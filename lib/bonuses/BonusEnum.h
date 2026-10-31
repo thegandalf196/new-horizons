@@ -242,6 +242,7 @@ class JsonNode;
 	BONUS_NAME(LONG_REACH) /*maximum gap hexes for physical melee attack range; does not alter adjacency-only queries*/ \
 	BONUS_NAME(CONFUSION_PENDING) /*source-bound next-activation Confusion, with captured caster and Confounder*/ \
 	BONUS_NAME(TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION) /*target-side relative penetration of positive MDR, percent*/ \
+	BONUS_NAME(HEALING_RECEIVED_REDUCTION_BASIS_POINTS) /*strongest incoming reduction of eligible capped body HP;0..10000*/ \
 
 	/* end of list */
 

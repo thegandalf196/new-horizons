@@ -110,17 +110,6 @@ void validatePolicySerialization(const JsonNode & capturedPerkRules, bool suppor
 		throw std::runtime_error("Cannot discard captured Necromancy policy");
 }
 
-bool isSkeletonFamily(CreatureID creature)
-{
-	if(!creature.hasValue())
-		return false;
-	const CreatureID skeleton(CreatureID::SKELETON);
-	if(creature == skeleton)
-		return true;
-	const auto * base = skeleton.toCreature();
-	return base && base->upgrades.contains(creature);
-}
-
 int discountedLeadershipRequirement(int baseRequirement, int reductionPercent)
 {
 	if(baseRequirement < 1 || reductionPercent < 0 || reductionPercent >= 100)

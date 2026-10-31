@@ -166,7 +166,16 @@ TEST(OwnedRecipientBonusGraphTest, InitialStaticFactsStageDoesNotPretendCreature
 	limiter->includeUpgrades = true;
 	raw->limiter = limiter;
 	root.local = {raw};
-	EXPECT_THROW(OwnedRecipientBonusGraph::fromOwnedInputs({root}, 0), std::invalid_argument);
+	std::unique_ptr<OwnedRecipientBonusGraph> captured;
+	ASSERT_NO_THROW(captured = OwnedRecipientBonusGraph::fromOwnedInputs({root}, 0));
+	ASSERT_TRUE(captured);
+	root.facts.creatureContext.emplace(); // Captured absence differs from an unknown domain.
+	auto absent = OwnedRecipientBonusGraph::fromOwnedInputs({root}, 0);
+	root.facts.creatureContext->creature = OwnedBonusEvaluationFacts::CreatureContext::Creature{CreatureID(0), 1, EAlignment::NEUTRAL};
+	auto matching = OwnedRecipientBonusGraph::fromOwnedInputs({root}, 0);
+	EXPECT_THROW(captured->query(all()), std::logic_error); // D2 checks the actual evaluation destination lazily.
+	EXPECT_TRUE(absent->query(all()).empty());
+	ASSERT_EQ(matching->query(all()).size(), 1u);
 }
 
 TEST(OwnedRecipientBonusGraphTest, ConstructQueryRepeatAndRetireDoNotInvalidateNativeGenerationOrCache)

@@ -64,7 +64,13 @@ void validateOrdinaryCreatureSpecialtiesSerialization(const JsonNode & developme
 		"stoneSentinelReductionPercent", "ogreWarcallerDamagePercent", "undertowRetaliationPercent",
 		"wyvernsPreyDamagePercent", "mobPressureDamagePercent",
 		"wingbeatInitiativePercent", "measuredVolleyMdrPenetrationPercent",
-		"prismaticScreenReductionPercent", "evasiveFlightReductionPercent", "ridersExploitDamagePercent", "tidalRenewalHealingHP", "cruelVolleyDamagePercent", "rangefinderFullDamageDistance", "fieldReassemblyHealingHP", "fieldMaintenanceHealingHP", "ogreBulwarkRetaliations", "gunneryProfessorInitiativeFlat", "gunneryProfessorFollowUpBonusPoints", "heavyBatterySiegeTermBonusPercent", "shieldAndSwordPhysicalReductionPercent", "sepulchralGripSpeedReduction", "cyclopeanBreachIgnorePercent", "runicEnduranceReductionPercent"});
+		"prismaticScreenReductionPercent", "evasiveFlightReductionPercent", "ridersExploitDamagePercent", "tidalRenewalHealingHP", "cruelVolleyDamagePercent", "rangefinderFullDamageDistance", "fieldReassemblyHealingHP", "fieldMaintenanceHealingHP", "ogreBulwarkRetaliations", "gunneryProfessorInitiativeFlat", "gunneryProfessorFollowUpBonusPoints", "heavyBatterySiegeTermBonusPercent", "shieldAndSwordPhysicalReductionPercent", "sepulchralGripSpeedReduction", "cyclopeanBreachIgnorePercent", "runicEnduranceReductionPercent",
+		"scorchingImpactDamageReductionPercent", "cruelOverseerDefenseReduction", "lanceFormationDefensePerHex",
+		"lanceFormationMaximumDefense", "stormWingsDefenseIgnorePercent", "stormWingsMinimumFlightDistance",
+		"consecratedTargetDefenseIgnorePercent", "featheredFeintPhysicalReductionIgnorePercent", "demonicSolidarityReductionPercent",
+		"ironHideReductionPercent", "graveDustHealingReductionBasisPoints", "cinderReprisalDamagePercent",
+		"emberbrandDamagePercent", "toxicStingChancePercent", "gnollHarriersDamagePercent",
+		"prismaticVanguardPhysicalDamagePercent", "siegeSapperCreatureDefenseIgnorePercent"});
 	detail::require(detail::integer((*policy)["version"], 1, 1), "ordinary creature specialty version");
 	for(const char * key : {"closeQuartersDrill", "marshSharpshooter"})
 		detail::require(detail::integer((*policy)[key], 1, 1), "ordinary creature penalty waiver");
@@ -97,6 +103,24 @@ void validateOrdinaryCreatureSpecialtiesSerialization(const JsonNode & developme
 			detail::require(detail::integer((*policy)[key], 0, 100), "ordinary melee specialty coefficient");
 	if(policy->Struct().contains("heavyBatterySiegeTermBonusPercent"))
 		detail::require(detail::integer((*policy)["heavyBatterySiegeTermBonusPercent"], 0, 100), "Heavy Battery Siege-term percentage");
+	for(const char * key : {"scorchingImpactDamageReductionPercent", "cruelOverseerDefenseReduction", "lanceFormationDefensePerHex",
+		"stormWingsDefenseIgnorePercent", "consecratedTargetDefenseIgnorePercent", "featheredFeintPhysicalReductionIgnorePercent",
+		"demonicSolidarityReductionPercent", "ironHideReductionPercent", "cinderReprisalDamagePercent",
+		"emberbrandDamagePercent", "toxicStingChancePercent", "gnollHarriersDamagePercent",
+		"prismaticVanguardPhysicalDamagePercent", "siegeSapperCreatureDefenseIgnorePercent"})
+		if(policy->Struct().contains(key))
+			detail::require(detail::integer((*policy)[key], 0, 100), "extended ordinary specialty coefficient");
+	detail::require(policy->Struct().contains("lanceFormationDefensePerHex") == policy->Struct().contains("lanceFormationMaximumDefense"),
+		"Extended ordinary specialty requires both captured coefficients");
+	if(policy->Struct().contains("lanceFormationMaximumDefense"))
+		detail::require(detail::integer((*policy)["lanceFormationMaximumDefense"], 1, 100), "extended ordinary specialty companion");
+	detail::require(policy->Struct().contains("stormWingsDefenseIgnorePercent") == policy->Struct().contains("stormWingsMinimumFlightDistance"),
+		"Extended ordinary specialty requires both captured coefficients");
+	if(policy->Struct().contains("stormWingsMinimumFlightDistance"))
+		detail::require(detail::integer((*policy)["stormWingsMinimumFlightDistance"], 1, 187), "extended ordinary specialty companion");
+	if(policy->Struct().contains("graveDustHealingReductionBasisPoints"))
+		detail::require(detail::integer((*policy)["graveDustHealingReductionBasisPoints"], 0, 10000), "Grave Dust healing reduction");
+
 }
 void validateOrdinaryCreatureExtensionsSerialization(const JsonNode & development, bool supported)
 {
@@ -170,6 +194,21 @@ void validateOrdinaryCombatSpecialtiesSerialization(const JsonNode & development
 		"cyclopeanBreachIgnorePercent", "runicEnduranceReductionPercent"})
 		if(policy->Struct().contains(key))
 			throw std::runtime_error("Captured ordinary combat specialties require format1151");
+}
+
+void validateExtendedOrdinarySpecialtiesSerialization(const JsonNode & development, bool supported)
+{
+	const auto * policy = ordinaryPolicy(development);
+	if(!policy || supported) return;
+	validateOrdinaryCreatureSpecialtiesSerialization(development, true);
+	for(const char * key : {"scorchingImpactDamageReductionPercent", "cruelOverseerDefenseReduction", "lanceFormationDefensePerHex",
+		"lanceFormationMaximumDefense", "stormWingsDefenseIgnorePercent", "stormWingsMinimumFlightDistance",
+		"consecratedTargetDefenseIgnorePercent", "featheredFeintPhysicalReductionIgnorePercent", "demonicSolidarityReductionPercent",
+		"ironHideReductionPercent", "graveDustHealingReductionBasisPoints", "cinderReprisalDamagePercent",
+		"emberbrandDamagePercent", "toxicStingChancePercent", "gnollHarriersDamagePercent",
+		"prismaticVanguardPhysicalDamagePercent", "siegeSapperCreatureDefenseIgnorePercent"})
+		if(policy->Struct().contains(key))
+			throw std::runtime_error("Captured extended ordinary specialties require format1152");
 }
 
 const CGHeroInstance * ordinaryCreatureVisibleOwnerHero(const CBattleInfoCallback & battle, const battle::Unit & actor)

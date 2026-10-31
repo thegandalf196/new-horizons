@@ -180,6 +180,10 @@ public:
 
 	CCreature();
 
+protected:
+	/// Inert owned descriptors never attach native bonus graph edges.
+	explicit CCreature(bool hypothetical);
+
 private:
 	static const std::map<CreatureQuantityId, std::string> creatureQuantityRanges;
 };

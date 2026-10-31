@@ -9,6 +9,7 @@
 #include "BonusEnum.h"
 #include "OwnedBonusEvaluationFacts.h"
 #include "../constants/EntityIdentifiers.h"
+#include "../constants/Enumerations.h"
 #include <optional>
 #include <cstdint>
 #include <vector>
@@ -65,6 +66,14 @@ public:
 	BonusEvaluationContext(const CBonusSystemNode & shell, const OwnedBonusEvaluationFacts & facts);
 	std::optional<int> heroLevel() const;
 	std::optional<int> filteredArmySize(CreatureID creature, FactionID faction, int level) const;
+	std::optional<bool> matchesCreature(CreatureID family, bool includeUpgrades) const;
+	std::optional<bool> matchesCreatureLevel(uint32_t minimum, uint32_t maximum) const;
+	std::optional<bool> matchesCreatureAlignment(EAlignment alignment) const;
+	FactionID sourceCreatureFaction(CreatureID source) const;
+	std::optional<bool> matchesRank(uint8_t minimum, uint8_t maximum) const;
+	std::optional<TerrainId> adventureTerrain() const;
+	TerrainId resolveTerrain(std::optional<TerrainId> adventure) const;
+	bool nativeTerrainMatches(std::optional<TerrainId> adventure) const;
 	/// Requires matching unit ID; the enclosing owner binds battle/lifetimes.
 	BonusEvaluationContext(const CStack & node, const battle::Unit & unit);
 	BonusEvaluationContext(const CStack & node, const battle::Unit & unit, const ProjectedBonusRoster & roster);

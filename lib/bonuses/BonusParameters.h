@@ -26,6 +26,8 @@ struct BonusParametersOnCombatEvent
 		template <class H>
 		void serialize(H& h)
 		{
+			if(h.saving && bonus)
+				bonus->validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
 			h & bonus;
 			h & targetEnemy;
 		}
@@ -53,6 +55,10 @@ struct BonusParametersOnCombatEvent
 	template <class H>
 	void serialize(H& h)
 	{
+		if(h.saving)
+			for(const auto & effect : effects)
+				if(const auto * owned = std::get_if<CombatEffectBonus>(&effect); owned && owned->bonus)
+					owned->bonus->validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
 		h & effects;
 	}
 };
@@ -127,7 +133,8 @@ public:
 	{
 		const auto context = BonusSerializationContext::fromHandler(h);
 		const bool supported = context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported;
 		if(h.saving && !supported)
 			validateAdjacencyCapabilitySerialization(context);
 		h & data_;

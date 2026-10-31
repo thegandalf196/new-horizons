@@ -96,6 +96,24 @@ set(lib_MAIN_SRCS
 		entities/hero/NewHorizonsGenieAbilities.cpp
 	battle/NewHorizonsSoulHarvest.cpp
 	battle/NewHorizonsOrdinaryStrike.cpp
+	battle/MeleeReturnDestination.cpp
+	battle/MeleeReturnDestination.h
+	battle/NewHorizonsInfernoStrikeDebuffs.cpp
+	battle/NewHorizonsInfernoStrikeDebuffs.h
+	battle/NewHorizonsChargeSpecialties.cpp
+	battle/NewHorizonsChargeSpecialties.h
+	battle/NewHorizonsCoordinatedMarks.cpp
+	battle/NewHorizonsCoordinatedMarks.h
+	battle/NewHorizonsReactiveDefense.cpp
+	battle/NewHorizonsReactiveDefense.h
+	battle/NewHorizonsCreatureBurn.cpp
+	battle/NewHorizonsCreatureBurn.h
+	battle/NewHorizonsGnollHarriers.cpp
+	battle/NewHorizonsGnollHarriers.h
+	battle/NewHorizonsPrismaticVanguard.cpp
+	battle/NewHorizonsPrismaticVanguard.h
+	battle/NewHorizonsGraveDust.cpp
+	battle/NewHorizonsGraveDust.h
 	battle/NewHorizonsShieldAndSword.cpp
 	battle/NewHorizonsSepulchralGrip.cpp
 		battle/NewHorizonsSequenceProtection.cpp
@@ -156,6 +174,13 @@ set(lib_MAIN_SRCS
 	battle/CPlayerBattleCallback.cpp
 	battle/CUnitState.cpp
 	battle/UnitStateCounts.cpp
+		battle/UnitStatePreparationFacts.cpp
+		battle/UnitStateCreature.cpp
+		battle/OwnedUnitCreatureResolver.cpp
+		battle/OwnedUnitEnvironment.cpp
+		battle/OwnedUnitEnvironment.h
+		battle/OwnedUnitCreatureResolver.h
+		battle/UnitCreatureResolver.h
 	battle/CUnitStateRoundReceipts.cpp
 	battle/CUnitStateLifecycle.cpp
 	battle/CUnitWaitActionState.cpp
@@ -236,6 +261,8 @@ set(lib_MAIN_SRCS
 	bonuses/OwnedBonusEvaluationFacts.cpp
 	bonuses/OwnedBonusPayloads.cpp
 	bonuses/OwnedRecipientBonusGraph.cpp
+		bonuses/OwnedRecipientRootQuery.cpp
+	bonuses/BonusTypeContext.cpp
 	bonuses/BonusBattleContext.cpp
 	bonuses/BonusGraphQuery.cpp
 	bonuses/ProjectedBonusGraph.cpp
@@ -267,6 +294,7 @@ set(lib_MAIN_SRCS
 	bonuses/PreparedBonusGraphStorage.cpp
 	bonuses/IBonusBearer.cpp
 	bonuses/Limiters.cpp
+	bonuses/LimiterSerialization.cpp
 	bonuses/TerrainBonusLimiter.cpp
 	bonuses/Propagators.cpp
 	bonuses/Updaters.cpp
@@ -362,6 +390,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPerkState.cpp
 	entities/hero/NewHorizonsNecromancy.cpp
 	entities/hero/NewHorizonsNecromancyPolicy.cpp
+		entities/hero/NewHorizonsNecromancyFamily.cpp
 	entities/hero/NewHorizonsReclaimerSerialization.cpp
 	entities/hero/NewHorizonsNecromancyResult.cpp
 	entities/hero/NewHorizonsReclaimerRules.cpp
@@ -673,6 +702,7 @@ set(lib_MAIN_SRCS
 	CAndroidVMHelper.cpp
 	CBonusTypeHandler.cpp
 	CCreatureHandler.cpp
+		CreatureIdentity.cpp
 	ConditionalWait.cpp
 	CPlayerState.cpp
 	CRandomGenerator.cpp

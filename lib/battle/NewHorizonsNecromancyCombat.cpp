@@ -53,9 +53,13 @@ std::shared_ptr<const BonusList> appendLuckBonuses(const AFactionMember & member
 	return result;
 }
 
+CombatPassives passivesForFamily(const CombatPassives & captured, bool family)
+{
+	return family ? captured : CombatPassives{};
+}
 CombatPassives passivesForCreature(const CombatPassives & captured, CreatureID creature)
 {
-	return isSkeletonFamily(creature) ? captured : CombatPassives{};
+	return passivesForFamily(captured, isSkeletonFamily(creature));
 }
 
 bool needsCombatPassiveSnapshot(const battle::Unit & unit)

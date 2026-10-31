@@ -119,13 +119,15 @@ public:
 	battle::Target getTarget(const CBattleInfoCallback * cb) const;
 	void setTarget(const battle::Target & target_);
 
-	template <typename Handler> void serialize(Handler & h)
+	/// Non-writing closed-kind admission; requestEnvelope retains historical request diagnostics.
+	void validatePhysicalCureSerialization(bool frozenSupported, bool graveDustSupported,
+		bool requestEnvelope = false) const;
+
+	template <typename Handler> void validateWriteSerialization(Handler & h) const
 	{
-		if(h.saving && !spellCurePhysicalAffliction.empty()
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
-			throw std::runtime_error("Cannot serialize physical Cure selection to an older protocol");
-		if(h.saving && !spellCurePhysicalAffliction.empty() && spellCurePhysicalAffliction != "frozen")
-			throw std::runtime_error("Invalid physical Cure selection");
+		if(!spellCurePhysicalAffliction.empty())
+			validatePhysicalCureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
 		if(h.saving && perfectMoment && !h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT))
 			throw std::runtime_error("Cannot serialize Perfect Moment to an older protocol");
 		if(h.saving && command == HeroCommand::FOCUS_FIRE
@@ -180,6 +182,12 @@ public:
 			&& spellShadowGiftSacrificePercent != 10 && spellShadowGiftSacrificePercent != 20
 			&& spellShadowGiftSacrificePercent != 30)
 			throw std::runtime_error("Invalid Shadow Gift sacrifice choice");
+	}
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving)
+			validateWriteSerialization(h);
 		h & side;
 		h & stackNumber;
 		h & actionType;
@@ -287,8 +295,9 @@ public:
 			h & spellCurePhysicalAffliction;
 		else if(!h.saving)
 			spellCurePhysicalAffliction.clear();
-		if(!h.saving && !spellCurePhysicalAffliction.empty() && spellCurePhysicalAffliction != "frozen")
-			throw std::runtime_error("Invalid physical Cure selection");
+		if(!h.saving && !spellCurePhysicalAffliction.empty())
+			validatePhysicalCureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
 		if(!h.saving && command == HeroCommand::FOCUS_FIRE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
 			throw std::runtime_error("Targeted command requires the new protocol");

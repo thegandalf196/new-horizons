@@ -152,7 +152,11 @@
  "required": ["version", "closeQuartersDrill", "marshSharpshooter", "retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"],
  "dependencies": {
  "gunneryProfessorInitiativeFlat": ["gunneryProfessorFollowUpBonusPoints"],
- "gunneryProfessorFollowUpBonusPoints": ["gunneryProfessorInitiativeFlat"]
+ "gunneryProfessorFollowUpBonusPoints": ["gunneryProfessorInitiativeFlat"],
+ "lanceFormationDefensePerHex": ["lanceFormationMaximumDefense"],
+ "lanceFormationMaximumDefense": ["lanceFormationDefensePerHex"],
+ "stormWingsDefenseIgnorePercent": ["stormWingsMinimumFlightDistance"],
+ "stormWingsMinimumFlightDistance": ["stormWingsDefenseIgnorePercent"]
  },
  "properties": {
  "version": {"type": "integer", "enum": [1]},
@@ -190,7 +194,24 @@
  "shieldAndSwordPhysicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
  "sepulchralGripSpeedReduction": {"type": "integer", "minimum": 0, "maximum": 100},
  "cyclopeanBreachIgnorePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "runicEnduranceReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100}
+ "runicEnduranceReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "scorchingImpactDamageReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "cruelOverseerDefenseReduction": {"type": "integer", "minimum": 0, "maximum": 100},
+ "lanceFormationDefensePerHex": {"type": "integer", "minimum": 0, "maximum": 100},
+ "lanceFormationMaximumDefense": {"type": "integer", "minimum": 1, "maximum": 100},
+ "stormWingsDefenseIgnorePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "stormWingsMinimumFlightDistance": {"type": "integer", "minimum": 1, "maximum": 187},
+ "consecratedTargetDefenseIgnorePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "featheredFeintPhysicalReductionIgnorePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "demonicSolidarityReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "ironHideReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "graveDustHealingReductionBasisPoints": {"type": "integer", "minimum": 0, "maximum": 10000},
+ "cinderReprisalDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "emberbrandDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "toxicStingChancePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "gnollHarriersDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "prismaticVanguardPhysicalDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "siegeSapperCreatureDefenseIgnorePercent": {"type": "integer", "minimum": 0, "maximum": 100}
  }
  },
 				"forestAmbush": {

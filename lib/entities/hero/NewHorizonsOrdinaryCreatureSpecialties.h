@@ -21,6 +21,7 @@ DLL_LINKAGE void validateOrdinaryRangedSpecialtiesSerialization(const JsonNode &
 DLL_LINKAGE void validateOrdinaryMaintenanceSpecialtiesSerialization(const JsonNode & development, bool supported);
 DLL_LINKAGE void validateOrdinaryMachineSpecialtiesSerialization(const JsonNode & development, bool supported);
 DLL_LINKAGE void validateOrdinaryCombatSpecialtiesSerialization(const JsonNode & development, bool supported);
+DLL_LINKAGE void validateExtendedOrdinarySpecialtiesSerialization(const JsonNode & development, bool supported);
 /// Current effective army owner, visible in this real callback perspective.
 /// Null includes unknown/unavailable; it is not proof of an absent hero.
 DLL_LINKAGE const CGHeroInstance * ordinaryCreatureVisibleOwnerHero(const CBattleInfoCallback & battle, const battle::Unit & actor);

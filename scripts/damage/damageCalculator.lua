@@ -342,6 +342,13 @@ function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense
 		ignored = ignored + math.floor((info.warMachinesPiercingBoltsDefenseIgnorePercent or 0) * math.max(0, defense) / 100)
 	end
 
+	if targetDefense and not info.shooting and info.physicalDamage and (info.coordinatedMeleeDefenseIgnorePercent or 0) > 0 then
+		ignored = ignored + math.floor((info.coordinatedMeleeDefenseIgnorePercent or 0) * math.max(0, defense) / 100)
+	end
+	if targetDefense and not info.shooting and info.physicalDamage and (info.stormWingsDefenseIgnorePercent or 0) > 0 then
+		ignored = ignored + math.floor((info.stormWingsDefenseIgnorePercent or 0) * math.max(0, defense) / 100)
+	end
+
 	-- Shock Assault is carried by the exact Charge attack selected by the
 	-- authoritative battle callback. It only changes the defender's Creature
 	-- Defense for that melee blow; it must not alter Frenzy's traded defense.

@@ -221,6 +221,8 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	}
 
 	/// Non-writing admission for the two capabilities introduced in format1145.
+	/// Canonical transient1152 marker classification shared by codec and owned snapshots.
+	bool isExtendedOrdinarySpecialtyEffect() const;
 	void validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const;
 
 	template <typename Handler> void validateWriteSerialization(Handler & h) const

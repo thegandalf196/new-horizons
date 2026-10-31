@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsOrdinaryStrike.h"
+#include "NewHorizonsCoordinatedMarks.h"
+#include "NewHorizonsInfernoStrikeDebuffs.h"
 #include "NewHorizonsSepulchralGrip.h"
 #include "NewHorizonsShieldAndSword.h"
 #include "BattleAttackInfo.h"
@@ -15,7 +17,7 @@ namespace newHorizonsOrdinaryStrike
 {
 bool isStrikeEffect(const Bonus * bonus)
 {
-	if(newHorizonsSepulchralGrip::isEffect(bonus) || newHorizonsShieldAndSword::isProtection(bonus))
+	if(newHorizonsInfernoStrikeDebuffs::isEffect(bonus) || newHorizonsCoordinatedMarks::isMark(bonus) || newHorizonsSepulchralGrip::isEffect(bonus) || newHorizonsShieldAndSword::isProtection(bonus))
 		return true;
 	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL
 		|| bonus->duration != BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION
@@ -51,7 +53,9 @@ bool mayChangeInitiative(const CBattleInfoCallback & battle)
 bool needsProjection(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	return attack.attacker && attack.defender
-		&& ((!attack.shooting && !attack.retaliation && newHorizonsShieldAndSword::eligible(battle, *attack.attacker))
+		&& (newHorizonsInfernoStrikeDebuffs::primaryHit(battle, attack)
+			|| (!attack.shooting && newHorizonsInfernoStrikeDebuffs::primaryHit(battle, attack.reverse()))
+			|| newHorizonsCoordinatedMarks::needsProjection(battle, attack) || (!attack.shooting && !attack.retaliation && newHorizonsShieldAndSword::eligible(battle, *attack.attacker))
 			|| newHorizonsSepulchralGrip::primaryHit(battle, attack)
 			|| newHorizonsHeroes::ordinaryCreatureStrikeBonus(battle, attack)
 			|| (!attack.shooting && newHorizonsSepulchralGrip::primaryHit(battle, attack.reverse()))
@@ -60,15 +64,24 @@ bool needsProjection(const CBattleInfoCallback & battle, const BattleAttackInfo 
 EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & attack, int64_t primaryDamage)
 {
 	EffectPlan result;
-	if(primaryDamage <= 0 || !attack.attacker || !attack.defender || !attack.attacker->alive()
+	if(attack.attacker && attack.defender)
+	{
+		result.target = attack.defender->unitId();
+		result.remove = newHorizonsCoordinatedMarks::consumed(battle, attack);
+	}
+	if(!attack.attacker || !attack.defender || !attack.attacker->alive()
 		|| !attack.defender->alive() || attack.attacker->isGhost() || attack.defender->isGhost()
 		|| attack.attacker->isTimeStopped() || attack.defender->isTimeStopped()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender))
 		return result;
-	auto effect = newHorizonsHeroes::ordinaryCreatureStrikeBonus(battle, attack);
-	if(!effect)
+	auto effect = primaryDamage > 0 ? newHorizonsHeroes::ordinaryCreatureStrikeBonus(battle, attack) : nullptr;
+	if(!effect && primaryDamage > 0)
 		effect = newHorizonsSepulchralGrip::primaryHit(battle, attack);
+	if(!effect && primaryDamage > 0)
+		effect = newHorizonsInfernoStrikeDebuffs::primaryHit(battle, attack);
+	if(!effect)
+		effect = newHorizonsCoordinatedMarks::consecratingShot(battle, attack);
 	if(!effect)
 		return result;
 	result.target = attack.defender->unitId();

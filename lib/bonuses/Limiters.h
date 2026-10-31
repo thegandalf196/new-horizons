@@ -54,6 +54,7 @@ public:
 	virtual JsonNode toJsonNode() const;
 	/// Preflight static adjacency metadata before enclosing serialization prefixes.
 	virtual void validateAdjacencySerialization(bool supported) const;
+	virtual void validateBonusTypeSerialization(bool adjacencySupported, bool healingReductionSupported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
@@ -73,11 +74,13 @@ public:
 	void add(const TLimiterPtr & limiter);
 	JsonNode toJsonNode() const override;
 	void validateAdjacencySerialization(bool supported) const override;
+	void validateBonusTypeSerialization(bool adjacencySupported, bool healingReductionSupported) const override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
-			validateAdjacencySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS));
+			validateBonusTypeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
 		h & static_cast<ILimiter&>(*this);
 		h & limiters;
 	}
@@ -149,6 +152,7 @@ public:
 	bool isSourceIDRelevant; //check for bonus source only if this is true
 
 	void validateAdjacencySerialization(bool supported) const override;
+	void validateBonusTypeSerialization(bool adjacencySupported, bool healingReductionSupported) const override;
 
 	HasAnotherBonusLimiter(BonusType bonus = BonusType::NONE);
 	HasAnotherBonusLimiter(BonusType bonus, BonusSubtypeID _subtype);
@@ -162,7 +166,8 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		const bool supported = h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS);
-		if(h.saving) validateAdjacencySerialization(supported);
+		const bool healingSupported = h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
+		if(h.saving) validateBonusTypeSerialization(supported, healingSupported);
 		h & static_cast<ILimiter&>(*this);
 		h & type;
 		h & subtype;
@@ -176,7 +181,7 @@ public:
 			h & minValue;
 			h & maxValue;
 		}
-		if(!h.saving) validateAdjacencySerialization(supported);
+		if(!h.saving) validateBonusTypeSerialization(supported, healingSupported);
 	}
 };
 

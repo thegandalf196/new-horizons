@@ -45,6 +45,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int physicalDamageReductionIgnorePercent = 0;
 	/// Independent captured unit passive, separate from Armorer, Orders and bonus-source groups.
 	int intrinsicPhysicalDamageReductionPercent = 0;
+	int coordinatedMeleeDefenseIgnorePercent = 0; // One consumed ordinary allied melee mark.
+	int stormWingsDefenseIgnorePercent = 0; // Exact first-primary voluntary-flight contribution.
 	int runicEnduranceReductionPercent = 0; // Independent attack-sequence protection source.
 	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
 	int heavenlyGaleDamageReductionBasisPoints = 0;
@@ -189,6 +191,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("physicalDamage", physicalDamage, "Whether this attack deals physical creature damage.");
 		s("physicalDamageReductionCapPercent", physicalDamageReductionCapPercent,
 			"Combined independent physical reduction cap; -1 preserves legacy calculations.");
+		s("coordinatedMeleeDefenseIgnorePercent", coordinatedMeleeDefenseIgnorePercent, "One-use allied melee mark penetration of target Creature Defense.");
+		s("stormWingsDefenseIgnorePercent", stormWingsDefenseIgnorePercent, "Exact voluntary-flight penetration of target Creature Defense.");
 		s("physicalDamageReductionIgnorePercent", physicalDamageReductionIgnorePercent,
 			"Attack-local percentage of combined capped physical damage reduction ignored.");
 		s("runicEnduranceReductionPercent", runicEnduranceReductionPercent, "Captured independent physical protection against additional blows in one ordinary action.");

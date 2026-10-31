@@ -146,7 +146,8 @@ public:
 	void validateStackBonusSerialization(BonusSerializationContext context) const
 	{
 		if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 		for(const auto & [slot, stack] : stacks)
 			if(stack) stack->validateExportedBonusSerialization(context);
 	}

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "PhysicalAffliction.h"
+#include "NewHorizonsGraveDust.h"
 
 #include "CUnitState.h"
 #include "../bonuses/BonusList.h"
@@ -87,6 +88,7 @@ void validateMarkerGroup(const GroupKey & key, const std::vector<Bonus> & bonuse
 
 	for(const auto & bonus : bonuses)
 	{
+		if(bonus.type != BonusType::PHYSICAL_AFFLICTION) newHorizonsGraveDust::validateRecord(bonus);
 		const auto metadata = physicalAfflictions::markerMetadata(bonus);
 		if(!metadata)
 		{
@@ -361,7 +363,9 @@ std::optional<MarkerMetadata> markerMetadata(const Bonus & bonus)
 			throw std::invalid_argument("PHYSICAL_AFFLICTION applicationOrder cannot be negative");
 	}
 
-	return MarkerMetadata{kindValue, applicationOrder};
+	const MarkerMetadata result{kindValue, applicationOrder};
+	newHorizonsGraveDust::validateParsedMarker(bonus, result);
+	return result;
 }
 
 std::vector<Affliction> enumerate(const battle::Unit & unit)
@@ -377,6 +381,8 @@ std::vector<Affliction> enumerate(const battle::Unit & unit)
 		affliction.source = key.source;
 		affliction.sourceID = key.sourceID;
 		validateMarkerGroup(key, groupBonuses, affliction);
+		if(newHorizonsGraveDust::isReservedSource(groupBonuses.front()))
+			newHorizonsGraveDust::validateUnitGroup(unit);
 		if(!affliction.kind.empty())
 			result.push_back(std::move(affliction));
 	}
@@ -436,6 +442,7 @@ std::vector<Bonus> removalPlan(const battle::Unit & unit, const Affliction & aff
 void stampEffectChanges(const battle::Unit & unit, const std::vector<Bonus> & removed,
 	const std::vector<std::vector<Bonus> *> & incomingInApplyOrder)
 {
+	newHorizonsGraveDust::validateBatchRecords(removed, incomingInApplyOrder);
 	std::set<const std::vector<Bonus> *> distinctVectors;
 	bool hasMarkerWork = false;
 	for(const auto & bonus : removed)

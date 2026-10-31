@@ -105,6 +105,7 @@ public:
 			if(crisisCommand.meaningful() && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 				throw std::runtime_error("Cannot discard Crisis Command battle suspension");
 			validateCrisisCommandProfiles(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+			crisisCommand.validatePhysicalCureSerialization(h);
 		}
 	}
 	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;

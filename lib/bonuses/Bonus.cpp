@@ -29,6 +29,14 @@
 #include "../battle/NewHorizonsMaintenanceSpecialties.h"
 #include "../battle/NewHorizonsShieldAndSword.h"
 #include "../battle/NewHorizonsSepulchralGrip.h"
+#include "../battle/NewHorizonsInfernoStrikeDebuffs.h"
+#include "../battle/NewHorizonsChargeSpecialties.h"
+#include "../battle/NewHorizonsCoordinatedMarks.h"
+#include "../battle/NewHorizonsReactiveDefense.h"
+#include "../battle/NewHorizonsCreatureBurn.h"
+#include "../battle/NewHorizonsGnollHarriers.h"
+#include "../battle/NewHorizonsPrismaticVanguard.h"
+#include "../battle/NewHorizonsGraveDust.h"
 #include "../constants/StringConstants.h"
 #include "../entities/hero/CHero.h"
 #include "../modding/ModUtility.h"
@@ -317,6 +325,25 @@ void appendOwnedEffectBonuses(const BonusParameters * parameters, std::vector<co
 			if(owned->bonus) pending.push_back(owned->bonus.get());
 }
 
+bool isExtendedOrdinaryEffect(const Bonus * bonus)
+{
+	return newHorizonsInfernoStrikeDebuffs::isEffect(bonus)
+		|| newHorizonsChargeSpecialties::isLanceFormation(bonus)
+		|| newHorizonsCoordinatedMarks::isMark(bonus)
+		|| newHorizonsReactiveDefense::isSolidarityProtection(bonus)
+		|| newHorizonsReactiveDefense::isIronHideSpent(bonus)
+		|| newHorizonsCreatureBurn::isBurn(bonus)
+		|| newHorizonsGnollHarriers::isMovementHistory(bonus)
+		|| newHorizonsPrismaticVanguard::isEffect(bonus)
+		|| (bonus && newHorizonsGraveDust::validateRecord(*bonus));
+}
+void validateHealingReductionType(const Bonus & bonus, bool supported)
+{
+	if(!supported && (bonus.type == BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS
+		|| bonus.subtype.as<BonusTypeID>().toEnum() == BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS))
+		throw std::runtime_error("Unsupported incoming healing reduction bonus format");
+}
+
 void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters * parameters, BonusSerializationContext context)
 {
 	std::vector<const Bonus *> pending;
@@ -341,11 +368,20 @@ void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters *
 			throw std::runtime_error("Unsupported Shield and Sword bonus format");
 		if(newHorizonsSepulchralGrip::isEffect(bonus) && !context.ordinaryCombatSpecialtiesSupported)
 			throw std::runtime_error("Unsupported Sepulchral Grip bonus format");
-		if(bonus->limiter) bonus->limiter->validateAdjacencySerialization(context.adjacencyFiltersSupported);
+		if(bonus->isExtendedOrdinarySpecialtyEffect() && !context.extendedOrdinarySpecialtiesSupported)
+			throw std::runtime_error("Unsupported extended ordinary specialty bonus format");
+		validateHealingReductionType(*bonus, context.extendedOrdinarySpecialtiesSupported);
+		if(bonus->limiter) bonus->limiter->validateBonusTypeSerialization(
+			context.adjacencyFiltersSupported, context.extendedOrdinarySpecialtiesSupported);
 		if(context.combatEventParametersSerialized)
 			appendOwnedEffectBonuses(bonus->parameters.get(), pending);
 	}
 }
+}
+
+bool Bonus::isExtendedOrdinarySpecialtyEffect() const
+{
+	return isExtendedOrdinaryEffect(this);
 }
 
 void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
@@ -355,15 +391,19 @@ void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext c
 		newHorizonsRangefinder::isEnvelope(*this);
 	if(context.ordinaryMaintenanceSpecialtiesSupported)
 		newHorizonsMaintenanceSpecialties::isDefendRetaliationBonus(this);
+	if(context.extendedOrdinarySpecialtiesSupported)
+		isExtendedOrdinarySpecialtyEffect();
+	validateHealingReductionType(*this, context.extendedOrdinarySpecialtiesSupported);
 	if(context.ordinaryCombatSpecialtiesSupported)
 	{
 		newHorizonsShieldAndSword::isProtection(this);
 		newHorizonsSepulchralGrip::isEffect(this);
 	}
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported)
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported)
 	{
-		if(limiter) limiter->validateAdjacencySerialization(true);
+		if(limiter) limiter->validateBonusTypeSerialization(true, context.extendedOrdinarySpecialtiesSupported);
 		return;
 	}
 	validateUnsupportedOwnedBonuses(this, nullptr, context);
@@ -372,6 +412,7 @@ void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext c
 void BonusParameters::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 	validateUnsupportedOwnedBonuses(nullptr, this, context);
 }

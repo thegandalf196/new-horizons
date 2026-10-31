@@ -45,7 +45,7 @@ ILimiter::EDecision ILimiter::limit(const BonusLimitationContext &context) const
 	return ILimiter::EDecision::ACCEPT;
 }
 
-void ILimiter::validateAdjacencySerialization(bool) const {}
+
 
 std::string ILimiter::toString() const
 {
@@ -61,13 +61,9 @@ JsonNode ILimiter::toJsonNode() const
 
 ILimiter::EDecision CCreatureTypeLimiter::limit(const BonusLimitationContext &context) const
 {
-	const CCreature *c = context.evaluation.creature();
-	if(!c)
-		return ILimiter::EDecision::NOT_APPLICABLE;
-
-	auto accept =  c->getId() == creatureID || (includeUpgrades && creatureID.toCreature()->isMyDirectOrIndirectUpgrade(c));
-	return accept ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
-	//drop bonus if it's not our creature and (we don`t check upgrades or its not our upgrade)
+	const auto accept = context.evaluation.matchesCreature(creatureID, includeUpgrades);
+	if(!accept) return ILimiter::EDecision::NOT_APPLICABLE;
+	return *accept ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 }
 
 CCreatureTypeLimiter::CCreatureTypeLimiter(const CCreature & creature_, bool IncludeUpgrades)
@@ -98,13 +94,7 @@ JsonNode CCreatureTypeLimiter::toJsonNode() const
 	return root;
 }
 
-void HasAnotherBonusLimiter::validateAdjacencySerialization(bool supported) const
-{
-	if(supported) return;
-	if(type == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION
-		|| subtype.as<BonusTypeID>().toEnum() == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION)
-		throw std::runtime_error("Unsupported target MDR penetration limiter format");
-}
+
 
 HasAnotherBonusLimiter::HasAnotherBonusLimiter( BonusType bonus )
 	: type(bonus), isSubtypeRelevant(false), isSourceRelevant(false), isSourceIDRelevant(false)
@@ -252,13 +242,6 @@ ILimiter::EDecision UnitAdjacentLimiter::limit(const BonusLimitationContext &con
 	return ILimiter::EDecision::DISCARD;
 }
 
-void UnitAdjacentLimiter::validateAdjacencySerialization(bool supported) const
-{
-	if(!filter.isValid() || (!supported && !filter.isDefault())
-		|| (filter.anyCreature && targetUnit.hasValue())
-		|| (!filter.isDefault() && !filter.anyCreature && !targetUnit.hasValue()))
-		throw std::runtime_error("Unsupported adjacency filter metadata");
-}
 
 JsonNode UnitAdjacentLimiter::toJsonNode() const
 {
@@ -340,7 +323,7 @@ ILimiter::EDecision FactionLimiter::limit(const BonusLimitationContext &context)
 		switch(context.b.source)
 		{
 			case BonusSource::CREATURE_ABILITY:
-				return *bearer == context.b.sid.as<CreatureID>().toCreature()->getFactionID() ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
+				return *bearer == context.evaluation.sourceCreatureFaction(context.b.sid.as<CreatureID>()) ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 
 			case BonusSource::TOWN_STRUCTURE:
 				return *bearer == context.b.sid.as<BuildingTypeUniqueID>().getFaction() ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
@@ -376,12 +359,9 @@ CreatureLevelLimiter::CreatureLevelLimiter(uint32_t minLevel, uint32_t maxLevel)
 
 ILimiter::EDecision CreatureLevelLimiter::limit(const BonusLimitationContext &context) const
 {
-	const auto *c = context.evaluation.creature();
-	if (!c)
-		return ILimiter::EDecision::NOT_APPLICABLE;
-
-	auto accept = c->getLevel() < maxLevel && c->getLevel() >= minLevel;
-	return accept ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD; //drop bonus for non-creatures or non-native residents
+	const auto accept = context.evaluation.matchesCreatureLevel(minLevel, maxLevel);
+	if(!accept) return ILimiter::EDecision::NOT_APPLICABLE;
+	return *accept ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 }
 
 std::string CreatureLevelLimiter::toString() const
@@ -409,14 +389,9 @@ CreatureAlignmentLimiter::CreatureAlignmentLimiter(EAlignment Alignment)
 
 ILimiter::EDecision CreatureAlignmentLimiter::limit(const BonusLimitationContext &context) const
 {
-	const auto * c = context.evaluation.creature();
-	if(c) {
-		if(alignment == c->getAlignment())
-			return ILimiter::EDecision::ACCEPT;
-		return ILimiter::EDecision::DISCARD;
-	}
-
-	return ILimiter::EDecision::NOT_APPLICABLE;
+	const auto accept = context.evaluation.matchesCreatureAlignment(alignment);
+	if(!accept) return ILimiter::EDecision::NOT_APPLICABLE;
+	return *accept ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 }
 
 std::string CreatureAlignmentLimiter::toString() const
@@ -448,17 +423,9 @@ RankRangeLimiter::RankRangeLimiter()
 
 ILimiter::EDecision RankRangeLimiter::limit(const BonusLimitationContext &context) const
 {
-	const CStackInstance * csi = context.evaluation.stackInstance();
-	if(csi)
-	{
-		if (csi->getNodeType() == BonusNodeType::COMMANDER) //no stack exp bonuses for commander creatures
-			return ILimiter::EDecision::DISCARD;
-		if (csi->getExpRank() > minRank && csi->getExpRank() < maxRank)
-			return ILimiter::EDecision::ACCEPT;
-
-		return ILimiter::EDecision::DISCARD;
-	}
-	return ILimiter::EDecision::NOT_APPLICABLE;
+	const auto accept = context.evaluation.matchesRank(minRank, maxRank);
+	if(!accept) return ILimiter::EDecision::NOT_APPLICABLE;
+	return *accept ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 }
 
 OppositeSideLimiter::OppositeSideLimiter()
@@ -482,12 +449,7 @@ AggregateLimiter::AggregateLimiter(std::vector<TLimiterPtr> limiters):
 {
 }
 
-void AggregateLimiter::validateAdjacencySerialization(bool supported) const
-{
-	for(const auto & limiter : limiters)
-		if(limiter)
-			limiter->validateAdjacencySerialization(supported);
-}
+
 
 void AggregateLimiter::add(const TLimiterPtr & limiter)
 {

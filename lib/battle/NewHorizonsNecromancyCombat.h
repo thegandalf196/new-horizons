@@ -34,6 +34,8 @@ DLL_LINKAGE std::shared_ptr<const BonusList> appendLuckBonuses(const AFactionMem
 	std::shared_ptr<const BonusList> ordinary, int & additionalLuck);
 DLL_LINKAGE CombatPassives captureCombatPassives(const CGHeroInstance * hero);
 DLL_LINKAGE CombatPassives passivesForCreature(const CombatPassives & captured, CreatureID creature);
+/// One passive-selection formula shared by native and copied family contexts.
+DLL_LINKAGE CombatPassives passivesForFamily(const CombatPassives & captured, bool family);
 /// Construction-only query: old captures and zero-passive recipients retain lazy projection.
 DLL_LINKAGE bool needsCombatPassiveSnapshot(const battle::Unit & unit);
 /// Paths with no historical general MDR stage acquire only the new independent source.

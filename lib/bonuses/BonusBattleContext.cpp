@@ -27,6 +27,8 @@ BonusEvaluationContext::BonusEvaluationContext(const CStack & node, const battle
 
 const battle::Unit * BonusEvaluationContext::battleUnit() const
 {
+	if(owned && getNodeType() == BonusNodeType::STACK_BATTLE)
+		throw std::logic_error("Owned current unit frame is not bound");
 	if(getNodeType() != BonusNodeType::STACK_BATTLE)
 		return nullptr;
 	return projected ? projected : dynamic_cast<const CStack *>(&original);
@@ -34,6 +36,8 @@ const battle::Unit * BonusEvaluationContext::battleUnit() const
 
 const CStackInstance * BonusEvaluationContext::stackInstance() const
 {
+	if(owned && (getNodeType() == BonusNodeType::STACK_INSTANCE || getNodeType() == BonusNodeType::STACK_BATTLE))
+		throw std::logic_error("Owned context has no native stack instance");
 	switch(getNodeType())
 	{
 	case BonusNodeType::STACK_INSTANCE:
@@ -47,6 +51,12 @@ const CStackInstance * BonusEvaluationContext::stackInstance() const
 
 const CCreature * BonusEvaluationContext::creature() const
 {
+	if(owned)
+	{
+		if(!owned->creatureContext) throw std::logic_error("Owned creature domain is unbound");
+		if(!owned->creatureContext->creature) return nullptr;
+		throw std::logic_error("Owned concrete creature descriptor is not bound");
+	}
 	if(getNodeType() == BonusNodeType::CREATURE)
 		return dynamic_cast<const CCreature *>(&original);
 	if(const auto * unit = battleUnit())
@@ -58,6 +68,11 @@ const CCreature * BonusEvaluationContext::creature() const
 
 std::optional<FactionID> BonusEvaluationContext::faction() const
 {
+	if(owned)
+	{
+		if(!owned->creatureContext) throw std::logic_error("Owned faction domain is unbound");
+		return owned->creatureContext->faction;
+	}
 	if(projected)
 		return projected->unitType()->getFactionID();
 	if(const auto * bearer = dynamic_cast<const INativeTerrainProvider *>(&original))
@@ -67,6 +82,7 @@ std::optional<FactionID> BonusEvaluationContext::faction() const
 
 std::vector<const battle::Unit *> BonusEvaluationContext::adjacentUnits() const
 {
+	if(owned) throw std::logic_error("Owned visibility-authorized roster is not bound");
 	if(projected)
 	{
 		if(!roster)
@@ -82,6 +98,11 @@ std::vector<const battle::Unit *> BonusEvaluationContext::adjacentUnits() const
 
 bool BonusEvaluationContext::acceptsBonus(const Bonus & bonus) const
 {
+	if(owned && getNodeType() == BonusNodeType::STACK_BATTLE)
+	{
+		if(!owned->acceptance) throw std::logic_error("Owned battle acceptance domain is unbound");
+		return battle::acceptsBattleBonus(bonus, owned->acceptance->metadata, owned->acceptance->state);
+	}
 	if(!projected)
 		return original.acceptsBonus(bonus);
 	const auto * state = dynamic_cast<const battle::CUnitState *>(projected);
@@ -99,10 +120,14 @@ BonusEvaluationContext::BonusEvaluationContext(const CStack & node, const battle
 	native = provenance;
 }
 
-bool BonusEvaluationContext::hasNativeContext() const noexcept { return native.has_value(); }
+bool BonusEvaluationContext::hasNativeContext() const noexcept
+{
+	return owned ? owned->terrainContext && owned->terrainContext->explicitNativeContext : native.has_value();
+}
 
 const BattleInfo * BonusEvaluationContext::battleContext() const
 {
+	if(owned) throw std::logic_error("Owned context has no native battle object");
 	if(native)
 		return native->battle;
 	const auto * stack = dynamic_cast<const CStack *>(&original);
@@ -111,12 +136,22 @@ const BattleInfo * BonusEvaluationContext::battleContext() const
 
 std::optional<TerrainId> BonusEvaluationContext::battleTerrain() const
 {
+	if(owned)
+	{
+		if(!owned->terrainContext) throw std::logic_error("Owned terrain domain is unbound");
+		return owned->terrainContext->battle;
+	}
 	const auto * battle = battleContext();
 	return battle ? std::optional<TerrainId>(battle->getTerrainType()) : std::nullopt;
 }
 
 std::optional<TerrainId> BonusEvaluationContext::queryTerrain() const
 {
+	if(owned)
+	{
+		if(!owned->terrainContext) throw std::logic_error("Owned terrain domain is unbound");
+		return owned->terrainContext->query;
+	}
 	if(native)
 		return native->queryTerrain; // explicit missing provenance never falls back
 	const auto * stack = dynamic_cast<const CStack *>(&original);
@@ -135,6 +170,7 @@ bool AdjacentUnitFilter::isValid() const
 bool BonusEvaluationContext::matchesAdjacentUnit(const battle::Unit & neighbor, CreatureID family,
 	const AdjacentUnitFilter & filter) const
 {
+	if(owned) throw std::logic_error("Owned visibility-authorized roster is not bound");
 	if(filter.isDefault())
 		return neighbor.creatureId() == family; // exact historical default, including its eligibility
 	const auto * subject = battleUnit();

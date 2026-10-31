@@ -98,6 +98,7 @@ set(test_SRCS
 		serializer/JsonUpdaterTest.cpp
 		serializer/SaveParityTest.cpp
 		serializer/BattleActionExportTest.cpp
+		serializer/CurePhysicalSelectorSerializationTest.cpp
 		../tools/native/BattleActionExport.cpp
 		../tools/native/BattleActionExportPackets.cpp
 		../tools/native/SaveParityInput.cpp
@@ -174,6 +175,9 @@ set(test_SRCS
 		battle/NewHorizonsMaintenanceSpecialtyTest.cpp
 		battle/NewHorizonsMachineSpecialtyTest.cpp
 		battle/NewHorizonsSequenceProtectionTest.cpp
+		battle/NewHorizonsCoordinatedMarkTest.cpp
+		server/battles/NewHorizonsChargeSpecialtiesTest.cpp
+		battle/InfernoStrikeDebuffTest.cpp
 		battle/NewHorizonsMeleeSpecialtyTest.cpp
 		server/battles/NewHorizonsSorshaDamageTypeTest.cpp
 	battle/NewHorizonsParalyzingGazeTest.cpp
@@ -187,6 +191,8 @@ set(test_SRCS
 		bonus/BonusSystemTest.cpp
 		bonus/BonusCapabilitySerializationTest.cpp
 		bonus/BonusNestedCapabilitySerializationTest.cpp
+	bonus/ExtendedOrdinaryBonusSerializationTest.cpp
+	serializer/ExtendedOrdinaryPolicySerializationTest.cpp
 		bonus/RangefinderMarkerSerializationTest.cpp
 		bonus/OgreBulwarkMarkerSerializationTest.cpp
 		bonus/OwnedWorldBonusSerializationTest.cpp
@@ -194,6 +200,12 @@ set(test_SRCS
 	bonus/OwnedBonusEvaluationFactsTest.cpp
 	bonus/OwnedBonusPayloadsTest.cpp
 	bonus/OwnedRecipientBonusGraphTest.cpp
+		bonus/OwnedRecipientRootQueryTest.cpp
+	bonus/BonusTypedContextSeamsTest.cpp
+	bonus/OwnedTypedBonusFactsTest.cpp
+		battle/UnitPreparationHealthBasisTest.cpp
+		battle/OwnedUnitCreatureResolverTest.cpp
+		battle/OwnedUnitEnvironmentTest.cpp
 		bonus/ProjectedBonusLimitationTest.cpp
 		bonus/TerrainAuthorityTest.cpp
 		bonus/TerrainLimiterSerializationTest.cpp
@@ -889,6 +901,7 @@ set(test_HEADERS
 		server/battles/VerdantPrisonScriptErrorCapture.h
 		server/battles/FrozenAttackStageFixture.h
 		server/battles/HeroCommandFixture.h
+		server/battles/InfernoStrikeDebuffFixture.h
 		server/battles/NewHorizonsGenieSageFixture.h
 		server/battles/NewHorizonsElementalTerrainFixture.h
 		server/battles/FocusFireFixture.h

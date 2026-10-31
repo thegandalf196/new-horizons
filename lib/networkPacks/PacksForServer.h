@@ -863,12 +863,8 @@ struct DLL_LINKAGE MakeAction : public CPackForServer
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving && !ba.spellCurePhysicalAffliction.empty())
-		{
-			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN))
-				throw std::runtime_error("Cannot discard physical Cure selection in an older action request format");
-			if(ba.spellCurePhysicalAffliction != "frozen")
-				throw std::runtime_error("Invalid physical Cure selection in action request");
-		}
+			ba.validatePhysicalCureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES), true);
 		h & static_cast<CPackForServer &>(*this);
 		h & ba;
 		h & battleID;

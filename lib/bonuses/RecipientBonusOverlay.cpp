@@ -71,6 +71,8 @@ bool Layer::hasEdits() const
 
 bool isSnapshotHeroSpecialEffect(const Bonus * bonus)
 {
+	if(bonus && bonus->isExtendedOrdinarySpecialtyEffect())
+		return true;
 	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL)
 		return false;
 	return newHorizonsSepulchralGrip::isEffect(bonus) || Bonus::NTurns(bonus)

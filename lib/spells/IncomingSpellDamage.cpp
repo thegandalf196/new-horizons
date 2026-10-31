@@ -62,8 +62,15 @@ int64_t CSpell::applyIncomingElementalDamageBonus(const battle::Unit * affectedC
 		|| damageElement == SpellDamageElement::NONE || damage <= 0)
 		return damage;
 
-	const auto bonuses = affectedCreature->getBonusesOfType(BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED,
-		BonusSubtypeID(BonusCustomSubtype(static_cast<int32_t>(damageElement))));
+	return spells::applyIncomingElementalDamageModifier(*affectedCreature, damageElement, damage);
+}
+
+int64_t spells::applyIncomingElementalDamageModifier(const battle::Unit & target, SpellDamageElement element, int64_t damage)
+{
+	if(element == SpellDamageElement::NONE || damage <= 0)
+		return damage;
+	const auto bonuses = target.getBonusesOfType(BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED,
+		BonusSubtypeID(BonusCustomSubtype(static_cast<int32_t>(element))));
 	if(bonuses->empty())
 		return damage;
 

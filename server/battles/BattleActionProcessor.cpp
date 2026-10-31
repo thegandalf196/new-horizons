@@ -1628,7 +1628,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 	RelentlessAssaultActionContext relentlessAssault;
 	int32_t defenderInitialQuantity = destinationStack->getCount();
 	bool manaLeechSequenceSpent = false;
-	bool completedPrimaryMelee = false;
+	std::optional<uint32_t> completedPrimaryTarget;
 
 	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
 	BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
@@ -1677,7 +1677,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			// Pass the originally selected Ward to makeAttack so Protect can
 			// consume its first interception atomically; attackTarget is only the
 			// resolved recipient used for local retaliation checks below.
-			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE, .manaLeechSequenceSpent = &manaLeechSequenceSpent, .dreadCavalryDamagePercent = dreadCavalry.percent}, &destroyedEnemy, &relentlessAssault, nullptr, &vanishKill, &dreadCavalry, &completedPrimaryMelee);
+			makeAttack(battle, stack, destinationStack, {.targetHex = destinationTile, .distance = (i ? 0 : movementResult.distance), .voluntaryFlightDistance = (i ? 0 : movementResult.voluntaryFlightDistance), .attackIndex = i, .first = i == 0, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE, .manaLeechSequenceSpent = &manaLeechSequenceSpent, .dreadCavalryDamagePercent = dreadCavalry.percent}, &destroyedEnemy, &relentlessAssault, nullptr, &vanishKill, &dreadCavalry, &completedPrimaryTarget);
 			if(armorerLastStandEndedActivation(stack))
 				break;
 
@@ -1719,8 +1719,10 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		}
 	}
 
-	movementSpent += returnAfterMeleeStrike(battle, ba, stack, target, startingPos,
-		beforeAttackSpeed, movementSpent, dreadCavalry.before.pending);
+	const auto returnMovement = returnAfterMeleeStrike(battle, ba, stack, target, startingPos,
+		beforeAttackSpeed, movementSpent, dreadCavalry.before.pending,
+		completedPrimaryTarget ? battle.battleGetUnitByID(*completedPrimaryTarget) : nullptr);
+	movementSpent += returnMovement.movementCost;
 
 	removeBonuses(battle, stack, attackerBonusesToRemove);
 	removeBonuses(battle, destinationStack, defenderBonusesToRemove);
@@ -1731,7 +1733,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
 
 	resolvePetrifyingBlood(battle, bloodSequence.result());
-	battleMeleeSpecialtyCompletion::apply(*gameHandler, battle, stack->unitId(), completedPrimaryMelee);
+	battleMeleeSpecialtyCompletion::apply(*gameHandler, battle, stack->unitId(), completedPrimaryTarget.has_value(), returnMovement.mark);
 
 	finishMeleeMovement(battle, ba, beforeAttackSpeed, movementSpent, destroyedEnemy, vanishKill,
 		allowPursuitContinuation, dreadCavalry);
@@ -3284,35 +3286,9 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 
 	if (currentUnit->hasBonusOfType(BonusType::FLYING))
 	{
-		if (pathDistance <= unitMovementRange && !unitPath.empty())
-		{
-			if (canUseGate && dbState != EGateState::OPENED &&
-				gateDrawbridgeFootprintContains(*currentUnit, dest, hasWideMoat))
-			{
-				BattleUpdateGateState db;
-				db.battleID = battle.getBattle()->getBattleID();
-				db.state = EGateState::OPENED;
-				gameHandler->sendAndApply(db);
-			}
-
-			//inform clients about move
-			BattleStackMoved sm;
-			sm.battleID = battle.getBattle()->getBattleID();
-			sm.stack = currentUnit->unitId();
-			BattleHexArray tiles;
-			tiles.insert(unitPath[0]);
-			sm.tilesToMove = tiles;
-			sm.distance = pathDistance;
-			sm.teleporting = false;
-			breakSanctuary(battle, currentUnit);
-			gameHandler->sendAndApply(sm);
-			livingInferno.traverse(start, sm.tilesToMove, true);
-			result.distance = pathDistance;
-			result.movementCost = pathDistance;
-			if(voluntary)
-				resolveOverwatch(battle, currentUnit, start, currentUnit->getPosition());
-			movementSuccess = currentUnit->alive() && !armorerLastStandEndedActivation(currentUnit);
-		}
+		movementSuccess = commitFlyingMovement(battle, *currentUnit,
+			{start, dest, unitPath, pathDistance, unitMovementRange, canUseGate, dbState, hasWideMoat, voluntary},
+			livingInferno, result);
 	}
 	else //for non-flying creatures
 	{
@@ -3562,6 +3538,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 						&& battle.battleNightProwlerCrossesEnemy(currentUnit, sm.tilesToMove);
 					breakSanctuary(battle, currentUnit);
 					gameHandler->sendAndApply(sm);
+					result.destinationCommitted |= currentUnit->getPosition() == dest;
 					livingInferno.traverse(previousSegmentPosition, sm.tilesToMove, false);
 					if(nightProwlerTriggered)
 					{
@@ -3888,7 +3865,7 @@ void BattleActionProcessor::markSpellLikeAttack(const CStack * attacker, BattleA
 void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker,
 	const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut,
 	RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows,
-	bool * vanishKillOut, dreadCavalryAction::Context * dreadCavalry, bool * primaryMeleePerformed)
+	bool * vanishKillOut, dreadCavalryAction::Context * dreadCavalry, std::optional<uint32_t> * primaryMeleeTarget)
 {
 	if(!admitAttack(battle, attacker, defender, attack))
 		return;
@@ -4203,7 +4180,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	if(defender && defender->alive())
 	{
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, defender,
-			attack.distance, false, attack.brace, attack.preemptiveDamagePercent,
+			attack, false, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, protectIntercepted,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
 			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack, attack.dreadCavalryDamagePercent);
@@ -4256,7 +4233,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			continue;
 
 		const auto estimation = applyBattleEffects(battle, bat, attackerState, payload, unit,
-			attack.distance, true, attack.brace, attack.preemptiveDamagePercent,
+			attack, true, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, false,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
 			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack, attack.dreadCavalryDamagePercent);
@@ -4505,18 +4482,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			|| attack.preemptiveDamagePercent > 0,
 		bat.bsa,
 		attack.manaLeechSequenceSpent && *attack.manaLeechSequenceSpent);
-	BattleAttackInfo primaryStrike(attacker, defender, attack.distance, attack.ranged);
-	primaryStrike.physicalDamage = !bat.spellLike();
-	primaryStrike.retaliation = attack.retaliation;
-	primaryStrike.secondaryAttack = attack.cleaveFollowup || attack.brace || attack.bulwarkPreemptive
-		|| attack.preemptiveDamagePercent > 0 || attack.archeryCounterfire || attack.battlecraftOverwatch;
-	const auto primaryEffects = battlePrimaryStrikeAftermath::prepare(battle, primaryStrike, bat.bsa);
-	const bool completedHostileMelee = primaryMeleePerformed && primaryStrike.physicalDamage
-		&& !primaryStrike.shooting && !primaryStrike.retaliation && !primaryStrike.secondaryAttack
-		&& battle.battleGetOwner(attacker) != battle.battleGetOwner(defender);
+	const auto primaryEffects = preparePrimaryStrikeAftermath(battle, attacker, defender, attack, bat);
 	gameHandler->sendAndApply(bat);
-	if(completedHostileMelee)
-		*primaryMeleePerformed = true;
+	battlePrimaryStrikeAftermath::recordPrimaryMelee(primaryEffects, primaryMeleeTarget);
+
 	handlePetrifyingBlood(battle, attacker, bat);
 	if(dreadCavalry && !bat.spellLike())
 		dreadCavalryAction::observeKilled(battle, attacker, bat, *dreadCavalry);
@@ -4967,7 +4936,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat,
 	std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
-	const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
+	const battle::Unit * def, const AttackDescriptor & attack, bool secondary, bool bracePreemptive,
 	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
 	int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
 	bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const
@@ -4979,7 +4948,8 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	bsa.attackerID = attackerState->unitId();
 	bsa.stackAttacked = def->unitId();
 
-	BattleAttackInfo bai(attackerState.get(), def, distance, bat.shot(), dreadCavalryDamagePercent);
+	BattleAttackInfo bai(attackerState.get(), def, attack.distance, bat.shot(), dreadCavalryDamagePercent);
+	bai.voluntaryFlightDistance = secondary ? 0 : attack.voluntaryFlightDistance;
 	bai.secondaryAttack = secondary;
 	// Master Gunner's selected follow-up is a new attack action even though
 	// its historical event index remains 1 for existing trigger consumers.

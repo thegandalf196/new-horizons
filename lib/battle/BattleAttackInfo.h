@@ -26,6 +26,9 @@ struct DLL_LINKAGE BattleAttackInfo
 	BattleHex defenderPos;
 
 	int chargeDistance = 0;
+	/// Actual voluntary flight for this exact first blow; unknown, forced or teleported travel is zero.
+	/// Simulation and detached callers must supply validated movement facts, never infer this from distance.
+	int voluntaryFlightDistance = 0; // Ephemeral; not serialized or carried by reverse().
 	bool shooting      = false;
 	/// Whether this is physical creature damage. Spell-like attacks are marked
 	/// false by the authoritative attack path so physical-only Orders do not

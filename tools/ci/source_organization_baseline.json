@@ -6444,108 +6444,108 @@
       "beforeSHA": "1736bf290e49244747167431e108bef1e6950eb3861ab06a5a3f048023678497",
       "functions": [
         {
-          "end": 28,
+          "end": 29,
           "start": 22,
           "symbol": "battle::void BattleEffectSnapshot::validateBonusSerialization(BonusSerializationContext context) const#1"
         },
         {
-          "end": 36,
-          "start": 30,
+          "end": 38,
+          "start": 31,
           "symbol": "battle::void BattleEffectExchangeEndpoint::validateBonusSerialization(BonusSerializationContext context) const#1"
         },
         {
-          "end": 44,
-          "start": 38,
+          "end": 47,
+          "start": 40,
           "symbol": "battle::void BattleEffectExchange::validateBonusSerialization(BonusSerializationContext context) const#1"
         },
         {
-          "end": 59,
-          "start": 53,
+          "end": 62,
+          "start": 56,
           "symbol": "battle::ReplacementBonusView::TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & = {}) const override#1"
         },
         {
-          "end": 65,
-          "start": 60,
+          "end": 68,
+          "start": 63,
           "symbol": "battle::ReplacementBonusView::TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override#1"
         },
         {
-          "end": 66,
-          "start": 66,
+          "end": 69,
+          "start": 69,
           "symbol": "battle::ReplacementBonusView::int32_t getTreeVersion() const override#1"
         },
         {
-          "end": 77,
-          "start": 69,
+          "end": 80,
+          "start": 72,
           "symbol": "battle::std::vector<std::byte> exactBonusBytes(const Bonus & bonus)#1"
         },
         {
-          "end": 101,
-          "start": 79,
+          "end": 104,
+          "start": 82,
           "symbol": "battle::void validateSnapshot(const BattleEffectSnapshot & snapshot, bool preserveLegacyPending = false)#1"
         },
         {
-          "end": 117,
-          "start": 104,
+          "end": 120,
+          "start": 107,
           "symbol": "battle::void BattleEffectSidecars::validate() const#1"
         },
         {
-          "end": 156,
-          "start": 119,
+          "end": 159,
+          "start": 122,
           "symbol": "battle::void BattleEffectExchange::validateShape() const#1"
         },
         {
-          "end": 135,
-          "start": 135,
+          "end": 138,
+          "start": 138,
           "symbol": "battle::BattleEffectExchange::validateShape() const::[](const Bonus & effect)#1"
         },
         {
-          "end": 161,
-          "start": 158,
+          "end": 164,
+          "start": 161,
           "symbol": "battle::bool exactBattleEffectEqual(const Bonus & first, const Bonus & second)#1"
         },
         {
-          "end": 171,
-          "start": 163,
+          "end": 174,
+          "start": 166,
           "symbol": "battle::bool exactBattleEffectsEqual(const std::vector<Bonus> & first, const std::vector<Bonus> & second)#1"
         },
         {
-          "end": 179,
-          "start": 173,
+          "end": 182,
+          "start": 176,
           "symbol": "battle::bool exactBattleEffectSnapshotEqual(const BattleEffectSnapshot & first, const BattleEffectSnapshot & second)#1"
         },
         {
-          "end": 193,
-          "start": 181,
+          "end": 196,
+          "start": 184,
           "symbol": "battle::BattleEffectSidecars captureBattleEffectSidecars(const CUnitState & unit)#1"
         },
         {
-          "end": 205,
-          "start": 195,
+          "end": 208,
+          "start": 198,
           "symbol": "battle::void commitBattleEffectSidecars(CUnitState & unit, const BattleEffectSidecars & sidecars) noexcept#1"
         },
         {
-          "end": 282,
-          "start": 207,
+          "end": 285,
+          "start": 210,
           "symbol": "battle::PreparedBattleEffectHealth prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules)#1"
         },
         {
-          "end": 249,
-          "start": 246,
+          "end": 252,
+          "start": 249,
           "symbol": "battle::prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules)::[&](const auto & bonus)#1"
         },
         {
-          "end": 277,
-          "start": 274,
+          "end": 280,
+          "start": 277,
           "symbol": "battle::prepareBattleEffectHealth(const CUnitState & unit, const BattleEffectSnapshot & expected, const BattleEffectSnapshot & replacement, const JsonNode & magicRules)::[&hydra](const Bonus & bonus)#1"
         }
       ],
       "previousManualSHA": "1736bf290e49244747167431e108bef1e6950eb3861ab06a5a3f048023678497",
-      "previous_review": "IR-ORDINARY-MAINTENANCE-1149-COMBINED-20261030-COMPLETE-MANUAL",
-      "rationale": "Complete19-callable exact-source inventory: all prior identities retained, including16 full ordinary bodies and3 nested lambdas. Sixteen bodies remain exact; the three owned serialization preflight bodies change only the explicit conjunction of supported capabilities. Default-argument/return-type recovery remains covered by the full ReplacementBonusView::getAllBonuses body. No omitted callable, coverage exclusion or runtime acceptance. Exact1149 renewal: independently inspected all19 callables;16 complete bodies remain byte-exact, the first3 change only the maintenance-capability conjunction. Full callable inventory retained; inherited parser recovery shifts3 lines, with no gap/exclusion or compiler/native acceptance. Exact future1151 source review: complete source outside these bodies inspected; two cache/header declaration changes and private completion signature add no callable; all original header bodies exact. Exchange keeps all19 bodies and only adds new capability conjunctions in its three preflight bodies. Preserve inherited extraction/lifecycle/field-order obligations. No manual duplication or coverage gap hidden.",
-      "review": "IR-FOUR-COMBAT-1151-COMPLETION-COMPLETE-MANUAL-20261030",
+      "previous_review": "IR-FOUR-COMBAT-1151-COMPLETION-COMPLETE-MANUAL-20261030",
+      "rationale": "Complete19-callable exact-source inventory: all prior identities retained, including16 full ordinary bodies and3 nested lambdas. Sixteen bodies remain exact; the three owned serialization preflight bodies change only the explicit conjunction of supported capabilities. Default-argument/return-type recovery remains covered by the full ReplacementBonusView::getAllBonuses body. No omitted callable, coverage exclusion or runtime acceptance. Exact1149 renewal: independently inspected all19 callables;16 complete bodies remain byte-exact, the first3 change only the maintenance-capability conjunction. Full callable inventory retained; inherited parser recovery shifts3 lines, with no gap/exclusion or compiler/native acceptance. Exact future1151 source review: complete source outside these bodies inspected; two cache/header declaration changes and private completion signature add no callable; all original header bodies exact. Exchange keeps all19 bodies and only adds new capability conjunctions in its three preflight bodies. Preserve inherited extraction/lifecycle/field-order obligations. No manual duplication or coverage gap hidden. Exact pending renewal retains every old callable identity; only complete shifted spans/source hash and explicit capability preflights differ. Existing typed-default parser gaps remain visible; no function exclusion, numeric waiver or native approval. Independent complete canonical inventory matches every normalized-parser callable and every old callable identity; retained inherited typed-default diagnostics remain explicit, no exclusions or waivers.",
+      "review": "IR-EXTENDED-CURE-1152-COMPLETE-MANUAL-20261030",
       "review_scope": "Complete exact final header/Exchange body inventory after7d617+495e, not a parser exclusion or numeric growth waiver.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "dbbdcf4eb87585790e9efb8691a12b8aa1d0b8ef5cc8cd04bc99db29ebb8bfe2"
+      "review_status": "INDEPENDENT_COMPLETE_SOURCE_INVENTORY_REVIEWED_NATIVE_UNRUN",
+      "sha256": "b20936a49c5ffd67e763ee8c5cc6b693ae19992c7f68197700fceb7091919900"
     },
     "lib/battle/CBattleInfoCallback.h": {
       "functions": [
@@ -6641,11 +6641,11 @@
           "symbol": "battle::CUnitState::bool isBattleFormRestorationPending() const#1"
         }
       ],
-      "previous_review": "IR-TAMIKA-FINAL-COMPLETE-CALLABLES-20261029",
+      "previous_review": "IR-OWNED-PREPARATION-BASIS-COMPLETE-MANUAL-E0-20261030",
       "rationale": "Complete5-callable exact-source inventory retained byte-for-byte with shifted spans; the only new interface line is a declaration of the readonly original-species override. Exact diff introduces no callable body or state. Every retained full body located uniquely in afterimage. Parser recovery explicitly covered; native/save/ABI acceptance unrun.",
-      "review": "IR-ORDINARY-RANGED-1148-COMPLETE-MANUAL-20261030",
-      "review_status": "INDEPENDENT_COMPLETE_SOURCE_ONLY_NATIVE_PENDING",
-      "sha256": "5912c78a8e4b50e8dfb5b6552ca9ab07cb166e352f2421f0982e17c358bb4425"
+      "review": "IR-OWNED-CREATURE-RESOLVER-E1-E1A-COMPLETE-MANUAL-20261030",
+      "review_status": "INDEPENDENT_COMPLETE_SOURCE_INVENTORY_NATIVE_UNRUN",
+      "sha256": "3022477e6167ba500ee723093b74c6cb07cf215c423bf78cb2209c5c9896ba4a"
     },
     "lib/battle/HeroActionAllowanceState.h": {
       "functions": [
@@ -7217,106 +7217,107 @@
           "symbol": "Bonus::void validateAllMagicVulnerabilitySerialization(Handler & h) const#1"
         },
         {
-          "end": 306,
-          "start": 226,
+          "end": 308,
+          "start": 228,
           "symbol": "Bonus::void validateWriteSerialization(Handler & h) const#1"
         },
         {
-          "end": 389,
-          "start": 308,
+          "end": 391,
+          "start": 310,
           "symbol": "Bonus::void serialize(Handler &h)#1"
         },
         {
-          "end": 397,
-          "start": 393,
+          "end": 399,
+          "start": 395,
           "symbol": "Bonus::static bool NDays(const Bonus *hb)#1"
         },
         {
-          "end": 402,
-          "start": 398,
+          "end": 404,
+          "start": 400,
           "symbol": "Bonus::static bool NTurns(const Bonus *hb)#1"
         },
         {
-          "end": 407,
-          "start": 403,
+          "end": 409,
+          "start": 405,
           "symbol": "Bonus::static bool OneDay(const Bonus *hb)#1"
         },
         {
-          "end": 412,
-          "start": 408,
+          "end": 414,
+          "start": 410,
           "symbol": "Bonus::static bool OneWeek(const Bonus *hb)#1"
         },
         {
-          "end": 417,
-          "start": 413,
+          "end": 419,
+          "start": 415,
           "symbol": "Bonus::static bool OneBattle(const Bonus *hb)#1"
         },
         {
-          "end": 422,
-          "start": 418,
+          "end": 424,
+          "start": 420,
           "symbol": "Bonus::static bool Permanent(const Bonus *hb)#1"
         },
         {
-          "end": 427,
-          "start": 423,
+          "end": 429,
+          "start": 425,
           "symbol": "Bonus::static bool UntilGetsTurn(const Bonus *hb)#1"
         },
         {
-          "end": 432,
-          "start": 428,
+          "end": 434,
+          "start": 430,
           "symbol": "Bonus::static bool UntilActivationEnds(const Bonus *hb)#1"
         },
         {
-          "end": 437,
-          "start": 433,
+          "end": 439,
+          "start": 435,
           "symbol": "Bonus::static bool UntilNextCreatureActivation(const Bonus *hb)#1"
         },
         {
-          "end": 442,
-          "start": 438,
+          "end": 444,
+          "start": 440,
           "symbol": "Bonus::static bool UntilAttack(const Bonus *hb)#1"
         },
         {
-          "end": 447,
-          "start": 443,
+          "end": 449,
+          "start": 445,
           "symbol": "Bonus::static bool UntilTakingIndirectDamage(const Bonus *hb)#1"
         },
         {
-          "end": 452,
-          "start": 448,
+          "end": 454,
+          "start": 450,
           "symbol": "Bonus::static bool untilAfterAttackSequence(const Bonus *hb)#1"
         },
         {
-          "end": 457,
-          "start": 453,
+          "end": 459,
+          "start": 455,
           "symbol": "Bonus::static bool UntilBeingAttacked(const Bonus *hb)#1"
         },
         {
-          "end": 462,
-          "start": 458,
+          "end": 464,
+          "start": 460,
           "symbol": "Bonus::static bool UntilCommanderKilled(const Bonus *hb)#1"
         },
         {
-          "end": 467,
-          "start": 463,
+          "end": 469,
+          "start": 465,
           "symbol": "Bonus::static bool UntilOwnAttack(const Bonus *hb)#1"
         },
         {
-          "end": 471,
-          "start": 468,
+          "end": 473,
+          "start": 470,
           "symbol": "Bonus::inline bool operator == (const BonusType & cf) const#1"
         },
         {
-          "end": 475,
-          "start": 472,
+          "end": 477,
+          "start": 474,
           "symbol": "Bonus::inline void operator += (const ui32 Val) //no return#1"
         }
       ],
       "previousManualSHA": "6ac563bfc285705116c256de9d256cd972ec8d30dbf282f14b922ad9ac54e497",
-      "rationale": "Complete exact-source callable inventory independently reconciled to preserved maintained preimage and all before/after source edits: 31 full bodies including retained inline definitions and nested lambdas. Every signature/closing-brace span and body hash checked. Parser recoveries are bodyless type/default declarations, not omitted functions. Coverage only; no numeric growth, GP behavior, compiler/native or rendered acceptance.",
-      "review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030-COMPLETE-MANUAL",
-      "review_status": "REVIEWED_EXACT_SOURCE_COVERAGE_ONLY",
-      "sha256": "7e87392d991a4b8642742fba7f46a06d07dbf5297c88552db025f498e91f18ec"
+      "previous_review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030-COMPLETE-MANUAL",
+      "rationale": "Complete exact-source callable inventory independently reconciled to preserved maintained preimage and all before/after source edits: 31 full bodies including retained inline definitions and nested lambdas. Every signature/closing-brace span and body hash checked. Parser recoveries are bodyless type/default declarations, not omitted functions. Coverage only; no numeric growth, GP behavior, compiler/native or rendered acceptance. Exact pending renewal retains every old callable identity; only complete shifted spans/source hash and explicit capability preflights differ. Existing typed-default parser gaps remain visible; no function exclusion, numeric waiver or native approval. Independent complete canonical inventory matches every normalized-parser callable and every old callable identity; retained inherited typed-default diagnostics remain explicit, no exclusions or waivers.",
+      "review": "IR-EXTENDED-CURE-1152-COMPLETE-MANUAL-20261030",
+      "review_status": "INDEPENDENT_COMPLETE_SOURCE_INVENTORY_REVIEWED_NATIVE_UNRUN",
+      "sha256": "73a7f19d4843df9e6301ee905bff0a31a008e169f7691eabf018544cdc8d5f53"
     },
     "lib/bonuses/BonusEnum.cpp": {
       "functions": [
@@ -7353,25 +7354,27 @@
     "lib/bonuses/BonusEnum.h": {
       "functions": [
         {
-          "end": 283,
-          "start": 283,
+          "end": 284,
+          "start": 284,
           "symbol": "#define BONUS_NAME#1"
         },
         {
-          "end": 320,
-          "start": 320,
+          "end": 321,
+          "start": 321,
           "symbol": "#define BONUS_SOURCE#1"
         },
         {
-          "end": 334,
-          "start": 334,
+          "end": 335,
+          "start": 335,
           "symbol": "#define BONUS_VALUE#1"
         }
       ],
-      "rationale": "Complete exact373-line header independently inspected. Three one-line function-like enum macros BONUS_NAME283/BONUS_SOURCE320/BONUS_VALUE334 are inventoried; object-like lists and enum/static_assert declarations are not callable bodies. No unlisted inline functions, lambdas or function-like macros. Separate b6db927e correction removes only the blank terminating BONUS_LIST before the new final entry; all228 old source entries stay in exact order, new entry228/count229. Root actual CPP enum/registry receipt corroborates expansion, but no C++ compile/link/native acceptance is claimed. Exact coverage only, no size allowance or future growth.",
-      "review": "IR-SERIALIZATION-BONUS-ENUM-MACRO-CORRECTION-EXACT-20261030",
-      "review_status": "REVIEWED_EXACT_SOURCE_COVERAGE_ONLY",
-      "sha256": "6338a3f0ea27a58ba33a49e2a8804bfbf418b9e632b2906ffff7c5bb8e4d3ab2"
+      "rationale": "Complete exact373-line header independently inspected. Three one-line function-like enum macros BONUS_NAME283/BONUS_SOURCE320/BONUS_VALUE334 are inventoried; object-like lists and enum/static_assert declarations are not callable bodies. No unlisted inline functions, lambdas or function-like macros. Separate b6db927e correction removes only the blank terminating BONUS_LIST before the new final entry; all228 old source entries stay in exact order, new entry228/count229. Root actual CPP enum/registry receipt corroborates expansion, but no C++ compile/link/native acceptance is claimed. Exact coverage only, no size allowance or future growth. One exact reviewed append-only healing reduction enum entry shifts all three unchanged one-line macros by one line; no callable body or previous enum index changes.",
+      "review": "IR-NATIVE-SPECIALTY-GUARD-CANONICAL-PREFIX-GP-20261030",
+      "review_status": "INDEPENDENT_BOUNDED_PREFIX_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "d7102d95488e1b07cc82bd753746723bcee446983664bee7d170913f348f9ec8",
+      "previous_review": "IR-SERIALIZATION-BONUS-ENUM-MACRO-CORRECTION-EXACT-20261030",
+      "review_scope": "Complete three unchanged macro-body inventory shifted by one exact append-only healing type entry; old enum ordering preserved, no field codec or native health-operation activation."
     },
     "lib/bonuses/BonusSelector.h": {
       "functions": [
@@ -7483,76 +7486,77 @@
       "beforeSHA": "5688df4010d5cb493e3d852e1d8c1b793bcf4947e5732012b1942461a40bfa24",
       "functions": [
         {
-          "end": 60,
-          "start": 58,
+          "end": 61,
+          "start": 59,
           "symbol": "ILimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 83,
-          "start": 77,
+          "end": 86,
+          "start": 79,
           "symbol": "AggregateLimiter::void serialize(Handler & h)#1"
         },
         {
-          "end": 135,
-          "start": 130,
+          "end": 138,
+          "start": 133,
           "symbol": "CCreatureTypeLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 180,
-          "start": 162,
+          "end": 185,
+          "start": 166,
           "symbol": "HasAnotherBonusLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 198,
-          "start": 194,
+          "end": 203,
+          "start": 199,
           "symbol": "TerrainLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 218,
-          "start": 213,
+          "end": 223,
+          "start": 218,
           "symbol": "CreatureLevelLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 235,
-          "start": 231,
+          "end": 240,
+          "start": 236,
           "symbol": "FactionLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 252,
-          "start": 248,
+          "end": 257,
+          "start": 253,
           "symbol": "CreatureAlignmentLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 265,
-          "start": 262,
+          "end": 270,
+          "start": 267,
           "symbol": "OppositeSideLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 283,
-          "start": 278,
+          "end": 288,
+          "start": 283,
           "symbol": "RankRangeLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 299,
-          "start": 295,
+          "end": 304,
+          "start": 300,
           "symbol": "UnitOnHexLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 331,
-          "start": 314,
+          "end": 336,
+          "start": 319,
           "symbol": "UnitAdjacentLimiter::void serialize(Handler &h)#1"
         },
         {
-          "end": 346,
-          "start": 342,
+          "end": 351,
+          "start": 347,
           "symbol": "HasChargesLimiter::void serialize(Handler &h)#1"
         }
       ],
       "previousManualSHA": "5688df4010d5cb493e3d852e1d8c1b793bcf4947e5732012b1942461a40bfa24",
-      "rationale": "Complete exact-source callable inventory independently reconciled to preserved maintained preimage and all before/after source edits: 13 full bodies including retained inline definitions and nested lambdas. Every signature/closing-brace span and body hash checked. Parser recoveries are bodyless type/default declarations, not omitted functions. Coverage only; no numeric growth, GP behavior, compiler/native or rendered acceptance.",
-      "review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030-COMPLETE-MANUAL",
-      "review_status": "REVIEWED_EXACT_SOURCE_COVERAGE_ONLY",
-      "sha256": "f5bc23bf03e41f6a6f474a36aac635a59b6ce796024a6409ce1dd3b1e4cf9e7f"
+      "previous_review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030-COMPLETE-MANUAL",
+      "rationale": "Complete exact-source callable inventory independently reconciled to preserved maintained preimage and all before/after source edits: 13 full bodies including retained inline definitions and nested lambdas. Every signature/closing-brace span and body hash checked. Parser recoveries are bodyless type/default declarations, not omitted functions. Coverage only; no numeric growth, GP behavior, compiler/native or rendered acceptance. Exact pending renewal retains every old callable identity; only complete shifted spans/source hash and explicit capability preflights differ. Existing typed-default parser gaps remain visible; no function exclusion, numeric waiver or native approval. Independent complete canonical inventory matches every normalized-parser callable and every old callable identity; retained inherited typed-default diagnostics remain explicit, no exclusions or waivers.",
+      "review": "IR-EXTENDED-CURE-1152-COMPLETE-MANUAL-20261030",
+      "review_status": "INDEPENDENT_COMPLETE_SOURCE_INVENTORY_REVIEWED_NATIVE_UNRUN",
+      "sha256": "b35afd1f55aab5c33e19b9d3753bd39199db51b6d1629b340996b7947fd8407e"
     },
     "lib/callback/CGameInfoCallback.cpp": {
       "functions": [
@@ -21703,12 +21707,15 @@
     },
     "lib/CCreatureHandler.cpp": {
       "kind": "legacy",
-      "lines": 1380,
+      "lines": 1374,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1380 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1380 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact E1/E1a: constructor and seven metadata/form/name readouts move to focused9/95-line owners; owned descriptor/key resolver77 is private value ownership. Native getter, generic identifier and whole-owner inverses retain payload behavior. CUnitState serializer173 lines unchanged, only two ID calls delegate to the coherent resolver owner; load adds one owned-only before-mutation form-key preflight. No new save field or native arithmetic.",
+      "review": "IR-OWNED-CREATURE-RESOLVER-E1-E1A-20261030",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "fc2cf2aebb32760e6961aebd5e8d2fe13975f173b5f5a9358364d973b687cdf2"
+      "sha256": "b5d46492fc3b3eabb2524d2bb6a57bb5243cacaa162ee97565fb1bd4bdb9f7f1",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "INDEPENDENT_BOUNDED_PURE_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "deferral": " Retain every existing extraction obligation. No general regrowth, large-serializer waiver or factory/injury permission: further codec decisions must use focused coherent value/validation owners, preserve native field order and ABI rebuild; no dynamic frame or hidden-policy import is established."
     },
     "lib/CCreatureHandler.cpp::std::shared_ptr<CCreature> CCreatureHandler::loadFromJson(const std::string & scope, const JsonNode & node, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21740,15 +21747,15 @@
     "lib/CMakeLists.txt": {
       "deferral": "Keep exact target membership and Linux/Windows parity when decomposing this mechanical registry; no additional implementation belongs here. Fafner bounded follow-up: Keep this registry mechanical; substantive functionality remains in its domain owner, preserving target/link boundaries. Mechanical-registry exception bounded to these six entries; validate each source/header exists and is registered once. Preserve one canonical registry; future additions require new exact review, not a general ceiling allowance. Next4: retain all inherited extraction/order/ownership/captured-absence obligations.22 authored native cases UNRUN; full1146 envelope/history plus branch/RNG/AI integration remain required. Further lifecycle/cache growth must extract a cohesive domain phase, not grow another oversized helper. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. 1148 bounded follow-up: Retain unique source/header registration, coherent Unit-vtable rebuild and platform linkage checks; no runtime logic or blanket expansion in this registry. Preserve coherent CMake target membership and platform parity; no future growth credit or registration removal. Exact bounded1151 change only. Exact1519to1525 additive focused Shield/Grip/SequenceProtection source+header registrations; complete previous ordering and target ownership remain exact. Registry-only allowance, no implementation ceiling growth. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Only two explicit build registrations for the cohesive internal registry; no growth allowance. Retain existing target-table decomposition obligation; reconcile later Moandor additions by actual composition and measurement, not stale CMake afterimages. Owned-query follow-up: this exact mechanical registry renewal does not approve complete fact domains, source capture intervals, live injury dispatch or save-format activation.",
       "kind": "exception",
-      "lines": 1534,
+      "lines": 1564,
       "owner": "engine_engineer",
-      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
+      "previous_review": "IR-NATIVE-SPECIALTY-GUARD-CANONICAL-PREFIX-GP-20261030",
       "prior_group_d_review": "IR-ORDINARY-RANGED-1148-COMBINED-20261030",
-      "rationale": "Exact1505to1512 mechanical registry adds one count-query component and six feature source/header entries; existing order/membership unchanged. New substantive rules remain in focused domain components. Exact1148 review: source-only coherent eight-step private composition; no shared adoption, native/compiler/GUI/Windows/first-writer or publication certification. GroupD exact renewal: Additive mechanical registry only; all actual423 slider/serialization/art entries and original order are retained. Exact combined CMake source/size, not stale frozen afterimage. Exact Machine2 additive mechanical source/header registrations only; all prior current430/GroupD/v3 entries and ordering remain unchanged. New functionality stays in focused domain owners; no general registry growth allowance. Exact1519to1525 additive focused Shield/Grip/SequenceProtection source+header registrations; complete previous ordering and target ownership remain exact. Registry-only allowance, no implementation ceiling growth. Exact finite registry extraction: only focused implementation/header target registrations; every previous registration and relative order is byte-exact. Static34-row table/type relocated unchanged; owner604→491, new118/22, net+27 including interface boilerplate. Exact owned-bonus facts, faithful payload ownership and inert inheritance-query composition adds seven source/header registrations. Existing target membership and relative order remain unchanged; canonical updater arithmetic and collector/filter/stack order remain in their focused domain owners. No live source factory or injury dispatcher is introduced.",
-      "review": "PROPOSED-OWNED-BONUS-PURE-COMPOSITION-20261030",
-      "review_scope": "Exact reviewed pure facts, faithful payload ownership and inert inheritance query composition; seven mechanical registrations only. Final dependent metadata review required.",
-      "review_status": "PROPOSED_DEPENDENT_COMPOSITION_NATIVE_UNRUN",
-      "sha256": "07ec18b9738fbdbe8a36ca86590e21717ca08f3e34aa5465c81302925b2821f5"
+      "rationale": "Exact1505to1512 mechanical registry adds one count-query component and six feature source/header entries; existing order/membership unchanged. New substantive rules remain in focused domain components. Exact1148 review: source-only coherent eight-step private composition; no shared adoption, native/compiler/GUI/Windows/first-writer or publication certification. GroupD exact renewal: Additive mechanical registry only; all actual423 slider/serialization/art entries and original order are retained. Exact combined CMake source/size, not stale frozen afterimage. Exact Machine2 additive mechanical source/header registrations only; all prior current430/GroupD/v3 entries and ordering remain unchanged. New functionality stays in focused domain owners; no general registry growth allowance. Exact1519to1525 additive focused Shield/Grip/SequenceProtection source+header registrations; complete previous ordering and target ownership remain exact. Registry-only allowance, no implementation ceiling growth. Exact finite registry extraction: only focused implementation/header target registrations; every previous registration and relative order is byte-exact. Static34-row table/type relocated unchanged; owner604→491, new118/22, net+27 including interface boilerplate. Exact owned-bonus facts, faithful payload ownership and inert inheritance-query composition adds seven source/header registrations. Existing target membership and relative order remain unchanged; canonical updater arithmetic and collector/filter/stack order remain in their focused domain owners. No live source factory or injury dispatcher is introduced. Canonical future-specialty guard prerequisite prefix adds sixteen complete reviewed mechanic source/header entries plus the existing reviewed physical-selector admission helper. Current ABC2 entries and ordering are retained. Final bounded joint composition: Current1534→guard1551→jointD1552→native return registrations1554; all20 additive entries/previous order exact, no helper dropped or duplicated. Exact current500 successor: retain all current registrations/order; add reviewed E0/E1/E2/E2a/E3a components to existing95, lib1554→1564. de93 uses existing registrations. No E3b or new producer rows.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact actual500 plus95/de93/E0-E3a1 mechanical registry composition; no live frame/caller/runtime/default/epoch approval.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "19eeb87c8bb1a07a7faf0c5f8965550faafc04d515f92df835d22d2a39ca66dc"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -21841,13 +21848,16 @@
       "sha256": "70f90c9c0ce70d84f003a87f9c968ff31ed9ca618310b98fc4e9d117e592bf93"
     },
     "lib/battle/BattleAction.h::BattleAction::void serialize(Handler & h)#1": {
-      "kind": "legacy",
-      "lines": 188,
+      "deferral": "Before further action-codec growth, extract the next cohesive non-writing admission or request declaration stage; preserve closed selector/version gates, direct/enclosing empty-prefix rejection, historical resets and exact supported field order. No general growth allowance.",
+      "kind": "review",
+      "lines": 132,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 188 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "073826fa014c7297f24e13221bd266a340709307fcbea0b49db3be9de946c500"
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Ordered write admission is extracted unchanged to a focused60-line non-writing method. Serializer188to132 shrinks below150; every payload statement and historical default-clear/read guard is exact apart from narrow closed physical-selector admission. Only graveDust gains reserved1152 support, Frozen retains its old boundary. Independent bounded source reviewed; native tests pending; no general action or affliction widening.",
+      "review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "review_scope": "Exact d18 admission + c9bb codec + required f049 test correction only; CURRENT1151, no default/full cohort/first-writer/gameplay/native approval. Actual mechanics/core/CMake composition needs renewed final source hashes.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "2d45a836e7d91d892303e4962c3b5f39722e9d7163e5c4b0ece6ab2776daabb9"
     },
     "lib/battle/BattleActivation.cpp::void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)#1": {
       "deferral": "Owner: engine_engineer with gameplay_engineer review. Before further faction activation-routing growth, extract the next ordered activation-start value transition in the existing BattleActivation domain with explicit unit/reason, pre-clear defend/Wait observations and side-state outputs. Keep authoritative queue and resource ownership local; preserve Time Stop, Morale/reactivation, wait/defend clearing and state/packet order. Require current/absent-policy activation and native/projected parity. Exact88-line existing-hotspot renewal below150, no general ceiling allowance.",
@@ -21908,14 +21918,14 @@
     "lib/battle/BattleInfo.h": {
       "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further serialization-family growth, extract cohesive non-writing source-marker/captured-policy preflight while retaining direct/enclosing prefix rejection, typed source/reference validation, wire order, historical clear defaults and current malformed-input rejection. Engine: extract battle-descriptor feature-prefix admission from BattleInfo/BattleStart templates into named class-owned nonwriting helpers; retain exact feature predicates, rejection timing, field/packet order and detached stack ownership. Require historical/current descriptor, invalid recovery/bonus prefix and existing restart/thread/repaint regression characterization before a separately reviewed baseline reduction.",
       "kind": "exception",
-      "lines": 1612,
+      "lines": 1613,
       "owner": "engine_engineer",
-      "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Urgent owned-payload prefix admission adds only declaration/include and narrow context-aware routing; all substantive capability traversal stays in Bonus/list/map/world owners. Existing ordered serialized fields and unrelated gameplay/lifecycle behavior remain unchanged.",
-      "review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030",
-      "review_scope": "Exact unit hash/physical-line bound in frozen foundation and prerequisite composition only. No future or unrelated growth, full integration, GP mechanics/AI, compiler/native/rendered or publication acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "c60b3f2815097f6bb134dca3b439c0a4e622c937debc63eab6d2a8632b481692"
+      "previous_review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030",
+      "rationale": "Only narrow non-writing physical Cure selector preflight routing in existing supported action owners. GraveDust requires reserved1152 before envelope prefixes; existing Frozen capability and strict closed kind names remain. Wire fields/order, gameplay legality, Crisis references and all unrelated callables are unchanged. Bounded correctness exception pending independent review; no further growth allowance.",
+      "review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "review_scope": "Exact d18 admission + c9bb codec + required f049 test correction only; CURRENT1151, no default/full cohort/first-writer/gameplay/native approval. Actual mechanics/core/CMake composition needs renewed final source hashes.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "deeaec57b8235e2315a1801dd32f2b3faf5b8c721a548551f0f3481bf59d730c"
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
       "deferral": "Owner: Engine engineer. Interface/acceptance: Extract version-capability preflight and captured-rules validation helpers with explicit support flags; preserve historical/current roundtrips and reject populated unsupported state before direct payload prefixes. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further serialization-family growth, extract cohesive non-writing source-marker/captured-policy preflight while retaining direct/enclosing prefix rejection, typed source/reference validation, wire order, historical clear defaults and current malformed-input rejection. Before next substantive growth, extract the next touched ordered non-writing captured-policy preflight traversal into an existing focused serialization/policy owner. Inputs: explicit supported feature set, captured development/Sylvan state and relevant map/world/hero/side references; output: success or rejection BEFORE existing field prefix. Keep field serialization order and version-gated defaults with current serializer. Required characterization: Direct and enclosing before-prefix downgrade rejection, old-policy absence/exact resave, malformed captures, newly populated state roundtrip and unchanged old field order. No generic context framework or Part-file splitting. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Engine: extract battle-descriptor feature-prefix admission from BattleInfo/BattleStart templates into named class-owned nonwriting helpers; retain exact feature predicates, rejection timing, field/packet order and detached stack ownership. Require historical/current descriptor, invalid recovery/bonus prefix and existing restart/thread/repaint regression characterization before a separately reviewed baseline reduction.",
@@ -22077,17 +22087,17 @@
       "sha256": "58c7d6a584b3e2a4d950d1e2964c66e71afc7f625d45197a66118f1eea40cd87"
     },
     "lib/battle/CUnitState.cpp": {
-      "deferral": "Existing gameplay engineer ownership of state/lifecycle debt remains. Further substantive expansion requires bounded cohesive extraction; this reduction is not permission to regrow the file. Preserve borrowed providers, type-transition fallback, state-only assignment and no serialized dispatch data; runtime equivalence and performance acceptance remain separate. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. 1148 bounded follow-up: Further state/lifecycle work must extract cohesive responsibilities with authoritative/hypothetical and expiry/save/RNG characterization; retain all existing count/battle-form provenance obligations. Owner gameplay_engineer with engine_engineer: preserve retaliation used/count/latch/suppression and detached environment bindings; native current/missing/zero and save roundtrips plus future typed marker admission required before writers.",
+      "deferral": "Existing gameplay engineer ownership of state/lifecycle debt remains. Further substantive expansion requires bounded cohesive extraction; this reduction is not permission to regrow the file. Preserve borrowed providers, type-transition fallback, state-only assignment and no serialized dispatch data; runtime equivalence and performance acceptance remain separate. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. 1148 bounded follow-up: Further state/lifecycle work must extract cohesive responsibilities with authoritative/hypothetical and expiry/save/RNG characterization; retain all existing count/battle-form provenance obligations. Owner gameplay_engineer with engine_engineer: preserve retaliation used/count/latch/suppression and detached environment bindings; native current/missing/zero and save roundtrips plus future typed marker admission required before writers. E0 grants only this exact shrinking extraction/interface seam; retain full coherent IUnitInfo-vtable rebuild and native qualification. No future growth allowance or owned injury/caller approval. Retain every existing extraction obligation. No general regrowth, large-serializer waiver or factory/injury permission: further codec decisions must use focused coherent value/validation owners, preserve native field order and ABI rebuild; no dynamic frame or hidden-policy import is established.",
       "kind": "exception",
-      "lines": 2741,
+      "lines": 2673,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
+      "previous_review": "IR-OWNED-PREPARATION-HEALTH-BASIS-E0-20261030",
       "prior_group_d_review": "IR-ORDINARY-RANGED-1148-COMBINED-20261030",
-      "rationale": "Exact2892to2812 shrinking boundary: six source-count getters and two shooting readouts extracted under CUnitState/Unit read APIs; existing calculations retained; new mechanics owned by focused ranged-specialty and Rangefinder modules. Exact1148 review: source-only coherent eight-step private composition; no shared adoption, native/compiler/GUI/Windows/first-writer or publication certification. GroupD exact renewal: Extract seven contiguous CRetaliations methods into focused UnitRetaliations; constructor excludes exact Krellion marker from latched ordinary proxy, total adds live Defend-derived capacity outside totalCache. Remaining213 original functions are byte-exact; state layout/field expressions unchanged.",
-      "review": "IR-GROUP-D-MECHANICS-7046-AI-FE996-CURRENT423-20261030",
+      "rationale": "Exact2892to2812 shrinking boundary: six source-count getters and two shooting readouts extracted under CUnitState/Unit read APIs; existing calculations retained; new mechanics owned by focused ranged-specialty and Rangefinder modules. Exact1148 review: source-only coherent eight-step private composition; no shared adoption, native/compiler/GUI/Windows/first-writer or publication certification. GroupD exact renewal: Extract seven contiguous CRetaliations methods into focused UnitRetaliations; constructor excludes exact Krellion marker from latched ordinary proxy, total adds live Defend-derived capacity outside totalCache. Remaining213 original functions are byte-exact; state layout/field expressions unchanged. Exact E0: two aggregate-health fallback getters relocate from2741-line unit to focused64-line value-fact owner; one readonly optional-fact forwarding declaration grows611to612. Engaged copied0 is truthful, absent retains exact native fallback. No state layout/serialized field/health arithmetic or live factory. Exact E1/E1a: constructor and seven metadata/form/name readouts move to focused9/95-line owners; owned descriptor/key resolver77 is private value ownership. Native getter, generic identifier and whole-owner inverses retain payload behavior. CUnitState serializer173 lines unchanged, only two ID calls delegate to the coherent resolver owner; load adds one owned-only before-mutation form-key preflight. No new save field or native arithmetic.",
+      "review": "IR-OWNED-CREATURE-RESOLVER-E1-E1A-20261030",
       "review_scope": "Exact listed file hash/size in private composition only; retain all inherited obligations and scoped exceptions, no raised ceiling/exclusion. Exact7046+fe996 actual423 composition only; future capability/typed-marker admission, native/rendered/performance and writer authority remain pending. No ceiling increase.",
-      "review_status": "INDEPENDENT_MECHANICAL_SOURCE_REVIEWED_FUTURE_ADMISSION_NATIVE_PENDING",
-      "sha256": "baa7b3ae91b1d9bb6430610acaa8f43d30fcd06aa1e38c857cf9c15555704562"
+      "review_status": "INDEPENDENT_BOUNDED_PURE_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "2b8ab0b72d6c58aee7f5211432eee1717d59dd4cacf5180a19af60bf2e7b3ea1"
     },
     "lib/battle/CUnitState.cpp::battle::HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power, const bool trackCasualtyProvenance)#1": {
       "kind": "legacy",
@@ -22110,28 +22120,28 @@
       "sha256": "3761366bb3bfa9bff111ec104bf997b612b293d84451257bd5c9a871b62cb7a9"
     },
     "lib/battle/CUnitState.cpp::battle::void CUnitState::serializeJson(JsonSerializeFormat & handler)#1": {
-      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
+      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Retain every existing extraction obligation. No general regrowth, large-serializer waiver or factory/injury permission: further codec decisions must use focused coherent value/validation owners, preserve native field order and ABI rebuild; no dynamic frame or hidden-policy import is established.",
       "kind": "exception",
       "lines": 173,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-EDRIC-ORDERED-SERIALIZATION-SOURCE-20261028",
-      "rationale": "Exact independent final Tamika source review, physical lines 166 to 173. Rules, grant state, controller/victim admission, read-only continuation UI and per-action output stay in focused typed owners; existing boundaries route snapshots, validated actions and capability checks. Whole actual activation inverse preserves Forest and prior reset order; decoded receipts and enclosing packet guards remain source-protected. Retain inherited kind/owner and concrete deferrals except the exact separately authorized seams. Authored native cases remain unrun; no future growth or ceiling increase.",
-      "review": "IR-TAMIKA-FINAL-ORDERED-CODEC-20261029",
+      "previous_review": "IR-TAMIKA-FINAL-ORDERED-CODEC-20261029",
+      "rationale": "Exact independent final Tamika source review, physical lines 166 to 173. Rules, grant state, controller/victim admission, read-only continuation UI and per-action output stay in focused typed owners; existing boundaries route snapshots, validated actions and capability checks. Whole actual activation inverse preserves Forest and prior reset order; decoded receipts and enclosing packet guards remain source-protected. Retain inherited kind/owner and concrete deferrals except the exact separately authorized seams. Authored native cases remain unrun; no future growth or ceiling increase. Exact E1/E1a: constructor and seven metadata/form/name readouts move to focused9/95-line owners; owned descriptor/key resolver77 is private value ownership. Native getter, generic identifier and whole-owner inverses retain payload behavior. CUnitState serializer173 lines unchanged, only two ID calls delegate to the coherent resolver owner; load adds one owned-only before-mutation form-key preflight. No new save field or native arithmetic.",
+      "review": "IR-OWNED-CREATURE-RESOLVER-E1-E1A-20261030",
       "review_scope": "Exact final Tamika c4a1 native/UI/codec composition after Edric and Living Armor; current df99 baseline. No final AI, native execution, rendered or delivery acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_AI_RENDER_PENDING",
-      "sha256": "b7934a4c5b5e05781c3194e86b2d55cdfc1403d0bc08e670e8ee46e69145e0d6"
+      "review_status": "INDEPENDENT_BOUNDED_PURE_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "b820926a9d3c87afb37dccffbcbf68373dc03fb5bd8810ae2a2a8e50a8ccdca6"
     },
     "lib/battle/CUnitState.h": {
-      "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: retain cohesive unit-environment ownership; further substantive header growth requires focused query-interface extraction preserving detached-provider and historical behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. 1148 bounded follow-up: Before further substantive header expansion extract the existing provider/binding interface coherently; native full rebuild, derived implementations and ABI integration remain required.",
+      "deferral": "Engine engineer owns cohesive detached provider/binding header extraction before further substantive header expansion. This exact592-line interface allowance retains DLL linkage, existing borrowed lifetime/assignment and save-format contracts. Added process-local pointers change native object layout: rebuild all consumers before any playable delivery; compilation/source review is not runtime or performance acceptance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: retain cohesive unit-environment ownership; further substantive header growth requires focused query-interface extraction preserving detached-provider and historical behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. 1148 bounded follow-up: Before further substantive header expansion extract the existing provider/binding interface coherently; native full rebuild, derived implementations and ABI integration remain required. E0 grants only this exact shrinking extraction/interface seam; retain full coherent IUnitInfo-vtable rebuild and native qualification. No future growth allowance or owned injury/caller approval. Retain every existing extraction obligation. No general regrowth, large-serializer waiver or factory/injury permission: further codec decisions must use focused coherent value/validation owners, preserve native field order and ABI rebuild; no dynamic frame or hidden-policy import is established.",
       "kind": "exception",
-      "lines": 611,
+      "lines": 620,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-TAMIKA-FINAL-ORDERED-CODEC-20261029",
-      "rationale": "Exact610to611 one readonly original-species count override declaration; six related getters extracted into the56-line domain implementation. No new state, serialized field or ownership access. Exact1148 review: source-only coherent eight-step private composition; no shared adoption, native/compiler/GUI/Windows/first-writer or publication certification.",
-      "review": "IR-ORDINARY-RANGED-1148-COMBINED-20261030",
+      "previous_review": "IR-OWNED-PREPARATION-HEALTH-BASIS-E0-20261030",
+      "rationale": "Exact610to611 one readonly original-species count override declaration; six related getters extracted into the56-line domain implementation. No new state, serialized field or ownership access. Exact1148 review: source-only coherent eight-step private composition; no shared adoption, native/compiler/GUI/Windows/first-writer or publication certification. Exact E0: two aggregate-health fallback getters relocate from2741-line unit to focused64-line value-fact owner; one readonly optional-fact forwarding declaration grows611to612. Engaged copied0 is truthful, absent retains exact native fallback. No state layout/serialized field/health arithmetic or live factory. Exact E1/E1a: constructor and seven metadata/form/name readouts move to focused9/95-line owners; owned descriptor/key resolver77 is private value ownership. Native getter, generic identifier and whole-owner inverses retain payload behavior. CUnitState serializer173 lines unchanged, only two ID calls delegate to the coherent resolver owner; load adds one owned-only before-mutation form-key preflight. No new save field or native arithmetic.",
+      "review": "IR-OWNED-CREATURE-RESOLVER-E1-E1A-20261030",
       "review_scope": "Exact listed file hash/size in private composition only; retain all inherited obligations and scoped exceptions, no raised ceiling/exclusion.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "5912c78a8e4b50e8dfb5b6552ca9ab07cb166e352f2421f0982e17c358bb4425"
+      "review_status": "INDEPENDENT_BOUNDED_PURE_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "3022477e6167ba500ee723093b74c6cb07cf215c423bf78cb2209c5c9896ba4a"
     },
     "lib/battle/CUnitStateLifecycle.cpp::battle::void CUnitState::reset()#1": {
       "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
@@ -22228,22 +22238,28 @@
       "sha256": "0602b5f729511d5ef59c6a81a61cdbf2abf20c40d144cdea097c2373b68c6abd"
     },
     "lib/battle/PhysicalAffliction.cpp": {
-      "kind": "legacy",
-      "lines": 592,
+      "deferral": " ExactF1only: Exact592→599 adds narrow canonical record/parsed-marker/positive-unit-group validation hooks only; removing those hooks and temporary parsed-result binding restores whole old source. Reserved OTHER typed source pair and metadata-kind validation are bidirectional; GroupKey, removal and stamping algorithms unchanged. New focused owner138/max24/header21 counts all new logic. Preserve existing grouping/stamping extraction obligations. Further substantive mutation logic must go into focused operation-aware preflight owner with reject-before-broadcast/commit and precise ADD/UPDATE/removal parity; no ceiling growth or blanket source exception.",
+      "kind": "exception",
+      "lines": 599,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 592 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 592 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact592→599 adds narrow canonical record/parsed-marker/positive-unit-group validation hooks only; removing those hooks and temporary parsed-result binding restores whole old source. Reserved OTHER typed source pair and metadata-kind validation are bidirectional; GroupKey, removal and stamping algorithms unchanged. New focused owner138/max24/header21 counts all new logic.",
+      "review": "IR-GRAVE-DUST-F1-RECORD-IDENTITY-20261030",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "871cc0383555842f96f8a022176e1101f22640acc64bf7d2253cbcf9d67a4879"
+      "review_status": "INDEPENDENT_RECORD_SOURCE_REVIEWED_NOT_INTEGRATABLE",
+      "sha256": "d3ea2cd1f971dc0b9102ba977586b7e9239491d02cac07c0ea137ba78f61a7a7"
     },
     "lib/battle/PhysicalAffliction.cpp::physicalAfflictions::void stampEffectChanges(const battle::Unit & unit, const std::vector<Bonus> & removed, const std::vector<std::vector<Bonus> *> & incomingInApplyOrder)#1": {
-      "kind": "legacy",
-      "lines": 148,
+      "deferral": " ExactF1only: Exact148→149 stampEffectChanges adds one pure nonwriting record preflight before old topology/planning/commit. Existing148-line body exact after removing that line. This does not establish operation-aware ADD/UPDATE group consistency; F2 must use focused batch ownership before any activation. No expansion beyond150, no new complexity in this stamping owner. Preserve existing grouping/stamping extraction obligations. Further substantive mutation logic must go into focused operation-aware preflight owner with reject-before-broadcast/commit and precise ADD/UPDATE/removal parity; no ceiling growth or blanket source exception.",
+      "kind": "exception",
+      "lines": 149,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 148 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 148 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact148→149 stampEffectChanges adds one pure nonwriting record preflight before old topology/planning/commit. Existing148-line body exact after removing that line. This does not establish operation-aware ADD/UPDATE group consistency; F2 must use focused batch ownership before any activation. No expansion beyond150, no new complexity in this stamping owner.",
+      "review": "IR-GRAVE-DUST-F1-RECORD-IDENTITY-20261030",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "e9164e63174037458ea52aed69e25a1a7d6ca6f90518095b86736446233cd4de"
+      "review_status": "INDEPENDENT_RECORD_SOURCE_REVIEWED_NOT_INTEGRATABLE",
+      "sha256": "5e132c1b8de5039e2822cda2c72b1751716e883257d59f4a60813930fe575564"
     },
     "lib/battle/SideInBattle.h": {
       "deferral": "Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance.",
@@ -22336,14 +22352,14 @@
     "lib/bonuses/Limiters.cpp": {
       "deferral": "Preserve the existing TerrainLimiter extraction, lazy provenance semantics and its separate unique source registration. Engine: extract UnitAdjacentLimiter and HasAnotherBonusLimiter method implementations into focused source owners with existing public classes, unique CMake registration and unchanged JSON/type factory/selector behavior. Characterize old target-only1144/current metadata, nested aggregate admission, typed enum reference and exception order before lowering the exact609 baseline. Trigger: before further substantive edits to these adjacency/dependency limiter families; engine owner must obtain separate extraction review with the named controls.",
       "kind": "exception",
-      "lines": 609,
+      "lines": 571,
       "owner": "engine_engineer",
-      "previous_review": "IR-F08-COLD-QUERY-SOURCE-20261016",
-      "rationale": "Exact528-to609 bounded existing-owner extension: static adjacency parsing/matching/export/admission and generic new-enum dependency guard remain in the relevant existing limiter classes; all affected methods are below80lines. The previous TerrainLimiter extraction stays separate. JSON loader shrinks by delegating this family to its actual class owner. This technical exception is limited to these81 added lines and the recorded final hash; no future growth credit.",
-      "review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030",
-      "review_scope": "Exact unit hash/physical-line bound in frozen foundation and prerequisite composition only. No future or unrelated growth, full integration, GP mechanics/AI, compiler/native/rendered or publication acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "0b3995de66dfbc2368c56c29bf89826db2c08db694ed43b298401696adc6fa84"
+      "previous_review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "rationale": "Exact528-to609 bounded existing-owner extension: static adjacency parsing/matching/export/admission and generic new-enum dependency guard remain in the relevant existing limiter classes; all affected methods are below80lines. The previous TerrainLimiter extraction stays separate. JSON loader shrinks by delegating this family to its actual class owner. This technical exception is limited to these81 added lines and the recorded final hash; no future growth credit. Exact private1152 admission renewal only; CURRENT remains1151, no defaults/new persisted fields. Canonical shapes stay in frozen mechanic owners; direct/owned prefix closure and typed healing references require focused native execution. All previous extraction/compatibility obligations remain binding; no full16 clearance or future growth credit. Final bounded joint composition: Current609→guard591→jointD571: canonical old serialization extraction retained alongside five typed context delegates; all applicability math/order remains in existing canonical owners.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact final dependent source composition only; current1151 unchanged, no fullfeature/default/AI or native acceptance.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "c7dcc0a1d1d4c4f33e72177b836963aab08786986d9f1855ae72e7a871a3a994"
     },
     "lib/callback/CGameInfoCallback.cpp": {
       "kind": "legacy",
@@ -22443,17 +22459,17 @@
       "sha256": "98205746d8e0c7083e7583c4af1c7b7ba335c771fc35079f0afd39c7d7044e8f"
     },
     "lib/combatScripts/IDamageCalculatorScript.h::DamageAttackInfo::void serializeScript(Serializer & s)#1": {
-      "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Engine/gameplay engineers: before further substantive codec rule growth, extract a separate focused validation/codec owner with explicit fields and feature support; preserve prefix rejection, suffix order, historical zero defaults and exact scalar payload identity. Exact bounded1151 change only. Exact120to121 in-process Lua mapping adds one scalar independent reduction field. No persisted save/network field, wide context or reordered mapping; preserve existing field-contract and extraction obligations. No ceiling increase, coverage exclusion or unrelated/future growth allowance.",
+      "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Engine/gameplay engineers: before further substantive codec rule growth, extract a separate focused validation/codec owner with explicit fields and feature support; preserve prefix rejection, suffix order, historical zero defaults and exact scalar payload identity. Exact bounded1151 change only. Exact120to121 in-process Lua mapping adds one scalar independent reduction field. No persisted save/network field, wide context or reordered mapping; preserve existing field-contract and extraction obligations. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Exact native receipt/registration integration only; before further substantive growth extract another cohesive phase preserving damage/movement/authority/order characterization. No future growth credit.",
       "kind": "exception",
-      "lines": 121,
+      "lines": 123,
       "owner": "engine_engineer",
       "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "IR-ORDINARY-FIRST-SIX-CAPTURE-EXTRACTION-CANONICAL-20261029",
-      "rationale": "Explicit typed Tactics multiplier fields join existing native/Lua payload serialization; maintained118-line span includes the preceding template declaration and preserves payload order. Exact 115 to 118 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. One typed neutral100 ephemeral ordinary-specialty payload field joins the same mechanical native/Lua field registry. No binary/save field or validation rules move into this codec. Maintained parser includes template declaration:118to120 (signature-only117to119). Existing codec extraction and prefix/default/order obligations remain binding. Exact120to121 in-process Lua mapping adds one scalar independent reduction field. No persisted save/network field, wide context or reordered mapping; preserve existing field-contract and extraction obligations.",
-      "review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "8a16de747fae9994c48c6510f15e80ad57203216aa027a6b61f4e22c48709ce6"
+      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
+      "rationale": "Explicit typed Tactics multiplier fields join existing native/Lua payload serialization; maintained118-line span includes the preceding template declaration and preserves payload order. Exact 115 to 118 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. One typed neutral100 ephemeral ordinary-specialty payload field joins the same mechanical native/Lua field registry. No binary/save field or validation rules move into this codec. Maintained parser includes template declaration:118to120 (signature-only117to119). Existing codec extraction and prefix/default/order obligations remain binding. Exact120to121 in-process Lua mapping adds one scalar independent reduction field. No persisted save/network field, wide context or reordered mapping; preserve existing field-contract and extraction obligations. Current exact native producer proposal: Only two ephemeral damage-payload field registrations, no persistence fields or alternate evaluator.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact current499+canonicalguard+Calh native marks/charge producer composition only; no AI, writer/default or wholefeature semantic acceptance.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "aea8cfa66e9b01595e97c388f930270fec5e4dcb16e068c0e251b054ba06a630"
     },
     "lib/constants/EntityIdentifiers.cpp": {
       "kind": "legacy",
@@ -23698,26 +23714,26 @@
     "lib/networkPacks/PacksForClient.h": {
       "deferral": "Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Engine: split the commander-property packet family into a focused declaration header with the existing public aggregate include and packet registration; preserve linkage, command fields, prefix rejection and supported binary bytes. The current change is four include/routing lines only, not permission to grow this packet registry. 1148 bounded follow-up: Before further commander serialization-family growth perform the previously assigned cohesive declaration/header extraction with the public aggregate registration, exact payload ordering and capability-prefix tests; no blanket packet-registry allowance. B47 correctness-only renewal: retain engine_engineer commander declaration/header extraction before further substantive family growth, including public aggregate registration/linkage, identical payload order, historical clear defaults and direct/enclosing empty-prefix/current-byte regression requirements. This one missing1151 preflight condition does not discharge or broaden that obligation.",
       "kind": "exception",
-      "lines": 2505,
+      "lines": 2506,
       "owner": "engine_engineer",
-      "previous_review": "IR-ORDINARY-MAINTENANCE-1149-COMBINED-20261030",
-      "rationale": "Exact2504→2505 adds missing combat1151 predicate to existing SetCommanderProperty outer Bonus preflight. This prevents supported1149/1150 envelopes from emitting commander prefix bytes before nested reserved Sorsha/Straker marker rejection; all wire expressions, old guards, other callables and CURRENT1151 path remain byte-exact. Focused urgent serialization-integrity fix precedes inherited packet-family extraction to avoid coupling declaration/registration restructuring to the two-line correction. No ceiling increase or general registry growth allowance.",
-      "review": "IR-B47-COMBAT-PACKET-PREFIX-CORRECTNESS-20261030",
-      "review_scope": "Exact listed file hash/size in private composition only; retain all inherited obligations and scoped exceptions, no raised ceiling/exclusion.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "92f384156775e96338cd0e6e822e9508fa962166b0bcb3cc2ae6c860df6fc7d0"
+      "previous_review": "IR-B47-COMBAT-PACKET-PREFIX-CORRECTNESS-20261030",
+      "rationale": "Exact2504→2505 adds missing combat1151 predicate to existing SetCommanderProperty outer Bonus preflight. This prevents supported1149/1150 envelopes from emitting commander prefix bytes before nested reserved Sorsha/Straker marker rejection; all wire expressions, old guards, other callables and CURRENT1151 path remain byte-exact. Focused urgent serialization-integrity fix precedes inherited packet-family extraction to avoid coupling declaration/registration restructuring to the two-line correction. No ceiling increase or general registry growth allowance. Exact private1152 admission renewal only; CURRENT remains1151, no defaults/new persisted fields. Canonical shapes stay in frozen mechanic owners; direct/owned prefix closure and typed healing references require focused native execution. All previous extraction/compatibility obligations remain binding; no full16 clearance or future growth credit.",
+      "review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "review_scope": "Exact d18 admission + c9bb codec + required f049 test correction only; CURRENT1151, no default/full cohort/first-writer/gameplay/native approval. Actual mechanics/core/CMake composition needs renewed final source hashes.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "3102a7defcae0b6f3466585ecd691ac996ea28e2f9c59f50a4b68379910f30f8"
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "deferral": "Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Engine owner should extract the next touched ordered serializer preflight family into a focused non-writing validation interface, preserving direct/enclosing prefix rejection, historical absence, field order and exact wire bytes before further executable growth. Preserve the inherited finite registry/admission/template extraction obligation. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further serialization-family growth, extract cohesive non-writing source-marker/captured-policy preflight while retaining direct/enclosing prefix rejection, typed source/reference validation, wire order, historical clear defaults and current malformed-input rejection. Engine: extract battle-descriptor feature-prefix admission from BattleInfo/BattleStart templates into named class-owned nonwriting helpers; retain exact feature predicates, rejection timing, field/packet order and detached stack ownership. Require historical/current descriptor, invalid recovery/bonus prefix and existing restart/thread/repaint regression characterization before a separately reviewed baseline reduction.",
       "kind": "exception",
-      "lines": 2317,
+      "lines": 2327,
       "owner": "engine_engineer",
-      "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Urgent owned-payload prefix admission adds only declaration/include and narrow context-aware routing; all substantive capability traversal stays in Bonus/list/map/world owners. Existing ordered serialized fields and unrelated gameplay/lifecycle behavior remain unchanged.",
-      "review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030",
-      "review_scope": "Exact unit hash/physical-line bound in frozen foundation and prerequisite composition only. No future or unrelated growth, full integration, GP mechanics/AI, compiler/native/rendered or publication acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "86bf811c73c5daa282dbb45373839917e4cb709b61d3857525ff53fd65308def"
+      "previous_review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030",
+      "rationale": "Only narrow non-writing physical Cure selector preflight routing in existing supported action owners. GraveDust requires reserved1152 before envelope prefixes; existing Frozen capability and strict closed kind names remain. Wire fields/order, gameplay legality, Crisis references and all unrelated callables are unchanged. Bounded correctness exception pending independent review; no further growth allowance.",
+      "review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "review_scope": "Exact d18 admission + c9bb codec + required f049 test correction only; CURRENT1151, no default/full cohort/first-writer/gameplay/native approval. Actual mechanics/core/CMake composition needs renewed final source hashes.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "6fd3977ac93824996e2f1d91534e9ccfc8fe9eb1a0cd2c675013e4d9507c06ae"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void validateSerializationPrefix(Handler & h)#1": {
       "deferral": "Owner: engine_engineer. At the next packet-boundary cleanup, extract focused capability and packet-shape preflight groups under the existing typed receipt owners. Preserve validation order and before-any-byte old-writer rejection for direct and enclosing packets, historical absence/clear defaults and no mutation/RNG on refusal. Require current and historical codec positives plus malformed/unsupported receipt prefix assertions. Exact94 source-bound routing exception only; no future growth or default-ceiling increase.",
@@ -23785,13 +23801,16 @@
       "sha256": "e285c73afd4391d068ef5a16d68ec94e4cb5f3a36bdfcba06b7c80c13d65bcbc"
     },
     "lib/networkPacks/PacksForServer.h": {
-      "kind": "legacy",
-      "lines": 966,
+      "deferral": "Before further action-codec growth, extract the next cohesive non-writing admission or request declaration stage; preserve closed selector/version gates, direct/enclosing empty-prefix rejection, historical resets and exact supported field order. No general growth allowance.",
+      "kind": "review",
+      "lines": 962,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 966 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f2dc9cf8e39cbc9e0057a2fa1c52cc1674640d4b127c4a655eee1a2fa330c3e4"
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact966to962 replaces duplicate physical Cure request checks with the closed linked validator before CPackForServer player/requestID. Historical Frozen/invalid-kind request diagnostics and every field/order remain exact; graveDust requires reserved1152. No new request state or generic physical selection.",
+      "review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "review_scope": "Exact d18 admission + c9bb codec + required f049 test correction only; CURRENT1151, no default/full cohort/first-writer/gameplay/native approval. Actual mechanics/core/CMake composition needs renewed final source hashes.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "d0681748cd5a8f98f0e671cd5beddd1af84d511539fded408c64766b0b6ec235"
     },
     "lib/networkPacks/SetStackEffect.h::SetStackEffect::void serialize(Handler & h)#1": {
       "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Fafner bounded follow-up: Before further serialization-family growth, extract cohesive non-writing source-marker/captured-policy preflight while retaining direct/enclosing prefix rejection, typed source/reference validation, wire order, historical clear defaults and current malformed-input rejection.",
@@ -24347,14 +24366,14 @@
     "lib/serializer/ESerializationVersion.h": {
       "deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Keep append-only feature values/aliases and direct/enclosing capability tests; do not add runtime mechanics to the feature registry. Keep the stable version registry coherent. Bound growth to six physical lines and this one capability; remove old versions only in a separate reviewed minimum-version migration with native historical fixtures. No future numeric ceiling increase. Future1146 hold: Root must first qualify the current1145/first19 cohort, preserve BATTLE_WIDE and all13 selected artwork bindings on rebase, review final coherent composition and execute the full direct/enclosing/history matrix including hero/map/pool/world and captured identity/default-absence controls. The nine authored central cases and two retargeted zero cases remain UNCOMPILED/UNRUN and do not discharge those obligations. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. 1148 bounded follow-up: Continue separate captured JSON and exact-marker codec admission; retain old13/four/neutral domains, no implicit policy repair, and prove direct/enclosing old-prefix rejection plus current full snapshot identity. Exact bounded1151 change only. Exact651to656 appends named1151 plus static boundary assertions and CURRENT alias update. All prior numeric values/aliases exceptCURRENT remain exact; capability facts are nonserialized and no payload field changes. No ceiling increase, coverage exclusion or unrelated/future growth allowance.",
       "kind": "exception",
-      "lines": 656,
+      "lines": 661,
       "owner": "engine_engineer",
-      "previous_review": "IR-MACHINE2-1150-COMBINED-EXACT-20261030",
-      "rationale": "Exact641to646 append-only registry adds capability1149 and CURRENT alias; every previous enum expression/alias remains exact. Independent source-only review; native117, historical/current integration and first writer remain unqualified. Exact646to651 appends1150 machine capability and CURRENT alias only; prior enum expressions remain exact. No runtime mechanics in registry; native historical/current acceptance pending. Exact651to656 appends named1151 plus static boundary assertions and CURRENT alias update. All prior numeric values/aliases exceptCURRENT remain exact; capability facts are nonserialized and no payload field changes.",
-      "review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "4a3cf849bfeed4341f013b31a4d854cb973621ef19a0cc94abf8ab759659f6cb"
+      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
+      "rationale": "Exact641to646 append-only registry adds capability1149 and CURRENT alias; every previous enum expression/alias remains exact. Independent source-only review; native117, historical/current integration and first writer remain unqualified. Exact646to651 appends1150 machine capability and CURRENT alias only; prior enum expressions remain exact. No runtime mechanics in registry; native historical/current acceptance pending. Exact651to656 appends named1151 plus static boundary assertions and CURRENT alias update. All prior numeric values/aliases exceptCURRENT remain exact; capability facts are nonserialized and no payload field changes. Exact private1152 admission renewal only; CURRENT remains1151, no defaults/new persisted fields. Canonical shapes stay in frozen mechanic owners; direct/owned prefix closure and typed healing references require focused native execution. All previous extraction/compatibility obligations remain binding; no full16 clearance or future growth credit.",
+      "review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "review_scope": "Exact d18 admission + c9bb codec + required f049 test correction only; CURRENT1151, no default/full cohort/first-writer/gameplay/native approval. Actual mechanics/core/CMake composition needs renewed final source hashes.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "87c91573a57792b3167f45b32c3f6a91518dc78c66c8a90d68632bce99444d17"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -25195,15 +25214,15 @@
     "scripts/damage/damageCalculator.lua": {
       "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: before further affected growth, extract coherent independent physical-reduction/final intrinsic-factor stages with explicit scalar, cap and penetration inputs; preserve nil/zero arithmetic skips, source order, shared cap, single floor and complete Lua attestation. Exact bounded1151 change only. Exact770to775/calculate114to118 adds one independent Rune physical reduction source at existing cap/penetration/final rounding stage. Legacy fallback skips zero sources; current-stage zero is multiplicative identity. No Hero lookup or separate AI formula; old Lua debt remains. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Exact corrective scope only; no forecast certificate renewal, timing claim or future growth credit.",
       "kind": "exception",
-      "lines": 777,
+      "lines": 784,
       "owner": "gameplay_engineer",
       "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "IR-ORDINARY-FIRST-SIX-CAPTURE-EXTRACTION-CANONICAL-20261029",
-      "rationale": "Typed Tactics attack/defense multiplier arrays and explicit favorable-Luck total enter the existing ordered final factor path. Nil/absent arrays retain identity; damage cap, one final floor and attack-only pre-defense reflection basis remain explicit. Exact 754 to 765 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. Exactly5 added lines carry one neutral-default outgoing specialty scalar through final and attack-only pre-defense factors; repeated pre-defense product becomes a named local. Full941-line nine-layer pure/read-only chain independently reviewed; no imports/RNG/state mutation added. Exact file765to770/calculate109to114 only; no future growth credit. Exact770to775/calculate114to118 adds one independent Rune physical reduction source at existing cap/penetration/final rounding stage. Legacy fallback skips zero sources; current-stage zero is multiplicative identity. No Hero lookup or separate AI formula; old Lua debt remains. Exact two-line phase2 correction uses existing reserved stacking identity and preserves physical short circuit; no marker/save representation or broad source filtering.",
-      "review": "IR-CURRENT-SORSHA-PHYSICAL-ONLY-20261030",
+      "previous_review": "IR-CURRENT-SORSHA-PHYSICAL-ONLY-20261030",
+      "rationale": "Typed Tactics attack/defense multiplier arrays and explicit favorable-Luck total enter the existing ordered final factor path. Nil/absent arrays retain identity; damage cap, one final floor and attack-only pre-defense reflection basis remain explicit. Exact 754 to 765 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. Exactly5 added lines carry one neutral-default outgoing specialty scalar through final and attack-only pre-defense factors; repeated pre-defense product becomes a named local. Full941-line nine-layer pure/read-only chain independently reviewed; no imports/RNG/state mutation added. Exact file765to770/calculate109to114 only; no future growth credit. Exact770to775/calculate114to118 adds one independent Rune physical reduction source at existing cap/penetration/final rounding stage. Legacy fallback skips zero sources; current-stage zero is multiplicative identity. No Hero lookup or separate AI formula; old Lua debt remains. Exact two-line phase2 correction uses existing reserved stacking identity and preserves physical short circuit; no marker/save representation or broad source filtering. Current500 joint native marks composition preserves the exact Sorsha filter and adds two independently floored Creature Defense contributors; final exact bytes remeasured, no forecast certificate or new growth allowance.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
       "review_scope": "Exact current e394 ce5f reserved Sorsha-only nonphysical Armorer filter with test-first59098 and required6128 affected-spell-query fixture correction. Preserve original generic contributors/caps/order and all prior deferrals. Actual baseline/repeat36 native results remain pending; no Marius/fullAI/default/save-writer/performance approval.",
-      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_BASELINE_AND_REPEAT_PENDING",
-      "sha256": "90e7197648d1859378892709b62128fada9de6ac623282f6b0221636b3b5b9c2"
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "a5cad72c5b1bc5f862f0fee0095eadbe9ce65e67f47d8a08991c6f71a1497a7d"
     },
     "scripts/damage/damageCalculator.lua::function Script:calculate(battle, info) -- the battle answers the queries that depend on where the blow happens; it rides along with the -- rest of the attack rather than in a global, which a script shared between threads must not have#1": {
       "deferral": "This exact advanced-Necromancy source hash/size exception grants no future growth. Gameplay engineer: before further affected growth, extract coherent independent physical-reduction/final intrinsic-factor stages with explicit scalar, cap and penetration inputs; preserve nil/zero arithmetic skips, source order, shared cap, single floor and complete Lua attestation. Exact bounded1151 change only. Exact770to775/calculate114to118 adds one independent Rune physical reduction source at existing cap/penetration/final rounding stage. Legacy fallback skips zero sources; current-stage zero is multiplicative identity. No Hero lookup or separate AI formula; old Lua debt remains. No ceiling increase, coverage exclusion or unrelated/future growth allowance.",
@@ -25513,52 +25532,40 @@
     "server/battles/BattleActionProcessor.cpp": {
       "deferral": "Existing owner: before further substantive growth, extract the relevant cohesive state-aware admission or ordered serializer routing into its existing typed domain owner with old-policy, sequencing and branch-isolation characterization. Owner: Engine engineer. Interface/acceptance: Extract prepared Order effect packet installation and Order StartAction preparation into focused transition helpers; preserve remove/add/log/action/RNG order, rejected-command atomicity and immutable snapshot equality. Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further attack aftermath growth, extract its ordered coordinator with prepared admission and post-damage commit interfaces; preserve hit/RNG/packet order, rebirth/control changes, excluded preemptive/secondary hits and ordinary retaliation. Owner gameplay_engineer: preserve voluntary versus forced provenance, stance-before-repair and mastery/log/completion ordering; require actual native voluntary/forced cases and inherited teardown/rejection regressions. Retain all preexisting extraction obligations.",
       "kind": "legacy",
-      "lines": 5454,
+      "lines": 5424,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-MACHINE2-1150-COMBINED-EXACT-20261030",
+      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
       "prior_group_d_review": "IR-1145-GP-CONSUMERS-EXACT-9DB40B96-20261030",
-      "rationale": "Exact shrinking 5613to5610: primary prehit Serpent/Gaze capture and ordered post-damage application move to45-line BattlePrimaryStrikeAftermath (largest function17), with ordinary strike plan/application added there. The caller preserves sendAndApply(bat), Petrifying Blood, Dread observation, primary effects, Mana Leech, Frozen and Last Stand order. Ranged Counterfire/Overwatch secondary exclusions do not broaden the existing melee-only Serpent predicate. No reaction/packet/RNG order, activation grant or command-validation bypass is introduced; inherited hotspot extraction obligations remain binding. GroupD exact renewal: Bounded extraction of existing Defend methods and exact mastery award into focused owners; Wait calls shared award, voluntary Defend adds shared repair after stance publication. No other118 original bodies change. Exact5503to5470 extracts continuation publish/log into focused52-line owner and delegates grant percentage through shared current-controller rule. Existing command admission/order/ammo/activation receipts remain binding. Exact return-movement extraction to existing95-line continuation owner shrinks Action5470to5454/doAttack312to287 after new receipt and shared completion routing. Whole movement body inverse and phase order preserved; no serialized receipt, command bypass or extra action.",
+      "rationale": "Exact shrinking 5613to5610: primary prehit Serpent/Gaze capture and ordered post-damage application move to45-line BattlePrimaryStrikeAftermath (largest function17), with ordinary strike plan/application added there. The caller preserves sendAndApply(bat), Petrifying Blood, Dread observation, primary effects, Mana Leech, Frozen and Last Stand order. Ranged Counterfire/Overwatch secondary exclusions do not broaden the existing melee-only Serpent predicate. No reaction/packet/RNG order, activation grant or command-validation bypass is introduced; inherited hotspot extraction obligations remain binding. GroupD exact renewal: Bounded extraction of existing Defend methods and exact mastery award into focused owners; Wait calls shared award, voluntary Defend adds shared repair after stance publication. No other118 original bodies change. Exact5503to5470 extracts continuation publish/log into focused52-line owner and delegates grant percentage through shared current-controller rule. Existing command admission/order/ammo/activation receipts remain binding. Exact return-movement extraction to existing95-line continuation owner shrinks Action5470to5454/doAttack312to287 after new receipt and shared completion routing. Whole movement body inverse and phase order preserved; no serialized receipt, command bypass or extra action. Current exact native producer proposal: Central owner5454→5424; exact native movement/prehit phase extraction and explicit return/flight receipts lower file debt, with bounded affected-callsite integration.",
       "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "836b2b4ddeb8b9e005aaea8853428942115435a1834325bd8fc99cbdf9ff204c"
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact current499+canonicalguard+Calh native marks/charge producer composition only; no AI, writer/default or wholefeature semantic acceptance.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "543f4010ac29613a7d915d057f259bbbc07398130a6cb7bdc6faa94860839984"
     },
     "server/battles/BattleActionProcessor.cpp::BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1": {
       "deferral": "Owner: engine_engineer. Before further movement-preflight growth, route the stored continuation cap through its existing movement admission owner; preserve legal zero-move attacks, exact movement/obstacle/Overwatch costs and callback order, ground/flying paths and malformed-action refusal. Exact528 exception only.",
       "kind": "exception",
-      "lines": 528,
+      "lines": 503,
       "owner": "engine_engineer",
-      "previous_review": "IR-BRON-FIUR-ORDERED-NATIVE-ROUTING-SOURCE-20261028",
-      "rationale": "Root explicitly authorized this exact bounded routing seam. Only stored pending continuation movement cap routing. Focused existing owners hold mechanics; no ceiling increase, generic policy expansion or future allowance. Source review only; native/render acceptance pending.",
-      "review": "IR-TAMIKA-FINAL-ORDERED-NATIVE-ACTIVATION-20261029",
-      "review_scope": "Exact final Tamika c4a1 native/UI/codec composition after Edric and Living Armor; current df99 baseline. No final AI, native execution, rendered or delivery acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_AI_RENDER_PENDING",
-      "sha256": "77b0c28d7254f9f65dd889179bff3c42f1095524564fcfa51ee31d77c3d00435"
-    },
-    "server/battles/BattleActionProcessor.cpp::DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, int distance, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted, int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent, bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const#1": {
-      "deferral": "Owner: engine_engineer. Before further output-stage changes, carry accepted action output through the existing typed hit-context boundary; preserve rounding/stage order, physical versus spell-like damage, current activation coefficient and no retaliation/Brace leakage. Require accepted-multihit/Rebirth/collateral and default100 controls. Exact146 mapped-key exception only; no inherited allowance. Exact bounded1151 change only. Exact146to149 one ephemeral ordinary-action index routing statement plus explanation, preserving historical event index and MasterGunner separate action semantics. Actual specialty arithmetic stays focused; before further growth extract cohesive damage metadata/aftermath without reordering queries or packet/RNG. No ceiling increase, coverage exclusion or unrelated/future growth allowance.",
-      "kind": "exception",
-      "lines": 149,
-      "owner": "engine_engineer",
-      "previous_review": "IR-TAMIKA-FINAL-ORDERED-CODEC-20261029",
-      "rationale": "Root explicitly authorized this exact bounded routing seam. Only accepted action scalar threaded through the existing typed attack input. Focused existing owners hold mechanics; no ceiling increase, generic policy expansion or future allowance. Source review only; native/render acceptance pending. Exact146to149 one ephemeral ordinary-action index routing statement plus explanation, preserving historical event index and MasterGunner separate action semantics. Actual specialty arithmetic stays focused; before further growth extract cohesive damage metadata/aftermath without reordering queries or packet/RNG.",
-      "review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "4fc57c6c758cee28f3c935450cd75806bdddf68048aae709ea483b9a29faa952"
+      "previous_review": "IR-TAMIKA-FINAL-ORDERED-NATIVE-ACTIVATION-20261029",
+      "rationale": "Root explicitly authorized this exact bounded routing seam. Only stored pending continuation movement cap routing. Focused existing owners hold mechanics; no ceiling increase, generic policy expansion or future allowance. Source review only; native/render acceptance pending. Current exact native producer proposal: Exact requested-endpoint/attack-completion routing or shrinking movement phase extraction; no extra action/search/RNG.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact current499+canonicalguard+Calh native marks/charge producer composition only; no AI, writer/default or wholefeature semantic acceptance.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "8fe21c3df13629bfe829761d6f02e07b5d71198b4da3d0d1f6fd177fde70dde6"
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation, dreadCavalryAction::Context & dreadCavalry)#1": {
-      "deferral": "Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Owner: gameplay_engineer with engine_engineer. Before further accepted-melee orchestration growth, extract the next cohesive stage at existing DreadCavalryAction/MeleeMovementContinuation boundaries. Preserve whole-command PetrifyingBlood resolution after all hits and before tail, captured scalar across Rebirth, actual movement, native retaliation, hit/RNG/packet order and no-state-change refusal; require mixed-feature native characterization.",
+      "deferral": "Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Owner: gameplay_engineer with engine_engineer. Before further accepted-melee orchestration growth, extract the next cohesive stage at existing DreadCavalryAction/MeleeMovementContinuation boundaries. Preserve whole-command PetrifyingBlood resolution after all hits and before tail, captured scalar across Rebirth, actual movement, native retaliation, hit/RNG/packet order and no-state-change refusal; require mixed-feature native characterization. Exact native receipt/registration integration only; before further substantive growth extract another cohesive phase preserving damage/movement/authority/order characterization. No future growth credit.",
       "kind": "exception",
-      "lines": 287,
+      "lines": 289,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-DREAD-RETURN-MOVEMENT-TYPE-SOURCE-20261029",
-      "rationale": "Independently reviewed urgent compile correction: cast the already nonnegative remaining-movement result to the existing uint32 movement-range type before std::min. Same expression order, subtraction, clamp, minimum, branch and physical lines. Every other current processor byte is exact. Preserve prior exact structural exception and concrete extraction deferral; no broader growth allowance. Exact return-movement extraction to existing95-line continuation owner shrinks Action5470to5454/doAttack312to287 after new receipt and shared completion routing. Whole movement body inverse and phase order preserved; no serialized receipt, command bypass or extra action.",
-      "review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "b4251e4637904fc9b7385626b14618c568fbc73bfd572afc2af7200208dfc3be"
+      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
+      "rationale": "Independently reviewed urgent compile correction: cast the already nonnegative remaining-movement result to the existing uint32 movement-range type before std::min. Same expression order, subtraction, clamp, minimum, branch and physical lines. Every other current processor byte is exact. Preserve prior exact structural exception and concrete extraction deferral; no broader growth allowance. Exact return-movement extraction to existing95-line continuation owner shrinks Action5470to5454/doAttack312to287 after new receipt and shared completion routing. Whole movement body inverse and phase order preserved; no serialized receipt, command bypass or extra action. Current exact native producer proposal: Exact requested-endpoint/attack-completion routing or shrinking movement phase extraction; no extra action/search/RNG.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact current499+canonicalguard+Calh native marks/charge producer composition only; no AI, writer/default or wholefeature semantic acceptance.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "e7ddd232eb80e37ca2454cf8b164eb3389b9b521d6b52cd451fd174a58c11794"
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)#1": {
       "kind": "legacy",
@@ -25636,19 +25643,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "3f47254b59fac6cec203217e42ac20fd934ad5e2ee2a2672bcacc67006069117"
-    },
-    "server/battles/BattleActionProcessor.cpp::void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut, dreadCavalryAction::Context * dreadCavalry, bool * primaryMeleePerformed)#1": {
-      "deferral": "Engine engineer owns the further ordered-reaction extraction described by the file record before substantive expansion. Characterization must compare native hit packets, RNG, status/resource state and fixed attack-loop behavior, including already-Frozen and LastStand cases. Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further attack aftermath growth, extract its ordered coordinator with prepared admission and post-damage commit interfaces; preserve hit/RNG/packet order, rebirth/control changes, excluded preemptive/secondary hits and ordinary retaliation. Before next affected expansion, extract the next cohesive ordered physical-strike aftermath coordinator with prepared pre-hit entitlements and actual post-damage commit receipts. Preserve requested/primary/collateral/controller identities and apply order, without moving RNG/packet orchestration into a generic event framework. Required characterization: Actual native hit/fortune packets, physical versus magical provenance, zero/damaging hit, Rebirth, control changes, Wait consumption, ordinary/preemptive/secondary reaction exclusions and RNG order. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Exact bounded1151 change only. Exact1074to1079 signature/receipt correction only: optional action-local bool becomes true immediately after committed physical hostile primary packet, not admission/secondary/reaction/spell-like/early return. Existing field/order/RNG and event index unchanged. Before further growth extract cohesive packet-commit/post-primary aftermath using explicit prepared receipts; keep before-prefix validation and packet/RNG sequence. No ceiling increase, coverage exclusion or unrelated/future growth allowance.",
-      "kind": "exception",
-      "lines": 1079,
-      "owner": "gameplay_engineer",
-      "previous_review": "IR-1145-GP-CONSUMERS-EXACT-9DB40B96-20261030",
-      "rationale": "Exact shrinking 1078to1074: primary prehit Serpent/Gaze capture and ordered post-damage application move to45-line BattlePrimaryStrikeAftermath (largest function17), with ordinary strike plan/application added there. The caller preserves sendAndApply(bat), Petrifying Blood, Dread observation, primary effects, Mana Leech, Frozen and Last Stand order. Ranged Counterfire/Overwatch secondary exclusions do not broaden the existing melee-only Serpent predicate. No reaction/packet/RNG order, activation grant or command-validation bypass is introduced; inherited hotspot extraction obligations remain binding. Exact1074to1079 signature/receipt correction only: optional action-local bool becomes true immediately after committed physical hostile primary packet, not admission/secondary/reaction/spell-like/early return. Existing field/order/RNG and event index unchanged. Before further growth extract cohesive packet-commit/post-primary aftermath using explicit prepared receipts; keep before-prefix validation and packet/RNG sequence.",
-      "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "fb827c1ea830f234e6faf85457d5cf20523d1f124593854a3ac8697ddb47132b"
     },
     "server/battles/BattleActionProcessor.cpp::void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)#1": {
       "kind": "legacy",
@@ -26437,6 +26431,52 @@
       "rationale": "Bounded type-to-summary dispatch with substantive start/action/spell/damage and ownership extraction in focused helpers. Unknown ownership is explicit; no authoritative mechanics or serialization mutation. Exact source-only review, below 150-line ceiling; no gameplay or runtime certification.",
       "review": "IR-BATTLE-ACTION-EXPORT-20261028-FINAL",
       "sha256": "7308b773c64b1fb2b727f2bff9f81dfc3d82991bd2df663b50077cb0097d851a"
+    },
+    "lib/battle/DamageFinalization.cpp::void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info, DamageAttackInfo & payload, const IBattleInfo * currentBattle) const#1": {
+      "kind": "review",
+      "lines": 83,
+      "sha256": "e11c367cd133f6b80eee4f1a7335e1191c83237db22715c139cb09010e002731",
+      "owner": "gameplay_engineer",
+      "rationale": "Focused existing payload finalization77→83 appends two distinct target Creature Defense contributors through canonical shared helpers; formulas stay in existing Lua target-defense stage. Native mark/charge source chain previously inspected; this exact composite record is proposed pending independent review. No AI/default/writer activation or uncapped Lorelei support implied.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact native mark/charge payload routing only.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN"
+    },
+    "lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.cpp": {
+      "deferral": "Preserve the existing typed registry separation and canonical visible-owner/context authority; future substantive growth must extract a coherent owner responsibility with historical absence, old policy/row/art and source-visibility characterization. Reconcile this exact source additively with every frozen core; never restore stale whole afterimages. No full16/cohort first-writer approval or future growth allowance.",
+      "kind": "exception",
+      "lines": 530,
+      "owner": "engine_engineer",
+      "rationale": "Existing491-line canonical ordinary policy/context owner expands to530 only for17 optional frozen captured keys, strict companion domains and one cohort presence gate. All combat handlers/visible owner selection, old34 registry/art entries and old policy bodies remain intact. Largest function72; no new/expanded function above80. Finite cohort guard change, not a new eligibility table or default activation.",
+      "review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
+      "review_scope": "Exact d18 admission + c9bb codec + required f049 test correction only; CURRENT1151, no default/full cohort/first-writer/gameplay/native approval. Actual mechanics/core/CMake composition needs renewed final source hashes.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "b58a25cb95ae1b64658c33c06d65487be7971aa83b5e8fc9acb263a124ba6382"
+    },
+    "server/battles/BattleActionProcessor.cpp::DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat, std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload, const battle::Unit * def, const AttackDescriptor & attack, bool secondary, bool bracePreemptive, int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted, int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent, bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const#1": {
+      "deferral": "Owner: engine_engineer. Before further output-stage changes, carry accepted action output through the existing typed hit-context boundary; preserve rounding/stage order, physical versus spell-like damage, current activation coefficient and no retaliation/Brace leakage. Require accepted-multihit/Rebirth/collateral and default100 controls. Exact146 mapped-key exception only; no inherited allowance. Exact bounded1151 change only. Exact146to149 one ephemeral ordinary-action index routing statement plus explanation, preserving historical event index and MasterGunner separate action semantics. Actual specialty arithmetic stays focused; before further growth extract cohesive damage metadata/aftermath without reordering queries or packet/RNG. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Exact149→150 descriptor routing reaches existing function ceiling; no future growth. Extract further phase before any added substantive routing.",
+      "kind": "exception",
+      "lines": 150,
+      "owner": "engine_engineer",
+      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
+      "rationale": "Root explicitly authorized this exact bounded routing seam. Only accepted action scalar threaded through the existing typed attack input. Focused existing owners hold mechanics; no ceiling increase, generic policy expansion or future allowance. Source review only; native/render acceptance pending. Exact146to149 one ephemeral ordinary-action index routing statement plus explanation, preserving historical event index and MasterGunner separate action semantics. Actual specialty arithmetic stays focused; before further growth extract cohesive damage metadata/aftermath without reordering queries or packet/RNG. Current exact native producer proposal: Exact signature replacement carries optional committed-target receipt or existing AttackDescriptor; old signature retired, same native phase responsibilities.",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact current499+canonicalguard+Calh native marks/charge producer composition only; no AI, writer/default or wholefeature semantic acceptance.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "80b31fa90985c581903c81fa4e24bd79067fd3e9a316ee3fc34ecff2a0df154a"
+    },
+    "server/battles/BattleActionProcessor.cpp::void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, bool * destroyedEnemyOut, RelentlessAssaultActionContext * relentlessAssault, RainOfArrowsAction * rainOfArrows, bool * vanishKillOut, dreadCavalryAction::Context * dreadCavalry, std::optional<uint32_t> * primaryMeleeTarget)#1": {
+      "deferral": "Engine engineer owns the further ordered-reaction extraction described by the file record before substantive expansion. Characterization must compare native hit packets, RNG, status/resource state and fixed attack-loop behavior, including already-Frozen and LastStand cases. Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further attack aftermath growth, extract its ordered coordinator with prepared admission and post-damage commit interfaces; preserve hit/RNG/packet order, rebirth/control changes, excluded preemptive/secondary hits and ordinary retaliation. Before next affected expansion, extract the next cohesive ordered physical-strike aftermath coordinator with prepared pre-hit entitlements and actual post-damage commit receipts. Preserve requested/primary/collateral/controller identities and apply order, without moving RNG/packet orchestration into a generic event framework. Required characterization: Actual native hit/fortune packets, physical versus magical provenance, zero/damaging hit, Rebirth, control changes, Wait consumption, ordinary/preemptive/secondary reaction exclusions and RNG order. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Exact bounded1151 change only. Exact1074to1079 signature/receipt correction only: optional action-local bool becomes true immediately after committed physical hostile primary packet, not admission/secondary/reaction/spell-like/early return. Existing field/order/RNG and event index unchanged. Before further growth extract cohesive packet-commit/post-primary aftermath using explicit prepared receipts; keep before-prefix validation and packet/RNG sequence. No ceiling increase, coverage exclusion or unrelated/future growth allowance.",
+      "kind": "exception",
+      "lines": 1071,
+      "owner": "gameplay_engineer",
+      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
+      "rationale": "Exact shrinking 1078to1074: primary prehit Serpent/Gaze capture and ordered post-damage application move to45-line BattlePrimaryStrikeAftermath (largest function17), with ordinary strike plan/application added there. The caller preserves sendAndApply(bat), Petrifying Blood, Dread observation, primary effects, Mana Leech, Frozen and Last Stand order. Ranged Counterfire/Overwatch secondary exclusions do not broaden the existing melee-only Serpent predicate. No reaction/packet/RNG order, activation grant or command-validation bypass is introduced; inherited hotspot extraction obligations remain binding. Exact1074to1079 signature/receipt correction only: optional action-local bool becomes true immediately after committed physical hostile primary packet, not admission/secondary/reaction/spell-like/early return. Existing field/order/RNG and event index unchanged. Before further growth extract cohesive packet-commit/post-primary aftermath using explicit prepared receipts; keep before-prefix validation and packet/RNG sequence. Current exact native producer proposal: Exact signature replacement carries optional committed-target receipt or existing AttackDescriptor; old signature retired, same native phase responsibilities.",
+      "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
+      "review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "review_scope": "Exact current499+canonicalguard+Calh native marks/charge producer composition only; no AI, writer/default or wholefeature semantic acceptance.",
+      "review_status": "INDEPENDENT_BOUNDED_SOURCE_METADATA_REVIEWED_NATIVE_UNRUN",
+      "sha256": "eaa8f85aa0f797461ac147c33f300da75d1a6d8596294b4d81c1bb0db53dc487"
     }
   }
 }

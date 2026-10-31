@@ -81,7 +81,8 @@ public:
 	void validateArmyBonusSerialization(BonusSerializationContext context) const
 	{
 		if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 		validateExportedBonusSerialization(context);
 		validateStackBonusSerialization(context);
 	}

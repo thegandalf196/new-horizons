@@ -516,6 +516,13 @@ private:
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
 		DamageProvenance provenance = DamageProvenance::OTHER);
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
+protected:
+	const CCreature * stateCreature(CreatureID id) const;
+private:
+	CreatureID decodeStateCreature(const std::string & key) const;
+	void validateOwnedFormIdentifiers(const JsonNode & data) const;
+	bool validStateCreature(CreatureID id) const;
+	void serializeStateCreature(JsonSerializeFormat & handler, const std::string & field, CreatureID & id) const;
 	const IUnitEnvironment * env = nullptr;
 	int32_t activationMovementBonus = 0;
 	int32_t frozenAppliedRound = -1;
@@ -583,11 +590,13 @@ public:
 	BattleSide unitSide() const override;
 
 	const CCreature * unitType() const override;
+	const UnitCreatureResolver * unitCreatureResolver() const override;
 	PlayerColor unitOwner() const override;
 
 	SlotID unitSlot() const override;
 
 	int32_t unitBaseAmount() const override;
+	std::optional<UnitPreparationHealthBasis> unitPreparationHealthBasis() const override;
 	int64_t getBattleStartMaximumAggregateHP() const override;
 	int64_t getRebirthOriginalAggregateHP() const override;
 

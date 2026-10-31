@@ -2,6 +2,8 @@ set(vcmiservercommon_SRCS
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
+	battles/BattlePrimaryStrikeMetadata.cpp
+	battles/BattleFlyingMovement.cpp
 		battles/CreatureSpellActions.cpp
 		battles/BattleAttackCasting.cpp
 		battles/BattlePetrifyingBlood.cpp

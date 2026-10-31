@@ -6,7 +6,7 @@ namespace newHorizonsHeroes::detail
 {
 namespace
 {
-const std::array<OrdinaryCreatureSpecialty, 34> ordinaryCreatureSpecialties{{
+const std::array<OrdinaryCreatureSpecialty, 40> ordinaryCreatureSpecialties{{
 	{"core:valeska", "core:archer", "Close-Quarters Drill", "closeQuartersDrill", BonusType::NO_MELEE_PENALTY,
 		BonusValueType::BASE_NUMBER, "Archers and Marksmen deal full ordinary melee damage. Adjacent enemies still prevent ordinary shooting.",
 		"newHorizons/heroSpecialties/ValeskaCloseQuartersDrill"},
@@ -109,6 +109,24 @@ const std::array<OrdinaryCreatureSpecialty, 34> ordinaryCreatureSpecialties{{
 	{"core:ufretin", "core:dwarf", "Runic Endurance", "runicEnduranceReductionPercent", BonusType::NONE,
 		BonusValueType::BASE_NUMBER, "Dwarves and Battle Dwarves gain %VALUE%% independent physical damage reduction against additional blows within one enemy ordinary attack action, including repeated collateral. New actions, retaliation and pre-emptive strikes do not qualify.",
 		"newHorizons/heroSpecialties/UfretinRunicEndurance"},
+	{"core:calh", "core:gog", "Scorching Impact", "scorchingImpactDamageReductionPercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Gog and Magog primary shots reduce ordinary attack damage by %VALUE%% through the victim's next accepted Creature Action, including Wait. Magical Magog primary shots qualify; splash is unchanged. Reapplication refreshes one strongest effect. Cure and Dispel do not remove it.",
+		"newHorizons/heroSpecialties/CalhScorchingImpact"},
+	{"core:nymus", "core:pitFiend", "Cruel Overseer", "cruelOverseerDefenseReduction", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Pit Fiend and Pit Lord primary physical melee strikes reduce the victim's Defense by %VALUE% through its next accepted Creature Action, including Wait. Ordinary retaliation qualifies; pre-emptive and collateral damage do not. Reapplication refreshes one strongest effect. Cure and Dispel do not remove it.",
+		"newHorizons/heroSpecialties/NymusCruelOverseer"},
+	{"core:ingham", "core:monk", "Consecrated Target", "consecratedTargetDefenseIgnorePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Monk and Zealot shots mark a surviving enemy until this round ends. The next allied primary melee strike ignores %VALUE%% of its Creature Defense, then consumes the mark. Ordinary retaliation qualifies.",
+		"newHorizons/heroSpecialties/InghamConsecratedTarget"},
+	{"core:lorelei", "core:harpy", "Feathered Feint", "featheredFeintPhysicalReductionIgnorePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "A completed Harpy or Harpy Hag attack-and-return marks the surviving victim until this round ends. The next different allied primary physical attacker ignores %VALUE%% of capped physical protection, then consumes the mark. This does not reduce Creature Defense or grant a return.",
+		"newHorizons/heroSpecialties/LoreleiFeatheredFeint"},
+	{"core:tyris", "core:cavalier", "Lance Formation", "lanceFormationDefensePerHex", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "A completed Cavalier or Champion charge grants the attacker temporary Creature Defense based on actual charge distance, until its next genuine activation. This is distinct from the Charge! Order and grants no additional attack or movement.",
+		"newHorizons/heroSpecialties/TyrisLanceFormation"},
+	{"core:shiva", "core:roc", "Storm Wings", "stormWingsDefenseIgnorePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Rocs and Thunderbirds ignore %VALUE%% of target Creature Defense on the first ordinary primary melee blow after a sufficiently long voluntary flight. Later blows, retaliation, reactions, teleportation and forced travel do not qualify. Native lightning remains unchanged.",
+		"newHorizons/heroSpecialties/ShivaStormWings"},
 }};
 }
 std::span<const OrdinaryCreatureSpecialty> ordinaryCreatureSpecialtyRegistry()

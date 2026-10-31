@@ -36,6 +36,7 @@ struct SpecialtySerializationContext
 	bool ordinaryMaintenanceSpecialties = false;
 	bool ordinaryMachineSpecialties = false;
 	bool ordinaryCombatSpecialties = false;
+	bool extendedOrdinarySpecialties = false;
 
 	template<class Handler>
 	static SpecialtySerializationContext fromHandler(const Handler & h)
@@ -65,6 +66,7 @@ struct SpecialtySerializationContext
 		result.ordinaryMaintenanceSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES);
 		result.ordinaryMachineSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES);
 		result.ordinaryCombatSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
+		result.extendedOrdinarySpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 		return result;
 	}
 };

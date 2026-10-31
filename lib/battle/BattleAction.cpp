@@ -13,6 +13,22 @@
 #include "Unit.h"
 #include "CBattleInfoCallback.h"
 
+void BattleAction::validatePhysicalCureSerialization(bool frozenSupported, bool graveDustSupported,
+	bool requestEnvelope) const
+{
+	if(spellCurePhysicalAffliction.empty())
+		return;
+	if(!frozenSupported)
+		throw std::runtime_error(requestEnvelope
+			? "Cannot discard physical Cure selection in an older action request format"
+			: "Cannot serialize physical Cure selection to an older protocol");
+	if(spellCurePhysicalAffliction != "frozen" && spellCurePhysicalAffliction != "graveDust")
+		throw std::runtime_error(requestEnvelope
+			? "Invalid physical Cure selection in action request" : "Invalid physical Cure selection");
+	if(spellCurePhysicalAffliction == "graveDust" && !graveDustSupported)
+		throw std::runtime_error("Grave Dust Cure selection requires format1152");
+}
+
 static const int32_t INVALID_UNIT_ID = -1000;
 
 BattleAction::BattleAction():

@@ -304,7 +304,8 @@ void Rewardable::Reward::serializeJson(JsonSerializeFormat & handler)
 void Rewardable::Reward::validateBonusSerialization(BonusSerializationContext context) const
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 	for(const auto * bonuses : {&heroBonuses, &playerBonuses, &commanderBonuses})
 		for(const auto & bonus : *bonuses)
 			if(bonus) bonus->validateAdjacencyCapabilitySerialization(context);

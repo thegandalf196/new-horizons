@@ -13,6 +13,7 @@ struct BonusSerializationContext
 	bool ordinaryRangedSpecialtiesSupported = false;
 	bool ordinaryMaintenanceSpecialtiesSupported = false;
 	bool ordinaryCombatSpecialtiesSupported = false;
+	bool extendedOrdinarySpecialtiesSupported = false;
 
 	template<typename Handler>
 	static BonusSerializationContext fromHandler(const Handler & handler)
@@ -21,6 +22,7 @@ struct BonusSerializationContext
 			handler.hasFeature(Handler::Version::BONUS_TRIGGER),
 			handler.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES),
 			handler.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES),
-			handler.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)};
+			handler.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES),
+			handler.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)};
 	}
 };

@@ -49,6 +49,7 @@ void validateCapturedSpecialtiesSerialization(const JsonNode & development,
 	validateOrdinaryMaintenanceSpecialtiesSerialization(development, context.ordinaryMaintenanceSpecialties);
 	validateOrdinaryMachineSpecialtiesSerialization(development, context.ordinaryMachineSpecialties);
 	validateOrdinaryCombatSpecialtiesSerialization(development, context.ordinaryCombatSpecialties);
+	validateExtendedOrdinarySpecialtiesSerialization(development, context.extendedOrdinarySpecialties);
 }
 
 void validateCurrentSpecialtyRules(const JsonNode & development)
@@ -78,6 +79,7 @@ void validateCurrentSpecialtyRules(const JsonNode & development)
 	current.ordinaryMaintenanceSpecialties = true;
 	current.ordinaryMachineSpecialties = true;
 	current.ordinaryCombatSpecialties = true;
+	current.extendedOrdinarySpecialties = true;
 	validateCapturedSpecialtiesSerialization(development, current);
 }
 

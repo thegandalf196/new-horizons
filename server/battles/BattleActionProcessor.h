@@ -16,6 +16,7 @@
 
 #include "battle/IBattleInfoCallback.h"
 #include "battle/Destination.h"
+#include "battle/NewHorizonsOrdinaryStrike.h"
 #include "battle/RelentlessAssaultState.h"
 #include "bonuses/Bonus.h"
 #include "combatScripts/CombatEventPayload.h"
@@ -38,6 +39,8 @@ class CUnitState;
 class CGameHandler;
 class BattleProcessor;
 class ICombatEventScript;
+namespace newHorizonsLivingInferno { struct Trail; }
+namespace battlePrimaryStrikeAftermath { struct Prepared; }
 
 /// Processes incoming battle action queries and applies requested action(s)
 class BattleActionProcessor : boost::noncopyable
@@ -52,6 +55,30 @@ class BattleActionProcessor : boost::noncopyable
 		bool obstacleHit = false;
 		/// Unit was unable to move to destination, e.g. invalid request
 		bool invalidRequest = false;
+		/// Local receipt set at the requested endpoint commit, before landing reactions.
+		bool destinationCommitted = false;
+		/// Accepted voluntary native flight, captured at the endpoint commit before reactions.
+		int voluntaryFlightDistance = 0;
+	};
+
+	struct MeleeReturnResult
+	{
+		int movementCost = 0;
+		newHorizonsOrdinaryStrike::EffectPlan mark;
+	};
+
+	/// Borrowed validated inputs for committing one native flight, never a new route.
+	struct FlightMovementInput
+	{
+		BattleHex start;
+		BattleHex destination;
+		const BattleHexArray & path;
+		int distance;
+		int movementRange;
+		bool canUseGate;
+		EGateState gateState;
+		bool hasWideMoat;
+		bool voluntary;
 	};
 
 	/// Per-action snapshot shared by an attack's multistrikes. It is local to
@@ -107,6 +134,7 @@ class BattleActionProcessor : boost::noncopyable
 		BattleHex targetHex;
 		/// hexes the attacker travelled before striking, which the damage of a charge scales with
 		int distance = 0;
+		int voluntaryFlightDistance = 0; // Local first-offensive-blow receipt; reactions default to zero.
 		/// zero-based position of this attack among those its own side makes in this action;
 		/// a counterattack is its side's attack 0
 		int attackIndex = 0;
@@ -152,14 +180,18 @@ class BattleActionProcessor : boost::noncopyable
 		const CStack * retaliator, const CStack * shooter);
 	bool tryAerialRetaliation(const CBattleInfoCallback & battle, const CStack * griffin, const CStack * shooter);
 	MovementResult moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary = false);
+	bool commitFlyingMovement(const CBattleInfoCallback & battle, const CStack & unit,
+		const FlightMovementInput & input, newHorizonsLivingInferno::Trail & trail, MovementResult & result);
 	void resolveOverwatch(const CBattleInfoCallback & battle, const CStack * mover,
 		const BattleHex & from, const BattleHex & to);
 	void breakSanctuary(const CBattleInfoCallback & battle, const battle::Unit * stack);
+	battlePrimaryStrikeAftermath::Prepared preparePrimaryStrikeAftermath(const CBattleInfoCallback & battle,
+		const CStack * attacker, const CStack * defender, const AttackDescriptor & attack, const BattleAttack & packet) const;
 	void makeAttack(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender,
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
 		RelentlessAssaultActionContext * relentlessAssault = nullptr,
 		RainOfArrowsAction * rainOfArrows = nullptr, bool * vanishKillOut = nullptr,
-		dreadCavalryAction::Context * dreadCavalry = nullptr, bool * primaryMeleePerformed = nullptr);
+		dreadCavalryAction::Context * dreadCavalry = nullptr, std::optional<uint32_t> * primaryMeleeTarget = nullptr);
 	RainOfArrowsAction beginRainOfArrows(const CBattleInfoCallback & battle,
 		const CStack * attacker, const CStack * primaryTarget) const;
 	void resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker,
@@ -191,7 +223,7 @@ class BattleActionProcessor : boost::noncopyable
 	/// Rolls the damage one attacked unit takes and appends what scripts need to know about it to the payload
 	DamageEstimation applyBattleEffects(const CBattleInfoCallback & battle, BattleAttack & bat,
 		std::shared_ptr<battle::CUnitState> attackerState, CombatEventPayload & payload,
-		const battle::Unit * def, int distance, bool secondary, bool bracePreemptive,
+		const battle::Unit * def, const AttackDescriptor & attack, bool secondary, bool bracePreemptive,
 		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
 		int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
 		bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const;
@@ -222,8 +254,8 @@ class BattleActionProcessor : boost::noncopyable
 	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation,
 		dreadCavalryAction::Context & dreadCavalry);
 	bool doMeleeActionWithContinuation(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
-	int returnAfterMeleeStrike(const CBattleInfoCallback & battle, const BattleAction & ba, const CStack * stack,
-		const battle::Target & target, BattleHex startingPos, int beforeAttackSpeed, int movementSpent, bool reducedBudget);
+	MeleeReturnResult returnAfterMeleeStrike(const CBattleInfoCallback & battle, const BattleAction & ba, const CStack * stack,
+		const battle::Target & target, BattleHex startingPos, int beforeAttackSpeed, int movementSpent, bool reducedBudget, const battle::Unit * victim);
 	void finishMeleeMovement(const CBattleInfoCallback & battle, const BattleAction & ba,
 		int beforeAttackSpeed, int movementSpent, bool destroyedEnemy, bool vanishKill,
 		bool allowPursuitContinuation, dreadCavalryAction::Context & dreadCavalry);

@@ -22,7 +22,8 @@ namespace battle
 void BattleEffectSnapshot::validateBonusSerialization(BonusSerializationContext context) const
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 	for(const auto & effect : effects)
 		effect.validateAdjacencyCapabilitySerialization(context);
 }
@@ -30,7 +31,8 @@ void BattleEffectSnapshot::validateBonusSerialization(BonusSerializationContext 
 void BattleEffectExchangeEndpoint::validateBonusSerialization(BonusSerializationContext context) const
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 	expected.validateBonusSerialization(context);
 	replacement.validateBonusSerialization(context);
 }
@@ -38,7 +40,8 @@ void BattleEffectExchangeEndpoint::validateBonusSerialization(BonusSerialization
 void BattleEffectExchange::validateBonusSerialization(BonusSerializationContext context) const
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 	for(const auto & endpoint : endpoints)
 		endpoint.validateBonusSerialization(context);
 }

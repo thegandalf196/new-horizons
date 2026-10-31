@@ -38,6 +38,8 @@ public:
 	virtual int bloodragePain(BattleSide side) const = 0;
 	virtual int magicResistance(const Unit * unit) const = 0;
 	virtual newHorizonsNecromancy::CombatPassives necromancyPassives(BattleSide side) const = 0;
+	virtual newHorizonsNecromancy::CombatPassives filterNecromancyPassives(
+		const newHorizonsNecromancy::CombatPassives & captured, CreatureID creature) const;
 	virtual const JsonNode & magicRules() const = 0;
 };
 

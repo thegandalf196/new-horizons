@@ -49,6 +49,9 @@ struct DLL_LINKAGE ReturnFrame
 
 	template<typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !action.spellCurePhysicalAffliction.empty())
+			action.validatePhysicalCureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
 		h & responder; h & anchor; h & grant; h & round; h & originalActor;
 		h & phase; h & kind; h & action;
 		h & masterGate; h & pursuit; h & ranged;
@@ -92,6 +95,14 @@ struct DLL_LINKAGE State
 		const HeroActionAllowanceState * replacementLedger = nullptr) const;
 	bool capture(BattleSide side, uint32_t unit);
 
+	template<typename Handler> void validatePhysicalCureSerialization(Handler & h) const
+	{
+		for(const auto & frame : returns)
+			if(!frame.action.spellCurePhysicalAffliction.empty())
+				frame.action.validatePhysicalCureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN),
+					h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
+	}
+
 	template<typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
@@ -99,6 +110,7 @@ struct DLL_LINKAGE State
 			validateShape();
 			if(meaningful() && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 				throw std::runtime_error("Cannot discard Crisis Command suspension");
+			validatePhysicalCureSerialization(h);
 		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 		{

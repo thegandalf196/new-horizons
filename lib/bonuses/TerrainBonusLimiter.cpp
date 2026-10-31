@@ -29,38 +29,9 @@ ILimiter::EDecision TerrainLimiter::limit(const BonusLimitationContext &context)
 {
 	BonusNodeType nodeType = context.node.getNodeType();
 	std::set<BonusNodeType> allowedNodes = {BonusNodeType::STACK_BATTLE, BonusNodeType::STACK_INSTANCE, BonusNodeType::HERO, BonusNodeType::TOWN, BonusNodeType::TOWN_AND_VISITOR};
-	std::set<BonusNodeType> stackNodes = {BonusNodeType::STACK_BATTLE, BonusNodeType::STACK_INSTANCE};
 	if (!allowedNodes.contains(nodeType))
 		return ILimiter::EDecision::NOT_APPLICABLE;
-
-	std::optional<TerrainId> currentTerrain;
-
-	if (stackNodes.contains(nodeType))
-	{
-		if (const auto * stack = context.evaluation.stackInstance())
-			currentTerrain = stack->getCurrentTerrain();
-	}
-	else if (const auto * army = dynamic_cast<const CArmedInstance *>(&context.node))
-		currentTerrain = army->getCurrentTerrain();
-
-	const auto resolveTerrain = [&]() -> TerrainId
-	{
-		if(currentTerrain)
-			return *currentTerrain;
-		if(const auto query = context.evaluation.queryTerrain(); query && query->hasValue())
-			return *query;
-		if(context.evaluation.hasNativeContext())
-		{
-			const auto projected = context.evaluation.battleTerrain();
-			if(!projected)
-				throw std::logic_error("Terrain limiter requires an adventure or bound battle terrain");
-			return *projected;
-		}
-		const auto * stack = dynamic_cast<const CStack *>(&context.node);
-		if(!stack || !stack->getBattle())
-			throw std::logic_error("Terrain limiter requires an adventure or bound battle terrain");
-		return stack->getCurrentTerrain();
-	};
+	const auto currentTerrain = context.evaluation.adventureTerrain();
 
 	if (terrainType == ETerrainId::NATIVE_TERRAIN)
 	{
@@ -72,10 +43,10 @@ ILimiter::EDecision TerrainLimiter::limit(const BonusLimitationContext &context)
 		if(context.stillUndecided.getFirst(selector))
 			return ILimiter::EDecision::NOT_SURE;
 
-		return context.evaluation.faction()->toEntity(LIBRARY)->isNativeTerrain(resolveTerrain()) ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
+		return context.evaluation.nativeTerrainMatches(currentTerrain) ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 	}
 
-	return resolveTerrain() == terrainType ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
+	return context.evaluation.resolveTerrain(currentTerrain) == terrainType ? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 }
 
 std::string TerrainLimiter::toString() const

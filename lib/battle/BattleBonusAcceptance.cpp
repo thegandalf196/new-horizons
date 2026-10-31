@@ -13,8 +13,59 @@
 
 namespace
 {
-bool accepts(const CStack & original, const battle::CUnitState & state, const Bonus & bonus,
-	std::optional<const CGHeroInstance *> suppliedHero)
+struct LiveState
+{
+	const battle::CUnitState & value;
+	bool hasBattleForm() const { return value.hasBattleForm(); }
+	CreatureID battleFormCreature() const { return value.battleFormCreature(); }
+	CreatureID battleFormOriginalCreature() const { return value.battleFormOriginalCreature(); }
+	bool isGhost() const { return value.isGhost(); }
+	bool isSummoned() const { return value.summoned; }
+	bool isNatureSummoned() const { return value.natureSummoned; }
+};
+struct CopiedState
+{
+	const battle::BonusAcceptanceFacts::State & value;
+	bool hasBattleForm() const { return value.hasForm; }
+	CreatureID battleFormCreature() const { return value.currentForm; }
+	CreatureID battleFormOriginalCreature() const { return value.originalForm; }
+	bool isGhost() const { return value.ghost; }
+	bool isSummoned() const { return value.summoned; }
+	bool isNatureSummoned() const { return value.natureSummoned; }
+};
+struct LiveMetadata
+{
+	const CStack & original;
+	std::optional<const CGHeroInstance *> supplied;
+	mutable bool resolved = false;
+	mutable const CGHeroInstance * cachedHero = nullptr;
+	const CGHeroInstance * hero() const
+	{
+		if(!resolved) { cachedHero = supplied ? *supplied : original.getMyHero(); resolved = true; }
+		return cachedHero;
+	}
+	SecondarySkill sylvanSkill() const { return SecondarySkill(SecondarySkill::decode("new-horizons:sylvanLuck")); }
+	bool tacticsEnabled() const { return newHorizonsSylvanTactics::enabled(hero()); }
+	bool heroPresent() const { return hero() != nullptr; }
+	bool wildChance() const
+	{
+		return hero() && hero()->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance");
+	}
+	bool isTurret() const { return original.isTurret(); }
+	SlotID unitSlot() const { return original.unitSlot(); }
+};
+struct CopiedMetadata
+{
+	const battle::BonusAcceptanceFacts::Static & value;
+	SecondarySkill sylvanSkill() const { return value.sylvanSkill; }
+	bool tacticsEnabled() const { return value.tacticsEnabled; }
+	bool heroPresent() const { return value.heroPresent; }
+	bool wildChance() const { return value.wildChance; }
+	bool isTurret() const { return value.turret; }
+	SlotID unitSlot() const { return value.slot; }
+};
+template<typename State, typename Metadata>
+bool accepts(const State & state, const Bonus & bonus, const Metadata & metadata)
 {
 	if(state.hasBattleForm() && state.battleFormCreature() != state.battleFormOriginalCreature()
 		&& bonus.sid == BonusSourceID(state.battleFormOriginalCreature())
@@ -29,28 +80,32 @@ bool accepts(const CStack & original, const battle::CUnitState & state, const Bo
 
 	// Identifier resolution depends on VLC and therefore must never run during
 	// namespace-scope initialization (notably in the standalone test binary).
-	const SecondarySkill sylvanLuckSkill(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	const auto sylvanLuckSkill = metadata.sylvanSkill();
 	if(bonus.sid.as<SecondarySkill>() != sylvanLuckSkill)
 		return true;
 
-	const auto * hero = suppliedHero ? *suppliedHero : original.getMyHero();
-	if(newHorizonsSylvanTactics::enabled(hero))
-		return !state.isGhost() && !original.isTurret()
-			&& original.unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-			&& original.unitSlot() != SlotID::WAR_MACHINES_SLOT;
-	if(!state.summoned) return true;
-	return state.natureSummoned && hero
-		&& hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance");
+	if(metadata.tacticsEnabled())
+		return !state.isGhost() && !metadata.isTurret()
+			&& metadata.unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+			&& metadata.unitSlot() != SlotID::WAR_MACHINES_SLOT;
+	if(!state.isSummoned()) return true;
+	return state.isNatureSummoned() && metadata.heroPresent() && metadata.wildChance();
 }
 }
 
 bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus)
 {
-	return accepts(original, state, bonus, std::nullopt);
+	return accepts(LiveState{state}, bonus, LiveMetadata{original, std::nullopt});
 }
 
 bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus,
 	const CGHeroInstance * hero)
 {
-	return accepts(original, state, bonus, hero);
+	return accepts(LiveState{state}, bonus, LiveMetadata{original, hero});
+}
+
+bool battle::acceptsBattleBonus(const Bonus & bonus,
+	const BonusAcceptanceFacts::Static & metadata, const BonusAcceptanceFacts::State & state)
+{
+	return accepts(CopiedState{state}, bonus, CopiedMetadata{metadata});
 }

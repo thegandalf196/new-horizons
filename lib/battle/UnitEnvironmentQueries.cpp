@@ -15,6 +15,12 @@
 #include <algorithm>
 #include <stdexcept>
 
+newHorizonsNecromancy::CombatPassives battle::UnitEnvironmentContext::filterNecromancyPassives(
+	const newHorizonsNecromancy::CombatPassives & captured, CreatureID creature) const
+{
+	return newHorizonsNecromancy::passivesForCreature(captured, creature);
+}
+
 battle::UnitEnvironmentQueries::UnitEnvironmentQueries(const UnitEnvironmentContext & context) : context(context) {}
 
 bool battle::UnitEnvironmentQueries::unitHasAmmoCart(const Unit * unit) const
@@ -182,5 +188,5 @@ newHorizonsNecromancy::CombatPassives battle::UnitEnvironmentQueries::unitNecrom
 	const auto side = context.ownership().playerToSide(context.ownership().owner(*unit));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return {};
-	return newHorizonsNecromancy::passivesForCreature(context.necromancyPassives(side), unit->creatureId());
+	return context.filterNecromancyPassives(context.necromancyPassives(side), unit->creatureId());
 }

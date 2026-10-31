@@ -17,6 +17,8 @@
 #include "../bonuses/BonusSelector.h"
 #include "../spells/MagicalDamageReduction.h"
 #include "../spells/IncomingMagicalDamage.h"
+#include <limits>
+#include <stdexcept>
 
 namespace newHorizonsMagicalAbilityDamage
 {
@@ -66,5 +68,53 @@ int64_t adjustDamage(const CBattleInfoCallback & battle, const battle::Unit & ta
 	const auto mitigated = spells::calculateMagicalDamageReductionBasisPoints(
 		rawDamage, reductionSourcesBasisPoints, spells::targetMdrPenetrations(target)).damageWithPenetration;
 	return spells::applyIncomingMagicalDamageModifier(target, mitigated);
+}
+bool fireImmune(const battle::Unit & target)
+{
+	const BonusSubtypeID fire(SpellSchool::FIRE);
+	if(target.hasBonusOfType(BonusType::SPELL_SCHOOL_IMMUNITY, fire)
+		|| target.hasBonusOfType(BonusType::NEGATIVE_EFFECTS_IMMUNITY, fire)
+		|| target.hasBonusOfType(BonusType::NEGATIVE_EFFECTS_IMMUNITY, BonusSubtypeID(SpellSchool::ANY)))
+		return true;
+	for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, fire))
+		if(bonus->val >= 100)
+			return true;
+	for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, fire))
+		if(bonus->val >= 10'000)
+			return true;
+	return false;
+}
+int64_t adjustFireDamage(const CBattleInfoCallback & battle, const battle::Unit & target, int64_t rawDamage)
+{
+	if(rawDamage <= 0)
+		return 0;
+	if(!battle.battleUsesNewHorizonsMultiplicativeMDR())
+		throw std::runtime_error("Creature burn requires captured multiplicative magical damage reduction");
+	if(target.isInvincible() || fireImmune(target))
+		return 0;
+	std::vector<int> reductions;
+	for(const auto school : {SpellSchool::FIRE, SpellSchool::ANY})
+	{
+		for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(school)))
+			if(bonus->val > 0)
+				reductions.push_back(std::clamp(bonus->val, 0, 100) * 100);
+		for(const auto & bonus : *target.getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSubtypeID(school)))
+			if(bonus->val > 0)
+				reductions.push_back(std::clamp(bonus->val, 0, 10'000));
+	}
+	for(const int value : {target.intrinsicMagicalDamageReductionPercent() * 100,
+		battle.battleGetHoldTheLineMagicalReductionBasisPoints(&target),
+		battle.battleGetPerkMagicalReductionBasisPoints(&target)})
+		if(value > 0)
+			reductions.push_back(std::clamp(value, 0, 10'000));
+	int64_t result = spells::calculateMagicalDamageReductionBasisPoints(rawDamage, reductions,
+		spells::targetMdrPenetrations(target)).damageWithPenetration;
+	if(target.getPhantomIntegrity() > 0)
+		result = result > std::numeric_limits<int64_t>::max() / 2
+			? std::numeric_limits<int64_t>::max() : result * 2;
+	result = spells::applyIncomingElementalDamageModifier(target, SpellDamageElement::FIRE, result);
+	result = spells::applyIncomingMagicalDamageModifier(target, result);
+	const int cap = target.valOfBonuses(BonusType::DAMAGE_RECEIVED_CAP);
+	return cap > 0 ? std::min<int64_t>(result, static_cast<int64_t>(target.getMaxHealth()) * cap / 100) : result;
 }
 }

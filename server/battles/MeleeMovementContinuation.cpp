@@ -7,6 +7,8 @@
 #include "../CGameHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
+#include "../../lib/battle/MeleeReturnDestination.h"
+#include "../../lib/battle/NewHorizonsCoordinatedMarks.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
@@ -58,10 +60,11 @@ void BattleActionProcessor::finishMeleeMovement(const CBattleInfoCallback & batt
 
 }
 
-int BattleActionProcessor::returnAfterMeleeStrike(const CBattleInfoCallback & battle, const BattleAction & ba,
+BattleActionProcessor::MeleeReturnResult BattleActionProcessor::returnAfterMeleeStrike(const CBattleInfoCallback & battle, const BattleAction & ba,
 	const CStack * stack, const battle::Target & target, BattleHex startingPos,
-	int beforeAttackSpeed, int movementSpent, bool reducedBudget)
+	int beforeAttackSpeed, int movementSpent, bool reducedBudget, const battle::Unit * victim)
 {
+	MeleeReturnResult result;
 	if(!stack->armorerLastStandEndedActivation
 		&& stack->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
 		&& !stack->hasBonusOfType(BonusType::NOT_ACTIVE)
@@ -75,21 +78,20 @@ int BattleActionProcessor::returnAfterMeleeStrike(const CBattleInfoCallback & ba
 		int afterAttackSpeed = reducedBudget
 			? std::min(stack->getMovementRange(0), static_cast<uint32_t>(std::max(0, beforeAttackSpeed - movementSpent)))
 			: stack->getMovementRange(0);
-		std::pair<BattleHexArray, int> path = battle.getPath(stack->getPosition(), startingPos, stack);
-		const auto returnReachability = battle.getReachability(stack);
-		const auto returnDestination = std::find_if(path.first.begin(), path.first.end(),
-			[&](const BattleHex & hex)
-			{
-				return returnReachability.isReachable(hex)
-					&& returnReachability.distances[hex.toInt()] <= static_cast<uint32_t>(std::max(0, afterAttackSpeed));
-			});
-		if(returnDestination != path.first.end())
+		const auto returnDestination = battleMovement::meleeReturnDestination(battle, *stack, startingPos, afterAttackSpeed);
+		if(returnDestination)
 		{
+			const auto preparedMark = victim ? newHorizonsCoordinatedMarks::prepareReturn(battle, *stack, *victim)
+				: newHorizonsOrdinaryStrike::EffectPlan{};
 			const auto returnResult = moveStack(battle, ba.stackNumber, *returnDestination);
 			if(!returnResult.invalidRequest)
-				return returnResult.movementCost;
+			{
+				result.movementCost = returnResult.movementCost;
+				if(returnResult.distance > 0 && *returnDestination == startingPos && returnResult.destinationCommitted)
+					result.mark = preparedMark;
+			}
 		}
 	}
 
-	return 0;
+	return result;
 }

@@ -11,4 +11,6 @@ void OwnedBonusEvaluationFacts::validate() const
 	if((nodeType == BonusNodeType::HERO && !heroLevel) || (army && !armySlots)
 		|| (stack && (!stackCount || !stableStackLevel)))
 		throw std::invalid_argument("Missing applicable owned bonus evaluation facts");
+	if(acceptance && acceptance->state.hasForm && !acceptance->state.currentForm.hasValue())
+		throw std::invalid_argument("Invalid copied battle form acceptance facts");
 }

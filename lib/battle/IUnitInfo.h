@@ -23,6 +23,7 @@ namespace battle
 {
 
 class Unit;
+class UnitCreatureResolver;
 
 class DLL_LINKAGE IUnitEnvironment
 {
@@ -44,10 +45,19 @@ public:
 	virtual std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const Unit *) const { return std::nullopt; }
 };
 
+/// Explicit copied preparation values. Engaged zero is a fact, not a fallback sentinel.
+struct UnitPreparationHealthBasis
+{
+	int64_t battleStartMaximumHP;
+	int64_t rebirthOriginalHP;
+};
+
 class DLL_LINKAGE IUnitInfo
 {
 public:
 	virtual int32_t unitBaseAmount() const = 0;
+	/// Legacy providers remain absent. An owned frame must supply both nonnegative values.
+	virtual std::optional<UnitPreparationHealthBasis> unitPreparationHealthBasis() const { return std::nullopt; }
 
 	virtual uint32_t unitId() const = 0;
 	virtual BattleSide unitSide() const = 0;
@@ -55,6 +65,8 @@ public:
 	virtual SlotID unitSlot() const = 0;
 
 	virtual const CCreature * unitType() const = 0;
+	/// Null retains the exact native entity/identifier paths; owned providers bind a complete table.
+	virtual const UnitCreatureResolver * unitCreatureResolver() const { return nullptr; }
 };
 
 }

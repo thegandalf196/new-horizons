@@ -4,8 +4,9 @@
 #include "OwnedBonusEvaluationFacts.h"
 #include "OwnedBonusPayloads.h"
 #include <unordered_map>
+#include <unordered_set>
 /// Pure owned inheritance storage, not live capture/admission. Context currently
-/// covers static Hero/Army/count facts and context-independent limiters only.
+/// covers copied scalar/type/terrain/rank/acceptance domains; no live frame/roster.
 class DLL_LINKAGE OwnedRecipientBonusGraph final : public BonusGraphQuery, boost::noncopyable
 {
 public:
@@ -16,7 +17,20 @@ public:
 		std::vector<std::shared_ptr<const Bonus>> local;
 		std::vector<size_t> parents;
 	};
-	static std::unique_ptr<OwnedRecipientBonusGraph> fromOwnedInputs(std::vector<NodeInput> inputs, size_t root);
+	static std::unique_ptr<OwnedRecipientBonusGraph> fromOwnedInputs(std::vector<NodeInput> inputs, size_t root,
+		std::vector<std::shared_ptr<const Bonus>> extraRecords = std::vector<std::shared_ptr<const Bonus>>());
+	struct RootQuery
+	{
+		OwnedBonusEvaluationFacts facts;
+		std::vector<size_t> parents; // Node indices, preserving canonical parent visit order/multiplicity.
+		std::vector<size_t> records; // Root-local or extra owned payload handles; never native pointers.
+	};
+	std::vector<size_t> rootLocalRecords() const;
+	size_t payloadCount() const;
+	/// Read-only borrow; retain owner. Alias identity is shared with raw node records.
+	const std::shared_ptr<Bonus> & payload(size_t index) const;
+	void validateRootQuery(const RootQuery & query) const;
+	BonusList queryRoot(const CSelector & selector, bool unstacked, const RootQuery & query) const;
 	~OwnedRecipientBonusGraph();
 	const CBonusSystemNode & root() const;
 	/// Returned raw/effective payload borrows must retire before this owner.
@@ -33,7 +47,11 @@ private:
 	std::vector<std::unique_ptr<Node>> nodes;
 	std::unordered_map<const CBonusSystemNode *, size_t> indices;
 	TNodesVector emptyEdges;
+	std::unordered_set<const Bonus *> inheritedOnlyRecords; // Immutable OWNED clone identities, not live addresses.
 	size_t rootIndex = 0;
+	size_t rootPayloadStart = 0;
+	size_t localPayloadCount = 0;
 	OwnedRecipientBonusGraph() = default;
 	const Node & entry(const CBonusSystemNode & node) const;
+	const CBonusSystemNode & queryNode(size_t index) const;
 };

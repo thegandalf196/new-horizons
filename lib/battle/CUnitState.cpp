@@ -1328,30 +1328,10 @@ CreatureID CUnitState::creatureId() const
 	return battleFormCreature();
 }
 
-int32_t CUnitState::creatureLevel() const
-{
-	return static_cast<int32_t>(battleFormCreature().toCreature()->getLevel());
-}
 
-bool CUnitState::doubleWide() const
-{
-	return battleFormCreature().toCreature()->isDoubleWide();
-}
 
-int32_t CUnitState::creatureCost() const
-{
-	return battleFormCreature().toCreature()->getRecruitCost(EGameResID::GOLD);
-}
 
-int32_t CUnitState::creatureIconIndex() const
-{
-	return battleFormCreature().toCreature()->getIconIndex();
-}
 
-FactionID CUnitState::getFactionID() const
-{
-	return battleFormCreature().toCreature()->getFactionID();
-}
 
 int32_t CUnitState::magicResistance() const
 {
@@ -1429,11 +1409,6 @@ PlayerColor CUnitState::getCasterOwner() const
 	return env->unitEffectiveOwner(this);
 }
 
-std::string CUnitState::getCasterNameTextID() const
-{
-	const auto * creature = creatureId().toEntity(LIBRARY);
-	return creature->getNamePluralTextID();
-}
 
 void CUnitState::getCastDescription(const spells::Spell * spell, const battle::Units & attacked, MetaString & text) const
 {
@@ -1683,7 +1658,7 @@ bool CUnitState::hasBattleFormState() const
 
 void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds)
 {
-	if(rounds <= 0 || !creature.hasValue() || creature.toEntity(LIBRARY) == nullptr)
+	if(rounds <= 0 || !creature.hasValue() || !validStateCreature(creature))
 		throw std::invalid_argument("Invalid battle-form target or duration");
 	if(!alive())
 		throw std::logic_error("This unit cannot receive a battle form");
@@ -2151,8 +2126,8 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeStruct("shots", shots);
 	handler.serializeInt("capacityHealthReferenceMax", capacityHealthReferenceMax, 0);
 	handler.serializeInt("cloneID", cloneID);
-	handler.serializeId("battleFormCreature", battleFormCreatureId, CreatureID(-1));
-	handler.serializeId("battleFormOriginalCreature", battleFormOriginalCreatureId, CreatureID(-1));
+	serializeStateCreature(handler, "battleFormCreature", battleFormCreatureId);
+	serializeStateCreature(handler, "battleFormOriginalCreature", battleFormOriginalCreatureId);
 	handler.serializeInt("battleFormRoundsRemaining", battleFormRoundsRemaining, 0);
 	handler.serializeBool("battleFormRestorationPending", battleFormRestorationPending, false);
 	handler.serializeInt("battleFormOriginalMaxHealth", battleFormOriginalMaxHealth, 0);
@@ -2284,6 +2259,7 @@ IncomingActivationReceipts parseIncomingActivationReceipts(const JsonNode & data
 
 void CUnitState::load(const JsonNode & data)
 {
+	validateOwnedFormIdentifiers(data);
 	const int32_t incomingBloodRound = petrifyingBloodRoundFromJson(data, petrifyingBloodRound);
 	summonLifetimeFromJson(data["state"]);
 	// Validate before reset/conversion, and never erase an already earned receipt
@@ -2311,8 +2287,8 @@ void CUnitState::load(const JsonNode & data)
 			if(!rounds || rounds->getType() != JsonNode::JsonType::DATA_INTEGER || rounds->Integer() != 1
 				|| !creature || !creature->isString() || creature->String().empty())
 				throw std::runtime_error("Pending battle-form restoration requires an active held form");
-			const CreatureID form(CreatureID::decode(creature->String()));
-			if(!form.hasValue() || form.toEntity(LIBRARY) == nullptr)
+			const CreatureID form = decodeStateCreature(creature->String());
+			if(!form.hasValue() || !validStateCreature(form))
 				throw std::runtime_error("Pending battle-form restoration requires a valid creature form");
 		}
 	}
@@ -2667,10 +2643,6 @@ BattleSide CUnitStateDetached::unitSide() const
 	return unit->unitSide();
 }
 
-const CCreature * CUnitStateDetached::unitType() const
-{
-	return hasBattleFormState() ? battleFormCreature().toCreature() : unit->unitType();
-}
 
 PlayerColor CUnitStateDetached::unitOwner() const
 {
@@ -2685,46 +2657,6 @@ SlotID CUnitStateDetached::unitSlot() const
 int32_t CUnitStateDetached::unitBaseAmount() const
 {
 	return unit->unitBaseAmount();
-}
-
-int64_t CUnitStateDetached::getBattleStartMaximumAggregateHP() const
-{
-	if(const auto * detachedSource = dynamic_cast<const CUnitStateDetached *>(unit))
-	{
-		const auto basis = detachedSource->getBattleStartMaximumAggregateHP();
-		if(basis > 0)
-			return basis;
-	}
-	else if(const auto * sourceUnit = dynamic_cast<const Unit *>(unit))
-	{
-		const auto basis = sourceUnit->getBattleStartMaximumAggregateHP();
-		if(basis > 0)
-			return basis;
-	}
-	if(const auto * detachedBonus = dynamic_cast<const CUnitStateDetached *>(bonus))
-		return detachedBonus->getBattleStartMaximumAggregateHP();
-	const auto * sourceBonus = dynamic_cast<const Unit *>(bonus);
-	return sourceBonus ? sourceBonus->getBattleStartMaximumAggregateHP() : 0;
-}
-
-int64_t CUnitStateDetached::getRebirthOriginalAggregateHP() const
-{
-	if(const auto * detachedSource = dynamic_cast<const CUnitStateDetached *>(unit))
-	{
-		const auto originalHP = detachedSource->getRebirthOriginalAggregateHP();
-		if(originalHP > 0)
-			return originalHP;
-	}
-	else if(const auto * sourceUnit = dynamic_cast<const Unit *>(unit))
-	{
-		const auto originalHP = sourceUnit->getRebirthOriginalAggregateHP();
-		if(originalHP > 0)
-			return originalHP;
-	}
-	if(const auto * detachedBonus = dynamic_cast<const CUnitStateDetached *>(bonus))
-		return detachedBonus->getRebirthOriginalAggregateHP();
-	const auto * sourceBonus = dynamic_cast<const Unit *>(bonus);
-	return sourceBonus ? sourceBonus->getRebirthOriginalAggregateHP() : 0;
 }
 
 void CUnitStateDetached::spendMana(ServerCallback * server, const int spellCost) const

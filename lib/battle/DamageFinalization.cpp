@@ -15,6 +15,8 @@
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSequenceProtection.h"
+#include "NewHorizonsCoordinatedMarks.h"
+#include "NewHorizonsChargeSpecialties.h"
 #include "../GameLibrary.h"
 #include "../IGameSettings.h"
 #include "../combatScripts/IDamageCalculatorScript.h"
@@ -36,6 +38,12 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	payload.intrinsicPhysicalDamageReductionPercent = info.physicalDamage && info.defender
 		? info.defender->intrinsicPhysicalDamageReductionPercent()
 			+ newHorizonsHeroes::ordinaryCreatureProtectionPercent(*this, info) : 0;
+	const auto coordinatedPenetration = newHorizonsCoordinatedMarks::penetration(*this, info);
+	payload.coordinatedMeleeDefenseIgnorePercent = coordinatedPenetration.creatureDefensePercent;
+	payload.stormWingsDefenseIgnorePercent = newHorizonsChargeSpecialties::stormWingsDefenseIgnorePercent(*this, info);
+	if(coordinatedPenetration.physicalProtectionPercent > 0)
+		payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
+			+ coordinatedPenetration.physicalProtectionPercent);
 	payload.runicEnduranceReductionPercent = newHorizonsSequenceProtection::runicEndurancePercent(*this, info);
 	payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
 		+ newHorizonsSequenceProtection::cyclopeanBreachPercent(*this, info));

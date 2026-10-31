@@ -9,6 +9,7 @@
 
 #include <array>
 #include <optional>
+#include <set>
 
 class CGHeroInstance;
 class JsonNode;
@@ -45,6 +46,8 @@ DLL_LINKAGE std::optional<Policy> policy(const JsonNode & capturedPerkRules);
 DLL_LINKAGE void validatePolicy(const JsonNode & capturedPerkRules);
 DLL_LINKAGE void validatePolicySerialization(const JsonNode & capturedPerkRules, bool supportsV1, bool supportsV2);
 DLL_LINKAGE bool isSkeletonFamily(CreatureID creature);
+/// Copied direct-upgrade membership, retaining native invalid/base-ID short circuits.
+DLL_LINKAGE bool isSkeletonFamily(CreatureID creature, const std::optional<std::set<CreatureID>> & upgrades);
 /// Discount once with a wide numerator, round up, and retain a minimum cost of one.
 DLL_LINKAGE int discountedLeadershipRequirement(int baseRequirement, int reductionPercent);
 DLL_LINKAGE int skeletonLeadershipReductionPercent(const CGHeroInstance * hero, CreatureID creature);

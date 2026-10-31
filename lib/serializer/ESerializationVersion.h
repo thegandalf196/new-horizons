@@ -313,6 +313,7 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES = 1149, // captured Josephine, Gerwulf and Krellion policies
 	NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES = 1150, // captured Torosar and Gurnisson policies
 	NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES = 1151, // captured Sorsha, Straker, Yog and Ufretin policies and reserved melee effects
+	NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES = 1152, // unreleased combined successor; admit each module separately
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
@@ -654,3 +655,7 @@ static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES
 static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES
  > ESerializationVersion::NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES,
  "Ordinary combat policies must preserve machine policies");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES
+ > ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES,
+ "Extended ordinary specialties must follow the previous combat cohort");

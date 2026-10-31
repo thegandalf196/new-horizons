@@ -767,6 +767,7 @@ struct DLL_LINKAGE BattleCrisisCommandChanged : public CPackForClient
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 			throw std::runtime_error("Crisis Command transition requires its protocol");
 		if(h.saving) validateShape();
+		if(h.saving) state.validatePhysicalCureSerialization(h);
 		h & battleID; h & state; h & allowanceSide; h & allowances;
 		validateShape();
 	}
@@ -1589,6 +1590,9 @@ struct DLL_LINKAGE StartAction : public CPackForClient
 		if(h.saving && preCombatOrderState
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_BATTLE_PLAN))
 			throw std::runtime_error("Cannot discard Battle Plan StartAction state");
+		if(h.saving && !ba.spellCurePhysicalAffliction.empty())
+			ba.validatePhysicalCureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
 		h & battleID;
 		h & ba;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS))
@@ -2229,6 +2233,9 @@ struct DLL_LINKAGE BattleTriggerEffect : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && effect == BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES))
+			throw std::runtime_error("Unsupported incoming healing reduction trigger format");
 		if(h.saving && heroicSpiritGrant)
 		{
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
@@ -2239,6 +2246,9 @@ struct DLL_LINKAGE BattleTriggerEffect : public CPackForClient
 		h & battleID;
 		h & stackID;
 		h & effect;
+		if(!h.saving && effect == BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES))
+			throw std::runtime_error("Unsupported incoming healing reduction trigger format");
 		h & val;
 		h & additionalInfo;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))

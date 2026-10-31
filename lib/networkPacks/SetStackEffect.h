@@ -79,7 +79,8 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES)
-			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)))
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)))
 		{
 			for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
 				for(const auto & entry : *changes)

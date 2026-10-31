@@ -24,6 +24,7 @@ public:
 
 	static const BonusCustomSource undeadMoraleDebuff; // -2
 	static const BonusCustomSource newHorizonsNoQuarter;
+	static const BonusCustomSource newHorizonsGraveDust;
 };
 
 class DLL_LINKAGE BonusCustomSubtype : public StaticIdentifier<BonusCustomSubtype>

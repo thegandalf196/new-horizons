@@ -182,7 +182,8 @@ bool PlayerState::wasKeymasterVisited(MapObjectSubID keymasterColor) const
 void PlayerState::validateOwnedBonusSerialization(BonusSerializationContext context) const
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
-		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
+		&& context.extendedOrdinarySpecialtiesSupported) return;
 	validateExportedBonusSerialization(context);
 	for(const auto & bonus : battleBonuses)
 		bonus.validateAdjacencyCapabilitySerialization(context);
