@@ -175,6 +175,7 @@ set(test_SRCS
 		battle/NewHorizonsMachineSpecialtyTest.cpp
 		battle/NewHorizonsSequenceProtectionTest.cpp
 		battle/NewHorizonsMeleeSpecialtyTest.cpp
+		server/battles/NewHorizonsSorshaDamageTypeTest.cpp
 	battle/NewHorizonsParalyzingGazeTest.cpp
 		battle/NewHorizonsLivingInfernoTest.cpp
 		battle/FocusFireStateTest.cpp

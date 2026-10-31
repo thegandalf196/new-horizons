@@ -487,6 +487,8 @@ function Script:getArmorerFactor(info)
 	if hasBonusOfType(info.defenderBonuses, "GENERAL_DAMAGE_REDUCTION") then
 		reduction = info.defender:getBonuses({type = "GENERAL_DAMAGE_REDUCTION", subtype = DAMAGE_TYPE_ALL}):filter(function(bonus)
 			return bonus:getSource() ~= ENUM.BonusSource.spellEffect
+				and (info.physicalDamage
+					or bonus:getStacking() ~= "new-horizons:ordinary-creature-specialty:core:sorsha:shieldAndSword")
 		end):totalValue()
 	end
 	-- Breakthrough scales the explicit Defend-derived Bulwark contribution,
