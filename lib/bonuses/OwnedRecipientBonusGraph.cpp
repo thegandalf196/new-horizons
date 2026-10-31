@@ -97,6 +97,7 @@ struct OwnedRecipientBonusGraph::Node final : CBonusSystemNode
 		: CBonusSystemNode(input.facts.nodeType, true), facts(input.facts), primary(input.primaryRating) {}
 	bool isPrimaryRatingNode() const override { return primary; }
 };
+OwnedRecipientBonusGraph::OwnedRecipientBonusGraph() noexcept(std::is_nothrow_default_constructible_v<decltype(indices)> && std::is_nothrow_default_constructible_v<decltype(inheritedOnlyRecords)>) = default;
 OwnedRecipientBonusGraph::~OwnedRecipientBonusGraph() = default;
 std::unique_ptr<OwnedRecipientBonusGraph> OwnedRecipientBonusGraph::fromOwnedInputs(
 	std::vector<NodeInput> inputs, size_t root, std::vector<std::shared_ptr<const Bonus>> extraRecords)

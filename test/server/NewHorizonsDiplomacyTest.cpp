@@ -343,6 +343,9 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		// This override intentionally skips current hero policies, but retains
+		// the parent fixture's exact authored encounter size before world init.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
@@ -526,7 +529,7 @@ TEST(NewHorizonsDiplomacy, UsesTheCapturedPerkRegistryForRulesetGating)
 
 TEST_F(NewHorizonsDiplomacyLegacyGateTest, MapWithoutCapturedNewHorizonsPerksStaysOnTheLegacyPath)
 {
-	startGame(16, 2, CGCreature::Character::HOSTILE, {9, 5, 0});
+	ASSERT_NO_FATAL_FAILURE(startGame(16, 2, CGCreature::Character::HOSTILE, {9, 5, 0}));
 	const auto forecast = neutral->getNewHorizonsDiplomacyForecast(*hero);
 	EXPECT_FALSE(forecast.usesNewHorizonsRules);
 	EXPECT_FALSE(forecast.active);

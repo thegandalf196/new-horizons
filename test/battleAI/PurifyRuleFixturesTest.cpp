@@ -6,6 +6,7 @@
  */
 #include "StdInc.h"
 #include "PurifyRuleFixtures.h"
+#include "../spells/HistoricalCrusadeRules.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/constants/StringConstants.h"
@@ -41,6 +42,10 @@ TEST_F(PurifyRuleFixturesTest, SavedV2RecipeValidatesAndPreservesCanonicalPurify
 	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
 	EXPECT_TRUE(current.Struct().contains("heroLuck"));
 	EXPECT_TRUE(current.Struct().contains("heroMorale"));
+	EXPECT_EQ(historical, historicalCrusadeRules(current, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION));
+	// Existing consumers require these two spell rows to retain their own policies.
+	for(const auto * identity : {"new-horizons:spellLock", "new-horizons:regeneration"})
+		EXPECT_EQ(historical["spells"][identity], current["spells"][identity]);
 }
 
 TEST_F(PurifyRuleFixturesTest, HistoricalRecipeDoesNotRelaxTheProductionV3FieldGuard)
@@ -50,6 +55,13 @@ TEST_F(PurifyRuleFixturesTest, HistoricalRecipeDoesNotRelaxTheProductionV3FieldG
 	{
 		auto invalid = purifyTest::savedV2MagicRules();
 		invalid[key] = current[key];
+		EXPECT_THROW(newHorizonsMagic::validateRules(invalid), std::runtime_error);
+	}
+	// Returning an old recipe must not admit modern revision rows under its v2 label.
+	for(const auto * identity : {"new-horizons:focusMagic", "core:slow", "new-horizons:summonLivingArmor"})
+	{
+		auto invalid = purifyTest::savedV2MagicRules();
+		invalid["spells"][identity] = current["spells"][identity];
 		EXPECT_THROW(newHorizonsMagic::validateRules(invalid), std::runtime_error);
 	}
 }

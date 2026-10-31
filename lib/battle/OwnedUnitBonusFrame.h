@@ -99,7 +99,7 @@ private:
 	static Units adjacentEnvironment(const OwnedUnitEnvironment & environment, const Unit & geometry);
 	class Data;
 	std::unique_ptr<Data> data;
-	OwnedUnitBonusFrame() = default;
+	OwnedUnitBonusFrame() noexcept;
 	friend class OwnedUnitBonusFrameBatch;
 	static std::shared_ptr<OwnedUnitBonusFrame> build(Inputs inputs, const CUnitState * values,
 		std::shared_ptr<const OwnedRecipientBonusGraph> capturedRoot = nullptr);

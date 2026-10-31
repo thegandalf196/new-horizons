@@ -14525,167 +14525,167 @@
           "symbol": "NewHorizonsDiplomacyTest::std::optional<int3> neutralGuardApproachFor(const CGHeroInstance * movingHero) const#1"
         },
         {
-          "end": 349,
+          "end": 352,
           "start": 343,
           "symbol": "NewHorizonsDiplomacyLegacyGateTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 363,
-          "start": 352,
+          "end": 366,
+          "start": 355,
           "symbol": "ForecastInput eligibleInput()#1"
         },
         {
-          "end": 421,
-          "start": 366,
+          "end": 424,
+          "start": 369,
           "symbol": "TEST(NewHorizonsDiplomacy, UsesExactRankAndPerkThresholdBoundaries)#1"
         },
         {
-          "end": 458,
-          "start": 423,
+          "end": 461,
+          "start": 426,
           "symbol": "TEST(NewHorizonsDiplomacy, RecruitmentPactUsesExactFifteenPercentDiscount)#1"
         },
         {
-          "end": 493,
-          "start": 460,
+          "end": 496,
+          "start": 463,
           "symbol": "TEST(NewHorizonsDiplomacy, KeepsEligibilityAndAuthoredFreeExceptionsSeparateFromRank)#1"
         },
         {
-          "end": 512,
-          "start": 495,
+          "end": 515,
+          "start": 498,
           "symbol": "TEST(NewHorizonsDiplomacy, RejectsUnrepresentableFullStackGoldCosts)#1"
         },
         {
-          "end": 525,
-          "start": 514,
+          "end": 528,
+          "start": 517,
           "symbol": "TEST(NewHorizonsDiplomacy, UsesTheCapturedPerkRegistryForRulesetGating)#1"
         },
         {
-          "end": 538,
-          "start": 527,
+          "end": 541,
+          "start": 530,
           "symbol": "TEST_F(NewHorizonsDiplomacyLegacyGateTest, MapWithoutCapturedNewHorizonsPerksStaysOnTheLegacyPath)#1"
         },
         {
-          "end": 552,
-          "start": 540,
+          "end": 555,
+          "start": 543,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, UnselectedEnvoyDoesNotChangeTheVisibleNeutralPopup)#1"
         },
         {
-          "end": 604,
-          "start": 554,
+          "end": 607,
+          "start": 557,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsWillingPaidStackAtInclusiveFiveTileRangeWithoutChangingVisibility)#1"
         },
         {
-          "end": 621,
-          "start": 606,
+          "end": 624,
+          "start": 609,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsAuthoredFreeJoinWithoutThresholdOrGold)#1"
         },
         {
-          "end": 638,
-          "start": 623,
+          "end": 641,
+          "start": 626,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyReportsThresholdFailureAndGoldAtFiveTiles)#1"
         },
         {
-          "end": 658,
-          "start": 640,
+          "end": 661,
+          "start": 643,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, EnvoyDoesNotReportBeyondFiveTilesOrAtSquaredDistanceTwentySix)#1"
         },
         {
-          "end": 740,
-          "start": 660,
+          "end": 743,
+          "start": 663,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndSafeAdmission)#1"
         },
         {
-          "end": 734,
-          "start": 731,
+          "end": 737,
+          "start": 734,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, PaidOfferUsesSelectedAdvancedDiplomacyPerksAndSafeAdmission)::[](const std::string & text)#1"
         },
         {
-          "end": 758,
-          "start": 742,
+          "end": 761,
+          "start": 745,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, ExpertGrandDiplomatIsSelectedThroughNormalOffers)#1"
         },
         {
-          "end": 802,
-          "start": 760,
+          "end": 805,
+          "start": 763,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RankZeroCanAcceptOnlyAnAuthoredCompliantFreeStack)#1"
         },
         {
-          "end": 824,
-          "start": 804,
+          "end": 827,
+          "start": 807,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, DecliningAnOfferCanStillResolveTheFollowupFleeChoice)#1"
         },
         {
-          "end": 877,
-          "start": 826,
+          "end": 880,
+          "start": 829,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, ExplicitMapOptOutAndEligibilitySerializationRemainDistinct)#1"
         },
         {
-          "end": 935,
-          "start": 879,
+          "end": 938,
+          "start": 882,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, PeacemakerProtectsOnlyItsHeroAndExpiresAtTheNextWeek)#1"
         },
         {
-          "end": 959,
-          "start": 937,
+          "end": 962,
+          "start": 940,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, DeliberateAttackClearsPeacemakerTargetButKeepsWeeklyUse)#1"
         },
         {
-          "end": 1001,
-          "start": 961,
+          "end": 1004,
+          "start": 964,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, TributePaysAndRemovesAnUnwillingStackOnTheMovementPath)#1"
         },
         {
-          "end": 1034,
-          "start": 1003,
+          "end": 1037,
+          "start": 1006,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, InsufficientTributeGoldFallsThroughToCombatWithoutUsingTheQuota)#1"
         },
         {
-          "end": 1075,
-          "start": 1036,
+          "end": 1078,
+          "start": 1039,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, WillingPaidOfferDoesNotConsumeTribute)#1"
         },
         {
-          "end": 1120,
-          "start": 1077,
+          "end": 1123,
+          "start": 1080,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactSelectsNormallyArmsOnRecruitmentAndDiscountsTheNextContact)#1"
         },
         {
-          "end": 1144,
-          "start": 1122,
+          "end": 1147,
+          "start": 1125,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactIsConsumedByAnUnwillingNextContact)#1"
         },
         {
-          "end": 1169,
-          "start": 1146,
+          "end": 1172,
+          "start": 1149,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, AcceptedOfferWithoutAnyAdmittedTroopsDoesNotRearmRecruitmentPact)#1"
         },
         {
-          "end": 1232,
-          "start": 1171,
+          "end": 1235,
+          "start": 1174,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, AcceptedDiscountedOfferRearmsRecruitmentPactOnItsInclusiveExpiryDay)#1"
         },
         {
-          "end": 1231,
-          "start": 1228,
+          "end": 1234,
+          "start": 1231,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, AcceptedDiscountedOfferRearmsRecruitmentPactOnItsInclusiveExpiryDay)::[](const std::string & text)#1"
         },
         {
-          "end": 1349,
-          "start": 1234,
+          "end": 1352,
+          "start": 1237,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, WeeklyPeacemakerAndTributeStateIsVersionedAndValidated)#1"
         },
         {
-          "end": 1455,
-          "start": 1351,
+          "end": 1458,
+          "start": 1354,
           "symbol": "TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactStateRoundTripsAndDefaultsInThePreviousWeeklyFormat)#1"
         }
       ],
       "previous_review": "IR-NECROMANCY-V2-COMPLETE-CALLABLES-20261027",
       "rationale": "Complete existing callable inventory retained after bounded test-only fixture corrections: explicit neutral count capture and setup assertions, captured Leadership arithmetic, detached historical Diplomacy snapshots. Every existing signature and closing-body boundary is mapped through exact unchanged source lines. No new callable definitions or excluded source. Independent exact-source review required before applying this renewal; native77 actual pass is a separate execution result.",
-      "review": "IR-BANK-RELATED-FIXTURE-CALLABLES-20261029",
+      "review": "IR-DIPLOMACY-LEGACY-FIXTURE-COMPLETE-CALLABLES-20261031",
       "review_scope": "exact-test-fixture-callable-inventory-only-no-production-growth-allowance",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "e65930db9f31a65984e9fd29ce4e50d63f459b99f07b4e99769634968d9ef032"
+      "sha256": "a473e8663aec32e305db0bca1387c35b0274251e58c65d5044101736d70c9dc9"
     },
     "test/server/NewHorizonsMercenaryAdmissionTest.cpp": {
       "functions": [

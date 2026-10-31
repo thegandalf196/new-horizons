@@ -154,7 +154,8 @@ protected:
 		if(selectedCommand == HeroCommand::NONE)
 			return;
 
-		const JsonNode file(JsonPath::builtin("config/newHorizonsCombat"));
+		// Retain the historical eight-Order policy selected by HeroCommandFixture.
+		const JsonNode file(JsonPath::builtin("config/newHorizonsCombatV3"));
 		auto rules = file["combat"]["heroCommands"];
 		const auto commands = {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
 			HeroCommand::FOCUS_FIRE, HeroCommand::RIPOSTE, HeroCommand::BRACE,

@@ -3,6 +3,7 @@
 #include "BonusGraphQuery.h"
 #include "OwnedBonusEvaluationFacts.h"
 #include "OwnedBonusPayloads.h"
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 namespace battle { class OwnedUnitBonusFrame; }
@@ -67,7 +68,7 @@ private:
 	size_t rootIndex = 0;
 	size_t rootPayloadStart = 0;
 	size_t localPayloadCount = 0;
-	OwnedRecipientBonusGraph() = default;
+	OwnedRecipientBonusGraph() noexcept(std::is_nothrow_default_constructible_v<decltype(indices)> && std::is_nothrow_default_constructible_v<decltype(inheritedOnlyRecords)>);
 	static std::unique_ptr<OwnedRecipientBonusGraph> build(CaptureInput input,
 		std::shared_ptr<ownedBonusPayloads::Captured> payloads, size_t start, size_t localCount, size_t recordCount);
 	void validateRecord(size_t index) const;

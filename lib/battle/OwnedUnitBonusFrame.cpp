@@ -137,6 +137,7 @@ void OwnedUnitBonusFrame::validateRecord(const OwnedRecipientBonusGraph & graph,
 {
 	graph.validateRecord(index);
 }
+OwnedUnitBonusFrame::OwnedUnitBonusFrame() noexcept = default;
 OwnedUnitBonusFrame::~OwnedUnitBonusFrame() = default;
 const CUnitState & OwnedUnitBonusFrame::unit() const { return *data->subject; }
 JsonNode OwnedUnitBonusFrame::save() const { return data->subject->save(); }
