@@ -6,6 +6,11 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include <algorithm>
+#include <stdexcept>
+#include "../../../lib/spells/CurePhysicalAffliction.h"
+#include "../../../lib/battle/NewHorizonsGraveDust.h"
+
 #include "../../../lib/battle/NewHorizonsFrozen.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -54,6 +59,15 @@ protected:
 		beginCombat();
 		ASSERT_NE(target, nullptr);
 		ASSERT_NE(enemy, nullptr);
+	}
+
+	void installGraveDust(CStack * recipient, int value = 5000)
+	{
+		SetStackEffect effects;
+		effects.battleID = BattleID(0);
+		effects.toAdd.emplace_back(recipient->unitId(), newHorizonsGraveDust::records(value, PlayerColor(1)));
+		gameHandler->sendAndApply(effects);
+		ASSERT_EQ(spells::curePhysical::graveDustRemoval(*recipient).size(), 2u);
 	}
 
 	void freeze(CStack * recipient)
@@ -210,4 +224,110 @@ TEST_F(NewHorizonsCureTargetTest, OrdinaryDispelLeavesTypedFrozenMarker)
 	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*target));
 	EXPECT_TRUE(target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(SpellID(SpellID::SLOW))))->empty());
+}
+
+TEST_F(NewHorizonsCureTargetTest, GraveDustSelectedCureAtFullHealthRemovesOnlyItsCanonicalGroup)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target, 10000));
+	Bonus unrelated(BonusDuration::PERMANENT, BonusType::STACKS_SPEED, BonusSource::OTHER, 2, BonusSourceID());
+	auto retained = std::make_shared<Bonus>(unrelated);
+	retained->stacking = "grave-dust-cleanse-unrelated-control";
+	target->addNewBonus(retained);
+	const auto health = target->getAvailableHealth();
+	ASSERT_EQ(target->getSurvivingMissingHealth(), 0);
+	ASSERT_TRUE(canTarget({spells::Destination(target)}, "graveDust"));
+	ASSERT_TRUE(canTarget({spells::Destination(target->getPosition())}, "graveDust"));
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::CURE;
+	action.spellCurePhysicalAffliction = "graveDust";
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_TRUE(spells::curePhysical::graveDustRemoval(*target).empty());
+	EXPECT_EQ(target->getAvailableHealth(), health);
+	EXPECT_TRUE(std::ranges::any_of(target->getExportedBonusList(), [&retained](const auto & bonus)
+	{ return bonus == retained; }));
+}
+
+TEST_F(NewHorizonsCureTargetTest, GraveDustDoesNotRelaxCureLivingBodyOrOwnerAdmission)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target));
+	const auto mana = attackerSideHero->getManaAvailable();
+	for(const auto & entry : std::vector<std::pair<std::string, BattleHex>>{
+		{"core:skeleton", BattleHex(4, 1)}, {"core:waterElemental", BattleHex(7, 1)}, {"core:ballista", BattleHex(10, 1)}})
+	{
+		auto * body = addStack(BattleSide::ATTACKER, creatureByName(entry.first), entry.second, 1);
+		ASSERT_NE(body, nullptr);
+		ASSERT_NO_FATAL_FAILURE(installGraveDust(body));
+		EXPECT_FALSE(canTarget({spells::Destination(body)}, "graveDust"));
+		EXPECT_EQ(spells::curePhysical::graveDustRemoval(*body).size(), 2u);
+	}
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(enemy));
+	EXPECT_FALSE(canTarget({spells::Destination(enemy)}, "graveDust"));
+	EXPECT_FALSE(canTarget({spells::Destination(target)}, "unrelatedPhysicalKind"));
+	EXPECT_FALSE(canTarget({spells::Destination(target)}, "graveDust", SpellID::DISEASE));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+}
+
+TEST_F(NewHorizonsCureTargetTest, GraveDustDoesNotBecomeAnOrdinaryDispelEffect)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target));
+	const auto * dispel = SpellID(SpellID::DISPEL).toSpell();
+	attackerSideHero->addSpellToSpellbook(SpellID::DISPEL);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, dispel);
+	EXPECT_FALSE(dispel->battleMechanics(&cast)->canBeCastAt({spells::Destination(target)}));
+	Bonus slow(BonusDuration::N_TURNS, BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT,
+		-2, BonusSourceID(SpellID(SpellID::SLOW)));
+	slow.turnsRemain = 3;
+	SetStackEffect effect;
+	effect.battleID = BattleID(0);
+	effect.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{slow});
+	gameHandler->sendAndApply(effect);
+	ASSERT_TRUE(dispel->battleMechanics(&cast)->canBeCastAt({spells::Destination(target)}));
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::DISPEL;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_FALSE(target->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::SLOW)))));
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*target).size(), 2u);
+}
+
+TEST_F(NewHorizonsCureTargetTest, SelectedGraveDustRemovalPrecedesTheSameCureHealingReceipt)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	StacksInjured injury;
+	injury.battleID = BattleID(0);
+	auto & hit = injury.stacks.emplace_back();
+	hit.stackAttacked = target->unitId();
+	hit.damageAmount = 5;
+	target->prepareAttacked(hit, gameHandler->getRandomGenerator());
+	gameHandler->sendAndApply(injury);
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target, 10000));
+	const auto before = target->getAvailableHealth();
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::CURE;
+	action.spellCurePhysicalAffliction = "graveDust";
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_TRUE(spells::curePhysical::graveDustRemoval(*target).empty());
+	EXPECT_GT(target->getAvailableHealth(), before);
+}
+
+TEST_F(NewHorizonsCureTargetTest, ForgedGraveDustPhysicalGroupFailsClosedBeforeCureCosts)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto malformed = newHorizonsGraveDust::records(5000, PlayerColor(1)).front();
+	malformed.source = BonusSource::HERO_SPECIAL;
+	target->addNewBonus(std::make_shared<Bonus>(malformed)); // Deliberately invalid installed-state witness.
+	const auto mana = attackerSideHero->getManaAvailable();
+	EXPECT_THROW(canTarget({spells::Destination(target)}, "graveDust"), std::invalid_argument);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }

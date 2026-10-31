@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <optional>
 #include "../../lib/battle/NewHorizonsAerialSupremacy.h"
+#include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include "../../lib/battle/IBattleInfoCallback.h"
 #include "../../lib/battle/BattleSide.h"
 #include <memory>
@@ -31,15 +32,28 @@ class AttackPreviewHitContext
 	const std::shared_ptr<HypotheticBattle> & fortunePreview;
 	bool & endedActiveActivationByLastStand;
 public:
-	static void applyOrdinaryStrike(HypotheticBattle & branch, const BattleAttackInfo & attack, int64_t primaryDamage);
-	void applyPrimaryStatuses(const BattleAttackInfo & attack, int64_t primaryDamage, bool binding, bool gaze) const;
+	struct PrimaryStatusAdmission
+	{
+		bool manaLeeches;
+		bool serpentBinding;
+		bool soulHarvest;
+		bool primaryRider;
+	};
+	/// Preserve existing pre-preview status queries and their evaluation order.
+	static PrimaryStatusAdmission primaryStatusAdmission(const CBattleInfoCallback & state,
+		const BattleAttackInfo & attack);
+	static void applyLanceFormation(HypotheticBattle & branch,
+		const newHorizonsOrdinaryStrike::EffectPlan & prehit);
+	static void applyOrdinaryStrike(HypotheticBattle & branch, const BattleAttackInfo & attack, int64_t primaryDamage, int64_t primaryBodyHealthLoss = 0);
+	void applyPrimaryStatuses(const BattleAttackInfo & attack, int64_t primaryDamage, bool binding, bool gaze, int64_t primaryBodyHealthLoss = 0,
+		const newHorizonsOrdinaryStrike::EffectPlan & lanceFormation = newHorizonsOrdinaryStrike::EffectPlan{}) const;
 	/// Restore only exact captured rider overlays after ordinary CUnitState replay.
 	static void replayOrdinaryStrikeEffects(HypotheticBattle & destination, const AttackPossibility & captured);
 	/// Borrowed inputs for the ordered victim metadata phase. Admission has
-	/// already run; no state, damage calculation or score belongs to this phase.
+	/// already run; captures pre-hit self-effect facts, without damage or scoring.
 	struct VictimStrikeInput
 	{
-		const FortuneStrikeProjection & strike;
+		FortuneStrikeProjection & strike;
 		const battle::Unit & primary;
 		const battle::Unit & recipient;
 		int index;

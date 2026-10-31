@@ -13,6 +13,8 @@ inline constexpr auto IDENTITY = "new-horizons:ordinary-creature-specialty:burn"
 DLL_LINKAGE bool isBurn(const Bonus * bonus);
 DLL_LINKAGE Bonus marker(HeroTypeID hero, uint32_t source, int32_t rawDamage);
 DLL_LINKAGE int32_t damageBudget(int64_t actualBodyHealthLoss, int percent);
+/// Applied strike loss already excludes Guardian Spirit; remove the captured prehit temporary pool.
+DLL_LINKAGE int64_t bodyHealthLoss(int64_t appliedDamage, int64_t temporaryHealthBefore);
 DLL_LINKAGE bool eligible(const CBattleInfoCallback & battle, const BattleAttackInfo & attack);
 /// Actual body loss must exclude Guardian Spirit and temporary HP; capture at the hit seam.
 DLL_LINKAGE newHorizonsOrdinaryStrike::EffectPlan plan(const CBattleInfoCallback & battle,

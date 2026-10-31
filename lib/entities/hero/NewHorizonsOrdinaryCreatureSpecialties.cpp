@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "OrdinaryCreatureSpecialtyRegistry.h"
+#include "../../battle/NewHorizonsGnollHarriers.h"
 #include "../../battle/NewHorizonsMachineSpecialties.h"
 #include "../../battle/NewHorizonsOrdinaryRangedSpecialtyRules.h"
 #include "../../battle/NewHorizonsRangefinder.h"
@@ -340,6 +341,8 @@ int ordinaryCreatureAttackPercent(const CGHeroInstance * hero, const BattleAttac
 
 int ordinaryCreatureDamageMultiplier(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
+	if(const int harriers = newHorizonsGnollHarriers::damagePercent(battle, attack); harriers > 0)
+		return 100 + harriers;
 	if(attack.shooting)
 	{
 		if(!newHorizonsOrdinaryRangedSpecialtyRules::orcCasualtyShot(attack)
@@ -474,7 +477,9 @@ bool ordinaryCreatureDamageIsStateful(const CBattleInfoCallback & battle)
 			&& hero->getHeroType()->getJsonKey() != "core:christian"
 			&& hero->getHeroType()->getJsonKey() != "core:gurnisson"
 			&& hero->getHeroType()->getJsonKey() != "core:yog"
-			&& hero->getHeroType()->getJsonKey() != "core:ufretin"))
+			&& hero->getHeroType()->getJsonKey() != "core:ufretin"
+			&& hero->getHeroType()->getJsonKey() != "core:drakon"
+			&& hero->getHeroType()->getJsonKey() != "core:synca"))
 			continue;
 		const auto * row = ordinaryIdentity(hero->getHeroType()->getJsonKey(), hero->getPrimaryGrowthRules());
 		if(row && (*ordinaryPolicy(hero->getPrimaryGrowthRules()))[row->coefficient].Integer() > 0)

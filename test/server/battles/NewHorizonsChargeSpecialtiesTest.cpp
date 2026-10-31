@@ -13,6 +13,14 @@
 #if ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/HypotheticBattle.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
+#include "../../../AI/BattleAI/AttackPossibility.h"
+#include "../../../AI/BattleAI/AttackPreviewHitContext.h"
+#include "../../../AI/BattleAI/BattleExchangeAftermath.h"
+#include "../../../AI/BattleAI/BattleExchangeVariant.h"
+#include "../../../AI/BattleAI/VisibleCandidateWorld.h"
+#include "../../../AI/BattleAI/SpellTargetsEvaluator.h"
+#include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include <vcmi/Environment.h>
 #endif
 namespace
@@ -435,3 +443,180 @@ TEST_F(NewHorizonsChargeSpecialtiesTest, ActualShivaFlightWithHistoricalPolicyAb
 		BattleAction::makeMeleeAttack(actor, victim, BattleHex(7, 5))));
 	const auto damage = primaryDamageReceived(); ASSERT_EQ(damage.size(), 1u); EXPECT_EQ(damage.front(), ordinary.min);
 }
+
+#if ENABLE_BATTLE_AI
+namespace
+{
+template<typename T> auto chargeAIWire(const T & value)
+{
+	CMemorySerializer memory; memory.oser & value; return memory.extractBuffer();
+}
+
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, PrehitReceiptGrantsFormationAfterLethalPrimaryButNotWithoutAcceptedHit)
+{
+	prepare(); ChargeEnvironment env(gameState());
+	auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto branch = std::make_shared<HypotheticBattle>(&env, known);
+	auto source = branch->getForUpdate(actor->unitId()), target = branch->getForUpdate(victim->unitId());
+	BattleAttackInfo attack(source.get(), target.get(), 4, false);
+	FortuneStrikeProjection strike; strike.defenderId = victim->unitId();
+	AttackPreviewHitContext::prepareVictimStrike(attack, *branch, {strike, *target, *target, 0, 100, false});
+	ASSERT_EQ(strike.lanceFormation.add.size(), 1u);
+	battleExchangeAftermath::replayPrimaryStatuses(*branch, attack, strike, {}, false, false, 0);
+	EXPECT_FALSE(source->hasBonus(CSelector(charge::isLanceFormation)));
+	int64_t lethal = target->getAvailableHealth(); target->damage(lethal);
+	ASSERT_FALSE(target->alive());
+	battleExchangeAftermath::replayPrimaryStatuses(*branch, attack, strike,
+		{{target->unitId(), lethal}}, false, false, lethal);
+	EXPECT_TRUE(source->hasBonus(CSelector(charge::isLanceFormation)));
+	EXPECT_FALSE(actor->hasBonus(CSelector(charge::isLanceFormation)));
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, FullChargePreviewSelectedReplayAndNativeRetaliationAgree)
+{
+	prepare(); deterministicNative(false); victim->setPosition(BattleHex(8, 5)); beginCombat();
+	ASSERT_EQ(battle()->battleActiveUnit(), actor);
+	ChargeEnvironment env(gameState());
+	auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto parent = std::make_shared<HypotheticBattle>(&env, known);
+	auto sibling = std::make_shared<HypotheticBattle>(&env, parent);
+	auto selected = std::make_shared<HypotheticBattle>(&env, parent);
+	auto * nativeRng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator());
+	auto * fixtureRng = dynamic_cast<CRandomGenerator *>(getRNG());
+	ASSERT_NE(nativeRng, nullptr); ASSERT_NE(fixtureRng, nullptr);
+	const auto a = chargeAIWire(*nativeRng), b = chargeAIWire(*fixtureRng);
+	const auto liveSource = actor->save(), liveTarget = victim->save();
+	const auto reachable = parent->getReachability(actor);
+	const BattleHex approach(7, 5);
+	const int distance = SpellTargetEvaluator::physicalTravelDistance(reachable, approach);
+	ASSERT_EQ(distance, 4); ASSERT_TRUE(parent->isMeleeAttackPossible(actor, victim, approach));
+	DamageCache cache;
+	const auto preview = AttackPossibility::evaluate(BattleAttackInfo(actor, victim, distance, false), approach, cache, parent);
+	ASSERT_NE(preview.effectPreview, nullptr); ASSERT_FALSE(preview.fortuneStrikes.empty());
+	ASSERT_EQ(preview.fortuneStrikes.front().lanceFormation.add.size(), 1u);
+	EXPECT_EQ(preview.fortuneStrikes.front().lanceFormation.add.front().val, 4);
+	BattleExchangeVariant exchange; exchange.trackAttack(preview, selected, cache);
+	const auto * source = selected->battleGetUnitByID(actor->unitId());
+	EXPECT_TRUE(source->hasBonus(CSelector(charge::isLanceFormation)));
+	EXPECT_EQ(source->getAvailableHealth(), preview.attackerState->getAvailableHealth());
+	EXPECT_EQ(actor->save(), liveSource); EXPECT_EQ(victim->save(), liveTarget);
+	EXPECT_EQ(sibling->battleGetUnitByID(actor->unitId())->acquireState()->save(), liveSource);
+	EXPECT_EQ(chargeAIWire(*nativeRng), a); EXPECT_EQ(chargeAIWire(*fixtureRng), b);
+	BattleSetActiveStack activate; activate.battleID = BattleID(0); activate.stack = actor->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE; gameHandler->sendAndApply(activate);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeMeleeAttack(actor, victim, approach, false)));
+	EXPECT_EQ(actor->getAvailableHealth(), source->getAvailableHealth());
+	EXPECT_EQ(victim->getAvailableHealth(), selected->battleGetUnitByID(victim->unitId())->getAvailableHealth());
+	EXPECT_TRUE(actor->hasBonus(CSelector(charge::isLanceFormation)));
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, AlreadyComputedFlyingCandidatesCarryExactFlightButAbsentInputStaysZero)
+{
+	prepare(true); victim->setPosition(BattleHex(8, 5));
+	ChargeEnvironment env(gameState()); auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto branch = std::make_shared<HypotheticBattle>(&env, known); DamageCache cache;
+	PotentialTargets targets(branch->battleGetUnitByID(actor->unitId()), cache, branch);
+	bool longFlight = false;
+	for(const auto & candidate : targets.possibleAttacks)
+		if(!candidate.attack.shooting && candidate.attack.chargeDistance >= 4)
+		{
+			longFlight = true;
+			EXPECT_EQ(candidate.attack.voluntaryFlightDistance, candidate.attack.chargeDistance);
+			EXPECT_EQ(charge::stormWingsDefenseIgnorePercent(*branch, candidate.attack), 25);
+		}
+	EXPECT_TRUE(longFlight);
+	BattleAttackInfo missing(actor, victim, 4, false);
+	EXPECT_EQ(missing.voluntaryFlightDistance, 0);
+	EXPECT_EQ(charge::stormWingsDefenseIgnorePercent(*branch, missing), 0);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, VictimMetadataClearsFlightForCollateralLaterAndReactionBlows)
+{
+	prepare(true);
+	auto * collateral = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(10, 5), 10);
+	ASSERT_NE(collateral, nullptr);
+	ChargeEnvironment env(gameState()); auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto branch = std::make_shared<HypotheticBattle>(&env, known);
+	for(int variant = 0; variant < 5; ++variant)
+	{
+		BattleAttackInfo attack(actor, variant == 1 ? collateral : victim, 4, false); attack.voluntaryFlightDistance = 4;
+		if(variant == 3) attack.retaliation = true;
+		if(variant == 4) attack.bracePreemptive = true;
+		FortuneStrikeProjection strike;
+		AttackPreviewHitContext::prepareVictimStrike(attack, *branch,
+			{strike, *victim, variant == 1 ? *collateral : *victim, variant == 2 ? 1 : 0, 100, false});
+		EXPECT_EQ(attack.voluntaryFlightDistance, variant == 0 ? 4 : 0);
+	}
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, CacheRemembersFormationAcrossItsActivationExpiry)
+{
+	prepare(); ChargeEnvironment env(gameState()); auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto branch = std::make_shared<HypotheticBattle>(&env, known);
+	const auto plan = charge::lanceFormation(*branch, BattleAttackInfo(actor, victim, 4, false));
+	ASSERT_FALSE(plan.add.empty());
+	auto source = branch->getForUpdate(actor->unitId()); source->addUnitBonus(plan.add);
+	DamageCache remembered; remembered.cacheDamage(victim, source.get(), branch);
+	const auto protectedDamage = remembered.getDamage(victim, source.get(), branch);
+	source->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation));
+	DamageCache fresh; const auto expected = fresh.getDamage(victim, source.get(), branch);
+	EXPECT_GT(expected, protectedDamage);
+	EXPECT_EQ(remembered.getDamage(victim, source.get(), branch), expected);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, HiddenSourceCannotCaptureFormation)
+{
+	prepare(); ChargeEnvironment env(gameState());
+	auto view = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1));
+	auto branch = std::make_shared<HypotheticBattle>(&env, view);
+	EXPECT_FALSE(charge::requiresChargeMovementPreview(*branch, *actor, *victim));
+	BattleAttackInfo attack(actor, victim, 4, false); FortuneStrikeProjection strike;
+	AttackPreviewHitContext::prepareVictimStrike(attack, *branch, {strike, *victim, *victim, 0, 100, false});
+	EXPECT_TRUE(strike.lanceFormation.add.empty());
+}
+#endif
+
+#if ENABLE_BATTLE_AI
+TEST_F(NewHorizonsChargeSpecialtiesTest, LongFlightUsesSharedShivaDefenseConsumerInFullPrimaryPreview)
+{
+	prepare(true); victim->setPosition(BattleHex(8, 5));
+	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::PRIMARY_SKILL, BonusSource::OTHER, 20, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE)));
+	ChargeEnvironment env(gameState()); auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto branch = std::make_shared<HypotheticBattle>(&env, known);
+	const BattleHex approach(7, 5);
+	const auto reachability = branch->getReachability(actor);
+	ASSERT_TRUE(reachability.params.flying);
+	const int distance = SpellTargetEvaluator::physicalTravelDistance(reachability, approach);
+	ASSERT_EQ(distance, 4);
+	BattleAttackInfo attack(actor, victim, distance, false);
+	attack.voluntaryFlightDistance = distance;
+	const auto penetrated = branch->calculateDmgRange(attack).damage;
+	DamageCache cache;
+	const auto first = AttackPossibility::evaluate(attack, approach, cache, branch);
+	attack.voluntaryFlightDistance = 0;
+	const auto ordinary = branch->calculateDmgRange(attack).damage;
+	const auto missing = AttackPossibility::evaluate(attack, approach, cache, branch);
+	EXPECT_GT(penetrated.min, ordinary.min);
+	EXPECT_GT(first.defenderDamageReduce, missing.defenderDamageReduce);
+	EXPECT_FALSE(actor->hasBonus(CSelector(charge::isLanceFormation)));
+}
+#endif
+
+#if ENABLE_BATTLE_AI
+TEST_F(NewHorizonsChargeSpecialtiesTest, FutureActorReusesExistingApproachForChargeWithoutOtherReactionTriggers)
+{
+	prepare(true); deterministicNative(false); victim->setPosition(BattleHex(8, 5));
+	fixedDefense(30);
+	ChargeEnvironment env(gameState()); auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto branch = std::make_shared<HypotheticBattle>(&env, known);
+	auto source = branch->getForUpdate(actor->unitId()), target = branch->getForUpdate(victim->unitId());
+	ASSERT_TRUE(charge::requiresChargeMovementPreview(*branch, *source, *target));
+	const auto origin = source->getPosition(); const auto healthBefore = target->getAvailableHealth();
+	const auto noFlight = branch->battleExpectedLuckDamage(BattleAttackInfo(source.get(), target.get(), 0, false));
+	DamageCache cache; BattleExchangeVariant exchange;
+	exchange.trackAttack(source, target, false, true, cache, branch);
+	EXPECT_NE(source->getPosition(), origin);
+	EXPECT_TRUE(branch->isMeleeAttackPossible(source.get(), target.get()));
+	EXPECT_GT(healthBefore - target->getAvailableHealth(), noFlight);
+	EXPECT_EQ(actor->getPosition(), origin);
+	EXPECT_EQ(victim->getAvailableHealth(), healthBefore);
+}
+#endif

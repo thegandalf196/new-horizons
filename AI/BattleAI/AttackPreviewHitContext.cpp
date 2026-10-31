@@ -4,12 +4,18 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "GnollHarriersProjection.h"
+#include "../../lib/battle/NewHorizonsGnollHarriers.h"
 #include "DamageCacheMarks.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "AttackPreviewHitContext.h"
 #include "ParalyzingGazeProjection.h"
+#include "../../lib/battle/NewHorizonsManaLeeches.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "StackWithBonuses.h"
+#include "PhysicalStrikeProjection.h"
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
+#include "../../lib/battle/NewHorizonsChargeSpecialties.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -18,6 +24,32 @@
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
+
+AttackPreviewHitContext::PrimaryStatusAdmission AttackPreviewHitContext::primaryStatusAdmission(
+	const CBattleInfoCallback & state, const BattleAttackInfo & attackInfo)
+{
+	const auto * attacker = attackInfo.attacker;
+	const auto * defender = attackInfo.defender;
+	const auto manaLeechAttack = newHorizonsManaLeeches::entitlement(state, attacker, defender,
+		attackInfo.shooting, attackInfo.physicalDamage,
+		attackInfo.secondaryAttack || attackInfo.bracePreemptive || attackInfo.preemptiveDamagePercent > 0
+			|| attackInfo.cleaveDamagePercent > 0);
+	const auto manaLeechCounter = newHorizonsManaLeeches::entitlement(state, defender, attacker,
+		attackInfo.shooting, attackInfo.physicalDamage, false);
+	const bool projectsManaLeeches = manaLeechAttack.amount > 0 || manaLeechCounter.amount > 0;
+	const bool projectsSerpentBinding = newHorizonsSerpentsEmbrace::qualifiesAttack(state, attacker, defender,
+		attackInfo.shooting, attackInfo.physicalDamage, attackInfo.secondaryAttack || attackInfo.bracePreemptive
+			|| attackInfo.preemptiveDamagePercent > 0 || attackInfo.cleaveDamagePercent > 0)
+		|| newHorizonsSerpentsEmbrace::qualifiesAttack(state, defender, attacker, attackInfo.shooting,
+			attackInfo.physicalDamage, false);
+	const bool projectsSoulHarvest = newHorizonsSoulHarvest::qualifies(state, *attacker, *defender, attackInfo.physicalDamage)
+		|| newHorizonsSoulHarvest::qualifies(state, *defender, *attacker, attackInfo.physicalDamage);
+	const bool projectsGaze = paralyzingGazeAI::needsProjection(state, attackInfo) || newHorizonsOrdinaryStrike::needsProjection(state, attackInfo)
+		|| newHorizonsChargeSpecialties::requiresChargeMovementPreview(state, *attacker, *defender)
+		|| PhysicalStrikeProjection::needsProjection(state, attacker, defender)
+		|| newHorizonsGnollHarriers::trackingRequired(state);
+	return {projectsManaLeeches, projectsSerpentBinding, projectsSoulHarvest, projectsGaze};
+}
 
 AttackPreviewHitContext::AttackPreviewHitContext(const std::shared_ptr<HypotheticBattle> & branch,
 	bool & endedActivation) : fortunePreview(branch), endedActiveActivationByLastStand(endedActivation) {}
@@ -213,6 +245,7 @@ FortuneStrikeProjection AttackPreviewHitContext::capturePreemptiveStrike(const B
 	strike.defenderId = attack.defender->unitId();
 	strike.retaliation = attack.retaliation;
 	strike.bracePreemptive = brace;
+	strike.preemptiveDamagePercent = attack.preemptiveDamagePercent;
 	strike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
 		attack.attacker, attack.physicalDamage,
 		attack.shooting && attack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
@@ -257,6 +290,7 @@ void AttackPreviewHitContext::classifyPrimaryStrike(FortuneStrikeProjection & re
 {
 	receipt.shooting = attack.shooting;
 	receipt.retaliation = attack.retaliation;
+	receipt.preemptiveDamagePercent = attack.preemptiveDamagePercent;
 	receipt.aerialExcursion = aerial;
 	receipt.dreadCavalryDamagePercent = attack.dreadCavalryDamagePercent;
 	receipt.damageProvenance = battleAIDamageProvenance(attack.attacker, attack.physicalDamage);
@@ -277,26 +311,43 @@ bool AttackPreviewHitContext::anyNightProwler(const battle::Units & units)
 }
 
 void AttackPreviewHitContext::applyOrdinaryStrike(HypotheticBattle & branch,
-	const BattleAttackInfo & attack, int64_t primaryDamage)
+	const BattleAttackInfo & attack, int64_t primaryDamage, int64_t primaryBodyHealthLoss)
 {
 	auto current = attack;
 	current.attacker = branch.battleGetUnitByID(attack.attacker->unitId());
 	current.defender = branch.battleGetUnitByID(attack.defender->unitId());
-	const auto effect = newHorizonsOrdinaryStrike::plan(branch, current, primaryDamage);
-	if(effect.add.empty())
+	const auto effect = newHorizonsOrdinaryStrike::plan(branch, current, primaryDamage, primaryBodyHealthLoss);
+	if(effect.add.empty() && effect.remove.empty())
 		return;
 	auto target = branch.getForUpdate(effect.target);
 	target->removeUnitBonus(effect.remove);
 	target->addUnitBonus(effect.add);
 }
+void AttackPreviewHitContext::applyLanceFormation(HypotheticBattle & branch,
+	const newHorizonsOrdinaryStrike::EffectPlan & lanceFormation)
+{
+	if(lanceFormation.add.empty())
+		return;
+	const auto * recipient = branch.battleGetUnitByID(lanceFormation.target);
+	if(recipient && recipient->alive()
+		&& !recipient->isGhost() && !recipient->isTimeStopped())
+	{
+		auto source = branch.getForUpdate(lanceFormation.target);
+		source->removeUnitBonus(lanceFormation.remove);
+		source->addUnitBonus(lanceFormation.add);
+	}
+}
+
 void AttackPreviewHitContext::applyPrimaryStatuses(const BattleAttackInfo & attack,
-	int64_t primaryDamage, bool binding, bool gaze) const
+	int64_t primaryDamage, bool binding, bool gaze, int64_t primaryBodyHealthLoss,
+	const newHorizonsOrdinaryStrike::EffectPlan & lanceFormation) const
 {
 	if(!fortunePreview)
 		return;
 	fortunePreview->projectSerpentBinding(attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, binding);
 	paralyzingGazeAI::apply(*fortunePreview, attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, gaze);
-	applyOrdinaryStrike(*fortunePreview, attack, primaryDamage);
+	applyOrdinaryStrike(*fortunePreview, attack, primaryDamage, primaryBodyHealthLoss);
+	applyLanceFormation(*fortunePreview, lanceFormation);
 }
 
 void AttackPreviewHitContext::replayOrdinaryStrikeEffects(HypotheticBattle & destination,
@@ -304,13 +355,18 @@ void AttackPreviewHitContext::replayOrdinaryStrikeEffects(HypotheticBattle & des
 {
 	if(!captured.effectPreview)
 		return;
+	PhysicalStrikeProjection::restoreEffects(destination, *captured.effectPreview);
 	std::vector<uint32_t> recipients;
 	if(captured.attackerState)
 		recipients.push_back(captured.attackerState->unitId());
 	for(const auto & affected : captured.affectedUnits)
 		if(affected && !vstd::contains(recipients, affected->unitId()))
 			recipients.push_back(affected->unitId());
-	const CSelector rider(newHorizonsOrdinaryStrike::isStrikeEffect);
+	const CSelector rider([](const Bonus * bonus)
+	{
+		return newHorizonsOrdinaryStrike::isStrikeEffect(bonus)
+			|| newHorizonsChargeSpecialties::isLanceFormation(bonus);
+	});
 	for(const auto id : recipients)
 	{
 		const auto * final = captured.effectPreview->battleGetUnitByID(id);
@@ -327,6 +383,8 @@ void AttackPreviewHitContext::replayOrdinaryStrikeEffects(HypotheticBattle & des
 		target->removeUnitBonus(rider);
 		target->addUnitBonus(values);
 	}
+	// This owner restores a freshly selected action snapshot, not a cached movement event.
+	gnollHarriersAI::restoreEffects(destination, captured, captured.validatedVoluntaryApproach);
 }
 
 void AttackPreviewHitContext::prepareVictimStrike(BattleAttackInfo & attack,
@@ -343,10 +401,15 @@ void AttackPreviewHitContext::prepareVictimStrike(BattleAttackInfo & attack,
 	// while secondaryAttack prevents it from inheriting the Order.
 	if(input.index > 0)
 		attack.chargeDistance = 0;
+	if(input.index > 0 || attack.secondaryAttack || attack.retaliation
+		|| attack.bracePreemptive || attack.preemptiveDamagePercent != 0 || attack.cleaveDamagePercent != 0)
+		attack.voluntaryFlightDistance = 0;
 	if(input.strike.perfectMoment || input.strike.perfectFortune)
 	{
 		attack.luckyStrike = !attack.secondaryAttack || state.getBattle()->getLuckRollRules().affectsAllTargets;
 		attack.unluckyStrike = false;
 	}
 	attack.defenderPos = attack.defender->getPosition();
+	if(!attack.secondaryAttack)
+		input.strike.lanceFormation = newHorizonsChargeSpecialties::lanceFormation(state, attack);
 }

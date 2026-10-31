@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "PrismaticVanguardProjection.h"
+#include "PhysicalStrikeProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "HypotheticBattle.h"
@@ -193,6 +195,7 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	const bool redeploy = unit->defended() && !unit->armorerLastStandDefending;
 	const bool waited = unit->waited();
 	newHorizonsHeroicSpirit::beginActivation(*unit, reason);
+	prismaticVanguardAI::begin(*this, *unit, reason);
 	{
 		LifecycleTimingScope measurement(timing ? &timing->activationExpiryRemoval : nullptr);
 		unit->removeUnitBonus(CSelector(Bonus::UntilNextCreatureActivation),
@@ -239,9 +242,11 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 		const bool wasAlive = unit->alive();
 		const auto rebirthSource = wasAlive ? captureElementalRebirthSource(*unit) : std::nullopt;
 		const bool nativeRebirth = hasReadyNativeRebirth(unit.get());
+		const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(*this, *unit);
 		unit->damage(poisonDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 		if(wasAlive && !unit->alive())
 			releaseSerpentBindingsForDeath(*unit);
+		if(destroyed) PhysicalStrikeProjection::completeDamagePacket(*this, std::span(&*destroyed, 1));
 		if(rebirthSource)
 			projectElementalRebirth(unit.get(), *rebirthSource,
 				wasAlive && !unit->alive(), unit->isClone(), nativeRebirth);
@@ -401,6 +406,7 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 	resetActiveUnit();
 	newHorizonsForestAmbush::acceptWait(*this, *unit);
 	unit->afterWait();
+	prismaticVanguardAI::completeWait(*unit);
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		fortuneStates.at(side).tactics.endActivation();
 	if(newHorizonsBattlecraft::hasOverwatch(battleGetOwnerHero(unit.get()))

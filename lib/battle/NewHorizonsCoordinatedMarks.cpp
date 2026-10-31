@@ -7,6 +7,7 @@
 #include "Unit.h"
 #include "../CCreatureHandler.h"
 #include "../bonuses/BonusParameters.h"
+#include "../bonuses/BonusList.h"
 #include "../entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include <stdexcept>
 namespace newHorizonsCoordinatedMarks
@@ -99,7 +100,8 @@ Penetration penetration(const CBattleInfoCallback & battle, const BattleAttackIn
 	Penetration result;
 	if(!primaryPhysical(battle, attack) || !attack.defender->hasBonusOfType(BonusType::NONE))
 		return result;
-	for(const auto & bonus : *attack.defender->getBonusesOfType(BonusType::NONE))
+	const auto bonuses = attack.defender->getBonusesOfType(BonusType::NONE);
+	for(const auto & bonus : *bonuses)
 		if(applies(battle, attack, *bonus))
 		{
 			auto & percent = isConsecrated(*bonus) ? result.creatureDefensePercent : result.physicalProtectionPercent;
@@ -120,7 +122,8 @@ std::vector<Bonus> consumed(const CBattleInfoCallback & battle, const BattleAtta
 	std::vector<Bonus> result;
 	if(!primaryPhysical(battle, attack) || !attack.defender->hasBonusOfType(BonusType::NONE))
 		return result;
-	for(const auto & bonus : *attack.defender->getBonusesOfType(BonusType::NONE))
+	const auto bonuses = attack.defender->getBonusesOfType(BonusType::NONE);
+	for(const auto & bonus : *bonuses)
 		if(applies(battle, attack, *bonus))
 			result.push_back(*bonus);
 	return result;
@@ -158,7 +161,8 @@ newHorizonsOrdinaryStrike::EffectPlan prepareReturn(const CBattleInfoCallback & 
 	if(!effect)
 		return result;
 	result.target = victim.unitId();
-	for(const auto & old : *victim.getBonusesOfType(BonusType::NONE))
+	const auto bonuses = victim.getBonusesOfType(BonusType::NONE);
+	for(const auto & old : *bonuses)
 		if(isMark(old.get()) && !isConsecrated(*old))
 			result.remove.push_back(*old);
 	result.add.push_back(*effect);

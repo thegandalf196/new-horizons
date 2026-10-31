@@ -12,6 +12,7 @@
 #include "../bonuses/ProjectedBonusView.h"
 #include "../mapObjects/army/CArmedInstance.h"
 #include <stdexcept>
+#include <set>
 
 namespace battle
 {
@@ -63,6 +64,30 @@ const IBonusBearer * CUnitStateDetached::getBonusBearer() const
 	return this; // Ordinary detached wrappers retain their existing query identity.
 }
 
+const IBonusBearer * CUnitStateDetached::sourceLocalEffectProvider() const
+{
+	std::set<const CUnitStateDetached *> visited;
+	const CUnitStateDetached * context = this;
+	while(true)
+	{
+		if(!visited.insert(context).second)
+			throw std::logic_error("Cyclic detached local-effect provenance");
+		if(const auto * projected = context->projectedBonusProvider())
+		{
+			if(projected->evaluatedUnit() != context)
+				throw std::logic_error("Local-effect provenance belongs to another detached unit");
+			return projected;
+		}
+		const auto * source = context->unitBonusProvider();
+		if(!source || !context->hasUnitInfoAncestor(*source) || !context->hasBonusProviderAncestor(*source))
+			throw std::runtime_error("Detached local-effect provenance requires its actual info and provider");
+		if(const auto * detached = dynamic_cast<const CUnitStateDetached *>(source))
+			context = detached;
+		else
+			return source;
+	}
+}
+
 void CUnitStateDetached::onBattleFormChanged()
 {
 	CUnitState::onBattleFormChanged();
@@ -108,10 +133,14 @@ TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppressio
 			? bonus->getUnstackedBonuses(selector) : bonus->getAllBonuses(selector, cachingStr), selector, veteranCohesionEarned);
 	};
 
-	if(!hasBattleFormState())
-		return sourceBonuses();
+	const bool formState = hasBattleFormState();
+	if(!formState && !unitCreatureResolver())
+		return sourceBonuses(); // Legacy provider keeps the original no-form return.
 
-	const CreatureID sourceCreature = unit->unitType()->getId();
+	const auto * ownedSource = completeOwnedFormSource();
+	if(!formState && !ownedSource)
+		return sourceBonuses();
+	const CreatureID sourceCreature = ownedSource ? ownedSource->unitType()->getId() : unit->unitType()->getId();
 	const CreatureID effectiveCreature = battleFormCreature();
 	const auto originalBonuses = sourceBonuses();
 	if(effectiveCreature == sourceCreature)
@@ -138,7 +167,9 @@ TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppressio
 	const auto * fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceBonusBearer);
 	if(!fallbackArmy)
 		fallbackArmy = dynamic_cast<const CArmedInstance *>(sourceUnitInfo);
-	const auto effectiveNativeBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, selector, unstacked);
+	auto effectiveNativeBonuses = ownedNativeFormBonuses(*this, selector, unstacked);
+	if(!effectiveNativeBonuses)
+		effectiveNativeBonuses = getBattleFormNativeBonuses(*this, sourceStack, fallbackArmy, selector, unstacked);
 	for(const auto & nativeBonus : *effectiveNativeBonuses)
 		result->push_back(nativeBonus);
 	if(!unstacked)
@@ -160,4 +191,65 @@ bool CUnitStateDetached::isBonusCacheable() const
 bool battle::CUnitStateDetached::usesUnitInfo(const IUnitInfo & expected) const noexcept
 {
 	return unit == &expected;
+}
+
+bool battle::CUnitStateDetached::hasUnitInfoAncestor(const IUnitInfo & expected) const
+{
+	std::set<const IUnitInfo *> visited;
+	const IUnitInfo * value = unit;
+	while(value)
+	{
+		if(value == &expected) return true;
+		if(!visited.insert(value).second) throw std::logic_error("Cyclic detached unit-info ancestry");
+		const auto * detached = dynamic_cast<const CUnitStateDetached *>(value);
+		if(!detached) return false;
+		value = detached->unit;
+	}
+	return false;
+}
+TConstBonusListPtr battle::CUnitStateDetached::ownedNativeFormBonuses(
+	const CUnitState & form, const CSelector & selector, bool unstacked) const
+{
+	if(const auto * view = projectedBonusProvider())
+	{
+		if(view->evaluatedUnit() != this) throw std::logic_error("Owned form source view belongs to another unit");
+		return view->ownedNativeFormBonuses(form, selector, unstacked);
+	}
+	if(const auto * source = unitBonusProvider()) return source->ownedNativeFormBonuses(form, selector, unstacked);
+	return {};
+}
+
+bool battle::CUnitStateDetached::hasBonusProviderAncestor(const IBonusBearer & expected) const
+{
+	std::set<const IBonusBearer *> visited;
+	const IBonusBearer * value = bonus;
+	while(value)
+	{
+		if(value == &expected) return true;
+		if(!visited.insert(value).second) throw std::logic_error("Cyclic detached bonus-provider ancestry");
+		const auto * detached = dynamic_cast<const CUnitStateDetached *>(value);
+		if(!detached) return false;
+		value = detached->bonus;
+	}
+	return false;
+}
+const battle::Unit * battle::CUnitStateDetached::completeOwnedFormSource() const
+{
+	std::set<const CUnitStateDetached *> visited;
+	const CUnitStateDetached * context = this;
+	while(context)
+	{
+		if(const auto * view = context->projectedBonusProvider())
+		{
+			const auto * source = view->completeOwnedFormSource();
+			if(source && (view->evaluatedUnit() != context || source != context))
+				throw std::logic_error("Owned complete-form source has a mismatched evaluated identity");
+			return source;
+		}
+		const auto * next = dynamic_cast<const CUnitStateDetached *>(context->unitBonusProvider());
+		if(!next) return nullptr; // Legacy source: no allocation or changed descriptor lookup.
+		if(!visited.insert(context).second) throw std::logic_error("Cyclic detached form-provider ancestry");
+		context = next;
+	}
+	return nullptr;
 }

@@ -14,9 +14,12 @@
 /// Unit identities/views must remain alive and ID-stable under the caller's
 /// world lease. Values may advance between queries; this is NOT a frozen copy.
 /// Membership completeness and graph collection remain the world owner's duty.
+namespace battle { class OwnedUnitEnvironment; }
 class DLL_LINKAGE ProjectedBonusRoster final
 {
 	friend class ProjectedBonusGraph;
+	friend class battle::OwnedUnitEnvironment;
+	std::vector<const battle::Unit *> adjacentUnitsAt(const battle::Unit & unit) const;
 	std::vector<const battle::Unit *> units;
 	bool orderedOccurrences = false;
 	void appendOccurrence(const battle::Unit & unit);

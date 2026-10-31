@@ -38,7 +38,7 @@ def check(controller, interface, adapter, session):
     assert "void BattleInterface::installCureAfflictionUI()" not in interface
     assert "void BattleInterface::installCureAfflictionUI()" in adapter
     assert "newHorizonsMagic::cureEnabled" in adapter
-    assert "if(choices.empty() && !frozenChoice)" in adapter
+    assert "if(choices.empty() && physicalChoices.empty())" in adapter
     assert "CObjectListWindow" in adapter
     assert "owner.get() != this" in adapter
     assert "std::weak_ptr<Battle> battle;" in session
@@ -50,15 +50,21 @@ def check(controller, interface, adapter, session):
     assert guarded.index("endCastingSpell()") < guarded.index("std::forward<Continue>(afterEnding)")
     installer = braced_region(adapter, "void BattleInterface::installCureAfflictionUI()")
     confirm = braced_region(installer, "auto confirm =")
-    assert "[session, pending, localBattleID, targetID, heroID, choices, frozenChoice]" in confirm
+    assert "[session, pending, localBattleID, targetID, heroID, choices, physicalChoices]" in confirm
     assert "session.confirm(CPlayerInterface::battleInt" in confirm
     assert "initialTarget" not in confirm and "[this" not in confirm
     assert "battleGetUnitByID(targetID)" in confirm
     assert "hero->id != heroID" in confirm
     assert confirm.index("hero->id != heroID") < confirm.index("battleMakeSpellAction")
     assert confirm.index("canBeCastAt(targetCheck, problem)") < confirm.index("battleMakeSpellAction")
-    assert 'action.spellCureAffliction = removeFrozen ? SpellID(SpellID::NONE) : choices[selected]' in confirm
-    assert 'action.spellCurePhysicalAffliction = removeFrozen ? "frozen" : ""' in confirm
+    assert 'action.spellCureAffliction = removePhysical ? SpellID(SpellID::NONE) : choices[selected]' in confirm
+    assert 'action.spellCurePhysicalAffliction = physicalKind' in confirm
+    assert "physicalChoices[selected - choices.size()]" in confirm
+    assert "choices.size() + physicalChoices.size()" in confirm
+    assert "curePhysicalAfflictionChoices(rules, cureTarget)" in controller
+    assert "curePhysicalAfflictionChoices(callback->getBattle()->getMagicRules(), initialTarget)" in adapter
+    assert 'spells::curePhysical::present(rules, *target, "graveDust")' in adapter
+    assert "spells::curePhysical::livingTarget(target)" in adapter
     cancel = braced_region(installer, "auto cancel =" if "auto cancel =" in installer else "window->onExit =")
     assert "[session]" in cancel
     assert "session.cancel(CPlayerInterface::battleInt)" in cancel
@@ -118,6 +124,8 @@ def main():
         (3, "!owner->makingTurn()", "false"),
         (2, "battleGetUnitByID(targetID)", "nullptr"),
         (2, "hero->id != heroID", "false"),
+        (2, "physicalChoices[selected - choices.size()]", '"frozen"'),
+        (2, 'spells::curePhysical::present(rules, *target, "graveDust")', "true"),
         (2, "session.cancel(CPlayerInterface::battleInt)", ""),
     ):
         mutated = list(sources)
@@ -128,7 +136,7 @@ def main():
             continue
         raise AssertionError(f"missed unsafe mutation: {before}")
     check_layouts(sources)
-    print("PASS: Cure extracted source wiring; seven unsafe mutations rejected")
+    print("PASS: Cure extracted source wiring; nine unsafe mutations rejected")
     print("PASS: relocated-helper/literal positives and four unsafe-cancel negatives")
     print("NOT compiled, native gameplay, or graphical acceptance")
 

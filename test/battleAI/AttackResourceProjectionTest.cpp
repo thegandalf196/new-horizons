@@ -616,3 +616,48 @@ TEST_F(AttackResourceProjectionTest, TrackingFirstOfTwoRetaliationsConsumesItWhi
 	model->nextRound();
 	EXPECT_EQ(model->getForUpdate(defender->unitId())->counterAttacks.available(), 2);
 }
+
+TEST_F(AttackResourceProjectionTest, FutureActorKilledAtActivationCannotContributeAnOrdinaryAttack)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	auto * opening = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(7, 5), 1000);
+	auto * followup = addStack(BattleSide::ATTACKER, creatureByName("core:ogre"), BattleHex(8, 4), 1000);
+	auto * defender = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(8, 5), 1000);
+	for(const auto [unit, speed] : {std::pair{opening, 20}, {followup, 10}})
+		unit->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+			BonusType::STACKS_SPEED, BonusSource::OTHER, speed, BonusSourceID()));
+	defender->movedThisRound = true;
+	// Existing poison deliberately exercises the correctness guard without
+	// enabling the separately held burn nextTurn routing.
+	followup->physicalPoisonBaseDamage = followup->getAvailableHealth();
+	followup->physicalPoisonActivationsRemaining = 3;
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = opening->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	prepareModel();
+	const auto attack = AttackPossibility::evaluate(BattleAttackInfo(opening, defender, 0, false),
+		opening->getPosition(), cache, model);
+	PotentialTargets targets(opening, cache, model);
+	BattleExchangeEvaluator evaluator(callback, environment, 1.0f, 1);
+	evaluator.updateReachabilityMap(model);
+	const auto units = evaluator.getExchangeUnits(attack, 0, targets, model);
+	ASSERT_EQ(units.units.at(0).size(), 2u);
+	ASSERT_EQ(units.units.at(0).at(1)->unitId(), followup->unitId());
+	const auto actual = evaluator.evaluateExchange(attack, 0, targets, cache, model);
+	auto reference = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	BattleExchangeVariant expected;
+	expected.trackAttack(attack, reference, cache);
+	reference->nextTurn(followup->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	ASSERT_FALSE(reference->battleGetUnitByID(followup->unitId())->alive());
+	const auto expectedScore = (expected.getScore().enemyDamageReduce - expected.getScore().ourDamageReduce) / 2.0f;
+	EXPECT_FLOAT_EQ(actual, expectedScore);
+	EXPECT_TRUE(followup->alive());
+	EXPECT_EQ(followup->physicalPoisonActivationsRemaining, 3);
+}

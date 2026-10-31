@@ -84,6 +84,7 @@ public:
 	bool counteringSelector(const Bonus * bonus) const;
 
 private:
+	bool canCastCure(Problem & problem, const CGHeroInstance * castingHero) const;
 	struct ResistanceRoll
 	{
 		uint32_t unitId;

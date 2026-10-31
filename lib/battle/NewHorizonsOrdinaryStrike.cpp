@@ -1,8 +1,12 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsOrdinaryStrike.h"
+#include "NewHorizonsCreatureBurn.h"
+#include "NewHorizonsReactiveDefense.h"
 #include "NewHorizonsCoordinatedMarks.h"
 #include "NewHorizonsInfernoStrikeDebuffs.h"
+#include "NewHorizonsGraveDust.h"
+#include "NewHorizonsGraveDustStrike.h"
 #include "NewHorizonsSepulchralGrip.h"
 #include "NewHorizonsShieldAndSword.h"
 #include "BattleAttackInfo.h"
@@ -17,7 +21,9 @@ namespace newHorizonsOrdinaryStrike
 {
 bool isStrikeEffect(const Bonus * bonus)
 {
-	if(newHorizonsInfernoStrikeDebuffs::isEffect(bonus) || newHorizonsCoordinatedMarks::isMark(bonus) || newHorizonsSepulchralGrip::isEffect(bonus) || newHorizonsShieldAndSword::isProtection(bonus))
+	if(newHorizonsGraveDust::isEffect(bonus)) return true;
+	if(newHorizonsCreatureBurn::isBurn(bonus) || newHorizonsReactiveDefense::isIronHideSpent(bonus) || newHorizonsReactiveDefense::isSolidarityProtection(bonus)
+		|| newHorizonsInfernoStrikeDebuffs::isEffect(bonus) || newHorizonsCoordinatedMarks::isMark(bonus) || newHorizonsSepulchralGrip::isEffect(bonus) || newHorizonsShieldAndSword::isProtection(bonus))
 		return true;
 	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL
 		|| bonus->duration != BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION
@@ -53,7 +59,12 @@ bool mayChangeInitiative(const CBattleInfoCallback & battle)
 bool needsProjection(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	return attack.attacker && attack.defender
-		&& (newHorizonsInfernoStrikeDebuffs::primaryHit(battle, attack)
+		&& (newHorizonsGraveDustStrike::eligible(battle, attack)
+			|| newHorizonsCreatureBurn::eligible(battle, attack)
+			|| (!attack.shooting && newHorizonsCreatureBurn::eligible(battle, attack.reverse()))
+			|| newHorizonsReactiveDefense::ironHidePercent(battle, attack) > 0
+			|| (!attack.shooting && newHorizonsReactiveDefense::ironHidePercent(battle, attack.reverse()) > 0)
+			|| newHorizonsInfernoStrikeDebuffs::primaryHit(battle, attack)
 			|| (!attack.shooting && newHorizonsInfernoStrikeDebuffs::primaryHit(battle, attack.reverse()))
 			|| newHorizonsCoordinatedMarks::needsProjection(battle, attack) || (!attack.shooting && !attack.retaliation && newHorizonsShieldAndSword::eligible(battle, *attack.attacker))
 			|| newHorizonsSepulchralGrip::primaryHit(battle, attack)
@@ -61,7 +72,7 @@ bool needsProjection(const CBattleInfoCallback & battle, const BattleAttackInfo 
 			|| (!attack.shooting && newHorizonsSepulchralGrip::primaryHit(battle, attack.reverse()))
 			|| (!attack.shooting && newHorizonsHeroes::ordinaryCreatureStrikeBonus(battle, attack.reverse())));
 }
-EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & attack, int64_t primaryDamage)
+EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & attack, int64_t primaryDamage, int64_t primaryBodyHealthLoss)
 {
 	EffectPlan result;
 	if(attack.attacker && attack.defender)
@@ -75,6 +86,12 @@ EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & att
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender))
 		return result;
+	if(auto spent = newHorizonsReactiveDefense::ironHideSpending(battle, attack))
+	{
+		for(const auto & old : *attack.defender->getUnstackedBonuses(CSelector(newHorizonsReactiveDefense::isIronHideSpent)))
+			result.remove.push_back(*old);
+		result.add.push_back(std::move(*spent));
+	}
 	auto effect = primaryDamage > 0 ? newHorizonsHeroes::ordinaryCreatureStrikeBonus(battle, attack) : nullptr;
 	if(!effect && primaryDamage > 0)
 		effect = newHorizonsSepulchralGrip::primaryHit(battle, attack);
@@ -83,7 +100,12 @@ EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & att
 	if(!effect)
 		effect = newHorizonsCoordinatedMarks::consecratingShot(battle, attack);
 	if(!effect)
+	{
+		const auto pending = newHorizonsCreatureBurn::plan(battle, attack, primaryBodyHealthLoss);
+		result.remove.insert(result.remove.end(), pending.remove.begin(), pending.remove.end());
+		result.add.insert(result.add.end(), pending.add.begin(), pending.add.end());
 		return result;
+	}
 	result.target = attack.defender->unitId();
 	// Match only this specialty's explicit local status. No unrelated source,
 	// spell, Initiative modifier or MDR contributor is removed or rewritten.

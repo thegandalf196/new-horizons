@@ -11,6 +11,7 @@
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
+#include "PhysicalStrikeProjection.h"
 #include "DefendEvaluation.h"
 #include "SummonEvaluation.h"
 #include "BattleEvaluatorProjection.h"
@@ -3306,9 +3307,7 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		BattleAttackInfo reaction(projectedTarget.get(), projectedEnemy.get(), 0, false);
 		reaction.retaliation = true;
 		reaction.preemptiveDamagePercent = percent;
-		auto reactionDamage = defendedPreview->battleExpectedLuckDamage(reaction);
-		vstd::amin(reactionDamage, projectedEnemy->getAvailableHealth());
-		projectedEnemy->damage(reactionDamage);
+		const auto reactionDamage = PhysicalStrikeProjection::applyExpectedReactionDamage(*defendedPreview, reaction, *projectedEnemy);
 		if(!projectedEnemy->alive())
 		{
 			for(auto & projectedThreat : threats)

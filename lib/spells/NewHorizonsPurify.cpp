@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsPurify.h"
+#include "CurePhysicalAffliction.h"
 #include "../battle/PhysicalAffliction.h"
 
 #include "CSpell.h"
@@ -221,9 +222,10 @@ std::vector<EligibleStack> eligibleStacks(const CBattleInfoCallback & battle, co
 		stack.spellEffectGroups = eligibleSpellEffectGroups(state->getMagicRules(), unit);
 		stack.physicalPoison = hasPhysicalPoison(unit);
 		stack.physicalPoisonAutomaticallyCleared = purifierPerk && stack.physicalPoison;
+		stack.graveDustAutomaticallyCleared = purifierPerk && !spells::curePhysical::graveDustRemoval(*unit).empty();
 		stack.maximumSpellEffectChoices = cap;
 
-		if(stack.spellEffectGroups.empty() && !stack.physicalPoison)
+		if(stack.spellEffectGroups.empty() && !stack.physicalPoison && !stack.graveDustAutomaticallyCleared)
 			continue;
 		result.push_back(std::move(stack));
 	}

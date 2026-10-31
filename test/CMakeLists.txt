@@ -134,6 +134,9 @@ set(test_SRCS
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
+		battle/HealingReceiptTest.cpp
+		battle/IncomingHealingTest.cpp
+		battle/GraveDustIdentityTest.cpp
 		battle/CUnitStateLifecycleTest.cpp
 		battle/UnitStateValueExchangeTest.cpp
 		battle/PreparedStackStateTransferTest.cpp
@@ -175,7 +178,17 @@ set(test_SRCS
 		battle/NewHorizonsMaintenanceSpecialtyTest.cpp
 		battle/NewHorizonsMachineSpecialtyTest.cpp
 		battle/NewHorizonsSequenceProtectionTest.cpp
+		server/battles/NewHorizonsCreatureBurnTest.cpp
+		server/battles/NewHorizonsBurnProducerTest.cpp
+		server/battles/NewHorizonsStingHarriersTest.cpp
+		server/battles/BodyHealthLossTest.cpp
+		battle/NewHorizonsReactiveDefenseTest.cpp
+		server/battles/NewHorizonsSolidarityDamageTypeTest.cpp
+	battle/PrismaticVanguardTest.cpp
+	battle/PrismaticVanguardCoreOnlyTest.cpp
+	server/battles/PrismaticVanguardProducerTest.cpp
 		battle/NewHorizonsCoordinatedMarkTest.cpp
+		battle/NewHorizonsAbilityChanceQueriesTest.cpp
 		server/battles/NewHorizonsChargeSpecialtiesTest.cpp
 		battle/InfernoStrikeDebuffTest.cpp
 		battle/NewHorizonsMeleeSpecialtyTest.cpp
@@ -201,6 +214,7 @@ set(test_SRCS
 	bonus/OwnedBonusPayloadsTest.cpp
 	bonus/OwnedRecipientBonusGraphTest.cpp
 		bonus/OwnedRecipientRootQueryTest.cpp
+		battle/OwnedUnitBonusFrameTest.cpp
 	bonus/BonusTypedContextSeamsTest.cpp
 	bonus/OwnedTypedBonusFactsTest.cpp
 		battle/UnitPreparationHealthBasisTest.cpp
@@ -701,6 +715,12 @@ set(test_SRCS
 		server/battles/NewHorizonsVerdantPrisonTest.cpp
 		server/battles/SummonedCreatureHealthTerrainTest.cpp
 		server/battles/NewHorizonsHydrasVitalityTest.cpp
+		server/battles/IncomingRegenerationReceiptTest.cpp
+	server/battles/GraveDustMutationTest.cpp
+	server/battles/GraveDustActivationTest.cpp
+	server/battles/GraveDustApplicationTest.cpp
+	server/battles/GraveDustBodyCleanupTest.cpp
+	server/battles/GraveDustPrimaryShotTest.cpp
 		server/battles/NewHorizonsChaosBlinkTest.cpp
 		server/battles/NewHorizonsCommandEfficiencyTest.cpp
 		server/battles/NewHorizonsCombinedArmsTest.cpp
@@ -901,6 +921,7 @@ set(test_HEADERS
 		server/battles/VerdantPrisonScriptErrorCapture.h
 		server/battles/FrozenAttackStageFixture.h
 		server/battles/HeroCommandFixture.h
+		server/battles/GraveDustPrimaryShotFixture.h
 		server/battles/InfernoStrikeDebuffFixture.h
 		server/battles/NewHorizonsGenieSageFixture.h
 		server/battles/NewHorizonsElementalTerrainFixture.h
@@ -1000,6 +1021,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsMaintenanceAITest.cpp
 		battleAI/NewHorizonsMachineSpecialtyAITest.cpp
 		battleAI/NewHorizonsMeleeSpecialtyAITest.cpp
+		battleAI/GraveDustSnapshotTest.cpp
 		battleAI/NewHorizonsParalyzingGazeAITest.cpp
 		battleAI/NewHorizonsPetrifyingBloodAITest.cpp
 		battleAI/OwnedExportBranchQueryTest.cpp
@@ -1033,6 +1055,11 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsDivineMandateAITest.cpp
 		battleAI/NewHorizonsElementalRebirthAITest.cpp
 		battleAI/KnownNativeRebirthPacketTest.cpp
+		battleAI/InfernoStrikeDebuffAITest.cpp
+		battleAI/PrismaticVanguardAITest.cpp
+		battleAI/ReactiveDefenseProjectionTest.cpp
+		battleAI/NewHorizonsCoordinatedMarkAITest.cpp
+		battleAI/ReactiveDefenseDirectRoutesTest.cpp
 		battleAI/NewHorizonsRebirthChainAITest.cpp
 		battleAI/NewHorizonsBattlePlanAITest.cpp
 		battleAI/AttackResourceProjectionTest.cpp

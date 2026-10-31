@@ -59,6 +59,10 @@ std::vector<const battle::Unit *> ProjectedBonusRoster::adjacentUnits(const batt
 {
 	if(!contains(unit))
 		throw std::invalid_argument("Projected bonus subject is outside its roster");
+	return adjacentUnitsAt(unit);
+}
+std::vector<const battle::Unit *> ProjectedBonusRoster::adjacentUnitsAt(const battle::Unit & unit) const
+{
 	const auto & hexes = unit.getSurroundingHexes();
 	std::vector<const battle::Unit *> result;
 	for(const auto * candidate : units)

@@ -24,13 +24,18 @@ VisibleHeroPolicy VisibleCandidateWorld::heroPolicy(BattleSide side) const
 
 AttackPossibility VisibleCandidateWorld::evaluate(const std::shared_ptr<const VisibleCandidateWorld> & owner,
 	const battle::Unit * attacker, const battle::Unit * defender, int distance,
-	bool shooting, const BattleHex & from, DamageCache & damageCache)
+	bool shooting, const BattleHex & from, DamageCache & damageCache, int validatedVoluntaryFlightDistance, bool validatedVoluntaryApproach)
 {
 	if(!owner || !attacker || !defender
 		|| owner->source->battleGetUnitByID(attacker->unitId()) != attacker
 		|| owner->source->battleGetUnitByID(defender->unitId()) != defender)
 		throw std::invalid_argument("Candidate actors must belong to their actual query world");
 	auto attack = BattleAttackInfo(attacker, defender, distance, shooting);
+	if(validatedVoluntaryFlightDistance < 0 || validatedVoluntaryFlightDistance > GameConstants::BFIELD_SIZE
+		|| (validatedVoluntaryFlightDistance > 0 && (shooting || !from.isValid()
+			|| !attacker->hasBonusOfType(BonusType::FLYING) || validatedVoluntaryFlightDistance != distance)))
+		throw std::invalid_argument("Invalid accepted candidate flight fact");
+	attack.voluntaryFlightDistance = validatedVoluntaryFlightDistance;
 	if(shooting && from.isValid() && from != attacker->getPosition()
 		&& newHorizonsArchery::canUseSkirmisher(owner->heroPolicy(attacker->unitSide()).legacyHero(), attacker))
 	{
@@ -40,7 +45,8 @@ AttackPossibility VisibleCandidateWorld::evaluate(const std::shared_ptr<const Vi
 	}
 	// Run the same ordinary preview, with the SAME concrete callback object:
 	// RTTI/lazy reaction paths, partial/unknown handling and scalar math stay put.
-	auto result = AttackPossibility::evaluate(attack, from, damageCache, owner->source);
+	auto result = AttackPossibility::evaluate(attack, from, damageCache, owner->source, false, std::nullopt, nullptr,
+		validatedVoluntaryApproach && from.isAvailable() && from != attacker->getPosition(), attacker->getPosition());
 	result.queryWorld = owner; // Actual borrowed actor/victim/provider lifetime, not shadow evidence.
 	return result;
 }

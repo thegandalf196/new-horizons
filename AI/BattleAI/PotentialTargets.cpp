@@ -81,7 +81,9 @@ PotentialTargets::PotentialTargets(
 				? std::max(0, SpellTargetEvaluator::physicalTravelDistance(reachability, hex))
 				: 0;
 			return VisibleCandidateWorld::evaluate(candidateWorld, attackerInfo, defender, distance,
-				shooting, hex, actionDamageCache);
+				shooting, hex, actionDamageCache,
+				!shooting && reachability.params.flying && !berserk && !attackerInfo->hasBonusOfType(BonusType::CONFUSION_PENDING)
+					? distance : 0, !berserk && !attackerInfo->hasBonusOfType(BonusType::CONFUSION_PENDING));
 		};
 
 		if(berserk)

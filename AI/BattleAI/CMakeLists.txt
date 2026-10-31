@@ -1,5 +1,14 @@
 set(battleAI_SRCS
 		AttackPossibility.cpp
+		CoordinatedMarkProjection.cpp
+		AttackPreviewMovement.cpp
+		GnollHarriersProjection.cpp
+		PhysicalStrikeProjection.cpp
+		AttackAbilityPrefix.cpp
+		NominalAbilityChance.cpp
+		PhysicalPoisonValue.cpp
+		ToxicStingValue.cpp
+		PrismaticVanguardProjection.cpp
 	MeleeSpecialtyProjection.cpp
 		SylvanTacticsProjection.cpp
 		AttackValue.cpp
@@ -113,6 +122,15 @@ set(battleAI_HEADERS
 		StdInc.h
 
 		AttackPossibility.h
+		CoordinatedMarkProjection.h
+		AttackPreviewMovement.h
+		GnollHarriersProjection.h
+		PhysicalStrikeProjection.h
+		AttackAbilityPrefix.h
+		NominalAbilityChance.h
+		PhysicalPoisonValue.h
+		ToxicStingValue.h
+		PrismaticVanguardProjection.h
 	MeleeSpecialtyProjection.h
 		SylvanTacticsProjection.h
 		AerialRetaliationProjection.h

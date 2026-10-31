@@ -29,6 +29,10 @@ namespace scripting::api
 void LuaUnitStateProxy::registerMethods(MethodRegistrar & R)
 {
 	// Read-only API
+	R.cfunction<&LuaUnitStateProxy::healingCapacity>("healingCapacity",
+		{{"amount", "integer", "Raw budget."}, {"level", "HealLevel", "Heal tier."}, {"power", "HealPower", "Persistence."}},
+		{"integer", "Eligible health before incoming reductions."},
+		"Queries eligible health without mutating the unit or spending healing marks.");
 	R.method<&LuaUnitState::getMinDamage>("getMinDamage",
 		{{"ranged", "True for ranged attack value, false for melee."}}, {},
 		"Returns the minimum damage one creature will deal.");
@@ -227,6 +231,27 @@ const Creature * LuaUnitStateProxy::getCreature(const LuaUnitState & state)
 BattleHexArray LuaUnitStateProxy::getHexes(const LuaUnitState & state)
 {
 	return state.getState()->getHexes();
+}
+
+int LuaUnitStateProxy::healingCapacity(lua_State * L)
+{
+	LuaStack S(L);
+
+	LuaUnitState unitState;
+	int64_t amount = 0;
+	EHealLevel healLevel = EHealLevel::HEAL;
+	EHealPower healPower = EHealPower::PERMANENT;
+
+	S.get(1, unitState);
+	S.get(2, amount);
+	S.get(3, healLevel);
+	S.get(4, healPower);
+
+	const int64_t capacity = unitState.getState()->healingCapacity(amount, healLevel, healPower);
+
+	S.clear();
+	S.push(capacity);
+	return 1;
 }
 
 int LuaUnitStateProxy::heal(lua_State * L)

@@ -12,6 +12,7 @@
 
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/PhysicalAffliction.h"
+#include "../../lib/battle/GraveDustEffectChanges.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 
@@ -22,6 +23,12 @@
 
 void CGameHandler::stampPhysicalAfflictionEffects(SetStackEffect & effects)
 {
+	if(newHorizonsGraveDust::containsEffect(effects))
+	{
+		const auto * battle = gameState().getBattle(effects.battleID);
+		if(!battle) throw std::invalid_argument("Grave Dust effect change requires a battle");
+		newHorizonsGraveDust::validateEffectChanges(*battle->getBattle(), effects);
+	}
 	// Stamp accepted effect applications in the outgoing packet, so replicas
 	// and detached forecasts receive the same ordering. Unmarked packets
 	// keep their ordinary path; this is not a recurring battle-wide scan.

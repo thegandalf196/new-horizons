@@ -31,12 +31,13 @@ void battle::ProjectedBattleWorldArena::Data::applyEntries(ProjectedBattleWorldA
 	}
 }
 
-void battle::ProjectedBattleWorldArena::Data::finishCandidates(const PacketCandidates & candidates,
+void battle::ProjectedBattleWorldArena::Data::finishCandidates(ProjectedBattleWorldArena & owner, const PacketCandidates & candidates,
 	const std::vector<UnitChanges> & changes)
 {
 	for(const auto id : candidates.removed)
 		recordBloodrageDeath(id);
 	recordCrisisDeaths(candidates.crisis);
+	recordSolidarityDeaths(owner, candidates.solidarity);
 	for(const auto & change : changes)
 	{
 		const auto * slot = find(change.id, false);

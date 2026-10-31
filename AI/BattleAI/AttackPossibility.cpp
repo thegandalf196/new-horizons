@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
-#include "SylvanTacticsProjection.h"
+#include "PhysicalPoisonValue.h"
+#include "ToxicStingValue.h"
+#include "PhysicalStrikeProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
@@ -28,7 +30,10 @@
 #include "DamageCacheAdmission.h"
 #include "DamageCacheMarks.h"
 #include "AttackPreviewHitContext.h"
+#include "AttackPreviewMovement.h"
+#include "GnollHarriersProjection.h"
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
+#include "../../lib/battle/NewHorizonsCreatureBurn.h"
 #include "SelectedAttackReceipt.h"
 #include "BattleShroudStrike.h"
 #include "AttackPreviewTargets.h"
@@ -105,28 +110,9 @@ int32_t noQuarterMoraleActivations(const CBattleInfoCallback & battle, uint32_t 
 	return battle.getBattle()->getActiveStackID() == static_cast<int32_t>(targetUnitId) ? 2 : 1;
 }
 
-int64_t projectedPhysicalPoisonDamage(const battle::CUnitState * state)
-{
-	if(!state || state->physicalPoisonBaseDamage <= 0 || state->physicalPoisonActivationsRemaining <= 0)
-		return 0;
-	const int64_t base = state->physicalPoisonBaseDamage;
-	const int remaining = state->physicalPoisonActivationsRemaining;
-	if(remaining >= 3)
-		return base * 4 + base / 2;
-	if(remaining == 2)
-		return base + base / 2 + base * 2;
-	return base * 2;
 }
 
 
-}
-
-AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & dest, const BattleAttackInfo & attack)
-	: from(from), dest(dest), attack(attack)
-{
-	this->attack.attackerPos = from;
-	this->attack.defenderPos = dest;
-}
 
 float hpFunction(uint64_t unitHealthStart, uint64_t unitHealthEnd, uint64_t maxHealth)
 {
@@ -312,53 +298,21 @@ AttackPossibility AttackPossibility::evaluate(
 	DamageCache & damageCache,
 	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment,
 	std::optional<newHorizonsAerialSupremacy::Excursion> aerial,
-	const dreadCavalryAI::Action * acceptedDreadAction)
+	const dreadCavalryAI::Action * acceptedDreadAction, bool validatedVoluntaryApproach, BattleHex validatedApproachOrigin)
 {
 	// Retained for source compatibility with cached evaluations. Perfect Moment
 	// is now automatic and cannot be opted out of or forced by this hint.
 	(void)perfectMoment;
+	const auto approachOrigin = !validatedVoluntaryApproach ? BattleHex(BattleHex::INVALID)
+		: validatedApproachOrigin.isAvailable() ? validatedApproachOrigin : inputAttack.attacker->getPosition();
 	auto attackInfo = inputAttack;
 	dreadCavalryAI::captureOutput(*state, attackInfo);
 	const auto dreadAction = acceptedDreadAction ? *acceptedDreadAction : dreadCavalryAI::begin(*state, attackInfo, hex);
 	aerialRetaliationAI::validateContext(*state, attackInfo, hex, aerial);
 	auto attacker = attackInfo.attacker;
-	// Ordinary movement is projected before the attack, not as a post-attack
-	// penalty: a lethal reaction must prevent the intended strike entirely.
-	if(attacker && hex.isAvailable() && hex != attacker->getPosition()
-		&& !attackInfo.retaliation && (!attackInfo.shooting || attackInfo.attackerPos == hex)
-		&& !attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
-		&& !attacker->hasBonusOfType(BonusType::CONFUSION_PENDING)
-		&& std::ranges::any_of(state->battleAliveUnits(), [&](const battle::Unit * unit)
-			{ return state->battleOverwatchReady(unit); }))
-	{
-		if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
-		{
-			auto projected = std::make_shared<HypotheticBattle>(model->env, state);
-			auto hits = projected->projectVoluntaryMovement(attacker->unitId(), hex);
-			if(!hits.empty())
-			{
-				auto moved = projected->getForUpdate(attacker->unitId());
-				BattleAttackInfo following = attackInfo;
-				following.attacker = moved.get();
-				following.defender = projected->battleGetUnitByID(attackInfo.defender->unitId());
-				auto result = moved->alive()
-					? evaluate(following, hex, damageCache, projected, perfectMoment, aerial, &dreadAction)
-					: AttackPossibility(hex, BattleHex::INVALID, following);
-				if(!result.effectPreview)
-					result.effectPreview = projected;
-				if(!result.attackerState)
-					result.attackerState = moved;
-				for(const auto & hit : hits)
-				{
-					result.attackerDamageReduce += calculateDamageReduce(
-						state->battleGetUnitByID(hit.shooterId), attacker, hit.healthLoss, damageCache, state);
-					result.affectedUnits.push_back(result.effectPreview->getForUpdate(hit.shooterId));
-				}
-				result.overwatchHits = std::move(hits);
-				return result;
-			}
-		}
-	}
+	if(auto movement = attackPreviewMovement::project(attackInfo, hex, damageCache, state, perfectMoment, aerial,
+		dreadAction, validatedVoluntaryApproach, approachOrigin))
+		return std::move(*movement);
 	const bool rangedFollowUp = attackInfo.shooting && hasPendingRangedFollowUp(attacker);
 	const auto * requestedDefender = attackInfo.defender;
 	const auto * redirectedDefender = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
@@ -400,7 +354,10 @@ AttackPossibility AttackPossibility::evaluate(
 			continue;
 
 		AttackPossibility ap(hex, defHex, attackInfo);
+		ap.validatedVoluntaryApproach = validatedVoluntaryApproach && !aerial;
+		ap.validatedApproachOrigin = ap.validatedVoluntaryApproach ? approachOrigin : BattleHex(BattleHex::INVALID);
 		std::vector<petrifyingBloodAI::Pending> petrifyingBloodPending;
+		toxicStingAI::Opportunities stingOpportunities;
 		std::vector<uint32_t> serpentSourceDeaths;
 		auto dreadCandidate = dreadAction;
 		std::map<uint32_t, float> freezeRemainingProbability;
@@ -489,6 +446,7 @@ AttackPossibility AttackPossibility::evaluate(
 		}
 		const bool projectsAerial = aerial || (attackInfo.shooting
 			&& !attackInfo.retaliation && aerialRetaliationAI::active(*state, defender));
+		const bool projectsSting = toxicStingAI::requiresPreview(*state, *attacker, *requestedDefender, *defender);
 		std::shared_ptr<HypotheticBattle> fortunePreview;
 		const auto mayReleaseSerpents = [&]()
 		{
@@ -525,21 +483,8 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0 && attackInfo.cleaveDamagePercent <= 0
 			&& attackInfo.physicalDamage && state->battleCanTriggerCleave(attacker);
-	const auto manaLeechAttack = newHorizonsManaLeeches::entitlement(*state, attacker, defender,
-		attackInfo.shooting, attackInfo.physicalDamage,
-		attackInfo.secondaryAttack || attackInfo.bracePreemptive || attackInfo.preemptiveDamagePercent > 0
-			|| attackInfo.cleaveDamagePercent > 0);
-	const auto manaLeechCounter = newHorizonsManaLeeches::entitlement(*state, defender, attacker,
-		attackInfo.shooting, attackInfo.physicalDamage, false);
-	const bool projectsManaLeeches = manaLeechAttack.amount > 0 || manaLeechCounter.amount > 0;
-	const bool projectsSerpentBinding = newHorizonsSerpentsEmbrace::qualifiesAttack(*state, attacker, defender,
-		attackInfo.shooting, attackInfo.physicalDamage, attackInfo.secondaryAttack || attackInfo.bracePreemptive
-			|| attackInfo.preemptiveDamagePercent > 0 || attackInfo.cleaveDamagePercent > 0)
-		|| newHorizonsSerpentsEmbrace::qualifiesAttack(*state, defender, attacker, attackInfo.shooting,
-			attackInfo.physicalDamage, false);
-	const bool projectsSoulHarvest = newHorizonsSoulHarvest::qualifies(*state, *attacker, *defender, attackInfo.physicalDamage)
-		|| newHorizonsSoulHarvest::qualifies(*state, *defender, *attacker, attackInfo.physicalDamage);
-	const bool projectsGaze = paralyzingGazeAI::needsProjection(*state, attackInfo) || newHorizonsOrdinaryStrike::needsProjection(*state, attackInfo);
+	const auto [projectsManaLeeches, projectsSerpentBinding, projectsSoulHarvest, projectsGaze]
+		= AttackPreviewHitContext::primaryStatusAdmission(*state, attackInfo);
 	bool manaLeechSequenceSpent = false;
 	const bool projectsMarks = attackInfo.shooting
 		&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
@@ -645,14 +590,14 @@ AttackPossibility AttackPossibility::evaluate(
 			&& state->getBattle()->getHeroOrderState(state->playerToSide(state->battleGetOwner(defender)), HeroCommand::BRACE).has_value();
 		const bool projectsOpportunist = ap.attack.physicalDamage && !ap.attack.retaliation
 			&& newHorizonsOpportunist::hasPerk(*state, attacker);
-		if(projectsSylvanTactics || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+		if(projectsSting || projectsSylvanTactics || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
 				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen || projectsLuckyRecovery || projectsBrace)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-	if(projectsSylvanTactics || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+	if(projectsSting || projectsSylvanTactics || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
@@ -664,7 +609,7 @@ AttackPossibility AttackPossibility::evaluate(
 		? static_cast<const CBattleInfoCallback &>(*fortunePreview) : *state;
 	bool endedActiveActivationByLastStand = false;
 	const AttackPreviewHitContext hitContext(fortunePreview, endedActiveActivationByLastStand);
-	sylvanTacticsAI::StrikeProjection tactics(fortunePreview.get());
+	PhysicalStrikeProjection tactics(fortunePreview.get());
 	const auto qualifiesForNoEscape = [&fortunePreview](const BattleAttackInfo & projectedAttack)
 	{
 		if(!fortunePreview || !fortunePreview->battleIsShroudFlankingAttack(projectedAttack))
@@ -721,24 +666,15 @@ AttackPossibility AttackPossibility::evaluate(
 
 		if(!aerial && (!attackInfo.shooting || projectsSkirmisher))
 			ap.attackerState->setPosition(hex);
+		if(ap.effectPreview && ap.validatedVoluntaryApproach)
+			gnollHarriersAI::record(*ap.effectPreview, attacker->unitId(), attacker->getPosition(), ap.attackerState->getPosition());
 
 		battle::Units affectedUnits;
 
 		if(!attackInfo.shooting && !aerial)
-		{
-			auto obstacleDamage = damageCache.getObstacleDamage(hex, attacker);
+			attackPreviewMovement::applyObstacleDamage(ap, damageCache, state, fortunePreview,
+				rootMayHaveSerpents, serpentSourceDeaths);
 
-			if(obstacleDamage > 0)
-			{
-				ap.attackerDamageReduce += calculateDamageReduce(nullptr, attacker, obstacleDamage, damageCache, state);
-
-				const bool serpentWasAlive = mayReleaseSerpents() && ap.attackerState->alive();
-				ap.attackerState->damage(obstacleDamage);
-				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
-					serpentWasAlive, serpentSourceDeaths);
-				ap.preAttackDamage += obstacleDamage;
-			}
-		}
 		affectedUnits = defenderUnits;
 		for(const auto * unit : requestedDefenderUnits)
 			if(!vstd::contains_if(affectedUnits, [unit](const battle::Unit * value)
@@ -947,6 +883,7 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.attackerState.get(), strikeDefenderState->second.get())
 				: 0;
 
+			std::optional<newHorizonsToxicSting::Plan> stingPlan;
 			FortuneStrikeProjection strike;
 			BattleAttackInfo perfectFortuneAttack = attackInfo;
 			perfectFortuneAttack.attacker = ap.attackerState.get();
@@ -1077,6 +1014,9 @@ AttackPossibility AttackPossibility::evaluate(
 				const bool wasAlive = defenderState->alive();
 				const int32_t harvestCountBefore = harvestEligible ? defenderState->getCount() : 0;
 				strike.hits.emplace_back(u->unitId(), incomingDamage);
+				const auto temporaryHealthBefore = defenderState->health.getTemporaryHitPoints();
+				if(u->unitId() == strike.defenderId)
+					stingPlan = toxicStingAI::prepare(*state, victimAttack, damageToApply, damageProvenance);
 				tactics.damage(*state, victimAttack, *defenderState, damageToApply, damageProvenance);
 				strike.resolvedHits.emplace_back(u->unitId(), damageToApply);
 				petrifyingBloodAI::capture(state, *ap.attackerState, *defenderState, damageToApply,
@@ -1084,7 +1024,8 @@ AttackPossibility AttackPossibility::evaluate(
 				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *defenderState,
 					wasAlive, serpentSourceDeaths);
 				if(u->unitId() == strike.defenderId)
-					hitContext.applyPrimaryStatuses(victimAttack, damageToApply, strikeSerpentBinding, strikeGaze);
+					hitContext.applyPrimaryStatuses(victimAttack, damageToApply, strikeSerpentBinding, strikeGaze,
+						newHorizonsCreatureBurn::bodyHealthLoss(damageToApply, temporaryHealthBefore), strike.lanceFormation);
 				// Keep damage and probabilistic control separate. A forecast never
 				// installs a guaranteed Freeze or spends its application-round stamp.
 				if(defenderState->alive() && (freezeCanApply || shattersFrozen))
@@ -1236,6 +1177,8 @@ AttackPossibility AttackPossibility::evaluate(
 				projectedStrikeAttack, strike.hits, ap.attackerState.get(), strike);
 			if(ap.perfectMoment && i == 0)
 				perfectMomentStrikeRecorded = projectedFortuneStrike;
+			stingOpportunities.score(ap, fortunePreview,
+				projectedStrikeAttack, stingPlan, damageCache);
 			// The server resolves every victim of a breath/splash strike before it
 			// applies Bulwark's direct reflection. Deferring this hit also keeps the
 			// attacker count stable while collateral damage is forecast.
@@ -1259,29 +1202,14 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.attackerDamageReduce += calculateDamageReduce(reflectedFrom,
 						ap.attackerState.get(), projectedReflection.healthLoss, damageCache, state);
 					const bool serpentWasAlive = mayReleaseSerpents() && ap.attackerState->alive();
+					const auto destroyed = fortunePreview ? PhysicalStrikeProjection::captureForecastDamage(*fortunePreview, *ap.attackerState) : std::nullopt;
 					ap.attackerState->damage(actualReflectedDamage, false,
 						reflectedProvenance);
 					serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
 						serpentWasAlive, serpentSourceDeaths);
-					const auto * bulwarkHero = state->battleGetOwnerHero(reflectedFrom);
-					if(!attackInfo.shooting && newHorizonsBulwark::hasToxicSpines(bulwarkHero)
-						&& reflectedFrom->bulwarkToxicSpinesRound != currentRound
-						&& actualReflectedDamage > 0 && ap.attackerState->alive())
-					{
-						reflectedFrom->bulwarkToxicSpinesRound = currentRound;
-						const auto previousPoisonDamage = projectedPhysicalPoisonDamage(ap.attackerState.get());
-						const auto poisonBase = newHorizonsBulwark::toxicSpinesPoisonBase(actualReflectedDamage);
-						if(newHorizonsBulwark::applyPhysicalPoison(ap.attackerState.get(), poisonBase,
-							static_cast<int32_t>(reflectedFrom->unitId())))
-						{
-							const auto projectedPoisonDamage = projectedPhysicalPoisonDamage(ap.attackerState.get());
-							const auto residualPoisonDamage = std::max<int64_t>(0,
-								projectedPoisonDamage - previousPoisonDamage);
-							if(residualPoisonDamage > 0)
-								ap.attackerDamageReduce += calculateDamageReduce(reflectedFrom,
-									ap.attackerState.get(), residualPoisonDamage, damageCache, state);
-						}
-					}
+					if(destroyed) PhysicalStrikeProjection::completeDamagePacket(*fortunePreview, std::span(&*destroyed, 1));
+					physicalPoisonValue::applySpines(ap, reflectedFrom, actualReflectedDamage,
+						attackInfo.shooting, currentRound, state, damageCache);
 				}
 			}
 			if(projectsSuppression && !projectedSuppressionSpent)
@@ -1763,12 +1691,15 @@ AttackPossibility AttackPossibility::evaluate(
 						retaliationAttack.attacker, retaliationAttack.physicalDamage)
 						&& luckState.battleHasBastionProtection(targetState.get());
 				}
+				const auto temporaryHealthBefore = targetState->health.getTemporaryHitPoints();
+				std::optional<newHorizonsToxicSting::Plan> counterSting;
 				const bool targetWasAlive = mayReleaseSerpents() && targetState->alive();
 				if(retaliation)
 				{
 					BattleAttackInfo hit(defenderStates.at(retaliation->attackerId).get(), targetState.get(), 0, false);
 					hit.retaliation = true;
 					hit.secondaryAttack = targetState->unitId() != retaliation->defenderId;
+					counterSting = toxicStingAI::prepare(*state, hit, actualDamage, retaliation->damageProvenance);
 					tactics.damage(*state, hit, *targetState, actualDamage, retaliation->damageProvenance);
 				}
 				else
@@ -1816,7 +1747,8 @@ AttackPossibility AttackPossibility::evaluate(
 					BattleAttackInfo retaliationAttack(retaliatorState.get(), targetState.get(), 0, false);
 					retaliationAttack.retaliation = true;
 					retaliationAttack.secondaryAttack = targetState->unitId() != attacker->unitId();
-					AttackPreviewHitContext::applyOrdinaryStrike(*fortunePreview, retaliationAttack, actualDamage);
+					AttackPreviewHitContext::applyOrdinaryStrike(*fortunePreview, retaliationAttack, actualDamage,
+						newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, temporaryHealthBefore));
 					if(state->battleCanTriggerNoQuarter(retaliationAttack) && !targetState->isTimeStopped()
 						&& state->battleMatchOwner(retaliatorState.get(), targetState.get())
 						&& newHorizonsOffense::belowNoQuarterThreshold(
@@ -1827,6 +1759,10 @@ AttackPossibility AttackPossibility::evaluate(
 							targetState->unitId(), moraleActivations, *retaliation);
 					}
 				}
+				if(retaliation && targetState->unitId() == retaliation->defenderId)
+					stingOpportunities.scoreCounter(ap, fortunePreview,
+						*defenderStates.at(retaliation->attackerId), *targetState,
+						counterSting, attackInfo.physicalDamage, damageCache);
 				if(retaliation && (targetState->unitId() == retaliation->defenderId
 					|| state->getBattle()->getLuckRollRules().affectsAllTargets))
 					retaliationActualDamage += actualDamage;
@@ -2017,6 +1953,7 @@ AttackPossibility AttackPossibility::evaluate(
 		if(serpentParent && !serpentSourceDeaths.empty())
 			serpentBindingAI::completeDeathPreview(state, *serpentParent, ap, serpentSourceDeaths, fortunePreview);
 
+		stingOpportunities.complete(ap, fortunePreview ? fortunePreview : state, damageCache);
 		petrifyingBloodAI::complete(ap, state, petrifyingBloodPending, aerial.has_value(), damageCache);
 		meleeSpecialtyAI::complete(ap);
 

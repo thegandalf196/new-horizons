@@ -8,7 +8,7 @@
  *
  */
 #include "StdInc.h"
-#include "SylvanTacticsProjection.h"
+#include "PhysicalStrikeProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "AerialRetaliationProjection.h"
@@ -17,6 +17,7 @@
 #include "MeleeSpecialtyProjection.h"
 #include "ExchangeInitiativeQueue.h"
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
+#include "../../lib/battle/NewHorizonsCreatureBurn.h"
 #include "BattleExchangeAftermath.h"
 #include "PetrifyingBloodValue.h"
 #include "AttackPreviewHitContext.h"
@@ -276,7 +277,7 @@ float BattleExchangeVariant::trackAttack(
 		if(!manaLeechReplay)
 			return 0; // Same pre-mutation skip contract as an unavailable actor.
 	}
-	sylvanTacticsAI::StrikeProjection tactics(hb.get());
+	PhysicalStrikeProjection tactics(hb.get());
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 
@@ -285,11 +286,7 @@ float BattleExchangeVariant::trackAttack(
 		return 0;
 
 	const auto referenceController = hb->battleGetOwner(attacker.get());
-	const auto originalPosition = attacker->getPosition();
-	applySelectedNightProwler(*hb, *attacker, originalPosition, ap.from);
-	if(!ap.overwatchHits.empty())
-		hb->projectVoluntaryMovement(attacker->unitId(), ap.from);
-	selectedAttackReceipt::restorePosition(ap, *attacker, *hb);
+	const auto originalPosition = selectedAttackReceipt::commitMovement(ap, *attacker, *hb);
 
 	float attackValue = ap.attackValue();
 	SelectedAttackReceipt selected(ap);
@@ -346,6 +343,7 @@ float BattleExchangeVariant::trackAttack(
 				projectedAttacker.get(), projectedDefender.get(), strike.shooting,
 				strike.damageProvenance == battle::DamageProvenance::PHYSICAL_CREATURE,
 				strike.bracePreemptive || strike.cleaveDamagePercent > 0 || ap.attack.preemptiveDamagePercent > 0);
+			int64_t primaryBodyHealthLoss = 0;
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
 			actualHits.reserve(strike.hits.size());
 			struct PendingRebirth
@@ -381,7 +379,10 @@ float BattleExchangeVariant::trackAttack(
 				const auto healthBefore = target->getAvailableHealth();
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
+				const auto temporaryHealthBefore = target->health.getTemporaryHitPoints();
 				tactics.damage(*hb, projectedAttack, *target, appliedDamage, strike.damageProvenance);
+				if(unitId == strike.defenderId)
+					primaryBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(appliedDamage, temporaryHealthBefore);
 				if(wasAlive && !target->alive())
 					hb->releaseSerpentBindingsForDeath(*target);
 				if(harvestEligible)
@@ -440,10 +441,8 @@ float BattleExchangeVariant::trackAttack(
 				projectedAttack.luckyStrike = fortune.consumePerfectMoment();
 				hb->setSylvanLuckState(side, fortune);
 			}
-			const auto primaryHit = std::ranges::find(actualHits, strike.defenderId,
-				&std::pair<uint32_t, int64_t>::first);
-			battleExchangeAftermath::applyPrimaryStatuses(*hb, projectedAttack,
-				primaryHit == actualHits.end() ? 0 : primaryHit->second, serpentBinding, gazeAdmitted);
+			battleExchangeAftermath::replayPrimaryStatuses(*hb, projectedAttack, strike,
+				actualHits, serpentBinding, gazeAdmitted, primaryBodyHealthLoss);
 			tactics.finish(projectedAttack.attacker->unitId());
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
 				strike.resolvedLuck, true, strike.perfectFortune, strike.perfectFortuneSide,
@@ -619,7 +618,7 @@ float BattleExchangeVariant::trackAttack(
 		return *reaction;
 	}
 
-	sylvanTacticsAI::StrikeProjection tactics(hb.get());
+	PhysicalStrikeProjection tactics(hb.get());
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 	const auto referenceController = hb->battleGetOwner(attacker.get());
@@ -679,6 +678,7 @@ float BattleExchangeVariant::trackAttack(
 	const auto projectedAttackDamage = battleAIProjectDamage(
 		defender.get(), attackDamage, attackDamageProvenance);
 	const int64_t actualDamage = projectedAttackDamage.appliedDamage;
+	const auto primaryBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, defender->health.getTemporaryHitPoints());
 	float defenderDamageReduce;
 	{
 		MovementExchangeScope scoreMeasurement(evaluateOnly && probeTiming ? probeTiming->dpsScore : nullptr);
@@ -737,7 +737,7 @@ float BattleExchangeVariant::trackAttack(
 			newHorizonsSoulHarvest::grant(*attacker, newHorizonsSoulHarvest::casualtiesAfterHit(
 				*defender, defenderHarvestCountBefore, defenderMayRebirth));
 		paralyzingGazeAI::apply(*hb, attacker->unitId(), defender->unitId(), actualDamage, gazeAdmitted);
-		AttackPreviewHitContext::applyOrdinaryStrike(*hb, projectedAttack, actualDamage);
+		AttackPreviewHitContext::applyOrdinaryStrike(*hb, projectedAttack, actualDamage, primaryBodyHealthLoss);
 		if(manaLeech.amount > 0)
 			hb->projectManaLeech(manaLeech, actualDamage, manaLeechSequenceSpent);
 		AttackPreviewHitContext::applyUnspentLastStand(*hb, defender.get(), attackLastStand.first, attackLastStand.second,
@@ -978,6 +978,7 @@ float BattleExchangeVariant::trackAttack(
 		}
 
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
+		const auto retaliationBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, attacker->health.getTemporaryHitPoints());
 		const bool counterHarvestEligible = newHorizonsSoulHarvest::qualifies(*hb,
 			*defender, *attacker, retaliationAttack.physicalDamage);
 		const bool attackerWasAlive = attacker->alive();
@@ -991,7 +992,7 @@ float BattleExchangeVariant::trackAttack(
 		if(attackerWasAlive && !attacker->alive())
 			hb->releaseSerpentBindingsForDeath(*attacker);
 		hb->projectSerpentBinding(defender->unitId(), attacker->unitId(), actualDamage, counterSerpentBinding);
-		AttackPreviewHitContext::applyOrdinaryStrike(*hb, retaliationAttack, actualDamage);
+		AttackPreviewHitContext::applyOrdinaryStrike(*hb, retaliationAttack, actualDamage, retaliationBodyHealthLoss);
 		if(counterHarvestEligible)
 			newHorizonsSoulHarvest::grant(*defender, newHorizonsSoulHarvest::casualtiesAfterHit(
 				*attacker, attackerHarvestCountBefore, attackerMayRebirth));
@@ -1594,6 +1595,13 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					fortuneActivation = false;
 				}
 			};
+			// Start-of-activation injury can kill the original actor or replace it
+			// with a distinct reborn unit. Neither grants this corpse an action.
+			if(!attacker->alive() || attacker->isGhost())
+			{
+				finishFortuneActivation();
+				continue;
+			}
 			if(frozenForfeits)
 			{
 				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));

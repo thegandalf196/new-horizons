@@ -18,7 +18,17 @@
 #include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../entities/hero/NewHorizonsNecromancy.h"
 #include "../spells/MagicalDamageReduction.h"
+#include <stdexcept>
 
+namespace
+{
+SecondarySkill luckExplanationSource(const std::optional<newHorizonsNecromancy::CombatPassives::LuckSource> & source)
+{
+	if(!source) return SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID));
+	if(!source->skill || !source->skill->hasValue()) throw std::logic_error("Owned Necromancy luck source is unknown");
+	return *source->skill;
+}
+}
 namespace newHorizonsNecromancy
 {
 CombatPassives captureCombatPassives(const CGHeroInstance * hero)
@@ -34,8 +44,12 @@ std::shared_ptr<const BonusList> appendLuckBonuses(const AFactionMember & member
 	std::shared_ptr<const BonusList> ordinary, int & additionalLuck)
 {
 	int luck = 0;
+	std::optional<CombatPassives::LuckSource> source;
 	if(const auto * unit = dynamic_cast<const battle::Unit *>(&member))
-		luck = unit->necromancyCombatPassives().luckBonus;
+	{
+		const auto passives = unit->necromancyCombatPassives();
+		luck = passives.luckBonus; source = passives.luckSource;
+	}
 	else if(const auto * stack = dynamic_cast<const CStackInstance *>(&member))
 	{
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(stack->getArmy());
@@ -49,7 +63,7 @@ std::shared_ptr<const BonusList> appendLuckBonuses(const AFactionMember & member
 		return ordinary;
 	auto result = std::make_shared<BonusList>(*ordinary);
 	result->push_back(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::LUCK,
-		BonusSource::SECONDARY_SKILL, luck, BonusSourceID(SecondarySkill(SecondarySkill::decode(SKILL_ID)))));
+		BonusSource::SECONDARY_SKILL, luck, BonusSourceID(luckExplanationSource(source))));
 	return result;
 }
 

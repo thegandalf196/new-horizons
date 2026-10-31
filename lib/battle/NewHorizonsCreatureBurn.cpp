@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsCreatureBurn.h"
+#include "BodyHealthLoss.h"
 #include "NewHorizonsMagicalAbilityDamage.h"
 #include "NewHorizonsCombatSkills.h"
 #include "BattleAttackInfo.h"
@@ -81,6 +82,10 @@ Bonus marker(HeroTypeID hero, uint32_t source, int32_t rawDamage)
 	result.parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(source));
 	result.description.appendRawString("Burn: one delayed Fire damage tick at the next genuine Creature Activation");
 	return result;
+}
+int64_t bodyHealthLoss(int64_t appliedDamage, int64_t temporaryHealthBefore)
+{
+	return battle::bodyHealthLoss(appliedDamage, temporaryHealthBefore);
 }
 int32_t damageBudget(int64_t actualBodyHealthLoss, int percent)
 {

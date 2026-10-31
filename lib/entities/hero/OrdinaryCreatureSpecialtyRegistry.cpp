@@ -6,7 +6,7 @@ namespace newHorizonsHeroes::detail
 {
 namespace
 {
-const std::array<OrdinaryCreatureSpecialty, 40> ordinaryCreatureSpecialties{{
+const std::array<OrdinaryCreatureSpecialty, 48> ordinaryCreatureSpecialties{{
 	{"core:valeska", "core:archer", "Close-Quarters Drill", "closeQuartersDrill", BonusType::NO_MELEE_PENALTY,
 		BonusValueType::BASE_NUMBER, "Archers and Marksmen deal full ordinary melee damage. Adjacent enemies still prevent ordinary shooting.",
 		"newHorizons/heroSpecialties/ValeskaCloseQuartersDrill"},
@@ -127,6 +127,30 @@ const std::array<OrdinaryCreatureSpecialty, 40> ordinaryCreatureSpecialties{{
 	{"core:shiva", "core:roc", "Storm Wings", "stormWingsDefenseIgnorePercent", BonusType::NONE,
 		BonusValueType::BASE_NUMBER, "Rocs and Thunderbirds ignore %VALUE%% of target Creature Defense on the first ordinary primary melee blow after a sufficiently long voluntary flight. Later blows, retaliation, reactions, teleportation and forced travel do not qualify. Native lightning remains unchanged.",
 		"newHorizons/heroSpecialties/ShivaStormWings"},
+	{"core:marius", "core:demon", "Demonic Solidarity", "demonicSolidarityReductionPercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "When combat damage destroys a different ordinary stack from this army, surviving Demons and Horned Demons gain %VALUE%% independent physical protection until their next Creature Activation. Repeated grants refresh rather than stack. Spell payments, dismissal and expiry do not qualify; temporary control does not transfer this passive army affiliation.",
+		"newHorizons/heroSpecialties/MariusDemonicSolidarity"},
+	{"core:alkin", "core:gorgon", "Iron Hide", "ironHideReductionPercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Gorgons and Mighty Gorgons take %VALUE%% less physical damage from the first accepted hostile primary melee hit each round. Ordinary retaliation qualifies; ranged, magical, secondary and pre-emptive strikes do not. A zero-damage accepted hit still spends the protection.",
+		"newHorizons/heroSpecialties/AlkinIronHide"},
+	{"core:synca", "core:manticore", "Toxic Sting", "toxicStingChancePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Manticore and Scorpicore primary physical melee hits have a %VALUE%% chance to apply physical Poison after positive body Health loss. Poison starts at one quarter of that loss and escalates over three activations. Ordinary retaliation qualifies. Native paralysis remains unchanged.",
+		"newHorizons/heroSpecialties/SyncaToxicSting"},
+	{"core:drakon", "core:gnoll", "Gnoll Harriers", "gnollHarriersDamagePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Gnolls and Gnoll Marauders deal +%VALUE%% final primary physical melee damage against a victim that voluntarily moved during its latest begun genuine activation. Ordinary retaliation qualifies; forced movement, Teleport, collateral and pre-emptive hits do not.",
+		"newHorizons/heroSpecialties/DrakonGnollHarriers"},
+	{"core:rashka", "core:efreet", "Cinder Reprisal", "cinderReprisalDamagePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Efreet and Efreet Sultan ordinary retaliations leave one delayed Fire damage tick on the primary attacker, based on %VALUE%% of actual creature HP lost. The strongest pending burn is retained without adding ticks. It resolves at the victim's next genuine activation; Wait resumption and continuations do not repeat it. Native Fire Shield is unchanged.",
+		"newHorizons/heroSpecialties/RashkaCinderReprisal"},
+	{"core:ignissa", "core:fireElemental", "Emberbrand", "emberbrandDamagePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Fire and Energy Elemental primary ordinary melee hits leave one delayed Fire damage tick, based on %VALUE%% of actual creature HP lost. Ordinary retaliation qualifies; collateral and pre-emptive hits do not. The strongest pending burn is retained without adding ticks and resolves at the victim's next genuine activation.",
+		"newHorizons/heroSpecialties/IgnissaEmberbrand"},
+	{"core:moandor", "core:lich", "Grave Dust", "graveDustHealingReductionBasisPoints", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Primary Lich and Power Lich shots deposit Grave Dust, reducing received eligible healing by %VALUE% basis points until the victim completes an accepted Creature Action, including Wait. Cloud collateral is unchanged.",
+		"newHorizons/heroSpecialties/MoandorGraveDust"},
+	{"core:monere", "new-horizons:wisp", "Prismatic Vanguard", "prismaticVanguardPhysicalDamagePercent", BonusType::NONE,
+		BonusValueType::BASE_NUMBER, "Wisps and Greater Wisps gain +%VALUE%% physical attack damage during their first real activation after entering combat. An accepted Wait or Defend consumes it. Healing and resurrection of the same body do not refresh it.",
+		"newHorizons/heroSpecialties/MonerePrismaticVanguard"},
 }};
 }
 std::span<const OrdinaryCreatureSpecialty> ordinaryCreatureSpecialtyRegistry()

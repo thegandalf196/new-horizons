@@ -43,6 +43,8 @@ public:
 	virtual bool unitHasVeteranCohesion(const Unit *) const { return false; }
 	/// Saved-context Morale range for this unit, or nullopt to use legacy engine limits.
 	virtual std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const Unit *) const { return std::nullopt; }
+	/// Copied legacy luck range, or nullopt to retain native engine limits.
+	virtual std::optional<std::pair<int32_t, int32_t>> unitLuckLimits(const Unit *) const { return std::nullopt; }
 };
 
 /// Explicit copied preparation values. Engaged zero is a fact, not a fallback sentinel.

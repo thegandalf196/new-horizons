@@ -23,7 +23,7 @@ void battle::ProjectedBattleWorldArena::applyPacket(const BattleUnitsChanged & p
 		if(!impl->applyConsumption(*this, packet))
 			impl->applyEntries(*this, packet.changedStacks);
 		// Inner consumption early returns do NOT skip the outer post-sidecars.
-		impl->finishCandidates(candidates, packet.changedStacks);
+		impl->finishCandidates(*this, candidates, packet.changedStacks);
 	}
 	catch(...)
 	{

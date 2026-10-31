@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "GnollHarriersProjection.h"
 #include "HeroActionContinuation.h"
 #include "HeroActionTiming.h"
 #include "BattleEvaluator.h"
@@ -73,7 +74,11 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 			cachedAttack.ap->attack.chargeDistance,
 			cachedAttack.ap->attack.shooting);
 
-		auto updatedAttack = AttackPossibility::evaluate(updatedBai, cachedAttack.ap->from, innerCache, state, cachedAttack.ap->perfectMoment);
+		// Retain the cached accepted movement fact; missing/forced paths remain0.
+		updatedBai.voluntaryFlightDistance = cachedAttack.ap->attack.voluntaryFlightDistance;
+
+		auto updatedAttack = AttackPossibility::evaluate(updatedBai, cachedAttack.ap->from, innerCache, state, cachedAttack.ap->perfectMoment, std::nullopt, nullptr,
+			gnollHarriersAI::replaysSameApproach(*cachedAttack.ap, *updatedAttacker), cachedAttack.ap->validatedApproachOrigin);
 
 		BattleExchangeEvaluator innerEvaluator(scoreEvaluator);
 

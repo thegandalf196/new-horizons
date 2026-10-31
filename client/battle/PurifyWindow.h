@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,6 +20,7 @@ class CButton;
 class CLabel;
 class CListBox;
 class CMultiLineLabel;
+namespace newHorizonsPurify { struct EligibleStack; }
 
 struct PurifyStackChoices
 {
@@ -27,15 +29,21 @@ struct PurifyStackChoices
 	int maximumSpellEffectChoices = 1;
 	std::vector<std::pair<SpellID, std::string>> eligibleEffects;
 	bool physicalPoisonAutomaticallyCleared = false;
+	bool graveDustAutomaticallyCleared = false;
 };
 
 using PurifyEffectSelection = std::vector<std::pair<int32_t, SpellID>>;
+
+/// Validate a UI selection against the freshly queried per-stack eligibility.
+std::optional<PurifyEffectSelection> validatedPurifyChoices(
+	const std::vector<newHorizonsPurify::EligibleStack> & currentEligible, const PurifyEffectSelection & choices);
 
 struct PurifyContext
 {
 	BattleHex center;
 	int maximumSpellEffectChoices = 1;
 	bool purifierWillClearPhysicalPoison = false;
+	bool purifierWillClearGraveDust = false;
 	std::vector<PurifyStackChoices> stacks;
 	std::function<bool(const PurifyEffectSelection &)> confirm;
 	std::function<void()> cancel;

@@ -11,6 +11,11 @@
 
 class CObjectListWindow;
 class CStack;
+class JsonNode;
+namespace battle { class Unit; }
+
+/// Eligible physical entries, in stable Frozen-then-Grave-Dust presentation order.
+std::vector<std::string> curePhysicalAfflictionChoices(const JsonNode & rules, const battle::Unit * target);
 
 /// Presentation only. The installed callbacks retain all live-state validation.
 class CureAfflictionPresenter

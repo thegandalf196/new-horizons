@@ -6,6 +6,7 @@
 #include "BattleExchangeAftermath.h"
 #include "AttackPreviewHitContext.h"
 #include "MeleeSpecialtyProjection.h"
+#include "CoordinatedMarkProjection.h"
 #include "ParalyzingGazeProjection.h"
 #include "DefiantDenialProjection.h"
 #include "../../lib/battle/BattleAttackInfo.h"
@@ -180,12 +181,26 @@ void projectRelentlessAssaultAttack(HypotheticBattle & battle, const BattleAttac
 }
 }
 
+void battleExchangeAftermath::replayPrimaryStatuses(HypotheticBattle & battle,
+	const BattleAttackInfo & attack, const FortuneStrikeProjection & strike,
+	const std::vector<std::pair<uint32_t, int64_t>> & actualHits,
+	bool binding, bool gaze, int64_t primaryBodyHealthLoss)
+{
+	const auto primaryHit = std::ranges::find(actualHits, strike.defenderId,
+		&std::pair<uint32_t, int64_t>::first);
+	applyPrimaryStatuses(battle, attack,
+		primaryHit == actualHits.end() ? 0 : primaryHit->second, binding, gaze, primaryBodyHealthLoss,
+		primaryHit == actualHits.end() ? newHorizonsOrdinaryStrike::EffectPlan{} : strike.lanceFormation);
+}
+
 void battleExchangeAftermath::applyPrimaryStatuses(HypotheticBattle & battle,
-	const BattleAttackInfo & attack, int64_t primaryDamage, bool binding, bool gaze)
+	const BattleAttackInfo & attack, int64_t primaryDamage, bool binding, bool gaze, int64_t primaryBodyHealthLoss,
+	const newHorizonsOrdinaryStrike::EffectPlan & lanceFormation)
 {
 	battle.projectSerpentBinding(attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, binding);
 	paralyzingGazeAI::apply(battle, attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, gaze);
-	AttackPreviewHitContext::applyOrdinaryStrike(battle, attack, primaryDamage);
+	AttackPreviewHitContext::applyOrdinaryStrike(battle, attack, primaryDamage, primaryBodyHealthLoss);
+	AttackPreviewHitContext::applyLanceFormation(battle, lanceFormation);
 }
 
 void BattleExchangeVariant::completeSelectedAttack(const AttackPossibility & ap,
@@ -194,11 +209,15 @@ void BattleExchangeVariant::completeSelectedAttack(const AttackPossibility & ap,
 	const std::set<uint32_t> & rebirthSpawnIdsBefore, size_t primalBurstFirstNewHit,
 	PlayerColor referenceController, DamageCache & damageCache)
 {
+	bool returned = false;
 	if(!ap.attack.shooting && ap.from.isValid() && attacker.alive()
 		&& attacker.hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
 		&& !attacker.hasBonusOfType(BonusType::NOT_ACTIVE)
 		&& !attacker.hasBonusOfType(BonusType::BIND_EFFECT))
+	{
 		attacker.setPosition(originalPosition);
+		returned = true;
+	}
 
 #if BATTLE_TRACE_LEVEL >= 1
 	logAi->trace(
@@ -213,4 +232,6 @@ void BattleExchangeVariant::completeSelectedAttack(const AttackPossibility & ap,
 	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, &attacker, true, damageCache, hb);
 	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, true, damageCache, hb);
 	meleeSpecialtyAI::complete(*hb, attacker.unitId(), meleeSpecialtyAI::completedPrimaryMelee(ap));
+	if(returned)
+		coordinatedMarkAI::replayReturn(ap, *hb, originalPosition);
 }

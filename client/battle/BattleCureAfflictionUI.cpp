@@ -26,10 +26,23 @@
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/CurePhysicalAffliction.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
+
+std::vector<std::string> curePhysicalAfflictionChoices(const JsonNode & rules, const battle::Unit * target)
+{
+	std::vector<std::string> choices;
+	if(!target)
+		return choices;
+	if(newHorizonsFrozen::chancePercent(rules) > 0 && target->alive() && newHorizonsFrozen::isFrozen(*target))
+		choices.emplace_back("frozen");
+	if(spells::curePhysical::livingTarget(target) && spells::curePhysical::present(rules, *target, "graveDust"))
+		choices.emplace_back("graveDust");
+	return choices;
+}
 
 std::shared_ptr<CObjectListWindow> showCureAfflictionModal(
 	const std::vector<std::string> & names, std::function<void(int)> confirm,
@@ -60,25 +73,24 @@ void BattleInterface::installCureAfflictionUI()
 			return false;
 
 		const auto choices = newHorizonsMagic::cureAfflictions(callback->getBattle()->getMagicRules(), initialTarget);
-		const bool frozenChoice = newHorizonsFrozen::chancePercent(callback->getBattle()->getMagicRules()) > 0
-			&& initialTarget->alive() && newHorizonsFrozen::isFrozen(*initialTarget);
-		if(choices.empty() && !frozenChoice)
+		const auto physicalChoices = curePhysicalAfflictionChoices(callback->getBattle()->getMagicRules(), initialTarget);
+		if(choices.empty() && physicalChoices.empty())
 			return false; // Ordinary healing needs no additional choice.
 
 		std::vector<std::string> names;
 		for(const auto choice : choices)
 			names.push_back(choice.toSpell()->getNameTranslated());
-		if(frozenChoice)
-			names.push_back(LIBRARY->generaltexth->translate("new-horizons.combat.frozen.label"));
+		for(const auto & kind : physicalChoices)
+			names.push_back(kind == "frozen" ? LIBRARY->generaltexth->translate("new-horizons.combat.frozen.label") : "Grave Dust");
 		const auto targetID = initialTarget->unitId();
 		const auto heroID = currentHero()->id;
 		const CureAfflictionSession session(owner, actionsController->getCastingSession());
-		auto confirm = [session, pending, localBattleID, targetID, heroID, choices, frozenChoice](int selected)
+		auto confirm = [session, pending, localBattleID, targetID, heroID, choices, physicalChoices](int selected)
 		{
 			session.confirm(CPlayerInterface::battleInt, [&](BattleInterface & owner)
 			{
 				if(!owner.curInt || !owner.curInt->cb || selected < 0
-					|| static_cast<size_t>(selected) >= choices.size() + (frozenChoice ? 1 : 0))
+					|| static_cast<size_t>(selected) >= choices.size() + physicalChoices.size())
 					return;
 				const auto callback = owner.curInt->cb->getBattle(localBattleID);
 				const auto * hero = owner.currentHero();
@@ -89,9 +101,10 @@ void BattleInterface::installCureAfflictionUI()
 				const auto * spell = pending.spell.toSpell();
 				spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
 				preview.setMetamagicFollowup(pending.metamagicFollowup);
-				const bool removeFrozen = static_cast<std::size_t>(selected) == choices.size();
-				preview.setCureAffliction(removeFrozen ? SpellID(SpellID::NONE) : choices[selected]);
-				preview.setCurePhysicalAffliction(removeFrozen ? "frozen" : "");
+				const bool removePhysical = static_cast<std::size_t>(selected) >= choices.size();
+				const std::string physicalKind = removePhysical ? physicalChoices[selected - choices.size()] : "";
+				preview.setCureAffliction(removePhysical ? SpellID(SpellID::NONE) : choices[selected]);
+				preview.setCurePhysicalAffliction(physicalKind);
 				auto mechanics = spell->battleMechanics(&preview);
 				spells::detail::ProblemImpl problem;
 				battle::Target targetCheck;
@@ -105,8 +118,8 @@ void BattleInterface::installCureAfflictionUI()
 				BattleAction action = pending;
 				action.target.clear();
 				action.aimToUnit(target);
-				action.spellCureAffliction = removeFrozen ? SpellID(SpellID::NONE) : choices[selected];
-				action.spellCurePhysicalAffliction = removeFrozen ? "frozen" : "";
+				action.spellCureAffliction = removePhysical ? SpellID(SpellID::NONE) : choices[selected];
+				action.spellCurePhysicalAffliction = physicalKind;
 				owner.curInt->cb->battleMakeSpellAction(localBattleID, action);
 			});
 		};

@@ -6,6 +6,7 @@
 #pragma once
 #include "../constants/EntityIdentifiers.h"
 #include <memory>
+#include <optional>
 
 class CGHeroInstance;
 class AFactionMember;
@@ -26,6 +27,8 @@ struct CombatPassives
 	int magicResistancePercent = 0;
 	bool doubleStrike = false;
 	int luckBonus = 0;
+	struct LuckSource { std::optional<SecondarySkill> skill; };
+	std::optional<LuckSource> luckSource; // Absent means native lazy identifier resolution; engaged missing is owned unknown.
 };
 /// Return detached explanation contributions without mutating the bonus graph.
 /// The caller adds additionalLuck to its unmodified scalar with wide arithmetic;

@@ -11,6 +11,7 @@
 #include "UnitStateValueFields.h"
 #include "UnitAdditionRules.h"
 #include "NewHorizonsOffense.h"
+#include "NewHorizonsPrismaticVanguard.h"
 #include "../mapObjects/army/CArmedInstance.h"
 #include "../mapObjects/army/CStackBasicDescriptor.h"
 #include <stdexcept>
@@ -79,6 +80,8 @@ void battle::ProjectedBattleWorldArena::Data::initializeAdded(Slot & slot, const
 	slot.state->natureSummoned = info.natureSummoned;
 	slot.state->summonRoundsRemaining = info.summonRoundsRemaining;
 	slot.original->initializeRebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP);
+	if(const auto entry = newHorizonsPrismaticVanguard::entryBonus(heroes.at(info.side), info.type))
+		graph->addExported(*slot.original, std::make_shared<Bonus>(*entry));
 	if(info.phantomIntegrity > 0)
 		slot.state->initializePhantomProfile(info.phantomIntegrity, info.phantomDuration);
 	const auto & sideOrders = orders.at(info.side);

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "PhysicalStrikeProjection.h"
 #include "HypotheticBattle.h"
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/battle/BattleAttackInfo.h"
@@ -277,6 +278,7 @@ void HypotheticBattle::projectPrimalBurst(const std::shared_ptr<StackWithBonuses
 		};
 		std::vector<PendingBurstHit> pendingHits;
 		pendingHits.reserve(hostileIds.size());
+		std::vector<newHorizonsReactiveDefense::Destruction> destroyed;
 
 		// Match the authoritative batch: resolve every target, mitigation value,
 		// controller, and death-source snapshot before changing any recipient.
@@ -289,6 +291,7 @@ void HypotheticBattle::projectPrimalBurst(const std::shared_ptr<StackWithBonuses
 				*this, *target, rawShare);
 			if(adjustedDamage <= 0)
 				continue;
+			if(const auto death = PhysicalStrikeProjection::captureForecastDamage(*this, *target)) destroyed.push_back(*death);
 			auto preHitTarget = std::make_shared<StackWithBonuses>(this, target.get());
 			preHitTarget->freezeDamageScoringBonusSnapshot();
 			pendingHits.push_back({targetId, std::move(preHitTarget), battleGetOwner(target.get()),
@@ -312,6 +315,8 @@ void HypotheticBattle::projectPrimalBurst(const std::shared_ptr<StackWithBonuses
 			target->removeUnitBonus(Bonus::UntilBeingAttacked);
 			projectedPrimalBurstHits.push_back({hit.preHitTarget, hit.targetController, actualDamage});
 		}
+
+		PhysicalStrikeProjection::completeDamagePacket(*this, destroyed);
 
 		// Only after the complete damage batch do its deaths trigger new rebirths.
 		for(const auto & hit : pendingHits)

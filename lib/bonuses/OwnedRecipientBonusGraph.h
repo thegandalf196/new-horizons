@@ -5,6 +5,7 @@
 #include "OwnedBonusPayloads.h"
 #include <unordered_map>
 #include <unordered_set>
+namespace battle { class OwnedUnitBonusFrame; }
 /// Pure owned inheritance storage, not live capture/admission. Context currently
 /// covers copied scalar/type/terrain/rank/acceptance domains; no live frame/roster.
 class DLL_LINKAGE OwnedRecipientBonusGraph final : public BonusGraphQuery, boost::noncopyable
@@ -42,6 +43,8 @@ public:
 	const TNodesVector & children(const CBonusSystemNode & node) const override;
 	BonusEvaluationContext evaluation(const CBonusSystemNode & node) const override;
 private:
+	friend class battle::OwnedUnitBonusFrame;
+	BonusList queryRootRecords(const CSelector & selector, bool unstacked, const RootQuery & query, const BonusList & records, const battle::Unit * ownedUnit = nullptr) const;
 	struct Node;
 	std::unique_ptr<ownedBonusPayloads::Captured> payloads; // Retires after all node lists.
 	std::vector<std::unique_ptr<Node>> nodes;

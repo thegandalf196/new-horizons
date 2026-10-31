@@ -114,10 +114,16 @@ int AFactionMember::moraleValAndBonusList(TConstBonusListPtr & bonusList, int32_
 	return std::clamp(result, minMorale, maxMorale);
 }
 
-int AFactionMember::luckValAndBonusList(TConstBonusListPtr & bonusList) const
+std::pair<int32_t, int32_t> AFactionMember::getLuckLimits() const
 {
 	int32_t maxGoodLuck = LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_LUCK_CHANCE).size();
 	int32_t maxBadLuck = - (int32_t) LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_LUCK_CHANCE).size();
+	return {maxBadLuck, maxGoodLuck};
+}
+
+int AFactionMember::luckValAndBonusList(TConstBonusListPtr & bonusList) const
+{
+	const auto [maxBadLuck, maxGoodLuck] = getLuckLimits();
 
 	if(getBonusBearer()->hasBonusOfType(BonusType::MAX_LUCK))
 	{

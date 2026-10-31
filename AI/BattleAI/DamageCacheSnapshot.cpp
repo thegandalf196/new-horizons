@@ -46,7 +46,7 @@ bool DamageCache::matchesSnapshot(const Snapshot & snapshot) const
 		if(!layer || !sameDamageBits(layer->damageCache, saved.damageCache)
 			|| layer->obstacleDamage != saved.obstacleDamage
 			|| layer->rangedMarkTargets != saved.rangedMarkTargets
-			|| layer->temporaryPhysicalProtectionTargets != saved.temporaryPhysicalProtectionTargets
+			|| layer->temporaryCombatModifierUnits != saved.temporaryCombatModifierUnits
 			|| layer->ambusherAttackers != saved.ambusherAttackers
 			|| layer->shadowAssaultTargetSides != saved.shadowAssaultTargetSides
 			|| layer->nightProwlerAttackers != saved.nightProwlerAttackers

@@ -141,6 +141,12 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 		return;
 	}
 
+	// Activation injury is resolved before ordinary action selection. A newly
+	// created replacement has a different unit ID and cannot inherit this slot.
+	const auto * activated = state->battleGetUnitByID(unit->unitId());
+	if(!activated || !activated->alive() || activated->isGhost())
+		return;
+
 	PotentialTargets potentialTargets(unit, damageCache, state);
 
 	if(!potentialTargets.possibleAttacks.empty())

@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
-#include "SylvanTacticsProjection.h"
+#include "PrismaticVanguardProjection.h"
+#include "GnollHarriersProjection.h"
+#include "PhysicalStrikeProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "../../lib/battle/NewHorizonsLivingInferno.h"
 #include "HypotheticBattle.h"
@@ -47,6 +49,7 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 	info.load(id, data);
 	auto newUnit = std::make_shared<StackWithBonuses>(this, info);
 	stackStates[newUnit->unitId()] = newUnit;
+	prismaticVanguardAI::entry(*this, *newUnit);
 	const auto bindings = newUnit->getBonuses(Selector::type()(BonusType::BIND_EFFECT));
 	for(const auto & bonus : *bindings)
 		if(bonus) noteSerpentBindingAdmission(*bonus);
@@ -118,7 +121,7 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 }
 
 std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(uint32_t id,
-	const BattleHex & destination)
+	const BattleHex & destination, bool ownsMovementHistoryReceipt)
 {
 	std::vector<ProjectedOverwatchHit> result;
 	auto mover = getForUpdate(id);
@@ -135,6 +138,8 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 		const auto from = mover->getPosition();
 		const auto to = path[index - 1];
 		moveUnit(id, to);
+		if(ownsMovementHistoryReceipt)
+			gnollHarriersAI::record(*this, id, from, mover->getPosition());
 		livingInferno.traverse(from, BattleHexArray{to}, mover->hasBonusOfType(BonusType::FLYING));
 		for(const auto shooterId : battleGetOverwatchReactors(mover.get(), from, to))
 		{
@@ -153,7 +158,7 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 			const auto source = captureElementalRebirthSource(*mover);
 			const bool nativeRebirth = hasReadyNativeRebirth(mover.get());
 			const auto healthBefore = mover->getAvailableHealth();
-			sylvanTacticsAI::StrikeProjection tactics(this);
+			PhysicalStrikeProjection tactics(this);
 			tactics.damage(*this, attack, *mover, damage, battle::DamageProvenance::PHYSICAL_CREATURE);
 			tactics.finish(shooterId);
 			if(!mover->alive())

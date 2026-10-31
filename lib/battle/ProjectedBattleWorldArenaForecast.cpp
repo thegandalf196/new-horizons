@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "ProjectedBattleWorldArenaState.h"
 #include "UnitStateValueFields.h"
+#include "UnitCreatureResolver.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <stdexcept>
 
@@ -51,13 +52,26 @@ void battle::ProjectedBattleWorldArena::replayExportedRemovals(const std::vector
 	catch(...) { impl->abandon(); throw; }
 }
 
+namespace
+{
+const CCreature * originalBodyDescriptor(const battle::CUnitState & state)
+{
+	if(!state.hasBattleFormState())
+		return state.unitType();
+	const auto original = state.battleFormOriginalCreature();
+	if(const auto * resolver = state.unitCreatureResolver())
+		return resolver->creature(original);
+	return original.toCreature();
+}
+}
+
 void battle::ProjectedBattleWorldArena::copyQueryValuesAt(size_t occurrence, const CUnitState & state)
 {
 	impl->requireUsable();
 	try
 	{
 		auto & slot = *impl->slots.at(occurrence);
-		if(slot.state->unitId() != state.unitId() || slot.state->unitType() != state.unitType()
+		if(slot.state->unitId() != state.unitId() || originalBodyDescriptor(*slot.state) != originalBodyDescriptor(state)
 			|| slot.state->unitSide() != state.unitSide() || slot.state->unitOwner() != state.unitOwner())
 			throw std::invalid_argument("Forecast query values require the same physical descriptor");
 		UnitStateValueFields::copy(*slot.state, state);

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "MeleeSpecialtyProjection.h"
+#include "CoordinatedMarkProjection.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
@@ -35,6 +36,7 @@ bool complete(HypotheticBattle & branch, uint32_t actorId, bool completed)
 }
 void complete(AttackPossibility & preview)
 {
+	coordinatedMarkAI::completeReturn(preview);
 	if(preview.effectPreview && completedPrimaryMelee(preview)
 		&& complete(*preview.effectPreview, preview.attackerState->unitId(), true))
 		preview.attackerState = preview.effectPreview->getForUpdate(preview.attackerState->unitId());

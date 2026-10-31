@@ -4,6 +4,7 @@
 #include "BattleProcessor.h"
 #include "../CGameHandler.h"
 #include "../../lib/CStack.h"
+#include "../../lib/battle/AttackAbilityQueries.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -31,22 +32,10 @@ void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bo
 				logGlobal->debug("attackCasting: all attacked creatures have been killed");
 				return;
 			}
-			int32_t spellLevel = 0;
-			TConstBonusListPtr spellsByType = attacker->getBonuses(Selector::typeSubtype(attackMode, BonusSubtypeID(spellID)));
-			for(const auto & sf : *spellsByType)
-			{
-				int meleeRanged = -1;
-				if (sf->parameters)
-				{
-					vstd::amax(spellLevel, sf->parameters->toVector()[0]);
-					meleeRanged = sf->parameters->toVector()[1];
-				}
-
-				if (meleeRanged == -1 || meleeRanged == 0 || (meleeRanged == 1 && ranged) || (meleeRanged == 2 && !ranged))
-					castMe = true;
-			}
-			int chance = attacker->valOfBonuses(Selector::typeSubtype(attackMode, BonusSubtypeID(spellID)));
-			vstd::amin(chance, 100);
+			const auto ability = attackAbilityQueries::parameters(*attacker, attackMode, spellID, ranged);
+			const int32_t spellLevel = ability.spellLevel;
+			const int chance = ability.chance;
+			castMe = ability.castMe;
 
 			const CSpell * spell = SpellID(spellID).toSpell();
 			spells::AbilityCaster caster(attacker, spellLevel);
@@ -94,57 +83,9 @@ void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bo
 	}
 }
 
-std::set<SpellID> BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack *defender)
+std::set<SpellID> BattleActionProcessor::getSpellsForAttackCasting(const TConstBonusListPtr & spells, const CStack * defender)
 {
-	std::set<SpellID> spellsToCast;
-	constexpr int unlayeredItemsInternalLayer = -1;
-
-	std::map<int, std::vector<std::shared_ptr<Bonus>>> spellsWithBackupLayers;
-
-	for(int i = 0; i < spells->size(); i++)
-	{
-		std::shared_ptr<Bonus> bonus = spells->operator[](i);
-		int layer = bonus->parameters ? bonus->parameters->toVector()[2] : -1;
-		vstd::amax(layer, -1);
-		spellsWithBackupLayers[layer].push_back(bonus);
-	}
-
-	auto addSpellsFromLayer = [&](int layer) -> void
-	{
-		assert(spellsWithBackupLayers.find(layer) != spellsWithBackupLayers.end());
-
-		for(const auto & spell : spellsWithBackupLayers[layer])
-		{
-			if (spell->subtype.as<SpellID>() != SpellID())
-				spellsToCast.insert(spell->subtype.as<SpellID>());
-			else
-				logGlobal->error("Invalid spell to cast during attack!");
-		}
-	};
-
-	if(spellsWithBackupLayers.find(unlayeredItemsInternalLayer) != spellsWithBackupLayers.end())
-	{
-		addSpellsFromLayer(unlayeredItemsInternalLayer);
-		spellsWithBackupLayers.erase(unlayeredItemsInternalLayer);
-	}
-
-	for(auto item : spellsWithBackupLayers)
-	{
-		bool areCurrentLayerSpellsApplied = std::all_of(item.second.begin(), item.second.end(),
-			[&](const std::shared_ptr<Bonus> spell)
-			{
-				std::vector<SpellID> activeSpells = defender->activeSpells();
-				return vstd::find(activeSpells, spell->subtype.as<SpellID>()) != activeSpells.end();
-			});
-
-		if(!areCurrentLayerSpellsApplied || item.first == spellsWithBackupLayers.rbegin()->first)
-		{
-			addSpellsFromLayer(item.first);
-			break;
-		}
-	}
-
-	return spellsToCast;
+	return attackAbilityQueries::spellsForAttackCasting(spells, *defender);
 }
 
 /// Legacy spell-casting abilities only - combat event reactions run from makeAttack instead, and

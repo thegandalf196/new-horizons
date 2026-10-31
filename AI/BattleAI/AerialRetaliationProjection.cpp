@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
+#include "PhysicalStrikeProjection.h"
 #include "AerialRetaliationProjection.h"
 #include "AttackPossibility.h"
 #include "BattleExchangeVariant.h"
@@ -92,9 +93,11 @@ int64_t replaySourceAftermath(HypotheticBattle & branch, const FortuneStrikeProj
 		const auto rebirthSource = branch.captureElementalRebirthSource(*source);
 		const bool nativeRebirth = branch.hasReadyNativeRebirth(source.get());
 		auto damage = strike.aerialReflectionDamage;
+		const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(branch, *source);
 		source->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 		if(!source->alive()) branch.releaseSerpentBindingsForDeath(*source);
 		branch.recordBloodrageTransition(source, true);
+		if(destroyed) PhysicalStrikeProjection::completeDamagePacket(branch, std::span(&*destroyed, 1));
 		if(rebirthSource) branch.projectElementalRebirth(source.get(), *rebirthSource,
 			!source->alive(), source->isClone(), nativeRebirth);
 	}

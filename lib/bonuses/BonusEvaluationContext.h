@@ -64,6 +64,8 @@ public:
 	BonusEvaluationContext(const CBonusSystemNode & node) noexcept;
 	/// Pure owned context; enclosing storage owns both shell and copied facts.
 	BonusEvaluationContext(const CBonusSystemNode & shell, const OwnedBonusEvaluationFacts & facts);
+	/// Query-scoped owned current unit; no native ownership/admission is established.
+	BonusEvaluationContext(const CBonusSystemNode & shell, const OwnedBonusEvaluationFacts & facts, const battle::Unit & unit);
 	std::optional<int> heroLevel() const;
 	std::optional<int> filteredArmySize(CreatureID creature, FactionID faction, int level) const;
 	std::optional<bool> matchesCreature(CreatureID family, bool includeUpgrades) const;
@@ -100,6 +102,7 @@ public:
 	/// Reads only raw unit identity/health/position and native creature traits;
 	/// never performs a neighbor's recursive stack bonus query.
 	bool matchesAdjacentUnit(const battle::Unit & neighbor, CreatureID family, const AdjacentUnitFilter & filter) const;
+	bool hasMatchingAdjacentUnit(CreatureID family, const AdjacentUnitFilter & filter) const;
 	/// Projected acceptance requires a CUnitState view (not a generic Unit wrapper).
 	bool acceptsBonus(const Bonus & bonus) const;
 };

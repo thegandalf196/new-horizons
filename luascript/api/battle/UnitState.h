@@ -94,6 +94,7 @@ public:
 	static bool hasAbsoluteImmunity(const LuaUnitState & state, const spells::Spell & spell);
 	static const Creature * getCreature(const LuaUnitState & state);
 	static BattleHexArray getHexes(const LuaUnitState & state);
+	static int healingCapacity(lua_State * L); // read-only raw allocation query
 	static int heal(lua_State * L); // args: amount, level, power — returns healedHP, resurrected
 };
 

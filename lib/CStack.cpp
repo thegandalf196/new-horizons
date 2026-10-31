@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "bonuses/NativeBonusGraphAccess.h"
 #include "CStack.h"
+#include "battle/AttackAbilityQueries.h"
 #include "battle/BattleBonusAcceptance.h"
 #include "battle/StackInitializationReceipts.h"
 
@@ -146,24 +147,7 @@ si32 CStack::magicResistance() const
 
 std::vector<SpellID> CStack::activeSpells() const
 {
-	std::vector<SpellID> ret;
-
-	std::stringstream cachingStr;
-	cachingStr << "!type_" << vstd::to_underlying(BonusType::NONE) << "source_" << vstd::to_underlying(BonusSource::SPELL_EFFECT);
-	CSelector selector = Selector::sourceType()(BonusSource::SPELL_EFFECT)
-						 .And(CSelector([](const Bonus * b)->bool
-	{
-		return b->type != BonusType::NONE && b->sid.as<SpellID>().toSpell() && !b->sid.as<SpellID>().toSpell()->isAdventure();
-	}));
-
-	TConstBonusListPtr spellEffects = getBonuses(selector, cachingStr.str());
-	for(const auto & it : *spellEffects)
-	{
-		if(!vstd::contains(ret, it->sid.as<SpellID>()))  //do not duplicate spells with multiple effects
-			ret.push_back(it->sid.as<SpellID>());
-	}
-
-	return ret;
+	return attackAbilityQueries::activeSpells(*this);
 }
 
 CStack::~CStack()
@@ -262,7 +246,7 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 			{
 				int64_t toHeal = customState->getMaxHealth() * resurrectedCount;
 				//TODO: add one-battle rebirth?
-				auto rebirth = customState->heal(toHeal, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+				auto rebirth = customState->recreateAfterNativeRebirth(toHeal);
 				if(rebirth.resurrectedCount > 0)
 				{
 					customState->casts.use();

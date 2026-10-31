@@ -9,6 +9,9 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "../../../lib/spells/CurePhysicalAffliction.h"
+#include "../../../lib/battle/NewHorizonsGraveDust.h"
+
 
 #include "../../../AI/BattleAI/BattleAI.h"
 #include "../../../lib/GameConstants.h"
@@ -219,6 +222,15 @@ protected:
 		ASSERT_TRUE(target->canBeHealed());
 	}
 
+	void installGraveDust(CStack * recipient, int value = 5000)
+	{
+		SetStackEffect effects;
+		effects.battleID = BattleID(0);
+		effects.toAdd.emplace_back(recipient->unitId(), newHorizonsGraveDust::records(value, PlayerColor(1)));
+		gameHandler->sendAndApply(effects);
+		ASSERT_EQ(spells::curePhysical::graveDustRemoval(*recipient).size(), 2u);
+	}
+
 	void addStoredPoison(CStack * target)
 	{
 		auto state = target->acquireState();
@@ -401,4 +413,64 @@ TEST_F(NewHorizonsSurgeonTest, SuccessfulHealingClearsStoredPhysicalPoisonFromAu
 	EXPECT_EQ(cleared->physicalPoisonBaseDamage, 0);
 	EXPECT_EQ(cleared->physicalPoisonActivationsRemaining, 0);
 	EXPECT_EQ(cleared->physicalPoisonSourceStackId, -1);
+}
+
+TEST_F(NewHorizonsSurgeonTest, GraveDustCleansesOnlyAfterPositiveSurvivorHealing)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareBattle(true));
+	auto * target = addFriendlyAzureDragon();
+	ASSERT_NE(target, nullptr);
+	ASSERT_NO_FATAL_FAILURE(wound(target, 100));
+	beginCombat();
+	ASSERT_TRUE(advanceUntilTent());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target));
+	ASSERT_TRUE(advanceUntilTent());
+	const auto before = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeHeal(tent, target)));
+	EXPECT_GT(target->getAvailableHealth(), before);
+	EXPECT_TRUE(spells::curePhysical::graveDustRemoval(*target).empty());
+}
+
+TEST_F(NewHorizonsSurgeonTest, FullyBlockedGraveDustHealingDoesNotTriggerSurgeonCleanse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareBattle(true));
+	auto * target = addFriendlyAzureDragon();
+	ASSERT_NE(target, nullptr);
+	ASSERT_NO_FATAL_FAILURE(wound(target, 100));
+	beginCombat();
+	ASSERT_TRUE(advanceUntilTent());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target, 10000));
+	ASSERT_TRUE(advanceUntilTent());
+	const auto before = target->getAvailableHealth();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeHeal(tent, target)));
+	EXPECT_EQ(target->getAvailableHealth(), before);
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*target).size(), 2u);
+}
+
+TEST_F(NewHorizonsSurgeonTest, OrdinaryTentHealingWithoutSurgeonKeepsGraveDust)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareBattle(false));
+	auto * target = addFriendlyAzureDragon();
+	ASSERT_NE(target, nullptr);
+	ASSERT_NO_FATAL_FAILURE(wound(target, 100));
+	beginCombat();
+	ASSERT_TRUE(advanceUntilTent());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target));
+	ASSERT_NO_FATAL_FAILURE(healWithTent(target));
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*target).size(), 2u);
+}
+
+TEST_F(NewHorizonsSurgeonTest, EarlierDiseaseKeepsPriorityOverGraveDust)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareBattle(true));
+	auto * target = addFriendlyAzureDragon();
+	ASSERT_NE(target, nullptr);
+	ASSERT_NO_FATAL_FAILURE(wound(target, 100));
+	addMarkedAffliction(target, "disease", 1, 49001);
+	beginCombat();
+	ASSERT_TRUE(advanceUntilTent());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(target));
+	ASSERT_NO_FATAL_FAILURE(healWithTent(target));
+	EXPECT_FALSE(hasAffliction(*target, "disease"));
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*target).size(), 2u);
 }

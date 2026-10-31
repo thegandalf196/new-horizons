@@ -27,8 +27,6 @@
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/battle/PhysicalAffliction.h"
-#include "../../lib/bonuses/CBonusSystemNode.h"
-#include "../../lib/bonuses/ProjectedBonusView.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/HydrasVitalityIdentity.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
@@ -284,24 +282,6 @@ void StackWithBonuses::clearNoQuarterRoundBlocker()
 	{
 		return newHorizonsOffense::isNoQuarterRetaliationBonus(bonus);
 	}));
-}
-
-std::vector<Bonus> StackWithBonuses::localSpellEffects() const
-{
-	if(exactLocalSpellEffects)
-		return *exactLocalSpellEffects;
-	if(const auto * parent = dynamic_cast<const StackWithBonuses *>(origBearer))
-		return parent->localSpellEffects();
-	if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(origBearer))
-		return projected->sourceLocalSpellEffects();
-	const auto * node = dynamic_cast<const CBonusSystemNode *>(origBearer);
-	if(!node)
-		throw std::runtime_error("Detached exact effect capture requires source-local bonus provenance");
-	std::vector<Bonus> result;
-	for(const auto & bonus : node->getExportedBonusList())
-		if(bonus->source == BonusSource::SPELL_EFFECT)
-			result.push_back(*bonus);
-	return result;
 }
 
 void StackWithBonuses::captureLocalSpellEffects()

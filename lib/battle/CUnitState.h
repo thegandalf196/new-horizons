@@ -126,6 +126,8 @@ public:
 	void normalizeCapacityHealth(bool preserveCapacityTracking);
 	int64_t capacityRegenerationProjectedHeal(int32_t perCreatureHeal) const;
 	int64_t consumeCapacityRegeneration(int32_t perCreatureHeal);
+	/// Spend only within each survivor's existing regeneration allowance.
+	int64_t consumeCapacityRegeneration(int32_t perCreatureHeal, int64_t receivedHealth);
 	bool isCapacityHealthTracking() const;
 
 	void serializeJson(JsonSerializeFormat & handler);
@@ -460,6 +462,9 @@ public:
 	void damageShadowGiftSacrifice(int64_t & amount);
 	void addShadowGiftMaximumHealthLoss(int64_t amount);
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) override;
+	int64_t healingCapacity(int64_t requested, EHealLevel level, EHealPower power) const override;
+	/// Native Rebirth recreates a body; never exported as a Lua healing bypass.
+	HealInfo recreateAfterNativeRebirth(int64_t & amount);
 
 	void localInit(const IUnitEnvironment * env_);
 	/// Bind copied/prepared state to its environment without resetting values.
@@ -513,9 +518,12 @@ public:
 
 private:
 	void clearDeadUnitTransientState();
+	int64_t rawHealingCapacity(int64_t requested, EHealLevel level, EHealPower power) const;
+	HealInfo applyHealing(int64_t & amount, EHealLevel level, EHealPower power, bool receivedBenefit);
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
 		DamageProvenance provenance = DamageProvenance::OTHER);
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
+	std::pair<int32_t, int32_t> getLuckLimits() const override;
 protected:
 	const CCreature * stateCreature(CreatureID id) const;
 private:
@@ -576,12 +584,19 @@ public:
 	void onBattleFormChanged() override;
 	bool usesBonusProvider(const IBonusBearer & expected) const noexcept;
 	bool usesUnitInfo(const IUnitInfo & expected) const noexcept;
+	/// Identity check only; caller must retain the actual source/loan owners.
+	bool hasUnitInfoAncestor(const IUnitInfo & expected) const;
+	bool hasBonusProviderAncestor(const IBonusBearer & expected) const;
+	/// Metadata-only borrowed provenance, not a query route or a source lease.
+	/// Caller retains the actual wrapper/info/provider owners; unknown/mismatched ancestry refuses.
+	const IBonusBearer * sourceLocalEffectProvider() const;
+	TConstBonusListPtr ownedNativeFormBonuses(const CUnitState & form, const CSelector & selector, bool unstacked) const override;
 	const IBonusBearer * getBonusBearer() const override;
 
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = "") const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 	TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(
-		const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const override;
+		const CSelector & selector, const std::string & cachingStr = std::string(), bool unstacked = false) const override;
 
 	int32_t getTreeVersion() const override;
 	bool isBonusCacheable() const override;
@@ -609,6 +624,7 @@ private:
 	const ProjectedBonusView * projectedBonusProvider() const;
 	const Unit * unitBonusProvider() const;
 	bool hasCurrentBonusProviderDispatch() const;
+	const Unit * completeOwnedFormSource() const;
 
 	const IUnitInfo * unit;
 	const IBonusBearer * bonus;

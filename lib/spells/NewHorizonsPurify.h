@@ -40,6 +40,8 @@ struct DLL_LINKAGE EligibleStack
 	bool physicalPoison = false;
 	/// Purifier removes this same current physical affliction automatically, outside the base cap.
 	bool physicalPoisonAutomaticallyCleared = false;
+	/// Only canonical Grave Dust is an additional automatic Purifier cleanse.
+	bool graveDustAutomaticallyCleared = false;
 	int maximumSpellEffectChoices = 0;
 };
 

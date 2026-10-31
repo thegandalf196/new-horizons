@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "StackWithBonuses.h"
+#include "PhysicalStrikeProjection.h"
 
 #include "../../lib/battle/NewHorizonsPlague.h"
 #include "../../lib/constants/NumericConstants.h"
@@ -134,8 +135,10 @@ void HypotheticBattle::HypotheticServerCallback::apply(BattleStackMoved & pack)
 
 void HypotheticBattle::HypotheticServerCallback::apply(BattleUnitsChanged & pack)
 {
+	const auto destroyed = PhysicalStrikeProjection::captureDamagePacket(*owner, std::span<const UnitChanges>(pack.changedStacks));
 	BattleStatePackVisitor visitor(*owner);
 	pack.visit(visitor);
+	PhysicalStrikeProjection::completeDamagePacket(*owner, destroyed);
 }
 
 void HypotheticBattle::HypotheticServerCallback::apply(SetStackEffect & pack)
@@ -146,6 +149,7 @@ void HypotheticBattle::HypotheticServerCallback::apply(SetStackEffect & pack)
 
 void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 {
+	const auto destroyed = PhysicalStrikeProjection::captureDamagePacket(*owner, std::span<const BattleStackAttacked>(pack.stacks));
 	std::vector<ProjectedPlagueHit> plagueHits;
 	static const SpellID plagueSpell(SpellID::decode(std::string(newHorizonsPlague::SPELL_ID)));
 	for(const auto & hit : pack.stacks)
@@ -184,6 +188,7 @@ void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 
 	BattleStatePackVisitor visitor(*owner);
 	pack.visit(visitor);
+	PhysicalStrikeProjection::completeDamagePacket(*owner, destroyed);
 	for(const auto & [unitId, pending] : pendingRebirths)
 	{
 		auto unit = owner->getForUpdate(unitId);

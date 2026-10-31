@@ -64,6 +64,7 @@ set(lualib_SRCS
 		api/callback/IGameInfoCallback.cpp
 		api/Registry.cpp
 		api/callback/ServerCallback.cpp
+		api/callback/CurePhysicalAffliction.cpp
 )
 
 set(lualib_HDRS

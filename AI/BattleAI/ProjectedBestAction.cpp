@@ -1,6 +1,8 @@
 /* ProjectedBestAction.cpp, VCMI / New Horizons, GPL v2.0 or later. */
 #include "StdInc.h"
+#include "GnollHarriersProjection.h"
 #include "ProjectedBestAction.h"
+#include "PhysicalStrikeProjection.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
@@ -11,6 +13,7 @@ void applyProjectedBestAction(HypotheticBattle & state, const battle::Unit * liv
 {
 	auto attackerState = state.getForUpdate(liveUnit->unitId());
 	const bool attackerWasAlive = attackerState->alive();
+	const bool committedPrefix = gnollHarriersAI::replaysSameApproach(action, *attackerState);
 	*attackerState = *action.attackerState;
 	state.recordBloodrageTransition(attackerState, attackerWasAlive);
 
@@ -54,4 +57,7 @@ void applyProjectedBestAction(HypotheticBattle & state, const battle::Unit * liv
 		if(action.attackerDamageReduce > 0 && action.attack.defender->unitId() == affected->unitId())
 			affectedState->removeUnitBonus(Bonus::UntilAttack);
 	}
+	if(action.effectPreview)
+		PhysicalStrikeProjection::restoreEffects(state, *action.effectPreview);
+	gnollHarriersAI::restoreEffects(state, action, committedPrefix);
 }

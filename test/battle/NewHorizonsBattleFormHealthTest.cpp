@@ -35,6 +35,7 @@ class FormHealthBonusBearer final : public BonusBearerMock
 public:
 	const CUnitState * state = nullptr;
 	bool timeStopped = false;
+	int32_t incomingReduction = 0;
 	int32_t treeVersion = 1;
 
 	void setTimeStopped(bool value)
@@ -78,6 +79,13 @@ public:
 				BonusType::TIME_STOP, BonusSource::SPELL_EFFECT, 1, BonusSourceID());
 			if(selector && selector(timeStopBonus.get()))
 				result->push_back(std::move(timeStopBonus));
+		}
+		if(incomingReduction > 0)
+		{
+			auto reduction = std::make_shared<Bonus>(BonusDuration::STACK_ACTIVATION,
+				BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS, BonusSource::OTHER,
+				incomingReduction, BonusSourceID(), BonusSubtypeID(), BonusValueType::BASE_NUMBER);
+			if(selector && selector(reduction.get())) result->push_back(std::move(reduction));
 		}
 		return result;
 	}
@@ -511,4 +519,29 @@ TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenan
 	EXPECT_TRUE(ghost.isClone());
 	EXPECT_TRUE(ghost.isGhost());
 	EXPECT_FALSE(ghost.hasBattleForm());
+}
+
+TEST(NewHorizonsBattleFormHealthTest, IncomingReceiptUsesCommonRawCapOnceAndKeepsOriginalLedgerOnExpiry)
+{
+	UnitEnvironmentMock environment;
+	UnitInfoMock info;
+	FormHealthBonusBearer bonuses;
+	FormTestUnitState state(&info, &bonuses);
+	configureUnitInfo(info, SOURCE_CREATURE.toCreature());
+	bonuses.state = &state;
+	bonuses.incomingReduction = 5000;
+	state.localInit(&environment);
+	int64_t loss = 37;
+	state.damage(loss);
+	state.beginBattleForm(LARGE_FORM, 2);
+	const auto before = state.save();
+	EXPECT_EQ(state.healingCapacity(1000, EHealLevel::HEAL, EHealPower::PERMANENT), 37);
+	EXPECT_EQ(state.save(), before);
+	int64_t request = 1000;
+	EXPECT_EQ(state.heal(request, EHealLevel::HEAL, EHealPower::PERMANENT).healedHealthPoints, 19);
+	EXPECT_EQ(request, 19);
+	EXPECT_EQ(state.health.getCreatureHealthAvailable(), 282);
+	ASSERT_NO_THROW(state.endBattleForm());
+	EXPECT_EQ(state.getCount(), 3);
+	EXPECT_EQ(state.health.getCreatureHealthAvailable(), 282);
 }

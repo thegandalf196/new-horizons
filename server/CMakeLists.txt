@@ -2,6 +2,12 @@ set(vcmiservercommon_SRCS
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
+	battles/BattleCreatureBurn.cpp
+	battles/BattleCreatureBurn.h
+	battles/BattleToxicSting.cpp
+	battles/BattleToxicSting.h
+	battles/BattleVoluntaryMovementHistory.cpp
+	battles/BattleVoluntaryMovementHistory.h
 	battles/BattlePrimaryStrikeMetadata.cpp
 	battles/BattleFlyingMovement.cpp
 		battles/CreatureSpellActions.cpp
@@ -18,6 +24,7 @@ set(vcmiservercommon_SRCS
 		battles/NewHorizonsManaLeeches.cpp
 		battles/NewHorizonsSerpentsEmbrace.cpp
 	battles/BattlePrimaryStrikeAftermath.cpp
+	battles/BattlePurifyAction.cpp
 	battles/BattleMeleeSpecialtyCompletion.cpp
 	battles/BattleRoundHealing.cpp
 	battles/BattlecraftMasteryAward.cpp
@@ -90,6 +97,7 @@ set(vcmiservercommon_HEADERS
 		battles/NewHorizonsManaLeeches.h
 		battles/NewHorizonsSerpentsEmbrace.h
 	battles/BattlePrimaryStrikeAftermath.h
+	battles/BattlePurifyAction.h
 	battles/BattleMeleeSpecialtyCompletion.h
 	battles/BattleRoundHealing.h
 	battles/BattlecraftMasteryAward.h

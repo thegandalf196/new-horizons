@@ -36,6 +36,8 @@ battle::ProjectedBattleWorldArena::Data::captureCandidates(const std::vector<Uni
 		if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 			&& newHorizonsCrisisCommand::eligible(sideHeroes.at(side)))
 			result.crisis.push_back({side, change.id});
+		if(const auto death = newHorizonsReactiveDefense::captureDestruction(*unit))
+			result.solidarity.push_back(*death);
 	}
 	for(const auto & change : changes)
 	{

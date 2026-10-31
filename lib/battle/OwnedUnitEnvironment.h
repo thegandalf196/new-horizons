@@ -6,8 +6,11 @@
 #include <optional>
 #include <set>
 #include <vector>
+class ProjectedBonusRoster;
 namespace battle
 {
+class OwnedUnitBonusFrame;
+class CUnitStateDetached;
 /// Pure copied metadata + retained ordered owned-unit references. Not live admission.
 /// Full frame/recipe owner must retain this environment through every descendant loan.
 class DLL_LINKAGE OwnedUnitEnvironment final : public IUnitEnvironment, boost::noncopyable
@@ -19,6 +22,9 @@ public:
 		BattleSideArray<std::optional<ProjectedUnitEnvironmentState::SideInputs>> inputs;
 		BattleSideArray<std::optional<ProjectedUnitEnvironmentState::SideState>> states;
 		std::optional<std::set<CreatureID>> skeletonUpgrades; // Exact direct-upgrade set, not transitive family.
+		std::optional<SecondarySkill> necromancyLuckSource; // Numeric metadata, not Hero policy or an imported entity.
+		std::optional<std::pair<int32_t, int32_t>> legacyLuckLimits; // Captured engine vector lengths, including concrete zero.
+		std::optional<std::pair<int32_t, int32_t>> legacyMoraleLimits; // Captured engine vector lengths; zero is meaningful.
 		std::optional<JsonNode> magicRules; // Engaged null is genuine legacy rules; disengaged is unknown.
 	};
 	/// References must point to independently owned units, never alias live nodes.
@@ -39,7 +45,15 @@ public:
 	int unitBloodragePainIncrement(const Unit * unit) const override;
 	bool unitHasVeteranCohesion(const Unit * unit) const override;
 	std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const Unit * unit) const override;
+	std::optional<std::pair<int32_t, int32_t>> unitLuckLimits(const Unit * unit) const override;
 private:
+	friend class OwnedUnitBonusFrame;
+	/// Exact retained source occurrence + info/provider ancestry; not an ID-only permit.
+	std::unique_ptr<OwnedUnitEnvironment> forDerivedSubject(const Unit & source,
+		const CUnitStateDetached & derived, const IUnitInfo & info) const;
+	OwnedUnitEnvironment(std::vector<std::shared_ptr<const Unit>> units, Facts facts, const Unit * derived);
+	Units adjacentGeometry(const Unit & geometry) const; // Only the retaining FRAME calls this after exact ancestry validation.
+	static Units adjacentInRoster(const ProjectedBonusRoster & roster, const Unit & geometry);
 	class Data;
 	std::unique_ptr<Data> data;
 };

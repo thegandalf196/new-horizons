@@ -48,7 +48,7 @@ void requireCapturedLimiterDomain(const TLimiterPtr & root)
 		}
 		else if(type == typeid(CCreatureTypeLimiter) || type == typeid(CreatureLevelLimiter)
 			|| type == typeid(CreatureAlignmentLimiter) || type == typeid(FactionLimiter)
-			|| type == typeid(RankRangeLimiter) || type == typeid(TerrainLimiter))
+			|| type == typeid(RankRangeLimiter) || type == typeid(TerrainLimiter) || type == typeid(UnitOnHexLimiter) || type == typeid(UnitAdjacentLimiter))
 		{
 			// Capability is checked at the canonical evaluation destination, not the
 			// raw source node. Inherited records can be limited again at the root.

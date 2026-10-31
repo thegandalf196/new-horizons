@@ -12,6 +12,7 @@
 #include "../battle/NewHorizonsForestAmbush.h"
 
 #include "BattleSpellMechanics.h"
+#include "CurePhysicalAffliction.h"
 #include "../battle/NewHorizonsSerpentsEmbrace.h"
 #include "NewHorizonsSpellcraft.h"
 
@@ -64,18 +65,9 @@ bool hasCounterpressurePerk(const CGHeroInstance * hero)
 		std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE));
 }
 
-bool isLivingCureTarget(const battle::Unit * unit)
-{
-	return unit && unit->isValidTarget(false) && unit->alive()
-		&& !unit->hasBonusOfType(BonusType::UNDEAD)
-		&& !unit->hasBonusOfType(BonusType::NON_LIVING)
-		&& !unit->hasBonusOfType(BonusType::MECHANICAL)
-		&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON);
-}
-
 bool isLivingPhysicalPoisonTarget(const battle::Unit * unit)
 {
-	return isLivingCureTarget(unit);
+	return curePhysical::livingTarget(unit);
 }
 
 bool isNewHorizonsRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
@@ -117,7 +109,7 @@ bool isNewHorizonsVengefulVinesSpell(const CSpell * spell, const JsonNode & save
 
 bool isRegenerationTarget(const battle::Unit * unit)
 {
-	return isLivingCureTarget(unit) && !unit->isClone() && unit->getPhantomInitialIntegrity() <= 0;
+	return curePhysical::livingTarget(unit) && !unit->isClone() && unit->getPhantomInitialIntegrity() <= 0;
 }
 
 bool hasRegenerationMarker(const battle::Unit * unit, SpellID regenerationSpell)
@@ -1032,7 +1024,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	if((getCureAffliction() != SpellID::NONE || !getCurePhysicalAffliction().empty()) && !isNewHorizonsCure())
 		return adaptGenericProblem(problem);
 	if(!getCurePhysicalAffliction().empty()
-		&& (getCurePhysicalAffliction() != "frozen" || getCureAffliction() != SpellID::NONE))
+		&& (!curePhysical::validKind(getCurePhysicalAffliction()) || getCureAffliction() != SpellID::NONE))
 		return adaptGenericProblem(problem);
 
 	if(mode == Mode::HERO && isMetamagicFollowup()
@@ -1302,25 +1294,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// Accept the spell when some friendly living unit can be healed or has a
 	// supported affliction; canBeCastAt below validates the submitted selection
 	// against the exact target before the server spends anything.
-	if(isNewHorizonsCure())
-	{
-		if(mode != Mode::HERO || !castingHero)
-			return adaptGenericProblem(problem);
-
-		const auto & rules = battle()->getBattle()->getMagicRules();
-		for(const auto * unit : battle()->battleGetAllUnits(false))
-		{
-			if(!isLivingCureTarget(unit)
-				|| !ownerMatches(unit, true) || !isReceptive(unit))
-				continue;
-
-			if((newHorizonsFrozen::enabled(rules) && newHorizonsFrozen::isFrozen(*unit))
-				|| !newHorizonsMagic::cureAfflictions(rules, unit).empty()
-				|| unit->getSurvivingMissingHealth() > 0)
-				return true;
-		}
-		return adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
-	}
+	if(isNewHorizonsCure()) return canCastCure(problem, castingHero);
 
 	return effects->applicable(problem, this);
 }
@@ -1516,7 +1490,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		// Human targeting can be hex-only; never redirect an explicit unit identity.
 		if(!cureTarget && !target.front().unitValue && spellTarget.front().hexValue.isAvailable())
 			cureTarget = battle()->battleGetUnitByPos(spellTarget.front().hexValue, true);
-		if(!isLivingCureTarget(cureTarget)
+		if(!curePhysical::livingTarget(cureTarget)
 			|| !ownerMatches(cureTarget, true) || !isReceptive(cureTarget))
 			return false;
 
@@ -1526,8 +1500,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		const auto physical = getCurePhysicalAffliction();
 		if(!physical.empty())
 		{
-			if(physical != "frozen" || selected != SpellID::NONE
-				|| !newHorizonsFrozen::enabled(rules) || !newHorizonsFrozen::isFrozen(*cureTarget))
+			if(!curePhysical::validKind(physical) || selected != SpellID::NONE
+				|| !curePhysical::present(rules, *cureTarget, physical))
 				return false;
 		}
 		else if(selected == SpellID::NONE)

@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "BracePreemptiveForecast.h"
+#include "../../lib/battle/NewHorizonsReactiveDefense.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
@@ -32,6 +33,9 @@ bool hasCombatReactions(const battle::Unit & unit)
 bool needsPreHitProjection(const CBattleInfoCallback & battle,
 	const battle::Unit & attacker, const battle::Unit & victim)
 {
+	if(newHorizonsReactiveDefense::solidarityConfiguredPercent(battle, BattleSide::ATTACKER) > 0
+		|| newHorizonsReactiveDefense::solidarityConfiguredPercent(battle, BattleSide::DEFENDER) > 0)
+		return true;
 	if(battle.battleResolveHeroOrderTarget(&attacker, &victim, false) != &victim)
 		return true;
 	if(hasCombatReactions(attacker) || hasCombatReactions(victim))

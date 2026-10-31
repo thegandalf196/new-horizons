@@ -422,7 +422,8 @@ public:
 	void updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta) override;
 	void moveUnit(uint32_t id, const BattleHex & destination) override;
 	/// Explicit ordinary movement only: spell/forced moveUnit callers never react.
-	std::vector<ProjectedOverwatchHit> projectVoluntaryMovement(uint32_t id, const BattleHex & destination);
+	std::vector<ProjectedOverwatchHit> projectVoluntaryMovement(uint32_t id, const BattleHex & destination,
+		bool ownsMovementHistoryReceipt = true);
 	void removeUnit(uint32_t id) override;
 	void recordBloodrageTransition(const std::shared_ptr<StackWithBonuses> & unit, bool wasAlive);
 

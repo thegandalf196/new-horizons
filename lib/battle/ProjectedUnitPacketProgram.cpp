@@ -16,7 +16,7 @@ void battle::ProjectedBattleWorldArena::applyUnitChanges(const std::vector<UnitC
 	{
 		const auto candidates = impl->captureCandidates(changes);
 		impl->applyEntries(*this, changes);
-		impl->finishCandidates(candidates, changes);
+		impl->finishCandidates(*this, candidates, changes);
 	}
 	catch(...)
 	{

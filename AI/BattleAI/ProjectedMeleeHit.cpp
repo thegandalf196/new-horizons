@@ -4,7 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
-#include "SylvanTacticsProjection.h"
+#include "PhysicalStrikeProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "ProjectedMeleeHit.h"
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
@@ -13,6 +13,8 @@
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "StackWithBonuses.h"
+#include "AttackPreviewHitContext.h"
+#include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
@@ -67,7 +69,7 @@ std::optional<heroOrderValue::MeleeHitReceipt> apply(HypotheticBattle & battle, 
 	const bool harvestEligible = newHorizonsSoulHarvest::qualifies(battle, *actor, *victim, strike.physicalDamage);
 	const bool victimMayRebirth = battle.hasReadyNativeRebirth(victim.get());
 	const int32_t victimCountBefore = harvestEligible ? victim->getCount() : 0;
-	sylvanTacticsAI::StrikeProjection tactics(&battle);
+	PhysicalStrikeProjection tactics(&battle);
 	tactics.damage(battle, strike, *victim, damage, battle::DamageProvenance::PHYSICAL_CREATURE);
 	tactics.finish(actor->unitId());
 	if(harvestEligible)
@@ -76,6 +78,10 @@ std::optional<heroOrderValue::MeleeHitReceipt> apply(HypotheticBattle & battle, 
 	battle.projectFortuneStrike(strike, {{victim->unitId(), damage}}, actor.get(), !victim->alive(),
 		outcome, true, perfect, side, side, newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(actor.get(), true));
 	actor->afterAttack(false, retaliation, true); // Brace is reactive but never ordinary retaliation consumption.
+	// The supported original melee loop owns its exact post-injury resource
+	// receipt before the ordinary primary rider, matching the native packet phase.
+	if(newHorizonsHeroes::ordinaryCreatureSpecialtyValue(battle, *actor, "core:nymus") > 0)
+		AttackPreviewHitContext::applyOrdinaryStrike(battle, strike, damage);
 	if(ownedSubject)
 	{
 		ownedSubject->recordState(battle, actor->unitId(), 0);

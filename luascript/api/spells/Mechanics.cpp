@@ -31,6 +31,7 @@
 #include "../../../lib/battle/IBattleState.h"
 #include "../../../lib/battle/NewHorizonsFrozen.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/CurePhysicalAffliction.h"
 #include "../../../lib/spells/NewHorizonsBlink.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
@@ -137,10 +138,9 @@ std::string MechanicsProxy::getCureAfflictionSource(const spells::Mechanics & m)
 
 bool MechanicsProxy::isSelectedCurePhysicalAfflictionTarget(const spells::Mechanics & m, const battle::Unit & unit)
 {
-	return m.isNewHorizonsCure() && m.getCurePhysicalAffliction() == "frozen"
+	return m.isNewHorizonsCure() && spells::curePhysical::validKind(m.getCurePhysicalAffliction())
 		&& m.getCureAffliction() == SpellID::NONE && m.battle() && m.battle()->getBattle()
-		&& newHorizonsFrozen::enabled(m.battle()->getBattle()->getMagicRules())
-		&& newHorizonsFrozen::isFrozen(unit);
+		&& spells::curePhysical::present(m.battle()->getBattle()->getMagicRules(), unit, m.getCurePhysicalAffliction());
 }
 
 

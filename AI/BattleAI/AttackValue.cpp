@@ -2,6 +2,13 @@
 #include "StdInc.h"
 #include "AttackPossibility.h"
 
+AttackPossibility::AttackPossibility(const BattleHex & from, const BattleHex & dest, const BattleAttackInfo & attack)
+	: from(from), dest(dest), attack(attack)
+{
+	this->attack.attackerPos = from;
+	this->attack.defenderPos = dest;
+}
+
 float AttackPossibility::damageDiff() const
 {
 	return defenderDamageReduce - attackerDamageReduce - collateralDamageReduce + shootersBlockedDmg + frozenControlValue + petrifyingBloodControlValue;

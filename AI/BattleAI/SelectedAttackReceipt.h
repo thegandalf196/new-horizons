@@ -10,6 +10,7 @@
 #include <vector>
 
 class AttackPossibility;
+class BattleHex;
 class DamageCache;
 class HypotheticBattle;
 class StackWithBonuses;
@@ -55,6 +56,8 @@ public:
 
 namespace selectedAttackReceipt
 {
+/// Existing Night Prowler, movement-reaction and endpoint prefix, in original order.
+BattleHex commitMovement(const AttackPossibility & preview, battle::CUnitState & actor, HypotheticBattle & branch);
 /// Reconstruct the same native damage context at authoritative source/target origins.
 BattleAttackInfo attackForStrike(const FortuneStrikeProjection & strike,
 	const battle::Unit * actor, const battle::Unit * target);

@@ -21,8 +21,8 @@ local function isIneligibleNewHorizonsResurrectionTarget(mechanics, unit)
 end
 
 -- Miracle Worker strengthens casualty restoration, not the wound healing
--- reserved first by Resurrection. Use the ordinary survivor-only heal probe
--- so capacity/Battle Form health obeys the same rules as real healing.
+-- reserved first by Resurrection. Query raw eligible wounds; incoming receipt
+-- reductions must not reclassify prevented healing as boosted casualty budget.
 local function healingAmount(mechanics, unit)
 	local amount = mechanics:applySpellBonus(mechanics:getRecipientEffectValue(unit), unit)
 	if not mechanics:isNewHorizonsResurrection() then return amount end
@@ -30,8 +30,7 @@ local function healingAmount(mechanics, unit)
 	if hero == nil or not hero:hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker") then
 		return amount
 	end
-	local probe = unit:copy()
-	local woundedHealing = probe:heal(amount, ENUM.HealLevel.heal, ENUM.HealPower.permanent)
+	local woundedHealing = unit:healingCapacity(amount, ENUM.HealLevel.heal, ENUM.HealPower.permanent)
 	local casualtyPool = math.max(0, amount - woundedHealing)
 	return woundedHealing + casualtyPool + math.floor(casualtyPool / 4)
 end

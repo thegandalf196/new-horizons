@@ -4,7 +4,10 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "GnollHarriersProjection.h"
+#include "BattleShroudStrike.h"
 #include "SelectedAttackReceipt.h"
+#include "PhysicalStrikeProjection.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
@@ -34,6 +37,20 @@ void SelectedAttackReceipt::captureDamage(HypotheticBattle & branch)
 			+ (unitToUpdate->unitId() == actorSnapshot->unitId() ? soulHarvestHealthGained : 0));
 		observations.push_back({id, before, projected});
 	}
+}
+
+BattleHex selectedAttackReceipt::commitMovement(const AttackPossibility & ap, battle::CUnitState & actor,
+	HypotheticBattle & branch)
+{
+	const auto originalPosition = actor.getPosition();
+	const bool replayVoluntaryApproach = gnollHarriersAI::replaysSameApproach(ap, actor);
+	applySelectedNightProwler(branch, actor, originalPosition, ap.from);
+	if(!ap.overwatchHits.empty())
+		branch.projectVoluntaryMovement(actor.unitId(), ap.from, replayVoluntaryApproach);
+	selectedAttackReceipt::restorePosition(ap, actor, branch);
+	if(replayVoluntaryApproach)
+		gnollHarriersAI::record(branch, actor.unitId(), originalPosition, actor.getPosition());
+	return originalPosition;
 }
 
 void selectedAttackReceipt::restorePosition(const AttackPossibility & ap, battle::CUnitState & actor,
@@ -131,10 +148,12 @@ void selectedAttackReceipt::applyCapturedDamage(HypotheticBattle & branch,
 	const bool wasAlive = recipient->alive();
 	const auto rebirthSource = wasAlive ? branch.captureElementalRebirthSource(*recipient) : std::nullopt;
 	const bool nativeRebirth = branch.hasReadyNativeRebirth(recipient.get());
+	const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(branch, *recipient);
 	recipient->damage(damage);
 	if(wasAlive && !recipient->alive())
 		branch.releaseSerpentBindingsForDeath(*recipient);
 	branch.recordBloodrageTransition(recipient, wasAlive);
+	if(destroyed) PhysicalStrikeProjection::completeDamagePacket(branch, std::span(&*destroyed, 1));
 	if(rebirthSource)
 		branch.projectElementalRebirth(recipient.get(), *rebirthSource,
 			wasAlive && !recipient->alive(), recipient->isClone(), nativeRebirth);
@@ -163,7 +182,8 @@ std::unique_ptr<AttackPossibility> selectedAttackReceipt::refreshForestAmbush(
 	attack.attacker = actor;
 	attack.defender = target;
 	return std::make_unique<AttackPossibility>(AttackPossibility::evaluate(
-		attack, preview.from, damageCache, branch));
+		attack, preview.from, damageCache, branch, false, std::nullopt, nullptr,
+		gnollHarriersAI::replaysSameApproach(preview, *actor), preview.validatedApproachOrigin));
 }
 
 BattleAttackInfo selectedAttackReceipt::attackForStrike(const FortuneStrikeProjection & strike,
@@ -174,6 +194,7 @@ BattleAttackInfo selectedAttackReceipt::attackForStrike(const FortuneStrikeProje
 	attack.retaliation = strike.retaliation;
 	attack.dreadCavalryDamagePercent = strike.dreadCavalryDamagePercent;
 	attack.bracePreemptive = strike.bracePreemptive;
+	attack.preemptiveDamagePercent = strike.preemptiveDamagePercent;
 	attack.cleaveDamagePercent = strike.cleaveDamagePercent;
 	attack.attackerPos = actor->getPosition();
 	attack.defenderPos = target->getPosition();

@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "PurifyWindow.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
 
 #include "../GameEngine.h"
 #include "../gui/Shortcut.h"
@@ -36,7 +37,8 @@ struct PurifyOption
 	SpellID spell;
 	std::string spellName;
 	int maximumSpellEffectChoices = 1;
-	bool automaticPhysicalPoison = false;
+	bool automaticPhysicalEffect = false;
+	std::string automaticDescription;
 };
 
 size_t selectedCountFor(const PurifyEffectSelection & selected, int32_t unitId)
@@ -67,13 +69,13 @@ class PurifyEffectRow final : public CIntObject
 
 	bool isSelected(const PurifyWindow::SelectionModel & model) const
 	{
-		return !option.automaticPhysicalPoison
+		return !option.automaticPhysicalEffect
 			&& std::ranges::find(model.selected, std::pair{option.unitId, option.spell}) != model.selected.end();
 	}
 
 	void toggle()
 	{
-		if(option.automaticPhysicalPoison)
+		if(option.automaticPhysicalEffect)
 			return;
 		auto model = selection.lock();
 		if(!model)
@@ -113,23 +115,59 @@ public:
 		const bool selected = model && isSelected(*model);
 		const auto selectedForStack = model ? selectedCountFor(model->selected, option.unitId) : 0;
 		const bool atLimit = selectedForStack >= static_cast<size_t>(option.maximumSpellEffectChoices);
-		stackLabel->setText(option.stackName + (option.automaticPhysicalPoison ? "" : "  "
+		stackLabel->setText(option.stackName + (option.automaticPhysicalEffect ? "" : "  "
 			+ std::to_string(selectedForStack) + "/" + std::to_string(option.maximumSpellEffectChoices)));
-		chooseButton->setTextOverlay(option.automaticPhysicalPoison ? "Auto" : (selected ? "Chosen" : "Choose"),
+		chooseButton->setTextOverlay(option.automaticPhysicalEffect ? "Auto" : (selected ? "Chosen" : "Choose"),
 			FONT_TINY, selected ? Colors::YELLOW : Colors::WHITE);
 		chooseButton->setBorderColor(selected ? std::optional<ColorRGBA>(Colors::YELLOW) : std::nullopt);
-		chooseButton->block(option.automaticPhysicalPoison || !model || (!selected && atLimit));
-		const bool physicalPoisonChoice = option.spell == SpellID::NONE && !option.automaticPhysicalPoison;
-		chooseButton->setHelp(CButton::tooltip(option.automaticPhysicalPoison ? "Automatic Purify effect"
+		chooseButton->block(option.automaticPhysicalEffect || !model || (!selected && atLimit));
+		const bool physicalPoisonChoice = option.spell == SpellID::NONE && !option.automaticPhysicalEffect;
+		chooseButton->setHelp(CButton::tooltip(option.automaticPhysicalEffect ? "Automatic Purify effect"
 			: (physicalPoisonChoice ? "Select physical Poison"
 				: (selected ? "Remove this effect group" : "Select this effect group")),
-			option.automaticPhysicalPoison ? "Purifier removes this physical Poison without using a selection slot."
+			option.automaticPhysicalEffect ? option.automaticDescription
 				: (physicalPoisonChoice ? "Remove this stack's stored physical Poison as one per-stack choice."
 					: (selected ? "Remove this source-spell group from the Purify selection."
 						: (atLimit ? "This stack has reached its per-stack Purify limit."
 							: "Choose this temporary negative spell effect group for this stack.")))));
 	}
 };
+}
+
+std::optional<PurifyEffectSelection> validatedPurifyChoices(
+	const std::vector<newHorizonsPurify::EligibleStack> & currentEligible, const PurifyEffectSelection & choices)
+{
+	PurifyEffectSelection accepted;
+	accepted.reserve(choices.size());
+	for(size_t index = 0; index < choices.size(); ++index)
+	{
+		const auto & choice = choices[index];
+		if(std::ranges::find(accepted, choice) != accepted.end())
+			return std::nullopt;
+
+		const auto stack = std::ranges::find_if(currentEligible, [&choice](const auto & eligible)
+		{
+			return eligible.unitId == choice.first;
+		});
+		if(stack == currentEligible.end())
+			return std::nullopt;
+		if(choice.second == newHorizonsPurify::physicalPoisonChoiceID())
+		{
+			if(!stack->physicalPoison || stack->physicalPoisonAutomaticallyCleared)
+				return std::nullopt;
+		}
+		else if(std::ranges::find(stack->spellEffectGroups, choice.second) == stack->spellEffectGroups.end())
+			return std::nullopt;
+
+		const auto countForStack = std::ranges::count_if(choices, [&choice](const auto & selected)
+		{
+			return selected.first == choice.first;
+		});
+		if(countForStack > stack->maximumSpellEffectChoices)
+			return std::nullopt;
+		accepted.push_back(choice);
+	}
+	return accepted;
 }
 
 PurifyWindow::PurifyWindow(PurifyContext context_)
@@ -141,10 +179,15 @@ PurifyWindow::PurifyWindow(PurifyContext context_)
 	for(const auto & stack : context.stacks)
 	{
 		for(const auto & [spell, spellName] : stack.eligibleEffects)
-			selection->options.push_back({stack.unitId, stack.stackName, spell, spellName, stack.maximumSpellEffectChoices, false});
+			selection->options.push_back({stack.unitId, stack.stackName, spell, spellName, stack.maximumSpellEffectChoices, false, {}});
 		if(stack.physicalPoisonAutomaticallyCleared)
 			selection->options.push_back({stack.unitId, stack.stackName, SpellID::NONE,
-				"Physical Poison (Purifier removes this extra effect)", stack.maximumSpellEffectChoices, true});
+				"Physical Poison (Purifier removes this extra effect)", stack.maximumSpellEffectChoices, true,
+				"Purifier removes this physical Poison without using a selection slot."});
+		if(stack.graveDustAutomaticallyCleared)
+			selection->options.push_back({stack.unitId, stack.stackName, SpellID::NONE,
+				"Grave Dust (Purifier removes this extra effect)", stack.maximumSpellEffectChoices, true,
+				"Purifier removes Grave Dust without using a selection slot."});
 	}
 
 	OBJECT_CONSTRUCTION;
@@ -204,18 +247,20 @@ void PurifyWindow::refresh()
 		+ std::to_string(context.maximumSpellEffectChoices) + " per stack.";
 	if(context.purifierWillClearPhysicalPoison)
 		state += "\nPurifier also removes physical Poison from each affected stack.";
-	else if(selection->options.empty())
+	if(context.purifierWillClearGraveDust)
+		state += "\nPurifier also removes Grave Dust from each affected stack.";
+	if(selection->options.empty())
 		state = "No eligible temporary spell effects are in this area. Confirm is unavailable.";
 	if(stateLabel && stateLabel->getText() != state)
 		stateLabel->setText(state);
 
 	const bool hasSelectableGroups = !selection->selected.empty();
-	confirmButton->block(!context.confirm || (!hasSelectableGroups && !context.purifierWillClearPhysicalPoison));
+	confirmButton->block(!context.confirm || (!hasSelectableGroups && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust));
 }
 
 void PurifyWindow::confirm()
 {
-	if(!context.confirm || (selection->selected.empty() && !context.purifierWillClearPhysicalPoison))
+	if(!context.confirm || (selection->selected.empty() && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust))
 	{
 		refresh();
 		return;

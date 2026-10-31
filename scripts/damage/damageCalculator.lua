@@ -192,6 +192,7 @@ local function getPhysicalDamageReductionFactor(info)
 		table.insert(reductions, { intrinsicReduction, 100 })
 	end
 	table.insert(reductions, { info.runicEnduranceReductionPercent or 0, 100 })
+	table.insert(reductions, { info.ironHideReductionPercent or 0, 100 })
 	table.insert(reductions, { info.formationFightingReductionPercent or 0, 100 })
 	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
 	local defendReductionRemainingFraction = getDefendReductionRemainingFraction(info)
@@ -495,7 +496,8 @@ function Script:getArmorerFactor(info)
 		reduction = info.defender:getBonuses({type = "GENERAL_DAMAGE_REDUCTION", subtype = DAMAGE_TYPE_ALL}):filter(function(bonus)
 			return bonus:getSource() ~= ENUM.BonusSource.spellEffect
 				and (info.physicalDamage
-					or bonus:getStacking() ~= "new-horizons:ordinary-creature-specialty:core:sorsha:shieldAndSword")
+					or (bonus:getStacking() ~= "new-horizons:ordinary-creature-specialty:core:sorsha:shieldAndSword"
+						and bonus:getStacking() ~= "new-horizons:ordinary-creature-specialty:core:marius:demonicSolidarity"))
 		end):totalValue()
 	end
 	-- Breakthrough scales the explicit Defend-derived Bulwark contribution,
@@ -734,7 +736,7 @@ function Script:calculate(battle, info)
 	-- Keep their existing factors and floors; zero/absent adds no arithmetic.
 	local intrinsicReduction = info.intrinsicPhysicalDamageReductionPercent or 0
 	if info.physicalDamage and not usesPhysicalDamageReductionStage then
-		for _, value in ipairs({ intrinsicReduction, info.runicEnduranceReductionPercent or 0 }) do
+		for _, value in ipairs({ intrinsicReduction, info.runicEnduranceReductionPercent or 0, info.ironHideReductionPercent or 0 }) do
 			if value > 0 then
 				local reduction = math.max(0, math.min(100, value)) / 100
 				local ignored = math.max(0, math.min(100, info.physicalDamageReductionIgnorePercent or 0)) / 100

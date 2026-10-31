@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "BattleActionProcessor.h"
+#include "BattleVoluntaryMovementHistory.h"
 #include "GateDrawbridgeFootprint.h"
 #include "../../lib/battle/NewHorizonsLivingInferno.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
@@ -33,6 +34,7 @@ bool BattleActionProcessor::commitFlyingMovement(const CBattleInfoCallback & bat
 	gameHandler->sendAndApply(movement);
 	result.destinationCommitted |= unit.getPosition() == input.destination;
 	result.voluntaryFlightDistance = input.voluntary && result.destinationCommitted ? input.distance : 0;
+	battleVoluntaryMovementHistory::record(*gameHandler, battle, unit, input.voluntary, input.start, unit.getPosition());
 	trail.traverse(input.start, movement.tilesToMove, true);
 	result.distance = input.distance;
 	result.movementCost = input.distance;

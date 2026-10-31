@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "BattleSylvanStrikeAftermath.h"
 #include "BattlePrimaryStrikeAftermath.h"
+#include "BattleToxicSting.h"
+#include "BattleVoluntaryMovementHistory.h"
 #include "BattleWaitState.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "../../lib/battle/OrdinaryMeleeRetaliation.h"
@@ -17,6 +19,7 @@
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "BattleActionProcessor.h"
+#include "BattlePurifyAction.h"
 #include "BattleMeleeSpecialtyCompletion.h"
 #include "BattleRangedFollowup.h"
 #include "../../lib/battle/NewHorizonsMachineSpecialties.h"
@@ -907,182 +910,9 @@ static bool validatePurifyAction(const CBattleInfoCallback & battle, const Battl
 
 	const bool clearsPhysicalPoison = vstd::contains_if(eligible, [](const auto & stack)
 	{
-		return stack.physicalPoisonAutomaticallyCleared;
+		return stack.physicalPoisonAutomaticallyCleared || stack.graveDustAutomaticallyCleared;
 	});
 	return !action.spellPurifyChoices.empty() || clearsPhysicalPoison;
-}
-
-static std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
-	const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)
-{
-	if(action.target.size() != 1 || action.target.front().unitValue != -1000)
-		return {};
-	std::set<uint32_t> affectedRecipients;
-
-	const BattleHex center = action.target.front().hexValue;
-	const bool purifier = newHorizonsPurify::hasPurifierPerk(hero);
-	const auto eligible = newHorizonsPurify::eligibleStacks(battle, action.side, center,
-		hero ? hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER) : 0, purifier);
-	std::set<int32_t> eligibleUnitIds;
-	for(const auto & stack : eligible)
-		eligibleUnitIds.insert(stack.unitId);
-
-	std::map<int32_t, std::vector<Bonus>> removalsByUnit;
-	std::set<int32_t> magicallyCleansedUnits;
-	std::set<int32_t> manuallySelectedPhysicalPoison;
-	for(const auto & [unitId, sourceSpell] : action.spellPurifyChoices)
-	{
-		if(!eligibleUnitIds.contains(unitId))
-			continue; // Recheck the shared center filter before any effect-group mutation.
-		if(sourceSpell == newHorizonsPurify::physicalPoisonChoiceID())
-		{
-			manuallySelectedPhysicalPoison.insert(unitId);
-			continue;
-		}
-		const auto * unit = battle.battleGetStackByID(unitId, false);
-		if(!unit)
-			continue;
-		auto bonuses = newHorizonsPurify::spellEffectGroupBonuses(unit, sourceSpell);
-		if(!bonuses.empty())
-		{
-			// Capture only genuinely magical removals before their source groups disappear.
-			if(newHorizonsPurify::isMagicalSpellEffectGroup(unit, sourceSpell))
-				magicallyCleansedUnits.insert(unitId);
-
-			auto & selected = removalsByUnit[unitId];
-			selected.insert(selected.end(), std::make_move_iterator(bonuses.begin()),
-				std::make_move_iterator(bonuses.end()));
-		}
-	}
-
-	const BattleID battleId = battle.getBattle()->getBattleID();
-	if(!removalsByUnit.empty())
-	{
-		SetStackEffect removedEffects;
-		removedEffects.battleID = battleId;
-		for(auto & [unitId, bonuses] : removalsByUnit)
-			removedEffects.toRemove.emplace_back(static_cast<ui32>(unitId), std::move(bonuses));
-		gameHandler.sendAndApply(removedEffects);
-		for(const auto & [unitId, sourceSpell] : action.spellPurifyChoices)
-		{
-			const auto * unit = battle.battleGetStackByID(unitId, false);
-			if(sourceSpell != newHorizonsPurify::physicalPoisonChoiceID() && unit
-				&& removalsByUnit.contains(unitId)
-				&& newHorizonsPurify::spellEffectGroupBonuses(unit, sourceSpell).empty())
-				affectedRecipients.insert(static_cast<uint32_t>(unitId));
-		}
-
-		BattleLogMessage message;
-		message.battleID = battleId;
-		for(const auto & removal : removalsByUnit)
-		{
-			const auto * unit = battle.battleGetStackByID(removal.first, false);
-			if(!unit)
-				continue;
-			MetaString line;
-			line.appendRawString("Purify removes negative spell effects from %s.");
-			unit->addNameReplacement(line, unit->getCount());
-			message.lines.push_back(std::move(line));
-		}
-		if(!message.lines.empty())
-			gameHandler.sendAndApply(message);
-	}
-
-	BattleUnitsChanged physicalPoisonUpdates;
-	physicalPoisonUpdates.battleID = battleId;
-	BattleLogMessage physicalPoisonLog;
-	physicalPoisonLog.battleID = battleId;
-	for(const auto & stack : eligible)
-	{
-		if(!manuallySelectedPhysicalPoison.contains(stack.unitId)
-			&& !stack.physicalPoisonAutomaticallyCleared)
-			continue;
-		const auto * unit = battle.battleGetStackByID(stack.unitId, false);
-		if(!unit)
-			continue;
-
-		auto state = unit->acquireState();
-		if(!newHorizonsPurify::clearPhysicalPoison(state.get()))
-			continue;
-
-		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-		update.data = state->save();
-		physicalPoisonUpdates.changedStacks.push_back(std::move(update));
-
-		MetaString line;
-		line.appendRawString(stack.physicalPoisonAutomaticallyCleared
-			? "Purifier removes physical Poison from %s."
-			: "Purify removes physical Poison from %s.");
-		unit->addNameReplacement(line, unit->getCount());
-		physicalPoisonLog.lines.push_back(std::move(line));
-	}
-
-	if(!physicalPoisonUpdates.changedStacks.empty())
-	{
-		gameHandler.sendAndApply(physicalPoisonUpdates);
-		for(const auto & change : physicalPoisonUpdates.changedStacks)
-			if(const auto * unit = battle.battleGetStackByID(change.id, false);
-				unit && unit->physicalPoisonActivationsRemaining == 0)
-				affectedRecipients.insert(change.id);
-	}
-	if(!physicalPoisonLog.lines.empty())
-		gameHandler.sendAndApply(physicalPoisonLog);
-
-	if(!purifyingMandate || magicallyCleansedUnits.empty())
-		return {affectedRecipients.begin(), affectedRecipients.end()};
-
-	SetStackEffect removePhysicalAfflictions;
-	removePhysicalAfflictions.battleID = battleId;
-	BattleUnitsChanged updateStoredPhysicalPoisons;
-	updateStoredPhysicalPoisons.battleID = battleId;
-	BattleLogMessage physicalAfflictionLog;
-	physicalAfflictionLog.battleID = battleId;
-	for(const int32_t unitId : magicallyCleansedUnits)
-	{
-		const auto * unit = battle.battleGetStackByID(unitId, false);
-		if(!unit)
-			continue;
-		const auto affliction = physicalAfflictions::first(*unit);
-		if(!affliction)
-			continue;
-
-		bool removed = false;
-		if(affliction->storedPoison)
-		{
-			auto state = unit->acquireState();
-			if(!newHorizonsPurify::clearPhysicalPoison(state.get()))
-				continue;
-
-			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-			update.data = state->save();
-			updateStoredPhysicalPoisons.changedStacks.push_back(std::move(update));
-			removed = true;
-		}
-		else
-		{
-			auto bonuses = physicalAfflictions::removalPlan(*unit, *affliction);
-			if(bonuses.empty())
-				continue;
-			removePhysicalAfflictions.toRemove.emplace_back(static_cast<ui32>(unitId), std::move(bonuses));
-			removed = true;
-		}
-
-		if(removed)
-		{
-			MetaString line;
-			line.appendRawString("Purifying Mandate removes a physical affliction from %s.");
-			unit->addNameReplacement(line, unit->getCount());
-			physicalAfflictionLog.lines.push_back(std::move(line));
-		}
-	}
-
-	if(!removePhysicalAfflictions.toRemove.empty())
-		gameHandler.sendAndApply(removePhysicalAfflictions);
-	if(!updateStoredPhysicalPoisons.changedStacks.empty())
-		gameHandler.sendAndApply(updateStoredPhysicalPoisons);
-	if(!physicalAfflictionLog.lines.empty())
-		gameHandler.sendAndApply(physicalAfflictionLog);
-	return {affectedRecipients.begin(), affectedRecipients.end()};
 }
 
 bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
@@ -3539,6 +3369,8 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 					breakSanctuary(battle, currentUnit);
 					gameHandler->sendAndApply(sm);
 					result.destinationCommitted |= currentUnit->getPosition() == dest;
+					battleVoluntaryMovementHistory::record(*gameHandler, battle, *currentUnit, voluntary,
+						previousSegmentPosition, currentUnit->getPosition());
 					livingInferno.traverse(previousSegmentPosition, sm.tilesToMove, false);
 					if(nightProwlerTriggered)
 					{
@@ -4822,6 +4654,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	if(defender && !attack.cleaveFollowup)
 		handleAfterAttackCasting(battle, attacker, defender, payload);
+	battleToxicSting::apply(*gameHandler, *owner, battle, primaryEffects.toxicSting);
 
 	// priority alone decides what runs first, which is how life drain heals before a fire shield can
 	// burn the attacker down and how a death stare only lands after it. Not gated on anyone being

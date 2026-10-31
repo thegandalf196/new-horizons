@@ -76,6 +76,9 @@ void UnitProxy::registerMethods(MethodRegistrar & R)
 		"Returns the battle side (attacker or defender) this unit belongs to.");
 	R.method<&Unit::getPosition>("getPosition", {},
 		"Returns the battlefield hex occupied by the unit, or front hex for double-wide units");
+	R.method<&Unit::healingCapacity>("healingCapacity",
+		{{"amount", "Raw health budget."}, {"level", "Heal tier."}, {"power", "Persistence."}}, {},
+		"Returns eligible health before incoming reductions without changing unit state.");
 	R.method<&Unit::getTotalHealth>("getTotalHealth", {},
 		"Returns the total hit points across all creatures in the stack, including dead.");
 	R.method<&Unit::getAvailableHealth>("getAvailableHealth", {},

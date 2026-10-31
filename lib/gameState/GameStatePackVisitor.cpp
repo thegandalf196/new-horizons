@@ -26,6 +26,8 @@
 #include "../entities/creature/NewHorizonsMusterRules.h"
 #include "../entities/hero/NewHorizonsLegendaryReputation.h"
 #include "GameStatePackVisitor.h"
+#include "CombatDestructionAftermath.h"
+#include "../battle/GraveDustBodyCleanup.h"
 #include "../mapObjects/NewHorizonsRecruitersContacts.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "../spells/NewHorizonsSpellcraft.h"
@@ -388,64 +390,11 @@ void applySpellBufferRoundExpiryReward(BattleInfo & battle, BattleSide sideID)
 	side.metamagicSpellBufferUsed = true;
 }
 
-std::set<uint32_t> bloodrageDeathCandidates(BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
-{
-	std::set<uint32_t> result;
-	for(const auto & update : updates)
-	{
-		const auto * unit = battle.getStack(update.stackAttacked, false);
-		// BattleStackAttacked::KILLED is authored while preparing the transition;
-		// the stack state may already reflect that transition before this packet is
-		// applied, so it is the authoritative alive-to-dead marker here.
-		if(update.killed() && !update.willRebirth() && unit
-			&& !unit->acquireState()->summoned && !unit->isClone())
-			result.insert(update.stackAttacked);
-	}
-	return result;
-}
-
-std::vector<newHorizonsCrisisCommand::DeathReceipt> crisisDeathCandidates(
-	BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
-{
-	std::vector<newHorizonsCrisisCommand::DeathReceipt> result;
-	for(const auto & update : updates)
-	{
-		const auto * unit = battle.getStack(update.stackAttacked, false);
-		// Rebirth is already restored in the prepared hit state. Clone and
-		// summoned destruction still qualify. Capture control before cleanup.
-		if(!unit || (!update.killed() && !update.cloneKilled()) || update.willRebirth()) continue;
-		const auto side = battle.playerToSide(battle.battleGetActionController(unit));
-		if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-			&& newHorizonsCrisisCommand::eligible(battle.getSideHero(side)))
-			result.push_back({side, unit->unitId()});
-	}
-	return result;
-}
-
-void recordCrisisDeaths(BattleInfo & battle, const std::vector<newHorizonsCrisisCommand::DeathReceipt> & deaths)
-{
-	auto state = battle.getCrisisCommandState();
-	for(const auto & receipt : deaths)
-		if(const auto * unit = battle.getStack(receipt.unit, false); unit && !unit->alive())
-			state.capture(receipt.side, receipt.unit);
-	battle.setCrisisCommandState(state);
-}
-
-void recordBloodrageDeaths(BattleInfo & battle, const std::set<uint32_t> & candidates)
-{
-	for(const auto unitId : candidates)
-		battle.recordBloodrageStackDeath(unitId);
-}
-
-void refreshBloodrageLivingUnits(BattleInfo & battle, const std::vector<BattleStackAttacked> & updates)
-{
-	for(const auto & update : updates)
-	{
-		const auto * unit = battle.getStack(update.stackAttacked, false);
-		if(unit && unit->alive())
-			battle.clearBloodrageStackDeath(update.stackAttacked);
-	}
-}
+using battleDestructionAftermath::bloodrageDeathCandidates;
+using battleDestructionAftermath::crisisDeathCandidates;
+using battleDestructionAftermath::recordCrisisDeaths;
+using battleDestructionAftermath::recordBloodrageDeaths;
+using battleDestructionAftermath::refreshBloodrageLivingUnits;
 
 void removeExhaustedGuardianSpirit(BattleInfo & battle, const BattleStackAttacked & hit)
 {
@@ -2468,6 +2417,7 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 		throw std::runtime_error("Invalid Chain Gate attack trigger");
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.bsa);
 	const auto crisisCandidates = crisisDeathCandidates(*battle, pack.bsa);
+	const auto solidarityCandidates = battleDestructionAftermath::solidarityDeathCandidates(*battle, pack.bsa);
 	CStack * attacker = battle->getStack(pack.stackAttacking);
 	assert(attacker);
 	std::array<bool, 2> lastStandSidesToConsume{};
@@ -2537,6 +2487,7 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 			throw std::runtime_error("Invalid Relentless Assault primary target update");
 	}
 	newHorizonsSylvanTactics::validateStrikeTransition(*battle, pack);
+	newHorizonsGraveDust::cleanupBodyChanges(*battle, pack.bsa);
 	if(pack.fortuneState)
 		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
 	if(pack.perfectFortuneState)
@@ -2567,6 +2518,7 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 		battle->setRelentlessAssaultState(pack.relentlessAssaultSide, *pack.relentlessAssaultState);
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
 	recordCrisisDeaths(*battle, crisisCandidates);
+	battleDestructionAftermath::recordSolidarityDeaths(*battle, solidarityCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.bsa);
 	if(pack.chainGateTriggered)
 		battle->armChainGate(battle->gatedDemonicStackSide(pack.stackAttacking));
@@ -3585,12 +3537,14 @@ void GameStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
+	newHorizonsGraveDust::validateBodyChanges(*battle, pack.stacks);
 	std::set<BattleSide> chainGateSides;
 	for(const auto & hit : pack.stacks)
 		if(chainGateKillQualifies(*battle, hit.attackerID, pack.stacks))
 			chainGateSides.insert(battle->gatedDemonicStackSide(hit.attackerID));
 	const auto bloodrageCandidates = bloodrageDeathCandidates(*battle, pack.stacks);
 	const auto crisisCandidates = crisisDeathCandidates(*battle, pack.stacks);
+	const auto solidarityCandidates = battleDestructionAftermath::solidarityDeathCandidates(*battle, pack.stacks);
 	BattleStatePackVisitor battleVisitor(*battle);
 	for (auto attackInfo : pack.stacks)
 	{
@@ -3604,6 +3558,7 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 	recordBloodrageDeaths(*battle, bloodrageCandidates);
 	refreshBloodrageLivingUnits(*battle, pack.stacks);
 	recordCrisisDeaths(*battle, crisisCandidates);
+	battleDestructionAftermath::recordSolidarityDeaths(*battle, solidarityCandidates);
 	for(const auto side : chainGateSides)
 		battle->armChainGate(side);
 }
@@ -3611,6 +3566,7 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 void GameStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
+	const auto solidarityCandidates = battleDestructionAftermath::solidarityDeathCandidates(*battle, pack.changedStacks);
 	std::vector<newHorizonsCrisisCommand::DeathReceipt> crisisCandidates;
 	for(const auto & change : pack.changedStacks)
 	{
@@ -3634,6 +3590,7 @@ void GameStatePackVisitor::visitBattleUnitsChanged(BattleUnitsChanged & pack)
 	pack.visitTyped(battleVisitor);
 	recordBloodrageDeaths(*battle, removed);
 	recordCrisisDeaths(*battle, crisisCandidates);
+	battleDestructionAftermath::recordSolidarityDeaths(*battle, solidarityCandidates);
 	for(const auto & change : pack.changedStacks)
 	{
 		const auto * unit = battle->getStack(change.id, false);
@@ -4205,68 +4162,9 @@ void BattleStatePackVisitor::visitBattleObstaclesChanged(BattleObstaclesChanged 
 	}
 }
 
-void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
-{
-	pack.validateExchange();
-	if(pack.exchange)
-	{
-		battleState.exchangeBattleEffects(*pack.exchange);
-		return;
-	}
-	pack.validateConfusionMarkers();
-	pack.validateGazeApplication(battleState);
-	// Validate the entire new-restraint batch before any removal or update.
-	for(const auto * changes : {&pack.toAdd, &pack.toUpdate})
-		for(const auto & [target, bonuses] : *changes)
-			for(const auto & bonus : bonuses)
-				newHorizonsSerpentsEmbrace::validateApplication(battleState, target, bonus);
-	const auto hydrasVitalitySource = newHorizonsMagic::hydrasVitalitySource(battleState.getMagicRules());
-	std::set<uint32_t> capacityAffectedStacks;
-	auto collectCapacityChanges = [&capacityAffectedStacks, &hydrasVitalitySource](const auto & changes)
-	{
-		for(const auto & stackEffects : changes)
-			if(std::ranges::any_of(stackEffects.second, [&hydrasVitalitySource](const Bonus & bonus)
-			{
-				return bonus.type == BonusType::STACK_HEALTH
-					|| (bonus.type == BonusType::HP_REGENERATION
-						&& hydrasVitalitySource(&bonus));
-			}))
-				capacityAffectedStacks.insert(stackEffects.first);
-	};
-	collectCapacityChanges(pack.toRemove);
-	collectCapacityChanges(pack.toUpdate);
-	collectCapacityChanges(pack.toAdd);
-
-	for(const auto & stackData : pack.toRemove)
-		battleState.removeUnitBonus(stackData.first, stackData.second);
-
-	for(const auto & stackData : pack.toUpdate)
-		battleState.updateUnitBonus(stackData.first, stackData.second);
-
-	for(const auto & stackData : pack.toAdd)
-		battleState.addUnitBonus(stackData.first, stackData.second);
-
-	if(capacityAffectedStacks.empty())
-		return;
-	const auto hydrasCapacity = hydrasVitalitySource.And(Selector::type()(BonusType::STACK_HEALTH));
-	const auto hydrasRegeneration = hydrasVitalitySource.And(Selector::type()(BonusType::HP_REGENERATION));
-	for(const auto * unit : battleState.getUnitsIf([&capacityAffectedStacks](const battle::Unit * candidate)
-		{
-			return candidate && capacityAffectedStacks.contains(candidate->unitId());
-		}))
-	{
-		auto state = unit->acquireState();
-		if(!state->health.isCapacityHealthTracking())
-			continue;
-		state->normalizeCapacityHealth();
-		if(!unit->hasBonus(hydrasCapacity) && !unit->hasBonus(hydrasRegeneration))
-			state->clearCapacityHealthReference();
-		battleState.updateUnit(unit->unitId(), state->save(), 0);
-	}
-}
-
 void BattleStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 {
+	newHorizonsGraveDust::cleanupBodyChanges(battleState, pack.stacks);
 	for(const BattleStackAttacked & stack : pack.stacks)
 	{
 		battleState.updateUnit(stack.newState.id, stack.newState.data, stack.newState.healthDelta);

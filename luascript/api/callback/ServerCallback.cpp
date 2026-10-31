@@ -453,30 +453,6 @@ void ServerCallbackProxy::removeUnitBonuses(ServerCallback & object, const IBatt
 	object.apply(sse);
 }
 
-void ServerCallbackProxy::clearFrozenAfterDirectMagicDamage(ServerCallback & object,
-	const IBattleInfoCallback & battle, const battle::Unit & unit)
-{
-	if(battle.battleGetUnitByID(unit.unitId()) != &unit)
-		throw std::runtime_error("Frozen removal requires a unit in the given battle");
-	if(!newHorizonsFrozen::enabled(battle.getBattle()->getMagicRules()))
-		return;
-	const auto removed = newHorizonsFrozen::removalPlan(unit);
-	if(removed.empty())
-		return;
-	SetStackEffect change;
-	change.battleID = battle.getBattle()->getBattleID();
-	change.toRemove.emplace_back(unit.unitId(), removed);
-	object.apply(change);
-}
-
-void ServerCallbackProxy::removeCurePhysicalAffliction(ServerCallback & object,
-	const IBattleInfoCallback & battle, const battle::Unit & unit, const std::string & kind)
-{
-	if(kind != "frozen")
-		throw std::invalid_argument("Unsupported physical Cure selection");
-	clearFrozenAfterDirectMagicDamage(object, battle, unit);
-}
-
 void ServerCallbackProxy::addUnitBonus(ServerCallback & object, const IBattleInfoCallback & battle, const battle::Unit & unit, const BonusDescriptor & data, bool cumulative)
 {
 	Bonus b = data.toBonus();

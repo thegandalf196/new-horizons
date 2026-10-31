@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "BattleActivationEffects.h"
 #include "BattleMaintenanceRecovery.h"
+#include "BattleCreatureBurn.h"
 #include "../CGameHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
@@ -236,6 +237,8 @@ void apply(CGameHandler * gameHandler, const CBattleInfoCallback & battle, const
 	if(battleMaintenanceRecovery::onActivation(*gameHandler, battle, *creatureStack, reason))
 		state = creatureStack->acquireState();
 	applyPhysicalPoison(gameHandler, battle, creatureStack, state);
+	if(battleCreatureBurn::onActivation(*gameHandler, battle, *creatureStack, reason))
+		state = creatureStack->acquireState();
 	applyBulwarkCleanup(gameHandler, battle, creatureStack, hero, state);
 }
 }

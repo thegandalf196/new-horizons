@@ -26,5 +26,6 @@ public:
 	const std::shared_ptr<HypotheticBattle> & callback() const { return source; }
 	static AttackPossibility evaluate(const std::shared_ptr<const VisibleCandidateWorld> & owner,
 		const battle::Unit * attacker, const battle::Unit * defender, int distance,
-		bool shooting, const BattleHex & from, DamageCache & damageCache);
+		bool shooting, const BattleHex & from, DamageCache & damageCache,
+		int validatedVoluntaryFlightDistance = 0, bool validatedVoluntaryApproach = false);
 };

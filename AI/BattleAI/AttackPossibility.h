@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include <algorithm>
 #include <set>
 #include <utility>
@@ -85,6 +86,8 @@ struct DefiantDenialProjection
 /// multi-strike exchange into one post-hoc transition.
 struct FortuneStrikeProjection
 {
+	/// Prehit source facts; replay after this accepted primary, before retaliation.
+	newHorizonsOrdinaryStrike::EffectPlan lanceFormation;
 	/// nullopt retains legacy inference; a captured UNKNOWN must stay unknown
 	/// when a consumed Gambler bonus changes the next strike's Luck value.
 	std::optional<ProjectedLuckOutcome> resolvedLuck;
@@ -109,6 +112,7 @@ struct FortuneStrikeProjection
 	bool retaliation = false;
 	/// Brace is reactive for Last Stand, but not damage/ordinary retaliation.
 	bool bracePreemptive = false;
+	int preemptiveDamagePercent = 0; // Retain exclusion during selected replay.
 	/// Captures the actual attack-classification decision for Last Stand; damage
 	/// provenance alone is broader and can include non-attack physical sources.
 	bool eligibleForLastStand = false;
@@ -184,7 +188,7 @@ private:
 	std::unordered_map<uint32_t, std::unordered_map<uint32_t, float>> damageCache;
 	std::map<BattleHex, std::unordered_map<uint32_t, int64_t>> obstacleDamage;
 	std::set<uint32_t> rangedMarkTargets;
-	std::set<uint32_t> temporaryPhysicalProtectionTargets;
+	std::set<uint32_t> temporaryCombatModifierUnits;
 	std::set<uint32_t> ambusherAttackers;
 	std::set<std::pair<uint32_t, BattleSide>> shadowAssaultTargetSides;
 	std::set<uint32_t> nightProwlerAttackers;
@@ -198,7 +202,8 @@ private:
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	void buildUnitDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side, bool terminalPressure);
 	bool tracksRangedMarks(uint32_t defenderId) const;
-	bool tracksTemporaryPhysicalProtection(uint32_t defenderId) const;
+	bool tracksTemporaryCombatModifier(uint32_t defenderId) const;
+	void rememberTemporaryCombatModifiers(const battle::Unit * attacker, const battle::Unit * defender);
 	bool tracksAmbusher(uint32_t attackerId) const;
 	bool tracksShadowAssault(uint32_t defenderId) const;
 	bool tracksNightProwler(uint32_t attackerId) const;
@@ -252,6 +257,8 @@ public:
 	// Detached unit states borrow their bonus bearer. Keep a per-candidate
 	// mark projection alive for as long as its returned states can be read.
 	std::shared_ptr<HypotheticBattle> effectPreview;
+	/// Local receipt distinguishes a newly completed return from a pre-existing target mark.
+	std::optional<uint32_t> completedReturnMarkTarget;
 	std::shared_ptr<battle::CUnitState> attackerState;
 
 	std::vector<std::shared_ptr<battle::CUnitState>> affectedUnits;
@@ -259,6 +266,9 @@ public:
 	/// Opted-in Tactics preserves actual Rain of Arrows collateral separately.
 	std::vector<sylvanTacticsAI::SecondaryHit> tacticsSecondaryHits;
 	std::vector<ProjectedOverwatchHit> overwatchHits;
+	/// Supplied only by the owner of the same validated ordinary movement prefix.
+	bool validatedVoluntaryApproach = false;
+	BattleHex validatedApproachOrigin;
 	/// Actual HP restored by the canonical New Horizons Vampirism trigger during
 	/// this exchange, grouped by the living stack that received the healing.
 	std::vector<std::pair<uint32_t, int64_t>> vampirismHealingByUnit;
@@ -294,7 +304,8 @@ public:
 		DamageCache & damageCache,
 		std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment = false,
 		std::optional<newHorizonsAerialSupremacy::Excursion> aerial = std::nullopt,
-		const dreadCavalryAI::Action * acceptedDreadAction = nullptr);
+		const dreadCavalryAI::Action * acceptedDreadAction = nullptr, bool validatedVoluntaryApproach = false,
+		BattleHex validatedApproachOrigin = BattleHex::INVALID);
 
 	static float calculateDamageReduce(
 		const battle::Unit * attacker,

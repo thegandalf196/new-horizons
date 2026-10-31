@@ -208,6 +208,8 @@ public:
 
 	virtual std::shared_ptr<Unit> acquire() const = 0;
 	virtual std::shared_ptr<CUnitState> acquireState() const = 0;
+	/// Internal complete-form source hook. Ordinary/native providers keep legacy fallback.
+	virtual TConstBonusListPtr ownedNativeFormBonuses(const CUnitState &, const CSelector &, bool) const { return {}; }
 
 	virtual BattlePhases::Type battleQueuePhase(int turn) const = 0;
 
@@ -250,6 +252,8 @@ public:
 
 	virtual void damage(int64_t & amount) = 0;
 	virtual HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) = 0;
+	/// Eligible raw HP before incoming reductions; read-only and creates no health.
+	virtual int64_t healingCapacity(int64_t requested, EHealLevel level, EHealPower power) const;
 };
 
 /// Maximum health for a battle unit, using Phantom Army's initial integrity

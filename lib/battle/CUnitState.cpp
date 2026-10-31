@@ -2184,17 +2184,6 @@ void CUnitState::bindStateEnvironment(const IUnitEnvironment * env_) noexcept
 	counterAttacks.setEnv(env);
 }
 
-std::pair<int32_t, int32_t> CUnitState::getMoraleLimits() const
-{
-	if(env)
-	{
-		const auto savedLimits = env->unitMoraleLimits(this);
-		if(savedLimits)
-			return *savedLimits;
-	}
-	return AFactionMember::getMoraleLimits();
-}
-
 bool CUnitState::archeryCrossfireAvailable(BattleSide side, uint32_t currentShooter, int32_t round) const
 {
 	if(archeryCrossfireRound != round || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
@@ -2540,25 +2529,6 @@ void CUnitState::normalizeCapacityHealth()
 	health.normalizeCapacityHealth(capacityHealthReferenceMax > 0);
 }
 
-int64_t CUnitState::capacityRegenerationProjectedHeal() const
-{
-	if(!alive() || capacityHealthReferenceMax <= 0 || !health.isCapacityHealthTracking())
-		return 0;
-	const int64_t numerator = static_cast<int64_t>(getMaxHealth()) + capacityRegenerationRemainderTenths;
-	const auto perCreatureHeal = static_cast<int32_t>(numerator / 10);
-	return health.capacityRegenerationProjectedHeal(perCreatureHeal);
-}
-
-int64_t CUnitState::consumeCapacityRegeneration()
-{
-	if(!alive() || capacityHealthReferenceMax <= 0 || !health.isCapacityHealthTracking())
-		return 0;
-	const int64_t numerator = static_cast<int64_t>(getMaxHealth()) + capacityRegenerationRemainderTenths;
-	const auto perCreatureHeal = static_cast<int32_t>(numerator / 10);
-	capacityRegenerationRemainderTenths = static_cast<int32_t>(numerator % 10);
-	return health.consumeCapacityRegeneration(perCreatureHeal);
-}
-
 int32_t CUnitState::getCapacityHealthReferenceMax() const
 {
 	return capacityHealthReferenceMax > 0
@@ -2571,60 +2541,6 @@ void CUnitState::clearCapacityHealthReference()
 	capacityHealthReferenceMax = 0;
 	capacityRegenerationRemainderTenths = 0;
 	normalizeCapacityHealth();
-}
-
-HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
-{
-	if(isTimeStopped())
-	{
-		amount = 0;
-		return {};
-	}
-
-	if(phantomInitialIntegrity > 0)
-	{
-		amount = 0;
-		return {};
-	}
-
-	if(level == EHealLevel::HEAL && power == EHealPower::ONE_BATTLE)
-		logGlobal->error("Heal for one battle does not make sense");
-	else if(cloned)
-		logGlobal->error("Attempt to heal clone");
-	else
-	{
-		if(battleFormOriginalHealth.isBattleFormProvenance())
-		{
-			CHealth sourceProbe = battleFormOriginalHealth;
-			CHealth effectiveProbe = health;
-			int64_t sourceAllowed = amount;
-			int64_t effectiveAllowed = amount;
-			sourceProbe.heal(sourceAllowed, level, power, true);
-			effectiveProbe.heal(effectiveAllowed, level, power, false);
-			const int64_t accepted = std::min(sourceAllowed, effectiveAllowed);
-
-			CHealth nextSource = battleFormOriginalHealth;
-			CHealth nextEffective = health;
-			int64_t sourceAmount = accepted;
-			int64_t effectiveAmount = accepted;
-			nextSource.heal(sourceAmount, level, power, true);
-			const HealInfo result = nextEffective.heal(effectiveAmount, level, power, false);
-			if(sourceAmount != accepted || effectiveAmount != accepted)
-				throw std::logic_error("Battle-form health ledgers disagree on accepted healing");
-
-			battleFormOriginalHealth = nextSource;
-			health = nextEffective;
-			amount = accepted;
-			normalizeCapacityHealth();
-			return result;
-		}
-
-		auto result = health.heal(amount, level, power);
-		normalizeCapacityHealth();
-		return result;
-	}
-
-	return {};
 }
 
 CUnitStateDetached & CUnitStateDetached::operator=(const CUnitState & other)

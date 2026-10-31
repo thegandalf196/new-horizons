@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleActionsController.h"
 #include "BattleMovementPreview.h"
+#include "CureAfflictionPresenter.h"
 
 #include "BattleFieldController.h"
 #include "BattleHero.h"
@@ -5162,11 +5163,10 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 			if(cureMechanics->canBeCastAt(target, cureProblem))
 				return true;
 		}
-		if(cureTarget && newHorizonsFrozen::chancePercent(rules) > 0
-			&& newHorizonsFrozen::isFrozen(*cureTarget))
+		for(const auto & kind : curePhysicalAfflictionChoices(rules, cureTarget))
 		{
 			cast.setCureAffliction(SpellID::NONE);
-			cast.setCurePhysicalAffliction("frozen");
+			cast.setCurePhysicalAffliction(kind);
 			auto cureMechanics = currentSpell->battleMechanics(&cast);
 			spells::detail::ProblemImpl cureProblem;
 			if(cureMechanics->canBeCastAt(target, cureProblem))

@@ -11,10 +11,12 @@
 #include "NewHorizonsSylvanTactics.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
+#include "NewHorizonsPrismaticVanguard.h"
 #include "NewHorizonsArchery.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSequenceProtection.h"
+#include "NewHorizonsReactiveDefense.h"
 #include "NewHorizonsCoordinatedMarks.h"
 #include "NewHorizonsChargeSpecialties.h"
 #include "../GameLibrary.h"
@@ -45,6 +47,7 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 		payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
 			+ coordinatedPenetration.physicalProtectionPercent);
 	payload.runicEnduranceReductionPercent = newHorizonsSequenceProtection::runicEndurancePercent(*this, info);
+	payload.ironHideReductionPercent = newHorizonsReactiveDefense::ironHidePercent(*this, info);
 	payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
 		+ newHorizonsSequenceProtection::cyclopeanBreachPercent(*this, info));
 	const bool finalLuckPolicy = getBattle()->getRawFinalDirectPhysicalLuckPolicy();
@@ -65,6 +68,8 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	newHorizonsSylvanTactics::finalizeDamage(*this, info, payload);
 	payload.unluckyStrike = info.unluckyStrike && (!finalLuckPolicy || luckEligible);
 	payload.ordinaryCreatureSpecialtyDamagePercent = newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*this, info);
+	payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
+		* (100 + newHorizonsPrismaticVanguard::activeDamagePercent(info)) / 100;
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
 	if(info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))

@@ -525,6 +525,7 @@ void BattleInterface::installPurifyUI()
 					: unit->unitType()->getNamePluralTranslated());
 			display.maximumSpellEffectChoices = eligible.maximumSpellEffectChoices;
 			display.physicalPoisonAutomaticallyCleared = eligible.physicalPoisonAutomaticallyCleared;
+			display.graveDustAutomaticallyCleared = eligible.graveDustAutomaticallyCleared;
 			if(eligible.physicalPoison && !eligible.physicalPoisonAutomaticallyCleared)
 				display.eligibleEffects.emplace_back(newHorizonsPurify::physicalPoisonChoiceID(), "Physical Poison");
 			for(const auto sourceSpell : eligible.spellEffectGroups)
@@ -534,6 +535,7 @@ void BattleInterface::installPurifyUI()
 					display.eligibleEffects.emplace_back(sourceSpell, source->getNameTranslated());
 			}
 			context.purifierWillClearPhysicalPoison |= display.physicalPoisonAutomaticallyCleared;
+			context.purifierWillClearGraveDust |= display.graveDustAutomaticallyCleared;
 			context.stacks.push_back(std::move(display));
 		}
 
@@ -541,7 +543,7 @@ void BattleInterface::installPurifyUI()
 		{
 			return !stack.eligibleEffects.empty();
 		});
-		if(!hasSelectableEffects && !context.purifierWillClearPhysicalPoison)
+		if(!hasSelectableEffects && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust)
 		{
 			if(actionsController)
 				actionsController->endCastingSpell();
@@ -573,42 +575,15 @@ void BattleInterface::installPurifyUI()
 			const auto currentEligible = newHorizonsPurify::eligibleStacks(
 				*callback, casterSide, center, spellPower, purifierPerk);
 
-			PurifyEffectSelection accepted;
-			accepted.reserve(choices.size());
-			for(size_t index = 0; index < choices.size(); ++index)
+			auto accepted = validatedPurifyChoices(currentEligible, choices);
+			if(!accepted)
+				return false;
+
+			const bool clearsAutomaticPhysicalEffect = std::ranges::any_of(currentEligible, [](const auto & eligible)
 			{
-				const auto & choice = choices[index];
-				if(std::ranges::find(accepted, choice) != accepted.end())
-					return false;
-
-				const auto stack = std::ranges::find_if(currentEligible, [&choice](const auto & eligible)
-				{
-					return eligible.unitId == choice.first;
-				});
-				if(stack == currentEligible.end())
-					return false;
-				if(choice.second == newHorizonsPurify::physicalPoisonChoiceID())
-				{
-					if(!stack->physicalPoison || stack->physicalPoisonAutomaticallyCleared)
-						return false;
-				}
-				else if(std::ranges::find(stack->spellEffectGroups, choice.second) == stack->spellEffectGroups.end())
-					return false;
-
-				const auto countForStack = std::ranges::count_if(choices, [&choice](const auto & selected)
-				{
-					return selected.first == choice.first;
-				});
-				if(countForStack > stack->maximumSpellEffectChoices)
-					return false;
-				accepted.push_back(choice);
-			}
-
-			const bool clearsPhysicalPoison = std::ranges::any_of(currentEligible, [](const auto & eligible)
-			{
-				return eligible.physicalPoisonAutomaticallyCleared;
+				return eligible.physicalPoisonAutomaticallyCleared || eligible.graveDustAutomaticallyCleared;
 			});
-			if(accepted.empty() && !clearsPhysicalPoison)
+			if(accepted->empty() && !clearsAutomaticPhysicalEffect)
 				return false;
 
 			spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
@@ -623,7 +598,7 @@ void BattleInterface::installPurifyUI()
 			BattleAction action = pending;
 			action.target.clear();
 			action.aimToHex(center);
-			action.spellPurifyChoices = std::move(accepted);
+			action.spellPurifyChoices = std::move(*accepted);
 			curInt->cb->battleMakeSpellAction(localBattleID, action);
 			actionsController->endCastingSpell();
 			return true;

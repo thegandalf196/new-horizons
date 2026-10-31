@@ -31,19 +31,29 @@ def check() -> None:
     assert "eligible.physicalPoison && !eligible.physicalPoisonAutomaticallyCleared" in picker
     assert "physicalPoisonChoiceID()" in picker
     assert "physicalPoisonAutomaticallyCleared" in picker
+    assert "display.graveDustAutomaticallyCleared = eligible.graveDustAutomaticallyCleared" in picker
+    assert "context.purifierWillClearGraveDust |= display.graveDustAutomaticallyCleared" in picker
+    assert "eligible.physicalPoisonAutomaticallyCleared || eligible.graveDustAutomaticallyCleared" in picker
+    assert "if(stack.graveDustAutomaticallyCleared)" in WINDOW
+    assert "option.automaticPhysicalEffect" in WINDOW
+    assert '"Grave Dust (Purifier removes this extra effect)"' in WINDOW
+    assert "bool graveDustAutomaticallyCleared = false;" in WINDOW_HEADER
+    assert "bool purifierWillClearGraveDust = false;" in WINDOW_HEADER
     assert "getCastingSession() != session" in picker
     assert "hero->id != heroID" in picker
-    assert "stack->maximumSpellEffectChoices" in picker
-    assert "stack->spellEffectGroups" in picker
+    assert "stack->maximumSpellEffectChoices" in WINDOW
+    assert "stack->spellEffectGroups" in WINDOW
     assert "canBeCastAt(targetCheck, problem)" in picker
     assert "action.aimToHex(center)" in picker
-    assert "action.spellPurifyChoices = std::move(accepted)" in picker
+    assert "action.spellPurifyChoices = std::move(*accepted)" in picker
+    assert "validatedPurifyChoices(currentEligible, choices)" in picker
+    assert "if(!accepted)" in picker
     assert picker.index("canBeCastAt(targetCheck, problem)") < picker.index("battleMakeSpellAction")
 
     cancel = picker.split("context.cancel =", 1)[1].split("createAndPushWindow", 1)[0]
     assert "endCastingSpell()" in cancel
     assert "battleMakeSpellAction" not in cancel
-    assert "!hasSelectableEffects && !context.purifierWillClearPhysicalPoison" in picker
+    assert "!hasSelectableEffects && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust" in picker
 
     assert 'ImagePath::builtin("DiBoxBck")' in WINDOW
     assert "CListBox" in WINDOW
@@ -53,11 +63,11 @@ def check() -> None:
     assert "option.maximumSpellEffectChoices" in WINDOW
     assert "Confirm" in WINDOW and "Cancel" in WINDOW
     assert "without spending Mana or the Hero Action" in WINDOW
-    assert "selection->selected.empty() && !context.purifierWillClearPhysicalPoison" in WINDOW
+    assert "selection->selected.empty() && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust" in WINDOW
     assert "void show(Canvas & to) override" not in WINDOW_HEADER
 
 
 if __name__ == "__main__":
     check()
-    print("PASS: Purify target click, per-stack choices, Purifier Poison and cancel routing")
+    print("PASS: Purify target click, per-stack choices, Purifier Poison/Grave Dust and cancel routing")
     print("NOT compiled, native gameplay, or graphical acceptance")

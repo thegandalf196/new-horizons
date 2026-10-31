@@ -79,6 +79,13 @@ set(lib_MAIN_SRCS
 	battle/HeroCommandCoefficientMath.cpp
 	battle/HeroCommandCoefficientQueries.cpp
 	battle/BattleInfo.cpp
+	battle/CreatureAbilityChance.h
+	battle/CreatureAbilityChance.cpp
+	battle/AttackAbilityQueries.h
+	battle/AttackAbilityQueries.cpp
+	battle/BattleEntryEffects.cpp
+	battle/BattleInfoUnitCreation.cpp
+	battle/UnitBonusApplications.cpp
 	battle/BattleActivation.cpp
 	battle/BattleLuckQueries.cpp
 	battle/NewHorizonsManaLeeches.cpp
@@ -96,6 +103,21 @@ set(lib_MAIN_SRCS
 		entities/hero/NewHorizonsGenieAbilities.cpp
 	battle/NewHorizonsSoulHarvest.cpp
 	battle/NewHorizonsOrdinaryStrike.cpp
+	battle/NewHorizonsToxicSting.cpp
+	battle/NewHorizonsToxicSting.h
+	battle/BodyHealthLoss.cpp
+	battle/NewHorizonsGraveDustStrike.cpp
+	battle/BodyHealthLoss.h
+	battle/NewHorizonsGraveDustStrike.h
+	gameState/CombatDestructionAftermath.cpp
+	gameState/CombatDestructionAftermath.h
+	battle/ProjectedDestructionAftermath.cpp
+	battle/GraveDustEffectChanges.cpp
+	battle/GraveDustApplication.cpp
+	battle/GraveDustBodyCleanup.cpp
+	battle/GraveDustEffectChanges.h
+	battle/GraveDustApplication.h
+	battle/GraveDustBodyCleanup.h
 	battle/MeleeReturnDestination.cpp
 	battle/MeleeReturnDestination.h
 	battle/NewHorizonsInfernoStrikeDebuffs.cpp
@@ -173,6 +195,9 @@ set(lib_MAIN_SRCS
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
 	battle/CUnitState.cpp
+	battle/UnitStateHealing.cpp
+	battle/CapacityHealingReceipt.cpp
+	battle/HealingReceipt.cpp
 	battle/UnitStateCounts.cpp
 		battle/UnitStatePreparationFacts.cpp
 		battle/UnitStateCreature.cpp
@@ -262,8 +287,14 @@ set(lib_MAIN_SRCS
 	bonuses/OwnedBonusPayloads.cpp
 	bonuses/OwnedRecipientBonusGraph.cpp
 		bonuses/OwnedRecipientRootQuery.cpp
+		battle/OwnedUnitBonusFrame.cpp
+		battle/UnitStateEnvironment.cpp
+		battle/OwnedUnitBonusFrameQuery.cpp
+		battle/OwnedUnitBonusFrame.h
+		battle/OwnedUnitBonusFrameData.h
 	bonuses/BonusTypeContext.cpp
 	bonuses/BonusBattleContext.cpp
+	bonuses/BonusAdjacencyContext.cpp
 	bonuses/BonusGraphQuery.cpp
 	bonuses/ProjectedBonusGraph.cpp
 	bonuses/ProjectedBonusRecipientOverlay.cpp
@@ -416,6 +447,7 @@ set(lib_MAIN_SRCS
 	gameState/MapObjectInitialization.cpp
 	gameState/CGameStateCampaign.cpp
 	gameState/GameStatePackVisitor.cpp
+	gameState/BattleEffectPackVisitor.cpp
 	gameState/GameStateBattleActivationVisitor.cpp
 	gameState/NewHorizonsBattleSpellPoints.cpp
 	gameState/HighScore.cpp
@@ -651,6 +683,8 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsTheChosen.cpp
 	spells/NewHorizonsImplosion.cpp
 	spells/NewHorizonsPurify.cpp
+	spells/CurePhysicalAffliction.cpp
+	spells/BattleSpellCure.cpp
 	spells/NewHorizonsRealityWarp.cpp
 	spells/NewHorizonsVengefulVines.cpp
 	spells/NewHorizonsLifeDrainProjection.cpp
@@ -885,6 +919,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsOverwhelmingFormula.h
 	spells/NewHorizonsOverwhelmingFormula.cpp
 	battle/BattleInfo.h
+	battle/BattleEntryEffects.h
 	battle/NewHorizonsManaLeeches.h
 	battle/NewHorizonsSerpentsEmbrace.h
 	battle/NewHorizonsForestAmbush.h
@@ -949,6 +984,7 @@ set(lib_MAIN_HEADERS
 	battle/CPlayerBattleCallback.h
 	battle/CUnitAmmo.h
 	battle/CUnitState.h
+	battle/HealingReceipt.h
 	battle/UnitStateValueExchange.h
 	battle/PreparedStackStateTransfer.h
 	battle/BattleUnitRootOrigin.h
@@ -1411,6 +1447,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsImplosion.h
 	spells/NewHorizonsFireWall.h
 	spells/NewHorizonsPurify.h
+	spells/CurePhysicalAffliction.h
 	spells/NewHorizonsFriendlyFire.h
 	spells/NewHorizonsRealityWarp.h
 	spells/NewHorizonsVengefulVines.h

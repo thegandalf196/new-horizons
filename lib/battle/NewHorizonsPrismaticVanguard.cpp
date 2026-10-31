@@ -20,9 +20,11 @@ namespace
 constexpr auto identity = "new-horizons:ordinary-creature-specialty:core:monere:prismaticVanguard";
 bool wisp(CreatureID creature)
 {
-	const auto family = CreatureID(CreatureID::decode("new-horizons:wisp"));
-	return creature == family || (creature.hasValue() && creature.toCreature()
-		&& family.toCreature()->isMyDirectOrIndirectUpgrade(creature.toCreature()));
+	const auto * registered = creature.hasValue() ? creature.toCreature() : nullptr;
+	if(!registered)
+		return false;
+	const auto & creatureIdentity = registered->getJsonKey();
+	return creatureIdentity == "new-horizons:wisp" || creatureIdentity == "new-horizons:wispUpgrade";
 }
 }
 bool isEffect(const Bonus * bonus)
@@ -49,11 +51,11 @@ bool isEffect(const Bonus * bonus)
 std::optional<Bonus> entryBonus(const CGHeroInstance * hero, CreatureID creature)
 {
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != "core:monere"
-		|| !wisp(creature) || !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero))
+		|| !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero))
 		return std::nullopt;
 	const auto & policy = hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 	const int amount = static_cast<int>(policy["prismaticVanguardPhysicalDamagePercent"].Integer());
-	if(amount <= 0)
+	if(amount <= 0 || !wisp(creature))
 		return std::nullopt;
 	Bonus result(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::HERO_SPECIAL,
 		amount, BonusSourceID(HeroTypeID(HeroTypeID::decode("core:monere"))),
@@ -100,12 +102,13 @@ ActivationPlan activationPlan(const CBattleInfoCallback & battle, const battle::
 int activeDamagePercent(const BattleAttackInfo & attack)
 {
 	if(!attack.physicalDamage || !attack.attacker || !attack.attacker->alive()
-		|| attack.attacker->isGhost() || !wisp(attack.attacker->creatureId()))
+		|| attack.attacker->isGhost())
 		return 0;
 	const auto markers = attack.attacker->getUnstackedBonuses(CSelector(isEffect));
 	if(markers->size() > 1)
 		throw std::runtime_error("Duplicate Prismatic Vanguard entitlement");
-	return markers->empty() || markers->front()->duration != BonusDuration::STACK_ACTIVATION
-		? 0 : markers->front()->val;
+	if(markers->empty() || markers->front()->duration != BonusDuration::STACK_ACTIVATION)
+		return 0;
+	return wisp(attack.attacker->creatureId()) ? markers->front()->val : 0;
 }
 }

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsPrismaticVanguard.h"
 #include "SylvanTacticsProjection.h"
 #include "DreadCavalryProjection.h"
 #include "AttackPossibility.h"
@@ -23,6 +24,10 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/NewHorizonsShieldAndSword.h"
+#include "../../lib/battle/NewHorizonsInfernoStrikeDebuffs.h"
+#include "../../lib/battle/NewHorizonsCoordinatedMarks.h"
+#include "../../lib/battle/NewHorizonsChargeSpecialties.h"
+#include "../../lib/battle/NewHorizonsReactiveDefense.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
@@ -51,13 +56,18 @@ bool hasNightProwlerBonus(const battle::Unit * unit)
 }
 namespace
 {
-bool hasTemporaryPhysicalProtection(const battle::Unit * unit)
+bool hasTemporaryCombatModifier(const battle::Unit * unit)
 {
-	return unit && unit->hasBonus(CSelector([](const Bonus * bonus)
+	return unit && (newHorizonsCoordinatedMarks::hasMark(*unit) || unit->hasBonus(CSelector([](const Bonus * bonus)
 	{
-		return newHorizonsShroud::isEvasiveShroudProtection(bonus)
-			|| newHorizonsShieldAndSword::isProtection(bonus);
-	}));
+		return newHorizonsPrismaticVanguard::isEffect(bonus)
+			|| newHorizonsShroud::isEvasiveShroudProtection(bonus)
+			|| newHorizonsShieldAndSword::isProtection(bonus)
+			|| newHorizonsInfernoStrikeDebuffs::isEffect(bonus)
+			|| newHorizonsChargeSpecialties::isLanceFormation(bonus)
+			|| newHorizonsReactiveDefense::isSolidarityProtection(bonus)
+			|| newHorizonsReactiveDefense::isIronHideSpent(bonus);
+	})));
 }
 bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)
 {
@@ -73,6 +83,13 @@ using damageCacheDetail::hasRangedMarkEffect;
 using damageCacheDetail::hasNightProwlerBonus;
 using attackCount::hasPendingRangedFollowUp;
 
+void DamageCache::rememberTemporaryCombatModifiers(const battle::Unit * attacker, const battle::Unit * defender)
+{
+	for(const auto * unit : {attacker, defender})
+		if(hasTemporaryCombatModifier(unit))
+			temporaryCombatModifierUnits.insert(unit->unitId());
+}
+
 void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
 {
 	cacheDamageMeasured(attacker, defender, std::move(hb), nullptr);
@@ -86,8 +103,9 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 		intrinsicMdrTargets.insert(defender->unitId());
 	if(defender->intrinsicPhysicalDamageReductionPercent() > 0)
 		intrinsicPdrTargets.insert(defender->unitId());
-	if(hasTemporaryPhysicalProtection(defender))
-		temporaryPhysicalProtectionTargets.insert(defender->unitId());
+	rememberTemporaryCombatModifiers(attacker, defender);
+	if(newHorizonsReactiveDefense::ironHideConfiguredPercent(*hb, *defender) > 0)
+		temporaryCombatModifierUnits.insert(defender->unitId());
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker));
 	const auto * attackerHero = attackerSide == BattleSide::ATTACKER || attackerSide == BattleSide::DEFENDER
 		? hb->battleGetFightingHero(attackerSide) : nullptr;
@@ -184,10 +202,10 @@ bool DamageCache::tracksRangedMarks(uint32_t defenderId) const
 	return false;
 }
 
-bool DamageCache::tracksTemporaryPhysicalProtection(uint32_t defenderId) const
+bool DamageCache::tracksTemporaryCombatModifier(uint32_t defenderId) const
 {
 	for(const auto * cache = this; cache; cache = cache->parent)
-		if(cache->temporaryPhysicalProtectionTargets.contains(defenderId))
+		if(cache->temporaryCombatModifierUnits.contains(defenderId))
 			return true;
 	return false;
 }
@@ -247,8 +265,9 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		intrinsicPdrTargets.insert(defender->unitId());
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
 		rangedMarkTargets.insert(defender->unitId());
-	if(hasTemporaryPhysicalProtection(defender))
-		temporaryPhysicalProtectionTargets.insert(defender->unitId());
+	rememberTemporaryCombatModifiers(attacker, defender);
+	if(newHorizonsReactiveDefense::ironHideConfiguredPercent(*hb, *defender) > 0)
+		temporaryCombatModifierUnits.insert(defender->unitId());
 	DamageCacheAdmission localAdmission(*attacker, *hb);
 	auto & admission = mainProbeAdmission && mainProbeAdmission->matches(*attacker, *hb)
 		? *mainProbeAdmission : localAdmission;
@@ -287,9 +306,9 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// reuse damage across either projected state. The Chain bypass remains active
 	// after its once-per-round trigger because a pending gift can still be spent.
 	// Bloodrage Pain can change damage after a projected health-threshold crossing.
-	// Evasive Shroud and Shield and Sword are temporary defender-side reductions. Remember any target
-	// whose marker was present while this cache tree was populated so expiry does
-	// not make an earlier reduced ID-only entry appear valid again.
+	// Temporary protection, attack reduction and Defense modifiers are visible
+	// unit effects. Remember either participant while a marker is present so
+	// expiry or hidden hero policy cannot revive a stale ID-only pair entry.
 	// Boneward is controller/form-sensitive environment state, not a bonus-tree node.
 	// Remember its prior presence so removing it cannot revive a reduced pair entry.
 	if(sylvanTacticsAI::dynamicDamage(*hb, attacker, defender)
@@ -316,7 +335,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| hasNightProwlerEffect
 		|| tracksNightProwler(attacker->unitId())
 		|| tracksAmbusher(attacker->unitId())
-		|| tracksTemporaryPhysicalProtection(defender->unitId())
+		|| tracksTemporaryCombatModifier(attacker->unitId())
+		|| tracksTemporaryCombatModifier(defender->unitId())
 		|| tracksRangedMarks(defender->unitId())
 		|| newHorizonsFrozen::isFrozen(*attacker)
 		|| tracksFrozen(defender->unitId()))

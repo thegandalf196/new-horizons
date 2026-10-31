@@ -8,6 +8,9 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../../lib/spells/CurePhysicalAffliction.h"
+#include "../../../lib/battle/NewHorizonsGraveDust.h"
+
 #include "BattleStartSnapshotFixture.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -1593,4 +1596,19 @@ TEST_F(NewHorizonsCureTest, SavedProfileWithoutTheOptInKeepsOriginalCureMechanic
 	EXPECT_FALSE(mechanics->isNewHorizonsCure());
 	EXPECT_FALSE(newHorizonsMagic::cureEnabled(
 		battle()->getBattle()->getMagicRules(), SpellID::CURE));
+}
+
+TEST_F(NewHorizonsCureTest, GraveDustChoiceDoesNotActivateOnHistoricalCureSnapshot)
+{
+	optIntoNewCure = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	SetStackEffect effects;
+	effects.battleID = BattleID(0);
+	effects.toAdd.emplace_back(target->unitId(), newHorizonsGraveDust::records(5000, PlayerColor(1)));
+	gameHandler->sendAndApply(effects);
+	const auto * cure = SpellID(SpellID::CURE).toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, cure);
+	cast.setCurePhysicalAffliction("graveDust");
+	EXPECT_FALSE(cure->battleMechanics(&cast)->canBeCastAt({spells::Destination(target)}));
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*target).size(), 2u);
 }

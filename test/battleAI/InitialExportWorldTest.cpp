@@ -449,3 +449,64 @@ TEST_F(InitialExportWorldTest, HeroGraphQueryPreservesNativeStackedAndUnstackedS
 	for(size_t index = 0; index < unstacked.size(); ++index)
 		EXPECT_EQ(projectedHitTest::serialized(*(*nativeUnstacked)[index]), projectedHitTest::serialized(*unstacked[index]));
 }
+
+TEST_F(InitialExportWorldTest, QueryScalarCopyAcceptsFormChangesOfExactOriginalBodyAndKeepsOtherOwnersIsolated)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareWorld());
+	const auto nativeBefore = incoming->save();
+	// These are native-bound legacy preparation values, not arena-owned loans.
+	// Finish their form/health queries before an immutable source graph is captured.
+	auto state = incoming->acquireState();
+	const auto original = state->battleFormOriginalCreature();
+	const auto alternate = creatureByName("core:halberdier");
+	ASSERT_NE(alternate, original);
+	state->beginBattleForm(alternate, 2);
+	int64_t damage = 7; state->damage(damage);
+	const auto formed = state->save();
+	ASSERT_NE(state->unitType(), incoming->unitType());
+	auto restoredState = incoming->acquireState();
+	*restoredState = *state; // Static CUnitState values only; preserve its native provider/environment.
+	restoredState->endBattleForm();
+	const auto restored = restoredState->save();
+	InitialExportWorld world(*battle());
+	const auto origin = source(world, *incoming);
+	auto sibling = world.fork();
+	const auto siblingBefore = sibling->snapshotAt(origin.occurrence);
+	ASSERT_NO_THROW(world.copyQueryValues(origin, *state));
+	world.recordQuerySnapshot(origin);
+	EXPECT_EQ(world.snapshotAt(origin.occurrence), formed);
+	EXPECT_EQ(world.unitAt(origin.occurrence).unitType()->getId(), alternate);
+	ASSERT_NO_THROW(world.copyQueryValues(origin, *restoredState));
+	world.recordQuerySnapshot(origin);
+	EXPECT_EQ(world.snapshotAt(origin.occurrence), restored);
+	EXPECT_EQ(world.unitAt(origin.occurrence).unitType()->getId(), original);
+	EXPECT_EQ(sibling->snapshotAt(origin.occurrence), siblingBefore);
+	EXPECT_EQ(incoming->save(), nativeBefore);
+}
+
+TEST_F(InitialExportWorldTest, QueryScalarCopyStillRejectsForeignOriginalSpeciesWithMatchingPacketIdentity)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareWorld());
+	ASSERT_NE(incoming->unitType(), braced->unitType());
+	struct ForeignInfo final : battle::IUnitInfo
+	{
+		const CStack & physical;
+		const CCreature * species;
+		ForeignInfo(const CStack & physical, const CCreature * species) : physical(physical), species(species) {}
+		int32_t unitBaseAmount() const override { return physical.unitBaseAmount(); }
+		uint32_t unitId() const override { return physical.unitId(); }
+		BattleSide unitSide() const override { return physical.unitSide(); }
+		PlayerColor unitOwner() const override { return physical.unitOwner(); }
+		SlotID unitSlot() const override { return physical.unitSlot(); }
+		const CCreature * unitType() const override { return species; }
+	} foreignInfo(*incoming, braced->unitType());
+	const auto nativeBefore = incoming->save();
+	InitialExportWorld world(*battle());
+	const auto origin = source(world, *incoming);
+	battle::CUnitStateDetached foreign(&foreignInfo, incoming);
+	EXPECT_EQ(foreign.unitId(), incoming->unitId());
+	EXPECT_EQ(foreign.unitSide(), incoming->unitSide());
+	EXPECT_EQ(foreign.unitOwner(), incoming->unitOwner());
+	EXPECT_THROW(world.copyQueryValues(origin, foreign), std::invalid_argument);
+	EXPECT_EQ(incoming->save(), nativeBefore);
+}

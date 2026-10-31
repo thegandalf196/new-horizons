@@ -12,6 +12,7 @@
 #include "ProjectedSummonHealthQuery.h"
 #include "HeroCommand.h"
 #include "NewHorizonsCrisisCommand.h"
+#include "NewHorizonsReactiveDefense.h"
 #include "NewHorizonsSeizeInitiative.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "CUnitState.h"
@@ -82,11 +83,13 @@ struct ProjectedBattleWorldArena::Data
 	struct PacketCandidates
 	{
 		std::vector<newHorizonsCrisisCommand::DeathReceipt> crisis;
+		std::vector<newHorizonsReactiveDefense::Destruction> solidarity;
 		std::set<uint32_t> removed;
 	};
 	PacketCandidates captureCandidates(const std::vector<UnitChanges> & changes) const;
 	void applyEntries(ProjectedBattleWorldArena & owner, const std::vector<UnitChanges> & changes);
-	void finishCandidates(const PacketCandidates & candidates, const std::vector<UnitChanges> & changes);
+	void finishCandidates(ProjectedBattleWorldArena & owner, const PacketCandidates & candidates, const std::vector<UnitChanges> & changes);
+	void recordSolidarityDeaths(ProjectedBattleWorldArena & owner, std::span<const newHorizonsReactiveDefense::Destruction> deaths);
 	bool applyConsumption(ProjectedBattleWorldArena & owner, const BattleUnitsChanged & packet);
 	void recordBloodrageDeath(uint32_t id);
 	void validateCrisisForStorage(const newHorizonsCrisisCommand::State & state) const;

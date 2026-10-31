@@ -233,13 +233,8 @@ ILimiter::EDecision UnitAdjacentLimiter::limit(const BonusLimitationContext &con
 	if (!stack->getPosition().isValid())
 		return ILimiter::EDecision::DISCARD;
 
-	const auto adjacentUnits = context.evaluation.adjacentUnits();
-
-	for (const auto & unit : adjacentUnits)
-		if(context.evaluation.matchesAdjacentUnit(*unit, targetUnit, filter))
-			return ILimiter::EDecision::ACCEPT;
-
-	return ILimiter::EDecision::DISCARD;
+	return context.evaluation.hasMatchingAdjacentUnit(targetUnit, filter)
+		? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
 }
 
 

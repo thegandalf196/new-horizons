@@ -13,6 +13,14 @@ BonusEvaluationContext::BonusEvaluationContext(const CBonusSystemNode & shell, c
 	if(shell.getNodeType() != facts.nodeType)
 		throw std::invalid_argument("Owned bonus shell and facts disagree");
 }
+BonusEvaluationContext::BonusEvaluationContext(const CBonusSystemNode & shell,
+	const OwnedBonusEvaluationFacts & facts, const battle::Unit & unit)
+	: BonusEvaluationContext(shell, facts)
+{
+	if(facts.nodeType != BonusNodeType::STACK_BATTLE)
+		throw std::invalid_argument("Owned current unit requires a battle recipient shell");
+	projected = &unit; // Borrowed only through canonical collection/fixedpoint completion.
+}
 std::optional<int> BonusEvaluationContext::heroLevel() const
 {
 	if(getNodeType() != BonusNodeType::HERO) return std::nullopt;

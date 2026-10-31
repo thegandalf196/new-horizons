@@ -4,10 +4,14 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "ToxicStingValue.h"
+#include "../../lib/battle/NewHorizonsGnollHarriers.h"
 #include "BattleExchangeVariant.h"
 #include "SpellTargetsEvaluator.h"
+#include "../../lib/battle/NewHorizonsChargeSpecialties.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsCoordinatedMarks.h"
 
 namespace
 {
@@ -85,20 +89,29 @@ std::optional<float> BattleExchangeVariant::trackFutureMovementReaction(
 	const bool readyBattlecraft = hasReadyBattlecraft(*hb, attacker.get(), resolvedDefender)
 		|| (resolvedDefender != defender.get()
 			&& hasReadyBattlecraft(*hb, attacker.get(), defender.get()));
+	const bool readyHistory = newHorizonsGnollHarriers::trackingRequired(*hb);
+	const bool readySting = toxicStingAI::requiresPreview(*hb, *attacker, *defender, *resolvedDefender);
+	const bool readyCharge = newHorizonsChargeSpecialties::requiresChargeMovementPreview(*hb, *attacker, *resolvedDefender)
+		|| (resolvedDefender != defender.get()
+			&& newHorizonsChargeSpecialties::requiresChargeMovementPreview(*hb, *attacker, *defender));
+	const bool readyReturn = newHorizonsCoordinatedMarks::canMarkReturn(*hb, *attacker)
+		&& attacker->alive() && !attacker->isGhost() && !attacker->isTimeStopped()
+		&& !attacker->hasBonusOfType(BonusType::NOT_ACTIVE) && !attacker->hasBonusOfType(BonusType::BIND_EFFECT)
+		&& attacker->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE);
 	const bool eligibleBrace = hb->battleCanTriggerHeroOrderBrace(
 		attacker.get(), resolvedDefender, 3, false, false);
-	if(!readyBattlecraft && !eligibleBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
+	if(!readySting && !readyHistory && !readyCharge && !readyReturn && !readyBattlecraft && !eligibleBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
 		return std::nullopt;
 	const auto reachable = hb->getReachability(attacker.get());
 	const auto approach = currentApproach(hb, attacker.get(), defender.get(), reachable);
-	if(!approach.isAvailable() || (approach == attacker->getPosition() && !readyBattlecraft))
+	if(!approach.isAvailable() || (approach == attacker->getPosition() && !readySting && !readyBattlecraft))
 		return std::nullopt;
 	const int distance = SpellTargetEvaluator::physicalTravelDistance(reachable, approach);
 	if(distance < 0)
 		return std::nullopt;
 	const bool readyBrace = hb->battleCanTriggerHeroOrderBrace(
 		attacker.get(), resolvedDefender, distance, false, false);
-	if(!readyBattlecraft && !readyBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
+	if(!readySting && !readyHistory && !readyCharge && !readyReturn && !readyBattlecraft && !readyBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))
 		return std::nullopt;
 
 	// Every target probe owns a child, including its units/Orders/reaction state.
@@ -106,13 +119,16 @@ std::optional<float> BattleExchangeVariant::trackFutureMovementReaction(
 	auto branch = evaluateOnly ? std::make_shared<HypotheticBattle>(hb->env, hb) : hb;
 	const auto actor = branch->getForUpdate(attacker->unitId());
 	const auto target = branch->getForUpdate(defender->unitId());
-	const auto projected = AttackPossibility::evaluate(
-		BattleAttackInfo(actor.get(), target.get(), distance, false), approach, damageCache, branch);
+	BattleAttackInfo incoming(actor.get(), target.get(), distance, false);
+	// This existing path was selected as a voluntary approach, never a forced
+	// reaction, teleport or later blow. Walking movement carries no flight fact.
+	incoming.voluntaryFlightDistance = reachable.params.flying ? distance : 0;
+	const auto projected = AttackPossibility::evaluate(incoming, approach, damageCache, branch, false, std::nullopt, nullptr, approach != actor->getPosition(), actor->getPosition());
 	const bool hasBraceReceipt = std::ranges::any_of(projected.fortuneStrikes,
 		[](const auto & strike) { return strike.bracePreemptive; });
 	// A changed round marker is the accepted Battlecraft receipt, even when
 	// the hit deals zero damage. Ordinary retaliation metadata is insufficient.
-	if(projected.overwatchHits.empty() && !hasBraceReceipt && !hasBattlecraftReceipt(projected, *hb))
+	if(!readySting && !readyHistory && !readyCharge && !readyReturn && projected.overwatchHits.empty() && !hasBraceReceipt && !hasBattlecraftReceipt(projected, *hb))
 		return std::nullopt;
 	BattleExchangeVariant reactionExchange;
 	const auto value = reactionExchange.trackAttack(projected, branch, damageCache);

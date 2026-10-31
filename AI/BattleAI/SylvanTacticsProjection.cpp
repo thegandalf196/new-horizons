@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "SylvanTacticsProjection.h"
+#include "PhysicalStrikeProjection.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
@@ -31,7 +32,7 @@ void replaySecondary(HypotheticBattle & battle, const SecondaryHit & hit)
 	auto target = battle.getForUpdate(hit.targetId);
 	BattleAttackInfo attack(actor.get(), target.get(), 0, true);
 	attack.secondaryAttack = true;
-	StrikeProjection projection(&battle);
+	PhysicalStrikeProjection projection(&battle);
 	auto damage = hit.requestedDamage;
 	projection.damage(battle, attack, *target, damage, battle::DamageProvenance::PHYSICAL_CREATURE);
 	projection.finish(actor->unitId());

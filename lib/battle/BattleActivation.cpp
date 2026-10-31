@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
 #include "BattleInfo.h"
+#include "NewHorizonsPrismaticVanguard.h"
 #include "NewHorizonsHeroicSpirit.h"
 #include "NewHorizonsSerpentsEmbrace.h"
 #include "NewHorizonsCombatSkills.h"
@@ -29,6 +30,9 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		newHorizonsSerpentsEmbrace::releaseBindings(*this, unitId);
 		st->moraleExtraActivation = moraleExtraDamagePercent != 100 && reason == BattleUnitTurnReason::MORALE;
 		newHorizonsHeroicSpirit::beginActivation(*st, reason);
+		const auto vanguard = newHorizonsPrismaticVanguard::activationPlan(*this, *st, reason);
+		if(!vanguard.remove.empty()) st->removeBonuses(CSelector(newHorizonsPrismaticVanguard::isEffect));
+		if(!vanguard.add.empty()) addUnitBonus(unitId, vanguard.add);
 		st->removeBonusesRecursive(CSelector(Bonus::UntilNextCreatureActivation));
 
 		// Second Wind is a genuine activation too, but must not broaden the

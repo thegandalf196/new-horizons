@@ -6,6 +6,9 @@
 #include "StdInc.h"
 
 #include "HeroCommandFixture.h"
+#include "../../../lib/spells/CurePhysicalAffliction.h"
+#include "../../../lib/battle/NewHorizonsGraveDust.h"
+
 
 #include "../../../lib/battle/BattleInfo.h"
 #include "../../../lib/battle/CBattleInfoEssentials.h"
@@ -166,6 +169,15 @@ protected:
 		ASSERT_EQ(newHorizonsPurify::spellID(), purifySpell());
 		ASSERT_EQ(attackerSideHero->hasActivePerk(lightMagicSkill, purifierPerk), purifier);
 		ASSERT_EQ(newHorizonsDivineMandate::hasPurifyingMandatePerk(attackerSideHero), purifyingMandate);
+	}
+
+	void installGraveDust(CStack * recipient, int value = 5000)
+	{
+		SetStackEffect effects;
+		effects.battleID = BattleID(0);
+		effects.toAdd.emplace_back(recipient->unitId(), newHorizonsGraveDust::records(value, PlayerColor(1)));
+		gameHandler->sendAndApply(effects);
+		ASSERT_EQ(spells::curePhysical::graveDustRemoval(*recipient).size(), 2u);
 	}
 
 	void removeDeployedUnits()
@@ -639,4 +651,63 @@ TEST(NewHorizonsPurifyHelpersTest, ActionRoundTripsAndOlderProtocolRejectsOnlyPo
 	CMemorySerializer oldOrdinary;
 	oldOrdinary.oser.version = ESerializationVersion::NEW_HORIZONS_SHADOW_GIFT;
 	EXPECT_NO_THROW(oldOrdinary.oser & ordinary);
+}
+
+TEST_F(NewHorizonsPurifyTest, PurifierCleansesCanonicalGraveDustAtFullHealthOutsideBaseCap)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, true));
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(friendly, 10000));
+	addMarkedAffliction(friendly, "bleeding", 1, 49002);
+	const auto health = friendly->getAvailableHealth();
+	const auto eligible = newHorizonsPurify::eligibleStacks(*battle(), BattleSide::ATTACKER, BattleHex(3, 5), 0, true);
+	ASSERT_EQ(eligible.size(), 1u);
+	EXPECT_TRUE(eligible.front().graveDustAutomaticallyCleared);
+	ASSERT_TRUE(cast());
+	EXPECT_TRUE(spells::curePhysical::graveDustRemoval(*friendly).empty());
+	EXPECT_TRUE(hasAffliction(friendly, "bleeding"));
+	EXPECT_EQ(friendly->getAvailableHealth(), health);
+}
+
+TEST_F(NewHorizonsPurifyTest, NoPurifierNoMagicalCleanupKeepsDustAndRejectsEmptyCast)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(friendly));
+	const auto mana = attackerSideHero->getManaAvailable();
+	EXPECT_TRUE(newHorizonsPurify::eligibleStacks(*battle(), BattleSide::ATTACKER, BattleHex(3, 5), 0, false).empty());
+	EXPECT_FALSE(cast());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*friendly).size(), 2u);
+}
+
+TEST_F(NewHorizonsPurifyTest, PurifierKeepsOutsideAndEnemyDust)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, true));
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(friendly));
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(outside));
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(enemy));
+	ASSERT_TRUE(cast());
+	EXPECT_TRUE(spells::curePhysical::graveDustRemoval(*friendly).empty());
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*outside).size(), 2u);
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*enemy).size(), 2u);
+}
+
+TEST_F(NewHorizonsPurifyTest, PurifyingMandateCleansesDustOnlyAfterActualMagicalGroupRemoval)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, false, true));
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(friendly));
+	addSourceGroup(friendly, SpellID(SpellID::CURSE));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_TRUE(cast({{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::CURSE)}}));
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+	EXPECT_TRUE(spells::curePhysical::graveDustRemoval(*friendly).empty());
+}
+
+TEST_F(NewHorizonsPurifyTest, InitialPurifyWithoutMandateFollowupKeepsDust)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0, false, true));
+	ASSERT_NO_FATAL_FAILURE(installGraveDust(friendly));
+	addSourceGroup(friendly, SpellID(SpellID::CURSE));
+	ASSERT_TRUE(cast({{static_cast<int32_t>(friendly->unitId()), SpellID(SpellID::CURSE)}}));
+	EXPECT_FALSE(hasEffect(friendly, SpellID(SpellID::CURSE)));
+	EXPECT_EQ(spells::curePhysical::graveDustRemoval(*friendly).size(), 2u);
 }

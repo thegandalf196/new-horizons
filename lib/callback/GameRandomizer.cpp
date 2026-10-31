@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "GameRandomizer.h"
+#include "../battle/CreatureAbilityChance.h"
 
 #include "IGameInfoCallback.h"
 
@@ -257,16 +258,10 @@ bool GameRandomizer::isBadMoraleRollStochastic(int magnitude) const
 
 int GameRandomizer::prepareFavorableCreatureAbilityChance(const IBonusBearer & unit, int percentageChance)
 {
-	const int chance = unit.favorableCreatureAbilityChanceBasisPoints(percentageChance);
-	if(chance == std::clamp(percentageChance, 0, 100) * 100)
-		return percentageChance;
-
-	// Keep the existing percentage-sized biased stream. Changing its dice scale
-	// would reinterpret accumulated bias when this timed modifier expires.
-	// Stochastic rounding retains fractional percentages in expectation, without
-	// any extra draw when the effective chance is an integer percentage.
-	int roundedChance = chance / 100;
-	if(chance % 100 && getDefault().nextInt(0, 99) < chance % 100)
+	const auto chance = creatureAbilityChance::rounding(unit, percentageChance);
+	// Preserve the existing fractional draw before the unchanged biased ability stream.
+	int roundedChance = chance.wholePercent;
+	if(chance.remainderBasisPoints && getDefault().nextInt(0, 99) < chance.remainderBasisPoints)
 		++roundedChance;
 	return roundedChance;
 }

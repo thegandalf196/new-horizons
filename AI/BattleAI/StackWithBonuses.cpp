@@ -9,6 +9,9 @@
  */
 #include "StdInc.h"
 #include "StackWithBonuses.h"
+#include "../../lib/bonuses/CBonusSystemNode.h"
+#include "../../lib/bonuses/ProjectedBonusView.h"
+#include <stdexcept>
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "HypotheticEffectSnapshotRules.h"
@@ -310,4 +313,32 @@ std::string StackWithBonuses::getDescription() const
 void StackWithBonuses::spendMana(ServerCallback * server, const int spellCost) const
 {
 	//TODO: evaluate cast use
+}
+
+std::vector<Bonus> StackWithBonuses::localSpellEffects() const
+{
+	if(exactLocalSpellEffects)
+		return *exactLocalSpellEffects;
+	if(const auto * parent = dynamic_cast<const StackWithBonuses *>(origBearer))
+		return parent->localSpellEffects();
+	if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(origBearer))
+		return projected->sourceLocalSpellEffects();
+	const auto * node = dynamic_cast<const CBonusSystemNode *>(origBearer);
+	if(!node)
+		if(const auto * detached = dynamic_cast<const battle::CUnitStateDetached *>(origBearer))
+		{
+			const auto * provider = detached->sourceLocalEffectProvider();
+			if(const auto * parent = dynamic_cast<const StackWithBonuses *>(provider))
+				return parent->localSpellEffects();
+			if(const auto * projected = dynamic_cast<const ProjectedBonusView *>(provider))
+				return projected->sourceLocalSpellEffects();
+			node = dynamic_cast<const CBonusSystemNode *>(provider);
+		}
+	if(!node)
+		throw std::runtime_error("Detached exact effect capture requires source-local bonus provenance");
+	std::vector<Bonus> result;
+	for(const auto & bonus : node->getExportedBonusList())
+		if(bonus->source == BonusSource::SPELL_EFFECT)
+			result.push_back(*bonus);
+	return result;
 }

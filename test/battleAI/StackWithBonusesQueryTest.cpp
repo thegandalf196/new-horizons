@@ -11,6 +11,7 @@
 #include "../../lib/int3.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/bonuses/BonusList.h"
+#include "../../lib/bonuses/Limiters.h"
 #include <array>
 #include <type_traits>
 
@@ -712,4 +713,69 @@ TEST_F(StackWithBonusesQueryTest, CanonicalSuppressionQueryKeepsFrozenParentRead
 	EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(*probe), 2);
 	ASSERT_NE(probe->canonicalSelector, nullptr);
 	EXPECT_EQ(values(probe->canonical), values(probe->copied));
+}
+
+TEST_F(StackWithBonusesQueryTest, DetachedPosthitAndNestedLoansKeepExactLocalSpellProvenanceAndRejectForeignProviders)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	Bonus local(BonusDuration::N_TURNS, BonusType::PRIMARY_SKILL, BonusSource::SPELL_EFFECT, 3,
+		BonusSourceID(SpellID(SpellID::HASTE)), BonusSubtypeID(PrimarySkill::ATTACK));
+	local.turnsRemain = 2;
+	incoming->addNewBonus(std::make_shared<Bonus>(local));
+	ASSERT_EQ(incoming->unitSide(), BattleSide::DEFENDER);
+	ASSERT_EQ(battle()->getSideArmy(incoming->unitSide()), defenderSideHero);
+	ASSERT_EQ(battle()->getSideHero(incoming->unitSide()), defenderSideHero);
+	ASSERT_TRUE(defenderSideHero->isPrimaryRatingNode());
+	auto inherited = local; inherited.val = 17;
+	// Unrestricted hero Attack is converted to its effective rating, not inherited
+	// as a raw record. A creature-specific spell bonus remains a distinct source.
+	auto family = std::make_shared<CCreatureTypeLimiter>();
+	family->setCreature(incoming->creatureId());
+	inherited.limiter = family;
+	const auto inheritedRecord = std::make_shared<Bonus>(inherited);
+	defenderSideHero->addNewBonus(inheritedRecord);
+	const auto selector = Selector::source(BonusSource::SPELL_EFFECT, local.sid);
+	const auto heroEffects = defenderSideHero->getUnstackedBonuses(selector);
+	EXPECT_FALSE(vstd::contains(*heroEffects, inheritedRecord));
+	const auto nativeEffects = incoming->getUnstackedBonuses(selector);
+	ASSERT_GE(nativeEffects->size(), 2u);
+	ASSERT_TRUE(vstd::contains(*nativeEffects, inheritedRecord));
+	resetChild();
+	const auto source = child->getForUpdate(incoming->unitId());
+	const auto localBefore = source->localSpellEffects();
+	ASSERT_EQ(localBefore.size(), 1u); ASSERT_EQ(localBefore.front().val, 3);
+	ASSERT_GE(source->getUnstackedBonuses(Selector::source(BonusSource::SPELL_EFFECT, local.sid))->size(), 2u);
+	const auto sourceState = source->save(), nativeState = incoming->save();
+	const auto nativeExports = incoming->getExportedBonusList().toJsonNode();
+	const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto fixtureRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	auto posthit = source->acquireState(); int64_t loss = 5; posthit->damage(loss);
+	ASSERT_EQ(loss, 5);
+	auto nested = posthit->acquireState(); loss = 2; nested->damage(loss); ASSERT_EQ(loss, 2);
+	const auto posthitState = posthit->save(), nestedState = nested->save();
+	StackWithBonuses wrapped(child.get(), nested.get());
+	EXPECT_EQ(wrapped.getAvailableHealth(), nested->getAvailableHealth());
+	EXPECT_EQ(wrapped.getAvailableHealth(), source->getAvailableHealth() - 7);
+	EXPECT_EQ(projectedHitTest::serialized(wrapped.localSpellEffects()), projectedHitTest::serialized(localBefore));
+	const auto * nestedProvider = dynamic_cast<const battle::CUnitStateDetached *>(nested.get());
+	ASSERT_NE(nestedProvider, nullptr);
+	EXPECT_EQ(nestedProvider->sourceLocalEffectProvider(), source.get());
+
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
+	const auto foreign = sibling->getForUpdate(source->unitId());
+	ASSERT_EQ(foreign->unitId(), source->unitId()); ASSERT_NE(foreign.get(), source.get());
+	battle::CUnitStateDetached wrongInfo(source.get(), foreign.get());
+	EXPECT_THROW(wrongInfo.sourceLocalEffectProvider(), std::runtime_error);
+	ForeignBearer unproven(*source);
+	battle::CUnitStateDetached unknown(source.get(), &unproven), missing(source.get(), nullptr);
+	unknown.localInit(child.get()); unknown = static_cast<const battle::CUnitState &>(*source);
+	EXPECT_THROW(unknown.sourceLocalEffectProvider(), std::runtime_error);
+	EXPECT_THROW(missing.sourceLocalEffectProvider(), std::runtime_error);
+	EXPECT_THROW(StackWithBonuses(child.get(), &unknown), std::runtime_error);
+	EXPECT_EQ(source->save(), sourceState); EXPECT_EQ(incoming->save(), nativeState);
+	EXPECT_EQ(posthit->save(), posthitState); EXPECT_EQ(nested->save(), nestedState);
+	EXPECT_EQ(incoming->getExportedBonusList().toJsonNode(), nativeExports);
+	EXPECT_EQ(projectedHitTest::serialized(source->localSpellEffects()), projectedHitTest::serialized(localBefore));
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
 }

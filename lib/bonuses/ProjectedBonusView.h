@@ -15,6 +15,11 @@ class DLL_LINKAGE ProjectedBonusView : public IBonusBearer
 {
 public:
 	virtual const battle::Unit * evaluatedUnit() const = 0;
+	/// Exact owned provider identity, not a bool permit or native source import.
+	virtual const battle::Unit * completeOwnedFormSource() const { return nullptr; }
+	/// Optional owned native-form source evaluation for a retained derived scratch.
+	/// Null means legacy handling; a handled empty list must remain engaged.
+	virtual TConstBonusListPtr ownedNativeFormBonuses(const battle::CUnitState &, const CSelector &, bool) const { return {}; }
 	/// Exact source-local exported spell records, in export order; never effective
 	/// or inherited records. Values retain the existing immutable metadata lease.
 	virtual std::vector<Bonus> sourceLocalSpellEffects() const

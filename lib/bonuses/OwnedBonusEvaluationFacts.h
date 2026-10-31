@@ -50,6 +50,24 @@ struct DLL_LINKAGE OwnedBonusEvaluationFacts
 	std::optional<RankContext> rankContext;
 	std::optional<TerrainContext> terrainContext;
 	std::optional<battle::BonusAcceptanceFacts> acceptance;
+	struct AdjacentUnit
+	{
+		uint32_t id;
+		CreatureID creature;
+		PlayerColor owner;
+		bool alive;
+		bool ghost;
+	};
+	struct AdjacentCreature
+	{
+		bool undead;
+		bool living;
+		std::map<CreatureID, bool> familyUpgrades;
+	};
+	/// Ordered current query occurrences; absent is unknown, engaged empty is no neighbors.
+	std::optional<std::vector<AdjacentUnit>> adjacencyUnits;
+	/// Absence of map/key is unknown; an empty mapped value is genuine missing unitType.
+	std::optional<std::map<CreatureID, std::optional<AdjacentCreature>>> adjacencyTraits;
 	/// Required applicable facts cannot be replaced by zero or a live fallback.
 	void validate() const;
 };

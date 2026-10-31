@@ -8,6 +8,7 @@
 #include "TavernHeroesPool.h"
 #include "QuestInfo.h"
 #include "../StartInfo.h"
+#include "../ScopeGuard.h"
 #include "../CPlayerState.h"
 #include "../GameSettings.h"
 #include "../battle/BattleInfo.h"
@@ -37,11 +38,10 @@ ReplayPayload CGameState::saveReplaySnapshot()
 	// Swapping keeps the serialized layout identical - an empty log is written instead.
 	ReplayLog logBackup;
 	std::swap(logBackup, replayLog);
+	const auto restoreLog = vstd::makeScopeGuard([this, &logBackup]() { std::swap(logBackup, replayLog); });
 
 	CMemorySerializer serializer;
 	serializer.oser & *this;
-
-	std::swap(logBackup, replayLog);
 
 	return {serializer.extractBuffer(), serializer.oser.version};
 }

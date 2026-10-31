@@ -48,6 +48,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int coordinatedMeleeDefenseIgnorePercent = 0; // One consumed ordinary allied melee mark.
 	int stormWingsDefenseIgnorePercent = 0; // Exact first-primary voluntary-flight contribution.
 	int runicEnduranceReductionPercent = 0; // Independent attack-sequence protection source.
+	int ironHideReductionPercent = 0; // Independent first-primary-melee-hit protection this round.
 	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
 	int heavenlyGaleDamageReductionBasisPoints = 0;
 	bool luckyStrike = false;
@@ -196,6 +197,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("physicalDamageReductionIgnorePercent", physicalDamageReductionIgnorePercent,
 			"Attack-local percentage of combined capped physical damage reduction ignored.");
 		s("runicEnduranceReductionPercent", runicEnduranceReductionPercent, "Captured independent physical protection against additional blows in one ordinary action.");
+		s("ironHideReductionPercent", ironHideReductionPercent, "Captured independent physical protection against the first primary melee hit this round.");
 		s("intrinsicPhysicalDamageReductionPercent", intrinsicPhysicalDamageReductionPercent,
 			"Independent intrinsic physical reduction before the shared cap and final floor.");
 		s("heavenlyGaleDamageReductionBasisPoints", heavenlyGaleDamageReductionBasisPoints,

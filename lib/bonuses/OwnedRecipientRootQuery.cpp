@@ -11,10 +11,11 @@ class RootQueryGraph final : public BonusGraphQuery
 	const OwnedBonusEvaluationFacts & facts;
 	const TCNodesVector & rootParents;
 	const BonusList & rootRecords;
+	const battle::Unit * ownedUnit;
 public:
 	RootQueryGraph(const OwnedRecipientBonusGraph & graph, const OwnedBonusEvaluationFacts & facts,
-		const TCNodesVector & parents, const BonusList & records)
-		: graph(graph), facts(facts), rootParents(parents), rootRecords(records) {}
+		const TCNodesVector & parents, const BonusList & records, const battle::Unit * unit)
+		: graph(graph), facts(facts), rootParents(parents), rootRecords(records), ownedUnit(unit) {}
 	const BonusList & local(const CBonusSystemNode & node) const override
 	{
 		return &node == &graph.root() ? rootRecords : graph.local(node);
@@ -27,19 +28,25 @@ public:
 	const TNodesVector & children(const CBonusSystemNode & node) const override { return graph.children(node); }
 	BonusEvaluationContext evaluation(const CBonusSystemNode & node) const override
 	{
-		return &node == &graph.root() ? BonusEvaluationContext(node, facts) : graph.evaluation(node);
+		if(&node != &graph.root()) return graph.evaluation(node);
+		return ownedUnit ? BonusEvaluationContext(node, facts, *ownedUnit) : BonusEvaluationContext(node, facts);
 	}
 };
 }
 // Node-private topology/payload inspection is supplied by the owning storage TU.
 BonusList OwnedRecipientBonusGraph::queryRoot(const CSelector & selector, bool unstacked, const RootQuery & query) const
 {
+	BonusList selectedRaw;
+	for(const auto index : query.records) selectedRaw.push_back(payload(index));
+	return queryRootRecords(selector, unstacked, query, selectedRaw);
+}
+BonusList OwnedRecipientBonusGraph::queryRootRecords(const CSelector & selector, bool unstacked,
+	const RootQuery & query, const BonusList & selectedRaw, const battle::Unit * ownedUnit) const
+{
 	validateRootQuery(query);
 	TCNodesVector selectedParents;
 	for(const auto index : query.parents) selectedParents.push_back(&queryNode(index));
-	BonusList selectedRaw;
-	for(const auto index : query.records) selectedRaw.push_back(payload(index));
-	RootQueryGraph view(*this, query.facts, selectedParents, selectedRaw);
+	RootQueryGraph view(*this, query.facts, selectedParents, selectedRaw, ownedUnit);
 	BonusList all, accepted, selected;
 	collectBonusGraph(view, root(), all);
 	limitBonuses(all, accepted, view.evaluation(root()));
