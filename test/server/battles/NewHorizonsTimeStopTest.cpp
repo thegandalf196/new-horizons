@@ -7,6 +7,7 @@
 
 #include "BattleTestFixture.h"
 #include "HeroCommandFixture.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -44,38 +45,15 @@ JsonNode magicRulesForVersion(int version)
 	if(version == newHorizonsMagic::CURRENT_RULESET_VERSION)
 		return rules;
 
-	rules["rulesetVersion"].Integer() = version;
-	if(version < newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	rules = historicalCrusadeRules(rules, version);
+	if(version == newHorizonsMagic::RULESET_VERSION)
 	{
-		rules.Struct().erase("schoolRankPowerCoefficientPercent");
-		rules.Struct().erase("spellcraftEfficiencyPercent");
-		// Derive a historical policy, not a current v3 object with a new label.
-		for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale"})
-			rules.Struct().erase(key);
-		rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
-		for(auto & [name, spell] : rules["spells"].Struct())
-		{
-			(void)name;
-			for(const auto * key : {"selectedPlacement", "earthquake", "structures", "heroAccess",
-				"restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers",
-				"temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
-				spell.Struct().erase(key);
-			if(spell.Struct().contains("variant"))
-			{
-				spell.Struct().erase("variant");
-				spell["active"].Bool() = false;
-			}
-		}
-		// Retain the existing historical Sorrow mapping rather than its later
-		// authored v3 level/cost/school override, as in the saved-v2 fixtures.
+		// V1 retains its original Sorrow mapping as well as its separate faction/spell schema.
 		auto & sorrow = rules["spells"]["core:sorrow"];
 		sorrow.Struct().erase("level");
 		sorrow.Struct().erase("costs");
 		sorrow["schools"].Vector().clear();
 		sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
-	}
-	if(version == newHorizonsMagic::RULESET_VERSION)
-	{
 		rules.Struct().erase("warcasting");
 		rules.Struct().erase("spellPoints");
 		rules.Struct().erase("mageGuildGeneration");

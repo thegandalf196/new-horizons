@@ -8,6 +8,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "../../../lib/spells/CurePhysicalAffliction.h"
 #include "../../../lib/battle/NewHorizonsGraveDust.h"
 
@@ -45,13 +46,14 @@ constexpr auto cureKey = "core:cure";
 // Installed v3 clauses must not leak into a purported v2 saved roster.
 JsonNode savedV2CureRules(const JsonNode & current)
 {
+	const auto historical = historicalCrusadeRules(current, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
 	JsonNode result;
 	for(const auto * field : {"schemaVersion", "schools", "schoolSkills", "skillReplacements", "adventureSpells",
 		"mageGuildGeneration", "factions"})
-		result[field] = current[field];
+		result[field] = historical[field];
 	result["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
 	result["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
-	for(const auto & [key, row] : current["spells"].Struct())
+	for(const auto & [key, row] : historical["spells"].Struct())
 	{
 		for(const auto * field : {"schools", "level", "costs", "ordinaryAcquisition", "directDamage", "active", "cureAfflictions"})
 			if(row.Struct().contains(field))

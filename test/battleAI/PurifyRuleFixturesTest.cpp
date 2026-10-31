@@ -73,7 +73,7 @@ TEST_F(PurifyRuleFixturesTest, NeutralCommandsRetainTheCompleteCurrentProfileExc
 	auto expected = original;
 	for(auto & [name, command] : expected["commands"].Struct())
 	{
-		(void)name;
+		if(name == "feint" || name == "vanguard") continue;
 		for(auto & [kind, effect] : command["effects"].Struct())
 		{
 			(void)kind;
@@ -82,10 +82,46 @@ TEST_F(PurifyRuleFixturesTest, NeutralCommandsRetainTheCompleteCurrentProfileExc
 			effect["defense"].Float() = 0;
 		}
 	}
+	// The revised formulas retain their divisors and shape; only potency inputs/caps are neutralized.
+	auto & feint = expected["commands"]["feint"]["effects"]["retaliationDamageReductionPercent"];
+	feint["base"].Float() = 0;
+	feint["leadership"].Float() = 0;
+	feint["cap"].Integer() = 0;
+	auto & stats = expected["commands"]["vanguard"]["effects"]["primaryAndMorale"];
+	stats["base"].Float() = 0;
+	stats["cap"].Integer() = 0;
+	auto & initiative = expected["commands"]["vanguard"]["effects"]["initiativePercent"];
+	initiative["base"].Float() = 0;
+	initiative["minimumRating"].Float() = 0;
+	initiative["cap"].Integer() = 0;
 	const auto neutral = purifyTest::neutralSpellCompetitionCommands();
 	EXPECT_EQ(neutral, expected);
 	EXPECT_NO_THROW(heroCommands::validateRules(neutral));
 	EXPECT_NE(neutral, JsonNode());
 	EXPECT_EQ(file["combat"]["heroCommands"], original);
+	EXPECT_EQ(neutral["rulesetVersion"].Integer(), heroCommands::CURRENT_RULESET_VERSION);
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	for(const auto command : {HeroCommand::FEINT, HeroCommand::VANGUARD})
+	{
+		HeroOrderState order;
+		order.command = command;
+		order.issuedRound = 2;
+		order.revision = heroCommands::nominalRevisedOrderSnapshot(command, order.issuedRound,
+			450, 300, 3000, neutral["commands"][heroCommands::key(command)]);
+		if(command == HeroCommand::VANGUARD)
+		{
+			order.revision->recipientUnitIds = {1};
+			const auto raw = heroCommands::scaledRevisedOrderSnapshot(command, order.issuedRound,
+				450, 300, 3000, neutral["commands"][heroCommands::key(command)], 100, 100, 100);
+			EXPECT_GT(raw.vanguardStatBonus, 0); // Retained ratingStep still computes the raw term.
+			EXPECT_EQ(order.revision->vanguardStatBonus, 0); // Nominal snapshot has already applied its cap.
+		}
+		heroCommands::finalizeRevisedOrderSnapshot(order, magic);
+		EXPECT_TRUE(order.revision->potencyFinalized);
+		EXPECT_EQ(order.revision->feintReductionPercent, 0);
+		EXPECT_EQ(order.revision->vanguardStatBonus, 0);
+		EXPECT_EQ(order.revision->vanguardInitiativePercent, 0);
+		EXPECT_NO_THROW(order.revision->validate(command, order.issuedRound));
+	}
 }
 }

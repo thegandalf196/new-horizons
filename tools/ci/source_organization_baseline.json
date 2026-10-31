@@ -16360,225 +16360,225 @@
       "functions": [
         {
           "symbol": "SpellID purifySpell()#1",
-          "start": 37,
-          "end": 40
+          "start": 38,
+          "end": 41
         },
         {
           "symbol": "Bonus spellEffect(SpellID source, BonusType type, int value, BonusSubtypeID subtype = BonusSubtypeID())#1",
-          "start": 42,
-          "end": 49
+          "start": 43,
+          "end": 50
         },
         {
           "symbol": "NewHorizonsPurifyTest::void SetUp() override#1",
-          "start": 56,
-          "end": 61
+          "start": 57,
+          "end": 62
         },
         {
           "symbol": "NewHorizonsPurifyTest::void mapLoaded(CMap * map) override#1",
-          "start": 63,
-          "end": 98
+          "start": 64,
+          "end": 76
         },
         {
           "symbol": "NewHorizonsPurifyTest::void acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId, const std::string_view perkId)#1",
-          "start": 100,
-          "end": 125
+          "start": 78,
+          "end": 103
         },
         {
           "symbol": "NewHorizonsPurifyTest::acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId, const std::string_view perkId)::[hero](const std::string & queriedSkillId)#1",
-          "start": 103,
-          "end": 106
+          "start": 81,
+          "end": 84
         },
         {
           "symbol": "NewHorizonsPurifyTest::acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId, const std::string_view perkId)::[&](const auto & candidate)#1",
-          "start": 111,
-          "end": 114
+          "start": 89,
+          "end": 92
         },
         {
           "symbol": "NewHorizonsPurifyTest::void selectPurifyingMandate()#1",
-          "start": 127,
-          "end": 137
+          "start": 105,
+          "end": 115
         },
         {
           "symbol": "NewHorizonsPurifyTest::void prepare(int32_t spellPower = 0, bool purifier = false, bool purifyingMandate = false)#1",
-          "start": 139,
-          "end": 172
+          "start": 117,
+          "end": 150
         },
         {
           "symbol": "NewHorizonsPurifyTest::void installGraveDust(CStack * recipient, int value = 5000)#1",
-          "start": 174,
-          "end": 181
+          "start": 152,
+          "end": 159
         },
         {
           "symbol": "NewHorizonsPurifyTest::void removeDeployedUnits()#1",
-          "start": 183,
-          "end": 190
+          "start": 161,
+          "end": 168
         },
         {
           "symbol": "NewHorizonsPurifyTest::void addSourceGroup(CStack * unit, SpellID source, int firstValue = -2, bool secondBonus = false)#1",
-          "start": 192,
-          "end": 202
+          "start": 170,
+          "end": 180
         },
         {
           "symbol": "NewHorizonsPurifyTest::void addPhysicalPoison(CStack * unit)#1",
-          "start": 204,
-          "end": 216
+          "start": 182,
+          "end": 194
         },
         {
           "symbol": "NewHorizonsPurifyTest::void addMarkedAffliction(CStack * unit, const std::string & kind, const int64_t applicationOrder, const int32_t sourceNumber)#1",
-          "start": 218,
-          "end": 234
+          "start": 196,
+          "end": 212
         },
         {
           "symbol": "NewHorizonsPurifyTest::bool hasAffliction(const CStack * unit, const std::string & kind) const#1",
-          "start": 236,
-          "end": 243
+          "start": 214,
+          "end": 221
         },
         {
           "symbol": "NewHorizonsPurifyTest::hasAffliction(const CStack * unit, const std::string & kind) const::[&](const auto & affliction)#1",
-          "start": 239,
-          "end": 242
+          "start": 217,
+          "end": 220
         },
         {
           "symbol": "NewHorizonsPurifyTest::BattleAction action(BattleHex center, std::vector<std::pair<int32_t, SpellID>> choices = {}) const#1",
-          "start": 245,
-          "end": 254
+          "start": 223,
+          "end": 232
         },
         {
           "symbol": "NewHorizonsPurifyTest::bool cast(std::vector<std::pair<int32_t, SpellID>> choices = {}, BattleHex center = BattleHex(3, 5))#1",
-          "start": 256,
-          "end": 260
+          "start": 234,
+          "end": 238
         },
         {
           "symbol": "NewHorizonsPurifyTest::bool hasEffect(const CStack * unit, SpellID source) const#1",
-          "start": 262,
-          "end": 267
+          "start": 240,
+          "end": 245
         },
         {
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, SpellPowerCapChangesAt120)#1",
-          "start": 275,
-          "end": 281
+          "start": 253,
+          "end": 259
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, SavedV2RulesDoNotEnablePurify)#1",
-          "start": 283,
-          "end": 291
+          "start": 261,
+          "end": 269
         },
         {
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, SchoolCoefficientFloorsOnlyThePowerTermAndPreservesCap)#1",
-          "start": 293,
-          "end": 307
+          "start": 271,
+          "end": 285
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, CapturedOlderRulesKeepUnmodifiedCountDespiteCurrentExpertHero)#1",
-          "start": 309,
-          "end": 325
+          "start": 287,
+          "end": 303
         },
         {
           "symbol": "TEST_P(NewHorizonsPurifySchoolRankTest, PaidTwoGroupCleanseUsesCapturedRankAndRejectsBelowThreshold)#1",
-          "start": 331,
-          "end": 357
+          "start": 309,
+          "end": 335
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)#1",
-          "start": 363,
-          "end": 401
+          "start": 341,
+          "end": 379
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)::[this](const auto & stack)#1",
-          "start": 374,
-          "end": 377
+          "start": 352,
+          "end": 355
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)::[this](const auto & stack)#2",
-          "start": 383,
-          "end": 386
+          "start": 361,
+          "end": 364
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, RejectsNoopForgedPositiveAndOverCapChoicesBeforeSpending)#1",
-          "start": 403,
-          "end": 431
+          "start": 381,
+          "end": 409
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, DoesNotRemoveOrderSourcedEffects)#1",
-          "start": 433,
-          "end": 456
+          "start": 411,
+          "end": 434
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, PhysicalPoisonIsASelectableBaseEffectWithoutPurifier)#1",
-          "start": 458,
-          "end": 480
+          "start": 436,
+          "end": 458
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierAutomaticallyClearsPhysicalPoisonInAdditionToSelectedGroups)#1",
-          "start": 482,
-          "end": 498
+          "start": 460,
+          "end": 476
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, DivineMandateOrderFollowupPurifyRemovesOneStoredPoisonAffliction)#1",
-          "start": 500,
-          "end": 521
+          "start": 478,
+          "end": 499
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierCleanupPrecedesMandateDiseaseRemoval)#1",
-          "start": 523,
-          "end": 540
+          "start": 501,
+          "end": 518
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, OrdinaryInitialHeroSpellDoesNotReceivePurifyingMandateBonus)#1",
-          "start": 542,
-          "end": 563
+          "start": 520,
+          "end": 541
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, PhysicalOnlyMandatePurifyDoesNotTriggerAnExtraAfflictionRemoval)#1",
-          "start": 565,
-          "end": 589
+          "start": 543,
+          "end": 567
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, MandateDiseaseGroupRemovalDoesNotUnlockAnotherAfflictionRemoval)#1",
-          "start": 591,
-          "end": 619
+          "start": 569,
+          "end": 597
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, MandateDiseaseGroupRemovalDoesNotUnlockAnotherAfflictionRemoval)::[](const auto & affliction)#1",
-          "start": 602,
-          "end": 605
+          "start": 580,
+          "end": 583
         },
         {
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, ActionRoundTripsAndOlderProtocolRejectsOnlyPopulatedPurifyChoices)#1",
-          "start": 621,
-          "end": 654
+          "start": 599,
+          "end": 632
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierCleansesCanonicalGraveDustAtFullHealthOutsideBaseCap)#1",
-          "start": 656,
-          "end": 669
+          "start": 634,
+          "end": 647
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, NoPurifierNoMagicalCleanupKeepsDustAndRejectsEmptyCast)#1",
-          "start": 671,
-          "end": 680
+          "start": 649,
+          "end": 658
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierKeepsOutsideAndEnemyDust)#1",
-          "start": 682,
-          "end": 692
+          "start": 660,
+          "end": 670
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifyingMandateCleansesDustOnlyAfterActualMagicalGroupRemoval)#1",
-          "start": 694,
-          "end": 703
+          "start": 672,
+          "end": 681
         },
         {
           "symbol": "TEST_F(NewHorizonsPurifyTest, InitialPurifyWithoutMandateFollowupKeepsDust)#1",
-          "start": 705,
-          "end": 713
+          "start": 683,
+          "end": 691
         }
       ],
-      "rationale": "Preserve the previously reviewed complete callable inventory; only one historical-profile field-removal statement is inserted. Independently verified exact original bytes after removing that line and adjusted all recorded spans; no new callable or assertion change. Complete exact final joint source inventory independently renewed; retained header bodies are byte-exact. Native test append/zero-default fixture extension and two casting helper relocations retain their reviewed scopes. Parser recovery is explicitly covered, not excluded; this is source coverage without C++ or runtime acceptance.",
-      "review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "sha256": "a1f386076bda3d2dad98279541001af2246c9fba58e9602ad1f73b07fad229c1",
+      "rationale": "Complete 43-callable inventory renewed after only historical mapLoaded construction delegates to the complete shared validated V2 recipe. The other 42 callable bodies and every existing test assertion are byte-identical. Both inherited braced-default-argument recovery points are covered by the full inventory, with no excluded source. Prior test append, zero-default fixture and casting-helper relocation scopes remain unchanged. This exact source-coverage review establishes neither C++ compilation nor native acceptance.",
+      "review": "IR-HISTORICAL-PURIFY-FIXTURE-COMPLETE-CALLABLES-20261031",
+      "sha256": "2703a64cd3018177d42358bccfedd05dcee8d8b249831b1c801b80a8cb44ed3f",
       "previous_review": "IR-QUICKSAND-RAW-RATING-20261024",
-      "review_status": "INDEPENDENT_COMPLETE_SOURCE_INVENTORY_NATIVE_UNRUN"
+      "review_status": "REVIEWED_EXACT_SOURCE_ONLY"
     },
     "test/server/battles/NewHorizonsShieldOfChaosTest.cpp": {
       "functions": [
@@ -17933,14 +17933,14 @@
     },
     "AI/BattleAI/CanonicalOrderValue.cpp": {
       "deferral": "Owner: AI engineer. Before further substantive growth, extract RevisedOrderEstimate and the two revised-army entrypoints into a registered RevisedArmyOrderValue translation unit. Keep the existing before/accepted-after callback interface, fixed reference/DamageCache ownership and native grant provenance. Require exact utility/component/duration and source/state/both-RNG checks plus zero full/movement/exchange-search acceptance; preserve historical directValue behavior and legal admission. Do not move the entire historical valuation owner or add generic dispatch/context scaffolding. Correctness follow-up: explicit all-query-unit ownership remains required until the deferred extraction; cold native retaliation-cache and whole-live/state/both-RNG oracles must accompany future changes. Materialization adds bounded O(units) work per evaluated candidate; no performance acceptance is implied.",
-      "kind": "review",
-      "lines": 571,
+      "kind": "exception",
+      "lines": 579,
       "owner": "ai_engineer",
-      "rationale": "Exact571-line revised-army valuation owner, including the source-reviewed thirteen-line cold-query ownership correction to the previously reviewed558-line candidate. Before, accepted-after and neutral-reference unit maps are explicitly materialized through getForUpdate before counter estimates or nested fixed DamageCache queries can latch state. Arithmetic scale, native grant provenance, component/duration policy and historical directValue remain unchanged. New methods remain at most30 physical lines; no action/movement/reachability/queue/exchange search. Git-base file406 lines was below the review trigger, so this remains the bounded new571-line review unit below1000, with no ceiling change or future growth allowance.",
-      "review": "revised-army-order-native97-cold-query-and-admission-repair",
-      "review_scope": "exact-revised-army-cold-query-ownership-and-vanguard-admission-source-only-no-future-growth-or-runtime-certification",
+      "rationale": "Exact579-line revised-army valuation owner, including the source-reviewed thirteen-line cold-query ownership correction to the previously reviewed558-line candidate. Before, accepted-after and neutral-reference unit maps are explicitly materialized through getForUpdate before counter estimates or nested fixed DamageCache queries can latch state. Arithmetic scale, native grant provenance, component/duration policy and historical directValue remain unchanged. New methods remain at most30 physical lines; no action/movement/reachability/queue/exchange search. Comparison base763e6e9bb460439a7e0d25e2e8c0f815576d5c22 already contains571 lines. This exact579-line source is a narrowly bounded exception for the eight-line constructor ownership correction described below: an actual cold live retaliation round latch changed during AI evaluation. Resolving that authoritative-state mutation before release justifies this existing-owner correctness addition; it does not authorize general regrowth, alter ceilings, or defer unrelated refactoring. The existing extraction deferral remains binding before further substantive growth. Additional eight-line constructor-only ownership correction copies each eligible unit state once for Riposte/Feint before exposing query pointers. The copied retaliation round latch retains values and provider/environment dispatch while live authority stays untouched; all arithmetic, saved rules, unit ordering and other commands remain unchanged. Cold direct-Feint and full Countercharge live-unit/order/allowance/both-RNG guards are required. No clone per attack pair or additional world is introduced.",
+      "review": "revised-army-order-native97-cold-query-and-admission-repair; canonical-retaliation-query-state-ownership-independent-engine-review-bounded-eight-line-exception",
+      "review_scope": "exact-revised-army-cold-query-ownership-and-vanguard-admission-source-only-no-future-growth-or-runtime-certification; Riposte-Feint-existing-owner-state-isolation-source-only",
       "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
-      "sha256": "425528717fd83a9ceeb42edb71780eb1c263790f6d3c007b17f0dbcaf4aeef32"
+      "sha256": "c6f4c6010da54f090a928b811713e6281a828df75910388d945cf16bd9eccbae"
     },
     "AI/BattleAI/DamageCache.cpp::int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver, DamageCacheAdmission * mainProbeAdmission)#1": {
       "deferral": "Existing owner: before further substantive growth, extract the relevant cohesive state-aware admission or ordered serializer routing into its existing typed domain owner with old-policy, sequencing and branch-isolation characterization. AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth. This exact120-line unchanged-size query redirection permits no substantive getDamage growth; AI engineer retains ordered damage/admission extraction before any further affected-area expansion. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. AI engineer: retain ordered admission/query extraction obligations before further cache growth; preserve branch visibility, target order, source identity, state isolation and both RNG streams. Next4: retain all inherited extraction/order/ownership/captured-absence obligations.22 authored native cases UNRUN; full1146 envelope/history plus branch/RNG/AI integration remain required. Further lifecycle/cache growth must extract a cohesive domain phase, not grow another oversized helper. Exact bounded1151 change only. Exact130-line getDamage renewal recognizes one new visible physical protection through the existing remembered-target set/query. Existing Evasive history is preserved by exact rename; no new cache field or query protocol. Expiry keeps conservative bypass rather than reusing stale ID-only entries; same-size routing has no performance credit. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",

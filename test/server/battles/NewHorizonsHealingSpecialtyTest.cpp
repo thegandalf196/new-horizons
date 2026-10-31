@@ -108,6 +108,21 @@ bool hasAdelaBlessDamageProducer(const CGHeroInstance * hero, const Bonus * prot
 	});
 }
 
+JsonNode historicalHealingSpecialtyRules()
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	// Specialty-only oracles select Healer explicitly after the unmodified base.
+	// Later starting profiles would preselect Healer/Benediction before testing.
+	rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
+	// Partial historical spell lists do not admit the later Phantom conversion
+	// or starting replacements that require identities deliberately omitted here.
+	rules.Struct().erase("remainingSpellSpecialtyReplacements");
+	for(const auto * flag : {"aenainFrailtyReplacement", "defensiveStartReplacements",
+		"offensiveStartReplacements", "remainingStartReplacements"})
+		rules["nonDamageSpellSpecialties"].Struct().erase(flag);
+	return rules;
+}
+
 class NewHorizonsHealingSpecialtyTest : public HeroCommandFixture
 {
 protected:
@@ -133,10 +148,12 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 
-		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+		JsonNode heroRules = historicalHealingSpecialtyRules();
 		if(enableNonDamageSpecialtyRules)
 		{
 			auto & specialtyRules = heroRules["nonDamageSpellSpecialties"];
+			// Author the original three-field policy without newer starting-spell flags.
+			specialtyRules = JsonNode();
 			specialtyRules["version"].Integer() = 1;
 			specialtyRules["componentPercent"].Integer() = 20;
 			auto & spells = specialtyRules["spells"].Vector();
@@ -339,6 +356,7 @@ protected:
 TEST_F(NewHorizonsHealingSpecialtyTest, UlandScalesOnlyCuresPowerComponentAcrossSchoolRanks)
 {
 	startSpecialistMap();
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(std::string(CURE_SKILL_ID), std::string(HEALER_PERK_ID)));
 	ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:uland");
 	ASSERT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::CURE), 20);
 	EXPECT_EQ(ordinaryHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::CURE), 0);
@@ -422,6 +440,7 @@ TEST_F(NewHorizonsHealingSpecialtyTest, UlandScalesOnlyCuresPowerComponentAcross
 TEST_F(NewHorizonsHealingSpecialtyTest, AcceptedUlandCureMatchesForecastAndDoesNotResurrect)
 {
 	startSpecialistMap();
+	ASSERT_FALSE(attackerSideHero->hasActivePerk(std::string(CURE_SKILL_ID), std::string(HEALER_PERK_ID)));
 	prepareBattle();
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(std::string(CURE_SKILL_ID))),
 		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
@@ -509,7 +528,7 @@ TEST_F(NewHorizonsHealingSpecialtyTest, AlamarScalesOnlyResurrectionsPowerCompon
 	EXPECT_EQ(savedRules->componentPercent, 20);
 	EXPECT_EQ(savedRules->spells[0], SpellID::CURE);
 	EXPECT_EQ(savedRules->spells[1], SpellID::RESURRECTION);
-	JsonNode resOnlyRules(JsonPath::builtin("config/newHorizonsHeroes"));
+	JsonNode resOnlyRules = historicalHealingSpecialtyRules();
 	auto & supportedSpells = resOnlyRules["nonDamageSpellSpecialties"]["spells"].Vector();
 	supportedSpells.clear();
 	supportedSpells.emplace_back(std::string(RESURRECTION_SPECIALTY_SPELL));
@@ -718,7 +737,7 @@ TEST_F(NewHorizonsHealingSpecialtyTest, AdelaScalesBlessPowerDurationAndRemovesO
 	ASSERT_EQ(savedRules->spells.size(), 2u);
 	EXPECT_EQ(savedRules->spells[1], SpellID::BLESS);
 
-	JsonNode blessOnlyRules(JsonPath::builtin("config/newHorizonsHeroes"));
+	JsonNode blessOnlyRules = historicalHealingSpecialtyRules();
 	auto & blessRules = blessOnlyRules["nonDamageSpellSpecialties"];
 	blessRules["version"].Integer() = 1;
 	blessRules["componentPercent"].Integer() = 20;

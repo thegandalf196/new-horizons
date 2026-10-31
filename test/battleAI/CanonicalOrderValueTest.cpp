@@ -351,6 +351,18 @@ TEST_F(CanonicalOrderValueTest, RevisedFeintUsesOnlyExpectedEnemyRetaliation)
 {
 	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto targetBefore = target->acquireState()->save();
+	ASSERT_TRUE(targetBefore["state"]["counterAttacks"]["totalCache"].isNull());
+	const auto liveUnits = [&]
+	{
+		std::vector<std::pair<uint32_t, JsonNode>> states;
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			states.emplace_back(unit->unitId(), unit->acquireState()->save());
+		return serialized(states);
+	};
+	const auto before = liveUnits();
+	const auto rng = serialized(*gameHandler->randomizer);
+	const auto fixtureRng = serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
 	const std::vector<uint32_t> noTargets;
 	heroOrderValue::CanonicalOrderValue value(*battle(), BattleSide::ATTACKER, HeroCommand::FEINT, noTargets);
 	const auto prepared = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER, HeroCommand::FEINT, {});
@@ -372,6 +384,9 @@ TEST_F(CanonicalOrderValueTest, RevisedFeintUsesOnlyExpectedEnemyRetaliation)
 	const auto actual = value.directValue(std::nullopt).direct;
 	ASSERT_TRUE(actual);
 	EXPECT_FLOAT_EQ(*actual, expected * prepared->revision->feintReductionPercent / 100.0f);
+	EXPECT_EQ(liveUnits(), before);
+	EXPECT_EQ(serialized(*gameHandler->randomizer), rng);
+	EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
 }
 
 TEST_F(CanonicalOrderValueTest, RevisedVanguardAdmissionUsesCapturedEligibleRecipients)

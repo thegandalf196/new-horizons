@@ -10,7 +10,7 @@ class HypotheticBattle;
 class AttackPossibility;
 class DamageCache;
 class CStack;
-struct BattleAction;
+class BattleAction;
 struct BattleAttackInfo;
 namespace battle { class Unit; }
 namespace dreadCavalryAI

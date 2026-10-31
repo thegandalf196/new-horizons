@@ -9,6 +9,9 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "HistoricalNecromancyFixture.h"
+#include "../../hero/HistoricalHeroEpochFixture.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "../../../client/windows/HeroSpecialtyPresentation.h"
 
 #include "../../../lib/GameConstants.h"
@@ -48,6 +51,18 @@ namespace
 {
 constexpr std::string_view SPECIALTY_MARKER_PREFIX = "new-horizons:creature-line-specialty:";
 constexpr std::string_view AUTHORED_SPECIALTY_MARKER = "fixture:authored-creature-specialty";
+
+JsonNode previousWispPerkRules()
+{
+	// Retain the complete pre-Skeleton Necromancy definition, not its modern meanings.
+	auto rules = necromancyTest::historicalRules();
+	for(const char * key : {"offerWeightPolicyVersion", "perkOfferNormalization",
+		"perkProgressionPolicyVersion", "sylvanTacticsPolicy"})
+		rules.Struct().erase(key);
+	rules.setOverrideFlag(true);
+	return rules;
+}
+
 
 class FixtureHeroHandler : public CHeroHandler
 {
@@ -124,6 +139,8 @@ protected:
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		// These fixtures characterize the captured generic-line policy before individual replacements.
 		rules["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
+		// Retain Fiur's fixed native package before the captured Living Inferno replacement.
+		rules.Struct().erase("livingInfernoSpecialty");
 		// Accepted UP304 fixtures intentionally retain the historical Psychic target.
 		rules.Struct().erase("defaultCreatureLineReplacements");
 		rules.setOverrideFlag(true);
@@ -649,7 +666,7 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationU
 		{"core:olema", "new-horizons:frailty"}, {"core:mirlanda", "new-horizons:frailty"},
 		{"core:xsi", "new-horizons:frailty"}, {"core:aenain", "new-horizons:frailty"},
 		{"core:merist", "new-horizons:hydrasVitality"}, {"core:labetha", "new-horizons:guardianSpirit"},
-		{"core:inteus", "new-horizons:crusade"}, {"core:loynis", "new-horizons:crusade"},
+		{"core:inteus", "new-horizons:theChosen"}, {"core:loynis", "new-horizons:theChosen"},
 		{"core:zubin", "new-horizons:focusMagic"}, {"core:thant", "new-horizons:reanimate"}
 	}};
 	for(const auto & [heroId, spellId] : successors)
@@ -663,9 +680,43 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationU
 		ASSERT_EQ(metadata.spell, spell);
 		EXPECT_FALSE(metadata.creature);
 		EXPECT_FALSE(metadata.skill);
-		EXPECT_EQ(metadata.name, spell.toSpell()->getNameTranslated());
-		EXPECT_NE(metadata.description.find(metadata.name), std::string::npos);
-		const auto card = heroSpecialtyPresentation(*hero, development, std::nullopt, magic);
+		if(spell.toSpell()->getJsonKey() == "new-horizons:theChosen")
+		{
+			EXPECT_EQ(metadata.name, std::string_view(heroId) == "core:inteus" ? "Fervor" : "Anointed Champions");
+			EXPECT_NE(metadata.description.find(spell.toSpell()->getNameTranslated()), std::string::npos);
+			// The earlier captured generic specialty still targets retired Crusade.
+			const auto historical = historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK);
+			const auto historicalMagic = historicalCrusadeRules(magic);
+			const SpellID crusade(SpellID::decode("new-horizons:crusade"));
+			const auto old = newHorizonsHeroes::resolveSpecialtyPresentation(*hero,
+				historical, historicalMagic, std::nullopt);
+			EXPECT_EQ(old.spell, crusade);
+			EXPECT_EQ(old.name, crusade.toSpell()->getNameTranslated());
+			EXPECT_NE(old.description.find(old.name), std::string::npos);
+			auto oldFallback = old;
+			oldFallback.artwork.reset();
+			const auto oldCard = heroSpecialtyPresentation(*hero, oldFallback);
+			EXPECT_EQ(oldCard.frame(), crusade.toSpell()->getIconIndex());
+			EXPECT_EQ(oldCard.animation().getOriginalName(), "SPELLSCR");
+			EXPECT_EQ(oldCard.animation(true).getOriginalName(), "SPELLSCR");
+		}
+		else
+		{
+			EXPECT_EQ(metadata.name, spell.toSpell()->getNameTranslated());
+			EXPECT_NE(metadata.description.find(metadata.name), std::string::npos);
+		}
+		const auto selectedCard = heroSpecialtyPresentation(*hero, development, std::nullopt, magic);
+		if(metadata.artwork)
+		{
+			EXPECT_EQ(selectedCard.frame(), 0u);
+			EXPECT_EQ(selectedCard.animation().getOriginalName(), *metadata.artwork + "/44");
+			EXPECT_EQ(selectedCard.animation(true).getOriginalName(), *metadata.artwork + "/32");
+		}
+		// Selected artwork is presentation data, not a historical rules switch.
+		// Also exercise the public renderer's explicit no-art spell fallback.
+		auto fallback = metadata;
+		fallback.artwork.reset();
+		const auto card = heroSpecialtyPresentation(*hero, fallback);
 		EXPECT_EQ(card.name, metadata.name);
 		EXPECT_EQ(card.description, metadata.description);
 		EXPECT_EQ(card.frame(), spell.toSpell()->getIconIndex());
@@ -685,7 +736,19 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationU
 		EXPECT_FALSE(metadata.spell);
 		EXPECT_FALSE(metadata.creature);
 		EXPECT_NE(metadata.description.find("+20%"), std::string::npos);
-		const auto card = heroSpecialtyPresentation(*hero, development, std::nullopt, magic);
+		const auto selectedCard = heroSpecialtyPresentation(*hero, development, std::nullopt, magic);
+		const std::string artwork = std::string_view(heroId) == "core:sylvia"
+			? "newHorizons/heroSpecialties/SylviaLogisticsCore" : "newHorizons/heroSpecialties/VoyLogistics";
+		ASSERT_TRUE(selectedCard.artwork.has_value());
+		EXPECT_EQ(*selectedCard.artwork, artwork);
+		EXPECT_EQ(selectedCard.name, metadata.name);
+		EXPECT_EQ(selectedCard.frame(), 0u);
+		EXPECT_EQ(selectedCard.animation().getOriginalName(), artwork + "/44");
+		EXPECT_EQ(selectedCard.animation(true).getOriginalName(), artwork + "/32");
+		// The same public renderer retains its native Skill icon without selected art.
+		auto fallback = metadata;
+		fallback.artwork.reset();
+		const auto card = heroSpecialtyPresentation(*hero, fallback);
 		EXPECT_EQ(card.name, metadata.name);
 		EXPECT_EQ(card.animation().getOriginalName(), "SECSKILL");
 		EXPECT_EQ(card.animation(true).getOriginalName(), "SECSK32");
@@ -698,8 +761,9 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationU
 
 TEST_F(NewHorizonsCreatureSpecialtyTest, SharedPresentationKeepsFallbackResourceAndCampaignIdentity)
 {
-	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
-	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	// Absent historical rules must not opt into today's bespoke replacements.
+	const JsonNode development;
+	const JsonNode magic;
 	for(const auto * heroId : {"core:thorgrim", "core:elleshar", "core:gem", "core:malcom",
 		"core:isra", "core:vidomina", "core:sandro", "core:jenova", "core:halon", "core:solmyr",
 		"core:mutare", "core:mutareDrake", "core:dracon", "core:gelu", "core:adrienne", "core:sirMullich"})
@@ -713,9 +777,33 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, SharedPresentationKeepsFallbackResource
 		EXPECT_FALSE(metadata.skill);
 		EXPECT_EQ(metadata.name, hero->getSpecialtyNameTranslated());
 		EXPECT_EQ(metadata.description, hero->getSpecialtyDescriptionTranslated());
-		const auto card = heroSpecialtyPresentation(*hero, metadata);
+		// Retained resource/Metamagic art has no historical-policy opt-out.
+		auto fallback = metadata;
+		fallback.artwork.reset();
+		const auto card = heroSpecialtyPresentation(*hero, fallback);
 		EXPECT_EQ(card.frame(), hero->imageIndex);
 		EXPECT_EQ(card.animation().getOriginalName(), "UN44");
+	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, CurrentThorgrimAndAshPresentationUsesSelectedSpecialties)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	for(const auto & [heroId, name, artwork] : std::array{
+		std::tuple{"core:thorgrim", "Master Spellward", "newHorizons/heroSpecialties/ThorgrimMasterSpellward"},
+		std::tuple{"core:ash", "Fireball", "newHorizons/heroSpecialties/AshFireball"}})
+	{
+		SCOPED_TRACE(heroId);
+		const auto * hero = HeroTypeID(HeroTypeID::decode(heroId)).toHeroType();
+		ASSERT_NE(hero, nullptr);
+		const auto card = heroSpecialtyPresentation(*hero, rules, std::nullopt, magic);
+		EXPECT_EQ(card.name, name);
+		ASSERT_TRUE(card.artwork.has_value());
+		EXPECT_EQ(*card.artwork, artwork);
+		EXPECT_EQ(card.frame(), 0u);
+		EXPECT_EQ(card.animation().getOriginalName(), std::string(artwork) + "/44");
+		EXPECT_EQ(card.animation(true).getOriginalName(), std::string(artwork) + "/32");
 	}
 }
 
@@ -839,25 +927,33 @@ protected:
 	bool legacy = false;
 	bool preset = false;
 	bool previousSerializationContext = false;
+	bool currentOrdinaryPolicy = false;
 	void mapLoaded(CMap * loaded) override
 	{
 		NewHorizonsCreatureSpecialtyTest::mapLoaded(loaded);
-		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		// Start the old writer fixture from the maintained immutable hero capture,
+		// before individual specialty families, instead of erasing an open-ended current roster.
+		JsonNode rules = previousSerializationContext
+			? historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK)
+			: JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		// Preserve this suite's generic Wisp capture before individual Prismatic Screen.
+		if(!currentOrdinaryPolicy && !previousSerializationContext)
+			rules["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
 		ASSERT_EQ(rules["defaultCreatureLineReplacements"]["core:pasis"].String(), "new-horizons:wisp");
 		ASSERT_EQ(rules["defaultCreatureLineReplacements"]["core:monere"].String(), "new-horizons:wisp");
 		if(absent) rules.Struct().erase("defaultCreatureLineReplacements");
 		if(legacy) rules = JsonNode();
 		if(previousSerializationContext)
-			for(const char * key : {"druidSpecialties", "fortuneChildSpecialty", "arcanePreparationSpecialty",
-				"bottomlessMindSpecialty", "masterSpellwardSpecialty"})
-				rules.Struct().erase(key);
+			rules.Struct().erase("defaultCreatureLineReplacements"); // The sole post-1105 field in that capture.
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		if(previousSerializationContext)
 		{
 			// Capture a 1105 context before hero initialization: later spell,
 			// specialty and perk policies must be absent, not removed from a save.
-			JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+			auto magic = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+			magic.Struct().erase("heroLuck");
+			magic.Struct().erase("heroMorale");
 			magic["spells"]["core:implosion"].Struct().erase("implosion");
 			magic["spells"]["core:teleport"].Struct().erase("ignoreInterveningBarriers");
 			magic["spells"]["core:dispel"].Struct().erase("temporaryMagicalEffectsOnly");
@@ -866,10 +962,7 @@ protected:
 			magic["adventureSpells"]["core:fly"].Struct().erase("requireLegalDayEnd");
 			magic.setOverrideFlag(true);
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
-			JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-			for(const char * key : {"offerWeightPolicyVersion", "perkOfferNormalization", "perkProgressionPolicyVersion"})
-				perks.Struct().erase(key);
-			perks.setOverrideFlag(true);
+			auto perks = previousWispPerkRules();
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		}
 		if(legacy)
@@ -939,6 +1032,23 @@ protected:
 		}
 	}
 };
+
+TEST_F(NewHorizonsWispSpecialtyTest, CurrentOrdinaryPasisReplacesGenericWispWhileMonereKeepsIt)
+{
+	currentOrdinaryPolicy = true;
+	prepare();
+	ASSERT_NE(pasis(), nullptr);
+	ASSERT_NE(monere(), nullptr);
+	EXPECT_EQ(specialtyMarkerCount(*pasis()), 0u);
+	EXPECT_EQ(specialtyMarkerCount(*monere()), 4u);
+	const auto presentation = heroSpecialtyPresentation(*pasis());
+	EXPECT_EQ(presentation.name, "Prismatic Screen");
+	ASSERT_TRUE(presentation.artwork.has_value());
+	EXPECT_EQ(*presentation.artwork, "newHorizons/heroSpecialties/PasisPrismaticScreen");
+	EXPECT_EQ(presentation.animation().getOriginalName(), "newHorizons/heroSpecialties/PasisPrismaticScreen/44");
+	EXPECT_EQ(presentation.animation(true).getOriginalName(), "newHorizons/heroSpecialties/PasisPrismaticScreen/32");
+	EXPECT_EQ(presentation.description, pasis()->getSpecialtyDescriptionTranslated());
+}
 
 TEST_F(NewHorizonsWispSpecialtyTest, FreshDefaultsBothEnrollRealWispAndUpgradeNotPsychicAliases)
 {
@@ -1199,6 +1309,7 @@ TEST_F(NewHorizonsWispSpecialtyTest, RawOldReaderRejectsPresenceAndAbsentPreviou
 		EXPECT_FALSE(pasis()->getPrimaryGrowthRules().Struct().contains(key));
 	JsonNode expectedPerks(JsonPath::builtin("config/newHorizonsPerks"));
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(expectedPerks));
+	expectedPerks = previousWispPerkRules();
 	for(const char * key : {"offerWeightPolicyVersion", "perkOfferNormalization", "perkProgressionPolicyVersion"})
 		expectedPerks.Struct().erase(key);
 	EXPECT_EQ(pasis()->getPerkState().rules, expectedPerks);

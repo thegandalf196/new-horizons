@@ -28,9 +28,13 @@ JsonNode neutralSpellCompetitionCommands()
 	for(auto & command : commands["commands"].Struct())
 		for(auto & effect : command.second["effects"].Struct())
 		{
-			effect.second["base"].Float() = 0;
-			effect.second["attack"].Float() = 0;
-			effect.second["defense"].Float() = 0;
+			// Preserve each current formula's keys; revised Orders have no attack/defense fields.
+			for(const auto * field : {"base", "attack", "defense", "leadership", "minimumRating"})
+				if(effect.second.Struct().contains(field))
+					effect.second[field].Float() = 0;
+			// Vanguard's ratingStep must stay positive; canonical finalization clamps to this cap.
+			if(effect.second.Struct().contains("cap"))
+				effect.second["cap"].Integer() = 0;
 		}
 	heroCommands::validateRules(commands);
 	return commands;

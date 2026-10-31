@@ -45,10 +45,18 @@ CanonicalOrderValue::CanonicalOrderValue(const CBattleInfoCallback & battle, Bat
 	hero = heroKnown ? battle.battleGetFightingHero(side) : nullptr;
 	units = battle.battleGetAllUnits(false);
 	ownPlayer = battle.sideToPlayer(side);
+	const bool ownsRetaliationQueries = command == riposteCommand() || command == HeroCommand::FEINT;
+	if(ownsRetaliationQueries)
+		ownedQueryUnits.reserve(units.size());
 	for(const auto * unit : units)
 	{
 		if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret())
 			continue;
+		if(ownsRetaliationQueries)
+		{
+			ownedQueryUnits.push_back(unit->acquireState());
+			unit = ownedQueryUnits.back().get();
+		}
 		if(battle.battleGetOwner(unit) == ownPlayer)
 			ownUnits.push_back(unit);
 		else

@@ -6,6 +6,7 @@
 #include "StdInc.h"
 
 #include "HeroCommandFixture.h"
+#include "../../battleAI/PurifyRuleFixtures.h"
 #include "../../../lib/spells/CurePhysicalAffliction.h"
 #include "../../../lib/battle/NewHorizonsGraveDust.h"
 
@@ -68,31 +69,8 @@ protected:
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 		if(magicVersion != newHorizonsMagic::CURRENT_RULESET_VERSION)
 		{
-			rules["rulesetVersion"].Integer() = magicVersion;
-			rules.Struct().erase("schoolRankPowerCoefficientPercent");
-			rules.Struct().erase("spellcraftEfficiencyPercent");
-			// A historical v2 capture must not contain later v3-only policies.
-			for(const auto * key : {"protectedAdventureBarriers", "creatureAbilities", "morale"})
-				rules.Struct().erase(key);
-			rules["adventureSpells"]["core:waterWalk"].Struct().erase("requireLegalDayEnd");
-			rules["spells"]["core:quicksand"].Struct().erase("selectedPlacement");
-			rules["spells"]["core:quicksand"].Struct().erase("rawSpellPowerPerPatch");
-			rules["spells"]["core:earthquake"].Struct().erase("earthquake");
-			for(auto & [identity, row] : rules["spells"].Struct())
-			{
-				(void)identity;
-				row.Struct().erase("heroAccess");
-				row.Struct().erase("restoration");
-				row.Struct().erase("structures");
-				for(const auto * key : {"selectedPlacement", "earthquake", "propagationLimit", "implosion",
-					"ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers"})
-					row.Struct().erase(key);
-				if(row.Struct().contains("variant"))
-				{
-					row.Struct().erase("variant");
-					row["active"].Bool() = false;
-				}
-			}
+			ASSERT_EQ(magicVersion, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+			rules = purifyTest::savedV2MagicRules();
 		}
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}

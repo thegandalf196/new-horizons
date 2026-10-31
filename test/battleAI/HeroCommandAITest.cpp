@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroActionTimingCapture.h"
+#include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -174,9 +175,9 @@ protected:
 
 		if(competeBraceAndCharge)
 		{
-			// A real utility contest: without Countercharge, Brace is worth 50%
-			// against the expected advancing stack while Charge is worth 60%.
-			// Countercharge should raise only Brace to 75%, changing the winner.
+			// Preserve the historical base coefficients: Charge 60%, Brace 50%,
+			// or 75% with Countercharge. Final choices use common exchange utility,
+			// not the ordering of these percentages.
 			rules["commands"][heroCommands::key(HeroCommand::CHARGE)]["effects"]
 				["meleeDamagePercent"]["base"].Integer() = 60;
 			rules["commands"][heroCommands::key(HeroCommand::BRACE)]["effects"]
@@ -646,19 +647,102 @@ TEST_F(CanonicalOrderAITest, AdjacentFlyingChargeCannotInventRunupOrExchangeUtil
 	ASSERT_NO_FATAL_FAILURE(legacyOrderTest::adjacentCharge({*this, environment, callback, active, enemy}));
 }
 
-TEST_F(CanonicalOrderAITest, CounterchargeMakesBraceBeatHigherValuedCharge)
+TEST_F(CanonicalOrderAITest, CounterchargeImprovesBraceWhileChargeHasHigherExchangeUtility)
 {
 	if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 		GTEST_SKIP() << "Requires the New Horizons content module";
 	selectedCommand = HeroCommand::BRACE;
 	configureCounterchargePerkData = true;
-	selectCountercharge = true;
 	competeBraceAndCharge = true;
 	prepareEvaluation(false);
 	keepOnlyCompetingStacks();
+	const auto armorer = SecondarySkill::decode("new-horizons:armorer");
+	ASSERT_GE(armorer, 0);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(armorer), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_FALSE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
+	// Prove every legal melee landing qualifies, including both footprints.
+	legacyOrderTest::Context context{*this, environment, callback, active, enemy};
+	ASSERT_NO_FATAL_FAILURE(legacyOrderTest::position(context, active, BattleHex(95)));
+	ASSERT_NO_FATAL_FAILURE(legacyOrderTest::position(context, enemy, BattleHex(89)));
+	const auto view = callback->getBattle(BattleID(0));
+	RecordProperty("ownDoubleWide", active->doubleWide());
+	RecordProperty("enemyDoubleWide", enemy->doubleWide());
+	for(const auto [actor, victim] : {std::pair{active, enemy}, std::pair{enemy, active}})
+	{
+		const auto reachability = view->getReachability(actor);
+		int minimum = std::numeric_limits<int>::max();
+		for(const auto hex : view->battleGetAvailableHexes(reachability, actor, false))
+			if(view->isMeleeAttackPossibleWithLongReach(actor, victim, hex))
+			{
+				const auto distance = SpellTargetEvaluator::physicalTravelDistance(reachability, hex);
+				ASSERT_GE(distance, 3) << "Actor " << actor->unitId() << " from " << hex;
+				minimum = std::min(minimum, distance);
+			}
+		ASSERT_NE(minimum, std::numeric_limits<int>::max());
+		RecordProperty(actor == active ? "ownMinimumApproach" : "enemyMinimumApproach", minimum);
+	}
+	struct Values final : heroActionSelection::Observer
+	{
+		float charge = std::numeric_limits<float>::lowest();
+		float brace = std::numeric_limits<float>::lowest();
+		float baseline = std::numeric_limits<float>::lowest();
+		void candidate(heroActionSelection::CandidateValue value) noexcept override
+		{
+			if(value.command == HeroCommand::CHARGE) charge = value.value;
+			if(value.command == HeroCommand::BRACE) brace = value.value;
+		}
+		void selected(heroActionSelection::SelectionValue value) noexcept override { baseline = value.baseline; }
+	} withoutCountercharge, values;
+	const auto evaluate = [&](Values & observed)
+	{
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+			BattleSide::ATTACKER, 1.0f, 2);
+		evaluator.selectStackAction(active);
+		return evaluator.canCastSpell() && evaluator.attemptCastingSpell(active, true, &observed);
+	};
+	// RecordingCommandCallback only records the proposed action: neither trial
+	// submits to simulation authority until executeChosen below.
+	const auto before = legacyOrderTest::snapshot(context, *view);
+	const auto capturedRules = attackerSideHero->getPerkState().rules;
+	const auto selectedBefore = attackerSideHero->getPerkState().selected.size();
+	ASSERT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(50, attackerSideHero), 50);
+	ASSERT_TRUE(evaluate(withoutCountercharge));
+	ASSERT_NE(withoutCountercharge.charge, std::numeric_limits<float>::lowest());
+	ASSERT_NE(withoutCountercharge.brace, std::numeric_limits<float>::lowest());
+	ASSERT_NE(withoutCountercharge.baseline, std::numeric_limits<float>::lowest());
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(legacyOrderTest::snapshot(context, *view), before);
+	RecordProperty("withoutCounterchargeSelectedCommand", static_cast<int>(callback->submitted.front().command));
+	callback->submitted.clear();
+	attackerSideHero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.countercharge"});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
-
-	assertChosenOrder(HeroCommand::BRACE);
+	EXPECT_EQ(attackerSideHero->getPerkState().rules, capturedRules);
+	EXPECT_EQ(attackerSideHero->getPerkState().selected.size(), selectedBefore + 1);
+	ASSERT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(50, attackerSideHero), 75);
+	const bool chosen = evaluate(values);
+	ASSERT_NE(values.charge, std::numeric_limits<float>::lowest());
+	ASSERT_NE(values.brace, std::numeric_limits<float>::lowest());
+	ASSERT_NE(values.baseline, std::numeric_limits<float>::lowest());
+	EXPECT_EQ(legacyOrderTest::snapshot(context, *view), before);
+	RecordProperty("withoutCounterchargeChargeValue", std::to_string(withoutCountercharge.charge));
+	RecordProperty("withoutCounterchargeBraceValue", std::to_string(withoutCountercharge.brace));
+	RecordProperty("withoutCounterchargeBaseline", std::to_string(withoutCountercharge.baseline));
+	EXPECT_GT(values.brace, withoutCountercharge.brace);
+	EXPECT_FLOAT_EQ(values.charge, withoutCountercharge.charge);
+	EXPECT_FLOAT_EQ(values.baseline, withoutCountercharge.baseline);
+	EXPECT_GT(values.charge, values.brace);
+	EXPECT_GT(values.charge, values.baseline);
+	RecordProperty("chargeFinalValue", std::to_string(values.charge));
+	RecordProperty("braceFinalValue", std::to_string(values.brace));
+	RecordProperty("noHeroActionBaseline", std::to_string(values.baseline));
+	ASSERT_TRUE(chosen);
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_EQ(callback->submitted.front().actionType, EActionType::HERO_COMMAND);
+	EXPECT_EQ(callback->submitted.front().command, HeroCommand::CHARGE);
+	executeChosen();
+	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->command, HeroCommand::CHARGE);
 }
 
 TEST_F(CanonicalOrderAITest, FocusFireSubmitRouteKeepsNativeTargetAndReceipt)

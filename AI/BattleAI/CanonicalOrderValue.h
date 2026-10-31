@@ -16,6 +16,7 @@
 
 class Environment;
 class HypotheticBattle;
+namespace battle { class CUnitState; }
 
 namespace heroOrderValue
 {
@@ -41,6 +42,8 @@ private:
 	// Keep the original all-unit snapshot alive until the estimate is destroyed,
 	// just like the local snapshot in the former monolithic implementation.
 	battle::Units units;
+	// Const retaliation queries latch round state; isolate those two estimators.
+	std::vector<std::shared_ptr<battle::CUnitState>> ownedQueryUnits;
 
 public:
 	CanonicalOrderValue(const CBattleInfoCallback & battle, BattleSide side,
