@@ -230,7 +230,6 @@ index/loading costs from decoding/drawing. Fresh processes are not proof of a
 cold OS cache. No system cache flushing or system-wide setting changes are
 required or permitted by this workflow.
 
-
 ### Conditional perk artwork records
 
 The additions ledger and NHART manifest retain format1. An unversioned
@@ -257,7 +256,6 @@ outlines remain UI-owned. Static32 is a packaging companion, not evidence of a
 live32 consumer. Verify these records through the maintained additions tests;
 source/payload checks do not establish actual rendered acceptance.
 
-
 ### Accepted nongraphics config history
 
 `runtime-art-config-revisions.json` records the explicit accepted config changes
@@ -279,7 +277,6 @@ These are source-history proofs of accepted changes, including The Chosen,
 Focus Magic and Mass Slow revisions. They do not certify new functional tests,
 rendered behavior or playable delivery. Keep current acceptance evidence separate;
 never replace an original art-only historical hash with a current gameplay hash.
-
 
 Missing historical artwork transitions use finite `artRoles` records for the
 selected Feint/Vanguard controls, Living Armor symbols, Ghost animation/portraits

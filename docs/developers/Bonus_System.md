@@ -264,7 +264,6 @@ use the existing spell-effect expiry and Dispel lifecycle. Both bonus types
 require serialization feature `NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS`;
 down-saving either to an older format is rejected rather than losing state.
 
-
 ## Filtered adjacent units
 
 `UNIT_ADJACENT` retains its historical exact `creature` match by default.
@@ -288,7 +287,6 @@ Captured ordinary-creature policies containing later optional specialty keys
 also require format1145. Format1144's first-six reader rejects unknown keys,
 including attack-only rows and explicit zero coefficients. First-six-only
 captures remain valid1144 data; missing extension keys are never filled on load.
-
 
 ## Target-side magical reduction penetration
 
