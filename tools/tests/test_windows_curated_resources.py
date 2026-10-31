@@ -82,6 +82,7 @@ class CuratedResourceTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('9 in-memory mutants rejected', result.stdout)
         self.assertIn('4 missing/late-refresh mutants rejected', result.stdout)
+        self.assertIn('spellbook access owner/caller contract; 24 in-memory mutants rejected', result.stdout)
 
     def test_missing_managed_module_is_fatal(self):
         (self.install / 'Mods/new-horizons/fixture.json').unlink()
