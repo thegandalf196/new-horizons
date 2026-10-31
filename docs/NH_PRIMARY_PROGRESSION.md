@@ -56,3 +56,14 @@ NewHorizonsPrimaryGrowth.cpp and NewHorizonsHeroRules.cpp. Protect:
 These are regression requirements and source entry points, not a new execution
 receipt. Historical version-2 native evidence cannot certify a version-3 build,
 ordinary rendered starts, campaigns, Windows or a playable-snapshot promotion.
+
+## Default adventure-map Primary Attribute rewards
+
+`config/newHorizonsPrimaryRewards.json` owns the build-time legacy-point value
+for the listed default map trainers, Scholar primary fallback and Fortress Cage
+of Warlords. The curated module generator resolves their amounts and text into
+registered object/building overlays. These concrete rewards are captured when
+objects and towns initialize; existing saves retain their captured amounts and
+visit history, including unvisited objects and unbuilt town trainers. This does
+not migrate authored map rewards or hero attributes. Artifact equipment and
+other authored town effects retain their separate content definitions.

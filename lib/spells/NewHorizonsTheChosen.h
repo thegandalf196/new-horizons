@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../json/JsonNode.h"
+#include "../constants/EntityIdentifiers.h"
 #include <optional>
 #include <string_view>
 
@@ -32,5 +33,6 @@ DLL_LINKAGE void validate(const JsonNode & savedRules);
 DLL_LINKAGE void validateSpellRow(const JsonNode & savedRules, std::string_view identity, const JsonNode & row);
 DLL_LINKAGE void validateSerialization(const JsonNode & savedRules, bool supported);
 /// Raw Spell Power and School only; exceptional duration extensions are separate.
+DLL_LINKAGE int32_t finishDuration(const Rules & rules, const CGHeroInstance * hero, SpellID spell, int32_t adjustedNominal);
 DLL_LINKAGE int32_t nominalDuration(const Rules & rules, int32_t rawSpellPower, int32_t schoolPercent);
 }

@@ -37,15 +37,16 @@ BonusNodeType BonusEvaluationContext::getNodeType() const
 
 PlayerColor BonusEvaluationContext::getOwner() const
 {
-	return projected ? projected->unitOwner() : original.getOwner();
+	return owned ? owned->owner : projected ? projected->unitOwner() : original.getOwner();
 }
 
 std::optional<int> BonusEvaluationContext::stackCount() const
 {
 	if(getNodeType() == BonusNodeType::STACK_INSTANCE || getNodeType() == BonusNodeType::COMMANDER)
-		return dynamic_cast<const CStackInstance &>(original).getCount();
+		return owned ? owned->stackCount : std::optional<int>(dynamic_cast<const CStackInstance &>(original).getCount());
 	if(getNodeType() == BonusNodeType::STACK_BATTLE)
 	{
+		if(owned) return owned->stackCount;
 		const auto & stack = dynamic_cast<const CStack &>(original);
 		return projected ? projected->getCount() : stack.getCount();
 	}
@@ -55,9 +56,10 @@ std::optional<int> BonusEvaluationContext::stackCount() const
 std::optional<int> BonusEvaluationContext::stackLevel() const
 {
 	if(getNodeType() == BonusNodeType::STACK_INSTANCE || getNodeType() == BonusNodeType::COMMANDER)
-		return dynamic_cast<const CStackInstance &>(original).getLevel();
+		return owned ? owned->stableStackLevel : std::optional<int>(dynamic_cast<const CStackInstance &>(original).getLevel());
 	if(getNodeType() == BonusNodeType::STACK_BATTLE)
 	{
+		if(owned) return owned->stableStackLevel;
 		const auto & stack = dynamic_cast<const CStack &>(original);
 		if(stack.base == nullptr)
 			return (projected ? projected->unitType() : stack.unitType())->getLevel();

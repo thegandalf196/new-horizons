@@ -165,6 +165,7 @@ struct DLL_LINKAGE PrimaryGrowthView
 	std::array<int, GameConstants::PRIMARY_SKILLS> lastGains{};
 	int powerDivisor = 1;
 	int maximumPrimary = 0;
+	std::array<int, GameConstants::PRIMARY_SKILLS> fixedSpecialtyGrowth{};
 };
 
 DLL_LINKAGE bool usesRules(const JsonNode & rules);

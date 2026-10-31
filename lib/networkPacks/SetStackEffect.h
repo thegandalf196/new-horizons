@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include <algorithm>
 
 #include "NetPacksBase.h"
@@ -50,6 +52,42 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 					bonus.validateConfusionPendingMarker();
 			}
 		}
+	}
+
+	template <typename Handler> void validateTypedBonusSerialization(Handler & h) const
+	{
+		const auto containsBonusType = [](const auto & effects, BonusType type)
+		{
+			return std::ranges::any_of(effects, [type](const auto & stackEffects)
+			{
+				return std::ranges::any_of(stackEffects.second, [type](const Bonus & bonus)
+				{
+					return bonus.type == type;
+				});
+			});
+		};
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE)
+			&& (containsBonusType(toAdd, BonusType::ELEMENTAL_SPELL_DAMAGE)
+				|| containsBonusType(toUpdate, BonusType::ELEMENTAL_SPELL_DAMAGE)
+				|| containsBonusType(toRemove, BonusType::ELEMENTAL_SPELL_DAMAGE)))
+			throw std::runtime_error("Cannot discard elemental spell damage in stack-effect packet");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE)
+			&& (containsBonusType(toAdd, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)
+				|| containsBonusType(toUpdate, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)
+				|| containsBonusType(toRemove, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)))
+			throw std::runtime_error("Cannot discard incoming elemental spell damage in stack-effect packet");
+		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)))
+		{
+			for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
+				for(const auto & entry : *changes)
+					for(const auto & bonus : entry.second)
+						bonus.validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
+			if(exchange) exchange->validateBonusSerialization(BonusSerializationContext::fromHandler(h));
+		}
+
 	}
 
 	template <typename Handler> void serialize(Handler & h)
@@ -164,26 +202,7 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 			&& (containsStatusMetadata(toAdd) || containsStatusMetadata(toUpdate)
 				|| containsStatusMetadata(toRemove)))
 			throw std::runtime_error("Cannot discard bonus status metadata in stack-effect packet");
-		const auto containsBonusType = [](const auto & effects, BonusType type)
-		{
-			return std::ranges::any_of(effects, [type](const auto & stackEffects)
-			{
-				return std::ranges::any_of(stackEffects.second, [type](const Bonus & bonus)
-				{
-					return bonus.type == type;
-				});
-			});
-		};
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_ELEMENTAL_SPELL_DAMAGE)
-			&& (containsBonusType(toAdd, BonusType::ELEMENTAL_SPELL_DAMAGE)
-				|| containsBonusType(toUpdate, BonusType::ELEMENTAL_SPELL_DAMAGE)
-				|| containsBonusType(toRemove, BonusType::ELEMENTAL_SPELL_DAMAGE)))
-			throw std::runtime_error("Cannot discard elemental spell damage in stack-effect packet");
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_INCOMING_ELEMENTAL_SPELL_DAMAGE)
-			&& (containsBonusType(toAdd, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)
-				|| containsBonusType(toUpdate, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)
-				|| containsBonusType(toRemove, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)))
-			throw std::runtime_error("Cannot discard incoming elemental spell damage in stack-effect packet");
+		validateTypedBonusSerialization(h);
 		h & battleID;
 		h & toAdd;
 		h & toUpdate;

@@ -1,0 +1,116 @@
+{
+	"bestowLuck": {
+		"name": "Bestow Luck",
+		"type": "ability",
+		"school": {},
+		"level": 0,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:51",
+			"iconEffect": "SPELLINT.def:0:52"
+		},
+		"animation": {
+			"affect": [
+				"C09SPA0"
+			]
+		},
+		"sounds": {
+			"cast": "FORTUNE"
+		},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Grant one friendly stack +3 Luck for 5 rounds. Replaces Fortune or Misfortune. Uses one of this stack's three total Wishes charges.",
+				"cost": 0,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"luck": {
+						"type": "new-horizons:genieLuck"
+					}
+				}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {
+			"positive": true,
+			"special": true
+		},
+		"counters": {
+			"core:fortune": true,
+			"core:misfortune": true
+		},
+		"targetCondition": {
+			"noneOf": {
+				"core:creature.firstAidTent": "absolute",
+				"core:creature.ammoCart": "absolute",
+				"core:creature.catapult": "absolute"
+			}
+		}
+	},
+	"turnOfFate": {
+		"name": "Turn of Fate",
+		"type": "ability",
+		"school": {},
+		"level": 0,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:52",
+			"iconEffect": "SPELLINT.def:0:53"
+		},
+		"animation": {
+			"affect": [
+				"C10SPF0"
+			]
+		},
+		"sounds": {
+			"cast": "MISFORT"
+		},
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Reduce one enemy stack's Luck by 3 for 5 rounds. Replaces Fortune or Misfortune. Uses one of this stack's three total Wishes charges.",
+				"cost": 0,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"luck": {
+						"type": "new-horizons:genieLuck"
+					}
+				}
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {
+			"negative": true,
+			"special": true
+		},
+		"counters": {
+			"core:fortune": true,
+			"core:misfortune": true
+		},
+		"targetCondition": {
+			"noneOf": {
+				"core:creature.firstAidTent": "absolute",
+				"core:creature.ammoCart": "absolute",
+				"core:creature.catapult": "absolute"
+			}
+		}
+	}
+}

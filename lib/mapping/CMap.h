@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "../mapObjects/NewHorizonsNeutralArmies.h"
 #include "../mapObjects/NewHorizonsRecruitmentGrowth.h"
 
@@ -223,6 +225,8 @@ public:
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
+	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
+
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported = false, bool schoolSupported = false, bool additionalSupported = false, bool recoverySupported = false) const;
 	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
 	void validateNewHorizonsMasterSpellwardSerialization(bool supported) const;
@@ -238,6 +242,7 @@ public:
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validatePlagueRulesSerialization(bool supported) const;
+	void validateSylvanTacticsSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
 
 	CGObjectInstance * getObject(ObjectInstanceID obj);
@@ -372,6 +377,7 @@ public:
 		if(h.saving)
 			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
+		if(h.saving) validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		if(h.saving) validateCrisisCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		if(h.saving)
 			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
@@ -442,6 +448,8 @@ public:
 			validateNewHorizonsLegendaryReputationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEGENDARY_REPUTATION));
 		if(h.saving)
 			validateNewHorizonsSageSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SAGE_GUILD_VISITS));
+		if(h.saving)
+			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & static_cast<CMapHeader&>(*this);
 		h & triggeredEvents; //from CMapHeader
 		h & rumors;

@@ -9,6 +9,8 @@
  */
 
 #include "StdInc.h"
+#include "../battle/NewHorizonsSylvanTactics.h"
+#include "../entities/hero/NewHorizonsGenieSage.h"
 #include "../entities/hero/NewHorizonsPetrifyingBlood.h"
 #include "../entities/hero/NewHorizonsDreadCavalry.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
@@ -449,52 +451,6 @@ void CGHeroInstance::setMovementPoints(int points)
 		movement = 1000000;
 	else
 		movement = std::max(0, points);
-}
-
-std::optional<newHorizonsHeroes::SiegeCapabilities> CGHeroInstance::getSiegeCapabilities() const
-{
-	if(!newHorizonsHeroes::usesRules(capabilityRules))
-		return std::nullopt;
-	const int artillery = getSecSkillLevel(SecondarySkill::ARTILLERY);
-	const auto control = [this](CreatureID machine)
-	{
-		return std::clamp(valOfBonuses(BonusType::MANUAL_CONTROL, BonusSubtypeID(machine)), 0, 100);
-	};
-	newHorizonsHeroes::SiegeCapabilities result;
-	result.artilleryRank = artillery;
-	result.ballisticsRank = getSecSkillLevel(SecondarySkill::BALLISTICS);
-	result.firstAidRank = getSecSkillLevel(SecondarySkill::FIRST_AID);
-	result.ballistaDamageMultiplier = newHorizonsHeroes::capabilityBallistaMultiplier(capabilityRules, artillery);
-	result.ballistaControlChance = control(CreatureID::BALLISTA);
-	result.catapultControlChance = control(CreatureID::CATAPULT);
-	result.firstAidControlChance = control(CreatureID::FIRST_AID_TENT);
-
-	// Ruleset v3 deliberately switches identity at this boundary. A saved
-	// canonical War Machines rank controls both the derived Siege values and
-	// deterministic machine control; legacy Artillery/Ballistics/First Aid
-	// skills and their MANUAL_CONTROL bonuses remain a read-only projection.
-	if(capabilityRules["rulesetVersion"].Integer() >= 3)
-	{
-		const int canonicalId = SecondarySkill::decode("new-horizons:warMachines");
-		const bool canonicalIdentity = canonicalId >= 0
-			&& SecondarySkill::encode(canonicalId) == "new-horizons:warMachines";
-		const int rank = canonicalIdentity
-			? std::clamp<int>(getSecSkillLevel(SecondarySkill(canonicalId)), 0, 3)
-			: 0;
-		result.warMachinesRank = rank;
-		result.siegeRating = newHorizonsHeroes::capabilitySiegeRating(capabilityRules, rank);
-		if(capabilityRules["rulesetVersion"].Integer() >= 4)
-			result.siegeRating = std::max(0, result.siegeRating + valOfBonuses(BonusType::SIEGE_RATING));
-		result.ballistaDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "ballistaDamage");
-		result.catapultStructuralDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "catapultStructuralDamage");
-		result.firstAidHealing = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "firstAidHealing");
-		result.defensiveTowerDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "defensiveTowerDamage");
-		const int directControl = newHorizonsHeroes::capabilityDirectControlChance(capabilityRules, rank);
-		result.ballistaControlChance = directControl;
-		result.catapultControlChance = directControl;
-		result.firstAidControlChance = directControl;
-	}
-	return result;
 }
 
 std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity() const
@@ -1137,6 +1093,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 	if(convertsCreatureLineSpecialty)
 		refreshCreatureLineSpecialtyBonuses(true);
+	newHorizonsHeroes::refreshWheelOfFortune(*this);
 
 	//initialize bonuses
 	recreateSecondarySkillsBonuses();
@@ -1297,7 +1254,8 @@ void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 			ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:estates", true);
 		const int estatesSpecialtyPercent = newHorizonsEstatesSkill && which == SecondarySkill(*newHorizonsEstatesSkill)
 			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)) : 0;
-		auto skillBonus = (*LIBRARY->skillh)[which]->at(val).effects;
+		auto skillBonus = newHorizonsSylvanTactics::rankBonuses(*this, which, val,
+			(*LIBRARY->skillh)[which]->at(val).effects);
 		for(const auto& b : skillBonus)
 		{
 			auto bonus = std::make_shared<Bonus>(*b);
@@ -1357,6 +1315,7 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 		return std::nullopt;
 	newHorizonsHeroes::PrimaryGrowthView result;
 	result.profile = newHorizonsHeroes::parsePrimaryProfile(primaryGrowthRules["profile"]);
+	result.fixedSpecialtyGrowth = newHorizonsHeroes::sageGrowth(*this);
 	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
 	{
 		result.base[i] = getBasePrimarySkillValue(PrimarySkill(i));
@@ -3091,6 +3050,15 @@ void CGHeroInstance::refreshFortuneChildSpecialtyBonus()
 
 void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
 {
+	if(createIfMissing)
+		if(auto bonus = newHorizonsHeroes::ordinaryCreatureSpecialtyBonus(*this))
+		{
+			removeBonuses(CSelector([&bonus](const Bonus * existing)
+			{ return existing && existing->source == bonus->source && existing->sid == bonus->sid
+				&& existing->stacking == bonus->stacking; }));
+			addNewBonus(bonus);
+		}
+
 	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
 	const CHero * heroType = getHeroType();
 	if(!rules || !heroType || !heroType->creatureLineSpecialtyAlias)
@@ -3123,45 +3091,8 @@ void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
 	if(newHorizonsHeroes::replacesGenericCreatureSpecialty(this))
 		return;
 
-	const TLimiterPtr lineLimiter = std::make_shared<CCreatureTypeLimiter>(*specCreature, true);
-	auto makeBonus = [heroType, creature](BonusType type, std::string_view stat)
-	{
-		auto bonus = std::make_shared<Bonus>();
-		bonus->duration = BonusDuration::PERMANENT;
-		bonus->source = BonusSource::HERO_SPECIAL;
-		bonus->sid = BonusSourceID(heroType->getId());
-		bonus->stacking = creatureLineSpecialtyMarker(heroType->getId(), creature, stat);
-		bonus->type = type;
-		bonus->valType = BonusValueType::BASE_NUMBER;
-		return bonus;
-	};
-
-	auto speed = makeBonus(BonusType::STACKS_SPEED, "speed");
-	speed->val = rules->speed;
-	speed->limiter = lineLimiter;
-	addNewBonus(speed);
-
-	auto initiative = makeBonus(BonusType::STACKS_INITIATIVE_BASE, "initiative");
-	initiative->val = rules->initiative;
-	auto initiativeLimiter = std::make_shared<AllOfLimiter>();
-	initiativeLimiter->add(lineLimiter);
-	initiativeLimiter->add(std::make_shared<HasAnotherBonusLimiter>(
-		BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY));
-	initiative->limiter = initiativeLimiter;
-	addNewBonus(initiative);
-
-	const int attributeBonus = static_cast<int>(std::min<int64_t>(rules->attributeMaximum,
-		static_cast<int64_t>(level) / rules->levelStep * rules->attributePerStep));
-	for(const auto skill : {PrimarySkill::ATTACK, PrimarySkill::DEFENSE})
-	{
-		const std::string_view stat = skill == PrimarySkill::ATTACK ? "attack" : "defense";
-		auto attribute = makeBonus(BonusType::PRIMARY_SKILL, stat);
-		attribute->subtype = BonusSubtypeID(skill);
-		attribute->val = attributeBonus;
-		attribute->targetSourceType = BonusSource::CREATURE_ABILITY;
-		attribute->limiter = lineLimiter;
-		addNewBonus(attribute);
-	}
+	for(auto & bonus : newHorizonsHeroes::creatureLineSpecialtyBonuses(*this, *rules, creature, markers))
+		addNewBonus(bonus);
 }
 
 void CGHeroInstance::attachCommanderToArmy()

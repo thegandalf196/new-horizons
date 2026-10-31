@@ -109,8 +109,12 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 	}
 	result.values = newHorizonsHeroes::projectStartingHero(prototype, context, overrides);
 	for(const auto & [skill, rank] : result.values.skills)
+	{
+		result.skillNames[skill] = newHorizonsSkillPresentation::skillName(context.perks,
+			skill.toSkill()->getJsonKey(), skill.toSkill()->getNameTranslated());
 		result.skillDescriptions[skill] = newHorizonsSkillPresentation::rankDescription(context.perks,
 			skill.toSkill()->getJsonKey(), rank, skill.toSkill()->getDescriptionTranslated(rank));
+	}
 	std::optional<CreatureID> specialtyTarget;
 	if(capturedHero)
 		specialtyTarget = capturedHero->getCreatureLineSpecialtyTarget();
@@ -141,6 +145,12 @@ std::string startingSkillPerkNames(const HeroStartingPreview & preview, Secondar
 				? selection.perkId : found->second;
 		}
 	return result;
+}
+
+std::string startingSkillName(const HeroStartingPreview & preview, SecondarySkill skill)
+{
+	const auto found = preview.skillNames.find(skill);
+	return found == preview.skillNames.end() ? skill.toSkill()->getNameTranslated() : found->second;
 }
 
 std::string startingSkillDescription(const HeroStartingPreview & preview, SecondarySkill skill, int rank)

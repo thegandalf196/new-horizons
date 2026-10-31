@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "army/CArmedInstance.h"
 
 #include "../rewardable/Interface.h"
@@ -98,6 +100,8 @@ public:
 			if(pendingBankCreatureReward && !h.hasFeature(Handler::Version::NEW_HORIZONS_BANK_CREATURE_REMAINDER))
 				throw std::runtime_error("Unclaimed bank troops require the bank remainder save format");
 
+		if(h.saving)
+			configuration.validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & static_cast<CArmedInstance&>(*this);
 		h & static_cast<Rewardable::Interface&>(*this);
 		h & onceVisitableObjectCleared;

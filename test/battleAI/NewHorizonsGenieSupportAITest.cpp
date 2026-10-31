@@ -25,6 +25,7 @@
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/spells/CSpellHandler.h"
+#include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
 #include <bit>
@@ -445,6 +446,49 @@ TEST_F(NewHorizonsGenieSupportAITest, UpgradedGenieUsesOneSharedChargePoolForAll
 TEST_F(NewHorizonsGenieSupportAITest, ZeroBenefitBoneDragonHostileForecastKeepsOrdinaryCreaturePolicy)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	// Characterize the original geometry: Slow removes the Dragon's legal
+	// attack on the caster and therefore has a real benefit at these positions.
+	const auto live = gameState()->saveToMemory();
+	const auto serverRng = serverRandomizerBytes();
+	const auto aiRng = aiRandomBytes();
+	auto projected = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	DamageCache original;
+	original.buildDamageCache(projected, BattleSide::ATTACKER);
+	DamageCache beforePressure(&original);
+	PotentialTargets unslowed(projected->battleGetUnitByID(enemy->unitId()), beforePressure, projected);
+	const auto attacksCaster = [this](const AttackPossibility & attack)
+	{
+		return attack.attack.defender->unitId() == genie->unitId();
+	};
+	ASSERT_TRUE(std::ranges::any_of(unslowed.possibleAttacks, attacksCaster));
+	const auto * slow = SpellID(SpellID::SLOW).toSpell();
+	const auto ability = genie->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+	ASSERT_TRUE(ability);
+	spells::BattleCast cast(projected.get(), projected->battleGetUnitByID(genie->unitId()),
+		spells::Mode::CREATURE_ACTIVE, slow);
+	cast.setSpellLevel(BattleEvaluator::creatureAbilitySpellLevel(genie, slow, ability->val));
+	cast.castEval(projected->getServerCallback(),
+		{spells::Destination(projected->battleGetUnitByID(enemy->unitId()))});
+	DamageCache afterPressure(&original);
+	PotentialTargets slowed(projected->battleGetUnitByID(enemy->unitId()), afterPressure, projected);
+	EXPECT_FALSE(std::ranges::any_of(slowed.possibleAttacks, attacksCaster));
+	EXPECT_FALSE(slowed.possibleAttacks.empty());
+	EXPECT_GT(evaluator().beneficialCreatureSpellOutcomeValue(genie, enemy, slow), 0.0f);
+	EXPECT_FLOAT_EQ(evaluator().beneficialCreatureSpellOutcomeValue(genie, enemy,
+		SpellID(SpellID::MISFORTUNE).toSpell()), 0.0f);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_EQ(serverRandomizerBytes(), serverRng);
+	EXPECT_EQ(aiRandomBytes(), aiRng);
+
+	// Keep this no-benefit scenario's caster outside even the unslowed reach.
+	// Slow retains the nearby Archangel exchange; Misfortune has no Luck gain.
+	BattleStackMoved move;
+	move.battleID = BattleID(0);
+	move.stack = genie->unitId();
+	move.teleporting = true;
+	move.tilesToMove.insert(BattleHex(1, 1));
+	gameHandler->sendAndApply(move);
+	ASSERT_EQ(genie->getPosition(), BattleHex(1, 1));
 	exhaustPool(genie);
 	exhaustPool(ally);
 	const auto pool = battle()->getAvailableRandomCreatureSpells(genie, enemy);

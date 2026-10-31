@@ -136,6 +136,9 @@ public:
 
 	/// returns initial size of this unit
 	virtual int32_t getCount() const = 0;
+	/// Surviving creatures in the combat-entry species, including currently
+	/// restored creatures. A battle-form view must override this count.
+	virtual int32_t getCurrentOriginalCreatureCount() const { return getCount(); }
 
 	/// returns remaining health of first unit
 	virtual int32_t getFirstHPleft() const = 0;

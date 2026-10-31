@@ -47,6 +47,25 @@ TEST(BattlecraftStatusPresentationTest, WaitReadbackShowsRankBonusOnlyWhileArmed
 	EXPECT_NE(ready, spent);
 }
 
+TEST(BattlecraftStatusPresentationTest, WaitReadbackPreservesOrdinaryAndDoubledSharedValues)
+{
+	// Captured query results are presentation inputs, including mastery doubling.
+	const auto ordinary = makeBattlecraftWaitStatus(15, true);
+	const auto doubled = makeBattlecraftWaitStatus(30, true);
+	ASSERT_TRUE(ordinary.has_value());
+	ASSERT_TRUE(doubled.has_value());
+	EXPECT_EQ(ordinary->damageBonusPercent, 15);
+	EXPECT_EQ(doubled->damageBonusPercent, 30);
+	EXPECT_NE(battlecraftWaitTooltip(*ordinary).find("+15%"), std::string::npos);
+	EXPECT_NE(battlecraftWaitTooltip(*doubled).find("+30%"), std::string::npos);
+	StackInfoStatusSnapshot before;
+	before.battlecraftWait = ordinary;
+	auto after = before;
+	after.battlecraftWait = doubled;
+	EXPECT_NE(before, after);
+	EXPECT_FALSE(makeBattlecraftWaitStatus(30, false).has_value());
+}
+
 TEST(BattlecraftStatusPresentationTest, DefendReadbackComposesBattlecraftEntrenchAndBulwark)
 {
 	DefendStatus inactive;

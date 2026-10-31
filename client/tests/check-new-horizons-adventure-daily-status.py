@@ -78,10 +78,10 @@ def main() -> None:
                         "void CSpellWindow::SpellArea::showPopupWindow")
     require(spell_area, "owner->isAdventureSpellUsedToday(mySpell->id)",
             "used Adventure Spell slot uses unavailable colors")
-    require(spell_area, "firstLineColor = Colors::WHITE;", "unavailable name color")
-    require(spell_area, "secondLineColor = Colors::ORANGE;", "unavailable cost color")
+    require(spell_area, "firstLineColor = ColorRGBA(62, 52, 44);", "unavailable name color")
+    require(spell_area, "secondLineColor = ColorRGBA(90, 24, 14);", "unavailable cost color")
     require(spell_area, "name->setText(mySpell->getNameTranslated());", "spell name remains visible")
-    require(spell_area, "costText.replaceNumber(spellCost);", "listed Mana cost remains visible")
+    require(spell_area, "costText.replaceNumber(costBreakdown.finalCost);", "listed Mana cost remains visible")
 
     click = method(UI, "void CSpellWindow::SpellArea::clickPressed", "void CSpellWindow::SpellArea::showPopupWindow")
     if "isAdventureSpellUsedToday" in click:

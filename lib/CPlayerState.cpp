@@ -178,3 +178,12 @@ bool PlayerState::wasKeymasterVisited(MapObjectSubID keymasterColor) const
 	return visitedObjectsGlobal.count({Obj::KEYMASTER, keymasterColor}) != 0;
 }
 
+
+void PlayerState::validateOwnedBonusSerialization(BonusSerializationContext context) const
+{
+	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+	validateExportedBonusSerialization(context);
+	for(const auto & bonus : battleBonuses)
+		bonus.validateAdjacencyCapabilitySerialization(context);
+}

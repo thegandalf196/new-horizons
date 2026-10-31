@@ -31,6 +31,14 @@ set(lualib_SRCS
 		api/battle/SpellObstacleDescriptor.cpp
 
 		api/spells/Mechanics.cpp
+		api/spells/TimedUtility.cpp
+		api/spells/TimeStopRadius.cpp
+		api/spells/SorceryUtility.cpp
+		api/spells/ShadowMagnitudes.cpp
+		api/spells/TimedBuffs.cpp
+		api/spells/TrollSummonPower.cpp
+	api/spells/PlacementPower.cpp
+		api/spells/ElementalConvergencePower.cpp
 		api/spells/Problem.cpp
 
 		api/library/Artifact.cpp
@@ -106,6 +114,13 @@ set(lualib_HDRS
 		api/library/SpellSchool.h
 
 		api/spells/Mechanics.h
+		api/spells/TimeStopRadius.h
+		api/spells/SorceryUtility.h
+		api/spells/ShadowMagnitudes.h
+		api/spells/TimedBuffs.h
+		api/spells/TrollSummonPower.h
+	api/spells/PlacementPower.h
+		api/spells/ElementalConvergencePower.h
 		api/spells/Problem.h
 
 		api/callback/IBattleInfoCallback.h

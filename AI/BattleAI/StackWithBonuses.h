@@ -22,6 +22,8 @@
 #include "../../lib/battle/CUnitState.h"
 
 class HypotheticBattle;
+class ProjectedAdjacencyBonuses;
+struct ProjectedAdjacencyQuery;
 class CStack;
 class InitialExportBattleSubject;
 struct MeleeBonusSource;
@@ -108,6 +110,9 @@ public:
 	std::string getDescription() const override;
 
 private:
+	friend class ProjectedAdjacencyBonuses;
+	TConstBonusListPtr mergeBonusesImpl(const CSelector & selector, const std::string & cachingStr,
+		bool unstacked, const ProjectedAdjacencyQuery * adjacency) const;
 	bool hasStableInheritedBonusList() const;
 	void removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
 		HypotheticLifecycleTiming::EffectWorkTiming * timing);

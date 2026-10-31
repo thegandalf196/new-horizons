@@ -38,6 +38,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
+#include "../../../lib/spells/SpellEffectPreview.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/Problem.h"
 
@@ -669,6 +670,15 @@ TEST_F(NewHorizonsLifeDrainTest, BasicShadowMagicUnselectedBloodDrinkerKeepsSixt
 	EXPECT_FALSE(attackerSideHero->hasActivePerk(shadowMagicSkillId, bloodDrinkerPerkId));
 	spells::BattleCast spellCast(battle(), attackerSideHero, spells::Mode::HERO, lifeDrainSpell().toSpell());
 	EXPECT_EQ(lifeDrainSpell().toSpell()->battleMechanics(&spellCast)->getEffectValue(), 232);
+	const auto manaBeforePreview = attackerSideHero->getManaAvailable();
+	const auto row = newHorizonsMagic::spellEffectPreview(*attackerSideHero, *lifeDrainSpell().toSpell(), battle());
+	ASSERT_TRUE(row.primary);
+	ASSERT_TRUE(row.secondary);
+	EXPECT_EQ(row.labelKey, "new-horizons.spellbook.effect.lifeDrain");
+	EXPECT_EQ(row.primary->value, 232);
+	EXPECT_EQ(row.secondary->value, 60);
+	EXPECT_EQ(row.secondary->scale, 1);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforePreview);
 	injure(friendly, 150);
 	const auto enemyBefore = enemy->getAvailableHealth();
 	const auto allyBefore = friendly->getAvailableHealth();
@@ -685,6 +695,15 @@ TEST_F(NewHorizonsLifeDrainTest, AcceptedBasicBloodDrinkerRaisesHealingToSeventy
 	spells::BattleCast spellCast(battle(), attackerSideHero, spells::Mode::HERO, lifeDrainSpell().toSpell());
 	EXPECT_EQ(lifeDrainSpell().toSpell()->battleMechanics(&spellCast)->getEffectValue(), 232)
 		<< "Basic Shadow Magic's 115% coefficient is shared with the unselected comparison";
+	const auto manaBeforePreview = attackerSideHero->getManaAvailable();
+	const auto row = newHorizonsMagic::spellEffectPreview(*attackerSideHero, *lifeDrainSpell().toSpell(), battle());
+	ASSERT_TRUE(row.primary);
+	ASSERT_TRUE(row.secondary);
+	EXPECT_EQ(row.labelKey, "new-horizons.spellbook.effect.lifeDrain");
+	EXPECT_EQ(row.primary->value, 232);
+	EXPECT_EQ(row.secondary->value, 75);
+	EXPECT_EQ(row.secondary->scale, 1);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforePreview);
 	injure(friendly, 180);
 	const auto enemyBefore = enemy->getAvailableHealth();
 	const auto allyBefore = friendly->getAvailableHealth();

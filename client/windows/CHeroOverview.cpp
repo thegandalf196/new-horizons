@@ -227,7 +227,7 @@ void CHeroOverview::genControls()
 			GAME->translator().translate("core.skilllev", skill.second - 1)
 			+ (startingSkillPerkNames(starting, skill.first).empty() ? "" : " / " + startingSkillPerkNames(starting, skill.first)), 90));
 		labelSecSkillsNames.push_back(std::make_shared<CLabel>(334 + 2 * borderOffset, 8 * borderOffset + yOffset + 186 + i * (32 + borderOffset) + 10, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
-			(*LIBRARY->skillh)[skill.first]->getNameTranslated(), 90));
+			startingSkillName(starting, skill.first), 90));
 		const auto perkNames = startingSkillPerkNames(starting, skill.first);
 		const auto help = startingSkillDescription(starting, skill.first, skill.second)
 			+ (perkNames.empty() ? "" : "\n" + perkNames);

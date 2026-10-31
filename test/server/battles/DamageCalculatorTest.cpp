@@ -14,6 +14,7 @@
 #include "BattleTestFixture.h"
 
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/CBattleInfoCallback.h"
@@ -98,6 +99,16 @@ public:
 		startGame();
 		startBattle();
 	}
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			return;
+		JsonNode legacyPerks(JsonPath::builtin("config/newHorizonsPerks"));
+		legacyPerks.Struct().erase("sylvanTacticsPolicy");
+		legacyPerks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacyPerks);
+	}
 	virtual bool finalLuckPolicy() const { return false; }
 
 	CStack * attacker(const std::string & creature, int32_t count = stackSize, const BattleHex & hex = BattleHex(attackerHex))
@@ -169,7 +180,7 @@ class NewHorizonsFinalLuckActualTest : public NewHorizonsFinalLuckDamageTest
 protected:
 	void mapLoaded(CMap * loaded) override
 	{
-		TinyMapGameTest::mapLoaded(loaded);
+		DamageCalculatorTestBase::mapLoaded(loaded);
 		JsonNode chance;
 		for(int index = 0; index < 10; ++index)
 			chance.Vector().emplace_back(100);
@@ -474,8 +485,10 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		JsonNode legacyPerks(JsonPath::builtin("config/newHorizonsPerks"));
+		legacyPerks.Struct().erase("sylvanTacticsPolicy");
+		legacyPerks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacyPerks);
 	}
 };
 

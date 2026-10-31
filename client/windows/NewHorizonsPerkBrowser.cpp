@@ -7,7 +7,7 @@
 
 #include "InfoWindows.h"
 #include "NewHorizonsPerkHelp.h"
-#include "NewHorizonsPerkIcons.h"
+#include "NewHorizonsCapturedPerkIcons.h"
 #include "NewHorizonsPerkAvailability.h"
 #include "../gui/Shortcut.h"
 #include "../render/Colors.h"
@@ -125,7 +125,7 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 		}
 
 		elements.push_back(std::make_shared<CLabel>(320, 19, FONT_BIG, ETextAlignment::CENTER,
-			Colors::YELLOW, "Perks: " + skill->name, 590));
+			Colors::YELLOW, "Perks: " + newHorizonsPerkHelp::skillName(&hero, skillId), 590));
 		elements.push_back(std::make_shared<CLabel>(320, 51, FONT_SMALL, ETextAlignment::CENTER,
 			Colors::WHITE, "Read-only catalogue. Learned perks are marked Learned; browsing changes nothing.", 600));
 
@@ -183,7 +183,7 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 						: evaluation.status == newHorizonsPerkAvailability::Status::LOCKED ? unlearnedBorder
 						: ColorRGBA(117, 96, 64, 255)));
 
-				auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name)), 0,
+				auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name, perkState.rules)), 0,
 					Rect(cardLeft + 4, top + 3, 24, 24));
 				elements.push_back(icon);
 				elements.push_back(std::make_shared<CMultiLineLabel>(Rect(cardLeft + 34, top + 2, cardWidth - 40, 26),
@@ -195,11 +195,11 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 				elements.push_back(std::make_shared<CLabel>(cardLeft + 34, top + 42, FONT_TINY,
 					ETextAlignment::TOPLEFT,
 					evaluation.status == newHorizonsPerkAvailability::Status::AVAILABLE ? Colors::GREEN : Colors::WHITE,
-					reasonCaption(evaluation, skill->name), cardWidth - 40));
+					reasonCaption(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId)), cardWidth - 40));
 
 				const auto description = newHorizonsPerkHelp::format(&hero, skillId, perk.name,
 					newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description)
-					+ "\n\n" + newHorizonsPerkAvailability::explanation(evaluation, skill->name)
+					+ "\n\n" + newHorizonsPerkAvailability::explanation(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId))
 					+ "\nImplementation: " + effectStatus + ". This browser is read-only; it does not unlock perks.";
 				auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId);
 				const int skillRank = std::clamp(hero.getPerkSkillRank(skillId), 1, 3);

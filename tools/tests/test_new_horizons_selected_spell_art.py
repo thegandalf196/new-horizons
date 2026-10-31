@@ -13,6 +13,7 @@ import import_new_horizons_spell_art as importer
 from .nhart_test_resources import (open_image, read_resource, verified_index,
                                   later_art_resources, later_art_waves,
                                   entries_before_wave, resource_before_wave)
+from .nhart_config_revisions import config_at_revision
 
 
 class SelectedSpellArtTest(unittest.TestCase):
@@ -21,6 +22,7 @@ class SelectedSpellArtTest(unittest.TestCase):
         cls.selection = json.loads((ROOT / 'assets/new-horizons/spell-art-selections.json').read_text())
         cls.manifest = json.loads((ROOT / importer.MANIFEST).read_text())
         cls.config = importer.parse_jsonc((ROOT / importer.CONFIG).read_text())
+        cls.configProofs = json.loads((ROOT / 'assets/new-horizons/runtime-art-config-revisions.json').read_text())
 
     def test_exact_semantic_roster_and_five_native_roles(self):
         entries = self.selection['entries']
@@ -63,7 +65,8 @@ class SelectedSpellArtTest(unittest.TestCase):
             self.assertEqual(importer.digest(ROOT / importer.ARCHIVE), self.selection['newArchiveSha256'])
 
     def test_graphics_only_and_existing_scenario_byte_reuse(self):
-        historical = json.loads(json.dumps(self.config))
+        # Validate the current accepted gameplay capture, then inspect the art-import revision.
+        historical = config_at_revision(self.config, importer.CONFIG, self.configProofs, 0)
         for wave in reversed(later_art_waves()):
             for status in wave['statuses']:
                 historical[status['id'].split(':')[1]]['graphics'].update(status['previousBindings'])

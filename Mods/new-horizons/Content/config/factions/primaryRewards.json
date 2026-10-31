@@ -1,0 +1,25 @@
+{
+	"core:fortress": {
+		"town": {
+			"buildings": {
+				"special1": {
+					"description": "Permanently increases each visiting hero's Defense by 5, once per hero at this Cage of Warlords.",
+					"configuration": {
+						"visitMode": "hero",
+						"notVisitedTooltip": "Training available: +5 permanent Defense.",
+						"visitedTooltip": "This hero has already trained here.",
+						"onVisitedMessage": "This hero has already received training from this Cage of Warlords.",
+						"rewards": [
+							{
+								"message": "The Cage of Warlords permanently increases this hero's Defense by 5.",
+								"primary": {
+									"defence": 5
+								}
+							}
+						]
+					}
+				}
+			}
+		}
+	}
+}

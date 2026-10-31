@@ -76,8 +76,10 @@ inline std::optional<SecondarySkill> skillEntity(std::string_view skillId)
 
 inline std::string skillName(const CGHeroInstance * hero, std::string_view skillId)
 {
-	if(const auto definition = skillDefinition(hero, skillId); definition && !definition->name.empty())
-		return definition->name;
+	if(hero && skillId == "new-horizons:sylvanLuck")
+		return newHorizonsSylvanTactics::capturedSkillName(hero->getPerkState().rules);
+	const auto definition = skillDefinition(hero, skillId);
+	const auto capturedName = definition ? definition->name : std::string();
 
 	if(LIBRARY)
 	{
@@ -85,7 +87,8 @@ inline std::string skillName(const CGHeroInstance * hero, std::string_view skill
 		{
 			const int decoded = SecondarySkill::decode(std::string(skillId));
 			if(decoded >= 0 && SecondarySkill::encode(decoded) == skillId)
-				return SecondarySkill(decoded).toEntity(LIBRARY)->getNameTranslated();
+				return newHorizonsSkillPresentation::perkSkillName(skillId,
+					SecondarySkill(decoded).toEntity(LIBRARY)->getNameTranslated(), capturedName);
 		}
 		catch(const std::exception &)
 		{
@@ -93,7 +96,20 @@ inline std::string skillName(const CGHeroInstance * hero, std::string_view skill
 		}
 	}
 
+	if(!capturedName.empty())
+		return capturedName;
 	return "Unknown";
+}
+
+/// Existing entity labels change meaning only for the captured Sylvan rework.
+/// Other Skills retain their translated installed label, including display-only
+/// renames that do not introduce a historical mechanics mode.
+inline std::string skillLabel(const CGHeroInstance * hero, SecondarySkill skill)
+{
+	const auto * definition = skill.toSkill();
+	const auto fallback = definition->getNameTranslated();
+	return hero ? newHorizonsSkillPresentation::skillName(hero->getPerkState().rules,
+		definition->getJsonKey(), fallback) : fallback;
 }
 
 inline std::string skillDescription(const CGHeroInstance * hero, SecondarySkill skill, int rank)

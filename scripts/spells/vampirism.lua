@@ -4,14 +4,7 @@ Script.__index = Script
 
 local VAMPIRISM_SPELL = "new-horizons:vampirism"
 local VAMPIRISM_STATUS = "core:vampirism"
-local SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic"
-local NIGHT_FEEDER_PERK = "new-horizons:shadowMagic.nightFeeder"
 local STATUS_DURATION_ROUNDS = 3
-local BASE_HEAL_BASIS_POINTS = 2500
-local MAX_BASE_HEAL_BASIS_POINTS = 5000
-local NIGHT_FEEDER_BONUS_BASIS_POINTS = 1500
-local MAX_HEAL_BASIS_POINTS = 6500
-local SPELL_POWER_BASIS_POINTS_PER_POINT = 15
 
 local function reject(problem, mechanics)
 	if problem then
@@ -59,17 +52,7 @@ function Script:transformTarget(mechanics, aimPoint, spellTarget)
 end
 
 local function healBasisPoints(mechanics)
-	local rawSpellPower = math.max(0, mechanics:getEffectPower())
-	local spellPowerBasisPoints = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		rawSpellPower * SPELL_POWER_BASIS_POINTS_PER_POINT, 1,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-	local baseHealing = math.min(MAX_BASE_HEAL_BASIS_POINTS,
-		BASE_HEAL_BASIS_POINTS + spellPowerBasisPoints)
-	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(SHADOW_MAGIC_SKILL, NIGHT_FEEDER_PERK) then
-		return math.min(MAX_HEAL_BASIS_POINTS, baseHealing + NIGHT_FEEDER_BONUS_BASIS_POINTS)
-	end
-	return baseHealing
+	return mechanics:getVampirismHealBasisPoints()
 end
 
 function Script:apply(mechanics, server, target)

@@ -11,6 +11,8 @@
 
 #include "MiscWidgets.h"
 
+class CGHeroInstance;
+
 class CAnimImage;
 
 class CComponentHolder : public SelectableSlot
@@ -84,6 +86,7 @@ public:
 	CSecSkillPlace(const Point & position, const ImageSize & imageSize, const SecondarySkill & skillId = SecondarySkill::NONE, const uint8_t level = 0);
 	void setSkill(const SecondarySkill & newSkillId, const uint8_t level = 0);
 	void setLevel(const uint8_t level);
+	void setSkillForHero(const CGHeroInstance & hero, SecondarySkill skill, uint8_t level);
 
 private:
 	SecondarySkill skillId;

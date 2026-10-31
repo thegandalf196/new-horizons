@@ -51,6 +51,16 @@ bool CBattleInfoCallback::battleUnitHasAmmoCart(const battle::Unit * unit) const
 	const battle::LiveUnitEnvironmentContext context(*this);
 	return battle::UnitEnvironmentQueries(context).unitHasAmmoCart(unit);
 }
+int CBattleInfoCallback::battleSylvanTacticsSpeed(const battle::Unit * unit, int turn) const
+{
+	const battle::LiveUnitEnvironmentContext context(*this);
+	return battle::UnitEnvironmentQueries(context).unitSylvanTacticsSpeed(unit, turn);
+}
+int CBattleInfoCallback::battleSylvanTacticsInitiativePercent(const battle::Unit * unit) const
+{
+	const battle::LiveUnitEnvironmentContext context(*this);
+	return battle::UnitEnvironmentQueries(context).unitSylvanTacticsInitiativePercent(unit);
+}
 int CBattleInfoCallback::battleFortuneSpeed(const battle::Unit * unit) const
 {
 	const battle::LiveUnitEnvironmentContext context(*this);

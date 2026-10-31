@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "SylvanTacticsProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "ProjectedMeleeHit.h"
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
@@ -41,6 +42,7 @@ std::optional<heroOrderValue::MeleeHitReceipt> apply(HypotheticBattle & battle, 
 	const bool retaliation = request.kind == MeleeStrikeKind::ORDINARY_RETALIATION;
 	BattleAttackInfo strike(actor.get(), victim.get(), request.distanceArgument, false);
 	strike.retaliation = retaliation;
+	strike.ordinaryAttackIndex = request.attackIndex;
 	strike.bracePreemptive = brace;
 	strike.attackerPos = actor->getPosition();
 	strike.defenderPos = victim->getPosition();
@@ -65,8 +67,9 @@ std::optional<heroOrderValue::MeleeHitReceipt> apply(HypotheticBattle & battle, 
 	const bool harvestEligible = newHorizonsSoulHarvest::qualifies(battle, *actor, *victim, strike.physicalDamage);
 	const bool victimMayRebirth = battle.hasReadyNativeRebirth(victim.get());
 	const int32_t victimCountBefore = harvestEligible ? victim->getCount() : 0;
-	newHorizonsForestAmbush::damageFromAttack(battle, *victim, damage,
-				battle::DamageProvenance::PHYSICAL_CREATURE);
+	sylvanTacticsAI::StrikeProjection tactics(&battle);
+	tactics.damage(battle, strike, *victim, damage, battle::DamageProvenance::PHYSICAL_CREATURE);
+	tactics.finish(actor->unitId());
 	if(harvestEligible)
 		newHorizonsSoulHarvest::grant(*actor, newHorizonsSoulHarvest::casualtiesAfterHit(
 			*victim, victimCountBefore, victimMayRebirth));

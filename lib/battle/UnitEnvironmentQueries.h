@@ -51,6 +51,8 @@ public:
 	bool unitHasAmmoCart(const Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const Unit * unit) const override;
 	std::optional<int> unitMagicResistance(const Unit * unit) const override;
+	int unitSylvanTacticsSpeed(const Unit * unit, int turn = 0) const override;
+	int unitSylvanTacticsInitiativePercent(const Unit * unit) const override;
 	int unitFortuneSpeed(const Unit * unit) const override;
 	int unitSpeedBonus(const Unit * unit) const override;
 	bool unitSlowAffectsSpeed(const Unit * unit) const override;

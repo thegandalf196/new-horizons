@@ -776,15 +776,7 @@ static std::shared_ptr<const ILimiter> parseUnitOnHexLimiter(const JsonNode & li
 
 static std::shared_ptr<const ILimiter> parseUnitAdjacentLimiter(const JsonNode & limiter)
 {
-	const JsonNode & creatureNode = limiter["creature"];
-
-	auto unitLimiter = std::make_shared<UnitAdjacentLimiter>();
-	LIBRARY->identifiers()->requestIdentifier("creature", creatureNode, [unitLimiter](si32 creatureID)
-	{
-		unitLimiter->targetUnit = creatureID;
-	});
-
-	return unitLimiter;
+	return UnitAdjacentLimiter::fromJson(limiter);
 }
 
 static std::shared_ptr<const ILimiter> parseHasChargesLimiter(const JsonNode & limiter)

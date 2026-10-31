@@ -1,0 +1,267 @@
+{
+	"core:arena": {
+		"types": {
+			"arena": {
+				"description": "Choose a permanent increase of 10 to Attack or Defense. Each hero may train here once.",
+				"rewards": [
+					{
+						"primary": {
+							"attack": 10
+						},
+						"message": "The Arena permanently increases this hero's Attack by 10."
+					},
+					{
+						"primary": {
+							"defence": 10
+						},
+						"message": "The Arena permanently increases this hero's Defense by 10."
+					}
+				],
+				"onSelectMessage": "Choose a permanent increase of 10 to Attack or Defense. Each hero may train here once."
+			}
+		}
+	},
+	"core:marlettoTower": {
+		"types": {
+			"marlettoTower": {
+				"description": "Permanently increases Defense by 5, once per hero.",
+				"rewards": [
+					{
+						"message": "The Marletto Tower permanently increases this hero's Defense by 5.",
+						"primary": {
+							"defence": 5
+						}
+					}
+				]
+			}
+		}
+	},
+	"core:gardenOfRevelation": {
+		"types": {
+			"gardenOfRevelation": {
+				"description": "Permanently increases Knowledge by 5, once per hero.",
+				"rewards": [
+					{
+						"message": "The Garden of Revelation permanently increases this hero's Knowledge by 5.",
+						"primary": {
+							"knowledge": 5
+						}
+					}
+				]
+			}
+		}
+	},
+	"core:libraryOfEnlightenment": {
+		"types": {
+			"libraryOfEnlightenment": {
+				"description": "Eligible heroes permanently gain 10 Attack, Defense, Spell Power, and Knowledge. Each hero may study here once.",
+				"rewards": [
+					{
+						"limiter": {
+							"anyOf": [
+								{
+									"heroLevel": 10
+								},
+								{
+									"heroLevel": 8,
+									"secondary": {
+										"core:diplomacy": 1
+									}
+								},
+								{
+									"heroLevel": 6,
+									"secondary": {
+										"core:diplomacy": 2
+									}
+								},
+								{
+									"heroLevel": 4,
+									"secondary": {
+										"core:diplomacy": 3
+									}
+								}
+							]
+						},
+						"message": "The Library of Enlightenment permanently increases this hero's Attack, Defense, Spell Power, and Knowledge by 10 each.",
+						"primary": {
+							"attack": 10,
+							"defence": 10,
+							"spellpower": 10,
+							"knowledge": 10
+						}
+					}
+				]
+			}
+		}
+	},
+	"core:mercenaryCamp": {
+		"types": {
+			"mercenaryCamp": {
+				"description": "Permanently increases Attack by 5, once per hero.",
+				"rewards": [
+					{
+						"message": "The Mercenary Camp permanently increases this hero's Attack by 5.",
+						"primary": {
+							"attack": 5
+						}
+					}
+				]
+			}
+		}
+	},
+	"core:starAxis": {
+		"types": {
+			"starAxis": {
+				"description": "Permanently increases Spell Power by 5, once per hero.",
+				"rewards": [
+					{
+						"message": "The Star Axis permanently increases this hero's Spell Power by 5.",
+						"primary": {
+							"spellpower": 5
+						}
+					}
+				]
+			}
+		}
+	},
+	"core:schoolOfMagic": {
+		"types": {
+			"schoolOfMagic": {
+				"description": "For 1,000 Gold, permanently increases Spell Power or Knowledge by 5. Each hero may train here once.",
+				"rewards": [
+					{
+						"limiter": {
+							"resources": {
+								"gold": 1000
+							}
+						},
+						"resources": {
+							"gold": -1000
+						},
+						"primary": {
+							"spellpower": 5
+						},
+						"message": "The School of Magic permanently increases this hero's Spell Power by 5."
+					},
+					{
+						"limiter": {
+							"resources": {
+								"gold": 1000
+							}
+						},
+						"resources": {
+							"gold": -1000
+						},
+						"primary": {
+							"knowledge": 5
+						},
+						"message": "The School of Magic permanently increases this hero's Knowledge by 5."
+					}
+				],
+				"onSelectMessage": "For 1,000 Gold, permanently increases Spell Power or Knowledge by 5. Each hero may train here once."
+			}
+		}
+	},
+	"core:schoolOfWar": {
+		"types": {
+			"schoolOfWar": {
+				"description": "For 1,000 Gold, permanently increases Attack or Defense by 5. Each hero may train here once.",
+				"rewards": [
+					{
+						"limiter": {
+							"resources": {
+								"gold": 1000
+							}
+						},
+						"resources": {
+							"gold": -1000
+						},
+						"primary": {
+							"attack": 5
+						},
+						"message": "The School of War permanently increases this hero's Attack by 5."
+					},
+					{
+						"limiter": {
+							"resources": {
+								"gold": 1000
+							}
+						},
+						"resources": {
+							"gold": -1000
+						},
+						"primary": {
+							"defence": 5
+						},
+						"message": "The School of War permanently increases this hero's Defense by 5."
+					}
+				],
+				"onSelectMessage": "For 1,000 Gold, permanently increases Attack or Defense by 5. Each hero may train here once."
+			}
+		}
+	},
+	"core:scholar": {
+		"types": {
+			"scholar": {
+				"description": "Offers an eligible spell, a Skill rank, or a permanent increase of 5 to one Primary Attribute. The Scholar leaves after helping one hero.",
+				"rewards": [
+					{
+						"appearChance": {
+							"min": 0,
+							"max": 33
+						},
+						"mapDice": 0,
+						"message": 115,
+						"limiter": {
+							"canLearnSpells": [
+								"@gainedSpell"
+							]
+						},
+						"spells": [
+							"@gainedSpell"
+						],
+						"removeObject": true
+					},
+					{
+						"appearChance": {
+							"min": 33,
+							"max": 66
+						},
+						"mapDice": 1,
+						"message": 115,
+						"limiter": {
+							"noneOf": [
+								{
+									"secondary": {
+										"@gainedSkill": 3
+									}
+								}
+							],
+							"anyOf": [
+								{
+									"canLearnSkills": true
+								},
+								{
+									"secondary": {
+										"@gainedSkill": 1
+									}
+								}
+							]
+						},
+						"secondary": {
+							"@gainedSkill": 1
+						},
+						"removeObject": true
+					},
+					{
+						"message": "The Scholar permanently increases one of this hero's Primary Attributes by 5.",
+						"primary": {
+							"@gainedStat": 5
+						},
+						"removeObject": true
+					}
+				]
+			}
+		}
+	}
+}

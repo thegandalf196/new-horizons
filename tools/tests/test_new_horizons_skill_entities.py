@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Validate the New Horizons SecondarySkill entity composition.
 
-The six school skills, Offense, Estates, Learning, Luck, Sylvan Luck, Necromancy,
+The six school skills, Offense, Estates, Learning, Luck, Sylvan Tactics, Necromancy,
 and Metamagic are active rank data.  The
 remaining canonical skills are registered with their canonical rank text but
 deliberately carry only a zero bonus until their runtime effect handlers exist.
@@ -109,30 +109,9 @@ ACTIVE_RANK_EFFECTS = {
         },
     },
     "sylvanLuck": {
-        "basic": {
-            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 1},
-            "luckyStrikeDamage": {
-                "type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-                "valueType": "BASE_NUMBER",
-                "val": 25,
-            },
-        },
-        "advanced": {
-            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 2},
-            "luckyStrikeDamage": {
-                "type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-                "valueType": "BASE_NUMBER",
-                "val": 60,
-            },
-        },
-        "expert": {
-            "luck": {"type": "LUCK", "valueType": "BASE_NUMBER", "val": 3},
-            "luckyStrikeDamage": {
-                "type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-                "valueType": "BASE_NUMBER",
-                "val": 100,
-            },
-        },
+        "basic": {"initiative": {"type": "STACKS_INITIATIVE_FLAT", "valueType": "BASE_NUMBER", "val": 1}},
+        "advanced": {"initiative": {"type": "STACKS_INITIATIVE_FLAT", "valueType": "BASE_NUMBER", "val": 2}},
+        "expert": {"initiative": {"type": "STACKS_INITIATIVE_FLAT", "valueType": "BASE_NUMBER", "val": 3}},
     },
     "necromancy": {
         "basic": {

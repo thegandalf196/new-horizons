@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "../battle/NewHorizonsAerialSupremacy.h"
 #include <algorithm>
 #include <limits>
@@ -55,6 +57,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && info)
+			info->validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
+		if(h.saving && info) info->validateSylvanTacticsSerialization(h);
 		if(h.saving && info)
 			info->validateCapturedSideSpecialtiesSerialization(h);
 		if(h.saving && info)

@@ -9,6 +9,7 @@
 #include "../StdInc.h"
 
 #include "../../client/battle/NewHorizonsBattleStatus.h"
+#include "../../client/windows/SylvanFactionStatusPresentation.h"
 #include "../../lib/battle/SylvanLuckState.h"
 
 namespace
@@ -177,4 +178,20 @@ TEST(SylvanLuckStatusPresentationTest, GamblerAndChainReadinessTrackAttackAndRou
 	const auto nextRound = makeSylvanLuckStackStatus(fortune, SOURCE_UNIT_ID, 5, true, false);
 	EXPECT_TRUE(nextRound.gamblerAttackReady);
 	EXPECT_FALSE(nextRound.chainFortuneReady);
+}
+
+TEST(SylvanLuckStatusPresentationTest, ObservedGuardSurvivesNonTacticsOwnerWithoutCatalogueLeak)
+{
+	using newHorizonsSylvanFactionPresentation::formatCurrentRows;
+	const std::vector<std::pair<std::string, int>> observedGuard{{"Covering Fire", 15}};
+	const std::vector<std::pair<std::string, int>> privateSpeed{{"Fleetfoot", 1}};
+	// Current owner lacks visible Tactics policy; observed protection still acts.
+	const auto protectedRecipient = formatCurrentRows(observedGuard, privateSpeed, false, 0);
+	ASSERT_EQ(protectedRecipient.size(), 1u);
+	EXPECT_NE(protectedRecipient.front().find("Covering Fire: 15%"), std::string::npos);
+	EXPECT_EQ(protectedRecipient.front().find("Fleetfoot"), std::string::npos);
+	EXPECT_TRUE(formatCurrentRows({}, privateSpeed, false, 0).empty());
+	const auto knownOwner = formatCurrentRows({}, privateSpeed, true, 0);
+	ASSERT_EQ(knownOwner.size(), 1u);
+	EXPECT_NE(knownOwner.front().find("Fleetfoot: +1 Speed"), std::string::npos);
 }

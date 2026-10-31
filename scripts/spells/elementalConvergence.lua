@@ -11,13 +11,7 @@ local function hasConjurer(mechanics)
 end
 
 local function healthPool(mechanics)
-	local percent = hasConjurer(mechanics) and 130 or 100
-	local spellPower = math.max(0, mechanics:getEffectPower())
-	-- Preserve fractional rank scaling and the complete-pool perk multiplier
-	-- until the single final floor, as for the established Troll summon path.
-	local spellPowerHundredths = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		5 * spellPower * percent, 1, mechanics:getSpellPowerCoefficientBasisPoints())
-	return math.floor((250 * percent + spellPowerHundredths) / 100)
+	return mechanics:getElementalConvergenceHitPoints()
 end
 
 local function requestedHex(target)

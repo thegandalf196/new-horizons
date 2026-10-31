@@ -64,3 +64,30 @@ void CGameState::loadReplaySnapshot(ReplayPayload payload)
 	serializer.iser.cb = this;
 	serializer.iser & *this;
 }
+
+void CGameState::updateOnLoad(const StartInfo & si)
+{
+	assert(services);
+	scenarioOps->playerInfos = si.playerInfos;
+	for(auto & i : si.playerInfos)
+	{
+		// a random-map save stores the original (unpruned) StartInfo, which may list players absent from the actual game state
+		if(!players.count(i.first))
+			continue;
+		players.at(i.first).human = i.second.isControlledByHuman();
+		logGlobal->debug("Player %d is controlled by %s, team %d", i.first.getNum(), i.second.isControlledByHuman() ? "human" : "AI", players.at(i.first).team.getNum());
+	}
+	// pre-TOWN_NAME_TEXT_ID saves carry renames as free-form text; move them into the map container
+	for(auto * town : getMap().getObjects<CGTownInstance>())
+		if(!town->legacyCustomName.empty())
+		{
+			town->setCustomName(getMap(), town->legacyCustomName);
+			town->legacyCustomName.clear();
+		}
+
+	const auto capturedNeutralRequest = scenarioOps->extraOptionsInfo.neutralArmySizePercent;
+	scenarioOps->extraOptionsInfo = si.extraOptionsInfo;
+	scenarioOps->extraOptionsInfo.neutralArmySizePercent = capturedNeutralRequest;
+	scenarioOps->turnTimerInfo = si.turnTimerInfo;
+	scenarioOps->simturnsInfo = si.simturnsInfo;
+}

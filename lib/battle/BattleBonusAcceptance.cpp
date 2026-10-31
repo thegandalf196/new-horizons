@@ -6,6 +6,7 @@
  */
 #include "StdInc.h"
 #include "BattleBonusAcceptance.h"
+#include "NewHorizonsSylvanTactics.h"
 #include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <optional>
@@ -23,7 +24,7 @@ bool accepts(const CStack & original, const battle::CUnitState & state, const Bo
 	// Temporary summons do not inherit Sylvan Luck rank effects unless they
 	// carry Nature-spell provenance and their hero owns Wild Chance.  Filtering
 	// by source skill preserves native creature Luck and unrelated bonuses.
-	if(!state.summoned || bonus.source != BonusSource::SECONDARY_SKILL)
+	if(bonus.source != BonusSource::SECONDARY_SKILL)
 		return true;
 
 	// Identifier resolution depends on VLC and therefore must never run during
@@ -33,6 +34,11 @@ bool accepts(const CStack & original, const battle::CUnitState & state, const Bo
 		return true;
 
 	const auto * hero = suppliedHero ? *suppliedHero : original.getMyHero();
+	if(newHorizonsSylvanTactics::enabled(hero))
+		return !state.isGhost() && !original.isTurret()
+			&& original.unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
+			&& original.unitSlot() != SlotID::WAR_MACHINES_SLOT;
+	if(!state.summoned) return true;
 	return state.natureSummoned && hero
 		&& hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance");
 }

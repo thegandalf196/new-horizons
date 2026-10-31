@@ -14,6 +14,11 @@ class HypotheticBattle;
 
 namespace attackPreview
 {
+/// Existing Rain of Arrows automatic collateral selection, with the captured
+/// primary footprint and unchanged health/hex/identity tie order.
+const battle::Unit * rainSecondary(const CBattleInfoCallback & battle,
+	const battle::Unit * attacker, const battle::Unit * primary, const BattleHexArray & rainPrimaryFootprint);
+
 struct Targets
 {
 	battle::Units resolved;

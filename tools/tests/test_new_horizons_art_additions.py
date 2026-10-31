@@ -10,7 +10,11 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 import import_new_horizons_art_wave as importer
-from .nhart_perk_presentations import header_before_perk_presentation, validate_perk_presentation
+from .nhart_perk_presentations import header_before_perk_presentation, validate_perk_presentation, validate_perk_payload
+from .nhart_sylvan_perk_presentations import validate_sylvan_family
+from .nhart_config_revisions import config_at_revision, wave_config_revision
+from .nhart_legacy_art_lineage import validate_art_roles
+from .nhart_specialty_lineage import specialty_family
 from .nhart_test_resources import later_art_waves, later_art_resources, read_resource, open_image, verified_index, entries_before_wave, resource_before_wave
 
 
@@ -166,8 +170,11 @@ class ArtAdditionsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.waves = later_art_waves()
+        cls.configProofs = json.loads((ROOT / 'assets/new-horizons/runtime-art-config-revisions.json').read_text())
         cls.manifest = json.loads((ROOT / importer.spells.MANIFEST).read_text())
         cls.header = (ROOT / importer.HEADER).read_text()
+        adapter = ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h'
+        cls.capturedHeader = adapter.read_text() if adapter.exists() else None
         cls.config = importer.spells.parse_jsonc((ROOT / importer.spells.CONFIG).read_text())
 
     def test_public_atlas_recipes_keep_bounded_geometry_without_authoring_prompts(self):
@@ -218,7 +225,7 @@ class ArtAdditionsTest(unittest.TestCase):
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         current_ids = {row['id'] for skill in roster['skills'].values() for row in skill['perks']}
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 self.assertIn(row['id'], current_ids); self.assertEqual(lookup[row['id']], row['icon44'])
@@ -236,24 +243,17 @@ class ArtAdditionsTest(unittest.TestCase):
 
     def test_optional_perk_presentations_preserve_named_condition_and_historical_shield(self):
         for wave in self.waves:
+            validate_sylvan_family(wave.get('perkPresentations', []), self.header, self.capturedHeader)
             for row in wave.get('perkPresentations', []):
-                validate_perk_presentation(row, self.header)
-                stem = row['icon44']
-                frames = json.loads(read_resource('SPRITES/' + stem + '.json'))['images']
-                self.assertEqual(frames, [{'group': 0, 'frame': index, 'file': stem + '_' + state + '.png'}
-                    for index, state in enumerate(('normal', 'pressed', 'disabled', 'highlighted'))])
-                for name in row['resources']:
-                    if name.endswith('.json'):
-                        continue
-                    image = open_image(name)
-                    self.assertEqual(image.mode, 'RGBA'); self.assertFalse(image.info)
-                    self.assertEqual(image.size, (32, 32) if name.endswith('_32.png') else (44, 44))
-                    self.assertEqual(image.getchannel('A').getextrema(), (0, row['alphaMaximum32'] if name.endswith('_32.png') else row['alphaMaximum44']))
-                for size in (44, 32):
-                    name = 'SPRITES/' + stem + ('_32' if size == 32 else '') + '.png'
-                    self.assertEqual(hashlib.sha256(read_resource(name)).hexdigest(), row['native' + str(size) + 'Sha256'])
+                validate_perk_presentation(row, self.header, self.capturedHeader)
+                validate_perk_payload(row, read_resource)
                 for suffix in ('.json', '_normal.png', '_pressed.png', '_disabled.png', '_highlighted.png'):
                     self.assertIn('SPRITES/' + row['historicalIcon44'] + suffix, verified_index())
+
+    def test_recorded_historical_art_roles_preserve_original_bytes_and_provenance(self):
+        manifest = {row['resource']: row for row in self.manifest['entries']}
+        for wave in self.waves:
+            validate_art_roles(wave, manifest, read_resource)
 
     def test_header_baseline_and_status_only_graphics(self):
         for index, wave in enumerate(self.waves):
@@ -264,7 +264,8 @@ class ArtAdditionsTest(unittest.TestCase):
                     self.assertEqual(header.count(line), 1); header = header.replace(line, '')
             self.assertIn(wave['baselineHeaderSha256'], {
                 hashlib.sha256(form.encode()).hexdigest() for form in perk_header_history_forms(header)})
-            historical = json.loads(json.dumps(self.config))
+            historical = config_at_revision(self.config, importer.spells.CONFIG, self.configProofs,
+                wave_config_revision(wave, importer.spells.CONFIG))
             for later in reversed(self.waves[index + 1:]):
                 for status in later['statuses']:
                     historical[status['id'].split(':')[1]]['graphics'].update(status['previousBindings'])
@@ -281,6 +282,8 @@ class ArtAdditionsTest(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(read_resource('SPRITES/' + filename)).hexdigest(), status['native30Sha256'])
             for reused in wave['reusedBindings']:
                 config = importer.spells.parse_jsonc((ROOT / reused['config']).read_text())
+                config = config_at_revision(config, reused['config'], self.configProofs,
+                    wave_config_revision(wave, reused['config']))
                 historical_config = config_at_wave(config, self.waves, index, reused['config'])
                 self.assertEqual(importer.non_status_config_digest(historical_config, [reused]), reused['nonGraphicsConfigSha256'])
                 self.assertEqual(historical_config[reused['id'].split(':')[1]]['graphics']['iconScenarioBonus'], 'NH_regeneration_32.png')
@@ -307,6 +310,8 @@ class ArtAdditionsTest(unittest.TestCase):
             self.assertEqual({row['id'] for row in records},
                              {'new-horizons:' + key for key in importer.MASS_SPELLS})
             config = importer.spells.parse_jsonc((ROOT / importer.MASS_CONFIG).read_text())
+            config = config_at_revision(config, importer.MASS_CONFIG, self.configProofs,
+                wave_config_revision(wave, importer.MASS_CONFIG))
             config = config_at_wave(config, self.waves, index, importer.MASS_CONFIG)
             self.assertEqual(importer.non_status_config_digest(config, records), wave['massConfigNonGraphicsSha256'])
             for row in records:
@@ -345,6 +350,7 @@ class ArtAdditionsTest(unittest.TestCase):
             self.assertEqual(len(resources), len(records) * 4)
             self.assertEqual(len(set(resources)), len(resources))
             for row in records:
+                family = specialty_family(row, manifest)
                 self.assertRegex(row['id'], r'^[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+$')
                 self.assertRegex(row['identity'], r'^[A-Za-z][A-Za-z0-9_]*$')
                 for field in ('version', 'origin', 'selection', 'approval'):
@@ -380,7 +386,7 @@ class ArtAdditionsTest(unittest.TestCase):
                         self.assertEqual(alpha.crop(box).getextrema(), (0, 0))
                 for name in expected:
                     metadata = manifest[name]
-                    self.assertEqual(metadata['family'], 'builtin-skills-perks-orders-and-ui')
+                    self.assertEqual(metadata['family'], family)
                     self.assertEqual(metadata['selection'], row['selection'])
                     self.assertTrue(metadata['approval'].strip())
                     self.assertTrue(metadata['origin'])

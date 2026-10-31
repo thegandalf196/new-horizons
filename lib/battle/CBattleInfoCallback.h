@@ -211,6 +211,8 @@ public:
 	bool battleCanTriggerNoQuarter(const BattleAttackInfo & attack) const;
 	const battle::Unit * battleSelectCleaveTarget(const battle::Unit * attacker,
 		const battle::Unit * destroyed) const;
+	int battleSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const;
+	int battleSylvanTacticsInitiativePercent(const battle::Unit * unit) const;
 	int battleFortuneSpeed(const battle::Unit * unit) const;
 	/// Threshold-based Bloodrage Speed and retaliation bonuses for the current controller.
 	int battleBloodrageSpeed(const battle::Unit * unit) const;

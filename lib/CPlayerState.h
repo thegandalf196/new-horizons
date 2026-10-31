@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "bonuses/BonusSerializationContext.h"
+
 #include <vcmi/Player.h>
 #include <vcmi/Team.h>
 
@@ -115,8 +117,12 @@ public:
 		return getHeroes().empty() && getTowns().empty();
 	}
 
+	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & color;
 		h & human;
 		h & team;
@@ -162,6 +168,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateExportedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & id;
 		h & players;
 		h & fogOfWarMap;

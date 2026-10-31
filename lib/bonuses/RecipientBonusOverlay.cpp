@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "RecipientBonusOverlay.h"
+#include "../battle/NewHorizonsSepulchralGrip.h"
 #include "BonusList.h"
 #include "../battle/NewHorizonsDiscipline.h"
 #include "../battle/NewHorizonsDivineMandate.h"
@@ -72,7 +73,11 @@ bool isSnapshotHeroSpecialEffect(const Bonus * bonus)
 {
 	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL)
 		return false;
-	return Bonus::NTurns(bonus)
+	return newHorizonsSepulchralGrip::isEffect(bonus) || Bonus::NTurns(bonus)
+		// Identified activation-expiry hero effects must belong to the branch,
+		// even when an ancestor expires its own copy before a lazy read.
+		|| (bonus->duration == BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION && bonus->hasStatusMetadata()
+			&& std::ranges::find(bonus->statusTags, BonusStatusTag::NON_TRANSFERABLE) != bonus->statusTags.end())
 		|| (bonus->duration == BonusDuration::STACK_ACTIVATION
 			&& bonus->type == BonusType::PERCENTAGE_DAMAGE_BOOST
 			&& bonus->stacking == "new-horizons:discipline.inspirationalLeader"

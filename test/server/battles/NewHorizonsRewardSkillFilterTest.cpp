@@ -11,7 +11,9 @@
 #include "HeroCommandFixture.h"
 
 #include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/GameConstants.h"
 #include "../../../lib/entities/hero/CHeroClass.h"
+#include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../../lib/json/JsonRandom.h"
 #include "../../../lib/mapObjects/CRewardableObject.h"
@@ -42,6 +44,15 @@ JsonNode authoredSecondary(const char * identity)
 	value.setModScope(ModScope::scopeBuiltin());
 	return value;
 }
+
+JsonNode authoredLibraryDiplomacy(int rank)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPrimaryRewards"));
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
+	return rules["objects"]["core:libraryOfEnlightenment"]["types"]["libraryOfEnlightenment"]
+		["rewards"].Vector().at(0)["limiter"]["anyOf"].Vector().at(rank)["secondary"];
+}
+
 }
 
 class NewHorizonsRewardSkillFilterTest : public HeroCommandFixture
@@ -53,13 +64,25 @@ protected:
 		ASSERT_TRUE(newHorizonsHeroes::usesRules(gameState()->getHeroDevelopmentRules()));
 	}
 
-	void startNewHorizonsAsThane()
+	void startNewHorizonsAsAlchemist()
 	{
+		// Thane's authored class is now Wizard. Resolve a real Alchemist before
+		// map initialization captures class growth, starting skills and perk rules.
+		const HeroTypeID actor(HeroTypeID::decode("core:piquedram"));
+		ASSERT_GE(actor.getNum(), 0);
+		const auto * prototype = actor.toHeroType();
+		ASSERT_NE(prototype, nullptr);
+		ASSERT_NE(prototype->heroClass, nullptr);
+		ASSERT_EQ(prototype->heroClass->getJsonKey(), "core:alchemist");
+		const auto rules = newHorizonsHeroes::resolveHeroRules(
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")), prototype->heroClass->getId());
+		ASSERT_EQ(newHorizonsHeroes::skillOfferWeight(rules, canonical("new-horizons:wisdom")).value_or(-1), 0);
+		ASSERT_GT(newHorizonsHeroes::skillOfferWeight(rules, canonical("new-horizons:lightMagic")).value_or(0), 0);
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false)
 			.playerActive(PlayerColor(0))
 			.playerActive(PlayerColor(1))
-			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:thane")), PlayerColor(0))
+			.hero({5, 5, 0}, actor, PlayerColor(0))
 			.heroGarrison({{CreatureID(0), 1}})
 			.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1))
 			.heroGarrison({{CreatureID(0), 1}});
@@ -69,7 +92,12 @@ protected:
 		gameHandler = std::make_shared<CGameHandler>(server, gameState());
 		attackerSideHero = findHeroByOwner(PlayerColor(0));
 		ASSERT_NE(attackerSideHero, nullptr);
+		ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:piquedram");
 		ASSERT_EQ(attackerSideHero->getHeroClass()->getJsonKey(), "core:alchemist");
+		ASSERT_EQ(newHorizonsHeroes::skillOfferWeight(attackerSideHero->getPrimaryGrowthRules(),
+			canonical("new-horizons:wisdom")).value_or(-1), 0);
+		ASSERT_GT(newHorizonsHeroes::skillOfferWeight(attackerSideHero->getPrimaryGrowthRules(),
+			canonical("new-horizons:lightMagic")).value_or(0), 0);
 	}
 };
 
@@ -141,7 +169,7 @@ TEST_F(NewHorizonsRewardSkillFilterTest, RewardPresentationAndLimitersNormalizeL
 
 TEST_F(NewHorizonsRewardSkillFilterTest, ZeroWeightTeacherRewardIsFilteredAndFallbackMessagesRemainAvailable)
 {
-	startNewHorizonsAsThane();
+	startNewHorizonsAsAlchemist();
 	const auto wisdom = canonical("new-horizons:wisdom");
 	ASSERT_TRUE(attackerSideHero->canLearnSkill());
 	EXPECT_FALSE(attackerSideHero->canLearnSkill(wisdom));
@@ -169,7 +197,7 @@ TEST_F(NewHorizonsRewardSkillFilterTest, ZeroWeightTeacherRewardIsFilteredAndFal
 
 TEST_F(NewHorizonsRewardSkillFilterTest, MixedRewardWithForbiddenSkillRemainsAvailable)
 {
-	startNewHorizonsAsThane();
+	startNewHorizonsAsAlchemist();
 	const auto wisdom = canonical("new-horizons:wisdom");
 	ASSERT_FALSE(attackerSideHero->canLearnSkill(wisdom));
 
@@ -186,7 +214,7 @@ TEST_F(NewHorizonsRewardSkillFilterTest, MixedRewardWithForbiddenSkillRemainsAva
 
 TEST_F(NewHorizonsRewardSkillFilterTest, PureTeacherRewardRemainsAvailableWhenAnySkillIsLearnable)
 {
-	startNewHorizonsAsThane();
+	startNewHorizonsAsAlchemist();
 	const auto wisdom = canonical("new-horizons:wisdom");
 	const auto lightMagic = canonical("new-horizons:lightMagic");
 	ASSERT_FALSE(attackerSideHero->canLearnSkill(wisdom));
@@ -205,7 +233,7 @@ TEST_F(NewHorizonsRewardSkillFilterTest, PureTeacherRewardRemainsAvailableWhenAn
 
 TEST_F(NewHorizonsRewardSkillFilterTest, NegativeSkillAdjustmentKeepsTeacherRewardAvailable)
 {
-	startNewHorizonsAsThane();
+	startNewHorizonsAsAlchemist();
 	const auto wisdom = canonical("new-horizons:wisdom");
 	const auto discipline = canonical("new-horizons:discipline");
 	ASSERT_FALSE(attackerSideHero->canLearnSkill(wisdom));
@@ -227,7 +255,7 @@ TEST_F(NewHorizonsRewardSkillFilterTest, NegativeSkillAdjustmentKeepsTeacherRewa
 
 TEST_F(NewHorizonsRewardSkillFilterTest, MissingClassWeightCannotBeLearnedFromPureTeacherReward)
 {
-	startNewHorizonsAsThane();
+	startNewHorizonsAsAlchemist();
 	const auto lightMagic = canonical("new-horizons:lightMagic");
 	auto & rules = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules());
 	rules["skillOfferWeights"].Struct().erase(SecondarySkill::encode(lightMagic.getNum()));
@@ -248,7 +276,7 @@ TEST_F(NewHorizonsRewardSkillFilterTest, MissingClassWeightCannotBeLearnedFromPu
 
 TEST_F(NewHorizonsRewardSkillFilterTest, ExistingZeroWeightSkillCannotBeAdvancedByTeacher)
 {
-	startNewHorizonsAsThane();
+	startNewHorizonsAsAlchemist();
 	const auto wisdom = canonical("new-horizons:wisdom");
 	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(attackerSideHero->getSecSkillLevel(wisdom), MasteryLevel::BASIC);
@@ -269,7 +297,7 @@ TEST_F(NewHorizonsRewardSkillFilterTest, ExistingZeroWeightSkillCannotBeAdvanced
 
 TEST_F(NewHorizonsRewardSkillFilterTest, EligibleTeacherAdvancementBypassesMissingPerkRequirement)
 {
-	startNewHorizonsAsThane();
+	startNewHorizonsAsAlchemist();
 	const auto lightMagic = canonical("new-horizons:lightMagic");
 	attackerSideHero->setSecSkillLevel(lightMagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(attackerSideHero->getSecSkillLevel(lightMagic), MasteryLevel::BASIC);
@@ -316,6 +344,13 @@ protected:
 	{
 		useCommands = false;
 		HeroCommandFixture::mapLoaded(map);
+		// Legacy development must not inherit current weighted perk capture or
+		// rating capabilities from module defaults after hero rules are removed.
+		JsonNode legacy;
+		legacy.setOverrideFlag(true);
+		for(const auto setting : {EGameSettings::HEROES_NEW_HORIZONS,
+			EGameSettings::HEROES_NEW_HORIZONS_PERKS, EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES})
+			map->overrideGameSetting(setting, legacy);
 	}
 };
 
@@ -323,6 +358,8 @@ TEST_F(LegacyRewardSkillFilterTest, LegacyModeRetainsAuthoredCoreSkills)
 {
 	startGame();
 	ASSERT_FALSE(newHorizonsHeroes::usesRules(gameState()->getHeroDevelopmentRules()));
+	ASSERT_TRUE(gameState()->getHeroPerkRules().isNull());
+	ASSERT_TRUE(gameState()->getHeroCapabilityRules().isNull());
 	GameRandomizer randomizer(*gameState());
 	JsonRandom loader(gameState().get(), randomizer);
 
@@ -333,4 +370,45 @@ TEST_F(LegacyRewardSkillFilterTest, LegacyModeRetainsAuthoredCoreSkills)
 	const auto mysticism = loader.loadSecondaries(authoredSecondary("core:mysticism"), {});
 	ASSERT_EQ(mysticism.size(), 1u);
 	EXPECT_EQ(mysticism.begin()->first, SecondarySkill::MYSTICISM);
+}
+
+TEST_F(NewHorizonsRewardSkillFilterTest, ModuleScopedLibraryDiplomacyRequirementsAreNotDropped)
+{
+	startNewHorizons();
+	GameRandomizer randomizer(*gameState());
+	JsonRandom loader(gameState().get(), randomizer);
+	const auto diplomacy = canonical("new-horizons:diplomacy");
+	for(int rank = 1; rank <= 3; ++rank)
+	{
+		const auto authored = authoredLibraryDiplomacy(rank);
+		ASSERT_EQ(authored.Struct().size(), 1u);
+		EXPECT_EQ(authored.Struct().begin()->second.getModScope(), GameConstants::NEW_HORIZONS_MOD_SCOPE);
+		const auto decoded = loader.loadSecondaries(authored, {});
+		ASSERT_EQ(decoded.size(), 1u);
+		EXPECT_EQ(decoded.begin()->first, diplomacy);
+		EXPECT_EQ(decoded.begin()->second, rank);
+		Rewardable::Limiter limiter;
+		limiter.secondary = decoded;
+		attackerSideHero->setSecSkillLevel(diplomacy, rank - 1, ChangeValueMode::ABSOLUTE);
+		EXPECT_FALSE(limiter.heroAllowed(attackerSideHero));
+		attackerSideHero->setSecSkillLevel(diplomacy, rank, ChangeValueMode::ABSOLUTE);
+		EXPECT_TRUE(limiter.heroAllowed(attackerSideHero));
+	}
+}
+
+TEST_F(LegacyRewardSkillFilterTest, ModuleScopedLibraryDiplomacyKeepsCoreIdentityWithoutNewRules)
+{
+	startGame();
+	ASSERT_FALSE(newHorizonsHeroes::usesRules(gameState()->getHeroDevelopmentRules()));
+	ASSERT_TRUE(gameState()->getHeroPerkRules().isNull());
+	ASSERT_TRUE(gameState()->getHeroCapabilityRules().isNull());
+	GameRandomizer randomizer(*gameState());
+	JsonRandom loader(gameState().get(), randomizer);
+	for(int rank = 1; rank <= 3; ++rank)
+	{
+		const auto decoded = loader.loadSecondaries(authoredLibraryDiplomacy(rank), {});
+		ASSERT_EQ(decoded.size(), 1u);
+		EXPECT_EQ(decoded.begin()->first, SecondarySkill(SecondarySkill::DIPLOMACY));
+		EXPECT_EQ(decoded.begin()->second, rank);
+	}
 }

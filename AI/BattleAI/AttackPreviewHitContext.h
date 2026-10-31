@@ -15,6 +15,7 @@
 #include <vector>
 
 class HypotheticBattle;
+class AttackPossibility;
 class CBattleInfoCallback;
 struct BattleAttackInfo;
 struct FortuneStrikeProjection;
@@ -30,6 +31,23 @@ class AttackPreviewHitContext
 	const std::shared_ptr<HypotheticBattle> & fortunePreview;
 	bool & endedActiveActivationByLastStand;
 public:
+	static void applyOrdinaryStrike(HypotheticBattle & branch, const BattleAttackInfo & attack, int64_t primaryDamage);
+	void applyPrimaryStatuses(const BattleAttackInfo & attack, int64_t primaryDamage, bool binding, bool gaze) const;
+	/// Restore only exact captured rider overlays after ordinary CUnitState replay.
+	static void replayOrdinaryStrikeEffects(HypotheticBattle & destination, const AttackPossibility & captured);
+	/// Borrowed inputs for the ordered victim metadata phase. Admission has
+	/// already run; no state, damage calculation or score belongs to this phase.
+	struct VictimStrikeInput
+	{
+		const FortuneStrikeProjection & strike;
+		const battle::Unit & primary;
+		const battle::Unit & recipient;
+		int index;
+		int relentlessAssaultPercent;
+		bool selectedFollowUp;
+	};
+	static void prepareVictimStrike(BattleAttackInfo & attack, const CBattleInfoCallback & state,
+		const VictimStrikeInput & input);
 	static bool anyNightProwler(const battle::Units & units);
 	/// Separate phases preserve creature-admission query order in the caller.
 	static void capturePrimaryFortune(FortuneStrikeProjection & receipt,

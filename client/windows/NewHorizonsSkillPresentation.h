@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../../lib/json/JsonNode.h"
+#include "../../lib/battle/NewHorizonsSylvanTactics.h"
 
 #include <array>
 #include <string>
@@ -12,11 +13,28 @@
 
 namespace newHorizonsSkillPresentation
 {
+/// A display-only Dungeon rename follows the installed translation even for
+/// old mechanics captures. Every other captured perk-catalogue name is retained.
+inline std::string perkSkillName(std::string_view skillId, const std::string & installed,
+	const std::string & captured)
+{
+	return skillId == "new-horizons:shroudOfMalassa" || captured.empty() ? installed : captured;
+}
+
+inline std::string skillName(const JsonNode & rules, std::string_view skillId,
+	const std::string & fallback)
+{
+	return skillId == "new-horizons:sylvanLuck"
+		? newHorizonsSylvanTactics::capturedSkillName(rules) : fallback;
+}
+
 /// Presentation reads the supplied snapshot only. Missing legacy entries keep
 /// their ordinary entity text rather than borrowing installed perk rules.
 inline std::string rankDescription(const JsonNode & rules, std::string_view skillId,
 	int rank, const std::string & fallback)
 {
+	if(skillId == "new-horizons:sylvanLuck")
+		return newHorizonsSylvanTactics::capturedRankDescription(rules, rank);
 	// Other Skills keep their existing translated presentation unchanged.
 	if(skillId != "new-horizons:necromancy" || rank < 1 || rank > 3
 		|| !rules.isStruct() || !rules["skills"].isStruct())

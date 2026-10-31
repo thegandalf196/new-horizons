@@ -62,6 +62,7 @@
 		{"skill": "new-horizons:spellcraft", "primary": 2, "chances": [0, 10, 20, 30]},
 		{"skill": "new-horizons:wisdom", "primary": 3, "chances": [0, 10, 20, 30]}
 	],
+	"genieSageSpecialties": {"version": 1},
 	"chosenSpecialties": {"version": 1, "inteusDurationBonus": 1, "loynisManaDiscountPercent": 20},
 	"creatureLineSpecialties": {
 		"version": 1,
@@ -105,6 +106,7 @@
 		"mireHexer": {"percentPerLevel": 5, "maximumPercent": 100}
 	},
 	"additionalSpecialties": {
+		"ordinaryCreatureSpecialties": {"version": 1, "closeQuartersDrill": 1, "marshSharpshooter": 1, "retaliationDamagePercent": 25, "defendDefense": 3, "maximumHealthPercent": 20, "resistanceAuraPoints": 10, "massedSpearsDamagePercent": 20, "packPursuitDamagePercent": 20, "bloodScentDamagePercent": 20, "livingBastionDefense": 3, "chillingPresenceReductionPercent": 10, "boneFormationDefense": 3, "stoneSentinelReductionPercent": 20, "ogreWarcallerDamagePercent": 10, "undertowRetaliationPercent": 25, "wyvernsPreyDamagePercent": 20, "mobPressureDamagePercent": 20, "wingbeatInitiativePercent": 15, "measuredVolleyMdrPenetrationPercent": 20, "prismaticScreenReductionPercent": 15, "evasiveFlightReductionPercent": 20, "ridersExploitDamagePercent": 20, "tidalRenewalHealingHP": 10, "cruelVolleyDamagePercent": 20, "rangefinderFullDamageDistance": 12, "fieldReassemblyHealingHP": 10, "fieldMaintenanceHealingHP": 25, "ogreBulwarkRetaliations": 1, "gunneryProfessorInitiativeFlat": 2, "gunneryProfessorFollowUpBonusPoints": 20, "heavyBatterySiegeTermBonusPercent": 25, "shieldAndSwordPhysicalReductionPercent": 20, "sepulchralGripSpeedReduction": 1, "cyclopeanBreachIgnorePercent": 25, "runicEnduranceReductionPercent": 25},
 		"version": 1,
 		"manaLeeches": {"manaPerDamagingAttackSequence": 1},
 		"serpentsEmbrace": {"enabled": true},
@@ -218,7 +220,7 @@
 		"core:tiva": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
 		"core:clancy": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:sylvanLuck", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.pathfinding"}]},
 		"core:piquedram": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
-		"core:thane": {"skills": [{"skill": "new-horizons:learning", "rank": 2}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}]},
+		"core:thane": {"skills": [{"skill": "new-horizons:learning", "rank": 2}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.historian"}]},
 		"core:torosar": {"skills": [{"skill": "new-horizons:warMachines", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
 		"core:iona": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:metamagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}]},
 		"core:fiona": {"skills": [{"skill": "new-horizons:logistics", "rank": 2}, {"skill": "new-horizons:demonicGating", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},

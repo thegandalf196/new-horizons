@@ -17,6 +17,29 @@
 #include "../../lib/battle/BattleHex.h"
 
 class StackWithBonuses;
+class CBattleInfoCallback;
+class InitialExportBattleSubject;
+struct ProjectedAdjacencySources;
+
+/// Source identity and control-block provenance, not a source ownership lease.
+/// A public proxy-base assignment must never reuse a prior source certificate.
+class HypotheticSourceBinding final
+{
+	CBattleInfoCallback * boundSubjectPointer;
+	std::weak_ptr<CBattleInfoCallback> boundSubjectOwner;
+	InitialExportBattleSubject * initialExportView;
+	std::shared_ptr<const ProjectedAdjacencySources> adjacency;
+	bool matches(const std::shared_ptr<CBattleInfoCallback> & subject) const;
+public:
+	HypotheticSourceBinding(const std::shared_ptr<CBattleInfoCallback> & subject,
+		const CBattleInfoCallback & policySource);
+	std::shared_ptr<InitialExportBattleSubject> resolve(const std::shared_ptr<CBattleInfoCallback> & subject) const;
+	std::shared_ptr<const ProjectedAdjacencySources> adjacencySources(
+		const std::shared_ptr<CBattleInfoCallback> & subject) const
+	{
+		return adjacency && matches(subject) ? adjacency : nullptr;
+	}
+};
 
 /// Optional nested diagnostics, never additional disjoint exchange body time.
 struct DLL_LINKAGE HypotheticLifecycleTiming

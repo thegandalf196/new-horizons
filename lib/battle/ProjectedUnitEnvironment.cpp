@@ -61,6 +61,16 @@ battle::ProjectedUnitEnvironment::ProjectedUnitEnvironment(const ProjectedBonusR
 bool battle::ProjectedUnitEnvironment::unitHasAmmoCart(const Unit * unit) const { return queries.unitHasAmmoCart(unit); }
 PlayerColor battle::ProjectedUnitEnvironment::unitEffectiveOwner(const Unit * unit) const { return queries.unitEffectiveOwner(unit); }
 std::optional<int> battle::ProjectedUnitEnvironment::unitMagicResistance(const Unit * unit) const { return queries.unitMagicResistance(unit); }
+int battle::ProjectedUnitEnvironment::unitSylvanTacticsSpeed(const Unit * unit, int turn) const
+{
+	return queries.unitSylvanTacticsSpeed(unit, turn);
+}
+
+int battle::ProjectedUnitEnvironment::unitSylvanTacticsInitiativePercent(const Unit * unit) const
+{
+	return queries.unitSylvanTacticsInitiativePercent(unit);
+}
+
 int battle::ProjectedUnitEnvironment::unitFortuneSpeed(const Unit * unit) const { return queries.unitFortuneSpeed(unit); }
 int battle::ProjectedUnitEnvironment::unitSpeedBonus(const Unit * unit) const { return queries.unitSpeedBonus(unit); }
 bool battle::ProjectedUnitEnvironment::unitSlowAffectsSpeed(const Unit * unit) const { return queries.unitSlowAffectsSpeed(unit); }

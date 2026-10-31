@@ -14,28 +14,14 @@ local VENGEFUL_VINES_SPELL = "new-horizons:vengefulVines"
 local MISFORTUNE_SPELL = "core:misfortune"
 local FORGETFULNESS_SPELL = "core:forgetfulness"
 local MINDBREAKER_PERK = "new-horizons:chaosMagic.mindbreaker"
-local FORGETFULNESS_BASE_DURATION = 1
-local FORGETFULNESS_MAX_DURATION = 3
-local FORGETFULNESS_POWER_DIVISOR = 80
 local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
-local AEGIS_PERK = "new-horizons:lightMagic.aegis"
 local RETRIBUTIONIST_PERK = "new-horizons:lightMagic.retributionist"
 local CRUSADER_PERK = "new-horizons:lightMagic.crusader"
 local SANCTUARY_KEEPER_PERK = "new-horizons:lightMagic.sanctuaryKeeper"
 local NATURE_MAGIC_SKILL = "new-horizons:natureMagic"
-local ROOTCALLER_PERK = "new-horizons:natureMagic.rootcaller"
 local CHAOS_MAGIC_SKILL = "new-horizons:chaosMagic"
-local MISFORTUNE_WEAVER_PERK = "new-horizons:chaosMagic.misfortuneWeaver"
-local HOLY_ARMOR_SPELL_POWER_DIVISOR = 5
-local HOLY_ARMOR_MAX_REDUCTION_PERCENT = 60
-local HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS = 5000
-local HEAVENLY_GALE_SPELL_POWER_COEFFICIENT_BASIS_POINTS = 15
-local HEAVENLY_GALE_MAX_REDUCTION_BASIS_POINTS = 8000
-local DIVINE_RETRIBUTION_BASE_DAMAGE = 25
-local DIVINE_RETRIBUTION_POWER_NUMERATOR = 125
-local DIVINE_RETRIBUTION_POWER_DIVISOR = 100
 local CRUSADE_BASE_ATTRIBUTE_BONUS = 3
 local CRUSADE_ATTRIBUTE_POWER_DIVISOR = 75
 local CRUSADE_BASE_INITIATIVE_BONUS = 1
@@ -46,28 +32,10 @@ local CRUSADE_REDUCTION_POWER_DIVISOR = 2
 local CRUSADE_MAX_REDUCTION_BASIS_POINTS = 2500
 local CRUSADE_BASE_DURATION = 3
 local ENTANGLE_BASE_DURATION = 1
-local ENTANGLE_SPELL_POWER_DIVISOR = 100
-local ENTANGLE_MAX_BASE_DURATION = 2
-local ENTANGLE_MAX_ROOTCALLER_DURATION = 3
 local VENGEFUL_VINES_BASE_DURATION = 2
-local MISFORTUNE_BASE_DURATION = 2
-local MISFORTUNE_MAX_DURATION = 4
-local MISFORTUNE_SPELL_POWER_DURATION_DIVISOR = 80
-local MISFORTUNE_BASE_CHANCE_MULTIPLIER_BASIS_POINTS = 7500
-local MISFORTUNE_SPELL_POWER_REDUCTION_BASIS_POINTS = 25
-local MISFORTUNE_WEAVER_REDUCTION_BASIS_POINTS = 1000
-local MISFORTUNE_MIN_CHANCE_MULTIPLIER_BASIS_POINTS = 2500
 local SHIELD_OF_CHAOS_SPELL = "new-horizons:shieldOfChaos"
-local PARADOX_SHIELD_PERK = "new-horizons:chaosMagic.paradoxShield"
-local SHIELD_OF_CHAOS_BASE_REDUCTION_BASIS_POINTS = 5000
-local SHIELD_OF_CHAOS_SPELL_POWER_REDUCTION_BASIS_POINTS = 15
-local SHIELD_OF_CHAOS_MAX_REDUCTION_BASIS_POINTS = 8000
-local PARADOX_SHIELD_BONUS_BASIS_POINTS = 1000
 local SHIELD_OF_CHAOS_BASE_DURATION = 2
 local SLOW_SPELL = "core:slow"
-local SLOW_BASE_REDUCTION_PERCENT = 20
-local SLOW_SPELL_POWER_DIVISOR = 5
-local SLOW_MAX_REDUCTION_PERCENT = 50
 
 function Script:deepCopyBonus(b)
 	local copy = {}
@@ -88,11 +56,7 @@ function Script:convertBonuses(mechanics)
 	local shieldOfChaosDuration = nil
 	local misfortuneChanceMultiplierBasisPoints = nil
 	if spellKey == FORGETFULNESS_SPELL and mechanics:usesNewHorizonsMagicV3() then
-		local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-			math.max(0, mechanics:getEffectPower()), FORGETFULNESS_POWER_DIVISOR,
-			mechanics:getSpellPowerCoefficientBasisPoints())
-		forgetfulnessDuration = mechanics:adjustEffectDuration(math.min(
-			FORGETFULNESS_MAX_DURATION, FORGETFULNESS_BASE_DURATION + powerTerm))
+		forgetfulnessDuration = mechanics:getForgetfulnessDuration()
 	elseif spellKey == SHIELD_OF_CHAOS_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		shieldOfChaosDuration = mechanics:adjustEffectDuration(SHIELD_OF_CHAOS_BASE_DURATION)
 	elseif spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
@@ -105,52 +69,20 @@ function Script:convertBonuses(mechanics)
 			crusadeDuration = crusadeDuration + 1
 		end
 	elseif spellKey == ENTANGLE_SPELL and mechanics:usesNewHorizonsMagicV3() then
-		-- School rank strengthens only the Spell Power term. Rootcaller extends
-		-- the capped base before Echoed Duration adds its separate cast round.
-		local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-			math.max(0, mechanics:getEffectPower()), ENTANGLE_SPELL_POWER_DIVISOR,
-			mechanics:getSpellPowerCoefficientBasisPoints())
-		local rootDuration = math.min(ENTANGLE_MAX_BASE_DURATION,
-			ENTANGLE_BASE_DURATION + spellPowerTerm)
-		local hero = mechanics:getHeroCaster()
-		if hero and hero:hasActivePerk(NATURE_MAGIC_SKILL, ROOTCALLER_PERK) then
-			rootDuration = math.min(ENTANGLE_MAX_ROOTCALLER_DURATION, rootDuration + 1)
-		end
-		entangleDuration = mechanics:adjustEffectDuration(rootDuration)
+		entangleDuration = mechanics:getEntangleDuration()
 	elseif spellKey == VENGEFUL_VINES_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		-- Vengeful Vines has a fixed two-round Speed penalty. Apply only the
 		-- common cast-specific Echoed Duration extension to that literal base.
 		vengefulVinesDuration = mechanics:adjustEffectDuration(VENGEFUL_VINES_BASE_DURATION)
 	elseif spellKey == MISFORTUNE_SPELL and mechanics:usesNewHorizonsMagicV3() then
-		-- Misfortune's fixed duration and chance floor stay outside the saved
-		-- School/Spellcraft coefficient. Only the Spell Power terms are scaled.
-		local spellPower = math.max(0, mechanics:getEffectPower())
-		local coefficient = mechanics:getSpellPowerCoefficientBasisPoints()
-		local durationPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-			spellPower, MISFORTUNE_SPELL_POWER_DURATION_DIVISOR, coefficient)
-		local ordinaryDuration = math.min(MISFORTUNE_MAX_DURATION,
-			MISFORTUNE_BASE_DURATION + durationPowerTerm)
-		misfortuneDuration = mechanics:adjustEffectDuration(ordinaryDuration)
-
-		local powerChanceReduction = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-			MISFORTUNE_SPELL_POWER_REDUCTION_BASIS_POINTS * spellPower, 1, coefficient)
-		local chanceMultiplier = MISFORTUNE_BASE_CHANCE_MULTIPLIER_BASIS_POINTS - powerChanceReduction
-		local hero = mechanics:getHeroCaster()
-		if hero and hero:hasActivePerk(CHAOS_MAGIC_SKILL, MISFORTUNE_WEAVER_PERK) then
-			chanceMultiplier = chanceMultiplier - MISFORTUNE_WEAVER_REDUCTION_BASIS_POINTS
-		end
-		misfortuneChanceMultiplierBasisPoints = math.max(
-			MISFORTUNE_MIN_CHANCE_MULTIPLIER_BASIS_POINTS, chanceMultiplier)
+		misfortuneDuration = mechanics:getMisfortuneDuration()
+		misfortuneChanceMultiplierBasisPoints = mechanics:getMisfortuneChanceMultiplier()
 	else
 		duration = mechanics:getEffectDuration()
 	end
 	local newHorizonsSlowReduction = nil
 	if spellKey == SLOW_SPELL and mechanics:usesNewHorizonsMagicV3() then
-		local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-			mechanics:getEffectPower(), SLOW_SPELL_POWER_DIVISOR,
-			mechanics:getSpellPowerCoefficientBasisPoints())
-		newHorizonsSlowReduction = -math.min(SLOW_MAX_REDUCTION_PERCENT,
-			SLOW_BASE_REDUCTION_PERCENT + spellPowerTerm)
+		newHorizonsSlowReduction = mechanics:getSlowBaseReduction()
 	end
 	local converted = {}
 
@@ -274,28 +206,6 @@ function Script:applyPeculiarEnchant(mechanics, hero, buffer, tier, spellKey)
 	end
 end
 
---- Adds a flat amount to every buffered bonus value (Aenain-style).
-function Script:applyAddValueEnchant(mechanics, hero, buffer, tier, spellKey)
-	local addVal = hero:getBonuses({type = "SPECIAL_ADD_VALUE_ENCHANT", subtype = spellKey})
-	if addVal:size() == 0 then return end
-
-	local addAmount = addVal:getBonus(1):getParametersAsNumber()
-	for _, nb in pairs(buffer) do
-		nb.val = (nb.val or 0) + addAmount
-	end
-end
-
---- Overwrites every buffered bonus value with a fixed amount (Daremyth-style).
-function Script:applyFixedValueEnchant(mechanics, hero, buffer, tier, spellKey)
-	local fixedVal = hero:getBonuses({type = "SPECIAL_FIXED_VALUE_ENCHANT", subtype = spellKey})
-	if fixedVal:size() == 0 then return end
-
-	local fixedAmount = fixedVal:getBonus(1):getParametersAsNumber()
-	for _, nb in pairs(buffer) do
-		nb.val = fixedAmount
-	end
-end
-
 --- Scales every buffered bonus value by a per-target-tier percentage (Solmyr-style
 --- SPECIAL_SPELL_SCALING, matching CGHeroInstance::getSpellBonus but for buff/debuff vals).
 function Script:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -329,35 +239,20 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
 	self:applyPeculiarEnchant(mechanics, hero, buffer, tier, spellKey)
-	self:applyAddValueEnchant(mechanics, hero, buffer, tier, spellKey)
-	self:applyFixedValueEnchant(mechanics, hero, buffer, tier, spellKey)
-end
-
-function Script:scaleAegisPowerTerm(mechanics, numerator, divisor, unit)
-	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, AEGIS_PERK) then
-		-- Fold Aegis into the ratio before the shared scaler's final floor so
-		-- fractional School/Spellcraft/Warcasting/Empower products are retained.
-		numerator = numerator * 120
-		divisor = divisor * 100
+	for _, nb in pairs(buffer) do
+		local override = mechanics:applyCasterEnchantValue(nb.val or 0)
+		if override ~= nil then nb.val = override end
 	end
-	return mechanics:scaleRecipientSpellPowerComponent(numerator, divisor, unit)
 end
 
 function Script:applyHolyArmorPower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= HOLY_ARMOR_SPELL then return end
 
-	local spellPowerTerm = self:scaleAegisPowerTerm(mechanics,
-		mechanics:getEffectPower(), HOLY_ARMOR_SPELL_POWER_DIVISOR,
-		unit)
-
 	for _, nb in pairs(buffer) do
 		if nb.type == "SPELL_DAMAGE_REDUCTION" then
-			-- The fixed 30% base remains unchanged; the common scaler applies the
-			-- saved Light/Spellcraft coefficient plus Warcasting and Empower only
-			-- to the Spell Power term. Preserve this as one independent source.
-			nb.val = math.min(HOLY_ARMOR_MAX_REDUCTION_PERCENT,
-				(nb.val or 0) + spellPowerTerm)
+			-- The configured fixed base remains loader-owned; shared C++ arithmetic
+			-- preserves the original Aegis/recipient ratios and final cap.
+			nb.val = mechanics:getHolyArmorReduction(nb.val or 0, unit)
 		end
 	end
 end
@@ -365,11 +260,7 @@ end
 function Script:applyHeavenlyGalePower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= HEAVENLY_GALE_SPELL then return end
 
-	local spellPowerTerm = self:scaleAegisPowerTerm(mechanics,
-		HEAVENLY_GALE_SPELL_POWER_COEFFICIENT_BASIS_POINTS * mechanics:getEffectPower(), 1,
-		unit)
-	local reduction = math.min(HEAVENLY_GALE_MAX_REDUCTION_BASIS_POINTS,
-		HEAVENLY_GALE_BASE_REDUCTION_BASIS_POINTS + spellPowerTerm)
+	local reduction = mechanics:getHeavenlyGaleReductionBasisPoints(unit)
 
 	for _, nb in pairs(buffer) do
 		if nb.type == "HEAVENLY_GALE" then
@@ -383,17 +274,7 @@ end
 function Script:applyShieldOfChaosPower(mechanics, buffer, spellKey)
 	if spellKey ~= SHIELD_OF_CHAOS_SPELL or not mechanics:usesNewHorizonsMagicV3() then return end
 
-	local powerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		SHIELD_OF_CHAOS_SPELL_POWER_REDUCTION_BASIS_POINTS * math.max(0, mechanics:getEffectPower()), 1,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-	local reduction = math.min(SHIELD_OF_CHAOS_MAX_REDUCTION_BASIS_POINTS,
-		SHIELD_OF_CHAOS_BASE_REDUCTION_BASIS_POINTS + powerTerm)
-	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(CHAOS_MAGIC_SKILL, PARADOX_SHIELD_PERK) then
-		-- Paradox Shield is added after the base formula's 80% cap. The shared physical
-		-- damage stage still applies its saved global 80% aggregate cap.
-		reduction = reduction + PARADOX_SHIELD_BONUS_BASIS_POINTS
-	end
+	local reduction = mechanics:getShieldOfChaosReduction()
 
 	for _, nb in pairs(buffer) do
 		if nb.type == "PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS"
@@ -418,11 +299,7 @@ end
 function Script:applyDivineRetributionPower(mechanics, buffer, spellKey, unit)
 	if spellKey ~= DIVINE_RETRIBUTION_SPELL then return end
 
-	local spellPowerTerm = mechanics:scaleRecipientSpellPowerComponent(
-		DIVINE_RETRIBUTION_POWER_NUMERATOR * math.max(0, mechanics:getEffectPower()),
-		DIVINE_RETRIBUTION_POWER_DIVISOR,
-		unit)
-	local cap = DIVINE_RETRIBUTION_BASE_DAMAGE + spellPowerTerm
+	local cap = mechanics:getDivineRetributionCap(unit)
 	local hero = mechanics:getHeroCaster()
 	local retributionistPercent = hero
 		and hero:hasActivePerk(LIGHT_MAGIC_SKILL, RETRIBUTIONIST_PERK) and 120 or 100

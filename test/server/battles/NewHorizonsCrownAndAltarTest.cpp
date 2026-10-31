@@ -11,6 +11,7 @@
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/entities/hero/NewHorizonsAdditionalSpecialties.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
@@ -22,6 +23,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include <vcmi/Environment.h>
+#include <tuple>
 #include "../../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
@@ -73,9 +75,31 @@ protected:
 		FAIL() << "No legal offer for " << perk;
 	}
 
-	void prepare(bool selected = true)
+	const char * fixtureHero = nullptr;
+
+	void mapLoaded(CMap * loaded) override
 	{
+		HeroCommandFixture::mapLoaded(loaded);
+		if(!fixtureHero)
+			return;
+		for(const auto & object : loaded->objects)
+		{
+			auto * hero = dynamic_cast<CGHeroInstance *>(object.get());
+			if(hero && hero->getOwner() == PlayerColor(0))
+			{
+				hero->setHeroType(HeroTypeID(HeroTypeID::decode(fixtureHero)));
+				return;
+			}
+		}
+		FAIL() << "Missing attacker in the loaded fixture map";
+	}
+
+	void prepare(bool selected = true, const char * hero = nullptr, int power = 50)
+	{
+		fixtureHero = hero;
 		startGame();
+		if(hero)
+			attackerSideHero->level = 20;
 		ASSERT_EQ(attackerSideHero->getFactionID(), FactionID::CASTLE);
 		select("new-horizons:divineMandate.consecratedCasting", MasteryLevel::BASIC);
 		select("new-horizons:divineMandate.purifyingMandate", MasteryLevel::ADVANCED);
@@ -91,7 +115,7 @@ protected:
 		attackerSideHero->initializeSpellPoints(attackerSideHero->manaLimit(), 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic")),
 			MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 50, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
 		for(const auto key : {"new-horizons:holyArmor", "new-horizons:heavenlyGale", "core:cure"})
 			attackerSideHero->addSpellToSpellbook(SpellID(SpellID::decode(key)));
 		startBattle();
@@ -203,6 +227,9 @@ TEST_F(NewHorizonsCrownAndAltarTest, GuardianSharedGetterPreservesRealCastleCrow
 	spells::BattleCast secondQuery(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
 	const auto second = spell.toSpell()->battleMechanics(&secondQuery);
 	ASSERT_EQ(second->getCrownAndAltarBonusPercent(friendly), 20);
+	ASSERT_EQ(second->getCastSpellPowerComponentBonusPercent(), 10);
+	ASSERT_EQ(second->getSpellPowerCoefficientBasisPoints(), 15950);
+	ASSERT_EQ(second->getWarcastingBonusPercent(), 0);
 	EXPECT_EQ(second->getCrownAndAltarBonusPercent(shooter), 0);
 	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(spell), 0);
 	const auto expected = 50 + second->scaleRecipientSpellPowerComponent(14, 1, friendly);
@@ -422,3 +449,112 @@ TEST_F(NewHorizonsCrownAndAltarTest, ActualCureKeepsFixedHealingAndBoostsOnlyCap
 	ASSERT_TRUE(cast("core:cure", friendly));
 	EXPECT_EQ(friendly->getAvailableHealth(), before + expected);
 }
+
+
+// Proposed characterization: currently expected to expose the recipient reconstruction bug.
+TEST_F(NewHorizonsCrownAndAltarTest, RionCrownCurePreservesFixedSpecialtyAtZeroSpellPower)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true, "core:rion", 0));
+	ASSERT_EQ(attackerSideHero->getFactionID(), FactionID::CASTLE);
+	ASSERT_EQ(attackerSideHero->getHeroTypeID(), HeroTypeID(HeroTypeID::decode("core:rion")));
+	const JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+	EXPECT_EQ(attackerSideHero->getPrimaryGrowthRules()["skillOfferWeights"],
+		heroRules["skillOfferWeights"]["core:cleric"]);
+	ASSERT_EQ(newHorizonsHeroes::fieldPhysicianHealingPercent(attackerSideHero), 100);
+	ASSERT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), 0);
+	const SpellID spell(SpellID::CURE);
+	spells::BattleCast firstQuery(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto first = spell.toSpell()->battleMechanics(&firstQuery);
+	ASSERT_EQ(first->getCrownAndAltarBonusPercent(friendly), 0);
+	ASSERT_EQ(first->getCastSpellPowerComponentBonusPercent(), 0);
+	ASSERT_EQ(first->getSpellPowerCoefficientBasisPoints(), 14500);
+	ASSERT_EQ(first->getEffectValue(), 50);
+	ASSERT_EQ(first->getRecipientEffectValue(friendly), 50);
+
+	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
+	spells::BattleCast secondQuery(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto second = spell.toSpell()->battleMechanics(&secondQuery);
+	ASSERT_EQ(second->getCrownAndAltarBonusPercent(friendly), 20);
+	EXPECT_EQ(second->getEffectValue(), 50);
+	// Crown improves only the zero SP component. Rion's fixed 50 must remain intact.
+	EXPECT_EQ(second->getRecipientEffectValue(friendly), 50);
+
+	auto injured = friendly->acquireState();
+	int64_t injury = friendly->getMaxHealth() - 1;
+	injured->damage(injury);
+	BattleUnitsChanged update;
+	update.battleID = BattleID(0);
+	UnitChanges change(friendly->unitId(), UnitChanges::EOperation::UPDATE);
+	change.data = injured->save();
+	update.changedStacks.push_back(change);
+	gameHandler->sendAndApply(update);
+	const auto health = friendly->getAvailableHealth();
+	const auto count = friendly->getCount();
+	const auto mana = attackerSideHero->getManaAvailable();
+	ASSERT_TRUE(cast("core:cure", friendly));
+	EXPECT_EQ(friendly->getAvailableHealth() - health, 50);
+	EXPECT_EQ(friendly->getCount(), count);
+	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
+}
+
+using CureCrownControl = std::tuple<const char *, int, int64_t, int64_t, int64_t>;
+class NewHorizonsCureCrownControlsTest : public NewHorizonsCrownAndAltarTest,
+	public ::testing::WithParamInterface<CureCrownControl> {};
+
+TEST_P(NewHorizonsCureCrownControlsTest, PaidCureKeepsFixedPoolAndExistingSpecialtyFloors)
+{
+	const auto & [hero, rawPower, preOrderBudget, postOrderBudget, crownBudget] = GetParam();
+	ASSERT_NO_FATAL_FAILURE(prepare(true, hero, rawPower));
+	ASSERT_EQ(attackerSideHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), rawPower);
+	ASSERT_EQ(newHorizonsHeroes::fieldPhysicianHealingPercent(attackerSideHero),
+		std::string(hero) == "core:rion" ? 100 : 0);
+	const SpellID spell(SpellID::CURE);
+	spells::BattleCast ordinaryQuery(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto ordinary = spell.toSpell()->battleMechanics(&ordinaryQuery);
+	ASSERT_EQ(ordinary->getEffectPower(), rawPower);
+	ASSERT_EQ(ordinary->getSpellPowerCoefficientBasisPoints(), 14500);
+	ASSERT_EQ(ordinary->getCastSpellPowerComponentBonusPercent(), 0);
+	ASSERT_EQ(ordinary->getWarcastingBonusPercent(), 0);
+	ASSERT_EQ(ordinary->getEmpowerSpellBonusPercent(), 0);
+	EXPECT_EQ(ordinary->getEffectValue(), preOrderBudget);
+	EXPECT_EQ(ordinary->getRecipientEffectValue(friendly), preOrderBudget);
+	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
+	spells::BattleCast crownQuery(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto crown = spell.toSpell()->battleMechanics(&crownQuery);
+	ASSERT_EQ(crown->getCrownAndAltarBonusPercent(friendly), 20);
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(skillId, "new-horizons:divineMandate.consecratedCasting"));
+	ASSERT_EQ(crown->getCastSpellPowerComponentBonusPercent(), 10);
+	ASSERT_EQ(crown->getSpellPowerCoefficientBasisPoints(), 15950);
+	ASSERT_EQ(crown->getWarcastingBonusPercent(), 0);
+	ASSERT_EQ(crown->getEmpowerSpellBonusPercent(), 0);
+	EXPECT_EQ(crown->getEffectValue(), postOrderBudget);
+	EXPECT_EQ(crown->getRecipientEffectValue(friendly), crownBudget);
+
+	auto injured = friendly->acquireState();
+	int64_t injury = friendly->getMaxHealth() - 1;
+	injured->damage(injury);
+	BattleUnitsChanged update;
+	update.battleID = BattleID(0);
+	UnitChanges change(friendly->unitId(), UnitChanges::EOperation::UPDATE);
+	change.data = injured->save();
+	update.changedStacks.push_back(change);
+	gameHandler->sendAndApply(update);
+	const auto before = friendly->getAvailableHealth();
+	const auto count = friendly->getCount();
+	const auto mana = attackerSideHero->getManaAvailable();
+	// Recipient/caster modifiers remain on the existing downstream path.
+	const auto expected = std::min<int64_t>(injury, crown->applySpellBonus(crownBudget, friendly));
+	ASSERT_TRUE(cast("core:cure", friendly));
+	EXPECT_EQ(friendly->getAvailableHealth() - before, expected);
+	EXPECT_EQ(friendly->getCount(), count);
+	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
+}
+INSTANTIATE_TEST_SUITE_P(FixedSpecialtyAndOrdinaryControls, NewHorizonsCureCrownControlsTest, ::testing::Values(
+	// Pre-Order coefficient145% becomes159.5% through legal Consecrated Casting.
+	// Crown then adds its independent1.2 SP multiplier before the same floor;
+	// Rion doubles the floored SP component and retains his separate fixed50.
+	// Tuple budgets: pre-Order / post-Order ordinary / post-Order Crown.
+	CureCrownControl{"core:rion", 1, 54, 54, 54},
+	CureCrownControl{"core:rion", 7, 80, 82, 90},
+	CureCrownControl{"core:orrin", 0, 25, 25, 25},
+	CureCrownControl{"core:orrin", 7, 40, 41, 45}));

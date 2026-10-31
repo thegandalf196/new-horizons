@@ -23,6 +23,7 @@ namespace petrifyingBloodAI { struct Pending; }
 struct BattleExchangeAttackResult
 {
 	bool completedAction = false;
+	bool primaryMeleePerformed = false;
 };
 
 struct BattleScore
@@ -128,6 +129,12 @@ public:
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);
 
 private:
+	/// Finish one selected sequence only after its strikes/counters have replayed.
+	void completeSelectedAttack(const AttackPossibility & ap,
+		const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition,
+		const std::optional<HypotheticBattle::ManaLeechReplay> & manaLeechReplay,
+		const std::set<uint32_t> & rebirthSpawnIdsBefore, size_t primalBurstFirstNewHit,
+		PlayerColor referenceController, DamageCache & damageCache);
 	std::optional<float> trackAerialExchange(const std::shared_ptr<StackWithBonuses> & attacker,
 		const std::shared_ptr<StackWithBonuses> & defender, bool shooting, bool isOurAttack,
 		DamageCache & cache, const std::shared_ptr<HypotheticBattle> & battle,
@@ -256,6 +263,7 @@ private:
 	std::shared_ptr<Environment> env;
 	mutable ReachabilityMapCache reachabilityMap;
 	std::vector<battle::Units> turnOrder;
+	bool initiativeStrikeEffects = false;
 	float negativeEffectMultiplier;
 	int simulationTurnsCount;
 

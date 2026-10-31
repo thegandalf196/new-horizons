@@ -300,12 +300,25 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_DREAD_CAVALRY = 1140, // captured Tamika continuation/state, after real Edric1139
 
 	NEW_HORIZONS_BANK_CREATURE_REMAINDER = 1141, // unclaimed bank troops are loot, not renewed guards
+	NEW_HORIZONS_GENIE_SAGE = 1142, // captured Iona Wishes options and Thane earned-level growth
+	NEW_HORIZONS_SYLVAN_TACTICS = 1143, // captured faction policy and bounded combat history
+
+	NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES = 1144, // captured first six ordinary creature identities
+
+	NEW_HORIZONS_ADJACENCY_FILTERS = 1145, // generic static adjacency metadata; preserve all first-six1144 layouts
+
+	NEW_HORIZONS_ORDINARY_CREATURE_POLICY_EXTENSIONS = 1146, // captured Pasis/Korbac/Tyraxor/Kalt policy keys
+	NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION = 1147, // optional fresh-world neutral-size request
+	NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES = 1148, // captured Jabarkas and Christian policies
+	NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES = 1149, // captured Josephine, Gerwulf and Krellion policies
+	NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES = 1150, // captured Torosar and Gurnisson policies
+	NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES = 1151, // captured Sorsha, Straker, Yog and Ufretin policies and reserved melee effects
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_BANK_CREATURE_REMAINDER,
+	CURRENT = NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2
@@ -613,3 +626,31 @@ static_assert(ESerializationVersion::NEW_HORIZONS_LIVING_INFERNO > ESerializatio
 	"Living Inferno must remain append-only after published captures");
 static_assert(ESerializationVersion::NEW_HORIZONS_AERIAL_SUPREMACY > ESerializationVersion::NEW_HORIZONS_LIVING_INFERNO,
 	"Aerial Supremacy must remain append-only before release aliases");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_ADJACENCY_FILTERS
+ > ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES,
+ "Adjacency metadata must preserve first-six format1144");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_POLICY_EXTENSIONS
+ > ESerializationVersion::NEW_HORIZONS_ADJACENCY_FILTERS,
+ "Ordinary policy extensions must preserve the format1145 cohort");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION
+ > ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_POLICY_EXTENSIONS,
+ "Neutral army start options must preserve prior wire fields");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES
+ > ESerializationVersion::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION,
+ "Ordinary ranged policies must preserve neutral start options");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES
+ > ESerializationVersion::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES,
+ "Ordinary maintenance policies must preserve ranged policies");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES
+ > ESerializationVersion::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES,
+ "Ordinary machine policies must preserve maintenance policies");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES
+ > ESerializationVersion::NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES,
+ "Ordinary combat policies must preserve machine policies");

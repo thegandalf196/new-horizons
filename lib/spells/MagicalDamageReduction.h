@@ -17,6 +17,9 @@
 class JsonNode;
 class IBattleInfo;
 
+class CSpell;
+class IBonusBearer;
+namespace battle { class Unit; }
 namespace spells
 {
 struct DLL_LINKAGE CapturedOverwhelmingFormula
@@ -65,4 +68,13 @@ DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReduction(
 DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReductionBasisPoints(
 	int64_t rawDamage, const std::vector<int> & independentReductionsBasisPoints,
 	const std::vector<int> & independentPenetrationsPercent);
+/// Pure extraction of the prior spell-school source collection; query order is preserved.
+DLL_LINKAGE std::vector<int> collectMagicalDamageReductionSources(const CSpell & spell, const battle::Unit * target,
+	int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints, bool fractional);
+/// Generic target-side relative penetration. No source/hero identity dispatch.
+DLL_LINKAGE std::vector<int> targetMdrPenetrations(const battle::Unit & target);
+DLL_LINKAGE int64_t applyTargetMdrPenetration(const battle::Unit & target, int64_t raw, int64_t mitigated);
+DLL_LINKAGE int64_t applyLegacyMagicalDamageReduction(const CSpell & spell, const battle::Unit * target,
+	const IBonusBearer * bearer, int64_t raw, int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints);
+
 }

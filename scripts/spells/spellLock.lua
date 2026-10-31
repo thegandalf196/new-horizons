@@ -3,25 +3,11 @@ local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
 local SPELL_KEY = "new-horizons:spellLock"
-local SPELLBINDER_SKILL = "new-horizons:sorceryMagic"
-local SPELLBINDER_PERK = "new-horizons:sorceryMagic.spellbinder"
-local BASE_DURATION_CAP = 3
-local SPELLBINDER_DURATION_CAP = 4
-local POWER_PER_EXTRA_ROUND = 80
 local PRESERVE_FRIENDLY_TEXT = "new-horizons.combat.spellLock.preserveBeneficial"
 local PRESERVE_HOSTILE_TEXT = "new-horizons.combat.spellLock.preserveHostile"
 
 local function duration(mechanics)
-	local scaledSpellPower = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		mechanics:getEffectPower(), POWER_PER_EXTRA_ROUND,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-	local base = math.min(BASE_DURATION_CAP,
-		1 + scaledSpellPower)
-	local hero = mechanics:getHeroCaster()
-	if hero ~= nil and hero:hasActivePerk(SPELLBINDER_SKILL, SPELLBINDER_PERK) then
-		base = math.min(SPELLBINDER_DURATION_CAP, base + 1)
-	end
-	return mechanics:adjustEffectDuration(base)
+	return mechanics:getSpellLockDuration()
 end
 
 local function opposingBonuses(mechanics, unit)

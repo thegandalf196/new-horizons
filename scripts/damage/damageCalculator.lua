@@ -191,6 +191,7 @@ local function getPhysicalDamageReductionFactor(info)
 	if intrinsicReduction > 0 then
 		table.insert(reductions, { intrinsicReduction, 100 })
 	end
+	table.insert(reductions, { info.runicEnduranceReductionPercent or 0, 100 })
 	table.insert(reductions, { info.formationFightingReductionPercent or 0, 100 })
 	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
 	local defendReductionRemainingFraction = getDefendReductionRemainingFraction(info)
@@ -445,7 +446,7 @@ function Script:getLuckFactor(info)
 	if not info.luckyStrike then return 0 end
 	-- Captured New Horizons policy moves positive Luck out of the ordinary
 	-- additive attack premiums. Historical profiles retain their old formula.
-	if info.newHorizonsFinalLuck then return 0 end
+	if info.newHorizonsFinalLuck or (info.sylvanLuckyStrikeTotalPercent or 0) > 0 then return 0 end
 	return 1.0 + getBonusValueOfType(info.attacker, info.attackerBonuses, "LUCKY_STRIKE_DAMAGE_PERCENTAGE") / 100
 end
 
@@ -659,10 +660,22 @@ function Script:calculate(battle, info)
 	local archeryRangedMultiplier = math.max(0, (info.archeryRangedDamageMultiplierPercent or 100) / 100)
 	local rangedFollowUpMultiplier = math.max(0, (info.rangedFollowUpDamagePercent or 100) / 100)
 	local activationOutputMultiplier = math.max(0, (info.activationOutputPercent or 100) / 100)
+	local sylvanMultiplier = 1.0
+	for _, value in ipairs(info.sylvanAttackMultipliers or {}) do
+		sylvanMultiplier = sylvanMultiplier * math.max(0, value / 100)
+	end
+	local sylvanDefenseMultiplier = 1.0
+	for _, value in ipairs(info.sylvanDefenseMultipliers or {}) do
+		sylvanDefenseMultiplier = sylvanDefenseMultiplier * math.max(0, value / 100)
+	end
+	local ordinaryCreatureSpecialtyMultiplier = (info.ordinaryCreatureSpecialtyDamagePercent or 100) / 100
 	local finalLuckMultiplier = 1.0
 	if info.newHorizonsFinalLuck and info.luckyStrike then
 		finalLuckMultiplier = 2.0
 			+ getBonusValueOfType(info.attacker, info.attackerBonuses, "LUCKY_STRIKE_DAMAGE_PERCENTAGE") / 100
+	end
+	if info.luckyStrike and (info.sylvanLuckyStrikeTotalPercent or 0) > 0 then
+		finalLuckMultiplier = info.sylvanLuckyStrikeTotalPercent / 100
 	end
 	local phantomDamageMultiplier = self:getPhantomDamageMultiplier(info)
 	local bulwarkImmovableMultiplier = math.max(0, (info.bulwarkImmovableFinalDamageMultiplier or 100) / 100)
@@ -701,32 +714,40 @@ function Script:calculate(battle, info)
 
 	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
 		* heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * archeryRangedMultiplier * rangedFollowUpMultiplier
-		* activationOutputMultiplier * phantomDamageMultiplier
+		* activationOutputMultiplier * sylvanMultiplier * sylvanDefenseMultiplier * phantomDamageMultiplier
 		* bulwarkImmovableMultiplier
 		* armorerBastionMultiplier
 		* counterBatteryMultiplier
 		* ((info.frozenShatterFinalDamageMultiplier or 100) / 100)
+		* ordinaryCreatureSpecialtyMultiplier
 		* finalLuckMultiplier
 	-- New unit passives also coexist with historical uncapped physical rules.
 	-- Keep their existing factors and floors; zero/absent adds no arithmetic.
 	local intrinsicReduction = info.intrinsicPhysicalDamageReductionPercent or 0
-	if info.physicalDamage and not usesPhysicalDamageReductionStage and intrinsicReduction > 0 then
-		local reduction = math.max(0, math.min(100, intrinsicReduction)) / 100
-		local ignored = math.max(0, math.min(100, info.physicalDamageReductionIgnorePercent or 0)) / 100
-		damageFactor = damageFactor * (1 - reduction * (1 - ignored))
+	if info.physicalDamage and not usesPhysicalDamageReductionStage then
+		for _, value in ipairs({ intrinsicReduction, info.runicEnduranceReductionPercent or 0 }) do
+			if value > 0 then
+				local reduction = math.max(0, math.min(100, value)) / 100
+				local ignored = math.max(0, math.min(100, info.physicalDamageReductionIgnorePercent or 0)) / 100
+				damageFactor = damageFactor * (1 - reduction * (1 - ignored))
+			end
+		end
 	end
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1
 	local damageMin = apply(baseMin, damageFactor, stabilizePdrRounding)
 	local damageMax = apply(baseMax, damageFactor, stabilizePdrRounding)
 
 	local killsMin, killsMax = self:getCasualties(info, damageMin, damageMax)
+	local attackBeforeDefenseFactor = raising * heroOrderMultiplier * preemptiveDamageMultiplier
+		* cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier
+		* sylvanMultiplier * ordinaryCreatureSpecialtyMultiplier * finalLuckMultiplier
 
 	return {
 		damage = { min = damageMin, max = damageMax },
 		kills = { min = killsMin, max = killsMax },
 		-- what the blow would have been worth had the target no defences at all, which is what an
 		-- ability reflecting a strike works from
-		damageBeforeDefense = { min = apply(baseMin, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier * finalLuckMultiplier), max = apply(baseMax, raising * heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier * finalLuckMultiplier) }
+		damageBeforeDefense = { min = apply(baseMin, attackBeforeDefenseFactor), max = apply(baseMax, attackBeforeDefenseFactor) }
 	}
 end
 

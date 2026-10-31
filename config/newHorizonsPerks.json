@@ -3,6 +3,7 @@
 	"rulesetVersion": 2,
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
+	"sylvanTacticsPolicy": 1,
 	"necromancyPolicy": {
 		"version": 2,
 		"skeletonLeadershipReductionPercent": [0, 50, 60, 70],
@@ -3064,132 +3065,132 @@
 		},
 		"new-horizons:sylvanLuck": {
 			"id": "new-horizons:sylvanLuck",
-			"name": "Sylvan Luck",
+			"name": "Sylvan Tactics",
 			"domain": "Faction",
 			"availability": "Rampart heroes only",
-			"description": "Faction-locked Skill. Rampart turns fortune into a faction identity. Sylvan Luck increases both the frequency and the payoff of favorable Luck while keeping the universal Luck system intact.",
+			"description": "Faction-locked Skill. Rampart coordinates initiative, patient positioning and supporting fire. The Skill grants Initiative instead of Luck; its independently learned perks retain their own stated triggers.",
 			"ranks": {
 				"basic": {
-					"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x.",
+					"description": "Friendly ordinary creatures gain +1 Initiative. This does not increase Luck or Lucky Strike damage.",
 					"effect": {
 						"status": "active",
-						"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x."
+						"description": "Friendly ordinary creatures gain +1 Initiative. This does not increase Luck or Lucky Strike damage."
 					}
 				},
 				"advanced": {
-					"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x.",
+					"description": "Friendly ordinary creatures gain +2 Initiative. This does not increase Luck or Lucky Strike damage.",
 					"effect": {
 						"status": "active",
-						"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x."
+						"description": "Friendly ordinary creatures gain +2 Initiative. This does not increase Luck or Lucky Strike damage."
 					}
 				},
 				"expert": {
-					"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x.",
+					"description": "Friendly ordinary creatures gain +3 Initiative. This does not increase Luck or Lucky Strike damage.",
 					"effect": {
 						"status": "active",
-						"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x."
+						"description": "Friendly ordinary creatures gain +3 Initiative. This does not increase Luck or Lucky Strike damage."
 					}
 				}
 			},
 			"perks": [
 				{
 					"id": "new-horizons:sylvanLuck.elvenPrecision",
-					"name": "Elven Precision",
+					"name": "Fleetfoot",
 					"requires": "basic",
-					"description": "Lucky ranged attacks ignore 25% Creature Defense.",
+					"description": "During its first real Creature Activation each combat, each friendly ordinary creature stack gains +1 Speed. Waiting spends this first-activation benefit; the delayed activation does not gain it again.",
 					"effect": {
 						"status": "active",
-						"description": "Lucky ranged attacks ignore 25% Creature Defense."
+						"description": "During its first real Creature Activation each combat, each friendly ordinary creature stack gains +1 Speed. Waiting spends this first-activation benefit; the delayed activation does not gain it again."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.forestSFavor",
-					"name": "Forest's Favor",
+					"name": "Patient Hunter",
 					"requires": "basic",
-					"description": "The first positive Luck trigger for each friendly stack in a combat grants +2 Speed for the remainder of that activation.",
+					"description": "The first actual physical creature attack after a friendly stack Waits deals +15% damage, including an ordinary retaliation if it occurs first. A rejected or unperformed attack does not consume the benefit.",
 					"effect": {
 						"status": "active",
-						"description": "The first positive Luck trigger for each friendly stack in a combat grants +2 Speed for the remainder of that activation."
+						"description": "The first actual physical creature attack after a friendly stack Waits deals +15% damage, including an ordinary retaliation if it occurs first. A rejected or unperformed attack does not consume the benefit."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.serendipity",
-					"name": "Serendipity",
+					"name": "Dappled Cover",
 					"requires": "basic",
-					"description": "Until a friendly stack has triggered positive Luck once in the current combat, it counts as having +1 additional Luck for trigger chance only.",
+					"description": "While Waiting for its delayed activation, a friendly ordinary creature stack takes 20% less physical ranged damage. The protection ends when its delayed activation begins.",
 					"effect": {
 						"status": "active",
-						"description": "Until a friendly stack has triggered positive Luck once in the current combat, it counts as having +1 additional Luck for trigger chance only."
+						"description": "While Waiting for its delayed activation, a friendly ordinary creature stack takes 20% less physical ranged damage. The protection ends when its delayed activation begins."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.luckyRecovery",
-					"name": "Lucky Recovery",
+					"name": "Measured Advance",
 					"requires": "basic",
-					"description": "A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt.",
+					"description": "A primary voluntary melee attack deals +10% physical damage after the attacker actually moves at least 1 hex and no more than half its current movement Speed, rounded down. Stationary attacks, retaliation, collateral, reactions and follow-up attacks do not receive this bonus.",
 					"effect": {
 						"status": "active",
-						"description": "A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt."
+						"description": "A primary voluntary melee attack deals +10% physical damage after the attacker actually moves at least 1 hex and no more than half its current movement Speed, rounded down. Stationary attacks, retaliation, collateral, reactions and follow-up attacks do not receive this bonus."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.sharedFortune",
-					"name": "Shared Fortune",
+					"name": "Covering Fire",
 					"requires": "advanced",
-					"description": "After a friendly stack triggers positive Luck, adjacent friendly stacks gain +1 Luck until their next activation.",
+					"description": "After a damaging physical ranged strike, including actual ranged collateral damage, adjacent friendly ordinary creature stacks gain 15% protection against physical ranged damage until their next real activation. Adjacency uses the resolved creature footprints; the guard refreshes without stacking.",
 					"effect": {
 						"status": "active",
-						"description": "After a friendly stack triggers positive Luck, adjacent friendly stacks gain +1 Luck until their next activation."
+						"description": "After a damaging physical ranged strike, including actual ranged collateral damage, adjacent friendly ordinary creature stacks gain 15% protection against physical ranged damage until their next real activation. Adjacency uses the resolved creature footprints; the guard refreshes without stacking."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.natureSProvidence",
-					"name": "Nature's Providence",
+					"name": "Crossfire",
 					"requires": "advanced",
-					"description": "The first negative Luck trigger against the army each round is ignored.",
+					"description": "A primary physical ranged attack deals +15% damage against an enemy already damaged by a different friendly shooter this round. Actual physical ranged collateral damage can establish this record, but secondary and collateral hits do not receive the bonus. The record resets each round.",
 					"effect": {
 						"status": "active",
-						"description": "The first negative Luck trigger against the army each round is ignored."
+						"description": "A primary physical ranged attack deals +15% damage against an enemy already damaged by a different friendly shooter this round. Actual physical ranged collateral damage can establish this record, but secondary and collateral hits do not receive the bonus. The record resets each round."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.fortunateAim",
-					"name": "Fortunate Aim",
+					"name": "Disruptive Strike",
 					"requires": "advanced",
-					"description": "Friendly shooters gain +1 Luck when attacking the target designated by Focus Fire!.",
+					"description": "A damaging primary physical melee attack reduces its enemy victim's Initiative by 15% until that victim's next real activation. Reapplication refreshes the penalty without stacking.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly shooters gain +1 Luck when attacking the target designated by Focus Fire!."
+						"description": "A damaging primary physical melee attack reduces its enemy victim's Initiative by 15% until that victim's next real activation. Reapplication refreshes the penalty without stacking."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.wildChance",
-					"name": "Wild Chance",
+					"name": "Quick Redeployment",
 					"requires": "advanced",
-					"description": "Temporary creatures summoned by Nature spells inherit the hero's Sylvan Luck bonus and Lucky Strike multiplier.",
+					"description": "After genuinely Defending, a friendly ordinary creature stack gains +2 Speed during its next real activation only. This grants neither movement outside that activation nor an additional activation.",
 					"effect": {
 						"status": "active",
-						"description": "Temporary creatures summoned by Nature spells inherit the hero's Sylvan Luck bonus and Lucky Strike multiplier."
+						"description": "After genuinely Defending, a friendly ordinary creature stack gains +2 Speed during its next real activation only. This grants neither movement outside that activation nor an additional activation."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.perfectMoment",
 					"name": "Perfect Moment",
 					"requires": "expert",
-					"description": "The first eligible attack each combat made by a friendly stack with +5 or greater current Luck triggers positive Luck automatically.",
+					"description": "A positive creature Lucky Strike deals a total of 3.5 times its normal physical damage. This does not add Luck, force a Lucky Strike, or affect hero spell Luck.",
 					"effect": {
 						"status": "active",
-						"description": "The first eligible attack each combat made by a friendly stack with +5 or greater current Luck triggers positive Luck automatically."
+						"description": "A positive creature Lucky Strike deals a total of 3.5 times its normal physical damage. This does not add Luck, force a Lucky Strike, or affect hero spell Luck."
 					}
 				},
 				{
 					"id": "new-horizons:sylvanLuck.cascadingFortune",
-					"name": "Cascading Fortune",
+					"name": "Wild Hunt",
 					"requires": "expert",
-					"description": "When a Lucky Strike destroys an enemy stack, the next friendly stack to act gains +3 Luck for its activation.",
+					"description": "Once per round, the first enemy ordinary creature stack destroyed by a friendly physical creature attack grants friendly ordinary creatures +2 Speed for the rest of that round. Ordinary retaliation and collateral can qualify; a death prevented by Rebirth does not. No additional activation is granted.",
 					"effect": {
 						"status": "active",
-						"description": "When a Lucky Strike destroys an enemy stack, the next friendly stack to act gains +3 Luck for its activation."
+						"description": "Once per round, the first enemy ordinary creature stack destroyed by a friendly physical creature attack grants friendly ordinary creatures +2 Speed for the rest of that round. Ordinary retaliation and collateral can qualify; a death prevented by Rebirth does not. No additional activation is granted."
 					}
 				}
 			]
@@ -3328,7 +3329,7 @@
 		},
 		"new-horizons:shroudOfMalassa": {
 			"id": "new-horizons:shroudOfMalassa",
-			"name": "Shroud of Malassa",
+			"name": "Shroud of Nighon",
 			"domain": "Faction",
 			"availability": "Dungeon heroes only",
 			"description": "Faction-locked Skill. Dungeon warfare is positional predation. The Shroud lets friendly stacks pass through occupied hexes while moving and rewards attacks delivered from distinct sides and exposed positions.",

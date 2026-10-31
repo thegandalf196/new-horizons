@@ -166,6 +166,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 	void serialize(Handler &h)
 	{
 		if(h.saving)
+			extraOptionsInfo.validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
+		if(h.saving)
 			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving)
@@ -224,9 +226,12 @@ struct DLL_LINKAGE LobbyState
 	CampaignScenarioID campaignMap;
 	int campaignBonus;
 	LobbyState() : si(new StartInfo()), campaignMap(CampaignScenarioID::NONE), campaignBonus(-1) {}
+	void validateNeutralArmyStartOptionSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNeutralArmyStartOptionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		if(h.saving && si)
 			si->validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));

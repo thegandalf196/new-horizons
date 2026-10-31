@@ -1,10 +1,13 @@
 set(battleAI_SRCS
 		AttackPossibility.cpp
+	MeleeSpecialtyProjection.cpp
+		SylvanTacticsProjection.cpp
 		AttackValue.cpp
 		AerialRetaliationProjection.cpp
 		BattleExchangeAerialAttack.cpp
 		DreadCavalryProjection.cpp
 		BattleExchangeDreadAttack.cpp
+		ExchangeInitiativeQueue.cpp
 		BattleExchangeAftermath.cpp
 		AttackHealthAftermath.cpp
 	ParalyzingGazeProjection.cpp
@@ -23,6 +26,7 @@ set(battleAI_SRCS
 		BracePrimaryState.cpp
 		BattleAI.cpp
 		BattleAITiming.cpp
+		DefendEvaluation.cpp
 		BattleEvaluator.cpp
 		BattleEvaluatorCreaturePressure.cpp
 		BattleEvaluatorHeroSubmit.cpp
@@ -75,6 +79,7 @@ set(battleAI_SRCS
 		StackRecipientBonusOverlay.cpp
 		PossibleSpellcast.cpp
 		PotentialTargets.cpp
+		ProjectedAdjacencyBonuses.cpp
 		StackWithBonuses.cpp
 		StackWithBonusesEffects.cpp
 		HypotheticBattle.cpp
@@ -108,6 +113,8 @@ set(battleAI_HEADERS
 		StdInc.h
 
 		AttackPossibility.h
+	MeleeSpecialtyProjection.h
+		SylvanTacticsProjection.h
 		AerialRetaliationProjection.h
 		DreadCavalryProjection.h
 		AttackHealthAftermath.h
@@ -123,6 +130,7 @@ set(battleAI_HEADERS
 		BracePrimaryState.h
 		BattleAI.h
 		BattleAITiming.h
+		DefendEvaluation.h
 		BattleEvaluator.h
 		BattleEvaluatorProjection.h
 		BattleEvaluatorSpellProjection.h
@@ -167,6 +175,7 @@ set(battleAI_HEADERS
 		PotentialTargets.h
 		PossibleSpellcast.h
 		NewHorizonsHexOfPain.h
+		ProjectedAdjacencyBonuses.h
 		StackWithBonuses.h
 		HypotheticEffectSnapshotRules.h
 		HypotheticLifecycleTimingScope.h
@@ -177,6 +186,8 @@ set(battleAI_HEADERS
 		TacticsHandler.h
 		ThreatMap.h
 		BattleExchangeVariant.h
+		ExchangeInitiativeQueue.h
+		BattleExchangeAftermath.h
 		EnemyBypassReachability.h
 		BattleShroudStrike.h
 		PrimaryFortuneReceipt.h

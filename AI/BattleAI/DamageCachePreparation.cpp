@@ -23,7 +23,7 @@ void DamageCache::buildCreaturePressureCache(std::shared_ptr<HypotheticBattle> h
 	// This terminal root cache is not a baseline for child DamageCaches. Its
 	// current/original queries always bypass pair entries under these saved rules.
 	const bool populated = !damageCache.empty() || !obstacleDamage.empty()
-		|| !rangedMarkTargets.empty() || !evasiveShroudTargets.empty()
+		|| !rangedMarkTargets.empty() || !temporaryPhysicalProtectionTargets.empty()
 		|| !ambusherAttackers.empty() || !shadowAssaultTargetSides.empty()
 		|| !nightProwlerAttackers.empty() || !frozenTargets.empty() || !intrinsicMdrTargets.empty() || !intrinsicPdrTargets.empty();
 	if(parent || populated

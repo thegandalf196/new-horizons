@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "IMarket.h"
 #include "CGDwelling.h"
 #include "NewHorizonsMagnateIncome.h"
@@ -112,12 +114,16 @@ public:
 	ObjectInstanceID portalSourceDwellingId = ObjectInstanceID::NONE;
 	/// Absolute week in which this town last replaced its Portal source.
 	int32_t portalLastSelectionWeek = -1;
+	void validateTownBonusSerialization(BonusSerializationContext context) const;
+
 	/// Map author supplied the initial army, including an explicitly empty army.
 	bool customInitialGarrison = false;
 
 	//////////////////////////////////////////////////////////////////////////
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateTownBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving)
 			newHorizonsMagnateIncome.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving)

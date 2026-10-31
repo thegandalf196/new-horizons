@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "ISpellMechanics.h"
+#include "NewHorizonsStormOfDaggersDamage.h"
 #include "CSpell.h"
 #include "NewHorizonsMagic.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -21,6 +22,8 @@ int64_t checkedStormMultiply(int64_t left, int64_t right)
 		|| (right != 0 && left > std::numeric_limits<int64_t>::max() / right))
 		throw std::overflow_error("Storm of Daggers damage pool overflows");
 	return left * right;
+}
+
 }
 
 int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int32_t effectPower,
@@ -64,8 +67,6 @@ int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int3
 	// both the displayed total and the equal per-stack share, without first
 	// truncating a fractional Spell Power term at the pool boundary.
 	return (scaledNumerator + denominator / 2) / denominator;
-}
-
 }
 
 int32_t Mechanics::getSpellPowerCoefficientBasisPoints() const

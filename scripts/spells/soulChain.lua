@@ -3,14 +3,8 @@ local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
 local SPELL_ID = "new-horizons:soulChain"
-local SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic"
-local SOUL_BINDER_PERK = "new-horizons:shadowMagic.soulBinder"
 local STATUS_TRIGGER = "core:soulChainStatus"
 local STATUS_DURATION_ROUNDS = 2
-local BASE_ECHO_BASIS_POINTS = 2000
-local BASE_ECHO_CAP_BASIS_POINTS = 4000
-local SOUL_BINDER_BONUS_BASIS_POINTS = 1500
-local BASIS_POINTS_PER_WHOLE = 10000
 local MAX_TARGETS = 3
 
 local function reject(problem, mechanics)
@@ -27,16 +21,7 @@ local function isValidEnemy(self, mechanics, unit)
 end
 
 local function echoBasisPoints(mechanics)
-	local rawSpellPower = math.max(0, mechanics:getEffectPower())
-	local coefficientBasisPoints = mechanics:getSpellPowerCoefficientBasisPoints()
-	local powerTerm = math.floor(rawSpellPower * 10 * coefficientBasisPoints
-		/ BASIS_POINTS_PER_WHOLE)
-	local baseEcho = math.min(BASE_ECHO_CAP_BASIS_POINTS, BASE_ECHO_BASIS_POINTS + powerTerm)
-	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(SHADOW_MAGIC_SKILL, SOUL_BINDER_PERK) then
-		baseEcho = baseEcho + SOUL_BINDER_BONUS_BASIS_POINTS
-	end
-	return baseEcho
+	return mechanics:getSoulChainEchoBasisPoints()
 end
 
 function Script:applicableGeneral(mechanics, problem)

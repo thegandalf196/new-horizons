@@ -9,7 +9,7 @@
  */
 #include "StdInc.h"
 #include "GUIClasses.h"
-#include "NewHorizonsPerkIcons.h"
+#include "NewHorizonsCapturedPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
 #include "NewHorizonsCreatureCategoryUI.h"
 #include "NewHorizonsMusterUI.h"
@@ -970,8 +970,8 @@ void CLevelWindow::initLevelUpData(const CGHeroInstance * heroInstance,
 	std::iota(choiceOrder.begin(), choiceOrder.end(), 0);
 	std::sort(choiceOrder.begin(), choiceOrder.begin() + skills.size(), [this, heroInstance](size_t left, size_t right) {
 		if(heroInstance->getSecSkillLevel(skills[left]) == heroInstance->getSecSkillLevel(skills[right]))
-			return LIBRARY->skillh->getById(skills[left])->getNameTranslated()
-				< LIBRARY->skillh->getById(skills[right])->getNameTranslated();
+			return newHorizonsPerkHelp::skillLabel(heroInstance, skills[left])
+				< newHorizonsPerkHelp::skillLabel(heroInstance, skills[right]);
 		return heroInstance->getSecSkillLevel(skills[left]) > heroInstance->getSecSkillLevel(skills[right]);
 	});
 }
@@ -1125,12 +1125,9 @@ void CLevelWindow::createSkillBox()
 				comp = std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, skill,
 					offeredRank, CComponent::medium);
 				comp->customDescription = newHorizonsPerkHelp::skillDescription(hero, skill, offeredRank);
-				if(newHorizonsMagic::rulesActive(hero->getMagicRules()))
-				{
-					const auto offeredRankText = GAME->translator().translate("core.skilllev", offeredRank - 1);
-					comp->customSubtitle = offeredRankText + "\n"
-						+ LIBRARY->skillh->getById(skill)->getNameTranslated();
-				}
+				const auto offeredRankText = GAME->translator().translate("core.skilllev", offeredRank - 1);
+				comp->customSubtitle = offeredRankText + "\n"
+					+ newHorizonsPerkHelp::skillLabel(hero, skill);
 				skillComps.push_back(comp);
 				comp->setHorizontalLayout(244, 84, true);
 			}
@@ -1146,9 +1143,9 @@ void CLevelWindow::createSkillBox()
 				const bool hasCanonicalSkillIcon = (decoded >= 0 && SecondarySkill::encode(decoded) == perk.selection.skillId)
 					|| perk.selection.skillId == "new-horizons:necromancy";
 				const auto parentName = hasCanonicalSkillIcon
-					? LIBRARY->skillh->getById(iconSkill)->getNameTranslated() : perk.selection.skillId;
+					? newHorizonsPerkHelp::skillLabel(hero, iconSkill) : perk.selection.skillId;
 				comp = std::make_shared<CLevelUpPerkComponent>(iconSkill, hasCanonicalSkillIcon,
-					perk.requiredRank, perk.name, AnimationPath::builtin(newHorizonsPerkIcon(perk.selection.perkId, perk.name)), parentName);
+					perk.requiredRank, perk.name, AnimationPath::builtin(newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)), parentName);
 				comp->customDescription = newHorizonsPerkHelp::format(hero, perk.selection.skillId,
 					perk.name, newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description);
 				perkComps.push_back(comp);
@@ -1905,6 +1902,7 @@ CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, SecondarySkill _ID,
 	pos.y += Y;
 
 	skill = std::make_shared<CSecSkillPlace>(Point(), CSecSkillPlace::ImageSize::MEDIUM, _ID, 1);
+	skill->setSkillForHero(*parent->hero, ID, 1);
 	skill->setClickPressedCallback([this](const CComponentHolder&, const Point& cursorPosition)
 		{
 			bool skillKnown = parent->hero->getSecSkillLevel(ID);
@@ -2043,7 +2041,7 @@ void CUniversityWindow::CItem::update()
 	bottomBar = std::make_shared<CPicture>(image, Point(-28, 48));
 
 	// needs to be on top of background bars
-	name = std::make_shared<CLabel>(22, -13, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, ID.toEntity(LIBRARY)->getNameTranslated());
+	name = std::make_shared<CLabel>(22, -13, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, newHorizonsPerkHelp::skillLabel(parent->hero, ID));
 	level = std::make_shared<CLabel>(22, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->translate("core.skilllev.0"));
 }
 
@@ -2165,7 +2163,7 @@ CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkil
 	MetaString speechText;
 	speechText.appendTextID("core.genrltxt.608");
 	speechText.replaceTextID("core.skilllev.0");
-	speechText.replaceName(SKILL);
+	speechText.replaceRawString(newHorizonsPerkHelp::skillLabel(owner->getHero(), SKILL));
 	speechText.replaceNumber(goldNeeded);
 	if(hasMixedTuition)
 	{
@@ -2183,7 +2181,7 @@ CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkil
 	const int clerkTextInsetY = 1;
 	clerkSpeech = std::make_shared<CTextBox>(text, Rect(speechFrameX + clerkTextInsetX, speechFrameY + clerkTextInsetY, speechFrameWidth - 2 * clerkTextInsetX, speechFrameHeight - 2 * clerkTextInsetY), 0, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE);
 
-	name = std::make_shared<CLabel>(centerX, 37,  FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, SKILL.toEntity(LIBRARY)->getNameTranslated());
+	name = std::make_shared<CLabel>(centerX, 37,  FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, newHorizonsPerkHelp::skillLabel(owner->getHero(), SKILL));
 	icon = std::make_shared<CAnimImage>(AnimationPath::builtin("SECSKILL"), SKILL.getNum()*3+3);
 	icon->center(Point(pos.x + centerX, pos.y + 71));
 	level = std::make_shared<CLabel>(centerX, 105, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->translate("core.skilllev.0"));
@@ -2196,7 +2194,7 @@ CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkil
 	MetaString skillName;
 	skillName.appendTextID("core.skilllev.0");
 	skillName.appendRawString(" ");
-	skillName.appendTextID(SKILL.toEntity(LIBRARY)->getNameTextID());
+	skillName.appendRawString(newHorizonsPerkHelp::skillLabel(owner->getHero(), SKILL));
 
 	MetaString hoverTextMessage;
 	hoverTextMessage.appendTextID("core.genrltxt.609");
@@ -2206,7 +2204,7 @@ CUnivConfirmWindow::CUnivConfirmWindow(CUniversityWindow * owner_, SecondarySkil
 	MetaString helpText;
 	helpText.appendTextID("core.help.633.help");
 	helpText.replaceTextID("core.skilllev.0");
-	helpText.replaceName(SKILL);
+	helpText.replaceRawString(newHorizonsPerkHelp::skillLabel(owner->getHero(), SKILL));
 	helpText.replaceNumber(goldNeeded);
 	text = helpText.toString(&GAME->translator());
 	if(hasMixedTuition)
@@ -2267,7 +2265,7 @@ CGarrisonWindow::CGarrisonWindow(const CArmedInstance * up, const CGHeroInstance
 
 	if(sourceTown != nullptr && down->getVisitedTown() != sourceTown && sourceHero != nullptr)
 		banner = std::make_shared<CAnimImage>(AnimationPath::builtin("PortraitsLarge"), sourceHero->getIconIndex(), 0, 27, 127);
-	else
+	else if(up->getOwner().isValidPlayer())
 		banner = std::make_shared<CAnimImage>(AnimationPath::builtin("CREST58"), up->getOwner().getNum(), 0, 27, 127);
 
 	portrait = std::make_shared<CAnimImage>(AnimationPath::builtin("PortraitsLarge"), down->getIconIndex(), 0, 27, 223);

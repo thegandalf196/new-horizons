@@ -8,6 +8,8 @@
  *
  */
 #pragma once
+
+#include "../bonuses/BonusSerializationContext.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsMasteryRules.h"
 #include "../entities/hero/NewHorizonsLegendaryReputation.h"
@@ -746,6 +748,11 @@ struct DLL_LINKAGE SetCommanderProperty : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)))
+			accumulatedBonus.validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
 		h & heroid;
 		h & which;
 		h & amount;

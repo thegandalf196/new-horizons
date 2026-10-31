@@ -72,7 +72,7 @@ int64_t adjustUnmitigatedMagicalDamage(const battle::Unit & target, int64_t rawD
 {
 	const int reduction = target.intrinsicMagicalDamageReductionPercent();
 	return reduction > 0 ? spells::calculateMagicalDamageReduction(rawDamage,
-		std::vector<int>{reduction}, 0).damageWithoutPenetration : rawDamage;
+		std::vector<int>{reduction}, spells::targetMdrPenetrations(target)).damageWithPenetration : rawDamage;
 }
 
 void adjustCreatureDamage(const BattleAttackInfo & attack, DamageEstimation & damage)

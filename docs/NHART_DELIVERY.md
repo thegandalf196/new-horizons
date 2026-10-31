@@ -54,6 +54,18 @@ testing delivery. Use synthetic images when testing an authoring algorithm.
 Generation and review workflows must use an explicit local output root rather
 than recreate loose artwork in publicly tracked directories.
 
+The offline `tools/export_new_horizons_magi_small_portraits.py` comparison tool
+accepts an explicitly staged `--snapshot` root with the two Mage forms' selected
+58x64 portraits, separate transparent foregrounds and current 32px portraits at
+the manifest's source-relative paths. It derives nearest-neighbor and Lanczos
+32px alternatives from the complete foreground, keeping a 2px inset; it does not
+resize the baked faction background or change resource bindings. Pass a fresh
+external `--output` and, for review, a fresh `--review` directory under
+`$HOME/Downloads/provisory/`. Outputs and manifests are local authoring material,
+not build inputs or additional public loose-art files. Selection, repacking and
+rendered acceptance remain separate steps. Its maintained tests use synthetic
+pixels and require no original-game images or private authoring inputs.
+
 ```sh
 "$NH_PYTHON" tools/nhart.py pack --manifest assets/new-horizons/runtime-art-manifest.json --input-root "$NH_ART_INPUT_ROOT" --output Mods/new-horizons/NewHorizons.nhart
 "$NH_PYTHON" tools/nhart.py inspect Mods/new-horizons/NewHorizons.nhart
@@ -217,3 +229,109 @@ Performance comparisons must use identical payload bytes and distinguish
 index/loading costs from decoding/drawing. Fresh processes are not proof of a
 cold OS cache. No system cache flushing or system-wide setting changes are
 required or permitted by this workflow.
+
+
+### Conditional perk artwork records
+
+The additions ledger and NHART manifest retain format1. An unversioned
+`perkPresentations` row is the original strict Arcane Ballistics contract:
+captured authored name, historical Countermage fallback and selected alpha
+maxima254/253. Its existing rows and reversible header history remain unchanged.
+
+The ten Sylvan Tactics rows use `schemaVersion: 2` with exact ID/name/current
+and historical stems, `capturedPolicy: {"sylvanTacticsPolicy": 1}`, alpha maxima255,
+original master/native44/native32/export-manifest/selection-evidence hashes and
+the reviewed captured resolver's source hash. Missing captured policy retains
+Sylvan Luck art, including historical Perfect Moment; Archery Crossfire stays
+separate. Unknown fields, identities, policy types/values, provenance or resource
+sets fail validation. The allowed origin and selection remain explicit; neither
+this schema nor provisional selection grants a license or Final approval.
+
+Each row declares exactly seven resources: native44 alias, native32 companion,
+descriptor and four44 states ordered normal0, pressed1, disabled2, highlighted3.
+Common checks verify clean RGBA, exact dimensions/native hashes, descriptor,
+normal alias equivalence and alpha-preserving state transforms (brightness0.82;
+saturation0.15 then brightness0.65; brightness1.13). Sylvan foregrounds retain a
+clear two-pixel perimeter at both native sizes. Existing panels and selection
+outlines remain UI-owned. Static32 is a packaging companion, not evidence of a
+live32 consumer. Verify these records through the maintained additions tests;
+source/payload checks do not establish actual rendered acceptance.
+
+
+### Accepted nongraphics config history
+
+`runtime-art-config-revisions.json` records the explicit accepted config changes
+that followed the original artwork waves. It preserves the old ledger hashes.
+The two supported files have exact from/to canonical projection hashes, source
+commit references and JSON-pointer edits with old/new values. Tests require the
+reviewed record fingerprints and exact current projections before reversing any
+edit. No Git checkout, network or full history is needed at verification time.
+
+Only the four previously selected status icon pointers and twenty selected Mass
+spell icon pointers are excluded from these projections; the existing graphics,
+resource, descriptor, provenance and rendering requirements still govern them.
+Unknown keys, new graphic roles, descriptions, costs or other changes fail until
+a specific new transition is reviewed. Older waves default to revision0. Later
+waves explicitly select `configRevisions` for each supported config file; current
+accepted stages are5 for `newHorizons.json` and1 for `massVariants.json`.
+
+These are source-history proofs of accepted changes, including The Chosen,
+Focus Magic and Mass Slow revisions. They do not certify new functional tests,
+rendered behavior or playable delivery. Keep current acceptance evidence separate;
+never replace an original art-only historical hash with a current gameplay hash.
+
+
+Missing historical artwork transitions use finite `artRoles` records for the
+selected Feint/Vanguard controls, Living Armor symbols, Ghost animation/portraits
+and bug-report icon. Their exact reviewed record fingerprints retain existing
+origins, rights, selection and pending rendered acceptance. Tests compare every
+original manifest entry and payload hash, PNG facts, descriptors and DEF group
+facts; an arbitrary future role cannot be appended as an exception. The eleven
+historical specialty families retain `hero-specialty-icons`; explicit reviewed
+source entries justify that family without relabeling original resources.
+
+Current original specialty additions use a separate explicit
+`provenanceCohort: "current-original-ordinary-specialties-v1"`. Its finite six-record
+validator pins complete records, including original generated foreground origin,
+selected master and native hashes, authored descriptors, selection evidence and
+pending Final/rendered status. It also compares every source entry against the
+selected manifest. The historical eleven-record allowlist and payload checks
+remain independent and exact. A separate finite thirteen-record cohort uses
+`provenanceCohort: "current-original-ordinary-specialties-thirteen-v1"` for Ryland,
+Charna, Galthran, Shakti, Fiona, Vokial, Piquedram, Vey, Lacus, Broghild, Gretchin,
+Aeris and Theodorus. It pins the same complete provenance, including export
+manifest and selected master hashes, without changing the earlier six-record
+cohort. These bindings populate the existing ordinary-specialty rows and retain
+their captured-policy gate; historical absence retains original presentation.
+Selection remains provisional, with Final approval and rendered acceptance
+separate from package verification. Missing, unknown or relabeled cohorts cannot
+bypass either validator. An additive wave preserves all prior wave objects and
+records its baseline archive, manifest, entry inventory, header and config
+revision before declaring its exact new resources and resulting archive.
+
+The next four selected ordinary identities use the separate finite cohort
+`current-original-ordinary-specialties-four-v1`: Pasis, Kalt, Korbac and Tyraxor.
+Their exact master/export/selection/native/source-entry records remain distinct
+from the earlier six and thirteen. Runtime artwork follows each existing row's
+captured-policy gate, including zero-valued captures; missing policies retain
+historical presentation. Package verification grants no Final or rendered approval.
+
+The ranged pair has its own finite cohort,
+`current-original-ordinary-specialties-ranged-pair-v1`: Christian Rangefinder
+and Jabarkas Cruel Volley. Its eight resources are unchanged selected provisional
+44/32 PNGs and normal group0/frame0 descriptors. Earlier cohorts and historical
+fallback bindings retain their meaning. Selection does not establish Final visual
+approval, gameplay verification or rendered acceptance.
+
+Maintenance and machine artwork remain separate finite three-identity cohorts:
+`current-original-ordinary-specialties-maintenance-three-v1` covers Josephine
+Field Reassembly, Gerwulf Field Maintenance and Krellion Ogre Bulwark;
+`current-original-ordinary-specialties-machine-three-v1` covers Torosar Gunnery
+Professor, Arlach Siege Sapper and Gurnisson Heavy Battery. Each has twelve
+selected resources with exact original provenance. Resource selection is separate
+from runtime binding and mechanic activation; held mechanics remain held.
+
+The remaining nineteen ordinary specialty illustrations are a finite selected
+cohort, `current-original-ordinary-specialties-remaining-nineteen-v1`, with
+76 native resources. Prior provenance and selections remain exact. Illustration
+availability does not activate mechanics, bind a hero or resolve held gameplay.

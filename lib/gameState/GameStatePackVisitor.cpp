@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsSylvanTactics.h"
 #include "../battle/NewHorizonsAerialSupremacy.h"
 #include "../battle/NewHorizonsHeroicSpirit.h"
 #include "../battle/NewHorizonsSerpentsEmbrace.h"
@@ -2535,6 +2536,7 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 			|| (target && target->unitSide() == pack.relentlessAssaultSide))
 			throw std::runtime_error("Invalid Relentless Assault primary target update");
 	}
+	newHorizonsSylvanTactics::validateStrikeTransition(*battle, pack);
 	if(pack.fortuneState)
 		battle->getSide(pack.fortuneSide).sylvanLuck = *pack.fortuneState;
 	if(pack.perfectFortuneState)

@@ -84,15 +84,20 @@ class HolyArmorContentTest(unittest.TestCase):
                 self.assertEqual(definition["graphics"][role], filename)
                 self.assertEqual(png_size(ArtPath() / filename), size)
 
-    def test_timed_script_scales_only_the_spell_power_term_and_keeps_aegis_inactive(self):
+    def test_timed_script_uses_shared_holy_armor_formula_and_loader_owned_base(self):
         script = (ROOT / "scripts/spells/timed.lua").read_text(encoding="utf-8")
         self.assertIn('local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"', script)
-        self.assertIn("mechanics:getSpellPowerCoefficientBasisPoints()", script)
-        self.assertIn("mechanics:getEffectPower()", script)
-        self.assertIn("HOLY_ARMOR_MAX_REDUCTION_PERCENT", script)
-        self.assertIn("if spellKey == HOLY_ARMOR_SPELL then return end", script)
-        self.assertIn("function Script:adjustHolyArmorPowerTerm", script)
-        self.assertIn("return spellPowerTerm", script)
+        self.assertIn("nb.val = mechanics:getHolyArmorReduction(nb.val or 0, unit)", script)
+        binding = (ROOT / "luascript/api/spells/TimedUtility.cpp").read_text(encoding="utf-8")
+        self.assertIn("newHorizonsMagic::holyArmorReduction(configuredBase", binding)
+        self.assertIn("m.getCrownAndAltarBonusPercent(&unit)", binding)
+        helper = (ROOT / "lib/spells/NewHorizonsTimedUtility.cpp").read_text(encoding="utf-8")
+        self.assertIn("BonusTypeID::decode", helper)
+        self.assertIn("decodeBonusSubtype", helper)
+        self.assertNotIn("JsonUtils::parseBonus", helper)
+        self.assertIn("numerator *= 120", helper)
+        self.assertIn("divisor *= 100", helper)
+        self.assertNotIn("HOLY_ARMOR_MAX_REDUCTION_PERCENT", script)
 
     def test_damage_script_keeps_legacy_immunity_but_defers_new_horizons_reduction(self):
         script = (ROOT / "scripts/spells/damage.lua").read_text(encoding="utf-8")

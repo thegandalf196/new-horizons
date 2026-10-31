@@ -13,6 +13,7 @@
 #include "../../lib/filesystem/ResourcePath.h"
 #include "../widgets/MiscWidgets.h"
 #include "CWindowObject.h"
+#include "CreatureBonusStatusPresentation.h"
 
 class CCommanderInstance;
 class CStackInstance;
@@ -56,13 +57,7 @@ public:
 
 class CStackWindow : public CWindowObject
 {
-	struct BonusInfo
-	{
-		std::string description;
-		ImagePath imagePath;
-		BonusSource bonusSource;
-		std::string tooltip;
-	};
+	using BonusInfo = creatureBonusStatusPresentation::Row;
 
 	class CWindowSection : public CIntObject
 	{

@@ -893,6 +893,7 @@ void CPlayerInterface::activeStack(const BattleID & battleID, const CStack * sta
 	{
 		// probably battle is finished already
 		cb->battleMakeUnitAction(battleID, BattleAction::makeDefend(stack));
+		return;
 	}
 
 	battleInt->stackActivated(stack);

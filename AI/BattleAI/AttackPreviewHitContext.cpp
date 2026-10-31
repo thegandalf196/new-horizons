@@ -7,6 +7,9 @@
 #include "DamageCacheMarks.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "AttackPreviewHitContext.h"
+#include "ParalyzingGazeProjection.h"
+#include "StackWithBonuses.h"
+#include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -271,4 +274,79 @@ bool AttackPreviewHitContext::anyNightProwler(const battle::Units & units)
 	{
 		return damageCacheDetail::hasNightProwlerBonus(unit);
 	});
+}
+
+void AttackPreviewHitContext::applyOrdinaryStrike(HypotheticBattle & branch,
+	const BattleAttackInfo & attack, int64_t primaryDamage)
+{
+	auto current = attack;
+	current.attacker = branch.battleGetUnitByID(attack.attacker->unitId());
+	current.defender = branch.battleGetUnitByID(attack.defender->unitId());
+	const auto effect = newHorizonsOrdinaryStrike::plan(branch, current, primaryDamage);
+	if(effect.add.empty())
+		return;
+	auto target = branch.getForUpdate(effect.target);
+	target->removeUnitBonus(effect.remove);
+	target->addUnitBonus(effect.add);
+}
+void AttackPreviewHitContext::applyPrimaryStatuses(const BattleAttackInfo & attack,
+	int64_t primaryDamage, bool binding, bool gaze) const
+{
+	if(!fortunePreview)
+		return;
+	fortunePreview->projectSerpentBinding(attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, binding);
+	paralyzingGazeAI::apply(*fortunePreview, attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, gaze);
+	applyOrdinaryStrike(*fortunePreview, attack, primaryDamage);
+}
+
+void AttackPreviewHitContext::replayOrdinaryStrikeEffects(HypotheticBattle & destination,
+	const AttackPossibility & captured)
+{
+	if(!captured.effectPreview)
+		return;
+	std::vector<uint32_t> recipients;
+	if(captured.attackerState)
+		recipients.push_back(captured.attackerState->unitId());
+	for(const auto & affected : captured.affectedUnits)
+		if(affected && !vstd::contains(recipients, affected->unitId()))
+			recipients.push_back(affected->unitId());
+	const CSelector rider(newHorizonsOrdinaryStrike::isStrikeEffect);
+	for(const auto id : recipients)
+	{
+		const auto * final = captured.effectPreview->battleGetUnitByID(id);
+		const auto * current = destination.battleGetUnitByID(id);
+		if(!final || !current)
+			continue;
+		const auto saved = final->getUnstackedBonuses(rider);
+		if(saved->empty() && !current->hasBonus(rider))
+			continue;
+		std::vector<Bonus> values;
+		for(const auto & bonus : *saved)
+			values.push_back(*bonus);
+		auto target = destination.getForUpdate(id);
+		target->removeUnitBonus(rider);
+		target->addUnitBonus(values);
+	}
+}
+
+void AttackPreviewHitContext::prepareVictimStrike(BattleAttackInfo & attack,
+	const CBattleInfoCallback & state, const VictimStrikeInput & input)
+{
+	attack.secondaryAttack = input.recipient.unitId() != input.primary.unitId();
+	attack.ordinaryAttackIndex = attack.retaliation || input.selectedFollowUp ? 0 : input.index;
+	attack.relentlessAssaultDamagePercent = input.relentlessAssaultPercent;
+	attack.protectIntercepted = input.strike.protectIntercepted
+		&& input.recipient.unitId() == input.primary.unitId();
+	// The authoritative path spends movement on the first strike and
+	// consumes Charge before collateral. Later attacks therefore have no
+	// charge distance; collateral retains distance for ordinary jousting,
+	// while secondaryAttack prevents it from inheriting the Order.
+	if(input.index > 0)
+		attack.chargeDistance = 0;
+	if(input.strike.perfectMoment || input.strike.perfectFortune)
+	{
+		attack.luckyStrike = !attack.secondaryAttack || state.getBattle()->getLuckRollRules().affectsAllTargets;
+		attack.unluckyStrike = false;
+	}
+	attack.defenderPos = attack.defender->getPosition();
 }

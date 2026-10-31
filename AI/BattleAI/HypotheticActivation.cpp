@@ -11,6 +11,8 @@
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/NewHorizonsMaintenanceSpecialties.h"
+#include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "InitialExportBattleSubject.h"
 #include "../../lib/battle/RoundBonusDuration.h"
@@ -119,6 +121,14 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		if(battle::endBattleFormAtNearestLegalPosition(*unit, getAccessibility(unit.get())))
 			unit->removeUnitBonus(CSelector(battle::isPolymorphMarker));
 	}
+	// Match the authoritative post-BattleNextRound health phase: timed expiry,
+	// pending ghosts and form restoration are already resolved; no activation occurs.
+	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
+	{
+		auto healing = static_cast<int64_t>(newHorizonsHeroes::ordinaryCreatureRoundHealing(*this, *unit));
+		if(healing > 0)
+			getForUpdate(unit->unitId())->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+	}
 	// Unlike opening unit enchantments, obstacle timers tick on every round
 	// transition. Authoritative BattleFlowProcessor then removes zero timers.
 	for(auto & obstacle : projectedObstacles)
@@ -180,6 +190,8 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	if(reason == BattleUnitTurnReason::MORALE)
 		unit->hadMorale = true;
 	unit->moraleExtraActivation = getMoraleExtraDamagePercent() != 100 && reason == BattleUnitTurnReason::MORALE;
+	const bool redeploy = unit->defended() && !unit->armorerLastStandDefending;
+	const bool waited = unit->waited();
 	newHorizonsHeroicSpirit::beginActivation(*unit, reason);
 	{
 		LifecycleTimingScope measurement(timing ? &timing->activationExpiryRemoval : nullptr);
@@ -217,6 +229,10 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 		&& unit->hasBonus(hydrasVitalityMarker))
 		unit->consumeCapacityRegeneration();
 
+	int64_t maintenanceHealing = newHorizonsMaintenanceSpecialties::activationHealing(*this, *unit, reason);
+	if(maintenanceHealing > 0)
+		unit->heal(maintenanceHealing, EHealLevel::HEAL, EHealPower::PERMANENT);
+
 	auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
 	if(poisonDamage > 0)
 	{
@@ -243,7 +259,7 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 		newHorizonsBulwark::applySwampRenewal(unit.get(), battleGetOwnerHero(unit.get()));
 	const auto side = playerToSide(battleGetOwner(unit.get()));
 	for(auto owner : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		fortuneStates.at(owner).beginActivation(unitId, side == owner);
+		fortuneStates.at(owner).beginActivation(unitId, side == owner, redeploy, waited);
 }
 
 void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw,
@@ -385,6 +401,8 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 	resetActiveUnit();
 	newHorizonsForestAmbush::acceptWait(*this, *unit);
 	unit->afterWait();
+	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		fortuneStates.at(side).tactics.endActivation();
 	if(newHorizonsBattlecraft::hasOverwatch(battleGetOwnerHero(unit.get()))
 		&& unit->isShooter() && unit->battlecraftOverwatchUsedRound != getRound())
 		unit->battlecraftOverwatchReadyRound = getRound();
@@ -406,6 +424,8 @@ void HypotheticBattle::completeSwiftNormalActivation(uint32_t unitId)
 	newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId);
 	const auto unit = getForUpdate(unitId);
 	unit->forestAmbush.finishActivation();
+	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		fortuneStates.at(side).tactics.endActivation();
 	if(const auto next = newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, getRound()))
 		updateUnitBonus(unitId, {*next});
 }

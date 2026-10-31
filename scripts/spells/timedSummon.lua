@@ -7,12 +7,7 @@ local function summonType(self)
 end
 
 local function healthPool(mechanics)
-	local base = mechanics:getLivingArmorParameter("baseHitPoints")
-	local coefficient = mechanics:getLivingArmorParameter("spellPowerCoefficient")
-	if base <= 0 or coefficient < 0 then return 0 end
-	return base + mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		coefficient * math.max(0, mechanics:getEffectPower()),
-		mechanics:getEffectPowerDivisor(), mechanics:getSpellPowerCoefficientBasisPoints())
+	return mechanics:getLivingArmorHitPoints()
 end
 
 local function summonHealth(mechanics, creature)

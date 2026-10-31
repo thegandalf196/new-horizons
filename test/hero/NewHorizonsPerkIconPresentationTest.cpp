@@ -1,6 +1,6 @@
 /* Part of VCMI / New Horizons; GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
-#include "../../client/windows/NewHorizonsPerkIcons.h"
+#include "../../client/windows/NewHorizonsCapturedPerkIcons.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -94,4 +94,87 @@ TEST(NewHorizonsPerkIconPresentation, UnrelatedStableIdentitiesAndFallbacksAreUn
 		EXPECT_EQ(newHorizonsPerkIcon(id, "Countermage"), resource);
 	}
 	EXPECT_EQ(newHorizonsPerkIcon("unknown:perk", "Arcane Ballistics"), "NH_perk_neutral");
+}
+
+namespace
+{
+struct SylvanArtExpectation
+{
+	const char * id;
+	const char * name;
+	const char * resource;
+};
+constexpr SylvanArtExpectation sylvanArt[] = {
+		{"new-horizons:sylvanLuck.elvenPrecision", "Fleetfoot", "NH_perk_sylvan_tactics_fleetfoot"},
+		{"new-horizons:sylvanLuck.forestSFavor", "Patient Hunter", "NH_perk_sylvan_tactics_patient_hunter"},
+		{"new-horizons:sylvanLuck.serendipity", "Dappled Cover", "NH_perk_sylvan_tactics_dappled_cover"},
+		{"new-horizons:sylvanLuck.luckyRecovery", "Measured Advance", "NH_perk_sylvan_tactics_measured_advance"},
+		{"new-horizons:sylvanLuck.sharedFortune", "Covering Fire", "NH_perk_sylvan_tactics_covering_fire"},
+		{"new-horizons:sylvanLuck.natureSProvidence", "Crossfire", "NH_perk_sylvan_tactics_crossfire"},
+		{"new-horizons:sylvanLuck.fortunateAim", "Disruptive Strike", "NH_perk_sylvan_tactics_disruptive_strike"},
+		{"new-horizons:sylvanLuck.wildChance", "Quick Redeployment", "NH_perk_sylvan_tactics_quick_redeployment"},
+		{"new-horizons:sylvanLuck.perfectMoment", "Perfect Moment", "NH_perk_sylvan_tactics_perfect_moment"},
+		{"new-horizons:sylvanLuck.cascadingFortune", "Wild Hunt", "NH_perk_sylvan_tactics_wild_hunt"},
+};
+}
+
+TEST(NewHorizonsPerkIconPresentation, SylvanArtworkUsesCapturedPolicyAndExactDefinitionIdentity)
+{
+	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesSylvanTactics(current));
+	const auto before = current;
+	auto legacy = current;
+	legacy.Struct().erase("sylvanTacticsPolicy");
+	ASSERT_FALSE(newHorizonsHeroes::usesSylvanTactics(legacy));
+	for(const auto & expected : sylvanArt)
+	{
+		SCOPED_TRACE(expected.id);
+		const auto perk = newHorizonsHeroes::perkDefinition(current, "new-horizons:sylvanLuck", expected.id);
+		ASSERT_TRUE(perk);
+		ASSERT_EQ(perk->name, expected.name);
+		EXPECT_EQ(newHorizonsPerkIcon(perk->id, perk->name, current), expected.resource);
+		// Names alone cannot distinguish historical Perfect Moment.
+		EXPECT_EQ(newHorizonsPerkIcon(perk->id, perk->name, legacy), newHorizonsPerkIcon(perk->id));
+		EXPECT_EQ(newHorizonsPerkIcon(perk->id, perk->name, JsonNode()), newHorizonsPerkIcon(perk->id));
+		EXPECT_EQ(newHorizonsPerkIcon(perk->id, "Unknown revised name", current), newHorizonsPerkIcon(perk->id));
+		EXPECT_EQ(newHorizonsPerkIcon(perk->id, "", current), newHorizonsPerkIcon(perk->id));
+	}
+	EXPECT_EQ(current, before);
+}
+
+TEST(NewHorizonsPerkIconPresentation, SylvanArtworkPreservesOtherFamiliesAndHistoricalResolver)
+{
+	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	for(const auto & [id, resource] : newHorizonsPerkIconBindings)
+	{
+		EXPECT_EQ(newHorizonsPerkIcon(id), resource);
+		EXPECT_EQ(newHorizonsPerkIcon(id, "unrelated captured name", current), resource);
+	}
+	EXPECT_EQ(newHorizonsPerkIcon("new-horizons:archery.crossfire", "Crossfire", current), "NH_perk_crossfire");
+	EXPECT_EQ(newHorizonsPerkIcon("new-horizons:sylvanLuck.perfectMoment"), "NH_perk_perfect_moment");
+	EXPECT_EQ(newHorizonsPerkIcon(stableId, "Arcane Ballistics", current), newBallistics);
+	EXPECT_EQ(newHorizonsPerkIcon(stableId, "Countermage", current), oldShield);
+	EXPECT_EQ(newHorizonsPerkIcon("unknown:perk", "Fleetfoot", current), "NH_perk_neutral");
+}
+
+TEST(NewHorizonsPerkIconPresentation, SylvanImmutableOfferKeepsItsCapturedArtContextAfterWireReload)
+{
+	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	auto legacy = current;
+	legacy.Struct().erase("sylvanTacticsPolicy");
+	for(const auto & expected : sylvanArt)
+	{
+		HeroLevelUp outgoing;
+		outgoing.heroId = ObjectInstanceID(7);
+		outgoing.player = PlayerColor(0);
+		outgoing.perks = {{{"new-horizons:sylvanLuck", expected.id}, expected.name, "Captured offer", 1}};
+		CMemorySerializer wire;
+		wire.oser & outgoing;
+		HeroLevelUp incoming;
+		wire.iser & incoming;
+		ASSERT_EQ(incoming.perks, outgoing.perks);
+		const auto & saved = incoming.perks.front();
+		EXPECT_EQ(newHorizonsPerkIcon(saved.selection.perkId, saved.name, current), expected.resource);
+		EXPECT_EQ(newHorizonsPerkIcon(saved.selection.perkId, saved.name, legacy), newHorizonsPerkIcon(expected.id));
+	}
 }

@@ -39,9 +39,9 @@ GrowsWithLevelUpdater::GrowsWithLevelUpdater(int valPer20, int stepSize)
 
 std::shared_ptr<Bonus> GrowsWithLevelUpdater::createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const
 {
-	if(context.getNodeType() == BonusNodeType::HERO)
+	if(const auto capturedLevel = context.heroLevel())
 	{
-		int level = dynamic_cast<const CGHeroInstance &>(context.originalNode()).level;
+		int level = *capturedLevel;
 		int steps = stepSize ? level / stepSize : level;
 		//rounding follows format for HMM3 creature specialty bonus
 		int newVal = vstd::divideAndCeil(valPer20 * steps, 20);
@@ -72,9 +72,9 @@ JsonNode GrowsWithLevelUpdater::toJsonNode() const
 
 std::shared_ptr<Bonus> TimesHeroLevelUpdater::createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const
 {
-	if(context.getNodeType() == BonusNodeType::HERO)
+	if(const auto capturedLevel = context.heroLevel())
 	{
-		int level = dynamic_cast<const CGHeroInstance &>(context.originalNode()).level;
+		int level = *capturedLevel;
 		auto newBonus = std::make_shared<Bonus>(*b);
 		newBonus->val *= level / stepSize;
 		return newBonus;
@@ -94,11 +94,11 @@ JsonNode TimesHeroLevelUpdater::toJsonNode() const
 
 std::shared_ptr<Bonus> TimesHeroLevelDivideStackLevelUpdater::createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const
 {
-	if(context.getNodeType() == BonusNodeType::HERO)
+	if(const auto capturedLevel = context.heroLevel())
 	{
 		// keep base val intact and defer all math to the divide step, so it can compute
 		// val * (hero level / stack level) - matching H3 rounding, unlike a pre-multiply
-		int level = dynamic_cast<const CGHeroInstance &>(context.originalNode()).level;
+		int level = *capturedLevel;
 		auto newBonus = std::make_shared<Bonus>(*b);
 		auto divider = std::make_shared<DivideStackLevelUpdater>(*divideStackLevel);
 		divider->heroLevel = level;
@@ -146,26 +146,10 @@ JsonNode TimesStackSizeUpdater::toJsonNode() const
 
 std::shared_ptr<Bonus> TimesArmySizeUpdater::createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const
 {
-	if(context.getNodeType() == BonusNodeType::ARMY || context.getNodeType() == BonusNodeType::HERO || context.getNodeType() == BonusNodeType::TOWN)
+	if(const auto totalSize = context.filteredArmySize(filteredCreature, filteredFaction, filteredLevel))
 	{
-		const auto & army = dynamic_cast<const CArmedInstance &>(context.originalNode());
-		int totalSize = 0;
-		for (const auto & unit : army.Slots())
-		{
-			if (filteredCreature.hasValue() && filteredCreature != unit.second->getCreatureID())
-				continue;
-
-			if (filteredFaction.hasValue() && filteredFaction != unit.second->getFactionID())
-				continue;
-
-			if (filteredLevel != -1 && filteredLevel != unit.second->getLevel())
-				continue;
-
-			totalSize += unit.second->getCount();
-		}
-
 		auto newBonus = std::make_shared<Bonus>(*b);
-		newBonus->val *= std::clamp(totalSize / stepSize, minimum, maximum);
+		newBonus->val *= std::clamp(*totalSize / stepSize, minimum, maximum);
 		return newBonus;
 	}
 	return b;

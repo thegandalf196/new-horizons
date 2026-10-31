@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "IObjectInterface.h"
 #include "../rewardable/Interface.h"
 
@@ -80,6 +82,8 @@ public:
 	
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			configuration.validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & static_cast<TownBuildingInstance&>(*this);
 		h & static_cast<Rewardable::Interface&>(*this);
 		h & visitors;

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsPerkHelp.h"
 #include "HeroSkillOddsWindow.h"
 
 #include "../GameInstance.h"
@@ -33,11 +34,11 @@ struct SkillWeight
 	int weight = 0;
 };
 
-std::string skillName(SecondarySkill skill, const std::string & fallback)
+std::string skillName(const CGHeroInstance & hero, SecondarySkill skill, const std::string & fallback)
 {
 	try
 	{
-		return skill.toSkill()->getNameTranslated();
+		return newHorizonsPerkHelp::skillLabel(&hero, skill);
 	}
 	catch(const std::exception &)
 	{
@@ -92,13 +93,13 @@ HeroSkillOddsWindow::HeroSkillOddsWindow(const CGHeroInstance & hero)
 			const SecondarySkill skill(decoded);
 			if(isForeignFactionSkill(skill))
 				continue;
-			weights.push_back({skill, id, skillName(skill, id), std::max<int>(0, weight.Integer())});
+			weights.push_back({skill, id, skillName(hero, skill, id), std::max<int>(0, weight.Integer())});
 		}
 	}
 	else
 	{
 		for(const auto & [skill, weight] : hero.getHeroClass()->secSkillProbability)
-			weights.push_back({skill, SecondarySkill::encode(skill.getNum()), skillName(skill, "Unknown"), std::max(1, weight)});
+			weights.push_back({skill, SecondarySkill::encode(skill.getNum()), skillName(hero, skill, "Unknown"), std::max(1, weight)});
 	}
 	std::stable_sort(weights.begin(), weights.end(), [](const SkillWeight & left, const SkillWeight & right)
 	{

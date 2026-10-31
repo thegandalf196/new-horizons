@@ -3,14 +3,27 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #pragma once
+#include "NewHorizonsOrdinaryCreatureSpecialties.h"
 #include <cstdint>
+#include <array>
+#include <memory>
+#include <string>
+#include <vector>
+#include "../../constants/EntityIdentifiers.h"
 #include <optional>
 class JsonNode;
 class CGHeroInstance;
 class CHero;
+struct BattleAttackInfo;
+class CBattleInfoCallback;
+struct Bonus;
 namespace newHorizonsHeroes
 {
 struct SpecialtyPresentation;
+struct CreatureLineSpecialtyRules;
+/// Pure construction; hero instance retains all bonus-tree mutation and marker ownership.
+DLL_LINKAGE std::vector<std::shared_ptr<Bonus>> creatureLineSpecialtyBonuses(const CGHeroInstance & hero,
+	const CreatureLineSpecialtyRules & rules, CreatureID creature, const std::array<std::string, 4> & markers);
 struct DLL_LINKAGE FieldPhysicianRules
 {
 	int healingPercentPerLevel = 0;

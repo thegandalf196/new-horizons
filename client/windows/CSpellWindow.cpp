@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "SpellPointPresentation.h"
+#include "SpellbookEntryPresentation.h"
 #include "CSpellWindow.h"
 
 #include "../../lib/ScopeGuard.h"
@@ -30,6 +31,7 @@
 #include "media/IVideoPlayer.h"
 #include "render/CAnimation.h"
 #include "render/IRenderHandler.h"
+#include "render/IFont.h"
 #include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/CComponent.h"
 #include "../widgets/CTextInput.h"
@@ -1095,10 +1097,10 @@ CSpellWindow::SpellArea::SpellArea(Rect pos, CSpellWindow * owner)
 	image->visible = false;
 
 	name = std::make_shared<CLabel>(39, 70, FONT_TINY, ETextAlignment::CENTER);
-	level = std::make_shared<CLabel>(39, 82, FONT_TINY, ETextAlignment::CENTER);
-	cost = std::make_shared<CLabel>(39, 94, FONT_TINY, ETextAlignment::CENTER);
+	cost = std::make_shared<CLabel>(39, 82, FONT_TINY, ETextAlignment::CENTER);
+	effect = std::make_shared<CLabel>(39, 94, FONT_TINY, ETextAlignment::CENTER);
 
-	for(auto l : {name, level, cost})
+	for(auto l : {name, cost, effect})
 		l->setAutoRedraw(false);
 }
 
@@ -1225,16 +1227,12 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 {
 	if(mySpell)
 	{
-		std::string dmgInfo;
-		auto causedDmg = owner->myInt->cb->estimateSpellDamage(mySpell, owner->myHero);
-		if(causedDmg == 0 || mySpell->id == SpellID::TITANS_LIGHTNING_BOLT) //Titan's Lightning Bolt already has damage info included
-			dmgInfo.clear();
-		else
-		{
-			MetaString dmgText = MetaString::createFromTextID("core.genrltxt.343");
-			dmgText.replaceNumber(causedDmg);
-			dmgInfo = dmgText.toString(&GAME->translator());
-		}
+		const auto breakdown = refreshReadout();
+		const auto heading = spellbookPresentation::levelAndSchools(owner->spellLevels.at(mySpell->getId()),
+			schoolLevel, owner->spellSchools.at(mySpell->getId()), GAME->translator());
+		const auto currentEffect = spellbookPresentation::effectDetail(effectPreview, GAME->translator());
+		const auto currentCost = spellbookPresentation::costLine(breakdown, GAME->translator(),
+			[](const std::string &) { return 0; });
 
 		std::string requirements;
 		if(schoolLocked)
@@ -1246,8 +1244,6 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 		std::string costInfo;
 		if(newHorizonsMagic::rulesActive(owner->myHero->getMagicRules()))
 		{
-			const auto metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
-			const auto breakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
 			costInfo = spellCostBreakdownText(breakdown);
 			if(!costInfo.empty())
 				costInfo = "\n\n" + costInfo;
@@ -1256,8 +1252,10 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 				costInfo += (costInfo.empty() ? "\n\n" : "\n")
 					+ LIBRARY->generaltexth->translate("new-horizons.spellCost.overcharge");
 		}
-		CRClickPopup::createAndPush(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel)
-			+ costInfo + dmgInfo + requirements + followupInfo,
+		CRClickPopup::createAndPush(heading + "\n\n"
+			+ newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel)
+			+ "\n\n" + currentCost + "\n" + currentEffect
+			+ costInfo + requirements + followupInfo,
 			std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
 	}
 }
@@ -1291,7 +1289,6 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 	schoolBorder.reset();
 	schoolLocked = false;
 	divineMandateLocked = false;
-	schoolRequirementLabel.clear();
 	schoolRequirementText.clear();
 	divineMandateRequirementText.clear();
 	image->visible = false;
@@ -1299,40 +1296,15 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 	// selecting a new frame so a preceding centered PNG cannot shift a DEF icon.
 	image->moveTo(pos.topLeft());
 	name->setText("");
-	level->setText("");
+	effect->setText("");
 	cost->setText("");
 	mySpell = spell;
 	if(mySpell)
 	{
-		const int requiredRank = newHorizonsMagic::requiredSchoolRank(owner->myHero->getMagicRules(), mySpell->getId());
-		const bool inscribedInSpellbook = owner->myHero->hasSpellbook()
-			&& owner->myHero->isSpellInscribedForCasting(mySpell->getId());
-		// Inscriptions and qualified scrolls use the authoritative casting rule;
-		// learning still requires the appropriate School proficiency.
-		schoolLocked = requiredRank > 0 && !inscribedInSpellbook
-			&& !newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId())
-			&& !owner->myHero->canCastThisSpell(mySpell);
-		divineMandateLocked = !owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->getId());
-		if(divineMandateLocked)
-			divineMandateRequirementText = "This spell is not eligible for the pending Divine Mandate Light Spell follow-up.";
-		if(schoolLocked)
-		{
-			const auto rankName = GAME->translator().translate(TextIdentifier("core.skilllev", requiredRank - 1).get());
-			schoolRequirementLabel = "Locked: " + rankName;
-			std::string schools;
-			for(const auto skill : newHorizonsMagic::spellSchoolSkills(owner->myHero->getMagicRules(), mySpell->getId()))
-			{
-				if(!schools.empty())
-					schools += " or ";
-				schools += skill.toEntity(LIBRARY)->getNameTranslated();
-			}
-			schoolRequirementText = "Requires " + rankName + " " + schools + ".";
-		}
+
 		SpellSchool whichSchool;
 		schoolLevel = owner->myHero->getSpellSchoolLevel(mySpell, &whichSchool);
-		const bool metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
-		const auto costBreakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
-		const int spellCost = costBreakdown.finalCost;
+
 
 		image->setFrame(mySpell->id.getNum());
 		image->visible = true;
@@ -1367,55 +1339,30 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 				iconCanvas.y + (iconCanvas.h - image->pos.h) / 2));
 		}
 
-		ColorRGBA firstLineColor, secondLineColor;
-		if(divineMandateLocked || owner->isAdventureSpellUsedToday(mySpell->id)
-			|| ((spellCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect)) //hero cannot cast this spell
-		{
-			firstLineColor = Colors::WHITE;
-			secondLineColor = Colors::ORANGE;
-		}
-		else
-		{
-			firstLineColor = Colors::YELLOW;
-			secondLineColor = Colors::WHITE;
-		}
-
-		name->color = firstLineColor;
-		name->setText(mySpell->getNameTranslated());
-
-		level->color = secondLineColor;
-		const int spellLevel = owner->spellLevels.at(mySpell->getId());
-		std::string levelTextID = spellLevel > 0 ? TextIdentifier("core.genrltxt", 171 + spellLevel).get()
-														  : "vcmi.spellBook.zero_level.hint";
-
-		if(schoolLevel > 0)
-		{
-			MetaString levelText = MetaString::createFromRawString("%s/%s");
-			levelText.replaceTextID(levelTextID);
-			levelText.replaceTextID("core.skilllev", 3 + (schoolLevel - 1)); //lines 4-6
-			level->setText(levelText.toString(&GAME->translator()));
-		}
-		else
-			level->setText(GAME->translator().translate(levelTextID));
-
-		cost->color = secondLineColor;
-		if(schoolLocked)
-			cost->setText(schoolRequirementLabel);
-		else if(divineMandateLocked)
-			cost->setText("Light spells only");
-		else
-		{
-			const bool showBreakdown = newHorizonsMagic::rulesActive(owner->myHero->getMagicRules())
-				&& hasSpellCostBreakdown(costBreakdown);
-			MetaString costText = showBreakdown
-				? MetaString::createFromTextID("new-horizons.spellCost.row")
-				: MetaString::createFromRawString("%s: %d");
-			if(showBreakdown)
-				costText.replaceNumber(costBreakdown.listedCost);
-			else
-				costText.replaceTextID("core.genrltxt.387"); // Spell Points
-			costText.replaceNumber(costBreakdown.finalCost);
-			cost->setText(costText.toString(&GAME->translator()));
-		}
+		refreshReadout();
 	}
+}
+
+SpellCostBreakdown CSpellWindow::SpellArea::refreshReadout()
+{
+	const auto access = spellbookPresentation::access(*owner->myHero, *mySpell, GAME->translator());
+	schoolLocked = access.schoolLocked;
+	schoolRequirementText = access.requirement;
+	divineMandateLocked = !owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->getId());
+	divineMandateRequirementText = divineMandateLocked
+		? LIBRARY->generaltexth->translate("new-horizons.spellbook.lightFollowupOnly") : "";
+	const bool metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
+	const auto breakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
+	const auto battle = owner->myInt->battleInt ? owner->myInt->battleInt->getBattle() : nullptr;
+	effectPreview = newHorizonsMagic::spellEffectPreview(*owner->myHero, *mySpell, battle.get(), metamagicFollowup);
+	const bool unavailable = divineMandateLocked || owner->isAdventureSpellUsedToday(mySpell->id)
+		|| ((breakdown.finalCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect);
+	name->color = unavailable ? ColorRGBA(62, 52, 44) : ColorRGBA(40, 24, 12);
+	cost->color = effect->color = unavailable ? ColorRGBA(90, 24, 14) : ColorRGBA(56, 34, 18);
+	const auto font = ENGINE->renderHandler().loadFont(FONT_TINY);
+	const auto width = [&font](const std::string & text) { return static_cast<int>(font->getStringWidth(text)); };
+	name->setText(mySpell->getNameTranslated());
+	cost->setText(spellbookPresentation::costLine(breakdown, GAME->translator(), width));
+	effect->setText(spellbookPresentation::effectLine(effectPreview, GAME->translator(), width));
+	return breakdown;
 }

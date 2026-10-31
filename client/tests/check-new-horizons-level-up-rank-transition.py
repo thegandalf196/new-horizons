@@ -55,7 +55,7 @@ def verify_rank_transition_wiring() -> None:
 
     # Display only the offered Basic/Advanced/Expert rank, as requested.
     # The actual current rank still determines the offer and component value.
-    require(skill_branch, "if(newHorizonsMagic::rulesActive(hero->getMagicRules()))", "saved New Horizons gate")
+    assert "newHorizonsMagic::rulesActive" not in skill_branch, "Captured hero names apply in original-mode overrides too"
     require(
         skill_branch,
         'translate("core.skilllev", offeredRank - 1)',
@@ -63,7 +63,7 @@ def verify_rank_transition_wiring() -> None:
     )
     assert 'skill.unlearned' not in skill_branch, "do not display the rejected Unlearned label"
     assert 'skill.rankTransition' not in skill_branch, "do not restore the rejected transition subtitle"
-    require(skill_branch, 'LIBRARY->skillh->getById(skill)->getNameTranslated()', "Skill name on second subtitle line")
+    require(skill_branch, 'newHorizonsPerkHelp::skillLabel(hero, skill)', "Skill name on second subtitle line")
     require(skill_branch, 'comp->customSubtitle = offeredRankText + "\\n"', "offered rank above Skill name")
 
     assert "newHorizonsMagic::rulesActive" not in perk_branch, "rank transition gate must not alter perk cards"
@@ -71,7 +71,7 @@ def verify_rank_transition_wiring() -> None:
     require(perk_branch, "perk.requiredRank, perk.name", "pass prerequisite rank and name to perk card")
     require(perk_branch, "perk.name", "existing perk name subtitle")
     require(perk_branch, "newHorizonsPerkHelp::format", "existing perk help")
-    require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId, perk.name)", "existing perk icon")
+    require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)", "existing perk icon")
     _, _, parent_card = braced_block(LEVEL, "class CLevelUpPerkComponent")
     require(parent_card, 'parentSkill->customSubtitle = parentName + "\\n"', "visible canonical parent Skill name")
     require(parent_card, 'translate("core.skilllev", requiredRank - 1)', "parent Skill's required rank")

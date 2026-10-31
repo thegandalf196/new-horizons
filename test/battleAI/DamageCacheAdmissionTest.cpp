@@ -6,6 +6,10 @@
 #include "StdInc.h"
 #include "ProjectedTargetHitFixture.h"
 #include "../../AI/BattleAI/DamageCacheAdmission.h"
+#include "../../AI/BattleAI/DreadCavalryProjection.h"
+#include "../../AI/BattleAI/NewHorizonsHexOfPain.h"
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../lib/battle/DamageCalculationTiming.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/CStack.h"
@@ -400,4 +404,79 @@ TEST_F(DamageCacheAdmissionTest, NewBatchObservesChangedSavedRulesAndCallbackIde
 	EXPECT_FALSE(independent.matches(*actor, source));
 	EXPECT_EQ(source.queries, 2u);
 	EXPECT_EQ(sibling.queries, 1u);
+}
+
+TEST_F(DamageCacheAdmissionTest, SelectedOrdinaryProbeAndFirstApplicationRepeatDamageWork)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto actor = child->getForUpdate(incoming->unitId());
+	auto target = child->getForUpdate(braced->unitId());
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(target, nullptr);
+	ASSERT_TRUE(actor->alive() && target->alive());
+	ASSERT_TRUE(newHorizonsCombatSkills::isPhysicalCreatureAttack(actor.get(), true));
+	ASSERT_FALSE(child->battleMatchOwner(actor.get(), target.get(), true));
+	for(const auto & unit : {actor, target})
+		unit->addUnitBonus(std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
+			BonusType::NO_LUCK, BonusSource::OTHER, 1, BonusSourceID())});
+	actor->addUnitBonus(std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
+		BonusType::BLOCKS_RETALIATION, BonusSource::OTHER, 1, BonusSourceID())});
+	ASSERT_EQ(child->battleResolveHeroOrderTarget(actor.get(), target.get(), false), target.get());
+	ASSERT_EQ(newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
+		child->battleGetOwnerHero(target.get()), target.get(), child->battleGetRound()), 0);
+	ASSERT_FALSE(child->battleCanTriggerHeroOrderBrace(actor.get(), target.get(), 3, false, false));
+	const auto alive = child->battleAliveUnits();
+	ASSERT_FALSE(std::any_of(alive.begin(), alive.end(), [&](const auto * unit)
+		{ return child->battleOverwatchReady(unit); }));
+	ASSERT_FALSE(dreadCavalryAI::hasActivationState(actor.get()));
+	ASSERT_EQ(actor->creatureId(), creatureByName("core:pikeman"));
+	ASSERT_FALSE(newHorizonsHexOfPainAI::hasEffect(actor.get()));
+	ASSERT_FALSE(child->battleCanTriggerCleave(actor.get()));
+	DamageCache cache;
+	cache.buildDamageCache(child, BattleSide::DEFENDER);
+	const auto before = snapshot();
+	const auto world = gameState()->saveToMemory();
+	const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto gameRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto defaultRng = projectedHitTest::serialized(CRandomGenerator::getDefault());
+	const auto targetHealthBefore = target->getAvailableHealth();
+	const auto cacheBefore = cache.captureSnapshot();
+	DamageCacheAdmission admission(*actor, *child);
+	BattleExchangeVariant probe, applied;
+	std::optional<bool> overwatch;
+	damageCalculationTiming::Sample probeCalculations, appliedCalculations;
+	const auto probeValue = [&]()
+	{
+		damageCalculationTiming::Binding measured(&probeCalculations);
+		return probe.trackAttack(actor, target, false, true, cache, child,
+			true, true, &overwatch, nullptr, &admission);
+	}();
+	EXPECT_EQ(snapshot(), before);
+	EXPECT_EQ(target->getAvailableHealth(), targetHealthBefore);
+	EXPECT_EQ(gameState()->saveToMemory(), world);
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
+	EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), defaultRng);
+	const bool probeCacheUnchanged = cache.matchesSnapshot(cacheBefore);
+	const auto appliedValue = [&]()
+	{
+		damageCalculationTiming::Binding measured(&appliedCalculations);
+		return applied.trackAttack(actor, target, false, true, cache, child);
+	}();
+	EXPECT_GT(probeValue, 0.0f);
+	EXPECT_GT(appliedValue, 0.0f);
+	EXPECT_LT(target->getAvailableHealth(), targetHealthBefore);
+	EXPECT_EQ(std::bit_cast<uint32_t>(probeValue), std::bit_cast<uint32_t>(appliedValue));
+	EXPECT_GT(probeCalculations.initialCalls, 0u);
+	EXPECT_GT(appliedCalculations.initialCalls, 0u);
+	EXPECT_EQ(gameState()->saveToMemory(), world);
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
+	EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), defaultRng);
+	RecordProperty("selectedProbeValueBits", std::to_string(std::bit_cast<uint32_t>(probeValue)));
+	RecordProperty("firstApplicationValueBits", std::to_string(std::bit_cast<uint32_t>(appliedValue)));
+	RecordProperty("probeNativeInitialCalls", std::to_string(probeCalculations.initialCalls));
+	RecordProperty("appliedNativeInitialCalls", std::to_string(appliedCalculations.initialCalls));
+	RecordProperty("probeCacheUnchanged", probeCacheUnchanged ? "true" : "false");
 }

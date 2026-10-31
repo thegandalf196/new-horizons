@@ -9,13 +9,15 @@ class ScrollCastingUI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = (ROOT / "client/windows/CSpellWindow.cpp").read_text()
+        cls.presentation = (ROOT / "client/windows/SpellbookEntryPresentation.cpp").read_text()
 
     def test_school_lock_does_not_reject_authoritatively_castable_scroll(self):
-        area = self.source.split("void CSpellWindow::SpellArea::setSpell(", 1)[1]
-        expression = area.split("schoolLocked = requiredRank", 1)[1].split(";", 1)[0]
-        self.assertIn("> 0 && !inscribedInSpellbook", expression)
-        self.assertIn("!newHorizonsMagic::hasSchoolProficiency(owner->myHero, mySpell->getId())", expression)
-        self.assertIn("&& !owner->myHero->canCastThisSpell(mySpell)", expression)
+        area = self.presentation.split("Access access(", 1)[1]
+        expression = area.split("result.schoolLocked = required", 1)[1].split(";", 1)[0]
+        self.assertIn("schoolLocked = access.schoolLocked;", self.source)
+        self.assertIn("> 0 && !inscribed", expression)
+        self.assertIn("!newHorizonsMagic::hasSchoolProficiency(&hero, spell.getId())", expression)
+        self.assertIn("&& !hero.canCastThisSpell(&spell)", expression)
         self.assertNotIn("SPELL_SCROLL", expression)
         self.assertNotIn("getSourcesForSpell", expression)
 

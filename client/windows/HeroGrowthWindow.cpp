@@ -25,7 +25,7 @@
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "NewHorizonsPerkHelp.h"
-#include "NewHorizonsPerkIcons.h"
+#include "NewHorizonsCapturedPerkIcons.h"
 
 namespace
 {
@@ -192,7 +192,8 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		{
 			addSmallLabel(x + 10, 182, 135, "Base: " + std::to_string(growth->base[i]));
 			addSmallLabel(x + 10, 200, 135, "Class start: " + std::to_string(growth->profile.starting[i]));
-			addSmallLabel(x + 10, 218, 135, "Class / level: +" + std::to_string(growth->profile.growth[i]));
+			addSmallLabel(x + 10, 218, 135, "Level: +" + std::to_string(growth->profile.growth[i] + growth->fixedSpecialtyGrowth[i])
+				+ (growth->fixedSpecialtyGrowth[i] ? " (+1 Sage)" : ""));
 			addSmallLabel(x + 10, 236, 135, "Last level: " + std::string(growth->lastGains[i] > 0 ? "+" : "") + std::to_string(growth->lastGains[i]));
 		}
 		else
@@ -240,7 +241,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 			growthText += "\nLearned skills can independently grant additional primary points on each level-up.";
 			const std::array<std::string, 4> attributeNames{"Attack", "Defense", "Spell Power", "Knowledge"};
 			for(const auto & opportunity : growth->extraGrowth)
-				growthText += "\n" + opportunity.skill.toEntity(LIBRARY)->getNameTranslated()
+				growthText += "\n" + newHorizonsPerkHelp::skillLabel(&hero, opportunity.skill)
 					+ ": " + std::to_string(opportunity.chancePercent) + "% chance of +1 "
 					+ attributeNames.at(static_cast<size_t>(opportunity.attribute)) + ".";
 			if(growth->extraGrowth.empty())
@@ -308,9 +309,9 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		if(masteries->pending)
 			masteryText += "A saved mastery offer awaits its mandatory choice dialog.\n";
 		for(const auto & skill : masteries->awaitingChoice)
-			masteryText += skill.toEntity(LIBRARY)->getNameTranslated() + ": awaiting mastery choice.\n";
+			masteryText += newHorizonsPerkHelp::skillLabel(&hero, skill) + ": awaiting mastery choice.\n";
 		for(const auto & skill : masteries->eligibleNextLevel)
-			masteryText += skill.toEntity(LIBRARY)->getNameTranslated() + ": eligible on a future level gain.\n";
+			masteryText += newHorizonsPerkHelp::skillLabel(&hero, skill) + ": eligible on a future level gain.\n";
 	}
 	if(perks)
 	{
@@ -378,15 +379,15 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 				if(!skill)
 					continue;
 				const int rank = hero.getPerkSkillRank(skillId);
-				perkSkillNames[skillIndex] = skill->name;
+				perkSkillNames[skillIndex] = newHorizonsPerkHelp::skillName(&hero, skillId);
 				perkSkillRanks[skillIndex] = rank;
 				if(skillIndex >= pageStart && skillIndex < pageEnd)
 				{
 					const int buttonX = 20 + static_cast<int>(skillIndex - pageStart) * 82;
 					const auto button = std::make_shared<CButton>(Point(buttonX, selectorTop + 17), AnimationPath::builtin("settingsWindow/button80"),
-						CButton::tooltip(skill->name, "Show the ten-perk pool for " + skill->name + ". This is read-only."),
+						CButton::tooltip(newHorizonsPerkHelp::skillName(&hero, skillId), "Show the ten-perk pool for " + newHorizonsPerkHelp::skillName(&hero, skillId) + ". This is read-only."),
 						[this, skillId] { selectPerkSkill(skillId); });
-					button->setTextOverlay(skill->name, FONT_TINY, Colors::WHITE);
+					button->setTextOverlay(newHorizonsPerkHelp::skillName(&hero, skillId), FONT_TINY, Colors::WHITE);
 					button->setHoverable(true);
 					perkSkillButtons[skillIndex] = button;
 					elements.push_back(button);
@@ -423,7 +424,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 					const auto background = std::make_shared<TransparentFilledRectangle>(Rect(x, y, cardWidth, cardHeight), panelColor, borderColor);
 					panel.push_back(background);
 					elements.push_back(background);
-					const auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name)), 0,
+					const auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsPerkIcon(perk.id, perk.name, perkState.rules)), 0,
 						Rect(x + 4, y + 3, 20, 20));
 					panel.push_back(icon);
 					elements.push_back(icon);
@@ -447,7 +448,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 						}
 					}
 					const std::string cardText = status + ": " + perk.name + "\n"
-						+ "Tier: " + newHorizonsPerkHelp::tierName(requiredRank) + " | Skill: " + skill->name;
+						+ "Tier: " + newHorizonsPerkHelp::tierName(requiredRank) + " | Skill: " + newHorizonsPerkHelp::skillName(&hero, skillId);
 					const auto caption = std::make_shared<CMultiLineLabel>(Rect(x + 44, y + 1, cardWidth - 48, cardHeight - 2),
 						FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, cardText);
 					panel.push_back(caption);

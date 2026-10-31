@@ -47,6 +47,8 @@ public:
 	std::vector<WeightedBattleFormCandidate> weightedFormsForTarget(const Mechanics * mechanics, const battle::Unit * unit) const;
 	bool usesShapeshifter(const Mechanics * mechanics) const;
 	int32_t getDuration() const { return duration; }
+	static int32_t configuredDuration(const JsonNode & data);
+	static int32_t durationWithExtend(int32_t base, int32_t extend);
 
 	void adjustAffectedHexes(BattleHexArray & hexes, const Mechanics * mechanics, const Target & spellTarget) const override;
 	bool applicableGeneral(Problem & problem, const Mechanics * mechanics) const override;

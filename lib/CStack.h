@@ -9,6 +9,8 @@
  */
 
 #pragma once
+
+#include "bonuses/BonusSerializationContext.h"
 #include "battle/NewHorizonsAerialSupremacy.h"
 #include "bonuses/Bonus.h"
 #include "bonuses/BonusList.h"
@@ -127,6 +129,8 @@ public:
 
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
+	int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override;
+	int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override;
 	int unitFortuneSpeed(const battle::Unit * unit) const override;
 	int unitSpeedBonus(const battle::Unit * unit) const override;
 	bool unitSlowAffectsSpeed(const battle::Unit * unit) const override;
@@ -284,6 +288,8 @@ public:
 
 	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
+		if(h.saving)
+			validateExportedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving) validatePetrifyingBloodSerialization(h);
 		if(h.saving)
 			validateVeteranDamageHistorySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));

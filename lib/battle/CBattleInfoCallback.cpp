@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsRangefinder.h"
 #include "NewHorizonsForestAmbush.h"
 #include "NewHorizonsDreadCavalry.h"
 #include "../entities/hero/CHero.h"
@@ -94,14 +95,6 @@ bool admitsBerserkTarget(const CBattleInfoCallback & callback, const battle::Uni
 	return !u->isInvincible()
 		&& !(newHorizonsForestAmbush::protectsDirectTarget(u) && callback.battleMatchOwner(berserker, u));
 }
-
-int64_t scaledBattleOutput(int64_t base, int32_t outputPercent)
-{
-	if(base <= 0 || outputPercent <= 0)
-		return 0;
-	return (base / 100) * outputPercent + ((base % 100) * outputPercent) / 100;
-}
-
 
 /// Order targeting is based on occupied hexes, not a unit's primary position.
 /// This matters for double-wide stacks: their rear hex may be the one actually
@@ -272,27 +265,6 @@ BreachmakerPreview CBattleInfoCallback::battleGetBreachmakerPreview(
 		[this](EWallPart adjacent) { return isWallPartAttackable(adjacent) ? getWallStructuralHP(adjacent) : 0; });
 }
 
-
-int32_t CBattleInfoCallback::battleGetCatapultStructuralDamage(
-	const battle::Unit * attacker, int32_t hitQuality) const
-{
-	// This callback is called at the catapult boundary, where the machine type
-	// is already known. Some legacy adapters provide a lightweight Unit proxy
-	// without creature identity, so do not rediscover its type here.
-	if(!attacker || hitQuality <= 0)
-		return 0;
-
-	int64_t structuralOutput = std::min<int32_t>(hitQuality, 2);
-	if(const auto * hero = battleGetOwnerHero(attacker);
-		hero && hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3)
-	{
-		if(const auto siege = hero->getSiegeCapabilities())
-			structuralOutput *= std::max(0, siege->catapultStructuralDamage);
-	}
-	structuralOutput = scaledBattleOutput(structuralOutput, battleGetActivationOutputPercent(attacker));
-	return static_cast<int32_t>(std::clamp<int64_t>(structuralOutput, 0,
-		std::numeric_limits<int32_t>::max()));
-}
 
 bool CBattleInfoCallback::battleCanTakeRangedFollowUp(const battle::Unit * unit) const
 {
@@ -3130,7 +3102,7 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 				&& !pointBlankAdjacentShot)
 				return false;
 
-			auto limitedRangeBonus = attacker->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
+			auto limitedRangeBonus = newHorizonsRangefinder::legalRangeBonus(*attacker);
 			if(limitedRangeBonus == nullptr)
 			{
 				return true;
@@ -3189,7 +3161,7 @@ bool CBattleInfoCallback::battleCanShootActionWithoutCounterBatteryRestriction(
 				&& !pointBlankAdjacentShot)
 				return false;
 
-			const auto limitedRangeBonus = attacker->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
+			const auto limitedRangeBonus = newHorizonsRangefinder::legalRangeBonus(*attacker);
 			if(!limitedRangeBonus)
 				return true;
 
@@ -4811,54 +4783,6 @@ ReachabilityInfo::TDistances CBattleInfoCallback::battleGetDistances(const battl
 	std::ranges::copy(reachability.distances, ret.begin());
 
 	return ret;
-}
-
-bool CBattleInfoCallback::battleHasDistancePenalty(const IBonusBearer * shooter, const BattleHex & shooterPosition, const BattleHex & destHex) const
-{
-	RETURN_IF_NOT_BATTLE(false);
-
-	const std::string cachingStrNoDistancePenalty = "type_NO_DISTANCE_PENALTY";
-	static const auto selectorNoDistancePenalty = Selector::type()(BonusType::NO_DISTANCE_PENALTY);
-
-	if(shooter->hasBonus(selectorNoDistancePenalty, cachingStrNoDistancePenalty))
-		return false;
-
-	if(const auto * target = battleGetUnitByPos(destHex, true))
-	{
-		//If any hex of target creature is within range, there is no penalty
-		int range = GameConstants::BATTLE_SHOOTING_PENALTY_DISTANCE;
-
-		auto bonus = shooter->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
-		if(bonus != nullptr && bonus->parameters)
-			range = bonus->parameters->toNumber();
-
-		if(isEnemyUnitWithinSpecifiedRange(shooterPosition, target, range))
-			return false;
-	}
-	else
-	{
-		if(BattleHex::getDistance(shooterPosition, destHex) <= GameConstants::BATTLE_SHOOTING_PENALTY_DISTANCE)
-			return false;
-	}
-
-	return true;
-}
-
-bool CBattleInfoCallback::isEnemyUnitWithinSpecifiedRange(const BattleHex & attackerPosition, const battle::Unit * defenderUnit, unsigned int range) const
-{
-	for(const auto & hex : defenderUnit->getHexes())
-		if(BattleHex::getDistance(attackerPosition, hex) <= range)
-			return true;
-	
-	return false;
-}
-
-bool CBattleInfoCallback::isHexWithinSpecifiedRange(const BattleHex & attackerPosition, const BattleHex & targetPosition, unsigned int range) const
-{
-	if(BattleHex::getDistance(attackerPosition, targetPosition) <= range)
-		return true;
-
-	return false;
 }
 
 BattleHex CBattleInfoCallback::wallPartToBattleHex(EWallPart part) const

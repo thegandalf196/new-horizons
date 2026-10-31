@@ -21,6 +21,8 @@ namespace newHorizonsCombatSkills
 constexpr std::string_view LUCK_SKILL_ID = "new-horizons:luck";
 constexpr std::string_view GAMBLER_PERK_ID = "new-horizons:luck.gambler";
 constexpr std::string_view LUCKY_RECOVERY_PERK_ID = "new-horizons:luck.luckyRecovery";
+/// A ranged SPELL_LIKE_ATTACK is magical even without a configured spell subtype.
+DLL_LINKAGE bool isPhysicalAttackDamage(const battle::Unit * attacker, bool shooting, bool spellLike = false);
 DLL_LINKAGE bool hasLuckyRecovery(const CGHeroInstance * hero);
 /// Independent generic/Sylvan 10% contributions, floored once after summing.
 DLL_LINKAGE int64_t luckyRecoveryAmount(int64_t actualDamage, bool genericRecovery, bool sylvanRecovery);

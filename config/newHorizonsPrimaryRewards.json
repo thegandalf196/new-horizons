@@ -1,0 +1,296 @@
+{
+	"schemaVersion": 1,
+	"legacyPointValue": 5,
+	"objects": {
+		"core:arena": {
+			"types": {
+				"arena": {
+					"description": "Choose a permanent increase of {doublePoint} to Attack or Defense. Each hero may train here once.",
+					"rewards": [
+						{
+							"primary": {
+								"attack": 2
+							},
+							"message": "The Arena permanently increases this hero's Attack by {doublePoint}."
+						},
+						{
+							"primary": {
+								"defence": 2
+							},
+							"message": "The Arena permanently increases this hero's Defense by {doublePoint}."
+						}
+					],
+					"onSelectMessage": "Choose a permanent increase of {doublePoint} to Attack or Defense. Each hero may train here once."
+				}
+			}
+		},
+		"core:marlettoTower": {
+			"types": {
+				"marlettoTower": {
+					"description": "Permanently increases Defense by {point}, once per hero.",
+					"rewards": [
+						{
+							"message": "The Marletto Tower permanently increases this hero's Defense by {point}.",
+							"primary": {
+								"defence": 1
+							}
+						}
+					]
+				}
+			}
+		},
+		"core:gardenOfRevelation": {
+			"types": {
+				"gardenOfRevelation": {
+					"description": "Permanently increases Knowledge by {point}, once per hero.",
+					"rewards": [
+						{
+							"message": "The Garden of Revelation permanently increases this hero's Knowledge by {point}.",
+							"primary": {
+								"knowledge": 1
+							}
+						}
+					]
+				}
+			}
+		},
+		"core:libraryOfEnlightenment": {
+			"types": {
+				"libraryOfEnlightenment": {
+					"description": "Eligible heroes permanently gain {doublePoint} Attack, Defense, Spell Power, and Knowledge. Each hero may study here once.",
+					"rewards": [
+						{
+							"limiter": {
+								"anyOf": [
+									{
+										"heroLevel": 10
+									},
+									{
+										"heroLevel": 8,
+										"secondary": {
+											"core:diplomacy": 1
+										}
+									},
+									{
+										"heroLevel": 6,
+										"secondary": {
+											"core:diplomacy": 2
+										}
+									},
+									{
+										"heroLevel": 4,
+										"secondary": {
+											"core:diplomacy": 3
+										}
+									}
+								]
+							},
+							"message": "The Library of Enlightenment permanently increases this hero's Attack, Defense, Spell Power, and Knowledge by {doublePoint} each.",
+							"primary": {
+								"attack": 2,
+								"defence": 2,
+								"spellpower": 2,
+								"knowledge": 2
+							}
+						}
+					]
+				}
+			}
+		},
+		"core:mercenaryCamp": {
+			"types": {
+				"mercenaryCamp": {
+					"description": "Permanently increases Attack by {point}, once per hero.",
+					"rewards": [
+						{
+							"message": "The Mercenary Camp permanently increases this hero's Attack by {point}.",
+							"primary": {
+								"attack": 1
+							}
+						}
+					]
+				}
+			}
+		},
+		"core:starAxis": {
+			"types": {
+				"starAxis": {
+					"description": "Permanently increases Spell Power by {point}, once per hero.",
+					"rewards": [
+						{
+							"message": "The Star Axis permanently increases this hero's Spell Power by {point}.",
+							"primary": {
+								"spellpower": 1
+							}
+						}
+					]
+				}
+			}
+		},
+		"core:schoolOfMagic": {
+			"types": {
+				"schoolOfMagic": {
+					"description": "For 1,000 Gold, permanently increases Spell Power or Knowledge by {point}. Each hero may train here once.",
+					"rewards": [
+						{
+							"limiter": {
+								"resources": {
+									"gold": 1000
+								}
+							},
+							"resources": {
+								"gold": -1000
+							},
+							"primary": {
+								"spellpower": 1
+							},
+							"message": "The School of Magic permanently increases this hero's Spell Power by {point}."
+						},
+						{
+							"limiter": {
+								"resources": {
+									"gold": 1000
+								}
+							},
+							"resources": {
+								"gold": -1000
+							},
+							"primary": {
+								"knowledge": 1
+							},
+							"message": "The School of Magic permanently increases this hero's Knowledge by {point}."
+						}
+					],
+					"onSelectMessage": "For 1,000 Gold, permanently increases Spell Power or Knowledge by {point}. Each hero may train here once."
+				}
+			}
+		},
+		"core:schoolOfWar": {
+			"types": {
+				"schoolOfWar": {
+					"description": "For 1,000 Gold, permanently increases Attack or Defense by {point}. Each hero may train here once.",
+					"rewards": [
+						{
+							"limiter": {
+								"resources": {
+									"gold": 1000
+								}
+							},
+							"resources": {
+								"gold": -1000
+							},
+							"primary": {
+								"attack": 1
+							},
+							"message": "The School of War permanently increases this hero's Attack by {point}."
+						},
+						{
+							"limiter": {
+								"resources": {
+									"gold": 1000
+								}
+							},
+							"resources": {
+								"gold": -1000
+							},
+							"primary": {
+								"defence": 1
+							},
+							"message": "The School of War permanently increases this hero's Defense by {point}."
+						}
+					],
+					"onSelectMessage": "For 1,000 Gold, permanently increases Attack or Defense by {point}. Each hero may train here once."
+				}
+			}
+		},
+		"core:scholar": {
+			"types": {
+				"scholar": {
+					"description": "Offers an eligible spell, a Skill rank, or a permanent increase of {point} to one Primary Attribute. The Scholar leaves after helping one hero.",
+					"rewards": [
+						{
+							"appearChance": {
+								"min": 0,
+								"max": 33
+							},
+							"mapDice": 0,
+							"message": 115,
+							"limiter": {
+								"canLearnSpells": [
+									"@gainedSpell"
+								]
+							},
+							"spells": [
+								"@gainedSpell"
+							],
+							"removeObject": true
+						},
+						{
+							"appearChance": {
+								"min": 33,
+								"max": 66
+							},
+							"mapDice": 1,
+							"message": 115,
+							"limiter": {
+								"noneOf": [
+									{
+										"secondary": {
+											"@gainedSkill": 3
+										}
+									}
+								],
+								"anyOf": [
+									{
+										"canLearnSkills": true
+									},
+									{
+										"secondary": {
+											"@gainedSkill": 1
+										}
+									}
+								]
+							},
+							"secondary": {
+								"@gainedSkill": 1
+							},
+							"removeObject": true
+						},
+						{
+							"message": "The Scholar permanently increases one of this hero's Primary Attributes by {point}.",
+							"primary": {
+								"@gainedStat": 1
+							},
+							"removeObject": true
+						}
+					]
+				}
+			}
+		}
+	},
+	"factions": {
+		"core:fortress": {
+			"town": {
+				"buildings": {
+					"special1": {
+						"description": "Permanently increases each visiting hero's Defense by {point}, once per hero at this Cage of Warlords.",
+						"configuration": {
+							"visitMode": "hero",
+							"notVisitedTooltip": "Training available: +{point} permanent Defense.",
+							"visitedTooltip": "This hero has already trained here.",
+							"onVisitedMessage": "This hero has already received training from this Cage of Warlords.",
+							"rewards": [
+								{
+									"message": "The Cage of Warlords permanently increases this hero's Defense by {point}.",
+									"primary": {
+										"defence": 1
+									}
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+	}
+}

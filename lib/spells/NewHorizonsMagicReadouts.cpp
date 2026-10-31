@@ -11,6 +11,7 @@
 #include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsBlessDuration.h"
 #include "NewHorizonsCureHealing.h"
 #include "NewHorizonsTheChosen.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
@@ -89,12 +90,8 @@ void describeTimeStop(std::string & result, const CGHeroInstance * hero, const s
 			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
 		const int radiusCap = newHorizonsSorcery::TIME_STOP_BASE_MAX_RADIUS
 			+ (chronomancer ? newHorizonsSorcery::TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
-		const int64_t radiusThreshold = static_cast<int64_t>(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS)
-			* SPELL_POWER_COEFFICIENT_BASIS_POINTS;
-		const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientBasisPoints
-			* (100 + empowerBonusPercent) / (radiusThreshold * 100);
-		const int radius = std::min(radiusCap,
-			newHorizonsSorcery::TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
+		const int radius = newHorizonsSorcery::timeStopRadius(spellPower,
+			coefficientBasisPoints, 0, empowerBonusPercent, chronomancer);
 		const bool schoolRankRules = rules["rulesetVersion"].Integer()
 			>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 
@@ -145,8 +142,8 @@ void describeCure(std::string & result, const CGHeroInstance * hero, const spell
 			"Cure does not remove magical effects.";
 		if(newHorizonsHeroes::fieldPhysicianHealingPercent(hero) > 0)
 		{
-			const auto healing = cureHealingBudget(hero, std::max<int32_t>(0, hero->getEffectPower(spell)),
-				coefficientBasisPoints, 0, empowerBonusPercent);
+			const auto healing = hero->getSpellBonus(spell, cureHealingBudget(hero, std::max<int32_t>(0, hero->getEffectPower(spell)),
+				coefficientBasisPoints, 0, empowerBonusPercent), nullptr);
 			result = "Targets one friendly living stack. Current healing: " + std::to_string(healing)
 				+ " HP, including Field Physician on the fixed and Spell Power components. "
 				"Healer, when present, strengthens only the Spell Power component. "
@@ -167,16 +164,14 @@ void describeBlessDuration(std::string & result, const CGHeroInstance * hero, co
 		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
 		const int64_t power = std::max<int32_t>(0, hero->getEffectPower(spell));
 		const int specialtyPercent = hero->getNonDamageSpellSpecialtyBonusPercent(SpellID(SpellID::BLESS));
-		const int64_t term = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-			power, BLESS_SPELL_POWER_DURATION_DIVISOR, coefficientBasisPoints, 0, empowerBonusPercent, specialtyPercent);
-		const int ordinaryDuration = blessDurationFromPowerTerm(term);
+		const int ordinaryDuration = blessOrdinaryDuration(power, coefficientBasisPoints, 0,
+			empowerBonusPercent, specialtyPercent);
 		const int64_t spellDurationModifier = static_cast<int64_t>(hero->valOfBonuses(
 			BonusType::SPELL_DURATION, BonusSubtypeID()))
 			+ hero->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID(SpellID(SpellID::BLESS)))
 			+ spellDurationBonus(hero, SpellID::BLESS);
 		const bool benediction = hasBenedictionPerk(hero);
-		const int64_t totalDuration = std::max<int64_t>(0, ordinaryDuration + spellDurationModifier
-			+ (benediction ? 1 : 0));
+		const int totalDuration = blessCasterDuration(*hero, ordinaryDuration, false);
 		result += "\n\nCurrent ordinary duration: " + std::to_string(ordinaryDuration)
 			+ (ordinaryDuration == 1 ? " round" : " rounds") + " (combined Spell Power coefficient: "
 			+ percentFromBasisPoints(coefficientBasisPoints) + "). Current total before battle-only adjustments: "
@@ -304,11 +299,9 @@ void appendFocusReadout(std::string & result, const CGHeroInstance * hero, const
 		+ percentFromBasisPoints(profile.powerBasisPoints) + " x scaled Spell Power).";
 	const int specialty = hasSavedSchoolRankCoefficient
 		? hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) : 0;
-	const int64_t scaledTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		spellPower * profile.powerBasisPoints, 1, coefficientBasisPoints, 0,
+	const int64_t penetrationBasisPoints = newHorizonsSorceryRevision::focusMarkBasisPoints(
+		profile, static_cast<int32_t>(spellPower), coefficientBasisPoints, 0,
 		empowerSpellBonusPercent(hero->getMagicRules(), hero, spell->getId()), specialty);
-	const int64_t penetrationBasisPoints = std::min<int64_t>(
-		profile.capBasisPoints, profile.baseBasisPoints + scaledTerm);
 	const auto fraction = penetrationBasisPoints % 100;
 	result += "\nCurrent ordinary per-mark penetration at Spell Power " + std::to_string(spellPower)
 		+ ": " + std::to_string(penetrationBasisPoints / 100) + "."

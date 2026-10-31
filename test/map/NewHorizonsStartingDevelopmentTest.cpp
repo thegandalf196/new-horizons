@@ -42,7 +42,7 @@ struct ExpectedStart
 const std::array<ExpectedStart, 8> starts{{
 	{"core:clancy", "new-horizons:logistics", 1, "new-horizons:logistics.pathfinding", "new-horizons:sylvanLuck"},
 	{"core:piquedram", "new-horizons:logistics", 1, "new-horizons:logistics.scouting", "new-horizons:metamagic"},
-	{"core:thane", "new-horizons:learning", 2, "new-horizons:learning.scholar", "new-horizons:metamagic"},
+	{"core:thane", "new-horizons:learning", 2, "new-horizons:learning.historian", "new-horizons:metamagic"},
 	{"core:torosar", "new-horizons:warMachines", 1, "new-horizons:warMachines.masterGunner", "new-horizons:metamagic"},
 	{"core:iona", "new-horizons:learning", 1, "new-horizons:learning.scholar", "new-horizons:metamagic"},
 	{"core:fiona", "new-horizons:logistics", 2, "new-horizons:logistics.scouting", "new-horizons:demonicGating"},

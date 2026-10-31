@@ -31,6 +31,8 @@ public:
 
 	virtual PlayerColor unitEffectiveOwner(const Unit * unit) const = 0;
 	virtual std::optional<int> unitMagicResistance(const Unit *) const { return std::nullopt; }
+	virtual int unitSylvanTacticsSpeed(const Unit *, int = 0) const { return 0; }
+	virtual int unitSylvanTacticsInitiativePercent(const Unit *) const { return 0; }
 	virtual int unitFortuneSpeed(const Unit *) const { return 0; }
 	virtual int unitSpeedBonus(const Unit *) const { return 0; }
 	virtual bool unitSlowAffectsSpeed(const Unit *) const { return false; }

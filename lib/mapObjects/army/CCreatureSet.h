@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../../bonuses/BonusSerializationContext.h"
+
 #include "CSimpleArmy.h"
 #include "CStackInstance.h"
 
@@ -141,6 +143,14 @@ public:
 	/// require presence of any unit other than requested (or more units than requested)
 	bool hasUnits(const std::vector<CStackBasicDescriptor> & units, bool requireLastStack = true) const;
 
+	void validateStackBonusSerialization(BonusSerializationContext context) const
+	{
+		if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		for(const auto & [slot, stack] : stacks)
+			if(stack) stack->validateExportedBonusSerialization(context);
+	}
+
 	void validateTrainingSerialization(bool supported, bool cohortsSupported = true) const
 	{
 		for(const auto & [slot, stack] : stacks)
@@ -153,6 +163,8 @@ public:
 	{
 		if(h.saving)
 			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
+		if(h.saving)
+			validateStackBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & stacks;
 		h & formation;
 	}

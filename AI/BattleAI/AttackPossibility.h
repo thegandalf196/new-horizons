@@ -20,6 +20,7 @@
 #include "ParalyzingGazeProjection.h"
 #include "HypotheticBattle.h"
 #include "HypotheticBattleTypes.h"
+#include "SylvanTacticsProjection.h"
 
 #define BATTLE_TRACE_LEVEL 0
 
@@ -183,21 +184,21 @@ private:
 	std::unordered_map<uint32_t, std::unordered_map<uint32_t, float>> damageCache;
 	std::map<BattleHex, std::unordered_map<uint32_t, int64_t>> obstacleDamage;
 	std::set<uint32_t> rangedMarkTargets;
-	std::set<uint32_t> evasiveShroudTargets;
+	std::set<uint32_t> temporaryPhysicalProtectionTargets;
 	std::set<uint32_t> ambusherAttackers;
 	std::set<std::pair<uint32_t, BattleSide>> shadowAssaultTargetSides;
 	std::set<uint32_t> nightProwlerAttackers;
 	std::set<uint32_t> frozenTargets;
 	std::set<uint32_t> intrinsicMdrTargets;
 	std::set<uint32_t> intrinsicPdrTargets;
-	DamageCache * parent;
+	const DamageCache * parent;
 
 	void cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender,
 		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	void buildUnitDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side, bool terminalPressure);
 	bool tracksRangedMarks(uint32_t defenderId) const;
-	bool tracksEvasiveShroud(uint32_t defenderId) const;
+	bool tracksTemporaryPhysicalProtection(uint32_t defenderId) const;
 	bool tracksAmbusher(uint32_t attackerId) const;
 	bool tracksShadowAssault(uint32_t defenderId) const;
 	bool tracksNightProwler(uint32_t attackerId) const;
@@ -214,14 +215,14 @@ public:
 	Snapshot captureSnapshot() const;
 	bool matchesSnapshot(const Snapshot & snapshot) const;
 	DamageCache() : parent(nullptr) {}
-	DamageCache(DamageCache * parent) : parent(parent) {}
+	DamageCache(const DamageCache * parent) : parent(parent) {}
 
 	void cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender,
 		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing,
 		DamageCacheAdmission * mainProbeAdmission = nullptr);
-	int64_t getObstacleDamage(const BattleHex & hex, const battle::Unit * defender);
+	int64_t getObstacleDamage(const BattleHex & hex, const battle::Unit * defender) const;
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,
 		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
@@ -255,6 +256,8 @@ public:
 
 	std::vector<std::shared_ptr<battle::CUnitState>> affectedUnits;
 	std::vector<FortuneStrikeProjection> fortuneStrikes;
+	/// Opted-in Tactics preserves actual Rain of Arrows collateral separately.
+	std::vector<sylvanTacticsAI::SecondaryHit> tacticsSecondaryHits;
 	std::vector<ProjectedOverwatchHit> overwatchHits;
 	/// Actual HP restored by the canonical New Horizons Vampirism trigger during
 	/// this exchange, grouped by the living stack that received the healing.

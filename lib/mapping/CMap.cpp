@@ -1442,6 +1442,16 @@ void CMap::validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) con
 			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(hero->getPrimaryGrowthRules(), supported);
 }
 
+void CMap::validateSylvanTacticsSerialization(bool supported) const
+{
+	if(gameSettings) gameSettings->validateSylvanTacticsSerialization(supported);
+	for(const auto & object : objects)
+		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
+			newHorizonsHeroes::validateSylvanTacticsSerialization(hero->getPerkState().rules, supported);
+	for(const auto & hero : heroesPool)
+		if(hero) newHorizonsHeroes::validateSylvanTacticsSerialization(hero->getPerkState().rules, supported);
+}
+
 void CMap::validateCrisisCommandSerialization(bool supported) const
 {
 	if(gameSettings) gameSettings->validateCrisisCommandSerialization(supported);

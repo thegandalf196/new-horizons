@@ -73,3 +73,13 @@ TEST(NewHorizonsSkillPresentation, EncyclopediaSharesRankOrderAndHistoricalText)
 	EXPECT_EQ(newHorizonsSkillPresentation::allRankDescriptions(JsonNode(), "core:necromancy",
 		{"first", "", "third"}), "first\n\nthird");
 }
+
+TEST(NewHorizonsSkillPresentation, LegacyDungeonDisplayRenameKeepsOtherCapturedNames)
+{
+	EXPECT_EQ(newHorizonsSkillPresentation::perkSkillName("new-horizons:shroudOfMalassa",
+		"Translated installed Dungeon name", "Shroud of Malassa"), "Translated installed Dungeon name");
+	EXPECT_EQ(newHorizonsSkillPresentation::perkSkillName("new-horizons:sylvanLuck",
+		"Sylvan Tactics", "Sylvan Luck"), "Sylvan Luck");
+	EXPECT_EQ(newHorizonsSkillPresentation::perkSkillName("new-horizons:offense",
+		"Translated installed name", "Historical captured name"), "Historical captured name");
+}

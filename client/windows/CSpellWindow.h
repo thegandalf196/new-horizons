@@ -11,6 +11,9 @@
 
 #include "CWindowObject.h"
 #include "../widgets/IVideoHolder.h"
+#include "../../lib/spells/SpellEffectPreview.h"
+
+struct SpellCostBreakdown;
 
 class CGHeroInstance;
 class CSpell;
@@ -38,14 +41,15 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 		int schoolLevel; //range: 0 none, 3 - expert
 		bool schoolLocked;
 		bool divineMandateLocked = false;
-		std::string schoolRequirementLabel;
 		std::string schoolRequirementText;
 		std::string divineMandateRequirementText;
 		CSpellWindow * owner;
 		std::shared_ptr<CAnimImage> image;
 		std::shared_ptr<CAnimImage> schoolBorder;
 		std::shared_ptr<CLabel> name;
-		std::shared_ptr<CLabel> level;
+		std::shared_ptr<CLabel> effect;
+		newHorizonsMagic::SpellEffectPreview effectPreview;
+		SpellCostBreakdown refreshReadout();
 		std::shared_ptr<CLabel> cost;
 	public:
 		SpellArea(Rect pos, CSpellWindow * owner);

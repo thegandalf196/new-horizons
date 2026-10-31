@@ -26,6 +26,10 @@ namespace scripting::api
 			"logic and consult it for caster identity, target validation, and damage formulas.";
 
 		static void registerMethods(MethodRegistrar & R);
+		static void registerTimedUtilityMethods(MethodRegistrar & R);
+		static int64_t getHolyArmorReduction(const ::spells::Mechanics & m, int32_t configuredBase, const battle::Unit & unit);
+		static int32_t getForgetfulnessDuration(const ::spells::Mechanics & m);
+		static int64_t getHexOfPainDamageSharePercent(const ::spells::Mechanics & m);
 
 		static bool ownerMatchesUnit(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool hasPrecisionBombardment(const ::spells::Mechanics & m);

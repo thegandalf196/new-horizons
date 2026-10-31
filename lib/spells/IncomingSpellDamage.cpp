@@ -95,7 +95,7 @@ int64_t spells::adjustUnmitigatedMagicalDamage(const battle::Unit & target, int6
 {
 	const int reduction = target.intrinsicMagicalDamageReductionPercent();
 	const auto mitigated = reduction > 0 ? calculateMagicalDamageReduction(damage,
-		std::vector<int>{reduction}, 0).damageWithoutPenetration : damage;
+		std::vector<int>{reduction}, targetMdrPenetrations(target)).damageWithPenetration : damage;
 	return applyIncomingMagicalDamageModifier(target, mitigated);
 }
 

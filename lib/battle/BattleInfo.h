@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "SideInBattle.h"
@@ -642,8 +644,19 @@ public:
 		}
 	}
 
+	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
+
+	template <typename Handler> void validateSylvanTacticsSerialization(Handler & h)
+	{
+		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			sides.at(side).sylvanLuck.validateSerializationPrefix(h);
+	}
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
+		if(h.saving) validateSylvanTacticsSerialization(h);
 		if(h.saving)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				if(const auto * hero = getSideHero(side))
@@ -865,6 +878,8 @@ public:
 			heroCommands::validateRevisedRulesSerialization(heroCommandRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 			heroCommands::validateRules(heroCommandRules);
+			for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				sides.at(side).sylvanLuck.validateSerializationPrefix(h);
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_PERFECT_MOMENT)
@@ -1360,6 +1375,8 @@ public:
 			// units and resolves their army bindings. Validation does not need those bindings.
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MULTIPLE_ORDERS))
 				normalizeLegacyHeroCommandState();
+			for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				sides.at(side).sylvanLuck.validateSerializationPrefix(h);
 			validateFocusFireStates();
 			validateRelentlessAssaultStates();
 			crisisCommand.validateSerializedReferences(*this);

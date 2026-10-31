@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleFlowProcessor.h"
+#include "BattleActivationEffects.h"
+#include "BattleRoundHealing.h"
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/spells/IncomingMagicalDamage.h"
 #ifdef NH_CURE_SIMULATION_FIXTURE
@@ -61,6 +63,7 @@
 #include "../../lib/battle/CObstacleInstance.h"
 
 #include <vstd/RNG.h>
+#include "../../lib/spells/NewHorizonsTimedMagnitudes.h"
 
 namespace
 {
@@ -341,9 +344,6 @@ namespace
 		static const SpellID id(SpellID::decode("new-horizons:divineRetribution"));
 		return id;
 	}
-
-	void applyStartOfActivationEffects(CGameHandler * gameHandler,
-		const CBattleInfoCallback & battle, const battle::Unit * stack);
 
 	std::optional<BattleSide> quartermasterActiveSide(const CBattleInfoCallback & battle, uint32_t unitId)
 	{
@@ -687,6 +687,8 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 		normalized.changedStacks.push_back(std::move(update));
 		gameHandler->sendAndApply(normalized);
 	}
+	// Expiry, form restoration and capacity normalization precede passive round healing.
+	battleRoundHealing::afterRound(*gameHandler, battle);
 	BattleLogMessage rewards;
 	rewards.battleID = bnr.battleID;
 	for(const auto & snapshot : spellPointSnapshots)
@@ -792,9 +794,8 @@ void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & b
 			if(!stack->alive())
 				continue;
 
-			const int64_t thirtyPercent = (actualHpDamage / 100) * 30 + (actualHpDamage % 100) * 30 / 100;
-			const int64_t cappedDamage = std::min(thirtyPercent, rawCap);
-			const int64_t payout = cappedDamage * retributionistPercent / 100;
+			const int64_t payout = newHorizonsMagic::divineRetributionPayout(actualHpDamage, rawCap,
+				static_cast<int32_t>(retributionistPercent));
 			if(payout <= 0)
 				continue;
 
@@ -1086,22 +1087,7 @@ const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & bat
 			publishRapidResponse(gameHandler, battle, side, BattleRapidResponseStateChanged::Transition::CONSUME);
 	const auto * stack = dynamic_cast<const CStack *>(next);
 
-	// regeneration takes place before everything else but only during first turn attempt in each round
-	// also works under blind and similar effects
-	if(stack && stack->alive() && !stack->waiting && !stack->isTimeStopped())
-	{
-		BattleTriggerEffect bte;
-		bte.battleID = battle.getBattle()->getBattleID();
-		bte.stackID = stack->unitId();
-		bte.effect = BonusType::HP_REGENERATION;
-
-		const int32_t lostHealth = stack->getMaxHealth() - stack->getFirstHPleft();
-		if(stack->hasBonusOfType(BonusType::HP_REGENERATION))
-			bte.val = std::min(lostHealth, stack->valOfBonuses(BonusType::HP_REGENERATION));
-
-		if(bte.val) // anything to heal
-			gameHandler->sendAndApply(bte);
-	}
+	battleRoundHealing::beforeTurn(*gameHandler, battle, stack);
 
 	if(!next || (!next->willMove() && !(next->isTimeStopped() && !next->timeStopTurnConsumed())
 		&& !(newHorizonsFrozen::isFrozen(*next) && !next->moved() && !next->defended())))
@@ -2668,7 +2654,7 @@ bool BattleFlowProcessor::beginAutomaticActivation(const CBattleInfoCallback & b
 	bsa.reason = BattleUnitTurnReason::AUTOMATIC_ACTION;
 	gameHandler->sendAndApply(bsa);
 	if(battle.battleBeginsActivation(stack, bsa.reason))
-		applyStartOfActivationEffects(gameHandler, battle, stack);
+		battleActivationEffects::apply(gameHandler, battle, stack, bsa.reason);
 	if(!stack->alive())
 		return false;
 	// Automatic actions still represent a fresh creature activation. Trigger
@@ -2912,7 +2898,7 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 	sas.reason = reason;
 	gameHandler->sendAndApply(sas);
 	if(battle.battleBeginsActivation(stack, reason))
-		applyStartOfActivationEffects(gameHandler, battle, stack);
+		battleActivationEffects::apply(gameHandler, battle, stack, reason);
 	bool secondWindActivation = false;
 	if(reason == BattleUnitTurnReason::HERO_COMMAND)
 	{
@@ -2930,213 +2916,6 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 			|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION || secondWindActivation)
 		&& canonicalFireWallCoversUnit(battle, *stack))
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
-}
-
-namespace
-{
-void applyStartOfActivationEffects(CGameHandler * gameHandler,
-	const CBattleInfoCallback & battle, const battle::Unit * stack)
-{
-	const auto * creatureStack = dynamic_cast<const CStack *>(stack);
-	if(!creatureStack)
-		return;
-
-	const auto * hero = battle.battleGetOwnerHero(creatureStack);
-	auto state = creatureStack->acquireState();
-	if(state)
-	{
-		const int64_t pendingPhysicalDamage = state->veteranPhysicalDamageSinceActivation;
-		const int64_t healing = newHorizonsCombatSkills::applyVeteran(state.get(), hero);
-		if(pendingPhysicalDamage > 0 || healing > 0)
-		{
-			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-			update.data = state->save();
-			update.healthDelta = healing;
-			BattleUnitsChanged changed;
-			changed.battleID = battle.getBattle()->getBattleID();
-			changed.changedStacks.push_back(std::move(update));
-			gameHandler->sendAndApply(changed);
-
-			if(healing > 0)
-			{
-				BattleLogMessage message;
-				message.battleID = battle.getBattle()->getBattleID();
-				MetaString line;
-				line.appendRawString("Veteran restores %s ");
-				creatureStack->addNameReplacement(line, creatureStack->getCount());
-				line.appendNumber(healing);
-				line.appendRawString(" Health.");
-				message.lines.push_back(std::move(line));
-				gameHandler->sendAndApply(message);
-			}
-		}
-	}
-	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
-		&& state->regenerationPendingMicroHealth > 0)
-	{
-		int64_t healing = state->consumeRegenerationMarks();
-		if(healing > 0)
-			healing = state->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT).healedHealthPoints;
-
-		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-		update.data = state->save();
-		update.healthDelta = healing;
-		BattleUnitsChanged changed;
-		changed.battleID = battle.getBattle()->getBattleID();
-		changed.changedStacks.push_back(std::move(update));
-		gameHandler->sendAndApply(changed);
-
-		if(healing > 0)
-		{
-			BattleLogMessage message;
-			message.battleID = battle.getBattle()->getBattleID();
-			MetaString line;
-			line.appendRawString("Regeneration restores %s ");
-			creatureStack->addNameReplacement(line, creatureStack->getCount());
-			line.appendNumber(healing);
-			line.appendRawString(" Health.");
-			message.lines.push_back(std::move(line));
-			gameHandler->sendAndApply(message);
-		}
-	}
-	const auto hydrasVitalityMarker = newHorizonsMagic::hydrasVitalitySource(battle.getBattle()->getMagicRules())
-		.And(Selector::type()(BonusType::HP_REGENERATION));
-	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
-		&& state->health.isCapacityHealthTracking()
-		&& creatureStack->hasBonus(hydrasVitalityMarker))
-	{
-		const int64_t healing = state->consumeCapacityRegeneration();
-		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-		update.data = state->save();
-		update.healthDelta = healing;
-		BattleUnitsChanged changed;
-		changed.battleID = battle.getBattle()->getBattleID();
-		changed.changedStacks.push_back(std::move(update));
-		gameHandler->sendAndApply(changed);
-
-		if(healing > 0)
-		{
-			BattleLogMessage message;
-			message.battleID = battle.getBattle()->getBattleID();
-			MetaString line;
-			line.appendRawString("Hydra's Vitality restores %s ");
-			creatureStack->addNameReplacement(line, creatureStack->getCount());
-			line.appendNumber(healing);
-			line.appendRawString(" Health.");
-			message.lines.push_back(std::move(line));
-			gameHandler->sendAndApply(message);
-		}
-	}
-	const int64_t poisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
-	if(creatureStack->alive() && state && poisonTick > 0)
-	{
-		const int64_t guardianSpiritBefore = state->guardianSpiritHitPoints;
-		const auto poisonSourceStackId = state->physicalPoisonSourceStackId;
-		newHorizonsBulwark::advancePhysicalPoison(state.get());
-		BattleStackAttacked hit;
-		hit.attackerID = poisonSourceStackId >= 0
-			? static_cast<ui32>(poisonSourceStackId) : creatureStack->unitId();
-		hit.stackAttacked = creatureStack->unitId();
-		hit.damageAmount = poisonTick;
-		CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state,
-			false, false, battle::DamageProvenance::PHYSICAL_CREATURE);
-		const int64_t guardianSpiritAbsorbed = std::max<int64_t>(
-			0, guardianSpiritBefore - state->guardianSpiritHitPoints);
-		const int64_t guardianSpiritOverflow = guardianSpiritAbsorbed > 0
-			? std::max<int64_t>(0, poisonTick - guardianSpiritAbsorbed) : 0;
-		if(!state->alive())
-		{
-			newHorizonsBulwark::clearPhysicalPoison(state.get());
-			hit.newState.data = state->save();
-		}
-		StacksInjured injury;
-		injury.battleID = battle.getBattle()->getBattleID();
-		injury.stacks.push_back(hit);
-		gameHandler->sendAndApply(injury);
-
-		if(hit.damageAmount > 0 || guardianSpiritAbsorbed > 0)
-		{
-			BattleLogMessage message;
-			message.battleID = battle.getBattle()->getBattleID();
-			MetaString line;
-			if(guardianSpiritAbsorbed > 0)
-			{
-				line.appendRawString("Physical Poison hits %s; Guardian Spirit absorbs ");
-				creatureStack->addNameReplacement(line, creatureStack->getCount());
-				line.appendNumber(guardianSpiritAbsorbed);
-				line.appendRawString(" physical damage");
-				if(guardianSpiritOverflow > 0)
-				{
-					line.appendRawString(" and ");
-					line.appendNumber(guardianSpiritOverflow);
-					line.appendRawString(" damage passes through.");
-				}
-				else
-					line.appendRawString("; no damage passes through.");
-			}
-			else
-			{
-				line.appendRawString("%s suffers ");
-				creatureStack->addNameReplacement(line, creatureStack->getCount());
-				line.appendNumber(hit.damageAmount);
-				line.appendRawString(" physical Poison damage.");
-			}
-			message.lines.push_back(std::move(line));
-			gameHandler->sendAndApply(message);
-		}
-		state = creatureStack->acquireState();
-	}
-	if(state && state->bulwarkMireGripApplied)
-	{
-		const int skillId = SecondarySkill::decode(std::string(newHorizonsBulwark::SKILL_ID));
-		const auto sourceId = BonusSourceID(SecondarySkill(skillId));
-		const auto penalties = creatureStack->getAllBonuses(Selector::source(BonusSource::OTHER, sourceId));
-		if(penalties && !penalties->empty())
-		{
-			std::vector<Bonus> toRemove;
-			toRemove.reserve(penalties->size());
-			for(const auto & bonus : *penalties)
-				toRemove.push_back(*bonus);
-			SetStackEffect remove;
-			remove.battleID = battle.getBattle()->getBattleID();
-			remove.toRemove.emplace_back(creatureStack->unitId(), std::move(toRemove));
-			gameHandler->sendAndApply(remove);
-		}
-		state->bulwarkMireGripApplied = false;
-		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-		update.data = state->save();
-		BattleUnitsChanged changed;
-		changed.battleID = battle.getBattle()->getBattleID();
-		changed.changedStacks.push_back(std::move(update));
-		gameHandler->sendAndApply(changed);
-	}
-	if(creatureStack->alive() && state && state->bulwarkDefendPhysicalDamage > 0
-		&& newHorizonsBulwark::hasSwampRenewal(hero))
-	{
-		const int64_t healing = newHorizonsBulwark::applySwampRenewal(state.get(), hero);
-
-		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-		update.data = state->save();
-		update.healthDelta = healing;
-		BattleUnitsChanged changed;
-		changed.battleID = battle.getBattle()->getBattleID();
-		changed.changedStacks.push_back(std::move(update));
-		gameHandler->sendAndApply(changed);
-
-		if(healing > 0)
-		{
-			BattleLogMessage message;
-			message.battleID = battle.getBattle()->getBattleID();
-			MetaString line;
-			line.appendRawString("Swamp Renewal restores %s ");
-			creatureStack->addNameReplacement(line, creatureStack->getCount());
-			line.appendNumber(healing);
-			line.appendRawString(" Health.");
-			message.lines.push_back(std::move(line));
-			gameHandler->sendAndApply(message);
-		}
-	}
-}
 }
 
 double BattleFlowProcessor::calculateTowerAttackValue(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * target) const

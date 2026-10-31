@@ -31,6 +31,8 @@ struct DLL_LINKAGE BattleAttackInfo
 	/// false by the authoritative attack path so physical-only Orders do not
 	/// reduce magical effects.
 	bool physicalDamage = true;
+	/// Zero-based blow in this accepted ordinary action; new actions/reactions start at zero.
+	int ordinaryAttackIndex = 0; // Ephemeral; never serialized or inferred from activation history.
 	bool secondaryAttack = false; // Collateral cannot inherit a targeted primary-shot Order.
 	bool protectIntercepted = false; // This exact blow was redirected by Protect.
 	bool retaliation = false; // The blow is a normal creature retaliation/counterattack.

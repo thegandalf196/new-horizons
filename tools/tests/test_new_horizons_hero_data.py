@@ -195,7 +195,7 @@ ACCEPTED_STARTS = {
     'core:serena': ('wisdom.intelligence', 1, 'metamagic', 1),
     'core:daremyth': ('luck.secondChance', 1, 'metamagic', 1),
     'core:aine': ('estates.taxCollector', 1, 'metamagic', 1),
-    'core:thane': ('learning.scholar', 2, 'metamagic', 1),
+    'core:thane': ('learning.historian', 2, 'metamagic', 1),
     'core:fiona': ('logistics.scouting', 2, 'demonicGating', 1),
     'core:ignatius': ('battlecraft.tactics', 1, 'demonicGating', 1),
     'core:ayden': ('wisdom.intelligence', 1, 'demonicGating', 1),

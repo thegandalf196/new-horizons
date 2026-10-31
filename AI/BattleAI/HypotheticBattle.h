@@ -39,10 +39,8 @@ class InitialExportBattleSubject;
 class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment
 {
 	friend class InitialExportBattleSubject;
-	// Borrowed route view; public proxy-base rebinding must use the original RTTI path.
-	CBattleInfoCallback * boundSubjectPointer;
-	std::weak_ptr<CBattleInfoCallback> boundSubjectOwner;
-	InitialExportBattleSubject * initialExportView;
+	friend class ProjectedAdjacencyBonuses;
+	HypotheticSourceBinding sourceBinding;
 	SeizeInitiativeState seizeInitiative;
 	struct ProjectedMana
 	{
@@ -102,6 +100,8 @@ public:
 
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
+	int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override { return battleSylvanTacticsSpeed(unit, turn); }
+	int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override { return battleSylvanTacticsInitiativePercent(unit); }
 	int unitFortuneSpeed(const battle::Unit * unit) const override { return battleFortuneSpeed(unit); }
 	int unitSpeedBonus(const battle::Unit * unit) const override { return battleBloodrageSpeed(unit); }
 	bool unitSlowAffectsSpeed(const battle::Unit * unit) const override;

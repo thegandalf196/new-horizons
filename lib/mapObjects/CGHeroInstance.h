@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
@@ -108,6 +110,8 @@ private:
 
 public:
 	CreatureID getCreatureLineSpecialtyTarget() const;
+	void validateHeroBonusSerialization(BonusSerializationContext context) const;
+
 	void validateDefaultCreatureLineSerialization(bool supported) const;
 	//////////////////////////////////////////////////////////////////////////
 	//format:   123
@@ -724,6 +728,10 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateHeroBonusSerialization(BonusSerializationContext::fromHandler(h));
+		if(h.saving) newHorizonsHeroes::validateSylvanTacticsSerialization(perkState.rules,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		if(h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(perkState.rules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),

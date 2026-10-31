@@ -4,6 +4,8 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include <bit>
+#include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "OriginalMeleeSequenceFixture.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../AI/BattleAI/PreemptiveAttackRequest.h"
@@ -223,6 +225,41 @@ TEST_F(FutureAttackReactionTest, TargetProbesAreSiblingAndLiveStateIsolated)
 	EXPECT_EQ(state(*parent), before);
 	EXPECT_EQ(state(*sibling), before);
 	EXPECT_EQ(state(*battle()), liveBefore);
+}
+
+TEST_F(FutureAttackReactionTest, UnredirectedNoReactionProbesKeepScoresCardinalityAndState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareFuture(false));
+	auto parent = model();
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto actor = parent->getForUpdate(incoming->unitId());
+	auto target = parent->getForUpdate(braced->unitId());
+	ASSERT_EQ(parent->battleResolveHeroOrderTarget(actor.get(), target.get(), false), target.get());
+	ASSERT_EQ(newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
+		parent->battleGetOwnerHero(target.get()), target.get(), parent->battleGetRound()), 0);
+	DamageCache cache;
+	cache.buildDamageCache(parent, BattleSide::ATTACKER);
+	const auto before = state(*parent), liveBefore = state(*battle());
+	BattleMovementTiming::StageTiming preparation;
+	const BattleTargetProbeTiming timing{nullptr, nullptr, nullptr, &preparation};
+	BattleExchangeVariant probe;
+	std::optional<bool> overwatch;
+	const auto first = probe.trackAttack(actor, target, false, false, cache, parent,
+		true, true, &overwatch, &timing);
+	const auto second = probe.trackAttack(actor, target, false, false, cache, parent,
+		true, true, &overwatch, &timing);
+	EXPECT_FLOAT_EQ(first, second);
+	auto accumulated = probe.getScore();
+	EXPECT_FLOAT_EQ(accumulated.value(), 0);
+	EXPECT_EQ(preparation.calls, 2u);
+	EXPECT_EQ(state(*parent), before);
+	EXPECT_EQ(state(*sibling), before);
+	EXPECT_EQ(state(*battle()), liveBefore);
+	RecordProperty("probeValueBits", std::to_string(std::bit_cast<uint32_t>(first)));
+	RecordProperty("probePreparationCalls", std::to_string(preparation.calls));
+	RecordProperty("requestedUnit", std::to_string(target->unitId()));
+	RecordProperty("resolvedUnit", std::to_string(parent->battleResolveHeroOrderTarget(
+		actor.get(), target.get(), false)->unitId()));
 }
 
 TEST_F(FutureAttackReactionTest, TwoHexApproachDoesNotManufactureBrace)

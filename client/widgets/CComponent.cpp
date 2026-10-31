@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../windows/NewHorizonsCurrentSkillPresentation.h"
 #include "CComponent.h"
 
 #include "Images.h"
@@ -273,7 +274,7 @@ std::string CComponent::getDescription() const
 		case ComponentType::MANA:
 			return LIBRARY->generaltexth->allTexts[149];
 		case ComponentType::SEC_SKILL:
-			return LIBRARY->skillh->getByIndex(data.subType.getNum())->getDescriptionTranslated(data.value.value_or(1));
+			return newHorizonsSkillPresentation::currentDescription(data.subType.as<SecondarySkill>(), data.value.value_or(1));
 		case ComponentType::RESOURCE:
 		case ComponentType::RESOURCE_PER_DAY:
 			return LIBRARY->generaltexth->allTexts[242];
@@ -354,9 +355,9 @@ std::string CComponent::getSubtitle() const
 		}
 		case ComponentType::SEC_SKILL:
 			if (data.value)
-				return GAME->translator().translate("core.skilllev", data.value.value_or(1)-1) + "\n" + LIBRARY->skillh->getById(data.subType.as<SecondarySkill>())->getNameTranslated();
+				return GAME->translator().translate("core.skilllev", data.value.value_or(1)-1) + "\n" + newHorizonsSkillPresentation::currentName(data.subType.as<SecondarySkill>());
 			else
-				return LIBRARY->skillh->getById(data.subType.as<SecondarySkill>())->getNameTranslated();
+				return newHorizonsSkillPresentation::currentName(data.subType.as<SecondarySkill>());
 		case ComponentType::RESOURCE:
 			return std::to_string(data.value.value_or(0));
 		case ComponentType::RESOURCE_PER_DAY:

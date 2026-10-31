@@ -66,6 +66,23 @@ else()
 endif()
 
 set(test_SRCS
+		../client/windows/SpellbookEntryPresentation.cpp
+		spells/SpellbookEntryPresentationTest.cpp
+		spells/SpellbookNativeFontPresentationTest.cpp
+		spells/SpellEffectPreviewTest.cpp
+		server/battles/SpellbookHealingCasterBonusTest.cpp
+		spells/NewHorizonsTimedUtilityTest.cpp
+		spells/NewHorizonsTimedMagnitudesTest.cpp
+		spells/NewHorizonsPlacementPowerTest.cpp
+		spells/NewHorizonsTimeStopRadiusTest.cpp
+		spells/NewHorizonsSorceryPreviewPowerTest.cpp
+		spells/NewHorizonsShadowMagnitudesTest.cpp
+		spells/NewHorizonsTimedBuffMagnitudeTest.cpp
+		spells/NewHorizonsStormOfDaggersDamageTest.cpp
+		spells/NewHorizonsTrollSummonPowerTest.cpp
+		spells/NewHorizonsRestorationPoolsTest.cpp
+		spells/NewHorizonsBlessDurationTest.cpp
+		spells/NewHorizonsElementalConvergencePowerTest.cpp
 		# Pure queue/replay storage only; native Engine session/factories stay in client.
 		../client/netlag/NetworkLagReplyState.cpp
 		../client/netlag/NetworkLagRollbackCopy.cpp
@@ -125,6 +142,15 @@ set(test_SRCS
 		battle/BattleRootCommitAdmissionTest.cpp
 		battle/PreparedReplayAppendTest.cpp
 		serializer/NewHorizonsSpecialtySerializationTest.cpp
+		serializer/NewHorizonsOrdinaryPolicyExtensionsSerializationTest.cpp
+		serializer/NewHorizonsOrdinaryPolicyRealOwnersTest.cpp
+		serializer/CapturedSpecialtySnapshotFixture.h
+		serializer/OrdinaryRangedPolicySerializationTest.cpp
+		serializer/OrdinaryMaintenancePolicySerializationTest.cpp
+		serializer/OrdinaryMachinePolicySerializationTest.cpp
+		serializer/OrdinaryCombatPolicySerializationTest.cpp
+		bonus/OrdinaryMeleeEffectSerializationTest.cpp
+		serializer/MachineGenericBonusSerializationTest.cpp
 	serializer/NewHorizonsManaLeechesSerializationTest.cpp
 	serializer/NewHorizonsGhostUpgradeSerializationTest.cpp
 	serializer/NewHorizonsPetrifyingBloodSerializationTest.cpp
@@ -143,6 +169,12 @@ set(test_SRCS
 		battle/NewHorizonsDebuffStatusesTest.cpp
 		battle/NewHorizonsFrozenTest.cpp
 		battle/NewHorizonsSerpentsEmbraceTest.cpp
+		battle/NewHorizonsJabarkasSpecialtyRulesTest.cpp
+		battle/NewHorizonsOrdinaryRangedPairTest.cpp
+		battle/NewHorizonsMaintenanceSpecialtyTest.cpp
+		battle/NewHorizonsMachineSpecialtyTest.cpp
+		battle/NewHorizonsSequenceProtectionTest.cpp
+		battle/NewHorizonsMeleeSpecialtyTest.cpp
 	battle/NewHorizonsParalyzingGazeTest.cpp
 		battle/NewHorizonsLivingInfernoTest.cpp
 		battle/FocusFireStateTest.cpp
@@ -152,7 +184,15 @@ set(test_SRCS
 		battle/battle_UnitTest.cpp
 
 		bonus/BonusSystemTest.cpp
+		bonus/BonusCapabilitySerializationTest.cpp
+		bonus/BonusNestedCapabilitySerializationTest.cpp
+		bonus/RangefinderMarkerSerializationTest.cpp
+		bonus/OgreBulwarkMarkerSerializationTest.cpp
+		bonus/OwnedWorldBonusSerializationTest.cpp
 		bonus/BonusEvaluationContextTest.cpp
+	bonus/OwnedBonusEvaluationFactsTest.cpp
+	bonus/OwnedBonusPayloadsTest.cpp
+	bonus/OwnedRecipientBonusGraphTest.cpp
 		bonus/ProjectedBonusLimitationTest.cpp
 		bonus/TerrainAuthorityTest.cpp
 		bonus/TerrainLimiterSerializationTest.cpp
@@ -213,6 +253,9 @@ set(test_SRCS
 		game/NewHorizonsRecruitmentGrowthTest.cpp
 		game/NewHorizonsRecruitmentGrowthWorldTest.cpp
 		game/NewHorizonsNeutralArmyWorldTest.cpp
+		game/NeutralArmyStartOptionTest.cpp
+		serializer/NeutralArmyStartOptionSerializationTest.cpp
+		server/NeutralArmyLobbyOptionsTest.cpp
 		game/HeroRecruitmentTest.cpp
 		game/HeroSecondarySkillsTest.cpp
 		creatures/NewHorizonsCreatureCategoryRulesTest.cpp
@@ -450,6 +493,7 @@ set(test_SRCS
 		server/battles/NewHorizonsDemonicGatingFixtureExportTest.cpp
 		server/battles/HeroCommandRejectionTest.cpp
 		server/battles/HeroCommandRejectionAtomicityTest.cpp
+		server/battles/BattleResultActionAdmissionTest.cpp
 		server/battles/HeroCommandEligibilityTest.cpp
 		server/battles/HeroCommandCloneTest.cpp
 		server/battles/FocusFireLifecycleTest.cpp
@@ -486,6 +530,7 @@ set(test_SRCS
 		battle/NewHorizonsOrderBadgeHelpTest.cpp
 		battle/BattleLuckReadbackTest.cpp
 		battle/LeadershipProposalReadbackTest.cpp
+		battle/SylvanTacticsStateTest.cpp
 		battle/SylvanLuckStatusPresentationTest.cpp
 		battle/LuckSerendipityStateTest.cpp
 		server/battles/NewHorizonsElementalOrbsTest.cpp
@@ -494,6 +539,8 @@ set(test_SRCS
 		server/battles/NewHorizonsMagicResistanceTest.cpp
 		server/battles/NewHorizonsCreatureSpecialtyTest.cpp
 		server/battles/NewHorizonsSpecialtyArtBindingTest.cpp
+		server/battles/NewHorizonsThirteenSpecialtyArtTest.cpp
+		server/battles/NewHorizonsFourSpecialtyArtTest.cpp
 		server/battles/NewHorizonsResourceSpecialtyArtTest.cpp
 		server/battles/NewHorizonsSelectedSpecialtyArtTest.cpp
 		server/battles/NewHorizonsRetainedSpecialtyArtTest.cpp
@@ -528,7 +575,17 @@ set(test_SRCS
 		server/battles/SpellTargetIdentityTest.cpp
 		server/battles/NewHorizonsSkillRewardApplicationTest.cpp
 		server/battles/NewHorizonsHeroGrowthTest.cpp
+		server/battles/NewHorizonsGenieSageTest.cpp
+		server/battles/NewHorizonsOrdinaryStrikeSpecialtyTest.cpp
+		server/battles/OrdinarySpecialtyVisibilityTest.cpp
+	server/battles/NewHorizonsOrdinaryScreenAndCounterTest.cpp
+	server/battles/NewHorizonsTidalRenewalTest.cpp
+	server/battles/NewHorizonsOrdinaryCreatureSpecialtyTest.cpp
+		server/battles/NewHorizonsConditionalCreatureSpecialtyTest.cpp
+		server/battles/NewHorizonsCreatureAuraSpecialtyTest.cpp
+		server/battles/NewHorizonsGenieSageArtBindingTest.cpp
 		server/battles/NewHorizonsBankCreatureRewardTest.cpp
+		server/battles/OwnedBonusEnvelopeSerializationTest.cpp
 		server/battles/NewHorizonsStartingSkillMigrationTest.cpp
 		server/battles/NewHorizonsCreatureCategoryStateTest.cpp
 		server/battles/NewHorizonsCreaturePopupTextTest.cpp
@@ -587,6 +644,7 @@ set(test_SRCS
 	server/battles/NewHorizonsLivingInfernoTest.cpp
 	server/battles/NewHorizonsDreadCavalryTest.cpp
 	server/battles/NewHorizonsSoulHarvestTest.cpp
+	server/battles/SoulHarvestOptionalContentTest.cpp
 	server/battles/NewHorizonsParalyzingGazeTest.cpp
 	server/battles/NewHorizonsAerialSupremacyTest.cpp
 	server/battles/NewHorizonsBloodAerialTest.cpp
@@ -678,6 +736,7 @@ set(test_SRCS
 		server/battles/NewHorizonsAmbusherTest.cpp
 		server/battles/NewHorizonsShadowAssaultTest.cpp
 		server/battles/NewHorizonsNightProwlerTest.cpp
+		server/battles/NewHorizonsSylvanTacticsTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsHeroLuckTest.cpp
 		server/battles/NewHorizonsLuckSerendipityTest.cpp
@@ -829,6 +888,7 @@ set(test_HEADERS
 		server/battles/VerdantPrisonScriptErrorCapture.h
 		server/battles/FrozenAttackStageFixture.h
 		server/battles/HeroCommandFixture.h
+		server/battles/NewHorizonsGenieSageFixture.h
 		server/battles/NewHorizonsElementalTerrainFixture.h
 		server/battles/FocusFireFixture.h
 		server/battles/BattleStartSnapshotFixture.h
@@ -913,6 +973,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/CreaturePressureCachePreparationTest.cpp
 		battleAI/RegenerationBaselineReuseTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
+		battleAI/ExchangeInitiativeQueueTest.cpp
+		battleAI/OrdinaryStrikeEvaluatorIntegrationTest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp
 		battleAI/AppliedStrikeFactsTest.cpp
@@ -921,6 +983,9 @@ if(ENABLE_BATTLE_AI)
 		battleAI/OrdinaryMeleeRetaliationTest.cpp
 		battleAI/OriginalMeleeSequenceTest.cpp
 		battleAI/NewHorizonsSerpentsEmbraceAITest.cpp
+		battleAI/NewHorizonsMaintenanceAITest.cpp
+		battleAI/NewHorizonsMachineSpecialtyAITest.cpp
+		battleAI/NewHorizonsMeleeSpecialtyAITest.cpp
 		battleAI/NewHorizonsParalyzingGazeAITest.cpp
 		battleAI/NewHorizonsPetrifyingBloodAITest.cpp
 		battleAI/OwnedExportBranchQueryTest.cpp
@@ -947,11 +1012,13 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroExpectedSpellSelectorTest.cpp
 		battleAI/HeroExpectedSpellComponentTest.cpp
 		battleAI/NewHorizonsGenieSupportAITest.cpp
+		battleAI/NewHorizonsGenieWheelAITest.cpp
 		battleAI/NewHorizonsBeneficialCreatureAITest.cpp
 		battleAI/NewHorizonsWispLongReachAITest.cpp
 		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/NewHorizonsDivineMandateAITest.cpp
 		battleAI/NewHorizonsElementalRebirthAITest.cpp
+		battleAI/KnownNativeRebirthPacketTest.cpp
 		battleAI/NewHorizonsRebirthChainAITest.cpp
 		battleAI/NewHorizonsBattlePlanAITest.cpp
 		battleAI/AttackResourceProjectionTest.cpp
@@ -1013,6 +1080,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HypotheticObstacleTest.cpp
 		battleAI/HypotheticSpellServerRouteTest.cpp
 		battleAI/HypotheticWallTest.cpp
+		battleAI/AttackPreviewRainTargetsTest.cpp
+		battleAI/NewHorizonsSylvanTacticsAITest.cpp
 		battleAI/NewHorizonsSylvanLuckAITest.cpp
 		battleAI/NewHorizonsNoQuarterAITest.cpp
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp

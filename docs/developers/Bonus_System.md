@@ -263,3 +263,59 @@ prevents the Perfect Moment forced-positive-Luck action. Timed spell markers
 use the existing spell-effect expiry and Dispel lifecycle. Both bonus types
 require serialization feature `NEW_HORIZONS_CREATURE_PROBABILITY_MODIFIERS`;
 down-saving either to an older format is rejected rather than losing state.
+
+
+## Filtered adjacent units
+
+`UNIT_ADJACENT` retains its historical exact `creature` match by default.
+Optional `includeUpgrades`, `relationship` (`any`, `sameArmy`, `opposingArmy`),
+`nativeTrait` (`any`, `undead`, `living`) and `anyCreature` narrow the neighbor
+query. `anyCreature: true` replaces `creature`; supplying both is rejected.
+Filtered queries exclude the subject itself and dead or ghost neighbors.
+Native traits come from the neighbor's current creature form, without recursive
+stack bonus queries. Army affiliation uses original/native ownership: Hypnotize
+and Puppet Master do not transfer these passive auras. Projected positions use
+the explicit projected roster and never fall back to live units.
+
+Extended static filter metadata requires
+`NEW_HORIZONS_ADJACENCY_FILTERS` (format1145). Loads through first-six format1144 reset the optional
+fields and retain the original creature-only layout. Standalone and composite
+limiter writers and enclosing Bonus writers reject unsupported filters before
+their respective payload prefixes. Default filters retain the old wire layout
+for earlier formats. This adds configuration metadata, not per-stack counters.
+
+Captured ordinary-creature policies containing later optional specialty keys
+also require format1145. Format1144's first-six reader rejects unknown keys,
+including attack-only rows and explicit zero coefficients. First-six-only
+captures remain valid1144 data; missing extension keys are never filled on load.
+
+
+## Target-side magical reduction penetration
+
+`TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION` is a target-side relative
+penetration percentage (integer0..100), distinct from incoming magical damage
+vulnerability. Its positive contributors join the existing independent
+penetration product after aggregate magical reduction's95% cap. For example,
+50% MDR with20% target penetration becomes40% MDR; zero MDR remainszero.
+The bonus does not affect physical damage or bypass spell immunity. The
+existing `stacking` field controls same-source nonstacking.
+
+This appended bonus requires the pending format1145 capability
+`NEW_HORIZONS_ADJACENCY_FILTERS`. Direct Bonus and enclosing SetStackEffect
+writers reject an unsupported target penetration before their payload prefixes.
+No fields or bytes are added to earlier default Bonus or effect-packet layouts.
+Current spell and raw magical ability consumers use the shared MDR owner;
+legacy spell captures retain their original source order and intermediate
+floors, then restore the target modifier's relative share of their actual
+positive reduction before damage-increasing effects. With no target modifier,
+the prior arithmetic and rounding remain unchanged.
+
+Ordinary physical strike riders use existing temporary Bonus state and
+`UNTIL_NEXT_CREATURE_ACTIVATION` expiry. Initiative affects the queue before the selected
+recipient's activation clears its penalty; this grants no extra activation.
+Hero-spell continuations retain the effect; genuine Second Wind activations
+expire it. Other existing bonus durations retain their prior behavior.
+Their `HERO_SPECIAL`, `DEBUFF` and `NON_TRANSFERABLE` metadata distinguishes
+them from spell effects and typed physical-affliction groups. Existing Cure
+and Dispel do not remove these statuses. Supplied descriptions identify the
+penalty and its next-activation lifetime; artwork is not required by the rule.

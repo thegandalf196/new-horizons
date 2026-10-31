@@ -7,8 +7,6 @@ Script.__index = Script
 -- obstacles. Corpses and artifacts are units/objects rather than obstacles and
 -- therefore cannot enter this list either.
 local USUAL_OBSTACLE = ENUM.ObstacleType.usual
-local MATTER_SHAPER_SKILL = "new-horizons:sorceryMagic"
-local MATTER_SHAPER_PERK = "new-horizons:sorceryMagic.matterShaper"
 
 local function contains(list, value)
 	for _, existing in ipairs(list) do
@@ -128,21 +126,7 @@ local function placementHex(mechanics, obstacle, creature, side)
 end
 
 function Script:hpPool(mechanics, obstacle)
-	local hexes = obstacle:getHexes()
-	local spellPower = mechanics:getEffectPower()
-	local coefficientBasisPoints = mechanics:getSpellPowerCoefficientBasisPoints()
-	local scaledSpellPower = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		2 * spellPower, 1, coefficientBasisPoints)
-	local pool = 80 + scaledSpellPower + 50 * hexes:size()
-
-	local hero = mechanics:getHeroCaster()
-	if hero ~= nil and hero:hasActivePerk(MATTER_SHAPER_SKILL, MATTER_SHAPER_PERK) then
-		-- Health is integral throughout the engine; use the same truncation as
-		-- integer healing/damage calculations for the 25% perk bonus.
-		pool = math.floor(pool * 5 / 4)
-	end
-
-	return pool
+	return mechanics:getTransfigureHitPoints(obstacle:getHexes():size())
 end
 
 local function golemMaxHealth(mechanics, creature)

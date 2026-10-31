@@ -79,6 +79,7 @@ class DLL_EXPORT BattleEvaluator
 		int abilityLevel, creatureSpellTiming::Sample * timing);
 	/// Leaves cast-only admission/value in ps; returns HP and future-DPS completion values.
 	std::pair<float, float> evaluateCreatureCastBeforeCompletion(const CStack * stack, PossibleSpellcast & ps);
+	bool applyCreatureCastProjection(HypotheticBattle & state, const CStack * stack, const PossibleSpellcast & ps);
 
 public:
 	/// Effective chosen-spell proficiency, matching authoritative creature-cast resolution.

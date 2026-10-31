@@ -638,7 +638,7 @@ WikiWindow::WikiWindow(WikiWindow::Style style_, std::optional<WikiEntryKey> ini
 					{skill->getDescriptionTranslated(1), skill->getDescriptionTranslated(2), skill->getDescriptionTranslated(3)});
 				categoryEntries[iSkill].push_back({
 					skill->getJsonKey(),
-					skill->getNameTranslated(), desc,
+					newHorizonsSkillPresentation::skillName(rules, skill->getJsonKey(), skill->getNameTranslated()), desc,
 					WikiIconInfo{ AnimationPath::builtin("SECSK32"), static_cast<size_t>(skill->getIndex() * 3 + 3), 0 },
 					skill->getModScope(), ""
 				});

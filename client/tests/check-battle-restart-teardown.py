@@ -160,4 +160,36 @@ for broken in (clear.replace("GpuRenderLayer::COUNT", "GpuRenderLayer::BATTLE"),
     else:
         raise AssertionError("scene-layer source guard accepted a missing or incomplete release")
 
+
+# A rejected/late activation may find no battlefield in release builds. Once
+# its existing defensive command has been sent, it must not touch that window.
+player = (ROOT / "client/CPlayerInterface.cpp").read_text(encoding="utf-8")
+
+
+def check_missing_battle_interface_return(source: str) -> None:
+    activation = body(source, "void CPlayerInterface::activeStack(const BattleID & battleID, const CStack * stack) //called when it's turn of that stack")
+    fallback = body(activation, "if(!battleInt)")
+    defend = "cb->battleMakeUnitAction(battleID, BattleAction::makeDefend(stack));"
+    assert fallback.count(defend) == 1, "preserve exactly one existing fallback command"
+    assert re.search(re.escape(defend) + r"\s*return\s*;\s*$", fallback), \
+        "a handled missing battlefield must return before later UI access"
+    assert "battleInt->stackActivated(stack);" in activation, \
+        "ordinary human activation must still reach its battlefield"
+    assert activation.index("if(!battleInt)") < activation.index("battleInt->stackActivated(stack);"), \
+        "the missing-window guard must precede activation"
+
+
+check_missing_battle_interface_return(player)
+# Negative witnesses cover the original fallthrough and loss of its command.
+player_fallback = body(player, "void CPlayerInterface::activeStack(const BattleID & battleID, const CStack * stack) //called when it's turn of that stack")
+fallback = body(player_fallback, "if(!battleInt)")
+for broken_fallback in (fallback.replace("return;", ""),
+                        fallback.replace("cb->battleMakeUnitAction(battleID, BattleAction::makeDefend(stack));", "")):
+    try:
+        check_missing_battle_interface_return(player.replace(fallback, broken_fallback, 1))
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("missing-battlefield source guard accepted broken recovery")
+
 print("battle restart teardown source checks passed")

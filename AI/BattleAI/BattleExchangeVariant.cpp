@@ -8,11 +8,16 @@
  *
  */
 #include "StdInc.h"
+#include "SylvanTacticsProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "AerialRetaliationProjection.h"
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
+#include "MeleeSpecialtyProjection.h"
+#include "ExchangeInitiativeQueue.h"
+#include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
+#include "BattleExchangeAftermath.h"
 #include "PetrifyingBloodValue.h"
 #include "AttackPreviewHitContext.h"
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
@@ -46,6 +51,10 @@
 #include "HypotheticBattle.h"
 #include "HypotheticBattleTypes.h"
 #include "StackWithBonuses.h"
+
+using battleExchangeAftermath::projectNoQuarterAfterHit;
+using battleExchangeAftermath::relentlessAssaultPrimaryTargetId;
+using battleExchangeAftermath::projectRelentlessAssaultAttack;
 
 namespace
 {
@@ -175,58 +184,6 @@ bool hasNightProwlerBonus(const battle::Unit * unit)
 	return unit && unit->hasBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
 }
 
-bool projectNoQuarterAfterHit(HypotheticBattle & battle, const BattleAttackInfo & attack,
-	StackWithBonuses & target)
-{
-	if(!battle.battleCanTriggerNoQuarter(attack) || !target.alive() || target.isTimeStopped()
-		|| !battle.battleMatchOwner(attack.attacker, &target)
-		|| !newHorizonsOffense::belowNoQuarterThreshold(
-			target.getAvailableHealth(), battle::getMaximumHealth(target)))
-		return false;
-	if(battleDefiantAI::project(battle, attack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER))
-		return false;
-
-	const int32_t moraleActivations = battle.getBattle()->getActiveStackID()
-		== static_cast<int32_t>(target.unitId()) ? 2 : 1;
-	target.applyNoQuarter(moraleActivations, true);
-	return true;
-}
-
-std::optional<uint32_t> relentlessAssaultPrimaryTargetId(const CBattleInfoCallback & battle,
-	const BattleAttackInfo & attack)
-{
-	const auto * attacker = attack.attacker;
-	const auto * defender = attack.defender;
-	if(!attacker || !defender || !attack.physicalDamage || attack.retaliation
-		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent > 0
-		|| attack.cleaveDamagePercent > 0 || attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))
-		return {};
-	const auto side = attacker->unitSide();
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return {};
-	const auto * hero = battle.battleGetFightingHero(side);
-	if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT)
-		|| !attacker->alive() || attacker->isGhost() || attacker->isTurret()
-		|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
-		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
-		return {};
-	const auto * primaryTarget = battle.battleResolveHeroOrderTarget(attacker, defender, attack.shooting);
-	if(!primaryTarget || !primaryTarget->alive() || primaryTarget->isGhost() || primaryTarget->isTurret()
-		|| primaryTarget->hasBonusOfType(BonusType::SIEGE_WEAPON)
-		|| primaryTarget->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
-		|| !battle.battleMatchOwner(attacker, primaryTarget))
-		return {};
-	return primaryTarget->unitId();
-}
-
-void projectRelentlessAssaultAttack(HypotheticBattle & battle, const BattleAttackInfo & attack,
-	std::optional<uint32_t> primaryTargetUnitId)
-{
-	if(!attack.attacker || !primaryTargetUnitId)
-		return;
-	battle.recordRelentlessAssaultAttack(attack.attacker->unitSide(), *primaryTargetUnitId);
-}
-
 uint32_t distToNearestReachableNeighbour(const ReachabilityInfo & reachability,
 	const battle::Unit * attacker, const battle::Unit * defender)
 {
@@ -319,6 +276,7 @@ float BattleExchangeVariant::trackAttack(
 		if(!manaLeechReplay)
 			return 0; // Same pre-mutation skip contract as an unavailable actor.
 	}
+	sylvanTacticsAI::StrikeProjection tactics(hb.get());
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 
@@ -423,8 +381,7 @@ float BattleExchangeVariant::trackAttack(
 				const auto healthBefore = target->getAvailableHealth();
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
-				newHorizonsForestAmbush::damageFromAttack(*hb, *target, appliedDamage,
-				strike.damageProvenance);
+				tactics.damage(*hb, projectedAttack, *target, appliedDamage, strike.damageProvenance);
 				if(wasAlive && !target->alive())
 					hb->releaseSerpentBindingsForDeath(*target);
 				if(harvestEligible)
@@ -485,10 +442,9 @@ float BattleExchangeVariant::trackAttack(
 			}
 			const auto primaryHit = std::ranges::find(actualHits, strike.defenderId,
 				&std::pair<uint32_t, int64_t>::first);
-			hb->projectSerpentBinding(strike.attackerId, strike.defenderId,
-				primaryHit == actualHits.end() ? 0 : primaryHit->second, serpentBinding);
-			paralyzingGazeAI::apply(*hb, strike.attackerId, strike.defenderId,
-				primaryHit == actualHits.end() ? 0 : primaryHit->second, gazeAdmitted);
+			battleExchangeAftermath::applyPrimaryStatuses(*hb, projectedAttack,
+				primaryHit == actualHits.end() ? 0 : primaryHit->second, serpentBinding, gazeAdmitted);
+			tactics.finish(projectedAttack.attacker->unitId());
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
 				strike.resolvedLuck, true, strike.perfectFortune, strike.perfectFortuneSide,
 				strike.luckSerendipitySide, strike.luckSerendipityOrdinaryAttack);
@@ -557,6 +513,9 @@ float BattleExchangeVariant::trackAttack(
 		}
 	}
 
+	for(const auto & hit : ap.tacticsSecondaryHits)
+		sylvanTacticsAI::replaySecondary(*hb, hit);
+
 	if(hb->getActiveStackID() == static_cast<int32_t>(attacker->unitId()))
 		attacker->consumeNoQuarterActivation();
 	if(ap.bulwarkMireGripTriggered && attacker->alive())
@@ -619,24 +578,8 @@ float BattleExchangeVariant::trackAttack(
 			}
 		}
 	}
-	if(!ap.attack.shooting && ap.from.isValid() && attacker->alive()
-		&& attacker->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
-		&& !attacker->hasBonusOfType(BonusType::NOT_ACTIVE)
-		&& !attacker->hasBonusOfType(BonusType::BIND_EFFECT))
-		attacker->setPosition(originalPosition);
-
-#if BATTLE_TRACE_LEVEL >= 1
-	logAi->trace(
-		"ap score: our: %2f, enemy: %2f, collateral: %2f, blocked: %2f",
-		ap.attackerDamageReduce,
-		ap.defenderDamageReduce,
-		ap.collateralDamageReduce,
-		ap.shootersBlockedDmg);
-#endif
-	if(manaLeechReplay)
-		hb->applyManaLeechReplay(*manaLeechReplay);
-	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, attacker.get(), true, damageCache, hb);
-	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, true, damageCache, hb);
+	completeSelectedAttack(ap, hb, *attacker, originalPosition, manaLeechReplay,
+		rebirthSpawnIdsBefore, primalBurstFirstNewHit, referenceController, damageCache);
 
 	return attackValue;
 }
@@ -676,6 +619,7 @@ float BattleExchangeVariant::trackAttack(
 		return *reaction;
 	}
 
+	sylvanTacticsAI::StrikeProjection tactics(hb.get());
 	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
 	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
 	const auto referenceController = hb->battleGetOwner(attacker.get());
@@ -700,6 +644,7 @@ float BattleExchangeVariant::trackAttack(
 			return 0;
 	}
 	BattleAttackInfo projectedAttack(attacker.get(), defender.get(), 0, shooting);
+	const bool hostilePrimaryMelee = !shooting && hb->battleGetOwner(attacker.get()) != hb->battleGetOwner(defender.get());
 	projectedAttack.protectIntercepted = protectIntercepted;
 	const auto manaLeech = !evaluateOnly && (!manaLeechSequenceSpent || !*manaLeechSequenceSpent)
 		? newHorizonsManaLeeches::entitlement(*hb, attacker.get(), defender.get(), shooting,
@@ -782,8 +727,7 @@ float BattleExchangeVariant::trackAttack(
 		else
 			dpsScore.ourDamageReduce += defenderDamageReduce;
 
-		newHorizonsForestAmbush::damageFromAttack(*hb, *defender, attackDamage,
-				attackDamageProvenance);
+		tactics.damage(*hb, projectedAttack, *defender, attackDamage, attackDamageProvenance);
 		petrifyingBloodAI::capture(hb, *attacker, *defender, actualDamage,
 			shooting, projectedAttack.physicalDamage, petrifyingBloodPending);
 		if(defenderWasAlive && !defender->alive())
@@ -793,6 +737,7 @@ float BattleExchangeVariant::trackAttack(
 			newHorizonsSoulHarvest::grant(*attacker, newHorizonsSoulHarvest::casualtiesAfterHit(
 				*defender, defenderHarvestCountBefore, defenderMayRebirth));
 		paralyzingGazeAI::apply(*hb, attacker->unitId(), defender->unitId(), actualDamage, gazeAdmitted);
+		AttackPreviewHitContext::applyOrdinaryStrike(*hb, projectedAttack, actualDamage);
 		if(manaLeech.amount > 0)
 			hb->projectManaLeech(manaLeech, actualDamage, manaLeechSequenceSpent);
 		AttackPreviewHitContext::applyUnspentLastStand(*hb, defender.get(), attackLastStand.first, attackLastStand.second,
@@ -810,6 +755,7 @@ float BattleExchangeVariant::trackAttack(
 		if(actualDamage > 0)
 			projectNoQuarterAfterHit(*hb, projectedAttack, *defender);
 		hb->recordBloodrageTransition(defender, defenderWasAlive);
+		tactics.finish(projectedAttack.attacker->unitId());
 		hb->projectFortuneStrike(projectedAttack, {{defender->unitId(), actualDamage}}, attacker.get(),
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()),
 			primaryFortune->resolvedLuck, true, primaryFortune->perfectFortune,
@@ -823,6 +769,8 @@ float BattleExchangeVariant::trackAttack(
 	}
 	if(projectedAttacker)
 		projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
+	if(actionResult && !evaluateOnly && hostilePrimaryMelee)
+		actionResult->primaryMeleePerformed = true;
 	if(!evaluateOnly && shooting && projectedAttack.physicalDamage
 		&& attacker->rangedFollowUpDamagePercent > 0)
 		attacker->rangedFollowUpDamagePercent = 0;
@@ -929,8 +877,7 @@ float BattleExchangeVariant::trackAttack(
 				const auto targetRebirthSource = targetWasAlive
 					? hb->captureElementalRebirthSource(*target) : std::nullopt;
 				const bool targetMayRebirth = hb->hasReadyNativeRebirth(target.get());
-				newHorizonsForestAmbush::damageFromAttack(*hb, *target, cleaveDamage,
-				cleaveProvenance);
+				tactics.damage(*hb, cleaveAttack, *target, cleaveDamage, cleaveProvenance);
 				petrifyingBloodAI::capture(hb, *projectedAttacker, *target, resolvedCleaveDamage,
 					false, cleaveAttack.physicalDamage, petrifyingBloodPending);
 				if(targetWasAlive && !target->alive())
@@ -952,6 +899,7 @@ float BattleExchangeVariant::trackAttack(
 				if(resolvedCleaveDamage > 0)
 					projectNoQuarterAfterHit(*hb, cleaveAttack, *target);
 				hb->recordBloodrageTransition(target, targetWasAlive);
+				tactics.finish(cleaveAttack.attacker->unitId());
 				hb->projectFortuneStrike(cleaveAttack, {{target->unitId(), cleaveDamage}}, attacker.get(),
 					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()),
 					cleaveResolvedLuck, true, cleavePerfectFortune, cleavePerfectFortuneSide,
@@ -1037,13 +985,13 @@ float BattleExchangeVariant::trackAttack(
 		const auto attackerRebirthSource = attackerWasAlive
 			? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
 		const bool attackerMayRebirth = hb->hasReadyNativeRebirth(attacker.get());
-		newHorizonsForestAmbush::damageFromAttack(*hb, *attacker, retaliationDamage,
-				retaliationProvenance);
+		tactics.damage(*hb, retaliationAttack, *attacker, retaliationDamage, retaliationProvenance);
 		petrifyingBloodAI::capture(hb, *defender, *attacker, actualDamage,
 			false, retaliationAttack.physicalDamage, petrifyingBloodPending);
 		if(attackerWasAlive && !attacker->alive())
 			hb->releaseSerpentBindingsForDeath(*attacker);
 		hb->projectSerpentBinding(defender->unitId(), attacker->unitId(), actualDamage, counterSerpentBinding);
+		AttackPreviewHitContext::applyOrdinaryStrike(*hb, retaliationAttack, actualDamage);
 		if(counterHarvestEligible)
 			newHorizonsSoulHarvest::grant(*defender, newHorizonsSoulHarvest::casualtiesAfterHit(
 				*attacker, attackerHarvestCountBefore, attackerMayRebirth));
@@ -1064,6 +1012,7 @@ float BattleExchangeVariant::trackAttack(
 		if(actualDamage > 0)
 			projectNoQuarterAfterHit(*hb, retaliationAttack, *attacker);
 		hb->recordBloodrageTransition(attacker, attackerWasAlive);
+		tactics.finish(retaliationAttack.attacker->unitId());
 		hb->projectFortuneStrike(retaliationAttack, {{attacker->unitId(), actualDamage}}, defender.get(),
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()),
 			retaliationResolvedLuck, true, retaliationPerfectFortune, retaliationPerfectFortuneSide,
@@ -1574,27 +1523,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 	auto exchangeBattle = std::make_shared<HypotheticBattle>(env.get(), hb);
 	BattleExchangeVariant v;
 
-	for(int exchangeTurn = 0; exchangeTurn < exchangeUnits.units.size(); exchangeTurn++)
-	{
-		for(auto unit : exchangeUnits.units.at(exchangeTurn))
-		{
-			if(unit->isTurret())
-				continue;
-
-			bool isOur = exchangeBattle->battleMatchOwner(ap.attack.attacker, unit, true);
-			auto & attackerQueue = isOur ? ourStacks : enemyStacks;
-			auto u = exchangeBattle->getForUpdate(unit->unitId());
-
-			if(u->alive() && !vstd::contains(attackerQueue, unit))
-			{
-				attackerQueue.push_back(unit);
-
-#if BATTLE_TRACE_LEVEL
-				logAi->trace("Exchanging: %s", u->getDescription());
-#endif
-			}
-		}
-	}
+	ExchangeInitiativeQueue::appendParticipantArmies(*exchangeBattle, ap.attack.attacker,
+		exchangeUnits.units, ourStacks, enemyStacks);
 
 	setupMeasurement.finish();
 	bool canUseAp = true;
@@ -1605,6 +1535,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		? simulationTurnsCount
 		: turn + turnOrder.size();
 
+	ExchangeInitiativeQueue exchangeQueue(exchangeBattle, initiativeStrikeEffects);
 	for(int exchangeTurn = 0; exchangeTurn < simulationTurnsCount; exchangeTurn++)
 	{
 		bool isMovingTurm = exchangeTurn < turn;
@@ -1612,7 +1543,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			? exchangeUnits.units.size() - 1
 			: exchangeTurn;
 
-		for(auto activeUnit : exchangeUnits.units.at(queueTurn))
+		exchangeQueue.beginRound(turnOrder.at(queueTurn), exchangeUnits.units.at(queueTurn));
+		while(const auto * activeUnit = exchangeQueue.next())
 		{
 			bool isOur = exchangeBattle->battleMatchOwner(ap.attack.attacker, activeUnit, true);
 			battle::Units & attackerQueue = isOur ? ourStacks : enemyStacks;
@@ -1815,6 +1747,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			else
 			{
 				bool manaLeechSequenceSpent = false;
+				bool primaryMeleePerformed = false;
 				std::vector<petrifyingBloodAI::Pending> bloodSequence;
 				for(int i = 0; i < totalAttacks; i++)
 				{
@@ -1825,10 +1758,12 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 							false, i == 0, nullptr, nullptr, nullptr, &actionResult, &manaLeechSequenceSpent, &bloodSequence);
 					});
 
+					primaryMeleePerformed |= actionResult.primaryMeleePerformed;
 					if(actionResult.completedAction || !attacker->alive() || !defender->alive())
 						break;
 				}
 				v.finishPetrifyingBlood(exchangeBattle, *attacker, bloodSequence, isOur, damageCache);
+				meleeSpecialtyAI::complete(*exchangeBattle, attacker->unitId(), primaryMeleePerformed);
 			}
 
 			v.trackDreadContinuation(exchangeBattle, attacker->unitId(), damageCache, isOur);
@@ -1932,6 +1867,7 @@ void BattleExchangeEvaluator::updateReachabilityMap(std::shared_ptr<HypotheticBa
 
 	hb->battleGetTurnOrder(turnOrder, std::numeric_limits<int>::max(), TURN_DEPTH);
 	reachabilityMap.update(turnOrder, hb);
+	initiativeStrikeEffects = newHorizonsOrdinaryStrike::mayChangeInitiative(*hb);
 }
 
 const battle::Units & ReachabilityMapCache::getOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex)

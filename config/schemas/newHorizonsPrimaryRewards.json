@@ -1,0 +1,90 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema",
+	"title": "New Horizons default Primary Attribute reward templates",
+	"description": "Build-time only. Primary numbers are legacy points; text placeholders are resolved by the curated module generator. Runtime captures concrete generated amounts.",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"schemaVersion",
+		"legacyPointValue",
+		"objects",
+		"factions"
+	],
+	"properties": {
+		"schemaVersion": {
+			"type": "integer",
+			"enum": [
+				1
+			]
+		},
+		"legacyPointValue": {
+			"type": "integer",
+			"minimum": 1,
+			"maximum": 1000
+		},
+		"objects": {
+			"type": "object",
+			"minProperties": 9,
+			"maxProperties": 9,
+			"additionalProperties": false,
+			"patternProperties": {
+				"^core:(arena|marlettoTower|gardenOfRevelation|libraryOfEnlightenment|mercenaryCamp|starAxis|schoolOfMagic|schoolOfWar|scholar)$": {
+					"type": "object",
+					"required": [
+						"types"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"types": {
+							"type": "object",
+							"minProperties": 1,
+							"maxProperties": 1,
+							"additionalProperties": {
+								"$ref": "rewardable.json"
+							}
+						}
+					}
+				}
+			}
+		},
+		"factions": {
+			"type": "object",
+			"required": [
+				"core:fortress"
+			],
+			"additionalProperties": false,
+			"properties": {
+				"core:fortress": {
+					"type": "object",
+					"required": [
+						"town"
+					],
+					"additionalProperties": false,
+					"properties": {
+						"town": {
+							"type": "object",
+							"required": [
+								"buildings"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"buildings": {
+									"type": "object",
+									"required": [
+										"special1"
+									],
+									"additionalProperties": false,
+									"properties": {
+										"special1": {
+											"$ref": "townBuilding.json"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

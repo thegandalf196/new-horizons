@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../windows/NewHorizonsCurrentSkillPresentation.h"
+#include "../windows/NewHorizonsPerkHelp.h"
 #include "CComponentHolder.h"
 
 #include "../GameEngine.h"
@@ -308,6 +310,16 @@ void CSecSkillPlace::setSkill(const SecondarySkill & newSkillId, const uint8_t l
 	setLevel(level);
 }
 
+void CSecSkillPlace::setSkillForHero(const CGHeroInstance & hero, SecondarySkill skill, uint8_t level)
+{
+	setSkill(skill, level);
+	text = newHorizonsPerkHelp::skillDescription(&hero, skill, level);
+	auto help = MetaString::createFromTextID("core.heroscrn.21");
+	help.replaceTextID("core.skilllev", level - 1);
+	help.replaceRawString(newHorizonsPerkHelp::skillLabel(&hero, skill));
+	hoverText = help.toString(&GAME->translator());
+}
+
 void CSecSkillPlace::setLevel(const uint8_t level)
 {
 	// 0 - none
@@ -328,10 +340,10 @@ void CSecSkillPlace::setLevel(const uint8_t level)
 		image->enable();
 		auto hoverText = MetaString::createFromTextID("core.heroscrn.21");
 		hoverText.replaceTextID("core.skilllev", level - 1);
-		hoverText.replaceTextID(secSkill->getNameTextID());
+		hoverText.replaceRawString(newHorizonsSkillPresentation::currentName(skillId));
 		this->hoverText = hoverText.toString(&GAME->translator());
 		component.value = level;
-		text = secSkill->getDescriptionTranslated(level);
+		text = newHorizonsSkillPresentation::currentDescription(skillId, level);
 	}
 	else
 	{

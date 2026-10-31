@@ -12,6 +12,7 @@
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../battle/NewHorizonsPlague.h"
 #include "CGameState.h"
+#include "../mapObjects/NewHorizonsNeutralArmies.h"
 #include "../bonuses/NativeBonusGraphAdmission.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
 
@@ -259,6 +260,7 @@ void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRando
 	randomArtifactPoolExclusions = artifactRandomPool::exclusionsFromSetting(
 		getSettings().getValue(EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS));
 	logGlobal->info("Map loaded!");
+	newHorizonsNeutralArmies::applyStartOption(*map, *scenarioOps);
 
 	day = 0;
 
@@ -368,31 +370,6 @@ void CGameState::updateEntity(Metatype metatype, int32_t index, const JsonNode &
 		logGlobal->error("This metatype update is not implemented");
 		break;
 	}
-}
-
-void CGameState::updateOnLoad(const StartInfo & si)
-{
-	assert(services);
-	scenarioOps->playerInfos = si.playerInfos;
-	for(auto & i : si.playerInfos)
-	{
-		// a random-map save stores the original (unpruned) StartInfo, which may list players absent from the actual game state
-		if(!players.count(i.first))
-			continue;
-		players.at(i.first).human = i.second.isControlledByHuman();
-		logGlobal->debug("Player %d is controlled by %s, team %d", i.first.getNum(), i.second.isControlledByHuman() ? "human" : "AI", players.at(i.first).team.getNum());
-	}
-	// pre-TOWN_NAME_TEXT_ID saves carry renames as free-form text; move them into the map container
-	for(auto * town : getMap().getObjects<CGTownInstance>())
-		if(!town->legacyCustomName.empty())
-		{
-			town->setCustomName(getMap(), town->legacyCustomName);
-			town->legacyCustomName.clear();
-		}
-
-	scenarioOps->extraOptionsInfo = si.extraOptionsInfo;
-	scenarioOps->turnTimerInfo = si.turnTimerInfo;
-	scenarioOps->simturnsInfo = si.simturnsInfo;
 }
 
 void CGameState::initNewGame(const IMapService * mapService, vstd::RNG & randomGenerator, bool allowSavingRandomMap, Load::ProgressAccumulator & progressTracking)
@@ -2153,6 +2130,12 @@ void CGameState::validateNewHorizonsCoroniusHolyWrathSerialization(bool supporte
 	newHorizonsHeroes::validateCoroniusHolyWrathSerialization(heroDevelopmentRules, supported);
 	if(map)
 		map->validateNewHorizonsCoroniusHolyWrathSerialization(supported);
+}
+
+void CGameState::validateSylvanTacticsSerialization(bool supported) const
+{
+	newHorizonsHeroes::validateSylvanTacticsSerialization(heroPerkRules, supported);
+	if(map) map->validateSylvanTacticsSerialization(supported);
 }
 
 void CGameState::validateCrisisCommandSerialization(bool supported) const

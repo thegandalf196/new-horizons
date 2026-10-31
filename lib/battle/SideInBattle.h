@@ -411,6 +411,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving) sylvanLuck.validateSerializationPrefix(h);
 		if(h.saving)
 			validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
 		if(h.saving)

@@ -8,6 +8,7 @@
 #include "HypotheticBattle.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/Unit.h"
+#include "../../lib/GameConstants.h"
 
 namespace
 {
@@ -26,6 +27,46 @@ void primaryFirst(battle::Units & units, const battle::Unit * primary, bool incl
 
 namespace attackPreview
 {
+const battle::Unit * rainSecondary(const CBattleInfoCallback & battle,
+	const battle::Unit * attacker, const battle::Unit * primary, const BattleHexArray & rainPrimaryFootprint)
+{
+	const auto adjacentToPrimary = [&rainPrimaryFootprint](const battle::Unit * candidate)
+	{
+		for(const auto & candidateHex : candidate->getHexes())
+		{
+			if(!candidateHex.isValid())
+				continue;
+			for(const auto & primaryHex : rainPrimaryFootprint)
+				if(primaryHex.isValid() && BattleHex::getDistance(candidateHex, primaryHex) == 1)
+					return true;
+		}
+		return false;
+	};
+	const auto lowestOccupiedHex = [](const battle::Unit * unit)
+	{
+		int result = GameConstants::BFIELD_SIZE;
+		for(const auto & occupied : unit->getHexes())
+			if(occupied.isValid())
+				result = std::min(result, static_cast<int>(occupied.toInt()));
+		return result;
+	};
+	const battle::Unit * secondary = nullptr;
+	for(const auto * candidate : battle.battleGetUnitsIf(
+		[](const battle::Unit * unit) { return unit->alive(); }))
+	{
+		if(candidate->unitId() == primary->unitId()
+			|| battle.battleMatchOwner(attacker, candidate, true)
+			|| !adjacentToPrimary(candidate))
+			continue;
+		if(!secondary || candidate->getAvailableHealth() > secondary->getAvailableHealth()
+			|| (candidate->getAvailableHealth() == secondary->getAvailableHealth()
+				&& std::pair{lowestOccupiedHex(candidate), candidate->unitId()}
+					< std::pair{lowestOccupiedHex(secondary), secondary->unitId()}))
+			secondary = candidate;
+	}
+	return secondary;
+}
+
 Targets targets(const CBattleInfoCallback & battle, const battle::Unit * attacker,
 	const battle::Unit * requested, const battle::Unit * resolved,
 	BattleHex from, BattleHex target, bool shooting, bool longReach)

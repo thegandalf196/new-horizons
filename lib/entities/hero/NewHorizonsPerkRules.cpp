@@ -158,7 +158,8 @@ void validatePerkRules(const JsonNode & rules)
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
-		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy"});
+		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy"});
+	usesSylvanTactics(rules);
 	newHorizonsNecromancy::validatePolicy(rules);
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
 	require(integer(rules["rulesetVersion"], PERK_MIN_RULESET_VERSION, PERK_RULESET_VERSION), "rulesetVersion");

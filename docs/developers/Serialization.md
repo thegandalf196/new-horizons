@@ -33,6 +33,25 @@ Historical loads default the marker to false, including reused objects; a cleare
 flag and surviving army never synthesize reward identity. Writers targeting an
 older format reject a pending marker before the rewardable object's prefix.
 
+## Captured Genie and Sage specialties
+
+`NEW_HORIZONS_GENIE_SAGE` admits the optional version-1
+`genieSageSpecialties` policy in saved hero development. Historical absence keeps
+Thane's and Iona's previous specialties and starting-perk history. New Thane
+initialization chooses Historian; each subsequently gained level adds one raw
+Spell Power and Knowledge after normal growth, without additional RNG draws.
+Earned ratings use the existing primary state; no accumulated-growth counter is
+added. Class profiles and level-1 ratings keep their ordinary representation.
+
+Iona's Genies gain named Luck casts through captured, creature-limited specialty
+bonuses. They spend the existing stack `CASTS` counter shared with random Wishes.
+The five-round Luck effects use canonical Fortune/Misfortune source IDs and a
+Wheel marker, preserving same-family replacement, cancellation and Dispel.
+Named creature actions are validated before random selection and action spending;
+other mixed or weighted random casters retain their existing protocol.
+Direct and enclosing development writers reject unsupported policy captures
+through the existing specialty-serialization admission checks.
+
 ## Captured contexts and detached descriptors
 
 Append each serialization feature after the last actual feature and before

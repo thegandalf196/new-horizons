@@ -64,7 +64,7 @@ int64_t adjustDamage(const CBattleInfoCallback & battle, const battle::Unit & ta
 		reductionSourcesBasisPoints.push_back(perkReduction);
 
 	const auto mitigated = spells::calculateMagicalDamageReductionBasisPoints(
-		rawDamage, reductionSourcesBasisPoints, 0).damageWithoutPenetration;
+		rawDamage, reductionSourcesBasisPoints, spells::targetMdrPenetrations(target)).damageWithPenetration;
 	return spells::applyIncomingMagicalDamageModifier(target, mitigated);
 }
 }

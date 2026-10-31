@@ -15,6 +15,12 @@ struct FocusRules
 	int32_t powerBasisPoints;
 	int32_t capBasisPoints;
 };
+DLL_LINKAGE int32_t slowBaseReduction(int32_t power, int32_t coefficient, int32_t warcasting, int32_t empower);
+DLL_LINKAGE double scaleSlowVariantValue(double value, int32_t powerPercent);
+DLL_LINKAGE int32_t focusMarkBasisPoints(const FocusRules & profile, int32_t power, int32_t coefficient,
+	int32_t warcasting, int32_t empower, int32_t specialty);
+DLL_LINKAGE int64_t livingArmorHitPoints(int64_t baseHitPoints, int64_t powerCoefficient,
+	int32_t power, int32_t divisor, int32_t coefficient, int32_t warcasting, int32_t empower);
 /// Absence preserves historical potency and initiative-only Slow.
 DLL_LINKAGE std::optional<FocusRules> focusRules(const JsonNode & rules);
 DLL_LINKAGE bool slowAffectsSpeed(const JsonNode & rules);

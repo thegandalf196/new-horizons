@@ -1,0 +1,378 @@
+{
+  "format": 1,
+  "files": {
+    "Mods/new-horizons/Content/config/spells/newHorizons.json": {
+      "baselineSourceCommit": "b184cd41bd09ce980ac5de46ccc154f4e933a9ec",
+      "excludedGraphics": [
+        "/arcaneBreach/graphics/iconEffect",
+        "/arcaneBreach/graphics/iconImmune",
+        "/lucidity/graphics/iconEffect",
+        "/lucidity/graphics/iconImmune"
+      ],
+      "baselineProjectionSha256": "85dd3614b5099daeab0e9a26439d322138573ec40f6c57dec58b84c765f7f15b",
+      "revisions": [
+        {
+          "sourceCommit": "c7fc7999734032bd8270a9928b6aa6b3644a93d0",
+          "fromProjectionSha256": "85dd3614b5099daeab0e9a26439d322138573ec40f6c57dec58b84c765f7f15b",
+          "toProjectionSha256": "f29a3d3439e201b9cc78be62295a4b4fd4ce569e6afa1124d2ab0c00e580aff1",
+          "changes": [
+            {
+              "pointer": "/confusion/levels/base/description",
+              "operation": "replace",
+              "before": "The target's next activation becomes Attack, Defend or Wander, chosen randomly. Applying Confusion removes Berserk. A negative Morale forfeiture consumes Confusion. Dispel removes pending Confusion. This spell is unavailable until its forced activation and AI implementation are complete.",
+              "after": "The target's next activation becomes Attack, Defend or Wander, chosen randomly. Attack approaches its chosen enemy if no attack is in reach; if no legal attack or approach is possible, it Defends. Wander also Defends if no legal destination exists. Applying Confusion removes Berserk. A negative Morale forfeiture consumes Confusion. Dispel removes pending Confusion."
+            },
+            {
+              "pointer": "/holyWrath/levels/advanced/description",
+              "operation": "replace",
+              "before": "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            },
+            {
+              "pointer": "/holyWrath/levels/basic/description",
+              "operation": "replace",
+              "before": "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            },
+            {
+              "pointer": "/holyWrath/levels/expert/description",
+              "operation": "replace",
+              "before": "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            },
+            {
+              "pointer": "/holyWrath/levels/none/description",
+              "operation": "replace",
+              "before": "Deal 40 + 2 x Spell Power damage to one enemy stack. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            }
+          ]
+        },
+        {
+          "sourceCommit": "905815eef602903cf093df7d16d0490a211b4e1e",
+          "fromProjectionSha256": "f29a3d3439e201b9cc78be62295a4b4fd4ce569e6afa1124d2ab0c00e580aff1",
+          "toProjectionSha256": "13c1c493535f1f13a4f961ae337e4c26fe2b9ae4cf5e153218c907fa607cf018",
+          "changes": [
+            {
+              "pointer": "/holyWrath/levels/advanced/description",
+              "operation": "replace",
+              "before": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            },
+            {
+              "pointer": "/holyWrath/levels/basic/description",
+              "operation": "replace",
+              "before": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            },
+            {
+              "pointer": "/holyWrath/levels/expert/description",
+              "operation": "replace",
+              "before": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            },
+            {
+              "pointer": "/holyWrath/levels/none/description",
+              "operation": "replace",
+              "before": "With New Horizons hero attributes, deal 40 + 0.2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno.",
+              "after": "In current New Horizons games, deal 40 + 2 x displayed Spell Power damage to one enemy stack before School, Spellcraft and specialty modifiers. Earlier games retain their own damage formula. Holy Wrath deals 150% of this damage to Undead stacks and creatures whose base faction is Inferno."
+            }
+          ]
+        },
+        {
+          "sourceCommit": "a6809b9be713ae6a4200d32568c55a7b9b8484e9",
+          "fromProjectionSha256": "13c1c493535f1f13a4f961ae337e4c26fe2b9ae4cf5e153218c907fa607cf018",
+          "toProjectionSha256": "6bea64a12c7eea686181730b9da974a08a18341be6214a18fbc031570b890d84",
+          "changes": [
+            {
+              "pointer": "/masterChainLightning/levels/advanced/description",
+              "operation": "replace",
+              "before": "Master Chain Lightning strikes up to five enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+              "after": "Master Chain Lightning strikes up to five stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%."
+            },
+            {
+              "pointer": "/masterChainLightning/levels/basic/description",
+              "operation": "replace",
+              "before": "Master Chain Lightning strikes up to four enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+              "after": "Master Chain Lightning strikes up to four stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%."
+            },
+            {
+              "pointer": "/masterChainLightning/levels/expert/description",
+              "operation": "replace",
+              "before": "Master Chain Lightning strikes up to five enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+              "after": "Master Chain Lightning strikes up to five stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%."
+            },
+            {
+              "pointer": "/masterChainLightning/levels/none/description",
+              "operation": "replace",
+              "before": "Master Chain Lightning strikes up to four enemy stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%.",
+              "after": "Master Chain Lightning strikes up to four stacks. After the first target, jumps choose the nearest valid unstruck stack regardless of allegiance and can damage friendly stacks. It deals the same initial damage as Chain Lightning. Its per-jump retention starts at 76% at hero level 1, gains 1 percentage point per level, and caps at 90%."
+            }
+          ]
+        },
+        {
+          "sourceCommit": "d10dd8fe19364a4d3876f99ea369ffde2ea50480",
+          "fromProjectionSha256": "6bea64a12c7eea686181730b9da974a08a18341be6214a18fbc031570b890d84",
+          "toProjectionSha256": "f97a09dbb4dcfe6706e92fcb6fb4639e310a03e0d2437cc65df3a94b017193d1",
+          "changes": [
+            {
+              "pointer": "/theChosen",
+              "operation": "add",
+              "after": {
+                "name": "The Chosen",
+                "type": "combat",
+                "school": {
+                  "new-horizons:light": true
+                },
+                "level": 5,
+                "power": 0,
+                "defaultGainChance": 0,
+                "gainChance": {},
+                "targetType": "CREATURE",
+                "graphics": {
+                  "iconBook": "NH_spell_crusade-44.png",
+                  "iconScroll": "NH_spell_crusade-32.png",
+                  "iconEffect": "NH_spell_crusade-30.png",
+                  "iconImmune": "NH_spell_crusade-30.png",
+                  "iconScenarioBonus": "NH_spell_crusade-32.png"
+                },
+                "animation": {
+                  "affect": [
+                    {
+                      "defName": "C10SPW",
+                      "verticalPosition": "bottom",
+                      "transparency": 0.5
+                    }
+                  ]
+                },
+                "sounds": {
+                  "cast": "PRAYER"
+                },
+                "levels": {
+                  "none": {
+                    "range": "0",
+                    "description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+                    "cost": 25,
+                    "power": 0,
+                    "battleEffects": {
+                      "theChosen": {
+                        "type": "theChosenEffect"
+                      }
+                    },
+                    "targetModifier": {
+                      "smart": true
+                    }
+                  },
+                  "basic": {
+                    "range": "0",
+                    "description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+                    "cost": 25,
+                    "power": 0,
+                    "battleEffects": {
+                      "theChosen": {
+                        "type": "theChosenEffect"
+                      }
+                    },
+                    "targetModifier": {
+                      "smart": true
+                    }
+                  },
+                  "advanced": {
+                    "range": "0",
+                    "description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+                    "cost": 25,
+                    "power": 0,
+                    "battleEffects": {
+                      "theChosen": {
+                        "type": "theChosenEffect"
+                      }
+                    },
+                    "targetModifier": {
+                      "smart": true
+                    }
+                  },
+                  "expert": {
+                    "range": "0",
+                    "description": "Choose one friendly living, non-mechanical stack. It gains at least double offensive attacks, unlimited retaliations, Flying and native Jousting (+5% damage per charged hex). Existing stronger abilities are retained. Only one stack per original army may be Chosen; a successful recast replaces the previous effect. Nominal duration is min(4, 2 + floor(School coefficient x raw Spell Power / 150)); Expert Light coefficient is 1.45. Spellcraft does not strengthen this duration.",
+                    "cost": 25,
+                    "power": 0,
+                    "battleEffects": {
+                      "theChosen": {
+                        "type": "theChosenEffect"
+                      }
+                    },
+                    "targetModifier": {
+                      "smart": true
+                    }
+                  }
+                },
+                "flags": {
+                  "positive": true
+                },
+                "targetCondition": {
+                  "noneOf": {
+                    "bonus.UNDEAD": "absolute",
+                    "bonus.NON_LIVING": "absolute",
+                    "bonus.MECHANICAL": "absolute"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "sourceCommit": "092447c15de8b3fecaff27178afb92bf67ea27da",
+          "fromProjectionSha256": "f97a09dbb4dcfe6706e92fcb6fb4639e310a03e0d2437cc65df3a94b017193d1",
+          "toProjectionSha256": "d458d1ebb4f930412f4f9cd9aae596ac27a3cd8578392889bdf8410024a67036",
+          "changes": [
+            {
+              "pointer": "/focusMagic/level",
+              "operation": "replace",
+              "before": 3,
+              "after": 1
+            },
+            {
+              "pointer": "/focusMagic/levels/advanced/cost",
+              "operation": "replace",
+              "before": 11,
+              "after": 4
+            },
+            {
+              "pointer": "/focusMagic/levels/advanced/description",
+              "operation": "replace",
+              "before": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+              "after": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit."
+            },
+            {
+              "pointer": "/focusMagic/levels/basic/cost",
+              "operation": "replace",
+              "before": 11,
+              "after": 4
+            },
+            {
+              "pointer": "/focusMagic/levels/basic/description",
+              "operation": "replace",
+              "before": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+              "after": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit."
+            },
+            {
+              "pointer": "/focusMagic/levels/expert/cost",
+              "operation": "replace",
+              "before": 11,
+              "after": 4
+            },
+            {
+              "pointer": "/focusMagic/levels/expert/description",
+              "operation": "replace",
+              "before": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+              "after": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit."
+            },
+            {
+              "pointer": "/focusMagic/levels/none/cost",
+              "operation": "replace",
+              "before": 11,
+              "after": 4
+            },
+            {
+              "pointer": "/focusMagic/levels/none/description",
+              "operation": "replace",
+              "before": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the 10% base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+              "after": "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit."
+            }
+          ]
+        }
+      ],
+      "currentProjectionSha256": "d458d1ebb4f930412f4f9cd9aae596ac27a3cd8578392889bdf8410024a67036"
+    },
+    "Mods/new-horizons/Content/config/spells/massVariants.json": {
+      "baselineSourceCommit": "b184cd41bd09ce980ac5de46ccc154f4e933a9ec",
+      "excludedGraphics": [
+        "/massBless/graphics/iconBook",
+        "/massBless/graphics/iconEffect",
+        "/massBless/graphics/iconImmune",
+        "/massBless/graphics/iconScenarioBonus",
+        "/massBless/graphics/iconScroll",
+        "/massCurse/graphics/iconBook",
+        "/massCurse/graphics/iconEffect",
+        "/massCurse/graphics/iconImmune",
+        "/massCurse/graphics/iconScenarioBonus",
+        "/massCurse/graphics/iconScroll",
+        "/massSlow/graphics/iconBook",
+        "/massSlow/graphics/iconEffect",
+        "/massSlow/graphics/iconImmune",
+        "/massSlow/graphics/iconScenarioBonus",
+        "/massSlow/graphics/iconScroll",
+        "/massSorrow/graphics/iconBook",
+        "/massSorrow/graphics/iconEffect",
+        "/massSorrow/graphics/iconImmune",
+        "/massSorrow/graphics/iconScenarioBonus",
+        "/massSorrow/graphics/iconScroll"
+      ],
+      "baselineProjectionSha256": "24b98213f5cb285b4cfb06f64ec8f097e53bb50356988b7e99da8f6717f40fcc",
+      "revisions": [
+        {
+          "sourceCommit": "092447c15de8b3fecaff27178afb92bf67ea27da",
+          "fromProjectionSha256": "24b98213f5cb285b4cfb06f64ec8f097e53bb50356988b7e99da8f6717f40fcc",
+          "toProjectionSha256": "b331f2689aafb642ac294c3f7585cc3f8c12ac4492a76fcac524b6be4e406d61",
+          "changes": [
+            {
+              "pointer": "/massSlow/level",
+              "operation": "replace",
+              "before": 1,
+              "after": 3
+            },
+            {
+              "pointer": "/massSlow/levels/advanced/cost",
+              "operation": "replace",
+              "before": 9,
+              "after": 33
+            },
+            {
+              "pointer": "/massSlow/levels/advanced/description",
+              "operation": "replace",
+              "before": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+              "after": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom."
+            },
+            {
+              "pointer": "/massSlow/levels/basic/cost",
+              "operation": "replace",
+              "before": 12,
+              "after": 33
+            },
+            {
+              "pointer": "/massSlow/levels/basic/description",
+              "operation": "replace",
+              "before": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+              "after": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom."
+            },
+            {
+              "pointer": "/massSlow/levels/expert/cost",
+              "operation": "replace",
+              "before": 9,
+              "after": 33
+            },
+            {
+              "pointer": "/massSlow/levels/expert/description",
+              "operation": "replace",
+              "before": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+              "after": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom."
+            },
+            {
+              "pointer": "/massSlow/levels/none/cost",
+              "operation": "replace",
+              "before": 12,
+              "after": 33
+            },
+            {
+              "pointer": "/massSlow/levels/none/description",
+              "operation": "replace",
+              "before": "Reduce all eligible enemy stacks' Initiative by 60% of the final Initiative reduction ordinary Slow produces after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom.",
+              "after": "Apply 60% of the final ordinary Slow reduction to Initiative and, under the revised captured profile, Speed to all eligible enemy stacks after rank, caps, and specialties; duration is unchanged. Granted only by Temporal Field and unavailable through ordinary learning. Costs three times Slow's listed Mana before Wisdom."
+            }
+          ]
+        }
+      ],
+      "currentProjectionSha256": "b331f2689aafb642ac294c3f7585cc3f8c12ac4492a76fcac524b6be4e406d61"
+    }
+  }
+}

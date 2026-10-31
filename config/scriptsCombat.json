@@ -112,7 +112,7 @@
 		"schema" : {
 			"required" : ["damageSharePercent", "casterSide"],
 			"properties" : {
-				"damageSharePercent" : { "type" : "integer", "enum" : [10], "description" : "share of the attack's actual damage the bearer suffers" },
+				"damageSharePercent" : { "type" : "integer", "minimum" : 0, "maximum" : 100, "description" : "captured share of actual attack damage, including the saved Hero Luck damage multiplier" },
 				"casterSide" : { "type" : "integer", "enum" : [0, 1], "description" : "battle side whose hero cast Hex of Pain (0=attacker, 1=defender)" }
 			},
 			"additionalProperties" : false

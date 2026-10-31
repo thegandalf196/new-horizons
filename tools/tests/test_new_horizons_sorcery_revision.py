@@ -72,7 +72,13 @@ local mechanics = {
  slowAffectsSpeed = function() return revised end,
  usesNewHorizonsMagicV3 = function() return true end,
  isMassSlow = function() return false end,
- getVariantPowerPercent = function() return 60 end
+ getVariantPowerPercent = function() return 60 end,
+ scaleSlowVariantValue = function(_, value, percent)
+  assert(percent == 60)
+  local expected = {[-31] = -18, [-50] = -30}
+  assert(expected[value] ~= nil)
+  return expected[value]
+ end
 }
 ENUM = {BonusSource = {spellEffect = 1}}
 ''' + body

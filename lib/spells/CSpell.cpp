@@ -466,66 +466,8 @@ std::vector<int> CSpell::magicalDamageReductionSourcesBasisPoints(const battle::
 	int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints,
 	bool useFractionalMagicalDamageReduction) const
 {
-	std::vector<int> sources;
-	if(!affectedCreature || !isMagical())
-		return sources;
-	const auto * bearer = affectedCreature->getBonusBearer();
-	// Preserve the existing multi-school rule: the first matching school
-	// supplies school-specific sources; each bonus remains independent.
-	forEachSchool([&](const SpellSchool & school, bool & stop)
-	{
-		const BonusSubtypeID subtype(school);
-		const auto reductions = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, subtype);
-		const auto fractional = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, subtype);
-		if(!reductions->empty() || (useFractionalMagicalDamageReduction && !fractional->empty()))
-		{
-			for(const auto & bonus : *reductions)
-			{
-				const int reduction = std::clamp(bonus->val, 0, 100);
-				if(reduction > 0)
-					sources.push_back(reduction * 100);
-			}
-			if(useFractionalMagicalDamageReduction)
-			{
-				for(const auto & bonus : *fractional)
-				{
-					const int reduction = std::clamp(bonus->val, 0, 10000);
-					if(reduction > 0)
-						sources.push_back(reduction);
-				}
-			}
-			stop = true;
-		}
-	});
-	const auto anySchool = bearer->getBonuses(
-		Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY)),
-		"type_SPELL_DAMAGE_REDUCTION_s_ANY");
-	for(const auto & bonus : *anySchool)
-	{
-		const int reduction = std::clamp(bonus->val, 0, 100);
-		if(reduction > 0)
-			sources.push_back(reduction * 100);
-	}
-	if(useFractionalMagicalDamageReduction)
-	{
-		const auto anySchoolFractional = bearer->getBonuses(
-			Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSubtypeID(SpellSchool::ANY)),
-			"type_SPELL_DAMAGE_REDUCTION_BASIS_POINTS_s_ANY");
-		for(const auto & bonus : *anySchoolFractional)
-		{
-			const int reduction = std::clamp(bonus->val, 0, 10000);
-			if(reduction > 0)
-				sources.push_back(reduction);
-		}
-	}
-	if(magicalDamageReductionBasisPoints > 0)
-		sources.push_back(std::clamp(magicalDamageReductionBasisPoints, 0, 10000));
-	if(perkMagicalDamageReductionBasisPoints > 0)
-		sources.push_back(std::clamp(perkMagicalDamageReductionBasisPoints, 0, 10000));
-	const int intrinsicReduction = affectedCreature->intrinsicMagicalDamageReductionPercent();
-	if(intrinsicReduction > 0)
-		sources.push_back(std::clamp(intrinsicReduction, 0, 100) * 100);
-	return sources;
+	return spells::collectMagicalDamageReductionSources(*this, affectedCreature,
+		magicalDamageReductionBasisPoints, perkMagicalDamageReductionBasisPoints, useFractionalMagicalDamageReduction);
 }
 
 bool CSpell::hasApplicableMagicalDamageReduction(const battle::Unit * affectedCreature,
@@ -558,59 +500,14 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 			auto penetrations = independentPenetrationsPercent;
 			if(ignoreSpellDamageReductionPercent > 0)
 				penetrations.push_back(ignoreSpellDamageReductionPercent);
+			const auto targetPenetrations = spells::targetMdrPenetrations(*affectedCreature);
+			penetrations.insert(penetrations.end(), targetPenetrations.begin(), targetPenetrations.end());
 			ret = spells::calculateMagicalDamageReductionBasisPoints(
 				ret, reductionSourcesBasisPoints, penetrations).damageWithPenetration;
 		}
 		else
-		{
-			// Legacy school-specific reduction semantics: when a spell has multiple
-			// schools, only the first matching school's aggregate is applied.
-			forEachSchool([&](const SpellSchool & cnf, bool & stop)
-			{
-				if(bearer->hasBonusOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf)))
-				{
-					const int reduction = bearer->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf));
-					const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
-					ret *= 100 - effectiveReduction;
-					ret /= 100;
-					stop = true; //only bonus from one school is used
-				}
-			});
-
-			CSelector selector = Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY));
-			auto cachingStr = "type_SPELL_DAMAGE_REDUCTION_s_ANY";
-
-			//general spell dmg reduction, works only on magical effects
-			if(bearer->hasBonus(selector, cachingStr) && isMagical())
-			{
-				const int reduction = bearer->valOfBonuses(selector, cachingStr);
-				const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
-				ret *= 100 - effectiveReduction;
-				ret /= 100;
-			}
-
-			// Hold the Line's saved Iron Discipline value is an independent magical
-			// reduction. Basis points preserve the exact half of an odd physical value.
-			if(isMagical() && magicalDamageReductionBasisPoints > 0)
-			{
-				const int boundedReductionBasisPoints = std::clamp(magicalDamageReductionBasisPoints, 0, 10000);
-				const int effectiveReductionBasisPoints = boundedReductionBasisPoints
-					* (100 - ignoreSpellDamageReductionPercent) / 100;
-				const int remainingDamageBasisPoints = 10000
-					- std::clamp(effectiveReductionBasisPoints, 0, 10000);
-				ret = ret / 10000 * remainingDamageBasisPoints
-					+ ret % 10000 * remainingDamageBasisPoints / 10000;
-			}
-			// A new captured unit passive may coexist with historical magic rules.
-			// Retain every legacy reduction/floor above, then apply only this new source.
-			if(isMagical())
-			{
-				const int intrinsicReduction = affectedCreature->intrinsicMagicalDamageReductionPercent();
-				if(intrinsicReduction > 0)
-					ret = spells::calculateMagicalDamageReduction(ret, std::vector<int>{intrinsicReduction},
-						ignoreSpellDamageReductionPercent).damageWithPenetration;
-			}
-		}
+			ret = spells::applyLegacyMagicalDamageReduction(*this, affectedCreature, bearer, ret,
+				ignoreSpellDamageReductionPercent, magicalDamageReductionBasisPoints);
 
 		//dmg increasing
 		if(id != SpellID::NONE && bearer->hasBonusOfType(BonusType::MORE_DAMAGE_FROM_SPELL, BonusSubtypeID(id)))

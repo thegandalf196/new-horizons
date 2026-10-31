@@ -45,6 +45,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int physicalDamageReductionIgnorePercent = 0;
 	/// Independent captured unit passive, separate from Armorer, Orders and bonus-source groups.
 	int intrinsicPhysicalDamageReductionPercent = 0;
+	int runicEnduranceReductionPercent = 0; // Independent attack-sequence protection source.
 	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
 	int heavenlyGaleDamageReductionBasisPoints = 0;
 	bool luckyStrike = false;
@@ -80,6 +81,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int counterBatteryFinalDamageMultiplier = 100;
 	/// Independent final physical creature-hit multiplier against Frozen.
 	int frozenShatterFinalDamageMultiplier = 100;
+	/// Captured ordinary creature specialty; separate from Orders and native effects.
+	int ordinaryCreatureSpecialtyDamagePercent = 100;
 	/// Crossfire's additive ranged premium for this shot only.
 	int archeryCrossfireDamagePercent = 0;
 	/// High Arc halves distance penalties and ignores obstacle penalties on physical shots.
@@ -155,6 +158,11 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int rangedFollowUpDamagePercent = 100;
 	/// Final output percentage for a genuine reduced-effectiveness activation.
 	int activationOutputPercent = 100;
+	/// Captured Sylvan Tactics contributions, independent final physical factors.
+	std::vector<int> sylvanAttackMultipliers;
+	/// Target defenses; excluded from damageBeforeDefense.
+	std::vector<int> sylvanDefenseMultipliers;
+	int sylvanLuckyStrikeTotalPercent = 0;
 
 	/// Which of the bonus types the script declared an interest in each of the two carries
 	std::unordered_map<std::string, bool> attackerBonuses;
@@ -183,6 +191,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Combined independent physical reduction cap; -1 preserves legacy calculations.");
 		s("physicalDamageReductionIgnorePercent", physicalDamageReductionIgnorePercent,
 			"Attack-local percentage of combined capped physical damage reduction ignored.");
+		s("runicEnduranceReductionPercent", runicEnduranceReductionPercent, "Captured independent physical protection against additional blows in one ordinary action.");
 		s("intrinsicPhysicalDamageReductionPercent", intrinsicPhysicalDamageReductionPercent,
 			"Independent intrinsic physical reduction before the shared cap and final floor.");
 		s("heavenlyGaleDamageReductionBasisPoints", heavenlyGaleDamageReductionBasisPoints,
@@ -205,6 +214,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Independent final physical shot multiplier from Counter-Battery against an enemy war machine.");
 		s("frozenShatterFinalDamageMultiplier", frozenShatterFinalDamageMultiplier,
 			"Final physical creature damage multiplier for a Frozen target.");
+		s("ordinaryCreatureSpecialtyDamagePercent", ordinaryCreatureSpecialtyDamagePercent,
+			"Final ordinary physical retaliation multiplier from captured creature specialty rules.");
 		s("archeryCrossfireDamagePercent", archeryCrossfireDamagePercent,
 			"Crossfire's additive damage premium for this ranged attack.");
 		s("archeryHighArc", archeryHighArc, "Whether High Arc halves distance penalties and ignores obstacle penalties.");
@@ -267,6 +278,9 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Final multiplicative percentage for reduced-strength Archery shots; 100 is neutral.");
 		s("rangedFollowUpDamagePercent", rangedFollowUpDamagePercent,
 			"Final multiplicative percentage for an earned Ballista follow-up shot; 100 is neutral.");
+		s("sylvanAttackMultipliers", sylvanAttackMultipliers, "Independent captured Sylvan Tactics physical damage factors.");
+		s("sylvanDefenseMultipliers", sylvanDefenseMultipliers, "Independent captured Sylvan Tactics target defenses, omitted from damageBeforeDefense.");
+		s("sylvanLuckyStrikeTotalPercent", sylvanLuckyStrikeTotalPercent, "Total creature Lucky Strike multiplier; zero retains ordinary policy.");
 		s("activationOutputPercent", activationOutputPercent,
 			"Final multiplicative percentage for a reduced-effectiveness activation; 100 is neutral.");
 		s("luckyStrike", luckyStrike, "Whether luck struck.");

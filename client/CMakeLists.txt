@@ -197,6 +197,7 @@ set(vcmiclientcommon_SRCS
 	windows/CJournalWindow.cpp
 	windows/CQuestLog.cpp
 	windows/CScenarioEventJournal.cpp
+	windows/SpellbookEntryPresentation.cpp
 	windows/CSpellWindow.cpp
 	windows/CTutorialWindow.cpp
 	windows/wiki/WikiCommon.cpp
@@ -219,6 +220,7 @@ set(vcmiclientcommon_SRCS
 	windows/CWindowObject.cpp
 	windows/CreaturePurchaseCard.cpp
 	windows/NewHorizonsCreatureAbilityHelp.cpp
+	windows/CreatureBonusStatusPresentation.cpp
 	windows/GUIClasses.cpp
 	windows/NewHorizonsMusterUI.cpp
 	windows/InfoWindows.cpp
@@ -479,9 +481,13 @@ set(vcmiclientcommon_HEADERS
 	windows/HeroGrowthPerkPresentation.h
 	windows/HeroSkillOddsWindow.h
 	windows/NewHorizonsPerkBrowser.h
+	windows/NewHorizonsCapturedPerkIcons.h
 	windows/NewHorizonsPerkIcons.h
 	windows/NewHorizonsPerkHelp.h
 	windows/NewHorizonsSkillPresentation.h
+	windows/NewHorizonsCurrentSkillPresentation.h
+	windows/SylvanFactionStatusPresentation.h
+	windows/CreatureBonusStatusPresentation.h
 	windows/NewHorizonsPerkAvailability.h
 	windows/NewHorizonsBuildingVisitHelp.h
 	windows/NewHorizonsGuildSpellHelp.h
@@ -498,6 +504,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CJournalWindow.h
 	windows/CQuestLog.h
 	windows/CScenarioEventJournal.h
+	windows/SpellbookEntryPresentation.h
 	windows/CSpellWindow.h
 	windows/CTutorialWindow.h
 	windows/wiki/WikiCommon.h

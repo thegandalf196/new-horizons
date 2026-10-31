@@ -84,6 +84,9 @@ struct DLL_LINKAGE SkillDefinition
 	}
 };
 
+DLL_LINKAGE bool usesSylvanTactics(const JsonNode & rules);
+DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
+
 DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);
 
 /// Validate the complete generic registry.  Empty/null rules retain legacy

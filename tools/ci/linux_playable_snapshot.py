@@ -301,7 +301,18 @@ def read_current(store):
     return name, digest, previous_name
 
 
-def set_current(store, name, digest, previous_name):
+def check_commit_deadline(absolute_monotonic_deadline):
+    if absolute_monotonic_deadline is None:
+        return
+    if (type(absolute_monotonic_deadline) not in (int, float)
+            or not math.isfinite(absolute_monotonic_deadline)
+            or absolute_monotonic_deadline <= 0):
+        fail("Validation commit deadline must be finite and positive")
+    if time.monotonic() >= absolute_monotonic_deadline:
+        fail("Validation commit deadline expired; selection unchanged")
+
+
+def set_current(store, name, digest, previous_name, *, absolute_monotonic_deadline=None):
     pointer_data = {"format": FORMAT_VERSION, "snapshot": name,
                     "snapshot_sha256": digest, "previous_snapshot": previous_name}
     fd, temporary_name = tempfile.mkstemp(prefix=".current-", dir=store)
@@ -311,6 +322,7 @@ def set_current(store, name, digest, previous_name):
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
+        check_commit_deadline(absolute_monotonic_deadline)
         os.replace(temporary_name, store / "current.json")
         directory_fd = os.open(store, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
         try:
@@ -356,7 +368,7 @@ def candidate_in_store(store, snapshot):
     return resolved
 
 
-def promote_snapshot(store, snapshot):
+def promote_snapshot(store, snapshot, *, absolute_monotonic_deadline=None):
     candidate = candidate_in_store(store, snapshot)
     match = SNAPSHOT_RE.fullmatch(candidate.name)
     digest = match.group(1)
@@ -367,7 +379,8 @@ def promote_snapshot(store, snapshot):
         current_name = None
         prior_name = None
     previous_name = current_name if current_name != candidate.name else prior_name
-    set_current(store, candidate.name, digest, previous_name)
+    set_current(store, candidate.name, digest, previous_name,
+                absolute_monotonic_deadline=absolute_monotonic_deadline)
     return candidate
 
 
@@ -486,17 +499,20 @@ def begin_validation(store, snapshot):
                                  current_lease(store))
 
 
-def finish_validation(ticket, *, accepted):
+def finish_validation(ticket, *, accepted, absolute_monotonic_deadline=None):
     """Signal-free one-shot completion, called after reviewed acceptance/postchecks.
 
     The trusted endpoint declares acceptance, not an arbitrary JSON receipt.
     This function never starts, supervises or signals that endpoint's processes.
+    An optional absolute time.monotonic() deadline is checked again after final
+    verification and temporary-pointer fsync, immediately before atomic selection.
     """
     if type(ticket) is not _ValidationTicket or ticket._consumed:
         fail("Validation requires an unused in-process ticket")
     ticket._consumed = True  # A failed completion cannot be repaired and replayed.
     if accepted is not True:
         fail("Reviewed validation endpoint did not accept the candidate")
+    check_commit_deadline(absolute_monotonic_deadline)
     with store_lock(ticket._store, exclusive=True):
         identity = ticket._store.stat()
         if (identity.st_dev, identity.st_ino) != ticket._store_identity:
@@ -505,7 +521,8 @@ def finish_validation(ticket, *, accepted):
             fail("Candidate changed during validation")
         if current_lease(ticket._store) != ticket._lease:
             fail("Current selection changed during validation; refusing stale promotion")
-        return promote_snapshot(ticket._store, ticket.candidate)
+        return promote_snapshot(ticket._store, ticket.candidate,
+                                absolute_monotonic_deadline=absolute_monotonic_deadline)
 
 
 def validation_descendants(process):

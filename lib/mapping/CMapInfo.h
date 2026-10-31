@@ -50,6 +50,7 @@ public:
 	void saveInit(const ResourcePath & file);
 	void campaignInit();
 	void countPlayers();
+	void validateNeutralArmyStartOptionSerialization(bool supported) const;
 	
 	std::string getNameTranslated(const ITranslator * translator) const;
 	std::string getNameForList(const ITranslator * translator) const;
@@ -60,6 +61,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNeutralArmyStartOptionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		h & mapHeader;
 		h & campaign;
 		h & scenarioOptionsOfSave;

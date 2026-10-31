@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "NewHorizonsPerkHelp.h"
 #include "HeroMasteryWindow.h"
 
 #include "../GameEngine.h"
@@ -30,7 +31,7 @@ HeroMasteryWindow::HeroMasteryWindow(const newHorizonsHeroes::MasteryOffer & sav
 	const auto * hero = GAME->interface()->cb->getHero(offer.hero);
 	const std::string heroName = hero ? GAME->translator().translate(hero->getNameTextID()) : "Hero " + std::to_string(offer.hero.getNum());
 	elements.push_back(std::make_shared<CLabel>(350, 58, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE,
-		heroName + " - " + offer.skill.toEntity(LIBRARY)->getNameTranslated() + " - Level " + std::to_string(offer.level), 656));
+		heroName + " - " + newHorizonsPerkHelp::skillLabel(hero, offer.skill) + " - Level " + std::to_string(offer.level), 656));
 	elements.push_back(std::make_shared<CLabel>(350, 82, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "Select one offered mastery, then confirm. This is not another skill rank."));
 	const std::array<EShortcut, 3> shortcuts = {EShortcut::SELECT_INDEX_1, EShortcut::SELECT_INDEX_2, EShortcut::SELECT_INDEX_3};
 	for(size_t i = 0; i < offer.options.size(); ++i)

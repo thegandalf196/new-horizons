@@ -64,16 +64,31 @@ live state and both RNG domains in a synthetic seven-versus-three battle. Its
 enumeration oracle shares the production spell-effect and pressure evaluators;
 it is not an independent implementation of those mechanics or a saved-game replay.
 
-Terminal creature-pressure forecasts use a fresh, parentless `DamageCache`.
-When captured rules force dynamic damage queries, preparation retains obstacles
-and the first pair's warmup, then omits unused remaining pair fills only if the
-loaded calculator attests its canonical implementation. Parented or populated
-caches, historical rules without Focus Fire, and unknown or failed capability
-queries retain ordinary preparation. Calculation failures still propagate.
-Never use this terminal cache as another cache's parent: child original-damage
-queries could observe its partial pair snapshots. Regression coverage lives in
-`CreaturePressureCachePreparationTest` and `DamageCacheObstacleVisibilityTest`;
-the ordered-pool oracle above protects the consuming wish-search decisions.
+Beneficial creature-spell pressure uses child `DamageCache` instances whose
+read-only parent is the evaluator's fully prepared pre-cast cache. Current damage
+is queried lazily in each outcome; existing parent pair entries anchor original
+casualty values, and obstacle queries inherit the parent. Keep fractional `AttackPossibility::attackValue()` results
+in the signed pressure sum. Repricing casualty values from each outcome or
+truncating each unit's pressure can erase a useful Luck change. The
+`NewHorizonsGenieWheelAITest` cases exercise positive/negative Luck, controlled
+recipients, stable original weights and fractional pressure; the ordered-pool
+oracle above covers consuming wish-search decisions.
+
+The separate `buildCreaturePressureCache` API remains terminal-root-only. When
+captured rules force dynamic damage queries, it retains obstacles and the first
+pair's warmup, then omits unused remaining pair fills only if the loaded
+calculator attests its canonical implementation. Parented or populated caches,
+historical rules without Focus Fire, and unknown or failed capability queries
+retain ordinary preparation. Calculation failures still propagate. Never use
+this terminal cache as another cache's parent: child original-damage queries
+could observe its partial pair snapshots. `CreaturePressureCachePreparationTest`
+and `DamageCacheObstacleVisibilityTest` cover this API's preparation contract.
+
+The wish consumer's lazy current-damage queries change eager preparation traffic;
+that API's call-order tests do not establish custom-calculator ordering in the
+consumer. Verify those semantics separately. Earlier terminal-root measurements
+do not establish a speedup for the full-parent consumer. Parent cache construction
+belongs to evaluator setup, outside the standalone search interval below.
 
 For an isolated profiler workload, explicitly select
 `NewHorizonsGenieSupportAITest.DISABLED_SyntheticSevenVsThreeForecastProfile`

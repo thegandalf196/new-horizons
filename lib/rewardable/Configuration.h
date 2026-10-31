@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "Limiter.h"
 #include "Reward.h"
 
@@ -105,6 +107,8 @@ struct DLL_LINKAGE VisitInfo
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			reward.validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & limiter;
 		h & reward;
 		h & message;
@@ -185,6 +189,8 @@ struct DLL_LINKAGE Configuration
 	/// counters against the provided calendar's settings.
 	ui32 getResetDuration(const Calendar & calendar) const;
 
+	void validateBonusSerialization(BonusSerializationContext context) const;
+
 	std::optional<int> getVariable(const std::string & category, const std::string & name) const;
 	const JsonNode & getPresetVariable(const std::string & category, const std::string & name) const;
 	void presetVariable(const std::string & category, const std::string & name, const JsonNode & value);
@@ -194,6 +200,8 @@ struct DLL_LINKAGE Configuration
 	
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & onSelect;
 		h & description;
 		h & notVisitedTooltip;

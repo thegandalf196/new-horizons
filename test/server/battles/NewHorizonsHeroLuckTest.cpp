@@ -4,6 +4,8 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../../lib/gameState/CGameState.h"
+#include "../../../lib/mapping/CMap.h"
 #include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../../lib/battle/NewHorizonsHeroicSpirit.h"
@@ -471,4 +473,64 @@ TEST_F(HeroLuckOrderTest, CompoundDoubleCommandAndHeroicSpiritCapacityRejectsBef
 	EXPECT_EQ(side.doubleCommandState, doubleCommand);
 	EXPECT_EQ(side.orderStates, orders);
 	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), rng);
+}
+
+TEST_F(HeroLuckOrderTest, ZeroCreatureLuckChanceDoesNotCreateOrAdvanceActorStreams)
+{
+	chance = 37;
+	startGame();
+	JsonNode normal;
+	normal.Vector().assign(4, JsonNode(37));
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, normal);
+	GameRandomizer source(*gameState()), control(*gameState());
+	source.setSeed(3017);
+	control.setSeed(3017);
+	const auto existing = attackerSideHero->id;
+	const auto fresh = defenderSideHero->id;
+	EXPECT_EQ(source.rollGoodLuck(existing, 2), control.rollGoodLuck(existing, 2));
+	EXPECT_EQ(source.rollBadLuck(existing, 2), control.rollBadLuck(existing, 2));
+	const auto before = savedRandomizer(source);
+	ASSERT_EQ(before, savedRandomizer(control));
+	JsonNode zero;
+	zero.Vector().assign(4, JsonNode(0));
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, zero);
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, zero);
+	for(const auto actor : {existing, fresh})
+	{
+		EXPECT_FALSE(source.rollGoodLuck(actor, 2));
+		EXPECT_FALSE(source.rollBadLuck(actor, 2));
+		EXPECT_EQ(savedRandomizer(source), before);
+	}
+	for(int positiveChance : {37, 100})
+	{
+		normal.Vector().assign(4, JsonNode(positiveChance));
+		gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, normal);
+		gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, normal);
+		for(int index = 0; index < 8; ++index)
+			for(const auto actor : {existing, fresh})
+			{
+				EXPECT_EQ(source.rollGoodLuck(actor, 2), control.rollGoodLuck(actor, 2));
+				EXPECT_EQ(source.rollBadLuck(actor, 2), control.rollBadLuck(actor, 2));
+				EXPECT_EQ(savedRandomizer(source), savedRandomizer(control));
+			}
+	}
+}
+
+TEST_F(HeroLuckOrderTest, EmptyCreatureLuckCurveKeepsItsExistingSeedAllocationOrder)
+{
+	startGame();
+	JsonNode empty;
+	empty.setType(JsonNode::JsonType::DATA_VECTOR);
+	gameState()->getMap().overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, empty);
+	GameRandomizer source(*gameState()), control(*gameState());
+	source.setSeed(3017);
+	control.setSeed(3017);
+	const auto before = savedRandomizer(source);
+	(void)control.getDefault().nextInt(); // Existing empty-curve path allocates one actor seed.
+	EXPECT_FALSE(source.rollGoodLuck(attackerSideHero->id, 2));
+	EXPECT_NE(savedRandomizer(source), before);
+	EXPECT_EQ(source.getDefault().nextInt(), control.getDefault().nextInt());
+	const auto initialized = savedRandomizer(source);
+	EXPECT_FALSE(source.rollGoodLuck(attackerSideHero->id, 2));
+	EXPECT_EQ(savedRandomizer(source), initialized);
 }

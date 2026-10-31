@@ -454,6 +454,16 @@ PlayerColor CStack::unitEffectiveOwner(const battle::Unit * unit) const
 	return battle->battleGetOwner(unit);
 }
 
+int CStack::unitSylvanTacticsSpeed(const battle::Unit * unit, int turn) const
+{
+	return battle->battleSylvanTacticsSpeed(unit, turn);
+}
+
+int CStack::unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const
+{
+	return battle->battleSylvanTacticsInitiativePercent(unit);
+}
+
 int CStack::unitFortuneSpeed(const battle::Unit * unit) const
 {
 	return battle->battleFortuneSpeed(unit);

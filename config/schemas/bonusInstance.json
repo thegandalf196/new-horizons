@@ -153,9 +153,17 @@
 					},
 					"then" : {
 						"additionalProperties" : false,
+						"oneOf" : [
+							{"required": ["creature"], "properties": {"anyCreature": {"const": false}}},
+							{"required": ["anyCreature"], "properties": {"anyCreature": {"const": true}}, "not": {"required": ["creature"]}}
+						],
 						"properties" : {
 							"type" : { "type" : "string", "const" : "UNIT_ADJACENT" },
-							"creature" : { "type" : "string" }
+							"creature" : { "type" : "string" },
+							"anyCreature" : { "type" : "boolean" },
+							"includeUpgrades" : { "type" : "boolean" },
+							"relationship" : { "type" : "string", "enum" : ["any", "sameArmy", "opposingArmy"] },
+							"nativeTrait" : { "type" : "string", "enum" : ["any", "undead", "living"] }
 						}
 					}
 				},
@@ -313,6 +321,10 @@
 	},
 	"additionalProperties" : false,
 	"allOf" : [
+		{
+			"if": {"required": ["type"], "properties": {"type": {"const": "TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION"}}},
+			"then": {"properties": {"val": {"type": "integer", "minimum": 0, "maximum": 100}}}
+		},
 		{
 			"if" : { "properties" : { "type" : { "enum" : [ "RANDOM_SPELLCASTER" ] } } },
 			"then" : { "properties" : { "addInfo" : { "type" : "integer", "enum" : [ 0, 1 ] } } }

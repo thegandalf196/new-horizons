@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsShadowMagnitudes.h"
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsImplosion.h"
@@ -448,17 +449,10 @@ std::optional<int> vampirismHealBasisPoints(const JsonNode & rules, const CGHero
 
 	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
-	const int64_t scaledPowerBasisPoints = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		static_cast<int64_t>(rawSpellPower) * VAMPIRISM_SPELL_POWER_BASIS_POINTS_PER_POINT, 1,
-		coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
-	const int baseHealBasisPoints = VAMPIRISM_BASE_HEAL_BASIS_POINTS + static_cast<int>(
-		std::min<int64_t>(VAMPIRISM_MAX_BASE_HEAL_BASIS_POINTS - VAMPIRISM_BASE_HEAL_BASIS_POINTS,
-			scaledPowerBasisPoints));
-	if(!hero || !hero->hasActivePerk(std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_NIGHT_FEEDER_PERK)))
-		return baseHealBasisPoints;
-
-	return std::min(VAMPIRISM_MAX_HEAL_BASIS_POINTS,
-		baseHealBasisPoints + VAMPIRISM_NIGHT_FEEDER_BONUS_BASIS_POINTS);
+	const bool nightFeeder = hero && hero->hasActivePerk(
+		std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_NIGHT_FEEDER_PERK));
+	return vampirismHealBasisPoints(rawSpellPower, coefficientBasisPoints,
+		warcastingBonusPercent, empowerBonusPercent, nightFeeder);
 }
 
 bool reanimateEnabled(const JsonNode & rules, const SpellID spell)
@@ -561,11 +555,7 @@ std::optional<int> doomCripplingPenaltyPercent(const JsonNode & rules, const CGH
 
 	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
-	const int64_t spellPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		static_cast<int64_t>(std::max(0, rawSpellPower)) * DOOM_SPELL_POWER_TERM_NUMERATOR,
-		DOOM_SPELL_POWER_TERM_DIVISOR, coefficientBasisPoints);
-	return static_cast<int>(std::min<int64_t>(DOOM_MAX_CRIPPLING_PERCENT,
-		DOOM_BASE_CRIPPLING_PERCENT + spellPowerTerm));
+	return doomCripplingPenaltyPercent(rawSpellPower, coefficientBasisPoints, 0, 0);
 }
 
 std::optional<int64_t> soulReaperMissingHealthDamage(const JsonNode & rules, const SpellID spell,

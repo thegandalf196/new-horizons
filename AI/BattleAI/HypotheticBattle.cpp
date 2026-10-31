@@ -38,9 +38,7 @@ using hypotheticEffectSnapshotRules::hasTimedMagicalSpellEffects;
 
 HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 	: BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)),
-	boundSubjectPointer(subject.get()),
-	boundSubjectOwner(subject),
-	initialExportView(dynamic_cast<InitialExportBattleSubject *>(subject.get())),
+	sourceBinding(subject, *realBattle),
 	env(ENV),
 	bonusTreeVersion(1)
 {

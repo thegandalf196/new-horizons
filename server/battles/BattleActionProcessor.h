@@ -15,6 +15,7 @@
 #include <optional>
 
 #include "battle/IBattleInfoCallback.h"
+#include "battle/Destination.h"
 #include "battle/RelentlessAssaultState.h"
 #include "bonuses/Bonus.h"
 #include "combatScripts/CombatEventPayload.h"
@@ -158,7 +159,7 @@ class BattleActionProcessor : boost::noncopyable
 		const AttackDescriptor & attack, bool * destroyedEnemyOut = nullptr,
 		RelentlessAssaultActionContext * relentlessAssault = nullptr,
 		RainOfArrowsAction * rainOfArrows = nullptr, bool * vanishKillOut = nullptr,
-		dreadCavalryAction::Context * dreadCavalry = nullptr);
+		dreadCavalryAction::Context * dreadCavalry = nullptr, bool * primaryMeleePerformed = nullptr);
 	RainOfArrowsAction beginRainOfArrows(const CBattleInfoCallback & battle,
 		const CStack * attacker, const CStack * primaryTarget) const;
 	void resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker,
@@ -221,6 +222,8 @@ class BattleActionProcessor : boost::noncopyable
 	bool doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation,
 		dreadCavalryAction::Context & dreadCavalry);
 	bool doMeleeActionWithContinuation(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
+	int returnAfterMeleeStrike(const CBattleInfoCallback & battle, const BattleAction & ba, const CStack * stack,
+		const battle::Target & target, BattleHex startingPos, int beforeAttackSpeed, int movementSpent, bool reducedBudget);
 	void finishMeleeMovement(const CBattleInfoCallback & battle, const BattleAction & ba,
 		int beforeAttackSpeed, int movementSpent, bool destroyedEnemy, bool vanishKill,
 		bool allowPursuitContinuation, dreadCavalryAction::Context & dreadCavalry);

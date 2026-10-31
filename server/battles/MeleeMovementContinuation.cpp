@@ -57,3 +57,39 @@ void BattleActionProcessor::finishMeleeMovement(const CBattleInfoCallback & batt
 	}
 
 }
+
+int BattleActionProcessor::returnAfterMeleeStrike(const CBattleInfoCallback & battle, const BattleAction & ba,
+	const CStack * stack, const battle::Target & target, BattleHex startingPos,
+	int beforeAttackSpeed, int movementSpent, bool reducedBudget)
+{
+	if(!stack->armorerLastStandEndedActivation
+		&& stack->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
+		&& !stack->hasBonusOfType(BonusType::NOT_ACTIVE)
+		&& !stack->hasBonusOfType(BonusType::BIND_EFFECT)
+		&& target.size() == 3
+		&& startingPos != stack->getPosition()
+		&& startingPos == target.at(2).hexValue
+		&& stack->alive())
+	{
+		assert(stack->unitId() == ba.stackNumber);
+		int afterAttackSpeed = reducedBudget
+			? std::min(stack->getMovementRange(0), static_cast<uint32_t>(std::max(0, beforeAttackSpeed - movementSpent)))
+			: stack->getMovementRange(0);
+		std::pair<BattleHexArray, int> path = battle.getPath(stack->getPosition(), startingPos, stack);
+		const auto returnReachability = battle.getReachability(stack);
+		const auto returnDestination = std::find_if(path.first.begin(), path.first.end(),
+			[&](const BattleHex & hex)
+			{
+				return returnReachability.isReachable(hex)
+					&& returnReachability.distances[hex.toInt()] <= static_cast<uint32_t>(std::max(0, afterAttackSpeed));
+			});
+		if(returnDestination != path.first.end())
+		{
+			const auto returnResult = moveStack(battle, ba.stackNumber, *returnDestination);
+			if(!returnResult.invalidRequest)
+				return returnResult.movementCost;
+		}
+	}
+
+	return 0;
+}

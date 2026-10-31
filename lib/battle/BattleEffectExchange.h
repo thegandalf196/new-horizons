@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "../bonuses/Bonus.h"
 #include "../json/JsonNode.h"
 #include <array>
@@ -51,8 +53,11 @@ struct DLL_LINKAGE BattleEffectSnapshot
 	/// Read-only stale-state guard, never loaded or exchanged as replacement HP.
 	JsonNode recipientHealth;
 	int32_t capacityHealthReferenceMax = 0;
+	void validateBonusSerialization(BonusSerializationContext context) const;
 	template<typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & effects;
 		// Bonus's legacy wire DTO deliberately omits dynamic bonusOwner. This
 		// exact transaction carries it explicitly without changing ordinary Bonus.
@@ -79,8 +84,11 @@ struct DLL_LINKAGE BattleEffectExchangeEndpoint
 	uint32_t id = 0;
 	BattleEffectSnapshot expected;
 	BattleEffectSnapshot replacement;
+	void validateBonusSerialization(BonusSerializationContext context) const;
 	template<typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & id;
 		h & expected;
 		h & replacement;
@@ -91,8 +99,11 @@ struct DLL_LINKAGE BattleEffectExchange
 {
 	std::array<BattleEffectExchangeEndpoint, 2> endpoints;
 	void validateShape() const;
+	void validateBonusSerialization(BonusSerializationContext context) const;
 	template<typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		for(auto & endpoint : endpoints)
 			h & endpoint;
 	}

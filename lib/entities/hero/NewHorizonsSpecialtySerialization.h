@@ -28,6 +28,14 @@ struct SpecialtySerializationContext
 	bool livingInferno = false;
 	bool aerialSupremacy = false;
 	bool dreadCavalry = false;
+	bool genieSage = false;
+	bool ordinaryCreatureSpecialties = false;
+	bool adjacencyFilters = false;
+	bool ordinaryCreaturePolicyExtensions = false;
+	bool ordinaryRangedSpecialties = false;
+	bool ordinaryMaintenanceSpecialties = false;
+	bool ordinaryMachineSpecialties = false;
+	bool ordinaryCombatSpecialties = false;
 
 	template<class Handler>
 	static SpecialtySerializationContext fromHandler(const Handler & h)
@@ -49,6 +57,14 @@ struct SpecialtySerializationContext
 		result.livingInferno = h.hasFeature(Handler::Version::NEW_HORIZONS_LIVING_INFERNO);
 		result.aerialSupremacy = h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY);
 		result.dreadCavalry = h.hasFeature(Handler::Version::NEW_HORIZONS_DREAD_CAVALRY);
+		result.genieSage = h.hasFeature(Handler::Version::NEW_HORIZONS_GENIE_SAGE);
+		result.ordinaryCreatureSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES);
+		result.adjacencyFilters = h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS);
+		result.ordinaryCreaturePolicyExtensions = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_CREATURE_POLICY_EXTENSIONS);
+		result.ordinaryRangedSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES);
+		result.ordinaryMaintenanceSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES);
+		result.ordinaryMachineSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES);
+		result.ordinaryCombatSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
 		return result;
 	}
 };

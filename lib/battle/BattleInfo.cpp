@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsSylvanTactics.h"
 #include "../bonuses/NativeBonusGraphAccess.h"
 #include "../bonuses/NativeBonusGraphAdmission.h"
 #include "NewHorizonsHeroicSpirit.h"
@@ -808,14 +809,7 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 			fortune.secondChance = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.secondChance");
 			fortune.gambler = false;
 			fortune.chainOfFortune = heroes[i]->hasActivePerk("new-horizons:luck", "new-horizons:luck.chainOfFortune");
-			fortune.serendipity = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.serendipity");
-			fortune.naturesProvidence = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.natureSProvidence");
-			fortune.fortunateAim = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.fortunateAim");
-			fortune.perfectMoment = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.perfectMoment");
-			fortune.forestsFavor = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.forestSFavor");
-			fortune.luckyRecovery = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.luckyRecovery");
-			fortune.sharedFortune = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.sharedFortune");
-			fortune.cascadingFortune = heroes[i]->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.cascadingFortune");
+			newHorizonsSylvanTactics::configure(*heroes[i], fortune);
 		}
 		currentBattle->sides[i].bloodrageRank = newHorizonsBloodrage::rank(heroes[i]);
 		currentBattle->sides[i].bloodrageCapPercent = newHorizonsBloodrage::capForHero(heroes[i]);

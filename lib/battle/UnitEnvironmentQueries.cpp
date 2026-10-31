@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "NewHorizonsSylvanTactics.h"
 #include "UnitEnvironmentQueries.h"
 #include "UnitOwnershipQuery.h"
 #include "Unit.h"
@@ -50,6 +51,23 @@ std::optional<int> battle::UnitEnvironmentQueries::unitMagicResistance(const Uni
 		return std::nullopt;
 	context.requireSubject(*unit);
 	return context.magicResistance(unit);
+}
+
+int battle::UnitEnvironmentQueries::unitSylvanTacticsSpeed(const Unit * unit, int turn) const
+{
+	if(!newHorizonsSylvanTactics::ordinary(unit) || !context.available()) return 0;
+	context.requireSubject(*unit);
+	const auto side = context.ownership().playerToSide(context.ownership().owner(*unit));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) return 0;
+	return context.fortune(side).tactics.speedBonus(unit->unitId(), turn);
+}
+int battle::UnitEnvironmentQueries::unitSylvanTacticsInitiativePercent(const Unit * unit) const
+{
+	if(!newHorizonsSylvanTactics::ordinary(unit) || !context.available()) return 0;
+	context.requireSubject(*unit);
+	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	 if(context.fortune(side).tactics.disrupted.contains(unit->unitId())) return newHorizonsSylvanTactics::DISRUPTIVE_INITIATIVE_PERCENT;
+	return 0;
 }
 
 int battle::UnitEnvironmentQueries::unitFortuneSpeed(const Unit * unit) const

@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "BonusSerializationContext.h"
+
 #include "BonusList.h"
 #include "IBonusBearer.h"
 
@@ -141,6 +143,10 @@ public:
 	virtual bool isPrimaryRatingNode() const { return false; }
 	bool isHypothetic() const { return isHypotheticNode; }
 
+	void validateExportedBonusSerialization(BonusSerializationContext context) const
+	{
+		exportedBonuses.validateAdjacencyCapabilitySerialization(context);
+	}
 	BonusList & getExportedBonusList();
 	const BonusList & getExportedBonusList() const;
 	BonusNodeType getNodeType() const;
@@ -167,6 +173,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateExportedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & nodeType;
 		h & exportedBonuses;
 

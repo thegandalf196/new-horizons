@@ -460,6 +460,92 @@ class LinuxPlayableSnapshotTest(unittest.TestCase):
             spawn.assert_not_called()
             signals.assert_not_called()
 
+    def test_external_validation_deadline_in_future_promotes_signal_free(self):
+        candidate = self.freeze_candidate()
+        ticket = snapshot_tools.begin_validation(self.store, candidate)
+        with mock.patch.object(snapshot_tools.time, 'monotonic', return_value=10), \
+             mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            self.assertEqual(snapshot_tools.finish_validation(
+                ticket, accepted=True, absolute_monotonic_deadline=20), candidate)
+            spawn.assert_not_called()
+            signals.assert_not_called()
+        self.assertEqual(self.selected_snapshot(), candidate)
+
+    def test_external_validation_invalid_deadline_consumes_ticket(self):
+        candidate = self.freeze_candidate()
+        for value in (True, False, 0, -1, float('nan'), float('inf'), '20'):
+            with self.subTest(deadline=value):
+                ticket = snapshot_tools.begin_validation(self.store, candidate)
+                with self.assertRaisesRegex(RuntimeError, 'finite and positive'):
+                    snapshot_tools.finish_validation(
+                        ticket, accepted=True, absolute_monotonic_deadline=value)
+                with self.assertRaisesRegex(RuntimeError, 'unused in-process ticket'):
+                    snapshot_tools.finish_validation(ticket, accepted=True)
+        self.assertFalse((self.store / 'current.json').exists())
+
+    def test_external_validation_expired_deadline_preserves_pointer(self):
+        candidate = self.freeze_candidate()
+        self.promote_candidate(candidate)
+        pointer = self.store / 'current.json'
+        before = snapshot_tools.current_lease(self.store)
+        ticket = snapshot_tools.begin_validation(self.store, candidate)
+        with mock.patch.object(snapshot_tools.time, 'monotonic', return_value=20):
+            with self.assertRaisesRegex(RuntimeError, 'deadline expired'):
+                snapshot_tools.finish_validation(
+                    ticket, accepted=True, absolute_monotonic_deadline=20)
+        self.assertEqual(snapshot_tools.current_lease(self.store), before)
+        self.assertTrue(pointer.exists())
+        with self.assertRaisesRegex(RuntimeError, 'unused in-process ticket'):
+            snapshot_tools.finish_validation(ticket, accepted=True)
+
+    def test_external_validation_final_verification_expiry_cannot_select(self):
+        candidate = self.freeze_candidate()
+        self.promote_candidate(candidate)
+        before = snapshot_tools.current_lease(self.store)
+        ticket = snapshot_tools.begin_validation(self.store, candidate)
+        clock = [10]
+        original = snapshot_tools.candidate_validation_identity
+        def verify_then_expire(*args):
+            identity = original(*args)
+            clock[0] = 20
+            return identity
+        with mock.patch.object(snapshot_tools.time, 'monotonic', side_effect=lambda: clock[0]), \
+             mock.patch.object(snapshot_tools, 'candidate_validation_identity', side_effect=verify_then_expire), \
+             mock.patch.object(snapshot_tools.os, 'replace') as replace:
+            with self.assertRaisesRegex(RuntimeError, 'deadline expired'):
+                snapshot_tools.finish_validation(
+                    ticket, accepted=True, absolute_monotonic_deadline=20)
+            replace.assert_not_called()
+        self.assertEqual(snapshot_tools.current_lease(self.store), before)
+        self.assertFalse(list(self.store.glob('.current-*')))
+
+    def test_external_validation_pointer_fsync_expiry_cannot_select(self):
+        candidate = self.freeze_candidate()
+        self.promote_candidate(candidate)
+        before = snapshot_tools.current_lease(self.store)
+        ticket = snapshot_tools.begin_validation(self.store, candidate)
+        clock = [10]
+        original = snapshot_tools.os.fsync
+        def fsync_then_expire(fd):
+            original(fd)
+            clock[0] = 20
+        with mock.patch.object(snapshot_tools.time, 'monotonic', side_effect=lambda: clock[0]), \
+             mock.patch.object(snapshot_tools.os, 'fsync', side_effect=fsync_then_expire), \
+             mock.patch.object(snapshot_tools.os, 'replace') as replace, \
+             mock.patch.object(snapshot_tools.subprocess, 'Popen') as spawn, \
+             mock.patch.object(snapshot_tools.os, 'killpg') as signals:
+            with self.assertRaisesRegex(RuntimeError, 'deadline expired'):
+                snapshot_tools.finish_validation(
+                    ticket, accepted=True, absolute_monotonic_deadline=20)
+            replace.assert_not_called()
+            spawn.assert_not_called()
+            signals.assert_not_called()
+        self.assertEqual(snapshot_tools.current_lease(self.store), before)
+        self.assertFalse(list(self.store.glob('.current-*')))
+        with self.assertRaisesRegex(RuntimeError, 'unused in-process ticket'):
+            snapshot_tools.finish_validation(ticket, accepted=True)
+
     def activate_nhart(self, selected=None):
         selected = selected or ['Mods/new-horizons/Images/icon.png']
         manifest = {'format': 1, 'requiredFamilies': ['fixture'],

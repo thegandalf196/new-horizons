@@ -122,3 +122,40 @@ std::optional<TerrainId> BonusEvaluationContext::queryTerrain() const
 	const auto * stack = dynamic_cast<const CStack *>(&original);
 	return stack ? stack->getQueryTerrain() : std::nullopt;
 }
+
+
+bool AdjacentUnitFilter::isDefault() const
+{
+	return relationship == Relationship::ANY && nativeTrait == NativeTrait::ANY && !includeUpgrades && !anyCreature;
+}
+bool AdjacentUnitFilter::isValid() const
+{
+	return relationship <= Relationship::OPPOSING_ARMY && nativeTrait <= NativeTrait::LIVING;
+}
+bool BonusEvaluationContext::matchesAdjacentUnit(const battle::Unit & neighbor, CreatureID family,
+	const AdjacentUnitFilter & filter) const
+{
+	if(filter.isDefault())
+		return neighbor.creatureId() == family; // exact historical default, including its eligibility
+	const auto * subject = battleUnit();
+	if(!subject || !neighbor.alive() || neighbor.isGhost() || neighbor.unitId() == subject->unitId())
+		return false;
+	const bool sameArmy = neighbor.unitOwner() == subject->unitOwner();
+	if((filter.relationship == AdjacentUnitFilter::Relationship::SAME_ARMY && !sameArmy)
+		|| (filter.relationship == AdjacentUnitFilter::Relationship::OPPOSING_ARMY && sameArmy))
+		return false;
+	const auto * creature = neighbor.unitType();
+	if(!creature)
+		return false;
+	if((filter.nativeTrait == AdjacentUnitFilter::NativeTrait::UNDEAD && !creature->hasBonusOfType(BonusType::UNDEAD))
+		|| (filter.nativeTrait == AdjacentUnitFilter::NativeTrait::LIVING && !creature->isLiving()))
+		return false;
+	if(filter.anyCreature || neighbor.creatureId() == family)
+		return true;
+	if(!filter.includeUpgrades || !family.hasValue())
+		return false;
+	const auto * base = family.toCreature();
+	if(!base)
+		throw std::runtime_error("Adjacency filter references a missing creature family");
+	return base->isMyDirectOrIndirectUpgrade(creature);
+}

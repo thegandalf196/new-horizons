@@ -4,10 +4,6 @@ Script.__index = Script
 
 local SPELL_ID = "new-horizons:doom"
 local DURATION_ROUNDS = 3
-local BASE_CRIPPLING_PERCENT = 35
-local MAX_CRIPPLING_PERCENT = 60
-local SPELL_POWER_TERM_NUMERATOR = 3
-local SPELL_POWER_TERM_DIVISOR = 20
 local MORALE_PENALTY = 3
 
 local BONUS_TYPES = {
@@ -30,11 +26,7 @@ local function isEnemyTarget(mechanics, unit)
 end
 
 local function penaltyPercent(mechanics)
-	local rawSpellPower = math.max(0, mechanics:getEffectPower())
-	local spellPowerTerm = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		rawSpellPower * SPELL_POWER_TERM_NUMERATOR, SPELL_POWER_TERM_DIVISOR,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-	return math.min(MAX_CRIPPLING_PERCENT, BASE_CRIPPLING_PERCENT + spellPowerTerm)
+	return mechanics:getDoomCripplingPenaltyPercent()
 end
 
 local function bonusesForSpell(unit, bonusType, spellKey)

@@ -846,3 +846,18 @@ TEST_F(NewHorizonsSoulHarvestTest, GhostCounterHarvestCreditsThreeCreaturesExact
 			{ return packet.stack == ghost->unitId() && packet.reason == BattleUnitTurnReason::TURN_QUEUE; }));
 	EXPECT_EQ(ghost->getAvailableHealth(), completedCounter->getAvailableHealth() + missingFrontHP);
 }
+
+TEST_F(NewHorizonsSoulHarvestTest, MetadataIdentityRetainsGhostAndRejectsCorePhysicalActor)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_EQ(ghost->unitType()->getJsonKey(), "new-horizons:ghost");
+	EXPECT_EQ(ghost->unitType()->getId(), ghost->creatureId());
+	EXPECT_TRUE(newHorizonsSoulHarvest::qualifies(*battle(), *ghost, *target, true));
+	EXPECT_FALSE(newHorizonsSoulHarvest::qualifies(*battle(), *target, *ghost, true));
+	ghost->beginBattleForm(creatureByName("core:pikeman"), 1);
+	EXPECT_EQ(ghost->unitType()->getId(), ghost->creatureId());
+	EXPECT_FALSE(newHorizonsSoulHarvest::qualifies(*battle(), *ghost, *target, true));
+	ghost->endBattleForm();
+	EXPECT_EQ(ghost->unitType()->getId(), ghost->creatureId());
+	EXPECT_TRUE(newHorizonsSoulHarvest::qualifies(*battle(), *ghost, *target, true));
+}

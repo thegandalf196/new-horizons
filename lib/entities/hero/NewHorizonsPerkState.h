@@ -125,6 +125,8 @@ public:
 
 	template<typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving) newHorizonsHeroes::validateSylvanTacticsSerialization(rules,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		const JsonNode & capturedRules = rules;
 		if(h.saving)
 			validate();
@@ -140,6 +142,7 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		h & rules;
+		validateSylvanTacticsSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		if(!h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),

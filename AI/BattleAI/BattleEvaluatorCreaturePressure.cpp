@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "BattleEvaluator.h"
 #include "CreatureSpellTiming.h"
 #include <bit>
@@ -31,15 +32,34 @@ void recordCreatureSelection(creatureSpellTiming::Sample & timing, const Possibl
 }
 }
 
+bool BattleEvaluator::applyCreatureCastProjection(HypotheticBattle & state,
+	const CStack * stack, const PossibleSpellcast & ps)
+{
+	std::optional<newHorizonsPuppetMaster::ActionControllerCaster> actionCaster;
+	const spells::Caster * caster = stack;
+	if(newHorizonsHeroes::isExplicitGenieLuckCast(*stack, ps.spell->getId()))
+	{
+		const auto * projectedCaster = state.battleGetUnitByID(stack->unitId());
+		actionCaster.emplace(projectedCaster, state.battleGetActionController(projectedCaster));
+		caster = &*actionCaster;
+	}
+	spells::BattleCast cast(&state, caster, spells::Mode::CREATURE_ACTIVE, ps.spell);
+	const auto mechanics = ps.spell->battleMechanics(&cast);
+	if(!ps.spell->canBeCast(&state, spells::Mode::CREATURE_ACTIVE, caster)
+		|| !mechanics->canBeCastAt(ps.dest))
+		return false;
+	cast.castEval(state.getServerCallback(), ps.dest);
+	return true;
+}
+
 float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<HypotheticBattle> & state,
 	uint32_t spentCasterId, DamageCache & cache, creatureSpellTiming::Pressure * timing) const
 {
 	creatureSpellTiming::Scope total(timing ? &timing->total : nullptr);
 	float value = 0;
-	creatureSpellTiming::measure(timing ? &timing->cache : nullptr, [&]()
-	{
-		cache.buildCreaturePressureCache(state, side);
-	});
+	// This branch inherits original casualty weights and obstacle damage from
+	// the evaluator's fully prepared pre-cast cache. Current damage stays lazy;
+	// rebuilding a root here would also reprice the spell's own recipients.
 	for(const auto * unit : state->getUnitsIf([&](const battle::Unit * unit)
 	{
 		return unit->alive() && unit->unitId() != spentCasterId && !unit->isTimeStopped();
@@ -53,7 +73,7 @@ float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<Hypothet
 		PotentialTargets targets(unit, cache, state);
 		if(targets.possibleAttacks.empty())
 			continue;
-		const float pressure = static_cast<float>(targets.bestActionValue());
+		const float pressure = targets.bestAction().attackValue();
 		value += state->battleGetActionController(unit) == playerID ? pressure : -pressure;
 	}
 	return value;
@@ -67,7 +87,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestRandomCreatureSpell(co
 	{
 		return std::make_shared<HypotheticBattle>(env.get(), battle);
 	});
-	DamageCache baselineCache;
+	DamageCache baselineCache(&damageCache);
 	const float baselinePressure = beneficialCreaturePressure(baseline, stack->unitId(), baselineCache, timing ? &timing->baseline : nullptr);
 	std::optional<PossibleSpellcast> best;
 	for(const auto * recipient : battle->battleAliveUnits())
@@ -118,12 +138,18 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 		timing->creature = stack->creatureId().getNum();
 		timing->randomPool = static_cast<bool>(randomAbility);
 	}
+	std::optional<PossibleSpellcast> randomChoice;
 	if(randomAbility)
 	{
-		auto best = findBestRandomCreatureSpell(stack, randomAbility->val, timing);
-		if(timing && best)
-			recordCreatureSelection(*timing, *best);
-		return best;
+		randomChoice = findBestRandomCreatureSpell(stack, randomAbility->val, timing);
+		const bool namedGenieOptions = newHorizonsHeroes::isExplicitGenieLuckCast(*stack,
+			newHorizonsHeroes::genieLuckSpell(false));
+		if(!namedGenieOptions)
+		{
+			if(timing && randomChoice)
+				recordCreatureSelection(*timing, *randomChoice);
+			return randomChoice;
+		}
 	}
 
 	std::vector<SpellID> spellsToCast;
@@ -140,6 +166,8 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 		spellsToCast.push_back(creatureSpellToCast);
 
 	std::vector<PossibleSpellcast> possibleCasts;
+	if(randomChoice)
+		possibleCasts.push_back(*randomChoice);
 	std::optional<float> beneficialBaseline;
 
 	for(const auto spellID : spellsToCast)
@@ -148,10 +176,17 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 			++timing->ordinarySpells;
 		const CSpell * spell = spellID.toSpell();
 
-		if(!spell->canBeCast(cb->getBattle(battleID).get(), spells::Mode::CREATURE_ACTIVE, stack))
+		std::optional<newHorizonsPuppetMaster::ActionControllerCaster> actionCaster;
+		const spells::Caster * caster = stack;
+		if(newHorizonsHeroes::isExplicitGenieLuckCast(*stack, spellID))
+		{
+			actionCaster.emplace(stack, cb->getBattle(battleID)->battleGetActionController(stack));
+			caster = &*actionCaster;
+		}
+		if(!spell->canBeCast(cb->getBattle(battleID).get(), spells::Mode::CREATURE_ACTIVE, caster))
 			continue;
 
-		spells::BattleCast temp(cb->getBattle(battleID).get(), stack, spells::Mode::CREATURE_ACTIVE, spell);
+		spells::BattleCast temp(cb->getBattle(battleID).get(), caster, spells::Mode::CREATURE_ACTIVE, spell);
 		for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
 		{
 			if(timing)
@@ -165,13 +200,15 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 			});
 			const auto ability = stack->getBonus(Selector::typeSubtype(BonusType::SPELLCASTER,
 				BonusSubtypeID(spellID)));
-			// Only fill the existing zero-HP blind spot for an ordinary friendly
-			// single-target buff. Damage, healing, summons and weighted abilities
-			// retain their existing scoring and selection policies.
+			// Reuse the existing signed pressure lane for the named Genie Luck
+			// options and the ordinary friendly-buff zero-HP fallback. Other
+			// damage, healing, summons and weighted abilities keep their policy.
 			bool beneficialFallback = false;
-			if(ps.value == 0 && spell->isPositive() && ability && !ability->parameters
+			if(ps.value == 0 && ability && !ability->parameters
+				&& (spell->isPositive() || newHorizonsHeroes::isExplicitGenieLuckCast(*stack, spellID))
 				&& target.size() == 1 && target.front().unitValue
-				&& cb->getBattle(battleID)->battleMatchActionController(stack, target.front().unitValue, true))
+				&& (newHorizonsHeroes::isExplicitGenieLuckCast(*stack, spellID)
+					|| cb->getBattle(battleID)->battleMatchActionController(stack, target.front().unitValue, true)))
 			{
 				beneficialFallback = true;
 				if(!beneficialBaseline)
@@ -180,7 +217,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 					{
 						return std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 					});
-					DamageCache cache;
+					DamageCache cache(&damageCache);
 					beneficialBaseline = beneficialCreaturePressure(baseline, stack->unitId(), cache, timing ? &timing->baseline : nullptr);
 				}
 				ps.value = beneficialCreatureOutcomeValue(stack, target.front().unitValue, spell,
@@ -244,7 +281,7 @@ float BattleEvaluator::beneficialCreatureOutcomeValue(const CStack * caster,
 		cast.setSpellLevel(spellLevel);
 		cast.castEval(state->getServerCallback(), {spells::Destination(projectedRecipient)});
 	}
-	DamageCache cache;
+	DamageCache cache(&damageCache);
 	const float pressure = beneficialCreaturePressure(state, caster->unitId(), cache, timing ? &timing->outcome : nullptr) - baselinePressure;
 	creatureSpellTiming::Scope healingTiming(timing ? &timing->outcomeHealing : nullptr);
 	const auto * restored = state->battleGetUnitByID(recipient->unitId());
@@ -265,7 +302,7 @@ float BattleEvaluator::expectedBeneficialCreatureSpellValue(const CStack * caste
 	if(pool.empty() || !ability)
 		return 0;
 	auto baseline = std::make_shared<HypotheticBattle>(env.get(), battle);
-	DamageCache cache;
+	DamageCache cache(&damageCache);
 	const float baselinePressure = beneficialCreaturePressure(baseline, caster->unitId(), cache);
 	double total = 0;
 	for(const auto spell : pool)
@@ -285,7 +322,7 @@ float BattleEvaluator::beneficialCreatureSpellOutcomeValue(const CStack * caster
 	if(!ability)
 		return 0;
 	auto baseline = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
-	DamageCache cache;
+	DamageCache cache(&damageCache);
 	return beneficialCreatureOutcomeValue(caster, recipient, spell,
 		creatureAbilitySpellLevel(caster, spell, ability->val),
 		beneficialCreaturePressure(baseline, caster->unitId(), cache));

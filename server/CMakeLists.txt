@@ -2,8 +2,10 @@ set(vcmiservercommon_SRCS
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
+		battles/CreatureSpellActions.cpp
 		battles/BattleAttackCasting.cpp
 		battles/BattlePetrifyingBlood.cpp
+		battles/BattleSylvanStrikeAftermath.cpp
 		battles/BattleCreatureKillRewards.cpp
 		battles/BattleWaitState.cpp
 		battles/DreadCavalryAction.cpp
@@ -13,6 +15,14 @@ set(vcmiservercommon_SRCS
 		battles/FrozenAttackResolution.cpp
 		battles/NewHorizonsManaLeeches.cpp
 		battles/NewHorizonsSerpentsEmbrace.cpp
+	battles/BattlePrimaryStrikeAftermath.cpp
+	battles/BattleMeleeSpecialtyCompletion.cpp
+	battles/BattleRoundHealing.cpp
+	battles/BattlecraftMasteryAward.cpp
+	battles/BattleActivationEffects.cpp
+	battles/BattleMaintenanceRecovery.cpp
+	battles/BattleRangedFollowup.cpp
+	battles/BattleDefendAction.cpp
 	battles/NewHorizonsParalyzingGaze.cpp
 	battles/NewHorizonsAerialSupremacy.cpp
 		battles/DefiantDenial.cpp
@@ -58,6 +68,7 @@ set(vcmiservercommon_SRCS
 		PreparedBattleWorldPublicationFactory.cpp
 		NetPacksServer.cpp
 		NetPacksLobbyServer.cpp
+	LobbyExtraOptions.cpp
 		TurnTimerHandler.cpp
 		TurnStartVisitScheduler.cpp
 )
@@ -68,6 +79,7 @@ set(vcmiservercommon_HEADERS
 		battles/BattleActionProcessor.h
 		battles/BattlePetrifyingBlood.h
 		battles/GateDrawbridgeFootprint.h
+		battles/BattleSylvanStrikeAftermath.h
 		battles/BattleCreatureKillRewards.h
 		battles/BattleWaitState.h
 		battles/DreadCavalryAction.h
@@ -75,6 +87,13 @@ set(vcmiservercommon_HEADERS
 		battles/FrozenAttackResolution.h
 		battles/NewHorizonsManaLeeches.h
 		battles/NewHorizonsSerpentsEmbrace.h
+	battles/BattlePrimaryStrikeAftermath.h
+	battles/BattleMeleeSpecialtyCompletion.h
+	battles/BattleRoundHealing.h
+	battles/BattlecraftMasteryAward.h
+	battles/BattleActivationEffects.h
+	battles/BattleMaintenanceRecovery.h
+	battles/BattleRangedFollowup.h
 	battles/NewHorizonsParalyzingGaze.h
 		battles/DefiantDenial.h
 		battles/NoQuarterAftermath.h

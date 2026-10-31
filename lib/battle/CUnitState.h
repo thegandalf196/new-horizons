@@ -377,6 +377,7 @@ public:
 	int32_t getMagicalCasualties() const;
 	bool hasCasualtyProvenanceState() const;
 	int32_t getCount() const override;
+	int32_t getCurrentOriginalCreatureCount() const override;
 	int32_t getFirstHPleft() const override;
 	int32_t getUnusableRemains() const override;
 	int32_t getPersonalBloodrageIncrement() const override { return personalBloodrageIncrement; }

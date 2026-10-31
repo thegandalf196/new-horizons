@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsSoulHarvest.h"
+#include "../CCreatureHandler.h"
 #include "CUnitState.h"
 #include "CBattleInfoCallback.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
@@ -14,8 +15,10 @@ bool qualifies(const CBattleInfoCallback & battle, const battle::Unit & actor,
 {
 	if(!physical || !actor.alive() || !victim.alive() || actor.isGhost() || victim.isGhost()
 		|| actor.isClone() || victim.isClone() || actor.isSummoned() || victim.isSummoned()
-		|| newHorizonsCreatureAbilitySuppression::suppressionLevel(actor) > 0
-		|| actor.creatureId() != CreatureID(CreatureID::decode("new-horizons:ghost"))
+		|| newHorizonsCreatureAbilitySuppression::suppressionLevel(actor) > 0)
+		return false;
+	const auto * creature = actor.unitType();
+	if(!creature || creature->getJsonKey() != "new-horizons:ghost"
 		|| victim.isTurret() || victim.hasBonusOfType(BonusType::SIEGE_WEAPON)
 		|| victim.unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
 		|| battle.battleGetOwner(&actor) == battle.battleGetOwner(&victim)

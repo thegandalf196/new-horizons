@@ -13,6 +13,14 @@
 #include "CBonusSystemNode.h"
 #include "../json/JsonNode.h"
 
+void BonusList::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
+{
+	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+	for(const auto & bonus : bonuses)
+		if(bonus) bonus->validateAdjacencyCapabilitySerialization(context);
+}
+
 void BonusList::stackBonuses()
 {
 	std::ranges::sort(bonuses, [](const std::shared_ptr<Bonus> & b1, const std::shared_ptr<Bonus> & b2) -> bool

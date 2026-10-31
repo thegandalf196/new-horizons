@@ -122,6 +122,8 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		// These fixtures characterize the captured generic-line policy before individual replacements.
+		rules["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
 		// Accepted UP304 fixtures intentionally retain the historical Psychic target.
 		rules.Struct().erase("defaultCreatureLineReplacements");
 		rules.setOverrideFlag(true);

@@ -6,6 +6,8 @@
 #include "NewHorizonsSorceryRevision.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSorcery.h"
+#include "ISpellMechanics.h"
+#include <cmath>
 
 namespace newHorizonsSorceryRevision
 {
@@ -45,6 +47,38 @@ void validateArmor(const JsonNode & rules)
 	}
 }
 }
+int32_t slowBaseReduction(int32_t power, int32_t coefficient, int32_t warcasting, int32_t empower)
+{
+	const auto component = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(power, 5, coefficient, warcasting, empower);
+	return static_cast<int32_t>(std::min<int64_t>(50, 20 + component));
+}
+double scaleSlowVariantValue(double value, int32_t powerPercent)
+{
+	if(value >= 0 || powerPercent >= 100)
+		return value;
+	// Preserve the original Lua numeric ceil after all recipient/caster specialties.
+	return std::ceil(value * powerPercent / 100.0);
+}
+
+int32_t focusMarkBasisPoints(const FocusRules & profile, int32_t power, int32_t coefficient,
+	int32_t warcasting, int32_t empower, int32_t specialty)
+{
+	// Preserve the original proxy's validation domain before profile scaling.
+	newHorizonsSorcery::arcaneBreachMarkBasisPoints(power);
+	const auto component = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		static_cast<int64_t>(power) * profile.powerBasisPoints, 1, coefficient, warcasting, empower, specialty);
+	return static_cast<int32_t>(std::min<int64_t>(profile.capBasisPoints, profile.baseBasisPoints + component));
+}
+
+int64_t livingArmorHitPoints(int64_t baseHitPoints, int64_t powerCoefficient, int32_t power,
+	int32_t divisor, int32_t coefficient, int32_t warcasting, int32_t empower)
+{
+	if(baseHitPoints <= 0 || powerCoefficient < 0)
+		return 0;
+	return baseHitPoints + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		powerCoefficient * std::max(0, power), divisor, coefficient, warcasting, empower);
+}
+
 std::optional<FocusRules> focusRules(const JsonNode & rules)
 {
 	const auto * value = profile(rules, newHorizonsSorcery::FOCUS_MAGIC_SPELL, "focusMagic");

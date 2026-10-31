@@ -87,6 +87,27 @@ void addNoLegalPlacementProblem(Problem & problem)
 }
 }
 
+int32_t BattleFormEffect::configuredDuration(const JsonNode & data)
+{
+	const auto & rawDuration = data["duration"];
+	if(rawDuration.isNull())
+	{
+		return DEFAULT_DURATION;
+	}
+
+	if(!rawDuration.isNumber() || !std::isfinite(rawDuration.Float())
+		|| std::floor(rawDuration.Float()) != rawDuration.Float()
+		|| rawDuration.Float() < 1
+		|| rawDuration.Float() > std::numeric_limits<int32_t>::max())
+		throw std::runtime_error("Battle-form duration must be a positive 32-bit integer");
+
+	return rawDuration.Integer();
+}
+int32_t BattleFormEffect::durationWithExtend(int32_t base, int32_t extend)
+{
+	return base + std::min(extend, std::numeric_limits<int32_t>::max() - base);
+}
+
 void BattleFormEffect::initImpl(JsonNode data)
 {
 	if(!data.isStruct())
@@ -102,20 +123,7 @@ void BattleFormEffect::initImpl(JsonNode data)
 	if(!type.isString() || type.String() != "core:battleForm")
 		throw std::runtime_error("Battle-form effect requires type 'core:battleForm'");
 
-	const auto & rawDuration = data["duration"];
-	if(rawDuration.isNull())
-	{
-		duration = DEFAULT_DURATION;
-		return;
-	}
-
-	if(!rawDuration.isNumber() || !std::isfinite(rawDuration.Float())
-		|| std::floor(rawDuration.Float()) != rawDuration.Float()
-		|| rawDuration.Float() < 1
-		|| rawDuration.Float() > std::numeric_limits<int32_t>::max())
-		throw std::runtime_error("Battle-form duration must be a positive 32-bit integer");
-
-	duration = rawDuration.Integer();
+	duration = configuredDuration(data);
 }
 
 void BattleFormEffect::adjustAffectedHexes(BattleHexArray & hexes, const Mechanics * mechanics, const Target & spellTarget) const
@@ -234,8 +242,7 @@ std::vector<BattleFormEffect::WeightedBattleFormCandidate> BattleFormEffect::wei
 		auto state = unit->acquireState();
 		if(!state)
 			return {};
-		state->beginBattleForm(forms[index].creature, duration + std::min(mechanics->getExtendSpellBonusRounds(),
-			std::numeric_limits<int32_t>::max() - duration));
+		state->beginBattleForm(forms[index].creature, durationWithExtend(duration, mechanics->getExtendSpellBonusRounds()));
 		const uint64_t armyValue = static_cast<uint64_t>(std::max(0, forms[index].creature.toCreature()->getAIValue()))
 			* static_cast<uint64_t>(state->getCount());
 		ranked.emplace_back(armyValue, index);
@@ -345,8 +352,7 @@ void BattleFormEffect::apply(ServerCallback * server, const Mechanics * mechanic
 
 		try
 		{
-			state->beginBattleForm(selectedCandidate.creature, duration + std::min(mechanics->getExtendSpellBonusRounds(),
-				std::numeric_limits<int32_t>::max() - duration));
+			state->beginBattleForm(selectedCandidate.creature, durationWithExtend(duration, mechanics->getExtendSpellBonusRounds()));
 			state->setPosition(selectedCandidate.landing);
 		}
 		catch(const std::exception & error)

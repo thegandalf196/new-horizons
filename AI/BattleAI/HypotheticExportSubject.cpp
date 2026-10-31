@@ -6,16 +6,37 @@
 #include "StdInc.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
+#include "ProjectedAdjacencyBonuses.h"
 #include <stdexcept>
 
-std::shared_ptr<InitialExportBattleSubject> HypotheticBattle::initialExportSubject() const
+HypotheticSourceBinding::HypotheticSourceBinding(const std::shared_ptr<CBattleInfoCallback> & subject,
+	const CBattleInfoCallback & policySource)
+	: boundSubjectPointer(subject.get()),
+	boundSubjectOwner(subject),
+	initialExportView(dynamic_cast<InitialExportBattleSubject *>(subject.get())),
+	adjacency(ProjectedAdjacencyBonuses::captureSources(policySource))
 {
-	if(subject.get() != boundSubjectPointer || boundSubjectOwner.expired()
-		|| boundSubjectOwner.owner_before(subject) || subject.owner_before(boundSubjectOwner))
+}
+
+bool HypotheticSourceBinding::matches(const std::shared_ptr<CBattleInfoCallback> & subject) const
+{
+	return !(subject.get() != boundSubjectPointer || boundSubjectOwner.expired()
+		|| boundSubjectOwner.owner_before(subject) || subject.owner_before(boundSubjectOwner));
+}
+
+std::shared_ptr<InitialExportBattleSubject> HypotheticSourceBinding::resolve(
+	const std::shared_ptr<CBattleInfoCallback> & subject) const
+{
+	if(!matches(subject))
 		return std::dynamic_pointer_cast<InitialExportBattleSubject>(subject);
 	if(!initialExportView)
 		return {};
 	return std::shared_ptr<InitialExportBattleSubject>(subject, initialExportView);
+}
+
+std::shared_ptr<InitialExportBattleSubject> HypotheticBattle::initialExportSubject() const
+{
+	return sourceBinding.resolve(subject);
 }
 
 battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate) const

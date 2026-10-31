@@ -101,6 +101,12 @@ DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer,
 DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer,
 	int32_t coefficientPercent, int32_t empowerSpellBonusPercent);
 
+/// Exact cast/preview radius using the captured basis-point coefficient and
+/// cast-time Warcasting/Empower. All multipliers share one final floor; fixed
+/// radius and Chronomancer's cap are not scaled. No legacy power divisor.
+DLL_LINKAGE int32_t timeStopRadius(int32_t rawSpellPower, int32_t coefficientBasisPoints,
+	int32_t warcastingBonusPercent, int32_t empowerSpellBonusPercent, bool chronomancer);
+
 constexpr int SPELL_LOCK_MANA = 22;
 constexpr int SPELL_LOCK_BASE_DURATION_CAP = 3;
 constexpr int SPELL_LOCK_POWER_PER_EXTRA_ROUND = 80;

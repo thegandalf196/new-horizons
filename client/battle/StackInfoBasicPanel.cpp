@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsGenieSage.h"
+#include "../windows/SylvanFactionStatusPresentation.h"
 #include "StackInfoBasicPanel.h"
 #include "SummonLifetimePresentation.h"
 #include "FrozenStatusPresentation.h"
@@ -46,16 +48,8 @@ namespace
 {
 constexpr std::string_view FRAILTY_SPELL_KEY = "new-horizons:frailty";
 constexpr std::string_view PLAGUE_SPELL_KEY = "new-horizons:plague";
-constexpr std::string_view SYLVAN_LUCK_SKILL_KEY = "new-horizons:sylvanLuck";
 
-bool usesNewHorizonsBattleRules(const CGHeroInstance * hero)
-{
-	if(!hero)
-		return false;
-
-	const auto & rules = hero->getCapabilityRules();
-	return newHorizonsHeroes::usesRules(rules) && rules["rulesetVersion"].Integer() >= 3;
-}
+using newHorizonsSylvanFactionPresentation::usesNewHorizonsBattleRules;
 
 struct StackStatusEntry
 {
@@ -199,32 +193,8 @@ std::optional<newHorizonsBattleStatus::BattlecraftWaitStatus> currentBattlecraft
 	if(!usesNewHorizonsBattleRules(hero))
 		return std::nullopt;
 
-	const int damageBonusPercent = newHorizonsBattlecraft::rankPercent(newHorizonsBattlecraft::rank(hero));
+	const int damageBonusPercent = newHorizonsBattlecraft::waitDamagePercent(hero, stack);
 	return newHorizonsBattleStatus::makeBattlecraftWaitStatus(damageBonusPercent, true);
-}
-
-newHorizonsBattleStatus::SylvanLuckStackStatus currentSylvanLuckStatus(
-	const CStack * stack, const CPlayerBattleCallback * battleCallback,
-	const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)
-{
-	if(!stack || !battleCallback || !battleCallback->getBattle()
-		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
-		return {};
-
-	const auto ownerSide = battleCallback->playerToSide(battleCallback->battleGetOwner(stack));
-	if(ownerSide != BattleSide::ATTACKER && ownerSide != BattleSide::DEFENDER)
-		return {};
-
-	// Match the actual attack/speed queries' current controller, and do not
-	// disclose a hidden opposing hero's perk state through the inspector.
-	const auto * hero = battleCallback->battleGetFightingHero(ownerSide);
-	if(!usesNewHorizonsBattleRules(hero) || hero->getPerkSkillRank(std::string(SYLVAN_LUCK_SKILL_KEY)) <= 0)
-		return {};
-
-	return newHorizonsBattleStatus::makeSylvanLuckStackStatus(
-		battleCallback->getBattle()->getSylvanLuckState(ownerSide), stack->unitId(),
-		luckReadback.active() ? luckReadback.ordinaryAttackLuck
-			: battleCallback->battleGetAttackLuck(stack, nullptr, false, false), true, stack->isShooter());
 }
 
 newHorizonsBattleStatus::BattleLuckReadback currentBattleLuckReadback(
@@ -375,7 +345,7 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	result.battlecraftWait = currentBattlecraftWaitStatus(stack, battleCallback);
 	if(stack && battleCallback && battleCallback->battleOverwatchReady(stack))
 		result.overwatchRange = newHorizonsBattlecraft::overwatchRange(stack);
-	result.sylvanLuck = currentSylvanLuckStatus(stack, battleCallback, luckReadback);
+	result.sylvanLuck = newHorizonsSylvanFactionPresentation::currentSylvanLuckStatus(stack, battleCallback, luckReadback);
 	if(stack)
 	{
 		result.forestAmbush = stack->forestAmbush;
@@ -729,7 +699,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		if(!displayedLuckReadback.noLuck || displayedLuckReadback.maxLuck)
 		{
 			const auto sylvanTooltip = newHorizonsBattleStatus::sylvanLuckStackTooltip(displayedStatus.sylvanLuck,
-				LIBRARY->generaltexth->translate("skill.new-horizons.sylvanLuck.name"),
+				"Sylvan Luck",
 				"Serendipity", "Forest's Favor", "Shared Fortune", "Cascading Fortune", "Fortunate Aim");
 			if(!sylvanTooltip.empty())
 			{
@@ -944,6 +914,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			throw std::runtime_error("Failed to find effects for spell " + effect.toSpell()->getJsonKey());
 
 		int duration = spellBonuses->front()->turnsRemain;
+		const auto wheelSpell = newHorizonsHeroes::genieLuckStatusSpell(*stack, effect);
 		const auto spellKey = effect.toSpell()->getJsonKey();
 		const bool confusion = newHorizonsBattleStatus::isConfusion(spellKey);
 		if(confusion && !displayedStatus.confusion.active())
@@ -982,8 +953,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
 			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
-		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect.getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || confusion || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade || chosen)
+		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), (wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1, 0, slotX, slotY));
+		if(settings["general"]["enableUiEnhancements"].Bool() || confusion || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade || chosen || wheelSpell.hasValue())
 		{
 			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : timeStop
 				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
@@ -1012,7 +983,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
 		}
 
-		if(confusion)
+		if(wheelSpell.hasValue())
+		{
+			const auto tooltip = wheelSpell.toSpell()->getDescriptionTranslated(0)
+				+ "\nRounds remaining: " + std::to_string(duration);
+			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		}
+		else if(confusion)
 		{
 			const auto tooltip = newHorizonsBattleStatus::confusionTooltip(
 				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.confusion);

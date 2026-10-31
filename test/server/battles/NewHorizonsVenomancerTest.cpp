@@ -11,9 +11,13 @@
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../SpellPointTestUtils.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/GameConstants.h"
+#include "../../../lib/CRandomGenerator.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsBulwark.h"
@@ -74,23 +78,16 @@ bool activatePerkInFixture(JsonNode & rules, const std::string_view skillId,
 JsonNode savedV2MagicRulesWithoutPoison()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
 	auto & spells = rules["spells"].Struct();
 	for(auto it = spells.begin(); it != spells.end();)
 	{
 		if(std::string_view(it->first) == poisonSpellKey || it->second.Struct().contains("variant"))
 			it = spells.erase(it);
 		else
-		{
-			it->second.Struct().erase("selectedPlacement");
-			it->second.Struct().erase("rawSpellPowerPerPatch");
-			it->second.Struct().erase("earthquake");
-			it->second.Struct().erase("structures");
 			++it;
-		}
 	}
+	rules = historicalCrusadeRules(std::move(rules), newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+	rules.setOverrideFlag(true);
 	newHorizonsMagic::validateRules(rules);
 	return rules;
 }
@@ -434,4 +431,153 @@ TEST_F(NewHorizonsVenomancerTest, ToxicSpinesStillUsesActualReflectedDamageWithV
 	EXPECT_EQ(attacker->physicalPoisonBaseDamage,
 		newHorizonsBulwark::toxicSpinesPoisonBase(actualReflectedLoss));
 	EXPECT_EQ(attacker->physicalPoisonActivationsRemaining, 3);
+}
+
+namespace
+{
+struct PoisonRecipientProbe
+{
+	const char * name;
+	const char * creature;
+	bool namedImmunity;
+	bool accepted;
+};
+}
+
+class NewHorizonsPoisonTargetTest : public NewHorizonsVenomancerTest,
+	public ::testing::WithParamInterface<PoisonRecipientProbe>
+{};
+
+TEST_P(NewHorizonsPoisonTargetTest, HexAndUnitQueriesAgreeWithAuthoritativeHexAction)
+{
+	prepare(false);
+	const auto & scenario = GetParam();
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName(scenario.creature),
+		BattleHex(12, 7), 1000);
+	ASSERT_NE(target, nullptr);
+	if(scenario.namedImmunity)
+	{
+		target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+			BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 0, BonusSourceID(),
+			BonusSubtypeID(poisonSpell())));
+	}
+	const auto * spell = poisonSpell().toSpell();
+	ASSERT_NE(spell, nullptr);
+	spells::BattleCast castEvent(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&castEvent);
+	spells::detail::ProblemImpl castProblem;
+	ASSERT_TRUE(mechanics->canBeCast(castProblem));
+	const auto manaBefore = attackerSideHero->getManaAvailable();
+	const auto healthBefore = target->getAvailableHealth();
+	const auto serialized = [](const auto & value)
+	{
+		CMemorySerializer wire;
+		wire.oser & value;
+		return wire.extractBuffer();
+	};
+	const auto serverRngBefore = serialized(*gameHandler->randomizer);
+	const auto ambientRngBefore = serialized(CRandomGenerator::getDefault());
+	const auto capturedMagicRules = battle()->getMagicRules().toCompactString();
+
+	// Ordinary hover and click both use this hex-only aim. The shared validator
+	// must accept exactly the same recipients as an explicit unit selection.
+	EXPECT_EQ(mechanics->canBeCastAt({spells::Destination(target->getPosition())}),
+		scenario.accepted);
+	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(target),
+		spells::Destination(target->getPosition())}));
+	const spells::Target explicitAim{
+		spells::Destination(target, target->getPosition())};
+	EXPECT_EQ(mechanics->canBeCastAt(explicitAim), scenario.accepted);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	EXPECT_EQ(target->getAvailableHealth(), healthBefore);
+	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(serialized(*gameHandler->randomizer), serverRngBefore);
+	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientRngBefore);
+	EXPECT_EQ(battle()->getMagicRules().toCompactString(), capturedMagicRules);
+
+	BattleAction humanAction;
+	humanAction.actionType = EActionType::HERO_SPELL;
+	humanAction.side = BattleSide::ATTACKER;
+	humanAction.spell = poisonSpell();
+	humanAction.aimToHex(target->getPosition());
+	EXPECT_EQ(act(casterStack, humanAction), scenario.accepted);
+	EXPECT_EQ(target->getAvailableHealth(), healthBefore);
+	if(scenario.accepted)
+	{
+		EXPECT_EQ(target->physicalPoisonBaseDamage, 77);
+		EXPECT_EQ(target->physicalPoisonActivationsRemaining, 3);
+		EXPECT_LT(attackerSideHero->getManaAvailable(), manaBefore);
+	}
+	else
+	{
+		EXPECT_EQ(target->physicalPoisonBaseDamage, 0);
+		EXPECT_EQ(target->physicalPoisonActivationsRemaining, 0);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
+	}
+}
+
+INSTANTIATE_TEST_SUITE_P(Recipients, NewHorizonsPoisonTargetTest,
+	::testing::Values(
+		PoisonRecipientProbe{"gnoll", "core:gnoll", false, true},
+		PoisonRecipientProbe{"gnollMarauder", "core:gnollMarauder", false, true},
+		PoisonRecipientProbe{"livingControl", "core:pikeman", false, true},
+		PoisonRecipientProbe{"undeadControl", "core:skeleton", false, false},
+		PoisonRecipientProbe{"nonlivingControl", "core:stoneGolem", false, false},
+		PoisonRecipientProbe{"explicitPoisonImmunity", "core:gnoll", true, false}),
+	[](const ::testing::TestParamInfo<PoisonRecipientProbe> & info)
+	{
+		return info.param.name;
+	});
+
+TEST_F(NewHorizonsVenomancerTest, PoisonHexLookupDoesNotRedirectExplicitCorpsesOrAdmitFriendlyOrEmptyTargets)
+{
+	prepare(false);
+	const BattleHex overlapHex(12, 7);
+	auto * corpse = addStack(BattleSide::DEFENDER, creatureByName("core:gnoll"), overlapHex, 1);
+	ASSERT_NE(corpse, nullptr);
+	auto state = corpse->acquireState();
+	int64_t appliedDamage = corpse->getAvailableHealth();
+	state->damage(appliedDamage, false);
+	UnitChanges change(corpse->unitId(), UnitChanges::EOperation::UPDATE);
+	change.data = state->save();
+	change.healthDelta = -appliedDamage;
+	BattleUnitsChanged update;
+	update.battleID = BattleID(0);
+	update.changedStacks.push_back(std::move(change));
+	gameHandler->sendAndApply(update);
+	ASSERT_FALSE(corpse->alive());
+
+	spells::BattleCast castEvent(battle(), attackerSideHero, spells::Mode::HERO, poisonSpell().toSpell());
+	const auto mechanics = poisonSpell().toSpell()->battleMechanics(&castEvent);
+	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(overlapHex)}));
+	auto * living = addStack(BattleSide::DEFENDER, creatureByName("core:gnoll"), overlapHex, 100);
+	ASSERT_NE(living, nullptr);
+	ASSERT_EQ(battle()->battleGetUnitByPos(overlapHex, true), living);
+	const auto serialized = [](const auto & value)
+	{
+		CMemorySerializer wire;
+		wire.oser & value;
+		return wire.extractBuffer();
+	};
+	const auto serverRng = serialized(*gameHandler->randomizer);
+	const auto ambientRng = serialized(CRandomGenerator::getDefault());
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto rules = battle()->getMagicRules().toCompactString();
+	const auto health = living->getAvailableHealth();
+	EXPECT_TRUE(mechanics->canBeCastAt({spells::Destination(overlapHex)}));
+	EXPECT_TRUE(mechanics->canBeCastAt({spells::Destination(living)}));
+	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(corpse)}));
+	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(casterStack->getPosition())}));
+	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(casterStack)}));
+	const BattleHex emptyHex(14, 8);
+	ASSERT_EQ(battle()->battleGetUnitByPos(emptyHex, true), nullptr);
+	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(emptyHex)}));
+	EXPECT_FALSE(mechanics->canBeCastAt({spells::Destination(living), spells::Destination(emptyHex)}));
+	EXPECT_EQ(serialized(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientRng);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->getMagicRules().toCompactString(), rules);
+	EXPECT_EQ(living->getAvailableHealth(), health);
+	EXPECT_EQ(living->physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(corpse->physicalPoisonActivationsRemaining, 0);
 }

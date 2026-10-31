@@ -115,3 +115,11 @@ void Rewardable::Configuration::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("infoWindowType", infoWindowType);
 	variables.serializeJson(handler);
 }
+
+void Rewardable::Configuration::validateBonusSerialization(BonusSerializationContext context) const
+{
+	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+	for(const auto & visit : info)
+		visit.reward.validateBonusSerialization(context);
+}

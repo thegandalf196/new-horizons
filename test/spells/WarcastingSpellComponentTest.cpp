@@ -11,6 +11,7 @@
 #include "../SpellPointTestUtils.h"
 
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/SpellEffectPreview.h"
 #include "../server/battles/HeroCommandFixture.h"
 
 #include "../../lib/GameConstants.h"
@@ -184,4 +185,32 @@ TEST_F(WarcastingSpellComponentMechanicsTest, OrdinarySpellSnapshotsBoostedArrow
 	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).bonusFor(
 		AlternatingHeroActionState::Action::SPELL, battle()->getRound()), 0);
 	EXPECT_EQ(arrowMechanics->getEffectValue(), 72);
+}
+
+TEST_F(WarcastingSpellComponentMechanicsTest, BookPreviewMatchesAuthoritativeCurrentCastAndKeepsReadiness)
+{
+ prepare();
+ ASSERT_TRUE(issue(HeroCommand::CHARGE));
+ advanceRound();
+ const auto mana = attackerSideHero->getManaAvailable();
+ const auto round = battle()->getRound();
+ const auto readiness = battle()->getWarcastingState(BattleSide::ATTACKER).bonusFor(
+  AlternatingHeroActionState::Action::SPELL, round);
+ for(const bool followup : {false, true})
+  for(const auto id : {SpellID::MAGIC_ARROW, SpellID::CURE})
+  {
+   const auto * spell = SpellID(id).toSpell();
+   auto cast = heroCast(id, followup);
+   const auto authority = spell->battleMechanics(&cast);
+   const auto preview = newHorizonsMagic::spellEffectPreview(*attackerSideHero, *spell, battle(), followup);
+   ASSERT_TRUE(preview.primary);
+   const auto expected = spell->isDamage()
+    ? spell->adjustRawDamage(attackerSideHero, nullptr, authority->getEffectValue()) : authority->getEffectValue();
+   EXPECT_EQ(preview.primary->value, expected);
+   EXPECT_EQ(preview, newHorizonsMagic::spellEffectPreview(*attackerSideHero, *spell, battle(), followup));
+  }
+ EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+ EXPECT_EQ(battle()->getRound(), round);
+ EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).bonusFor(
+  AlternatingHeroActionState::Action::SPELL, round), readiness);
 }

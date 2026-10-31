@@ -4,11 +4,6 @@ local BattleLog = require("battleLog")
 local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
-local SHADOW_MAGIC_SKILL = "new-horizons:shadowMagic"
-local BLOOD_DRINKER_PERK = "new-horizons:shadowMagic.bloodDrinker"
-local BASE_HEAL_PERCENT = 60
-local BLOOD_DRINKER_HEAL_PERCENT = 75
-
 local function addNoTargetProblem(mechanics, problem)
 	if problem then
 		problem:addStandard(mechanics, ENUM.SpellCastProblem.noAppropriateTarget)
@@ -30,14 +25,6 @@ end
 local function isFriendlyTarget(mechanics, unit)
 	return livingTarget(unit)
 		and (mechanics:currentControllerIsCaster(unit) ~= mechanics:isMagicMirror())
-end
-
-local function healPercent(mechanics)
-	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(SHADOW_MAGIC_SKILL, BLOOD_DRINKER_PERK) then
-		return BLOOD_DRINKER_HEAL_PERCENT
-	end
-	return BASE_HEAL_PERCENT
 end
 
 local function predictedDamage(mechanics, unit)
@@ -144,7 +131,7 @@ function Script:apply(mechanics, server, target)
 		battle, enemy, mechanics:adjustEffectValue(enemy), false, mechanics:getUnitCaster(), true)
 	local current = battle:getUnitByID(enemyID)
 	if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
-	local healing = math.floor(damage * healPercent(mechanics) / 100)
+	local healing = math.floor(damage * mechanics:getLifeDrainHealingPercent() / 100)
 	local healedHP = 0
 	if healing > 0 then
 		healedHP = server:healUnit(battle, friendly, healing, ENUM.HealLevel.heal, ENUM.HealPower.permanent)

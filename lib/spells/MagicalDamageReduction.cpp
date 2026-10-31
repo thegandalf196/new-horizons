@@ -9,6 +9,10 @@
 #include "MagicalDamageReduction.h"
 #include "../json/JsonNode.h"
 #include "../battle/IBattleState.h"
+#include "CSpell.h"
+#include "../battle/Unit.h"
+#include "../bonuses/BonusList.h"
+#include "../bonuses/Bonus.h"
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cmath>
@@ -189,4 +193,151 @@ MagicalDamageReductionResult calculateMagicalDamageReductionBasisPoints(
 	return calculateMagicalDamageReductionWithScale(
 		rawDamage, independentReductionsBasisPoints, 10'000, independentPenetrationsPercent);
 }
+std::vector<int> collectMagicalDamageReductionSources(const CSpell & spell, const battle::Unit * affectedCreature,
+	int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints,
+	bool useFractionalMagicalDamageReduction)
+{
+	std::vector<int> sources;
+	if(!affectedCreature || !spell.isMagical())
+		return sources;
+	const auto * bearer = affectedCreature->getBonusBearer();
+	// Preserve the existing multi-school rule: the first matching school
+	// supplies school-specific sources; each bonus remains independent.
+	spell.forEachSchool([&](const SpellSchool & school, bool & stop)
+	{
+		const BonusSubtypeID subtype(school);
+		const auto reductions = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION, subtype);
+		const auto fractional = bearer->getBonusesOfType(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, subtype);
+		if(!reductions->empty() || (useFractionalMagicalDamageReduction && !fractional->empty()))
+		{
+			for(const auto & bonus : *reductions)
+			{
+				const int reduction = std::clamp(bonus->val, 0, 100);
+				if(reduction > 0)
+					sources.push_back(reduction * 100);
+			}
+			if(useFractionalMagicalDamageReduction)
+			{
+				for(const auto & bonus : *fractional)
+				{
+					const int reduction = std::clamp(bonus->val, 0, 10000);
+					if(reduction > 0)
+						sources.push_back(reduction);
+				}
+			}
+			stop = true;
+		}
+	});
+	const auto anySchool = bearer->getBonuses(
+		Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY)),
+		"type_SPELL_DAMAGE_REDUCTION_s_ANY");
+	for(const auto & bonus : *anySchool)
+	{
+		const int reduction = std::clamp(bonus->val, 0, 100);
+		if(reduction > 0)
+			sources.push_back(reduction * 100);
+	}
+	if(useFractionalMagicalDamageReduction)
+	{
+		const auto anySchoolFractional = bearer->getBonuses(
+			Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSubtypeID(SpellSchool::ANY)),
+			"type_SPELL_DAMAGE_REDUCTION_BASIS_POINTS_s_ANY");
+		for(const auto & bonus : *anySchoolFractional)
+		{
+			const int reduction = std::clamp(bonus->val, 0, 10000);
+			if(reduction > 0)
+				sources.push_back(reduction);
+		}
+	}
+	if(magicalDamageReductionBasisPoints > 0)
+		sources.push_back(std::clamp(magicalDamageReductionBasisPoints, 0, 10000));
+	if(perkMagicalDamageReductionBasisPoints > 0)
+		sources.push_back(std::clamp(perkMagicalDamageReductionBasisPoints, 0, 10000));
+	const int intrinsicReduction = affectedCreature->intrinsicMagicalDamageReductionPercent();
+	if(intrinsicReduction > 0)
+		sources.push_back(std::clamp(intrinsicReduction, 0, 100) * 100);
+	return sources;
+}
+std::vector<int> targetMdrPenetrations(const battle::Unit & target)
+{
+	std::vector<int> result;
+	for(const auto & bonus : *target.getBonusesOfType(BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION))
+		if(bonus->val > 0)
+			result.push_back(std::clamp(bonus->val, 0, 100));
+	return result;
+}
+int64_t applyTargetMdrPenetration(const battle::Unit & target, int64_t raw, int64_t mitigated)
+{
+	const auto penetrations = targetMdrPenetrations(target);
+	if(penetrations.empty() || mitigated >= raw || raw <= 0)
+		return mitigated;
+	boost::multiprecision::cpp_int remainingNumerator = 1;
+	boost::multiprecision::cpp_int remainingDenominator = 1;
+	for(const int penetration : penetrations)
+	{
+		remainingNumerator *= 100 - penetration;
+		remainingDenominator *= 100;
+	}
+	// Legacy staged floors remain intact. Only a new target modifier restores
+	// its relative share of the actual positive reduction, never vulnerability.
+	const boost::multiprecision::cpp_int numerator = boost::multiprecision::cpp_int(raw) * remainingDenominator
+		- (boost::multiprecision::cpp_int(raw) - mitigated) * remainingNumerator;
+	const boost::multiprecision::cpp_int result = numerator / remainingDenominator;
+	return result.convert_to<int64_t>();
+}
+int64_t applyLegacyMagicalDamageReduction(const CSpell & spell, const battle::Unit * affectedCreature,
+	const IBonusBearer * bearer, int64_t ret, int ignoreSpellDamageReductionPercent, int magicalDamageReductionBasisPoints)
+{
+	const int64_t raw = ret;
+
+	// Legacy school-specific reduction semantics: when a spell has multiple
+	// schools, only the first matching school's aggregate is applied.
+	spell.forEachSchool([&](const SpellSchool & cnf, bool & stop)
+	{
+		if(bearer->hasBonusOfType(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf)))
+		{
+			const int reduction = bearer->valOfBonuses(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(cnf));
+			const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
+			ret *= 100 - effectiveReduction;
+			ret /= 100;
+			stop = true; //only bonus from one school is used
+		}
+	});
+
+	CSelector selector = Selector::typeSubtype(BonusType::SPELL_DAMAGE_REDUCTION, BonusSubtypeID(SpellSchool::ANY));
+	auto cachingStr = "type_SPELL_DAMAGE_REDUCTION_s_ANY";
+
+	//general spell dmg reduction, works only on magical effects
+	if(bearer->hasBonus(selector, cachingStr) && spell.isMagical())
+	{
+		const int reduction = bearer->valOfBonuses(selector, cachingStr);
+		const int effectiveReduction = reduction * (100 - ignoreSpellDamageReductionPercent) / 100;
+		ret *= 100 - effectiveReduction;
+		ret /= 100;
+	}
+
+	// Hold the Line's saved Iron Discipline value is an independent magical
+	// reduction. Basis points preserve the exact half of an odd physical value.
+	if(spell.isMagical() && magicalDamageReductionBasisPoints > 0)
+	{
+		const int boundedReductionBasisPoints = std::clamp(magicalDamageReductionBasisPoints, 0, 10000);
+		const int effectiveReductionBasisPoints = boundedReductionBasisPoints
+			* (100 - ignoreSpellDamageReductionPercent) / 100;
+		const int remainingDamageBasisPoints = 10000
+			- std::clamp(effectiveReductionBasisPoints, 0, 10000);
+		ret = ret / 10000 * remainingDamageBasisPoints
+			+ ret % 10000 * remainingDamageBasisPoints / 10000;
+	}
+	// A new captured unit passive may coexist with historical magic rules.
+	// Retain every legacy reduction/floor above, then apply only this new source.
+	if(spell.isMagical())
+	{
+		const int intrinsicReduction = affectedCreature->intrinsicMagicalDamageReductionPercent();
+		if(intrinsicReduction > 0)
+			ret = spells::calculateMagicalDamageReduction(ret, std::vector<int>{intrinsicReduction},
+				ignoreSpellDamageReductionPercent).damageWithPenetration;
+	}
+	return spell.isMagical() ? applyTargetMdrPenetration(*affectedCreature, raw, ret) : ret;
+}
+
 }

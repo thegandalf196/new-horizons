@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "NetPacksBase.h"
 
 #include "../rewardable/Configuration.h"
@@ -23,6 +25,8 @@ struct DLL_LINKAGE SetRewardableConfiguration : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			configuration.validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & objectID;
 		h & buildingID;
 		h & configuration;

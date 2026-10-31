@@ -11,6 +11,7 @@
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
+#include "DefendEvaluation.h"
 #include "SummonEvaluation.h"
 #include "BattleEvaluatorProjection.h"
 #include "BattleEvaluatorSpellProjection.h"
@@ -3034,18 +3035,10 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	if(!stack || stack->defended()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack))
 		return false;
-	const auto * hero = battle->battleGetOwnerHero(stack);
-	const int bulwarkRank = newHorizonsBulwark::rank(hero);
-	const int paviseReduction = newHorizonsCombatSkills::paviseReductionPercent(hero);
-	const bool hasBattlecraftPreemptiveStrike = newHorizonsBattlecraft::hasPreemptiveStrike(hero);
-	const bool hasHoldFast = newHorizonsDiscipline::hasHoldFast(hero);
-	const bool hasBastion = hero && hero->hasActivePerk(
-		std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID),
-		std::string(newHorizonsCombatSkills::BASTION_PERK_ID));
-	const bool hasBattlefieldMastery = newHorizonsBattlecraft::hasBattlefieldMastery(hero);
-	const bool hasExistingDefendValue = bulwarkRank > 0 || paviseReduction > 0
-		|| hasBattlecraftPreemptiveStrike || hasHoldFast || hasBastion;
-	if(!hasExistingDefendValue && !hasBattlefieldMastery)
+	const auto capabilities = defendEvaluation::capabilities(*battle, *stack);
+	const auto * hero = capabilities.hero;
+	const int bulwarkRank = capabilities.bulwarkRank;
+	if(!capabilities.hasDefendValue && !capabilities.battlefieldMastery)
 		return false;
 
 	auto defendedPreview = std::make_shared<HypotheticBattle>(environment, battle);
@@ -3055,6 +3048,8 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	projectedTarget->defending = true;
 	projectedTarget->addUnitBonus(std::vector<Bonus>{
 		Bonus(BonusDuration::STACK_GETS_TURN, BonusType::UNIT_DEFENDING, BonusSource::OTHER, 0, BonusSourceID())});
+	const int maintenanceHealing = capabilities.maintenance
+		? defendEvaluation::projectWoundHealing(*defendedPreview, *projectedTarget) : 0;
 	const auto masterySide = defendedPreview->playerToSide(defendedPreview->battleGetOwner(projectedTarget.get()));
 	const auto masteryRound = defendedPreview->getRound();
 	const bool awardsBattlefieldMastery = newHorizonsBattlecraft::canAwardBattlefieldMastery(hero,
@@ -3063,12 +3058,12 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	if(awardsBattlefieldMastery)
 		defendedPreview->awardBattlecraftMastery(masterySide, projectedTarget->unitId(), masteryRound,
 			BattlecraftMasteryAction::DEFEND);
-	if(!hasExistingDefendValue && !awardsBattlefieldMastery)
+	if(!capabilities.hasDefendValue && !awardsBattlefieldMastery)
 		return false;
 
 	bool bastionForecastAvailable = defendedPreview->battleHasBastionProtection(projectedTarget.get());
 	float holdFastMoraleValue = 0.0f;
-	if(hasHoldFast && !stack->unaffectedByMorale() && battle->battleGetMorale(stack) < 0)
+	if(capabilities.holdFast && !stack->unaffectedByMorale() && battle->battleGetMorale(stack) < 0)
 	{
 		projectedTarget->addUnitBonus(std::vector<Bonus>{
 			newHorizonsDiscipline::holdFastMoraleFloorBonus()});
@@ -3414,7 +3409,10 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 		reflectedDamage += std::min<int64_t>(projectedEnemy->getAvailableHealth(), reflected);
 	}
 
-	const float defendValue = damagePrevented + preemptiveValue + reflectedDamage + holdFastMoraleValue;
+	float defendValue = damagePrevented + preemptiveValue + reflectedDamage + holdFastMoraleValue;
+	if(capabilities.maintenance)
+		defendValue += maintenanceHealing + defendEvaluation::extraRetaliationValue(
+			*battle, defendedPreview, *stack);
 	int64_t swampRenewalValue = 0;
 	if(newHorizonsBulwark::hasSwampRenewal(hero) && remainingHealth > 0 && swampRenewalDamage > 0)
 	{
@@ -5287,15 +5285,11 @@ std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(co
 		return {};
 	}
 
-	spells::BattleCast cast(&state, stack, spells::Mode::CREATURE_ACTIVE, ps.spell);
-	const auto mechanics = ps.spell->battleMechanics(&cast);
-	if(!ps.spell->canBeCast(&state, spells::Mode::CREATURE_ACTIVE, stack)
-		|| !mechanics->canBeCastAt(ps.dest))
+	if(!applyCreatureCastProjection(state, stack, ps))
 	{
 		ps.value = -1;
 		return {};
 	}
-	cast.castEval(state.getServerCallback(), ps.dest);
 
 	for(auto unit : all)
 	{

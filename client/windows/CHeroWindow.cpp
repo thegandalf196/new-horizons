@@ -13,7 +13,7 @@
 #include "HeroSpecialtyPresentation.h"
 #include "HeroWindowLabelText.h"
 #include "NewHorizonsPerkBrowser.h"
-#include "NewHorizonsPerkIcons.h"
+#include "NewHorizonsCapturedPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
 #include "NewHorizonsPerkAvailability.h"
 #include "HeroSkillOddsWindow.h"
@@ -791,9 +791,10 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				primSkillAreas[g]->text = "Knowledge supplies base mana directly. Skills and artifacts modify the final mana limit shown on this hero screen.";
 			if(newHorizonsLayout)
 			{
-				growthValues[g]->setText("+" + std::to_string(growth->profile.growth[g]));
+				growthValues[g]->setText("+" + std::to_string(growth->profile.growth[g] + growth->fixedSpecialtyGrowth[g]));
 				primSkillAreas[g]->text += " Saved class growth per level: +" + std::to_string(growth->profile.growth[g])
-					+ ". This is the class proposal before caps, not a prediction of extra skill rolls or actual last-level gains. Open Hero development for details.";
+					+ "; specialty growth: +" + std::to_string(growth->fixedSpecialtyGrowth[g])
+					+ ". Before caps and extra Skill rolls. Open Hero development for actual last-level gains.";
 			}
 		}
 	}
@@ -848,13 +849,13 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				if(slot.selectedPerk)
 				{
 					const auto & perk = *slot.selectedPerk;
-					const auto iconKey = newHorizonsPerkIcon(perk.id, perk.name);
+					const auto iconKey = newHorizonsPerkIcon(perk.id, perk.name, perkState.rules);
 					provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
 					provisionalAbilityIcons[g][ability]->enable();
 					const auto details = newHorizonsPerkHelp::format(curHero, skillId,
 						perk.name, newHorizonsPerkAvailability::tierName(slot.requiredRank), perk.description)
 						+ "\n\n" + newHorizonsPerkAvailability::explanation(
-							{slot.status, slot.reason, slot.requiredRank}, skillDefinition->name);
+							{slot.status, slot.reason, slot.requiredRank}, newHorizonsPerkHelp::skillName(curHero, skillId));
 					area->text = details;
 					area->hoverText = details;
 				}
@@ -863,8 +864,8 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 					const auto details = (selectionSlots
 						? "An unfilled perk slot. Each Skill permits at most three selected perks.\n"
 							+ newHorizonsPerkAvailability::explanation(
-								{slot.status, slot.reason, slot.requiredRank}, skillDefinition->name)
-						: tierSlotText(slot, skillDefinition->name))
+								{slot.status, slot.reason, slot.requiredRank}, newHorizonsPerkHelp::skillName(curHero, skillId))
+						: tierSlotText(slot, newHorizonsPerkHelp::skillName(curHero, skillId)))
 						+ "\nClick the Skill to browse its ten perks; browsing never acquires a perk.";
 					area->text = details;
 					area->hoverText = details;
@@ -883,10 +884,9 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		int	level = curHero->getSecSkillLevel(skill);
 		std::string skillValue = GAME->translator().translate("core.skilllev", level-1);
 
-		heroWindowLabelText::setSkillName(*secSkillNames[g], skill.toEntity(LIBRARY)->getNameTranslated(), newHorizonsLayout);
+		heroWindowLabelText::setSkillName(*secSkillNames[g], newHorizonsPerkHelp::skillLabel(curHero, skill), newHorizonsLayout);
 		secSkillValues[g]->setText(skillValue);
-		secSkills[g]->setSkill(skill, level);
-		secSkills[g]->text = newHorizonsPerkHelp::skillDescription(curHero, skill, level);
+		secSkills[g]->setSkillForHero(*curHero, skill, level);
 	}
 
 	std::ostringstream expstr;

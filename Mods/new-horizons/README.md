@@ -31,8 +31,9 @@ New games save canonical Leadership and trained Siege rules. Each class has its
 own starting Leadership and fixed per-level growth. Every army slot is checked
 independently: maximum stack size is the hero's Leadership divided by that
 creature's requirement, rounded down. There is no shared army-wide budget and no
-Leadership movement penalty. Upgrades use 120% of the base creature requirement,
-rounded to the nearest 10; oversized recruitment and transfers are rejected.
+Leadership movement penalty. Default new-game rules keep ordinary upgrades at
+the base form's per-creature Leadership requirement; older saves retain their
+captured requirements. Oversized recruitment and transfers are rejected.
 Artillery supplies a saved 1/2/3/4 base-damage multiplier for an eligible owned
 ballista; this is not a universal final-damage guarantee or new mastery rank.
 

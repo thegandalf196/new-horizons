@@ -15,6 +15,14 @@
 
 namespace
 {
+JsonNode legacySylvanRegistry()
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	rules.Struct().erase("sylvanTacticsPolicy");
+	rules.setOverrideFlag(true);
+	return rules;
+}
+
 JsonNode certainLuck()
 {
 	JsonNode result;
@@ -63,6 +71,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacySylvanRegistry());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, certainLuck());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
 		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCKY_STRIKE_AFFECTS_ALL_TARGETS, JsonNode(true));
@@ -86,7 +95,7 @@ protected:
 	{
 		NewHorizonsSylvanLuckAITest::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			legacySylvanRegistry());
 	}
 
 	void prepareRecovery(bool sylvan = false, bool opposingSerendipity = false)

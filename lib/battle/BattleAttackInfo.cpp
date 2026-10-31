@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleAttackInfo.h"
 #include "CUnitState.h"
+#include "NewHorizonsCombatSkills.h"
 
 BattleAttackInfo::BattleAttackInfo(const battle::Unit * Attacker, const battle::Unit * Defender, int chargeDistance, bool Shooting,
 	int dreadCavalryPercent)
@@ -24,7 +25,7 @@ BattleAttackInfo::BattleAttackInfo(const battle::Unit * Attacker, const battle::
 	// Spell-like creature shots (Liches, Magogs, and modded equivalents) are
 	// magical attacks even when AI and preview callers construct the attack
 	// directly rather than going through the authoritative packet path.
-	physicalDamage = !(shooting && attacker && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+	physicalDamage = newHorizonsCombatSkills::isPhysicalAttackDamage(attacker, shooting);
 }
 
 BattleAttackInfo BattleAttackInfo::reverse() const

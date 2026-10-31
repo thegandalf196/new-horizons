@@ -83,7 +83,8 @@ std::optional<float> BattleExchangeVariant::trackFutureMovementReaction(
 	// Eligibility admits the existing path query; AP owns ordered reactions.
 	// Protect can expose the requested target again on a later primary blow.
 	const bool readyBattlecraft = hasReadyBattlecraft(*hb, attacker.get(), resolvedDefender)
-		|| hasReadyBattlecraft(*hb, attacker.get(), defender.get());
+		|| (resolvedDefender != defender.get()
+			&& hasReadyBattlecraft(*hb, attacker.get(), defender.get()));
 	const bool eligibleBrace = hb->battleCanTriggerHeroOrderBrace(
 		attacker.get(), resolvedDefender, 3, false, false);
 	if(!readyBattlecraft && !eligibleBrace && !hasReadyOverwatch(hb, evaluateOnly, readyOverwatch))

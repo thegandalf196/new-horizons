@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsGenieSage.h"
 #include "../battle/NewHorizonsForestAmbush.h"
 
 #include "BattleSpellMechanics.h"
@@ -1604,6 +1605,9 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 			return false;
 
 		const auto * poisonTarget = spellTarget.front().unitValue;
+		// Human targeting can be hex-only; never redirect an explicit unit identity.
+		if(!poisonTarget && !target.front().unitValue && spellTarget.front().hexValue.isAvailable())
+			poisonTarget = battle()->battleGetUnitByPos(spellTarget.front().hexValue, true);
 		if(!isLivingPhysicalPoisonTarget(poisonTarget)
 			|| poisonTarget->unitSide() != battle()->otherSide(casterSide)
 			|| poisonTarget->isInvincible()
@@ -2888,6 +2892,10 @@ bool BattleSpellMechanics::counteringSelector(const Bonus * bonus) const
 
 	if(bonus->source != BonusSource::SPELL_EFFECT)
 		return false;
+
+	if(newHorizonsHeroes::countersGenieLuck(*bonus, newHorizonsMagic::spellVariantBase(
+		battle()->getBattle()->getMagicRules(), getSpellId())))
+		return true;
 
 	for(const SpellID & id : owner->counteredSpells)
 	{

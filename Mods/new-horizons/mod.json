@@ -3089,6 +3089,9 @@
 						]
 					}
 				],
+				"genieSageSpecialties": {
+					"version": 1
+				},
 				"chosenSpecialties": {
 					"version": 1,
 					"inteusDurationBonus": 1,
@@ -3169,6 +3172,44 @@
 					}
 				},
 				"additionalSpecialties": {
+					"ordinaryCreatureSpecialties": {
+						"version": 1,
+						"closeQuartersDrill": 1,
+						"marshSharpshooter": 1,
+						"retaliationDamagePercent": 25,
+						"defendDefense": 3,
+						"maximumHealthPercent": 20,
+						"resistanceAuraPoints": 10,
+						"massedSpearsDamagePercent": 20,
+						"packPursuitDamagePercent": 20,
+						"bloodScentDamagePercent": 20,
+						"livingBastionDefense": 3,
+						"chillingPresenceReductionPercent": 10,
+						"boneFormationDefense": 3,
+						"stoneSentinelReductionPercent": 20,
+						"ogreWarcallerDamagePercent": 10,
+						"undertowRetaliationPercent": 25,
+						"wyvernsPreyDamagePercent": 20,
+						"mobPressureDamagePercent": 20,
+						"wingbeatInitiativePercent": 15,
+						"measuredVolleyMdrPenetrationPercent": 20,
+						"prismaticScreenReductionPercent": 15,
+						"evasiveFlightReductionPercent": 20,
+						"ridersExploitDamagePercent": 20,
+						"tidalRenewalHealingHP": 10,
+						"cruelVolleyDamagePercent": 20,
+						"rangefinderFullDamageDistance": 12,
+						"fieldReassemblyHealingHP": 10,
+						"fieldMaintenanceHealingHP": 25,
+						"ogreBulwarkRetaliations": 1,
+						"gunneryProfessorInitiativeFlat": 2,
+						"gunneryProfessorFollowUpBonusPoints": 20,
+						"heavyBatterySiegeTermBonusPercent": 25,
+						"shieldAndSwordPhysicalReductionPercent": 20,
+						"sepulchralGripSpeedReduction": 1,
+						"cyclopeanBreachIgnorePercent": 25,
+						"runicEnduranceReductionPercent": 25
+					},
 					"version": 1,
 					"manaLeeches": {
 						"manaPerDamagingAttackSequence": 1
@@ -4163,7 +4204,7 @@
 							"startingPerks": [
 								{
 									"skill": "new-horizons:learning",
-									"perk": "new-horizons:learning.scholar"
+									"perk": "new-horizons:learning.historian"
 								}
 							]
 						},
@@ -6390,6 +6431,7 @@
 				"rulesetVersion": 2,
 				"offerWeightPolicyVersion": 2,
 				"perkProgressionPolicyVersion": 1,
+				"sylvanTacticsPolicy": 1,
 				"necromancyPolicy": {
 					"version": 2,
 					"skeletonLeadershipReductionPercent": [
@@ -9459,132 +9501,132 @@
 					},
 					"new-horizons:sylvanLuck": {
 						"id": "new-horizons:sylvanLuck",
-						"name": "Sylvan Luck",
+						"name": "Sylvan Tactics",
 						"domain": "Faction",
 						"availability": "Rampart heroes only",
-						"description": "Faction-locked Skill. Rampart turns fortune into a faction identity. Sylvan Luck increases both the frequency and the payoff of favorable Luck while keeping the universal Luck system intact.",
+						"description": "Faction-locked Skill. Rampart coordinates initiative, patient positioning and supporting fire. The Skill grants Initiative instead of Luck; its independently learned perks retain their own stated triggers.",
 						"ranks": {
 							"basic": {
-								"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x.",
+								"description": "Friendly ordinary creatures gain +1 Initiative. This does not increase Luck or Lucky Strike damage.",
 								"effect": {
 									"status": "active",
-									"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x."
+									"description": "Friendly ordinary creatures gain +1 Initiative. This does not increase Luck or Lucky Strike damage."
 								}
 							},
 							"advanced": {
-								"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x.",
+								"description": "Friendly ordinary creatures gain +2 Initiative. This does not increase Luck or Lucky Strike damage.",
 								"effect": {
 									"status": "active",
-									"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x."
+									"description": "Friendly ordinary creatures gain +2 Initiative. This does not increase Luck or Lucky Strike damage."
 								}
 							},
 							"expert": {
-								"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x.",
+								"description": "Friendly ordinary creatures gain +3 Initiative. This does not increase Luck or Lucky Strike damage.",
 								"effect": {
 									"status": "active",
-									"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x."
+									"description": "Friendly ordinary creatures gain +3 Initiative. This does not increase Luck or Lucky Strike damage."
 								}
 							}
 						},
 						"perks": [
 							{
 								"id": "new-horizons:sylvanLuck.elvenPrecision",
-								"name": "Elven Precision",
+								"name": "Fleetfoot",
 								"requires": "basic",
-								"description": "Lucky ranged attacks ignore 25% Creature Defense.",
+								"description": "During its first real Creature Activation each combat, each friendly ordinary creature stack gains +1 Speed. Waiting spends this first-activation benefit; the delayed activation does not gain it again.",
 								"effect": {
 									"status": "active",
-									"description": "Lucky ranged attacks ignore 25% Creature Defense."
+									"description": "During its first real Creature Activation each combat, each friendly ordinary creature stack gains +1 Speed. Waiting spends this first-activation benefit; the delayed activation does not gain it again."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.forestSFavor",
-								"name": "Forest's Favor",
+								"name": "Patient Hunter",
 								"requires": "basic",
-								"description": "The first positive Luck trigger for each friendly stack in a combat grants +2 Speed for the remainder of that activation.",
+								"description": "The first actual physical creature attack after a friendly stack Waits deals +15% damage, including an ordinary retaliation if it occurs first. A rejected or unperformed attack does not consume the benefit.",
 								"effect": {
 									"status": "active",
-									"description": "The first positive Luck trigger for each friendly stack in a combat grants +2 Speed for the remainder of that activation."
+									"description": "The first actual physical creature attack after a friendly stack Waits deals +15% damage, including an ordinary retaliation if it occurs first. A rejected or unperformed attack does not consume the benefit."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.serendipity",
-								"name": "Serendipity",
+								"name": "Dappled Cover",
 								"requires": "basic",
-								"description": "Until a friendly stack has triggered positive Luck once in the current combat, it counts as having +1 additional Luck for trigger chance only.",
+								"description": "While Waiting for its delayed activation, a friendly ordinary creature stack takes 20% less physical ranged damage. The protection ends when its delayed activation begins.",
 								"effect": {
 									"status": "active",
-									"description": "Until a friendly stack has triggered positive Luck once in the current combat, it counts as having +1 additional Luck for trigger chance only."
+									"description": "While Waiting for its delayed activation, a friendly ordinary creature stack takes 20% less physical ranged damage. The protection ends when its delayed activation begins."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.luckyRecovery",
-								"name": "Lucky Recovery",
+								"name": "Measured Advance",
 								"requires": "basic",
-								"description": "A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt.",
+								"description": "A primary voluntary melee attack deals +10% physical damage after the attacker actually moves at least 1 hex and no more than half its current movement Speed, rounded down. Stationary attacks, retaliation, collateral, reactions and follow-up attacks do not receive this bonus.",
 								"effect": {
 									"status": "active",
-									"description": "A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt."
+									"description": "A primary voluntary melee attack deals +10% physical damage after the attacker actually moves at least 1 hex and no more than half its current movement Speed, rounded down. Stationary attacks, retaliation, collateral, reactions and follow-up attacks do not receive this bonus."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.sharedFortune",
-								"name": "Shared Fortune",
+								"name": "Covering Fire",
 								"requires": "advanced",
-								"description": "After a friendly stack triggers positive Luck, adjacent friendly stacks gain +1 Luck until their next activation.",
+								"description": "After a damaging physical ranged strike, including actual ranged collateral damage, adjacent friendly ordinary creature stacks gain 15% protection against physical ranged damage until their next real activation. Adjacency uses the resolved creature footprints; the guard refreshes without stacking.",
 								"effect": {
 									"status": "active",
-									"description": "After a friendly stack triggers positive Luck, adjacent friendly stacks gain +1 Luck until their next activation."
+									"description": "After a damaging physical ranged strike, including actual ranged collateral damage, adjacent friendly ordinary creature stacks gain 15% protection against physical ranged damage until their next real activation. Adjacency uses the resolved creature footprints; the guard refreshes without stacking."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.natureSProvidence",
-								"name": "Nature's Providence",
+								"name": "Crossfire",
 								"requires": "advanced",
-								"description": "The first negative Luck trigger against the army each round is ignored.",
+								"description": "A primary physical ranged attack deals +15% damage against an enemy already damaged by a different friendly shooter this round. Actual physical ranged collateral damage can establish this record, but secondary and collateral hits do not receive the bonus. The record resets each round.",
 								"effect": {
 									"status": "active",
-									"description": "The first negative Luck trigger against the army each round is ignored."
+									"description": "A primary physical ranged attack deals +15% damage against an enemy already damaged by a different friendly shooter this round. Actual physical ranged collateral damage can establish this record, but secondary and collateral hits do not receive the bonus. The record resets each round."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.fortunateAim",
-								"name": "Fortunate Aim",
+								"name": "Disruptive Strike",
 								"requires": "advanced",
-								"description": "Friendly shooters gain +1 Luck when attacking the target designated by Focus Fire!.",
+								"description": "A damaging primary physical melee attack reduces its enemy victim's Initiative by 15% until that victim's next real activation. Reapplication refreshes the penalty without stacking.",
 								"effect": {
 									"status": "active",
-									"description": "Friendly shooters gain +1 Luck when attacking the target designated by Focus Fire!."
+									"description": "A damaging primary physical melee attack reduces its enemy victim's Initiative by 15% until that victim's next real activation. Reapplication refreshes the penalty without stacking."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.wildChance",
-								"name": "Wild Chance",
+								"name": "Quick Redeployment",
 								"requires": "advanced",
-								"description": "Temporary creatures summoned by Nature spells inherit the hero's Sylvan Luck bonus and Lucky Strike multiplier.",
+								"description": "After genuinely Defending, a friendly ordinary creature stack gains +2 Speed during its next real activation only. This grants neither movement outside that activation nor an additional activation.",
 								"effect": {
 									"status": "active",
-									"description": "Temporary creatures summoned by Nature spells inherit the hero's Sylvan Luck bonus and Lucky Strike multiplier."
+									"description": "After genuinely Defending, a friendly ordinary creature stack gains +2 Speed during its next real activation only. This grants neither movement outside that activation nor an additional activation."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.perfectMoment",
 								"name": "Perfect Moment",
 								"requires": "expert",
-								"description": "The first eligible attack each combat made by a friendly stack with +5 or greater current Luck triggers positive Luck automatically.",
+								"description": "A positive creature Lucky Strike deals a total of 3.5 times its normal physical damage. This does not add Luck, force a Lucky Strike, or affect hero spell Luck.",
 								"effect": {
 									"status": "active",
-									"description": "The first eligible attack each combat made by a friendly stack with +5 or greater current Luck triggers positive Luck automatically."
+									"description": "A positive creature Lucky Strike deals a total of 3.5 times its normal physical damage. This does not add Luck, force a Lucky Strike, or affect hero spell Luck."
 								}
 							},
 							{
 								"id": "new-horizons:sylvanLuck.cascadingFortune",
-								"name": "Cascading Fortune",
+								"name": "Wild Hunt",
 								"requires": "expert",
-								"description": "When a Lucky Strike destroys an enemy stack, the next friendly stack to act gains +3 Luck for its activation.",
+								"description": "Once per round, the first enemy ordinary creature stack destroyed by a friendly physical creature attack grants friendly ordinary creatures +2 Speed for the rest of that round. Ordinary retaliation and collateral can qualify; a death prevented by Rebirth does not. No additional activation is granted.",
 								"effect": {
 									"status": "active",
-									"description": "When a Lucky Strike destroys an enemy stack, the next friendly stack to act gains +3 Luck for its activation."
+									"description": "Once per round, the first enemy ordinary creature stack destroyed by a friendly physical creature attack grants friendly ordinary creatures +2 Speed for the rest of that round. Ordinary retaliation and collateral can qualify; a death prevented by Rebirth does not. No additional activation is granted."
 								}
 							}
 						]
@@ -9723,7 +9765,7 @@
 					},
 					"new-horizons:shroudOfMalassa": {
 						"id": "new-horizons:shroudOfMalassa",
-						"name": "Shroud of Malassa",
+						"name": "Shroud of Nighon",
 						"domain": "Faction",
 						"availability": "Dungeon heroes only",
 						"description": "Faction-locked Skill. Dungeon warfare is positional predation. The Shroud lets friendly stacks pass through occupied hexes while moving and rewards attacks delivered from distinct sides and exposed positions.",
@@ -10555,16 +10597,19 @@
 	],
 	"factions": [
 		"config/factions/uniqueBuildings.json",
+		"config/factions/primaryRewards.json",
 		"config/factions/universalMageGuilds.json",
 		"config/factions/towerCreatureRanks.json",
 		"config/factions/academyArt.json",
 		"config/factions/confluxCreatureRanks.json"
 	],
 	"objects": [
-		"config/objects/magicSpring.json"
+		"config/objects/magicSpring.json",
+		"config/objects/primaryRewards.json"
 	],
 	"scripts": [
-		"config/scripts/cabirRepair.json"
+		"config/scripts/cabirRepair.json",
+		"config/scripts/genieLuck.json"
 	],
 	"spells": [
 		"config/spells/newHorizons.json",
@@ -10572,7 +10617,8 @@
 		"config/spells/iceBolt.json",
 		"config/spells/massVariants.json",
 		"config/spells/elementalDamageTags.json",
-		"config/spells/cabirRepair.json"
+		"config/spells/cabirRepair.json",
+		"config/spells/genieLuck.json"
 	],
 	"spellSchools": {
 		"light": {
@@ -12017,7 +12063,7 @@
 			}
 		},
 		"sylvanLuck": {
-			"name": "Sylvan Luck",
+			"name": "Sylvan Tactics",
 			"specialty": [],
 			"tags": {
 				"special": true
@@ -12027,7 +12073,7 @@
 				"magic": 0
 			},
 			"basic": {
-				"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x.",
+				"description": "Friendly ordinary creatures gain +1 Initiative. This does not increase Luck or Lucky Strike damage.",
 				"images": {
 					"small": "NH_sylvanLuck_basic_small.png",
 					"medium": "NH_sylvanLuck_basic_medium.png",
@@ -12035,20 +12081,15 @@
 					"scenarioBonus": "NH_sylvanLuck_basic_scenarioBonus.png"
 				},
 				"effects": {
-					"luck": {
-						"type": "LUCK",
+					"initiative": {
+						"type": "STACKS_INITIATIVE_FLAT",
 						"valueType": "BASE_NUMBER",
 						"val": 1
-					},
-					"luckyStrikeDamage": {
-						"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-						"valueType": "BASE_NUMBER",
-						"val": 25
 					}
 				}
 			},
 			"advanced": {
-				"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x.",
+				"description": "Friendly ordinary creatures gain +2 Initiative. This does not increase Luck or Lucky Strike damage.",
 				"images": {
 					"small": "NH_sylvanLuck_advanced_small.png",
 					"medium": "NH_sylvanLuck_advanced_medium.png",
@@ -12056,20 +12097,15 @@
 					"scenarioBonus": "NH_sylvanLuck_advanced_scenarioBonus.png"
 				},
 				"effects": {
-					"luck": {
-						"type": "LUCK",
+					"initiative": {
+						"type": "STACKS_INITIATIVE_FLAT",
 						"valueType": "BASE_NUMBER",
 						"val": 2
-					},
-					"luckyStrikeDamage": {
-						"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-						"valueType": "BASE_NUMBER",
-						"val": 60
 					}
 				}
 			},
 			"expert": {
-				"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x.",
+				"description": "Friendly ordinary creatures gain +3 Initiative. This does not increase Luck or Lucky Strike damage.",
 				"images": {
 					"small": "NH_sylvanLuck_expert_small.png",
 					"medium": "NH_sylvanLuck_expert_medium.png",
@@ -12077,15 +12113,10 @@
 					"scenarioBonus": "NH_sylvanLuck_expert_scenarioBonus.png"
 				},
 				"effects": {
-					"luck": {
-						"type": "LUCK",
+					"initiative": {
+						"type": "STACKS_INITIATIVE_FLAT",
 						"valueType": "BASE_NUMBER",
 						"val": 3
-					},
-					"luckyStrikeDamage": {
-						"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-						"valueType": "BASE_NUMBER",
-						"val": 100
 					}
 				}
 			}
@@ -12154,7 +12185,7 @@
 			}
 		},
 		"shroudOfMalassa": {
-			"name": "Shroud of Malassa",
+			"name": "Shroud of Nighon",
 			"specialty": [],
 			"tags": {
 				"special": true
@@ -12282,7 +12313,7 @@
 				"magic": 0
 			},
 			"basic": {
-				"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down.",
+				"description": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 50% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 				"images": {
 					"small": "SECSK32:0:39",
 					"medium": "SECSKILL:0:39",
@@ -12298,7 +12329,7 @@
 				}
 			},
 			"advanced": {
-				"description": "Raise Skeletons equal to 20% of eligible casualties.",
+				"description": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 60% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 				"images": {
 					"small": "SECSK32:0:40",
 					"medium": "SECSKILL:0:40",
@@ -12314,7 +12345,7 @@
 				}
 			},
 			"expert": {
-				"description": "Raise Skeletons equal to 30% of eligible casualties.",
+				"description": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 70% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 				"images": {
 					"small": "SECSK32:0:41",
 					"medium": "SECSKILL:0:41",
@@ -12682,6 +12713,226 @@
 		"new-horizons.heroSpecialty.petrifyingBlood.name": "Petrifying Blood",
 		"new-horizons.heroSpecialty.petrifyingBlood.tooltip": "The first damaging enemy melee hit each round triggers an ordinary petrification attempt on the attacker.",
 		"new-horizons.heroSpecialty.petrifyingBlood.description": "Once per round for each Basilisk or Greater Basilisk stack, the first enemy physical melee hit that deals damage triggers an ordinary petrification attempt on the attacker. The attempt is spent even if the roll fails or the attacker is immune.",
+		"new-horizons.spellbook.or": " or ",
+		"new-horizons.spellbook.requirement": "Requires %s %s.",
+		"new-horizons.spellbook.costShort": "SP: %d",
+		"new-horizons.spellbook.currentEffect": "Current effect: %s",
+		"new-horizons.spellbook.lightFollowupOnly": "This follow-up requires an eligible Light spell.",
+		"new-horizons.spellbook.unit.number": "%s",
+		"new-horizons.spellbook.targetUnknown": "Potential effect before recipient limits or bonuses. No random proc is assumed.",
+		"new-horizons.spellbook.beforeDefenses": "Potential damage before target defenses, immunities and recipient-dependent effects. Optional cast settings use their unselected default; no random proc is assumed.",
+		"new-horizons.spellbook.followupBeforeTarget": "Potential follow-up damage before target defenses and target-dependent Split Focus or Focused Pairing. Optional cast settings use their unselected default; no random proc is assumed.",
+		"new-horizons.spellbook.poisonTicks": "Physical damage on the next three normal Creature Activations: the first tick is shown; the second deals 150% and the third 200%, each rounded down. No random proc is assumed.",
+		"new-horizons.spellbook.effect.blink": "Radius %s hexes",
+		"new-horizons.spellbook.effect.blink.short": "Radius %s",
+		"new-horizons.spellbook.effect.sanctuary": "Until it acts",
+		"new-horizons.spellbook.effect.dispel": "Remove magic",
+		"new-horizons.spellbook.effect.holyArmor": "Magical damage -%s%",
+		"new-horizons.spellbook.effect.holyArmor.short": "Magic dmg -%s%",
+		"new-horizons.spellbook.holyArmorRecipient": "Current caster potential before any recipient-specific Crown and Altar bonus. The configured fixed reduction is not scaled.",
+		"new-horizons.spellbook.effect.forgetfulness": "No shots for %s rounds",
+		"new-horizons.spellbook.effect.forgetfulness.short": "%s rounds",
+		"new-horizons.spellbook.effect.hex": "Per hit: %s damage + %s%",
+		"new-horizons.spellbook.effect.hex.short": "%s+%s%/hit",
+		"new-horizons.spellbook.hexTrigger": "Each eligible physical hit triggers the shown captured flat damage plus this share of actual damage. No random proc is assumed; recipient defenses and trigger eligibility remain separate.",
+		"new-horizons.spellbook.effect.plague": "Captured tick damage %s",
+		"new-horizons.spellbook.effect.plague.short": "%s dmg/tick",
+		"new-horizons.spellbook.plagueSnapshot": "Initial raw Plague tick snapshot before recipient effects or a random proc. Later ticks and child infections reuse this captured value; Warcasting and Empower are not added to this authored snapshot.",
+		"new-horizons.spellbook.regenerationRecovery": "This share of damage suffered by surviving creatures can be recovered at the start of their next activation, limited to wounds; casualties are not restored.",
+		"new-horizons.spellbook.effect.patches": "Places %s patches",
+		"new-horizons.spellbook.effect.patches.short": "%s patches",
+		"new-horizons.spellbook.minePlacement": "Shown damage is per mine before recipient defenses or a random proc. Placement can be limited by legal empty ground hexes.",
+		"new-horizons.spellbook.effect.mines": "%s damage per mine; %s mines",
+		"new-horizons.spellbook.effect.mines.short": "%sdmg x%s",
+		"new-horizons.spellbook.effect.morale": "Morale -%s",
+		"new-horizons.spellbook.effect.morale.short": "Morale -%s",
+		"new-horizons.spellbook.effect.curse": "Min damage: %s rounds",
+		"new-horizons.spellbook.effect.curse.short": "%s rounds",
+		"new-horizons.spellbook.effect.restoration": "Restoration pool %s HP",
+		"new-horizons.spellbook.effect.restoration.short": "Pool %s HP",
+		"new-horizons.spellbook.effect.phantom": "Phantom Integrity %s%",
+		"new-horizons.spellbook.effect.phantom.short": "Integrity %s%",
+		"new-horizons.spellbook.reanimateRecipient": "Current pool before the recipient is selected. It first repairs surviving wounds; Reanimator increases only the remaining casualty pool. Actual restored creatures depend on recipient wounds and casualty capacity.",
+		"new-horizons.spellbook.phantomRecipient": "Caster-derived Integrity fraction shown to hundredths of a percent using the shared 10,000-HP reference. The chosen source stack supplies current HP; its actual Integrity pool is rounded down after scaling.",
+		"new-horizons.spellbook.effect.timeStop": "Radius %s hexes",
+		"new-horizons.spellbook.effect.timeStop.short": "Radius %s",
+		"new-horizons.spellbook.effect.focus": "Defense penetration %s%",
+		"new-horizons.spellbook.effect.focus.short": "Pierces %s%",
+		"new-horizons.spellbook.effect.livingArmor": "Summon %s HP",
+		"new-horizons.spellbook.effect.livingArmor.short": "Pool %s HP",
+		"new-horizons.spellbook.effect.vampirism": "Lifesteal %s%",
+		"new-horizons.spellbook.effect.vampirism.short": "Steals %s%",
+		"new-horizons.spellbook.effect.doom": "Attack damage and Speed -%s%",
+		"new-horizons.spellbook.effect.doom.short": "Damage -%s%",
+		"new-horizons.spellbook.doomRecipient": "Reduces physical attack damage and Speed by the shown amount. Initiative changes only for a recipient with an explicit Initiative base; unknown target protections are not assumed.",
+		"new-horizons.spellbook.effect.slow": "Initiative %s%",
+		"new-horizons.spellbook.effect.slow.short": "Initiative %s%",
+		"new-horizons.spellbook.effect.slowDual": "Speed and Initiative %s%",
+		"new-horizons.spellbook.effect.slowDual.short": "Slow %s%",
+		"new-horizons.spellbook.effect.haste": "Adds %s Speed",
+		"new-horizons.spellbook.effect.haste.short": "Adds %s Speed",
+		"new-horizons.spellbook.effect.fortune": "Adds %s Luck",
+		"new-horizons.spellbook.effect.fortune.short": "Adds %s Luck",
+		"new-horizons.spellbook.recipientTierSpecialty": "Current caster magnitude before recipient-tier specialty bonuses. Known flat and fixed caster overrides are already included; target attributes are not assumed.",
+		"new-horizons.spellbook.effect.storm": "Per stack: %s-%s damage",
+		"new-horizons.spellbook.effect.storm.short": "%s-%s each",
+		"new-horizons.spellbook.stormCounts": "Per-stack damage varies with the number of selected stacks, up to the spell's configured maximum. Actual legal counts depend on eligible targets. Range is before target defenses; no random proc is assumed.",
+		"new-horizons.spellbook.effect.natureSummon": "Summon %s HP",
+		"new-horizons.spellbook.effect.natureSummon.short": "Pool %s HP",
+		"new-horizons.spellbook.summonPlacement": "Summoned HP pool. Actual creature count depends on the summoned creature's maximum HP, and placement must be legal.",
+		"new-horizons.spellbook.effect.soulChain": "Echoes %s% damage",
+		"new-horizons.spellbook.effect.soulChain.short": "%s% damage echo",
+		"new-horizons.spellbook.soulChainRecipient": "Echo rate from the current hero. Actual damage depends on damage dealt to linked secondary stacks and the primary stack's defenses; no targets or random proc are assumed.",
+		"new-horizons.spellbook.effect.restorationPool": "Restoration pool: %s HP",
+		"new-horizons.spellbook.effect.restorationPool.short": "%s HP pool",
+		"new-horizons.spellbook.restorationRecipient": "Current hero restoration pool before recipient-specific bonuses. Actual restored HP and casualties depend on the selected stack, its wounds, and spell-specific restoration rules.",
+		"new-horizons.spellbook.effect.bless": "Maximum creature damage for %s rounds",
+		"new-horizons.spellbook.effect.bless.short": "Max dmg %s rounds",
+		"new-horizons.spellbook.effect.heavenlyGale": "Ranged damage -%s%",
+		"new-horizons.spellbook.effect.heavenlyGale.short": "Ranged dmg -%s%",
+		"new-horizons.spellbook.heavenlyGaleRecipient": "Current hero reduction of incoming physical projectile damage before recipient-specific Crown and Altar. Actual damage also depends on penetration, other defenses and the aggregate physical reduction cap; melee damage is unaffected.",
+		"new-horizons.spellbook.effect.implosion": "Damage: %s% current HP",
+		"new-horizons.spellbook.effect.implosion.short": "%s% current HP",
+		"new-horizons.spellbook.effect.shadowGift": "Damage bonus: %s-%s% by tier",
+		"new-horizons.spellbook.effect.shadowGift.short": "+%s-%s%dmg",
+		"new-horizons.spellbook.effect.naturesWrath": "First hit: %s damage / %s healing HP",
+		"new-horizons.spellbook.effect.naturesWrath.short": "%sdmg/%sHP",
+		"new-horizons.spellbook.effect.pandemonium": "At one debuff: %s damage",
+		"new-horizons.spellbook.effect.pandemonium.short": "1 debuff: %s dmg",
+		"new-horizons.spellbook.effect.holyWrath": "Damage: %s-%s by recipient",
+		"new-horizons.spellbook.effect.holyWrath.short": "%s-%s dmg",
+		"new-horizons.spellbook.effect.handOfFate": "Primary damage: %s",
+		"new-horizons.spellbook.effect.handOfFate.short": "%s primary dmg",
+		"new-horizons.spellbook.effect.soulReaper": "Damage: %s + %s% missing HP",
+		"new-horizons.spellbook.effect.soulReaper.short": "%s+%s%lostHP",
+		"new-horizons.spellbook.healthRate": "Current caster damage rate before target defenses, rounded down to two decimal places. Actual HP damage is rounded for the selected stack; target-dependent specialties and defenses remain unknown.",
+		"new-horizons.spellbook.shadowGiftChoice": "Range across the available sacrifice tiers. Actual tier and recipient HP cost are chosen when casting; Dark Gift reduces the sacrifice cost, not this offensive rate.",
+		"new-horizons.spellbook.naturesWrathRoute": "First recipient potential before target defenses or missing-HP limits. Later hops attenuate through the captured route; actual recipients, defenses and wounds remain unknown.",
+		"new-horizons.spellbook.pandemoniumCount": "Conditional damage at exactly one distinct debuff. Actual damage depends on the selected recipient's captured debuff count; the shared formula rounds the full aggregate once. No debuffs or recipients are inspected here.",
+		"new-horizons.spellbook.holyWrathRecipient": "Lower value for an ordinary recipient; upper value for an undead or Inferno recipient. A recipient with both traits receives the multiplier once. Values are before recipient defenses.",
+		"new-horizons.spellbook.handOfFateSpill": "Current primary damage before defenses. Spill is based on half the actual primary damage and the randomly selected recipient's defenses; no spill recipient or random outcome is predicted.",
+		"new-horizons.spellbook.soulReaperHealth": "Current base damage plus the caster-adjusted missing-HP component rate. The combined amount is rounded by the actual caster damage stages, then recipient defenses and conditional execution apply. Unknown HP, execution and random procs are not assumed.",
+		"new-horizons.spellbook.effect.berserk": "Force nearest attack",
+		"new-horizons.spellbook.effect.berserk.short": "Attack nearest",
+		"new-horizons.spellbook.effect.realityWarp": "Swap temporary magic",
+		"new-horizons.spellbook.effect.realityWarp.short": "Swap magic",
+		"new-horizons.spellbook.effect.confusion": "Random next activation",
+		"new-horizons.spellbook.effect.confusion.short": "Next: random",
+		"new-horizons.spellbook.effect.puppetMaster": "Control one activation",
+		"new-horizons.spellbook.effect.puppetMaster.short": "1 activation",
+		"new-horizons.spellbook.effect.teleport": "Relocate a stack",
+		"new-horizons.spellbook.effect.teleport.short": "Relocate stack",
+		"new-horizons.spellbook.effect.spellLock": "Seal magic for %s rounds",
+		"new-horizons.spellbook.effect.spellLock.short": "Seal %s rounds",
+		"new-horizons.spellbook.effect.theChosen": "Empower for %s rounds",
+		"new-horizons.spellbook.effect.theChosen.short": "Buff %s rounds",
+		"new-horizons.spellbook.effect.purify": "Remove up to %s effects per stack",
+		"new-horizons.spellbook.effect.purify.short": "Remove %s effects",
+		"new-horizons.spellbook.effect.polymorph": "Transform for %s rounds",
+		"new-horizons.spellbook.effect.polymorph.short": "Form %s rounds",
+		"new-horizons.spellbook.purifyChoices": "Maximum selectable negative spell effects per eligible stack. Actual removable effects and recipients depend on the selected area; Purifier's automatic physical affliction removal remains separate.",
+		"new-horizons.spellbook.effect.frailty": "Defense -%s%",
+		"new-horizons.spellbook.effect.frailty.short": "Defense -%s%",
+		"new-horizons.spellbook.effect.hydra": "Maximum HP +%s%",
+		"new-horizons.spellbook.effect.hydra.short": "Max HP +%s%",
+		"new-horizons.spellbook.effect.chaosShield": "Magic damage -%s%",
+		"new-horizons.spellbook.effect.chaosShield.short": "Magic dmg -%s%",
+		"new-horizons.spellbook.effect.divineReflection": "Reflect up to %s damage",
+		"new-horizons.spellbook.effect.divineReflection.short": "Reflect up to %s",
+		"new-horizons.spellbook.effect.entangle": "Root for %s rounds",
+		"new-horizons.spellbook.effect.entangle.short": "Root %s rounds",
+		"new-horizons.spellbook.effect.misfortune": "Ability chance x%s% for %s rounds",
+		"new-horizons.spellbook.effect.misfortune.short": "%s%/%s rounds",
+		"new-horizons.spellbook.chaosShieldCap": "Current stored magic reduction. The spell also protects against physical damage, whose aggregate reduction cap may limit its benefit; attacker penetration and other sources are resolved against the chosen recipient.",
+		"new-horizons.spellbook.divineReflectionDamage": "Maximum end-of-round reflection before unknown recipient-specific Crown and Altar. The shared payout uses 30% of actual HP damage taken, caps that amount, then applies Retributionist. Actual incoming damage, recipient bonuses and defenses remain unknown.",
+		"new-horizons.spellbook.misfortuneChance": "Multiplier on explicitly affected favorable random creature abilities, relative to their ordinary chance. Caster enchantment overrides are included; unknown recipient-tier specialty adjustments are not assumed. No ability or random outcome is predicted. Luck penalties and other effects remain in the full description.",
+		"new-horizons.spellbook.effect.verdant": "Dendroid HP pool: %s",
+		"new-horizons.spellbook.effect.verdant.short": "%s HP pool",
+		"new-horizons.spellbook.effect.transfigure": "1 hex: %s HP; 2 hexes: %s HP",
+		"new-horizons.spellbook.effect.transfigure.short": "1h %s / 2h %s",
+		"new-horizons.spellbook.effect.earthquakeSiege": "%s structural damage to %s sections",
+		"new-horizons.spellbook.effect.earthquakeSiege.short": "%sdmg x%s",
+		"new-horizons.spellbook.effect.earthquakeField": "%s field damage; siege %s sections",
+		"new-horizons.spellbook.effect.earthquakeField.short": "%s field dmg",
+		"new-horizons.spellbook.effect.vines": "%s damage; movement Speed %s",
+		"new-horizons.spellbook.effect.vines.short": "%sdmg/%s Speed",
+		"new-horizons.spellbook.verdantPlacement": "Current hero HP pool before distribution over the legal ring. The actual ring, creature counts and placement remain unknown.",
+		"new-horizons.spellbook.transfigureFootprint": "Conditional HP values for one-hex and two-hex obstacles. Actual HP uses the selected obstacle's full footprint and the same whole-pool rounding; no obstacle or creature count is assumed.",
+		"new-horizons.spellbook.earthquakeSiege": "Current siege mode: structural damage per chosen section and the maximum section count. Actual eligible sections depend on the chosen location; no Luck outcome is assumed.",
+		"new-horizons.spellbook.earthquakeMode": "Outdoor damage before recipient defenses, with conditional siege section count. In a fortified battle the row switches to structural damage per section. No targets, structures or Luck outcomes are predicted.",
+		"new-horizons.spellbook.vinesShape": "Damage per intersected enemy stack before recipient defenses, plus the loaded movement Speed modifier. Each stack is hit once; actual recipients depend on the selected connected hexes. Initiative is unchanged.",
+		"new-horizons.spellbook.effect.blink.short.narrow": "Radius %s",
+		"new-horizons.spellbook.effect.holyArmor.short.narrow": "Magic dmg -%s%",
+		"new-horizons.spellbook.effect.forgetfulness.short.narrow": "%s rounds",
+		"new-horizons.spellbook.effect.hex.short.narrow": "%s+%s%/hit",
+		"new-horizons.spellbook.effect.plague.short.narrow": "%s dmg/tick",
+		"new-horizons.spellbook.effect.patches.short.narrow": "%s patches",
+		"new-horizons.spellbook.effect.mines.short.narrow": "%sdmg x%s",
+		"new-horizons.spellbook.effect.morale.short.narrow": "Morale -%s",
+		"new-horizons.spellbook.effect.curse.short.narrow": "%s rounds",
+		"new-horizons.spellbook.effect.restoration.short.narrow": "Pool %s HP",
+		"new-horizons.spellbook.effect.phantom.short.narrow": "Integrity %s%",
+		"new-horizons.spellbook.effect.timeStop.short.narrow": "Radius %s",
+		"new-horizons.spellbook.effect.focus.short.narrow": "Pierces %s%",
+		"new-horizons.spellbook.effect.livingArmor.short.narrow": "Pool %s HP",
+		"new-horizons.spellbook.effect.vampirism.short.narrow": "Steals %s%",
+		"new-horizons.spellbook.effect.doom.short.narrow": "Damage -%s%",
+		"new-horizons.spellbook.effect.slow.short.narrow": "Init%s%",
+		"new-horizons.spellbook.effect.slowDual.short.narrow": "Slow %s%",
+		"new-horizons.spellbook.effect.haste.short.narrow": "Adds %s Speed",
+		"new-horizons.spellbook.effect.fortune.short.narrow": "Adds %s Luck",
+		"new-horizons.spellbook.effect.storm.short.narrow": "%s-%s/ea",
+		"new-horizons.spellbook.effect.natureSummon.short.narrow": "Pool %s HP",
+		"new-horizons.spellbook.effect.soulChain.short.narrow": "%s% damage echo",
+		"new-horizons.spellbook.effect.restorationPool.short.narrow": "%s HP pool",
+		"new-horizons.spellbook.effect.bless.short.narrow": "Max dmg %s rounds",
+		"new-horizons.spellbook.effect.heavenlyGale.short.narrow": "Ranged dmg -%s%",
+		"new-horizons.spellbook.effect.implosion.short.narrow": "%s% current HP",
+		"new-horizons.spellbook.effect.shadowGift.short.narrow": "+%s-%s%D",
+		"new-horizons.spellbook.effect.naturesWrath.short.narrow": "D%s/H%s",
+		"new-horizons.spellbook.effect.pandemonium.short.narrow": "1 debuff: %s dmg",
+		"new-horizons.spellbook.effect.holyWrath.short.narrow": "%s-%sD",
+		"new-horizons.spellbook.effect.handOfFate.short.narrow": "%s primary dmg",
+		"new-horizons.spellbook.effect.soulReaper.short.narrow": "%s+%s%L",
+		"new-horizons.spellbook.effect.berserk.short.narrow": "Attack nearest",
+		"new-horizons.spellbook.effect.realityWarp.short.narrow": "Swap magic",
+		"new-horizons.spellbook.effect.confusion.short.narrow": "Next: random",
+		"new-horizons.spellbook.effect.puppetMaster.short.narrow": "1 activation",
+		"new-horizons.spellbook.effect.teleport.short.narrow": "Relocate stack",
+		"new-horizons.spellbook.effect.spellLock.short.narrow": "Seal %s rounds",
+		"new-horizons.spellbook.effect.theChosen.short.narrow": "Buff %s rounds",
+		"new-horizons.spellbook.effect.purify.short.narrow": "Remove %s effects",
+		"new-horizons.spellbook.effect.polymorph.short.narrow": "Form %s rounds",
+		"new-horizons.spellbook.effect.frailty.short.narrow": "Defense -%s%",
+		"new-horizons.spellbook.effect.hydra.short.narrow": "Max HP +%s%",
+		"new-horizons.spellbook.effect.chaosShield.short.narrow": "Magic dmg -%s%",
+		"new-horizons.spellbook.effect.divineReflection.short.narrow": "Reflect up to %s",
+		"new-horizons.spellbook.effect.entangle.short.narrow": "Root %s rounds",
+		"new-horizons.spellbook.effect.misfortune.short.narrow": "%s%/%s rounds",
+		"new-horizons.spellbook.effect.verdant.short.narrow": "%s HP pool",
+		"new-horizons.spellbook.effect.transfigure.short.narrow": "1h%s/2:%s",
+		"new-horizons.spellbook.effect.earthquakeSiege.short.narrow": "%sdmg x%s",
+		"new-horizons.spellbook.effect.earthquakeField.short.narrow": "%s field dmg",
+		"new-horizons.spellbook.effect.vines.short.narrow": "%sD/%sSpd",
+		"new-horizons.spellbook.effect.damage.short.narrow": "%s dmg",
+		"new-horizons.spellbook.effect.healing.short.narrow": "Heal %s HP",
+		"new-horizons.spellbook.effect.poison.short.narrow": "%s dmg/tick 1",
+		"new-horizons.spellbook.effect.regeneration.short.narrow": "Recover %s%",
+		"new-horizons.spellbook.compactNotation": "Compact large or fractional values may be rounded down. Scientific notation 1.23e6 means 1,230,000; D/H denote damage/healing HP, L denotes missing HP, and h denotes obstacle hexes.",
+		"new-horizons.spellbook.costScientific": "SP:%s",
+		"new-horizons.spellbook.effect.damage": "Damage %s before defenses",
+		"new-horizons.spellbook.effect.damage.short": "%s dmg",
+		"new-horizons.spellbook.effect.healing": "Heals %s HP",
+		"new-horizons.spellbook.effect.healing.short": "Heal %s HP",
+		"new-horizons.spellbook.effect.poison": "%s dmg first tick",
+		"new-horizons.spellbook.effect.poison.short": "%s dmg/tick 1",
+		"new-horizons.spellbook.effect.regeneration": "Recovers %s%",
+		"new-horizons.spellbook.effect.regeneration.short": "Recover %s%",
+		"new-horizons.spellbook.effect.lifeDrain": "Damage %s; heal %s% of damage",
+		"new-horizons.spellbook.effect.lifeDrain.short": "%sdmg/%s%heal",
+		"new-horizons.spellbook.effect.lifeDrain.short.narrow": "D%s/%s%H",
+		"new-horizons.spellbook.lifeDrainHealing": "Potential damage before target defenses, immunities and recipient-dependent effects. Optional cast settings use their unselected default; no random proc is assumed. Healing restores the shown percentage of actual damage dealt, rounded down and limited by the friendly recipient's wounds; it does not restore casualties. H denotes that healing percentage.",
+		"new-horizons.spellbook.lifeDrainFollowup": "Potential follow-up damage before target defenses and target-dependent Split Focus or Focused Pairing. Optional cast settings use their unselected default; no random proc is assumed. Healing restores the shown percentage of actual damage dealt, rounded down and limited by the friendly recipient's wounds; it does not restore casualties. H denotes that healing percentage.",
 		"new-horizons.adventure.townPortal.targetingHint": "Town Portal returns to the nearest controlled town; the destination cannot be chosen. Casting spends all remaining Movement.",
 		"new-horizons.adventure.dimensionDoor.targetingHint": "Choose a destination. Casting Dimension Door spends all remaining Movement.",
 		"new-horizons.adventure.spellbook.dailyAvailable": "Adventure Spell: available today",

@@ -216,6 +216,12 @@ public:
 		newHorizonsPlague::validateRuleSerialization(getAllOverrides()["magic"]["newHorizons"], supported);
 	}
 
+	void validateSylvanTacticsSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateSylvanTacticsSerialization(
+			getAllOverrides()["heroes"]["newHorizonsPerks"], supported);
+	}
+
 	void validateCrisisCommandSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateCrisisCommandProfileSerialization(
@@ -233,6 +239,7 @@ public:
 	{
 		if (h.saving)
 		{
+			validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			JsonNode overrides = getAllOverrides();
 			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
@@ -257,6 +264,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
+			newHorizonsHeroes::validateSylvanTacticsSerialization(overrides["heroes"]["newHorizonsPerks"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
@@ -311,6 +320,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+			newHorizonsHeroes::validateSylvanTacticsSerialization(overrides["heroes"]["newHorizonsPerks"],
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],

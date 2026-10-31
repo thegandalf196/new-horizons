@@ -3,12 +3,7 @@ local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
 local SPELL_ID = "new-horizons:verdantPrison"
-local NATURE_MAGIC_SKILL = "new-horizons:natureMagic"
-local VERDANT_WARDEN_PERK = "new-horizons:natureMagic.verdantWarden"
 local DENDROID_GUARD_ID = "core:dendroidGuard"
-local BASE_HEALTH_POOL = 180
-local SPELL_POWER_HEALTH_COEFFICIENT = 3
-local VERDANT_WARDEN_PERCENT = 125
 
 local function reject(problem, mechanics)
 	if problem then
@@ -129,21 +124,7 @@ local function targetFromCanonical(mechanics, target)
 end
 
 local function healthPool(mechanics)
-	local spellPower = math.max(0, mechanics:getEffectPower())
-	local hero = mechanics:getHeroCaster()
-	local modifierPercent = 100
-	if hero ~= nil and hero:hasActivePerk(NATURE_MAGIC_SKILL, VERDANT_WARDEN_PERK) then
-		modifierPercent = VERDANT_WARDEN_PERCENT
-	end
-
-	-- Keep fractional School/Spellcraft/Warcasting/Empower scaling until the
-	-- single final whole-HP floor. Multiplying by the whole-pool modifier first
-	-- also applies Verdant Warden to the fixed 180 base.
-	local spellPowerHundredths = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		SPELL_POWER_HEALTH_COEFFICIENT * spellPower * modifierPercent,
-		1,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-	return math.floor((BASE_HEALTH_POOL * modifierPercent + spellPowerHundredths) / 100)
+	return mechanics:getVerdantPrisonHitPoints()
 end
 
 local function allocation(mechanics, ring, pool)

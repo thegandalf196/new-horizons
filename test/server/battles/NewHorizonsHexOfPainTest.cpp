@@ -9,10 +9,15 @@
 #include "StdInc.h"
 
 #include "HeroCommandFixture.h"
+#include "../../../luascript/StdInc.h"
+#include "../../../luascript/LuaStack.h"
 #include "../../SpellPointTestUtils.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 
 #include "../../../lib/GameSettings.h"
+#include "../../../lib/json/JsonUtils.h"
+#include "../../../lib/texts/TextIdentifier.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/constants/StringConstants.h"
@@ -23,7 +28,11 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <stdexcept>
+#include <string_view>
 
 namespace
 {
@@ -91,22 +100,9 @@ protected:
 		ASSERT_FALSE(magicRules["spells"][spellKey].isNull());
 		if(useV2MagicRules)
 		{
-			magicRules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-			magicRules.Struct().erase("schoolRankPowerCoefficientPercent");
-			magicRules.Struct().erase("spellcraftEfficiencyPercent");
-			for(auto & [name, spellRow] : magicRules["spells"].Struct())
-			{
-				(void)name;
-				spellRow.Struct().erase("selectedPlacement");
-				spellRow.Struct().erase("rawSpellPowerPerPatch");
-				spellRow.Struct().erase("earthquake");
-				spellRow.Struct().erase("structures");
-				if(spellRow.Struct().contains("variant"))
-				{
-					spellRow.Struct().erase("variant");
-					spellRow["active"].Bool() = false;
-				}
-			}
+			magicRules = historicalCrusadeRules(std::move(magicRules),
+				newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+			magicRules.setOverrideFlag(true);
 		}
 		newHorizonsMagic::validateRules(magicRules);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
@@ -181,6 +177,8 @@ protected:
 		EXPECT_EQ(bonus->turnsRemain, 3);
 		ASSERT_NE(bonus->parameters, nullptr);
 		const auto parameters = bonus->parameters->toCustom<JsonNode>();
+		EXPECT_EQ(parameters["damageSharePercent"].getType(), JsonNode::JsonType::DATA_INTEGER);
+		EXPECT_EQ(parameters["casterSide"].getType(), JsonNode::JsonType::DATA_INTEGER);
 		EXPECT_EQ(parameters["damageSharePercent"].Integer(), 10);
 		EXPECT_EQ(parameters["casterSide"].Integer(), static_cast<int32_t>(casterSide));
 	}
@@ -395,4 +393,108 @@ TEST_F(NewHorizonsHexOfPainTest, RetaliationTriggersItsOwnReactiveShadowDamage)
 	EXPECT_EQ(reactiveInjury.front().stackAttacked, cursed->unitId());
 	EXPECT_EQ(reactiveInjury.front().attackerID, attacker->unitId());
 	EXPECT_EQ(reactiveInjury.front().damageAmount, 15 + counterDamage / 10); // integer division floors the 10% share
+}
+
+TEST_F(NewHorizonsHexOfPainTest, LuaIntegralPayloadIsPreparedBeforeStrictSchemaValidation)
+{
+	const auto & schema = LIBRARY->scriptTypes()->getById(combatEvent).parametersSchema;
+	for(int side : {0, 1})
+		for(int share : {0, 10, 20, 100})
+		{
+			std::unique_ptr<lua_State, decltype(&lua_close)> state(luaL_newstate(), lua_close);
+			ASSERT_NE(state, nullptr);
+			const std::string source = "return {addInfo={casterSide=" + std::to_string(side)
+				+ ",damageSharePercent=" + std::to_string(share) + "}}";
+			ASSERT_EQ(luaL_dostring(state.get(), source.c_str()), 0);
+			JsonNode descriptor;
+			scripting::LuaStack stack(state.get());
+			stack.get(stack.absindex(-1), descriptor);
+			JsonNode parameters = descriptor["addInfo"];
+			ASSERT_EQ(parameters["casterSide"].getType(), JsonNode::JsonType::DATA_FLOAT);
+			ASSERT_EQ(parameters["damageSharePercent"].getType(), JsonNode::JsonType::DATA_FLOAT);
+			LIBRARY->scriptTypes()->prepareParameters(combatEvent, parameters, TextIdentifier(""));
+			EXPECT_EQ(parameters["casterSide"].getType(), JsonNode::JsonType::DATA_INTEGER);
+			EXPECT_EQ(parameters["damageSharePercent"].getType(), JsonNode::JsonType::DATA_INTEGER);
+			EXPECT_EQ(parameters["casterSide"].Integer(), side);
+			EXPECT_EQ(parameters["damageSharePercent"].Integer(), share);
+			EXPECT_TRUE(JsonUtils::validate(parameters, schema, "prepared Hex payload"));
+		}
+}
+
+TEST_F(NewHorizonsHexOfPainTest, InvalidLuaPayloadRemainsInvalidInsteadOfBeingTruncated)
+{
+	const auto & schema = LIBRARY->scriptTypes()->getById(combatEvent).parametersSchema;
+	for(double side : {0.5, 2.0, 9223372036854775808.0})
+	{
+		JsonNode parameters;
+		parameters["casterSide"].Float() = side;
+		parameters["damageSharePercent"].Float() = 10;
+		LIBRARY->scriptTypes()->prepareParameters(combatEvent, parameters, TextIdentifier(""));
+		EXPECT_EQ(static_cast<const JsonNode &>(parameters)["casterSide"].Float(), side);
+		EXPECT_FALSE(JsonUtils::validate(parameters, schema, "invalid Hex side"));
+	}
+	for(double share : {-1.0, 10.5, 101.0})
+	{
+		JsonNode parameters;
+		parameters["casterSide"].Float() = 0;
+		parameters["damageSharePercent"].Float() = share;
+		LIBRARY->scriptTypes()->prepareParameters(combatEvent, parameters, TextIdentifier(""));
+		EXPECT_EQ(static_cast<const JsonNode &>(parameters)["damageSharePercent"].Float(), share);
+		EXPECT_FALSE(JsonUtils::validate(parameters, schema, "invalid Hex share"));
+	}
+}
+
+TEST_F(NewHorizonsHexOfPainTest, NonfiniteStringAndUnknownPayloadFieldsAreNotCoerced)
+{
+	const auto & schema = LIBRARY->scriptTypes()->getById(combatEvent).parametersSchema;
+	for(double side : {std::numeric_limits<double>::infinity(),
+		std::numeric_limits<double>::quiet_NaN()})
+	{
+		JsonNode parameters;
+		parameters["casterSide"].Float() = side;
+		parameters["damageSharePercent"].Integer() = 10;
+		LIBRARY->scriptTypes()->prepareParameters(combatEvent, parameters, TextIdentifier(""));
+		EXPECT_EQ(parameters["casterSide"].getType(), JsonNode::JsonType::DATA_FLOAT);
+		EXPECT_FALSE(std::isfinite(static_cast<const JsonNode &>(parameters)["casterSide"].Float()));
+		EXPECT_FALSE(JsonUtils::validate(parameters, schema, "nonfinite Hex side"));
+	}
+	JsonNode parameters;
+	parameters["casterSide"].String() = "0";
+	parameters["damageSharePercent"].Integer() = 10;
+	parameters["unknownField"].Float() = 1.0;
+	LIBRARY->scriptTypes()->prepareParameters(combatEvent, parameters, TextIdentifier(""));
+	EXPECT_EQ(parameters["casterSide"].getType(), JsonNode::JsonType::DATA_STRING);
+	EXPECT_EQ(parameters["unknownField"].getType(), JsonNode::JsonType::DATA_FLOAT);
+	EXPECT_FALSE(JsonUtils::validate(parameters, schema, "unconverted Hex fields"));
+}
+
+TEST_F(NewHorizonsHexOfPainTest, OtherRegisteredNumberNestedAndAnyOfParametersKeepTheirRepresentation)
+{
+	for(const auto * key : {"core:attachCombatScript", "core:focusMagic"})
+	{
+		const auto identifier = LIBRARY->identifiers()->getIdentifier(
+			ModScope::scopeGame(), "script", std::string(key));
+		ASSERT_TRUE(identifier.has_value());
+		const ScriptID script(*identifier);
+		JsonNode parameters;
+		if(std::string_view(key) == "core:attachCombatScript")
+		{
+			parameters["eventValue"].Float() = 12.0;
+			parameters["eventParameters"]["nested"].Float() = 1.0;
+		}
+		else
+			parameters["beneficiarySide"].Float() = 1.0;
+		const auto before = parameters.toCompactString();
+		LIBRARY->scriptTypes()->prepareParameters(script, parameters, TextIdentifier(""));
+		EXPECT_EQ(parameters.toCompactString(), before);
+		EXPECT_TRUE(JsonUtils::validate(parameters,
+			LIBRARY->scriptTypes()->getById(script).parametersSchema, "unchanged script numeric payload"));
+		if(std::string_view(key) == "core:attachCombatScript")
+		{
+			EXPECT_EQ(parameters["eventValue"].getType(), JsonNode::JsonType::DATA_FLOAT);
+			EXPECT_EQ(parameters["eventParameters"]["nested"].getType(), JsonNode::JsonType::DATA_FLOAT);
+		}
+		else
+			EXPECT_EQ(parameters["beneficiarySide"].getType(), JsonNode::JsonType::DATA_FLOAT);
+	}
 }

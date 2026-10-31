@@ -36,6 +36,14 @@ constexpr std::array<BindingCase, 7> bindings = {{
 	{"core:daremyth", "fortuneChildSpecialty", "newHorizons/heroSpecialties/DaremythFortunesChild"}
 }};
 
+// Preserve the creature-line contract captured before the optional ordinary policy existed.
+JsonNode historicalCreatureLineRules()
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	rules["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
+	return rules;
+}
+
 const CHero & prototype(const char * id)
 {
 	return *HeroTypeID(HeroTypeID::decode(id)).toHeroType();
@@ -45,6 +53,18 @@ const CHero & prototype(const char * id)
 class NewHorizonsSpecialtyArtBindingTest : public HeroCommandFixture
 {
 protected:
+	bool historicalCreatureLineCapture = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		if(historicalCreatureLineCapture)
+		{
+			auto development = historicalCreatureLineRules();
+			development.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+		}
+	}
+
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -145,7 +165,7 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, HistoricalDaremythKeepsHasteSuccessor
 
 TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedTargetAndPolicy)
 {
-	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	const JsonNode development = historicalCreatureLineRules();
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	const auto wisp = CreatureID(CreatureID::decode("new-horizons:wisp"));
 	const auto ballista = CreatureID(CreatureID::BALLISTA);
@@ -187,6 +207,7 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedT
 
 TEST_F(NewHorizonsSpecialtyArtBindingTest, PasisAndChristianCapturedStartsUseTheirNativePairsWithoutMutation)
 {
+	historicalCreatureLineCapture = true;
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:pasis")), PlayerColor(0))
@@ -239,7 +260,7 @@ struct ResolvedArtCase
 	newHorizonsHeroes::detail::SpecialtyArtworkFamily family;
 	const char * stem;
 };
-constexpr std::array<ResolvedArtCase, 98> resolvedArtCases = {{
+constexpr std::array<ResolvedArtCase, 96> resolvedArtCases = {{
 	{"core:melodia", "remainingSpellSpecialtyReplacements", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MelodiaBless"},
 	{"core:pyre", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PyreBallistaLine"},
 	{"core:ash", "remainingSpellSpecialtyReplacements", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AshFireball"},
@@ -322,11 +343,9 @@ constexpr std::array<ResolvedArtCase, 98> resolvedArtCases = {{
 	{"core:alamar", "nonDamageSpellSpecialties", "core:resurrection", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AlamarResurrection"},
 	{"core:mephala", "skillSpecialties", "core:armorer", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Skill, "MephalaArmorer"},
 	{"core:vey", "creatureLineSpecialties", "core:ogre", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "VeyOgreLine"},
-	{"core:thane", "creatureLineSpecialties", "core:genie", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ThaneGenieLine"},
 	{"core:josephine", "creatureLineSpecialties", "core:ironGolem", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "JosephineGolemLine"},
 	{"core:torosar", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TorosarBallistaLine"},
 	{"core:fafner", "creatureLineSpecialties", "core:naga", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "FafnerNagaLine"},
-	{"core:iona", "creatureLineSpecialties", "core:genie", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "IonaGenieLine"},
 	{"core:theodorus", "creatureLineSpecialties", "core:mage", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TheodorusMageLine"},
 	{"core:lorelei", "creatureLineSpecialties", "core:harpy", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "LoreleiHarpyLine"},
 	{"core:marius", "creatureLineSpecialties", "core:demon", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "MariusDemonLine"},

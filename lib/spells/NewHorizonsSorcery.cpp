@@ -198,6 +198,17 @@ int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPer
 	return std::min(maximumRadius, TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
 }
 
+int32_t timeStopRadius(const int32_t rawSpellPower, const int32_t coefficientBasisPoints,
+	const int32_t warcastingBonusPercent, const int32_t empowerSpellBonusPercent, const bool chronomancer)
+{
+	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
+		rawSpellPower, TIME_STOP_POWER_PER_EXTRA_RADIUS, coefficientBasisPoints,
+		warcastingBonusPercent, empowerSpellBonusPercent);
+	const int32_t maximumRadius = TIME_STOP_BASE_MAX_RADIUS
+		+ (chronomancer ? TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
+	return static_cast<int32_t>(std::min<int64_t>(maximumRadius, TIME_STOP_BASE_RADIUS + scaledPowerTerm));
+}
+
 int spellLockDuration(int32_t spellPower, bool spellbinder, int32_t coefficientPercent,
 	int32_t warcastingBonusPercent)
 {

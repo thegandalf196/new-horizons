@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include "SylvanTacticsState.h"
 #include <set>
 #include <algorithm>
 #include <cstdint>
@@ -43,6 +44,7 @@ struct DLL_LINKAGE LuckRollRules
 /// authoritative strike roll changes history; damage targets never roll luck.
 struct DLL_LINKAGE SylvanLuckState
 {
+	SylvanTacticsState tactics;
 	bool serendipity = false;
 	bool naturesProvidence = false;
 	bool fortunateAim = false;
@@ -66,7 +68,7 @@ struct DLL_LINKAGE SylvanLuckState
 	bool chainTriggeredThisRound = false;
 	std::optional<uint32_t> chainSourceUnitId;
 
-	bool active() const { return serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance || gambler || chainOfFortune; }
+	bool active() const { return tactics.enabled || serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance || gambler || chainOfFortune; }
 	bool gamblerAttackAvailable() const { return gambler && !gamblerAttackUsedThisRound; }
 	bool chainFortuneAvailable(uint32_t unitId) const
 	{
@@ -145,12 +147,14 @@ struct DLL_LINKAGE SylvanLuckState
 	static int64_t recoveryAmount(int64_t actualDamage) { return std::max<int64_t>(0, actualDamage) / 10; }
 	void endActivation()
 	{
+		tactics.endActivation();
 		speedUnits.clear();
 		cascadingUnits.clear();
 	}
-	void beginActivation(uint32_t unitId, bool friendly)
+	void beginActivation(uint32_t unitId, bool friendly, bool redeploy = false, bool waited = false)
 	{
 		endActivation();
+		tactics.beginActivation(unitId, friendly, redeploy, waited);
 		// Expire a recipient's gift even if control changed in the meantime.
 		sharedUnits.erase(unitId);
 		if(friendly && cascadingPending)
@@ -161,6 +165,7 @@ struct DLL_LINKAGE SylvanLuckState
 	}
 	void nextRound()
 	{
+		tactics.nextRound();
 		negativeLuckIgnored = false;
 		gamblerAttackUsedThisRound = false;
 		chainTriggeredThisRound = false;
@@ -168,8 +173,19 @@ struct DLL_LINKAGE SylvanLuckState
 	}
 	bool operator==(const SylvanLuckState &) const = default;
 
+	void validateTacticsCompatibility() const
+	{
+		tactics.validate();
+		if(tactics.enabled && (serendipity || naturesProvidence || fortunateAim || forestsFavor
+			|| luckyRecovery || sharedFortune || cascadingFortune || perfectMoment))
+			throw std::runtime_error("Mixed historical Sylvan Luck and Sylvan Tactics policy");
+	}
+
 	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
+		if(h.saving) validateTacticsCompatibility();
+		if(h.saving && tactics.enabled && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_SYLVAN_TACTICS))
+			throw std::runtime_error("Cannot discard Sylvan Tactics state");
 		if(h.saving && !h.hasFeature(ESerializationVersion::NEW_HORIZONS_CHAIN_OF_FORTUNE)
 			&& (chainOfFortune || chainTriggeredThisRound || chainSourceUnitId))
 			throw std::runtime_error("Cannot downgrade Chain of Fortune state");
@@ -186,6 +202,8 @@ struct DLL_LINKAGE SylvanLuckState
 	template <typename Handler> void serialize(Handler & h)
 	{
 		validateSerializationPrefix(h);
+		if(h.hasFeature(ESerializationVersion::NEW_HORIZONS_SYLVAN_TACTICS)) h & tactics;
+		else if(!h.saving) tactics = {};
 		h & serendipity;
 		h & naturesProvidence;
 		h & fortunateAim;
@@ -241,6 +259,7 @@ struct DLL_LINKAGE SylvanLuckState
 			chainOfFortune = chainTriggeredThisRound = false;
 			chainSourceUnitId.reset();
 		}
+		if(!h.saving) validateTacticsCompatibility();
 		if(!h.saving && !chainOfFortune && (chainTriggeredThisRound || chainSourceUnitId))
 			throw std::runtime_error("Chain of Fortune history without perk");
 		if(!h.saving && ((chainSourceUnitId && !positiveLuckUnits.contains(*chainSourceUnitId))

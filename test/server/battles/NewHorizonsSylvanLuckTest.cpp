@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "BattleTestFixture.h"
+#include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -74,7 +75,10 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		JsonNode legacyPerks(JsonPath::builtin("config/newHorizonsPerks"));
+		legacyPerks.Struct().erase("sylvanTacticsPolicy");
+		legacyPerks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacyPerks);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, certainLuck());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_BAD_LUCK_CHANCE, certainLuck());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
@@ -175,9 +179,18 @@ protected:
 		NewHorizonsSylvanLuckTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
-		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
-		magicRules["warcasting"] = JsonNode(false);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		// This writer predates captured final Luck, reduced Morale and magic clauses.
+		loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
+		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT, JsonNode(100));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		// The old battle format also predates an active Crisis Command profile.
+		auto legacyPerks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+		for(auto & perk : legacyPerks["skills"]["new-horizons:command"]["perks"].Vector())
+			if(perk["id"].String() == "new-horizons:command.crisisCommand")
+				perk["effect"]["status"].String() = "planned";
+		legacyPerks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacyPerks);
+		captureLegacyPerkOfferPolicy(*loaded);
 	}
 };
 }
@@ -579,6 +592,7 @@ TEST_F(NewHorizonsSylvanLuckTest, RangedPositiveTriggerDoesNotRecoverHealth)
 TEST_F(NewHorizonsSylvanLuckTest, GenuineActivationAndHypotheticalCopiesConsumeOnlyFriendlyPendingGift)
 {
 	startBattle();
+	battle()->nextRound(); // Hero Orders require a genuine combat round.
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 10);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 10);
 	auto & fortune = battle()->getSide(BattleSide::ATTACKER).sylvanLuck;
@@ -619,6 +633,8 @@ TEST_F(NewHorizonsSylvanLuckTest, GenuineActivationAndHypotheticalCopiesConsumeO
 	order.secondWindActive = true;
 	order.primaryTargetUnitId = source->unitId();
 	battle()->getSide(BattleSide::ATTACKER).upsertOrder(order);
+	battle()->getSide(BattleSide::ATTACKER).activeOrder = order.command;
+	battle()->getSide(BattleSide::ATTACKER).heroCommandUsed = true;
 	battle()->nextTurn(source->unitId(), BattleUnitTurnReason::HERO_COMMAND);
 	EXPECT_FALSE(fortune.cascadingPending);
 	EXPECT_EQ(fortune.temporaryLuck(source->unitId()), 3);
@@ -652,6 +668,8 @@ TEST_F(NewHorizonsSylvanLuckTest, FocusTargetAndChanceOnlyQuery)
 {
 	perks({"serendipity", "fortunateAim"});
 	startBattle();
+	// Characterize the legacy additive query, including its siege-marker behavior.
+	battle()->luckRollRules.finalDirectPhysicalMultiplier = false;
 	battle()->nextRound();
 	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:monk"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex + 4), 20);
@@ -664,6 +682,13 @@ TEST_F(NewHorizonsSylvanLuckTest, FocusTargetAndChanceOnlyQuery)
 	mark.issuedRound = battle()->getRound();
 	mark.recipientUnitIds = {shooter->unitId()};
 	battle()->getSide(BattleSide::ATTACKER).focusFire = mark;
+	HeroOrderState order;
+	order.command = HeroCommand::FOCUS_FIRE;
+	order.issuedRound = mark.issuedRound;
+	order.primaryTargetUnitId = target->unitId();
+	battle()->getSide(BattleSide::ATTACKER).upsertOrder(order);
+	battle()->getSide(BattleSide::ATTACKER).activeOrder = order.command;
+	battle()->getSide(BattleSide::ATTACKER).heroCommandUsed = true;
 	EXPECT_EQ(battle()->battleGetAttackLuck(shooter, target, true), base + 2);
 	EXPECT_EQ(battle()->battleGetAttackLuck(shooter, other, true), base + 1);
 	EXPECT_EQ(battle()->battleGetAttackLuck(shooter, target, false), base + 1);
@@ -688,7 +713,7 @@ TEST_F(NewHorizonsSylvanLuckTest, FocusTargetAndChanceOnlyQuery)
 
 TEST_F(NewHorizonsSylvanLuckTest, AuthoritativeMultiTargetStrikeRecordsOnce)
 {
-	perks({"natureSProvidence"});
+	perks({"elvenPrecision", "natureSProvidence"});
 	startBattle();
 	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
 	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
@@ -807,6 +832,7 @@ TEST_F(NewHorizonsSylvanLuckTest, WildChanceScopesSylvanLuckToNatureSummons)
 	EXPECT_EQ(ordinary->valOfBonuses(BonusType::LUCK), 2);
 	EXPECT_EQ(ordinary->valOfBonuses(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE), 60);
 
+	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"});
 	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance"});
 	nature->nodeHasChanged();
 	EXPECT_EQ(nature->valOfBonuses(BonusType::LUCK), 2);
@@ -817,8 +843,18 @@ TEST_F(NewHorizonsSylvanLuckTest, WildChanceScopesSylvanLuckToNatureSummons)
 TEST_F(NewHorizonsSylvanLuckLegacySaveTest, LegacySaveIsInertAndCannotDiscardLiveHistory)
 {
 	startBattle();
+	// setupBattle captures later Army Value metadata even for an otherwise inert
+	// fixture. This synthetic pre-Sylvan source must model its historical absence.
+	ASSERT_TRUE(battle()->hasInitialArmyValueState());
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		battle()->getSide(side).initialArmyValue.reset();
+		battle()->getSide(side).initialArmyIsWandering = false;
+	}
+	ASSERT_FALSE(battle()->hasInitialArmyValueState());
 	CMemorySerializer old;
 	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_BLOODRAGE;
+	old.iser.cb = gameState().get();
 	old.oser & *battle();
 	BattleInfo restored(gameState().get());
 	restored.getSide(BattleSide::ATTACKER).sylvanLuck.serendipity = true;

@@ -13,6 +13,7 @@ class CArmedInstance;
 class CMap;
 class IGameSettings;
 class JsonNode;
+struct StartInfo;
 namespace Rewardable { struct Configuration; }
 
 namespace newHorizonsNeutralArmies
@@ -28,6 +29,8 @@ DLL_LINKAGE void scaleGeneratedGuards(const CArmedInstance & army, Rewardable::C
 
 /// Fresh-world only: capture effective settings and scale each initial army once.
 DLL_LINKAGE void initializeWorld(CMap & map);
+/// Apply only to a fresh scenario before object initialization; never on load.
+DLL_LINKAGE void applyStartOption(CMap & map, const StartInfo & start);
 
 /// Settings admission also protects legacy read/write boundaries.
 DLL_LINKAGE void validateOverrides(const JsonNode & settings, bool supported);

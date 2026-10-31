@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../../bonuses/BonusSerializationContext.h"
+
 #include "CCreatureSet.h"
 
 #include "../CGObjectInstance.h"
@@ -76,11 +78,21 @@ public:
 
 	void serializeJsonOptions(JsonSerializeFormat & handler) override;
 
+	void validateArmyBonusSerialization(BonusSerializationContext context) const
+	{
+		if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+		validateExportedBonusSerialization(context);
+		validateStackBonusSerialization(context);
+	}
+
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
 		if(h.saving)
 			validateTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
+		if(h.saving)
+			validateArmyBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & static_cast<CGObjectInstance &>(*this);
 		h & static_cast<CBonusSystemNode &>(*this);
 		h & static_cast<CCreatureSet &>(*this);

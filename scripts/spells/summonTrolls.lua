@@ -2,33 +2,12 @@ local Base = require("spells/spellEffect")
 local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
-local NATURE_MAGIC_SKILL = "new-horizons:natureMagic"
-local BEASTCALLER_PERK = "new-horizons:natureMagic.beastcaller"
-
 local function trollType(self)
 	return LIBRARY:getCreatureByName(self.id)
 end
 
-local function beastcallerPercent(mechanics)
-	local hero = mechanics:getHeroCaster()
-	if hero ~= nil and hero:hasActivePerk(NATURE_MAGIC_SKILL, BEASTCALLER_PERK) then
-		return 125
-	end
-	return 100
-end
-
 local function healthPool(mechanics)
-	local spellPower = math.max(0, mechanics:getEffectPower())
-	local modifierPercent = beastcallerPercent(mechanics)
-	-- The modifier percent also supplies the hundredths precision: with no perk,
-	-- 100 scales the 5/2 coefficient into hundredths; Beastcaller uses 125 so it
-	-- scales the complete Spell Power term by 125% before the one final HP floor.
-	local spellPowerHundredths = mechanics:scaleSpellPowerComponentWithCoefficientBasisPoints(
-		5 * spellPower * modifierPercent,
-		2,
-		mechanics:getSpellPowerCoefficientBasisPoints())
-
-	return math.floor((100 * modifierPercent + spellPowerHundredths) / 100)
+	return mechanics:getTrollSummonHitPoints()
 end
 
 local function trollHealth(mechanics, creature)

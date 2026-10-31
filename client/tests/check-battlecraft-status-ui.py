@@ -8,6 +8,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = (ROOT / "client/battle/NewHorizonsBattleStatus.h").read_text(encoding="utf-8")
 PANEL = (ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text(encoding="utf-8")
+FACTION = (ROOT / "client/windows/SylvanFactionStatusPresentation.h").read_text(encoding="utf-8")
+ACTION = (ROOT / "client/battle/StackInfoActionStatus.cpp").read_text(encoding="utf-8")
 WINDOW = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 RULES = (ROOT / "lib/battle/NewHorizonsBattlecraft.cpp").read_text(encoding="utf-8")
 UNIT_STATE = (ROOT / "lib/battle/CUnitState.cpp").read_text(encoding="utf-8")
@@ -23,12 +25,16 @@ class BattlecraftStatusUiTest(unittest.TestCase):
 		self.assertIn("newHorizonsCombatSkills::isOrdinaryCreatureAttacker(stack)", wait)
 		self.assertIn("battleCallback->battleGetFightingHero(ownerSide)", wait)
 		self.assertIn("usesNewHorizonsBattleRules(hero)", wait)
-		self.assertIn("newHorizonsBattlecraft::rankPercent(newHorizonsBattlecraft::rank(hero))", wait)
+		self.assertIn("newHorizonsBattlecraft::waitDamagePercent(hero, stack)", wait)
+		self.assertNotIn("newHorizonsBattlecraft::rankPercent(", wait)
+		self.assertIn("stack->battlecraftWaitMasteryDoubled && stack->battlecraftWaitBonusAvailable()", RULES)
 		self.assertIn("waitedThisTurn && !battlecraftWaitBonusUsed", UNIT_STATE)
-		self.assertIn("newHorizonsBattlecraft::rankPercent(", CALLBACK)
+		self.assertIn("newHorizonsBattlecraft::waitDamagePercent(", CALLBACK)
+		self.assertIn("const int bonus = rankPercent(rank(hero));", RULES)
 
 	def test_profile_gate_and_privacy_scoped_defend_readback(self):
-		profile = PANEL[PANEL.index("bool usesNewHorizonsBattleRules("):PANEL.index("struct StackStatusEntry")]
+		profile = FACTION[FACTION.index("bool usesNewHorizonsBattleRules("):FACTION.index("newHorizonsBattleStatus::SylvanLuckStackStatus currentSylvanLuckStatus(")]
+		self.assertIn("using newHorizonsSylvanFactionPresentation::usesNewHorizonsBattleRules;", PANEL)
 		self.assertIn("newHorizonsHeroes::usesRules(rules)", profile)
 		self.assertIn('rules["rulesetVersion"].Integer() >= 3', profile)
 		defend = PANEL[PANEL.index("newHorizonsBattleStatus::DefendStatus currentDefendStatus("):PANEL.index(
@@ -40,10 +46,10 @@ class BattlecraftStatusUiTest(unittest.TestCase):
 		self.assertNotIn("stack->getMyHero()", defend)
 
 	def test_same_compact_status_slot_preserves_defend_and_soul_badges(self):
-		self.assertIn("if(displayedStatus.defend.defending)", PANEL)
-		self.assertIn('displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND"', PANEL)
-		self.assertIn('Colors::YELLOW, "WAIT"', PANEL)
-		self.assertEqual(PANEL.count("Rect(7, 153, 39, 13), tooltip, tooltip"), 2)
+		self.assertIn("if(displayedStatus.defend.defending)", ACTION)
+		self.assertIn('displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND"', ACTION)
+		self.assertIn('displayedStatus.overwatchRange > 0 ? "WATCH" : "WAIT"', ACTION)
+		self.assertEqual(ACTION.count("Rect(7, 153, 39, 13), tooltip, tooltip"), 2)
 		self.assertIn('Colors::YELLOW, "SOUL"', PANEL)
 		self.assertIn("result.battlecraftWait = currentBattlecraftWaitStatus(stack, battleCallback)", PANEL)
 		self.assertIn("if(current == displayedStatus", PANEL)
@@ -63,6 +69,7 @@ class BattlecraftStatusUiTest(unittest.TestCase):
 
 	def test_native_coverage_includes_ranked_wait_defend_and_inert_states(self):
 		self.assertIn("WaitReadbackShowsRankBonusOnlyWhileArmed", NATIVE)
+		self.assertIn("WaitReadbackPreservesOrdinaryAndDoubledSharedValues", NATIVE)
 		self.assertIn("for(int rank = 1; rank <= 3; ++rank)", NATIVE)
 		self.assertIn("DefendReadbackComposesBattlecraftEntrenchAndBulwark", NATIVE)
 		self.assertIn("OrdinaryDefendHasNoInertBattlecraftClaim", NATIVE)

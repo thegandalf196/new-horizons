@@ -36,10 +36,12 @@ struct HeroStartingPreview
 	std::vector<int> stackChances;
 	std::map<std::string, std::string> perkNames;
 	std::map<SecondarySkill, std::string> skillDescriptions;
+	std::map<SecondarySkill, std::string> skillNames;
 	bool defaultProfile = true;
 };
 HeroStartingPreview heroStartingPreview(HeroTypeID hero, const CMapInfo * selectedMap = nullptr,
 	PlayerColor owner = PlayerColor::NEUTRAL, const CGHeroInstance * capturedHero = nullptr);
 std::string startingSkillPerkNames(const HeroStartingPreview & preview, SecondarySkill skill);
+std::string startingSkillName(const HeroStartingPreview & preview, SecondarySkill skill);
 std::string startingSkillDescription(const HeroStartingPreview & preview, SecondarySkill skill, int rank);
 

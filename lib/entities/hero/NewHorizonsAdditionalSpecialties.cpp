@@ -3,7 +3,9 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "NewHorizonsGenieSage.h"
 #include "NewHorizonsAdditionalSpecialties.h"
+#include "NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "NewHorizonsForestAmbush.h"
 #include "NewHorizonsAerialSupremacy.h"
 #include "NewHorizonsDreadCavalry.h"
@@ -19,6 +21,15 @@
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../spells/NewHorizonsMagic.h"
 #include <limits>
+#include "../../bonuses/Bonus.h"
+#include "../../bonuses/Limiters.h"
+#include "../../bonuses/Propagators.h"
+#include "../../bonuses/Updaters.h"
+#include "../../CCreatureHandler.h"
+#include "../../battle/BattleAttackInfo.h"
+#include "../../battle/CBattleInfoCallback.h"
+#include "../../battle/NewHorizonsCombatSkills.h"
+#include "../../battle/Unit.h"
 namespace newHorizonsHeroes
 {
 bool usesConvertedCreatureSpecialty(const CGHeroInstance * hero)
@@ -29,7 +40,8 @@ bool usesConvertedCreatureSpecialty(const CGHeroInstance * hero)
 
 bool replacesGenericCreatureSpecialty(const CGHeroInstance * hero)
 {
-	return hasManaLeeches(hero) || hasSerpentsEmbrace(hero)
+	return hasOrdinaryCreatureSpecialty(hero) || hasSageOfTheAges(hero) || hasWheelOfFortune(hero)
+		|| hasManaLeeches(hero) || hasSerpentsEmbrace(hero)
 		|| hasParalyzingGaze(hero) || hasForestAmbush(hero) || hasPetrifyingBlood(hero) || hasLivingInferno(hero) || hasAerialSupremacy(hero) || hasDreadCavalry(hero);
 }
 
@@ -40,7 +52,8 @@ void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bo
 	if(!supported)
 		throw std::runtime_error("Additional individual specialties require the new save format");
 	const auto & table = development["additionalSpecialties"];
-	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy"});
+	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy", "ordinaryCreatureSpecialties"});
+	validateOrdinaryCreatureSpecialtiesSerialization(development, true);
 	detail::require(detail::integer(table["version"], 1, 1), "additional specialty version");
 	validateLearningSpecialtyRows(table);
 	if(table.Struct().contains("aerialSupremacy"))
@@ -121,7 +134,8 @@ int64_t fieldPhysicianHealing(int64_t ordinary, const CGHeroInstance * hero)
 bool resolveAdditionalSpecialtyPresentation(const CHero & hero, const JsonNode & development,
 	const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
-	if(resolveLearningSpecialtyPresentation(hero, development, magic, capturedHero, result))
+	if(resolveOrdinaryCreatureSpecialtyPresentation(hero, development, result)
+		|| resolveLearningSpecialtyPresentation(hero, development, magic, capturedHero, result))
 		return true;
 	if(hero.getJsonKey() == "core:ayden")
 		return resolveManaFurnacePresentation(hero, development, capturedHero, result);
@@ -146,4 +160,51 @@ bool resolveAdditionalSpecialtyPresentation(const CHero & hero, const JsonNode &
 			+ std::to_string(fieldPhysicianHealingPercent(capturedHero)) + "%.";
 	return true;
 }
+
+std::vector<std::shared_ptr<Bonus>> creatureLineSpecialtyBonuses(const CGHeroInstance & hero,
+	const CreatureLineSpecialtyRules & rules, CreatureID creature, const std::array<std::string, 4> & markers)
+{
+	std::vector<std::shared_ptr<Bonus>> bonuses;
+	const auto * heroType = hero.getHeroType();
+	const TLimiterPtr lineLimiter = std::make_shared<CCreatureTypeLimiter>(*creature.toCreature(), true);
+	auto makeBonus = [heroType, &markers](BonusType type, size_t marker)
+	{
+		auto bonus = std::make_shared<Bonus>();
+		bonus->duration = BonusDuration::PERMANENT;
+		bonus->source = BonusSource::HERO_SPECIAL;
+		bonus->sid = BonusSourceID(heroType->getId());
+		bonus->stacking = markers[marker];
+		bonus->type = type;
+		bonus->valType = BonusValueType::BASE_NUMBER;
+		return bonus;
+	};
+
+	auto speed = makeBonus(BonusType::STACKS_SPEED, 0);
+	speed->val = rules.speed;
+	speed->limiter = lineLimiter;
+	bonuses.push_back(speed);
+
+	auto initiative = makeBonus(BonusType::STACKS_INITIATIVE_BASE, 1);
+	initiative->val = rules.initiative;
+	auto initiativeLimiter = std::make_shared<AllOfLimiter>();
+	initiativeLimiter->add(lineLimiter);
+	initiativeLimiter->add(std::make_shared<HasAnotherBonusLimiter>(
+		BonusType::STACKS_INITIATIVE_BASE, BonusSource::CREATURE_ABILITY));
+	initiative->limiter = initiativeLimiter;
+	bonuses.push_back(initiative);
+
+	const int attributeBonus = static_cast<int>(std::min<int64_t>(rules.attributeMaximum,
+		static_cast<int64_t>(hero.level) / rules.levelStep * rules.attributePerStep));
+	for(const auto skill : {PrimarySkill::ATTACK, PrimarySkill::DEFENSE})
+	{
+		auto attribute = makeBonus(BonusType::PRIMARY_SKILL, skill == PrimarySkill::ATTACK ? 2 : 3);
+		attribute->subtype = BonusSubtypeID(skill);
+		attribute->val = attributeBonus;
+		attribute->targetSourceType = BonusSource::CREATURE_ABILITY;
+		attribute->limiter = lineLimiter;
+		bonuses.push_back(attribute);
+	}
+	return bonuses;
+}
+
 }

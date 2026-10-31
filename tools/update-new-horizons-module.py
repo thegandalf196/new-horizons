@@ -93,6 +93,7 @@ def content_patch_files():
     ]
     faction_patch_files = [
         'config/factions/uniqueBuildings.json',
+        'config/factions/primaryRewards.json',
         'config/factions/universalMageGuilds.json',
         'config/factions/towerCreatureRanks.json',
         'config/factions/academyArt.json',
@@ -158,8 +159,8 @@ def base_metadata(settings, schools, skills, module_version):
                       'config/artifacts/adventureMovementCasts.json',
                       'config/artifacts/manaRegeneration.json'],
         'factions': faction_patch_files,
-        'objects': ['config/objects/magicSpring.json'],
-        'scripts': ['config/scripts/cabirRepair.json'],
+        'objects': ['config/objects/magicSpring.json', 'config/objects/primaryRewards.json'],
+        'scripts': ['config/scripts/cabirRepair.json', 'config/scripts/genieLuck.json'],
         'spells': [
             'config/spells/newHorizons.json',
             'config/spells/summonLivingArmor.json',
@@ -167,12 +168,53 @@ def base_metadata(settings, schools, skills, module_version):
             'config/spells/massVariants.json',
             'config/spells/elementalDamageTags.json',
             'config/spells/cabirRepair.json',
+            'config/spells/genieLuck.json',
         ],
         'spellSchools': schools,
         'skills': skills,
         # Selected runtime art retains its full virtual paths in one container.
         # Bootstrap UI also mounts this pack in builtin scope (filesystem.json).
         'filesystem': {'': [{'type': 'nhart', 'path': '/NewHorizons.nhart'}]},
+    }
+
+
+def primary_reward_patches(rules):
+    """Compile legacy-point templates into concrete new-world reward data."""
+    if set(rules) != {'schemaVersion', 'legacyPointValue', 'objects', 'factions'}:
+        raise ValueError('Invalid primary reward configuration fields')
+    if type(rules['schemaVersion']) is not int or rules['schemaVersion'] != 1:
+        raise ValueError('Unsupported primary reward configuration version')
+    point = rules['legacyPointValue']
+    if type(point) is not int or not 1 <= point <= 1000:
+        raise ValueError('Primary reward point value must be an integer from 1 to 1000')
+
+    def render(value):
+        if isinstance(value, dict):
+            return {key: render(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [render(item) for item in value]
+        if isinstance(value, str):
+            return value.replace('{doublePoint}', str(2 * point)).replace('{point}', str(point))
+        return value
+
+    def scale_rewards(configuration):
+        for reward in configuration['rewards']:
+            for attribute, amount in reward.get('primary', {}).items():
+                if type(amount) is not int or amount <= 0 or amount * point > 10000:
+                    raise ValueError('Invalid legacy primary reward amount')
+                reward['primary'][attribute] = amount * point
+
+    objects = render(rules['objects'])
+    factions = render(rules['factions'])
+    for obj in objects.values():
+        for configuration in obj['types'].values():
+            scale_rewards(configuration)
+    for faction in factions.values():
+        for building in faction['town']['buildings'].values():
+            scale_rewards(building['configuration'])
+    return {
+        'config/objects/primaryRewards.json': objects,
+        'config/factions/primaryRewards.json': factions,
     }
 
 
@@ -183,7 +225,14 @@ def write_outputs(root, parser, check, metadata, destination, preview_output, ca
     creature_values = json.dumps(canonical('newHorizonsCreatureExperimentalValues.json'),
                                 indent='\t', ensure_ascii=False) + '\n'
     creature_values_destination = root / 'Mods/new-horizons/Content/config/creatures/experimentalValues.json'
+    primary_rewards = primary_reward_patches(canonical('newHorizonsPrimaryRewards.json'))
+    primary_outputs = {root / 'Mods/new-horizons/Content' / path:
+                       json.dumps(value, indent='\t', ensure_ascii=False) + '\n'
+                       for path, value in primary_rewards.items()}
     if check:
+        for path, text in primary_outputs.items():
+            if not path.is_file() or path.read_text(encoding='utf-8') != text:
+                parser.exit(1, 'Curated primary rewards are stale; run tools/update-new-horizons-module.py\n')
         if (not creature_values_destination.is_file()
                 or creature_values_destination.read_text(encoding='utf-8') != creature_values):
             parser.exit(1, 'Curated creature experimental values are stale; run tools/update-new-horizons-module.py\n')
@@ -192,11 +241,14 @@ def write_outputs(root, parser, check, metadata, destination, preview_output, ca
         if (not biography_destination.is_file()
                 or biography_destination.read_text(encoding='utf-8') != biographies):
             parser.exit(1, 'Curated hero biographies are stale; run tools/update-new-horizons-module.py\n')
-        print('PASS: module settings, six schools, 31 Skill entities, perk registry, image mount and metadata match canonical data')
+        print('PASS: module settings, six schools, 31 Skill entities, perk registry, primary rewards, image mount and metadata match canonical data')
     else:
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(expected, encoding='utf-8')
         if preview_output is None:
+            for path, text in primary_outputs.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text, encoding='utf-8')
             creature_values_destination.parent.mkdir(parents=True, exist_ok=True)
             creature_values_destination.write_text(creature_values, encoding='utf-8')
             biography_destination.parent.mkdir(parents=True, exist_ok=True)

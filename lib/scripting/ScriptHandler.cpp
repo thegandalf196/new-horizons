@@ -18,8 +18,33 @@
 #include "../texts/CGeneralTextHandler.h"
 #include "../texts/TextIdentifier.h"
 
+#include <cmath>
+
 namespace
 {
+
+// Lua 5.1/LuaJIT represents all numbers as floating point. Only a schema's
+// explicitly integer fields admit lossless integer representation here; invalid
+// fractional, nonfinite and out-of-range values remain visible to validation.
+void prepareIntegerParameters(JsonNode & parameters, const JsonNode & schema)
+{
+	if(!parameters.isStruct())
+		return;
+	for(const auto & [field, property] : schema["properties"].Struct())
+	{
+		if(!property["type"].isString() || property["type"].String() != "integer")
+			continue;
+		const auto found = parameters.Struct().find(field);
+		if(found == parameters.Struct().end()
+			|| found->second.getType() != JsonNode::JsonType::DATA_FLOAT)
+			continue;
+		const double number = static_cast<const JsonNode &>(found->second).Float();
+		// The upper endpoint is exclusive: double cannot represent INT64_MAX.
+		if(std::isfinite(number) && std::trunc(number) == number
+			&& number >= -9223372036854775808.0 && number < 9223372036854775808.0)
+			found->second.Integer() = static_cast<si64>(number);
+	}
+}
 
 ScriptKind parseKind(const std::string & name)
 {
@@ -137,7 +162,10 @@ void ScriptHandler::prepareParameters(ScriptID scriptID, JsonNode & parameters, 
 	const ScriptTypeDescription & description = getById(scriptID);
 
 	if(!description.parametersSchema.isNull())
+	{
+		prepareIntegerParameters(parameters, description.parametersSchema);
 		JsonUtils::validate(parameters, description.parametersSchema, owner.get());
+	}
 
 	// a parameter naming an entity is resolved here purely to have it reported when it names
 	// nothing - otherwise a typo only shows up as a raw json key in the creature window

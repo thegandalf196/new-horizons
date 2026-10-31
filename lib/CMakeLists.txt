@@ -60,6 +60,7 @@ set(lib_MAIN_SRCS
 	battle/AccessibilityInfo.cpp
 	battle/BattleForm.cpp
 	battle/BattleEffectExchange.cpp
+	battle/BattleBonusSerialization.cpp
 	battle/BattleAction.cpp
 	battle/BattleAttackInfo.cpp
 	battle/DamageFinalization.cpp
@@ -91,7 +92,14 @@ set(lib_MAIN_SRCS
 		battle/DreadCavalryQueries.cpp
 		battle/BattleActivationActionState.cpp
 		entities/hero/NewHorizonsDreadCavalry.cpp
+		entities/hero/NewHorizonsGenieSage.cpp
+		entities/hero/NewHorizonsGenieAbilities.cpp
 	battle/NewHorizonsSoulHarvest.cpp
+	battle/NewHorizonsOrdinaryStrike.cpp
+	battle/NewHorizonsShieldAndSword.cpp
+	battle/NewHorizonsSepulchralGrip.cpp
+		battle/NewHorizonsSequenceProtection.cpp
+	battle/NewHorizonsOrdinaryRangedSpecialtyRules.cpp
 	battle/NewHorizonsParalyzingGaze.cpp
 	battle/NewHorizonsAerialSupremacy.cpp
 	battle/BattleInfoUnitUpdate.cpp
@@ -125,6 +133,9 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsSoulChain.cpp
 	battle/NewHorizonsBattlecraft.cpp
 	battle/NewHorizonsDiscipline.cpp
+	battle/NewHorizonsSylvanTacticsAftermath.cpp
+	battle/NewHorizonsSylvanTacticsPresentation.cpp
+	battle/NewHorizonsSylvanTactics.cpp
 	battle/NewHorizonsArchery.cpp
 	battle/NewHorizonsArmorer.cpp
 	battle/NewHorizonsCombatSkills.cpp
@@ -144,6 +155,7 @@ set(lib_MAIN_SRCS
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
 	battle/CUnitState.cpp
+	battle/UnitStateCounts.cpp
 	battle/CUnitStateRoundReceipts.cpp
 	battle/CUnitStateLifecycle.cpp
 	battle/CUnitWaitActionState.cpp
@@ -165,6 +177,13 @@ set(lib_MAIN_SRCS
 	battle/UnitMagicResistanceQuery.cpp
 	battle/ProjectedUnitMagicResistance.cpp
 	battle/UnitOwnershipQuery.cpp
+	battle/NewHorizonsRangefinder.cpp
+	battle/NewHorizonsMaintenanceSpecialties.cpp
+	battle/NewHorizonsMachineSpecialties.cpp
+	battle/BattleShootingRange.cpp
+	battle/UnitShootingRange.cpp
+	battle/UnitRetaliations.cpp
+	battle/CatapultStructuralOutput.cpp
 	battle/UnitEnvironmentQueries.cpp
 	battle/LiveUnitEnvironmentContext.cpp
 	battle/BattleAccessibilityQuery.cpp
@@ -213,6 +232,10 @@ set(lib_MAIN_SRCS
 	bonuses/BonusCache.cpp
 	bonuses/PrimarySkillPolicy.cpp
 	bonuses/BonusEvaluationContext.cpp
+	bonuses/BonusOwnedContext.cpp
+	bonuses/OwnedBonusEvaluationFacts.cpp
+	bonuses/OwnedBonusPayloads.cpp
+	bonuses/OwnedRecipientBonusGraph.cpp
 	bonuses/BonusBattleContext.cpp
 	bonuses/BonusGraphQuery.cpp
 	bonuses/ProjectedBonusGraph.cpp
@@ -257,6 +280,7 @@ set(lib_MAIN_SRCS
 	callback/CNonConstInfoCallback.cpp
 	callback/CPlayerSpecificInfoCallback.cpp
 	callback/GameRandomizer.cpp
+	callback/HeroPrimaryGrowth.cpp
 	callback/MapInfoCallback.cpp
 	callback/EditorCallback.cpp
 
@@ -295,6 +319,8 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
 	entities/hero/NewHorizonsChosenSpecialties.cpp
 	entities/hero/NewHorizonsAdditionalSpecialties.cpp
+	entities/hero/OrdinaryCreatureSpecialtyRegistry.cpp
+	entities/hero/NewHorizonsOrdinaryCreatureSpecialties.cpp
 	entities/hero/NewHorizonsManaLeeches.cpp
 	entities/hero/NewHorizonsSerpentsEmbrace.cpp
 	entities/hero/NewHorizonsForestAmbush.cpp
@@ -327,9 +353,11 @@ set(lib_MAIN_SRCS
 	entities/hero/HeroStartingProjection.cpp
 	entities/hero/NewHorizonsLeadership.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
+	entities/hero/HeroMachineCapabilities.cpp
 	entities/hero/NewHorizonsMasteryRules.cpp
 	entities/hero/NewHorizonsMasteryState.cpp
 	entities/hero/NewHorizonsMasteryEffects.cpp
+	entities/hero/NewHorizonsSylvanTacticsPolicy.cpp
 	entities/hero/NewHorizonsPerkRules.cpp
 	entities/hero/NewHorizonsPerkState.cpp
 	entities/hero/NewHorizonsNecromancy.cpp
@@ -368,6 +396,7 @@ set(lib_MAIN_SRCS
 	gameState/ReplayPayload.cpp
 	gameState/ReplayProvenance.cpp
 	gameState/CGameStateMemory.cpp
+	gameState/WorldBonusPreflight.cpp
 	gameState/PreparedReplayAppend.cpp
 	gameState/PreparedReplayBatch.cpp
 	gameState/PreparedReplaySnapshot.cpp
@@ -394,6 +423,7 @@ set(lib_MAIN_SRCS
 	mapObjects/DwellingWeeklyGrowth.cpp
 	mapObjects/DwellingGuards.cpp
 	mapObjects/NewHorizonsNeutralArmies.cpp
+	gameState/NeutralArmyStartOption.cpp
 	mapObjects/NewHorizonsRecruitmentGrowth.cpp
 	mapObjects/CGHeroInstance.cpp
 	mapObjects/NewHorizonsHeroUpgrade.cpp
@@ -433,6 +463,7 @@ set(lib_MAIN_SRCS
 
 	mapping/CDrawRoadsOperation.cpp
 	mapping/MapSpecialtyPreflight.cpp
+	mapping/MapBonusPreflight.cpp
 	mapping/CMap.cpp
 	mapping/CMapHeader.cpp
 	mapping/CMapEditManager.cpp
@@ -551,6 +582,30 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsDivineRetribution.cpp
 	spells/NewHorizonsPandemonium.cpp
 	spells/NewHorizonsDirectDamage.cpp
+	spells/HeroSpellCastContext.cpp
+	spells/SpellEffectPreview.cpp
+	spells/NewHorizonsTimedUtility.cpp
+	spells/NewHorizonsTimedMagnitudes.cpp
+	spells/NewHorizonsPlacementPower.cpp
+	spells/PlacementSpellEffectPreview.cpp
+	spells/TimedMagnitudeSpellEffectPreview.cpp
+	spells/NewHorizonsShadowMagnitudes.cpp
+	spells/NewHorizonsTimedBuffMagnitude.cpp
+	spells/BuffSpellEffectPreview.cpp
+	spells/StormSpellEffectPreview.cpp
+	spells/NatureSummonSpellEffectPreview.cpp
+	spells/NewHorizonsRestorationPools.cpp
+	spells/NewHorizonsBlessDuration.cpp
+	spells/RestorationSpellEffectPreview.cpp
+	spells/NewHorizonsTrollSummonPower.cpp
+	spells/NewHorizonsElementalConvergencePower.cpp
+	spells/TimedSpellEffectPreview.cpp
+	spells/AfflictionSpellEffectPreview.cpp
+	spells/DirectSpellEffectPreview.cpp
+	spells/UtilityActionSpellEffectPreview.cpp
+	spells/ConditionalSpellEffectPreview.cpp
+	spells/NewHorizonsLightDamage.cpp
+	spells/KnownUtilitySpellEffectPreview.cpp
 	spells/NewHorizonsDamagePower.cpp
 	spells/NewHorizonsCureHealing.cpp
 	spells/NewHorizonsSpellcraftPower.cpp
@@ -780,6 +835,8 @@ set(lib_MAIN_HEADERS
 	battle/HeroCommandCoefficientMath.h
 	battle/FocusFireState.h
 	battle/FocusFireQueries.h
+	battle/SylvanTacticsState.h
+	battle/NewHorizonsSylvanTactics.h
 	battle/SylvanLuckState.h
 	battle/LuckSerendipityState.h
 	battle/PerfectFortuneState.h
@@ -807,7 +864,13 @@ set(lib_MAIN_HEADERS
 		battle/DreadCavalryState.h
 		battle/NewHorizonsDreadCavalry.h
 		entities/hero/NewHorizonsDreadCavalry.h
+		entities/hero/NewHorizonsGenieSage.h
 	battle/NewHorizonsSoulHarvest.h
+	battle/NewHorizonsOrdinaryStrike.h
+	battle/NewHorizonsShieldAndSword.h
+	battle/NewHorizonsSepulchralGrip.h
+		battle/NewHorizonsSequenceProtection.h
+	battle/NewHorizonsOrdinaryRangedSpecialtyRules.h
 	battle/NewHorizonsParalyzingGaze.h
 	battle/NewHorizonsAerialSupremacy.h
 	battle/BattleDeploymentState.h
@@ -878,6 +941,9 @@ set(lib_MAIN_HEADERS
 	battle/UnitMagicResistanceQuery.h
 	battle/ProjectedUnitMagicResistance.h
 	battle/UnitOwnershipQuery.h
+	battle/NewHorizonsRangefinder.h
+	battle/NewHorizonsMaintenanceSpecialties.h
+	battle/NewHorizonsMachineSpecialties.h
 	battle/UnitEnvironmentQueries.h
 	battle/LiveUnitEnvironmentContext.h
 	battle/BattleAccessibilityQuery.h
@@ -906,9 +972,13 @@ set(lib_MAIN_HEADERS
 	battle/BattleBonusAcceptance.h
 
 	bonuses/Bonus.h
+	bonuses/BonusSerializationContext.h
 	bonuses/BonusCache.h
 	bonuses/PrimarySkillPolicy.h
 	bonuses/BonusEvaluationContext.h
+	bonuses/OwnedBonusEvaluationFacts.h
+	bonuses/OwnedBonusPayloads.h
+	bonuses/OwnedRecipientBonusGraph.h
 	bonuses/BonusLimitation.h
 	bonuses/BonusGraphQuery.h
 	bonuses/ProjectedBonusGraph.h
@@ -1010,6 +1080,8 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsIndividualSpecialties.h
 	entities/hero/NewHorizonsChosenSpecialties.h
 	entities/hero/NewHorizonsAdditionalSpecialties.h
+	entities/hero/OrdinaryCreatureSpecialtyRegistry.h
+	entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h
 	entities/hero/NewHorizonsManaLeeches.h
 	entities/hero/NewHorizonsSerpentsEmbrace.h
 	entities/hero/NewHorizonsForestAmbush.h
@@ -1276,6 +1348,31 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsDivineRetribution.h
 	spells/NewHorizonsPandemonium.h
 	spells/NewHorizonsDirectDamage.h
+	spells/HeroSpellCastContext.h
+	spells/SpellEffectPreview.h
+	spells/NewHorizonsTimedUtility.h
+	spells/NewHorizonsTimedMagnitudes.h
+	spells/NewHorizonsPlacementPower.h
+	spells/PlacementSpellEffectPreview.h
+	spells/TimedMagnitudeSpellEffectPreview.h
+	spells/NewHorizonsShadowMagnitudes.h
+	spells/NewHorizonsTimedBuffMagnitude.h
+	spells/BuffSpellEffectPreview.h
+	spells/StormSpellEffectPreview.h
+	spells/NatureSummonSpellEffectPreview.h
+	spells/NewHorizonsRestorationPools.h
+	spells/NewHorizonsBlessDuration.h
+	spells/RestorationSpellEffectPreview.h
+	spells/NewHorizonsTrollSummonPower.h
+	spells/NewHorizonsElementalConvergencePower.h
+	spells/NewHorizonsStormOfDaggersDamage.h
+	spells/TimedSpellEffectPreview.h
+	spells/AfflictionSpellEffectPreview.h
+	spells/DirectSpellEffectPreview.h
+	spells/UtilityActionSpellEffectPreview.h
+	spells/ConditionalSpellEffectPreview.h
+	spells/NewHorizonsLightDamage.h
+	spells/KnownUtilitySpellEffectPreview.h
 	spells/NewHorizonsMagic.h
 	spells/NewHorizonsCureHealing.h
 	spells/NewHorizonsMagicInternal.h

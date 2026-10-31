@@ -96,6 +96,11 @@ bool isOrdinaryCreatureAttacker(const battle::Unit * attacker)
 		&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
 }
 
+bool isPhysicalAttackDamage(const battle::Unit * attacker, bool shooting, bool spellLike)
+{
+	return !spellLike && !(shooting && attacker && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+}
+
 bool isPhysicalCreatureAttack(const battle::Unit * attacker, bool physicalDamage)
 {
 	return physicalDamage && isOrdinaryCreatureAttacker(attacker)

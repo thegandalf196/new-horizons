@@ -11,6 +11,9 @@
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleEvaluator.h"
+#include "AttackPreviewHitContext.h"
+#include "ExchangeInitiativeQueue.h"
+#include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include "BattleEvaluatorProjection.h"
 #include "HypotheticBattle.h"
 #include "PotentialTargets.h"
@@ -46,15 +49,19 @@ bool BattleEvaluator::evaluateHeroActionQueue(PossibleSpellcast::ValueMap & valu
 	size_t ourTurnSpan = 0;
 
 	bool stop = false;
+	ExchangeInitiativeQueue initiativeQueue(state, newHorizonsOrdinaryStrike::mayChangeInitiative(*state));
 
 	for(auto & round : queue)
 	{
 		if(!firstRound)
 			state->nextRound();
 		auto remainingQueue = round;
+		initiativeQueue.beginRound(round, round);
 		for(size_t queueIndex = 0; queueIndex < remainingQueue.size(); ++queueIndex)
 		{
-			const auto * queuedUnit = remainingQueue[queueIndex];
+			const auto * queuedUnit = initiativeQueue.nextIn(remainingQueue, queueIndex);
+			if(!queuedUnit)
+				break;
 			const auto * unit = state->battleGetUnitByID(queuedUnit->unitId());
 			if(!unit)
 				continue;
@@ -172,6 +179,7 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 				if(attackPossibility.attackerDamageReduce > 0 && attackPossibility.attack.defender->unitId() == affected->unitId())
 					stackWithBonuses->removeUnitBonus(Bonus::UntilAttack);
 			}
+			AttackPreviewHitContext::replayOrdinaryStrikeEffects(*state, attackPossibility);
 		}
 	}
 

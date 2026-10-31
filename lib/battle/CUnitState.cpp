@@ -307,77 +307,6 @@ CCasts::CCasts(const battle::Unit * Owner):
 {
 }
 
-///CRetaliations
-CRetaliations::CRetaliations(const battle::Unit * Owner)
-	: CAmmo(Owner, Selector::type()(BonusType::ADDITIONAL_RETALIATION)),
-	totalCache(0),
-	env(nullptr),
-	noRetaliation(Owner, Selector::type()(BonusType::SIEGE_WEAPON).Or(Selector::type()(BonusType::NO_RETALIATION))),
-	unlimited(Owner, Selector::type()(BonusType::UNLIMITED_RETALIATIONS))
-{
-}
-
-bool CRetaliations::isLimited() const
-{
-	return !unlimited.hasBonus() || noRetaliation.hasBonus();
-}
-
-int32_t CRetaliations::total() const
-{
-	if(noRetaliation.hasBonus())
-		return 0;
-
-	// Legacy Heroic Spirit state remains readable, but no longer grants a
-	// creature retaliation: the reworked perk grants a typed Hero Order action.
-	const int64_t additionalRetaliations = env
-		? static_cast<int64_t>(env->unitAdditionalRetaliations(owner))
-			+ env->unitNecromancyPassives(owner).additionalRetaliations : 0;
-	if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*owner) >= 2)
-	{
-		// The ordinary bonus cache normally preserves a larger observed cap for
-		// the current round after Dispel. Mindbreaker is an active suppression,
-		// not removal of the bonus: do not let that latch retain native extra
-		// retaliations while the marker is present.
-		const int64_t currentTotal = 1LL + totalProxy.getValue() + additionalRetaliations;
-		return static_cast<int32_t>(std::clamp<int64_t>(currentTotal, 0,
-			std::numeric_limits<int32_t>::max()));
-	}
-
-	//after dispel bonus should remain during current round
-	int32_t val = 1 + totalProxy.getValue();
-	vstd::amax(totalCache, val);
-	// Keep the ordinary, cached allowance separate so a live controller or
-	// Bloodrage threshold change can remove the derived retaliation immediately.
-	return static_cast<int32_t>(std::min<int64_t>(std::numeric_limits<int32_t>::max(),
-		static_cast<int64_t>(totalCache) + additionalRetaliations));
-}
-
-CRetaliations & CRetaliations::operator=(const CRetaliations & other)
-{
-	CAmmo::operator=(other);
-	totalCache = other.totalCache;
-	// Keep the destination's no-retaliation/unlimited bonus cache bindings.
-	return *this;
-}
-
-void CRetaliations::reset()
-{
-	CAmmo::reset();
-	totalCache = 0;
-}
-
-void CRetaliations::setEnv(const IUnitEnvironment * env_) noexcept
-{
-	env = env_;
-}
-
-void CRetaliations::serializeJson(JsonSerializeFormat & handler)
-{
-	CAmmo::serializeJson(handler);
-	//we may be serialized in the middle of turn
-	handler.serializeInt("totalCache", totalCache, 0);
-}
-
 ///CHealth
 CHealth::CHealth(const battle::Unit * Owner):
 	owner(Owner)
@@ -1616,49 +1545,6 @@ bool CUnitState::isShooter() const
 	return shots.total() > 0;
 }
 
-int32_t CUnitState::getKilled() const
-{
-	const auto & provenanceHealth = battleFormOriginalHealth.isBattleFormProvenance()
-		? battleFormOriginalHealth
-		: health;
-	int32_t res = unitBaseAmount() - provenanceHealth.getCount() + provenanceHealth.getResurrected();
-	vstd::amax(res, 0);
-	return res;
-}
-
-int32_t CUnitState::getMagicalCasualties() const
-{
-	const auto & provenanceHealth = battleFormOriginalHealth.isBattleFormProvenance()
-		? battleFormOriginalHealth
-		: health;
-	return provenanceHealth.getCasualtyCount(DamageProvenance::SPELL);
-}
-
-bool CUnitState::hasCasualtyProvenanceState() const
-{
-	const auto & provenanceHealth = battleFormOriginalHealth.isBattleFormProvenance()
-		? battleFormOriginalHealth
-		: health;
-	return provenanceHealth.hasCasualtyProvenanceState();
-}
-
-int32_t CUnitState::getCount() const
-{
-	return health.getCount();
-}
-
-int32_t CUnitState::getFirstHPleft() const
-{
-	return health.getFirstHPleft();
-}
-
-int32_t CUnitState::getUnusableRemains() const
-{
-	return battleFormOriginalHealth.isBattleFormProvenance()
-		? battleFormOriginalHealth.getUnusableRemains()
-		: health.getUnusableRemains();
-}
-
 int64_t CUnitState::getAvailableHealth() const
 {
 	if(phantomInitialIntegrity > 0)
@@ -1932,7 +1818,8 @@ int32_t CUnitState::getInitiative(int turn) const
 		if(slowSpeedDifference && env->unitSlowAffectsSpeed(this))
 			baseInitiative += slowSpeedDifference;
 	}
-	const int64_t percent = std::max<int64_t>(0, 100 + initiativePercentPerTurn.getValue(turn));
+	const int64_t percent = std::max<int64_t>(0, 100 + initiativePercentPerTurn.getValue(turn)
+		+ (turn == 0 && env ? env->unitSylvanTacticsInitiativePercent(this) : 0));
 	return static_cast<int32_t>(baseInitiative * percent / 100 + initiativeFlatPerTurn.getValue(turn));
 }
 
@@ -1948,7 +1835,8 @@ ui32 CUnitState::getMovementRange(int turn) const
 		+ (env ? env->unitFortuneSpeed(this) : 0)
 		+ (env ? env->unitSpeedBonus(this) : 0)
 		+ (env ? env->unitNecromancyPassives(this).movementSpeed : 0)
-		+ (turn == 0 ? activationMovementBonus : 0);
+		+ (turn == 0 ? activationMovementBonus : 0)
+		+ (env ? env->unitSylvanTacticsSpeed(this, turn) : 0);
 	return static_cast<ui32>(std::max<int64_t>(0, movementRange));
 }
 
@@ -1969,43 +1857,6 @@ void CUnitState::setRangedFollowUpDamagePercent(int32_t value)
 ui32 CUnitState::getMovementRange() const
 {
 	return getMovementRange(0);
-}
-
-uint8_t CUnitState::getRangedFullDamageDistance() const
-{
-	if(!isShooter())
-		return 0;
-
-	// overwrite full ranged damage distance with the value set in Additional info field of LIMITED_SHOOTING_RANGE bonus
-	if(hasBonusOfType(BonusType::LIMITED_SHOOTING_RANGE))
-	{
-		auto bonus = this->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
-		if(bonus != nullptr && bonus->parameters)
-			return bonus->parameters->toNumber();
-	}
-
-	if (hasBonusOfType(BonusType::NO_DISTANCE_PENALTY))
-		return GameConstants::BATTLE_SHOOTING_RANGE_DISTANCE;
-
-	return GameConstants::BATTLE_SHOOTING_PENALTY_DISTANCE;
-}
-
-uint8_t CUnitState::getShootingRangeDistance() const
-{
-	if(!isShooter())
-		return 0;
-
-	uint8_t shootingRangeDistance = GameConstants::BATTLE_SHOOTING_RANGE_DISTANCE;
-
-	// overwrite full ranged damage distance with the value set in Additional info field of LIMITED_SHOOTING_RANGE bonus
-	if(hasBonusOfType(BonusType::LIMITED_SHOOTING_RANGE))
-	{
-		auto bonus = this->getBonus(Selector::type()(BonusType::LIMITED_SHOOTING_RANGE));
-		if(bonus != nullptr)
-			shootingRangeDistance = bonus->val;
-	}
-
-	return shootingRangeDistance;
 }
 
 bool CUnitState::canMove(int turn) const

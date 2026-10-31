@@ -7,8 +7,10 @@
 #pragma once
 
 #include "BonusEnum.h"
+#include "OwnedBonusEvaluationFacts.h"
 #include "../constants/EntityIdentifiers.h"
 #include <optional>
+#include <cstdint>
 #include <vector>
 
 class CBonusSystemNode;
@@ -20,6 +22,20 @@ class CStackInstance;
 class ProjectedBonusRoster;
 struct Bonus;
 namespace battle { class Unit; }
+
+/// Stateless native-aura configuration. Affiliation follows original armies,
+/// independently of Hypnotize or Puppet Master action control.
+struct DLL_LINKAGE AdjacentUnitFilter
+{
+	enum class Relationship : uint8_t { ANY, SAME_ARMY, OPPOSING_ARMY };
+	enum class NativeTrait : uint8_t { ANY, UNDEAD, LIVING };
+	Relationship relationship = Relationship::ANY;
+	NativeTrait nativeTrait = NativeTrait::ANY;
+	bool includeUpgrades = false;
+	bool anyCreature = false;
+	bool isDefault() const;
+	bool isValid() const;
+};
 
 /// Explicit updater/limiter input, NOT a projected bonus graph collector.
 /// Original typed hero/army/base identities stay live and immutable. Optional
@@ -37,6 +53,7 @@ public:
 	};
 private:
 	const CBonusSystemNode & original;
+	const OwnedBonusEvaluationFacts * owned = nullptr;
 	const battle::Unit * projected = nullptr;
 	const ProjectedBonusRoster * roster = nullptr;
 	std::optional<NativeContext> native;
@@ -44,6 +61,10 @@ private:
 public:
 	/// Implicit adapter preserves existing live calls using a bonus node.
 	BonusEvaluationContext(const CBonusSystemNode & node) noexcept;
+	/// Pure owned context; enclosing storage owns both shell and copied facts.
+	BonusEvaluationContext(const CBonusSystemNode & shell, const OwnedBonusEvaluationFacts & facts);
+	std::optional<int> heroLevel() const;
+	std::optional<int> filteredArmySize(CreatureID creature, FactionID faction, int level) const;
 	/// Requires matching unit ID; the enclosing owner binds battle/lifetimes.
 	BonusEvaluationContext(const CStack & node, const battle::Unit & unit);
 	BonusEvaluationContext(const CStack & node, const battle::Unit & unit, const ProjectedBonusRoster & roster);
@@ -67,6 +88,9 @@ public:
 	std::optional<FactionID> faction() const;
 	/// Projected adjacency requires complete roster membership; never live-falls-back.
 	std::vector<const battle::Unit *> adjacentUnits() const;
+	/// Reads only raw unit identity/health/position and native creature traits;
+	/// never performs a neighbor's recursive stack bonus query.
+	bool matchesAdjacentUnit(const battle::Unit & neighbor, CreatureID family, const AdjacentUnitFilter & filter) const;
 	/// Projected acceptance requires a CUnitState view (not a generic Unit wrapper).
 	bool acceptsBonus(const Bonus & bonus) const;
 };

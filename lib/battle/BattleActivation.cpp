@@ -25,6 +25,7 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	CStack * st = getStack(activeStack);
 	if(battleBeginsActivation(st, reason))
 	{
+		const bool sylvanRedeploy = st->defended() && !st->armorerLastStandDefending;
 		newHorizonsSerpentsEmbrace::releaseBindings(*this, unitId);
 		st->moraleExtraActivation = moraleExtraDamagePercent != 100 && reason == BattleUnitTurnReason::MORALE;
 		newHorizonsHeroicSpirit::beginActivation(*st, reason);
@@ -38,7 +39,7 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		}));
 		const auto owner = playerToSide(battleGetOwner(st));
 		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			sides.at(side).sylvanLuck.beginActivation(unitId, side == owner);
+			sides.at(side).sylvanLuck.beginActivation(unitId, side == owner, sylvanRedeploy, st->waited());
 	}
 	if(st->isTimeStopped() && reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
 	{

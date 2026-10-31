@@ -1371,15 +1371,17 @@
 		}
 	},
 	"sylvanLuck": {
-		"name": "Sylvan Luck",
+		"name": "Sylvan Tactics",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "+1 Luck. Lucky Strike damage multiplier becomes 2.25x.",
+			"description": "Friendly ordinary creatures gain +1 Initiative. This does not increase Luck or Lucky Strike damage.",
 			"images": {
 				"small": "NH_sylvanLuck_basic_small.png",
 				"medium": "NH_sylvanLuck_basic_medium.png",
@@ -1387,20 +1389,15 @@
 				"scenarioBonus": "NH_sylvanLuck_basic_scenarioBonus.png"
 			},
 			"effects": {
-				"luck": {
-					"type": "LUCK",
+				"initiative": {
+					"type": "STACKS_INITIATIVE_FLAT",
 					"valueType": "BASE_NUMBER",
 					"val": 1
-				},
-				"luckyStrikeDamage": {
-					"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-					"valueType": "BASE_NUMBER",
-					"val": 25
 				}
 			}
 		},
 		"advanced": {
-			"description": "+2 Luck total. Lucky Strike multiplier becomes 2.60x.",
+			"description": "Friendly ordinary creatures gain +2 Initiative. This does not increase Luck or Lucky Strike damage.",
 			"images": {
 				"small": "NH_sylvanLuck_advanced_small.png",
 				"medium": "NH_sylvanLuck_advanced_medium.png",
@@ -1408,20 +1405,15 @@
 				"scenarioBonus": "NH_sylvanLuck_advanced_scenarioBonus.png"
 			},
 			"effects": {
-				"luck": {
-					"type": "LUCK",
+				"initiative": {
+					"type": "STACKS_INITIATIVE_FLAT",
 					"valueType": "BASE_NUMBER",
 					"val": 2
-				},
-				"luckyStrikeDamage": {
-					"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-					"valueType": "BASE_NUMBER",
-					"val": 60
 				}
 			}
 		},
 		"expert": {
-			"description": "+3 Luck total. Lucky Strike multiplier becomes 3.00x.",
+			"description": "Friendly ordinary creatures gain +3 Initiative. This does not increase Luck or Lucky Strike damage.",
 			"images": {
 				"small": "NH_sylvanLuck_expert_small.png",
 				"medium": "NH_sylvanLuck_expert_medium.png",
@@ -1429,15 +1421,10 @@
 				"scenarioBonus": "NH_sylvanLuck_expert_scenarioBonus.png"
 			},
 			"effects": {
-				"luck": {
-					"type": "LUCK",
+				"initiative": {
+					"type": "STACKS_INITIATIVE_FLAT",
 					"valueType": "BASE_NUMBER",
 					"val": 3
-				},
-				"luckyStrikeDamage": {
-					"type": "LUCKY_STRIKE_DAMAGE_PERCENTAGE",
-					"valueType": "BASE_NUMBER",
-					"val": 100
 				}
 			}
 		}
@@ -1504,7 +1491,7 @@
 		}
 	},
 	"shroudOfMalassa": {
-		"name": "Shroud of Malassa",
+		"name": "Shroud of Nighon",
 		"specialty": [],
 		"tags": {"special": true},
 		"gainChance": {
@@ -1626,7 +1613,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "After victory, raise Skeletons equal to 10% of eligible living enemy creature casualties, rounded down.",
+			"description": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 50% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 			"images": {
 				"small": "SECSK32:0:39",
 				"medium": "SECSKILL:0:39",
@@ -1642,7 +1629,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Raise Skeletons equal to 20% of eligible casualties.",
+			"description": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 60% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 			"images": {
 				"small": "SECSK32:0:40",
 				"medium": "SECSKILL:0:40",
@@ -1658,7 +1645,7 @@
 			}
 		},
 		"expert": {
-			"description": "Raise Skeletons equal to 30% of eligible casualties.",
+			"description": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 70% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
 			"images": {
 				"small": "SECSK32:0:41",
 				"medium": "SECSKILL:0:41",

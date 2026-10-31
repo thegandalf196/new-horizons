@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "BonusSerializationContext.h"
+
 #include "Bonus.h"
 #include "BonusSelector.h"
 #include <cassert>
@@ -64,6 +66,8 @@ public:
 	TInternalContainer::size_type operator-=(const std::shared_ptr<Bonus> & i);
 
 	// BonusList functions
+	/// Checks only stored payloads; never queries inherited or cached bonuses.
+	void validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const;
 	void stackBonuses();
 	int totalValue(int baseValue = 0) const;
 	void getBonuses(BonusList &out, const CSelector &selector) const;
@@ -97,6 +101,8 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
 		h & static_cast<TInternalContainer&>(bonuses);
 	}
 

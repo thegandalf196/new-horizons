@@ -1327,30 +1327,16 @@ void CStackWindow::initBonusesList()
 	? static_cast<const IBonusBearer*>(info->stack)  // Use CStack in battle
 	: static_cast<const IBonusBearer*>(info->stackNode);  // Use CStackInstance outside of battle
 
-	const auto hydrasVitalityStatusText = [battleStack = info->stack](const Bonus & marker) -> std::string
-	{
-		if(!battleStack)
-			return {};
-		const auto state = battleStack->acquireState();
-		if(!state)
-			return {};
-		return "Hydra's Vitality: " + std::to_string(battleStack->getMaxHealth())
-			+ " max HP/creature; +" + std::to_string(state->capacityRegenerationProjectedHeal())
-			+ " aggregate HP next activation; " + std::to_string(marker.turnsRemain) + " rounds left.";
-	};
-
 	const auto confusionMarkers = bonusSource->getBonuses(Selector::type()(BonusType::CONFUSION_PENDING));
 	const auto confusion = info->stack
 		? newHorizonsBattleStatus::confusionStatus(*confusionMarkers, info->stack->confusionState)
 		: newHorizonsBattleStatus::ConfusionStatus{};
-	auto bonusToString = [bonusSource, hydrasVitalityStatusText, confusion](const std::shared_ptr<Bonus> & bonus) -> std::string
+	auto bonusToString = [bonusSource, battleStack = info->stack, confusion](const std::shared_ptr<Bonus> & bonus) -> std::string
 	{
 		if(bonus->type == BonusType::CONFUSION_PENDING)
 			return newHorizonsBattleStatus::confusionTooltip({}, confusion);
-		if(bonus->type == BonusType::HP_REGENERATION
-			&& bonus->source == BonusSource::SPELL_EFFECT
-			&& bonus->sid.toString() == "new-horizons:hydrasVitality")
-			return hydrasVitalityStatusText(*bonus);
+		if(creatureBonusStatusPresentation::isHydrasVitality(*bonus))
+			return creatureBonusStatusPresentation::hydrasVitalityText(battleStack, *bonus);
 
 		if(!bonus->description.empty())
 			return bonus->description.toString(&GAME->translator());
@@ -1436,32 +1422,10 @@ void CStackWindow::initBonusesList()
 			visibleBonuses.push_back(usedGroup.front());
 	}
 
-	if(info->stack)
-	{
-		const SpellID hydrasVitalityId = SpellID::decode("new-horizons:hydrasVitality");
-		const auto hydrasVitalityMarkers = info->stack->getBonuses(
-			Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(hydrasVitalityId))
-				.And(Selector::type()(BonusType::HP_REGENERATION)));
-		const bool hydraMarkerAlreadySelected = std::any_of(visibleBonuses.begin(), visibleBonuses.end(), [](const auto & bonus)
-		{
-			return !bonus->hidden
-				&& bonus->type == BonusType::HP_REGENERATION
-				&& bonus->source == BonusSource::SPELL_EFFECT
-				&& bonus->sid.toString() == "new-horizons:hydrasVitality";
-		});
-		if(!hydrasVitalityMarkers->empty() && !hydraMarkerAlreadySelected)
-		{
-			BonusInfo status;
-			status.description = hydrasVitalityStatusText(*hydrasVitalityMarkers->front());
-			if(!status.description.empty())
-			{
-				if(info->stackNode)
-					status.imagePath = info->stackNode->bonusToGraphics(hydrasVitalityMarkers->front());
-				status.bonusSource = BonusSource::SPELL_EFFECT;
-				activeBonuses.push_back(std::move(status));
-			}
-		}
-	}
+	auto * callback = GAME->interface() ? GAME->interface()->cb.get() : nullptr;
+	for(auto & status : creatureBonusStatusPresentation::supplementalRows(
+		info->stack, info->stackNode, visibleBonuses, callback))
+		activeBonuses.push_back(std::move(status));
 
 	std::sort(visibleBonuses.begin(), visibleBonuses.end(), bonusSortingPredicate);
 

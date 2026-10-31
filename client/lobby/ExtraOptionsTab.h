@@ -13,6 +13,10 @@
 
 class ExtraOptionsTab : public OptionsTabBase
 {
+	bool canChangeNeutralArmySize() const;
+	void setNeutralArmySize(int index);
+
 public:
 	ExtraOptionsTab();
+	void recreate(bool campaign = false) override;
 };

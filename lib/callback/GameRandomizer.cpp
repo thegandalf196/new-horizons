@@ -121,6 +121,9 @@ bool GameRandomizer::rollMoraleLuck(std::map<ObjectInstanceID, RandomGeneratorWi
 	int diceSize = gameInfo.getSettings().getInteger(diceSizeSetting);
 	int biasValue = gameInfo.getSettings().getInteger(biasValueSetting);
 	size_t chanceIndex = std::min<size_t>(chanceVector.size(), moraleLuckValue) - 1; // array index, so 0-indexed
+	// A configured impossible outcome does not allocate or advance a random stream.
+	if(!chanceVector.empty() && chanceVector[chanceIndex] == 0)
+		return false;
 
 	if(!seeds.count(actor))
 		seeds.try_emplace(actor, getDefault().nextInt());
@@ -425,51 +428,6 @@ vstd::RNG & GameRandomizer::getDefault()
 void GameRandomizer::setSeed(int newSeed)
 {
 	globalRandomNumberGenerator.setSeed(newSeed);
-}
-
-std::array<int, GameConstants::PRIMARY_SKILLS> GameRandomizer::rollPrimarySkillsForLevelup(const CGHeroInstance * hero)
-{
-	if(!hero->usesPrimaryGrowth())
-	{
-		std::array<int, GameConstants::PRIMARY_SKILLS> gains{};
-		++gains[rollPrimarySkillForLevelup(hero).getNum()];
-		return gains;
-	}
-	const auto view = hero->getPrimaryGrowthView();
-	if(!view)
-		return {};
-
-	if(view->extraGrowth.empty())
-		return view->profile.growth;
-	if(!heroSkillSeed.count(hero->getHeroTypeID()))
-		heroSkillSeed.try_emplace(hero->getHeroTypeID(), getDefault().nextInt());
-	auto & generator = heroSkillSeed.at(hero->getHeroTypeID()).seed;
-	std::vector<newHorizonsHeroes::ExtraPrimaryRoll> opportunities;
-	std::vector<int> draws;
-	for(const auto & chance : view->extraGrowth)
-	{
-		opportunities.push_back({chance.attribute, chance.chancePercent});
-		draws.push_back(generator.nextInt(0, 99));
-	}
-	return newHorizonsHeroes::calculatePrimaryGrowth(view->profile, opportunities, draws);
-}
-
-PrimarySkill GameRandomizer::rollPrimarySkillForLevelup(const CGHeroInstance * hero)
-{
-	if(!heroSkillSeed.count(hero->getHeroTypeID()))
-		heroSkillSeed.try_emplace(hero->getHeroTypeID(), getDefault().nextInt());
-
-	const bool isLowLevelHero = hero->level < GameConstants::HERO_HIGH_LEVEL;
-	const auto & skillChances = isLowLevelHero ? hero->getHeroClass()->primarySkillLowLevel : hero->getHeroClass()->primarySkillHighLevel;
-	auto & heroRng = heroSkillSeed.at(hero->getHeroTypeID());
-
-	if(hero->isCampaignYog())
-	{
-		// Yog can only receive Attack or Defence on level-up
-		std::vector<int> yogChances = {skillChances[0], skillChances[1]};
-		return static_cast<PrimarySkill>(RandomGeneratorUtil::nextItemWeighted(yogChances, heroRng.seed));
-	}
-	return static_cast<PrimarySkill>(RandomGeneratorUtil::nextItemWeighted(skillChances, heroRng.seed));
 }
 
 SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance * hero, const std::set<SecondarySkill> & options)

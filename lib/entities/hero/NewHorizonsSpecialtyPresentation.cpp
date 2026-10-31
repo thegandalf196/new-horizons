@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsGenieSage.h"
 #include "NewHorizonsPetrifyingBlood.h"
 #include "NewHorizonsDreadCavalry.h"
 #include "NewHorizonsRecoverySpecialties.h"
@@ -53,7 +54,8 @@ bool resolveIndividualPresentation(const CHero & hero,
 				: "Serpent’s Embrace is disabled for this game.";
 			return true;
 		}
-	if(resolveForestAmbushPresentation(hero, development, result)
+	if(resolveGenieSagePresentation(hero, development, result)
+		|| resolveForestAmbushPresentation(hero, development, result)
 		|| resolvePetrifyingBloodPresentation(hero, development, result)
 		|| resolveLivingInfernoPresentation(hero, development, result)
 		|| resolveDreadCavalryPresentation(hero, development, result)

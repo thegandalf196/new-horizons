@@ -1,0 +1,14 @@
+{
+	"genieLuck": {
+		"implements": "spellEffect",
+		"script": "spells/genieLuck",
+		"patches": [],
+		"schema": {
+			"type": "object",
+			"properties": {
+				"type": {}
+			},
+			"additionalProperties": false
+		}
+	}
+}

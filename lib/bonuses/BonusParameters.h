@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "BonusSerializationContext.h"
+
 #include "../json/JsonNode.h"
 #include "../serializer/Serializeable.h"
 
@@ -67,6 +69,13 @@ public:
 		:data_(value)
 	{}
 
+	/// Only typed, serialized combat-effect bonuses belong to this capability closure.
+	const BonusParametersOnCombatEvent * combatEffects() const
+	{
+		return std::get_if<BonusParametersOnCombatEvent>(&data_);
+	}
+	void validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const;
+
 	std::string toString() const;
 	JsonNode toJsonNode() const;
 
@@ -116,7 +125,14 @@ public:
 	template <class H>
 	void serialize(H& h)
 	{
+		const auto context = BonusSerializationContext::fromHandler(h);
+		const bool supported = context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported;
+		if(h.saving && !supported)
+			validateAdjacencyCapabilitySerialization(context);
 		h & data_;
+		if(!h.saving && !supported)
+			validateAdjacencyCapabilitySerialization(context);
 	}
 
 private:

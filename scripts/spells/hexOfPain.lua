@@ -4,7 +4,6 @@ Script.__index = Script
 
 local COMBAT_EVENT = "core:hexOfPain"
 local DURATION_TURNS = 3
-local DAMAGE_SHARE_PERCENT = 10
 function Script:apply(mechanics, server, target)
 	local battle = mechanics:getBattle()
 	local spellKey = mechanics:getSpell():getJsonKey()
@@ -39,7 +38,7 @@ function Script:apply(mechanics, server, target)
 				statusTags = {"DEBUFF"},
 				statusIdentity = spellKey,
 				addInfo = {
-					damageSharePercent = mechanics:scaleHeroLuckDamage(DAMAGE_SHARE_PERCENT),
+					damageSharePercent = mechanics:getHexOfPainDamageSharePercent(),
 					casterSide = casterSide
 				}
 			}, false)

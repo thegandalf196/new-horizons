@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "BonusSerializationContext.h"
+
 #include "BonusEnum.h"
 #include "BonusCustomTypes.h"
 #include "Limiters.h"
@@ -218,7 +220,10 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			throw std::runtime_error("Cannot discard all-magical damage vulnerability in an older format");
 	}
 
-	template <typename Handler> void serialize(Handler &h)
+	/// Non-writing admission for the two capabilities introduced in format1145.
+	void validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const;
+
+	template <typename Handler> void validateWriteSerialization(Handler & h) const
 	{
 		if(h.saving) validateParalyzingGazeSerialization(h);
 		if(h.saving) validateSerpentsEmbraceSerialization(h);
@@ -296,6 +301,13 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && (duration & BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION) != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CREATURE_ACTIVATION_DURATION))
 			throw std::runtime_error("Cannot discard New Horizons creature activation bonus duration");
+		if(h.saving)
+			validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
+	}
+
+	template <typename Handler> void serialize(Handler &h)
+	{
+		validateWriteSerialization(h);
 		h & duration;
 		h & type;
 		h & subtype;
@@ -361,6 +373,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			BonusMigration::migrateCombatAbility(*this);
 		if(!h.saving)
 		{
+			validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
 			validateSerpentsEmbraceSerialization(h);
 			validateParalyzingGazeSerialization(h);
 			validateAllMagicVulnerabilitySerialization(h);

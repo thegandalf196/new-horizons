@@ -1,0 +1,64 @@
+{
+	"items": [
+		{
+			"name": "labelNeutralArmySize",
+			"type": "label",
+			"font": "small",
+			"alignment": "left",
+			"color": "yellow",
+			"text": "vcmi.optionsTab.neutralArmySize.title",
+			"position": {
+				"x": 70,
+				"y": 212
+			}
+		},
+		{
+			"name": "labelNeutralArmySizeValue",
+			"type": "label",
+			"font": "small",
+			"alignment": "right",
+			"color": "white",
+			"text": "vcmi.optionsTab.neutralArmySize.default",
+			"position": {
+				"x": 378,
+				"y": 212
+			}
+		},
+		{
+			"name": "sliderNeutralArmySize",
+			"type": "slider",
+			"orientation": "horizontal",
+			"position": {
+				"x": 70,
+				"y": 236
+			},
+			"size": 308,
+			"callback": "setNeutralArmySize",
+			"itemsVisible": 1,
+			"itemsTotal": 100,
+			"selected": 49,
+			"style": "blue",
+			"scrollBounds": {
+				"x": 0,
+				"y": 0,
+				"w": 308,
+				"h": 28
+			}
+		},
+		{
+			"name": "labelNeutralArmySizeHelp",
+			"type": "multiLineLabel",
+			"font": "tiny",
+			"alignment": "left",
+			"color": "white",
+			"text": "vcmi.optionsTab.neutralArmySize.help",
+			"rect": {
+				"x": 70,
+				"y": 270,
+				"w": 308,
+				"h": 64
+			},
+			"adoptHeight": false
+		}
+	]
+}

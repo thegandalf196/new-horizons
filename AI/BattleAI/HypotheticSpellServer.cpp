@@ -174,8 +174,12 @@ void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 		auto snapshot = owner->captureElementalRebirthSource(*unit);
 		if(!snapshot)
 			continue;
+		// Accepted destruction flags encode the resolved same-unit result. Mere
+		// readiness remains the fallback only for a flagless forecast packet.
+		const bool nativeRebirth = hit.killed() || hit.cloneKilled()
+			? hit.willRebirth() : owner->hasReadyNativeRebirth(unit.get());
 		pendingRebirths.emplace(hit.stackAttacked, PendingRebirth{
-			*snapshot, unit->isClone(), owner->hasReadyNativeRebirth(unit.get())});
+			*snapshot, unit->isClone(), nativeRebirth});
 	}
 
 	BattleStatePackVisitor visitor(*owner);

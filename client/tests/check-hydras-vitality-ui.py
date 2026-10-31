@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CONTROLLER = (ROOT / "client/battle/BattleActionsController.cpp").read_text()
 CONTROLLER_HEADER = (ROOT / "client/battle/BattleActionsController.h").read_text()
 CREATURE_WINDOW = (ROOT / "client/windows/CCreatureWindow.cpp").read_text()
+STATUS_ROWS = (ROOT / "client/windows/CreatureBonusStatusPresentation.cpp").read_text()
 
 
 def require(source: str, needle: str, label: str) -> None:
@@ -69,7 +70,10 @@ def main() -> None:
     if "hpDelta =" in targeted_spell or "unitsDelta =" in targeted_spell:
         raise AssertionError("target preview must not repurpose immediate-health or casualty fields")
 
-    status = function_body(CREATURE_WINDOW, "CStackWindow::initBonusesList(")
+    router = function_body(CREATURE_WINDOW, "CStackWindow::initBonusesList(")
+    require(router, "creatureBonusStatusPresentation::supplementalRows(", "focused live-status row builder")
+    require(router, "creatureBonusStatusPresentation::hydrasVitalityText(battleStack, *bonus)", "normal chosen marker formatting")
+    status = STATUS_ROWS
     require(status, "BonusType::HP_REGENERATION", "active Hydra marker type")
     require(status, "BonusSource::SPELL_EFFECT", "active spell source")
     require(status, '"new-horizons:hydrasVitality"', "active Hydra spell identity")
@@ -77,8 +81,15 @@ def main() -> None:
     require(status, "state->capacityRegenerationProjectedHeal()", "shared next-activation healing forecast")
     require(status, "marker.turnsRemain", "active spell duration status")
     require(status, "hydraMarkerAlreadySelected", "coalesced regeneration marker fallback")
+    require(status, "!bonus->hidden && isHydrasVitality(*bonus)", "visible chosen marker deduplication")
+    require(status, "stackNode->bonusToGraphics(hydrasVitalityMarkers->front())", "original source icon")
+    require(status, "status.bonusSource = BonusSource::SPELL_EFFECT", "original row source")
+    require(status, "if(!battleStack)", "no supplemental rows outside battle")
+    assert router.index("supplementalRows(") < router.index("std::sort(visibleBonuses.begin()"), "Supplemental statuses retain their original insertion position"
+    assert status.index("hydraMarkerAlreadySelected") < status.index("newHorizonsSylvanFactionPresentation::currentRows"), "Hydra fallback remains before new faction statuses"
 
-    for source in (CONTROLLER, CONTROLLER_HEADER, CREATURE_WINDOW):
+
+    for source in (CONTROLLER, CONTROLLER_HEADER, CREATURE_WINDOW, STATUS_ROWS):
         if "HydrasVitalityWindow" in source or "HydrasVitalityDialog" in source:
             raise AssertionError("Hydra's Vitality must use existing hover/status UI, not add a window")
 

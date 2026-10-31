@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <stdexcept>
 #include "BonusCustomTypes.h"
 #include "BonusEnum.h"
 #include "BonusEvaluationContext.h"
@@ -51,6 +52,8 @@ public:
 	virtual EDecision limit(const BonusLimitationContext &context) const;
 	virtual std::string toString() const;
 	virtual JsonNode toJsonNode() const;
+	/// Preflight static adjacency metadata before enclosing serialization prefixes.
+	virtual void validateAdjacencySerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
@@ -69,9 +72,12 @@ public:
 	std::vector<TLimiterPtr> limiters;
 	void add(const TLimiterPtr & limiter);
 	JsonNode toJsonNode() const override;
+	void validateAdjacencySerialization(bool supported) const override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateAdjacencySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS));
 		h & static_cast<ILimiter&>(*this);
 		h & limiters;
 	}
@@ -142,6 +148,8 @@ public:
 	bool isSourceRelevant; //check for bonus source only if this is true
 	bool isSourceIDRelevant; //check for bonus source only if this is true
 
+	void validateAdjacencySerialization(bool supported) const override;
+
 	HasAnotherBonusLimiter(BonusType bonus = BonusType::NONE);
 	HasAnotherBonusLimiter(BonusType bonus, BonusSubtypeID _subtype);
 	HasAnotherBonusLimiter(BonusType bonus, BonusSource src);
@@ -153,6 +161,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		const bool supported = h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS);
+		if(h.saving) validateAdjacencySerialization(supported);
 		h & static_cast<ILimiter&>(*this);
 		h & type;
 		h & subtype;
@@ -166,6 +176,7 @@ public:
 			h & minValue;
 			h & maxValue;
 		}
+		if(!h.saving) validateAdjacencySerialization(supported);
 	}
 };
 
@@ -292,15 +303,31 @@ class DLL_LINKAGE UnitAdjacentLimiter : public ILimiter // applis if unit is adj
 {
 public:
 	CreatureID targetUnit;
+	AdjacentUnitFilter filter;
+	static std::shared_ptr<const ILimiter> fromJson(const JsonNode & node);
 
 	UnitAdjacentLimiter() = default;
 	EDecision limit(const BonusLimitationContext &context) const override;
 	JsonNode toJsonNode() const override;
+	void validateAdjacencySerialization(bool supported) const override;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		const bool supported = h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS);
+		if(h.saving)
+			validateAdjacencySerialization(supported);
 		h & static_cast<ILimiter&>(*this);
 		h & targetUnit;
+		if(supported)
+		{
+			h & filter.relationship;
+			h & filter.nativeTrait;
+			h & filter.includeUpgrades;
+			h & filter.anyCreature;
+			validateAdjacencySerialization(true);
+		}
+		else if(!h.saving)
+			filter = {};
 	}
 };
 

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "SylvanTacticsProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "../../lib/battle/NewHorizonsLivingInferno.h"
 #include "HypotheticBattle.h"
@@ -152,8 +153,9 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 			const auto source = captureElementalRebirthSource(*mover);
 			const bool nativeRebirth = hasReadyNativeRebirth(mover.get());
 			const auto healthBefore = mover->getAvailableHealth();
-			newHorizonsForestAmbush::damageFromAttack(*this, *mover, damage,
-				battle::DamageProvenance::PHYSICAL_CREATURE);
+			sylvanTacticsAI::StrikeProjection tactics(this);
+			tactics.damage(*this, attack, *mover, damage, battle::DamageProvenance::PHYSICAL_CREATURE);
+			tactics.finish(shooterId);
 			if(!mover->alive())
 				releaseSerpentBindingsForDeath(*mover);
 			const auto healthLoss = std::max<int64_t>(0, healthBefore - mover->getAvailableHealth());

@@ -334,10 +334,7 @@ function Script:apply(mechanics, server, target)
 	if center == nil then return end
 	local battle = mechanics:getBattle()
 	if battle:hasFortifications() then
-		local structuralDamage = mechanics:getNewHorizonsEarthquakeParameter("structuralDamage")
-		if geomancerActive(mechanics) then
-			structuralDamage = math.floor(structuralDamage * 125 / 100)
-		end
+		local structuralDamage = mechanics:getEarthquakeStructuralDamageBase()
 		structuralDamage = mechanics:scaleHeroLuckDamage(structuralDamage)
 		for _, part in ipairs(plannedSections(mechanics, center)) do
 			server:damageFortification(battle, part, structuralDamage)

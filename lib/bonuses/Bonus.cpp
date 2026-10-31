@@ -25,6 +25,10 @@
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
 #include "../battle/BattleInfo.h"
 #include "../battle/NewHorizonsConfusionControl.h"
+#include "../battle/NewHorizonsRangefinder.h"
+#include "../battle/NewHorizonsMaintenanceSpecialties.h"
+#include "../battle/NewHorizonsShieldAndSword.h"
+#include "../battle/NewHorizonsSepulchralGrip.h"
 #include "../constants/StringConstants.h"
 #include "../entities/hero/CHero.h"
 #include "../modding/ModUtility.h"
@@ -299,4 +303,75 @@ std::shared_ptr<Bonus> Bonus::addPropagationUpdater(const TUpdaterPtr & newUpdat
 {
 	propagationUpdater = appendToUpdaters(propagationUpdater, newUpdater);
 	return this->shared_from_this();
+}
+
+namespace
+{
+void appendOwnedEffectBonuses(const BonusParameters * parameters, std::vector<const Bonus *> & pending)
+{
+	if(!parameters) return;
+	const auto * event = parameters->combatEffects();
+	if(!event) return;
+	for(const auto & effect : event->effects)
+		if(const auto * owned = std::get_if<BonusParametersOnCombatEvent::CombatEffectBonus>(&effect))
+			if(owned->bonus) pending.push_back(owned->bonus.get());
+}
+
+void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters * parameters, BonusSerializationContext context)
+{
+	std::vector<const Bonus *> pending;
+	std::set<const Bonus *> visited;
+	if(root) pending.push_back(root);
+	appendOwnedEffectBonuses(parameters, pending);
+	while(!pending.empty())
+	{
+		const auto * bonus = pending.back();
+		pending.pop_back();
+		if(!visited.insert(bonus).second) continue;
+		if(!context.adjacencyFiltersSupported
+			&& (bonus->type == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION
+				|| bonus->subtype.as<BonusTypeID>().toEnum() == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION))
+			throw std::runtime_error("Unsupported target MDR penetration bonus format");
+		if(newHorizonsRangefinder::isEnvelope(*bonus) && !context.ordinaryRangedSpecialtiesSupported)
+			throw std::runtime_error("Unsupported Rangefinder envelope bonus format");
+		if(newHorizonsMaintenanceSpecialties::isDefendRetaliationBonus(bonus)
+			&& !context.ordinaryMaintenanceSpecialtiesSupported)
+			throw std::runtime_error("Unsupported Ogre Bulwark bonus format");
+		if(newHorizonsShieldAndSword::isProtection(bonus) && !context.ordinaryCombatSpecialtiesSupported)
+			throw std::runtime_error("Unsupported Shield and Sword bonus format");
+		if(newHorizonsSepulchralGrip::isEffect(bonus) && !context.ordinaryCombatSpecialtiesSupported)
+			throw std::runtime_error("Unsupported Sepulchral Grip bonus format");
+		if(bonus->limiter) bonus->limiter->validateAdjacencySerialization(context.adjacencyFiltersSupported);
+		if(context.combatEventParametersSerialized)
+			appendOwnedEffectBonuses(bonus->parameters.get(), pending);
+	}
+}
+}
+
+void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
+{
+	// Supported owner preflights stay constant-time; the direct codec still validates reserved provenance.
+	if(context.ordinaryRangedSpecialtiesSupported)
+		newHorizonsRangefinder::isEnvelope(*this);
+	if(context.ordinaryMaintenanceSpecialtiesSupported)
+		newHorizonsMaintenanceSpecialties::isDefendRetaliationBonus(this);
+	if(context.ordinaryCombatSpecialtiesSupported)
+	{
+		newHorizonsShieldAndSword::isProtection(this);
+		newHorizonsSepulchralGrip::isEffect(this);
+	}
+	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported)
+	{
+		if(limiter) limiter->validateAdjacencySerialization(true);
+		return;
+	}
+	validateUnsupportedOwnedBonuses(this, nullptr, context);
+}
+
+void BonusParameters::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
+{
+	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
+		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported) return;
+	validateUnsupportedOwnedBonuses(nullptr, this, context);
 }

@@ -8,11 +8,13 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsSylvanTactics.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "NewHorizonsArchery.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsFrozen.h"
+#include "NewHorizonsSequenceProtection.h"
 #include "../GameLibrary.h"
 #include "../IGameSettings.h"
 #include "../combatScripts/IDamageCalculatorScript.h"
@@ -32,7 +34,11 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	DamageAttackInfo & payload, const IBattleInfo * currentBattle) const
 {
 	payload.intrinsicPhysicalDamageReductionPercent = info.physicalDamage && info.defender
-		? info.defender->intrinsicPhysicalDamageReductionPercent() : 0;
+		? info.defender->intrinsicPhysicalDamageReductionPercent()
+			+ newHorizonsHeroes::ordinaryCreatureProtectionPercent(*this, info) : 0;
+	payload.runicEnduranceReductionPercent = newHorizonsSequenceProtection::runicEndurancePercent(*this, info);
+	payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
+		+ newHorizonsSequenceProtection::cyclopeanBreachPercent(*this, info));
 	const bool finalLuckPolicy = getBattle()->getRawFinalDirectPhysicalLuckPolicy();
 	const bool luckEligible = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(info.attacker, info.physicalDamage);
 	payload.luckyStrike = info.luckyStrike && (!finalLuckPolicy || luckEligible);
@@ -42,13 +48,15 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	{
 		if(const auto * hero = battleGetOwnerHero(info.attacker))
 		{
-			if(hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"))
+			if(!newHorizonsSylvanTactics::enabled(hero) && hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"))
 				payload.luckyRangedDefenseIgnorePercent += ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT;
 			if(hero->hasActivePerk("new-horizons:luck", "new-horizons:luck.luckyAim"))
 				payload.luckyRangedDefenseIgnorePercent += LUCKY_AIM_DEFENSE_IGNORE_PERCENT;
 		}
 	}
+	newHorizonsSylvanTactics::finalizeDamage(*this, info, payload);
 	payload.unluckyStrike = info.unluckyStrike && (!finalLuckPolicy || luckEligible);
+	payload.ordinaryCreatureSpecialtyDamagePercent = newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*this, info);
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
 	if(info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))

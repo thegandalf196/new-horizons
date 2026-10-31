@@ -166,7 +166,17 @@ reviewed endpoint process, outside the payload. There is no JSON import, CLI
 hold the original ticket through its complete receipt, actual acceptance and
 post-preservation checks. Only literal boolean `True` can finish promotion.
 Every completion attempt consumes the ticket, including refusal; it cannot be
-replayed after a mutation, stale lease or failed acceptance. Losing the endpoint
+replayed after a mutation, stale lease or failed acceptance.
+An endpoint with an overall deadline can pass
+`absolute_monotonic_deadline=deadline` to `finish_validation`, where `deadline`
+is a finite positive absolute `time.monotonic()` value captured before launch.
+The optional argument defaults to no deadline for existing callers. The commit
+checks it again under the store lock after verification and temporary-pointer
+fsync, immediately before atomic pointer replacement. Expiry refuses selection,
+cleans the temporary pointer and consumes the ticket; it does not signal or
+cancel the endpoint's processes. This is a commit admission deadline, not a timer
+for the filesystem operation or a replacement for bounded graphical cleanup.
+Losing the endpoint
 loses the ticket: a later process cannot reconstruct acceptance from a file.
 
 `begin_validation` requires an exact generated snapshot inside the selected

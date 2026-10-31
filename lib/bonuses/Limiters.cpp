@@ -20,11 +20,14 @@
 #include "../mapObjects/army/CArmedInstance.h"
 #include "../CStack.h"
 #include <optional>
+#include <set>
+#include <set>
 #include <stdexcept>
 #include "../TerrainHandler.h"
 #include "../constants/StringConstants.h"
 #include "../battle/Unit.h"
 #include "../json/JsonUtils.h"
+#include "../modding/IdentifierStorage.h"
 
 const std::map<std::string, TLimiterPtr> bonusLimiterMap =
 {
@@ -41,6 +44,8 @@ ILimiter::EDecision ILimiter::limit(const BonusLimitationContext &context) const
 {
 	return ILimiter::EDecision::ACCEPT;
 }
+
+void ILimiter::validateAdjacencySerialization(bool) const {}
 
 std::string ILimiter::toString() const
 {
@@ -91,6 +96,14 @@ JsonNode CCreatureTypeLimiter::toJsonNode() const
 	root["parameters"].Vector().emplace_back(includeUpgrades);
 
 	return root;
+}
+
+void HasAnotherBonusLimiter::validateAdjacencySerialization(bool supported) const
+{
+	if(supported) return;
+	if(type == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION
+		|| subtype.as<BonusTypeID>().toEnum() == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION)
+		throw std::runtime_error("Unsupported target MDR penetration limiter format");
 }
 
 HasAnotherBonusLimiter::HasAnotherBonusLimiter( BonusType bonus )
@@ -233,20 +246,81 @@ ILimiter::EDecision UnitAdjacentLimiter::limit(const BonusLimitationContext &con
 	const auto adjacentUnits = context.evaluation.adjacentUnits();
 
 	for (const auto & unit : adjacentUnits)
-		if (unit->creatureId() == targetUnit)
+		if(context.evaluation.matchesAdjacentUnit(*unit, targetUnit, filter))
 			return ILimiter::EDecision::ACCEPT;
 
 	return ILimiter::EDecision::DISCARD;
 }
 
+void UnitAdjacentLimiter::validateAdjacencySerialization(bool supported) const
+{
+	if(!filter.isValid() || (!supported && !filter.isDefault())
+		|| (filter.anyCreature && targetUnit.hasValue())
+		|| (!filter.isDefault() && !filter.anyCreature && !targetUnit.hasValue()))
+		throw std::runtime_error("Unsupported adjacency filter metadata");
+}
+
 JsonNode UnitAdjacentLimiter::toJsonNode() const
 {
+	validateAdjacencySerialization(true);
+	if(!filter.anyCreature && !targetUnit.hasValue())
+		throw std::runtime_error("Adjacency filter has no creature family");
 	JsonNode root;
-
 	root["type"].String() = "UNIT_ADJACENT";
-	root["creature"].String() = targetUnit.toEntity(LIBRARY)->getJsonKey();
-
+	if(filter.anyCreature)
+		root["anyCreature"].Bool() = true;
+	else
+		root["creature"].String() = targetUnit.toEntity(LIBRARY)->getJsonKey();
+	if(filter.includeUpgrades)
+		root["includeUpgrades"].Bool() = true;
+	if(filter.relationship != AdjacentUnitFilter::Relationship::ANY)
+		root["relationship"].String() = filter.relationship == AdjacentUnitFilter::Relationship::SAME_ARMY
+			? "sameArmy" : "opposingArmy";
+	if(filter.nativeTrait != AdjacentUnitFilter::NativeTrait::ANY)
+		root["nativeTrait"].String() = filter.nativeTrait == AdjacentUnitFilter::NativeTrait::UNDEAD ? "undead" : "living";
 	return root;
+}
+std::shared_ptr<const ILimiter> UnitAdjacentLimiter::fromJson(const JsonNode & node)
+{
+	if(!node.isStruct())
+		throw std::runtime_error("Adjacency filter must be an object");
+	if(!node["type"].isString() || node["type"].String() != "UNIT_ADJACENT")
+		throw std::runtime_error("Adjacency filter requires its registered type");
+	const std::set<std::string> fields{"type", "creature", "anyCreature", "includeUpgrades", "relationship", "nativeTrait"};
+	for(const auto & [key, value] : node.Struct())
+		if(!fields.contains(key))
+			throw std::runtime_error("Unknown adjacency filter field");
+	auto result = std::make_shared<UnitAdjacentLimiter>();
+	for(const char * key : {"includeUpgrades", "anyCreature"})
+		if(node.Struct().contains(key) && !node[key].isBool())
+			throw std::runtime_error("Adjacency filter flag must be boolean");
+	result->filter.includeUpgrades = node["includeUpgrades"].isBool() && node["includeUpgrades"].Bool();
+	result->filter.anyCreature = node["anyCreature"].isBool() && node["anyCreature"].Bool();
+	if(!result->filter.anyCreature)
+	{
+		if(!node["creature"].isString())
+			throw std::runtime_error("Adjacency filter requires a creature family or anyCreature");
+		LIBRARY->identifiers()->requestIdentifier("creature", node["creature"], [result](si32 id) { result->targetUnit = id; });
+	}
+	else if(node.Struct().contains("creature"))
+		throw std::runtime_error("Adjacency filter cannot combine creature with anyCreature");
+	if(node.Struct().contains("relationship"))
+	{
+		if(!node["relationship"].isString()) throw std::runtime_error("Invalid adjacency relationship");
+		const auto & value = node["relationship"].String();
+		if(value == "sameArmy") result->filter.relationship = AdjacentUnitFilter::Relationship::SAME_ARMY;
+		else if(value == "opposingArmy") result->filter.relationship = AdjacentUnitFilter::Relationship::OPPOSING_ARMY;
+		else if(value != "any") throw std::runtime_error("Invalid adjacency relationship");
+	}
+	if(node.Struct().contains("nativeTrait"))
+	{
+		if(!node["nativeTrait"].isString()) throw std::runtime_error("Invalid adjacency native trait");
+		const auto & value = node["nativeTrait"].String();
+		if(value == "undead") result->filter.nativeTrait = AdjacentUnitFilter::NativeTrait::UNDEAD;
+		else if(value == "living") result->filter.nativeTrait = AdjacentUnitFilter::NativeTrait::LIVING;
+		else if(value != "any") throw std::runtime_error("Invalid adjacency native trait");
+	}
+	return result;
 }
 
 FactionLimiter::FactionLimiter(FactionID creatureFaction)
@@ -406,6 +480,13 @@ ILimiter::EDecision OppositeSideLimiter::limit(const BonusLimitationContext & co
 AggregateLimiter::AggregateLimiter(std::vector<TLimiterPtr> limiters):
 	limiters(std::move(limiters))
 {
+}
+
+void AggregateLimiter::validateAdjacencySerialization(bool supported) const
+{
+	for(const auto & limiter : limiters)
+		if(limiter)
+			limiter->validateAdjacencySerialization(supported);
 }
 
 void AggregateLimiter::add(const TLimiterPtr & limiter)

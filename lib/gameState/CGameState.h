@@ -9,6 +9,8 @@
  */
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
@@ -272,6 +274,8 @@ public:
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
+	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
+
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported = false, bool schoolSupported = false, bool additionalSupported = false, bool recoverySupported = false) const;
 	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
 	void validateNewHorizonsMasterSpellwardSerialization(bool supported) const;
@@ -286,13 +290,17 @@ public:
 	void validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported = false) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateNeutralArmySizeSerialization(bool supported) const;
+	void validateNeutralArmyStartOptionSerialization(bool supported) const;
 	void validateRecruitmentGrowthSerialization(bool supported) const;
 	void validateTimeStopSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
+	void validateSylvanTacticsSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNeutralArmyStartOptionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		if(h.saving)
 			validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 		if(h.saving)
@@ -308,6 +316,7 @@ public:
 			validateCanonicalSpellClausesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
 		if(h.saving) validatePlagueRulesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
+		if(h.saving) validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		if(h.saving) validateCrisisCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		if(h.saving)
 			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
@@ -392,6 +401,8 @@ public:
 				&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
 				throw std::runtime_error("Cannot discard New Horizons targeted world rules");
 		}
+		if(h.saving)
+			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & scenarioOps;
 		h & initialOpts;
 		h & actingPlayers;
@@ -556,6 +567,8 @@ public:
 			if(!h.saving) newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+			if(!h.saving) newHorizonsHeroes::validateSylvanTacticsSerialization(heroPerkRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			if(!h.saving) newHorizonsHeroes::validateCrisisCommandProfileSerialization(heroPerkRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 			if(!h.saving)

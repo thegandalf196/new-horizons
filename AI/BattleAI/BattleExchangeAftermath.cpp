@@ -3,6 +3,13 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "BattleExchangeAftermath.h"
+#include "AttackPreviewHitContext.h"
+#include "MeleeSpecialtyProjection.h"
+#include "ParalyzingGazeProjection.h"
+#include "DefiantDenialProjection.h"
+#include "../../lib/battle/BattleAttackInfo.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "BattleExchangeVariant.h"
@@ -116,4 +123,94 @@ void BattleExchangeVariant::completeFrozenActivation(const std::shared_ptr<Stack
 	if(current->alive() && !current->isGhost() && !current->isTimeStopped()
 		&& newHorizonsFrozen::isFrozen(*current))
 		current->removeUnitBonus(frozen);
+}
+
+namespace battleExchangeAftermath
+{
+bool projectNoQuarterAfterHit(HypotheticBattle & battle, const BattleAttackInfo & attack,
+	StackWithBonuses & target)
+{
+	if(!battle.battleCanTriggerNoQuarter(attack) || !target.alive() || target.isTimeStopped()
+		|| !battle.battleMatchOwner(attack.attacker, &target)
+		|| !newHorizonsOffense::belowNoQuarterThreshold(
+			target.getAvailableHealth(), battle::getMaximumHealth(target)))
+		return false;
+	if(battleDefiantAI::project(battle, attack, newHorizonsArmorer::DefiantDenialCause::NO_QUARTER))
+		return false;
+
+	const int32_t moraleActivations = battle.getBattle()->getActiveStackID()
+		== static_cast<int32_t>(target.unitId()) ? 2 : 1;
+	target.applyNoQuarter(moraleActivations, true);
+	return true;
+}
+
+std::optional<uint32_t> relentlessAssaultPrimaryTargetId(const CBattleInfoCallback & battle,
+	const BattleAttackInfo & attack)
+{
+	const auto * attacker = attack.attacker;
+	const auto * defender = attack.defender;
+	if(!attacker || !defender || !attack.physicalDamage || attack.retaliation
+		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent > 0
+		|| attack.cleaveDamagePercent > 0 || attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))
+		return {};
+	const auto side = attacker->unitSide();
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return {};
+	const auto * hero = battle.battleGetFightingHero(side);
+	if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT)
+		|| !attacker->alive() || attacker->isGhost() || attacker->isTurret()
+		|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
+		return {};
+	const auto * primaryTarget = battle.battleResolveHeroOrderTarget(attacker, defender, attack.shooting);
+	if(!primaryTarget || !primaryTarget->alive() || primaryTarget->isGhost() || primaryTarget->isTurret()
+		|| primaryTarget->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| primaryTarget->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
+		|| !battle.battleMatchOwner(attacker, primaryTarget))
+		return {};
+	return primaryTarget->unitId();
+}
+
+void projectRelentlessAssaultAttack(HypotheticBattle & battle, const BattleAttackInfo & attack,
+	std::optional<uint32_t> primaryTargetUnitId)
+{
+	if(!attack.attacker || !primaryTargetUnitId)
+		return;
+	battle.recordRelentlessAssaultAttack(attack.attacker->unitSide(), *primaryTargetUnitId);
+}
+}
+
+void battleExchangeAftermath::applyPrimaryStatuses(HypotheticBattle & battle,
+	const BattleAttackInfo & attack, int64_t primaryDamage, bool binding, bool gaze)
+{
+	battle.projectSerpentBinding(attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, binding);
+	paralyzingGazeAI::apply(battle, attack.attacker->unitId(), attack.defender->unitId(), primaryDamage, gaze);
+	AttackPreviewHitContext::applyOrdinaryStrike(battle, attack, primaryDamage);
+}
+
+void BattleExchangeVariant::completeSelectedAttack(const AttackPossibility & ap,
+	const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition,
+	const std::optional<HypotheticBattle::ManaLeechReplay> & manaLeechReplay,
+	const std::set<uint32_t> & rebirthSpawnIdsBefore, size_t primalBurstFirstNewHit,
+	PlayerColor referenceController, DamageCache & damageCache)
+{
+	if(!ap.attack.shooting && ap.from.isValid() && attacker.alive()
+		&& attacker.hasBonusOfType(BonusType::RETURN_AFTER_STRIKE)
+		&& !attacker.hasBonusOfType(BonusType::NOT_ACTIVE)
+		&& !attacker.hasBonusOfType(BonusType::BIND_EFFECT))
+		attacker.setPosition(originalPosition);
+
+#if BATTLE_TRACE_LEVEL >= 1
+	logAi->trace(
+		"ap score: our: %2f, enemy: %2f, collateral: %2f, blocked: %2f",
+		ap.attackerDamageReduce,
+		ap.defenderDamageReduce,
+		ap.collateralDamageReduce,
+		ap.shootersBlockedDmg);
+#endif
+	if(manaLeechReplay)
+		hb->applyManaLeechReplay(*manaLeechReplay);
+	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, &attacker, true, damageCache, hb);
+	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, true, damageCache, hb);
+	meleeSpecialtyAI::complete(*hb, attacker.unitId(), meleeSpecialtyAI::completedPrimaryMelee(ap));
 }

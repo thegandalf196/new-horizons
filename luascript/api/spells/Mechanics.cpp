@@ -10,6 +10,13 @@
 #include "StdInc.h"
 
 #include "Mechanics.h"
+#include "TimeStopRadius.h"
+#include "SorceryUtility.h"
+#include "ShadowMagnitudes.h"
+#include "TimedBuffs.h"
+#include "TrollSummonPower.h"
+#include "PlacementPower.h"
+#include "ElementalConvergencePower.h"
 
 #include "../Registry.h"
 #include "../../LuaStack.h"
@@ -136,32 +143,6 @@ bool MechanicsProxy::isSelectedCurePhysicalAfflictionTarget(const spells::Mechan
 		&& newHorizonsFrozen::isFrozen(unit);
 }
 
-int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics & m)
-{
-	using namespace newHorizonsSorcery;
-	// Validate the same domain as the shared unmodified formula. Warcasting
-	// and the saved School x Spellcraft coefficient boost only the Spell Power component,
-	// before the final per-mark cap.
-	const auto effectPower = m.getEffectPower();
-	arcaneBreachMarkBasisPoints(effectPower);
-	// Focus Magic captures its own first-shot penetration. Other Arcane Breach
-	// mark producers retain the ordinary formula, including post-hit marks.
-	const auto * hero = m.getHeroCaster();
-	const int specialty = hero && m.usesNewHorizonsMagicV3()
-		&& m.getSpellId().toSpell()->getJsonKey() == FOCUS_MAGIC_SPELL
-		? hero->getNonDamageSpellSpecialtyBonusPercent(m.getSpellId()) : 0;
-	// Only this enchantment opts into revised potency. Other mark producers
-	// and all historical captures continue to use the original formula.
-	const auto * state = m.battle() ? m.battle()->getBattle() : nullptr;
-	const auto revised = state && m.getSpellId().toSpell()->getJsonKey() == FOCUS_MAGIC_SPELL
-		? newHorizonsSorceryRevision::focusRules(state->getMagicRules()) : std::nullopt;
-	const auto profile = revised.value_or(newHorizonsSorceryRevision::FocusRules{
-		ARCANE_BREACH_BASE_BASIS_POINTS, ARCANE_BREACH_POWER_BASIS_POINTS, ARCANE_BREACH_CAP_BASIS_POINTS});
-	const auto component = m.scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
-		static_cast<int64_t>(effectPower) * profile.powerBasisPoints,
-		1, m.getSpellPowerCoefficientBasisPoints(), specialty);
-	return static_cast<int32_t>(std::min<int64_t>(profile.capBasisPoints, profile.baseBasisPoints + component));
-}
 
 bool MechanicsProxy::slowAffectsSpeed(const spells::Mechanics & m)
 {
@@ -169,16 +150,6 @@ bool MechanicsProxy::slowAffectsSpeed(const spells::Mechanics & m)
 	return state && newHorizonsSorceryRevision::slowAffectsSpeed(state->getMagicRules());
 }
 
-int64_t MechanicsProxy::getLivingArmorParameter(const spells::Mechanics & m, const std::string & name)
-{
-	const auto * state = m.battle() ? m.battle()->getBattle() : nullptr;
-	if(!state || (name != "baseHitPoints" && name != "spellPowerCoefficient" && name != "duration"))
-		return 0;
-	const auto & config = state->getMagicRules()["spells"][m.getSpell()->getJsonKey()]["livingArmor"];
-	if(!config.isStruct() || config["version"].Integer() != 1)
-		return 0;
-	return config[name].Integer();
-}
 
 int32_t MechanicsProxy::getBattleRound(const spells::Mechanics & m)
 {
@@ -238,6 +209,13 @@ BattleHex MechanicsProxy::chooseBlinkmasterDestination(const Mechanics & m, cons
 
 void MechanicsProxy::registerMethods(MethodRegistrar & R)
 {
+	registerTimedUtilityMethods(R);
+	registerTimeStopRadiusMethods(R);
+	registerSorceryUtilityMethods(R);
+	registerShadowMagnitudeMethods(R);
+	registerTimedBuffMethods(R);
+	registerTrollSummonMethods(R);
+	registerElementalConvergenceMethods(R);
 	R.method<&Mechanics::isPositiveSpell>("isPositive", {},
 		"True if the spell mechanics classify this cast as a positive effect.");
 	R.method<&Mechanics::isNegativeSpell>("isNegative", {},
@@ -260,11 +238,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the effective mastery level used for the spell's range.");
 	R.function<&MechanicsProxy::slowAffectsSpeed>("slowAffectsSpeed", {},
 		"True only when the owning battle captured the revised dual-stat Slow profile.");
-	R.function<&MechanicsProxy::getLivingArmorParameter>("getLivingArmorParameter",
-		{{"name", "Captured summon parameter name."}}, {},
-		"Returns a captured Living Armor parameter, or zero when absent.");
-	R.function<&MechanicsProxy::getArcaneBreachMarkBasisPoints>("getArcaneBreachMarkBasisPoints", {},
-		"Returns one Arcane Breach mark's penetration in basis points, including the cast's Warcasting boost to its Spell Power component before the cap.");
+
+
 	R.method<&Mechanics::getEffectPower>("getEffectPower", {},
 		"Returns the effective spell power applied to the magnitude calculation.");
 	R.method<&Mechanics::getTheChosenNominalDuration>("getTheChosenNominalDuration", {},
@@ -297,10 +272,8 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getStormOfDaggersTotalDamage>("getStormOfDaggersTotalDamage",
 		{{"selectedTargetCount", "Number of distinct enemy stacks selected, from one to five."}}, {},
 		"Returns the rounded raw Storm of Daggers total before target-specific resistance or mitigation.");
-	R.method<&Mechanics::getExtendSpellBonusRounds>("getExtendSpellBonusRounds", {},
-		"Returns this cast's snapshotted Extend Spell round bonus without changing other duration modifiers.");
-	R.method<&Mechanics::getEffectDuration>("getEffectDuration", {},
-		"Returns the effect duration in turns.");
+
+
 	R.function<&MechanicsProxy::getVariantPowerPercent>("getVariantPowerPercent", {},
 		"Returns the saved power percentage for this cast's validated Spell variant, or 100% for ordinary and legacy spells.");
 	R.function<&MechanicsProxy::getBattleRound>("getBattleRound", {},
@@ -316,9 +289,7 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 			{"second", "Second independent legal destination drawn with replacement."}
 		}, {},
 		"Resolves the farther of two Blinkmaster destinations, using lower BattleHex id for equal-distance ties.");
-	R.method<&Mechanics::adjustEffectDuration>("adjustEffectDuration",
-		{{"baseDuration", "Base effect duration in turns."}}, {},
-		"Returns the base duration adjusted by cast-specific duration mechanics.");
+
 	R.method<&Mechanics::isSelectiveDispel>("isSelectiveDispel", {},
 		"True when this authoritative cast selected the Sorcery Selective Dispel mode.");
 	R.method<&Mechanics::isMetamagicFollowup>("isMetamagicFollowup", {},
@@ -350,13 +321,7 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"True only for ordinary Dispel's saved temporary-magical-effects policy.");
 	R.function<&MechanicsProxy::hasPrecisionBombardment>("hasPrecisionBombardment", {},
 		"True only for the controlled hero Catapult with saved Precision Bombardment.");
-	R.method<&Mechanics::usesNewHorizonsEarthquake>("usesNewHorizonsEarthquake", {},
-		"True only when the saved-v3 Earthquake row explicitly enables its selected-area and field rules.");
-	R.method<&Mechanics::getNewHorizonsEarthquakeParameter>("getNewHorizonsEarthquakeParameter",
-		{{"name", "Validated saved Earthquake parameter name."}}, {},
-		"Returns a parameter from the saved Earthquake row, or zero outside the opted-in profile.");
-	R.method<&Mechanics::getNewHorizonsEarthquakeSectionCount>("getNewHorizonsEarthquakeSectionCount", {},
-		"Returns the saved Earthquake section count with composed Spell Power scaling and its cap.");
+	registerPlacementPowerMethods(R);
 	R.method<&Mechanics::usesNewHorizonsHavocStructures>("usesNewHorizonsHavocStructures", {},
 		"True only when saved-v3 rules enable Meteor Shower or Armageddon structural effects.");
 	R.method<&Mechanics::getNewHorizonsHavocStructuralDamage>("getNewHorizonsHavocStructuralDamage", {},

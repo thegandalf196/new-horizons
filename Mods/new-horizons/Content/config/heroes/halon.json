@@ -36,7 +36,7 @@
 	},
 	"core:geon": {
 		"images": {"large": "HPL092WL.bmp", "small": "HPS092WL.bmp", "specialtyLarge": "NH_shroudOfMalassa_basic_medium.png", "specialtySmall": "NH_shroudOfMalassa_basic_small.png"},
-		"texts": {"specialty": {"name": "Shroud of Malassa", "tooltip": "Faction skill: Shroud of Malassa", "description": "Dungeon heroes begin with the Shroud of Malassa. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
+		"texts": {"specialty": {"name": "Shroud of Nighon", "tooltip": "Faction skill: Shroud of Nighon", "description": "Dungeon heroes begin with the Shroud of Nighon. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
 		"specialty": {"secondary": null}
 	},
 	"core:tiva": {
@@ -51,7 +51,7 @@
 	},
 	"core:malcom": {
 		"images": {"large": "HPL028DR.bmp", "small": "HPS028DR.bmp", "specialtyLarge": "NH_sylvanLuck_basic_medium.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
-		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"texts": {"specialty": {"name": "Sylvan Tactics", "tooltip": "Faction skill: Sylvan Tactics", "description": "Rampart heroes begin with Sylvan Tactics. It improves friendly creatures' Initiative and supports coordinated positioning and attacks."}},
 		"specialty": {"secondary": null}
 	},
 	"core:oris": {
@@ -76,7 +76,7 @@
 	},
 	"core:gem": {
 		"images": {"large": "HPL027DR.bmp", "small": "HPS027DR.bmp", "specialtyLarge": "NH_sylvanLuck_basic_medium.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
-		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"texts": {"specialty": {"name": "Sylvan Tactics", "tooltip": "Faction skill: Sylvan Tactics", "description": "Rampart heroes begin with Sylvan Tactics. It improves friendly creatures' Initiative and supports coordinated positioning and attacks."}},
 		"specialty": {"secondary": null}
 	},
 	"core:andra": {
@@ -91,12 +91,12 @@
 	},
 	"core:elleshar": {
 		"images": {"large": "HPL026DR.bmp", "small": "HPS026DR.bmp", "specialtyLarge": "NH_sylvanLuck_basic_medium.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
-		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"texts": {"specialty": {"name": "Sylvan Tactics", "tooltip": "Faction skill: Sylvan Tactics", "description": "Rampart heroes begin with Sylvan Tactics. It improves friendly creatures' Initiative and supports coordinated positioning and attacks."}},
 		"specialty": {"secondary": null}
 	},
 	"core:jaegar": {
 		"images": {"large": "HPL089WL.bmp", "small": "HPS089WL.bmp", "specialtyLarge": "NH_shroudOfMalassa_basic_medium.png", "specialtySmall": "NH_shroudOfMalassa_basic_small.png"},
-		"texts": {"specialty": {"name": "Shroud of Malassa", "tooltip": "Faction skill: Shroud of Malassa", "description": "Dungeon heroes begin with the Shroud of Malassa. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
+		"texts": {"specialty": {"name": "Shroud of Nighon", "tooltip": "Faction skill: Shroud of Nighon", "description": "Dungeon heroes begin with the Shroud of Nighon. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
 		"specialty": {
 			"secondary": null,
 			"bonuses": {"mysticismExtra": null}
@@ -130,12 +130,12 @@
 	},
 	"core:thorgrim": {
 		"images": {"large": "HPL020RN.bmp", "small": "HPS020RN.bmp", "specialtyLarge": "NH_sylvanLuck_basic_medium.png", "specialtySmall": "NH_sylvanLuck_basic_small.png"},
-		"texts": {"specialty": {"name": "Sylvan Luck", "tooltip": "Faction skill: Sylvan Luck", "description": "Rampart heroes begin with Sylvan Luck. It improves Luck and increases the payoff of a Lucky Strike."}},
+		"texts": {"specialty": {"name": "Sylvan Tactics", "tooltip": "Faction skill: Sylvan Tactics", "description": "Rampart heroes begin with Sylvan Tactics. It improves friendly creatures' Initiative and supports coordinated positioning and attacks."}},
 		"specialty": {"secondary": null}
 	},
 	"core:malekith": {
 		"images": {"large": "HPL090WL.bmp", "small": "HPS090WL.bmp", "specialtyLarge": "NH_shroudOfMalassa_basic_medium.png", "specialtySmall": "NH_shroudOfMalassa_basic_small.png"},
-		"texts": {"specialty": {"name": "Shroud of Malassa", "tooltip": "Faction skill: Shroud of Malassa", "description": "Dungeon heroes begin with the Shroud of Malassa. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
+		"texts": {"specialty": {"name": "Shroud of Nighon", "tooltip": "Faction skill: Shroud of Nighon", "description": "Dungeon heroes begin with the Shroud of Nighon. Friendly stacks may move through occupied creature hexes, and flanking melee attacks deal increased damage."}},
 		"specialty": {"secondary": null}
 	},
 	"core:styg": {

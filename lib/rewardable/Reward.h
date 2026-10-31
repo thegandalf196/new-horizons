@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "../bonuses/BonusSerializationContext.h"
+
 #include "../ResourceSet.h"
 #include "../GameConstants.h"
 #include "../bonuses/Bonus.h"
@@ -149,6 +151,8 @@ struct DLL_LINKAGE Reward final
 	Reward();
 	~Reward();
 
+	void validateBonusSerialization(BonusSerializationContext context) const;
+
 	static constexpr si32 MAX_HERO_EXPERIENCE_NEXT_LEVEL_PERCENT = 100;
 
 	template <typename Handler> void serialize(Handler &h)
@@ -163,6 +167,8 @@ struct DLL_LINKAGE Reward final
 			&& primaryExperienceReward)
 			throw std::runtime_error("Primary Experience reward requires the New Horizons primary Experience save format");
 
+		if(h.saving)
+			validateBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & resources;
 		h & extraComponents;
 		h & removeObject;

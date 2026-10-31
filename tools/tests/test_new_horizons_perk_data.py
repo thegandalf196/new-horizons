@@ -426,7 +426,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 candidate['perkOfferNormalization'] = normalization
                 self.assertTrue(list(validator.iter_errors(candidate)))
 
-    def test_hero_luck_reworks_keep_saved_ids_ranks_and_sylvan_recovery(self):
+    def test_hero_luck_reworks_keep_saved_ids_ranks_and_sylvan_identity(self):
         perks = {p['id']: p for p in self.rules['skills']['new-horizons:luck']['perks']}
         for identity, name, rank in (
                 ('luckyRecovery', 'Lucky Day', 'advanced'),
@@ -441,10 +441,46 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertNotIn('new-horizons:luck.druidicLuck', perks)
         sylvan = next(p for p in self.rules['skills']['new-horizons:sylvanLuck']['perks']
                       if p['id'] == 'new-horizons:sylvanLuck.luckyRecovery')
-        description = 'A melee Lucky Strike restores surviving creatures for 10% of actual damage dealt.'
-        self.assertEqual((sylvan['name'], sylvan['requires']), ('Lucky Recovery', 'basic'))
+        description = 'A primary voluntary melee attack deals +10% physical damage after the attacker actually moves at least 1 hex and no more than half its current movement Speed, rounded down. Stationary attacks, retaliation, collateral, reactions and follow-up attacks do not receive this bonus.'
+        self.assertEqual((sylvan['name'], sylvan['requires']), ('Measured Advance', 'basic'))
         self.assertEqual(sylvan['description'], description)
         self.assertEqual(sylvan['effect'], {'status': 'active', 'description': description})
+
+    def test_sylvan_tactics_policy_is_optional_and_strict(self):
+        validator = Draft4Validator(self.schema)
+        self.assertEqual(self.rules['sylvanTacticsPolicy'], 1)
+        validator.validate(self.rules)
+        historical = json.loads(json.dumps(self.rules))
+        historical.pop('sylvanTacticsPolicy')
+        validator.validate(historical)
+        self.assertNotIn('sylvanTacticsPolicy', historical)
+        for invalid in (None, False, True, 0, -1, 2, 1.0, '1', {}, []):
+            with self.subTest(invalid=invalid):
+                candidate = json.loads(json.dumps(self.rules))
+                candidate['sylvanTacticsPolicy'] = invalid
+                self.assertTrue(list(validator.iter_errors(candidate)))
+
+    def test_sylvan_tactics_preserves_all_saved_perk_ids_and_tiers(self):
+        sylvan = self.rules['skills']['new-horizons:sylvanLuck']
+        self.assertEqual(sylvan['name'], 'Sylvan Tactics')
+        expected = (
+            ('elvenPrecision', 'Fleetfoot', 'basic'),
+            ('forestSFavor', 'Patient Hunter', 'basic'),
+            ('serendipity', 'Dappled Cover', 'basic'),
+            ('luckyRecovery', 'Measured Advance', 'basic'),
+            ('sharedFortune', 'Covering Fire', 'advanced'),
+            ('natureSProvidence', 'Crossfire', 'advanced'),
+            ('fortunateAim', 'Disruptive Strike', 'advanced'),
+            ('wildChance', 'Quick Redeployment', 'advanced'),
+            ('perfectMoment', 'Perfect Moment', 'expert'),
+            ('cascadingFortune', 'Wild Hunt', 'expert'),
+        )
+        self.assertEqual([(p['id'], p['name'], p['requires']) for p in sylvan['perks']],
+                         [('new-horizons:sylvanLuck.' + key, name, tier)
+                          for key, name, tier in expected])
+        perfect = next(p for p in sylvan['perks'] if p['id'].endswith('.perfectMoment'))
+        self.assertIn('total of 3.5', perfect['description'])
+        self.assertIn('does not add Luck, force a Lucky Strike', perfect['description'])
 
     def test_revised_order_perks_preserve_saved_ids_and_tiers(self):
         expected = (

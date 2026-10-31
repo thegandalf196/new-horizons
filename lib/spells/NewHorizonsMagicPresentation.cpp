@@ -12,6 +12,7 @@
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSorceryRevision.h"
+#include "NewHorizonsTimedBuffMagnitude.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "CSpell.h"
@@ -98,12 +99,11 @@ bool describeLivingArmor(std::string & result, const CGHeroInstance * hero, cons
 	if(!profile.isStruct())
 		return false;
 	const auto power = static_cast<int64_t>(std::max<int32_t>(0, hero->getEffectPower(spell)));
-	const int64_t pool = profile["baseHitPoints"].Integer()
-		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-			power * profile["spellPowerCoefficient"].Integer(),
-			std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)),
-			spellPowerCoefficientBasisPoints(rules, hero, spell->getId()), 0,
-			empowerSpellBonusPercent(rules, hero, spell->getId()));
+	const int64_t pool = newHorizonsSorceryRevision::livingArmorHitPoints(
+		profile["baseHitPoints"].Integer(), profile["spellPowerCoefficient"].Integer(), static_cast<int32_t>(power),
+		std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)),
+		spellPowerCoefficientBasisPoints(rules, hero, spell->getId()), 0,
+		empowerSpellBonusPercent(rules, hero, spell->getId()));
 	result = "Summon Living Armor on an empty hex. Current pool: " + std::to_string(pool)
 		+ " HP before battle-only Warcasting. Lifetime: " + std::to_string(profile["duration"].Integer())
 		+ " rounds, including this round. Eligible Extend Spell and Echoed Duration each add one round. "
@@ -126,11 +126,11 @@ bool describeSlow(std::string & result, const CGHeroInstance * hero, const spell
 		const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell->getId());
 		const int combinedCoefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
 		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int64_t powerReduction = spellPower * combinedCoefficientBasisPoints
-			/ (5LL * SPELL_POWER_COEFFICIENT_BASIS_POINTS);
-		const int initiativeReduction = std::min(50, 20 + static_cast<int>(powerReduction));
+		const int initiativeReduction = newHorizonsSorceryRevision::slowBaseReduction(static_cast<int32_t>(spellPower),
+			combinedCoefficientBasisPoints, 0, empowerSpellBonusPercent(rules, hero, spell->getId()));
 		const int variantPower = spellVariantPowerPercent(rules, spell->getId());
-		const int displayedReduction = initiativeReduction * variantPower / 100;
+		const auto displayedReduction = static_cast<int64_t>(-newHorizonsSorceryRevision::scaleSlowVariantValue(
+			casterEnchantValue(hero, SpellID::SLOW, -initiativeReduction), variantPower));
 		constexpr std::array<std::string_view, 4> rankNames{"No rank", "Basic", "Advanced", "Expert"};
 		const auto rankName = rankNames.at(static_cast<size_t>(std::clamp(schoolRank,
 			static_cast<int>(MasteryLevel::NONE), static_cast<int>(MasteryLevel::EXPERT))));

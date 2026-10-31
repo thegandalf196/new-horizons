@@ -92,6 +92,15 @@ void validateSerialization(const JsonNode & savedRules, bool supported)
 		throw std::runtime_error("The Chosen requires its captured profile");
 }
 
+int32_t finishDuration(const Rules & rules, const CGHeroInstance * hero, SpellID spell, int32_t adjustedNominal)
+{
+	const int specialty = hero ? newHorizonsHeroes::chosenSpecialtyDurationBonus(
+		hero->getPrimaryGrowthRules(), hero->getHeroType()->getJsonKey(), spell) : 0;
+	const int64_t turns = static_cast<int64_t>(adjustedNominal)
+		+ exaltedChampionDurationBonus(rules, hero) + specialty;
+	return static_cast<int32_t>(std::clamp<int64_t>(turns, 0, std::numeric_limits<int32_t>::max()));
+}
+
 int32_t nominalDuration(const Rules & rules, int32_t rawSpellPower, int32_t schoolPercent)
 {
 	const int64_t powerTerm = static_cast<int64_t>(std::max(0, rawSpellPower))
@@ -119,14 +128,8 @@ int32_t Mechanics::getTheChosenDuration() const
 	const auto rules = state ? newHorizonsTheChosen::rulesFor(state->getMagicRules()) : std::nullopt;
 	if(!rules)
 		return 0;
-	// The nominal cap precedes every exceptional extension. Capability riders
-	// remain additive; neither their rounds nor their presence scale with power.
-	const auto * hero = getHeroCaster();
-	const int specialty = hero ? newHorizonsHeroes::chosenSpecialtyDurationBonus(
-		hero->getPrimaryGrowthRules(), hero->getHeroType()->getJsonKey(), getSpellId()) : 0;
-	const int64_t turns = static_cast<int64_t>(adjustEffectDuration(getTheChosenNominalDuration()))
-		+ newHorizonsTheChosen::exaltedChampionDurationBonus(*rules, hero) + specialty;
-	return static_cast<int32_t>(std::clamp<int64_t>(turns, 0, std::numeric_limits<int32_t>::max()));
+	return newHorizonsTheChosen::finishDuration(*rules, getHeroCaster(), getSpellId(),
+		adjustEffectDuration(getTheChosenNominalDuration()));
 }
 
 int32_t Mechanics::getTheChosenJoustingPercent() const

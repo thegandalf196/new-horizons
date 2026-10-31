@@ -23,7 +23,7 @@ function Revision.scaleSlow(mechanics, buffer, spellKey)
 		if (bonus.type == "STACKS_INITIATIVE" or (affectsSpeed and bonus.type == "STACKS_SPEED"))
 			and (bonus.val or 0) < 0 then
 			-- Scale after target-specific specialties, rounding toward zero.
-			bonus.val = math.ceil(bonus.val * powerPercent / 100)
+			bonus.val = mechanics:scaleSlowVariantValue(bonus.val, powerPercent)
 		end
 	end
 end
