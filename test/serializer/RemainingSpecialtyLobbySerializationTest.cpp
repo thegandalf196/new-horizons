@@ -11,6 +11,7 @@
 #include "../../lib/StartInfo.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForLobby.h"
@@ -71,6 +72,10 @@ protected:
 			magic.setOverrideFlag(true);
 			map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 			auto perks = necromancyTest::historicalRules();
+			// The helper captures Necromancy only; Recovery also predates Sylvan Tactics.
+			perks.Struct().erase("sylvanTacticsPolicy");
+			ASSERT_FALSE(newHorizonsHeroes::usesSylvanTactics(perks));
+			ASSERT_NO_THROW(newHorizonsHeroes::validateSylvanTacticsSerialization(perks, false));
 			ASSERT_FALSE(perks.Struct().contains(newHorizonsNecromancy::POLICY_KEY));
 			ASSERT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(perks, false, false));
 			perks.setOverrideFlag(true);
@@ -94,6 +99,8 @@ protected:
 		recovery.additional = recovery.recovery = true;
 		EXPECT_NO_THROW(world.validateNewHorizonsSpecialtySerialization(recovery));
 		EXPECT_NO_THROW(world.validateNewHorizonsNecromancyPolicySerialization(false, false));
+		EXPECT_FALSE(newHorizonsHeroes::usesSylvanTactics(world.getHeroPerkRules()));
+		EXPECT_NO_THROW(world.validateSylvanTacticsSerialization(false));
 		EXPECT_NO_THROW(world.validateCanonicalSpellClausesSerialization(true, false));
 		EXPECT_NO_THROW(world.validateNeutralArmySizeSerialization(false));
 		EXPECT_NO_THROW(world.validateRecruitmentGrowthSerialization(false));

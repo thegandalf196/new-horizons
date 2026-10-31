@@ -92,6 +92,9 @@ protected:
 			heroes["additionalSpecialties"].Struct().erase(key);
 		for(const auto key : {"ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty"})
 			heroes.Struct().erase(key);
+		// Genie/Sage and ordinary captures postdate both Necromancy formats.
+		ASSERT_EQ(heroes.Struct().erase("genieSageSpecialties"), 1u);
+		ASSERT_EQ(heroes["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties"), 1u);
 		CMemorySerializer oldest;
 		oldest.oser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
 		ASSERT_NO_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(heroes,
@@ -110,6 +113,8 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 		JsonNode absent(JsonPath::builtin("config/newHorizonsPerks"));
 		absent.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
+		// Isolate the campaign Necromancy guard from later world-policy captures.
+		ASSERT_EQ(absent.Struct().erase("sylvanTacticsPolicy"), 1u);
 		absent.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, absent);
 	}

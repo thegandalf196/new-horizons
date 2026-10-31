@@ -167,11 +167,11 @@ jobs:
           set -euo pipefail
           source_cache="$RUNNER_TEMP/conan-source-cache"
           archive="$RUNNER_TEMP/SDL3_image-3.4.4.tar.gz"
-          # Independent official endpoint; one bounded fetch, no retry loop.
+          # Canonical official GitHub release; one bounded fetch, no retry loop.
           # Never substitute a new checksum or alter the canonical recipe URL.
           curl --fail --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
             --connect-timeout 20 --max-time 120 --max-filesize 15728640 --retry 0 \
-            --output "$archive" https://www.libsdl.org/projects/SDL_image/release/SDL3_image-3.4.4.tar.gz
+            --output "$archive" https://github.com/libsdl-org/SDL_image/releases/download/release-3.4.4/SDL3_image-3.4.4.tar.gz
           python - "$source_cache" "$archive" "$SDL_IMAGE_SOURCE_SHA256" "$SDL_IMAGE_SOURCE_BYTES" <<'PY'
           from pathlib import Path
           import sys

@@ -86,7 +86,7 @@ class WindowsDecoderRecipeTest(unittest.TestCase):
         self.assertEqual(seed['env']['SDL_IMAGE_SOURCE_SHA256'], expected)
         self.assertEqual(seed['env']['SDL_IMAGE_SOURCE_BYTES'], 11123077)
         script = seed['run']
-        self.assertIn('https://www.libsdl.org/projects/SDL_image/release/SDL3_image-3.4.4.tar.gz', script)
+        self.assertIn('https://github.com/libsdl-org/SDL_image/releases/download/release-3.4.4/SDL3_image-3.4.4.tar.gz', script)
         self.assertIn('curl --fail --location', script)
         self.assertIn("--proto '=https' --proto-redir '=https'", script)
         self.assertIn('--max-time 120 --max-filesize 15728640 --retry 0', script)
