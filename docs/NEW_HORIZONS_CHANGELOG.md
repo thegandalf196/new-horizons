@@ -7,7 +7,7 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.88.1 — in development
+## 0.88.1 Early Access
 
 ### Heroes and army pacing
 
@@ -76,6 +76,12 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   to use the revised defaults, spell roster and hero profiles.
 
 Thanks to **Matrix4767** for playtesting feedback on Necromancy pacing.
+
+[Download 0.88.1 and read installation instructions](https://github.com/thegandalf196/new-horizons/releases/tag/v0.88.1).
+Linux gameplay checks passed for selected scenarios and interface flows. Windows
+build and static package checks passed; native Windows startup, gameplay, audio
+and save/reload have not been tested for this release. Combat performance remains
+a known unresolved issue. Balance and selected artwork remain provisional.
 
 ## 0.87.1 Early Access
 
