@@ -47,6 +47,34 @@ def attested_paths():
     return sorted('scripts/' + name + '.lua' for name in names)
 
 
+def reviewed_hashes_by_path():
+    # Read only the owner's literal declarations; this is not an interpreter or closure proof.
+    source = (ROOT / 'luascript/LuaImplementationIdentity.cpp').read_text()
+    declarations = re.findall(
+        r'^constexpr std::string_view ([A-Z_]+)_SHA256\s*=\s*"([0-9a-f]{64})";', source, re.M)
+    constants = dict(declarations)
+    identities = {**ROOT_IDENTITIES, **IMPORT_IDENTITIES}
+    if len(constants) != len(declarations) or set(constants) != set(identities):
+        raise AssertionError('Review the literal digest declarations before updating this drift alarm')
+    accepted = {}
+    for identity, path in identities.items():
+        accepted.setdefault('scripts/' + path + '.lua', set()).add(constants[identity])
+    layers = re.findall(
+        r'\{\s*"((?:spells|damage|combat)/[A-Za-z0-9_/]+)"\s*,\s*("[0-9a-f]{64}"|[A-Z_]+_SHA256)\s*\}',
+        source)
+    for path, value in layers:
+        digest = value[1:-1] if value.startswith('"') else constants[value.removesuffix('_SHA256')]
+        accepted.setdefault('scripts/' + path + '.lua', set()).add(digest)
+    if set(accepted) != set(attested_paths()):
+        raise AssertionError('Every attested path must have an explicit reviewed digest')
+    return accepted
+
+
+def drifted_shipped_scripts():
+    return sorted(path for path, accepted in reviewed_hashes_by_path().items()
+                  if hashlib.sha256((ROOT / path).read_bytes()).hexdigest() not in accepted)
+
+
 def git_environment():
     # Git context variables override -C; isolate native Windows' case-insensitive environment too.
     environment = {key: value for key, value in os.environ.items()
@@ -146,6 +174,24 @@ class LuaAttestationLineEndingsTest(unittest.TestCase):
                              b'local-only')
         self.assertTrue((self.repo / '.git/index').is_file())
         self.assertEqual(snapshot(), before)
+
+    def test_shipped_scripts_match_an_owner_reviewed_digest_for_their_path(self):
+        self.assertEqual(drifted_shipped_scripts(), [])
+
+    def test_byte_drift_and_another_paths_digest_are_rejected(self):
+        owner = 'luascript/LuaImplementationIdentity.cpp'
+        payloads = {name: (ROOT / name).read_bytes() for name in [*self.paths, owner]}
+        for name, raw in payloads.items():
+            target = self.repo / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(raw)
+        changed = 'scripts/spells/timed.lua'
+        for raw in (payloads[changed] + b'\n-- unreviewed source drift\n',
+                    payloads['scripts/spells/damage.lua']):
+            (self.repo / changed).write_bytes(raw)
+            with patch.dict(globals(), ROOT=self.repo):
+                self.assertEqual(drifted_shipped_scripts(), [changed])
+        self.assertNotIn(UNKNOWN, reviewed_hashes_by_path())
 
     def test_unattested_scripts_are_not_blanket_normalized(self):
         self.assertNotIn(UNKNOWN, self.paths)
