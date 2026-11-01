@@ -1,0 +1,156 @@
+"""Exact Lua capability bytes must survive native Windows Git checkout."""
+import hashlib
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[2]
+# Roots are named by digest in the owner, rather than by resource path.
+# A new digest/dispatch must extend this checked inventory explicitly.
+ROOT_IDENTITIES = {
+    'DAMAGE': 'spells/damage',
+    'LIFE_DRAIN': 'spells/lifeDrain',
+    'SHARED_LIFE_DRAIN': 'spells/lifeDrain',
+    'TIMED': 'spells/timed',
+    'SHARED_TIMED': 'spells/timed',
+    'FOCUS_MAGIC': 'combat/focusMagic',
+    'HEX_OF_PAIN': 'combat/hexOfPain',
+}
+IMPORT_IDENTITIES = {
+    'DAMAGE': 'spells/damage',
+    'UNIT_EFFECT': 'spells/unitEffect',
+    'BATTLE_LOG': 'battleLog',
+    'COMBAT_SCRIPT': 'combat/combatScript',
+    'SORCERY_REVISION': 'spells/sorceryRevision',
+    'SHARED_SORCERY_REVISION': 'spells/sorceryRevision',
+}
+UNKNOWN = 'scripts/unattested-line-ending-probe.lua'
+
+
+def attested_paths():
+    source = (ROOT / 'luascript/LuaImplementationIdentity.cpp').read_text()
+    roots = set(re.findall(r'rootDigest == ([A-Z_]+)_SHA256', source))
+    constants = set(re.findall(r'constexpr std::string_view ([A-Z_]+)_SHA256\s*=', source))
+    if roots != set(ROOT_IDENTITIES) or constants != set(ROOT_IDENTITIES) | set(IMPORT_IDENTITIES):
+        raise AssertionError('Attestation identity inventory changed; review its exact script paths')
+    imports = set(re.findall(r'if\(name == "([^"]+)"\)', source))
+    if imports != set(IMPORT_IDENTITIES.values()):
+        raise AssertionError('Attestation import closure changed; review its exact script paths')
+    # Includes every literal root/patch path in the reviewed layer tables.
+    layers = set(re.findall(r'"((?:spells|damage|combat)/[A-Za-z0-9_/]+)"', source))
+    names = layers | imports | set(ROOT_IDENTITIES.values())
+    return sorted('scripts/' + name + '.lua' for name in names)
+
+
+def git_environment():
+    # Git context variables override -C; isolate native Windows' case-insensitive environment too.
+    environment = {key: value for key, value in os.environ.items()
+                   if not key.upper().startswith('GIT_')}
+    environment.update(GIT_CONFIG_NOSYSTEM='1', GIT_CONFIG_GLOBAL=os.devnull, GIT_ATTR_NOSYSTEM='1')
+    return environment
+
+
+class LuaAttestationLineEndingsTest(unittest.TestCase):
+    def setUp(self):
+        self.environment = git_environment()
+        self.git = shutil.which('git')
+        self.assertIsNotNone(self.git, 'Git is required for the checkout contract')
+        self.paths = attested_paths()
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.repo = Path(self.temp.name) / 'repo'
+        self.repo.mkdir()
+        self.command('init', '-q')
+        self.command('config', 'core.autocrlf', 'false')
+        (self.repo / '.gitattributes').write_bytes((ROOT / '.gitattributes').read_bytes())
+
+    def command(self, *args):
+        return subprocess.check_output([self.git, '-C', str(self.repo), *args],
+                                       stderr=subprocess.PIPE, env=self.environment)
+
+    def attributes(self, paths):
+        fields = self.command('check-attr', '-z', 'text', 'eol', '--', *paths).decode().split('\0')
+        self.assertEqual(fields.pop(), '')
+        result = {}
+        for offset in range(0, len(fields), 3):
+            name, attribute, value = fields[offset:offset + 3]
+            result.setdefault(name, {})[attribute] = value
+        return result
+
+    def test_every_attested_root_import_and_patch_has_explicit_lf(self):
+        values = self.attributes(self.paths)
+        for name in self.paths:
+            with self.subTest(script=name):
+                self.assertTrue((ROOT / name).is_file())
+                self.assertEqual(values[name], {'text': 'set', 'eol': 'lf'})
+
+    def test_windows_style_checkout_preserves_every_attested_digest(self):
+        payloads = {name: (ROOT / name).read_bytes() for name in self.paths}
+        payloads[UNKNOWN] = b'return { deliberatelyUnattested = true }\n'
+        for name, raw in payloads.items():
+            self.assertNotIn(b'\r', raw, name)
+            path = self.repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(raw)
+        self.command('add', '--', '.gitattributes', *payloads)
+        self.command('config', 'core.autocrlf', 'true')
+        self.command('config', 'core.eol', 'crlf')
+        checkout = self.repo.parent / 'checkout'
+        self.command('checkout-index', '--all', '--force', '--prefix=' + checkout.as_posix() + '/')
+        for name in self.paths:
+            with self.subTest(script=name):
+                checked = (checkout / name).read_bytes()
+                self.assertEqual(checked, payloads[name])
+                self.assertEqual(hashlib.sha256(checked).digest(), hashlib.sha256(payloads[name]).digest())
+        # Demonstrate that CRLF conversion was active, rather than testing an inert configuration.
+        self.assertEqual((checkout / UNKNOWN).read_bytes(), payloads[UNKNOWN].replace(b'\n', b'\r\n'))
+
+    def test_inherited_git_context_cannot_mutate_external_repository(self):
+        external = self.repo.parent / 'external'
+        external.mkdir()
+        def outside(*args):
+            return subprocess.check_output([self.git, '-C', str(external), *args],
+                                           stderr=subprocess.PIPE, env=git_environment())
+        outside('init', '-q')
+        (external / 'sentinel').write_bytes(b'unchanged outside repository\n')
+        outside('add', '--', 'sentinel')
+        def snapshot():
+            return {str(path.relative_to(external)): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in external.rglob('*') if path.is_file()}
+        before = snapshot()
+        poison = {
+            'GIT_DIR': str(external / '.git'), 'gIt_WoRk_TrEe': str(external),
+            'GIT_WORK_TREE': str(external), 'GIT_INDEX_FILE': str(external / '.git/index'),
+            'GIT_OBJECT_DIRECTORY': str(external / '.git/objects'),
+            'GIT_ALTERNATE_OBJECT_DIRECTORIES': str(external / '.git/objects'),
+            'GIT_CONFIG_COUNT': '2', 'GIT_CONFIG_KEY_0': 'core.worktree',
+            'GIT_CONFIG_VALUE_0': str(external), 'GIT_CONFIG_KEY_1': 'core.hooksPath',
+            'GIT_CONFIG_VALUE_1': str(external / '.git/hooks'),
+            'GIT_CONFIG_PARAMETERS': "'core.bare=false'", 'GIT_EXEC_PATH': str(external),
+        }
+        with patch.dict(os.environ, poison):
+            self.environment = git_environment()
+            self.assertEqual({key: value for key, value in self.environment.items()
+                              if key.upper().startswith('GIT_')}, {
+                                  'GIT_CONFIG_NOSYSTEM': '1', 'GIT_CONFIG_GLOBAL': os.devnull,
+                                  'GIT_ATTR_NOSYSTEM': '1'})
+            self.command('init', '-q')
+            self.command('config', 'containment.check', 'local-only')
+            self.command('add', '--', '.gitattributes')
+            self.assertEqual(self.command('config', '--local', '--get', 'containment.check').strip(),
+                             b'local-only')
+        self.assertTrue((self.repo / '.git/index').is_file())
+        self.assertEqual(snapshot(), before)
+
+    def test_unattested_scripts_are_not_blanket_normalized(self):
+        self.assertNotIn(UNKNOWN, self.paths)
+        self.assertEqual(self.attributes([UNKNOWN])[UNKNOWN], {'text': 'unspecified', 'eol': 'unspecified'})
+
+
+if __name__ == '__main__':
+    unittest.main()

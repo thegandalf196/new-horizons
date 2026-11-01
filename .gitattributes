@@ -20,11 +20,14 @@
 # Keep Windows checkouts identical rather than normalizing unknown scripts.
 /scripts/spells/damage.lua text eol=lf
 /scripts/spells/timed.lua text eol=lf
+/scripts/spells/sorceryRevision.lua text eol=lf
+/scripts/spells/lifeDrain.lua text eol=lf
 /scripts/spells/patches/timedShield.lua text eol=lf
 /scripts/spells/patches/timedBind.lua text eol=lf
 /scripts/spells/unitEffect.lua text eol=lf
 /scripts/battleLog.lua text eol=lf
 /scripts/damage/damageCalculator.lua text eol=lf
+/scripts/damage/physicalProtection.lua text eol=lf
 /scripts/damage/siegeWeapon.lua text eol=lf
 /scripts/damage/magicElemental.lua text eol=lf
 /scripts/damage/psychicElemental.lua text eol=lf

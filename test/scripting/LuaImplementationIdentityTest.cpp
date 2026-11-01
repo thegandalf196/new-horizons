@@ -7,11 +7,14 @@
 #include "StdInc.h"
 #include "../../luascript/StdInc.h"
 #include "../../luascript/LuaImplementationIdentity.h"
+#include "HistoricalTimedScript.h"
+#include "HistoricalLifeDrainScript.h"
 #include "../../luascript/LuaContext.h"
 #include "../../luascript/LuaModule.h"
 #include "../../luascript/LuaScriptInstance.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include <array>
+#include <stdexcept>
 
 namespace
 {
@@ -23,6 +26,17 @@ std::string source(const std::string & name)
 	const auto path = ScriptPath::builtinTODO(name).addPrefix("SCRIPTS/");
 	auto bytes = CResourceHandler::get()->load(path)->readAll();
 	return std::string(reinterpret_cast<const char *>(bytes.first.get()), bytes.second);
+}
+
+std::string historicalSorcerySource()
+{
+	auto text = source("spells/sorceryRevision");
+	const std::string current = "bonus.val = mechanics:scaleSlowVariantValue(bonus.val, powerPercent)";
+	const auto position = text.find(current);
+	if(position == std::string::npos || text.find(current, position + current.size()) != std::string::npos)
+		throw std::runtime_error("Historical Sorcery fixture requires the exact single shared-arithmetic call");
+	text.replace(position, current.size(), "bonus.val = math.ceil(bonus.val * powerPercent / 100)");
+	return text;
 }
 
 void load(Identity & identity, const std::string & name, const std::string & text)
@@ -526,4 +540,70 @@ TEST(LuaImplementationIdentity, LifeDrainActualContextAttestsAndLaterRuntimeErro
 	ASSERT_EQ(context.forecastImplementation(), Implementation::CANONICAL_LIFE_DRAIN);
 	context.callFunction<void>("forecastIdentityDeliberatelyMissingMethod");
 	EXPECT_EQ(context.forecastImplementation(), Implementation::UNKNOWN);
+}
+
+TEST(LuaImplementationIdentity, SharedArithmeticTimedRejectsHistoricalSorceryImport)
+{
+	const auto historicalSorcery = historicalSorcerySource();
+	scripting::LuaModule host;
+	const auto script = timedScript(host, timedPatches());
+	for(const bool layered : {false, true})
+	{
+		auto identity = layered ? Identity::fromScript(*script) : Identity(source("spells/timed"), false);
+		load(identity, "spells/unitEffect", source("spells/unitEffect"));
+		load(identity, "spells/sorceryRevision", historicalSorcery);
+		identity.finish(true);
+		EXPECT_EQ(identity.get(), Implementation::UNKNOWN) << layered;
+	}
+}
+
+TEST(LuaImplementationIdentity, HistoricalTimedKeepsExactHistoricalImportAndRejectsCurrentImport)
+{
+	scripting::LuaModule host;
+	const auto script = timedScript(host, timedPatches());
+	script->layers.front().sourceText = std::string(historicalTimedIdentityTest::TIMED_SOURCE);
+	for(const bool layered : {false, true})
+		for(const bool historicalImport : {true, false})
+		{
+			auto identity = layered ? Identity::fromScript(*script)
+				: Identity(historicalTimedIdentityTest::TIMED_SOURCE, false);
+			load(identity, "spells/unitEffect", source("spells/unitEffect"));
+			load(identity, "spells/sorceryRevision", historicalImport
+				? historicalSorcerySource() : source("spells/sorceryRevision"));
+			identity.finish(true);
+			EXPECT_EQ(identity.get(), historicalImport ? Implementation::CANONICAL_TIMED : Implementation::UNKNOWN)
+				<< "layered=" << layered << " historicalImport=" << historicalImport;
+		}
+}
+
+TEST(LuaImplementationIdentity, HistoricalAndSharedLifeDrainRootsRequireExactBytesAndClosure)
+{
+	scripting::LuaModule host;
+	for(const auto & original : {std::string(historicalLifeDrainIdentityTest::SOURCE), source("spells/lifeDrain")})
+		for(const bool changed : {false, true})
+			for(const bool fromScript : {false, true})
+			{
+				const auto text = original + (changed ? "\n-- unreviewed change" : "");
+				scripting::LuaScriptInstance script(host, "core", text);
+				auto identity = fromScript ? Identity::fromScript(script) : Identity(text, false);
+				completeLifeDrain(identity);
+				identity.finish(true);
+				EXPECT_EQ(identity.get(), changed ? Implementation::UNKNOWN : Implementation::CANONICAL_LIFE_DRAIN)
+					<< "changed=" << changed << " fromScript=" << fromScript;
+			}
+}
+
+TEST(LuaImplementationIdentity, HistoricalAndSharedLifeDrainContextsAttestActualImportsAndRejectChanges)
+{
+	scripting::LuaModule host;
+	EmptyEnvironment environment;
+	for(const auto & original : {std::string(historicalLifeDrainIdentityTest::SOURCE), source("spells/lifeDrain")})
+		for(const bool changed : {false, true})
+		{
+			scripting::LuaScriptInstance script(host, "core", original + (changed ? "\n-- unreviewed change" : ""));
+			scripting::LuaContext context(&script, &environment);
+			context.initialize();
+			EXPECT_EQ(context.forecastImplementation(), changed ? Implementation::UNKNOWN : Implementation::CANONICAL_LIFE_DRAIN)
+				<< "changed=" << changed;
+		}
 }

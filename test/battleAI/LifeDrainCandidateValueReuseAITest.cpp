@@ -12,6 +12,7 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -30,6 +31,14 @@ SpellID lifeDrainId()
 {
 	return SpellID(SpellID::decode(std::string(newHorizonsLifeDrain::SPELL_KEY)));
 }
+// Native known-policy projection only; the AI action callback remains player-scoped.
+class KnownLifeDrainBattleView final : public CPlayerBattleCallback
+{
+public:
+	explicit KnownLifeDrainBattleView(const IBattleInfo * battle)
+		: CPlayerBattleCallback(battle, PlayerColor(0)) {}
+	std::optional<PlayerColor> getPlayerID() const override { return std::nullopt; }
+};
 class LifeDrainCallback final : public CBattleCallback
 {
 public:
@@ -85,6 +94,7 @@ protected:
 	CStack * woundedFriend = nullptr;
 	CStack * enemy = nullptr;
 	std::shared_ptr<LifeDrainCallback> callback;
+	std::shared_ptr<CPlayerBattleCallback> knownRebirthView;
 	std::shared_ptr<projectedHitTest::Environment> environment;
 	void SetUp() override
 	{
@@ -281,6 +291,22 @@ protected:
 		beginCombat();
 		ASSERT_NO_FATAL_FAILURE(woundRebirthSource());
 		finishSetup();
+		knownRebirthView = std::make_shared<KnownLifeDrainBattleView>(battle());
+		ASSERT_EQ(callback->getPlayerID(), std::make_optional(PlayerColor(0)));
+		ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetMySide(), BattleSide::ATTACKER);
+		ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetMyHero(), attackerSideHero);
+		ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+		ASSERT_EQ(knownRebirthView->battleGetMySide(), BattleSide::ALL_KNOWING);
+		ASSERT_EQ(knownRebirthView->battleGetFightingHero(BattleSide::ATTACKER), attackerSideHero);
+		ASSERT_EQ(knownRebirthView->battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
+		ASSERT_EQ(knownRebirthView->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(),
+			VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+		ASSERT_EQ(knownRebirthView->getBattle()->getSidePlayer(BattleSide::DEFENDER), defenderSideHero->getOwner());
+		ASSERT_EQ(knownRebirthView->battleGetActionController(active), PlayerColor(0));
+		const auto knownProfile = newHorizonsElementalRebirth::activeProfile(knownRebirthView->battleGetFightingHero(BattleSide::DEFENDER));
+		ASSERT_TRUE(knownProfile);
+		ASSERT_EQ(knownProfile->rank, MasteryLevel::BASIC);
+		ASSERT_TRUE(knownProfile->primalBurst);
 	}
 	void woundRebirthSource()
 	{
@@ -477,9 +503,10 @@ TEST_F(LifeDrainCandidateValueReuseAITest, AdditionalLightMembershipRetainsEvery
 TEST_F(LifeDrainCandidateValueReuseAITest, LethalActualPrimalBurstChangingChosenFriendCannotCertify)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareRebirth());
+	RecordProperty("ProjectionKnowledge", "known authority projection; separate player-scoped AI parity");
 	const auto before = snapshot();
-	HypotheticBattle child(environment.get(), callback->getBattle(BattleID(0)));
-	ASSERT_EQ(child.battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+	HypotheticBattle child(environment.get(), knownRebirthView);
+	ASSERT_EQ(child.battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
 	ASSERT_EQ(child.getSideHero(BattleSide::DEFENDER), defenderSideHero);
 	const auto * source = child.battleGetUnitByID(enemy->unitId());
 	ASSERT_NE(source, nullptr);
@@ -498,13 +525,14 @@ TEST_F(LifeDrainCandidateValueReuseAITest, LethalActualPrimalBurstChangingChosen
 		if(hit.preHitTarget && hit.preHitTarget->unitId() == active->unitId() && hit.actualDamage > 0)
 			selectedFriendHit = true;
 	ASSERT_TRUE(selectedFriendHit); // Native damage producer actually changed the observed friend.
-	HypotheticBattle outside(environment.get(), callback->getBattle(BattleID(0)));
+	HypotheticBattle outside(environment.get(), knownRebirthView);
 	const auto unaffected = project(fullFriend, outside);
 	ASSERT_TRUE(unaffected.accepted);
 	ASSERT_TRUE(unaffected.lifeDrain); // The same real lethal machinery can certify an untouched friend.
 	ASSERT_FALSE(outside.getElementalRebirthSpawnUnitIds().empty());
-	EXPECT_EQ(child.battleGetFightingHero(BattleSide::DEFENDER), nullptr);
+	EXPECT_EQ(child.battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
 	EXPECT_EQ(snapshot(), before);
+	// The unchanged player callback separately checks full AI parity without inferring hidden policy.
 	ASSERT_NO_FATAL_FAILURE(compare()); // Other legal, unaffected full pairs must still produce hits.
 }
 

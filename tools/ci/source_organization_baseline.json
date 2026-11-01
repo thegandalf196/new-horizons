@@ -10141,11 +10141,11 @@
     },
     "luascript/LuaImplementationIdentity.h": {
       "functions": [],
-      "rationale": "Complete50-line header has zero callable bodies. Two LifeDrain-only counters are private data; every method and constructor remains a declaration. Existing empty string_view default-argument parser recovery is unchanged. This renews exact callable coverage, not runtime acceptance.",
-      "review": "life-drain-completed-suffix-independent-source-review",
-      "review_scope": "exact-completed-LifeDrain-suffix-source-only-no-runtime-or-performance-acceptance",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "ce7eafe2381f3d79f0089f1bc5907dbdfdc6547eee3b9d40dd4a7821bb653f25"
+      "rationale": "Complete50-line header has zero callable bodies. Two LifeDrain-only counters are private data; every method and constructor remains a declaration. Existing empty string_view default-argument parser recovery is unchanged. This renews exact callable coverage, not runtime acceptance. Exact51-line successor adds only one private transient boolean data member selecting the paired Sorcery digest. All methods remain declarations and the unchanged default-argument parser recovery has no callable body. No serialized field or coverage exclusion.",
+      "review": "IR-PAIRED-TIMED-IDENTITY-DECLARATION-COVERAGE-20261101",
+      "review_scope": "Exact51-line zero-callable header coverage only; no size ceiling exception, future growth or native acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
+      "sha256": "ab9ca05f978a9edc16fb9e366d06d70578ebb33ca53df2a84a0a10351d06d6da"
     },
     "luascript/LuaScriptInstance.h": {
       "functions": [

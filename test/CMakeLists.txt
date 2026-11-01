@@ -901,6 +901,8 @@ set(test_SRCS
 )
 
 set(test_HEADERS
+		scripting/HistoricalTimedScript.h
+		scripting/HistoricalLifeDrainScript.h
 		battleAI/HeroActionTimingCapture.h
 		battleAI/HeroQueueSelectorFixture.h
 		battleAI/HeroExpectedSpellFixture.h
