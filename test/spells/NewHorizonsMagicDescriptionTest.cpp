@@ -225,21 +225,19 @@ TEST_F(NewHorizonsMagicDescriptionTest, ImplosionKeepsSixDecimalFormattingAndSch
 		"displacement causes no retaliation.\n\nNo School Rank: 100% Spell Power damage coefficient.");
 }
 
-TEST_F(NewHorizonsMagicDescriptionTest, FocusCurrentAndHistoricalEarlyReturnsKeepExactDecimalReadouts)
+TEST_F(NewHorizonsMagicDescriptionTest, FocusCurrentAndHistoricalProfilesKeepExactValuesInPlainReadout)
 {
 	const auto * focus = descriptionSpell("new-horizons:focusMagic");
 	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 17, ChangeValueMode::ABSOLUTE);
 	rank(focus, 1, 1);
-	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0) + spellcraftSuffix
-		+ "\n\nBasic Sorcery: 115% coefficient on the Spell Power term."
-		"\nCaptured per-mark formula: min(12%, 5% + 0.03% x scaled Spell Power)."
-		"\nCurrent ordinary per-mark penetration at Spell Power 17: 5.64% (before battle-only Warcasting).");
+	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0)
+		+ "\n\nYour hero: each mark lets friendly ranged attacks ignore 5.64% Creature Defense; "
+		"3 such marks: 16.92%. Battle bonuses may increase this.");
 	ASSERT_NO_THROW(callback.rules = historicalDescriptionRules(2));
 	rank(focus, 3);
 	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0)
-		+ "\n\nLegacy profile: 100% coefficient on the Spell Power term; Sorcery rank does not scale Focus Magic."
-		"\nCaptured per-mark formula: min(20%, 10% + 0.05% x scaled Spell Power)."
-		"\nCurrent ordinary per-mark penetration at Spell Power 17: 10.85% (before battle-only Warcasting).");
+		+ "\n\nYour hero: each mark lets friendly ranged attacks ignore 10.85% Creature Defense; "
+		"3 such marks: 32.55%. Battle bonuses may increase this.");
 }
 
 TEST_F(NewHorizonsMagicDescriptionTest, MasterChainRetentionTracksLevelAndCapWithSchoolSuffixLast)

@@ -436,9 +436,8 @@ TEST_F(FocusMagicSpellTest, SpellcraftAndSorceryScaleOnlyTheFocusMagicPowerTerm)
 	// 10% fixed base plus floor(5 basis points x 100 SP x 1.265) = 16.32%.
 	expectCapturedFocusMagic(friendlyShooter, 1632, BattleSide::ATTACKER);
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), 0);
-	EXPECT_NE(description.find("Spellcraft efficiency: 110%"), std::string::npos);
-	EXPECT_NE(description.find("Current ordinary per-mark penetration at Spell Power 100: 16.32%"),
-		std::string::npos);
+	EXPECT_NE(description.find("Your hero: each mark lets friendly ranged attacks ignore 16.32% Creature Defense; "
+		"3 such marks: 48.96%. Battle bonuses may increase this."), std::string::npos);
 }
 
 TEST_F(FocusMagicSpellTest, RealCastWithSavedV2ProfileUsesTheUnrankedPowerCoefficient)
@@ -452,7 +451,7 @@ TEST_F(FocusMagicSpellTest, RealCastWithSavedV2ProfileUsesTheUnrankedPowerCoeffi
 	expectCapturedFocusMagic(friendlyShooter, 1015, BattleSide::ATTACKER);
 }
 
-TEST_F(FocusMagicSpellTest, ContextualHelpShowsSavedSorceryRankAndOrdinaryMarkValue)
+TEST_F(FocusMagicSpellTest, ContextualHelpShowsOrdinaryMarkValuesAtEachSorceryRank)
 {
 	ASSERT_TRUE(prepare(3));
 	const auto sorcery = SecondarySkill::decode(sorcerySkillKey);
@@ -462,15 +461,14 @@ TEST_F(FocusMagicSpellTest, ContextualHelpShowsSavedSorceryRankAndOrdinaryMarkVa
 	struct HelpExpectation
 	{
 		MasteryLevel::Type rank;
-		const char * rankName;
-		int coefficientPercent;
 		const char * currentPenetration;
+		const char * threeMarkPenetration;
 	};
 	const std::array<HelpExpectation, 4> cases = {{
-		{MasteryLevel::NONE, "No Sorcery Rank", 100, "10.15"},
-		{MasteryLevel::BASIC, "Basic Sorcery", 115, "10.17"},
-		{MasteryLevel::ADVANCED, "Advanced Sorcery", 130, "10.19"},
-		{MasteryLevel::EXPERT, "Expert Sorcery", 145, "10.21"}
+		{MasteryLevel::NONE, "10.15", "30.45"},
+		{MasteryLevel::BASIC, "10.17", "30.51"},
+		{MasteryLevel::ADVANCED, "10.19", "30.57"},
+		{MasteryLevel::EXPERT, "10.21", "30.63"}
 	}};
 	for(const auto & expected : cases)
 	{
@@ -478,28 +476,20 @@ TEST_F(FocusMagicSpellTest, ContextualHelpShowsSavedSorceryRankAndOrdinaryMarkVa
 			ChangeValueMode::ABSOLUTE);
 		const auto description = newHorizonsMagic::spellDescriptionForHero(
 			attackerSideHero, spell.toSpell(), 0);
-		EXPECT_NE(description.find("Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, "
-			"130% at Advanced, and 145% at Expert; it scales only the Spell Power term, "
-			"leaving the captured fixed base unchanged."), std::string::npos);
-		EXPECT_NE(description.find("Saved v1/v2 profiles use 100% at every Sorcery rank."), std::string::npos);
-		EXPECT_NE(description.find(std::string(expected.rankName) + ": "
-			+ std::to_string(expected.coefficientPercent) + "% coefficient on the Spell Power term."),
-			std::string::npos);
-		EXPECT_NE(description.find(std::string("Current ordinary per-mark penetration at Spell Power 3: ")
-			+ expected.currentPenetration + "% (before battle-only Warcasting)."), std::string::npos);
+		EXPECT_NE(description.find(std::string("Your hero: each mark lets friendly ranged attacks ignore ")
+			+ expected.currentPenetration + "% Creature Defense; 3 such marks: "
+			+ expected.threeMarkPenetration + "%. Battle bonuses may increase this."), std::string::npos);
 	}
 }
 
-TEST_F(FocusMagicSpellTest, ContextualHelpKeepsSavedV2AtUnrankedCoefficient)
+TEST_F(FocusMagicSpellTest, ContextualHelpKeepsSavedV2MarkValue)
 {
 	useV2MagicRules = true;
 	ASSERT_TRUE(prepare(3));
 	// configureCaster leaves this hero at Expert, but v2 saved rules retain 100%.
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), 0);
-	EXPECT_NE(description.find("Legacy profile: 100% coefficient on the Spell Power term; "
-		"Sorcery rank does not scale Focus Magic."), std::string::npos);
-	EXPECT_NE(description.find("Current ordinary per-mark penetration at Spell Power 3: "
-		"10.15% (before battle-only Warcasting)."), std::string::npos);
+	EXPECT_NE(description.find("Your hero: each mark lets friendly ranged attacks ignore 10.15% Creature Defense; "
+		"3 such marks: 30.45%. Battle bonuses may increase this."), std::string::npos);
 }
 
 TEST_F(FocusMagicSpellTest, EchoedDurationExtendsOnlyTheActuallyAppliedAdditionalCast)

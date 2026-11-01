@@ -222,6 +222,7 @@ void describeSpellcraft(std::string & result, const CGHeroInstance * hero, const
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& hero->getMagicRules().Struct().contains("spellcraftEfficiencyPercent")
 		&& registeredSpellcraftRank(hero) > MasteryLevel::NONE
+		&& spell->getJsonKey() != newHorizonsSorcery::FOCUS_MAGIC_SPELL
 		&& spell->isCommonHeroSpell() && spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId())
 		&& !isAdventureSpell(hero->getMagicRules(), spell->getId())
 		&& !spellSchoolSkills(hero->getMagicRules(), spell->getId()).empty())
@@ -272,41 +273,20 @@ void appendCapturedReadouts(std::string & result, const CGHeroInstance * hero, c
 }
 
 void appendFocusReadout(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell,
-	bool hasSavedSchoolRankCoefficient, int coefficientPercent, int coefficientBasisPoints)
+	bool hasSavedSchoolRankCoefficient, int coefficientBasisPoints)
 {
-	if(hasSavedSchoolRankCoefficient)
-	{
-		const auto rankIndex = detail::schoolCoefficientRankIndex(coefficientPercent);
-		if(!rankIndex)
-			return;
-		constexpr std::array<std::string_view, 4> sorceryRankNames{
-			"No Sorcery Rank", "Basic Sorcery", "Advanced Sorcery", "Expert Sorcery"};
-		result += "\n\n" + std::string(sorceryRankNames[*rankIndex]) + ": "
-			+ std::to_string(coefficientPercent) + "% coefficient on the Spell Power term.";
-	}
-	else
-	{
-		result += "\n\nLegacy profile: 100% coefficient on the Spell Power term; "
-			"Sorcery rank does not scale Focus Magic.";
-	}
-
 	const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
 	const auto profile = newHorizonsSorceryRevision::focusRules(hero->getMagicRules()).value_or(
 		newHorizonsSorceryRevision::FocusRules{newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS,
 			newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS, newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS});
-	result += "\nCaptured per-mark formula: min(" + percentFromBasisPoints(profile.capBasisPoints)
-		+ ", " + percentFromBasisPoints(profile.baseBasisPoints) + " + "
-		+ percentFromBasisPoints(profile.powerBasisPoints) + " x scaled Spell Power).";
 	const int specialty = hasSavedSchoolRankCoefficient
 		? hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) : 0;
-	const int64_t penetrationBasisPoints = newHorizonsSorceryRevision::focusMarkBasisPoints(
+	const int penetrationBasisPoints = newHorizonsSorceryRevision::focusMarkBasisPoints(
 		profile, static_cast<int32_t>(spellPower), coefficientBasisPoints, 0,
 		empowerSpellBonusPercent(hero->getMagicRules(), hero, spell->getId()), specialty);
-	const auto fraction = penetrationBasisPoints % 100;
-	result += "\nCurrent ordinary per-mark penetration at Spell Power " + std::to_string(spellPower)
-		+ ": " + std::to_string(penetrationBasisPoints / 100) + "."
-		+ (fraction < 10 ? "0" : "") + std::to_string(fraction)
-		+ "% (before battle-only Warcasting).";
+	result += "\n\nYour hero: each mark lets friendly ranged attacks ignore "
+		+ percentFromBasisPoints(penetrationBasisPoints) + " Creature Defense; 3 such marks: "
+		+ percentFromBasisPoints(3 * penetrationBasisPoints) + ". Battle bonuses may increase this.";
 }
 
 void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
@@ -339,7 +319,7 @@ void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * 
 	if(focusMagicCoefficient)
 	{
 		appendFocusReadout(result, hero, spell, hasSavedSchoolRankCoefficient,
-			coefficientPercent, coefficientBasisPoints);
+			coefficientBasisPoints);
 		return;
 	}
 

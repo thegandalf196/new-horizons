@@ -1551,7 +1551,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(spell['gainChance'], {})
         self.assertEqual(set(spell['levels']), {'none', 'basic', 'advanced', 'expert'})
 
-        description = "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit."
+        description = "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected."
         for rank in ('none', 'basic', 'advanced', 'expert'):
             with self.subTest(rank=rank):
                 current = spell['levels'][rank]
