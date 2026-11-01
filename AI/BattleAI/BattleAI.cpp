@@ -454,7 +454,8 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	// a legal Hero Action when one is available, or submit the authoritative
 	// no-op pass.  Falling through to the ordinary stack evaluator would submit
 	// DEFEND/WAIT and leave the battle waiting forever on a stopped stack.
-	if(stack->isTimeStopped())
+	const bool timeStopped = stack->isTimeStopped();
+	if(timeStopped || stack->pursuitMovementRemaining > 0)
 	{
 		const auto battleCallback = cb->getBattle(battleID);
 		if(battleCallback->battleGetMyHero()
@@ -471,32 +472,16 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 				return;
 		}
 
-		BattleAction pass = BattleAction::makeNoAction(stack);
-		// The AI callback is dispatched for the action controller, while every
-		// creature-action packet continues to identify the stack's physical side.
-		pass.side = stack->unitSide();
-		timing.submitUnitAction(cb, battleID, pass);
-		return;
-	}
-
-	if(stack->pursuitMovementRemaining > 0)
-	{
-		const auto battleCallback = cb->getBattle(battleID);
-		if(battleCallback->battleGetMyHero()
-			&& (autobattlePreferences.enableSpellsUsage || battleCallback->battleUsesHeroCommands()))
+		if(timeStopped)
 		{
-			auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
-			{
-				return makeEvaluator(battleID, stack);
-			});
-			if(evaluator.canCastSpell()
-				&& timing.measure(&TimingSummary::heroAction, [&]
-				{
-					return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage, heroValueObserver, vinesReuseControl);
-				}))
-				return;
+			BattleAction pass = BattleAction::makeNoAction(stack);
+			// The AI callback is dispatched for the action controller, while every
+			// creature-action packet continues to identify the stack's physical side.
+			pass.side = stack->unitSide();
+			timing.submitUnitAction(cb, battleID, pass);
 		}
-		timing.submitUnitAction(cb, battleID, choosePursuitMovement(battleCallback, stack));
+		else
+			timing.submitUnitAction(cb, battleID, choosePursuitMovement(battleCallback, stack));
 		return;
 	}
 

@@ -16,6 +16,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
+#include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include <bit>
 #include <future>
 #include <stdexcept>
@@ -59,6 +60,21 @@ public:
 			throw std::runtime_error("fixture saved-rules query failure");
 		}
 		return rules;
+	}
+};
+
+// Count the real callback boundary; retain native specialty validation and policy lookup.
+class CountingHeroBattle final : public BattleInfo
+{
+public:
+	const CGHeroInstance * attacker = nullptr;
+	const CGHeroInstance * defender = nullptr;
+	mutable std::vector<BattleSide> queries;
+	CountingHeroBattle() : BattleInfo(nullptr) {}
+	const CGHeroInstance * getSideHero(BattleSide side) const override
+	{
+		queries.push_back(side);
+		return side == BattleSide::ATTACKER ? attacker : defender;
 	}
 };
 
@@ -479,4 +495,114 @@ TEST_F(DamageCacheAdmissionTest, SelectedOrdinaryProbeAndFirstApplicationRepeatD
 	RecordProperty("probeNativeInitialCalls", std::to_string(probeCalculations.initialCalls));
 	RecordProperty("appliedNativeInitialCalls", std::to_string(appliedCalculations.initialCalls));
 	RecordProperty("probeCacheUnchanged", probeCacheUnchanged ? "true" : "false");
+}
+
+TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyCharacterizesCapturedIdentityAndCoefficient)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:tyraxor")));
+	CountingHeroBattle source;
+	source.attacker = attackerSideHero;
+	auto & captured = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules());
+	auto & policy = captured["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	const auto installedCoefficient = policy["ridersExploitDamagePercent"].Integer();
+	ASSERT_GT(installedCoefficient, 0);
+	EXPECT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
+	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER}));
+	policy["ridersExploitDamagePercent"].Integer() = 0;
+	source.queries.clear();
+	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
+	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER, BattleSide::DEFENDER}));
+	policy.Struct().erase("ridersExploitDamagePercent"); // Historical absence stays inactive.
+	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
+	source.attacker = nullptr;
+	source.defender = attackerSideHero;
+	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
+	policy["ridersExploitDamagePercent"].Integer() = installedCoefficient;
+	source.queries.clear();
+	EXPECT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
+	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER, BattleSide::DEFENDER}));
+}
+
+TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyMainProbesMatchScoresStateAndRngsWithBothPresenceStates)
+{
+	legacyRootAdmission = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:tyraxor")));
+	const auto * other = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(94), 20);
+	resetChild();
+	ASSERT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*child));
+	ASSERT_NO_FATAL_FAILURE(compareMainBatch(child->getForUpdate(incoming->unitId()),
+		{braced, other, braced, other}));
+	// End every admission lifetime before changing captured policy and constructing a new batch.
+	auto & policy = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules())
+		["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	policy["ridersExploitDamagePercent"].Integer() = 0;
+	resetChild();
+	ASSERT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*child));
+	ASSERT_NO_FATAL_FAILURE(compareMainBatch(child->getForUpdate(incoming->unitId()),
+		{braced, other, braced, other}));
+}
+
+TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyAdmissionIsLazyAndRetainsTrueAndFalse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:tyraxor")));
+	const auto actor = child->getForUpdate(incoming->unitId());
+	CountingHeroBattle source;
+	source.attacker = attackerSideHero;
+	{
+		DamageCacheAdmission admission(*actor, source);
+		EXPECT_TRUE(source.queries.empty());
+		EXPECT_TRUE(admission.ordinaryCreatureDamageIsStateful());
+		EXPECT_TRUE(admission.ordinaryCreatureDamageIsStateful());
+		EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER}));
+	}
+	// A new immutable batch must observe changed captured policy on the same callback.
+	auto & policy = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules())
+		["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	policy["ridersExploitDamagePercent"].Integer() = 0;
+	source.queries.clear();
+	DamageCacheAdmission next(*actor, source);
+	EXPECT_FALSE(next.ordinaryCreatureDamageIsStateful());
+	EXPECT_FALSE(next.ordinaryCreatureDamageIsStateful());
+	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER, BattleSide::DEFENDER}));
+	CountingHeroBattle sibling;
+	EXPECT_FALSE(next.matches(*actor, sibling));
+}
+
+TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyFailureDoesNotPublishAndRetryPreservesFirstUse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:tyraxor")));
+	const auto actor = child->getForUpdate(incoming->unitId());
+	CountingHeroBattle source;
+	source.attacker = attackerSideHero;
+	auto & policy = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules())
+		["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	const auto valid = policy;
+	policy["version"].Integer() = 999; // Native captured-policy validation throws.
+	DamageCacheAdmission admission(*actor, source);
+	EXPECT_TRUE(source.queries.empty());
+	EXPECT_THROW(admission.ordinaryCreatureDamageIsStateful(), std::runtime_error);
+	EXPECT_EQ(source.queries.size(), 1u);
+	policy = valid;
+	EXPECT_TRUE(admission.ordinaryCreatureDamageIsStateful());
+	EXPECT_TRUE(admission.ordinaryCreatureDamageIsStateful());
+	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER, BattleSide::ATTACKER}));
+}
+
+TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyAdmissionRetainsPlayerVisibleHeroBoundary)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
+	defenderSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:tyraxor")));
+	resetChild();
+	const auto actor = child->getForUpdate(incoming->unitId());
+	ASSERT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*battle()));
+	ASSERT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*child));
+	DamageCacheAdmission visible(*actor, *child), allKnowing(*actor, *battle());
+	EXPECT_FALSE(visible.ordinaryCreatureDamageIsStateful());
+	EXPECT_TRUE(allKnowing.ordinaryCreatureDamageIsStateful());
+	EXPECT_FALSE(visible.matches(*actor, *battle()));
 }

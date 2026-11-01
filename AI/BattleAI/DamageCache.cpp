@@ -13,7 +13,6 @@
 #include "DreadCavalryProjection.h"
 #include "AttackPossibility.h"
 #include "DamageCacheAdmission.h"
-#include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "DamageCacheTimingScope.h"
 #include "DamageCacheMarks.h"
 #include "AttackCount.h"
@@ -312,7 +311,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// Boneward is controller/form-sensitive environment state, not a bonus-tree node.
 	// Remember its prior presence so removing it cannot revive a reduced pair entry.
 	if(sylvanTacticsAI::dynamicDamage(*hb, attacker, defender)
-		|| newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*hb)
+		|| admission.ordinaryCreatureDamageIsStateful()
 		|| tracksIntrinsicReduction(defender->unitId(), attack.physicalDamage)
 		|| admission.supportsFocusFire()
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0

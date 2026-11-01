@@ -17618,14 +17618,14 @@
     "AI/BattleAI/BattleAI.cpp": {
       "deferral": "AI engineer: before further substantive growth, extract continuation admission through existing continuation callbacks and BattleAITiming; preserve stale pending decline, candidate order and validated submissions. AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
       "kind": "exception",
-      "lines": 842,
+      "lines": 827,
       "owner": "ai_engineer",
-      "previous_review": "IR-COMBAT-AI-TIMING-BOUNDARY-SOURCE-20261026",
-      "rationale": "Independently reviewed exact renewal, 836 to 842 physical lines. Essential typed continuation, accepted output, final-state deferred reaction and shared per-hit casualty routing preserve native order. Cohesive rule owners retain substantive mechanics. Root authorized this urgent bounded scope; no raised ceiling, broad exclusion or future growth.",
-      "review": "IR-CREATURE-SPECIALIST-FINAL-AI-SOURCE-20261029",
-      "review_scope": "Exact final typed specialist correctness source only; native/type/rendered acceptance pending; no future growth.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "c235ac705a6f39d7c88ce3ba4acbee7ebb8615c1c8e87829b176d55837c4ce98"
+      "previous_review": "IR-CREATURE-SPECIALIST-FINAL-AI-SOURCE-20261029",
+      "rationale": "Independently reviewed exact renewal, 836 to 842 physical lines. Essential typed continuation, accepted output, final-state deferred reaction and shared per-hit casualty routing preserve native order. Cohesive rule owners retain substantive mechanics. Root authorized this urgent bounded scope; no raised ceiling, broad exclusion or future growth. Consolidates the identical optional Hero Action window for Time Stop and movement-only Pursuit in the existing orchestration owner, preserving precedence, short-circuit reads, callback requery, submission and exception order. File842 to827; no new module, moved code or extra call. All inherited extraction and runtime obligations remain; no future regrowth credit, ceiling increase, exclusion or performance claim.",
+      "review": "IR-PHASE2-COMBAT-AI-ORGANIZATION-RATCHET-20261101",
+      "review_scope": "Exact final typed specialist correctness source only; native/type/rendered acceptance pending; no future growth. Exact bounded consolidation/unused-local ratchet only. Seven constrained prechange cases passed; postchange and adjacent native acceptance remain pending. No source move or new production file.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_PRECHANGE_PASS_POSTCHANGE_PENDING",
+      "sha256": "61f44e77c1b85a89f65924281c70e1c2ef3414427ca97dc2dd82cdb6f4191f15"
     },
     "AI/BattleAI/BattleAI.cpp::BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)#1": {
       "kind": "legacy",
@@ -17657,14 +17657,14 @@
     "AI/BattleAI/BattleAI.cpp::void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )#1": {
       "deferral": "AI engineer: before further substantive growth, extract continuation admission through existing continuation callbacks and BattleAITiming; preserve stale pending decline, candidate order and validated submissions. AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate.",
       "kind": "exception",
-      "lines": 226,
+      "lines": 211,
       "owner": "ai_engineer",
-      "previous_review": "IR-VINES-REUSE-EXTRACTION-SOURCE-20261021",
-      "rationale": "Independently reviewed exact renewal, 221 to 226 physical lines. Essential typed continuation, accepted output, final-state deferred reaction and shared per-hit casualty routing preserve native order. Cohesive rule owners retain substantive mechanics. Root authorized this urgent bounded scope; no raised ceiling, broad exclusion or future growth.",
-      "review": "IR-CREATURE-SPECIALIST-FINAL-AI-SOURCE-20261029",
-      "review_scope": "Exact final typed specialist correctness source only; native/type/rendered acceptance pending; no future growth.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "1cd622ed7c39279d9621d66bbe0ff2ff3d0a68155c6fb5a7704f0f4102ee2038"
+      "previous_review": "IR-CREATURE-SPECIALIST-FINAL-AI-SOURCE-20261029",
+      "rationale": "Independently reviewed exact renewal, 221 to 226 physical lines. Essential typed continuation, accepted output, final-state deferred reaction and shared per-hit casualty routing preserve native order. Cohesive rule owners retain substantive mechanics. Root authorized this urgent bounded scope; no raised ceiling, broad exclusion or future growth. The identical Time Stop and Pursuit optional Hero Action gate is expressed once while preserving the physical-side pass versus movement fallback and ordered Hero submission. Method226 to211; no change to scores, RNG, candidates, timing ownership or saved-policy handling. All inherited extraction and runtime obligations remain; no future regrowth credit, ceiling increase, exclusion or performance claim.",
+      "review": "IR-PHASE2-COMBAT-AI-ORGANIZATION-RATCHET-20261101",
+      "review_scope": "Exact final typed specialist correctness source only; native/type/rendered acceptance pending; no future growth. Exact bounded consolidation/unused-local ratchet only. Seven constrained prechange cases passed; postchange and adjacent native acceptance remain pending. No source move or new production file.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_PRECHANGE_PASS_POSTCHANGE_PENDING",
+      "sha256": "046032f3c13ab5fc18ca40c64b4bb14d4338c471a240ad7222a2c02e2cfe959a"
     },
     "AI/BattleAI/BattleAITiming.cpp": {
       "kind": "review",
@@ -17700,15 +17700,15 @@
     "AI/BattleAI/BattleEvaluator.cpp": {
       "deferral": "Existing owner: before further substantive growth, extract the relevant cohesive state-aware admission or ordered serializer routing into its existing typed domain owner with old-policy, sequencing and branch-isolation characterization. Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Revised correction follow-up, same AI owner: before any further substantive selector growth, extract accepted-Order finalization/routing behind a narrow existing-admission/result-value interface, keeping allowance snapshots and rejected/accepted order atomicity in sequence. Retain V3 candidate/value/state/both-RNG characterization and test that revised Feint/Vanguard never enter candidate forecast combat search, full/cached continuation, movement or exchange. The new15-line bounded exception does not discharge the existing LightActionValue extraction or authorize another monolithic extension. Owner ai_engineer: next cohesive extraction is Defend incoming-threat/preemptive groups with explicit visible-state inputs and unchanged old-policy action/score/RNG characterization. Existing404-line Defend and1202-line spell method remain debt; native seven cases and old-policy regression required. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
       "kind": "exception",
-      "lines": 5344,
+      "lines": 5343,
       "owner": "ai_engineer",
-      "previous_review": "IR-GROUP-D-MECHANICS-7046-AI-FE996-CURRENT423-20261030",
+      "previous_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
       "prior_group_d_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Cast-only validation/application moves into the focused creature-pressure owner with named-only action-controller proxy; central evaluator and completion method shrink, with ordinary-caster behavior retained. Exact 5351 to 5347 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. GroupD exact renewal: Extract ordered Defend capability reads into focused DefendEvaluation; repair and usable adjacent-counter proxy use shared authority. File5347→5345 and Defend407→404; no new search and no whole-file reduction claim. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation.",
-      "review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "review_scope": "Exact private047bb composition whole file 5347 physical lines; bounded technical ceiling renewal only. No future growth, native, rendered or actual-Main gate claim. Exact7046+fe996 actual423 composition only; future capability/typed-marker admission, native/rendered/performance and writer authority remain pending. No ceiling increase.",
-      "review_status": "INDEPENDENT_BOUNDED_SOURCE_ONLY_NATIVE_UNRUN",
-      "sha256": "6291a3894733f7512c8c66f3a7504579f40a9ebb8a79d9b137e0f958c60e012b"
+      "rationale": "Cast-only validation/application moves into the focused creature-pressure owner with named-only action-controller proxy; central evaluator and completion method shrink, with ordinary-caster behavior retained. Exact 5351 to 5347 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. GroupD exact renewal: Extract ordered Defend capability reads into focused DefendEvaluation; repair and usable adjacent-counter proxy use shared authority. File5347→5345 and Defend407→404; no new search and no whole-file reduction claim. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation. Removes only an unused fieldless RNGStub automatic local from creature-cast completion valuation. Its default construction/destruction has no gameplay RNG or other observable effect; the actual projected battle RNG owner is unchanged. File5344 to5343 and affected method81 to80; no moved code. All inherited extraction and runtime obligations remain; no future regrowth credit, ceiling increase, exclusion or performance claim.",
+      "review": "IR-PHASE2-COMBAT-AI-ORGANIZATION-RATCHET-20261101",
+      "review_scope": "Exact private047bb composition whole file 5347 physical lines; bounded technical ceiling renewal only. No future growth, native, rendered or actual-Main gate claim. Exact7046+fe996 actual423 composition only; future capability/typed-marker admission, native/rendered/performance and writer authority remain pending. No ceiling increase. Exact bounded consolidation/unused-local ratchet only. Seven constrained prechange cases passed; postchange and adjacent native acceptance remain pending. No source move or new production file.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_PRECHANGE_PASS_POSTCHANGE_PENDING",
+      "sha256": "985505d30f56b08debea47cbd5eec09e02dcc6a55d02bec240ecc43ddd1a8ded"
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -17809,17 +17809,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "b2b19d319afd875b96c3f5786f7c463941792c9293e7ede55aa8f819141d7098"
-    },
-    "AI/BattleAI/BattleEvaluator.cpp::std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(const CStack * stack, PossibleSpellcast & ps)#1": {
-      "kind": "review",
-      "lines": 81,
-      "owner": "ai_engineer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Cast-only validation/application moves into the focused creature-pressure owner with named-only action-controller proxy; central evaluator and completion method shrink, with ordinary-caster behavior retained. Exact 85 to 81 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding.",
-      "review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "review_scope": "Exact private047bb composition maintained function span 5262-5342 (81 physical lines, including any template declaration); bounded cohesion/existing-hotspot review only. No future growth, native, rendered or actual-Main gate claim.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "0677132bb6a26fb6734e144ddaab55ca5021ea13f88850dd1a8ff8fc8bbc8f8d"
     },
     "AI/BattleAI/BattleEvaluatorCreaturePressure.cpp::std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * details)#1": {
       "deferral": "Keep recipient admission/ordinary cast/pressure boundaries explicit. Any substantive selector growth requires renewed responsibility review; do not transfer remaining giant Hero action work here.",
@@ -17948,12 +17937,12 @@
       "kind": "exception",
       "lines": 132,
       "owner": "ai_engineer",
-      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "rationale": "129to130 adds one constant-two-side captured-positive Tyraxor policy predicate in existing dynamic bypass. Prevents stale ID-only damage across allowance/effective-owner transitions; no unit search/new cache framework. Pure policy decision is extracted. Exact130-line getDamage renewal recognizes one new visible physical protection through the existing remembered-target set/query. Existing Evasive history is preserved by exact rename; no new cache field or query protocol. Expiry keeps conservative bypass rather than reusing stale ID-only entries; same-size routing has no performance credit. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation.",
-      "review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
-      "review_status": "INDEPENDENT_BOUNDED_SOURCE_ONLY_NATIVE_UNRUN",
-      "sha256": "c58bd0238a40f2e6fde883c310494f2679a9193e735b0d2d99865d5ad979f1c2"
+      "previous_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
+      "rationale": "129to130 adds one constant-two-side captured-positive Tyraxor policy predicate in existing dynamic bypass. Prevents stale ID-only damage across allowance/effective-owner transitions; no unit search/new cache framework. Pure policy decision is extracted. Exact130-line getDamage renewal recognizes one new visible physical protection through the existing remembered-target set/query. Existing Evasive history is preserved by exact rename; no new cache field or query protocol. Expiry keeps conservative bypass rather than reusing stale ID-only entries; same-size routing has no performance credit. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation. This unchanged-size 132-line renewal replaces only the existing second OR policy predicate with the existing actor/callback-scoped lazy admission fact. First-use position, exception retry, hidden hero policy, independent fallback, score/RNG and mutation boundaries remain unchanged; containing file shrinks 448 to 447 lines. This source review grants no future growth, source-volume or measured performance claim; postchange native acceptance remains separate.",
+      "review": "IR-PHASE2-ORDINARY-POLICY-FACT-SOURCE-20261101",
+      "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit. Current renewal covers only the exact 132-line lazy ordinary-policy call-site substitution, with the obsolete containing-file include removed. All inherited extraction and runtime obligations remain; no ceiling increase or coverage exclusion.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_POSTCHANGE_NATIVE_PENDING",
+      "sha256": "094e7a9c348c1ee9786733769b8bdfb6f575f0484c318b377806606a9aaa7cbb"
     },
     "AI/BattleAI/HypotheticActivation.cpp::void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)#1": {
       "deferral": "No further lifecycle orchestration growth approved. AI owner must place substantive activation/round semantics in shared native lifecycle and InitialExportLifecycle owners before expansion; require actual ordered packet, fork/RNG and frozen-oracle parity for that later change. Exact one-argument routing only; no future growth credit. Retain existing lifecycle/round extraction obligations before substantive expansion. Next4: retain all inherited extraction/order/ownership/captured-absence obligations.22 authored native cases UNRUN; full1146 envelope/history plus branch/RNG/AI integration remain required. Further lifecycle/cache growth must extract a cohesive domain phase, not grow another oversized helper.",

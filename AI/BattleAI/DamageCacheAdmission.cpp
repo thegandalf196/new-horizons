@@ -13,6 +13,7 @@
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/battle/Unit.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 
 bool DamageCacheAdmission::matches(const battle::Unit & candidate, const CBattleInfoCallback & branch) const
 {
@@ -100,5 +101,13 @@ bool DamageCacheAdmission::supportsFocusFire()
 	return remember(FOCUS_FIRE_RULES, [&]
 	{
 		return heroCommands::supportedByRules(battle.getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE);
+	});
+}
+
+bool DamageCacheAdmission::ordinaryCreatureDamageIsStateful()
+{
+	return remember(ORDINARY_DAMAGE_POLICY, [&]
+	{
+		return newHorizonsHeroes::ordinaryCreatureDamageIsStateful(battle);
 	});
 }

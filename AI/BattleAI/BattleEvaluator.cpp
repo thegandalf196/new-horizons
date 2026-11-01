@@ -5261,7 +5261,6 @@ std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(co
 {
 	using ValueMap = PossibleSpellcast::ValueMap;
 
-	RNGStub rngStub;
 	auto projected = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 	auto & state = *projected;
 	TStacks all = cb->getBattle(battleID)->battleGetAllStacks(false);
