@@ -106,7 +106,7 @@ class OwnedBonusAcceptancePolicy final
 	OwnedBonusAcceptancePolicy(BonusAcceptanceFacts::Static values, BonusAcceptanceFacts::Subject scope)
 		: metadata(std::move(values)), subject(scope) {}
 	friend BonusAcceptanceFacts captureOwnedBonusAcceptance(const CStack &);
-	friend bool acceptsBattleBonus(const Bonus &, const BonusAcceptanceFacts::Static &, const BonusAcceptanceFacts::State &);
+	friend DLL_LINKAGE bool acceptsBattleBonus(const Bonus &, const BonusAcceptanceFacts::Static &, const BonusAcceptanceFacts::State &);
 public:
 	~OwnedBonusAcceptancePolicy() = default;
 };

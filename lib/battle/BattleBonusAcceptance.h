@@ -39,7 +39,7 @@ struct BonusAcceptanceFacts
 		// Engine-only immutable canonical inputs; no public policy/state getter.
 		std::shared_ptr<const OwnedBonusAcceptancePolicy> enginePolicy;
 		friend BonusAcceptanceFacts captureOwnedBonusAcceptance(const CStack &);
-		friend bool acceptsBattleBonus(const Bonus &, const Static &, const State &);
+		friend DLL_LINKAGE bool acceptsBattleBonus(const Bonus &, const Static &, const State &);
 	};
 	struct State
 	{

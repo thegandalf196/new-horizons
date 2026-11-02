@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "../../lib/GameSettings.h"
+#include "../../lib/json/JsonValidator.h"
 #include "../../lib/mapObjects/NewHorizonsNeutralCalibration.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <limits>
@@ -30,6 +31,22 @@ JsonNode configured()
 	JsonNode result;
 	result["creatures"][SETTING_KEY] = curve();
 	return result;
+}
+
+JsonNode generation()
+{
+	const std::string text = R"({"version":1,"enabled":true,
+		"stages":[{"heroLevel":1,"weeks":1,"unlockedLines":3,"troopGold":4000}],
+		"unlockWeeks":[1,1,1,2,2,3,4]})";
+	return JsonNode(text.data(), text.size(), "neutral calibration schema fixture");
+}
+
+std::string nativeSchemaErrors(JsonNode rules)
+{
+	// Core settings intentionally skip generic required-key checks. Presence
+	// exclusions must therefore work without negating a required-key schema.
+	rules.setModScope("core");
+	return JsonValidator().check("vcmi:newHorizonsNeutralCalibration", rules);
 }
 }
 
@@ -144,4 +161,42 @@ TEST(NewHorizonsNeutralCalibration, ReferenceCostOverflowRejectsBeforeCurveCaptu
 	EXPECT_EQ(affordableValue({{7, 80, 60}, {5, 126, 100}}, 4000), 1190);
 	EXPECT_EQ(affordableValue({{7, 80, 60}, {5, 126, 100}}, 460), 492);
 	EXPECT_EQ(affordableValue({{std::numeric_limits<int64_t>::max(), 1, 1}}, 1), 1);
+}
+
+TEST(NewHorizonsNeutralCalibration, NativeSchemaAcceptsCoreGenerationCaptureAndDisabledForms)
+{
+	JsonNode emptyObject;
+	emptyObject.Struct();
+	for(const auto & rules : std::vector<JsonNode>{JsonNode(), emptyObject, disabledSnapshot(), curve(), generation()})
+	{
+		const auto errors = nativeSchemaErrors(rules);
+		EXPECT_TRUE(errors.empty()) << errors;
+		EXPECT_NO_THROW(validate(rules));
+	}
+}
+
+TEST(NewHorizonsNeutralCalibration, NativeSchemaRejectsMixedFormsEvenForNullCoreProperties)
+{
+	for(const char * key : {"stages", "unlockWeeks"})
+	{
+		auto captured = curve();
+		captured[key] = JsonNode();
+		EXPECT_FALSE(nativeSchemaErrors(captured).empty());
+		EXPECT_THROW(validate(captured), std::runtime_error);
+	}
+	auto generated = generation();
+	generated["curve"] = JsonNode();
+	EXPECT_FALSE(nativeSchemaErrors(generated).empty());
+	EXPECT_THROW(validate(generated), std::runtime_error);
+}
+
+TEST(NewHorizonsNeutralCalibration, NativeSchemaRejectsNonObjectScalarsAndArrays)
+{
+	JsonNode array;
+	array.Vector().emplace_back(1);
+	for(const auto & rules : std::vector<JsonNode>{JsonNode(1), JsonNode(true), JsonNode("invalid"), array})
+	{
+		EXPECT_FALSE(nativeSchemaErrors(rules).empty());
+		EXPECT_THROW(validate(rules), std::runtime_error);
+	}
 }

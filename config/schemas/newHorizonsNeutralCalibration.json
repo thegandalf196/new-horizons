@@ -1,8 +1,18 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema#",
-	"type": [
-		"object",
-		"null"
+	"allOf": [
+		{
+			"anyOf": [
+				{
+					"type": "object"
+				},
+				{
+					"enum": [
+						null
+					]
+				}
+			]
+		}
 	],
 	"additionalProperties": false,
 	"properties": {
@@ -116,21 +126,13 @@
 					"enum": [
 						true
 					]
+				},
+				"stages": {
+					"not": {}
+				},
+				"unlockWeeks": {
+					"not": {}
 				}
-			},
-			"not": {
-				"anyOf": [
-					{
-						"required": [
-							"stages"
-						]
-					},
-					{
-						"required": [
-							"unlockWeeks"
-						]
-					}
-				]
 			}
 		},
 		{
@@ -145,12 +147,10 @@
 					"enum": [
 						true
 					]
+				},
+				"curve": {
+					"not": {}
 				}
-			},
-			"not": {
-				"required": [
-					"curve"
-				]
 			}
 		}
 	]
