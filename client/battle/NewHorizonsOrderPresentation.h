@@ -94,6 +94,23 @@ inline bool isTargeted(HeroCommand command)
 		|| command == HeroCommand::FLANK || command == HeroCommand::SECOND_WIND;
 }
 
+inline std::string unavailableOrderReason(const CPlayerBattleCallback & callback, BattleSide side,
+	HeroCommand command, bool hasTargets)
+{
+	if(isTargeted(command))
+	{
+		if(command == HeroCommand::PROTECT)
+			return "No legal Protector/Ward pair is available; the two friendly unit footprints must touch.";
+		return hasTargets ? "No available target meets this Order's requirements."
+			: "No legal targets are available right now.";
+	}
+	if(callback.battleGetHeroOrderTargetRejection(side, command, {}) == heroCommands::TargetRejection::NO_RECIPIENT)
+		return command == HeroCommand::VANGUARD
+			? "No friendly stack can receive Vanguard right now. Undead and mechanical creatures are unaffected."
+			: "No friendly creature stack can receive this Order right now.";
+	return "This Order cannot be issued right now.";
+}
+
 inline std::string combinedArmsHelp(const JsonNode & rules, HeroCommand command, const CGHeroInstance * hero)
 {
 	if(!heroCommands::isCanonicalRules(rules) || !heroCommands::hasCombinedArms(hero))
@@ -178,7 +195,7 @@ inline std::string revisedSnapshotText(const HeroOrderState & state, int current
 
 inline std::string revisedActiveHelp(const std::optional<HeroOrderState> & state, int currentRound)
 {
-	return state && state->revision ? "\n\nIssued snapshot: " + revisedSnapshotText(*state, currentRound) : "";
+	return state && state->revision ? "\n\nActive effect: " + revisedSnapshotText(*state, currentRound) : "";
 }
 
 inline std::string commandName(HeroCommand command)
@@ -274,7 +291,7 @@ inline RevisedOrderPreview revisedOrderPreview(const CPlayerBattleCallback & cal
 	else
 		prepared = callback.battleGetHeroOrderState(side, command);
 	if(!prepared || !prepared->revision)
-		return {"Preview unavailable", "\n\nNo eligible prepared snapshot is available."};
+		return {"Preview unavailable", {}};
 	const auto & snapshot = *prepared->revision;
 	const int remaining = std::max(0, snapshot.expiresAfterRound - callback.battleGetRound() + 1);
 	const auto label = command == HeroCommand::FEINT
@@ -282,9 +299,9 @@ inline RevisedOrderPreview revisedOrderPreview(const CPlayerBattleCallback & cal
 		: "A/D/M +" + std::to_string(snapshot.vanguardStatBonus)
 			+ "; Init +" + std::to_string(snapshot.vanguardInitiativePercent) + "%\n"
 			+ std::to_string(remaining) + " rounds (incl. now)";
-	return {label, std::string(preview ? "\n\nPreview without a Lucky Day proc: " : "\n\nIssued snapshot: ")
+	return {label, std::string(preview ? "\n\nPreview without a Lucky Day proc: " : "\n\nActive effect: ")
 		+ revisedSnapshotText(*prepared, callback.battleGetRound())
-		+ (command == HeroCommand::VANGUARD ? ". Stack badges show native timers, including Time Stop pauses." : ".")};
+		+ (command == HeroCommand::VANGUARD ? ". Stack badges show remaining duration, including Time Stop pauses." : ".")};
 }
 
 inline std::string commandEffects(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero,

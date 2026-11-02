@@ -13,6 +13,7 @@
 int HypotheticBattle::heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
 	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned Hero policy queries require captured canonical dependencies");
 	if(const auto owned = initialExportSubject())
 	{
 		owned->synchronizeValues(*this);

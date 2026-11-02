@@ -220,6 +220,12 @@ set(test_SRCS
 	bonus/PeerBonusDependencyClosureTest.cpp
 		bonus/OwnedRecipientRootQueryTest.cpp
 		battle/OwnedUnitBonusFrameTest.cpp
+	battle/OwnedLegacyTimeStopCaptureTest.cpp
+	battle/OwnedTimeStopRecordClassifierTest.cpp
+	battle/OwnedFrameBranchQueriesTest.cpp
+	battleAI/OwnedStackQuerySourceTest.cpp
+	bonus/OwnedSourceExportRoleTest.cpp
+	bonus/OwnedSourceRelationRecipeTest.cpp
 		battle/StackFormSourceIdentityTest.cpp
 		battle/ScopedStackEffectQueriesTest.cpp
 	bonus/BonusTypedContextSeamsTest.cpp
@@ -289,6 +295,7 @@ set(test_SRCS
 		game/BattleSpellCastTest.cpp
 		game/GameSettingsTest.cpp
 		game/NewHorizonsCombatScalarCaptureTest.cpp
+		game/NewHorizonsNeutralCalibrationTest.cpp
 		game/NewHorizonsNeutralArmySizeTest.cpp
 		game/NewHorizonsRecruitmentGrowthTest.cpp
 		game/NewHorizonsRecruitmentGrowthWorldTest.cpp
@@ -324,6 +331,7 @@ set(test_SRCS
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
 		hero/NewHorizonsPerkRulesTest.cpp
+		hero/NewHorizonsQuickStudyDefaultCaptureTest.cpp
 		hero/NewHorizonsNecromancyCaptureTest.cpp
 		hero/NewHorizonsPerkStateTest.cpp
 		hero/NewHorizonsPerkAvailabilityTest.cpp
@@ -901,6 +909,9 @@ set(test_SRCS
 )
 
 set(test_HEADERS
+		scripting/HistoricalTimedScript.h
+		scripting/HistoricalLifeDrainScript.h
+		scripting/HistoricalDamageCalculatorScript.h
 		battleAI/HeroActionTimingCapture.h
 		battleAI/HeroQueueSelectorFixture.h
 		battleAI/HeroExpectedSpellFixture.h
@@ -995,6 +1006,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HeroCommandAITest.cpp
 		battleAI/FutureAttackReactionTest.cpp
 		battleAI/CanonicalOrderValueTest.cpp
+		battleAI/HeroDecisionPressureTest.cpp
+		battleAI/HeroOrderShortlistTest.cpp
 		battleAI/SecondWindOpportunityTest.cpp
 		battleAI/HeroOrderCandidatesTest.cpp
 		battleAI/TheChosenValueTest.cpp
@@ -1024,6 +1037,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/RegenerationBaselineReuseTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
 		battleAI/ExchangeInitiativeQueueTest.cpp
+		battleAI/CreatureCandidateBaselineTest.cpp
+		battleAI/MovementCandidateScreeningTest.cpp
 		battleAI/OrdinaryStrikeEvaluatorIntegrationTest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp
@@ -1037,6 +1052,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsMachineSpecialtyAITest.cpp
 		battleAI/NewHorizonsMeleeSpecialtyAITest.cpp
 		battleAI/GraveDustSnapshotTest.cpp
+	battleAI/HypotheticFortificationSnapshotTest.cpp
 		battleAI/OwnedBurnProjectionTest.cpp
 		battleAI/NewHorizonsParalyzingGazeAITest.cpp
 		battleAI/NewHorizonsPetrifyingBloodAITest.cpp
@@ -1172,6 +1188,9 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/AIUtilityTest.cpp
 		battleAI/NewHorizonsElementalOrbAITest.cpp
 		nullkiller2/Analyzers/HeroManagerTest.cpp
+		nullkiller2/QuickStudyOfferStateTest.cpp
+		nullkiller2/QuickStudyDecisionTest.cpp
+		nullkiller2/QuickStudyCallbackIntegrationTest.cpp
 		nullkiller2/Analyzers/ObjectClusterizerTest.cpp
 		nullkiller2/Behaviors/DefenceBehaviorTest.cpp
 		nullkiller2/Behaviors/EscapeBehaviorTest.cpp

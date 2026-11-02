@@ -152,13 +152,25 @@ int perkRequiredRank(std::string_view prerequisite)
 	throw std::runtime_error("Unknown New Horizons perk prerequisite");
 }
 
+std::optional<int> quickStudyRerollInterval(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("quickStudyPolicy"))
+		return std::nullopt;
+	const auto & policy = rules["quickStudyPolicy"];
+	fields(policy, {"version", "interval"});
+	require(integer(policy["version"], 1, 1), "Quick Study policy version");
+	require(integer(policy["interval"], 1, 100), "Quick Study interval in 1..100");
+	return static_cast<int>(policy["interval"].Integer());
+}
+
 void validatePerkRules(const JsonNode & rules)
 {
 	if(!usesPerkRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
-		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy"});
+		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "quickStudyPolicy"});
+	quickStudyRerollInterval(rules);
 	usesSylvanTactics(rules);
 	newHorizonsNecromancy::validatePolicy(rules);
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
@@ -254,9 +266,11 @@ bool usesStrictPerkProgression(const JsonNode & rules)
 		&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION;
 }
 
-void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported)
+void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported)
 {
 	validatePerkRules(rules);
+	if(quickStudyRerollInterval(rules) && !optionalRerollSupported)
+		throw std::runtime_error("Cannot serialize optional Quick Study policy to an older format");
 	if(rules.isStruct() && rules.Struct().contains("perkProgressionPolicyVersion") && !strictSupported)
 		throw std::runtime_error("Cannot serialize strict perk progression to an older format");
 	if(usesPerkRules(rules) && rules.Struct().contains("offerWeightPolicyVersion") && !supported)

@@ -10,8 +10,12 @@ class OwnedUnitBonusFrame::Data
 public:
 	std::shared_ptr<const OwnedUnitCreatureResolver> creatures;
 	Identity identity;
+	bool hasCurrentRoster = false;
 	std::shared_ptr<const OwnedRecipientBonusGraph> graph;
 	std::map<CreatureID, FormSources> forms;
+	// Retain finite owned metadata pools through all current-ledger borrows.
+	std::vector<std::shared_ptr<const ownedBonusPayloads::Captured>> pendingPayloads;
+	std::map<std::shared_ptr<Bonus>, std::shared_ptr<Bonus>> sourceReplacements;
 	std::vector<size_t> sourceLocalSpells;
 	OwnedUnitEnvironment::Facts environment;
 	std::vector<std::shared_ptr<const Unit>> peers;
@@ -57,6 +61,12 @@ public:
 		std::vector<std::shared_ptr<const Unit>> peers, size_t recipientPosition, recipientBonusOverlay::Layer ledger, const std::optional<std::vector<PeerInput>> & peerSources, const Data * inheritedPeers = nullptr);
 	std::vector<std::shared_ptr<const Unit>> buildPeers(const std::vector<PeerInput> & inputs);
 	std::vector<std::shared_ptr<const Unit>> copyPeers(const Data & source);
+	struct CurrentPeers
+	{
+		std::vector<std::shared_ptr<Peer>> queries;
+		std::unique_ptr<OwnedUnitEnvironment> environment;
+	};
+	CurrentPeers prepareCurrentPeers(const std::vector<std::shared_ptr<OwnedUnitBonusFrame>> & ordered) const;
 	void validateValues(const CUnitState & values) const;
 	void validate() const;
 	void validateSnapshot(const JsonNode & snapshot) const;

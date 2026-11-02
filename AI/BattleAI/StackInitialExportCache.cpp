@@ -9,5 +9,5 @@
 
 bool StackWithBonuses::isBonusCacheable() const
 {
-	return !owner->initialExportSubject();
+	return !ownedQuerySource && !owner->initialExportSubject();
 }

@@ -118,6 +118,7 @@ class OrdinaryRangedPolicySerializationTest : public HeroCommandFixture,
 {
 protected:
 	JsonNode authored;
+	bool preCalibrationCapture = false;
 	bool historicFour = false;
 	std::optional<int32_t> neutralRequest;
 	const PairPolicy & entry() const { return pairPolicies.at(std::get<0>(GetParam())); }
@@ -131,6 +132,15 @@ protected:
 		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, authored);
+		// Explicit old-codec worlds predate captured neutral calibration.
+		if(preCalibrationCapture)
+		{
+			loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+			auto perkRules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perkRules.Struct().erase("quickStudyPolicy");
+			perkRules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+		}
 	}
 	void prepare(bool natural = false, const char * actorOverride = nullptr)
 	{
@@ -179,6 +189,7 @@ protected:
 };
 TEST_P(OrdinaryRangedPolicySerializationTest, CurrentOwnedSnapshotsKeepIdentityAndPriorWritersRejectBeforePrefix)
 {
+	preCalibrationCapture = true;
 	const auto owner = std::get<2>(GetParam());
 	ASSERT_NO_FATAL_FAILURE(prepare(owner == Owner::ALL));
 	auto world = gameState();
@@ -289,6 +300,7 @@ INSTANTIATE_TEST_SUITE_P(PairAndOwnedScopes, OrdinaryRangedPolicySerializationTe
 class OrdinaryRangedHistoricalTest : public OrdinaryRangedPolicySerializationTest {};
 TEST_P(OrdinaryRangedHistoricalTest, GenuinePriorWorldAndPoolKeepMissingPairAndCapturedIdentity)
 {
+	preCalibrationCapture = true;
 	const auto epoch = priorEpochs.at(static_cast<size_t>(std::get<2>(GetParam())));
 	historicFour = epoch >= static_cast<Version>(1146);
 	if(epoch == static_cast<Version>(1147)) neutralRequest = 75;

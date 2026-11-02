@@ -1122,10 +1122,10 @@ TEST_F(NewHorizonsCureTest, OptedInDescriptionExplainsReworkedCure)
 
 	EXPECT_NE(description.find("one friendly living stack"), std::string::npos);
 	EXPECT_NE(description.find("25 + 1.5"), std::string::npos);
-	EXPECT_NE(description.find("cannot resurrect casualties"), std::string::npos);
+	EXPECT_NE(description.find("without restoring dead creatures"), std::string::npos);
 	EXPECT_NE(description.find("Poison or Disease"), std::string::npos);
 	EXPECT_NE(description.find("one physical affliction"), std::string::npos);
-	EXPECT_NE(description.find("does not remove magical effects"), std::string::npos);
+	EXPECT_NE(description.find("Magical effects remain."), std::string::npos);
 	EXPECT_NE(description, spell->getDescriptionTranslated(0));
 }
 

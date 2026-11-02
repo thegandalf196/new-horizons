@@ -96,11 +96,21 @@ class OrdinaryPolicyRealOwnersTest : public HeroCommandFixture,
 {
 protected:
 	JsonNode authored;
+	bool preCalibrationCapture = false;
 	void mapLoaded(CMap * loaded) override
 	{
 		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, authored);
+		// Explicit old-codec worlds predate captured neutral calibration.
+		if(preCalibrationCapture)
+		{
+			loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+			auto perkRules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perkRules.Struct().erase("quickStudyPolicy");
+			perkRules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+		}
 	}
 	const Extension & entry() const { return extensions.at(std::get<0>(GetParam())); }
 	void prepare(bool natural = false, bool keepPreviousKeys = false, const char * actor = nullptr)
@@ -151,6 +161,7 @@ protected:
 
 TEST_P(OrdinaryPolicyRealOwnersTest, ActualOwnedBoundariesKeepCurrentAndRejectOldBeforePrefix)
 {
+	preCalibrationCapture = true;
 	const auto scope = std::get<2>(GetParam());
 	ASSERT_NO_FATAL_FAILURE(prepare(scope == Scope::ALL));
 	auto world = gameState();
@@ -273,6 +284,7 @@ TEST_P(OrdinaryPolicyRealOwnersTest, ActualOwnedBoundariesKeepCurrentAndRejectOl
 class OrdinaryPolicyHistoricalOwnersTest : public OrdinaryPolicyRealOwnersTest {};
 TEST_P(OrdinaryPolicyHistoricalOwnersTest, OldMissingKeysKeepFullOwnerIdentityAfterCurrentDefaultsChange)
 {
+	preCalibrationCapture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto id = attackerSideHero->id;
 	const auto heroType = attackerSideHero->getHeroTypeID();
@@ -393,6 +405,7 @@ TEST_P(OrdinaryPolicyHistoricalOwnersTest, MalformedCurrentCapturedOwnersAreReje
 class OrdinaryPolicyFull1145OwnersTest : public OrdinaryPolicyRealOwnersTest {};
 TEST_P(OrdinaryPolicyFull1145OwnersTest, FullNineteenCaptured1145WorldAndPoolRetainIdentity)
 {
+	preCalibrationCapture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true, "core:shakti"));
 	const auto epoch = Version::NEW_HORIZONS_ADJACENCY_FILTERS;
 	const auto & global = gameState()->getHeroDevelopmentRules();

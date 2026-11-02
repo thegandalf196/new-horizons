@@ -195,6 +195,8 @@ public:
 	TerrainId terrainType;
 	TerrainLimiter();
 	TerrainLimiter(TerrainId terrain);
+	/// Source-only nodes have no terrain domain and return NOT_APPLICABLE.
+	static bool appliesToNode(BonusNodeType nodeType) noexcept;
 
 	EDecision limit(const BonusLimitationContext &context) const override;
 	std::string toString() const override;

@@ -88,6 +88,8 @@ DLL_LINKAGE bool usesSylvanTactics(const JsonNode & rules);
 DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
 
 DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);
+/// Absence preserves the historical automatic fifth-level policy.
+DLL_LINKAGE std::optional<int> quickStudyRerollInterval(const JsonNode & rules);
 
 /// Validate the complete generic registry.  Empty/null rules retain legacy
 /// semantics and are accepted; an active registry must match the canonical
@@ -101,7 +103,7 @@ DLL_LINKAGE bool usesR2PerkOffers(const JsonNode & rules);
 /// Absence preserves historical progression, including policy2 same-tier choices.
 DLL_LINKAGE bool usesStrictPerkProgression(const JsonNode & rules);
 DLL_LINKAGE void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported = false,
-	bool strictSupported = false);
+	bool strictSupported = false, bool optionalRerollSupported = false);
 /// Fresh-world paired admission only; historical resolved snapshots are not
 /// retrofitted with a table or rejected for their intentionally absent marker.
 DLL_LINKAGE void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & perks);

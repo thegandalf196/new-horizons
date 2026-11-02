@@ -724,6 +724,51 @@
 			"weeklyGrowthPercent" : 10,
 			// New games use half-sized neutral armies; captured historical absence remains100.
 			"neutralArmySizePercent" : 50,
+			"neutralLeadershipCalibration" : {
+				"version": 1,
+				"enabled": true,
+				"unlockWeeks": [
+					1,
+					1,
+					1,
+					2,
+					2,
+					3,
+					4
+				],
+				"stages": [
+					{
+						"heroLevel": 1,
+						"weeks": 1,
+						"unlockedLines": 3,
+						"troopGold": 4000
+					},
+					{
+						"heroLevel": 5,
+						"weeks": 2,
+						"unlockedLines": 4,
+						"troopGold": 8000
+					},
+					{
+						"heroLevel": 10,
+						"weeks": 4,
+						"unlockedLines": 6,
+						"troopGold": 18000
+					},
+					{
+						"heroLevel": 20,
+						"weeks": 8,
+						"unlockedLines": 7,
+						"troopGold": 40000
+					},
+					{
+						"heroLevel": 30,
+						"weeks": 16,
+						"unlockedLines": 7,
+						"troopGold": 80000
+					}
+				]
+			},
 			// Final newly generated recruitment, rounded up once; stored stock is unchanged.
 			"recruitmentGrowthPercent" : 50,
 			// creatures on map will not grow if their quantity is greater than this value

@@ -21,6 +21,7 @@
 #include "HeroTargetHeuristicProjection.h"
 #include "HeroOrderCandidates.h"
 #include "CanonicalOrderValue.h"
+#include "HeroDecisionPressure.h"
 #include "TheChosenValue.h"
 #include "BattleDamageValue.h"
 #include "HeroOrderCandidateRules.h"
@@ -4049,8 +4050,10 @@ bool BattleEvaluator::canCastSpell()
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells,
 	heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse,
 	LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse,
-	RegenerationBaselineReuse::TestControl * regenerationReuse)
+	RegenerationBaselineReuse::TestControl * regenerationReuse,
+	heroDecisionPressure::Experiment * orderExperiment)
 {
+	if(orderExperiment) orderExperiment->reset();
 	const auto battleView = cb->getBattle(battleID);
 	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
 	const bool mandatoryPreCombatOrder = battleView->battleHasPendingPreCombatOrder(side);
@@ -4583,6 +4586,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	// This frame owns fixed parent/caster/scoring inputs; no entry survives it.
 	HeroCandidateValueReuse values(vinesReuse, lifeDrainReuse);
 	RegenerationBaselineReuse regenerationBaseline(regenerationReuse);
+	if(orderExperiment && orderExperiment->enableShortlist && !mandatoryOrder)
+		heroDecisionPressure::prepareShortlist(*orderExperiment, env.get(), battleView, side, possibleCasts, damageCache, scoreEvaluator);
 	timing.prepare(possibleCasts.size());
 	{
 		heroActionTiming::LoopScope loop(timing.candidateSlots(), timing.sink());
@@ -4597,6 +4602,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						? ps.spell->getId().getNum() : -1;
 				}
 				heroActionTiming::Scope candidateScope(candidateTiming ? &candidateTiming->candidate : nullptr);
+				if(orderExperiment && !orderExperiment->declined.empty() && orderExperiment->declined[i])
+				{
+					ps.value = std::numeric_limits<float>::lowest(); // Policy-declined, not illegal.
+					continue;
+				}
 				auto candidateReuse = values.beginCandidate(ps);
 				battleEvaluatorProjection::SpellProjection projection;
 				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
@@ -4605,7 +4615,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				heroActionProjection::Admission admission;
 				std::optional<HypotheticBattle::ProjectedOrderContinuation> orderContinuation;
 				const auto & spellAllowance = admission.spellAllowance;
-				const auto & orderAllowance = admission.orderAllowance;
 				const auto & counterspell = admission.counterspell;
 				const auto & counterspellNegated = admission.counterspellNegated;
 				uint32_t targetId = std::numeric_limits<uint32_t>::max();
@@ -4809,28 +4818,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 				else
 				{
-					if(admission.legacyOrder)
+					auto completed = heroActionProjection::completeOrder(*state, *battleCallback, side, ps, admission);
+					if(!completed.accepted)
 					{
-						if(!state->projectAcceptedHeroOrder(side, ps.command, ps.commandTargets, *orderAllowance))
-						{
-							ps.value = std::numeric_limits<float>::lowest();
-							continue;
-						}
+						ps.value = std::numeric_limits<float>::lowest();
+						continue;
 					}
-					else
-					{
-						// Install the native pre-action snapshot, not a second locally
-						// reconstructed bonus set or an aggregate raw-HP utility prior.
-						if(!admission.orderEffects || !state->projectAcceptedHeroOrder(
-							side, *admission.orderEffects, *orderAllowance))
-						{
-							ps.value = std::numeric_limits<float>::lowest();
-							continue;
-						}
-						if(!heroOrderValue::usesRevisedArmyHeuristic(*battleCallback, ps.command))
-							orderContinuation = state->projectOrderContinuation(side, *orderAllowance,
-								*admission.orderEffects);
-					}
+					orderContinuation = std::move(completed.continuation);
 				}
 
 				if(heroOrderValue::usesRevisedArmyHeuristic(*battleCallback, ps.command))
@@ -5028,6 +5022,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const auto modelActor = orderContinuation
 					? orderContinuation->actor.value() : activeStack->unitId();
 				const auto modelActive = state->getForUpdate(modelActor);
+				if(orderExperiment) orderExperiment->noteContinuation(i);
 				heroActionUtility::evaluateContinuation(continuation, modelActive, needFullEval,
 					cachedAttack, innerCache, state, env, strengthRatio, simulationTurnsCount,
 					scoreEvaluator, targets.get(), candidateTiming);
@@ -5261,7 +5256,6 @@ std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(co
 {
 	using ValueMap = PossibleSpellcast::ValueMap;
 
-	RNGStub rngStub;
 	auto projected = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
 	auto & state = *projected;
 	TStacks all = cb->getBattle(battleID)->battleGetAllStacks(false);

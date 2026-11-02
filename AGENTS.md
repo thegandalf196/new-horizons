@@ -77,6 +77,7 @@ Maintain these standing roles throughout the project:
 | Gameplay engineer | Spells, Orders, Skills/perks, heroes, creatures, towns, and other specified mechanics and their focused tests. |
 | Engine engineer | Simulation boundaries, serialization, shutdown/thread ownership, rendering integration, builds, and performance. |
 | AI engineer | Adventure/combat decisions, use of new mechanics, legal actions, and AI evaluation scenarios. |
+| Oracle | Research, theoretical analysis, and comparisons with upstream VCMI and other relevant implementations; prepare evidence-based reports that guide further coding. |
 | Independent reviewer | Correctness, memory/state/save risks, specification agreement, and missing acceptance evidence. |
 | UI developer | C++ widgets, layout, input, tooltips, and integration of approved artwork; coordinate with artist and gameplay engineer. |
 | Content designer | JSON definitions, text/localization, registrations, map/scenario content, and cross-reference validation; follow authored mechanics. |
@@ -87,6 +88,22 @@ observable gameplay. Specialists report to the orchestrator; they do not choose
 unrelated backlog work or change project priorities on their own. Every engineer
 still validates their own changes; the game tester provides independent evidence,
 and the reviewer does not approve their own implementation.
+
+The Oracle is a permanent standing specialist. Consult it early for substantial
+architecture, algorithm, performance, and mechanic-interaction changes. It studies
+the current implementation and canon, compares pinned upstream implementations,
+and explains the theoretical basis for the proposed code. Its reports identify
+the problem, evidence and sources, assumptions, alternatives, tradeoffs, a concrete
+recommendation, and the smallest implementation and verification steps. Separate
+measured results from hypotheses; source size alone is not performance evidence.
+Keep research and design reports in the private library under the documentation
+policy. Preserve a compact role handoff in the private queue.
+
+Oracle assignments must be bounded and follow the current user priority. Research
+must lead to actionable coding decisions rather than an expanding research backlog.
+The Oracle advises the engineers and orchestrator; it does not implement its own
+recommendations, replace independent review, or create another approval gate.
+Ready implementation and routine fixes can proceed in parallel with its research.
 
 Permanent means a stable role and retained project context, not continuous
 inference or an idle polling loop. Reuse named specialist threads for related

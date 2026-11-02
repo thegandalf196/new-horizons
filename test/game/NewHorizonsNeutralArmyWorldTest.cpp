@@ -7,6 +7,7 @@
 #include "../mock/GameHandlerTestServer.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
+#include "../../lib/bonuses/NativeBonusGraphAccess.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/gameState/QuestInfo.h"
 #include "../../lib/CCreatureHandler.h"
@@ -17,12 +18,21 @@
 #include "../../lib/mapObjects/CRewardableObject.h"
 #include "../../lib/mapObjects/CGPandoraBox.h"
 #include "../../lib/mapObjects/NewHorizonsNeutralArmies.h"
+#include "../../lib/mapObjects/NewHorizonsNeutralCalibration.h"
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "../../lib/mapObjectConstructors/CRewardableConstructor.h"
 #include "../../lib/networkPacks/PacksForLobby.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/serializer/CLoadFile.h"
+#include "../../lib/serializer/CSaveFile.h"
+#include "../../server/TurnTimerHandler.h"
+#include "../../server/battles/BattleProcessor.h"
+#include "../../server/processors/HeroPoolProcessor.h"
+#include "../../server/processors/PlayerMessageProcessor.h"
+#include "../../server/processors/TurnOrderProcessor.h"
 #include "../../server/CGameHandler.h"
 #include "../../server/processors/NewTurnProcessor.h"
+#include <tuple>
 
 namespace
 {
@@ -66,6 +76,7 @@ class NewHorizonsNeutralArmyWorldTest : public TinyMapGameTest
 {
 protected:
 	int percent = 50;
+	bool historicalPerkPolicy = false;
 	Services * gameServices() override { return LIBRARY; }
 	void configureWorldInitialization(StartInfo &, GameRandomizer & rng) const override { rng.setSeed(1337); }
 	void mapLoaded(CMap * loaded) override
@@ -74,6 +85,14 @@ protected:
 		// This fixture characterizes its original unscaled growth/context.
 		loaded->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
 		loaded->overrideGameSetting(option, JsonNode(percent));
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+		if(historicalPerkPolicy)
+		{
+			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perks.Struct().erase("quickStudyPolicy");
+			perks.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		}
 		for(auto * pile : loaded->getObjects<CGResource>())
 			for(int slot = 0; slot < 7; ++slot)
 				pile->putStack(SlotID(slot), std::make_unique<CStackInstance>(gameState().get(), troop(), slot ? 6 : 7));
@@ -384,4 +403,485 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, NaturalTownReinforcementsScaleOnlyNewGro
 		EXPECT_EQ(bytes(*wholeHandler.randomizer), bytes(*halfHandler.randomizer));
 	}
 	EXPECT_GT(exercisedGrowth, 0);
+}
+
+namespace
+{
+std::shared_ptr<CGameState> calibratedRoundTrip(const CGameState & source,
+	ESerializationVersion version = ESerializationVersion::CURRENT)
+{
+	NativeBonusGraphAccess graphAccess;
+	CMemorySerializer memory;
+	memory.oser.version = memory.iser.version = version;
+	memory.oser & source;
+	auto restored = std::make_shared<CGameState>();
+	restored->preInit(LIBRARY);
+	memory.iser.loadingGamestate = true;
+	memory.iser.cb = restored.get();
+	memory.iser & *restored;
+	return restored;
+}
+
+JsonNode fixedCalibration()
+{
+	JsonNode result;
+	result["version"].Integer() = 1;
+	result["enabled"].Bool() = true;
+	for(const auto [input, output] : {std::pair{1000, 1000}, std::pair{5000, 2000}})
+	{
+		JsonNode point;
+		point["original"].Integer() = input;
+		point["fieldable"].Integer() = output;
+		result["curve"].Vector().push_back(point);
+	}
+	return result;
+}
+
+class NewHorizonsNeutralCalibrationWorldTest : public NewHorizonsNeutralArmyWorldTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsNeutralArmyWorldTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
+	}
+};
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, FreshNumbersRoundTripWithoutSecondScaling)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto * monster = findFirst<CGCreature>();
+	ASSERT_NE(monster, nullptr);
+	EXPECT_EQ(monster->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(monster->temppower, 11000);
+	// The seven-slot resource formation shares one budget, not seven ceilings.
+	const auto * pile = findFirst<CGResource>();
+	ASSERT_NE(pile, nullptr);
+	int total = 0;
+	for(const auto & [slot, stack] : pile->Slots())
+		total += stack->getCount();
+	EXPECT_EQ(total, 8);
+	EXPECT_EQ(findFirst<CGTownInstance>()->getStackCount(SlotID(0)), 4);
+	auto restored = calibratedRoundTrip(*gameState());
+	EXPECT_EQ(restored->getMap().getObjects<CGCreature>().front()->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(restored->getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION), fixedCalibration());
+	auto reread = calibratedRoundTrip(*restored);
+	EXPECT_EQ(reread->getMap().getObjects<CGCreature>().front()->temppower, 11000);
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, ScriptedEncounterKeepsPercentageWithoutNewRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	CMap isolated(gameState().get());
+	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
+	auto ordinary = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
+	auto scripted = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
+	scripted->message.appendRawString("Scripted encounter");
+	const auto before = bytes(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	newHorizonsNeutralArmies::initializeWorld(isolated);
+	EXPECT_EQ(ordinary->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(scripted->getStackCount(SlotID(0)), 22);
+	EXPECT_EQ(bytes(dynamic_cast<CRandomGenerator &>(*getRNG())), before);
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, UnsupportedWorldEnvelopesRejectBeforePrefix)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto rejects = [](const auto & value)
+	{
+		CMemorySerializer memory;
+		memory.oser.version = ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES;
+		EXPECT_THROW(memory.oser & value, std::runtime_error);
+		EXPECT_TRUE(memory.extractBuffer().empty());
+	};
+	rejects(*map());
+	rejects(*gameState());
+	LobbyStartGame start;
+	start.initializedGameState = gameState();
+	rejects(start);
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, BankConfigurationAndPhysicalStacksShareOneBudget)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	CMap isolated(gameState().get());
+	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
+	auto bank = initialArmy<CRewardableObject>(isolated, PlayerColor::UNFLAGGABLE, 100);
+	bank->configuration.info.emplace_back();
+	auto & reward = bank->configuration.info.front().reward;
+	for(int slot = 0; slot < 5; ++slot)
+	{
+		reward.guards.emplace_back(troop(), 100);
+		if(slot > 0)
+			bank->putStack(SlotID(slot), std::make_unique<CStackInstance>(gameState().get(), troop(), 100));
+	}
+	reward.creatures.emplace_back(troop(), 17);
+	newHorizonsNeutralArmies::initializeWorld(isolated);
+	for(int slot = 0; slot < 5; ++slot)
+	{
+		EXPECT_EQ(bank->getStackCount(SlotID(slot)), 3);
+		EXPECT_EQ(reward.guards[slot].getCount(), 3);
+	}
+	EXPECT_EQ(reward.creatures.front().getCount(), 17);
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, RefillUsesCapturedCurveAndPreservesRandomStream)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto restored = calibratedRoundTrip(*gameState());
+	GameHandlerTestServer server(restored);
+	CGameHandler handler(server, restored);
+	auto object = handler.createNewObject({20, 14, 0}, Obj::DRAGON_UTOPIA, MapObjectSubID(0));
+	handler.newObject(object, PlayerColor(0));
+	auto * bank = dynamic_cast<CRewardableObject *>(object.get());
+	ASSERT_NE(bank, nullptr);
+	const auto constructor = std::dynamic_pointer_cast<const CRewardableConstructor>(bank->getObjectHandler());
+	ASSERT_NE(constructor, nullptr);
+	bank->configuration.resetParameters.days = 1;
+	bank->configuration.resetParameters.rewards = true;
+	restored->day = 2;
+	handler.randomizer->setSeed(1337);
+	GameRandomizer reference(*restored);
+	CMemorySerializer copy(bytes(*handler.randomizer));
+	copy.iser & reference;
+	auto expected = constructor->generateConfiguration(bank->cb, reference, bank->ID, bank->configuration.variables.preset);
+	newHorizonsNeutralArmies::scaleGeneratedGuards(*bank, expected);
+	bank->newTurn(handler, *handler.randomizer);
+	EXPECT_EQ(bytes(*handler.randomizer), bytes(reference));
+	ASSERT_EQ(bank->configuration.info.size(), expected.info.size());
+	int slot = 0;
+	for(size_t i = 0; i < expected.info.size(); ++i)
+	{
+		EXPECT_EQ(bytes(bank->configuration.info[i].reward), bytes(expected.info[i].reward));
+		for(const auto & stack : expected.info[i].reward.guards)
+			EXPECT_EQ(bank->getStackCount(SlotID(slot++)), stack.getCount());
+	}
+	EXPECT_GT(slot, 0);
+}
+
+TEST_F(NewHorizonsNeutralArmyWorldTest, LegacyDisabledWorldKeepsPercentageAndOrdinaryGrowthAfterResave)
+{
+	historicalPerkPolicy = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto restored = calibratedRoundTrip(*gameState(), ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
+	auto reread = calibratedRoundTrip(*restored);
+	EXPECT_FALSE(newHorizonsNeutralArmies::calibration::Rules(reread->getSettings().getValue(
+		EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)).enabled());
+	GameHandlerTestServer server(reread);
+	CGameHandler handler(server, reread);
+	auto * monster = reread->getMap().getObjects<CGCreature>().front();
+	EXPECT_EQ(monster->getStackCount(SlotID(0)), 22);
+	reread->day = 8;
+	monster->newTurn(handler, *handler.randomizer);
+	EXPECT_EQ(monster->getStackCount(SlotID(0)), 24);
+	EXPECT_EQ(monster->temppower, 24200);
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, QuestTargetKeepsAuthoredEncounterPercentage)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	CMap isolated(gameState().get());
+	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
+	auto target = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
+	target->id = ObjectInstanceID(5);
+	auto ordinary = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
+	ordinary->id = ObjectInstanceID(6);
+	auto seer = initialArmy<SeerHut>(isolated, PlayerColor::UNFLAGGABLE, 1);
+	seer->addQuest().mission.destroyedObjects.push_back(target->id);
+	newHorizonsNeutralArmies::initializeWorld(isolated);
+	EXPECT_EQ(target->getStackCount(SlotID(0)), 22);
+	EXPECT_EQ(ordinary->getStackCount(SlotID(0)), 11);
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, HundredPercentUsesCalibratedBaseline)
+{
+	percent = 100;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_EQ(findFirst<CGCreature>()->getStackCount(SlotID(0)), 21);
+	EXPECT_EQ(findFirst<CGCreature>()->temppower, 21000);
+	EXPECT_EQ(newHorizonsNeutralArmies::percentage(gameState()->getSettings()), 100);
+}
+
+TEST_F(NewHorizonsNeutralArmyWorldTest, HistoricalWireAbsenceResavesAndRefillsWithoutCalibration)
+{
+	historicalPerkPolicy = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	// A null override is omitted from the settings payload. This is actual wire
+	// absence, distinct from an explicitly captured disabled calibration row.
+	map()->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+	auto restored = calibratedRoundTrip(*gameState(), ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
+	EXPECT_FALSE(newHorizonsNeutralArmies::calibration::Rules(restored->getSettings().getValue(
+		EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)).enabled());
+	auto reread = calibratedRoundTrip(*restored);
+	EXPECT_EQ(reread->getMap().getObjects<CGCreature>().front()->getStackCount(SlotID(0)), 22);
+	GameHandlerTestServer server(reread);
+	CGameHandler handler(server, reread);
+	auto object = handler.createNewObject({20, 14, 0}, Obj::DRAGON_UTOPIA, MapObjectSubID(0));
+	handler.newObject(object, PlayerColor(0));
+	auto * bank = dynamic_cast<CRewardableObject *>(object.get());
+	ASSERT_NE(bank, nullptr);
+	const auto constructor = std::dynamic_pointer_cast<const CRewardableConstructor>(bank->getObjectHandler());
+	ASSERT_NE(constructor, nullptr);
+	bank->configuration.resetParameters.days = 1;
+	bank->configuration.resetParameters.rewards = true;
+	reread->day = 2;
+	handler.randomizer->setSeed(1337);
+	GameRandomizer reference(*reread);
+	CMemorySerializer copy(bytes(*handler.randomizer));
+	copy.iser & reference;
+	auto expected = constructor->generateConfiguration(bank->cb, reference, bank->ID, bank->configuration.variables.preset);
+	for(auto & visit : expected.info)
+		for(auto & guard : visit.reward.guards)
+			guard.setCount((guard.getCount() + 1) / 2);
+	bank->newTurn(handler, *handler.randomizer);
+	ASSERT_EQ(bank->configuration.info.size(), expected.info.size());
+	for(size_t i = 0; i < expected.info.size(); ++i)
+		EXPECT_EQ(bytes(bank->configuration.info[i].reward), bytes(expected.info[i].reward));
+	EXPECT_EQ(bytes(*handler.randomizer), bytes(reference));
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, ExplicitDefinitionCapturesOnceIndependentOfNeutralPercentage)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	using namespace newHorizonsNeutralArmies::calibration;
+	JsonNode definition;
+	definition["version"].Integer() = 1;
+	definition["enabled"].Bool() = true;
+	for(const int week : {1, 1, 1, 2, 2, 3, 4})
+		definition["unlockWeeks"].Vector().emplace_back(week);
+	for(const auto [level, weeks, lines, gold] : {std::tuple{1, 1, 3, 4000}, std::tuple{10, 4, 6, 18000}})
+	{
+		JsonNode stage;
+		stage["heroLevel"].Integer() = level;
+		stage["weeks"].Integer() = weeks;
+		stage["unlockedLines"].Integer() = lines;
+		stage["troopGold"].Integer() = gold;
+		definition["stages"].Vector().push_back(stage);
+	}
+	GameSettings reference;
+	reference.addOverride(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+		JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+	reference.addOverride(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
+		JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
+	reference.addOverride(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(50));
+	reference.addOverride(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, definition);
+	reference.addOverride(option, JsonNode(1));
+	const auto captured = capture(reference);
+	EXPECT_TRUE(Rules(captured).enabled());
+	EXPECT_TRUE(captured.Struct().contains("curve"));
+	EXPECT_FALSE(captured.Struct().contains("stages"));
+	reference.addOverride(option, JsonNode(100));
+	EXPECT_EQ(capture(reference), captured);
+	// Once captured, later installed supply defaults cannot recalculate this row.
+	reference.addOverride(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, captured);
+	reference.addOverride(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
+	EXPECT_EQ(capture(reference), captured);
+}
+
+namespace
+{
+struct NeutralSaveFiles
+{
+	boost::filesystem::path directory = boost::filesystem::temp_directory_path()
+		/ boost::filesystem::unique_path("nh-neutral-save-%%%%%%%%-%%%%%%%%");
+	NeutralSaveFiles() { boost::filesystem::create_directory(directory); }
+	~NeutralSaveFiles() { boost::filesystem::remove_all(directory); }
+};
+
+std::shared_ptr<CGameState> emptyNeutralWorld()
+{
+	auto world = std::make_shared<CGameState>();
+	world->preInit(LIBRARY);
+	return world;
+}
+
+void writeNeutralSave(const boost::filesystem::path & path, const CGameState & world, const CGameHandler & handler)
+{
+	NativeBonusGraphAccess graphAccess;
+	CSaveFile file;
+	world.saveGame(file);
+	file.save(handler);
+	file.write(path);
+}
+
+void readNeutralSave(const boost::filesystem::path & path, CGameState & world, CGameHandler & handler)
+{
+	NativeBonusGraphAccess graphAccess;
+	CLoadFile file(path, &world);
+	EXPECT_EQ(file.formatVersion(), ESerializationVersion::CURRENT);
+	world.loadGame(file);
+	file.load(handler);
+	EXPECT_TRUE(file.atEnd());
+}
+
+void expectNeutralRefill(const std::shared_ptr<CGameState> & world, CGameHandler & handler, bool calibrated)
+{
+	auto object = handler.createNewObject({20, 14, 0}, Obj::DRAGON_UTOPIA, MapObjectSubID(0));
+	handler.newObject(object, PlayerColor(0));
+	auto * bank = dynamic_cast<CRewardableObject *>(object.get());
+	ASSERT_NE(bank, nullptr);
+	const auto constructor = std::dynamic_pointer_cast<const CRewardableConstructor>(bank->getObjectHandler());
+	ASSERT_NE(constructor, nullptr);
+	bank->configuration.resetParameters.days = 1;
+	bank->configuration.resetParameters.rewards = true;
+	world->day = 2;
+	handler.randomizer->setSeed(1337);
+	GameRandomizer reference(*world);
+	CMemorySerializer copy(bytes(*handler.randomizer));
+	copy.iser & reference;
+	auto expected = constructor->generateConfiguration(bank->cb, reference, bank->ID, bank->configuration.variables.preset);
+	if(calibrated)
+		newHorizonsNeutralArmies::scaleGeneratedGuards(*bank, expected);
+	else
+		for(auto & visit : expected.info)
+			for(auto & guard : visit.reward.guards)
+				guard.setCount((guard.getCount() + 1) / 2);
+	bank->newTurn(handler, *handler.randomizer);
+	ASSERT_EQ(bank->configuration.info.size(), expected.info.size());
+	int slot = 0;
+	for(size_t i = 0; i < expected.info.size(); ++i)
+	{
+		EXPECT_EQ(bytes(bank->configuration.info[i].reward), bytes(expected.info[i].reward));
+		for(const auto & guard : expected.info[i].reward.guards)
+			EXPECT_EQ(bank->getStackCount(SlotID(slot++)), guard.getCount());
+	}
+	EXPECT_GT(slot, 0);
+	EXPECT_EQ(bytes(*handler.randomizer), bytes(reference));
+}
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, RealCurrentFileResavesCapturedCountsAndRefillsWithoutRngDrift)
+{
+	ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION);
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	NeutralSaveFiles files;
+	GameHandlerTestServer sourceServer(gameState());
+	CGameHandler sourceHandler(sourceServer, gameState());
+	sourceHandler.randomizer->setSeed(9182);
+	const auto randomBefore = bytes(*sourceHandler.randomizer);
+	writeNeutralSave(files.directory / "first.vsgm1", *gameState(), sourceHandler);
+	auto restored = emptyNeutralWorld();
+	GameHandlerTestServer restoredServer(restored);
+	CGameHandler restoredHandler(restoredServer, restored);
+	readNeutralSave(files.directory / "first.vsgm1", *restored, restoredHandler);
+	EXPECT_EQ(bytes(*restoredHandler.randomizer), randomBefore);
+	EXPECT_EQ(restored->getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION), fixedCalibration());
+	EXPECT_EQ(restored->getMap().getObjects<CGCreature>().front()->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(restored->getMap().getObjects<CGCreature>().front()->temppower, 11000);
+	writeNeutralSave(files.directory / "second.vsgm1", *restored, restoredHandler);
+	auto reread = emptyNeutralWorld();
+	GameHandlerTestServer rereadServer(reread);
+	CGameHandler rereadHandler(rereadServer, reread);
+	readNeutralSave(files.directory / "second.vsgm1", *reread, rereadHandler);
+	EXPECT_EQ(bytes(*rereadHandler.randomizer), randomBefore);
+	EXPECT_EQ(reread->getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION), fixedCalibration());
+	EXPECT_EQ(reread->getMap().getObjects<CGCreature>().front()->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(reread->getMap().getObjects<CGCreature>().front()->temppower, 11000);
+	ASSERT_NO_FATAL_FAILURE(expectNeutralRefill(reread, rereadHandler, true));
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, CurrentReplaySnapshotKeepsVersionCaptureAndCountsThroughResave)
+{
+	ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION);
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto randomBefore = bytes(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto snapshot = gameState()->saveReplaySnapshot();
+	EXPECT_EQ(snapshot.version, ESerializationVersion::CURRENT);
+	auto restored = emptyNeutralWorld();
+	restored->loadReplaySnapshot(snapshot);
+	const auto recaptured = restored->saveReplaySnapshot();
+	EXPECT_EQ(recaptured.version, snapshot.version);
+	restored->loadReplaySnapshot(recaptured);
+	EXPECT_EQ(restored->saveReplaySnapshot(), recaptured);
+	EXPECT_EQ(restored->getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION), fixedCalibration());
+	EXPECT_EQ(restored->getMap().getObjects<CGCreature>().front()->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(restored->getMap().getObjects<CGCreature>().front()->temppower, 11000);
+	EXPECT_EQ(bytes(dynamic_cast<CRandomGenerator &>(*getRNG())), randomBefore);
+	GameHandlerTestServer server(restored);
+	CGameHandler handler(server, restored);
+	ASSERT_NO_FATAL_FAILURE(expectNeutralRefill(restored, handler, true));
+}
+
+TEST_F(NewHorizonsNeutralArmyWorldTest, HistoricalReplayAbsenceStaysDisabledUnderEnabledDefaultsThroughCurrentResave)
+{
+	ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION);
+	historicalPerkPolicy = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	// The installed new-world definition really is enabled; historical absence
+	// must not inherit it. The old payload below is written at its actual epoch.
+	CMap installed(gameState().get());
+	ASSERT_TRUE(installed.getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)["enabled"].Bool());
+	map()->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+	const auto randomBefore = bytes(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES;
+	{
+		NativeBonusGraphAccess graphAccess;
+		old.oser & *gameState();
+	}
+	const ReplayPayload historical{old.extractBuffer(), old.oser.version};
+	auto restored = emptyNeutralWorld();
+	restored->loadReplaySnapshot(historical);
+	EXPECT_FALSE(newHorizonsNeutralArmies::calibration::Rules(restored->getSettings().getValue(
+		EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)).enabled());
+	const auto current = restored->saveReplaySnapshot();
+	EXPECT_EQ(current.version, ESerializationVersion::CURRENT);
+	EXPECT_NE(current.version, historical.version);
+	restored->loadReplaySnapshot(current);
+	EXPECT_EQ(restored->saveReplaySnapshot(), current);
+	EXPECT_FALSE(newHorizonsNeutralArmies::calibration::Rules(restored->getSettings().getValue(
+		EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)).enabled());
+	EXPECT_EQ(restored->getMap().getObjects<CGCreature>().front()->getStackCount(SlotID(0)), 22);
+	EXPECT_EQ(restored->getMap().getObjects<CGCreature>().front()->temppower, 22000);
+	EXPECT_EQ(bytes(dynamic_cast<CRandomGenerator &>(*getRNG())), randomBefore);
+	GameHandlerTestServer server(restored);
+	CGameHandler handler(server, restored);
+	ASSERT_NO_FATAL_FAILURE(expectNeutralRefill(restored, handler, false));
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, NeverFleeAloneKeepsCalibrationWhileScriptedRewardsRemainProtected)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	CMap isolated(gameState().get());
+	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
+	auto ordinary = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
+	auto resolute = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
+	resolute->neverFlees = true;
+	auto scripted = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
+	scripted->neverFlees = true;
+	scripted->message.appendRawString("Scripted encounter");
+	const auto randomBefore = bytes(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	newHorizonsNeutralArmies::initializeWorld(isolated);
+	EXPECT_EQ(ordinary->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(resolute->getStackCount(SlotID(0)), 11);
+	EXPECT_EQ(scripted->getStackCount(SlotID(0)), 22);
+	EXPECT_TRUE(resolute->neverFlees);
+	EXPECT_TRUE(scripted->neverFlees);
+	EXPECT_EQ(bytes(dynamic_cast<CRandomGenerator &>(*getRNG())), randomBefore);
+}
+
+TEST_F(NewHorizonsNeutralCalibrationWorldTest, AllForOneFireElementalFlagsDoNotBypassCapturedSizing)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	CMap isolated(gameState().get());
+	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
+	// Original ROE guard 725 is 60 Fire Elementals, Savage/NeverFlees, with
+	// no message, reward or no-growth tag. Use those inputs with this fixture's
+	// synthetic captured curve, rather than claiming a live-map balance result.
+	auto guard = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 60);
+	guard->getStackPtr(SlotID(0))->setType(CreatureID(CreatureID::decode("core:fireElemental")));
+	guard->initialCharacter = CGCreature::Character::SAVAGE;
+	guard->neverFlees = true;
+	newHorizonsNeutralArmies::initializeWorld(isolated);
+	EXPECT_GT(guard->getStackCount(SlotID(0)), 0);
+	EXPECT_LT(guard->getStackCount(SlotID(0)), 30);
+	EXPECT_EQ(guard->temppower, static_cast<int64_t>(guard->getStackCount(SlotID(0))) * 1000);
+	EXPECT_TRUE(guard->neverFlees);
+	EXPECT_EQ(guard->initialCharacter, CGCreature::Character::SAVAGE);
 }

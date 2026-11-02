@@ -10,6 +10,9 @@
 #include "StdInc.h"
 
 #include "LobbyClientNetPackVisitors.h"
+#ifdef NH_OWNED_PREPARATION_SIMULATION_AUDIT
+#include "../server/tests/OwnedPreparationFirstWriter.h"
+#endif
 #include "lobby/CSelectionBase.h"
 #include "lobby/CLobbyScreen.h"
 
@@ -174,6 +177,9 @@ void ApplyOnLobbyHandlerNetPackVisitor::visitLobbyPrepareStartGame(LobbyPrepareS
 
 void ApplyOnLobbyHandlerNetPackVisitor::visitLobbyStartGame(LobbyStartGame & pack)
 {
+#ifdef NH_OWNED_PREPARATION_SIMULATION_AUDIT
+	ownedPreparationAudit::observeFirstWriter(false, *handler.logicConnection, pack.initializedGameState);
+#endif
 	handler.setState(EClientState::STARTING);
 	if(handler.si->mode != EStartMode::LOAD_GAME)
 	{

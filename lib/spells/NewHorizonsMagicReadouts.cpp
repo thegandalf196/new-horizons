@@ -39,15 +39,16 @@ void describeResurrection(std::string & result, const CGHeroInstance * hero, con
 	if(hero && resurrectionRestorationEnabled(hero->getMagicRules(), spell->getId()))
 	{
 		const auto & rules = hero->getMagicRules();
-		result = "Restoration pool: " + std::to_string(RESURRECTION_BASE_POOL_HP)
+		result = "Heal one friendly stack and permanently restore its fallen creatures, up to its battle-start capacity. "
+			"The wounded surviving creature is healed first. Summoned, cloned, and Phantom stacks are ineligible.\n\n"
+			"Base restoration pool: " + std::to_string(RESURRECTION_BASE_POOL_HP)
 			+ " + " + std::to_string(RESURRECTION_SPELL_POWER_HP_PER_POINT)
-			+ " HP per Spell Power. School and Spellcraft scale only the Spell Power term; the current combined factor is "
+			+ " HP per Spell Power. School and Spellcraft strengthen only the Spell Power part ("
 			+ percentFromBasisPoints(spellPowerCoefficientBasisPoints(rules, hero, spell->getId()))
-			+ ". Empower and battle-only Warcasting may further strengthen that term; eligible spell bonuses may modify the resulting pool. "
-			"The pool first heals the wounded surviving creature, then permanently restores casualties, "
-			"without exceeding the stack's battle-start capacity. Summoned, cloned, and Phantom stacks are ineligible.";
+			+ " of normal strength). Empower and battle-only Warcasting may further strengthen that part; "
+			"other spell bonuses may modify the resulting pool.";
 		if(hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.miracleWorker"))
-			result += " Miracle Worker adds 25% to the casualty HP pool only, rounded down after reserving the wound healing; it does not increase wound healing.";
+			result += " Miracle Worker adds 25% to the HP available for restoring casualties, rounded down after reserving the healing for the wounded survivor. Wound healing is unchanged.";
 	}
 }
 
@@ -67,10 +68,10 @@ void describeQuicksand(std::string & result, const CGHeroInstance * hero, const 
 			const int32_t powerStep = detail::quicksandSpellPowerStep(rules,
 				std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)));
 			result = "Places " + std::to_string(*patchCount)
-				+ " concealed Quicksand patches on legal empty ground hexes. Base count is min(5, "
+				+ " concealed Quicksand patches on legal empty ground hexes. Walking creatures stop when entering a patch; flying creatures ignore it.\n\nBase count: min(5, "
 				+ "2 + floor(displayed Spell Power / " + std::to_string(powerStep)
-				+ ")); Nature rank, Spellcraft, and Empower strengthen only the Spell Power term. "
-				+ "The current count excludes battle-only Warcasting, which may further strengthen the Spell Power term.";
+				+ ")). Nature rank, Spellcraft, and Empower strengthen only the Spell Power part. "
+				+ "The displayed count includes those bonuses, but battle-only Warcasting may add patches.";
 			if(hero->hasActivePerk(std::string(NATURE_MAGIC_SKILL), std::string(NATURE_MIRE_SHAPER)))
 				result += " Mire Shaper adds one patch after the ordinary five-patch cap, allowing up to six patches.";
 		}
@@ -95,32 +96,24 @@ void describeTimeStop(std::string & result, const CGHeroInstance * hero, const s
 		const bool schoolRankRules = rules["rulesetVersion"].Integer()
 			>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 
-		result = "Place the selected area outside time until the beginning of the caster's next Hero Action. ";
+		result = "Stop time in the selected area until the beginning of your next Hero Action. Creatures in stasis cannot move, "
+			"act, retaliate, take damage, receive healing, teleport, or receive new effects. Their existing effect timers "
+			"are paused, and they still block their occupied hexes.";
 		if(schoolRankRules)
 		{
-			result += "Under saved v3 rules, Sorcery rank scales only the Spell Power term: 100% with no rank, "
-				"115% at Basic, 130% at Advanced, and 145% at Expert. Spellcraft efficiency multiplies that School factor; "
-				"the current combined coefficient is " + percentFromBasisPoints(coefficientBasisPoints) + ". The radius is min("
-				+ std::to_string(radiusCap) + ", 1 + floor(" + std::to_string(coefficientBasisPoints)
-				+ " x Spell Power / (10000 x " + std::to_string(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS)
-				+ "))); Chronomancer raises the cap to 3 without "
-				"adding a free radius step. Current ordinary radius without battle-only Warcasting at Spell Power "
-				+ std::to_string(spellPower) + ": " + std::to_string(radius) + ". Warcasting also scales only this "
-				"Spell Power term when the shared cast scaler supplies its bonus. Duration and targeting do not "
-				"change with Sorcery rank.";
+			result += "\n\nRadius before battle-only Warcasting (hexes): " + std::to_string(radius) + " at Spell Power "
+				+ std::to_string(spellPower) + ". Sorcery and Spellcraft strengthen only the Spell Power part ("
+				+ percentFromBasisPoints(coefficientBasisPoints) + " of normal strength).";
 		}
 		else
 		{
-			result += "Saved v1/v2 rules use a 100% Spell Power coefficient at every rank. Radius is min("
-				+ std::to_string(radiusCap) + ", 1 + floor(Spell Power / "
-				+ std::to_string(newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS) + ")); Chronomancer raises "
-				"the cap to 3 without adding a free radius step. Current radius at Spell Power "
-				+ std::to_string(spellPower) + ": " + std::to_string(radius)
-				+ ". Warcasting also scales only this Spell Power term when the saved profile and shared cast scaler "
-				"supply its bonus. Duration and targeting are unchanged.";
+			result += "\n\nRadius before battle-only Warcasting (hexes): " + std::to_string(radius) + " at Spell Power "
+				+ std::to_string(spellPower) + ". School rank does not increase this radius.";
 		}
-		result += " Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, "
-			"or lose duration from existing effects.";
+		result += " Maximum radius: " + std::to_string(radiusCap)
+			+ " hexes. Chronomancer raises the maximum to 3 without adding a free radius step. "
+			"Battle-only Warcasting may increase the radius through Spell Power. It does not extend the duration "
+			"or change which targets can be affected.";
 	}
 }
 
@@ -136,19 +129,17 @@ void describeCure(std::string & result, const CGHeroInstance * hero, const spell
 		if(hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.healer"))
 			coefficientTenThousandths = coefficientTenThousandths * 120 / 100;
 		const std::string spellPowerCoefficient = fixedPointFromScaledValue(coefficientTenThousandths, 4);
-		result = "Targets one friendly living stack. Base healing is 25 + " + spellPowerCoefficient
-			+ " \u00d7 Spell Power HP and cannot resurrect casualties. "
-			"If the target has Poison or Disease, choose one physical affliction to remove. "
-			"Cure does not remove magical effects.";
+		result = "Heal one friendly living stack without restoring dead creatures. If the target has Poison or Disease, choose one physical "
+			"affliction to remove. Magical effects remain.\n\nBase healing: 25 + "
+			+ spellPowerCoefficient + " \u00d7 Spell Power HP.";
 		if(newHorizonsHeroes::fieldPhysicianHealingPercent(hero) > 0)
 		{
 			const auto healing = hero->getSpellBonus(spell, cureHealingBudget(hero, std::max<int32_t>(0, hero->getEffectPower(spell)),
 				coefficientBasisPoints, 0, empowerBonusPercent), nullptr);
-			result = "Targets one friendly living stack. Current healing: " + std::to_string(healing)
-				+ " HP, including Field Physician on the fixed and Spell Power components. "
-				"Healer, when present, strengthens only the Spell Power component. "
-				"This excludes battle-only Warcasting and cannot resurrect casualties. "
-				"You may remove one physical affliction; magical effects remain.";
+			result = "Heal one friendly living stack without restoring dead creatures. If the target has Poison or Disease, choose one physical "
+				"affliction to remove. Magical effects remain.\n\nOrdinary healing budget: " + std::to_string(healing)
+				+ " HP before battle-only and target-specific bonuses. Field Physician is included in both the fixed healing "
+				"and the Spell Power part. Healer, when present, strengthens only the Spell Power part.";
 		}
 	}
 }
@@ -222,19 +213,20 @@ void describeSpellcraft(std::string & result, const CGHeroInstance * hero, const
 		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		&& hero->getMagicRules().Struct().contains("spellcraftEfficiencyPercent")
 		&& registeredSpellcraftRank(hero) > MasteryLevel::NONE
+		&& spell->getJsonKey() != newHorizonsSorcery::FOCUS_MAGIC_SPELL
 		&& spell->isCommonHeroSpell() && spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId())
 		&& !isAdventureSpell(hero->getMagicRules(), spell->getId())
 		&& !spellSchoolSkills(hero->getMagicRules(), spell->getId()).empty())
 	{
 		const int efficiencyPercent = spellcraftEfficiencyPercent(hero->getMagicRules(), registeredSpellcraftRank(hero));
-		result += "\n\nBase Spellcraft efficiency: " + std::to_string(efficiencyPercent)
-			+ "% on Spell Power-derived terms, multiplying with School rank.";
+		result += "\n\nSpellcraft: " + std::to_string(efficiencyPercent)
+			+ "% of normal strength from Spell Power, applied after School rank.";
 		const int ordinary = spellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
 		const int direct = directDamageSpellPowerCoefficientBasisPoints(hero->getMagicRules(), hero, spell->getId());
 		if(direct != ordinary)
-			result += " The specialty changes the combined School/Spellcraft factor to "
+			result += " Your specialty changes damage from Spell Power to "
 				+ percentFromBasisPoints(direct)
-				+ " for damage Spell Power components; other components retain their ordinary factor.";
+				+ " of normal strength after School and Spellcraft. Other effects keep their usual strength.";
 	}
 }
 
@@ -272,41 +264,20 @@ void appendCapturedReadouts(std::string & result, const CGHeroInstance * hero, c
 }
 
 void appendFocusReadout(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell,
-	bool hasSavedSchoolRankCoefficient, int coefficientPercent, int coefficientBasisPoints)
+	bool hasSavedSchoolRankCoefficient, int coefficientBasisPoints)
 {
-	if(hasSavedSchoolRankCoefficient)
-	{
-		const auto rankIndex = detail::schoolCoefficientRankIndex(coefficientPercent);
-		if(!rankIndex)
-			return;
-		constexpr std::array<std::string_view, 4> sorceryRankNames{
-			"No Sorcery Rank", "Basic Sorcery", "Advanced Sorcery", "Expert Sorcery"};
-		result += "\n\n" + std::string(sorceryRankNames[*rankIndex]) + ": "
-			+ std::to_string(coefficientPercent) + "% coefficient on the Spell Power term.";
-	}
-	else
-	{
-		result += "\n\nLegacy profile: 100% coefficient on the Spell Power term; "
-			"Sorcery rank does not scale Focus Magic.";
-	}
-
 	const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
 	const auto profile = newHorizonsSorceryRevision::focusRules(hero->getMagicRules()).value_or(
 		newHorizonsSorceryRevision::FocusRules{newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS,
 			newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS, newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS});
-	result += "\nCaptured per-mark formula: min(" + percentFromBasisPoints(profile.capBasisPoints)
-		+ ", " + percentFromBasisPoints(profile.baseBasisPoints) + " + "
-		+ percentFromBasisPoints(profile.powerBasisPoints) + " x scaled Spell Power).";
 	const int specialty = hasSavedSchoolRankCoefficient
 		? hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) : 0;
-	const int64_t penetrationBasisPoints = newHorizonsSorceryRevision::focusMarkBasisPoints(
+	const int penetrationBasisPoints = newHorizonsSorceryRevision::focusMarkBasisPoints(
 		profile, static_cast<int32_t>(spellPower), coefficientBasisPoints, 0,
 		empowerSpellBonusPercent(hero->getMagicRules(), hero, spell->getId()), specialty);
-	const auto fraction = penetrationBasisPoints % 100;
-	result += "\nCurrent ordinary per-mark penetration at Spell Power " + std::to_string(spellPower)
-		+ ": " + std::to_string(penetrationBasisPoints / 100) + "."
-		+ (fraction < 10 ? "0" : "") + std::to_string(fraction)
-		+ "% (before battle-only Warcasting).";
+	result += "\n\nYour hero: each mark lets friendly ranged attacks ignore "
+		+ percentFromBasisPoints(penetrationBasisPoints) + " Creature Defense; 3 such marks: "
+		+ percentFromBasisPoints(3 * penetrationBasisPoints) + ". Battle bonuses may increase this.";
 }
 
 void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
@@ -339,7 +310,7 @@ void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * 
 	if(focusMagicCoefficient)
 	{
 		appendFocusReadout(result, hero, spell, hasSavedSchoolRankCoefficient,
-			coefficientPercent, coefficientBasisPoints);
+			coefficientBasisPoints);
 		return;
 	}
 
@@ -348,10 +319,10 @@ void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * 
 		return;
 	result += "\n\n" + std::string(rankNames[*rankIndex]) + ": "
 		+ std::to_string(coefficientPercent)
-		+ (transfigureCoefficient ? "% Spell Power-derived golem HP."
-			: phantomCoefficient ? "% Spell Power-derived Phantom Integrity."
-			: cureCoefficient ? "% Spell Power-derived healing."
-			: "% Spell Power damage coefficient.");
+		+ (transfigureCoefficient ? "% of normal golem HP from Spell Power."
+			: phantomCoefficient ? "% of normal Phantom Integrity from Spell Power."
+			: cureCoefficient ? "% of normal healing from Spell Power."
+			: "% of normal damage from Spell Power.");
 	return;
 }
 }

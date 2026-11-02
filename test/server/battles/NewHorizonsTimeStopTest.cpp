@@ -820,8 +820,8 @@ TEST_F(NewHorizonsTimeStopContentTest, SchoolRankThresholdsUseSharedPreviewAndAu
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorceryId), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 87, ChangeValueMode::ABSOLUTE);
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), MasteryLevel::NONE);
-	EXPECT_NE(description.find("115% at Basic, 130% at Advanced, and 145% at Expert"), std::string::npos);
-	EXPECT_NE(description.find("Current ordinary radius without battle-only Warcasting at Spell Power 87: 2"),
+	EXPECT_NE(description.find("115% of normal strength"), std::string::npos);
+	EXPECT_NE(description.find("Radius before battle-only Warcasting (hexes): 2 at Spell Power 87"),
 		std::string::npos);
 
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorceryId), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
@@ -886,9 +886,9 @@ TEST_P(NewHorizonsTimeStopLegacyProfileTest, SchoolRankKeepsTheSavedV1V2RadiusAn
 	const auto affected = mechanics->getAffectedStacks(aim);
 	EXPECT_EQ(std::find(affected.begin(), affected.end(), outerStack), affected.end());
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), MasteryLevel::NONE);
-	EXPECT_NE(description.find("Saved v1/v2 rules use a 100% Spell Power coefficient at every rank"),
+	EXPECT_NE(description.find("School rank does not increase this radius."),
 		std::string::npos);
-	EXPECT_NE(description.find("Current radius at Spell Power 99: 1"), std::string::npos);
+	EXPECT_NE(description.find("Radius before battle-only Warcasting (hexes): 1 at Spell Power 99"), std::string::npos);
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;

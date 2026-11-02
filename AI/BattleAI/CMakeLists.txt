@@ -37,6 +37,7 @@ set(battleAI_SRCS
 		PreemptiveAttackRequest.cpp
 		BracePrimaryState.cpp
 		BattleAI.cpp
+		BattleAIEvaluation.cpp
 		BattleAITiming.cpp
 		DefendEvaluation.cpp
 		BattleEvaluator.cpp
@@ -54,6 +55,7 @@ set(battleAI_SRCS
 		HeroTargetHeuristicProjection.cpp
 		TheChosenValue.cpp
 		CanonicalOrderValue.cpp
+		HeroDecisionPressure.cpp
 		SecondWindOpportunity.cpp
 		BattleDamageValue.cpp
 		HeroOrderCandidates.cpp
@@ -96,6 +98,22 @@ set(battleAI_SRCS
 		StackWithBonuses.cpp
 		StackWithBonusesEffects.cpp
 		HypotheticBattle.cpp
+	HypotheticFortificationSnapshot.cpp
+	HypotheticHeroActionSnapshot.cpp
+	HypotheticOwnedAccessibility.cpp
+	HypotheticOwnedCapabilities.cpp
+	HypotheticOwnedFrames.cpp
+	HypotheticSideCombatSnapshot.cpp
+	OwnedFrameAccessibility.cpp
+	OwnedFrameAccessibility.h
+	OwnedFrameEffectPublication.cpp
+	OwnedFrameEffectQueries.cpp
+	OwnedFrameEffectQueries.h
+	OwnedPreparationObserver.h
+	OwnedStackQuerySource.cpp
+	OwnedStackQuerySource.h
+	StackOwnedBonusApplication.cpp
+	StackOwnedSourceBinding.cpp
 		HypotheticFortifications.cpp
 		HypotheticNecromancy.cpp
 		HypotheticHeroActions.cpp
@@ -116,6 +134,8 @@ set(battleAI_SRCS
 		TacticsHandler.cpp
 		ThreatMap.cpp
 		BattleExchangeVariant.cpp
+		CreatureCandidateScreening.cpp
+		MovementCandidateScreening.cpp
 		BattleExchangeBloodValue.cpp
 		EnemyBypassReachability.cpp
 		BattleExchangeFutureAttack.cpp
@@ -173,6 +193,7 @@ set(battleAI_HEADERS
 		HeroTargetHeuristicProjection.h
 		TheChosenValue.h
 		CanonicalOrderValue.h
+		HeroDecisionPressure.h
 		SecondWindOpportunity.h
 		BattleDamageValue.h
 		HeroOrderCandidates.h
@@ -215,6 +236,8 @@ set(battleAI_HEADERS
 		TacticsHandler.h
 		ThreatMap.h
 		BattleExchangeVariant.h
+		CreatureCandidateScreening.h
+		MovementCandidateScreening.h
 		ExchangeInitiativeQueue.h
 		BattleExchangeAftermath.h
 		EnemyBypassReachability.h
@@ -226,6 +249,19 @@ assign_source_group(${battleAI_SRCS} ${battleAI_HEADERS})
 
 add_library(BattleAI OBJECT ${battleAI_SRCS} ${battleAI_HEADERS})
 target_compile_definitions(BattleAI PRIVATE VCMI_DLL=1)
+
+# The actual dedicated controller and its value-only barrier share this facade's
+# single internal AI implementation. The executable never imports hidden HB/Stack
+# symbols or embeds another engine/AI copy. Ordinary builds add no test sources.
+option(ENABLE_NH_OWNED_PREPARATION_INTEGRATION "Build genuine owned-preparation client oracles" OFF)
+if(ENABLE_NH_OWNED_PREPARATION_INTEGRATION)
+	target_sources(BattleAI PRIVATE
+		../../client/tests/OwnedPreparationController.cpp
+		../../client/tests/OwnedPreparationAssertions.cpp
+		../../server/tests/OwnedPreparationAuditState.cpp)
+	target_compile_definitions(BattleAI PRIVATE
+		NH_OWNED_PREPARATION_INTEGRATION=1 NH_OWNED_PREPARATION_SIMULATION_AUDIT)
+endif()
 
 target_include_directories(BattleAI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(BattleAI PRIVATE vcmiMain)

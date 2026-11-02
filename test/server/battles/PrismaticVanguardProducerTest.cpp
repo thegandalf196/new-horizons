@@ -104,7 +104,18 @@ TEST_P(HistoricalVanguardProducerTest, HistoricalAndZeroIdentityAlsoApplyToRealF
 }
 INSTANTIATE_TEST_SUITE_P(HistoricalAndZero, HistoricalVanguardProducerTest, ::testing::Values(-1, 0));
 class VanguardSourceWorldTest : public PrismaticVanguardFixture,
-	public ::testing::WithParamInterface<int> {};
+	public ::testing::WithParamInterface<int>
+{
+	void mapLoaded(CMap * loaded) override
+	{
+		PrismaticVanguardFixture::mapLoaded(loaded);
+		// This cohort also writes the explicit pre-optional extended codec.
+		auto perkRules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+		perkRules.Struct().erase("quickStudyPolicy");
+		perkRules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+	}
+};
 TEST_P(VanguardSourceWorldTest, Explicit1152WorldAndDescriptorPreservePendingActiveOrSpentWithoutLocalInitRearm)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -113,12 +124,21 @@ TEST_P(VanguardSourceWorldTest, Explicit1152WorldAndDescriptorPreservePendingAct
 	const auto before = markers(*actor)->toJsonNode();
 	const auto capturedPolicy = attackerSideHero->getPrimaryGrowthRules();
 	NativeBonusGraphAccess graph;
-	// Installed default CURRENT remains1151 and must reject this captured key before its prefix.
+	// The named pre-extended writer must still reject this key before its prefix.
 	CMemorySerializer current;
-	ASSERT_EQ(current.oser.version, ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
-	EXPECT_THROW(current.oser & *gameState(), std::runtime_error);
-	EXPECT_TRUE(current.extractBuffer().empty());
+	ASSERT_EQ(current.oser.version, ESerializationVersion::CURRENT);
+	ASSERT_GE(current.oser.version, ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
+	EXPECT_NO_THROW(current.oser & *gameState());
+	EXPECT_FALSE(current.extractBuffer().empty());
+	CMemorySerializer currentDescriptor;
+	EXPECT_NO_THROW(battleStartFixture::writeDescriptors(*battle(), currentDescriptor));
+	EXPECT_FALSE(currentDescriptor.extractBuffer().empty());
+	CMemorySerializer historical;
+	historical.oser.version = ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION;
+	EXPECT_THROW(historical.oser & *gameState(), std::runtime_error);
+	EXPECT_TRUE(historical.extractBuffer().empty());
 	CMemorySerializer rejectedDescriptor;
+	rejectedDescriptor.oser.version = ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION;
 	EXPECT_THROW(battleStartFixture::writeDescriptors(*battle(), rejectedDescriptor), std::runtime_error);
 	EXPECT_TRUE(rejectedDescriptor.extractBuffer().empty());
 	constexpr auto version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;

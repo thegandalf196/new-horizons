@@ -11,6 +11,8 @@
 #include "../lib/CRandomGenerator.h"
 #include "../lib/CCreatureHandler.h"
 #include "../lib/mapObjects/NewHorizonsNeutralArmies.h"
+#include "../lib/mapObjects/NewHorizonsNeutralCalibration.h"
+#include "../lib/IGameSettings.h"
 #include "../lib/callback/IGameInfoCallback.h"
 #include "../lib/callback/CGameInfoCallback.h"
 
@@ -29,7 +31,10 @@ void CGameHandler::spawnWanderingMonsters(CreatureID creatureID)
 		tile = tiles.begin();
 		logGlobal->trace("\tSpawning monster at %s", tile->toString());
 		auto count = cre->getRandomAmount(getRandomGenerator());
-		createWanderingMonster(*tile, creatureID, newHorizonsNeutralArmies::scaleCount(count,
+		const newHorizonsNeutralArmies::calibration::Rules rules(gameInfo().getSettings().getValue(
+			EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION));
+		const auto calibrated = rules.counts({{count, cre->getAIValue()}}).front();
+		createWanderingMonster(*tile, creatureID, newHorizonsNeutralArmies::scaleCount(calibrated,
 			newHorizonsNeutralArmies::percentage(gameInfo().getSettings())));
 		tiles.erase(tile); //not use it again
 	}

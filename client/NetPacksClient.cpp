@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "PerfTrace.h"
 #include "ClientNetPackVisitors.h"
+#include "ClientBattleInterfaceDispatch.h"
 #include "BattleEndDispatch.h"
 
 #include "Client.h"
@@ -74,19 +75,6 @@ bool callInterfaceIfPresent(CClient & cl, PlayerColor player, void (T::*ptr)(Arg
 }
 
 template<typename T, typename ... Args, typename ... Args2>
-void callOnlyThatBattleInterface(CClient & cl, PlayerColor player, void (T::*ptr)(Args...), Args2 && ...args)
-{
-	if(vstd::contains(cl.battleints,player))
-		((*cl.battleints[player]).*ptr)(std::forward<Args2>(args)...);
-
-	if(cl.additionalBattleInts.count(player))
-	{
-		for(auto bInt : cl.additionalBattleInts[player])
-			((*bInt).*ptr)(std::forward<Args2>(args)...);
-	}
-}
-
-template<typename T, typename ... Args, typename ... Args2>
 void callBattleInterfaceIfPresent(CClient & cl, PlayerColor player, void (T::*ptr)(Args...), Args2 && ...args)
 {
 	callOnlyThatInterface(cl, player, ptr, std::forward<Args2>(args)...);
@@ -101,25 +89,6 @@ void callAllInterfaces(CClient & cl, void (T::*ptr)(Args...), Args2 && ...args)
 }
 
 //calls all normal interfaces and privileged ones, playerints may be updated when iterating over it, so we need a copy
-template<typename T, typename ... Args, typename ... Args2>
-void callBattleInterfaceIfPresentForBothSides(CClient & cl, const BattleID & battleID, void (T::*ptr)(Args...), Args2 && ...args)
-{
-	assert(cl.gameState().getBattle(battleID));
-
-	if(!cl.gameState().getBattle(battleID))
-	{
-		logGlobal->error("Attempt to call battle interface without ongoing battle!");
-		return;
-	}
-
-	callOnlyThatBattleInterface(cl, cl.gameState().getBattle(battleID)->getSide(BattleSide::ATTACKER).color, ptr, std::forward<Args2>(args)...);
-	callOnlyThatBattleInterface(cl, cl.gameState().getBattle(battleID)->getSide(BattleSide::DEFENDER).color, ptr, std::forward<Args2>(args)...);
-	if(settings["session"]["spectate"].Bool() && !settings["session"]["spectate-skip-battle"].Bool() && GAME->interface()->battleInt)
-	{
-		callOnlyThatBattleInterface(cl, PlayerColor::SPECTATOR, ptr, std::forward<Args2>(args)...);
-	}
-}
-
 static void showEagleEyeLearnedSpellsDialog(CClient & cl, ObjectInstanceID heroId, const std::set<SpellID> & spells, PlayerColor player)
 {
 	if(spells.empty())
@@ -791,7 +760,8 @@ void ApplyClientNetPackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const CGHeroInstance * hero = cl.gameInfo().getHero(pack.heroId);
 	assert(hero);
-	callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotLevel, hero, pack.primskill, pack.skills, pack.perks, pack.queryID);
+	callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotLevelWithReroll, hero, pack.primskill, pack.skills, pack.perks,
+		pack.queryID, pack.optionalRerollAvailable, pack.replacesQueryID, pack.reachedLevel);
 }
 
 void ApplyClientNetPackVisitor::visitHeroMasteryOffer(HeroMasteryOffer & pack)
@@ -886,23 +856,6 @@ void ApplyFirstClientNetPackVisitor::visitBattleNextRound(BattleNextRound & pack
 void ApplyClientNetPackVisitor::visitBattleNextRound(BattleNextRound & pack)
 {
 	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID, &IBattleEventsReceiver::battleNewRound, pack.battleID);
-}
-
-void ApplyClientNetPackVisitor::visitBattleSetActiveStack(BattleSetActiveStack & pack)
-{
-	callBattleInterfaceIfPresentForBothSides(cl, pack.battleID, &IBattleEventsReceiver::battleActiveStackReasonChanged,
-		pack.battleID, pack.stack, pack.reason);
-
-	if(pack.reason == BattleUnitTurnReason::AUTOMATIC_ACTION || pack.reason == BattleUnitTurnReason::CRISIS_RESUME)
-		return;
-
-	const auto * battle = gs.getBattle(pack.battleID);
-	const CStack * activated = battle->battleGetStackByID(pack.stack);
-	const auto & crisis = battle->getCrisisCommandState();
-	const auto playerToCall = crisis.choice()
-		? battle->sideToPlayer(crisis.chooser()) : battle->battleGetActionController(activated);
-
-	cl.startPlayerBattleAction(pack.battleID, playerToCall);
 }
 
 void ApplyClientNetPackVisitor::visitBattleLogMessage(BattleLogMessage & pack)

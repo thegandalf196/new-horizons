@@ -1429,18 +1429,9 @@ void CStackWindow::initBonusesList()
 
 	std::sort(visibleBonuses.begin(), visibleBonuses.end(), bonusSortingPredicate);
 
-	BonusInfo bonusInfo;
-	for(auto b : visibleBonuses)
-	{
-		bonusInfo.description = bonusToString(b);
-		//FIXME: we possibly use fakeNode, which does not have the correct bonus value
-		bonusInfo.imagePath = info->stackNode->bonusToGraphics(b);
-		bonusInfo.bonusSource = b->source;
-
-		//if it's possible to give any description or image for this kind of bonus
-		if(!bonusInfo.description.empty() && !b->hidden)
-			activeBonuses.push_back(bonusInfo);
-	}
+	for(auto & row : creatureBonusStatusPresentation::visibleRows(
+		*bonusSource, *info->stackNode, visibleBonuses, bonusToString))
+		activeBonuses.push_back(std::move(row));
 }
 
 void CStackWindow::initSections()

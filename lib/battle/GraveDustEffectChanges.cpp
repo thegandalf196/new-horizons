@@ -12,6 +12,8 @@
 #include <stdexcept>
 namespace newHorizonsGraveDust
 {
+OrderedEffectChangePreflight::~OrderedEffectChangePreflight() = default;
+
 namespace
 {
 void invalidChange()

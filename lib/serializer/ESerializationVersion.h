@@ -313,13 +313,15 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES = 1149, // captured Josephine, Gerwulf and Krellion policies
 	NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES = 1150, // captured Torosar and Gurnisson policies
 	NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES = 1151, // captured Sorsha, Straker, Yog and Ufretin policies and reserved melee effects
-	NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES = 1152, // unreleased combined successor; admit each module separately
+	NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION = 1152, // reserved resolved neutral-generation policy
+	NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES = 1153, // reserved combined successor; admit each module separately
+	NEW_HORIZONS_OPTIONAL_QUICK_STUDY = 1154, // reserved optional level-up reroll envelope
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES,
+	CURRENT = NEW_HORIZONS_OPTIONAL_QUICK_STUDY,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2
@@ -659,3 +661,10 @@ static_assert(ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES
 static_assert(ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES
  > ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES,
  "Extended ordinary specialties must follow the previous combat cohort");
+
+static_assert(ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION
+	> ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES, "Neutral calibration must follow published1151");
+static_assert(ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES
+	> ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION, "Reserved specialty profile must follow calibration");
+static_assert(ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY
+	> ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES, "Reserved Quick Study envelope must follow specialties");

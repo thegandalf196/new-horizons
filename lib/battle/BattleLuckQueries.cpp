@@ -4,6 +4,8 @@
 #include "CUnitState.h"
 #include "IBattleState.h"
 #include "DamageCalculationTiming.h"
+#include "../combatScripts/IDamageCalculatorScript.h"
+#include "../scripting/ScriptService.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsForestAmbush.h"
 #include "../GameLibrary.h"

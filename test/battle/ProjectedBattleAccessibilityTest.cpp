@@ -7,6 +7,7 @@
 #include "StdInc.h"
 #include "../bonus/ProjectedUnitEnvironmentFixture.h"
 #include "../../lib/battle/ProjectedBattleAccessibility.h"
+#include "../../lib/battle/OwnedBattleFrameRefusals.h"
 #include "../../lib/battle/LiveBattleAccessibilityContext.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/CObstacleInstance.h"
@@ -289,4 +290,56 @@ TEST_F(ProjectedBattleAccessibilityTest, ReplacedProviderRefusesBeforeAnyLatestT
 	*units[3] = ordinary;
 	EXPECT_THROW(query(state), std::invalid_argument);
 }
+}
+
+namespace
+{
+class CapturedAccessibilityCallback final : public CBattleInfoCallback
+{
+public:
+	const IBattleInfo * getBattle() const override { throw std::logic_error("No native source in pure accessibility dispatch test"); }
+	std::optional<PlayerColor> getPlayerID() const override { return PlayerColor(0); }
+	bool battleCanTargetEmptyHex(const battle::Unit *) const override { throw std::domain_error("Uncaptured owned target capability"); }
+	AccessibilityInfo getAccessibility() const override
+	{
+		AccessibilityInfo result;
+		result.fill(EAccessibility::OBSTACLE);
+		return result;
+	}
+};
+}
+TEST(OwnedBattleFrameSubjectContractTest, CommonAccessibilityOverloadsDispatchCapturedInputWithoutNativeSource)
+{
+	CapturedAccessibilityCallback source;
+	const CBattleInfoCallback & common = source;
+	const BattleHex hex(5, 5);
+	EXPECT_EQ(common.getAccessibility()[hex.toInt()], EAccessibility::OBSTACLE);
+	EXPECT_EQ(common.getAccessibility(BattleHexArray{hex})[hex.toInt()], EAccessibility::ACCESSIBLE);
+}
+TEST(OwnedBattleFrameSubjectContractTest, UncapturedBattleDefaultsRefuseInsteadOfInventingFalseOrGlobalRules)
+{
+	battle::ownedFrameCapture::RefusingBattleInfo source;
+	EXPECT_THROW(source.getHeroCommandUsed(BattleSide::ATTACKER), std::logic_error);
+	EXPECT_THROW(source.getBloodrageRank(BattleSide::ATTACKER), std::logic_error);
+	EXPECT_THROW(source.getMagicRules(), std::logic_error);
+	EXPECT_THROW(source.getSideHero(BattleSide::ATTACKER), std::logic_error);
+	EXPECT_THROW(source.getScriptContextPool(), std::logic_error);
+}
+TEST(OwnedBattleFrameSubjectContractTest, UncapturedCallbackCapabilityDispatchesRefusalBeforeGlobalLookup)
+{
+	CapturedAccessibilityCallback source;
+	const CBattleInfoCallback & common = source;
+	EXPECT_THROW(common.battleCanTargetEmptyHex(nullptr), std::domain_error);
+}
+TEST(OwnedBattleFrameSubjectContractTest, CapturedNativeTerrainVisibilityUsesCanonicalObstaclePredicate)
+{
+	SpellCreatedObstacle obstacle;
+	obstacle.hidden = true; obstacle.revealed = false; obstacle.nativeVisible = true;
+	obstacle.casterSide = BattleSide::DEFENDER;
+	EXPECT_FALSE(CBattleInfoEssentials::battleIsObstacleVisibleForSide(obstacle, BattleSide::ATTACKER, false));
+	EXPECT_TRUE(CBattleInfoEssentials::battleIsObstacleVisibleForSide(obstacle, BattleSide::ATTACKER, true));
+	EXPECT_TRUE(CBattleInfoEssentials::battleIsObstacleVisibleForSide(obstacle, BattleSide::DEFENDER, false));
+	EXPECT_TRUE(CBattleInfoEssentials::battleIsObstacleVisibleForSide(obstacle, BattleSide::ALL_KNOWING, false));
+	obstacle.nativeVisible = false;
+	EXPECT_FALSE(CBattleInfoEssentials::battleIsObstacleVisibleForSide(obstacle, BattleSide::ATTACKER, true));
 }

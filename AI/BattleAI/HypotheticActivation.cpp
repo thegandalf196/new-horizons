@@ -42,6 +42,7 @@ void HypotheticBattle::nextRound()
 
 void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	if(deploymentState.independent && deploymentState.activeSide() != BattleSide::NONE)
 		throw std::runtime_error("Cannot advance a battle round with unresolved deployment phase");
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -155,6 +156,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 
 bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	auto unit = getForUpdate(unitId);
 	if(!unit || !unit->alive() || !unit->canMove() || unit->hadMorale || unit->defending
 		|| unit->waited() || unit->fear || battleGetMorale(unit.get()) <= 0
@@ -171,12 +173,14 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason, HypotheticLifecycleTiming * timing)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	nextTurnImpl(unitId, reason, false, timing);
 }
 
 void HypotheticBattle::nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason,
 	HypotheticLifecycleTiming * timing)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	const auto * unit = battleGetUnitByID(unitId);
 	if(!unit || !newHorizonsFrozen::forfeitsNormalActivation(*unit, reason))
 		throw std::invalid_argument("Deferred Frozen thaw requires a Frozen normal forfeiture");

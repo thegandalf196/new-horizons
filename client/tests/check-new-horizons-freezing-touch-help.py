@@ -10,6 +10,7 @@ BINDINGS = (ROOT / "client/windows/NewHorizonsCreatureAbilityHelp.cpp").read_tex
 WINDOW = (ROOT / "client/windows/CCreatureWindow.cpp").read_text()
 WIKI = (ROOT / "client/windows/wiki/WikiCreatureContent.cpp").read_text()
 HEADER = (ROOT / "client/windows/CCreatureWindow.h").read_text()
+STATUS_ROWS = (ROOT / "client/windows/CreatureBonusStatusPresentation.h").read_text()
 TEXTS = json.loads((ROOT / "config/newHorizonsCombatTexts.json").read_text())
 
 
@@ -32,7 +33,8 @@ class FreezingTouchHelpBindingTest(unittest.TestCase):
             self.assertNotIn('25%', text)
 
     def test_full_help_and_existing_row_geometry(self):
-        self.assertIn('std::string tooltip;', HEADER)
+        self.assertIn('using BonusInfo = creatureBonusStatusPresentation::Row;', HEADER)
+        self.assertIn('std::string tooltip;', STATUS_ROWS)
         self.assertIn('Rect(position.x + 60, position.y, 137, 50)', WINDOW)
         self.assertIn('Rect(position.x, position.y, 197, 50), bi.tooltip, bi.tooltip', WINDOW)
         self.assertIn('ability.description = help.compact', WINDOW)

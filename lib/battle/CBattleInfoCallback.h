@@ -13,6 +13,8 @@
 #include <vcmi/spells/Magic.h>
 
 #include <cstdint>
+#include <cstddef>
+#include <functional>
 
 #include "ReachabilityInfo.h"
 #include "BattleAttackInfo.h"
@@ -30,6 +32,7 @@
 
 class CGHeroInstance;
 class CStack;
+class BattleInfo;
 class ISpellCaster;
 class SpellCastEnvironment;
 class ServerCallback;
@@ -38,6 +41,7 @@ struct CObstacleInstance;
 class IBonusBearer;
 class PossiblePlayerBattleAction;
 struct DamageAttackInfo;
+struct DamagePayloadPreparation;
 
 namespace battle { struct MeleeContactFootprint; }
 
@@ -357,7 +361,7 @@ public:
 	bool battleCanAttackHex(const battle::Unit * attacker, const BattleHex & position) const; //check all directions
 	bool battleCanAttackHex(const BattleHexArray & availableHexes, const battle::Unit * attacker, const BattleHex & position) const; //reuse availableHexes on multiple calls
 
-	int battleGetSurrenderCost(const PlayerColor & Player) const; //returns cost of surrendering battle, -1 if surrendering is not possible
+	virtual int battleGetSurrenderCost(const PlayerColor & Player) const; //returns cost of surrendering battle, -1 if surrendering is not possible
 	ReachabilityInfo::TDistances battleGetDistances(const battle::Unit * unit, const BattleHex & assumedPosition) const;
 	BattleHexArray battleGetAttackedHexes(const battle::Unit * attacker, const BattleHex & destinationTile, const BattleHex & attackerPos = BattleHex::INVALID) const;
 	bool isEnemyUnitWithinSpecifiedRange(const BattleHex & attackerPosition, const battle::Unit * defenderUnit, unsigned int range) const;
@@ -365,7 +369,7 @@ public:
 
 	std::pair< BattleHexArray, int > getPath(const BattleHex & start, const BattleHex & dest, const battle::Unit * stack) const;
 
-	bool battleCanTargetEmptyHex(const battle::Unit * attacker) const; //determines of stack with given ID can target empty hex to attack - currently used only for SPELL_LIKE_ATTACK shooting
+	virtual bool battleCanTargetEmptyHex(const battle::Unit * attacker) const; //determines of stack with given ID can target empty hex to attack - currently used only for SPELL_LIKE_ATTACK shooting
 	bool battleCanAttackUnit(const battle::Unit * attacker, const battle::Unit * target) const; //determines if attacker can attack target (no spatial reasoning)
 	/// Direct player action legality, using the action controller while preserving physical allegiance elsewhere.
 	bool battleCanAttackUnitAction(const battle::Unit * attacker, const battle::Unit * target) const;
@@ -399,7 +403,9 @@ public:
 	bool battleIsUnitBlocked(const battle::Unit * unit) const; //returns true if there is neighboring enemy stack
 	battle::Units battleAdjacentUnits(const battle::Unit * unit) const;
 
-	DamageEstimation calculateDmgRange(const BattleAttackInfo & info) const;
+	virtual DamageEstimation calculateDmgRange(const BattleAttackInfo & info) const;
+	/// Internal immutable getter-chain proof, never authority or policy knowledge.
+	virtual bool hasCanonicalDamageQuerySources(size_t remaining = 512, const BattleInfo * expected = nullptr) const;
 
 	/// estimates damage dealt by attacker to defender;
 	/// only non-random bonuses are considered in estimation
@@ -444,14 +450,14 @@ public:
 	ESpellCastProblem battleCanCastSpell(const spells::Caster * caster, spells::Mode mode, SpellID requestedSpell) const;
 
 	/// Complete, uniformly weighted random-beneficial pool, without selecting an outcome or using RNG.
-	std::vector<SpellID> getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * target) const;
+	virtual std::vector<SpellID> getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * target) const;
 	/// Target-dependent random enchantments; hostile pools require explicit bonus opt-in.
-	std::vector<SpellID> getAvailableRandomCreatureSpells(const battle::Unit * caster, const battle::Unit * target) const;
+	virtual std::vector<SpellID> getAvailableRandomCreatureSpells(const battle::Unit * caster, const battle::Unit * target) const;
 	SpellID getRandomCreatureSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * target) const;
 	SpellID getRandomBeneficialSpell(vstd::RNG & rand, const battle::Unit * caster, const battle::Unit * target) const;
 	SpellID getRandomCastedSpell(vstd::RNG & rand, const CStack * caster) const; //called at the beginning of turn for Faerie Dragon
 
-	std::vector<PossiblePlayerBattleAction> getClientActionsForStack(const CStack * stack, const BattleClientInterfaceData & data);
+	virtual std::vector<PossiblePlayerBattleAction> getClientActionsForStack(const CStack * stack, const BattleClientInterfaceData & data);
 	PossiblePlayerBattleAction getCasterAction(const CSpell * spell, const spells::Caster * caster, spells::Mode mode) const;
 
 	//convenience methods using the ones above
@@ -495,8 +501,8 @@ public:
 	ReachabilityInfo getReachability(const ReachabilityInfo::Parameters & params) const;
 	/// Adds the current controlling hero's Passing Lines traversal hexes to a
 	/// custom reachability query without changing its side or Ghost Walk rules.
-	void configurePassingLines(const battle::Unit * mover, ReachabilityInfo::Parameters & params) const;
-	AccessibilityInfo getAccessibility() const;
+	virtual void configurePassingLines(const battle::Unit * mover, ReachabilityInfo::Parameters & params) const;
+	virtual AccessibilityInfo getAccessibility() const;
 	AccessibilityInfo getAccessibility(const battle::Unit * stack) const; //Hexes occupied by stack will be marked as accessible.
 	AccessibilityInfo getAccessibility(const BattleHexArray & accessibleHexes) const; //given hexes will be marked as accessible
 	/// Returns tied nearest v3 Berserk candidates without RNG, one deterministic legacy action, or empty when none is reachable/legal.
@@ -507,6 +513,14 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 private:
+
+	void prepareAttackDamageContext(const BattleAttackInfo &, DamagePayloadPreparation &) const;
+	void preparePhysicalDamageModifiers(const BattleAttackInfo &, DamagePayloadPreparation &) const;
+	void prepareDamageOrders(const BattleAttackInfo &, DamagePayloadPreparation &) const;
+	void prepareAttackerDamageOrders(const BattleAttackInfo &, DamagePayloadPreparation &, const JsonNode &,
+		const CGHeroInstance *, BattleSide, const std::vector<HeroOrderState> &) const;
+	void prepareDefenderDamageOrders(const BattleAttackInfo &, DamagePayloadPreparation &, const JsonNode &,
+		const CGHeroInstance *, const std::vector<HeroOrderState> &) const;
 	AttackableTiles getPotentiallyAttackableHexes(const battle::Unit * attacker,
 		const battle::Unit * defender, BattleHex destinationTile, BattleHex attackerPos,
 		BattleHex defenderPos, const battle::MeleeContactFootprint * contact) const;

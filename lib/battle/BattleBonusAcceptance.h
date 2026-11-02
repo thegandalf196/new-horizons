@@ -6,6 +6,8 @@
  */
 #pragma once
 #include "../constants/EntityIdentifiers.h"
+#include <memory>
+#include <optional>
 
 class CStack;
 class CGHeroInstance;
@@ -13,9 +15,18 @@ struct Bonus;
 namespace battle
 {
 class CUnitState;
+class OwnedBonusAcceptancePolicy;
 /// Copied inputs only; no native Hero/Unit/Battle/library references.
 struct BonusAcceptanceFacts
 {
+	struct Subject
+	{
+		BattleID battle;
+		uint32_t unit;
+		int32_t activationSerial;
+		bool operator==(const Subject &) const = default;
+	};
+	struct State;
 	struct Static
 	{
 		SecondarySkill sylvanSkill;
@@ -24,6 +35,11 @@ struct BonusAcceptanceFacts
 		bool wildChance = false;
 		bool turret = false;
 		SlotID slot;
+	private:
+		// Engine-only immutable canonical inputs; no public policy/state getter.
+		std::shared_ptr<const OwnedBonusAcceptancePolicy> enginePolicy;
+		friend BonusAcceptanceFacts captureOwnedBonusAcceptance(const CStack &);
+		friend bool acceptsBattleBonus(const Bonus &, const Static &, const State &);
 	};
 	struct State
 	{
@@ -33,6 +49,8 @@ struct BonusAcceptanceFacts
 		bool ghost = false;
 		bool summoned = false;
 		bool natureSummoned = false;
+		// Pure source-domain identity, not freshness or command authority.
+		std::optional<Subject> capturedSubject;
 	};
 	Static metadata;
 	State state;

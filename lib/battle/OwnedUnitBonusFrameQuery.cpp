@@ -34,7 +34,12 @@ const OwnedRecipientBonusGraph & OwnedUnitBonusFrame::Data::sourceGraph(const Fo
 BonusList OwnedUnitBonusFrame::Data::raw(const OwnedRecipientBonusGraph & owner, const std::vector<size_t> & records) const
 {
 	BonusList original, result;
-	for(const auto index : records) original.push_back(owner.payload(index));
+	for(const auto index : records)
+	{
+		const auto & raw = owner.payload(index);
+		const auto found = sourceReplacements.find(raw);
+		original.push_back(found == sourceReplacements.end() ? raw : found->second);
+	}
 	// All inputs here are RAW source/owned pending records. No effective snapshots are promoted.
 	recipientBonusOverlay::copyInherited(result, original, ledger.view(), true);
 	recipientBonusOverlay::append(result, ledger.view(), Selector::all, true);
@@ -82,7 +87,12 @@ TConstBonusListPtr OwnedUnitBonusFrame::Data::View::ownedNativeFormBonuses(
 std::vector<Bonus> OwnedUnitBonusFrame::Data::View::sourceLocalSpellEffects() const
 {
 	BonusList raw;
-	for(const auto index : data.sourceLocalSpells) raw.push_back(data.graph->payload(index));
+	for(const auto index : data.sourceLocalSpells)
+	{
+		const auto & original = data.graph->payload(index);
+		const auto found = data.sourceReplacements.find(original);
+		raw.push_back(found == data.sourceReplacements.end() ? original : found->second);
+	}
 	BonusList result;
 	recipientBonusOverlay::copyInherited(result, raw, data.ledger.view(), true);
 	recipientBonusOverlay::append(result, data.ledger.view(), Selector::sourceTypeSel(BonusSource::SPELL_EFFECT), true);

@@ -278,12 +278,11 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                 with self.subTest(skill=key, rank=rank):
                     description = skill[rank]["description"]
                     self.assertIn(
-                        f"Through ordinary learning, this rank unlocks acquisition of {school_name} "
-                        f"spells up to Level {maximum_level}.",
+                        f"Learn {school_name} spells up to Level {maximum_level} through ordinary learning.",
                         description,
                     )
                     self.assertIn(
-                        "A legitimately inscribed combat spell remains castable regardless of School rank.",
+                        "A combat spell already inscribed in your spellbook can still be cast at any School rank.",
                         description,
                     )
                     self.assertNotIn("Wisdom still governs access", description)

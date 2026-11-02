@@ -7,10 +7,12 @@
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "../../lib/bonuses/BonusList.h"
+#include <stdexcept>
 
 TConstBonusListPtr HypotheticBattle::visibleHeroBonuses(BattleSide side,
 	const CSelector & selector, bool unstacked) const
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned Hero policy queries require captured canonical dependencies");
 	if(const auto owned = initialExportSubject())
 	{
 		owned->synchronizeValues(*this);

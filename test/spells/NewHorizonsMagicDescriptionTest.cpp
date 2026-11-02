@@ -61,7 +61,7 @@ const CSpell * descriptionSpell(const char * key)
 	return id.toSpell();
 }
 
-constexpr auto spellcraftSuffix = "\n\nBase Spellcraft efficiency: 110% on Spell Power-derived terms, multiplying with School rank.";
+constexpr auto spellcraftSuffix = "\n\nSpellcraft: 110% of normal strength from Spell Power, applied after School rank.";
 }
 
 class NewHorizonsMagicDescriptionTest : public ::testing::Test
@@ -156,10 +156,9 @@ TEST_F(NewHorizonsMagicDescriptionTest, CureRankReadoutsAreByteExactIncludingFra
 	for(int level = 0; level <= 3; ++level)
 	{
 		rank(cure, level);
-		const auto expected = "Targets one friendly living stack. Base healing is 25 + " + healing.at(level)
-			+ " × Spell Power HP and cannot resurrect casualties. If the target has Poison or Disease, "
-			"choose one physical affliction to remove. Cure does not remove magical effects.\n\n"
-			+ rankText.at(level) + "% Spell Power-derived healing.";
+		const auto expected = "Heal one friendly living stack without restoring dead creatures. If the target has Poison or Disease, choose one physical "
+			"affliction to remove. Magical effects remain.\n\nBase healing: 25 + "
+			+ healing.at(level) + " × Spell Power HP.\n\n" + rankText.at(level) + "% of normal healing from Spell Power.";
 		EXPECT_EQ(describe(cure, level), expected);
 	}
 }
@@ -168,9 +167,9 @@ TEST_F(NewHorizonsMagicDescriptionTest, CureSpellcraftPrecisionAndSuffixOrderAre
 {
 	const auto * cure = descriptionSpell("core:cure");
 	rank(cure, 1, 1);
-	EXPECT_EQ(describe(cure), std::string("Targets one friendly living stack. Base healing is 25 + 1.8975 × Spell Power HP "
-		"and cannot resurrect casualties. If the target has Poison or Disease, choose one physical affliction to remove. "
-		"Cure does not remove magical effects.") + spellcraftSuffix + "\n\nBasic School: 115% Spell Power-derived healing.");
+	EXPECT_EQ(describe(cure), std::string("Heal one friendly living stack without restoring dead creatures. If the target has Poison or Disease, choose one physical "
+		"affliction to remove. Magical effects remain.\n\nBase healing: 25 + 1.8975 × Spell Power HP.")
+		+ spellcraftSuffix + "\n\nBasic School: 115% of normal healing from Spell Power.");
 }
 
 TEST_F(NewHorizonsMagicDescriptionTest, MissingCureOptInAndDisabledRosterRetainExactOrdinaryFallback)
@@ -222,24 +221,22 @@ TEST_F(NewHorizonsMagicDescriptionTest, ImplosionKeepsSixDecimalFormattingAndSch
 		"of the target's current aggregate Health before magical defenses. School rank scales only the Spell Power term, "
 		"not the base or cap. After resolved damage, other living stacks within 3 hexes are pulled one legal hex closer. "
 		"Closest stacks move first, then clockwise from northeast. The primary target stays in place; this magical "
-		"displacement causes no retaliation.\n\nNo School Rank: 100% Spell Power damage coefficient.");
+		"displacement causes no retaliation.\n\nNo School Rank: 100% of normal damage from Spell Power.");
 }
 
-TEST_F(NewHorizonsMagicDescriptionTest, FocusCurrentAndHistoricalEarlyReturnsKeepExactDecimalReadouts)
+TEST_F(NewHorizonsMagicDescriptionTest, FocusCurrentAndHistoricalProfilesKeepExactValuesInPlainReadout)
 {
 	const auto * focus = descriptionSpell("new-horizons:focusMagic");
 	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 17, ChangeValueMode::ABSOLUTE);
 	rank(focus, 1, 1);
-	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0) + spellcraftSuffix
-		+ "\n\nBasic Sorcery: 115% coefficient on the Spell Power term."
-		"\nCaptured per-mark formula: min(12%, 5% + 0.03% x scaled Spell Power)."
-		"\nCurrent ordinary per-mark penetration at Spell Power 17: 5.64% (before battle-only Warcasting).");
+	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0)
+		+ "\n\nYour hero: each mark lets friendly ranged attacks ignore 5.64% Creature Defense; "
+		"3 such marks: 16.92%. Battle bonuses may increase this.");
 	ASSERT_NO_THROW(callback.rules = historicalDescriptionRules(2));
 	rank(focus, 3);
 	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0)
-		+ "\n\nLegacy profile: 100% coefficient on the Spell Power term; Sorcery rank does not scale Focus Magic."
-		"\nCaptured per-mark formula: min(20%, 10% + 0.05% x scaled Spell Power)."
-		"\nCurrent ordinary per-mark penetration at Spell Power 17: 10.85% (before battle-only Warcasting).");
+		+ "\n\nYour hero: each mark lets friendly ranged attacks ignore 10.85% Creature Defense; "
+		"3 such marks: 32.55%. Battle bonuses may increase this.");
 }
 
 TEST_F(NewHorizonsMagicDescriptionTest, MasterChainRetentionTracksLevelAndCapWithSchoolSuffixLast)
@@ -249,21 +246,20 @@ TEST_F(NewHorizonsMagicDescriptionTest, MasterChainRetentionTracksLevelAndCapWit
 	{
 		hero.level = level;
 		EXPECT_EQ(describe(spell), spell->getDescriptionTranslated(0) + "\n\nCurrent retention: " + retention
-			+ "%.\n\nNo School Rank: 100% Spell Power damage coefficient.");
+			+ "%.\n\nNo School Rank: 100% of normal damage from Spell Power.");
 	}
 }
 
 TEST_F(NewHorizonsMagicDescriptionTest, TimeStopIndependentReplacementKeepsCompleteCurrentReadout)
 {
 	EXPECT_EQ(describe(descriptionSpell("new-horizons:timeStop")),
-		"Place the selected area outside time until the beginning of the caster's next Hero Action. "
-		"Under saved v3 rules, Sorcery rank scales only the Spell Power term: 100% with no rank, "
-		"115% at Basic, 130% at Advanced, and 145% at Expert. Spellcraft efficiency multiplies that School factor; "
-		"the current combined coefficient is 100%. The radius is min(2, 1 + floor(10000 x Spell Power / (10000 x 100))); "
-		"Chronomancer raises the cap to 3 without adding a free radius step. Current ordinary radius without battle-only "
-		"Warcasting at Spell Power 1: 1. Warcasting also scales only this Spell Power term when the shared cast scaler "
-		"supplies its bonus. Duration and targeting do not change with Sorcery rank. Creatures in stasis cannot act, "
-		"receive damage or healing, teleport, receive new effects, or lose duration from existing effects.");
+		"Stop time in the selected area until the beginning of your next Hero Action. Creatures in stasis cannot move, "
+		"act, retaliate, take damage, receive healing, teleport, or receive new effects. Their existing effect timers "
+		"are paused, and they still block their occupied hexes.\n\n"
+		"Radius before battle-only Warcasting (hexes): 1 at Spell Power 1. Sorcery and Spellcraft strengthen only the Spell Power part "
+		"(100% of normal strength). Maximum radius: 2 hexes. Chronomancer raises the maximum to 3 without adding "
+		"a free radius step. Battle-only Warcasting may increase the radius through Spell Power. It does not extend "
+		"the duration or change which targets can be affected.");
 }
 
 class NewHorizonsMagicPerkDescriptionTest : public HeroCommandFixture
@@ -291,7 +287,7 @@ TEST_F(NewHorizonsMagicPerkDescriptionTest, InitialFateDealerAppendPrecedesSpell
 		+ " Fate Dealer draws two spill candidates independently with replacement. If exactly one is hostile to your "
 		"current side, it receives the spill; otherwise a fair coin chooses between the two draws, including duplicates. "
 		"The selected recipient's own defenses still apply, without a reroll or a second hit."
-		+ spellcraftSuffix + "\n\nAdvanced School: 130% Spell Power damage coefficient.");
+		+ spellcraftSuffix + "\n\nAdvanced School: 130% of normal damage from Spell Power.");
 }
 
 TEST_F(NewHorizonsMagicPerkDescriptionTest, BlessDurationBonusesBenedictionAndSpellcraftKeepExactSuffixOrder)

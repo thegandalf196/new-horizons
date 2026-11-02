@@ -12,6 +12,9 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/bonuses/Limiters.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../mock/mock_battle_IBattleState.h"
+#include <optional>
 #include <array>
 #include <type_traits>
 
@@ -778,4 +781,103 @@ TEST_F(StackWithBonusesQueryTest, DetachedPosthitAndNestedLoansKeepExactLocalSpe
 	EXPECT_EQ(projectedHitTest::serialized(source->localSpellEffects()), projectedHitTest::serialized(localBefore));
 	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
 	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
+}
+
+namespace
+{
+using Knowledge = VisibleHeroPolicy::Knowledge;
+using testing::Return;
+void colors(BattleStateMock & battle)
+{
+	ON_CALL(battle, getSidePlayer(BattleSide::ATTACKER)).WillByDefault(Return(PlayerColor(0)));
+	ON_CALL(battle, getSidePlayer(BattleSide::DEFENDER)).WillByDefault(Return(PlayerColor(1)));
+}
+class InformationOnlyCallback final : public CPlayerBattleCallback
+{
+	VisibleHeroPolicy copied;
+public:
+	InformationOnlyCallback(const IBattleInfo * battle, VisibleHeroPolicy policy)
+		: CPlayerBattleCallback(battle, PlayerColor(0)), copied(std::move(policy)) {}
+	VisibleHeroPolicy battleGetVisibleHeroPolicy(BattleSide side) const override
+	{
+		if(side != copied.side()) throw std::logic_error("No captured policy for requested side");
+		return copied;
+	}
+};
+}
+TEST(VisibleHeroPolicyValueTest, CopiesPreserveVisibleHiddenAbsentAndUnavailableWithoutCertifyingNullAsVisible)
+{
+	testing::NiceMock<BattleStateMock> battle; colors(battle);
+	CGHeroInstance hero(nullptr), other(nullptr);
+	ON_CALL(battle, getSideHero(BattleSide::ATTACKER)).WillByDefault(Return(&hero));
+	ON_CALL(battle, getSideHero(BattleSide::DEFENDER)).WillByDefault(Return(nullptr));
+	CPlayerBattleCallback own(&battle, PlayerColor(0)), defender(&battle, PlayerColor(1)), unavailable(nullptr, PlayerColor(0));
+	const auto visible = own.battleGetVisibleHeroPolicy(BattleSide::ATTACKER);
+	EXPECT_EQ(visible.kind(), Knowledge::VISIBLE_HERO); EXPECT_EQ(visible.legacyHero(), &hero);
+	EXPECT_TRUE(visible.matchesSuppliedHero(&hero)); EXPECT_FALSE(visible.matchesSuppliedHero(nullptr));
+	EXPECT_FALSE(visible.matchesSuppliedHero(&other));
+	const auto copied = visible.informationOnly();
+	EXPECT_EQ(copied.kind(), Knowledge::VISIBLE_HERO); EXPECT_EQ(copied.side(), BattleSide::ATTACKER);
+	EXPECT_THROW(copied.legacyHero(), std::logic_error);
+	EXPECT_FALSE(copied.matchesSuppliedHero(nullptr)); EXPECT_FALSE(copied.matchesSuppliedHero(&hero));
+	const auto absent = defender.battleGetVisibleHeroPolicy(BattleSide::DEFENDER).informationOnly();
+	EXPECT_EQ(absent.kind(), Knowledge::KNOWN_ABSENT); EXPECT_EQ(absent.legacyHero(), nullptr);
+	EXPECT_TRUE(absent.matchesSuppliedHero(nullptr)); EXPECT_FALSE(absent.matchesSuppliedHero(&hero));
+	const auto hidden = own.battleGetVisibleHeroPolicy(BattleSide::DEFENDER).informationOnly();
+	EXPECT_EQ(hidden.kind(), Knowledge::HIDDEN_UNKNOWN); EXPECT_EQ(hidden.legacyHero(), nullptr);
+	EXPECT_FALSE(hidden.matchesSuppliedHero(nullptr)); EXPECT_FALSE(hidden.matchesSuppliedHero(&hero));
+	const auto missing = unavailable.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).informationOnly();
+	EXPECT_EQ(missing.kind(), Knowledge::UNAVAILABLE); EXPECT_FALSE(missing.matchesSuppliedHero(nullptr));
+}
+TEST(VisibleHeroPolicyValueTest, InformationOnlyValueOutlivesSourceAddressAndCallback)
+{
+	std::optional<VisibleHeroPolicy> copied;
+	{
+		testing::NiceMock<BattleStateMock> battle; colors(battle); CGHeroInstance hero(nullptr);
+		ON_CALL(battle, getSideHero(BattleSide::ATTACKER)).WillByDefault(Return(&hero));
+		CPlayerBattleCallback source(&battle, PlayerColor(0));
+		copied = source.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).informationOnly();
+	}
+	ASSERT_TRUE(copied); EXPECT_EQ(copied->kind(), Knowledge::VISIBLE_HERO);
+	EXPECT_THROW(copied->legacyHero(), std::logic_error); EXPECT_FALSE(copied->matchesSuppliedHero(nullptr));
+}
+TEST(VisibleHeroPolicyValueTest, EssentialsVirtualDispatchPreservesCopiedPresenceWithoutNativeHeroQuery)
+{
+	testing::NiceMock<BattleStateMock> battle; colors(battle); CGHeroInstance hero(nullptr);
+	EXPECT_CALL(battle, getSideHero(BattleSide::ATTACKER)).Times(1).WillOnce(Return(&hero));
+	CPlayerBattleCallback source(&battle, PlayerColor(0));
+	InformationOnlyCallback copied(&battle, source.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).informationOnly());
+	const CBattleInfoEssentials & view = copied;
+	const auto policy = view.battleGetVisibleHeroPolicy(BattleSide::ATTACKER);
+	EXPECT_EQ(policy.kind(), Knowledge::VISIBLE_HERO); EXPECT_THROW(policy.legacyHero(), std::logic_error);
+	EXPECT_FALSE(policy.matchesSuppliedHero(nullptr));
+}
+
+TEST(VisibleHeroPolicyValueTest, ProxyForwardsInformationOnlyPolicyWithoutResurrectingHeroAddress)
+{
+	testing::NiceMock<BattleStateMock> battle; colors(battle); CGHeroInstance hero(nullptr);
+	EXPECT_CALL(battle, getSideHero(BattleSide::ATTACKER)).Times(1).WillOnce(Return(&hero));
+	CPlayerBattleCallback source(&battle, PlayerColor(0));
+	auto copied = std::make_shared<InformationOnlyCallback>(&battle,
+		source.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).informationOnly());
+	ReadOnlySubjectProxy proxy(copied); const CBattleInfoEssentials & base = proxy;
+	const auto policy = base.battleGetVisibleHeroPolicy(BattleSide::ATTACKER);
+	EXPECT_EQ(policy.kind(), Knowledge::VISIBLE_HERO); EXPECT_THROW(policy.legacyHero(), std::logic_error);
+	EXPECT_FALSE(policy.matchesSuppliedHero(nullptr)); EXPECT_FALSE(policy.matchesSuppliedHero(&hero));
+}
+
+TEST_F(StackWithBonusesQueryTest, ColdForeignProviderStillConstructsWithoutExportAdmission)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_FALSE(braced->isTimeStopped());
+	const auto before = braced->save();
+	ForcedCopyView view(*child, *braced);
+	EXPECT_FALSE(view.projected->isTimeStopped());
+	EXPECT_EQ(view.projected->save(), before);
+	EXPECT_THROW(view.source.sourceLocalEffectProvider(), std::runtime_error);
+	EXPECT_THROW(view.projected->localSpellEffects(), std::runtime_error);
+	StackWithBonuses nested(child.get(), view.projected.get());
+	EXPECT_FALSE(nested.isTimeStopped()); // Actual parent delta capture still grants no foreign provenance.
+	EXPECT_THROW(nested.localSpellEffects(), std::runtime_error);
+	EXPECT_EQ(braced->save(), before);
 }

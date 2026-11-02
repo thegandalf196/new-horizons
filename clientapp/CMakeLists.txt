@@ -93,7 +93,7 @@ if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
 		message(FATAL_ERROR "Cure integration requires the isolated Linux SDL3/OpenGL candidate")
 	endif()
 	add_executable(nhCureClientIntegration EXCLUDE_FROM_ALL
-		StdInc.cpp EntryPoint.cpp
+		${clientapp_SRCS} ${clientapp_HEADERS}
 		../client/tests/CureIntegrationDriver.cpp
 		../client/tests/CureIntegrationDriver.h
 		../client/tests/CureIntegrationBootstrap.cpp
@@ -105,6 +105,35 @@ if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
 	target_include_directories(nhCureClientIntegration PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 	target_link_libraries(nhCureClientIntegration PRIVATE nhCureSimulationFixture vcmiclientcommon ${SDL3_CORE_TARGET})
 	vcmi_set_output_dir(nhCureClientIntegration "")
+endif()
+
+# The same ordinary GameInstance/internal connection as Cure, with its own
+# observation-only simulation OBJECT and unchanged main-loop teardown owner.
+# No default CTest launch: explicit cases require guarded disposable Xvfb ownership.
+option(ENABLE_NH_OWNED_PREPARATION_INTEGRATION "Build genuine owned-preparation client oracles" OFF)
+if(ENABLE_NH_OWNED_PREPARATION_INTEGRATION)
+	if(NOT ENABLE_BATTLE_AI)
+		message(FATAL_ERROR "Owned preparation integration requires the existing BattleAI facade implementation")
+	endif()
+	if(NOT ENABLE_SDL3 OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		message(FATAL_ERROR "Owned preparation integration requires isolated Linux SDL3/OpenGL")
+	endif()
+	add_executable(nhOwnedPreparationClientIntegration EXCLUDE_FROM_ALL
+		${clientapp_SRCS} ${clientapp_HEADERS} ClientIntegrationDriver.h
+		../AI/BattleAI/OwnedPreparationObserver.h
+		../client/tests/owned-preparation-cases.json
+		../client/tests/OwnedPreparationIntegrationDriver.cpp
+		../client/tests/OwnedPreparationIntegrationDriver.h
+		../client/tests/OwnedPreparationController.h
+		../client/tests/OwnedPreparationBootstrap.cpp
+		../client/tests/OwnedPreparationBootstrap.h
+		../client/tests/OwnedPreparationAssertions.h)
+	target_compile_definitions(nhOwnedPreparationClientIntegration PRIVATE
+		NH_OWNED_PREPARATION_INTEGRATION=1 NH_OWNED_PREPARATION_SIMULATION_AUDIT VCMI_SDL3)
+	target_include_directories(nhOwnedPreparationClientIntegration PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+	target_link_libraries(nhOwnedPreparationClientIntegration PRIVATE
+		nhOwnedPreparationSimulationAudit nhOwnedPreparationClientCaptureAudit vcmiclientcommon ${SDL3_CORE_TARGET})
+	vcmi_set_output_dir(nhOwnedPreparationClientIntegration "")
 endif()
 
 if(ENABLE_SINGLE_APP_BUILD AND ENABLE_EDITOR)

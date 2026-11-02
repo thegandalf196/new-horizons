@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../mapObjects/NewHorizonsLevelUpOffer.h"
 #include "../battle/NewHorizonsSylvanTactics.h"
 #include "../battle/NewHorizonsAerialSupremacy.h"
 #include "../battle/NewHorizonsHeroicSpirit.h"
@@ -2120,25 +2121,7 @@ void GameStatePackVisitor::visitHeroMasteryChosen(HeroMasteryChosen & pack)
 
 void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
-	auto * hero = gs.getHero(pack.heroId);
-	assert(hero);
-	if(!pack.perks.empty() || pack.perkOfferSeed != 0)
-	{
-		if(pack.perkOfferSeed < 0 || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
-			throw std::runtime_error("Invalid New Horizons perk offer envelope");
-		const size_t maxSkills = static_cast<size_t>(hero->getPerkState().rules["maxSkillChoices"].Integer());
-		const size_t maxPerks = static_cast<size_t>(hero->getPerkState().rules["maxPerkChoices"].Integer());
-		if(pack.skills.size() > maxSkills || pack.perks.size() > maxPerks)
-			throw std::runtime_error("Oversized New Horizons level-up offer");
-		const auto expected = hero->getPerkState().prepareOffer([hero](const std::string & skillId)
-		{
-			return hero->getPerkSkillRank(skillId);
-		}, static_cast<uint64_t>(pack.perkOfferSeed), hero->getPerkOfferWeightContext());
-		if(expected != pack.perks)
-			throw std::runtime_error("Forged New Horizons level-up perk offer");
-	}
-	hero->captureMasteryEligibility(hero->level + 1, pack.artilleryExpertBeforeGain, pack.logisticsExpertBeforeGain);
-	hero->levelUp(pack.primaryGains);
+	newHorizonsHeroes::applyLevelUpOffer(gs.getHero(pack.heroId), pack);
 }
 
 void GameStatePackVisitor::visitHeroPerkChosen(HeroPerkChosen & pack)

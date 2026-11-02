@@ -243,7 +243,7 @@ public:
 	ELoadMode getLoadMode();
 
 	void visitForLobby(CPackForLobby & lobbyPack);
-	void visitForClient(CPackForClient & clientPack);
+	void visitForClient(CPackForClient & clientPack, ClientPacketReceiveSession * receive = nullptr);
 	/// Opt-in replay storage only; ordinary dispatch remains unchanged.
 	std::unique_ptr<PreparedClientBattleReplay> prepareBattleReplayEntry(BattleUnitsChanged & packet);
 
@@ -256,4 +256,7 @@ public:
 
 	void startLobbyPreview(const std::string & addr, ui16 port, std::function<void()> onJoin);
 	void onLobbyPreviewResponse(LobbyModsCheck & pack);
+private:
+	void waitForOwnedReceiveRetirement();
+
 };

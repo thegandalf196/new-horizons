@@ -15,6 +15,7 @@
 
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/battle/BattleHex.h"
+#include "../../lib/battle/HeroActionAllowanceState.h"
 
 class StackWithBonuses;
 class CBattleInfoCallback;
@@ -31,8 +32,10 @@ class HypotheticSourceBinding final
 	std::shared_ptr<const ProjectedAdjacencySources> adjacency;
 	bool matches(const std::shared_ptr<CBattleInfoCallback> & subject) const;
 public:
+	/// Exact existing subject/control-block identity; not a lifetime lease.
+	bool isCurrentSource(const std::shared_ptr<CBattleInfoCallback> & subject) const { return matches(subject); }
 	HypotheticSourceBinding(const std::shared_ptr<CBattleInfoCallback> & subject,
-		const CBattleInfoCallback & policySource);
+		const CBattleInfoCallback & policySource, bool ownedRecipient = false);
 	std::shared_ptr<InitialExportBattleSubject> resolve(const std::shared_ptr<CBattleInfoCallback> & subject) const;
 	std::shared_ptr<const ProjectedAdjacencySources> adjacencySources(
 		const std::shared_ptr<CBattleInfoCallback> & subject) const
@@ -147,4 +150,19 @@ struct ProjectedOverwatchHit
 	uint32_t shooterId = 0;
 	BattleHex position;
 	int64_t healthLoss = 0;
+};
+
+struct HypotheticProjectedActionReceipt
+{
+	BattleSide side = BattleSide::NONE;
+	HeroActionAllowanceState::Receipt receipt;
+	bool typedLedger = true;
+	uint64_t epoch = 0;
+
+	bool operator==(const HypotheticProjectedActionReceipt &) const = default;
+
+	bool isHeroAction() const
+	{
+		return receipt.allowance == HeroActionAllowanceState::AllowanceKind::HERO;
+	}
 };

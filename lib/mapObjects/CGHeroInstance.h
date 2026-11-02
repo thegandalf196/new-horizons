@@ -746,7 +746,8 @@ public:
 			newHorizonsHeroes::validateWeightedPerkSerialization(perkState.rules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
 		if(h.saving)
 			newHorizonsMagic::validateTravelDayEndSerialization(getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),

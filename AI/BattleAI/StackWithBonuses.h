@@ -20,8 +20,12 @@
 #include "../../lib/bonuses/IBonusBearer.h"
 #include "../../lib/bonuses/RecipientBonusOverlay.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/GraveDustEffectChanges.h"
 
 class HypotheticBattle;
+class OwnedStackQuerySource;
+class OwnedFrameEffectQueries;
+namespace battle { class OwnedUnitBonusFrame; }
 class ProjectedAdjacencyBonuses;
 struct ProjectedAdjacencyQuery;
 class CStack;
@@ -32,6 +36,8 @@ class StackWithBonuses : public battle::CUnitState, public virtual IBonusBearer,
 	public std::enable_shared_from_this<StackWithBonuses>
 {
 	friend class InitialExportBattleSubject;
+	friend class HypotheticBattle;
+	friend class OwnedFrameEffectQueries;
 public:
 	/// Exact original export owner plus uncopied unit-local overlay identities.
 	bool captureMeleeBonusSource(MeleeBonusSource & result) const;
@@ -48,6 +54,11 @@ public:
 	StackWithBonuses(const HypotheticBattle * Owner, const battle::Unit * Stack);
 
 	StackWithBonuses(const HypotheticBattle * Owner, const battle::UnitInfo & info);
+	/// Pure retained owned recipient; this overload is not native source admission.
+	StackWithBonuses(const HypotheticBattle * Owner, std::shared_ptr<battle::OwnedUnitBonusFrame> frame);
+	const battle::UnitCreatureResolver * unitCreatureResolver() const override;
+	std::shared_ptr<battle::Unit> acquire() const override;
+	std::shared_ptr<battle::CUnitState> acquireState() const override;
 
 	virtual ~StackWithBonuses();
 
@@ -80,6 +91,8 @@ public:
 	/// Does not prove preceding reactions or projected typed-hero semantics.
 	bool usesCanonicalMovementQuery(const HypotheticBattle & branch) const;
 	recipientBonusOverlay::View recipientOverlayView() const;
+	/// Read-only closed getter/source proof for one immutable expected-Luck pair.
+	bool hasCanonicalDamageQuerySources(const HypotheticBattle & branch) const;
 	bool captureRecipientOverlayLayers(std::vector<recipientBonusOverlay::Layer> & layers,
 		const CStack * & native) const;
 
@@ -115,6 +128,7 @@ private:
 		bool unstacked, const ProjectedAdjacencyQuery * adjacency) const;
 	bool hasStableInheritedBonusList() const;
 	void replacePhysicalAfflictionMarker(Bonus marker);
+	void applyOwnedBonusVector(const std::vector<Bonus> & records, newHorizonsGraveDust::EffectOperation operation);
 	void removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
 		HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	TConstBonusListPtr mergeBonuses(const CSelector & selector, const std::string & cachingStr,
@@ -124,6 +138,15 @@ private:
 
 	// Value snapshots survive nested models whose bonus queries create fresh pointers.
 	// Include spell/command effects and captured affliction groups; only N_TURNS are aged.
+	std::shared_ptr<const recipientBonusOverlay::ParentClockRecipe> parentClockRecipe;
+	const IBonusBearer * parentClockTerminal = nullptr; // Existing retained ordinary source chain only.
+	std::vector<std::pair<const StackWithBonuses *, int32_t>> parentClockVersions;
+	void captureParentClockRecipe();
+	bool parentClockSourceChanged() const;
+	bool clockRecipeImportNeutral() const;
+	TConstBonusListPtr clockRemovalRecords(TConstBonusListPtr original, const CSelector & selector) const;
+	TConstBonusListPtr frozenInheritedClockQuery(TConstBonusListPtr inherited, const CSelector & selector,
+		bool unstacked, const ProjectedAdjacencyQuery * adjacency) const;
 	std::optional<std::vector<Bonus>> projectedEffects;
 	// Preserve the historical stacked snapshot above while retaining every
 	// source bonus and its shared identity for source-sensitive mechanics in
@@ -143,6 +166,7 @@ private:
 	// New hypothetical units own a detached CStack as their creature/army bonus
 	// provenance. Descendant projections retain the projected bearer that they
 	// wrap so origBearer never points into a destroyed hypothetical battle.
+	std::unique_ptr<OwnedStackQuerySource> ownedQuerySource;
 	std::shared_ptr<CStack> ownedBearer;
 	std::shared_ptr<const StackWithBonuses> projectedBearer;
 	const IBonusBearer * origBearer;

@@ -73,7 +73,7 @@ void OwnedUnitBonusFrame::Data::validate() const
 	}
 	for(const auto index : sourceLocalSpells)
 	{
-		OwnedUnitBonusFrame::validateRecord(*graph, index);
+		graph->validateSourceExport(index);
 		if(graph->payload(index)->source != BonusSource::SPELL_EFFECT)
 			throw std::invalid_argument("Owned spell export handle is not a raw spell record");
 	}
@@ -169,12 +169,17 @@ std::shared_ptr<OwnedUnitBonusFrame> OwnedUnitBonusFrame::fork() const
 	auto result = std::shared_ptr<OwnedUnitBonusFrame>(new OwnedUnitBonusFrame);
 	result->data = std::make_unique<Data>(data->identity, data->creatures, data->graph, data->forms,
 		data->sourceLocalSpells, data->environment, data->peers, data->recipientPosition, data->ledger, std::nullopt, data.get());
+	result->data->pendingPayloads = data->pendingPayloads;
+	result->data->sourceReplacements = data->sourceReplacements;
+	result->data->hasCurrentRoster = data->hasCurrentRoster;
 	*result->data->subject = static_cast<const CUnitState &>(*data->subject); // Canonical value copy; owners remain private/exact.
 	return result;
 }
 bool OwnedUnitBonusFrame::hasSameQueryState(const OwnedUnitBonusFrame & other) const
 {
 	const auto & left = *data; const auto & right = *other.data;
+	// Current opaque-peer recipes/ledgers need their own whole-roster certificate.
+	if(left.hasCurrentRoster || right.hasCurrentRoster) return false;
 	// Opaque peer recipes/scalars are private and copied exactly by fork; legacy external peers are not.
 	if(bool(left.peerQueries) != bool(right.peerQueries)) return false;
 	if(left.peerQueries)
@@ -191,7 +196,8 @@ bool OwnedUnitBonusFrame::hasSameQueryState(const OwnedUnitBonusFrame & other) c
 		return layer.added.empty() && layer.updated.empty() && !layer.stackedSnapshot && !layer.unstackedSnapshot
 			&& !layer.veteranCohesionEarned;
 	};
-	if(!supported(left.ledger) || !supported(right.ledger)) return false;
+	if(!supported(left.ledger) || !supported(right.ledger)
+		|| left.sourceReplacements != right.sourceReplacements) return false;
 	return left.ledger.removed == right.ledger.removed && left.ledger.capturedGroups == right.ledger.capturedGroups
 		&& save() == other.save();
 }

@@ -7,9 +7,11 @@
 #include "StdInc.h"
 #include "BattleBonusAcceptance.h"
 #include "NewHorizonsSylvanTactics.h"
+#include "BattleInfo.h"
 #include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <optional>
+#include <stdexcept>
 
 namespace
 {
@@ -93,6 +95,48 @@ bool accepts(const State & state, const Bonus & bonus, const Metadata & metadata
 }
 }
 
+namespace battle
+{
+// The same canonical accepts() below consumes this immutable private metadata.
+// No native source, Hero, callback, library or callable is retained.
+class OwnedBonusAcceptancePolicy final
+{
+	const BonusAcceptanceFacts::Static metadata;
+	const BonusAcceptanceFacts::Subject subject;
+	OwnedBonusAcceptancePolicy(BonusAcceptanceFacts::Static values, BonusAcceptanceFacts::Subject scope)
+		: metadata(std::move(values)), subject(scope) {}
+	friend BonusAcceptanceFacts captureOwnedBonusAcceptance(const CStack &);
+	friend bool acceptsBattleBonus(const Bonus &, const BonusAcceptanceFacts::Static &, const BonusAcceptanceFacts::State &);
+public:
+	~OwnedBonusAcceptancePolicy() = default;
+};
+BonusAcceptanceFacts captureOwnedBonusAcceptance(const CStack & original)
+{
+	const auto * battle = original.getBattle();
+	if(!battle) throw std::invalid_argument("Owned acceptance requires its captured native battle occurrence");
+	LiveMetadata native{original, std::nullopt};
+	BonusAcceptanceFacts::Static copied;
+	copied.sylvanSkill = native.sylvanSkill();
+	copied.tacticsEnabled = native.tacticsEnabled();
+	// These dependencies are mutually exclusive in the canonical formula.
+	// Typed current ghost/summon/form transitions remain evaluated after capture.
+	if(!copied.tacticsEnabled)
+	{
+		copied.heroPresent = native.heroPresent();
+		if(copied.heroPresent) copied.wildChance = native.wildChance();
+	}
+	copied.turret = native.isTurret(); copied.slot = native.unitSlot();
+	const BonusAcceptanceFacts::Subject subject{battle->getBattleID(), original.unitId(), battle->getActivationSerial()};
+	BonusAcceptanceFacts result;
+	result.metadata.sylvanSkill = copied.sylvanSkill; result.metadata.slot = copied.slot;
+	result.metadata.enginePolicy = std::shared_ptr<const OwnedBonusAcceptancePolicy>(
+		new OwnedBonusAcceptancePolicy(std::move(copied), subject));
+	result.state = {original.hasBattleForm(), original.battleFormCreature(), original.battleFormOriginalCreature(),
+		original.isGhost(), original.summoned, original.natureSummoned, subject};
+	return result;
+}
+}
+
 bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & state, const Bonus & bonus)
 {
 	return accepts(LiveState{state}, bonus, LiveMetadata{original, std::nullopt});
@@ -107,5 +151,11 @@ bool battle::acceptsBattleBonus(const CStack & original, const CUnitState & stat
 bool battle::acceptsBattleBonus(const Bonus & bonus,
 	const BonusAcceptanceFacts::Static & metadata, const BonusAcceptanceFacts::State & state)
 {
+	if(const auto & policy = metadata.enginePolicy)
+	{
+		if(!state.capturedSubject || *state.capturedSubject != policy->subject)
+			throw std::invalid_argument("Owned bonus acceptance source-domain mismatch");
+		return accepts(CopiedState{state}, bonus, CopiedMetadata{policy->metadata});
+	}
 	return accepts(CopiedState{state}, bonus, CopiedMetadata{metadata});
 }

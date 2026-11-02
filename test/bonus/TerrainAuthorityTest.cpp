@@ -9,6 +9,9 @@
 #include "../../server/CGameHandler.h"
 #include "../../lib/bonuses/BonusEvaluationContext.h"
 #include "../../lib/bonuses/Limiters.h"
+#include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
+#include "../../lib/battle/OwnedFrameCaptureFacts.h"
+#include "../../lib/CCreatureHandler.h"
 #include "../../lib/bonuses/ProjectedBonusGraph.h"
 #include "../../lib/bonuses/ProjectedBonusRoster.h"
 #include "../../lib/entities/faction/CFaction.h"
@@ -383,5 +386,64 @@ TEST_F(TerrainAuthorityTest, PlainTownVisitorOnlyExercisesDefinedProviderBranche
 	expectProviderPriority(town->townAndVis);
 	// No native fallback oracle: this plain node has no terrain/faction authority.
 	// Its complete allowed-query domain remains a separate unresolved gate.
+}
+
+TEST_F(TerrainAuthorityTest, OwnedCaptureDoesNotResolveTerrainForAnInapplicableCreatureSource)
+{
+	const auto * creature = CreatureID(0).toCreature();
+	ASSERT_NE(creature, nullptr);
+	auto marker = std::make_shared<Bonus>(input);
+	marker->limiter = std::make_shared<TerrainLimiter>();
+	BonusList raw;
+	raw.push_back(marker);
+	const auto needed = battle::ownedFrameCapture::requirements({raw});
+	ASSERT_TRUE(needed.terrain);
+	ASSERT_TRUE(BonusEvaluationContext(*creature).faction().has_value());
+	EXPECT_EQ(decision(*marker->limiter, *creature), Decision::NOT_APPLICABLE);
+
+	OwnedRecipientBonusGraph::NodeInput source;
+	ASSERT_NO_THROW(source.facts = battle::ownedFrameCapture::facts(*creature, needed, {creature}));
+	EXPECT_FALSE(source.facts.terrainContext);
+	source.local = {marker};
+	const auto owned = OwnedRecipientBonusGraph::fromOwnedInputs({source}, 0);
+	EXPECT_TRUE(owned->query(Selector::type()(BonusType::STACKS_SPEED)).empty());
+}
+
+TEST_F(TerrainAuthorityTest, OwnedTerrainCapturePreservesBoundBattleTerrainIncludingNone)
+{
+	auto * stack = addStack(BattleSide::ATTACKER, CreatureID(0), BattleHex(leftHex), 8);
+	ASSERT_NE(stack, nullptr);
+	ASSERT_EQ(stack->base, nullptr);
+	battle::ownedFrameCapture::Requirements needed;
+	needed.terrain = true;
+	for(const TerrainId terrain : {TerrainId(ETerrainId::SNOW), TerrainId(TerrainId::NONE)})
+	{
+		battle()->terrainType = terrain;
+		const auto facts = battle::ownedFrameCapture::facts(*stack, needed, {stack->unitType()}, stack, stack->unitType());
+		ASSERT_TRUE(facts.terrainContext);
+		EXPECT_EQ(facts.terrainContext->battle, terrain);
+		EXPECT_EQ(facts.terrainContext->legacyFallback, terrain);
+		const BonusEvaluationContext live(*stack), copied(*stack, facts);
+		expectExplicit(copied, terrain, terrain == TerrainId::NONE ? TerrainId(ETerrainId::SNOW) : TerrainId(TerrainId::NONE));
+		EXPECT_EQ(decision(TerrainLimiter(), copied), decision(TerrainLimiter(), live));
+	}
+}
+
+TEST_F(TerrainAuthorityTest, OwnedTerrainCaptureStillRejectsAnApplicableUnboundStack)
+{
+	CStackBasicDescriptor descriptor(CreatureID(0), 8);
+	CStack stack(&descriptor, PlayerColor(0), 1000, BattleSide::ATTACKER);
+	ASSERT_EQ(stack.getBattle(), nullptr);
+	battle::ownedFrameCapture::Requirements needed;
+	needed.terrain = true;
+	try
+	{
+		(void)battle::ownedFrameCapture::facts(stack, needed, {stack.unitType()});
+		FAIL() << "Expected missing bound terrain context";
+	}
+	catch(const std::logic_error & error)
+	{
+		EXPECT_STREQ(error.what(), "Terrain limiter requires an adventure or bound battle terrain");
+	}
 }
 }

@@ -40,6 +40,14 @@ struct DLL_LINKAGE LuckRollRules
 	}
 };
 
+/// Raw configured flags needed by damage-cache admission, without history copies.
+struct DLL_LINKAGE SylvanLuckDamageFlags
+{
+	bool secondChance = false;
+	bool gambler = false;
+	bool chainOfFortune = false;
+};
+
 /// Shared army Luck effects: old battles default to an inert state. Only the
 /// authoritative strike roll changes history; damage targets never roll luck.
 struct DLL_LINKAGE SylvanLuckState
@@ -68,6 +76,10 @@ struct DLL_LINKAGE SylvanLuckState
 	bool chainTriggeredThisRound = false;
 	std::optional<uint32_t> chainSourceUnitId;
 
+	SylvanLuckDamageFlags damageFlags() const
+	{
+		return {secondChance, gambler, chainOfFortune};
+	}
 	bool active() const { return tactics.enabled || serendipity || naturesProvidence || fortunateAim || extendedActive() || perfectMoment || secondChance || gambler || chainOfFortune; }
 	bool gamblerAttackAvailable() const { return gambler && !gamblerAttackUsedThisRound; }
 	bool chainFortuneAvailable(uint32_t unitId) const

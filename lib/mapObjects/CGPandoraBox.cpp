@@ -188,6 +188,12 @@ void CGPandoraBox::battleFinished(IGameEventCallback & gameEvents, const CGHeroI
 
 void CGPandoraBox::blockingDialogAnswered(IGameEventCallback & gameEvents, const CGHeroInstance *hero, int32_t answer) const
 {
+	if(hasPendingRewardSelection())
+	{
+		onBlockingDialogAnswered(gameEvents, hero, answer);
+		return;
+	}
+
 	if(answer)
 	{
 		if(stacksCount() > 0) //if pandora's box is protected by army

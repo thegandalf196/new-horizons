@@ -1325,14 +1325,24 @@ void CGTownInstance::serializeJsonOptions(JsonSerializeFormat & handler)
 					continue;
 
 				if(id == BuildingID::FORT)
+				{
 					hasFort = true;
+					continue;
+				}
 
 				buildingsLIC.all.insert(id.getNum());
 				customBuildings = true;
 			}
 
+			// The default marker and a Fort are the ordinary RMG starting layout.
+			// An authored Fort without that marker remains an explicit custom set.
+			customBuildings = customBuildings || (hasFort && !hasBuilt(BuildingID::DEFAULT));
 			if(customBuildings)
+			{
+				if(hasFort)
+					buildingsLIC.all.insert(static_cast<si32>(BuildingID::FORT));
 				handler.serializeLIC("buildings", buildingsLIC);
+			}
 			else
 				handler.serializeBool("hasFort",hasFort);
 		}

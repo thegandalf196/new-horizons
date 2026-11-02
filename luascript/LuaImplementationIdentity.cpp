@@ -29,7 +29,12 @@ constexpr std::array<unsigned, 5> LIFE_DRAIN_MODULES = {
 // A source change must fail closed until its forecast equivalence is reviewed.
 constexpr std::string_view DAMAGE_SHA256 = "370d909ae20343bdd1eebb6ba34638ac46e10ced627a4bfd26e148f209addb11";
 constexpr std::string_view LIFE_DRAIN_SHA256 = "86b50ae5e382e1c1b9631a8e569ded27dc81ed73995d34eb277c6789b29b0917";
+// Exact shared60/75-helper extraction; historical root retains the same strict imports.
+constexpr std::string_view SHARED_LIFE_DRAIN_SHA256 = "b9e7f1ab9015710353af5bc7a10af1f793fe4dd326c8af61ad828636dc096226";
 constexpr std::string_view TIMED_SHA256 = "94f218fd97f2aa160b27cc06db5d1bc767d46f505b8c17d6faf83b9bf2cbebb4";
+// Exact shared-arithmetic successor; retain the separately reviewed historical pair.
+constexpr std::string_view SHARED_TIMED_SHA256 = "6b899ebf32a6e8594b2a14a87570587d3cc76f1f9fdc884e574cce9cb54b2713";
+constexpr std::string_view SHARED_SORCERY_REVISION_SHA256 = "7d4094b791d4f80be8d6fe4afa7fe3f6a1447bd7cb0b302cd39fa083e801c8b4";
 constexpr std::string_view SORCERY_REVISION_SHA256 = "c38ab2528f067ffb24d77a0c5fa8d084869c719ef97eda9cc00d298803910e81";
 constexpr std::string_view UNIT_EFFECT_SHA256 = "cba59fd9ea526e021104813ec9602fd4d9eb1e232e46a263d894e9417d3e39a0";
 constexpr std::string_view BATTLE_LOG_SHA256 = "a05fb3578afcabce40c2f60bcac17623c7ca3b30a6ae530be2a528b0e4cb8ce7";
@@ -48,6 +53,13 @@ constexpr std::array<ReviewedLayer, 3> TIMED_LAYERS = {{
 	{"spells/patches/timedShield", "1b07ff906170d0263936609b2498e45b4b3f3661632cc4ea0a6fa3999ea4d2d6"},
 	{"spells/patches/timedBind", "227ff8633628dc42f827a1c15a72be9fed770af93c0499adcd85a9c335c6336a"}
 }};
+
+constexpr auto SHARED_TIMED_LAYERS = []
+{
+	auto result = TIMED_LAYERS;
+	result[0].sha256 = SHARED_TIMED_SHA256;
+	return result;
+}();
 
 constexpr ReviewedLayer HISTORICAL_CALCULATOR_ROOT = {
 	"damage/damageCalculator", "403340e1d0794736971478d9e0cc58d2f3efa4e8056cfcd3b138406012de2058"};
@@ -80,6 +92,16 @@ constexpr auto PHYSICAL_PROTECTION_CALCULATOR_LAYERS = []
 	result[1] = {"damage/physicalProtection", "f8821b7c9ae90ad1a95b7cf048cbce23fc3180f1ccc8ca4999a9cb31204d318c"};
 	for(size_t index = 0; index < CALCULATOR_PATCHES.size(); ++index)
 		result[index + 2] = CALCULATOR_PATCHES[index];
+	return result;
+}();
+
+// Exact captured Point-Blank precedence successor; keep the historical chain above.
+constexpr ReviewedLayer POINT_BLANK_CALCULATOR_ROOT = {
+	"damage/damageCalculator", "520fd7833953d9dd40bfa8727b0e408765d23eac813c9c0128a42eb6956b3eb3"};
+constexpr auto POINT_BLANK_CALCULATOR_LAYERS = []
+{
+	auto result = PHYSICAL_PROTECTION_CALCULATOR_LAYERS;
+	result[0] = POINT_BLANK_CALCULATOR_ROOT;
 	return result;
 }();
 
@@ -131,10 +153,13 @@ LuaImplementationIdentity::LuaImplementationIdentity(std::string_view rootSource
 	const auto rootDigest = digest(rootSource);
 	if(rootDigest == DAMAGE_SHA256)
 		implementation = Implementation::CANONICAL_DAMAGE;
-	else if(rootDigest == LIFE_DRAIN_SHA256)
+	else if(rootDigest == LIFE_DRAIN_SHA256 || rootDigest == SHARED_LIFE_DRAIN_SHA256)
 		implementation = Implementation::CANONICAL_LIFE_DRAIN;
-	else if(rootDigest == TIMED_SHA256)
+	else if(rootDigest == TIMED_SHA256 || rootDigest == SHARED_TIMED_SHA256)
+	{
 		implementation = Implementation::CANONICAL_TIMED;
+		sharedArithmeticTimed = rootDigest == SHARED_TIMED_SHA256;
+	}
 	else if(rootDigest == FOCUS_MAGIC_SHA256)
 		combatEventImplementation = CombatEventForecastImplementation::CANONICAL_FOCUS_MAGIC;
 	else if(rootDigest == HEX_OF_PAIN_SHA256)
@@ -151,8 +176,14 @@ LuaImplementationIdentity LuaImplementationIdentity::fromScript(const LuaScriptI
 	// remain unknown even when a failed load leaves canonical-looking layers.
 	if(matchesReviewedLayers(script, TIMED_LAYERS))
 		result.implementation = Implementation::CANONICAL_TIMED;
+	else if(matchesReviewedLayers(script, SHARED_TIMED_LAYERS))
+	{
+		result.implementation = Implementation::CANONICAL_TIMED;
+		result.sharedArithmeticTimed = true;
+	}
 	else if(matchesReviewedLayers(script, CALCULATOR_LAYERS)
-		|| matchesReviewedLayers(script, PHYSICAL_PROTECTION_CALCULATOR_LAYERS))
+		|| matchesReviewedLayers(script, PHYSICAL_PROTECTION_CALCULATOR_LAYERS)
+		|| matchesReviewedLayers(script, POINT_BLANK_CALCULATOR_LAYERS))
 		result.canonicalDamageCalculator = true;
 	return result;
 }
@@ -225,7 +256,8 @@ void LuaImplementationIdentity::moduleLoaded(std::string_view name, std::string_
 	}
 	const auto expected = flag == UNIT_EFFECT ? UNIT_EFFECT_SHA256
 		: flag == COMBAT_SCRIPT ? COMBAT_SCRIPT_SHA256
-		: flag == SORCERY_REVISION ? SORCERY_REVISION_SHA256 : BATTLE_LOG_SHA256;
+		: flag == SORCERY_REVISION ? (sharedArithmeticTimed
+			? SHARED_SORCERY_REVISION_SHA256 : SORCERY_REVISION_SHA256) : BATTLE_LOG_SHA256;
 	if(digest(source) != expected)
 		invalidate();
 	loaded |= flag;

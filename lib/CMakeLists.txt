@@ -64,6 +64,8 @@ set(lib_MAIN_SRCS
 	battle/BattleAction.cpp
 	battle/BattleAttackInfo.cpp
 	battle/DamageFinalization.cpp
+	battle/DamagePayloadPreparation.cpp
+	battle/DamageOrderPayload.cpp
 	battle/DamageCalculationTiming.cpp
 	battle/BattleHex.cpp
 	battle/BattleHexArray.cpp
@@ -316,6 +318,34 @@ set(lib_MAIN_SRCS
 		battle/OwnedUnitBonusFrame.h
 		battle/OwnedUnitBonusFrameData.h
 		battle/OwnedUnitBonusFrameBatch.h
+	battle/OwnedBattleFrameBatch.h
+	battle/OwnedBattleFrameSubject.cpp
+	battle/OwnedFrameBranchQueries.cpp
+	battle/OwnedFrameBranchQueries.h
+	battle/BattleObstacleVisibility.cpp
+	battle/OwnedBattleFrameSubject.h
+	battle/OwnedBattleFrameRefusals.h
+	battle/OwnedBattleFrameCapture.cpp
+	battle/OwnedFrameBatchBuilder.cpp
+	battle/OwnedFrameBatchBuilder.h
+	battle/OwnedFrameCaptureEnvironment.cpp
+	battle/OwnedFrameCaptureEnvironment.h
+	battle/OwnedFrameCaptureFacts.cpp
+	battle/OwnedFrameCaptureFacts.h
+	battle/OwnedFrameCaptureRequirements.cpp
+	battle/OwnedFrameRawCapture.cpp
+	battle/OwnedFrameRawCapture.h
+	battle/OwnedFrameRelationCapture.cpp
+	battle/OwnedFrameRelationCapture.h
+	battle/OwnedFrameTopology.cpp
+	battle/OwnedFrameTopology.h
+	battle/OwnedLegacyTimeStopCapture.cpp
+	battle/OwnedLegacyTimeStopCapture.h
+	battle/OwnedUnitEnvironmentPolicy.cpp
+	battle/OwnedUnitEnvironmentPolicy.h
+	battle/UnitTimeStopQuery.cpp
+	bonuses/OwnedSourceRelationReplay.cpp
+	bonuses/OwnedSourceRelationReplay.h
 		battle/StackFormSourceIdentity.h
 		battle/ScopedStackEffectQueries.h
 		battle/ScopedStackEffectQueryData.h
@@ -516,10 +546,12 @@ set(lib_MAIN_SRCS
 	mapObjects/CGDwelling.cpp
 	mapObjects/DwellingWeeklyGrowth.cpp
 	mapObjects/DwellingGuards.cpp
+	mapObjects/NewHorizonsNeutralCalibration.cpp
 	mapObjects/NewHorizonsNeutralArmies.cpp
 	gameState/NeutralArmyStartOption.cpp
 	mapObjects/NewHorizonsRecruitmentGrowth.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/NewHorizonsLevelUpOffer.cpp
 	mapObjects/NewHorizonsHeroUpgrade.cpp
 	mapObjects/HeroManaRegeneration.cpp
 	mapObjects/HeroScholar.cpp
@@ -1015,6 +1047,7 @@ set(lib_MAIN_HEADERS
 	battle/CurrentFireBasis.h
 	battle/CBattleInfoCallback.h
 	battle/DamageCalculationTiming.h
+	battle/DamagePayloadPreparation.h
 	battle/CBattleInfoEssentials.h
 	battle/VisibleHeroPolicy.h
 	battle/CObstacleInstance.h
@@ -1271,9 +1304,11 @@ set(lib_MAIN_HEADERS
 
 	mapObjects/CGCreature.h
 	mapObjects/CGDwelling.h
+	mapObjects/NewHorizonsNeutralCalibration.h
 	mapObjects/NewHorizonsNeutralArmies.h
 	mapObjects/NewHorizonsRecruitmentGrowth.h
 	mapObjects/CGHeroInstance.h
+	mapObjects/NewHorizonsLevelUpOffer.h
 	mapObjects/NewHorizonsGlyphsOfFear.h
 	mapObjects/CGMarket.h
 	mapObjects/CGObjectInstance.h

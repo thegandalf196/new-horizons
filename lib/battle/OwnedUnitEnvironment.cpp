@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "OwnedUnitEnvironment.h"
+#include "OwnedUnitEnvironmentPolicy.h"
 #include "UnitOwnershipQuery.h"
 #include "UnitMagicResistanceQuery.h"
 #include "CUnitState.h"
@@ -42,15 +43,16 @@ class OwnedUnitEnvironment::Data final : public UnitEnvironmentContext, public U
 	std::vector<std::shared_ptr<const Unit>> units;
 	const Unit * derived; // Borrowed ONLY by the retaining Scratch loan; never a native object.
 	Facts facts;
+	std::optional<BattleSideArray<ProjectedUnitEnvironmentState::SideState>> policyStates;
 	ProjectedBonusRoster roster;
 	Resistance resistance;
 	const ProjectedUnitEnvironmentState::SideInputs & inputs(BattleSide side) const
 	{
-		if(!facts.inputs.at(side)) throw std::logic_error("Owned side policy facts are unknown");
-		return *facts.inputs.at(side);
+		return OwnedUnitEnvironment::capturedInputs(facts, side);
 	}
 	const ProjectedUnitEnvironmentState::SideState & sideState(BattleSide side) const
 	{
+		if(policyStates) return policyStates->at(side);
 		if(!facts.states.at(side)) throw std::logic_error("Owned side state facts are unknown");
 		return *facts.states.at(side);
 	}
@@ -67,15 +69,27 @@ public:
 		resistance(*this), queries(*this)
 	{
 		(void)rules(facts); // Retain the original required-rules construction admission.
+		if(facts.enginePolicy) policyStates = OwnedUnitEnvironment::capturedStates(facts);
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			if(!facts.colors.at(side) || !knownAffiliation(*facts.colors.at(side))
-				|| (facts.inputs.at(side) && facts.inputs.at(side)->color != *facts.colors.at(side)))
+				|| (facts.inputs.at(side) && facts.inputs.at(side)->color != *facts.colors.at(side))
+				|| (facts.enginePolicy && inputs(side).color != *facts.colors.at(side)))
 				throw std::invalid_argument("Owned side affiliation facts are inconsistent");
 	}
 	ProjectedUnitEnvironmentState::SideState & state(BattleSide side)
 	{
+		if(facts.enginePolicy) throw std::logic_error("Opaque production environment has no side-state export");
 		if(!facts.states.at(side)) throw std::logic_error("Owned side state facts are unknown");
 		return *facts.states.at(side);
+	}
+	bool legacyTimeStopMatch(const Unit & unit, SpellID spell) const
+	{
+		requireSubject(unit);
+		if(!facts.legacyTimeStop) throw std::logic_error("Owned legacy Time Stop identity domain is unbound");
+		const auto found = facts.legacyTimeStop->classified.find(spell);
+		if(found == facts.legacyTimeStop->classified.end())
+			throw std::invalid_argument("Spell identity is outside the captured owned clock domain");
+		return found->second;
 	}
 	std::pair<int32_t, int32_t> legacyMoraleLimits() const
 	{
@@ -127,6 +141,17 @@ public:
 	}
 	const JsonNode & magicRules() const override { return rules(facts); }
 };
+const ProjectedUnitEnvironmentState::SideInputs & OwnedUnitEnvironment::capturedInputs(const Facts & facts, BattleSide side)
+{
+	if(facts.enginePolicy) return facts.enginePolicy->inputs.at(side);
+	if(!facts.inputs.at(side)) throw std::logic_error("Owned side policy facts are unknown");
+	return *facts.inputs.at(side);
+}
+const BattleSideArray<ProjectedUnitEnvironmentState::SideState> & OwnedUnitEnvironment::capturedStates(const Facts & facts)
+{
+	if(!facts.enginePolicy) throw std::logic_error("Missing opaque engine environment owner");
+	return facts.enginePolicy->states;
+}
 OwnedUnitEnvironment::OwnedUnitEnvironment(std::vector<std::shared_ptr<const Unit>> units, Facts facts)
 	: OwnedUnitEnvironment(std::move(units), std::move(facts), nullptr) {}
 OwnedUnitEnvironment::OwnedUnitEnvironment(std::vector<std::shared_ptr<const Unit>> units, Facts facts, const Unit * derived)
@@ -148,6 +173,11 @@ std::unique_ptr<OwnedUnitEnvironment> OwnedUnitEnvironment::forDerivedSubject(
 Units OwnedUnitEnvironment::adjacentGeometry(const Unit & geometry) const { return adjacentInRoster(data->roster, geometry); }
 OwnedUnitEnvironment::~OwnedUnitEnvironment() = default;
 ProjectedUnitEnvironmentState::SideState & OwnedUnitEnvironment::state(BattleSide side) { return data->state(side); }
+std::optional<bool> OwnedUnitEnvironment::unitLegacyTimeStopSpellMatch(const Unit * unit, SpellID spell) const
+{
+	if(!unit) throw std::invalid_argument("Owned legacy clock classifier requires its actual subject");
+	return data->legacyTimeStopMatch(*unit, spell);
+}
 bool OwnedUnitEnvironment::unitHasAmmoCart(const Unit * unit) const { return data->queries.unitHasAmmoCart(unit); }
 PlayerColor OwnedUnitEnvironment::unitEffectiveOwner(const Unit * unit) const { return data->queries.unitEffectiveOwner(unit); }
 std::optional<int> OwnedUnitEnvironment::unitMagicResistance(const Unit * unit) const { return data->queries.unitMagicResistance(unit); }

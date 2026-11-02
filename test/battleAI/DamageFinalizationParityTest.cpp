@@ -5,6 +5,10 @@
  */
 #include "StdInc.h"
 #include "ProjectedTargetHitFixture.h"
+#include "../../AI/BattleAI/AttackPossibility.h"
+#include "../../AI/BattleAI/DamageCacheAdmission.h"
+#include "../../lib/bonuses/Limiters.h"
+#include "../../lib/battle/DamageCalculationTiming.h"
 #include "../../AI/BattleAI/InitialExportBattleSubject.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameLibrary.h"
@@ -513,4 +517,427 @@ TEST_F(DamageFinalizationParityTest, RawLuckScalarAndFullGetterFallbackKeepDamag
 			EXPECT_EQ(nativeSnapshot(), native);
 			EXPECT_EQ(projectedSnapshot(), projected);
 		}
+}
+
+// Pair-local prefix characterization uses the existing real-Lua recorder and
+// complete payload/state/RNG oracles above. It also runs before production reuse.
+class DamagePrefixReuseParityTest : public DamageFinalizationParityTest
+{
+protected:
+	bool legacyElvenPrecision = false;
+	bool finalLuckPolicy = true;
+	void mapLoaded(CMap * loaded) override
+	{
+		DamageFinalizationParityTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+		if(legacyElvenPrecision)
+		{
+			JsonNode registry(JsonPath::builtin("config/newHorizonsPerks"));
+			registry.Struct().erase("sylvanTacticsPolicy");
+			registry.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, registry);
+		}
+	}
+	void selectLuckPerk(const char * skill, const char * perk)
+	{
+		const int decoded = SecondarySkill::decode(skill);
+		ASSERT_GE(decoded, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->applyPerkSelection({skill, perk});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(skill, perk));
+	}
+
+	BattleAttackInfo luckAttack(int luck, bool zeroChance = false, bool shooting = false, bool rebuild = true)
+	{
+		auto * source = shooting ? addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(94), 20) : braced;
+		battle()->luckRollRules.goodChance = {zeroChance ? 0 : 25, zeroChance ? 0 : 50, zeroChance ? 0 : 75};
+		battle()->luckRollRules.badChance = {zeroChance ? 0 : 25, zeroChance ? 0 : 50, zeroChance ? 0 : 75};
+		battle()->luckRollRules.diceSize = 100;
+		battle()->luckRollRules.affectsAllTargets = true;
+		battle()->luckRollRules.finalDirectPhysicalMultiplier = finalLuckPolicy;
+		if(rebuild) resetChild(); // Luck policy is captured by the real HB constructor.
+		auto actor = child->getForUpdate(source->unitId());
+		auto target = child->getForUpdate(incoming->unitId());
+		actor->removeUnitBonus(Selector::type()(BonusType::LUCK));
+		actor->addUnitBonus(std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
+			BonusType::LUCK, BonusSource::OTHER, luck, BonusSourceID())});
+		for(const auto & unit : battle()->stacks)
+			(void)unit->counterAttacks.available();
+		return BattleAttackInfo(actor.get(), target.get(), 0, shooting);
+	}
+	void emitPair(const RecordingCalculator & recorder, int64_t value)
+	{
+		RecordProperty("expectedLuckDamage", std::to_string(value));
+		std::string trace;
+		for(auto payload : recorder.payloads)
+		{
+			PayloadTrace fields;
+			payload.serializeScript(fields);
+			trace += fields.text + "--next-payload--\n";
+		}
+		RecordProperty("completeNativePair", trace);
+	}
+};
+
+TEST_F(DamagePrefixReuseParityTest, ZeroChanceStillRunsBothOrderedCanonicalCalculations)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1, true);
+	ASSERT_GT(child->battleGetAttackLuck(attack.attacker, attack.defender, false), 0);
+	ASSERT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	ASSERT_EQ(child->getLuckRollRules().goodChance.front(), 0);
+	const auto direct = child->calculateDmgRange(attack).damage;
+	ScopedCalculatorRegistry registry;
+	auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary());
+	registry.install(recorder);
+	const auto native = nativeSnapshot();
+	const auto projected = projectedSnapshot();
+	const auto value = child->battleExpectedLuckDamage(attack);
+	EXPECT_EQ(value, direct.min + (direct.max - direct.min) / 2);
+	ASSERT_EQ(recorder->events, "CC");
+	ASSERT_EQ(recorder->payloads.size(), 2u);
+	EXPECT_FALSE(recorder->payloads[0].luckyStrike);
+	EXPECT_TRUE(recorder->payloads[1].luckyStrike);
+	EXPECT_EQ(nativeSnapshot(), native);
+	EXPECT_EQ(projectedSnapshot(), projected);
+	EXPECT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	emitPair(*recorder, value);
+}
+
+TEST_F(DamagePrefixReuseParityTest, NormalLuckyAndUnluckyKeepTheirEntirePayloadAndNativeState)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	ScopedCalculatorRegistry registry;
+	auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary());
+	registry.install(recorder);
+	for(const auto & flags : std::array<std::pair<bool, bool>, 3>{{{false, false}, {true, false}, {false, true}}})
+	{
+		auto exact = attack;
+		exact.luckyStrike = flags.first;
+		exact.unluckyStrike = flags.second;
+		ASSERT_NO_FATAL_FAILURE(parity(*child, exact, *recorder));
+	}
+	EXPECT_EQ(recorder->events, "CCCCCC");
+	emitPair(*recorder, child->battleExpectedLuckDamage(attack));
+}
+
+class RepeatedNativeDamageParityTest : public DamagePrefixReuseParityTest
+{
+protected:
+	void compareFullPair(const BattleAttackInfo & attack)
+	{
+		ASSERT_NE(child->battleGetFightingHero(BattleSide::ATTACKER), nullptr);
+		ASSERT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+		const auto projected = projectedSnapshot(); // Materialize canonical branch views before the immutable batch.
+		ScopedCalculatorRegistry registry;
+		auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary());
+		registry.install(recorder);
+		const auto native = nativeSnapshot();
+		const auto expected = child->battleExpectedLuckDamage(attack);
+		ASSERT_EQ(recorder->payloads.size(), 2u);
+		damageCalculationTiming::Sample timing;
+		int64_t actual = 0;
+		{
+			damageCalculationTiming::Binding bound(&timing);
+			actual = child->battleExpectedLuckDamage(attack);
+		}
+		ASSERT_EQ(recorder->payloads.size(), 4u);
+		EXPECT_EQ(actual, expected);
+		expectPayload(recorder->payloads[0], recorder->payloads[2]);
+		expectPayload(recorder->payloads[1], recorder->payloads[3]);
+		EXPECT_EQ(recorder->events, "CCCC");
+		EXPECT_EQ(timing.nativeAttackContext.calls, 2u);
+		EXPECT_EQ(timing.nativePhysicalModifiers.calls, 2u);
+		EXPECT_EQ(timing.nativeHeroOrders.calls, 2u);
+		EXPECT_EQ(timing.nativeFinalization.calls, 2u);
+		EXPECT_EQ(timing.bonusPreparation.calls, 2u);
+		EXPECT_EQ(timing.luaCall.calls, 2u);
+		EXPECT_EQ(nativeSnapshot(), native);
+		EXPECT_EQ(projectedSnapshot(), projected);
+		EXPECT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+		emitPair(*recorder, actual);
+	}
+};
+
+TEST_F(RepeatedNativeDamageParityTest, PlayerScopedHeroPairKeepsBothFullNativePayloads)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	ASSERT_NO_FATAL_FAILURE(compareFullPair(attack));
+}
+
+TEST_F(DamagePrefixReuseParityTest, OrdinaryDamageNeverNeedsUnknownOrThrowingScriptIdentity)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	(void)projectedSnapshot();
+	const auto native = nativeSnapshot();
+	const auto projected = projectedSnapshot();
+	for(const auto capability : {Capability::UNKNOWN, Capability::QUERY_FAILURE, Capability::CANONICAL})
+	{
+		ScopedCalculatorRegistry registry;
+		auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary(), capability);
+		registry.install(recorder);
+		const auto expected = child->battleExpectedLuckDamage(attack);
+		damageCalculationTiming::Sample timing;
+		{
+			damageCalculationTiming::Binding bound(&timing);
+			EXPECT_EQ(child->battleExpectedLuckDamage(attack), expected);
+		}
+		ASSERT_EQ(recorder->payloads.size(), 4u);
+		expectPayload(recorder->payloads[0], recorder->payloads[2]);
+		expectPayload(recorder->payloads[1], recorder->payloads[3]);
+		EXPECT_EQ(recorder->events, "CCCC");
+		EXPECT_EQ(timing.nativeAttackContext.calls, 2u);
+		EXPECT_EQ(timing.luaCall.calls, 2u);
+	}
+	EXPECT_EQ(nativeSnapshot(), native);
+	EXPECT_EQ(projectedSnapshot(), projected);
+}
+
+TEST_F(DamagePrefixReuseParityTest, CustomCallbackKeepsOrdinaryThrowingHeroQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto proxy = std::make_shared<FullLuckPolicyProxy>(live);
+	proxy->rules = battle()->luckRollRules;
+	child = std::make_shared<HypotheticBattle>(environment.get(), proxy);
+	const auto attack = luckAttack(1, false, false, false);
+	(void)projectedSnapshot();
+	proxy->fullQueries = 0;
+	proxy->heroQueries = 0;
+	EXPECT_EQ(proxy->fullQueries, 0);
+	EXPECT_EQ(proxy->heroQueries, 0);
+	proxy->throwOnHeroQuery = true;
+	EXPECT_THROW(child->battleExpectedLuckDamage(attack), std::runtime_error);
+	EXPECT_GT(proxy->heroQueries, 0);
+}
+
+TEST_F(DamagePrefixReuseParityTest, ReboundEnvironmentRefusesCanonicalUnitQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	(void)projectedSnapshot();
+	auto actor = child->getForUpdate(attack.attacker->unitId());
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), live);
+	actor->bindStateEnvironment(sibling.get());
+	const auto restore = vstd::makeScopeGuard([&]() { actor->bindStateEnvironment(child.get()); });
+	EXPECT_FALSE(actor->usesStateEnvironment(*child));
+	EXPECT_FALSE(actor->hasCanonicalDamageQuerySources(*child));
+}
+
+TEST_F(DamagePrefixReuseParityTest, CurrentLuckyAimKeepsItsLuckyOnlyFinalization)
+{
+	legacyElvenPrecision = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(selectLuckPerk("new-horizons:luck", "new-horizons:luck.luckyAim"));
+	const auto attack = luckAttack(1, false, true);
+	ScopedCalculatorRegistry registry;
+	auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary());
+	registry.install(recorder);
+	const auto value = child->battleExpectedLuckDamage(attack);
+	ASSERT_EQ(recorder->payloads.size(), 2u);
+	EXPECT_EQ(recorder->payloads[0].luckyRangedDefenseIgnorePercent, 0);
+	EXPECT_EQ(recorder->payloads[1].luckyRangedDefenseIgnorePercent, 25);
+	emitPair(*recorder, value);
+}
+
+TEST_F(DamagePrefixReuseParityTest, HistoricalElvenPrecisionKeepsItsLuckyOnlyFinalization)
+{
+	legacyElvenPrecision = true;
+	finalLuckPolicy = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(selectLuckPerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"));
+	const auto attack = luckAttack(1, false, true);
+	ScopedCalculatorRegistry registry;
+	auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary());
+	registry.install(recorder);
+	const auto value = child->battleExpectedLuckDamage(attack);
+	ASSERT_EQ(recorder->payloads.size(), 2u);
+	EXPECT_EQ(recorder->payloads[0].luckyRangedDefenseIgnorePercent, 0);
+	EXPECT_EQ(recorder->payloads[1].luckyRangedDefenseIgnorePercent, 25);
+	emitPair(*recorder, value);
+}
+
+TEST_F(RepeatedNativeDamageParityTest, UnluckyPairKeepsAllPayloadBitsAndRounding)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(-1);
+	ASSERT_NO_FATAL_FAILURE(compareFullPair(attack));
+}
+
+TEST_F(RepeatedNativeDamageParityTest, ZeroChancePairStillRunsBothFullNativeCalculations)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1, true);
+	ASSERT_NO_FATAL_FAILURE(compareFullPair(attack));
+}
+
+TEST_F(RepeatedNativeDamageParityTest, LuckyAimPairReexecutesFlagDependentFinalizer)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(selectLuckPerk("new-horizons:luck", "new-horizons:luck.luckyAim"));
+	const auto attack = luckAttack(1, false, true);
+	ASSERT_NO_FATAL_FAILURE(compareFullPair(attack));
+}
+
+TEST_F(RepeatedNativeDamageParityTest, HistoricalElvenPairReexecutesFlagDependentFinalizer)
+{
+	legacyElvenPrecision = true;
+	finalLuckPolicy = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(selectLuckPerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"));
+	const auto attack = luckAttack(1, false, true);
+	ASSERT_NO_FATAL_FAILURE(compareFullPair(attack));
+}
+
+namespace
+{
+class PrefixForeignLimiter final : public ILimiter
+{
+public:
+	mutable unsigned calls = 0;
+	EDecision limit(const BonusLimitationContext &) const override
+	{
+		++calls;
+		throw std::runtime_error("foreign prefix limiter query");
+	}
+};
+class PrefixForeignDamageCallback final : public CPlayerBattleCallback
+{
+public:
+	mutable unsigned damageCalls = 0;
+	using CPlayerBattleCallback::CPlayerBattleCallback;
+	bool hasCanonicalDamageQuerySources(size_t remaining, const BattleInfo * expected) const override
+	{
+		(void)remaining;
+		(void)expected;
+		return true;
+	}
+	DamageEstimation calculateDmgRange(const BattleAttackInfo &) const override
+	{
+		++damageCalls;
+		DamageEstimation result;
+		result.damage = {40, 42};
+		return result;
+	}
+};
+class PrefixForeignGameState final : public CGameState {};
+class PrefixForeignBattle final : public BattleInfo
+{
+public:
+	PrefixForeignBattle() : BattleInfo(nullptr) {}
+};
+}
+
+TEST_F(DamagePrefixReuseParityTest, ForeignModifierPreservesOrdinaryThrowingQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	(void)projectedSnapshot();
+	auto actor = child->getForUpdate(attack.attacker->unitId());
+	auto limiter = std::make_shared<PrefixForeignLimiter>();
+	Bonus bonus(BonusDuration::ONE_BATTLE, BonusType::CREATURE_DAMAGE, BonusSource::OTHER, 1, BonusSourceID());
+	bonus.limiter = limiter;
+	ASSERT_EQ(actor->unitId(), braced->unitId());
+	// Local projected additions intentionally do not evaluate limiters. Attach
+	// to the inherited native source after snapshots, via its invalidating API.
+	braced->addNewBonus(std::make_shared<Bonus>(bonus));
+	EXPECT_EQ(limiter->calls, 0u);
+	EXPECT_THROW(child->battleExpectedLuckDamage(attack), std::runtime_error);
+	const auto once = limiter->calls;
+	EXPECT_GT(once, 0u);
+	EXPECT_THROW(child->battleExpectedLuckDamage(attack), std::runtime_error);
+	EXPECT_EQ(limiter->calls, once + 1);
+}
+
+TEST_F(DamagePrefixReuseParityTest, ForeignDamageOverrideAndBattleSubclassKeepOrdinaryVirtualDispatch)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	PrefixForeignDamageCallback callback(battle(), PlayerColor(0));
+	EXPECT_TRUE(callback.hasCanonicalDamageQuerySources(512, nullptr));
+	EXPECT_EQ(callback.battleExpectedLuckDamage(attack), 41);
+	EXPECT_EQ(callback.damageCalls, 2u);
+	PrefixForeignBattle foreign;
+	CPlayerBattleCallback leaf(&foreign, PlayerColor(0));
+	EXPECT_FALSE(leaf.hasCanonicalDamageQuerySources());
+}
+
+TEST_F(DamagePrefixReuseParityTest, NativeEnvironmentRebindingRefusesCanonicalUnitQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	(void)projectedSnapshot();
+	ASSERT_TRUE(braced->usesStateEnvironment(*braced));
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), live);
+	braced->bindStateEnvironment(sibling.get());
+	const auto restore = vstd::makeScopeGuard([&]() { braced->bindStateEnvironment(braced); });
+	EXPECT_FALSE(child->getForUpdate(attack.attacker->unitId())->hasCanonicalDamageQuerySources(*child));
+}
+
+TEST_F(DamagePrefixReuseParityTest, ReboundCanonicalSubjectRefusesCanonicalQueries)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	(void)projectedSnapshot();
+	auto newView = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto replacement = std::make_shared<HypotheticBattle>(environment.get(), newView);
+	static_cast<BattleProxy &>(*child) = static_cast<const BattleProxy &>(*replacement);
+	EXPECT_FALSE(child->hasCanonicalDamageQuerySources());
+}
+
+TEST_F(DamagePrefixReuseParityTest, NoSecondLuckCalculationRunsOneFullNativeCalculation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(0);
+	auto actor = child->getForUpdate(attack.attacker->unitId());
+	actor->addUnitBonus(std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
+		BonusType::NO_LUCK, BonusSource::OTHER, 1, BonusSourceID())});
+	ASSERT_EQ(child->battleGetAttackLuck(actor.get(), attack.defender, false), 0);
+	ScopedCalculatorRegistry registry;
+	auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary(), Capability::QUERY_FAILURE);
+	registry.install(recorder);
+	damageCalculationTiming::Sample timing;
+	{
+		damageCalculationTiming::Binding bound(&timing);
+		(void)child->battleExpectedLuckDamage(attack);
+	}
+	EXPECT_EQ(recorder->events, "C");
+	EXPECT_EQ(timing.nativeAttackContext.calls, 1u);
+	EXPECT_EQ(timing.nativeFinalization.calls, 1u);
+	EXPECT_EQ(timing.luaCall.calls, 1u);
+}
+
+TEST_F(DamagePrefixReuseParityTest, ForeignGameContextCannotHideBehindExactNativeBattleType)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	PrefixForeignGameState foreign;
+	auto * original = battle()->cb;
+	battle()->cb = &foreign;
+	const auto restore = vstd::makeScopeGuard([&]() { battle()->cb = original; });
+	EXPECT_FALSE(child->hasCanonicalDamageQuerySources());
+}
+
+TEST_F(DamagePrefixReuseParityTest, NonHypotheticMainCacheKeepsCustomVirtualDamageFallback)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto attack = luckAttack(1);
+	auto callback = std::make_shared<PrefixForeignDamageCallback>(battle(), PlayerColor(0));
+	ASSERT_TRUE(callback->hasCanonicalDamageQuerySources(512, nullptr));
+	const CBattleInfoCallback * callbackBase = callback.get();
+	ASSERT_EQ(dynamic_cast<const HypotheticBattle *>(callbackBase), nullptr);
+	const auto native = nativeSnapshot();
+	const auto projected = projectedSnapshot();
+	DamageCache cache;
+	DamageCacheAdmission admission(*attack.attacker, *callback);
+	ASSERT_TRUE(admission.matches(*attack.attacker, *callback));
+	DamageCacheProbeTiming timing;
+	EXPECT_EQ(cache.getDamage(attack.attacker, attack.defender, callback, &timing, &admission), 41);
+	EXPECT_EQ(callback->damageCalls, 2u);
+	EXPECT_EQ(timing.dynamicBypasses, 1u);
+	EXPECT_EQ(nativeSnapshot(), native);
+	EXPECT_EQ(projectedSnapshot(), projected);
 }

@@ -131,6 +131,7 @@ void CClient::loadGame(std::shared_ptr<CGameState> initializedGameState)
 
 void CClient::endNetwork()
 {
+	cancelOwnedRecipientPreparation("client network teardown");
 	GAME->map().endNetwork();
 
 	if (CPlayerInterface::battleInt)
@@ -146,6 +147,7 @@ void CClient::endNetwork()
 
 void CClient::finishGameplay()
 {
+	cancelOwnedRecipientPreparation("client gameplay teardown");
 	waitingRequest.requestTermination();
 
 	//suggest interfaces to finish their stuff (AI should interrupt any bg working threads)
@@ -355,24 +357,6 @@ void CClient::installNewBattleInterface(std::shared_ptr<CBattleGameInterface> ba
 	}
 }
 
-void CClient::handlePack(CPackForClient & pack)
-{
-	PerfTrace::ApplyScope trace(pack);
-	ApplyClientNetPackVisitor afterVisitor(*this, gameState());
-	ApplyFirstClientNetPackVisitor beforeVisitor(*this, gameState());
-
-	pack.visit(beforeVisitor);
-	logNetwork->trace("\tMade first apply on cl: %s", typeid(pack).name());
-	{
-		std::unique_lock lock(CGameState::mutex);
-		gameState().apply(pack);
-	}
-	trace.stateApplied();
-	logNetwork->trace("\tApplied on gs: %s", typeid(pack).name());
-	pack.visit(afterVisitor);
-	logNetwork->trace("\tMade second apply on cl: %s", typeid(pack).name());
-}
-
 void CClient::applyPackSilently(CPackForClient & pack)
 {
 	std::unique_lock lock(CGameState::mutex);
@@ -573,35 +557,6 @@ void CClient::battleDeploymentPhaseChanged(const BattleID & battleID)
 		CPlayerInterface::battleInt->deploymentPhaseChanged();
 }
 
-void CClient::startPlayerBattleAction(const BattleID & battleID, PlayerColor color)
-{
-	if (battleints.count(color) == 0)
-		return; // not our combat in MP
-
-	auto battleint = battleints.at(color);
-	auto activateStack = [&]()
-	{
-		battleint->activeStack(battleID, gameState().getBattle(battleID)->battleGetStackByID(gameState().getBattle(battleID)->activeStack, false));
-	};
-
-	if (!battleint->human)
-	{
-		// we want to avoid locking gamestate and causing UI to freeze while AI is making turn
-		if(ENGINE)
-		{
-			auto unlockInterface = vstd::makeUnlockGuard(ENGINE->interfaceMutex);
-			activateStack();
-		}
-		else
-		{
-			activateStack();
-		}
-	}
-	else
-	{
-		activateStack();
-	}
-}
 
 void CClient::removeGUI() const
 {

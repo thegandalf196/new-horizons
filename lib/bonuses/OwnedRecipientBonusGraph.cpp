@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "OwnedRecipientBonusGraph.h"
+#include "OwnedSourceRelationReplay.h"
 #include "BonusLimitation.h"
 #include "Limiters.h"
 #include <stdexcept>
@@ -84,6 +85,17 @@ RawInput inspectInput(const OwnedRecipientBonusGraph::CaptureInput & input)
 		requireCapturedLimiterDomain(value->limiter);
 		raw.push_back(value);
 	}
+	for(const auto & value : input.sourceExports)
+	{
+		if(!value) throw std::invalid_argument("Null owned source export record");
+		requireCapturedLimiterDomain(value->limiter);
+		raw.push_back(value);
+	}
+	for(const auto & value : input.retainedRecords)
+	{
+		if(!value) throw std::invalid_argument("Null owned retained recipe record");
+		raw.push_back(value); // The same aggregate finite type/topology admission still applies.
+	}
 	return {std::move(raw), localCount};
 }
 }
@@ -120,12 +132,22 @@ std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> OwnedRecipientBonusGraph:
 std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> OwnedRecipientBonusGraph::fromOwnedBatchInputs(
 	std::vector<CaptureInput> inputs, const OwnedBonusCaptureCodec & codec)
 {
+	return fromOwnedBatchInputs(std::move(inputs), {}, codec);
+}
+std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> OwnedRecipientBonusGraph::fromOwnedBatchInputs(
+	std::vector<CaptureInput> inputs, std::vector<std::vector<SourceRelation>> relations,
+	const OwnedBonusCaptureCodec & codec)
+{
 	if(inputs.empty()) throw std::invalid_argument("Missing owned graph capture batch");
+	if(relations.empty()) relations.resize(inputs.size());
+	if(relations.size() != inputs.size()) throw std::invalid_argument("Missing owned source-relation recipe");
 	std::vector<std::shared_ptr<const Bonus>> raw;
 	std::vector<std::pair<size_t, size_t>> sizes;
-	for(const auto & input : inputs)
+	for(size_t i = 0; i < inputs.size(); ++i)
 	{
-		auto value = inspectInput(input); sizes.emplace_back(value.localCount, value.records.size());
+		auto value = inspectInput(inputs[i]);
+		validateOwnedSourceRelations(inputs[i], value.records, relations[i]);
+		sizes.emplace_back(value.localCount, value.records.size());
 		raw.insert(raw.end(), value.records.begin(), value.records.end());
 	}
 	std::shared_ptr<ownedBonusPayloads::Captured> pool(ownedBonusPayloads::copy(raw, codec));
@@ -133,19 +155,24 @@ std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> OwnedRecipientBonusGraph:
 	size_t start = 0;
 	for(size_t i = 0; i < inputs.size(); ++i)
 	{
-		result.push_back(build(std::move(inputs[i]), pool, start, sizes[i].first, sizes[i].second));
+		const auto & values = pool->roots();
+		std::vector<std::shared_ptr<Bonus>> records(values.begin() + start, values.begin() + start + sizes[i].second);
+		records = replayOwnedSourceRelations(inputs[i], std::move(records), relations[i]);
+		result.push_back(build(std::move(inputs[i]), pool, std::move(records)));
 		start += sizes[i].second;
 	}
 	return result;
 }
 std::unique_ptr<OwnedRecipientBonusGraph> OwnedRecipientBonusGraph::build(CaptureInput input,
-	std::shared_ptr<ownedBonusPayloads::Captured> pool, size_t start, size_t localCount, size_t recordCount)
+	std::shared_ptr<ownedBonusPayloads::Captured> pool, std::vector<std::shared_ptr<Bonus>> records)
 {
 	auto result = std::unique_ptr<OwnedRecipientBonusGraph>(new OwnedRecipientBonusGraph);
 	result->payloads = std::move(pool);
-	const auto & records = result->payloads->roots();
-	result->recordValues.assign(records.begin() + start, records.begin() + start + recordCount);
-	result->localPayloadCount = localCount;
+	result->recordValues = std::move(records);
+	result->localPayloadCount = 0;
+	for(const auto & node : input.nodes) result->localPayloadCount += node.local.size();
+	result->queryPayloadCount = result->localPayloadCount + input.extraRecords.size();
+	result->sourcePayloadCount = result->queryPayloadCount + input.sourceExports.size();
 	result->rootIndex = input.root;
 	const auto root = input.root; const auto & inputs = input.nodes;
 	for(const auto & input : inputs) result->nodes.push_back(std::make_unique<Node>(input));
@@ -208,6 +235,35 @@ std::vector<size_t> OwnedRecipientBonusGraph::rootLocalRecords() const
 	for(size_t i = 0; i < local(root()).size(); ++i) result.push_back(rootPayloadStart + i);
 	return result;
 }
+OwnedRecipientBonusGraph::RootQuery OwnedRecipientBonusGraph::capturedRootQuery() const
+{
+	RootQuery result{entry(root()).facts, {}, rootLocalRecords()};
+	for(const auto * parent : parents(root())) result.parents.push_back(indices.at(parent));
+	return result;
+}
+size_t OwnedRecipientBonusGraph::extraRecord(size_t ordinal) const
+{
+	if(ordinal >= queryPayloadCount - localPayloadCount) throw std::out_of_range("Owned extra record ordinal");
+	return localPayloadCount + ordinal;
+}
+size_t OwnedRecipientBonusGraph::sourceExportRecord(size_t ordinal) const
+{
+	if(ordinal >= sourcePayloadCount - queryPayloadCount) throw std::out_of_range("Owned source export ordinal");
+	return queryPayloadCount + ordinal;
+}
+std::vector<size_t> OwnedRecipientBonusGraph::sourceExportRecords() const
+{
+	std::vector<size_t> result;
+	for(size_t i = queryPayloadCount; i < sourcePayloadCount; ++i) result.push_back(i);
+	return result;
+}
+void OwnedRecipientBonusGraph::validateSourceExport(size_t index) const
+{
+	payload(index);
+	if(index >= sourcePayloadCount) throw std::invalid_argument("Retained recipe payload has no unit-export role");
+	if(index >= queryPayloadCount) return; // Explicit index role, regardless of accepted alias location.
+	validateRecord(index); // Retain legacy explicit fixture root/extra export roles.
+}
 size_t OwnedRecipientBonusGraph::payloadCount() const { return recordValues.size(); }
 const std::shared_ptr<Bonus> & OwnedRecipientBonusGraph::payload(size_t index) const { return recordValues.at(index); }
 const CBonusSystemNode & OwnedRecipientBonusGraph::queryNode(size_t index) const { return *nodes.at(index); }
@@ -229,7 +285,7 @@ void OwnedRecipientBonusGraph::validateRootQuery(const RootQuery & query) const
 void OwnedRecipientBonusGraph::validateRecord(size_t index) const
 {
 	payload(index); // Bounds first; no foreign or dangling raw identities.
-	if((index < localPayloadCount && (index < rootPayloadStart || index >= rootPayloadStart + local(root()).size()))
+	if(index >= queryPayloadCount || (index < localPayloadCount && (index < rootPayloadStart || index >= rootPayloadStart + local(root()).size()))
 		|| inheritedOnlyRecords.contains(payload(index).get()))
 		throw std::invalid_argument("Inherited source record cannot become recipient-local raw input");
 }

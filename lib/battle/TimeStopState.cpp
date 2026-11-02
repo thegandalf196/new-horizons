@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "TimeStopState.h"
+#include "Unit.h"
 
 #include "../bonuses/BonusParameters.h"
 #include "../spells/CSpell.h"
@@ -38,6 +39,24 @@ bool isStateBonus(const Bonus & bonus)
 			|| bonus.type == BonusType::NONE
 			|| bonus.type == BonusType::NOT_ACTIVE
 			|| bonus.type == BonusType::INVINCIBLE);
+}
+
+bool isTimeStopBonus(const Bonus & bonus, const battle::Unit & subject)
+{
+	if(bonus.type == BonusType::TIME_STOP) return true;
+	if(bonus.source != BonusSource::SPELL_EFFECT || !bonus.sid.as<SpellID>().hasValue()) return false;
+	const auto identity = bonus.sid.as<SpellID>();
+	if(const auto captured = subject.legacyTimeStopSpellMatch(identity)) return *captured;
+	// Preserve the original native lookup, including its order BEFORE marker
+	// type filtering. The owned domain never reaches this branch.
+	const auto * spell = identity.toSpell();
+	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
+}
+bool isStateBonus(const Bonus & bonus, const battle::Unit & subject)
+{
+	return isTimeStopBonus(bonus, subject)
+		&& (bonus.type == BonusType::TIME_STOP || bonus.type == BonusType::NONE
+			|| bonus.type == BonusType::NOT_ACTIVE || bonus.type == BonusType::INVINCIBLE);
 }
 
 bool belongsToSide(const Bonus & bonus, BattleSide side)

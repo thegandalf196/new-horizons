@@ -77,6 +77,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	bool archeryAdjacentRangedTarget = false;
 	/// Point-Blank Shot removes only the ordinary adjacent-target penalty from this shot.
 	bool archeryIgnoreAdjacentRangedPenalty = false;
+	/// Explicit captured policy; false retains historical Point-Blank/Focus Fire precedence.
+	bool pointBlankPreservesAdjacentExemption = false;
 	/// Percentage of the target's Creature Defense ignored by this exact attack.  This is
 	/// populated from authoritative saved perk state, not from installed content alone.
 	int luckyRangedDefenseIgnorePercent = 0;
@@ -216,6 +218,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Whether this ranged shot is against an adjacent target and receives the ordinary adjacent-shot penalty.");
 		s("archeryIgnoreAdjacentRangedPenalty", archeryIgnoreAdjacentRangedPenalty,
 			"Whether Point-Blank Shot removes the ordinary adjacent-target ranged penalty from this shot.");
+		s("pointBlankPreservesAdjacentExemption", pointBlankPreservesAdjacentExemption,
+			"Whether captured rules preserve an already removed adjacent penalty during Focus Fire.");
 		s("luckyRangedDefenseIgnorePercent", luckyRangedDefenseIgnorePercent,
 			"Percentage of target Creature Defense ignored by this lucky ranged attack.");
 		s("archeryRangedDefenseIgnorePercent", archeryRangedDefenseIgnorePercent,

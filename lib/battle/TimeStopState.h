@@ -12,13 +12,19 @@
 #include "BattleSide.h"
 #include "../bonuses/Bonus.h"
 
+namespace battle { class Unit; }
+
 namespace timeStopState
 {
 /// Recognizes both canonical Time Stop effects and legacy/content-light markers.
 DLL_LINKAGE bool isTimeStopBonus(const Bonus & bonus);
+/// Same canonical recognition with the exact subject's captured spell domain.
+/// A captured false is definitive; unknown owned identities refuse in that domain.
+DLL_LINKAGE bool isTimeStopBonus(const Bonus & bonus, const battle::Unit & subject);
 
 /// True for the stack-state markers removed when a caster's Hero Action expires Time Stop.
 DLL_LINKAGE bool isStateBonus(const Bonus & bonus);
+DLL_LINKAGE bool isStateBonus(const Bonus & bonus, const battle::Unit & subject);
 
 /// Legacy markers without caster parameters are cleaned up on either Hero Action.
 DLL_LINKAGE bool belongsToSide(const Bonus & bonus, BattleSide side);

@@ -162,3 +162,20 @@ TEST(NewHorizonsMagicTest, SchoolsUseScopedCurrentSerializationAndReadLegacyNume
 	EXPECT_THROW(SpellSchool::fromSerializationKey("air"), std::runtime_error);
 	EXPECT_THROW(SpellSchool::fromSerializationKey("missing-required-module:air"), std::runtime_error);
 }
+
+
+TEST(NewHorizonsMagicTest, PointBlankPrecedenceIsExplicitBooleanAndPreservesAbsence)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	ASSERT_TRUE(rules["pointBlankPreservesAdjacentExemption"].Bool());
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules.Struct().erase("pointBlankPreservesAdjacentExemption");
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	rules["pointBlankPreservesAdjacentExemption"] = JsonNode(false);
+	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	for(const auto & invalid : {JsonNode(), JsonNode(1), JsonNode("true")})
+	{
+		rules["pointBlankPreservesAdjacentExemption"] = invalid;
+		EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+	}
+}

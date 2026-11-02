@@ -13,6 +13,7 @@
 #include "../bonuses/BonusSerializationContext.h"
 
 #include "../mapObjects/NewHorizonsNeutralArmies.h"
+#include "../mapObjects/NewHorizonsNeutralCalibration.h"
 #include "../mapObjects/NewHorizonsRecruitmentGrowth.h"
 
 #include "../entities/hero/NewHorizonsSpecialtySerialization.h"
@@ -222,7 +223,7 @@ public:
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
 	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
-	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
@@ -370,6 +371,8 @@ public:
 		if(h.saving)
 			newHorizonsNeutralArmies::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 		if(h.saving)
+			newHorizonsNeutralArmies::calibration::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
+		if(h.saving)
 			newHorizonsRecruitmentGrowth::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 		if(h.saving)
 			validateCombatScalarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
@@ -407,7 +410,8 @@ public:
 		if(h.saving)
 			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
 		if(h.saving)
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)

@@ -3,6 +3,9 @@
 #include "CreatureBonusStatusPresentation.h"
 #include "SylvanFactionStatusPresentation.h"
 #include "../../lib/CStack.h"
+#include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/BattleInfo.h"
@@ -12,6 +15,39 @@
 
 namespace creatureBonusStatusPresentation
 {
+std::vector<Row> visibleRows(const IBonusBearer & bonusSource, const CStackInstance & stackNode,
+	const BonusList & visibleBonuses,
+	const std::function<std::string(const std::shared_ptr<Bonus> &)> & describe)
+{
+	// Match the effective ability selected by creature spell targeting, including
+	// legacy allied-only policies. Creature identity is not an ability contract.
+	const auto randomSpellcaster = bonusSource.getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
+	bool hostileWishes = false;
+	if(randomSpellcaster && randomSpellcaster->parameters)
+	{
+		const auto policy = randomSpellcaster->parameters->toJsonNode();
+		hostileWishes = policy.getType() == JsonNode::JsonType::DATA_INTEGER && policy.Integer() == 1;
+	}
+	std::vector<Row> rows;
+	for(const auto & bonus : visibleBonuses)
+	{
+		Row row;
+		row.description = describe(bonus);
+		row.imagePath = stackNode.bonusToGraphics(bonus);
+		row.bonusSource = bonus->source;
+		if(bonus->type == BonusType::RANDOM_SPELLCASTER && randomSpellcaster && !randomSpellcaster->hidden)
+		{
+			const std::string prefix = hostileWishes
+				? "new-horizons.creature.wishes.hostile" : "new-horizons.creature.wishes.allied";
+			row.description = LIBRARY->generaltexth->translate(prefix + ".compact");
+			row.tooltip = LIBRARY->generaltexth->translate(prefix + ".help");
+		}
+		if(!row.description.empty() && !bonus->hidden)
+			rows.push_back(std::move(row));
+	}
+	return rows;
+}
+
 bool isHydrasVitality(const Bonus & bonus)
 {
 	return bonus.type == BonusType::HP_REGENERATION

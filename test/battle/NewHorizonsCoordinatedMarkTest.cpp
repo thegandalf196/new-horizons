@@ -259,6 +259,7 @@ TEST_P(NewHorizonsCoordinatedMarkTest, IncompleteReturnDeadOrStoppedActorCannotM
 }
 TEST_P(NewHorizonsCoordinatedMarkTest, MarksExpireAtRoundEndAndCurrentIdentityRoundtrips)
 {
+	preOptionalCapture = true;
 	prepare("core:ingham");
 	beginCombat();
 	ASSERT_GT(battle()->battleGetRound(), 0);
@@ -266,18 +267,23 @@ TEST_P(NewHorizonsCoordinatedMarkTest, MarksExpireAtRoundEndAndCurrentIdentityRo
 	const auto policy = attackerSideHero->getPrimaryGrowthRules();
 	const auto original = victim->getUnstackedBonuses(CSelector(marks::isMark))->toJsonNode();
 	NativeBonusGraphAccess access;
-	// CURRENT stays1151. Presence includes explicitzero and must refuse before bytes.
+	// Named pre-extended writing still rejects presence, including explicit zero.
 	CMemorySerializer current;
-	ASSERT_EQ(current.oser.version, ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
+	ASSERT_EQ(current.oser.version, ESerializationVersion::CURRENT);
+	ASSERT_GE(current.oser.version, ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
+	EXPECT_NO_THROW(current.oser & *gameState());
+	EXPECT_FALSE(current.extractBuffer().empty());
+	CMemorySerializer historical;
+	historical.oser.version = ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION;
 	if(GetParam() == 1)
-		EXPECT_NO_THROW(current.oser & *gameState());
+		EXPECT_NO_THROW(historical.oser & *gameState());
 	else
 	{
-		EXPECT_THROW(current.oser & *gameState(), std::runtime_error);
-		EXPECT_TRUE(current.extractBuffer().empty());
+		EXPECT_THROW(historical.oser & *gameState(), std::runtime_error);
+		EXPECT_TRUE(historical.extractBuffer().empty());
 	}
 	// The existing public world codec performs the normal preflight and load-tree reinit.
-	// This explicit reserved-version test is not loadReplaySnapshot/write activation.
+	// Preserve the named extended codec roundtrip independently of default activation.
 	constexpr auto version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
 	CMemorySerializer world;
 	world.oser.version = version;

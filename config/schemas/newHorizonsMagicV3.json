@@ -9,6 +9,7 @@
 	"properties": {
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [3]},
+		"pointBlankPreservesAdjacentExemption": {"type": "boolean", "not": {"type": "null"}, "description": "Explicitly preserve Point-Blank Shot adjacent penalty removal during Focus Fire. Omission retains historical precedence."},
 		"heroLuck": {
 			"type": "object",
 			"required": ["luckyDayChanceScalePercent", "erraticManaChanceScalePercent", "druidicLuckChanceScalePercent", "orderMultiplierPercent", "damageMultiplierPercent", "manaRefundPercent"],

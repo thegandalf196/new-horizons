@@ -23,6 +23,9 @@ newHorizonsHeroes::PerkState state()
 	result.rules.Struct().erase("offerWeightPolicyVersion");
 	result.rules.Struct().erase("perkOfferNormalization");
 	result.rules.Struct().erase("perkProgressionPolicyVersion");
+	result.rules.Struct().erase("sylvanTacticsPolicy");
+	result.rules.Struct().erase("necromancyPolicy");
+	result.rules.Struct().erase("quickStudyPolicy");
 	return result;
 }
 

@@ -1152,3 +1152,33 @@ storage is permitted; UNKNOWN execution is not. Metadata counts, supported
 version ranges and empty-snapshot/tag consistency validate on decode, planning
 and save. Append reservation checks the current array shape and incoming tags,
 then reserves both arrays before its no-throw publication step.
+
+## Successor formats and local bonus clones
+
+The current source writer is format1154 (`NEW_HORIZONS_OPTIONAL_QUICK_STUDY`).
+Published format1151 precedes neutral Leadership calibration1152, extended ordinary
+specialties1153, and optional Quick Study1154. Format gates validate the captured
+policy and packet fields; a format number alone does not activate a policy.
+
+Neutral calibration carries a resolved generation curve in captured game
+settings. It changes no Bonus representation: its local bonus-clone profile is
+1151. Extended ordinary specialties and optional Quick Study use bonus profile
+1153. A connection must validate its exact owner and equal read/write epoch
+before choosing an explicit recognized profile. An unknown epoch or mismatched
+profile refuses; a clone profile never grants native source or action authority.
+
+Format1154 adds `optionalRerollAvailable`, `replacesQueryID`, and `reachedLevel`
+to `HeroLevelUp`. Older-format reads initialize these to false, no replacement
+query, and zero. Writing a nondefault optional offer to an older format refuses.
+Captured optional Quick Study rules also require the1154 gate in game settings
+and hero perk state. These older-format read paths do not permit writing a new
+captured policy to a format that cannot represent it.
+
+Earlier unreleased experiments used different meanings for1152/1153. Their files
+and forced-version transport captures are unsupported experimental artifacts,
+not migration inputs. Extended captures presented as neutral1152 are rejected
+by capability and captured-policy validation. An epoch alone cannot distinguish
+an old experimental payload that contains no distinguishing fields; keep such
+artifacts separate from supported saves. Both packet endpoints require the same
+coherent wire layout. The current source format does not establish release or
+platform acceptance.

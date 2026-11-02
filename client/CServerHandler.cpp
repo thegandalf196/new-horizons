@@ -820,52 +820,6 @@ void CServerHandler::showHighScoresAndEndGameplay(PlayerColor player, bool victo
 	}
 }
 
-void CServerHandler::endGameplay()
-{
-	// a running replay holds the live session hostage - it has to be gone before anything is torn down.
-	// Every caller of this method owns the interface mutex, which the replay thread needs to finish.
-	if(gameplayReplayer)
-	{
-		gameplayReplayer->requestStop();
-
-		if(ENGINE)
-		{
-			auto unlockInterface = vstd::makeUnlockGuard(ENGINE->interfaceMutex);
-			gameplayReplayer->waitForFinish();
-		}
-		else
-		{
-			gameplayReplayer->waitForFinish();
-		}
-
-		gameplayReplayer.reset();
-	}
-
-	// nothing renders this map's texts any more, and the next game must not see them
-	gameplayTextOverlays.clear();
-
-	client->endNetwork();
-	client->finishGameplay();
-
-	// Game is ending
-	// Tell the network thread to reach a stable state
-	sendClientDisconnecting();
-	logNetwork->info("Closed connection.");
-
-	client->endGame();
-	client.reset();
-
-	if (GAME->mainmenu())
-	{
-		GAME->mainmenu()->enable();
-		GAME->mainmenu()->playMusic();
-		GAME->mainmenu()->makeActiveInterface();
-	}
-
-	if(ENGINE)
-		ENGINE->discord().setStatus("", "", {0, 0});
-}
-
 std::optional<std::string> CServerHandler::canQuickLoadGame(const std::string & path) const
 {
 	auto mapInfo = std::make_shared<CMapInfo>();
@@ -1211,29 +1165,6 @@ void CServerHandler::visitForLobby(CPackForLobby & lobbyPack)
 	}
 }
 
-void CServerHandler::visitForClient(CPackForClient & clientPack)
-{
-	if(gameplayReplayer && gameplayReplayer->isActive())
-	{
-		// a replay has taken the client over, so the live gamestate is not there to receive this pack.
-		// Holding the network thread here keeps packs in order and applies them to the live session
-		// once the replay is over - the player can end a replay at any time from its overlay
-		auto unlockInterface = vstd::makeUnlockGuard(ENGINE->interfaceMutex);
-		gameplayReplayer->waitForFinish();
-	}
-
-	// not done in CGameState::apply() - lag compensation applies predictions and rollbacks there
-	if(client)
-	{
-		NativeBonusGraphMutation nativeMutation;
-		client->gameState().replayLog.recordPack(clientPack, client->gameState());
-	}
-
-	if (networkLagCompensator && networkLagCompensator->verifyReply(clientPack))
-		return;
-
-	client->handlePack(clientPack);
-}
 
 GameplayReplayer & CServerHandler::replayer()
 {

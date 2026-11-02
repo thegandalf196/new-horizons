@@ -25,6 +25,7 @@ def body(source: str, signature: str) -> str:
 
 client = (ROOT / "client/Client.cpp").read_text(encoding="utf-8")
 server = (ROOT / "client/CServerHandler.cpp").read_text(encoding="utf-8")
+server += "\n" + (ROOT / "client/ClientGameplayTeardown.cpp").read_text(encoding="utf-8")
 windows = (ROOT / "client/gui/WindowHandler.cpp").read_text(encoding="utf-8")
 entry = (ROOT / "clientapp/EntryPoint.cpp").read_text(encoding="utf-8")
 
@@ -55,7 +56,7 @@ def check_quit_mutex_ownership(source: str) -> None:
     assert 'if(!settings["session"]["headless"].Bool())' in locked, \
         "keep non-headless gameplay teardown conditional for menu/no-client shutdown"
     assert "if(GAME->server().client)" in locked, "menu shutdown must not require a gameplay client"
-    assert locked.index("cureIntegration->detach();") < locked.find(network), \
+    assert locked.index("clientIntegration->detach();") < locked.find(network), \
         "integration detach must keep its existing ordering before network shutdown"
     assert all(step not in locked for step in ("GAME.reset();", "ENGINE->async().wait();", "ENGINE.reset();")), \
         "release the interface mutex before owner destruction and asynchronous cleanup"
@@ -64,6 +65,10 @@ def check_quit_mutex_ownership(source: str) -> None:
 
 
 check_quit_mutex_ownership(entry)
+integration_driver = (ROOT / "clientapp/ClientIntegrationDriver.h").read_text(encoding="utf-8")
+assert "using ClientIntegrationDriver = CureIntegrationDriver;" in integration_driver
+assert "using ClientIntegrationDriver = OwnedPreparationIntegrationDriver;" in integration_driver
+assert "#error Integration executables must select exactly one driver" in integration_driver
 # Wiring witnesses only: they do not replace a real new-game/load/normal-Quit run.
 for broken in (
     entry.replace("std::unique_lock<std::mutex> interfaceLock;", ""),
@@ -191,5 +196,30 @@ for broken_fallback in (fallback.replace("return;", ""),
         pass
     else:
         raise AssertionError("missing-battlefield source guard accepted broken recovery")
+
+
+# Dedicated owned preparation must cancel before waits, then retire the actual
+# network receive stack before deleting its client. This is a source invariant;
+# a runtime restart/cancellation check is still required for acceptance.
+assert body(client, "void CClient::endNetwork()").index("cancelOwnedRecipientPreparation(") < body(client, "void CClient::endNetwork()").index("GAME->map().endNetwork();")
+assert body(client, "void CClient::finishGameplay()").index("cancelOwnedRecipientPreparation(") < body(client, "void CClient::finishGameplay()").index("waitingRequest.requestTermination();")
+owned_end = body(server, "void CServerHandler::endGameplay()")
+assert owned_end.index("cancelOwnedRecipientPreparation(") < owned_end.index("gameplayReplayer->waitForFinish();")
+assert owned_end.index("sendClientDisconnecting();") < owned_end.index("waitForOwnedReceiveRetirement();") < owned_end.index("client->endGame();")
+retirement = (ROOT / "client/ClientOwnedReceiveRetirement.cpp").read_text(encoding="utf-8")
+assert "running_in_this_thread()" in retirement and "!threadNetwork.joinable()" in retirement
+assert "boost::asio::post(context, [signal]() { signal->set_value(); });" in retirement
+assert "makeUnlockGuard(ENGINE->interfaceMutex)" in retirement and "waitForNetworkThread();" in retirement
+apply = (ROOT / "client/ClientPacketApply.cpp").read_text(encoding="utf-8")
+received = body(apply, "void CClient::handleReceivedPack(CPackForClient & pack, ClientPacketReceiveSession & receive)")
+assert "applyClientPacket(pack, &receive);" in received and "currentReceive" not in received
+client_header = (ROOT / "client/Client.h").read_text(encoding="utf-8")
+assert "currentReceive" not in client_header
+activation = (ROOT / "client/ClientBattleActionDispatch.cpp").read_text(encoding="utf-8")
+assert activation.index("if(!frames) return;") < activation.index("auto activateStack =")
+assert "catch(const std::exception & error)" in activation and "cancelOwnedPreparationObservation(error.what())" in activation
+capture = (ROOT / "client/replay/ClientOwnedBattleFrames.cpp").read_text(encoding="utf-8")
+assert "makeUnlockGuard(access.interfaceAccess)" in capture
+assert "if(!observed) return {};" in capture
 
 print("battle restart teardown source checks passed")

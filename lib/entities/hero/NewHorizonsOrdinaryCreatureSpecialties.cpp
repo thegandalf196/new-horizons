@@ -209,7 +209,7 @@ void validateExtendedOrdinarySpecialtiesSerialization(const JsonNode & developme
 		"emberbrandDamagePercent", "toxicStingChancePercent", "gnollHarriersDamagePercent",
 		"prismaticVanguardPhysicalDamagePercent", "siegeSapperCreatureDefenseIgnorePercent"})
 		if(policy->Struct().contains(key))
-			throw std::runtime_error("Captured extended ordinary specialties require format1152");
+			throw std::runtime_error("Captured extended ordinary specialties require format1153");
 }
 
 const CGHeroInstance * ordinaryCreatureVisibleOwnerHero(const CBattleInfoCallback & battle, const battle::Unit & actor)

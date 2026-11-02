@@ -223,6 +223,7 @@ set(vcmiclientcommon_SRCS
 	windows/NewHorizonsCreatureAbilityHelp.cpp
 	windows/CreatureBonusStatusPresentation.cpp
 	windows/GUIClasses.cpp
+	windows/CLevelWindow.cpp
 	windows/NewHorizonsMusterUI.cpp
 	windows/InfoWindows.cpp
 	windows/QuickRecruitmentWindow.cpp
@@ -242,9 +243,17 @@ set(vcmiclientcommon_SRCS
 	GameInstance.cpp
 	Translator.cpp
 	CPlayerInterface.cpp
+	CPlayerInterfaceLevelUp.cpp
 	PlayerLocalState.cpp
 	CServerHandler.cpp
 	Client.cpp
+	ClientBattleActionDispatch.cpp
+	ClientPacketDispatch.cpp
+	ClientPacketApply.cpp
+	ClientGameplayTeardown.cpp
+	ClientOwnedReceiveRetirement.cpp
+	ClientBattleInterfaceDispatch.h
+	replay/ClientOwnedBattleFrames.cpp
 	PerfTrace.cpp
 	ClientCommandManager.cpp
 	GameChatHandler.cpp
@@ -640,3 +649,17 @@ endif()
 
 vcmi_set_output_dir(vcmiclientcommon "")
 enable_pch(vcmiclientcommon)
+
+# Test-only alternate owner object. The ordinary archive member remains unchanged;
+# the dedicated executable supplies this same implementation exactly once.
+if(ENABLE_NH_OWNED_PREPARATION_INTEGRATION)
+	add_library(nhOwnedPreparationClientCaptureAudit OBJECT EXCLUDE_FROM_ALL
+		replay/ClientOwnedBattleFrames.cpp NetPacksLobbyClient.cpp)
+	target_include_directories(nhOwnedPreparationClientCaptureAudit PRIVATE
+		$<TARGET_PROPERTY:vcmiclientcommon,INCLUDE_DIRECTORIES>)
+	target_compile_definitions(nhOwnedPreparationClientCaptureAudit PRIVATE
+		$<TARGET_PROPERTY:vcmiclientcommon,COMPILE_DEFINITIONS> NH_OWNED_PREPARATION_SIMULATION_AUDIT)
+	target_compile_options(nhOwnedPreparationClientCaptureAudit PRIVATE
+		$<TARGET_PROPERTY:vcmiclientcommon,COMPILE_OPTIONS>)
+	target_link_libraries(nhOwnedPreparationClientCaptureAudit PRIVATE vcmi)
+endif()

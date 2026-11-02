@@ -246,9 +246,18 @@ TEST(CurePhysicalSelectorSerialization, ReplayAnnouncementUsesDeclaredCodecWitho
 	EXPECT_EQ(restored.ba, source.ba);
 	EXPECT_EQ(encode(restored, successor), bytes);
 
-	// The reserved codec is testable without activating the default replay writer.
-	ASSERT_EQ(Version::CURRENT, oldCurrent);
-	EXPECT_THROW(ReplayPackSerializer::write(source), std::runtime_error);
+	// Explicit historical writing still refuses the selector; actual default writing admits it.
+	CMemorySerializer historicalWriter;
+	historicalWriter.oser.version = Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION;
+	EXPECT_THROW(source.serialize(historicalWriter.oser), std::runtime_error);
+	EXPECT_TRUE(historicalWriter.extractBuffer().empty());
+	ASSERT_GE(Version::CURRENT, Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
+	const auto current = ReplayPackSerializer::write(source);
+	EXPECT_EQ(current.version, Version::CURRENT);
+	auto currentDecoded = ReplayPackSerializer::read(current, nullptr);
+	const auto * currentAction = dynamic_cast<StartAction *>(currentDecoded.get());
+	ASSERT_NE(currentAction, nullptr);
+	EXPECT_EQ(currentAction->ba, source.ba);
 	auto legacy = announcement("frozen");
 	const auto control = ReplayPackSerializer::write(legacy);
 	EXPECT_EQ(control.version, Version::CURRENT);

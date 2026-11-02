@@ -9,6 +9,9 @@
  */
 #include "StdInc.h"
 #include "LobbyNetPackVisitors.h"
+#ifdef NH_OWNED_PREPARATION_SIMULATION_AUDIT
+#include "tests/OwnedPreparationFirstWriter.h"
+#endif
 
 #include "CVCMIServer.h"
 #include "CGameHandler.h"
@@ -271,6 +274,9 @@ void ApplyOnServerNetPackVisitor::visitLobbyStartGame(LobbyStartGame & pack)
 	
 	pack.initializedStartInfo = std::make_shared<StartInfo>(*srv.gh->gameState().getInitialStartInfo());
 	pack.initializedGameState = srv.gh->gs;
+#ifdef NH_OWNED_PREPARATION_SIMULATION_AUDIT
+	ownedPreparationAudit::observeFirstWriter(true, *connection, pack.initializedGameState);
+#endif
 	result = true;
 }
 

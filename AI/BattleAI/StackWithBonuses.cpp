@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "StackWithBonuses.h"
+#include "OwnedStackQuerySource.h"
+#include "../../lib/battle/UnitCreatureResolver.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/bonuses/ProjectedBonusView.h"
 #include <stdexcept>
@@ -85,7 +87,16 @@ void StackWithBonuses::setOriginalBearer(const IBonusBearer * bearer)
 		if(projectedBearer)
 			origBearer = projectedBearer.get();
 	}
-	originalUnit = dynamic_cast<const battle::Unit *>(origBearer);
+	if(projected && projected->ownedQuerySource)
+	{
+		projected->ownedQuerySource->current();
+		ownedQuerySource = std::make_unique<OwnedStackQuerySource>(*owner, *this,
+			projected->ownedQuerySource->retainedFrame()->fork());
+		origBearer = ownedQuerySource->retainedFrame()->unit().getBonusBearer();
+		originalUnit = &ownedQuerySource->retainedFrame()->unit();
+		projectedBearer.reset(); ownedBearer.reset();
+	}
+	else originalUnit = dynamic_cast<const battle::Unit *>(origBearer);
 }
 
 StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle::CUnitState * Stack)
@@ -104,9 +115,11 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	treeVersionLocal(0)
 {
 	setOriginalBearer(Stack->getBonusBearer());
-	localInit(Owner);
+	localInit(ownedQuerySource ? static_cast<const battle::IUnitEnvironment *>(ownedQuerySource.get()) : Owner);
 
 	battle::CUnitState::operator=(*Stack);
+	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
+	captureParentClockRecipe();
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
 		captureLocalSpellEffects();
@@ -134,10 +147,12 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	treeVersionLocal(0)
 {
 	setOriginalBearer(Stack->getBonusBearer());
-	localInit(Owner);
+	localInit(ownedQuerySource ? static_cast<const battle::IUnitEnvironment *>(ownedQuerySource.get()) : Owner);
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
+	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
+	captureParentClockRecipe();
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
 		captureLocalSpellEffects();
@@ -200,6 +215,12 @@ StackWithBonuses & StackWithBonuses::operator=(const battle::CUnitState & other)
 
 const CCreature * StackWithBonuses::unitType() const
 {
+	if(ownedQuerySource)
+	{
+		const auto creature = hasBattleForm() ? battleFormCreature()
+			: ownedQuerySource->retainedFrame()->unit().battleFormOriginalCreature();
+		return unitCreatureResolver()->creature(creature);
+	}
 	return hasBattleFormState() ? battleFormCreature().toCreature() : type;
 }
 
@@ -262,6 +283,8 @@ TConstBonusListPtr StackWithBonuses::getUnstackedBonuses(const CSelector & selec
 TConstBonusListPtr StackWithBonuses::getBonusesBeforeCreatureAbilitySuppression(
 	const CSelector & selector, const std::string & cachingStr, const bool unstacked) const
 {
+	if(ownedQuerySource && !damageScoringBonuses)
+		return ownedQuerySource->current().unit().getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, unstacked);
 	if(!damageScoringBonuses)
 		if(const auto subject = owner->initialExportSubject())
 			return newHorizonsDiscipline::veteranCohesionBonuses(
@@ -317,6 +340,7 @@ void StackWithBonuses::spendMana(ServerCallback * server, const int spellCost) c
 
 std::vector<Bonus> StackWithBonuses::localSpellEffects() const
 {
+	if(ownedQuerySource) return ownedQuerySource->localSpellEffects();
 	if(exactLocalSpellEffects)
 		return *exactLocalSpellEffects;
 	if(const auto * parent = dynamic_cast<const StackWithBonuses *>(origBearer))

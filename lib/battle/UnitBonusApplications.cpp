@@ -23,6 +23,11 @@
 #include <algorithm>
 #include <stdexcept>
 
+namespace
+{
+bool applyUnitBonusRecord(CStack * sta, const Bonus & value, bool forceAdd);
+}
+
 void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
 	stackEffectVectorRules::validateIncomingRecords(*this, id, bonus, [this](uint32_t target)
@@ -41,9 +46,13 @@ void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
 	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*sta, bonus);
+	bool acceptedFrozen = false;
 	for(const Bonus & b : stampedBonuses)
-		addOrUpdateUnitBonus(sta, b, true);
-	if(frozenApplication)
+	{
+		const bool accepted = applyUnitBonusRecord(sta, b, true);
+		acceptedFrozen |= frozenApplication && accepted && newHorizonsFrozen::markerApplicationRound(b).has_value();
+	}
+	if(acceptedFrozen)
 		sta->commitPreparedFrozenApplication(*frozenApplication);
 }
 
@@ -65,9 +74,13 @@ void BattleInfo::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*sta, bonus);
 	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*sta, bonus);
+	bool acceptedFrozen = false;
 	for(const Bonus & b : stampedBonuses)
-		addOrUpdateUnitBonus(sta, b, false);
-	if(frozenApplication)
+	{
+		const bool accepted = applyUnitBonusRecord(sta, b, false);
+		acceptedFrozen |= frozenApplication && accepted && newHorizonsFrozen::markerApplicationRound(b).has_value();
+	}
+	if(acceptedFrozen)
 		sta->commitPreparedFrozenApplication(*frozenApplication);
 }
 
@@ -106,7 +119,9 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 	}
 }
 
-void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
+namespace
+{
+bool applyUnitBonusRecord(CStack * sta, const Bonus & value, bool forceAdd)
 {
 	if(newHorizonsSwiftRebirth::isLifecycleMarker(value))
 	{
@@ -114,7 +129,7 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 		if(previous)
 			sta->removeBonus(previous);
 		sta->addNewBonus(std::make_shared<Bonus>(value));
-		return; // Lifecycle bookkeeping remains writable during Time Stop.
+		return true; // Lifecycle bookkeeping remains writable during Time Stop.
 	}
 	if(value.type == BonusType::CONFUSION_PENDING)
 		newHorizonsConfusionControl::validateMarker(value);
@@ -124,7 +139,7 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 	if(stackEffectRecordRules::incomingProtected(*sta, value))
 	{
 		logNetwork->warn("Ignoring new effect on Time Stop unit %d", sta->unitId());
-		return;
+		return false;
 	}
 	if(value.type == BonusType::CONFUSION_PENDING)
 	{
@@ -133,7 +148,7 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 		sta->removeBonusesRecursive(Selector::type()(BonusType::CONFUSION_PENDING));
 		sta->addNewBonus(std::make_shared<Bonus>(value));
 		sta->confusionState = next;
-		return;
+		return true;
 	}
 	if(value.type == BonusType::PHYSICAL_AFFLICTION)
 	{
@@ -141,7 +156,7 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 		if(replacement.replaceExisting)
 			sta->removeBonusesRecursive(stackEffectRecordRules::physicalMarkerGroup(value));
 		sta->addNewBonus(std::make_shared<Bonus>(replacement.marker));
-		return;
+		return true;
 	}
 	if(value.type == BonusType::GUARDIAN_SPIRIT)
 	{
@@ -150,7 +165,7 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 		sta->addNewBonus(std::make_shared<Bonus>(value));
 		sta->guardianSpiritHitPoints = pool.hitPoints;
 		sta->guardianSpiritRoundsRemaining = pool.rounds;
-		return;
+		return true;
 	}
 
 	const bool hasLegacyRefreshCandidate = sta->hasBonus(stackEffectRefresh::legacyCandidateSelector(value));
@@ -172,4 +187,11 @@ void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool fo
 				stackEffectRefresh::refreshFields(*stackBonus, value);
 		sta->nodeHasChanged();
 	}
+	return true;
+}
+}
+
+void BattleInfo::addOrUpdateUnitBonus(CStack * sta, const Bonus & value, bool forceAdd)
+{
+	(void)applyUnitBonusRecord(sta, value, forceAdd);
 }

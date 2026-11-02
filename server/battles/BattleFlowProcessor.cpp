@@ -8,6 +8,9 @@
  *
  */
 #include "StdInc.h"
+#ifdef NH_OWNED_PREPARATION_SIMULATION_AUDIT
+#include "../tests/OwnedPreparationAudit.h"
+#endif
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleFlowProcessor.h"
 #include "BattleActivationEffects.h"
@@ -2833,6 +2836,10 @@ void BattleFlowProcessor::stackTurnTrigger(const CBattleInfoCallback & battle, c
 
 void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, const battle::Unit * stack, BattleUnitTurnReason reason)
 {
+#ifdef NH_OWNED_PREPARATION_SIMULATION_AUDIT
+	const auto auditBattleID = battle.getBattle()->getBattleID();
+	const auto auditUnitID = stack->unitId();
+#endif
 	assert(stack);
 	bool swiftExtra = reason == BattleUnitTurnReason::MORALE
 		|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION;
@@ -2910,6 +2917,15 @@ void BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 			|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION || secondWindActivation)
 		&& canonicalFireWallCoversUnit(battle, *stack))
 		battle.handleObstacleTriggersForUnit(*gameHandler->spellEnv, *stack);
+#ifdef NH_OWNED_PREPARATION_SIMULATION_AUDIT
+	// Activation effects can finalize the native battle. Reacquire both owners
+	// instead of passing a potentially retired callback/actor to the test hook.
+	if(const auto * current = gameHandler->gameState().getBattle(auditBattleID))
+	{
+		if(const auto * actor = current->battleGetUnitByID(auditUnitID))
+			ownedPreparationAudit::afterActivation(*gameHandler, *current, *actor);
+	}
+#endif
 }
 
 double BattleFlowProcessor::calculateTowerAttackValue(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * target) const

@@ -111,6 +111,9 @@ public:
 	/// stasis marker.  This is intentionally exposed on the shared unit view so
 	/// battle rules, spell targeting, Lua and BattleAI all observe one state.
 	virtual bool isTimeStopped() const { return false; }
+	/// Static captured spell identity only; NOT current stasis, visibility or
+	/// source authority. nullopt preserves the ordinary native lookup domain.
+	virtual std::optional<bool> legacyTimeStopSpellMatch(SpellID) const { return std::nullopt; }
 
 	virtual bool isClone() const = 0;
 	virtual bool hasClone() const = 0;

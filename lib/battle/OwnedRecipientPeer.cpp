@@ -4,6 +4,16 @@
 #include <stdexcept>
 namespace
 {
+recipientBonusOverlay::Layer emptyPeerLedger()
+{
+	recipientBonusOverlay::Records added, updated;
+	std::set<std::shared_ptr<Bonus>> removed;
+	std::optional<recipientBonusOverlay::Values> stacked;
+	std::optional<recipientBonusOverlay::Records> raw;
+	recipientBonusOverlay::Groups groups;
+	const bool veteran = false;
+	return recipientBonusOverlay::Layer({added, updated, removed, stacked, raw, groups, veteran});
+}
 bool peerOutput(const Bonus * bonus)
 {
 	return bonus->type == BonusType::SPELL_RESISTANCE_AURA || bonus->type == BonusType::HYPNOTIZED
@@ -26,6 +36,9 @@ class OwnedUnitBonusFrame::Data::Peer
 	std::shared_ptr<const OwnedRecipientBonusGraph> graph;
 	OwnedRecipientBonusGraph::RootQuery source;
 	std::map<CreatureID, QuerySource> variants;
+	recipientBonusOverlay::Layer ledger;
+	std::vector<std::shared_ptr<const ownedBonusPayloads::Captured>> pendingPayloads;
+	std::map<std::shared_ptr<Bonus>, std::shared_ptr<Bonus>> sourceReplacements;
 	Info info;
 	class View final : public ProjectedBonusView
 	{
@@ -45,7 +58,7 @@ class OwnedUnitBonusFrame::Data::Peer
 public:
 	std::shared_ptr<CUnitStateDetached> subject; // Retire before view/info/graph; no env/native provider alias.
 	Peer(const Data & owner, const PeerInput & input)
-		: owner(owner), identity(input.identity), body(effectiveBody(input)), graph(input.graph), source(input.query), variants(input.sourceVariants), info(body, owner.creatures), view(*this)
+		: owner(owner), identity(input.identity), body(effectiveBody(input)), graph(input.graph), source(input.query), variants(input.sourceVariants), ledger(emptyPeerLedger()), info(body, owner.creatures), view(*this)
 	{
 		if(!input.values || !graph || (identity.side != BattleSide::ATTACKER && identity.side != BattleSide::DEFENDER)
 			|| !owner.environment.colors.at(identity.side) || *owner.environment.colors.at(identity.side) != identity.owner
@@ -97,19 +110,69 @@ public:
 		}
 		auto context = owner.decorate(std::move(recipe), *subject);
 		BonusList raw;
-		for(const auto index : context.records) raw.push_back(selected->payload(index));
-		const auto accepted = OwnedUnitBonusFrame::queryGraph(*selected, context, raw, Selector::all, unstacked, *subject);
+		for(const auto index : context.records)
+		{
+			const auto & original = selected->payload(index);
+			const auto found = sourceReplacements.find(original);
+			raw.push_back(found == sourceReplacements.end() ? original : found->second);
+		}
+		BonusList current;
+		recipientBonusOverlay::copyInherited(current, raw, ledger.view(), true);
+		recipientBonusOverlay::append(current, ledger.view(), Selector::all, true);
+		const auto accepted = OwnedUnitBonusFrame::queryGraph(*selected, context, current, Selector::all, unstacked, *subject);
 		auto result = std::make_shared<BonusList>();
 		accepted.getBonuses(*result, CSelector(peerOutput).And(selector)); // Dependencies never become peer outputs.
 		return result;
 	}
 	Peer(const Data & owner, const Peer & other)
-		: owner(owner), identity(other.identity), body(other.body), graph(other.graph), source(other.source), variants(other.variants), info(body, owner.creatures), view(*this)
+		: owner(owner), identity(other.identity), body(other.body), graph(other.graph), source(other.source), variants(other.variants), ledger(other.ledger), pendingPayloads(other.pendingPayloads), sourceReplacements(other.sourceReplacements), info(body, owner.creatures), view(*this)
 	{
 		subject = std::make_shared<CUnitStateDetached>(&info, &view);
 		subject->health = other.subject->health; subject->ghost = other.subject->ghost; subject->position = other.subject->position;
 	}
+	std::shared_ptr<Peer> currentCopy(const Data & destination, const Data & current) const
+	{
+		if(identity.id != current.identity.id || identity.side != current.identity.side
+			|| identity.owner != current.identity.owner || identity.slot != current.identity.slot
+			|| identity.baseAmount != current.identity.baseAmount
+			|| identity.healthBasis.battleStartMaximumHP != current.identity.healthBasis.battleStartMaximumHP
+			|| identity.healthBasis.rebirthOriginalHP != current.identity.healthBasis.rebirthOriginalHP
+			|| identity.originalCreature != current.identity.originalCreature
+			|| body.originalCreature != current.subject->battleFormCreature())
+			throw std::invalid_argument("Current peer form requires a new owned source-domain recipe");
+		auto result = std::make_shared<Peer>(destination, *this);
+		result->ledger = current.ledger;
+		result->pendingPayloads = current.pendingPayloads;
+		result->sourceReplacements = current.sourceReplacements;
+		result->subject->health = current.subject->health;
+		result->subject->ghost = current.subject->ghost;
+		result->subject->position = current.subject->position;
+		auto & state = result->source.facts.acceptance->state;
+		state.ghost = current.subject->isGhost(); state.summoned = current.subject->summoned;
+		state.natureSummoned = current.subject->natureSummoned;
+		return result;
+	}
 };
+OwnedUnitBonusFrame::Data::CurrentPeers OwnedUnitBonusFrame::Data::prepareCurrentPeers(
+	const std::vector<std::shared_ptr<OwnedUnitBonusFrame>> & ordered) const
+{
+	if(!peerQueries || ordered.size() != peerQueries->size() + 1 || recipientPosition >= ordered.size()
+		|| ordered[recipientPosition]->data->identity.id != identity.id)
+		throw std::invalid_argument("Current roster must retain exact captured ordered occurrences");
+	CurrentPeers result;
+	std::vector<std::shared_ptr<const Unit>> roster;
+	for(size_t i = 0, peer = 0; i < ordered.size(); ++i)
+	{
+		if(i == recipientPosition) roster.push_back(subject);
+		else
+		{
+			auto next = peerQueries->at(peer++)->currentCopy(*this, *ordered[i]->data);
+			roster.push_back(next->subject); result.queries.push_back(std::move(next));
+		}
+	}
+	result.environment = std::make_unique<OwnedUnitEnvironment>(std::move(roster), environment);
+	return result;
+}
 std::vector<std::shared_ptr<const Unit>> OwnedUnitBonusFrame::Data::buildPeers(const std::vector<PeerInput> & sources)
 {
 	if(!peers.empty() || recipientPosition > sources.size())

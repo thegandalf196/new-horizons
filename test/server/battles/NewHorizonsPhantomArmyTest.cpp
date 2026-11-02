@@ -420,7 +420,7 @@ TEST_F(NewHorizonsPhantomArmyTest, SchoolRankScalesOnlySpellPowerIntegrityAndPre
 	}
 
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, definition, 0);
-	EXPECT_NE(description.find("Expert School: 145% Spell Power-derived Phantom Integrity."), std::string::npos);
+	EXPECT_NE(description.find("Expert School: 145% of normal Phantom Integrity from Spell Power."), std::string::npos);
 }
 
 TEST_F(NewHorizonsPhantomArmyTest, SingleHexLandingPreviewMatchesTheActualCloneAndSkipsAnOccupiedLanding)

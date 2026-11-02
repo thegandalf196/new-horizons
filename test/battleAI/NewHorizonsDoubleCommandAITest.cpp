@@ -10,6 +10,11 @@
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/BattleAI.h"
+#include "../../AI/BattleAI/HeroDecisionPressure.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/StartInfo.h"
+#include "../../lib/CRandomGenerator.h"
 #include "../../AI/BattleAI/HeroOrderCandidates.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/GameConstants.h"
@@ -305,4 +310,66 @@ TEST_F(NewHorizonsDoubleCommandAITest, CandidateGenerationRetainsNonpositiveMand
 	EXPECT_EQ(server.startedActions.size(), actionsBefore);
 	EXPECT_TRUE(callback->heroActions.empty());
 	EXPECT_TRUE(callback->creatureActions.empty());
+}
+
+TEST_F(NewHorizonsDoubleCommandAITest, RealActiveStackResolvesNativePendingSecondOrderBeforeCreatureAction)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePendingChoice());
+	ASSERT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+
+	int own = 0, opposing = 0;
+	for(const auto * unit : battle()->battleGetAllStacks())
+		(unit->unitSide() == BattleSide::ATTACKER ? own : opposing)
+			+= unit->getCount() * unit->creatureId().toCreature()->getAIValue();
+	const float ratio = opposing ? static_cast<float>(own) / opposing : 1.0f;
+	const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
+	const auto before = gameState()->saveToMemory();
+	const auto serialized = [](const auto & value)
+	{
+		CMemorySerializer memory;
+		memory.oser & value;
+		return memory.extractBuffer();
+	};
+	const auto randomBefore = serialized(*gameHandler->randomizer);
+	const auto fixtureBefore = serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
+	const auto ambientBefore = serialized(CRandomGenerator::getDefault());
+	std::vector<std::byte> directRequest;
+	for(const bool enabled : {false, true})
+	{
+		callback->heroActions.clear();
+		heroDecisionPressure::Experiment experiment;
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, ratio, horizon);
+		ASSERT_TRUE(evaluator.attemptCastingSpell(active, false, nullptr, nullptr, nullptr, nullptr,
+			enabled ? &experiment : nullptr));
+		ASSERT_EQ(callback->heroActions.size(), 1u);
+		EXPECT_EQ(experiment.baselineAttempts, 0u);
+		EXPECT_FALSE(experiment.baselineReady);
+		const auto request = serialized(callback->heroActions.front());
+		if(!enabled) directRequest = request;
+		else EXPECT_EQ(request, directRequest);
+		EXPECT_EQ(gameState()->saveToMemory(), before);
+		EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
+		EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
+		EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
+	}
+	callback->heroActions.clear();
+	CBattleAI ai;
+	AutocombatPreferences preferences;
+	preferences.enableSpellsUsage = false;
+	ai.initBattleInterface(environment, callback, preferences);
+	ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
+		attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
+	ai.activeStack(BattleID(0), active);
+	ASSERT_EQ(callback->heroActions.size(), 1u);
+	EXPECT_EQ(serialized(callback->heroActions.front()), directRequest);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
+	EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
+	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
+	EXPECT_TRUE(callback->creatureActions.empty());
+	const auto & chosen = callback->heroActions.front();
+	ASSERT_EQ(chosen.actionType, EActionType::HERO_COMMAND);
+	EXPECT_NE(chosen.command, battle()->getDoubleCommandState(BattleSide::ATTACKER).firstOrder);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), chosen));
+	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
 }

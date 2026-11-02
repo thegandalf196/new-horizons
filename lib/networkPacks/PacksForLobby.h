@@ -160,7 +160,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsOffensiveStartSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
-	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported = false, bool schoolSupported = false, bool additionalSupported = false, bool recoverySupported = false) const;
@@ -178,6 +178,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported = false) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateNeutralArmySizeSerialization(bool supported) const;
+	void validateNeutralLeadershipCalibrationSerialization(bool supported) const;
 	void validateNeutralArmyStartOptionSerialization(bool supported) const;
 	void validateRecruitmentGrowthSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
@@ -189,6 +190,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 			validateNeutralArmyStartOptionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		if(h.saving)
 			validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+		if(h.saving)
+			validateNeutralLeadershipCalibrationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
 		if(h.saving)
 			validateRecruitmentGrowthSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 		if(h.saving)
@@ -218,7 +221,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 		if(h.saving)
 			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
 		if(h.saving)
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)

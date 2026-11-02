@@ -29,6 +29,11 @@ std::optional<PlayerColor> BattleProxy::getPlayerID() const
 	return subject->getPlayerID();
 }
 
+VisibleHeroPolicy BattleProxy::battleGetVisibleHeroPolicy(BattleSide side) const
+{
+	return subject->battleGetVisibleHeroPolicy(side); // Do not recreate stripped address capability through getSideHero.
+}
+
 int32_t BattleProxy::getActiveStackID() const
 {
 	const auto * ret = subject->battleActiveUnit();

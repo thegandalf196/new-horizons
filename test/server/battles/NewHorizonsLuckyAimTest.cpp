@@ -57,6 +57,8 @@ protected:
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";
 		startGame();
+		// Neither Tower nor Castle receives native-terrain bonuses in this numeric control.
+		gameState()->getMap().getTile(int3(4, 4, 0)).terrainType = TerrainId::DIRT;
 		startBattle();
 	}
 
@@ -67,6 +69,8 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, certainLuckChance());
 		loaded->overrideGameSetting(EGameSettings::COMBAT_LUCK_DICE_SIZE, JsonNode(100));
+		// The original numeric oracles use historical additive positive Luck.
+		loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
 	}
 
 	SecondarySkill luckSkill() const
@@ -102,6 +106,16 @@ protected:
 	CStack * defenderArchangel()
 	{
 		return addStack(BattleSide::DEFENDER, creatureByName("core:archangel"), BattleHex(leftHex + 3), 100);
+	}
+};
+
+class NewHorizonsCurrentLuckyAimTest : public NewHorizonsLuckyAimTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		NewHorizonsLuckyAimTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(true));
 	}
 };
 }
@@ -194,4 +208,40 @@ TEST_F(NewHorizonsLuckyAimTest, LiveAndDetachedAIPredictionUseTheSameLuckyAimDef
 	ASSERT_NE(projectedTarget, nullptr);
 	const BattleAttackInfo projectedRanged(projectedSource.get(), projectedTarget.get(), 0, true);
 	EXPECT_EQ(projected.battleExpectedLuckDamage(projectedRanged), expected);
+}
+
+TEST_F(NewHorizonsCurrentLuckyAimTest, FinalLuckMultipliesTheLuckyAimRaisedDamageAndDetachedPrediction)
+{
+	ASSERT_TRUE(battle()->getBattle()->getLuckRollRules().finalDirectPhysicalMultiplier);
+	setLuckRank(MasteryLevel::BASIC);
+	auto * source = attackerTitan();
+	auto * target = defenderArchangel();
+	ASSERT_EQ(source->getAttack(true), 24);
+	ASSERT_EQ(target->getDefense(true), 30);
+	const BattleAttackInfo ordinary(source, target, 0, true);
+	auto lucky = ordinary;
+	lucky.luckyStrike = true;
+	const auto ordinaryBefore = battle()->calculateDmgRange(ordinary).damage;
+	const auto luckyBefore = battle()->calculateDmgRange(lucky).damage;
+	EXPECT_EQ(luckyBefore.min, 6800);
+	EXPECT_EQ(luckyBefore.max, 10200);
+
+	selectLuckyAim();
+	// Ignore floor(30 * .25) = 7 Defense: advantage is +1. Current Luck
+	// multiplies the raised damage, so the factor is (1 + .05) * 2 = 2.10.
+	const auto raised = battle()->calculateDmgRange(lucky).damage;
+	EXPECT_EQ(raised.min, 8400);
+	EXPECT_EQ(raised.max, 12600);
+	expectSameDamage(battle()->calculateDmgRange(ordinary).damage, ordinaryBefore);
+	EXPECT_EQ(battle()->battleExpectedLuckDamage(ordinary), 10500);
+
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	LuckyAimEnvironment environment(gameState());
+	HypotheticBattle projected(&environment, callback);
+	const auto projectedSource = projected.getForUpdate(source->unitId());
+	const auto projectedTarget = projected.getForUpdate(target->unitId());
+	ASSERT_NE(projectedSource, nullptr);
+	ASSERT_NE(projectedTarget, nullptr);
+	EXPECT_EQ(projected.battleExpectedLuckDamage(
+		BattleAttackInfo(projectedSource.get(), projectedTarget.get(), 0, true)), 10500);
 }

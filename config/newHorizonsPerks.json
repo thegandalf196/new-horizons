@@ -4,6 +4,10 @@
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
 	"sylvanTacticsPolicy": 1,
+	"quickStudyPolicy": {
+		"version": 1,
+		"interval": 3
+	},
 	"necromancyPolicy": {
 		"version": 2,
 		"skeletonLeadershipReductionPercent": [0, 50, 60, 70],
@@ -273,10 +277,10 @@
 					"id": "new-horizons:armorer.lastStand",
 					"name": "Last Stand",
 					"requires": "expert",
-					"description": "Once per combat, the first friendly stack that would be completely destroyed by a physical creature attack instead survives with one creature at 1 HP and immediately Defends. Protects ordinary stack health only, not clones or Phantom Integrity. If lethal retaliation triggers this on the acting attacker, its current activation ends.",
+					"description": "Once per combat, save the first friendly creature stack that a physical creature attack would destroy. It survives with one creature at 1 HP and immediately Defends.\n\nClones and Phantom Integrity are not protected. If lethal retaliation triggers Last Stand on the acting attacker, its current activation ends.",
 					"effect": {
 						"status": "active",
-						"description": "Once per combat, the first friendly stack that would be completely destroyed by a physical creature attack instead survives with one creature at 1 HP and immediately Defends. Protects ordinary stack health only, not clones or Phantom Integrity. If lethal retaliation triggers this on the acting attacker, its current activation ends."
+						"description": "Once per combat, save the first friendly creature stack that a physical creature attack would destroy. It survives with one creature at 1 HP and immediately Defends.\n\nClones and Phantom Integrity are not protected. If lethal retaliation triggers Last Stand on the acting attacker, its current activation ends."
 					}
 				},
 				{
@@ -415,10 +419,10 @@
 					"id": "new-horizons:archery.rainOfArrows",
 					"name": "Rain of Arrows",
 					"requires": "expert",
-					"description": "Once per activation after a ranged attack, the enemy stack adjacent to the primary target with the highest current aggregate HP suffers 35% of the actual damage dealt to the primary target. Ties use deterministic hex order; if no adjacent enemy exists, there is no secondary damage.",
+					"description": "Once per activation, a ranged attack also damages one enemy beside the primary target. The extra hit deals 35% of the actual damage dealt to the primary target.\n\nThe adjacent enemy stack with the most total HP remaining is hit automatically; ties use hex order. If no adjacent enemy exists, there is no extra hit.",
 					"effect": {
 						"status": "active",
-						"description": "Once per activation after a ranged attack, the enemy stack adjacent to the primary target with the highest current aggregate HP suffers 35% of the actual damage dealt to the primary target. Ties use deterministic hex order; if no adjacent enemy exists, there is no secondary damage."
+						"description": "Once per activation, a ranged attack also damages one enemy beside the primary target. The extra hit deals 35% of the actual damage dealt to the primary target.\n\nThe adjacent enemy stack with the most total HP remaining is hit automatically; ties use hex order. If no adjacent enemy exists, there is no extra hit."
 					}
 				}
 			]
@@ -1045,10 +1049,10 @@
 					"id": "new-horizons:command.commandingPresence",
 					"name": "Commanding Presence",
 					"requires": "advanced",
-					"description": "Friendly stacks currently affected by one of the hero's Orders treat negative Morale as 0 while that stack's Order benefit remains active. The floor ends immediately when its benefit is spent or broken, even if the Order snapshot remains until round end; examples include a consumed Charge, a broken or exhausted Protect pair, and the end of Second Wind's extra activation.",
+					"description": "Friendly stacks benefiting from your hero's Orders treat negative Morale as 0. The protection ends as soon as that stack's Order benefit is spent or broken.\n\nFor example, it ends when Charge is consumed, a Protect pair breaks or is exhausted, or Second Wind's extra activation ends. An Order remaining on record until round end does not extend this protection.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly stacks currently affected by one of the hero's Orders treat negative Morale as 0 while that stack's Order benefit remains active. The floor ends immediately when its benefit is spent or broken, even if the Order snapshot remains until round end; examples include a consumed Charge, a broken or exhausted Protect pair, and the end of Second Wind's extra activation."
+						"description": "Friendly stacks benefiting from your hero's Orders treat negative Morale as 0. The protection ends as soon as that stack's Order benefit is spent or broken.\n\nFor example, it ends when Charge is consumed, a Protect pair breaks or is exhausted, or Second Wind's extra activation ends. An Order remaining on record until round end does not extend this protection."
 					}
 				},
 				{
@@ -1091,24 +1095,24 @@
 			"description": "Light preserves: healing, blessing, divine protection, purification, restoration, and holy retaliation.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
+					"description": "Learn Light spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
+						"description": "Learn Light spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
+					"description": "Learn Light spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
+						"description": "Learn Light spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
+					"description": "Learn Light spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
+						"description": "Learn Light spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				}
 			},
@@ -1223,24 +1227,24 @@
 			"description": "Shadow condemns: curses, stolen vitality, supernatural affliction, sacrifice, reanimation, and execution.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
+					"description": "Learn Shadow spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
+						"description": "Learn Shadow spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
+					"description": "Learn Shadow spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
+						"description": "Learn Shadow spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
+					"description": "Learn Shadow spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
+						"description": "Learn Shadow spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				}
 			},
@@ -1355,24 +1359,24 @@
 			"description": "Nature governs living systems and the physical world: regeneration, vegetation, venom, beasts, terrain, and elemental convergence.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
+					"description": "Learn Nature spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
+						"description": "Learn Nature spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
+					"description": "Learn Nature spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
+						"description": "Learn Nature spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
+					"description": "Learn Nature spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
+						"description": "Learn Nature spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				}
 			},
@@ -1487,24 +1491,24 @@
 			"description": "Havoc destroys through fire, frost, lightning, bombardment, traps, and catastrophic force.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
+					"description": "Learn Havoc spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
+						"description": "Learn Havoc spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
+					"description": "Learn Havoc spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
+						"description": "Learn Havoc spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
+					"description": "Learn Havoc spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
+						"description": "Learn Havoc spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				}
 			},
@@ -1619,24 +1623,24 @@
 			"description": "Sorcery manipulates magic and reality through technique: overcharge, dispelling, relocation, illusion, counterspells, gravity, time, and magical sealing.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
+					"description": "Learn Sorcery spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
+						"description": "Learn Sorcery spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
+					"description": "Learn Sorcery spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
+						"description": "Learn Sorcery spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
+					"description": "Learn Sorcery spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
+						"description": "Learn Sorcery spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				}
 			},
@@ -1751,24 +1755,24 @@
 			"description": "Chaos destabilizes probability, position, identity, control, and the relationship between beneficial and harmful magical states.",
 			"ranks": {
 				"basic": {
-					"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier.",
+					"description": "Learn Chaos spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 3 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 115% Basic multiplier."
+						"description": "Learn Chaos spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"advanced": {
-					"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier.",
+					"description": "Learn Chaos spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 4 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 130% Advanced multiplier."
+						"description": "Learn Chaos spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				},
 				"expert": {
-					"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier.",
+					"description": "Learn Chaos spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
 					"effect": {
 						"status": "active",
-						"description": "The hero may acquire Level 5 spells from this school through ordinary learning. When a School-rank spell benefit is authored, applicable Spell Power coefficients use the provisional 145% Expert multiplier."
+						"description": "Learn Chaos spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank."
 					}
 				}
 			},
@@ -1929,10 +1933,10 @@
 					"id": "new-horizons:spellcraft.concentration",
 					"name": "Concentration",
 					"requires": "basic",
-					"description": "A hero combat spell with exactly one unique prospective stack recipient receives +15% to its Spell Power-derived numerical component. Count recipients before resistance rolls or random additional-target draws, not only stacks that ultimately receive an effect.",
+					"description": "Strengthen combat spells that target just one creature stack.\n\nThe part of the effect that scales with Spell Power gains +15%. Targets still count if they resist or would be chosen at random.",
 					"effect": {
 						"status": "active",
-						"description": "A hero combat spell with exactly one unique prospective stack recipient receives +15% to its Spell Power-derived numerical component. Count recipients before resistance rolls or random additional-target draws, not only stacks that ultimately receive an effect."
+						"description": "Strengthen combat spells that target just one creature stack.\n\nThe part of the effect that scales with Spell Power gains +15%. Targets still count if they resist or would be chosen at random."
 					}
 				},
 				{
@@ -2061,10 +2065,10 @@
 					"id": "new-horizons:wisdom.arcaneMemory",
 					"name": "Arcane Memory",
 					"requires": "basic",
-					"description": "After a genuine scroll-sourced cast successfully completes, permanently learn the spell only if captured ordinary acquisition rules and its School requirement permit it. Current paid Adventure Guild unlocks are not bypassed; captured older rules retain their ordinary behavior. Book or Tome sources take priority over scrolls, and reusable scrolls over charged artifacts. Rejected, canceled or pending casts and unused carried scrolls do not teach; reusable scrolls remain reusable.",
+					"description": "Permanently learn a spell after successfully casting it from a scroll, if your hero meets the normal learning rules, including its School requirement. This does not bypass Adventure Guild unlocks. Reusable scrolls remain reusable.\n\nA spell available from your spellbook or a Tome uses that source before a scroll; reusable scrolls take priority over charged artifacts. Carrying a scroll is not enough: canceled, rejected, or unfinished casts do not teach the spell.",
 					"effect": {
 						"status": "active",
-						"description": "After a genuine scroll-sourced cast successfully completes, permanently learn the spell only if captured ordinary acquisition rules and its School requirement permit it. Current paid Adventure Guild unlocks are not bypassed; captured older rules retain their ordinary behavior. Book or Tome sources take priority over scrolls, and reusable scrolls over charged artifacts. Rejected, canceled or pending casts and unused carried scrolls do not teach; reusable scrolls remain reusable."
+						"description": "Permanently learn a spell after successfully casting it from a scroll, if your hero meets the normal learning rules, including its School requirement. This does not bypass Adventure Guild unlocks. Reusable scrolls remain reusable.\n\nA spell available from your spellbook or a Tome uses that source before a scroll; reusable scrolls take priority over charged artifacts. Carrying a scroll is not enough: canceled, rejected, or unfinished casts do not teach the spell."
 					}
 				},
 				{
@@ -2751,10 +2755,10 @@
 					"id": "new-horizons:learning.quickStudy",
 					"name": "Quick Study",
 					"requires": "advanced",
-					"description": "At every fifth hero level, the initial level-up offer is automatically rerolled once before the choices are shown to the player.",
+					"description": "At hero levels 3, 6, 9 and every third level thereafter, after seeing the Skill and perk choices, you may replace the whole offer once. The replacement is final.",
 					"effect": {
 						"status": "active",
-						"description": "At every fifth hero level, the initial level-up offer is automatically rerolled once before the choices are shown to the player."
+						"description": "At hero levels 3, 6, 9 and every third level thereafter, after seeing the Skill and perk choices, you may replace the whole offer once. The replacement is final."
 					}
 				},
 				{

@@ -331,12 +331,6 @@ std::shared_ptr<const CObstacleInstance> CBattleInfoEssentials::battleGetObstacl
 	return std::shared_ptr<const CObstacleInstance>();
 }
 
-bool CBattleInfoEssentials::battleIsObstacleVisibleForSide(const CObstacleInstance & coi, BattleSide side) const
-{
-	RETURN_IF_NOT_BATTLE(false);
-	return side == BattleSide::ALL_KNOWING || coi.visibleForSide(side, battleHasNativeStack(side));
-}
-
 bool CBattleInfoEssentials::battleHasNativeStack(BattleSide side) const
 {
 	RETURN_IF_NOT_BATTLE(false);

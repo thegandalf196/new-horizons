@@ -3,9 +3,12 @@
  */
 #pragma once
 #include "../../lib/json/JsonNode.h"
+#include "../../lib/filesystem/ResourcePath.h"
+#include "../../lib/constants/StringConstants.h"
 
 inline JsonNode historicalCrusadeRules(JsonNode rules, int version = 3)
 {
+	rules.Struct().erase("pointBlankPreservesAdjacentExemption");
 	// A loaded pre-revision game keeps Crusade and never acquires The Chosen.
 	rules["spells"].Struct().erase("new-horizons:theChosen");
 	rules["spells"]["new-horizons:crusade"].Struct().erase("active");
@@ -62,5 +65,56 @@ inline JsonNode historicalCrusadeRules(JsonNode rules, int version = 3)
 			sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
 		}
 	}
+	return rules;
+}
+
+inline JsonNode historicalMagicV1Rules()
+{
+	JsonNode rules = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")), 1);
+	rules["rulesetVersion"].Integer() = 1;
+	rules.Struct().erase("heroLuck");
+	rules.Struct().erase("heroMorale");
+	rules.Struct().erase("warcasting");
+	rules.Struct().erase("spellPoints");
+	rules.Struct().erase("mageGuildGeneration");
+	rules.Struct().erase("physicalDamageReductionCapPercent");
+	rules.Struct().erase("schoolRankPowerCoefficientPercent");
+	rules.Struct().erase("spellcraftEfficiencyPercent");
+	for(auto & [name, faction] : rules["factions"].Struct())
+	{
+		(void)name;
+		faction["major"] = faction["preferredA"];
+		faction["minor"] = faction["preferredB"];
+		faction.Struct().erase("preferredA");
+		faction.Struct().erase("preferredB");
+	}
+	for(auto & [name, spell] : rules["spells"].Struct())
+	{
+		(void)name;
+		spell.Struct().erase("active");
+		spell.Struct().erase("directDamage");
+		spell.Struct().erase("cureAfflictions");
+		spell.Struct().erase("selectedPlacement");
+		spell.Struct().erase("rawSpellPowerPerPatch");
+		spell.Struct().erase("earthquake");
+		spell.Struct().erase("structures");
+		spell.Struct().erase("heroAccess");
+		spell.Struct().erase("focusMagic");
+		spell.Struct().erase("slow");
+		spell.Struct().erase("livingArmor");
+		spell.Struct().erase("theChosen");
+		spell.Struct().erase("restoration");
+		spell.Struct().erase("propagationLimit");
+		spell.Struct().erase("implosion");
+		spell.Struct().erase("ignoreInterveningBarriers");
+		spell.Struct().erase("temporaryMagicalEffectsOnly");
+		spell.Struct().erase("schoolRankDurations");
+		spell.Struct().erase("burnGroundedFlyers");
+		if(spell.Struct().contains("variant"))
+		{
+			spell.Struct().erase("variant");
+		}
+	}
+	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
 	return rules;
 }

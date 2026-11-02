@@ -363,6 +363,7 @@ public:
 	bool isHypnotized() const override;
 	bool isInvincible() const override;
 	bool isTimeStopped() const override;
+	std::optional<bool> legacyTimeStopSpellMatch(SpellID spell) const override;
 
 	bool isClone() const override;
 	bool hasClone() const override;
@@ -469,6 +470,9 @@ public:
 	void localInit(const IUnitEnvironment * env_);
 	/// Bind copied/prepared state to its environment without resetting values.
 	void bindStateEnvironment(const IUnitEnvironment * env_) noexcept;
+	/// Identity only; does not expose, acquire or change the environment.
+	bool usesStateEnvironment(const IUnitEnvironment & expected) const noexcept { return env == &expected; }
+
 	void serializeJson(JsonSerializeFormat & handler);
 	void serializeWaitActionState(JsonSerializeFormat & handler);
 	void serializeJsonRoundReceipts(JsonSerializeFormat & handler);

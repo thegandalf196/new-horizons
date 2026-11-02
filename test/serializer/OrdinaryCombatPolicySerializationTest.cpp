@@ -93,6 +93,7 @@ class OrdinaryCombatPolicySerializationTest : public HeroCommandFixture,
 {
 protected:
 	JsonNode authored;
+	bool preCalibrationCapture = false;
 	bool historicFour = false;
 	bool historicRanged = false;
 	bool historicMaintenance = false;
@@ -110,6 +111,15 @@ protected:
 		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, authored);
+		// Explicit old-codec worlds predate captured neutral calibration.
+		if(preCalibrationCapture)
+		{
+			loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+			auto perkRules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perkRules.Struct().erase("quickStudyPolicy");
+			perkRules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+		}
 	}
 	void prepare(bool natural = false, const char * actorOverride = nullptr)
 	{
@@ -164,6 +174,7 @@ protected:
 };
 TEST_P(OrdinaryCombatPolicySerializationTest, CurrentOwnedSnapshotsKeepIdentityAndPriorWritersRejectBeforePrefix)
 {
+	preCalibrationCapture = true;
 	const auto owner = std::get<2>(GetParam());
 	ASSERT_NO_FATAL_FAILURE(prepare(owner == Owner::ALL));
 	auto world = gameState();
@@ -272,6 +283,7 @@ INSTANTIATE_TEST_SUITE_P(CombatAndOwnedScopes, OrdinaryCombatPolicySerialization
 class OrdinaryCombatHistoricalTest : public OrdinaryCombatPolicySerializationTest {};
 TEST_P(OrdinaryCombatHistoricalTest, GenuinePriorWorldAndPoolKeepMissingCombatAndCapturedIdentity)
 {
+	preCalibrationCapture = true;
 	const auto epoch = priorEpochs.at(2 * static_cast<size_t>(std::get<2>(GetParam()))
 		+ static_cast<size_t>(std::get<1>(GetParam())));
 	historicFour = epoch >= static_cast<Version>(1146);
@@ -372,9 +384,10 @@ INSTANTIATE_TEST_SUITE_P(FourMalformedOwnerDomains, OrdinaryCombatMalformedTest,
 TEST(OrdinaryCombatAdmission, NamedFlagAndExplicitZeroRemainStrictTo1151)
 {
 	static_assert(static_cast<int>(combatEpoch) == 1151);
-	static_assert(Version::CURRENT == combatEpoch);
+	static_assert(Version::CURRENT >= combatEpoch);
 	EXPECT_FALSE(newHorizonsHeroes::SpecialtySerializationContext{}.ordinaryCombatSpecialties);
 	for(const auto epoch : priorEpochs) EXPECT_FALSE(context(epoch).ordinaryCombatSpecialties);
+	EXPECT_TRUE(context(combatEpoch).ordinaryCombatSpecialties);
 	EXPECT_TRUE(context(Version::CURRENT).ordinaryCombatSpecialties);
 	EXPECT_TRUE(context(static_cast<Version>(1146)).ordinaryCreaturePolicyExtensions);
 	for(const auto & row : combatPolicies)
@@ -487,6 +500,7 @@ TEST(OrdinaryCombatAdmission, FourIndependentKeysDoNotWidenAnyPriorFamilyGate)
 class OrdinaryCombat1144OwnerTest : public OrdinaryCombatPolicySerializationTest {};
 TEST_P(OrdinaryCombat1144OwnerTest, ActualFirstSixOwnersRejectNewPresenceBeforeTheirPrefixes)
 {
+	preCalibrationCapture = true;
 	firstSixOnly = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	const auto reject = [](auto & owner)

@@ -178,7 +178,7 @@ TEST_F(NewHorizonsHolyWrathTest, CanonicalRosterAndSchoolRankUseTheFortyPlusTwoT
 	EXPECT_NE(description.find("40 + 2 x displayed Spell Power"), std::string::npos);
 	EXPECT_NE(description.find("Undead"), std::string::npos);
 	EXPECT_NE(description.find("base faction is Inferno"), std::string::npos);
-	EXPECT_NE(description.find("Expert School: 145% Spell Power damage coefficient."), std::string::npos);
+	EXPECT_NE(description.find("Expert School: 145% of normal damage from Spell Power."), std::string::npos);
 }
 
 TEST_F(NewHorizonsHolyWrathTest, AuthoritativeCastDamagesOrdinaryEnemyAndSpendsElevenMana)

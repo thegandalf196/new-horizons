@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
 #include "HeroCommandFixture.h"
+#include "../../../lib/IGameSettings.h"
 #include "../../../lib/battle/NewHorizonsCoordinatedMarks.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -32,6 +33,7 @@ class NewHorizonsCoordinatedMarkFixture : public HeroCommandFixture
 {
 protected:
 	int mode = 0;
+	bool preOptionalCapture = false;
 	CStack * actor = nullptr;
 	CStack * victim = nullptr;
 	CoordinatedMarkRecordingServer observed;
@@ -42,6 +44,13 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		useRevisedOrders = true; HeroCommandFixture::mapLoaded(map);
+		if(preOptionalCapture)
+		{
+			auto perkRules = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perkRules.Struct().erase("quickStudyPolicy");
+			perkRules.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
+		}
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 		for(const char * key : {"consecratedTargetDefenseIgnorePercent", "featheredFeintPhysicalReductionIgnorePercent"})

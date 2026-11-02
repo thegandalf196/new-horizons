@@ -31,7 +31,7 @@ void ClientPacketReceiveSession::visitForClient(CPackForClient & packet)
 	if(activePacket || access.child)
 		throw std::logic_error("Receive dispatch is not reentrant");
 	activePacket = &packet;
-	try { handler.visitForClient(packet); } // EXACT existing dispatcher; no partial routing
+	try { handler.visitForClient(packet, this); } // EXACT existing dispatcher; no partial routing
 	catch(...) { activePacket = nullptr; throw; }
 	activePacket = nullptr;
 }

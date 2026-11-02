@@ -249,12 +249,24 @@ public:
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & availablePerks,
 		const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
 	void setCloseOnSelection(bool value);
+	void configureReroll(QueryID queryID, bool available, std::function<int()> callback);
+	bool matchesQuery(QueryID queryID) const;
+	bool matchesHero(const CGHeroInstance * heroInstance) const;
+	void rerollRequestApplied(uint32_t requestID, bool success);
 
 	void close() override;
 
 private:
 	bool closeOnSelection = true;
 	bool selectionSubmitted = false;
+	QueryID levelQuery = QueryID::NONE;
+	std::shared_ptr<CButton> reroll;
+	std::function<int()> rerollCallback;
+	std::optional<uint32_t> rerollRequest;
+	bool rerollAvailable = false;
+	bool rerollPending = false;
+	void refreshRerollControls();
+	void requestReroll();
 };
 
 /// Town portal, castle gate window

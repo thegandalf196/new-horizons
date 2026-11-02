@@ -3,6 +3,11 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../../lib/battle/OwnedFrameCaptureFacts.h"
+#include "../../../lib/bonuses/PreparedBonusGraphStorage.h"
+#include "../../../lib/bonuses/BonusSelector.h"
+#include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
+#include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "BattleTestFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -921,4 +926,68 @@ TEST_F(NewHorizonsSylvanLuckTest, RetaliationIncludesItsOwnLuckyStrike)
 	const auto projected = AttackPossibility::evaluate(BattleAttackInfo(source, target, 0, false), source->getPosition(), cache, model);
 	EXPECT_FALSE(projected.defenderDead);
 	EXPECT_EQ(projected.attackerState->getAvailableHealth(), 200);
+}
+
+TEST_F(NewHorizonsSylvanLuckTest, OpaqueOwnedAcceptanceKeepsLegacyPolicyAfterSourceRetirement)
+{
+	perks({"elvenPrecision"}); startBattle();
+	const auto type = creatureByName("core:angel");
+	CStackBasicDescriptor descriptor(type, 2);
+	// A real native unit lifetime in this existing fixture, not Session/Batch admission.
+	auto native = std::make_unique<CStack>(&descriptor, PlayerColor(0), 12001, BattleSide::ATTACKER, SlotID(0));
+	native->localInit(battle()); ASSERT_EQ(native->getMyHero(), attackerSideHero);
+	const SecondarySkill skill(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	const Bonus bonus(BonusDuration::PERMANENT, BonusType::LUCK, BonusSource::SECONDARY_SKILL, 2, BonusSourceID(skill));
+	battle::ownedFrameCapture::Requirements needed;
+	needed.secondaryRecords.push_back(std::make_shared<Bonus>(bonus));
+	const auto capture = [&] { return battle::ownedFrameCapture::facts(*native, needed, {type.toCreature()}, native.get(), type.toCreature()); };
+	const auto held = native->getAllBonuses(Selector::all, "owned-acceptance-readonly-characterization");
+	const auto scalar = native->save(); const auto tree = native->getTreeVersion();
+	const auto generation = PreparedBonusGraphStorage::currentGeneration();
+	auto * random = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator()); ASSERT_NE(random, nullptr);
+	const auto rngBytes = [&] { CMemorySerializer wire; wire.oser & *random; return wire.extractBuffer(); };
+	const auto rng = rngBytes();
+	const auto oldFacts = capture(); ASSERT_TRUE(oldFacts.acceptance);
+	EXPECT_EQ(native->save(), scalar); EXPECT_EQ(native->getTreeVersion(), tree);
+	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation); EXPECT_EQ(rngBytes(), rng);
+	const auto after = native->getAllBonuses(Selector::all, "owned-acceptance-readonly-characterization");
+	EXPECT_FALSE(held.owner_before(after)); EXPECT_FALSE(after.owner_before(held));
+	auto current = native->acquireState(); std::array<bool, 3> before{}, selected{};
+	const std::array<std::pair<bool, bool>, 3> states{{{false, false}, {true, false}, {true, true}}};
+	const auto expectations = [&](std::array<bool, 3> & values)
+	{
+		for(unsigned flags = 0; flags < values.size(); ++flags)
+		{
+			current->summoned = states[flags].first; current->natureSummoned = states[flags].second;
+			values[flags] = battle::acceptsBattleBonus(*native, *current, bonus);
+		}
+	};
+	expectations(before);
+	attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance"});
+	expectations(selected); const auto newFacts = capture(); ASSERT_TRUE(newFacts.acceptance);
+	EXPECT_FALSE(before[2]); EXPECT_TRUE(selected[2]); // Nature summons distinguish the actual policies.
+	current.reset(); native.reset(); // Retire the real unit before any copied policy evaluation below.
+	struct WithoutLibrary { GameLibrary * saved = LIBRARY; WithoutLibrary() { LIBRARY = nullptr; } ~WithoutLibrary() { LIBRARY = saved; } } absent;
+	for(unsigned flags = 0; flags < before.size(); ++flags)
+	{
+		auto oldState = oldFacts.acceptance->state; auto newState = newFacts.acceptance->state;
+		oldState.summoned = newState.summoned = states[flags].first;
+		oldState.natureSummoned = newState.natureSummoned = states[flags].second;
+		EXPECT_EQ(battle::acceptsBattleBonus(bonus, oldFacts.acceptance->metadata, oldState), before[flags]);
+		EXPECT_EQ(battle::acceptsBattleBonus(bonus, newFacts.acceptance->metadata, newState), selected[flags]);
+	}
+	// Canonical typed form filtering, not an owned-frame form-admission grant.
+	auto form = newFacts.acceptance->state; form.hasForm = true;
+	form.originalForm = type; form.currentForm = CreatureID(CreatureID::ARCHER);
+	Bonus original(BonusDuration::PERMANENT, BonusType::LUCK, BonusSource::CREATURE_ABILITY, 2, BonusSourceID(type));
+	EXPECT_FALSE(battle::acceptsBattleBonus(original, newFacts.acceptance->metadata, form));
+	original.sid = BonusSourceID(form.currentForm);
+	EXPECT_TRUE(battle::acceptsBattleBonus(original, newFacts.acceptance->metadata, form));
+	auto wrong = newFacts.acceptance->state; ASSERT_TRUE(wrong.capturedSubject);
+	++wrong.capturedSubject->unit;
+	EXPECT_THROW(battle::acceptsBattleBonus(bonus, newFacts.acceptance->metadata, wrong), std::invalid_argument);
+	wrong = newFacts.acceptance->state; ++wrong.capturedSubject->activationSerial;
+	EXPECT_THROW(battle::acceptsBattleBonus(bonus, newFacts.acceptance->metadata, wrong), std::invalid_argument);
+	wrong = newFacts.acceptance->state; wrong.capturedSubject.reset();
+	EXPECT_THROW(battle::acceptsBattleBonus(bonus, newFacts.acceptance->metadata, wrong), std::invalid_argument);
 }

@@ -2060,11 +2060,11 @@ void CGameState::validateNewHorizonsNecromancyPolicySerialization(bool supportsV
 		map->validateNewHorizonsNecromancyPolicySerialization(supportsV1, supportsV2);
 }
 
-void CGameState::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported) const
+void CGameState::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported) const
 {
-	newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules, supported, r2Supported, strictSupported);
+	newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules, supported, r2Supported, strictSupported, optionalRerollSupported);
 	if(map)
-		map->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported);
+		map->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported, optionalRerollSupported);
 }
 
 

@@ -14,6 +14,8 @@
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/entities/hero/NewHorizonsPerkState.h"
+#include <utility>
 
 namespace NK2AI
 {
@@ -55,6 +57,8 @@ public:
 	HeroRole getHeroRoleOrDefaultInefficient(const CGHeroInstance * hero) const;
 	HeroRole getHeroRoleOrDefault(const HeroPtr & heroPtr) const;
 	int selectBestSkillIndex(const HeroPtr & heroPtr, const std::vector<SecondarySkill> & skills) const;
+	bool shouldRerollLevelUpOffer(const HeroPtr & heroPtr, const std::vector<SecondarySkill> & skills,
+		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, int reachedLevel) const;
 	void update();
 	float evaluateSecSkill(SecondarySkill skill, const CGHeroInstance * hero) const;
 	float evaluateHero(const CGHeroInstance * hero) const;
@@ -66,6 +70,7 @@ public:
 	float getFightingStrengthCached(const CGHeroInstance * hero) const;
 
 private:
+	std::pair<int, float> bestLevelUpSkill(const HeroPtr & heroPtr, const std::vector<SecondarySkill> & skills) const;
 	float evaluateFightingStrength(const CGHeroInstance * hero) const;
 	float evaluateSpeciality(const CGHeroInstance * hero) const;
 	const CGTownInstance * findTownWithTavern() const;

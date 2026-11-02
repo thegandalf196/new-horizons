@@ -151,6 +151,7 @@
 			"additionalProperties" : false,
 			"properties" : {
 				"newHorizonsCategories" :            { "$ref" : "newHorizonsCreatureCategories.json" },
+				"neutralLeadershipCalibration" :       { "$ref" : "newHorizonsNeutralCalibration.json" },
 				"neutralArmySizePercent" :            { "type" : "integer", "minimum" : 1, "maximum" : 100 },
 				"recruitmentGrowthPercent" :         { "type" : "integer", "minimum" : 0, "maximum" : 1000 },
 				"weeklyGrowthPercent" :               { "type" : "number" },

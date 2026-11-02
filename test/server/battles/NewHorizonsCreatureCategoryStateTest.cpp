@@ -130,6 +130,11 @@ protected:
 		if(legacyWholeWorldSave)
 		{
 			// Keep this pre-pool world snapshot independent of newer installed defaults.
+			map->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+			auto perkRules = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perkRules.Struct().erase("quickStudyPolicy");
+			perkRules.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 			JsonNode emptyArtifactPool;
 			emptyArtifactPool.Vector();
 			map->overrideGameSetting(EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS, emptyArtifactPool);

@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-LEVEL = (ROOT / "client/windows/GUIClasses.cpp").read_text(encoding="utf-8")
+LEVEL = (ROOT / "client/windows/CLevelWindow.cpp").read_text(encoding="utf-8")
 COMPONENT = (ROOT / "client/widgets/CComponent.cpp").read_text(encoding="utf-8")
 TEXTS = json.loads((ROOT / "config/newHorizonsCombatTexts.json").read_text(encoding="utf-8"))
 

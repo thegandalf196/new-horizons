@@ -23,6 +23,7 @@
 #include "HypotheticBattleTypes.h"
 #include "StackWithBonuses.h"
 #include "../../lib/battle/BattleProxy.h"
+#include "../../lib/battle/GraveDustEffectChanges.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
 #include "../../lib/battle/HeroOrderEffects.h"
 #include "../../lib/battle/NewHorizonsElementalRebirth.h"
@@ -35,11 +36,35 @@
 
 class CSpell;
 class InitialExportBattleSubject;
+class OwnedStackQuerySource;
+class OwnedFrameEffectQueries;
+namespace battle { class OwnedBattleFrameBatch; class OwnedUnitBonusFrame; }
 
-class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment
+class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment,
+	public newHorizonsGraveDust::OrderedEffectChangePreflight
 {
 	friend class InitialExportBattleSubject;
 	friend class ProjectedAdjacencyBonuses;
+	friend class OwnedStackQuerySource;
+	friend class OwnedFrameEffectQueries;
+	const SetStackEffect * ordinaryValidatedPacket = nullptr;
+	bool replayingOrdinaryEffects = false; // Private validation branch only.
+	std::shared_ptr<const battle::OwnedBattleFrameBatch> ownedFrameBatch;
+	std::map<uint32_t, std::shared_ptr<battle::OwnedUnitBonusFrame>> ownedFrameBases;
+	const CBattleInfoCallback * ownedSourcePointer = nullptr;
+	std::weak_ptr<CBattleInfoCallback> ownedSourceOwner;
+	void requireOwnedFrameSource() const;
+	void synchronizeOwnedFrame(const StackWithBonuses & current, battle::OwnedUnitBonusFrame & frame) const;
+	std::shared_ptr<battle::OwnedUnitBonusFrame> ownedFrameFor(uint32_t id) const;
+	battle::Units ownedFrameUnitsIf(const battle::UnitFilter & predicate) const;
+	void inheritOwnedFrames(const HypotheticBattle & parent);
+	void installOwnedRootFrames(const Subject & source, std::shared_ptr<const battle::OwnedBattleFrameBatch> batch);
+	static bool ownedFrameSource(const Subject & source);
+	void captureHeroActionState(const CBattleInfoCallback & source, BattleSide side);
+	void captureSideCombatState(const CBattleInfoCallback & source, BattleSide side);
+	void captureFortificationState(const CBattleInfoCallback & actualSource);
+	int battleGetRetreatPermission(BattleSide side, BonusType permission) const override;
+	void applyOwnedEffectChanges(const SetStackEffect & packet);
 	HypotheticSourceBinding sourceBinding;
 	SeizeInitiativeState seizeInitiative;
 	struct ProjectedMana
@@ -59,6 +84,11 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 public:
+	bool usesOwnedFrameQueries() const;
+	bool retainsOwnedFrameBatch(const std::shared_ptr<const battle::OwnedBattleFrameBatch> & batch) const;
+	const std::shared_ptr<const battle::OwnedBattleFrameBatch> & sourceBatch() const;
+	bool hasCanonicalDamageQuerySources(size_t remaining = 512, const BattleInfo * expected = nullptr) const override;
+
 	bool mayHaveSerpentBindings() const noexcept { return mayContainSerpentBindings; }
 	void noteSerpentBindingAdmission(const Bonus & bonus) const;
 	void releaseSerpentBindings(uint32_t sourceId);
@@ -91,11 +121,37 @@ public:
 		seizeInitiative = state;
 	}
 	void completeSeizeInitiativeActivation(uint32_t unitId) { seizeInitiative.complete(unitId); }
+	/// Read-only admission; the private ordinary branch is discarded on every result.
+	void validateOrdinaryEffectVector(const StackWithBonuses & unit, const std::vector<Bonus> & records,
+		newHorizonsGraveDust::EffectOperation operation) const;
+	void preflightEffectChanges(const SetStackEffect & effects) const override;
+	void validateOrdinaryEffectChanges(const SetStackEffect & effects,
+		const StackWithBonuses * currentOverride = nullptr) const;
 	std::map<uint32_t, std::shared_ptr<StackWithBonuses>> stackStates;
 
 	const Environment * env;
 
 	HypotheticBattle(const Environment * ENV, Subject realBattle);
+	/// Caller retains its actual source lease through construction. Session owns
+	/// controller/activation freshness; historical Batch is data, not authority.
+	HypotheticBattle(const Environment * ENV, Subject realBattle,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch> batch);
+	const IBattleInfo * getBattle() const override { requireOwnedFrameSource(); return this; }
+	std::optional<PlayerColor> getPlayerID() const override { requireOwnedFrameSource(); return BattleProxy::getPlayerID(); }
+	int32_t getActivationSerial() const override;
+	DamageEstimation calculateDmgRange(const BattleAttackInfo & info) const override;
+	bool battleCanTargetEmptyHex(const battle::Unit * attacker) const override;
+	void configurePassingLines(const battle::Unit * mover, ReachabilityInfo::Parameters & params) const override;
+	std::vector<SpellID> getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * target) const override;
+	std::vector<SpellID> getAvailableRandomCreatureSpells(const battle::Unit * caster, const battle::Unit * target) const override;
+	int battleGetSurrenderCost(const PlayerColor & player) const override;
+	std::vector<PossiblePlayerBattleAction> getClientActionsForStack(const CStack * stack, const BattleClientInterfaceData & data) override;
+	const std::map<CreatureID, TQuantity> & getDemonicReserve(BattleSide side) const override;
+	VisibleHeroPolicy battleGetVisibleHeroPolicy(BattleSide side) const override;
+	PlayerColor getSidePlayer(BattleSide side) const override;
+	using CBattleInfoCallback::getAccessibility;
+	AccessibilityInfo getAccessibility() const override;
+	int32_t getBloodrageRank(BattleSide side) const override { return bloodrageRanks.at(side); }
 	std::shared_ptr<InitialExportBattleSubject> initialExportSubject() const;
 
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
@@ -200,20 +256,7 @@ public:
 	{
 		return countersequenceArmedStates.at(side);
 	}
-	struct ProjectedActionReceipt
-	{
-		BattleSide side = BattleSide::NONE;
-		HeroActionAllowanceState::Receipt receipt;
-		bool typedLedger = true;
-		uint64_t epoch = 0;
-
-		bool operator==(const ProjectedActionReceipt &) const = default;
-
-		bool isHeroAction() const
-		{
-			return receipt.allowance == HeroActionAllowanceState::AllowanceKind::HERO;
-		}
-	};
+	using ProjectedActionReceipt = HypotheticProjectedActionReceipt;
 	struct ProjectedMetamagicSnapshot
 	{
 		uint8_t uses = 0;
@@ -334,6 +377,7 @@ public:
 	int32_t getBloodrageLowHealthIncrement(BattleSide side) const override;
 	int32_t getBloodragePainIncrement(BattleSide side) const override;
 	SylvanLuckState getSylvanLuckState(BattleSide side) const override { return fortuneStates.at(side); }
+	SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override { return fortuneStates.at(side).damageFlags(); }
 	PerfectFortuneState getPerfectFortuneState(BattleSide side) const override { return perfectFortuneStates.at(side); }
 	LuckSerendipityState getLuckSerendipityState(BattleSide side) const override { return luckSerendipityStates.at(side); }
 	void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override
@@ -616,6 +660,7 @@ private:
 	{
 	public:
 		HypotheticEnvironment(HypotheticBattle * owner_, const Environment * upperEnvironment);
+		void closeNativeSource() noexcept { env = nullptr; }
 
 		const Services * services() const override;
 		const BattleCb * battle(const BattleID & battleID) const override;

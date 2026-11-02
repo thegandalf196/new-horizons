@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "HistoricalCrusadeRules.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/constants/StringConstants.h"
@@ -16,31 +17,7 @@ namespace
 {
 JsonNode fullV1Rules()
 {
-	JsonNode result(JsonPath::builtin("config/newHorizonsMagic"));
-	result["rulesetVersion"].Integer() = 1;
-	result.Struct().erase("warcasting");
-	result.Struct().erase("spellPoints");
-	result.Struct().erase("mageGuildGeneration");
-	result.Struct().erase("physicalDamageReductionCapPercent");
-	result.Struct().erase("schoolRankPowerCoefficientPercent");
-	result.Struct().erase("spellcraftEfficiencyPercent");
-	for(auto & [factionId, faction] : result["factions"].Struct())
-	{
-		(void)factionId;
-		faction["major"] = faction["preferredA"];
-		faction["minor"] = faction["preferredB"];
-		faction.Struct().erase("preferredA");
-		faction.Struct().erase("preferredB");
-	}
-	for(auto & [spellId, spell] : result["spells"].Struct())
-	{
-		(void)spellId;
-		spell.Struct().erase("active");
-		spell.Struct().erase("directDamage");
-		spell.Struct().erase("cureAfflictions");
-	}
-	result.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
-	return result;
+	return historicalMagicV1Rules();
 }
 
 bool validNamed(const JsonNode & rules)

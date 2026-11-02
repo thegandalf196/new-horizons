@@ -271,7 +271,7 @@ public:
 	void validateNewHorizonsRemainingSpellSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
 	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
-	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const;
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
@@ -290,6 +290,7 @@ public:
 	void validateCanonicalSpellClausesSerialization(bool supported, bool sorcerySupported = false) const;
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateNeutralArmySizeSerialization(bool supported) const;
+	void validateNeutralLeadershipCalibrationSerialization(bool supported) const;
 	void validateNeutralArmyStartOptionSerialization(bool supported) const;
 	void validateRecruitmentGrowthSerialization(bool supported) const;
 	void validateTimeStopSerialization(bool supported) const;
@@ -303,6 +304,8 @@ public:
 			validateNeutralArmyStartOptionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		if(h.saving)
 			validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+		if(h.saving)
+			validateNeutralLeadershipCalibrationSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
 		if(h.saving)
 			validateRecruitmentGrowthSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 		if(h.saving)
@@ -340,7 +343,8 @@ public:
 		if(h.saving)
 			validateNewHorizonsWeightedPerkSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
 		if(h.saving)
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
@@ -566,7 +570,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 			if(!h.saving) newHorizonsHeroes::validateWeightedPerkSerialization(heroPerkRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
 			if(!h.saving) newHorizonsHeroes::validateSylvanTacticsSerialization(heroPerkRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			if(!h.saving) newHorizonsHeroes::validateCrisisCommandProfileSerialization(heroPerkRules,

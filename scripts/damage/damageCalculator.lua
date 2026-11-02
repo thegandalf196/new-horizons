@@ -382,7 +382,10 @@ end
 function Script:getRangePenaltyFactor(info)
 	if info.shooting then
 		if info.archeryAdjacentRangedTarget then
-			if info.archeryIgnoreAdjacentRangedPenalty then return info.targetedRangedCommand and -0.25 or 0 end
+			if info.archeryIgnoreAdjacentRangedPenalty then
+				if info.pointBlankPreservesAdjacentExemption then return 0 end
+				return info.targetedRangedCommand and -0.25 or 0
+			end
 			return info.targetedRangedCommand and -0.25 or -0.5
 		end
 		if info.battle:hasDistancePenalty(info.attacker, info.defender, info.attackerHex, info.defenderHex) then

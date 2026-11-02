@@ -2,6 +2,8 @@
 #pragma once
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/filesystem/ResourcePath.h"
+#include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -10,6 +12,7 @@ class BonusList;
 class CStack;
 class CStackInstance;
 class CCallback;
+class IBonusBearer;
 
 namespace creatureBonusStatusPresentation
 {
@@ -21,6 +24,11 @@ struct Row
 	BonusSource bonusSource;
 	std::string tooltip;
 };
+
+/// Format the selected bonus cards without owning widgets or changing state.
+std::vector<Row> visibleRows(const IBonusBearer & bonusSource, const CStackInstance & stackNode,
+	const BonusList & visibleBonuses,
+	const std::function<std::string(const std::shared_ptr<Bonus> &)> & describe);
 
 bool isHydrasVitality(const Bonus & bonus);
 std::string hydrasVitalityText(const CStack * battleStack, const Bonus & marker);

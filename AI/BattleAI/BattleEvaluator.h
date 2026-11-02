@@ -29,6 +29,7 @@ class CGHeroInstance;
 struct DivineMandateStatus;
 namespace heroActionTiming { struct Summary; }
 namespace heroActionSelection { class Observer; }
+namespace heroDecisionPressure { struct Experiment; }
 
 struct CachedAttack
 {
@@ -105,11 +106,13 @@ public:
 	};
 
 	BattleAction selectStackAction(const CStack * stack, SelectionTiming * timing = nullptr);
+	/// Optional call-local experiment; null retains the original candidate set.
 	bool attemptCastingSpell(const CStack * stack, bool allowSpells = true,
 		heroActionSelection::Observer * observer = nullptr,
 		VinesCandidateValueReuse::TestControl * vinesReuse = nullptr,
 		LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse = nullptr,
-		RegenerationBaselineReuse::TestControl * regenerationReuse = nullptr);
+		RegenerationBaselineReuse::TestControl * regenerationReuse = nullptr,
+		heroDecisionPressure::Experiment * orderExperiment = nullptr);
 	bool canCastSpell();
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * timing = nullptr);
 	/// Deterministic full-pool forecast; does not choose the eventual random spell.

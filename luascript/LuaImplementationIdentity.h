@@ -42,6 +42,7 @@ private:
 	unsigned lifeDrainLoaded = 0;
 	bool finished = false;
 	bool canonicalDamageCalculator = false;
+	bool sharedArithmeticTimed = false;
 
 	unsigned expectedModules() const;
 	void invalidate();

@@ -1890,12 +1890,30 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 	int64_t perkOfferSeed = 0;
 	bool artilleryExpertBeforeGain = false;
 	bool logisticsExpertBeforeGain = false;
+	bool optionalRerollAvailable = false;
+	QueryID replacesQueryID = QueryID::NONE;
+	int reachedLevel = 0;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY)
+			&& (optionalRerollAvailable || replacesQueryID != QueryID::NONE || reachedLevel != 0))
+			throw std::runtime_error("Cannot write optional Quick Study offer to an older format");
 		h & queryID;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY))
+		{
+			h & optionalRerollAvailable;
+			h & replacesQueryID;
+			h & reachedLevel;
+		}
+		else if(!h.saving)
+		{
+			optionalRerollAvailable = false;
+			replacesQueryID = QueryID::NONE;
+			reachedLevel = 0;
+		}
 		h & player;
 		h & heroId;
 		h & primskill;

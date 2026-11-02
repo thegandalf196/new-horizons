@@ -16,6 +16,7 @@
 #include "../lib/gameState/GameStatistics.h"
 #include "../lib/networkPacks/PacksForServer.h"
 #include "../lib/serializer/GameConnectionID.h"
+#include "queries/HeroLevelUpOffer.h"
 #include "../lib/serializer/PlayerConnectionID.h"
 
 struct SideInBattle;
@@ -295,6 +296,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			newHorizonsLevelUp::validateNoPendingOptionalOffer(*this);
 		h & QID;
 		h & *randomizer;
 		h & *battles;

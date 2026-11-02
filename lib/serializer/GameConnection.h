@@ -60,8 +60,9 @@ public:
 	void enterLobbyConnectionMode();
 	void setCallback(IGameInfoCallback & cb);
 	void setSerializationVersion(ESerializationVersion version);
+	/// Optional epoch output is assigned only on success, after exact owner/read/write/profile checks.
 	/// Value-only negotiated capabilities; caller separately proves established gameplay/current world.
 	/// Take BEFORE state/native locks. Does not retain a source or grant future graph access.
 	newHorizonsHeroes::SpecialtySerializationContext captureSpecialtySerializationContext(
-		const std::shared_ptr<INetworkConnection> & expectedConnection);
+		const std::shared_ptr<INetworkConnection> & expectedConnection, ESerializationVersion * observedEpoch = nullptr);
 };

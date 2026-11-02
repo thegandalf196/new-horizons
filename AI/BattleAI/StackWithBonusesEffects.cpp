@@ -81,6 +81,8 @@ void restoreGuardianSpiritFromExistingBonuses(StackWithBonuses & unit)
 
 void StackWithBonuses::removeUnitBonus(const std::vector<Bonus> & bonus)
 {
+	if(ownedQuerySource) { applyOwnedBonusVector(bonus, newHorizonsGraveDust::EffectOperation::REMOVE); return; }
+	owner->validateOrdinaryEffectVector(*this, bonus, newHorizonsGraveDust::EffectOperation::REMOVE);
 	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::REMOVE);
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
@@ -170,6 +172,7 @@ void StackWithBonuses::removeGamblerLuckPenalty(HypotheticLifecycleTiming::Effec
 void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
 	HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
+	if(ownedQuerySource) throw std::logic_error("Owned selector mutation needs its canonical raw selector transaction");
 	const auto protectedRemoval = graveDustAI::protectedRemovalSelector(*this, selector);
 	if(const auto subject = owner->initialExportSubject())
 	{
@@ -205,6 +208,7 @@ void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayA
 	{
 		LifecycleTimingScope measurement(timing ? &timing->selectiveRemovalQuery : nullptr);
 		toRemove = origBearer->getBonuses(effectiveSelector);
+		toRemove = clockRemovalRecords(std::move(toRemove), effectiveSelector);
 	}
 	LifecycleTimingScope mutation(timing ? &timing->removalMutation : nullptr);
 
@@ -297,6 +301,7 @@ void StackWithBonuses::captureLocalSpellEffects()
 
 void StackWithBonuses::replaceLocalSpellEffectsExact(const std::vector<Bonus> & replacement)
 {
+	if(ownedQuerySource) throw std::logic_error("Owned replacement requires its canonical source-export transaction");
 	captureLocalSpellEffects();
 	captureEffects();
 	// The raw snapshot includes inherited spell effects. Remove exactly the
@@ -381,6 +386,38 @@ void StackWithBonuses::captureEffects(HypotheticLifecycleTiming::EffectWorkTimin
 	});
 }
 
+namespace
+{
+/// Preserve identity multiplicity while aging each owned raw alias only once.
+/// Immediate predicate borrow: no new stored closure, codec or source query.
+template<typename Predicate>
+void ageAliasedRawEffects(std::vector<std::shared_ptr<Bonus>> & records, const Predicate & roundTimed)
+{
+	// Raw snapshots may contain the same inherited Bonus pointer multiple
+	// times. Clone each expiring identity once, reconnect all aliases, and age
+	// that branch-local clone once so parent/sibling projections stay intact.
+	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> branchCopies;
+	for(auto & bonus : records)
+	{
+		if(!bonus || !roundTimed(bonus.get())
+			|| bonus->turnsRemain <= 0)
+			continue;
+		auto [copy, inserted] = branchCopies.try_emplace(bonus.get());
+		if(inserted)
+			copy->second = std::make_shared<Bonus>(*bonus);
+		bonus = copy->second;
+	}
+	for(const auto & copy : branchCopies)
+		if(copy.second->turnsRemain > 0)
+			--copy.second->turnsRemain;
+	vstd::erase_if(records, [&roundTimed](const std::shared_ptr<Bonus> & bonus)
+	{
+		return !bonus || (roundTimed(bonus.get())
+			&& bonus->turnsRemain <= 0);
+	});
+}
+}
+
 void StackWithBonuses::advanceTimedRound()
 {
 	advanceTimedRound(nullptr);
@@ -388,6 +425,7 @@ void StackWithBonuses::advanceTimedRound()
 
 void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
+	if(ownedQuerySource) throw std::logic_error("Owned aging requires its canonical raw duration transaction");
 	captureLocalSpellEffects();
 	captureEffects(timing);
 	if(isTimeStopped())
@@ -422,31 +460,7 @@ void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTi
 	};
 	age(*projectedEffects);
 	age(*exactLocalSpellEffects);
-	if(projectedUnstackedEffects)
-	{
-		// Raw snapshots may contain the same inherited Bonus pointer multiple
-		// times. Clone each expiring identity once, reconnect all aliases, and age
-		// that branch-local clone once so parent/sibling projections stay intact.
-		std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> branchCopies;
-		for(auto & bonus : *projectedUnstackedEffects)
-		{
-			if(!bonus || !roundTimed(bonus.get())
-				|| bonus->turnsRemain <= 0)
-				continue;
-			auto [copy, inserted] = branchCopies.try_emplace(bonus.get());
-			if(inserted)
-				copy->second = std::make_shared<Bonus>(*bonus);
-			bonus = copy->second;
-		}
-		for(const auto & copy : branchCopies)
-			if(copy.second->turnsRemain > 0)
-				--copy.second->turnsRemain;
-		vstd::erase_if(*projectedUnstackedEffects, [&roundTimed](const std::shared_ptr<Bonus> & bonus)
-		{
-			return !bonus || (roundTimed(bonus.get())
-				&& bonus->turnsRemain <= 0);
-		});
-	}
+	if(projectedUnstackedEffects) ageAliasedRawEffects(*projectedUnstackedEffects, roundTimed);
 	const auto ageRecords = [&roundTimed](auto & records)
 	{
 		for(auto & record : records)

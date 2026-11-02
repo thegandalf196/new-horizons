@@ -1917,23 +1917,6 @@ bool CUnitState::isInvincible() const
 	return bonusCache.hasBonus(UnitBonusValuesProxy::INVINCIBLE);
 }
 
-bool CUnitState::isTimeStopped() const
-{
-	if(hasBonusOfType(BonusType::TIME_STOP))
-		return true;
-
-	// Compatibility with the original data-only fallback marker.  New saves
-	// use the dedicated TIME_STOP bonus, but an in-flight legacy battle may
-	// still carry a hidden NONE marker from the Lua implementation.
-	const auto effects = getBonuses(Selector::sourceType()(BonusSource::SPELL_EFFECT));
-	return vstd::contains_if(*effects, [](const std::shared_ptr<Bonus> & bonus)
-	{
-		if(!bonus || bonus->type != BonusType::NONE || !bonus->sid.as<SpellID>().hasValue())
-			return false;
-		const auto * spell = bonus->sid.as<SpellID>().toSpell();
-		return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
-	});
-}
 
 int CUnitState::getTotalAttacks(bool ranged) const
 {

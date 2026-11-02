@@ -26,7 +26,7 @@ void BattleAction::validatePhysicalCureSerialization(bool frozenSupported, bool 
 		throw std::runtime_error(requestEnvelope
 			? "Invalid physical Cure selection in action request" : "Invalid physical Cure selection");
 	if(spellCurePhysicalAffliction == "graveDust" && !graveDustSupported)
-		throw std::runtime_error("Grave Dust Cure selection requires format1152");
+		throw std::runtime_error("Grave Dust Cure selection requires format1153");
 }
 
 static const int32_t INVALID_UNIT_ID = -1000;

@@ -9,6 +9,19 @@
  */
 #include "StdInc.h"
 
+#include "../../lib/GameConstants.h"
+#include "../../lib/GameLibrary.h"
+#include "../mock/TinyH3MBuilder.h"
+#include "../mock/TinyMapGameTest.h"
+#include "../../lib/callback/EditorCallback.h"
+#include "../../lib/entities/artifact/CArtifactInstance.h"
+#include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/MiscObjects.h"
+#include "../../lib/mapping/MapFormatH3M.h"
+#include "../../lib/modding/CModHandler.h"
+#include "../../lib/serializer/JsonDeserializer.h"
+#include "../../lib/serializer/JsonSerializer.h"
+
 #include "../../lib/filesystem/CMemoryBuffer.h"
 #include "../../lib/filesystem/Filesystem.h"
 
@@ -220,4 +233,110 @@ TEST(MapFormat, DISABLED_Terrain)
 		c.compare("surface", actualSurface, expectedSurface);
 		c.compare("underground", actualUnderground, expectedUnderground);
 	}
+}
+
+namespace
+{
+class MapScrollRoundTripTest : public ::testing::TestWithParam<std::string>
+{
+};
+
+TEST_P(MapScrollRoundTripTest, KeepsExplicitSpellIdentity)
+{
+	if(GetParam().starts_with("new-horizons:")
+		&& !vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+		GTEST_SKIP() << "Requires the separate New Horizons native profile";
+	const SpellID expected(SpellID::decode(GetParam()));
+	ASSERT_TRUE(expected.hasValue());
+	auto bytes = TinyH3M::TinyH3MBuilder(EMapFormat::SOD)
+		.size(36, false).name("ScrollIdentityRoundTrip")
+		.scroll({10, 10, 0}, SpellID(SpellID::MAGIC_ARROW)).build();
+	CMemoryBuffer seed;
+	seed.write(bytes.data(), static_cast<si64>(bytes.size()));
+	seed.seek(0);
+	EditorCallback sourceCallback(nullptr);
+	CMapLoaderH3M sourceLoader("ScrollIdentityRoundTrip", "core", "ASCII", &seed);
+	auto source = sourceLoader.loadMap(&sourceCallback);
+	ASSERT_NE(source, nullptr);
+	sourceCallback.setMap(source.get());
+	ASSERT_EQ(source->objects.size(), 1u);
+	auto * sourceScroll = dynamic_cast<CGArtifact *>(source->objects.front().get());
+	ASSERT_NE(sourceScroll, nullptr);
+	sourceScroll->setArtifactInstance(source->createArtifact(ArtifactID::SPELL_SCROLL, expected));
+	ASSERT_EQ(sourceScroll->getArtifactInstance()->getScrollSpellID(), expected);
+
+	CMemoryBuffer serialized;
+	{
+		CMapSaverJson saver(&serialized);
+		saver.saveMap(source);
+	}
+	serialized.seek(0);
+	EditorCallback restoredCallback(nullptr);
+	CMapLoaderJson loader(&serialized);
+	auto restored = loader.loadMap(&restoredCallback);
+	ASSERT_NE(restored, nullptr);
+	restoredCallback.setMap(restored.get());
+	ASSERT_EQ(restored->objects.size(), 1u);
+	const auto * restoredScroll = dynamic_cast<const CGArtifact *>(restored->objects.front().get());
+	ASSERT_NE(restoredScroll, nullptr);
+	ASSERT_NE(restoredScroll->getArtifactInstance(), nullptr);
+	EXPECT_EQ(restoredScroll->getArtifactInstance()->getScrollSpellID(), expected);
+}
+
+INSTANTIATE_TEST_SUITE_P(CoreAndNewHorizons, MapScrollRoundTripTest,
+	::testing::Values("core:magicArrow", "new-horizons:theChosen", "new-horizons:shadowGift"));
+
+class TownMapDefaultsRoundTripTest : public TinyMapGameTest, public ::testing::WithParamInterface<int>
+{
+protected:
+	Services * gameServices() override { return LIBRARY; }
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		auto * town = loaded->getObjects<CGTownInstance>().front();
+		town->removeAllBuildings();
+		if(GetParam() < 2) town->addBuilding(BuildingID::DEFAULT);
+		if(GetParam() != 1) town->addBuilding(BuildingID::FORT);
+		if(GetParam() == 3)
+		{
+			town->addBuilding(BuildingID::MAGES_GUILD_1);
+			town->forbiddenBuildings.insert(BuildingID::BLACKSMITH);
+		}
+		JsonNode serialized;
+		JsonSerializer writer(nullptr, serialized);
+		town->CGObjectInstance::serializeJson(writer);
+		town->removeAllBuildings();
+		town->forbiddenBuildings.clear();
+		JsonDeserializer reader(nullptr, serialized);
+		town->CGObjectInstance::serializeJson(reader);
+		EXPECT_EQ(town->hasBuilt(BuildingID::DEFAULT), GetParam() < 2);
+		JsonNode chances;
+		chances.Vector().emplace_back(100);
+		loaded->overrideGameSetting(EGameSettings::TOWNS_STARTING_DWELLING_CHANCES, chances);
+	}
+	void prepare()
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(0), PlayerColor(0))
+			.hero({6, 7, 0}, HeroTypeID(1), PlayerColor(1))
+			.town({12, 12, 0}, FactionID::CASTLE, PlayerColor(0));
+		startWithMap(std::move(builder));
+	}
+};
+
+TEST_P(TownMapDefaultsRoundTripTest, InitializesDefaultsWithoutChangingAuthoredLayouts)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	EXPECT_EQ(town->hasBuilt(BuildingID::FORT), GetParam() != 1);
+	EXPECT_EQ(town->hasBuilt(BuildingID::TAVERN), GetParam() < 2);
+	EXPECT_EQ(town->hasBuilt(BuildingID::DWELL_LVL_1), GetParam() < 2);
+	EXPECT_EQ(town->hasBuilt(BuildingID::MAGES_GUILD_1), GetParam() == 3);
+	EXPECT_EQ(town->forbiddenBuildings.contains(BuildingID::BLACKSMITH), GetParam() == 3);
+}
+
+INSTANTIATE_TEST_SUITE_P(DefaultAndAuthoredLayouts, TownMapDefaultsRoundTripTest,
+	::testing::Values(0, 1, 2, 3));
 }

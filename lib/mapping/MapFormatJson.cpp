@@ -1239,7 +1239,7 @@ void CMapLoaderJson::MapObjectLoader::configure()
 		if(art->ID == Obj::SPELL_SCROLL)
 		{
 			auto spellIdentifier = configuration["options"]["spell"].String();
-			auto rawId = LIBRARY->identifiers()->getIdentifier(ModScope::scopeBuiltin(), "spell", spellIdentifier);
+			auto rawId = LIBRARY->identifiers()->getIdentifier(ModScope::scopeMap(), "spell", spellIdentifier);
 			if(rawId)
 				spellID = rawId.value();
 			else

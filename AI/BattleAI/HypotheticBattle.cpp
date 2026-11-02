@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
+#include "../../lib/battle/OwnedBattleFrameBatch.h"
 #include "HypotheticEffectSnapshotRules.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/BattleLayout.h"
@@ -37,8 +38,14 @@ using hypotheticEffectSnapshotRules::hasSnapshotHeroSpecialEffects;
 using hypotheticEffectSnapshotRules::hasTimedMagicalSpellEffects;
 
 HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
+	: HypotheticBattle(ENV, std::move(realBattle), {})
+{
+}
+
+HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
+	std::shared_ptr<const battle::OwnedBattleFrameBatch> batch)
 	: BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)),
-	sourceBinding(subject, *realBattle),
+	sourceBinding(subject, *realBattle, batch || ownedFrameSource(realBattle)),
 	env(ENV),
 	bonusTreeVersion(1)
 {
@@ -54,93 +61,40 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 		projectedPrimalBurstHits = parent->projectedPrimalBurstHits;
 		projectedPlagueHits = parent->projectedPlagueHits;
 		bloodrageFirstBloodUsed = parent->bloodrageFirstBloodUsed;
+		inheritOwnedFrames(*parent);
 	}
 	else
 	{
 		if(const auto * concrete = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
 			bloodrageFirstBloodUsed = concrete->bloodrageFirstBloodUsed;
 	}
-	auto activeUnit = realBattle->battleActiveUnit();
-	activeUnitId = activeUnit ? activeUnit->unitId() : -1;
+	if(batch) installOwnedRootFrames(realBattle, std::move(batch));
+	const auto * activeUnit = ownedFrameBatch ? nullptr : realBattle->battleActiveUnit();
+	activeUnitId = ownedFrameBatch ? static_cast<int32_t>(ownedFrameBatch->activeUnitId())
+		: activeUnit ? activeUnit->unitId() : -1;
 	projectedRound = realBattle->battleGetRound();
 	seizeInitiative = realBattle->getBattle()->getSeizeInitiativeState();
 	deploymentState = realBattle->getBattle()->getDeploymentState();
 	fortuneRollRules = realBattle->getBattle()->getLuckRollRules();
 	if(const auto * concreteBattle = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
 		pendingTimeStopHeroActionSides = concreteBattle->getPendingTimeStopHeroActionSides();
-	for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
-	{
-		const auto part = static_cast<EWallPart>(index);
-		projectedWalls[part] = BattleProxy::getWallState(part);
-		projectedStructuralHP[part] = BattleProxy::getWallStructuralHP(part);
-		canonicalStructuralHP |= projectedStructuralHP[part] > 0;
-	}
-	initialGateState = BattleProxy::getGateState();
-	// Use the subject's visible view, not its unfiltered authoritative obstacle list.
-	for(const auto & obstacle : BattleProxy::getAllObstacles())
-	{
-		if(const auto spell = std::dynamic_pointer_cast<const SpellCreatedObstacle>(obstacle))
-			projectedObstacles.push_back(std::make_shared<SpellCreatedObstacle>(*spell));
-		else
-			projectedObstacles.push_back(obstacle);
-	}
+	captureFortificationState(*realBattle);
 
 	nextId = 0x00F00000;
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		rapidResponseStates[side] = realBattle->getBattle()->getRapidResponseState(side);
-		reducedExtraActivationStates[side] = realBattle->getBattle()->getReducedExtraActivationState(side);
-		crossSchoolFormulaStates[side] = realBattle->getBattle()->getCrossSchoolFormulaState(side);
-		spellResponseStates[side] = realBattle->getBattle()->getSpellResponseState(side);
-		extendSpellRounds[side] = realBattle->getBattle()->getExtendSpellLastRound(side);
-		overwhelmingFormulaStates[side] = realBattle->getBattle()->getOverwhelmingFormulaState(side);
-		heroOrderStates[side] = realBattle->getBattle()->getHeroOrderStates(side);
-		relentlessAssaultStates[side] = realBattle->getBattle()->getRelentlessAssaultState(side);
-		battlecraftMasteryAwardRounds[side] = realBattle->getBattle()->getBattlecraftMasteryAwardRound(side);
-		armorerLastStandUsedStates[side] = realBattle->getBattle()->armorerLastStandUsed(side);
-		rebirthChainUsedStates[side] = realBattle->getBattle()->getRebirthChainUsed(side);
-		phoenixSparkUsedStates[side] = realBattle->getBattle()->getPhoenixSparkUsed(side);
-		armorerDefiantStates[side] = realBattle->getBattle()->getArmorerDefiantState(side);
-		warcastingStates[side] = realBattle->getBattle()->getWarcastingState(side);
-		heroActionAllowances[side] = realBattle->getBattle()->getHeroActionAllowances(side);
-		doubleCommandStates[side] = realBattle->getBattle()->getDoubleCommandState(side);
-		preCombatOrderStates[side] = realBattle->getBattle()->getPreCombatOrderState(side);
-		heroSpellCastCompletedStates[side] = realBattle->getBattle()->hasCompletedHeroSpellCast(side);
-		completedHeroSpellLevelMasks[side] = 0;
-		for(int32_t level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
-			if(realBattle->getBattle()->hasCompletedHeroSpellLevel(side, level))
-				completedHeroSpellLevelMasks[side] |= static_cast<std::uint8_t>(1u << (level - 1));
-		counterspellArmedStates[side] = realBattle->getBattle()->getCounterspellArmed(side);
-		countersequenceArmedStates[side] = realBattle->getBattle()->getMetamagicCountersequenceArmed(side);
-		auto & meta = metamagicStates[side];
-		meta.uses = realBattle->getBattle()->getMetamagicUsesConsumed(side);
-		meta.pending = realBattle->getBattle()->getMetamagicPendingCount(side);
-		meta.grandUsed = realBattle->getBattle()->getMetamagicGrandUsed(side);
-		meta.firstSpell = realBattle->getBattle()->getMetamagicFirstSpell(side);
-		meta.firstTarget = realBattle->getBattle()->getMetamagicFirstTargetUnitId(side);
-		meta.firstCountered = realBattle->getBattle()->getMetamagicFirstCounterspellNegated(side);
-		meta.sequence = realBattle->getBattle()->getMetamagicSequenceSpells(side);
-		focusFireStates[side] = realBattle->battleGetFocusFireState(side);
-		fortuneStates[side] = realBattle->getBattle()->getSylvanLuckState(side);
-		perfectFortuneStates[side] = realBattle->getBattle()->getPerfectFortuneState(side);
-		luckSerendipityStates[side] = realBattle->getBattle()->getLuckSerendipityState(side);
-		adverseRerollStates[side] = realBattle->getBattle()->getAdverseCombatRerollState(side);
-		moraleSuppressionStates[side] = realBattle->getBattle()->getMoraleSuppressionState(side);
-		bloodrageRanks[side] = realBattle->getBattle()->getBloodrageRank(side);
-		bloodrageDamagePercents[side] = realBattle->getBattle()->getBloodrageDamagePercent(side);
-		bloodrageCaps[side] = realBattle->getBattle()->getBloodrageCapPercent(side);
-		bloodrageSpeedBonuses[side] = realBattle->getBattle()->getBloodrageSpeedBonus(side);
-		bloodrageAdditionalRetaliations[side] = realBattle->getBattle()->getBloodrageAdditionalRetaliations(side);
-		bloodrageLowHealthIncrements[side] = realBattle->getBattle()->getBloodrageLowHealthIncrement(side);
-		bloodragePainIncrements[side] = realBattle->getBattle()->getBloodragePainIncrement(side);
+		captureHeroActionState(*realBattle, side);
+		captureSideCombatState(*realBattle, side);
 	}
 
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
 	serverCallback.reset(new HypotheticServerCallback(this));
+	if(ownedFrameBatch) { localEnvironment->closeNativeSource(); env = localEnvironment.get(); }
 	// The remaining units retain the existing lazy projection policy. Frozen's
 	// next-slot receipt must be a branch snapshot: reading it for the first time
 	// after a parent Shatter/thaw cannot import that later parent's mutation.
 	// Likewise, capture current Morale origin before the parent can advance.
+	if(ownedFrameBatch) { getForUpdate(static_cast<uint32_t>(activeUnitId)); return; }
 	for(const auto * unit : realBattle->battleGetAllUnits(false))
 	{
 		// Fold root status admission into the existing visible-unit snapshot pass.
@@ -226,6 +180,7 @@ std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdate(uint32_t id)
 
 BattleID HypotheticBattle::getBattleID() const
 {
+	requireOwnedFrameSource();
 	return subject->getBattle()->getBattleID();
 }
 
@@ -607,6 +562,7 @@ bool HypotheticBattle::armorerLastStandUsed(BattleSide side) const
 
 const CGHeroInstance * HypotheticBattle::getSideHero(BattleSide side) const
 {
+	requireOwnedFrameSource();
 	// Internal IBattleInfo rule resolution needs both actual side heroes. Public
 	// battleGetFightingHero still applies the callback's player visibility gate.
 	return subject->getBattle()->getSideHero(side);
@@ -725,12 +681,14 @@ int32_t HypotheticBattle::getBloodragePainIncrement(BattleSide side) const
 
 IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned obstacle-object queries require captured typed obstacle values");
 	return projectedObstacles;
 }
 
 
 void HypotheticBattle::addObstacle(const ObstacleChanges & changes)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned obstacle transitions require captured typed obstacle values");
 	auto obstacle = std::make_shared<SpellCreatedObstacle>();
 	obstacle->fromInfo(changes);
 	projectedObstacles.push_back(obstacle);
@@ -739,6 +697,7 @@ void HypotheticBattle::addObstacle(const ObstacleChanges & changes)
 
 void HypotheticBattle::updateObstacle(const ObstacleChanges& changes)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned obstacle transitions require captured typed obstacle values");
 	auto changed = std::make_shared<SpellCreatedObstacle>();
 	changed->fromInfo(changes);
 	for(auto & obstacle : projectedObstacles)
@@ -760,6 +719,7 @@ void HypotheticBattle::updateObstacle(const ObstacleChanges& changes)
 
 void HypotheticBattle::removeObstacle(uint32_t id)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned obstacle transitions require captured typed obstacle values");
 	const auto found = std::find_if(projectedObstacles.begin(), projectedObstacles.end(),
 		[id](const auto & obstacle) { return obstacle->uniqueID == id; });
 	if(found != projectedObstacles.end())

@@ -45,7 +45,7 @@ void removeRecord(Queries & queries, uint32_t id, const Bonus & value)
 		stackEffectRecordRules::restoreGuardianAfterRemoval(state);
 }
 template<typename Queries>
-void incomingRecord(Queries & queries, uint32_t id, const Bonus & value, bool forceAdd)
+bool incomingRecord(Queries & queries, uint32_t id, const Bonus & value, bool forceAdd)
 {
 	const auto & unit = queries.current(id);
 	if(newHorizonsSwiftRebirth::isLifecycleMarker(value))
@@ -53,11 +53,11 @@ void incomingRecord(Queries & queries, uint32_t id, const Bonus & value, bool fo
 		const auto previous = stackEffectRecordRules::previousSwiftLifecycle(unit, value, forceAdd, queries.exportedRecords(id));
 		if(previous) queries.removeExported(id, previous);
 		queries.appendExported(id, std::make_shared<Bonus>(value));
-		return;
+		return true;
 	}
 	if(value.type == BonusType::CONFUSION_PENDING) newHorizonsConfusionControl::validateMarker(value);
 	if(value.type == BonusType::PHYSICAL_AFFLICTION) physicalAfflictions::markerMetadata(value);
-	if(stackEffectRecordRules::incomingProtected(unit, value)) return;
+	if(stackEffectRecordRules::incomingProtected(unit, value)) return false;
 	auto & state = queries.state(id);
 	if(value.type == BonusType::CONFUSION_PENDING)
 	{
@@ -66,14 +66,14 @@ void incomingRecord(Queries & queries, uint32_t id, const Bonus & value, bool fo
 		queries.removeMatchingExports(id, Selector::type()(BonusType::CONFUSION_PENDING));
 		queries.appendExported(id, std::make_shared<Bonus>(value));
 		state.confusionState = next;
-		return;
+		return true;
 	}
 	if(value.type == BonusType::PHYSICAL_AFFLICTION)
 	{
 		const auto replacement = stackEffectRecordRules::physicalMarkerReplacement(value, queries.exportedRecords(id));
 		if(replacement.replaceExisting) queries.removeMatchingExports(id, stackEffectRecordRules::physicalMarkerGroup(value));
 		queries.appendExported(id, std::make_shared<Bonus>(replacement.marker));
-		return;
+		return true;
 	}
 	if(value.type == BonusType::GUARDIAN_SPIRIT)
 	{
@@ -82,12 +82,13 @@ void incomingRecord(Queries & queries, uint32_t id, const Bonus & value, bool fo
 		queries.appendExported(id, std::make_shared<Bonus>(value));
 		state.guardianSpiritHitPoints = pool.hitPoints;
 		state.guardianSpiritRoundsRemaining = pool.rounds;
-		return;
+		return true;
 	}
 	const bool legacy = unit.hasBonus(stackEffectRefresh::legacyCandidateSelector(value));
 	const auto plan = stackEffectRefresh::plan(forceAdd, value, queries.exportedRecords(id), legacy);
 	if(plan.append) queries.appendExported(id, std::make_shared<Bonus>(value));
 	else queries.refreshMatchingExports(id, value);
+	return true;
 }
 }
 template<typename Queries>
@@ -113,8 +114,13 @@ void replayStackEffectVector(Queries & queries, const IBattleInfo & battle, uint
 	stackEffectVectorRules::validateSwiftRecords(*unit, records, operation == newHorizonsGraveDust::EffectOperation::ADD);
 	const auto stamped = physicalAfflictions::stampApplicationOrder(queries.current(id), records);
 	const auto frozen = newHorizonsFrozen::prepareApplication(queries.current(id), records);
+	bool acceptedFrozen = false;
 	for(const auto & value : stamped)
-		stackEffectReplayDetail::incomingRecord(queries, id, value, operation == newHorizonsGraveDust::EffectOperation::ADD);
-	if(frozen) queries.state(id).commitPreparedFrozenApplication(*frozen);
+	{
+		const bool accepted = stackEffectReplayDetail::incomingRecord(queries, id, value,
+			operation == newHorizonsGraveDust::EffectOperation::ADD);
+		acceptedFrozen |= frozen && accepted && newHorizonsFrozen::markerApplicationRound(value).has_value();
+	}
+	if(acceptedFrozen) queries.state(id).commitPreparedFrozenApplication(*frozen);
 }
 }

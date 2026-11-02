@@ -9,6 +9,14 @@ namespace battle { class Unit; }
 namespace newHorizonsGraveDust
 {
 enum class EffectOperation { REMOVE, UPDATE, ADD };
+/// Read-only validation owned by an actual simulation backend. This conveys no
+/// native source lease, freshness/import authority or permission to mutate.
+class DLL_LINKAGE OrderedEffectChangePreflight
+{
+public:
+	virtual ~OrderedEffectChangePreflight();
+	virtual void preflightEffectChanges(const SetStackEffect & effects) const = 0;
+};
 /// Record-only fast path; no unit or bonus-graph query for an absent Dust change.
 DLL_LINKAGE bool containsEffect(const std::vector<Bonus> & records);
 DLL_LINKAGE bool containsEffect(const SetStackEffect & effects);

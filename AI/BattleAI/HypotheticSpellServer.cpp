@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/ScopeGuard.h"
 #include "ProjectedInjuryLifecycle.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
 #include "../../lib/battle/GraveDustBodyCleanup.h"
@@ -146,7 +147,11 @@ void HypotheticBattle::HypotheticServerCallback::apply(BattleUnitsChanged & pack
 
 void HypotheticBattle::HypotheticServerCallback::apply(SetStackEffect & pack)
 {
-	newHorizonsGraveDust::validateEffectChanges(*owner, pack);
+	if(owner->usesOwnedFrameQueries()) { owner->applyOwnedEffectChanges(pack); return; }
+	owner->preflightEffectChanges(pack);
+	const auto * previousPacket = owner->ordinaryValidatedPacket;
+	const auto restorePacket = vstd::makeScopeGuard([&]() { owner->ordinaryValidatedPacket = previousPacket; });
+	owner->ordinaryValidatedPacket = &pack;
 	BattleStatePackVisitor visitor(*owner);
 	pack.visit(visitor);
 }
@@ -228,16 +233,20 @@ HypotheticBattle::HypotheticEnvironment::HypotheticEnvironment(HypotheticBattle 
 
 const Services * HypotheticBattle::HypotheticEnvironment::services() const
 {
+	if(owner->usesOwnedFrameQueries()) throw std::logic_error("Owned recipient cannot request native services");
 	return env->services();
 }
 
 const Environment::BattleCb * HypotheticBattle::HypotheticEnvironment::battle(const BattleID & battleID) const
 {
+	if(owner->usesOwnedFrameQueries() && battleID != owner->getBattleID())
+		throw std::invalid_argument("Foreign owned battle environment lookup");
 	assert(battleID == owner->getBattleID());
 	return owner;
 }
 
 const Environment::GameCb * HypotheticBattle::HypotheticEnvironment::game() const
 {
+	if(owner->usesOwnedFrameQueries()) throw std::logic_error("Owned recipient cannot request native game state");
 	return env->game();
 }

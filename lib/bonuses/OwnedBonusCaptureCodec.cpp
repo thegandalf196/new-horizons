@@ -12,7 +12,34 @@ struct CodecFeatures
 	bool hasFeature(Version feature) const { return version >= feature; }
 };
 }
-OwnedBonusCaptureCodec OwnedBonusCaptureCodec::current() { return OwnedBonusCaptureCodec(ESerializationVersion::CURRENT); }
+OwnedBonusCaptureCodec OwnedBonusCaptureCodec::current()
+{
+	using Context = newHorizonsHeroes::SpecialtySerializationContext;
+	return fromSourceEpoch(ESerializationVersion::CURRENT, Context::fromHandler(CodecFeatures{ESerializationVersion::CURRENT}));
+}
+OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVersion epoch,
+	const newHorizonsHeroes::SpecialtySerializationContext & capabilities)
+{
+	using Version = ESerializationVersion;
+	Version profile;
+	switch(epoch)
+	{
+	case Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES:
+	case Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION:
+		profile = Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES;
+		break;
+	case Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES:
+	case Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY:
+		profile = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+		break;
+	default:
+		throw std::invalid_argument("Unknown owned bonus source epoch");
+	}
+	const auto codec = fromSourceCapabilities(capabilities);
+	if(codec.version() != profile)
+		throw std::invalid_argument("Source epoch and owned bonus capability profile disagree");
+	return codec;
+}
 OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceCapabilities(
 	const newHorizonsHeroes::SpecialtySerializationContext & capabilities)
 {

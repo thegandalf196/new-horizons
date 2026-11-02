@@ -4,6 +4,10 @@
  */
 #include "StdInc.h"
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/HistoricalHeroEpochFixture.h"
+#include "../spells/HistoricalCrusadeRules.h"
+#include "../server/battles/HistoricalNecromancyFixture.h"
+#include "../../lib/entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -20,14 +24,32 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		if(!historicalCapture)
 			return;
-		auto rules = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
-		rules.setOverrideFlag(true);
-		for(const auto key : {"recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
-			rules.Struct().erase(key);
+		// The historical writer predates both percentage settings and calibration.
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
+		loaded->overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
+		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+		// Reuse authored historical captures instead of inheriting later installed policy families.
+		auto rules = historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES);
+		rules.Struct().erase("recoverySpecialties"); // the writer is the preceding Additional Specialties epoch
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		auto magic = historicalCrusadeRules(loaded->getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS));
+		magic.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
+		auto perks = necromancyTest::historicalRules();
+		perks.Struct().erase("sylvanTacticsPolicy");
+		perks.Struct().erase("quickStudyPolicy");
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
 	void expectHistoricalCapture(const CGameState & world)
 	{
+		const newHorizonsHeroes::SpecialtySerializationContext context{
+			.fortuneAndArcane = true, .individualRiders = true, .schoolSpellcraft = true, .additional = true};
+		EXPECT_NO_THROW(world.validateNewHorizonsSpecialtySerialization(context));
+		EXPECT_NO_THROW(world.validateCanonicalSpellClausesSerialization(true, false));
+		EXPECT_NO_THROW(world.validateNewHorizonsNecromancyPolicySerialization(false, false));
+		EXPECT_NO_THROW(world.validateSylvanTacticsSerialization(false));
+		EXPECT_NO_THROW(world.validateNeutralArmySizeSerialization(false));
+		EXPECT_NO_THROW(world.validateRecruitmentGrowthSerialization(false));
 		for(const auto key : {"recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
 			EXPECT_TRUE(world.getHeroDevelopmentRules()[key].isNull());
 		EXPECT_EQ(world.getHeroDevelopmentRules(), gameState()->getHeroDevelopmentRules());
@@ -116,4 +138,13 @@ TEST_F(ReplaySnapshotVersionTest, LegacyOpaqueReplayDoesNotBlockOrdinaryWorldLoa
 	restored.replayLog.reconfigureOnLoad(2);
 	restored.replayLog.beginDay(restored.day + 1, restored.saveReplaySnapshot());
 	EXPECT_EQ(restored.replayLog.getChapters().back().snapshotVersion, ESerializationVersion::CURRENT);
+}
+
+TEST_F(ReplaySnapshotVersionTest, InstalledCurrentPoliciesRefuseHistoricalWriterBeforePrefix)
+{
+	ASSERT_NO_FATAL_FAILURE(startGame());
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_ADDITIONAL_SPECIALTIES;
+	EXPECT_THROW(old.oser & *gameState(), std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
 }

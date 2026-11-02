@@ -25,11 +25,16 @@ TerrainLimiter::TerrainLimiter(TerrainId terrain):
 {
 }
 
+bool TerrainLimiter::appliesToNode(BonusNodeType nodeType) noexcept
+{
+	return nodeType == BonusNodeType::STACK_BATTLE || nodeType == BonusNodeType::STACK_INSTANCE
+		|| nodeType == BonusNodeType::HERO || nodeType == BonusNodeType::TOWN
+		|| nodeType == BonusNodeType::TOWN_AND_VISITOR;
+}
+
 ILimiter::EDecision TerrainLimiter::limit(const BonusLimitationContext &context) const
 {
-	BonusNodeType nodeType = context.node.getNodeType();
-	std::set<BonusNodeType> allowedNodes = {BonusNodeType::STACK_BATTLE, BonusNodeType::STACK_INSTANCE, BonusNodeType::HERO, BonusNodeType::TOWN, BonusNodeType::TOWN_AND_VISITOR};
-	if (!allowedNodes.contains(nodeType))
+	if (!appliesToNode(context.node.getNodeType()))
 		return ILimiter::EDecision::NOT_APPLICABLE;
 	const auto currentTerrain = context.evaluation.adventureTerrain();
 

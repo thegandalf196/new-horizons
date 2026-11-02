@@ -13,6 +13,10 @@
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/BattleInfo.h"
+#include <array>
+#include <stdexcept>
+#include <utility>
 #include "../../AI/BattleAI/HypotheticBattle.h"
 
 namespace
@@ -26,6 +30,26 @@ public:
 	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
 	const GameCb * game() const override { return state.get(); }
 };
+
+class FortuneQueryBattle final : public BattleInfo
+{
+public:
+	SylvanLuckState fortune;
+	mutable std::vector<BattleSide> calls;
+	mutable bool failNext = false;
+	FortuneQueryBattle() : BattleInfo(nullptr) {}
+	SylvanLuckState getSylvanLuckState(BattleSide side) const override
+	{
+		calls.push_back(side);
+		if(std::exchange(failNext, false))
+			throw std::runtime_error("fixture Fortune query failure");
+		return fortune;
+	}
+};
+std::array<bool, 3> flags(const SylvanLuckDamageFlags & value)
+{
+	return {value.secondChance, value.gambler, value.chainOfFortune};
+}
 }
 
 class DamageReductionControlTest : public HeroCommandFixture {};
@@ -140,4 +164,77 @@ TEST_F(DamageReductionControlTest, HypotheticPhantomKeepsOpeningDurationAndExpir
 	EXPECT_FALSE(phantom->alive());
 	EXPECT_TRUE(phantom->ghostPending);
 	EXPECT_EQ(phantom->getPhantomIntegrity(), 0);
+}
+
+TEST(DamageCacheFortuneFlagsTest, DefaultProjectionKeepsVirtualQueryCountFailureAndFreshValues)
+{
+	FortuneQueryBattle source;
+	source.fortune.secondChance = true;
+	source.fortune.positiveLuckUnits = {2, 4, 6};
+	const auto before = source.fortune;
+	EXPECT_EQ(flags(source.getSylvanLuckDamageFlags(BattleSide::DEFENDER)),
+		(std::array<bool, 3>{true, false, false}));
+	EXPECT_EQ(source.calls, (std::vector<BattleSide>{BattleSide::DEFENDER}));
+	EXPECT_EQ(source.fortune, before);
+
+	source.failNext = true;
+	try
+	{
+		(void)source.getSylvanLuckDamageFlags(BattleSide::ATTACKER);
+		FAIL() << "Expected the original Fortune query failure";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_STREQ(error.what(), "fixture Fortune query failure");
+	}
+	EXPECT_EQ(source.calls, (std::vector<BattleSide>{BattleSide::DEFENDER, BattleSide::ATTACKER}));
+	EXPECT_EQ(source.fortune, before);
+	source.fortune.gambler = source.fortune.chainOfFortune = true;
+	EXPECT_EQ(flags(source.getSylvanLuckDamageFlags(BattleSide::ATTACKER)),
+		(std::array<bool, 3>{true, true, true}));
+	EXPECT_EQ(source.calls.size(), 3u); // No memoization or swallowed query failure.
+}
+
+TEST_F(DamageReductionControlTest, FortuneFlagProjectionKeepsConfiguredFlagsAndNonemptyHistoriesBranchLocal)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCommands());
+	auto environment = std::make_shared<DamageEnvironment>(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto model = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), model);
+	const auto siblingBefore = sibling->getSylvanLuckState(BattleSide::ATTACKER);
+	for(bool tactics : {false, true})
+		for(unsigned mask = 0; mask < 8; ++mask)
+		{
+			SCOPED_TRACE(mask);
+			SylvanLuckState state;
+			state.secondChance = (mask & 1) != 0;
+			state.gambler = (mask & 2) != 0;
+			state.chainOfFortune = (mask & 4) != 0;
+			// Cache bypass uses configured flags even after their opportunities are spent.
+			state.secondChanceUsed = state.secondChance;
+			state.gamblerAttackUsedThisRound = state.gambler;
+			state.chainTriggeredThisRound = state.chainOfFortune;
+			state.positiveLuckUnits = {1, 2, 3};
+			if(tactics)
+			{
+				state.tactics.enabled = state.tactics.crossfire = true;
+				state.tactics.activated = {1, 2};
+				state.tactics.shootersByTarget[3] = {1, 2};
+			}
+			else
+			{
+				state.forestsFavor = state.sharedFortune = state.cascadingFortune = true;
+				state.speedUnits = state.sharedUnits = state.cascadingUnits = {1, 2};
+			}
+			ASSERT_NO_THROW(state.validateTacticsCompatibility());
+			model->setSylvanLuckState(BattleSide::ATTACKER, state);
+			const auto reference = model->getSylvanLuckState(BattleSide::ATTACKER);
+			EXPECT_EQ(flags(model->getSylvanLuckDamageFlags(BattleSide::ATTACKER)),
+				(std::array<bool, 3>{reference.secondChance, reference.gambler, reference.chainOfFortune}));
+			EXPECT_EQ(model->getSylvanLuckState(BattleSide::ATTACKER), state);
+			EXPECT_EQ(sibling->getSylvanLuckState(BattleSide::ATTACKER), siblingBefore);
+			EXPECT_EQ(flags(sibling->getSylvanLuckDamageFlags(BattleSide::ATTACKER)),
+				(std::array<bool, 3>{siblingBefore.secondChance, siblingBefore.gambler, siblingBefore.chainOfFortune}));
+		}
 }

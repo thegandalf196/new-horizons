@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "GameSettings.h"
 #include "mapObjects/NewHorizonsNeutralArmies.h"
+#include "mapObjects/NewHorizonsNeutralCalibration.h"
 #include "mapObjects/NewHorizonsRecruitmentGrowth.h"
 #include "json/JsonUtils.h"
 
@@ -46,6 +47,9 @@ GameSettings::GameSettings()
 	const auto recruitment = static_cast<size_t>(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT);
 	baseSettings[recruitment].Integer() = 100;
 	actualSettings[recruitment] = baseSettings[recruitment];
+	const auto calibration = static_cast<size_t>(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION);
+	baseSettings[calibration] = newHorizonsNeutralArmies::calibration::disabledSnapshot();
+	actualSettings[calibration] = baseSettings[calibration];
 }
 GameSettings::~GameSettings() = default;
 
@@ -91,6 +95,7 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::CREATURES_JOINING_PERCENTAGE,                     "creatures", "joiningPercentage"                    },
 		{EGameSettings::CREATURES_WEEKLY_GROWTH_CAP,                      "creatures", "weeklyGrowthCap"                      },
 		{EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT,               "creatures", "neutralArmySizePercent"               },
+		{EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION,          "creatures", "neutralLeadershipCalibration"          },
 		{EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT,           "creatures", "recruitmentGrowthPercent"              },
 		{EGameSettings::CREATURES_WEEKLY_GROWTH_PERCENT,                  "creatures", "weeklyGrowthPercent"                  },
 		{EGameSettings::CREATURES_ADDITIONAL_WEEKLY_GROWTH_SPECIAL_WEEK,  "creatures", "additionalWeeklyGrowthSpecialWeek"    },
@@ -177,6 +182,7 @@ void GameSettings::loadBase(const JsonNode & input)
 	JsonUtils::validate(input, "vcmi:gameSettings", input.getModScope());
 	newHorizonsNeutralArmies::validateOverrides(input, true);
 	newHorizonsRecruitmentGrowth::validateOverrides(input, true);
+	newHorizonsNeutralArmies::calibration::validate(input["creatures"][newHorizonsNeutralArmies::calibration::SETTING_KEY]);
 
 	for(const auto & option : settingProperties)
 	{
@@ -186,7 +192,10 @@ void GameSettings::loadBase(const JsonNode & input)
 		if(optionValue.isNull())
 			continue;
 
-		JsonUtils::mergeCopy(baseSettings[index], optionValue);
+		if(option.setting == EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)
+			baseSettings[index] = optionValue; // One authored definition/capture, never a hybrid.
+		else
+			JsonUtils::mergeCopy(baseSettings[index], optionValue);
 	}
 	actualSettings = baseSettings;
 }
@@ -236,6 +245,8 @@ void GameSettings::loadSavedOverrides(const JsonNode & input)
 		saved["creatures"][newHorizonsNeutralArmies::SETTING_KEY].Integer() = 100;
 	if(!saved["creatures"].Struct().contains(newHorizonsRecruitmentGrowth::SETTING_KEY))
 		saved["creatures"][newHorizonsRecruitmentGrowth::SETTING_KEY].Integer() = 100;
+	if(!saved["creatures"].Struct().contains(newHorizonsNeutralArmies::calibration::SETTING_KEY))
+		saved["creatures"][newHorizonsNeutralArmies::calibration::SETTING_KEY] = newHorizonsNeutralArmies::calibration::disabledSnapshot();
 	loadOverrides(saved);
 }
 
@@ -246,11 +257,13 @@ void GameSettings::loadOverrides(const JsonNode & input)
 	validateCombatScalarOverrides(input, true, true);
 	newHorizonsNeutralArmies::validateOverrides(input, true);
 	newHorizonsRecruitmentGrowth::validateOverrides(input, true);
+	newHorizonsNeutralArmies::calibration::validate(input["creatures"][newHorizonsNeutralArmies::calibration::SETTING_KEY]);
 	for(const auto & option : settingProperties)
 	{
 		const JsonNode & optionValue = input[option.group][option.key];
 		const bool explicitVersionedContext = (option.setting == EGameSettings::MAGIC_NEW_HORIZONS
-			|| option.setting == EGameSettings::COMBAT_HERO_COMMANDS)
+			|| option.setting == EGameSettings::COMBAT_HERO_COMMANDS
+			|| option.setting == EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)
 			&& input[option.group].Struct().contains(option.key);
 		if (!optionValue.isNull() || explicitVersionedContext)
 			addOverride(option.setting, optionValue);
@@ -259,6 +272,8 @@ void GameSettings::loadOverrides(const JsonNode & input)
 
 void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 {
+	if(option == EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)
+		newHorizonsNeutralArmies::calibration::validate(input);
 	if(option == EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK
 		|| option == EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT)
 	{
@@ -295,6 +310,8 @@ void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 		heroCommandsOverridePresent = true;
 		actualSettings[index] = input;
 	}
+	else if(option == EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)
+		actualSettings[index] = input; // Captured absence/disabled must not inherit new installed defaults.
 	else
 	{
 		JsonNode newValue = baseSettings[index];
@@ -315,6 +332,7 @@ const JsonNode & GameSettings::getValue(EGameSettings option) const
 		|| option == EGameSettings::HEROES_NEW_HORIZONS_MASTERIES
 		|| option == EGameSettings::HEROES_NEW_HORIZONS_PERKS
 		|| option == EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES
+		|| option == EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION
 		|| option == EGameSettings::ARTIFACTS_RANDOM_POOL_EXCLUSIONS
 		|| !actualSettings.at(index).isNull());
 	return actualSettings.at(index);

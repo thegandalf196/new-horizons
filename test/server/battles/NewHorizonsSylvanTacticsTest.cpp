@@ -1,5 +1,7 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
+#include "../../../lib/battle/OwnedFrameCaptureFacts.h"
+#include "../../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -302,4 +304,39 @@ TEST_F(NewHorizonsSylvanTacticsTest, RankInitiativeExcludesDynamicSiegeMarkersWi
 	source->removeBonus(siege);
 	EXPECT_FALSE(source->hasBonusOfType(BonusType::SIEGE_WEAPON));
 	EXPECT_EQ(source->valOfBonuses(BonusType::STACKS_INITIATIVE_FLAT), 1);
+}
+
+TEST_F(NewHorizonsSylvanTacticsTest, OpaqueOwnedAcceptanceKeepsCanonicalGhostSlotAndTurretFilters)
+{
+	const SecondarySkill skill(SecondarySkill::decode("new-horizons:sylvanLuck"));
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE); startBattle();
+	const Bonus bonus(BonusDuration::PERMANENT, BonusType::LUCK, BonusSource::SECONDARY_SKILL, 2, BonusSourceID(skill));
+	const auto exercise = [&](CreatureID type, SlotID slot, bool expectedOrdinary)
+	{
+		CStackBasicDescriptor descriptor(type, 1);
+		auto native = std::make_unique<CStack>(&descriptor, PlayerColor(0), 13001, BattleSide::ATTACKER, slot);
+		native->localInit(battle()); ASSERT_EQ(native->getMyHero(), attackerSideHero);
+		battle::ownedFrameCapture::Requirements needed; needed.secondaryRecords.push_back(std::make_shared<Bonus>(bonus));
+		const auto facts = battle::ownedFrameCapture::facts(*native, needed, {type.toCreature()}, native.get(), type.toCreature());
+		ASSERT_TRUE(facts.acceptance); auto current = native->acquireState(); std::array<bool, 2> expected{};
+		for(unsigned flags = 0; flags < expected.size(); ++flags)
+		{
+			current->ghost = flags != 0; current->summoned = true; current->natureSummoned = false;
+			expected[flags] = battle::acceptsBattleBonus(*native, *current, bonus);
+		}
+		EXPECT_EQ(expected[0], expectedOrdinary); EXPECT_FALSE(expected[1]);
+		current.reset(); native.reset();
+		struct WithoutLibrary { GameLibrary * saved = LIBRARY; WithoutLibrary() { LIBRARY = nullptr; } ~WithoutLibrary() { LIBRARY = saved; } } absent;
+		for(unsigned flags = 0; flags < expected.size(); ++flags)
+		{
+			auto state = facts.acceptance->state;
+			state.ghost = flags != 0; state.summoned = true; state.natureSummoned = false;
+			EXPECT_EQ(battle::acceptsBattleBonus(bonus, facts.acceptance->metadata, state), expected[flags]);
+		}
+	};
+	const auto angel = creatureByName("core:angel");
+	exercise(angel, SlotID(0), true);
+	exercise(angel, SlotID::WAR_MACHINES_SLOT, false);
+	exercise(angel, SlotID::COMMANDER_SLOT_PLACEHOLDER, false);
+	exercise(CreatureID(CreatureID::ARROW_TOWERS), SlotID(0), false);
 }

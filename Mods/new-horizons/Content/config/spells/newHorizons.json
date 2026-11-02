@@ -23,7 +23,7 @@
 		"levels": {
 			"base": {
 				"range": "0",
-				"description": "The target's next activation becomes Attack, Defend or Wander, chosen randomly. Attack approaches its chosen enemy if no attack is in reach; if no legal attack or approach is possible, it Defends. Wander also Defends if no legal destination exists. Applying Confusion removes Berserk. A negative Morale forfeiture consumes Confusion. Dispel removes pending Confusion.",
+				"description": "Confuse one enemy stack for its next activation. It randomly attacks one of its enemies, Defends, or wanders to a random legal position. It does not attack its allies.\n\nIf the chosen enemy is out of reach, the stack approaches it. If it cannot attack or approach, or has nowhere to wander, it Defends. Confusion removes Berserk. Losing the activation to negative Morale also consumes Confusion; Dispel can remove it before it takes effect.",
 				"cost": 5,
 				"power": 0,
 				"targetModifier": {"smart": true},
@@ -640,7 +640,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Deal 70 + 2.5 x Spell Power damage to one enemy stack. Fate then selects one other surviving battlefield stack, friend or enemy, for a hit based on half the primary target's actual HP loss. The recipient's own magical defenses apply; a blocked hit is not rerolled.",
+				"description" : "Strike one enemy stack, then hit one other random surviving stack, friend or enemy. The second hit is based on half the primary target's actual HP loss, so overkill does not increase it. If no other stack survives, there is no second hit.\n\nBase damage to the primary target: 70 + 2.5 x Spell Power. The second target's own magical defenses apply; a blocked hit is not rerolled.",
 				"cost" : 12,
 				"power" : 0,
 				"battleEffects" : {"directDamage" : {"type" : "damage", "handOfFate" : true}},
@@ -648,7 +648,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Deal 70 + 2.5 x Spell Power damage to one enemy stack. Fate then selects one other surviving battlefield stack, friend or enemy, for a hit based on half the primary target's actual HP loss. The recipient's own magical defenses apply; a blocked hit is not rerolled.",
+				"description" : "Strike one enemy stack, then hit one other random surviving stack, friend or enemy. The second hit is based on half the primary target's actual HP loss, so overkill does not increase it. If no other stack survives, there is no second hit.\n\nBase damage to the primary target: 70 + 2.5 x Spell Power. The second target's own magical defenses apply; a blocked hit is not rerolled.",
 				"cost" : 12,
 				"power" : 0,
 				"battleEffects" : {"directDamage" : {"type" : "damage", "handOfFate" : true}},
@@ -656,7 +656,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Deal 70 + 2.5 x Spell Power damage to one enemy stack. Fate then selects one other surviving battlefield stack, friend or enemy, for a hit based on half the primary target's actual HP loss. The recipient's own magical defenses apply; a blocked hit is not rerolled.",
+				"description" : "Strike one enemy stack, then hit one other random surviving stack, friend or enemy. The second hit is based on half the primary target's actual HP loss, so overkill does not increase it. If no other stack survives, there is no second hit.\n\nBase damage to the primary target: 70 + 2.5 x Spell Power. The second target's own magical defenses apply; a blocked hit is not rerolled.",
 				"cost" : 12,
 				"power" : 0,
 				"battleEffects" : {"directDamage" : {"type" : "damage", "handOfFate" : true}},
@@ -664,7 +664,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Deal 70 + 2.5 x Spell Power damage to one enemy stack. Fate then selects one other surviving battlefield stack, friend or enemy, for a hit based on half the primary target's actual HP loss. The recipient's own magical defenses apply; a blocked hit is not rerolled.",
+				"description" : "Strike one enemy stack, then hit one other random surviving stack, friend or enemy. The second hit is based on half the primary target's actual HP loss, so overkill does not increase it. If no other stack survives, there is no second hit.\n\nBase damage to the primary target: 70 + 2.5 x Spell Power. The second target's own magical defenses apply; a blocked hit is not rerolled.",
 				"cost" : 12,
 				"power" : 0,
 				"battleEffects" : {"directDamage" : {"type" : "damage", "handOfFate" : true}},
@@ -950,7 +950,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Protect one friendly stack for 2 rounds. Each enemy creature that damages it becomes Judged and takes Holy damage at round's end: min(30% of its damage dealt to the protected stack that round, 25 + 1.25 x Spell Power). Each attacker triggers once per round. Light rank strengthens only the Spell Power term; Retributionist increases final reactive damage by 20%. Spells do not trigger it.",
+				"description" : "For 2 rounds, enemy creatures that damage one chosen friendly stack are Judged and suffer Holy damage at the end of the round. Spells do not trigger this effect.\n\nEach attacker is punished once per round for 30% of the damage it dealt to the protected stack, capped at 25 + 1.25 x Spell Power. Light rank strengthens only the Spell Power part. Retributionist increases the resulting reactive damage by 20%.",
 				"cost" : 16,
 				"power" : 0,
 				"battleEffects" : {"divineRetribution" : {"type" : "timed", "bonus" : {"judgment" : {"val" : 25, "type" : "DIVINE_RETRIBUTION", "duration" : "N_TURNS", "turns" : 2}}}},
@@ -958,7 +958,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Protect one friendly stack for 2 rounds. Each enemy creature that damages it becomes Judged and takes Holy damage at round's end: min(30% of its damage dealt to the protected stack that round, 25 + 1.25 x Spell Power). Each attacker triggers once per round. Light rank strengthens only the Spell Power term; Retributionist increases final reactive damage by 20%. Spells do not trigger it.",
+				"description" : "For 2 rounds, enemy creatures that damage one chosen friendly stack are Judged and suffer Holy damage at the end of the round. Spells do not trigger this effect.\n\nEach attacker is punished once per round for 30% of the damage it dealt to the protected stack, capped at 25 + 1.25 x Spell Power. Light rank strengthens only the Spell Power part. Retributionist increases the resulting reactive damage by 20%.",
 				"cost" : 16,
 				"power" : 0,
 				"battleEffects" : {"divineRetribution" : {"type" : "timed", "bonus" : {"judgment" : {"val" : 25, "type" : "DIVINE_RETRIBUTION", "duration" : "N_TURNS", "turns" : 2}}}},
@@ -966,7 +966,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Protect one friendly stack for 2 rounds. Each enemy creature that damages it becomes Judged and takes Holy damage at round's end: min(30% of its damage dealt to the protected stack that round, 25 + 1.25 x Spell Power). Each attacker triggers once per round. Light rank strengthens only the Spell Power term; Retributionist increases final reactive damage by 20%. Spells do not trigger it.",
+				"description" : "For 2 rounds, enemy creatures that damage one chosen friendly stack are Judged and suffer Holy damage at the end of the round. Spells do not trigger this effect.\n\nEach attacker is punished once per round for 30% of the damage it dealt to the protected stack, capped at 25 + 1.25 x Spell Power. Light rank strengthens only the Spell Power part. Retributionist increases the resulting reactive damage by 20%.",
 				"cost" : 16,
 				"power" : 0,
 				"battleEffects" : {"divineRetribution" : {"type" : "timed", "bonus" : {"judgment" : {"val" : 25, "type" : "DIVINE_RETRIBUTION", "duration" : "N_TURNS", "turns" : 2}}}},
@@ -974,7 +974,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Protect one friendly stack for 2 rounds. Each enemy creature that damages it becomes Judged and takes Holy damage at round's end: min(30% of its damage dealt to the protected stack that round, 25 + 1.25 x Spell Power). Each attacker triggers once per round. Light rank strengthens only the Spell Power term; Retributionist increases final reactive damage by 20%. Spells do not trigger it.",
+				"description" : "For 2 rounds, enemy creatures that damage one chosen friendly stack are Judged and suffer Holy damage at the end of the round. Spells do not trigger this effect.\n\nEach attacker is punished once per round for 30% of the damage it dealt to the protected stack, capped at 25 + 1.25 x Spell Power. Light rank strengthens only the Spell Power part. Retributionist increases the resulting reactive damage by 20%.",
 				"cost" : 16,
 				"power" : 0,
 				"battleEffects" : {"divineRetribution" : {"type" : "timed", "bonus" : {"judgment" : {"val" : 25, "type" : "DIVINE_RETRIBUTION", "duration" : "N_TURNS", "turns" : 2}}}},
@@ -1055,7 +1055,7 @@
 		"levels": {
 			"base": {
 				"range": "0",
-				"description": "Teleport one friendly or enemy stack to a random legal position within min(4, 2 + floor(Spell Power / 100)) hexes, excluding its origin and fitting its whole footprint. Intervening blockers and Zones of Control do not matter. No new action, retaliation, Initiative or voluntary-movement benefit. Chaos rank strengthens only the Spell Power term. Blinkmaster draws two independent legal destinations and automatically chooses the farther, breaking equal-distance ties by hex order. No legal destination means no Mana or Hero Action is spent.",
+				"description": "Teleport one friendly or enemy stack to a random nearby position. It must fit there, and cannot stay where it is. Blink ignores intervening blockers and Zones of Control. It grants no extra action or Initiative, does not refresh retaliation, and gives no benefit for voluntary movement. If no legal destination exists, no Mana or Hero Action is spent.\n\nRange: min(4, 2 + floor(Spell Power / 100)) hexes. Chaos rank strengthens only the Spell Power part. Blinkmaster draws two legal destinations independently and uses the farther one; ties use hex order.",
 				"cost": 4,
 				"power": 2,
 				"targetModifier": {"smart": false},
@@ -2593,7 +2593,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
 				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
@@ -2605,7 +2605,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
 				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
@@ -2617,7 +2617,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
 				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
@@ -2629,7 +2629,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Enchant one friendly ranged-capable stack for 3 rounds. After each ranged creature attack that deals damage, the damaged enemy stack gains one Arcane Breach mark; the hit that applies a mark does not benefit from it. A stack can hold at most 3 marks, and applying a mark refreshes all existing marks to 2 rounds. Focus Magic captures its caster's Spell Power-derived penetration when cast, and each mark copies that value: the captured revised formula is min(12%, 5% + 0.03% x Spell Power x Sorcery rank coefficient); historical profiles retain min(20%, 10% + 0.05% x Spell Power x Sorcery rank coefficient). Under saved v3 rules, the coefficient is 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert; it scales only the Spell Power term, leaving the captured fixed base unchanged. Saved v1/v2 profiles use 100% at every Sorcery rank. Subsequent friendly ranged creature attacks ignore that much Creature Defense; Creature Defense is not reduced, and melee attacks gain no benefit.",
+				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
 				"cost" : 4,
 				"power" : 0,
 				"battleEffects" : {
@@ -3251,7 +3251,7 @@
 		"levels" : {
 			"none" : {
 				"range" : "0",
-				"description" : "Curse one enemy stack for the rest of the battle, unless Dispel removes it. Each cast reduces base Creature Defense by min(20%, 10% + 0.05% x effective Spell Power). Shadow School and Spellcraft ranks strengthen the Spell Power portion of this formula; Warcasting affects it as well. Recasts accumulate to a 60% cap. Withering Touch adds 5 percentage points per cast without raising the cumulative cap. The Defense loss is recalculated from the target's base Defense and accumulated percentage, and has no round duration counter.",
+				"description" : "Reduce one enemy stack's Creature Defense for the rest of the battle. Repeated casts add together, up to a 60% reduction of its base Defense. Dispel removes the curse.\n\nEach cast removes min(20%, 10% + 0.05% x effective Spell Power) of base Creature Defense. Shadow rank, Spellcraft and Warcasting strengthen only the Spell Power part. Withering Touch adds 5 percentage points per cast, without raising the 60% total cap. Defense loss is always calculated from base Defense.",
 				"cost" : 8,
 				"power" : 0,
 				"battleEffects" : {
@@ -3261,7 +3261,7 @@
 			},
 			"basic" : {
 				"range" : "0",
-				"description" : "Curse one enemy stack for the rest of the battle, unless Dispel removes it. Each cast reduces base Creature Defense by min(20%, 10% + 0.05% x effective Spell Power). Shadow School and Spellcraft ranks strengthen the Spell Power portion of this formula; Warcasting affects it as well. Recasts accumulate to a 60% cap. Withering Touch adds 5 percentage points per cast without raising the cumulative cap. The Defense loss is recalculated from the target's base Defense and accumulated percentage, and has no round duration counter.",
+				"description" : "Reduce one enemy stack's Creature Defense for the rest of the battle. Repeated casts add together, up to a 60% reduction of its base Defense. Dispel removes the curse.\n\nEach cast removes min(20%, 10% + 0.05% x effective Spell Power) of base Creature Defense. Shadow rank, Spellcraft and Warcasting strengthen only the Spell Power part. Withering Touch adds 5 percentage points per cast, without raising the 60% total cap. Defense loss is always calculated from base Defense.",
 				"cost" : 8,
 				"power" : 0,
 				"battleEffects" : {
@@ -3271,7 +3271,7 @@
 			},
 			"advanced" : {
 				"range" : "0",
-				"description" : "Curse one enemy stack for the rest of the battle, unless Dispel removes it. Each cast reduces base Creature Defense by min(20%, 10% + 0.05% x effective Spell Power). Shadow School and Spellcraft ranks strengthen the Spell Power portion of this formula; Warcasting affects it as well. Recasts accumulate to a 60% cap. Withering Touch adds 5 percentage points per cast without raising the cumulative cap. The Defense loss is recalculated from the target's base Defense and accumulated percentage, and has no round duration counter.",
+				"description" : "Reduce one enemy stack's Creature Defense for the rest of the battle. Repeated casts add together, up to a 60% reduction of its base Defense. Dispel removes the curse.\n\nEach cast removes min(20%, 10% + 0.05% x effective Spell Power) of base Creature Defense. Shadow rank, Spellcraft and Warcasting strengthen only the Spell Power part. Withering Touch adds 5 percentage points per cast, without raising the 60% total cap. Defense loss is always calculated from base Defense.",
 				"cost" : 8,
 				"power" : 0,
 				"battleEffects" : {
@@ -3281,7 +3281,7 @@
 			},
 			"expert" : {
 				"range" : "0",
-				"description" : "Curse one enemy stack for the rest of the battle, unless Dispel removes it. Each cast reduces base Creature Defense by min(20%, 10% + 0.05% x effective Spell Power). Shadow School and Spellcraft ranks strengthen the Spell Power portion of this formula; Warcasting affects it as well. Recasts accumulate to a 60% cap. Withering Touch adds 5 percentage points per cast without raising the cumulative cap. The Defense loss is recalculated from the target's base Defense and accumulated percentage, and has no round duration counter.",
+				"description" : "Reduce one enemy stack's Creature Defense for the rest of the battle. Repeated casts add together, up to a 60% reduction of its base Defense. Dispel removes the curse.\n\nEach cast removes min(20%, 10% + 0.05% x effective Spell Power) of base Creature Defense. Shadow rank, Spellcraft and Warcasting strengthen only the Spell Power part. Withering Touch adds 5 percentage points per cast, without raising the 60% total cap. Defense loss is always calculated from base Defense.",
 				"cost" : 8,
 				"power" : 0,
 				"battleEffects" : {

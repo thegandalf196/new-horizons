@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "HistoricalDamageCalculatorScript.h"
 #include "../../luascript/StdInc.h"
 #include "../../luascript/LuaImplementationIdentity.h"
 #include "../../luascript/LuaContext.h"
@@ -160,4 +161,50 @@ TEST(LuaDamageCalculatorIdentity, ActualContextAttestsOnlyAfterAllLayersExecute)
 	EXPECT_TRUE(context.hasCanonicalDamageCalculator());
 	context.callFunction<void>("forecastIdentityDeliberatelyMissingMethod");
 	EXPECT_FALSE(context.hasCanonicalDamageCalculator());
+}
+
+
+TEST(LuaDamageCalculatorIdentity, PreviousPhysicalProtectionRootRetainsItsExactChain)
+{
+	scripting::LuaModule host;
+	auto script = calculator(host, canonicalPatches());
+	auto & source = script->layers.front().sourceText;
+	const std::string current = "\t\t\tif info.archeryIgnoreAdjacentRangedPenalty then\n"
+		"\t\t\t\tif info.pointBlankPreservesAdjacentExemption then return 0 end\n"
+		"\t\t\t\treturn info.targetedRangedCommand and -0.25 or 0\n\t\t\tend";
+	const auto position = source.find(current);
+	ASSERT_NE(position, std::string::npos);
+	source.replace(position, current.size(),
+		"\t\t\tif info.archeryIgnoreAdjacentRangedPenalty then return info.targetedRangedCommand and -0.25 or 0 end");
+	EXPECT_TRUE(attests(*script));
+	script->layers[1].sourceText += "\n";
+	EXPECT_FALSE(attests(*script));
+}
+
+
+TEST(LuaDamageCalculatorIdentity, HistoricalNineLayerContextLoadsExactRootAndRejectsByteDrift)
+{
+	scripting::LuaModule host;
+	EmptyEnvironment environment;
+	auto patches = canonicalPatches();
+	ASSERT_EQ(patches.front().second, "damage/physicalProtection");
+	patches.erase(patches.begin());
+	ASSERT_EQ(patches.size(), 8);
+	for(const bool changed : {false, true})
+	{
+		auto script = calculator(host, patches);
+		ASSERT_EQ(script->layers.size(), 9);
+		ASSERT_EQ(script->getPatchDeclarations().size(), 8);
+		// Same fixture pattern as historical Timed: preserve loaded canonical
+		// layer identities, supplying exact historical bytes before Lua executes.
+		script->layers.front().sourceText = std::string(historicalDamageCalculatorIdentityTest::SOURCE)
+			+ (changed ? "\n-- unreviewed historical root change\n" : "");
+		scripting::LuaContext context(script.get(), &environment);
+		EXPECT_FALSE(context.hasCanonicalDamageCalculator());
+		context.initialize();
+		EXPECT_EQ(context.hasCanonicalDamageCalculator(), !changed);
+		const JsonNode parameters;
+		EXPECT_FALSE(context.callMethod<std::vector<std::string>>("bonusTypes", parameters).empty());
+		EXPECT_EQ(context.hasCanonicalDamageCalculator(), !changed);
+	}
 }

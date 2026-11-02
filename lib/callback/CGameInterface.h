@@ -36,6 +36,15 @@ public:
 	virtual void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) {}
 	virtual void heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)=0;
+	virtual void heroGotLevelWithReroll(const CGHeroInstance * hero, PrimarySkill pskill,
+		std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks,
+		QueryID queryID, bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel)
+	{
+		// Existing AI interfaces keep the ordinary choice path; a refresh belongs
+		// only to an interface which explicitly requested the optional reroll.
+		if(replacesQueryID < 0)
+			heroGotLevel(hero, pskill, skills, perks, queryID);
+	}
 	virtual void commanderGotLevel (const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID)=0;
 
 	// Show a dialog, player must take decision. If selection then he has to choose between one of given components,

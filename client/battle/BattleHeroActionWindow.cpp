@@ -220,8 +220,8 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 			effectLabels[i]->setText(effects);
 		const auto & display = commandDisplay(commands[i].first);
 		const std::string coverage = isTargeted(commands[i].first)
-			? "\n\nTarget selection is revalidated by the authority at Confirm."
-			: "\n\nThe authority applies the Order to eligible current troops; later summons and clones do not inherit it.";
+			? "\n\nTargets are checked again when you confirm."
+			: "\n\nOnly eligible troops present when the Order is issued receive it; later summons and clones do not inherit it.";
 		commands[i].second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (effects.empty() ? "" : "\n\nCurrent effect: " + effects)
 			+ combinedArmsHelp(rules, commands[i].first, &hero)
@@ -349,14 +349,9 @@ void BattleHeroActionWindow::refresh()
 		anyCommand |= available;
 		std::string reason = commonReason();
 		if(reason.empty() && !supported)
-			reason = "This Order is not available in the battle's saved rules.";
-		if(reason.empty() && targeted && !targetReady)
-			reason = entry.first == HeroCommand::PROTECT
-			? "No legal Protector/Ward pair is available; the two friendly unit footprints must touch."
-			: (hasTargets ? "The authority currently rejects this target requirement."
-				: "No legal targets are available right now.");
+			reason = "This Order is not available in this battle.";
 		if(reason.empty() && !available)
-			reason = "The authority currently rejects this Order's requirements.";
+			reason = unavailableOrderReason(*callback, side, entry.first, hasTargets);
 		// Re-prepare revised Orders on every refresh so Leadership, perk, saved-rule
 		// and allowance changes cannot leave a stale numerical preview.
 		const auto revisedPreview = revisedOrderPreview(*callback, side, entry.first, hero);

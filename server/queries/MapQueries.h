@@ -105,6 +105,9 @@ class CHeroLevelUpDialogQuery : public CDialogQuery
 {
 private:
 	void refreshChoicesBeforePrompt();
+	bool canReroll() const;
+	bool hasValidOffer() const;
+	bool confirmCurrentOffer(PlayerColor player, QueryID requestedID) const;
 	const newHorizonsHeroes::PerkState::OfferWeightContext & perkWeightContext() const;
 	mutable newHorizonsHeroes::PerkState::OfferWeightContext cachedPerkWeightContext;
 	mutable JsonNode cachedPerkNormalization;
@@ -113,6 +116,9 @@ public:
 	static constexpr QueryType TYPE = QueryType::HeroLevelUpDialog;
 
 	CHeroLevelUpDialogQuery(CGameHandler * owner, const HeroLevelUp &Hlu, const CGHeroInstance * Hero);
+	static constexpr int32_t REROLL_REPLY = -1;
+	bool requestReroll(PlayerColor player);
+	bool hasOptionalPolicy() const;
 
 	void onRemoval(PlayerColor color) override;
 	bool isValidReply(std::optional<int32_t> reply) const override;

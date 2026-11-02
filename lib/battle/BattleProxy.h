@@ -24,6 +24,7 @@ public:
 	// IBattleInfo
 	const IBattleInfo * getBattle() const override;
 	std::optional<PlayerColor> getPlayerID() const override;
+	VisibleHeroPolicy battleGetVisibleHeroPolicy(BattleSide side) const override;
 
 	int32_t getActiveStackID() const override;
 	int32_t getActivationSerial() const override { return subject->getBattle()->getActivationSerial(); }

@@ -32,6 +32,7 @@ void ProjectedBonusGraph::assignRecipientOverlays(const CStack & original,
 	size_t remaining = 8192;
 	for(const auto & layer : layers)
 	{
+		if(layer.clockParents) throw std::invalid_argument("Frozen clock recipes require ordinary query ownership, not native-layer import");
 		for(const auto * records : {&layer.added, &layer.updated})
 		{
 			if(records->size() > remaining || std::ranges::any_of(*records, [](const auto & record) { return !record; }))

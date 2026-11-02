@@ -196,6 +196,7 @@ std::string effectDetail(const newHorizonsMagic::SpellEffectPreview & preview, c
 	heading.replaceRawString(value);
 	return heading.toString(&translator) + (preview.qualificationKey.empty()
 		? "" : "\n" + translated(translator, preview.qualificationKey))
-		+ (preview.narrowLabelKey.empty() ? "" : "\n" + translated(translator,"new-horizons.spellbook.compactNotation"));
+		+ (preview.narrowLabelKey.empty() || preview.labelKey == "new-horizons.spellbook.effect.focus"
+			? "" : "\n" + translated(translator,"new-horizons.spellbook.compactNotation"));
 }
 }

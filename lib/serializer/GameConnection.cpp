@@ -147,7 +147,7 @@ void GameConnection::setSerializationVersion(ESerializationVersion version)
 }
 
 newHorizonsHeroes::SpecialtySerializationContext GameConnection::captureSpecialtySerializationContext(
-	const std::shared_ptr<INetworkConnection> & expectedConnection)
+	const std::shared_ptr<INetworkConnection> & expectedConnection, ESerializationVersion * observedEpoch)
 {
 	std::scoped_lock lock(writeMutex);
 	const auto actual = networkConnection.lock();
@@ -157,7 +157,8 @@ newHorizonsHeroes::SpecialtySerializationContext GameConnection::captureSpecialt
 	if(serializer->version != deserializer->version)
 		throw std::logic_error("Source read/write capability epochs disagree");
 	const auto capabilities = newHorizonsHeroes::SpecialtySerializationContext::fromHandler(*serializer);
-	const auto codec = OwnedBonusCaptureCodec::fromSourceCapabilities(capabilities);
-	if(codec.version() != serializer->version) throw std::logic_error("Unknown source capability epoch");
+	// Transport features outside Bonus representation do not invent bonus capabilities.
+	(void)OwnedBonusCaptureCodec::fromSourceEpoch(serializer->version, capabilities);
+	if(observedEpoch) *observedEpoch = serializer->version;
 	return capabilities; // Mutex released here, NEVER held through state/native capture.
 }

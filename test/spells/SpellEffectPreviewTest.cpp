@@ -214,6 +214,8 @@ TEST_F(SpellEffectPreviewTest, FocusAndLivingArmorUseSharedAuthorityAndDetailFor
 {
 	const auto & focus = spell("new-horizons:focusMagic");
 	const auto & armor = spell("new-horizons:summonLivingArmor");
+	PreviewTranslator translator;
+	translator.texts.emplace("new-horizons.spellbook.effect.focus", "Defense penetration %s%");
 	const auto profile = newHorizonsSorceryRevision::focusRules(callback.rules);
 	ASSERT_TRUE(profile);
 	const auto & savedArmor = callback.rules["spells"][armor.getJsonKey()]["livingArmor"];
@@ -222,6 +224,10 @@ TEST_F(SpellEffectPreviewTest, FocusAndLivingArmorUseSharedAuthorityAndDetailFor
 		hero.setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
 		const auto penetration = newHorizonsMagic::spellEffectPreview(hero, focus);
 		ASSERT_TRUE(penetration.primary);
+		EXPECT_TRUE(penetration.qualificationKey.empty());
+		EXPECT_EQ(spellbookPresentation::effectDetail(penetration, translator),
+			"Current effect: " + spellbookPresentation::effectLine(penetration, translator,
+				[](const std::string &) { return 0; }));
 		EXPECT_EQ(penetration.primary->value, newHorizonsSorceryRevision::focusMarkBasisPoints(*profile,
 			hero.getEffectPower(&focus), newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules,
 				&hero, focus.getId()), 0, 0, hero.getNonDamageSpellSpecialtyBonusPercent(focus.getId())));

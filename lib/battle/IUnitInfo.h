@@ -28,6 +28,9 @@ class UnitCreatureResolver;
 class DLL_LINKAGE IUnitEnvironment
 {
 public:
+	/// nullopt retains native spell lookup. An owned environment must either
+	/// classify within its captured identity domain or explicitly refuse.
+	virtual std::optional<bool> unitLegacyTimeStopSpellMatch(const Unit *, SpellID) const { return std::nullopt; }
 	virtual bool unitHasAmmoCart(const Unit * unit) const = 0; //todo: handle ammo cart with bonus system
 
 	virtual PlayerColor unitEffectiveOwner(const Unit * unit) const = 0;

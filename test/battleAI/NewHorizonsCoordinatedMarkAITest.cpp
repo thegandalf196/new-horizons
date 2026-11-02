@@ -39,12 +39,12 @@ template<typename Random> auto markRandomBytes(Random & random)
 {
 	CMemorySerializer memory; memory.oser & random; return memory.extractBuffer();
 }
-// Explicit future world codec for the captured policy; live battles are not world fields.
+// Actual default world codec; live battles are not world fields.
 std::vector<std::byte> markWorldBytes(CGameState & state)
 {
 	NativeBonusGraphAccess graph;
 	CMemorySerializer memory;
-	memory.oser.version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+	memory.oser.version = ESerializationVersion::CURRENT;
 	memory.oser & state;
 	return memory.extractBuffer();
 }
@@ -71,14 +71,20 @@ protected:
 }
 TEST_P(NewHorizonsCoordinatedMarkAITest, MonkShotForecastAndSelectedReplayKeepTheMarkWithoutMutatingNativeOrRng)
 {
+	preOptionalCapture = true;
 	prepare("core:ingham"); beginCombat(); auto model = simulation(); DamageCache cache;
 	CMemorySerializer current;
-	ASSERT_EQ(current.oser.version, ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
+	ASSERT_EQ(current.oser.version, ESerializationVersion::CURRENT);
+	ASSERT_GE(current.oser.version, ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
+	NativeBonusGraphAccess graph;
+	EXPECT_NO_THROW(current.oser & *gameState());
+	EXPECT_FALSE(current.extractBuffer().empty());
+	CMemorySerializer historical;
+	historical.oser.version = ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION;
 	if(GetParam() != 1)
 	{
-		NativeBonusGraphAccess graph;
-		EXPECT_THROW(current.oser & *gameState(), std::runtime_error);
-		EXPECT_TRUE(current.extractBuffer().empty());
+		EXPECT_THROW(historical.oser & *gameState(), std::runtime_error);
+		EXPECT_TRUE(historical.extractBuffer().empty());
 	}
 	const auto live = markWorldBytes(*gameState());
 	auto * world = dynamic_cast<CRandomGenerator *>(getRNG()); ASSERT_NE(world, nullptr);
@@ -250,6 +256,7 @@ TEST_P(NewHorizonsCoordinatedMarkAITest, OldOwnReturnMarkWithoutNewReturnDoesNot
 }
 TEST_P(NewHorizonsCoordinatedMarkAITest, DefaultSnapshotPreservesNonemptyReplayOnCapturedPolicyRejectionAndSuccess)
 {
+	preOptionalCapture = true;
 	prepare("core:ingham");
 	auto & log = gameState()->replayLog;
 	log.configure(false, 2);
@@ -259,14 +266,19 @@ TEST_P(NewHorizonsCoordinatedMarkAITest, DefaultSnapshotPreservesNonemptyReplayO
 	ASSERT_EQ(log.getChapters().front().snapshotVersion, ESerializationVersion::CURRENT);
 	const auto before = markRandomBytes(log);
 	ASSERT_FALSE(before.empty());
-	ASSERT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
+	ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
+	EXPECT_NO_THROW(gameState()->saveToMemory());
+	NativeBonusGraphAccess graph;
+	CMemorySerializer historical;
+	historical.oser.version = ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION;
 	if(GetParam() == 1)
 	{
-		EXPECT_NO_THROW(gameState()->saveToMemory());
+		EXPECT_NO_THROW(historical.oser & *gameState());
 	}
 	else
 	{
-		EXPECT_THROW(gameState()->saveToMemory(), std::runtime_error);
+		EXPECT_THROW(historical.oser & *gameState(), std::runtime_error);
+		EXPECT_TRUE(historical.extractBuffer().empty());
 	}
 	EXPECT_EQ(markRandomBytes(log), before);
 	ASSERT_EQ(log.getChapters().size(), 1u);

@@ -9,6 +9,9 @@
 #include "../../AI/BattleAI/BattleDamageValue.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "../../AI/BattleAI/SecondWindOpportunity.h"
+#include "../../AI/BattleAI/HeroDecisionPressure.h"
+#include "../../AI/BattleAI/AttackPossibility.h"
+#include "../../lib/CRandomGenerator.h"
 #include "HeroQueueBonusSnapshot.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -329,4 +332,102 @@ TEST_F(SecondWindOpportunityTest, AbsentOrMismatchedContextDoesNotInventAZeroOpp
 	fork();
 	EXPECT_EQ(heroOrderValue::projectSecondWindActivation(*live, environment.get(), parent,
 		BattleSide::ATTACKER, recipient->unitId()), nullptr);
+}
+
+TEST_F(SecondWindOpportunityTest, PressurePolicyValuesSpentAdjacentRecipientWithoutResetOrDoubleScaling)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(BattleHex(5, 5), true, BattleHex(4, 5), "core:behemoth"));
+	recipient->waiting = false;
+	recipient->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::BLOCKS_RETALIATION, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_TRUE(recipient->movedThisRound);
+	ASSERT_FALSE(recipient->willMove(0));
+	fork();
+	const auto before = outside();
+	const auto defaultRng = serialized(CRandomGenerator::getDefault());
+	auto baseline = heroDecisionPressure::Baseline::create(environment.get(), live, BattleSide::ATTACKER);
+	ASSERT_TRUE(baseline);
+	auto activation = std::dynamic_pointer_cast<const HypotheticBattle>(project());
+	ASSERT_TRUE(activation);
+	const auto * actor = activation->battleGetUnitByID(recipient->unitId());
+	const auto * victim = activation->battleGetUnitByID(enemy->unitId());
+	ASSERT_TRUE(actor->moved(0));
+	ASSERT_FALSE(actor->willMove(0));
+	ASSERT_TRUE(heroOrderValue::hasSecondWindAttackOpportunity(*activation, actor->unitId(), victim->unitId()));
+	const auto nativeDamage = battleDamageValue::averageOrderDamage(
+		activation->battleEstimateDamage(BattleAttackInfo(actor, victim, 0, false)));
+	auto reference = std::make_shared<HypotheticBattle>(environment.get(), live);
+	for(const auto * unit : reference->battleGetAllUnits(false)) reference->getForUpdate(unit->unitId());
+	DamageCache cache;
+	cache.buildDamageCache(reference, BattleSide::ATTACKER);
+	const auto * referenceActor = reference->battleGetUnitByID(actor->unitId());
+	const auto * referenceVictim = reference->battleGetUnitByID(victim->unitId());
+	const auto ordinaryDamage = battleDamageValue::averageOrderDamage(
+		reference->battleEstimateDamage(BattleAttackInfo(referenceActor, referenceVictim, 0, false)));
+	ASSERT_GT(nativeDamage, 0);
+	ASSERT_LT(nativeDamage, ordinaryDamage); // Native projection already applies the grant coefficient.
+	const auto expected = AttackPossibility::calculateDamageReduce(referenceActor, referenceVictim,
+		static_cast<uint64_t>(nativeDamage), cache, reference);
+	ASSERT_GT(expected, 0);
+	const auto value = baseline->orderUtility(std::const_pointer_cast<HypotheticBattle>(activation), HeroCommand::SECOND_WIND);
+	ASSERT_TRUE(value);
+	EXPECT_EQ(*value, expected); // No second percent factor after native damage.
+	EXPECT_TRUE(actor->moved(0));
+	EXPECT_FALSE(actor->willMove(0));
+	EXPECT_EQ(outside(), before);
+	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), defaultRng);
+}
+
+TEST_F(SecondWindOpportunityTest, PressurePolicyValuesSpentShooterAfterActivationRestoresShooting)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(BattleHex(14, 5), true, BattleHex(4, 5), "core:behemoth"));
+	recipient->waiting = false;
+	for(const auto type : {BonusType::SHOOTER, BonusType::SHOTS})
+		recipient->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+			type, BonusSource::OTHER, 10, BonusSourceID()));
+	recipient->addNewBonus(std::make_shared<Bonus>(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION,
+		BonusType::FORGETFULL, BonusSource::OTHER, 100, BonusSourceID()));
+	ASSERT_TRUE(recipient->movedThisRound);
+	ASSERT_FALSE(recipient->willMove(0));
+	ASSERT_FALSE(live->battleCanShootAction(recipient, enemy->getPosition()));
+	fork();
+	const auto before = outside();
+	const auto defaultRng = serialized(CRandomGenerator::getDefault());
+	auto baseline = heroDecisionPressure::Baseline::create(environment.get(), live, BattleSide::ATTACKER);
+	ASSERT_TRUE(baseline);
+	auto activation = std::dynamic_pointer_cast<const HypotheticBattle>(project());
+	ASSERT_TRUE(activation);
+	const auto * actor = activation->battleGetUnitByID(recipient->unitId());
+	ASSERT_TRUE(actor->moved(0));
+	ASSERT_FALSE(actor->willMove(0));
+	ASSERT_TRUE(activation->battleCanShootAction(actor, enemy->getPosition()));
+	const auto value = baseline->orderUtility(std::const_pointer_cast<HypotheticBattle>(activation), HeroCommand::SECOND_WIND);
+	ASSERT_TRUE(value);
+	EXPECT_GT(*value, 0);
+	EXPECT_EQ(outside(), before);
+	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), defaultRng);
+}
+
+TEST_F(SecondWindOpportunityTest, PressurePolicyDoesNotInventAnAttackForSpentDistantImmobileRecipient)
+{
+	useRevisedOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	recipient->waiting = false;
+	ASSERT_TRUE(recipient->movedThisRound);
+	ASSERT_FALSE(recipient->willMove(0));
+	fork();
+	const auto before = outside();
+	const auto defaultRng = serialized(CRandomGenerator::getDefault());
+	auto baseline = heroDecisionPressure::Baseline::create(environment.get(), live, BattleSide::ATTACKER);
+	ASSERT_TRUE(baseline);
+	auto activation = std::dynamic_pointer_cast<const HypotheticBattle>(project());
+	ASSERT_TRUE(activation);
+	ASSERT_FALSE(heroOrderValue::hasSecondWindAttackOpportunity(*activation, recipient->unitId(), enemy->unitId()));
+	const auto value = baseline->orderUtility(std::const_pointer_cast<HypotheticBattle>(activation), HeroCommand::SECOND_WIND);
+	ASSERT_TRUE(value);
+	EXPECT_EQ(*value, 0);
+	EXPECT_EQ(outside(), before);
+	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), defaultRng);
 }

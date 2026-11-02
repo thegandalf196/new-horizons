@@ -1,0 +1,15 @@
+{
+  "target": "nhOwnedPreparationClientIntegration",
+  "caseVariable": "NH_OWNED_PREPARATION_CASE",
+  "bootstrapVariable": "NH_OWNED_PREPARATION_BOOTSTRAP",
+  "bootstrap": "owned-angel2",
+  "fixtureResource": "Maps/owned-preparation-angel2.vmap",
+  "resourceBindings": ["NH_OWNED_PREPARATION_MAP_SHA256", "NH_OWNED_PREPARATION_MAP_BYTES"],
+  "cases": [
+    {"selector": "ordered-removal", "originalOracle": "GraveDustSnapshotTest.MixedTimeStopRemovalPreflightsOrderedVectorBeforeOverlayMutation"},
+    {"selector": "incoming-clock", "originalOracle": "GraveDustSnapshotTest.OrdinaryIncomingClockBeforeCompleteDustIsCanonicalProtectedNoOp"}
+  ],
+  "nativeControlsRemainRequired": ["GraveDustMutationTest.*", "OwnedSourceRelationRecipeTest.*", "OwnedSourceExportRoleTest.*"],
+  "isolation": "Guarded background Xvfb; disposable profile/save; actual SDL_AUDIODRIVER and SDL_AUDIO_DRIVER dummy; bounded owner and full wait/reap/postchecks",
+  "acceptance": "Each original oracle, native source state, authoritative simulation RNG, callback/Batch perspective and ordinary teardown must pass; compile or capture alone is insufficient"
+}

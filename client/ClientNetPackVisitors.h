@@ -12,6 +12,7 @@
 #include "../lib/networkPacks/NetPackVisitor.h"
 
 class CClient;
+class ClientPacketReceiveSession;
 
 class CGameState;
 
@@ -20,10 +21,11 @@ class ApplyClientNetPackVisitor : public ::ICPackVisitor
 private:
 	CClient & cl;
 	const CGameState & gs;
+	ClientPacketReceiveSession * const receive;
 
 public:
-	ApplyClientNetPackVisitor(CClient & cl, const CGameState & gs)
-		:cl(cl), gs(gs)
+	ApplyClientNetPackVisitor(CClient & cl, const CGameState & gs, ClientPacketReceiveSession * receive = nullptr)
+		:cl(cl), gs(gs), receive(receive)
 	{
 	}
 

@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/OwnedUnitBonusFrame.h"
 
 std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdateImpl(uint32_t id)
 {
@@ -11,9 +12,14 @@ std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdateImpl(uint32_t id
 
 	if(iter == stackStates.end())
 	{
-		const battle::Unit * s = subject->battleGetUnitByID(id);
-
-		auto ret = std::make_shared<StackWithBonuses>(this, s);
+		std::shared_ptr<StackWithBonuses> ret;
+		if(ownedFrameBatch)
+		{
+			const auto frame = ownedFrameFor(id);
+			if(!frame) throw std::invalid_argument("Owned branch has no admitted occurrence for this ID");
+			ret = std::make_shared<StackWithBonuses>(this, frame);
+		}
+		else ret = std::make_shared<StackWithBonuses>(this, subject->battleGetUnitByID(id));
 		stackStates[id] = ret;
 		return ret;
 	}

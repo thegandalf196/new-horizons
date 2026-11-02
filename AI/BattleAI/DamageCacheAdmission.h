@@ -36,10 +36,11 @@ public:
 	bool hasReducedExtraActivation();
 	bool hasBloodragePain();
 	bool supportsFocusFire();
+	bool ordinaryCreatureDamageIsStateful();
 
 private:
 	enum Fact : std::size_t { AMBUSHER, SHADOW, NIGHT, NIGHT_EFFECT, RELENTLESS, GAMBLER,
-		REDUCED_ACTIVATION, BLOODRAGE, FOCUS_FIRE_RULES, COUNT };
+		REDUCED_ACTIVATION, BLOODRAGE, FOCUS_FIRE_RULES, ORDINARY_DAMAGE_POLICY, COUNT };
 	const battle::Unit & actor;
 	const CBattleInfoCallback & battle;
 	std::optional<BattleSide> actorSide;

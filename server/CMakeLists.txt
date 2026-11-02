@@ -51,6 +51,7 @@ set(vcmiservercommon_SRCS
 		queries/CQuery.cpp
 		queries/LuaScriptQuery.cpp
 		queries/MapQueries.cpp
+		queries/HeroLevelUpOffer.cpp
 		queries/VisitQueries.cpp
 		queries/QueriesProcessor.cpp
 
@@ -117,6 +118,7 @@ set(vcmiservercommon_HEADERS
 		queries/CQuery.h
 		queries/LuaScriptQuery.h
 		queries/MapQueries.h
+		queries/HeroLevelUpOffer.h
 		queries/VisitQueries.h
 		queries/QueriesProcessor.h
 		queries/IQueryStackListener.h
@@ -194,4 +196,20 @@ if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
 	target_compile_options(nhCureSimulationFixture PRIVATE
 		$<TARGET_PROPERTY:vcmiservercommon,COMPILE_OPTIONS>)
 	target_link_libraries(nhCureSimulationFixture PRIVATE vcmi minizip::minizip)
+endif()
+
+# Observation-only alternate flow object. Ordinary server and Cure targets keep
+# their own exact sources/definitions; no test macro enters either archive/PCH.
+option(ENABLE_NH_OWNED_PREPARATION_INTEGRATION "Build genuine owned-preparation client oracles" OFF)
+if(ENABLE_NH_OWNED_PREPARATION_INTEGRATION)
+	add_library(nhOwnedPreparationSimulationAudit OBJECT EXCLUDE_FROM_ALL
+		battles/BattleFlowProcessor.cpp NetPacksLobbyServer.cpp tests/OwnedPreparationAudit.cpp
+		tests/OwnedPreparationAudit.h tests/OwnedPreparationFirstWriter.cpp tests/OwnedPreparationFirstWriter.h)
+	target_include_directories(nhOwnedPreparationSimulationAudit PRIVATE
+		$<TARGET_PROPERTY:vcmiservercommon,INCLUDE_DIRECTORIES>)
+	target_compile_definitions(nhOwnedPreparationSimulationAudit PRIVATE
+		$<TARGET_PROPERTY:vcmiservercommon,COMPILE_DEFINITIONS> NH_OWNED_PREPARATION_SIMULATION_AUDIT)
+	target_compile_options(nhOwnedPreparationSimulationAudit PRIVATE
+		$<TARGET_PROPERTY:vcmiservercommon,COMPILE_OPTIONS>)
+	target_link_libraries(nhOwnedPreparationSimulationAudit PRIVATE vcmi minizip::minizip)
 endif()

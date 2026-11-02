@@ -44,6 +44,7 @@ std::optional<SpellID> entangleSpellId()
 
 void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned creation requires an admitted source-domain recipe");
 	invalidateLifeDrainFriendlyObservation(id);
 	battle::UnitInfo info;
 	info.load(id, data);
@@ -329,6 +330,7 @@ battle::BattleEffectSnapshot HypotheticBattle::captureBattleEffects(uint32_t id)
 
 void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
 {
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned exchange requires its canonical transaction metadata");
 	for(const auto & endpoint : exchange.endpoints)
 		invalidateLifeDrainFriendlyObservation(endpoint.id);
 	exchange.validateShape();

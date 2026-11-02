@@ -10,11 +10,11 @@
 #include <stdexcept>
 
 HypotheticSourceBinding::HypotheticSourceBinding(const std::shared_ptr<CBattleInfoCallback> & subject,
-	const CBattleInfoCallback & policySource)
+	const CBattleInfoCallback & policySource, bool ownedRecipient)
 	: boundSubjectPointer(subject.get()),
 	boundSubjectOwner(subject),
 	initialExportView(dynamic_cast<InitialExportBattleSubject *>(subject.get())),
-	adjacency(ProjectedAdjacencyBonuses::captureSources(policySource))
+	adjacency(ownedRecipient ? nullptr : ProjectedAdjacencyBonuses::captureSources(policySource))
 {
 }
 
@@ -36,11 +36,13 @@ std::shared_ptr<InitialExportBattleSubject> HypotheticSourceBinding::resolve(
 
 std::shared_ptr<InitialExportBattleSubject> HypotheticBattle::initialExportSubject() const
 {
+	requireOwnedFrameSource();
 	return sourceBinding.resolve(subject);
 }
 
 battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate) const
 {
+	if(ownedFrameBatch) return ownedFrameUnitsIf(predicate);
 	if(initialExportSubject())
 		return ownedExportUnitsIf(predicate);
 	const auto original = BattleProxy::getUnitsIf([](const battle::Unit *)

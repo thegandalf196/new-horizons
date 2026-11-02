@@ -65,6 +65,7 @@ class CBattleAI : public CBattleGameInterface
 	heroActionSelection::Observer * heroValueObserver;
 	VinesCandidateValueReuse::TestControl * vinesReuseControl;
 	BattleEvaluator makeEvaluator(const BattleID & battleID, const CStack * stack);
+	bool attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack);
 
 	BattleSide side;
 	std::shared_ptr<CBattleCallback> cb;

@@ -8,6 +8,9 @@
 #pragma once
 
 #include "../GameConstants.h"
+#include "../constants/EntityIdentifiers.h"
+#include <utility>
+#include <vector>
 
 class CArmedInstance;
 class CMap;
@@ -20,11 +23,14 @@ namespace newHorizonsNeutralArmies
 {
 inline constexpr auto SETTING_KEY = "neutralArmySizePercent";
 
-/// Trial percentage: 100 is identity, 50 is the opt-in half-size experiment.
+/// Final encounter percentage. In captured calibration, 100 is the calibrated
+/// baseline; historical absence retains the original-count percentage policy.
 DLL_LINKAGE int percentage(const IGameSettings & settings);
 DLL_LINKAGE TQuantity scaleCount(TQuantity count, int percent);
 DLL_LINKAGE bool eligible(const CArmedInstance & army);
 DLL_LINKAGE TQuantity generatedCount(const CArmedInstance & army, TQuantity rawCount);
+DLL_LINKAGE std::vector<TQuantity> generatedCounts(const CArmedInstance & army,
+	const std::vector<std::pair<CreatureID, TQuantity>> & raw);
 DLL_LINKAGE void scaleGeneratedGuards(const CArmedInstance & army, Rewardable::Configuration & raw);
 
 /// Fresh-world only: capture effective settings and scale each initial army once.

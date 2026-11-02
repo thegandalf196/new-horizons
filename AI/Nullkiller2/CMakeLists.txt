@@ -83,6 +83,10 @@ set(Nullkiller2_SRCS
 		Helpers/ExplorationHelper.cpp
 		Helpers/DwellingGrowthValue.cpp
 		AIGateway.cpp
+		AIGatewayLevelUp.cpp
+		Analyzers/HeroLevelUpEvaluation.cpp
+		Analyzers/QuickStudyDecision.cpp
+		Helpers/LevelUpOfferState.cpp
 		Helpers/ArmyUpgradeSelection.cpp
 		Helpers/ArmyUpgradeExecution.cpp
 )
@@ -178,6 +182,7 @@ set(Nullkiller2_HEADERS
 		Helpers/ExplorationHelper.h
 		Helpers/DwellingGrowthValue.h
 		AIGateway.h
+		Helpers/LevelUpOfferState.h
 )
 
 assign_source_group(${Nullkiller2_SRCS} ${Nullkiller2_HEADERS})

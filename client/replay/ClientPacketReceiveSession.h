@@ -10,6 +10,8 @@
 
 class CServerHandler;
 class CClient;
+class CBattleGameInterface;
+namespace battle { class OwnedBattleFrameBatch; }
 class GameEngine;
 class GameConnection;
 class INetworkConnection;
@@ -25,6 +27,11 @@ class ClientPacketReceiveSession final : private ClientReplaySessionReadiness
 {
 	friend class CServerHandler;
 	friend class ClientReceiveAccess;
+	friend class CClient;
+	bool observeAfterOwnedDecision(const std::shared_ptr<const battle::OwnedBattleFrameBatch> & frames,
+		const std::shared_ptr<CBattleGameInterface> & controller);
+	std::shared_ptr<const battle::OwnedBattleFrameBatch> captureActiveBattleFrames(
+		PlayerColor observer, BattleID battle, const std::shared_ptr<CBattleGameInterface> & controller);
 	CServerHandler & handler;
 	GameEngine * const engine;
 	std::shared_ptr<INetworkConnection> connection;

@@ -37,7 +37,7 @@ class DLL_LINKAGE CBattleInfoEssentials : public IBattleInfoCallback
 {
 protected:
 	bool battleDoWeKnowAbout(BattleSide side) const;
-	int battleGetRetreatPermission(BattleSide side, BonusType permission) const;
+	virtual int battleGetRetreatPermission(BattleSide side, BonusType permission) const;
 
 public:
 	enum EStackOwnership
@@ -126,7 +126,7 @@ public:
 	bool battleCanUseMetamagicSpell(BattleSide side, SpellID spell, bool grand) const;
 	const CGHeroInstance * battleGetFightingHero(BattleSide side) const; //deprecated for players callback, easy to get wrong
 	/// Hidden is unknown, never proof that an opponent has no hero or policy.
-	VisibleHeroPolicy battleGetVisibleHeroPolicy(BattleSide side) const;
+	virtual VisibleHeroPolicy battleGetVisibleHeroPolicy(BattleSide side) const;
 	const CArmedInstance * battleGetArmyObject(BattleSide side) const;
 	InfoAboutHero battleGetHeroInfo(BattleSide side) const;
 
@@ -146,6 +146,8 @@ public:
 
 	const CStack * battleGetStackByID(int ID, bool onlyAlive = true) const; //returns stack info by given ID
 	bool battleIsObstacleVisibleForSide(const CObstacleInstance & coi, BattleSide side) const;
+	/// Canonical value predicate; caller supplies its already-owned native-terrain query result.
+	static bool battleIsObstacleVisibleForSide(const CObstacleInstance & coi, BattleSide side, bool hasNativeStack);
 
 	///returns player that controls given stack; mind control included
 	PlayerColor battleGetOwner(const battle::Unit * unit) const;

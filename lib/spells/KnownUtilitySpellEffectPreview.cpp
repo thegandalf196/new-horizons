@@ -44,8 +44,11 @@ std::optional<SpellEffectPreview> knownUtilitySpellEffectPreview(const CGHeroIns
 		const auto profile = newHorizonsSorceryRevision::focusRules(rules).value_or(newHorizonsSorceryRevision::FocusRules{
 			newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS, newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS,
 			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS});
-		return quantity("focus", newHorizonsSorceryRevision::focusMarkBasisPoints(profile, power, coefficient,
+		auto result = quantity("focus", newHorizonsSorceryRevision::focusMarkBasisPoints(profile, power, coefficient,
 			warcasting, empower, hero.getNonDamageSpellSpecialtyBonusPercent(spell.getId())), 100);
+		// Each captured mark has this penetration rate regardless of its recipient.
+		result.qualificationKey.clear();
+		return result;
 	}
 	if(spell.getJsonKey() == "new-horizons:summonLivingArmor")
 	{

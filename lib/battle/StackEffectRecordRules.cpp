@@ -16,11 +16,11 @@ namespace stackEffectRecordRules
 {
 bool incomingProtected(const battle::Unit & unit, const Bonus & value)
 {
-	return unit.isTimeStopped() && !timeStopState::isStateBonus(value);
+	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit);
 }
 bool removalProtected(const battle::Unit & unit, const Bonus & value)
 {
-	return unit.isTimeStopped() && !timeStopState::isStateBonus(value)
+	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit)
 		&& !newHorizonsOffense::isNoQuarterBonus(&value)
 		&& !newHorizonsSerpentsEmbrace::isMarker(value);
 }

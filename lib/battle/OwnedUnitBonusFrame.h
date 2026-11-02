@@ -6,9 +6,11 @@
 #include "../bonuses/OwnedRecipientBonusGraph.h"
 #include <map>
 #include <limits>
+class OwnedFrameEffectQueries;
 namespace battle
 {
 class OwnedUnitBonusFrameBatch;
+class OwnedFrameBranchQueries;
 /// Pure owned fixture/preparation frame; no live-source capture or command dispatch.
 /// Unit/BonusList/shared Bonus returns are BORROWS: retain frame/Scratch through all uses.
 /// Bonus/updater/limiter aliases are READ-ONLY observations, not mutable effect owners.
@@ -101,6 +103,8 @@ private:
 	std::unique_ptr<Data> data;
 	OwnedUnitBonusFrame() noexcept;
 	friend class OwnedUnitBonusFrameBatch;
+	friend class OwnedFrameBranchQueries;
+	friend class ::OwnedFrameEffectQueries;
 	static std::shared_ptr<OwnedUnitBonusFrame> build(Inputs inputs, const CUnitState * values,
 		std::shared_ptr<const OwnedRecipientBonusGraph> capturedRoot = nullptr);
 	static bool samePayloadOwner(const OwnedRecipientBonusGraph & left, const OwnedRecipientBonusGraph & right);

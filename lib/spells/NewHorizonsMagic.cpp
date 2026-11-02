@@ -899,7 +899,7 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "pointBlankPreservesAdjacentExemption", "morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"});
 	newHorizonsHeroLuck::validateRules(rules);
 	newHorizonsProtectedMobility::validateRulesSerialization(rules, true);
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
@@ -934,6 +934,12 @@ void validateRules(const JsonNode & rules)
 		require(version == CURRENT_RULESET_VERSION, "Morale rolls require magic rules v3");
 		fields(rules["morale"], {"rulesetVersion", "minimum", "maximum", "goodChance", "badChance", "diceSize"});
 		require(validMoraleRules(rules), "valid versioned Morale rules");
+	}
+	if(rules.Struct().contains("pointBlankPreservesAdjacentExemption"))
+	{
+		require(version == CURRENT_RULESET_VERSION, "Point-Blank penalty precedence requires magic rules v3");
+		require(rules["pointBlankPreservesAdjacentExemption"].getType() == JsonNode::JsonType::DATA_BOOL,
+			"boolean pointBlankPreservesAdjacentExemption");
 	}
 	if(rules.Struct().contains("physicalDamageReductionCapPercent"))
 	{

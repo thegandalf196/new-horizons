@@ -27,6 +27,8 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 	{
 		if(const auto * native = dynamic_cast<const BattleInfo *>(&battleState))
 			newHorizonsGraveDust::validateNativeEffectChanges(*native, pack);
+		else if(const auto * ordered = dynamic_cast<const newHorizonsGraveDust::OrderedEffectChangePreflight *>(&battleState))
+			ordered->preflightEffectChanges(pack);
 		else
 			newHorizonsGraveDust::validateEffectChanges(battleState, pack);
 	}

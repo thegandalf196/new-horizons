@@ -21,6 +21,14 @@
 		"skills"
 	],
 	"properties": {
+		"quickStudyPolicy": {
+			"type": "object", "additionalProperties": false,
+			"required": ["version", "interval"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1]},
+				"interval": {"type": "integer", "minimum": 1, "maximum": 100}
+			}
+		},
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [1, 2]},
 		"offerWeightPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Captured weighting:1 full per-perk raw weights;2 normalized parent-first offers. Without an independent progression marker,2 retains historical same-tier selections."},

@@ -35,6 +35,12 @@ private:
 	mutable std::vector<ui32> pendingRewardIndices;
 	
 protected:
+	/// Distinguish the reward ordinal dialog from a derived object's initial visit prompt.
+	bool hasPendingRewardSelection() const
+	{
+		return !pendingRewardIndices.empty();
+	}
+
 	
 	/// function that must be called if hero got level-up during grantReward call
 	void grantRewardAfterLevelup(IGameEventCallback & gameEvents, const Rewardable::VisitInfo & reward, const CArmedInstance * army, const CGHeroInstance * hero) const;

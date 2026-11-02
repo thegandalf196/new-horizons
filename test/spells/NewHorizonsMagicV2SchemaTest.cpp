@@ -19,53 +19,7 @@ namespace
 {
 JsonNode v1Rules()
 {
-	JsonNode rules = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")), 1);
-	rules["rulesetVersion"].Integer() = 1;
-	rules.Struct().erase("heroLuck");
-	rules.Struct().erase("heroMorale");
-	rules.Struct().erase("warcasting");
-	rules.Struct().erase("spellPoints");
-	rules.Struct().erase("mageGuildGeneration");
-	rules.Struct().erase("physicalDamageReductionCapPercent");
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
-	for(auto & [name, faction] : rules["factions"].Struct())
-	{
-		(void)name;
-		faction["major"] = faction["preferredA"];
-		faction["minor"] = faction["preferredB"];
-		faction.Struct().erase("preferredA");
-		faction.Struct().erase("preferredB");
-	}
-	for(auto & [name, spell] : rules["spells"].Struct())
-	{
-		(void)name;
-		spell.Struct().erase("active");
-		spell.Struct().erase("directDamage");
-		spell.Struct().erase("cureAfflictions");
-		spell.Struct().erase("selectedPlacement");
-		spell.Struct().erase("rawSpellPowerPerPatch");
-		spell.Struct().erase("earthquake");
-		spell.Struct().erase("structures");
-		spell.Struct().erase("heroAccess");
-		spell.Struct().erase("focusMagic");
-		spell.Struct().erase("slow");
-		spell.Struct().erase("livingArmor");
-		spell.Struct().erase("theChosen");
-		spell.Struct().erase("restoration");
-		spell.Struct().erase("propagationLimit");
-		spell.Struct().erase("implosion");
-		spell.Struct().erase("ignoreInterveningBarriers");
-		spell.Struct().erase("temporaryMagicalEffectsOnly");
-		spell.Struct().erase("schoolRankDurations");
-		spell.Struct().erase("burnGroundedFlyers");
-		if(spell.Struct().contains("variant"))
-		{
-			spell.Struct().erase("variant");
-		}
-	}
-	rules.setModScope(GameConstants::NEW_HORIZONS_MOD_SCOPE);
-	return rules;
+	return historicalMagicV1Rules();
 }
 
 JsonNode v2Rules()
@@ -430,4 +384,40 @@ TEST(NewHorizonsMagicV2SchemaTest, AuthoredMapMagicOverrideAcceptsV3Snapshot)
 {
 	EXPECT_TRUE(named(v2Rules(), "vcmi:newHorizonsMapMagicOverride"));
 	EXPECT_TRUE(named(v3Rules(), "vcmi:newHorizonsMapMagicOverride"));
+}
+
+
+TEST(NewHorizonsMagicV3SchemaTest, PointBlankPrecedenceRequiresBooleanAndAllowsAbsence)
+{
+	auto rules = v3Rules();
+	EXPECT_TRUE(v3(rules));
+	rules.Struct().erase("pointBlankPreservesAdjacentExemption");
+	EXPECT_TRUE(v3(rules));
+	rules["pointBlankPreservesAdjacentExemption"] = JsonNode(false);
+	EXPECT_TRUE(v3(rules));
+	for(const auto & invalid : {JsonNode(), JsonNode(1), JsonNode("true")})
+	{
+		rules["pointBlankPreservesAdjacentExemption"] = invalid;
+		EXPECT_FALSE(v3(rules));
+	}
+	auto historical = v1Rules();
+	historical["pointBlankPreservesAdjacentExemption"] = JsonNode(true);
+	EXPECT_FALSE(named(historical, "vcmi:newHorizonsMagic"));
+	EXPECT_THROW(newHorizonsMagic::validateRules(historical), std::runtime_error);
+}
+
+
+TEST(NewHorizonsMagicV2SchemaTest, ValidHistoricalRulesRejectEitherPresentPointBlankPolicy)
+{
+	const auto rules = v2Rules();
+	ASSERT_FALSE(rules.Struct().contains("pointBlankPreservesAdjacentExemption"));
+	ASSERT_TRUE(v2(rules));
+	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
+	for(const bool enabled : {true, false})
+	{
+		auto unsupported = rules;
+		unsupported["pointBlankPreservesAdjacentExemption"] = JsonNode(enabled);
+		EXPECT_FALSE(v2(unsupported)) << enabled;
+		EXPECT_THROW(newHorizonsMagic::validateRules(unsupported), std::runtime_error) << enabled;
+	}
 }

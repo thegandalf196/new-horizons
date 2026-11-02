@@ -1,6 +1,7 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 3,
+	"pointBlankPreservesAdjacentExemption": true,
 	"heroLuck": {
 		"luckyDayChanceScalePercent": 100,
 		"erraticManaChanceScalePercent": 100,

@@ -28,11 +28,26 @@ public:
 		std::vector<NodeInput> nodes;
 		size_t root = 0;
 		std::vector<std::shared_ptr<const Bonus>> extraRecords;
+		std::vector<std::shared_ptr<const Bonus>> sourceExports; // Raw export role, NEVER a query handle.
+		std::vector<std::shared_ptr<const Bonus>> retainedRecords; // Same-pool recipe dependencies; NO query/unit-export right.
+		bool peerDependenciesOnly = false; // Canonical minimal opaque peer closure, AFTER relation replay.
 	};
 	/// One deep alias pool, separate graph-local entitlements. Pure owned input, not live authority.
 	static std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> fromOwnedBatchInputs(std::vector<CaptureInput> inputs);
 	static std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> fromOwnedBatchInputs(
 		std::vector<CaptureInput> inputs, const OwnedBonusCaptureCodec & codec);
+	/// Ordered source-relation replay on the ONE cloned payload pool. This is
+	/// pure value preparation, never native occurrence/visibility admission.
+	struct SourceRelation
+	{
+		bool attach;
+		OwnedBonusEvaluationFacts source;
+		std::vector<size_t> records; // Explicit extra/source/retained handles after locals; canonical source export order.
+		std::vector<size_t> destinations; // Node ordinals in exact native route order, WITH repetitions.
+	};
+	static std::vector<std::unique_ptr<OwnedRecipientBonusGraph>> fromOwnedBatchInputs(
+		std::vector<CaptureInput> inputs, std::vector<std::vector<SourceRelation>> relations,
+		const OwnedBonusCaptureCodec & codec);
 	struct RootQuery
 	{
 		OwnedBonusEvaluationFacts facts;
@@ -40,6 +55,11 @@ public:
 		std::vector<size_t> records; // Root-local or extra owned payload handles; never native pointers.
 	};
 	std::vector<size_t> rootLocalRecords() const;
+	RootQuery capturedRootQuery() const;
+	size_t extraRecord(size_t ordinal) const;
+	size_t sourceExportRecord(size_t ordinal) const;
+	std::vector<size_t> sourceExportRecords() const;
+	void validateSourceExport(size_t index) const;
 	size_t payloadCount() const;
 	/// Read-only borrow; retain owner. Alias identity is shared with raw node records.
 	const std::shared_ptr<Bonus> & payload(size_t index) const;
@@ -68,9 +88,11 @@ private:
 	size_t rootIndex = 0;
 	size_t rootPayloadStart = 0;
 	size_t localPayloadCount = 0;
+	size_t queryPayloadCount = 0;
+	size_t sourcePayloadCount = 0;
 	OwnedRecipientBonusGraph() noexcept(std::is_nothrow_default_constructible_v<decltype(indices)> && std::is_nothrow_default_constructible_v<decltype(inheritedOnlyRecords)>);
 	static std::unique_ptr<OwnedRecipientBonusGraph> build(CaptureInput input,
-		std::shared_ptr<ownedBonusPayloads::Captured> payloads, size_t start, size_t localCount, size_t recordCount);
+		std::shared_ptr<ownedBonusPayloads::Captured> payloads, std::vector<std::shared_ptr<Bonus>> records);
 	void validateRecord(size_t index) const;
 	const Node & entry(const CBonusSystemNode & node) const;
 	const CBonusSystemNode & queryNode(size_t index) const;

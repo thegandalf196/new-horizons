@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "HeroActionSelectionState.h"
+#include "HeroActionTimingCapture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../../AI/BattleAI/VinesCandidateValueReuse.h"
@@ -316,7 +317,10 @@ protected:
 	}
 	void compare()
 	{
+		heroTimingTest::Capture timing;
 		const auto before = decisionSnapshot();
+		int64_t disabledFullCalls = 0;
+		int64_t disabledCachedCalls = 0;
 		std::vector<Scores::Row> expected;
 		std::vector<std::byte> expectedHero, expectedUnit;
 		std::optional<heroActionSelection::SelectionValue> expectedSelection;
@@ -331,11 +335,40 @@ protected:
 			EXPECT_EQ(decisionSnapshot(), before);
 			Scores scores;
 			VinesCandidateValueReuse::TestControl control{enabled};
+			const auto timingRowsBefore = timing.records().size();
 			const bool accepted = evaluator.attemptCastingSpell(active, true, &scores, &control);
 			EXPECT_EQ(decisionSnapshot(), before); // Full state, bonuses, Orders, allowances, mana and BOTH RNG.
 			ASSERT_EQ(callback->submitted.size(), accepted ? 1u : 0u);
 			ASSERT_TRUE(scores.selection);
 			ASSERT_FALSE(scores.rows.empty());
+			if(heroTimingTest::optedIn())
+			{
+				const auto rows = timing.records();
+				ASSERT_EQ(rows.size(), timingRowsBefore + 1);
+				const auto & row = rows.back();
+				EXPECT_EQ(row.at("candidates"), static_cast<int64_t>(scores.rows.size()));
+				EXPECT_EQ(row.at("loop_joined"), 1);
+				EXPECT_EQ(row.at("loop_threw"), 0);
+				const auto full = row.at("continuation_full_calls");
+				const auto cached = row.at("continuation_cached_calls");
+				if(!enabled)
+				{
+					disabledFullCalls = full;
+					disabledCachedCalls = cached;
+				}
+				else
+				{
+					EXPECT_GT(disabledFullCalls, full);
+					EXPECT_EQ(disabledFullCalls - full, static_cast<int64_t>(control.hits));
+					EXPECT_EQ(disabledCachedCalls, cached);
+				}
+				const std::string prefix = enabled ? "VinesEnabled" : "VinesDisabled";
+				RecordProperty(prefix + "FullCalls", std::to_string(full));
+				RecordProperty(prefix + "CachedCalls", std::to_string(cached));
+				RecordProperty(prefix + "ReuseHits", std::to_string(control.hits));
+				RecordProperty(prefix + "CandidateCount", std::to_string(scores.rows.size()));
+				RecordProperty(prefix + "Timing", timing.rows().back());
+			}
 			const auto hero = projectedHitTest::serialized(callback->submitted);
 			if(!enabled)
 			{

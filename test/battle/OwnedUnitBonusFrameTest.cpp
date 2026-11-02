@@ -7,10 +7,13 @@
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Updaters.h"
+#include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/PeerBonusDependencyClosure.h"
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/battle/OwnedLegacyTimeStopCapture.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include <stdexcept>
 namespace
 {
@@ -594,6 +597,68 @@ TEST(OwnedUnitBonusFrameTest, OpaquePeerCaptureForkQueryAndRetirementKeepNativeG
 
 namespace
 {
+Bonus legacyClock(SpellID id)
+{
+	return Bonus(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::SPELL_EFFECT, 0, BonusSourceID(id));
+}
+Frame::Inputs legacyClockInputs(SpellID id, bool inherited)
+{
+	auto result = inputs(); auto record = std::make_shared<Bonus>(legacyClock(id));
+	if(inherited)
+	{
+		record->limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::LUCK);
+		result.nodes[1].local.push_back(record);
+		result.sourceLocalSpells = {7}; // One extra inherited record shifts the existing explicit spell export.
+	}
+	else
+	{
+		result.nodes[0].local.push_back(record); result.sourceLocalSpells = {7};
+		for(auto & [form, query] : result.forms) query.full.records.push_back(4);
+	}
+	result.environment.legacyTimeStop = battle::ownedFrameCapture::captureLegacyTimeStopIdentities({record});
+	return result;
+}
+}
+TEST(OwnedUnitBonusFrameTest, CapturedLegacyClockIdentityKeepsInheritedLimitedClockDynamicWithoutLibrary)
+{
+	const SpellID timeStop(SpellID::decode(newHorizonsSorcery::TIME_STOP_SPELL)); ASSERT_TRUE(timeStop.hasValue());
+	auto frame = Frame::fromOwnedInputs(legacyClockInputs(timeStop, true)); auto sibling = frame->fork();
+	WithoutLibrary absent;
+	EXPECT_TRUE(frame->unit().isTimeStopped()); EXPECT_TRUE(sibling->unit().isTimeStopped());
+	frame->removeRecords({0}); // Canonical current LUCK limiter becomes false; no frozen stasis bool.
+	EXPECT_FALSE(frame->unit().isTimeStopped()); EXPECT_TRUE(sibling->unit().isTimeStopped());
+	auto scratch = sibling->scratch(); auto nested = scratch.nested();
+	EXPECT_TRUE(nested.unit().isTimeStopped());
+}
+TEST(OwnedUnitBonusFrameTest, OwnedLegacyClockRejectsUnboundAndUncapturedIdentityInsteadOfNativeFallback)
+{
+	const SpellID timeStop(SpellID::decode(newHorizonsSorcery::TIME_STOP_SPELL)); ASSERT_TRUE(timeStop.hasValue());
+	auto unbound = legacyClockInputs(timeStop, false); unbound.environment.legacyTimeStop.reset();
+	auto outside = legacyClockInputs(timeStop, false); outside.environment.legacyTimeStop->classified.clear();
+	auto first = Frame::fromOwnedInputs(std::move(unbound)), second = Frame::fromOwnedInputs(std::move(outside));
+	WithoutLibrary absent;
+	EXPECT_THROW(first->unit().isTimeStopped(), std::logic_error);
+	EXPECT_THROW(second->unit().isTimeStopped(), std::invalid_argument);
+}
+TEST(OwnedUnitBonusFrameTest, CapturedClockIdentityRejectsNullAndForeignOwnedSubjectOccurrences)
+{
+	auto values = legacyClockInputs(SpellID(SpellID::FORTUNE), false);
+	battle::OwnedUnitEnvironment outside({}, values.environment);
+	auto frame = Frame::fromOwnedInputs(std::move(values));
+	WithoutLibrary absent;
+	EXPECT_THROW(outside.unitLegacyTimeStopSpellMatch(nullptr, SpellID(SpellID::FORTUNE)), std::invalid_argument);
+	EXPECT_THROW(outside.unitLegacyTimeStopSpellMatch(&frame->unit(), SpellID(SpellID::FORTUNE)), std::invalid_argument);
+}
+TEST(OwnedUnitBonusFrameTest, KnownAbsentCanonicalClockStillClassifiesOnlyExplicitlyAdmittedOtherIds)
+{
+	auto values = legacyClockInputs(SpellID(SpellID::FORTUNE), false);
+	values.environment.legacyTimeStop->canonical.reset(); // Pure explicit absent-definition value domain, not actual factory proof.
+	auto frame = Frame::fromOwnedInputs(std::move(values));
+	WithoutLibrary absent; EXPECT_FALSE(frame->unit().isTimeStopped());
+}
+
+namespace
+{
 using Batch = battle::OwnedUnitBonusFrameBatch;
 struct BatchFixture
 {
@@ -666,4 +731,108 @@ TEST(OwnedUnitBonusFrameTest, BatchPeerArrivalVariantsFollowOnlyMainRecipientFor
 	auto changed = child->scratch(); changed.unit().beginBattleForm(CreatureID(2), 2); child->load(changed.unit().save());
 	EXPECT_EQ(child->unit().magicResistance(), 50); EXPECT_EQ(frame->unit().magicResistance(), 25);
 	EXPECT_EQ(frozen.unit().magicResistance(), 25); EXPECT_EQ(child->fork()->unit().magicResistance(), 50);
+}
+
+namespace
+{
+BatchFixture exactBatchFixture()
+{
+	auto result = batchFixture(false);
+	for(size_t graph = 0; graph < result.graphs.size(); ++graph)
+	{
+		const auto form = CreatureID(graph == 0 ? 1 : 2);
+		const auto & query = graph == 2 ? result.recipe.inputs.forms.at(form).native : result.recipe.inputs.forms.at(form).full;
+		result.graphs[graph].nodes[0].facts = query.facts;
+		result.graphs[graph].nodes[0].parents = query.parents;
+	}
+	// Exact current FULL closure; remove the unreachable alternate source row.
+	result.graphs[0].nodes.pop_back();
+	result.recipe.inputs.sourceLocalSpells = {5}; // New base local count5, then original explicit spell extra.
+	auto nativeCurrent = result.graphs[0];
+	nativeCurrent.nodes[0].local.clear(); nativeCurrent.extraRecords.clear();
+	result.recipe.formGraphs.at(CreatureID(1)).second = result.graphs.size();
+	result.graphs.push_back(std::move(nativeCurrent));
+	return result;
+}
+Graph::SourceRelation attachSource(size_t exported)
+{
+	OwnedBonusEvaluationFacts source; source.nodeType = BonusNodeType::CREATURE;
+	return {true, std::move(source), {exported}, {0}};
+}
+}
+TEST(OwnedUnitBonusFrameTest, SourceRecipeBatchRebasesSpellExportAndDerivesExactFullNativeAndPeerQueries)
+{
+	auto values = exactBatchFixture(); auto peer = peerFixture(false, false);
+	values.recipe.inputs.state["state"]["position"].Integer() = 93;
+	std::vector<std::vector<Graph::SourceRelation>> relations(values.graphs.size());
+	auto speed = value(BonusType::STACKS_SPEED, 7);
+	speed->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::STACK_BATTLE);
+	values.graphs[0].extraRecords.push_back(speed);
+	relations[0] = {attachSource(6)}; // Source ordinal BEFORE root gets its extra accepted arrival.
+	for(const int aura : {25, 50})
+	{
+		Graph::NodeInput root; root.facts = peer.captured.query.facts;
+		auto exported = value(BonusType::SPELL_RESISTANCE_AURA, aura);
+		exported->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::STACK_BATTLE);
+		values.graphs.push_back({{root}, 0, {exported}});
+		relations.push_back({attachSource(0)});
+	}
+	Batch::Peer captured{peer.captured.identity, 4, {}, peer.captured.values, {}};
+	captured.variants = {{CreatureID(1), {4, {}}}, {CreatureID(2), {5, {}}}};
+	values.recipe.peers.push_back(std::move(captured));
+	const auto generation = PreparedBonusGraphStorage::currentGeneration();
+	auto frames = Batch::fromOwnedSourceRecipes(std::move(values.graphs), {values.recipe}, std::move(relations),
+		OwnedBonusCaptureCodec::current());
+	WithoutLibrary absent;
+	peer.source.reset(); auto frame = frames.front(); auto child = frame->fork();
+	EXPECT_EQ(frame->unit().getMaxHealth(), 10u);
+	EXPECT_EQ(frame->unit().valOfBonuses(BonusType::STACKS_SPEED), 12);
+	EXPECT_EQ(frame->unit().magicResistance(), 25);
+	const auto * view = dynamic_cast<const ProjectedBonusView *>(frame->unit().getBonusBearer()); ASSERT_NE(view, nullptr);
+	const auto spells = view->sourceLocalSpellEffects();
+	ASSERT_EQ(spells.size(), 1u); EXPECT_EQ(spells.front().sid, BonusSourceID(SpellID(SpellID::FORTUNE)));
+	EXPECT_EQ(view->ownedNativeFormBonuses(frame->unit(), Selector::type()(BonusType::STACKS_SPEED), false)->totalValue(), 0);
+	auto changed = child->scratch(); changed.unit().beginBattleForm(CreatureID(2), 2); child->load(changed.unit().save());
+	EXPECT_EQ(child->unit().getMaxHealth(), 1u); EXPECT_EQ(child->unit().magicResistance(), 50);
+	EXPECT_EQ(frame->unit().magicResistance(), 25); EXPECT_EQ(frame->unit().valOfBonuses(BonusType::STACKS_SPEED), 12);
+	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
+}
+
+TEST(OwnedUnitBonusFrameTest, SourceRecipeBatchDerivesAdjacentTraitsAfterCloneAndKeepsExplicitExportRole)
+{
+	auto values = exactBatchFixture(); auto peer = peerFixture(false, false);
+	values.recipe.inputs.state["state"]["position"].Integer() = 93;
+	auto & base = values.graphs[0];
+	base.sourceExports = base.extraRecords; base.extraRecords.clear();
+	auto speed = value(BonusType::STACKS_SPEED, 7);
+	speed->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::STACK_BATTLE);
+	base.sourceExports.push_back(speed);
+	std::vector<std::vector<Graph::SourceRelation>> relations(values.graphs.size()); relations[0] = {attachSource(6)};
+	for(const int creature : {1, 2})
+	{
+		Graph::NodeInput root; root.facts.nodeType = BonusNodeType::CREATURE;
+		root.local = {value(BonusType::LIVING, 1)};
+		values.recipe.traitGraphs.emplace(CreatureID(creature), values.graphs.size());
+		values.graphs.push_back({{root}, 0, {}}); relations.emplace_back();
+	}
+	Graph::NodeInput root; root.facts = peer.captured.query.facts;
+	for(auto & [creature, facts] : *root.facts.adjacencyTraits) facts->living = false;
+	auto aura = value(BonusType::SPELL_RESISTANCE_AURA, 25);
+	auto adjacent = std::make_shared<UnitAdjacentLimiter>(); adjacent->targetUnit = CreatureID(1);
+	adjacent->filter.relationship = AdjacentUnitFilter::Relationship::SAME_ARMY;
+	adjacent->filter.nativeTrait = AdjacentUnitFilter::NativeTrait::LIVING; aura->limiter = adjacent;
+	root.local = {aura};
+	const auto graph = values.graphs.size(); values.graphs.push_back({{root}, 0, {}}); relations.emplace_back();
+	Batch::Peer captured{peer.captured.identity, graph, {}, peer.captured.values, {}};
+	captured.variants = {{CreatureID(1), {graph, {}}}, {CreatureID(2), {graph, {}}}};
+	values.recipe.peers.push_back(std::move(captured));
+	auto frames = Batch::fromOwnedSourceRecipes(std::move(values.graphs), {values.recipe}, std::move(relations),
+		OwnedBonusCaptureCodec::current());
+	WithoutLibrary absent;
+	peer.source.reset(); const auto frame = frames.front();
+	EXPECT_EQ(frame->unit().magicResistance(), 25); // Raw trait placeholders were false; cloned trait roots establish LIVING.
+	EXPECT_EQ(frame->unit().valOfBonuses(BonusType::STACKS_SPEED), 12);
+	const auto * view = dynamic_cast<const ProjectedBonusView *>(frame->unit().getBonusBearer()); ASSERT_NE(view, nullptr);
+	const auto spells = view->sourceLocalSpellEffects(); ASSERT_EQ(spells.size(), 1u);
+	EXPECT_EQ(spells.front().sid, BonusSourceID(SpellID(SpellID::FORTUNE)));
 }

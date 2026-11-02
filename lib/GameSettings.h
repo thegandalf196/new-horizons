@@ -11,6 +11,7 @@
 
 #include "IGameSettings.h"
 #include "mapObjects/NewHorizonsNeutralArmies.h"
+#include "mapObjects/NewHorizonsNeutralCalibration.h"
 #include "mapObjects/NewHorizonsRecruitmentGrowth.h"
 #include "pathfinder/NewHorizonsLighthouse.h"
 #include "json/JsonNode.h"
@@ -137,10 +138,10 @@ public:
 			getAllOverrides()["heroes"]["newHorizonsPerks"], supportsV1, supportsV2);
 	}
 
-	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false) const
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false) const
 	{
 		newHorizonsHeroes::validateWeightedPerkSerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supported, r2Supported, strictSupported);
+			getAllOverrides()["heroes"]["newHorizonsPerks"], supported, r2Supported, strictSupported, optionalRerollSupported);
 	}
 
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const
@@ -242,6 +243,7 @@ public:
 			validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			JsonNode overrides = getAllOverrides();
 			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+			newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
 			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 			validateCombatScalarOverrides(overrides,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
@@ -295,7 +297,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
@@ -364,7 +367,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
@@ -376,6 +380,7 @@ public:
 			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+			newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
 			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 			loadSavedOverrides(overrides);
 		}

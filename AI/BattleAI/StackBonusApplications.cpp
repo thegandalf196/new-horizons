@@ -16,6 +16,8 @@
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
+#include "../../lib/battle/StackEffectRecordRules.h"
+#include "../../lib/battle/StackEffectVectorRules.h"
 
 namespace hypotheticBonusApplication
 {
@@ -28,6 +30,11 @@ bool isGuardianSpiritBonus(const Bonus * bonus)
 using hypotheticBonusApplication::isGuardianSpiritBonus;
 namespace
 {
+bool protectedOrdinaryIncoming(const StackWithBonuses & unit, const Bonus & bonus)
+{
+	return !newHorizonsSwiftRebirth::isLifecycleMarker(bonus)
+		&& stackEffectRecordRules::incomingProtected(unit, bonus);
+}
 void applyGuardianSpiritBonus(StackWithBonuses & unit, const Bonus & bonus)
 {
 	if(!isGuardianSpiritBonus(&bonus))
@@ -37,15 +44,6 @@ void applyGuardianSpiritBonus(StackWithBonuses & unit, const Bonus & bonus)
 	unit.guardianSpiritHitPoints = rounds > 0 ? std::max<int64_t>(0, bonus.val) : 0;
 	unit.guardianSpiritRoundsRemaining = rounds;
 }
-
-void applyGuardianSpiritBonuses(StackWithBonuses & unit, const std::vector<Bonus> & bonuses)
-{
-	for(const auto & bonus : bonuses)
-		applyGuardianSpiritBonus(unit, bonus);
-}
-
-
-
 }
 void StackWithBonuses::replacePhysicalAfflictionMarker(Bonus marker)
 {
@@ -69,6 +67,8 @@ void StackWithBonuses::replacePhysicalAfflictionMarker(Bonus marker)
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	if(ownedQuerySource) { applyOwnedBonusVector(bonus, newHorizonsGraveDust::EffectOperation::ADD); return; }
+	owner->validateOrdinaryEffectVector(*this, bonus, newHorizonsGraveDust::EffectOperation::ADD);
 	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::ADD);
 	for(const auto & entry : bonus)
 	{
@@ -81,14 +81,7 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 		++treeVersionLocal;
 		return;
 	}
-	int swiftMarkers = 0;
-	for(const auto & entry : bonus)
-		if(newHorizonsSwiftRebirth::isLifecycleMarker(entry))
-		{
-			if(++swiftMarkers > 1)
-				throw std::invalid_argument("Duplicate Swift Rebirth ADD");
-			newHorizonsSwiftRebirth::validateTransition(newHorizonsSwiftRebirth::lifecycle(*this), entry, true);
-		}
+	stackEffectVectorRules::validateSwiftRecords(*this, bonus, true);
 	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
@@ -104,15 +97,17 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 		captureEffects();
 	const auto stampedBonuses = physicalAfflictions::stampApplicationOrder(*this, bonus);
 	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*this, bonus);
-	for(const auto & stamped : stampedBonuses)
-		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
-			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
+	bool acceptedFrozen = false;
 	for(const auto & stamped : stampedBonuses)
 	{
+		// Match canonical record replay: Swift lifecycle has its own admission
+		// before Time Stop; Confusion/physical metadata was validated above.
+		if(protectedOrdinaryIncoming(*this, stamped)) continue;
+		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
+		acceptedFrozen |= frozenApplication && newHorizonsFrozen::markerApplicationRound(stamped).has_value();
 		if(stamped.type == BonusType::CONFUSION_PENDING)
 		{
-			if(isTimeStopped())
-				continue;
 			auto next = confusionState;
 			next.applyPending(stamped.spellCasterOwner, stamped.val == 2);
 			removeUnitBonus(Selector::type()(BonusType::CONFUSION_PENDING));
@@ -125,15 +120,17 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 			bonusesToAdd.push_back(std::make_shared<Bonus>(stamped));
 		if(stamped.source == BonusSource::SPELL_EFFECT)
 			exactLocalSpellEffects->push_back(stamped);
+		applyGuardianSpiritBonus(*this, stamped);
 	}
-	applyGuardianSpiritBonuses(*this, stampedBonuses);
-	if(frozenApplication)
+	if(acceptedFrozen)
 		commitPreparedFrozenApplication(*frozenApplication);
 	treeVersionLocal++;
 }
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	if(ownedQuerySource) { applyOwnedBonusVector(bonus, newHorizonsGraveDust::EffectOperation::UPDATE); return; }
+	owner->validateOrdinaryEffectVector(*this, bonus, newHorizonsGraveDust::EffectOperation::UPDATE);
 	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::UPDATE);
 	for(const auto & entry : bonus)
 	{
@@ -146,14 +143,7 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 		++treeVersionLocal;
 		return;
 	}
-	int swiftMarkers = 0;
-	for(const auto & entry : bonus)
-		if(newHorizonsSwiftRebirth::isLifecycleMarker(entry))
-		{
-			if(++swiftMarkers > 1)
-				throw std::invalid_argument("Duplicate Swift Rebirth UPDATE");
-			newHorizonsSwiftRebirth::validateTransition(newHorizonsSwiftRebirth::lifecycle(*this), entry, false);
-		}
+	stackEffectVectorRules::validateSwiftRecords(*this, bonus, false);
 	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
@@ -162,11 +152,15 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 	const auto frozenApplication = newHorizonsFrozen::prepareApplication(*this, bonus);
 	// Preserve operation order: a preceding local ADD must be visible to refresh.
 	captureEffects();
-	for(const auto & stamped : stampedBonuses)
-		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
-			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
+	bool acceptedFrozen = false;
 	for(const auto & stamped : stampedBonuses)
 	{
+		// Match canonical record replay: Swift lifecycle has its own admission
+		// before Time Stop; Confusion/physical metadata was validated above.
+		if(protectedOrdinaryIncoming(*this, stamped)) continue;
+		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
+			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
+		acceptedFrozen |= frozenApplication && newHorizonsFrozen::markerApplicationRound(stamped).has_value();
 		if(newHorizonsSwiftRebirth::isLifecycleMarker(stamped))
 		{
 			removeUnitBonus(CSelector([](const Bonus * candidate)
@@ -177,8 +171,6 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 		}
 		else if(stamped.type == BonusType::CONFUSION_PENDING)
 		{
-			if(isTimeStopped())
-				continue;
 			auto next = confusionState;
 			next.applyPending(stamped.spellCasterOwner, stamped.val == 2);
 			removeUnitBonus(Selector::type()(BonusType::CONFUSION_PENDING));
@@ -202,9 +194,9 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 			if(!found)
 				exactLocalSpellEffects->push_back(stamped);
 		}
+		applyGuardianSpiritBonus(*this, stamped);
 	}
-	applyGuardianSpiritBonuses(*this, stampedBonuses);
-	if(frozenApplication)
+	if(acceptedFrozen)
 		commitPreparedFrozenApplication(*frozenApplication);
 	treeVersionLocal++;
 }

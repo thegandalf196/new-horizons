@@ -36,8 +36,15 @@ protected:
 		rules.setOverrideFlag(true);
 		// Only the explicit old positive codec fixture predates later families.
 		if(historicalCodecCapture)
+		{
+			map->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+			auto perkRules = map->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perkRules.Struct().erase("quickStudyPolicy");
+			perkRules.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 			for(const auto key : {"learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
 				rules.Struct().erase(key);
+		}
 		rules.Struct().erase("recoverySpecialties");
 		if(captured)
 		{

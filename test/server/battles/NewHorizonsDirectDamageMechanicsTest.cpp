@@ -1029,7 +1029,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, V3SchoolRanksScaleOnlySavedCoeffici
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(battle()->getMagicRules(), attackerSideHero, spell->getId()), 145)
 		<< "Two Expert school memberships apply one factor, not two";
-	EXPECT_NE(newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell, 0).find("Expert School: 145% Spell Power damage coefficient."),
+	EXPECT_NE(newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell, 0).find("Expert School: 145% of normal damage from Spell Power."),
 		std::string::npos);
 }
 
@@ -1161,8 +1161,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, CureScalesOnlyItsSpellPowerTermAndT
 			<< "The fixed 25 HP remains unchanged";
 	}
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, cure, 0);
-	EXPECT_NE(description.find("Base healing is 25 + 2.175 \u00d7 Spell Power HP"), std::string::npos);
-	EXPECT_NE(description.find("Expert School: 145% Spell Power-derived healing."), std::string::npos);
+	EXPECT_NE(description.find("Base healing: 25 + 2.175 \u00d7 Spell Power HP"), std::string::npos);
+	EXPECT_NE(description.find("Expert School: 145% of normal healing from Spell Power."), std::string::npos);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, V2SavedDamageFormulaIgnoresInstalledSchoolRankFactors)

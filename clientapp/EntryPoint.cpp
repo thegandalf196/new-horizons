@@ -14,9 +14,7 @@
 #include "../Global.h"
 #include "PrivateWineStartupWitness.h"
 #include "BugReportBootstrap.h"
-#ifdef NH_CURE_CLIENT_INTEGRATION
-#include "../client/tests/CureIntegrationDriver.h"
-#endif
+#include "ClientIntegrationDriver.h"
 #include <vstd/DateUtils.h>
 
 #include "../client/ClientCommandManager.h"
@@ -176,8 +174,8 @@ int main(int argc, char * argv[])
 	std::cout << "Starting... " << std::endl;
 	po::options_description opts("Allowed options");
 	po::variables_map vm;
-#ifdef NH_CURE_CLIENT_INTEGRATION
-	std::unique_ptr<CureIntegrationDriver> cureIntegration;
+#if defined(NH_CURE_CLIENT_INTEGRATION) || defined(NH_OWNED_PREPARATION_INTEGRATION)
+	std::unique_ptr<ClientIntegrationDriver> clientIntegration;
 #endif
 
 	BugReportBootstrap::addOptions(opts);
@@ -335,11 +333,11 @@ int main(int argc, char * argv[])
 
 		if (ENGINE)
 			ENGINE->setEngineUser(GAME.get());
-#ifdef NH_CURE_CLIENT_INTEGRATION
+#if defined(NH_CURE_CLIENT_INTEGRATION) || defined(NH_OWNED_PREPARATION_INTEGRATION)
 		if(!ENGINE)
-			throw std::runtime_error("Cure client integration requires the ordinary graphical bootstrap");
-		cureIntegration = std::make_unique<CureIntegrationDriver>(*GAME);
-		ENGINE->setEngineUser(cureIntegration.get());
+			throw std::runtime_error("Client integration requires the ordinary graphical bootstrap");
+		clientIntegration = std::make_unique<ClientIntegrationDriver>(*GAME);
+		ENGINE->setEngineUser(clientIntegration.get());
 #endif
 	
 #ifndef VCMI_NO_THREADED_LOAD
@@ -440,8 +438,8 @@ int main(int argc, char * argv[])
 		};
 
 		const auto & cleanupEngine = [&reports
-#ifdef NH_CURE_CLIENT_INTEGRATION
-			, &cureIntegration
+#if defined(NH_CURE_CLIENT_INTEGRATION) || defined(NH_OWNED_PREPARATION_INTEGRATION)
+			, &clientIntegration
 #endif
 		]()
 		{
@@ -457,8 +455,8 @@ int main(int argc, char * argv[])
 
 				if(ENGINE)
 				{
-#ifdef NH_CURE_CLIENT_INTEGRATION
-					cureIntegration->detach();
+#if defined(NH_CURE_CLIENT_INTEGRATION) || defined(NH_OWNED_PREPARATION_INTEGRATION)
+					clientIntegration->detach();
 #endif
 					GAME->server().endNetwork();
 				}
@@ -509,8 +507,8 @@ int main(int argc, char * argv[])
 		logGlobal->info("Shutdown requested during initialization");
 	}
 	reports.finishCleanly();
-#ifdef NH_CURE_CLIENT_INTEGRATION
-	return cureIntegration ? cureIntegration->result() : 1;
+#if defined(NH_CURE_CLIENT_INTEGRATION) || defined(NH_OWNED_PREPARATION_INTEGRATION)
+	return clientIntegration ? clientIntegration->result() : 1;
 #else
 	return 0;
 #endif

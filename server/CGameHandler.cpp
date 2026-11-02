@@ -31,6 +31,7 @@
 #include "queries/QueriesProcessor.h"
 #include "queries/LuaScriptQuery.h"
 #include "queries/MapQueries.h"
+#include "queries/HeroLevelUpOffer.h"
 #include "queries/VisitQueries.h"
 
 #include "../lib/CConfigHandler.h"
@@ -297,34 +298,19 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	hlu.primaryGains = gains;
 	hlu.artilleryExpertBeforeGain = artilleryExpertBeforeGain;
 	hlu.logisticsExpertBeforeGain = logisticsExpertBeforeGain;
-	auto prepareChoices = [this, hero, &hlu]()
-	{
-		hlu.skills = randomizer->rollSecondarySkills(hero);
-		if(!newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
-			return;
-
-		const auto & perkState = hero->getPerkState();
-		std::erase_if(hlu.skills, [hero, &perkState](SecondarySkill skill)
-		{
-			const auto * definition = LIBRARY->skillh->getById(skill);
-			return !definition || !perkState.canAdvanceSkillNormally(definition->getJsonKey(),
-				hero->getSecSkillLevel(skill));
-		});
-		const size_t maxSkillChoices = static_cast<size_t>(perkState.rules["maxSkillChoices"].Integer());
-		if(hlu.skills.size() > maxSkillChoices)
-			hlu.skills.resize(maxSkillChoices);
-		hlu.perkOfferSeed = static_cast<uint32_t>(randomizer->getDefault().nextInt());
-		hlu.perks = perkState.prepareOffer([hero](const std::string & skillId)
-		{
-			return hero->getPerkSkillRank(skillId);
-		}, hlu.perkOfferSeed, hero->getPerkOfferWeightContext());
-	};
-	prepareChoices();
+	newHorizonsLevelUp::prepareChoices(*this, hero, hlu);
 
 	const int reachedLevel = hero->level + 1;
-	if(reachedLevel % 5 == 0
-		&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.quickStudy"))
-		prepareChoices();
+	const auto interval = newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().rules);
+	const bool activeQuickStudy = hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.quickStudy");
+	if(!interval && reachedLevel % 5 == 0 && activeQuickStudy)
+		newHorizonsLevelUp::prepareChoices(*this, hero, hlu);
+	if(interval)
+	{
+		hlu.reachedLevel = reachedLevel;
+		hlu.optionalRerollAvailable = activeQuickStudy && reachedLevel % *interval == 0
+			&& (!hlu.skills.empty() || !hlu.perks.empty());
+	}
 
 	if (!hero->getOwner().isValidPlayer())
 	{
@@ -2900,6 +2886,7 @@ void pruneAutosaves(const ResourcePath & currentAutosave, int countLimit)
 
 void CGameHandler::save(const std::string & filename, PlayerColor playerToNotifyOnSuccess, int autosaveCountLimit)
 {
+	newHorizonsLevelUp::validateNoPendingOptionalOffer(*this);
 	logGlobal->info("Saving to %s", filename);
 	ResourcePath savePath(filename, EResType::SAVEGAME);
 	const auto savefname = savePath.getOriginalName() + ".vsgm1";
@@ -5323,6 +5310,8 @@ bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, Player
 
 		if(currentQuery != nullptr && vstd::contains(currentQuery->players, player)
 			&& currentQuery->getType() != CHeroMasteryDialogQuery::TYPE
+			&& !(currentQuery->getType() == CHeroLevelUpDialogQuery::TYPE
+				&& static_cast<const CHeroLevelUpDialogQuery &>(*currentQuery).hasOptionalPolicy())
 			&& currentQuery->endsByPlayerAnswer() && currentQuery->isValidReply(answer))
 		{
 			currentQuery->setReply(answer);
@@ -5334,6 +5323,9 @@ bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, Player
 
 		COMPLAIN_RET("This player top query has different ID!"); //topQuery->queryID != qid
 	}
+	if(answer == CHeroLevelUpDialogQuery::REROLL_REPLY
+		&& topQuery->getType() == CHeroLevelUpDialogQuery::TYPE)
+		return static_cast<CHeroLevelUpDialogQuery &>(*topQuery).requestReroll(player);
 	COMPLAIN_RET_FALSE_IF(topQuery->getType() == CHeroMasteryDialogQuery::TYPE, "Mastery requires a dedicated validated reply");
 	COMPLAIN_RET_FALSE_IF(!topQuery->endsByPlayerAnswer(), "This query cannot be ended by player's answer!");
 	COMPLAIN_RET_FALSE_IF(!topQuery->isValidReply(answer), "Invalid query reply");

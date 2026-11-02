@@ -11,7 +11,10 @@
 #include "HeroActionTimingCapture.h"
 #include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/BattleAI.h"
+#include "../../lib/CRandomGenerator.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -32,6 +35,14 @@
 #include "LegacyOrderOracleChecks.h"
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include <tuple>
+#include "ProjectedTargetHitFixture.h"
+#include "../../AI/BattleAI/HeroDecisionPressure.h"
+#include "../../AI/BattleAI/HeroActionAdmission.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/StartInfo.h"
+#include <array>
+#include <bit>
+#include <sstream>
 
 namespace
 {
@@ -54,11 +65,17 @@ class RecordingCommandCallback final : public CBattleCallback
 {
 public:
 	std::vector<BattleAction> submitted;
+	std::vector<BattleAction> unitActions;
 	bool throwOnSubmit = false;
 
 	RecordingCommandCallback()
 		: CBattleCallback(PlayerColor(0), nullptr)
 	{
+	}
+
+	void battleMakeUnitAction(const BattleID &, const BattleAction & action) override
+	{
+		unitActions.push_back(action);
 	}
 
 	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override
@@ -77,6 +94,14 @@ protected:
 	CStack * enemy = nullptr;
 	std::shared_ptr<RecordingCommandCallback> callback;
 	std::shared_ptr<CommandEnvironment> environment;
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		// Commands-off captures empty legacy hero development and its matching perk-offer policy.
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*loaded);
+	}
 
 	virtual void configureHeroBeforeBattle()
 	{
@@ -127,6 +152,64 @@ protected:
 		memory.oser & *gameHandler->randomizer;
 		return memory.extractBuffer();
 	}
+	void chooseActive(bool allowSpells = true)
+	{
+		CBattleAI ai;
+		AutocombatPreferences preferences;
+		preferences.enableSpellsUsage = allowSpells;
+		ai.initBattleInterface(environment, callback, preferences);
+		ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
+			attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
+		ai.activeStack(BattleID(0), active);
+	}
+
+	void characterizeConstrainedFallback(bool stopped, bool spentHeroAction = false)
+	{
+		useCommands = spentHeroAction;
+		ASSERT_NO_FATAL_FAILURE(prepareEvaluation(false));
+		if(spentHeroAction)
+		{
+			ASSERT_TRUE(choose());
+			ASSERT_NO_FATAL_FAILURE(executeChosen());
+			callback->submitted.clear();
+		}
+		active->pursuitMovementRemaining = 2;
+		if(stopped)
+			active->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+				BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
+		ASSERT_EQ(active->isTimeStopped(), stopped);
+		for(const auto * unit : battle()->battleGetAllStacks(false))
+			(void)unit->counterAttacks.available();
+		const auto world = gameState()->saveToMemory();
+		const auto serverRng = rngState();
+		CMemorySerializer defaultRandom;
+		defaultRandom.oser & CRandomGenerator::getDefault();
+		const auto defaultRng = defaultRandom.extractBuffer();
+		ASSERT_NO_THROW(chooseActive(false));
+		EXPECT_TRUE(callback->submitted.empty());
+		ASSERT_EQ(callback->unitActions.size(), 1u);
+		const auto & action = callback->unitActions.front();
+		EXPECT_EQ(action.stackNumber, active->unitId());
+		EXPECT_EQ(action.side, active->unitSide());
+		if(stopped)
+			EXPECT_EQ(action.actionType, EActionType::NO_ACTION);
+		else
+		{
+			EXPECT_EQ(action.actionType, EActionType::WALK);
+			ASSERT_EQ(action.getTarget(battle()).size(), 1u);
+			const auto path = battle()->getPath(active->getPosition(),
+				action.getTarget(battle()).front().hexValue, active);
+			EXPECT_GT(path.second, 0);
+			EXPECT_LE(path.second, active->pursuitMovementRemaining);
+		}
+		EXPECT_EQ(gameState()->saveToMemory(), world);
+		EXPECT_EQ(rngState(), serverRng);
+		CMemorySerializer afterRandom;
+		afterRandom.oser & CRandomGenerator::getDefault();
+		EXPECT_EQ(afterRandom.extractBuffer(), defaultRng);
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	}
+
 };
 
 /// Isolate canonical Orders while still running the real evaluator and
@@ -1062,4 +1145,595 @@ TEST_F(CanonicalOrderFutureActorTest, ActualThreeHexFutureApproachPreservesBrace
 TEST_F(CanonicalOrderFutureActorTest, SameFutureApproachWithoutBraceRetainsOrdinaryHealthParity)
 {
 	ASSERT_NO_FATAL_FAILURE(compareFutureWithSelectedAndNative(false));
+}
+
+TEST_F(HeroCommandAITest, ConstrainedPursuitRetainsMovementOnlyFallbackWithoutHeroOpportunity)
+{
+	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(false));
+}
+
+TEST_F(HeroCommandAITest, ConstrainedTimeStopPrecedesExistingPursuitAndRetainsPhysicalSidePass)
+{
+	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(true));
+}
+
+TEST_F(HeroCommandAITest, ConstrainedPursuitChecksSpentHeroAllowanceBeforeMovementFallback)
+{
+	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(false, true));
+}
+
+TEST_F(HeroCommandAITest, ConstrainedTimeStopChecksSpentHeroAllowanceBeforePassing)
+{
+	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(true, true));
+}
+
+// Exercise the actual optional-Hero gate in CBattleAI, rather than calling the evaluator directly.
+class ConstrainedHeroActionAITest : public HeroCommandAITest
+{
+protected:
+	void SetUp() override
+	{
+		HeroCommandAITest::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires the New Horizons content module";
+	}
+
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandAITest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+
+	void configureHeroBeforeBattle() override
+	{
+		const SecondarySkill offense(SecondarySkill::decode(newHorizonsOffense::SKILL));
+		ASSERT_GE(offense.getNum(), 0);
+		attackerSideHero->setSecSkillLevel(offense, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		const std::string pursuit = "new-horizons:offense.pursuit";
+		ASSERT_TRUE(attackerSideHero->getPerkState().canAcquirePerk(newHorizonsOffense::SKILL,
+			pursuit, attackerSideHero->getPerkSkillRank(newHorizonsOffense::SKILL)));
+		attackerSideHero->applyPerkSelection({newHorizonsOffense::SKILL, pursuit});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(newHorizonsOffense::SKILL, pursuit));
+	}
+
+	void characterizePositiveHeroAction(bool stopped, bool throwing = false)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepareEvaluation(true));
+		attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 99, ChangeValueMode::ABSOLUTE);
+		setTestSpellPointTotal(attackerSideHero, 1000);
+		const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
+		ASSERT_EQ(attackerSideHero->getEffectPower(spell), 99);
+		const auto divisor = attackerSideHero->getEffectPowerDivisor(spell);
+		ASSERT_GT(divisor, 0);
+		const auto rating = int64_t{99} * divisor;
+		ASSERT_LE(rating, std::numeric_limits<int32_t>::max());
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, static_cast<int32_t>(rating),
+			ChangeValueMode::ABSOLUTE);
+		ASSERT_EQ(attackerSideHero->getEffectPower(spell), rating);
+		ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), divisor);
+		ASSERT_EQ(attackerSideHero->getEffectPower(spell) / divisor, 99);
+
+		if(stopped)
+			active->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+				BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
+		else
+		{
+			// Earn the movement tail through the authoritative kill path; never assign its allowance.
+			CStack * bait = nullptr;
+			for(const auto hex : active->getSurroundingHexes())
+				if(hex.isAvailable() && !battle()->battleGetUnitByPos(hex))
+				{
+					bait = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), hex, 1);
+					break;
+				}
+			ASSERT_NE(bait, nullptr);
+			const auto baitId = bait->unitId();
+			ASSERT_EQ(battle()->battleActiveUnit()->unitId(), active->unitId());
+			const auto attack = BattleAction::makeMeleeAttack(active, bait->getPosition(), active->getPosition());
+			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), attack));
+			const auto * survivor = battle()->battleGetUnitByID(baitId);
+			ASSERT_TRUE(!survivor || !survivor->alive());
+			ASSERT_GT(active->pursuitMovementRemaining, 0);
+		}
+		ASSERT_EQ(active->isTimeStopped(), stopped);
+		ASSERT_EQ(battle()->battleActiveUnit()->unitId(), active->unitId());
+		ASSERT_EQ(active->getCount(), 100);
+		ASSERT_EQ(enemy->getCount(), 100);
+		ASSERT_EQ(active->getAvailableHealth(), active->getTotalHealth());
+		ASSERT_EQ(enemy->getAvailableHealth(), enemy->getTotalHealth());
+		// Keep the existing strong-offensive-spell oracle, including the original target army.
+		const auto spellDamage = spell->calculateDamage(attackerSideHero);
+		const auto melee = battle()->calculateDmgRange(BattleAttackInfo(active, enemy, 0, false)).damage.max;
+		ASSERT_GT(spellDamage, melee / 2);
+		ASSERT_LT(spellDamage, enemy->getAvailableHealth());
+		ASSERT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
+		ASSERT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
+		ASSERT_TRUE(spell->canBeCast(callback->getBattle(BattleID(0)).get(), spells::Mode::HERO, attackerSideHero));
+
+		for(const auto * unit : battle()->battleGetAllStacks(false))
+			(void)unit->counterAttacks.available();
+		const auto world = gameState()->saveToMemory();
+		const auto serverRng = rngState();
+		const auto randomBytes = [](const CRandomGenerator & value)
+		{
+			CMemorySerializer memory;
+			memory.oser & value;
+			return memory.extractBuffer();
+		};
+		const auto defaultRng = randomBytes(CRandomGenerator::getDefault());
+		const auto gameRng = randomBytes(dynamic_cast<CRandomGenerator &>(*getRNG()));
+		callback->waitTillRealize = true;
+		callback->throwOnSubmit = throwing;
+		if(throwing)
+			EXPECT_THROW(chooseActive(), std::runtime_error);
+		else
+			ASSERT_NO_THROW(chooseActive());
+		EXPECT_TRUE(callback->waitTillRealize); // CBattleAI destruction restores the caller's strategy on either exit.
+		EXPECT_TRUE(callback->unitActions.empty()); // Accepted/throwing Hero submission cannot fall through.
+		ASSERT_EQ(callback->submitted.size(), 1u);
+		const auto & action = callback->submitted.front();
+		ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);
+		EXPECT_EQ(action.spell, SpellID::IMPLOSION);
+		const auto target = action.getTarget(battle());
+		ASSERT_EQ(target.size(), 1u);
+		ASSERT_NE(target.front().unitValue, nullptr);
+		EXPECT_EQ(target.front().unitValue->unitId(), enemy->unitId());
+		EXPECT_EQ(gameState()->saveToMemory(), world);
+		EXPECT_EQ(rngState(), serverRng);
+		EXPECT_EQ(randomBytes(CRandomGenerator::getDefault()), defaultRng);
+		EXPECT_EQ(randomBytes(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
+		if(!throwing)
+		{
+			const auto health = enemy->getAvailableHealth();
+			const auto mana = attackerSideHero->getManaAvailable();
+			ASSERT_NO_FATAL_FAILURE(executeChosen());
+			EXPECT_LT(enemy->getAvailableHealth(), health);
+			EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
+			EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 1);
+		}
+	}
+};
+
+TEST_F(ConstrainedHeroActionAITest, TimeStopSubmitsBeneficialSpellBeforePhysicalPass)
+{
+	ASSERT_NO_FATAL_FAILURE(characterizePositiveHeroAction(true));
+}
+
+TEST_F(ConstrainedHeroActionAITest, EarnedPursuitSubmitsBeneficialSpellBeforeMovement)
+{
+	ASSERT_NO_FATAL_FAILURE(characterizePositiveHeroAction(false));
+}
+
+TEST_F(ConstrainedHeroActionAITest, ThrowingHeroSubmissionRestoresCallbackWithoutUnitFallback)
+{
+	ASSERT_NO_FATAL_FAILURE(characterizePositiveHeroAction(true, true));
+}
+
+namespace
+{
+struct CallbackOrderTrace final : heroActionSelection::Observer
+{
+	std::array<heroActionSelection::CandidateValue, 128> values{};
+	std::array<std::optional<heroActionSelection::CandidateIdentity>, 128> identities{};
+	size_t count = 0;
+	bool overflow = false;
+	std::optional<heroActionSelection::SelectionValue> selection;
+	void candidate(heroActionSelection::CandidateValue value) noexcept override
+	{
+		if(count == values.size()) { overflow = true; return; }
+		values[count++] = value;
+	}
+	void selected(heroActionSelection::SelectionValue value) noexcept override { selection = value; }
+	bool observeIdentity() const noexcept override { return true; }
+	void candidateIdentity(size_t ordinal, heroActionSelection::CandidateIdentity value) noexcept override
+	{
+		if(ordinal >= identities.size()) { overflow = true; return; }
+		identities[ordinal] = std::move(value);
+	}
+	std::string ledger() const
+	{
+		std::ostringstream out;
+		for(size_t i = 0; i < count; ++i)
+			out << values[i].ordinal << ':' << static_cast<int>(values[i].command) << ':'
+				<< values[i].spell.getNum() << ':' << values[i].overcharge << ':'
+				<< std::bit_cast<uint32_t>(values[i].value) << ';';
+		return out.str();
+	}
+};
+struct CallbackOrderOutcome
+{
+	CallbackOrderTrace trace;
+	heroDecisionPressure::Experiment experiment;
+	std::vector<BattleAction> heroActions;
+	std::vector<BattleAction> unitActions;
+};
+void recordActualCallbackWork(const heroTimingTest::Capture & capture,
+	const CallbackOrderOutcome & directNull, const CallbackOrderOutcome & directOn,
+	const CallbackOrderOutcome & actualOn)
+{
+	const auto rows = capture.records();
+	ASSERT_EQ(rows.size(), 3u) << "Exactly the existing NULL, ON and real-callback attempts";
+	const std::array<size_t, 3> submissions{directNull.heroActions.size(), directOn.heroActions.size(), actualOn.heroActions.size()};
+	for(size_t index = 0; index < rows.size(); ++index)
+	{
+		const auto & row = rows[index];
+		EXPECT_EQ(row.at("loop_joined"), 1);
+		EXPECT_EQ(row.at("loop_threw"), 0);
+		EXPECT_EQ(row.at("loop_calls"), 1);
+		EXPECT_EQ(row.at("submit_calls"), submissions[index]);
+		EXPECT_EQ(row.at("submit_returned"), submissions[index]);
+		EXPECT_EQ(row.at("submit_threw"), 0);
+		for(const auto * field : {"battle", "player", "side", "stack", "round", "candidates"})
+			EXPECT_EQ(row.at(field), rows.front().at(field));
+		if(index > 0)
+			EXPECT_EQ(row.at("hero_attempt"), rows[index - 1].at("hero_attempt") + 1);
+	}
+	EXPECT_EQ(rows[0].at("candidates"), directNull.trace.count);
+	EXPECT_EQ(rows[1].at("candidates"), directOn.trace.count);
+	EXPECT_EQ(rows[2].at("candidates"), actualOn.trace.count);
+	const auto declined = std::count(directOn.experiment.declined.begin(), directOn.experiment.declined.end(), true);
+	ASSERT_GT(declined, 0);
+	EXPECT_EQ(rows[2].at("continuation_full_calls"), rows[1].at("continuation_full_calls"));
+	EXPECT_LT(rows[2].at("continuation_full_calls"), rows[0].at("continuation_full_calls"));
+	const auto omitted = rows[0].at("continuation_full_calls") - rows[2].at("continuation_full_calls");
+	EXPECT_EQ(omitted, declined);
+	::testing::Test::RecordProperty("DiagnosticNullFullCalls", std::to_string(rows[0].at("continuation_full_calls")));
+	::testing::Test::RecordProperty("DiagnosticDirectOnFullCalls", std::to_string(rows[1].at("continuation_full_calls")));
+	::testing::Test::RecordProperty("DiagnosticActualOnFullCalls", std::to_string(rows[2].at("continuation_full_calls")));
+	::testing::Test::RecordProperty("DiagnosticOmittedFullCallsVsNull", std::to_string(omitted));
+	::testing::Test::RecordProperty("DiagnosticReferenceDeclinedCandidates", std::to_string(declined));
+}
+
+}
+
+class CurrentOrderCallbackAITest : public HeroCommandAITest
+{
+protected:
+	bool contactProfile = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandAITest::mapLoaded(loaded);
+		if(!contactProfile)
+			return;
+		JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+		auto & profiles = heroes["startingSkills"]["startingDevelopmentProfiles"].Struct();
+		const auto found = profiles.find("core:orrin");
+		ASSERT_NE(found, profiles.end());
+		ASSERT_EQ(found->second["startingPerks"].Vector().size(), 1u);
+		ASSERT_EQ(found->second["startingPerks"].Vector().front()["perk"].String(), "new-horizons:archery.targetCaller");
+		profiles.erase(found); // Supported generic creation fallback, before initHero; never a runtime respec.
+		heroes.setOverrideFlag(true); // Keep this complete authored map copy; merging would restore the omitted entry.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+		ASSERT_FALSE(loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS)
+			["startingSkills"]["startingDevelopmentProfiles"].Struct().contains("core:orrin"));
+	}
+	void selectPerk(const char * skill, const char * perk, MasteryLevel::Type rank)
+	{
+		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)), rank, ChangeValueMode::ABSOLUTE);
+		const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
+		for(uint64_t seed = 0; seed < 4096; ++seed)
+		{
+			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			for(size_t index = 0; index < offers.size(); ++index)
+				if(offers[index].selection.skillId == skill && offers[index].selection.perkId == perk)
+				{
+					gameHandler->levelUpHero(attackerSideHero, offers, index, seed, false);
+					ASSERT_TRUE(attackerSideHero->hasActivePerk(skill, perk));
+					return;
+				}
+		}
+		FAIL() << "No canonical offer for " << perk;
+	}
+	void acquireContactPointBlank(const battle::Units & contacts)
+	{
+		ASSERT_FALSE(attackerSideHero->getPrimaryGrowthRules()["startingSkills"]["startingDevelopmentProfiles"]
+			.Struct().contains("core:orrin"));
+		ASSERT_FALSE(attackerSideHero->getPerkState().hasSelection(
+			"new-horizons:archery", "new-horizons:archery.targetCaller"));
+		const SecondarySkill archery(SecondarySkill::decode("new-horizons:archery"));
+		ASSERT_EQ(attackerSideHero->getSecSkillLevel(archery), MasteryLevel::NONE);
+		attackerSideHero->setSecSkillLevel(archery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		const auto beforePointBlank = battle()->battleEstimateDamage(
+			BattleAttackInfo(active, contacts.front(), 0, true));
+		ASSERT_TRUE(attackerSideHero->getPerkState().canAcquirePerk(
+			"new-horizons:archery", "new-horizons:archery.pointBlankShot", MasteryLevel::BASIC));
+		ASSERT_NO_FATAL_FAILURE(selectPerk("new-horizons:archery", "new-horizons:archery.pointBlankShot", MasteryLevel::BASIC));
+		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:archery", "new-horizons:archery.pointBlankShot"));
+		ASSERT_FALSE(attackerSideHero->getPerkState().hasSelection(
+			"new-horizons:archery", "new-horizons:archery.targetCaller"));
+		const auto plain = battle()->battleEstimateDamage(BattleAttackInfo(active, contacts.front(), 0, true));
+		EXPECT_GE(plain.damage.min, 2 * beforePointBlank.damage.min);
+		EXPECT_LE(plain.damage.min, 2 * beforePointBlank.damage.min + 1);
+		EXPECT_GE(plain.damage.max, 2 * beforePointBlank.damage.max);
+		EXPECT_LE(plain.damage.max, 2 * beforePointBlank.damage.max + 1);
+		RecordProperty("PlainAdjacentBeforePointBlank", std::to_string(beforePointBlank.damage.min) + "," + std::to_string(beforePointBlank.damage.max));
+		RecordProperty("PlainAdjacentWithPointBlank", std::to_string(plain.damage.min) + "," + std::to_string(plain.damage.max));
+		for(const auto * own : battle()->battleAliveUnits(BattleSide::ATTACKER))
+			for(const auto * enemy : contacts)
+			{
+				ASSERT_TRUE(battle()->battleCanShoot(own, enemy->getPosition()));
+				ASSERT_TRUE(battle()->isMeleeAttackPossible(enemy, own));
+			}
+		auto focused = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+		PossibleSpellcast candidate;
+		candidate.command = HeroCommand::FOCUS_FIRE;
+		candidate.commandTargets = {contacts.front()->unitId()};
+		const auto admission = heroActionProjection::admitCandidate(*focused, BattleSide::ATTACKER, candidate);
+		ASSERT_TRUE(admission.admitted);
+		ASSERT_TRUE(admission.orderEffects);
+		ASSERT_TRUE(admission.orderAllowance);
+		ASSERT_TRUE(focused->projectAcceptedHeroOrder(BattleSide::ATTACKER,
+			*admission.orderEffects, *admission.orderAllowance));
+		const auto focus = focused->battleEstimateDamage(BattleAttackInfo(
+			focused->battleGetUnitByID(active->unitId()), focused->battleGetUnitByID(contacts.front()->unitId()), 0, true));
+		RecordProperty("FocusFireAdjacentWithPointBlank", std::to_string(focus.damage.min) + "," + std::to_string(focus.damage.max));
+	}
+	void configureWorldInitialization(StartInfo & info, GameRandomizer & randomizer) const override
+	{
+		info.startTime = 1'700'000'000;
+		randomizer.setSeed(1337);
+	}
+	void prepareCurrentOrder(bool contact)
+	{
+		useRevisedOrders = true;
+		contactProfile = contact;
+		dynamic_cast<CRandomGenerator &>(*getRNG()).setSeed(1337);
+		CRandomGenerator::getDefault().setSeed(1337);
+		startGame();
+		for(auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			hero->removeAllSpells();
+			if(hero->hasSpellbook()) hero->removeArtifact(ArtifactPosition::SPELLBOOK);
+			for(const auto attribute : {PrimarySkill::ATTACK, PrimarySkill::DEFENSE})
+				hero->setPrimarySkill(attribute, 0, ChangeValueMode::ABSOLUTE);
+		}
+		if(!contact) attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 200, ChangeValueMode::ABSOLUTE);
+		startBattle();
+		BattleUnitsChanged clear;
+		clear.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			clear.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(clear);
+		active = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(2, 5), 200);
+		if(contact)
+		{
+			active->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+				BonusType::FREE_SHOOTING, BonusSource::OTHER, 1, BonusSourceID()));
+			const auto & neighbours = active->getPosition().getNeighbouringTiles();
+			auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), neighbours[0], 150);
+			auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), neighbours[1], 250);
+			BattleHex ally = BattleHex::INVALID;
+			for(const auto hex : first->getPosition().getNeighbouringTiles())
+				if(hex != active->getPosition() && hex.isAvailable()
+					&& BattleHex::getDistance(hex, second->getPosition()) == 1
+					&& !battle()->battleGetUnitByPos(hex, true)
+					&& battle()->battleGetAllObstaclesOnPos(hex, false).empty())
+				{ ally = hex; break; }
+			ASSERT_TRUE(ally.isAvailable());
+			addStack(BattleSide::ATTACKER, creatureByName("core:archer"), ally, 200);
+		}
+		else
+			for(int i = 0; i < 3; ++i)
+				addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(13, 1 + 4 * i), 150 + 50 * i);
+		beginCombat();
+		BattleSetActiveStack activation;
+		activation.battleID = BattleID(0);
+		activation.stack = active->unitId();
+		activation.reason = BattleUnitTurnReason::TURN_QUEUE;
+		gameHandler->sendAndApply(activation);
+		for(const auto * unit : battle()->battleGetAllStacks(false)) (void)unit->counterAttacks.available();
+		callback = std::make_shared<RecordingCommandCallback>();
+		callback->onBattleStarted(battle());
+		environment = std::make_shared<CommandEnvironment>(gameState());
+		if(contact)
+		{
+			const auto contacts = battle()->battleAliveUnits(BattleSide::DEFENDER);
+			ASSERT_EQ(contacts.size(), 2u);
+			for(const auto * own : battle()->battleAliveUnits(BattleSide::ATTACKER))
+				for(const auto * target : contacts)
+				{
+					ASSERT_TRUE(battle()->isMeleeAttackPossible(target, own));
+					ASSERT_FALSE(battle()->battleCanShoot(target, own->getPosition()));
+				}
+			ASSERT_NO_FATAL_FAILURE(acquireContactPointBlank(contacts));
+			for(const auto * unit : battle()->battleGetAllStacks(false)) (void)unit->counterAttacks.available();
+			RecordProperty("PointBlankFocusFireQualification", "Existing adjacent stacking behavior; rerun after its separate mechanics correction");
+		}
+	}
+	auto unchangedState()
+	{
+		return std::array<std::vector<std::byte>, 4>{gameState()->saveToMemory(), rngState(),
+			projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())),
+			projectedHitTest::serialized(CRandomGenerator::getDefault())};
+	}
+	CallbackOrderOutcome evaluateCallback(bool realCallback, bool directOn = false)
+	{
+		CallbackOrderOutcome result;
+		callback->submitted.clear();
+		callback->unitActions.clear();
+		if(realCallback)
+		{
+			CBattleAI ai(&result.trace);
+			AutocombatPreferences preferences;
+			preferences.enableSpellsUsage = false;
+			ai.initBattleInterface(environment, callback, preferences);
+			ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
+				attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
+			ai.activeStack(BattleID(0), active);
+		}
+		else
+		{
+			int own = 0, opposing = 0;
+			for(const auto * unit : battle()->battleGetAllStacks())
+				(unit->unitSide() == BattleSide::ATTACKER ? own : opposing)
+					+= unit->getCount() * unit->creatureId().toCreature()->getAIValue();
+			const float ratio = opposing ? static_cast<float>(own) / opposing : 1.0f;
+			const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
+			BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+				BattleSide::ATTACKER, ratio, horizon);
+			const auto fallback = evaluator.selectStackAction(active);
+			if(!evaluator.attemptCastingSpell(active, false, &result.trace, nullptr, nullptr, nullptr,
+				directOn ? &result.experiment : nullptr))
+				callback->unitActions.push_back(fallback);
+		}
+		result.heroActions = callback->submitted;
+		result.unitActions = callback->unitActions;
+		return result;
+	}
+	void characterizeIntendedOn(HeroCommand positive)
+	{
+		std::optional<heroTimingTest::Capture> workCounts;
+		if(heroTimingTest::optedIn()) workCounts.emplace();
+		const auto before = unchangedState();
+		const auto directNull = evaluateCallback(false);
+		EXPECT_EQ(unchangedState(), before);
+		const auto directOn = evaluateCallback(false, true);
+		EXPECT_EQ(unchangedState(), before);
+		const auto actualOn = evaluateCallback(true);
+		EXPECT_EQ(unchangedState(), before);
+		if(workCounts)
+			ASSERT_NO_FATAL_FAILURE(recordActualCallbackWork(*workCounts, directNull, directOn, actualOn));
+		ASSERT_FALSE(directNull.trace.overflow);
+		ASSERT_FALSE(directOn.trace.overflow);
+		ASSERT_FALSE(actualOn.trace.overflow);
+		ASSERT_TRUE(actualOn.trace.selection);
+		ASSERT_TRUE(directNull.trace.selection);
+		ASSERT_GT(actualOn.trace.count, 0u);
+		ASSERT_EQ(actualOn.trace.count, directNull.trace.count);
+		ASSERT_EQ(actualOn.trace.count, directOn.trace.count);
+		for(size_t ordinal = 0; ordinal < actualOn.trace.count; ++ordinal)
+		{
+			ASSERT_EQ(actualOn.trace.values[ordinal].ordinal, ordinal);
+			ASSERT_TRUE(actualOn.trace.identities[ordinal]);
+			ASSERT_TRUE(directNull.trace.identities[ordinal]);
+			ASSERT_TRUE(directOn.trace.identities[ordinal]);
+		}
+		EXPECT_EQ(actualOn.trace.ledger(), directOn.trace.ledger());
+		EXPECT_EQ(actualOn.trace.identities, directOn.trace.identities);
+		EXPECT_EQ(actualOn.trace.selection->ordinal, directOn.trace.selection->ordinal);
+		EXPECT_EQ(actualOn.trace.selection->disposition, directOn.trace.selection->disposition);
+		EXPECT_EQ(std::bit_cast<uint32_t>(actualOn.trace.selection->baseline),
+			std::bit_cast<uint32_t>(directOn.trace.selection->baseline));
+		EXPECT_EQ(projectedHitTest::serialized(actualOn.heroActions), projectedHitTest::serialized(directOn.heroActions));
+		EXPECT_EQ(projectedHitTest::serialized(actualOn.unitActions), projectedHitTest::serialized(directOn.unitActions));
+		if(positive == HeroCommand::RIPOSTE)
+		{
+			const auto count = [&](HeroCommand command)
+			{
+				return std::count_if(directNull.trace.values.begin(), directNull.trace.values.begin() + directNull.trace.count,
+					[&](const auto & value) { return value.command == command; });
+			};
+			EXPECT_EQ(count(HeroCommand::FOCUS_FIRE), 2);
+			EXPECT_EQ(count(HeroCommand::RIPOSTE), 1);
+		}
+		ASSERT_GE(directOn.experiment.cheapScores.size(), 3u);
+		ASSERT_TRUE(directOn.experiment.baselineReady);
+		EXPECT_TRUE(std::any_of(directOn.experiment.cheapScores.begin(), directOn.experiment.cheapScores.end(),
+			[&](const auto & ranked) { return directOn.trace.values[ranked.ordinal].command == positive && ranked.marginal > 0; }));
+		EXPECT_GT(std::count(directOn.experiment.declined.begin(), directOn.experiment.declined.end(), true), 0);
+		EXPECT_GT(directOn.experiment.refinementContinuationCalls, 0u);
+		EXPECT_LE(directOn.experiment.refinementContinuationCalls, 2u);
+		RecordProperty("ActualOnLedger", actualOn.trace.ledger());
+		RecordProperty("OldNullLedger", directNull.trace.ledger());
+		RecordProperty("IntendedDirectOnLedger", directOn.trace.ledger());
+		ASSERT_EQ(directOn.heroActions.size(), 1u);
+		ASSERT_EQ(actualOn.heroActions.size(), 1u);
+		EXPECT_TRUE(actualOn.unitActions.empty());
+		// Real ON must match accepted direct ON; old NULL choice differences are recorded.
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), actualOn.heroActions.front()));
+	}
+};
+
+TEST_F(CurrentOrderCallbackAITest, IntendedOnRangedFocusFireMatchesAcceptedDirectOn)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCurrentOrder(false));
+	ASSERT_NO_FATAL_FAILURE(characterizeIntendedOn(HeroCommand::FOCUS_FIRE));
+}
+
+TEST_F(CurrentOrderCallbackAITest, IntendedOnContactRiposteMatchesAcceptedDirectOn)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCurrentOrder(true));
+	ASSERT_NO_FATAL_FAILURE(characterizeIntendedOn(HeroCommand::RIPOSTE));
+}
+
+namespace
+{
+std::string callbackTimerHex(const std::vector<std::byte> & bytes)
+{
+	constexpr size_t maximumRawBytes = 64 * 1024 * 1024;
+	if(bytes.size() > maximumRawBytes)
+		throw std::runtime_error("Callback timer value export exceeded raw-byte bound: actual="
+			+ std::to_string(bytes.size()) + " limit=" + std::to_string(maximumRawBytes));
+	constexpr char digits[] = "0123456789abcdef";
+	std::string result;
+	result.reserve(bytes.size() * 2);
+	for(const auto byte : bytes)
+	{
+		const auto value = std::to_integer<unsigned int>(byte);
+		result.push_back(digits[value >> 4]);
+		result.push_back(digits[value & 15]);
+	}
+	return result;
+}
+}
+
+TEST_F(CurrentOrderCallbackAITest, DISABLED_CurrentRangedWholeCallbackWall)
+{
+	ASSERT_FALSE(heroTimingTest::optedIn()) << "Work-count diagnostics are a separate invocation";
+	ASSERT_NO_FATAL_FAILURE(prepareCurrentOrder(false));
+	ASSERT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
+	ASSERT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	ASSERT_FALSE(battle()->getCrisisCommandState().choice());
+	ASSERT_FALSE(active->isTimeStopped());
+	ASSERT_EQ(active->pursuitMovementRemaining, 0);
+	const auto before = unchangedState();
+	const auto startedActions = server.startedActions.size();
+	const bool waitBefore = callback->waitTillRealize;
+	CBattleAI::TimingSummary measured;
+	{
+		CBattleAI ai; // Production null observer; no direct reference decisions.
+		AutocombatPreferences preferences;
+		preferences.enableSpellsUsage = false;
+		ai.initBattleInterface(environment, callback, preferences);
+		ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
+			attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
+		ai.activeStack(BattleID(0), active);
+		const auto summary = ai.getTimingSummary();
+		ASSERT_TRUE(summary);
+		measured = *summary;
+	}
+	EXPECT_EQ(callback->waitTillRealize, waitBefore);
+	EXPECT_EQ(unchangedState(), before);
+	EXPECT_EQ(server.startedActions.size(), startedActions);
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	EXPECT_TRUE(callback->unitActions.empty());
+	const auto & action = callback->submitted.front();
+	ASSERT_EQ(action.actionType, EActionType::HERO_COMMAND);
+	EXPECT_EQ(measured.activeStackCalls, 1u);
+	EXPECT_EQ(measured.activeStackInFlight, 0u);
+	EXPECT_EQ(measured.evaluatorConstruction.calls, 1u);
+	EXPECT_EQ(measured.stackActionSelection.calls, 1u);
+	EXPECT_EQ(measured.heroAction.calls, 1u);
+	EXPECT_EQ(measured.directUnitSubmission.calls, 0u);
+	EXPECT_GT(measured.activeStackTotalMicroseconds, 0u);
+	EXPECT_GT(measured.heroAction.totalMicroseconds, 0u);
+	EXPECT_GE(measured.activeStackTotalMicroseconds, measured.heroAction.totalMicroseconds);
+	RecordProperty("CallbackWallMicroseconds", std::to_string(measured.activeStackTotalMicroseconds));
+	RecordProperty("HeroActionMicroseconds", std::to_string(measured.heroAction.totalMicroseconds));
+	RecordProperty("CallbackCalls", std::to_string(measured.activeStackCalls));
+	RecordProperty("HeroActionCalls", std::to_string(measured.heroAction.calls));
+	RecordProperty("Performed", "true");
+	const auto actionBytes = projectedHitTest::serialized(callback->submitted);
+	RecordProperty("HeroActionsBytes", std::to_string(actionBytes.size()));
+	for(size_t part = 0; part < before.size(); ++part)
+		RecordProperty("StatePart" + std::to_string(part) + "Bytes", std::to_string(before[part].size()));
+	RecordProperty("HeroActionsWire", callbackTimerHex(actionBytes));
+	for(size_t part = 0; part < before.size(); ++part)
+		RecordProperty("StatePart" + std::to_string(part) + "Wire", callbackTimerHex(before[part]));
+	// Actual authority acceptance is outside both existing decision clocks.
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(server.startedActions.size(), startedActions + 1);
+	EXPECT_TRUE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
 }

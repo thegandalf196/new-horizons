@@ -32,6 +32,11 @@ void CGDwelling::updateGuards(IGameEventCallback & gameEvents) const
 
 	if (guarded)
 	{
+		std::vector<std::pair<CreatureID, TQuantity>> rawGuards;
+		for(const auto & entry : creatures)
+			rawGuards.emplace_back(entry.second.at(0), cb->getCreatureBaseGrowth(entry.second.at(0)) * 3);
+		const auto counts = newHorizonsNeutralArmies::generatedCounts(*this, rawGuards);
+		size_t index = 0;
 		for (auto creatureEntry : creatures)
 		{
 			const CCreature * crea = creatureEntry.second.at(0).toCreature();
@@ -42,7 +47,7 @@ void CGDwelling::updateGuards(IGameEventCallback & gameEvents) const
 				ChangeStackCount csc;
 				csc.army = this->id;
 				csc.slot = slot;
-				csc.count = newHorizonsNeutralArmies::generatedCount(*this, cb->getCreatureBaseGrowth(crea->getId()) * 3);
+				csc.count = counts.at(index);
 				csc.mode = ChangeValueMode::ABSOLUTE;
 				gameEvents.sendAndApply(csc);
 			}
@@ -52,9 +57,10 @@ void CGDwelling::updateGuards(IGameEventCallback & gameEvents) const
 				ns.army = this->id;
 				ns.slot = slot;
 				ns.type = crea->getId();
-				ns.count = newHorizonsNeutralArmies::generatedCount(*this, cb->getCreatureBaseGrowth(crea->getId()) * 3);
+				ns.count = counts.at(index);
 				gameEvents.sendAndApply(ns);
 			}
+			++index;
 		}
 	}
 }

@@ -7,9 +7,14 @@
 #include "Bonus.h"
 #include <optional>
 #include <set>
+#include <utility>
+
+namespace battle { class Unit; }
 
 namespace recipientBonusOverlay
 {
+struct ParentClockRecipe;
+
 using Records = std::vector<std::shared_ptr<Bonus>>;
 using Values = std::vector<Bonus>;
 using Groups = std::set<std::pair<BonusSource, BonusSourceID>>;
@@ -25,6 +30,7 @@ struct View
 	const std::optional<Records> & unstackedSnapshot;
 	const Groups & capturedGroups;
 	const bool & veteranCohesionEarned;
+	std::shared_ptr<const ParentClockRecipe> clockParents = nullptr;
 };
 
 /// Owned layer values; original record identities/configuration stay borrowed
@@ -38,6 +44,7 @@ struct DLL_LINKAGE Layer
 	std::optional<Records> unstackedSnapshot;
 	Groups capturedGroups;
 	bool veteranCohesionEarned = false;
+	std::shared_ptr<const ParentClockRecipe> clockParents = nullptr;
 	explicit Layer(const View & source);
 	View view() const;
 	bool hasEdits() const;
@@ -52,3 +59,26 @@ DLL_LINKAGE void append(BonusList & target, const View & layer,
 	const CSelector & mergeSelector, bool unstacked);
 DLL_LINKAGE TConstBonusListPtr finish(TBonusListPtr target, const View & layer, const CSelector & selector);
 }
+
+namespace recipientBonusOverlay
+{
+/// Ordinary recipient delta values only: no native callback, source lease,
+/// originating-export claim, current/freshness authority or hero policy.
+struct DLL_LINKAGE ParentClockRecipe
+{
+	std::shared_ptr<const ParentClockRecipe> parent;
+	Layer clocks;
+	Records orderWitness; // Query-only pointer order, not originating exports or copied bonus values.
+	bool hasAliases = false; // Query-record copies, never source freshness/action authority.
+	std::vector<std::pair<std::shared_ptr<Bonus>, std::shared_ptr<Bonus>>> aliases;
+	explicit ParentClockRecipe(Layer clocks) : clocks(std::move(clocks)) {}
+};
+/// Collection membership only: UNKNOWN records remain untouched for the canonical native query/error.
+DLL_LINKAGE bool isCapturedClockRecord(const Bonus * record, const battle::Unit & subject);
+DLL_LINKAGE std::shared_ptr<ParentClockRecipe> captureParentClocks(const View & parent, const battle::Unit & subject);
+DLL_LINKAGE void replaceInheritedClocks(BonusList & inherited, const BonusList & terminal,
+	const ParentClockRecipe & recipe, const battle::Unit & subject, const CSelector & selector, bool unstacked);
+}
+
+
+namespace recipientBonusOverlay { DLL_LINKAGE std::shared_ptr<Bonus> capturedClockAlias(const ParentClockRecipe & recipe, const std::shared_ptr<Bonus> & record); }

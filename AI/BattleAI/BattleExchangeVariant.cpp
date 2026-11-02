@@ -15,6 +15,8 @@
 #include "AerialRetaliationProjection.h"
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
+#include "MovementCandidateScreening.h"
+#include "CreatureCandidateScreening.h"
 #include "MeleeSpecialtyProjection.h"
 #include "ExchangeInitiativeQueue.h"
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
@@ -1040,96 +1042,6 @@ float BattleExchangeEvaluator::scoreValue(const BattleScore & score) const
 	return score.enemyDamageReduce * getPositiveEffectMultiplier() - score.ourDamageReduce * getNegativeEffectMultiplier();
 }
 
-EvaluationResult BattleExchangeEvaluator::findBestTarget(
-	const battle::Unit * activeStack,
-	PotentialTargets & targets,
-	DamageCache & damageCache,
-	std::shared_ptr<HypotheticBattle> hb,
-	bool siegeDefense,
-	BattleBestTargetTiming * timing)
-{
-	EvaluationResult result(targets.bestAction());
-
-	if(!activeStack->acquireState()->waitedThisTurn && !activeStack->acquireState()->hadMorale)
-	{
-#if BATTLE_TRACE_LEVEL>=1
-		logAi->trace("Evaluating waited attack for %s", activeStack->getDescription());
-#endif
-
-		auto hbWaited = std::make_shared<HypotheticBattle>(env.get(), hb);
-
-		hbWaited->makeWait(activeStack);
-
-		updateReachabilityMap(hbWaited);
-
-		for(auto & ap : targets.possibleAttacks)
-		{
-			if (siegeDefense && !hb->battleIsInsideWalls(ap.from))
-				continue;
-
-			float score;
-			{
-				MovementExchangeScope measurement(timing ? &timing->waitedExchange : nullptr);
-				score = evaluateExchange(ap, 0, targets, damageCache, hbWaited,
-					timing ? &timing->waitedDetails : nullptr);
-			}
-
-			if(score > result.score)
-			{
-				result.score = score;
-				result.bestAttack = ap;
-				result.wait = true;
-
-#if BATTLE_TRACE_LEVEL >= 1
-				logAi->trace("New high score %2f", result.score);
-#endif
-			}
-		}
-	}
-
-#if BATTLE_TRACE_LEVEL>=1
-	logAi->trace("Evaluating normal attack for %s", activeStack->getDescription());
-#endif
-
-	updateReachabilityMap(hb);
-
-	if(result.bestAttack.attack.shooting
-		&& !result.bestAttack.defenderDead
-		&& !activeStack->acquireState()->waitedThisTurn
-		&& hb->battleHasShootingPenalty(activeStack, result.bestAttack.dest))
-	{
-		if(!canBeHitThisTurn(result.bestAttack))
-			return result; // lets wait
-	}
-
-	for(auto & ap : targets.possibleAttacks)
-	{
-		if (siegeDefense && !hb->battleIsInsideWalls(ap.from))
-			continue;
-
-		float score;
-		{
-			MovementExchangeScope measurement(timing ? &timing->normalExchange : nullptr);
-			score = evaluateExchange(ap, 0, targets, damageCache, hb,
-				timing ? &timing->normalDetails : nullptr);
-		}
-		bool sameScoreButWaited = vstd::isAlmostEqual(score, result.score) && result.wait;
-
-		if(score > result.score || sameScoreButWaited)
-		{
-			result.score = score;
-			result.bestAttack = ap;
-			result.wait = false;
-
-#if BATTLE_TRACE_LEVEL >= 1
-			logAi->trace("New high score %2f", result.score);
-#endif
-		}
-	}
-
-	return result;
-}
-
 MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 	const battle::Unit * activeStack,
 	PotentialTargets & targets,
@@ -1140,20 +1052,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 	MovementExchangeScope measurement(timing ? &timing->findMove : nullptr);
 	MoveTarget result;
 	if(targets.berserk)
-	{
-		// A detached forecast must retain Berserk's selected path. Do not replace
-		// its forced destination with the ordinary tactical target chooser.
-		for(const auto & forcedAction : targets.forcedBerserkActions)
-			if(forcedAction.type == EActionType::WALK && forcedAction.position.isValid())
-				result.positions.insert(forcedAction.position);
-
-		if(!result.positions.empty())
-		{
-			result.score = 0.0f;
-			result.turnsToReach = 1;
-		}
-		return result;
-	}
+		return movementCandidateScreening::forcedBerserkMove(targets);
 
 	logAi->trace("Find move towards unreachable. Enemies count %d", targets.unreachableEnemies.size());
 
@@ -1169,6 +1068,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 	auto dists = getReachabilityWithEnemyBypass(activeStack, damageCache, hb);
 	auto flying = activeStack->hasBonusOfType(BonusType::FLYING);
+	const bool screenMovement = creatureCandidateScreening::supportsVisibleOrdinaryMelee(activeStack, *hb);
 
 	for(const battle::Unit * enemy : targets.unreachableEnemies)
 	{
@@ -1207,7 +1107,9 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 		}
 
 		auto turnsToReach = (distance - 1) / speed + 1;
-		const BattleHexArray & hexes = enemy->getAttackableHexes(activeStack);
+		const auto hexes = screenMovement
+			? movementCandidateScreening::promisingApproaches(enemy->getAttackableHexes(activeStack), dists, speed)
+			: enemy->getAttackableHexes(activeStack);
 		auto enemySpeed = enemy->getMovementRange();
 		auto speedRatio = speed / static_cast<float>(enemySpeed);
 		auto multiplier = (speedRatio > 1 ? 1 : speedRatio) * penaltyMultiplier;

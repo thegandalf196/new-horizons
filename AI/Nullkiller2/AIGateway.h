@@ -21,6 +21,7 @@
 #include "Engine/Nullkiller.h"
 #include "Helpers/AdventureSpellExecution.h"
 #include "Helpers/RouteActorObservation.h"
+#include "Helpers/LevelUpOfferState.h"
 
 #include <map>
 #include <mutex>
@@ -116,6 +117,9 @@ public:
 	void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) override;
 	void heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID) override; //one combined skill/perk choice
+	void heroGotLevelWithReroll(const CGHeroInstance * hero, PrimarySkill pskill,
+		std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks,
+		QueryID queryID, bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) override;
 	void commanderGotLevel(const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID) override; //TODO
 	void showBlockingDialog(const std::string & text, const std::vector<Component> & components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept) override; //Show a dialog, player must take decision. If selection then he has to choose between one of given components, if cancel he is allowed to not choose. After making choice, CCallback::selectionMade should be called with number of selected component (1 - n) or 0 for cancel (if allowed) and askID.
 	void showGarrisonDialog(const CArmedInstance * up, const CGHeroInstance * down, bool removableUnits, QueryID queryID, const MetaString & customTitle) override; //all stacks operations between these objects become allowed, interface has to call onEnd when done
@@ -249,6 +253,12 @@ public:
 	static void memorizeRevisitableObjs(const std::unique_ptr<AIMemory>& memory, const PlayerColor& playerID, const std::shared_ptr<CCallback>& cc);
 
 	static void pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other = nullptr);
+private:
+	LevelUpOfferState levelUpOffers;
+	void heroGotLevelImpl(const CGHeroInstance * hero, PrimarySkill pskill,
+		std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks,
+		QueryID queryID, bool registerQuery);
+
 };
 
 }

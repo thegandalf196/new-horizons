@@ -226,6 +226,11 @@ public:
 	virtual int32_t getBloodrageLowHealthIncrement(BattleSide side) const { return 0; }
 	virtual int32_t getBloodragePainIncrement(BattleSide side) const { (void)side; return 0; }
 	virtual SylvanLuckState getSylvanLuckState(BattleSide side) const { return {}; }
+	/// Unknown/custom sources retain the existing virtual query and its exceptions.
+	virtual SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const
+	{
+		return getSylvanLuckState(side).damageFlags();
+	}
 	virtual PerfectFortuneState getPerfectFortuneState(BattleSide side) const { (void)side; return {}; }
 	virtual LuckSerendipityState getLuckSerendipityState(BattleSide side) const { (void)side; return {}; }
 	virtual ArmorerDefiantState getArmorerDefiantState(BattleSide side) const { (void)side; return {}; }

@@ -36,6 +36,7 @@ namespace events
 
 class CClient;
 class CBaseForCLApply;
+class ClientPacketReceiveSession;
 
 template<typename T>
 class ThreadSafeVector
@@ -146,6 +147,7 @@ public:
 
 	void endNetwork();
 	void finishGameplay();
+	bool cancelOwnedRecipientPreparation(const std::string & reason);
 	void endGame();
 
 	void initMapHandler();
@@ -165,6 +167,7 @@ public:
 	/// While set, this client only observes a replay and must not send anything to the server
 	std::atomic<bool> observerMode = false;
 
+	void handleReceivedPack(CPackForClient & pack, ClientPacketReceiveSession & receive);
 	void handlePack(CPackForClient & pack); //applies the given pack and deletes it
 
 	/// Applies the pack on gamestate only, without notifying any interface.
@@ -185,7 +188,7 @@ public:
 	void battleStarted(const BattleID & battle);
 	void battleDeploymentPhaseChanged(const BattleID & battle);
 	void battleFinished(const BattleID & battleID);
-	void startPlayerBattleAction(const BattleID & battleID, PlayerColor color);
+	void startPlayerBattleAction(const BattleID & battleID, PlayerColor color, ClientPacketReceiveSession * receive = nullptr);
 
 	friend class CCallback; //handling players actions
 	friend class CBattleCallback; //handling players actions
@@ -193,5 +196,6 @@ public:
 	void removeGUI() const;
 
 private:
+	void applyClientPacket(CPackForClient & pack, ClientPacketReceiveSession * receive);
 	std::optional<PlayerColor> findPlayerColorForSpectatorInterface() const;
 };

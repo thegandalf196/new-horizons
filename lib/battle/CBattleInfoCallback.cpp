@@ -21,6 +21,9 @@
 #include "HeroCommandAdjacency.h"
 #include "HeroCommandRoyalStandard.h"
 #include "DamageCalculationTiming.h"
+#include "DamagePayloadPreparation.h"
+#include "CPlayerBattleCallback.h"
+#include "../gameState/CGameState.h"
 #include "UnitAdjacency.h"
 #include "../mapObjects/NewHorizonsGlyphsOfFear.h"
 #include "NewHorizonsFrozen.h"
@@ -73,11 +76,6 @@
 
 namespace
 {
-constexpr int SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT = 25;
-constexpr int EXECUTIONER_DAMAGE_PERCENT = 20;
-constexpr int ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT = 20;
-constexpr int BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT = 50;
-constexpr int PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT = 50;
 constexpr int RANDOM_CREATURE_HOSTILE_ENCHANTMENTS_POLICY = 1;
 
 bool admitsBerserkTarget(const CBattleInfoCallback & callback, const battle::Unit * berserker,
@@ -3162,482 +3160,25 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 {
 	damageCalculationTiming::Scope payloadTiming(damageCalculationTiming::Phase::NATIVE_PAYLOAD);
 	const auto * script = LIBRARY->scriptTypes()->getDamageCalculator();
-
-	// core declares one, and there is no rule for what an attack is worth without it
 	if(!script)
 		throw std::runtime_error("No damage calculator script is loaded!");
-
-	// Successful allegiance reads belong only to this immutable native payload.
-	// Keep each getter's first-use site, including null heroes and thrown reads;
-	// nested helpers and the subsequent Lua calculation keep their own queries.
-	std::optional<const CGHeroInstance *> attackerHeroValue, defenderHeroValue;
-	std::optional<PlayerColor> attackerOwnerValue, defenderOwnerValue;
-	const auto readAttackerHero = [&]()
-	{
-		if(!attackerHeroValue.has_value())
-			attackerHeroValue = battleGetOwnerHero(info.attacker);
-		return *attackerHeroValue;
-	};
-	const auto readDefenderHero = [&]()
-	{
-		if(!defenderHeroValue.has_value())
-			defenderHeroValue = battleGetOwnerHero(info.defender);
-		return *defenderHeroValue;
-	};
-	const auto readAttackerOwner = [&]()
-	{
-		if(!attackerOwnerValue.has_value())
-			attackerOwnerValue = battleGetOwner(info.attacker);
-		return *attackerOwnerValue;
-	};
-	const auto readDefenderOwner = [&]()
-	{
-		if(!defenderOwnerValue.has_value())
-			defenderOwnerValue = battleGetOwner(info.defender);
-		return *defenderOwnerValue;
-	};
-
-	DamageAttackInfo payload;
-	HeroCommand attackerOrderCause = HeroCommand::NONE;
-	HeroCommand defenderOrderCause = HeroCommand::NONE;
-	std::vector<HeroCommand> attackerOrderCauses;
-	std::vector<HeroCommand> defenderOrderCauses;
-
-	payload.attacker = info.attacker;
-	payload.defender = info.defender;
-	// the script is told where the blow happens rather than left to work it out, so that an
-	// attack being weighed reads the same as one being dealt
-	payload.attackerHex = info.attackerPos.isValid() ? info.attackerPos : info.attacker->getPosition();
-	payload.defenderHex = info.defenderPos.isValid() ? info.defenderPos : info.defender->getPosition();
-	payload.chargeDistance = info.chargeDistance;
-	payload.shooting = info.shooting;
-	payload.physicalDamage = info.physicalDamage;
-	payload.activationOutputPercent = battleGetDirectActivationOutputPercent(info);
-	payload.archeryRangedDamageMultiplierPercent = info.archeryRangedDamageMultiplierPercent;
-	if(info.shooting && info.physicalDamage && info.attacker && info.attacker->isBallista())
-		payload.rangedFollowUpDamagePercent = battleGetRangedFollowUpDamagePercent(info.attacker);
-	payload.relentlessAssaultDamagePercent = info.relentlessAssaultDamagePercent;
-	const auto * currentBattle = getBattle();
-	if(currentBattle)
-		payload.physicalDamageReductionCapPercent = newHorizonsMagic::physicalDamageReductionCapPercent(currentBattle->getMagicRules());
-	const auto rangedPenetration = battleGetRangedAttackPenetration(info);
-	payload.rangedDefenseIgnoreBasisPoints = rangedPenetration.creatureDefenseIgnoreBasisPoints;
-	payload.physicalDamageReductionIgnorePercent = rangedPenetration.physicalDamageReductionIgnorePercent;
-	if(currentBattle && info.physicalDamage && info.shooting && info.defender
-		&& newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))
-	{
-		const auto galeBonuses = info.defender->getBonusesOfType(BonusType::HEAVENLY_GALE);
-		if(galeBonuses && !galeBonuses->empty())
-		{
-			for(const auto & bonus : *galeBonuses)
-				payload.heavenlyGaleDamageReductionBasisPoints = std::max(
-					payload.heavenlyGaleDamageReductionBasisPoints, bonus->val);
-		}
-	}
-	payload.targetedRangedCommand = battleIsTargetedRangedCommand(
-		info.attacker, info.defender, info.shooting, info.secondaryAttack);
-	payload.targetedRangedCommandPercent = battleTargetedRangedCommandPercent(
-		info.attacker, info.defender, info.shooting, info.secondaryAttack);
-	if(payload.targetedRangedCommandPercent > 0)
-	{
-		attackerOrderCause = HeroCommand::FOCUS_FIRE;
-		attackerOrderCauses.push_back(HeroCommand::FOCUS_FIRE);
-	}
-	if(info.shooting && info.physicalDamage && info.attacker && info.defender)
-	{
-		const auto & adjacentHexes = info.attacker->getSurroundingHexes(payload.attackerHex);
-		const auto & targetHexes = info.defender->getHexes(payload.defenderHex);
-		payload.archeryAdjacentRangedTarget = std::ranges::any_of(targetHexes, [&adjacentHexes](BattleHex hex)
-		{
-			return adjacentHexes.contains(hex);
-		});
-		payload.archeryIgnoreAdjacentRangedPenalty = payload.archeryAdjacentRangedTarget
-			&& newHorizonsArchery::hasPointBlankShot(readAttackerHero());
-	}
-	if(payload.targetedRangedCommand && info.physicalDamage
-		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker)
-		&& newHorizonsArchery::hasTargetCaller(readAttackerHero()))
-	{
-		payload.targetedRangedCommandPercent += newHorizonsArchery::TARGET_CALLER_DAMAGE_PERCENT;
-		payload.archeryIgnoreObstaclePenalty = true;
-	}
-	const auto * archeryHero = info.attacker ? readAttackerHero() : nullptr;
-	if(info.physicalDamage && info.shooting
-		&& battleIsCounterBatteryMachineTarget(info.attacker, info.defender))
-		payload.counterBatteryFinalDamageMultiplier = 150;
-	if(info.physicalDamage && info.shooting && info.attacker && info.attacker->isBallista() && info.defender)
-	{
-		const auto * controllerHero = readAttackerHero();
-		if(controllerHero && controllerHero->hasActivePerk(
-			"new-horizons:warMachines", "new-horizons:warMachines.piercingBolts"))
-			payload.warMachinesPiercingBoltsDefenseIgnorePercent = PIERCING_BOLTS_DEFENSE_IGNORE_PERCENT;
-	}
-	const bool ordinaryArcheryShot = info.physicalDamage && info.shooting
-		&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker) && archeryHero;
-	if(ordinaryArcheryShot)
-	{
-		if(newHorizonsArchery::hasArmorPiercingShot(archeryHero))
-			payload.archeryRangedDefenseIgnorePercent += newHorizonsArchery::ARMOR_PIERCING_DEFENSE_IGNORE_PERCENT;
-		payload.archeryHighArc = newHorizonsArchery::hasHighArc(archeryHero);
-		if(payload.archeryHighArc)
-			payload.archeryIgnoreObstaclePenalty = true;
-
-		if(newHorizonsArchery::hasDeadeye(archeryHero))
-		{
-			const auto attackerState = info.attacker->acquireState();
-			if(attackerState->archeryDeadeyeRound != battleGetRound())
-			{
-				payload.archeryMaximumCreatureDamage = true;
-				payload.archeryRangedDefenseIgnorePercent += newHorizonsArchery::DEADEYE_DEFENSE_IGNORE_PERCENT;
-			}
-		}
-
-		if(newHorizonsArchery::hasCrossfire(archeryHero) && info.defender)
-		{
-			const auto attackerSide = playerToSide(readAttackerOwner());
-			const auto defenderState = std::dynamic_pointer_cast<battle::CUnitState>(info.defender->acquireState());
-			if(defenderState && defenderState->archeryCrossfireAvailable(
-				attackerSide, info.attacker->unitId(), battleGetRound()))
-				payload.archeryCrossfireDamagePercent = newHorizonsArchery::CROSSFIRE_DAMAGE_PERCENT;
-		}
-	}
-	if(payload.targetedRangedCommand && payload.targetedRangedCommandPercent > 0)
-		attackerOrderCause = HeroCommand::FOCUS_FIRE;
-	std::optional<bool> defenderDefendState;
-	const auto defenderDefended = [&]()
-	{
-		if(!defenderDefendState)
-			defenderDefendState = info.defender->defended();
-		return *defenderDefendState;
-	};
+	DamagePayloadPreparation preparation;
+	prepareAttackDamageContext(info, preparation);
 	payloadTiming.nextNativeRegion(damageCalculationTiming::NativeRegion::PHYSICAL_MODIFIERS);
-	if(info.physicalDamage && !info.shooting && info.attacker && info.defender
-		&& readAttackerOwner() != readDefenderOwner())
-	{
-		if(const auto * hero = readAttackerHero())
-		{
-			const auto hasOffensePerk = [hero](const char * perk)
-			{
-				return hero->hasActivePerk("new-horizons:offense", perk);
-			};
-			if(hasOffensePerk("new-horizons:offense.executioner")
-				&& info.defender->getAvailableHealth() * 100 < info.defender->getTotalHealth() * 40)
-				payload.executionerDamagePercent = EXECUTIONER_DAMAGE_PERCENT;
-			if(hasOffensePerk("new-horizons:offense.armorPiercer"))
-				payload.meleeDefenseIgnorePercent = ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT;
-			if(hasOffensePerk("new-horizons:offense.breakthrough") && defenderDefended())
-			{
-				payload.defensiveStanceDamageReductionIgnorePercent = BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT;
-				payload.defensiveStanceDefenseBonus = std::max(0, info.defender->getDefense(false)
-					- info.defender->getDefenseIgnoringDefensiveStance(false));
-			}
-		}
-	}
-	// Bloodrage scales ordinary primary elemental shots as well as physical
-	// attacks. Actual casts use spell mechanics, never this attack payload.
-	// Preserve historical pre-v3/absent contexts and existing physical paths.
-	const auto & bloodrageRules = getBattle()->getMagicRules();
-	const bool elementalBloodrageAttack = !info.secondaryAttack && info.shooting
-		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker)
-		&& info.attacker->unitSlot() != SlotID::WAR_MACHINES_SLOT
-		&& info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
-		&& newHorizonsMagic::rulesActive(bloodrageRules)
-		&& bloodrageRules["rulesetVersion"].Integer()
-			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
-	if(info.physicalDamage || elementalBloodrageAttack)
-		payload.bloodrageDamagePercent = battleGetBloodrageDamagePercent(info.attacker, info.defender);
-	if(info.physicalDamage)
-	{
-		if(info.defender && newHorizonsCombatSkills::isPhysicalCreatureAttack(info.attacker, info.physicalDamage)
-			&& readAttackerOwner() != readDefenderOwner()
-			&& newHorizonsBloodrage::hasAvatarOfRage(readAttackerHero()))
-		{
-			const auto side = playerToSide(readAttackerOwner());
-			if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-				&& newHorizonsBloodrage::atMaximumForAttack(payload.bloodrageDamagePercent,
-					getBattle()->getBloodrageCapPercent(side)))
-			{
-				// Blood Scent's higher Rage belongs to this attack only. Reuse the
-				// target Creature Defense channels, never hero attributes or Frenzy.
-				if(info.shooting)
-					payload.archeryRangedDefenseIgnorePercent += newHorizonsBloodrage::AVATAR_DEFENSE_IGNORE_PERCENT;
-				else
-					payload.meleeDefenseIgnorePercent += newHorizonsBloodrage::AVATAR_DEFENSE_IGNORE_PERCENT;
-			}
-		}
-		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);
-		if(info.shooting && ordinaryCreatureAttack)
-			payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(
-				readAttackerHero());
-		if(ordinaryCreatureAttack && info.attacker->battlecraftWaitBonusAvailable())
-			payload.battlecraftWaitDamagePercent = newHorizonsBattlecraft::waitDamagePercent(
-				readAttackerHero(), dynamic_cast<const battle::CUnitState *>(info.attacker));
-		if(ordinaryCreatureAttack)
-			payload.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(
-				readDefenderHero());
-		if(info.defender && battleHasFormationFightingProtection(info.defender, info.defenderPos))
-			payload.formationFightingReductionPercent = newHorizonsCombatSkills::formationFightingReductionPercent(
-				readDefenderHero());
-		if(ordinaryCreatureAttack && info.defender && defenderDefended())
-		{
-			payload.battlecraftDefendReductionPercent = newHorizonsBattlecraft::defendReductionPercent(
-				readDefenderHero(), dynamic_cast<const battle::CUnitState *>(info.defender));
-			if(info.shooting)
-				payload.paviseDamageReductionPercent = newHorizonsCombatSkills::paviseReductionPercent(
-					readDefenderHero());
-		}
-		if(newHorizonsCombatSkills::isPhysicalCreatureAttack(info.attacker, info.physicalDamage)
-			&& battleHasBastionProtection(info.defender))
-			payload.armorerBastionFinalDamageMultiplier = newHorizonsCombatSkills::BASTION_FINAL_DAMAGE_MULTIPLIER;
-		if(battleIsShroudFlankingAttack(info))
-		{
-			const auto * attackerHero = readAttackerHero();
-			payload.shroudFlankingDamagePercent = newHorizonsShroud::flankingDamagePercent(
-				newHorizonsShroud::rank(attackerHero))
-				+ newHorizonsShroud::backstabDamagePercent(attackerHero)
-				+ newHorizonsShroud::ambusherDamagePercent(attackerHero, info.attacker);
-			payload.shroudFlankingDamagePercent += battleEncircledDoomDamagePercent(info);
-			payload.meleeDefenseIgnorePercent += newHorizonsShroud::shadowAssaultDefenseIgnorePercent(
-				attackerHero, info.defender, playerToSide(readAttackerOwner()));
-		}
-		if(info.defender && defenderDefended() && ordinaryCreatureAttack
-			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.defender)
-			&& (!info.shooting || !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))
-		{
-			const auto reductionForHero = [this](const CGHeroInstance * hero)
-			{
-				const auto terrain = getBattle()->getTerrainType();
-				const bool mireTerrain = newHorizonsBulwark::hasMireborn(hero)
-					&& (terrain == TerrainId::SWAMP || terrain == TerrainId::ROUGH);
-				return newHorizonsBulwark::reductionBasisPoints(
-					newHorizonsBulwark::rank(hero), hero ? hero->getPrimSkillLevel(PrimarySkill::DEFENSE) : 0, mireTerrain);
-			};
-			const auto * hero = readDefenderHero();
-			const int baseReduction = reductionForHero(hero);
-			const auto defenderState = info.defender->acquireState();
-			if(newHorizonsBulwark::hasImmovable(hero) && defenderState
-				&& defenderState->bulwarkImmovableRound != battleGetRound())
-				payload.bulwarkImmovableFinalDamageMultiplier = 75;
-			payload.bulwarkDamageReductionBasisPoints = baseReduction;
-			if(baseReduction > 0 && newHorizonsBulwark::hasSharedCover(hero))
-			{
-				const auto friends = battleAdjacentUnits(info.defender);
-				for(const auto * friendUnit : friends)
-				{
-					if(friendUnit->unitSide() != info.defender->unitSide() || !friendUnit->defended()
-						|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(friendUnit))
-						continue;
-					payload.bulwarkDamageReductionBasisPoints = std::min(10000,
-						baseReduction + newHorizonsBulwark::sharedCoverBasisPoints(baseReduction));
-					break;
-				}
-			}
-		}
-	}
-	payload.shroudDeepFlankDamagePercent = battleDeepFlankDamagePercent(info);
-	if(info.preemptiveDamagePercent > 0)
-		payload.preemptiveDamageMultiplier = info.preemptiveDamagePercent;
-	if(info.cleaveDamagePercent > 0)
-		payload.cleaveFinalDamageMultiplier = info.cleaveDamagePercent;
+	preparePhysicalDamageModifiers(info, preparation);
 	payloadTiming.nextNativeRegion(damageCalculationTiming::NativeRegion::HERO_ORDERS);
-	if(heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
-		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
-	{
-		const auto & rules = getBattle()->getHeroCommandRules()["commands"];
-		const auto attack = readAttackerHero();
-		const auto defend = readDefenderHero();
-		const auto attackerSide = playerToSide(readAttackerOwner());
-		const auto defenderSide = playerToSide(readDefenderOwner());
-		const auto attackerStates = battleGetHeroOrderStates(attackerSide);
-		const auto defenderStates = battleGetHeroOrderStates(defenderSide);
-		const auto eligibleOrderUnit = [](const battle::Unit * unit)
-		{
-			return unit && unit->alive() && !unit->isGhost() && !unit->isTurret()
-				&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-				&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
-		};
-		const auto recordAttackerCause = [&](HeroCommand command)
-		{
-			attackerOrderCauses.push_back(command);
-			if(attackerOrderCause == HeroCommand::NONE)
-				attackerOrderCause = command;
-		};
-		const auto recordDefenderCause = [&](HeroCommand command)
-		{
-			defenderOrderCauses.push_back(command);
-			if(defenderOrderCause == HeroCommand::NONE)
-				defenderOrderCause = command;
-		};
-		for(const auto & attackerState : attackerStates)
-		{
-			if(!attackerState.scheduledFor(info.attacker->unitId(), battleGetRound()) || !attack)
-				continue;
-			switch(attackerState.command)
-			{
-			case HeroCommand::FOCUS_FIRE:
-				if(eligibleOrderUnit(info.attacker) && info.attacker->isMeleeAttacker()
-					&& !info.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
-					&& info.physicalDamage && !info.shooting && !info.secondaryAttack
-					&& info.defender->alive() && readAttackerOwner() != readDefenderOwner()
-					&& attackerState.primaryTargetUnitId == info.defender->unitId()
-					&& battleIsFocusFireTargetActive(attackerSide))
-				{
-					const auto mark = battleGetFocusFireState(attackerSide);
-					if(mark && attackerState.scheduledFor(info.attacker->unitId(), battleGetRound())
-						&& mark->targetUnitId == info.defender->unitId()
-						&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), info.attacker->unitId()))
-					{
-						const auto combinedArmsDamagePercent = heroCommands::combinedArmsFocusFirePercent(
-							(attackerState.crownAndAltarAppliesTo(info.attacker->unitId())
-								? attackerState.crownAndAltarFocusFirePercent : mark->rangedDamagePercent), *attack);
-						payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
-						if(combinedArmsDamagePercent > 0)
-							recordAttackerCause(HeroCommand::FOCUS_FIRE);
-					}
-				}
-				break;
-			case HeroCommand::CHARGE:
-				if(eligibleOrderUnit(info.attacker) && !info.shooting && !info.secondaryAttack && info.chargeDistance >= 3
-					&& !attackerState.containsConsumed(info.attacker->unitId()))
-				{
-					const int intrinsic = heroCommandCoefficient(rules["charge"]["effects"]["meleeDamagePercent"],
-						*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
-					const int orderDamagePercent = heroCommands::orderPotency(intrinsic + 2 * (info.chargeDistance - 3),
-						heroOrderCoefficient(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId(), false)
-							+ 2 * (info.chargeDistance - 3), attackerState, getBattle()->getMagicRules())
-						+ (info.physicalDamage
-							? heroCommands::revisedPerkBonus(getBattle()->getHeroCommandRules(), attack, HeroCommand::CHARGE) : 0);
-					payload.heroOrderDamagePercent += orderDamagePercent;
-					if(orderDamagePercent > 0)
-						recordAttackerCause(HeroCommand::CHARGE);
-					if(info.physicalDamage && readAttackerOwner() != readDefenderOwner()
-						&& attack->hasActivePerk("new-horizons:offense", "new-horizons:offense.shockAssault"))
-						payload.chargeDefenseIgnorePercent = SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT;
-				}
-				break;
-			case HeroCommand::RIPOSTE:
-				if(eligibleOrderUnit(info.attacker) && info.retaliation && !info.shooting)
-				{
-					const int orderDamagePercent = heroOrderCoefficient(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &attackerState, info.attacker->unitId());
-					payload.heroOrderDamagePercent += orderDamagePercent;
-					if(orderDamagePercent > 0)
-						recordAttackerCause(HeroCommand::RIPOSTE);
-				}
-				break;
-			case HeroCommand::BRACE:
-				if(eligibleOrderUnit(info.attacker) && info.bracePreemptive && !info.shooting)
-				{
-					const int ordinary = heroOrderCoefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
-						attack, &attackerState, info.attacker->unitId(), false);
-					const int companion = newHorizonsCombatSkills::bracePreemptivePercent(ordinary, attack) - ordinary;
-					const int intrinsic = heroCommandCoefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
-						*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
-					const int orderMultiplier = heroCommands::orderPotency(intrinsic, ordinary,
-						attackerState, getBattle()->getMagicRules()) + companion;
-					payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
-					if(payload.heroOrderFinalDamageMultiplier == 100)
-						payload.heroOrderFinalDamageMultiplier = orderMultiplier;
-					recordAttackerCause(HeroCommand::BRACE);
-				}
-				break;
-			case HeroCommand::FLANK:
-				if(eligibleOrderUnit(info.attacker)
-					&& attackerState.primaryTargetUnitId == info.defender->unitId())
-				{
-					if(!info.shooting)
-					{
-						const int orderDamagePercent = battleHeroOrderFlankMeleeDamagePercent(info);
-						payload.heroOrderDamagePercent += orderDamagePercent;
-						if(orderDamagePercent > 0)
-							recordAttackerCause(HeroCommand::FLANK);
-					}
-					else if(info.shooting && info.physicalDamage && info.defender->alive()
-						&& readAttackerOwner() != readDefenderOwner()
-						&& newHorizonsArchery::isOrdinaryPhysicalShooter(info.attacker)
-						&& attackerState.flankFor(info.defender->unitId()))
-					{
-						const auto combinedArmsDamagePercent = heroCommands::combinedArmsFlankPercent(
-							newHorizonsDivineMandate::crownOrderFormula(rules["flank"]["effects"]["meleeDamagePercent"],
-								attackerState.crownAndAltarAppliesTo(info.attacker->unitId())), *attack,
-							attackerState.warcastingBonusPercent,
-							attackerState.divineMandateEfficiencyBonusPercent());
-						payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
-						if(combinedArmsDamagePercent > 0)
-							recordAttackerCause(HeroCommand::FLANK);
-					}
-				}
-				break;
-			case HeroCommand::SECOND_WIND:
-				if(attackerState.secondWindActive && attackerState.primaryTargetUnitId == info.attacker->unitId())
-				{
-					const int orderMultiplier = heroCommands::orderPotency(
-						heroCommands::secondWindPercent(*attack, attackerState.warcastingBonusPercent,
-							attackerState.divineMandateEfficiencyBonusPercent()),
-						newHorizonsDivineMandate::crownSecondWindPercent(*attack, attackerState, info.attacker->unitId()),
-						attackerState, getBattle()->getMagicRules());
-					if(orderMultiplier != 100)
-					{
-						payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
-						if(payload.heroOrderFinalDamageMultiplier == 100)
-							payload.heroOrderFinalDamageMultiplier = orderMultiplier;
-						recordAttackerCause(HeroCommand::SECOND_WIND);
-					}
-				}
-				break;
-			default:
-				break;
-			}
-		}
-		for(const auto & defenderState : defenderStates)
-		{
-			if(!defenderState.scheduledFor(info.defender->unitId(), battleGetRound()) || !defend
-				|| !eligibleOrderUnit(info.defender) || !info.physicalDamage)
-				continue;
-			int orderDamageReductionPercent = 0;
-			switch(defenderState.command)
-			{
-			case HeroCommand::FEINT:
-				if(info.retaliation && !info.shooting && !info.secondaryAttack && !info.bracePreemptive
-					&& defenderState.revision
-					&& readAttackerOwner() != readDefenderOwner())
-					orderDamageReductionPercent = heroCommands::revisedFeintReductionFor(defenderState, info.defender->unitId());
-				break;
-			case HeroCommand::RIPOSTE:
-				if(!info.shooting)
-					orderDamageReductionPercent = heroOrderCoefficient(rules["riposte"]["effects"]["meleeDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
-				break;
-			case HeroCommand::HOLD_THE_LINE:
-				if(battleIsHoldTheLineRecipient(defenderState, info.defender))
-					orderDamageReductionPercent = heroOrderCoefficient(rules["holdTheLine"]["effects"]["damageReductionPercent"], defend, &defenderState, info.defender->unitId())
-						+ heroCommands::revisedPerkBonus(getBattle()->getHeroCommandRules(), defend, HeroCommand::HOLD_THE_LINE);
-				break;
-			case HeroCommand::PROTECT:
-				if(!info.shooting && info.protectIntercepted
-					&& defenderState.primaryTargetUnitId == info.defender->unitId())
-					orderDamageReductionPercent = heroOrderCoefficient(rules["protect"]["effects"]["interceptedDamageReductionPercent"], defend, &defenderState, info.defender->unitId());
-				break;
-			default:
-				break;
-			}
-			if(orderDamageReductionPercent > 0)
-			{
-				if(payload.heroOrderDamageReductionPercent == 0)
-					payload.heroOrderDamageReductionPercent = orderDamageReductionPercent;
-				payload.heroOrderDamageReductionPercents.push_back(orderDamageReductionPercent);
-				recordDefenderCause(defenderState.command);
-			}
-		}
-	}
+	prepareDamageOrders(info, preparation);
+	auto & payload = preparation.payload;
 	payloadTiming.nextNativeRegion(damageCalculationTiming::NativeRegion::FINALIZATION);
-	finalizeDamagePayload(info, payload, currentBattle);
+	finalizeDamagePayload(info, payload, preparation.currentBattle);
 	payloadTiming.finish();
 	auto result = script->calculate(*this, payload);
 	newHorizonsNecromancy::adjustCreatureDamage(info, result);
 	spells::applyIncomingMagicalCreatureDamage(info, result);
-	result.attackerOrderCause = attackerOrderCause;
-	result.defenderOrderCause = defenderOrderCause;
-	result.attackerOrderCauses = std::move(attackerOrderCauses);
-	result.defenderOrderCauses = std::move(defenderOrderCauses);
+	result.attackerOrderCause = preparation.causes.attackerOrderCause;
+	result.defenderOrderCause = preparation.causes.defenderOrderCause;
+	result.attackerOrderCauses = std::move(preparation.causes.attackerOrderCauses);
+	result.defenderOrderCauses = std::move(preparation.causes.defenderOrderCauses);
 	result.archeryDefenseIgnorePercent = payload.archeryRangedDefenseIgnorePercent;
 	result.archeryCrossfireDamagePercent = payload.archeryCrossfireDamagePercent;
 	result.archeryDeadeye = payload.archeryMaximumCreatureDamage;
@@ -5151,4 +4692,30 @@ std::optional<BattleSide> CBattleInfoCallback::battleIsFinished() const
 const scripting::Pool & CBattleInfoCallback::getScriptContextPool() const
 {
 	return getBattle()->getScriptContextPool();
+}
+
+// A closed canonical query chain is separate from script identity and source
+// modifier admission. Foreign callbacks retain every ordinary query/evaluation.
+bool CBattleInfoCallback::hasCanonicalDamageQuerySources(size_t remaining, const BattleInfo * expected) const
+{
+	if(remaining == 0)
+		return false;
+	const BattleInfo * source = nullptr;
+	if(typeid(*this) == typeid(CPlayerBattleCallback))
+	{
+		const auto * world = getBattle();
+		if(!world || typeid(*world) != typeid(BattleInfo))
+			return false;
+		source = dynamic_cast<const BattleInfo *>(world);
+	}
+	else if(typeid(*this) == typeid(BattleInfo))
+		source = dynamic_cast<const BattleInfo *>(this);
+	if(!source || !source->cb || typeid(*source->cb) != typeid(CGameState)
+		|| (expected && source != expected) || source->stacks.size() > 256)
+		return false;
+	// Reject custom unit getters BEFORE the proxy roster join reads unitId().
+	return std::ranges::all_of(source->stacks, [](const auto & unit)
+	{
+		return unit && typeid(*unit) == typeid(CStack);
+	});
 }
