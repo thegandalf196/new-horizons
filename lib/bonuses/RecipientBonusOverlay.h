@@ -48,7 +48,29 @@ struct DLL_LINKAGE Layer
 	explicit Layer(const View & source);
 	View view() const;
 	bool hasEdits() const;
+	/// Publish prepared values without constructing/moving a set (MSVC may
+	/// allocate its sentinel on move construction). Exchange existing storage.
+	void swap(Layer & other) noexcept(
+		noexcept(added.swap(other.added)) && noexcept(updated.swap(other.updated))
+		&& noexcept(removed.swap(other.removed)) && noexcept(stackedSnapshot.swap(other.stackedSnapshot))
+		&& noexcept(unstackedSnapshot.swap(other.unstackedSnapshot))
+		&& noexcept(capturedGroups.swap(other.capturedGroups))
+		&& noexcept(std::swap(veteranCohesionEarned, other.veteranCohesionEarned))
+		&& noexcept(clockParents.swap(other.clockParents)))
+	{
+		added.swap(other.added);
+		updated.swap(other.updated);
+		removed.swap(other.removed);
+		stackedSnapshot.swap(other.stackedSnapshot);
+		unstackedSnapshot.swap(other.unstackedSnapshot);
+		capturedGroups.swap(other.capturedGroups);
+		std::swap(veteranCohesionEarned, other.veteranCohesionEarned);
+		clockParents.swap(other.clockParents);
+	}
 };
+
+/// ADL selects the same storage exchange for generic nothrow publication.
+DLL_LINKAGE void swap(Layer & left, Layer & right) noexcept(noexcept(left.swap(right)));
 
 DLL_LINKAGE bool isSnapshotHeroSpecialEffect(const Bonus * bonus);
 DLL_LINKAGE bool isInPhysicalAfflictionGroup(const Bonus * bonus, const Groups & history);

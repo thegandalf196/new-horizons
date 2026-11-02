@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "RecipientBonusOverlay.h"
+#include <type_traits>
 #include "../battle/NewHorizonsSepulchralGrip.h"
 #include "BonusList.h"
 #include "../battle/TimeStopState.h"
@@ -59,6 +60,22 @@ void actualizeEffect(BonusList & target, const Bonus & ef)
 
 namespace recipientBonusOverlay
 {
+// Member container swap is allocation-free only with interchangeable default
+// allocators and nonthrowing comparator exchange. Keep these concrete guards
+// next to the Layer owner rather than assuming generic Layer move is noexcept.
+static_assert(std::allocator_traits<Records::allocator_type>::is_always_equal::value);
+static_assert(std::allocator_traits<Values::allocator_type>::is_always_equal::value);
+static_assert(std::allocator_traits<decltype(Layer::removed)::allocator_type>::is_always_equal::value);
+static_assert(std::allocator_traits<Groups::allocator_type>::is_always_equal::value);
+static_assert(std::is_nothrow_swappable_v<decltype(Layer::removed)::key_compare>);
+static_assert(std::is_nothrow_swappable_v<Groups::key_compare>);
+static_assert(std::is_nothrow_swappable_v<Layer>);
+
+void swap(Layer & left, Layer & right) noexcept(noexcept(left.swap(right)))
+{
+	left.swap(right);
+}
+
 Layer::Layer(const View & source)
 	: added(source.added), updated(source.updated), removed(source.removed),
 	stackedSnapshot(source.stackedSnapshot), unstackedSnapshot(source.unstackedSnapshot),

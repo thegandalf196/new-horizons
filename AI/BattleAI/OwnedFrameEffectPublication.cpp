@@ -27,7 +27,7 @@ void OwnedFrameEffectQueries::publish()
 		if(isolated && actual[i]->unit().unitId() != target->unitId()) continue;
 		auto & to = *actual[i]->data; auto & from = *order[i]->data;
 		battle::exchangePreparedUnitStateValues(*to.subject, *from.subject);
-		std::swap(to.ledger, from.ledger); to.sourceReplacements.swap(from.sourceReplacements);
+		to.ledger.swap(from.ledger); to.sourceReplacements.swap(from.sourceReplacements);
 		to.pendingPayloads.swap(from.pendingPayloads); to.env.swap(peers[i].environment);
 		to.peerQueries->swap(peers[i].queries); to.subject->bindStateEnvironment(to.env.get());
 		to.hasCurrentRoster = true;

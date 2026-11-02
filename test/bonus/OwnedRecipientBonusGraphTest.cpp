@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
+#include "../../lib/bonuses/RecipientBonusOverlay.h"
+#include <type_traits>
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Limiters.h"
@@ -259,4 +261,56 @@ TEST(OwnedRecipientBonusGraphTest, BatchPoolRetiresNestedParameterCycleOnlyAfter
 	EXPECT_NE(graphs[1]->payload(0)->parameters, nullptr);
 	graphs[1].reset(); EXPECT_TRUE(weak.expired());
 	root->parameters.reset(); first->parameters.reset(); second->parameters.reset();
+}
+
+TEST(OwnedRecipientBonusGraphTest, LayerPublicationSwapPreservesStorageIdentityAndExchangesEveryField)
+{
+	using namespace recipientBonusOverlay;
+	static_assert(std::is_nothrow_swappable_v<Layer>);
+	const auto firstRecord = speed(3), secondRecord = speed(7);
+	Records added{firstRecord}, updated{secondRecord};
+	std::set<std::shared_ptr<Bonus>> removed{firstRecord};
+	std::optional<Values> stacked{Values{*secondRecord}};
+	std::optional<Records> unstacked{Records{firstRecord, secondRecord}};
+	Groups groups{{BonusSource::OTHER, BonusSourceID()}};
+	const bool earned = true;
+	Layer prepared(View{added, updated, removed, stacked, unstacked, groups, earned});
+	prepared.clockParents = std::make_shared<ParentClockRecipe>(prepared);
+	Records emptyRecords;
+	std::set<std::shared_ptr<Bonus>> emptyRemoved;
+	std::optional<Values> noStacked;
+	std::optional<Records> noUnstacked;
+	Groups noGroups;
+	const bool notEarned = false;
+	Layer actual(View{emptyRecords, emptyRecords, emptyRemoved, noStacked, noUnstacked, noGroups, notEarned});
+	const auto * addedBuffer = prepared.added.data();
+	const auto * stackedBuffer = prepared.stackedSnapshot->data();
+	const auto * unstackedBuffer = prepared.unstackedSnapshot->data();
+	const auto * removalNode = &*prepared.removed.begin();
+	const auto * groupNode = &*prepared.capturedGroups.begin();
+	const auto parent = prepared.clockParents;
+	using std::swap;
+	swap(actual, prepared);
+	EXPECT_EQ(actual.added.data(), addedBuffer);
+	EXPECT_EQ(actual.added.front(), firstRecord);
+	EXPECT_EQ(actual.updated.front(), secondRecord);
+	EXPECT_EQ(actual.stackedSnapshot->data(), stackedBuffer);
+	EXPECT_EQ(actual.unstackedSnapshot->data(), unstackedBuffer);
+	EXPECT_EQ(&*actual.removed.begin(), removalNode);
+	EXPECT_EQ(&*actual.capturedGroups.begin(), groupNode);
+	EXPECT_TRUE(actual.veteranCohesionEarned);
+	EXPECT_EQ(actual.clockParents, parent);
+	EXPECT_FALSE(prepared.hasEdits());
+	EXPECT_FALSE(prepared.stackedSnapshot);
+	EXPECT_FALSE(prepared.unstackedSnapshot);
+	EXPECT_EQ(firstRecord->val, 3);
+	EXPECT_EQ(secondRecord->val, 7);
+	swap(actual, prepared);
+	EXPECT_FALSE(actual.hasEdits());
+	EXPECT_EQ(prepared.added.data(), addedBuffer);
+	EXPECT_EQ(prepared.stackedSnapshot->data(), stackedBuffer);
+	EXPECT_EQ(prepared.clockParents, parent);
+	prepared.swap(prepared);
+	EXPECT_EQ(prepared.added.data(), addedBuffer);
+	EXPECT_EQ(prepared.clockParents, parent);
 }
