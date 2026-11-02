@@ -24,7 +24,9 @@ class BootstrapClientArgumentsTest(unittest.TestCase):
     def test_absent_optin_preserves_ordinary_argument_policy(self):
         with mock.patch.dict(HELPER.os.environ, {}, clear=True):
             for arguments in ([], ["--disable-video", "--savefrequency", "0"],
-                              ["--testmap", "Maps/map.vmap", "--spectate"]):
+                              ["--testmap", "Maps/map.vmap", "--spectate"],
+                              ["--testmap", "Maps/map.vmap", "--spectate", "--spectate-skip-battle"],
+                              ["--spectate-skip-battle", "--spectate"]):
                 HELPER.validate_client_args(arguments)
             with self.assertRaises(HELPER.Refusal):
                 HELPER.validate_client_args(["--onlyAI"])
@@ -56,7 +58,8 @@ class BootstrapClientArgumentsTest(unittest.TestCase):
                 mock.patch.object(HELPER.subprocess, "run") as run:
             for arguments in (["--testmap", "Maps/map.vmap"], ["--testsave", "Saves/map.vcgm1"],
                               ["--onlyAI"], ["--headless"], ["--spectate"], ["--spectate=true"],
-                              ["--testmap=Maps/map.vmap"]):
+                              ["--testmap=Maps/map.vmap"], ["--spectate-skip-battle"],
+                              ["--spectate", "--spectate-skip-battle"]):
                 with self.subTest(arguments=arguments), self.assertRaises(HELPER.Refusal):
                     HELPER.validate_client_args(arguments)
             popen.assert_not_called()
@@ -372,7 +375,7 @@ class PrivateLaunchTest(unittest.TestCase):
 
     def test_native_vmap_spectate_preserves_exact_argv(self):
         client_args = ['--disable-video', '--savefrequency', '0', '--testmap',
-                       'Maps/Controlled fixture/Animation witness.vmap', '--spectate']
+                       'Maps/Controlled fixture/Animation witness.vmap', '--spectate', '--spectate-skip-battle']
         with self._patch_boundaries(), mock.patch.object(
                 HELPER.subprocess, 'run', return_value=mock.Mock(returncode=0)) as run:
             self.assertEqual(HELPER.main(self._args('--verify-only', '--', *client_args)), 0)
@@ -395,7 +398,11 @@ class PrivateLaunchTest(unittest.TestCase):
         invalid = [['--spectate', '--spectate'], ['--testmap'],
                    ['--testmap', '--spectate'],
                    ['--testmap', 'Maps/a.vmap', '--testmap', 'Maps/b.h3m'],
-                   ['--spectate=true'], ['--onlyAI'], ['--nointro'],
+                   ['--spectate=true'], ['--onlyAI'], ['--headless'], ['--nointro'],
+                   ['--spectate-skip-battle'], ['--spectate-skip-battle=true'],
+                   ['--spectate', '--spectate-skip-battle', '--spectate-skip-battle'],
+                   ['--spectate', '--spectate-skip-battle', 'true'],
+                   ['--spectate', '--spectate-skip-battle-result'],
                    ['--testmap', 'Maps/a.vmap', '--spectate', 'true']]
         with self._patch_boundaries(), mock.patch.object(HELPER.subprocess, 'run') as run:
             for arguments in invalid:
@@ -412,7 +419,7 @@ class PrivateLaunchTest(unittest.TestCase):
         # Client arguments are rejected before accessing any Wine paths/pins.
         with mock.patch.object(HELPER.subprocess, 'Popen') as popen:
             with self.assertRaises(HELPER.Refusal):
-                HELPER.wine_fullgame_plan(SimpleNamespace(), ['--testmap', 'Maps/map.vmap', '--spectate'])
+                HELPER.wine_fullgame_plan(SimpleNamespace(), ['--testmap', 'Maps/map.vmap', '--spectate', '--spectate-skip-battle'])
             with self.assertRaises(HELPER.Refusal):
                 HELPER.wine_surface_plan(SimpleNamespace(), ['--spectate'])
             popen.assert_not_called()

@@ -26,6 +26,7 @@ Only these optional client arguments are accepted after --:
   --savefrequency 0
   --testmap Maps/<relative-map>.h3m (or .vmap)
   --spectate
+  --spectate-skip-battle (requires --spectate)
 """
 import argparse
 import hashlib
@@ -480,13 +481,13 @@ def validate_client_args(client_args):
                 "same-session", "late-session", "replaced-owner"):
             raise Refusal("Fixed Cure bootstrap requires one selected callback mode")
         if any(value in client_args for value in
-               ("--testmap", "--testsave", "--onlyAI", "--headless", "--spectate")):
+               ("--testmap", "--testsave", "--onlyAI", "--headless", "--spectate", "--spectate-skip-battle")):
             raise Refusal("Conflicting client arguments with fixed human bootstrap")
     index = 0
     seen = set()
     while index < len(client_args):
         option = client_args[index]
-        if option in ("--disable-video", "--spectate"):
+        if option in ("--disable-video", "--spectate", "--spectate-skip-battle"):
             if option in seen:
                 raise Refusal(f"Duplicate client argument: {option}")
             seen.add(option)
@@ -512,6 +513,8 @@ def validate_client_args(client_args):
             index += 2
             continue
         raise Refusal(f"Client argument is not allowlisted: {option!r}")
+    if "--spectate-skip-battle" in seen and "--spectate" not in seen:
+        raise Refusal("--spectate-skip-battle requires --spectate")
 
 
 def report_client_args(args, client_args):
