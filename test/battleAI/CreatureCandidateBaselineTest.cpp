@@ -35,6 +35,8 @@ protected:
 	struct ForecastRow { size_t ordinal; bool waited; float score; };
 	std::vector<ForecastRow> forecastRows;
 	bool historicalOrders = false;
+	bool historicalHeroCapture = false;
+	bool revisedCoefficientCapture = false;
 	static constexpr float strengthRatio = 0.5f; // Explicit public evaluator input, not a recalculated army ratio.
 	CStack * actor = nullptr;
 	CStack * reserve = nullptr;
@@ -43,6 +45,30 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		BattleTestFixture::mapLoaded(map);
+		if(historicalHeroCapture)
+		{
+			// Valid predecessor absence, captured by native initialization rather
+			// than injected into a live Hero or substituted after loading.
+			auto perks = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+			perks.Struct().erase("quickStudyPolicy");
+			perks.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+			auto growth = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
+			growth.Struct().erase("additionalSpecialties");
+			growth.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, growth);
+		}
+		if(revisedCoefficientCapture)
+		{
+			auto commands = LIBRARY->engineSettings()->getValue(EGameSettings::COMBAT_HERO_COMMANDS);
+			// Same revised representation, different valid native formula.
+			auto & feint = commands["commands"]["feint"]["effects"]["retaliationDamageReductionPercent"];
+			feint["base"].Integer() = 4;
+			feint["leadership"].Integer() = 0;
+			feint["cap"].Integer() = 4;
+			commands.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, commands);
+		}
 		if(historicalOrders)
 		{
 			const JsonNode file(JsonPath::builtin("config/newHorizonsCombatV3"));
@@ -122,7 +148,33 @@ protected:
 		initializeAI(PlayerColor(0));
 	}
 
-	void prepareNativeProfile(const std::string & heroKey, const std::string & troopKey)
+	void roundTripCapturedProfiles()
+	{
+		const auto ids = gameState()->getMap().getHeroesOnMap();
+		std::map<ObjectInstanceID, std::pair<JsonNode, JsonNode>> captures;
+		for(const auto id : ids)
+		{
+			const auto * hero = gameState()->getHero(id);
+			captures.emplace(id, std::make_pair(hero->getPrimaryGrowthRules(), hero->getPerkState().rules));
+		}
+		const auto commands = gameState()->getHeroCommandRules();
+		// Use the established full-world loader, then resave/load. Battle creation
+		// and all quality checks below consume the restored native objects.
+		for(int pass = 0; pass < 2; ++pass)
+		{
+			ASSERT_NO_THROW(gameState()->loadFromMemory(gameState()->saveToMemory()));
+			EXPECT_EQ(gameState()->getHeroCommandRules(), commands);
+			for(const auto & [id, capture] : captures)
+			{
+				const auto * hero = gameState()->getHero(id);
+				ASSERT_NE(hero, nullptr);
+				EXPECT_EQ(hero->getPrimaryGrowthRules(), capture.first);
+				EXPECT_EQ(hero->getPerkState().rules, capture.second);
+			}
+		}
+	}
+
+	void prepareNativeProfile(const std::string & heroKey, const std::string & troopKey, bool roundTrip = false)
 	{
 		// Build real authored level-one heroes directly. BattleTestFixture::startGame
 		// neutralizes heroes, so it is deliberately not used in this scenario.
@@ -133,11 +185,19 @@ protected:
 			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(1)).heroExperience(0)
 			.heroGarrison({{creatureByName("core:pikeman"), 1}});
 		ASSERT_NO_FATAL_FAILURE(startWithMap(std::move(builder)));
+		const auto * originalAttacker = findHeroByOwner(PlayerColor(0));
+		const auto * originalDefender = findHeroByOwner(PlayerColor(1));
+		ASSERT_NE(originalAttacker, nullptr);
+		ASSERT_NE(originalDefender, nullptr);
+		const auto attackerId = originalAttacker->id;
+		const auto defenderId = originalDefender->id;
+		if(roundTrip)
+			ASSERT_NO_FATAL_FAILURE(roundTripCapturedProfiles());
 		server.gameState = gameState();
 		gameHandler = std::make_shared<CGameHandler>(server, gameState());
 		gameHandler->randomizer->setSeed(seed);
-		attackerSideHero = findHeroByOwner(PlayerColor(0));
-		defenderSideHero = findHeroByOwner(PlayerColor(1));
+		attackerSideHero = gameState()->getHero(attackerId);
+		defenderSideHero = gameState()->getHero(defenderId);
 		ASSERT_NE(attackerSideHero, nullptr);
 		ASSERT_NE(defenderSideHero, nullptr);
 		ASSERT_EQ(attackerSideHero->getHeroTypeID(), HeroTypeID(HeroTypeID::decode(heroKey)));
@@ -1092,4 +1152,62 @@ TEST_F(CreatureCandidateBaselineTest, NativeSorshaActiveExecutionerMatchesFullRe
 	RecordProperty("NativeExecutionerFullHealthMinDamage", std::to_string(fullHealthDamage.min));
 	RecordProperty("NativeExecutionerWoundedMinDamage", std::to_string(woundedDamage.min));
 	ASSERT_NO_FATAL_FAILURE(comparePreparedMelee());
+}
+
+TEST_F(CreatureCandidateBaselineTest, CurrentNativeCaptureRoundTripMatchesFullReferenceWithOmissions)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareNativeProfile("core:clavius", "core:skeleton", true));
+	ASSERT_NO_FATAL_FAILURE(comparePreparedMelee());
+}
+
+TEST_F(CreatureCandidateBaselineTest, HistoricalNativeCaptureAbsenceRoundTripMatchesFullReferenceWithOmissions)
+{
+	historicalHeroCapture = true;
+	ASSERT_NO_FATAL_FAILURE(prepareNativeProfile("core:clavius", "core:skeleton", true));
+	for(const auto * hero : {attackerSideHero, defenderSideHero})
+	{
+		EXPECT_FALSE(hero->getPerkState().rules.Struct().contains("quickStudyPolicy"));
+		EXPECT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("additionalSpecialties"));
+		EXPECT_NE(hero->getPerkState().rules,
+			LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS));
+	}
+	RecordProperty("HistoricalCaptureQualification", "authored predecessor absence; native init/full-world load/resave; not an earned Day115 fixture");
+	ASSERT_NO_FATAL_FAILURE(comparePreparedMelee());
+}
+
+TEST_F(CreatureCandidateBaselineTest, RevisedCapturedCoefficientRoundTripMatchesFullReferenceWithOmissions)
+{
+	revisedCoefficientCapture = true;
+	ASSERT_NO_FATAL_FAILURE(prepareNativeProfile("core:clavius", "core:skeleton", true));
+	ASSERT_TRUE(heroCommands::isRevisedRules(battle()->getHeroCommandRules()));
+	const auto & defaults = LIBRARY->engineSettings()->getValue(EGameSettings::COMBAT_HERO_COMMANDS);
+	EXPECT_NE(battle()->getHeroCommandRules(), defaults);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::FEINT)));
+	const auto issued = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::FEINT);
+	ASSERT_TRUE(issued);
+	ASSERT_TRUE(issued->revision);
+	ASSERT_TRUE(issued->revision->potencyFinalized);
+	ASSERT_TRUE(issued->hasScheduledRecipients(battle()->battleGetRound()));
+	const auto & captured = battle()->getHeroCommandRules()["commands"]["feint"]["effects"]["retaliationDamageReductionPercent"];
+	const int activeReduction = heroCommands::revisedFeintReductionFor(*issued, actor->unitId());
+	// Native finalization must respect the captured cap. This active grant is
+	// below even the installed formula's base; merely differing JSON cannot pass.
+	ASSERT_GT(activeReduction, 0);
+	EXPECT_EQ(issued->revision->feintCap, captured["cap"].Integer());
+	EXPECT_LE(activeReduction, captured["cap"].Integer());
+	EXPECT_LT(activeReduction, defaults["commands"]["feint"]["effects"]["retaliationDamageReductionPercent"]["base"].Integer());
+	ASSERT_EQ(battle()->battleActiveUnit()->unitId(), actor->unitId());
+	RecordProperty("CapturedCoefficientActiveFeintReduction", std::to_string(activeReduction));
+	ASSERT_NO_FATAL_FAILURE(comparePreparedMelee());
+}
+
+TEST_F(CreatureCandidateBaselineTest, LegacyOrderRepresentationRoundTripRemainsOutsideOrdinaryScreening)
+{
+	historicalOrders = true;
+	ASSERT_NO_FATAL_FAILURE(prepareNativeProfile("core:clavius", "core:skeleton", true));
+	ASSERT_FALSE(heroCommands::isRevisedRules(battle()->getHeroCommandRules()));
+	const auto before = worldAndRng();
+	EXPECT_FALSE(creatureCandidateScreening::supportsVisibleOrdinaryMelee(actor, *simulation()));
+	EXPECT_EQ(worldAndRng(), before);
 }

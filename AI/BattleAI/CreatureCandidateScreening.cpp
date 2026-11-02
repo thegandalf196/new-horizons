@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 #include "../../lib/GameLibrary.h"
-#include "../../lib/GameSettings.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/HeroCommandRevision.h"
@@ -67,13 +66,8 @@ bool supportedHero(const VisibleHeroPolicy & policy, bool actorSide)
 	const auto * hero = policy.legacyHero();
 	if(!hero || !hero->getHeroType())
 		return false;
-	const auto & defaults = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
-	const auto & captured = hero->getPrimaryGrowthRules();
-	if(hero->getPerkState().rules != LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS)
-		|| captured["rulesetVersion"] != defaults["rulesetVersion"]
-		|| captured["skillSpecialties"] != defaults["skillSpecialties"]
-		|| captured["additionalSpecialties"] != defaults["additionalSpecialties"])
-		return false;
+	// Native init/load owns captured-rule validation. Valid saved policies may
+	// predate installed defaults; retained AP/full scoring reads those captures.
 	// Preserve malformed native skill-reference rejection independently of policy.
 	if(std::ranges::any_of(hero->secSkills, [](const auto & entry)
 		{ return entry.second != 0 && !entry.first.toSkill(); }))
@@ -99,7 +93,6 @@ bool supportedOrdinaryState(const battle::Unit * actor, const HypotheticBattle &
 	if(!actor
 		|| state.usesOwnedFrameQueries() || !state.hasCanonicalDamageQuerySources()
 		|| !state.getBattle() || !heroCommands::isRevisedRules(state.getBattle()->getHeroCommandRules())
-		|| state.getBattle()->getHeroCommandRules() != LIBRARY->engineSettings()->getValue(EGameSettings::COMBAT_HERO_COMMANDS)
 		|| state.getDefendedTown() != nullptr)
 		return false;
 	const auto & crisis = state.getBattle()->getCrisisCommandState();
