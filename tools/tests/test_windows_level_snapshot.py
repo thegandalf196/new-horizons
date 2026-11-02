@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class LevelSnapshotTest(unittest.TestCase):
     def test_skill_choice_labels_show_only_offered_rank(self):
-        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
         choices = source.split('void CLevelWindow::createSkillBox()', 1)[1]
         self.assertIn('translate("core.skilllev", offeredRank - 1)', choices)
         self.assertIn('comp->customSubtitle = offeredRankText + "\\n"', choices)
@@ -19,7 +19,7 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertNotIn('new-horizons.levelUp.skill.rankTransition', choices)
 
     def test_native_panel_footer_has_separate_regions(self):
-        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
         background = (ROOT / 'client/render/AssetGenerator.cpp').read_text()
         method = background.split(
             'AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground()', 1
@@ -41,7 +41,7 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertLessEqual(568 + 29, 600)
 
     def test_perk_exposes_distinct_parent_icon_name_and_rank(self):
-        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
         component = source.split('class CLevelUpPerkComponent', 1)[1].split('CLevelWindow::CLevelWindow', 1)[0]
         self.assertIn('setCustomIcon(icon)', component)
         self.assertIn('CComponent::small', component)
@@ -51,7 +51,7 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertIn('parentSkill->moveTo(pos.topLeft() + Point(8, 48))', component)
 
     def test_compact_one_and_two_choice_extents_match_recesses(self):
-        source = (ROOT / 'client/windows/GUIClasses.cpp').read_text()
+        source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
         choices = source.split('void CLevelWindow::createSkillBox()', 1)[1]
         perk = source.split('class CLevelUpPerkComponent', 1)[1].split('CLevelWindow::CLevelWindow', 1)[0]
         background = (ROOT / 'client/render/AssetGenerator.cpp').read_text().split(
