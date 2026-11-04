@@ -280,12 +280,20 @@ TEST_F(NewHorizonsCommandEfficiencyAITest, VeteranCommanderAISecondWindProjectio
 	spells::BattleCast arrowCast(battle(), attackerSideHero, spells::Mode::HERO, arrow);
 	const auto arrowMechanics = arrow->battleMechanics(&arrowCast);
 	ASSERT_TRUE(arrowMechanics->canBeCastAt({spells::Destination(enemy)}));
-	ASSERT_EQ(arrowMechanics->adjustEffectValue(enemy), 55);
+	// Current Arrow has base20; School scaling multiplies its zero SP term.
+	// The ordinary zero-Overcharge cast therefore retains exactly the base.
+	const auto & arrowFormula = battle()->getMagicRules()["spells"]["core:magicArrow"]["directDamage"];
+	ASSERT_EQ(arrowFormula["base"].Integer(), 20);
+	ASSERT_EQ(arrowFormula["powerCoefficient"].Integer(), 20);
+	ASSERT_EQ(arrowMechanics->getEffectPower(), 0);
+	ASSERT_EQ(arrowMechanics->getOvercharge(), 0);
+	constexpr int64_t expectedArrowDamage = 20;
+	ASSERT_EQ(arrowMechanics->adjustEffectValue(enemy), expectedArrowDamage);
 	const int leadershipEfficiency = 120 + 25;
 	const int expectedPercent = std::clamp(50 + static_cast<int>(std::lround(
 		0.015 * static_cast<double>(capacity->capacity) * leadershipEfficiency / 100.0)), 0, 100);
 	ASSERT_GT(static_cast<int64_t>(std::floor(static_cast<double>(before.damage.min)
-		* expectedPercent / 100.0)), 55);
+		* expectedPercent / 100.0)), expectedArrowDamage);
 
 	class Observer final : public heroActionSelection::Observer
 	{
