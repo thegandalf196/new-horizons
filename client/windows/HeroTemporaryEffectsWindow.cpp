@@ -44,7 +44,8 @@ std::string effectText(const Bonus & bonus)
 
 std::string effectSource(const Bonus & bonus)
 {
-	if(bonus.source == BonusSource::OTHER && bonus.description.empty() && bonus.stacking == "stables"
+	if(bonus.source == BonusSource::OBJECT_TYPE && bonus.sid == BonusSourceID(MapObjectID(Obj::STABLES))
+		&& bonus.description.empty() && bonus.stacking == "stables"
 		&& bonus.type == BonusType::MOVEMENT && bonus.valType == BonusValueType::ADDITIVE_VALUE
 		&& bonus.subtype == BonusSubtypeID(BonusCustomSubtype::heroMovementLand)
 		&& bonus.duration == BonusDuration::ONE_WEEK)
