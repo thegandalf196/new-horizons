@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "PurifyRuleFixtures.h"
+#include "../../AI/BattleAI/HeroActionAdmission.h"
 #include "SelectedHeroUtilityCapture.h"
 #include "HeroActionSelectionObserver.h"
 #include "HeroActionSelectionState.h"
@@ -186,24 +187,42 @@ protected:
 		EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::DEFENDER));
 		EXPECT_TRUE(callback->submitted.empty());
 		ASSERT_TRUE(battle()->battleCanBeginHeroCommand(BattleSide::ATTACKER, HeroCommand::FEINT));
-		const auto preparedOrder = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER, HeroCommand::FEINT, {});
-		ASSERT_TRUE(preparedOrder);
-		ASSERT_TRUE(preparedOrder->revision);
+		const auto rawOrder = battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER, HeroCommand::FEINT, {});
+		ASSERT_TRUE(rawOrder);
+		ASSERT_TRUE(rawOrder->revision);
 		const auto capacity = attackerSideHero->getLeadershipCapacity();
 		ASSERT_TRUE(capacity);
 		// Accepted current rules: base15 + 0.015*Leadership at Advanced120%,
 		// then Combined Arms +5 percentage points, with a final 60% cap.
-		const int expected = std::min(60, static_cast<int>(std::lround(
-			15 + 0.015 * std::max<int64_t>(0, capacity->capacity) * 1.2)) + 5);
-		EXPECT_EQ(preparedOrder->revision->feintReductionPercent, expected);
-		EXPECT_EQ(preparedOrder->revision->feintCap, 60);
-		EXPECT_EQ(preparedOrder->revision->expiresAfterRound, battle()->getRound());
+		const int intrinsic = static_cast<int>(std::lround(
+			15 + 0.015 * std::max<int64_t>(0, capacity->capacity) * 1.2));
+		const int expected = std::min(60, intrinsic + 5);
+		EXPECT_FALSE(rawOrder->revision->potencyFinalized);
+		EXPECT_EQ(rawOrder->revision->feintReductionPercent, intrinsic);
+		EXPECT_EQ(rawOrder->revision->feintCompanionPercent, 5);
 		const BattleAttackInfo melee(active, enemy, 0, false);
 		DamageEstimation beforeRetaliation;
 		const auto before = battle()->battleEstimateDamage(melee, &beforeRetaliation);
 		const auto healthBeforeProjection = enemy->getAvailableHealth();
-		HypotheticBattle projected(environment.get(), callback->getBattle(BattleID(0)));
-		projected.setHeroOrderState(BattleSide::ATTACKER, preparedOrder);
+		const auto live = callback->getBattle(BattleID(0));
+		const auto liveBefore = heroSelectionTest::snapshot(*live, *gameHandler->randomizer,
+			dynamic_cast<CRandomGenerator &>(*getRNG()));
+		HypotheticBattle projected(environment.get(), live);
+		PossibleSpellcast candidate;
+		candidate.command = HeroCommand::FEINT;
+		const auto admission = heroActionProjection::admitCandidate(projected, BattleSide::ATTACKER, candidate);
+		ASSERT_TRUE(admission.admitted);
+		ASSERT_TRUE(admission.orderEffects);
+		ASSERT_TRUE(admission.orderAllowance);
+		ASSERT_TRUE(projected.projectAcceptedHeroOrder(BattleSide::ATTACKER,
+			*admission.orderEffects, *admission.orderAllowance));
+		const auto accepted = projected.getHeroOrderState(BattleSide::ATTACKER, HeroCommand::FEINT);
+		ASSERT_TRUE(accepted);
+		ASSERT_TRUE(accepted->revision);
+		EXPECT_TRUE(accepted->revision->potencyFinalized);
+		EXPECT_EQ(accepted->revision->feintReductionPercent, expected);
+		EXPECT_EQ(accepted->revision->feintCap, 60);
+		EXPECT_EQ(accepted->revision->expiresAfterRound, battle()->getRound());
 		DamageEstimation projectedRetaliation;
 		const auto projectedHit = projected.battleEstimateDamage(melee, &projectedRetaliation);
 		EXPECT_EQ(projectedHit.damage.min, before.damage.min);
@@ -216,6 +235,8 @@ protected:
 		initiatingMaximum = projectedHit.damage.max;
 		retaliationMinimum = projectedRetaliation.damage.min;
 		retaliationMaximum = projectedRetaliation.damage.max;
+		EXPECT_EQ(heroSelectionTest::snapshot(*live, *gameHandler->randomizer,
+			dynamic_cast<CRandomGenerator &>(*getRNG())), liveBefore);
 	}
 
 	bool chooseOrder(HeroCommand expected, BattleAction & selected)

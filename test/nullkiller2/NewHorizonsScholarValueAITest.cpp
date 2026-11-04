@@ -11,6 +11,7 @@
 #include "lib/GameLibrary.h"
 #include "lib/callback/Calendar.h"
 #include "lib/callback/GameRandomizer.h"
+#include "lib/entities/artifact/ArtifactUtils.h"
 #include "lib/entities/creature/NewHorizonsMusterRules.h"
 #include "lib/entities/hero/NewHorizonsLearningExchangeSpecialties.h"
 #include "lib/mapObjects/CGHeroInstance.h"
@@ -227,7 +228,13 @@ TEST_F(NewHorizonsScholarValueAITest, UnboundedBudgetDoesNotInventScholarPermiss
 TEST_F(NewHorizonsScholarValueAITest, SchoolScrollAndBookFailuresContributeNoIllegalSpellValue)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_TRUE(handler->giveHeroNewScroll(sanya, named("core:magicArrow"), ArtifactPosition::MISC1));
+	const auto scrollSlot = ArtifactUtils::getArtEquippedPosition(sanya, ArtifactID::SPELL_SCROLL);
+	ASSERT_NE(scrollSlot, ArtifactPosition::PRE_FIRST);
+	ASSERT_TRUE(ArtifactUtils::isSlotEquipment(scrollSlot));
+	ASSERT_TRUE(sanya->isPositionFree(scrollSlot));
+	ASSERT_TRUE(handler->giveHeroNewScroll(sanya, named("core:magicArrow"), scrollSlot));
+	ASSERT_NE(sanya->getArt(scrollSlot), nullptr);
+	ASSERT_FALSE(sanya->spellbookContainsSpell(named("core:magicArrow")));
 	expectPureReward(sanya, scholar, 0); // A temporary scroll is not permanent teaching knowledge.
 	handler->changeSpells(sanya, true, {named("core:implosion")});
 	for(const auto school : SCHOOLS)

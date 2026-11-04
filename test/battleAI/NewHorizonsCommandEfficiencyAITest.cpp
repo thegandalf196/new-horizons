@@ -4,6 +4,9 @@
  */
 #include "StdInc.h"
 #include "PurifyRuleFixtures.h"
+#include "HeroActionSelectionObserver.h"
+#include "../../AI/BattleAI/HeroActionAdmission.h"
+#include "../../lib/spells/BattleSpellMechanics.h"
 
 #include "../SpellPointTestUtils.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -144,6 +147,20 @@ protected:
 		}
 		ASSERT_NE(active, nullptr);
 		ASSERT_NE(enemy, nullptr);
+		if(order == HeroCommand::SECOND_WIND)
+		{
+			// Isolate the immediate extra shot from movement/exchange risk.
+			// The spent ranged recipient retains its ordinary movement and shots.
+			for(auto * unit : {active, enemy})
+			{
+				const auto initiative = unit->getInitiative();
+				unit->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+					BonusType::STACKS_MOVEMENT_RANGE, BonusSource::OTHER,
+					-static_cast<int32_t>(unit->getMovementRange()), BonusSourceID()));
+				ASSERT_EQ(unit->getMovementRange(), 0u);
+				EXPECT_EQ(unit->getInitiative(), initiative);
+			}
+		}
 
 		beginCombat();
 		if(windTarget)
@@ -253,10 +270,69 @@ TEST_F(NewHorizonsCommandEfficiencyAITest, VeteranCommanderAISecondWindProjectio
 	const auto before = battle()->battleEstimateDamage(attack);
 	ASSERT_GT(before.damage.min, 0);
 
-	BattleAction action;
-	ASSERT_TRUE(chooseOrder(HeroCommand::SECOND_WIND, action));
+	ASSERT_EQ(active->getMovementRange(), 0u);
+	ASSERT_EQ(enemy->getMovementRange(), 0u);
+	ASSERT_GT(windTarget->getMovementRange(), 0u);
+	ASSERT_TRUE(windTarget->moved());
+	ASSERT_TRUE(battle()->battlePrepareHeroOrderState(BattleSide::ATTACKER,
+		HeroCommand::SECOND_WIND, {windTarget->unitId()}));
+	const auto * arrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	spells::BattleCast arrowCast(battle(), attackerSideHero, spells::Mode::HERO, arrow);
+	const auto arrowMechanics = arrow->battleMechanics(&arrowCast);
+	ASSERT_TRUE(arrowMechanics->canBeCastAt({spells::Destination(enemy)}));
+	ASSERT_EQ(arrowMechanics->adjustEffectValue(enemy), 55);
+	const int leadershipEfficiency = 120 + 25;
+	const int expectedPercent = std::clamp(50 + static_cast<int>(std::lround(
+		0.015 * static_cast<double>(capacity->capacity) * leadershipEfficiency / 100.0)), 0, 100);
+	ASSERT_GT(static_cast<int64_t>(std::floor(static_cast<double>(before.damage.min)
+		* expectedPercent / 100.0)), 55);
+
+	class Observer final : public heroActionSelection::Observer
+	{
+	public:
+		heroSelectionTest::Observer maximum;
+		std::optional<float> secondWind;
+		void candidate(heroActionSelection::CandidateValue value) noexcept override
+		{
+			maximum.candidate(value);
+			if(value.command == HeroCommand::SECOND_WIND && (!secondWind || *secondWind < value.value))
+				secondWind = value.value;
+		}
+		void selected(heroActionSelection::SelectionValue value) noexcept override { maximum.selected(value); }
+	} observer;
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
+		BattleSide::ATTACKER, 1.0f, 2);
+	evaluator.selectStackAction(active);
+	ASSERT_TRUE(evaluator.canCastSpell());
+	ASSERT_TRUE(evaluator.attemptCastingSpell(active, true, &observer));
+	SCOPED_TRACE("SecondWind=" + ::testing::PrintToString(observer.secondWind)
+		+ " best=" + std::to_string(observer.maximum.best.value)
+		+ " command=" + std::to_string(static_cast<int>(observer.maximum.best.command))
+		+ " spell=" + std::to_string(observer.maximum.best.spell.getNum()));
+	ASSERT_TRUE(observer.secondWind);
+	ASSERT_GT(*observer.secondWind, 0.0f);
+	ASSERT_TRUE(observer.maximum.hasMagicArrow);
+	ASSERT_EQ(callback->submitted.size(), 1u);
+	const auto action = callback->submitted.front();
+	ASSERT_NO_FATAL_FAILURE(observer.maximum.expectPerformedMatching(action));
 	ASSERT_EQ(action.actionType, EActionType::HERO_COMMAND);
 	EXPECT_EQ(action.command, HeroCommand::SECOND_WIND);
+	HypotheticBattle projected(environment.get(), callback->getBattle(BattleID(0)));
+	PossibleSpellcast candidate;
+	candidate.command = HeroCommand::SECOND_WIND;
+	candidate.commandTargets = {windTarget->unitId()};
+	const auto admission = heroActionProjection::admitCandidate(projected, BattleSide::ATTACKER, candidate);
+	ASSERT_TRUE(admission.admitted);
+	ASSERT_TRUE(admission.orderEffects);
+	ASSERT_TRUE(admission.orderAllowance);
+	ASSERT_TRUE(projected.projectAcceptedHeroOrder(BattleSide::ATTACKER,
+		*admission.orderEffects, *admission.orderAllowance));
+	const auto continuation = projected.projectOrderContinuation(BattleSide::ATTACKER,
+		*admission.orderAllowance, *admission.orderEffects);
+	ASSERT_EQ(continuation.kind, HypotheticBattle::ProjectedOrderContinuation::Kind::SECOND_WIND_ACTOR);
+	ASSERT_EQ(continuation.actor, windTarget->unitId());
+	const auto projectedDamage = projected.battleEstimateDamage(BattleAttackInfo(
+		projected.battleGetUnitByID(windTarget->unitId()), projected.battleGetUnitByID(enemy->unitId()), 0, true));
 	execute(action);
 	const auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(order);
@@ -264,12 +340,12 @@ TEST_F(NewHorizonsCommandEfficiencyAITest, VeteranCommanderAISecondWindProjectio
 	EXPECT_TRUE(order->secondWindActive);
 	EXPECT_EQ(order->primaryTargetUnitId, windTarget->unitId());
 
-	const int leadershipEfficiency = 120 + 25;
-	const int expectedPercent = std::clamp(50 + static_cast<int>(std::lround(
-		0.015 * static_cast<double>(capacity->capacity) * leadershipEfficiency / 100.0)), 0, 100);
 	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero), expectedPercent);
 	const auto after = battle()->battleEstimateDamage(attack);
 	EXPECT_EQ(after.attackerOrderCause, HeroCommand::SECOND_WIND);
+	EXPECT_EQ(after.damage.min, projectedDamage.damage.min);
+	EXPECT_EQ(after.damage.max, projectedDamage.damage.max);
+	EXPECT_EQ(battle()->getActiveStackID(), windTarget->unitId());
 	const auto expectedMinimum = static_cast<int64_t>(std::floor(
 		static_cast<double>(before.damage.min) * expectedPercent / 100.0));
 	EXPECT_LE(std::abs(after.damage.min - expectedMinimum), 1);

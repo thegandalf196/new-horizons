@@ -26,7 +26,8 @@ protected:
   NullkillerTest::SetUp();
   ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
   TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
-  builder.size(36, false).playerActive(OWNER).hero({5, 5, 0}, HeroTypeID(0), OWNER).heroGarrison({{CreatureID(0), 10}});
+  builder.size(36, false).playerActive(OWNER).hero({5, 5, 0}, HeroTypeID(0), OWNER).heroGarrison({{CreatureID(0), 10}})
+   .town({12, 12, 0}, FactionID::CASTLE, OWNER);
   startWithMap(std::move(builder)); hero = findHeroAt({5, 5, 0}); ASSERT_NE(hero, nullptr);
   hero->secSkills.clear();
   const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
@@ -36,7 +37,11 @@ protected:
   hero->setSecSkillLevel(learning, 2, ChangeValueMode::ABSOLUTE);
   hero->applyPerkSelection({LEARNING, "new-horizons:learning.connoisseur"});
   hero->level = 6;
-  gateway = makeGateway(OWNER); gateway->nullkiller->heroManager->update();
+  gateway = makeGateway(OWNER);
+  // The ordinary role policy reserves MAIN slots for owned towns.
+  ASSERT_EQ(gateway->cc->getTownsInfo().size(), 1u);
+  ASSERT_EQ(gateway->cc->getHeroesInfo().size(), 1u);
+  gateway->nullkiller->heroManager->update();
   const auto pool = newHorizonsHeroes::connoisseurSkillCandidates(*gateway->cc, *hero, {});
   ASSERT_GT(pool.size(), 1u);
   const std::vector<SecondarySkill> cards(pool.begin(), pool.end());

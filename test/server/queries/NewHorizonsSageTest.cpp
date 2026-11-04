@@ -29,6 +29,19 @@ SpellID named(const char * name) { return SpellID(SpellID::decode(name)); }
 SpellSchool sorcery() { return SpellSchool(SpellSchool::decode("new-horizons:sorcery")); }
 SecondarySkill school(const char * name) { return SecondarySkill(SecondarySkill::decode(name)); }
 
+class SageVisitTestServer final : public GameHandlerTestServer
+{
+public:
+	using GameHandlerTestServer::GameHandlerTestServer;
+	size_t sageReceipts = 0;
+	void applyPack(CPackForClient & pack) override
+	{
+		if(dynamic_cast<SetNewHorizonsSageGuildVisit *>(&pack))
+			++sageReceipts;
+		GameHandlerTestServer::applyPack(pack);
+	}
+};
+
 class NewHorizonsSageTest : public TinyMapGameTest
 {
 protected:
@@ -131,16 +144,19 @@ TEST_F(NewHorizonsSageTest, CurrentExpertLearningLearnsOnlyOrdinaryVisibleGuildS
 	select(false, true);
 	EXPECT_FALSE(newHorizonsSage::selectSpell(*hero, *town));
 	const auto guildRows = town->spells;
-	GameHandlerTestServer server(gameState(), PLAYER);
+	SageVisitTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
 	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:magicArrow")));
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:implosion")));
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:dispel")));
 	EXPECT_EQ(town->spells, guildRows);
-	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().contains(town->id));
+	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
 	visit(handler);
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:dispel")));
+	EXPECT_EQ(server.sageReceipts, 0u);
+	EXPECT_TRUE(hero->visitedObjects.contains(town->id));
+	EXPECT_EQ(hero->getVisitedTown(), town);
 }
 
 TEST_F(NewHorizonsSageTest, CurrentWisdomSageChangesKnowledgeWithoutRevealingGuildSpells)
@@ -194,17 +210,21 @@ TEST_F(NewHorizonsSageTest, EachCurrentWisdomHolderRecordsItsVisitWithoutPublish
 	auto * other = findHeroAt({7, 5, 0});
 	ASSERT_NE(other, nullptr);
 	select(true, false, other);
-	GameHandlerTestServer server(gameState(), PLAYER);
+	SageVisitTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
 	town->setVisitingHero(nullptr);
 	handler.heroVisitCastle(town, other);
 	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[3].empty());
 	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
-	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().contains(town->id));
-	EXPECT_TRUE(other->getNewHorizonsSageGuildVisits().contains(town->id));
+	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
+	EXPECT_TRUE(other->getNewHorizonsSageGuildVisits().empty());
 	handler.heroVisitCastle(town, other);
 	EXPECT_FALSE(other->spellbookContainsSpell(named("core:haste")));
+	EXPECT_EQ(server.sageReceipts, 0u);
+	EXPECT_TRUE(hero->visitedObjects.contains(town->id));
+	EXPECT_TRUE(other->visitedObjects.contains(town->id));
+	EXPECT_EQ(other->getVisitedTown(), town);
 }
 
 TEST_F(NewHorizonsSageTest, PreAcquisitionFirstGuildVisitConsumesButGuildlessArrivalDoesNot)
@@ -217,7 +237,7 @@ TEST_F(NewHorizonsSageTest, PreAcquisitionFirstGuildVisitConsumesButGuildlessArr
 	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
 	setGuild(1);
 	visit(handler);
-	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().contains(town->id));
+	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
 	select(true, true);
 	visit(handler);
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:haste")));
@@ -232,7 +252,7 @@ TEST_F(NewHorizonsSageTest, FirstGuildVisitWithoutBookCannotBeReclaimedAfterBook
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
-	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().contains(town->id));
+	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
 	ASSERT_TRUE(handler.giveHeroNewArtifact(hero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK));
 	visit(handler);
 	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:magicArrow")));
@@ -265,7 +285,7 @@ TEST_F(NewHorizonsSageTest, CurrentWorldRoundtripPreservesFiveOrdinarySlotsAndVi
 	ASSERT_EQ(town->newHorizonsMageGuildVisibleSpells[0], 5);
 	EXPECT_FALSE(newHorizonsSage::wisdomReveal(*hero, *town));
 	const auto ordinary = town->spells[0];
-	GameHandlerTestServer server(gameState(), PLAYER);
+	SageVisitTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
 	EXPECT_EQ(town->spellsAtLevel(1, true), 5);
@@ -281,7 +301,13 @@ TEST_F(NewHorizonsSageTest, CurrentWorldRoundtripPreservesFiveOrdinarySlotsAndVi
 	EXPECT_EQ(savedTown->spells, town->spells);
 	EXPECT_EQ(savedHero->getSpellsInSpellbook(), hero->getSpellsInSpellbook());
 	EXPECT_EQ(savedTown->newHorizonsSageRevealedSpells, town->newHorizonsSageRevealedSpells);
-	EXPECT_TRUE(savedHero->getNewHorizonsSageGuildVisits().contains(town->id));
+	EXPECT_TRUE(savedHero->getNewHorizonsSageGuildVisits().empty());
+	EXPECT_EQ(server.sageReceipts, 0u);
+	EXPECT_TRUE(hero->visitedObjects.contains(town->id));
+	EXPECT_TRUE(savedHero->visitedObjects.contains(savedTown->id));
+	EXPECT_EQ(savedHero->getVisitedTown(), savedTown);
+	EXPECT_EQ(savedHero->getPerkState().rules, hero->getPerkState().rules);
+	EXPECT_EQ(savedHero->getMagicRules(), hero->getMagicRules());
 }
 
 TEST_F(NewHorizonsSageTest, TypedVisitRejectsStaleOrWrongRevealAtomicallyAndCurrentPacketRoundtrips)
