@@ -7,6 +7,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/SpellEffectPreview.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/texts/ITranslator.h"
 #include "../../lib/vcmi_endian.h"
 namespace
@@ -62,6 +63,10 @@ protected:
 }
 TEST_F(SpellbookNativeFontPresentationTest, ActualCanonicalFormatterFitsEveryCurrentRowAtFourPowerProfiles)
 {
+	// Focus Magic replaces Haste in the current hero roster; Haste remains a non-hero effect.
+	EXPECT_FALSE(magicRules["spells"]["core:haste"]["heroAccess"].Bool());
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(magicRules, SpellID::HASTE));
+	EXPECT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(magicRules, SpellID::HASTE));
 	int covered = 0;
 	for(const auto & [key,rules] : magicRules["spells"].Struct())
 	{
@@ -84,7 +89,7 @@ TEST_F(SpellbookNativeFontPresentationTest, ActualCanonicalFormatterFitsEveryCur
 		}
 		++covered;
 	}
-	EXPECT_EQ(covered,75);
+	EXPECT_EQ(covered,74);
 }
 TEST_F(SpellbookNativeFontPresentationTest, ExpertTransfigurePreservesBothOrdinaryFootprintValues)
 {
@@ -153,8 +158,10 @@ TEST_F(SpellbookNativeFontPresentationTest, LifeDrainKeepsDamageAndHealingRateVi
 	}
 	const auto followup = newHorizonsMagic::spellEffectPreview(*hero, *spell, nullptr, true);
 	const auto detail = spellbookPresentation::effectDetail(followup, translator);
-	EXPECT_NE(detail.find("Split Focus"), std::string::npos);
-	EXPECT_NE(detail.find("Focused Pairing"), std::string::npos);
+	EXPECT_EQ(followup.qualificationKey, "new-horizons.spellbook.lifeDrainFollowup");
+	EXPECT_NE(detail.find("205"), std::string::npos);
+	EXPECT_NE(detail.find("60% of damage"), std::string::npos);
+	EXPECT_NE(detail.find("Potential follow-up damage"), std::string::npos);
 	EXPECT_NE(detail.find("unselected default"), std::string::npos);
 	EXPECT_NE(detail.find("no random proc"), std::string::npos);
 	EXPECT_NE(detail.find("actual damage"), std::string::npos);

@@ -84,13 +84,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
-		// Banking is still pending in the live registry. Activate just this
-		// perk in the saved map rules so these tests exercise its runtime path.
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-		for(auto & perk : perkRules["skills"][ESTATES_SKILL]["perks"].Vector())
-			if(perk["id"].String() == BANKING)
-				perk["effect"]["status"].String() = "active";
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
 	void startGame()
@@ -129,8 +124,14 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 2048; ++seed)
-			if(offerContains(hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext()), perkId))
+		const auto weightContext = hero->getPerkOfferWeightContext();
+		// Rank and planned-status rejection are seed independent. Still inspect
+		// one real offer; sampling thousands cannot strengthen this admission check.
+		const bool eligible = hero->getPerkState().canAcquirePerk(
+			ESTATES_SKILL, std::string(perkId), rankLookup(ESTATES_SKILL));
+		const uint64_t seedLimit = eligible ? 2048 : 1;
+		for(uint64_t seed = 0; seed < seedLimit; ++seed)
+			if(offerContains(hero->getPerkState().prepareOffer(rankLookup, seed, weightContext), perkId))
 				return true;
 		return false;
 	}
@@ -142,9 +143,10 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
+		const auto weightContext = hero->getPerkOfferWeightContext();
 		for(uint64_t seed = 0; seed < 10000; ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, weightContext);
 			for(size_t index = 0; index < offer.size(); ++index)
 			{
 				if(offer[index].selection.perkId != perkId)

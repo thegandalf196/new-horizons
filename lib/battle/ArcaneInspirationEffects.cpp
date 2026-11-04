@@ -20,6 +20,7 @@ Bonus marker(const char * identity, BonusType type, int amount, PlayerColor owne
 	if(round < 0 || round == std::numeric_limits<int32_t>::max() || !owner.isValidPlayer())
 		throw std::invalid_argument("Invalid Arcane Inspiration activation receipt");
 	Bonus result(BonusDuration::ONE_BATTLE, type, BonusSource::HERO_SPECIAL, amount, BonusSourceID());
+	result.valType = BonusValueType::BASE_NUMBER;
 	result.stacking = identity;
 	result.statusIdentity = identity;
 	result.statusTags = {BonusStatusTag::NON_TRANSFERABLE};

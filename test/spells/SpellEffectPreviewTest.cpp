@@ -7,6 +7,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/SpellEffectPreview.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/NewHorizonsDirectDamage.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsCureHealing.h"
@@ -513,6 +514,10 @@ TEST_F(SpellEffectPreviewTest, RemainingTimedFamiliesShowNumericEffectsAtCurrent
 
 TEST_F(SpellEffectPreviewTest, EveryCuratedCombatRowHasAnExplicitCurrentEffect)
 {
+	// Focus Magic replaces Haste in the current hero roster; Haste remains a non-hero effect.
+	EXPECT_FALSE(callback.rules["spells"]["core:haste"]["heroAccess"].Bool());
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(callback.rules, SpellID::HASTE));
+	EXPECT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(callback.rules, SpellID::HASTE));
 	const std::set<std::string> categorical{"new-horizons:sanctuary","core:dispel","core:berserk",
 		"new-horizons:realityWarp","new-horizons:confusion","new-horizons:puppetMaster","core:teleport"};
 	int covered = 0;
@@ -535,7 +540,7 @@ TEST_F(SpellEffectPreviewTest, EveryCuratedCombatRowHasAnExplicitCurrentEffect)
 		}
 		++covered;
 	}
-	EXPECT_EQ(covered,75);
+	EXPECT_EQ(covered,74);
 	EXPECT_EQ(hero.getManaAvailable(),mana);
 	EXPECT_EQ(hero.getSpellsInSpellbook(),known);
 }

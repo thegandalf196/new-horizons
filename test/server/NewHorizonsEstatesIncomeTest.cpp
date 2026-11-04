@@ -57,12 +57,19 @@ TEST_F(NewHorizonsEstatesIncomeTest, ResourceProducersStackAcrossHoldersAndPersi
 
 TEST_F(NewHorizonsEstatesIncomeTest, PlannedResourcePerkCannotBeSelectedAndOrdinaryGenerationUsesHandicap)
 {
-    planned = "new-horizons:estates.prosperity";
     incomePercent = 50;
     ASSERT_NO_FATAL_FAILURE(startGame());
+    // Initialize every authored starting profile against the active registry;
+    // this hero alone retains a saved snapshot where Prosperity is planned.
+    const std::string plannedPerk = "new-horizons:estates.prosperity";
+    auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(first->getPerkState());
+    for(auto & perk : savedPerks.rules["skills"][ESTATES]["perks"].Vector())
+        if(perk["id"].String() == plannedPerk)
+            perk["effect"]["status"].String() = "planned";
+    ASSERT_NO_THROW(savedPerks.validate());
     const auto skill = SecondarySkill(SecondarySkill::decode(ESTATES));
     first->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-    EXPECT_THROW(first->applyPerkSelection({ESTATES, planned}), std::runtime_error);
+    EXPECT_THROW(first->applyPerkSelection({ESTATES, plannedPerk}), std::runtime_error);
     EXPECT_EQ(first->dailyIncome()[EGameResID::WOOD], 0);
     EXPECT_EQ(first->dailyIncome()[EGameResID::ORE], 0);
     EXPECT_EQ(first->dailyIncome()[EGameResID::GOLD], 63);

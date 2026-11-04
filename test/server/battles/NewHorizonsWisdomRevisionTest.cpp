@@ -107,7 +107,7 @@ protected:
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 100);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-		for(const auto spell : {SpellID::HASTE, SpellID::BLESS, SpellID::MAGIC_ARROW}) attackerSideHero->addSpellToSpellbook(spell);
+		for(const auto spell : {SpellID::BLESS, SpellID::MAGIC_ARROW}) attackerSideHero->addSpellToSpellbook(spell);
 		for(auto * hero : {attackerSideHero, defenderSideHero}) hero->setStackCount(SlotID(0), 1000);
 		ASSERT_NO_FATAL_FAILURE(startBattle());
 		for(const auto & unit : battle()->stacks)
@@ -115,12 +115,12 @@ protected:
 		ASSERT_NE(actor, nullptr);
 		ASSERT_NO_FATAL_FAILURE(beginCombat());
 	}
-	bool castHaste()
+	bool castBless()
 	{
 		auto action = BattleAction::makeDefend(actor);
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
-		action.spell = SpellID::HASTE;
+		action.spell = SpellID::BLESS;
 		action.aimToUnit(actor);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
@@ -129,14 +129,14 @@ protected:
 TEST_F(NewHorizonsWisdomRevisionTest, AuthoritativeReceiptCountsOnceAndRejectedActionChangesNothing)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:wisdom.spellFamiliarity"));
-	const auto spell = SpellID(SpellID::HASTE).toSpell();
+	const auto spell = SpellID(SpellID::BLESS).toSpell();
 	const int32_t ordinary = battle()->battleGetSpellCost(spell, attackerSideHero);
 	const int64_t mana = attackerSideHero->getManaAvailable();
-	ASSERT_TRUE(castHaste());
-	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::HASTE), 1);
+	ASSERT_TRUE(castBless());
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::BLESS), 1);
 	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), ordinary);
-	EXPECT_FALSE(castHaste());
-	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::HASTE), 1);
+	EXPECT_FALSE(castBless());
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::BLESS), 1);
 	advanceRound();
 	const auto breakdown = battle()->battleGetSpellCostBreakdown(spell, attackerSideHero);
 	const auto discounted = breakdown.finalCost;
@@ -148,18 +148,18 @@ TEST_F(NewHorizonsWisdomRevisionTest, InsightAndArchmageWorkWithoutMetamagicAndS
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:wisdom.spellFamiliarity", "new-horizons:wisdom.arcaneInsight", "new-horizons:wisdom.archmage"));
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")), 0, ChangeValueMode::ABSOLUTE);
-	const auto before = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::HASTE);
+	const auto before = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::BLESS);
 	EXPECT_EQ(before.perks.wisdomEffectivenessBonus, 25);
-	ASSERT_TRUE(castHaste());
+	ASSERT_TRUE(castBless());
 	EXPECT_EQ(before.perks.wisdomEffectivenessBonus, 25);
-	const auto after = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::HASTE);
+	const auto after = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::BLESS);
 	EXPECT_EQ(after.perks.wisdomEffectivenessBonus, 0);
-	const auto distinct = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::BLESS);
+	const auto distinct = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::MAGIC_ARROW);
 	EXPECT_EQ(distinct.perks.wisdomEffectivenessBonus, 25);
 	const auto high = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::RESURRECTION);
 	EXPECT_EQ(high.perks.wisdomEffectivenessBonus, 45);
 	EXPECT_EQ(newHorizonsWisdom::archmagePenetrationPercent(attackerSideHero, attackerSideHero->getMagicRules(), SpellID::RESURRECTION), 10);
-	EXPECT_EQ(newHorizonsWisdom::archmagePenetrationPercent(attackerSideHero, attackerSideHero->getMagicRules(), SpellID::HASTE), 0);
+	EXPECT_EQ(newHorizonsWisdom::archmagePenetrationPercent(attackerSideHero, attackerSideHero->getMagicRules(), SpellID::BLESS), 0);
 	EXPECT_EQ(newHorizonsMetamagic::outgoingMagnitude(100, &high, actor), 145);
 	EXPECT_EQ(newHorizonsMetamagic::outgoingMagnitude(100, &high, nullptr), 145);
 	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, SpellID(SpellID::IMPLOSION).toSpell());

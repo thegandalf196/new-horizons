@@ -39,7 +39,11 @@ TEST(ArcaneInspiration, MarkersRoundtripAndCarryHasNoRiders)
 	CMemorySerializer wire;
 	wire.oser.version = ESerializationVersion::CURRENT;
 	wire.iser.version = ESerializationVersion::CURRENT;
-	std::vector<Bonus> originals{active, retained, arcaneInspiration::spellshockMarker(PlayerColor(0), 2)};
+	std::vector<Bonus> originals{active, retained, arcaneInspiration::spellshockMarker(PlayerColor(0), 2),
+		arcaneInspiration::valorMarker(PlayerColor(0), 2)};
+	BonusList morale;
+	morale.push_back(std::make_shared<Bonus>(originals.back()));
+	EXPECT_EQ(morale.totalValue(), 1);
 	wire.oser & originals;
 	std::vector<Bonus> restored;
 	wire.iser & restored;
@@ -47,6 +51,10 @@ TEST(ArcaneInspiration, MarkersRoundtripAndCarryHasNoRiders)
 	for(size_t i = 0; i < restored.size(); ++i)
 	{
 		EXPECT_TRUE(arcaneInspiration::isEffect(&restored[i]));
+		EXPECT_EQ(restored[i].valType, BonusValueType::BASE_NUMBER);
+		auto malformed = restored[i];
+		malformed.valType = BonusValueType::ADDITIVE_VALUE;
+		EXPECT_THROW(arcaneInspiration::isEffect(&malformed), std::runtime_error);
 		EXPECT_EQ(restored[i].stacking, originals[i].stacking);
 		EXPECT_EQ(restored[i].subtype, originals[i].subtype);
 		EXPECT_EQ(restored[i].turnsRemain, originals[i].turnsRemain);
@@ -91,7 +99,7 @@ protected:
 		attackerSideHero->setSecSkillLevel(skill, rank, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-		for(const auto spell : {SpellID::HASTE, SpellID::MAGIC_ARROW}) attackerSideHero->addSpellToSpellbook(spell);
+		for(const auto spell : {SpellID::BLESS, SpellID::MAGIC_ARROW}) attackerSideHero->addSpellToSpellbook(spell);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 		startBattle();
 		actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 20);
@@ -148,7 +156,7 @@ protected:
 TEST_F(ArcaneInspirationBattleTest, FriendlySuccessfulCastInspiresButDoesNotGrantAnotherHeroAction)
 {
 	prepare(1);
-	ASSERT_TRUE(castOn(attackerSideHero, SpellID::HASTE, actor));
+	ASSERT_TRUE(castOn(attackerSideHero, SpellID::BLESS, actor));
 	EXPECT_EQ(arcaneInspiration::activeProfile(*actor, PlayerColor(0)).corePercent, 5);
 	EXPECT_EQ(arcaneInspiration::activeProfile(*victim, PlayerColor(1)).corePercent, 0);
 	EXPECT_FALSE(castOn(attackerSideHero, SpellID::MAGIC_ARROW, victim));

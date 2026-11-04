@@ -157,7 +157,7 @@ protected:
 		setTestSpellPointTotal(attackerSideHero, 1000);
 		setTestSpellPointTotal(defenderSideHero, 1000);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-		for(const auto spell : {SpellID::HASTE, SpellID::SLOW, SpellID::MAGIC_ARROW})
+		for(const auto spell : {SpellID::BLESS, SpellID::SLOW, SpellID::MAGIC_ARROW})
 			attackerSideHero->addSpellToSpellbook(spell);
 
 		startBattle();
@@ -294,7 +294,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesCurrentPoints
 	EXPECT_EQ(beforeSpellCounts.spellActions, 0u);
 
 	const auto points = battle()->getMetamagicPointState(side);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::BLESS, attacker));
 	const auto & afterSpell = battle()->getSide(side);
 	ASSERT_EQ(afterSpell.castSpellsCount, 1u);
 	ASSERT_EQ(afterSpell.metamagicPendingCount, 0u);
@@ -316,7 +316,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesCurrentPoints
 	EXPECT_EQ(battle()->getHeroCommandUsed(side), true);
 	EXPECT_EQ(battle()->getActiveOrder(side), HeroCommand::CHARGE);
 	EXPECT_EQ(afterOrder.castSpellsCount, 1u);
-	EXPECT_EQ(afterOrder.usedSpellsHistory, (std::vector<SpellID>{SpellID::HASTE}));
+	EXPECT_EQ(afterOrder.usedSpellsHistory, (std::vector<SpellID>{SpellID::BLESS}));
 	EXPECT_EQ(afterOrder.metamagicPendingCount, 0u);
 	EXPECT_EQ(afterOrder.metamagicSequenceSpells, (std::vector<SpellID>{}));
 	const auto afterOrderCounts = afterOrder.heroActionAllowances.remainingCounts(round);
@@ -359,11 +359,11 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleSpendsGenericTypedSpellAndHe
 	HypotheticBattle projection(&environment, callback);
 	ASSERT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 1u);
 	ASSERT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 1u);
-	const auto typed = projection.prepareHeroSpellAllowance(side, SpellID::HASTE, false, false);
+	const auto typed = projection.prepareHeroSpellAllowance(side, SpellID::BLESS, false, false);
 	ASSERT_TRUE(typed);
 	EXPECT_EQ(typed->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
 	EXPECT_EQ(typed->action.receipt.source, HeroActionAllowanceState::GrantSource::PERK);
-	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::HASTE, attacker->unitId(), false, false));
+	ASSERT_TRUE(projection.projectHeroSpellAllowance(side, SpellID::BLESS, attacker->unitId(), false, false));
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 1u);
 	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).spellActions, 0u);
 	EXPECT_FALSE(projection.prepareHeroSpellAllowance(side, SpellID::SLOW, true, false));
@@ -376,7 +376,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalBattleSpendsGenericTypedSpellAndHe
 	EXPECT_EQ(projection.getMetamagicPendingCount(side), 0);
 	EXPECT_EQ(projection.getMetamagicUsesConsumed(side), 0);
 	EXPECT_EQ(projection.getMetamagicPointState(side), points);
-	EXPECT_EQ(projection.getWisdomCombatState(side).priorCasts(SpellID::HASTE), 1u);
+	EXPECT_EQ(projection.getWisdomCombatState(side).priorCasts(SpellID::BLESS), 1u);
 	EXPECT_EQ(projection.getWisdomCombatState(side).priorCasts(SpellID::SLOW), 1u);
 	EXPECT_EQ(battle()->getHeroActionAllowances(side), authoritative);
 	EXPECT_EQ(battle()->getMetamagicPointState(side), points);
@@ -409,7 +409,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalHeroReceiptExpiresOnlyItsTimeStopA
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::BLESS, false, false);
 	ASSERT_TRUE(prepared);
 	EXPECT_EQ(prepared->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
 	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
@@ -448,12 +448,12 @@ TEST_F(NewHorizonsWarcastingTest, TypedSpellAndOrderReceiptsPreserveOwnTimeStopA
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	auto spell = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
+	auto spell = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::BLESS, false, false);
 	ASSERT_TRUE(spell);
 	EXPECT_EQ(spell->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
 	EXPECT_EQ(spell->action.receipt.source, HeroActionAllowanceState::GrantSource::PERK);
 	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *spell));
-	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::BLESS,
 		attacker->unitId(), false, false, false, false, *spell));
 	EXPECT_TRUE(projection.getCounterspellArmed(BattleSide::ATTACKER));
 	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(BattleSide::ATTACKER));
@@ -477,13 +477,13 @@ TEST_F(NewHorizonsWarcastingTest, PreparedAllowanceCommitCannotBeReplayed)
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
+	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::BLESS, false, false);
 	ASSERT_TRUE(prepared);
 	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
-	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::BLESS,
 		attacker->unitId(), false, false, false, false, *prepared));
 	const auto afterCommit = projection.getHeroActionAllowances(BattleSide::ATTACKER);
-	EXPECT_FALSE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+	EXPECT_FALSE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::BLESS,
 		attacker->unitId(), false, false, false, false, *prepared));
 	EXPECT_EQ(projection.getHeroActionAllowances(BattleSide::ATTACKER), afterCommit);
 	EXPECT_EQ(projection.getMetamagicUsesConsumed(BattleSide::ATTACKER), 0);
@@ -506,7 +506,7 @@ TEST_F(NewHorizonsWarcastingTest, StalePreparedActionCannotClearEffectsBeforeCom
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto staleSpell = projection.prepareHeroSpellAllowance(side, SpellID::HASTE, false, false);
+	const auto staleSpell = projection.prepareHeroSpellAllowance(side, SpellID::BLESS, false, false);
 	ASSERT_TRUE(staleSpell);
 
 	// A typed Order consumes a different grant without crossing the Hero-action
@@ -520,7 +520,7 @@ TEST_F(NewHorizonsWarcastingTest, StalePreparedActionCannotClearEffectsBeforeCom
 	EXPECT_TRUE(projectedAttacker->isTimeStopped());
 
 	EXPECT_FALSE(projection.beginProjectedHeroAction(side, *staleSpell));
-	EXPECT_FALSE(projection.projectAcceptedHeroSpell(side, SpellID::HASTE,
+	EXPECT_FALSE(projection.projectAcceptedHeroSpell(side, SpellID::BLESS,
 		attacker->unitId(), false, false, false, false, *staleSpell));
 	EXPECT_TRUE(projection.getCounterspellArmed(side));
 	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(side));
@@ -545,7 +545,7 @@ TEST_F(NewHorizonsWarcastingTest, BegunOrderTokenCannotAuthorizeSameEpochSpellCo
 	WarcastingEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle projection(&environment, callback);
-	const auto spell = projection.prepareHeroSpellAllowance(side, SpellID::HASTE, false, false);
+	const auto spell = projection.prepareHeroSpellAllowance(side, SpellID::BLESS, false, false);
 	const auto order = projection.prepareHeroOrderAllowance(side);
 	ASSERT_TRUE(spell);
 	ASSERT_TRUE(order);
@@ -553,7 +553,7 @@ TEST_F(NewHorizonsWarcastingTest, BegunOrderTokenCannotAuthorizeSameEpochSpellCo
 	EXPECT_EQ(order->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
 
 	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *order));
-	EXPECT_FALSE(projection.projectAcceptedHeroSpell(side, SpellID::HASTE,
+	EXPECT_FALSE(projection.projectAcceptedHeroSpell(side, SpellID::BLESS,
 		attacker->unitId(), false, false, false, false, *spell));
 	EXPECT_TRUE(projection.getCounterspellArmed(side));
 	EXPECT_TRUE(projection.getMetamagicCountersequenceArmed(side));
@@ -571,7 +571,7 @@ TEST_F(NewHorizonsWarcastingTest, BegunOrderTokenCannotAuthorizeSameEpochSpellCo
 TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesRealManaThresholdAndPreservesCurrentPoints)
 {
 	prepareWarcasting(1, true);
-	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell());
+	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::BLESS).toSpell());
 	const int wardCost = newHorizonsMagic::counterspellCost(listedCost, false, false);
 	setTestSpellPointTotal(defenderSideHero, wardCost - 1);
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
@@ -587,11 +587,11 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesRealManaThresholdA
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
 	ASSERT_NE(callback->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
 	HypotheticBattle lowManaProjection(&environment, callback);
-	auto lowManaPrepared = lowManaProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
+	auto lowManaPrepared = lowManaProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::BLESS, false, false);
 	ASSERT_TRUE(lowManaPrepared);
 	ASSERT_TRUE(lowManaProjection.beginProjectedHeroAction(BattleSide::ATTACKER, *lowManaPrepared));
 	auto outcome = lowManaProjection.resolveProjectedCounterspell(BattleSide::ATTACKER,
-		SpellID(SpellID::HASTE).toSpell());
+		SpellID(SpellID::BLESS).toSpell());
 	EXPECT_TRUE(outcome.wardActive);
 	EXPECT_EQ(outcome.wardSide, BattleSide::DEFENDER);
 	ASSERT_TRUE(outcome.resolutionKnown);
@@ -599,32 +599,32 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesRealManaThresholdA
 	ASSERT_TRUE(outcome.negated.has_value());
 	EXPECT_EQ(*outcome.manaCost, wardCost);
 	EXPECT_FALSE(*outcome.negated);
-	ASSERT_TRUE(lowManaProjection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+	ASSERT_TRUE(lowManaProjection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::BLESS,
 		attacker->unitId(), false, false, outcome.wardActive, *outcome.negated, *lowManaPrepared));
 	EXPECT_EQ(lowManaProjection.getMetamagicPendingCount(BattleSide::ATTACKER), 0);
 	EXPECT_EQ(lowManaProjection.getMetamagicPointState(BattleSide::ATTACKER), points);
-	EXPECT_EQ(lowManaProjection.getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::HASTE), 1u);
+	EXPECT_EQ(lowManaProjection.getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::BLESS), 1u);
 	EXPECT_EQ(lowManaProjection.battleHeroActionAllowanceCounts(BattleSide::ATTACKER).heroActions, 0u);
 	EXPECT_FALSE(lowManaProjection.getCounterspellArmed(BattleSide::DEFENDER));
 	EXPECT_EQ(defenderSideHero->getManaAvailable(), wardCost - 1);
 
 	setTestSpellPointTotal(defenderSideHero, wardCost);
 	HypotheticBattle negatedProjection(&environment, callback);
-	const auto prepared = negatedProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE, false, false);
+	const auto prepared = negatedProjection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::BLESS, false, false);
 	ASSERT_TRUE(prepared);
 	ASSERT_TRUE(negatedProjection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
 	outcome = negatedProjection.resolveProjectedCounterspell(BattleSide::ATTACKER,
-		SpellID(SpellID::HASTE).toSpell());
+		SpellID(SpellID::BLESS).toSpell());
 	ASSERT_TRUE(outcome.resolutionKnown);
 	ASSERT_TRUE(outcome.manaCost.has_value());
 	ASSERT_TRUE(outcome.negated.has_value());
 	EXPECT_TRUE(*outcome.negated);
 	EXPECT_EQ(*outcome.manaCost, wardCost);
-	ASSERT_TRUE(negatedProjection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::HASTE,
+	ASSERT_TRUE(negatedProjection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::BLESS,
 		attacker->unitId(), false, false, outcome.wardActive, *outcome.negated, *prepared));
 	EXPECT_EQ(negatedProjection.getMetamagicPendingCount(BattleSide::ATTACKER), 0);
 	EXPECT_EQ(negatedProjection.getMetamagicPointState(BattleSide::ATTACKER), points);
-	EXPECT_EQ(negatedProjection.getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::HASTE), 1u);
+	EXPECT_EQ(negatedProjection.getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::BLESS), 1u);
 	EXPECT_EQ(negatedProjection.battleHeroActionAllowanceCounts(BattleSide::ATTACKER).heroActions, 0u);
 	EXPECT_FALSE(negatedProjection.getCounterspellArmed(BattleSide::DEFENDER));
 	EXPECT_EQ(defenderSideHero->getManaAvailable(), wardCost);
@@ -637,7 +637,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesRealManaThresholdA
 TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountermageCostWithoutSpendingMana)
 {
 	prepareWarcasting(1, true, true);
-	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell());
+	const int listedCost = attackerSideHero->getListedSpellCost(SpellID(SpellID::BLESS).toSpell());
 	const int wardCost = newHorizonsMagic::counterspellCost(listedCost, true, false);
 	setTestSpellPointTotal(defenderSideHero, wardCost - 1);
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
@@ -650,7 +650,7 @@ TEST_F(NewHorizonsWarcastingTest, HypotheticalCounterspellUsesCountermageCostWit
 	ASSERT_NE(callback->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
 	HypotheticBattle projection(&environment, callback);
 	const auto outcome = projection.resolveProjectedCounterspell(BattleSide::ATTACKER,
-		SpellID(SpellID::HASTE).toSpell());
+		SpellID(SpellID::BLESS).toSpell());
 	EXPECT_TRUE(outcome.wardActive);
 	ASSERT_TRUE(outcome.resolutionKnown);
 	ASSERT_TRUE(outcome.manaCost.has_value());
@@ -676,7 +676,7 @@ TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolv
 		HypotheticBattle projection(&environment, callback);
 		const auto allowancesBefore = projection.getHeroActionAllowances(BattleSide::ATTACKER);
 		const auto outcome = projection.resolveProjectedCounterspell(BattleSide::ATTACKER,
-			SpellID(SpellID::HASTE).toSpell());
+			SpellID(SpellID::BLESS).toSpell());
 		EXPECT_TRUE(outcome.wardActive);
 		EXPECT_EQ(outcome.wardSide, BattleSide::DEFENDER);
 		EXPECT_FALSE(outcome.resolutionKnown);
@@ -685,7 +685,7 @@ TEST_F(NewHorizonsWarcastingTest, PlayerViewKeepsHiddenArmedCounterspellUnresolv
 
 		// The convenience wrapper must not turn an unknown ward into a resolved
 		// cast or spend the projected allowance while doing so.
-		EXPECT_FALSE(projection.projectHeroSpellAllowance(BattleSide::ATTACKER, SpellID::HASTE,
+		EXPECT_FALSE(projection.projectHeroSpellAllowance(BattleSide::ATTACKER, SpellID::BLESS,
 			attacker->unitId(), false, false));
 		EXPECT_EQ(projection.getHeroActionAllowances(BattleSide::ATTACKER), allowancesBefore);
 		EXPECT_TRUE(projection.getCounterspellArmed(BattleSide::DEFENDER));
@@ -733,7 +733,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedCounterspellReplacesOldCountersequencePro
 TEST_F(NewHorizonsWarcastingTest, OrdinarySpellThenOrderSharesOneActionAndRejectsAtomically)
 {
 	prepareWarcasting();
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::BLESS, attacker));
 	const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
 	const auto mana = attackerSideHero->getManaAvailable();
 	const auto actions = server.startedActions.size();
@@ -754,18 +754,18 @@ TEST_F(NewHorizonsWarcastingTest, OrdinaryOrderThenSpellSharesOneActionAndReject
 	const auto mana = attackerSideHero->getManaAvailable();
 	const auto actions = server.startedActions.size();
 	const auto order = battle()->getHeroOrderState(BattleSide::ATTACKER);
-	EXPECT_FALSE(cast(SpellID::HASTE, attacker));
+	EXPECT_FALSE(cast(SpellID::BLESS, attacker));
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(server.startedActions.size(), actions);
 	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER), order);
-	EXPECT_TRUE(server.castsOf(SpellID::HASTE).empty());
+	EXPECT_TRUE(server.castsOf(SpellID::BLESS).empty());
 }
 
 TEST_F(NewHorizonsWarcastingTest, RetiredMetamagicDeclineRejectsWithoutChangingAllowances)
 {
 	prepareWarcasting(1, true);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::BLESS, attacker));
 	const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
 	const auto actions = server.startedActions.size();
 	EXPECT_FALSE(declineMetamagic());
@@ -782,7 +782,7 @@ TEST_F(NewHorizonsWarcastingTest, GenericTypedSpellAndHeroActionsRemainSeparateW
 	// Generic test grant, explicitly not produced by current passive Metamagic.
 	grantSpellAllowanceForFixture(side);
 	const auto points = battle()->getMetamagicPointState(side);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::BLESS, attacker));
 	EXPECT_EQ(battle()->getHeroActionAllowances(side).remainingCounts(round).heroActions, 1u);
 	EXPECT_EQ(battle()->getHeroActionAllowances(side).remainingCounts(round).spellActions, 0u);
 	const auto ledger = battle()->getHeroActionAllowances(side);
@@ -806,23 +806,23 @@ TEST_F(NewHorizonsWarcastingTest, GenericTypedSpellAndHeroActionsRemainSeparateW
 	EXPECT_EQ(battle()->getMetamagicPointState(side), points);
 	EXPECT_EQ(battle()->getSide(side).castSpellsCount, 2u);
 	EXPECT_EQ(battle()->getSide(side).usedSpellsHistory,
-		(std::vector<SpellID>{SpellID::HASTE, SpellID::SLOW}));
-	EXPECT_EQ(battle()->getWisdomCombatState(side).priorCasts(SpellID::HASTE), 1u);
+		(std::vector<SpellID>{SpellID::BLESS, SpellID::SLOW}));
+	EXPECT_EQ(battle()->getWisdomCombatState(side).priorCasts(SpellID::BLESS), 1u);
 	EXPECT_EQ(battle()->getWisdomCombatState(side).priorCasts(SpellID::SLOW), 1u);
 }
 
 TEST_F(NewHorizonsWarcastingTest, CounterspelledOrdinaryCastSpendsManaAndSharedActionWithoutApplyingSpell)
 {
 	prepareWarcasting();
-	const auto hasteEffect = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::HASTE)));
-	ASSERT_FALSE(attacker->hasBonus(hasteEffect));
+	const auto blessEffect = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS)));
+	ASSERT_FALSE(attacker->hasBonus(blessEffect));
 	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 	const auto mana = attackerSideHero->getManaAvailable();
-	const auto cost = battle()->battleGetSpellCost(SpellID(SpellID::HASTE).toSpell(), attackerSideHero);
-	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto cost = battle()->battleGetSpellCost(SpellID(SpellID::BLESS).toSpell(), attackerSideHero);
+	ASSERT_TRUE(cast(SpellID::BLESS, attacker));
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
-	EXPECT_FALSE(attacker->hasBonus(hasteEffect));
-	const auto casts = server.castsOf(SpellID::HASTE);
+	EXPECT_FALSE(attacker->hasBonus(blessEffect));
+	const auto casts = server.castsOf(SpellID::BLESS);
 	ASSERT_EQ(casts.size(), 1u);
 	EXPECT_TRUE(casts.front().announcement.counterspellNegated);
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound()).heroActions, 0u);
