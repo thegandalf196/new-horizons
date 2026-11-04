@@ -14,12 +14,31 @@
 #include "../../lib/CBonusTypeHandler.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/bonuses/Bonus.h"
+#include "../../lib/bonuses/BonusCustomTypes.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/texts/MetaString.h"
 
 namespace
 {
+std::string effectText(const Bonus & bonus)
+{
+	if(bonus.valType == BonusValueType::ADDITIVE_VALUE
+		&& (bonus.type == BonusType::LUCK || bonus.type == BonusType::MORALE))
+	{
+		MetaString text = MetaString::createFromRawString("%s %+d");
+		text.replaceTextID(bonus.type == BonusType::LUCK ? "core.genrltxt.385" : "core.genrltxt.384");
+		text.replacePositiveNumber(bonus.val);
+		return text.toString(&GAME->translator());
+	}
+	if(bonus.type == BonusType::MOVEMENT && bonus.valType == BonusValueType::ADDITIVE_VALUE
+		&& bonus.subtype == BonusSubtypeID(BonusCustomSubtype::heroMovementLand))
+		return (bonus.val >= 0 ? "+" : "") + std::to_string(bonus.val) + " land movement points";
+	// Preserve catalogue formatting and hidden-marker suppression for every other kind.
+	return LIBRARY->bth->bonusToString(std::make_shared<Bonus>(bonus));
+}
+
 std::string effectList(const CGHeroInstance & hero)
 {
 	std::string result;
@@ -28,9 +47,7 @@ std::string effectList(const CGHeroInstance & hero)
 	{
 		if(!heroTemporaryEffects::visibleDuration(bonus->duration, bonus->turnsRemain))
 			continue;
-		// The bonus catalogue hides internal markers and formats actual values,
-		// subtypes and scripted effects using the same rules as creature help.
-		const auto effect = LIBRARY->bth->bonusToString(std::make_shared<Bonus>(*bonus));
+		const auto effect = effectText(*bonus);
 		if(effect.empty())
 			continue;
 		const auto source = bonus->Description(GAME->interface()->cb.get());
