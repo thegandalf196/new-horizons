@@ -97,7 +97,9 @@ void restrictFixturePerkOffersToConscription(CGHeroInstance * hero)
  auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
  for(auto & skill : state.rules["skills"].Struct())
   for(auto & perk : skill.second["perks"].Vector())
-   if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != CONSCRIPTION)
+   if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != CONSCRIPTION
+    && !std::ranges::any_of(state.selected, [&](const auto & selected)
+    { return selected.perkId == perk["id"].String(); }))
     perk["effect"]["status"].String() = "planned";
  state.validate();
 }
@@ -179,7 +181,9 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedArchit
 	for(auto & skill : perkState.rules["skills"].Struct())
 	{
 		for(auto & perk : skill.second["perks"].Vector())
-			if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != ARCHITECT)
+			if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != ARCHITECT
+				&& !std::ranges::any_of(perkState.selected, [&](const auto & selected)
+				{ return selected.perkId == perk["id"].String(); }))
 				perk["effect"]["status"].String() = "planned";
 	}
 	perkState.validate();
@@ -220,13 +224,14 @@ TEST_F(NewHorizonsEstatesIncomeAITest, BankingWeeklyGrantDoesNotBecomeRecurringD
  for(auto * hero : {firstHero, secondHero}) selectBankingForFixture(hero);
  auto * state = gameState()->getPlayerState(PLAYER);
  state->resources[EGameResID::GOLD] = 10000;
+ gameState()->day = 7;
  const auto ownedTowns = state->getTowns();
  const std::vector<const CGTownInstance *> towns(ownedTowns.begin(), ownedTowns.end());
  const auto daily = NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), towns);
  EXPECT_EQ(newHorizonsEstates::bankingWeeklyGold(*state), 200);
  GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
  handler.onNewTurn();
- ASSERT_EQ(gameState()->day, 1u);
+ ASSERT_EQ(gameState()->day, 8u);
  EXPECT_EQ(NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), towns), daily);
  const auto gateway = makeGateway(PLAYER);
  EXPECT_EQ(gateway->cc->getResourceAmount(), state->resources);
@@ -286,6 +291,7 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerResourceViewIncludesOrdinaryPro
  firstHero->applyPerkSelection({ESTATES_SKILL, "new-horizons:estates.prosperity"});
  auto * state = gameState()->getPlayerState(PLAYER);
  state->resources[EGameResID::WOOD] = 0; state->resources[EGameResID::ORE] = 0;
+ gameState()->day = 1;
  GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
  handler.onNewTurn();
  EXPECT_EQ(state->resources[EGameResID::WOOD], 1);

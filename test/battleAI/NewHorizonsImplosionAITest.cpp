@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "PurifyRuleFixtures.h"
 #include <algorithm>
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
@@ -46,11 +47,15 @@ protected:
 
 	void mapLoaded(CMap * map) override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 		ASSERT_TRUE(newHorizonsImplosion::hasRules(rules));
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
+		// Preserve full current hero rules and weighted perks; isolate Order potency.
+		const auto orders = purifyTest::neutralSpellCompetitionCommands();
+		map->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, orders);
 	}
 
 	void injure(CStack * unit, int64_t amount)
@@ -70,7 +75,7 @@ protected:
 
 	void prepare()
 	{
-		useCommands = false; // Isolate the paid spell consumer, not an Order choice.
+		useCommands = true; // Full current primary and weighted-perk context.
 		startGame();
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->removeAllSpells();
@@ -100,12 +105,12 @@ protected:
 		const auto * spell = SpellID(SpellID::IMPLOSION).toSpell();
 		spells::BattleCast captured(battle(), attackerSideHero, spells::Mode::HERO, spell);
 		const auto mechanics = spell->battleMechanics(&captured);
-		ASSERT_EQ(attackerSideHero->getEffectPower(spell), 1); // Real cache value, not requested base0.
-		ASSERT_EQ(mechanics->getEffectPower(), 1);
+		ASSERT_EQ(attackerSideHero->getEffectPower(spell), 0); // Expanded primary ratings preserve SP0.
+		ASSERT_EQ(mechanics->getEffectPower(), 0);
 		ASSERT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 13000);
 		ASSERT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 		ASSERT_EQ(mechanics->getEmpowerSpellBonusPercent(), 0);
-		ASSERT_EQ(canonicalDamage(10000), 1213);
+		ASSERT_EQ(canonicalDamage(10000), 1200);
 		ASSERT_EQ(canonicalDamage(500), 60);
 		callback = std::make_shared<ImplosionCallback>();
 		callback->onBattleStarted(battle());
@@ -114,10 +119,9 @@ protected:
 
 	int64_t canonicalDamage(int64_t health) const
 	{
-		// This fixture intentionally disables expanded primary ratings with Orders.
-		// The legacy primary cache clamps local base SP0 to actual SP1; Advanced
-		// Sorcery scales only the 0.1%-per-SP term by 130%, not the fixed12%.
-		// Independent bounded integer oracle: canonical30% cap before the sole final floor.
+		// Current expanded ratings preserve SP0; Advanced Sorcery scales only
+		// the 0.1%-per-SP term by 130%, not the fixed 12%.
+		// Independent integer oracle: 30% cap precedes the sole final floor.
 		const int64_t power = attackerSideHero->getEffectPower(SpellID(SpellID::IMPLOSION).toSpell());
 		const int64_t percentageNumerator = std::min<int64_t>(300000, 120000 + power * 10 * 130);
 		return health * percentageNumerator / 1000000;

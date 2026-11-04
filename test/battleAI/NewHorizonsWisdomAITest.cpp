@@ -11,7 +11,8 @@
 namespace
 {
 constexpr auto SIDE = BattleSide::ATTACKER;
-const SpellID SPELL(SpellID::HASTE);
+// Use an ordinary current hero spell for real cast-completion coverage.
+const SpellID SPELL(SpellID::BLESS);
 class NewHorizonsWisdomAITest : public ProjectedTargetHitFixture
 {
 protected:
@@ -106,6 +107,7 @@ TEST_F(NewHorizonsWisdomAITest, SharedCastEvalRecordsExactlyOneCastWithoutChangi
 	spells::BattleCast cast(child.get(), attackerSideHero, spells::Mode::HERO, SPELL.toSpell());
 	auto mechanics = SPELL.toSpell()->battleMechanics(&cast);
 	spells::Target target{spells::Destination(child->battleGetUnitByID(battle()->battleActiveUnit()->unitId()))};
+	ASSERT_TRUE(mechanics->canBeCastAt(target));
 	mechanics->castEval(child->getServerCallback(), target);
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(SPELL), 1u);
 	EXPECT_EQ(gameState()->saveToMemory(), world);

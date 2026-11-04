@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "PurifyRuleFixtures.h"
 
 #include "../SpellPointTestUtils.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -78,21 +79,9 @@ protected:
 		// Isolate the shared coefficient consumer for one selected Order. Magic Arrow
 		// remains a real competing hero action; this fixture does not claim to
 		// certify all-Orders tactical ranking under the canonical rules.
-		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsCombat"))["combat"]["heroCommands"];
-		for(const auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
-			HeroCommand::FOCUS_FIRE, HeroCommand::RIPOSTE, HeroCommand::BRACE,
-			HeroCommand::PROTECT, HeroCommand::FLANK, HeroCommand::SECOND_WIND})
-		{
-			if(command == selectedOrder)
-				continue;
-			for(auto & [name, formula] : rules["commands"][heroCommands::key(command)]["effects"].Struct())
-			{
-				(void)name;
-				formula["base"].Integer() = 0;
-				formula["attack"].Float() = 0;
-				formula["defense"].Float() = 0;
-			}
-		}
+		const auto current = JsonNode(JsonPath::builtin("config/newHorizonsCombat"))["combat"]["heroCommands"];
+		auto rules = purifyTest::neutralSpellCompetitionCommands();
+		rules["commands"][heroCommands::key(selectedOrder)] = current["commands"][heroCommands::key(selectedOrder)];
 		heroCommands::validateRules(rules);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 	}

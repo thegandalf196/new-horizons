@@ -232,7 +232,9 @@ protected:
 			for(auto & perk : skillEntry.second["perks"].Vector())
 			{
 				const auto & id = perk["id"].String();
-				if(id == PHILOSOPHER_PERK || id == SEASONED_PERK || id == BASIC_MENTOR_PERK)
+				if(id == PHILOSOPHER_PERK || id == SEASONED_PERK || id == BASIC_MENTOR_PERK
+					|| std::ranges::any_of(state.selected, [&](const auto & selected)
+					{ return selected.perkId == id; }))
 				{
 					ASSERT_EQ(perk["effect"]["status"].String(), "active");
 					continue; // Keep the production current-tier definitions active.

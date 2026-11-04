@@ -90,6 +90,10 @@ BudgetPoint classReference(const IGameSettings & settings, const CHeroClass & he
 	const int level = integer(stage["heroLevel"], 1, 100);
 	const int unlocked = integer(stage["unlockedLines"], 1, 7);
 	const int gold = integer(stage["troopGold"], 1, 1000000);
+	const int configuredGrowthPercent = newHorizonsRecruitmentGrowth::percentage(settings);
+	// Zero disables real recruitment, but a captured calibration reference must
+	// remain positive. Only that reference uses unscaled authored supply at zero.
+	const int referenceGrowthPercent = configuredGrowthPercent == 0 ? 100 : configuredGrowthPercent;
 	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(capability, heroClass.getId());
 	const int leadership = newHorizonsHeroes::capabilityLeadershipRating(resolved, level);
 	const auto originalLines = referenceLines(heroClass, categories, false);
@@ -104,7 +108,7 @@ BudgetPoint classReference(const IGameSettings & settings, const CHeroClass & he
 			const int activeWeeks = std::max(0, weeks - integer(unlockWeeks.Vector().at(i), 1, 52) + 1);
 			const int growth = limited ? categories.weeklyBaseGrowth(creature->getJsonKey()).value_or(creature->getGrowth()) : creature->getGrowth();
 			int64_t count = static_cast<int64_t>(activeWeeks) * (limited
-				? newHorizonsRecruitmentGrowth::scale(growth, newHorizonsRecruitmentGrowth::percentage(settings)) : growth);
+				? newHorizonsRecruitmentGrowth::scale(growth, referenceGrowthPercent) : growth);
 			if(limited)
 			{
 				const int requirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(resolved, creature->getId());

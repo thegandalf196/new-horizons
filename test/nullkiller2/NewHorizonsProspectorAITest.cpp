@@ -52,13 +52,15 @@ protected:
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			savedRegistry ? JsonNode(JsonPath::builtin("config/newHorizonsPerks")) : JsonNode());
+		if(!savedRegistry)
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
 	}
 	void prepare(bool selected = true)
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PLAYER)
 			.hero({4, 5, 0}, HeroTypeID(0), PLAYER)
-			.heroGarrison({{CreatureID(27), 10}})
+			.heroGarrison({{CreatureID(CreatureID::decode("core:pikeman")), 1}})
 			.hero({4, 20, 0}, HeroTypeID(1), PLAYER)
 			.mine({8, 5, 0}, MapObjectSubID(0), PLAYER)
 			.mine({12, 5, 0}, MapObjectSubID(1), PLAYER)

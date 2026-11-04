@@ -71,7 +71,49 @@ TEST_F(QuickStudyDecisionTest, WeakSkillCardHasVisibleBetterAlternativeWithoutCh
 TEST_F(QuickStudyDecisionTest, KeepsExistingBestVisibleSkill)
 { EXPECT_FALSE(decide({best})); }
 TEST_F(QuickStudyDecisionTest, ChoosesOnlyWeakerCardAndPreservesBetterCard)
-{ EXPECT_EQ(decide({best, weak}), 1u); }
+{
+ const auto * manager = gateway->nullkiller->heroManager.get();
+ const NK2AI::HeroPtr heroPtr(hero, gateway->cc.get());
+ const auto low = SecondarySkill(SecondarySkill::decode("new-horizons:offense"));
+ const auto middle = SecondarySkill(SecondarySkill::decode("new-horizons:lightMagic"));
+ const auto top = SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate"));
+ const auto eligible = newHorizonsHeroes::connoisseurSkillCandidates(*gateway->cc, *hero, {});
+ for(const auto card : {low, middle, top})
+ {
+  const auto key = SecondarySkill::encode(card.getNum());
+  ASSERT_TRUE(eligible.contains(card));
+  ASSERT_TRUE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gateway->cc, hero, card));
+  ASSERT_FALSE(newHorizonsHeroes::isExcludedSkill(hero->getPrimaryGrowthRules(), card));
+  ASSERT_GT(newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), card).value_or(0), 0);
+  ASSERT_EQ(hero->getPerkState().rules["skills"][key]["ranks"]["basic"]["effect"]["status"].String(), "active");
+ }
+ ASSERT_EQ(manager->getHeroRoleOrDefault(heroPtr), NK2AI::MAIN);
+ ASSERT_TRUE(hero->getSpellsInSpellbook().empty());
+ ASSERT_EQ(hero->getSecSkillLevel(middle), MasteryLevel::NONE);
+ // Current main-hero scores: ordinary Offense0, first School1, own faction1000.
+ ASSERT_FLOAT_EQ(manager->evaluateSecSkill(low, hero), 0.0f);
+ ASSERT_FLOAT_EQ(manager->evaluateSecSkill(middle, hero), 1.0f);
+ ASSERT_EQ(best, top);
+ ASSERT_EQ(manager->selectBestSkillIndex(heroPtr, {low, middle}), 1);
+ ASSERT_EQ(manager->selectBestSkillIndex(heroPtr, {middle, top}), 1);
+
+ // A legal unoffered third card beats the weakest visible card.
+ const auto positivePool = newHorizonsHeroes::connoisseurSkillCandidates(
+  *gateway->cc, *hero, {middle, low});
+ ASSERT_TRUE(positivePool.contains(top));
+ ASSERT_FALSE(positivePool.contains(middle));
+ ASSERT_FALSE(positivePool.contains(low));
+ EXPECT_EQ(decide({middle, low}), 1u);
+
+ // These are the top two scores: ties cannot justify discarding the School.
+ const auto negativePool = newHorizonsHeroes::connoisseurSkillCandidates(
+  *gateway->cc, *hero, {top, middle});
+ ASSERT_FALSE(negativePool.contains(top));
+ ASSERT_FALSE(negativePool.contains(middle));
+ for(const auto card : negativePool)
+  ASSERT_EQ(manager->selectBestSkillIndex(heroPtr, {middle, card}), 0);
+ EXPECT_FALSE(decide({top, middle}));
+}
 TEST_F(QuickStudyDecisionTest, ZeroWeightAlternativeIsNotAConnoisseurCandidate)
 {
  restrictAlternatives();

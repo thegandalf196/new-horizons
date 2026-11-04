@@ -137,13 +137,13 @@ TEST_F(NewHorizonsScholarValueAITest, SanyaValuesAllLegalSpellsBothDirectionsBef
 	ASSERT_EQ(gateway->cc->getCalendar().getCurrentDay(), 1);
 	ASSERT_EQ(week(), 0);
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
-	const auto incoming = named("core:dispel"), leftover = named("core:haste");
+	const auto incoming = named("core:dispel"), leftover = named("core:bless");
 	handler->changeSpells(sanya, true, {high, middle, low});
 	handler->changeSpells(scholar, true, {incoming, leftover});
 	const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, week());
 	ASSERT_TRUE(plan);
 	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high, middle, low}));
-	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{incoming, leftover}));
+	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{leftover, incoming}));
 	const auto expected = (sanya->getSpellLevel(incoming.toSpell()) + sanya->getSpellLevel(leftover.toSpell())) * 0.5f
 		+ (scholar->getSpellLevel(high.toSpell()) + scholar->getSpellLevel(middle.toSpell()) + scholar->getSpellLevel(low.toSpell())) * 0.25f;
 	expectPureReward(sanya, scholar, expected);
@@ -166,12 +166,12 @@ TEST_F(NewHorizonsScholarValueAITest, GeonValuesAllLegalSpellsAtUnchangedWeights
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
-	const auto outgoing = named("core:dispel"), leftover = named("core:haste");
+	const auto outgoing = named("core:dispel"), leftover = named("core:bless");
 	handler->changeSpells(scholar, true, {high, middle, low});
 	handler->changeSpells(geon, true, {outgoing, leftover});
 	const auto plan = newHorizonsHeroes::prepareScholarExchange(*geon, *scholar, week());
 	ASSERT_TRUE(plan);
-	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{outgoing, leftover}));
+	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{leftover, outgoing}));
 	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{high, middle, low}));
 	const auto expected = (geon->getSpellLevel(high.toSpell()) + geon->getSpellLevel(middle.toSpell()) + geon->getSpellLevel(low.toSpell())) * 0.5f
 		+ (scholar->getSpellLevel(outgoing.toSpell()) + scholar->getSpellLevel(leftover.toSpell())) * 0.25f;

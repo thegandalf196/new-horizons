@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "PurifyRuleFixtures.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
@@ -418,17 +419,7 @@ protected:
 		}
 		if(neutralizeCommandEffects)
 		{
-			const JsonNode combatRules(JsonPath::builtin("config/newHorizonsCombat"));
-			JsonNode rules = combatRules["combat"]["heroCommands"];
-			for(auto & commandEntry : rules["commands"].Struct())
-				for(auto & effectEntry : commandEntry.second["effects"].Struct())
-				{
-					auto & formula = effectEntry.second;
-					formula["base"].Float() = 0;
-					formula["attack"].Float() = 0;
-					formula["defense"].Float() = 0;
-				}
-			heroCommands::validateRules(rules);
+			const auto rules = purifyTest::neutralSpellCompetitionCommands();
 			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		}
 		if(useRealHeroScale || !useCommands)
@@ -905,6 +896,12 @@ TEST_F(NewHorizonsMagicAITest, SpellLockAIUsesSavedRankSpellbinderAndCurrentLing
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 160, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::EXPERT,
 		ChangeValueMode::ABSOLUTE);
+	// Fill the current Basic and Advanced prerequisite tiers with perks
+	// that do not alter Spell Lock before selecting Expert Spellbinder.
+	attackerSideHero->applyPerkSelection({newHorizonsSorcery::SORCERY_MAGIC_SKILL,
+		"new-horizons:sorceryMagic.overcharger"});
+	attackerSideHero->applyPerkSelection({newHorizonsSorcery::SORCERY_MAGIC_SKILL,
+		"new-horizons:sorceryMagic.illusionist"});
 	attackerSideHero->applyPerkSelection({newHorizonsSorcery::SORCERY_MAGIC_SKILL,
 		newHorizonsSorcery::SPELLBINDER_PERK});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(
@@ -915,8 +912,7 @@ TEST_F(NewHorizonsMagicAITest, SpellLockAIUsesSavedRankSpellbinderAndCurrentLing
 	ASSERT_GE(metamagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), MasteryLevel::ADVANCED,
 		ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic",
-		"new-horizons:metamagic.arcaneCatalyst"});
+	// Lingering Magic occupies the Basic perk tier in the current catalog.
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic",
 		"new-horizons:metamagic.lingeringMagic"});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(
@@ -1641,7 +1637,7 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIFirstCastUsesOnlyOrdinaryRoundA
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
 	// Current Basic/Advanced/Expert prerequisites; point growth grants no actions.
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst"});
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"});
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneFeedback"});
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneSingularity"});
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -1748,14 +1744,14 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
 	// Current point-policy prerequisites, without historical follow-up grants.
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst"});
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"});
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneFeedback"});
 	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneSingularity"});
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
 	for(const auto spell : knownSpells)
 		attackerSideHero->removeSpellFromSpellbook(spell);
-	attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
+	attackerSideHero->addSpellToSpellbook(SpellID::BLESS);
 	attackerSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
 	attackerSideHero->addSpellToSpellbook(SpellID::FIREBALL);
 	attackerSideHero->addSpellToSpellbook(SpellID::SLOW);
@@ -1815,7 +1811,7 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 	for(int used = 0; used < 2; ++used)
 	{
 		if(used != 0) { advanceRound(); gameHandler->sendAndApply(activate); }
-		ASSERT_TRUE(acceptPaid(SpellID::HASTE, active));
+		ASSERT_TRUE(acceptPaid(SpellID::BLESS, active));
 		EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::SLOW));
 		EXPECT_EQ(metamagicState.metamagicPendingCount, 0);
 		EXPECT_EQ(metamagicState.metamagicUsesConsumed, 0);
@@ -1827,7 +1823,7 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 	ASSERT_EQ(earned->source, HeroActionAllowanceState::GrantSource::ROUND);
 	ASSERT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER, SpellID::IMPLOSION));
 	// Isolate the metadata decision, not competition between different spells.
-	for(const auto spellId : {SpellID::HASTE, SpellID::SLOW, SpellID::FIREBALL})
+	for(const auto spellId : {SpellID::BLESS, SpellID::SLOW, SpellID::FIREBALL})
 		attackerSideHero->removeSpellFromSpellbook(SpellID(spellId));
 	ASSERT_EQ(attackerSideHero->getSpellsInSpellbook(), std::set<SpellID>{SpellID::IMPLOSION});
 	const auto * implosion = SpellID(SpellID::IMPLOSION).toSpell();

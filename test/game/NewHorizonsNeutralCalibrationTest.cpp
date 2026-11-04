@@ -3,6 +3,9 @@
 #include "../../lib/GameSettings.h"
 #include "../../lib/json/JsonValidator.h"
 #include "../../lib/mapObjects/NewHorizonsNeutralCalibration.h"
+#include "../../lib/mapObjects/NewHorizonsRecruitmentGrowth.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/filesystem/ResourcePath.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <limits>
 
@@ -199,4 +202,65 @@ TEST(NewHorizonsNeutralCalibration, NativeSchemaRejectsNonObjectScalarsAndArrays
 		EXPECT_FALSE(nativeSchemaErrors(rules).empty());
 		EXPECT_THROW(validate(rules), std::runtime_error);
 	}
+}
+
+namespace
+{
+void configureSingleKnightReference(GameSettings & settings, int recruitmentPercent)
+{
+	JsonNode capabilities(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto knight = capabilities["classProfiles"]["core:knight"];
+	capabilities["classProfiles"].Struct().clear();
+	capabilities["classProfiles"]["core:knight"] = knight;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capabilities);
+	settings.addOverride(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
+		JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
+	auto definition = generation();
+	definition["stages"].Vector().front()["unlockedLines"].Integer() = 1;
+	settings.addOverride(option, definition);
+	settings.addOverride(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(recruitmentPercent));
+}
+
+void expectCurrentPikemanReference()
+{
+	const auto * pikeman = CreatureID(CreatureID::decode("core:pikeman")).toCreature();
+	ASSERT_NE(pikeman, nullptr);
+	ASSERT_EQ(pikeman->getGrowth(), 14);
+	ASSERT_EQ(pikeman->getAIValue(), 80);
+	ASSERT_EQ(pikeman->getFullRecruitCost()[EGameResID::GOLD], 60);
+}
+}
+
+TEST(NewHorizonsNeutralCalibration, ZeroRecruitmentUsesOnlyANonzeroReferenceAndKeepsActualGrowthZero)
+{
+	ASSERT_NO_FATAL_FAILURE(expectCurrentPikemanReference());
+	GameSettings zero;
+	GameSettings identity;
+	configureSingleKnightReference(zero, 0);
+	configureSingleKnightReference(identity, 100);
+	const auto captured = capture(zero);
+	EXPECT_NO_THROW(validate(captured));
+	ASSERT_TRUE(Rules(captured).enabled());
+	EXPECT_EQ(capture(zero), captured);
+	EXPECT_EQ(captured, capture(identity));
+	const std::string expected = R"({"version":1,"enabled":true,"curve":[{"original":1120,"fieldable":1120}]})";
+	EXPECT_EQ(captured, JsonNode(expected.data(), expected.size(), "unscaled reference snapshot"));
+	EXPECT_EQ(newHorizonsRecruitmentGrowth::percentage(zero), 0);
+	EXPECT_EQ(newHorizonsRecruitmentGrowth::scale(7, newHorizonsRecruitmentGrowth::percentage(zero)), 0);
+	EXPECT_EQ(newHorizonsRecruitmentGrowth::stockAfterWeek(2, 7, 0, false, false), 2u);
+}
+
+TEST(NewHorizonsNeutralCalibration, PositiveRecruitmentKeepsTheExactFiftyPercentReferenceSnapshot)
+{
+	ASSERT_NO_FATAL_FAILURE(expectCurrentPikemanReference());
+	GameSettings half;
+	configureSingleKnightReference(half, 50);
+	const auto captured = capture(half);
+	// One week: original14 Pikemen, scaled7; Gold4000 and Leadership1025 do not bind.
+	// At AI80 each, the unchanged pre-fix reference is1120 ->560 with identity knee560.
+	const std::string expected = R"({"version":1,"enabled":true,"curve":[{"original":560,"fieldable":560},{"original":1120,"fieldable":560}]})";
+	EXPECT_EQ(captured, JsonNode(expected.data(), expected.size(), "fifty percent reference snapshot"));
+	EXPECT_EQ(capture(half), captured);
+	EXPECT_EQ(newHorizonsRecruitmentGrowth::percentage(half), 50);
+	EXPECT_EQ(newHorizonsRecruitmentGrowth::scale(7, 50), 4);
 }

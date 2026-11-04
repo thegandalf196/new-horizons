@@ -23,8 +23,10 @@ public:
 	bool nonfinite = false;
 	bool hasBest = false;
 	bool hasFlank = false;
+	bool hasFeint = false;
 	bool hasMagicArrow = false;
 	float bestFlank = std::numeric_limits<float>::lowest();
+	float bestFeint = std::numeric_limits<float>::lowest();
 	heroActionSelection::CandidateValue best{0, HeroCommand::NONE, SpellID::NONE, 0, 0};
 	size_t selections = 0;
 	std::optional<heroActionSelection::SelectionValue> selection;
@@ -38,6 +40,12 @@ public:
 		{
 			best = value;
 			hasBest = true;
+		}
+		if(value.command == HeroCommand::FEINT)
+		{
+			if(!hasFeint || bestFeint < value.value)
+				bestFeint = value.value;
+			hasFeint = true;
 		}
 		if(value.command == HeroCommand::FLANK)
 		{
