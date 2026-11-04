@@ -3,7 +3,7 @@
 #include "NewHorizonsMetamagicMarks.h"
 #include "../constants/EntityIdentifiers.h"
 #include <optional>
-class Bonus;
+struct Bonus;
 namespace newHorizonsMetamagic
 {
 DLL_LINKAGE bool isChaosShieldMagnitude(const Bonus&, SpellID accepted, SpellID family);
