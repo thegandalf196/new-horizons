@@ -412,7 +412,7 @@ TEST_F(NewHorizonsVinesProjectionIntegration, CompletionExceptionClearsPriorRece
 	auto mechanics = project(*state, aim);
 	ASSERT_TRUE(mechanics->vengefulVinesProjectionReceipt());
 	const auto liveBefore = unitsSnapshot(*branch());
-	const auto rngBefore = randomState(*gameHandler->getRandomGenerator());
+	const auto rngBefore = randomState(*gameHandler->randomizer);
 	auto * delegate = state->getServerCallback();
 	NiceMock<CompletionFailureServer> failingServer;
 	ON_CALL(failingServer, getRNG()).WillByDefault(Return(delegate->getRNG()));
@@ -427,5 +427,5 @@ TEST_F(NewHorizonsVinesProjectionIntegration, CompletionExceptionClearsPriorRece
 	EXPECT_NO_THROW(mechanics->castEval(delegate, aim));
 	EXPECT_TRUE(mechanics->vengefulVinesProjectionReceipt());
 	EXPECT_EQ(unitsSnapshot(*branch()), liveBefore);
-	EXPECT_EQ(randomState(*gameHandler->getRandomGenerator()), rngBefore);
+	EXPECT_EQ(randomState(*gameHandler->randomizer), rngBefore);
 }

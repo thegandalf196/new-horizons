@@ -130,7 +130,6 @@ JsonNode actionData(const StartAction & packet)
 		order["issuedRound"].Integer() = packet.orderState->issuedRound;
 		order["primaryTargetUnitID"].Integer() = packet.orderState->primaryTargetUnitId;
 		order["secondaryTargetUnitID"].Integer() = packet.orderState->secondaryTargetUnitId;
-		order["warcastingBonusPercent"].Integer() = packet.orderState->warcastingBonusPercent;
 		order["hasRevision"].Bool() = packet.orderState->revision.has_value();
 	}
 	return value;

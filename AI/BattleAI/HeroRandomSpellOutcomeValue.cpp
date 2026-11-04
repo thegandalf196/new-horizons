@@ -8,6 +8,8 @@
 #include "../../lib/spells/ArcaneInspirationCompletion.h"
 #include "../../lib/spells/NewHorizonsMetamagicPoints.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/effects/BattleForm.h"

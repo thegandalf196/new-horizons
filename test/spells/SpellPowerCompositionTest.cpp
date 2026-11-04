@@ -138,7 +138,7 @@ TEST_F(SpellPowerCompositionBattleTest, WarcastingRankAndPreviousOrderDoNotBoost
 	const auto mana = attackerSideHero->getManaAvailable();
 	for(const auto id : {SpellID::MAGIC_ARROW, SpellID::CURE})
 	{
-		const auto * spell = id.toSpell();
+		const auto * spell = SpellID(id).toSpell();
 		const auto preview = newHorizonsMagic::spellEffectPreview(*attackerSideHero, *spell, battle());
 		ASSERT_TRUE(preview.primary);
 		EXPECT_EQ(preview.primary->value, spell->isDamage()

@@ -17,6 +17,7 @@
 #include "../render/Colors.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/CComponent.h"
+#include "../widgets/Images.h"
 #include "../widgets/MiscWidgets.h"
 #include "../widgets/TextControls.h"
 #include "../../lib/ConditionalWait.h"

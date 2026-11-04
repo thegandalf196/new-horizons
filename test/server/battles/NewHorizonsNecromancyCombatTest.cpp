@@ -12,6 +12,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsFrozen.h"
 #include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
+#include "../../../lib/battle/MagicalCreatureAttackDamage.h"
 #include "../../../lib/battle/NewHorizonsNecromancyCombat.h"
 #include "../../../lib/battle/ProjectedUnitEnvironmentState.h"
 #include "../../../lib/callback/CBattleCallback.h"
@@ -306,13 +307,14 @@ TEST_F(NewHorizonsNecromancyCombatTest, MagicalShotPredictionAndAppliedDamageAgr
 	const auto preview = projected->battleEstimateDamage(BattleAttackInfo(projectedMage, projectedTarget, 0, true));
 	EXPECT_EQ(preview.damage.min, predicted.damage.min);
 	DamageEstimation raw;
+	// Normalize the calculator output before the real native magical-attack stage.
 	raw.damage = {100, 100};
-	newHorizonsNecromancy::adjustCreatureDamage(attack, raw);
+	battle::applyMagicalAttackReduction(*battle(), attack, raw);
 	EXPECT_EQ(raw.damage.min, 70);
 	EXPECT_EQ(raw.damage.max, 70);
 	raw.damage = {100, 100};
 	attack.physicalDamage = true;
-	newHorizonsNecromancy::adjustCreatureDamage(attack, raw);
+	battle::applyMagicalAttackReduction(*battle(), attack, raw);
 	EXPECT_EQ(raw.damage.min, 100);
 	EXPECT_EQ(raw.damage.max, 100);
 	BattleSetActiveStack active;
@@ -400,8 +402,9 @@ TEST_F(NewHorizonsNecromancyCombatTest, NewPassiveWithHistoricalMdrReducesMagica
 		BattleAttackInfo physical(magicalShooter, target, 0, false);
 		ASSERT_TRUE(physical.physicalDamage);
 		DamageEstimation raw;
+		// Physical calculator output bypasses the native magical-attack stage.
 		raw.damage = {100, 100};
-		newHorizonsNecromancy::adjustCreatureDamage(physical, raw);
+		battle::applyMagicalAttackReduction(*battle(), physical, raw);
 		EXPECT_EQ(raw.damage.min, 100);
 		EXPECT_EQ(raw.damage.max, 100);
 	}

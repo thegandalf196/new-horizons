@@ -205,7 +205,7 @@ void CGameHandler::validatePendingProdigyLevels() const
 {
 	for(const auto & [id, count] : pendingProdigyLevels)
 	{
-		const auto * hero = gameInfo().getHero(id);
+		const auto * hero = gameState().getHero(id);
 		if(!hero || count < 1 || count > 3
 			|| !hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.prodigy"))
 			throw std::runtime_error("Invalid pending Prodigy progression");
