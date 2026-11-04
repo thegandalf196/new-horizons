@@ -87,10 +87,11 @@ TEST_F(NewHorizonsScholarTest, ActualFieldMeetingTeachesAllEligibleSpellsInBothD
 	configure(handler);
 	const auto high = named("core:implosion");
 	const auto low = named("core:magicArrow");
-	const auto other = named("core:haste");
+	const auto other = named("new-horizons:focusMagic");
 	handler.changeSpells(first, true, {high, low});
 	handler.changeSpells(second, true, {other});
 	ASSERT_TRUE(second->canLearnSpell(high.toSpell()));
+	ASSERT_TRUE(first->canLearnSpell(other.toSpell()));
 	ASSERT_EQ(first->getNewHorizonsScholarSpellFor(*second), high);
 	ASSERT_EQ(second->getNewHorizonsScholarSpellFor(*first), other);
 	handler.heroExchange(first->id, second->id);
@@ -107,8 +108,9 @@ TEST_F(NewHorizonsScholarTest, SamePairCanTeachNewUnknownSpellsAgainDuringTheSam
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	configure(handler);
-	const auto earlier = named("core:haste");
+	const auto earlier = named("new-horizons:focusMagic");
 	const auto later = named("core:magicArrow");
+	ASSERT_TRUE(second->canLearnSpell(earlier.toSpell()));
 	handler.changeSpells(first, true, {earlier});
 	handler.heroExchange(first->id, second->id);
 	EXPECT_TRUE(second->spellbookContainsSpell(earlier));

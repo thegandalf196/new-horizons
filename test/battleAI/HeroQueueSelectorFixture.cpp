@@ -49,6 +49,8 @@ void HeroQueueSelectorTest::selectPerk(CGHeroInstance * hero, const std::string 
 	const auto id = SecondarySkill(SecondarySkill::decode(skill));
 	ASSERT_TRUE(id.hasValue());
 	hero->setSecSkillLevel(id, rank, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(hero->getPerkState().canAcquirePerk(skill, perk, hero->getPerkSkillRank(skill)))
+		<< "Requested perk is not eligible under the captured current rules: " << perk;
 	const auto lookup = [hero](const std::string & name) { return hero->getPerkSkillRank(name); };
 	for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
 	{

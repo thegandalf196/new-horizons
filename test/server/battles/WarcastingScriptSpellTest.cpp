@@ -24,6 +24,9 @@
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/Problem.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
+#include <tuple>
 
 namespace
 {
@@ -173,69 +176,83 @@ protected:
 		return obstacle;
 	}
 
+	void expectRosterDeniedWithoutMutation(const BattleAction & action)
+	{
+		const auto * spell = action.spell.toSpell();
+		const auto & row = attackerSideHero->getMagicRules()["spells"][spell->getJsonKey()];
+		ASSERT_FALSE(row["heroAccess"].Bool());
+		ASSERT_FALSE(row["ordinaryAcquisition"].Bool());
+		ASSERT_TRUE(attackerSideHero->spellbookContainsSpell(action.spell));
+		ASSERT_FALSE(attackerSideHero->canCastThisSpell(spell));
+		const auto bytes = [](auto & value)
+		{
+			CMemorySerializer wire;
+			wire.oser & value;
+			return wire.extractBuffer();
+		};
+		const auto army = [](const CGHeroInstance * hero)
+		{
+			std::vector<std::tuple<SlotID, CreatureID, int64_t>> result;
+			for(const auto & [slot, stack] : hero->Slots())
+				result.emplace_back(slot, stack->getCreatureID(), stack->getCount());
+			return result;
+		};
+		const auto beforeBattle = bytes(*battle());
+		const auto beforeRandom = bytes(*gameHandler->randomizer);
+		const auto beforeArmy = army(attackerSideHero);
+		const auto beforeEnemyArmy = army(defenderSideHero);
+		const auto normal = attackerSideHero->getNormalSpellPoints();
+		const auto buffer = attackerSideHero->getBufferSpellPoints();
+		const auto enemyMana = defenderSideHero->getManaAvailable();
+		const auto actions = server.startedActions.size();
+		const auto casts = server.casts.size();
+		EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+		EXPECT_EQ(bytes(*battle()), beforeBattle); // Includes ledger, history, effects and every battle stack.
+		EXPECT_EQ(bytes(*gameHandler->randomizer), beforeRandom);
+		EXPECT_EQ(army(attackerSideHero), beforeArmy);
+		EXPECT_EQ(army(defenderSideHero), beforeEnemyArmy);
+		EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), normal);
+		EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), buffer);
+		EXPECT_EQ(defenderSideHero->getManaAvailable(), enemyMana);
+		EXPECT_EQ(server.startedActions.size(), actions);
+		EXPECT_EQ(server.casts.size(), casts);
+	}
+
 	const CStack * attacker = nullptr;
 	const CStack * defender = nullptr;
 };
 }
 
-TEST_F(WarcastingScriptSpellTest, SummonUsesTheSpellPowerProductBeforeDivision)
+TEST_F(WarcastingScriptSpellTest, CurrentRosterRejectsInscribedRetiredSummonWithoutMutation)
 {
-	constexpr int32_t spellPower = 43;
-	prepare(spellPower);
-	const SpellID spell(SpellID::SUMMON_AIR_ELEMENTAL);
-	ASSERT_EQ(spell.toSpell()->getLevelPower(3), 4);
-	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell.toSpell()), 10);
+	prepare(43);
 	issueOrderThenAdvanceRound();
-
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
-	action.spell = spell;
+	action.spell = SpellID::SUMMON_AIR_ELEMENTAL;
 	action.aimToHex(BattleHex::INVALID);
-	spells::BattleCast parameters(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
-	const auto mechanics = spell.toSpell()->battleMechanics(&parameters);
-	spells::detail::ProblemImpl problem;
-	const bool applicable = mechanics->canBeCast(problem)
-		&& mechanics->canBeCastAt(action.getTarget(battle()), problem);
-	std::vector<std::string> problems;
-	problem.getAll(problems);
-	ASSERT_TRUE(applicable) << testing::PrintToString(problems);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-
-	int summonedCount = 0;
-	for(const auto * unit : battle()->battleGetAllStacks())
-		if(unit->isSummoned() && unit->unitSide() == BattleSide::ATTACKER)
-			summonedCount += unit->getCount();
-	EXPECT_EQ(summonedCount, 17); // floor(43 * 4 / 10).
+	ASSERT_NO_FATAL_FAILURE(expectRosterDeniedWithoutMutation(action));
 }
 
-TEST_F(WarcastingScriptSpellTest, SacrificeScalesTheFullStackPowerNumeratorOnly)
+TEST_F(WarcastingScriptSpellTest, CurrentRosterRejectsInscribedRetiredSacrificeWithoutMutation)
 {
-	constexpr int32_t spellPower = 43;
-	prepare(spellPower);
-	const SpellID spell(SpellID::SACRIFICE);
-	const auto * spellData = spell.toSpell();
-	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spellData), 10);
+	prepare(43);
 	auto * dead = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(70), 100);
 	auto * victim = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(72), 100);
 	int64_t casualtyDamage = dead->getAvailableHealth();
 	dead->damage(casualtyDamage);
 	ASSERT_FALSE(dead->alive());
-	const int64_t victimCount = victim->getCount();
-	const int64_t fixedTerms = (victim->getMaxHealth() + spellData->getLevelPower(3)) * victimCount;
-	const int64_t scaledPower = spellPower * victimCount / 10;
-	const int64_t expectedHeal = fixedTerms + scaledPower;
-
+	const auto victimHealth = victim->getAvailableHealth();
 	issueOrderThenAdvanceRound();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
-	action.spell = spell;
+	action.spell = SpellID::SACRIFICE;
 	action.setTarget({battle::Destination(dead), battle::Destination(victim)});
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_TRUE(dead->alive());
-	EXPECT_EQ(dead->getAvailableHealth(), expectedHeal); // Fixed stack terms plus floor(43 * 100 / 10) = 1430.
-	EXPECT_FALSE(victim->alive());
+	ASSERT_NO_FATAL_FAILURE(expectRosterDeniedWithoutMutation(action));
+	EXPECT_FALSE(dead->alive());
+	EXPECT_EQ(victim->getAvailableHealth(), victimHealth);
 }
 
 TEST_F(WarcastingScriptSpellTest, PhantomArmyUsesPowerInItsIntegrityCoefficient)

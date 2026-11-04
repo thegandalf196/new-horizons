@@ -14,6 +14,7 @@
 #include <vstd/RNG.h>
 
 #include "../../../lib/CCreatureHandler.h"
+#include "../../../lib/battle/Unit.h"
 #include "../../../lib/json/JsonNode.h"
 
 namespace test
@@ -195,6 +196,59 @@ INSTANTIATE_TEST_SUITE_P
 		Values(false, true)
 	)
 );
+
+// Exercise the retained Lua effect directly; this does not grant hero roster access.
+class SummonProductMechanics : public MechanicsMock
+{
+public:
+	int32_t getEffectPowerDivisor() const override { return 10; }
+	int32_t getSpellPowerCoefficientBasisPoints() const override { return 10000; }
+};
+
+class SummonProductTest : public Test, public EffectFixture
+{
+public:
+	SummonProductTest() : EffectFixture("core:summon") {}
+protected:
+	void SetUp() override
+	{
+		EffectFixture::setUp();
+		JsonNode options;
+		options["id"].String() = "core:airElemental";
+		options["permanent"].Bool() = true;
+		EffectFixture::setupEffect(options);
+	}
+};
+
+TEST_F(SummonProductTest, LuaEffectMultipliesPowerBeforeDivision)
+{
+	StrictMock<SummonProductMechanics> scaled;
+	scaled.casterSide = BattleSide::ATTACKER;
+	EXPECT_CALL(scaled, battle()).WillRepeatedly(Return(battleFake.get()));
+	EXPECT_CALL(scaled, getUnitCaster()).WillRepeatedly(Return(nullptr));
+	EXPECT_CALL(scaled, getHeroCaster()).WillRepeatedly(Return(nullptr));
+	EXPECT_CALL(scaled, getSpellId()).WillRepeatedly(Return(SpellID(SpellID::SUMMON_AIR_ELEMENTAL)));
+	EXPECT_CALL(scaled, getEffectPower()).WillOnce(Return(43));
+	EXPECT_CALL(scaled, calculateRawEffectValue(0, 43)).WillOnce(Return(172));
+	EXPECT_CALL(scaled, applySpecificSpellBonus(17)).WillOnce(Return(17));
+	EXPECT_CALL(creatureServiceMock, getByName("core:airElemental")).WillRepeatedly(Return(&creatureStub));
+	EXPECT_CALL(creatureServiceMock, getById(creature1)).WillRepeatedly(Return(&creatureStub));
+	EXPECT_CALL(creatureServiceMock, getByIndex(creature1.getNum())).WillRepeatedly(Return(&creatureStub));
+	EXPECT_CALL(creatureStub, getId()).WillRepeatedly(Return(creature1));
+	EXPECT_CALL(creatureStub, getJsonKey()).WillRepeatedly(Return("core:airElemental"));
+	EXPECT_CALL(*battleFake, nextUnitId()).WillOnce(Return(42));
+	::battle::UnitInfo added;
+	EXPECT_CALL(*battleFake, addUnit(42, _)).WillOnce(Invoke([&](uint32_t id, const JsonNode & data)
+	{
+		added.load(id, data);
+	}));
+	EXPECT_CALL(serverMock, apply(Matcher<BattleUnitsChanged &>(_))).Times(1);
+	Target target{::battle::Destination(BattleHex(5, 5))};
+	subject->apply(&serverMock, &scaled, target);
+	EXPECT_EQ(added.count, 17); // floor(43 * 4 / 10), rather than floor(43 / 10) * 4.
+	EXPECT_EQ(added.type, creature1);
+	EXPECT_EQ(added.position, BattleHex(5, 5));
+}
 
 class SummonApplyTest : public TestWithParam<::testing::tuple<bool, bool>>, public EffectFixture
 {

@@ -133,10 +133,12 @@ TEST_F(NewHorizonsLearningExchangeTest, SanyaPartnerScholarMeetingExchangesAllEl
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
-	const auto firstTie = named("core:dispel"), otherTie = named("core:haste");
+	const auto firstTie = named("core:dispel"), otherTie = named("new-horizons:focusMagic");
 	handler->changeSpells(sanya, true, {high, middle, low});
 	handler->changeSpells(scholar, true, {firstTie, otherTie});
 	ASSERT_TRUE(scholar->canLearnSpell(high.toSpell()));
+	ASSERT_TRUE(sanya->canLearnSpell(otherTie.toSpell()));
+	ASSERT_EQ(sanya->getSpellLevel(firstTie.toSpell()), sanya->getSpellLevel(otherTie.toSpell()));
 	const auto random = rng();
 	const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, 0);
 	EXPECT_EQ(rng(), random);
@@ -158,9 +160,11 @@ TEST_F(NewHorizonsLearningExchangeTest, GeonPartnerScholarMeetingExchangesAllEli
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
-	const auto firstTie = named("core:dispel"), otherTie = named("core:haste");
+	const auto firstTie = named("core:dispel"), otherTie = named("new-horizons:focusMagic");
 	handler->changeSpells(scholar, true, {high, middle, low});
 	handler->changeSpells(geon, true, {firstTie, otherTie});
+	ASSERT_TRUE(scholar->canLearnSpell(otherTie.toSpell()));
+	ASSERT_EQ(scholar->getSpellLevel(firstTie.toSpell()), scholar->getSpellLevel(otherTie.toSpell()));
 	handler->heroExchange(scholar->id, geon->id);
 	EXPECT_TRUE(geon->spellbookContainsSpell(high));
 	EXPECT_TRUE(geon->spellbookContainsSpell(middle));

@@ -612,6 +612,38 @@ TEST_F(SacrificeGetHealthChangeTest, AliveTargetReturnsCalculatedHealWithNegativ
 	EXPECT_EQ(result.unitType, static_cast<const Creature *>(CreatureID(unitId).toCreature()));
 }
 
+// The retained effect remains testable independently of current hero spell admission.
+class SacrificeProductMechanics : public MechanicsMock
+{
+public:
+	int32_t getEffectPowerDivisor() const override { return 10; }
+	int32_t getSpellPowerCoefficientBasisPoints() const override { return 10000; }
+};
+
+TEST_F(SacrificeGetHealthChangeTest, LuaEffectScalesFullStackPowerBeforeDivisionAndLeavesFixedTerms)
+{
+	StrictMock<SacrificeProductMechanics> scaled;
+	scaled.casterSide = BattleSide::ATTACKER;
+	EXPECT_CALL(scaled, battle()).WillRepeatedly(Return(battleFake.get()));
+	EXPECT_CALL(scaled, getUnitCaster()).WillRepeatedly(Return(nullptr));
+	EXPECT_CALL(scaled, getHeroCaster()).WillRepeatedly(Return(nullptr));
+	EXPECT_CALL(scaled, getSpellId()).WillRepeatedly(Return(SpellID(SpellID::SACRIFICE)));
+	EXPECT_CALL(scaled, getEffectPower()).WillOnce(Return(43));
+	EXPECT_CALL(scaled, calculateRawEffectValue(0, 1)).WillOnce(Return(0));
+	auto & victim = unitsFake.add(BattleSide::ATTACKER);
+	victim.makeAlive();
+	EXPECT_CALL(victim, getCount()).WillRepeatedly(Return(100));
+	EXPECT_CALL(victim, creatureId()).WillRepeatedly(Return(CreatureID(0)));
+	victim.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH,
+		BonusSource::CREATURE_ABILITY, 10, BonusSourceID()));
+	unitsFake.setDefaultBonusExpectations();
+	Target target{::battle::Destination(&victim, BattleHex())};
+	const auto result = subject->getHealthChange(&scaled, target);
+	EXPECT_EQ(result.hpDelta, 1430); // (10 + 0) * 100 + floor(43 * 100 / 10).
+	EXPECT_EQ(result.unitsDelta, -100);
+	EXPECT_EQ(result.unitType, static_cast<const Creature *>(CreatureID(0).toCreature()));
+}
+
 class SacrificeApplyTest : public Test, public EffectFixture
 {
 public:

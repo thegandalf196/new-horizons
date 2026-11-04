@@ -244,8 +244,10 @@ protected:
 	{
 		const BattleSide loser = winner == BattleSide::ATTACKER ? BattleSide::DEFENDER : BattleSide::ATTACKER;
 		int64_t baseXp = 0;
-		for(const auto & [creatureId, count] : result.casualties[loser])
-			baseXp += creatureId.toCreature()->valOfBonuses(BonusType::STACK_HEALTH) * count;
+		// The declared winner alone receives casualty XP in endBattle.
+		if(winner == result.winner)
+			for(const auto & [creatureId, count] : result.casualties[loser])
+				baseXp += creatureId.toCreature()->valOfBonuses(BonusType::STACK_HEALTH) * count;
 
 		const auto * defeatedHero = winner == context.referenceWinner ? context.loserHero : context.winnerHero;
 		if(result.result == EBattleResult::NORMAL && defeatedHero)
@@ -283,6 +285,7 @@ protected:
 			if(losingHero->hasActivePerk(LEARNING_SKILL, FIELD_STUDY))
 			{
 				ASSERT_GT(losingHeroBaseXp, 0);
+				EXPECT_EQ(losingHeroBaseXp, 500) << "Normal hero combat retains the existing per-side fixed hero XP";
 				EXPECT_EQ(result.exp[loser], losingHeroBaseXp * 145 / 100);
 			}
 			else
@@ -365,7 +368,8 @@ TEST_F(NewHorizonsLearningFieldStudyTest, FieldStudyScalesBothSidesCombatXpInclu
 	EXPECT_EQ(battle()->getSide(BattleSide::DEFENDER).initialArmyValue, defenderArmyValue);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroID, attackerSideHero->id);
 
-	// Give the losing attacker a positive casualty XP contribution too.
+	// Damage the winner too: casualties still reward only the winner, while
+	// the losing attacker's existing fixed hero XP must receive Field Study.
 	auto * defenderStack = stackAt(BattleSide::DEFENDER, SlotID(0));
 	ASSERT_NE(defenderStack, nullptr);
 	damageStack(defenderStack, defenderStack->getMaxHealth());
