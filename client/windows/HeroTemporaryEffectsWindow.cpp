@@ -17,7 +17,10 @@
 #include "../../lib/bonuses/BonusCustomTypes.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/callback/CCallback.h"
+#include "../../lib/constants/EntityIdentifiers.h"
+#include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/MetaString.h"
 
 namespace
@@ -39,6 +42,16 @@ std::string effectText(const Bonus & bonus)
 	return LIBRARY->bth->bonusToString(std::make_shared<Bonus>(bonus));
 }
 
+std::string effectSource(const Bonus & bonus)
+{
+	if(bonus.source == BonusSource::OTHER && bonus.description.empty() && bonus.stacking == "stables"
+		&& bonus.type == BonusType::MOVEMENT && bonus.valType == BonusValueType::ADDITIVE_VALUE
+		&& bonus.subtype == BonusSubtypeID(BonusCustomSubtype::heroMovementLand)
+		&& bonus.duration == BonusDuration::ONE_WEEK)
+		return LIBRARY->generaltexth->translate(LIBRARY->objtypeh->getObjectGroupNameTextID(Obj::STABLES));
+	return bonus.Description(GAME->interface()->cb.get());
+}
+
 std::string effectList(const CGHeroInstance & hero)
 {
 	std::string result;
@@ -50,7 +63,7 @@ std::string effectList(const CGHeroInstance & hero)
 		const auto effect = effectText(*bonus);
 		if(effect.empty())
 			continue;
-		const auto source = bonus->Description(GAME->interface()->cb.get());
+		const auto source = effectSource(*bonus);
 		result += (result.empty() ? "" : "\n\n") + std::string("{") + source + "}\n"
 			+ effect + "\n" + heroTemporaryEffects::expiry(bonus->duration, bonus->turnsRemain);
 	}
