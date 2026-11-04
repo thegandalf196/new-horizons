@@ -142,6 +142,22 @@ protected:
 		spells::BattleCast trigger(battle(), &proxy, spells::Mode::PASSIVE, obstacle.trigger.toSpell());
 		trigger.cast(gameHandler->spellEnv.get(), battle::Target{spells::Destination(target)});
 	}
+	std::vector<std::byte> savedRandomizer() const
+	{
+		CMemorySerializer wire;
+		wire.oser & *gameHandler->randomizer;
+		return wire.extractBuffer();
+	}
+	void restoreWallBaseline(const JsonNode & state, const std::vector<std::byte> & randomizer)
+	{
+		BattleUnitsChanged restore;
+		restore.battleID = BattleID(0);
+		restore.changedStacks.emplace_back(victim->unitId(), UnitChanges::EOperation::UPDATE);
+		restore.changedStacks.back().data = state;
+		gameHandler->sendAndApply(restore);
+		CMemorySerializer wire(randomizer);
+		wire.iser & *gameHandler->randomizer;
+	}
 	void inspire(CStack * unit, arcaneInspiration::Profile policy)
 	{
 		SetStackEffect packet;
@@ -381,12 +397,25 @@ TEST_F(ArcaneInspirationBattleTest, NativeDelayedHeroWallShocksWithoutCoreHistor
 	const auto history = battle()->getWisdomCombatState(BattleSide::ATTACKER);
 	const auto points = battle()->getMetamagicPointState(BattleSide::ATTACKER);
 	const auto actions = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
-	const auto casts = server.casts.size();
-	CMemorySerializer before;
-	before.oser & *gameHandler->randomizer;
 	const auto health = victim->getAvailableHealth();
+	const auto stateBefore = victim->acquireState()->save();
+	const auto randomizerBefore = savedRandomizer();
+	// Keep the exact damage snapshot, caster delegate and layout; only the
+	// unowned baseline lacks the original-side receipt required for Spellshock.
+	auto baseline = obstacle;
+	baseline.casterSide = BattleSide::NONE;
+	triggerWall(baseline, victim);
+	const auto baselineHealth = victim->getAvailableHealth();
+	const auto baselineRandomizer = savedRandomizer();
+	EXPECT_LT(baselineHealth, health);
+	EXPECT_FALSE(victim->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
+	EXPECT_NE(baselineRandomizer, randomizerBefore); // Canonical resistance draws remain native.
+	restoreWallBaseline(stateBefore, randomizerBefore);
+	ASSERT_EQ(victim->acquireState()->save(), stateBefore);
+	ASSERT_EQ(savedRandomizer(), randomizerBefore);
+	const auto casts = server.casts.size();
 	triggerWall(obstacle, victim);
-	EXPECT_LT(victim->getAvailableHealth(), health);
+	EXPECT_EQ(victim->getAvailableHealth(), baselineHealth);
 	EXPECT_TRUE(victim->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
 	EXPECT_FALSE(actor->hasBonus(CSelector(arcaneInspiration::isActive)));
 	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).completedCasts, history.completedCasts);
@@ -396,9 +425,17 @@ TEST_F(ArcaneInspirationBattleTest, NativeDelayedHeroWallShocksWithoutCoreHistor
 	ASSERT_EQ(server.casts.size(), casts + 1);
 	EXPECT_FALSE(server.casts.back().announcement.castByHero);
 	EXPECT_FALSE(server.casts.back().announcement.activeCast);
-	CMemorySerializer after;
-	after.oser & *gameHandler->randomizer;
-	EXPECT_EQ(after.extractBuffer(), before.extractBuffer());
+	EXPECT_EQ(savedRandomizer(), baselineRandomizer);
+	// The delayed publisher itself refreshes only Spellshock: no damage or RNG.
+	spells::ObstacleCasterProxy proxy(PlayerColor(0), attackerSideHero, obstacle);
+	spells::BattleCast completion(battle(), &proxy, spells::Mode::PASSIVE, obstacle.trigger.toSpell());
+	const auto mechanics = obstacle.trigger.toSpell()->battleMechanics(&completion);
+	BattleStackAttacked receipt;
+	receipt.stackAttacked = victim->unitId();
+	receipt.damageAmount = health - baselineHealth;
+	arcaneInspiration::publishDelayedSpellDamage(*gameHandler->spellEnv, *battle(), *mechanics, std::span(&receipt, 1));
+	EXPECT_EQ(savedRandomizer(), baselineRandomizer);
+	EXPECT_EQ(victim->getAvailableHealth(), baselineHealth);
 	advanceRound();
 	EXPECT_FALSE(victim->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
 }

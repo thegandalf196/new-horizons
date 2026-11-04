@@ -383,8 +383,8 @@ HypotheticBattle::ProjectedCounterspellOutcome HypotheticBattle::resolveProjecte
 	result.wardActive = true;
 	result.resolutionKnown = false;
 	result.negated.reset();
-	const auto * caster = getSideHero(casterSide);
-	const auto * wardingHero = getSideHero(wardSide);
+	const auto * caster = battleGetFightingHero(casterSide);
+	const auto * wardingHero = battleGetFightingHero(wardSide);
 	if(!caster || !wardingHero)
 		return result;
 

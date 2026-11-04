@@ -13,6 +13,7 @@
 #include "../../../lib/spells/NewHorizonsWisdom.h"
 #include "../../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../../lib/spells/SpellCostBreakdown.h"
+#include "../../../lib/spells/MagicalDamageReduction.h"
 
 TEST(NewHorizonsWisdomState, FamiliarityTracksParticularSpellsAcrossInterveningCastsAndFloorsPayment)
 {
@@ -165,8 +166,22 @@ TEST_F(NewHorizonsWisdomRevisionTest, InsightAndArchmageWorkWithoutMetamagicAndS
 	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, SpellID(SpellID::IMPLOSION).toSpell());
 	const auto mechanics = event.getSpell()->battleMechanics(&event);
 	const auto penetration = mechanics->getCapturedMdrPenetration();
-	ASSERT_EQ(penetration["penetrations"].Vector().size(), 1);
-	EXPECT_EQ(penetration["penetrations"].Vector().front().Integer(), 10);
+	const auto * capturedProfile = mechanics->getMetamagicCastProfile();
+	ASSERT_NE(capturedProfile, nullptr);
+	EXPECT_TRUE(capturedProfile->perks.pointPolicy);
+	EXPECT_EQ(capturedProfile->perks.rank, 0);
+	EXPECT_EQ(capturedProfile->perks.wisdomEffectivenessBonus, 45);
+	EXPECT_EQ(newHorizonsMetamagic::effectivenessBonusPercent(capturedProfile->perks, capturedProfile->points)
+		- capturedProfile->perks.wisdomEffectivenessBonus, 0);
+	// Ignore identity factors; only Archmage may contribute effective penetration here.
+	const auto contributors = spells::capturedMdrPenetrations(penetration, actor->unitId(), battle());
+	auto effectiveContributors = contributors;
+	std::erase(effectiveContributors, 0);
+	EXPECT_EQ(effectiveContributors, (std::vector<int>{10}));
+	EXPECT_EQ(penetration["sourceHeroCasterId"].Integer(), attackerSideHero->id.getNum());
+	const auto mitigated = spells::calculateMagicalDamageReduction(1000, std::vector<int>{50}, contributors);
+	EXPECT_EQ(mitigated.damageWithoutPenetration, 500);
+	EXPECT_EQ(mitigated.damageWithPenetration, 550); // Two independent 10% sources would produce 595.
 	battle()->getSide(BattleSide::ATTACKER).wisdomCombatState.recordCompletedCast(SpellID::RESURRECTION, battle()->getRound());
 	const auto repeatedHigh = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, SpellID::RESURRECTION);
 	EXPECT_EQ(repeatedHigh.perks.wisdomEffectivenessBonus, 20);
