@@ -184,10 +184,9 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	questlogButton->block(!GAME->interface()->hasJournalEntries());
 	if(newHorizonsLayout)
 	{
-		temporaryEffectsButton = std::make_shared<CButton>(Point(560, 480), AnimationPath::builtin("hsbtns4.def"),
+		temporaryEffectsButton = std::make_shared<CButton>(Point(560, 480), AnimationPath::builtin("heroBackpack"),
 			CButton::tooltip("Temporary effects", "Show this hero's active temporary bonuses, penalties and their expiry."),
 			[this]() { ENGINE->windows().createAndPushWindow<HeroTemporaryEffectsWindow>(*curHero); });
-		temporaryEffectsButton->setImage(AnimationPath::builtin("heroBackpack"));
 		temporaryEffectsButton->setOverlay(std::make_shared<CPicture>(ImagePath::builtin("NH_hero_temporary_effects_icon")));
 	}
 
