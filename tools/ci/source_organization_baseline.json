@@ -42,9 +42,9 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "rationale": "Complete workflow read1–542, every run block and folded command, embedded Bash/Python/PowerShell and Python heredocs. No function/def/lambda definitions, Bash function declarations, or PowerShell callable scriptblocks. Control-flow braces56/257/259, Python comprehensions380/455 and generator221, shell substitutions, here-string534–542 and trap strings444/479 are not callable-definition spans under the maintained metric. Exact542-line renewal changes only the bounded SDL3_image source seed URL/comment to its canonical official GitHub release; no callable definition or control flow changes. Root source review preserves size/SHA/HTTPS/time/cache checks. Explicit functions[] does not exclude542-line physical file or certify CI behavior. Separately reviewed547-line successor adds only actions/setup-python declarative setup after checkout and before the first verifier. All inherited542-line run bodies remain byte-exact; no callable was added. Current physical coordinates are control-flow braces61/262/264, comprehensions385/460, generator226, here-string539-547 and trap strings449/484; prior references above are retained historical review evidence. Complete current inventory remains functions[], not a coverage exclusion or CI execution claim.",
-      "review": "IR-MANUAL-BATCH7-NINE-1e934f67-20261015; ROOT-SDL-IMAGE-OFFICIAL-ENDPOINT-ONLY-20261031; IR-WINDOWS-PY315-EXPLICIT-SETUP-SOURCE-20261101",
-      "sha256": "654e63907bfae739d22cdef3059dab13b05f30f59a88944612aabac9288a4171"
+      "rationale": "Complete 544-line workflow inventory includes every folded command and embedded Bash, Python and PowerShell body. No callable definitions remain inline: functions[] measures coverage rather than excluding the workflow. The exact shrinking successor extracts preset configuration and the six-target build command into tools/ci/build_windows_client.py. Existing dispatch, dependency, preflight, CRT, packaging, runtime and artifact contracts remain unchanged; the new PCH input defaults on. This is source review, not a Windows execution or build-speed claim.",
+      "review": "WINDOWS-CONFIGURE-BUILD-EXTRACTION-SOURCE-REVIEW",
+      "sha256": "33c47a5eab05606e06a198fc96a174bb62068eda55e6f26e7f858da6e7ecde84"
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -18055,12 +18055,12 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted.",
       "kind": "exception",
-      "lines": 547,
+      "lines": 544,
       "owner": "engine_engineer",
-      "rationale": "Existing542-line workflow retained at the same physical size. Exact reviewed source-seed URL/comment correction replaces the twice timing-out libsdl.org endpoint with the canonical official GitHub SDL3_image3.4.4 release already specified by the unchanged recipe. Downloaded bytes match the unchanged11123077-byte size and pinnedSHA256; HTTPS-only redirects, time and size limits, zero retries, source-cache admission and downstream pixel/source gates are unchanged. No callable or control flow is added. This bounded source reliability exception grants no future growth or ceiling change. Separate bounded interpreter correctness successor542-to547 adds only explicit Python3.15 setup before every existing Python consumer. Existing run bodies, compiler and dependency declarations, source-cache controls, permissions, branch/dispatch conditions and artifact behavior remain byte-exact. Combining this five-line declarative correction with orchestration extraction would enlarge the verification surface without helping interpreter selection; Windows execution remains pending.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1; ROOT-SDL-IMAGE-OFFICIAL-ENDPOINT-ONLY-20261031; IR-WINDOWS-PY315-EXPLICIT-SETUP-SOURCE-20261101",
-      "review_scope": "exact-official-source-endpoint-url-comment-only-source-reviewed-runtime-ci-pending-no-future-growth; exact-five-line-python315-selection-source-reviewed-Windows-unrun-no-further-growth",
-      "sha256": "654e63907bfae739d22cdef3059dab13b05f30f59a88944612aabac9288a4171"
+      "rationale": "Workflow decreases from 547 to 544 lines while its configure/build argv move into a focused 61-line Python component. The component owns exact preset/helper/cache configuration and six targets; the workflow retains all other release stages. An explicit no-PCH option permits compiler-cache use while preserving the existing PCH default. Project production code grows by 58 lines across these two files; this change reduces orchestration concentration rather than total source size.",
+      "review": "WINDOWS-CONFIGURE-BUILD-EXTRACTION-SOURCE-REVIEW",
+      "review_scope": "exact-shrinking-configure-build-extraction-and-default-on-PCH-input; source-reviewed; existing release gates retained; no ceiling increase or coverage exclusion",
+      "sha256": "33c47a5eab05606e06a198fc96a174bb62068eda55e6f26e7f858da6e7ecde84"
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "composition_predecessor_review": "PROPOSED-IR-CURRENT704-REBASED-FINITE-PREREQUISITES-20261031",

@@ -7,6 +7,10 @@ on:
         description: Validate notices/sources without compiling the client (may build the patched decoder)
         type: boolean
         default: true
+      use_precompiled_headers:
+        description: Use precompiled headers; disable for MSVC sccache object caching
+        type: boolean
+        default: true
       repack_run_id:
         description: Optional historical upstream-decoder build run for notice-only repair
         type: string
@@ -313,15 +317,8 @@ jobs:
       - name: Configure client and internal authority
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         run: >-
-          cmake --preset new-horizons-windows-x64
-          -DENABLE_CCACHE=ON
-          -DENABLE_NH_SDL3_MASK_REGRESSION=ON
-          -DENABLE_NH_ART_CACHE_REGRESSION=ON
-          -DENABLE_NH_PREVIEW_SURFACE_REGRESSION=ON
-          -DENABLE_NH_SDL3_OUTLINE_REGRESSION=ON
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          -DCMAKE_C_COMPILER_LAUNCHER=sccache
-          -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+          python tools/ci/build_windows_client.py configure
+          --use-precompiled-headers ${{ inputs.use_precompiled_headers && 'ON' || 'OFF' }}
 
       - name: Verify CMake-selected CRT bytes before compiling
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
@@ -352,7 +349,7 @@ jobs:
 
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: cmake --build build/new-horizons-windows-x64 --target vcmiclient nhSdl3GrayscaleMaskRuntimeTest nhArtStartupRuntimeTest nhImageOptimizerRuntimeTest nhCreaturePreviewSurfaceRuntimeTest nhSdl3OutlineRuntimeTest --parallel 4 -- -d keeprsp
+        run: python tools/ci/build_windows_client.py build --build-root build/new-horizons-windows-x64
 
       - name: Record bounded Windows AI compiler flag evidence
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}

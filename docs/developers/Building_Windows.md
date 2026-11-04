@@ -252,6 +252,38 @@ cd /d C:\VCMI
 cmake --build build --config Debug
 ```
 
+#### New Horizons CI targets with Ninja
+
+After preparing dependencies and the compiler environment, CI and local Windows
+Ninja builds share these configure and build operations:
+
+```batchfile
+python tools/ci/build_windows_client.py configure
+python tools/ci/build_windows_client.py build --build-root build/new-horizons-windows-x64
+```
+
+`configure` uses the existing `new-horizons-windows-x64` preset and the sccache,
+regression-target and compile-database flags used by the
+[Windows workflow](../../.github/workflows/new-horizons-windows.yml). `build` compiles
+`vcmiclient` and the five runtime-regression targets in one fail-fast CMake invocation,
+using four jobs by default. `--jobs` accepts 1 through 10. Ninja response files are
+retained with `-d keeprsp`. Dependency preparation, installation, packaging and
+runtime checks remain separate steps.
+
+The workflow dispatch input `use_precompiled_headers` defaults to `true`. Set it to
+`false` to configure the normal build with `ENABLE_PCH=OFF`: sccache 0.10 can cache
+ordinary MSVC object compilations without PCH. A cold build may be slower; this
+option provides no full-build speed guarantee. The shared `configure` command also
+defaults to PCH on; select `--use-precompiled-headers OFF` explicitly to use that route.
+The `build` command retains the tree's configured PCH setting.
+
+For a Wine host, configure the licensed MSVC/SDK tools and wrappers externally,
+then use `build --build-root` for that configured tree and select the host's CMake
+executable with `--cmake`. The helper inherits that
+environment unchanged. Keep proprietary tools and SDK files outside distribution
+artifacts. This helper uses Ninja options; Visual Studio solution builds above
+continue to use their own command.
+
 ## Updating an existing checkout
 
 For normal day-to-day updates, keep the Conan cache and existing solution:
