@@ -7,6 +7,7 @@
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../spells/AutomaticHeroCast.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsSpellAvailability.h"
 #include "../spells/NewHorizonsMetamagicMarks.h"
 #include <algorithm>
 #include <stdexcept>
