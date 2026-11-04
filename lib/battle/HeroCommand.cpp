@@ -389,7 +389,7 @@ std::vector<Bonus> bonuses(const JsonNode & rules, HeroCommand command, const CG
 		// Saved v1-v3 rules do not gain perks added to the current canonical
 		// Orders profile. Keep their historic rank scaling while excluding the
 		// attribute-specific Commander bonuses introduced with the canonical rules.
-		bonus.val = coefficient(formula, CoefficientInputs::native(hero), 0, 0, false);
+		bonus.val = coefficient(formula, CoefficientInputs::native(hero), 0, false);
 		bonus.description.appendRawString("New Horizons: " + key(command));
 		if(effect == "speedPercent")
 		{
