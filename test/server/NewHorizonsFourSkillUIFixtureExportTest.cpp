@@ -133,6 +133,17 @@ protected:
         second = findHeroAt({12, 14, 0});
         town = expectAt<CGTownInstance>({7, 7, 0});
         ASSERT_TRUE(first && second && town);
+        // Map XP initialization fills ranks without choosing their required perks.
+        // Author Orrin's level-nine progression instead: two Basic starting Skills,
+        // then eight alternating rank/perk choices for Learning and Estates.
+        const SecondarySkill mandate(SecondarySkill::decode("new-horizons:divineMandate"));
+        const SecondarySkill archery(SecondarySkill::decode("new-horizons:archery"));
+        const auto initializedSkills = first->secSkills;
+        for(const auto & [skill, rank] : initializedSkills)
+            if(skill != learning && skill != estates && skill != mandate && skill != archery)
+                first->setSecSkillLevel(skill, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+        first->setSecSkillLevel(mandate, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+        first->setSecSkillLevel(archery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
         ASSERT_NO_FATAL_FAILURE(choose(first, LEARNING, "historian", "connoisseur"));
         ASSERT_NO_FATAL_FAILURE(choose(first, estatesTest::ESTATES, "taxCollector", "conscription"));
         ASSERT_NO_FATAL_FAILURE(choose(second, estatesTest::ESTATES, "taxCollector", "architect"));
@@ -170,6 +181,9 @@ protected:
         ASSERT_EQ((*buyer)->level, 9u);
         ASSERT_EQ((*buyer)->exp, LIBRARY->heroh->reqExp(10) - 1);
         ASSERT_FALSE((*buyer)->gainsLevel());
+        ASSERT_EQ((*buyer)->secSkills.size(), 4u);
+        ASSERT_EQ((*buyer)->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate"))), MasteryLevel::BASIC);
+        ASSERT_EQ((*buyer)->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:archery"))), MasteryLevel::BASIC);
         ASSERT_GT(newHorizonsHeroes::connoisseurSkillCandidates(world, **buyer, {}).size(), 2u);
         ASSERT_FALSE(handler->queries->topQuery(estatesTest::PLAYER));
         ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(estatesTest::PLAYER));
