@@ -4,7 +4,7 @@
 #include "../../lib/constants/EntityIdentifiers.h"
 #include <map>
 class CGameHandler;
-class CPackForClient;
+struct CPackForClient;
 namespace elementalCataclysmAftermath
 {
 struct Trigger

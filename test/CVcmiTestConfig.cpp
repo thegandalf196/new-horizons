@@ -93,8 +93,19 @@ void CVcmiTestConfig::SetUp()
 			|| std::getenv("NH_EXPORT_HERO_PROC_FAMILY") || std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT"))
 			throw std::runtime_error("Passive Skill UI export requires its exact isolated invocation");
 	}
+	const char * fourSkill = std::getenv("NH_EXPORT_FOUR_SKILL_UI_FIXTURE");
+	const char * fourSkillRoot = std::getenv("NH_EXPORT_FOUR_SKILL_UI_SAVE_ROOT");
+	const char * fourSkillPrivate = std::getenv("NH_EXPORT_FOUR_SKILL_UI_PRIVATE_ROOT");
+	const char * fourSkillSource = std::getenv("NH_EXPORT_FOUR_SKILL_UI_SOURCE_ROOT");
+	const bool useFourSkillExport = fourSkill || fourSkillRoot || fourSkillPrivate || fourSkillSource;
+	if(useFourSkillExport && (!fourSkill || std::string_view(fourSkill) != "1"
+		|| ::testing::GTEST_FLAG(filter) != "NewHorizonsFourSkillUIFixtureExportTest.ExportCurrentPrequeryWorld"
+		|| !fourSkillRoot || !*fourSkillRoot || !fourSkillPrivate || !*fourSkillPrivate || !fourSkillSource || !*fourSkillSource
+		|| useOrdinaryExport || useSkirmisherExport || usePositiveCueExport || useAuthoredCue || usePassiveSkillExport
+		|| std::getenv("NH_EXPORT_HERO_PROC_FAMILY") || std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT")))
+		throw std::runtime_error("Four Skill UI export bootstrap requires its exact isolated invocation");
 	const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport || usePositiveCueExport
-		|| useAuthoredCue || usePassiveSkillExport;
+		|| useAuthoredCue || usePassiveSkillExport || useFourSkillExport;
 	LIBRARY = new GameLibrary;
 	// Default tests retain their independent TEST preset and fixture mod. Only
 	// the explicitly selected player-save exporter uses the ordinary preset.
@@ -107,7 +118,7 @@ void CVcmiTestConfig::SetUp()
 			|| std::any_of(mods.begin(), mods.end(), [](const auto & mod)
 			{ return mod != "core" && mod != "vcmi" && mod != "new-horizons"; }))
 			throw std::runtime_error("Ordinary hero export bootstrap requires only the shipping mods");
-		if((useSkirmisherExport || usePositiveCueExport || useAuthoredCue || usePassiveSkillExport)
+		if((useSkirmisherExport || usePositiveCueExport || useAuthoredCue || usePassiveSkillExport || useFourSkillExport)
 			&& std::find(mods.begin(), mods.end(), "core") == mods.end())
 			throw std::runtime_error("Ordinary Skirmisher export bootstrap requires the shipping core mod");
 	}

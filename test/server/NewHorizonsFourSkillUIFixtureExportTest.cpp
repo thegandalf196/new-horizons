@@ -6,6 +6,7 @@
 #include "../../lib/entities/hero/CHeroHandler.h"
 #include "../../lib/entities/hero/SkillChoiceEligibility.h"
 #include "../../lib/filesystem/NhArtSha256.h"
+#include "../../lib/filesystem/SavegamePath.h"
 #include "../../lib/serializer/CLoadFile.h"
 #include "../../lib/pathfinder/PathfinderCache.h"
 #include "../../lib/pathfinder/PathfinderOptions.h"
@@ -115,6 +116,9 @@ protected:
     }
     void createWorld()
     {
+        const auto & mods = LIBRARY->modh->getActiveMods();
+        const std::set<std::string> shipping{"core", "vcmi", "new-horizons"};
+        ASSERT_EQ(std::set<std::string>(mods.begin(), mods.end()), shipping);
         const auto xp = LIBRARY->heroh->reqExp(10) - 1;
         ASSERT_GT(xp, 0);
         ASSERT_LE(xp, std::numeric_limits<uint32_t>::max());
@@ -255,6 +259,9 @@ protected:
         RecordProperty("saveBytes", std::to_string(size));
         RecordProperty("fixtureIdentity", "authored-current-perks-prequery-not-default-hero-proof");
         RecordProperty("saveLoadRoundtrip", "verified");
+        RecordProperty("libraryModProfile", "shipping-core-vcmi-new-horizons");
+        RecordProperty("quicksaveRelativePath", SavegamePath::getPath(
+            *handler->gameState().getStartInfo(), *handler->gameState().getMapHeader(), "Quicksave"));
         RecordProperty("saveFormat", static_cast<int>(ESerializationVersion::CURRENT));
         RecordProperty("pendingQueriesBeforeExport", 0);
         RecordProperty("combatActionsBeforeExport", 0);
