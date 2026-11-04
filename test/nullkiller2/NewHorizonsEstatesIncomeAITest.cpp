@@ -220,12 +220,14 @@ TEST_F(NewHorizonsEstatesIncomeAITest, BankingWeeklyGrantDoesNotBecomeRecurringD
  for(auto * hero : {firstHero, secondHero}) selectBankingForFixture(hero);
  auto * state = gameState()->getPlayerState(PLAYER);
  state->resources[EGameResID::GOLD] = 10000;
- const auto daily = NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), state->getTowns());
+ const auto ownedTowns = state->getTowns();
+ const std::vector<const CGTownInstance *> towns(ownedTowns.begin(), ownedTowns.end());
+ const auto daily = NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), towns);
  EXPECT_EQ(newHorizonsEstates::bankingWeeklyGold(*state), 200);
  GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
  handler.onNewTurn();
  ASSERT_EQ(gameState()->day, 1u);
- EXPECT_EQ(NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), state->getTowns()), daily);
+ EXPECT_EQ(NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), towns), daily);
  const auto gateway = makeGateway(PLAYER);
  EXPECT_EQ(gateway->cc->getResourceAmount(), state->resources);
  EXPECT_EQ(state->resources[EGameResID::GOLD], 10000 + 200 + daily[EGameResID::GOLD]);
