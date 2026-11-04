@@ -66,7 +66,21 @@ def main():
         assert token in wait, token
     assert "awaitingEvents.clear()" not in wait
 
-    print("PASS: projectile Metamagic stages drain through sound-only gaps before EndAction resumes control")
+    packets = (ROOT / "client/NetPacksClient.cpp").read_text()
+    attack = packets.split("void ApplyFirstClientNetPackVisitor::visitBattleAttack", 1)[1].split(
+        "void ApplyClientNetPackVisitor::visitBattleAttack", 1)[0]
+    assert attack.index("::battleAttack,") < attack.index("::battleStacksAttacked,") < attack.index("::battleAttackPresentationComplete,")
+    injuries = packets.split("void ApplyFirstClientNetPackVisitor::visitStacksInjured", 1)[1].split("\nvoid ", 1)[0]
+    assert "battleAttackPresentationComplete" not in injuries
+    player = (ROOT / "client/CPlayerInterface.cpp").read_text()
+    completion = player.split("void CPlayerInterface::battleAttackPresentationComplete", 1)[1].split("\nvoid ", 1)[0]
+    for token in ("BATTLE_EVENT_POSSIBLE_RETURN", "const auto interface = battleInt;",
+                  "interface && interface->getBattleID() == battleID", "interface->waitForAnimations();"):
+        assert token in completion, token
+    stacks = (ROOT / "client/battle/BattleStacksController.cpp").read_text()
+    assert "currentAnimations.empty() && !owner.hasQueuedStage(EAnimationEvents::BEFORE_HIT)" in stacks
+
+    print("PASS: spell hit batches remain deferred and physical packets finish presentation before state apply")
 
 
 if __name__ == "__main__":

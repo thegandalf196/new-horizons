@@ -41,6 +41,8 @@ public:
 	virtual void actionFinished(const BattleID & battleID, const BattleAction &action){};//occurs AFTER every action taken by any stack or by the hero
 	virtual void actionStarted(const BattleID & battleID, const BattleAction &action){};//occurs BEFORE every action taken by any stack or by the hero
 	virtual void battleAttack(const BattleID & battleID, const BattleAttack *ba){}; //called when stack is performing attack
+	/// Finish physical BattleAttack presentation after both callbacks, before state apply.
+	virtual void battleAttackPresentationComplete(const BattleID & battleID){};
 	virtual void battleStacksAttacked(const BattleID & battleID, const std::vector<BattleStackAttacked> & bsa, bool ranged){}; //called when stack receives damage (after battleAttack())
 	virtual void battleEnd(const BattleID & battleID, const BattleResult *br, QueryID queryID){};
 	virtual void battleNewRoundFirst(const BattleID & battleID){}; //called at the beginning of each turn before changes are applied;

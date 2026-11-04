@@ -977,6 +977,15 @@ void CPlayerInterface::battleStacksAttacked(const BattleID & battleID, const std
 	}
 	battleInt->stacksAreAttacked(arg);
 }
+void CPlayerInterface::battleAttackPresentationComplete(const BattleID & battleID)
+{
+	EVENT_HANDLER_CALLED_BY_CLIENT;
+	BATTLE_EVENT_POSSIBLE_RETURN;
+	const auto interface = battleInt;
+	if(interface && interface->getBattleID() == battleID)
+		interface->waitForAnimations();
+}
+
 void CPlayerInterface::battleAttack(const BattleID & battleID, const BattleAttack * ba)
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
