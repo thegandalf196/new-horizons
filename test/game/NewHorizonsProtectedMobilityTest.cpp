@@ -304,6 +304,55 @@ TEST_F(NewHorizonsProtectedMobilityTest, ActualWaterWalkAndLandLandingRemainOuts
 	EXPECT_EQ(hero->getProtectedAdventureFlightLayer(), EPathfindingLayer::LAND);
 }
 
+TEST_F(NewHorizonsProtectedMobilityTest, PaidWaterWalkAutoRouteCanLandOnItsLastMovementPoint)
+{
+	ASSERT_NO_FATAL_FAILURE(start());
+	revealMap(PlayerColor(0));
+	const auto water = origin + int3(1, 0, 0);
+	const auto shore = origin + int3(2, 0, 0);
+	for(int y = -2; y <= 2; ++y)
+		map()->getTile(water + int3(0, y, 0)).terrainType = ETerrainId::WATER;
+	const auto spell = SpellID(SpellID::decode("core:waterWalk"));
+	const auto mana = hero->getManaAvailable();
+	ASSERT_TRUE(cast(spell));
+	ASSERT_EQ(hero->getManaAvailable(), mana - 30);
+	ASSERT_TRUE(hero->getTurnInfo(0)->hasWaterWalking());
+	ASSERT_TRUE(hero->hasNewHorizonsAdventureSpellCastToday());
+
+	for(const int budget : {29, 30, 31})
+	{
+		hero->setMovementPoints(budget);
+		CPathsInfo paths(gameState()->getMapSize(), hero);
+		auto config = std::make_shared<SingleHeroPathfinderConfig>(paths, *gameState(), hero);
+		config->options.turnLimit = 0;
+		CPathfinder(*gameState(), config).calculatePaths();
+		const auto * destination = paths.getPathInfo(shore, EPathfindingLayer::AUTO);
+		EXPECT_EQ(destination->reachable(), budget >= 30) << "budget=" << budget;
+		if(budget >= 30 && destination->reachable())
+		{
+			EXPECT_EQ(destination->layer, EPathfindingLayer::LAND);
+			EXPECT_EQ(destination->turns, 0);
+			EXPECT_EQ(destination->moveRemains, budget - 30);
+			CGPath path;
+			ASSERT_TRUE(paths.getPath(path, shore, EPathfindingLayer::AUTO));
+			ASSERT_EQ(path.nodes.size(), 3u);
+			EXPECT_EQ(path.nodes[1].layer, EPathfindingLayer::WATER);
+			EXPECT_EQ(path.nodes[1].coord, water);
+		}
+		// No new AUTO endpoint on empty water, and no unsafe zero-reserve node.
+		EXPECT_FALSE(paths.getPathInfo(water, EPathfindingLayer::AUTO)->reachable());
+		EXPECT_EQ(paths.getPathInfo(water, EPathfindingLayer::WATER)->reachable(), budget >= 30);
+	}
+
+	hero->setMovementPoints(30);
+	ASSERT_TRUE(move(water, EPathfindingLayer::WATER));
+	EXPECT_EQ(hero->movementPointsRemaining(), 15);
+	ASSERT_TRUE(move(shore, EPathfindingLayer::LAND));
+	EXPECT_EQ(hero->movementPointsRemaining(), 0);
+	EXPECT_EQ(hero->visitablePos(), shore);
+	EXPECT_EQ(hero->getManaAvailable(), mana - 30);
+}
+
 TEST_F(NewHorizonsProtectedMobilityTest, TypedReceiptRejectsStaleSourceAndForgedSurfaceBeforeMutation)
 {
 	start();

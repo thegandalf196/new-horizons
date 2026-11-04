@@ -150,7 +150,9 @@ void MovementCostRule::process(
 	}
 
 	if(destination.isBetterWay() &&
-		((source.node->turns == destTurnsUsed && destMovePointsLeft) || pathfinderHelper->passOneTurnLimitCheck(source)))
+		((source.node->turns == destTurnsUsed
+			&& (destMovePointsLeft || pathfinderHelper->passOneTurnLimitCheck(destination)))
+			|| pathfinderHelper->passOneTurnLimitCheck(source)))
 	{
 		pathfinderConfig->nodeStorage->commit(destination, source);
 

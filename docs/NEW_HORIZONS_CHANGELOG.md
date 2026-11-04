@@ -7,6 +7,11 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## Unreleased
+
+- Fixed Water Walk paths that rejected a legal landing when the hero would finish
+  with exactly zero Movement Points.
+
 ## 0.88.2 Early Access
 
 Published packages and platform notes are available on the

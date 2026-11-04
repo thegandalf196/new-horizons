@@ -96,6 +96,16 @@ Generated user Maps must remain refreshable after initialization and resolve thr
   with and without New Horizons loaded; retain current Divine Mandate and
   Metamagic cast controls rather than substituting test-only spell bonuses.
 
+## Adventure movement
+
+A same-turn Water Walk route may spend its last Movement Point landing on legal
+land. Check the destination's turn limit for that final step while retaining the
+source's day-rollover restriction and the preceding reserve and barrier checks.
+`NewHorizonsProtectedMobilityTest.PaidWaterWalkAutoRouteCanLandOnItsLastMovementPoint`
+covers a paid cast, 29/30/31-point routes, ordinary land endpoints and authoritative
+water/land movement. Empty-water endpoints retain their existing behavior.
+Native coverage does not establish rendered save/load or next-day expiry.
+
 ## Build and test evidence
 
 Include concrete definitions needed by serializer instantiation; avoid broad headers or API casts to conceal a fixture error. C++20 designated initializers follow declaration order; mixed numeric `min/max` calls need a common type on every platform. Static native tests must not falsely claim the copied facade was mapped.

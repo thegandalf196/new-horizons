@@ -24819,14 +24819,15 @@
       "sha256": "04adabb07a7e521a458e53ca24998a4093260b91877d19ab199f3f04ce847a51"
     },
     "lib/pathfinder/PathfindingRules.cpp": {
-      "kind": "legacy",
-      "lines": 563,
+      "kind": "exception",
+      "lines": 565,
       "owner": "engine_engineer",
-      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 566 to 563 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "rationale": "Urgent exact-budget terminal landing correction adds2 lines,563→565 file/93→95 function. Same-turn admission delegates existing destination turn-limit helper; source rollover, preparation, reserve/barrier/layer/boat stages remain byte-identical. Actual paid-spell CPathsInfo regression fails only30MP before and passes29/30/31+native server movement after; focused9/0skip GREEN preserves negative boundaries. Coupled structural rewrite would enlarge risk of this localized predicate repair; no future growth/limit/exclusion granted.",
+      "review": "IR-WATER-WALK-EXACT-BUDGET-LANDING-20261104",
+      "review_scope": "exact-same-turn-terminal-landing-zero-MP-admission-only; production-consumer-RED-GREEN9; no-AUTO-water-or-source-rollover-change; rendered-pending",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "662c0f92a8c7d62594d7589eb641a4ffb8dc91942d446821941082a1491b5106"
+      "sha256": "8a600b77612bb4d493266a067d934a721c85b9d1253eab353db0d99423c803a3",
+      "deferral": "engine_engineer owns next substantive movement-cost change: extract ordered cost settlement (ordinary versus embark/disembark/lighthouse conversion) into a focused component returning an explicit immutable cost/remaining-MP/departure result, with a narrow read-only source/destination/turn-info interface. Keep preparation/day selection, reserve/barrier validation and node commit in their existing visible order. Characterize exact-budget path/server agreement, rollover, WATER/AIR reserve rejection, barriers and boat preference. Whole95-line method relocation alone does not discharge this boundary; no extraction required in this urgent2-line fix."
     },
     "lib/pathfinder/PathfindingRules.cpp::void DestinationActionRule::process( const PathNodeInfo & source, CDestinationNodeInfo & destination, const PathfinderConfig * pathfinderConfig, CPathfinderHelper * pathfinderHelper) const#1": {
       "kind": "legacy",
@@ -24847,14 +24848,15 @@
       "sha256": "cede249682927b4684581c5205638fb66aed29dd24f9dd31f9a6cee1c8b20a77"
     },
     "lib/pathfinder/PathfindingRules.cpp::void MovementCostRule::process( const PathNodeInfo & source, CDestinationNodeInfo & destination, const PathfinderConfig * pathfinderConfig, CPathfinderHelper * pathfinderHelper) const#1": {
-      "kind": "legacy",
-      "lines": 93,
+      "kind": "exception",
+      "lines": 95,
       "owner": "engine_engineer",
-      "rationale": "Exact Fly landing safety responsibility extraction/routing shrink, 96 to 93 lines. No unrelated growth permission; retained mechanics/serialization/callback order require native acceptance.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
+      "rationale": "Urgent exact-budget terminal landing correction adds2 lines,563→565 file/93→95 function. Same-turn admission delegates existing destination turn-limit helper; source rollover, preparation, reserve/barrier/layer/boat stages remain byte-identical. Actual paid-spell CPathsInfo regression fails only30MP before and passes29/30/31+native server movement after; focused9/0skip GREEN preserves negative boundaries. Coupled structural rewrite would enlarge risk of this localized predicate repair; no future growth/limit/exclusion granted.",
+      "review": "IR-WATER-WALK-EXACT-BUDGET-LANDING-20261104",
+      "review_scope": "exact-same-turn-terminal-landing-zero-MP-admission-only; production-consumer-RED-GREEN9; no-AUTO-water-or-source-rollover-change; rendered-pending",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "eb61171137fc6591023f0b3b7ec05561234c334f3862cdab5c97adc3e883d6fd"
+      "sha256": "ac0f27d7499e0574ea0e4296bae5edd175489f974f90514045485902edf557e9",
+      "deferral": "engine_engineer owns next substantive movement-cost change: extract ordered cost settlement (ordinary versus embark/disembark/lighthouse conversion) into a focused component returning an explicit immutable cost/remaining-MP/departure result, with a narrow read-only source/destination/turn-info interface. Keep preparation/day selection, reserve/barrier validation and node commit in their existing visible order. Characterize exact-budget path/server agreement, rollover, WATER/AIR reserve rejection, barriers and boat preference. Whole95-line method relocation alone does not discharge this boundary; no extraction required in this urgent2-line fix."
     },
     "lib/pathfinder/TurnInfo.cpp": {
       "kind": "legacy",
