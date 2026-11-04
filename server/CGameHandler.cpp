@@ -774,7 +774,7 @@ void CGameHandler::giveSpells(const CGTownInstance *t, const CGHeroInstance *h, 
 {
 	const bool firstGuildVisit = h->getVisitedTown() == t && newHorizonsSage::firstGuildVisit(*h, *t);
 	const bool learnSageSpell = firstGuildVisit && newHorizonsSage::learningSelected(*h);
-	if(firstGuildVisit)
+	if(firstGuildVisit && newHorizonsSage::hasVisitReward(*h, *t))
 	{
 		SetNewHorizonsSageGuildVisit receipt;
 		receipt.hero = h->id;

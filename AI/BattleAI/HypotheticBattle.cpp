@@ -16,6 +16,7 @@
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
@@ -92,7 +93,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	// The remaining units retain the existing lazy projection policy. Frozen's
 	// next-slot receipt must be a branch snapshot: reading it for the first time
 	// after a parent Shatter/thaw cannot import that later parent's mutation.
-	// Likewise, capture current Morale origin before the parent can advance.
+	// Capture Morale origin and pending Poison before the parent can advance.
 	if(ownedFrameBatch) { getForUpdate(static_cast<uint32_t>(activeUnitId)); return; }
 	for(const auto * unit : realBattle->battleGetAllUnits(false))
 	{
@@ -104,14 +105,21 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 			for(const auto & bonus : *bindings)
 				if(bonus) noteSerpentBindingAdmission(*bonus);
 		}
+		const bool pendingPoison = unit->physicalPoisonSpellOrigin() != BattleSide::NONE
+			|| newHorizonsBulwark::physicalPoisonTickDamage(dynamic_cast<const battle::CUnitState *>(unit)) > 0;
 		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
 			|| hasTimedMagicalSpellEffects(*unit)
 			|| hasSnapshotHeroSpecialEffects(*unit)
 			|| newHorizonsNecromancy::needsCombatPassiveSnapshot(*unit)
 			|| newHorizonsFrozen::isFrozen(*unit)
+			|| pendingPoison
 			|| (dynamic_cast<const battle::CUnitState *>(unit)
 				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))
-			getForUpdate(unit->unitId());
+		{
+			const auto captured = getForUpdate(unit->unitId());
+			if(pendingPoison)
+				captured->captureEffects();
+		}
 	}
 }
 

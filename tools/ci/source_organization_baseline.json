@@ -18681,15 +18681,15 @@
     "AI/BattleAI/HypotheticBattle.cpp": {
       "composition_predecessor_review": "IR-PRISMATIC-SOURCE-BINDING-V3-EXACT-20261030",
       "deferral": "Further branch-state growth should use a focused value transition owner with explicit side/round/receipt, preserving constructor copying, live/child/sibling separation, callback ownership and current point/Wisdom/action identity.",
-      "kind": "review",
-      "lines": 750,
+      "kind": "exception",
+      "lines": 758,
       "owner": "ai_engineer",
-      "previous_review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "rationale": "Exact767to750 shrinking branch owner removes retired alternating Warcasting copies/queries. Current typed state remains value-owned; canonical completion observations are detached-only and add no save or live authority state.",
-      "review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
-      "review_scope": "Exact seven frozen layers, including final Blink b350. Shrinking debt ratchets existing records; new focused functions remain below150. No future growth credit, changed limits/exclusions, native/rendered proof or publication authority.",
+      "previous_review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
+      "rationale": "Retains the prior 767-to-750 branch-owner extraction. Urgent bounded successor adds eight lines for pending typed/creature Poison admission and current/empty projected-effect capture in the existing constructor pass. HP, shields, ticks and provenance stay value-owned; future parent Spellshock is filtered. Refactoring branch lifecycle together with this state-isolation correction would increase risk. No search, continuation, RNG or serialized-state change.",
+      "review": "IR-ARCANE-LIFETIME-POISON-STATE-EXACT-20261104",
+      "review_scope": "Exact 750-to-758 file and 73-to-80 constructor delta only; all other callable bodies and allowances unchanged. Existing owned-frame and ordinary unpoisoned lazy paths retained. Source review only; no native/rendered proof, future growth credit or publication authority.",
       "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "c7606cebccbbdcafd4edef974ac82c18ef149f5651d73227fc3e0777eaf531a3"
+      "sha256": "aae8de50f4aef7a79a0e42563f041d7665198772cd27da8e96138e927573c8f2"
     },
     "AI/BattleAI/HypotheticBattle.h": {
       "composition_predecessor_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
@@ -26286,12 +26286,12 @@
       "kind": "exception",
       "lines": 6295,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-LEARNING-EXACT-PRODUCTION-20261103",
-      "rationale": "Exact 6431→6295 physical lines. Focused Estates rule ownership/extraction; current income/actual buyer/effective town quote and mine delivery stay shared/authoritative; UI consumes shared getters without duplicate perk math.",
-      "review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
-      "review_scope": "Exact actual-current EstatesGP c5ce +UI160e projected source only; excludes AI pricing holds, final server CMake insertion, native/rendered/gameplay/platform/publication acceptance. No future growth permission.",
+      "previous_review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
+      "rationale": "Retains the prior 6431-to-6295 Estates extraction. Urgent one-condition giveSpells correction requires a real shared Sage visit reward before publishing the retired visit receipt. File remains 6295 lines and giveSpells remains 61; ordinary spell grants and every other body are byte-identical. Coupling Guild orchestration extraction to this bounded regression correction would increase risk.",
+      "review": "IR-SAGE-NO-REWARD-RECEIPT-EXACT-20261104",
+      "review_scope": "Exact one-condition hasVisitReward receipt gate only. All numeric allowances, ordinary Guild learning, packet order outside the removed obsolete receipt and other callable bodies unchanged. Source review only; native/rendered/platform acceptance and publication authority remain separate.",
       "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "e097929a9de40fd86de74c3b8aa37e8a9aefb4e88ec8c073dbe4851eafe99da0"
+      "sha256": "7ca66e80b7e875fce1e4113bb1be9ce645b62a1e836114f914941049db487bcc"
     },
     "server/CGameHandler.cpp::bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)#1": {
       "deferral": "Owner: gameplay_engineer with engine_engineer review. Before further growth, extract cohesive ArmyExchange orchestration from arrangeStacks: explicit swap/merge/split inputs, exact query/packet order, source/destination ownership, last-stack and Leadership validation. Characterize legal bank splits and rejected hostile/oversized transfers before changing the boundary.",

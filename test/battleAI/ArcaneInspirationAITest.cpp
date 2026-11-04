@@ -16,6 +16,7 @@
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../lib/spells/ArcaneInspirationCompletion.h"
 #include "../mock/mock_ServerCallback.h"
+#include <array>
 
 namespace
 {
@@ -179,6 +180,7 @@ TEST_F(ArcaneInspirationAITest, ParentAndSiblingKeepIndependentStatusAndChargeLi
 	descendant->nextRound();
 	EXPECT_FALSE(descendant->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isActive)));
 	EXPECT_TRUE(sibling->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isActive)));
+	EXPECT_TRUE(sibling->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isRetained)));
 	EXPECT_FALSE(battle()->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isEffect)));
 }
 
@@ -331,6 +333,7 @@ TEST_F(ArcaneInspirationAITest, LastHeroPoisonTickAppliesOnlySpellshockWithIsola
  EXPECT_EQ(child->getMetamagicPointState(SIDE), points);
  EXPECT_FALSE(sibling->battleGetUnitByID(victim)->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
  EXPECT_EQ(sibling->battleGetUnitByID(victim)->getAvailableHealth(), hp);
+ EXPECT_EQ(sibling->battleGetUnitByID(victim)->physicalPoisonSpellOrigin(), SIDE);
  EXPECT_EQ(gameState()->saveToMemory(), world);
  EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), random);
 }
@@ -341,9 +344,12 @@ TEST_F(ArcaneInspirationAITest, CreaturePoisonDoesNotBorrowItsOwnersHeroSpellsho
  auto target = child->getForUpdate(victim);
  ASSERT_TRUE(newHorizonsBulwark::applyPhysicalPoison(target.get(), 10, actor));
  ASSERT_EQ(target->physicalPoisonSpellOrigin(), BattleSide::NONE);
+ auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
  const auto hp = target->getAvailableHealth();
  child->nextTurn(victim, BattleUnitTurnReason::TURN_QUEUE);
  EXPECT_LT(target->getAvailableHealth(), hp);
+ EXPECT_EQ(sibling->battleGetUnitByID(victim)->getAvailableHealth(), hp);
+ EXPECT_EQ(sibling->battleGetUnitByID(victim)->physicalPoisonSpellOrigin(), BattleSide::NONE);
  EXPECT_FALSE(target->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
  EXPECT_FALSE(child->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isActive)));
 }
@@ -355,9 +361,13 @@ TEST_F(ArcaneInspirationAITest, FullyShieldedHeroPoisonHasNoActualDamageAndNoSpe
  ASSERT_TRUE(newHorizonsBulwark::applyPhysicalPoison(target.get(), 10, -1));
  target->physicalPoisonSpellSide = SIDE;
  target->guardianSpiritHitPoints = 1000;
+ target->guardianSpiritRoundsRemaining = 1;
+ auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
  const auto hp = target->getAvailableHealth();
  child->nextTurn(victim, BattleUnitTurnReason::TURN_QUEUE);
  EXPECT_EQ(target->getAvailableHealth(), hp);
+ EXPECT_EQ(target->guardianSpiritHitPoints, 990);
+ EXPECT_EQ(sibling->getForUpdate(victim)->guardianSpiritHitPoints, 1000);
  EXPECT_FALSE(target->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
  EXPECT_FALSE(child->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isActive)));
 }
@@ -454,6 +464,21 @@ TEST_F(ArcaneInspirationAITest, ExistingFateOutcomeLoopPassesActualFriendlyCasua
  spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, fate.toSpell());
  auto mechanics = fate.toSpell()->battleMechanics(&cast);
  size_t observations = 0, continuations = 0; bool sawFriendlyLoss = false; float coreOnly = 0;
+ std::array<float, 3> localMarginals{};
+ // Use the family's signed combat-value kernel, rather than comparing raw attack HP
+ // with a local correction expressed in exchange utility.
+ const auto kernel = [&](const std::shared_ptr<HypotheticBattle> & board)
+ {
+  DamageCache cache; float result = 0;
+  for(const auto * unit : board->battleGetAllUnits(false))
+   if(unit && unit->alive() && !unit->isGhost() && !unit->isTurret())
+   {
+    const auto potential = AttackPossibility::calculateDamageReduce(nullptr, unit,
+     unit->getAvailableHealth(), cache, board);
+    result += board->battleGetOwner(unit) == PlayerColor(0) ? potential : -potential;
+   }
+  return result;
+ };
  const heroSpellProjection::OutcomeValue value = [&](const auto & board, auto injuries, bool completed, bool localOnly)
  {
   EXPECT_FALSE(completed);
@@ -462,7 +487,8 @@ TEST_F(ArcaneInspirationAITest, ExistingFateOutcomeLoopPassesActualFriendlyCasua
   arcaneInspiration::publishCompletedSpell(*board->getServerCallback(), *board, SIDE, injuries);
   auto without = std::make_shared<HypotheticBattle>(environment.get(), board);
   without->reverseArcaneInspirationEffects(board->getArcaneInspirationEffects());
-  const float marginal = static_cast<float>(damage(*board) - damage(*without));
+  const float marginal = kernel(board) - kernel(without);
+  if(observations < localMarginals.size()) localMarginals[observations] = marginal;
   ++observations;
   if(localOnly) return 0.0f;
   ++continuations; coreOnly = marginal;
@@ -476,7 +502,12 @@ TEST_F(ArcaneInspirationAITest, ExistingFateOutcomeLoopPassesActualFriendlyCasua
  EXPECT_TRUE(sawFriendlyLoss);
  EXPECT_GT(coreOnly, 0);
  EXPECT_GT(expected->inspirationValue, 0);
- EXPECT_LT(expected->inspirationValue, coreOnly);
+ const auto primaryChance = SpellTargetEvaluator::applicationChance(mechanics.get(), battle()->battleGetUnitByID(victim));
+ const auto collateralChance = SpellTargetEvaluator::applicationChance(mechanics.get(), battle()->battleGetUnitByID(actor));
+ EXPECT_LT(localMarginals[2], localMarginals[1]); // Friendly casualties reduce the surviving status benefit.
+ EXPECT_FLOAT_EQ(expected->inspirationValue, coreOnly
+  + primaryChance * (localMarginals[1] - localMarginals[0])
+  + primaryChance * collateralChance * (localMarginals[2] - localMarginals[1]));
  EXPECT_EQ(gameState()->saveToMemory(), world);
  EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), random);
 }
