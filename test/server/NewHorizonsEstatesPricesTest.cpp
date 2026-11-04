@@ -130,7 +130,7 @@ TEST_F(NewHorizonsEstatesPricesTest, ArchitectResidenceControlsActualPaymentAffo
     EXPECT_EQ(town->getBuildingCost(building), base);
     town->setVisitingHero(first);
     setResources(handler, quote);
-    EXPECT_EQ(handler.gameInfo().canBuildStructure(town, building), EBuildingState::ALLOWED);
+    EXPECT_EQ(handler.gameState().canBuildStructure(town, building), EBuildingState::ALLOWED);
     ASSERT_TRUE(handler.buildStructure(town->id, building));
     EXPECT_TRUE(town->hasBuilt(building));
     EXPECT_TRUE(gameState()->getPlayerState(PLAYER)->resources.empty());
@@ -154,7 +154,7 @@ TEST_F(NewHorizonsEstatesPricesTest, ArchitectLeavesRareComponentsAndRejectsInsu
     auto insufficient = quote;
     --insufficient[EGameResID::GEMS];
     setResources(handler, insufficient);
-    EXPECT_EQ(handler.gameInfo().canBuildStructure(town, building), EBuildingState::NO_RESOURCES);
+    EXPECT_EQ(handler.gameState().canBuildStructure(town, building), EBuildingState::NO_RESOURCES);
     EXPECT_FALSE(handler.buildStructure(town->id, building));
     EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources, insufficient);
     EXPECT_FALSE(town->hasBuilt(building));

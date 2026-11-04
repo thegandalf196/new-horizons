@@ -25,6 +25,7 @@
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/networkPacks/PacksForLobby.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/entities/hero/CHero.h"

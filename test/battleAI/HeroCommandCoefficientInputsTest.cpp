@@ -92,30 +92,30 @@ TEST_F(HeroCommandCoefficientInputsTest, DefensivePerkLegacyExclusionAndOverflow
 	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 20, ChangeValueMode::ABSOLUTE);
 	ASSERT_NO_FATAL_FAILURE(commandPolicy(attackerSideHero, "new-horizons:command.defensiveCommander"));
 	const auto inputs = heroCommands::CoefficientInputs::projected(*attackerSideHero, primary(*attackerSideHero));
-	EXPECT_EQ(heroCommands::coefficient(formula(11, 1, 1), inputs, 0, 0), 48);
-	EXPECT_EQ(heroCommands::coefficient(formula(11, 1, 1), inputs, 0, 0, false), 44);
+	EXPECT_EQ(heroCommands::coefficient(formula(11, 1, 1), inputs, 0), 48);
+	EXPECT_EQ(heroCommands::coefficient(formula(11, 1, 1), inputs, 0, false), 44);
 	for(const auto & value : {formula(0.5, 0, 0), formula(-0.5, 0, 0)})
-		EXPECT_EQ(heroCommands::coefficient(value, inputs, 0, 0), heroCommands::coefficient(value, *attackerSideHero));
+		EXPECT_EQ(heroCommands::coefficient(value, inputs, 0), heroCommands::coefficient(value, *attackerSideHero));
 	const double maximum = std::numeric_limits<double>::max();
 	const auto nonfinite = formula(1, maximum, -maximum);
 	// Canonical coefficient * efficiency / 100 overflows BEFORE division.
-	EXPECT_THROW(heroCommands::coefficient(nonfinite, inputs, 0, 0), std::runtime_error);
+	EXPECT_THROW(heroCommands::coefficient(nonfinite, inputs, 0), std::runtime_error);
 	EXPECT_THROW(heroCommands::coefficient(nonfinite, *attackerSideHero), std::runtime_error);
 	// Finite efficiency-scaled terms; only the weighted SUM overflows here.
 	for(const int sign : {-1, 1})
 	{
 		const auto finite = formula(sign * maximum, sign * (maximum / 256), 0);
 		const int expected = sign > 0 ? heroCommands::MAX_EFFECT_PERCENT : heroCommands::MIN_EFFECT_PERCENT;
-		EXPECT_EQ(heroCommands::coefficient(finite, inputs, 0, 0), expected);
+		EXPECT_EQ(heroCommands::coefficient(finite, inputs, 0), expected);
 		EXPECT_EQ(heroCommands::coefficient(finite, *attackerSideHero), expected);
 	}
 	// Finite terms whose separate products overflow; exact cancellation is 1.
 	EXPECT_EQ(heroCommands::coefficientMath::boundedCoefficient({1, maximum / 2, -maximum / 2}, {1, 4, 4}), 1);
 	EXPECT_EQ(heroCommands::coefficientMath::boundedCoefficient({0, maximum / 2, 0}, {1, 4, 0}), heroCommands::MAX_EFFECT_PERCENT);
 	EXPECT_EQ(heroCommands::coefficientMath::boundedCoefficient({0, -maximum / 2, 0}, {1, 4, 0}), heroCommands::MIN_EFFECT_PERCENT);
-	EXPECT_EQ(heroCommands::coefficient(formula(0.5, 0, 0), inputs, 0, 0), 1);
-	EXPECT_EQ(heroCommands::coefficient(formula(-0.5, 0, 0), inputs, 0, 0), -1);
-	EXPECT_THROW(heroCommands::coefficient(formula(std::numeric_limits<double>::quiet_NaN(), 0, 0), inputs, 0, 0), std::runtime_error);
+	EXPECT_EQ(heroCommands::coefficient(formula(0.5, 0, 0), inputs, 0), 1);
+	EXPECT_EQ(heroCommands::coefficient(formula(-0.5, 0, 0), inputs, 0), -1);
+	EXPECT_THROW(heroCommands::coefficient(formula(std::numeric_limits<double>::quiet_NaN(), 0, 0), inputs, 0), std::runtime_error);
 	EXPECT_THROW(heroCommands::CoefficientInputs::projected(*attackerSideHero, nullptr), std::invalid_argument);
 	auto wrongDomain = std::make_shared<BonusList>();
 	wrongDomain->push_back(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID()));
@@ -245,7 +245,7 @@ TEST_F(LegacyHeroCoefficientInputsTest, ExplicitLegacyRatingsMatchTheActualNativ
 	EXPECT_EQ(inputs.primary(PrimarySkill::ATTACK), attackerSideHero->getPrimSkillLevel(PrimarySkill::ATTACK));
 	EXPECT_EQ(inputs.primary(PrimarySkill::DEFENSE), attackerSideHero->getPrimSkillLevel(PrimarySkill::DEFENSE));
 	EXPECT_EQ(heroCommands::coefficient(formula(5, 0.1, 0.2), inputs, 5),
-		heroCommands::coefficient(formula(5, 0.1, 0.2), *attackerSideHero, 10, 5));
+		heroCommands::coefficient(formula(5, 0.1, 0.2), *attackerSideHero, 5));
 }
 
 TEST(PrimarySkillPolicyTest, GrowthAndLegacyBoundsRetainTheirDifferentClampContracts)

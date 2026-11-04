@@ -148,15 +148,17 @@ protected:
 TEST(NewHorizonsChaosBlinkRulesTest, RadiusUsesScaledSpellPowerTermAndCapsWithoutLegacyDivisor)
 {
 	using newHorizonsBlink::radiusFor;
-	EXPECT_EQ(radiusFor(0, 10000, 0), 2);
-	EXPECT_EQ(radiusFor(99, 10000, 0), 2);
-	EXPECT_EQ(radiusFor(100, 10000, 0), 3);
-	EXPECT_EQ(radiusFor(200, 10000, 0), 4);
-	EXPECT_EQ(radiusFor(87, 11500, 0), 3);
-	EXPECT_EQ(radiusFor(86, 11500, 0), 2);
-	EXPECT_EQ(radiusFor(84, 10000, 20), 3);
-	EXPECT_EQ(radiusFor(83, 10000, 20), 2);
-	EXPECT_EQ(radiusFor(std::numeric_limits<int32_t>::max(), 10000, 1000), 4);
+	EXPECT_EQ(radiusFor(0, 10000), 2);
+	EXPECT_EQ(radiusFor(99, 10000), 2);
+	EXPECT_EQ(radiusFor(100, 10000), 3);
+	EXPECT_EQ(radiusFor(200, 10000), 4);
+	EXPECT_EQ(radiusFor(87, 11500), 3);
+	EXPECT_EQ(radiusFor(86, 11500), 2);
+	// Current School x Spellcraft coefficient only: 84 * 1.20 crosses 100,
+	// while 83 * 1.20 does not. No retired Warcasting multiplier is applied.
+	EXPECT_EQ(radiusFor(84, 12000), 3);
+	EXPECT_EQ(radiusFor(83, 12000), 2);
+	EXPECT_EQ(radiusFor(std::numeric_limits<int32_t>::max(), 10000), 4);
 }
 
 TEST(NewHorizonsChaosBlinkRulesTest, OutcomeDistributionIsUniformOrTwoIndependentDrawsWithReplacement)

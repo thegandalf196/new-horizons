@@ -216,7 +216,7 @@ protected:
         ASSERT_GT(size, 0u);
         ASSERT_LT(size, 64u * 1024u * 1024u);
         {
-            CLoadFile header(boost::filesystem::path(output.string()), &handler->gameState());
+            CLoadFile header(boost::filesystem::path(output.string()), &handler->gameInfo());
             ASSERT_EQ(header.formatVersion(), ESerializationVersion::CURRENT);
         }
         StartInfo load = *handler->gameState().getStartInfo();

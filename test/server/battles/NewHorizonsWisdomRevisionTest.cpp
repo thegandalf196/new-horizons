@@ -99,9 +99,9 @@ protected:
 			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:wisdom", perks[tier]));
 		}
 	}
-	void prepare(const char * basic, const char * advanced = nullptr, const char * expert = nullptr)
+	void prepare(const char * basic, const char * advanced = nullptr, const char * expert = nullptr, bool withTown = false)
 	{
-		ASSERT_NO_FATAL_FAILURE(startGame());
+		ASSERT_NO_FATAL_FAILURE(startGame(withTown));
 		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:solmyr")));
 		ASSERT_NO_FATAL_FAILURE(learn(basic, advanced, expert));
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
@@ -185,10 +185,14 @@ TEST_F(NewHorizonsWisdomRevisionTest, SageKnowledgeIsDerivedExactlyOnceAndIntell
 }
 TEST_F(NewHorizonsWisdomRevisionTest, ScholarDiscountUsesVisitingOwnerOnlyAndCeilsEveryResource)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:wisdom.intelligence", "new-horizons:wisdom.spellScholar"));
-	CGTownInstance town(&gameHandler->gameInfo());
-	town.tempOwner = attackerSideHero->getOwner();
-	town.visitingHero = attackerSideHero->id;
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:wisdom.intelligence", "new-horizons:wisdom.spellScholar", nullptr, true));
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	gameHandler->setOwner(town, attackerSideHero->getOwner());
+	town->setVisitingHero(attackerSideHero);
+	ASSERT_EQ(town->getVisitingHero(), attackerSideHero);
+	ASSERT_EQ(attackerSideHero->getVisitedTown(), town);
+	EXPECT_FALSE(attackerSideHero->isGarrisoned());
 	const auto spell = SpellID(SpellID::FLY);
 	auto rules = attackerSideHero->getMagicRules();
 	auto & cost = rules["adventureSpells"]["core:fly"]["unlockCost"];
@@ -197,17 +201,34 @@ TEST_F(NewHorizonsWisdomRevisionTest, ScholarDiscountUsesVisitingOwnerOnlyAndCei
 	cost["sulfur"].Integer() = 2;
 	cost["crystal"].Integer() = 3;
 	cost["gems"].Integer() = 0;
-	const auto price = newHorizonsWisdom::adventureSpellPurchaseCost(rules, spell, town);
+	const auto price = newHorizonsWisdom::adventureSpellPurchaseCost(rules, spell, *town);
 	EXPECT_EQ(price[EGameResID::GOLD], 76);
 	EXPECT_EQ(price[EGameResID::MERCURY], 1);
 	EXPECT_EQ(price[EGameResID::SULFUR], 2);
 	EXPECT_EQ(price[EGameResID::CRYSTAL], 3);
 	EXPECT_EQ(price[EGameResID::GEMS], 0);
-	town.garrisonHero = town.visitingHero;
-	town.visitingHero = ObjectInstanceID();
-	EXPECT_EQ(newHorizonsWisdom::adventureSpellPurchaseCost(rules, spell, town)[EGameResID::GOLD], 101);
-	town.visitingHero = defenderSideHero->id;
-	EXPECT_EQ(newHorizonsWisdom::adventureSpellPurchaseCost(rules, spell, town)[EGameResID::GOLD], 101);
+	town->setVisitingHero(nullptr);
+	town->setGarrisonedHero(attackerSideHero);
+	ASSERT_EQ(town->getVisitingHero(), nullptr);
+	ASSERT_EQ(town->getGarrisonHero(), attackerSideHero);
+	ASSERT_EQ(attackerSideHero->getVisitedTown(), town);
+	EXPECT_TRUE(attackerSideHero->isGarrisoned());
+	EXPECT_EQ(newHorizonsWisdom::adventureSpellPurchaseCost(rules, spell, *town)[EGameResID::GOLD], 101);
+	town->setGarrisonedHero(nullptr);
+	ASSERT_EQ(attackerSideHero->getVisitedTown(), nullptr);
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	defenderSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.intelligence"});
+	defenderSideHero->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	defenderSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.spellScholar"});
+	ASSERT_TRUE(defenderSideHero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.spellScholar"));
+	ASSERT_NE(defenderSideHero->getOwner(), town->getOwner());
+	town->setVisitingHero(defenderSideHero);
+	ASSERT_EQ(town->getVisitingHero(), defenderSideHero);
+	ASSERT_EQ(defenderSideHero->getVisitedTown(), town);
+	EXPECT_EQ(newHorizonsWisdom::adventureSpellPurchaseCost(rules, spell, *town)[EGameResID::GOLD], 101);
+	town->setVisitingHero(nullptr);
+	EXPECT_EQ(defenderSideHero->getVisitedTown(), nullptr);
 }
 TEST_F(NewHorizonsWisdomRevisionTest, FastingIsVictoryAndNoCastGatedAndCappedToNormalCapacity)
 {

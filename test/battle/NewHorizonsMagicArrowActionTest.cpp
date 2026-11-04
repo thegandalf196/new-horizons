@@ -35,7 +35,7 @@ TEST(NewHorizonsShadowGiftMechanicsTest, SharedTierFormulaAndNoFreeSacrifice)
 	EXPECT_EQ(getDamageBonusBasisPoints(10, 0, 10000), 1250);
 	EXPECT_EQ(getDamageBonusBasisPoints(10, 100, 10000), 1750);
 	EXPECT_EQ(getDamageBonusBasisPoints(10, 100, 14500), 1975);
-	EXPECT_EQ(getDamageBonusBasisPoints(10, 100, 14500, 50, 25), 2609);
+	EXPECT_EQ(getDamageBonusBasisPoints(10, 100, 14500, 25), 2156);
 	EXPECT_THROW(getDamageBonusBasisPoints(15, 100, 10000), std::invalid_argument);
 }
 
