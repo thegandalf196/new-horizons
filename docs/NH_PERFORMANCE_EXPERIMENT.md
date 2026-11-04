@@ -84,6 +84,13 @@ this terminal cache as another cache's parent: child original-damage queries
 could observe its partial pair snapshots. `CreaturePressureCachePreparationTest`
 and `DamageCacheObstacleVisibilityTest` cover this API's preparation contract.
 
+Lua calculator capability admission binds every ordered layer to reviewed bytes.
+The current Inspiration root and physical-protection patch form one exact pair;
+mixing either with an earlier pair fails closed. Historical reviewed chains stay
+distinct. This admits the current canonical calculation to guarded forecast and
+cache reuse; initialization, import and patch checks still apply. Verify the
+native payload-to-Lua damage stages as well as the identity checks.
+
 The wish consumer's lazy current-damage queries change eager preparation traffic;
 that API's call-order tests do not establish custom-calculator ordering in the
 consumer. Verify those semantics separately. Earlier terminal-root measurements

@@ -487,3 +487,66 @@ TEST_F(ArcaneInspirationBattleTest, NativeFriendlyDelayedHeroWallCanDamageButNev
 	EXPECT_FALSE(actor->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
 	EXPECT_FALSE(actor->hasBonus(CSelector(arcaneInspiration::isActive)));
 }
+
+TEST_F(ArcaneInspirationBattleTest, AuthoritativeAttackPlanFeedsRealLuaDamageAndBeforeDefenseStages)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(auto * hero : {attackerSideHero, defenderSideHero})
+	{
+		hero->setPrimarySkill(PrimarySkill::ATTACK, 0, ChangeValueMode::ABSOLUTE);
+		hero->setPrimarySkill(PrimarySkill::DEFENSE, 0, ChangeValueMode::ABSOLUTE);
+	}
+	battle()->terrainType = TerrainId(ETerrainId::SAND);
+	battle()->nodeHasChanged();
+	const auto makeAngel = [this](BattleSide side, BattleHex hex, int count)
+	{
+		return addStack(side, creatureByName("core:angel"), hex, count);
+	};
+	const auto expectDamage = [](const DamageEstimation & result, int64_t damage, int64_t beforeDefense)
+	{
+		EXPECT_EQ(result.damage.min, damage);
+		EXPECT_EQ(result.damage.max, damage);
+		EXPECT_EQ(result.damageBeforeDefense.min, beforeDefense);
+		EXPECT_EQ(result.damageBeforeDefense.max, beforeDefense);
+	};
+	auto * coreActor = makeAngel(BattleSide::ATTACKER, BattleHex{6, 3}, 100);
+	auto * coreTarget = makeAngel(BattleSide::DEFENDER, BattleHex{7, 3}, 1000);
+	ASSERT_EQ(coreActor->getAttack(false), 20);
+	ASSERT_EQ(coreTarget->getDefense(false), 20);
+	BattleAttackInfo coreAttack(coreActor, coreTarget, 0, false);
+	expectDamage(battle()->calculateDmgRange(coreAttack), 5000, 5000);
+	inspire(coreActor, {15, 0, false});
+	SetStackEffect shock;
+	shock.battleID = BattleID(0);
+	shock.toAdd.emplace_back(coreActor->unitId(), std::vector<Bonus>{
+		arcaneInspiration::spellshockMarker(PlayerColor(1), battle()->getRound())});
+	gameHandler->sendAndApply(shock);
+	const auto core = arcaneInspiration::attackPlan(*battle(), coreAttack);
+	ASSERT_EQ(core.damageBonusPercent, 15);
+	ASSERT_EQ(core.outputPenaltyPercent, 10);
+	// 5000 * 1.15 * 0.90; the before-defense basis must use the same product.
+	expectDamage(battle()->calculateDmgRange(coreAttack), 5175, 5175);
+
+	auto * weaponActor = makeAngel(BattleSide::ATTACKER, BattleHex{8, 4}, 100);
+	auto * weaponTarget = makeAngel(BattleSide::DEFENDER, BattleHex{9, 4}, 1000);
+	BattleAttackInfo weaponAttack(weaponActor, weaponTarget, 0, false);
+	inspire(weaponActor, {5, arcaneInspiration::WEAPONS, false});
+	ASSERT_EQ(arcaneInspiration::attackPlan(*battle(), weaponAttack).defenseIgnorePercent, 15);
+	// Ignore floor(20 * 15%) = 3 target Defense, then apply the 5% core.
+	expectDamage(battle()->calculateDmgRange(weaponAttack), 6037, 6037);
+	weaponActor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::IN_FRENZY,
+		BonusSource::OTHER, 100, BonusSourceID()));
+	// Frenzy still trades all 20 own Defense: (40 - 17) * 5% + 1, times core1.05.
+	expectDamage(battle()->calculateDmgRange(weaponAttack), 11287, 11287);
+
+	auto * bulwarkActor = makeAngel(BattleSide::ATTACKER, BattleHex{6, 7}, 100);
+	auto * bulwarkTarget = makeAngel(BattleSide::DEFENDER, BattleHex{7, 7}, 1000);
+	BattleAttackInfo physical(bulwarkActor, bulwarkTarget, 0, false);
+	inspire(bulwarkTarget, {5, arcaneInspiration::BULWARK, false});
+	ASSERT_EQ(arcaneInspiration::attackPlan(*battle(), physical).physicalReductionPercent, 10);
+	expectDamage(battle()->calculateDmgRange(physical), 4500, 5000);
+	auto magical = physical;
+	magical.physicalDamage = false;
+	ASSERT_EQ(arcaneInspiration::attackPlan(*battle(), magical).physicalReductionPercent, 0);
+	expectDamage(battle()->calculateDmgRange(magical), 5000, 5000);
+}

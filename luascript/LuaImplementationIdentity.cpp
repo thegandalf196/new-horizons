@@ -118,6 +118,17 @@ constexpr auto POINT_BLANK_CALCULATOR_LAYERS = []
 	return result;
 }();
 
+
+// The current Inspiration root and protection patch are one reviewed pair;
+// historical pairs and every other ordered patch keep their exact identities.
+constexpr auto INSPIRATION_CALCULATOR_LAYERS = []
+{
+	auto result = POINT_BLANK_CALCULATOR_LAYERS;
+	result[0] = {"damage/damageCalculator", "e6bc0541070b3d2d55b24e44ad2e63301879da0d1d29f66837f2651a1b08c5aa"};
+	result[1] = {"damage/physicalProtection", "b98ea36dd318c4a7335222faa83c559fd4194d4f6fe5a6e11b42c9715068a2c0"};
+	return result;
+}();
+
 std::string digest(std::string_view source)
 {
 	return nhart::hex(nhart::sha256(std::span<const ui8>(
@@ -202,7 +213,8 @@ LuaImplementationIdentity LuaImplementationIdentity::fromScript(const LuaScriptI
 	}
 	else if(matchesReviewedLayers(script, CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, PHYSICAL_PROTECTION_CALCULATOR_LAYERS)
-		|| matchesReviewedLayers(script, POINT_BLANK_CALCULATOR_LAYERS))
+		|| matchesReviewedLayers(script, POINT_BLANK_CALCULATOR_LAYERS)
+		|| matchesReviewedLayers(script, INSPIRATION_CALCULATOR_LAYERS))
 		result.canonicalDamageCalculator = true;
 	return result;
 }

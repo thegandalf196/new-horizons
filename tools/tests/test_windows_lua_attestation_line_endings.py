@@ -14,10 +14,13 @@ ROOT = Path(__file__).resolve().parents[2]
 # A new digest/dispatch must extend this checked inventory explicitly.
 ROOT_IDENTITIES = {
     'DAMAGE': 'spells/damage',
+    'MARKED_DAMAGE': 'spells/damage',
     'LIFE_DRAIN': 'spells/lifeDrain',
     'SHARED_LIFE_DRAIN': 'spells/lifeDrain',
+    'CURRENT_LIFE_DRAIN': 'spells/lifeDrain',
     'TIMED': 'spells/timed',
     'SHARED_TIMED': 'spells/timed',
+    'MARKED_TIMED': 'spells/timed',
     'FOCUS_MAGIC': 'combat/focusMagic',
     'HEX_OF_PAIN': 'combat/hexOfPain',
 }

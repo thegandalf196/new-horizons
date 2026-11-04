@@ -40,6 +40,35 @@ bool attests(const scripting::LuaScriptInstance & script)
 	return identity.hasCanonicalDamageCalculator();
 }
 
+
+void replaceRequired(std::string & source, std::string_view current, std::string_view previous)
+{
+	const auto position = source.find(current);
+	ASSERT_NE(position, std::string::npos);
+	ASSERT_EQ(source.find(current, position + 1), std::string::npos);
+	source.replace(position, current.size(), previous);
+}
+
+// Restore the exact pre-Inspiration pair, not an arbitrary compatible Lua program.
+void restorePriorPointBlankPair(scripting::LuaScriptInstance & script)
+{
+	auto & root = script.layers.front().sourceText;
+	ASSERT_NO_FATAL_FAILURE(replaceRequired(root,
+		"\tif targetDefense then\n"
+		"\t\tignored = ignored + math.floor((info.arcaneInspirationDefenseIgnorePercent or 0) * math.max(0, defense) / 100)\n"
+		"\tend\n", ""));
+	ASSERT_NO_FATAL_FAILURE(replaceRequired(root,
+		"\tlocal inspirationMultiplier = (100 + (info.arcaneInspirationDamageBonusPercent or 0)) / 100\n"
+		"\t\t* (100 - (info.spellshockOutputPenaltyPercent or 0)) / 100\n"
+		"\tlocal damageFactor = raising * lowering * physicalDamageReductionMultiplier * inspirationMultiplier\n",
+		"\tlocal damageFactor = raising * lowering * physicalDamageReductionMultiplier\n"));
+	ASSERT_NO_FATAL_FAILURE(replaceRequired(root,
+		"\t\t* sylvanMultiplier * ordinaryCreatureSpecialtyMultiplier * finalLuckMultiplier * inspirationMultiplier\n",
+		"\t\t* sylvanMultiplier * ordinaryCreatureSpecialtyMultiplier * finalLuckMultiplier\n"));
+	ASSERT_NO_FATAL_FAILURE(replaceRequired(script.layers[1].sourceText,
+		"\ttable.insert(reductions, { info.arcaneBulwarkReductionPercent or 0, 100 })\n", ""));
+}
+
 class EmptyEnvironment final : public Environment
 {
 public:
@@ -168,6 +197,7 @@ TEST(LuaDamageCalculatorIdentity, PreviousPhysicalProtectionRootRetainsItsExactC
 {
 	scripting::LuaModule host;
 	auto script = calculator(host, canonicalPatches());
+	ASSERT_NO_FATAL_FAILURE(restorePriorPointBlankPair(*script));
 	auto & source = script->layers.front().sourceText;
 	const std::string current = "\t\t\tif info.archeryIgnoreAdjacentRangedPenalty then\n"
 		"\t\t\t\tif info.pointBlankPreservesAdjacentExemption then return 0 end\n"
@@ -207,4 +237,20 @@ TEST(LuaDamageCalculatorIdentity, HistoricalNineLayerContextLoadsExactRootAndRej
 		EXPECT_FALSE(context.callMethod<std::vector<std::string>>("bonusTypes", parameters).empty());
 		EXPECT_EQ(context.hasCanonicalDamageCalculator(), !changed);
 	}
+}
+
+TEST(LuaDamageCalculatorIdentity, InspirationAndPriorPointBlankPairsAttestButBothMixedPairsFailClosed)
+{
+	scripting::LuaModule host;
+	const auto current = calculator(host, canonicalPatches());
+	ASSERT_TRUE(attests(*current));
+	auto previous = calculator(host, canonicalPatches());
+	ASSERT_NO_FATAL_FAILURE(restorePriorPointBlankPair(*previous));
+	ASSERT_TRUE(attests(*previous));
+	auto oldRootWithCurrentProtection = calculator(host, canonicalPatches());
+	oldRootWithCurrentProtection->layers[0].sourceText = previous->layers[0].sourceText;
+	EXPECT_FALSE(attests(*oldRootWithCurrentProtection));
+	auto currentRootWithOldProtection = calculator(host, canonicalPatches());
+	currentRootWithOldProtection->layers[1].sourceText = previous->layers[1].sourceText;
+	EXPECT_FALSE(attests(*currentRootWithOldProtection));
 }

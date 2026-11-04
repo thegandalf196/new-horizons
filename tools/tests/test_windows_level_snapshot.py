@@ -57,11 +57,13 @@ class LevelSnapshotTest(unittest.TestCase):
         background = (ROOT / 'client/render/AssetGenerator.cpp').read_text().split(
             'AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground()', 1
         )[1].split('AssetGenerator::CanvasPtr', 1)[0]
-        self.assertIn('comp->setHorizontalLayout(244, 84, true)', choices)
+        skill_layout = 'comp->setHorizontalLayout(rerollAvailable ? 156 : 244, 84, true)'
+        self.assertIn(skill_layout, choices)
         self.assertIn('setHorizontalLayout(244, 46, true)', perk)
         self.assertIn('pos.h = 84', perk)
-        for left, category in ((44, 'skillComps'), (352, 'perkComps')):
-            self.assertIn(f'Rect({left}, 300, 244, static_cast<int>({category}.size()) * 96 - 12)', choices)
+        for left, category, width in ((44, 'skillComps', 'rerollAvailable ? 156 : 244'),
+                                      (352, 'perkComps', '244')):
+            self.assertIn(f'Rect({left}, 300, {width}, static_cast<int>({category}.size()) * 96 - 12)', choices)
             self.assertIn(f'recessed(Rect({left}, 300 + row * 96, 244, 84))', background)
             for rows in (1, 2):
                 box_height = rows * 96 - 12
@@ -72,10 +74,16 @@ class LevelSnapshotTest(unittest.TestCase):
         # first card can create an empty row in the unchanged global algorithm.
         self.assertNotIn('setHorizontalLayout(284', choices)
         self.assertNotIn('setHorizontalLayout(284', perk)
-        self.assertLess(choices.index('comp->setHorizontalLayout(244, 84, true)'),
+        self.assertLess(choices.index(skill_layout),
                         choices.index('std::make_shared<CComponentBox>(skillComps'))
         self.assertLessEqual(8 + 228, 244)
         self.assertLessEqual(48 + 34, 84)
+        reroll = (ROOT / 'client/windows/CLevelWindowReroll.cpp').read_text()
+        self.assertIn('CButton>(Point(208, 326 + static_cast<int>(row++) * 96)', reroll)
+        self.assertIn('AnimationPath::builtin("settingsWindow/button80")', reroll)
+        self.assertEqual(156 + 8 + 80, 244)
+        self.assertEqual(44 + 156 + 8, 208)
+        self.assertEqual(208 + 80, 44 + 244)
 
     def test_centering_is_opt_in_and_moves_the_complete_horizontal_group(self):
         header = (ROOT / 'client/widgets/CComponent.h').read_text()
@@ -93,7 +101,7 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertIn('FONT_TINY, ETextAlignment::CENTERLEFT', layout)
         # Bound arithmetic witnesses for short and wrapped/extended captions.
         # These are source/geometry checks, not rendered glyph measurements.
-        for width in (244, 228):
+        for width in (156, 244, 228):
             for icon_width in (32, 42, 44):
                 for measured_caption in (0, 25, 100, 500):
                     caption_width = min(max(measured_caption, 0), width - icon_width - 12)
@@ -122,7 +130,7 @@ class LevelSnapshotTest(unittest.TestCase):
         # This is source-contract coverage, not rendered text verification.
 
     def test_actual_snapshot_preserves_hero_level_type(self):
-        snapshot = (ROOT / 'client/windows/GUIClasses.h').read_text()
+        snapshot = (ROOT / 'client/windows/CLevelWindow.h').read_text()
         hero = (ROOT / 'lib/mapObjects/CGHeroInstance.h').read_text()
         declaration = re.search(r'struct PrimaryGainSnapshot\s*\{.*?\};', snapshot, re.S).group()
         snapshot_type = re.search(r'(\w+)\s+level\s*;', declaration).group(1)
@@ -133,7 +141,7 @@ class LevelSnapshotTest(unittest.TestCase):
         compiler = shutil.which('cl') or shutil.which('g++')
         if compiler is None:
             self.skipTest('C++ compiler required for compile-only boundary control')
-        snapshot = (ROOT / 'client/windows/GUIClasses.h').read_text()
+        snapshot = (ROOT / 'client/windows/CLevelWindow.h').read_text()
         declaration = re.search(r'struct PrimaryGainSnapshot\s*\{.*?\};', snapshot, re.S).group()
         hero = (ROOT / 'lib/mapObjects/CGHeroInstance.h').read_text()
         hero_type = re.search(r'(\w+)\s+level\s*;', hero).group(1)
