@@ -82,7 +82,7 @@ public:
 	{
 		if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 		validateExportedBonusSerialization(context);
 		validateStackBonusSerialization(context);
 	}

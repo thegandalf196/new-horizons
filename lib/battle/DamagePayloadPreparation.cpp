@@ -224,16 +224,17 @@ void CBattleInfoCallback::preparePhysicalDamageModifiers(const BattleAttackInfo 
 			&& newHorizonsBloodrage::hasAvatarOfRage(p.readAttackerHero(*this, info)))
 		{
 			const auto side = playerToSide(p.readAttackerOwner(*this, info));
-			if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-				&& newHorizonsBloodrage::atMaximumForAttack(p.payload.bloodrageDamagePercent,
-					getBattle()->getBloodrageCapPercent(side)))
+			if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 			{
+				const int ignored = newHorizonsBloodrage::avatarDefenseIgnorePercent(
+					p.readAttackerHero(*this, info), p.payload.bloodrageDamagePercent,
+					getBattle()->getBloodrageRank(side), getBattle()->getBloodrageCapPercent(side));
 				// Blood Scent's higher Rage belongs to this attack only. Reuse the
 				// target Creature Defense channels, never hero attributes or Frenzy.
 				if(info.shooting)
-					p.payload.archeryRangedDefenseIgnorePercent += newHorizonsBloodrage::AVATAR_DEFENSE_IGNORE_PERCENT;
+					p.payload.archeryRangedDefenseIgnorePercent += ignored;
 				else
-					p.payload.meleeDefenseIgnorePercent += newHorizonsBloodrage::AVATAR_DEFENSE_IGNORE_PERCENT;
+					p.payload.meleeDefenseIgnorePercent += ignored;
 			}
 		}
 		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);

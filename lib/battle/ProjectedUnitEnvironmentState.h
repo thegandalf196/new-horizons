@@ -7,6 +7,7 @@
 #pragma once
 #include <array>
 #include "SylvanLuckState.h"
+#include "MetamagicPointState.h"
 #include "BattleSide.h"
 #include "NewHorizonsNecromancyCombat.h"
 #include "../GameConstants.h"
@@ -36,6 +37,7 @@ public:
 	struct SideState
 	{
 		SylvanLuckState fortune;
+		MetamagicPointState metamagicPoints;
 		int bloodrageDamagePercent = 0;
 	};
 private:

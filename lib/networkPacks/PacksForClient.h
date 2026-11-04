@@ -752,7 +752,8 @@ struct DLL_LINKAGE SetCommanderProperty : public CPackForClient
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)
-			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)))
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS)))
 			accumulatedBonus.validateAdjacencyCapabilitySerialization(BonusSerializationContext::fromHandler(h));
 		h & heroid;
 		h & which;
@@ -1776,7 +1777,8 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
-		if(h.saving && what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
+        validateMercenaryProperty(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
+        if(h.saving && what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
 			&& (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR)
 				|| identifier != ObjPropertyID(NumericID(identifier.getNum())) || identifier.getNum() < -1))
 			throw std::runtime_error("Invalid or unsupported New Horizons Prospector property");
@@ -1786,6 +1788,7 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 		h & id;
 		h & what;
 		h & identifier;
+        validateMercenaryProperty(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
 		if(what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
 			&& (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR)
 				|| identifier != ObjPropertyID(NumericID(identifier.getNum())) || identifier.getNum() < -1))
@@ -1794,6 +1797,16 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_SURVEYOR))
 			throw std::runtime_error("New Horizons Land Surveyor property requires the new wire format");
 	}
+private:
+    void validateMercenaryProperty(bool supported) const
+    {
+        if(what != ObjProperty::NEW_HORIZONS_MINE_MERCENARY_WEEK
+            && what != ObjProperty::NEW_HORIZONS_MINE_MERCENARY_PENDING)
+            return;
+        if(!supported || identifier != ObjPropertyID(NumericID(identifier.getNum()))
+            || identifier.getNum() < (what == ObjProperty::NEW_HORIZONS_MINE_MERCENARY_WEEK ? -1 : 0))
+            throw std::runtime_error("Invalid or unsupported Mercenary Company property");
+    }
 };
 
 struct DLL_LINKAGE SetQuestHint : public CPackForClient

@@ -9,9 +9,10 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsDivineMandate.h"
+#include "PassiveDivineMandate.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
-#include "NewHorizonsEnchantedCommand.h"
+#include "HeroOrderRecipients.h"
 #include "Unit.h"
 #include "../bonuses/Bonus.h"
 
@@ -75,8 +76,7 @@ JsonNode crownOrderFormula(const JsonNode & formula, bool eligible)
 
 int32_t crownSecondWindPercent(const CGHeroInstance & hero, const HeroOrderState & order, uint32_t unitId)
 {
-	return heroCommands::secondWindPercent(hero, order.warcastingBonusPercent,
-		order.divineMandateEfficiencyBonusPercent(), order.crownAndAltarAppliesTo(unitId));
+	return heroCommands::secondWindPercent(hero, order.divineMandateEfficiencyBonusPercent(), order.crownAndAltarAppliesTo(unitId));
 }
 
 bool hasSharedPurposePerk(const CGHeroInstance * hero)
@@ -107,7 +107,7 @@ std::vector<uint32_t> sharedPurposeOrderRecipients(const CBattleInfoCallback & b
 	BattleSide side, const HeroOrderState & order)
 {
 	return sharedPurposeFriendlyRecipients(battle, side,
-		newHorizonsEnchantedCommand::recipientIds(battle, side, order));
+		heroCommands::recipientIds(battle, side, order));
 }
 
 Bonus sharedPurposeMoraleBonus()
@@ -146,7 +146,8 @@ namespace
 {
 bool hasActiveDivineMandate(const CGHeroInstance * hero)
 {
-	if(!hero || hero->getFactionID() != FactionID::CASTLE
+	if(!hero || newHorizonsPassiveDivineMandate::enabled(hero->getPerkState().rules)
+		|| hero->getFactionID() != FactionID::CASTLE
 		|| !hero->usesPrimaryGrowth()
 		|| !newHorizonsHeroes::usesRules(hero->getPrimaryGrowthRules())
 		|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))

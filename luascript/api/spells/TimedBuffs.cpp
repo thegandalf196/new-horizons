@@ -19,8 +19,7 @@ std::optional<double> currentCasterEnchantValue(const ::spells::Mechanics & m, d
 }
 int32_t currentSlowReduction(const ::spells::Mechanics & m)
 {
-	return -newHorizonsSorceryRevision::slowBaseReduction(m.getEffectPower(), m.getSpellPowerCoefficientBasisPoints(),
-		m.getWarcastingBonusPercent(), m.getEmpowerSpellBonusPercent());
+	return -newHorizonsSorceryRevision::slowBaseReduction(m.getEffectPower(), m.getSpellPowerCoefficientBasisPoints(), m.getEmpowerSpellBonusPercent());
 }
 double currentSlowVariantValue(const ::spells::Mechanics &, double value, int32_t percent)
 {

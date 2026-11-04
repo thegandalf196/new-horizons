@@ -115,7 +115,7 @@
 		"aerialSupremacy": {"enabled": true},
 		"fieldPhysician": {"healingPercentPerLevel": 5, "healingMaximumPercent": 100},
 		"manaFurnace": {"restorePointsPerLevel": 2, "maximumRestorePoints": 40},
-		"graveArchivist": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalEagleEyeSpells": 1},
+		"graveArchivist": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100},
 		"spiritTeacher": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "mentorExperiencePercent": 25}
 	},
 	"recoverySpecialties": {
@@ -127,8 +127,8 @@
 	},
 	"learningExchangeSpecialties": {
 		"version": 1,
-		"ecumenicalScholar": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalSpellsTaught": 1},
-		"occultScholar": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "additionalSpellsReceived": 1}
+		"ecumenicalScholar": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100},
+		"occultScholar": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100}
 	},
 	"swampSeerSpecialty": {"version": 1, "learningPercentPerLevel": 5, "learningMaximumPercent": 100, "studyExperiencePerMagicPrimaryPoint": 250},
 	"ghostSpecialty": {"version": 1},
@@ -182,13 +182,13 @@
 			"core:voy": {"skills": [{"skill": "new-horizons:logistics", "rank": 1}, {"skill": "new-horizons:bulwarkOfTheMire", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.navigation"}]},
 		"core:terek": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
 		"core:oris": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
-		"core:saurug": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+		"core:saurug": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:bloodrage", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prosperity"}]},
 		"core:alamar": {"skills": [{"skill": "new-horizons:shadowMagic", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:shadowMagic", "perk": "new-horizons:shadowMagic.bloodDrinker"}]},
 		"core:jaegar": {"skills": [{"skill": "new-horizons:wisdom", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:wisdom", "perk": "new-horizons:wisdom.mysticism"}]},
 		"core:jeddite": {"skills": [{"skill": "new-horizons:spellcraft", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 2}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.concentration"}]},
 		"core:geon": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.eagleEye"}]},
 		"core:deemer": {"skills": [{"skill": "new-horizons:logistics", "rank": 2}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.scouting"}]},
-		"core:sephinroth": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+		"core:sephinroth": {"skills": [{"skill": "new-horizons:estates", "rank": 1}, {"skill": "new-horizons:shroudOfMalassa", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prosperity"}]},
 		"core:straker": {"skills": [{"skill": "new-horizons:warcasting", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}]},
 		"core:charna": {"skills": [{"skill": "new-horizons:battlecraft", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 1}], "startingPerks": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.tactics"}]},
 		"core:isra": {"skills": [{"skill": "new-horizons:learning", "rank": 1}, {"skill": "new-horizons:necromancy", "rank": 2}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.historian"}]},
@@ -250,8 +250,8 @@
 			"core:josephine": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.pavise"}]},
 			"core:neela": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.ironDiscipline"}]},
 			"core:fafner": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:warcasting", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}]},
-			"core:halon": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:warcasting", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.battleMeditation"}]},
-			"core:rissa": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+			"core:halon": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:warcasting", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.arcaneValor"}]},
+			"core:rissa": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prosperity"}]},
 			"core:theodorus": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:learning", "rank": 1}], "startingPerks": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.mentor"}]},
 			"core:solmyr": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.stormcaller"}]},
 			"core:cyra": {"skills": [{"skill": "new-horizons:metamagic", "rank": 1},{"skill": "new-horizons:sorceryMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:sorceryMagic", "perk": "new-horizons:sorceryMagic.temporalist"}]},
@@ -262,7 +262,7 @@
 			"core:pyre": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:warMachines", "rank": 1}], "startingPerks": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.masterGunner"}]},
 			"core:nymus": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
 			"core:olema": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.concentration"}]},
-			"core:calid": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]},
+			"core:calid": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prosperity"}]},
 			"core:xarfax": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}]},
 			"core:zydar": {"skills": [{"skill": "new-horizons:demonicGating", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}]},
 			"core:vokial": {"skills": [{"skill": "new-horizons:necromancy", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
@@ -294,7 +294,7 @@
 			"core:gird": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:spellcraft", "rank": 1}], "startingPerks": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.arcaneFocus"}]},
 			"core:vey": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:discipline", "rank": 1}], "startingPerks": [{"skill": "new-horizons:discipline", "perk": "new-horizons:discipline.inspirationalLeader"}]},
 			"core:dessa": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:logistics", "rank": 1}], "startingPerks": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.pathfinding"}]},
-			"core:zubin": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:archery", "rank": 1}], "startingPerks": [{"skill": "new-horizons:archery", "perk": "new-horizons:archery.targetCaller"}]},
+			"core:zubin": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}]},
 			"core:gundula": {"skills": [{"skill": "new-horizons:bloodrage", "rank": 1},{"skill": "new-horizons:offense", "rank": 1}], "startingPerks": [{"skill": "new-horizons:offense", "perk": "new-horizons:offense.executioner"}]},
 			"core:bron": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:armorer", "rank": 1}], "startingPerks": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.countercharge"}]},
 			"core:drakon": {"skills": [{"skill": "new-horizons:bulwarkOfTheMire", "rank": 1},{"skill": "new-horizons:discipline", "rank": 1}], "startingPerks": [{"skill": "new-horizons:discipline", "perk": "new-horizons:discipline.steadfast"}]},
@@ -321,7 +321,7 @@
 			"core:inteus": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:havocMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}]},
 			"core:aenain": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:natureMagic", "rank": 1}], "startingPerks": [{"skill": "new-horizons:natureMagic", "perk": "new-horizons:natureMagic.rootcaller"}]},
 			"core:gelare": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.merchantPrince"}]},
-			"core:grindan": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prospector"}]}
+			"core:grindan": {"skills": [{"skill": "new-horizons:elementalRebirth", "rank": 1},{"skill": "new-horizons:estates", "rank": 1}], "startingPerks": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.prosperity"}]}
 		},
 		"factionSkills": {
 			"core:castle": "new-horizons:divineMandate",

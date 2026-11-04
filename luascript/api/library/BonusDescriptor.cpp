@@ -13,6 +13,7 @@
 
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/json/JsonBonus.h"
+#include "../../../lib/spells/NewHorizonsDivineRetribution.h"
 
 namespace scripting::api
 {
@@ -54,6 +55,7 @@ Bonus BonusDescriptor::toBonus() const
 {
 	Bonus b;
 	JsonUtils::parseBonus(toJson(), &b);
+	newHorizonsDivineRetribution::canonicalizeScriptPayoutRatio(b);
 	return b;
 }
 

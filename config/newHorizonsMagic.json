@@ -29,7 +29,6 @@
 	},
 	"schoolRankPowerCoefficientPercent": [100, 115, 130, 145],
 	"spellcraftEfficiencyPercent": [100, 110, 120, 130],
-	"warcasting": true,
 	"physicalDamageReductionCapPercent": 80,
 	"spellPoints": {
 		"rulesetVersion": 1,
@@ -819,6 +818,7 @@
 		},
 		"core:haste": {
 			"ordinaryAcquisition": false,
+			"heroAccess": false,
 			"schools": [
 				"new-horizons:sorcery"
 			],

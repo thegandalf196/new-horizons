@@ -11,8 +11,10 @@
 
 #include "BattleSidePanel.h"
 #include "NewHorizonsBattleStatus.h"
+#include "ArcaneInspirationPresentation.h"
 
 #include <cstdint>
+#include <array>
 #include <optional>
 #include <string>
 #include <vector>
@@ -42,6 +44,8 @@ private:
 	newHorizonsBattleStatus::BattleMoraleReadback displayedMoraleReadback;
 	newHorizonsBattleStatus::BattleLuckReadback displayedLuckReadback;
 	std::string displayedSoulChainSignature;
+	arcaneInspirationPresentation::Readout displayedInspiration;
+	std::array<uint8_t, 2> displayedArcaneMarks{};
 	int displayedMorale = 0;
 	int32_t displayedSummonRounds = 0;
 	std::optional<newHorizonsBattleStatus::BattleBonusDescriptionCacheKey> bonusDescriptionCacheKey;

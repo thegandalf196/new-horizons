@@ -294,11 +294,20 @@ public:
 	bool dig(const CGHeroInstance *h);
 	bool moveArmy(const CArmedInstance *src, const CArmedInstance *dst, bool allowMerging);
 
+	std::map<ObjectInstanceID, uint8_t> pendingProdigyLevels;
+	void validatePendingProdigyLevels() const;
+
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+		{
 			newHorizonsLevelUp::validateNoPendingOptionalOffer(*this);
+			validatePendingProdigyLevels();
+		}
 		h & QID;
+		h & pendingProdigyLevels;
+		if(!h.saving)
+			validatePendingProdigyLevels();
 		h & *randomizer;
 		h & *battles;
 		h & *heroPool;

@@ -38,7 +38,7 @@ class VampirismStatusUiSourceTest(unittest.TestCase):
         self.assertIn("vampirismTooltip(", PANEL)
         self.assertIn('" of actual attack damage dealt, including retaliation."', STATUS)
         self.assertIn('"\\nRemaining: " + roundsRemaining(status.remainingRounds)', STATUS)
-        self.assertIn('AnimationPath::builtin("SpellInt"), effect.getNum() + 1', PANEL)
+        self.assertIn('AnimationPath::builtin("SpellInt"), (wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1', PANEL)
         self.assertIn("Rect(slotX, slotY, 48, 36), tooltip, tooltip", PANEL)
 
     def test_night_feeder_uses_its_art_and_existing_perk_help(self):

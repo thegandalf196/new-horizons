@@ -4,6 +4,9 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "NewHorizonsBloodrageLegacyFixture.h"
+#include "../../../lib/GameSettings.h"
+#include "../../../lib/mapping/CMap.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../lib/battle/NewHorizonsBloodrage.h"
@@ -32,6 +35,19 @@ public:
 class NewHorizonsBloodrageDeathPerksTest : public BattleTestFixture
 {
 protected:
+	bool historicalSerialization = false;
+	bool revisedBloodrage = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		BattleTestFixture::mapLoaded(loaded);
+		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(!revisedBloodrage)
+			rules.Struct().erase("bloodragePolicy");
+		rules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(rules));
+		if(historicalSerialization)
+			historicalBloodrageFixture::captureContext(*loaded);
+	}
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
@@ -219,6 +235,7 @@ TEST_F(NewHorizonsBloodrageDeathPerksTest, DetachedNestedDeathReceiptMatchesLive
 
 TEST_F(NewHorizonsBloodrageDeathPerksTest, CurrentReceiptPersistsAndOldWriterRejectsBeforePrefix)
 {
+	historicalSerialization = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(kill(victim("core:ogre")));
 	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
@@ -233,6 +250,7 @@ TEST_F(NewHorizonsBloodrageDeathPerksTest, CurrentReceiptPersistsAndOldWriterRej
 
 TEST_F(NewHorizonsBloodrageDeathPerksTest, OlderBattleReadDefaultsReceiptToFalse)
 {
+	historicalSerialization = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(false, false));
 	CMemorySerializer old;
 	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_FROZEN;
@@ -257,4 +275,26 @@ TEST(NewHorizonsBloodrageDeathPerksRulesTest, OuterBattleStartRejectsReceiptBefo
 	EXPECT_TRUE(writer.extractBuffer().empty());
 	packet.info->bloodrageFirstBloodUsed = false;
 	EXPECT_NO_THROW(packet.info->validateBloodrageDeathPerksSerialization(writer.oser));
+}
+
+TEST_F(NewHorizonsBloodrageDeathPerksTest, RevisedFirstCoreGrantsThreeThenOneAndSaturates)
+{
+	revisedBloodrage = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(true, false));
+	ASSERT_NO_FATAL_FAILURE(kill(victim("core:pikeman")));
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 15);
+	ASSERT_NO_FATAL_FAILURE(kill(victim("core:pikeman", BattleSide::DEFENDER, 1)));
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 20);
+	ASSERT_NO_FATAL_FAILURE(kill(victim("core:pikeman", BattleSide::DEFENDER, 2)));
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 20);
+}
+
+TEST_F(NewHorizonsBloodrageDeathPerksTest, RevisedFirstEliteComposesWithSlayerAsFourIncrements)
+{
+	revisedBloodrage = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(kill(victim("core:ogre")));
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 32);
+	ASSERT_NO_FATAL_FAILURE(kill(victim("core:angel", BattleSide::DEFENDER, 1)));
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 40);
 }

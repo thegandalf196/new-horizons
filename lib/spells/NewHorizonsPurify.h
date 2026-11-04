@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <string_view>
 #include <vector>
+#include <utility>
 
 #include "../battle/CUnitState.h"
 #include "../battle/Unit.h"
@@ -65,6 +66,8 @@ DLL_LINKAGE std::vector<SpellID> eligibleSpellEffectGroups(const JsonNode & magi
 	const battle::Unit * unit);
 /// Returns a copy of the selected source spell's complete SPELL_EFFECT group.
 DLL_LINKAGE std::vector<Bonus> spellEffectGroupBonuses(const battle::Unit * unit, SpellID sourceSpell);
+/// Among currently friendly eligible recipients, this removal restores an originally hostile stack.
+DLL_LINKAGE bool removalReturnsHostileStack(const battle::Unit & unit, BattleSide casterSide, SpellID sourceSpell);
 /// Classify an existing selected group before removal. Spell-effect transport does not make
 /// physical afflictions (including legacy Poison/Disease groups) magical.
 DLL_LINKAGE bool isMagicalSpellEffectGroup(const battle::Unit * unit, SpellID sourceSpell);
@@ -79,4 +82,9 @@ DLL_LINKAGE bool clearPhysicalPoison(battle::CUnitState * state);
 /// authoritative validation/apply, human picker and AI all consume this same list.
 DLL_LINKAGE std::vector<EligibleStack> eligibleStacks(const CBattleInfoCallback & battle,
 	BattleSide casterSide, const BattleHex & center, int32_t spellPower, bool purifierPerk);
+/// Exact prospective chosen recipients plus automatic Purifier cleanses.
+/// No RNG, effect application, hypothetical cast or mark mutation.
+DLL_LINKAGE std::vector<uint32_t> prospectiveRecipients(const CBattleInfoCallback & battle,
+	BattleSide casterSide, const BattleHex & center, int32_t spellPower, bool purifierPerk,
+	const std::vector<std::pair<int32_t, SpellID>> & choices);
 }

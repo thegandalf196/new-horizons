@@ -14716,6 +14716,191 @@
       },
       "approval": "Prior provisionally selected artwork only; no active mechanics/binding, Final or rendered acceptance implied",
       "newManifestSha256": "6538bfada9da42ba362e3b78cf74efcdeb682e0b78598141fb5654f7b2ff9cb3"
+    },
+    {
+      "baselineArchiveSha256": "c49cfa44a95b73b273a377a53b4ee705336bca0b465514d9d5221742a721315a",
+      "baselineManifestSha256": "6538bfada9da42ba362e3b78cf74efcdeb682e0b78598141fb5654f7b2ff9cb3",
+      "baselineEntriesSha256": "e28fdfbaa4a4be4a59869228fe8711bb040dfb8123dca86b7f159fcacc0df629",
+      "baselineHeaderSha256": "6e218b8fb1b7d06bc1184a0206ec155940e25ec33dc716a29b1124eecba31811",
+      "nonStatusConfigSha256": "7a155f77757d53bed5995d785f5cc4e64bc4e0406d085d09c2ecd4b4dd63add4",
+      "baselineCount": 5711,
+      "entryCount": 5722,
+      "newArchiveSha256": "cb9d429999cb8875cd62dfd5472f9caee83e1ca4ba891c2a72e846e1432c99e5",
+      "resources": [
+        "SPRITES/NH_hero_temporary_effects_icon.png",
+        "SPRITES/NH_info_button.json",
+        "SPRITES/NH_info_button_disabled.png",
+        "SPRITES/NH_info_button_highlighted.png",
+        "SPRITES/NH_info_button_normal.png",
+        "SPRITES/NH_info_button_pressed.png",
+        "SPRITES/NH_info_button_small.json",
+        "SPRITES/NH_info_button_small_disabled.png",
+        "SPRITES/NH_info_button_small_highlighted.png",
+        "SPRITES/NH_info_button_small_normal.png",
+        "SPRITES/NH_info_button_small_pressed.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "configRevisions": {
+        "Mods/new-horizons/Content/config/spells/newHorizons.json": 5,
+        "Mods/new-horizons/Content/config/spells/massVariants.json": 1
+      },
+      "heroInterfaceButtons": [
+        {
+          "id": "new-horizons:heroInterfaceButtons",
+          "family": "hero-interface-buttons",
+          "resources": [
+            "SPRITES/NH_hero_temporary_effects_icon.png",
+            "SPRITES/NH_info_button.json",
+            "SPRITES/NH_info_button_disabled.png",
+            "SPRITES/NH_info_button_highlighted.png",
+            "SPRITES/NH_info_button_normal.png",
+            "SPRITES/NH_info_button_pressed.png",
+            "SPRITES/NH_info_button_small.json",
+            "SPRITES/NH_info_button_small_disabled.png",
+            "SPRITES/NH_info_button_small_highlighted.png",
+            "SPRITES/NH_info_button_small_normal.png",
+            "SPRITES/NH_info_button_small_pressed.png"
+          ],
+          "sourceEntries": [
+            {
+              "resource": "SPRITES/NH_hero_temporary_effects_icon.png",
+              "source": "Mods/new-horizons/Images/NH_hero_temporary_effects_icon.png",
+              "size": 1137,
+              "sha256": "241a77f2cdc9d5c318834e79ee64afcc6bafe27beabce1c8e686d70217340599",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button.json",
+              "source": "Mods/new-horizons/Images/NH_info_button.json",
+              "size": 393,
+              "sha256": "2c5d47995369fb60b0a31d9234e412572c01e1d4a34d44d0ce2cc79071cbf9fa",
+              "family": "hero-interface-buttons",
+              "origin": "Authored four-state animation descriptor for purpose-made hero information medallion; no raster or original-game pixels.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_disabled.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_disabled.png",
+              "size": 1035,
+              "sha256": "7ffe42657b6200326ce6b4a26c3ebbe3c8496a904ecc4a71df041272a593f47b",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_highlighted.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_highlighted.png",
+              "size": 1027,
+              "sha256": "cdd667d558c41acd7187716b1c6822238c376c4c75760ac0215e5b88774b1793",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_normal.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_normal.png",
+              "size": 1013,
+              "sha256": "01faaa42e41efc43f5df8344ba589fd69df650d579618cbe2c07bd53545e5603",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_pressed.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_pressed.png",
+              "size": 1001,
+              "sha256": "115003d666d243d5cbe42d3a5de5021f50a5ee6ca186b970f515bad48c80ebdd",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_small.json",
+              "source": "Mods/new-horizons/Images/NH_info_button_small.json",
+              "size": 417,
+              "sha256": "a7766ca7836a31e2356912a463593182c3ef0639721356bb14b21f2b647bf536",
+              "family": "hero-interface-buttons",
+              "origin": "Authored four-state animation descriptor for purpose-made hero information medallion; no raster or original-game pixels.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_small_disabled.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_small_disabled.png",
+              "size": 636,
+              "sha256": "9e4e5d733502c509b4b2000c6bce848daec676e43b98f369687ff6fdb3af255b",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_small_highlighted.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_small_highlighted.png",
+              "size": 611,
+              "sha256": "86d497c56ee124d6ba9cc113270c70cb2cea29b0fe7283d18ed2e8e91ef05b21",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_small_normal.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_small_normal.png",
+              "size": 609,
+              "sha256": "93975b94e583c4b866937a78eae2a4cfc54de96c4ac34c678d02ce85eaeac21b",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_info_button_small_pressed.png",
+              "source": "Mods/new-horizons/Images/NH_info_button_small_pressed.png",
+              "size": 589,
+              "sha256": "7389b47d2fc2eeebfb3ed040c2f8601fae0c25a61ddbf2a4b710b5ecf2c560ae",
+              "family": "hero-interface-buttons",
+              "origin": "Purpose-made AI-generated painted bronze/gold hero information medallion and hourglass; native-sized premultiplied-alpha reductions and mechanical interaction states. Native button frames remain external game resources.",
+              "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+              "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+            }
+          ],
+          "infoCanvas": [
+            22,
+            22
+          ],
+          "compactInfoCanvas": [
+            16,
+            16
+          ],
+          "infoStates": [
+            "normal",
+            "pressed",
+            "disabled",
+            "highlighted"
+          ],
+          "temporaryEffectsCanvas": [
+            24,
+            24
+          ],
+          "temporaryEffectsContainer": "Existing external heroBackpack 52x36 button; centered symbol overlay.",
+          "origin": "Built-in image generation, native premultiplied-alpha Lanczos export; no copied original-game pixels.",
+          "selection": "Root-selected provisional gold information medallion and hourglass for authorized 0.88.2 hero interface integration.",
+          "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending."
+        }
+      ],
+      "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending.",
+      "newManifestSha256": "fd5c139b1970e67bf3f78e67e4172c257a271f34b19a8a616af134cc02de2a27"
     }
   ]
 }

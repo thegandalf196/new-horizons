@@ -9,6 +9,7 @@
  */
 
 #pragma once
+#include "battle/PhysicalPoisonSpellOrigin.h"
 
 #include "bonuses/BonusSerializationContext.h"
 #include "battle/NewHorizonsAerialSupremacy.h"
@@ -110,7 +111,8 @@ public:
 								const std::shared_ptr<battle::CUnitState> & customState,
 								bool destroyRemains = false,
 								bool bypassTemporaryHitPoints = false,
-								battle::DamageProvenance provenance = battle::DamageProvenance::OTHER); //requires bsa.damageAmount filled
+								battle::DamageProvenance provenance = battle::DamageProvenance::OTHER,
+								int64_t * postShieldBeforeCasualties = nullptr); //requires bsa.damageAmount filled
 
 	const CCreature * unitType() const override;
 	int32_t unitBaseAmount() const override;
@@ -322,6 +324,13 @@ public:
 		if(h.saving)
 			confusionState.validateSerialization(h);
 		if(h.saving)
+		{
+			arcaneMarks.validateSerialization(h);
+			battle::validatePhysicalPoisonSerialization(*this, h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+			if(demonicGateOpened && !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+				throw std::runtime_error("Cannot discard Demonic Gate use in an older stack descriptor");
+		}
+		if(h.saving)
 			dreadCavalryState.validateSerialization(h);
 		if(h.saving && getPhantomRoundsRemaining() > 3)
 			throw std::runtime_error("Binary stack descriptors cannot preserve extended Phantom lifetime");
@@ -463,6 +472,30 @@ public:
 			petrifyingBloodRound = -1;
 		if(petrifyingBloodRound < -1)
 			throw std::runtime_error("Invalid saved Petrifying Blood round receipt");
+		arcaneMarks.serialize(h);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS))
+			h & arcaneShieldHitPoints;
+		if(arcaneShieldHitPoints < 0)
+			throw std::runtime_error("Invalid Arcane Shield hit points");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+			h & demonicGateOpened;
+		else if(!h.saving)
+			demonicGateOpened = false;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+		{
+			h & physicalPoisonBaseDamage;
+			h & physicalPoisonActivationsRemaining;
+			h & physicalPoisonSourceStackId;
+			h & physicalPoisonSpellSide;
+		}
+		else if(!h.saving)
+		{
+			physicalPoisonBaseDamage = 0;
+			physicalPoisonActivationsRemaining = 0;
+			physicalPoisonSourceStackId = -1;
+			physicalPoisonSpellSide = BattleSide::NONE;
+		}
+		if(!h.saving) battle::validatePhysicalPoisonSerialization(*this, true);
 	}
 
 private:

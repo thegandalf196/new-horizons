@@ -6,6 +6,7 @@
 #pragma once
 #include "InitialExportWorld.h"
 #include "../../lib/battle/BattleProxy.h"
+#include "../../lib/battle/WisdomCombatState.h"
 
 class HypotheticBattle;
 
@@ -15,12 +16,14 @@ class HypotheticBattle;
 class InitialExportBattleSubject final : public BattleProxy
 {
 	std::unique_ptr<InitialExportWorld> owned;
+	BattleSideArray<MetamagicPointState> metamagicPointStates;
+	BattleSideArray<WisdomCombatState> wisdomCombatStates;
 	InitialExportBattleSubject(Subject subject, std::unique_ptr<InitialExportWorld> world);
 	void copyValuesTo(InitialExportWorld & destination, const HypotheticBattle & branch, const InitialExportBattleSubject & source) const;
 	void copyValuesFrom(const HypotheticBattle & branch, const InitialExportBattleSubject & source) const;
 	void captureBranchValuesFrom(const HypotheticBattle & branch, const InitialExportBattleSubject & source);
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
-		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
+		int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 public:
 	static std::shared_ptr<InitialExportBattleSubject> capture(Subject subject, BattleInfo & native);
@@ -71,11 +74,13 @@ public:
 	void setReducedExtraActivationState(BattleSide, const ReducedExtraActivationState &) override;
 	void setCrisisCommandState(const newHorizonsCrisisCommand::State &) override;
 	void setCrossSchoolFormulaState(BattleSide, const newHorizonsCrossSchoolFormula::State &) override;
-	void armReactiveWeave(BattleSide, int32_t, int32_t) override;
 	void setSpellResponseState(BattleSide, const SpellResponseState &) override;
 	void consumeExtendSpell(BattleSide) override;
 	void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) override;
 	void setPerfectFortuneState(BattleSide, const PerfectFortuneState &) override;
+	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override;
+	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
+	void setMetamagicPointState(BattleSide, const MetamagicPointState &) override;
 	void setRebirthChainUsed(BattleSide, bool) override;
 	void setPhoenixSparkUsed(BattleSide, bool) override;
 	void setLuckSerendipityState(BattleSide, const LuckSerendipityState &) override;

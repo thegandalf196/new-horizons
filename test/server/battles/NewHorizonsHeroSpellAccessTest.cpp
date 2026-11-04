@@ -54,11 +54,10 @@ struct StartingSpellHero
 	std::string_view spell;
 };
 
-constexpr std::array<StartingSpellHero, 13> HERO_STARTING_SPELLS = {{
+constexpr std::array<StartingSpellHero, 12> HERO_STARTING_SPELLS = {{
 	{"core:labetha", "core:stoneSkin"},
 	{"core:inteus", "core:bloodlust"},
 	{"core:loynis", "core:prayer"},
-	{"core:zubin", "core:precision"},
 	{"core:coronius", "core:slayer"},
 	{"core:aenain", "core:disruptingRay"},
 	{"core:piquedram", "core:shield"},

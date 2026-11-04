@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleSpellMechanics.h"
+#include "NewHorizonsMetamagicEffects.h"
 #include "CSpell.h"
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsMagic.h"
@@ -120,7 +121,8 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 			// an ally is not resisting a hostile magical effect.
 			if(owner->getJsonKey() == newHorizonsBlink::SPELL_ID && unit->unitSide() == casterSide)
 				continue;
-			const int prob = std::min(unit->magicResistance(), 100); //probability of resistance in %
+			const int prob = newHorizonsMetamagic::resistanceChance(std::min(unit->magicResistance(), 100),
+				getMetamagicCastProfile(), *battle(), *unit); // probability of resistance in %
 			const bool didResist = rng.nextInt(0, 99) < prob;
 			resistanceRolls.push_back({unit->unitId(), prob, didResist, false});
 			if(didResist)

@@ -1,6 +1,7 @@
 /* Part of VCMI. Authors: see AUTHORS. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "StackEffectRecordRules.h"
+#include "ArcaneInspiration.h"
 #include "CUnitState.h"
 #include "BattleForm.h"
 #include "NewHorizonsSwiftRebirth.h"
@@ -16,11 +17,11 @@ namespace stackEffectRecordRules
 {
 bool incomingProtected(const battle::Unit & unit, const Bonus & value)
 {
-	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit);
+	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit) && !arcaneInspiration::isEffect(&value);
 }
 bool removalProtected(const battle::Unit & unit, const Bonus & value)
 {
-	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit)
+	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit) && !arcaneInspiration::isEffect(&value)
 		&& !newHorizonsOffense::isNoQuarterBonus(&value)
 		&& !newHorizonsSerpentsEmbrace::isMarker(value);
 }

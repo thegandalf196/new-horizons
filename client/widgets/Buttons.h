@@ -105,6 +105,7 @@ public:
 	void setHoverable(bool on);
 	void setSoundDisabled(bool on);
 	void setHelp(const std::pair<std::string, std::string> & help);
+	const std::string & getHelp() const { return helpBox; }
 
 	/// State modifiers
 	bool isBlocked();

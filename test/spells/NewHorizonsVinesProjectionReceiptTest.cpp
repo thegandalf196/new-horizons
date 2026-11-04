@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "../mock/mock_spells_Mechanics.h"
+#include "../mock/mock_ServerCallback.h"
 #include "../mock/mock_battle_Unit.h"
 #include "../server/battles/NewHorizonsElementalTerrainFixture.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
@@ -38,6 +39,12 @@ public:
 		const spells::Target & target) const override { return target; }
 private:
 	void initImpl(JsonNode) override {}
+};
+
+class CompletionFailureServer : public ServerCallbackMock
+{
+public:
+	MOCK_METHOD2(recordCompletedHeroSpellCast, void(BattleSide, int32_t));
 };
 
 class ReceiptEnvironment final : public ::Environment
@@ -395,4 +402,30 @@ TEST_F(NewHorizonsVinesProjectionIntegration, NegatedCastNeverPublishesReusableR
 	auto mechanics = vines().toSpell()->battleMechanics(&cast);
 	mechanics->castEval(state->getServerCallback(), target({firstHex, secondHex, BattleHex(10, 5)}));
 	EXPECT_FALSE(mechanics->vengefulVinesProjectionReceipt());
+}
+
+TEST_F(NewHorizonsVinesProjectionIntegration, CompletionExceptionClearsPriorReceiptAndSuccessfulRetryRecertifies)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto state = branch();
+	const auto aim = target({firstHex, secondHex, BattleHex(10, 5)});
+	auto mechanics = project(*state, aim);
+	ASSERT_TRUE(mechanics->vengefulVinesProjectionReceipt());
+	const auto liveBefore = unitsSnapshot(*branch());
+	const auto rngBefore = randomState(*gameHandler->getRandomGenerator());
+	auto * delegate = state->getServerCallback();
+	NiceMock<CompletionFailureServer> failingServer;
+	ON_CALL(failingServer, getRNG()).WillByDefault(Return(delegate->getRNG()));
+	ON_CALL(failingServer, apply(An<StacksInjured &>())).WillByDefault(Invoke([&](StacksInjured & pack) { delegate->apply(pack); }));
+	ON_CALL(failingServer, apply(An<SetStackEffect &>())).WillByDefault(Invoke([&](SetStackEffect & pack) { delegate->apply(pack); }));
+	ON_CALL(failingServer, apply(An<CPackForClient &>())).WillByDefault(Invoke([&](CPackForClient & pack) { delegate->apply(pack); }));
+	EXPECT_CALL(failingServer, recordCompletedHeroSpellCast(BattleSide::ATTACKER, state->battleGetSpellLevel(vines())))
+		.WillOnce(Throw(std::runtime_error("Completion characterization failure")));
+	EXPECT_THROW(mechanics->castEval(&failingServer, aim), std::runtime_error);
+	EXPECT_FALSE(mechanics->vengefulVinesProjectionReceipt());
+	EXPECT_FALSE(mechanics->lifeDrainProjectionReceipt());
+	EXPECT_NO_THROW(mechanics->castEval(delegate, aim));
+	EXPECT_TRUE(mechanics->vengefulVinesProjectionReceipt());
+	EXPECT_EQ(unitsSnapshot(*branch()), liveBefore);
+	EXPECT_EQ(randomState(*gameHandler->getRandomGenerator()), rngBefore);
 }

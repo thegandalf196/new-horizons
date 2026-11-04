@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsSwampSeer.h"
+#include "NewHorizonsLearning.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../rewardable/Reward.h"
 #include <algorithm>
@@ -50,7 +51,7 @@ int64_t projectedStudyPrimaryPoints(const CGHeroInstance & hero, const Rewardabl
 		const auto index = static_cast<size_t>(skill.getNum());
 		if(index >= reward.primary.size())
 			continue;
-		const auto change = hero.projectPrimarySkillChange(skill, reward.primary[index], ChangeValueMode::RELATIVE);
+		const auto change = hero.projectPrimarySkillChange(skill, newHorizonsLearning::trainingPrimaryReward(&hero, source, reward.primary[index]), ChangeValueMode::RELATIVE);
 		points += std::max<int64_t>(0, int64_t(change.after) - change.before);
 	}
 	return points;

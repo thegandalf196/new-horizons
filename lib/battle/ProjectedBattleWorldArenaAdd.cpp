@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../spells/NewHorizonsMetamagicEntry.h"
 #include "ProjectedBattleWorldArenaState.h"
 #include "BattleInfo.h"
 #include "StackInitializationReceipts.h"
@@ -79,6 +80,11 @@ void battle::ProjectedBattleWorldArena::Data::initializeAdded(Slot & slot, const
 	slot.state->summoned = info.summoned;
 	slot.state->natureSummoned = info.natureSummoned;
 	slot.state->summonRoundsRemaining = info.summonRoundsRemaining;
+	newHorizonsMetamagic::seedSummonedMarks(*slot.state,
+		{heroes.at(BattleSide::ATTACKER), heroes.at(BattleSide::DEFENDER)});
+	if(const auto entry = newHorizonsMetamagic::entryAttunement(source, *slot.state,
+		sideValues.state(info.side).metamagicPoints.points))
+		graph->addExported(*slot.original, std::make_shared<Bonus>(*entry));
 	slot.original->initializeRebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP);
 	if(const auto entry = newHorizonsPrismaticVanguard::entryBonus(heroes.at(info.side), info.type))
 		graph->addExported(*slot.original, std::make_shared<Bonus>(*entry));

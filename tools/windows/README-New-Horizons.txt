@@ -56,9 +56,13 @@ New saves use a separate New Horizons directory:
   %LOCALAPPDATA%\new-horizons\Saves
 
 Earlier %LOCALAPPDATA%\HeroesIII-NewHorizons\Saves files are not moved or
-deleted. To continue an old game, close the game and copy its save files
-(including same-name companion files) into the new directory. Do not overwrite
-conflicting names. Retain originals until the copied game loads successfully.
+deleted.
+
+SAVE COMPATIBILITY - 0.88.2
+Start a new game. This version cannot load saves from 0.88.1 or older development
+builds, and no save conversion is provided. Keep your old save files and backups;
+use the matching older version to continue those games. Copying an old save into
+the new directory does not make it compatible.
 
 The package's config\dirs.json supplies ALL five path overrides. Do not remove
 it or point userDataPath at your original installation: the engine can write

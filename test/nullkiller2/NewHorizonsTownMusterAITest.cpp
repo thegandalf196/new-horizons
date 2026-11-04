@@ -151,7 +151,7 @@ TEST_F(NewHorizonsTownMusterAITest, EmptyOwnedTownPlansMovesAndAutomaticallySubm
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_EQ(town->getVisitingHero(), nullptr);
 	ASSERT_EQ(town->getGarrisonHero(), nullptr);
-	EXPECT_FALSE(hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.academicStudy"));
+	EXPECT_FALSE(hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.seasonedAdventurer"));
 	const uint64_t expected = uint64_t(2) * creature("core:pikeman").toCreature()->getAIValue();
 	EXPECT_EQ(NK2AI::townMusterArmyReward(gateway->nullkiller.get(), hero, town), expected);
 	auto goal = plan();

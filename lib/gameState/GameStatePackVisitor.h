@@ -15,11 +15,13 @@
 
 class CBonusSystemNode;
 class CGameState;
+class CStack;
 struct Bonus;
 
 class GameStatePackVisitor final : public ICPackVisitor
 {
 	void restorePreBattleState(BattleID battleID);
+	bool commitDemonicGateStartAction(const StartAction & pack, CStack & source);
 
 	/// Morale from army composition is only recomputed on army change, so it must be refreshed on gain or loss of a troop-mixing bonus
 	void updateMoraleOnTroopMixingBonusChange(CBonusSystemNode * node, const Bonus & bonus);
@@ -149,7 +151,7 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
-	void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) override;
+	void visitSetMetamagicPointState(SetMetamagicPointState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;
@@ -187,7 +189,7 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
-	void visitSetReactiveWeaveState(SetReactiveWeaveState & pack) override;
+	void visitSetMetamagicPointState(SetMetamagicPointState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;

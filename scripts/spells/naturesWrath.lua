@@ -101,6 +101,7 @@ function Script:apply(mechanics, server, target)
 	for index, destination in ipairs(target) do
 		local unit = destination.unit
 		if eligibleEffect(self, mechanics, unit) then
+			server:recordResolvedSpellRecipient(unit:unitID())
 			if mechanics:ownerIsSameAs(unit) then
 				local amount = mechanics:applySpellBonus(mechanics:getNaturesWrathHopPower(index - 1), unit)
 				local healed = server:healUnit(battle, unit, amount, ENUM.HealLevel.heal, ENUM.HealPower.permanent)

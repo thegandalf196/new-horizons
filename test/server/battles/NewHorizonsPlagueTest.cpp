@@ -239,29 +239,25 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsPlagueTest, CombatCastingIsSavedOnMarkerAndRetainedAfterReadinessConsumption)
+TEST_F(NewHorizonsPlagueTest, SpellPenetrationIsSavedOnMarkerAndRetainedForDelayedDamage)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto warcasting = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
-	ASSERT_TRUE(warcasting.hasValue());
-	attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.martialChanneling"});
-	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.combatCasting"});
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_TRUE(spellcraft.hasValue());
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"});
 	afflicted->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::CREATURE_ABILITY, 50,
 		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	battle()->getSide(BattleSide::ATTACKER).warcastingState.recordAcceptedAction(
-		AlternatingHeroActionState::Action::ORDER, battle()->getRound(), 20);
 	ASSERT_TRUE(castOn(attackerSideHero, plagueSpell(), afflicted));
 	const auto marker = plagueStatus(afflicted);
 	ASSERT_NE(marker, nullptr);
 	ASSERT_NE(marker->parameters, nullptr);
 	const auto parameters = marker->parameters->toCustom<JsonNode>();
 	const auto & captured = parameters["mdrPenetration"];
-	EXPECT_EQ(spells::capturedMdrPenetrations(captured, afflicted->unitId()), (std::vector<int>{15}));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).warcastingState.bonusFor(
-		AlternatingHeroActionState::Action::SPELL, battle()->getRound()), 0);
-	const auto expected = spells::calculateMagicalDamageReduction(marker->val, {50}, std::vector<int>{15}).damageWithPenetration;
+	EXPECT_EQ(spells::capturedMdrPenetrations(captured, afflicted->unitId()), (std::vector<int>{20}));
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	const auto expected = spells::calculateMagicalDamageReduction(marker->val, {50}, std::vector<int>{20}).damageWithPenetration;
 	EXPECT_EQ(newHorizonsPlague::adjustedTickDamage(*battle(), BattleSide::ATTACKER,
 		afflicted, marker->val, &captured), expected);
 	const auto firstInjury = server.injuries.size();

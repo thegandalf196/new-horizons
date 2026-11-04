@@ -32,6 +32,9 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 	case Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY:
 		profile = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
 		break;
+	case Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS:
+		profile = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+		break;
 	default:
 		throw std::invalid_argument("Unknown owned bonus source epoch");
 	}
@@ -51,6 +54,8 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceCapabilities(
 		version = Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES;
 	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES}))
 		version = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS}))
+		version = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
 	else throw std::invalid_argument("Unknown or partial owned bonus capture capabilities");
 	return OwnedBonusCaptureCodec(version);
 }

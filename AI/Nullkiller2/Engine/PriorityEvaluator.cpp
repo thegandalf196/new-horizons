@@ -8,9 +8,7 @@
 *
 */
 #include "StdInc.h"
-#include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../../../lib/mapObjects/NewHorizonsRecruitersContacts.h"
-#include "../../../lib/mapObjects/NewHorizonsSage.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include <limits>
 
@@ -179,7 +177,7 @@ int32_t getResourcesGoldReward(const TResources & res)
 	return result;
 }
 
-uint64_t getDwellingArmyValue(CCallback * cb, const CGObjectInstance * target, bool checkGold)
+uint64_t getDwellingArmyValue(CCallback * cb, const CGObjectInstance * target, const CGHeroInstance * buyer, bool checkGold)
 {
 	auto dwelling = dynamic_cast<const CGDwelling *>(target);
 	uint64_t score = 0;
@@ -189,8 +187,7 @@ uint64_t getDwellingArmyValue(CCallback * cb, const CGObjectInstance * target, b
 		if(creLevel.first && creLevel.second.size())
 		{
 			auto creature = creLevel.second.back().toCreature();
-			auto creaturesAreFree = creature->getLevel() == 1;
-			if(!creaturesAreFree && checkGold && !cb->getResourceAmount().canAfford(creature->getFullRecruitCost() * creLevel.first))
+			if(checkGold && !cb->getResourceAmount().canAfford(dwelling->getTotalRecruitmentCost(creature->getId(), creLevel.first, buyer)))
 				continue;
 
 			score += creature->getAIValue() * creLevel.first;
@@ -201,7 +198,7 @@ uint64_t getDwellingArmyValue(CCallback * cb, const CGObjectInstance * target, b
 }
 
 
-int getDwellingArmyCost(const CGObjectInstance * target)
+int getDwellingArmyCost(const CGObjectInstance * target, const CGHeroInstance * buyer)
 {
 	auto dwelling = dynamic_cast<const CGDwelling *>(target);
 	int cost = 0;
@@ -211,9 +208,7 @@ int getDwellingArmyCost(const CGObjectInstance * target)
 		if(creLevel.first && creLevel.second.size())
 		{
 			auto creature = creLevel.second.back().toCreature();
-			auto creaturesAreFree = creature->getLevel() == 1;
-			if(!creaturesAreFree)
-				cost += creature->getFullRecruitCost().marketValue() * creLevel.first;
+			cost += dwelling->getTotalRecruitmentCost(creature->getId(), creLevel.first, buyer).marketValue();
 		}
 	}
 
@@ -222,9 +217,7 @@ int getDwellingArmyCost(const CGObjectInstance * target)
 
 static uint64_t evaluateSpellScrollArmyValue(const SpellID & spell, const CGHeroInstance * hero)
 {
-	// The reusable scroll remains useful; Archivist additionally retains the
-	// legally learnable spell after the scroll is traded or otherwise removed.
-	return hero && hero->canLearnSpellFromAcquiredScroll(spell) ? 3000 : 1500;
+	return 1500; // Reusable scroll value; acquisition no longer teaches its spell.
 }
 
 static uint64_t evaluateArtifactArmyValue(const CArtifact * art)
@@ -283,6 +276,9 @@ uint64_t RewardEvaluator::getArmyReward(
 
 	switch(target->ID)
 	{
+	case Obj::MINE:
+	case Obj::ABANDONED_MINE:
+		return ownedMineArmyReward(aiNk, hero, dynamic_cast<const CGMine *>(target));
 	case Obj::MONSTER:
 	{
 		const auto join = neutralJoinValue(aiNk, target, hero, army);
@@ -298,7 +294,7 @@ uint64_t RewardEvaluator::getArmyReward(
 	case Obj::CREATURE_GENERATOR3:
 	case Obj::CREATURE_GENERATOR4:
 	{
-		uint64_t reward = getDwellingArmyValue(aiNk->cc.get(), target, checkGold);
+		uint64_t reward = getDwellingArmyValue(aiNk->cc.get(), target, hero, checkGold);
 		const auto * dwelling = dynamic_cast<const CGDwelling *>(target);
 		if(hero && dwelling)
 			reward += externalMusterArmyReward(aiNk, hero, dwelling);
@@ -309,8 +305,8 @@ uint64_t RewardEvaluator::getArmyReward(
 			if(const auto award = newHorizonsRecruitment::recruitersContactsAward(*hero, *dwelling, week))
 			{
 				const auto creature = dwelling->creatures.at(award->row).second.back().toCreature();
-				const bool free = creature->getLevel() == 1;
-				if(free || !checkGold || aiNk->cc->getResourceAmount().canAfford(creature->getFullRecruitCost() * award->amount))
+				if(!checkGold || aiNk->cc->getResourceAmount().canAfford(
+					dwelling->getTotalRecruitmentCost(creature->getId(), award->amount, hero)))
 					reward += static_cast<uint64_t>(creature->getAIValue()) * award->amount;
 			}
 		}
@@ -439,7 +435,7 @@ int RewardEvaluator::getGoldCost(const CGObjectInstance * target, const CGHeroIn
 	case Obj::CREATURE_GENERATOR2:
 	case Obj::CREATURE_GENERATOR3:
 	case Obj::CREATURE_GENERATOR4:
-		return getDwellingArmyCost(target);
+		return getDwellingArmyCost(target, hero);
 	default:
 		return 0;
 	}
@@ -549,12 +545,7 @@ float RewardEvaluator::getStrategicalValue(const CGObjectInstance * target, cons
 		auto mine = dynamic_cast<const CGMine *>(target);
 		TResources res;
 		if(mine->getOwner() == aiNk->playerID)
-		{
-			if(!hero || !shouldVisit(aiNk, hero, mine))
-				return 0;
-			res[mine->producedResource] = mine->prospectorQuantity();
-			return getCombinedResourceRequirementStrength(res);
-		}
+			return 0;
 		res[mine->producedResource] = mine->producedQuantity;
 
 		// Mines should have higher priority than resources
@@ -730,13 +721,7 @@ int32_t RewardEvaluator::getGoldReward(const CGObjectInstance * target, const CG
 	{
 		auto * mine = dynamic_cast<const CGMine*>(target);
 		if(mine->getOwner() == aiNk->playerID)
-		{
-			if(!shouldVisit(aiNk, hero, mine))
-				return 0;
-			TResources reward;
-			reward[mine->producedResource] = mine->prospectorQuantity();
-			return getResourcesGoldReward(reward);
-		}
+			return 0;
 		return dailyIncomeMultiplier * (mine->producedResource == GameResID::GOLD ? 1000 : 75);
 	}
 	case Obj::PANDORAS_BOX:

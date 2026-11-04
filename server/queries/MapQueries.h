@@ -116,8 +116,11 @@ public:
 	static constexpr QueryType TYPE = QueryType::HeroLevelUpDialog;
 
 	CHeroLevelUpDialogQuery(CGameHandler * owner, const HeroLevelUp &Hlu, const CGHeroInstance * Hero);
-	static constexpr int32_t REROLL_REPLY = -1;
-	bool requestReroll(PlayerColor player);
+	// QueryReply negative values encode exactly one secondary-skill card.
+	static constexpr int32_t REROLL_REPLY = -2;
+	static constexpr int32_t rerollReply(size_t skillIndex) { return -2 - static_cast<int32_t>(skillIndex); }
+	bool requestReroll(PlayerColor player, size_t skillIndex = 0);
+	std::set<SecondarySkill> rerollCandidates() const;
 	bool hasOptionalPolicy() const;
 
 	void onRemoval(PlayerColor color) override;

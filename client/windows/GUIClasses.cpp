@@ -62,6 +62,7 @@
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "../../lib/mapObjectConstructors/CommonConstructors.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/NewHorizonsEstates.h"
 #include "../../lib/mapObjects/army/CArmedInstance.h"
 #include "../../lib/mapObjects/CGMarket.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
@@ -90,19 +91,6 @@ static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreature
 	if(!creature || !GAME || !GAME->interface() || !GAME->interface()->cb)
 		return std::nullopt;
 	return GAME->interface()->cb->getCreatureCategory(creature->getId());
-}
-
-static si32 maxRecruitableAmount(const CGDwelling * dwelling, const CCreature * creature, const TResources & resources)
-{
-	const auto cost = dwelling->getRecruitmentCost(creature->getId());
-	si32 result = std::numeric_limits<si32>::max() - 2;
-	const size_t resourceCount = std::min(cost.size(), resources.size());
-	for(size_t resource = 0; resource < resourceCount; ++resource)
-	{
-		if(cost[resource] > 0)
-			result = std::min(result, static_cast<si32>(resources[resource] / cost[resource]));
-	}
-	return result;
 }
 
 static ImagePath splitDialogBackgroundImage()
@@ -339,8 +327,9 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 
 	if(card)
 	{
-		const auto recruitmentCost = dwelling->getRecruitmentCost(card->creature->getId());
-		si32 maxAmount = maxRecruitableAmount(dwelling, card->creature, GAME->interface()->cb->getResourceAmount());
+		const auto recruitmentCost = dwelling->getTotalRecruitmentCost(card->creature->getId(), 1, newHorizonsEstates::recruitmentBuyer(dst));
+		si32 maxAmount = dwelling->getRecruitmentAmount(card->creature->getId(), GAME->interface()->cb->getResourceAmount(),
+			card->amount, newHorizonsEstates::recruitmentBuyer(dst));
 
 		vstd::amin(maxAmount, card->amount);
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(dst))
@@ -376,7 +365,8 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		totalCostValue->createItems(recruitmentCost);
 
 		costPerTroopValue->set(recruitmentCost);
-		totalCostValue->set(recruitmentCost * maxAmount);
+		totalCostValue->set(dwelling->getTotalRecruitmentCost(card->creature->getId(), maxAmount,
+			newHorizonsEstates::recruitmentBuyer(dst)));
 
 		//Recruit %s
 		MetaString recruitText;
@@ -707,13 +697,13 @@ void CRecruitmentWindow::sliderMoved(int to)
 	if(!selected)
 		return;
 
-	const auto recruitmentCost = dwelling->getRecruitmentCost(selected->creature->getId());
-	const bool canAfford = GAME->interface()->cb->getResourceAmount().canAfford(recruitmentCost * to);
+	const auto recruitmentCost = dwelling->getTotalRecruitmentCost(selected->creature->getId(), to, newHorizonsEstates::recruitmentBuyer(dst));
+	const bool canAfford = GAME->interface()->cb->getResourceAmount().canAfford(recruitmentCost);
 	buyButton->block(!to || !canAfford || !GAME->interface()->makingTurn);
 	availableValue->setText(std::to_string(selected->amount - to));
 	toRecruitValue->setText(std::to_string(to));
 
-	totalCostValue->set(recruitmentCost * to);
+	totalCostValue->set(recruitmentCost);
 	updateLeadershipProposalHelp(to);
 }
 

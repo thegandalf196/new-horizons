@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "ArcaneInspiration.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
@@ -44,6 +45,14 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	payload.coordinatedMeleeDefenseIgnorePercent = coordinatedPenetration.creatureDefensePercent;
 	payload.coordinatedPhysicalProtectionIgnorePercent = coordinatedPenetration.physicalProtectionPercent;
 	payload.stormWingsDefenseIgnorePercent = newHorizonsChargeSpecialties::stormWingsDefenseIgnorePercent(*this, info);
+	const auto inspiration = arcaneInspiration::attackPlan(*this, info);
+	payload.arcaneInspirationDamageBonusPercent = inspiration.damageBonusPercent;
+	payload.spellshockOutputPenaltyPercent = inspiration.outputPenaltyPercent;
+	payload.arcaneInspirationDefenseIgnorePercent = inspiration.defenseIgnorePercent;
+	payload.arcaneBulwarkReductionPercent = inspiration.physicalReductionPercent;
+	if(info.physicalDamage)
+		payload.physicalDamageReductionIgnorePercent = std::min(100,
+			payload.physicalDamageReductionIgnorePercent + inspiration.protectionIgnorePercent);
 	const int existingProtectionIgnore = payload.physicalDamageReductionIgnorePercent;
 	if(coordinatedPenetration.physicalProtectionPercent > 0)
 		payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent

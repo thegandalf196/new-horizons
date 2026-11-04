@@ -90,7 +90,7 @@ TEST(GameConnectionSourceCapabilitiesTest, Neutral1152SeparatesActualWireEpochFr
 
 TEST(GameConnectionSourceCapabilitiesTest, ReservedProfilesObserveExactEpochAndNeverGuessUnknown)
 {
-	for(const auto [wire, profile] : {std::pair{1151, 1151}, {1152, 1151}, {1153, 1153}, {1154, 1153}})
+	for(const auto [wire, profile] : {std::pair{1151, 1151}, {1152, 1151}, {1153, 1153}, {1154, 1153}, {1155, 1155}})
 	{
 		auto endpoint = std::make_shared<Endpoint>(); GameConnection connection(endpoint);
 		connection.setSerializationVersion(static_cast<ESerializationVersion>(wire));
@@ -113,7 +113,7 @@ TEST(GameConnectionSourceCapabilitiesTest, FailedEpochCaptureLeavesSentinelAndEx
 		EXPECT_THROW(connection.captureSpecialtySerializationContext(invalid, &observed), std::logic_error);
 		EXPECT_EQ(observed, ESerializationVersion::NONE);
 	}
-	connection.setSerializationVersion(static_cast<ESerializationVersion>(1155));
+	connection.setSerializationVersion(static_cast<ESerializationVersion>(1156));
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(endpoint, &observed), std::invalid_argument);
 	EXPECT_EQ(observed, ESerializationVersion::NONE);
 	separateOwner.reset(); separatePointer.reset(); endpoint.reset();
@@ -196,7 +196,7 @@ TEST(GameConnectionSourceCapabilitiesTest, FailedEpochObservationNeverWritesTheC
 	std::shared_ptr<INetworkConnection> differentPointer(endpoint, foreign.get());
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(differentPointer, &observed), std::logic_error);
 	EXPECT_EQ(observed, ESerializationVersion::NONE);
-	connection.setSerializationVersion(static_cast<ESerializationVersion>(static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY) + 1));
+	connection.setSerializationVersion(static_cast<ESerializationVersion>(static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS) + 1));
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(endpoint, &observed), std::invalid_argument);
 	EXPECT_EQ(observed, ESerializationVersion::NONE);
 	separateOwner.reset(); differentPointer.reset(); endpoint.reset();
@@ -225,4 +225,18 @@ TEST(GameConnectionSourceCapabilitiesTest, Independent1154WriterReaderObserveRea
 	ASSERT_NE(restored, nullptr);
 	EXPECT_EQ(restored->reachedLevel, 3); EXPECT_EQ(restored->queryID, QueryID(7));
 	EXPECT_TRUE(restored->optionalRerollAvailable); EXPECT_EQ(restored->replacesQueryID, QueryID::NONE);
+}
+
+TEST(GameConnectionSourceCapabilitiesTest, PassiveFactionEpochHasAnExplicitCompleteOwnedCopyProfile)
+{
+	auto endpoint = std::make_shared<Endpoint>();
+	GameConnection connection(endpoint);
+	connection.setSerializationVersion(ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	const auto capabilities = connection.captureSpecialtySerializationContext(endpoint);
+	EXPECT_TRUE(capabilities.passiveFactionSkills);
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(capabilities).version(),
+		ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	auto incomplete = capabilities;
+	incomplete.extendedOrdinarySpecialties = false;
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceCapabilities(incomplete), std::invalid_argument);
 }

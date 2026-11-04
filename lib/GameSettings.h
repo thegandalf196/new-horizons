@@ -138,10 +138,10 @@ public:
 			getAllOverrides()["heroes"]["newHorizonsPerks"], supportsV1, supportsV2);
 	}
 
-	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false) const
+	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const
 	{
 		newHorizonsHeroes::validateWeightedPerkSerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supported, r2Supported, strictSupported, optionalRerollSupported);
+			getAllOverrides()["heroes"]["newHorizonsPerks"], supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
 	}
 
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const
@@ -298,7 +298,8 @@ public:
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
@@ -368,7 +369,8 @@ public:
 			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(overrides["heroes"]["newHorizons"],

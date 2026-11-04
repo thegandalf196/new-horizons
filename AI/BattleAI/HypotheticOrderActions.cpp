@@ -8,7 +8,6 @@
 #include "../../lib/battle/HeroOrderEffects.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
-#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
 bool HypotheticBattle::projectAcceptedHeroOrder(BattleSide side, const ProjectedOrderAllowance & prepared)
@@ -147,13 +146,7 @@ bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side,
 	}
 	if(projectingCommand && action.isHeroAction())
 		setSeizeInitiativeState(newHorizonsSeizeInitiative::capturePaidOrder(*this, side));
-	if(action.isHeroAction() && newHorizonsWarcasting::enabled(getMagicRules()))
-	{
-		const auto * hero = getSideHero(side);
-		warcastingStates.at(side).recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
-			projectedRound, newHorizonsWarcasting::empowerment(hero, AlternatingHeroActionState::Action::ORDER),
-			newHorizonsWarcasting::readinessLifetimeRounds(hero));
-	}
+
 	if(effects)
 	{
 		setHeroOrderState(side, effects->order);

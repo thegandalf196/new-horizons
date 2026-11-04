@@ -24,7 +24,7 @@ int32_t currentTimeStopRadius(const ::spells::Mechanics & mechanics)
 	const bool chronomancer = hero && hero->hasActivePerk(
 		newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
 	return newHorizonsSorcery::timeStopRadius(mechanics.getEffectPower(),
-		mechanics.getSpellPowerCoefficientBasisPoints(), mechanics.getWarcastingBonusPercent(),
+		mechanics.getSpellPowerCoefficientBasisPoints(),
 		mechanics.getEmpowerSpellBonusPercent(), chronomancer);
 }
 }
@@ -32,7 +32,7 @@ int32_t currentTimeStopRadius(const ::spells::Mechanics & mechanics)
 void registerTimeStopRadiusMethods(MethodRegistrar & registrar)
 {
 	registrar.function<&currentTimeStopRadius>("getTimeStopRadius", {},
-		"Returns this cast's Time Stop radius from its captured coefficient, Warcasting, Empower "
+		"Returns this cast's Time Stop radius from its captured coefficient, Empower "
 		"and active Chronomancer, with one final floor and the ordinary radius cap. No RNG or targets.");
 }
 }

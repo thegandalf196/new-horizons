@@ -4172,23 +4172,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			return  LIBRARY->generaltexth->translate("core.genrltxt.417"); // "View Hero Stats"
 
 		case PossiblePlayerBattleAction::DEMONIC_GATE:
-		{
-			const auto * source = owner.stacksController->getActiveStack();
-			if(!source)
-				return "Open Gate";
-			const auto * hero = source ? owner.getBattle()->battleGetFightingHero(source->unitSide()) : nullptr;
-			if(hero && hero->hasActivePerk("new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate")
-				&& !demonicGatingMovement.isValid())
-				return "Move up to half Speed, then place the Gate.";
-			const auto & reserve = owner.getBattle()->getBattle()->getDemonicReserve(
-				source->unitSide());
-			const auto found = reserve.find(demonicGatingCreature);
-			if(found == reserve.end())
-				return "Open Gate";
-			return "Open Gate for " + std::to_string(found->second) + " "
-				+ (found->second == 1 ? demonicGatingCreature.toCreature()->getNameSingularTranslated()
-					: demonicGatingCreature.toCreature()->getNamePluralTranslated());
-		}
+			return demonicGateStatus(targetHex);
 	}
 	assert(0);
 	return "";
@@ -4237,16 +4221,7 @@ std::string BattleActionsController::actionGetStatusMessageBlocked(PossiblePlaye
 			return text.toString(&GAME->translator());
 		}
 		case PossiblePlayerBattleAction::DEMONIC_GATE:
-		{
-			const auto * source = owner.stacksController->getActiveStack();
-			const auto * hero = source ? owner.getBattle()->battleGetFightingHero(source->unitSide()) : nullptr;
-			if(hero && hero->hasActivePerk("new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate")
-				&& !demonicGatingMovement.isValid())
-				return "Choose a reachable movement destination within half Speed.";
-			return demonicGatingMovement.isValid()
-				? "A Gate must be opened on an empty hex within range of the selected destination."
-				: "A Gate must be opened on an empty hex within range.";
-		}
+			return demonicGateBlockedStatus();
 		default:
 			return "";
 	}
@@ -4284,49 +4259,7 @@ bool BattleActionsController::actionIsLegal(PossiblePlayerBattleAction action, c
 			return false;
 
 		case PossiblePlayerBattleAction::DEMONIC_GATE:
-		{
-			const auto * source = owner.stacksController->getActiveStack();
-			if(!source || !demonicGatingCreature.hasValue())
-				return false;
-			const auto * creature = demonicGatingCreature.toCreature();
-			if(!creature)
-				return false;
-			const auto * hero = owner.getBattle()->battleGetFightingHero(source->unitSide());
-			const bool mobileGate = hero && hero->hasActivePerk(
-				"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate");
-			if(mobileGate && !demonicGatingMovement.isValid())
-			{
-				if(targetHex == source->getPosition())
-					return true;
-				const auto movement = owner.getBattle()->toWhichHexMove(source, targetHex);
-				if(!movement.isValid())
-					return false;
-				const auto [path, distance] = owner.getBattle()->getPath(source->getPosition(), movement, source);
-				return !path.empty() && distance >= 0
-					&& distance <= static_cast<int>(source->getMovementRange(0) / 2);
-			}
-			const int placementRange = hero && hero->hasActivePerk(
-				"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
-			if(!source || !creature)
-				return false;
-			const BattleHex sourcePosition = demonicGatingMovement.isValid()
-				? demonicGatingMovement : source->getPosition();
-			const BattleHex occupiedTail = source->doubleWide()
-				? source->occupiedHex(sourcePosition) : BattleHex::INVALID;
-			const BattleHex gatedTail = battle::Unit::occupiedHex(
-				targetHex, creature->isDoubleWide(), source->unitSide());
-			if(!targetHex.isAvailable()
-				|| targetHex == sourcePosition || targetHex == occupiedTail
-				|| (gatedTail.isValid() && (gatedTail == sourcePosition || gatedTail == occupiedTail))
-				|| BattleHex::getDistance(sourcePosition, targetHex) > placementRange
-				|| owner.getBattle()->battleGetUnitByPos(targetHex, true)
-				|| !owner.getBattle()->battleGetAllObstaclesOnPos(targetHex, false).empty())
-				return false;
-			const auto & reserve = owner.getBattle()->getBattle()->getDemonicReserve(source->unitSide());
-			const auto found = reserve.find(demonicGatingCreature);
-			return found != reserve.end() && found->second > 0
-				&& owner.getBattle()->getAccessibility().accessible(targetHex, creature->isDoubleWide(), source->unitSide());
-		}
+			return demonicGateIsLegal(targetHex);
 
 		case PossiblePlayerBattleAction::SKIRMISHER_ATTACK:
 		{
@@ -4482,31 +4415,8 @@ void BattleActionsController::actionRealize(PossiblePlayerBattleAction action, c
 		}
 
 		case PossiblePlayerBattleAction::DEMONIC_GATE:
-		{
-			const auto * active = owner.stacksController->getActiveStack();
-			if(!active || !demonicGatingCreature.hasValue() || !demonicGatingCreature.toCreature())
-				return;
-			const auto * hero = owner.getBattle()->battleGetFightingHero(active->unitSide());
-			const bool mobileGate = hero && hero->hasActivePerk(
-				"new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate");
-			if(mobileGate && !demonicGatingMovement.isValid())
-			{
-				demonicGatingMovement = targetHex == active->getPosition()
-					? active->getPosition() : owner.getBattle()->toWhichHexMove(active, targetHex);
-				ENGINE->fakeMouseMove();
-				return;
-			}
-			BattleAction command;
-			command.actionType = EActionType::DEMONIC_GATING;
-			command.side = active->unitSide();
-			command.stackNumber = active->unitId();
-			command.gatingCreature = demonicGatingCreature;
-			if(demonicGatingMovement.isValid() && demonicGatingMovement != active->getPosition())
-				command.aimToHex(demonicGatingMovement);
-			command.aimToHex(targetHex);
-			owner.sendCommand(command, active);
+			demonicGateClicked(targetHex);
 			return;
-		}
 
 		case PossiblePlayerBattleAction::MOVE_TACTICS:
 		case PossiblePlayerBattleAction::MOVE_STACK:
@@ -4909,6 +4819,7 @@ void BattleActionsController::onHexHovered(const BattleHex & hoveredHex)
 		actionSetCursor(action, hoveredHex);
 		updateChainLightningPreview(action, hoveredHex);
 		newConsoleMsg = actionGetStatusMessage(action, hoveredHex);
+		newConsoleMsg += spellTargetManaStatus(action, hoveredHex);
 	}
 	else
 	{
@@ -5406,17 +5317,6 @@ void BattleActionsController::invalidateSkirmisherFiringCache()
 	skirmisherFiringDistancesCache.fill(ReachabilityInfo::INFINITE_DIST);
 }
 
-void BattleActionsController::selectDemonicGatingCreature(CreatureID creature)
-{
-	if(!creature.hasValue() || !creature.toCreature())
-		return;
-
-	invalidateChainLightningPreview();
-	demonicGatingCreature = creature;
-	demonicGatingMovement = BattleHex::INVALID;
-	possibleActions = {PossiblePlayerBattleAction::DEMONIC_GATE};
-	ENGINE->fakeMouseMove();
-}
 
 void BattleActionsController::resetCurrentStackPossibleActions()
 {
@@ -5426,4 +5326,5 @@ void BattleActionsController::resetCurrentStackPossibleActions()
 	demonicGatingCreature = CreatureID();
 	demonicGatingMovement = BattleHex::INVALID;
 	possibleActions = getPossibleActionsForStack(owner.stacksController->getActiveStack());
+	owner.windowObject->clearUnitActionSelection();
 }

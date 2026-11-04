@@ -229,7 +229,6 @@ TEST_F(NewHorizonsCrownAndAltarTest, GuardianSharedGetterPreservesRealCastleCrow
 	ASSERT_EQ(second->getCrownAndAltarBonusPercent(friendly), 20);
 	ASSERT_EQ(second->getCastSpellPowerComponentBonusPercent(), 10);
 	ASSERT_EQ(second->getSpellPowerCoefficientBasisPoints(), 15950);
-	ASSERT_EQ(second->getWarcastingBonusPercent(), 0);
 	EXPECT_EQ(second->getCrownAndAltarBonusPercent(shooter), 0);
 	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(spell), 0);
 	const auto expected = 50 + second->scaleRecipientSpellPowerComponent(14, 1, friendly);
@@ -282,7 +281,6 @@ TEST_F(NewHorizonsCrownAndAltarTest, RecipientAndSpecialtyArithmeticComposesBefo
 	ASSERT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(spell), 0);
 	// Pure numerical pipeline only: Castle Crown and Labetha's Conflux specialty
 	// cannot both be admitted on this actual hero. Never forge either identity.
-	ASSERT_EQ(mechanics->getWarcastingBonusPercent(), 0);
 	ASSERT_EQ(mechanics->getEmpowerSpellBonusPercent(), 0);
 	const int64_t coefficient = mechanics->getSpellPowerCoefficientBasisPoints();
 	bool observedPrematureFloorDifference = false;
@@ -335,8 +333,8 @@ TEST_F(NewHorizonsCrownAndAltarTest, FirstActionIsNeverRetroactivelyStrengthened
 	const auto state = current(HeroCommand::RIPOSTE);
 	const auto & formula = battle()->getHeroCommandRules()["commands"]["riposte"]["effects"]["retaliationDamagePercent"];
 	EXPECT_GT(heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula, true),
-		*attackerSideHero, state.warcastingBonusPercent, state.divineMandateEfficiencyBonusPercent()),
-		heroCommands::coefficient(formula, *attackerSideHero, state.warcastingBonusPercent,
+		*attackerSideHero, state.divineMandateEfficiencyBonusPercent()),
+		heroCommands::coefficient(formula, *attackerSideHero,
 			state.divineMandateEfficiencyBonusPercent()));
 }
 
@@ -514,7 +512,6 @@ TEST_P(NewHorizonsCureCrownControlsTest, PaidCureKeepsFixedPoolAndExistingSpecia
 	ASSERT_EQ(ordinary->getEffectPower(), rawPower);
 	ASSERT_EQ(ordinary->getSpellPowerCoefficientBasisPoints(), 14500);
 	ASSERT_EQ(ordinary->getCastSpellPowerComponentBonusPercent(), 0);
-	ASSERT_EQ(ordinary->getWarcastingBonusPercent(), 0);
 	ASSERT_EQ(ordinary->getEmpowerSpellBonusPercent(), 0);
 	EXPECT_EQ(ordinary->getEffectValue(), preOrderBudget);
 	EXPECT_EQ(ordinary->getRecipientEffectValue(friendly), preOrderBudget);
@@ -525,7 +522,6 @@ TEST_P(NewHorizonsCureCrownControlsTest, PaidCureKeepsFixedPoolAndExistingSpecia
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(skillId, "new-horizons:divineMandate.consecratedCasting"));
 	ASSERT_EQ(crown->getCastSpellPowerComponentBonusPercent(), 10);
 	ASSERT_EQ(crown->getSpellPowerCoefficientBasisPoints(), 15950);
-	ASSERT_EQ(crown->getWarcastingBonusPercent(), 0);
 	ASSERT_EQ(crown->getEmpowerSpellBonusPercent(), 0);
 	EXPECT_EQ(crown->getEffectValue(), postOrderBudget);
 	EXPECT_EQ(crown->getRecipientEffectValue(friendly), crownBudget);

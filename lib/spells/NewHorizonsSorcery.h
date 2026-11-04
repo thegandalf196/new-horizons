@@ -75,7 +75,7 @@ DLL_LINKAGE int32_t phantomArmyIntegrityBasisPoints(int32_t spellPower, bool ill
 /// Returns the integral Phantom Army health pool.  Rounding is down after the
 /// percentage is applied, matching the engine's integer health accounting.
 DLL_LINKAGE int64_t phantomArmyIntegrityWithModifiers(int64_t sourceCurrentHealth, int32_t spellPower,
-	bool illusionist, int32_t coefficientBasisPoints, int32_t warcastingPercent, int32_t empowerPercent,
+	bool illusionist, int32_t coefficientBasisPoints, int32_t empowerPercent,
 	int32_t specialtyPercent);
 DLL_LINKAGE int64_t phantomArmyIntegrity(int64_t sourceCurrentHealth, int32_t spellPower,
 	bool illusionist = false);
@@ -102,10 +102,9 @@ DLL_LINKAGE int timeStopRadius(int32_t spellPower, bool chronomancer,
 	int32_t coefficientPercent, int32_t empowerSpellBonusPercent);
 
 /// Exact cast/preview radius using the captured basis-point coefficient and
-/// cast-time Warcasting/Empower. All multipliers share one final floor; fixed
+/// cast-time Empower. All multipliers share one final floor; fixed
 /// radius and Chronomancer's cap are not scaled. No legacy power divisor.
-DLL_LINKAGE int32_t timeStopRadius(int32_t rawSpellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingBonusPercent, int32_t empowerSpellBonusPercent, bool chronomancer);
+DLL_LINKAGE int32_t timeStopRadius(int32_t rawSpellPower, int32_t coefficientBasisPoints, int32_t empowerSpellBonusPercent, bool chronomancer);
 
 constexpr int SPELL_LOCK_MANA = 22;
 constexpr int SPELL_LOCK_BASE_DURATION_CAP = 3;
@@ -114,17 +113,17 @@ constexpr int SPELL_LOCK_SPELLBINDER_DURATION_BONUS = 1;
 constexpr int SPELL_LOCK_SPELLBINDER_DURATION_CAP = 4;
 
 /// Number of rounds for which a stack remains sealed. Spell Power is scaled
-/// by the saved school coefficient and Warcasting percentage before flooring.
+/// by the saved school coefficient and Empower percentage before flooring.
 /// Spellbinder extends the canonical 3-round cap to 4 rounds; Echoed Duration
 /// is applied separately to an eligible follow-up cast.
 DLL_LINKAGE int spellLockDuration(int32_t spellPower, bool spellbinder = false,
-	int32_t coefficientPercent = 100, int32_t warcastingBonusPercent = 0);
+	int32_t coefficientPercent = 100);
 
 /// Like spellLockDuration, but accepts the composed School x Spellcraft
 /// coefficient in basis points so fractional percentages survive until the
 /// Spell Power-derived duration term is rounded.
 DLL_LINKAGE int spellLockDurationBasisPoints(int32_t spellPower, bool spellbinder,
-	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent = 0,
+	int32_t coefficientBasisPoints,
 	int32_t empowerSpellBonusPercent = 0);
 
 struct DLL_LINKAGE SpellLockPolicy

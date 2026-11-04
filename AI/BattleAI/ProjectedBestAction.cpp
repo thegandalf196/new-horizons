@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "GnollHarriersProjection.h"
 #include "ProjectedBestAction.h"
+#include "HypotheticFactionAftermath.h"
 #include "PhysicalStrikeProjection.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
@@ -58,6 +59,9 @@ void applyProjectedBestAction(HypotheticBattle & state, const battle::Unit * liv
 			affectedState->removeUnitBonus(Bonus::UntilAttack);
 	}
 	if(action.effectPreview)
+	{
+		factionAftermathAI::restoreCataclysmRecipients(state, *action.effectPreview);
 		PhysicalStrikeProjection::restoreEffects(state, *action.effectPreview);
+	}
 	gnollHarriersAI::restoreEffects(state, action, committedPrefix);
 }

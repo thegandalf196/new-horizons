@@ -9,6 +9,13 @@
 #include "lib/GameConstants.h"
 #include "lib/CCreatureHandler.h"
 #include "lib/entities/faction/CTown.h"
+#include "lib/entities/building/CBuilding.h"
+#include "lib/mapObjects/NewHorizonsEstates.h"
+#include "lib/serializer/CMemorySerializer.h"
+#include "AI/Nullkiller2/Pathfinding/Actors.h"
+#include "lib/CPlayerState.h"
+#include "server/CGameHandler.h"
+#include "mock/GameHandlerTestServer.h"
 #include "lib/mapObjects/CGDwelling.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
@@ -183,4 +190,152 @@ TEST_F(NewHorizonsRecruitmentGrowthAITest, LibraryOneOnOddTotalHasNoRoundedMargi
 	EXPECT_EQ(town->getGrowthInfo(rowIndex).unscaledGrowth(), rawBefore + 1);
 	EXPECT_EQ(town->creatureGrowth(rowIndex), before);
 	EXPECT_EQ(building(BuildingID::SPECIAL_3, mage).creatureGrowth, 0);
+}
+
+TEST_F(NewHorizonsRecruitmentGrowthAITest, ConscriptionForecastUsesExactAggregateQuoteAndLeavesParentUnchanged)
+{
+ prepare(0);
+ const auto estates = SecondarySkill(SecondarySkill::decode("new-horizons:estates"));
+ hero->setSecSkillLevel(estates, 1, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+ hero->setSecSkillLevel(estates, 2, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.conscription"});
+ dwelling->creatures = {{20, {swordsman()}}};
+ const auto budget = dwelling->getTotalRecruitmentCost(swordsman(), 10, hero);
+ const auto before = gameState()->saveToMemory();
+ const auto candidates = gateway->nullkiller->armyManager->getArmyAvailableToBuy(hero, dwelling, budget, 0, hero);
+ ASSERT_EQ(candidates.size(), 1u);
+ EXPECT_EQ(candidates.front().count, 10);
+ EXPECT_EQ(gameState()->saveToMemory(), before);
+ EXPECT_EQ(dwelling->getTotalRecruitmentCost(swordsman(), candidates.front().count, hero), budget);
+}
+
+TEST_F(NewHorizonsRecruitmentGrowthAITest, BareTownForecastCannotBorrowVisitingHerosConscription)
+{
+ prepare(0);
+ const auto estates = SecondarySkill(SecondarySkill::decode("new-horizons:estates"));
+ hero->setSecSkillLevel(estates, 1, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+ hero->setSecSkillLevel(estates, 2, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.conscription"});
+ town->setVisitingHero(hero); town->clearSlots(); town->creatures = {{20, {pikeman()}}};
+ ASSERT_EQ(newHorizonsEstates::recruitmentBuyer(town->getUpperArmy()), nullptr);
+ const auto budget = town->getTotalRecruitmentCost(pikeman(), 10, hero);
+ const auto expected = town->getRecruitmentAmount(pikeman(), budget, 20);
+ ASSERT_LT(expected, 10);
+ const auto candidates = gateway->nullkiller->armyManager->getArmyAvailableToBuy(town->getUpperArmy(), town, budget, 0);
+ ASSERT_EQ(candidates.size(), 1u);
+ EXPECT_EQ(candidates.front().count, expected);
+ town->setVisitingHero(nullptr); town->setGarrisonedHero(hero);
+ const auto garrison = gateway->nullkiller->armyManager->getArmyAvailableToBuy(town->getUpperArmy(), town, budget, 0);
+ ASSERT_EQ(garrison.size(), 1u);
+ EXPECT_EQ(garrison.front().count, 10);
+}
+
+TEST_F(NewHorizonsRecruitmentGrowthAITest, BuildingInfoUsesSameResidentArchitectQuoteAsAuthority)
+{
+ prepare(0);
+ const auto id = BuildingID(BuildingID::DWELL_LVL_1);
+ const auto base = town->getBuildingCost(id);
+ const auto estates = SecondarySkill(SecondarySkill::decode("new-horizons:estates"));
+ hero->setSecSkillLevel(estates, 1, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+ hero->setSecSkillLevel(estates, 2, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.architect"});
+ town->setVisitingHero(hero);
+ const auto quoted = town->getBuildingCost(id);
+ EXPECT_EQ(quoted, newHorizonsEstates::buildingCost(base, true));
+ const auto forecast = building(id, pikeman());
+ EXPECT_EQ(forecast.buildCost, quoted);
+ EXPECT_EQ(forecast.buildCostWithPrerequisites, quoted);
+ town->setVisitingHero(nullptr);
+ EXPECT_EQ(building(id, pikeman()).buildCost, base);
+}
+
+TEST_F(NewHorizonsRecruitmentGrowthAITest, ExactDiscountedUnitBudgetAdmitsOrdinaryOwnedDwellingVisitAndValue)
+{
+ prepare(0);
+ hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:recruitment")), 0, ChangeValueMode::ABSOLUTE);
+ const auto estates = SecondarySkill(SecondarySkill::decode("new-horizons:estates"));
+ hero->setSecSkillLevel(estates, 1, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+ hero->setSecSkillLevel(estates, 2, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.conscription"});
+ GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
+ handler.setOwner(dwelling, PLAYER); dwelling->creatures = {{1, {swordsman()}}};
+ const auto budget = dwelling->getTotalRecruitmentCost(swordsman(), 1, hero);
+ gameState()->getPlayerState(PLAYER)->resources = budget;
+ ASSERT_FALSE(budget.canAfford(dwelling->getTotalRecruitmentCost(swordsman(), 1)));
+ ASSERT_EQ(NK2AI::externalMusterArmyReward(gateway->nullkiller.get(), hero, dwelling), 0u);
+ const auto before = gameState()->saveToMemory();
+ EXPECT_TRUE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, dwelling));
+ NK2AI::RewardEvaluator rewards(gateway->nullkiller.get());
+ EXPECT_EQ(rewards.getArmyReward(dwelling, hero, hero, true), swordsman().toCreature()->getAIValue());
+ EXPECT_EQ(rewards.getGoldCost(dwelling, hero, hero), budget.marketValue());
+ EXPECT_EQ(gameState()->saveToMemory(), before);
+}
+
+TEST_F(NewHorizonsRecruitmentGrowthAITest, DwellingExchangeUsesReceivingBuyerQuoteForGateAndStoredReservation)
+{
+ prepare(0);
+ const auto estates = SecondarySkill(SecondarySkill::decode("new-horizons:estates"));
+ hero->setSecSkillLevel(estates, 1, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+ hero->setSecSkillLevel(estates, 2, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.conscription"});
+ dwelling->creatures = {{10, {swordsman()}}};
+ const auto quote = dwelling->getTotalRecruitmentCost(swordsman(), 10, hero);
+ gameState()->getPlayerState(PLAYER)->resources = quote;
+ NK2AI::DwellingActor source(dwelling, 2, false, 1);
+ ASSERT_FALSE(quote.canAfford(source.armyCost));
+ EXPECT_EQ(source.getArmyCostForBuyer(hero), quote);
+ const auto before = gameState()->saveToMemory();
+ NK2AI::HeroActor carrier(hero, NK2AI::MAIN, 1, gateway->nullkiller.get());
+ const auto result = static_cast<const NK2AI::ChainActor &>(carrier).tryExchangeNoLock(&source);
+ ASSERT_TRUE(result.lockAcquired);
+ ASSERT_NE(result.actor, nullptr);
+ EXPECT_EQ(result.actor->armyCost, quote);
+ EXPECT_EQ(source.armyCost, dwelling->getTotalRecruitmentCost(swordsman(), 10));
+ EXPECT_EQ(gameState()->saveToMemory(), before);
+}
+
+TEST_F(NewHorizonsRecruitmentGrowthAITest, TownMusterPricesActualUpperArmyWhileLeadershipUsesFinalHero)
+{
+ prepare(0);
+ const auto estates = SecondarySkill(SecondarySkill::decode("new-horizons:estates"));
+ hero->setSecSkillLevel(estates, 1, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+ hero->setSecSkillLevel(estates, 2, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.conscription"});
+ hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:recruitment")), 1, ChangeValueMode::ABSOLUTE);
+ town->addBuilding(BuildingID::DWELL_LVL_1); town->clearSlots(); town->creatures = {{0, {pikeman()}}};
+ town->setVisitingHero(hero);
+ const auto budget = town->getTotalRecruitmentCost(pikeman(), 2, hero);
+ gameState()->getPlayerState(PLAYER)->resources = budget;
+ ASSERT_EQ(town->getRecruitmentAmount(pikeman(), budget, 2), 1);
+ EXPECT_EQ(NK2AI::townMusterArmyReward(gateway->nullkiller.get(), hero, town), pikeman().toCreature()->getAIValue());
+ town->setVisitingHero(nullptr); town->setGarrisonedHero(hero);
+ EXPECT_EQ(NK2AI::townMusterArmyReward(gateway->nullkiller.get(), hero, town), 2u * pikeman().toCreature()->getAIValue());
+}
+
+TEST_F(NewHorizonsRecruitmentGrowthAITest, DirectTownHeroPurchaseReservesItsSharedQuoteExactlyOnce)
+{
+ prepare(0);
+ const auto estates = SecondarySkill(SecondarySkill::decode("new-horizons:estates"));
+ hero->setSecSkillLevel(estates, 1, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
+ hero->setSecSkillLevel(estates, 2, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.conscription"});
+ town->clearSlots(); town->creatures = {{10, {swordsman()}}};
+ const auto quote = town->getTotalRecruitmentCost(swordsman(), 10, hero);
+ gameState()->getPlayerState(PLAYER)->resources = quote;
+ NK2AI::TownGarrisonActor source(town, 2);
+ NK2AI::HeroActor carrier(hero, NK2AI::MAIN, 1, gateway->nullkiller.get());
+ const auto before = gameState()->saveToMemory();
+ const auto result = static_cast<const NK2AI::ChainActor &>(carrier).tryExchangeNoLock(&source);
+ ASSERT_TRUE(result.lockAcquired);
+ ASSERT_NE(result.actor, nullptr);
+ EXPECT_EQ(result.actor->armyCost, quote);
+ EXPECT_TRUE(quote.canAfford(result.actor->armyCost));
+ EXPECT_EQ(gameState()->saveToMemory(), before);
 }

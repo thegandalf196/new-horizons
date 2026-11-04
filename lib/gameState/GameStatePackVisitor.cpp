@@ -8,8 +8,12 @@
  *
  */
 #include "StdInc.h"
+#include "../spells/NewHorizonsMetamagicMarks.h"
+#include "../spells/AutomaticHeroCast.h"
+#include "../battle/PassiveDivineMandate.h"
 #include "../mapObjects/NewHorizonsLevelUpOffer.h"
 #include "../battle/NewHorizonsSylvanTactics.h"
+#include "../battle/NewHorizonsBloodrage.h"
 #include "../battle/NewHorizonsAerialSupremacy.h"
 #include "../battle/NewHorizonsHeroicSpirit.h"
 #include "../battle/NewHorizonsSerpentsEmbrace.h"
@@ -28,6 +32,7 @@
 #include "../entities/hero/NewHorizonsLegendaryReputation.h"
 #include "GameStatePackVisitor.h"
 #include "CombatDestructionAftermath.h"
+#include "AcceptedHeroSpellAllowance.h"
 #include "../battle/GraveDustBodyCleanup.h"
 #include "../mapObjects/NewHorizonsRecruitersContacts.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
@@ -40,7 +45,6 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/NewHorizonsArmorer.h"
 #include "../battle/NewHorizonsOffense.h"
-#include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/NewHorizonsDivineMandate.h"
 #include "../bonuses/BonusSelector.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -172,7 +176,7 @@ bool hasSameHeroOrderIssuance(const HeroOrderState & previous, const HeroOrderSt
 		&& previous.secondaryTargetUnitId == next.secondaryTargetUnitId
 		&& previous.protectInterceptionLimit == next.protectInterceptionLimit
 		&& previous.anchors == next.anchors
-		&& previous.warcastingBonusPercent == next.warcastingBonusPercent
+
 		&& previous.sacredCommandEfficiencyBonusPercent == next.sacredCommandEfficiencyBonusPercent
 		&& previous.knightlySequenceEfficiencyBonusPercent == next.knightlySequenceEfficiencyBonusPercent
 		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints
@@ -2050,7 +2054,9 @@ void GameStatePackVisitor::visitSetObjectProperty(SetObjectProperty & pack)
 {
 	// A weekly use marker does not alter the bonus graph or Mana capacity.
 	if(pack.what != ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
-		&& pack.what != ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK)
+		&& pack.what != ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
+        && pack.what != ObjProperty::NEW_HORIZONS_MINE_MERCENARY_WEEK
+        && pack.what != ObjProperty::NEW_HORIZONS_MINE_MERCENARY_PENDING)
 		spellPointBonusGraphChanged = true;
 	CGObjectInstance *obj = gs.getObjInstance(pack.id);
 	if(!obj)
@@ -2175,6 +2181,7 @@ void GameStatePackVisitor::visitBattleStart(BattleStart & pack)
 	// so validate both sides before localInit attaches armies or either hero is
 	// mutated from its saved pool snapshot.
 	const auto spellPointEntry = newHorizonsHeroes::validateBattleSpellPointEntry(gs, *pack.info);
+	newHorizonsBloodrage::validateBattleStart(*pack.info, gs);
 	// Validate before localInit attaches armies or changes the canonical battle.
 	heroCommands::validateRules(pack.info->getHeroCommandRules());
 	pack.info->normalizeLegacyHeroCommandState();
@@ -2822,30 +2829,12 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			side.counterspellArmed = false;
 			side.metamagicCountersequenceArmed = false;
 		}
-		std::optional<AlternatingHeroActionState> nextWarcastingState;
-		if(newHorizonsWarcasting::enabled(commandBattle->getMagicRules())
-			&& (!sharedActionBudget || (orderReceipt
-				&& orderReceipt->allowance == HeroActionAllowanceState::AllowanceKind::HERO)))
-		{
-			auto next = side.warcastingState;
-			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
-			const int effectiveBonus = newHorizonsWarcasting::orderBonus(
-				hero, next, commandBattle->getRound());
-			next.recordAcceptedAction(AlternatingHeroActionState::Action::ORDER,
-				commandBattle->getRound(), newHorizonsWarcasting::empowerment(hero,
-					AlternatingHeroActionState::Action::ORDER), newHorizonsWarcasting::readinessLifetimeRounds(hero));
-			if(canonicalOrder && (!pack.orderState || effectiveBonus != pack.orderState->warcastingBonusPercent))
-				throw std::runtime_error("Warcasting Order snapshot does not match current readiness");
-			nextWarcastingState = std::move(next);
-		}
 		// Preserve the legacy action-history marker for save validators and
 		// presentation. Shared-budget availability is derived only from the
 		// receipt-backed ledger above.
 		if(spendsHeroAction && canonicalOrder)
 			commandBattle->setSeizeInitiativeState(newHorizonsSeizeInitiative::capturePaidOrder(*commandBattle, pack.ba.side));
 		side.heroCommandUsed = true;
-		if(nextWarcastingState)
-			side.warcastingState = *nextWarcastingState;
 		if(targeted)
 			side.focusFire = pack.focusFire;
 		if(canonicalOrder)
@@ -2889,38 +2878,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		assert(st); // stack must exists for all non-hero actions
 		bool masterGateContinuation = false;
 		if(pack.ba.actionType == EActionType::DEMONIC_GATING)
-		{
-			if(pack.ba.side != BattleSide::ATTACKER && pack.ba.side != BattleSide::DEFENDER)
-				throw std::runtime_error("Invalid Demonic Gating StartAction side");
-			// Mobile Gate commits its reserve stack only after the authoritative
-			// movement has completed and the destination is revalidated.
-			if(pack.ba.target.size() != 2)
-			{
-				auto * actionBattle = gs.getBattle(pack.battleID);
-				auto & side = actionBattle->getSide(pack.ba.side);
-				const auto found = side.demonicReserve.find(pack.ba.gatingCreature);
-				if(found == side.demonicReserve.end() || found->second <= 0 || pack.ba.target.size() != 1)
-					throw std::runtime_error("Invalid Demonic Gating StartAction snapshot");
-				const auto * hero = battleContext->battleGetFightingHero(pack.ba.side);
-				masterGateContinuation = !side.masterGateUsed && hero && hero->hasActivePerk(
-					"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate");
-				if(masterGateContinuation)
-				{
-					const auto * active = battleContext->battleActiveUnit();
-					if(!active || active != st || active->unitSide() != pack.ba.side)
-						throw std::runtime_error("Master Gate StartAction does not match the active stack");
-					side.masterGateUsed = true;
-				}
-				SideInBattle::PendingDemonicGate gate;
-				gate.creature = found->first;
-				gate.count = found->second;
-				gate.position = pack.ba.target.front().hexValue;
-				gate.arrivalRound = gs.getBattle(pack.battleID)->getRound() + 1;
-				gate.sourceUnitId = pack.ba.stackNumber;
-				side.demonicReserve.erase(found);
-				side.pendingDemonicGates.push_back(gate);
-			}
-		}
+			masterGateContinuation = commitDemonicGateStartAction(pack, *st);
 
 		switch(pack.ba.actionType)
 		{
@@ -3109,52 +3067,6 @@ void GameStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderState
 	battle->getSide(pack.side).validateDoubleCommandState();
 }
 
-void GameStatePackVisitor::visitBattleDemonicGatingStateChanged(BattleDemonicGatingStateChanged & pack)
-{
-	auto * battle = gs.getBattle(pack.battleID);
-	if(!battle || (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER))
-		throw std::runtime_error("Invalid Demonic Gating battle state update");
-	auto & side = battle->getSide(pack.side);
-	if(pack.masterGateContinuationUnitId)
-	{
-		const auto unitId = *pack.masterGateContinuationUnitId;
-		const auto * unit = battle->battleGetStackByID(unitId, false);
-		const auto * active = battle->battleActiveUnit();
-		const auto * hero = battle->battleGetFightingHero(pack.side);
-		const auto newlyPending = std::ranges::find_if(pack.pending, [&](const auto & gate)
-		{
-			return gate.sourceUnitId == unitId
-				&& std::ranges::none_of(side.pendingDemonicGates, [&](const auto & prior)
-				{
-					return prior.sourceUnitId == gate.sourceUnitId && prior.creature == gate.creature;
-				});
-		});
-		const auto consumedReserve = newlyPending == pack.pending.end() ? side.demonicReserve.end()
-			: side.demonicReserve.find(newlyPending->creature);
-		const auto remainingReserve = newlyPending == pack.pending.end() ? pack.reserve.end()
-			: pack.reserve.find(newlyPending->creature);
-		if(side.masterGateUsed || !pack.masterGateUsed || !unit || !unit->alive()
-			|| unit->unitSide() != pack.side || !active || active->unitId() != unitId
-			|| !unit->movedThisRound || !hero || !hero->hasActivePerk(
-				"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate")
-			|| newlyPending == pack.pending.end() || consumedReserve == side.demonicReserve.end()
-			|| newlyPending->count != consumedReserve->second
-			|| (remainingReserve != pack.reserve.end() && remainingReserve->second >= consumedReserve->second))
-			throw std::runtime_error("Invalid Master Gate mobile continuation state update");
-	}
-	else if(pack.masterGateUsed != side.masterGateUsed)
-	{
-		throw std::runtime_error("Demonic Gating update changed Master Gate state without a continuation");
-	}
-	side.demonicReserve = std::move(pack.reserve);
-	side.pendingDemonicGates = std::move(pack.pending);
-	side.gatedDemonicStacks = std::move(pack.gated);
-	side.chainGateArmed = pack.chainGateArmed;
-	side.masterGateUsed = pack.masterGateUsed;
-	if(pack.masterGateContinuationUnitId)
-		battle->getStack(*pack.masterGateContinuationUnitId)->movedThisRound = false;
-}
-
 void GameStatePackVisitor::visitBattleAdverseRerollStateChanged(BattleAdverseRerollStateChanged & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
@@ -3202,15 +3114,6 @@ void GameStatePackVisitor::visitSetArmorerDefiantState(SetArmorerDefiantState & 
 	battle->setArmorerDefiantState(pack.side, pack.state);
 }
 
-void GameStatePackVisitor::visitSetReactiveWeaveState(SetReactiveWeaveState & pack)
-{
-	auto * battle = gs.getBattle(pack.battleID);
-	if(!battle)
-		throw std::runtime_error("Missing battle for Reactive Weave");
-	BattleStatePackVisitor visitor(*battle);
-	pack.visitTyped(visitor);
-}
-
 void GameStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)
 {
 	auto * battle = gs.getBattle(pack.battleID);
@@ -3240,6 +3143,7 @@ void GameStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMastery
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
+	pack.validateAutomaticHeroCast();
 	pack.validateHeroLuckReceipt();
 	if(pack.activeCast && pack.castByHero && pack.casterStack < 0
 		&& (pack.side == BattleSide::ATTACKER || pack.side == BattleSide::DEFENDER))
@@ -3314,71 +3218,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			throw std::runtime_error("Accepted hero Mana expenditure has no fighting hero");
 		if(pack.paidCounterspellManaCost > 0 && !battle->battleGetFightingHero(pack.counterspellSide))
 			throw std::runtime_error("Accepted Counterspell Mana expenditure has no fighting hero");
-		const int actualMetamagicCapacity = newHorizonsMagic::metamagicCapacity(hero);
-		if(casterSide.metamagicUsesConsumed > actualMetamagicCapacity
-			|| (casterSide.metamagicPendingCount != 0 && casterSide.metamagicSequenceSpells.size() == 1
-				&& casterSide.metamagicUsesConsumed >= actualMetamagicCapacity))
-			throw std::runtime_error("Metamagic consumption/reservation exceeds actual fighting hero capacity");
-		const bool sharedActionBudget = heroCommands::supportedByRules(
-			battle->getHeroCommandRules(), HeroCommand::CHARGE);
-		const auto lightSchoolNumber = sharedActionBudget ? SpellSchool::decode("new-horizons:light") : -1;
-		const auto & savedMagicRules = battle->getMagicRules();
-		const auto spellSchools = newHorizonsMagic::spellSchools(savedMagicRules, pack.spellID);
-		const bool isLightSpell = newHorizonsMagic::spellAllowedByHeroRoster(savedMagicRules, pack.spellID)
-			&& lightSchoolNumber >= 0
-			&& std::find(spellSchools.begin(), spellSchools.end(), SpellSchool(lightSchoolNumber)) != spellSchools.end();
-		const auto mandate = battle->battleGetDivineMandateStatus(pack.side);
-		const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
-		const auto spellGrantFilter = [isLightSpell, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
-		{
-			return HeroActionAllowanceState::grantAllowedForSpell(grant, isLightSpell)
-				&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
-		};
-		std::optional<HeroSpellAllowanceTransition::Result> spellTransition;
-		if(pack.metamagicGrand && !pack.metamagicFollowup)
-			throw std::runtime_error("Grand Metamagic metadata requires a follow-up cast");
-		if(pack.metamagicManaRefund > 0
-			&& (!pack.metamagicFollowup || pack.metamagicGrand || casterSide.metamagicPendingCount != 1
-				|| !hero || !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
-				|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE)))
-			throw std::runtime_error("Invalid Formula Reserve Metamagic refund");
-		if(sharedActionBudget)
-		{
-			auto nextAllowances = casterSide.heroActionAllowances;
-			auto nextMetamagicUsesConsumed = casterSide.metamagicUsesConsumed;
-			auto nextMetamagicPendingCount = casterSide.metamagicPendingCount;
-			auto nextMetamagicGrandUsed = casterSide.metamagicGrandUsed;
-			const auto selected = nextAllowances.eligibleAllowance(
-				HeroActionAllowanceState::ActionKind::SPELL, battle->getRound(), spellGrantFilter);
-			if(!selected)
-				throw std::runtime_error("Accepted Hero spell has no eligible action allowance");
-			auto transition = HeroSpellAllowanceTransition::commitAcceptedCast(
-				nextAllowances, selected->grantId, battle->getRound(),
-				pack.metamagicFollowup, pack.metamagicGrand,
-				static_cast<uint8_t>(hero ? newHorizonsMagic::metamagicRank(hero) : 0),
-				hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-				nextMetamagicUsesConsumed, nextMetamagicPendingCount,
-				nextMetamagicGrandUsed, casterSide.metamagicSequenceSpells.size(), spellGrantFilter,
-				static_cast<uint8_t>(newHorizonsMagic::metamagicCapacity(hero)));
-			if(!transition)
-				throw std::runtime_error("Accepted Hero spell has forged or inconsistent allowance metadata");
-			const auto recipients = isLightSpell && !pack.counterspellNegated
-				&& newHorizonsDivineMandate::needsRecipientCapture(hero)
-				? newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*battle, pack.side, pack.affectedCres, true)
-				: std::vector<uint32_t>{};
-			DivineMandateTransition::applyAcceptedAction(nextAllowances, transition->receipt,
-				battle->getRound(), isLightSpell, mandate.maximumPairs, recipients);
-			casterSide.heroActionAllowances = std::move(nextAllowances);
-			casterSide.metamagicUsesConsumed = nextMetamagicUsesConsumed;
-			casterSide.metamagicPendingCount = nextMetamagicPendingCount;
-			casterSide.metamagicGrandUsed = nextMetamagicGrandUsed;
-			spellTransition = std::move(*transition);
-		}
-		else if(pack.metamagicFollowup && casterSide.metamagicPendingCount == 0)
-			throw std::runtime_error("Metamagic follow-up cast without pending sequence");
-		const bool spendsHeroAllowance = spellTransition
-			? spellTransition->receipt.allowance == HeroActionAllowanceState::AllowanceKind::HERO
-			: !pack.metamagicFollowup;
+		const auto [automaticHeroCast, sharedActionBudget, spendsHeroAllowance, spellTransition] =
+			prepareAndCommitAcceptedHeroSpellAllowance(*battle, hero, pack);
 
 		if(!pack.metamagicFollowup)
 			casterSide.castSpellsCount++;
@@ -3467,7 +3308,7 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			if(casterSide.metamagicPendingCount == 0)
 				casterSide.clearMetamagicSequence();
 		}
-		else if(hero)
+		else if(hero && !automaticHeroCast)
 		{
 			const int capacity = newHorizonsMagic::metamagicCapacity(hero);
 			if(capacity > casterSide.metamagicUsesConsumed && capacity > 0)
@@ -3479,17 +3320,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				casterSide.metamagicFirstCounterspellNegated = pack.counterspellNegated;
 			}
 		}
-		if(spendsHeroAllowance && newHorizonsWarcasting::enabled(battle->getMagicRules()))
-		{
-			auto next = casterSide.warcastingState;
-			if(newHorizonsWarcasting::battleMeditationEligible(
-				battle->getMagicRules(), hero, casterSide.warcastingState, battle->getRound()))
-				next.lastManaRecoveryRound = battle->getRound();
-			next.recordAcceptedAction(AlternatingHeroActionState::Action::SPELL, battle->getRound(),
-				newHorizonsWarcasting::empowerment(hero, AlternatingHeroActionState::Action::SPELL),
-				newHorizonsWarcasting::readinessLifetimeRounds(hero));
-			casterSide.warcastingState = std::move(next);
-		}
+
+
 		const auto addManaSpent = [](SideInBattle & side, int32_t amount)
 		{
 			if(amount <= 0)
@@ -3506,6 +3338,8 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 			battle->setCrossSchoolFormulaState(pack.side, pack.crossSchoolFormula->after);
 		// This marker is set only after every accepted-cast validation above has
 		// succeeded; creature casts and rejected hero requests never consume it.
+		if(battle->getRound() >= 0)
+			casterSide.wisdomCombatState.recordCompletedCast(pack.spellID, battle->getRound());
 		casterSide.heroSpellCastCompleted = true;
 		casterSide.recordCompletedHeroSpellLevel(battle->battleGetSpellLevel(pack.spellID));
 	}
@@ -4051,18 +3885,6 @@ void BattleStatePackVisitor::visitSetArmorerDefiantState(SetArmorerDefiantState 
 		throw std::runtime_error("Defiant consumption requires a shared battle callback");
 	pack.validateAgainst(*battle);
 	battleState.setArmorerDefiantState(pack.side, pack.state);
-}
-
-void BattleStatePackVisitor::visitSetReactiveWeaveState(SetReactiveWeaveState & pack)
-{
-	pack.validateShape();
-	if(pack.battleID != battleState.getBattleID() || pack.round != battleState.getRound()
-		|| !battleState.getSideHero(pack.casterSide)
-		|| !battleState.hasCompletedHeroSpellCast(pack.casterSide))
-		throw std::runtime_error("Reactive Weave receipt has invalid cast provenance");
-	// Recipient IDs identify the actual application. Ownership was captured before
-	// effects: control-changing spells must not reinterpret it after application.
-	battleState.armReactiveWeave(pack.side, pack.round, pack.empowerment);
 }
 
 void BattleStatePackVisitor::visitSetSpellResponseState(SetSpellResponseState & pack)

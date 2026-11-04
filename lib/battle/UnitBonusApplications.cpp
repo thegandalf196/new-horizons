@@ -28,6 +28,18 @@ namespace
 bool applyUnitBonusRecord(CStack * sta, const Bonus & value, bool forceAdd);
 }
 
+std::vector<Bonus> BattleInfo::getLocalSpellEffects(uint32_t id) const
+{
+	const auto * stack = battleGetStackByID(id, false);
+	if(!stack)
+		throw std::runtime_error("Missing local spell-effect recipient");
+	std::vector<Bonus> result;
+	for(const auto & bonus : stack->getExportedBonusList())
+		if(bonus->source == BonusSource::SPELL_EFFECT)
+			result.push_back(*bonus);
+	return result;
+}
+
 void BattleInfo::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
 	stackEffectVectorRules::validateIncomingRecords(*this, id, bonus, [this](uint32_t target)

@@ -27,6 +27,9 @@ void CUnitState::reset()
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
 	confusionState = {};
+	arcaneMarks = {};
+	arcaneShieldHitPoints = 0;
+	demonicGateOpened = false;
 	dreadCavalryState = {};
 	frozenAppliedRound = -1;
 	battlecraftOverwatchReadyRound = -1;
@@ -75,6 +78,7 @@ void CUnitState::reset()
 	physicalPoisonBaseDamage = 0;
 	physicalPoisonActivationsRemaining = 0;
 	physicalPoisonSourceStackId = -1;
+	physicalPoisonSpellSide = BattleSide::NONE;
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomInitialIntegrity = 0;
@@ -144,6 +148,7 @@ void CUnitState::afterWait()
 
 void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
 {
+	arcaneShieldHitPoints = 0;
 	forestAmbush = {};
 	moraleExtraActivation = false;
 	battlecraftOverwatchReadyRound = -1;

@@ -12,7 +12,7 @@ void CGameState::validateOwnedBonusSerialization(BonusSerializationContext conte
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	if(map) map->validateOwnedBonusSerialization(context);
 	for(const auto & [color, player] : players)
 		player.validateOwnedBonusSerialization(context);

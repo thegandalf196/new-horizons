@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+passive = (ROOT / "client/battle/PassiveFactionSkillPresentation.cpp").read_text(encoding="utf-8")
+arrow = (ROOT / "client/battle/BattleMagicArrowUI.cpp").read_text(encoding="utf-8")
+mana_preview = (ROOT / "client/battle/BattleSpellManaPreview.cpp").read_text(encoding="utf-8")
 interface_h = (ROOT / "client/battle/BattleInterface.h").read_text(encoding="utf-8")
 interface = (ROOT / "client/battle/BattleInterface.cpp").read_text(encoding="utf-8")
 window_h = (ROOT / "client/battle/BattleWindow.h").read_text(encoding="utf-8")
@@ -91,23 +94,54 @@ preview = actions.split("std::optional<FriendlyFirePreview> buildFriendlyFirePre
     "FriendlyFirePreview result;", 1
 )[0]
 assert grand_preview_passthrough in preview
-actions_without_grand_preview = actions.replace(grand_preview_passthrough, "")
-client_sources = (interface_h, interface, window_h, window, actions_h, actions, spellbook,
-                  (ROOT / "client/windows/CSpellWindow.h").read_text(encoding="utf-8"))
-for source in client_sources:
-    source = source.replace(grand_preview_passthrough, "")
-    for term in ("metamagicGrand", "toggleMetamagicGrandFollowup", "metamagicGrandModeActive"):
-        assert term not in source, f"manual Grand request/control remains: {term}"
-assert "setMetamagicFollowup(followup)" in actions
-assert "setMetamagicGrand" not in actions_without_grand_preview + interface
-assert "battleCanUseMetamagicFollowup(metamagicSide, mySpell->id)" in spellbook
+# Inventory every Grand metadata reference, including existing read-only caches.
+# A new request assignment, user control or unreviewed preview reference fails.
+expected_grand = (
+    (interface_h, []), (interface, []), (window_h, []), (window, []),
+    (actions_h, ["bool metamagicGrand = false;"]),
+    (actions, [grand_preview_passthrough,
+               "cacheKey.metamagicGrand = heroSpellToCast->metamagicGrand;",
+               "cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);"]),
+    (spellbook, []), ((ROOT / "client/windows/CSpellWindow.h").read_text(encoding="utf-8"), []),
+    (arrow, []), (mana_preview, ["cast.setMetamagicGrand(preview.metamagicGrand);"]),
+)
+for source, expected in expected_grand:
+    actual = [line.strip() for line in source.splitlines() if "metamagicGrand" in line]
+    assert actual == expected, "Grand metadata escaped the exact copied-preview/cache paths"
+    for term in ("toggleMetamagicGrandFollowup", "metamagicGrandModeActive"):
+        assert term not in source, f"manual Grand control remains: {term}"
+chain_preview = actions.split("void BattleActionsController::updateChainLightningPreview(", 1)[1].split(
+    "void BattleActionsController::", 1)[0]
+assert "cacheKey.metamagicGrand = heroSpellToCast->metamagicGrand;" in chain_preview
+assert "cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);" in chain_preview
+assert "bool metamagicGrand = false;" in actions_h.split("struct ChainLightningPreviewCacheKey", 1)[1].split("};", 1)[0]
+assert "BattleAction preview = *heroSpellToCast;" in mana_preview
+assert "setMetamagicFollowup(followup)" in actions + arrow
+followup = spellbook.split("bool CSpellWindow::hasMetamagicFollowupForSpell(SpellID spell) const", 1)[1].split(
+    "bool CSpellWindow::", 1)[0]
+assert "battle->battleCanUseMetamagicFollowup(side, spell)" in followup
+assert "owner->hasMetamagicFollowupForSpell(mySpell->id)" in spellbook
+book_readout = (ROOT / "client/windows/SpellbookReadout.cpp").read_text(encoding="utf-8")
+assert "newHorizonsMagic::spellEffectPreview(*owner->myHero, *mySpell, battle.get(), metamagicFollowup)" in book_readout
+assert "recipientSpellEffectPreview" not in book_readout + spellbook
+assert "getActiveStack" not in mana_preview
+assert "const auto target = preview.getTarget(battle.get());" in mana_preview
+assert "const auto mechanics = cast.mechanicsForTarget(target);" in mana_preview
+assert mana_preview.index("preview.getTarget(battle.get())") < mana_preview.index("cast.mechanicsForTarget(target)")
+assert mana_preview.index("cast.mechanicsForTarget(target)") < mana_preview.index("mechanics->setStormOfDaggersTargetCount")
+assert mana_preview.index("mechanics->setStormOfDaggersTargetCount") < mana_preview.index("mechanics->getTargetAwareManaCost(target)")
+assert "recipientEffectStatus(*mechanics, getStackForHex(targetHex))" in mana_preview
 assert "battleGetSpellActionAllowance(side, spell)" in spellbook
 assert "canUseSpellForCurrentDivineMandateFollowup(mySpell->id)" in spellbook
 assert "DIVINE_MANDATE_USES" in window
-mandate_status = window.split("case CSkill::CombatStatusProvider::DIVINE_MANDATE_USES:", 1)[1].split("providerDetails =", 1)[0]
+mandate_status = passive.split("std::optional<SkillStatusText> divineMandate(", 1)[1]
 assert "static_cast<unsigned>(mandate.completedPairs)" in mandate_status
 assert "completed < mandate.maximumPairs" in mandate_status
 assert "std::min" not in mandate_status, "Completed pairs are history, not a clamped remaining-use count"
+assert "passiveFactionSkillPresentation::divineMandate(*hero, *battleCallback, side)" in window
+assert "newHorizonsPassiveDivineMandate::enabled(hero.getPerkState().rules)" in mandate_status
+assert "getPassiveDivineMandateUses(side)" in mandate_status
+assert "remainingActivations(policy, used)" in mandate_status
 assert "METAMAGIC_ARCANE_ECONOMY" in spellbook
 assert "owner->myHero);" in spellbook.split("const bool canCast", 1)[1].split("if(canCast)", 1)[0]
 
@@ -141,16 +175,18 @@ assert "if(skillRank <= 0)" in refresh
 assert "switch(skill->getCombatStatusProvider())" in refresh
 assert "case CSkill::CombatStatusProvider::METAMAGIC_USES:" in refresh
 assert "case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:" in refresh
-assert "newHorizonsMagic::metamagicCapacity(hero)" in refresh
-assert "if(total <= 0)" in refresh
-assert "battleCallback->battleMetamagicUsesConsumed(side)" in refresh
-assert "std::clamp(battleCallback->battleMetamagicUsesConsumed(side), 0, total)" in refresh
-assert 'std::to_string(total - consumed) + " / " + std::to_string(total)' in refresh
+assert "passiveFactionSkillPresentation::metamagic(*hero, *battleCallback, side)" in refresh
+assert "newHorizonsMetamagic::usesArcaneMarks(hero.getPerkState().rules)" in passive
+assert "newHorizonsMagic::metamagicCapacity(&hero)" in passive
+assert "if(total <= 0)" in passive
+assert "battle.battleMetamagicUsesConsumed(side)" in passive
+assert "std::clamp(battle.battleMetamagicUsesConsumed(side), 0, total)" in passive
+assert 'std::to_string(total - consumed) + " / " + std::to_string(total)' in passive
 assert "battle->getBloodrageCapPercent(side)" in refresh
 assert "battle->getBloodrageDamagePercent(side)" in refresh
 assert '"/" + std::to_string(cap) + "%"' in refresh
 assert refresh.index("switch(skill->getCombatStatusProvider())") < refresh.index(
-    "const auto description = skill->getCombatStatusDescriptionTranslated()"
+    "const auto description = replaceProviderDescription"
 )
 assert refresh.count("entries.push_back({skill->at(") == 1
 assert "skill->at(std::clamp(skillRank, 1, 3)).iconSmall" in refresh
@@ -179,10 +215,12 @@ assert "currentDivineMandateFollowupText()" in spellbook
 # The Orders chooser asks the candidate-aware callback for the selected grant,
 # preserving Divine Mandate while also labeling Double Command and other sources.
 orders_window = (ROOT / "client/battle/BattleHeroActionWindow.cpp").read_text(encoding="utf-8")
+order_presentation = (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8")
+assert 'using namespace newHorizonsOrderPresentation;' in orders_window
 assert "callback->battleGetOrderActionAllowance(side)" in orders_window
 assert "orderActionOpportunityText(*orderSelection)" in orders_window
-assert "GrantSource::DOUBLE_COMMAND: return \"Double Command\";" in orders_window
-assert "selection.expiryRound" in orders_window
+assert "GrantSource::DOUBLE_COMMAND: return \"Double Command\";" in order_presentation
+assert "selection.expiryRound" in order_presentation
 assert "actionOpportunityContext" in orders_window
 assert "callback->battleHeroActionAllowanceCounts(side)" in orders_window
 assert '"Normal Hero Action available"' in orders_window

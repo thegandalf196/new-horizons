@@ -83,6 +83,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<CButton> dismissButton;
 	std::shared_ptr<CTextBox> questlogLabel;
 	std::shared_ptr<CButton> questlogButton;
+	std::shared_ptr<CButton> temporaryEffectsButton;
 	std::shared_ptr<CButton> commanderButton;
 	std::shared_ptr<CButton> growthButton;
 	std::shared_ptr<CButton> backpackButton;
@@ -118,6 +119,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	void restoreLegacyLayout();
 	void refreshHero(bool refreshArtifactInteraction);
 	void demonicReserveClicked();
+	void refreshDemonicReserveVisibility();
 
 public:
 	const CGHeroInstance * curHero;

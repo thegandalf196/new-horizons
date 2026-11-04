@@ -301,10 +301,8 @@ TEST_F(NewHorizonsKnightlySequenceTest, LightFirstKnightlyOrderComposesWithSacre
 	EXPECT_EQ(order->divineMandateEfficiencyBonusPercent(), 15);
 	EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs, 1);
 
-	const int sacredOnlyCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero,
-		order->warcastingBonusPercent, order->sacredCommandEfficiencyBonusPercent);
-	const int combinedCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero,
-		order->warcastingBonusPercent, order->divineMandateEfficiencyBonusPercent());
+	const int sacredOnlyCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero, order->sacredCommandEfficiencyBonusPercent);
+	const int combinedCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero, order->divineMandateEfficiencyBonusPercent());
 	EXPECT_GT(combinedCoefficient, sacredOnlyCoefficient)
 		<< "Knightly Sequence contributes its distinct five percentage points alongside Sacred Command";
 
@@ -367,7 +365,7 @@ TEST_F(NewHorizonsKnightlySequenceTest, LightFirstKnightlyOrderComposesWithSacre
 	fixedOnlyFormula["base"].Float() = 37;
 	fixedOnlyFormula["attack"].Float() = 0;
 	fixedOnlyFormula["defense"].Float() = 0;
-	EXPECT_EQ(heroCommands::coefficient(fixedOnlyFormula, *attackerSideHero, 0, 15), 37)
+	EXPECT_EQ(heroCommands::coefficient(fixedOnlyFormula, *attackerSideHero, 15), 37)
 		<< "The combined efficiency applies only to attribute-derived terms, not the fixed base";
 }
 

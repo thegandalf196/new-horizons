@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsMetamagicEffects.h"
 
 #include "TargetCondition.h"
 #include "NewHorizonsSpellAvailability.h"
@@ -141,7 +142,8 @@ protected:
 		if(m->isPositiveSpell()) //Always pass on positive
 			return true;
 
-		return target->magicResistance() < 100;
+		return newHorizonsMetamagic::resistanceChance(target->magicResistance(),
+			m->getMetamagicCastProfile(), *m->battle(), *target) < 100;
 	}
 };
 

@@ -47,9 +47,9 @@ void validateArmor(const JsonNode & rules)
 	}
 }
 }
-int32_t slowBaseReduction(int32_t power, int32_t coefficient, int32_t warcasting, int32_t empower)
+int32_t slowBaseReduction(int32_t power, int32_t coefficient, int32_t empower)
 {
-	const auto component = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(power, 5, coefficient, warcasting, empower);
+	const auto component = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(power, 5, coefficient, empower);
 	return static_cast<int32_t>(std::min<int64_t>(50, 20 + component));
 }
 double scaleSlowVariantValue(double value, int32_t powerPercent)
@@ -60,23 +60,22 @@ double scaleSlowVariantValue(double value, int32_t powerPercent)
 	return std::ceil(value * powerPercent / 100.0);
 }
 
-int32_t focusMarkBasisPoints(const FocusRules & profile, int32_t power, int32_t coefficient,
-	int32_t warcasting, int32_t empower, int32_t specialty)
+int32_t focusMarkBasisPoints(const FocusRules & profile, int32_t power, int32_t coefficient, int32_t empower, int32_t specialty)
 {
 	// Preserve the original proxy's validation domain before profile scaling.
 	newHorizonsSorcery::arcaneBreachMarkBasisPoints(power);
 	const auto component = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		static_cast<int64_t>(power) * profile.powerBasisPoints, 1, coefficient, warcasting, empower, specialty);
+		static_cast<int64_t>(power) * profile.powerBasisPoints, 1, coefficient, empower, specialty);
 	return static_cast<int32_t>(std::min<int64_t>(profile.capBasisPoints, profile.baseBasisPoints + component));
 }
 
 int64_t livingArmorHitPoints(int64_t baseHitPoints, int64_t powerCoefficient, int32_t power,
-	int32_t divisor, int32_t coefficient, int32_t warcasting, int32_t empower)
+	int32_t divisor, int32_t coefficient, int32_t empower)
 {
 	if(baseHitPoints <= 0 || powerCoefficient < 0)
 		return 0;
 	return baseHitPoints + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		powerCoefficient * std::max(0, power), divisor, coefficient, warcasting, empower);
+		powerCoefficient * std::max(0, power), divisor, coefficient, empower);
 }
 
 std::optional<FocusRules> focusRules(const JsonNode & rules)

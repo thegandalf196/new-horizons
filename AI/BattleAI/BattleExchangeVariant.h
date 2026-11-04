@@ -17,6 +17,9 @@
 
 struct DLL_LINKAGE BattleTargetProbeTiming;
 namespace petrifyingBloodAI { struct Pending; }
+class SelectedProbeDamage;
+class PhysicalStrikeProjection;
+class BattleExchangeEvaluator;
 
 /// A full reaction preview may already have replayed every hit in this action.
 /// The future-actor caller must not then repeat its ordinary extra-hit loop.
@@ -129,6 +132,24 @@ public:
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);
 
 private:
+	std::optional<float> trackInspirationProbe(const std::shared_ptr<StackWithBonuses> & attacker,
+		const std::shared_ptr<StackWithBonuses> & defender, bool shooting, bool isOurAttack,
+		DamageCache &, const std::shared_ptr<HypotheticBattle> &, bool evaluateOnly, bool allowRetaliation);
+	std::pair<float, float> accountReprisalValue(const PhysicalStrikeProjection &, DamageCache &,
+		const std::shared_ptr<HypotheticBattle> &, PlayerColor reference, bool isOurAttack);
+	friend class BattleExchangeEvaluator;
+	float trackAttackWithSelectedDamage(std::shared_ptr<StackWithBonuses> attacker,
+		std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack,
+		DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly,
+		bool allowRetaliation, std::optional<bool> * readyOverwatch,
+		const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission,
+		BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent,
+		std::vector<petrifyingBloodAI::Pending> * bloodSequence,
+		SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused);
+	const battle::Unit * selectExchangeTarget(const battle::Units & candidates,
+		const std::shared_ptr<StackWithBonuses> & attacker, bool shooting, bool isOur,
+		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & battle,
+		const BattleTargetProbeTiming * timing, SelectedProbeDamage & selected, uint64_t * offers);
 	/// Finish one selected sequence only after its strikes/counters have replayed.
 	void completeSelectedAttack(const AttackPossibility & ap,
 		const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition, bool returnCommitted,
@@ -221,6 +242,9 @@ struct DLL_LINKAGE BattleMovementTiming
 		bool collectProbeDamageCache = false;
 		/// Counts trackAttack invocations; the initial AP invocation may replay multiple strikes.
 		StageTiming appliedAttacks;
+		/// Opt-in diagnostic counts only; no additional clocks or gameplay state.
+		uint64_t selectedProbeDamageOffers = 0;
+		uint64_t selectedProbeDamageUses = 0;
 		StageTiming activationStart;
 		/// Expiry/affliction completion and fortune/Swift end regions; not an activation count.
 		StageTiming activationEnd;
@@ -245,6 +269,7 @@ struct DLL_LINKAGE BattleTargetProbeTiming
 	DamageCacheProbeTiming * damageCache = nullptr;
 	/// Prefix after the invalid-actor guard, finalized before primary damage.
 	BattleMovementTiming::StageTiming * preparation = nullptr;
+	BattleMovementTiming::StageTiming * wholeProbe = nullptr;
 };
 
 /// Nonadditive candidate wrappers and disjoint calculateExchange subregions.

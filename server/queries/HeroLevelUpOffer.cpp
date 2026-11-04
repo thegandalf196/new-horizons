@@ -15,6 +15,7 @@
 #include "../TurnTimerHandler.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CSkillHandler.h"
+#include "../../lib/entities/hero/SkillChoiceEligibility.h"
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -23,49 +24,6 @@
 
 #include "HeroLevelUpOffer.h"
 #include "../../lib/callback/GameRandomizer.h"
-
-namespace
-{
-bool isValidHeroSkillChoice(CGameHandler & gameHandler, const CGHeroInstance * hero, SecondarySkill skill)
-{
-	if(!hero || skill == SecondarySkill::NONE)
-		return false;
-
-	const auto & rules = hero->getPrimaryGrowthRules();
-	const auto ownFactionSkill = newHorizonsHeroes::factionSkill(rules, hero->getFactionID());
-	if(newHorizonsHeroes::isFactionSkill(rules, skill)
-		&& (!ownFactionSkill || !newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill)))
-		return false;
-	if(ownFactionSkill && newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill))
-	{
-		const auto representative = std::find_if(hero->secSkills.begin(), hero->secSkills.end(), [&rules, hero](const auto & entry)
-		{
-			return newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), entry.first);
-		});
-		if(representative != hero->secSkills.end() && representative->first != skill)
-			return false;
-	}
-
-	const int currentRank = hero->getSecSkillLevel(skill);
-	if(currentRank >= MasteryLevel::EXPERT)
-		return false;
-	const auto & perkState = hero->getPerkState();
-	const auto * skillEntity = LIBRARY->skillh->getById(skill);
-	if(!skillEntity || !perkState.canAdvanceSkillNormally(skillEntity->getJsonKey(), currentRank))
-		return false;
-	if(currentRank > MasteryLevel::NONE)
-		return true;
-	if(!hero->canLearnSkill())
-		return false;
-
-	// Own faction skills are intentionally absent from the legacy class
-	// probability table. They are still legal as a new skill when the active
-	// rules snapshot says so, subject to the map's allowed-skill roster.
-	if(ownFactionSkill && *ownFactionSkill == skill)
-		return gameHandler.gameInfo().isAllowed(skill);
-	return hero->canLearnSkill(skill);
-}
-}
 
 CHeroLevelUpDialogQuery::CHeroLevelUpDialogQuery(CGameHandler * owner, const HeroLevelUp & Hlu, const CGHeroInstance * Hero):
 	CDialogQuery(owner, TYPE), hero(Hero)
@@ -83,9 +41,9 @@ bool CHeroLevelUpDialogQuery::canReroll() const
 {
 	const auto interval = newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().rules);
 	return prompted && !answer && hlu.optionalRerollAvailable && interval
-		&& hlu.reachedLevel == hero->level && hero->level % *interval == 0
-		&& (!hlu.skills.empty() || !hlu.perks.empty())
-		&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.quickStudy");
+		&& hlu.reachedLevel == hero->level && !hlu.skills.empty()
+		&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.connoisseur")
+		&& !rerollCandidates().empty();
 }
 
 bool CHeroLevelUpDialogQuery::hasValidOffer() const
@@ -93,7 +51,7 @@ bool CHeroLevelUpDialogQuery::hasValidOffer() const
 	if(hlu.perkOfferSeed < 0)
 		return false;
 	for(auto skill : hlu.skills)
-		if(!isValidHeroSkillChoice(*gh, hero, skill))
+		if(!newHorizonsHeroes::isValidLevelUpSkillChoice(gh->gameInfo(), hero, skill))
 			return false;
 	return hlu.perks == hero->getPerkState().prepareOffer([this](const std::string & skill)
 		{ return hero->getPerkSkillRank(skill); }, hlu.perkOfferSeed, perkWeightContext());
@@ -128,7 +86,12 @@ bool CHeroLevelUpDialogQuery::confirmCurrentOffer(PlayerColor player, QueryID re
 	return true;
 }
 
-bool CHeroLevelUpDialogQuery::requestReroll(PlayerColor player)
+std::set<SecondarySkill> CHeroLevelUpDialogQuery::rerollCandidates() const
+{
+	return newHorizonsHeroes::connoisseurSkillCandidates(gh->gameInfo(), *hero, hlu.skills);
+}
+
+bool CHeroLevelUpDialogQuery::requestReroll(PlayerColor player, size_t skillIndex)
 {
 	if(!vstd::contains(players, player) || hero->getOwner() != player
 		|| owner->topQuery(player).get() != this)
@@ -138,11 +101,14 @@ bool CHeroLevelUpDialogQuery::requestReroll(PlayerColor player)
 		confirmCurrentOffer(player, queryID);
 		return false;
 	}
-	if(!hasValidOffer())
+	if(skillIndex >= hlu.skills.size() || !hasValidOffer())
 		return false;
-
+	const auto candidates = rerollCandidates();
+	// Rejection, including no legal alternative, is mutation- and RNG-free.
+	if(candidates.empty())
+		return false;
 	auto replacement = hlu;
-	newHorizonsLevelUp::prepareChoices(*gh, hero, replacement);
+	replacement.skills[skillIndex] = gh->randomizer->rollSecondarySkillForLevelup(hero, candidates);
 	replacement.optionalRerollAvailable = false;
 	replacement.replacesQueryID = queryID;
 	replacement.queryID = ++gh->QID;
@@ -178,7 +144,7 @@ void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
 {
 	std::erase_if(hlu.skills, [this](SecondarySkill skill)
 	{
-		return !isValidHeroSkillChoice(*gh, hero, skill);
+		return !newHorizonsHeroes::isValidLevelUpSkillChoice(gh->gameInfo(), hero, skill);
 	});
 
 	// Perk replies are validated against the complete deterministic offer, not a
@@ -188,6 +154,9 @@ void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
 	{
 		return hero->getPerkSkillRank(skillId);
 	}, hlu.perkOfferSeed, perkWeightContext());
+	// All current Skill cards are excluded from the shared replacement pool,
+	// so every valid card index has the same availability. Publish authority.
+	hlu.optionalRerollAvailable = hlu.optionalRerollAvailable && !rerollCandidates().empty();
 }
 
 bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
@@ -203,7 +172,7 @@ bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
 	if(choice >= choiceCount)
 		return false;
 	if(choice < hlu.skills.size())
-		return isValidHeroSkillChoice(*gh, hero, hlu.skills[choice]);
+		return newHorizonsHeroes::isValidLevelUpSkillChoice(gh->gameInfo(), hero, hlu.skills[choice]);
 	try
 	{
 		auto validated = hero->getPerkState();

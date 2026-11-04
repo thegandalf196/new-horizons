@@ -61,7 +61,9 @@
 	"armorer": {
 		"name": "Armorer",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -118,7 +120,9 @@
 	"archery": {
 		"name": "Archery",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -175,13 +179,15 @@
 	"battlecraft": {
 		"name": "Battlecraft",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "After a friendly stack Waits, its next attack or retaliation before the end of the round deals +5% physical damage. A stack that Defends gains an additional 5% physical creature-damage reduction until its next activation.",
+			"description": "Waiting grants +5% physical damage on your next attack this round; Defending grants 5% extra physical protection until your next activation.",
 			"images": {
 				"small": "NH_battlecraft_basic_small.png",
 				"medium": "NH_battlecraft_basic_medium.png",
@@ -197,7 +203,7 @@
 			}
 		},
 		"advanced": {
-			"description": "The conditional Wait damage bonus and Defend reduction become 10%.",
+			"description": "Waiting grants +10% physical damage on your next attack this round; Defending grants 10% extra physical protection until your next activation.",
 			"images": {
 				"small": "NH_battlecraft_advanced_small.png",
 				"medium": "NH_battlecraft_advanced_medium.png",
@@ -213,7 +219,7 @@
 			}
 		},
 		"expert": {
-			"description": "The conditional Wait damage bonus and Defend reduction become 15%.",
+			"description": "Waiting grants +15% physical damage on your next attack this round; Defending grants 15% extra physical protection until your next activation.",
 			"images": {
 				"small": "NH_battlecraft_expert_small.png",
 				"medium": "NH_battlecraft_expert_medium.png",
@@ -232,7 +238,9 @@
 	"warMachines": {
 		"name": "War Machines",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -289,7 +297,9 @@
 	"discipline": {
 		"name": "Discipline",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -346,7 +356,9 @@
 	"recruitment": {
 		"name": "Recruitment",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -403,13 +415,15 @@
 	"command": {
 		"name": "Command",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "Attribute-derived components of Orders operate at 110% Command Efficiency.",
+			"description": "Your Orders gain +10% to effects determined by your hero’s attributes.",
 			"images": {
 				"small": "SECSK32:0:60",
 				"medium": "SECSKILL:0:60",
@@ -425,7 +439,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Attribute-derived components operate at 120% Command Efficiency.",
+			"description": "Your Orders gain +20% to effects determined by your hero’s attributes.",
 			"images": {
 				"small": "SECSK32:0:61",
 				"medium": "SECSKILL:0:61",
@@ -441,7 +455,7 @@
 			}
 		},
 		"expert": {
-			"description": "Attribute-derived components operate at 130% Command Efficiency.",
+			"description": "Your Orders gain +30% to effects determined by your hero’s attributes.",
 			"images": {
 				"small": "SECSK32:0:62",
 				"medium": "SECSKILL:0:62",
@@ -468,7 +482,7 @@
 			"magic": 6
 		},
 		"basic": {
-			"description": "Learn Light spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Light spells up to Level 3 and increase their Spell Power contribution by 15%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_lightMagic_basic_small.png",
 				"medium": "NH_lightMagic_basic_medium.png",
@@ -485,7 +499,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Learn Light spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Light spells up to Level 4 and increase their Spell Power contribution by 30%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_lightMagic_advanced_small.png",
 				"medium": "NH_lightMagic_advanced_medium.png",
@@ -502,7 +516,7 @@
 			}
 		},
 		"expert": {
-			"description": "Learn Light spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Light spells up to Level 5 and increase their Spell Power contribution by 45%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_lightMagic_expert_small.png",
 				"medium": "NH_lightMagic_expert_medium.png",
@@ -530,7 +544,7 @@
 			"magic": 6
 		},
 		"basic": {
-			"description": "Learn Shadow spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Shadow spells up to Level 3 and increase their Spell Power contribution by 15%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_shadowMagic_basic_small.png",
 				"medium": "NH_shadowMagic_basic_medium.png",
@@ -547,7 +561,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Learn Shadow spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Shadow spells up to Level 4 and increase their Spell Power contribution by 30%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_shadowMagic_advanced_small.png",
 				"medium": "NH_shadowMagic_advanced_medium.png",
@@ -564,7 +578,7 @@
 			}
 		},
 		"expert": {
-			"description": "Learn Shadow spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Shadow spells up to Level 5 and increase their Spell Power contribution by 45%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_shadowMagic_expert_small.png",
 				"medium": "NH_shadowMagic_expert_medium.png",
@@ -592,7 +606,7 @@
 			"magic": 6
 		},
 		"basic": {
-			"description": "Learn Nature spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Nature spells up to Level 3 and increase their Spell Power contribution by 15%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_natureMagic_basic_small.png",
 				"medium": "NH_natureMagic_basic_medium.png",
@@ -609,7 +623,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Learn Nature spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Nature spells up to Level 4 and increase their Spell Power contribution by 30%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_natureMagic_advanced_small.png",
 				"medium": "NH_natureMagic_advanced_medium.png",
@@ -626,7 +640,7 @@
 			}
 		},
 		"expert": {
-			"description": "Learn Nature spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Nature spells up to Level 5 and increase their Spell Power contribution by 45%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_natureMagic_expert_small.png",
 				"medium": "NH_natureMagic_expert_medium.png",
@@ -654,7 +668,7 @@
 			"magic": 6
 		},
 		"basic": {
-			"description": "Learn Havoc spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Havoc spells up to Level 3 and increase their Spell Power contribution by 15%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_havocMagic_basic_small.png",
 				"medium": "NH_havocMagic_basic_medium.png",
@@ -671,7 +685,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Learn Havoc spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Havoc spells up to Level 4 and increase their Spell Power contribution by 30%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_havocMagic_advanced_small.png",
 				"medium": "NH_havocMagic_advanced_medium.png",
@@ -688,7 +702,7 @@
 			}
 		},
 		"expert": {
-			"description": "Learn Havoc spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Havoc spells up to Level 5 and increase their Spell Power contribution by 45%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_havocMagic_expert_small.png",
 				"medium": "NH_havocMagic_expert_medium.png",
@@ -716,7 +730,7 @@
 			"magic": 6
 		},
 		"basic": {
-			"description": "Learn Sorcery spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Sorcery spells up to Level 3 and increase their Spell Power contribution by 15%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_sorceryMagic_basic_small.png",
 				"medium": "NH_sorceryMagic_basic_medium.png",
@@ -733,7 +747,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Learn Sorcery spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Sorcery spells up to Level 4 and increase their Spell Power contribution by 30%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_sorceryMagic_advanced_small.png",
 				"medium": "NH_sorceryMagic_advanced_medium.png",
@@ -750,7 +764,7 @@
 			}
 		},
 		"expert": {
-			"description": "Learn Sorcery spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Sorcery spells up to Level 5 and increase their Spell Power contribution by 45%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_sorceryMagic_expert_small.png",
 				"medium": "NH_sorceryMagic_expert_medium.png",
@@ -778,7 +792,7 @@
 			"magic": 6
 		},
 		"basic": {
-			"description": "Learn Chaos spells up to Level 3 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 15%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Chaos spells up to Level 3 and increase their Spell Power contribution by 15%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_chaosMagic_basic_small.png",
 				"medium": "NH_chaosMagic_basic_medium.png",
@@ -795,7 +809,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Learn Chaos spells up to Level 4 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 30%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Chaos spells up to Level 4 and increase their Spell Power contribution by 30%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_chaosMagic_advanced_small.png",
 				"medium": "NH_chaosMagic_advanced_medium.png",
@@ -812,7 +826,7 @@
 			}
 		},
 		"expert": {
-			"description": "Learn Chaos spells up to Level 5 through ordinary learning. Where a spell uses School rank, strengthen the part of its effect determined by Spell Power by 45%; fixed values are unchanged.\n\nA combat spell already inscribed in your spellbook can still be cast at any School rank.",
+			"description": "Learn Chaos spells up to Level 5 and increase their Spell Power contribution by 45%; inscribed combat spells remain castable at any rank.",
 			"images": {
 				"small": "NH_chaosMagic_expert_small.png",
 				"medium": "NH_chaosMagic_expert_medium.png",
@@ -832,13 +846,15 @@
 	"spellcraft": {
 		"name": "Spellcraft",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "Spell Power-derived numerical components of spells operate at 110% Spellcraft Efficiency.",
+			"description": "Your spells gain +10% to the part of their effect determined by Spell Power.",
 			"images": {
 				"small": "SECSK32:0:78",
 				"medium": "SECSKILL:0:78",
@@ -854,7 +870,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Spell Power-derived components operate at 120%.",
+			"description": "Your spells gain +20% to the part of their effect determined by Spell Power.",
 			"images": {
 				"small": "SECSK32:0:79",
 				"medium": "SECSKILL:0:79",
@@ -870,7 +886,7 @@
 			}
 		},
 		"expert": {
-			"description": "Spell Power-derived components operate at 130%.",
+			"description": "Your spells gain +30% to the part of their effect determined by Spell Power.",
 			"images": {
 				"small": "SECSK32:0:80",
 				"medium": "SECSKILL:0:80",
@@ -889,7 +905,9 @@
 	"wisdom": {
 		"name": "Wisdom",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -946,13 +964,15 @@
 	"warcasting": {
 		"name": "Warcasting",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "After using the Hero Action to cast a Spell, the next Order issued before the end of the next round gains +10 percentage points of efficiency on its attribute-derived components. After using the Hero Action to issue an Order, the next Spell cast before the end of the next round gains +10% to its Spell Power-derived numerical component.",
+			"description": "Hero combat spells grant friendly stacks +5% attack and retaliation damage until the next round.",
 			"images": {
 				"small": "NH_warcasting_basic_small.png",
 				"medium": "NH_warcasting_basic_medium.png",
@@ -968,7 +988,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Both alternating bonuses become 20% / +20 percentage points.",
+			"description": "Hero combat spells grant friendly stacks +10% attack and retaliation damage until the next round.",
 			"images": {
 				"small": "NH_warcasting_advanced_small.png",
 				"medium": "NH_warcasting_advanced_medium.png",
@@ -984,7 +1004,7 @@
 			}
 		},
 		"expert": {
-			"description": "Both alternating bonuses become 30% / +30 percentage points.",
+			"description": "Hero combat spells grant friendly stacks +15% attack and retaliation damage until the next round.",
 			"images": {
 				"small": "NH_warcasting_expert_small.png",
 				"medium": "NH_warcasting_expert_medium.png",
@@ -1003,7 +1023,9 @@
 	"logistics": {
 		"name": "Logistics",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -1081,13 +1103,15 @@
 	"diplomacy": {
 		"name": "Diplomacy",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "An eligible neutral stack with Army Value no greater than 25% of the hero's current army may offer to join for its normal recruitment gold cost.",
+			"description": "Eligible neutral stacks worth up to 25% of your army’s value may join for their normal recruitment Gold cost.",
 			"images": {
 				"small": "SECSK32:0:15",
 				"medium": "SECSKILL:0:15",
@@ -1103,7 +1127,7 @@
 			}
 		},
 		"advanced": {
-			"description": "The deterministic joining threshold becomes 50% of the hero's Army Value.",
+			"description": "Eligible neutral stacks worth up to 50% of your army’s value may join for their normal recruitment Gold cost.",
 			"images": {
 				"small": "SECSK32:0:16",
 				"medium": "SECSKILL:0:16",
@@ -1119,7 +1143,7 @@
 			}
 		},
 		"expert": {
-			"description": "The deterministic joining threshold becomes 75% of the hero's Army Value.",
+			"description": "Eligible neutral stacks worth up to 75% of your army’s value may join for their normal recruitment Gold cost.",
 			"images": {
 				"small": "SECSK32:0:17",
 				"medium": "SECSKILL:0:17",
@@ -1138,7 +1162,9 @@
 	"estates": {
 		"name": "Estates",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -1198,7 +1224,9 @@
 	"learning": {
 		"name": "Learning",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -1255,7 +1283,9 @@
 	"luck": {
 		"name": "Luck",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
@@ -1312,7 +1342,9 @@
 	"divineMandate": {
 		"name": "Divine Mandate",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"combatStatus": {
 			"provider": "divineMandateUses",
 			"description": "Remaining Divine Mandate pairs for this combat. A Hero Action casting a Light Spell grants an Order-only follow-up; issuing an Order grants a Light-Spell-only follow-up. The follow-up lasts until round end and spends a use only when performed. It does not block creature actions or create another pair."
@@ -1322,7 +1354,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end.",
+			"description": "Strengthen attribute-based Order effects by 5 percentage points; up to 1 Orders each combat also cast a useful known Light blessing for free.",
 			"images": {
 				"small": "NH_divineMandate_basic_small.png",
 				"medium": "NH_divineMandate_basic_medium.png",
@@ -1338,7 +1370,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Divine Mandate may be used twice per combat.",
+			"description": "Strengthen attribute-based Order effects by 10 percentage points; up to 2 Orders each combat also cast a useful known Light blessing for free.",
 			"images": {
 				"small": "NH_divineMandate_advanced_small.png",
 				"medium": "NH_divineMandate_advanced_medium.png",
@@ -1354,7 +1386,7 @@
 			}
 		},
 		"expert": {
-			"description": "Divine Mandate may be used three times per combat.",
+			"description": "Strengthen attribute-based Order effects by 15 percentage points; up to 3 Orders each combat also cast a useful known Light blessing for free.",
 			"images": {
 				"small": "NH_divineMandate_expert_small.png",
 				"medium": "NH_divineMandate_expert_medium.png",
@@ -1381,7 +1413,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Friendly ordinary creatures gain +1 Initiative. This does not increase Luck or Lucky Strike damage.",
+			"description": "Friendly creatures gain +1 Initiative.",
 			"images": {
 				"small": "NH_sylvanLuck_basic_small.png",
 				"medium": "NH_sylvanLuck_basic_medium.png",
@@ -1397,7 +1429,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Friendly ordinary creatures gain +2 Initiative. This does not increase Luck or Lucky Strike damage.",
+			"description": "Friendly creatures gain +2 Initiative.",
 			"images": {
 				"small": "NH_sylvanLuck_advanced_small.png",
 				"medium": "NH_sylvanLuck_advanced_medium.png",
@@ -1413,7 +1445,7 @@
 			}
 		},
 		"expert": {
-			"description": "Friendly ordinary creatures gain +3 Initiative. This does not increase Luck or Lucky Strike damage.",
+			"description": "Friendly creatures gain +3 Initiative.",
 			"images": {
 				"small": "NH_sylvanLuck_expert_small.png",
 				"medium": "NH_sylvanLuck_expert_medium.png",
@@ -1432,7 +1464,9 @@
 	"metamagic": {
 		"name": "Metamagic",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"combatStatus": {
 			"provider": "metamagicUses",
 			"description": "Remaining Metamagic uses for this combat. A use is consumed only when the extra spell is actually cast. If you do not use the optional action before the round ends, it expires without spending a use. Metamagic uses are not Spell Actions."
@@ -1442,7 +1476,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends your one Metamagic use for this combat and cannot trigger Metamagic again.",
+			"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +1% spell effectiveness and Magic Penetration.",
 			"images": {
 				"small": "NH_metamagic_prism_basic_small.png",
 				"medium": "NH_metamagic_prism_basic_medium.png",
@@ -1458,7 +1492,7 @@
 			}
 		},
 		"advanced": {
-			"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your two Metamagic uses for this combat and cannot trigger Metamagic again.",
+			"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +2% spell effectiveness and Magic Penetration.",
 			"images": {
 				"small": "NH_metamagic_prism_advanced_small.png",
 				"medium": "NH_metamagic_prism_advanced_medium.png",
@@ -1474,7 +1508,7 @@
 			}
 		},
 		"expert": {
-			"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your three Metamagic uses for this combat and cannot trigger Metamagic again.",
+			"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +3% spell effectiveness and Magic Penetration.",
 			"images": {
 				"small": "NH_metamagic_prism_expert_small.png",
 				"medium": "NH_metamagic_prism_expert_medium.png",
@@ -1493,13 +1527,15 @@
 	"shroudOfMalassa": {
 		"name": "Shroud of Nighon",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "Friendly stacks gain Ghost Walk: they may move through occupied creature hexes but may not end movement on an occupied hex. Flanking melee attacks deal +25% damage.",
+			"description": "Friendly stacks move through occupied hexes and deal +25% flanking melee damage.",
 			"images": {
 				"small": "NH_shroudOfMalassa_basic_small.png",
 				"medium": "NH_shroudOfMalassa_basic_medium.png",
@@ -1515,7 +1551,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Ghost Walk remains active. Flanking melee bonus becomes +40%.",
+			"description": "Friendly stacks move through occupied hexes and deal +40% flanking melee damage.",
 			"images": {
 				"small": "NH_shroudOfMalassa_advanced_small.png",
 				"medium": "NH_shroudOfMalassa_advanced_medium.png",
@@ -1531,7 +1567,7 @@
 			}
 		},
 		"expert": {
-			"description": "Ghost Walk remains active. Flanking melee bonus becomes +60%, and flanking melee attacks deny normal retaliation.",
+			"description": "Friendly stacks move through occupied hexes and deal +60% flanking melee damage; flanking prevents normal retaliation.",
 			"images": {
 				"small": "NH_shroudOfMalassa_expert_small.png",
 				"medium": "NH_shroudOfMalassa_expert_medium.png",
@@ -1550,13 +1586,15 @@
 	"demonicGating": {
 		"name": "Demonic Gating",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "A friendly Inferno stack may spend its Creature Activation to open a Gate on a legal empty hex within 3 hexes. At the start of the next round, one Core stack from the Demonic Reserve arrives there.",
+			"description": "Original Core Inferno stacks can spend an activation once per combat to summon 30% more creatures next round as temporary reinforcements.",
 			"images": {
 				"small": "NH_demonicGating_basic_small.png",
 				"medium": "NH_demonicGating_basic_medium.png",
@@ -1572,7 +1610,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Gating may bring Core or Elite reserve stacks.",
+			"description": "Original Core and Elite Inferno stacks can spend an activation once per combat to summon 30% more creatures next round as temporary reinforcements.",
 			"images": {
 				"small": "NH_demonicGating_advanced_small.png",
 				"medium": "NH_demonicGating_advanced_medium.png",
@@ -1588,7 +1626,7 @@
 			}
 		},
 		"expert": {
-			"description": "Gating may bring Core, Elite, or Champion reserve stacks.",
+			"description": "Original Core, Elite and Champion Inferno stacks can spend an activation once per combat to summon 30% more creatures next round as temporary reinforcements.",
 			"images": {
 				"small": "NH_demonicGating_expert_small.png",
 				"medium": "NH_demonicGating_expert_medium.png",
@@ -1607,13 +1645,15 @@
 	"necromancy": {
 		"name": "Necromancy",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 50% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
+			"description": "After victory, raise Skeletons from 10% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 50% less Leadership.",
 			"images": {
 				"small": "SECSK32:0:39",
 				"medium": "SECSKILL:0:39",
@@ -1629,7 +1669,7 @@
 			}
 		},
 		"advanced": {
-			"description": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 60% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
+			"description": "After victory, raise Skeletons from 20% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 60% less Leadership.",
 			"images": {
 				"small": "SECSK32:0:40",
 				"medium": "SECSKILL:0:40",
@@ -1645,7 +1685,7 @@
 			}
 		},
 		"expert": {
-			"description": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 70% less Leadership; round their discounted requirement up to a whole point, minimum 1.",
+			"description": "After victory, raise Skeletons from 30% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 70% less Leadership.",
 			"images": {
 				"small": "SECSK32:0:41",
 				"medium": "SECSKILL:0:41",
@@ -1664,7 +1704,9 @@
 	"bloodrage": {
 		"name": "Bloodrage",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"combatStatus": {
 			"provider": "bloodrageDamage",
 			"description": "Current cumulative creature damage bonus from Bloodrage, up to the cap for the learned rank."
@@ -1725,13 +1767,15 @@
 	"bulwarkOfTheMire": {
 		"name": "Bulwark of the Mire",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "While a friendly stack Defends, it gains additional physical damage reduction equal to 5% + 0.10% × Hero Defense until its next activation. The first melee attacker is struck pre-emptively for 50% normal damage.",
+			"description": "Defending stacks gain physical protection based on your hero’s Defense and strike the first melee attacker for 50% damage.",
 			"images": {
 				"small": "NH_bulwarkOfTheMire_basic_small.png",
 				"medium": "NH_bulwarkOfTheMire_basic_medium.png",
@@ -1747,7 +1791,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Bulwark reduction becomes 7.5% + 0.15% × Hero Defense; pre-emptive damage becomes 75%; the stack reflects 25% of actual melee physical damage received after reductions.",
+			"description": "Defending stacks gain physical protection based on your hero’s Defense and strike the first melee attacker for 75% damage while reflecting 25% of melee damage received.",
 			"images": {
 				"small": "NH_bulwarkOfTheMire_advanced_small.png",
 				"medium": "NH_bulwarkOfTheMire_advanced_medium.png",
@@ -1763,7 +1807,7 @@
 			}
 		},
 		"expert": {
-			"description": "Bulwark reduction becomes 10% + 0.20% × Hero Defense; pre-emptive damage becomes 100%; melee reflection becomes 50%.",
+			"description": "Defending stacks gain physical protection based on your hero’s Defense and strike the first melee attacker for 100% damage while reflecting 50% of melee damage received.",
 			"images": {
 				"small": "NH_bulwarkOfTheMire_expert_small.png",
 				"medium": "NH_bulwarkOfTheMire_expert_medium.png",
@@ -1782,13 +1826,15 @@
 	"elementalRebirth": {
 		"name": "Elemental Rebirth",
 		"specialty": [],
-		"tags": {"special": true},
+		"tags": {
+			"special": true
+		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "When a non-summoned allied stack is destroyed, summon a random Elite Elemental stack at that position with aggregate HP equal to 25% of the destroyed stack's maximum aggregate HP.",
+			"description": "Fallen non-summoned allies create temporary random Elite Elementals with 25% of the lost stack’s battle-start maximum total HP.",
 			"images": {
 				"small": "NH_elementalRebirth_basic_small.png",
 				"medium": "NH_elementalRebirth_basic_medium.png",
@@ -1804,7 +1850,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Reborn Elemental HP becomes 40% of the destroyed stack's maximum aggregate HP.",
+			"description": "Fallen non-summoned allies create temporary random Elite Elementals with 40% of the lost stack’s battle-start maximum total HP.",
 			"images": {
 				"small": "NH_elementalRebirth_advanced_small.png",
 				"medium": "NH_elementalRebirth_advanced_medium.png",
@@ -1820,7 +1866,7 @@
 			}
 		},
 		"expert": {
-			"description": "Reborn Elemental HP becomes 50% of the destroyed stack's maximum aggregate HP.",
+			"description": "Fallen non-summoned allies create temporary random Elite Elementals with 50% of the lost stack’s battle-start maximum total HP.",
 			"images": {
 				"small": "NH_elementalRebirth_expert_small.png",
 				"medium": "NH_elementalRebirth_expert_medium.png",

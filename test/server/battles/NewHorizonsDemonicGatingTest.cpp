@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../HistoricalFactionPerkRules.h"
 #include "../../SpellPointTestUtils.h"
 
 #include "BattleTestFixture.h"
@@ -52,6 +53,8 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		BattleTestFixture::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			historicalFactionPerkRules());
 		for(const auto & object : loaded->objects)
 			if(auto * hero = dynamic_cast<CGHeroInstance *>(object.get()); hero && hero->getOwner() == PlayerColor(0))
 				hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:calh")));
@@ -168,6 +171,8 @@ protected:
 			rank, ChangeValueMode::ABSOLUTE);
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
 		state.selected.clear();
+		if(rank >= MasteryLevel::ADVANCED)
+			state.select("new-horizons:demonicGating", "new-horizons:demonicGating.reinforcedGate", rank);
 		state.select("new-horizons:demonicGating", perkId, rank);
 		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:demonicGating", perkId));
 	}
@@ -405,12 +410,13 @@ protected:
 		FAIL() << "No legal Demonic Gating offer contained " << perk;
 	}
 
-	void grantChainGate(bool swift = false)
+	void grantChainGate(bool swift = false, bool hellfire = false)
 	{
 		const SecondarySkill gating(SecondarySkill::decode("new-horizons:demonicGating"));
 		attackerSideHero->setSecSkillLevel(gating, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		ASSERT_NO_FATAL_FAILURE(acceptGatingPerk(swift ? "new-horizons:demonicGating.swiftGate"
-			: "new-horizons:demonicGating.wideGate", MasteryLevel::BASIC));
+			: hellfire ? "new-horizons:demonicGating.hellfireArrival"
+			: "new-horizons:demonicGating.reinforcedGate", MasteryLevel::BASIC));
 		attackerSideHero->setSecSkillLevel(gating, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		ASSERT_NO_FATAL_FAILURE(acceptGatingPerk("new-horizons:demonicGating.chainGate", MasteryLevel::ADVANCED));
 	}
@@ -692,6 +698,7 @@ TEST_F(NewHorizonsDemonicGatingTest, MasterGateContinuationMayOpenAnotherGateBut
 	});
 
 	BattleAction secondGate = firstGate;
+	secondGate.target.clear();
 	const auto secondGateHex = legalGateHex(active);
 	ASSERT_TRUE(secondGateHex.isAvailable());
 	secondGate.aimToHex(secondGateHex);
@@ -779,6 +786,8 @@ TEST_F(NewHorizonsDemonicGatingTest, FailedPostMoveGateConsumesActivationWithout
 	trap->casterSide = BattleSide::DEFENDER;
 	trap->passable = true;
 	trap->trap = true;
+	trap->hidden = true;
+	trap->nativeVisible = false; // The route is legal until the unseen trap interrupts it.
 	battle()->obstacles.push_back(trap);
 	Bonus moralePenalty(BonusDuration::ONE_BATTLE, BonusType::MORALE,
 		BonusSource::OTHER, -3, BonusSourceID());
@@ -1163,10 +1172,7 @@ TEST_F(NewHorizonsDemonicGatingTest, HellfireArrivalDealsFifteenPercentAggregate
 
 TEST_F(NewHorizonsDemonicGatingTest, HellfireLethalKillByGatedUnitArmsChainGate)
 {
-	grantChainGate();
-	auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	state.select("new-horizons:demonicGating",
-		"new-horizons:demonicGating.hellfireArrival", MasteryLevel::ADVANCED);
+	grantChainGate(false, true);
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(
 		"new-horizons:demonicGating", "new-horizons:demonicGating.hellfireArrival"));
 

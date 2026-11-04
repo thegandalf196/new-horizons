@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsDemonicGating.h"
 #include "DreadCavalryProjection.h"
 #include "BattleAI.h"
 #include "BattleAITiming.h"
@@ -240,7 +241,7 @@ std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoC
 		|| source->creatureId().toCreature()->getFactionID() != FactionID::INFERNO)
 		return std::nullopt;
 	const auto * hero = battle->battleGetFightingHero(side);
-	if(!hero)
+	if(!hero || newHorizonsDemonicGating::usesTemporaryGating(hero))
 		return std::nullopt;
 	const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
 	if(rank <= 0)
@@ -555,6 +556,9 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	const auto currentBattle = cb->getBattle(battleID);
 	if(currentBattle && shouldUseCreatureCatapult(*currentBattle, stack, result, playerID))
 		result = useCatapult(battleID, stack);
+
+	if(auto gate = evaluator.chooseTemporaryGate(stack, result))
+		result = *gate;
 
 	if(result.actionType == EActionType::DEFEND)
 	{

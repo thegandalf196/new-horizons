@@ -128,10 +128,9 @@ std::optional<Rules> rulesFor(const JsonNode & rules, SpellID spell)
 }
 
 int64_t damage(const Rules & rules, int64_t health, int32_t power,
-	int32_t coefficient, int32_t warcasting, int32_t empower)
+	int32_t coefficient, int32_t empower)
 {
-	if(health < 0 || power < 0 || coefficient < 10000 || coefficient > 1000000
-		|| warcasting < 0 || warcasting > 200 || empower < 0 || empower > 100
+	if(health < 0 || power < 0 || coefficient < 10000 || coefficient > 1000000 || empower < 0 || empower > 100
 		|| rules.baseBasisPoints < 0 || rules.maximumBasisPoints < rules.baseBasisPoints
 		|| rules.maximumBasisPoints > 10000 || rules.powerBasisPointsPerSpellPower < 1
 		|| rules.powerBasisPointsPerSpellPower > 10000)
@@ -140,10 +139,10 @@ int64_t damage(const Rules & rules, int64_t health, int32_t power,
 	// Fixed-width integer arithmetic retains fractional rank/modifiers through
 	// the sole final floor. Even maximal int64 health and int32 inputs fit 256 bits.
 	using Wide = boost::multiprecision::uint256_t;
-	const Wide denominator = 100000000;
+	const Wide denominator = 1000000;
 	const Wide base = Wide(rules.baseBasisPoints) * denominator;
 	const Wide term = Wide(power) * rules.powerBasisPointsPerSpellPower
-		* coefficient * (100 + warcasting) * (100 + empower);
+		* coefficient * (100 + empower);
 	const Wide cap = Wide(rules.maximumBasisPoints) * denominator;
 	const Wide numerator = std::min(Wide(base + term), cap);
 	return (Wide(health) * numerator / (denominator * 10000)).convert_to<int64_t>();

@@ -15,7 +15,6 @@
 #include "IBattleState.h"
 #include "SideInBattle.h"
 #include "SiegeInfo.h"
-#include "NewHorizonsWarcasting.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsDiscipline.h"
@@ -108,7 +107,6 @@ public:
 			crisisCommand.validatePhysicalCureSerialization(h);
 		}
 	}
-	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const override
 	{
 		return sides.at(side).relentlessAssault;
@@ -117,15 +115,6 @@ public:
 	{
 		return sides.at(side).heroActionAllowances;
 	}
-	void validateReactiveWeaveStates() const;
-	template <typename Handler> void validateReactiveWeaveSerialization(Handler & h) const
-	{
-		if(h.saving)
-			validateReactiveWeaveStates();
-		for(const auto & side : sides)
-			side.warcastingState.validateReactiveSerialization(h);
-	}
-
 	template <typename Handler> void validateSharedPurposeSerialization(Handler & h) const
 	{
 		for(const auto & side : sides)
@@ -258,13 +247,10 @@ public:
 	{
 		newHorizonsProtectedMobility::validateRulesSerialization(magicRules, supported);
 	}
-	const SpellResponseState & getSpellResponseState(BattleSide side) const override
-	{
-		static const SpellResponseState empty;
-		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-			return empty;
-		return sides.at(side).spellResponseState;
-	}
+	const SpellResponseState & getSpellResponseState(BattleSide side) const override;
+	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
+	void setMetamagicPointState(BattleSide side, const MetamagicPointState & state) override;
+	void validateMetamagicPointSerialization(bool supported) const;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override
 	{
@@ -350,7 +336,15 @@ public:
 			ret.push_back({gate.creature, gate.position});
 		return ret;
 	}
-	bool getChainGateArmed(BattleSide side) const { return sides.at(side).chainGateArmed; }
+	bool getChainGateArmed(BattleSide side) const override { return sides.at(side).chainGateArmed; }
+	bool getMasterGateUsed(BattleSide side) const override { return sides.at(side).masterGateUsed; }
+	uint8_t getPassiveDivineMandateUses(BattleSide side) const override { return sides.at(side).passiveDivineMandateUses; }
+	void setPassiveDivineMandateUses(BattleSide side, uint8_t uses) override
+	{
+		if(uses > 5)
+			throw std::runtime_error("Invalid passive Divine Mandate use count");
+		sides.at(side).passiveDivineMandateUses = uses;
+	}
 	bool hasChainGateState() const
 	{
 		return sides[BattleSide::ATTACKER].hasChainGateState()
@@ -653,8 +647,14 @@ public:
 			sides.at(side).sylvanLuck.validateSerializationPrefix(h);
 	}
 
+	void validatePassiveFactionStateSerialization(bool supported) const;
+
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateMetamagicPointSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
+		if(h.saving)
+			validatePassiveFactionStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(h.saving)
 			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving) validateSylvanTacticsSerialization(h);
@@ -702,7 +702,7 @@ public:
 		if(h.saving)
 			validateMetamagicCapacitySerialization(h);
 		validateRoyalStandardSerialization(h);
-		validateReactiveWeaveSerialization(h);
+
 		validateSharedPurposeSerialization(h);
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
@@ -738,7 +738,7 @@ public:
 			validateConfusionStates();
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CONFUSION_STATE) && hasConfusionState())
 				throw std::runtime_error("Cannot discard Confusion pending state or history from a battle snapshot");
-			validateReactiveWeaveStates();
+
 			validateSpellResponseStates();
 			validateExtendSpellSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION));
 			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
@@ -791,26 +791,6 @@ public:
 				&& hasIndependentDeploymentState())
 				throw std::runtime_error("Cannot discard independent deployment state");
 		}
-		const auto validBloodrageSnapshot = [](const SideInBattle & side)
-		{
-			if(side.bloodrageRank < 0 || side.bloodrageRank > 3
-				|| side.bloodrageDamagePercent < 0
-				|| side.bloodrageSpeedBonus < 0 || side.bloodrageSpeedBonus > 1
-				|| side.bloodrageAdditionalRetaliations < 0 || side.bloodrageAdditionalRetaliations > 1
-				|| (side.bloodrageLowHealthIncrement != 0
-					&& (side.bloodrageRank == 0 || side.bloodrageLowHealthIncrement
-						!= newHorizonsBloodrage::incrementForRank(side.bloodrageRank)))
-				|| (side.bloodragePainIncrement != 0
-					&& (side.bloodrageRank == 0 || side.bloodragePainIncrement
-						!= newHorizonsBloodrage::incrementForRank(side.bloodrageRank)))
-				|| (side.bloodrageRank < 2
-					&& (side.bloodrageSpeedBonus != 0 || side.bloodrageAdditionalRetaliations != 0)))
-				return false;
-			const auto baseCap = newHorizonsBloodrage::capForRank(side.bloodrageRank);
-			const auto extendedCap = newHorizonsBloodrage::capForRank(side.bloodrageRank, true);
-			return (side.bloodrageCapPercent == baseCap || side.bloodrageCapPercent == extendedCap)
-				&& side.bloodrageDamagePercent <= side.bloodrageCapPercent;
-		};
 		if(h.saving)
 		{
 			for(const auto & side : sides)
@@ -849,17 +829,6 @@ public:
 			if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE)
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
 				throw std::runtime_error("Cannot save typed Hero Action budgets in an older format");
-			if(newHorizonsWarcasting::enabled(magicRules)
-				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
-				throw std::runtime_error("Cannot save an active Warcasting battle in an older format");
-			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SYNTHESIS)
-				&& (sides[BattleSide::ATTACKER].warcastingState.hasConsumedBonus
-					|| sides[BattleSide::DEFENDER].warcastingState.hasConsumedBonus))
-				throw std::runtime_error("Cannot discard Warcasting consumption history in an older format");
-			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_SEQUENCE)
-				&& (sides[BattleSide::ATTACKER].warcastingState.hasRecentActionHistory()
-					|| sides[BattleSide::DEFENDER].warcastingState.hasRecentActionHistory()))
-				throw std::runtime_error("Cannot discard Hero Action sequence history in an older format");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 				throw std::runtime_error("Cannot discard Chain Gate battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_GATE)
@@ -907,8 +876,8 @@ public:
 		}
 		if(h.saving)
 		{
-			if(!validBloodrageSnapshot(sides[BattleSide::ATTACKER])
-				|| !validBloodrageSnapshot(sides[BattleSide::DEFENDER]))
+			if(!newHorizonsBloodrage::validSnapshot(sides[BattleSide::ATTACKER])
+				|| !newHorizonsBloodrage::validSnapshot(sides[BattleSide::DEFENDER]))
 				throw std::runtime_error("Invalid Bloodrage battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_BLOODRAGE_CAP)
 				&& (sides[BattleSide::ATTACKER].bloodrageCapPercent
@@ -998,8 +967,8 @@ public:
 				for(auto & side : sides)
 					side.bloodragePainIncrement = 0;
 			}
-			if(!h.saving && (!validBloodrageSnapshot(sides[BattleSide::ATTACKER])
-				|| !validBloodrageSnapshot(sides[BattleSide::DEFENDER])))
+			if(!h.saving && (!newHorizonsBloodrage::validSnapshot(sides[BattleSide::ATTACKER])
+				|| !newHorizonsBloodrage::validSnapshot(sides[BattleSide::DEFENDER])))
 				throw std::runtime_error("Invalid saved Bloodrage rank, cap, or damage state");
 		}
 		else if(!h.saving)
@@ -1112,102 +1081,11 @@ public:
 			validateMetamagicCapacitySerialization(h);
 			const bool usesSharedActionBudget = heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE);
 			for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			{
-				auto & side = sides.at(sideId);
-				auto & allowances = side.heroActionAllowances;
-				if(!usesSharedActionBudget)
-				{
-					if(allowances != HeroActionAllowanceState{})
-						throw std::runtime_error("Saved Hero Action allowance state requires shared action rules");
-					continue;
-				}
-				const bool noPreRoundActionHistory = !side.heroCommandUsed && side.castSpellsCount == 0
-					&& side.metamagicPendingCount == 0 && side.metamagicUsesConsumed == 0
-					&& side.activeOrder == HeroCommand::NONE && side.orderStates.empty() && !side.focusFire
-					&& side.metamagicSequenceSpells.empty();
-				const bool cleanUninitializedLedger = allowances == HeroActionAllowanceState{};
-
-				if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
-				{
-					if(round <= 0)
-					{
-						if(!noPreRoundActionHistory)
-							throw std::runtime_error("Action history exists before the first playable battle round");
-						if(!cleanUninitializedLedger)
-							throw std::runtime_error("Hero Action allowances exist before the first playable battle round");
-						continue;
-					}
-					if(allowances.currentRound != round)
-						throw std::runtime_error("Hero Action allowance round does not match battle round");
-					allowances.validateShape();
-
-				}
-				else if(round <= 0)
-				{
-					if(!noPreRoundActionHistory)
-						throw std::runtime_error("Action history exists before the first playable battle round");
-					if(!cleanUninitializedLedger)
-						throw std::runtime_error("Hero Action allowances exist before the first playable battle round");
-				}
-				else
-				{
-					// Old saves represented both a consumed Hero Action and an available
-					// Metamagic continuation with independent counters. Reconstruct the
-					// typed grants once from that authoritative legacy snapshot.
-					allowances.resetForRound(round);
-					if(side.heroCommandUsed || side.castSpellsCount > 0)
-					{
-						const auto baseAction = allowances.eligibleAllowance(
-							HeroActionAllowanceState::ActionKind::SPELL, round);
-						if(!baseAction || baseAction->allowance != HeroActionAllowanceState::AllowanceKind::HERO
-							|| !allowances.consumeAllowance(baseAction->grantId,
-								HeroActionAllowanceState::ActionKind::SPELL, round))
-							throw std::runtime_error("Could not migrate spent legacy Hero Action");
-					}
-					if(side.metamagicPendingCount > 1)
-						throw std::runtime_error("Unsupported legacy pending Metamagic allowance count");
-					if(side.metamagicPendingCount == 1)
-					{
-						if(side.castSpellsCount == 0 && !side.heroCommandUsed)
-							throw std::runtime_error("Legacy Metamagic grant has no consumed Hero Action");
-						const bool grandContinuation = side.metamagicGrandUsed && side.metamagicSequenceSpells.size() == 2;
-						allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
-							grandContinuation ? HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND
-								: HeroActionAllowanceState::GrantSource::METAMAGIC,
-							round);
-					}
-				}
-
-				uint32_t metamagicGrantCount = 0;
-				uint32_t grandGrantCount = 0;
-				for(const auto & grant : allowances.grants)
-				{
-					if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC)
-						++metamagicGrantCount;
-					else if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND)
-						++grandGrantCount;
-				}
-				if(metamagicGrantCount + grandGrantCount != side.metamagicPendingCount
-					|| metamagicGrantCount > 1 || grandGrantCount > 1
-					|| (metamagicGrantCount != 0 && side.metamagicSequenceSpells.size() != 1)
-					|| (grandGrantCount != 0 && (!side.metamagicGrandUsed || side.metamagicSequenceSpells.size() != 2)))
-					throw std::runtime_error("Metamagic metadata does not match typed Spell grants");
-			}
+				sides.at(sideId).restoreHeroActionAllowancesAfterLoad(round, usesSharedActionBudget,
+					usesSharedActionBudget && h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES));
 		}
 
-		if(!h.saving && !newHorizonsWarcasting::enabled(magicRules))
-		{
-			// Old readers arrive here with default-empty state. A newer payload that
-			// carries readiness while its saved rules opt out is inconsistent.
-			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			{
-				const auto & orders = sides.at(side).orderStates;
-				const bool empoweredOrder = std::any_of(orders.begin(), orders.end(),
-					[](const HeroOrderState & order) { return order.warcastingBonusPercent != 0; });
-				if(sides.at(side).warcastingState != AlternatingHeroActionState{} || empoweredOrder)
-					throw std::runtime_error("Saved Warcasting state requires the opt-in magic rules");
-			}
-		}
+
 
 		if(!h.saving)
 		{
@@ -1365,9 +1243,10 @@ public:
 		if(!h.saving)
 		{
 			validateSeizeInitiativeSerialization(h);
+			validatePassiveFactionStateSerialization(true);
 			validateConfusionStates();
 			validateDefiantSerialization(h);
-			validateReactiveWeaveStates();
+
 			validateSpellResponseStates();
 			validateCrossSchoolFormulaSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_CROSS_SCHOOL_FORMULA));
 			validateOverwhelmingFormulaStates();
@@ -1459,6 +1338,10 @@ public:
 	int32_t getWallStructuralHP(EWallPart partOfWall) const override;
 	EGateState getGateState() const override;
 
+	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override
+	{
+		return getSide(side).wisdomCombatState;
+	}
 	bool hasCompletedHeroSpellCast(BattleSide side) const override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -1516,6 +1399,7 @@ public:
 	void removeUnit(uint32_t id) override;
 
 	void addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
+	std::vector<Bonus> getLocalSpellEffects(uint32_t id) const override;
 	battle::BattleEffectSnapshot captureBattleEffects(uint32_t id) const override;
 	void exchangeBattleEffects(const battle::BattleEffectExchange & exchange) override;
 	void updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
@@ -1531,7 +1415,6 @@ public:
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	void setDoubleCommandState(BattleSide side, const DoubleCommandState & state) override;
 	void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state) override;
-	void armReactiveWeave(BattleSide side, int32_t round, int32_t empowerment) override;
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	void awardBattlecraftMastery(BattleSide side, uint32_t unitId, int32_t awardRound,
 		BattlecraftMasteryAction action) override;

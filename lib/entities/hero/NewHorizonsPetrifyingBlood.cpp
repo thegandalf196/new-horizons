@@ -39,6 +39,7 @@ bool resolvePetrifyingBloodPresentation(const CHero & hero, const JsonNode & rul
 		return false;
 	validatePetrifyingBloodSerialization(rules, true);
 	result.name = LIBRARY->generaltexth->translate("new-horizons.heroSpecialty.petrifyingBlood.name");
+	result.summary = "Once each round, Basilisks and Greater Basilisks attempt to petrify the first melee attacker that damages them.";
 	result.description = LIBRARY->generaltexth->translate("new-horizons.heroSpecialty.petrifyingBlood.description");
 	result.creature = CreatureID(CreatureID::decode("core:basilisk"));
 	result.artwork = "newHorizons/heroSpecialties/BronPetrifyingBlood";

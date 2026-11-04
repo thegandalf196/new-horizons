@@ -10,12 +10,68 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 import import_new_horizons_art_wave as importer
-from .nhart_perk_presentations import header_before_perk_presentation, validate_perk_presentation, validate_perk_payload
+from .nhart_perk_presentations import (header_before_perk_presentation, validate_perk_presentation,
+    validate_perk_payload, REWORKED_PERK_REBINDINGS, header_before_reworked_perks)
 from .nhart_sylvan_perk_presentations import validate_sylvan_family
 from .nhart_config_revisions import config_at_revision, wave_config_revision
 from .nhart_legacy_art_lineage import validate_art_roles
+from .nhart_hero_interface_buttons import validate_hero_interface_buttons
 from .nhart_specialty_lineage import specialty_family
 from .nhart_test_resources import later_art_waves, later_art_resources, read_resource, open_image, verified_index, entries_before_wave, resource_before_wave
+
+
+# Accepted faction rebindings change presentation identities, not selected bytes.
+# Keep the original wave ledger/hashes intact and reverse only these exact edits
+# when checking its historical header. This is test-only lineage, not a loader.
+FACTION_BINDINGS = '''		{"new-horizons:metamagic.arcaneCatalyst", "NH_perk_arcane_acquisition"},
+		{"new-horizons:metamagic.arcaneShield", "NH_perk_echoed_duration"},
+		{"new-horizons:metamagic.manaConduit", "NH_perk_arcane_economy"},
+		{"new-horizons:metamagic.lingeringMagic", "NH_perk_spell_sequencing"},
+		{"new-horizons:metamagic.arcaneFeedback", "NH_perk_focused_pairing"},
+		{"new-horizons:metamagic.spellFracture", "NH_perk_perfect_sequence"},
+		{"new-horizons:metamagic.arcaneWellspring", "NH_perk_countersequence"},
+		{"new-horizons:metamagic.arcaneAttunement", "NH_perk_spell_buffer_v2"},
+		{"new-horizons:metamagic.arcaneEcho", "NH_perk_formula_reserve"},
+		{"new-horizons:metamagic.arcaneSingularity", "NH_perk_grand_metamagic"},
+		{"new-horizons:divineMandate.knightlyValor", "NH_perk_knightly_sequence"},
+		{"new-horizons:divineMandate.shieldOfFaith", "NH_perk_shared_purpose"},
+		{"new-horizons:divineMandate.righteousDiscipline", "NH_perk_crown_and_altar"},
+		{"new-horizons:divineMandate.unwaveringStandard", "NH_perk_royal_standard"},
+		{"new-horizons:divineMandate.inspiringLeadership", "NH_perk_divine_discipline"},
+		{"new-horizons:divineMandate.consecratedArms", "NH_perk_purifying_mandate"},
+		{"new-horizons:divineMandate.divineFury", "NH_perk_consecrated_casting"},
+		{"new-horizons:demonicGating.infernalDiscipline", "NH_perk_reserve_discipline"},
+		{"new-horizons:demonicGating.infernalOnslaught", "NH_perk_mobile_gate"},
+		{"new-horizons:demonicGating.hellstride", "NH_perk_chain_gate"},
+'''
+FACTION_RENAMES = {
+    'new-horizons:shroudOfMalassa.ambusher': ('new-horizons:shroudOfMalassa.shadowHex', 'NH_perk_ambusher'),
+    'new-horizons:shroudOfMalassa.nightProwler': ('new-horizons:shroudOfMalassa.exposedWeakness', 'NH_perk_night_prowler'),
+    'new-horizons:elementalRebirth.elementalMemory': ('new-horizons:elementalRebirth.elementalConduit', 'NH_perk_elemental_memory'),
+    'new-horizons:elementalRebirth.elementalWard': ('new-horizons:elementalRebirth.elementalCataclysm', 'NH_perk_elemental_ward'),
+}
+WAVE_CURRENT_IDS = {
+    **{old: current for old, (current, _) in REWORKED_PERK_REBINDINGS.items()},
+    **{old: current for old, (current, _) in FACTION_RENAMES.items()},
+    'new-horizons:divineMandate.sharedPurpose': 'new-horizons:divineMandate.shieldOfFaith',
+    'new-horizons:divineMandate.consecratedCasting': 'new-horizons:divineMandate.divineFury',
+    'new-horizons:divineMandate.royalStandard': 'new-horizons:divineMandate.unwaveringStandard',
+    'new-horizons:divineMandate.divineDiscipline': 'new-horizons:divineMandate.inspiringLeadership',
+    'new-horizons:divineMandate.knightlySequence': 'new-horizons:divineMandate.knightlyValor',
+}
+
+
+def header_before_faction_rebindings(header):
+    if header.count(FACTION_BINDINGS) != 1:
+        raise ValueError('Current faction binding block changed')
+    historical = header.replace(FACTION_BINDINGS, '', 1)
+    for old, (current, icon) in FACTION_RENAMES.items():
+        before = '\t\t{"' + old + '", "' + icon + '"},\n'
+        after = '\t\t{"' + current + '", "' + icon + '"},\n'
+        if historical.count(after) != 1 or before in historical:
+            raise ValueError('Current faction renamed binding changed')
+        historical = historical.replace(after, before, 1)
+    return historical
 
 
 def config_at_wave(config, waves, index, config_path):
@@ -224,11 +280,16 @@ class ArtAdditionsTest(unittest.TestCase):
         lookup = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', self.header))
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         current_ids = {row['id'] for skill in roster['skills'].values() for row in skill['perks']}
+        historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
+                                     header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
-                self.assertIn(row['id'], current_ids); self.assertEqual(lookup[row['id']], row['icon44'])
+                current_id = WAVE_CURRENT_IDS.get(row['id'], row['id'])
+                self.assertIn(current_id, current_ids)
+                self.assertEqual(lookup[current_id], row['icon44'])
+                self.assertEqual(historical[row['id']], row['icon44'])
                 self.assertEqual(len(row['resources']), 7)
                 stem = row['icon44']
                 for size in (44, 32):
@@ -240,6 +301,21 @@ class ArtAdditionsTest(unittest.TestCase):
                     for index, state in enumerate(('normal', 'pressed', 'disabled', 'highlighted'))])
                 for frame in frames:
                     self.assertEqual(open_image('SPRITES/' + frame['file']).size, (44, 44))
+
+    def test_faction_rebinding_history_is_exact_and_preserves_unrelated_edits(self):
+        historical = header_before_faction_rebindings(self.header)
+        bindings = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', FACTION_BINDINGS))
+        current = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
+        ids = {perk['id'] for skill in current['skills'].values() for perk in skill['perks']}
+        self.assertEqual(len(bindings), 20)
+        self.assertTrue(bindings.keys() <= ids)
+        for changed in (self.header.replace('NH_perk_arcane_acquisition', 'NH_changed', 1),
+                        self.header.replace('NH_perk_ambusher', 'NH_changed', 1),
+                        self.header.replace(FACTION_BINDINGS, FACTION_BINDINGS * 2)):
+            with self.assertRaises(ValueError):
+                header_before_faction_rebindings(changed)
+        changed = self.header.replace('NH_perk_neutral', 'NH_changed_neutral')
+        self.assertNotEqual(header_before_faction_rebindings(changed), historical)
 
     def test_optional_perk_presentations_preserve_named_condition_and_historical_shield(self):
         for wave in self.waves:
@@ -255,9 +331,18 @@ class ArtAdditionsTest(unittest.TestCase):
         for wave in self.waves:
             validate_art_roles(wave, manifest, read_resource)
 
+    def test_selected_hero_interface_buttons_preserve_native_states_and_provenance(self):
+        manifest = {row['resource']: row for row in self.manifest['entries']}
+        for wave in self.waves:
+            validate_hero_interface_buttons(wave.get('heroInterfaceButtons', []), manifest, read_resource)
+
     def test_header_baseline_and_status_only_graphics(self):
         for index, wave in enumerate(self.waves):
-            header = self.header
+            # Interface-button wave was selected after the faction rebindings;
+            # earlier wave anchors must still see their exact original IDs.
+            header = header_before_reworked_perks(self.header)
+            if not wave.get('heroInterfaceButtons'):
+                header = header_before_faction_rebindings(header)
             for later in self.waves[index:]:
                 for row in later['perks']:
                     line = '\t\t{"' + row['id'] + '", "' + row['icon44'] + '"},\n'
@@ -296,7 +381,8 @@ class ArtAdditionsTest(unittest.TestCase):
         for wave in self.waves:
             for row in wave['perks'] + wave['statuses'] + wave.get('spells', []):
                 self.assertIn('no Final' if row in wave['perks'] else 'not Final', row['approval'])
-                matches = [entry for entry in inventory if entry['Item / ID'].endswith('(' + row['id'] + ')')]
+                current_id = WAVE_CURRENT_IDS.get(row['id'], row['id'])
+                matches = [entry for entry in inventory if entry['Item / ID'].endswith('(' + current_id + ')')]
                 self.assertEqual(len(matches), 1); self.assertEqual(matches[0]['Art'], 'Provisional')
             for name in wave['resources']:
                 self.assertFalse((ROOT / 'Mods/new-horizons/Images' / name.removeprefix('SPRITES/')).exists())

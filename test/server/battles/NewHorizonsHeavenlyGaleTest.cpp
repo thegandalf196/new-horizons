@@ -224,7 +224,7 @@ TEST_F(NewHorizonsHeavenlyGaleTest, AegisCombinesWithTheSchoolCoefficientBeforeF
 		<< "45 basis points x 130% Advanced Light x 120% Aegis floors to 70; separate intermediate floors would produce 69";
 }
 
-TEST_F(NewHorizonsHeavenlyGaleTest, WarcastingScalesOnlyTheSpellPowerTerm)
+TEST_F(NewHorizonsHeavenlyGaleTest, WarcastingDoesNotScaleTheSpellPowerTerm)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto skill = SecondarySkill(SecondarySkill::decode(warcastingSkill));
@@ -235,11 +235,10 @@ TEST_F(NewHorizonsHeavenlyGaleTest, WarcastingScalesOnlyTheSpellPowerTerm)
 
 	spells::BattleCast castEvent(battle(), attackerSideHero, spells::Mode::HERO, heavenlyGaleSpell().toSpell());
 	const auto mechanics = heavenlyGaleSpell().toSpell()->battleMechanics(&castEvent);
-	ASSERT_EQ(mechanics->getWarcastingBonusPercent(), 10);
 	ASSERT_TRUE(cast(heavenlyGaleSpell(), friendly));
 	ASSERT_EQ(galeBonuses(friendly)->size(), 1u);
-	EXPECT_EQ(galeBonuses(friendly)->front()->val, 5825)
-		<< "Warcasting scales the 750-basis-point Spell Power term while the 5000-basis-point base stays fixed";
+	EXPECT_EQ(galeBonuses(friendly)->front()->val, 5750)
+		<< "The 5000-point base and 750-point Spell Power term are independent of Warcasting";
 }
 
 TEST_F(NewHorizonsHeavenlyGaleTest, EmpowerScalesOnlyTheSpellPowerTerm)
@@ -259,7 +258,7 @@ TEST_F(NewHorizonsHeavenlyGaleTest, EmpowerScalesOnlyTheSpellPowerTerm)
 		attackerSideHero->getMagicRules(), attackerSideHero, spell);
 	ASSERT_EQ(empower, 25);
 	const auto expectedTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		750, 1, coefficient, 0, empower);
+		750, 1, coefficient, empower);
 	spells::BattleCast castEvent(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
 	ASSERT_EQ(spell.toSpell()->battleMechanics(&castEvent)->getEmpowerSpellBonusPercent(), empower);
 

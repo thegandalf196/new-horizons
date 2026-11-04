@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
+#include "PassiveDivineMandate.h"
 #include "CBattleInfoCallback.h"
 #include "CUnitState.h"
 #include "IBattleState.h"
@@ -50,7 +51,8 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 		return 0;
 	const int baseLuck = static_cast<int>(std::clamp<int64_t>(
 		static_cast<int64_t>(attacker->valOfBonuses(BonusType::LUCK))
-			+ attacker->necromancyCombatPassives().luckBonus, minimum, maximum));
+			+ attacker->necromancyCombatPassives().luckBonus
+			+ newHorizonsPassiveDivineMandate::activeOrderRiders(*this, attacker).luck, minimum, maximum));
 	const auto side = playerToSide(battleGetOwner(attacker));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return cap(baseLuck);

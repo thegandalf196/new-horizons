@@ -68,7 +68,6 @@ public:
 
 private:
 	// Prepared snapshots keep their original enclosing-estimate lifetime.
-	std::optional<HeroActionAllowanceState::Selection> orderAllowance;
 	std::optional<HeroOrderState> preparedOrder;
 	const CBattleInfoCallback & battle;
 	const BattleSide side;
@@ -76,7 +75,6 @@ private:
 	const std::vector<uint32_t> & targetIds;
 	const JsonNode * commandRules = nullptr;
 	bool combinedArmsEnabled = false;
-	int warcastingBonus = 0;
 	int divineMandateEfficiencyBonusPercent = 0;
 
 	float coefficient(const char * commandKey, const char * effectKey) const;

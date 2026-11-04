@@ -21,13 +21,14 @@
 		"skills"
 	],
 	"properties": {
-		"quickStudyPolicy": {
+		"metamagicPolicy": {"$ref": "#/definitions/metamagicPolicyV3"},
+		"divineMandatePolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
+		"demonicGatingPolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
+		"bloodragePolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
+		"connoisseurPolicy": {
 			"type": "object", "additionalProperties": false,
-			"required": ["version", "interval"],
-			"properties": {
-				"version": {"type": "integer", "enum": [1]},
-				"interval": {"type": "integer", "minimum": 1, "maximum": 100}
-			}
+			"required": ["version"],
+			"properties": {"version": {"type": "integer", "enum": [1]}}
 		},
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [1, 2]},
@@ -57,6 +58,8 @@
 		}
 	},
 	"definitions": {
+		"passiveFactionSkillPolicyV2": {"type": "object", "additionalProperties": false, "minProperties": 1, "maxProperties": 1, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [2]}}, "description": "Captured version 2 selects the revised faction Skill. Absence preserves its historical policy and definitions."},
+		"metamagicPolicyV3": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [3]}, "adeptAdditionalPoints": {"type": "integer", "minimum": 0, "maximum": 12}}},
 		"necromancyPolicy": {
 			"oneOf": [
 				{"$ref": "#/definitions/necromancyPolicyV1"},
@@ -134,6 +137,7 @@
 			"additionalProperties": false,
 			"properties": {
 				"description": {"type": "string", "minLength": 1},
+				"details": {"type": "string", "minLength": 1},
 				"effect": {"$ref": "#/definitions/effect"}
 			}
 		},
@@ -146,6 +150,7 @@
 				"name": {"type": "string", "minLength": 1},
 				"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},
 				"description": {"type": "string", "minLength": 1},
+				"details": {"type": "string", "minLength": 1},
 				"effect": {"$ref": "#/definitions/effect"}
 			}
 		},
@@ -162,6 +167,7 @@
 					"enum": ["All heroes", "Might-exclusive", "Magic-exclusive", "Castle heroes only", "Rampart heroes only", "Tower heroes only", "Dungeon heroes only", "Inferno heroes only", "Necropolis heroes only", "Stronghold heroes only", "Fortress heroes only", "Conflux heroes only"]
 				},
 				"description": {"type": "string", "minLength": 1},
+				"details": {"type": "string", "minLength": 1},
 				"ranks": {
 					"type": "object",
 					"required": ["basic", "advanced", "expert"],

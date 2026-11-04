@@ -39,6 +39,8 @@ struct DLL_LINKAGE SpecialtyPresentation
 	std::optional<SecondarySkill> skill;
 	// Resolved presentation only; never serialized or used for eligibility.
 	std::optional<std::string> artwork;
+	// Optional plain effect summary; description retains the complete explanation.
+	std::string summary;
 };
 
 DLL_LINKAGE SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,

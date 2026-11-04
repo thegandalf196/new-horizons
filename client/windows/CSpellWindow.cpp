@@ -23,6 +23,7 @@
 #include "../PlayerLocalState.h"
 
 #include "../battle/BattleInterface.h"
+#include "../battle/ArcaneMarkPresentation.h"
 #include "../battle/BattleActionsController.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -47,6 +48,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CCallback.h"
+#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/SpellCostBreakdown.h"
@@ -76,52 +78,6 @@ std::string spellAllowanceSourceName(HeroActionAllowanceState::GrantSource sourc
 		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
 	}
 	return "Additional ability";
-}
-
-const char * spellCostStageTextKey(SpellCostStage::Kind kind)
-{
-	switch(kind)
-	{
-		case SpellCostStage::Kind::LISTED_MULTIPLIER: return "new-horizons.spellCost.modifier.listedMultiplier";
-		case SpellCostStage::Kind::CHOSEN_SPECIALTY: return "new-horizons.spellCost.modifier.chosenSpecialty";
-		case SpellCostStage::Kind::WISDOM: return "new-horizons.spellCost.modifier.wisdom";
-		case SpellCostStage::Kind::ADVENTURE_ARTIFACT: return "new-horizons.spellCost.modifier.adventureArtifact";
-		case SpellCostStage::Kind::KNIGHTLY_SEQUENCE: return "new-horizons.spellCost.modifier.knightlySequence";
-		case SpellCostStage::Kind::PREPARED_CASTER: return "new-horizons.spellCost.modifier.preparedCaster";
-		case SpellCostStage::Kind::ARCHMAGE: return "new-horizons.spellCost.modifier.archmage";
-		case SpellCostStage::Kind::ALLIED_ARMY: return "new-horizons.spellCost.modifier.alliedArmy";
-		case SpellCostStage::Kind::ENEMY_ARMY: return "new-horizons.spellCost.modifier.enemyArmy";
-		case SpellCostStage::Kind::MINIMUM_COST: return "new-horizons.spellCost.modifier.minimumCost";
-		case SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY: return "new-horizons.spellCost.modifier.arcaneEconomy";
-	}
-	return "new-horizons.spellCost.current";
-}
-
-bool hasSpellCostBreakdown(const SpellCostBreakdown & breakdown)
-{
-	return breakdown.listedCost != breakdown.finalCost || !breakdown.stages.empty();
-}
-
-std::string spellCostBreakdownText(const SpellCostBreakdown & breakdown)
-{
-	if(!hasSpellCostBreakdown(breakdown))
-		return {};
-
-	MetaString listed = MetaString::createFromTextID("new-horizons.spellCost.listed");
-	listed.replaceNumber(breakdown.listedCost);
-	MetaString current = MetaString::createFromTextID("new-horizons.spellCost.current");
-	current.replaceNumber(breakdown.finalCost);
-
-	std::string result = listed.toString(&GAME->translator()) + "\n" + current.toString(&GAME->translator());
-	for(const auto & stage : breakdown.stages)
-	{
-		MetaString stageText = MetaString::createFromTextID("new-horizons.spellCost.stage");
-		stageText.replaceRawString(LIBRARY->generaltexth->translate(spellCostStageTextKey(stage.kind)));
-		stageText.replaceNumber(stage.before);
-		stageText.replaceNumber(stage.after);
-		result += "\n" + stageText.toString(&GAME->translator());
-	}
-	return result;
 }
 }
 
@@ -1134,7 +1090,8 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 		const auto battleCallback = battleInterface ? battleInterface->getBattle() : nullptr;
 		const bool metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
 		const auto costBreakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
-		const int spellCost = costBreakdown.finalCost;
+		const int spellCost = newHorizonsMetamagic::minimumSelectionCost(*owner->myHero,
+			*mySpell, battleCallback.get(), costBreakdown.finalCost);
 		if(spellCost > owner->myHero->getManaAvailable() && !metamagicFollowup) //insufficient mana; follow-ups use authoritative preview below
 		{
 			MetaString message = MetaString::createFromTextID("core.genrltxt.206"); // That spell costs %d spell points. Your hero only has %d spell points...
@@ -1160,7 +1117,9 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 		if((combatSpell != inCombat) || inCastle || (!combatSpell && !GAME->interface()->makingTurn))
 		{
 			std::vector<std::shared_ptr<CComponent>> hlp(1, std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
-			GAME->interface()->showInfoDialog(newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel), hlp);
+			GAME->interface()->showInfoDialog(
+				newHorizonsMagic::spellSummaryForHero(owner->myHero, mySpell, schoolLevel), hlp, 0,
+				newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel));
 		}
 		else if(combatSpell)
 		{
@@ -1220,43 +1179,6 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 					GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("vcmi.adventureMap.spellUnknownProblem"));
 			}
 		}
-	}
-}
-
-void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
-{
-	if(mySpell)
-	{
-		const auto breakdown = refreshReadout();
-		const auto heading = spellbookPresentation::levelAndSchools(owner->spellLevels.at(mySpell->getId()),
-			schoolLevel, owner->spellSchools.at(mySpell->getId()), GAME->translator());
-		const auto currentEffect = spellbookPresentation::effectDetail(effectPreview, GAME->translator());
-		const auto currentCost = spellbookPresentation::costLine(breakdown, GAME->translator(),
-			[](const std::string &) { return 0; });
-
-		std::string requirements;
-		if(schoolLocked)
-			requirements += "\n\n" + schoolRequirementText;
-		if(divineMandateLocked)
-			requirements += "\n\n" + divineMandateRequirementText;
-		const auto followup = owner->spellActionOpportunityText(mySpell->id);
-		const auto followupInfo = followup.empty() ? std::string() : "\n\n" + followup;
-		std::string costInfo;
-		if(newHorizonsMagic::rulesActive(owner->myHero->getMagicRules()))
-		{
-			costInfo = spellCostBreakdownText(breakdown);
-			if(!costInfo.empty())
-				costInfo = "\n\n" + costInfo;
-
-			if(newHorizonsMagic::magicArrowOverchargeEnabled(owner->myHero->getMagicRules(), mySpell->id))
-				costInfo += (costInfo.empty() ? "\n\n" : "\n")
-					+ LIBRARY->generaltexth->translate("new-horizons.spellCost.overcharge");
-		}
-		CRClickPopup::createAndPush(heading + "\n\n"
-			+ newHorizonsMagic::spellDescriptionForHero(owner->myHero, mySpell, schoolLevel)
-			+ "\n\n" + currentCost + "\n" + currentEffect
-			+ costInfo + requirements + followupInfo,
-			std::make_shared<CComponent>(ComponentType::SPELL, mySpell->id));
 	}
 }
 
@@ -1341,28 +1263,4 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 
 		refreshReadout();
 	}
-}
-
-SpellCostBreakdown CSpellWindow::SpellArea::refreshReadout()
-{
-	const auto access = spellbookPresentation::access(*owner->myHero, *mySpell, GAME->translator());
-	schoolLocked = access.schoolLocked;
-	schoolRequirementText = access.requirement;
-	divineMandateLocked = !owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->getId());
-	divineMandateRequirementText = divineMandateLocked
-		? LIBRARY->generaltexth->translate("new-horizons.spellbook.lightFollowupOnly") : "";
-	const bool metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
-	const auto breakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
-	const auto battle = owner->myInt->battleInt ? owner->myInt->battleInt->getBattle() : nullptr;
-	effectPreview = newHorizonsMagic::spellEffectPreview(*owner->myHero, *mySpell, battle.get(), metamagicFollowup);
-	const bool unavailable = divineMandateLocked || owner->isAdventureSpellUsedToday(mySpell->id)
-		|| ((breakdown.finalCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect);
-	name->color = unavailable ? ColorRGBA(62, 52, 44) : ColorRGBA(40, 24, 12);
-	cost->color = effect->color = unavailable ? ColorRGBA(90, 24, 14) : ColorRGBA(56, 34, 18);
-	const auto font = ENGINE->renderHandler().loadFont(FONT_TINY);
-	const auto width = [&font](const std::string & text) { return static_cast<int>(font->getStringWidth(text)); };
-	name->setText(mySpell->getNameTranslated());
-	cost->setText(spellbookPresentation::costLine(breakdown, GAME->translator(), width));
-	effect->setText(spellbookPresentation::effectLine(effectPreview, GAME->translator(), width));
-	return breakdown;
 }

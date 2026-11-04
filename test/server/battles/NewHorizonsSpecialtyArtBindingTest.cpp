@@ -260,7 +260,7 @@ struct ResolvedArtCase
 	newHorizonsHeroes::detail::SpecialtyArtworkFamily family;
 	const char * stem;
 };
-constexpr std::array<ResolvedArtCase, 96> resolvedArtCases = {{
+constexpr std::array<ResolvedArtCase, 95> resolvedArtCases = {{
 	{"core:melodia", "remainingSpellSpecialtyReplacements", "core:bless", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "MelodiaBless"},
 	{"core:pyre", "creatureLineSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PyreBallistaLine"},
 	{"core:ash", "remainingSpellSpecialtyReplacements", "core:fireball", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "AshFireball"},
@@ -289,7 +289,6 @@ constexpr std::array<ResolvedArtCase, 96> resolvedArtCases = {{
 	{"core:calh", "creatureLineSpecialties", "core:gog", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "CalhGogLine"},
 	{"core:nymus", "creatureLineSpecialties", "core:pitFiend", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "NymusPitFiendLine"},
 	{"core:straker", "creatureLineSpecialties", "core:walkingDead", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "StrakerWalkingDeadLine"},
-	{"core:zubin", "nonDamageSpellSpecialties", "new-horizons:focusMagic", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "ZubinFocusMagic"},
 	{"core:gretchin", "creatureLineSpecialties", "core:goblin", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GretchinGoblinLine"},
 	{"core:shiva", "creatureLineSpecialties", "core:roc", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ShivaRocLine"},
 	{"core:tyraxor", "creatureLineSpecialties", "core:goblinWolfRider", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TyraxorGoblinWolfRiderLine"},
@@ -426,8 +425,11 @@ protected:
 		}
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+		// Preserve selected Haste artwork coverage for its captured historical target.
+		if(std::string_view(resolvedArtCases.at(GetParam()).target) == "core:haste")
+			magic["spells"]["core:haste"].Struct().erase("heroAccess");
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 	}
 
 	void prepare()
@@ -493,18 +495,20 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, SelectedCreatureArtworkRejectsResolve
 	}
 }
 
-TEST_F(NewHorizonsSpecialtyArtBindingTest, ZubinArtworkRequiresCurrentFocusMagicSuccessor)
+TEST_F(NewHorizonsSpecialtyArtBindingTest, ZubinFireballUsesNativeSpellIcon)
 {
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
-	auto noSuccessor = configured;
-	noSuccessor["nonDamageSpellSpecialties"]["offensiveStartReplacements"].Bool() = false;
-	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:zubin"),
-		noSuccessor, magic, std::nullopt).artwork);
-	EXPECT_FALSE(newHorizonsHeroes::resolveSpecialtyPresentation(prototype("core:zubin"),
-		configured, JsonNode(), std::nullopt).artwork);
+	const auto metadata = newHorizonsHeroes::resolveSpecialtyPresentation(
+		prototype("core:zubin"), configured, magic, std::nullopt);
+	EXPECT_EQ(metadata.spell, SpellID::FIREBALL);
+	EXPECT_FALSE(metadata.artwork);
+	EXPECT_EQ(metadata.name, SpellID(SpellID::FIREBALL).toSpell()->getNameTranslated());
+	EXPECT_NE(metadata.description.find("+15%"), std::string::npos);
+	const auto card = heroSpecialtyPresentation(prototype("core:zubin"), metadata);
+	EXPECT_EQ(card.animation(), AnimationPath::builtin("SPELLSCR"));
+	EXPECT_EQ(card.frame(), SpellID(SpellID::FIREBALL).toSpell()->getIconIndex());
 }
-
 
 TEST_F(NewHorizonsSpecialtyArtBindingTest, SyntheticArmorerIdentityRetainsGenericSkillFallback)
 {

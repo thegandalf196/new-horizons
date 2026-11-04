@@ -20,6 +20,10 @@ class DLL_LINKAGE StackInitializationReceipts final
 	std::tuple<bool, bool, bool, bool, bool, bool, bool> restoredQueueFlags;
 	bool restoredVeteranCohesion;
 	ConfusionState restoredConfusionState;
+	ArcaneMarkState restoredArcaneMarks;
+	int64_t restoredArcaneShieldHitPoints = 0;
+	bool restoredDemonicGateOpened;
+	std::tuple<int64_t, int32_t, int32_t, BattleSide> restoredPhysicalPoison;
 	ForestAmbushState restoredForestAmbush;
 	DreadCavalryState restoredDreadCavalry;
 	int32_t restoredOverwatchReadyRound;

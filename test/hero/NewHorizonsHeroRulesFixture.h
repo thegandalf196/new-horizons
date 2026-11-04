@@ -15,6 +15,30 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/mapping/CMap.h"
+#include <array>
+
+namespace historicalHeroRulesTest
+{
+inline constexpr std::array<const char *, 17> extendedOrdinaryKeys = {
+	"scorchingImpactDamageReductionPercent", "cruelOverseerDefenseReduction",
+	"lanceFormationDefensePerHex", "lanceFormationMaximumDefense",
+	"stormWingsDefenseIgnorePercent", "stormWingsMinimumFlightDistance",
+	"consecratedTargetDefenseIgnorePercent", "featheredFeintPhysicalReductionIgnorePercent",
+	"demonicSolidarityReductionPercent", "ironHideReductionPercent",
+	"graveDustHealingReductionBasisPoints", "cinderReprisalDamagePercent",
+	"emberbrandDamagePercent", "toxicStingChancePercent", "gnollHarriersDamagePercent",
+	"prismaticVanguardPhysicalDamagePercent", "siegeSapperCreatureDefenseIgnorePercent"
+};
+
+// An explicit pre1153 fixture must not inherit any later ordinary specialty
+// from installed defaults, even when its own tested coefficient is absent.
+inline void omitPost1152OrdinarySpecialties(JsonNode & rules)
+{
+	auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	for(const auto * key : extendedOrdinaryKeys)
+		policy.Struct().erase(key);
+}
+}
 
 inline JsonNode testHeroRules()
 {

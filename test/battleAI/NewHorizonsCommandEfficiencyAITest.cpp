@@ -241,7 +241,7 @@ TEST_F(NewHorizonsCommandEfficiencyAITest, DefensiveCommanderAIOrderMatchesHoldT
 	ASSERT_TRUE(order);
 	EXPECT_EQ(order->command, HeroCommand::HOLD_THE_LINE);
 	EXPECT_NE(order->anchorFor(active->unitId()), nullptr);
-	EXPECT_EQ(heroCommands::coefficient(formula, *attackerSideHero, order->warcastingBonusPercent), 23);
+	EXPECT_EQ(heroCommands::coefficient(formula, *attackerSideHero), 23);
 	const auto after = battle()->battleEstimateDamage(incoming);
 	EXPECT_EQ(after.defenderOrderCause, HeroCommand::HOLD_THE_LINE);
 	EXPECT_LT(after.damage.min, before.damage.min);
@@ -275,10 +275,10 @@ TEST_F(NewHorizonsCommandEfficiencyAITest, VeteranCommanderAISecondWindProjectio
 	EXPECT_TRUE(order->secondWindActive);
 	EXPECT_EQ(order->primaryTargetUnitId, windTarget->unitId());
 
-	const int leadershipEfficiency = 120 + 25 + order->warcastingBonusPercent;
+	const int leadershipEfficiency = 120 + 25;
 	const int expectedPercent = std::clamp(50 + static_cast<int>(std::lround(
 		0.015 * static_cast<double>(capacity->capacity) * leadershipEfficiency / 100.0)), 0, 100);
-	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero, order->warcastingBonusPercent), expectedPercent);
+	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero), expectedPercent);
 	const auto after = battle()->battleEstimateDamage(attack);
 	EXPECT_EQ(after.attackerOrderCause, HeroCommand::SECOND_WIND);
 	const auto expectedMinimum = static_cast<int64_t>(std::floor(

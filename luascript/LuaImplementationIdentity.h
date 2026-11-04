@@ -43,6 +43,7 @@ private:
 	bool finished = false;
 	bool canonicalDamageCalculator = false;
 	bool sharedArithmeticTimed = false;
+	bool currentLifeDrain = false;
 
 	unsigned expectedModules() const;
 	void invalidate();

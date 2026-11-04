@@ -24,7 +24,6 @@
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsElementalRebirth.h"
-#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"

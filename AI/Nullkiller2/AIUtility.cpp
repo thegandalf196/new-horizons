@@ -8,9 +8,7 @@
  *
  */
 #include "StdInc.h"
-#include "../../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../../lib/mapObjects/NewHorizonsRecruitersContacts.h"
-#include "../../lib/mapObjects/NewHorizonsSage.h"
 #include "AIUtility.h"
 #include "AIGateway.h"
 #include "Goals/Goals.h"
@@ -19,6 +17,7 @@
 #include "../../lib/UnlockGuard.h"
 #include "../../lib/CConfigHandler.h"
 #include "../../lib/CPlayerState.h"
+#include "../../lib/StartInfo.h"
 #include "../../lib/callback/Calendar.h"
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/CHero.h"
@@ -708,6 +707,17 @@ float teachingMeetingReward(const Nullkiller * aiNk, const CGHeroInstance * trav
 	return reward;
 }
 
+uint64_t ownedMineArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGMine * mine)
+{
+	if(!hero || !mine || hero->getOwner() != aiNk->playerID || mine->getOwner() != aiNk->playerID
+		|| !aiNk->settings->isGarrisonTroopsUsageAllowed() || aiNk->cc->getStartInfo()->restrictedGarrisonsForAI()
+		|| !aiNk->cc->isVisible(mine->visitablePos()) || aiNk->cc->getObj(mine->id, false) != mine)
+		return 0;
+	// Only guards already delivered to this visible mine; pending Company debt
+	// is not an army and never justifies a collection journey.
+	return aiNk->armyManager->howManyReinforcementsCanGet(hero, hero, mine, TerrainId::NONE);
+}
+
 // todo: move to obj manager
 uint64_t externalMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGDwelling * dwelling)
 {
@@ -739,7 +749,7 @@ uint64_t externalMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance 
 		const int current = hero->hasStackAtSlot(slot) ? hero->getStackCount(slot) : 0;
 		amount = std::min(amount, std::max(0, capacity->maximum - current));
 	}
-	amount = std::min(amount, aiNk->cc->getResourceAmount() / dwelling->getRecruitmentCost(candidate->creature));
+	amount = dwelling->getRecruitmentAmount(candidate->creature, aiNk->cc->getResourceAmount(), amount, hero);
 	return static_cast<uint64_t>(std::max(0, amount)) * candidate->creature.toCreature()->getAIValue();
 }
 
@@ -768,7 +778,8 @@ uint64_t townMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * he
 	if(!candidate)
 		return 0;
 	auto resources = aiNk->cc->getResourceAmount();
-	const auto recruitableValue = [hero, town, &resources](CreatureID creature, int amount) -> uint64_t
+	const auto * buyer = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy());
+	const auto recruitableValue = [hero, buyer, town, &resources](CreatureID creature, int amount) -> uint64_t
 	{
 		auto slot = newHorizonsHeroes::recruitmentSlot(hero, creature, amount);
 		if(!slot.validSlot())
@@ -780,9 +791,8 @@ uint64_t townMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * he
 			const int current = hero->hasStackAtSlot(slot) ? hero->getStackCount(slot) : 0;
 			amount = std::min(amount, std::max(0, capacity->maximum - current));
 		}
-		const auto cost = town->getRecruitmentCost(creature);
-		amount = std::max(0, std::min(amount, resources / cost));
-		resources -= cost * amount;
+		amount = town->getRecruitmentAmount(creature, resources, amount, buyer);
+		resources -= town->getTotalRecruitmentCost(creature, amount, buyer);
 		return static_cast<uint64_t>(amount) * creature.toCreature()->getAIValue();
 	};
 	if(candidate->isSplit())
@@ -802,22 +812,13 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 	case Obj::MINE:
 	case Obj::ABANDONED_MINE:
 		if(relations == PlayerRelations::SAME_PLAYER)
-		{
-			const auto * mine = dynamic_cast<const CGMine *>(obj);
-			const auto calendar = aiNk->cc->getCalendar();
-			const int week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
-			return mine && mine->prospectorQuantity() > 0
-				&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.prospector")
-				&& !hero->hasUsedNewHorizonsProspector(week);
-		}
+			return ownedMineArmyReward(aiNk, hero, dynamic_cast<const CGMine *>(obj)) > 0;
 		break;
 	case Obj::TOWN:
 		if(relations != PlayerRelations::ENEMIES)
 		{
 			const auto * town = dynamic_cast<const CGTownInstance *>(obj);
-			return town && (newHorizonsLearning::academicStudyExperience(*hero, *town) > 0
-				|| newHorizonsSage::hasVisitReward(*hero, *town)
-				|| townMusterArmyReward(aiNk, hero, town) > 0);
+			return town && townMusterArmyReward(aiNk, hero, town) > 0;
 		}
 		return true;
 	case Obj::HERO:
@@ -889,7 +890,7 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 			{
 				if((level.first || (contacts && contacts->row == row))
 					&& (hero->getSlotFor(CreatureID(c)) != SlotID() || duplicatingSlotsCount > 0)
-					&& aiNk->cc->getResourceAmount().canAfford(c.toCreature()->getFullRecruitCost()))
+					&& d->getRecruitmentAmount(c, aiNk->cc->getResourceAmount(), 1, hero) > 0)
 				{
 					return true;
 				}

@@ -51,7 +51,7 @@ function Script:apply(mechanics, server, target)
 			sourceType = ENUM.BonusSource.spellEffect,
 			val        = 0,
 			sourceID   = mechanics:getSpell():getJsonKey(),
-			turns      = mechanics:getEffectDuration()
+			turns      = mechanics:adjustMetamagicDuration(mechanics:getEffectDuration(), unit)
 		}, true)
 
 		::continue::

@@ -204,11 +204,6 @@ void InitialExportBattleSubject::setCrossSchoolFormulaState(BattleSide, const ne
 	rejectSourceMutation();
 }
 
-void InitialExportBattleSubject::armReactiveWeave(BattleSide, int32_t, int32_t)
-{
-	rejectSourceMutation();
-}
-
 void InitialExportBattleSubject::setSpellResponseState(BattleSide, const SpellResponseState &)
 {
 	rejectSourceMutation();
@@ -225,6 +220,21 @@ void InitialExportBattleSubject::setOverwhelmingFormulaState(BattleSide, const O
 }
 
 void InitialExportBattleSubject::setPerfectFortuneState(BattleSide, const PerfectFortuneState &)
+{
+	rejectSourceMutation();
+}
+
+const WisdomCombatState & InitialExportBattleSubject::getWisdomCombatState(BattleSide side) const
+{
+	return wisdomCombatStates.at(side);
+}
+
+const MetamagicPointState & InitialExportBattleSubject::getMetamagicPointState(BattleSide side) const
+{
+	return metamagicPointStates.at(side);
+}
+
+void InitialExportBattleSubject::setMetamagicPointState(BattleSide, const MetamagicPointState &)
 {
 	rejectSourceMutation();
 }
@@ -260,7 +270,14 @@ void InitialExportBattleSubject::consumeArmorerLastStand(BattleSide)
 }
 
 InitialExportBattleSubject::InitialExportBattleSubject(Subject subject, std::unique_ptr<InitialExportWorld> world)
-	: BattleProxy(std::move(subject)), owned(std::move(world)) {}
+	: BattleProxy(std::move(subject)), owned(std::move(world))
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		metamagicPointStates[side] = this->subject->getBattle()->getMetamagicPointState(side);
+		wisdomCombatStates[side] = this->subject->getBattle()->getWisdomCombatState(side);
+	}
+}
 
 std::shared_ptr<InitialExportBattleSubject> InitialExportBattleSubject::capture(Subject subject, BattleInfo & native)
 {
@@ -348,6 +365,11 @@ void InitialExportBattleSubject::captureBranchValuesFrom(const HypotheticBattle 
 	const InitialExportBattleSubject & source)
 {
 	copyValuesFrom(branch, source);
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		metamagicPointStates[side] = branch.getMetamagicPointState(side);
+		wisdomCombatStates[side] = branch.getWisdomCombatState(side);
+	}
 	owned->recordEnvironmentSnapshot(battle::ProjectedUnitEnvironmentState::capture(branch));
 	for(const auto & [id, state] : branch.stackStates)
 		owned->recordQuerySnapshot(owned->sourceAt(occurrence(id)));

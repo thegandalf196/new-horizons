@@ -13,7 +13,6 @@
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
-#include "../../../lib/battle/AlternatingHeroActionState.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -273,18 +272,15 @@ TEST_F(NewHorizonsBlessTest, DurationBonusesAndBenedictionApplyAfterTheOrdinaryC
 	EXPECT_NE(description.find("Benediction adds 1 round"), std::string::npos);
 }
 
-TEST_F(NewHorizonsBlessTest, EligibleWarcastingScalesTheSpellPowerDurationTerm)
+TEST_F(NewHorizonsBlessTest, WarcastingDoesNotChangeTheSpellPowerDurationThreshold)
 {
 	prepare(79, MasteryLevel::NONE);
-	const int32_t round = battle()->battleGetRound();
-	battle()->getSide(BattleSide::ATTACKER).warcastingState = {
-		AlternatingHeroActionState::Action::SPELL, 20, round};
-	EXPECT_EQ(ordinaryDuration(), newHorizonsMagic::BLESS_BASE_DURATION + 1)
-		<< "the eligible +20% Warcasting bonus crosses the 80 Spell Power threshold";
-
-	battle()->getSide(BattleSide::ATTACKER).warcastingState = AlternatingHeroActionState{};
-	EXPECT_EQ(ordinaryDuration(), newHorizonsMagic::BLESS_BASE_DURATION)
-		<< "the same Spell Power is below the threshold without Warcasting";
+	const auto warcasting = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
+	ASSERT_TRUE(warcasting.hasValue());
+	attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(ordinaryDuration(), newHorizonsMagic::BLESS_BASE_DURATION);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 80, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(ordinaryDuration(), newHorizonsMagic::BLESS_BASE_DURATION + 1);
 }
 
 TEST_F(NewHorizonsBlessTest, ExpertV3BlessRemainsSingleTargetInTheActualCast)

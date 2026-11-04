@@ -60,6 +60,7 @@ bool resolveGenieSagePresentation(const CHero & hero, const JsonNode & rules,
 	if(hero.getJsonKey() == "core:thane")
 	{
 		result.name = "Sage of the Ages";
+		result.summary = "Gain +1 Spell Power and +1 Knowledge on each level gained, in addition to ordinary growth.";
 		result.artwork = "newHorizons/heroSpecialties/ThaneSageOfTheAges";
 		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
 		result.description = "Gain +1 Spell Power and +1 Knowledge on each level gained, in addition to normal class and Skill growth. No additional ratings are granted at level 1.";
@@ -68,6 +69,7 @@ bool resolveGenieSagePresentation(const CHero & hero, const JsonNode & rules,
 	if(hero.getJsonKey() != "core:iona")
 		return false;
 	result.name = "Wheel of Fortune";
+	result.summary = "Genies grant +3 Luck; Master Genies can also inflict -3 Luck, for five rounds, spending one of three Wishes charges.";
 	result.artwork = "newHorizons/heroSpecialties/IonaWheelOfFortune";
 	result.creature = CreatureID(CreatureID::decode("core:genie"));
 	result.description = "Genies and Master Genies may cast Bestow Luck on one friendly stack for +3 Luck. Master Genies may also cast Turn of Fate on one enemy stack for -3 Luck. Each lasts 5 rounds and uses one of the stack's three total Wishes charges. These effects replace existing Fortune or Misfortune effects.";

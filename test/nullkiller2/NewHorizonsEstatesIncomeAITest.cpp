@@ -25,6 +25,7 @@
 #include "lib/gameState/CGameState.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
+#include "lib/mapObjects/NewHorizonsEstates.h"
 #include "lib/modding/CModHandler.h"
 #include "lib/networkPacks/PacksForServer.h"
 #include "mock/GameHandlerTestServer.h"
@@ -36,8 +37,8 @@ namespace
 const PlayerColor PLAYER(0);
 constexpr auto ESTATES_SKILL = "new-horizons:estates";
 constexpr auto TAX_COLLECTOR = "new-horizons:estates.taxCollector";
-constexpr auto ESTATE_NETWORK = "new-horizons:estates.estateNetwork";
-constexpr auto INVESTOR = "new-horizons:estates.investor";
+constexpr auto ARCHITECT = "new-horizons:estates.architect";
+constexpr auto CONSCRIPTION = "new-horizons:estates.conscription";
 
 class EstatesAIEnvironment final : public Environment
 {
@@ -77,48 +78,28 @@ public:
 	}
 };
 
-void activatePlannedInvestorForFixture(CGHeroInstance * hero)
+void prepareConscriptionOfferForFixture(CGHeroInstance * hero)
 {
-	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-	for(auto & skill : perkState.rules["skills"].Struct())
-	{
-		for(auto & perk : skill.second["perks"].Vector())
-		{
-			if(perk["id"].String() == INVESTOR)
-				perk["effect"]["status"].String() = "active";
-		}
-	}
-	perkState.validate();
+ const auto skill = SecondarySkill(SecondarySkill::decode(ESTATES_SKILL));
+ hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({ESTATES_SKILL, TAX_COLLECTOR});
+ hero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 }
-
-void prepareInvestorOfferForFixture(CGHeroInstance * hero)
+void selectBankingForFixture(CGHeroInstance * hero)
 {
-	const auto estatesSkill = SecondarySkill(SecondarySkill::decode(ESTATES_SKILL));
-	hero->setSecSkillLevel(estatesSkill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	hero->applyPerkSelection({ESTATES_SKILL, TAX_COLLECTOR});
-	hero->setSecSkillLevel(estatesSkill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	activatePlannedInvestorForFixture(hero);
+ prepareConscriptionOfferForFixture(hero);
+ hero->applyPerkSelection({ESTATES_SKILL, CONSCRIPTION});
+ hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(ESTATES_SKILL)), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+ hero->applyPerkSelection({ESTATES_SKILL, "new-horizons:estates.banking"});
 }
-
-void selectInvestorForFixture(CGHeroInstance * hero)
+void restrictFixturePerkOffersToConscription(CGHeroInstance * hero)
 {
-	prepareInvestorOfferForFixture(hero);
-	hero->applyPerkSelection({ESTATES_SKILL, INVESTOR});
-}
-
-void restrictFixturePerkOffersToInvestor(CGHeroInstance * hero)
-{
-	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-	for(auto & skill : perkState.rules["skills"].Struct())
-	{
-		for(auto & perk : skill.second["perks"].Vector())
-		{
-			const auto id = perk["id"].String();
-			if(id != TAX_COLLECTOR && id != INVESTOR)
-				perk["effect"]["status"].String() = "planned";
-		}
-	}
-	perkState.validate();
+ auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+ for(auto & skill : state.rules["skills"].Struct())
+  for(auto & perk : skill.second["perks"].Vector())
+   if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != CONSCRIPTION)
+    perk["effect"]["status"].String() = "planned";
+ state.validate();
 }
 
 class NewHorizonsEstatesIncomeAITest : public NullkillerTest
@@ -184,7 +165,7 @@ TEST_F(NewHorizonsEstatesIncomeAITest, BuildAnalyzerUsesTheSharedCappedIncomeFor
 	EXPECT_EQ(forecast[EGameResID::GOLD], townIncome + 2 * 625);
 }
 
-TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstateNetworkPerk)
+TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedArchitectPerk)
 {
 	startGame();
 	const int estatesSkill = SecondarySkill::decode(ESTATES_SKILL);
@@ -198,7 +179,7 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstate
 	for(auto & skill : perkState.rules["skills"].Struct())
 	{
 		for(auto & perk : skill.second["perks"].Vector())
-			if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != ESTATE_NETWORK)
+			if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != ARCHITECT)
 				perk["effect"]["status"].String() = "planned";
 	}
 	perkState.validate();
@@ -211,7 +192,7 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstate
 	ASSERT_EQ(offer.size(), 1u);
 	const auto networkOffer = std::ranges::find_if(offer, [](const auto & candidate)
 	{
-		return candidate.selection.perkId == ESTATE_NETWORK;
+		return candidate.selection.perkId == ARCHITECT;
 	});
 	ASSERT_NE(networkOffer, offer.end());
 	ASSERT_EQ(networkOffer->requiredRank, MasteryLevel::ADVANCED);
@@ -230,80 +211,45 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedEstate
 	const int selected = answer.get();
 	ASSERT_GE(selected, 0);
 	ASSERT_LT(static_cast<size_t>(selected), offer.size());
-	EXPECT_EQ(offer[static_cast<size_t>(selected)].selection.perkId, ESTATE_NETWORK);
+	EXPECT_EQ(offer[static_cast<size_t>(selected)].selection.perkId, ARCHITECT);
 }
 
-TEST_F(NewHorizonsEstatesIncomeAITest, PublishedInvestorIncomeFeedsTheSharedForecastAndStaysFixedMidweek)
+TEST_F(NewHorizonsEstatesIncomeAITest, BankingWeeklyGrantDoesNotBecomeRecurringDailyForecastIncome)
 {
-	startGame();
-	for(auto * hero : {firstHero, secondHero})
-		selectInvestorForFixture(hero);
-
-	auto * mutablePlayerState = gameState()->getPlayerState(PLAYER);
-	const auto * constPlayerState = mutablePlayerState;
-	mutablePlayerState->resources[EGameResID::GOLD] = 10000;
-	const int firstHeroIncomeBeforePublication = firstHero->dailyIncome()[EGameResID::GOLD];
-	const int secondHeroIncomeBeforePublication = secondHero->dailyIncome()[EGameResID::GOLD];
-	const auto forecastBeforePublication = NK2AI::BuildAnalyzer::calculateDailyIncome(
-		constPlayerState->getOwnedObjects(), constPlayerState->getTowns());
-
-	GameHandlerTestServer server(gameState(), PLAYER);
-	CGameHandler handler(server, gameState());
-	handler.onNewTurn(); // Day zero -> one publishes the weekly Investor snapshot.
-	ASSERT_EQ(gameState()->day, 1u);
-	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 100);
-	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 100);
-	EXPECT_EQ(firstHero->dailyIncome()[EGameResID::GOLD], firstHeroIncomeBeforePublication + 100);
-	EXPECT_EQ(secondHero->dailyIncome()[EGameResID::GOLD], secondHeroIncomeBeforePublication + 100);
-
-	const auto forecastAfterPublication = NK2AI::BuildAnalyzer::calculateDailyIncome(
-		constPlayerState->getOwnedObjects(), constPlayerState->getTowns());
-	EXPECT_EQ(forecastAfterPublication[EGameResID::GOLD], forecastBeforePublication[EGameResID::GOLD] + 200);
-
-	// The treasury can change midweek, but it cannot re-quote the saved snapshot.
-	mutablePlayerState->resources[EGameResID::GOLD] = 25000;
-	handler.onNewTurn();
-	ASSERT_EQ(gameState()->day, 2u);
-	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 100);
-	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 100);
-	const auto forecastMidweek = NK2AI::BuildAnalyzer::calculateDailyIncome(
-		constPlayerState->getOwnedObjects(), constPlayerState->getTowns());
-	EXPECT_EQ(forecastMidweek[EGameResID::GOLD], forecastAfterPublication[EGameResID::GOLD]);
+ startGame();
+ for(auto * hero : {firstHero, secondHero}) selectBankingForFixture(hero);
+ auto * state = gameState()->getPlayerState(PLAYER);
+ state->resources[EGameResID::GOLD] = 10000;
+ const auto daily = NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), state->getTowns());
+ EXPECT_EQ(newHorizonsEstates::bankingWeeklyGold(*state), 200);
+ GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
+ handler.onNewTurn();
+ ASSERT_EQ(gameState()->day, 1u);
+ EXPECT_EQ(NK2AI::BuildAnalyzer::calculateDailyIncome(state->getOwnedObjects(), state->getTowns()), daily);
+ const auto gateway = makeGateway(PLAYER);
+ EXPECT_EQ(gateway->cc->getResourceAmount(), state->resources);
+ EXPECT_EQ(state->resources[EGameResID::GOLD], 10000 + 200 + daily[EGameResID::GOLD]);
 }
 
-TEST_F(NewHorizonsEstatesIncomeAITest, InvestorRefreshesNextWeekAndClearsWhenHolderFallsBelowAdvanced)
+TEST_F(NewHorizonsEstatesIncomeAITest, BankingSnapshotQuoteUsesCurrentEligibleHoldersAndPerHolderCap)
 {
-	startGame();
-	selectInvestorForFixture(firstHero);
-	selectInvestorForFixture(secondHero);
-
-	auto * playerState = gameState()->getPlayerState(PLAYER);
-	playerState->resources[EGameResID::GOLD] = 5000;
-	GameHandlerTestServer server(gameState(), PLAYER);
-	CGameHandler handler(server, gameState());
-	handler.onNewTurn(); // Day zero -> one captures exactly one full treasury tranche.
-	ASSERT_EQ(gameState()->day, 1u);
-	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 50);
-	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 50);
-
-	firstHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(ESTATES_SKILL)),
-		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	for(int day = 0; day < 6; ++day)
-		handler.onNewTurn(); // Reach day seven without refreshing the weekly snapshot.
-	ASSERT_EQ(gameState()->day, 7u);
-
-	playerState->resources[EGameResID::GOLD] = 25000;
-	handler.onNewTurn(); // Day eight applies the capped next-week snapshot.
-	ASSERT_EQ(gameState()->day, 8u);
-	EXPECT_EQ(firstHero->getNewHorizonsInvestorDailyGold(), 0);
-	EXPECT_EQ(secondHero->getNewHorizonsInvestorDailyGold(), 250);
+ startGame();
+ selectBankingForFixture(firstHero); selectBankingForFixture(secondHero);
+ auto * state = gameState()->getPlayerState(PLAYER);
+ state->resources[EGameResID::GOLD] = 5000;
+ EXPECT_EQ(newHorizonsEstates::bankingWeeklyGold(*state), 100);
+ firstHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(ESTATES_SKILL)), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+ state->resources[EGameResID::GOLD] = 250000;
+ EXPECT_EQ(newHorizonsEstates::bankingWeeklyGold(*state), 1000);
+ const auto gateway = makeGateway(PLAYER);
+ EXPECT_EQ(gateway->cc->getResourceAmount(), state->resources);
 }
 
-TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedInvestorPerk)
+TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedConscriptionPerk)
 {
 	startGame();
-	prepareInvestorOfferForFixture(firstHero);
-	restrictFixturePerkOffersToInvestor(firstHero);
+	prepareConscriptionOfferForFixture(firstHero);
+	restrictFixturePerkOffersToConscription(firstHero);
 
 	const auto rankLookup = [this](const std::string & skillId)
 	{
@@ -311,7 +257,7 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedInvest
 	};
 	const auto offer = firstHero->getPerkState().prepareOffer(rankLookup, 0, firstHero->getPerkOfferWeightContext());
 	ASSERT_EQ(offer.size(), 1u);
-	ASSERT_EQ(offer.front().selection.perkId, INVESTOR);
+	ASSERT_EQ(offer.front().selection.perkId, CONSCRIPTION);
 	ASSERT_EQ(offer.front().requiredRank, MasteryLevel::ADVANCED);
 
 	const auto ai = AIFactory::createAdventureAI("Nullkiller2");
@@ -328,31 +274,21 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedInvest
 	const int selected = answer.get();
 	ASSERT_GE(selected, 0);
 	ASSERT_LT(static_cast<size_t>(selected), offer.size());
-	EXPECT_EQ(offer[static_cast<size_t>(selected)].selection.perkId, INVESTOR);
+	EXPECT_EQ(offer[static_cast<size_t>(selected)].selection.perkId, CONSCRIPTION);
 }
 
-TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerResourceViewIncludesTheAuthoritativeWeekStartGrant)
+TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerResourceViewIncludesOrdinaryProsperityDailyIncome)
 {
-	startGame();
-	const int estatesSkill = SecondarySkill::decode(ESTATES_SKILL);
-	ASSERT_GE(estatesSkill, 0);
-	firstHero->setSecSkillLevel(SecondarySkill(estatesSkill), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	firstHero->applyPerkSelection({ESTATES_SKILL, TAX_COLLECTOR});
-	firstHero->applyPerkSelection({ESTATES_SKILL, ESTATE_NETWORK});
-	ASSERT_TRUE(firstHero->hasActivePerk(ESTATES_SKILL, ESTATE_NETWORK));
-
-	auto * playerState = gameState()->getPlayerState(PLAYER);
-	playerState->resources[EGameResID::WOOD] = 0;
-	playerState->resources[EGameResID::ORE] = 0;
-	GameHandlerTestServer server(gameState(), PLAYER);
-	CGameHandler handler(server, gameState());
-	handler.onNewTurn(); // Initial week-start grant is applied before AI planning.
-	EXPECT_EQ(gameState()->day, 1u);
-	EXPECT_EQ(playerState->resources[EGameResID::WOOD], 3);
-	EXPECT_EQ(playerState->resources[EGameResID::ORE], 3);
-
-	const auto gateway = makeGateway(PLAYER);
-	const auto freeResources = gateway->nullkiller->getFreeResources();
-	EXPECT_EQ(freeResources[EGameResID::WOOD], 3);
-	EXPECT_EQ(freeResources[EGameResID::ORE], 3);
+ startGame();
+ firstHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(ESTATES_SKILL)), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+ firstHero->applyPerkSelection({ESTATES_SKILL, "new-horizons:estates.prosperity"});
+ auto * state = gameState()->getPlayerState(PLAYER);
+ state->resources[EGameResID::WOOD] = 0; state->resources[EGameResID::ORE] = 0;
+ GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
+ handler.onNewTurn();
+ EXPECT_EQ(state->resources[EGameResID::WOOD], 1);
+ EXPECT_EQ(state->resources[EGameResID::ORE], 1);
+ const auto gateway = makeGateway(PLAYER);
+ EXPECT_EQ(gateway->nullkiller->getFreeResources()[EGameResID::WOOD], 1);
+ EXPECT_EQ(gateway->nullkiller->getFreeResources()[EGameResID::ORE], 1);
 }

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../spells/NewHorizonsMetamagicEntry.h"
 #include "BattleInfo.h"
 #include "UnitAdditionRules.h"
 #include "UnitTransitionSidecars.h"
@@ -56,6 +57,10 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 	stacks.back()->summoned = info.summoned;
 	stacks.back()->natureSummoned = info.natureSummoned;
 	stacks.back()->summonRoundsRemaining = info.summonRoundsRemaining;
+	newHorizonsMetamagic::seedSummonedMarks(*stacks.back(),
+		{getSideHero(BattleSide::ATTACKER), getSideHero(BattleSide::DEFENDER)});
+	if(const auto initiative = newHorizonsMetamagic::entryAttunement(*this, *stacks.back()))
+		stacks.back()->addNewBonus(std::make_shared<Bonus>(*initiative));
 	stacks.back()->initializeRebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP);
 	if(const auto entry = newHorizonsPrismaticVanguard::entryBonus(getSideHero(info.side), info.type))
 		stacks.back()->addNewBonus(std::make_shared<Bonus>(*entry));

@@ -8,6 +8,8 @@
 #include "HypotheticBattle.h"
 #include "../../lib/battle/HeroOrderEffects.h"
 
+#include <functional>
+
 class PossibleSpellcast;
 
 namespace heroActionProjection
@@ -54,6 +56,7 @@ struct OrderCompletion
 /// Existing ordered finalization after an admitted Order. The ordinary full
 /// evaluator owns its result; scouting must not request this continuation.
 OrderCompletion completeOrder(HypotheticBattle & state, const CBattleInfoCallback & before,
-	BattleSide side, const PossibleSpellcast & candidate, const Admission & admission);
+	BattleSide side, const PossibleSpellcast & candidate, const Admission & admission,
+	const std::function<void(const HeroOrderState &)> & afterAcceptedOrder = nullptr);
 
 }

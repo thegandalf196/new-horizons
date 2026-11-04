@@ -53,9 +53,7 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 
 		if(!ci.count) continue;
 
-		const auto recruitCost = dwelling->getRecruitmentCost(ci.creID);
-		if(!recruitCost.empty())
-			vstd::amin(ci.count, availableRes / recruitCost);
+		ci.count = dwelling->getRecruitmentAmount(ci.creID, availableRes, ci.count, carrier);
 		if(ci.count <= 0)
 			continue;
 
@@ -138,7 +136,7 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 			*destination = {dst, ci.creID, ci.count};
 		else
 			destination->count += ci.count;
-		availableRes -= recruitCost * ci.count;
+		availableRes -= dwelling->getTotalRecruitmentCost(ci.creID, ci.count, carrier);
 	}
 
 	return creaturesInDwellings;

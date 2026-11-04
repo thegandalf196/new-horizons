@@ -16,7 +16,8 @@ WINDOW = (ROOT / "client/battle/MagicArrowOverchargeWindow.cpp").read_text()
 WINDOW_HEADER = (ROOT / "client/battle/MagicArrowOverchargeWindow.h").read_text()
 CONTROLLER = (ROOT / "client/battle/BattleActionsController.cpp").read_text()
 CONTROLLER_HEADER = (ROOT / "client/battle/BattleActionsController.h").read_text()
-INTERFACE = (ROOT / "client/battle/BattleInterface.cpp").read_text()
+INTERFACE = ((ROOT / "client/battle/BattleInterface.cpp").read_text()
+             + (ROOT / "client/battle/BattleMagicArrowUI.cpp").read_text())
 MAGIC_ARROW_CONFIG = (ROOT / "config/spells/offensive.json").read_text()
 MAGIC_ARROW_CONFIG_SECTION = MAGIC_ARROW_CONFIG.split('"magicArrow"', 1)[1].split('"iceBolt"', 1)[0]
 
@@ -104,7 +105,7 @@ def main() -> None:
     require(WINDOW, "if(!values.legal || !values.affordable)", "preview-independent confirmation callback")
     if "!values.previewAvailable ||" in WINDOW:
         raise AssertionError("missing forecast must not disable an otherwise legal cast")
-    preview_selection = INTERFACE.split("const auto baseChange = previewChange(0);", 1)[1].split("MagicArrowOverchargeContext context;", 1)[0]
+    preview_selection = INTERFACE.split("const auto baseChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, 0);", 1)[1].split("MagicArrowOverchargeContext context;", 1)[0]
     if "values.legal = false" in preview_selection:
         raise AssertionError("missing effect forecast must not make a legal target uncastable")
     battle_window = (ROOT / "client/battle/BattleWindow.cpp").read_text()

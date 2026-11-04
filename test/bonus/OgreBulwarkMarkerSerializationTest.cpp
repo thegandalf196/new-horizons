@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../lib/battle/PassiveDivineMandateVanguard.h"
 #include "../server/battles/BattleTestFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/battle/NewHorizonsRangefinder.h"
@@ -431,4 +432,85 @@ TEST_P(OgreBulwarkOwnedWorldSerializationTest, RealOwnedBonusProtectsMapWorldAnd
 INSTANTIATE_TEST_SUITE_P(OwnedPayloads, OgreBulwarkOwnedWorldSerializationTest, ::testing::Values(
 	OwnedLocation::HERO, OwnedLocation::SLOT, OwnedLocation::PLAYER, OwnedLocation::PLAYER_BATTLE,
 	OwnedLocation::TEAM, OwnedLocation::GLOBAL, OwnedLocation::POOL, OwnedLocation::ARTIFACT));
+}
+
+namespace
+{
+Bonus passiveVanguardRider(int mask)
+{
+	Bonus bonus(BonusDuration::N_TURNS, BonusType::NONE, BonusSource::HERO_COMMAND,
+		mask, BonusSourceID(), BonusSubtypeID(BonusCustomSubtype(1)));
+	bonus.stacking = "vanguard";
+	bonus.valType = BonusValueType::BASE_NUMBER;
+	bonus.turnsRemain = 2;
+	return bonus;
+}
+}
+TEST_F(OgreBulwarkMarkerSerializationTest, PassiveVanguardMarkerRetainsSmallMasksWithoutReclassifyingLegacyRoyalStandard)
+{
+	startGame();
+	for(const int mask : {1, 2, 0x3ff})
+	{
+		auto bonus = passiveVanguardRider(mask);
+		CMemorySerializer bytes;
+		bytes.oser.version = bytes.iser.version = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+		ASSERT_NO_THROW(bytes.oser & bonus);
+		Bonus restored;
+		ASSERT_NO_THROW(bytes.iser & restored);
+		EXPECT_TRUE(newHorizonsPassiveDivineMandate::isVanguardRiderEntitlement(restored));
+		EXPECT_EQ(restored.val, mask);
+		for(const auto epoch : {Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES, static_cast<Version>(1154)})
+		{
+			CMemorySerializer old;
+			old.oser.version = epoch;
+			EXPECT_THROW(old.oser & bonus, std::runtime_error);
+			EXPECT_TRUE(old.extractBuffer().empty());
+		}
+	}
+	for(const int side : {1, 2})
+	{
+		auto legacy = passiveVanguardRider(side);
+		legacy.valType = BonusValueType::ADDITIVE_VALUE;
+		legacy.subtype = BonusSubtypeID();
+		EXPECT_FALSE(newHorizonsPassiveDivineMandate::isVanguardRiderEntitlement(legacy));
+		CMemorySerializer old;
+		old.oser.version = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+		EXPECT_NO_THROW(old.oser & legacy);
+	}
+}
+TEST_F(OgreBulwarkMarkerSerializationTest, PassiveVanguardSurvivesMissingSideSnapshotAndProtectsOlderBattlePrefix)
+{
+	startGame();
+	startBattle();
+	battle()->getSide(BattleSide::ATTACKER).orderStates.clear();
+	battle()->getSide(BattleSide::DEFENDER).orderStates.clear();
+	ASSERT_FALSE(battle()->stacks.empty());
+	battle()->stacks.front()->addNewBonus(std::make_shared<Bonus>(passiveVanguardRider(1)));
+	CMemorySerializer old;
+	old.oser.version = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+	try
+	{
+		old.oser & *battle();
+		FAIL() << "Old binary BattleInfo must refuse retained native Vanguard entitlement";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_EQ(std::string(error.what()), "Unsupported passive Vanguard rider entitlement format");
+	}
+	EXPECT_TRUE(old.extractBuffer().empty());
+}
+TEST_F(OgreBulwarkMarkerSerializationTest, PassiveVanguardMalformedCurrentRecordIsRejectedByDirectCodec)
+{
+	startGame();
+	for(const int malformed : {0, 1, 2})
+	{
+		auto bonus = passiveVanguardRider(1);
+		if(malformed == 0) bonus.val = 0;
+		if(malformed == 1) bonus.subtype = BonusSubtypeID(BonusCustomSubtype(0));
+		if(malformed == 2) bonus.turnsRemain = 4;
+		CMemorySerializer bytes;
+		bytes.oser.version = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+		EXPECT_THROW(bytes.oser & bonus, std::runtime_error);
+		EXPECT_TRUE(bytes.extractBuffer().empty());
+	}
 }

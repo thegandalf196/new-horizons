@@ -135,10 +135,10 @@ protected:
 		gameHandler->sendAndApply(activate);
 	}
 
-	void armSpellReadiness()
+	void issueOrderThenAdvanceRound()
 	{
 		ASSERT_TRUE(issue(HeroCommand::CHARGE));
-		advanceRound(); // The Order arms Spell readiness through its inclusive next-round expiry.
+		advanceRound(); // A new round restores the shared ordinary Hero action.
 	}
 
 	bool castAtUnit(const SpellID spell, const CStack * target)
@@ -178,14 +178,14 @@ protected:
 };
 }
 
-TEST_F(WarcastingScriptSpellTest, SummonUsesTheBoostedSpellPowerProductBeforeDivision)
+TEST_F(WarcastingScriptSpellTest, SummonUsesTheSpellPowerProductBeforeDivision)
 {
 	constexpr int32_t spellPower = 43;
 	prepare(spellPower);
 	const SpellID spell(SpellID::SUMMON_AIR_ELEMENTAL);
 	ASSERT_EQ(spell.toSpell()->getLevelPower(3), 4);
 	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell.toSpell()), 10);
-	armSpellReadiness();
+	issueOrderThenAdvanceRound();
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -206,7 +206,7 @@ TEST_F(WarcastingScriptSpellTest, SummonUsesTheBoostedSpellPowerProductBeforeDiv
 	for(const auto * unit : battle()->battleGetAllStacks())
 		if(unit->isSummoned() && unit->unitSide() == BattleSide::ATTACKER)
 			summonedCount += unit->getCount();
-	EXPECT_EQ(summonedCount, 18); // floor(43 * 4 * 110 / (10 * 100)); the unboosted result is 17.
+	EXPECT_EQ(summonedCount, 17); // floor(43 * 4 / 10).
 }
 
 TEST_F(WarcastingScriptSpellTest, SacrificeScalesTheFullStackPowerNumeratorOnly)
@@ -223,10 +223,10 @@ TEST_F(WarcastingScriptSpellTest, SacrificeScalesTheFullStackPowerNumeratorOnly)
 	ASSERT_FALSE(dead->alive());
 	const int64_t victimCount = victim->getCount();
 	const int64_t fixedTerms = (victim->getMaxHealth() + spellData->getLevelPower(3)) * victimCount;
-	const int64_t scaledPower = spellPower * victimCount * 110 / (10 * 100);
+	const int64_t scaledPower = spellPower * victimCount / 10;
 	const int64_t expectedHeal = fixedTerms + scaledPower;
 
-	armSpellReadiness();
+	issueOrderThenAdvanceRound();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -234,22 +234,22 @@ TEST_F(WarcastingScriptSpellTest, SacrificeScalesTheFullStackPowerNumeratorOnly)
 	action.setTarget({battle::Destination(dead), battle::Destination(victim)});
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_TRUE(dead->alive());
-	EXPECT_EQ(dead->getAvailableHealth(), expectedHeal); // 1473 for 100 Pikemen; baseline is 1430.
+	EXPECT_EQ(dead->getAvailableHealth(), expectedHeal); // Fixed stack terms plus floor(43 * 100 / 10) = 1430.
 	EXPECT_FALSE(victim->alive());
 }
 
-TEST_F(WarcastingScriptSpellTest, PhantomArmyUsesBoostedPowerInItsIntegrityCoefficient)
+TEST_F(WarcastingScriptSpellTest, PhantomArmyUsesPowerInItsIntegrityCoefficient)
 {
 	constexpr int32_t spellPower = 43;
 	prepare(spellPower, 1000);
 	const auto spell = phantomArmySpell();
 	ASSERT_EQ(attackerSideHero->getEffectPower(spell.toSpell()), spellPower);
 	const auto sourceHealth = attacker->getAvailableHealth();
-	const int64_t basisPoints = 2000 + (15LL * spellPower * 110) / 100;
+	const int64_t basisPoints = 2000 + 15LL * spellPower;
 	const auto expectedIntegrity = sourceHealth * basisPoints / 10000;
 	ASSERT_EQ(sourceHealth, 10000);
-	ASSERT_EQ(basisPoints, 2709);
-	armSpellReadiness();
+	ASSERT_EQ(basisPoints, 2645);
+	issueOrderThenAdvanceRound();
 	ASSERT_TRUE(castAtUnit(spell, attacker));
 
 	const auto phantoms = battle()->battleGetStacksIf([](const CStack * unit)
@@ -268,9 +268,9 @@ TEST_F(WarcastingScriptSpellTest, TransfigureMatterScalesItsPowerPoolButNotItsFi
 	const auto obstacle = addPhysicalObstacle(20, BattleHex(8, 5));
 	const auto footprint = static_cast<int64_t>(obstacle->getAffectedTiles().size());
 	ASSERT_GT(footprint, 1);
-	const auto expectedHealth = 80 + (2LL * spellPower * 110) / 100 + 50 * footprint;
-	ASSERT_EQ(expectedHealth, 170 + 50 * footprint);
-	armSpellReadiness();
+	const auto expectedHealth = 80 + 2LL * spellPower + 50 * footprint;
+	ASSERT_EQ(expectedHealth, 162 + 50 * footprint);
+	issueOrderThenAdvanceRound();
 	ASSERT_TRUE(castAtHex(transfigureMatterSpell(), obstacle->pos));
 
 	const auto golems = battle()->battleGetStacksIf([](const CStack * unit)

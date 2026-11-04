@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../../lib/spells/BattleSpellMechanics.h"
+#include "HeroSpellOutcomeValue.h"
 #include <vcmi/spells/Magic.h>
 
 #include <optional>
@@ -37,8 +38,12 @@ public:
 	{
 		float hostileDamageValue = 0.0f;
 		float friendlyDamageValue = 0.0f;
+		float inspirationValue = 0.0f;
 	};
 
+	/// Existing negative magical application forecast, including native marks
+	/// and the authoritative available hostile-resistance reroll convention.
+	static float applicationChance(const spells::Mechanics *, const battle::Unit *);
 	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics);
 	/// Signed change in reachable upcoming activation pressure after the actual
 	/// atomic exchange has been applied to a detached battle. Fresh damage caches
@@ -135,7 +140,8 @@ public:
 		const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		PlayerColor scoringPlayer,
-		std::shared_ptr<CBattleInfoCallback> battleState = {});
+		std::shared_ptr<CBattleInfoCallback> battleState = {}, const Environment * environment = nullptr,
+		const heroSpellProjection::OutcomeValue & outcomeValue = heroSpellProjection::OutcomeValue());
 	/// Scores a battle-form cast as the signed mean reduction in the target's
 	/// reachable offensive pressure across the complete shared candidate pool.
 	/// Every outcome is projected on a detached battle with a fresh damage cache;
@@ -145,10 +151,12 @@ public:
 		const spells::effects::BattleFormEffect * battleFormEffect,
 		const spells::Target & target,
 		const Environment * environment,
-		std::shared_ptr<CBattleInfoCallback> battleState = {});
+		std::shared_ptr<CBattleInfoCallback> battleState = {}, float * inspirationValue = nullptr,
+		const heroSpellProjection::OutcomeValue & outcomeValue = heroSpellProjection::OutcomeValue());
 	static std::optional<float> confusionExpectedActivationValue(
 		spells::Mechanics * spellMechanics, const spells::Target & target,
-		const Environment * environment, std::shared_ptr<CBattleInfoCallback> battleState = {});
+		const Environment * environment, std::shared_ptr<CBattleInfoCallback> battleState = {}, float * inspirationValue = nullptr,
+		const heroSpellProjection::OutcomeValue & outcomeValue = heroSpellProjection::OutcomeValue());
 
 private:
 	enum Compare

@@ -18,7 +18,6 @@ local LIGHT_MAGIC_SKILL = "new-horizons:lightMagic"
 local HEALER_PERK = "new-horizons:lightMagic.healer"
 local GUARDIAN_PERK = "new-horizons:lightMagic.guardian"
 local RETRIBUTIONIST_PERK = "new-horizons:lightMagic.retributionist"
-local CRUSADER_PERK = "new-horizons:lightMagic.crusader"
 local SANCTUARY_KEEPER_PERK = "new-horizons:lightMagic.sanctuaryKeeper"
 local NATURE_MAGIC_SKILL = "new-horizons:natureMagic"
 local CHAOS_MAGIC_SKILL = "new-horizons:chaosMagic"
@@ -60,14 +59,7 @@ function Script:convertBonuses(mechanics)
 	elseif spellKey == SHIELD_OF_CHAOS_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		shieldOfChaosDuration = mechanics:adjustEffectDuration(SHIELD_OF_CHAOS_BASE_DURATION)
 	elseif spellKey == CRUSADE_SPELL and mechanics:usesNewHorizonsMagicV3() then
-		-- Crusade authors a fixed three-round buff, independent of Spell Power. Apply
-		-- cast-specific duration mechanics exactly once to that literal base, then
-		-- add Crusader's separate round below.
-		crusadeDuration = mechanics:adjustEffectDuration(CRUSADE_BASE_DURATION)
-		local hero = mechanics:getHeroCaster()
-		if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, CRUSADER_PERK) then
-			crusadeDuration = crusadeDuration + 1
-		end
+		crusadeDuration = mechanics:getTimedLightEffectDuration()
 	elseif spellKey == ENTANGLE_SPELL and mechanics:usesNewHorizonsMagicV3() then
 		entangleDuration = mechanics:getEntangleDuration()
 	elseif spellKey == VENGEFUL_VINES_SPELL and mechanics:usesNewHorizonsMagicV3() then
@@ -131,10 +123,9 @@ function Script:convertBonuses(mechanics)
 			nb.turns = crusadeDuration
 		elseif shieldOfChaosDuration ~= nil then
 			nb.turns = shieldOfChaosDuration
-		elseif not nb.turns or nb.turns == 0 then
-			nb.turns = duration
-		elseif nb.duration == "N_TURNS" or nb.duration == ENUM.BonusDuration.nTurns then
-			nb.turns = nb.turns + mechanics:getExtendSpellBonusRounds()
+		else
+			nb.turns = mechanics:getConfiguredTimedDuration(nb.turns or 0, duration or 0,
+				nb.duration == "N_TURNS" or nb.duration == ENUM.BonusDuration.nTurns)
 		end
 
 		nb.sourceType = "SPELL_EFFECT"
@@ -235,6 +226,12 @@ function Script:applyHeroSpecialty(mechanics, buffer, unit)
 		or spellKey == DIVINE_RETRIBUTION_SPELL
 		or spellKey == CRUSADE_SPELL or spellKey == ENTANGLE_SPELL
 		or spellKey == VENGEFUL_VINES_SPELL then return end
+	if spellKey == MISFORTUNE_SPELL then
+		for _, nb in pairs(buffer) do
+			nb.val = mechanics:getMisfortuneRecipientValue(unit, nb.val or 0)
+		end
+		return
+	end
 	local tier = math.max(unit:creatureLevel(), 1)
 
 	self:applySpellScaling(mechanics, hero, buffer, tier, spellKey)
@@ -311,6 +308,8 @@ function Script:applyDivineRetributionPower(mechanics, buffer, spellKey, unit)
 			-- 20% applies after the end-of-round 30%/cap calculation.
 			nb.val = cap
 			nb.addInfo = { retributionistPercent = retributionistPercent }
+			local payout = mechanics:getRecipientDivineRetributionPayoutBasisPoints(unit)
+			if payout ~= nil then nb.addInfo.payoutRatioBasisPoints = payout end
 		end
 	end
 end

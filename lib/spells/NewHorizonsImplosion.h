@@ -27,7 +27,7 @@ DLL_LINKAGE bool hasRules(const JsonNode & rules);
 DLL_LINKAGE std::optional<Rules> rulesFor(const JsonNode & rules, SpellID spell);
 DLL_LINKAGE void validate(const JsonNode & rules);
 DLL_LINKAGE int64_t damage(const Rules & rules, int64_t currentHealth, int32_t spellPower,
-	int32_t coefficientBasisPoints, int32_t warcastingPercent, int32_t empowerPercent);
+	int32_t coefficientBasisPoints, int32_t empowerPercent);
 /// Snapshot recipient IDs once; each endpoint is subsequently checked on the changed board.
 DLL_LINKAGE std::vector<uint32_t> pullOrder(const CBattleInfoCallback & battle,
 	uint32_t primaryID, BattleHex origin, int32_t radius);

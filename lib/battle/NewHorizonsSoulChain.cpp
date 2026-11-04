@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../spells/NewHorizonsMetamagicEffects.h"
 
 #include "NewHorizonsSoulChain.h"
 
@@ -220,11 +221,12 @@ int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide 
 	const auto penetrations = capturedPenetration
 		&& battle.battleGetOwner(primary) != caster->getCasterOwner()
 		? spells::capturedMdrPenetrations(*capturedPenetration, primary->unitId(), battle.getBattle()) : std::vector<int>{};
-	return definition->adjustRawDamage(caster, primary, rawDamage, 0,
+	const auto ordinary = definition->adjustRawDamage(caster, primary, rawDamage, 0,
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(primary), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
 				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
 		true, battle.battleGetPerkMagicalReductionBasisPoints(primary), penetrations);
+	return newHorizonsMetamagic::spellDamage(ordinary, nullptr, battle, primary, caster->getCasterOwner());
 }
 }

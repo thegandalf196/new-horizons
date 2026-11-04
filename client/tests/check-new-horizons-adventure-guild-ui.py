@@ -61,7 +61,8 @@ def main() -> None:
     require(UI, "newHorizonsMagic::adventureSpellRulesActive", "saved-rules gate")
     require(UI, "guildLevel <= 5", "five fixed Guild tiers")
     require(UI, "newHorizonsMagic::adventureSpellForGuildLevel(magicRules, guildLevel)", "fixed spell from saved rules")
-    require(UI, "newHorizonsMagic::adventureSpellUnlockCost(magicRules, spellId)", "exact saved unlock cost")
+    require(UI, "newHorizonsWisdom::adventureSpellPurchaseCost(magicRules, spellId, *town)",
+            "shared saved price with owner-controlled visiting hero discount")
     require(UI, "town->hasNewHorizonsAdventureSpellUnlocked(guildLevel)", "locked/unlocked status from town state")
     require(UI, "resources.canAfford(cost)", "resource affordability check")
     require(UI, "unlockNewHorizonsAdventureSpell(currentTown, guildLevel)", "validated server callback")
@@ -88,6 +89,8 @@ def main() -> None:
     )[0]
     for forbidden in (
         "setNewHorizonsAdventureSpellUnlocked",
+        "newHorizonsMagic::adventureSpellUnlockCost(",
+        "getGarrisonHero(",
         "adventureSpellUnlockCost(magicRules, spellId) =",
         "town->newHorizonsAdventureSpell",
     ):

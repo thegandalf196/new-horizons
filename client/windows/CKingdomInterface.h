@@ -110,6 +110,7 @@ public:
 
 	//TODO: replace with something better
 	virtual void prepareMessage(std::string & text, std::shared_ptr<CComponent> & comp)=0;
+	virtual std::string getDetails() { return {}; }
 
 	virtual ~IInfoBoxData(){};
 };
@@ -142,6 +143,7 @@ class InfoBoxHeroData : public InfoBoxAbstractHeroData
 
 public:
 	InfoBoxHeroData(InfoType Type, const CGHeroInstance *Hero, int Index=0);
+	std::string getDetails() override;
 	std::string getNameText() override;
 	AnimationPath getImageName(InfoBox::InfoSize size) override;
 	size_t getImageIndex() override;

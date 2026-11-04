@@ -14,7 +14,6 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/HeroCommandRevision.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
-#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../../lib/scripting/ScriptService.h"
@@ -106,8 +105,7 @@ void prepareShortlist(Experiment & result, const Environment * environment,
 			|| receipt.source == HeroActionAllowanceState::GrantSource::BATTLE_PLAN
 			|| future.orderPending() || future.secondWindReady()
 			|| newHorizonsHeroicSpirit::canRollOrderMorale(hero, receipt)
-			|| !order.crownAndAltarRecipientUnitIds.empty()
-			|| newHorizonsEnchantedCommand::eligible(state->getMagicRules(), hero, order))
+			|| !order.crownAndAltarRecipientUnitIds.empty())
 			continue; // Unvalued typed/faction/activation companions stay on the full path.
 		const auto marginal = baseline->orderUtility(state, candidate.command);
 		if(marginal && std::isfinite(*marginal))

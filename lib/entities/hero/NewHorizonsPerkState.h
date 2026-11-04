@@ -137,25 +137,31 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
-		h & rules;
-		validateSylvanTacticsSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
+		JsonNode decodedRules;
+		if(h.saving) h & rules;
+		else h & decodedRules;
+		const auto & incomingRules = h.saving ? rules : decodedRules;
+		validateSylvanTacticsSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		if(!h.saving)
-			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
+			newHorizonsNecromancy::validatePolicySerialization(incomingRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(!h.saving)
-			validateWeightedPerkSerialization(capturedRules,
+			validateWeightedPerkSerialization(incomingRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(!h.saving)
-			validateCrisisCommandProfileSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+			validateCrisisCommandProfileSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+		if(!h.saving) rules = std::move(decodedRules);
 		h & selected;
 		if(!h.saving)
 		{

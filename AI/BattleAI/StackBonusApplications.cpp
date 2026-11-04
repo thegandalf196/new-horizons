@@ -10,7 +10,7 @@
 #include "HypotheticBonusApplication.h"
 #include "../../lib/battle/NewHorizonsConfusionControl.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
-#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
+#include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/battle/NewHorizonsSwiftRebirth.h"
@@ -91,7 +91,7 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 	// enter the branch a second time or change its independent activation life.
 	if(std::any_of(bonus.begin(), bonus.end(), [](const Bonus & entry)
 	{
-		return newHorizonsEnchantedCommand::isMoraleBonus(&entry)
+		return arcaneInspiration::isEffect(&entry)
 			|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(&entry);
 	}))
 		captureEffects();

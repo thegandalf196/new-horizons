@@ -34,7 +34,7 @@ function Script:apply(mechanics, server, target)
 			server:addUnitBonus(battle, unit, {
 				type = "COMBAT_EVENT_TRIGGER",
 				subtype = COMBAT_EVENT,
-				val = damageBonusBasisPoints,
+				val = mechanics:adjustMetamagicMagnitude(damageBonusBasisPoints, unit),
 				duration = ENUM.BonusDuration.nTurns,
 				turns = DURATION_TURNS + mechanics:getExtendSpellBonusRounds(),
 				sourceType = ENUM.BonusSource.spellEffect,

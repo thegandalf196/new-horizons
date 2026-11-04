@@ -19,6 +19,10 @@ bool resolveForestAmbushPresentation(const CHero & hero, const JsonNode & rules,
 	if(!enabled)
 		return false;
 	result.name = "Forest Ambush";
+	result.summary = *enabled
+		? "Wood Elves and Grand Elves that Wait before being attacked hide until acting; their first delayed shot gains +"
+			+ std::to_string(newHorizonsForestAmbush::FIRST_SHOT_LUCK) + " Luck."
+		: "Forest Ambush is disabled for this game.";
 	result.artwork = "newHorizons/heroSpecialties/IvorForestAmbush";
 	result.creature = CreatureID(CreatureID::decode("core:woodElf"));
 	result.description = *enabled

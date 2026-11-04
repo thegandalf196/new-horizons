@@ -161,7 +161,6 @@ protected:
 		ASSERT_EQ(attackerSideHero->getDamageSpellSpecialtyBonusPercent(holyWrath()), 15);
 		ASSERT_EQ(mechanics.getEffectPower(), 100);
 		ASSERT_EQ(mechanics.getEffectPowerDivisor(), 10);
-		ASSERT_EQ(mechanics.getWarcastingBonusPercent(), 0);
 		ASSERT_EQ(mechanics.getCastSpellPowerComponentBonusPercent(), concentration);
 		ASSERT_EQ(mechanics.getSpellPowerCoefficientBasisPoints(), concentration == 0 ? 12650 : 14547);
 		ASSERT_EQ(mechanics.getTargetedStackCount({spells::Destination(target)}), 1u);

@@ -44,7 +44,7 @@ require(
     '"Garrison: " + name',
     "split dialog must keep a garrison-name fallback",
 )
-split_window_declaration = SPLIT_H.split("class CSplitWindow", 1)[1].split("class CLevelWindow", 1)[0]
+split_window_declaration = SPLIT_H.split("class CSplitWindow", 1)[1].split("class CObjectListWindow", 1)[0]
 require(split_window_declaration, "CSplitWindowOwner leftOwner", "split sides must carry army identity for markers")
 require(split_window_declaration, "std::shared_ptr<CAnimImage> leftOwnerMarker;", "split window must retain its left owner marker")
 require(split_window_declaration, "std::shared_ptr<CAnimImage> rightOwnerMarker;", "split window must retain its right owner marker")

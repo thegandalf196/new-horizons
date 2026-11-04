@@ -4,6 +4,8 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "../../../lib/GameSettings.h"
+#include "../../../lib/mapping/CMap.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
@@ -31,8 +33,18 @@ public:
 class NewHorizonsAvatarOfRageTest : public BattleTestFixture
 {
 protected:
+	bool revisedBloodrage = false;
 	CStack * source = nullptr;
 	CStack * target = nullptr;
+	void mapLoaded(CMap * loaded) override
+	{
+		BattleTestFixture::mapLoaded(loaded);
+		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(!revisedBloodrage)
+			rules.Struct().erase("bloodragePolicy");
+		rules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(rules));
+	}
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
@@ -151,4 +163,47 @@ TEST_F(NewHorizonsAvatarOfRageTest, DetachedPredictionMatchesLiveWithoutChanging
 	EXPECT_EQ(projected.min, live.min);
 	EXPECT_EQ(projected.max, live.max);
 	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 60);
+}
+
+TEST_F(NewHorizonsAvatarOfRageTest, RevisedIgnoreUsesEachCompleteEffectiveIncrementUpToTwentyFive)
+{
+	revisedBloodrage = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 12;
+	const auto inactive = battle()->calculateDmgRange(BattleAttackInfo(source, target, 0, false)).damage;
+	const int heroDefense = defenderSideHero->getPrimSkillLevel(PrimarySkill::DEFENSE);
+	ASSERT_NO_FATAL_FAILURE(select(AVATAR));
+	for(int count = 0; count <= 5; ++count)
+	{
+		const int rage = count * 12;
+		EXPECT_EQ(newHorizonsBloodrage::avatarDefenseIgnorePercent(attackerSideHero, rage, 3, 60), count * 5);
+	}
+	EXPECT_EQ(newHorizonsBloodrage::avatarDefenseIgnorePercent(attackerSideHero, 11, 3, 60), 0);
+	EXPECT_EQ(newHorizonsBloodrage::avatarDefenseIgnorePercent(attackerSideHero, 80, 3, 80), 25);
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 12;
+	const auto selected = battle()->calculateDmgRange(BattleAttackInfo(source, target, 0, false)).damage;
+	EXPECT_GT(selected.min, inactive.min);
+	EXPECT_EQ(defenderSideHero->getPrimSkillLevel(PrimarySkill::DEFENSE), heroDefense);
+	defenderSideHero->setPrimarySkill(PrimarySkill::DEFENSE, heroDefense + 100, ChangeValueMode::ABSOLUTE);
+	const auto withHeroDefense = battle()->calculateDmgRange(BattleAttackInfo(source, target, 0, false)).damage;
+	EXPECT_EQ(withHeroDefense.min, selected.min);
+	EXPECT_EQ(withHeroDefense.max, selected.max);
+	defenderSideHero->setPrimarySkill(PrimarySkill::DEFENSE, heroDefense, ChangeValueMode::ABSOLUTE);
+	AvatarEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto model = std::make_shared<HypotheticBattle>(&environment, callback);
+	const auto projectedSource = model->getForUpdate(source->unitId());
+	const auto projectedTarget = model->getForUpdate(target->unitId());
+	const auto projected = model->calculateDmgRange(BattleAttackInfo(projectedSource.get(), projectedTarget.get(), 0, false)).damage;
+	EXPECT_EQ(projected.min, selected.min);
+	EXPECT_EQ(projected.max, selected.max);
+	int64_t wound = target->getAvailableHealth() * 3 / 5;
+	target->damage(wound);
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(source, target), 36);
+	EXPECT_EQ(newHorizonsBloodrage::avatarDefenseIgnorePercent(attackerSideHero, 36, 3, 60), 15);
+	source->personalBloodrageIncrement = 24;
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(source, target), 60);
+	EXPECT_EQ(newHorizonsBloodrage::avatarDefenseIgnorePercent(attackerSideHero,
+		battle()->battleGetBloodrageDamagePercent(source, target), 3, 60), 25);
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 12);
 }

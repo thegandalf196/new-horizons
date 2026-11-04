@@ -78,8 +78,8 @@ function Script:apply(mechanics, server, target)
 		side = mechanics:getCasterSide(),
 		position = position,
 		summoned = true,
-		summonRoundsRemaining = mechanics:adjustEffectDuration(
-			mechanics:getLivingArmorParameter("duration"))
+		summonRoundsRemaining = mechanics:adjustMetamagicDuration(mechanics:adjustEffectDuration(
+			mechanics:getLivingArmorParameter("duration")), nil)
 	})
 	if unit == nil then return end
 

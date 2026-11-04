@@ -27,6 +27,10 @@
 #include "HeroOrderCandidateRules.h"
 #include "HeroActionAdmission.h"
 #include "HeroActionUtility.h"
+#include "PassiveDivineMandateProjection.h"
+#include "HeroSpellVariants.h"
+#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
+#include "LightSpellProtectionValue.h"
 #include "HeroActionSelection.h"
 #include "HeroActionContinuation.h"
 #include "HeroActionTiming.h"
@@ -65,8 +69,6 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/HeroCommand.h"
-#include "../../lib/battle/NewHorizonsWarcasting.h"
-#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
@@ -138,15 +140,6 @@ bool isCanonicalElementalConvergence(const CSpell * spell)
 	return spell && spell->getJsonKey() == "new-horizons:elementalConvergence";
 }
 
-bool isCanonicalHandOfFate(const CBattleInfoCallback & battle, const CSpell * spell)
-{
-	if(!spell || spell->getJsonKey() != "new-horizons:handOfFate" || !battle.getBattle())
-		return false;
-
-	const auto & magicRules = battle.getBattle()->getMagicRules();
-	return newHorizonsMagic::rulesActive(magicRules)
-		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId());
-}
 
 bool isCounterspell(const CSpell * spell)
 {
@@ -301,10 +294,6 @@ bool isCanonicalDoom(const CSpell * spell)
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_DOOM_SPELL;
 }
 
-bool isCanonicalPuppetMaster(const CSpell * spell)
-{
-	return spell && spell->getJsonKey() == "new-horizons:puppetMaster";
-}
 
 bool BattleEvaluator::canonicalDoomAvailableInSavedRules(const JsonNode & magicRules, const CSpell * spell)
 {
@@ -476,56 +465,6 @@ float expectedBerserkActivationValue(const battle::Unit * original, const battle
 	const int resistance = std::clamp(original->magicResistance(), 0, 100);
 	const float applicationChance = 1.0f - static_cast<float>(resistance) / 100.0f;
 	return signedValue * applicationChance;
-}
-
-float expectedPuppetMasterActivationSwing(const CSpell * spell, const spells::Target & target,
-	const CGHeroInstance * caster, bool metamagicFollowup, bool metamagicGrand, int overcharge,
-	const std::shared_ptr<HypotheticBattle> & currentBattle, DamageCache & damageCache,
-	const Environment * environment, PlayerColor valuedPlayer, BattleSide valuedSide)
-{
-	if(!isCanonicalPuppetMaster(spell) || target.size() != 1 || !target.front().unitValue
-		|| !caster || !currentBattle || !environment)
-		return 0.0f;
-
-	const auto targetId = target.front().unitValue->unitId();
-	const auto * originalTarget = currentBattle->battleGetUnitByID(targetId);
-	if(!originalTarget || !originalTarget->alive() || originalTarget->isGhost() || originalTarget->isTurret())
-		return 0.0f;
-
-	PotentialTargets ordinaryActions(originalTarget, damageCache, currentBattle);
-	const float ordinaryActionValue = std::max(0.0f, static_cast<float>(ordinaryActions.bestActionValue()));
-
-	auto projectedBattle = std::make_shared<HypotheticBattle>(environment, currentBattle);
-	const auto * projectedTarget = projectedBattle->battleGetUnitByID(targetId);
-	if(!projectedTarget)
-		return 0.0f;
-
-	spells::Target projectedAim{spells::Destination(projectedTarget)};
-	spells::BattleCast projectedCast(projectedBattle.get(), caster, spells::Mode::HERO, spell);
-	projectedCast.setMetamagicFollowup(metamagicFollowup);
-	projectedCast.setMetamagicGrand(metamagicGrand);
-	projectedCast.setOvercharge(overcharge);
-	projectedCast.setMetamagicTargetUnitId(targetId);
-	auto projectedMechanics = spell->battleMechanics(&projectedCast);
-	spells::detail::ProblemImpl problem;
-	if(!projectedMechanics->canBeCastAt(projectedAim, problem))
-		return 0.0f;
-	projectedMechanics->castEval(projectedBattle->getServerCallback(), projectedAim);
-	// The cast can materialize a copy-on-write unit; query its post-cast identity.
-	projectedTarget = projectedBattle->battleGetUnitByID(targetId);
-	if(!projectedTarget || projectedBattle->battleGetActionController(projectedTarget) != valuedPlayer
-		|| projectedBattle->playerToSide(projectedBattle->battleGetActionController(projectedTarget)) != valuedSide)
-		return 0.0f;
-
-	DamageCache controlledDamage(&damageCache);
-	controlledDamage.buildDamageCache(projectedBattle, valuedSide);
-	PotentialTargets controlledActions(projectedTarget, controlledDamage, projectedBattle);
-	const float controlledActionValue = std::max(0.0f, static_cast<float>(controlledActions.bestActionValue()));
-	const float applicationChance = 1.0f - static_cast<float>(std::clamp(originalTarget->magicResistance(), 0, 100)) / 100.0f;
-
-	// The target's ordinary activation would benefit its true owner; Puppet
-	// Master replaces that value with a real action selected by its controller.
-	return (ordinaryActionValue + controlledActionValue) * applicationChance;
 }
 
 float expectedCurseTargetActivationValue(const battle::Unit * target,
@@ -1030,41 +969,6 @@ bool natureEntangleAvailableInSavedRules(const CBattleInfoCallback & battle, con
 		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spell->getId());
 }
 
-struct HolyArmorProtection
-{
-	int reductionPercent = 0;
-	int rounds = 0;
-
-	int exposurePercentRounds() const
-	{
-		return reductionPercent * rounds;
-	}
-};
-
-HolyArmorProtection holyArmorProtection(const battle::Unit * unit, SpellID spell)
-{
-	HolyArmorProtection result;
-	if(!unit)
-		return result;
-
-	const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
-		.And(Selector::type()(BonusType::SPELL_DAMAGE_REDUCTION)));
-	if(!bonuses)
-		return result;
-	for(const auto & bonus : *bonuses)
-	{
-		if(!bonus || !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
-			continue;
-
-		const HolyArmorProtection current{
-			std::clamp(bonus->val, 0, 100),
-			std::clamp(static_cast<int>(bonus->turnsRemain), 0, 2)};
-		if(current.exposurePercentRounds() > result.exposurePercentRounds())
-			result = current;
-	}
-	return result;
-}
-
 float projectedCapacityRegenerationValue(
 	const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & beforeCast,
@@ -1416,112 +1320,6 @@ using heroOrderCandidates::commandTargetIsLegal;
 
 using battleDamageValue::averageOrderDamage;
 
-/// Values one immediately available direct attack from the chosen landing.
-/// This intentionally omits full-battle rollouts and movement/path simulation;
-/// it is only a bounded tactical signal for whether Blink changes direct reach.
-float blinkDirectAttackValue(const battle::Unit * attacker, const battle::Unit * defender,
-	const CBattleInfoCallback & battle, const std::shared_ptr<CBattleInfoCallback> & battleState,
-	DamageCache & damageCache, bool includeShooting = true)
-{
-	if(!attacker || !defender || !attacker->alive() || !defender->alive()
-		|| !battle.battleCanAttackUnitAction(attacker, defender))
-		return 0.0f;
-
-	const auto availableHealth = std::max<int64_t>(0, defender->getAvailableHealth());
-	if(availableHealth <= 0)
-		return 0.0f;
-
-	float bestValue = 0.0f;
-	const auto valueForAttackMode = [&](bool shooting)
-	{
-		const auto attackCount = std::max(0, AttackPossibility::getAttackCount(*attacker, shooting, battle));
-		if(attackCount <= 0)
-			return 0.0f;
-
-		const BattleAttackInfo attack(attacker, defender, 0, shooting);
-		const auto perAttackDamage = static_cast<int64_t>(averageOrderDamage(battle.battleEstimateDamage(attack)));
-		if(perAttackDamage <= 0)
-			return 0.0f;
-
-		const auto totalDamage = std::min(availableHealth, perAttackDamage * static_cast<int64_t>(attackCount));
-		return AttackPossibility::calculateDamageReduce(attacker, defender,
-			static_cast<uint64_t>(totalDamage), damageCache, battleState);
-	};
-
-	if(includeShooting && battle.battleCanShootAction(attacker, defender->getPosition()))
-		bestValue = std::max(bestValue, valueForAttackMode(true));
-	if(battle.isMeleeAttackPossibleWithLongReach(attacker, defender) || battle.isLongWeaponAttack(attacker, defender))
-		bestValue = std::max(bestValue, valueForAttackMode(false));
-	return bestValue;
-}
-
-/// Signed direct-attack pressure involving a stack at one endpoint. Attacks by
-/// the relocated stack are limited to its single best target; attacks by other
-/// stacks are accumulated because they represent independent future activations.
-float blinkLandingPositionValue(const battle::Unit * original, const BattleHex & landing,
-	PlayerColor player, const CBattleInfoCallback & battle,
-	const std::shared_ptr<CBattleInfoCallback> & battleState, DamageCache & damageCache)
-{
-	if(!original || !original->alive() || !landing.isValid())
-		return 0.0f;
-
-	auto relocated = original->acquireState();
-	if(!relocated)
-		return 0.0f;
-	relocated->setPosition(landing);
-
-	float bestOutgoing = 0.0f;
-	float signedIncoming = 0.0f;
-	for(const auto * other : battle.battleGetAllUnits(false))
-	{
-		if(!other || !other->alive() || other->unitId() == original->unitId()
-			|| other->isGhost() || other->isTurret())
-			continue;
-
-		bestOutgoing = std::max(bestOutgoing,
-			blinkDirectAttackValue(relocated.get(), other, battle, battleState, damageCache));
-
-		// The battle callback resolves a shot's target by occupied hex; a detached
-		// relocation is deliberately not installed into that live occupancy map.
-		// Keep the positional forecast symmetric by valuing direct incoming melee
-		// pressure here while outgoing shots still use the live enemy occupancy.
-		const auto incoming = blinkDirectAttackValue(other, relocated.get(), battle, battleState,
-			damageCache, false);
-		if(incoming > 0.0f)
-			signedIncoming += battle.battleGetOwner(other) == player ? incoming : -incoming;
-	}
-
-	const float outgoingSign = battle.battleGetOwner(original) == player ? 1.0f : -1.0f;
-	return outgoingSign * bestOutgoing + signedIncoming;
-}
-
-/// Returns the exact expected marginal direct-attack pressure for one Blink
-/// target. The shared distribution handles normal uniform destinations and
-/// Blinkmaster's two independent draws with replacement; this code consumes no RNG.
-float blinkExpectedPositionValue(const battle::Unit * target,
-	const newHorizonsBlink::Preview & preview, PlayerColor player,
-	const CBattleInfoCallback & battle, const std::shared_ptr<CBattleInfoCallback> & battleState,
-	DamageCache & damageCache)
-{
-	if(!target || preview.legalDestinations.empty())
-		return 0.0f;
-
-	const auto origin = target->getPosition();
-	const auto outcomes = newHorizonsBlink::outcomeDistribution(preview, origin);
-	if(outcomes.empty() || outcomes.front().totalWeight == 0)
-		return 0.0f;
-
-	const auto before = blinkLandingPositionValue(target, origin, player, battle, battleState, damageCache);
-	long double weightedDelta = 0.0L;
-	for(const auto & outcome : outcomes)
-	{
-		const auto after = blinkLandingPositionValue(target, outcome.hex, player, battle, battleState, damageCache);
-		weightedDelta += static_cast<long double>(after - before) * outcome.weight;
-	}
-
-	return static_cast<float>(weightedDelta / outcomes.front().totalWeight);
-}
-
 /// Values at most one immediately available melee action that a rooted unit
 /// would otherwise make after walking to an allied target. This intentionally
 /// ignores shooters and targets already adjacent to any ally: Entangle does not
@@ -1622,328 +1420,6 @@ float entangleMovementThreatValue(const battle::Unit * liveTarget,
 	}
 
 	return bestThreatValue;
-}
-
-struct GuardianSpiritShield
-{
-	int64_t hitPoints = 0;
-	int roundsRemaining = 0;
-};
-
-GuardianSpiritShield guardianSpiritShield(const battle::Unit * unit)
-{
-	if(!unit)
-		return {};
-
-	const auto state = unit->acquireState();
-	if(!state)
-		return {};
-
-	return {
-		std::max<int64_t>(0, state->guardianSpiritHitPoints),
-		std::clamp(state->guardianSpiritRoundsRemaining, 0, 2)};
-}
-
-/// Estimate physical creature damage that can reach this one target during the
-/// shield's remaining exposure. Only visible enemy stacks and direct melee or
-/// ranged attacks are considered; spell-like shots, siege weapons, turrets, and
-/// hidden enemy-hero spellbooks are deliberately outside Guardian Spirit's scope.
-float guardianSpiritPhysicalThreat(const battle::Unit * target,
-	const CBattleInfoCallback & battle, int roundsRemaining)
-{
-	if(!target || !target->alive() || target->isGhost() || target->isTurret()
-		|| roundsRemaining <= 0)
-		return 0.0f;
-
-	const int rounds = std::clamp(roundsRemaining, 0, 2);
-	float damagePerRound = 0.0f;
-	for(const auto * attacker : battle.battleGetAllUnits(false))
-	{
-		if(!attacker || !attacker->alive() || !attacker->isValidTarget()
-			|| attacker->isGhost() || attacker->isTurret()
-			|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
-			|| !battle.battleMatchOwner(attacker, target))
-			continue;
-
-		bool canShootTarget = false;
-		if(attacker->canShoot())
-			for(const auto & targetHex : target->getHexes())
-				if(battle.battleCanShoot(attacker, targetHex))
-				{
-					canShootTarget = true;
-					break;
-				}
-
-		bool canMeleeTarget = false;
-		if(attacker->isMeleeAttacker())
-		{
-			canMeleeTarget = !battle.meleeAttackHexes(attacker, target,
-				attacker->getPosition()).empty();
-			if(!canMeleeTarget)
-				for(const auto & position : battle.battleGetAvailableHexes(attacker, false))
-					if(!battle.meleeAttackHexes(attacker, target, position).empty())
-					{
-						canMeleeTarget = true;
-						break;
-					}
-		}
-
-		float bestAttackThreat = 0.0f;
-		for(const bool shooting : {false, true})
-		{
-			if((shooting && !canShootTarget) || (!shooting && !canMeleeTarget))
-				continue;
-
-			const BattleAttackInfo attack(attacker, target, 0, shooting);
-			if(!attack.physicalDamage)
-				continue;
-
-			const float perAttackDamage = averageOrderDamage(battle.battleEstimateDamage(attack));
-			if(perAttackDamage <= 0.0f)
-				continue;
-
-			const int availableAttacks = std::max(0,
-				AttackPossibility::getAttackCount(*attacker, shooting, battle));
-			int attacksPerFutureActivation = std::max(1, attacker->getTotalAttacks(shooting));
-			if(shooting)
-				if(const auto * attackerState = dynamic_cast<const battle::CUnitState *>(attacker);
-					attackerState && attackerState->shots.isLimited()
-						&& attackerState->shots.available() <= availableAttacks)
-					attacksPerFutureActivation = 0;
-			const float attackEquivalents = static_cast<float>(availableAttacks)
-				+ (rounds > 1 ? 0.5f * static_cast<float>(attacksPerFutureActivation) : 0.0f);
-			bestAttackThreat = std::max(bestAttackThreat, perAttackDamage * attackEquivalents);
-		}
-
-		// A stack chooses either its shot or melee attack, not both. Keep its
-		// strongest relevant mode once, then aggregate independent enemy stacks.
-		damagePerRound += bestAttackThreat;
-	}
-
-	return damagePerRound;
-}
-
-float guardianSpiritMitigationValue(const battle::Unit * liveTarget,
-	const battle::Unit * projectedTarget, DamageCache & damageCache,
-	const std::shared_ptr<HypotheticBattle> & projectedBattle)
-{
-	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
-		|| liveTarget->getAvailableHealth() <= 0 || !projectedBattle)
-		return 0.0f;
-
-	const auto before = guardianSpiritShield(liveTarget);
-	const auto after = guardianSpiritShield(projectedTarget);
-	const auto incomingBefore = guardianSpiritPhysicalThreat(projectedTarget, *projectedBattle,
-		before.roundsRemaining);
-	const auto incomingAfter = guardianSpiritPhysicalThreat(projectedTarget, *projectedBattle,
-		after.roundsRemaining);
-	const auto absorbedBefore = std::min(static_cast<long double>(before.hitPoints),
-		static_cast<long double>(incomingBefore));
-	const auto absorbedAfter = std::min(static_cast<long double>(after.hitPoints),
-		static_cast<long double>(incomingAfter));
-	const auto newlyAbsorbed = absorbedAfter - absorbedBefore;
-	if(!std::isfinite(newlyAbsorbed) || newlyAbsorbed <= 0.0L)
-		return 0.0f;
-
-	const auto savedDamage = static_cast<uint64_t>(std::floor(newlyAbsorbed));
-	if(savedDamage == 0)
-		return 0.0f;
-
-	const auto retainedAttackValue = AttackPossibility::calculateDamageReduce(
-		nullptr, projectedTarget, savedDamage, damageCache, projectedBattle);
-	if(retainedAttackValue > 0.0f)
-		return retainedAttackValue;
-
-	const auto maxHealth = liveTarget->getMaxHealth();
-	const auto * creature = liveTarget->unitType();
-	const auto creatureValue = creature ? creature->getAIValue() : 0;
-	if(maxHealth <= 0 || creatureValue <= 0)
-		return std::max(0.0f, retainedAttackValue);
-
-	// A shield still preserves a stack that cannot currently attack. Bound its
-	// fallback value by the target's ordinary creature-health value.
-	const long double healthValue = static_cast<long double>(savedDamage)
-		* static_cast<long double>(creatureValue) / static_cast<long double>(maxHealth);
-	if(!std::isfinite(healthValue) || healthValue <= 0.0L)
-		return std::max(0.0f, retainedAttackValue);
-
-	return static_cast<float>(std::min(healthValue,
-		static_cast<long double>(std::numeric_limits<float>::max())));
-}
-
-struct HeavenlyGaleProtection
-{
-	int reductionBasisPoints = 0;
-	int roundsRemaining = 0;
-
-	int exposureBasisPoints() const
-	{
-		return reductionBasisPoints * roundsRemaining;
-	}
-};
-
-HeavenlyGaleProtection heavenlyGaleProtection(const battle::Unit * unit, SpellID spell)
-{
-	HeavenlyGaleProtection result;
-	if(!unit)
-		return result;
-
-	const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
-		.And(Selector::type()(BonusType::HEAVENLY_GALE)));
-	if(!bonuses)
-		return result;
-
-	for(const auto & bonus : *bonuses)
-	{
-		if(!bonus || !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
-			continue;
-
-		const HeavenlyGaleProtection current{
-			std::clamp(bonus->val, 0, 8000),
-			std::clamp(static_cast<int>(bonus->turnsRemain), 0, 2)};
-		if(current.exposureBasisPoints() > result.exposureBasisPoints())
-			result = current;
-	}
-	return result;
-}
-
-float heavenlyGaleAttackEquivalents(const battle::Unit * attacker,
-	const CBattleInfoCallback & battle, int roundsRemaining)
-{
-	if(!attacker || roundsRemaining <= 0)
-		return 0.0f;
-
-	const int availableAttacks = std::max(0, AttackPossibility::getAttackCount(*attacker, true, battle));
-	int attacksPerFutureActivation = std::max(1, attacker->getTotalAttacks(true));
-	if(const auto * attackerState = dynamic_cast<const battle::CUnitState *>(attacker);
-		attackerState && attackerState->shots.isLimited()
-			&& attackerState->shots.available() <= availableAttacks)
-		attacksPerFutureActivation = 0;
-
-	return static_cast<float>(availableAttacks)
-		+ (roundsRemaining > 1 ? 0.5f * static_cast<float>(attacksPerFutureActivation) : 0.0f);
-}
-
-float heavenlyGaleSavedDamageValue(const battle::Unit * target, uint64_t savedDamage,
-	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
-{
-	if(!target || savedDamage == 0 || !projectedBattle)
-		return 0.0f;
-
-	const auto retainedAttackValue = AttackPossibility::calculateDamageReduce(
-		nullptr, target, savedDamage, damageCache, projectedBattle);
-	if(retainedAttackValue > 0.0f)
-		return retainedAttackValue;
-
-	const auto maxHealth = target->getMaxHealth();
-	const auto * creature = target->unitType();
-	const auto creatureValue = creature ? creature->getAIValue() : 0;
-	if(maxHealth <= 0 || creatureValue <= 0)
-		return std::max(0.0f, retainedAttackValue);
-
-	const long double healthValue = static_cast<long double>(savedDamage)
-		* static_cast<long double>(creatureValue) / static_cast<long double>(maxHealth);
-	if(!std::isfinite(healthValue) || healthValue <= 0.0L)
-		return std::max(0.0f, retainedAttackValue);
-
-	return static_cast<float>(std::min(healthValue,
-		static_cast<long double>(std::numeric_limits<float>::max())));
-}
-
-/// Estimate the army-wide value from the actual projected Heavenly Gale marker.
-/// Each visible ranged attacker contributes only its best threatened ally, so a
-/// single shooter's same volley is not counted once for every stack. Siege
-/// weapons and towers are included; spell-like projectiles are filtered through
-/// BattleAttackInfo::physicalDamage. No opposing hero book is inspected.
-float heavenlyGaleMitigationValue(BattleSide side,
-	const CBattleInfoCallback & liveBattle, const std::shared_ptr<HypotheticBattle> & projectedBattle,
-	SpellID spell, DamageCache & damageCache)
-{
-	if(!projectedBattle)
-		return 0.0f;
-
-	float totalValue = 0.0f;
-	const auto visibleUnits = liveBattle.battleGetAllUnits(true);
-	for(const auto * attacker : visibleUnits)
-	{
-		if(!attacker || !attacker->alive() || attacker->isGhost() || attacker->unitSide() == side
-			|| !attacker->canShoot())
-			continue;
-
-		const auto * projectedAttacker = projectedBattle->battleGetUnitByID(attacker->unitId());
-		if(!projectedAttacker || !projectedAttacker->alive())
-			continue;
-
-		float bestAttackerValue = 0.0f;
-		for(const auto * liveTarget : liveBattle.battleGetAllUnits(false))
-		{
-			if(!liveTarget || !liveTarget->alive() || !liveTarget->isValidTarget(false)
-				|| liveTarget->isGhost() || liveTarget->unitSide() != side)
-				continue;
-
-			const auto * projectedTarget = projectedBattle->battleGetUnitByID(liveTarget->unitId());
-			if(!projectedTarget || !projectedTarget->alive())
-				continue;
-
-			const auto before = heavenlyGaleProtection(liveTarget, spell);
-			const auto after = heavenlyGaleProtection(projectedTarget, spell);
-			if(after.roundsRemaining <= 0 || after.reductionBasisPoints <= 0
-				|| after.exposureBasisPoints() <= before.exposureBasisPoints())
-				continue;
-
-			bool canShootTarget = false;
-			for(const auto & targetHex : liveTarget->getHexes())
-				if(liveBattle.battleCanShoot(attacker, targetHex))
-				{
-					canShootTarget = true;
-					break;
-				}
-			if(!canShootTarget)
-				continue;
-
-			const BattleAttackInfo beforeAttack(attacker, liveTarget, 0, true);
-			if(!beforeAttack.physicalDamage)
-				continue;
-
-			const BattleAttackInfo afterAttack(projectedAttacker, projectedTarget, 0, true);
-			if(!afterAttack.physicalDamage)
-				continue;
-
-			const auto beforePerAttackDamage = std::max(0.0f,
-				averageOrderDamage(liveBattle.battleEstimateDamage(beforeAttack)));
-			const auto afterPerAttackDamage = std::max(0.0f,
-				averageOrderDamage(projectedBattle->battleEstimateDamage(afterAttack)));
-			const long double beforeDamageScale = std::max<int>(1, 10000 - before.reductionBasisPoints);
-			const long double afterDamageScale = std::max<int>(1, 10000 - after.reductionBasisPoints);
-			const long double rawPerAttackDamage = std::max(
-				static_cast<long double>(beforePerAttackDamage) * 10000.0L / beforeDamageScale,
-				static_cast<long double>(afterPerAttackDamage) * 10000.0L / afterDamageScale);
-			if(!std::isfinite(rawPerAttackDamage) || rawPerAttackDamage <= 0.0L)
-				continue;
-
-			const auto beforeExposure = static_cast<long double>(before.reductionBasisPoints)
-				* heavenlyGaleAttackEquivalents(attacker, liveBattle, before.roundsRemaining);
-			const auto afterExposure = static_cast<long double>(after.reductionBasisPoints)
-				* heavenlyGaleAttackEquivalents(attacker, liveBattle, after.roundsRemaining);
-			const auto targetHealth = std::max<int64_t>(0, liveTarget->getAvailableHealth());
-			const auto beforePrevented = std::min(static_cast<long double>(targetHealth),
-				rawPerAttackDamage * beforeExposure / 10000.0L);
-			const auto afterPrevented = std::min(static_cast<long double>(targetHealth),
-				rawPerAttackDamage * afterExposure / 10000.0L);
-			const auto addedProtection = afterPrevented - beforePrevented;
-			if(!std::isfinite(addedProtection) || addedProtection <= 0.0L)
-				continue;
-
-			const auto savedDamage = static_cast<uint64_t>(std::floor(addedProtection));
-			const auto value = heavenlyGaleSavedDamageValue(projectedTarget, savedDamage,
-				damageCache, projectedBattle);
-			bestAttackerValue = std::max(bestAttackerValue, value);
-		}
-		totalValue += bestAttackerValue;
-	}
-
-	return std::isfinite(totalValue) ? totalValue : 0.0f;
 }
 
 struct CrusadeProjection
@@ -2337,218 +1813,6 @@ float shieldOfChaosTargetValue(uint32_t activeUnitId, BattleSide scoringSide,
 	return std::isfinite(value) ? value : 0.0f;
 }
 
-struct DivineRetributionProtection
-{
-	int rawCap = 0;
-	int retributionistPercent = 100;
-	int roundsRemaining = 0;
-};
-
-DivineRetributionProtection divineRetributionProtection(const battle::Unit * unit, SpellID spell)
-{
-	DivineRetributionProtection result;
-	if(!unit)
-		return result;
-
-	const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))
-		.And(Selector::type()(BonusType::DIVINE_RETRIBUTION)));
-	if(!bonuses)
-		return result;
-
-	for(const auto & bonus : *bonuses)
-	{
-		if(!bonus || !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
-			continue;
-
-		int retributionistPercent = 100;
-		if(bonus->parameters)
-		{
-			try
-			{
-				const auto & parameters = bonus->parameters->toCustom<JsonNode>();
-				const auto percent = parameters["retributionistPercent"];
-				if(percent.isNumber())
-					retributionistPercent = static_cast<int>(percent.Integer());
-			}
-			catch(const std::runtime_error &)
-			{
-				// Older or unrelated marker payloads keep the neutral 100% behavior.
-			}
-		}
-
-		const DivineRetributionProtection current{
-			std::max(0, bonus->val),
-			std::clamp(retributionistPercent, 100, 120),
-			std::clamp(static_cast<int>(bonus->turnsRemain), 0, 2)};
-		const int64_t currentExposure = static_cast<int64_t>(current.rawCap)
-			* current.retributionistPercent * current.roundsRemaining;
-		const int64_t resultExposure = static_cast<int64_t>(result.rawCap)
-			* result.retributionistPercent * result.roundsRemaining;
-		if(currentExposure > resultExposure)
-			result = current;
-	}
-	return result;
-}
-
-int divineRetributionDamage(const DivineRetributionProtection & protection,
-	long double actualDamage, int roundOffset)
-{
-	if(protection.roundsRemaining <= roundOffset || protection.rawCap <= 0
-		|| !std::isfinite(actualDamage) || actualDamage <= 0.0L)
-		return 0;
-
-	const auto cappedBaseDamage = std::min(static_cast<long double>(protection.rawCap),
-		std::floor(actualDamage * 0.30L));
-	const auto finalDamage = std::floor(cappedBaseDamage
-		* static_cast<long double>(protection.retributionistPercent) / 100.0L);
-	if(finalDamage <= 0.0L)
-		return 0;
-	return static_cast<int>(std::min(finalDamage,
-		static_cast<long double>(std::numeric_limits<int>::max())));
-}
-
-float divineRetributionDamageValue(const battle::Unit * target, uint64_t damage,
-	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
-{
-	if(!target || damage == 0 || !projectedBattle)
-		return 0.0f;
-
-	const auto retainedAttackValue = AttackPossibility::calculateDamageReduce(
-		nullptr, target, damage, damageCache, projectedBattle);
-	if(retainedAttackValue > 0.0f)
-		return retainedAttackValue;
-
-	const auto maxHealth = target->getMaxHealth();
-	const auto * creature = target->unitType();
-	const auto creatureValue = creature ? creature->getAIValue() : 0;
-	if(maxHealth <= 0 || creatureValue <= 0)
-		return std::max(0.0f, retainedAttackValue);
-
-	const long double healthValue = static_cast<long double>(damage)
-		* static_cast<long double>(creatureValue) / static_cast<long double>(maxHealth);
-	if(!std::isfinite(healthValue) || healthValue <= 0.0L)
-		return std::max(0.0f, retainedAttackValue);
-
-	return static_cast<float>(std::min(healthValue,
-		static_cast<long double>(std::numeric_limits<float>::max())));
-}
-
-/// Estimate the marginal delayed Holy response from visible ordinary creature
-/// attackers. Siege weapons, towers, active creature casts and hidden hero spellbooks
-/// are deliberately excluded. Each stack contributes its strongest legal
-/// melee or ranged attack once per round, with a bounded second-round forecast.
-float divineRetributionThreatValue(const battle::Unit * liveTarget,
-	const battle::Unit * projectedTarget, BattleSide side,
-	const CBattleInfoCallback & liveBattle,
-	const std::shared_ptr<HypotheticBattle> & projectedBattle,
-	SpellID spell, DamageCache & damageCache)
-{
-	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
-		|| liveTarget->getAvailableHealth() <= 0 || !projectedBattle)
-		return 0.0f;
-
-	const auto before = divineRetributionProtection(liveTarget, spell);
-	const auto after = divineRetributionProtection(projectedTarget, spell);
-	if(after.roundsRemaining <= 0 || after.rawCap <= 0)
-		return 0.0f;
-
-	float totalValue = 0.0f;
-	for(const auto * attacker : liveBattle.battleGetAllUnits(true))
-	{
-		if(!attacker || !attacker->alive() || !attacker->isValidTarget() || attacker->isGhost() || attacker->isTurret()
-			|| attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			|| attacker->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
-			|| attacker->unitSide() == side || !liveBattle.battleMatchOwner(attacker, liveTarget))
-			continue;
-
-		const auto * projectedAttacker = projectedBattle->battleGetUnitByID(attacker->unitId());
-		if(!projectedAttacker || !projectedAttacker->alive())
-			continue;
-
-		bool canShootTarget = false;
-		if(attacker->canShoot())
-			for(const auto & targetHex : liveTarget->getHexes())
-				if(liveBattle.battleCanShoot(attacker, targetHex))
-				{
-					canShootTarget = true;
-					break;
-				}
-
-		bool canMeleeTarget = false;
-		if(attacker->isMeleeAttacker())
-		{
-			canMeleeTarget = !liveBattle.meleeAttackHexes(attacker, liveTarget,
-				attacker->getPosition()).empty();
-			if(!canMeleeTarget)
-				for(const auto & position : liveBattle.battleGetAvailableHexes(attacker, false))
-					if(!liveBattle.meleeAttackHexes(attacker, liveTarget, position).empty())
-					{
-						canMeleeTarget = true;
-						break;
-					}
-		}
-
-		float attackerValue = 0.0f;
-		for(const int roundOffset : {0, 1})
-		{
-			const float roundWeight = roundOffset == 0 ? 1.0f : 0.5f;
-			int afterAttacks = roundOffset == 0
-				? std::max(0, AttackPossibility::getAttackCount(*attacker, true, liveBattle))
-				: std::max(1, attacker->getTotalAttacks(true));
-			if(canShootTarget && roundOffset == 1)
-				if(const auto * attackerState = dynamic_cast<const battle::CUnitState *>(attacker);
-					attackerState && attackerState->shots.isLimited())
-				{
-					const int currentShots = std::max(0,
-						AttackPossibility::getAttackCount(*attacker, true, liveBattle));
-					afterAttacks = std::min(afterAttacks,
-						std::max(0, attackerState->shots.available() - currentShots));
-				}
-
-			int64_t beforeResponse = 0;
-			int64_t afterResponse = 0;
-			for(const bool shooting : {false, true})
-			{
-				if((shooting && !canShootTarget) || (!shooting && !canMeleeTarget))
-					continue;
-
-				const BattleAttackInfo attack(attacker, liveTarget, 0, shooting);
-				const auto estimate = liveBattle.battleEstimateDamage(attack);
-				const auto perAttackDamage = static_cast<long double>(std::max<int64_t>(0,
-					estimate.damage.min + estimate.damage.max)) / 2.0L;
-				if(perAttackDamage <= 0.0L)
-					continue;
-
-				const int attackCount = shooting ? afterAttacks : (roundOffset == 0
-					? std::max(0, AttackPossibility::getAttackCount(*attacker, false, liveBattle))
-					: std::max(1, attacker->getTotalAttacks(false)));
-				if(attackCount <= 0)
-					continue;
-
-				const auto actualDamage = std::min(
-					static_cast<long double>(liveTarget->getAvailableHealth()),
-					perAttackDamage * static_cast<long double>(attackCount));
-				beforeResponse = std::max(beforeResponse,
-					newHorizonsDivineRetribution::recipientDamage(liveBattle, attacker,
-						divineRetributionDamage(before, actualDamage, roundOffset)));
-				afterResponse = std::max(afterResponse,
-					newHorizonsDivineRetribution::recipientDamage(*projectedBattle, projectedAttacker,
-						divineRetributionDamage(after, actualDamage, roundOffset)));
-			}
-
-			if(afterResponse <= beforeResponse)
-				continue;
-
-			attackerValue += divineRetributionDamageValue(projectedAttacker,
-				static_cast<uint64_t>(afterResponse - beforeResponse), damageCache, projectedBattle)
-				* roundWeight;
-		}
-		totalValue += attackerValue;
-	}
-
-	return std::isfinite(totalValue) ? totalValue : 0.0f;
-}
-
 /// Estimate visible creature spell pressure without querying a concealed enemy
 /// hero or asking a random-spellcaster to choose an ability. Spellcaster
 /// bonuses are part of the visible creature stack; each stack contributes its
@@ -2557,95 +1821,6 @@ float divineRetributionThreatValue(const battle::Unit * liveTarget,
 /// `canBeCast` here: a player-specific callback may refuse to answer for an
 /// opposing side, which is not evidence that its visible spellcaster is inert.
 /// `canCast()` and explicit visible SPELLCASTER bonuses bound this estimate.
-float visibleCreatureSpellThreat(
-	const std::vector<const battle::Unit *> & enemyUnits, bool magicalOnly = false)
-{
-	float totalThreat = 0.0f;
-	for(const auto * enemy : enemyUnits)
-	{
-		if(!enemy || !enemy->canCast())
-			continue;
-		float bestSpellDamage = 0.0f;
-		const auto spellcasters = enemy->getBonuses(Selector::type()(BonusType::SPELLCASTER));
-		if(!spellcasters)
-			continue;
-		for(const auto & bonus : *spellcasters)
-		{
-			if(!bonus || bonus->parameters || !bonus->subtype.as<SpellID>().hasValue())
-				continue;
-			const auto * spell = bonus->subtype.as<SpellID>().toSpell();
-			if(!spell || !spell->isCombat()
-				|| (!spell->isOffensive() && !spell->isDamage())
-				|| spell->isCreatureAbility()
-				|| (magicalOnly && !spell->isMagical()))
-				continue;
-			const auto spellDamage = static_cast<float>(std::max<int64_t>(0, spell->calculateDamage(enemy)));
-			bestSpellDamage = std::max(bestSpellDamage, spellDamage);
-		}
-		totalThreat += bestSpellDamage;
-	}
-	return totalThreat;
-}
-
-float holyArmorMitigationValue(BattleSide side,
-	const battle::Unit * liveTarget, const battle::Unit * projectedTarget, SpellID spell,
-	int64_t friendlyHealth, float visibleMagicalThreat, DamageCache & damageCache,
-	std::shared_ptr<CBattleInfoCallback> projectedBattle)
-{
-	if(!liveTarget || !projectedTarget || !liveTarget->alive() || !projectedTarget->alive()
-		|| liveTarget->unitSide() != side || visibleMagicalThreat <= 0.0f || friendlyHealth <= 0)
-		return 0.0f;
-
-	const auto targetHealth = liveTarget->getAvailableHealth();
-	if(targetHealth <= 0)
-		return 0.0f;
-
-	const auto before = holyArmorProtection(liveTarget, spell);
-	const auto after = holyArmorProtection(projectedTarget, spell);
-	const int addedExposure = after.exposurePercentRounds() - before.exposurePercentRounds();
-	if(addedExposure <= 0)
-		return 0.0f;
-
-	// Spread the visible creature-caster volley across allied health as a bounded
-	// target-priority estimate. The detached cast supplies the actual Holy Armor
-	// reduction and duration; the threat side deliberately uses one best spell
-	// per visible caster and does not infer anything from an enemy hero's book.
-	const long double targetShare = static_cast<long double>(targetHealth)
-		/ static_cast<long double>(friendlyHealth);
-	const long double estimatedSavedDamage = std::min(
-		static_cast<long double>(targetHealth),
-		static_cast<long double>(visibleMagicalThreat) * targetShare
-			* static_cast<long double>(addedExposure) / 100.0L);
-	if(!std::isfinite(estimatedSavedDamage) || estimatedSavedDamage <= 0.0L)
-		return 0.0f;
-
-	const auto savedDamage = static_cast<uint64_t>(std::floor(estimatedSavedDamage));
-	if(savedDamage == 0)
-		return 0.0f;
-
-	const auto retainedAttackValue = AttackPossibility::calculateDamageReduce(
-		nullptr, liveTarget, savedDamage, damageCache, std::move(projectedBattle));
-	if(retainedAttackValue > 0.0f)
-		return retainedAttackValue;
-	const auto maxHealth = liveTarget->getMaxHealth();
-	const auto creatureValue = liveTarget->unitType()->getAIValue();
-	if(maxHealth <= 0 || creatureValue <= 0)
-		return std::max(0.0f, retainedAttackValue);
-
-	// The usual damage-reduction value reflects the attacks the saved stack can
-	// still make. That can be zero for a distant or temporarily immobilized unit,
-	// even though preserving its health is useful. Fall back to a bounded share
-	// of the stack's creature value so defensive spells are not treated as no-ops.
-	const long double healthValue = static_cast<long double>(savedDamage)
-		* static_cast<long double>(creatureValue) / static_cast<long double>(maxHealth);
-	if(!std::isfinite(healthValue) || healthValue <= 0.0L)
-		return std::max(0.0f, retainedAttackValue);
-
-	const auto boundedHealthValue = static_cast<float>(std::min(
-		healthValue, static_cast<long double>(std::numeric_limits<float>::max())));
-	return boundedHealthValue;
-}
-
 namespace
 {
 /// Values only enemy attacks that deliberately name the Sanctified stack as
@@ -2930,43 +2105,7 @@ float canonicalOrderHeuristic(const CBattleInfoCallback & battle, BattleSide sid
 		if(effects && preview->projectAcceptedHeroOrder(side, *effects, *allowance))
 			baseValue += sharedPurposeMoraleValue(battle, preview, side, damageCache);
 	}
-	const auto prepared = battle.battlePrepareHeroOrderState(side, command, targetIds);
-	const auto * hero = battle.battleGetFightingHero(side);
-	if(!prepared || !newHorizonsEnchantedCommand::eligible(battle.getBattle()->getMagicRules(), hero, *prepared))
-		return baseValue;
-	auto preview = std::make_shared<HypotheticBattle>(environment, realBattle);
-	float moraleValue = 0.0f;
-	for(const auto id : newHorizonsEnchantedCommand::recipientIds(battle, side, *prepared))
-	{
-		const auto * original = battle.battleGetUnitByID(id);
-		if(original->unaffectedByMorale() || original->isTimeStopped()
-			|| original->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()))
-			continue;
-		auto projected = preview->getForUpdate(id);
-		projected->addUnitBonus(std::vector<Bonus>{newHorizonsEnchantedCommand::moraleBonus()});
-		auto before = expectedMoraleActivationChange(battle, original);
-		auto after = expectedMoraleActivationChange(*preview, projected.get());
-		const auto * active = battle.battleActiveUnit();
-		if(!active || active->unitId() != id)
-		{
-			// On queued stacks the grant protects the pre-activation bad-Morale
-			// roll, then expires before the post-action good-Morale roll.
-			before = std::min(0.0f, before);
-			after = std::min(0.0f, after);
-		}
-		else
-		{
-			const auto state = original->acquireState();
-			if(state->hadMorale || state->fear || original->waited() || original->defended() || !original->canMove())
-				continue;
-			before = std::max(0.0f, before);
-			after = std::max(0.0f, after);
-		}
-		const auto delta = preview->projectMoraleActivationDelta(original, projected.get(), before, after, 1.0f);
-		moraleValue += std::max(0.0f, delta)
-			* expectedTargetActivationValue(projected.get(), damageCache, preview);
-	}
-	return baseValue + moraleValue;
+	return baseValue;
 }
 
 // Defend and direct creature-cast candidates use HP. The zero-HP beneficial
@@ -4051,7 +3190,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse,
 	LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse,
 	RegenerationBaselineReuse::TestControl * regenerationReuse,
-	heroDecisionPressure::Experiment * orderExperiment)
+	heroDecisionPressure::Experiment * orderExperiment, arrowContinuation::Reuse::TestControl * arrowReuse)
 {
 	if(orderExperiment) orderExperiment->reset();
 	const auto battleView = cb->getBattle(battleID);
@@ -4188,36 +3327,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			continue;
 		}
 
-		const int maxOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
-			cb->getBattle(battleID)->getBattle()->getMagicRules(), spell->getId(), hero->getEffectPower(spell),
-			newHorizonsMagic::magicArrowOverchargeModifiers(hero));
-		const bool canUseSelectiveDispel = spell->getId() == SpellID::DISPEL
-			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.selectiveDispel");
-		const bool canUseTemporalField = spell->getId() == SpellID::SLOW
-			&& !newHorizonsMagic::hasDistinctMassSlow(cb->getBattle(battleID)->getBattle()->getMagicRules())
-			&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField")
-			&& !cb->getBattle(battleID)->battleWasTemporalFieldUsed(side);
-		std::vector<std::pair<SpellID, std::string>> cureAfflictionChoices{{SpellID::NONE, {}}};
-		const auto & magicRules = cb->getBattle(battleID)->getBattle()->getMagicRules();
-		if(newHorizonsMagic::cureEnabled(magicRules, spell->getId()))
-		{
-			for(const auto * unit : cb->getBattle(battleID)->battleGetAllUnits(false))
-			{
-				for(const auto affliction : newHorizonsMagic::cureAfflictions(magicRules, unit))
-					if(!vstd::contains(cureAfflictionChoices, std::make_pair(affliction, std::string{})))
-						cureAfflictionChoices.emplace_back(affliction, std::string{});
-				const auto frozenChoice = std::make_pair(SpellID(SpellID::NONE), std::string("frozen"));
-				if(newHorizonsFrozen::isFrozen(*unit) && !vstd::contains(cureAfflictionChoices, frozenChoice))
-					cureAfflictionChoices.push_back(frozenChoice);
-			}
-			std::sort(cureAfflictionChoices.begin(), cureAfflictionChoices.end(), [](const auto & lhs, const auto & rhs)
-			{
-				return std::make_pair(lhs.first.getNum(), lhs.second) < std::make_pair(rhs.first.getNum(), rhs.second);
-			});
-		}
-
-		const std::vector<int32_t> shadowGiftChoices = isCanonicalShadowGift(*cb->getBattle(battleID), spell)
-			? std::vector<int32_t>{10, 20, 30} : std::vector<int32_t>{0};
+		const auto [maxOvercharge, canUseSelectiveDispel, canUseTemporalField,
+			cureAfflictionChoices, shadowGiftChoices] = heroSpellVariants::prepare(
+				*cb->getBattle(battleID), hero, spell, side);
 		for(const auto shadowGiftSacrificePercent : shadowGiftChoices)
 		for(const auto & [cureAffliction, curePhysicalAffliction] : cureAfflictionChoices)
 		for(const bool massSlow : {false, true})
@@ -4297,6 +3409,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 									selection, env.get(), battleCallback);
 							}
 						}
+						if(!heroSpellVariants::targetAdmitted(ps, candidateCast, candidateMechanics))
+							continue;
 						if(isCanonicalShadowGift(*cb->getBattle(battleID), spell))
 						{
 							ps.spellShadowGiftHeuristicValue = SpellTargetEvaluator::shadowGiftTradeValue(
@@ -4304,44 +3418,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellShadowGiftHeuristicValue <= 0.0f)
 								continue;
 						}
-						if(isCanonicalHandOfFate(*cb->getBattle(battleID), spell))
-						{
-							const auto expectedDamage = SpellTargetEvaluator::handOfFateExpectedDamageValue(
-								candidateMechanics.get(), ps.dest, playerID, cb->getBattle(battleID));
-							if(!expectedDamage)
-								continue;
-							ps.spellHandOfFateExpectedValue = expectedDamage->hostileDamageValue
-								* scoreEvaluator.getPositiveEffectMultiplier()
-								- 4.0f * expectedDamage->friendlyDamageValue
-									* scoreEvaluator.getNegativeEffectMultiplier();
-						}
-						if(const auto * battleFormEffect = candidateMechanics->findEffect<spells::effects::BattleFormEffect>())
-						{
-							const auto expectedValue = SpellTargetEvaluator::battleFormExpectedOffensiveValue(
-								candidateMechanics.get(), battleFormEffect, ps.dest, env.get(), cb->getBattle(battleID));
-							if(!expectedValue)
-								continue;
-							ps.spellBattleFormExpectedValue = *expectedValue
-								* scoreEvaluator.getPositiveEffectMultiplier();
-						}
-						if(spell->getJsonKey() == "new-horizons:confusion")
-						{
-							const auto value = SpellTargetEvaluator::confusionExpectedActivationValue(
-								candidateMechanics.get(), ps.dest, env.get(), cb->getBattle(battleID));
-							if(!value || *value <= 0.0f)
-								continue;
-							ps.spellConfusionExpectedValue = *value * scoreEvaluator.getPositiveEffectMultiplier();
-						}
-						if(isCanonicalPuppetMaster(spell))
-						{
-							const auto expectedValue = expectedPuppetMasterActivationSwing(
-								spell, ps.dest, hero, metamagicFollowup, metamagicGrandChoice, overcharge,
-								hb, damageCache, env.get(), playerID, side);
-							if(expectedValue <= 0.0f)
-								continue;
-							ps.spellPuppetMasterExpectedValue = expectedValue
-								* scoreEvaluator.getPositiveEffectMultiplier();
-						}
+						if(!prepareExpectedOutcomes(ps, *candidateMechanics, activeStack->unitId())) continue;
 						if(const auto structuralValue = SpellTargetEvaluator::earthquakeStructuralHPValue(
 							candidateMechanics.get(), ps.dest, env.get(), cb->getBattle(battleID)))
 						{
@@ -4447,23 +3524,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							if(ps.spellPlacementHeuristicValue <= 0.0f)
 								continue;
 						}
-						if(isCanonicalChaosBlink(spell))
-						{
-							if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
-								continue;
-
-							const auto blinkPreview = newHorizonsBlink::preview(
-								*candidateMechanics, ps.dest.front().unitValue);
-							if(!blinkPreview)
-								continue;
-
-							ps.spellPlacementHeuristicValue = blinkExpectedPositionValue(
-								ps.dest.front().unitValue, *blinkPreview, playerID,
-								*battleCallback, battleCallback, damageCache)
-								* scoreEvaluator.getPositiveEffectMultiplier();
-							if(ps.spellPlacementHeuristicValue <= 0.0f)
-								continue;
-						}
+						if(isCanonicalChaosBlink(spell) && !prepareBlinkOutcome(ps, *candidateMechanics, activeStack->unitId())) continue;
 						if(isCanonicalHolyArmor(spell))
 						{
 							if(visibleMagicalSpellThreat <= 0.0f || friendlyAvailableHealth <= 0
@@ -4585,6 +3646,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	// This frame owns fixed parent/caster/scoring inputs; no entry survives it.
 	HeroCandidateValueReuse values(vinesReuse, lifeDrainReuse);
+	arrowContinuation::Reuse arrowValues(arrowReuse);
 	RegenerationBaselineReuse regenerationBaseline(regenerationReuse);
 	if(orderExperiment && orderExperiment->enableShortlist && !mandatoryOrder)
 		heroDecisionPressure::prepareShortlist(*orderExperiment, env.get(), battleView, side, possibleCasts, damageCache, scoreEvaluator);
@@ -4594,6 +3656,16 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			for(size_t i = 0; i != possibleCasts.size(); i++)
 			{
 				auto & ps = possibleCasts[i];
+				bool arrowCompleted = false;
+				const auto clearIncompleteArrow = vstd::makeScopeGuard([&]()
+				{
+					if(!arrowCompleted) arrowValues.clear();
+				});
+				std::optional<float> automaticBenefit;
+				const auto includeAutomaticBenefit = vstd::makeScopeGuard([&]()
+				{
+					if(automaticBenefit) ps.value += *automaticBenefit;
+				});
 				auto * candidateTiming = timing.continuation(i);
 				if(candidateTiming)
 				{
@@ -4625,6 +3697,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				if(!admission.admitted)
 				{
 					ps.value = std::numeric_limits<float>::lowest();
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
 				if(ps.command == HeroCommand::NONE && !counterspellNegated
@@ -4655,17 +3728,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					sharedPurposeSpellRecipients = newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(
 						*state, side, sharedPurposeSpellRecipients, true);
 				}
-				if(isCounterspell(ps.spell))
+				if(heroSpellProjection::projectNoEffectOrPrecomputedValue(ps, *state, side, baseline,
+					counterspell, counterspellNegated, spellAllowance, sharedPurposeSpellRecipients, targetId))
 				{
-					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
-						ps.value = std::numeric_limits<float>::lowest();
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
-				if(heroSpellProjection::projectPrecomputedValue(ps, *state, side, baseline,
-					counterspell, counterspellNegated, spellAllowance, sharedPurposeSpellRecipients, targetId))
-					continue;
 				// Sanctuary has no immediate health delta. Price direct attacks on
 				// this primary target and, for an active Keeper, only the bad-Morale
 				// penalty avoided before Sanctuary breaks on the next action.
@@ -4688,12 +3756,12 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					const auto sanctuaryValue = protectionValue + moraleValue;
 					if(sanctuaryValue <= 0.0f
 						|| counterspellNegated
-						|| !state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-							ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-							counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
+						|| !heroSpellProjection::acceptTerminalEffects(*state, side, ps, targetId,
+							counterspell, counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + sanctuaryValue * scoreEvaluator.getPositiveEffectMultiplier();
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
 				// Purify projects exactly its selected groups on detached snapshots.
@@ -4702,19 +3770,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					heroSpellProjection::projectPurifySelection(ps, *state, hero, side, baseline,
 						counterspell, counterspellNegated, spellAllowance, sharedPurposeSpellRecipients, targetId);
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
 				// Shadow Gift's immediate sacrifice is a real cost, but its value is in
-				// a bounded three-round attack projection. Use the signed snapshot score
-				// instead of generic cast evaluation, which cannot price future attacks.
+				// a bounded three-round attack projection. Retain that signed heuristic;
+				// materialize its effects once for the conditional completion marginal.
 				if(ps.command == HeroCommand::NONE && ps.spellShadowGiftHeuristicValue > 0.0f)
 				{
-					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
+					if(!heroSpellProjection::acceptTerminalEffects(*state, side, ps, targetId,
+							counterspell, counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellShadowGiftHeuristicValue;
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
 				// Hydra's Vitality has no cast-time HP delta: its value comes only
@@ -4727,18 +3796,19 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						ps.spellPlacementHeuristicValue,
 						*state, side, baseline, counterspell, counterspellNegated, spellAllowance,
 						sharedPurposeSpellRecipients, targetId);
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
 				// Blink has no deterministic landing at cast time. Preserve its exact
 				// shared-helper expectation (including the Blinkmaster distribution)
 				// instead of projecting RNGStub's midpoint as if it were authoritative.
-				if(ps.command == HeroCommand::NONE && isCanonicalChaosBlink(ps.spell)
-					&& ps.spellPlacementHeuristicValue > 0.0f)
+				if(ps.command == HeroCommand::NONE && isCanonicalChaosBlink(ps.spell))
 				{
 					heroSpellProjection::projectTargetHeuristic(ps,
 						ps.spellPlacementHeuristicValue,
 						*state, side, baseline, counterspell, counterspellNegated, spellAllowance,
 						sharedPurposeSpellRecipients, targetId);
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
 				// Canonical delayed spells such as Land Mine, Fire Wall, and Plague may
@@ -4751,39 +3821,18 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					// A delayed spell still consumes the hero exchange; preserve the
 					// same best-attack baseline used by contextual Orders so its
 					// placement heuristic is compared on the shared BattleAI scale.
-					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
+					if(!heroSpellProjection::acceptTerminalEffects(*state, side, ps, targetId,
+							counterspell, counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
 						ps.value = std::numeric_limits<float>::lowest();
 					else
 						ps.value = baseline + ps.spellPlacementHeuristicValue;
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
-				// Canonical Nature Poison changes only the target's physical
-				// Poison state. Its detached, three-activation marginal value was
-				// forecast during target enumeration, so avoid a second generic
-				// effect projection that has no immediate health delta.
-				if(ps.command == HeroCommand::NONE && ps.spellNaturePoisonValue > 0.0f)
+				if(heroSpellProjection::projectDeferredDamageValue(ps, *state, side, baseline,
+					counterspell, counterspellNegated, spellAllowance, sharedPurposeSpellRecipients, targetId))
 				{
-					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + ps.spellNaturePoisonValue;
-					continue;
-				}
-				// Soul Chain changes future damage relationships without an immediate
-				// health delta. Its detached forecast was valued during target generation,
-				// so do not collapse the cast to zero through generic castEval scoring.
-				if(ps.command == HeroCommand::NONE && ps.spellSoulChainDelayedValue > 0.0f)
-				{
-					if(!state->projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-						ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-						counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients) || counterspellNegated)
-						ps.value = std::numeric_limits<float>::lowest();
-					else
-						ps.value = baseline + ps.spellSoulChainDelayedValue;
+					includeSyntheticInspiration(ps, state, activeStack->unitId());
 					continue;
 				}
 
@@ -4818,7 +3867,23 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 				else
 				{
-					auto completed = heroActionProjection::completeOrder(*state, *battleCallback, side, ps, admission);
+					auto completed = heroActionProjection::completeOrder(*state, *battleCallback, side, ps, admission,
+						[&](const HeroOrderState & acceptedOrder)
+						{
+							if(!acceptedOrder.passiveDivineMandate) return;
+							passiveDivineMandateAI::Workload work;
+							automaticBenefit = passiveDivineMandateAI::projectedValue(env.get(), state, side,
+								acceptedOrder, damageCache, scoreEvaluator.getPositiveEffectMultiplier(),
+								scoreEvaluator.getNegativeEffectMultiplier(), &work);
+							if(!automaticBenefit)
+							{
+								if(!work.uncertainAutomaticBenefit)
+									throw std::logic_error("Unsupported native passive Divine Mandate forecast");
+								// Explicit conservative lower bound: keep the legal Order's normal
+								// utility, credit no hidden uncertain automatic-spell benefit.
+								if(observer) observer->uncertainAutomaticBenefit(i);
+							}
+						});
 					if(!completed.accepted)
 					{
 						ps.value = std::numeric_limits<float>::lowest();
@@ -4894,8 +3959,9 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					const auto movementThreat = counterspellNegated ? 0.0f
 						: entangleMovementThreatValue(liveTarget, projectedTarget,
 							activeStack->unitId(), side, *battleCallback, state, innerCache);
-					const int resistance = liveTarget
-						? std::clamp(liveTarget->magicResistance(), 0, 100) : 100;
+					const auto marks = newHorizonsMetamagic::captureHeroCastProfile(hero, battleCallback->getBattle(), true);
+					const int resistance = liveTarget ? newHorizonsMetamagic::resistanceChance(liveTarget->magicResistance(),
+						marks.perks.rank > 0 ? &marks : nullptr, *battleCallback, *liveTarget) : 100;
 					const auto applicationChance = 1.0f - static_cast<float>(resistance) / 100.0f;
 					if(movementThreat <= 0.0f || applicationChance <= 0.0f)
 					{
@@ -5023,9 +4089,18 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					? orderContinuation->actor.value() : activeStack->unitId();
 				const auto modelActive = state->getForUpdate(modelActor);
 				if(orderExperiment) orderExperiment->noteContinuation(i);
-				heroActionUtility::evaluateContinuation(continuation, modelActive, needFullEval,
-					cachedAttack, innerCache, state, env, strengthRatio, simulationTurnsCount,
-					scoreEvaluator, targets.get(), candidateTiming);
+				const bool full = modelActive->alive() && (needFullEval || !cachedAttack.ap);
+				if(const auto reused = arrowValues.find(ps, admission, sharedPurposeSpellRecipients,
+					projection.arrow, *state, full))
+					continuation = *reused;
+				else
+				{
+					heroActionUtility::evaluateContinuation(continuation, modelActive, needFullEval,
+						cachedAttack, innerCache, state, env, strengthRatio, simulationTurnsCount,
+						scoreEvaluator, targets.get(), candidateTiming);
+					if(full) arrowValues.remember(ps, admission, sharedPurposeSpellRecipients, projection.arrow, continuation, *state);
+				}
+				arrowCompleted = true;
 				for(const auto & unit : allUnits)
 				{
 					if(!unit->isValidTarget(true) && !vstd::contains(healthOfStack, unit->unitId()))

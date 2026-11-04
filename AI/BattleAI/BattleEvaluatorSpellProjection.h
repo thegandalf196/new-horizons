@@ -4,6 +4,7 @@
  */
 #pragma once
 #include "HeroActionAdmission.h"
+#include "ArrowContinuationReuse.h"
 #include "../../lib/spells/NewHorizonsVengefulVines.h"
 #include "../../lib/spells/NewHorizonsLifeDrainProjection.h"
 
@@ -19,6 +20,7 @@ bool isCanonicalRegeneration(const CSpell * spell, const JsonNode & rules);
 struct SpellProjection
 {
 	bool accepted = false;
+	std::optional<arrowContinuation::Outcome> arrow;
 	std::optional<newHorizonsVengefulVines::ProjectionReceipt> vines;
 	/// Supplied only after the selected friendly passed native no-op observation.
 	std::optional<newHorizonsLifeDrain::ProjectionReceipt> lifeDrain;

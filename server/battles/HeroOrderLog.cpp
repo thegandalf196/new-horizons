@@ -98,12 +98,7 @@ MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side,
 	line.appendRawString(": ");
 	line.appendRawString(heroOrderDisplayName(state.command));
 	line.appendRawString("!");
-	if(state.warcastingBonusPercent > 0)
-	{
-		line.appendRawString(" Warcasting adds +");
-		line.appendNumber(state.warcastingBonusPercent);
-		line.appendRawString(" percentage points to attribute-derived efficiency.");
-	}
+
 	if(state.sacredCommandEfficiencyBonusPercent > 0)
 	{
 		line.appendRawString(" Sacred Command adds +");
@@ -127,7 +122,7 @@ MetaString heroOrderLogLine(const CBattleInfoCallback & battle, BattleSide side,
 			line.appendRawString(" Each allied stack's first melee attack after moving at least 3 hexes gains +");
 			line.appendNumber(hero ? heroCommands::coefficient(
 				battle.getBattle()->getHeroCommandRules()["commands"]["charge"]["effects"]["meleeDamagePercent"],
-				*hero, state.warcastingBonusPercent, state.divineMandateEfficiencyBonusPercent()) : 0);
+				*hero, state.divineMandateEfficiencyBonusPercent()) : 0);
 			line.appendRawString("% damage, plus 2 percentage points per additional hex, this round.");
 			break;
 		case HeroCommand::HOLD_THE_LINE:

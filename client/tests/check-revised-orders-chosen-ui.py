@@ -15,9 +15,9 @@ class RevisedPresentationTest(unittest.TestCase):
         self.assertIn("heroCommands::supportedByRules(*rules, display.command)", display)
         for old in ("PROTECT", "FLANK", "FOCUS_FIRE", "SECOND_WIND"):
             self.assertIn("HeroCommand::" + old, targeting)
-        for current in ("FEINT", "VANGUARD"):
+        for current, icon in (("FEINT", "NH_feint_button"), ("VANGUARD", "NH_vanguard_button")):
             self.assertNotIn("HeroCommand::" + current, targeting)
-            self.assertIn('{HeroCommand::' + current + ', "NH_orders_gauntlet_framed"', display)
+            self.assertIn('{HeroCommand::' + current + ', "' + icon + '"', display)
 
     def test_active_values_and_expiry_come_from_issued_snapshot(self):
         display = source("client/battle/NewHorizonsOrderPresentation.h")

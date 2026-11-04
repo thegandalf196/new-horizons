@@ -10,13 +10,15 @@ INTERFACE = (ROOT / "client/battle/BattleInterface.cpp").read_text()
 PANEL = (ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text()
 WINDOW = (ROOT / "client/windows/CCreatureWindow.cpp").read_text()
 STATUS = (ROOT / "client/battle/FrozenStatusPresentation.cpp").read_text()
+TEMPORARY = (ROOT / "client/battle/StackTemporaryStatusPresenter.cpp").read_text()
+COLORS = (ROOT / "client/battle/BattleStackColorPresentation.h").read_text()
 
 
 class FrozenPresentationSourceTest(unittest.TestCase):
     def test_frozen_excludes_the_empty_status_caption(self):
-        condition = PANEL.split("if(spells.size() == hiddenReanimateSpellEffects", 1)[1]
-        condition = condition.split("labelsMultiline.push_back", 1)[0]
-        self.assertIn("!displayedStatus.frozen", condition)
+        self.assertIn("if(temporaryStatuses.isEmpty())", PANEL)
+        self.assertIn("empty = totalEffectCount == 0;", TEMPORARY)
+        self.assertIn("+ (status.frozen ? 1 : 0)", TEMPORARY)
 
     def test_both_status_surfaces_share_real_physical_icon_and_help(self):
         section = WINDOW.split("CStackWindow::ActiveSpellsSection::ActiveSpellsSection(", 1)[1]
@@ -26,8 +28,8 @@ class FrozenPresentationSourceTest(unittest.TestCase):
         self.assertLess(section.index("currentTooltip"), section.index("battleStack->activeSpells()"))
         self.assertIn("++printed;", section.split("battleStack->activeSpells()", 1)[0])
         self.assertIn("printed >= 8", section)
-        self.assertIn("newHorizonsFrozenPresentation::FrozenStatusIcon", PANEL)
-        self.assertIn("newHorizonsFrozenPresentation::tooltip(displayedStatus.frozenShatterBonusPercent)", PANEL)
+        self.assertIn("newHorizonsFrozenPresentation::FrozenStatusIcon", TEMPORARY)
+        self.assertIn("newHorizonsFrozenPresentation::tooltip(status.frozenShatterBonusPercent)", TEMPORARY)
         self.assertNotIn("class FrozenStatusIcon", PANEL)
 
     def test_status_uses_current_marker_and_captured_battle_rules(self):
@@ -64,7 +66,10 @@ class FrozenPresentationSourceTest(unittest.TestCase):
     def test_only_misaligned_prism_removed_blue_hue_and_shatter_retained(self):
         painting = CONTROLLER.split("void BattleStacksController::showStack(", 1)[1]
         painting = painting.split("void BattleStacksController::tick(", 1)[0]
-        self.assertIn("ColorRGBA(114, 186, 218, 140)", painting)
+        self.assertIn("battleStackColorPresentation::appearance(stack,", painting)
+        self.assertIn("stack->unitType()->getJsonKey(), physicallyFrozen, stackFilterEffects", painting)
+        self.assertIn("const ColorRGBA blue(114, 186, 218, 140);", COLORS)
+        self.assertIn("if(physicallyFrozen)\n\t\tresult.color = blue;", COLORS)
         self.assertNotIn("const int radius", painting)
         self.assertNotIn("vertices", painting)
         self.assertIn("frozenShatterFeedback", painting)

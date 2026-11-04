@@ -27,12 +27,11 @@ int64_t checkedStormMultiply(int64_t left, int64_t right)
 }
 
 int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int32_t effectPower,
-	int32_t powerDivisor, int32_t spellPowerCoefficientBasisPoints, int32_t warcastingBonusPercent,
+	int32_t powerDivisor, int32_t spellPowerCoefficientBasisPoints,
 	int32_t empowerSpellBonusPercent, int32_t selectedTargetCount, bool total)
 {
 	if(base < 0 || powerCoefficient < 0 || effectPower < 0 || powerDivisor <= 0
 		|| spellPowerCoefficientBasisPoints < 0 || spellPowerCoefficientBasisPoints > 100000
-		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000
 		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000
 		|| selectedTargetCount < 1
 		|| selectedTargetCount > newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS)
@@ -43,11 +42,9 @@ int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient, int3
 	// generic direct-damage path truncates at the pool boundary, which differs
 	// from the Storm table at positive half values (for example, SP=1 yields 47).
 	const int64_t powerDenominator = checkedStormMultiply(
-		checkedStormMultiply(powerDivisor, 1000000), 100);
+		checkedStormMultiply(powerDivisor, 10000), 100);
 	int64_t spellPowerNumerator = checkedStormMultiply(powerCoefficient, effectPower);
 	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator, spellPowerCoefficientBasisPoints);
-	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator,
-		100LL + warcastingBonusPercent);
 	spellPowerNumerator = checkedStormMultiply(spellPowerNumerator,
 		100LL + empowerSpellBonusPercent);
 	const int64_t fixedNumerator = checkedStormMultiply(base, powerDenominator);
@@ -91,8 +88,7 @@ int64_t BaseMechanics::getStormOfDaggersDamagePerTarget(int32_t selectedTargetCo
 	if(!formula)
 		return 0;
 	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
-		getEffectPower(), getEffectPowerDivisor(), getDirectDamageSpellPowerCoefficientBasisPoints(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), selectedTargetCount, false);
+		getEffectPower(), getEffectPowerDivisor(), getDirectDamageSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent(), selectedTargetCount, false);
 }
 
 int64_t BaseMechanics::getStormOfDaggersTotalDamage(int32_t selectedTargetCount) const
@@ -106,8 +102,7 @@ int64_t BaseMechanics::getStormOfDaggersTotalDamage(int32_t selectedTargetCount)
 	if(!formula)
 		return 0;
 	return stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
-		getEffectPower(), getEffectPowerDivisor(), getDirectDamageSpellPowerCoefficientBasisPoints(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), selectedTargetCount, true);
+		getEffectPower(), getEffectPowerDivisor(), getDirectDamageSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent(), selectedTargetCount, true);
 }
 
 

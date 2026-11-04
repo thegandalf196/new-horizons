@@ -54,6 +54,8 @@ bool resolveManaFurnacePresentation(const CHero & hero, const JsonNode & develop
 	if(!rules)
 		return false;
 	result.name = "Mana Furnace";
+	result.summary = "With Intelligence active, restore " + std::to_string(rules->restorePointsPerLevel)
+		+ " Normal Spell Points per hero level at combat start, up to " + std::to_string(rules->maximumRestorePoints) + " and available capacity.";
 	result.artwork = "newHorizons/heroSpecialties/AydenManaFurnace";
 	result.description = "With Intelligence active, restore " + std::to_string(rules->restorePointsPerLevel)
 		+ " Normal Spell Points per hero level when combat begins, up to " + std::to_string(rules->maximumRestorePoints)

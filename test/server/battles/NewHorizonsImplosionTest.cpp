@@ -107,30 +107,30 @@ protected:
 
 TEST(NewHorizonsImplosionFormulaTest, CurrentHealthAndOneFinalFloor)
 {
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 10000, 0, 0), 1700);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 100, 10000, 0, 0), 2200);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 150, 10000, 0, 0), 2700);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 180, 10000, 0, 0), 3000);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 1000, 0, 10000, 0, 0), 120);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 500, 0, 10000, 0, 0), 60);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 999, 50, 11500, 0, 0), 177);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 10000, 0), 1700);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 100, 10000, 0), 2200);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 150, 10000, 0), 2700);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 180, 10000, 0), 3000);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 1000, 0, 10000, 0), 120);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 500, 0, 10000, 0), 60);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 999, 50, 11500, 0), 177);
 }
 
-TEST(NewHorizonsImplosionFormulaTest, RankAndWarcastingScaleOnlyPowerTerm)
+TEST(NewHorizonsImplosionFormulaTest, RankAndEmpowerScaleOnlyPowerTerm)
 {
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 10000, 0, 0), 1700);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 14500, 0, 0), 1925);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 0, 14500, 200, 25), 1200);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 14500, 100, 25), 3000);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 10000, 0), 1700);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 14500, 0), 1925);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 0, 14500, 25), 1200);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 10000, 50, 14500, 25), 2106);
 }
 
 TEST(NewHorizonsImplosionFormulaTest, CapAndHugeHealthAreOverflowSafe)
 {
 	const auto health = std::numeric_limits<int64_t>::max();
 	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, health, std::numeric_limits<int32_t>::max(),
-		1000000, 200, 100), health / 10 * 3 + health % 10 * 3 / 10);
-	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 1, 0, 10000, 0, 0), 0);
-	EXPECT_THROW(newHorizonsImplosion::damage(DEFAULT, 100, -1, 10000, 0, 0), std::invalid_argument);
+		1000000, 100), health / 10 * 3 + health % 10 * 3 / 10);
+	EXPECT_EQ(newHorizonsImplosion::damage(DEFAULT, 1, 0, 10000, 0), 0);
+	EXPECT_THROW(newHorizonsImplosion::damage(DEFAULT, 100, -1, 10000, 0), std::invalid_argument);
 }
 
 TEST_F(NewHorizonsImplosionTest, ActualPaidCastUsesCurrentAggregateHealthAndPreview)

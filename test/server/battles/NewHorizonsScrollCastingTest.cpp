@@ -74,8 +74,8 @@ protected:
 		{
 			const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
 			attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-			attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.arcaneMemory"});
-			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.arcaneMemory"));
+			attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.spellFamiliarity"});
+			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.spellFamiliarity"));
 		}
 		setTestSpellPointTotal(attackerSideHero, 1000);
 		for(const auto school : newHorizonsMagic::schoolSkills(attackerSideHero->getMagicRules()))
@@ -135,7 +135,7 @@ TEST_F(NewHorizonsScrollCastingTest, EquippedHighLevelScrollCastsWithoutSchoolOr
 	EXPECT_FALSE(restoredHero->canLearnSpell(spell.toSpell()));
 }
 
-TEST_F(NewHorizonsScrollCastingTest, ArcaneMemoryDoesNotBypassSchoolLearningAfterGenuineScrollCast)
+TEST_F(NewHorizonsScrollCastingTest, SpellFamiliarityDoesNotBypassSchoolLearningAfterGenuineScrollCast)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, spell, ArtifactPosition::MISC1));
@@ -146,7 +146,7 @@ TEST_F(NewHorizonsScrollCastingTest, ArcaneMemoryDoesNotBypassSchoolLearningAfte
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(spell.toSpell()));
 }
 
-TEST_F(NewHorizonsScrollCastingTest, QualifiedArcaneMemoryStillLearnsFromAcceptedScrollCast)
+TEST_F(NewHorizonsScrollCastingTest, QualifiedSpellFamiliarityStillDoesNotLearnFromAcceptedScrollCast)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")),
@@ -155,7 +155,8 @@ TEST_F(NewHorizonsScrollCastingTest, QualifiedArcaneMemoryStillLearnsFromAccepte
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, spell, ArtifactPosition::MISC1));
 	ASSERT_NO_FATAL_FAILURE(begin());
 	ASSERT_TRUE(cast());
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(spell));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell));
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(spell), 1);
 	EXPECT_TRUE(attackerSideHero->hasScroll(spell, true));
 }
 

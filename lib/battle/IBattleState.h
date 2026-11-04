@@ -22,9 +22,10 @@
 #include "NewHorizonsRapidResponse.h"
 #include "SylvanLuckState.h"
 #include "HeroActionAllowanceState.h"
-#include "AlternatingHeroActionState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
+#include "MetamagicPointState.h"
+#include "WisdomCombatState.h"
 #include "NewHorizonsSeizeInitiative.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "OverwhelmingFormulaState.h"
@@ -83,6 +84,11 @@ public:
 	virtual TStacks getStacksIf(const TStackFilter & predicate) const = 0;
 
 	virtual battle::Units getUnitsIf(const battle::UnitFilter & predicate) const = 0;
+	/// Read-only SOURCE-LOCAL spell records only; no inherited auras, HP or sidecar snapshots.
+	virtual std::vector<Bonus> getLocalSpellEffects(uint32_t) const
+	{
+		throw std::runtime_error("Battle view does not expose source-local spell-effect records");
+	}
 
 	virtual BattleField getBattlefieldType() const = 0;
 	virtual TerrainId getTerrainType() const = 0;
@@ -144,12 +150,6 @@ public:
 		static const BattleDeploymentState empty;
 		return empty;
 	}
-	virtual const AlternatingHeroActionState & getWarcastingState(BattleSide side) const
-	{
-		(void)side;
-		static const AlternatingHeroActionState empty;
-		return empty;
-	}
 	virtual const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const
 	{
 		(void)side;
@@ -187,6 +187,11 @@ public:
 	}
 	virtual std::optional<FocusFireState> getFocusFireState(BattleSide side) const { return {}; }
 	virtual bool hasCompletedHeroSpellCast(BattleSide side) const { (void)side; return false; }
+	virtual const WisdomCombatState & getWisdomCombatState(BattleSide) const
+	{
+		static const WisdomCombatState empty;
+		return empty;
+	}
 	virtual int32_t getExtendSpellLastRound(BattleSide) const { return -1; }
 	virtual bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const
 	{
@@ -203,6 +208,11 @@ public:
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 	virtual bool getTemporalFieldUsed(BattleSide side) const { return false; }
 	virtual bool getCounterspellArmed(BattleSide side) const { return false; }
+	virtual const MetamagicPointState & getMetamagicPointState(BattleSide) const
+	{
+		static const MetamagicPointState empty;
+		return empty;
+	}
 	virtual int32_t getMetamagicPendingCount(BattleSide side) const { return 0; }
 	virtual int32_t getMetamagicUsesConsumed(BattleSide side) const { return 0; }
 	virtual bool getMetamagicGrandUsed(BattleSide side) const { return false; }
@@ -276,6 +286,9 @@ public:
 		static const std::map<CreatureID, TQuantity> empty;
 		return empty;
 	}
+	virtual bool getChainGateArmed(BattleSide) const { return false; }
+	virtual bool getMasterGateUsed(BattleSide) const { return false; }
+	virtual uint8_t getPassiveDivineMandateUses(BattleSide) const { return 0; }
 	/// Pending Demonic Gate landing footprints are authoritative but derived into accessibility.
 	virtual std::vector<PendingDemonicGateFootprint> getPendingDemonicGateFootprints(BattleSide side) const
 	{
@@ -382,11 +395,15 @@ public:
 	{
 		throw std::runtime_error("Battle state cannot record Cross-School Formula");
 	}
-	virtual void armReactiveWeave(BattleSide, int32_t, int32_t)
+	virtual void setMetamagicPointState(BattleSide, const MetamagicPointState &)
 	{
-		throw std::runtime_error("Reactive Weave state is unsupported by this battle");
+		throw std::logic_error("Battle state cannot record Metamagic points");
 	}
 	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
+	virtual void setPassiveDivineMandateUses(BattleSide, uint8_t)
+	{
+		throw std::logic_error("Battle state does not support passive Divine Mandate updates");
+	}
 	virtual void consumeExtendSpell(BattleSide) { throw std::runtime_error("Battle state cannot consume Extend Spell"); }
 	virtual void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) {}
 	virtual void setPerfectFortuneState(BattleSide, const PerfectFortuneState &) {}

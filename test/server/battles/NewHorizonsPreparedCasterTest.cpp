@@ -23,6 +23,7 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsWisdom.h"
 #include "../../../lib/spells/SpellCostBreakdown.h"
 #include "../../../server/CGameHandler.h"
 
@@ -35,17 +36,17 @@ namespace
 {
 constexpr auto WISDOM_SKILL = "new-horizons:wisdom";
 constexpr auto MYSTICISM = "new-horizons:wisdom.mysticism";
-constexpr auto PREPARED_CASTER = "new-horizons:wisdom.preparedCaster";
-constexpr auto DEEP_KNOWLEDGE = "new-horizons:wisdom.deepKnowledge";
+constexpr auto SPELL_FAMILIARITY = "new-horizons:wisdom.spellFamiliarity";
+constexpr auto MANA_CONSERVATION = "new-horizons:wisdom.manaConservation";
 constexpr auto ARCHMAGE = "new-horizons:wisdom.archmage";
 constexpr auto HAVOC_MAGIC = "new-horizons:havocMagic";
 constexpr auto METAMAGIC_SKILL = "new-horizons:metamagic";
-constexpr auto ARCANE_ECONOMY = "new-horizons:metamagic.arcaneEconomy";
+constexpr auto MANA_CONDUIT = "new-horizons:metamagic.manaConduit";
 
-class NewHorizonsPreparedCasterTest : public HeroCommandFixture
+class NewHorizonsSpellFamiliarityTest : public HeroCommandFixture
 {
 protected:
-	bool capturePreparedCasterAsPlanned = false;
+	bool captureSpellFamiliarityAsPlanned = false;
 	bool captureArchmageAsPlanned = false;
 	bool chainLightningCostIsOne = false;
 
@@ -69,11 +70,11 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-		if(capturePreparedCasterAsPlanned || captureArchmageAsPlanned)
+		if(captureSpellFamiliarityAsPlanned || captureArchmageAsPlanned)
 		{
 			for(auto & perk : perkRules["skills"][WISDOM_SKILL]["perks"].Vector())
 			{
-				if(perk["id"].String() == PREPARED_CASTER && capturePreparedCasterAsPlanned)
+				if(perk["id"].String() == SPELL_FAMILIARITY && captureSpellFamiliarityAsPlanned)
 					perk["effect"]["status"].String() = "planned";
 				if(perk["id"].String() == ARCHMAGE && captureArchmageAsPlanned)
 					perk["effect"]["status"].String() = "planned";
@@ -88,7 +89,7 @@ protected:
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder
 			.size(36, false)
-			.name("PreparedCasterTest")
+			.name("SpellFamiliarityTest")
 			.playerActive(PlayerColor(0))
 			.playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(0))
@@ -114,28 +115,29 @@ protected:
 		return SecondarySkill(decoded);
 	}
 
-	void grantPreparedCaster(CGHeroInstance * hero, int wisdomRank = MasteryLevel::BASIC)
+	void grantSpellFamiliarity(CGHeroInstance * hero, int wisdomRank = MasteryLevel::BASIC)
 	{
 		hero->setSecSkillLevel(wisdomSkill(), wisdomRank, ChangeValueMode::ABSOLUTE);
-		hero->applyPerkSelection({WISDOM_SKILL, PREPARED_CASTER});
-		ASSERT_TRUE(hero->hasActivePerk(WISDOM_SKILL, PREPARED_CASTER));
+		hero->applyPerkSelection({WISDOM_SKILL, SPELL_FAMILIARITY});
+		ASSERT_TRUE(hero->hasActivePerk(WISDOM_SKILL, SPELL_FAMILIARITY));
 	}
 
-	void grantArcaneEconomy(CGHeroInstance * hero)
+	void grantManaConduit(CGHeroInstance * hero)
 	{
 		const int decoded = SecondarySkill::decode(METAMAGIC_SKILL);
 		ASSERT_GE(decoded, 0);
+		hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:solmyr")));
 		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		hero->applyPerkSelection({METAMAGIC_SKILL, ARCANE_ECONOMY});
-		ASSERT_TRUE(hero->hasActivePerk(METAMAGIC_SKILL, ARCANE_ECONOMY));
+		hero->applyPerkSelection({METAMAGIC_SKILL, MANA_CONDUIT});
+		ASSERT_TRUE(hero->hasActivePerk(METAMAGIC_SKILL, MANA_CONDUIT));
 	}
 
-	void grantArchmage(CGHeroInstance * hero, bool includePreparedCaster = false)
+	void grantArchmage(CGHeroInstance * hero, bool includeSpellFamiliarity = false)
 	{
 		hero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		hero->applyPerkSelection({WISDOM_SKILL, includePreparedCaster ? PREPARED_CASTER : MYSTICISM});
+		hero->applyPerkSelection({WISDOM_SKILL, includeSpellFamiliarity ? SPELL_FAMILIARITY : MYSTICISM});
 		hero->setSecSkillLevel(wisdomSkill(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-		hero->applyPerkSelection({WISDOM_SKILL, DEEP_KNOWLEDGE});
+		hero->applyPerkSelection({WISDOM_SKILL, MANA_CONSERVATION});
 		hero->setSecSkillLevel(wisdomSkill(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		hero->applyPerkSelection({WISDOM_SKILL, ARCHMAGE});
 		ASSERT_TRUE(hero->hasActivePerk(WISDOM_SKILL, ARCHMAGE));
@@ -211,12 +213,12 @@ protected:
 		return breakdown;
 	}
 
-	CStack * prepareBattleWithPreparedCaster(int wisdomRank = MasteryLevel::BASIC, bool includeArcaneEconomy = false)
+	CStack * prepareBattleWithSpellFamiliarity(int wisdomRank = MasteryLevel::BASIC, bool includeManaConduit = false)
 	{
 		startGame();
-		grantPreparedCaster(attackerSideHero, wisdomRank);
-		if(includeArcaneEconomy)
-			grantArcaneEconomy(attackerSideHero);
+		grantSpellFamiliarity(attackerSideHero, wisdomRank);
+		if(includeManaConduit)
+			grantManaConduit(attackerSideHero);
 		prepareAttackerSpellbook(attackerSideHero);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 		startBattle();
@@ -225,10 +227,10 @@ protected:
 		return target;
 	}
 
-	CStack * prepareBattleWithArchmage(bool includePreparedCaster = false)
+	CStack * prepareBattleWithArchmage(bool includeSpellFamiliarity = false)
 	{
 		startGame();
-		grantArchmage(attackerSideHero, includePreparedCaster);
+		grantArchmage(attackerSideHero, includeSpellFamiliarity);
 		prepareArchmageSpellbook(attackerSideHero);
 		startBattle();
 		auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
@@ -266,9 +268,9 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, AcceptedFirstSpellGetsDiscountAndTheGatePersistsAcrossRounds)
+TEST_F(NewHorizonsSpellFamiliarityTest, FirstSpellHasNoDiscountAndParticularSpellHistoryPersistsAcrossRounds)
 {
-	auto * target = prepareBattleWithPreparedCaster(MasteryLevel::EXPERT);
+	auto * target = prepareBattleWithSpellFamiliarity(MasteryLevel::EXPERT);
 	ASSERT_NE(target, nullptr);
 	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
 	ASSERT_EQ(attackerSideHero->getListedSpellCost(magicArrow), 4);
@@ -276,14 +278,14 @@ TEST_F(NewHorizonsPreparedCasterTest, AcceptedFirstSpellGetsDiscountAndTheGatePe
 		attackerSideHero->getListedSpellCost(magicArrow), 1, MasteryLevel::EXPERT);
 	ASSERT_EQ(wisdomCost, 3);
 	const auto breakdown = readSpellCostBreakdown(magicArrow, 4);
-	EXPECT_EQ(breakdown.finalCost, 1);
+	EXPECT_EQ(breakdown.finalCost, wisdomCost);
 	const auto wisdomStage = std::find_if(breakdown.stages.begin(), breakdown.stages.end(), [](const auto & stage)
 	{
 		return stage.kind == SpellCostStage::Kind::WISDOM;
 	});
 	const auto preparedStage = std::find_if(breakdown.stages.begin(), breakdown.stages.end(), [](const auto & stage)
 	{
-		return stage.kind == SpellCostStage::Kind::PREPARED_CASTER;
+		return stage.kind == SpellCostStage::Kind::SPELL_FAMILIARITY;
 	});
 	ASSERT_NE(wisdomStage, breakdown.stages.end());
 	ASSERT_NE(preparedStage, breakdown.stages.end());
@@ -296,8 +298,9 @@ TEST_F(NewHorizonsPreparedCasterTest, AcceptedFirstSpellGetsDiscountAndTheGatePe
 
 	const auto firstMana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(issueMagicArrow(target, 4));
-	EXPECT_EQ(firstMana - attackerSideHero->getManaAvailable(), 5)
-		<< "Prepared Caster discounts the Wisdom base to 1; Overcharge still adds all four Mana";
+	EXPECT_EQ(firstMana - attackerSideHero->getManaAvailable(), wisdomCost + 4)
+		<< "The first cast has no Familiarity discount; Overcharge still adds all four Mana";
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::MAGIC_ARROW), 1);
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::DEFENDER));
 
@@ -308,13 +311,14 @@ TEST_F(NewHorizonsPreparedCasterTest, AcceptedFirstSpellGetsDiscountAndTheGatePe
 	EXPECT_EQ(battle()->battleGetSpellCost(SpellID(SpellID::MAGIC_ARROW).toSpell(), attackerSideHero), wisdomCost);
 	const auto laterMana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(issueMagicArrow(target));
-	EXPECT_EQ(laterMana - attackerSideHero->getManaAvailable(), wisdomCost)
-		<< "The battle-long marker survives round transition and no longer discounts later spells";
+	EXPECT_EQ(laterMana - attackerSideHero->getManaAvailable(), newHorizonsWisdom::familiarityCost(wisdomCost, 1))
+		<< "Per-spell history survives the round; the next cast receives the rounded 5% reduction";
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::MAGIC_ARROW), 2);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, AdventureSpellBreakdownIgnoresWisdomAndMetamagicFollowup)
+TEST_F(NewHorizonsSpellFamiliarityTest, AdventureSpellBreakdownIgnoresWisdomAndMetamagicFollowup)
 {
-	auto * target = prepareBattleWithPreparedCaster(MasteryLevel::EXPERT, true);
+	auto * target = prepareBattleWithSpellFamiliarity(MasteryLevel::EXPERT, true);
 	ASSERT_NE(target, nullptr);
 	attackerSideHero->addSpellToSpellbook(SpellID(SpellID::TOWN_PORTAL));
 	const auto * townPortal = SpellID(SpellID::TOWN_PORTAL).toSpell();
@@ -334,11 +338,11 @@ TEST_F(NewHorizonsPreparedCasterTest, AdventureSpellBreakdownIgnoresWisdomAndMet
 		}));
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, WorldSpellCostBreakdownSeparatesAdventureAndWisdomStages)
+TEST_F(NewHorizonsSpellFamiliarityTest, WorldSpellCostBreakdownSeparatesAdventureAndWisdomStages)
 {
 	startGame();
-	grantPreparedCaster(attackerSideHero, MasteryLevel::EXPERT);
-	grantArcaneEconomy(attackerSideHero);
+	grantSpellFamiliarity(attackerSideHero, MasteryLevel::EXPERT);
+	grantManaConduit(attackerSideHero);
 	prepareAttackerSpellbook(attackerSideHero);
 	attackerSideHero->addSpellToSpellbook(SpellID(SpellID::TOWN_PORTAL));
 
@@ -375,10 +379,10 @@ TEST_F(NewHorizonsPreparedCasterTest, WorldSpellCostBreakdownSeparatesAdventureA
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, RejectedHeroAndAcceptedCreatureCastsDoNotConsumeTheMarker)
+TEST_F(NewHorizonsSpellFamiliarityTest, RejectedHeroAndAcceptedCreatureCastsDoNotConsumeTheMarker)
 {
 	startGame();
-	grantPreparedCaster(attackerSideHero);
+	grantSpellFamiliarity(attackerSideHero);
 	prepareAttackerSpellbook(attackerSideHero);
 	startBattle();
 	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(leftHex), 10);
@@ -409,10 +413,10 @@ TEST_F(NewHorizonsPreparedCasterTest, RejectedHeroAndAcceptedCreatureCastsDoNotC
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, FloorAndBattlefieldCostModifiersApplyAfterThePreparedDiscount)
+TEST_F(NewHorizonsSpellFamiliarityTest, FloorAndBattlefieldCostModifiersApplyAfterThePreparedDiscount)
 {
 	startGame();
-	grantPreparedCaster(attackerSideHero, MasteryLevel::EXPERT);
+	grantSpellFamiliarity(attackerSideHero, MasteryLevel::EXPERT);
 	startBattle();
 	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(leftHex), 1);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 1);
@@ -422,7 +426,7 @@ TEST_F(NewHorizonsPreparedCasterTest, FloorAndBattlefieldCostModifiersApplyAfter
 	const auto * chainLightning = SpellID(SpellID::CHAIN_LIGHTNING).toSpell();
 	const int wisdomCost = newHorizonsMagic::wisdomAdjustedCost(
 		attackerSideHero->getListedSpellCost(chainLightning), 1, MasteryLevel::EXPERT);
-	const int preparedCost = std::max(1, wisdomCost - 2);
+	const int preparedCost = wisdomCost;
 	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::CHANGES_SPELL_COST_FOR_ALLY, BonusSource::OTHER, 3, BonusSourceID()));
 	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
@@ -436,7 +440,7 @@ TEST_F(NewHorizonsPreparedCasterTest, FloorAndBattlefieldCostModifiersApplyAfter
 	const auto floorBreakdown = readSpellCostBreakdown(magicArrow,
 		attackerSideHero->getListedSpellCost(magicArrow));
 	EXPECT_EQ(floorBreakdown.finalCost, 1)
-		<< "Prepared Caster and allied battlefield reductions cannot make an ordinary spell free";
+		<< "Spell Familiarity and allied battlefield reductions cannot make an ordinary spell free";
 	const auto minimumStage = std::find_if(floorBreakdown.stages.begin(), floorBreakdown.stages.end(), [](const auto & stage)
 	{
 		return stage.kind == SpellCostStage::Kind::MINIMUM_COST;
@@ -446,24 +450,24 @@ TEST_F(NewHorizonsPreparedCasterTest, FloorAndBattlefieldCostModifiersApplyAfter
 	EXPECT_EQ(minimumStage->after, floorBreakdown.finalCost);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, WizardSelectsArchmageThroughTheNormalExpertOffer)
+TEST_F(NewHorizonsSpellFamiliarityTest, WizardSelectsArchmageThroughTheNormalExpertOffer)
 {
 	startGameWithWizard();
 	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
 		attackerSideHero->setSecSkillLevel(SecondarySkill(index), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, PREPARED_CASTER))
-		<< "Prepared Caster should be a legal Basic Wisdom perk offer";
+	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, SPELL_FAMILIARITY))
+		<< "Spell Familiarity should be a legal Basic Wisdom perk offer";
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, DEEP_KNOWLEDGE))
-		<< "Deep Knowledge should be a legal Advanced Wisdom perk offer";
+	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, MANA_CONSERVATION))
+		<< "Mana Conservation should be a legal Advanced Wisdom perk offer";
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, ARCHMAGE))
 		<< "Archmage should be a legal Expert Wisdom perk offer after lower tiers are selected";
 	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCHMAGE));
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, PlannedArchmageIsInactiveAndDoesNotDiscount)
+TEST_F(NewHorizonsSpellFamiliarityTest, PlannedArchmageIsInactiveAndDoesNotDiscount)
 {
 	captureArchmageAsPlanned = true;
 	startGameWithWizard();
@@ -472,7 +476,7 @@ TEST_F(NewHorizonsPreparedCasterTest, PlannedArchmageIsInactiveAndDoesNotDiscoun
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, MYSTICISM));
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, DEEP_KNOWLEDGE));
+	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, MANA_CONSERVATION));
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 
 	const auto & savedPerks = attackerSideHero->getPerkState().rules["skills"][WISDOM_SKILL]["perks"].Vector();
@@ -506,29 +510,32 @@ TEST_F(NewHorizonsPreparedCasterTest, PlannedArchmageIsInactiveAndDoesNotDiscoun
 	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), wisdomCost);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, CurrentExpertRankIsRequiredAfterArchmageSelection)
+TEST_F(NewHorizonsSpellFamiliarityTest, CurrentExpertRankIsRequiredAfterArchmageSelection)
 {
 	prepareBattleWithArchmage();
 	const auto * chainLightning = SpellID(SpellID::CHAIN_LIGHTNING).toSpell();
 	const auto wisdomCost = newHorizonsMagic::wisdomAdjustedCost(
 		attackerSideHero->getListedSpellCost(chainLightning), 1, MasteryLevel::EXPERT);
 	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCHMAGE));
-	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), std::max(1, wisdomCost - 3));
+	EXPECT_EQ(newHorizonsWisdom::archmagePenetrationPercent(attackerSideHero, attackerSideHero->getMagicRules(), SpellID::CHAIN_LIGHTNING), 10);
+	EXPECT_EQ(newHorizonsWisdom::effectivenessBonusPercent(attackerSideHero, *battle(), BattleSide::ATTACKER, SpellID::CHAIN_LIGHTNING), 20);
+	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), wisdomCost);
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCHMAGE));
+	EXPECT_EQ(newHorizonsWisdom::archmagePenetrationPercent(attackerSideHero, attackerSideHero->getMagicRules(), SpellID::CHAIN_LIGHTNING), 0);
 	const auto advancedWisdomCost = newHorizonsMagic::wisdomAdjustedCost(
 		attackerSideHero->getListedSpellCost(chainLightning), 1, MasteryLevel::ADVANCED);
 	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), advancedWisdomCost);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, LowLevelCastLeavesArchmageForFirstHighLevelCastAndDiscountsStack)
+TEST_F(NewHorizonsSpellFamiliarityTest, LowLevelCastDoesNotRemoveArchmageHighLevelEffectiveness)
 {
 	auto * target = prepareBattleWithArchmage(true);
 	ASSERT_NE(target, nullptr);
 	const auto * chainLightning = SpellID(SpellID::CHAIN_LIGHTNING).toSpell();
 	const int wisdomCost = newHorizonsMagic::wisdomAdjustedCost(
 		attackerSideHero->getListedSpellCost(chainLightning), 1, MasteryLevel::EXPERT);
-	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), std::max(1, wisdomCost - 2 - 3));
+	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), wisdomCost);
 
 	ASSERT_TRUE(issueMagicArrow(target));
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 1));
@@ -536,15 +543,15 @@ TEST_F(NewHorizonsPreparedCasterTest, LowLevelCastLeavesArchmageForFirstHighLeve
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5));
 	endRound();
 
-	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), std::max(1, wisdomCost - 3));
+	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), wisdomCost);
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(issueHeroSpell(SpellID::CHAIN_LIGHTNING, target));
-	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), std::max(1, wisdomCost - 3));
+	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), wisdomCost);
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 4));
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5));
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, FirstHighSpellConsumesSharedLevelFourOrFiveGate)
+TEST_F(NewHorizonsSpellFamiliarityTest, EveryHighSpellRetainsArchmageAndDistinctSpellFamiliarity)
 {
 	startGame();
 	grantArchmage(attackerSideHero, true);
@@ -562,22 +569,22 @@ TEST_F(NewHorizonsPreparedCasterTest, FirstHighSpellConsumesSharedLevelFourOrFiv
 		attackerSideHero->getListedSpellCost(chainLightning), 1, MasteryLevel::EXPERT);
 	const auto chainBreakdown = readSpellCostBreakdown(chainLightning,
 		attackerSideHero->getListedSpellCost(chainLightning));
-	EXPECT_EQ(chainBreakdown.finalCost, std::max(1, chainWisdomCost - 2 - 3));
+	EXPECT_EQ(chainBreakdown.finalCost, chainWisdomCost);
 	const auto preparedStage = std::find_if(chainBreakdown.stages.begin(), chainBreakdown.stages.end(), [](const auto & stage)
 	{
-		return stage.kind == SpellCostStage::Kind::PREPARED_CASTER;
+		return stage.kind == SpellCostStage::Kind::SPELL_FAMILIARITY;
 	});
 	const auto archmageStage = std::find_if(chainBreakdown.stages.begin(), chainBreakdown.stages.end(), [](const auto & stage)
 	{
 		return stage.kind == SpellCostStage::Kind::ARCHMAGE;
 	});
 	ASSERT_NE(preparedStage, chainBreakdown.stages.end());
-	ASSERT_NE(archmageStage, chainBreakdown.stages.end());
-	EXPECT_LT(std::distance(chainBreakdown.stages.begin(), preparedStage),
-		std::distance(chainBreakdown.stages.begin(), archmageStage));
+	EXPECT_EQ(archmageStage, chainBreakdown.stages.end());
+	EXPECT_EQ(newHorizonsWisdom::archmagePenetrationPercent(attackerSideHero, attackerSideHero->getMagicRules(), SpellID::CHAIN_LIGHTNING), 10);
+	EXPECT_EQ(newHorizonsWisdom::effectivenessBonusPercent(attackerSideHero, *battle(), BattleSide::ATTACKER, SpellID::CHAIN_LIGHTNING), 20);
 	const auto firstHighMana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(issueHeroSpell(SpellID::CHAIN_LIGHTNING, target));
-	EXPECT_EQ(firstHighMana - attackerSideHero->getManaAvailable(), std::max(1, chainWisdomCost - 2 - 3));
+	EXPECT_EQ(firstHighMana - attackerSideHero->getManaAvailable(), chainWisdomCost);
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 4));
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5));
 	ASSERT_TRUE(durableAttacker->alive());
@@ -595,9 +602,11 @@ TEST_F(NewHorizonsPreparedCasterTest, FirstHighSpellConsumesSharedLevelFourOrFiv
 	ASSERT_TRUE(issueGlobalHeroSpell(SpellID::ARMAGEDDON));
 	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), armageddonWisdomCost);
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5));
+	EXPECT_EQ(newHorizonsWisdom::archmagePenetrationPercent(attackerSideHero, attackerSideHero->getMagicRules(), SpellID::ARMAGEDDON), 10);
+	EXPECT_EQ(newHorizonsWisdom::effectivenessBonusPercent(attackerSideHero, *battle(), BattleSide::ATTACKER, SpellID::ARMAGEDDON), 20);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, DeadActiveUnitActionIsRejectedBeforeStartAction)
+TEST_F(NewHorizonsSpellFamiliarityTest, DeadActiveUnitActionIsRejectedBeforeStartAction)
 {
 	startGame();
 	grantArchmage(attackerSideHero, true);
@@ -653,7 +662,7 @@ TEST_F(NewHorizonsPreparedCasterTest, DeadActiveUnitActionIsRejectedBeforeStartA
 		EXPECT_FALSE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, spellLevel));
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, RejectedHeroAndAcceptedCreatureHighCastsDoNotConsumeArchmage)
+TEST_F(NewHorizonsSpellFamiliarityTest, RejectedHeroAndAcceptedCreatureHighCastsDoNotConsumeArchmage)
 {
 	startGame();
 	grantArchmage(attackerSideHero);
@@ -692,10 +701,10 @@ TEST_F(NewHorizonsPreparedCasterTest, RejectedHeroAndAcceptedCreatureHighCastsDo
 	const auto * chainLightning = SpellID(SpellID::CHAIN_LIGHTNING).toSpell();
 	const int wisdomCost = newHorizonsMagic::wisdomAdjustedCost(
 		attackerSideHero->getListedSpellCost(chainLightning), 1, MasteryLevel::EXPERT);
-	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), std::max(1, wisdomCost - 3));
+	EXPECT_EQ(battle()->battleGetSpellCost(chainLightning, attackerSideHero), wisdomCost);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, ArchmageCostReductionNeverMakesAnOrdinarySpellFree)
+TEST_F(NewHorizonsSpellFamiliarityTest, FamiliarityNeverMakesAnOrdinarySpellFree)
 {
 	chainLightningCostIsOne = true;
 	auto * target = prepareBattleWithArchmage(true);
@@ -703,7 +712,7 @@ TEST_F(NewHorizonsPreparedCasterTest, ArchmageCostReductionNeverMakesAnOrdinaryS
 	EXPECT_EQ(battle()->battleGetSpellCost(SpellID(SpellID::CHAIN_LIGHTNING).toSpell(), attackerSideHero), 1);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, WizardSelectsPreparedCasterThroughTheNormalOffer)
+TEST_F(NewHorizonsSpellFamiliarityTest, WizardSelectsSpellFamiliarityThroughTheNormalOffer)
 {
 	startGameWithWizard();
 	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
@@ -720,7 +729,7 @@ TEST_F(NewHorizonsPreparedCasterTest, WizardSelectsPreparedCasterThroughTheNorma
 		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		const auto prepared = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 		{
-			return candidate.selection.perkId == PREPARED_CASTER;
+			return candidate.selection.perkId == SPELL_FAMILIARITY;
 		});
 		if(prepared == offer.end())
 			continue;
@@ -729,22 +738,22 @@ TEST_F(NewHorizonsPreparedCasterTest, WizardSelectsPreparedCasterThroughTheNorma
 		gameHandler->levelUpHero(attackerSideHero, offer, choice, seed, false);
 		selectedThroughOffer = true;
 	}
-	ASSERT_TRUE(selectedThroughOffer) << "Prepared Caster should be a legal Basic Wisdom perk offer";
-	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, PREPARED_CASTER));
+	ASSERT_TRUE(selectedThroughOffer) << "Spell Familiarity should be a legal Basic Wisdom perk offer";
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, SPELL_FAMILIARITY));
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, CapturedPlannedSnapshotDoesNotOfferOrActivatePreparedCaster)
+TEST_F(NewHorizonsSpellFamiliarityTest, CapturedPlannedSnapshotDoesNotOfferOrActivateSpellFamiliarity)
 {
-	capturePreparedCasterAsPlanned = true;
+	captureSpellFamiliarityAsPlanned = true;
 	startGameWithWizard();
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	const auto & savedPerks = attackerSideHero->getPerkState().rules["skills"][WISDOM_SKILL]["perks"].Vector();
-	const auto capturedPreparedCaster = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
+	const auto capturedSpellFamiliarity = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
 	{
-		return perk["id"].String() == PREPARED_CASTER;
+		return perk["id"].String() == SPELL_FAMILIARITY;
 	});
-	ASSERT_NE(capturedPreparedCaster, savedPerks.end());
-	EXPECT_EQ((*capturedPreparedCaster)["effect"]["status"].String(), "planned");
+	ASSERT_NE(capturedSpellFamiliarity, savedPerks.end());
+	EXPECT_EQ((*capturedSpellFamiliarity)["effect"]["status"].String(), "planned");
 
 	const auto rankLookup = [this](const std::string & skillId)
 	{
@@ -755,11 +764,11 @@ TEST_F(NewHorizonsPreparedCasterTest, CapturedPlannedSnapshotDoesNotOfferOrActiv
 		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
-			return candidate.selection.perkId == PREPARED_CASTER;
+			return candidate.selection.perkId == SPELL_FAMILIARITY;
 		}));
 	}
-	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL, PREPARED_CASTER}), std::runtime_error);
-	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL, PREPARED_CASTER));
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL, SPELL_FAMILIARITY}), std::runtime_error);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL, SPELL_FAMILIARITY));
 
 	prepareAttackerSpellbook(attackerSideHero);
 	startBattle();
@@ -769,13 +778,15 @@ TEST_F(NewHorizonsPreparedCasterTest, CapturedPlannedSnapshotDoesNotOfferOrActiv
 	EXPECT_EQ(battle()->battleGetSpellCost(magicArrow, attackerSideHero), wisdomCost);
 }
 
-TEST_F(NewHorizonsPreparedCasterTest, CompletedHeroSpellLevelsHaveAppendOnlyBinaryCompatibility)
+TEST_F(NewHorizonsSpellFamiliarityTest, CompletedHeroSpellLevelsAndWisdomHistoryRoundTripCurrentWire)
 {
 	SideInBattle original(nullptr);
 	original.heroSpellCastCompleted = true;
 	original.recordCompletedHeroSpellLevel(1);
 	original.recordCompletedHeroSpellLevel(4);
 	original.recordCompletedHeroSpellLevel(5);
+	original.wisdomCombatState.recordCompletedCast(SpellID::HASTE, 1);
+	original.wisdomCombatState.recordCompletedCast(SpellID::HASTE, 2);
 
 	CMemorySerializer current;
 	current.oser.version = current.iser.version = ESerializationVersion::CURRENT;
@@ -789,19 +800,11 @@ TEST_F(NewHorizonsPreparedCasterTest, CompletedHeroSpellLevelsHaveAppendOnlyBina
 	EXPECT_TRUE(restored.hasCompletedHeroSpellLevel(5));
 	EXPECT_FALSE(restored.hasCompletedHeroSpellLevel(6));
 
-	CMemorySerializer oldDownsave;
-	oldDownsave.oser.version = ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL;
-	EXPECT_THROW(oldDownsave.oser & original, std::runtime_error);
-	EXPECT_TRUE(oldDownsave.extractBuffer().empty());
-
-	CMemorySerializer oldSave;
-	oldSave.oser.version = oldSave.iser.version = ESerializationVersion::BATTLE_COMPLETED_HERO_SPELL;
-	SideInBattle oldState(nullptr);
-	oldState.heroSpellCastCompleted = true;
-	oldSave.oser & oldState;
-	SideInBattle loadedFromOld(nullptr);
-	loadedFromOld.completedHeroSpellLevels = SideInBattle::COMPLETED_HERO_SPELL_LEVELS_MASK;
-	oldSave.iser & loadedFromOld;
-	EXPECT_TRUE(loadedFromOld.heroSpellCastCompleted);
-	EXPECT_EQ(loadedFromOld.completedHeroSpellLevels, 0);
+	EXPECT_EQ(restored.wisdomCombatState.priorCasts(SpellID::HASTE), 2);
+	EXPECT_EQ(restored.wisdomCombatState.momentumBonusPercent(2), 10);
+	WisdomCombatState invalid = restored.wisdomCombatState;
+	invalid.consecutiveCastRounds = 5;
+	CMemorySerializer invalidWire;
+	EXPECT_THROW(invalidWire.oser & invalid, std::runtime_error);
+	EXPECT_TRUE(invalidWire.extractBuffer().empty());
 }

@@ -20,7 +20,6 @@ JsonNode learningRules()
 		table[key]["learningPercentPerLevel"].Integer() = 5;
 		table[key]["learningMaximumPercent"].Integer() = 100;
 	}
-	table["graveArchivist"]["additionalEagleEyeSpells"].Integer() = 1;
 	table["spiritTeacher"]["mentorExperiencePercent"].Integer() = 25;
 	return rules;
 }
@@ -30,7 +29,7 @@ TEST(NewHorizonsLearningSpecialtyRules, CapturedRowsAreIndependentAndHistoricalA
 	auto configured = learningRules();
 	const auto captured = resolveHeroRules(configured, HeroClassID(0));
 	ASSERT_TRUE(learningSpecialtyRules(captured, LearningSpecialtyKind::GRAVE_ARCHIVIST));
-	EXPECT_EQ(learningSpecialtyRules(captured, LearningSpecialtyKind::GRAVE_ARCHIVIST)->additionalEagleEyeSpells, 1);
+	EXPECT_EQ(learningSpecialtyRules(captured, LearningSpecialtyKind::GRAVE_ARCHIVIST)->learning.percentPerLevel, 5);
 	EXPECT_EQ(learningSpecialtyRules(captured, LearningSpecialtyKind::SPIRIT_TEACHER)->mentorExperiencePercent, 25);
 	configured["additionalSpecialties"]["spiritTeacher"]["mentorExperiencePercent"].Integer() = 100;
 	EXPECT_EQ(learningSpecialtyRules(captured, LearningSpecialtyKind::SPIRIT_TEACHER)->mentorExperiencePercent, 25);

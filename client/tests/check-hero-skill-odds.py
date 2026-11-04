@@ -8,23 +8,25 @@ root = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(root / "tools/tests"))
 from nhart_test_resources import read_resource
 hero = (root / "client/windows/CHeroWindow.cpp").read_text()
+layout = (root / "client/windows/CHeroWindowLayout.cpp").read_text()
 window = (root / "client/windows/HeroSkillOddsWindow.cpp").read_text()
 assert "createAndPushWindow<HeroSkillOddsWindow>(*curHero)" in hero
 assert "createAndPushWindow<HeroGrowthWindow>" not in hero
 assert "Open Hero development for the saved growth profile" not in hero
-assert 'Colors::YELLOW, "Skills / learned perks", 376' in hero
-assert 'move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 176))' in hero
-assert 'growthButton->pos.w = infoMark->pos.w;' in hero
-assert 'growthButton->pos.h = infoMark->pos.h;' in hero
-resize = hero.index('growthButton->pos.w = infoMark->pos.w;')
-overlay = hero.index('growthButton->setOverlay(infoMark);')
-assert resize < overlay, "Overlay must be centered after the button is resized"
-assert 'pos = Rect(0, 0, 16, 16);' in hero
-assert 'movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44)' in hero
-assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44)' in hero
+assert 'Colors::YELLOW, "Skills / learned perks", 376' in layout
+assert 'move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 176))' in layout
+assert 'growthButton->setImage(AnimationPath::builtin("NH_info_button_small"))' in hero
+assert "class HeroSkillOddsInfoMark" not in hero, "Do not restore the floating vector mark"
+assert 'movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44)' in layout
+assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44)' in layout
 data = read_resource("SPRITES/NH_hero_growth_entry_normal.png")
 width, height = struct.unpack(">II", data[16:24])
 assert (width, height) == (24, 24), "Legacy entry-control frame size changed"
+for resource, size in (("SPRITES/NH_info_button_small_normal.png", 16),
+                       ("SPRITES/NH_info_button_normal.png", 22),
+                       ("SPRITES/NH_hero_temporary_effects_icon.png", 24)):
+    image = read_resource(resource)
+    assert struct.unpack(">II", image[16:24]) == (size, size), resource
 info_mark_size = 16
 button_y = 176
 upper_row_bottom = 132 + 44

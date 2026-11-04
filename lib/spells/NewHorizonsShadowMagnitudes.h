@@ -20,11 +20,9 @@ DLL_LINKAGE int32_t lifeDrainHealingPercent(const CGHeroInstance * hero);
 
 /// Pure magnitude with the already-composed cast coefficient. Night Feeder is
 /// applied after the ordinary base cap. This is a lifesteal rate, not healed HP.
-DLL_LINKAGE int32_t vampirismHealBasisPoints(int32_t rawSpellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingBonusPercent, int32_t empowerBonusPercent, bool nightFeeder);
+DLL_LINKAGE int32_t vampirismHealBasisPoints(int32_t rawSpellPower, int32_t coefficientBasisPoints, int32_t empowerBonusPercent, bool nightFeeder);
 
 /// Pure Doom magnitude. Only its Spell Power term is scaled; fixed35 and cap60
 /// remain unchanged. Initiative handling and recipient eligibility stay outside.
-DLL_LINKAGE int32_t doomCripplingPenaltyPercent(int32_t rawSpellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingBonusPercent, int32_t empowerBonusPercent);
+DLL_LINKAGE int32_t doomCripplingPenaltyPercent(int32_t rawSpellPower, int32_t coefficientBasisPoints, int32_t empowerBonusPercent);
 }

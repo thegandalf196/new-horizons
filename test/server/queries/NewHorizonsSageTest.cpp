@@ -34,7 +34,6 @@ class NewHorizonsSageTest : public TinyMapGameTest
 protected:
 	CGHeroInstance * hero = nullptr;
 	CGTownInstance * town = nullptr;
-	bool isolateFutureCrisisProfile = false;
 	void SetUp() override
 	{
 		TinyMapGameTest::SetUp();
@@ -44,55 +43,13 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
-		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
-		heroRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
-		heroRules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
-		heroRules["startingSkills"].Struct().erase("startingBookReplacements");
-		heroRules.Struct().erase("remainingSpellSpecialtyReplacements");
-		heroRules["skillSpecialties"].Struct().erase("navigationStartReplacements");
-		heroRules.Struct().erase("defaultCreatureLineReplacements");
-		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(),
-			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
-		heroRules.Struct().erase("lighthouseDeparture");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
-		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
-		{
-			return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
-				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
-		});
-		// Isolate Sage's prior-format controls from the later independent opt-in.
-		auto & specialties = heroRules["nonDamageSpellSpecialties"]["spells"].Vector();
-		std::erase_if(specialties, [](const JsonNode & spell)
-		{
-			return spell.isString() && spell.String() == "new-horizons:frailty";
-		});
-		heroRules.setOverrideFlag(true);
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroRules);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-		if(isolateFutureCrisisProfile)
-			for(auto & perk : perkRules["skills"]["new-horizons:command"]["perks"].Vector())
-				if(perk["id"].String() == "new-horizons:command.crisisCommand")
-					perk["effect"]["status"].String() = "planned";
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
-		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
-		// Sage's old-positive writer control predates these independent clauses;
-		// preserve the current spell catalog/levels but isolate absent opt-ins.
-		for(const auto & [spell, field] : std::array<std::pair<const char *, const char *>, 5>{{
-			{"core:implosion", "implosion"}, {"core:teleport", "ignoreInterveningBarriers"},
-			{"core:dispel", "temporaryMagicalEffectsOnly"}, {"core:curse", "schoolRankDurations"},
-			{"core:fireWall", "burnGroundedFlyers"}}})
-			magicRules["spells"][spell].Struct().erase(field);
-		magicRules.setOverrideFlag(true);
-		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
-		isolateHistoricalAdventurePolicies(*map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
-	void prepare(int guildLevel = 1, bool book = true, bool historicalWriterProfile = false)
+	void prepare(int guildLevel = 1, bool book = true)
 	{
-		isolateFutureCrisisProfile = historicalWriterProfile;
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PLAYER).playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, HeroTypeID(0), PLAYER)
@@ -108,7 +65,7 @@ protected:
 		{
 			ASSERT_NE(current, nullptr);
 			current->setSecSkillLevel(school("new-horizons:learning"), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-			current->setSecSkillLevel(school("new-horizons:wisdom"), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+			current->setSecSkillLevel(school("new-horizons:wisdom"), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 			current->setSecSkillLevel(school("new-horizons:sorceryMagic"), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 			// Permanent spell removal is sent through the real handler below.
 		}
@@ -151,33 +108,34 @@ protected:
 		if(wisdom)
 		{
 			current->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.intelligence"});
+			current->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.spellScholar"});
 			current->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.sage"});
 		}
 		if(learning)
 		{
 			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.eagleEye"});
 			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.fieldStudy"});
-			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.sage"});
+			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.philosopher"});
 		}
 		EXPECT_EQ(current->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.sage"), wisdom);
-		EXPECT_EQ(newHorizonsSage::learningSelected(*current), learning);
+		EXPECT_FALSE(newHorizonsSage::learningSelected(*current));
 	}
 	void visit(CGameHandler & handler) { handler.heroVisitCastle(town, hero); }
 };
 }
 
-TEST_F(NewHorizonsSageTest, LearningPersonallyLearnsHighestUndrawnBuiltSchoolSpellWithoutPublishingIt)
+TEST_F(NewHorizonsSageTest, CurrentExpertLearningLearnsOnlyOrdinaryVisibleGuildSpells)
 {
 	prepare(4);
 	isolatedCatalog();
 	select(false, true);
-	ASSERT_EQ(newHorizonsSage::selectSpell(*hero, *town), named("core:implosion"));
+	EXPECT_FALSE(newHorizonsSage::selectSpell(*hero, *town));
 	const auto guildRows = town->spells;
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
 	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:magicArrow")));
-	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:implosion")));
+	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:implosion")));
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:dispel")));
 	EXPECT_EQ(town->spells, guildRows);
 	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().contains(town->id));
@@ -185,35 +143,34 @@ TEST_F(NewHorizonsSageTest, LearningPersonallyLearnsHighestUndrawnBuiltSchoolSpe
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:dispel")));
 }
 
-TEST_F(NewHorizonsSageTest, WisdomRevealsGloballyAndOtherVisitorsLearnThePersistentExtra)
+TEST_F(NewHorizonsSageTest, CurrentWisdomSageChangesKnowledgeWithoutRevealingGuildSpells)
 {
 	prepare();
 	isolatedCatalog();
+	const auto knowledge = hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
 	select(true, false);
-	const auto ordinaryCounts = town->newHorizonsMageGuildVisibleSpells;
-	const auto ordinarySchools = town->newHorizonsMageGuildVisibleSpellSchools;
+	EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), knowledge + 50);
+	EXPECT_FALSE(newHorizonsSage::wisdomReveal(*hero, *town));
+	const auto ordinary = town->spells;
+	const auto counts = town->newHorizonsMageGuildVisibleSpells;
+	const auto schools = town->newHorizonsMageGuildVisibleSpellSchools;
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0], (std::vector<SpellID>{named("core:dispel")}));
-	EXPECT_EQ(town->spellsAtLevel(1, true), 2);
-	EXPECT_EQ(town->spells[0].back(), named("core:dispel"));
-	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:dispel")));
-	EXPECT_EQ(town->newHorizonsMageGuildVisibleSpells, ordinaryCounts);
-	EXPECT_EQ(town->newHorizonsMageGuildVisibleSpellSchools, ordinarySchools);
-	const auto researchCount = town->spellResearchCounterDay;
-	visit(handler);
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0].size(), 1);
+	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
+	EXPECT_EQ(town->spells, ordinary);
+	EXPECT_EQ(town->newHorizonsMageGuildVisibleSpells, counts);
+	EXPECT_EQ(town->newHorizonsMageGuildVisibleSpellSchools, schools);
 	auto * other = findHeroAt({7, 5, 0});
 	ASSERT_NE(other, nullptr);
 	town->setVisitingHero(nullptr);
 	hero->setVisitedTown(nullptr, false);
 	handler.heroVisitCastle(town, other);
-	EXPECT_TRUE(other->spellbookContainsSpell(named("core:dispel")));
-	EXPECT_EQ(town->spellResearchCounterDay, researchCount);
+	EXPECT_TRUE(other->spellbookContainsSpell(named("core:magicArrow")));
+	EXPECT_FALSE(other->spellbookContainsSpell(named("core:dispel")));
 }
 
-TEST_F(NewHorizonsSageTest, BothSagesComposeAfterOrdinaryLearningAndWisdomRevealWithoutDuplicateTeaching)
+TEST_F(NewHorizonsSageTest, CurrentLearningAndWisdomPerksDoNotRevealOrLearnHiddenSpells)
 {
 	prepare(4);
 	isolatedCatalog();
@@ -221,15 +178,15 @@ TEST_F(NewHorizonsSageTest, BothSagesComposeAfterOrdinaryLearningAndWisdomReveal
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[3], (std::vector<SpellID>{named("core:implosion")}));
-	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:implosion")));
-	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:dispel")));
+	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[3].empty());
+	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:implosion")));
+	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:dispel")));
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:haste")));
 	visit(handler);
 	EXPECT_FALSE(hero->spellbookContainsSpell(named("core:haste")));
 }
 
-TEST_F(NewHorizonsSageTest, DifferentWisdomHoldersPublishDistinctExtrasButEachHeroTownVisitIsOnceOnly)
+TEST_F(NewHorizonsSageTest, EachCurrentWisdomHolderRecordsItsVisitWithoutPublishingAnyExtra)
 {
 	prepare(4);
 	isolatedCatalog();
@@ -242,12 +199,11 @@ TEST_F(NewHorizonsSageTest, DifferentWisdomHoldersPublishDistinctExtrasButEachHe
 	visit(handler);
 	town->setVisitingHero(nullptr);
 	handler.heroVisitCastle(town, other);
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[3], (std::vector<SpellID>{named("core:implosion")}));
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0], (std::vector<SpellID>{named("core:dispel")}));
-	EXPECT_TRUE(other->spellbookContainsSpell(named("core:implosion")));
-	EXPECT_TRUE(other->spellbookContainsSpell(named("core:dispel")));
+	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[3].empty());
+	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
+	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().contains(town->id));
+	EXPECT_TRUE(other->getNewHorizonsSageGuildVisits().contains(town->id));
 	handler.heroVisitCastle(town, other);
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0], (std::vector<SpellID>{named("core:dispel")}));
 	EXPECT_FALSE(other->spellbookContainsSpell(named("core:haste")));
 }
 
@@ -284,45 +240,36 @@ TEST_F(NewHorizonsSageTest, FirstGuildVisitWithoutBookCannotBeReclaimedAfterBook
 	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
 }
 
-TEST_F(NewHorizonsSageTest, CapturedSchoolLabelsMapBansBuiltLevelsAndHeroEligibilityRestrictCatalog)
+TEST_F(NewHorizonsSageTest, NoHiddenCandidateExistsRegardlessOfSchoolLabelsMapBansOrBuiltLevel)
 {
 	prepare(4);
 	isolatedCatalog();
 	select(true, true);
 	map()->allowedSpells.erase(named("core:implosion"));
-	EXPECT_EQ(newHorizonsSage::selectSpell(*hero, *town), named("core:dispel"));
-	// Dispel and Haste now share the authored level-1 Sorcery bucket.
+	EXPECT_FALSE(newHorizonsSage::selectSpell(*hero, *town));
 	town->newHorizonsMageGuildVisibleSpellSchools[0].clear();
 	EXPECT_TRUE(newHorizonsSage::candidates(*hero, *town).empty());
 	town->newHorizonsMageGuildVisibleSpellSchools[0] = {sorcery()};
 	map()->allowedSpells.erase(named("core:dispel"));
-	EXPECT_EQ(newHorizonsSage::selectSpell(*hero, *town), named("core:haste"));
-	map()->allowedSpells.erase(named("core:haste"));
-	EXPECT_TRUE(newHorizonsSage::candidates(*hero, *town).empty());
-	map()->allowedSpells.insert(named("core:implosion"));
-	hero->setSecSkillLevel(school("new-horizons:sorceryMagic"), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
-	EXPECT_TRUE(newHorizonsSage::candidates(*hero, *town).empty());
-	hero->setSecSkillLevel(school("new-horizons:sorceryMagic"), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(newHorizonsSage::selectSpell(*hero, *town));
 	setGuild(3);
 	EXPECT_TRUE(newHorizonsSage::candidates(*hero, *town).empty());
 }
 
-TEST_F(NewHorizonsSageTest, SixthVisibleSpellDoesNotReplaceOrdinarySlotsAndWorldRoundtripPreservesRevealAndReceipt)
+TEST_F(NewHorizonsSageTest, CurrentWorldRoundtripPreservesFiveOrdinarySlotsAndVisitWithoutExtraReveal)
 {
 	prepare();
 	for(const auto * skill : {"new-horizons:lightMagic", "new-horizons:shadowMagic", "new-horizons:natureMagic", "new-horizons:chaosMagic", "new-horizons:havocMagic"})
 		hero->setSecSkillLevel(school(skill), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	select(true, false);
 	ASSERT_EQ(town->newHorizonsMageGuildVisibleSpells[0], 5);
-	const auto chosen = newHorizonsSage::wisdomReveal(*hero, *town);
-	ASSERT_TRUE(chosen);
+	EXPECT_FALSE(newHorizonsSage::wisdomReveal(*hero, *town));
 	const auto ordinary = town->spells[0];
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
-	ASSERT_EQ(town->spellsAtLevel(1, true), 6);
-	EXPECT_EQ(std::vector<SpellID>(town->spells[0].begin(), town->spells[0].begin() + 5), ordinary);
-	EXPECT_EQ(town->spells[0][5], *chosen);
+	EXPECT_EQ(town->spellsAtLevel(1, true), 5);
+	EXPECT_EQ(town->spells[0], ordinary);
 	CGameState restored;
 	restored.preInit(LIBRARY);
 	restored.loadFromMemory(gameState()->saveToMemory());
@@ -330,7 +277,9 @@ TEST_F(NewHorizonsSageTest, SixthVisibleSpellDoesNotReplaceOrdinarySlotsAndWorld
 	const auto * savedHero = restored.getHero(hero->id);
 	ASSERT_NE(savedTown, nullptr);
 	ASSERT_NE(savedHero, nullptr);
-	EXPECT_EQ(savedTown->spellsAtLevel(1, true), 6);
+	EXPECT_EQ(savedTown->spellsAtLevel(1, true), 5);
+	EXPECT_EQ(savedTown->spells, town->spells);
+	EXPECT_EQ(savedHero->getSpellsInSpellbook(), hero->getSpellsInSpellbook());
 	EXPECT_EQ(savedTown->newHorizonsSageRevealedSpells, town->newHorizonsSageRevealedSpells);
 	EXPECT_TRUE(savedHero->getNewHorizonsSageGuildVisits().contains(town->id));
 }
@@ -351,7 +300,7 @@ TEST_F(NewHorizonsSageTest, TypedVisitRejectsStaleOrWrongRevealAtomicallyAndCurr
 	EXPECT_THROW(handler.sendAndApply(receipt), std::runtime_error);
 	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
 	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
-	receipt.revealedSpell = named("core:dispel");
+	receipt.revealedSpell = SpellID::NONE;
 	CMemorySerializer current;
 	current.oser & receipt;
 	SetNewHorizonsSageGuildVisit restored;
@@ -361,68 +310,28 @@ TEST_F(NewHorizonsSageTest, TypedVisitRejectsStaleOrWrongRevealAtomicallyAndCurr
 	EXPECT_EQ(restored.revealedSpell, receipt.revealedSpell);
 	handler.sendAndApply(receipt);
 	EXPECT_THROW(handler.sendAndApply(receipt), std::runtime_error);
-	EXPECT_EQ(town->newHorizonsSageRevealedSpells[0].size(), 1);
+	EXPECT_TRUE(town->newHorizonsSageRevealedSpells[0].empty());
 }
 
-TEST_F(NewHorizonsSageTest, SaveGuardsRejectMeaningfulHeroTownAndOffMapReceiptsBeforeEveryPrefix)
+TEST_F(NewHorizonsSageTest, CurrentMalformedVisitAndOffMapStateRejectBeforeOwningSavePrefixes)
 {
-	// An active Crisis profile itself is later-format metadata, even unselected.
-	// Only this synthetic Sage predecessor-format control captures it as planned.
-	prepare(1, true, true);
+	prepare();
 	isolatedCatalog();
-	select(true, false);
-	LobbyStartGame lobby;
-	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
-	lobby.initializedGameState = gameState();
-	const auto old = static_cast<ESerializationVersion>(static_cast<int>(ESerializationVersion::NEW_HORIZONS_SAGE_GUILD_VISITS) - 1);
-	const auto check = [&](auto & value, bool rejected)
-	{
-		CMemorySerializer writer;
-		writer.oser.version = old;
-		if(rejected)
-		{
-			EXPECT_THROW(writer.oser & value, std::runtime_error);
-			EXPECT_TRUE(writer.extractBuffer().empty());
-		}
-		else
-			EXPECT_NO_THROW(writer.oser & value);
-	};
-	check(*hero, false);
-	check(*town, false);
-	check(*map(), false);
-	check(*gameState(), false);
-	check(lobby, false);
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	visit(handler);
-	check(*hero, true);
-	check(*town, true);
-	check(*map(), true);
-	check(*gameState(), true);
-	check(lobby, true);
-	SetNewHorizonsSageGuildVisit receipt;
-	receipt.hero = hero->id;
-	receipt.town = town->id;
-	check(receipt, true);
-	// Isolate the actual off-map hero receipt from the town's reveal guard.
-	town->newHorizonsSageRevealedSpells = {};
-	town->spells[0].pop_back();
 	const auto pooled = std::dynamic_pointer_cast<CGHeroInstance>(map()->eraseObject(hero->id));
 	ASSERT_NE(pooled, nullptr);
 	map()->addToHeroPool(pooled);
 	ASSERT_EQ(map()->tryGetFromHeroPool(pooled->getHeroTypeID()), hero);
-	check(*map(), true);
-	check(*gameState(), true);
-	check(lobby, true);
 	EXPECT_NO_THROW(gameState()->validateNewHorizonsSageSerialization(true));
-	// Represent a malformed current receipt without exposing a gameplay setter.
 	auto & visits = const_cast<std::set<ObjectInstanceID> &>(hero->getNewHorizonsSageGuildVisits());
 	visits.insert(ObjectInstanceID::NONE);
 	CMemorySerializer malformed;
 	EXPECT_THROW(malformed.oser & *gameState(), std::runtime_error);
 	EXPECT_TRUE(malformed.extractBuffer().empty());
 	visits.erase(ObjectInstanceID::NONE);
-	// A malformed revealed suffix rejects at the town and world prefixes too.
+	// Revealed suffixes without matching Guild rows remain corrupt current data.
 	town->newHorizonsSageRevealedSpells[0] = {named("core:haste")};
 	CMemorySerializer malformedTown;
 	EXPECT_THROW(malformedTown.oser & *town, std::runtime_error);

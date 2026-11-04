@@ -34,45 +34,6 @@
 #include "../../lib/networkPacks/Component.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 
-namespace
-{
-MetaString investorIncomeSummary(const PlayerState & playerState, const JsonNode & magicRules)
-{
-	MetaString summary;
-	if(!newHorizonsMagic::rulesActive(magicRules))
-		return summary;
-
-	bool hasInvestor = false;
-	for(const auto * hero : playerState.getHeroes())
-	{
-		if(!hero || !hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.investor"))
-			continue;
-
-		if(!hasInvestor)
-		{
-			summary.appendTextID("new-horizons.economy.investor.header");
-			summary.appendEOL();
-			hasInvestor = true;
-		}
-
-		MetaString heroContribution;
-		heroContribution.appendTextID("new-horizons.economy.investor.hero");
-		heroContribution.replaceTokenTextID("%HERO", hero->getNameTextID());
-		heroContribution.replaceTokenNumber("%GOLD", hero->getNewHorizonsInvestorDailyGold());
-		summary.append(heroContribution);
-		summary.appendEOL();
-	}
-
-	if(hasInvestor)
-	{
-		summary.appendEOL();
-		summary.appendTextID("new-horizons.economy.investor.help");
-	}
-
-	return summary;
-}
-}
-
 CResDataBar::CResDataBar(const ImagePath & imageName, const Point & position)
 {
 	addUsedEvents(SHOW_POPUP);
@@ -173,9 +134,6 @@ void CResDataBar::showPopupWindow(const Point & cursorPosition)
 	}
 
 	std::string popupText = LIBRARY->generaltexth->translate("core.genrltxt.270");
-	const auto investorSummary = investorIncomeSummary(*playerState, GAME->interface()->cb->getMagicRules());
-	if(!investorSummary.empty())
-		popupText = CInfoWindow::genText(popupText, investorSummary.toString(&GAME->translator()));
 
 	CRClickPopup::createAndPush(popupText, comp);
 }

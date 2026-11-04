@@ -1077,9 +1077,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 					|| (producer->spell == SpellID::PRAYER && heroType->getJsonKey() == "core:loynis"
 						&& target.toSpell()->getJsonKey() == "new-horizons:crusade")
 					|| (producer->spell == SpellID::BLOODLUST && heroType->getJsonKey() == "core:inteus"
-						&& target.toSpell()->getJsonKey() == "new-horizons:crusade")
-					|| (producer->spell == SpellID::PRECISION && heroType->getJsonKey() == "core:zubin"
-						&& target.toSpell()->getJsonKey() == "new-horizons:focusMagic"))
+						&& target.toSpell()->getJsonKey() == "new-horizons:crusade"))
 					converted->parameters = std::make_shared<BonusParameters>(std::vector<int32_t>{0});
 				addNewBonus(converted);
 				continue;
@@ -1347,21 +1345,6 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 				&& opportunity.attribute == PrimarySkill::ATTACK)
 				opportunity.chancePercent = std::min(100,
 					opportunity.chancePercent * (100 + archerySpecialtyPercent) / 100);
-	if(hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.deepKnowledge"))
-	{
-		const int wisdomSkillID = SecondarySkill::decode("new-horizons:wisdom");
-		if(wisdomSkillID >= 0)
-		{
-			for(auto & opportunity : result.extraGrowth)
-			{
-				if(opportunity.skill == SecondarySkill(wisdomSkillID))
-				{
-					opportunity.chancePercent = std::min(100, opportunity.chancePercent + 10);
-					break;
-				}
-			}
-		}
-	}
 	result.lastGains = lastPrimaryGains;
 	result.powerDivisor = primaryGrowthRules["powerDivisor"].Integer();
 	result.maximumPrimary = primaryGrowthRules["maxPrimary"].Integer();
@@ -1711,11 +1694,9 @@ void CGHeroInstance::markNewHorizonsRecruitersContactsUsed(int32_t week)
 	newHorizonsRecruitersContactsLastWeek = week;
 }
 
-bool CGHeroInstance::canLearnSpellFromAcquiredScroll(SpellID spell) const
+bool CGHeroInstance::canLearnSpellFromAcquiredScroll(SpellID) const
 {
-	return spell != SpellID::NONE
-		&& hasActivePerk("new-horizons:learning", "new-horizons:learning.archivist")
-		&& canLearnSpell(spell.toSpell());
+	return false; // Archivist is retired. Scroll casting access is unchanged.
 }
 
 bool CGHeroInstance::canLearnAdventureSpellFromGuild(const spells::Spell * spell, const CGTownInstance * town) const
@@ -2157,10 +2138,8 @@ si32 CGHeroInstance::manaLimit() const
 			? newHorizonsMagic::spellPointsIntelligenceMaximumPercent(getMagicRules())
 			: 100;
 		const int64_t knowledgeCapacity = knowledge * percent / 100;
-		const int64_t arcaneReservoirBonus = hasActivePerk(
-			"new-horizons:wisdom", "new-horizons:wisdom.arcaneReservoir") ? 25 : 0;
 		return static_cast<si32>(std::min<int64_t>(
-			knowledgeCapacity + arcaneReservoirBonus + getHighLoreManaBonus() + getBottomlessMindManaBonus(), std::numeric_limits<si32>::max()));
+			knowledgeCapacity + getHighLoreManaBonus() + getBottomlessMindManaBonus(), std::numeric_limits<si32>::max()));
 	}
 
 	// Existing cache has a 1000% (ten mana/Knowledge) base. Normalize that
@@ -2683,120 +2662,6 @@ void CGHeroInstance::setExperience(si64 value, ChangeValueMode mode)
 bool CGHeroInstance::gainsLevel() const
 {
 	return level < LIBRARY->heroh->maxSupportedLevel() && exp >= static_cast<TExpType>(LIBRARY->heroh->reqExp(level+1));
-}
-
-bool CGHeroInstance::isValidNewHorizonsLearningMentorState(ObjectInstanceID heroId, int32_t week,
-	const LearningMentorRecipients & recipients)
-{
-	if(week < -1)
-		return false;
-	bool foundEmpty = false;
-	for(const auto recipientId : recipients)
-	{
-		if(recipientId == ObjectInstanceID::NONE)
-		{
-			foundEmpty = true;
-			continue;
-		}
-		if(week == -1 || !heroId.hasValue() || !recipientId.hasValue()
-			|| recipientId == heroId || foundEmpty)
-			return false;
-	}
-	return recipients[0] == ObjectInstanceID::NONE || recipients[0] != recipients[1];
-}
-
-bool CGHeroInstance::isValidNewHorizonsScholarState(ObjectInstanceID hero, int32_t week, const std::vector<ObjectInstanceID> & partners)
-{
-	if(week < -1 || (week == -1) != partners.empty())
-		return false;
-	ObjectInstanceID previous = ObjectInstanceID::NONE;
-	for(const auto partner : partners)
-	{
-		if(!hero.hasValue() || !partner.hasValue() || partner == hero || partner <= previous)
-			return false;
-		previous = partner;
-	}
-	return true;
-}
-
-void CGHeroInstance::markNewHorizonsScholarMeeting(ObjectInstanceID partner, int32_t week)
-{
-	if(!id.hasValue() || !partner.hasValue() || partner == id || week < 0 || week < newHorizonsScholarWeek
-		|| !isValidNewHorizonsScholarState(id, newHorizonsScholarWeek, newHorizonsScholarPartners))
-		throw std::runtime_error("Invalid New Horizons Scholar meeting");
-	if(week != newHorizonsScholarWeek)
-	{
-		newHorizonsScholarWeek = week;
-		newHorizonsScholarPartners.clear();
-	}
-	const auto position = std::lower_bound(newHorizonsScholarPartners.begin(), newHorizonsScholarPartners.end(), partner);
-	if(position == newHorizonsScholarPartners.end() || *position != partner)
-		newHorizonsScholarPartners.insert(position, partner);
-}
-
-bool CGHeroInstance::hasNewHorizonsScholarMeeting(ObjectInstanceID partner, int32_t week) const
-{
-	return week == newHorizonsScholarWeek
-		&& std::binary_search(newHorizonsScholarPartners.begin(), newHorizonsScholarPartners.end(), partner);
-}
-
-bool CGHeroInstance::canExchangeNewHorizonsScholarWith(const CGHeroInstance & partner, int32_t week) const
-{
-	if(!cb || !newHorizonsMagic::rulesActive(getMagicRules())
-		|| !id.hasValue() || !partner.id.hasValue() || id == partner.id || week < 0
-		|| week < newHorizonsScholarWeek || week < partner.newHorizonsScholarWeek
-		|| !isValidNewHorizonsScholarState(id, newHorizonsScholarWeek, newHorizonsScholarPartners)
-		|| !isValidNewHorizonsScholarState(partner.id, partner.newHorizonsScholarWeek, partner.newHorizonsScholarPartners)
-		|| cb->getPlayerRelations(getOwner(), partner.getOwner()) == PlayerRelations::ENEMIES
-		|| hasNewHorizonsScholarMeeting(partner.id, week) || partner.hasNewHorizonsScholarMeeting(id, week))
-		return false;
-	if(!hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar")
-		&& !partner.hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"))
-		return false;
-	return getNewHorizonsScholarSpellFor(partner).has_value() || partner.getNewHorizonsScholarSpellFor(*this).has_value();
-}
-
-void CGHeroInstance::setNewHorizonsLearningMentorState(int32_t week, const LearningMentorRecipients & recipients)
-{
-	if(!isValidNewHorizonsLearningMentorState(id, week, recipients))
-		throw std::runtime_error("Invalid New Horizons Learning Mentor state");
-	newHorizonsLearningMentorLastWeek = week;
-	newHorizonsLearningMentorRecipients = recipients;
-}
-
-TExpType CGHeroInstance::getNewHorizonsLearningMentorExperiencePerLevel() const
-{
-	const std::string learningSkillId = "new-horizons:learning";
-	const auto rank = getPerkSkillRank(learningSkillId);
-	if(rank >= MasteryLevel::EXPERT && hasActivePerk(learningSkillId, "new-horizons:learning.masterTeacher"))
-		return 500;
-	if(rank >= MasteryLevel::BASIC && hasActivePerk(learningSkillId, "new-horizons:learning.mentor"))
-		return 250;
-	return 0;
-}
-
-bool CGHeroInstance::hasNewHorizonsLearningMentorUseFor(ObjectInstanceID recipientId, int32_t week) const
-{
-	const auto experiencePerLevel = getNewHorizonsLearningMentorExperiencePerLevel();
-	if(week < 0 || !id.hasValue() || !recipientId.hasValue() || recipientId == id
-		|| experiencePerLevel == 0
-		|| !isValidNewHorizonsLearningMentorState(id, newHorizonsLearningMentorLastWeek,
-			newHorizonsLearningMentorRecipients))
-		return false;
-	if(newHorizonsLearningMentorLastWeek != week)
-		return true;
-	// A legacy used-week marker has unknown recipients: never refill it on load or resave.
-	if(newHorizonsLearningMentorRecipients[0] == ObjectInstanceID::NONE)
-		return false;
-	if(std::find(newHorizonsLearningMentorRecipients.begin(), newHorizonsLearningMentorRecipients.end(),
-		recipientId) != newHorizonsLearningMentorRecipients.end())
-		return false;
-	return experiencePerLevel == 500 && newHorizonsLearningMentorRecipients[1] == ObjectInstanceID::NONE;
-}
-
-bool CGHeroInstance::canGrantNewHorizonsLearningMentorTo(const CGHeroInstance & recipient, int32_t week) const
-{
-	return this != &recipient && level > recipient.level && hasNewHorizonsLearningMentorUseFor(recipient.id, week);
 }
 
 newHorizonsHeroes::PerkState::OfferWeightContext CGHeroInstance::getPerkOfferWeightContext() const
@@ -3427,44 +3292,6 @@ bool CGHeroInstance::isCampaignGem() const
 {
 	const StartInfo *si = cb->getStartInfo();
 	return si && si->campState &&si->campState->getGemSorceressID() == getHeroTypeID();
-}
-
-ResourceSet CGHeroInstance::dailyIncome() const
-{
-	return dailyIncomeWithInvestorGold(getNewHorizonsInvestorDailyGold());
-}
-
-ResourceSet CGHeroInstance::dailyIncomeWithInvestorGold(int32_t investorDailyGold) const
-{
-	static constexpr int32_t goldPerInvestorStep = 50;
-	static constexpr int32_t maximumInvestorDailyGold = 250;
-	if(investorDailyGold < 0 || investorDailyGold > maximumInvestorDailyGold
-		|| investorDailyGold % goldPerInvestorStep != 0)
-		throw std::runtime_error("Invalid New Horizons Investor daily Gold snapshot");
-
-	ResourceSet income;
-
-	for (GameResID k : LIBRARY->resourceTypeHandler->getAllObjects())
-		income[k] += valOfBonuses(BonusType::GENERATE_RESOURCE, BonusSubtypeID(k));
-
-	if(hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"))
-	{
-		static constexpr int goldPerTown = 50;
-		static constexpr int maximumDailyGold = 500;
-		const auto * ownerState = cb->getPlayerState(getOwner());
-		if(ownerState)
-		{
-			const auto townsForThisPerk = std::min(ownerState->getTowns().size(),
-				static_cast<size_t>(maximumDailyGold / goldPerTown));
-			income[EGameResID::GOLD] += static_cast<int>(townsForThisPerk) * goldPerTown;
-		}
-	}
-	if(hasActivePerk("new-horizons:estates", "new-horizons:estates.investor"))
-		income[EGameResID::GOLD] += investorDailyGold;
-
-	const auto & playerSettings = cb->getPlayerSettings(getOwner());
-	income.applyHandicap(playerSettings->handicap.percentIncome);
-	return income;
 }
 
 std::vector<CreatureID> CGHeroInstance::providedCreatures() const

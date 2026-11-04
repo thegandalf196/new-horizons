@@ -11,6 +11,7 @@
 
 #include "CWindowObject.h"
 #include "../../lib/ResourceSet.h"
+#include "../../lib/constants/EntityIdentifiers.h"
 
 #include <array>
 #include <optional>
@@ -29,6 +30,8 @@ public:
 	int getAvailableCreatures();
 	int getWeeklyGrowth(int recruitmentLevel) const;
 	void updateAllSliders();
+	TResources recruitmentCost(CreatureID creature, int amount) const;
+	int recruitmentAmount(CreatureID creature, const TResources & resources, int available) const;
 	bool isForTown(const CGTownInstance * value) const { return town == value; }
 	QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition);
 

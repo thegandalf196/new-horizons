@@ -254,6 +254,7 @@ void GameSettings::loadOverrides(const JsonNode & input)
 {
 	// Validate the two new scalar rows together before any option is changed.
 	// This is admission only; absence normalization remains binary-load-only.
+	newHorizonsHeroes::validatePassiveFactionPolicies(input["heroes"]["newHorizonsPerks"]);
 	validateCombatScalarOverrides(input, true, true);
 	newHorizonsNeutralArmies::validateOverrides(input, true);
 	newHorizonsRecruitmentGrowth::validateOverrides(input, true);
@@ -272,6 +273,8 @@ void GameSettings::loadOverrides(const JsonNode & input)
 
 void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 {
+	if(option == EGameSettings::HEROES_NEW_HORIZONS_PERKS)
+		newHorizonsHeroes::validatePassiveFactionPolicies(input);
 	if(option == EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)
 		newHorizonsNeutralArmies::calibration::validate(input);
 	if(option == EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK

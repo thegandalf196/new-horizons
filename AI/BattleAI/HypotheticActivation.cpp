@@ -8,11 +8,16 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/spells/NewHorizonsMetamagicPoints.h"
+#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
+#include "../../lib/spells/ArcaneInspirationCompletion.h"
+#include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "PrismaticVanguardProjection.h"
 #include "PhysicalStrikeProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/battle/NewHorizonsMaintenanceSpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
@@ -54,6 +59,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 			throw std::runtime_error("Cannot advance a battle round with unresolved Double Command continuation");
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		if(projectedCastSpells[side]) projectedCastSpells[side] = 0;
 		fortuneStates[side].nextRound();
 		luckSerendipityStates[side].nextRound(projectedRound + 1);
 		moraleSuppressionStates[side].nextRound();
@@ -68,13 +74,14 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	// BattleInfo grants opening effects their full duration in round one.
 	const bool firstRound = projectedRound == 0;
 	++projectedRound;
+	advanceMetamagicPoints();
+	arcaneInspiration::advanceRound(*this, projectedRound);
 	seizeInitiative.nextRound(projectedRound);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		auto & spellResponse = spellResponseStates.at(side);
 		if(spellResponse.hasState() && !spellResponse.isReadyAt(projectedRound))
 			spellResponse = {};
-		warcastingStates[side] = warcastingStates[side].clearedIfExpired(projectedRound);
 		if(heroActionAllowances[side].currentRound >= 0)
 			heroActionAllowances[side].resetForRound(projectedRound);
 		auto & meta = metamagicStates[side];
@@ -124,6 +131,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		if(battle::endBattleFormAtNearestLegalPosition(*unit, getAccessibility(unit.get())))
 			unit->removeUnitBonus(CSelector(battle::isPolymorphMarker));
 	}
+	newHorizonsMetamagic::publishRoundEffects(*getServerCallback(), *this);
 	// Match the authoritative post-BattleNextRound health phase: timed expiry,
 	// pending ghosts and form restoration are already resolved; no activation occurs.
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
@@ -187,6 +195,36 @@ void HypotheticBattle::nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUn
 	nextTurnImpl(unitId, reason, true, timing);
 }
 
+void HypotheticBattle::applyProjectedPoison(const std::shared_ptr<StackWithBonuses> & unit)
+{
+	const auto poisonOrigin = unit->physicalPoisonSpellOrigin();
+	auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
+	if(poisonOrigin == BattleSide::ATTACKER || poisonOrigin == BattleSide::DEFENDER)
+		poisonDamage = newHorizonsMetamagic::spellDamage(poisonDamage, nullptr, *this, unit.get(),
+			sideToPlayer(poisonOrigin));
+	if(poisonDamage > 0)
+	{
+		const bool wasAlive = unit->alive();
+		const auto rebirthSource = wasAlive ? captureElementalRebirthSource(*unit) : std::nullopt;
+		const bool nativeRebirth = hasReadyNativeRebirth(unit.get());
+		const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(*this, *unit);
+		unit->damage(poisonDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+		if(wasAlive && !unit->alive())
+			releaseSerpentBindingsForDeath(*unit);
+		if(destroyed) PhysicalStrikeProjection::completeDamagePacket(*this, std::span(&*destroyed, 1));
+		if(rebirthSource)
+			projectElementalRebirth(unit.get(), *rebirthSource,
+				wasAlive && !unit->alive(), unit->isClone(), nativeRebirth);
+		newHorizonsBulwark::advancePhysicalPoison(unit.get());
+		if(!unit->alive()) newHorizonsBulwark::clearPhysicalPoison(unit.get());
+		BattleStackAttacked injury;
+		injury.stackAttacked = unit->unitId();
+		injury.damageAmount = poisonDamage;
+		arcaneInspiration::publishSpellDamage(*getServerCallback(), *this, poisonOrigin,
+			std::span(&injury, 1));
+	}
+}
+
 void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	const std::shared_ptr<StackWithBonuses> & unit, BattleUnitTurnReason reason,
 	HypotheticLifecycleTiming * timing)
@@ -240,22 +278,7 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	if(maintenanceHealing > 0)
 		unit->heal(maintenanceHealing, EHealLevel::HEAL, EHealPower::PERMANENT);
 
-	auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
-	if(poisonDamage > 0)
-	{
-		const bool wasAlive = unit->alive();
-		const auto rebirthSource = wasAlive ? captureElementalRebirthSource(*unit) : std::nullopt;
-		const bool nativeRebirth = hasReadyNativeRebirth(unit.get());
-		const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(*this, *unit);
-		unit->damage(poisonDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
-		if(wasAlive && !unit->alive())
-			releaseSerpentBindingsForDeath(*unit);
-		if(destroyed) PhysicalStrikeProjection::completeDamagePacket(*this, std::span(&*destroyed, 1));
-		if(rebirthSource)
-			projectElementalRebirth(unit.get(), *rebirthSource,
-				wasAlive && !unit->alive(), unit->isClone(), nativeRebirth);
-		newHorizonsBulwark::advancePhysicalPoison(unit.get());
-	}
+	applyProjectedPoison(unit);
 	if(unit->bulwarkMireGripApplied)
 	{
 		const int bulwarkSkillId = SecondarySkill::decode(std::string(newHorizonsBulwark::SKILL_ID));

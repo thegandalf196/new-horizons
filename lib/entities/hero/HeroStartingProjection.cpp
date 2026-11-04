@@ -79,9 +79,13 @@ std::optional<SpellID> authoredRemainingSpellReplacement(const CHero & hero, con
 	for(const auto & producer : hero.spellSpecialtySuccessorProducers)
 		if(producer.source == source)
 			for(const auto & spell : LIBRARY->spellh->objects)
-				if(spell && spell->getJsonKey() == producer.target
-					&& newHorizonsMagic::spellAllowedByHeroRoster(magic, spell->getId()))
-					return spell->getId();
+				if(spell && spell->getJsonKey() == producer.target)
+				{
+					const auto target = authoredNonDamageSpellReplacement(hero, development, magic, spell->getId())
+						.value_or(spell->getId());
+					if(newHorizonsMagic::spellAllowedByHeroRoster(magic, target))
+						return target;
+				}
 	return std::nullopt;
 }
 
@@ -113,6 +117,17 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CHero & hero, con
 {
 	if(const auto target = chosenStartingSpellReplacement(development, magic, hero.getJsonKey(), source))
 		return target;
+	const auto & haste = magic["spells"]["core:haste"]["heroAccess"];
+	if(source == SpellID::HASTE && haste.isBool() && !haste.Bool()
+		&& nonDamageSpellSpecialtyRules(development)
+		&& newHorizonsMagic::rulesActive(magic)
+		&& magic["rulesetVersion"].Integer()
+			>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
+	{
+		const SpellID focus(SpellID::decode("new-horizons:focusMagic"));
+		if(focus.hasValue() && newHorizonsMagic::spellAllowedByHeroRoster(magic, focus))
+			return focus;
+	}
 	const auto & key = hero.getJsonKey();
 	const auto & remainingFlag = development["nonDamageSpellSpecialties"]["remainingStartReplacements"];
 	const bool remaining = remainingFlag.isBool() && remainingFlag.Bool();
@@ -133,8 +148,7 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CHero & hero, con
 		&& (key == "core:merist" || key == "core:labetha");
 	const auto & offensiveFlag = development["nonDamageSpellSpecialties"]["offensiveStartReplacements"];
 	const bool offensive = offensiveFlag.isBool() && offensiveFlag.Bool()
-		&& ((source == SpellID::PRAYER && key == "core:loynis")
-			|| (source == SpellID::PRECISION && key == "core:zubin"));
+		&& source == SpellID::PRAYER && key == "core:loynis";
 	const bool thant = key == "core:thant" && source == SpellID::ANIMATE_DEAD;
 	const bool frailty = (source == SpellID::WEAKNESS
 		&& (key == "core:cuthbert" || key == "core:olema" || key == "core:mirlanda"))
@@ -165,7 +179,7 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CHero & hero, con
 						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 					&& newHorizonsMagic::spellAllowedByHeroRoster(magic, spell))
 				|| (offensive && spell.toSpell()->getJsonKey()
-					== (key == "core:loynis" ? "new-horizons:crusade" : "new-horizons:focusMagic")
+					== "new-horizons:crusade"
 					&& newHorizonsMagic::rulesActive(magic)
 					&& magic["rulesetVersion"].Integer()
 						>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION

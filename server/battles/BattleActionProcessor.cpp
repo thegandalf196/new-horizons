@@ -8,8 +8,13 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/ArcaneReprisal.h"
+#include "../../lib/battle/PassiveDivineMandate.h"
+#include "../../lib/battle/PassiveDivineMandateInspiration.h"
+#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "BattleSylvanStrikeAftermath.h"
 #include "BattlePrimaryStrikeAftermath.h"
+#include "BattleLastStandDamage.h"
 #include "BattleToxicSting.h"
 #include "BattleVoluntaryMovementHistory.h"
 #include "BattleWaitState.h"
@@ -19,6 +24,8 @@
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "BattleActionProcessor.h"
+#include "HeroOrderLog.h"
+#include "../../lib/battle/NewHorizonsDemonicGating.h"
 #include "BattlePurifyAction.h"
 #include "BattleMeleeSpecialtyCompletion.h"
 #include "BattleRangedFollowup.h"
@@ -34,7 +41,6 @@
 #include "DefiantDenial.h"
 #include "NoQuarterAftermath.h"
 #include "NewHorizonsLivingInferno.h"
-#include "HeroOrderLog.h"
 #include "FrozenAttackResolution.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
@@ -319,10 +325,13 @@ static void recordDivineRetributionDamage(const CBattleInfoCallback & battle, CG
 		parameters["actualHpDamage"].Integer() = accumulatedDamage;
 		parameters["rawCap"].Integer() = protection->val;
 		parameters["retributionistPercent"].Integer() = retributionistPercent;
+		if(const auto ratio = newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(*protection))
+			parameters["payoutRatioBasisPoints"].Integer() = *ratio;
 
 		Bonus judgment(BonusDuration::N_TURNS, BonusType::DIVINE_RETRIBUTION_JUDGED,
 			BonusSource::SPELL_EFFECT, 1, BonusSourceID(spell), protectedSubtype);
 		judgment.turnsRemain = 1;
+		judgment.spellCasterOwner = protection->spellCasterOwner;
 		judgment.parameters = std::make_shared<BonusParameters>(parameters);
 
 		if(!removed.empty())
@@ -663,70 +672,6 @@ static bool canonicalFireWallDirection(BattleHex::EDir direction)
 	return direction >= BattleHex::TOP_LEFT && direction <= BattleHex::LEFT;
 }
 
-static bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle,
-	const BattleHex & position, bool doubleWide, BattleSide side)
-{
-	for(const auto & hex : battle::Unit::getHexes(position, doubleWide, side))
-	{
-		if(hex.isAvailable() && !battle.battleGetAllObstaclesOnPos(hex, false).empty())
-			return true;
-	}
-	return false;
-}
-
-static bool validateDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & action)
-{
-	if(action.actionType != EActionType::DEMONIC_GATING || !action.gatingCreature.hasValue()
-		|| (action.target.size() != 1 && action.target.size() != 2)
-		|| std::ranges::any_of(action.target, [](const auto & destination)
-		{
-			return destination.unitValue != -1000 || !destination.hexValue.isValid();
-		}))
-		return false;
-	const auto * source = battle.battleGetStackByID(action.stackNumber, false);
-	const auto * hero = battle.battleGetFightingHero(action.side);
-	const auto * creature = action.gatingCreature.toCreature();
-	if(!source || !source->alive() || !hero || !creature
-		|| source->unitSide() != action.side || source->creatureId().toCreature()->getFactionID() != FactionID::INFERNO
-		|| creature->getFactionID() != FactionID::INFERNO)
-		return false;
-	const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
-	const auto category = battle.battleGetCreatureCategory(action.gatingCreature);
-	if(rank <= 0 || !category || static_cast<int>(category->category) >= rank)
-		return false;
-	const auto & demonicReserve = battle.getBattle()->getDemonicReserve(action.side);
-	const auto reserve = demonicReserve.find(action.gatingCreature);
-	if(reserve == demonicReserve.end() || reserve->second <= 0)
-		return false;
-	BattleHex sourcePosition = source->getPosition();
-	if(action.target.size() == 2)
-	{
-		if(!hero->hasActivePerk("new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate")
-			|| source != battle.battleActiveUnit())
-			return false;
-		const BattleHex movementDestination = action.target.front().hexValue;
-		const auto [path, distance] = battle.getPath(sourcePosition, movementDestination, source);
-		const int movementLimit = static_cast<int>(source->getMovementRange(0) / 2);
-		if(path.empty() || distance < 0 || distance > movementLimit)
-			return false;
-		sourcePosition = movementDestination;
-	}
-	const int placementRange = hero->hasActivePerk(
-		"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
-	const BattleHex target = action.target.back().hexValue;
-	const BattleHex occupiedTail = source->doubleWide()
-		? source->occupiedHex(sourcePosition) : BattleHex::INVALID;
-	const BattleHex gatedTail = battle::Unit::occupiedHex(target, creature->isDoubleWide(), action.side);
-	if(!target.isAvailable() || target == sourcePosition || target == occupiedTail
-		|| (gatedTail.isValid() && (gatedTail == sourcePosition || gatedTail == occupiedTail))
-		|| BattleHex::getDistance(sourcePosition, target) > placementRange
-		|| battle.battleGetUnitByPos(target, true)
-		|| demonicGateFootprintHasObstacle(battle, target, creature->isDoubleWide(), action.side))
-		return false;
-	const auto accessibility = battle.getAccessibility();
-	return accessibility.accessible(target, creature->isDoubleWide(), action.side);
-}
-
 static bool validateCanonicalFireWallAction(const CBattleInfoCallback & battle,
 	const BattleAction & action, battle::Target & expandedTarget)
 {
@@ -910,6 +855,131 @@ static bool validatePurifyAction(const CBattleInfoCallback & battle, const Battl
 	return !action.spellPurifyChoices.empty() || clearsPhysicalPoison;
 }
 
+static const char * heroSpellTargetProblem(const CBattleInfoCallback & battle, const BattleAction & action,
+	const CGHeroInstance * hero, const CSpell * spell, const spells::Mechanics & mechanics, battle::Target & target)
+{
+	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isFireWall(spell->getId()))
+	{
+		battle::Target expandedTarget;
+		if(!validateCanonicalFireWallAction(battle, action, expandedTarget))
+			return "New Horizons Fire Wall requires one empty start hex and a valid direction";
+		target = std::move(expandedTarget);
+	}
+	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
+		&& newHorizonsMagic::isLandMine(spell->getId())
+		&& !validateCanonicalLandMineTargets(battle, mechanics, target))
+		return "New Horizons Land Mine requires the exact number of unique empty hexes";
+	if(newHorizonsMagic::quicksandSelectedPlacementEnabled(
+		battle.getBattle()->getMagicRules(), spell->getId())
+		&& !validateCanonicalQuicksandTargets(battle, mechanics, target))
+		return "New Horizons Quicksand requires the exact number of unique empty hexes";
+	if(!validateShadowGiftAction(battle, action, hero, spell, target))
+		return "Shadow Gift requires one eligible allied stack and a valid 10/20/30 percent sacrifice choice";
+	if(spell->getId() == newHorizonsPurify::spellID())
+	{
+		if(!validatePurifyAction(battle, action, hero, target))
+			return "Purify selections no longer match eligible effects in the selected area";
+	}
+	else if(!action.spellPurifyChoices.empty())
+		return "Purify selections are only valid for the Purify Hero Spell action";
+	return nullptr;
+}
+
+static void completeHeroPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+	const BattleAction & action, const CGHeroInstance * hero, bool purifyingMandate,
+	const newHorizonsMetamagic::CastProfile & metamagic, const spells::AutomaticHeroCastReceipt & automatic,
+	const std::optional<HeroActionAllowanceState::Receipt> & originalAction)
+{
+	const auto removed = applyPurifyAction(gameHandler, battle, action, hero, purifyingMandate);
+	newHorizonsMetamagic::publishResolvedMarks(*gameHandler.spellcastEnvironment(),
+		metamagic.perks.rank > 0 ? &metamagic : nullptr, battle, removed);
+	if(automatic.inspiringDuration > 0 && !removed.empty())
+	{
+		auto inspiration = newHorizonsPassiveDivineMandate::inspiringSpeedEffects(battle, action.side, automatic, removed);
+		if(!inspiration.toAdd.empty())
+			gameHandler.sendAndApply(inspiration);
+	}
+	const auto recipients = newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(battle, action.side, removed);
+	if(originalAction && !recipients.empty())
+	{
+		const auto & original = *originalAction;
+		const auto & ledger = battle.getBattle()->getHeroActionAllowances(action.side);
+		if(original.source == HeroActionAllowanceState::GrantSource::ROUND
+			&& original.allowance == HeroActionAllowanceState::AllowanceKind::HERO)
+		{
+			const auto grant = std::find_if(ledger.grants.begin(), ledger.grants.end(), [](const auto & entry)
+			{
+				return entry.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+					&& entry.allowance == HeroActionAllowanceState::AllowanceKind::ORDER;
+			});
+			if(grant != ledger.grants.end())
+			{
+				BattleDivineMandateRecipientsChanged capture;
+				capture.battleID = battle.getBattle()->getBattleID();
+				capture.side = action.side;
+				capture.pendingGrantId = grant->id;
+				capture.originalAction = original;
+				capture.recipients = recipients;
+				gameHandler.sendAndApply(capture);
+			}
+		}
+		else if(original.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
+			&& newHorizonsDivineMandate::hasSharedPurposePerk(hero))
+		{
+			std::vector<uint32_t> overlap;
+			std::set_intersection(original.divineMandateRecipients.begin(), original.divineMandateRecipients.end(),
+				recipients.begin(), recipients.end(), std::back_inserter(overlap));
+			SetStackEffect purpose;
+			purpose.battleID = battle.getBattle()->getBattleID();
+			for(const auto id : overlap)
+				if(const auto * unit = battle.battleGetUnitByID(id);
+					unit && !unit->hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
+					purpose.toAdd.emplace_back(id,
+						std::vector<Bonus>{newHorizonsDivineMandate::sharedPurposeMoraleBonus()});
+			if(!purpose.toAdd.empty())
+				gameHandler.sendAndApply(purpose);
+		}
+	}
+}
+
+static bool logHeroSpellProblem(const char * message, const spells::Problem & problem)
+{
+	logGlobal->warn(message);
+	std::vector<std::string> texts;
+	problem.getAll(texts);
+	for(const auto & text : texts)
+		logGlobal->warn(text);
+	return false;
+}
+
+static void completeHeroCurePhysicalPoison(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+	const battle::Target & target)
+{
+	for(const auto & destination : target)
+	{
+		const auto * cureTarget = dynamic_cast<const CStack *>(destination.unitValue);
+		if(!cureTarget || cureTarget->physicalPoisonActivationsRemaining <= 0)
+			continue;
+		auto state = cureTarget->acquireState();
+		newHorizonsBulwark::clearPhysicalPoison(state.get());
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler.sendAndApply(changed);
+
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		MetaString line;
+		line.appendRawString("Cure removes physical Poison from %s.");
+		cureTarget->addNameReplacement(line, cureTarget->getCount());
+		message.lines.push_back(std::move(line));
+		gameHandler.sendAndApply(message);
+	}
+}
+
 bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	if(ba.metamagicGrand)
@@ -939,38 +1009,18 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 	spells::detail::ProblemImpl problem;
 	auto mechanics = spell->battleMechanics(&parameters);
 	auto target = ba.getTarget(&battle);
-	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
-		&& newHorizonsMagic::isFireWall(spell->getId()))
-	{
-		battle::Target expandedTarget;
-		if(!validateCanonicalFireWallAction(battle, ba, expandedTarget))
-			return false;
-		target = std::move(expandedTarget);
-	}
-	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
-		&& newHorizonsMagic::isLandMine(spell->getId())
-		&& !validateCanonicalLandMineTargets(battle, *mechanics, target))
+	if(heroSpellTargetProblem(battle, ba, hero, spell, *mechanics, target))
 		return false;
-	if(newHorizonsMagic::quicksandSelectedPlacementEnabled(
-		battle.getBattle()->getMagicRules(), spell->getId())
-		&& !validateCanonicalQuicksandTargets(battle, *mechanics, target))
-		return false;
-	if(!validateShadowGiftAction(battle, ba, hero, spell, target))
-		return false;
-	if(spell->getId() == newHorizonsPurify::spellID())
-	{
-		if(!validatePurifyAction(battle, ba, hero, target))
-			return false;
-	}
-	else if(!ba.spellPurifyChoices.empty())
-		return false;
-
 	return mechanics->canBeCast(problem) && !target.empty() && mechanics->canBeCastAt(target, problem);
 }
 
-bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
+bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba,
+	spells::AutomaticHeroCastReceipt automatic)
 {
-	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
+	automatic.validateShape();
+	if(automatic.automatic() && (ba.metamagicFollowup || ba.metamagicGrand || ba.metamagicManaRefund != 0))
+		throw std::runtime_error("Automatic hero cast cannot request additional actions");
+	if(!automatic.automatic() && ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
 	{
 		gameHandler->complain("Metamagic follow-up is not available in the authoritative battle state");
 		return false;
@@ -989,10 +1039,12 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	}
 	const CSpell * s = ba.spell.toSpell();
 	spells::BattleCast parameters(&battle, h, spells::Mode::HERO, s);
+	parameters.setAutomaticHeroCast(automatic);
 	parameters.setOvercharge(ba.spellOvercharge);
 	parameters.setSelectiveDispel(ba.spellSelectiveDispel);
 	parameters.setCureAffliction(ba.spellCureAffliction);
 	parameters.setCurePhysicalAffliction(ba.spellCurePhysicalAffliction);
+	parameters.setPurifyChoices(ba.spellPurifyChoices);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setShadowGiftSacrificePercent(ba.spellShadowGiftSacrificePercent);
 	parameters.setMetamagicFollowup(ba.metamagicFollowup);
@@ -1010,69 +1062,16 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 
 	auto m = s->battleMechanics(&parameters);
 	auto target = ba.getTarget(&battle);
-	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
-		&& newHorizonsMagic::isFireWall(s->getId()))
+	if(const auto * complaint = heroSpellTargetProblem(battle, ba, h, s, *m, target))
 	{
-		battle::Target expandedTarget;
-		if(!validateCanonicalFireWallAction(battle, ba, expandedTarget))
-		{
-			gameHandler->complain("New Horizons Fire Wall requires one empty start hex and a valid direction");
-			return false;
-		}
-		target = std::move(expandedTarget);
-	}
-	if(newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
-		&& newHorizonsMagic::isLandMine(s->getId())
-		&& !validateCanonicalLandMineTargets(battle, *m, target))
-	{
-		gameHandler->complain("New Horizons Land Mine requires the exact number of unique empty hexes");
+		gameHandler->complain(complaint);
 		return false;
 	}
-	if(newHorizonsMagic::quicksandSelectedPlacementEnabled(
-		battle.getBattle()->getMagicRules(), s->getId())
-		&& !validateCanonicalQuicksandTargets(battle, *m, target))
-	{
-		gameHandler->complain("New Horizons Quicksand requires the exact number of unique empty hexes");
-		return false;
-	}
-	if(!validateShadowGiftAction(battle, ba, h, s, target))
-	{
-		gameHandler->complain("Shadow Gift requires one eligible allied stack and a valid 10/20/30 percent sacrifice choice");
-		return false;
-	}
-	if(s->getId() == newHorizonsPurify::spellID())
-	{
-		if(!validatePurifyAction(battle, ba, h, target))
-		{
-			gameHandler->complain("Purify selections no longer match eligible effects in the selected area");
-			return false;
-		}
-	}
-	else if(!ba.spellPurifyChoices.empty())
-	{
-		gameHandler->complain("Purify selections are only valid for the Purify Hero Spell action");
-		return false;
-	}
-
 	if(!m->canBeCast(problem))
-	{
-		logGlobal->warn("Spell cannot be cast!");
-		std::vector<std::string> texts;
-		problem.getAll(texts);
-		for(const auto & text : texts)
-			logGlobal->warn(text);
-		return false;
-	}
+		return logHeroSpellProblem("Spell cannot be cast!", problem);
 
 	if(target.empty() || !m->canBeCastAt(target, problem))
-	{
-		logGlobal->warn("Spell cannot be cast at the requested target!");
-		std::vector<std::string> texts;
-		problem.getAll(texts);
-		for(const auto & text : texts)
-			logGlobal->warn(text);
-		return false;
-	}
+		return logHeroSpellProblem("Spell cannot be cast at the requested target!", problem);
 	if(ba.metamagicFollowup && !target.empty() && target.front().unitValue)
 		parameters.setMetamagicTargetUnitId(target.front().unitValue->unitId());
 	if(ba.metamagicFollowup && !grandActivation
@@ -1126,6 +1125,9 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 				HeroActionAllowanceState::ActionKind::SPELL, grant->allowance, grant->source,
 				battle.battleGetRound(), grant->divineMandateRecipients};
 	}
+	const auto auxiliaryMeta = s->getId() == newHorizonsPurify::spellID()
+		? newHorizonsMetamagic::captureHeroCastProfile(h, battle.getBattle(), true)
+		: newHorizonsMetamagic::CastProfile{};
 	if(newHorizonsHeroLuck::hasErraticMana(h)
 		|| (newHorizonsHeroLuck::hasDruidicLuck(h)
 			&& spells::heroLuckDamageEligible(*s, battle.getBattle()->getMagicRules())))
@@ -1133,50 +1135,8 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 			parameters.setHeroLuck(*luck);
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
 	if(!counterspellNegated && s->getId() == newHorizonsPurify::spellID())
-	{
-		const auto removed = applyPurifyAction(*gameHandler, battle, ba, h, purifyingMandate);
-		const auto recipients = newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(battle, ba.side, removed);
-		if(sharedPurposePurifyAction && !recipients.empty())
-		{
-			const auto & original = *sharedPurposePurifyAction;
-			const auto & ledger = battle.getBattle()->getHeroActionAllowances(ba.side);
-			if(original.source == HeroActionAllowanceState::GrantSource::ROUND
-				&& original.allowance == HeroActionAllowanceState::AllowanceKind::HERO)
-			{
-				const auto grant = std::find_if(ledger.grants.begin(), ledger.grants.end(), [](const auto & entry)
-				{
-					return entry.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-						&& entry.allowance == HeroActionAllowanceState::AllowanceKind::ORDER;
-				});
-				if(grant != ledger.grants.end())
-				{
-					BattleDivineMandateRecipientsChanged capture;
-					capture.battleID = battle.getBattle()->getBattleID();
-					capture.side = ba.side;
-					capture.pendingGrantId = grant->id;
-					capture.originalAction = original;
-					capture.recipients = recipients;
-					gameHandler->sendAndApply(capture);
-				}
-			}
-			else if(original.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-				&& newHorizonsDivineMandate::hasSharedPurposePerk(h))
-			{
-				std::vector<uint32_t> overlap;
-				std::set_intersection(original.divineMandateRecipients.begin(), original.divineMandateRecipients.end(),
-					recipients.begin(), recipients.end(), std::back_inserter(overlap));
-				SetStackEffect purpose;
-				purpose.battleID = battle.getBattle()->getBattleID();
-				for(const auto id : overlap)
-					if(const auto * unit = battle.battleGetUnitByID(id);
-						unit && !unit->hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus)))
-						purpose.toAdd.emplace_back(id,
-							std::vector<Bonus>{newHorizonsDivineMandate::sharedPurposeMoraleBonus()});
-				if(!purpose.toAdd.empty())
-					gameHandler->sendAndApply(purpose);
-			}
-		}
-	}
+		completeHeroPurifyAction(*gameHandler, battle, ba, h, purifyingMandate,
+			auxiliaryMeta, automatic, sharedPurposePurifyAction);
 	if(!counterspellNegated && s->getJsonKey() == newHorizonsShadowGift::SPELL_ID)
 	{
 		// Pay only after the script published the timed status. This keeps the
@@ -1192,30 +1152,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	}
 	if(!counterspellNegated && s->getId() == SpellID::CURE && ba.spellCureAffliction == SpellID::POISON
 		&& newHorizonsMagic::cureEnabled(h->getMagicRules(), s->getId()))
-	{
-		for(const auto & destination : target)
-		{
-			const auto * cureTarget = dynamic_cast<const CStack *>(destination.unitValue);
-			if(!cureTarget || cureTarget->physicalPoisonActivationsRemaining <= 0)
-				continue;
-			auto state = cureTarget->acquireState();
-			newHorizonsBulwark::clearPhysicalPoison(state.get());
-			BattleUnitsChanged changed;
-			changed.battleID = battle.getBattle()->getBattleID();
-			UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-			update.data = state->save();
-			changed.changedStacks.push_back(std::move(update));
-			gameHandler->sendAndApply(changed);
-
-			BattleLogMessage message;
-			message.battleID = battle.getBattle()->getBattleID();
-			MetaString line;
-			line.appendRawString("Cure removes physical Poison from %s.");
-			cureTarget->addNameReplacement(line, cureTarget->getCount());
-			message.lines.push_back(std::move(line));
-			gameHandler->sendAndApply(message);
-		}
-	}
+		completeHeroCurePhysicalPoison(*gameHandler, battle, target);
 	if(counterspellNegated)
 		counteringHero->spendMana(gameHandler->spellcastEnvironment(), counterspellCost);
 	gameHandler->useChargeBasedSpell(h->id, ba.spell);
@@ -2265,183 +2202,6 @@ bool BattleActionProcessor::dispatchBattleAction(const CBattleInfoCallback & bat
 	return false;
 }
 
-bool BattleActionProcessor::doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba)
-{
-	const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
-	if(!concrete)
-		return false;
-	const auto * actingStack = battle.battleGetStackByID(ba.stackNumber, false);
-	if(!canStackAct(battle, actingStack))
-		return false;
-	if(ba.target.size() == 2)
-	{
-		processBattleEventTriggers(battle, CombatEventType::BEFORE_MOVE, actingStack, nullptr);
-		const auto movement = moveStack(battle, ba.stackNumber, ba.target.front().hexValue);
-		if(movement.invalidRequest)
-			return false;
-		const auto * source = battle.battleGetStackByID(ba.stackNumber, false);
-		if(source && source->alive())
-			processBattleEventTriggers(battle, CombatEventType::AFTER_MOVE, source, nullptr);
-
-		const auto * hero = battle.battleGetFightingHero(ba.side);
-		const auto * creature = ba.gatingCreature.toCreature();
-		const BattleHex gateHex = ba.target.back().hexValue;
-		const int placementRange = hero && hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate") ? 5 : 3;
-		const auto accessibility = battle.getAccessibility();
-		const bool gateStillLegal = source && source->alive() && hero && creature
-			&& BattleHex::getDistance(source->getPosition(), gateHex) <= placementRange
-			&& !battle.battleGetUnitByPos(gateHex, true)
-			&& !demonicGateFootprintHasObstacle(battle, gateHex, creature->isDoubleWide(), ba.side)
-			&& accessibility.accessible(gateHex, creature->isDoubleWide(), ba.side);
-		if(!gateStillLegal)
-			return true; // authoritative movement or an obstacle may still have consumed the activation
-
-		const auto & side = concrete->getSide(ba.side);
-		const auto reserve = side.demonicReserve.find(ba.gatingCreature);
-		if(reserve == side.demonicReserve.end() || reserve->second <= 0)
-			return true;
-		BattleDemonicGatingStateChanged update;
-		update.battleID = concrete->getBattleID();
-		update.side = ba.side;
-		update.reserve = side.demonicReserve;
-		update.pending = side.pendingDemonicGates;
-		update.gated = side.gatedDemonicStacks;
-		update.chainGateArmed = side.chainGateArmed;
-		update.masterGateUsed = side.masterGateUsed;
-		const bool masterGateContinuation = !side.masterGateUsed && hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate");
-		SideInBattle::PendingDemonicGate gate;
-		gate.creature = reserve->first;
-		gate.count = reserve->second;
-		gate.position = gateHex;
-		gate.arrivalRound = concrete->getRound() + 1;
-		gate.sourceUnitId = ba.stackNumber;
-		update.reserve.erase(gate.creature);
-		update.pending.push_back(gate);
-		if(masterGateContinuation)
-		{
-			update.masterGateUsed = true;
-			update.masterGateContinuationUnitId = ba.stackNumber;
-		}
-		gameHandler->sendAndApply(update);
-	}
-	const auto & gates = concrete->getSide(ba.side).pendingDemonicGates;
-	const auto found = std::ranges::find_if(gates, [&ba](const auto & gate)
-	{
-		return gate.sourceUnitId == ba.stackNumber && gate.creature == ba.gatingCreature;
-	});
-	if(found == gates.end())
-		return false;
-	const auto acceptedGate = *found;
-
-	// A valid Gate is the only point at which the token is spent.  Validation
-	// happened before StartAction, so rejected requests never reach this block;
-	// Swift Gate still consumes Chain Gate but retains its already-end-of-round
-	// timing instead of advancing it any further.
-	const auto * hero = battle.battleGetFightingHero(ba.side);
-	if(hero && hero->hasActivePerk(
-		"new-horizons:demonicGating", "new-horizons:demonicGating.chainGate")
-		&& concrete->getChainGateArmed(ba.side))
-	{
-		const bool swiftGate = hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.swiftGate");
-		BattleDemonicGatingStateChanged update;
-		update.battleID = concrete->getBattleID();
-		update.side = ba.side;
-		update.reserve = concrete->getSide(ba.side).demonicReserve;
-		update.pending = concrete->getSide(ba.side).pendingDemonicGates;
-		update.gated = concrete->getSide(ba.side).gatedDemonicStacks;
-		update.chainGateArmed = false;
-		update.masterGateUsed = concrete->getSide(ba.side).masterGateUsed;
-		if(!swiftGate)
-		{
-			const auto pending = std::ranges::find_if(update.pending, [&ba](const auto & gate)
-			{
-				return gate.sourceUnitId == ba.stackNumber && gate.creature == ba.gatingCreature;
-			});
-			if(pending != update.pending.end())
-			{
-				pending->arrivalRound = concrete->getRound();
-				pending->chainGateAccelerated = true;
-			}
-		}
-		gameHandler->sendAndApply(update);
-	}
-	BattleLogMessage message;
-	message.battleID = concrete->getBattleID();
-	MetaString line = MetaString::createFromRawString("A Gate opens for ");
-	line.appendNumber(acceptedGate.count);
-	line.appendRawString(" ");
-	line.appendName(acceptedGate.creature, acceptedGate.count);
-	line.appendRawString(".");
-	message.lines.push_back(std::move(line));
-	gameHandler->sendAndApply(message);
-	return true;
-}
-
-bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba)
-{
-	// Canonical Orders are represented by an immutable StartAction snapshot and
-	// evaluated from that snapshot by the battle callback. Perk bonuses are
-	// emitted separately and do not replace the conditional Order state.
-	if(heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules()))
-	{
-		const auto state = battle.getBattle()->getHeroOrderState(ba.side, ba.command);
-		if(!state || state->command != ba.command)
-			return false;
-		const auto grants = heroCommands::prepareIssuedOrderGrants(battle, ba.side, *state);
-		for(const auto & batch : grants.removals)
-		{
-			SetStackEffect update;
-			update.battleID = battle.getBattle()->getBattleID();
-			update.toRemove = batch;
-			gameHandler->sendAndApply(update);
-		}
-		for(const auto & batch : grants.batches)
-		{
-			SetStackEffect update;
-			update.battleID = battle.getBattle()->getBattleID();
-			update.toAdd = batch;
-			gameHandler->sendAndApply(update);
-		}
-		const auto holdFastRecipientCount = grants.holdFastRecipientCount;
-		BattleLogMessage message;
-		message.battleID = battle.getBattle()->getBattleID();
-		message.lines.push_back(heroOrderLogLine(battle, ba.side, *state));
-		if(holdFastRecipientCount > 0)
-		{
-			MetaString holdFastText;
-			holdFastText.appendRawString("Hold Fast lets ");
-			holdFastText.appendNumber(holdFastRecipientCount);
-			holdFastText.appendRawString(holdFastRecipientCount == 1
-				? " friendly stack treat negative Morale as 0 until its next Creature Activation."
-				: " friendly stacks treat negative Morale as 0 until their next Creature Activation.");
-			message.lines.push_back(std::move(holdFastText));
-		}
-		gameHandler->sendAndApply(message);
-		return true;
-	}
-	if(ba.command == HeroCommand::FOCUS_FIRE)
-		return true; // Validated contextual state was published atomically by StartAction.
-	const auto * hero = battle.battleGetFightingHero(ba.side);
-	if(!hero || heroCommands::isDoctrine(ba.command)
-		|| !heroCommands::supportedByRules(battle.getBattle()->getHeroCommandRules(), ba.command))
-		return false;
-	const auto effects = heroCommands::bonuses(battle.getBattle()->getHeroCommandRules(), ba.command, *hero);
-	SetStackEffect update;
-	update.battleID = battle.getBattle()->getBattleID();
-	for(const auto * unit : battle.battleGetAllStacks(true))
-	{
-		if(battle.battleGetOwner(unit) != battle.sideToPlayer(ba.side))
-			continue;
-		if(unit->alive() && !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON))
-			update.toAdd.emplace_back(unit->unitId(), effects);
-	}
-	gameHandler->sendAndApply(update);
-	return true;
-}
-
 bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba,
 	bool * masterGateActivationContinuationOut, bool voluntary)
 {
@@ -2783,7 +2543,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	}
 	if(ba.actionType == EActionType::MONSTER_SPELL && !prepareUnitSpellAction(battle, effectiveAction))
 		return false;
-	if(ba.actionType == EActionType::DEMONIC_GATING && !validateDemonicGatingAction(battle, ba))
+	if(ba.actionType == EActionType::DEMONIC_GATING && !newHorizonsDemonicGating::plan(battle, ba))
 	{
 		gameHandler->complain("Demonic Gate placement or reserve selection is invalid");
 		return false;
@@ -4003,6 +3763,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		combatFeedbackLogLines.push_back(std::move(line));
 	}
 
+	const auto divineFurySide = battle.playerToSide(battle.battleGetOwner(attacker));
+	const bool divineFuryUnderOrder = newHorizonsPassiveDivineMandate::activeOrderRiders(battle, attacker).fury;
 	// only primary target
 	if(defender && defender->alive())
 	{
@@ -4317,6 +4079,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	if(dreadCavalry && !bat.spellLike())
 		dreadCavalryAction::observeKilled(battle, attacker, bat, *dreadCavalry);
 	battlePrimaryStrikeAftermath::apply(*gameHandler, battle, primaryEffects);
+	arcaneInspiration::publishReprisals(*gameHandler->spellEnv, battle, payload.arcaneReprisals);
+	// One event per native primary attack; collateral BSA entries never enter this hook.
+	castDivineFury(battle, attacker, defender, divineFurySide, true, divineFuryUnderOrder);
 	newHorizonsManaLeeches::apply(*gameHandler, manaLeech, attack.manaLeechSequenceSpent);
 	resolveFrozenAttack(*gameHandler, frozenContext, frozenResolution);
 	for(const BattleStackAttacked & hit : bat.bsa)
@@ -4816,38 +4581,21 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 			&& attackerState->unitSlot() != SlotID::WAR_MACHINES_SLOT;
 		const auto standSide = battle.playerToSide(battle.battleGetOwner(def));
 		const bool validStandSide = standSide == BattleSide::ATTACKER || standSide == BattleSide::DEFENDER;
-		const auto standSideIndex = validStandSide ? static_cast<size_t>(standSide) : 0;
 		const auto * targetHero = validStandSide ? battle.battleGetFightingHero(standSide) : nullptr;
-		const bool canCheckLastStand = validStandSide
-			&& newHorizonsArmorer::isEligiblePhysicalAttack(attackerState.get(), bai.physicalDamage, bat.spellLike())
-			&& newHorizonsArmorer::canTriggerLastStand(targetHero, def);
-		const bool sideAlreadyUsed = validStandSide
-			&& (battle.getBattle()->armorerLastStandUsed(standSide) || lastStandUsedThisAttack[standSideIndex]);
-		const auto lastStand = newHorizonsArmorer::resolveLastStandDamage(incomingDamage,
-			defenderState->guardianSpiritHitPoints, defenderState->guardianSpiritRoundsRemaining,
-			def->getAvailableHealth(), canCheckLastStand, sideAlreadyUsed);
-		if(lastStand.triggered)
-		{
-			bsa.damageAmount = lastStand.damageToApply;
-			bsa.armorerLastStandSide = standSide;
-			lastStandUsedThisAttack[standSideIndex] = true;
-			defenderStateChanged = true;
-			defenderState->armorerLastStandDefending = true;
-			if(retaliation && battle.getBattle()->getActiveStackID() == static_cast<int32_t>(def->unitId()))
-			{
-				bsa.armorerLastStandEndsActivation = true;
-				defenderState->armorerLastStandEndedActivation = true;
-				bat.flags |= BattleAttack::LAST_STAND_RETALIATION;
-			}
-		}
+		defenderStateChanged = battleLastStandDamage::prepare(battle, bai, bat, bsa,
+			*defenderState, lastStandUsedThisAttack, retaliation);
 		const bool bastionProtectionConsumed = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			attackerState.get(), bai.physicalDamage) && battle.battleHasBastionProtection(def);
 		const auto damageProvenance = !bai.physicalDamage
 			? battle::DamageProvenance::SPELL
 			: physicalCreatureAttack ? battle::DamageProvenance::PHYSICAL_CREATURE
 				: battle::DamageProvenance::OTHER;
+		int64_t postShieldBeforeCasualties = 0;
 		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState,
-			false, false, damageProvenance); //calculate casualties
+			false, false, damageProvenance, &postShieldBeforeCasualties); //calculate casualties
+		// The live target still has its pre-packet identity/effects here, even if its prepared body died.
+		if(const auto reprisal = arcaneInspiration::captureReprisal(battle, bai, postShieldBeforeCasualties))
+			payload.arcaneReprisals.push_back(*reprisal);
 		// Ordinary primary melee/ranged hits qualify even when their damage is
 		// magical (e.g. Magog shots). Actual creature casts use a separate path.
 		// Preserve existing physical secondary behavior without widening magical

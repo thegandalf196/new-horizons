@@ -13,10 +13,12 @@
 #include "PotentialTargets.h"
 #include "BattleExchangeVariant.h"
 #include "VinesCandidateValueReuse.h"
+#include "ArrowContinuationReuse.h"
 #include "LifeDrainCandidateValueReuse.h"
 #include "RegenerationBaselineReuse.h"
 #include <utility>
 #include "HypotheticBattle.h"
+#include "HeroSpellOutcomeValue.h"
 
 namespace creatureSpellTiming { struct Sample; struct Pressure; }
 
@@ -49,6 +51,14 @@ class DLL_EXPORT BattleEvaluator
 	bool activeActionMade = false;
 	bool submitHeroAction(const PossibleSpellcast & castToPerform, heroActionTiming::Summary * timing);
 	CachedAttack cachedAttack;
+	void includeSyntheticInspiration(PossibleSpellcast &, const std::shared_ptr<HypotheticBattle> &, uint32_t actorId);
+	float conditionalInspirationUtility(const std::shared_ptr<HypotheticBattle> &, uint32_t actorId, bool full);
+	float inspirationOutcome(const PossibleSpellcast &, const spells::Mechanics &,
+		const std::shared_ptr<HypotheticBattle> &, std::span<const BattleStackAttacked>, bool completed, bool full, uint32_t actorId);
+	heroSpellProjection::OutcomeValue inspirationOutcomeEvaluator(const PossibleSpellcast &, const spells::Mechanics &, uint32_t actorId);
+	bool prepareBlinkOutcome(PossibleSpellcast &, spells::Mechanics &, uint32_t actorId);
+	bool prepareExpectedOutcomes(PossibleSpellcast &, spells::Mechanics &, uint32_t actorId);
+
 	PlayerColor playerID;
 	BattleID battleID;
 	BattleSide side;
@@ -106,13 +116,16 @@ public:
 	};
 
 	BattleAction selectStackAction(const CStack * stack, SelectionTiming * timing = nullptr);
+	/// New captured Gating only; invoked after ordinary Hero/typed decisions.
+	std::optional<BattleAction> chooseTemporaryGate(const CStack *, const BattleAction & ordinary);
 	/// Optional call-local experiment; null retains the original candidate set.
 	bool attemptCastingSpell(const CStack * stack, bool allowSpells = true,
 		heroActionSelection::Observer * observer = nullptr,
 		VinesCandidateValueReuse::TestControl * vinesReuse = nullptr,
 		LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse = nullptr,
 		RegenerationBaselineReuse::TestControl * regenerationReuse = nullptr,
-		heroDecisionPressure::Experiment * orderExperiment = nullptr);
+		heroDecisionPressure::Experiment * orderExperiment = nullptr,
+		arrowContinuation::Reuse::TestControl * arrowReuse = nullptr);
 	bool canCastSpell();
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * timing = nullptr);
 	/// Deterministic full-pool forecast; does not choose the eventual random spell.

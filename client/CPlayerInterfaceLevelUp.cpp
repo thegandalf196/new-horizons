@@ -9,7 +9,7 @@
 #include "GameInstance.h"
 #include "gui/WindowHandler.h"
 #include "media/ISoundPlayer.h"
-#include "windows/GUIClasses.h"
+#include "windows/CLevelWindow.h"
 #include "../lib/callback/CCallback.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include "../lib/entities/hero/NewHorizonsPrimaryGrowth.h"
@@ -41,7 +41,10 @@ void CPlayerInterface::heroGotLevelWithReroll(const CGHeroInstance *hero, Primar
 	{
 		if(replacesQueryID < 0)
 			ENGINE->sound().playSound(soundBase::heroNewLevel);
-		auto reroll = [this, queryID] { return cb->selectionMade(-1, queryID); };
+		auto reroll = [this, queryID](size_t skillIndex)
+		{
+			return cb->selectionMade(-2 - static_cast<int>(skillIndex), queryID);
+		};
 		auto callback = [this, queryID](ui32 selection)
 		{
 			if(queryID < 0)

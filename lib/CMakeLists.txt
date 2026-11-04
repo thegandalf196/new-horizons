@@ -70,6 +70,7 @@ set(lib_MAIN_SRCS
 	battle/BattleHex.cpp
 	battle/BattleHexArray.cpp
 	battle/HeroCommand.cpp
+	battle/DemonicGateArrival.cpp
 	battle/HeroCommandPreparation.cpp
 	battle/HeroCommandRevision.cpp
 	battle/HeroCommandVanguardEffects.cpp
@@ -81,6 +82,13 @@ set(lib_MAIN_SRCS
 	battle/HeroCommandCoefficientMath.cpp
 	battle/HeroCommandCoefficientQueries.cpp
 	battle/BattleInfo.cpp
+	battle/ArcaneInspirationRules.cpp
+	battle/ArcaneInspirationEffects.cpp
+	battle/ArcaneReprisal.cpp
+	battle/HeroOrderRecipients.cpp
+	battle/MagicalCreatureAttackDamage.cpp
+	spells/ArcaneSpellDamage.cpp
+	spells/ArcaneInspirationCompletion.cpp
 	battle/CreatureAbilityChance.h
 	battle/CreatureAbilityChance.cpp
 	battle/AttackAbilityQueries.h
@@ -90,6 +98,29 @@ set(lib_MAIN_SRCS
 	battle/UnitBonusApplications.cpp
 	battle/BattleActivation.cpp
 	battle/BattleLuckQueries.cpp
+	battle/BattleMoraleQueries.cpp
+	battle/PassiveDivineMandate.cpp
+	battle/PassiveDivineMandateInspiration.cpp
+	battle/PassiveDivineMandateOrders.cpp
+	battle/PassiveDivineMandatePolicy.cpp
+	battle/PassiveDivineMandateSpellPool.cpp
+	battle/PassiveDivineMandateVanguard.cpp
+	spells/AutomaticHeroCast.cpp
+	spells/LegacyMetamagicSpellActions.cpp
+	spells/NewHorizonsHandOfFateTargeting.cpp
+	spells/NewHorizonsMetamagicEffects.cpp
+	spells/NewHorizonsMetamagicEntry.cpp
+	spells/NewHorizonsMetamagicPoints.cpp
+	spells/SpellDelayedOutput.cpp
+	spells/SpellMdrPenetration.cpp
+	spells/NewHorizonsWisdom.cpp
+	spells/NewHorizonsMetamagicMarks.cpp
+	spells/NewHorizonsMetamagicRefresh.cpp
+	spells/NewHorizonsMetamagicTimedStatus.cpp
+	spells/NewHorizonsTimedStatusPlan.cpp
+	spells/RecipientSpellEffectPreview.cpp
+	spells/RecipientTimedSpellEffectPreview.cpp
+	spells/NewHorizonsRegeneration.cpp
 	battle/NewHorizonsManaLeeches.cpp
 	battle/NewHorizonsSerpentsEmbrace.cpp
 	battle/NewHorizonsForestAmbush.cpp
@@ -113,6 +144,8 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsGraveDustStrike.cpp
 	battle/BodyHealthLoss.h
 	battle/NewHorizonsGraveDustStrike.h
+	gameState/AcceptedHeroSpellAllowance.cpp
+	gameState/AcceptedHeroSpellAllowance.h
 	gameState/CombatDestructionAftermath.cpp
 	gameState/CombatDestructionAftermath.h
 	battle/ProjectedDestructionAftermath.cpp
@@ -177,6 +210,13 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsConfusionResolution.cpp
 	battle/NewHorizonsConfusionControl.cpp
 	battle/NewHorizonsConfusionState.cpp
+	battle/ArcaneMarkState.cpp
+	battle/PhysicalPoisonSpellOrigin.cpp
+	battle/UnitStateEffectReceipts.cpp
+	battle/PassiveFactionStateSerialization.cpp
+	battle/MetamagicPointState.cpp
+	battle/CUnitStateArcaneShield.cpp
+	battle/NewHorizonsDemonicGating.cpp
 	battle/NewHorizonsPlague.cpp
 	battle/NewHorizonsPuppetMaster.cpp
 	battle/NewHorizonsSoulChain.cpp
@@ -188,8 +228,8 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsArchery.cpp
 	battle/NewHorizonsArmorer.cpp
 	battle/NewHorizonsCombatSkills.cpp
-	battle/NewHorizonsEnchantedCommand.cpp
 	battle/NewHorizonsShroud.cpp
+	battle/NewHorizonsFactionSpellDamage.cpp
 	battle/NewHorizonsShadowGift.cpp
 	battle/BattleLayout.cpp
 	battle/BattleProxy.cpp
@@ -399,6 +439,7 @@ set(lib_MAIN_SRCS
 	callback/CBattleCallback.cpp
 	callback/CCallback.cpp
 	callback/CGameInfoCallback.cpp
+	callback/TownBuildingAvailability.cpp
 	callback/CNonConstInfoCallback.cpp
 	callback/CPlayerSpecificInfoCallback.cpp
 	callback/GameRandomizer.cpp
@@ -458,6 +499,8 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsRecoverySpecialtyPresentation.cpp
 	entities/hero/NewHorizonsLearningSpecialtyRules.cpp
 	entities/hero/NewHorizonsLearningExperience.cpp
+	entities/hero/NewHorizonsLearning.cpp
+	entities/hero/SkillChoiceEligibility.cpp
 	entities/hero/NewHorizonsSwampSeerRules.cpp
 	entities/hero/NewHorizonsSwampSeerExperience.cpp
 	entities/hero/NewHorizonsSwampSeerPresentation.cpp
@@ -510,6 +553,7 @@ set(lib_MAIN_SRCS
 	gameState/MapObjectInitialization.cpp
 	gameState/CGameStateCampaign.cpp
 	gameState/GameStatePackVisitor.cpp
+	gameState/GameStateDemonicGating.cpp
 	gameState/BattleEffectPackVisitor.cpp
 	gameState/GameStateBattleActivationVisitor.cpp
 	gameState/NewHorizonsBattleSpellPoints.cpp
@@ -551,10 +595,15 @@ set(lib_MAIN_SRCS
 	gameState/NeutralArmyStartOption.cpp
 	mapObjects/NewHorizonsRecruitmentGrowth.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/HeroEstateIncome.cpp
+	mapObjects/TownEstateEconomy.cpp
+	mapObjects/DwellingRecruitmentCost.cpp
+	mapObjects/NewHorizonsEstates.cpp
 	mapObjects/NewHorizonsLevelUpOffer.cpp
 	mapObjects/NewHorizonsHeroUpgrade.cpp
 	mapObjects/HeroManaRegeneration.cpp
 	mapObjects/HeroScholar.cpp
+	mapObjects/HeroLearningState.cpp
 	mapObjects/HeroPrimarySkill.cpp
 	mapObjects/HeroStartingEquipment.cpp
 	mapObjects/HeroSpellCasting.cpp
@@ -578,6 +627,7 @@ set(lib_MAIN_SRCS
 	mapObjects/SkeletonTransformer.cpp
 	mapObjects/IObjectInterface.cpp
 	mapObjects/MiscObjects.cpp
+	mapObjects/MineEstate.cpp
 	mapObjects/ObjectTemplate.cpp
 	mapObjects/ObstacleSetHandler.cpp
 
@@ -958,6 +1008,7 @@ set(lib_MAIN_HEADERS
 	battle/GateDrawbridgeFootprint.h
 	battle/BattleHexArray.h
 	battle/HeroCommand.h
+	battle/DemonicGateArrival.h
 	battle/HeroCommandRevision.h
 	battle/HeroCommandRoyalStandard.h
 	battle/HeroCommandAdjacency.h
@@ -975,17 +1026,20 @@ set(lib_MAIN_HEADERS
 	battle/AdverseCombatRerollState.h
 	battle/MoraleSuppressionState.h
 	battle/ReducedExtraActivationState.h
-	battle/AlternatingHeroActionState.h
 	battle/HeroActionAllowanceState.h
 	battle/RelentlessAssaultState.h
 	battle/SpellResponseState.h
 	battle/TimeStopState.h
-	battle/NewHorizonsWarcasting.h
 	battle/NewHorizonsWarMachines.h
 	battle/OverwhelmingFormulaState.h
 	spells/NewHorizonsOverwhelmingFormula.h
 	spells/NewHorizonsOverwhelmingFormula.cpp
 	battle/BattleInfo.h
+	battle/ArcaneInspiration.h
+	battle/ArcaneReprisal.h
+	battle/HeroOrderRecipients.h
+	battle/MagicalCreatureAttackDamage.h
+	spells/ArcaneInspirationCompletion.h
 	battle/BattleEntryEffects.h
 	battle/NewHorizonsManaLeeches.h
 	battle/NewHorizonsSerpentsEmbrace.h
@@ -1029,6 +1083,26 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsConfusionResolution.h
 	battle/NewHorizonsConfusionControl.h
 	battle/NewHorizonsConfusionState.h
+	battle/ArcaneMarkState.h
+	battle/PassiveDivineMandate.h
+	battle/PassiveDivineMandateInspiration.h
+	battle/PassiveDivineMandateSpellPool.h
+	battle/PassiveDivineMandateVanguard.h
+	spells/AutomaticHeroCast.h
+	spells/NewHorizonsHandOfFateTargeting.h
+	spells/NewHorizonsMetamagicEffects.h
+	spells/NewHorizonsMetamagicEntry.h
+	spells/NewHorizonsMetamagicPoints.h
+	spells/NewHorizonsMetamagicMarks.h
+	spells/NewHorizonsMetamagicRefresh.h
+	spells/NewHorizonsMetamagicTimedStatus.h
+	spells/NewHorizonsTimedStatusPlan.h
+	spells/RecipientSpellEffectPreview.h
+	spells/RecipientTimedSpellEffectPreview.h
+	spells/NewHorizonsRegeneration.h
+	battle/PhysicalPoisonSpellOrigin.h
+	battle/UnitStateEffectReceipts.h
+	battle/NewHorizonsDemonicGating.h
 	battle/NewHorizonsSoulChain.h
 	battle/NewHorizonsPuppetMaster.h
 	battle/NewHorizonsBattlecraft.h
@@ -1036,8 +1110,8 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsArchery.h
 	battle/NewHorizonsArmorer.h
 	battle/NewHorizonsCombatSkills.h
-	battle/NewHorizonsEnchantedCommand.h
 	battle/NewHorizonsShroud.h
+	battle/NewHorizonsFactionSpellDamage.h
 	battle/BattleLayout.h
 	battle/BattleSide.h
 	battle/BattleStateInfoForRetreat.h
@@ -1070,7 +1144,11 @@ set(lib_MAIN_HEADERS
 	battle/IUnitInfo.h
 	battle/PossiblePlayerBattleAction.h
 	battle/ReachabilityInfo.h
+	battle/WisdomCombatState.h
+	spells/NewHorizonsWisdom.h
 	battle/SideInBattle.h
+	battle/MetamagicPointState.h
+	networkPacks/SetMetamagicPointState.h
 	battle/SiegeInfo.h
 	battle/Unit.h
 	battle/UnitAdjacency.h
@@ -1235,6 +1313,8 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsRecoverySpecialties.h
 	entities/hero/NewHorizonsHerbalSurgeon.h
 	entities/hero/NewHorizonsLearningSpecialties.h
+	entities/hero/NewHorizonsLearning.h
+	entities/hero/SkillChoiceEligibility.h
 	entities/hero/NewHorizonsLearningExchangeSpecialties.h
 	entities/hero/NewHorizonsSwampSeer.h
 	entities/hero/NewHorizonsSchoolSpellcraft.h
@@ -1320,6 +1400,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/NewHorizonsRecruitersContacts.h
 	mapObjects/NewHorizonsAcademicStudy.h
 	mapObjects/NewHorizonsMagnateIncome.h
+	mapObjects/NewHorizonsEstates.h
 	mapObjects/Quest.h
 	mapObjects/CRewardableObject.h
 	mapObjects/FlaggableMapObject.h

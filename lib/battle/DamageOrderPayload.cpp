@@ -12,6 +12,7 @@
 #include "NewHorizonsArchery.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsDivineMandate.h"
+#include "PassiveDivineMandate.h"
 
 namespace
 {
@@ -38,6 +39,22 @@ void CBattleInfoCallback::prepareDamageOrders(const BattleAttackInfo & info,
 		const auto defenderSide = playerToSide(p.readDefenderOwner(*this, info));
 		const auto attackerStates = battleGetHeroOrderStates(attackerSide);
 		const auto defenderStates = battleGetHeroOrderStates(defenderSide);
+		if(p.readAttackerOwner(*this, info) != p.readDefenderOwner(*this, info))
+		{
+			const auto attackerRiders = newHorizonsPassiveDivineMandate::activeOrderRiders(*this, info.attacker, attackerStates);
+			const auto defenderRiders = newHorizonsPassiveDivineMandate::activeOrderRiders(*this, info.defender, defenderStates);
+			if(!info.shooting)
+			{
+				p.payload.heroOrderDamagePercent += attackerRiders.meleeDamagePercent;
+				p.payload.meleeDefenseIgnorePercent += attackerRiders.meleeDefenseIgnorePercent;
+			}
+			if(defenderRiders.enemyAttackReductionPercent != 0)
+			{
+				p.payload.heroOrderDamageReductionPercent = defenderRiders.enemyAttackReductionPercent;
+				if(info.physicalDamage)
+					p.payload.heroOrderDamageReductionPercents.push_back(defenderRiders.enemyAttackReductionPercent);
+			}
+		}
 		prepareAttackerDamageOrders(info, p, rules, attack, attackerSide, attackerStates);
 		prepareDefenderDamageOrders(info, p, rules, defend, defenderStates);
 	}
@@ -86,7 +103,7 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 				&& !attackerState.containsConsumed(info.attacker->unitId()))
 			{
 				const int intrinsic = heroCommandCoefficient(rules["charge"]["effects"]["meleeDamagePercent"],
-					*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
+					*attack, attackerState.divineMandateEfficiencyBonusPercent());
 				const int orderDamagePercent = heroCommands::orderPotency(intrinsic + 2 * (info.chargeDistance - 3),
 					heroOrderCoefficient(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId(), false)
 						+ 2 * (info.chargeDistance - 3), attackerState, getBattle()->getMagicRules())
@@ -116,7 +133,7 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 					attack, &attackerState, info.attacker->unitId(), false);
 				const int companion = newHorizonsCombatSkills::bracePreemptivePercent(ordinary, attack) - ordinary;
 				const int intrinsic = heroCommandCoefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
-					*attack, attackerState.warcastingBonusPercent, attackerState.divineMandateEfficiencyBonusPercent());
+					*attack, attackerState.divineMandateEfficiencyBonusPercent());
 				const int orderMultiplier = heroCommands::orderPotency(intrinsic, ordinary,
 					attackerState, getBattle()->getMagicRules()) + companion;
 				p.payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
@@ -144,7 +161,6 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 					const auto combinedArmsDamagePercent = heroCommands::combinedArmsFlankPercent(
 						newHorizonsDivineMandate::crownOrderFormula(rules["flank"]["effects"]["meleeDamagePercent"],
 							attackerState.crownAndAltarAppliesTo(info.attacker->unitId())), *attack,
-						attackerState.warcastingBonusPercent,
 						attackerState.divineMandateEfficiencyBonusPercent());
 					p.payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
 					if(combinedArmsDamagePercent > 0)
@@ -156,7 +172,7 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 			if(attackerState.secondWindActive && attackerState.primaryTargetUnitId == info.attacker->unitId())
 			{
 				const int orderMultiplier = heroCommands::orderPotency(
-					heroCommands::secondWindPercent(*attack, attackerState.warcastingBonusPercent,
+					heroCommands::secondWindPercent(*attack,
 						attackerState.divineMandateEfficiencyBonusPercent()),
 					newHorizonsDivineMandate::crownSecondWindPercent(*attack, attackerState, info.attacker->unitId()),
 					attackerState, getBattle()->getMagicRules());

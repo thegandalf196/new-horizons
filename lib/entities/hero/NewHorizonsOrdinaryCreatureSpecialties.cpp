@@ -517,18 +517,25 @@ bool resolveOrdinaryCreatureSpecialtyPresentation(const CHero & hero, const Json
 	result.artwork = row->artwork;
 	result.creature = CreatureID(CreatureID::decode(row->creature));
 	result.description = row->description;
+	result.summary = row->summary;
 	const auto placeholder = result.description.find("%VALUE%");
 	if(placeholder != std::string::npos)
 	{
 		const auto captured = (*ordinaryPolicy(development))[row->coefficient].Integer();
 		const auto displayed = hero.getJsonKey() == "core:christian" && captured == 0 ? 10 : captured;
 		result.description.replace(placeholder, 7, std::to_string(displayed));
+		if(const auto summaryPlaceholder = result.summary.find("%VALUE%"); summaryPlaceholder != std::string::npos)
+			result.summary.replace(summaryPlaceholder, 7, std::to_string(displayed));
 	}
 	if(hero.getJsonKey() == "core:torosar")
+	{
+		const auto followUpDamage = std::to_string(newHorizonsMachineSpecialties::MASTER_GUNNER_ORDINARY_FOLLOW_UP_DAMAGE_PERCENT
+			+ (*ordinaryPolicy(development))["gunneryProfessorFollowUpBonusPoints"].Integer());
+		result.summary = "Ballistae gain +" + std::to_string((*ordinaryPolicy(development))[row->coefficient].Integer())
+			+ " Initiative; if Master Gunner is learned, its follow-up retains " + followUpDamage + "% ordinary damage.";
 		result.description += " If Master Gunner is legitimately learned, its follow-up retains "
-			+ std::to_string(newHorizonsMachineSpecialties::MASTER_GUNNER_ORDINARY_FOLLOW_UP_DAMAGE_PERCENT
-				+ (*ordinaryPolicy(development))["gunneryProfessorFollowUpBonusPoints"].Integer())
-			+ "% of ordinary damage.";
+			+ followUpDamage + "% of ordinary damage.";
+	}
 	return true;
 }
 

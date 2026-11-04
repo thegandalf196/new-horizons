@@ -17,8 +17,6 @@ struct DLL_LINKAGE LearningExchangeSpecialtyRules
 {
 	int learningPercentPerLevel = 0;
 	int learningMaximumPercent = 0;
-	int additionalSpellsTaught = 0;
-	int additionalSpellsReceived = 0;
 };
 struct DLL_LINKAGE ScholarExchange
 {

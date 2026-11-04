@@ -27,6 +27,9 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/networkPacks/PacksForServer.h"
 #include "../../../lib/mapObjects/NewHorizonsLevelUpOffer.h"
+#include "../../../lib/entities/hero/NewHorizonsLearning.h"
+#include "../../../lib/entities/hero/SkillChoiceEligibility.h"
+#include "../../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "../../../server/queries/HeroLevelUpOffer.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/queries/MapQueries.h"
@@ -39,7 +42,7 @@ namespace
 {
 constexpr auto LEARNING_SKILL = "new-horizons:learning";
 constexpr auto MENTOR = "new-horizons:learning.mentor";
-constexpr auto QUICK_STUDY = "new-horizons:learning.quickStudy";
+constexpr auto QUICK_STUDY = "new-horizons:learning.connoisseur";
 
 class OfferRecordingServer : public GameHandlerTestServer
 {
@@ -126,7 +129,7 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		auto perkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		// Historical controls capture absence even after installed defaults opt in.
-		perkRules.Struct().erase("quickStudyPolicy");
+		perkRules.Struct().erase("connoisseurPolicy");
 		for(auto & perk : perkRules["skills"][LEARNING_SKILL]["perks"].Vector())
 		{
 			if(perk["id"].String() == QUICK_STUDY || perk["id"].String() == MENTOR)
@@ -192,8 +195,7 @@ protected:
 		randomizerSnapshot.iser & expectedRandomizer;
 		const auto expectedPrimaryGains = expectedRandomizer.rollPrimarySkillsForLevelup(hero);
 		auto expectedOffer = prepareExpectedOffer(expectedRandomizer, hero);
-		if(expectReroll)
-			expectedOffer = prepareExpectedOffer(expectedRandomizer, hero);
+		(void)expectReroll; // Connoisseur never redraws automatically.
 
 		gameHandler->levelUpHero(hero);
 		const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
@@ -216,11 +218,10 @@ protected:
 		ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, owner));
 	}
 
-	void enableOptionalPolicy(int interval = 3)
+	void enableOptionalPolicy(int = 1)
 	{
 		auto & rules = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).rules;
-		rules["quickStudyPolicy"]["version"].Integer() = 1;
-		rules["quickStudyPolicy"]["interval"].Integer() = interval;
+		rules["connoisseurPolicy"]["version"].Integer() = 1;
 	}
 
 	std::shared_ptr<CHeroLevelUpDialogQuery> openOptionalOffer(int level)
@@ -230,6 +231,37 @@ protected:
 		gameHandler->onAdvInterfaceReady(hero->getOwner());
 		gameHandler->levelUpHero(hero);
 		return std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(hero->getOwner()));
+	}
+
+	bool acquireProdigyFromCurrentOffer()
+	{
+		const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(hero->getOwner()));
+		if(!query)
+			return false;
+		for(uint64_t seed = 0; seed < 10000; ++seed)
+		{
+			const auto offer = hero->getPerkState().prepareOffer([this](const std::string & skill)
+				{ return hero->getPerkSkillRank(skill); }, seed, hero->getPerkOfferWeightContext());
+			for(size_t i = 0; i < offer.size(); ++i)
+				if(offer[i].selection.perkId == "new-horizons:learning.prodigy")
+				{
+					query->hlu.perks = offer;
+					query->hlu.perkOfferSeed = seed;
+					return gameHandler->queryReply(query->queryID, static_cast<int32_t>(query->hlu.skills.size() + i), hero->getOwner());
+				}
+		}
+		return false;
+	}
+
+	int finishNormalChoices()
+	{
+		int count = 0;
+		while(const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(hero->getOwner())))
+		{
+			if(++count > 12 || !gameHandler->queryReply(query->queryID, 0, hero->getOwner()))
+				return -1;
+		}
+		return count;
 	}
 
 	std::unique_ptr<GameRandomizer> cloneRandomizer()
@@ -254,7 +286,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsQuickStudyTest, RerollsTheWholeOfferOnceAtEveryFifthReachedLevel)
+TEST_F(NewHorizonsQuickStudyTest, NeverRedrawsInitialOfferAutomatically)
 {
 	startGame();
 	setLearningRank(MasteryLevel::ADVANCED);
@@ -327,7 +359,7 @@ TEST_F(NewHorizonsQuickStudyTest, OptionalPolicyShowsInitialOfferAndDeclineConsu
 	EXPECT_EQ(hero->level, 3);
 }
 
-TEST_F(NewHorizonsQuickStudyTest, OptionalRerollReplacesWholeOfferOnceWithoutAnotherLevel)
+TEST_F(NewHorizonsQuickStudyTest, OptionalRerollReplacesOnlySelectedSkillOnceWithoutAnotherLevel)
 {
 	startGame();
 	selectQuickStudy();
@@ -339,7 +371,10 @@ TEST_F(NewHorizonsQuickStudyTest, OptionalRerollReplacesWholeOfferOnceWithoutAno
 	const auto oldPrimary = query->hlu.primaryGains;
 	const auto selections = hero->getPerkState().selected;
 	auto expected = cloneRandomizer();
-	const auto replacement = prepareExpectedOffer(*expected, hero);
+	const auto held = query->hlu;
+	const auto candidates = query->rerollCandidates();
+	ASSERT_FALSE(candidates.empty());
+	const auto expectedCard = expected->rollSecondarySkillForLevelup(hero, candidates);
 	ASSERT_TRUE(gameHandler->queryReply(oldID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_EQ(gameHandler->queries->topQuery(hero->getOwner()), query);
 	EXPECT_NE(query->queryID, oldID);
@@ -347,13 +382,22 @@ TEST_F(NewHorizonsQuickStudyTest, OptionalRerollReplacesWholeOfferOnceWithoutAno
 	ASSERT_GE(server->offers.size(), 2u);
 	EXPECT_EQ(server->offers.back().replacesQueryID, oldID);
 	EXPECT_FALSE(query->hlu.optionalRerollAvailable);
-	EXPECT_EQ(query->hlu.skills, replacement.skills);
-	EXPECT_EQ(query->hlu.perks, replacement.perks);
-	EXPECT_EQ(query->hlu.perkOfferSeed, replacement.perkOfferSeed);
+	ASSERT_EQ(query->hlu.skills.size(), held.skills.size());
+	EXPECT_NE(query->hlu.skills.front(), held.skills.front());
+	EXPECT_EQ(query->hlu.skills.front(), expectedCard);
+	for(size_t i = 1; i < held.skills.size(); ++i)
+		EXPECT_EQ(query->hlu.skills[i], held.skills[i]);
+	EXPECT_EQ(query->hlu.perks, held.perks);
+	EXPECT_EQ(query->hlu.perkOfferSeed, held.perkOfferSeed);
 	EXPECT_EQ(query->hlu.primaryGains, oldPrimary);
 	EXPECT_EQ(hero->level, 6);
 	EXPECT_EQ(hero->getPerkState().selected, selections);
 	const auto afterReroll = randomizerBytes();
+	PrefixProbe pendingSave;
+	EXPECT_THROW(gameHandler->serialize(pendingSave), std::runtime_error);
+	EXPECT_EQ(pendingSave.fields, 0u);
+	EXPECT_EQ(randomizerBytes(), afterReroll);
+	EXPECT_FALSE(query->hlu.optionalRerollAvailable);
 	EXPECT_FALSE(gameHandler->queryReply(oldID, 0, hero->getOwner()));
 	EXPECT_FALSE(gameHandler->queryReply(oldID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
@@ -375,13 +419,7 @@ TEST_F(NewHorizonsQuickStudyTest, OptionalCadenceAndEligibilityAreAuthoritative)
 	{
 		const auto query = openOptionalOffer(level);
 		ASSERT_NE(query, nullptr);
-		EXPECT_EQ(query->hlu.optionalRerollAvailable, level % 3 == 0);
-		if(level % 3)
-		{
-			const auto before = randomizerBytes();
-			EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
-			EXPECT_EQ(randomizerBytes(), before);
-		}
+		EXPECT_TRUE(query->hlu.optionalRerollAvailable);
 		ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, hero->getOwner()));
 	}
 }
@@ -396,10 +434,10 @@ TEST_F(NewHorizonsQuickStudyTest, RerollRejectsLostRankPlannedPerkAndWrongPlayer
 	const auto before = randomizerBytes();
 	EXPECT_FALSE(query->requestReroll(PlayerColor(1)));
 	setLearningRank(MasteryLevel::BASIC);
-	EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	setLearningRank(MasteryLevel::ADVANCED);
 	markQuickStudyPlanned();
-	EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_EQ(randomizerBytes(), before);
 }
 
@@ -413,11 +451,11 @@ TEST_F(NewHorizonsQuickStudyTest, RerollRequiresTopQueryAndRejectsStaleOffer)
 	const auto before = randomizerBytes();
 	auto blocking = std::make_shared<CGenericQuery>(gameHandler.get(), hero->getOwner(), [](auto) {});
 	gameHandler->queries->addQuery(blocking);
-	EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_FALSE(gameHandler->queryReply(query->queryID, 0, hero->getOwner()));
 	gameHandler->queries->popQuery(blocking);
 	query->hlu.perkOfferSeed = -1;
-	EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_EQ(randomizerBytes(), before);
 }
 
@@ -435,35 +473,32 @@ TEST_F(NewHorizonsQuickStudyTest, PendingOptionalOfferRejectsSaveBeforeAnySerial
 	EXPECT_EQ(gameHandler->queries->topQuery(hero->getOwner()), query);
 }
 
-TEST_F(NewHorizonsQuickStudyTest, CompletedChoiceRoundTripsCapturedPolicyAtItsExplicitFormat)
+TEST_F(NewHorizonsQuickStudyTest, CompletedChoiceRoundTripsCapturedPolicyAtCurrentFormat)
 {
 	startGame();
 	selectQuickStudy();
 	enableOptionalPolicy();
 	const auto query = openOptionalOffer(3);
 	ASSERT_NE(query, nullptr);
-	ASSERT_TRUE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, hero->getOwner()));
 	EXPECT_NO_THROW(newHorizonsLevelUp::validateNoPendingOptionalOffer(*gameHandler));
-	ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
-	for(const bool explicitFormat : {true, false})
-	{
-		CMemorySerializer save;
-		if(explicitFormat) save.oser.version = ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY;
-		else EXPECT_EQ(save.oser.version, ESerializationVersion::CURRENT);
-		ASSERT_NO_THROW(save.oser & *gameState());
-		CGameState restored;
-		restored.preInit(LIBRARY);
-		save.iser.version = save.oser.version;
-		save.iser.loadingGamestate = true;
-		save.iser.cb = &restored;
-		ASSERT_NO_THROW(save.iser & restored);
-		const auto * loaded = restored.getHero(hero->id);
-		ASSERT_NE(loaded, nullptr);
-		EXPECT_EQ(loaded->level, 3);
-		EXPECT_EQ(loaded->getPerkState().selected, hero->getPerkState().selected);
-		EXPECT_EQ(newHorizonsHeroes::quickStudyRerollInterval(loaded->getPerkState().rules), 3);
-	}
+	CMemorySerializer save;
+	ASSERT_EQ(save.oser.version, ESerializationVersion::CURRENT);
+	ASSERT_NO_THROW(save.oser & *gameState());
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	save.iser.version = ESerializationVersion::CURRENT;
+	save.iser.loadingGamestate = true;
+	save.iser.cb = &restored;
+	ASSERT_NO_THROW(save.iser & restored);
+	const auto * loaded = restored.getHero(hero->id);
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->level, 3);
+	EXPECT_EQ(loaded->exp, hero->exp);
+	EXPECT_EQ(loaded->getPerkState().selected, hero->getPerkState().selected);
+	EXPECT_EQ(loaded->getPerkState().rules, hero->getPerkState().rules);
+	EXPECT_EQ(newHorizonsHeroes::quickStudyRerollInterval(loaded->getPerkState().rules), 1);
 }
 
 TEST_F(NewHorizonsQuickStudyTest, CapturedPolicyIsConfigurableAndRejectsMalformedPresence)
@@ -475,11 +510,11 @@ TEST_F(NewHorizonsQuickStudyTest, CapturedPolicyIsConfigurableAndRejectsMalforme
 	ASSERT_NE(query, nullptr);
 	EXPECT_TRUE(query->hlu.optionalRerollAvailable);
 	auto rules = hero->getPerkState().rules;
-	EXPECT_THROW(newHorizonsHeroes::validateWeightedPerkSerialization(rules, true, true, true), std::runtime_error);
-	EXPECT_NO_THROW(newHorizonsHeroes::validateWeightedPerkSerialization(rules, true, true, true, true));
-	rules["quickStudyPolicy"]["interval"].Integer() = 0;
+	EXPECT_THROW(newHorizonsHeroes::validateWeightedPerkSerialization(rules, true, true, true, false, true), std::runtime_error);
+	EXPECT_NO_THROW(newHorizonsHeroes::validateWeightedPerkSerialization(rules, true, true, true, true, true));
+	rules["connoisseurPolicy"]["interval"].Integer() = 3;
 	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error);
-	rules["quickStudyPolicy"] = JsonNode();
+	rules["connoisseurPolicy"] = JsonNode();
 	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error);
 }
 
@@ -554,27 +589,38 @@ TEST_F(NewHorizonsQuickStudyTest, LegacyCapturedAbsenceRoundTripsWithoutOptional
 	expectLevelUp(5, true);
 }
 
-TEST_F(NewHorizonsQuickStudyTest, DirectHeroSerializationUsesTheDeclaredOptionalPolicyCapabilityBeforePrefix)
+TEST_F(NewHorizonsQuickStudyTest, DirectHeroSerializationUsesCurrentPolicyAndRetainsIdentityBooksAndPerks)
 {
 	startGame();
 	selectQuickStudy();
 	enableOptionalPolicy();
-	CMemorySerializer supported;
-	supported.oser.version = ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY;
-	EXPECT_NO_THROW(supported.oser & *hero);
-	EXPECT_FALSE(supported.extractBuffer().empty());
-
-	CMemorySerializer unsupported;
-	unsupported.oser.version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
-	EXPECT_THROW(unsupported.oser & *hero, std::runtime_error);
-	EXPECT_TRUE(unsupported.extractBuffer().empty());
-
+	const auto random = randomizerBytes();
+	CMemorySerializer current;
+	ASSERT_EQ(current.oser.version, ESerializationVersion::CURRENT);
+	ASSERT_NO_THROW(current.oser & *hero);
+	const auto payload = current.extractBuffer();
+	ASSERT_FALSE(payload.empty());
+	CMemorySerializer reader(payload);
+	reader.iser.version = ESerializationVersion::CURRENT;
+	reader.iser.cb = gameState().get();
+	CGHeroInstance restored(gameState().get());
+	ASSERT_NO_THROW(reader.iser & restored);
+	EXPECT_EQ(restored.id, hero->id);
+	EXPECT_EQ(restored.getHeroTypeID(), hero->getHeroTypeID());
+	EXPECT_EQ(restored.getSpellsInSpellbook(), hero->getSpellsInSpellbook());
+	EXPECT_EQ(restored.level, hero->level);
+	EXPECT_EQ(restored.exp, hero->exp);
+	EXPECT_EQ(restored.getPerkState().selected, hero->getPerkState().selected);
+	EXPECT_EQ(restored.getPerkState().rules, hero->getPerkState().rules);
+	// Current malformed policy still rejects before any Hero bytes are written.
 	auto & rules = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).rules;
-	rules.Struct().erase("quickStudyPolicy");
-	CMemorySerializer legacy;
-	legacy.oser.version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
-	EXPECT_NO_THROW(legacy.oser & *hero);
-	EXPECT_FALSE(legacy.extractBuffer().empty());
+	const auto captured = rules;
+	rules["connoisseurPolicy"]["interval"].Integer() = 3;
+	CMemorySerializer invalid;
+	EXPECT_THROW(invalid.oser & *hero, std::runtime_error);
+	EXPECT_TRUE(invalid.extractBuffer().empty());
+	rules = captured;
+	EXPECT_EQ(randomizerBytes(), random);
 }
 
 TEST_F(NewHorizonsQuickStudyTest, RejectedRerollConfirmsHeldOfferBeforeAckWithoutGrowthOrDraws)
@@ -584,8 +630,10 @@ TEST_F(NewHorizonsQuickStudyTest, RejectedRerollConfirmsHeldOfferBeforeAckWithou
 	enableOptionalPolicy();
 	const auto query = openOptionalOffer(4);
 	ASSERT_NE(query, nullptr);
+	query->hlu.optionalRerollAvailable = false;
 	const auto held = query->hlu;
 	const auto idCounter = gameHandler->QID;
+	query->hlu.optionalRerollAvailable = false;
 	const auto before = randomizerBytes();
 	CMemorySerializer globalBefore;
 	CRandomGenerator::getDefault().serialize(globalBefore.oser);
@@ -627,17 +675,18 @@ TEST_F(NewHorizonsQuickStudyTest, RerollConfirmationRequiresCurrentOwnerAndQuery
 	enableOptionalPolicy();
 	const auto query = openOptionalOffer(4);
 	ASSERT_NE(query, nullptr);
+	query->hlu.optionalRerollAvailable = false;
 	const auto before = randomizerBytes();
 	const auto count = server->offers.size();
 	EXPECT_FALSE(query->requestReroll(PlayerColor(1)));
-	EXPECT_FALSE(gameHandler->queryReply(QueryID(query->queryID.getNum() + 1), -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(QueryID(query->queryID.getNum() + 1), CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	auto blocking = std::make_shared<CGenericQuery>(gameHandler.get(), hero->getOwner(), [](auto) {});
 	gameHandler->queries->addQuery(blocking);
-	EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	gameHandler->queries->popQuery(blocking);
 	EXPECT_EQ(server->offers.size(), count);
 	const auto idCounter = gameHandler->QID;
-	EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_EQ(server->offers.back().queryID, query->queryID);
 	EXPECT_EQ(server->offers.back().replacesQueryID, query->queryID);
 	EXPECT_FALSE(server->offers.back().optionalRerollAvailable);
@@ -645,7 +694,7 @@ TEST_F(NewHorizonsQuickStudyTest, RerollConfirmationRequiresCurrentOwnerAndQuery
 	EXPECT_EQ(gameHandler->QID, idCounter);
 	EXPECT_EQ(randomizerBytes(), before);
 	query->hlu.perkOfferSeed = -1;
-	EXPECT_FALSE(gameHandler->queryReply(query->queryID, -1, hero->getOwner()));
+	EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_EQ(server->offers.size(), count + 1);
 	EXPECT_EQ(randomizerBytes(), before);
 }
@@ -680,7 +729,7 @@ TEST_F(NewHorizonsQuickStudyTest, SameIdConfirmationRejectsWrongHeroOwnerAndLeve
 	EXPECT_EQ(hero->level, 3);
 	EXPECT_EQ(randomizerBytes(), before);
 	const auto originalID = query->queryID;
-	ASSERT_TRUE(gameHandler->queryReply(originalID, -1, hero->getOwner()));
+	ASSERT_TRUE(gameHandler->queryReply(originalID, CHeroLevelUpDialogQuery::REROLL_REPLY, hero->getOwner()));
 	EXPECT_NE(query->queryID, originalID);
 	EXPECT_FALSE(query->hlu.optionalRerollAvailable);
 	EXPECT_EQ(hero->level, 3);
@@ -706,5 +755,290 @@ TEST_F(NewHorizonsQuickStudyTest, RejectedRerollDoesNotPublishConfirmationForAnI
 	EXPECT_EQ(server->offers.size(), offers);
 	EXPECT_EQ(gameHandler->queries->topQuery(hero->getOwner()), query);
 	EXPECT_EQ(hero->level, 4);
+	EXPECT_EQ(randomizerBytes(), before);
+}
+
+TEST_F(NewHorizonsQuickStudyTest, ConnoisseurRejectsInvalidIndexAndNoAlternativeWithoutDrawOrUse)
+{
+	startGame();
+	selectQuickStudy();
+	enableOptionalPolicy();
+	const auto query = openOptionalOffer(4);
+	ASSERT_NE(query, nullptr);
+	const auto before = randomizerBytes();
+	const auto original = query->hlu;
+	EXPECT_FALSE(query->requestReroll(hero->getOwner(), original.skills.size()));
+	EXPECT_EQ(randomizerBytes(), before);
+	EXPECT_TRUE(query->hlu.optionalRerollAvailable);
+	auto & weights = const_cast<JsonNode &>(hero->getPrimaryGrowthRules())["skillOfferWeights"];
+	for(auto & [name, value] : weights.Struct())
+		if(std::none_of(original.skills.begin(), original.skills.end(), [&name](SecondarySkill skill)
+			{ return name == SecondarySkill::encode(skill.getNum()); }))
+			value.Integer() = 0;
+	query->hlu.perks = hero->getPerkState().prepareOffer([this](const std::string & skill)
+		{ return hero->getPerkSkillRank(skill); }, query->hlu.perkOfferSeed, hero->getPerkOfferWeightContext());
+	const auto heldPerks = query->hlu.perks;
+	EXPECT_TRUE(query->rerollCandidates().empty());
+	EXPECT_FALSE(query->requestReroll(hero->getOwner(), 0));
+	EXPECT_EQ(randomizerBytes(), before);
+	EXPECT_EQ(query->hlu.skills, original.skills);
+	EXPECT_EQ(query->hlu.perks, heldPerks);
+	EXPECT_TRUE(query->hlu.optionalRerollAvailable);
+}
+
+TEST_F(NewHorizonsQuickStudyTest, ConnoisseurCanReplaceSecondCardWithoutChangingFirstOrPerks)
+{
+	startGame();
+	selectQuickStudy();
+	enableOptionalPolicy();
+	const auto query = openOptionalOffer(4);
+	ASSERT_NE(query, nullptr);
+	ASSERT_GE(query->hlu.skills.size(), 2u);
+	const auto held = query->hlu;
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::rerollReply(1), hero->getOwner()));
+	EXPECT_EQ(query->hlu.skills[0], held.skills[0]);
+	EXPECT_NE(query->hlu.skills[1], held.skills[1]);
+	EXPECT_NE(query->hlu.skills[1], held.skills[0]);
+	EXPECT_EQ(query->hlu.perks, held.perks);
+	EXPECT_EQ(query->hlu.perkOfferSeed, held.perkOfferSeed);
+}
+
+TEST_F(NewHorizonsQuickStudyTest, CurrentLearningRewardsUseEnemyTotalExperienceAdditiveExperienceAndPermanentPrimaries)
+{
+	startGame();
+	selectQuickStudy();
+	setLearningRank(MasteryLevel::EXPERT);
+	hero->applyPerkSelection({LEARNING_SKILL, "new-horizons:learning.philosopher"});
+	hero->level = 1;
+	hero->setExperience(600, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(hero->calculateXp(1000), 1550);
+	EXPECT_EQ(hero->calculateXp(1000, 25), 1800);
+	// Independent helper checks use isolated selected-perk projections below.
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
+	state.selected.push_back({LEARNING_SKILL, "new-horizons:learning.duelLessons"});
+	state.selected.push_back({LEARNING_SKILL, "new-horizons:learning.seasonedAdventurer"});
+	EXPECT_EQ(newHorizonsLearning::duelLessonsExperience(hero, 20000), 2000);
+	EXPECT_EQ(newHorizonsLearning::duelLessonsExperience(hero, 0), 0);
+	EXPECT_EQ(newHorizonsLearning::duelLessonsExperience(hero, 20009), 2000);
+	EXPECT_EQ(newHorizonsLearning::duelLessonsExperience(hero, -1), 0);
+	EXPECT_EQ(newHorizonsLearning::combatExperience(hero, 1000, 20000), 3550);
+	EXPECT_EQ(newHorizonsLearning::combatExperience(hero, std::numeric_limits<int64_t>::max(), 20000), std::numeric_limits<int64_t>::max());
+	EXPECT_EQ(newHorizonsLearning::trainingPrimaryReward(hero, Obj::LIBRARY_OF_ENLIGHTENMENT, 4), 5);
+	EXPECT_EQ(newHorizonsLearning::trainingPrimaryReward(hero, Obj::GARDEN_OF_REVELATION, 1), 1);
+	EXPECT_EQ(newHorizonsLearning::trainingPrimaryReward(hero, Obj::SCHOOL_OF_WAR, -4), -4);
+	EXPECT_EQ(newHorizonsLearning::trainingPrimaryReward(hero, Obj::SWAN_POND, 4), 4);
+	EXPECT_EQ(newHorizonsLearning::trainingPrimaryReward(hero, std::nullopt, 4), 4);
+}
+
+TEST_F(NewHorizonsQuickStudyTest, ProdigyDefersUntilCurrentChoiceThenGrantsExactlyThreeNormalLevelsPreservingRawProgress)
+{
+	startGame();
+	hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:thane")));
+	selectQuickStudy();
+	enableOptionalPolicy();
+	const_cast<JsonNode &>(hero->getPrimaryGrowthRules())["extraGrowth"].Vector().clear();
+	setLearningRank(MasteryLevel::EXPERT);
+	const auto query = openOptionalOffer(6);
+	ASSERT_NE(query, nullptr);
+	hero->setExperience(LIBRARY->heroh->reqExp(6) + 123, ChangeValueMode::ABSOLUTE);
+	const auto before = hero->getPrimaryGrowthView()->base;
+	const auto growth = hero->getPrimaryGrowthView()->profile.growth;
+	ASSERT_TRUE(newHorizonsHeroes::hasSageOfTheAges(hero));
+	ASSERT_TRUE(acquireProdigyFromCurrentOffer());
+	EXPECT_EQ(hero->level, 7); // First new normal choice is already waiting.
+	EXPECT_EQ(finishNormalChoices(), 3);
+	EXPECT_EQ(hero->level, 9);
+	EXPECT_EQ(hero->exp, LIBRARY->heroh->reqExp(9) + 123);
+	EXPECT_TRUE(gameHandler->pendingProdigyLevels.empty());
+	for(size_t i = 0; i < before.size(); ++i)
+		EXPECT_EQ(hero->getPrimaryGrowthView()->base[i] - before[i], 3 * (growth[i] + (i >= 2 ? 1 : 0)));
+	const auto experience = hero->exp;
+	gameHandler->expGiven(hero);
+	EXPECT_EQ(hero->level, 9);
+	EXPECT_EQ(hero->exp, experience);
+	EXPECT_FALSE(gameHandler->queries->topQuery(hero->getOwner()));
+	CMemorySerializer save;
+	ASSERT_NO_THROW(save.oser & *gameState());
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	save.iser.loadingGamestate = true;
+	save.iser.cb = &restored;
+	ASSERT_NO_THROW(save.iser & restored);
+	const auto * loaded = restored.getHero(hero->id);
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->level, 9);
+	EXPECT_EQ(loaded->exp, experience);
+	EXPECT_TRUE(loaded->hasActivePerk(LEARNING_SKILL, "new-horizons:learning.prodigy"));
+	GameHandlerTestServer loadedServer(&restored, hero->getOwner());
+	CGameHandler loadedHandler(loadedServer, &restored);
+	loadedHandler.expGiven(loaded);
+	EXPECT_EQ(loaded->level, 9);
+	EXPECT_FALSE(loadedHandler.queries->topQuery(loaded->getOwner()));
+}
+
+TEST_F(NewHorizonsQuickStudyTest, ProdigyDrainsAlreadyEarnedNaturalLevelsBeforeThreeBonusLevels)
+{
+	startGame();
+	selectQuickStudy();
+	enableOptionalPolicy();
+	setLearningRank(MasteryLevel::EXPERT);
+	const auto query = openOptionalOffer(6);
+	ASSERT_NE(query, nullptr);
+	hero->setExperience(LIBRARY->heroh->reqExp(8) + 75, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(acquireProdigyFromCurrentOffer());
+	EXPECT_EQ(finishNormalChoices(), 5); // Two already earned, then exactly three Prodigy levels.
+	EXPECT_EQ(hero->level, 11);
+	EXPECT_EQ(hero->exp, LIBRARY->heroh->reqExp(11) + 75);
+	EXPECT_TRUE(gameHandler->pendingProdigyLevels.empty());
+}
+
+TEST_F(NewHorizonsQuickStudyTest, ProdigyHonorsMapCapAndThaneReceivesEveryNormalSpecialtyGrowthEvent)
+{
+	startGame();
+	hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:thane")));
+	selectQuickStudy();
+	enableOptionalPolicy();
+	setLearningRank(MasteryLevel::EXPERT);
+	const auto query = openOptionalOffer(6);
+	ASSERT_NE(query, nullptr);
+	gameState()->getMap().levelLimit = 8;
+	const auto power = hero->getBasePrimarySkillValue(PrimarySkill::SPELL_POWER);
+	const auto knowledge = hero->getBasePrimarySkillValue(PrimarySkill::KNOWLEDGE);
+	ASSERT_TRUE(acquireProdigyFromCurrentOffer());
+	EXPECT_EQ(finishNormalChoices(), 2);
+	EXPECT_EQ(hero->level, 8);
+	EXPECT_GE(hero->getBasePrimarySkillValue(PrimarySkill::SPELL_POWER) - power, 2);
+	EXPECT_GE(hero->getBasePrimarySkillValue(PrimarySkill::KNOWLEDGE) - knowledge, 2);
+	EXPECT_TRUE(gameHandler->pendingProdigyLevels.empty());
+}
+
+TEST_F(NewHorizonsQuickStudyTest, ConnoisseurPublishesNoAlternativeAsUnavailableWithoutDrawsOrQueryMutation)
+{
+	startGame();
+	selectQuickStudy();
+	enableOptionalPolicy();
+	hero->level = 3;
+	hero->setExperience(LIBRARY->heroh->reqExp(4), ChangeValueMode::ABSOLUTE);
+	gameHandler->levelUpHero(hero); // Wait for the ordinary client-ready prompt boundary.
+	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(hero->getOwner()));
+	ASSERT_NE(query, nullptr);
+	ASSERT_FALSE(query->prompted);
+	ASSERT_FALSE(query->hlu.skills.empty());
+	const auto skills = query->hlu.skills;
+	auto & weights = const_cast<JsonNode &>(hero->getPrimaryGrowthRules())["skillOfferWeights"];
+	for(auto & [name, value] : weights.Struct())
+		if(std::none_of(skills.begin(), skills.end(), [&name](SecondarySkill skill)
+			{ return name == SecondarySkill::encode(skill.getNum()); }))
+			value.Integer() = 0;
+	ASSERT_TRUE(query->rerollCandidates().empty());
+	const auto beforePrompt = randomizerBytes();
+	const auto selections = hero->getPerkState().selected;
+	gameHandler->onAdvInterfaceReady(hero->getOwner());
+	ASSERT_TRUE(query->prompted);
+	ASSERT_FALSE(server->offers.empty());
+	EXPECT_FALSE(server->offers.back().optionalRerollAvailable);
+	EXPECT_FALSE(query->hlu.optionalRerollAvailable);
+	EXPECT_EQ(randomizerBytes(), beforePrompt);
+	EXPECT_EQ(query->hlu.skills, skills);
+	EXPECT_EQ(hero->level, 4);
+	const auto idCounter = gameHandler->QID;
+	CMemorySerializer held;
+	held.oser & query->hlu;
+	const auto heldBytes = held.extractBuffer();
+	for(size_t index = 0; index < skills.size(); ++index)
+	{
+		EXPECT_FALSE(gameHandler->queryReply(query->queryID, CHeroLevelUpDialogQuery::rerollReply(index), hero->getOwner()));
+		EXPECT_FALSE(server->offers.back().optionalRerollAvailable);
+		EXPECT_EQ(server->offers.back().queryID, query->queryID);
+		EXPECT_EQ(server->offers.back().replacesQueryID, query->queryID);
+		EXPECT_EQ(gameHandler->queries->topQuery(hero->getOwner()), query);
+		EXPECT_EQ(gameHandler->QID, idCounter);
+		EXPECT_EQ(randomizerBytes(), beforePrompt);
+		EXPECT_EQ(hero->getPerkState().selected, selections);
+		EXPECT_EQ(hero->level, 4);
+		CMemorySerializer unchanged;
+		unchanged.oser & query->hlu;
+		EXPECT_EQ(unchanged.extractBuffer(), heldBytes);
+	}
+}
+
+TEST_F(NewHorizonsQuickStudyTest, SharedConnoisseurPoolExcludesBothCardsAndConsumesNoRng)
+{
+	startGame();
+	selectQuickStudy();
+	enableOptionalPolicy();
+	const auto query = openOptionalOffer(4);
+	ASSERT_NE(query, nullptr);
+	ASSERT_EQ(query->hlu.skills.size(), 2u);
+	const auto before = randomizerBytes();
+	const auto pool = newHorizonsHeroes::connoisseurSkillCandidates(*gameState(), *hero, query->hlu.skills);
+	EXPECT_EQ(pool, query->rerollCandidates());
+	for(const auto skill : query->hlu.skills)
+		EXPECT_FALSE(pool.contains(skill));
+	auto reversed = query->hlu.skills;
+	std::reverse(reversed.begin(), reversed.end());
+	EXPECT_EQ(pool, newHorizonsHeroes::connoisseurSkillCandidates(*gameState(), *hero, reversed));
+	EXPECT_EQ(randomizerBytes(), before);
+}
+
+TEST_F(NewHorizonsQuickStudyTest, SharedSkillEligibilityKeepsRankPerkAndSlotLimits)
+{
+	startGame();
+	const SecondarySkill learning(SecondarySkill::decode(LEARNING_SKILL));
+	EXPECT_FALSE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), nullptr, learning));
+	EXPECT_FALSE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, SecondarySkill::NONE));
+	ASSERT_EQ(hero->getSecSkillLevel(learning), MasteryLevel::NONE);
+	EXPECT_TRUE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, learning));
+	setLearningRank(MasteryLevel::BASIC);
+	EXPECT_FALSE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, learning));
+	hero->applyPerkSelection({LEARNING_SKILL, MENTOR});
+	EXPECT_TRUE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, learning));
+	setLearningRank(MasteryLevel::EXPERT);
+	EXPECT_FALSE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, learning));
+	setLearningRank(MasteryLevel::NONE);
+	JsonNode oneSlot;
+	oneSlot.Integer() = 1;
+	gameState()->getMap().overrideGameSetting(EGameSettings::HEROES_SKILL_PER_HERO, oneSlot);
+	EXPECT_FALSE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, learning));
+}
+
+TEST_F(NewHorizonsQuickStudyTest, SharedSkillEligibilityKeepsOwnFactionMapGateAndRejectsForeignFaction)
+{
+	startGame();
+	const auto & rules = hero->getPrimaryGrowthRules();
+	const auto own = newHorizonsHeroes::factionSkill(rules, hero->getFactionID());
+	const auto foreign = newHorizonsHeroes::factionSkill(rules, FactionID(FactionID::decode("core:tower")));
+	ASSERT_TRUE(own);
+	ASSERT_TRUE(foreign);
+	ASSERT_NE(*own, *foreign);
+	EXPECT_FALSE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, *foreign));
+	hero->setSecSkillLevel(*own, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(gameState()->isAllowed(*own));
+	EXPECT_TRUE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, *own));
+	gameState()->getMap().allowedAbilities.erase(*own);
+	EXPECT_FALSE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gameState(), hero, *own));
+}
+
+TEST_F(NewHorizonsQuickStudyTest, SharedConnoisseurPoolKeepsMapClassWeightAndCapturedExclusions)
+{
+	startGame();
+	const SecondarySkill learning(SecondarySkill::decode(LEARNING_SKILL));
+	const std::vector<SecondarySkill> offered;
+	const auto pool = [&]() { return newHorizonsHeroes::connoisseurSkillCandidates(*gameState(), *hero, offered); };
+	ASSERT_TRUE(pool().contains(learning));
+	const auto before = randomizerBytes();
+	gameState()->getMap().allowedAbilities.erase(learning);
+	EXPECT_FALSE(pool().contains(learning));
+	gameState()->getMap().allowedAbilities.insert(learning);
+	auto & rules = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+	auto & weight = rules["skillOfferWeights"][LEARNING_SKILL];
+	const auto positiveWeight = weight;
+	weight.Integer() = 0;
+	EXPECT_FALSE(pool().contains(learning));
+	weight = positiveWeight;
+	JsonNode excluded;
+	excluded.String() = LEARNING_SKILL;
+	rules["excludedSkills"].Vector().push_back(excluded);
+	EXPECT_FALSE(pool().contains(learning));
 	EXPECT_EQ(randomizerBytes(), before);
 }

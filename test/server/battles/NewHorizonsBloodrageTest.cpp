@@ -5,9 +5,11 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "NewHorizonsBloodrageLegacyFixture.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/NewHorizonsBloodrage.h"
+#include "../../../lib/battle/SideInBattle.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/Limiters.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -96,14 +98,16 @@ protected:
 class NewHorizonsBloodrageLegacySerializationTest : public NewHorizonsBloodrageRuntimeTest
 {
 protected:
+	void startBattle()
+	{
+		BattleTestFixture::startBattle();
+		historicalBloodrageFixture::capturePreArmyValueSnapshot(*battle());
+	}
+
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
-		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
-		magicRules["warcasting"] = JsonNode(false);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		historicalBloodrageFixture::captureContext(*loaded);
 	}
 };
 
@@ -120,17 +124,16 @@ public:
 class BloodrageCompatibilityTest : public BattleTestFixture
 {
 protected:
+	void startBattle()
+	{
+		BattleTestFixture::startBattle();
+		historicalBloodrageFixture::capturePreArmyValueSnapshot(*battle());
+	}
+
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
-		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
-		if(!magicRules.isNull())
-		{
-			magicRules["warcasting"] = JsonNode(false);
-			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, std::move(magicRules));
-		}
+		historicalBloodrageFixture::captureContext(*loaded);
 	}
 
 	void SetUp() override
@@ -381,4 +384,56 @@ TEST_F(NewHorizonsBloodrageLegacySerializationTest, LegacyBattleWriteRejectsCoun
 		EXPECT_EQ(std::string(error.what()), "Cannot discard Bloodrage battle state");
 	}
 	EXPECT_TRUE(rejected.extractBuffer().empty());
+}
+
+TEST(NewHorizonsBloodrageSnapshotRulesTest, StructuralBoundariesDoNotRequireCallbackOrHero)
+{
+	for(int rank = 0; rank <= 3; ++rank)
+	{
+		SideInBattle side(nullptr);
+		side.bloodrageRank = rank;
+		side.bloodrageCapPercent = newHorizonsBloodrage::capForRank(rank);
+		side.bloodrageDamagePercent = side.bloodrageCapPercent;
+		side.bloodrageLowHealthIncrement = newHorizonsBloodrage::incrementForRank(rank);
+		side.bloodragePainIncrement = side.bloodrageLowHealthIncrement;
+		EXPECT_TRUE(newHorizonsBloodrage::validSnapshot(side));
+		++side.bloodrageDamagePercent;
+		EXPECT_FALSE(newHorizonsBloodrage::validSnapshot(side));
+		--side.bloodrageDamagePercent;
+		side.bloodrageDamagePercent = -1;
+		EXPECT_FALSE(newHorizonsBloodrage::validSnapshot(side));
+		side.bloodrageDamagePercent = 0;
+		side.bloodrageLowHealthIncrement = 7;
+		EXPECT_FALSE(newHorizonsBloodrage::validSnapshot(side));
+		side.bloodrageLowHealthIncrement = 0;
+		side.bloodragePainIncrement = 7;
+		EXPECT_FALSE(newHorizonsBloodrage::validSnapshot(side));
+		side.bloodragePainIncrement = 0;
+		side.bloodrageSpeedBonus = 1;
+		side.bloodrageAdditionalRetaliations = 1;
+		EXPECT_EQ(newHorizonsBloodrage::validSnapshot(side), rank >= 2);
+		side.bloodrageSpeedBonus = 2;
+		EXPECT_FALSE(newHorizonsBloodrage::validSnapshot(side));
+	}
+	for(int rank : {-1, 4, std::numeric_limits<int>::min(), std::numeric_limits<int>::max()})
+	{
+		SideInBattle side(nullptr);
+		side.bloodrageRank = rank;
+		EXPECT_FALSE(newHorizonsBloodrage::validSnapshot(side));
+	}
+}
+
+TEST(NewHorizonsBloodrageSnapshotRulesTest, ContextFreeStructureAdmitsRevisedDomainsWithoutPolicyInference)
+{
+	for(int rank = 1; rank <= 3; ++rank)
+	{
+		SideInBattle side(nullptr);
+		side.bloodrageRank = rank;
+		side.bloodrageCapPercent = newHorizonsBloodrage::capForRank(rank);
+		side.bloodrageLowHealthIncrement = 2 * newHorizonsBloodrage::incrementForRank(rank);
+		side.bloodragePainIncrement = side.bloodrageLowHealthIncrement;
+		EXPECT_TRUE(newHorizonsBloodrage::validSnapshot(side));
+		EXPECT_EQ(side.cb, nullptr);
+		EXPECT_FALSE(side.heroID.hasValue());
+	}
 }

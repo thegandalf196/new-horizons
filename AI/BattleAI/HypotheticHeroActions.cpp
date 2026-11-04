@@ -11,7 +11,6 @@
 #include "HypotheticBattle.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
-#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/TimeStopState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
@@ -206,6 +205,8 @@ bool HypotheticBattle::beginProjectedHeroAction(BattleSide side, const Projected
 	if(!isCurrentPreparedSpellAction(side, prepared, false))
 		return false;
 	begunProjectedSpellAllowances.at(side) = prepared;
+	recordedWisdomActionEpochs.at(side).reset();
+	arcaneInspirationEffects.clear();
 	beginProjectedHeroAction(side, prepared.action);
 	return true;
 }
@@ -239,6 +240,7 @@ void HypotheticBattle::finishProjectedHeroAction(BattleSide side, const Projecte
 		&& *begunProjectedSpellAllowances.at(side) == prepared)
 	{
 		begunProjectedSpellAllowances.at(side).reset();
+		recordedWisdomActionEpochs.at(side).reset();
 		++projectedActionEpochs.at(side);
 	}
 }
@@ -335,10 +337,6 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 	}
 
 	const auto * hero = getSideHero(side);
-	if(action.isHeroAction() && newHorizonsWarcasting::enabled(getMagicRules()))
-		warcastingStates.at(side).recordAcceptedAction(AlternatingHeroActionState::Action::SPELL,
-			projectedRound, newHorizonsWarcasting::empowerment(hero, AlternatingHeroActionState::Action::SPELL),
-			newHorizonsWarcasting::readinessLifetimeRounds(hero));
 
 	const auto enemySide = side == BattleSide::ATTACKER ? BattleSide::DEFENDER : BattleSide::ATTACKER;
 	if(counterspellWardActive)
@@ -351,6 +349,14 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 		counterspellArmedStates.at(side) = true;
 		countersequenceArmedStates.at(side) = metamagicFollowup && newHorizonsMagic::hasMetamagicPerk(
 			hero, newHorizonsMagic::METAMAGIC_COUNTERSEQUENCE);
+	}
+	// castEval already records ordinary casts before effects. Countered and
+	// precomputed-value paths skip it, but accept the same manual receipt here.
+	// Automatic casts never satisfy this manual epoch, even for the same spell.
+	if(recordedWisdomActionEpochs.at(side) != prepared.action.epoch)
+	{
+		serverCallback->recordCompletedWisdomSpellCast(side, spell, projectedRound, false);
+		if(!counterspellNegated) completeSyntheticInspiration(side);
 	}
 	finishProjectedHeroAction(side, prepared);
 	return true;

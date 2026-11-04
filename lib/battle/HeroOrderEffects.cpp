@@ -9,7 +9,6 @@
 #include "IBattleState.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsDiscipline.h"
-#include "NewHorizonsEnchantedCommand.h"
 #include "NewHorizonsOffense.h"
 #include "Unit.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -38,18 +37,6 @@ IssuedOrderGrants prepareIssuedOrderGrants(const CBattleInfoCallback & battle,
 	IssuedOrderGrants result;
 	appendVanguardGrants(result, battle, side, order);
 	const auto * hero = battle.battleGetFightingHero(side);
-	if(newHorizonsEnchantedCommand::eligible(battle.getBattle()->getMagicRules(), hero, order))
-	{
-		IssuedOrderGrants::Batch batch;
-		for(const auto id : newHorizonsEnchantedCommand::recipientIds(battle, side, order))
-		{
-			const auto * unit = battle.battleGetUnitByID(id);
-			if(!unit->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()))
-				batch.emplace_back(id, std::vector<Bonus>{newHorizonsEnchantedCommand::moraleBonus()});
-		}
-		if(!batch.empty())
-			result.batches.push_back(std::move(batch));
-	}
 	if(order.command == HeroCommand::RIPOSTE && hero
 		&& hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE))
 	{

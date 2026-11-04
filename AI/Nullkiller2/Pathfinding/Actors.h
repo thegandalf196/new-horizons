@@ -78,6 +78,7 @@ public:
 	virtual ~ChainActor() = default;
 
 	virtual std::string toString() const;
+	virtual TResources getArmyCostForBuyer(const CGHeroInstance * buyer) const { return armyCost; }
 	ExchangeResult tryExchangeNoLock(const ChainActor * other) const { return tryExchangeNoLock(this, other); }
 	void setBaseActor(HeroActor * base);
 	virtual const CGObjectInstance * getActorObject() const	{ return hero; }
@@ -155,6 +156,7 @@ public:
 	DwellingActor(const CGDwelling * dwelling, uint64_t chainMask, bool waitForGrowth, int dayOfWeek);
 	~DwellingActor();
 	std::string toString() const override;
+	TResources getArmyCostForBuyer(const CGHeroInstance * buyer) const override;
 
 protected:
 	int getInitialTurn(bool waitForGrowth, int dayOfWeek);

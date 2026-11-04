@@ -8,6 +8,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = (ROOT / "client/battle/NewHorizonsBattleStatus.h").read_text(encoding="utf-8")
 HOVER_PANEL = (ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text(encoding="utf-8")
+TEMPORARY = (ROOT / "client/battle/StackTemporaryStatusPresenter.cpp").read_text(encoding="utf-8")
+PRIORITY = (ROOT / "client/battle/StackInfoStatusPresentation.h").read_text(encoding="utf-8")
 STACK_WINDOW = (ROOT / "client/windows/CCreatureWindow.cpp").read_text(encoding="utf-8")
 SPELLS = (ROOT / "Mods/new-horizons/Content/config/spells/newHorizons.json").read_text(encoding="utf-8")
 
@@ -23,12 +25,9 @@ class TimeStopStatusUiSourceTest(unittest.TestCase):
         self.assertIn("TIME_STOP_BADGE", STACK_WINDOW)
         self.assertIn("timeStopTooltip", HOVER_PANEL)
         self.assertIn("timeStopTooltip", STACK_WINDOW)
-        self.assertIn("std::stable_partition(spells.begin(), spells.end()", HOVER_PANEL)
+        self.assertIn("StackTemporaryStatusPresenter temporaryStatuses(stack, displayedStatus, battleCallback.get());", HOVER_PANEL)
         self.assertIn("std::stable_partition(spells.begin(), spells.end()", STACK_WINDOW)
-        self.assertLess(
-            HOVER_PANEL.index("std::stable_partition(spells.begin(), spells.end()"),
-            HOVER_PANEL.index("for(SpellID effect : spells)"),
-        )
+        self.assertLess(HOVER_PANEL.index("temporaryStatuses.plan()"), HOVER_PANEL.index("for(const auto entryIndex"))
         self.assertLess(
             STACK_WINDOW.index("std::stable_partition(spells.begin(), spells.end()"),
             STACK_WINDOW.index("for(SpellID effect : spells)"),
@@ -38,9 +37,11 @@ class TimeStopStatusUiSourceTest(unittest.TestCase):
         self.assertIn("std::to_string(duration)", HOVER_PANEL)
         self.assertIn("std::to_string(duration)", STACK_WINDOW)
         self.assertIn("spellDurationRemaining", STACK_WINDOW)
-        self.assertIn('effect.getNum() + 1', HOVER_PANEL)
+        self.assertIn('(wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1', HOVER_PANEL)
         self.assertIn('effect + 1', STACK_WINDOW)
-        self.assertIn("printed >= 3 || (printed == 2 && spells.size() > 3)", HOVER_PANEL)
+        self.assertIn("displayPlan.visibleEntryIndices", HOVER_PANEL)
+        self.assertIn("displayPlan.ellipsisUsesSlot", HOVER_PANEL)
+        self.assertIn("const std::size_t visibleLimit = result.ellipsisUsesSlot ? 2 : 3;", PRIORITY)
         self.assertIn("printed >= 8", STACK_WINDOW)
 
     def test_focus_magic_uses_captured_provenance_in_both_stack_presentations(self):
@@ -65,7 +66,13 @@ class TimeStopStatusUiSourceTest(unittest.TestCase):
         self.assertIn("Only subsequent friendly ranged creature attacks", STATUS)
 
     def test_new_horizons_statuses_are_prioritized_before_display_limits(self):
-        for source in (HOVER_PANEL, STACK_WINDOW):
+        self.assertIn("statusIconKind(effect)", TEMPORARY)
+        self.assertIn("stackStatusDisplayPlan(statusKinds, totalEffectCount)", TEMPORARY)
+        for kind, priority in (("TIME_STOP", 0), ("SPELL_LOCK", 1), ("FOCUS_OR_ARCANE", 7)):
+            self.assertIn("StackStatusIconKind::" + kind + ": return " + str(priority), PRIORITY)
+        self.assertIn("std::stable_sort(orderedIndices.begin(), orderedIndices.end()", PRIORITY)
+        self.assertLess(PRIORITY.index("std::stable_sort(orderedIndices.begin()"), PRIORITY.index("result.visibleEntryIndices.assign"))
+        for source in (STACK_WINDOW,):
             partition = source.index("const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end()")
             time_stop_partition = source.index("std::stable_partition(spells.begin(), prioritizedEnd", partition)
             loop = source.index("for(SpellID effect : spells)")

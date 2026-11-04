@@ -103,7 +103,7 @@ protected:
 		ASSERT_EQ(attackerSideHero->getEffectPower(spell), 1); // Real cache value, not requested base0.
 		ASSERT_EQ(mechanics->getEffectPower(), 1);
 		ASSERT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 13000);
-		ASSERT_EQ(mechanics->getWarcastingBonusPercent(), 0);
+		ASSERT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 		ASSERT_EQ(mechanics->getEmpowerSpellBonusPercent(), 0);
 		ASSERT_EQ(canonicalDamage(10000), 1213);
 		ASSERT_EQ(canonicalDamage(500), 60);

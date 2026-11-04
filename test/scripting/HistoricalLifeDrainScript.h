@@ -176,4 +176,526 @@ end
 
 return Script
 )NH_LIFE";
+
+// Exact reviewed shared root and damage dependency from revision2488cb6b.
+// Frozen test input bytes, not a generated runtime implementation.
+inline constexpr std::string_view SHARED_SOURCE = R"NH_SHARED(local Base = require("spells/unitEffect")
+local Damage = require("spells/damage")
+local BattleLog = require("battleLog")
+local Script = setmetatable({}, {__index = Base})
+Script.__index = Script
+
+local function addNoTargetProblem(mechanics, problem)
+	if problem then
+		problem:addStandard(mechanics, ENUM.SpellCastProblem.noAppropriateTarget)
+	end
+	return false
+end
+
+local function livingTarget(unit)
+	return unit ~= nil and unit:isAlive() and unit:isValidTarget(false)
+end
+
+local function isEnemyTarget(self, mechanics, unit)
+	-- This existing binding queries effective allegiance, not Puppet action control.
+	return livingTarget(unit)
+		and (mechanics:currentControllerIsCaster(unit) == mechanics:isMagicMirror())
+		and self:isReceptive(mechanics, unit)
+end
+
+local function isFriendlyTarget(mechanics, unit)
+	return livingTarget(unit)
+		and (mechanics:currentControllerIsCaster(unit) ~= mechanics:isMagicMirror())
+end
+
+local function predictedDamage(mechanics, unit)
+	local copy = unit:copy()
+	local before = copy:getAvailableHealth()
+	local countBefore = copy:getCount()
+	copy:damage(mechanics:adjustEffectValue(unit))
+	return before - copy:getAvailableHealth(), countBefore - copy:getCount()
+end
+
+function Script:adjustTargetTypes(mechanics, types)
+	if #types == 0 then return types end
+	if types[1] ~= ENUM.AimType.creature then return {} end
+	if #types == 1 then return { ENUM.AimType.creature, ENUM.AimType.creature } end
+	if #types ~= 2 or types[2] ~= ENUM.AimType.creature then return {} end
+	return types
+end
+
+function Script:isReceptive(mechanics, unit)
+	-- Keep spell resistance and the saved New Horizons magical-reduction
+	-- compatibility rule identical to ordinary direct damage spells.
+	return Damage.isReceptive(self, mechanics, unit)
+end
+
+function Script:applicableGeneral(mechanics, problem)
+	if not mechanics:usesNewHorizonsMagicV3() then
+		return addNoTargetProblem(mechanics, problem)
+	end
+
+	local hasEnemy = false
+	local hasFriend = false
+	mechanics:getBattle():getUnitsIf(function(unit)
+		if not hasEnemy and isEnemyTarget(self, mechanics, unit) then hasEnemy = true end
+		if not hasFriend and isFriendlyTarget(mechanics, unit) then hasFriend = true end
+		return hasEnemy and hasFriend
+	end)
+
+	if not hasEnemy or not hasFriend then
+		return addNoTargetProblem(mechanics, problem)
+	end
+	return true
+end
+
+function Script:applicableTarget(mechanics, problem, target)
+	if not mechanics:usesNewHorizonsMagicV3() or #target == 0 or #target > 2 then
+		return addNoTargetProblem(mechanics, problem)
+	end
+
+	local enemy = target[1].unit
+	if not isEnemyTarget(self, mechanics, enemy) then
+		return addNoTargetProblem(mechanics, problem)
+	end
+
+	-- The enemy prefix is deliberately valid so the target resolver can request
+	-- the second, friendly creature selection in order.
+	if #target == 1 then return true end
+	if not isFriendlyTarget(mechanics, target[2].unit) then
+		return addNoTargetProblem(mechanics, problem)
+	end
+	return true
+end
+
+function Script:transformTarget(mechanics, aimPoint, spellTarget)
+	if not mechanics:usesNewHorizonsMagicV3() then return {} end
+	if #aimPoint > 0 and aimPoint[1].unit then
+		spellTarget = { aimPoint[1] }
+	end
+	local filtered = Base.transformTarget(self, mechanics, aimPoint, spellTarget)
+	if #filtered == 0 then return {} end
+
+	local result = { filtered[1] }
+	if #aimPoint >= 2 then
+		-- Preserve the explicit second identity so an invalid friendly selection
+		-- cannot silently collapse into a valid one-target enemy prefix.
+		result[2] = aimPoint[2]
+	end
+	return result
+end
+
+function Script:getHealthChange(mechanics, spellTarget)
+	local result = { hpDelta = 0, unitsDelta = 0 }
+	if not mechanics:usesNewHorizonsMagicV3() or #spellTarget == 0 then return result end
+
+	local enemy = spellTarget[1].unit
+	if not isEnemyTarget(self, mechanics, enemy) then return result end
+	local damage, killed = predictedDamage(mechanics, enemy)
+	result.hpDelta = -damage
+	result.unitsDelta = -killed
+	-- The generic hover value is attached to the selected enemy stack. Do not
+	-- combine a separate friendly heal into that number; cast evaluation records
+	-- both authoritative unit-state changes independently.
+	return result
+end
+
+function Script:apply(mechanics, server, target)
+	if not mechanics:usesNewHorizonsMagicV3() or #target ~= 2 then return end
+	if not self:applicableTarget(mechanics, nil, target) then return end
+
+	local enemy = target[1].unit
+	local friendly = target[2].unit
+	local battle = mechanics:getBattle()
+	local enemyID = enemy:unitID()
+	local damage, killed = server:damageUnit(
+		battle, enemy, mechanics:adjustEffectValue(enemy), false, mechanics:getUnitCaster(), true)
+	local current = battle:getUnitByID(enemyID)
+	if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
+	local healing = math.floor(damage * mechanics:getLifeDrainHealingPercent() / 100)
+	local healedHP = 0
+	if healing > 0 then
+		healedHP = server:healUnit(battle, friendly, healing, ENUM.HealLevel.heal, ENUM.HealPower.permanent)
+	end
+
+	if damage > 0 then
+		BattleLog.spellDamage(server, battle, mechanics:getSpell(), enemy, damage, killed)
+	end
+	if healedHP > 0 then
+		server:appendLog(battle, {
+			append = { "new-horizons.combat.lifeDrain.healed" },
+			replaceStrings = { friendly:getCreature():getNameTextID(friendly:getCount()) },
+			replaceNumbers = { healedHP }
+		})
+	end
+end
+
+return Script
+)NH_SHARED";
+inline constexpr std::string_view DAMAGE_SOURCE = R"NH_DAMAGE(local Base = require("spells/unitEffect")
+local BattleLog = require("battleLog")
+local Script = setmetatable({}, {__index = Base})
+Script.__index = Script
+
+local HAVOC_CONDUCTOR_SKILL = "new-horizons:havocMagic"
+local HAVOC_CONDUCTOR_PERK = "new-horizons:havocMagic.conductor"
+local SOUL_REAPER_SPELL = "new-horizons:soulReaper"
+local CHAOS_MAGIC_SKILL = "new-horizons:chaosMagic"
+local FATE_DEALER_PERK = "new-horizons:chaosMagic.fateDealer"
+local HAND_OF_FATE_COLLATERAL_TEXT = "new-horizons.combat.handOfFate.collateral"
+local HAND_OF_FATE_BLOCKED_TEXT = "new-horizons.combat.handOfFate.blocked"
+
+local function conductorRetentionPercent(mechanics, targetIndex)
+	if targetIndex <= 0 then return nil end
+	local hero = mechanics:getHeroCaster()
+	local spell = mechanics:getSpell()
+	if not hero or not spell or not hero:hasActivePerk(HAVOC_CONDUCTOR_SKILL, HAVOC_CONDUCTOR_PERK) then
+		return nil
+	end
+	local key = spell:getJsonKey()
+	if key ~= "core:chainLightning" and key ~= "new-horizons:masterChainLightning" then
+		return nil
+	end
+	-- Conductor's values are integer retention percentages from the initial hit,
+	-- rather than another geometric per-hop factor. The final entry also covers
+	-- the fifth target of Master Chain Lightning.
+	local retentionPercent = { 100, 75, 55, 40, 30 }
+	-- targetIndex zero is the initial target, so Lua's one-based table index is
+	-- the battle target index plus one: 100% / 75% / 55% / 40% / 30%.
+	return retentionPercent[targetIndex + 1]
+end
+
+function Script:isReceptive(mechanics, unit)
+	local spell = mechanics:getSpell()
+	local useIndependentMagicalDamageReduction = spell:isMagical()
+		and mechanics:usesNewHorizonsMultiplicativeMDR()
+	if spell:isMagical() then
+		-- New Horizons' saved roster applies each ANY-subtype bonus as an
+		-- independent magical-damage reduction, capped together at 95%. Do not
+		-- turn their additive sum into immunity before CSpell can apply that rule.
+		-- Legacy profiles retain the original 100% reduction shortcut.
+		if not useIndependentMagicalDamageReduction
+			and unit:getBonusesValue({type = "SPELL_DAMAGE_REDUCTION", subtype = "any"}) >= 100 then
+			return false
+		end
+	end
+	local reductions = unit:getBonuses({type = "SPELL_DAMAGE_REDUCTION"})
+	for _, school in ipairs(spell:getSchools()) do
+		-- the subtype of each names a school, and telling apart the school it names from the "any"
+		-- that covers all of them is not something the filter can ask for
+		local matching = reductions:filter(function(b)
+			local sub = b:getSubtype()
+			if sub == "any" then return false end
+			return LIBRARY:getSpellSchoolByName(sub) == school
+		end)
+		local total = 0
+		for i = 1, matching:size() do
+			total = total + matching:getBonus(i):getVal()
+		end
+		if total >= 100 and not useIndependentMagicalDamageReduction then
+			return false
+		end
+	end
+	return Base.isReceptive(self, mechanics, unit)
+end
+
+function Script:damageForTarget(targetIndex, mechanics, unit)
+	local base
+	local directKillEffect = self.killByPercentage or self.killByCount
+	if self.killByPercentage then
+		local toKill = math.floor(unit:getCount() * mechanics:getEffectValue() / 100)
+		base = toKill * unit:getMaxHealth()
+	elseif self.killByCount then
+		base = mechanics:getEffectValue() * unit:getMaxHealth()
+	else
+		base = mechanics:adjustEffectValue(unit)
+	end
+	-- Count-based effects such as Death Stare bypass adjustEffectValue, so apply
+	-- Phantom Army's magical vulnerability to their HP-equivalent directly.
+	local phantomIntegrity = unit:getPhantomIntegrity()
+	if directKillEffect and mechanics:getSpell():isMagical() and phantomIntegrity > 0 then
+		-- Clamp before doubling to avoid overflowing large HP-equivalent values.
+		if base >= phantomIntegrity / 2 then
+			base = phantomIntegrity
+		else
+			base = base * 2
+		end
+	end
+	local chainLength = self.chainLength or 0
+	if chainLength > 1 and targetIndex > 0 then
+		local chainFactor = self.chainFactor or 0
+		local factorPerHeroLevel = self.chainFactorPerHeroLevel or 0
+		if factorPerHeroLevel ~= 0 then
+			local hero = mechanics:getHeroCaster()
+			local heroLevel = hero and hero:getLevel() or 1
+			chainFactor = chainFactor + factorPerHeroLevel * math.max(0, heroLevel)
+			if self.chainFactorMaximum then
+				chainFactor = math.min(chainFactor, self.chainFactorMaximum)
+			end
+		end
+		local retentionPercent = mechanics:getNewHorizonsChainLightningRetentionPercent(targetIndex)
+		local conductorPercent = conductorRetentionPercent(mechanics, targetIndex)
+		if retentionPercent >= 0 then
+			-- Saved-v3 ordinary Chain Lightning uses authored retention from the
+			-- initial hit, not a repeated geometric factor.
+			-- Compare Conductor in the same integer-percent domain, then multiply
+			-- before dividing so values such as 90 * 70% do not underflow due to
+			-- a binary floating-point approximation of 0.70.
+			if conductorPercent then
+				retentionPercent = math.max(retentionPercent, conductorPercent)
+			end
+			base = math.floor(base * retentionPercent / 100)
+		else
+			-- Legacy and Master Chain keep their configured geometric factor.
+			-- Conductor can improve it, but never erases Master Chain's
+			-- level-scaled specialty.
+			local multiplier = chainFactor ^ targetIndex
+			if conductorPercent then
+				multiplier = math.max(multiplier, conductorPercent / 100)
+			end
+			base = math.floor(multiplier * base)
+		end
+	end
+	-- Morale modifies final direct HP, not spell power, buffs, healing or passive procs.
+	-- Sharing this seam with getHealthChange keeps detached evaluation and previews identical.
+	if not self.indirect then
+		base = mechanics:adjustDirectCreatureActivationDamage(base)
+	end
+	return base
+end
+
+local function damageBeforeSoulReaperExecution(mechanics, unit)
+	if mechanics:getSpell():getJsonKey() ~= SOUL_REAPER_SPELL then return nil end
+
+	local copy = unit:copy()
+	local healthBefore = copy:getAvailableHealth()
+	local countBefore = copy:getCount()
+	copy:damage(mechanics:adjustEffectValueBeforeExecution(unit))
+	return {
+		damage = healthBefore - copy:getAvailableHealth(),
+		killed = countBefore - copy:getCount()
+	}
+end
+
+local function handOfFateCandidates(battle, primary)
+	local primaryID = primary:unitID()
+	return battle:getUnitsIf(function(unit)
+		-- Fate chooses from every living stack still on the battlefield. Keep
+		-- spell-immune, resistant, invincible, and temporarily untargetable
+		-- stacks in the pool; their defenses are resolved only after selection.
+		return unit:isAlive()
+			and unit:unitID() ~= primaryID
+			and unit:getPosition():isValid()
+			and not unit:isTurret()
+	end)
+end
+
+local function applyHandOfFateCollateral(self, mechanics, server, battle, primary, actualPrimaryDamage)
+	local candidates = handOfFateCandidates(battle, primary)
+	if #candidates == 0 then return 0, 0 end
+
+	-- Draw before inspecting defenses: immunity or spell resistance cannot
+	-- change who Fate chose, and a rejected hit never causes a reroll.
+	local recipient = candidates[server:rngInt(1, #candidates)]
+	local hero = mechanics:getHeroCaster()
+	if mechanics:usesNewHorizonsMagicV3() and hero
+		and mechanics:getSpell():getJsonKey() == "new-horizons:handOfFate"
+		and hero:hasActivePerk(CHAOS_MAGIC_SKILL, FATE_DEALER_PERK) then
+		-- Two independent uniform draws with replacement. Inspect current
+		-- control, not original battle side; defenses still do not affect draws.
+		local second = candidates[server:rngInt(1, #candidates)]
+		-- Explicit current-control query: ordinary ownerMatches retains its
+		-- existing polarity/original-side semantics for other spell consumers.
+		local firstHostile = not mechanics:currentControllerIsCaster(recipient)
+		local secondHostile = not mechanics:currentControllerIsCaster(second)
+		if firstHostile ~= secondHostile then
+			if not firstHostile then recipient = second end
+		elseif server:rngInt(1, 2) == 2 then
+			-- Equal-side draws use a fair coin even when both identify one stack.
+			recipient = second
+		end
+	end
+	local spillBase = math.floor(actualPrimaryDamage / 2)
+	local recipientName = recipient:getCreature():getNameTextID(recipient:getCount())
+	if not self:isValidTarget(mechanics, recipient)
+		or not self:isReceptive(mechanics, recipient)
+		or mechanics:wouldResist(recipient) then
+		server:appendLog(battle, {
+			append = { HAND_OF_FATE_BLOCKED_TEXT },
+			replaceStrings = { recipientName },
+			replaceNumbers = { spillBase }
+		})
+		return 0, 0
+	end
+
+	-- The base is half the primary's actual HP loss. Only the selected stack's
+	-- defenses apply here; the primary's caster-side damage bonuses are already
+	-- included in the actual loss and must not be applied a second time.
+	local adjustedDamage = mechanics:adjustRecipientDamage(recipient, spillBase)
+	local recipientID = recipient:unitID()
+	if adjustedDamage <= 0 then
+		-- Receptivity/resistance already succeeded: a fully absorbed immediate
+		-- magical hit still breaks Frozen, just like the primary damage event.
+		if mechanics:getSpell():isMagical() and not self.indirect then
+			local current = battle:getUnitByID(recipientID)
+			if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
+		end
+		server:appendLog(battle, {
+			append = { HAND_OF_FATE_BLOCKED_TEXT },
+			replaceStrings = { recipientName },
+			replaceNumbers = { spillBase }
+		})
+		return 0, 0
+	end
+	local actualDamage, killed = server:damageUnit(battle, recipient, adjustedDamage, self.destroyRemains == true,
+		mechanics:getUnitCaster(), true)
+	-- This immediate secondary spell hit is direct damage, not a redirected
+	-- injury or a damage-over-time tick. It breaks Frozen without Shatter.
+	if mechanics:getSpell():isMagical() and not self.indirect then
+		local current = battle:getUnitByID(recipientID)
+		if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
+	end
+	server:appendLog(battle, {
+		append = { HAND_OF_FATE_COLLATERAL_TEXT },
+		replaceStrings = { recipientName },
+		replaceNumbers = { spillBase, adjustedDamage, actualDamage }
+	})
+	return actualDamage, killed
+end
+
+function Script:getHealthChange(mechanics, spellTarget)
+	local result = { hpDelta = 0, unitsDelta = 0 }
+	for i, dest in ipairs(spellTarget) do
+		local unit = dest.unit
+		if unit and unit:isAlive() then
+			local amount = self:damageForTarget(i - 1, mechanics, unit)
+			local copy = unit:copy()
+			local hpBefore    = copy:getAvailableHealth()
+			local countBefore = copy:getCount()
+			copy:damage(amount)
+			result.hpDelta    = result.hpDelta    - (hpBefore    - copy:getAvailableHealth())
+			result.unitsDelta = result.unitsDelta - (countBefore - copy:getCount())
+		end
+	end
+	return result
+end
+
+function Script:apply(mechanics, server, target)
+	local battle   = mechanics:getBattle()
+	local describe = server:describeChanges()
+	local stormOfDaggers = mechanics:getSpell():getJsonKey() == "new-horizons:stormOfDaggers"
+	local firstUnit, totalDamage, totalKilled, multiple = nil, 0, 0, false
+	local ordinaryDamage, ordinaryKilled, executedKilled = 0, 0, 0
+
+	for i, dest in ipairs(target) do
+		local unit = dest.unit
+		if unit and unit:isAlive() then
+			local unitID = unit:unitID()
+			local origin = unit:getPosition()
+			local amount = self:damageForTarget(i - 1, mechanics, unit)
+			local soulReaperBaseline = describe and damageBeforeSoulReaperExecution(mechanics, unit) or nil
+			-- Creature casts expose their battle Unit; hero and environmental casts return nil and
+			-- intentionally remain unattributed.
+			local dmg, killed = server:damageUnit(
+				battle, unit, amount, self.destroyRemains == true, mechanics:getUnitCaster(), true)
+			if mechanics:getSpell():isMagical() and not self.indirect then
+				local current = battle:getUnitByID(unitID)
+				if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
+				server:applyImplosionPull(battle, mechanics, unitID, origin)
+			end
+			local collateralDamage, collateralKilled = 0, 0
+			if self.handOfFate then
+				collateralDamage, collateralKilled = applyHandOfFateCollateral(
+					self, mechanics, server, battle, unit, dmg)
+			end
+			if describe then
+				if stormOfDaggers then
+					-- Use resolved HP loss and casualties, not the raw split or a preview.
+					-- Name the recipient even when no creature was killed.
+					server:appendLog(battle, {
+						appendRaw = { "Storm of Daggers deals %d damage to %s." },
+						replaceNumbers = { dmg },
+						replaceStrings = { unit:getCreature():getNameTextID(unit:getCount()) }
+					})
+					BattleLog.creaturesPerish(server, battle, unit, killed)
+				end
+				if firstUnit then multiple = true else firstUnit = unit end
+				totalDamage = totalDamage + dmg + collateralDamage
+				totalKilled = totalKilled + killed + collateralKilled
+				if collateralDamage > 0 then multiple = true end
+				if soulReaperBaseline then
+					local additionalKilled = math.max(0, killed - soulReaperBaseline.killed)
+					if additionalKilled > 0 then
+						ordinaryDamage = ordinaryDamage + soulReaperBaseline.damage
+						ordinaryKilled = ordinaryKilled + soulReaperBaseline.killed
+						executedKilled = executedKilled + additionalKilled
+					end
+				end
+			end
+		end
+	end
+
+	if describe and not stormOfDaggers and firstUnit and totalDamage > 0 then
+		self:describeEffect(server, battle, mechanics, firstUnit, totalKilled, totalDamage, multiple,
+			ordinaryKilled, ordinaryDamage, executedKilled)
+	end
+end
+
+function Script:describeEffect(server, battle, mechanics, firstUnit, kills, damage, multiple,
+	ordinaryKills, ordinaryDamage, executedKills)
+	local spell    = mechanics:getSpell()
+	local spellKey = spell:getJsonKey()
+
+	if spellKey:find("deathStare") and not multiple then
+		local casterNameID = mechanics:getCasterNameTextID()
+		if kills > 1 then
+			server:appendLog(battle, {
+				append         = { "core.genrltxt.119" },
+				replaceStrings = { firstUnit:getCreature():getNameTextID(0), casterNameID },
+				replaceNumbers = { kills }
+			})
+		else
+			server:appendLog(battle, {
+				append         = { "core.genrltxt.118" },
+				replaceStrings = { firstUnit:getCreature():getNameTextID(1), casterNameID }
+			})
+		end
+
+	elseif spellKey:find("accurateShot") and not multiple then
+		local textID = mechanics:getPluralFormTextID(
+			"vcmi.battleWindow.accurateShot.resultDescription", kills)
+		server:appendLog(battle, {
+			append         = { textID },
+			replaceStrings = { firstUnit:getCreature():getNameTextID(kills) },
+			replaceNumbers = { kills }
+		})
+
+	elseif spellKey:find("thunderbolt") and not multiple then
+		server:appendLog(battle, {
+			append         = { "core.genrltxt.367" },
+			replaceStrings = { firstUnit:getCreature():getNameTextID(0) }
+		})
+		server:appendLog(battle, {
+			append         = { "core.genrltxt.343" },
+			replaceNumbers = { damage }
+		})
+
+	elseif spellKey == SOUL_REAPER_SPELL and executedKills > 0 and not multiple then
+		BattleLog.spellDamage(server, battle, spell, firstUnit, ordinaryDamage, ordinaryKills)
+		local textID = mechanics:getPluralFormTextID(
+			"new-horizons.combat.soulReaper.execute", executedKills)
+		server:appendLog(battle, {
+			append         = { textID },
+			replaceStrings = { firstUnit:getCreature():getNameTextID(executedKills) },
+			replaceNumbers = { executedKills }
+		})
+
+	else
+		-- an area spell kills creatures of several stacks, so the log names none of them
+		BattleLog.spellDamage(server, battle, spell, not multiple and firstUnit or nil, damage, kills)
+	end
+end
+
+return Script
+)NH_DAMAGE";
 }

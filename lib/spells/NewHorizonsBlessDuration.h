@@ -5,7 +5,7 @@
 class CGHeroInstance;
 namespace newHorizonsMagic
 {
-DLL_LINKAGE int32_t blessOrdinaryDuration(int32_t power, int32_t coefficient, int32_t warcasting,
+DLL_LINKAGE int32_t blessOrdinaryDuration(int32_t power, int32_t coefficient,
 	int32_t empower, int32_t specialty);
 /// Adds existing caster duration bonuses before general Extend/Echo adjustment.
 DLL_LINKAGE int32_t blessCasterDuration(const CGHeroInstance & hero, int32_t ordinary, bool brimstone);

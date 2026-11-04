@@ -15,7 +15,6 @@
 #include "lib/logging/CLogger.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
-#include "lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "lib/mapObjects/NewHorizonsSage.h"
 #include "lib/mapping/CMap.h"
 #include "lib/modding/CModHandler.h"
@@ -112,18 +111,19 @@ protected:
 		if(!current) current = hero;
 		if(wisdom)
 		{
+			current->setSecSkillLevel(skill("new-horizons:wisdom"), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 			current->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.intelligence"});
+			current->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.manaFasting"});
 			current->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.sage"});
 			ASSERT_TRUE(current->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.sage"));
 		}
 		else
 		{
-			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.eagleEye"});
-			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.fieldStudy"});
-			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.sage"});
-			ASSERT_TRUE(newHorizonsSage::learningSelected(*current));
+			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.scholar"});
+			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.seasonedAdventurer"});
+			current->applyPerkSelection({"new-horizons:learning", "new-horizons:learning.philosopher"});
+			ASSERT_TRUE(current->hasActivePerk("new-horizons:learning", "new-horizons:learning.philosopher"));
 		}
-		ASSERT_FALSE(current->hasActivePerk("new-horizons:learning", "new-horizons:learning.academicStudy"));
 	}
 	std::vector<const CGObjectInstance *> candidates()
 	{
@@ -132,46 +132,48 @@ protected:
 		NK2AI::PathfinderSettings settings; settings.useHeroChain = false;
 		ai->pathfinder->updatePaths(ai->getHeroesForPathfinding(), settings);
 		ai->memory->visitableObjs = {town->id};
-		ai->memory->alreadyVisited = {town->id};
+		ai->memory->alreadyVisited = town->getOwner() == PLAYER
+			? std::set<ObjectInstanceID>{town->id} : std::set<ObjectInstanceID>{};
 		ai->objectClusterizer->reset(); ai->objectClusterizer->clusterize();
 		return ai->objectClusterizer->getNearbyObjects();
 	}
 };
 }
 
-TEST_F(NewHorizonsSageAITest, LearningSageWithoutAcademicReachesVisitedTownAndAcceptedVisitSpendsOnlyItsReceipt)
+TEST_F(NewHorizonsSageAITest, CurrentLearningDoesNotCreateHiddenGuildRewardOrVisitReceipt)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_NO_FATAL_FAILURE(select(false));
-	ASSERT_EQ(newHorizonsLearning::academicStudyExperience(*hero, *town), 0);
-	ASSERT_EQ(newHorizonsSage::selectSpell(*hero, *town), named("core:implosion"));
-	EXPECT_TRUE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
-	EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), other, town));
-	const auto before = candidates();
-	EXPECT_NE(std::ranges::find(before, town), before.end());
-	GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
-	handler.heroVisitCastle(town, hero);
-	EXPECT_TRUE(hero->spellbookContainsSpell(named("core:implosion")));
-	EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().contains(town->id));
-	EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
-	EXPECT_TRUE(candidates().empty());
+ ASSERT_NO_FATAL_FAILURE(prepare());
+ ASSERT_NO_FATAL_FAILURE(select(false));
+ EXPECT_FALSE(newHorizonsSage::selectSpell(*hero, *town));
+ EXPECT_FALSE(newHorizonsSage::hasVisitReward(*hero, *town));
+ EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
+ EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), other, town));
+ EXPECT_TRUE(candidates().empty());
+ GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
+ handler.heroVisitCastle(town, hero);
+ EXPECT_FALSE(hero->spellbookContainsSpell(named("core:implosion")));
+ EXPECT_TRUE(hero->getNewHorizonsSageGuildVisits().empty());
+ EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
+ EXPECT_TRUE(candidates().empty());
 }
 
-TEST_F(NewHorizonsSageAITest, WisdomSageWithoutAcademicAlsoReachesThePlanner)
+TEST_F(NewHorizonsSageAITest, WisdomSageKnowledgeDoesNotCreateAGuildRevealPlannerReward)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(select(true));
-	ASSERT_TRUE(newHorizonsSage::wisdomReveal(*hero, *town));
-	ASSERT_TRUE(newHorizonsSage::hasVisitReward(*hero, *town));
-	EXPECT_TRUE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
-	const auto available = candidates();
-	EXPECT_NE(std::ranges::find(available, town), available.end());
+	EXPECT_FALSE(newHorizonsSage::wisdomReveal(*hero, *town));
+	EXPECT_FALSE(newHorizonsSage::hasVisitReward(*hero, *town));
+	EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
+	EXPECT_TRUE(candidates().empty());
 }
 
 TEST_F(NewHorizonsSageAITest, RememberedPartialTownFootprintDoesNotQueryHiddenVisitableTile)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_NO_FATAL_FAILURE(select(true));
+	ASSERT_NO_FATAL_FAILURE(select(false));
+	// Exercise generic remembered-object visibility through an ordinary enemy capture.
+	GameHandlerTestServer server(gameState(), PLAYER); CGameHandler handler(server, gameState());
+	handler.setOwner(town, PlayerColor(1));
 	const auto visible = candidates();
 	ASSERT_NE(std::ranges::find(visible, town), visible.end());
 	const auto anchor = town->visitablePos();
@@ -186,7 +188,8 @@ TEST_F(NewHorizonsSageAITest, RememberedPartialTownFootprintDoesNotQueryHiddenVi
 		return tile != anchor && gateway->nullkiller->cc->isVisible(tile);
 	}));
 	ASSERT_EQ(gateway->nullkiller->cc->getObj(town->id, false), town);
-	ASSERT_TRUE(newHorizonsSage::hasVisitReward(*hero, *town));
+	ASSERT_TRUE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
+	ASSERT_FALSE(newHorizonsSage::hasVisitReward(*hero, *town));
 	auto warningCount = std::make_shared<std::atomic_size_t>(0);
 	CLogger::getGlobalLogger()->addTarget(
 		std::make_unique<PartialTownVisibilityLogTarget>(anchor, warningCount));
@@ -218,7 +221,7 @@ TEST_F(NewHorizonsSageAITest, UnselectedOrEmptyCatalogDoesNotPermitBlanketTownRe
 	EXPECT_TRUE(candidates().empty());
 }
 
-TEST_F(NewHorizonsSageAITest, AlliedTownIsEligibleButEnemyCaptureKeepsItsOrdinaryPolicy)
+TEST_F(NewHorizonsSageAITest, AlliedTownHasNoRevealButEnemyCaptureKeepsItsOrdinaryPolicy)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(select(false));
@@ -231,8 +234,8 @@ TEST_F(NewHorizonsSageAITest, AlliedTownIsEligibleButEnemyCaptureKeepsItsOrdinar
 	gameState()->players.at(PlayerColor(1)).team = team;
 	gameState()->teams.at(team).players.insert(PlayerColor(1));
 	ASSERT_EQ(gameState()->getPlayerRelations(PLAYER, PlayerColor(1)), PlayerRelations::ALLIES);
-	EXPECT_TRUE(newHorizonsSage::hasVisitReward(*hero, *town));
-	EXPECT_TRUE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
+	EXPECT_FALSE(newHorizonsSage::hasVisitReward(*hero, *town));
+	EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
 }
 
 TEST_F(NewHorizonsSageAITest, ForeignSelectedHeroCannotEnableOwnHerosVisitedTownBypass)
@@ -243,7 +246,7 @@ TEST_F(NewHorizonsSageAITest, ForeignSelectedHeroCannotEnableOwnHerosVisitedTown
 	const auto team = gameState()->players.at(PLAYER).team;
 	gameState()->players.at(PlayerColor(1)).team = team;
 	gameState()->teams.at(team).players.insert(PlayerColor(1));
-	ASSERT_TRUE(newHorizonsSage::hasVisitReward(*foreign, *town));
+	ASSERT_FALSE(newHorizonsSage::hasVisitReward(*foreign, *town));
 	EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, town));
 	EXPECT_TRUE(candidates().empty());
 }

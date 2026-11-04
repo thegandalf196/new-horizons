@@ -87,7 +87,7 @@ int64_t expectedPool(const int spellPower, const int coefficientBasisPoints,
 	const int modifierPercent = 100)
 {
 	const int64_t spellPowerHundredths = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		3LL * spellPower * modifierPercent, 1, coefficientBasisPoints, 0, 0);
+		3LL * spellPower * modifierPercent, 1, coefficientBasisPoints, 0);
 	return (180LL * modifierPercent + spellPowerHundredths) / 100;
 }
 

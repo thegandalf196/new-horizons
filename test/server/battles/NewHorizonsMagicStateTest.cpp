@@ -166,7 +166,7 @@ class NewHorizonsMagicStateTest : public HeroCommandFixture
 {
 protected:
 	static constexpr auto WISDOM_SKILL = "new-horizons:wisdom";
-	static constexpr auto ARCANE_MEMORY = "new-horizons:wisdom.arcaneMemory";
+	static constexpr auto SPELL_FAMILIARITY = "new-horizons:wisdom.spellFamiliarity";
 	bool historicalFlyWithoutUnlockPrice = false;
 	bool useMagic = true;
 	int magicVersion = newHorizonsMagic::CURRENT_RULESET_VERSION;
@@ -225,7 +225,7 @@ protected:
 	{
 		const CreatureID token(0);
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
-		builder.size(36, false).name("ArcaneMemoryTest")
+		builder.size(36, false).name("SpellFamiliarityTest")
 			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:solmyr")), PlayerColor(0))
 			.heroGarrison({{token, 1}})
@@ -252,12 +252,12 @@ protected:
 		return SecondarySkill(decoded);
 	}
 
-	void prepareWizardWithArcaneMemory(bool withGuildTown = false)
+	void prepareWizardWithSpellFamiliarity(bool withGuildTown = false)
 	{
 		startGameWithWizard(withGuildTown);
 		attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({WISDOM_SKILL, ARCANE_MEMORY});
-		ASSERT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
+		attackerSideHero->applyPerkSelection({WISDOM_SKILL, SPELL_FAMILIARITY});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, SPELL_FAMILIARITY));
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 	}
@@ -1272,7 +1272,7 @@ TEST_F(NewHorizonsMagicStateTest, LegacyExpertSummonBoatStillCreatesConfiguredBo
 	EXPECT_FALSE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 }
 
-TEST_F(NewHorizonsMagicStateTest, WizardCanChooseArcaneMemoryFromTheBasicWisdomOffer)
+TEST_F(NewHorizonsMagicStateTest, WizardCanChooseSpellFamiliarityFromTheBasicWisdomOffer)
 {
 	startGameWithWizard();
 	for(int index = 0; index < LIBRARY->skillh->size(); ++index)
@@ -1287,40 +1287,40 @@ TEST_F(NewHorizonsMagicStateTest, WizardCanChooseArcaneMemoryFromTheBasicWisdomO
 	for(uint64_t offerSeed = 0; offerSeed < 4096 && !selectedThroughOffer; ++offerSeed)
 	{
 		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
-		const auto arcaneMemory = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
+		const auto spellFamiliarity = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 		{
-			return candidate.selection.perkId == ARCANE_MEMORY;
+			return candidate.selection.perkId == SPELL_FAMILIARITY;
 		});
-		if(arcaneMemory == offer.end())
+		if(spellFamiliarity == offer.end())
 			continue;
 
-		const auto choice = static_cast<size_t>(std::distance(offer.begin(), arcaneMemory));
+		const auto choice = static_cast<size_t>(std::distance(offer.begin(), spellFamiliarity));
 		gameHandler->levelUpHero(attackerSideHero, offer, choice, offerSeed, false);
 		selectedThroughOffer = true;
 	}
-	ASSERT_TRUE(selectedThroughOffer) << "Arcane Memory should be a legal Basic Wisdom perk offer for a Wizard";
-	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
+	ASSERT_TRUE(selectedThroughOffer) << "Spell Familiarity should be a legal Basic Wisdom perk offer for a Wizard";
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, SPELL_FAMILIARITY));
 }
 
-TEST_F(NewHorizonsMagicStateTest, ShippedArcaneMemoryRegistryIsActiveAndSavedWithoutInjection)
+TEST_F(NewHorizonsMagicStateTest, ShippedSpellFamiliarityRegistryIsActiveAndSavedWithoutInjection)
 {
 	startGameWithWizard();
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 
 	const auto & savedPerks = attackerSideHero->getPerkState().rules["skills"][WISDOM_SKILL]["perks"].Vector();
-	const auto arcaneMemory = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
+	const auto spellFamiliarity = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
 	{
-		return perk["id"].String() == ARCANE_MEMORY;
+		return perk["id"].String() == SPELL_FAMILIARITY;
 	});
-	ASSERT_NE(arcaneMemory, savedPerks.end());
-	EXPECT_EQ((*arcaneMemory)["effect"]["status"].String(), "active");
-	ASSERT_NO_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL, ARCANE_MEMORY}));
-	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, ARCANE_MEMORY));
+	ASSERT_NE(spellFamiliarity, savedPerks.end());
+	EXPECT_EQ((*spellFamiliarity)["effect"]["status"].String(), "active");
+	ASSERT_NO_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL, SPELL_FAMILIARITY}));
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL, SPELL_FAMILIARITY));
 }
 
-TEST_F(NewHorizonsMagicStateTest, AcceptedCombatScrollCastLearnsAndPersistsWithoutConsuming)
+TEST_F(NewHorizonsMagicStateTest, AcceptedCombatScrollCastRecordsFamiliarityAndPersistsWithoutLearningOrConsuming)
 {
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID magicArrow(SpellID::MAGIC_ARROW);
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, magicArrow, ArtifactPosition::MISC1));
 	ASSERT_TRUE(attackerSideHero->hasScroll(magicArrow, false));
@@ -1335,23 +1335,24 @@ TEST_F(NewHorizonsMagicStateTest, AcceptedCombatScrollCastLearnsAndPersistsWitho
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 
 	EXPECT_TRUE(attackerSideHero->hasScroll(magicArrow, false));
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(magicArrow));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(magicArrow));
 	gameHandler->removeArtifact(ArtifactLocation(attackerSideHero->id, ArtifactPosition::MISC1));
 	EXPECT_FALSE(attackerSideHero->hasScroll(magicArrow, false));
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(magicArrow));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(magicArrow));
 	const auto saved = gameState()->saveToMemory();
 	auto restored = std::make_shared<CGameState>();
 	restored->preInit(LIBRARY);
 	restored->loadFromMemory(saved);
 	const auto * restoredHero = restored->getHero(attackerSideHero->id);
 	ASSERT_NE(restoredHero, nullptr);
-	EXPECT_TRUE(restoredHero->spellbookContainsSpell(magicArrow));
+	EXPECT_FALSE(restoredHero->spellbookContainsSpell(magicArrow));
+	EXPECT_EQ(restored->getBattle(BattleID(0))->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(magicArrow), 1);
 	EXPECT_FALSE(restoredHero->hasScroll(magicArrow, false));
 }
 
 TEST_F(NewHorizonsMagicStateTest, SpellbookSourceTakesPriorityOverMatchingScroll)
 {
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID magicArrow(SpellID::MAGIC_ARROW);
 	attackerSideHero->addSpellToSpellbook(magicArrow);
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, magicArrow, ArtifactPosition::MISC1));
@@ -1375,13 +1376,13 @@ TEST_F(NewHorizonsMagicStateTest, SpellbookSourceTakesPriorityOverMatchingScroll
 	ASSERT_NE(attackerSideHero->getArt(ArtifactPosition::MISC1), nullptr);
 	EXPECT_EQ(attackerSideHero->getArt(ArtifactPosition::MISC1)->getId(), scrollId);
 	EXPECT_FALSE(attackerSideHero->canLearnSpell(SpellID(SpellID::MAGIC_ARROW).toSpell()))
-		<< "A spell already in the book is not a new Arcane Memory acquisition";
+		<< "A spell already in the book is not a new learning acquisition";
 }
 
 
 TEST_F(NewHorizonsMagicStateTest, EquippedTomeSourceTakesPriorityOverMatchingScroll)
 {
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID haste(SpellID::HASTE);
 	ASSERT_TRUE(gameHandler->giveHeroNewArtifact(attackerSideHero,
 		ArtifactID(ArtifactID::decode("core:tomeOfAirMagic")), ArtifactPosition::MISC2));
@@ -1421,7 +1422,7 @@ TEST_F(NewHorizonsMagicStateTest, EquippedTomeSourceTakesPriorityOverMatchingScr
 
 TEST_F(NewHorizonsMagicStateTest, CombatScrollCastsWithoutSchoolButDoesNotBypassLearningRequirement)
 {
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID handOfFate(SpellID::decode("new-horizons:handOfFate"));
 	ASSERT_GE(handOfFate.getNum(), 0);
 	ASSERT_EQ(newHorizonsMagic::requiredSchoolRank(attackerSideHero->getMagicRules(), handOfFate), MasteryLevel::BASIC);
@@ -1461,7 +1462,7 @@ TEST_F(NewHorizonsMagicStateTest, CombatScrollCastsWithoutSchoolButDoesNotBypass
 
 TEST_F(NewHorizonsMagicStateTest, ImplosionScrollCastsWithoutSorceryButLearningStillRequiresActualRank)
 {
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID implosion(SpellID::IMPLOSION);
 	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
@@ -1486,7 +1487,7 @@ TEST_F(NewHorizonsMagicStateTest, ImplosionScrollCastsWithoutSorceryButLearningS
 TEST_F(NewHorizonsMagicStateTest, HistoricalNoPriceAdventureScrollRetainsOrdinaryLearningAdmission)
 {
 	historicalFlyWithoutUnlockPrice = true;
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID fly(SpellID::FLY);
 	gameHandler->changeSpells(attackerSideHero, false, {fly});
 	ASSERT_TRUE(attackerSideHero->canLearnSpell(fly.toSpell()));
@@ -1497,13 +1498,13 @@ TEST_F(NewHorizonsMagicStateTest, HistoricalNoPriceAdventureScrollRetainsOrdinar
 	parameters.pos = int3();
 	(void)fly.toSpell()->adventureCast(environment, parameters);
 	EXPECT_EQ(environment->completed, 1);
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(fly));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(fly));
 	EXPECT_TRUE(attackerSideHero->hasScroll(fly, false));
 }
 
 TEST_F(NewHorizonsMagicStateTest, AcceptedAdventureScrollCastSettlesFromCompletedEffect)
 {
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID fly(SpellID::FLY);
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, fly, ArtifactPosition::MISC1));
 	ASSERT_TRUE(attackerSideHero->hasScroll(fly, false));
@@ -1530,7 +1531,7 @@ TEST_F(NewHorizonsMagicStateTest, AcceptedAdventureScrollCastSettlesFromComplete
 
 TEST_F(NewHorizonsMagicStateTest, DimensionDoorRejectedWithoutMovementLeavesScrollUntouched)
 {
-	prepareWizardWithArcaneMemory();
+	prepareWizardWithSpellFamiliarity();
 	const SpellID dimensionDoor(SpellID::DIMENSION_DOOR);
 	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, dimensionDoor, ArtifactPosition::MISC1));
 	ASSERT_TRUE(attackerSideHero->canCastThisSpell(dimensionDoor.toSpell()));
@@ -1646,7 +1647,7 @@ TEST_F(NewHorizonsMagicStateTest, LegacyDimensionDoorKeepsItsRectangularRangeAnd
 
 TEST_F(NewHorizonsMagicStateTest, TownPortalQueryCancelThenGuildVisitRetainsTheOriginalScroll)
 {
-	prepareWizardWithArcaneMemory(true);
+	prepareWizardWithSpellFamiliarity(true);
 	auto * destination = findFirst<CGTownInstance>();
 	ASSERT_NE(destination, nullptr);
 	for(const auto building : {BuildingID::MAGES_GUILD_1, BuildingID::MAGES_GUILD_2, BuildingID::MAGES_GUILD_3})
@@ -1738,7 +1739,7 @@ TEST_F(NewHorizonsMagicStateTest, TownPortalQueryCancelThenGuildVisitRetainsTheO
 	EXPECT_TRUE(attackerSideHero->hasNewHorizonsAdventureSpellCastToday());
 	EXPECT_TRUE(attackerSideHero->hasScroll(townPortal, false));
 	// Accepted teleportation visits this already paid/unlocked Guild. The
-	// inscription is ordinary Guild teaching, not Arcane Memory admission.
+	// inscription is ordinary Guild teaching, not Spell Familiarity admission.
 	ASSERT_EQ(attackerSideHero->getVisitedTown(), destination);
 	ASSERT_TRUE(destination->hasNewHorizonsAdventureSpellUnlocked(3));
 	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(townPortal));

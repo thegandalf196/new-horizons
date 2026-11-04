@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../spells/NewHorizonsMetamagicEffects.h"
 
 #include "NewHorizonsPlague.h"
 
@@ -423,11 +424,12 @@ int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide caster
 	const auto penetrations = capturedPenetration
 		&& battle.battleGetOwner(target) != caster->getCasterOwner()
 		? spells::capturedMdrPenetrations(*capturedPenetration, target->unitId(), battle.getBattle()) : std::vector<int>{};
-	return spell->adjustRawDamage(caster, target, rawDamage, 0,
+	const auto ordinary = spell->adjustRawDamage(caster, target, rawDamage, 0,
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(target), 100, true,
 		newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules())
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
 				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
 		true, battle.battleGetPerkMagicalReductionBasisPoints(target), penetrations);
+	return newHorizonsMetamagic::spellDamage(ordinary, nullptr, battle, target, caster->getCasterOwner());
 }
 }

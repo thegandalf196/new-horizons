@@ -1298,30 +1298,7 @@ void CStackWindow::keyPressed(EShortcut key)
 
 void CStackWindow::initBonusesList()
 {
-	// Use the unit's own captured battle/world rules. A missing battle context
-	// must not borrow the adventure profile, and a bare preview invents none.
-	const JsonNode * abilityRules = nullptr;
-	if(info->stack)
-	{
-		if(const auto * battleContext = info->stack->getBattle())
-			abilityRules = &battleContext->getMagicRules();
-	}
-	else if(info->stackNode && info->stackNode->cb)
-		abilityRules = &info->stackNode->cb->getMagicRules();
-	else if(GAME->interface() && GAME->interface()->cb)
-		abilityRules = &GAME->interface()->cb->getMagicRules();
-	const auto innateAbilities = newHorizonsCreatureAbilityHelp::translatedInnateAbilities(
-		info->creature->getJsonKey(), abilityRules,
-		info->stack && info->stack->alive() ? info->stack->summonRoundsRemaining : 0);
-	for(const auto & help : innateAbilities)
-	{
-		BonusInfo ability;
-		ability.description = help.compact;
-		ability.tooltip = help.details;
-		ability.imagePath = help.iconPath.empty() ? ImagePath{} : ImagePath::builtin(help.iconPath);
-		ability.bonusSource = BonusSource::CREATURE_ABILITY;
-		activeBonuses.push_back(std::move(ability));
-	}
+	appendInnateAbilityCards(info->stack, info->stackNode, info->creature);
 
 	const IBonusBearer * bonusSource = info->stack
 	? static_cast<const IBonusBearer*>(info->stack)  // Use CStack in battle

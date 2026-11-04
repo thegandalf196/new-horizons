@@ -74,5 +74,19 @@ int main()
 		"Static Ghost help uses the intrinsic growth constant without a hero or captured profile");
 	require(!newHorizonsCreatureAbilityHelp::soulHarvest("core:wraith", "", ""),
 		"Ordinary Wraiths do not claim Soul Harvest");
-	std::cout << "Battle stack color and summon lifetime presentation PASS\n";
+	const std::array<SideInBattle::GatedDemonicStack, 2> arrivedGates{{
+		{7, CreatureID(0), 6, true},
+		{8, CreatureID(0), 20, false}
+	}};
+	const auto reinforcement = newHorizonsCreatureAbilityHelp::demonicGateReinforcement(7, arrivedGates);
+	require(reinforcement && reinforcement->compact == "Temporary reinforcement"
+		&& reinforcement->details == "Arrived through a Demonic Gate. Disappears after combat and cannot open Gates.",
+		"An actual temporary arrived Gate record produces the combat-long reinforcement card");
+	require(!newHorizonsCreatureAbilityHelp::demonicGateReinforcement(8, arrivedGates),
+		"Historical owned-reserve arrival of the same creature must not claim temporary reinforcement");
+	require(!newHorizonsCreatureAbilityHelp::demonicGateReinforcement(9, arrivedGates),
+		"An unrelated stack must not borrow another stack's Gate provenance");
+	require(!newHorizonsCreatureAbilityHelp::demonicGateReinforcement(7, {}),
+		"Absent arrived records must not infer Gate reinforcement from other stack properties");
+	std::cout << "Battle stack color, summon lifetime and Gate reinforcement presentation PASS\n";
 }

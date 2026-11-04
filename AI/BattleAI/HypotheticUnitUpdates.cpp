@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/spells/NewHorizonsMetamagicEntry.h"
 #include "PrismaticVanguardProjection.h"
 #include "GnollHarriersProjection.h"
 #include "PhysicalStrikeProjection.h"
@@ -49,7 +50,11 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 	battle::UnitInfo info;
 	info.load(id, data);
 	auto newUnit = std::make_shared<StackWithBonuses>(this, info);
+	newHorizonsMetamagic::seedSummonedMarks(*newUnit,
+		{battleGetFightingHero(BattleSide::ATTACKER), battleGetFightingHero(BattleSide::DEFENDER)});
 	stackStates[newUnit->unitId()] = newUnit;
+	if(const auto initiative = newHorizonsMetamagic::entryAttunement(*this, *newUnit))
+		addUnitBonus(id, {*initiative});
 	prismaticVanguardAI::entry(*this, *newUnit);
 	const auto bindings = newUnit->getBonuses(Selector::type()(BonusType::BIND_EFFECT));
 	for(const auto & bonus : *bindings)
@@ -303,22 +308,29 @@ void HypotheticBattle::recordBloodrageTransition(const std::shared_ptr<StackWith
 	bloodrageFirstBloodUsed |= firstBloodSelected;
 }
 
+std::vector<Bonus> HypotheticBattle::getLocalSpellEffects(uint32_t id) const
+{
+	const auto * unit = battleGetUnitByID(id);
+	if(!unit) throw std::runtime_error("Local spell-effect source does not exist");
+	if(const auto * projected = dynamic_cast<const StackWithBonuses *>(unit))
+		return projected->localSpellEffects();
+	if(const auto * node = dynamic_cast<const CBonusSystemNode *>(unit))
+	{
+		std::vector<Bonus> result;
+		for(const auto & bonus : node->getExportedBonusList())
+			if(bonus->source == BonusSource::SPELL_EFFECT) result.push_back(*bonus);
+		return result;
+	}
+	throw std::runtime_error("Exact effect capture requires source-local bonus provenance");
+}
+
 battle::BattleEffectSnapshot HypotheticBattle::captureBattleEffects(uint32_t id) const
 {
 	const auto * unit = battleGetUnitByID(id);
 	if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret() || !unit->getPosition().isValid())
 		throw std::runtime_error("Spell-effect exchange endpoint is not a living battlefield stack");
 	battle::BattleEffectSnapshot result;
-	if(const auto * projected = dynamic_cast<const StackWithBonuses *>(unit))
-		result.effects = projected->localSpellEffects();
-	else if(const auto * node = dynamic_cast<const CBonusSystemNode *>(unit))
-	{
-		for(const auto & bonus : node->getExportedBonusList())
-			if(bonus->source == BonusSource::SPELL_EFFECT)
-				result.effects.push_back(*bonus);
-	}
-	else
-		throw std::runtime_error("Exact effect capture requires source-local bonus provenance");
+	result.effects = getLocalSpellEffects(id);
 	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
 	if(!state)
 		throw std::runtime_error("Exact effect exchange requires a typed unit state");

@@ -25,7 +25,7 @@ namespace
 {
 constexpr PlayerColor PLAYER(0);
 constexpr auto LEARNING = "new-horizons:learning";
-constexpr auto ARCHIVIST = "new-horizons:learning.archivist";
+constexpr auto FIELD_STUDY = "new-horizons:learning.fieldStudy";
 
 class NewHorizonsArchivistTest : public TinyMapGameTest
 {
@@ -59,9 +59,9 @@ protected:
 		if(selected)
 		{
 			hero->applyPerkSelection({LEARNING, "new-horizons:learning.eagleEye"});
-			hero->applyPerkSelection({LEARNING, ARCHIVIST});
+			hero->applyPerkSelection({LEARNING, FIELD_STUDY});
 		}
-		EXPECT_EQ(hero->hasActivePerk(LEARNING, ARCHIVIST), selected);
+		EXPECT_EQ(hero->hasActivePerk(LEARNING, FIELD_STUDY), selected);
 		hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")),
 			school ? MasteryLevel::BASIC : MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 		if(book && !hero->hasSpellbook())
@@ -77,25 +77,25 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsArchivistTest, AcceptedNewScrollLearnsImmediatelyAndSurvivesScrollRemoval)
+TEST_F(NewHorizonsArchivistTest, AcceptedNewScrollProvidesOnlyScrollAccessAndRemovalDoesNotLeavePermanentLearning)
 {
 	prepare();
 	auto * hero = findHeroAt({5, 5, 0});
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	configure(hero, handler, true);
-	ASSERT_TRUE(hero->canLearnSpellFromAcquiredScroll(spell()));
+	ASSERT_FALSE(hero->canLearnSpellFromAcquiredScroll(spell()));
 	ASSERT_TRUE(handler.giveHeroNewScroll(hero, spell(), ArtifactPosition::BACKPACK_START));
-	EXPECT_TRUE(hero->spellbookContainsSpell(spell()));
+	EXPECT_FALSE(hero->spellbookContainsSpell(spell()));
 	EXPECT_FALSE(hero->canLearnSpellFromAcquiredScroll(spell()));
 	const auto position = hero->getScrollPos(spell(), false);
 	ASSERT_NE(position, ArtifactPosition::PRE_FIRST);
 	handler.removeArtifact(ArtifactLocation(hero->id, position));
-	EXPECT_TRUE(hero->spellbookContainsSpell(spell()));
+	EXPECT_FALSE(hero->spellbookContainsSpell(spell()));
 	EXPECT_FALSE(hero->hasScroll(spell(), false));
 }
 
-TEST_F(NewHorizonsArchivistTest, AcceptedPutArtifactReceiptLearnsFromAnExistingScrollInstance)
+TEST_F(NewHorizonsArchivistTest, AcceptedPutArtifactReceiptRetainsScrollWithoutPermanentLearning)
 {
 	prepare();
 	auto * hero = findHeroAt({5, 5, 0});
@@ -107,11 +107,11 @@ TEST_F(NewHorizonsArchivistTest, AcceptedPutArtifactReceiptLearnsFromAnExistingS
 	const auto * scroll = gameState()->getMap().createScroll(spell());
 	ASSERT_NE(scroll, nullptr);
 	ASSERT_TRUE(handler.putArtifact(ArtifactLocation(hero->id, ArtifactPosition::FIRST_AVAILABLE), scroll->getId(), false));
-	EXPECT_TRUE(hero->spellbookContainsSpell(spell()));
+	EXPECT_FALSE(hero->spellbookContainsSpell(spell()));
 	EXPECT_TRUE(hero->hasScroll(spell(), false));
 }
 
-TEST_F(NewHorizonsArchivistTest, AcceptedHeroTransferLearnsAndKeepsTheOriginalScroll)
+TEST_F(NewHorizonsArchivistTest, AcceptedHeroTransferKeepsTheOriginalScrollWithoutPermanentLearning)
 {
 	prepare();
 	auto * recipient = findHeroAt({5, 5, 0});
@@ -127,7 +127,7 @@ TEST_F(NewHorizonsArchivistTest, AcceptedHeroTransferLearnsAndKeepsTheOriginalSc
 	handler.heroExchange(donor->id, recipient->id);
 	ASSERT_TRUE(handler.moveArtifact(PLAYER,
 		ArtifactLocation(donor->id, donor->getArtPos(scroll)), ArtifactLocation(recipient->id, ArtifactPosition::BACKPACK_START)));
-	EXPECT_TRUE(recipient->spellbookContainsSpell(spell()));
+	EXPECT_FALSE(recipient->spellbookContainsSpell(spell()));
 	EXPECT_FALSE(donor->spellbookContainsSpell(spell()));
 	EXPECT_EQ(recipient->getArt(recipient->getScrollPos(spell(), false))->getId(), id);
 }
@@ -142,8 +142,8 @@ TEST_F(NewHorizonsArchivistTest, SelectingPerkThenRearrangingAnAlreadyOwnedScrol
 	ASSERT_TRUE(handler.giveHeroNewScroll(hero, spell(), ArtifactPosition::BACKPACK_START));
 	EXPECT_FALSE(hero->spellbookContainsSpell(spell()));
 	hero->applyPerkSelection({LEARNING, "new-horizons:learning.eagleEye"});
-	hero->applyPerkSelection({LEARNING, ARCHIVIST});
-	ASSERT_TRUE(hero->canLearnSpellFromAcquiredScroll(spell()));
+	hero->applyPerkSelection({LEARNING, FIELD_STUDY});
+	ASSERT_FALSE(hero->canLearnSpellFromAcquiredScroll(spell()));
 	const auto source = hero->getScrollPos(spell(), false);
 	ASSERT_TRUE(handler.moveArtifact(PLAYER, ArtifactLocation(hero->id, source),
 		ArtifactLocation(hero->id, ArtifactPosition::TRANSITION_POS)));
@@ -169,7 +169,8 @@ TEST_F(NewHorizonsArchivistTest, SchoolAndSpellbookEligibilityAreNotBypassedByRe
 	handler.changeSpells(noSchool, false, {gatedSpell});
 	handler.changeSpells(noBook, false, {gatedSpell});
 	noSchool->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	ASSERT_TRUE(noSchool->canLearnSpellFromAcquiredScroll(gatedSpell));
+	ASSERT_TRUE(noSchool->canLearnSpell(gatedSpell.toSpell()));
+	ASSERT_FALSE(noSchool->canLearnSpellFromAcquiredScroll(gatedSpell));
 	noSchool->setSecSkillLevel(sorcery, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	noBook->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(noSchool->getSecSkillLevel(sorcery), MasteryLevel::NONE);
@@ -210,7 +211,7 @@ TEST_F(NewHorizonsArchivistTest, BannedSpellAndInsufficientLearningRankRemainIne
 	configure(banned, handler, true);
 	configure(belowRank, handler, true);
 	belowRank->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(LEARNING)), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	EXPECT_FALSE(belowRank->hasActivePerk(LEARNING, ARCHIVIST));
+	EXPECT_FALSE(belowRank->hasActivePerk(LEARNING, FIELD_STUDY));
 	EXPECT_FALSE(belowRank->canLearnSpellFromAcquiredScroll(spell()));
 	ASSERT_TRUE(handler.giveHeroNewScroll(belowRank, spell(), ArtifactPosition::BACKPACK_START));
 	EXPECT_FALSE(belowRank->spellbookContainsSpell(spell()));
@@ -237,13 +238,13 @@ protected:
 		const SpellID spell(SpellID::decode("core:magicArrow"));
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(LEARNING)), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->applyPerkSelection({LEARNING, "new-horizons:learning.eagleEye"});
-		attackerSideHero->applyPerkSelection({LEARNING, ARCHIVIST});
-		ASSERT_TRUE(attackerSideHero->hasActivePerk(LEARNING, ARCHIVIST));
+		attackerSideHero->applyPerkSelection({LEARNING, FIELD_STUDY});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(LEARNING, FIELD_STUDY));
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		if(!attackerSideHero->hasSpellbook())
 			ASSERT_TRUE(gameHandler->giveHeroNewArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK));
 		gameHandler->changeSpells(attackerSideHero, false, {spell});
-		ASSERT_TRUE(attackerSideHero->canLearnSpellFromAcquiredScroll(spell));
+		ASSERT_FALSE(attackerSideHero->canLearnSpellFromAcquiredScroll(spell));
 		ArtifactInstanceID scrollId;
 		ASSERT_FALSE(scrollId.hasValue());
 		if(withScroll)
@@ -268,19 +269,19 @@ protected:
 			if(dialog && dialog->getType() == QueryType::BattleDialog)
 				ASSERT_TRUE(gameHandler->queryReply(dialog->queryID, 0, player));
 		}
-		EXPECT_EQ(attackerSideHero->spellbookContainsSpell(spell), withScroll);
+		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell));
 		if(withScroll)
 		{
 			ASSERT_TRUE(attackerSideHero->hasScroll(spell, false));
 			const auto position = attackerSideHero->getScrollPos(spell, false);
 			EXPECT_EQ(attackerSideHero->getArt(position)->getId(), scrollId);
 			gameHandler->removeArtifact(ArtifactLocation(attackerSideHero->id, position));
-			EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(spell));
+			EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell));
 		}
 	}
 };
 
-TEST_F(NewHorizonsArchivistBattleLootTest, ActualVictoryLootReceiptPermanentlyLearnsTheNewScroll)
+TEST_F(NewHorizonsArchivistBattleLootTest, ActualVictoryLootReceiptKeepsScrollIdentityWithoutPermanentLearning)
 {
 	verifyResult(true);
 }

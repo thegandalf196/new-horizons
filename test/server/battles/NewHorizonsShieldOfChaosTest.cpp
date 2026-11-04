@@ -247,7 +247,7 @@ TEST_F(NewHorizonsShieldOfChaosTest, ChaosRankScalesOnlyTheSpellPowerTerm)
 	const int coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(
 		attackerSideHero->getMagicRules(), attackerSideHero, shieldOfChaosSpell());
 	const int expectedTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		750, 1, coefficient, 0, 0);
+		750, 1, coefficient, 0);
 	const int expected = 5000 + expectedTerm;
 	const auto physical = shieldBonus(friendly, BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS);
 	const auto magical = shieldBonus(friendly, BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS,

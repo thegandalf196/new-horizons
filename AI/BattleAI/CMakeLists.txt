@@ -4,6 +4,7 @@ set(battleAI_SRCS
 		AttackPreviewMovement.cpp
 		GnollHarriersProjection.cpp
 		PhysicalStrikeProjection.cpp
+		ArcaneInspirationProjection.cpp
 		AttackAbilityPrefix.cpp
 		NominalAbilityChance.cpp
 		PhysicalPoisonValue.cpp
@@ -45,11 +46,16 @@ set(battleAI_SRCS
 		BattleEvaluatorHeroSubmit.cpp
 		BattleEvaluatorSpellCandidates.cpp
 		BattleEvaluatorSpellProjection.cpp
+		ArrowContinuationProjection.cpp
+		ArrowContinuationReuse.cpp
 		VinesCandidateValueReuse.cpp
 		HeroCandidateValueContext.cpp
 		HeroCandidateValueReuse.cpp
 		LifeDrainCandidateValueReuse.cpp
 		BattleEvaluatorHeroQueue.cpp
+		HandOfFateExpectedValue.cpp
+		HeroRandomSpellOutcomeValue.cpp
+		BlinkPositionValue.cpp
 		HeroSpellExpectedValueProjection.cpp
 		HeroPurifyProjection.cpp
 		HeroTargetHeuristicProjection.cpp
@@ -61,6 +67,19 @@ set(battleAI_SRCS
 		HeroOrderCandidates.cpp
 		HeroActionAdmission.cpp
 		HeroActionUtility.cpp
+		AttackOpportunityValue.cpp
+		AttackPreviewDiagnostics.cpp
+		BattleEvaluatorTemporaryGating.cpp
+		FixedActionValue.cpp
+		HeroSpellVariants.cpp
+		HypotheticAutomaticSpell.cpp
+		LightSpellProtectionValue.cpp
+		LightSpellResponseValue.cpp
+		PassiveDivineFuryValue.cpp
+		PassiveDivineMandateProjection.cpp
+		PassiveDivineMandateValue.cpp
+		TemporaryGatingAI.cpp
+		TemporaryGatingProjection.cpp
 		HeroActionSelection.cpp
 		HeroActionContinuation.cpp
 		CreatureSpellTiming.cpp
@@ -120,6 +139,12 @@ set(battleAI_SRCS
 		HypotheticOrderActions.cpp
 		HypotheticLegacyOrders.cpp
 		HypotheticOrderContinuation.cpp
+		HypotheticMetamagicPoints.cpp
+		HypotheticWisdom.cpp
+		HypotheticArcaneInspiration.cpp
+		SyntheticInspirationUtility.cpp
+		HypotheticFactionAftermath.cpp
+		HypotheticFactionAftermath.h
 		HypotheticActivation.cpp
 		HypotheticUnitUpdates.cpp
 		HypotheticLifeDrainObservation.cpp
@@ -134,11 +159,13 @@ set(battleAI_SRCS
 		TacticsHandler.cpp
 		ThreatMap.cpp
 		BattleExchangeVariant.cpp
+		BattleExchangeArcaneInspiration.cpp
 		CreatureCandidateScreening.cpp
 		MovementCandidateScreening.cpp
 		BattleExchangeBloodValue.cpp
 		EnemyBypassReachability.cpp
 		BattleExchangeFutureAttack.cpp
+		SelectedProbeDamage.cpp
 		BattleExchangeMembership.cpp
 		BattleShroudStrike.cpp
 		PrimaryFortuneReceipt.cpp
@@ -152,6 +179,7 @@ set(battleAI_HEADERS
 		AttackPreviewMovement.h
 		GnollHarriersProjection.h
 		PhysicalStrikeProjection.h
+		ArcaneInspirationProjection.h
 		AttackAbilityPrefix.h
 		NominalAbilityChance.h
 		PhysicalPoisonValue.h
@@ -181,6 +209,7 @@ set(battleAI_HEADERS
 		BattleEvaluator.h
 		BattleEvaluatorProjection.h
 		BattleEvaluatorSpellProjection.h
+		ArrowContinuationReuse.h
 		VinesCandidateValueReuse.h
 		HeroCandidateValueContext.h
 		HeroCandidateValueReuse.h
@@ -188,6 +217,8 @@ set(battleAI_HEADERS
 		RegenerationForecast.h
 		ProjectedBestAction.h
 		LifeDrainCandidateValueReuse.h
+		HeroSpellOutcomeValue.h
+		BlinkPositionValue.h
 		HeroSpellExpectedValueProjection.h
 		HeroPurifyProjection.h
 		HeroTargetHeuristicProjection.h
@@ -202,6 +233,15 @@ set(battleAI_HEADERS
 		BracePreemptiveForecast.h
 		BraceStagePreparation.h
 		HeroActionUtility.h
+		AttackPreviewDiagnostics.h
+		FixedActionValue.h
+		HeroSpellVariants.h
+		LightSpellProtectionValue.h
+		PassiveDivineFuryValue.h
+		PassiveDivineMandateProjection.h
+		PassiveDivineMandateValue.h
+		TemporaryGatingAI.h
+		TemporaryGatingProjection.h
 		HeroActionSelection.h
 		HeroActionSelectionIdentity.h
 		HeroActionContinuation.h
@@ -236,6 +276,7 @@ set(battleAI_HEADERS
 		TacticsHandler.h
 		ThreatMap.h
 		BattleExchangeVariant.h
+		SelectedProbeDamage.h
 		CreatureCandidateScreening.h
 		MovementCandidateScreening.h
 		ExchangeInitiativeQueue.h

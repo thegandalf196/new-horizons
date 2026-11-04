@@ -198,7 +198,7 @@ protected:
 			result.push_back(projectedHitTest::serialized(branch->getRelentlessAssaultState(side)));
 			result.push_back(projectedHitTest::serialized(branch->getHeroOrderStates(side)));
 			result.push_back(projectedHitTest::serialized(branch->getHeroActionAllowances(side)));
-			result.push_back(projectedHitTest::serialized(branch->getWarcastingState(side)));
+			result.push_back(projectedHitTest::serialized(branch->getWisdomCombatState(side)));
 		}
 		result.push_back(projectedHitTest::serialized(branch->getActiveStackID()));
 		result.push_back(projectedHitTest::serialized(branch->battleGetRound()));

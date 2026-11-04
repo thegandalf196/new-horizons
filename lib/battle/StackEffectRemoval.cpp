@@ -5,12 +5,18 @@
  */
 #include "StdInc.h"
 #include "StackEffectRemoval.h"
+#include "ArcaneInspiration.h"
 #include "NewHorizonsSerpentsEmbrace.h"
 #include "../bonuses/Bonus.h"
 namespace battle
 {
 bool matchesStackEffectRemoval(const Bonus & selected, const Bonus & candidate)
 {
+	if(arcaneInspiration::isEffect(&selected) || arcaneInspiration::isEffect(&candidate))
+		return arcaneInspiration::isEffect(&selected) && arcaneInspiration::isEffect(&candidate)
+			&& selected.stacking == candidate.stacking && selected.spellCasterOwner == candidate.spellCasterOwner
+			&& selected.duration == candidate.duration && selected.type == candidate.type
+			&& selected.val == candidate.val && selected.subtype == candidate.subtype;
 	const bool legacyMatch = selected.duration == candidate.duration
 		&& selected.type == candidate.type
 		&& selected.subtype == candidate.subtype

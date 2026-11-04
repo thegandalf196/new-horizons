@@ -1,5 +1,6 @@
 set(vcmiclientcommon_SRCS
 	StdInc.cpp
+	MetamagicPointUI.cpp
 
 	adventureMap/AdventureMapInterface.cpp
 	adventureMap/AdventureMapShortcuts.cpp
@@ -15,6 +16,9 @@ set(vcmiclientcommon_SRCS
 	adventureMap/TurnTimerWidget.cpp
 
 	battle/BattleActionsController.cpp
+	battle/BattleDemonicGateUI.cpp
+	battle/BattleMagicArrowUI.cpp
+	battle/BattleSpellManaPreview.cpp
 	battle/BattleMovementPreview.cpp
 	battle/BattleAnimationClasses.cpp
 	battle/BattleConsole.cpp
@@ -29,6 +33,7 @@ set(vcmiclientcommon_SRCS
 	battle/TemporalFieldWindow.cpp
 	battle/FocusFireTargetWindow.cpp
 	battle/BattleOrderPresentation.cpp
+	battle/BattleOrderHelp.cpp
 	battle/BattleInterface.cpp
 	battle/CreatureContinuationUI.cpp
 	battle/BattleCureAfflictionUI.cpp
@@ -42,11 +47,14 @@ set(vcmiclientcommon_SRCS
 	battle/BattleStacksController.cpp
 	battle/BattleTargetSelectionPanel.cpp
 	battle/BattleWindow.cpp
+	battle/PassiveFactionSkillPresentation.cpp
 	battle/CreatureAnimation.cpp
 	battle/HeroInfoWindow.cpp
 	battle/QuickSpellPanel.cpp
 	battle/FrozenStatusPresentation.cpp
 	battle/StackInfoBasicPanel.cpp
+	battle/StackTemporaryStatusPresenter.cpp
+	battle/ArcaneMarkPresentation.cpp
 	battle/StackInfoActionStatus.cpp
 	battle/StackSpellStatusPresentation.cpp
 	battle/StackQueue.cpp
@@ -152,6 +160,7 @@ set(vcmiclientcommon_SRCS
 	widgets/GraphicalPrimitiveCanvas.cpp
 	widgets/Images.cpp
 	widgets/MiscWidgets.cpp
+	widgets/BattleMoraleLuckBox.cpp
 	widgets/CreaturePic.cpp
 	widgets/CreaturePreviewAnimation.cpp
 	widgets/CViewport.cpp
@@ -180,14 +189,18 @@ set(vcmiclientcommon_SRCS
 	windows/CCastleInterface.cpp
 	windows/TownGrowthPresentation.cpp
 	windows/CCreatureWindow.cpp
+	windows/StackAbilityCards.cpp
 	windows/CreatureUpgradeConfirmation.cpp
 	windows/CStackExperienceDetailsWindow.cpp
 	windows/CExchangeWindow.cpp
 	windows/CHeroOverview.cpp
 	windows/HeroStartingPreview.cpp
 	windows/CHeroWindow.cpp
+	windows/CHeroWindowLayout.cpp
+	windows/CHeroDemonicReserve.cpp
 	windows/HeroGrowthWindow.cpp
 	windows/HeroSkillOddsWindow.cpp
+	windows/HeroTemporaryEffectsWindow.cpp
 	windows/NewHorizonsPerkBrowser.cpp
 	windows/HeroMasteryWindow.cpp
 	windows/CKingdomInterface.cpp
@@ -200,6 +213,8 @@ set(vcmiclientcommon_SRCS
 	windows/CScenarioEventJournal.cpp
 	windows/SpellbookEntryPresentation.cpp
 	windows/CSpellWindow.cpp
+	windows/CSpellWindowHelp.cpp
+	windows/SpellbookReadout.cpp
 	windows/CTutorialWindow.cpp
 	windows/wiki/WikiCommon.cpp
 	windows/wiki/WikiWindow.cpp
@@ -224,8 +239,11 @@ set(vcmiclientcommon_SRCS
 	windows/CreatureBonusStatusPresentation.cpp
 	windows/GUIClasses.cpp
 	windows/CLevelWindow.cpp
+	windows/CLevelWindowReroll.cpp
 	windows/NewHorizonsMusterUI.cpp
 	windows/InfoWindows.cpp
+	windows/InfoWindowDetails.cpp
+	windows/KingdomHeroHelp.cpp
 	windows/QuickRecruitmentWindow.cpp
 	windows/CHeroBackpackWindow.cpp
 	windows/CWindowWithArtifacts.cpp
@@ -329,11 +347,15 @@ set(vcmiclientcommon_HEADERS
 	battle/SummonLifetimePresentation.h
 	battle/BattleTargetSelectionPanel.h
 	battle/BattleWindow.h
+	battle/PassiveFactionSkillPresentation.h
 	battle/NewHorizonsRealityWarpPreview.h
 	battle/CreatureAnimation.h
 	battle/HeroInfoWindow.h
 	battle/QuickSpellPanel.h
 	battle/StackInfoBasicPanel.h
+	battle/StackTemporaryStatusPresenter.h
+	battle/ArcaneMarkPresentation.h
+	battle/ArcaneInspirationPresentation.h
 	battle/StackQueue.h
 	battle/UnitActionPanel.h
 
@@ -491,6 +513,8 @@ set(vcmiclientcommon_HEADERS
 	windows/HeroGrowthWindow.h
 	windows/HeroGrowthPerkPresentation.h
 	windows/HeroSkillOddsWindow.h
+	windows/HeroTemporaryEffects.h
+	windows/HeroTemporaryEffectsWindow.h
 	windows/NewHorizonsPerkBrowser.h
 	windows/NewHorizonsCapturedPerkIcons.h
 	windows/NewHorizonsPerkIcons.h
@@ -538,6 +562,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CWindowObject.h
 	windows/CreaturePurchaseCard.h
 	windows/GUIClasses.h
+	windows/CLevelWindow.h
 	windows/NewHorizonsMusterUI.h
 	windows/InfoWindows.h
 	windows/QuickRecruitmentWindow.h

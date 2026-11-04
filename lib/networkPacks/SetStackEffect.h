@@ -80,7 +80,8 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)
-			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)))
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS)))
 		{
 			for(const auto * changes : {&toAdd, &toUpdate, &toRemove})
 				for(const auto & entry : *changes)

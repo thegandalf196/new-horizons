@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../HistoricalFactionPerkRules.h"
 
 #include "BattleStartSnapshotFixture.h"
 #include "HeroCommandFixture.h"
@@ -21,6 +22,7 @@
 #include "../../../lib/spells/SpellCostBreakdown.h"
 
 #include <algorithm>
+#include <functional>
 #include <limits>
 
 namespace
@@ -52,6 +54,8 @@ protected:
 	bool legacyCloneRoster = false;
 	bool legacySchoolRankRules = false;
 	bool historicalCounterspell = false;
+	bool historicalPrayer = false;
+	bool ownedRestorationTargets = false;
 
 	void SetUp() override
 	{
@@ -64,6 +68,8 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
+		if(historicalPrayer)
+			magicRules["spells"]["core:prayer"].Struct().erase("heroAccess");
 		if(historicalCounterspell)
 			magicRules["spells"]["new-horizons:counterspell"].Struct().erase("active");
 		if(legacySchoolRankRules)
@@ -77,8 +83,15 @@ protected:
 		if(legacyCloneRoster)
 			magicRules["spells"]["core:clone"].Struct().erase("active");
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		auto perks = historicalFactionPerkRules();
+		if(!useCommands)
+		{
+			// This pre-command fixture also predates weighted hero progression.
+			perks.Struct().erase("perkProgressionPolicyVersion");
+			perks.Struct().erase("offerWeightPolicyVersion");
+			perks.Struct().erase("perkOfferNormalization");
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
 
 	void prepare(int rank, std::initializer_list<const char *> perks = {}, bool useLegacyCloneRoster = false,
@@ -94,7 +107,7 @@ protected:
 		// fixture with a scalar total would now place all funds in Buffer instead.
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
 		std::array<std::string, 4> selectedPerTier;
-		const JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		const auto & perkRules = attackerSideHero->getPerkState().rules;
 		for(const auto perk : perks)
 		{
 			const auto & definitions = perkRules["skills"][metamagicSkill]["perks"].Vector();
@@ -148,9 +161,31 @@ protected:
 			gameHandler->sendAndApply(grantCombatMana);
 		}
 
+		if(ownedRestorationTargets)
+			for(auto * hero : {attackerSideHero, defenderSideHero})
+				hero->setStackCount(SlotID(0), 10);
 		startBattle();
-		attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
-		defender = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 10);
+		if(ownedRestorationTargets)
+		{
+			// Current Resurrection restores army troops, never ADD-created summons.
+			for(const auto & unit : battle()->stacks)
+				if(unit->unitSlot() == SlotID(0))
+				{
+					const bool attacking = unit->unitSide() == BattleSide::ATTACKER;
+					(attacking ? attacker : defender) = unit.get();
+					BattleStackMoved move;
+					move.battleID = BattleID(0);
+					move.stack = unit->unitId();
+					move.teleporting = true;
+					move.tilesToMove.insert(BattleHex(attacking ? leftHex : rightHex));
+					gameHandler->sendAndApply(move);
+				}
+		}
+		else
+		{
+			attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
+			defender = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 10);
+		}
 		beginCombat();
 
 		BattleUnitsChanged remove;
@@ -881,6 +916,7 @@ TEST_F(NewHorizonsMetamagicTest, FollowupHealingLogUsesCappedAuthoritativeHealth
 
 TEST_F(NewHorizonsMetamagicTest, FollowupResurrectionLogUsesAuthoritativeCountAndHealth)
 {
+	ownedRestorationTargets = true;
 	prepare(1);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto healthBefore = attacker->getAvailableHealth();
@@ -904,6 +940,7 @@ TEST_F(NewHorizonsMetamagicTest, FollowupResurrectionLogUsesAuthoritativeCountAn
 
 TEST_F(NewHorizonsMetamagicTest, FollowupResurrectionAggregatesPartialCasualtiesPerTarget)
 {
+	ownedRestorationTargets = true;
 	prepare(1);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto countBeforeDamage = attacker->getCount();
@@ -1114,7 +1151,8 @@ TEST_F(NewHorizonsMetamagicTest, FollowupChainLightningLogNamesEveryDamagedStack
 	prepare(1);
 	addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(rightHex + 2), 100);
 	addStack(BattleSide::DEFENDER, creatureByName("core:griffin"), BattleHex(rightHex + 3), 100);
-	addStack(BattleSide::DEFENDER, creatureByName("core:monk"), BattleHex(rightHex + 4), 100);
+	// The defending Griffin occupies its head and the following hex.
+	addStack(BattleSide::DEFENDER, creatureByName("core:monk"), BattleHex(rightHex + 5), 100);
 
 	struct Before
 	{
@@ -1152,7 +1190,7 @@ TEST_F(NewHorizonsMetamagicTest, FollowupChainLightningLogNamesEveryDamagedStack
 			const auto outcome = std::to_string(injury.damageAmount) + " damage to "
 				+ creatureName(snapshot->unit, snapshot->count) + " ("
 				+ std::to_string(injury.killedAmount) + " killed)";
-			const auto outcomePosition = line.find(outcome);
+			const auto outcomePosition = line.find(outcome, damagedStacks > 1 ? previousOutcomePosition + 1 : 0);
 			EXPECT_NE(outcomePosition, std::string::npos) << outcome << " missing from: " << line;
 			if(damagedStacks > 1 && outcomePosition != std::string::npos)
 			{
@@ -1161,7 +1199,7 @@ TEST_F(NewHorizonsMetamagicTest, FollowupChainLightningLogNamesEveryDamagedStack
 			previousOutcomePosition = outcomePosition;
 		}
 	}
-	EXPECT_EQ(damagedStacks, 4);
+	EXPECT_EQ(damagedStacks, 5); // Saved-v3 Chain Lightning has five jumps.
 }
 
 TEST_F(NewHorizonsMetamagicTest, FollowupAreaDamageLogNamesEveryDamagedStack)
@@ -1245,6 +1283,7 @@ TEST_F(NewHorizonsMetamagicTest, FollowupDispelLogNamesRemovedSpellTargetAndRema
 
 TEST_F(NewHorizonsMetamagicTest, FollowupMultiBonusSpellProducesOneCausalEffectOutcome)
 {
+	historicalPrayer = true;
 	prepare(1);
 	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
 	const auto expectedDuration = followupDuration(SpellID(SpellID::PRAYER), attacker);
@@ -1267,6 +1306,7 @@ TEST_F(NewHorizonsMetamagicTest, FollowupMultiBonusSpellProducesOneCausalEffectO
 
 TEST_F(NewHorizonsMetamagicTest, FollowupMixedDamageAndStatusLogReportsBothOutcomes)
 {
+	legacySchoolRankRules = true;
 	prepare(1);
 	const SpellID iceBolt(SpellID::decode("core:iceBolt"));
 	ASSERT_NE(iceBolt, SpellID::NONE);
@@ -1886,7 +1926,7 @@ TEST_F(NewHorizonsMetamagicTest, SpellActionDoesNotBlockControlledHypnotizedStac
 
 TEST_F(NewHorizonsMetamagicTest, SpellBufferDataIsAnAdvancedOnceCombatExpiryReward)
 {
-	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+	const auto perks = historicalFactionPerkRules();
 	const auto & entries = perks["skills"][metamagicSkill]["perks"].Vector();
 	const auto found = std::find_if(entries.begin(), entries.end(), [](const JsonNode & entry)
 	{
@@ -1896,7 +1936,7 @@ TEST_F(NewHorizonsMetamagicTest, SpellBufferDataIsAnAdvancedOnceCombatExpiryRewa
 	EXPECT_EQ((*found)["name"].String(), "Spell Buffer");
 	EXPECT_EQ((*found)["requires"].String(), "advanced");
 	EXPECT_EQ((*found)["effect"]["status"].String(), "active");
-	EXPECT_NE((*found)["description"].String().find("unused Metamagic Spell Action expires"), std::string::npos);
+	EXPECT_NE((*found)["description"].String().find("Spell Action granted by Metamagic expires unused at the end of the round"), std::string::npos);
 	EXPECT_NE((*found)["description"].String().find("6 Buffer Spell Points"), std::string::npos);
 	EXPECT_EQ(std::find_if(entries.begin(), entries.end(), [](const JsonNode & entry)
 	{
@@ -2119,4 +2159,280 @@ TEST(NewHorizonsMetamagicStateTest, SpellBufferUseHasVersionedRoundTripAndOldRea
 	CMemorySerializer lossy;
 	lossy.oser.version = ESerializationVersion::NEW_HORIZONS_SPELL_POINTS;
 	EXPECT_THROW(lossy.oser & outgoing, std::runtime_error);
+}
+
+namespace
+{
+// All field bytes use the real current decoder. This deliberately projects the
+// decoded side counters into the pre-typed-ledger read branch; it is NOT an
+// authentic historical save fixture. The current writer correctly refuses that
+// old shared-budget format before its prefix, protected separately below.
+class ActionLedgerProjectionReader
+{
+	BinaryDeserializer & decoder;
+	bool typedAllowances;
+	std::function<void(BattleSideArray<SideInBattle> &)> afterSides;
+public:
+	using Version = ESerializationVersion;
+	static constexpr bool saving = false;
+	bool projected = false;
+
+	ActionLedgerProjectionReader(BinaryDeserializer & decoder, bool typedAllowances,
+		std::function<void(BattleSideArray<SideInBattle> &)> afterSides)
+		: decoder(decoder), typedAllowances(typedAllowances), afterSides(std::move(afterSides)) {}
+
+	ActionLedgerProjectionReader(BinaryDeserializer & decoder, bool typedAllowances)
+		: ActionLedgerProjectionReader(decoder, typedAllowances, {}) {}
+
+	bool hasFeature(Version version) const
+	{
+		return version == Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES
+			? typedAllowances : decoder.hasFeature(version);
+	}
+
+	template<typename T> ActionLedgerProjectionReader & operator&(T & value)
+	{
+		decoder & value;
+		return *this;
+	}
+
+	ActionLedgerProjectionReader & operator&(BattleSideArray<SideInBattle> & sides)
+	{
+		decoder & sides;
+		if(!typedAllowances)
+			for(auto & side : sides)
+				side.heroActionAllowances = {};
+		if(afterSides)
+			afterSides(sides);
+		projected = true;
+		return *this;
+	}
+};
+}
+
+TEST_F(NewHorizonsMetamagicTest, DecodedPaidCountersReconstructLegacySpellGrantWithoutChangingLiveLedger)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto original = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(original.castSpellsCount, 1);
+	ASSERT_EQ(original.metamagicPendingCount, 1);
+	ASSERT_EQ(original.metamagicSequenceSpells, (std::vector<SpellID>{SpellID::HASTE}));
+	for(const bool typed : {true, false})
+	{
+		CMemorySerializer wire;
+		battleStartFixture::writeDescriptors(*battle(), wire);
+		wire.iser.cb = gameState().get();
+		BattleInfo restored(gameState().get());
+		ActionLedgerProjectionReader reader(wire.iser, typed);
+		ASSERT_NO_THROW(restored.serialize(reader));
+		ASSERT_TRUE(reader.projected);
+		const auto & side = restored.getSide(BattleSide::ATTACKER);
+		EXPECT_EQ(side.castSpellsCount, original.castSpellsCount);
+		EXPECT_EQ(side.metamagicPendingCount, original.metamagicPendingCount);
+		EXPECT_EQ(side.metamagicUsesConsumed, original.metamagicUsesConsumed);
+		EXPECT_EQ(side.metamagicSequenceSpells, original.metamagicSequenceSpells);
+		EXPECT_EQ(side.heroActionAllowances.currentRound, battle()->getRound());
+		ASSERT_EQ(side.heroActionAllowances.grants.size(), 1u);
+		EXPECT_EQ(side.heroActionAllowances.grants.front().source, HeroActionAllowanceState::GrantSource::METAMAGIC);
+		EXPECT_EQ(side.heroActionAllowances.remainingCounts(battle()->getRound()).heroActions, 0u);
+		EXPECT_EQ(side.heroActionAllowances.remainingCounts(battle()->getRound()).spellActions, 1u);
+		EXPECT_EQ(restored.getSide(BattleSide::DEFENDER).heroActionAllowances.remainingCounts(battle()->getRound()).heroActions, 1u);
+		if(typed)
+			EXPECT_EQ(side.heroActionAllowances, original.heroActionAllowances);
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroActionAllowances, original.heroActionAllowances);
+		EXPECT_EQ(attackerSideHero->battle, battle());
+	}
+}
+
+TEST_F(NewHorizonsMetamagicTest, DecodedGrandCountersReconstructLegacyGrandGrantAndFreshIdentity)
+{
+	prepare(3, {grandMetamagic, formulaReserve});
+	for(int use = 0; use < 2; ++use)
+	{
+		ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+		ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+		endRound();
+	}
+	ASSERT_EQ(battle()->getSide(BattleSide::ATTACKER).metamagicUsesConsumed, 2);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	ASSERT_TRUE(cast(SpellID::SLOW, defender, true));
+	const auto original = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_TRUE(original.metamagicGrandUsed);
+	ASSERT_EQ(original.metamagicPendingCount, 1);
+	ASSERT_EQ(original.metamagicSequenceSpells, (std::vector<SpellID>{SpellID::HASTE, SpellID::SLOW}));
+	CMemorySerializer wire;
+	battleStartFixture::writeDescriptors(*battle(), wire);
+	wire.iser.cb = gameState().get();
+	BattleInfo restored(gameState().get());
+	ActionLedgerProjectionReader reader(wire.iser, false);
+	ASSERT_NO_THROW(restored.serialize(reader));
+	const auto & side = restored.getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(side.heroActionAllowances.grants.size(), 1u);
+	EXPECT_EQ(side.heroActionAllowances.grants.front().source, HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND);
+	EXPECT_EQ(side.heroActionAllowances.grants.front().id, 2u);
+	EXPECT_EQ(side.heroActionAllowances.nextGrantId, 3u);
+	EXPECT_EQ(side.heroActionAllowances.remainingCounts(battle()->getRound()).spellActions, 1u);
+	EXPECT_EQ(side.heroActionAllowances.remainingCounts(battle()->getRound()).heroActions, 0u);
+	EXPECT_EQ(side.metamagicUsesConsumed, original.metamagicUsesConsumed);
+	EXPECT_EQ(side.metamagicSequenceSpells, original.metamagicSequenceSpells);
+	EXPECT_TRUE(side.metamagicGrandUsed);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroActionAllowances, original.heroActionAllowances);
+}
+
+TEST_F(NewHorizonsMetamagicTest, DecodedLegacyCounterRejectionPreservesAttackerBeforeDefenderOrder)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto original = battle()->getSide(BattleSide::ATTACKER).heroActionAllowances;
+	for(const bool orphan : {false, true})
+	{
+		CMemorySerializer wire;
+		battleStartFixture::writeDescriptors(*battle(), wire);
+		wire.iser.cb = gameState().get();
+		BattleInfo restored(gameState().get());
+		ActionLedgerProjectionReader reader(wire.iser, false, [orphan](auto & sides)
+		{
+			auto & side = sides.at(BattleSide::ATTACKER);
+			if(orphan)
+			{
+				side.castSpellsCount = 0;
+				side.heroCommandUsed = false;
+			}
+			else
+				side.metamagicPendingCount = 2;
+		});
+		try { restored.serialize(reader); FAIL() << "Malformed decoded legacy counters accepted"; }
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_EQ(std::string(error.what()), orphan ? "Legacy Metamagic grant has no consumed Hero Action"
+				: "Unsupported legacy pending Metamagic allowance count");
+		}
+		ASSERT_TRUE(reader.projected);
+		// Migration intentionally mutates the decoded attacker before rejection;
+		// it has not yet initialized the defender. Do not invent atomicity here.
+		EXPECT_EQ(restored.getSide(BattleSide::ATTACKER).heroActionAllowances.currentRound, battle()->getRound());
+		EXPECT_EQ(restored.getSide(BattleSide::ATTACKER).heroActionAllowances.remainingCounts(battle()->getRound()).heroActions, orphan ? 1u : 0u);
+		EXPECT_EQ(restored.getSide(BattleSide::DEFENDER).heroActionAllowances, HeroActionAllowanceState{});
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroActionAllowances, original);
+		EXPECT_EQ(attackerSideHero->battle, battle());
+	}
+}
+
+TEST_F(NewHorizonsMetamagicTest, DecodedTypedLedgerRejectsRoundAndMetamagicMetadataMismatch)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto original = battle()->getSide(BattleSide::ATTACKER).heroActionAllowances;
+	for(const bool staleRound : {true, false})
+	{
+		CMemorySerializer wire;
+		battleStartFixture::writeDescriptors(*battle(), wire);
+		wire.iser.cb = gameState().get();
+		BattleInfo restored(gameState().get());
+		ActionLedgerProjectionReader reader(wire.iser, true, [staleRound](auto & sides)
+		{
+			auto & ledger = sides.at(BattleSide::ATTACKER).heroActionAllowances;
+			if(staleRound)
+				++ledger.currentRound;
+			else
+				ledger.grants.front().source = HeroActionAllowanceState::GrantSource::OTHER;
+		});
+		try { restored.serialize(reader); FAIL() << "Malformed decoded typed ledger accepted"; }
+		catch(const std::runtime_error & error)
+		{
+			EXPECT_EQ(std::string(error.what()), staleRound ? "Hero Action allowance round does not match battle round"
+				: "Metamagic metadata does not match typed Spell grants");
+		}
+		ASSERT_TRUE(reader.projected);
+		EXPECT_EQ(restored.getSide(BattleSide::DEFENDER).heroActionAllowances,
+			battle()->getSide(BattleSide::DEFENDER).heroActionAllowances);
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroActionAllowances, original);
+	}
+}
+
+TEST_F(NewHorizonsMetamagicTest, SharedActionOldWriterStillRejectsBeforeBattlePrefix)
+{
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_BATTLE_MEDITATION;
+	EXPECT_THROW(battleStartFixture::writeDescriptors(*battle(), old), std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+}
+
+TEST_F(NewHorizonsMetamagicTest, DecodedNonsharedCountersRetainEmptyLedgerAndRejectInventedAllowances)
+{
+	useCommands = false;
+	prepare(1);
+	ASSERT_TRUE(cast(SpellID::HASTE, attacker));
+	const auto original = battle()->getSide(BattleSide::ATTACKER);
+	ASSERT_EQ(original.heroActionAllowances, HeroActionAllowanceState{});
+	for(const bool inventedLedger : {false, true})
+	{
+		CMemorySerializer wire;
+		battleStartFixture::writeDescriptors(*battle(), wire);
+		wire.iser.cb = gameState().get();
+		BattleInfo restored(gameState().get());
+		ActionLedgerProjectionReader reader(wire.iser, true, [inventedLedger](auto & sides)
+		{
+			if(inventedLedger)
+				sides.at(BattleSide::ATTACKER).heroActionAllowances.resetForRound(1);
+		});
+		if(inventedLedger)
+		{
+			try { restored.serialize(reader); FAIL() << "Nonshared context accepted a typed allowance"; }
+			catch(const std::runtime_error & error)
+			{
+				EXPECT_EQ(std::string(error.what()), "Saved Hero Action allowance state requires shared action rules");
+			}
+		}
+		else
+		{
+			ASSERT_NO_THROW(restored.serialize(reader));
+			EXPECT_EQ(restored.getSide(BattleSide::ATTACKER).heroActionAllowances, HeroActionAllowanceState{});
+			EXPECT_EQ(restored.getSide(BattleSide::ATTACKER).castSpellsCount, original.castSpellsCount);
+			EXPECT_EQ(restored.getSide(BattleSide::ATTACKER).metamagicPendingCount, original.metamagicPendingCount);
+		}
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroActionAllowances, original.heroActionAllowances);
+	}
+}
+
+TEST_F(NewHorizonsMetamagicTest, DecodedPreRoundHistoryAndLedgerRejectWithoutInventingRoundGrants)
+{
+	startGame();
+	startBattle();
+	ASSERT_LE(battle()->getRound(), 0);
+	for(const int corruption : {0, 1, 2})
+	{
+		CMemorySerializer wire;
+		battleStartFixture::writeDescriptors(*battle(), wire);
+		wire.iser.cb = gameState().get();
+		BattleInfo restored(gameState().get());
+		ActionLedgerProjectionReader reader(wire.iser, false, [corruption](auto & sides)
+		{
+			auto & side = sides.at(BattleSide::ATTACKER);
+			if(corruption == 1)
+				side.castSpellsCount = 1;
+			if(corruption == 2)
+				side.heroActionAllowances.resetForRound(1);
+		});
+		if(corruption == 0)
+		{
+			ASSERT_NO_THROW(restored.serialize(reader));
+			EXPECT_EQ(restored.getSide(BattleSide::ATTACKER).heroActionAllowances, HeroActionAllowanceState{});
+		}
+		else
+		{
+			try { restored.serialize(reader); FAIL() << "Pre-round action state accepted"; }
+			catch(const std::runtime_error & error)
+			{
+				EXPECT_EQ(std::string(error.what()), corruption == 1
+					? "Action history exists before the first playable battle round"
+					: "Hero Action allowances exist before the first playable battle round");
+			}
+		}
+		EXPECT_EQ(restored.getSide(BattleSide::DEFENDER).heroActionAllowances, HeroActionAllowanceState{});
+		EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroActionAllowances, HeroActionAllowanceState{});
+	}
 }

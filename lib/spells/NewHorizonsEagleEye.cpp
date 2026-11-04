@@ -35,7 +35,7 @@ std::vector<SpellID> selectSpells(const CGHeroInstance * hero,
 		if(!spell)
 			continue;
 		const int level = hero->getSpellLevel(spell);
-		if(level >= 1 && level <= 3 && hero->canLearnSpell(spell))
+		if(level >= 1 && hero->canLearnSpell(spell))
 			eligible.push_back(spellId);
 	}
 	std::stable_sort(eligible.begin(), eligible.end(), [hero](SpellID lhs, SpellID rhs)
@@ -43,9 +43,6 @@ std::vector<SpellID> selectSpells(const CGHeroInstance * hero,
 		return hero->getSpellLevel(lhs.toEntity(LIBRARY->spells()))
 			> hero->getSpellLevel(rhs.toEntity(LIBRARY->spells()));
 	});
-	const auto maximum = static_cast<std::size_t>(1 + newHorizonsHeroes::additionalEagleEyeSpells(hero));
-	if(eligible.size() > maximum)
-		eligible.resize(maximum);
 	return eligible;
 }
 std::optional<SpellID> selectSpell(const CGHeroInstance * hero,

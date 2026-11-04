@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "PhysicalStrikeProjection.h"
+#include "BattleDamageValue.h"
 #include "CoordinatedMarkProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
@@ -33,6 +34,7 @@
 #include "BattleShroudStrike.h"
 #include "PrimaryFortuneReceipt.h"
 #include "DamageCacheAdmission.h"
+#include "SelectedProbeDamage.h"
 #include "ProjectedTargetHit.h"
 #include "SelectedAttackReceipt.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
@@ -109,6 +111,8 @@ public:
 	{
 		return timing && timing->collectProbeDamageCache ? &local.targetProbeDamageCache : nullptr;
 	}
+	uint64_t * selectedProbeOffers() { return timing ? &local.selectedProbeDamageOffers : nullptr; }
+	uint64_t * selectedProbeUses() { return timing ? &local.selectedProbeDamageUses : nullptr; }
 	HypotheticLifecycleTiming * lifecycleSubsets()
 	{
 		return timing ? &local.lifecycleSubsets : nullptr;
@@ -138,6 +142,8 @@ public:
 			classified += sample.totalMicroseconds;
 		}
 		timing->body.calls += local.body.calls;
+		timing->selectedProbeDamageOffers += local.selectedProbeDamageOffers;
+		timing->selectedProbeDamageUses += local.selectedProbeDamageUses;
 		if(timing->collectProbeDamageCache)
 			timing->targetProbeDamageCache.accumulate(local.targetProbeDamageCache);
 		// Nested subsets are aggregated separately, never added to classified body time.
@@ -571,7 +577,7 @@ float BattleExchangeVariant::trackAttack(
 	return attackValue;
 }
 
-float BattleExchangeVariant::trackAttack(
+float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	std::shared_ptr<StackWithBonuses> attacker,
 	std::shared_ptr<StackWithBonuses> defender,
 	bool shooting,
@@ -584,7 +590,8 @@ float BattleExchangeVariant::trackAttack(
 	const BattleTargetProbeTiming * probeTiming,
 	DamageCacheAdmission * mainProbeAdmission,
 	BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent,
-	std::vector<petrifyingBloodAI::Pending> * bloodSequence)
+	std::vector<petrifyingBloodAI::Pending> * bloodSequence,
+	SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused)
 {
 	if(actionResult)
 		*actionResult = {};
@@ -593,6 +600,8 @@ float BattleExchangeVariant::trackAttack(
 			&& hb->battleMatchOwner(attacker.get(), defender.get())))
 		return 0;
 
+	if(const auto reprisal = trackInspirationProbe(attacker, defender, shooting, isOurAttack,
+		damageCache, hb, evaluateOnly, allowRetaliation)) return *reprisal;
 	// A nonadditive target-probe prefix. Early reaction returns finalize by RAII;
 	// applied/null-sink paths read no clocks and invalid actors keep zero samples.
 	MovementExchangeScope preparationMeasurement(
@@ -652,9 +661,20 @@ float BattleExchangeVariant::trackAttack(
 	int64_t attackDamage;
 	{
 		MovementExchangeScope damageMeasurement(evaluateOnly && probeTiming ? probeTiming->mainDamage : nullptr);
-		attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb,
-			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr,
-			evaluateOnly ? mainProbeAdmission : nullptr);
+		// Redirected Protect spends interception state before this point: never reuse it.
+		const auto retained = !evaluateOnly && !protectIntercepted && selected
+			? selected->consume(*hb, *attacker, *defender, shooting) : std::nullopt;
+		if(retained)
+		{
+			attackDamage = *retained;
+			if(reused) ++*reused;
+		}
+		else
+			attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb,
+				evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr,
+				evaluateOnly ? mainProbeAdmission : nullptr);
+		if(evaluateOnly && !protectIntercepted && produced)
+			produced->record(*hb, *attacker, *defender, shooting, attackDamage);
 	}
 	const auto attackLastStand = AttackPreviewHitContext::resolveUnspentLastStand(*hb, projectedAttack, defender.get(), attackDamage);
 	attackDamage = attackLastStand.first.damageToApply;
@@ -782,19 +802,11 @@ float BattleExchangeVariant::trackAttack(
 		if(!actorBeforeTrigger || damage <= 0)
 			return;
 
-		const auto value = AttackPossibility::calculateDamageReduce(nullptr, actorBeforeTrigger,
+		const auto value = battleDamageValue::indirectDamageValue(attacker.get(), actorBeforeTrigger,
 			static_cast<uint64_t>(damage), damageCache, hb);
-		const bool sameSideAsMainAttacker = hb->battleMatchOwner(attacker.get(), actorBeforeTrigger, true);
-		if(sameSideAsMainAttacker)
-			attackerDamageReduce += value;
-		else
-			defenderDamageReduce += value;
-
-		const bool actorOnOurSide = sameSideAsMainAttacker == isOurAttack;
-		if(actorOnOurSide)
-			dpsScore.ourDamageReduce += value;
-		else
-			dpsScore.enemyDamageReduce += value;
+		(value.victimFriendly ? attackerDamageReduce : defenderDamageReduce) += value.amount;
+		const bool actorOnOurSide = value.victimFriendly == isOurAttack;
+		(actorOnOurSide ? dpsScore.ourDamageReduce : dpsScore.enemyDamageReduce) += value.amount;
 	};
 	if(projectedAttacker && newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
 	{
@@ -1023,6 +1035,9 @@ float BattleExchangeVariant::trackAttack(
 
 	const float petrifyingBloodControl = !evaluateOnly && !bloodSequence
 		? finishPetrifyingBlood(hb, *attacker, petrifyingBloodPending, isOurAttack, damageCache) : 0;
+	const auto reprisal = accountReprisalValue(tactics, damageCache, hb, referenceController, isOurAttack);
+	attackerDamageReduce += reprisal.first;
+	defenderDamageReduce += reprisal.second;
 	auto score = defenderDamageReduce - attackerDamageReduce + petrifyingBloodControl;
 
 #if BATTLE_TRACE_LEVEL>=1
@@ -1382,60 +1397,23 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			}
 
 			auto targetUnit = ap.attack.defender;
+			SelectedProbeDamage selectedDamage;
 
 			if(!isOur || !exchangeBattle->battleGetUnitByID(targetUnit->unitId())->alive())
 			{
 #if BATTLE_TRACE_LEVEL>=2
 				logAi->trace("Best target selector for %s", attacker->getDescription());
 #endif
-				auto estimateAttack = [&](const battle::Unit * u, std::optional<bool> & readyOverwatch,
-					DamageCacheAdmission & admission) -> float
+				const BattleTargetProbeTiming probeTiming{
+					measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeMainDamage),
+					measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeDpsScore),
+					measurement.probeDamageCache(),
+					measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbePreparation),
+					measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbes)};
+				const auto selectBestTarget = [&](const battle::Units & candidates)
 				{
-					auto stackWithBonuses = exchangeBattle->getForUpdate(u->unitId());
-					const auto score = measurement.measure(&BattleMovementTiming::ExchangeTiming::targetProbes, [&]()
-					{
-						const BattleTargetProbeTiming probeTiming{
-							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeMainDamage),
-							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbeDpsScore),
-							measurement.probeDamageCache(),
-							measurement.stage(&BattleMovementTiming::ExchangeTiming::targetProbePreparation)};
-						return v.trackAttack(attacker, stackWithBonuses, shooting, isOur,
-							damageCache, exchangeBattle, true, true, &readyOverwatch,
-							timing ? &probeTiming : nullptr, &admission);
-					});
-
-#if BATTLE_TRACE_LEVEL>=2
-					logAi->trace("Best target selector %s->%s score = %2f", attacker->getDescription(), stackWithBonuses->getDescription(), score);
-#endif
-
-					return score;
-				};
-				auto selectBestTarget = [&](const battle::Units & candidates) -> const battle::Unit *
-				{
-					if(candidates.empty())
-						return nullptr;
-
-					const battle::Unit * best = candidates.front();
-					// maxElementByFun never invokes its comparator for one element.
-					if(candidates.size() == 1)
-						return best;
-
-					// evaluateOnly keeps this branch's readiness unchanged. End the
-					// hint's lifetime before any applied attack, turn or round boundary.
-					std::optional<bool> readyOverwatch;
-					DamageCacheAdmission admission(*attacker, *exchangeBattle);
-					float bestScore = estimateAttack(best, readyOverwatch, admission);
-					for(size_t index = 1; index < candidates.size(); ++index)
-					{
-						const auto * candidate = candidates[index];
-						const float candidateScore = estimateAttack(candidate, readyOverwatch, admission);
-						if(candidateScore > bestScore)
-						{
-							best = candidate;
-							bestScore = candidateScore;
-						}
-					}
-					return best;
+					return v.selectExchangeTarget(candidates, attacker, shooting, isOur, damageCache,
+						exchangeBattle, timing ? &probeTiming : nullptr, selectedDamage, measurement.selectedProbeOffers());
 				};
 
 				auto unitsInOppositeQueueExceptInaccessible = oppositeQueue;
@@ -1519,8 +1497,9 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					BattleExchangeAttackResult actionResult;
 					measurement.measure(&BattleMovementTiming::ExchangeTiming::appliedAttacks, [&]()
 					{
-						return v.trackAttack(attacker, defender, shooting, isOur, damageCache, exchangeBattle,
-							false, i == 0, nullptr, nullptr, nullptr, &actionResult, &manaLeechSequenceSpent, &bloodSequence);
+						return v.trackAttackWithSelectedDamage(attacker, defender, shooting, isOur, damageCache, exchangeBattle,
+							false, i == 0, nullptr, nullptr, nullptr, &actionResult, &manaLeechSequenceSpent, &bloodSequence,
+							nullptr, i == 0 ? &selectedDamage : nullptr, measurement.selectedProbeUses());
 					});
 
 					primaryMeleePerformed |= actionResult.primaryMeleePerformed;

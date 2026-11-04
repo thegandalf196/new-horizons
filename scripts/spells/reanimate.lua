@@ -76,7 +76,7 @@ local function healingPool(mechanics, unit)
 	if hero:hasActivePerk(SHADOW_MAGIC_SKILL, REANIMATOR_PERK) then
 		pool = pool + math.floor(math.max(0, pool - survivorWounds(unit)) / 4)
 	end
-	return pool
+	return mechanics:adjustMetamagicMagnitude(pool, unit)
 end
 
 function Script:applicableGeneral(mechanics, problem)

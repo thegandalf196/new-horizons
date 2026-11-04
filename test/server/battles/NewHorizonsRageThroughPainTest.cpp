@@ -6,6 +6,7 @@
 #include "StdInc.h"
 
 #include "BattleTestFixture.h"
+#include "BattleStartSnapshotFixture.h"
 
 #include "../../../AI/BattleAI/AttackPossibility.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -14,6 +15,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/BattleInfo.h"
+#include "../../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/entities/hero/CHero.h"
@@ -44,9 +46,21 @@ public:
 	const GameCb * game() const override { return state.get(); }
 };
 
+class BloodrageAdmissionServer final : public RecordingGameServer
+{
+public:
+	size_t appliedPackets = 0;
+	void applyPack(CPackForClient & pack) override
+	{
+		++appliedPackets;
+		RecordingGameServer::applyPack(pack);
+	}
+};
+
 class NewHorizonsRageThroughPainTest : public BattleTestFixture
 {
 protected:
+	bool revisedBloodrage = false;
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
@@ -58,8 +72,10 @@ protected:
 	{
 		BattleTestFixture::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(!revisedBloodrage)
+			rules.Struct().erase("bloodragePolicy");
+		rules.setOverrideFlag(true);
 		int found = 0;
-		bool changed = false;
 		for(auto & perk : rules["skills"][std::string(BLOODRAGE_SKILL)]["perks"].Vector())
 		{
 			if(perk["id"].String() != RAGE_THROUGH_PAIN)
@@ -71,12 +87,10 @@ protected:
 			if(status != "planned")
 				throw std::runtime_error("Rage Through Pain must be planned or active in canonical content");
 			perk["effect"]["status"].String() = "active";
-			changed = true;
 		}
 		if(found != 1)
 			throw std::runtime_error("Rage Through Pain is missing or duplicated in the New Horizons registry");
-		if(changed)
-			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(rules));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(rules));
 	}
 
 	HeroTypeID heroTypeForFaction(FactionID faction) const
@@ -238,6 +252,70 @@ protected:
 		selectRageThroughPain(attackerSideHero);
 		startBattle();
 		removeStartingUnits();
+	}
+
+	void rejectMismatchedEntry(bool revised, bool wrongRank = false)
+	{
+		revisedBloodrage = revised;
+		startGameWithStrongholdHero();
+		ASSERT_NO_FATAL_FAILURE(selectRageThroughPain(attackerSideHero));
+		const auto beforeBattle = gameState()->saveToMemory();
+		startBattle();
+		for(const bool decodedCarrier : {false, true})
+		{
+			auto replica = std::make_shared<CGameState>();
+			replica->preInit(LIBRARY);
+			replica->loadFromMemory(beforeBattle);
+			BattleStart outgoing;
+			outgoing.battleID = replica->nextBattleID;
+			outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
+			outgoing.trainingEntry = outgoing.info->trainingEntrySnapshot;
+			auto & side = outgoing.info->getSide(BattleSide::ATTACKER);
+			if(wrongRank)
+			{
+				side.bloodrageRank = 2;
+				side.bloodrageCapPercent = newHorizonsBloodrage::ADVANCED_CAP;
+				side.bloodragePainIncrement = side.bloodrageLowHealthIncrement = 0;
+			}
+			else
+				side.bloodragePainIncrement = revised ? 5 : 10;
+			BattleStart decoded;
+			BattleStart * incoming = &outgoing;
+			if(decodedCarrier)
+			{
+				CMemorySerializer wire;
+				ASSERT_NO_THROW(wire.oser & outgoing);
+				wire.iser.cb = replica.get();
+				ASSERT_NO_THROW(wire.iser & decoded);
+				incoming = &decoded;
+			}
+			BloodrageAdmissionServer recording;
+			recording.gameState = replica;
+			CGameHandler handler(recording, replica);
+			const auto before = replica->saveToMemory();
+			for(const bool serverPreflight : {true, false})
+			{
+				try
+				{
+					if(serverPreflight)
+						handler.sendAndApply(*incoming);
+					else
+						replica->apply(*incoming);
+					FAIL() << "Mismatched captured Bloodrage policy must reject";
+				}
+				catch(const std::runtime_error & error)
+				{
+					EXPECT_EQ(std::string(error.what()), wrongRank
+						? "Bloodrage battle snapshot rank does not match captured hero"
+						: "Bloodrage battle snapshot does not match captured perk policy");
+				}
+				EXPECT_EQ(recording.appliedPackets, 0u) << "Invalid packet must not enter publication";
+				EXPECT_EQ(replica->saveToMemory(), before);
+				EXPECT_TRUE(replica->currentBattles.empty());
+				EXPECT_EQ(replica->getHero(attackerSideHero->id)->battle, nullptr);
+				EXPECT_EQ(replica->getHero(defenderSideHero->id)->battle, nullptr);
+			}
+		}
 	}
 
 	static std::size_t rageThroughPainLogCount(const RecordingGameServer & recording)
@@ -416,4 +494,127 @@ TEST_F(NewHorizonsRageThroughPainTest, PersonalIncrementPersistsInJsonAndNarrowS
 	legacy.iser & legacyRestored;
 	EXPECT_EQ(legacyRestored.getPersonalBloodrageIncrement(), 0)
 		<< "A pre-feature descriptor defaults the omitted personal increment to zero";
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, RevisedFirstPositiveHitGrantsTwoAboveHalfOncePerStack)
+{
+	revisedBloodrage = true;
+	readyFixtureBattle();
+	ASSERT_EQ(battle()->getBloodragePainIncrement(BattleSide::ATTACKER), 10);
+	const int armyBefore = battle()->getBloodrageDamagePercent(BattleSide::ATTACKER);
+	auto * victim = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(81), 10);
+	auto * untouched = addDistantFriendlyVictim(victim);
+	ASSERT_NE(untouched, nullptr);
+	auto * hitter = addAdjacentEnemy(victim);
+	ASSERT_NE(hitter, nullptr);
+	blockRetaliation(hitter);
+	beginCombat();
+	int64_t zero = 0;
+	victim->damage(zero);
+	EXPECT_EQ(victim->getPersonalBloodrageIncrement(), 0);
+	ASSERT_TRUE(attack(hitter, victim->getPosition()));
+	ASSERT_GT(victim->getAvailableHealth(), 50);
+	EXPECT_EQ(victim->getPersonalBloodrageIncrement(), 10);
+	EXPECT_EQ(untouched->getPersonalBloodrageIncrement(), 0);
+	int64_t secondHit = 1;
+	untouched->damage(secondHit);
+	EXPECT_EQ(untouched->getPersonalBloodrageIncrement(), 10);
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), armyBefore);
+	EXPECT_EQ(rageThroughPainLogCount(server), 1u);
+	healAvailableHealth(victim, 1);
+	int64_t repeat = 1;
+	victim->damage(repeat);
+	EXPECT_EQ(victim->getPersonalBloodrageIncrement(), 10);
+	auto state = victim->acquireState();
+	state->load(state->save());
+	EXPECT_EQ(state->getPersonalBloodrageIncrement(), 10);
+	CStackBasicDescriptor base(victim->unitType()->getId(), victim->unitBaseAmount());
+	CStack descriptor(&base, victim->unitOwner(), static_cast<int>(victim->unitId()), victim->unitSide());
+	descriptor.personalBloodrageIncrement = 10;
+	CMemorySerializer current;
+	current.oser & descriptor;
+	CStack restored;
+	current.iser.cb = gameState().get();
+	current.iser & restored;
+	EXPECT_EQ(restored.getPersonalBloodrageIncrement(), 10);
+	const auto battleRestored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(battleRestored, nullptr);
+	EXPECT_EQ(battleRestored->getBloodragePainIncrement(BattleSide::ATTACKER), 10);
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, HistoricalCaptureRejectsForgedDoubledPainAtPolicyAdmission)
+{
+	readyFixtureBattle();
+	ASSERT_FALSE(newHorizonsBloodrage::revisedPerks(attackerSideHero));
+	battle()->getSide(BattleSide::ATTACKER).bloodragePainIncrement = 10;
+	EXPECT_TRUE(newHorizonsBloodrage::validSnapshot(battle()->getSide(BattleSide::ATTACKER)));
+	EXPECT_THROW(newHorizonsBloodrage::validateBattleStart(*battle(), *gameState()), std::runtime_error);
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, RevisedCaptureRejectsHistoricalPainAmountAtPolicyAdmission)
+{
+	revisedBloodrage = true;
+	readyFixtureBattle();
+	ASSERT_TRUE(newHorizonsBloodrage::revisedPerks(attackerSideHero));
+	battle()->getSide(BattleSide::ATTACKER).bloodragePainIncrement = 5;
+	EXPECT_TRUE(newHorizonsBloodrage::validSnapshot(battle()->getSide(BattleSide::ATTACKER)));
+	EXPECT_THROW(newHorizonsBloodrage::validateBattleStart(*battle(), *gameState()), std::runtime_error);
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, RevisedFullBattleStartRoundTripUsesExplicitWorldPolicy)
+{
+	revisedBloodrage = true;
+	startGameWithStrongholdHero();
+	ASSERT_NO_FATAL_FAILURE(selectRageThroughPain(attackerSideHero));
+	const auto beforeBattle = gameState()->saveToMemory();
+	startBattle();
+	auto replica = std::make_shared<CGameState>();
+	replica->preInit(LIBRARY);
+	replica->loadFromMemory(beforeBattle);
+	BattleStart outgoing;
+	outgoing.battleID = replica->nextBattleID;
+	outgoing.info = battleStartFixture::snapshot(*battle(), replica.get());
+	outgoing.trainingEntry = outgoing.info->trainingEntrySnapshot;
+	CMemorySerializer wire;
+	ASSERT_NO_THROW(wire.oser & outgoing);
+	wire.iser.cb = replica.get();
+	BattleStart decoded;
+	ASSERT_NO_THROW(wire.iser & decoded);
+	ASSERT_NE(decoded.info, nullptr);
+	ASSERT_EQ(decoded.info->getBloodragePainIncrement(BattleSide::ATTACKER), 10);
+	EXPECT_TRUE(newHorizonsBloodrage::validSnapshot(decoded.info->getSide(BattleSide::ATTACKER)));
+	EXPECT_NO_THROW(newHorizonsBloodrage::validateBattleStart(*decoded.info, *replica));
+	RecordingGameServer recording;
+	recording.gameState = replica;
+	CGameHandler handler(recording, replica);
+	ASSERT_NO_THROW(handler.sendAndApply(decoded));
+	const auto * accepted = replica->getBattle(outgoing.battleID);
+	ASSERT_NE(accepted, nullptr);
+	EXPECT_EQ(accepted->getBloodragePainIncrement(BattleSide::ATTACKER), 10);
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, HistoricalPolicyRejectsDoubledDirectAndDecodedEntryAtomically)
+{
+	ASSERT_NO_FATAL_FAILURE(rejectMismatchedEntry(false));
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, RevisedPolicyRejectsOriginalDirectAndDecodedEntryAtomically)
+{
+	ASSERT_NO_FATAL_FAILURE(rejectMismatchedEntry(true));
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, RevisedPolicyRejectsWrongValidRankDirectAndDecodedWithoutConditionals)
+{
+	ASSERT_NO_FATAL_FAILURE(rejectMismatchedEntry(true, true));
+}
+
+TEST_F(NewHorizonsRageThroughPainTest, HistoricalPolicyRetainsOriginalRankDomainWithoutHeroRankInference)
+{
+	readyFixtureBattle();
+	auto & side = battle()->getSide(BattleSide::ATTACKER);
+	side.bloodrageRank = 2;
+	side.bloodrageCapPercent = newHorizonsBloodrage::ADVANCED_CAP;
+	side.bloodragePainIncrement = side.bloodrageLowHealthIncrement = 0;
+	EXPECT_TRUE(newHorizonsBloodrage::validSnapshot(side));
+	EXPECT_NO_THROW(newHorizonsBloodrage::validateBattleStart(*battle(), *gameState()));
 }

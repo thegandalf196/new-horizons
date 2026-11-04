@@ -5,6 +5,9 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsBloodrage.h"
+#include "SideInBattle.h"
+#include "BattleInfo.h"
+#include "../callback/IGameInfoCallback.h"
 
 #include "../mapObjects/CGHeroInstance.h"
 
@@ -23,6 +26,75 @@ constexpr std::string_view AVATAR_OF_RAGE = "new-horizons:bloodrage.avatarOfRage
 constexpr std::string_view FIRST_BLOOD = "new-horizons:bloodrage.firstBlood";
 constexpr std::string_view SLAYER = "new-horizons:bloodrage.slayer";
 constexpr std::string_view RAGE_THROUGH_PAIN = "new-horizons:bloodrage.rageThroughPain";
+}
+
+bool validSnapshot(const SideInBattle & side)
+{
+	if(side.bloodrageRank < 0 || side.bloodrageRank > 3
+		|| side.bloodrageDamagePercent < 0
+		|| side.bloodrageSpeedBonus < 0 || side.bloodrageSpeedBonus > 1
+		|| side.bloodrageAdditionalRetaliations < 0 || side.bloodrageAdditionalRetaliations > 1
+		|| (side.bloodrageLowHealthIncrement != 0
+			&& (side.bloodrageRank == 0 || side.bloodrageLowHealthIncrement
+				!= newHorizonsBloodrage::incrementForRank(side.bloodrageRank)
+					&& side.bloodrageLowHealthIncrement != 2 * newHorizonsBloodrage::incrementForRank(side.bloodrageRank)))
+		|| (side.bloodragePainIncrement != 0
+			&& (side.bloodrageRank == 0 || side.bloodragePainIncrement
+				!= newHorizonsBloodrage::incrementForRank(side.bloodrageRank)
+					&& side.bloodragePainIncrement != 2 * newHorizonsBloodrage::incrementForRank(side.bloodrageRank)))
+		|| (side.bloodrageRank < 2
+			&& (side.bloodrageSpeedBonus != 0 || side.bloodrageAdditionalRetaliations != 0)))
+		return false;
+	const auto baseCap = newHorizonsBloodrage::capForRank(side.bloodrageRank);
+	const auto extendedCap = newHorizonsBloodrage::capForRank(side.bloodrageRank, true);
+	return (side.bloodrageCapPercent == baseCap || side.bloodrageCapPercent == extendedCap)
+		&& side.bloodrageDamagePercent <= side.bloodrageCapPercent;
+}
+
+void validateBattleStart(const BattleInfo & battle, const IGameInfoCallback & context)
+{
+	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & side = battle.getSide(sideID);
+		if(!validSnapshot(side))
+			throw std::runtime_error("Invalid Bloodrage battle state");
+		const auto * hero = side.heroID.hasValue() ? context.getHero(side.heroID) : nullptr;
+		if(side.heroID.hasValue() && !hero)
+			throw std::runtime_error("Bloodrage battle snapshot references a missing hero");
+		const bool revised = revisedPerks(hero);
+		if(revised && side.bloodrageRank != rank(hero))
+			throw std::runtime_error("Bloodrage battle snapshot rank does not match captured hero");
+		const int increment = incrementForRank(side.bloodrageRank) * (revised ? 2 : 1);
+		if((side.bloodrageLowHealthIncrement != 0 && side.bloodrageLowHealthIncrement != increment)
+			|| (side.bloodragePainIncrement != 0 && side.bloodragePainIncrement != increment))
+			throw std::runtime_error("Bloodrage battle snapshot does not match captured perk policy");
+	}
+}
+
+bool revisedPerks(const CGHeroInstance * hero)
+{
+	if(!hero)
+		return false;
+	const auto & rules = hero->getPerkState().rules;
+	return rules.isStruct() && rules.Struct().contains("bloodragePolicy")
+		&& rules["bloodragePolicy"]["version"].Integer() == 2;
+}
+
+int conditionalIncrement(const CGHeroInstance * hero)
+{
+	return incrementForRank(rank(hero)) * (revisedPerks(hero) ? 2 : 1);
+}
+
+int avatarDefenseIgnorePercent(const CGHeroInstance * hero, int attackDamagePercent,
+	int capturedRank, int capturedCapPercent)
+{
+	if(!revisedPerks(hero))
+		return atMaximumForAttack(attackDamagePercent, capturedCapPercent) ? AVATAR_DEFENSE_IGNORE_PERCENT : 0;
+	const int increment = incrementForRank(capturedRank);
+	if(increment <= 0 || capturedCapPercent <= 0)
+		return 0;
+	const int increments = std::clamp(attackDamagePercent, 0, capturedCapPercent) / increment;
+	return std::min(AVATAR_DEFENSE_IGNORE_PERCENT, 5 * increments);
 }
 
 int rank(const CGHeroInstance * hero)

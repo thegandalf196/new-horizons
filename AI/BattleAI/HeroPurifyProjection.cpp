@@ -8,6 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/BattleAction.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/spells/CurePhysicalAffliction.h"
 #include "HeroPurifyProjection.h"
 #include "PossibleSpellcast.h"
 #include "StackWithBonuses.h"
@@ -128,4 +131,47 @@ void heroSpellProjection::projectPurifySelection(PossibleSpellcast & ps, Hypothe
 		ps.value = std::numeric_limits<float>::lowest();
 	else
 		ps.value = baseline + ps.spellPurifyHeuristicValue;
+}
+
+std::optional<std::vector<uint32_t>> heroSpellProjection::projectAutomaticPurifyEffects(
+	HypotheticBattle & state, const BattleAction & action, const CGHeroInstance * hero)
+{
+	if(!hero || action.target.size() != 1 || action.target.front().unitValue != -1000)
+		return std::nullopt;
+	const auto eligible = newHorizonsPurify::eligibleStacks(state, action.side,
+		action.target.front().hexValue, hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER),
+		newHorizonsPurify::hasPurifierPerk(hero));
+	PossibleSpellcast selected;
+	std::set<uint32_t> manuallyPoisoned, resolved;
+	for(const auto & [id, source] : action.spellPurifyChoices)
+		if(source == newHorizonsPurify::physicalPoisonChoiceID()) manuallyPoisoned.insert(id);
+		else selected.spellPurifyChoices.emplace_back(id, source);
+	const auto selection = collectSelection(selected);
+	if(!selection.selectedUnits.empty())
+	{
+		if(!applySelection(selection, state, false)) return std::nullopt;
+		resolved.insert(selection.selectedUnits.begin(), selection.selectedUnits.end());
+	}
+	// Native auxiliary ordering is groups, stored Poison, then Grave Dust. Use
+	// the same shared eligibility/clear/removal helpers, including Purifier's
+	// automatic afflictions outside the selected spell-group cap.
+	for(const auto & row : eligible)
+		if(row.physicalPoisonAutomaticallyCleared || manuallyPoisoned.contains(row.unitId))
+		{
+			auto unit = state.getForUpdate(row.unitId);
+			if(newHorizonsPurify::clearPhysicalPoison(unit.get())) resolved.insert(row.unitId);
+		}
+	for(const auto & row : eligible)
+		if(row.graveDustAutomaticallyCleared)
+		{
+			const auto * unit = state.battleGetUnitByID(row.unitId);
+			const auto removed = spells::curePhysical::graveDustRemoval(*unit);
+			if(!removed.empty())
+			{
+				state.removeUnitBonus(row.unitId, removed);
+				if(spells::curePhysical::graveDustRemoval(*state.battleGetUnitByID(row.unitId)).empty())
+					resolved.insert(row.unitId);
+			}
+		}
+	return std::vector<uint32_t>{resolved.begin(), resolved.end()};
 }

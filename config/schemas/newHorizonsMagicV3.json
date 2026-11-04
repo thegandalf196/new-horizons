@@ -116,11 +116,6 @@
 			},
 			"description": "Opt in to fixed-school Mage Guild generation. Each level receives one slot for each preferred school plus the configured number of distinct non-preferred schools."
 		},
-		"warcasting": {
-			"type": "boolean",
-			"not": {"type": "null"},
-			"description": "Enable alternating Hero Action empowerment. Absence or false preserves pre-Warcasting battle rules."
-		},
 		"schools": {
 			"type": "array",
 			"minItems": 6,

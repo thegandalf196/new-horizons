@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "RecipientBonusOverlay.h"
+#include "../battle/ArcaneInspiration.h"
 #include <type_traits>
 #include "../battle/NewHorizonsSepulchralGrip.h"
 #include "BonusList.h"
@@ -16,7 +17,6 @@
 #include "../battle/NewHorizonsDiscipline.h"
 #include "../battle/NewHorizonsDivineMandate.h"
 #include "../battle/NewHorizonsElementalRebirth.h"
-#include "../battle/NewHorizonsEnchantedCommand.h"
 #include "../battle/NewHorizonsSwiftRebirth.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 #include <unordered_map>
@@ -28,7 +28,7 @@ bool projectedEffect(const Bonus * bonus)
 {
 	return bonus && (bonus->source == BonusSource::SPELL_EFFECT || bonus->source == BonusSource::HERO_COMMAND
 		|| recipientBonusOverlay::isSnapshotHeroSpecialEffect(bonus)
-		|| newHorizonsEnchantedCommand::isMoraleBonus(bonus)
+		|| arcaneInspiration::isEffect(bonus)
 		|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(bonus)
 		|| newHorizonsTraining::isTrainingBonus(bonus)
 		|| newHorizonsSwiftRebirth::isLifecycleMarker(*bonus)
@@ -94,7 +94,7 @@ bool Layer::hasEdits() const
 
 bool isSnapshotHeroSpecialEffect(const Bonus * bonus)
 {
-	if(bonus && bonus->isExtendedOrdinarySpecialtyEffect())
+	if(arcaneInspiration::isEffect(bonus) || (bonus && bonus->isExtendedOrdinarySpecialtyEffect()))
 		return true;
 	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL)
 		return false;

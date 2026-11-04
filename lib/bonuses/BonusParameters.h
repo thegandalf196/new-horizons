@@ -134,7 +134,7 @@ public:
 		const auto context = BonusSerializationContext::fromHandler(h);
 		const bool supported = context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported;
 		if(h.saving && !supported)
 			validateAdjacencyCapabilitySerialization(context);
 		h & data_;

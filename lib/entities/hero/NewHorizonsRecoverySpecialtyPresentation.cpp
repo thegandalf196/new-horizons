@@ -31,6 +31,11 @@ bool resolveRecoverySpecialtyPresentation(const CHero & hero, const JsonNode & d
 		? "AxsisInfernalWellspring" : *kind == RecoverySpecialtyKind::RITUAL_RESERVE
 		? "JaegarRitualReserve" : "RosicDeepTrance");
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
+	result.summary = *kind == RecoverySpecialtyKind::INFERNAL_WELLSPRING
+		? "Improve daily Mysticism recovery as the hero gains levels and restore additional Mana after victories."
+		: *kind == RecoverySpecialtyKind::RITUAL_RESERVE
+		? "Improve daily Mysticism recovery as the hero gains levels, recovering extra Mana when below half capacity."
+		: "Improve daily Mysticism recovery as the hero gains levels and restore Mana at the first combat of each day.";
 	result.description = "With Mysticism active, its daily recovery is at least 5 Normal Spell Points or 10% of maximum Normal, whichever is greater. "
 		"That Mysticism amount increases by " + std::to_string(rule->dailyPercentPerLevel)
 		+ "% per hero level, up to +" + std::to_string(rule->dailyMaximumPercent)

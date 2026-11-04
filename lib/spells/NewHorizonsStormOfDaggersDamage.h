@@ -20,7 +20,6 @@ namespace spells
 /// Counts outside1..newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS return zero.
 /// Invalid numeric domains return zero; checked arithmetic overflow throws.
 DLL_LINKAGE int64_t stormOfDaggersRoundedDamage(int64_t base, int64_t powerCoefficient,
-	int32_t effectPower, int32_t powerDivisor, int32_t spellPowerCoefficientBasisPoints,
-	int32_t warcastingBonusPercent, int32_t empowerSpellBonusPercent,
+	int32_t effectPower, int32_t powerDivisor, int32_t spellPowerCoefficientBasisPoints, int32_t empowerSpellBonusPercent,
 	int32_t selectedTargetCount, bool total);
 }

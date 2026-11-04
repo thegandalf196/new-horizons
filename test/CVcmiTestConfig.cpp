@@ -76,7 +76,25 @@ void CVcmiTestConfig::SetUp()
 		|| useOrdinaryExport || useSkirmisherExport || usePositiveCueExport
 		|| std::getenv("NH_EXPORT_HERO_PROC_FAMILY") || std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT")))
 		throw std::runtime_error("Authored hero cue export requires its exact isolated invocation");
-	const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport || usePositiveCueExport || useAuthoredCue;
+	const char * passiveSkill = std::getenv("NH_EXPORT_PASSIVE_SKILL_UI_FIXTURE");
+	const bool usePassiveSkillExport = passiveSkill != nullptr;
+	if(usePassiveSkillExport)
+	{
+		const std::string_view kind(passiveSkill);
+		const std::string_view filter(::testing::GTEST_FLAG(filter));
+		const bool exactCase = (kind == "divine"
+			&& filter == "NewHorizonsPassiveSkillUIFixtureExportTest.ExportAdelaZeroManaAutomaticLight")
+			|| (kind == "metamagic"
+			&& (filter == "NewHorizonsPassiveSkillUIFixtureExportTest.ExportSevenMarkedRecipientPreviews"
+				|| filter == "NewHorizonsPassiveSkillUIFixtureExportTest.OrdinaryMetaOpponentSustainsEligiblePreviewRecipients"
+				|| filter == "NewHorizonsPassiveSkillUIFixtureExportTest.ExportSevenMarkedRecipientPreviews:"
+					"NewHorizonsPassiveSkillUIFixtureExportTest.OrdinaryMetaOpponentSustainsEligiblePreviewRecipients"));
+		if(!exactCase || useOrdinaryExport || useSkirmisherExport || usePositiveCueExport || useAuthoredCue
+			|| std::getenv("NH_EXPORT_HERO_PROC_FAMILY") || std::getenv("NH_EXPORT_HERO_PROC_SAVE_ROOT"))
+			throw std::runtime_error("Passive Skill UI export requires its exact isolated invocation");
+	}
+	const bool useOrdinaryBootstrap = useOrdinaryExport || useSkirmisherExport || usePositiveCueExport
+		|| useAuthoredCue || usePassiveSkillExport;
 	LIBRARY = new GameLibrary;
 	// Default tests retain their independent TEST preset and fixture mod. Only
 	// the explicitly selected player-save exporter uses the ordinary preset.
@@ -89,7 +107,8 @@ void CVcmiTestConfig::SetUp()
 			|| std::any_of(mods.begin(), mods.end(), [](const auto & mod)
 			{ return mod != "core" && mod != "vcmi" && mod != "new-horizons"; }))
 			throw std::runtime_error("Ordinary hero export bootstrap requires only the shipping mods");
-		if((useSkirmisherExport || usePositiveCueExport || useAuthoredCue) && std::find(mods.begin(), mods.end(), "core") == mods.end())
+		if((useSkirmisherExport || usePositiveCueExport || useAuthoredCue || usePassiveSkillExport)
+			&& std::find(mods.begin(), mods.end(), "core") == mods.end())
 			throw std::runtime_error("Ordinary Skirmisher export bootstrap requires the shipping core mod");
 	}
 	LIBRARY->initializeLibrary();

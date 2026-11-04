@@ -22,6 +22,7 @@
 #include "mock/GameHandlerTestServer.h"
 #include "server/CGameHandler.h"
 #include <array>
+#include <limits>
 
 namespace
 {
@@ -43,7 +44,6 @@ class NewHorizonsScholarValueAITest : public NullkillerTest
 protected:
 	bool captured = true;
 	bool allied = false;
-	int bonus = 1;
 	CGHeroInstance * sanya = nullptr;
 	CGHeroInstance * geon = nullptr;
 	CGHeroInstance * scholar = nullptr;
@@ -70,8 +70,6 @@ protected:
 				table[key]["learningPercentPerLevel"].Integer() = 5;
 				table[key]["learningMaximumPercent"].Integer() = 100;
 			}
-			table["ecumenicalScholar"]["additionalSpellsTaught"].Integer() = bonus;
-			table["occultScholar"]["additionalSpellsReceived"].Integer() = bonus;
 		}
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
@@ -131,7 +129,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsScholarValueAITest, SanyaValuesTwoOutgoingAndOneIncomingBeforeActualMeeting)
+TEST_F(NewHorizonsScholarValueAITest, SanyaValuesAllLegalSpellsBothDirectionsBeforeActualMeeting)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	// TinyMap initialization is day zero; this meeting occurs on ordinary day one.
@@ -144,28 +142,27 @@ TEST_F(NewHorizonsScholarValueAITest, SanyaValuesTwoOutgoingAndOneIncomingBefore
 	handler->changeSpells(scholar, true, {incoming, leftover});
 	const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, week());
 	ASSERT_TRUE(plan);
-	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high, middle}));
-	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{incoming}));
-	const auto expected = sanya->getSpellLevel(incoming.toSpell()) * 0.5f
-		+ (scholar->getSpellLevel(high.toSpell()) + scholar->getSpellLevel(middle.toSpell())) * 0.25f;
+	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high, middle, low}));
+	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{incoming, leftover}));
+	const auto expected = (sanya->getSpellLevel(incoming.toSpell()) + sanya->getSpellLevel(leftover.toSpell())) * 0.5f
+		+ (scholar->getSpellLevel(high.toSpell()) + scholar->getSpellLevel(middle.toSpell()) + scholar->getSpellLevel(low.toSpell())) * 0.25f;
 	expectPureReward(sanya, scholar, expected);
 	handler->heroExchange(sanya->id, scholar->id);
 	EXPECT_TRUE(scholar->spellbookContainsSpell(high));
 	EXPECT_TRUE(scholar->spellbookContainsSpell(middle));
-	EXPECT_FALSE(scholar->spellbookContainsSpell(low));
+	EXPECT_TRUE(scholar->spellbookContainsSpell(low));
 	EXPECT_TRUE(sanya->spellbookContainsSpell(incoming));
-	EXPECT_FALSE(sanya->spellbookContainsSpell(leftover));
-	EXPECT_TRUE(sanya->hasNewHorizonsScholarMeeting(scholar->id, week()));
-	EXPECT_TRUE(scholar->hasNewHorizonsScholarMeeting(sanya->id, week()));
+	EXPECT_TRUE(sanya->spellbookContainsSpell(leftover));
+	EXPECT_FALSE(sanya->hasNewHorizonsScholarMeeting(scholar->id, week()));
+	EXPECT_FALSE(scholar->hasNewHorizonsScholarMeeting(sanya->id, week()));
 	expectPureReward(sanya, scholar, 0);
 	gameState()->day += gateway->cc->getCalendar().getDaysInWeek();
 	ASSERT_EQ(gateway->cc->getCalendar().getCurrentDay(), 8);
 	ASSERT_EQ(week(), 1);
-	expectPureReward(sanya, scholar, sanya->getSpellLevel(leftover.toSpell()) * 0.5f
-		+ scholar->getSpellLevel(low.toSpell()) * 0.25f);
+	expectPureReward(sanya, scholar, 0); // All legal spells were already exchanged; no week gate.
 }
 
-TEST_F(NewHorizonsScholarValueAITest, GeonValuesTwoIncomingAndOneOutgoingAtUnchangedWeights)
+TEST_F(NewHorizonsScholarValueAITest, GeonValuesAllLegalSpellsAtUnchangedWeights)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
@@ -174,59 +171,57 @@ TEST_F(NewHorizonsScholarValueAITest, GeonValuesTwoIncomingAndOneOutgoingAtUncha
 	handler->changeSpells(geon, true, {outgoing, leftover});
 	const auto plan = newHorizonsHeroes::prepareScholarExchange(*geon, *scholar, week());
 	ASSERT_TRUE(plan);
-	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{outgoing}));
-	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{high, middle}));
-	const auto expected = (geon->getSpellLevel(high.toSpell()) + geon->getSpellLevel(middle.toSpell())) * 0.5f
-		+ scholar->getSpellLevel(outgoing.toSpell()) * 0.25f;
+	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{outgoing, leftover}));
+	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{high, middle, low}));
+	const auto expected = (geon->getSpellLevel(high.toSpell()) + geon->getSpellLevel(middle.toSpell()) + geon->getSpellLevel(low.toSpell())) * 0.5f
+		+ (scholar->getSpellLevel(outgoing.toSpell()) + scholar->getSpellLevel(leftover.toSpell())) * 0.25f;
 	expectPureReward(geon, scholar, expected);
 	handler->heroExchange(geon->id, scholar->id);
 	EXPECT_TRUE(geon->spellbookContainsSpell(high));
 	EXPECT_TRUE(geon->spellbookContainsSpell(middle));
-	EXPECT_FALSE(geon->spellbookContainsSpell(low));
+	EXPECT_TRUE(geon->spellbookContainsSpell(low));
 	EXPECT_TRUE(scholar->spellbookContainsSpell(outgoing));
-	EXPECT_FALSE(scholar->spellbookContainsSpell(leftover));
+	EXPECT_TRUE(scholar->spellbookContainsSpell(leftover));
 }
 
-TEST_F(NewHorizonsScholarValueAITest, AbsentCapturedRidersKeepOneSpellEachDirectionAndOldWrapper)
+TEST_F(NewHorizonsScholarValueAITest, AbsentCapturedRidersStillTeachAllEligibleSpells)
 {
-	captured = false;
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto high = named("core:implosion"), low = named("core:magicArrow"), incoming = named("core:dispel");
-	handler->changeSpells(sanya, true, {high, low});
-	handler->changeSpells(scholar, true, {incoming, named("core:haste")});
-	const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, week());
-	ASSERT_TRUE(plan);
-	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high}));
-	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{incoming}));
-	EXPECT_EQ(sanya->getNewHorizonsScholarSpellFor(*scholar), high);
-	EXPECT_EQ(scholar->getNewHorizonsScholarSpellFor(*sanya), incoming);
-	expectPureReward(sanya, scholar, sanya->getSpellLevel(incoming.toSpell()) * 0.5f
-		+ scholar->getSpellLevel(high.toSpell()) * 0.25f);
+ captured = false;
+ ASSERT_NO_FATAL_FAILURE(prepare());
+ const auto high = named("core:implosion"), low = named("core:magicArrow");
+ handler->changeSpells(sanya, true, {high, low});
+ const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, week());
+ ASSERT_TRUE(plan);
+ EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high, low}));
+ expectPureReward(sanya, scholar, (scholar->getSpellLevel(high.toSpell()) + scholar->getSpellLevel(low.toSpell())) * 0.25f);
 }
 
-TEST_F(NewHorizonsScholarValueAITest, ExplicitZeroBonusKeepsOrdinaryBudget)
+TEST_F(NewHorizonsScholarValueAITest, NewKnowledgeCanBeTaughtAgainInTheSameWeek)
 {
-	bonus = 0;
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto high = named("core:implosion"), low = named("core:magicArrow");
-	handler->changeSpells(sanya, true, {high, low});
-	const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, week());
-	ASSERT_TRUE(plan);
-	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high}));
-	EXPECT_TRUE(plan->secondTeaches.empty());
-	expectPureReward(sanya, scholar, scholar->getSpellLevel(high.toSpell()) * 0.25f);
+ ASSERT_NO_FATAL_FAILURE(prepare());
+ const auto high = named("core:implosion"), low = named("core:magicArrow");
+ handler->changeSpells(sanya, true, {high});
+ handler->heroExchange(sanya->id, scholar->id);
+ ASSERT_TRUE(scholar->spellbookContainsSpell(high));
+ expectPureReward(sanya, scholar, 0);
+ handler->changeSpells(sanya, true, {low});
+ const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, week());
+ ASSERT_TRUE(plan);
+ EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{low}));
+ expectPureReward(sanya, scholar, scholar->getSpellLevel(low.toSpell()) * 0.25f);
+ handler->heroExchange(sanya->id, scholar->id);
+ EXPECT_TRUE(scholar->spellbookContainsSpell(low));
 }
 
-TEST_F(NewHorizonsScholarValueAITest, CoincidentBonusesCapAtTwoAndDoNotInventScholarPermission)
+TEST_F(NewHorizonsScholarValueAITest, UnboundedBudgetDoesNotInventScholarPermission)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	handler->changeSpells(sanya, true, {named("core:implosion"), named("core:lightningBolt"), named("core:magicArrow")});
-	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*sanya, *geon), 2);
-	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*geon, *sanya), 1);
-	EXPECT_FALSE(sanya->hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"));
-	EXPECT_FALSE(geon->hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"));
-	EXPECT_FALSE(newHorizonsHeroes::prepareScholarExchange(*sanya, *geon, week()));
-	expectPureReward(sanya, geon, 0);
+ ASSERT_NO_FATAL_FAILURE(prepare());
+ handler->changeSpells(sanya, true, {named("core:magicArrow")});
+ EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*sanya, *geon), std::numeric_limits<int>::max());
+ EXPECT_FALSE(sanya->hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"));
+ EXPECT_FALSE(geon->hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"));
+ EXPECT_FALSE(newHorizonsHeroes::prepareScholarExchange(*sanya, *geon, week()));
+ expectPureReward(sanya, geon, 0);
 }
 
 TEST_F(NewHorizonsScholarValueAITest, SchoolScrollAndBookFailuresContributeNoIllegalSpellValue)
@@ -243,18 +238,16 @@ TEST_F(NewHorizonsScholarValueAITest, SchoolScrollAndBookFailuresContributeNoIll
 	expectPureReward(sanya, scholar, 0);
 }
 
-TEST_F(NewHorizonsScholarValueAITest, PairReceiptUsesAbsoluteWeekRatherThanCurrentDay)
+TEST_F(NewHorizonsScholarValueAITest, CalendarDoesNotSuppressUnexchangedLegalTeaching)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto spell = named("core:magicArrow");
 	handler->changeSpells(sanya, true, {spell});
 	gameState()->day = 8;
 	ASSERT_EQ(week(), 1);
-	sanya->markNewHorizonsScholarMeeting(scholar->id, 1);
-	scholar->markNewHorizonsScholarMeeting(sanya->id, 1);
-	expectPureReward(sanya, scholar, 0);
+	expectPureReward(sanya, scholar, scholar->getSpellLevel(spell.toSpell()) * 0.25f);
 	gameState()->day = 9;
-	expectPureReward(sanya, scholar, 0);
+	expectPureReward(sanya, scholar, scholar->getSpellLevel(spell.toSpell()) * 0.25f);
 	gameState()->day = 15;
 	ASSERT_EQ(week(), 2);
 	expectPureReward(sanya, scholar, scholar->getSpellLevel(spell.toSpell()) * 0.25f);

@@ -24,9 +24,9 @@ int64_t currentElementalConvergenceHitPoints(const ::spells::Mechanics & mechani
 	const auto * hero = mechanics.getHeroCaster();
 	const bool conjurer = hero && hero->hasActivePerk(
 		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL), "new-horizons:natureMagic.elementalConjurer");
-	return newHorizonsMagic::elementalConvergenceHitPoints(mechanics.getEffectPower(),
-		mechanics.getSpellPowerCoefficientBasisPoints(), mechanics.getWarcastingBonusPercent(),
-		mechanics.getEmpowerSpellBonusPercent(), conjurer);
+	return mechanics.adjustMetamagicMagnitude(newHorizonsMagic::elementalConvergenceHitPoints(mechanics.getEffectPower(),
+		mechanics.getSpellPowerCoefficientBasisPoints(),
+		mechanics.getEmpowerSpellBonusPercent(), conjurer), nullptr);
 }
 }
 

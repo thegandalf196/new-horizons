@@ -16,6 +16,5 @@ namespace newHorizonsMagic
 /// Exact current Elemental Convergence HP budget. Conjurer applies130% to the
 /// fixed250HP and the full Spell-Power term before the hundredths/whole-HP floors.
 /// No legacy power divisor, HP cap, terrain selection or creature-count estimate.
-DLL_LINKAGE int64_t elementalConvergenceHitPoints(int32_t rawSpellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingBonusPercent, int32_t empowerSpellBonusPercent, bool conjurer);
+DLL_LINKAGE int64_t elementalConvergenceHitPoints(int32_t rawSpellPower, int32_t coefficientBasisPoints, int32_t empowerSpellBonusPercent, bool conjurer);
 }

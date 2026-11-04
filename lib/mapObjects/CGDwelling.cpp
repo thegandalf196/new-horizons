@@ -574,15 +574,3 @@ std::vector<CreatureID> CGDwelling::providedCreatures() const
 
 	return result;
 }
-
-TResources CGDwelling::getRecruitmentCost(CreatureID creatureId) const
-{
-	const auto * creature = creatureId.toCreature();
-	if(!creature)
-		return {};
-
-	if((ID == Obj::CREATURE_GENERATOR1 || ID == Obj::CREATURE_GENERATOR4) && creature->getLevel() == 1)
-		return {};
-
-	return creature->getFullRecruitCost();
-}

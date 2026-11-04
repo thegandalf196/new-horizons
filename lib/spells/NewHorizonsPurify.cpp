@@ -187,12 +187,13 @@ bool hasPhysicalPoison(const battle::Unit * unit)
 bool clearPhysicalPoison(battle::CUnitState * state)
 {
 	if(!state || (state->physicalPoisonBaseDamage <= 0 && state->physicalPoisonActivationsRemaining <= 0
-		&& state->physicalPoisonSourceStackId < 0))
+		&& state->physicalPoisonSourceStackId < 0 && state->physicalPoisonSpellSide == BattleSide::NONE))
 		return false;
 
 	state->physicalPoisonBaseDamage = 0;
 	state->physicalPoisonActivationsRemaining = 0;
 	state->physicalPoisonSourceStackId = -1;
+	state->physicalPoisonSpellSide = BattleSide::NONE;
 	return true;
 }
 
@@ -236,4 +237,39 @@ std::vector<EligibleStack> eligibleStacks(const CBattleInfoCallback & battle, co
 	});
 	return result;
 }
+
+bool removalReturnsHostileStack(const battle::Unit & unit, BattleSide casterSide, SpellID sourceSpell)
+{
+	if(unit.unitSide() == casterSide)
+		return false;
+	const auto bonuses = spellEffectGroupBonuses(&unit, sourceSpell);
+	return std::ranges::any_of(bonuses, [](const Bonus & bonus)
+	{
+		return bonus.type == BonusType::HYPNOTIZED;
+	});
+}
+
+std::vector<uint32_t> prospectiveRecipients(const CBattleInfoCallback & battle,
+	BattleSide casterSide, const BattleHex & center, int32_t spellPower, bool purifierPerk,
+	const std::vector<std::pair<int32_t, SpellID>> & choices)
+{
+	const auto rows = eligibleStacks(battle, casterSide, center, spellPower, purifierPerk);
+	std::set<uint32_t> recipients;
+	for(const auto & row : rows)
+		if(row.physicalPoisonAutomaticallyCleared || row.graveDustAutomaticallyCleared)
+			recipients.insert(static_cast<uint32_t>(row.unitId));
+	for(const auto & [unitId, spell] : choices)
+	{
+		const auto found = std::find_if(rows.begin(), rows.end(), [unitId](const auto & row)
+		{
+			return row.unitId == unitId;
+		});
+		if(found != rows.end() && ((spell == physicalPoisonChoiceID() && found->physicalPoison)
+			|| std::find(found->spellEffectGroups.begin(), found->spellEffectGroups.end(), spell)
+				!= found->spellEffectGroups.end()))
+			recipients.insert(static_cast<uint32_t>(unitId));
+	}
+	return {recipients.begin(), recipients.end()};
+}
+
 }

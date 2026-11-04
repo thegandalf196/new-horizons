@@ -47,6 +47,7 @@ struct DLL_LINKAGE PerkDefinition
 	std::string requiredRank;
 	std::string description;
 	JsonNode effect;
+	std::string details;
 
 	bool operator==(const PerkDefinition &) const = default;
 
@@ -57,6 +58,7 @@ struct DLL_LINKAGE PerkDefinition
 		h & requiredRank;
 		h & description;
 		h & effect;
+		h & details;
 	}
 };
 
@@ -69,6 +71,14 @@ struct DLL_LINKAGE SkillDefinition
 	std::string description;
 	JsonNode ranks;
 	std::vector<PerkDefinition> perks;
+	std::string details;
+
+	const std::string & rankDetails(std::string_view rank) const
+	{
+		static const std::string empty;
+		const auto & value = ranks[std::string(rank)]["details"];
+		return value.isString() ? value.String() : empty;
+	}
 
 	bool operator==(const SkillDefinition &) const = default;
 
@@ -81,6 +91,7 @@ struct DLL_LINKAGE SkillDefinition
 		h & description;
 		h & ranks;
 		h & perks;
+		h & details;
 	}
 };
 
@@ -95,6 +106,8 @@ DLL_LINKAGE std::optional<int> quickStudyRerollInterval(const JsonNode & rules);
 /// semantics and are accepted; an active registry must match the canonical
 /// schema's cardinalities and preserve every scoped identity.
 DLL_LINKAGE void validatePerkRules(const JsonNode & rules);
+/// Absent markers preserve historical skills; present policies are strict captured objects.
+DLL_LINKAGE void validatePassiveFactionPolicies(const JsonNode & rules);
 /// Only the explicit captured marker opts into weighted perk selection.
 /// Old registries remain legacy; a present malformed marker is rejected.
 DLL_LINKAGE bool usesWeightedPerkOffers(const JsonNode & rules);
@@ -103,7 +116,7 @@ DLL_LINKAGE bool usesR2PerkOffers(const JsonNode & rules);
 /// Absence preserves historical progression, including policy2 same-tier choices.
 DLL_LINKAGE bool usesStrictPerkProgression(const JsonNode & rules);
 DLL_LINKAGE void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported = false,
-	bool strictSupported = false, bool optionalRerollSupported = false);
+	bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false);
 /// Fresh-world paired admission only; historical resolved snapshots are not
 /// retrofitted with a table or rejected for their intentionally absent marker.
 DLL_LINKAGE void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & perks);

@@ -27,7 +27,7 @@ bool needsFamilyResolver(const CSpell & spell, const JsonNode & rules)
 }
 }
 std::optional<int64_t> directSpellRawPotential(const CGHeroInstance & hero, const CSpell & spell,
-	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t warcasting, int32_t empower)
+	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t empower)
 {
 	const int divisor = std::max(1, hero.getEffectPowerDivisor(&spell));
 	const int damageCoefficient = directCoefficient
@@ -37,26 +37,26 @@ std::optional<int64_t> directSpellRawPotential(const CGHeroInstance & hero, cons
 	if(const auto overrideValue = hero.getEffectValue(&spell); overrideValue != 0)
 		raw = overrideValue;
 	else if(const auto formula = spellDirectDamage(rules, spell.getJsonKey()))
-		raw = formula->evaluateBasisPoints(power, divisor, damageCoefficient, empower, specialty, warcasting);
+		raw = formula->evaluateBasisPoints(power, divisor, damageCoefficient, empower, specialty);
 	else
 	{
 		if(!spell.getJsonKey().starts_with("core:"))
 			return std::nullopt; // No generic base-to-effect assumption for custom families.
 		const DirectDamageFormula fallback{spell.getLevelPower(std::clamp(hero.getEffectLevel(&spell), 0, 3)), spell.getBasePower()};
-		raw = fallback.evaluateBasisPoints(power, divisor, damageCoefficient, empower, specialty, warcasting);
+		raw = fallback.evaluateBasisPoints(power, divisor, damageCoefficient, empower, specialty);
 	}
 	return std::max<int64_t>(0, raw);
 }
 SpellEffectPreview directSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t warcasting,
+	const JsonNode & rules, int32_t power, int32_t directCoefficient,
 	int32_t empower, bool followup, int32_t numericalCoefficient, const CBattleInfoCallback * callback)
 {
 	if(const auto conditional = conditionalSpellEffectPreview(hero, spell, rules, power,
-		directCoefficient, numericalCoefficient, warcasting, empower, callback))
+		directCoefficient, numericalCoefficient, empower, callback))
 		return *conditional;
 	if(!spell.isDamage() || needsFamilyResolver(spell, rules))
 		return {};
-	const auto raw = directSpellRawPotential(hero, spell, rules, power, directCoefficient, warcasting, empower);
+	const auto raw = directSpellRawPotential(hero, spell, rules, power, directCoefficient, empower);
 	if(!raw)
 		return {};
 

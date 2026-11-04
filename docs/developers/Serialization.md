@@ -1,5 +1,22 @@
 # Serialization
 
+## Current save boundary
+
+New Horizons 0.88.2 requires a new game. The current writer and minimum accepted
+format are both **1156**, `NEW_HORIZONS_FACTION_SKILL_REVISIONS`.
+`MINIMAL` and `CURRENT` in `ESerializationVersion` use that feature value.
+`CLoadFile` rejects earlier save formats before reading their payload; there is
+no save conversion or migration path in this revision. Existing files remain
+untouched. The file-loader minimum does not by itself validate connection-version
+negotiation.
+
+Format1156 carries round-point Metamagic, revised Dungeon and Conflux perks,
+and optional detailed Skill/perk help. Historical format descriptions below
+explain prior layouts; they do not grant ordinary save-load admission.
+Explicit local bonus-clone profiles remain separate from on-disk save support
+and must retain their own exact validation. A format declaration alone does
+not establish successful save/reload, gameplay or platform acceptance.
+
 ## Captured army generation settings
 
 `NEW_HORIZONS_NEUTRAL_ARMY_SIZE` protects a reduced captured
@@ -1155,9 +1172,8 @@ then reserves both arrays before its no-throw publication step.
 
 ## Successor formats and local bonus clones
 
-The current source writer is format1154 (`NEW_HORIZONS_OPTIONAL_QUICK_STUDY`).
-Published format1151 precedes neutral Leadership calibration1152, extended ordinary
-specialties1153, and optional Quick Study1154. Format gates validate the captured
+Historically, published format1151 precedes neutral Leadership calibration1152, extended ordinary
+specialties1153, optional Quick Study1154, and passive faction skills1155. Format gates validate the captured
 policy and packet fields; a format number alone does not activate a policy.
 
 Neutral calibration carries a resolved generation curve in captured game
@@ -1173,6 +1189,24 @@ query, and zero. Writing a nondefault optional offer to an older format refuses.
 Captured optional Quick Study rules also require the1154 gate in game settings
 and hero perk state. These older-format read paths do not permit writing a new
 captured policy to a format that cannot represent it.
+
+Historical format1155 adds captured passive Metamagic, Divine Mandate and temporary Gating
+policies and their battle state, including Arcane Marks and automatic-cast
+receipts. Populated successor state refuses older writers before the enclosing
+payload prefix; older captures retain their historical policies and defaults.
+
+The optional captured `bloodragePolicy` version2 uses the same1155 admission.
+Absence retains the original Bloodrage perk rules; loading never fills it from
+installed defaults. Conditional and earned personal grants use the existing
+percentage fields. Side snapshots decode structurally without a hero callback. Authoritative
+BattleStart admission binds them to the owning hero's captured policy before
+training, local initialization or gameplay changes. Revised captures also bind
+the saved rank to that side hero; historical captures retain their original
+rank-domain admission. Earned personal amounts
+persist across subsequent control changes.
+Avatar consumes the attack-local effective Rage through the Creature Defense
+channels. No field or format number is added. Direct and enclosing perk-policy
+writers reject this marker below1155, and readers reject unknown policy keys.
 
 Earlier unreleased experiments used different meanings for1152/1153. Their files
 and forced-version transport captures are unsupported experimental artifacts,

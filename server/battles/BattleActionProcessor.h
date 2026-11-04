@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "spells/AutomaticHeroCast.h"
 #include "battle/NewHorizonsAerialSupremacy.h"
 #include <array>
 #include "BattlePetrifyingBlood.h"
@@ -24,6 +25,7 @@
 struct BattleLogMessage;
 struct BattleAttack;
 class BattleAction;
+struct HeroOrderState;
 class CBattleInfoCallback;
 class BattleHex;
 class CStack;
@@ -244,7 +246,11 @@ class BattleActionProcessor : boost::noncopyable
 	bool doSurrenderAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba);
-	bool doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	bool doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba,
+		spells::AutomaticHeroCastReceipt automatic = spells::AutomaticHeroCastReceipt{});
+	void castPassiveDivineMandate(const CBattleInfoCallback & battle, BattleSide side, const HeroOrderState & order);
+	void castDivineFury(const CBattleInfoCallback & battle, const battle::Unit * source,
+		const battle::Unit * target, BattleSide issuingSide, bool ordinaryPrimaryCreatureAttack, bool underOrderAtStrike);
 	bool doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doDemonicGatingAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doWalkAction(const CBattleInfoCallback & battle, const BattleAction & ba);

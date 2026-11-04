@@ -47,6 +47,8 @@ void accumulateExchange(ExchangeTiming & total, const ExchangeTiming & sample)
 	for(const auto & [name, stage] : exchangeStages)
 		accumulateStage(total.*stage, sample.*stage);
 	total.remainderMicroseconds += sample.remainderMicroseconds;
+	total.selectedProbeDamageOffers += sample.selectedProbeDamageOffers;
+	total.selectedProbeDamageUses += sample.selectedProbeDamageUses;
 	if(sample.collectProbeDamageCache)
 	{
 		total.collectProbeDamageCache = true;
@@ -80,6 +82,8 @@ std::string bestTargetFields(const BattleBestTargetTiming & details)
 		for(const auto & [stageName, stage] : exchangeStages)
 			appendStage(fields, prefix + "_" + stageName, (details.*member).*stage);
 		fields += " " + prefix + "_remainder_us=" + std::to_string((details.*member).remainderMicroseconds);
+		fields += " " + prefix + "_selected_probe_offers=" + std::to_string((details.*member).selectedProbeDamageOffers);
+		fields += " " + prefix + "_selected_probe_uses=" + std::to_string((details.*member).selectedProbeDamageUses);
 	}
 	return fields;
 }
@@ -92,6 +96,8 @@ std::string movementFields(const BattleMovementTiming & details)
 	for(const auto & [name, stage] : exchangeStages)
 		appendStage(fields, prefix + "_" + name, details.findMoveExchangeDetails.*stage);
 	fields += " " + prefix + "_remainder_us=" + std::to_string(details.findMoveExchangeDetails.remainderMicroseconds);
+	fields += " " + prefix + "_selected_probe_offers=" + std::to_string(details.findMoveExchangeDetails.selectedProbeDamageOffers);
+	fields += " " + prefix + "_selected_probe_uses=" + std::to_string(details.findMoveExchangeDetails.selectedProbeDamageUses);
 	return fields;
 }
 }

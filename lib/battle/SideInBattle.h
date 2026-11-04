@@ -28,10 +28,11 @@
 #include "MoraleSuppressionState.h"
 #include "ReducedExtraActivationState.h"
 #include "NewHorizonsRapidResponse.h"
-#include "AlternatingHeroActionState.h"
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
+#include "MetamagicPointState.h"
+#include "WisdomCombatState.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "OverwhelmingFormulaState.h"
 #include "PerfectFortuneState.h"
@@ -57,11 +58,23 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		// arrivalRound so later round processing cannot accidentally accelerate a
 		// different Gate.
 		bool chainGateAccelerated = false;
+		/// Explicit provenance: never reinterpret a temporary reinforcement as owned reserve troops.
+		bool temporary = false;
+
+		void validate() const
+		{
+			if(temporary && (!creature.hasValue() || count <= 0 || !position.isAvailable()
+				|| arrivalRound < 0 || sourceUnitId == std::numeric_limits<uint32_t>::max()))
+				throw std::runtime_error("Invalid temporary pending Gate state");
+		}
 
 		auto operator<=>(const PendingDemonicGate &) const = default;
 
 		template <typename Handler> void serialize(Handler & h)
 		{
+			if(h.saving) validate();
+			if(h.saving && temporary && !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+				throw std::runtime_error("Cannot discard temporary Gate provenance");
 			if(h.saving && chainGateAccelerated && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE))
 				throw std::runtime_error("Cannot discard accelerated Chain Gate state");
 			h & creature;
@@ -73,6 +86,11 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 				h & chainGateAccelerated;
 			else if(!h.saving)
 				chainGateAccelerated = false;
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+				h & temporary;
+			else if(!h.saving)
+				temporary = false;
+			if(!h.saving) validate();
 		}
 	};
 	struct GatedDemonicStack
@@ -80,19 +98,35 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		uint32_t unitId = std::numeric_limits<uint32_t>::max();
 		CreatureID creature;
 		TQuantity initialCount = 0;
+		bool temporary = false;
 
 		TQuantity endlessLegionRestoration(TQuantity survivors) const
 		{
-			return std::max<TQuantity>(0, initialCount - std::max<TQuantity>(0, survivors)) / 2;
+			return temporary ? 0 : std::max<TQuantity>(0, initialCount - std::max<TQuantity>(0, survivors)) / 2;
+		}
+
+		void validate() const
+		{
+			if(temporary && (!creature.hasValue() || initialCount <= 0
+				|| unitId == std::numeric_limits<uint32_t>::max()))
+				throw std::runtime_error("Invalid temporary gated-stack state");
 		}
 
 		auto operator<=>(const GatedDemonicStack &) const = default;
 
 		template <typename Handler> void serialize(Handler & h)
 		{
+			if(h.saving) validate();
+			if(h.saving && temporary && !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+				throw std::runtime_error("Cannot discard temporary gated-stack provenance");
 			h & unitId;
 			h & creature;
 			h & initialCount;
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+				h & temporary;
+			else if(!h.saving)
+				temporary = false;
+			if(!h.saving) validate();
 		}
 	};
 
@@ -151,7 +185,6 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	// without allowing ordinary stacks to qualify by creature or slot alone.
 	bool chainGateArmed = false;
 	// Only accepted ordinary hero actions update this alternating readiness.
-	AlternatingHeroActionState warcastingState;
 	// Authoritative round-long Hero/typed action budget. Creature activations
 	// remain outside this ledger; legacy counters above are retained for history
 	// and migration only.
@@ -223,10 +256,19 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t deepTranceRecoveredNormal = 0;
 	// Only actual Familiar Normal recovery may raise the legacy completion ceiling.
 	int32_t manaLeechesRecoveredNormal = 0;
+	/// Passive automatic blessings, independent of historical paired-action allowances.
+	uint8_t passiveDivineMandateUses = 0;
+	MetamagicPointState metamagicPointState;
+	WisdomCombatState wisdomCombatState;
+	void validatePassiveFactionSerialization(bool supported) const;
 	void validateManaLeechesSerialization(bool supported) const;
 	void validateRecoverySpecialtySerialization(bool supported) const;
 	void validateManaFurnaceSerialization(bool supported) const;
 	int32_t legacySpellPointCompletionCeiling() const;
+	/// Validate decoded typed state or reconstruct grants from captured legacy counters.
+	/// Mutates only this side's ledger; callers retain battle-level validation order.
+	void restoreHeroActionAllowancesAfterLoad(int32_t round, bool usesSharedActionBudget,
+		bool typedAllowancesSupported);
 
 	static constexpr uint8_t COMPLETED_HERO_SPELL_LEVELS_MASK =
 		static_cast<uint8_t>((1u << GameConstants::SPELL_LEVELS) - 1u);
@@ -411,6 +453,10 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			metamagicPointState.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
+		if(h.saving)
+			validatePassiveFactionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(h.saving) sylvanLuck.validateSerializationPrefix(h);
 		if(h.saving)
 			validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
@@ -497,16 +543,6 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		}
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE) && hasChainGateState())
 			throw std::runtime_error("Cannot discard Chain Gate battle state");
-		warcastingState.validateReactiveSerialization(h);
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING)
-			&& warcastingState != AlternatingHeroActionState{})
-			throw std::runtime_error("Cannot discard Warcasting battle state");
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SYNTHESIS)
-			&& warcastingState.hasConsumedBonus)
-			throw std::runtime_error("Cannot discard Warcasting consumption history");
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_SEQUENCE)
-			&& warcastingState.hasRecentActionHistory())
-			throw std::runtime_error("Cannot discard Hero Action sequence history");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES)
 			&& heroActionAllowances != HeroActionAllowanceState{})
 			throw std::runtime_error("Cannot discard Hero Action allowance battle state");
@@ -669,10 +705,6 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			h & chainGateArmed;
 		else if(!h.saving)
 			chainGateArmed = false;
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_WARCASTING))
-			h & warcastingState;
-		else if(!h.saving)
-			warcastingState = {};
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_ALLOWANCES))
 			h & heroActionAllowances;
 		else if(!h.saving)
@@ -845,6 +877,14 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			manaLeechesRecoveredNormal = 0;
 		if(!h.saving)
 			validateManaLeechesSerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+			h & passiveDivineMandateUses;
+		else if(!h.saving)
+			passiveDivineMandateUses = 0;
+		if(!h.saving)
+			validatePassiveFactionSerialization(true);
+		h & metamagicPointState;
+		h & wisdomCombatState;
 	}
 
 	void clearMetamagicSequence()

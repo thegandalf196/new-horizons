@@ -5,6 +5,8 @@
 #include "StdInc.h"
 
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
+#include "../HistoricalFactionPerkRules.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../lib/CStack.h"
@@ -72,6 +74,8 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, historicalFactionPerkRules());
+		if(!useCommands) captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void SetUp() override
@@ -85,6 +89,9 @@ protected:
 	{
 		useCommands = false;
 		startGame();
+		const auto light = SecondarySkill::decode("new-horizons:lightMagic");
+		ASSERT_GE(light, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(light), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		for(const auto known : attackerSideHero->getSpellsInSpellbook())
 			attackerSideHero->removeSpellFromSpellbook(known);

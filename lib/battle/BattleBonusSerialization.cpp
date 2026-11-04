@@ -11,7 +11,7 @@ void BattleInfo::validateOwnedBonusSerialization(BonusSerializationContext conte
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	validateExportedBonusSerialization(context);
 	// Retained dead stacks are serialized too. Side hero/army references are IDs.
 	for(const auto & stack : stacks)

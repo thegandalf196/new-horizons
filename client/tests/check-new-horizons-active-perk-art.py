@@ -247,8 +247,6 @@ def main() -> None:
             assert re.fullmatch(r"[0-9a-f]{64}", asset["source_sha256"]), (perk_id, "master hash")
             prompt_name = asset.get("prompt_file", generation.get("prompt_file"))
             assert prompt_name, (perk_id, "missing prompt provenance")
-            prompt = source / prompt_name
-            assert prompt.is_file() and prompt.read_text(encoding="utf-8").strip(), prompt
 
             export = source / "exports" / slug
             export_manifest = json.loads(
@@ -271,6 +269,8 @@ def main() -> None:
             assert outputs[f"{slug}-32.png"]["dimensions"] == [32, 32]
             if args.source_root is not None:
                 private_source = args.source_root / source.relative_to(ROOT / "assets/new-horizons/art-source")
+                prompt = private_source / prompt_name
+                assert prompt.is_file() and prompt.read_text(encoding="utf-8").strip(), prompt
                 private_master = private_source / asset["master"]
                 assert digest(private_master) == asset["source_sha256"], (perk_id, "master hash")
                 assert image_size(private_master) == tuple(asset["dimensions"])
@@ -448,7 +448,42 @@ def main() -> None:
         for perk in skill["perks"]
         if perk["effect"]["status"] == "active"
     }
-    assert set(EXPECTED) <= active
+    # Historical V5 bindings and their provenance remain checked above. Their
+    # retired semantic IDs are replaced in the current passive skill rosters.
+    retired_perks = {
+        "new-horizons:metamagic.arcaneAcquisition",
+        "new-horizons:metamagic.spellBuffer",
+        "new-horizons:demonicGating.reserveDiscipline",
+        "new-horizons:demonicGating.mobileGate",
+        "new-horizons:demonicGating.chainGate",
+    }
+    current_aliases = {
+        'new-horizons:metamagic.arcaneCatalyst': 'NH_perk_arcane_acquisition',
+        'new-horizons:metamagic.arcaneShield': 'NH_perk_echoed_duration',
+        'new-horizons:metamagic.manaConduit': 'NH_perk_arcane_economy',
+        'new-horizons:metamagic.lingeringMagic': 'NH_perk_spell_sequencing',
+        'new-horizons:metamagic.arcaneFeedback': 'NH_perk_focused_pairing',
+        'new-horizons:metamagic.spellFracture': 'NH_perk_perfect_sequence',
+        'new-horizons:metamagic.arcaneWellspring': 'NH_perk_countersequence',
+        'new-horizons:metamagic.arcaneAttunement': 'NH_perk_spell_buffer_v2',
+        'new-horizons:metamagic.arcaneEcho': 'NH_perk_formula_reserve',
+        'new-horizons:metamagic.arcaneSingularity': 'NH_perk_grand_metamagic',
+        'new-horizons:divineMandate.knightlyValor': 'NH_perk_knightly_sequence',
+        'new-horizons:divineMandate.shieldOfFaith': 'NH_perk_shared_purpose',
+        'new-horizons:divineMandate.righteousDiscipline': 'NH_perk_crown_and_altar',
+        'new-horizons:divineMandate.unwaveringStandard': 'NH_perk_royal_standard',
+        'new-horizons:divineMandate.inspiringLeadership': 'NH_perk_divine_discipline',
+        'new-horizons:divineMandate.consecratedArms': 'NH_perk_purifying_mandate',
+        'new-horizons:divineMandate.divineFury': 'NH_perk_consecrated_casting',
+        'new-horizons:demonicGating.infernalDiscipline': 'NH_perk_reserve_discipline',
+        'new-horizons:demonicGating.infernalOnslaught': 'NH_perk_mobile_gate',
+        'new-horizons:demonicGating.hellstride': 'NH_perk_chain_gate',
+    }
+    assert (set(EXPECTED) - retired_perks) <= active
+    assert not (retired_perks & active)
+    assert set(current_aliases) <= active
+    for perk_id, selected_family in current_aliases.items():
+        assert mapping[perk_id] == selected_family, (perk_id, "selected provisional alias")
     missing = sorted(active - set(mapping))
     assert not missing, f"active perks without named icon mappings: {missing}"
     normal_hashes = set()

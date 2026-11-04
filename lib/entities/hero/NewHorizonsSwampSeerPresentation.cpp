@@ -19,6 +19,7 @@ bool resolveSwampSeerPresentation(const CHero & hero, const JsonNode & developme
 	if(!rule)
 		return false;
 	result.name = "Swamp Seer";
+	result.summary = "Gain more experience through Learning and extra experience when specified adventure sites permanently increase Knowledge or Spell Power.";
 	result.artwork = "newHorizons/heroSpecialties/TivaSwampSeer";
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
 	result.description = "Learning's core experience bonus increases by " + std::to_string(rule->learningPercentPerLevel)

@@ -6,6 +6,8 @@
 #include "StdInc.h"
 
 #include "HeroCommandFixture.h"
+#include "../../hero/NewHorizonsHeroRulesFixture.h"
+#include "../../HistoricalFactionPerkRules.h"
 
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -41,6 +43,7 @@ class CounterspellPerkTest : public HeroCommandFixture
 {
 protected:
 	bool typedAllowanceFixture = false;
+	bool historicalMetamagicFixture = false;
 
 	void SetUp() override
 	{
@@ -58,13 +61,23 @@ protected:
 		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
 		magicRules["spells"][counterspellKey].Struct().erase("active");
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		if(historicalMetamagicFixture)
+		{
+			// Only the two authored extra-Spell-Action cases retain pre-passive Metamagic.
+			const auto historical = historicalFactionPerkRules(perks);
+			perks["skills"][metamagicSkill] = historical["skills"][metamagicSkill];
+			perks.Struct().erase("metamagicPolicy");
+			perks.setOverrideFlag(true);
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		if(!useCommands) captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void prepare(int counterMana, bool selectCountermage,
 		bool attackerMetamagic = false, bool defenderMetamagic = false)
 	{
+		historicalMetamagicFixture = attackerMetamagic || defenderMetamagic;
 		startGame();
 		const auto decoded = SecondarySkill::decode(sorcerySkill);
 		ASSERT_GE(decoded, 0);

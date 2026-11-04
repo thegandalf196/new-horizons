@@ -93,28 +93,7 @@ int64_t adjustUnmitigatedMagicalDamage(const battle::Unit & target, int64_t rawD
 		std::vector<int>{reduction}, spells::targetMdrPenetrations(target)).damageWithPenetration : rawDamage;
 }
 
-void adjustCreatureDamage(const BattleAttackInfo & attack, DamageEstimation & damage)
-{
-	if(attack.physicalDamage || !attack.defender)
-		return;
-	const int reduction = attack.defender->intrinsicMagicalDamageReductionPercent();
-	if(reduction <= 0)
-		return;
-	damage.damage.min = adjustUnmitigatedMagicalDamage(*attack.defender, damage.damage.min);
-	damage.damage.max = adjustUnmitigatedMagicalDamage(*attack.defender, damage.damage.max);
-	// Keep the existing script's casualty convention after the new mitigation.
-	const auto killedBy = [&](int64_t amount) -> int64_t
-	{
-		const auto integrity = attack.defender->getPhantomIntegrity();
-		if(integrity > 0)
-			return amount >= integrity ? attack.defender->getCount() : 0;
-		const auto firstHealth = attack.defender->getFirstHPleft();
-		return amount < firstHealth ? 0 : std::min<int64_t>(attack.defender->getCount(),
-			1 + (amount - firstHealth) / std::max<uint32_t>(1, attack.defender->getMaxHealth()));
-	};
-	damage.kills.min = killedBy(damage.damage.min);
-	damage.kills.max = killedBy(damage.damage.max);
-}
+
 }
 
 int32_t battle::CUnitState::intrinsicMagicalDamageReductionPercent() const

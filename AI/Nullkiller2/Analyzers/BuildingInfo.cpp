@@ -56,8 +56,8 @@ BuildingInfo::BuildingInfo(
 	const std::unique_ptr<ArmyManager> & armyManager)
 {
 	id = building->bid;
-	buildCost = building->resources;
-	buildCostWithPrerequisites = building->resources;
+	buildCost = town->getBuildingCost(id);
+	buildCostWithPrerequisites = buildCost;
 	dailyIncome = building->produce;
 	isBuilt = town->hasBuilt(id);
 	prerequisitesCount = 1;

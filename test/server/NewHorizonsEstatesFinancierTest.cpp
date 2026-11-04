@@ -1,5 +1,5 @@
 /*
- * NewHorizonsEstatesFinancierTest.cpp, part of VCMI engine
+ * NewHorizonsEstatesBankingTest.cpp, part of VCMI engine
  *
  * License: GNU General Public License v2 or later; see license.txt
  */
@@ -29,8 +29,8 @@ namespace
 const PlayerColor PLAYER(0);
 constexpr auto ESTATES_SKILL = "new-horizons:estates";
 constexpr auto TAX_COLLECTOR = "new-horizons:estates.taxCollector";
-constexpr auto ESTATE_NETWORK = "new-horizons:estates.estateNetwork";
-constexpr auto FINANCIER = "new-horizons:estates.financier";
+constexpr auto STEWARDSHIP = "new-horizons:estates.stewardship";
+constexpr auto BANKING = "new-horizons:estates.banking";
 
 class RecordingGameServer final : public IGameServer
 {
@@ -61,7 +61,7 @@ private:
 	std::shared_ptr<CGameState> state;
 };
 
-class NewHorizonsEstatesFinancierTest : public TinyMapGameTest
+class NewHorizonsEstatesBankingTest : public TinyMapGameTest
 {
 protected:
 	void SetUp() override
@@ -84,11 +84,11 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
-		// Financier is still pending in the live registry. Activate just this
+		// Banking is still pending in the live registry. Activate just this
 		// perk in the saved map rules so these tests exercise its runtime path.
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
 		for(auto & perk : perkRules["skills"][ESTATES_SKILL]["perks"].Vector())
-			if(perk["id"].String() == FINANCIER)
+			if(perk["id"].String() == BANKING)
 				perk["effect"]["status"].String() = "active";
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 	}
@@ -176,8 +176,8 @@ protected:
 
 		handler.levelUpHero(hero, estates, false);
 		ASSERT_EQ(hero->getSecSkillLevel(estates), MasteryLevel::ADVANCED);
-		ASSERT_TRUE(selectOfferedPerk(handler, hero, ESTATE_NETWORK, MasteryLevel::ADVANCED));
-		ASSERT_TRUE(hero->hasActivePerk(ESTATES_SKILL, ESTATE_NETWORK));
+		ASSERT_TRUE(selectOfferedPerk(handler, hero, STEWARDSHIP, MasteryLevel::ADVANCED));
+		ASSERT_TRUE(hero->hasActivePerk(ESTATES_SKILL, STEWARDSHIP));
 	}
 
 	void advanceToExpertEstates(CGameHandler & handler, CGHeroInstance * hero)
@@ -187,13 +187,13 @@ protected:
 		ASSERT_EQ(hero->getSecSkillLevel(estates), MasteryLevel::EXPERT);
 	}
 
-	void acquireFinancier(CGameHandler & handler, CGHeroInstance * hero)
+	void acquireBanking(CGameHandler & handler, CGHeroInstance * hero)
 	{
 		prepareForEstatesProgression(handler, hero);
 		advanceToAdvancedEstates(handler, hero);
 		advanceToExpertEstates(handler, hero);
-		ASSERT_TRUE(selectOfferedPerk(handler, hero, FINANCIER, MasteryLevel::EXPERT));
-		ASSERT_TRUE(hero->hasActivePerk(ESTATES_SKILL, FINANCIER));
+		ASSERT_TRUE(selectOfferedPerk(handler, hero, BANKING, MasteryLevel::EXPERT));
+		ASSERT_TRUE(hero->hasActivePerk(ESTATES_SKILL, BANKING));
 	}
 
 	void setGold(CGameHandler & handler, int64_t amount)
@@ -223,23 +223,23 @@ protected:
 	CGHeroInstance * secondHero = nullptr;
 };
 
-void setFinancierPlannedInSavedRules(CGHeroInstance * hero)
+void setBankingPlannedInSavedRules(CGHeroInstance * hero)
 {
 	auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
 	for(auto & perk : savedPerks.rules["skills"][ESTATES_SKILL]["perks"].Vector())
-		if(perk["id"].String() == FINANCIER)
+		if(perk["id"].String() == BANKING)
 			perk["effect"]["status"].String() = "planned";
 	savedPerks.validate();
 }
 
 } // namespace
 
-TEST_F(NewHorizonsEstatesFinancierTest, PaysOnFirstAndFollowingWeekStartsButNotOnAnOrdinaryDay)
+TEST_F(NewHorizonsEstatesBankingTest, PaysOnFirstAndFollowingWeekStartsButNotOnAnOrdinaryDay)
 {
 	startGame();
 	RecordingGameServer server(gameState());
 	CGameHandler handler(server, gameState());
-	acquireFinancier(handler, firstHero);
+	acquireBanking(handler, firstHero);
 	setGold(handler, 199);
 
 	handler.onNewTurn(); // Day zero -> one is the first week start.
@@ -254,7 +254,7 @@ TEST_F(NewHorizonsEstatesFinancierTest, PaysOnFirstAndFollowingWeekStartsButNotO
 	EXPECT_EQ(callback->getResourceAmount()[EGameResID::GOLD], 200);
 
 	const int64_t dailyGold = ordinaryDailyGoldIncome();
-	handler.onNewTurn(); // Ordinary day two has no Financier interest.
+	handler.onNewTurn(); // Ordinary day two has no Banking interest.
 	ASSERT_TRUE(server.lastNewTurn);
 	EXPECT_EQ(gameState()->day, 2u);
 	EXPECT_EQ(packetGold(*server.lastNewTurn), dailyGold);
@@ -270,13 +270,13 @@ TEST_F(NewHorizonsEstatesFinancierTest, PaysOnFirstAndFollowingWeekStartsButNotO
 	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD], 199 + dailyGold + 1);
 }
 
-TEST_F(NewHorizonsEstatesFinancierTest, FloorsCapsAndSnapshotsInterestPerActiveHolder)
+TEST_F(NewHorizonsEstatesBankingTest, FloorsCapsAndSnapshotsInterestPerActiveHolder)
 {
 	startGame();
 	RecordingGameServer server(gameState());
 	CGameHandler handler(server, gameState());
-	acquireFinancier(handler, firstHero);
-	acquireFinancier(handler, secondHero);
+	acquireBanking(handler, firstHero);
+	acquireBanking(handler, secondHero);
 
 	setGold(handler, 999);
 	handler.onNewTurn();
@@ -307,7 +307,7 @@ TEST_F(NewHorizonsEstatesFinancierTest, FloorsCapsAndSnapshotsInterestPerActiveH
 	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD], 202000 + dailyGold);
 }
 
-TEST_F(NewHorizonsEstatesFinancierTest, RequiresExpertRankSelectionAndAnActiveSavedPerkRule)
+TEST_F(NewHorizonsEstatesBankingTest, RequiresExpertRankSelectionAndAnActiveSavedPerkRule)
 {
 	startGame();
 	RecordingGameServer server(gameState());
@@ -317,17 +317,17 @@ TEST_F(NewHorizonsEstatesFinancierTest, RequiresExpertRankSelectionAndAnActiveSa
 	advanceToAdvancedEstates(handler, firstHero);
 	advanceToAdvancedEstates(handler, secondHero);
 
-	EXPECT_FALSE(hasOfferedPerk(firstHero, FINANCIER));
-	EXPECT_FALSE(hasOfferedPerk(secondHero, FINANCIER));
+	EXPECT_FALSE(hasOfferedPerk(firstHero, BANKING));
+	EXPECT_FALSE(hasOfferedPerk(secondHero, BANKING));
 	advanceToExpertEstates(handler, firstHero);
 	advanceToExpertEstates(handler, secondHero);
-	EXPECT_FALSE(firstHero->hasActivePerk(ESTATES_SKILL, FINANCIER));
-	EXPECT_FALSE(secondHero->hasActivePerk(ESTATES_SKILL, FINANCIER));
+	EXPECT_FALSE(firstHero->hasActivePerk(ESTATES_SKILL, BANKING));
+	EXPECT_FALSE(secondHero->hasActivePerk(ESTATES_SKILL, BANKING));
 
 	// The second hero's own saved rule snapshot retains the planned status, as
 	// happens for a perk that is not live in a saved ruleset.
-	setFinancierPlannedInSavedRules(secondHero);
-	EXPECT_FALSE(hasOfferedPerk(secondHero, FINANCIER));
+	setBankingPlannedInSavedRules(secondHero);
+	EXPECT_FALSE(hasOfferedPerk(secondHero, BANKING));
 
 	setGold(handler, 199);
 	handler.onNewTurn();
@@ -337,8 +337,8 @@ TEST_F(NewHorizonsEstatesFinancierTest, RequiresExpertRankSelectionAndAnActiveSa
 
 	// A legal accepted Expert offer activates only the first hero. The planned
 	// snapshot on the second hero must not stack a second interest payment.
-	ASSERT_TRUE(selectOfferedPerk(handler, firstHero, FINANCIER, MasteryLevel::EXPERT));
-	ASSERT_TRUE(firstHero->hasActivePerk(ESTATES_SKILL, FINANCIER));
+	ASSERT_TRUE(selectOfferedPerk(handler, firstHero, BANKING, MasteryLevel::EXPERT));
+	ASSERT_TRUE(firstHero->hasActivePerk(ESTATES_SKILL, BANKING));
 	const int64_t dailyGold = ordinaryDailyGoldIncome();
 	while(gameState()->day < 7)
 		handler.onNewTurn();

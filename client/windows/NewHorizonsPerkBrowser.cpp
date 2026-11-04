@@ -9,6 +9,8 @@
 #include "NewHorizonsPerkHelp.h"
 #include "NewHorizonsCapturedPerkIcons.h"
 #include "NewHorizonsPerkAvailability.h"
+#include "../CPlayerInterface.h"
+#include "../GameInstance.h"
 #include "../gui/Shortcut.h"
 #include "../render/Colors.h"
 #include "../widgets/Buttons.h"
@@ -26,19 +28,29 @@ namespace
 class PerkBrowserHelpArea : public CHoverableArea
 {
 	std::string description;
+	std::string details;
 	std::optional<SecondarySkill> parentSkill;
 	int skillRank;
 
 public:
-	PerkBrowserHelpArea(const Rect & area, std::string description_, std::optional<SecondarySkill> parentSkill_, int skillRank_)
-		: description(std::move(description_)), parentSkill(std::move(parentSkill_)), skillRank(skillRank_)
+	PerkBrowserHelpArea(const Rect & area, std::string description_, std::string details_, std::optional<SecondarySkill> parentSkill_, int skillRank_)
+		: description(std::move(description_)), details(std::move(details_)), parentSkill(std::move(parentSkill_)), skillRank(skillRank_)
 	{
 		// CIntObject has already adjusted the child to the parent's screen origin.
 		// Match LRClickableAreaWText's local-rectangle convention when replacing
 		// that position with this card's bounds.
 		pos = area + pos.topLeft();
-		hoverText = "Right-click for the perk explanation.";
-		addUsedEvents(SHOW_POPUP);
+		hoverText = "Click for the perk explanation.";
+		addUsedEvents(LCLICK | SHOW_POPUP);
+	}
+
+	void clickPressed(const Point &) override
+	{
+		CInfoWindow::TCompsInfo components;
+		if(parentSkill)
+			components.push_back(std::make_shared<CComponent>(ComponentType::SEC_SKILL,
+				*parentSkill, skillRank, CComponent::small));
+		GAME->interface()->showInfoDialog(description, components, 0, details);
 	}
 
 	void showPopupWindow(const Point &) override
@@ -55,6 +67,17 @@ public:
 			CRClickPopup::createAndPush(description);
 	}
 };
+
+std::shared_ptr<CIntObject> rankHelp(const CGHeroInstance & hero, const std::string & skillId,
+	int rank, const Rect & area)
+{
+	const auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId);
+	if(!parentSkill)
+		return std::make_shared<PerkBrowserHelpArea>(area, "No Skill description is available.", "", std::nullopt, rank);
+	return std::make_shared<PerkBrowserHelpArea>(area,
+		newHorizonsPerkHelp::skillDescription(&hero, *parentSkill, rank),
+		newHorizonsPerkHelp::skillDetails(&hero, *parentSkill, rank), parentSkill, rank);
+}
 
 int perkRank(const newHorizonsHeroes::PerkDefinition & perk)
 {
@@ -151,6 +174,8 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 				panelFill, panelBorder));
 			elements.push_back(std::make_shared<CLabel>(left + columnWidth / 2, 86, FONT_MEDIUM,
 				ETextAlignment::CENTER, Colors::YELLOW, rankNames[rankIndex]));
+			elements.push_back(rankHelp(hero, skillId, static_cast<int>(rankIndex) + 1,
+				Rect(left + 6, columnTop + 3, columnWidth - 12, 32)));
 
 			const auto & rankPerks = perksByRank[rankIndex];
 			if(rankPerks.empty())
@@ -203,14 +228,14 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 					+ "\nImplementation: " + effectStatus + ". This browser is read-only; it does not unlock perks.";
 				auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId);
 				const int skillRank = std::clamp(hero.getPerkSkillRank(skillId), 1, 3);
-				elements.push_back(std::make_shared<PerkBrowserHelpArea>(card, description,
+				elements.push_back(std::make_shared<PerkBrowserHelpArea>(card, description, perk.details,
 					std::move(parentSkill), skillRank));
 			}
 		}
 	}
 
 	elements.push_back(std::make_shared<CLabel>(16, 477, FONT_TINY, ETextAlignment::TOPLEFT,
-		Colors::WHITE, "Right-click a perk for its explanation.", 500));
+		Colors::WHITE, "Click a perk for its explanation; use i for details.", 500));
 	closeButton = std::make_shared<CButton>(Point(555, 462), AnimationPath::builtin("NH_cancel_button"),
 		CButton::tooltip("Close", "Return to the hero screen without changing any Skills or perks."),
 		[this] { close(); }, EShortcut::GLOBAL_CANCEL);

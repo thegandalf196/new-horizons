@@ -25,6 +25,7 @@ struct Budget
 	int64_t base = 0;
 	int remaining = 0;
 	int32_t source = -1;
+	BattleSide spellSide = BattleSide::NONE;
 	auto operator<=>(const Budget &) const = default;
 };
 /// Metadata only. Equivalent strongest/refresh outcomes coalesce; units are never branched.

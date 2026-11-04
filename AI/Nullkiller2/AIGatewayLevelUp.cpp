@@ -48,18 +48,18 @@ void AIGateway::heroGotLevelWithReroll(const CGHeroInstance * hero, PrimarySkill
 		return;
 	}
 	HeroPtr heroPtr(hero, cc.get());
-	executeActionAsync("quickStudyDecision", [this, heroPtr, heroId = hero->id, pskill, skills, perks, queryID, reachedLevel]() mutable
+	executeActionAsync("connoisseurDecision", [this, heroPtr, heroId = hero->id, pskill, skills, perks, queryID, reachedLevel]() mutable
 	{
-		bool reroll = false;
+		std::optional<size_t> reroll;
 		if(heroPtr.isVerified())
 		{
 			std::unique_lock lock(nullkiller->aiStateMutex);
 			nullkiller->heroManager->update();
-			reroll = nullkiller->heroManager->shouldRerollLevelUpOffer(heroPtr, skills, perks, reachedLevel);
+			reroll = nullkiller->heroManager->connoisseurSkillCard(heroPtr, skills, reachedLevel);
 		}
 		if(reroll && levelUpOffers.reroll(heroId, queryID))
 		{
-			answerQuery(queryID, -1);
+			answerQuery(queryID, -2 - static_cast<int32_t>(*reroll));
 		}
 		else if(levelUpOffers.select(heroId, queryID))
 		{

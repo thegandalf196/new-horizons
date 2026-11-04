@@ -213,9 +213,9 @@ TEST_F(NewHorizonsSorrowTest, SavedV3PenaltyUsesTheRankCoefficientBeforeOneFinal
 	EXPECT_EQ(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 65), 2)
 		<< "Spellcraft scales raw Spell Power across the 70-point threshold";
 	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 60), 1)
+		<< "Below the raw Spell Power threshold without another multiplier";
 	EXPECT_EQ(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 60, 20), 2)
-		<< "Warcasting scales the Spell Power term before the final floor";
-	EXPECT_EQ(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 60, 0, 20), 2)
 		<< "Empower scales the Spell Power term before the final floor";
 	attackerSideHero->setSecSkillLevel(shadow, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 
@@ -276,7 +276,7 @@ TEST_F(NewHorizonsSorrowTest, V3ExpertCastAppliesTheRankedPenaltyForThreeRoundsT
 	EXPECT_EQ(affected.front(), target);
 	const auto expectedPenalty = newHorizonsMagic::sorrowMoralePenalty(
 		battle()->getBattle()->getMagicRules(), attackerSideHero, SpellID::SORROW,
-		mechanics->getEffectPower(), mechanics->getWarcastingBonusPercent(),
+		mechanics->getEffectPower(),
 		mechanics->getEmpowerSpellBonusPercent());
 	ASSERT_TRUE(expectedPenalty.has_value());
 	EXPECT_EQ(*expectedPenalty, 3);

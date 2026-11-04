@@ -7,6 +7,7 @@
 #include "../../lib/battle/NewHorizonsChargeSpecialties.h"
 #include "../../lib/battle/NewHorizonsCoordinatedMarks.h"
 #include "../../lib/battle/NewHorizonsGraveDustStrike.h"
+#include "../../lib/battle/NewHorizonsFactionSpellDamage.h"
 #include "../../lib/battle/BodyHealthLoss.h"
 #include "NewHorizonsParalyzingGaze.h"
 #include "../CGameHandler.h"
@@ -72,6 +73,8 @@ Prepared prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & at
 	if(primary != hits.end())
 		result.lanceFormation = newHorizonsChargeSpecialties::lanceFormation(battle, attack);
 	result.graveDust = prepareGraveDust(battle, attack, hits);
+	if(primary != hits.end())
+		result.exposedWeakness = newHorizonsFactionSpellDamage::exposedWeakness(battle, attack);
 	return result;
 }
 void recordPrimaryMelee(const Prepared & prepared, std::optional<uint32_t> * victim)
@@ -87,6 +90,7 @@ void apply(CGameHandler & game, const CBattleInfoCallback & battle, const Prepar
 	applyOrdinaryEffect(game, battle, prepared.ordinary);
 	applyOrdinaryEffect(game, battle, prepared.lanceFormation);
 	if(!prepared.graveDust.add.empty()) applyOrdinaryEffect(game, battle, prepared.graveDust);
+	applyOrdinaryEffect(game, battle, prepared.exposedWeakness);
 }
 void applyOrdinaryEffect(CGameHandler & game, const CBattleInfoCallback & battle,
 	const newHorizonsOrdinaryStrike::EffectPlan & effectPlan)

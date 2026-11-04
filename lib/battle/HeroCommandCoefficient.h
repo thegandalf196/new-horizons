@@ -27,8 +27,7 @@ public:
 	int primary(PrimarySkill skill) const;
 };
 
-DLL_LINKAGE int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks);
+DLL_LINKAGE int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks);
 DLL_LINKAGE int coefficient(const JsonNode & effect, const CoefficientInputs & inputs,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks = true);
+	int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks = true);
 }

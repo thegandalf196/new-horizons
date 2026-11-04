@@ -13,13 +13,13 @@ using NewHorizonsPandemoniumTest = NewHorizonsPandemoniumFixture;
 TEST(NewHorizonsPandemoniumPowerTest, ExactBaselineRankAndWholeMasterFloor)
 {
 	for(size_t count = 0; count <= 5; ++count)
-		EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 10000, 0, 0, false, count), 45 * count);
-	EXPECT_EQ(newHorizonsPandemonium::rawPower(160, 10000, 0, 0, false, 4), 240);
-	EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 14500, 0, 0, false, 2), 112);
-	EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 10000, 0, 0, true, 2), 112);
-	EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 10000, 20, 50, true, 2), 162);
-	EXPECT_EQ(newHorizonsPandemonium::rawPower(0, 14500, 100, 100, false, 1), 20);
-	EXPECT_THROW(newHorizonsPandemonium::rawPower(100, -1, 0, 0, false, 1), std::invalid_argument);
+		EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 10000, 0, false, count), 45 * count);
+	EXPECT_EQ(newHorizonsPandemonium::rawPower(160, 10000, 0, false, 4), 240);
+	EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 14500, 0, false, 2), 112);
+	EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 10000, 0, true, 2), 112);
+	EXPECT_EQ(newHorizonsPandemonium::rawPower(100, 10000, 50, true, 2), 143);
+	EXPECT_EQ(newHorizonsPandemonium::rawPower(0, 14500, 100, false, 1), 20);
+	EXPECT_THROW(newHorizonsPandemonium::rawPower(100, -1, 0, false, 1), std::invalid_argument);
 }
 
 TEST_F(NewHorizonsPandemoniumTest, PaidExpertCastDamagesBothSidesAndLeavesZeroDebuffStackUntouched)
@@ -37,8 +37,8 @@ TEST_F(NewHorizonsPandemoniumTest, PaidExpertCastDamagesBothSidesAndLeavesZeroDe
 	const auto cost = battle()->battleGetSpellCost(spell().toSpell(), attackerSideHero);
 	EXPECT_EQ(cost, 22);
 	ASSERT_TRUE(cast());
-	EXPECT_EQ(enemyHP - enemy->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, 0, false, 2));
-	EXPECT_EQ(friendlyHP - friendly->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, 0, false, 1));
+	EXPECT_EQ(enemyHP - enemy->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, false, 2));
+	EXPECT_EQ(friendlyHP - friendly->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, false, 1));
 	EXPECT_EQ(clean->getAvailableHealth(), cleanHP);
 	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), cost);
 	EXPECT_FALSE(cast()) << "Accepted cast must spend the hero action";
@@ -51,7 +51,7 @@ TEST_F(NewHorizonsPandemoniumTest, SelectedMasterScalesActualPaidDamage)
 	const auto coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(battle()->getMagicRules(), attackerSideHero, spell());
 	const auto before = enemy->getAvailableHealth();
 	ASSERT_TRUE(cast());
-	EXPECT_EQ(before - enemy->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, 0, true, 1));
+	EXPECT_EQ(before - enemy->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, true, 1));
 }
 
 TEST_F(NewHorizonsPandemoniumTest, DiseaseComponentsRefreshAndPhysicalPoisonCountLogicalStatusesOnce)
@@ -66,7 +66,7 @@ TEST_F(NewHorizonsPandemoniumTest, DiseaseComponentsRefreshAndPhysicalPoisonCoun
 	const auto before = enemy->getAvailableHealth();
 	const auto coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(battle()->getMagicRules(), attackerSideHero, spell());
 	ASSERT_TRUE(cast());
-	EXPECT_EQ(before - enemy->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, 0, false, 2));
+	EXPECT_EQ(before - enemy->getAvailableHealth(), newHorizonsPandemonium::rawPower(100, coefficient, 0, false, 2));
 }
 
 TEST_F(NewHorizonsPandemoniumTest, NoQuarterProducerPairAndStoredPoisonAreDistinct)

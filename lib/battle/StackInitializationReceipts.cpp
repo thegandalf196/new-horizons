@@ -14,6 +14,11 @@ battle::StackInitializationReceipts::StackInitializationReceipts(const CUnitStat
 		state.defending, state.hadMorale, state.battlecraftWaitBonusUsed, state.battlecraftWaitMasteryDoubled);
 	restoredVeteranCohesion = state.veteranCohesionEarned;
 	restoredConfusionState = state.confusionState;
+	restoredArcaneMarks = state.arcaneMarks;
+	restoredArcaneShieldHitPoints = state.arcaneShieldHitPoints;
+	restoredDemonicGateOpened = state.demonicGateOpened;
+	restoredPhysicalPoison = std::make_tuple(state.physicalPoisonBaseDamage, state.physicalPoisonActivationsRemaining,
+		state.physicalPoisonSourceStackId, state.physicalPoisonSpellSide);
 	restoredForestAmbush = state.forestAmbush;
 	restoredDreadCavalry = state.dreadCavalryState;
 	restoredOverwatchReadyRound = state.battlecraftOverwatchReadyRound;
@@ -44,6 +49,11 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 	// Binary stack descriptors carry pending Confusion and target history too;
 	// rebinding the stack to the battle must not consume either value.
 	state.confusionState = restoredConfusionState;
+	state.arcaneMarks = restoredArcaneMarks;
+	state.arcaneShieldHitPoints = restoredArcaneShieldHitPoints;
+	state.demonicGateOpened = restoredDemonicGateOpened;
+	std::tie(state.physicalPoisonBaseDamage, state.physicalPoisonActivationsRemaining,
+		state.physicalPoisonSourceStackId, state.physicalPoisonSpellSide) = restoredPhysicalPoison;
 	state.forestAmbush = restoredForestAmbush;
 	state.dreadCavalryState = restoredDreadCavalry;
 	state.battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;

@@ -78,6 +78,7 @@ function Script:apply(mechanics, server, target)
 	for _, entry in ipairs(recipients) do
 		if entry.count > 0 and eligible(self, mechanics, entry.unit) then
 			local unitID = entry.unit:unitID()
+			server:recordResolvedSpellRecipient(unitID)
 			local damage, killed = server:damageUnit(battle, entry.unit,
 				mechanics:getPandemoniumDamage(entry.unit, entry.count),
 				false, mechanics:getUnitCaster(), true)

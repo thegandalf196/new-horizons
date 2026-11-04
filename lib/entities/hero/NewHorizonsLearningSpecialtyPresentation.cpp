@@ -26,22 +26,15 @@ bool resolveLearningSpecialtyPresentation(const CHero & hero, const JsonNode & d
 	if(!rule)
 		return false;
 	result.name = archivist ? "Grave Archivist" : "Spirit Teacher";
+	result.summary = archivist ? "Gain more experience through Learning."
+		: "Gain more experience through Learning and improve experience awarded by Mentor.";
 	result.artwork = "newHorizons/heroSpecialties/" + std::string(archivist ? "NimbusGraveArchivist" : "OrisSpiritTeacher");
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
 	result.description = "Learning's core experience bonus increases by " + std::to_string(rule->learning.percentPerLevel)
 		+ "% per hero level, up to +" + std::to_string(rule->learning.maximumPercent)
 		+ "% of that contribution. Fractions round down; other experience modifiers are unchanged. ";
-	if(archivist)
-	{
-		const bool eagleEye = newHorizonsMagic::rulesActive(magic)
-			&& magic["rulesetVersion"].Integer() == newHorizonsMagic::CURRENT_RULESET_VERSION;
-		result.description += eagleEye ? "While Eagle Eye is active, learn up to "
-			+ std::to_string(rule->additionalEagleEyeSpells)
-			+ " additional distinct eligible enemy-hero spells after combat. Highest level first; equal-level ties use cast order. Ordinary learning restrictions apply."
-			: "Eagle Eye's additional learning is inactive under this game's legacy magic rules.";
-	}
-	else
-		result.description += "When ordinary Mentor or Master Teacher authorizes teaching, its raw experience award increases by "
+	if(!archivist)
+		result.description += "When Mentor authorizes teaching, its raw experience award increases by "
 			+ std::to_string(rule->mentorExperiencePercent)
 			+ "% before the recipient's ordinary experience modifiers. This grants no perk or extra weekly recipient.";
 	if(capturedHero && capturedHero->getSecSkillLevel(*result.skill) == MasteryLevel::NONE)

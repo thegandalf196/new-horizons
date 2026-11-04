@@ -164,7 +164,17 @@ private:
 	MetaString getHoverText(PlayerColor player) const override;
 	MetaString getHoverText(const CGHeroInstance * hero) const override;
 
+private:
+    int32_t mercenaryLastWeek = -1;
+    int32_t pendingMercenaries = 0;
+    PlayerColor pendingMercenaryOwner = PlayerColor::NEUTRAL;
+    void validateMercenaryState() const;
+    void setPropertyDer(ObjProperty what, ObjPropertyID value) override;
 public:
+    int32_t getMercenaryLastWeek() const { return mercenaryLastWeek; }
+    int32_t getPendingMercenaries() const { return pendingMercenaries; }
+    void grantWeeklyMercenaries(IGameEventCallback & events, int32_t week, int32_t amount) const;
+    void deliverPendingMercenaries(IGameEventCallback & events) const;
 	template <typename Handler> void serialize(Handler &h)
 	{
 		h & static_cast<CArmedInstance&>(*this);
@@ -173,10 +183,18 @@ public:
 		h & abandonedMineResources;
 		if(h.version >= Handler::Version::HOTA_MAP_FORMAT_EXTENSIONS_2)
 			h & abandonedMineGuards;
+        if(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS))
+        {
+            h & mercenaryLastWeek;
+            h & pendingMercenaries;
+            h & pendingMercenaryOwner;
+            validateMercenaryState();
+        }
+        else if(h.saving && (mercenaryLastWeek != -1 || pendingMercenaries != 0))
+            throw std::runtime_error("Mercenary Company mine receipt requires current format");
 	}
 	ui32 defaultResProduction() const;
 	ui32 getProducedQuantity() const;
-	int prospectorQuantity() const;
 
 	const IOwnableObject * asOwnable() const final;
 	ResourceSet dailyIncome() const override;

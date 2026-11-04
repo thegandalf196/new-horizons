@@ -292,70 +292,6 @@ int CGTownInstance::getDwellingBonus(const std::vector<CreatureID>& creatureIds,
 	return totalBonus;
 }
 
-int32_t CGTownInstance::getStewardGoldBeforeHandicap() const
-{
-	if(!getOwner().isValidPlayer())
-		return 0;
-	constexpr int32_t goldPerHero = 250;
-	const auto qualifies = [this](const CGHeroInstance * hero)
-	{
-		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
-			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.steward");
-	};
-	const auto * visitor = getVisitingHero();
-	const auto * garrison = getGarrisonHero();
-	return (qualifies(visitor) ? goldPerHero : 0)
-		+ (garrison != visitor && qualifies(garrison) ? goldPerHero : 0);
-}
-
-TResources CGTownInstance::dailyIncome() const
-{
-	const int32_t day = newHorizonsMagnateIncome.empty() ? 0 : cb->getCalendar().getCurrentDay();
-	return dailyIncomeWithMagnate(newHorizonsMagnateIncome, day);
-}
-
-int32_t CGTownInstance::getMagnateGoldBeforeHandicap() const
-{
-	if(newHorizonsMagnateIncome.empty())
-		return 0;
-	return newHorizonsMagnateIncome.goldOnDay(cb->getCalendar().getCurrentDay(), getOwner());
-}
-
-TResources CGTownInstance::dailyIncomeWithMagnate(const newHorizonsEconomy::MagnateIncome & snapshot, int32_t day) const
-{
-	snapshot.validate();
-	ResourceSet ret;
-
-	for (GameResID k : LIBRARY->resourceTypeHandler->getAllObjects())
-		ret[k] += valOfBonuses(BonusType::GENERATE_RESOURCE, BonusSubtypeID(k));
-
-	for(const auto & p : getTown()->buildings)
-	{
-		BuildingID buildingUpgrade;
-
-		for(const auto & p2 : getTown()->buildings)
-		{
-			if (p2.second->upgrade == p.first)
-			{
-				buildingUpgrade = p2.first;
-			}
-		}
-		if (!hasBuilt(buildingUpgrade)&&(hasBuilt(p.first)))
-		{
-			ret += p.second->produce;
-		}
-	}
-
-	if (!getOwner().isValidPlayer())
-		return ret;
-
-	ret[EGameResID::GOLD] += snapshot.goldOnDay(day, getOwner());
-	ret[EGameResID::GOLD] += getStewardGoldBeforeHandicap();
-	const auto & playerSettings = cb->getPlayerSettings(getOwner());
-	ret.applyHandicap(playerSettings->handicap.percentIncome);
-	return ret;
-}
-
 std::vector<CreatureID> CGTownInstance::providedCreatures() const
 {
 	return {};
@@ -822,51 +758,6 @@ BoatId CGTownInstance::getBoatType() const
 	return getTown()->faction->boatType;
 }
 
-int CGTownInstance::getMarketEfficiency() const
-{
-	if(!hasBuiltResourceMarketplace())
-		return 0;
-
-	const PlayerState *p = cb->getPlayerState(tempOwner);
-	assert(p);
-
-	int marketCount = p->valOfBonuses(BonusType::MARKETPLACE_ACCESS);
-	const auto hasMerchantPrince = [this](const CGHeroInstance * hero)
-	{
-		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
-			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.merchantPrince");
-	};
-	// The town receives two virtual Marketplaces, not two per resident holder.
-	// Keep the ordinary Marketplace gate and every consuming offer's own cap.
-	if(hasMerchantPrince(getVisitingHero()) || hasMerchantPrince(getGarrisonHero()))
-		marketCount += 2;
-
-	return marketCount;
-}
-
-double CGTownInstance::getResourceExchangeEffectiveness(GameResID resourceToSell, GameResID resourceToBuy) const
-{
-	const double ordinaryEffectiveness = IMarket::getResourceExchangeEffectiveness(resourceToSell, resourceToBuy);
-	const bool sellsCommonResource = resourceToSell == EGameResID::WOOD || resourceToSell == EGameResID::ORE;
-	const bool buysRareResource = resourceToBuy == EGameResID::MERCURY || resourceToBuy == EGameResID::SULFUR
-		|| resourceToBuy == EGameResID::CRYSTAL || resourceToBuy == EGameResID::GEMS;
-
-	if(!hasBuiltResourceMarketplace() || !sellsCommonResource || !buysRareResource)
-		return ordinaryEffectiveness;
-
-	const auto hasResourceBroker = [this](const CGHeroInstance * hero)
-	{
-		return hero
-			&& hero->getVisitedTown() == this
-			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.resourceBroker");
-	};
-
-	if(hasResourceBroker(getVisitingHero()) || hasResourceBroker(getGarrisonHero()))
-		return ordinaryEffectiveness * 1.2;
-
-	return ordinaryEffectiveness;
-}
-
 std::vector<TradeItemBuy> CGTownInstance::availableItemsIds(EMarketMode mode) const
 {
 	if(mode == EMarketMode::RESOURCE_ARTIFACT)
@@ -1166,18 +1057,6 @@ void CGTownInstance::removeAllBuildings()
 std::set<BuildingID> CGTownInstance::getBuildings() const
 {
 	return builtBuildings;
-}
-
-TResources CGTownInstance::getBuildingCost(const BuildingID & buildingID) const
-{
-	if (vstd::contains(getTown()->buildings, buildingID))
-		return getTown()->buildings.at(buildingID)->resources;
-	else
-	{
-		logGlobal->error("Town %s at %s has no possible building %d!", getNameTextID(), anchorPos().toString(), buildingID.toEnum());
-		return TResources();
-	}
-
 }
 
 CBuilding::TRequired CGTownInstance::genBuildingRequirements(const BuildingID & buildID, bool deep) const

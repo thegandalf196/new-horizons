@@ -14,7 +14,7 @@
 #include "lib/entities/hero/NewHorizonsPerkState.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
-#include "lib/mapObjects/NewHorizonsAcademicStudy.h"
+#include "lib/entities/hero/NewHorizonsLearning.h"
 #include "lib/modding/CModHandler.h"
 #include "lib/networkPacks/PacksForClient.h"
 
@@ -67,10 +67,10 @@ protected:
 		{
 			const SecondarySkill skill(SecondarySkill::decode(LEARNING));
 			hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-			hero->applyPerkSelection({LEARNING, "new-horizons:learning.eagleEye"});
+			hero->applyPerkSelection({LEARNING, "new-horizons:learning.historian"});
 			hero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-			hero->applyPerkSelection({LEARNING, "new-horizons:learning.academicStudy"});
-			ASSERT_TRUE(hero->hasActivePerk(LEARNING, "new-horizons:learning.academicStudy"));
+			hero->applyPerkSelection({LEARNING, "new-horizons:learning.seasonedAdventurer"});
+			ASSERT_TRUE(hero->hasActivePerk(LEARNING, "new-horizons:learning.seasonedAdventurer"));
 		}
 		gateway = makeGateway(PLAYER);
 	}
@@ -91,17 +91,17 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsAcademicStudyAITest, ActualPlannerAdmitsOnlyHeroSpecificUnvisitedGuildReward)
+TEST_F(NewHorizonsAcademicStudyAITest, CurrentLearningDoesNotInventRetiredGuildXpOrPlannerVisit)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto * ai = gateway->nullkiller.get();
 	NK2AI::RewardEvaluator reward(ai);
-	EXPECT_TRUE(NK2AI::shouldVisit(ai, hero, rewardTown));
+	EXPECT_FALSE(NK2AI::shouldVisit(ai, hero, rewardTown));
 	EXPECT_FALSE(NK2AI::shouldVisit(ai, hero, emptyTown));
 	EXPECT_FLOAT_EQ(reward.getSkillReward(rewardTown, hero, NK2AI::MAIN),
-		static_cast<float>(hero->calculateXp(750)) / (1000.0f * std::sqrt(hero->level)));
+		0.0f);
 	const auto result = candidates();
-	EXPECT_NE(std::ranges::find(result, rewardTown), result.end());
+	EXPECT_EQ(std::ranges::find(result, rewardTown), result.end());
 	EXPECT_EQ(std::ranges::find(result, emptyTown), result.end());
 }
 
@@ -121,6 +121,6 @@ TEST_F(NewHorizonsAcademicStudyAITest, UnselectedHeroDoesNotCreateOwnedTownCaptu
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false));
 	EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, rewardTown));
-	EXPECT_EQ(newHorizonsLearning::academicStudyExperience(*hero, *rewardTown), 0);
+	EXPECT_FLOAT_EQ(NK2AI::RewardEvaluator(gateway->nullkiller.get()).getSkillReward(rewardTown, hero, NK2AI::MAIN), 0.0f);
 	EXPECT_TRUE(candidates().empty());
 }

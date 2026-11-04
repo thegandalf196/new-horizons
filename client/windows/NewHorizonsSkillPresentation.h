@@ -35,8 +35,7 @@ inline std::string rankDescription(const JsonNode & rules, std::string_view skil
 {
 	if(skillId == "new-horizons:sylvanLuck")
 		return newHorizonsSylvanTactics::capturedRankDescription(rules, rank);
-	// Other Skills keep their existing translated presentation unchanged.
-	if(skillId != "new-horizons:necromancy" || rank < 1 || rank > 3
+	if(rank < 1 || rank > 3
 		|| !rules.isStruct() || !rules["skills"].isStruct())
 		return fallback;
 	const auto & skills = rules["skills"].Struct();

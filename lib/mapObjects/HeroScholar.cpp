@@ -12,12 +12,10 @@
 std::vector<SpellID> CGHeroInstance::getNewHorizonsScholarSpellsFor(
 	const CGHeroInstance & recipient, size_t maximumSpells) const
 {
-	if(maximumSpells > 2)
-		throw std::invalid_argument("Unsupported Scholar spell budget");
 	if(this == &recipient || !hasSpellbook() || !recipient.hasSpellbook() || maximumSpells == 0)
 		return {};
 	std::vector<SpellID> selected;
-	selected.reserve(maximumSpells + 1);
+	selected.reserve(std::min(maximumSpells, spells.size()));
 	const auto higherPriority = [&recipient](SpellID left, SpellID right)
 	{
 		const auto leftLevel = recipient.getSpellLevel(left.toSpell());

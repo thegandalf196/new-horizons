@@ -267,11 +267,11 @@ TEST_F(NewHorizonsCrusadeTest, AuthoritativeCastEmpowersAlliesAndUsesOneHeroActi
 	const auto coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(
 		battle()->getMagicRules(), attackerSideHero, spell);
 	const auto expectedAttribute = std::min<int64_t>(6, 3
-		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(spellPower, 75, coefficient, 0, 0));
+		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(spellPower, 75, coefficient, 0));
 	const auto expectedInitiative = std::min<int64_t>(3, 1
-		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(spellPower, 100, coefficient, 0, 0));
+		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(spellPower, 100, coefficient, 0));
 	const auto expectedMDR = std::min<int64_t>(2500, 1200
-		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(13 * spellPower, 2, coefficient, 0, 0));
+		+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(13 * spellPower, 2, coefficient, 0));
 	EXPECT_EQ(expectedMDR, 1525) << "The unranked SP 50 profile matches the canonical 15.25% example";
 
 	for(const auto * unit : {friendly, otherFriendly})

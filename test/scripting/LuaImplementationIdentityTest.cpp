@@ -13,6 +13,9 @@
 #include "../../luascript/LuaModule.h"
 #include "../../luascript/LuaScriptInstance.h"
 #include "../../lib/filesystem/Filesystem.h"
+#include "../../lib/filesystem/CFilesystemLoader.h"
+#include "../../lib/VCMIDirs.h"
+#include <boost/filesystem/fstream.hpp>
 #include <array>
 #include <stdexcept>
 
@@ -155,13 +158,20 @@ TEST(LuaImplementationIdentity, SorceryImportDoesNotBroadenOtherOrTimedClosures)
 
 TEST(LuaImplementationIdentity, RootWhitespaceOrCustomCodeFailsClosed)
 {
-	for(const auto & text : {source("spells/damage") + "\n", std::string("return { type = 'damage' }")})
+	for(const auto & name : {"spells/damage", "spells/timed"})
 	{
-		Identity identity(text, false);
-		completeDamage(identity);
+		Identity identity(source(name) + "\n", false);
+		if(std::string_view(name) == "spells/damage")
+			completeDamage(identity);
+		else
+			completeTimed(identity);
 		identity.finish(true);
-		EXPECT_EQ(identity.get(), Implementation::UNKNOWN);
+		EXPECT_EQ(identity.get(), Implementation::UNKNOWN) << name;
 	}
+	Identity custom("return { type = 'damage' }", false);
+	completeDamage(custom);
+	custom.finish(true);
+	EXPECT_EQ(custom.get(), Implementation::UNKNOWN);
 }
 
 TEST(LuaImplementationIdentity, DeclaredPatchesRejectEvenWhenNoneLoadedOrAttemptSucceeded)
@@ -458,11 +468,55 @@ namespace
 {
 constexpr std::array<const char *, 5> lifeDrainModules = {
 	"spells/unitEffect", "spells/damage", "spells/unitEffect", "battleLog", "battleLog"};
-void completeLifeDrain(Identity & identity)
+void completeLifeDrain(Identity & identity, bool current = true)
 {
 	for(const auto * name : lifeDrainModules)
-		load(identity, name, source(name));
+		load(identity, name, !current && std::string_view(name) == "spells/damage"
+			? std::string(historicalLifeDrainIdentityTest::DAMAGE_SOURCE) : source(name));
 }
+
+// Serial test-only overlay: exercise the bytes actually imported by LuaContext.
+// Keep it in the isolated test cache and restore the filesystem before returning.
+class HistoricalLifeDrainDamageScope
+{
+	boost::filesystem::path directory;
+	std::string identifier;
+public:
+	explicit HistoricalLifeDrainDamageScope(bool historical)
+	{
+		if(!historical)
+			return;
+		identifier = boost::filesystem::unique_path("life-drain-%%%%-%%%%-%%%%").string();
+		directory = VCMIDirs::get().userCachePath() / identifier;
+		try
+		{
+			boost::filesystem::create_directories(directory / "spells");
+			boost::filesystem::ofstream output(directory / "spells/damage.lua", std::ios::binary);
+			output << historicalLifeDrainIdentityTest::DAMAGE_SOURCE;
+			output.close();
+			if(!output)
+				throw std::runtime_error("Failed to write historical Life Drain dependency");
+			CResourceHandler::addFilesystem("root", identifier,
+				std::make_unique<CFilesystemLoader>("SCRIPTS/", directory));
+			if(source("spells/damage") != historicalLifeDrainIdentityTest::DAMAGE_SOURCE)
+				throw std::runtime_error("Historical Life Drain import was not selected");
+		}
+		catch(...)
+		{
+			CResourceHandler::removeFilesystem("root", identifier);
+			boost::filesystem::remove_all(directory);
+			throw;
+		}
+	}
+	~HistoricalLifeDrainDamageScope()
+	{
+		if(!identifier.empty())
+		{
+			CResourceHandler::removeFilesystem("root", identifier);
+			boost::filesystem::remove_all(directory);
+		}
+	}
+};
 }
 TEST(LuaImplementationIdentity, LifeDrainRequiresItsExactTransitiveClosure)
 {
@@ -579,14 +633,15 @@ TEST(LuaImplementationIdentity, HistoricalTimedKeepsExactHistoricalImportAndReje
 TEST(LuaImplementationIdentity, HistoricalAndSharedLifeDrainRootsRequireExactBytesAndClosure)
 {
 	scripting::LuaModule host;
-	for(const auto & original : {std::string(historicalLifeDrainIdentityTest::SOURCE), source("spells/lifeDrain")})
+	for(const auto & original : {std::string(historicalLifeDrainIdentityTest::SOURCE),
+		std::string(historicalLifeDrainIdentityTest::SHARED_SOURCE), source("spells/lifeDrain")})
 		for(const bool changed : {false, true})
 			for(const bool fromScript : {false, true})
 			{
 				const auto text = original + (changed ? "\n-- unreviewed change" : "");
 				scripting::LuaScriptInstance script(host, "core", text);
 				auto identity = fromScript ? Identity::fromScript(script) : Identity(text, false);
-				completeLifeDrain(identity);
+				completeLifeDrain(identity, original == source("spells/lifeDrain"));
 				identity.finish(true);
 				EXPECT_EQ(identity.get(), changed ? Implementation::UNKNOWN : Implementation::CANONICAL_LIFE_DRAIN)
 					<< "changed=" << changed << " fromScript=" << fromScript;
@@ -597,13 +652,48 @@ TEST(LuaImplementationIdentity, HistoricalAndSharedLifeDrainContextsAttestActual
 {
 	scripting::LuaModule host;
 	EmptyEnvironment environment;
-	for(const auto & original : {std::string(historicalLifeDrainIdentityTest::SOURCE), source("spells/lifeDrain")})
+	for(const auto & original : {std::string(historicalLifeDrainIdentityTest::SOURCE),
+		std::string(historicalLifeDrainIdentityTest::SHARED_SOURCE), source("spells/lifeDrain")})
 		for(const bool changed : {false, true})
 		{
+			HistoricalLifeDrainDamageScope imports(original != source("spells/lifeDrain"));
 			scripting::LuaScriptInstance script(host, "core", original + (changed ? "\n-- unreviewed change" : ""));
 			scripting::LuaContext context(&script, &environment);
 			context.initialize();
 			EXPECT_EQ(context.forecastImplementation(), changed ? Implementation::UNKNOWN : Implementation::CANONICAL_LIFE_DRAIN)
 				<< "changed=" << changed;
 		}
+}
+
+TEST(LuaImplementationIdentity, LifeDrainCurrentAndHistoricalDamageImportsNeverMix)
+{
+	scripting::LuaModule host;
+	EmptyEnvironment environment;
+	const auto currentRoot = source("spells/lifeDrain");
+	for(const auto & root : {std::string(historicalLifeDrainIdentityTest::SOURCE),
+		std::string(historicalLifeDrainIdentityTest::SHARED_SOURCE), currentRoot})
+		for(const bool currentImport : {false, true})
+		{
+			const auto expected = (root == currentRoot) == currentImport
+				? Implementation::CANONICAL_LIFE_DRAIN : Implementation::UNKNOWN;
+			Identity identity(root, false);
+			completeLifeDrain(identity, currentImport);
+			identity.finish(true);
+			EXPECT_EQ(identity.get(), expected);
+			HistoricalLifeDrainDamageScope imports(!currentImport);
+			scripting::LuaScriptInstance script(host, "core", root);
+			scripting::LuaContext context(&script, &environment);
+			context.initialize();
+			EXPECT_EQ(context.forecastImplementation(), expected);
+		}
+}
+
+TEST(LuaImplementationIdentity, LifeDrainHistoricalImportScopeRestoresCurrentSource)
+{
+	const auto current = source("spells/damage");
+	{
+		HistoricalLifeDrainDamageScope imports(true);
+		EXPECT_EQ(source("spells/damage"), historicalLifeDrainIdentityTest::DAMAGE_SOURCE);
+	}
+	EXPECT_EQ(source("spells/damage"), current);
 }

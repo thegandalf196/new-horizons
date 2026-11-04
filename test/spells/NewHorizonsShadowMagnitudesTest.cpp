@@ -16,70 +16,68 @@
 
 TEST(NewHorizonsShadowMagnitudesTest, VampirismScalesOnlyPowerWithOneFinalFloor)
 {
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(0, 10000, 0, 0, false), 2500);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 10000, 0, 0, false), 4000);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 11500, 0, 0, false), 4225);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(20, 12650, 0, 0, false), 2879);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(20, 12650, 20, 25, false), 3069);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(0, 10000, 0, false), 2500);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 10000, 0, false), 4000);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 11500, 0, false), 4225);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(20, 12650, 0, false), 2879);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(20, 12650, 25, false), 2974);
 }
 
 TEST(NewHorizonsShadowMagnitudesTest, NightFeederAppliesAfterTheOrdinaryCap)
 {
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(0, 100000, 1000, 1000, true), 4000);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 14300, 0, 0, true), 6145);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(166, 10000, 0, 0, false), 4990);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(167, 10000, 0, 0, false), 5000);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(166, 10000, 0, 0, true), 6490);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(167, 10000, 0, 0, true), 6500);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(0, 100000, 1000, true), 4000);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 14300, 0, true), 6145);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(166, 10000, 0, false), 4990);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(167, 10000, 0, false), 5000);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(166, 10000, 0, true), 6490);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(167, 10000, 0, true), 6500);
 }
 
 TEST(NewHorizonsShadowMagnitudesTest, DoomPreservesFixedThirtyFiveAndCapSixty)
 {
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(0, 100000, 1000, 1000), 35);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 10000, 0, 0), 50);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 11500, 0, 0), 52);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 14500, 0, 0), 56);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(166, 10000, 0, 0), 59);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(167, 10000, 0, 0), 60);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(0, 100000, 1000), 35);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 10000, 0), 50);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 11500, 0), 52);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 14500, 0), 56);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(166, 10000, 0), 59);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(167, 10000, 0), 60);
 }
 
 TEST(NewHorizonsShadowMagnitudesTest, ExplicitCastCoefficientAndBonusesAreNotRecomputed)
 {
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(50, 11500, 20, 25), 47);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(114, 14599, 0, 0), 59);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(115, 14599, 0, 0), 60);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(20, 14599, 20, 25, false), 3156);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(50, 11500, 25), 45);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(114, 14599, 0), 59);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(115, 14599, 0), 60);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(20, 14599, 25, false), 3047);
 }
 
 TEST(NewHorizonsShadowMagnitudesTest, NegativeAndZeroPowerKeepTheirExistingFamilySemantics)
 {
-	EXPECT_THROW(newHorizonsMagic::vampirismHealBasisPoints(-1, 10000, 0, 0, false), std::invalid_argument);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(-1, 10000, 0, 0), 35);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 0, 1000, 1000, false), 2500);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 0, 1000, 1000), 35);
+	EXPECT_THROW(newHorizonsMagic::vampirismHealBasisPoints(-1, 10000, 0, false), std::invalid_argument);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(-1, 10000, 0), 35);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(100, 0, 1000, false), 2500);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(100, 0, 1000), 35);
 }
 
 TEST(NewHorizonsShadowMagnitudesTest, LargePowerCapsBeforeNarrowing)
 {
 	const auto power = std::numeric_limits<int32_t>::max();
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(power, 100000, 1000, 1000, false), 5000);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(power, 100000, 1000, 1000, true), 6500);
-	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(power, 100000, 1000, 1000), 60);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(power, 100000, 1000, false), 5000);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(power, 100000, 1000, true), 6500);
+	EXPECT_EQ(newHorizonsMagic::doomCripplingPenaltyPercent(power, 100000, 1000), 60);
 }
 
 TEST(NewHorizonsShadowMagnitudesTest, InvalidCoefficientAndCastBonusDomainsRemainRejected)
 {
 	for(const int32_t coefficient : {-1, 100001})
 	{
-		EXPECT_THROW(newHorizonsMagic::vampirismHealBasisPoints(100, coefficient, 0, 0, false), std::invalid_argument);
-		EXPECT_THROW(newHorizonsMagic::doomCripplingPenaltyPercent(100, coefficient, 0, 0), std::invalid_argument);
+		EXPECT_THROW(newHorizonsMagic::vampirismHealBasisPoints(100, coefficient, 0, false), std::invalid_argument);
+		EXPECT_THROW(newHorizonsMagic::doomCripplingPenaltyPercent(100, coefficient, 0), std::invalid_argument);
 	}
 	for(const int32_t bonus : {-1, 1001})
 	{
-		EXPECT_THROW(newHorizonsMagic::vampirismHealBasisPoints(100, 10000, bonus, 0, false), std::invalid_argument);
-		EXPECT_THROW(newHorizonsMagic::vampirismHealBasisPoints(100, 10000, 0, bonus, false), std::invalid_argument);
-		EXPECT_THROW(newHorizonsMagic::doomCripplingPenaltyPercent(100, 10000, bonus, 0), std::invalid_argument);
-		EXPECT_THROW(newHorizonsMagic::doomCripplingPenaltyPercent(100, 10000, 0, bonus), std::invalid_argument);
+		EXPECT_THROW(newHorizonsMagic::vampirismHealBasisPoints(100, 10000, bonus, false), std::invalid_argument);
+		EXPECT_THROW(newHorizonsMagic::doomCripplingPenaltyPercent(100, 10000, bonus), std::invalid_argument);
 	}
 }
 

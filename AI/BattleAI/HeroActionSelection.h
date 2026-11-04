@@ -40,6 +40,8 @@ public:
 	/// Existing scalar observers pay no additional allocation or unit queries.
 	virtual bool observeIdentity() const noexcept { return false; }
 	virtual void candidateIdentity(size_t, CandidateIdentity) noexcept {}
+	/// New-policy forecast diagnostics only, independent of native action legality.
+	virtual void uncertainAutomaticBenefit(size_t) noexcept {}
 };
 struct Selection
 {

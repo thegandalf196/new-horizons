@@ -160,7 +160,7 @@ TEST_F(HeroCommandRevisionEffectsTest, RetainedNativeVanguardStillEnablesCommand
 	EXPECT_FALSE(battle()->battleHasCommandingPresence(friendly));
 }
 
-TEST_F(HeroCommandRevisionEffectsTest, LeadershipEfficiencyRetainsCommandWarcastingDivineAndVeteran)
+TEST_F(HeroCommandRevisionEffectsTest, LeadershipEfficiencyRetainsCommandDivineAndVeteran)
 {
 	useRevisedOrders = true;
 	startGame();
@@ -169,8 +169,8 @@ TEST_F(HeroCommandRevisionEffectsTest, LeadershipEfficiencyRetainsCommandWarcast
 	ASSERT_NO_FATAL_FAILURE(acceptCommandPerk("new-horizons:command.aggressiveCommander"));
 	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	ASSERT_NO_FATAL_FAILURE(acceptCommandPerk("new-horizons:command.veteranCommander"));
-	EXPECT_EQ(heroCommands::leadershipEfficiencyPercent(*attackerSideHero, 40, 10), 195);
-	EXPECT_EQ(heroCommands::leadershipEfficiencyPercent(*attackerSideHero, 0, 0), 145);
+	EXPECT_EQ(heroCommands::leadershipEfficiencyPercent(*attackerSideHero, 10), 155);
+	EXPECT_EQ(heroCommands::leadershipEfficiencyPercent(*attackerSideHero, 0), 145);
 }
 
 TEST_F(HeroCommandRevisionEffectsTest, RevisedRidersUseCapturedValuesAndLeaveHistoricalProfileAlone)

@@ -123,6 +123,20 @@ inline std::string skillDescription(const CGHeroInstance * hero, SecondarySkill 
 	return newHorizonsSkillPresentation::rankDescription(hero->getPerkState().rules, id, rank, fallback);
 }
 
+inline std::string skillDetails(const CGHeroInstance * hero, SecondarySkill skill, int rank)
+{
+	if(!hero || rank < 1 || rank > 3)
+		return {};
+	const auto id = skill.toSkill()->getJsonKey() == "core:necromancy" && hero->usesNewHorizonsNecromancy()
+		? "new-horizons:necromancy" : skill.toSkill()->getJsonKey();
+	const auto definition = skillDefinition(hero, id);
+	if(!definition)
+		return {};
+	constexpr std::array<const char *, 3> rankKeys = {"basic", "advanced", "expert"};
+	const auto & rankText = definition->rankDetails(rankKeys[static_cast<size_t>(rank - 1)]);
+	return definition->details + (definition->details.empty() || rankText.empty() ? "" : "\n\n") + rankText;
+}
+
 inline std::string tierName(int requiredRank)
 {
 	switch(requiredRank)

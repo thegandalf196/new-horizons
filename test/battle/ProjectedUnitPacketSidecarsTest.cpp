@@ -36,7 +36,9 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		perks.Struct().erase("bloodragePolicy");
+		perks.setOverrideFlag(true);
 		ASSERT_TRUE(newHorizonsCrisisCommand::activeProfile(perks));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}

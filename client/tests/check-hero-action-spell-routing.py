@@ -86,8 +86,10 @@ def verify_spent_action_spell_feedback(source):
 
 def spellbook_access_sources():
     root = SOURCE.parents[2]
-    return tuple((root / path).read_text() for path in (
-        'client/windows/CSpellWindow.cpp',
+    window = (root / 'client/windows/CSpellWindow.cpp').read_text()
+    readout = (root / 'client/windows/SpellbookReadout.cpp').read_text()
+    window += readout[readout.index('SpellCostBreakdown CSpellWindow::SpellArea::refreshReadout()'):]
+    return (window,) + tuple((root / path).read_text() for path in (
         'client/windows/SpellbookEntryPresentation.cpp',
         'lib/mapObjects/HeroSpellCasting.cpp',
         'lib/mapObjects/CGHeroInstance.cpp',
@@ -163,7 +165,7 @@ def verify_spellbook_access_mutants():
         (0, 'spellbookPresentation::access(*owner->myHero, *mySpell, GAME->translator())', 'spellbookPresentation::access(*owner->myHero, *spell, GAME->translator())'),
         (0, 'schoolLocked = access.schoolLocked;', 'schoolLocked = false;'),
         (0, 'schoolRequirementText = access.requirement;', 'schoolRequirementText.clear();'),
-        (0, '\t\trefreshReadout();\n\t}\n}\n\nSpellCostBreakdown', '\t}\n}\n\nSpellCostBreakdown'),
+        (0, '\t\trefreshReadout();\n\t}\n}', '\t}\n}'),
         (0, 'showInfoDialog(schoolRequirementText);', 'showInfoDialog("");'),
         (0, 'mySpell->canBeCast(problem, battleCallback.get(), spells::Mode::HERO,', 'true; /* mySpell->canBeCast(problem, battleCallback.get(), spells::Mode::HERO, */'),
         (0, 'problem.getAll(texts);', '/* no authoritative problem */'),

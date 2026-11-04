@@ -72,7 +72,7 @@ function Script:apply(mechanics, server, target)
 			server:appendLog(battle, {
 				append = {friendly and PRESERVE_FRIENDLY_TEXT or PRESERVE_HOSTILE_TEXT},
 				replaceStrings = {unit:getCreature():getNameTextID(unit:getCount())},
-				replaceNumbers = {turns}
+				replaceNumbers = {mechanics:getRecipientSpellLockDuration(unit)}
 			})
 		end
 

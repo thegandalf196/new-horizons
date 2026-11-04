@@ -6,6 +6,9 @@
 #pragma once
 
 class CGHeroInstance;
+struct SideInBattle;
+class BattleInfo;
+class IGameInfoCallback;
 
 namespace newHorizonsBloodrage
 {
@@ -21,6 +24,22 @@ constexpr int AVATAR_DEFENSE_IGNORE_PERCENT = 25;
 constexpr bool atMaximumForAttack(int attackDamagePercent, int capturedCapPercent)
 {
 	return capturedCapPercent > 0 && attackDamagePercent >= capturedCapPercent;
+}
+
+/// Structural side admission is context-free; authoritative entry binds policy separately.
+DLL_LINKAGE bool validSnapshot(const SideInBattle & side);
+DLL_LINKAGE void validateBattleStart(const BattleInfo & battle, const IGameInfoCallback & context);
+
+/// Absence in the hero's saved registry retains the original four perk rules.
+DLL_LINKAGE bool revisedPerks(const CGHeroInstance * hero);
+DLL_LINKAGE int conditionalIncrement(const CGHeroInstance * hero);
+DLL_LINKAGE int avatarDefenseIgnorePercent(const CGHeroInstance * hero,
+	int attackDamagePercent, int capturedRank, int capturedCapPercent);
+// Historical and revised rank-sized awards are disjoint; the saved amount also
+// preserves which trigger produced it without adding another serialized field.
+constexpr bool firstDamagePainIncrement(int value)
+{
+	return value == 2 * BASIC_INCREMENT || value == 2 * ADVANCED_INCREMENT || value == 2 * EXPERT_INCREMENT;
 }
 
 DLL_LINKAGE int rank(const CGHeroInstance * hero);
@@ -49,7 +68,8 @@ DLL_LINKAGE DeathGrant deathGrant(const CGHeroInstance * hero, bool firstDeath, 
 DLL_LINKAGE bool hasRageThroughPain(const CGHeroInstance * hero);
 constexpr bool isValidPersonalIncrement(int value)
 {
-	return value == 0 || value == BASIC_INCREMENT || value == ADVANCED_INCREMENT || value == EXPERT_INCREMENT;
+	return value == 0 || value == BASIC_INCREMENT || value == ADVANCED_INCREMENT || value == EXPERT_INCREMENT
+		|| firstDamagePainIncrement(value);
 }
 DLL_LINKAGE int initialDamagePercent(const CGHeroInstance * hero);
 DLL_LINKAGE int advanceDamagePercent(const CGHeroInstance * hero, int currentPercent);

@@ -10,14 +10,9 @@
 
 namespace newHorizonsLearning
 {
-TExpType academicStudyRawExperience(const CGHeroInstance & hero, const CGTownInstance & town)
+TExpType academicStudyRawExperience(const CGHeroInstance &, const CGTownInstance &)
 {
-	if(!newHorizonsMagic::rulesActive(hero.getMagicRules())
-		|| !hero.hasActivePerk("new-horizons:learning", "new-horizons:learning.academicStudy")
-		|| hero.visitedObjects.contains(town.id))
-		return 0;
-	constexpr TExpType experiencePerGuildLevel = 250;
-	return experiencePerGuildLevel * town.mageGuildLevel();
+	return 0; // Academic Study is retired.
 }
 
 TExpType academicStudyExperience(const CGHeroInstance & hero, const CGTownInstance & town)

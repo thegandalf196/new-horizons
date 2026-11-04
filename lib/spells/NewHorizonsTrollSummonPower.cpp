@@ -15,13 +15,12 @@
 
 namespace newHorizonsMagic
 {
-int64_t trollSummonHitPoints(const int32_t rawSpellPower, const int32_t coefficientBasisPoints,
-	const int32_t warcastingBonusPercent, const int32_t empowerSpellBonusPercent, const bool beastcaller)
+int64_t trollSummonHitPoints(const int32_t rawSpellPower, const int32_t coefficientBasisPoints, const int32_t empowerSpellBonusPercent, const bool beastcaller)
 {
 	const int64_t modifierPercent = beastcaller ? 125 : 100;
 	const int64_t spellPowerHundredths = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		5LL * std::max<int32_t>(0, rawSpellPower) * modifierPercent, 2,
-		coefficientBasisPoints, warcastingBonusPercent, empowerSpellBonusPercent);
+		coefficientBasisPoints, empowerSpellBonusPercent);
 	return (100 * modifierPercent + spellPowerHundredths) / 100;
 }
 }

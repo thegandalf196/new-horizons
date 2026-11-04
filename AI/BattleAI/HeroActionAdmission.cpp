@@ -70,7 +70,8 @@ Admission admitCandidate(HypotheticBattle & state, BattleSide side, const Possib
 }
 
 OrderCompletion completeOrder(HypotheticBattle & state, const CBattleInfoCallback & before,
-	BattleSide side, const PossibleSpellcast & candidate, const Admission & admission)
+	BattleSide side, const PossibleSpellcast & candidate, const Admission & admission,
+	const std::function<void(const HeroOrderState &)> & afterAcceptedOrder)
 {
 	OrderCompletion result;
 	if(admission.legacyOrder)
@@ -86,6 +87,7 @@ OrderCompletion completeOrder(HypotheticBattle & state, const CBattleInfoCallbac
 		if(!admission.orderEffects || !state.projectAcceptedHeroOrder(
 			side, *admission.orderEffects, *admission.orderAllowance))
 			return result;
+		if(afterAcceptedOrder) afterAcceptedOrder(admission.orderEffects->order);
 		if(!heroOrderValue::usesRevisedArmyHeuristic(before, candidate.command))
 			result.continuation = state.projectOrderContinuation(side,
 				*admission.orderAllowance, *admission.orderEffects);

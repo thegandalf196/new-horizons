@@ -17,7 +17,7 @@ namespace
 Budget budget(const battle::CUnitState & unit)
 {
 	return {unit.physicalPoisonBaseDamage, unit.physicalPoisonActivationsRemaining,
-		unit.physicalPoisonSourceStackId};
+		unit.physicalPoisonSourceStackId, unit.physicalPoisonSpellSide};
 }
 void prefix(std::map<Outcome, double> & outcomes, const creatureAbilityChance::Rounding & chance)
 {
@@ -62,6 +62,7 @@ float utility(const std::shared_ptr<CBattleInfoCallback> & battle, const battle:
 	query->physicalPoisonBaseDamage = poison.base;
 	query->physicalPoisonActivationsRemaining = poison.remaining;
 	query->physicalPoisonSourceStackId = poison.source;
+	query->physicalPoisonSpellSide = poison.spellSide;
 	return AttackPossibility::calculateDamageReduce(source, &target,
 		physicalPoisonValue::projectedDamage(query.get()), cache, battle);
 }

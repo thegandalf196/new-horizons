@@ -50,6 +50,7 @@ class LRClickableAreaWText: public CHoverableArea
 {
 public:
 	std::string text;
+	std::string details;
 
 	LRClickableAreaWText();
 	LRClickableAreaWText(const Rect & Pos, const std::string & HoverText = "", const std::string & ClickText = "");
@@ -250,6 +251,8 @@ public:
 
 class MoraleLuckBox : public LRClickableAreaWTextComp
 {
+	void setBattleLuck(const CStack * stack, const CBattleInfoCallback * battleCallback);
+	void setBattleMorale(const CStack * stack, const CBattleInfoCallback * battleCallback);
 	std::shared_ptr<CAnimImage> image;
 	std::shared_ptr<CLabel> label;
 public:

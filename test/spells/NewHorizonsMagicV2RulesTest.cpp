@@ -358,13 +358,10 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandPatchCountUsesSavedSchoolAndSpellcraf
 	ASSERT_TRUE(unmodifiedCount);
 	EXPECT_EQ(*unmodifiedCount, 2) << "48 Spell Power is below the first patch threshold without modifiers";
 	const auto empoweredCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 48,
-		1, 0, 25);
+		1, 25);
 	ASSERT_TRUE(empoweredCount);
 	EXPECT_EQ(*empoweredCount, 3) << "Empower alone can cross the first patch threshold";
-	const auto warcastCount = newHorizonsMagic::quicksandPatchCount(current, &hero, quicksand, 48,
-		1, 25, 0);
-	ASSERT_TRUE(warcastCount);
-	EXPECT_EQ(*warcastCount, 3) << "Warcasting alone can cross the first patch threshold";
+
 
 	const auto v1 = legacyRules();
 	const auto v2 = formulaRules();
@@ -372,7 +369,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandPatchCountUsesSavedSchoolAndSpellcraf
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(v2, &hero, quicksand, 180));
 	EXPECT_FALSE(newHorizonsMagic::quicksandPatchCount(current, &hero, SpellID(SpellID::HASTE), 180));
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, quicksand, 0), 2);
-	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, quicksand, 1000, 1, 100, 100), 5)
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, nullptr, quicksand, 1000, 1, 100), 5)
 		<< "Without a selected hero perk, scaling cannot raise the ordinary five-patch cap";
 }
 
@@ -452,8 +449,7 @@ TEST(NewHorizonsMagicV2RulesTest, BasisPointSpellPowerTermsKeepFractionalFactors
 		newHorizonsMagic::regenerationRateMillionths(1, 100, false));
 	EXPECT_EQ(newHorizonsMagic::regenerationRateMillionthsBasisPoints(1, 12'650, false), 251'897)
 		<< "The combined 126.5% factor is applied once before the final rate floor";
-	EXPECT_EQ(newHorizonsMagic::regenerationRateMillionthsBasisPoints(1, 12'650, false, 20), 252'277)
-		<< "Warcasting composes before the same final integer floor";
+
 	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(3, 10'000),
 		newHorizonsMagic::poisonBaseDamage(3, 100));
 	EXPECT_EQ(newHorizonsMagic::poisonBaseDamageBasisPoints(3, 12'650), 21)
@@ -528,21 +524,16 @@ TEST(NewHorizonsMagicV2RulesTest, ActiveSpellMarkerMustBeBooleanAndOldRowsStayVa
 	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 }
 
-TEST(NewHorizonsMagicV2RulesTest, WarcastingOptInIsOptionalAndStrictlyBoolean)
+TEST(NewHorizonsMagicV2RulesTest, RetiredWarcastingOptInIsRejected)
 {
-	auto rules = formulaRules();
+	auto rules = originalRules();
 	rules.Struct().erase("warcasting");
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
-	rules["warcasting"].Bool() = false;
-	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
-	rules["warcasting"].Bool() = true;
-	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
-	rules["warcasting"].String() = "true";
-	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
-	rules["warcasting"].Integer() = 1;
-	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
-	rules["warcasting"] = JsonNode();
-	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+	for(const bool enabled : {false, true})
+	{
+		rules["warcasting"].Bool() = enabled;
+		EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
+	}
 }
 
 TEST(NewHorizonsMagicV2RulesTest, SpellPointOptInIsV2OnlyAndUsesSavedCapacityPercent)
@@ -665,8 +656,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepRetainsModifiersAndSupportsCap
 	hero.secSkills.clear();
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 48, 10), 2);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 48, 10, 25), 3);
-	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 48, 10, 0, 25), 3);
-	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 1000, 10, 100, 100), 5);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(current, &hero, spell, 1000, 10, 100), 5);
 	current["spells"][quicksandKey]["rawSpellPowerPerPatch"].Integer() = 90;
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(current));
 	for(const int divisor : {1, 10})

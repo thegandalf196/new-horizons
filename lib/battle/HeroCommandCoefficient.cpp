@@ -45,11 +45,9 @@ int CoefficientInputs::primary(PrimarySkill skill) const
 		hero.usesPrimaryGrowth() ? &hero.getPrimaryGrowthRules() : nullptr);
 }
 
-int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
+int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
 {
-	int efficiency = efficiencyPercent(hero) + std::clamp(warcastingBonusPercent, 0, 100)
-		+ std::clamp(divineMandateEfficiencyBonusPercent, 0, 15);
+	int efficiency = efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, 15);
 	if(includeCommanderPerks && attribute == PrimarySkill::ATTACK
 		&& hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
 		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
@@ -59,13 +57,11 @@ int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribu
 	return efficiency;
 }
 
-int coefficient(const JsonNode & effect, const CoefficientInputs & inputs, int warcastingBonusPercent,
+int coefficient(const JsonNode & effect, const CoefficientInputs & inputs,
 	int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
 {
-	const int attackEfficiency = attributeEfficiencyPercent(inputs.policy(), PrimarySkill::ATTACK,
-		warcastingBonusPercent, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
-	const int defenseEfficiency = attributeEfficiencyPercent(inputs.policy(), PrimarySkill::DEFENSE,
-		warcastingBonusPercent, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
+	const int attackEfficiency = attributeEfficiencyPercent(inputs.policy(), PrimarySkill::ATTACK, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
+	const int defenseEfficiency = attributeEfficiencyPercent(inputs.policy(), PrimarySkill::DEFENSE, divineMandateEfficiencyBonusPercent, includeCommanderPerks);
 	return coefficientMath::boundedCoefficient({effect["base"].Float(), effect["attack"].Float() * attackEfficiency / 100.0,
 		effect["defense"].Float() * defenseEfficiency / 100.0},
 		{1, inputs.primary(PrimarySkill::ATTACK), inputs.primary(PrimarySkill::DEFENSE)});
@@ -76,14 +72,9 @@ int coefficient(const JsonNode & effect, const CGHeroInstance & hero)
 	return coefficient(effect, hero, 0);
 }
 
-int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent)
-{
-	return coefficient(effect, hero, warcastingBonusPercent, 0);
-}
-
-int coefficient(const JsonNode & effect, const CGHeroInstance & hero, int warcastingBonusPercent,
+int coefficient(const JsonNode & effect, const CGHeroInstance & hero,
 	int divineMandateEfficiencyBonusPercent)
 {
-	return coefficient(effect, CoefficientInputs::native(hero), warcastingBonusPercent, divineMandateEfficiencyBonusPercent, true);
+	return coefficient(effect, CoefficientInputs::native(hero), divineMandateEfficiencyBonusPercent, true);
 }
 }

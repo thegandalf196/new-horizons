@@ -8,12 +8,17 @@
  *
  */
 #pragma once
+#include "../../lib/battle/PassiveDivineMandate.h"
+#include "../../lib/battle/MetamagicPointState.h"
+#include "../../lib/battle/WisdomCombatState.h"
+#include "../../lib/battle/NewHorizonsFactionSpellDamage.h"
 
 #include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -35,6 +40,7 @@
 #include "../../lib/battle/NewHorizonsManaLeeches.h"
 
 class CSpell;
+struct SetMana;
 class InitialExportBattleSubject;
 class OwnedStackQuerySource;
 class OwnedFrameEffectQueries;
@@ -48,6 +54,8 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	friend class OwnedStackQuerySource;
 	friend class OwnedFrameEffectQueries;
 	const SetStackEffect * ordinaryValidatedPacket = nullptr;
+	std::vector<std::shared_ptr<const SetStackEffect>> arcaneInspirationEffects;
+	void completeSyntheticInspiration(BattleSide side);
 	bool replayingOrdinaryEffects = false; // Private validation branch only.
 	std::shared_ptr<const battle::OwnedBattleFrameBatch> ownedFrameBatch;
 	std::map<uint32_t, std::shared_ptr<battle::OwnedUnitBonusFrame>> ownedFrameBases;
@@ -81,9 +89,11 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	void captureNecromancyPassives(const CBattleInfoCallback & source);
 	battle::Units ownedExportUnitsIf(const battle::UnitFilter & predicate) const;
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
-		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
+		int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 public:
+	const auto & getArcaneInspirationEffects() const { return arcaneInspirationEffects; }
+	void reverseArcaneInspirationEffects(std::span<const std::shared_ptr<const SetStackEffect>> receipts);
 	bool usesOwnedFrameQueries() const;
 	bool retainsOwnedFrameBatch(const std::shared_ptr<const battle::OwnedBattleFrameBatch> & batch) const;
 	const std::shared_ptr<const battle::OwnedBattleFrameBatch> & sourceBatch() const;
@@ -168,7 +178,8 @@ public:
 	std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const battle::Unit * unit) const override;
 	int unitAdditionalRetaliations(const battle::Unit * unit) const override
 	{
-		return battleBloodrageRetaliations(unit);
+		return battleBloodrageRetaliations(unit)
+			+ newHorizonsPassiveDivineMandate::activeOrderRiders(*this, unit).extraRetaliations;
 	}
 
 	std::shared_ptr<StackWithBonuses> getForUpdate(uint32_t id);
@@ -197,7 +208,6 @@ public:
 	const SpellResponseState & getSpellResponseState(BattleSide side) const override;
 	int32_t getExtendSpellLastRound(BattleSide side) const override { return extendSpellRounds.at(side); }
 	void consumeExtendSpell(BattleSide side) override;
-	void armReactiveWeave(BattleSide side, int32_t round, int32_t empowerment) override;
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override;
 	void setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state) override;
@@ -214,7 +224,6 @@ public:
 	void recordRelentlessAssaultAttack(BattleSide side, uint32_t targetUnitId) override;
 	/// Consume the copied Protect state immediately after hypothetical redirection, before effects resolve.
 	bool consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId);
-	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override;
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
 	const newHorizonsCrisisCommand::State & getCrisisCommandState() const override { return crisisCommand; }
 	void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override
@@ -238,7 +247,16 @@ public:
 	void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state) override;
 	bool hasCompletedHeroSpellCast(BattleSide side) const override { return heroSpellCastCompletedStates.at(side); }
 	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override;
+	int32_t getCastSpells(BattleSide side) const override
+	{ const auto & value = projectedCastSpells.at(side); return value ? *value : BattleProxy::getCastSpells(side); }
+	bool getChainGateArmed(BattleSide side) const override { return chainGateArmedStates.at(side); }
+	bool getMasterGateUsed(BattleSide side) const override { return masterGateUsedStates.at(side); }
+	uint8_t getPassiveDivineMandateUses(BattleSide side) const override { return passiveDivineMandateUses.at(side); }
+	void setPassiveDivineMandateUses(BattleSide side, uint8_t uses) override;
 	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
+	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override;
+	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
+	void setMetamagicPointState(BattleSide side, const MetamagicPointState & state) override;
 	int32_t getMetamagicPendingCount(BattleSide side) const override { return metamagicStates.at(side).pending; }
 	int32_t getMetamagicUsesConsumed(BattleSide side) const override { return metamagicStates.at(side).uses; }
 	bool getMetamagicGrandUsed(BattleSide side) const override { return metamagicStates.at(side).grandUsed; }
@@ -336,6 +354,8 @@ public:
 	ProjectedOrderContinuation projectOrderContinuation(BattleSide side,
 		const ProjectedOrderAllowance & prepared, const heroCommands::PreparedOrderEffects & effects);
 	ProjectedCounterspellOutcome resolveProjectedCounterspell(BattleSide casterSide, const CSpell * spell) const;
+	/// Known automatic-cast ward payment/expiry only; no caster action ledger.
+	bool projectAutomaticCounterspell(const ProjectedCounterspellOutcome & resolved);
 	bool projectHeroSpellAllowance(BattleSide side, SpellID spell, uint32_t target,
 		bool metamagicFollowup, bool grand);
 	bool projectHeroOrderAllowance(BattleSide side);
@@ -474,6 +494,7 @@ public:
 	void recordBloodrageTransition(const std::shared_ptr<StackWithBonuses> & unit, bool wasAlive);
 
 	void addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
+	std::vector<Bonus> getLocalSpellEffects(uint32_t id) const override;
 	battle::BattleEffectSnapshot captureBattleEffects(uint32_t id) const override;
 	void exchangeBattleEffects(const battle::BattleEffectExchange & exchange) override;
 	void updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus) override;
@@ -489,6 +510,7 @@ public:
 	uint32_t nextUnitId() const override;
 	std::optional<newHorizonsElementalRebirth::DeathSnapshot> captureElementalRebirthSource(
 		const battle::Unit & unit) const;
+	void projectCataclysms(std::span<const newHorizonsFactionSpellDamage::Cataclysm> captured);
 	bool hasReadyNativeRebirth(const battle::Unit * unit) const;
 	std::optional<uint32_t> projectElementalRebirth(const battle::Unit * postHitUnit,
 		const newHorizonsElementalRebirth::DeathSnapshot & snapshot, bool hitKilled,
@@ -527,6 +549,7 @@ private:
 	/// IDs created by this branch's Elemental Rebirth projection; never serialized.
 	void nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw,
 		HypotheticLifecycleTiming * timing);
+	void applyProjectedPoison(const std::shared_ptr<StackWithBonuses> & unit);
 	void applyProjectedActivationStartEffects(uint32_t unitId,
 		const std::shared_ptr<StackWithBonuses> & unit, BattleUnitTurnReason reason,
 		HypotheticLifecycleTiming * timing);
@@ -555,7 +578,6 @@ private:
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	/// Newest Order is last; updates by command preserve this issuance order.
 	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;
-	BattleSideArray<AlternatingHeroActionState> warcastingStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
 	BattleSideArray<DoubleCommandState> doubleCommandStates;
 	BattleSideArray<PreCombatOrderState> preCombatOrderStates;
@@ -568,13 +590,22 @@ private:
 	BattleSideArray<bool> phoenixSparkUsedStates;
 	BattleSideArray<ArmorerDefiantState> armorerDefiantStates;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
+	BattleSideArray<std::optional<int32_t>> projectedCastSpells;
+	BattleSideArray<bool> chainGateArmedStates;
+	BattleSideArray<bool> masterGateUsedStates;
+	BattleSideArray<uint8_t> passiveDivineMandateUses;
 	BattleSideArray<bool> counterspellArmedStates;
 	BattleSideArray<bool> countersequenceArmedStates;
 	ui8 pendingTimeStopHeroActionSides = 0;
 	using ProjectedMetamagic = ProjectedMetamagicSnapshot;
 	BattleSideArray<ProjectedMetamagic> metamagicStates;
+	BattleSideArray<MetamagicPointState> metamagicPointStates;
+	BattleSideArray<WisdomCombatState> wisdomCombatStates;
+	void advanceMetamagicPoints();
+	void restoreProjectedNormalMana(const SetMana & packet);
 	BattleSideArray<uint64_t> projectedActionEpochs{};
 	BattleSideArray<std::optional<ProjectedSpellAllowance>> begunProjectedSpellAllowances{};
+	BattleSideArray<std::optional<uint64_t>> recordedWisdomActionEpochs{};
 	BattleSideArray<std::optional<ProjectedOrderAllowance>> begunProjectedOrderAllowances{};
 	struct BoundProjectedOrderEffects
 	{
@@ -631,9 +662,13 @@ private:
 		void complain(const std::string & problem) override;
 		bool describeChanges() const override;
 		void recordCrossSchoolFormulaCast(BattleSide side, const newHorizonsCrossSchoolFormula::Receipt & receipt) override;
+		void recordArcaneInspirationEffects(const SetStackEffect & packet) override;
+		void recordCompletedWisdomSpellCast(BattleSide side, const SpellID & spell, int32_t round, bool automatic) override;
 		void recordCompletedHeroSpellCast(BattleSide side) override;
 		void recordExtendSpellCast(BattleSide side) override { owner->consumeExtendSpell(side); }
 		void recordCompletedHeroSpellCast(BattleSide side, int32_t spellLevel) override;
+		void recordCompletedAutomaticHeroSpellCast(BattleSide side, const SpellID & spell,
+			const spells::AutomaticHeroCastReceipt & receipt) override;
 
 		vstd::RNG * getRNG() override;
 		bool rollCombatAbility(const IBattleInfoCallback & battle, const battle::Unit & actor, int percentageChance) override;

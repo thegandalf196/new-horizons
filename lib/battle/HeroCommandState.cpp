@@ -7,6 +7,14 @@
 
 void HeroOrderState::validateShape() const
 {
+	if(passiveDivineMandate)
+	{
+		passiveDivineMandate->validate();
+		if(passiveDivineMandate->rank == 0 || sacredCommandEfficiencyBonusPercent != 0
+			|| knightlySequenceEfficiencyBonusPercent != 0)
+			throw std::runtime_error("Invalid mixed legacy/passive Divine Mandate Order snapshot");
+	}
+
 	if(revision)
 	{
 		revision->validate(command, issuedRound);
@@ -54,7 +62,6 @@ void HeroOrderState::validateShape() const
 			[maxWireId](uint32_t id) { return id > maxWireId; }))
 		throw std::runtime_error("Invalid Royal Standard recipient identities");
 	if(command == HeroCommand::NONE || issuedRound < 1
-		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 100
 		|| (sacredCommandEfficiencyBonusPercent != 0 && sacredCommandEfficiencyBonusPercent != 10)
 		|| (knightlySequenceEfficiencyBonusPercent != 0 && knightlySequenceEfficiencyBonusPercent != 5)
 		|| holdMagicalReductionBasisPoints > MAX_HOLD_MAGICAL_REDUCTION_BASIS_POINTS

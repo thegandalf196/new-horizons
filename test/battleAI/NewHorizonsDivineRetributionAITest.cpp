@@ -5,6 +5,9 @@
 #include "StdInc.h"
 
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
+#include "../HistoricalFactionPerkRules.h"
+#include "../spells/HistoricalCrusadeRules.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
@@ -17,6 +20,7 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsTimedStatusPlan.h"
 #include "../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
@@ -33,39 +37,12 @@ SpellID divineRetributionSpell()
 
 JsonNode savedV2MagicRulesWithCurrentSpellRoster()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
-	// Derive an actual historical v2 snapshot, not v3 data with a relabelled version.
-	for(const auto * key : {"morale", "creatureAbilities", "protectedAdventureBarriers"})
-		rules.Struct().erase(key);
-	for(auto & [name, spell] : rules["spells"].Struct())
-	{
-		(void)name;
-		spell.Struct().erase("selectedPlacement");
-		spell.Struct().erase("rawSpellPowerPerPatch");
-		spell.Struct().erase("earthquake");
-		spell.Struct().erase("structures");
-		for(const auto * key : {"heroAccess", "restoration", "propagationLimit", "implosion",
-			"ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations",
-			"burnGroundedFlyers"})
-			spell.Struct().erase(key);
-		if(spell.Struct().contains("variant"))
-		{
-			spell.Struct().erase("variant");
-			spell["active"].Bool() = false;
-		}
-	}
-	if(newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION
-		< newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-	{
-		auto & sorrow = rules["spells"]["core:sorrow"];
-		sorrow.Struct().erase("level");
-		sorrow.Struct().erase("costs");
-		sorrow["schools"].Vector().clear();
-		sorrow["schools"].Vector().emplace_back(std::string("new-horizons:chaos"));
-	}
+	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
+	// Reuse the complete validated old roster, including pre-revision Sorcery.
+	auto rules = historicalCrusadeRules(current, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION);
+	// Retain this spell deliberately: the AI test isolates the saved-version gate.
+	rules["spells"][divineRetributionKey] = current["spells"][divineRetributionKey];
+	rules.setOverrideFlag(true);
 	newHorizonsMagic::validateRules(rules);
 	return rules;
 }
@@ -110,6 +87,7 @@ protected:
 	std::shared_ptr<DivineRetributionCallback> callback;
 	bool useSavedV2Rules = false;
 	bool learnRetributionist = false;
+	int fullProtectionCap = divineRetributionRawCap;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -117,9 +95,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, useSavedV2Rules
 			? savedV2MagicRulesWithCurrentSpellRoster()
 			: JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
-		if(learnRetributionist)
-			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, historicalFactionPerkRules());
+		if(!useCommands) captureLegacyPerkOfferPolicy(*loaded);
 	}
 
 	void SetUp() override
@@ -151,6 +128,9 @@ protected:
 			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:lightMagic",
 				"new-horizons:lightMagic.retributionist"));
 		}
+		const auto light = SecondarySkill::decode("new-horizons:lightMagic");
+		ASSERT_GE(light, 0);
+		attackerSideHero->setSecSkillLevel(SecondarySkill(light), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		for(const auto known : attackerSideHero->getSpellsInSpellbook())
 			attackerSideHero->removeSpellFromSpellbook(known);
@@ -213,6 +193,25 @@ protected:
 				BonusType::DIVINE_RETRIBUTION, BonusSource::SPELL_EFFECT,
 				divineRetributionRawCap, BonusSourceID(spell));
 			marker->turnsRemain = 2;
+			if(!learnRetributionist)
+			{
+				// Equal-full means the actual current caster's native producer, not the old untrained cap.
+				spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+				const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+				const auto configured = newHorizonsMagic::configuredRoundBonusIdentity(*spell.toSpell(),
+					mechanics->getEffectLevel(), BonusType::DIVINE_RETRIBUTION);
+				ASSERT_TRUE(configured);
+				fullProtectionCap = mechanics->getRecipientDivineRetributionCap(protectedStack);
+				marker->val = fullProtectionCap;
+				const auto rounds = newHorizonsMagic::configuredTimedDurationForCast(*mechanics,
+					configured->turnsRemain, mechanics->getEffectDuration(), true);
+				marker->turnsRemain = mechanics->adjustMetamagicDuration(rounds, protectedStack);
+				marker->spellCasterOwner = mechanics->getCasterColor();
+				if(const auto payout = mechanics->getRecipientDivineRetributionPayoutBasisPoints(protectedStack))
+					parameters["payoutRatioBasisPoints"].Integer() = *payout;
+				RecordProperty("FullProtectionNativeCap", std::to_string(fullProtectionCap));
+				RecordProperty("FullProtectionNativeRounds", std::to_string(marker->turnsRemain));
+			}
 			marker->parameters = std::make_shared<BonusParameters>(parameters);
 			protectedStack->addNewBonus(marker);
 		}
@@ -288,7 +287,7 @@ TEST_F(NewHorizonsDivineRetributionAITest, DoesNotRefreshAnEqualFullProtectionEf
 	const auto marker = protectedStack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(divineRetributionSpell())).And(Selector::type()(BonusType::DIVINE_RETRIBUTION)));
 	ASSERT_EQ(marker->size(), 1u);
-	EXPECT_EQ(marker->front()->val, divineRetributionRawCap);
+	EXPECT_EQ(marker->front()->val, fullProtectionCap);
 	EXPECT_EQ(marker->front()->turnsRemain, 2);
 }
 

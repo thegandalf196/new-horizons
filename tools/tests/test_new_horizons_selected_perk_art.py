@@ -8,9 +8,11 @@ import re
 import unittest
 
 if __package__:
+    from .nhart_perk_presentations import REWORKED_PERK_REBINDINGS
     from .nhart_test_resources import (verified_index, read_resource, open_image,
                                       later_art_resources, later_art_waves, entries_before_wave)
 else:
+    from nhart_perk_presentations import REWORKED_PERK_REBINDINGS
     from nhart_test_resources import (verified_index, read_resource, open_image,
                                      later_art_resources, later_art_waves, entries_before_wave)
 
@@ -30,7 +32,8 @@ class SelectedPerkArtTest(unittest.TestCase):
         bindings = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                   (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()))
         for row in rows:
-            self.assertEqual(bindings[row['id']], row['icon44'])
+            current_id = REWORKED_PERK_REBINDINGS.get(row['id'], (row['id'], row['icon44']))[0]
+            self.assertEqual(bindings[current_id], row['icon44'])
             for size, key in ((44, 'native44Sha256'), (32, 'native32Sha256')):
                 name = 'SPRITES/' + row['icon44'] + ('' if size == 44 else '_32') + '.png'
                 self.assertEqual(hashlib.sha256(read_resource(name)).hexdigest(), row[key])

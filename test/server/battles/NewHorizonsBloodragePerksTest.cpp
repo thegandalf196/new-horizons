@@ -5,12 +5,14 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "NewHorizonsBloodrageLegacyFixture.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsBloodrage.h"
+#include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -151,7 +153,9 @@ protected:
 
 	int minimumMorale() const
 	{
-		return -static_cast<int>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size());
+		const auto captured = newHorizonsMagic::moraleLimits(battle()->getMagicRules());
+		return captured ? captured->first
+			: -static_cast<int>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size());
 	}
 
 	void kill(const std::vector<CStack *> & targets)
@@ -174,14 +178,16 @@ protected:
 class NewHorizonsBloodragePerksLegacySerializationTest : public NewHorizonsBloodragePerksTest
 {
 protected:
+	void startBattle()
+	{
+		BattleTestFixture::startBattle();
+		historicalBloodrageFixture::capturePreArmyValueSnapshot(*battle());
+	}
+
 	void mapLoaded(CMap * loaded) override
 	{
 		NewHorizonsBloodragePerksTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
-		auto magicRules = LIBRARY->settingsHandler->getValue(EGameSettings::MAGIC_NEW_HORIZONS);
-		magicRules["warcasting"] = JsonNode(false);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
+		historicalBloodrageFixture::captureContext(*loaded);
 	}
 };
 }

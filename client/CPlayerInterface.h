@@ -225,7 +225,7 @@ public: // public interface for use by client via GAME->interface() access
 	void openHeroWindow(const CGHeroInstance * hero); //shows hero window with given hero
 
 	void showInfoDialog(const std::string &text, std::shared_ptr<CComponent> component);
-	void showInfoDialog(const std::string &text, const std::vector<std::shared_ptr<CComponent>> & components = std::vector<std::shared_ptr<CComponent>>(), int soundID = 0);
+	void showInfoDialog(const std::string &text, const std::vector<std::shared_ptr<CComponent>> & components = std::vector<std::shared_ptr<CComponent>>(), int soundID = 0, const std::string & details = {});
 	void showInfoDialogAndWait(std::vector<Component> & components, const MetaString & text);
 	void showYesNoDialog(const std::string &text, CFunctionList<void()> onYes, CFunctionList<void()> onNo, const std::vector<std::shared_ptr<CComponent>> & components = std::vector<std::shared_ptr<CComponent>>());
 

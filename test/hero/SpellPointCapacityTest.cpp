@@ -63,9 +63,8 @@ using KnowledgeArtifact = std::pair<ArtifactID, ArtifactPosition>;
 constexpr auto WISDOM_SKILL_ID = "new-horizons:wisdom";
 constexpr auto MYSTICISM_PERK_ID = "new-horizons:wisdom.mysticism";
 constexpr auto INTELLIGENCE_PERK_ID = "new-horizons:wisdom.intelligence";
-constexpr auto MEDITATION_PERK_ID = "new-horizons:wisdom.meditation";
-constexpr auto DEEP_KNOWLEDGE_PERK_ID = "new-horizons:wisdom.deepKnowledge";
-constexpr auto ARCANE_RESERVOIR_PERK_ID = "new-horizons:wisdom.arcaneReservoir";
+constexpr auto SPELL_SCHOLAR_PERK_ID = "new-horizons:wisdom.spellScholar";
+constexpr auto SAGE_PERK_ID = "new-horizons:wisdom.sage";
 
 const std::array<KnowledgeArtifact, 4> & knowledgeArtifacts()
 {
@@ -201,10 +200,10 @@ protected:
 			&& selectWisdomPerkThroughLegalOffer(hero, advancedPerkId);
 	}
 
-	bool advanceWisdomToExpertWithDeepKnowledge(CGHeroInstance * hero)
+	bool advanceWisdomToExpertWithSpellScholar(CGHeroInstance * hero)
 	{
 		if(!advanceWisdomAndSelectPerkThroughLegalOffers(hero,
-			INTELLIGENCE_PERK_ID, DEEP_KNOWLEDGE_PERK_ID))
+			INTELLIGENCE_PERK_ID, SPELL_SCHOLAR_PERK_ID))
 			return false;
 
 		const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
@@ -215,10 +214,10 @@ protected:
 		return hero->getSecSkillLevel(wisdom) == MasteryLevel::EXPERT;
 	}
 
-	bool selectArcaneReservoirThroughLegalExpertOffer(CGHeroInstance * hero)
+	bool selectSageThroughLegalExpertOffer(CGHeroInstance * hero)
 	{
-		return advanceWisdomToExpertWithDeepKnowledge(hero)
-			&& selectWisdomPerkThroughLegalOffer(hero, ARCANE_RESERVOIR_PERK_ID);
+		return advanceWisdomToExpertWithSpellScholar(hero)
+			&& selectWisdomPerkThroughLegalOffer(hero, SAGE_PERK_ID);
 	}
 
 	bool selectMysticismThroughLegalOffer(CGHeroInstance * hero)
@@ -549,7 +548,7 @@ protected:
 	}
 };
 
-class SpellPointCapacityPlannedMeditationTest : public SpellPointCapacityWizardTest
+class SpellPointCapacityPlannedSageTest : public SpellPointCapacityWizardTest
 {
 protected:
 	void mapLoaded(CMap * loaded) override
@@ -558,23 +557,7 @@ protected:
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
 		{
-			if(perk["id"].String() == MEDITATION_PERK_ID)
-				perk["effect"]["status"].String() = "planned";
-		}
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
-	}
-};
-
-class SpellPointCapacityPlannedArcaneReservoirTest : public SpellPointCapacityWizardTest
-{
-protected:
-	void mapLoaded(CMap * loaded) override
-	{
-		SpellPointCapacityWizardTest::mapLoaded(loaded);
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		for(auto & perk : perks["skills"][WISDOM_SKILL_ID]["perks"].Vector())
-		{
-			if(perk["id"].String() == ARCANE_RESERVOIR_PERK_ID)
+			if(perk["id"].String() == SAGE_PERK_ID)
 				perk["effect"]["status"].String() = "planned";
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
@@ -717,18 +700,18 @@ TEST_F(SpellPointCapacityTest, IntelligenceRaisesKnowledgeCapacityByThirtyPercen
 	expectPools(attackerSideHero, 200, 37, 200);
 }
 
-TEST_F(SpellPointCapacityWizardTest, ExpertArcaneReservoirAddsTwentyFiveAfterIntelligenceWithoutRefilling)
+TEST_F(SpellPointCapacityWizardTest, ExpertSageAddsFiftyEffectiveKnowledgeBeforeIntelligenceWithoutRefilling)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 64);
 	grantBuffer(attackerSideHero, 17);
 
-	ASSERT_TRUE(selectArcaneReservoirThroughLegalExpertOffer(attackerSideHero));
+	ASSERT_TRUE(selectSageThroughLegalExpertOffer(attackerSideHero));
 	const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
 	ASSERT_GE(wisdomId, 0);
 	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(wisdomId)), MasteryLevel::EXPERT);
-	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
-	expectPools(attackerSideHero, 64, 17, 155); // floor(1.30 * 100) + 25; capacity does not refill.
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, SAGE_PERK_ID));
+	expectPools(attackerSideHero, 64, 17, 195); // floor(1.30 * (100 + Sage50)); capacity does not refill.
 }
 
 TEST_F(HighLoreCapacityTest, CapturedPolicyScalesOnlyIntelligenceExtraAtLevelOneTenAndCapWithoutRefill)
@@ -755,14 +738,14 @@ TEST_F(HighLoreCapacityTest, CapturedPolicyScalesOnlyIntelligenceExtraAtLevelOne
 
 	setKnowledge(defenderSideHero, 101);
 	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(defenderSideHero,
-		INTELLIGENCE_PERK_ID, DEEP_KNOWLEDGE_PERK_ID));
+		INTELLIGENCE_PERK_ID, SPELL_SCHOLAR_PERK_ID));
 	ASSERT_NE(defenderSideHero->getHeroType()->getJsonKey(), "core:elleshar");
 	EXPECT_FALSE(defenderSideHero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE));
 	EXPECT_EQ(defenderSideHero->getHighLoreManaBonus(), 0);
 	EXPECT_EQ(defenderSideHero->manaLimit(), 131);
 }
 
-TEST_F(HighLoreCapacityTest, ArcaneReservoirStaysTwentyFiveAndCurrentWorldCodecRetainsPolicyAndPools)
+TEST_F(HighLoreCapacityTest, SageKnowledgeParticipatesInHighLoreAndCurrentWorldCodecRetainsPools)
 {
 	setKnowledge(attackerSideHero, 101);
 	setNormal(attackerSideHero, 60);
@@ -770,12 +753,12 @@ TEST_F(HighLoreCapacityTest, ArcaneReservoirStaysTwentyFiveAndCurrentWorldCodecR
 	ASSERT_NO_FATAL_FAILURE(activateDefaultIntelligence());
 	const SecondarySkill wisdom(SecondarySkill::decode(WISDOM_SKILL_ID));
 	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
-	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, DEEP_KNOWLEDGE_PERK_ID));
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, SPELL_SCHOLAR_PERK_ID));
 	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
-	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, ARCANE_RESERVOIR_PERK_ID));
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, SAGE_PERK_ID));
 	attackerSideHero->level = 10;
-	EXPECT_EQ(attackerSideHero->getHighLoreManaBonus(), 30);
-	expectPools(attackerSideHero, 60, 17, 186); // 131 + HighLore30 + unchanged Reservoir25.
+	EXPECT_EQ(attackerSideHero->getHighLoreManaBonus(), 45);
+	expectPools(attackerSideHero, 60, 17, 241); // floor(151*1.30) + HighLore45.
 	const auto captured = attackerSideHero->getPrimaryGrowthRules();
 	const auto saved = gameState()->saveToMemory();
 	CGameState restored;
@@ -785,11 +768,8 @@ TEST_F(HighLoreCapacityTest, ArcaneReservoirStaysTwentyFiveAndCurrentWorldCodecR
 	ASSERT_NE(hero, nullptr);
 	EXPECT_EQ(hero->getPrimaryGrowthRules(), captured);
 	EXPECT_EQ(hero->level, 10);
-	EXPECT_EQ(hero->getHighLoreManaBonus(), 30);
-	expectPools(hero, 60, 17, 186);
-	CMemorySerializer old;
-	old.oser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
-	EXPECT_THROW(old.oser & attackerSideHero, std::runtime_error);
+	EXPECT_EQ(hero->getHighLoreManaBonus(), 45);
+	expectPools(hero, 60, 17, 241);
 }
 
 TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndSurvivesPriorEpoch)
@@ -836,24 +816,24 @@ TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndS
 TEST_F(SpellPointCapacityWizardTest, LosingExpertWisdomClampsNormalCapacityAndPreservesBuffer)
 {
 	setKnowledge(attackerSideHero, 100);
-	ASSERT_TRUE(selectArcaneReservoirThroughLegalExpertOffer(attackerSideHero));
-	setNormal(attackerSideHero, 155);
+	ASSERT_TRUE(selectSageThroughLegalExpertOffer(attackerSideHero));
+	setNormal(attackerSideHero, 195);
 	grantBuffer(attackerSideHero, 23);
-	expectPools(attackerSideHero, 155, 23, 155);
+	expectPools(attackerSideHero, 195, 23, 195);
 
 	setWisdomRank(attackerSideHero, MasteryLevel::ADVANCED);
 
-	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, SAGE_PERK_ID));
 	expectPools(attackerSideHero, 130, 23, 130); // The authoritative rank-change event clamps Normal only.
 }
 
-TEST_F(SpellPointCapacityWizardTest, ExpertArcaneReservoirSelectionSurvivesSaveLoad)
+TEST_F(SpellPointCapacityWizardTest, ExpertSageSelectionSurvivesCurrentSaveLoad)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 48);
 	grantBuffer(attackerSideHero, 12);
-	ASSERT_TRUE(selectArcaneReservoirThroughLegalExpertOffer(attackerSideHero));
-	expectPools(attackerSideHero, 48, 12, 155);
+	ASSERT_TRUE(selectSageThroughLegalExpertOffer(attackerSideHero));
+	expectPools(attackerSideHero, 48, 12, 195);
 
 	const auto saved = gameState()->saveToMemory();
 	CGameState restored;
@@ -861,16 +841,16 @@ TEST_F(SpellPointCapacityWizardTest, ExpertArcaneReservoirSelectionSurvivesSaveL
 	restored.loadFromMemory(saved);
 	const auto * restoredHero = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(restoredHero, nullptr);
-	EXPECT_TRUE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
-	expectPools(restoredHero, 48, 12, 155);
+	EXPECT_TRUE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, SAGE_PERK_ID));
+	expectPools(restoredHero, 48, 12, 195);
 }
 
-TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotOfferOrApplyCapacity)
+TEST_F(SpellPointCapacityPlannedSageTest, SavedPlannedSnapshotCannotOfferOrApplyCapacity)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 48);
 	grantBuffer(attackerSideHero, 9);
-	ASSERT_TRUE(advanceWisdomToExpertWithDeepKnowledge(attackerSideHero));
+	ASSERT_TRUE(advanceWisdomToExpertWithSpellScholar(attackerSideHero));
 	expectPools(attackerSideHero, 48, 9, 130);
 
 	const auto rankLookup = [this](const std::string & skillId)
@@ -882,11 +862,11 @@ TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotO
 		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
-			return candidate.selection.perkId == ARCANE_RESERVOIR_PERK_ID;
+			return candidate.selection.perkId == SAGE_PERK_ID;
 		}));
 	}
-	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID}), std::runtime_error);
-	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL_ID, SAGE_PERK_ID}), std::runtime_error);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(WISDOM_SKILL_ID, SAGE_PERK_ID));
 
 	const auto saved = gameState()->saveToMemory();
 	CGameState restored;
@@ -894,7 +874,7 @@ TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotO
 	restored.loadFromMemory(saved);
 	const auto * restoredHero = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(restoredHero, nullptr);
-	EXPECT_FALSE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_RESERVOIR_PERK_ID));
+	EXPECT_FALSE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, SAGE_PERK_ID));
 	expectPools(restoredHero, 48, 9, 130);
 	const auto restoredRankLookup = [restoredHero](const std::string & skillId)
 	{
@@ -905,7 +885,7 @@ TEST_F(SpellPointCapacityPlannedArcaneReservoirTest, SavedPlannedSnapshotCannotO
 		const auto offer = restoredHero->getPerkState().prepareOffer(restoredRankLookup, seed, restoredHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
-			return candidate.selection.perkId == ARCANE_RESERVOIR_PERK_ID;
+			return candidate.selection.perkId == SAGE_PERK_ID;
 		}));
 	}
 }
@@ -1036,42 +1016,20 @@ TEST_F(SpellPointCapacityWizardTest, NewTurnPacketAppliesDailyMysticismRecoveryT
 	expectPools(attackerSideHero, 50, 11, 100);
 }
 
-TEST_F(SpellPointCapacityWizardTest, MeditationUsesExactMovementThresholdAddsToBaselineAndCapsMissingNormal)
-{
-	setKnowledge(attackerSideHero, 100);
-	setNormal(attackerSideHero, 0);
-	grantBuffer(attackerSideHero, 23);
-	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(attackerSideHero,
-		INTELLIGENCE_PERK_ID, MEDITATION_PERK_ID));
-	ASSERT_EQ(attackerSideHero->manaLimit(), 130);
-
-	// The optional prior limit is the same snapshot used for heroes whose
-	// Movement maximum changes as the tavern pool expires daily bonuses.
-	setMovement(attackerSideHero, 49);
-	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 1);
-	setMovement(attackerSideHero, 50);
-	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 20); // 1 base + floor(130 * 15%).
-	expectPools(attackerSideHero, 0, 23, 130); // Forecasting changes neither pool.
-
-	setNormal(attackerSideHero, 125);
-	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 130);
-	expectPools(attackerSideHero, 125, 23, 130); // Only missing Normal is restored; Buffer is untouched.
-}
-
-TEST_F(SpellPointCapacityWizardTest, NewTurnPacketExcludesInitialDayAndAddsMeditationAfterMysticismAndStrongerRegen)
+TEST_F(SpellPointCapacityWizardTest, CurrentNewTurnUsesMysticismOrStrongerRegenWithoutMovementMeditation)
 {
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 0);
 	grantBuffer(attackerSideHero, 11);
 	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(attackerSideHero,
-		MYSTICISM_PERK_ID, MEDITATION_PERK_ID));
+		MYSTICISM_PERK_ID, SPELL_SCHOLAR_PERK_ID));
 	ASSERT_EQ(attackerSideHero->manaRegain(), 10);
 
 	const int movementLimit = attackerSideHero->movementPointsLimit();
 	ASSERT_GT(movementLimit, 0);
 	const int atLeastQuarterMovement = (movementLimit + 3) / 4;
 	setMovement(attackerSideHero, atLeastQuarterMovement);
-	EXPECT_EQ(attackerSideHero->getManaNewTurn(true), 25); // Completed-day forecast includes both perks.
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(true), 10); // Movement cannot add a retired Meditation bonus.
 
 	NewTurnRecordingGameServer dayStartServer;
 	dayStartServer.gameState = gameState();
@@ -1089,7 +1047,7 @@ TEST_F(SpellPointCapacityWizardTest, NewTurnPacketExcludesInitialDayAndAddsMedit
 	};
 	const auto firstDayMana = findMana(*dayStartServer.lastNewTurn);
 	ASSERT_NE(firstDayMana, dayStartServer.lastNewTurn->heroesMana.end());
-	EXPECT_EQ(firstDayMana->amount, 10); // Day zero has no completed Movement day for Meditation.
+	EXPECT_EQ(firstDayMana->amount, 10); // Mysticism applies on the first day.
 	EXPECT_EQ(firstDayMana->operation, SetMana::Operation::SET_NORMAL);
 
 	setNormal(attackerSideHero, 0);
@@ -1103,38 +1061,13 @@ TEST_F(SpellPointCapacityWizardTest, NewTurnPacketExcludesInitialDayAndAddsMedit
 	ASSERT_EQ(dayStartServer.lastNewTurn->day, 2u);
 	const auto secondDayMana = findMana(*dayStartServer.lastNewTurn);
 	ASSERT_NE(secondDayMana, dayStartServer.lastNewTurn->heroesMana.end());
-	EXPECT_EQ(secondDayMana->amount, 41); // Previous Movement qualifies before day-start refresh.
+	EXPECT_EQ(secondDayMana->amount, 26); // The stronger existing source wins; no extra Movement recovery.
 	EXPECT_EQ(secondDayMana->operation, SetMana::Operation::SET_NORMAL);
-	expectPools(attackerSideHero, 41, 11, 100);
+	expectPools(attackerSideHero, 26, 11, 100);
 	EXPECT_EQ(attackerSideHero->movementPointsRemaining(), attackerSideHero->movementPointsLimit());
 }
 
-TEST_F(SpellPointCapacityWizardTest, AdvancedMeditationSelectionSurvivesSaveAndRankLossDisablesIt)
-{
-	setKnowledge(attackerSideHero, 100);
-	setNormal(attackerSideHero, 0);
-	grantBuffer(attackerSideHero, 11);
-	ASSERT_TRUE(advanceWisdomAndSelectPerkThroughLegalOffers(attackerSideHero,
-		INTELLIGENCE_PERK_ID, MEDITATION_PERK_ID));
-	setMovement(attackerSideHero, 50);
-
-	const auto saved = gameState()->saveToMemory();
-	CGameState restored;
-	restored.preInit(LIBRARY);
-	restored.loadFromMemory(saved);
-	const auto * restoredHero = restored.getHero(attackerSideHero->id);
-	ASSERT_NE(restoredHero, nullptr);
-	EXPECT_TRUE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, MEDITATION_PERK_ID));
-	EXPECT_EQ(restoredHero->getManaNewTurn(true, 200), 20);
-	EXPECT_EQ(restoredHero->getNormalSpellPoints(), 0);
-	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 11);
-
-	setWisdomRank(attackerSideHero, MasteryLevel::BASIC);
-	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 200), 1); // The saved choice needs current Advanced Wisdom.
-	expectPools(attackerSideHero, 0, 11, 130);
-}
-
-TEST_F(SpellPointCapacityTest, TavernPoolRecoveryUsesPreExpiryMovementLimitBeforeRefreshingPoints)
+TEST_F(SpellPointCapacityTest, TavernPoolRecoversCurrentMysticismAndExpiresMovementWithoutExtraMana)
 {
 	const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
 	ASSERT_GE(wisdomId, 0);
@@ -1156,12 +1089,12 @@ TEST_F(SpellPointCapacityTest, TavernPoolRecoveryUsesPreExpiryMovementLimitBefor
 	// Pool heroes are not map objects, so build both choices from their own
 	// legal offers and apply those selected candidates directly to that pool entry.
 	pooledHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	ASSERT_TRUE(selectWisdomPerkFromPoolOffer(pooledHero, INTELLIGENCE_PERK_ID));
+	ASSERT_TRUE(selectWisdomPerkFromPoolOffer(pooledHero, MYSTICISM_PERK_ID));
 	pooledHero->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	ASSERT_TRUE(selectWisdomPerkFromPoolOffer(pooledHero, MEDITATION_PERK_ID));
+	ASSERT_TRUE(selectWisdomPerkFromPoolOffer(pooledHero, SPELL_SCHOLAR_PERK_ID));
 	pooledHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 	pooledHero->initializeSpellPoints(0, 17);
-	ASSERT_EQ(pooledHero->manaLimit(), 130);
+	ASSERT_EQ(pooledHero->manaLimit(), 100);
 
 	const int unmodifiedMovementLimit = pooledHero->movementPointsLimit();
 	ASSERT_GT(unmodifiedMovementLimit, 0);
@@ -1185,60 +1118,21 @@ TEST_F(SpellPointCapacityTest, TavernPoolRecoveryUsesPreExpiryMovementLimitBefor
 	gameState()->heroesPool->setHeroForPlayer(PlayerColor(0), TavernHeroSlot::RANDOM,
 		pooledWisdomHero, noArmy, TavernSlotRole::SINGLE_UNIT, false);
 	gameState()->heroesPool->onNewDay(true);
-	EXPECT_EQ(pooledHero->getNormalSpellPoints(), 20); // Prior max qualifies after its one-day penalty expires.
+	EXPECT_EQ(pooledHero->getNormalSpellPoints(), 10); // Current Mysticism recovery is independent of Movement.
 	EXPECT_EQ(pooledHero->getBufferSpellPoints(), 17);
 	EXPECT_EQ(pooledHero->movementPointsLimit(), unmodifiedMovementLimit);
 	EXPECT_EQ(pooledHero->movementPointsRemaining(), unmodifiedMovementLimit);
 
-	// If the pool refreshed Movement before calculating Mana, a spent-out
-	// hero would incorrectly satisfy Meditation against the freshly filled pool.
+	// With no remaining Movement, current Mysticism still restores ten Normal.
+	// Buffer and the refreshed Movement limit retain their separate lifecycles.
 	pooledHero->setNormalSpellPoints(0);
 	addExpiringMovementPenalty();
 	pooledHero->setMovementPoints(0);
 	gameState()->heroesPool->onNewDay(true);
-	EXPECT_EQ(pooledHero->getNormalSpellPoints(), 1);
+	EXPECT_EQ(pooledHero->getNormalSpellPoints(), 10);
 	EXPECT_EQ(pooledHero->getBufferSpellPoints(), 17);
 	EXPECT_EQ(pooledHero->movementPointsLimit(), unmodifiedMovementLimit);
 	EXPECT_EQ(pooledHero->movementPointsRemaining(), unmodifiedMovementLimit);
-}
-
-TEST_F(SpellPointCapacityPlannedMeditationTest, SavedPlannedMeditationCannotBeOfferedOrApplied)
-{
-	setKnowledge(attackerSideHero, 100);
-	setNormal(attackerSideHero, 0);
-	grantBuffer(attackerSideHero, 9);
-	setWisdomRank(attackerSideHero, MasteryLevel::BASIC);
-	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, INTELLIGENCE_PERK_ID));
-	const int wisdomId = SecondarySkill::decode(WISDOM_SKILL_ID);
-	ASSERT_GE(wisdomId, 0);
-	const auto wisdom = SecondarySkill(wisdomId);
-	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
-	ASSERT_EQ(attackerSideHero->getSecSkillLevel(wisdom), MasteryLevel::ADVANCED);
-	const auto rankLookup = [this](const std::string & skillId)
-	{
-		return attackerSideHero->getPerkSkillRank(skillId);
-	};
-	for(uint64_t seed = 0; seed < 128; ++seed)
-	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
-		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
-		{
-			return candidate.selection.perkId == MEDITATION_PERK_ID;
-		}));
-	}
-	EXPECT_THROW(attackerSideHero->applyPerkSelection({WISDOM_SKILL_ID, MEDITATION_PERK_ID}), std::runtime_error);
-	setMovement(attackerSideHero, 50);
-
-	const auto saved = gameState()->saveToMemory();
-	CGameState restored;
-	restored.preInit(LIBRARY);
-	restored.loadFromMemory(saved);
-	const auto * restoredHero = restored.getHero(attackerSideHero->id);
-	ASSERT_NE(restoredHero, nullptr);
-	EXPECT_FALSE(restoredHero->hasActivePerk(WISDOM_SKILL_ID, MEDITATION_PERK_ID));
-	EXPECT_EQ(restoredHero->getManaNewTurn(true, 200), 1);
-	EXPECT_EQ(restoredHero->getNormalSpellPoints(), 0);
-	EXPECT_EQ(restoredHero->getBufferSpellPoints(), 9);
 }
 
 TEST_F(SpellPointCapacityMageGuildTest, MageGuildFullRefillTakesPrecedenceOverMysticism)
@@ -1698,18 +1592,18 @@ TEST_F(BottomlessMindCapacityTest, ActualAndraAddsFlatLevelCapacityWithoutRefill
 	expectPools(attackerSideHero, 100, 17, 170); // reactivation does not refill.
 }
 
-TEST_F(BottomlessMindCapacityTest, ReservoirIsUnscaledAndWorldCodecKeepsPolicyLevelAndPools)
+TEST_F(BottomlessMindCapacityTest, SageKnowledgeScalesWithIntelligenceWhileBottomlessMindRemainsFlat)
 {
 	const SecondarySkill wisdom(SecondarySkill::decode(WISDOM_SKILL_ID));
 	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
-	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, DEEP_KNOWLEDGE_PERK_ID));
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, SPELL_SCHOLAR_PERK_ID));
 	gameHandler->levelUpHero(attackerSideHero, wisdom, false);
-	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, ARCANE_RESERVOIR_PERK_ID));
+	ASSERT_TRUE(selectWisdomPerkThroughLegalOffer(attackerSideHero, SAGE_PERK_ID));
 	attackerSideHero->level = 20;
 	setKnowledge(attackerSideHero, 100);
 	setNormal(attackerSideHero, 10);
 	grantBuffer(attackerSideHero, 17);
-	expectPools(attackerSideHero, 10, 17, 195); // 130 + unchanged25 + flat40.
+	expectPools(attackerSideHero, 10, 17, 235); // floor((100 + Sage50)*1.30) + flat40.
 	const auto policy = attackerSideHero->getPrimaryGrowthRules();
 	const auto bytes = gameState()->saveToMemory();
 	CGameState restored;
@@ -1719,24 +1613,7 @@ TEST_F(BottomlessMindCapacityTest, ReservoirIsUnscaledAndWorldCodecKeepsPolicyLe
 	ASSERT_NE(hero, nullptr);
 	EXPECT_EQ(hero->getPrimaryGrowthRules(), policy);
 	EXPECT_EQ(hero->getBottomlessMindManaBonus(), 40);
-	expectPools(hero, 10, 17, 195);
-	const auto reject = [](auto & value)
-	{
-		CMemorySerializer previous;
-		previous.oser.version = ESerializationVersion::NEW_HORIZONS_FORTUNE_CHILD_AND_ARCANE_PREPARATION;
-		EXPECT_THROW(value.serialize(previous.oser), std::runtime_error);
-		EXPECT_TRUE(previous.extractBuffer().empty());
-	};
-	reject(*attackerSideHero);
-	GameSettings settings;
-	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, gameState()->getHeroDevelopmentRules());
-	reject(settings);
-	reject(gameState()->getMap());
-	reject(*gameState());
-	LobbyStartGame lobby;
-	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
-	lobby.initializedGameState = gameState();
-	reject(lobby);
+	expectPools(hero, 10, 17, 235);
 }
 
 TEST_F(BottomlessMindAbsentCapacityTest, PreviousCapturedAbsenceStaysInertThroughPreviousWorldCodec)

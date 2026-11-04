@@ -2575,7 +2575,7 @@ protected:
 				entry["ordersHex"].String() = valueHex(currentBattle->getHeroOrderStates(side));
 				entry["activeOrderHex"].String() = valueHex(currentBattle->getActiveOrder(side));
 				entry["focusFireHex"].String() = valueHex(currentBattle->getFocusFireState(side));
-				entry["warcastingHex"].String() = valueHex(currentBattle->getWarcastingState(side));
+				entry["wisdomHex"].String() = valueHex(currentBattle->getWisdomCombatState(side));
 				entry["doubleCommandHex"].String() = valueHex(currentBattle->getDoubleCommandState(side));
 				entry["castSpells"].Integer() = currentBattle->getCastSpells(side);
 				entry["usedSpellsHex"].String() = valueHex(currentBattle->getUsedSpells(side));
@@ -3713,7 +3713,7 @@ void NewHorizonsExchangeReadParityTest::runShippingNormalCallback(bool visibleRo
 			entry["ordersHex"].String() = valueHex(currentBattle->getHeroOrderStates(side));
 			entry["activeOrderHex"].String() = valueHex(currentBattle->getActiveOrder(side));
 			entry["focusFireHex"].String() = valueHex(currentBattle->getFocusFireState(side));
-			entry["warcastingHex"].String() = valueHex(currentBattle->getWarcastingState(side));
+			entry["wisdomHex"].String() = valueHex(currentBattle->getWisdomCombatState(side));
 			entry["doubleCommandHex"].String() = valueHex(currentBattle->getDoubleCommandState(side));
 			entry["castSpells"].Integer() = currentBattle->getCastSpells(side);
 			entry["usedSpellsHex"].String() = valueHex(currentBattle->getUsedSpells(side));

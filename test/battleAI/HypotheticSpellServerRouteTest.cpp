@@ -231,12 +231,10 @@ std::string viewState(const CBattleInfoCallback & callback)
 	out << "round=" << state->getRound() << ";active=" << state->getActiveStackID();
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		const auto & weave = state->getWarcastingState(side);
-		out << ";side=" << static_cast<int>(side) << ',' << static_cast<int>(weave.nextEligibleAction)
-			<< ',' << weave.empowermentPercent << ',' << weave.expiryRound << ',' << weave.reactiveEmpowermentPercent
-			<< ',' << weave.reactiveExpiryRound << ',' << weave.lastManaRecoveryRound << ',' << weave.hasConsumedBonus;
-		for(const auto action : weave.recentActions)
-			out << ',' << static_cast<int>(action);
+		const auto & wisdom = state->getWisdomCombatState(side);
+		out << ";wisdom=" << wisdom.lastCastRound << ',' << static_cast<int>(wisdom.consecutiveCastRounds);
+		for(const auto & [spell, casts] : wisdom.completedCasts)
+			out << ',' << spell.getNum() << ':' << casts;
 		const auto & formula = state->getOverwhelmingFormulaState(side);
 		out << ";response=" << state->getSpellResponseState(side).armedInRound
 			<< ";formula=" << formula.lastCandidateCastToken << ',' << formula.winningCastToken
@@ -321,8 +319,7 @@ protected:
 		RecordProperty("snapshotRefusalControls", "direct=2;composite=2;propagation=2;nestedOwner=2;cycle=1");
 		ASSERT_NO_FATAL_FAILURE(startGame(siege));
 		if(reactions)
-			for(const auto & keys : {std::array<std::string, 3>{"new-horizons:warcasting", "martialChanneling", "reactiveWeave"},
-				std::array<std::string, 3>{"new-horizons:spellcraft", "spellPenetration", "counterpressure"}})
+			for(const auto & keys : {std::array<std::string, 3>{"new-horizons:spellcraft", "spellPenetration", "counterpressure"}})
 			{
 				const auto skill = SecondarySkill(SecondarySkill::decode(keys[0]));
 				ASSERT_TRUE(skill.hasValue());
@@ -538,24 +535,13 @@ TEST_F(HypotheticSpellServerRouteTest, TypedCatapultUsesAbsoluteDamageOnlyInChil
 	record("typed-catapult-absolute50-not-legacy1");
 }
 
-TEST_F(HypotheticSpellServerRouteTest, GenericAllowlistAppliesThreeStatesAndPropagatesInvalidReceiptThrows)
+TEST_F(HypotheticSpellServerRouteTest, GenericAllowlistAppliesCurrentStatesAndPropagatesInvalidReceiptThrows)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true, false, PlayerColor(1)));
 	ScopedRouteLogs logs;
 	auto * callback = child->getServerCallback();
 	const int round = child->getRound();
 	callback->recordCompletedHeroSpellCast(BattleSide::ATTACKER, 1);
-	SetReactiveWeaveState weave;
-	weave.battleID = BattleID(0);
-	weave.side = BattleSide::DEFENDER;
-	weave.casterSide = BattleSide::ATTACKER;
-	weave.round = round;
-	weave.empowerment = 15;
-	weave.recipients = {victim};
-	callback->apply(static_cast<CPackForClient &>(weave));
-	EXPECT_EQ(child->getWarcastingState(BattleSide::DEFENDER).reactiveEmpowermentPercent, 15);
-	EXPECT_EQ(child->getWarcastingState(BattleSide::DEFENDER).reactiveExpiryRound, round + 1);
-	record("generic-reactive15");
 	SetSpellResponseState response;
 	response.battleID = BattleID(0);
 	response.side = BattleSide::DEFENDER;
@@ -571,8 +557,6 @@ TEST_F(HypotheticSpellServerRouteTest, GenericAllowlistAppliesThreeStatesAndProp
 	EXPECT_EQ(hidden->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
 	auto * hiddenCallback = hidden->getServerCallback();
 	hiddenCallback->recordCompletedHeroSpellCast(BattleSide::ATTACKER, 1);
-	hiddenCallback->apply(static_cast<CPackForClient &>(weave));
-	EXPECT_EQ(hidden->getWarcastingState(BattleSide::DEFENDER).reactiveEmpowermentPercent, 15);
 	const auto worldBefore = gameState()->saveToMemory();
 	const auto childBeforeHidden = viewState(*child);
 	hiddenCallback->apply(static_cast<CPackForClient &>(response));
@@ -607,11 +591,6 @@ TEST_F(HypotheticSpellServerRouteTest, GenericAllowlistAppliesThreeStatesAndProp
 	EXPECT_EQ(child->getOverwhelmingFormulaState(BattleSide::ATTACKER).winningCastToken, 0u);
 	record("generic-formula-first-token1");
 	const auto accepted = viewState(*child);
-	weave.battleID = BattleID(1);
-	expectError([&] { callback->apply(static_cast<CPackForClient &>(weave)); },
-		"Reactive Weave receipt has invalid cast provenance");
-	EXPECT_EQ(viewState(*child), accepted);
-	record("generic-invalid-reactive-provenance");
 	response.state.armedInRound = round + 2;
 	expectError([&] { callback->apply(static_cast<CPackForClient &>(response)); },
 		"Spell Response state can only be armed in the current round");
@@ -622,7 +601,7 @@ TEST_F(HypotheticSpellServerRouteTest, GenericAllowlistAppliesThreeStatesAndProp
 		"Invalid Overwhelming Formula state transition");
 	EXPECT_EQ(viewState(*child), accepted);
 	EXPECT_TRUE(logs.rows().empty());
-	record("generic-three-invalid-updates-throw-without-rollback-of-earlier-valid-updates");
+	record("generic-two-invalid-updates-throw-without-rollback-of-earlier-valid-updates");
 }
 
 TEST_F(HypotheticSpellServerRouteTest, ErasedTypedAndUnsupportedGenericLogOnceAndReturnWithoutDispatch)

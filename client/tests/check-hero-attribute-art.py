@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT / "tools/tests"))
 from nhart_test_resources import ArtPath
 IMAGES = ArtPath()
 HERO = (ROOT / "client/windows/CHeroWindow.cpp").read_text(encoding="utf-8")
+HERO += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
 GROWTH = (ROOT / "client/windows/HeroGrowthWindow.cpp").read_text(encoding="utf-8")
 
 

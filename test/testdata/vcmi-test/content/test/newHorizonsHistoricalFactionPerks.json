@@ -1,0 +1,401 @@
+{
+	"sourceRevision": "59784d2254af2cc1b8c3b39be8bdfa7df02840a3",
+	"skills": {
+		"new-horizons:metamagic": {
+			"id": "new-horizons:metamagic",
+			"name": "Metamagic",
+			"domain": "Faction",
+			"availability": "Tower heroes only",
+			"description": "Faction-locked Skill. If a use remains, after casting a Spell with your Hero Action, Metamagic offers an optional Spell Action usable until the round ends. An extra Spell cast with it spends a use and cannot trigger Metamagic again.",
+			"ranks": {
+				"basic": {
+					"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends your one Metamagic use for this combat and cannot trigger Metamagic again.",
+					"effect": {
+						"status": "active",
+						"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends your one Metamagic use for this combat and cannot trigger Metamagic again."
+					}
+				},
+				"advanced": {
+					"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your two Metamagic uses for this combat and cannot trigger Metamagic again.",
+					"effect": {
+						"status": "active",
+						"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your two Metamagic uses for this combat and cannot trigger Metamagic again."
+					}
+				},
+				"expert": {
+					"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your three Metamagic uses for this combat and cannot trigger Metamagic again.",
+					"effect": {
+						"status": "active",
+						"description": "After casting with your Hero Action, if a use remains, gain an optional Spell Action usable until the round ends. Casting with it spends one of your three Metamagic uses for this combat and cannot trigger Metamagic again."
+					}
+				}
+			},
+			"perks": [
+				{
+					"id": "new-horizons:metamagic.spellSequencing",
+					"name": "Spell Sequencing",
+					"requires": "basic",
+					"description": "A Spell cast with a Metamagic Spell Action gains +15% to its Spell Power-derived numerical component if it belongs to a different school from the Spell that triggered Metamagic.",
+					"effect": {
+						"status": "active",
+						"description": "A Spell cast with a Metamagic Spell Action gains +15% to its Spell Power-derived numerical component if it belongs to a different school from the Spell that triggered Metamagic."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.arcaneEconomy",
+					"name": "Arcane Economy",
+					"requires": "basic",
+					"description": "Spells cast with Metamagic Spell Actions cost 2 less Mana, to a minimum of 1.",
+					"effect": {
+						"status": "active",
+						"description": "Spells cast with Metamagic Spell Actions cost 2 less Mana, to a minimum of 1."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.focusedPairing",
+					"name": "Focused Pairing",
+					"requires": "basic",
+					"description": "If a hostile Spell cast with a Metamagic Spell Action targets the same stack as the triggering Spell, it ignores 20% of that stack's Magical Damage Reduction.",
+					"effect": {
+						"status": "active",
+						"description": "If a hostile Spell cast with a Metamagic Spell Action targets the same stack as the triggering Spell, it ignores 20% of that stack's Magical Damage Reduction."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.arcaneAcquisition",
+					"name": "Arcane Acquisition",
+					"requires": "basic",
+					"description": "If Focus Magic is cast with a Metamagic Spell Action, each living enemy stack struck by the enchanted shooter while it currently has no Arcane Breach marks receives 2 marks instead of 1. A target that already has one or more marks receives the normal 1 mark. Check each target when it is damaged and retain the 3-mark cap.",
+					"effect": {
+						"status": "active",
+						"description": "If Focus Magic is cast with a Metamagic Spell Action, each living enemy stack struck by the enchanted shooter while it currently has no Arcane Breach marks receives 2 marks instead of 1. A target that already has one or more marks receives the normal 1 mark. Check each target when it is damaged and retain the 3-mark cap."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.echoedDuration",
+					"name": "Echoed Duration",
+					"requires": "advanced",
+					"description": "A temporary effect created by a Spell cast with a Metamagic Spell Action lasts 1 additional round.",
+					"effect": {
+						"status": "active",
+						"description": "A temporary effect created by a Spell cast with a Metamagic Spell Action lasts 1 additional round."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.splitFocus",
+					"name": "Split Focus",
+					"requires": "advanced",
+					"description": "If a Spell cast with a Metamagic Spell Action targets a different stack from the triggering Spell, it gains +10% to its Spell Power-derived numerical component.",
+					"effect": {
+						"status": "active",
+						"description": "If a Spell cast with a Metamagic Spell Action targets a different stack from the triggering Spell, it gains +10% to its Spell Power-derived numerical component."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.formulaReserve",
+					"name": "Formula Reserve",
+					"requires": "advanced",
+					"description": "After each Metamagic sequence in which at least one additional Spell was cast is completed, restore 3 Normal Spell Points once.",
+					"effect": {
+						"status": "active",
+						"description": "After each Metamagic sequence in which at least one additional Spell was cast is completed, restore 3 Normal Spell Points once."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.spellBuffer",
+					"name": "Spell Buffer",
+					"requires": "advanced",
+					"description": "Once per combat, when a Spell Action granted by Metamagic expires unused at the end of the round, gain 6 Buffer Spell Points. The expired opportunity does not consume a Metamagic use.",
+					"effect": {
+						"status": "active",
+						"description": "Once per combat, when a Spell Action granted by Metamagic expires unused at the end of the round, gain 6 Buffer Spell Points. The expired opportunity does not consume a Metamagic use."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.grandMetamagic",
+					"name": "Grand Metamagic",
+					"requires": "expert",
+					"description": "When the first additional Spell of the third used Metamagic sequence is cast, automatically grant one further Spell Action. The sequence therefore permits two additional Spells in total. Both opportunities expire at the end of the round, neither can trigger Metamagic, and the further action does not consume another Metamagic use.",
+					"effect": {
+						"status": "active",
+						"description": "When the first additional Spell of the third used Metamagic sequence is cast, automatically grant one further Spell Action. The sequence therefore permits two additional Spells in total. Both opportunities expire at the end of the round, neither can trigger Metamagic, and the further action does not consume another Metamagic use."
+					}
+				},
+				{
+					"id": "new-horizons:metamagic.perfectSequence",
+					"name": "Perfect Sequence",
+					"requires": "expert",
+					"description": "Each Spell cast with a Metamagic Spell Action gains +20% to its Spell Power-derived numerical component if it is a different Spell from every earlier Spell in that Metamagic sequence.",
+					"effect": {
+						"status": "active",
+						"description": "Each Spell cast with a Metamagic Spell Action gains +20% to its Spell Power-derived numerical component if it is a different Spell from every earlier Spell in that Metamagic sequence."
+					}
+				}
+			]
+		},
+		"new-horizons:divineMandate": {
+			"id": "new-horizons:divineMandate",
+			"name": "Divine Mandate",
+			"domain": "Faction",
+			"availability": "Castle heroes only",
+			"description": "Faction-locked Skill. Castle unites sacred intervention and military command. Divine Mandate creates a precise exception to the normal Spell-or-Order choice without introducing a second action currency.",
+			"ranks": {
+				"basic": {
+					"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end.",
+					"effect": {
+						"status": "active",
+						"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end."
+					}
+				},
+				"advanced": {
+					"description": "Divine Mandate may be used twice per combat.",
+					"effect": {
+						"status": "active",
+						"description": "Divine Mandate may be used twice per combat."
+					}
+				},
+				"expert": {
+					"description": "Divine Mandate may be used three times per combat.",
+					"effect": {
+						"status": "active",
+						"description": "Divine Mandate may be used three times per combat."
+					}
+				}
+			},
+			"perks": [
+				{
+					"id": "new-horizons:divineMandate.sacredCommand",
+					"name": "Sacred Command",
+					"requires": "basic",
+					"description": "An Order issued through Divine Mandate gains +10 percentage points of efficiency on its attribute-derived components.",
+					"effect": {
+						"status": "active",
+						"description": "An Order issued through Divine Mandate gains +10 percentage points of efficiency on its attribute-derived components."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.consecratedCasting",
+					"name": "Consecrated Casting",
+					"requires": "basic",
+					"description": "A Light Spell cast through Divine Mandate gains +10% to its Spell Power-derived numerical component.",
+					"effect": {
+						"status": "active",
+						"description": "A Light Spell cast through Divine Mandate gains +10% to its Spell Power-derived numerical component."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.sharedPurpose",
+					"name": "Shared Purpose",
+					"requires": "basic",
+					"description": "If the paired Light Spell and Order both affect the same friendly stack, that stack gains +1 Morale until its next activation.",
+					"effect": {
+						"status": "active",
+						"description": "If the paired Light Spell and Order both affect the same friendly stack, that stack gains +1 Morale until its next activation."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.chaplainSReserve",
+					"name": "Chaplain's Reserve",
+					"requires": "basic",
+					"description": "After the first Divine Mandate sequence each combat resolves, recover 3 Mana.",
+					"effect": {
+						"status": "active",
+						"description": "After the first Divine Mandate sequence each combat resolves, recover 3 Mana."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.divineDiscipline",
+					"name": "Divine Discipline",
+					"requires": "advanced",
+					"description": "An Order issued through Divine Mandate that would normally end at round end remains separately on its original affected friendly recipients through their first genuine completed Creature Activation after the issuing round. Wait and same-activation continuations do not consume this carry.",
+					"effect": {
+						"status": "active",
+						"description": "An Order issued through Divine Mandate that would normally end at round end remains separately on its original affected friendly recipients through their first genuine completed Creature Activation after the issuing round. Wait and same-activation continuations do not consume this carry."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.purifyingMandate",
+					"name": "Purifying Mandate",
+					"requires": "advanced",
+					"description": "When a Light Spell cast through Divine Mandate removes a negative magical effect, it also removes one physical affliction from that target if present.",
+					"effect": {
+						"status": "active",
+						"description": "When a Light Spell cast through Divine Mandate removes a negative magical effect, it also removes one physical affliction from that target if present."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.knightlySequence",
+					"name": "Knightly Sequence",
+					"requires": "advanced",
+					"description": "If the Order is performed first, the paired Light Spell costs 2 less Mana; if the Light Spell is performed first, the paired Order gains +5 additional percentage points of efficiency.",
+					"effect": {
+						"status": "active",
+						"description": "If the Order is performed first, the paired Light Spell costs 2 less Mana; if the Light Spell is performed first, the paired Order gains +5 additional percentage points of efficiency."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.royalStandard",
+					"name": "Royal Standard",
+					"requires": "advanced",
+					"description": "Friendly stacks affected by an Order issued through Divine Mandate treat negative Morale as 0 for that Order's duration.",
+					"effect": {
+						"status": "active",
+						"description": "Friendly stacks affected by an Order issued through Divine Mandate treat negative Morale as 0 for that Order's duration."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.mandateOfHeaven",
+					"name": "Mandate of Heaven",
+					"requires": "expert",
+					"description": "The first Divine Mandate sequence each combat does not count against the Skill's normal per-combat usage limit.",
+					"effect": {
+						"status": "active",
+						"description": "The first Divine Mandate sequence each combat does not count against the Skill's normal per-combat usage limit."
+					}
+				},
+				{
+					"id": "new-horizons:divineMandate.crownAndAltar",
+					"name": "Crown and Altar",
+					"requires": "expert",
+					"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action.",
+					"effect": {
+						"status": "active",
+						"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action."
+					}
+				}
+			]
+		},
+		"new-horizons:demonicGating": {
+			"id": "new-horizons:demonicGating",
+			"name": "Demonic Gating",
+			"domain": "Faction",
+			"availability": "Inferno heroes only",
+			"description": "Faction-locked Skill. Inferno heroes may bring actual reserve troops onto the battlefield through gates. Gating uses a Demonic Reserve of owned Inferno creatures outside the seven active combat slots; creatures are not created for free.",
+			"ranks": {
+				"basic": {
+					"description": "A friendly Inferno stack may spend its Creature Activation to open a Gate on a legal empty hex within 3 hexes. At the start of the next round, one Core stack from the Demonic Reserve arrives there.",
+					"effect": {
+						"status": "active",
+						"description": "A friendly Inferno stack may spend its Creature Activation to open a Gate on a legal empty hex within 3 hexes. At the start of the next round, one Core stack from the Demonic Reserve arrives there."
+					}
+				},
+				"advanced": {
+					"description": "Gating may bring Core or Elite reserve stacks.",
+					"effect": {
+						"status": "active",
+						"description": "Gating may bring Core or Elite reserve stacks."
+					}
+				},
+				"expert": {
+					"description": "Gating may bring Core, Elite, or Champion reserve stacks.",
+					"effect": {
+						"status": "active",
+						"description": "Gating may bring Core, Elite, or Champion reserve stacks."
+					}
+				}
+			},
+			"perks": [
+				{
+					"id": "new-horizons:demonicGating.swiftGate",
+					"name": "Swift Gate",
+					"requires": "basic",
+					"description": "A gated stack arrives at the end of the current round instead of the start of the next round.",
+					"effect": {
+						"status": "active",
+						"description": "A gated stack arrives at the end of the current round instead of the start of the next round."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.wideGate",
+					"name": "Wide Gate",
+					"requires": "basic",
+					"description": "Gate placement range increases from 3 to 5 hexes from the gating stack.",
+					"effect": {
+						"status": "active",
+						"description": "Gate placement range increases from 3 to 5 hexes from the gating stack."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.hellfireArrival",
+					"name": "Hellfire Arrival",
+					"requires": "basic",
+					"description": "When a gated stack arrives, adjacent enemy stacks suffer Fire damage equal to 15% of the gated stack's current aggregate HP, divided evenly among them.",
+					"effect": {
+						"status": "active",
+						"description": "When a gated stack arrives, adjacent enemy stacks suffer Fire damage equal to 15% of the gated stack's current aggregate HP, divided evenly among them."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.reinforcedGate",
+					"name": "Reinforced Gate",
+					"requires": "basic",
+					"description": "A gated stack gains temporary HP equal to floor(20% of its current aggregate HP) until combat ends. This pool is consumed before creature HP, creates no creatures, cannot be healed or resurrected, and is serialized in battle saves.",
+					"effect": {
+						"status": "active",
+						"description": "A gated stack gains temporary HP equal to floor(20% of its current aggregate HP) until combat ends. This pool is consumed before creature HP, creates no creatures, cannot be healed or resurrected, and is serialized in battle saves."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.mobileGate",
+					"name": "Mobile Gate",
+					"requires": "advanced",
+					"description": "As one combined Creature Activation, a stack may optionally move along a legal path up to floor(half its Speed) and then Gate. The complete request is validated before commitment; choosing no movement is legal, and interrupted or rejected movement does not consume or remove the selected reserve stack.",
+					"effect": {
+						"status": "active",
+						"description": "As one combined Creature Activation, a stack may optionally move along a legal path up to floor(half its Speed) and then Gate. The complete request is validated before commitment; choosing no movement is legal, and interrupted or rejected movement does not consume or remove the selected reserve stack."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.infernalBeacon",
+					"name": "Infernal Beacon",
+					"requires": "advanced",
+					"description": "If the Gate is placed adjacent to another friendly Inferno stack, the gated stack gains +2 Initiative during its first actionable round. A delayed arrival never consumes the bonus before the gated stack can act.",
+					"effect": {
+						"status": "active",
+						"description": "If the Gate is placed adjacent to another friendly Inferno stack, the gated stack gains +2 Initiative during its first actionable round. A delayed arrival never consumes the bonus before the gated stack can act."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.chainGate",
+					"name": "Chain Gate",
+					"requires": "advanced",
+					"description": "After a gated stack destroys an enemy stack, the next Gate opened during that combat resolves one timing step sooner.",
+					"effect": {
+						"status": "active",
+						"description": "After a gated stack destroys an enemy stack, the next Gate opened during that combat resolves one timing step sooner."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.reserveDiscipline",
+					"name": "Reserve Discipline",
+					"requires": "advanced",
+					"description": "Gated stacks treat negative Morale as 0 during the round in which they arrive.",
+					"effect": {
+						"status": "active",
+						"description": "Gated stacks treat negative Morale as 0 during the round in which they arrive."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.masterGate",
+					"name": "Master Gate",
+					"requires": "expert",
+					"description": "The first Gate opened each combat does not consume the gating stack's Creature Activation. After opening the Gate, that stack proceeds with its normal Creature Activation.",
+					"effect": {
+						"status": "active",
+						"description": "The first Gate opened each combat does not consume the gating stack's Creature Activation. After opening the Gate, that stack proceeds with its normal Creature Activation."
+					}
+				},
+				{
+					"id": "new-horizons:demonicGating.endlessLegion",
+					"name": "Endless Legion",
+					"requires": "expert",
+					"description": "After a victorious combat, 50% of casualties suffered specifically by gated Core and Elite reserve stacks are restored to the Demonic Reserve, rounded down.",
+					"effect": {
+						"status": "active",
+						"description": "After a victorious combat, 50% of casualties suffered specifically by gated Core and Elite reserve stacks are restored to the Demonic Reserve, rounded down."
+					}
+				}
+			]
+		}
+	}
+}

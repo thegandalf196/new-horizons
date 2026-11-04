@@ -116,7 +116,7 @@ TEST_F(NewHorizonsCommandEfficiencyTest, DefensiveCommanderScalesOnlyDefenseDeri
 	EXPECT_EQ(heroCommands::coefficient(flatOnly, *attackerSideHero), 37);
 }
 
-TEST_F(NewHorizonsCommandEfficiencyTest, RankAndWarcastingPointsRemainAdditiveForAttackTerms)
+TEST_F(NewHorizonsCommandEfficiencyTest, RankAndDivineMandatePointsRemainAdditiveForAttackTerms)
 {
 	prepareCommand(MasteryLevel::BASIC);
 	selectCommandPerk(AGGRESSIVE_COMMANDER);
@@ -130,8 +130,8 @@ TEST_F(NewHorizonsCommandEfficiencyTest, RankAndWarcastingPointsRemainAdditiveFo
 		const int rankEfficiency = 100 + rank * 10;
 		const int expected = 11 + 10 * (rankEfficiency + 20) / 100;
 		EXPECT_EQ(heroCommands::coefficient(attackOnly, *attackerSideHero), expected);
-		const int warcastExpected = 11 + 10 * (rankEfficiency + 20 + 10) / 100;
-		EXPECT_EQ(heroCommands::coefficient(attackOnly, *attackerSideHero, 10), warcastExpected);
+		const int divineExpected = 11 + 10 * (rankEfficiency + 20 + 10) / 100;
+		EXPECT_EQ(heroCommands::coefficient(attackOnly, *attackerSideHero, 10), divineExpected);
 	}
 }
 
@@ -182,20 +182,19 @@ TEST_F(NewHorizonsCommandEfficiencyTest, VeteranCommanderOnlyScalesSecondWindLea
 	HeroOrderState order;
 	order.command = HeroCommand::CHARGE;
 	order.issuedRound = 1;
-	order.warcastingBonusPercent = 10;
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::CURRENT;
 	memory.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(memory.oser & order);
 	HeroOrderState restored;
 	ASSERT_NO_THROW(memory.iser & restored);
-	EXPECT_EQ(restored.warcastingBonusPercent, 10);
-	EXPECT_EQ(heroCommands::coefficient(attackOnly, *attackerSideHero, restored.warcastingBonusPercent), 26);
+	EXPECT_EQ(restored, order);
+	EXPECT_EQ(heroCommands::coefficient(attackOnly, *attackerSideHero), 25);
 
-	const int expectedLeadershipEfficiency = 120 + 25 + restored.warcastingBonusPercent;
+	const int expectedLeadershipEfficiency = 120 + 25;
 	const int expectedSecondWind = std::clamp(50 + static_cast<int>(std::lround(
 		0.015 * static_cast<double>(capacityAfter->capacity) * expectedLeadershipEfficiency / 100.0)), 0, 100);
-	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero, restored.warcastingBonusPercent), expectedSecondWind);
+	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero), expectedSecondWind);
 }
 
 TEST_F(NewHorizonsCommandEfficiencyTest, LegacyRulesDoNotGainCanonicalCommanderPerks)

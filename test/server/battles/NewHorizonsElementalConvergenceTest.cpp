@@ -126,7 +126,7 @@ TEST_F(NewHorizonsElementalConvergenceTest, NatureRankScalesOnlyPowerComponentAn
 		const auto coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(
 			battle()->getMagicRules(), attackerSideHero, spell());
 		const auto expected = (25000 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-			5LL * 41 * 100, 1, coefficient, 0, 0)) / 100;
+			5LL * 41 * 100, 1, coefficient, 0)) / 100;
 		const auto forecast = battle()->getSpellEffectValue(spell().toSpell(), attackerSideHero, spells::Mode::HERO, selected);
 		ASSERT_NE(forecast, nullptr);
 		EXPECT_EQ(forecast->hpDelta, expected) << "Nature rank " << rank;
@@ -169,7 +169,7 @@ TEST_F(NewHorizonsElementalConvergenceTest, SelectedConjurerScalesWholePoolAndIn
 	const auto coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(
 		battle()->getMagicRules(), attackerSideHero, spell());
 	const auto expected = (250 * 130 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		5LL * 41 * 130, 1, coefficient, 0, 0)) / 100;
+		5LL * 41 * 130, 1, coefficient, 0)) / 100;
 	const auto forecast = battle()->getSpellEffectValue(spell().toSpell(), attackerSideHero, spells::Mode::HERO, selected);
 	ASSERT_NE(forecast, nullptr);
 	EXPECT_EQ(forecast->hpDelta, expected);

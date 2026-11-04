@@ -3,12 +3,11 @@ local Script = setmetatable({}, {__index = Base})
 Script.__index = Script
 
 local COMBAT_EVENT = "core:hexOfPain"
-local DURATION_TURNS = 3
 function Script:apply(mechanics, server, target)
 	local battle = mechanics:getBattle()
 	local spellKey = mechanics:getSpell():getJsonKey()
 	local flatDamage = mechanics:getHexOfPainFlatDamage()
-	local duration = mechanics:adjustEffectDuration(DURATION_TURNS)
+	local duration = mechanics:getScriptedRoundStatusDuration()
 	local casterSide = mechanics:getCasterSide()
 
 	for _, destination in ipairs(target) do
@@ -29,7 +28,7 @@ function Script:apply(mechanics, server, target)
 			server:addUnitBonus(battle, unit, {
 				type = "COMBAT_EVENT_TRIGGER",
 				subtype = COMBAT_EVENT,
-				val = flatDamage,
+				val = mechanics:adjustMetamagicMagnitude(flatDamage, unit),
 				duration = ENUM.BonusDuration.nTurns,
 				turns = duration,
 				sourceType = ENUM.BonusSource.spellEffect,
@@ -38,7 +37,7 @@ function Script:apply(mechanics, server, target)
 				statusTags = {"DEBUFF"},
 				statusIdentity = spellKey,
 				addInfo = {
-					damageSharePercent = mechanics:getHexOfPainDamageSharePercent(),
+					damageSharePercent = mechanics:getRecipientHexOfPainDamageSharePercent(unit),
 					casterSide = casterSide
 				}
 			}, false)

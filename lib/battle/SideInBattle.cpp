@@ -16,6 +16,7 @@
 
 void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town)
 {
+	passiveDivineMandateUses = 0;
 	manaFurnaceRecoveredNormal = 0;
 	manaLeechesRecoveredNormal = 0;
 	initialAcceptedCombatDay = -1;
@@ -102,4 +103,87 @@ int32_t SideInBattle::legacySpellPointCompletionCeiling() const
 	validateManaLeechesSerialization(true);
 	return static_cast<int32_t>(std::clamp<int64_t>(static_cast<int64_t>(initialMana) + manaFurnaceRecoveredNormal + deepTranceRecoveredNormal + manaLeechesRecoveredNormal,
 		0, std::numeric_limits<int32_t>::max()));
+}
+
+void SideInBattle::restoreHeroActionAllowancesAfterLoad(int32_t round, bool usesSharedActionBudget,
+	bool typedAllowancesSupported)
+{
+	auto & allowances = heroActionAllowances;
+	if(!usesSharedActionBudget)
+	{
+		if(allowances != HeroActionAllowanceState{})
+			throw std::runtime_error("Saved Hero Action allowance state requires shared action rules");
+		return;
+	}
+	const bool noPreRoundActionHistory = !heroCommandUsed && castSpellsCount == 0
+		&& metamagicPendingCount == 0 && metamagicUsesConsumed == 0
+		&& activeOrder == HeroCommand::NONE && orderStates.empty() && !focusFire
+		&& metamagicSequenceSpells.empty();
+	const bool cleanUninitializedLedger = allowances == HeroActionAllowanceState{};
+
+	if(typedAllowancesSupported)
+	{
+		if(round <= 0)
+		{
+			if(!noPreRoundActionHistory)
+				throw std::runtime_error("Action history exists before the first playable battle round");
+			if(!cleanUninitializedLedger)
+				throw std::runtime_error("Hero Action allowances exist before the first playable battle round");
+			return;
+		}
+		if(allowances.currentRound != round)
+			throw std::runtime_error("Hero Action allowance round does not match battle round");
+		allowances.validateShape();
+
+	}
+	else if(round <= 0)
+	{
+		if(!noPreRoundActionHistory)
+			throw std::runtime_error("Action history exists before the first playable battle round");
+		if(!cleanUninitializedLedger)
+			throw std::runtime_error("Hero Action allowances exist before the first playable battle round");
+	}
+	else
+	{
+		// Old saves represented both a consumed Hero Action and an available
+		// Metamagic continuation with independent counters. Reconstruct the
+		// typed grants once from that authoritative legacy snapshot.
+		allowances.resetForRound(round);
+		if(heroCommandUsed || castSpellsCount > 0)
+		{
+			const auto baseAction = allowances.eligibleAllowance(
+				HeroActionAllowanceState::ActionKind::SPELL, round);
+			if(!baseAction || baseAction->allowance != HeroActionAllowanceState::AllowanceKind::HERO
+				|| !allowances.consumeAllowance(baseAction->grantId,
+					HeroActionAllowanceState::ActionKind::SPELL, round))
+				throw std::runtime_error("Could not migrate spent legacy Hero Action");
+		}
+		if(metamagicPendingCount > 1)
+			throw std::runtime_error("Unsupported legacy pending Metamagic allowance count");
+		if(metamagicPendingCount == 1)
+		{
+			if(castSpellsCount == 0 && !heroCommandUsed)
+				throw std::runtime_error("Legacy Metamagic grant has no consumed Hero Action");
+			const bool grandContinuation = metamagicGrandUsed && metamagicSequenceSpells.size() == 2;
+			allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
+				grandContinuation ? HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND
+					: HeroActionAllowanceState::GrantSource::METAMAGIC,
+				round);
+		}
+	}
+
+	uint32_t metamagicGrantCount = 0;
+	uint32_t grandGrantCount = 0;
+	for(const auto & grant : allowances.grants)
+	{
+		if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC)
+			++metamagicGrantCount;
+		else if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND)
+			++grandGrantCount;
+	}
+	if(metamagicGrantCount + grandGrantCount != metamagicPendingCount
+		|| metamagicGrantCount > 1 || grandGrantCount > 1
+		|| (metamagicGrantCount != 0 && metamagicSequenceSpells.size() != 1)
+		|| (grandGrantCount != 0 && (!metamagicGrandUsed || metamagicSequenceSpells.size() != 2)))
+		throw std::runtime_error("Metamagic metadata does not match typed Spell grants");
 }

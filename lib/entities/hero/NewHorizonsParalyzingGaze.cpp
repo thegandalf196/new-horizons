@@ -46,6 +46,9 @@ bool resolveParalyzingGazePresentation(const CHero & hero, const JsonNode & deve
 		if(const auto enabled = paralyzingGazePolicy(development))
 		{
 			result.name = "Paralyzing Gaze";
+			result.summary = *enabled
+				? "Damaging Beholder and Evil Eye shots suppress the target’s next ordinary retaliation; repeated hits do not stack, and Defiant can ignore it."
+				: "Paralyzing Gaze is disabled for this game.";
 			if(*enabled)
 				result.artwork = "newHorizons/heroSpecialties/AjitParalyzingGaze";
 			result.creature = CreatureID(CreatureID::decode("core:beholder"));

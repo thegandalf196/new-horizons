@@ -527,6 +527,12 @@ void CComponentBox::selectFirst()
 		selectionChanged(std::dynamic_pointer_cast<CSelectableComponent>(components.front()));
 }
 
+void CComponentBox::selectIndex(size_t index)
+{
+	if(index < components.size())
+		selectionChanged(std::dynamic_pointer_cast<CSelectableComponent>(components[index]));
+}
+
 void CComponentBox::setShortcuts(const std::vector<EShortcut> & shortcuts)
 {
 	const auto count = std::min(components.size(), shortcuts.size());

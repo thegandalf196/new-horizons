@@ -157,7 +157,8 @@ int battle::UnitEnvironmentQueries::unitBloodragePainIncrement(const Unit * unit
 	const int rank = context.bloodrageRank(side);
 	const int increment = context.bloodragePain(side);
 	return context.bloodrageCap(side) > 0 && rank > 0
-		&& increment == newHorizonsBloodrage::incrementForRank(rank) ? increment : 0;
+		&& (increment == newHorizonsBloodrage::incrementForRank(rank)
+			|| increment == 2 * newHorizonsBloodrage::incrementForRank(rank)) ? increment : 0;
 }
 
 bool battle::UnitEnvironmentQueries::unitHasVeteranCohesion(const Unit * unit) const

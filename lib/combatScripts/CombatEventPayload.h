@@ -9,6 +9,7 @@
  */
 
 #pragma once
+#include "../battle/ArcaneReprisal.h"
 
 #include <vcmi/scripting/ApiTags.h>
 
@@ -42,6 +43,9 @@ struct DLL_LINKAGE AttackedTarget final : public scripting::ApiSerializable<Atta
 /// so a script may read the fields of the event it handles without checking which event fired.
 struct DLL_LINKAGE CombatEventPayload final : public scripting::ApiSerializable<CombatEventPayload>
 {
+	/// Native strike receipts, captured before casualties; not exposed to scripts.
+	std::vector<arcaneInspiration::Reprisal> arcaneReprisals;
+
 	std::vector<AttackedTarget> targets;
 	bool ranged = false;
 	bool isCounter = false;

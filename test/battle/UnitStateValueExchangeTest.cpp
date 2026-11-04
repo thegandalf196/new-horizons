@@ -13,6 +13,16 @@
 #include "mock/mock_UnitInfo.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/UnitStateValueExchange.h"
+#include "../../lib/battle/StackInitializationReceipts.h"
+#include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/spells/NewHorizonsPurify.h"
+#include "../../lib/CStack.h"
+#include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/bonuses/Propagators.h"
+#include "../../lib/bonuses/Updaters.h"
+#include "../../lib/mapObjects/army/CStackBasicDescriptor.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/json/JsonNode.h"
 
@@ -71,6 +81,13 @@ protected:
 		first.archeryCrossfireRound = 3;
 		first.archeryCrossfireAttackers = {11, 13};
 		first.archeryCrossfireDefenders = {17};
+		first.arcaneMarks.set(BattleSide::ATTACKER, 3);
+		first.arcaneMarks.set(BattleSide::DEFENDER, 1);
+		first.demonicGateOpened = true;
+		first.physicalPoisonBaseDamage = 10;
+		first.physicalPoisonActivationsRemaining = 2;
+		first.physicalPoisonSourceStackId = -1;
+		first.physicalPoisonSpellSide = BattleSide::ATTACKER;
 		first.confusionState.previousResolved = battle::ConfusionBehavior::WANDER;
 		first.confusionState.applyPending(PlayerColor(0), true);
 		int64_t damage = 25;
@@ -202,4 +219,148 @@ TEST_F(UnitStateValueExchangeTest, CopyStillInvokesLegacyChangedFormHook)
 	first.endBattleForm();
 	EXPECT_EQ(second.save(), first.save());
 }
+TEST_F(UnitStateValueExchangeTest, PassiveFactionReceiptsSurviveNativeRebindingAndStrictLoad)
+{
+	seedFirst();
+	const auto marks = first.arcaneMarks;
+	const battle::StackInitializationReceipts receipts(first);
+	receipts.initialize(first, &firstEnvironment, first.position);
+	EXPECT_EQ(first.arcaneMarks, marks);
+	EXPECT_TRUE(first.hasOpenedDemonicGate());
+	EXPECT_EQ(first.physicalPoisonSpellOrigin(), BattleSide::ATTACKER);
+	EXPECT_EQ(first.physicalPoisonBaseDamage, 10);
+	EXPECT_EQ(first.physicalPoisonActivationsRemaining, 2);
+	const auto saved = first.save();
+	second.load(saved);
+	EXPECT_EQ(second.arcaneMarks, marks);
+	EXPECT_TRUE(second.hasOpenedDemonicGate());
+	auto invalid = saved;
+	invalid["state"]["arcaneMarks"].Vector()[0].Integer() = 6;
+	const auto before = second.save();
+	EXPECT_THROW(second.load(invalid), std::runtime_error);
+	EXPECT_EQ(second.save(), before);
+}
+
+TEST_F(UnitStateValueExchangeTest, PoisonReplacementAndPurifyClearOnlySuccessfulSpellProvenance)
+{
+	ASSERT_TRUE(newHorizonsBulwark::applyPhysicalPoison(&first, 10, -1));
+	first.physicalPoisonSpellSide = BattleSide::DEFENDER;
+	EXPECT_FALSE(newHorizonsBulwark::applyPhysicalPoison(&first, 5, 8));
+	EXPECT_EQ(first.physicalPoisonSpellOrigin(), BattleSide::DEFENDER);
+	EXPECT_TRUE(newHorizonsBulwark::applyPhysicalPoison(&first, 10, 8));
+	EXPECT_EQ(first.physicalPoisonSpellOrigin(), BattleSide::NONE);
+	first.physicalPoisonSpellSide = BattleSide::ATTACKER;
+	EXPECT_TRUE(newHorizonsPurify::clearPhysicalPoison(&first));
+	EXPECT_EQ(first.physicalPoisonSpellOrigin(), BattleSide::NONE);
+	EXPECT_EQ(first.physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(first.physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(first.physicalPoisonSourceStackId, -1);
+}
+TEST_F(UnitStateValueExchangeTest, PoisonTupleHasCoherent1155DescriptorAndOlderPrefixRefusal)
+{
+	CStackBasicDescriptor base(CreatureID(0), 10);
+	CStack descriptor(&base, PlayerColor(0), 1, BattleSide::ATTACKER);
+	descriptor.physicalPoisonBaseDamage = 10;
+	descriptor.physicalPoisonActivationsRemaining = 2;
+	descriptor.physicalPoisonSourceStackId = -1;
+	descriptor.physicalPoisonSpellSide = BattleSide::DEFENDER;
+	CMemorySerializer bytes;
+	bytes.oser.version = ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+	bytes.iser.version = bytes.oser.version;
+	bytes.oser & descriptor;
+	CStack restored;
+	bytes.iser & restored;
+	EXPECT_EQ(restored.physicalPoisonBaseDamage, 10);
+	EXPECT_EQ(restored.physicalPoisonActivationsRemaining, 2);
+	EXPECT_EQ(restored.physicalPoisonSourceStackId, -1);
+	EXPECT_EQ(restored.physicalPoisonSpellOrigin(), BattleSide::DEFENDER);
+	for(const auto origin : {BattleSide::NONE, BattleSide::ATTACKER})
+	{
+		descriptor.physicalPoisonSpellSide = origin;
+		CMemorySerializer old;
+		old.oser.version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+		EXPECT_THROW(old.oser & descriptor, std::runtime_error);
+		EXPECT_TRUE(old.extractBuffer().empty());
+	}
+	descriptor.physicalPoisonBaseDamage = 0;
+	descriptor.physicalPoisonActivationsRemaining = 0;
+	descriptor.physicalPoisonSourceStackId = -1;
+	descriptor.physicalPoisonSpellSide = BattleSide::NONE;
+	CMemorySerializer emptyHistorical;
+	emptyHistorical.oser.version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+	emptyHistorical.iser.version = emptyHistorical.oser.version;
+	emptyHistorical.oser & descriptor;
+	emptyHistorical.iser & restored;
+	EXPECT_EQ(restored.physicalPoisonBaseDamage, 0);
+	EXPECT_EQ(restored.physicalPoisonActivationsRemaining, 0);
+	EXPECT_EQ(restored.physicalPoisonSourceStackId, -1);
+	EXPECT_EQ(restored.physicalPoisonSpellOrigin(), BattleSide::NONE);
+}
+
+TEST_F(UnitStateValueExchangeTest, UnsupportedPassiveUnitReadersRejectBeforeGameplayApplication)
+{
+	const auto before = second.save();
+	for(const int receipt : {0, 1, 2})
+	{
+		UnitChanges incoming(2, UnitChanges::EOperation::UPDATE);
+		incoming.data = before;
+		if(receipt == 0) incoming.data["state"]["arcaneMarks"].Vector()[0].Integer() = 1;
+		if(receipt == 1) incoming.data["state"]["demonicGateOpened"].Bool() = true;
+		if(receipt == 2)
+		{
+			incoming.data["state"]["physicalPoisonBaseDamage"].Integer() = 10;
+			incoming.data["state"]["physicalPoisonActivationsRemaining"].Integer() = 2;
+			incoming.data["state"]["physicalPoisonSpellSide"].Integer() = 1;
+		}
+		CMemorySerializer direct;
+		direct.oser.version = ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+		direct.iser.version = static_cast<ESerializationVersion>(1154);
+		direct.oser & incoming;
+		bool directReadCompleted = false;
+		try
+		{
+			UnitChanges decoded;
+			direct.iser & decoded;
+			directReadCompleted = true;
+			second.load(decoded.data);
+		}
+		catch(const std::runtime_error &) {}
+		EXPECT_FALSE(directReadCompleted);
+		EXPECT_EQ(second.save(), before);
+		BattleUnitsChanged packet;
+		packet.battleID = BattleID(0);
+		packet.changedStacks.push_back(incoming);
+		CMemorySerializer outer;
+		outer.oser.version = ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+		outer.iser.version = static_cast<ESerializationVersion>(1154);
+		outer.oser & packet;
+		bool outerReadCompleted = false;
+		try
+		{
+			BattleUnitsChanged decoded;
+			outer.iser & decoded;
+			outerReadCompleted = true;
+			for(const auto & change : decoded.changedStacks) second.load(change.data);
+		}
+		catch(const std::runtime_error &) {}
+		EXPECT_FALSE(outerReadCompleted);
+		EXPECT_EQ(second.save(), before);
+	}
+}
+TEST_F(UnitStateValueExchangeTest, HistoricalEmptyPassiveUnitReceiptRemainsReadable)
+{
+	UnitChanges incoming(2, UnitChanges::EOperation::UPDATE);
+	incoming.data = second.save();
+	CMemorySerializer bytes;
+	bytes.oser.version = bytes.iser.version = static_cast<ESerializationVersion>(1154);
+	ASSERT_NO_THROW(bytes.oser & incoming);
+	UnitChanges decoded;
+	ASSERT_NO_THROW(bytes.iser & decoded);
+	EXPECT_EQ(decoded.data, incoming.data);
+	EXPECT_NO_THROW(second.load(decoded.data));
+	EXPECT_EQ(second.metamagicMarks(BattleSide::ATTACKER), 0);
+	EXPECT_FALSE(second.hasOpenedDemonicGate());
+	EXPECT_EQ(second.physicalPoisonSpellOrigin(), BattleSide::NONE);
+}
+
 }

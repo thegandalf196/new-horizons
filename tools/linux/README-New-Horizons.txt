@@ -42,14 +42,17 @@ The first launch creates a private managed profile for settings and saves. Reuse
 that profile for later launches; an existing unmanaged profile is refused. Keep
 profiles outside both the extracted package and the original installation.
 Saves are stored in <profile>/data/new-horizons/Saves. Earlier releases used
-<profile>/data/vcmi/Saves; those files are not moved or deleted. To continue an
-old game, close the game and copy its save files (including same-name companion
-files) into the new directory. Do not overwrite conflicting names. Retain the
-originals until the copied game loads successfully.
-Saved gameplay contexts retain their captured rules rather than silently adopting
-new defaults. Consult the release notes for version-specific compatibility,
-acceptance evidence and known limitations. Numerical balance remains provisional;
-Linux checks do not establish native Windows gameplay acceptance.
+<profile>/data/vcmi/Saves; those files are not moved or deleted.
+
+SAVE COMPATIBILITY — 0.88.2
+Start a new game. This version cannot load saves from 0.88.1 or older development
+builds, and no save conversion is provided. Keep your old save files and backups;
+use the matching older version to continue those games. Copying an old save into
+the new directory does not make it compatible.
+
+Consult the release notes for acceptance evidence and known limitations.
+Numerical balance remains provisional; Linux checks do not establish native
+Windows gameplay acceptance.
 
 See the build identity, dependency evidence, licenses and corresponding source
 companions accompanying the release. New Horizons-authored geometry/icons are

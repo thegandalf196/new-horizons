@@ -21,21 +21,12 @@ bool resolveLearningExchangePresentation(const CHero & hero, const JsonNode & de
 	if(!rule)
 		return false;
 	result.name = outgoing ? "Ecumenical Scholar" : "Occult Scholar";
+	result.summary = "Gain more experience through Learning.";
 	result.artwork = "newHorizons/heroSpecialties/" + std::string(outgoing ? "SanyaEcumenicalScholar" : "GeonOccultScholar");
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
 	result.description = "Learning's core experience bonus increases by " + std::to_string(rule->learningPercentPerLevel)
 		+ "% per hero level, up to +" + std::to_string(rule->learningMaximumPercent)
 		+ "% of that contribution. Fractions round down; other experience modifiers are unchanged. ";
-	if(newHorizonsMagic::rulesActive(magic)
-		&& magic["rulesetVersion"].Integer() == newHorizonsMagic::CURRENT_RULESET_VERSION)
-		result.description += std::string(outgoing ? "In an ordinary Scholar meeting, this hero teaches up to "
-			: "In an ordinary Scholar meeting, this hero learns up to ")
-			+ std::to_string(outgoing ? rule->additionalSpellsTaught : rule->additionalSpellsReceived)
-			+ " additional eligible spell(s) in that direction. Either participant must have active Scholar. "
-			"Highest eligible level first; ties follow ordinary spellbook order. One meeting per hero pair per week. "
-			"Coincident outgoing and incoming bonuses use the greater value, never their sum. No perk is granted.";
-	else
-		result.description += "The additional Scholar exchange is inactive under this game's legacy magic rules.";
 	if(capturedHero && capturedHero->getSecSkillLevel(*result.skill) == MasteryLevel::NONE)
 		result.description += " Learning is not currently learned.";
 	return true;

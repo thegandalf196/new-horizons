@@ -39,6 +39,19 @@ void SelectedAttackReceipt::captureDamage(HypotheticBattle & branch)
 			finalDamage[id] = std::max<int64_t>(0, finalDamage[id] - landing->second);
 		observations.push_back({id, before, projected});
 	}
+	// Cataclysm resolves again at the original strike/death boundary. Its
+	// captured HP loss is not an unclassified residual hit on the actor.
+	if(effectOwner)
+	{
+		const auto & hits = effectOwner->getProjectedPrimalBurstHits();
+		for(size_t index = branch.getProjectedPrimalBurstHits().size(); index < hits.size(); ++index)
+		{
+			const auto & hit = hits[index];
+			if(!hit.elementalCataclysm || !hit.preHitTarget) continue;
+			if(auto found = finalDamage.find(hit.preHitTarget->unitId()); found != finalDamage.end())
+				found->second = std::max<int64_t>(0, found->second - hit.actualDamage);
+		}
+	}
 }
 
 BattleHex selectedAttackReceipt::commitMovement(const AttackPossibility & ap, battle::CUnitState & actor,
@@ -121,6 +134,7 @@ void selectedAttackReceipt::restoreResources(const AttackPossibility & ap, const
 	unitToUpdate->physicalPoisonBaseDamage = captured.physicalPoisonBaseDamage;
 	unitToUpdate->physicalPoisonActivationsRemaining = captured.physicalPoisonActivationsRemaining;
 	unitToUpdate->physicalPoisonSourceStackId = captured.physicalPoisonSourceStackId;
+	unitToUpdate->physicalPoisonSpellSide = captured.physicalPoisonSpellSide;
 	unitToUpdate->guardianSpiritHitPoints = captured.guardianSpiritHitPoints;
 	unitToUpdate->guardianSpiritRoundsRemaining = captured.guardianSpiritRoundsRemaining;
 	unitToUpdate->luckyOwnAttackSequence = captured.luckyOwnAttackSequence;
@@ -175,19 +189,7 @@ void SelectedAttackReceipt::applyFallbackDamage(HypotheticBattle & branch)
 		auto unitToUpdate = branch.getForUpdate(affectedUnit->unitId());
 		auto damageDealt = finalDamage[unitToUpdate->unitId()];
 		if(damageDealt > 0)
-		{
-			const bool wasAlive = unitToUpdate->alive();
-			const auto rebirthSource = wasAlive
-				? branch.captureElementalRebirthSource(*unitToUpdate) : std::nullopt;
-			const bool nativeRebirth = branch.hasReadyNativeRebirth(unitToUpdate.get());
-			unitToUpdate->damage(damageDealt);
-			if(wasAlive && !unitToUpdate->alive())
-				branch.releaseSerpentBindingsForDeath(*unitToUpdate);
-			branch.recordBloodrageTransition(unitToUpdate, wasAlive);
-			if(rebirthSource)
-				branch.projectElementalRebirth(unitToUpdate.get(), *rebirthSource,
-					wasAlive && !unitToUpdate->alive(), unitToUpdate->isClone(), nativeRebirth);
-		}
+			selectedAttackReceipt::applyCapturedDamage(branch, unitToUpdate, damageDealt);
 	}
 }
 

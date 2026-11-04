@@ -58,7 +58,6 @@ protected:
 class CounterchargeTest : public HeroCommandFixture
 {
 protected:
-	bool enableWarcasting = false;
 
 	void SetUp() override
 	{
@@ -72,24 +71,13 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
-		if(enableWarcasting)
-		{
-			auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
-			magicRules["warcasting"] = JsonNode(true);
-			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
-		}
 	}
 
-	void prepareCountercharge(bool selectPerk, bool prepareWarcasting = false)
+	void prepareCountercharge(bool selectPerk, bool withPriorSpell = false)
 	{
-		enableWarcasting = prepareWarcasting;
-		if(prepareWarcasting)
+		if(withPriorSpell)
 		{
 			startGame();
-			const int warcasting = SecondarySkill::decode("new-horizons:warcasting");
-			ASSERT_GE(warcasting, 0);
-			attackerSideHero->setSecSkillLevel(SecondarySkill(warcasting), MasteryLevel::BASIC,
-				ChangeValueMode::ABSOLUTE);
 			attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
 			setTestSpellPointTotal(attackerSideHero, 1000);
 			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
@@ -176,7 +164,6 @@ protected:
 class IronDisciplineTest : public HeroCommandFixture
 {
 protected:
-	bool enableWarcasting = false;
 
 	void attachCombatScript(CStack * unit, const std::string & scriptName, int value)
 	{
@@ -199,17 +186,10 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
-		if(enableWarcasting)
-		{
-			auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
-			magicRules["warcasting"] = JsonNode(true);
-			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
-		}
 	}
 
-	void prepareIronDiscipline(bool selectPerk = true, bool prepareWarcasting = false)
+	void prepareIronDiscipline(bool selectPerk = true, bool withPriorSpell = false)
 	{
-		enableWarcasting = prepareWarcasting;
 		startGame();
 		const int armorer = SecondarySkill::decode(newHorizonsIronDiscipline::SKILL);
 		ASSERT_GE(armorer, 0);
@@ -227,19 +207,15 @@ protected:
 		setTestSpellPointTotal(defenderSideHero, 1000);
 		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		defenderSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
-		if(prepareWarcasting)
+		if(withPriorSpell)
 		{
-			const int warcasting = SecondarySkill::decode("new-horizons:warcasting");
-			ASSERT_GE(warcasting, 0);
-			attackerSideHero->setSecSkillLevel(SecondarySkill(warcasting), MasteryLevel::BASIC,
-				ChangeValueMode::ABSOLUTE);
 			giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 		}
 		startBattle();
 		beginCombat();
 
-		if(prepareWarcasting)
+		if(withPriorSpell)
 		{
 			BattleAction spell;
 			spell.actionType = EActionType::HERO_SPELL;
@@ -862,7 +838,7 @@ TEST_F(HeroCommandTest, HoldTheLineLogsResolvedIncomingDamage)
 	EXPECT_THAT(*causalLine, ::testing::HasSubstr(std::to_string(hit->damageAmount) + " damage"));
 }
 
-TEST_F(IronDisciplineTest, HoldTheLineCapturesHalfClampedPhysicalReductionIncludingWarcasting)
+TEST_F(IronDisciplineTest, HoldTheLineCapturesHalfClampedPhysicalReductionAfterPriorSpell)
 {
 	prepareIronDiscipline(true, true);
 	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 50, ChangeValueMode::ABSOLUTE);
@@ -872,12 +848,9 @@ TEST_F(IronDisciplineTest, HoldTheLineCapturesHalfClampedPhysicalReductionInclud
 	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
 	const auto state = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(state);
-	EXPECT_EQ(state->warcastingBonusPercent, 10);
 	const auto & holdEffect = battle()->getHeroCommandRules()["commands"]["holdTheLine"]["effects"]["damageReductionPercent"];
-	const int physicalReduction = heroCommands::coefficient(holdEffect, *attackerSideHero,
-		state->warcastingBonusPercent);
-	const int physicalReductionWithoutWarcasting = heroCommands::coefficient(holdEffect, *attackerSideHero, 0);
-	ASSERT_GT(physicalReduction, physicalReductionWithoutWarcasting);
+	const int physicalReduction = heroCommands::coefficient(holdEffect, *attackerSideHero);
+	ASSERT_EQ(physicalReduction, 20); // 10 fixed + 0.20 * 50 Defense at unranked Command.
 	const int expectedBasisPoints = physicalReduction * newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT;
 	EXPECT_EQ(state->holdMagicalReductionBasisPoints, expectedBasisPoints);
 	EXPECT_EQ(battle()->battleGetHoldTheLineMagicalReductionBasisPoints(held), expectedBasisPoints);
@@ -1285,7 +1258,7 @@ TEST_F(CounterchargeTest, PerkSelectionSurvivesGameSaveAndLoad)
 		<< "A restored Countercharge hero keeps the same shared Brace resolver result";
 }
 
-TEST_F(CounterchargeTest, BraceWarcastingSnapshotSurvivesBattleDeepCopyWithCounterchargeDamage)
+TEST_F(CounterchargeTest, BraceAfterPriorSpellSurvivesBattleDeepCopyWithCounterchargeDamage)
 {
 	prepareCountercharge(true, true);
 	attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 20, ChangeValueMode::ABSOLUTE);
@@ -1303,20 +1276,18 @@ TEST_F(CounterchargeTest, BraceWarcastingSnapshotSurvivesBattleDeepCopyWithCount
 	spell.spell = SpellID::HASTE;
 	spell.aimToUnit(braced);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spell));
-	EXPECT_EQ(battle()->getWarcastingState(BattleSide::ATTACKER).empowermentPercent, 10);
 	advanceRound();
 	ASSERT_TRUE(issue(HeroCommand::BRACE));
 
 	auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(order);
 	ASSERT_EQ(order->command, HeroCommand::BRACE);
-	ASSERT_EQ(order->warcastingBonusPercent, 10);
 	const auto coefficient = heroCommands::coefficient(
 		battle()->getHeroCommandRules()["commands"]["brace"]["effects"]["preemptiveDamagePercent"],
-		*attackerSideHero, order->warcastingBonusPercent);
-	ASSERT_EQ(coefficient, 56);
+		*attackerSideHero);
+	ASSERT_EQ(coefficient, 55);
 	const auto expectedPercent = newHorizonsCombatSkills::bracePreemptivePercent(coefficient, attackerSideHero);
-	ASSERT_EQ(expectedPercent, 81);
+	ASSERT_EQ(expectedPercent, 80);
 	BattleAttackInfo braceStrike(braced, target, 0, false);
 	braceStrike.bracePreemptive = true;
 	const auto liveDamage = battle()->calculateDmgRange(braceStrike);
@@ -1328,7 +1299,6 @@ TEST_F(CounterchargeTest, BraceWarcastingSnapshotSurvivesBattleDeepCopyWithCount
 	const auto restoredOrder = restored->getHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(restoredOrder);
 	EXPECT_EQ(*restoredOrder, *order);
-	EXPECT_EQ(restoredOrder->warcastingBonusPercent, 10);
 	const auto * restoredBraced = restored->getStack(braced->unitId(), false);
 	const auto * restoredTarget = restored->getStack(target->unitId(), false);
 	ASSERT_NE(restoredBraced, nullptr);

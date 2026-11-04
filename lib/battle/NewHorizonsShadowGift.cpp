@@ -30,15 +30,14 @@ int32_t getSacrificeCostBasisPoints(const int32_t choicePercent, const bool dark
 }
 
 int32_t getDamageBonusBasisPoints(const int32_t choicePercent, const int32_t spellPower,
-	const int32_t schoolCoefficientBasisPoints, const int32_t warcastingBonusPercent,
+	const int32_t schoolCoefficientBasisPoints,
 	const int32_t empowerBonusPercent)
 {
 	if(!isValidSacrificePercent(choicePercent) || spellPower < 0)
 		throw std::invalid_argument("Invalid Shadow Gift damage inputs");
 
 	const int64_t scaledSpellPowerBasisPoints = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		static_cast<int64_t>(spellPower) * 50, 1, schoolCoefficientBasisPoints,
-		warcastingBonusPercent, empowerBonusPercent);
+		static_cast<int64_t>(spellPower) * 50, 1, schoolCoefficientBasisPoints, empowerBonusPercent);
 	const int64_t damageBonusBasisPoints =
 		(static_cast<int64_t>(12'500) + scaledSpellPowerBasisPoints) * choicePercent / 100;
 	if(damageBonusBasisPoints > std::numeric_limits<int32_t>::max())

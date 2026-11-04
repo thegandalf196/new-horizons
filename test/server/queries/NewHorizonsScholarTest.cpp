@@ -43,36 +43,10 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
-		JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
-		heroRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
-		heroRules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
-		heroRules["startingSkills"].Struct().erase("startingBookReplacements");
-		heroRules.Struct().erase("remainingSpellSpecialtyReplacements");
-		heroRules["skillSpecialties"].Struct().erase("navigationStartReplacements");
-		heroRules.Struct().erase("defaultCreatureLineReplacements");
-		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(),
-			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
-		heroRules.Struct().erase("lighthouseDeparture");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
-		heroRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
-		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
-		{
-			return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
-				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
-		});
-		// Test Scholar's older-format admission independently of the later
-		// Thant/Frailty replacements; retain Haste and all other captured rules.
-		std::erase_if(heroRules["nonDamageSpellSpecialties"]["spells"].Vector(),
-			[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"
-				|| spell.String() == "new-horizons:frailty"; });
-		heroRules.setOverrideFlag(true);
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroRules);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
-		isolateHistoricalAdventurePolicies(*map);
 	}
 	void prepare()
 	{
@@ -105,7 +79,7 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsScholarTest, ActualFieldMeetingTeachesOneHighestSpellInEachDirection)
+TEST_F(NewHorizonsScholarTest, ActualFieldMeetingTeachesAllEligibleSpellsInBothDirections)
 {
 	prepare();
 	GameHandlerTestServer server(gameState(), PLAYER);
@@ -121,13 +95,13 @@ TEST_F(NewHorizonsScholarTest, ActualFieldMeetingTeachesOneHighestSpellInEachDir
 	ASSERT_EQ(second->getNewHorizonsScholarSpellFor(*first), other);
 	handler.heroExchange(first->id, second->id);
 	EXPECT_TRUE(second->spellbookContainsSpell(high));
-	EXPECT_FALSE(second->spellbookContainsSpell(low));
+	EXPECT_TRUE(second->spellbookContainsSpell(low));
 	EXPECT_TRUE(first->spellbookContainsSpell(other));
-	EXPECT_TRUE(first->hasNewHorizonsScholarMeeting(second->id, 0));
-	EXPECT_TRUE(second->hasNewHorizonsScholarMeeting(first->id, 0));
+	EXPECT_FALSE(first->hasNewHorizonsScholarMeeting(second->id, 0));
+	EXPECT_FALSE(second->hasNewHorizonsScholarMeeting(first->id, 0));
 }
 
-TEST_F(NewHorizonsScholarTest, StableScopedTieRepeatedPairAndNextWeek)
+TEST_F(NewHorizonsScholarTest, SamePairCanTeachNewUnknownSpellsAgainDuringTheSameWeek)
 {
 	prepare();
 	GameHandlerTestServer server(gameState(), PLAYER);
@@ -135,20 +109,17 @@ TEST_F(NewHorizonsScholarTest, StableScopedTieRepeatedPairAndNextWeek)
 	configure(handler);
 	const auto earlier = named("core:haste");
 	const auto later = named("core:magicArrow");
-	handler.changeSpells(first, true, {earlier, later});
-	ASSERT_EQ(first->getSpellLevel(earlier.toSpell()), first->getSpellLevel(later.toSpell()));
-	ASSERT_EQ(first->getNewHorizonsScholarSpellFor(*second), earlier);
+	handler.changeSpells(first, true, {earlier});
 	handler.heroExchange(first->id, second->id);
 	EXPECT_TRUE(second->spellbookContainsSpell(earlier));
-	EXPECT_FALSE(second->spellbookContainsSpell(later));
-	second->applyPerkSelection({LEARNING, SCHOLAR});
-	handler.heroExchange(second->id, first->id);
-	EXPECT_FALSE(second->spellbookContainsSpell(later));
-	gameState()->day = 8;
-	handler.heroExchange(second->id, first->id);
+	handler.changeSpells(first, true, {later});
+	EXPECT_TRUE(first->canExchangeNewHorizonsScholarWith(*second, 0));
+	handler.heroExchange(first->id, second->id);
 	EXPECT_TRUE(second->spellbookContainsSpell(later));
-	EXPECT_EQ(first->getNewHorizonsScholarWeek(), 1);
-	EXPECT_EQ(second->getNewHorizonsScholarWeek(), 1);
+	EXPECT_EQ(first->getNewHorizonsScholarWeek(), -1);
+	EXPECT_EQ(second->getNewHorizonsScholarWeek(), -1);
+	gameState()->day = 8;
+	EXPECT_FALSE(first->canExchangeNewHorizonsScholarWith(*second, 1));
 }
 
 TEST_F(NewHorizonsScholarTest, EmptyMeetingDoesNotSpendAndSchoolBookAndPerkRemainRequired)
@@ -175,7 +146,7 @@ TEST_F(NewHorizonsScholarTest, EmptyMeetingDoesNotSpendAndSchoolBookAndPerkRemai
 	EXPECT_TRUE(second->spellbookContainsSpell(spell));
 }
 
-TEST_F(NewHorizonsScholarTest, ActualTownMeetingAndSavedPairReceiptPreventRepeat)
+TEST_F(NewHorizonsScholarTest, ActualTownMeetingAndCurrentSaveKeepPermanentBooksWithoutPairReceipt)
 {
 	prepare();
 	GameHandlerTestServer server(gameState(), PLAYER);
@@ -191,7 +162,7 @@ TEST_F(NewHorizonsScholarTest, ActualTownMeetingAndSavedPairReceiptPreventRepeat
 	town->setGarrisonedHero(first);
 	handler.heroVisitCastle(town, second);
 	EXPECT_TRUE(second->spellbookContainsSpell(spell));
-	EXPECT_TRUE(second->hasNewHorizonsScholarMeeting(first->id, 0));
+	EXPECT_FALSE(second->hasNewHorizonsScholarMeeting(first->id, 0));
 	CGameState restored;
 	restored.preInit(LIBRARY);
 	restored.loadFromMemory(gameState()->saveToMemory());
@@ -199,8 +170,10 @@ TEST_F(NewHorizonsScholarTest, ActualTownMeetingAndSavedPairReceiptPreventRepeat
 	const auto * savedSecond = restored.getHero(second->id);
 	ASSERT_NE(savedFirst, nullptr);
 	ASSERT_NE(savedSecond, nullptr);
-	EXPECT_TRUE(savedFirst->hasNewHorizonsScholarMeeting(savedSecond->id, 0));
-	EXPECT_TRUE(savedSecond->hasNewHorizonsScholarMeeting(savedFirst->id, 0));
+	EXPECT_EQ(savedFirst->getSpellsInSpellbook(), first->getSpellsInSpellbook());
+	EXPECT_EQ(savedSecond->getSpellsInSpellbook(), second->getSpellsInSpellbook());
+	EXPECT_FALSE(savedFirst->hasNewHorizonsScholarMeeting(savedSecond->id, 0));
+	EXPECT_FALSE(savedSecond->hasNewHorizonsScholarMeeting(savedFirst->id, 0));
 	EXPECT_FALSE(savedFirst->canExchangeNewHorizonsScholarWith(*savedSecond, 0));
 }
 
@@ -221,116 +194,4 @@ TEST_F(NewHorizonsScholarTest, EnemySelfAndScrollOnlySourcesNeverCreatePairUse)
 	EXPECT_FALSE(first->spellbookContainsSpell(named("core:magicArrow")));
 	EXPECT_EQ(first->getNewHorizonsScholarWeek(), -1);
 	EXPECT_EQ(second->getNewHorizonsScholarWeek(), -1);
-}
-
-TEST_F(NewHorizonsScholarTest, PacketAndHeroOlderWritersRejectBeforePayloadAndCurrentPacketRoundtrips)
-{
-	prepare();
-	GameHandlerTestServer server(gameState(), PLAYER);
-	CGameHandler handler(server, gameState());
-	configure(handler);
-	SetNewHorizonsScholarMeeting receipt;
-	receipt.first = std::min(first->id, second->id);
-	receipt.second = std::max(first->id, second->id);
-	receipt.week = 0;
-	CMemorySerializer current;
-	current.oser & receipt;
-	SetNewHorizonsScholarMeeting restored;
-	current.iser & restored;
-	EXPECT_EQ(restored.first, receipt.first);
-	EXPECT_EQ(restored.second, receipt.second);
-	EXPECT_EQ(restored.week, receipt.week);
-	CMemorySerializer old;
-	old.oser.version = static_cast<ESerializationVersion>(static_cast<int>(ESerializationVersion::NEW_HORIZONS_LEARNING_SCHOLAR) - 1);
-	EXPECT_THROW(old.oser & receipt, std::runtime_error);
-	EXPECT_TRUE(old.extractBuffer().empty());
-	first->markNewHorizonsScholarMeeting(second->id, 0);
-	CMemorySerializer oldHero;
-	oldHero.oser.version = old.oser.version;
-	EXPECT_THROW(oldHero.oser & *first, std::runtime_error);
-	EXPECT_TRUE(oldHero.extractBuffer().empty());
-	EXPECT_FALSE(CGHeroInstance::isValidNewHorizonsScholarState(first->id, -1, {second->id}));
-	EXPECT_FALSE(CGHeroInstance::isValidNewHorizonsScholarState(first->id, 0, {first->id}));
-	EXPECT_FALSE(CGHeroInstance::isValidNewHorizonsScholarState(first->id, 0, {second->id, second->id}));
-	receipt.second = receipt.first;
-	CMemorySerializer malformed;
-	EXPECT_THROW(malformed.oser & receipt, std::runtime_error);
-	EXPECT_TRUE(malformed.extractBuffer().empty());
-}
-
-TEST_F(NewHorizonsScholarTest, StalePacketRejectsAtomicallyBeforeEitherHeroIsChanged)
-{
-	prepare();
-	GameHandlerTestServer server(gameState(), PLAYER);
-	CGameHandler handler(server, gameState());
-	configure(handler);
-	handler.changeSpells(first, true, {named("core:magicArrow")});
-	SetNewHorizonsScholarMeeting receipt;
-	receipt.first = std::min(first->id, second->id);
-	receipt.second = std::max(first->id, second->id);
-	receipt.week = 1;
-	EXPECT_THROW(handler.sendAndApply(receipt), std::runtime_error);
-	EXPECT_EQ(first->getNewHorizonsScholarWeek(), -1);
-	EXPECT_EQ(second->getNewHorizonsScholarWeek(), -1);
-	receipt.week = 0;
-	handler.sendAndApply(receipt);
-	EXPECT_THROW(handler.sendAndApply(receipt), std::runtime_error);
-	EXPECT_EQ(first->getNewHorizonsScholarPartners(), (std::vector<ObjectInstanceID>{second->id}));
-	EXPECT_EQ(second->getNewHorizonsScholarPartners(), (std::vector<ObjectInstanceID>{first->id}));
-}
-
-TEST_F(NewHorizonsScholarTest, WorldMapLobbyAndActualOffMapPoolRejectUnsupportedOrMalformedReceiptsBeforePrefixes)
-{
-	prepare();
-	LobbyStartGame lobby;
-	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
-	lobby.initializedGameState = gameState();
-	const auto previous = static_cast<ESerializationVersion>(static_cast<int>(ESerializationVersion::NEW_HORIZONS_LEARNING_SCHOLAR) - 1);
-	const auto checkWriters = [&](ESerializationVersion version, bool rejected)
-	{
-		const auto check = [&](auto & value)
-		{
-			CMemorySerializer writer;
-			writer.oser.version = version;
-			if(rejected)
-			{
-				EXPECT_THROW(writer.oser & value, std::runtime_error);
-				EXPECT_TRUE(writer.extractBuffer().empty());
-			}
-			else
-			{
-				EXPECT_NO_THROW(writer.oser & value);
-				EXPECT_FALSE(writer.extractBuffer().empty());
-			}
-		};
-		check(*first);
-		check(*map());
-		check(*gameState());
-		check(lobby);
-	};
-	checkWriters(previous, false);
-	first->markNewHorizonsScholarMeeting(second->id, 0);
-	checkWriters(previous, true);
-	EXPECT_NO_THROW(gameState()->validateNewHorizonsScholarSerialization(true));
-	EXPECT_NO_THROW(lobby.validateNewHorizonsScholarSerialization(true));
-
-	// Inspect the actual serialized off-map hero object, not a Tavern ID index.
-	const auto pooled = std::dynamic_pointer_cast<CGHeroInstance>(map()->eraseObject(first->id));
-	ASSERT_NE(pooled, nullptr);
-	map()->addToHeroPool(pooled);
-	ASSERT_EQ(map()->tryGetFromHeroPool(pooled->getHeroTypeID()), first);
-	ASSERT_EQ(map()->objects[first->id.getNum()], nullptr);
-	checkWriters(previous, true);
-
-	// A corrupt current receipt also fails before enclosing prefixes. The const
-	// getter is deliberately bypassed only here to represent malformed state.
-	auto & partners = const_cast<std::vector<ObjectInstanceID> &>(first->getNewHorizonsScholarPartners());
-	partners.push_back(second->id);
-	checkWriters(ESerializationVersion::CURRENT, true);
-	partners.pop_back();
-	EXPECT_NO_THROW(gameState()->validateNewHorizonsScholarSerialization(true));
-	LobbyStartGame emptyLobby;
-	CMemorySerializer empty;
-	empty.oser.version = previous;
-	EXPECT_NO_THROW(empty.oser & emptyLobby);
 }

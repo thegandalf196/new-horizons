@@ -5,6 +5,8 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "PassiveDivineMandate.h"
+#include <stdexcept>
 #include "ProjectedUnitEnvironmentState.h"
 #include "UnitEnvironmentQueries.h"
 #include "IBattleState.h"
@@ -19,6 +21,13 @@ battle::ProjectedUnitEnvironmentState battle::ProjectedUnitEnvironmentState::cap
 		auto & inputs = result.captured.at(side);
 		inputs.color = source.getSidePlayer(side);
 		const auto * hero = source.getSideHero(side);
+		for(const auto & order : source.getHeroOrderStates(side))
+			if(order.passiveDivineMandate && order.passiveDivineMandate->has(
+				newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
+				throw std::invalid_argument("Projected environment does not capture active Righteous Discipline Orders");
+		if(newHorizonsPassiveDivineMandate::capturePolicy(hero).has(
+			newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
+			throw std::invalid_argument("Projected environment does not capture dynamic Righteous Discipline Orders");
 		inputs.ammoArtifact = heroHasAmmoCartArtifact(hero);
 		inputs.veteranCohesion = newHorizonsDiscipline::hasVeteranCohesion(hero);
 		inputs.necromancy = newHorizonsNecromancy::captureCombatPassives(hero);
@@ -29,6 +38,7 @@ battle::ProjectedUnitEnvironmentState battle::ProjectedUnitEnvironmentState::cap
 		inputs.bloodragePain = source.getBloodragePainIncrement(side);
 		auto & state = result.states.at(side);
 		state.fortune = source.getSylvanLuckState(side);
+		state.metamagicPoints = source.getMetamagicPointState(side);
 		state.bloodrageDamagePercent = source.getBloodrageDamagePercent(side);
 	}
 	return result;

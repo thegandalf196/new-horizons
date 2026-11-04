@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../HistoricalFactionPerkRules.h"
 
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -58,7 +59,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		JsonNode perkRules = historicalFactionPerkRules();
 		const auto & perks = perkRules["skills"][std::string(divineMandateSkill)]["perks"].Vector();
 		const auto found = std::find_if(perks.begin(), perks.end(), [](const JsonNode & perk)
 		{

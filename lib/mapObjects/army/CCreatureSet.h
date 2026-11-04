@@ -147,7 +147,7 @@ public:
 	{
 		if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 		for(const auto & [slot, stack] : stacks)
 			if(stack) stack->validateExportedBonusSerialization(context);
 	}

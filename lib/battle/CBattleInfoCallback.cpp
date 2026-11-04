@@ -8,12 +8,17 @@
  *
  */
 #include "StdInc.h"
+#include "ArcaneInspiration.h"
+#include "MagicalCreatureAttackDamage.h"
+#include "../spells/NewHorizonsWisdom.h"
+#include "PassiveDivineMandate.h"
 #include "NewHorizonsRangefinder.h"
 #include "NewHorizonsForestAmbush.h"
 #include "NewHorizonsDreadCavalry.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "CBattleInfoCallback.h"
+#include "NewHorizonsDemonicGating.h"
 #include "BattleActivationPredicate.h"
 #include "CurrentFireBasis.h"
 #include "NewHorizonsParalyzingGaze.h"
@@ -25,13 +30,11 @@
 #include "CPlayerBattleCallback.h"
 #include "../gameState/CGameState.h"
 #include "UnitAdjacency.h"
-#include "../mapObjects/NewHorizonsGlyphsOfFear.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSwiftRebirth.h"
 
 #include <vcmi/scripting/Service.h>
 #include <vstd/RNG.h>
-#include <unordered_map>
 
 #include "../CStack.h"
 #include "BattleInfo.h"
@@ -44,7 +47,6 @@
 #include "NewHorizonsNecromancyCombat.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsShroud.h"
-#include "NewHorizonsWarcasting.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
 #include "NewHorizonsDiscipline.h"
@@ -558,9 +560,7 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 	const auto allowance = battleGetOrderActionAllowance(side);
 	const bool spendsHeroAllowance = !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE)
 		|| (allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO);
-	const auto warcastingBonus = newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
-		&& spendsHeroAllowance
-		? newHorizonsWarcasting::orderBonus(hero, getBattle()->getWarcastingState(side), result.issuedRound) : 0;
+
 	const auto sacredCommandBonus = allowance
 		&& allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
 		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
@@ -569,8 +569,10 @@ std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(B
 		&& allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
 		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
 		? newHorizonsDivineMandate::knightlySequenceOrderBonusPercent(hero) : 0;
-	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero, warcastingBonus,
-		sacredCommandBonus + knightlySequenceBonus);
+	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero,
+		sacredCommandBonus + knightlySequenceBonus
+			+ newHorizonsPassiveDivineMandate::orderEfficiencyPercent(
+				newHorizonsPassiveDivineMandate::capturePolicy(hero)));
 	const bool includeMeleeRecipients = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& heroCommands::hasCombinedArms(hero);
 	const auto recipients = battleGetUnitsIf([this, side, includeMeleeRecipients](const battle::Unit * unit)
@@ -1122,143 +1124,6 @@ bool CBattleInfoCallback::battleHasCommandingPresence(const battle::Unit * unit)
 	});
 }
 
-BattleMoraleInfo CBattleInfoCallback::battleGetMoraleInfo(const battle::Unit * unit) const
-{
-	BattleMoraleInfo result;
-	if(!unit)
-		return result;
-
-	if(!getBattle() || !unit->alive() || unit->isGhost())
-	{
-		result.real = unit->moraleVal();
-		result.effective = result.real;
-		return result;
-	}
-
-	const int32_t firstRoundMoraleModifier = getBattle()->getRound() == 1
-		? getBattle()->getFirstRoundMoraleModifier(unit->unitSide()) : 0;
-	result.firstRoundModifier = firstRoundMoraleModifier;
-	const auto * hero = battleGetOwnerHero(unit);
-	int32_t additionalMorale = 0;
-	if(hero && hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.standardBearer"))
-	{
-		const auto owner = battleGetOwner(unit);
-		for(const auto * supporter : battleGetUnitsIf([](const battle::Unit * candidate)
-			{
-				return candidate->alive() && !candidate->isGhost();
-			}))
-		{
-			if(supporter->unitId() == unit->unitId() || battleGetOwner(supporter) != owner)
-				continue;
-
-			if(heroCommands::orderUnitsAdjacent(unit, supporter))
-			{
-				additionalMorale = 1;
-				break;
-			}
-		}
-	}
-	result.standardBearerBonus = additionalMorale;
-	const auto glyphsBonuses = newHorizonsGlyphsOfFear::moraleBonuses(hero, getBattle()->getLocation());
-	const int32_t glyphsMorale = glyphsBonuses->totalValue();
-
-	const auto applyMoraleFloor = [this, unit, hero, &result](int morale)
-	{
-		result.real = morale;
-		if(morale >= 0)
-			return morale;
-		if(battleHasCommandingPresence(unit))
-		{
-			result.commandingPresenceFloorApplied = true;
-			return 0;
-		}
-		const auto side = playerToSide(battleGetOwner(unit));
-		if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-		{
-			if(heroCommands::hasVanguardRoyalStandardEntitlement(unit, side))
-				return 0;
-			const auto orders = battleGetHeroOrderStates(side);
-			if(std::ranges::any_of(orders, [this, unit](const HeroOrderState & order)
-			{
-				return order.scheduledFor(unit->unitId(), battleGetRound())
-					&& std::binary_search(order.royalStandardRecipientUnitIds.begin(),
-						order.royalStandardRecipientUnitIds.end(), unit->unitId());
-			}))
-				return 0;
-		}
-		if(newHorizonsBloodrage::hasFuryUnbound(hero)
-			&& battleGetBloodrageDamagePercent(unit) > 0)
-		{
-			result.furyUnboundFloorApplied = true;
-			return 0;
-		}
-		return morale;
-	};
-	const bool steadfast = newHorizonsDiscipline::hasSteadfast(hero);
-	const bool espritDeCorps = newHorizonsDiscipline::hasEspritDeCorps(hero);
-	if(!steadfast && !espritDeCorps)
-	{
-		if(additionalMorale == 0 && firstRoundMoraleModifier == 0 && glyphsMorale == 0)
-			result.effective = applyMoraleFloor(unit->moraleVal());
-		else
-		{
-			const auto totalAdditionalMorale = static_cast<int64_t>(additionalMorale)
-				+ static_cast<int64_t>(firstRoundMoraleModifier) + glyphsMorale;
-			const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
-				std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-			result.effective = applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
-		}
-		return result;
-	}
-
-	const auto currentMoraleBonuses = unit->getBonusesOfType(BonusType::MORALE);
-	const auto compositionBonuses = newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *unit);
-	const int64_t compositionDelta = static_cast<int64_t>(compositionBonuses->totalValue())
-		- currentMoraleBonuses->totalValue();
-	result.espritDeCorpsAdjustment = static_cast<int32_t>(std::clamp<int64_t>(compositionDelta,
-		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-	const auto moraleBonuses = newHorizonsGlyphsOfFear::appendMoraleBonuses(
-		newHorizonsDiscipline::espritDeCorpsMoraleBonuses(hero, *unit, false), hero, getBattle()->getLocation());
-	BonusList adjustedMoraleBonuses;
-	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> adjustedByOriginal;
-	const PlayerColor targetAuraOwner = unit->unitOwner() == PlayerColor::UNFLAGGABLE
-		? PlayerColor::NEUTRAL : unit->unitOwner();
-	for(const auto & bonus : *moraleBonuses)
-	{
-		const bool hostileCreatureAura = bonus->source == BonusSource::CREATURE_ABILITY
-			&& bonus->bonusOwner != PlayerColor::CANNOT_DETERMINE
-			&& bonus->bonusOwner != targetAuraOwner;
-		if(steadfast && bonus->val < 0 && (bonus->appliedByEnemy || hostileCreatureAura))
-		{
-			auto & adjusted = adjustedByOriginal[bonus.get()];
-			if(!adjusted)
-			{
-				adjusted = std::make_shared<Bonus>(*bonus);
-				++adjusted->val;
-			}
-			adjustedMoraleBonuses.push_back(adjusted);
-		}
-		else
-			adjustedMoraleBonuses.push_back(bonus);
-	}
-	adjustedMoraleBonuses.stackBonuses();
-
-	const int64_t moraleDelta = static_cast<int64_t>(adjustedMoraleBonuses.totalValue())
-		- static_cast<int64_t>(currentMoraleBonuses->totalValue());
-	result.steadfastAdjustment = static_cast<int32_t>(std::clamp<int64_t>(moraleDelta - compositionDelta - glyphsMorale,
-		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-	const int64_t totalAdditionalMorale = moraleDelta + additionalMorale + firstRoundMoraleModifier;
-	const auto boundedAdditionalMorale = static_cast<int32_t>(std::clamp<int64_t>(totalAdditionalMorale,
-		std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::max()));
-	result.effective = applyMoraleFloor(unit->moraleValWithBonus(boundedAdditionalMorale));
-	return result;
-}
-
-int CBattleInfoCallback::battleGetMorale(const battle::Unit * unit) const
-{
-	return battleGetMoraleInfo(unit).effective;
-}
-
 int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) const
 {
 	if(!affected)
@@ -1566,32 +1431,31 @@ int CBattleInfoCallback::battleHeroOrderFlankMeleeDamagePercent(const BattleAtta
 	const int additionalSides = std::max(0, distinctSides - 1);
 	const auto & formula = currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["meleeDamagePercent"];
 	const int intrinsicBaseDamagePercent = heroCommands::coefficient(formula, *hero,
-		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+		state->divineMandateEfficiencyBonusPercent());
 	const int baseDamagePercent = heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(formula,
 		state->crownAndAltarAppliesTo(attacker->unitId())), *hero,
-		state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+		state->divineMandateEfficiencyBonusPercent());
 	const int additionalSidePercent = state->crownAndAltarAppliesTo(attacker->unitId())
 		&& !hero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement")
 		? heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(
 			currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["additionalSidePercent"], true),
-			*hero, state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent())
+			*hero, state->divineMandateEfficiencyBonusPercent())
 		: battleHeroOrderFlankAdditionalSidePercent(attackerSide,
-			state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+			state->divineMandateEfficiencyBonusPercent());
 	const int intrinsicAdditionalSidePercent = heroCommands::coefficient(
 		currentBattle->getHeroCommandRules()["commands"]["flank"]["effects"]["additionalSidePercent"],
-		*hero, state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+		*hero, state->divineMandateEfficiencyBonusPercent());
 	return heroCommands::orderPotency(intrinsicBaseDamagePercent + additionalSides * intrinsicAdditionalSidePercent,
 		baseDamagePercent + additionalSides * additionalSidePercent, *state, currentBattle->getMagicRules());
 }
 
-int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
-	int warcastingBonusPercent) const
+int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side) const
 {
-	return battleHeroOrderFlankAdditionalSidePercent(side, warcastingBonusPercent, 0);
+	return battleHeroOrderFlankAdditionalSidePercent(side, 0);
 }
 
 int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const
+	int divineMandateEfficiencyBonusPercent) const
 {
 	const auto * battle = getBattle();
 	if(!battle || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
@@ -1601,7 +1465,7 @@ int CBattleInfoCallback::battleHeroOrderFlankAdditionalSidePercent(BattleSide si
 	if(hero && hero->hasActivePerk("new-horizons:offense", "new-horizons:offense.encirclement"))
 		return heroCommands::ENCIRCLEMENT_ADDITIONAL_SIDE_PERCENT;
 	if(hero)
-		return heroCommands::coefficient(formula, *hero, warcastingBonusPercent,
+		return heroCommands::coefficient(formula, *hero,
 			divineMandateEfficiencyBonusPercent);
 	return heroCommands::coefficient(formula, 0, 0);
 }
@@ -1799,14 +1663,7 @@ std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsFor
 			allowedActionList.push_back(PossiblePlayerBattleAction::HEAL);
 		if(hero && stack->creatureId().toCreature()->getFactionID() == FactionID::INFERNO)
 		{
-			const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
-			const auto & reserve = getBattle()->getDemonicReserve(stack->unitSide());
-			const bool eligible = rank > 0 && std::ranges::any_of(reserve, [this, rank](const auto & entry)
-			{
-				const auto category = battleGetCreatureCategory(entry.first);
-				return entry.second > 0 && category && static_cast<int>(category->category) < rank;
-			});
-			if(eligible)
+			if(!newHorizonsDemonicGating::availableTypes(*this, *stack, stack->unitSide()).empty())
 				allowedActionList.push_back(PossiblePlayerBattleAction::DEMONIC_GATE);
 		}
 		if(stack->hasBonusOfType(BonusType::ADJACENT_SPELLCASTER))
@@ -3173,7 +3030,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	finalizeDamagePayload(info, payload, preparation.currentBattle);
 	payloadTiming.finish();
 	auto result = script->calculate(*this, payload);
-	newHorizonsNecromancy::adjustCreatureDamage(info, result);
+	battle::applyMagicalAttackReduction(*this, info, result);
 	spells::applyIncomingMagicalCreatureDamage(info, result);
 	result.attackerOrderCause = preparation.causes.attackerOrderCause;
 	result.defenderOrderCause = preparation.causes.defenderOrderCause;
@@ -4225,6 +4082,15 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 		if(wisdom != MasteryLevel::NONE)
 			recordStage(SpellCostStage::Kind::WISDOM, multipliedListedCost, ret);
 	}
+	const auto wisdomSide = playerToSide(caster->tempOwner);
+	if(getBattle() && (wisdomSide == BattleSide::ATTACKER || wisdomSide == BattleSide::DEFENDER)
+		&& getBattle()->getSideHero(wisdomSide) == caster && sp->isCombat()
+		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.spellFamiliarity"))
+	{
+		const int32_t before = ret;
+		ret = newHorizonsWisdom::familiarityCost(ret, getBattle()->getWisdomCombatState(wisdomSide).priorCasts(sp->getId()));
+		recordStage(SpellCostStage::Kind::SPELL_FAMILIARITY, before, ret);
+	}
 	const int specialtyDiscount = newHorizonsHeroes::chosenSpecialtyManaDiscount(
 		caster->getPrimaryGrowthRules(), caster->getHeroType()->getJsonKey(), sp->getId());
 	if(specialtyDiscount > 0)
@@ -4249,29 +4115,6 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 		ret = std::max(1, ret - newHorizonsDivineMandate::knightlySequenceSpellCostReduction(caster));
 		recordStage(SpellCostStage::Kind::KNIGHTLY_SEQUENCE, before, ret);
 	}
-	const bool preparedCaster = ordinarySideHero
-		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.preparedCaster")
-		&& !getBattle()->hasCompletedHeroSpellCast(casterSide);
-	if(preparedCaster)
-	{
-		const int32_t before = ret;
-		ret = std::max(1, ret - 2);
-		recordStage(SpellCostStage::Kind::PREPARED_CASTER, before, ret);
-	}
-
-	const int spellLevel = battleGetSpellLevel(sp->getId());
-	const bool archmage = ordinarySideHero
-		&& (spellLevel == 4 || spellLevel == 5)
-		&& caster->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.archmage")
-		&& !getBattle()->hasCompletedHeroSpellLevel(casterSide, 4)
-		&& !getBattle()->hasCompletedHeroSpellLevel(casterSide, 5);
-	if(archmage)
-	{
-		const int32_t before = ret;
-		ret = std::max(1, ret - 3);
-		recordStage(SpellCostStage::Kind::ARCHMAGE, before, ret);
-	}
-
 	//checking for friendly stacks reducing cost of the spell and
 	//enemy stacks increasing it
 	int32_t manaReduction = 0;

@@ -13,7 +13,7 @@
 namespace newHorizonsMagic
 {
 SpellEffectPreview stormSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t warcasting, int32_t empower)
+	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t empower)
 {
 	if(spell.getJsonKey() != STORM_OF_DAGGERS_SPELL || !rulesActive(rules)
 		|| rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
@@ -27,7 +27,7 @@ SpellEffectPreview stormSpellEffectPreview(const CGHeroInstance & hero, const CS
 		// Share and total have independent positive-half-up rounding. Never divide
 		// an already-rounded total or enumerate battle units for a book readout.
 		const auto raw = formula ? spells::stormOfDaggersRoundedDamage(formula->base, formula->powerCoefficient,
-			power, hero.getEffectPowerDivisor(&spell), directCoefficient, warcasting, empower, count, false) : 0;
+			power, hero.getEffectPowerDivisor(&spell), directCoefficient, empower, count, false) : 0;
 		const auto damage = spell.adjustRawDamage(&hero, nullptr, raw);
 		minimum = std::min(minimum, damage);
 		maximum = std::max(maximum, damage);

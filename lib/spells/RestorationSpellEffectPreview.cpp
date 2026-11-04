@@ -11,14 +11,14 @@
 namespace newHorizonsMagic
 {
 std::optional<SpellEffectPreview> restorationSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const JsonNode & rules, int32_t power, int32_t coefficient, int32_t warcasting, int32_t empower)
+	const JsonNode & rules, int32_t power, int32_t coefficient, int32_t empower)
 {
 	const int specialty = hero.getNonDamageSpellSpecialtyBonusPercent(spell.getId());
 	std::optional<int64_t> pool;
 	if(resurrectionRestorationEnabled(rules, spell.getId()))
-		pool = hero.getSpellBonus(&spell, resurrectionRestorationPool(power, coefficient, warcasting, empower, specialty), nullptr);
+		pool = hero.getSpellBonus(&spell, resurrectionRestorationPool(power, coefficient, empower, specialty), nullptr);
 	else if(spell.getJsonKey() == "new-horizons:guardianSpirit")
-		pool = guardianSpiritHitPoints(power, coefficient, warcasting, empower, specialty,
+		pool = guardianSpiritHitPoints(power, coefficient, empower, specialty,
 			hero.hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.healer"),
 			hero.hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.guardian"));
 	if(!pool)

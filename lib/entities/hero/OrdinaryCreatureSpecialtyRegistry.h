@@ -16,6 +16,7 @@ struct OrdinaryCreatureSpecialty
 	BonusValueType valueType;
 	const char * description;
 	std::optional<std::string> artwork = std::nullopt;
+	const char * summary = "";
 };
 /// Internal finite authored rows; capture validation and contextual dispatch stay with their owner.
 std::span<const OrdinaryCreatureSpecialty> ordinaryCreatureSpecialtyRegistry();

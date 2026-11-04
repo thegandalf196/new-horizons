@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsMagic.h"
+#include "ISpellMechanics.h"
 #include "../constants/StringConstants.h"
 #include "../GameLibrary.h"
 #include "../callback/IGameInfoCallback.h"
@@ -21,6 +22,19 @@
 
 namespace newHorizonsMagic
 {
+const spells::Spell * effectSpellForCast(const spells::Mechanics & mechanics)
+{
+	const auto * spell = mechanics.getSpell();
+	if(!spell)
+		return nullptr;
+	const auto * callback = mechanics.battle();
+	const auto * state = callback ? callback->getBattle() : nullptr;
+	if(!state)
+		return spell;
+	const auto * family = spellVariantBase(state->getMagicRules(), spell->getId()).toSpell();
+	return family ? family : spell;
+}
+
 namespace
 {
 struct SavedSpellVariant

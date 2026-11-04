@@ -4,18 +4,26 @@
 #include <cstdint>
 namespace newHorizonsMagic
 {
-DLL_LINKAGE int32_t frailtyDefenseLoss(int32_t power, int32_t coefficient, int32_t warcasting,
+struct FrailtyAccumulation
+{
+	int32_t totalBasisPoints = 0;
+	int32_t defenseLoss = 0;
+};
+DLL_LINKAGE FrailtyAccumulation frailtyAccumulation(int32_t baseDefense,
+	int32_t previousTotalBasisPoints, int64_t perCastBasisPoints);
+DLL_LINKAGE int32_t frailtyDefenseLoss(int32_t power, int32_t coefficient,
 	int32_t empower, int32_t specialty, bool withering);
-DLL_LINKAGE int64_t hydraCapacityMillionths(int32_t power, int32_t coefficient, int32_t warcasting,
+DLL_LINKAGE int64_t hydraCapacityMillionths(int32_t power, int32_t coefficient,
 	int32_t empower, int32_t specialty);
-DLL_LINKAGE int32_t entangleBaseDuration(int32_t power, int32_t coefficient, int32_t warcasting,
+DLL_LINKAGE int32_t entangleBaseDuration(int32_t power, int32_t coefficient,
 	int32_t empower, bool rootcaller);
-DLL_LINKAGE int32_t misfortuneBaseDuration(int32_t power, int32_t coefficient, int32_t warcasting, int32_t empower);
-DLL_LINKAGE int32_t misfortuneChanceMultiplier(int32_t power, int32_t coefficient, int32_t warcasting,
+DLL_LINKAGE int32_t misfortuneBaseDuration(int32_t power, int32_t coefficient, int32_t empower);
+DLL_LINKAGE int32_t misfortuneChanceMultiplier(int32_t power, int32_t coefficient,
 	int32_t empower, bool weaver);
-DLL_LINKAGE int32_t shieldOfChaosReduction(int32_t power, int32_t coefficient, int32_t warcasting,
+DLL_LINKAGE int32_t shieldOfChaosReduction(int32_t power, int32_t coefficient,
 	int32_t empower, bool paradox);
-DLL_LINKAGE int64_t divineRetributionCap(int32_t power, int32_t coefficient, int32_t warcasting,
+DLL_LINKAGE int64_t divineRetributionCap(int32_t power, int32_t coefficient,
 	int32_t empower, int32_t crown = 0);
-DLL_LINKAGE int64_t divineRetributionPayout(int64_t actualHpDamage, int64_t rawCap, int32_t retributionistPercent);
+DLL_LINKAGE int64_t divineRetributionPayout(int64_t actualHpDamage, int64_t rawCap, int32_t retributionistPercent,
+	int32_t payoutRatioBasisPoints = 3000);
 }

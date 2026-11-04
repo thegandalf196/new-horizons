@@ -21,6 +21,7 @@ action = ACTION.read_text(encoding="utf-8") + (ROOT / "client/battle/NewHorizons
 controller = CONTROLLER.read_text(encoding="utf-8")
 creature_window = CREATURE_WINDOW.read_text(encoding="utf-8") + (ROOT / "client/windows/NewHorizonsOrderIndicators.h").read_text(encoding="utf-8")
 hero_window = HERO_WINDOW.read_text(encoding="utf-8")
+hero_window += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
 development_window = DEVELOPMENT_WINDOW.read_text(encoding="utf-8")
 asset_generator = ASSET_GENERATOR.read_text(encoding="utf-8")
 
@@ -92,14 +93,13 @@ for rejection in (unavailable, targeting_failed):
     assert "close();" not in rejection
     assert "battleMakeSpellAction" not in rejection
     assert "BattleAction::" not in rejection
-# Effect previews must use the same allowance-aware Warcasting snapshot that
-# authoritative Hold preparation will capture, plus the captured Divine Mandate
-# sum. Iron Discipline keeps the exact
+# Effect previews retain captured Divine Mandate efficiency without the retired
+# Warcasting Order bonus. Iron Discipline keeps the exact
 # half-percent by formatting the saved coefficient in basis points.
 assert "battlePrepareHeroOrderState(side, HeroCommand::HOLD_THE_LINE, {})" in action
-assert "preparedHold ? preparedHold->warcastingBonusPercent : 0" in action
+assert "warcastingBonusPercent" not in action
 assert "preparedHold ? preparedHold->divineMandateEfficiencyBonusPercent() : 0" in action
-assert "heroCommands::coefficient(formula, hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent)" in action
+assert "heroCommands::coefficient(formula, hero, divineMandateEfficiencyBonusPercent)" in action
 assert "newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT" in action
 assert 'AnimationPath::builtin("NH_orders_gauntlet_framed")' in (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 assert "Protect unavailable. No legal Protector/Ward pair is available" in action

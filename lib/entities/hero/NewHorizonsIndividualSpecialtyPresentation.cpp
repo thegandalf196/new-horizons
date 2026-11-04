@@ -36,6 +36,7 @@ bool resolveIndividualRiderPresentation(const CHero & hero, const JsonNode & dev
 		const auto & rule = policy->graveReaper;
 		result.artwork = "newHorizons/heroSpecialties/IsraGraveReaper";
 		result.name = "Grave Reaper";
+	result.summary = "Raise more creatures through Necromancy as the hero gains levels; ordinary army capacity still applies.";
 		result.description = "With Necromancy learned, its base raising rate gains +"
 			+ std::to_string(rule.percentagePointsPerLevel) + " percentage points per hero level, up to +"
 			+ std::to_string(rule.maximumPercentagePoints) + " points. Bone Collector and Amplifiers add separately; "
@@ -53,6 +54,7 @@ bool resolveIndividualRiderPresentation(const CHero & hero, const JsonNode & dev
 		const auto & rule = policy->warlocksFormula;
 		result.artwork = "newHorizons/heroSpecialties/MalekithWarlocksFormula";
 		result.name = "Warlock's Formula";
+	result.summary = "Strengthen Spellcraft's contribution to direct spell damage as the hero gains levels.";
 		const int expertEfficiency = newHorizonsMagic::spellcraftEfficiencyPercent(magic, MasteryLevel::EXPERT);
 		result.description = "For direct magical damage, Spellcraft's Spell Power bonus increases by "
 			+ std::to_string(rule.percentPerLevel) + "% per hero level, up to +"

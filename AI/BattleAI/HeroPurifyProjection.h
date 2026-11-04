@@ -16,10 +16,16 @@
 #include <vector>
 
 class CGHeroInstance;
+class BattleAction;
 class PossibleSpellcast;
 
 namespace heroSpellProjection
 {
+/// Native automatic Purify uses the same auxiliary detached-state operation.
+/// This performs no action bookkeeping and never invokes an old Divine rider.
+std::optional<std::vector<uint32_t>> projectAutomaticPurifyEffects(HypotheticBattle & state,
+	const BattleAction & action, const CGHeroInstance * hero);
+
 /// Projects an already selected Purify candidate and assigns its terminal score.
 /// The caller retains canonical-spell/positive-value admission and terminal routing.
 void projectPurifySelection(PossibleSpellcast & ps, HypotheticBattle & state,

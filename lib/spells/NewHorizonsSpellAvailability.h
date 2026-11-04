@@ -15,6 +15,8 @@
 class IGameInfoCallback;
 class CBattleInfoCallback;
 class CGHeroInstance;
+class CSpell;
+namespace spells { class Mechanics; class Spell; }
 
 namespace newHorizonsMagic
 {
@@ -48,6 +50,9 @@ DLL_LINKAGE bool spellAllowedByBattleRoster(const CBattleInfoCallback & battle, 
 /// Older snapshots, inactive entries and entries without saved variant metadata
 /// retain their own identity; installed spell data never supplies a fallback.
 DLL_LINKAGE SpellID spellVariantBase(const JsonNode & rules, SpellID spell);
+/// Resolve the cast's saved effect family; absent battle state retains the cast
+/// spell itself. Shared by native script bindings and read-only recipient plans.
+DLL_LINKAGE const spells::Spell * effectSpellForCast(const spells::Mechanics & mechanics);
 /// Saved, validated variant magnitude; ordinary/old-profile spells return100.
 DLL_LINKAGE int spellVariantPowerPercent(const JsonNode & rules, SpellID spell);
 /// True only when the saved profile enables the distinct perk-granted Mass Slow.

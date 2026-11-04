@@ -9,9 +9,11 @@
  */
 
 #include "StdInc.h"
+#include "NewHorizonsWisdom.h"
 #include "ISpellMechanics.h"
 #include "HeroSpellCastContext.h"
 #include "NewHorizonsTimedUtility.h"
+#include "NewHorizonsMetamagicEffects.h"
 #include "NewHorizonsRestorationPools.h"
 #include "NewHorizonsBlessDuration.h"
 #include "NewHorizonsLightDamage.h"
@@ -52,9 +54,7 @@
 #include "../battle/HeroActionAllowanceState.h"
 #include "../battle/HeroCommand.h"
 #include "../battle/IBattleState.h"
-#include "../battle/AlternatingHeroActionState.h"
 #include "../battle/NewHorizonsDivineMandate.h"
-#include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../serializer/JsonDeserializer.h"
@@ -73,9 +73,9 @@ int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 {
 	// value is smaller than divisor. This bitwise quotient/remainder loop avoids
 	// forming value * multiplier, which may overflow even when the final quotient
-	// is small. The coefficient/Warcasting/Empower/specialty product is bounded
+	// is small. The coefficient/Empower/specialty product is bounded
 	// below 2^42. Specialty scaling may make the denominator as large as
-	// INT32_MAX * 1e8 * 20, so keep the intermediate remainder unsigned.
+	// INT32_MAX * 1e6 * 20, so keep the intermediate remainder unsigned.
 	if(value < 0 || divisor <= 0 || value >= divisor
 		|| static_cast<uint64_t>(divisor) > std::numeric_limits<uint64_t>::max() / 3)
 		throw std::invalid_argument("Invalid quotient/remainder scaling inputs");
@@ -98,49 +98,23 @@ int64_t multiplyDivideFloor(int64_t value, uint64_t multiplier, int64_t divisor)
 
 }
 
-int64_t scaleWarcastingSpellPowerComponent(const int64_t numerator, const int64_t divisor, const int32_t bonusPercent)
-{
-	// The ranked caller multiplies an int32 spell divisor by at most 100.
-	// Keeping that bound also makes the quotient/remainder doubling below safe.
-	constexpr int64_t MAX_SCALED_DIVISOR = static_cast<int64_t>(std::numeric_limits<int32_t>::max()) * 100;
-	if(numerator < 0 || divisor <= 0 || divisor > MAX_SCALED_DIVISOR || bonusPercent < 0)
-		throw std::invalid_argument("Invalid Warcasting spell component inputs");
-	if(numerator == 0)
-		return 0;
-
-	const int64_t denominator = static_cast<int64_t>(divisor) * 100;
-	const uint64_t multiplier = static_cast<uint64_t>(100LL + bonusPercent);
-	const int64_t whole = numerator / denominator;
-	const int64_t remainder = numerator % denominator;
-	const int64_t maximum = std::numeric_limits<int64_t>::max();
-	if(whole > maximum / static_cast<int64_t>(multiplier))
-		throw std::overflow_error("Warcasting spell component overflows");
-
-	const int64_t scaledWhole = whole * static_cast<int64_t>(multiplier);
-	const int64_t scaledRemainder = multiplyDivideFloor(remainder, multiplier, denominator);
-	if(scaledWhole > maximum - scaledRemainder)
-		throw std::overflow_error("Warcasting spell component overflows");
-	return scaledWhole + scaledRemainder;
-}
-
 int64_t scaleSpellPowerComponentWithCoefficientBasisPoints(const int64_t numerator, const int32_t divisor,
-	const int32_t coefficientBasisPoints, const int32_t warcastingBonusPercent,
+	const int32_t coefficientBasisPoints,
 	const int32_t empowerSpellBonusPercent, const int32_t damageSpecialtyPercent)
 {
 	if(numerator < 0 || divisor <= 0 || coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
-		|| warcastingBonusPercent < 0 || warcastingBonusPercent > 1000
 		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000
 		|| (damageSpecialtyPercent != 0 && damageSpecialtyPercent != 15 && damageSpecialtyPercent != 20))
 		throw std::invalid_argument("Invalid Spell Power basis-point coefficient inputs");
 	if(coefficientBasisPoints == 0 || numerator == 0)
 		return 0;
 
-	// Keep coefficient, Warcasting, Empower Spell, and the divisor in one
+	// Keep coefficient, Empower Spell, and the divisor in one
 	// rational expression until the final floor. Quotient/remainder scaling
 	// avoids multiplying a potentially large Spell Power numerator directly.
-	int64_t denominator = static_cast<int64_t>(divisor) * 100000000;
+	int64_t denominator = static_cast<int64_t>(divisor) * 1000000;
 	uint64_t multiplier = static_cast<uint64_t>(coefficientBasisPoints)
-		* (100LL + warcastingBonusPercent) * (100LL + empowerSpellBonusPercent);
+		* (100LL + empowerSpellBonusPercent);
 	if(damageSpecialtyPercent == 15)
 	{
 		denominator *= 20;
@@ -187,7 +161,7 @@ int64_t Mechanics::scaleDamageSpellPowerComponentWithCoefficientBasisPoints(cons
 	const int32_t divisor, const int32_t coefficientBasisPoints, const int32_t damageSpecialtyPercent) const
 {
 	return spells::scaleSpellPowerComponentWithCoefficientBasisPoints(numerator, divisor,
-		coefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), damageSpecialtyPercent);
+		coefficientBasisPoints, getEmpowerSpellBonusPercent(), damageSpecialtyPercent);
 }
 
 bool heroLuckDamageEligible(const Spell & spell, const JsonNode & savedMagicRules)
@@ -226,59 +200,10 @@ int64_t Mechanics::getHexOfPainFlatDamage() const
 	if(getSpellId().toSpell()->getJsonKey() != "new-horizons:hexOfPain")
 		return 0;
 	const auto * hero = getHeroCaster();
-	return scaleHeroLuckDamage(newHorizonsMagic::hexOfPainFlatDamage(getEffectPower(), getDamageSpellPowerCoefficientBasisPoints(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
+	return scaleHeroLuckDamage(newHorizonsMagic::hexOfPainFlatDamage(getEffectPower(), getDamageSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent(),
 		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0,
 		usesNewHorizonsMagicV3() && hero
 			&& hero->hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver")));
-}
-
-int64_t Mechanics::getPlagueTickDamage() const
-{
-	if(getSpellId().toSpell()->getJsonKey() != "new-horizons:plague")
-		return 0;
-	const auto * hero = getHeroCaster();
-	// Preserve Plague's authored initial snapshot: coefficient, not an extra
-	// Warcasting/Empower application. Children reuse this exact captured value.
-	return scaleHeroLuckDamage(newHorizonsMagic::plagueTickDamage(getEffectPower(), getDamageSpellPowerCoefficientBasisPoints(),
-		hero ? hero->getDamageSpellSpecialtyBonusPercent(getSpellId()) : 0));
-}
-
-int64_t Mechanics::getPhantomArmyIntegrity(const battle::Unit * source) const
-{
-	if(!source || getSpellId().toSpell()->getJsonKey() != "new-horizons:phantomArmy")
-		return 0;
-	const auto * hero = getHeroCaster();
-	return std::max<int64_t>(1, newHorizonsSorcery::phantomArmyIntegrityWithModifiers(
-		source->getAvailableHealth(), std::max(0, getEffectPower()),
-		hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"),
-		getSpellPowerCoefficientBasisPoints(), getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
-		hero ? hero->getNonDamageSpellSpecialtyBonusPercent(getSpellId()) : 0));
-}
-
-int32_t Mechanics::getFrailtyDefenseLossBasisPoints() const
-{
-	if(getSpellId().toSpell()->getJsonKey() != newHorizonsMagic::SHADOW_FRAILTY_SPELL)
-		return 0;
-	const auto * hero = getHeroCaster();
-	return newHorizonsMagic::frailtyDefenseLoss(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
-		hero ? hero->getNonDamageSpellSpecialtyBonusPercent(getSpellId()) : 0,
-		hero && hero->hasActivePerk(std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL),
-			std::string(newHorizonsMagic::SHADOW_WITHERING_TOUCH_PERK)));
-}
-
-int64_t Mechanics::getGuardianSpiritHitPoints(const battle::Unit * target) const
-{
-	if(getSpellId().toSpell()->getJsonKey() != "new-horizons:guardianSpirit")
-		return 0;
-	const auto * hero = getHeroCaster();
-	return newHorizonsMagic::guardianSpiritHitPoints(getEffectPower(), getSpellPowerCoefficientBasisPoints(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
-		hero ? hero->getNonDamageSpellSpecialtyBonusPercent(getSpellId()) : 0,
-		hero && hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.healer"),
-		hero && hero->hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.guardian"),
-		getCrownAndAltarBonusPercent(target));
 }
 
 int32_t Mechanics::getSchoolRankPowerCoefficientPercent() const
@@ -324,8 +249,7 @@ int32_t Mechanics::getNewHorizonsQuicksandPatchCount() const
 		return 0;
 
 	const auto patchCount = newHorizonsMagic::quicksandPatchCount(battleState->getMagicRules(),
-		getHeroCaster(), getSpellId(), getEffectPower(), getEffectPowerDivisor(),
-		getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), getCastSpellPowerComponentBonusPercent(),
+		getHeroCaster(), getSpellId(), getEffectPower(), getEffectPowerDivisor(), getEmpowerSpellBonusPercent(), getCastSpellPowerComponentBonusPercent(),
 		getSpellPowerCoefficientBasisPoints());
 	return patchCount.value_or(0);
 }
@@ -357,9 +281,11 @@ int32_t Mechanics::getNewHorizonsEarthquakeSectionCount() const
 {
 	if(!usesNewHorizonsEarthquake())
 		return 0;
-	return newHorizonsMagic::earthquakeSectionCount(
-		battle()->getBattle()->getMagicRules()["spells"]["core:earthquake"]["earthquake"], getEffectPower(),
-		getSpellPowerCoefficientBasisPoints(), getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+	const auto & profile = battle()->getBattle()->getMagicRules()["spells"]["core:earthquake"]["earthquake"];
+	const auto ordinary = newHorizonsMagic::earthquakeSectionCount(profile, getEffectPower(),
+		getSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent());
+	return static_cast<int32_t>(std::min<int64_t>(profile["maxSections"].Integer(),
+		adjustMetamagicMagnitude(ordinary, nullptr)));
 }
 
 bool Mechanics::usesNewHorizonsHavocStructures() const
@@ -409,7 +335,7 @@ int32_t Mechanics::getShadowGiftDamageBonusBasisPoints() const
 		return 0;
 
 	return newHorizonsShadowGift::getDamageBonusBasisPoints(getShadowGiftSacrificePercent(), getEffectPower(),
-		getSpellPowerCoefficientBasisPoints(), getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+		getSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent());
 }
 
 int32_t Mechanics::getEmpowerSpellBonusPercent() const
@@ -599,6 +525,11 @@ std::string BattleCast::getCurePhysicalAffliction() const
 	return curePhysicalAffliction;
 }
 
+std::vector<std::pair<int32_t, SpellID>> BattleCast::getPurifyChoices() const
+{
+	return purifyChoices;
+}
+
 bool BattleCast::getForceNonSmartTargeting() const
 {
 	return forceNonSmartTargeting;
@@ -617,6 +548,11 @@ bool BattleCast::getMassSlow() const
 int32_t BattleCast::getShadowGiftSacrificePercent() const
 {
 	return shadowGiftSacrificePercent;
+}
+
+AutomaticHeroCastReceipt BattleCast::getAutomaticHeroCast() const
+{
+	return automaticHeroCast;
 }
 
 bool BattleCast::isMetamagicFollowup() const
@@ -699,6 +635,11 @@ void BattleCast::setCurePhysicalAffliction(std::string value)
 	curePhysicalAffliction = std::move(value);
 }
 
+void BattleCast::setPurifyChoices(std::vector<std::pair<int32_t, SpellID>> value)
+{
+	purifyChoices = std::move(value);
+}
+
 void BattleCast::setForceNonSmartTargeting(bool value)
 {
 	forceNonSmartTargeting = value;
@@ -717,6 +658,14 @@ void BattleCast::setMassSlow(bool value)
 void BattleCast::setShadowGiftSacrificePercent(const int32_t value)
 {
 	shadowGiftSacrificePercent = value;
+}
+
+void BattleCast::setAutomaticHeroCast(AutomaticHeroCastReceipt value)
+{
+	value.validateShape();
+	if(value.automatic() && mode != Mode::HERO)
+		throw std::runtime_error("Automatic hero provenance requires HERO spell mechanics");
+	automaticHeroCast = value;
 }
 
 void BattleCast::setMetamagicFollowup(bool value)
@@ -915,19 +864,24 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	caster = event->getCaster();
 	captureOriginalSpellSpecialties(event);
 	heroLuck = event->getHeroLuck();
+	automaticHeroCast = event->getAutomaticHeroCast();
+	automaticHeroCast.validateShape();
 	metamagicFollowup = event->isMetamagicFollowup();
 	massSlow = event->getMassSlow();
 	shadowGiftSacrificePercent = event->getShadowGiftSacrificePercent();
 
 	casterSide = cb->playerToSide(caster->getCasterOwner());
+	metamagicCastProfile = newHorizonsMetamagic::captureHeroCastProfile(caster->getHeroCaster(), cb->getBattle(),
+		mode == Mode::HERO, owner->getId());
+	if(mode == Mode::PASSIVE)
+		metamagicCastProfile = newHorizonsMetamagic::captureDelayedCastProfile(caster);
 	if(mode == Mode::HERO && dynamic_cast<const CGHeroInstance *>(caster)
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER))
 	{
 		const auto * battleInfo = cb->getBattle();
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
 		const auto scalarContext = newHorizonsMagic::heroSpellCastContext(*hero, *owner, *cb,
-			metamagicFollowup, event->isConcentrated());
-		warcastingBonusPercent = scalarContext.warcasting;
+			metamagicFollowup, event->isConcentrated(), automaticHeroCast.automatic());
 		consecratedCastingBonusPercent = scalarContext.consecrated;
 		arcaneFocusBonusPercent = scalarContext.arcaneFocus;
 		counterpressureBonusPercent = scalarContext.counterpressure;
@@ -949,8 +903,6 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				crownAndAltarRecipientUnitIds = grant->divineMandateRecipients;
 		}
 
-		combatCastingEligible = warcastingBonusPercent > 0 && hero
-			&& hero->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.combatCasting");
 		overwhelmingFormulaEligible = battleInfo && hero && owner
 			&& (owner->isNegative() || newHorizonsMagic::isLandMine(owner->getId())
 				|| newHorizonsMagic::isFireWall(owner->getId()))
@@ -1056,7 +1008,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			else if(v3Bless)
 			{
 				const auto ordinary = newHorizonsMagic::blessOrdinaryDuration(effectPower,
-					getSpellPowerCoefficientBasisPoints(), getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(),
+					getSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent(),
 					heroCaster->getNonDamageSpellSpecialtyBonusPercent(familyID));
 				effectDuration = newHorizonsMagic::blessCasterDuration(*heroCaster, ordinary, infernoDurationBonus);
 			}
@@ -1083,6 +1035,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	metamagicGrand = event->isMetamagicGrand();
 	metamagicTargetUnitId = event->getMetamagicTargetUnitId();
 	metamagicManaRefund = event->getMetamagicManaRefund();
+	purifyChoices = event->getPurifyChoices();
 	forceNonSmartTargeting = event->getForceNonSmartTargeting();
 	if(metamagicFollowup && mode == Mode::HERO)
 	{
@@ -1153,7 +1106,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 			{
 				effectValue = newHorizonsMagic::earthquakeRawDamage(
 					battle->getMagicRules()["spells"]["core:earthquake"]["earthquake"], effectPower,
-					damageCoefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+					damageCoefficientBasisPoints, getEmpowerSpellBonusPercent());
 			}
 			else if(battle && owner->getJsonKey() == "new-horizons:hydrasVitality"
 				&& newHorizonsMagic::rulesActive(battle->getMagicRules())
@@ -1165,13 +1118,12 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				// the canonical raw attribute, not the legacy divisor.
 				const auto * hero = caster->getHeroCaster();
 				const int specialtyPercent = hero ? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
-				effectValue = newHorizonsMagic::hydraCapacityMillionths(effectPower, spellPowerCoefficientBasisPoints,
-					getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), specialtyPercent);
+				effectValue = newHorizonsMagic::hydraCapacityMillionths(effectPower, spellPowerCoefficientBasisPoints, getEmpowerSpellBonusPercent(), specialtyPercent);
 			}
 			else if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
 			{
 				effectValue = newHorizonsMagic::cureHealingBudget(caster->getHeroCaster(), effectPower,
-					spellPowerCoefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+					spellPowerCoefficientBasisPoints, getEmpowerSpellBonusPercent());
 			}
 			else if(battle && newHorizonsMagic::resurrectionRestorationEnabled(
 				battle->getMagicRules(), owner->getId()))
@@ -1183,7 +1135,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 				const int specialtyPercent = hero
 					? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
 				effectValue = newHorizonsMagic::resurrectionRestorationPool(effectPower,
-					spellPowerCoefficientBasisPoints, getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), specialtyPercent);
+					spellPowerCoefficientBasisPoints, getEmpowerSpellBonusPercent(), specialtyPercent);
 			}
 			else
 			{
@@ -1201,7 +1153,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 							.value_or(newHorizonsMagic::DirectDamageFormula{20, 20});
 						const int64_t baseDamage = formula.evaluateBasisPoints(
 							effectPower, getEffectPowerDivisor(), damageCoefficientBasisPoints, empowerBonusPercent,
-							damageSpecialtyPercent, warcastingBonusPercent);
+							damageSpecialtyPercent);
 						const int64_t overchargeMultiplier = 1000LL
 							+ static_cast<int64_t>(modifiers.damagePercentTenths) * getOvercharge();
 						magicArrowValue = baseDamage * overchargeMultiplier / 1000;
@@ -1215,14 +1167,14 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 						battle->getMagicRules(), owner->getJsonKey()))
 						savedValue = formula->evaluateBasisPoints(
 							effectPower, getEffectPowerDivisor(), damageCoefficientBasisPoints, empowerBonusPercent,
-							damageSpecialtyPercent, warcastingBonusPercent);
+							damageSpecialtyPercent);
 				}
 
 				if(magicArrowValue)
 					effectValue = *magicArrowValue;
 				else if(savedValue)
 					effectValue = *savedValue;
-				else if(warcastingBonusPercent > 0 || effectPowerCoefficientBasisPoints != 10000
+				else if(effectPowerCoefficientBasisPoints != 10000
 					|| empowerBonusPercent > 0 || damageSpecialtyPercent > 0)
 				{
 					const int64_t powerNumerator = static_cast<int64_t>(owner->getBasePower()) * effectPower;
@@ -1443,51 +1395,6 @@ void BaseMechanics::registerOverwhelmingFormulaCast(ServerCallback * server)
 	overwhelmingFormulaToken = token;
 }
 
-JsonNode BaseMechanics::getCapturedMdrPenetration() const
-{
-	if(mode == Mode::PASSIVE)
-		if(const auto * obstacle = dynamic_cast<const ObstacleCasterProxy *>(caster))
-			return obstacle->getCapturedMdrPenetration();
-	JsonNode result;
-	const auto * hero = caster ? caster->getHeroCaster() : nullptr;
-	if(mode != Mode::HERO || (!isNegativeSpell() && !overwhelmingFormulaEligible
-		&& !newHorizonsNaturesWrath::enabled(*this)) || !hero
-		|| !newHorizonsMagic::rulesActive(hero->getMagicRules()))
-		return result;
-	const auto add = [&result](int percent)
-	{
-		result["penetrations"].Vector().emplace_back(percent);
-	};
-	if(hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
-		"new-horizons:spellcraft.spellPenetration"))
-		add(20);
-	if(newHorizonsMagic::hasAnnihilatorPerk(hero, owner))
-		add(20);
-	if(combatCastingEligible)
-		add(15);
-	if(overwhelmingFormulaEligible && overwhelmingFormulaToken != 0)
-	{
-		result["overwhelmingFormulaSide"].Integer() = static_cast<int32_t>(casterSide);
-		// A decimal string survives Lua's double-only numerical representation.
-		result["overwhelmingFormulaToken"].String() = std::to_string(overwhelmingFormulaToken);
-	}
-	else if(overwhelmingFormulaEligible && cb && cb->getBattle()
-		&& cb->getBattle()->getOverwhelmingFormulaState(casterSide).winningCastToken == 0
-		&& cb->getBattle()->getOverwhelmingFormulaState(casterSide).lastCandidateCastToken
-			!= std::numeric_limits<uint64_t>::max())
-	{
-		// Unaccepted UI prediction is read-only. Execution registers above before
-		// preparing effects, so this temporary contribution is never saved on one.
-		add(50);
-	}
-	if(metamagicFollowup && metamagicFocusedPairingEligible
-		&& metamagicFirstTargetUnitId != std::numeric_limits<uint32_t>::max())
-	{
-		result["focusedTargetUnitId"].Integer() = metamagicFirstTargetUnitId;
-		result["focusedPenetrationPercent"].Integer() = 20;
-	}
-	return result;
-}
 
 int64_t Mechanics::adjustDirectCreatureActivationDamage(const int64_t damage) const
 {
@@ -1554,7 +1461,7 @@ int32_t BaseMechanics::getDirectCreatureActivationDamagePercent() const
 	// activation transition clears Morale when beginning Second Wind, and the
 	// completion transition spends Second Wind before any earned Morale check.
 	return heroCommands::orderPotency(
-		heroCommands::secondWindPercent(*hero, order->warcastingBonusPercent,
+		heroCommands::secondWindPercent(*hero,
 			order->divineMandateEfficiencyBonusPercent()),
 		newHorizonsDivineMandate::crownSecondWindPercent(*hero, *order, unit->unitId()),
 		*order, callback->getBattle()->getMagicRules());
@@ -1575,9 +1482,11 @@ int64_t Mechanics::adjustRecipientDamage(const battle::Unit * target, int64_t ra
 	const auto penetrations = hostileRecipient
 		? capturedMdrPenetrations(getCapturedMdrPenetration(), target->unitId(),
 			callback ? callback->getBattle() : nullptr) : std::vector<int>{};
-	return spell->adjustRawDamage(caster, target, rawDamage, 0,
+	const auto ordinary = spell->adjustRawDamage(caster, target, rawDamage, 0,
 		holdReductionBasisPoints, 100, usesNewHorizonsMultiplicativeMDR(),
 		usesNewHorizonsMagicV3(), false, perkReductionBasisPoints, penetrations);
+	return callback ? newHorizonsMetamagic::spellDamage(ordinary, getMetamagicCastProfile(), *callback,
+		target, callback->sideToPlayer(getEffectCasterSide())) : ordinary;
 }
 
 int64_t BaseMechanics::adjustEffectValue(const battle::Unit * target) const
@@ -1601,6 +1510,12 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
 			"new-horizons:spellcraft.spellPenetration");
 	std::vector<int> penetrations;
+	if(mode == Mode::HERO && hostileRecipient)
+		if(const auto * meta = getMetamagicCastProfile(); meta && meta->perks.pointPolicy)
+			penetrations.push_back(newHorizonsMetamagic::effectivenessBonusPercent(meta->perks, meta->points) - meta->perks.wisdomEffectivenessBonus);
+	if(mode == Mode::HERO && hostileRecipient && hero)
+		if(const int wisdom = newHorizonsWisdom::archmagePenetrationPercent(hero, hero->getMagicRules(), owner->getId()))
+			penetrations.push_back(wisdom);
 	if(metamagicFollowup && isNegativeSpell() && target
 		&& metamagicFocusedPairingEligible && target->unitId() == metamagicFirstTargetUnitId)
 		penetrations.push_back(20);
@@ -1608,8 +1523,6 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		penetrations.push_back(20);
 	if(spellPenetration)
 		penetrations.push_back(20);
-	if(combatCastingEligible && mode == Mode::HERO && isNegativeSpell() && hostileRecipient)
-		penetrations.push_back(15);
 	if(overwhelmingFormulaEligible && mode == Mode::HERO && hostileRecipient && cb && cb->getBattle())
 	{
 		const auto & state = cb->getBattle()->getOverwhelmingFormulaState(casterSide);
@@ -1636,8 +1549,7 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		const auto & magicRules = battleState->getMagicRules();
 		if(const auto implosion = newHorizonsImplosion::rulesFor(magicRules, owner->getId()))
 			rawDamage = newHorizonsImplosion::damage(*implosion, target->getAvailableHealth(),
-				std::max(0, getEffectPower()), getDirectDamageSpellPowerCoefficientBasisPoints(),
-				getWarcastingBonusPercent(), getEmpowerSpellBonusPercent());
+				std::max(0, getEffectPower()), getDirectDamageSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent());
 		if(const auto missingHealthDamage = newHorizonsMagic::soulReaperMissingHealthDamage(
 			magicRules, owner->getId(), target->getShadowGiftMaximumHealth(), target->getAvailableHealth()))
 		{
@@ -1652,6 +1564,8 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction,
 		usesNewHorizonsMagicV3(), true, perkReductionBasisPoints,
 		useIndependentMagicalDamageReduction ? penetrations : std::vector<int>{});
+	adjustedDamage = newHorizonsMetamagic::spellDamage(adjustedDamage, getMetamagicCastProfile(), *cb,
+		target, cb->sideToPlayer(getEffectCasterSide()));
 	if(applyExecution && target && battleState && newHorizonsMagic::soulReaperEnabled(
 		battleState->getMagicRules(), owner->getId()))
 		adjustedDamage = newHorizonsMagic::soulReaperDamageAfterExecution(
@@ -1676,11 +1590,9 @@ IBattleCast::Value64 BaseMechanics::getRecipientEffectValue(const battle::Unit *
 	const int coefficient = getSpellPowerCoefficientBasisPoints();
 	const int multiplier = 100 + getCrownAndAltarBonusPercent(target);
 	if(isNewHorizonsCure())
-		return newHorizonsMagic::cureHealingBudget(hero, getEffectPower(), coefficient,
-			getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), multiplier - 100);
+		return newHorizonsMagic::cureHealingBudget(hero, getEffectPower(), coefficient, getEmpowerSpellBonusPercent(), multiplier - 100);
 	if(isNewHorizonsResurrection())
-		return newHorizonsMagic::resurrectionRestorationPool(getEffectPower(), coefficient,
-			getWarcastingBonusPercent(), getEmpowerSpellBonusPercent(), specialty, multiplier - 100);
+		return newHorizonsMagic::resurrectionRestorationPool(getEffectPower(), coefficient, getEmpowerSpellBonusPercent(), specialty, multiplier - 100);
 	return getEffectValue();
 }
 
@@ -1692,12 +1604,13 @@ int32_t BaseMechanics::getHeroLuckDamageMultiplierPercent() const
 
 int64_t BaseMechanics::applySpellBonus(int64_t value, const battle::Unit * target) const
 {
-	return caster->getSpellBonus(owner, value, target);
+	const auto ordinary = caster->getSpellBonus(owner, value, target);
+	return newHorizonsMetamagic::outgoingMagnitude(ordinary, getMetamagicCastProfile(), target);
 }
 
 int64_t BaseMechanics::applySpecificSpellBonus(int64_t value) const
 {
-	return caster->getSpecificSpellBonus(owner, value);
+	return newHorizonsMetamagic::outgoingMagnitude(caster->getSpecificSpellBonus(owner, value), getMetamagicCastProfile(), nullptr);
 }
 
 int64_t BaseMechanics::calculateRawEffectValue(int32_t basePowerMultiplier, int32_t levelPowerMultiplier) const
@@ -1777,11 +1690,6 @@ IBattleCast::Value BaseMechanics::getEffectPower() const
 	return effectPower;
 }
 
-int32_t BaseMechanics::getWarcastingBonusPercent() const
-{
-	return warcastingBonusPercent;
-}
-
 int32_t BaseMechanics::getArcaneFocusBonusPercent() const
 {
 	return arcaneFocusBonusPercent;
@@ -1794,7 +1702,7 @@ int32_t BaseMechanics::getConsecratedCastingBonusPercent() const
 
 int32_t BaseMechanics::getCastSpellPowerComponentBonusPercent() const
 {
-	return newHorizonsMagic::HeroSpellCastContext{warcastingBonusPercent, arcaneFocusBonusPercent,
+	return newHorizonsMagic::HeroSpellCastContext{arcaneFocusBonusPercent,
 		consecratedCastingBonusPercent, counterpressureBonusPercent, crossSchoolFormulaBonusPercent,
 		grandFormulaMultiplierPercent, concentrationBonusPercent}.componentBonusPercent();
 }
@@ -1888,6 +1796,11 @@ std::string BaseMechanics::getCurePhysicalAffliction() const
 	return curePhysicalAffliction;
 }
 
+std::vector<std::pair<int32_t, SpellID>> BaseMechanics::getPurifyChoices() const
+{
+	return purifyChoices;
+}
+
 bool BaseMechanics::isMassSlow() const
 {
 	return massSlow;
@@ -1920,6 +1833,11 @@ bool BaseMechanics::setStormOfDaggersTargetCount(int32_t selectedTargetCount)
 }
 
 
+
+AutomaticHeroCastReceipt BaseMechanics::getAutomaticHeroCast() const
+{
+	return automaticHeroCast;
+}
 
 bool BaseMechanics::isMetamagicFollowup() const
 {

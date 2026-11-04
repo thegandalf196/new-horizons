@@ -29,7 +29,7 @@ namespace
 {
 const PlayerColor OWNER(0);
 constexpr auto LEARNING = "new-horizons:learning";
-constexpr auto QUICK = "new-horizons:learning.quickStudy";
+constexpr auto QUICK = "new-horizons:learning.connoisseur";
 
 // Transport queues real CCallback requests; the test thread drives the authority.
 // This prevents a test-only recursive server invocation under the AI state lock.
@@ -103,7 +103,7 @@ protected:
 	{
 		NullkillerTest::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
-			GTEST_SKIP() << "Requires the coherent future optional-Quick profile";
+			GTEST_SKIP() << "Requires the coherent future Connoisseur profile";
 	}
 	void mapLoaded(CMap * loaded) override
 	{
@@ -113,7 +113,7 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES, JsonNode());
-		loaded->overrideGameSetting(EGameSettings::LEVEL_UP_TOTAL_SKILLS_AMOUNT, JsonNode(0));
+		loaded->overrideGameSetting(EGameSettings::LEVEL_UP_TOTAL_SKILLS_AMOUNT, JsonNode(2));
 	}
 	void TearDown() override
 	{
@@ -179,13 +179,9 @@ protected:
 			GameRandomizer probe(*gameState());
 			snapshot.iser & probe;
 			probe.rollPrimarySkillsForLevelup(hero);
-			if(!probe.rollSecondarySkills(hero).empty())
-				return false;
-			const auto offerSeed = static_cast<uint32_t>(probe.getDefault().nextInt());
-			const auto offers = hero->getPerkState().prepareOffer([this](const std::string & id)
-				{ return hero->getPerkSkillRank(id); }, offerSeed, hero->getPerkOfferWeightContext());
-			if(!offers.empty() && std::all_of(offers.begin(), offers.end(), [](const auto & perk)
-				{ return perk.requiredRank == 1; }))
+			const auto cards = probe.rollSecondarySkills(hero);
+			if(gateway->nullkiller->heroManager->connoisseurSkillCard(
+				NK2AI::HeroPtr(hero, gateway->cc.get()), cards, hero->level))
 				return true;
 		}
 		return false;
@@ -201,9 +197,9 @@ protected:
 		hero->secSkills.clear();
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
 		state.selected.clear();
-		ASSERT_EQ(newHorizonsHeroes::quickStudyRerollInterval(state.rules), 3);
+		ASSERT_EQ(newHorizonsHeroes::quickStudyRerollInterval(state.rules), 1);
 		setRank(LEARNING, 1);
-		hero->applyPerkSelection({LEARNING, "new-horizons:learning.mentor"});
+		hero->applyPerkSelection({LEARNING, "new-horizons:learning.scholar"});
 		setRank(LEARNING, 2);
 		hero->applyPerkSelection({LEARNING, QUICK});
 		setRank("new-horizons:offense", 1);
@@ -220,6 +216,9 @@ protected:
 		server = std::make_unique<QuickStudyServer>(gameState(), OWNER);
 		handler = std::make_unique<CGameHandler>(*server, gameState());
 		gameState()->actingPlayers.insert(OWNER);
+		gateway = makeGateway(OWNER, &client);
+		client.gateway = gateway.get();
+		gateway->nullkiller->heroManager->update();
 		ASSERT_TRUE(chooseWeakInitialSeed()) << "No canonical weak initial offer in bounded test-input search";
 		handler->onAdvInterfaceReady(OWNER);
 		handler->levelUpHero(hero);
@@ -227,12 +226,9 @@ protected:
 		ASSERT_NE(query, nullptr);
 		ASSERT_FALSE(server->offers.empty());
 		ASSERT_TRUE(query->hlu.optionalRerollAvailable);
-		ASSERT_TRUE(query->hlu.skills.empty());
-		gateway = makeGateway(OWNER, &client);
-		client.gateway = gateway.get();
-		gateway->nullkiller->heroManager->update();
-		ASSERT_TRUE(gateway->nullkiller->heroManager->shouldRerollLevelUpOffer(
-			NK2AI::HeroPtr(hero, gateway->cc.get()), query->hlu.skills, query->hlu.perks, 6));
+		ASSERT_FALSE(query->hlu.skills.empty());
+		ASSERT_TRUE(gateway->nullkiller->heroManager->connoisseurSkillCard(
+			NK2AI::HeroPtr(hero, gateway->cc.get()), query->hlu.skills, 6));
 		server->deliver = [this](const auto & offer) { dispatch(offer); };
 	}
 };
@@ -252,12 +248,23 @@ TEST_F(QuickStudyCallbackIntegrationTest, SynchronousRegistrationAndFreshReplace
 	}
 	const auto reroll = client.take();
 	ASSERT_TRUE(reroll);
-	ASSERT_EQ(reroll->reply, -1);
+	ASSERT_TRUE(reroll->reply);
+	ASSERT_LE(*reroll->reply, -2);
 	EXPECT_EQ(rngBytes(), rng); // The AI decision itself spent no authoritative RNG.
 	ASSERT_TRUE(process(*reroll));
 	ASSERT_EQ(server->offers.size(), 2u);
 	const auto replacement = server->offers.back();
 	EXPECT_EQ(replacement.replacesQueryID, initial.queryID);
+	EXPECT_EQ(replacement.perks, initial.perks);
+	EXPECT_EQ(replacement.primskill, initial.primskill);
+	EXPECT_EQ(replacement.perkOfferSeed, initial.perkOfferSeed);
+	const auto changed = static_cast<size_t>(-2 - *reroll->reply);
+	ASSERT_LT(changed, initial.skills.size());
+	ASSERT_EQ(replacement.skills.size(), initial.skills.size());
+	for(size_t i = 0; i < initial.skills.size(); ++i)
+		if(i != changed) EXPECT_EQ(replacement.skills[i], initial.skills[i]);
+	EXPECT_NE(replacement.skills[changed], initial.skills[changed]);
+	EXPECT_FALSE(replacement.optionalRerollAvailable);
 	EXPECT_NE(replacement.queryID, initial.queryID);
 	EXPECT_EQ(gateway->status.getQueriesCount(), 2); // New callback precedes old ACK.
 	dispatch(replacement);
@@ -293,12 +300,14 @@ TEST_F(QuickStudyCallbackIntegrationTest, AuthoritativeSameIdConfirmationBeforeF
 	dispatch(initial);
 	const auto reroll = client.take();
 	ASSERT_TRUE(reroll);
-	ASSERT_EQ(reroll->reply, -1);
+	ASSERT_TRUE(reroll->reply);
+	ASSERT_LE(*reroll->reply, -2);
 	// Explicit test injection of authority-side availability loss after exposure;
 	// no claim that ordinary gameplay currently produces this race.
 	query->hlu.optionalRerollAvailable = false;
 	const auto rng = rngBytes();
 	const auto count = hero->getPerkState().selected.size();
+	const auto ranksBefore = hero->secSkills;
 	ASSERT_FALSE(process(*reroll));
 	ASSERT_EQ(server->offers.size(), 2u);
 	const auto confirmation = server->offers.back();
@@ -321,7 +330,16 @@ TEST_F(QuickStudyCallbackIntegrationTest, AuthoritativeSameIdConfirmationBeforeF
 	ASSERT_TRUE(process(*selection));
 	acknowledge(*selection, true);
 	EXPECT_EQ(gateway->status.getQueriesCount(), 0);
-	EXPECT_EQ(hero->getPerkState().selected.size(), count + 1);
+	const auto countAfter = hero->getPerkState().selected.size();
+	EXPECT_GE(countAfter, count);
+	EXPECT_LE(countAfter, count + 1);
+	const auto rankSum = [](const auto & ranks)
+	{
+		int total = 0;
+		for(const auto & entry : ranks) total += entry.second;
+		return total;
+	};
+	EXPECT_EQ(rankSum(hero->secSkills) - rankSum(ranksBefore), countAfter == count ? 1 : 0);
 	gateway->finish(); // Drain every worker before checking for any extra command.
 	EXPECT_EQ(gateway->status.getQueriesCount(), 0);
 	EXPECT_FALSE(client.take(std::chrono::milliseconds(0)));
@@ -333,7 +351,8 @@ TEST_F(QuickStudyCallbackIntegrationTest, FailedAckAloneNeverSubmitsAnOldQuerySe
 	dispatch(server->offers.back());
 	const auto reroll = client.take();
 	ASSERT_TRUE(reroll);
-	ASSERT_EQ(reroll->reply, -1);
+	ASSERT_TRUE(reroll->reply);
+	ASSERT_LE(*reroll->reply, -2);
 	const auto rng = rngBytes();
 	// A synthetic transport ACK intentionally carries no authoritative offer.
 	acknowledge(*reroll, false);

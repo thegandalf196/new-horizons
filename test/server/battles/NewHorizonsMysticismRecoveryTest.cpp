@@ -169,13 +169,13 @@ TEST_F(NewHorizonsMysticismRecoveryTest, ActualNewTurnExcludesInitialJaegarExtra
 	EXPECT_EQ(attackerSideHero->getNormalSpellPoints(), 74);
 	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 13);
 }
-TEST_F(NewHorizonsMysticismRecoveryTest, MeditationRemainsSeparateAfterDailyFloorAndNormalCapacityClips)
+TEST_F(NewHorizonsMysticismRecoveryTest, ManaFastingDoesNotAlterDailyMysticismOrMovementAndNormalCapacityClips)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:wisdom")), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.meditation"});
+	attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.manaFasting"});
 	attackerSideHero->setMovementPoints(25);
-	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 100), 35);
+	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 100), 20);
 	EXPECT_EQ(attackerSideHero->getManaNewTurn(false, 100), 20);
 	attackerSideHero->setNormalSpellPoints(95);
 	EXPECT_EQ(attackerSideHero->getManaNewTurn(true, 100), 100);

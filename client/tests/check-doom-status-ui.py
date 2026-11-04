@@ -8,7 +8,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 STATUS = (ROOT / "client/battle/NewHorizonsBattleStatus.h").read_text(encoding="utf-8")
 PRESENTATION = (ROOT / "client/battle/StackInfoStatusPresentation.h").read_text(encoding="utf-8")
-HOVER_PANEL = (ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text(encoding="utf-8")
+HOVER_PANEL = ((ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text(encoding="utf-8")
+               + (ROOT / "client/battle/StackTemporaryStatusPresenter.cpp").read_text(encoding="utf-8"))
 STACK_WINDOW = (ROOT / "client/windows/CCreatureWindow.cpp").read_text(encoding="utf-8")
 
 

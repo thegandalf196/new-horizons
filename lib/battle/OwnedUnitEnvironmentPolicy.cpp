@@ -1,5 +1,9 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "PassiveDivineMandate.h"
+#include "CBattleInfoCallback.h"
+#include "IBattleState.h"
+#include <stdexcept>
 #include "OwnedUnitEnvironmentPolicy.h"
 #include "LiveUnitEnvironmentContext.h"
 #include "UnitOwnershipQuery.h"
@@ -10,6 +14,13 @@ OwnedUnitEnvironmentPolicy::OwnedUnitEnvironmentPolicy(const CBattleInfoCallback
 	const LiveUnitEnvironmentContext source(observer); // The same real registered callback perspective.
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		for(const auto & order : observer.getBattle()->getHeroOrderStates(side))
+			if(order.passiveDivineMandate && order.passiveDivineMandate->has(
+				newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
+				throw std::invalid_argument("Owned environment does not capture active Righteous Discipline Orders");
+		if(newHorizonsPassiveDivineMandate::capturePolicy(observer.battleGetFightingHero(side)).has(
+			newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
+			throw std::invalid_argument("Owned environment does not capture dynamic Righteous Discipline Orders");
 		auto & input = inputs.at(side);
 		input.color = source.ownership().sidePlayer(side);
 		input.ammoArtifact = source.sideHasAmmoArtifact(side);

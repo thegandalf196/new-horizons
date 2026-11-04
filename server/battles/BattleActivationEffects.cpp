@@ -1,6 +1,9 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "BattleActivationEffects.h"
+#include "../../lib/spells/ArcaneInspirationCompletion.h"
+#include "../../lib/spells/ISpellMechanics.h"
 #include "BattleMaintenanceRecovery.h"
 #include "BattleCreatureBurn.h"
 #include "../CGameHandler.h"
@@ -111,11 +114,16 @@ void applyExistingRecovery(CGameHandler * gameHandler, const CBattleInfoCallback
 void applyPhysicalPoison(CGameHandler * gameHandler, const CBattleInfoCallback & battle, const CStack * creatureStack,
 	std::shared_ptr<battle::CUnitState> & state)
 {
-	const int64_t poisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
+	int64_t poisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
+	if(state && (state->physicalPoisonSpellOrigin() == BattleSide::ATTACKER
+		|| state->physicalPoisonSpellOrigin() == BattleSide::DEFENDER))
+		poisonTick = newHorizonsMetamagic::spellDamage(poisonTick, nullptr, battle, creatureStack,
+			battle.sideToPlayer(state->physicalPoisonSpellOrigin()));
 	if(creatureStack->alive() && state && poisonTick > 0)
 	{
 		const int64_t guardianSpiritBefore = state->guardianSpiritHitPoints;
 		const auto poisonSourceStackId = state->physicalPoisonSourceStackId;
+		const auto spellOrigin = state->physicalPoisonSpellOrigin();
 		newHorizonsBulwark::advancePhysicalPoison(state.get());
 		BattleStackAttacked hit;
 		hit.attackerID = poisonSourceStackId >= 0
@@ -137,6 +145,7 @@ void applyPhysicalPoison(CGameHandler * gameHandler, const CBattleInfoCallback &
 		injury.battleID = battle.getBattle()->getBattleID();
 		injury.stacks.push_back(hit);
 		gameHandler->sendAndApply(injury);
+		arcaneInspiration::publishSpellDamage(*gameHandler->spellEnv, battle, spellOrigin, injury.stacks);
 
 		if(hit.damageAmount > 0 || guardianSpiritAbsorbed > 0)
 		{

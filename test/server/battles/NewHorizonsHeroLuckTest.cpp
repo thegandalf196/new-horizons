@@ -320,7 +320,7 @@ TEST_P(HeroLuckOrderTest, EachAcceptedCanonicalOrderCapturesOneLuckyDayWithoutCh
 	{
 		const int ordinary = heroCommands::coefficient(
 			battle()->getHeroCommandRules()["commands"]["flank"]["effects"]["meleeDamagePercent"],
-			*attackerSideHero, state->warcastingBonusPercent, state->divineMandateEfficiencyBonusPercent());
+			*attackerSideHero, state->divineMandateEfficiencyBonusPercent());
 		EXPECT_EQ(battle()->battleHeroOrderFlankMeleeDamagePercent(BattleAttackInfo(friendly, enemy, 0, false)),
 			2 * ordinary);
 	}

@@ -88,9 +88,16 @@ void validateEffect(const JsonNode & effect, const std::string & context)
 	require(effect["description"].isString() && !effect["description"].String().empty(), context + " effect description");
 }
 
+void validateDetails(const JsonNode & node, const std::string & context)
+{
+	if(node.Struct().contains("details"))
+		require(node["details"].isString() && !node["details"].String().empty(), context + " nonempty details");
+}
+
 void validateRank(const JsonNode & rank, const std::string & context)
 {
-	fields(rank, {"description", "effect"});
+	fields(rank, {"description", "details", "effect"});
+	validateDetails(rank, context);
 	require(rank["description"].isString() && !rank["description"].String().empty(), context + " description");
 	validateEffect(rank["effect"], context);
 }
@@ -98,7 +105,8 @@ void validateRank(const JsonNode & rank, const std::string & context)
 void validatePerk(const JsonNode & node, const std::string & skillId, const std::string & context,
 	std::set<std::string> & identities)
 {
-	fields(node, {"id", "name", "requires", "description", "effect"});
+	fields(node, {"id", "name", "requires", "description", "details", "effect"});
+	validateDetails(node, context);
 	for(const auto * key : {"id", "name", "requires", "description"})
 		require(node[key].isString() && !node[key].String().empty(), context + " nonempty " + key);
 	require(scopedId(node["id"].String()), context + " scoped id");
@@ -115,6 +123,7 @@ void parsePerk(const JsonNode & node, PerkDefinition & result)
 	result.name = node["name"].String();
 	result.requiredRank = node["requires"].String();
 	result.description = node["description"].String();
+	result.details = node["details"].isString() ? node["details"].String() : std::string{};
 	result.effect = node["effect"];
 }
 
@@ -125,6 +134,7 @@ void parseSkill(const JsonNode & node, SkillDefinition & result)
 	result.domain = node["domain"].String();
 	result.availability = node["availability"].String();
 	result.description = node["description"].String();
+	result.details = node["details"].isString() ? node["details"].String() : std::string{};
 	result.ranks = node["ranks"];
 	result.perks.clear();
 	for(const auto & entry : node["perks"].Vector())
@@ -154,13 +164,46 @@ int perkRequiredRank(std::string_view prerequisite)
 
 std::optional<int> quickStudyRerollInterval(const JsonNode & rules)
 {
-	if(!rules.isStruct() || !rules.Struct().contains("quickStudyPolicy"))
+	if(!rules.isStruct() || !rules.Struct().contains("connoisseurPolicy"))
 		return std::nullopt;
-	const auto & policy = rules["quickStudyPolicy"];
-	fields(policy, {"version", "interval"});
-	require(integer(policy["version"], 1, 1), "Quick Study policy version");
-	require(integer(policy["interval"], 1, 100), "Quick Study interval in 1..100");
-	return static_cast<int>(policy["interval"].Integer());
+	const auto & policy = rules["connoisseurPolicy"];
+	fields(policy, {"version"});
+	require(integer(policy["version"], 1, 1), "Connoisseur policy version");
+	return 1;
+}
+
+void validatePassiveFactionPolicies(const JsonNode & rules)
+{
+	if(!rules.isStruct())
+		return;
+	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
+	{
+		const auto found = rules.Struct().find(key);
+		if(found == rules.Struct().end())
+			continue;
+		const auto & policy = found->second;
+		const bool metamagic = std::string_view(key) == "metamagicPolicy";
+		if(metamagic && policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& policy["version"].Integer() == 2)
+			fields(policy, {"version", "adeptAdditionalMarks"});
+		else if(metamagic)
+			fields(policy, {"version", "adeptAdditionalPoints"});
+		else
+			fields(policy, {"version"});
+		require(policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& (policy["version"].Integer() == 2 || (metamagic && policy["version"].Integer() == 3)),
+			std::string(key) + " has an unsupported version");
+		if(metamagic && policy.Struct().contains("adeptAdditionalPoints"))
+			require(integer(policy["adeptAdditionalPoints"], 0, 12),
+				"Metamagic adeptAdditionalPoints must be an integer in 0..12");
+		if(metamagic && policy.Struct().contains("adeptAdditionalMarks"))
+		{
+			const auto & marks = policy["adeptAdditionalMarks"];
+			require(marks.getType() == JsonNode::JsonType::DATA_INTEGER
+				&& marks.Integer() >= 0 && marks.Integer() <= 5,
+				"Metamagic adeptAdditionalMarks must be an integer in 0..5");
+		}
+	}
 }
 
 void validatePerkRules(const JsonNode & rules)
@@ -169,7 +212,9 @@ void validatePerkRules(const JsonNode & rules)
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
-		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "quickStudyPolicy"});
+		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "connoisseurPolicy",
+		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"});
+	validatePassiveFactionPolicies(rules);
 	quickStudyRerollInterval(rules);
 	usesSylvanTactics(rules);
 	newHorizonsNecromancy::validatePolicy(rules);
@@ -211,7 +256,8 @@ void validatePerkRules(const JsonNode & rules)
 	std::set<std::string> identities;
 	for(const auto & [key, node] : rules["skills"].Struct())
 	{
-		fields(node, {"id", "name", "domain", "availability", "description", "ranks", "perks"});
+		fields(node, {"id", "name", "domain", "availability", "description", "details", "ranks", "perks"});
+		validateDetails(node, key);
 		require(scopedId(key), "scoped skill key");
 		require(node["id"].isString() && node["id"].String() == key, "skill key/id mismatch");
 		require(skills.insert(key).second, "duplicate skill id");
@@ -266,9 +312,13 @@ bool usesStrictPerkProgression(const JsonNode & rules)
 		&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION;
 }
 
-void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported)
+void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported)
 {
 	validatePerkRules(rules);
+	if(!passiveFactionSupported && rules.isStruct())
+		for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
+			if(rules.Struct().contains(key))
+				throw std::runtime_error("Cannot serialize passive faction skills to an older format");
 	if(quickStudyRerollInterval(rules) && !optionalRerollSupported)
 		throw std::runtime_error("Cannot serialize optional Quick Study policy to an older format");
 	if(rules.isStruct() && rules.Struct().contains("perkProgressionPolicyVersion") && !strictSupported)

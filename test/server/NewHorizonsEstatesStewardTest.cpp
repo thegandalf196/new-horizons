@@ -25,7 +25,7 @@ namespace
 {
 const PlayerColor PLAYER(0);
 constexpr auto ESTATES = "new-horizons:estates";
-constexpr auto STEWARD = "new-horizons:estates.steward";
+constexpr auto STEWARD = "new-horizons:estates.stewardship";
 
 class StewardRecordingServer final : public IGameServer
 {

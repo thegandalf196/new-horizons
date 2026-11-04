@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
 #include "HeroCommandFixture.h"
+#include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/battle/NewHorizonsCoordinatedMarks.h"
 #include "../../../lib/battle/CObstacleInstance.h"
@@ -52,6 +53,8 @@ protected:
 			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 		}
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(preOptionalCapture)
+			historicalHeroRulesTest::omitPost1152OrdinarySpecialties(rules);
 		auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 		for(const char * key : {"consecratedTargetDefenseIgnorePercent", "featheredFeintPhysicalReductionIgnorePercent"})
 		{

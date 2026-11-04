@@ -250,7 +250,7 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 	local snapshotDamage = newMine or newFireWall
 	local turnsRemaining = self.turnsRemaining or -1
 	if newFireWall then
-		turnsRemaining = mechanics:adjustEffectDuration(3)
+		turnsRemaining = mechanics:adjustMetamagicDuration(mechanics:adjustEffectDuration(3), nil)
 	end
 	return {
 		pos              = hex,
@@ -260,6 +260,7 @@ local function buildDescriptor(self, mechanics, side, hex, customSize)
 		casterPowerDivisor = mechanics:getEffectPowerDivisor(),
 		spellLevel       = mechanics:getEffectLevel(),
 		casterSide       = side,
+		-- Includes immutable effectiveness, applied after recipient mitigation by the trigger.
 		mdrPenetration   = mechanics:getCapturedMdrPenetration(),
 		-- Canonical Land Mine and Fire Wall direct-damage values are evaluated by
 		-- the authoritative cast mechanics and retained in the generic obstacle

@@ -370,7 +370,8 @@ ui64 ArmyManager::howManyReinforcementsCanBuy(const CCreatureSet * h, const CGDw
 
 std::shared_ptr<CCreatureSet> ArmyManager::getArmyAvailableToBuyAsCCreatureSet(
 	const CGDwelling * dwelling,
-	TResources availableRes) const
+	TResources availableRes,
+	const CGHeroInstance * buyer) const
 {
 	std::vector<creInfo> creaturesInDwellings;
 	auto army = std::make_shared<TemporaryArmy>();
@@ -382,9 +383,7 @@ std::shared_ptr<CCreatureSet> ArmyManager::getArmyAvailableToBuyAsCCreatureSet(
 		if(!ci.count || ci.creID == CreatureID::NONE)
 			continue;
 
-		const auto recruitCost = dwelling->getRecruitmentCost(ci.creID);
-		if(!recruitCost.empty())
-			vstd::amin(ci.count, availableRes / recruitCost); //max count we can afford
+		ci.count = dwelling->getRecruitmentAmount(ci.creID, availableRes, ci.count, buyer);
 
 		if(!ci.count)
 			continue;
@@ -395,7 +394,7 @@ std::shared_ptr<CCreatureSet> ArmyManager::getArmyAvailableToBuyAsCCreatureSet(
 			break;
 
 		army->setCreature(dst, ci.creID, ci.count);
-		availableRes -= recruitCost * ci.count;
+		availableRes -= dwelling->getTotalRecruitmentCost(ci.creID, ci.count, buyer);
 	}
 
 	return army;

@@ -9,6 +9,8 @@
  */
 
 #include "StdInc.h"
+#include "../battle/PassiveDivineMandateVanguard.h"
+#include "../spells/NewHorizonsDivineRetribution.h"
 #include "Bonus.h"
 #include "BonusParameters.h"
 #include "Limiters.h"
@@ -344,6 +346,27 @@ void validateHealingReductionType(const Bonus & bonus, bool supported)
 		throw std::runtime_error("Unsupported incoming healing reduction bonus format");
 }
 
+void validateDivinePayoutSerialization(const Bonus & bonus, BonusSerializationContext context)
+{
+	if(bonus.type != BonusType::DIVINE_RETRIBUTION && bonus.type != BonusType::DIVINE_RETRIBUTION_JUDGED)
+		return;
+	if(!newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(bonus))
+		return;
+	if(bonus.source != BonusSource::SPELL_EFFECT)
+		throw std::runtime_error("Invalid captured Divine Retribution payout provenance");
+	if(!context.passiveFactionSkillsSupported)
+		throw std::runtime_error("Unsupported captured Divine Retribution payout format");
+}
+
+void validateVanguardRiderSerialization(const Bonus & bonus, BonusSerializationContext context)
+{
+	if(!newHorizonsPassiveDivineMandate::isVanguardRiderEntitlement(bonus))
+		return;
+	newHorizonsPassiveDivineMandate::validateVanguardRiderEntitlement(bonus);
+	if(!context.passiveFactionSkillsSupported)
+		throw std::runtime_error("Unsupported passive Vanguard rider entitlement format");
+}
+
 void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters * parameters, BonusSerializationContext context)
 {
 	std::vector<const Bonus *> pending;
@@ -355,6 +378,8 @@ void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters *
 		const auto * bonus = pending.back();
 		pending.pop_back();
 		if(!visited.insert(bonus).second) continue;
+		validateVanguardRiderSerialization(*bonus, context);
+		validateDivinePayoutSerialization(*bonus, context);
 		if(!context.adjacencyFiltersSupported
 			&& (bonus->type == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION
 				|| bonus->subtype.as<BonusTypeID>().toEnum() == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION))
@@ -386,6 +411,8 @@ bool Bonus::isExtendedOrdinarySpecialtyEffect() const
 
 void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
 {
+	validateVanguardRiderSerialization(*this, context);
+	validateDivinePayoutSerialization(*this, context);
 	// Supported owner preflights stay constant-time; the direct codec still validates reserved provenance.
 	if(context.ordinaryRangedSpecialtiesSupported)
 		newHorizonsRangefinder::isEnvelope(*this);
@@ -401,7 +428,7 @@ void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext c
 	}
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported)
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported)
 	{
 		if(limiter) limiter->validateBonusTypeSerialization(true, context.extendedOrdinarySpecialtiesSupported);
 		return;
@@ -413,6 +440,6 @@ void BonusParameters::validateAdjacencyCapabilitySerialization(BonusSerializatio
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	validateUnsupportedOwnedBonuses(nullptr, this, context);
 }

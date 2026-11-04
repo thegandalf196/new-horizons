@@ -43,6 +43,8 @@ bool resolveDreadCavalryPresentation(const CHero & hero,
 	if(!percent)
 		return false;
 	result.name = "Dread Cavalry";
+	result.summary = "Once per activation, Black and Dread Knights that kill in melee may attack another enemy at "
+		+ std::to_string(*percent) + "% damage using remaining movement.";
 	result.artwork = "newHorizons/heroSpecialties/TamikaDreadCavalry";
 	result.creature = CreatureID(CreatureID::decode("core:blackKnight"));
 	result.description = "Once per Creature Activation, Black and Dread Knights that destroy an enemy "

@@ -51,6 +51,13 @@ public:
 	{
 	}
 
+	template <typename Handler> void validatePassiveFactionSerialization(Handler & h) const
+	{
+		if(battle::hasPassiveFactionUnitState(data)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+			throw std::runtime_error("Cannot discard passive faction unit state in an older update");
+	}
+
 	bool hasConfusionState() const
 	{
 		return battle::hasConfusionState(data);
@@ -223,6 +230,8 @@ public:
 		if(h.saving)
 			validateConfusionSerialization(h);
 		if(h.saving)
+			validatePassiveFactionSerialization(h);
+		if(h.saving)
 			validateDreadCavalrySerialization(h);
 		if(h.saving)
 			validateOpportunistSerialization(h);
@@ -275,6 +284,8 @@ public:
 			validateBattleFormSerialization(h);
 		if(!h.saving)
 			validateConfusionSerialization(h);
+		if(!h.saving)
+			validatePassiveFactionSerialization(h);
 		if(!h.saving)
 			validateDreadCavalrySerialization(h);
 		if(!h.saving)

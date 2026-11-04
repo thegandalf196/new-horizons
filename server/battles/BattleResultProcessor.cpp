@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "BattleWisdomRecovery.h"
 #include "BattleResultProcessor.h"
+#include "../../lib/entities/hero/NewHorizonsLearning.h"
 #include "NewHorizonsWellspringRecovery.h"
 #include "NewHorizonsRaisedArmy.h"
 #include "../../lib/entities/hero/NewHorizonsReclaimer.h"
@@ -46,8 +48,6 @@
 
 namespace
 {
-constexpr auto wisdomSkillId = "new-horizons:wisdom";
-constexpr auto manaConservationPerkId = "new-horizons:wisdom.manaConservation";
 
 /// Return a detached source-species view for post-battle accounting while a
 /// replacement form is active. Result projection must not change the live
@@ -315,30 +315,15 @@ void BattleResultProcessor::endBattle(const CBattleInfoCallback & battle)
 	if (defendedTown && battleResult->winner == BattleSide::ATTACKER)
 		battleResult->exp[BattleSide::ATTACKER] += 500;
 
-	const auto * concreteBattle = dynamic_cast<const BattleInfo *>(battle.getBattle());
-	const auto fieldStudyAdditionalPercent = [&battle, battleResult, concreteBattle](
-		BattleSide side, const CGHeroInstance * hero) -> int32_t
-	{
-		if(!hero || battleResult->winner != side
-			|| !hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.fieldStudy")
-			|| !concreteBattle)
-			return 0;
-
-		const auto & heroArmy = concreteBattle->getSide(side);
-		const auto & opponentArmy = concreteBattle->getSide(battle.otherSide(side));
-		if(!heroArmy.initialArmyValue || !opponentArmy.initialArmyValue
-			|| !(opponentArmy.heroID.hasValue() || opponentArmy.initialArmyIsWandering))
-			return 0;
-
-		return *opponentArmy.initialArmyValue > *heroArmy.initialArmyValue ? 25 : 0;
-	};
-
+	const bool heroDefeated = battleResult->result == EBattleResult::NORMAL;
+	const auto attackerTotalExperience = heroAttacker ? heroAttacker->exp : 0;
+	const auto defenderTotalExperience = heroDefender ? heroDefender->exp : 0;
 	if(heroAttacker)
-		battleResult->exp[BattleSide::ATTACKER] = heroAttacker->calculateXp(
-			battleResult->exp[BattleSide::ATTACKER], fieldStudyAdditionalPercent(BattleSide::ATTACKER, heroAttacker));
+		battleResult->exp[BattleSide::ATTACKER] = newHorizonsLearning::combatExperience(heroAttacker,
+			battleResult->exp[BattleSide::ATTACKER], heroDefender && heroDefeated && battleResult->winner == BattleSide::ATTACKER ? defenderTotalExperience : 0);
 	if(heroDefender)
-		battleResult->exp[BattleSide::DEFENDER] = heroDefender->calculateXp(
-			battleResult->exp[BattleSide::DEFENDER], fieldStudyAdditionalPercent(BattleSide::DEFENDER, heroDefender));
+		battleResult->exp[BattleSide::DEFENDER] = newHorizonsLearning::combatExperience(heroDefender,
+			battleResult->exp[BattleSide::DEFENDER], heroAttacker && heroDefeated && battleResult->winner == BattleSide::DEFENDER ? attackerTotalExperience : 0);
 
 	auto attackerQuery = gameHandler->queries->topQuery(battle.sideToPlayer(BattleSide::ATTACKER));
 
@@ -453,9 +438,12 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 				&& hero->hasActivePerk("new-horizons:demonicGating",
 					"new-horizons:demonicGating.endlessLegion");
 			for(const auto & pending : side.pendingDemonicGates)
-				reserve[pending.creature] += pending.count;
+				if(!pending.temporary)
+					reserve[pending.creature] += pending.count;
 			for(const auto & gated : side.gatedDemonicStacks)
 			{
+				if(gated.temporary)
+					continue;
 				const auto * stack = battle.battleGetStackByID(gated.unitId, false);
 				auto originalFormState = stack ? acquireOriginalFormState(*stack) : nullptr;
 				if(stack && !originalFormState)
@@ -630,6 +618,8 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	const auto defenderHero = (*battle)->battleGetFightingHero(BattleSide::DEFENDER);
 	const int64_t attackerHeroManaSpent = (*battle)->getSide(BattleSide::ATTACKER).acceptedHeroManaSpent;
 	const int64_t defenderHeroManaSpent = (*battle)->getSide(BattleSide::DEFENDER).acceptedHeroManaSpent;
+	const bool attackerCast = !(*battle)->getWisdomCombatState(BattleSide::ATTACKER).completedCasts.empty();
+	const bool defenderCast = !(*battle)->getWisdomCombatState(BattleSide::DEFENDER).completedCasts.empty();
 	const auto attackerSide = (*battle)->getSidePlayer(BattleSide::ATTACKER);
 	const auto defenderSide = (*battle)->getSidePlayer(BattleSide::DEFENDER);
 	bool winnerHasUnitsLeft = true;
@@ -879,31 +869,6 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	// Mana Conservation is ordinary Normal-pool recovery. Apply it only after
 	// BattleResultsApplied has finished its Buffer cleanup and result restorations,
 	// then before any surviving hero is removed into the hero pool.
-	BattleLogMessage manaConservationRewards;
-	manaConservationRewards.battleID = battleID;
-	const auto recoverManaConservation = [this, &manaConservationRewards](const CGHeroInstance * hero,
-		int64_t spent, bool eligible)
-	{
-		if(!eligible || !hero || spent <= 0
-			|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
-			|| !hero->hasActivePerk(wisdomSkillId, manaConservationPerkId))
-			return;
-		const int64_t requested = std::min<int64_t>(20, spent / 5);
-		const int32_t recoverable = static_cast<int32_t>(std::min<int64_t>(requested,
-			std::max<int64_t>(0, static_cast<int64_t>(hero->manaLimit()) - hero->getNormalSpellPoints())));
-		if(recoverable <= 0)
-			return;
-		const int32_t before = hero->getNormalSpellPoints();
-		gameHandler->restoreSpellPoints(hero->id, recoverable);
-		const int32_t restored = hero->getNormalSpellPoints() - before;
-		if(restored <= 0)
-			return;
-		MetaString line = MetaString::createFromTextID(hero->getNameTextID());
-		line.appendRawString(": Mana Conservation restores ");
-		line.appendNumber(restored);
-		line.appendRawString(" Normal Spell Points after combat.");
-		manaConservationRewards.lines.push_back(std::move(line));
-	};
 	const bool drawHeroesRetreat = finishingBattle->isDraw()
 		&& gameHandler->gameInfo().getSettings().getBoolean(EGameSettings::HEROES_RETREAT_ON_WIN_WITHOUT_TROOPS);
 	const bool attackerIsWinner = !finishingBattle->isDraw()
@@ -916,12 +881,10 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	const bool defenderEscapes = !finishingBattle->isDraw()
 		&& finishingBattle->winnerSide != BattleSide::DEFENDER
 		&& (result.result == EBattleResult::ESCAPE || result.result == EBattleResult::SURRENDER);
-	recoverManaConservation(attackerHero, attackerHeroManaSpent,
-		attackerIsWinner || attackerEscapes || (drawHeroesRetreat && attackerHero));
-	recoverManaConservation(defenderHero, defenderHeroManaSpent,
-		defenderIsWinner || defenderEscapes || (drawHeroesRetreat && defenderHero));
-	if(!manaConservationRewards.lines.empty())
-		gameHandler->sendAndApply(manaConservationRewards);
+	applyWisdomBattleRecovery(*gameHandler, battleID, attackerHero, attackerHeroManaSpent,
+		attackerIsWinner || attackerEscapes || (drawHeroesRetreat && attackerHero), attackerIsWinner, attackerCast);
+	applyWisdomBattleRecovery(*gameHandler, battleID, defenderHero, defenderHeroManaSpent,
+		defenderIsWinner || defenderEscapes || (drawHeroesRetreat && defenderHero), defenderIsWinner, defenderCast);
 
 	if(!finishingBattle->isDraw())
 		applyWellspringVictoryRecovery(*gameHandler, battleID, winnerHero);

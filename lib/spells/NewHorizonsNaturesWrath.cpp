@@ -6,6 +6,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "NewHorizonsMetamagicEffects.h"
 #include "NewHorizonsNaturesWrath.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "ISpellMechanics.h"
@@ -104,19 +105,18 @@ spells::Target route(const spells::Mechanics & mechanics, const battle::Unit * f
 		hasWorldroot(mechanics.getHeroCaster()) ? WORLDROOT_RECIPIENTS : BASE_RECIPIENTS);
 }
 
-int64_t hopPower(int32_t spellPower, int32_t coefficientBasisPoints, int32_t warcastingPercent,
+int64_t hopPower(int32_t spellPower, int32_t coefficientBasisPoints,
 	int32_t empowerPercent, bool worldroot, int32_t hopIndex)
 {
-	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
-		|| warcastingPercent < 0 || warcastingPercent > 1000 || empowerPercent < 0 || empowerPercent > 1000
+	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100000 || empowerPercent < 0 || empowerPercent > 1000
 		|| hopIndex < 0 || hopIndex >= (worldroot ? WORLDROOT_RECIPIENTS : BASE_RECIPIENTS))
 		throw std::invalid_argument("Invalid Nature's Wrath power projection");
 	using boost::multiprecision::cpp_int;
-	// 10000 basis points, two percentage modifiers, and Worldroot's percentage.
-	cpp_int denominator = cpp_int(10000) * 100 * 100 * 100;
+	// 10000 basis points, Empower's percentage and Worldroot's percentage.
+	cpp_int denominator = cpp_int(10000) * 100 * 100;
 	cpp_int numerator = cpp_int(BASE_POWER) * denominator
 		+ cpp_int(SPELL_POWER_MULTIPLIER) * std::max(0, spellPower) * coefficientBasisPoints
-			* (100 + warcastingPercent) * (100 + empowerPercent) * (worldroot ? 110 : 100);
+			* (100 + empowerPercent) * (worldroot ? 110 : 100);
 	for(int hop = 0; hop < hopIndex; ++hop)
 	{
 		numerator *= HOP_RETENTION_PERCENT;
@@ -132,8 +132,7 @@ int64_t hopPower(const spells::Mechanics & mechanics, int32_t hopIndex)
 {
 	if(!enabled(mechanics))
 		return 0;
-	return hopPower(mechanics.getEffectPower(), mechanics.getDirectDamageSpellPowerCoefficientBasisPoints(),
-		mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent(),
+	return hopPower(mechanics.getEffectPower(), mechanics.getDirectDamageSpellPowerCoefficientBasisPoints(), mechanics.getEmpowerSpellBonusPercent(),
 		hasWorldroot(mechanics.getHeroCaster()), hopIndex);
 }
 
@@ -150,11 +149,13 @@ int64_t damage(const spells::Mechanics & mechanics, const battle::Unit * recipie
 		recipient->unitId(), callback->getBattle());
 	const bool independent = mechanics.usesNewHorizonsMultiplicativeMDR();
 	const int legacyPenetration = penetrations.empty() ? 0 : *std::max_element(penetrations.begin(), penetrations.end());
-	return spell->adjustRawDamage(mechanics.caster, recipient, hopPower(mechanics, hopIndex),
+	const auto ordinary = spell->adjustRawDamage(mechanics.caster, recipient, hopPower(mechanics, hopIndex),
 		independent ? 0 : legacyPenetration,
 		callback->battleGetHoldTheLineMagicalReductionBasisPoints(recipient), 100,
 		independent, mechanics.usesNewHorizonsMagicV3(), true,
 		callback->battleGetPerkMagicalReductionBasisPoints(recipient),
 		independent ? penetrations : std::vector<int>{});
+	return newHorizonsMetamagic::spellDamage(ordinary, mechanics.getMetamagicCastProfile(),
+		*callback, recipient, callback->sideToPlayer(mechanics.getEffectCasterSide()));
 }
 }

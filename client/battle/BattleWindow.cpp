@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleWindow.h"
+#include "PassiveFactionSkillPresentation.h"
 #include "BattleTargetSelectionPanel.h"
 
 #include "BattleActionsController.h"
@@ -55,7 +56,6 @@
 #include "../../lib/StartInfo.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/CUnitState.h"
-#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -77,22 +77,6 @@ constexpr int ordersControlPitch = 51;
 // StackInfoBasicPanel's tallest child is the CCRPOP background at y=37 with
 // height 286. Keep the outside hero/status/stack column inside short screens.
 constexpr int outsideStackInfoPanelExtent = 37 + 286;
-
-bool hasActiveWarcasting(const AlternatingHeroActionState & state, int round)
-{
-	return state.bonusFor(AlternatingHeroActionState::Action::SPELL, round) > 0
-		|| state.bonusFor(AlternatingHeroActionState::Action::ORDER, round) > 0;
-}
-
-std::string warcastingIconName(AlternatingHeroActionState::Action action)
-{
-	if(action == AlternatingHeroActionState::Action::SPELL)
-		return "NH_perk_arcane_channeling_normal.png";
-	if(action == AlternatingHeroActionState::Action::ORDER)
-		return "NH_perk_martial_channeling_normal.png";
-	return {};
-}
-
 }
 
 namespace
@@ -712,35 +696,7 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 			CInfoWindow::genText("Counterspell Ward", "The Counterspell ward is armed for this side.")});
 	}
 
-	const auto & warcasting = battle->getWarcastingState(side);
-	const auto round = battle->getRound();
 	const auto * visibleHero = battleCallback->battleGetFightingHero(side);
-	for(const auto action : {AlternatingHeroActionState::Action::SPELL, AlternatingHeroActionState::Action::ORDER})
-	{
-		if(!hasActiveWarcasting(warcasting, round) || warcasting.bonusFor(action, round) <= 0)
-			continue;
-		// Only apply hero-specific Master Synthesis when this client can see the
-		// fighting hero. Readiness itself remains a public saved battle state.
-		const auto empowerment = visibleHero
-			? newHorizonsWarcasting::effectiveBonus(visibleHero, warcasting, action, round)
-			: warcasting.bonusFor(action, round);
-		const auto actionName = action == AlternatingHeroActionState::Action::SPELL ? "Spell" : "Order";
-		const auto amount = action == AlternatingHeroActionState::Action::SPELL
-			? "+" + std::to_string(empowerment) + "%"
-			: "+" + std::to_string(empowerment) + "pp";
-		const auto actionEffect = action == AlternatingHeroActionState::Action::SPELL
-			? "to its Spell Power-derived numerical component."
-			: "to efficiency on attribute-derived components.";
-		const auto amountDescription = action == AlternatingHeroActionState::Action::SPELL
-			? "+" + std::to_string(empowerment) + "%"
-			: "+" + std::to_string(empowerment) + " percentage points";
-		const auto tooltip = CInfoWindow::genText("Warcasting",
-			std::string("Next eligible action: ") + actionName + ". It gains " + amountDescription + " " + actionEffect
-			+ " Available through round " + std::to_string(warcasting.readinessExpiryFor(action, round)) + " (inclusive)."
-			+ (warcasting.reactiveEmpowermentPercent > 0
-				? " Reactive Weave is independent: the stronger bonus applies, without addition; both Order candidates are consumed." : ""));
-		entries.push_back({warcastingIconName(action), actionName, amount, tooltip});
-	}
 
 	if(const auto * hero = visibleHero)
 	{
@@ -754,15 +710,17 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 
 			std::string value;
 			std::string providerDetails;
+			bool replaceProviderDescription = false;
 			switch(skill->getCombatStatusProvider())
 			{
 				case CSkill::CombatStatusProvider::METAMAGIC_USES:
 				{
-					const int total = newHorizonsMagic::metamagicCapacity(hero);
-					if(total <= 0)
+					const auto readout = passiveFactionSkillPresentation::metamagic(*hero, *battleCallback, side);
+					if(!readout)
 						continue;
-					const int consumed = std::clamp(battleCallback->battleMetamagicUsesConsumed(side), 0, total);
-					value = std::to_string(total - consumed) + " / " + std::to_string(total);
+					value = readout->value;
+					providerDetails = readout->details;
+					replaceProviderDescription = readout->replacesProviderDescription;
 					break;
 				}
 				case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:
@@ -778,32 +736,19 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 				}
 				case CSkill::CombatStatusProvider::DIVINE_MANDATE_USES:
 				{
-					const auto mandate = battleCallback->battleGetDivineMandateStatus(side);
-					if(!mandate.active || mandate.maximumPairs == 0)
+					const auto readout = passiveFactionSkillPresentation::divineMandate(*hero, *battleCallback, side);
+					if(!readout)
 						continue;
-					const auto completed = static_cast<unsigned>(mandate.completedPairs);
-					const auto remaining = completed < mandate.maximumPairs
-						? static_cast<unsigned>(mandate.maximumPairs) - completed : 0u;
-					value = std::to_string(remaining) + " / " + std::to_string(mandate.maximumPairs);
-					std::string details = "Completed Spell/Order pairs this combat: "
-						+ std::to_string(completed) + " of " + std::to_string(mandate.maximumPairs)
-						+ "; remaining pairs: " + std::to_string(remaining) + ".";
-					if(mandate.pendingFollowup
-						&& mandate.pendingFollowup->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
-					{
-						const auto followupName = mandate.pendingFollowup->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
-							? "Light Spell" : "Order";
-						details += "\nSource: Divine Mandate. Pending " + std::string(followupName)
-							+ " follow-up through the end of round "
-							+ std::to_string(mandate.pendingFollowup->expiryRound) + ".";
-					}
-					providerDetails = std::move(details);
+					value = readout->value;
+					providerDetails = readout->details;
+					replaceProviderDescription = readout->replacesProviderDescription;
 					break;
 				}
 				case CSkill::CombatStatusProvider::NONE:
 					continue;
 			}
-			const auto description = skill->getCombatStatusDescriptionTranslated();
+			const auto description = replaceProviderDescription ? std::string{}
+				: skill->getCombatStatusDescriptionTranslated();
 			const auto details = providerDetails.empty()
 				? (description.empty() ? value : description + "\n\n" + value)
 				: (description.empty() ? providerDetails : description + "\n\n" + providerDetails);
@@ -1178,6 +1123,11 @@ void BattleWindow::reallySurrender(bool allowMarketplaceOffer, bool marketplaceS
 		owner.giveCommand(EActionType::SURRENDER);
 		ENGINE->cursor().set(Cursor::Map::POINTER);
 	}
+}
+
+void BattleWindow::clearUnitActionSelection()
+{
+	unitActionWindow->clearSelection();
 }
 
 void BattleWindow::setPossibleActions(const std::vector<PossiblePlayerBattleAction> & actions)

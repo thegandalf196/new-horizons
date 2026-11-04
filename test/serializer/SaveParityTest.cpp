@@ -90,6 +90,29 @@ struct TemporarySave
 	}
 };
 
+TEST(SaveFormatHeaderTest, PriorFormatIsRejectedBeforeReadingPayloadWithoutChangingFile)
+{
+	TemporarySave save;
+	const auto unsupported = static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	{
+		std::ofstream output(save.path.string(), std::ios::binary);
+		output.write("VCMI", 4);
+		output.write(reinterpret_cast<const char *>(&unsupported), sizeof(unsupported));
+	}
+	const auto original = save.contents();
+	ASSERT_EQ(original.size(), 4 + sizeof(unsupported));
+	try
+	{
+		CLoadFile file(save.path, nullptr);
+		FAIL() << "Prior save format must reject before its missing payload is read";
+	}
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_NE(std::string(error.what()).find("too old file format"), std::string::npos);
+	}
+	EXPECT_EQ(save.contents(), original);
+}
+
 // Explicit native serialization fixture: pin every current randomizer field,
 // including private saved streams, without rolling gameplay to populate them.
 struct HeroSkillImage

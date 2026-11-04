@@ -437,7 +437,6 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, FixedTermRankRationalFloorAndCastCapAreU
 		setPower(7);
 		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, frailty().toSpell());
 		const auto mechanics = frailty().toSpell()->battleMechanics(&cast);
-		EXPECT_EQ(mechanics->getWarcastingBonusPercent(), 0);
 		EXPECT_EQ(mechanics->getEmpowerSpellBonusPercent(), 0);
 		EXPECT_EQ(mechanics->getFrailtyDefenseLossBasisPoints(),
 			1000 + 5LL * 7 * mechanics->getSpellPowerCoefficientBasisPoints() * 120 / 1'000'000);

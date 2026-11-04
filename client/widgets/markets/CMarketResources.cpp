@@ -30,45 +30,6 @@
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 
-namespace
-{
-void appendResourceBrokerHelp(std::pair<std::string, std::string> & help,
-	const IMarket * market,
-	const CPlayerInterface & tradeInterface,
-	GameResID sellingResource,
-	GameResID buyingResource)
-{
-	if(!market || sellingResource == buyingResource
-		|| !newHorizonsMagic::rulesActive(tradeInterface.cb->getMagicRules()))
-		return;
-
-	const auto * town = dynamic_cast<const CGTownInstance *>(market);
-	if(!town || town->getOwner() != tradeInterface.playerID)
-		return;
-
-	const double ordinaryEffectiveness = town->IMarket::getResourceExchangeEffectiveness(sellingResource, buyingResource);
-	const double actualEffectiveness = market->getResourceExchangeEffectiveness(sellingResource, buyingResource);
-	if(!std::isfinite(ordinaryEffectiveness) || ordinaryEffectiveness <= 0.0
-		|| !std::isfinite(actualEffectiveness) || actualEffectiveness <= ordinaryEffectiveness)
-		return;
-
-	const double percentIncrease = ((actualEffectiveness / ordinaryEffectiveness) - 1.0) * 100.0;
-	if(!std::isfinite(percentIncrease) || percentIncrease <= 0.0
-		|| percentIncrease > static_cast<double>(std::numeric_limits<int>::max()))
-		return;
-
-	const auto roundedPercent = std::lround(percentIncrease);
-	if(roundedPercent <= 0)
-		return;
-
-	MetaString brokerHelp = MetaString::createFromTextID("new-horizons.economy.resourceBroker.modifier");
-	brokerHelp.replaceTokenNumber("%PERCENT", roundedPercent);
-	if(!help.second.empty())
-		help.second += "\n\n";
-	help.second += brokerHelp.toString(&GAME->translator());
-}
-}
-
 CMarketResources::CMarketResources(const IMarket * market, const CGHeroInstance * hero, bool allowTradeWhenNotMakingTurn, CPlayerInterface * tradeInterface)
 	: CMarketBase(market, hero)
 	, CResourcesSelling(
@@ -140,17 +101,7 @@ void CMarketResources::highlightingChanged()
 {
 	auto dealHelp = LIBRARY->generaltexth->zelp[595];
 	deal->setHelp(dealHelp);
-	if(bidTradePanel->isHighlighted() && offerTradePanel->isHighlighted())
-	{
-		const auto sellingResource = bidTradePanel->getHighlightedItemId();
-		const auto buyingResource = offerTradePanel->getHighlightedItemId();
-		if(sellingResource >= 0 && buyingResource >= 0 && sellingResource != buyingResource)
-		{
-			appendResourceBrokerHelp(dealHelp, market, *getTradeInterface(),
-				GameResID(sellingResource), GameResID(buyingResource));
-			deal->setHelp(dealHelp);
-		}
-	}
+
 
 	if(bidTradePanel->isHighlighted() && offerTradePanel->isHighlighted())
 	{

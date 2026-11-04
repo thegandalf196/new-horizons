@@ -143,21 +143,16 @@ local function damageBeforeSoulReaperExecution(mechanics, unit)
 	}
 end
 
-local function handOfFateCandidates(battle, primary)
-	local primaryID = primary:unitID()
-	return battle:getUnitsIf(function(unit)
-		-- Fate chooses from every living stack still on the battlefield. Keep
-		-- spell-immune, resistant, invincible, and temporarily untargetable
-		-- stacks in the pool; their defenses are resolved only after selection.
-		return unit:isAlive()
-			and unit:unitID() ~= primaryID
-			and unit:getPosition():isValid()
-			and not unit:isTurret()
-	end)
+local function handOfFateCandidates(mechanics, primary)
+	local candidates = {}
+	for _, destination in ipairs(mechanics:getHandOfFateCollateralPool(primary)) do
+		table.insert(candidates, destination.unit)
+	end
+	return candidates
 end
 
 local function applyHandOfFateCollateral(self, mechanics, server, battle, primary, actualPrimaryDamage)
-	local candidates = handOfFateCandidates(battle, primary)
+	local candidates = handOfFateCandidates(mechanics, primary)
 	if #candidates == 0 then return 0, 0 end
 
 	-- Draw before inspecting defenses: immunity or spell resistance cannot
@@ -194,9 +189,9 @@ local function applyHandOfFateCollateral(self, mechanics, server, battle, primar
 		return 0, 0
 	end
 
-	-- The base is half the primary's actual HP loss. Only the selected stack's
-	-- defenses apply here; the primary's caster-side damage bonuses are already
-	-- included in the actual loss and must not be applied a second time.
+	-- Preserve half the primary's actual HP loss. Generic caster bonuses are
+	-- already included; the secondary's own Arcane Marks apply once here.
+	server:recordResolvedSpellRecipient(recipient:unitID())
 	local adjustedDamage = mechanics:adjustRecipientDamage(recipient, spillBase)
 	local recipientID = recipient:unitID()
 	if adjustedDamage <= 0 then
@@ -257,6 +252,7 @@ function Script:apply(mechanics, server, target)
 		local unit = dest.unit
 		if unit and unit:isAlive() then
 			local unitID = unit:unitID()
+			server:recordResolvedSpellRecipient(unitID)
 			local origin = unit:getPosition()
 			local amount = self:damageForTarget(i - 1, mechanics, unit)
 			local soulReaperBaseline = describe and damageBeforeSoulReaperExecution(mechanics, unit) or nil

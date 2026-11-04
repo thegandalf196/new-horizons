@@ -32,10 +32,9 @@ DLL_LINKAGE bool validRecipient(const battle::Unit * unit);
 DLL_LINKAGE spells::Target targets(const spells::Mechanics & mechanics);
 /// Capture every logical debuff count before any recipient is damaged.
 DLL_LINKAGE std::vector<RecipientSnapshot> snapshot(const spells::Mechanics & mechanics);
-/// D * (20 + SP/4), rank/Warcasting/Empower scale only the SP term;
+/// D * (20 + SP/4), rank/Empower scale only the SP term;
 /// Master multiplies the whole contribution by 125%, with one final floor.
-DLL_LINKAGE int64_t rawPower(int32_t spellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingPercent, int32_t empowerPercent, bool master, size_t debuffCount);
+DLL_LINKAGE int64_t rawPower(int32_t spellPower, int32_t coefficientBasisPoints, int32_t empowerPercent, bool master, size_t debuffCount);
 DLL_LINKAGE int64_t rawPower(const spells::Mechanics & mechanics, size_t debuffCount);
 /// Recipient-adjusted damage from an already captured count. No resistance RNG.
 DLL_LINKAGE int64_t damage(const spells::Mechanics & mechanics,

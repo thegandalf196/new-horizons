@@ -326,14 +326,12 @@ public:
 	/// Included in dailyIncome; this subtotal precedes the ordinary handicap.
 	int32_t getStewardGoldBeforeHandicap() const;
 	ResourceSet dailyIncome() const override;
-	ResourceSet dailyIncomeWithMagnate(const newHorizonsEconomy::MagnateIncome & snapshot, int32_t day) const;
 	const newHorizonsEconomy::MagnateIncome & getNewHorizonsMagnateIncome() const { return newHorizonsMagnateIncome; }
 	void setNewHorizonsMagnateIncome(const newHorizonsEconomy::MagnateIncome & snapshot)
 	{
 		snapshot.validate();
 		newHorizonsMagnateIncome = snapshot;
 	}
-	int32_t getMagnateGoldBeforeHandicap() const;
 	std::vector<CreatureID> providedCreatures() const override;
 
 	int spellsAtLevel(int level, bool checkGuild) const; //levels are counted from 1 (1 - 5)

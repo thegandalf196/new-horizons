@@ -314,6 +314,7 @@ void CSecSkillPlace::setSkillForHero(const CGHeroInstance & hero, SecondarySkill
 {
 	setSkill(skill, level);
 	text = newHorizonsPerkHelp::skillDescription(&hero, skill, level);
+	details = newHorizonsPerkHelp::skillDetails(&hero, skill, level);
 	auto help = MetaString::createFromTextID("core.heroscrn.21");
 	help.replaceTextID("core.skilllev", level - 1);
 	help.replaceRawString(newHorizonsPerkHelp::skillLabel(&hero, skill));
@@ -322,6 +323,7 @@ void CSecSkillPlace::setSkillForHero(const CGHeroInstance & hero, SecondarySkill
 
 void CSecSkillPlace::setLevel(const uint8_t level)
 {
+	details.clear();
 	// 0 - none
 	// 1 - base
 	// 2 - advanced

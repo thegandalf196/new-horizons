@@ -42,7 +42,6 @@ public:
 	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getDoubleCommandState"); }
 	const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getPreCombatOrderState"); }
 	const BattleDeploymentState & getDeploymentState() const override { throw std::logic_error("Owned battle query is outside its captured scope: getDeploymentState"); }
-	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getWarcastingState"); }
 	const RelentlessAssaultState & getRelentlessAssaultState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getRelentlessAssaultState"); }
 	HeroCommand getActiveDoctrine(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getActiveDoctrine"); }
 	HeroCommand getActiveOrder(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getActiveOrder"); }
@@ -50,6 +49,7 @@ public:
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getHeroOrderState"); }
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side, HeroCommand command) const override { throw std::logic_error("Owned battle query is outside its captured scope: getHeroOrderState"); }
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getFocusFireState"); }
+	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getWisdomCombatState"); }
 	bool hasCompletedHeroSpellCast(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: hasCompletedHeroSpellCast"); }
 	int32_t getExtendSpellLastRound(BattleSide) const override { throw std::logic_error("Owned battle query is outside its captured scope: getExtendSpellLastRound"); }
 	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override { throw std::logic_error("Owned battle query is outside its captured scope: hasCompletedHeroSpellLevel"); }

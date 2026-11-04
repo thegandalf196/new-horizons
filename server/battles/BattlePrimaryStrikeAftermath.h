@@ -17,6 +17,7 @@ struct Prepared
 	newHorizonsOrdinaryStrike::EffectPlan ordinary;
 	newHorizonsOrdinaryStrike::EffectPlan lanceFormation;
 	newHorizonsOrdinaryStrike::EffectPlan graveDust;
+	newHorizonsOrdinaryStrike::EffectPlan exposedWeakness;
 };
 Prepared prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & attack,
 	const std::vector<BattleStackAttacked> & hits);

@@ -43,6 +43,5 @@ DLL_LINKAGE CombatPassives passivesForFamily(const CombatPassives & captured, bo
 DLL_LINKAGE bool needsCombatPassiveSnapshot(const battle::Unit & unit);
 /// Paths with no historical general MDR stage acquire only the new independent source.
 DLL_LINKAGE int64_t adjustUnmitigatedMagicalDamage(const battle::Unit & target, int64_t rawDamage);
-/// Existing magical creature attacks have no general MDR stage: add only this new source.
-DLL_LINKAGE void adjustCreatureDamage(const BattleAttackInfo & attack, DamageEstimation & damage);
+
 }

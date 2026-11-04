@@ -86,7 +86,8 @@ public:
 		const CGObjectInstance * upgrader,
 		const TResources & availableResources,
 		const CGHeroInstance * carrier = nullptr) const = 0;
-	virtual std::shared_ptr<CCreatureSet> getArmyAvailableToBuyAsCCreatureSet(const CGDwelling * dwelling, TResources availableRes) const = 0;
+	virtual std::shared_ptr<CCreatureSet> getArmyAvailableToBuyAsCCreatureSet(const CGDwelling * dwelling, TResources availableRes,
+		const CGHeroInstance * buyer = nullptr) const = 0;
 };
 
 class StackUpgradeInfo;
@@ -127,7 +128,8 @@ public:
 		uint8_t turn = 0,
 		const CGHeroInstance * carrier = nullptr) const override;
 
-	std::shared_ptr<CCreatureSet> getArmyAvailableToBuyAsCCreatureSet(const CGDwelling * dwelling, TResources availableRes) const override;
+	std::shared_ptr<CCreatureSet> getArmyAvailableToBuyAsCCreatureSet(const CGDwelling * dwelling, TResources availableRes,
+		const CGHeroInstance * buyer = nullptr) const override;
 	uint64_t evaluateStackPower(const Creature * creature, int count) const override;
 	SlotInfo getTotalCreaturesAvailable(CreatureID creatureID) const override;
 	ArmyUpgradeInfo calculateCreaturesUpgrade(

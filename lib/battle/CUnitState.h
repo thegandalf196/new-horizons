@@ -16,6 +16,7 @@
 #include "BattleUnitTurnReason.h"
 #include "CUnitAmmo.h"
 #include "NewHorizonsConfusionState.h"
+#include "ArcaneMarkState.h"
 #include "DreadCavalryState.h"
 #include "Unit.h"
 #include "../bonuses/BonusCache.h"
@@ -188,6 +189,11 @@ public:
 	/// Pending forced activation and battle-long Confusion result history.
 	/// Ordinary round/activation boundaries do not clear this value implicitly.
 	ConfusionState confusionState;
+	ArcaneMarkState arcaneMarks;
+	int64_t arcaneShieldHitPoints = 0;
+	bool demonicGateOpened = false;
+	int32_t metamagicMarks(BattleSide side) const override { return arcaneMarks.get(side); }
+	bool hasOpenedDemonicGate() const override { return demonicGateOpened; }
 	DreadCavalryState dreadCavalryState;
 	/// Movement still available during a Pursuit/Vanish movement-only continuation.
 	/// A positive value means this unit is in the movement-only tail of its
@@ -229,7 +235,7 @@ public:
 	std::vector<uint32_t> archeryCrossfireDefenders;
 	/// Number of accepted activations remaining before No Quarter's morale penalty ends.
 	int32_t noQuarterMoraleActivationsRemaining;
-	/// One personal Bloodrage increment earned the first time this unit crosses below half HP.
+	/// Earned personal Bloodrage percentage: historical one-increment crossing or revised two-increment first damage.
 	int32_t personalBloodrageIncrement = 0;
 	/// Battle-long one-shot receipt; healing, death and round changes never rearm it.
 	bool veteranCohesionEarned = false;
@@ -296,6 +302,8 @@ public:
 	int64_t physicalPoisonBaseDamage;
 	int32_t physicalPoisonActivationsRemaining;
 	int32_t physicalPoisonSourceStackId;
+	BattleSide physicalPoisonSpellSide = BattleSide::NONE;
+	BattleSide physicalPoisonSpellOrigin() const override { return physicalPoisonSpellSide; }
 	/// Separate Guardian Spirit buffer; only physical creature damage can consume it.
 	int64_t guardianSpiritHitPoints = 0;
 	int32_t guardianSpiritRoundsRemaining = 0;
@@ -459,7 +467,9 @@ public:
 
 	void damage(int64_t & amount) override;
 	void damage(int64_t & amount, bool destroyRemains);
-	void damage(int64_t & amount, bool destroyRemains, DamageProvenance provenance);
+	/// Optional ephemeral receipt: amount after native shields, before HP/casualties.
+	void damage(int64_t & amount, bool destroyRemains, DamageProvenance provenance,
+		int64_t * postShieldBeforeCasualties = nullptr);
 	void damageShadowGiftSacrifice(int64_t & amount);
 	void addShadowGiftMaximumHealthLoss(int64_t amount);
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power) override;
@@ -524,8 +534,9 @@ private:
 	void clearDeadUnitTransientState();
 	int64_t rawHealingCapacity(int64_t requested, EHealLevel level, EHealPower power) const;
 	HealInfo applyHealing(int64_t & amount, EHealLevel level, EHealPower power, bool receivedBenefit);
+	void absorbDamageShields(int64_t & amount, DamageProvenance provenance, bool bypassShields);
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
-		DamageProvenance provenance = DamageProvenance::OTHER);
+		DamageProvenance provenance = DamageProvenance::OTHER, int64_t * postShieldBeforeCasualties = nullptr);
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
 	std::pair<int32_t, int32_t> getLuckLimits() const override;
 protected:

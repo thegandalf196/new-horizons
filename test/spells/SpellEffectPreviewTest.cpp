@@ -102,14 +102,14 @@ TEST_F(SpellEffectPreviewTest, CureUsesTheSharedHealingBudgetAndPoisonNamesItsFi
 	EXPECT_EQ(poison.qualificationKey, "new-horizons.spellbook.poisonTicks");
 }
 
-TEST(SpellEffectPreviewFormulaTest, WarcastingSharesTheAuthorityPowerFloorInsteadOfScalingTheFixedBase)
+TEST(SpellEffectPreviewFormulaTest, EmpowerSharesTheAuthorityPowerFloorInsteadOfScalingTheFixedBase)
 {
 	const newHorizonsMagic::DirectDamageFormula formula{20, 20};
-	EXPECT_EQ(formula.evaluateBasisPoints(24, 10, 10000, 0, 0, 10), 72);
+	EXPECT_EQ(formula.evaluateBasisPoints(24, 10, 10000, 10, 0), 72);
 	EXPECT_EQ(formula.evaluateBasisPoints(24, 10), 68);
 	for(const int power : {0, 1, 17, 24, 101})
-		EXPECT_EQ(formula.evaluateBasisPoints(power, 10, 12650, 25, 15, 10),
-			20 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(20LL * power, 10, 12650, 10, 25, 15));
+		EXPECT_EQ(formula.evaluateBasisPoints(power, 10, 12650, 25, 15),
+			20 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(20LL * power, 10, 12650, 25, 15));
 }
 
 TEST_F(SpellEffectPreviewTest, HolyArmorAndForgetfulnessUseTheSharedUtilityResultAtCurrentPower)
@@ -125,11 +125,11 @@ TEST_F(SpellEffectPreviewTest, HolyArmorAndForgetfulnessUseTheSharedUtilityResul
 		ASSERT_TRUE(reduction.primary);
 		EXPECT_EQ(reduction.primary->value, newHorizonsMagic::holyArmorReduction(*base,
 			hero.getEffectPower(&armor), newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules,
-				&hero, armor.getId()), 0, 0, false));
+				&hero, armor.getId()), 0, false));
 		const auto duration = newHorizonsMagic::spellEffectPreview(hero, forget);
 		ASSERT_TRUE(duration.primary);
 		EXPECT_EQ(duration.primary->value, newHorizonsMagic::forgetfulnessBaseDuration(hero.getEffectPower(&forget),
-			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, forget.getId()), 0, 0));
+			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, forget.getId()), 0));
 	}
 }
 
@@ -143,7 +143,7 @@ TEST_F(SpellEffectPreviewTest, HexAndPlagueUseCapturedDamageHelpersWithoutAdding
 		ASSERT_TRUE(capturedHex.primary);
 		ASSERT_TRUE(capturedHex.secondary);
 		EXPECT_EQ(capturedHex.primary->value, newHorizonsMagic::hexOfPainFlatDamage(hero.getEffectPower(&hex),
-			newHorizonsMagic::damageSpellPowerCoefficientBasisPoints(callback.rules, &hero, hex.getId()), 0, 0,
+			newHorizonsMagic::damageSpellPowerCoefficientBasisPoints(callback.rules, &hero, hex.getId()), 0,
 			hero.getDamageSpellSpecialtyBonusPercent(hex.getId()), false));
 		EXPECT_EQ(capturedHex.secondary->value, newHorizonsMagic::hexOfPainDamageSharePercent());
 		const auto & plague = spell("new-horizons:plague");
@@ -193,7 +193,7 @@ TEST_F(SpellEffectPreviewTest, KnownUtilityFamiliesExposeTheirActualSharedCaster
 	EXPECT_EQ(integrity.primary->scale, 100);
 	EXPECT_EQ(integrity.primary->value, newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000,
 		hero.getEffectPower(&phantom), false,
-		newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, phantom.getId()), 0, 0,
+		newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, phantom.getId()), 0,
 		hero.getNonDamageSpellSpecialtyBonusPercent(phantom.getId())));
 }
 
@@ -206,7 +206,7 @@ TEST_F(SpellEffectPreviewTest, TimeStopBookRadiusUsesTheCapturedCoefficientOverl
 		const auto preview = newHorizonsMagic::spellEffectPreview(hero, stop);
 		ASSERT_TRUE(preview.primary);
 		EXPECT_EQ(preview.primary->value, newHorizonsSorcery::timeStopRadius(hero.getEffectPower(&stop),
-			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, stop.getId()), 0, 0, false));
+			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, stop.getId()), 0, false));
 	}
 }
 
@@ -230,13 +230,13 @@ TEST_F(SpellEffectPreviewTest, FocusAndLivingArmorUseSharedAuthorityAndDetailFor
 				[](const std::string &) { return 0; }));
 		EXPECT_EQ(penetration.primary->value, newHorizonsSorceryRevision::focusMarkBasisPoints(*profile,
 			hero.getEffectPower(&focus), newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules,
-				&hero, focus.getId()), 0, 0, hero.getNonDamageSpellSpecialtyBonusPercent(focus.getId())));
+				&hero, focus.getId()), 0, hero.getNonDamageSpellSpecialtyBonusPercent(focus.getId())));
 		const auto pool = newHorizonsMagic::spellEffectPreview(hero, armor);
 		ASSERT_TRUE(pool.primary);
 		EXPECT_EQ(pool.primary->value, newHorizonsSorceryRevision::livingArmorHitPoints(
 			savedArmor["baseHitPoints"].Integer(), savedArmor["spellPowerCoefficient"].Integer(), hero.getEffectPower(&armor),
 			hero.getEffectPowerDivisor(&armor), newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules,
-				&hero, armor.getId()), 0, 0));
+				&hero, armor.getId()), 0));
 	}
 }
 
@@ -251,11 +251,11 @@ TEST_F(SpellEffectPreviewTest, ShadowMagnitudesUseCapturedCoefficientHelpers)
 		ASSERT_TRUE(healing.primary);
 		EXPECT_EQ(healing.primary->scale, 100);
 		EXPECT_EQ(healing.primary->value, newHorizonsMagic::vampirismHealBasisPoints(hero.getEffectPower(&vampirism),
-			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, vampirism.getId()), 0, 0, false));
+			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, vampirism.getId()), 0, false));
 		const auto crippling = newHorizonsMagic::spellEffectPreview(hero, doom);
 		ASSERT_TRUE(crippling.primary);
 		EXPECT_EQ(crippling.primary->value, newHorizonsMagic::doomCripplingPenaltyPercent(hero.getEffectPower(&doom),
-			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, doom.getId()), 0, 0));
+			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, doom.getId()), 0));
 	}
 }
 
@@ -318,7 +318,7 @@ TEST_F(SpellEffectPreviewTest, BasicBuffRowsUseSharedSlowMagnitudeAndLoadedHaste
 	const auto slowed = newHorizonsMagic::spellEffectPreview(hero, slow);
 	ASSERT_TRUE(slowed.primary);
 	EXPECT_EQ(slowed.primary->value, -newHorizonsSorceryRevision::slowBaseReduction(hero.getEffectPower(&slow),
-		newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, slow.getId()), 0, 0));
+		newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, slow.getId()), 0));
 	for(const auto id : {SpellID::HASTE, SpellID::FORTUNE})
 	{
 		const auto * buff = SpellID(id).toSpell();
@@ -345,7 +345,7 @@ TEST_F(SpellEffectPreviewTest, StormRangeUsesIndependentPerTargetKernelEndpoints
 	{
 		return storm.adjustRawDamage(&hero, nullptr, spells::stormOfDaggersRoundedDamage(formula->base,
 			formula->powerCoefficient, hero.getEffectPower(&storm), hero.getEffectPowerDivisor(&storm),
-			coefficient, 0, 0, count, false));
+			coefficient, 0, count, false));
 	};
 	EXPECT_EQ(preview.primary->value, endpoint(newHorizonsMagic::STORM_OF_DAGGERS_MAX_TARGETS));
 	EXPECT_EQ(preview.secondary->value, endpoint(1));
@@ -362,11 +362,11 @@ TEST_F(SpellEffectPreviewTest, ActiveNatureSummonRowsExposeSharedHitPointPoolsWi
 		const auto trollPool = newHorizonsMagic::spellEffectPreview(hero, trolls);
 		ASSERT_TRUE(trollPool.primary);
 		EXPECT_EQ(trollPool.primary->value, newHorizonsMagic::trollSummonHitPoints(hero.getEffectPower(&trolls),
-			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, trolls.getId()), 0, 0, false));
+			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, trolls.getId()), 0, false));
 		const auto elementalPool = newHorizonsMagic::spellEffectPreview(hero, convergence);
 		ASSERT_TRUE(elementalPool.primary);
 		EXPECT_EQ(elementalPool.primary->value, newHorizonsMagic::elementalConvergenceHitPoints(hero.getEffectPower(&convergence),
-			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, convergence.getId()), 0, 0, false));
+			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, convergence.getId()), 0, false));
 		EXPECT_EQ(elementalPool.qualificationKey, "new-horizons.spellbook.summonPlacement");
 	}
 }
@@ -408,8 +408,8 @@ TEST_F(SpellEffectPreviewTest, RestorationRowsTrackHeroPowerWithoutChoosingAReci
 			ASSERT_FALSE(hero.usesPrimaryGrowth());
 			EXPECT_EQ(actualPower, std::clamp(power, 1, 99));
 			const auto expected = restored.getId() == SpellID::RESURRECTION
-				? hero.getSpellBonus(&restored, newHorizonsMagic::resurrectionRestorationPool(actualPower, coefficient, 0, 0, specialty), nullptr)
-				: newHorizonsMagic::guardianSpiritHitPoints(actualPower, coefficient, 0, 0, specialty,
+				? hero.getSpellBonus(&restored, newHorizonsMagic::resurrectionRestorationPool(actualPower, coefficient, 0, specialty), nullptr)
+				: newHorizonsMagic::guardianSpiritHitPoints(actualPower, coefficient, 0, specialty,
 					hero.hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.healer"),
 					hero.hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.guardian"));
 			EXPECT_EQ(preview.primary->value, expected);
@@ -430,7 +430,7 @@ TEST_F(SpellEffectPreviewTest, BlessAndItsMassVariantDisplayCurrentCasterDuratio
 			ASSERT_TRUE(row.primary);
 			const auto coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(callback.rules, &hero, blessed.getId());
 			const auto ordinary = newHorizonsMagic::blessOrdinaryDuration(hero.getEffectPower(&blessed),
-				coefficient, 0, 0, hero.getNonDamageSpellSpecialtyBonusPercent(SpellID::BLESS));
+				coefficient, 0, hero.getNonDamageSpellSpecialtyBonusPercent(SpellID::BLESS));
 			EXPECT_EQ(row.primary->value, newHorizonsMagic::blessCasterDuration(hero, ordinary, false));
 			EXPECT_EQ(row.labelKey, "new-horizons.spellbook.effect.bless");
 		}
@@ -446,7 +446,7 @@ TEST_F(SpellEffectPreviewTest, HeavenlyGaleShowsCurrentCasterReductionBeforeUnkn
 		const auto row = newHorizonsMagic::spellEffectPreview(hero, gale);
 		ASSERT_TRUE(row.primary);
 		EXPECT_EQ(row.primary->value, newHorizonsMagic::heavenlyGaleReductionBasisPoints(hero.getEffectPower(&gale),
-			newHorizonsMagic::spellPowerCoefficientBasisPoints(callback.rules, &hero, gale.getId()), 0, 0,
+			newHorizonsMagic::spellPowerCoefficientBasisPoints(callback.rules, &hero, gale.getId()), 0,
 			hero.hasActivePerk("new-horizons:lightMagic", "new-horizons:lightMagic.aegis")));
 		EXPECT_EQ(row.primary->scale, 100);
 		EXPECT_EQ(row.qualificationKey, "new-horizons.spellbook.heavenlyGaleRecipient");

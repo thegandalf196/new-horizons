@@ -154,7 +154,7 @@ function Script:apply(mechanics, server, target)
 	local deadTarget = target[1].unit
 	local victim     = target[2].unit
 
-	local healValue = self:calculateHealValue(mechanics, victim)
+	local healValue = mechanics:adjustMetamagicMagnitude(self:calculateHealValue(mechanics, victim), deadTarget)
 	local battle    = mechanics:getBattle()
 
 	local _, resurrected = server:healUnit(

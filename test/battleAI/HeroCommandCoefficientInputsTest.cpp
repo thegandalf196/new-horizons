@@ -78,10 +78,9 @@ TEST_F(HeroCommandCoefficientInputsTest, NativeAndExplicitPrimaryInputsPreserveR
 	{
 		attackerSideHero->setSecSkillLevel(command, rank, ChangeValueMode::ABSOLUTE);
 		const auto inputs = heroCommands::CoefficientInputs::projected(*attackerSideHero, primary(*attackerSideHero));
-		for(const int warcasting : {-1, 0, 10, 150})
 			for(const int divine : {-1, 0, 15, 100})
-				EXPECT_EQ(heroCommands::coefficient(formula(11, 1, 1), inputs, warcasting, divine),
-					heroCommands::coefficient(formula(11, 1, 1), *attackerSideHero, warcasting, divine));
+				EXPECT_EQ(heroCommands::coefficient(formula(11, 1, 1), inputs, divine),
+					heroCommands::coefficient(formula(11, 1, 1), *attackerSideHero, divine));
 	}
 }
 
@@ -150,7 +149,7 @@ TEST_F(HeroCommandCoefficientInputsTest, RawPlayerDamageAuthorityAndHiddenProxyR
 	EXPECT_THAT(projected.attackerOrderCauses, ::testing::Contains(HeroCommand::BRACE));
 }
 
-TEST_F(HeroCommandCoefficientInputsTest, OwnedRatingsReachCrownWarcastingAndPotencyCompositionWithoutNativeFallback)
+TEST_F(HeroCommandCoefficientInputsTest, OwnedRatingsReachCrownAndPotencyCompositionWithoutNativeFallback)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSequence(true, false));
 	releaseKnown();
@@ -170,7 +169,6 @@ TEST_F(HeroCommandCoefficientInputsTest, OwnedRatingsReachCrownWarcastingAndPote
 	const auto order = known->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::BRACE);
 	ASSERT_TRUE(order);
 	auto state = *order;
-	state.warcastingBonusPercent = 10;
 	state.sacredCommandEfficiencyBonusPercent = 5;
 	state.crownAndAltarRecipientUnitIds = {braced->unitId()};
 	const auto source = known->initialExportSubject()->world().projectedHeroBonuses(BattleSide::ATTACKER, false);
@@ -179,12 +177,12 @@ TEST_F(HeroCommandCoefficientInputsTest, OwnedRatingsReachCrownWarcastingAndPote
 	const auto inputs = heroCommands::CoefficientInputs::projected(*owner, ratings);
 	ASSERT_GT(inputs.primary(PrimarySkill::DEFENSE), owner->getPrimSkillLevel(PrimarySkill::DEFENSE));
 	const auto value = formula(10, 0.2, 0.6);
-	const int intrinsic = heroCommands::coefficient(value, inputs, 10, 5);
-	const int companions = heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(value, true), inputs, 10, 5);
+	const int intrinsic = heroCommands::coefficient(value, inputs, 5);
+	const int companions = heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(value, true), inputs, 5);
 	EXPECT_EQ(probe.order(value, owner, state, braced->unitId()), heroCommands::orderPotency(intrinsic, companions, state, known->getMagicRules()));
 	EXPECT_NE(probe.order(value, owner, state, braced->unitId()),
-		heroCommands::orderPotency(heroCommands::coefficient(value, *owner, 10, 5),
-			heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(value, true), *owner, 10, 5), state, known->getMagicRules()));
+		heroCommands::orderPotency(heroCommands::coefficient(value, *owner, 5),
+			heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(value, true), *owner, 5), state, known->getMagicRules()));
 	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), rng);
 	EXPECT_FALSE(heroOrderValue::prepareBraceStage(environment.get(), known, action())); // Full witness retained.
 }
@@ -246,7 +244,7 @@ TEST_F(LegacyHeroCoefficientInputsTest, ExplicitLegacyRatingsMatchTheActualNativ
 	const auto inputs = heroCommands::CoefficientInputs::projected(*attackerSideHero, primary(*attackerSideHero));
 	EXPECT_EQ(inputs.primary(PrimarySkill::ATTACK), attackerSideHero->getPrimSkillLevel(PrimarySkill::ATTACK));
 	EXPECT_EQ(inputs.primary(PrimarySkill::DEFENSE), attackerSideHero->getPrimSkillLevel(PrimarySkill::DEFENSE));
-	EXPECT_EQ(heroCommands::coefficient(formula(5, 0.1, 0.2), inputs, 10, 5),
+	EXPECT_EQ(heroCommands::coefficient(formula(5, 0.1, 0.2), inputs, 5),
 		heroCommands::coefficient(formula(5, 0.1, 0.2), *attackerSideHero, 10, 5));
 }
 

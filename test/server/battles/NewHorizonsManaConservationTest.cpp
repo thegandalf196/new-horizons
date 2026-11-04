@@ -205,6 +205,7 @@ TEST_F(NewHorizonsManaConservationTest, AcceptedCounterspellWardPaymentIsAddedTo
 
 	const auto & announcement = server.casts.back().announcement;
 	EXPECT_TRUE(announcement.counterspellNegated);
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::DEFENDER).priorCasts(SpellID::HASTE), 1);
 	EXPECT_EQ(announcement.counterspellSide, BattleSide::ATTACKER);
 	EXPECT_EQ(announcement.paidCounterspellManaCost,
 		newHorizonsMagic::counterspellCost(defenderSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell()),

@@ -439,7 +439,7 @@ bool vampirismEnabled(const JsonNode & rules, const SpellID spell)
 }
 
 std::optional<int> vampirismHealBasisPoints(const JsonNode & rules, const CGHeroInstance * hero,
-	const SpellID spell, const int32_t rawSpellPower, const int warcastingBonusPercent,
+	const SpellID spell, const int32_t rawSpellPower,
 	const int empowerBonusPercent, const int additionalSpellPowerComponentPercent)
 {
 	if(!vampirismEnabled(rules, spell))
@@ -451,8 +451,7 @@ std::optional<int> vampirismHealBasisPoints(const JsonNode & rules, const CGHero
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const bool nightFeeder = hero && hero->hasActivePerk(
 		std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_NIGHT_FEEDER_PERK));
-	return vampirismHealBasisPoints(rawSpellPower, coefficientBasisPoints,
-		warcastingBonusPercent, empowerBonusPercent, nightFeeder);
+	return vampirismHealBasisPoints(rawSpellPower, coefficientBasisPoints, empowerBonusPercent, nightFeeder);
 }
 
 bool reanimateEnabled(const JsonNode & rules, const SpellID spell)
@@ -555,7 +554,7 @@ std::optional<int> doomCripplingPenaltyPercent(const JsonNode & rules, const CGH
 
 	const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
-	return doomCripplingPenaltyPercent(rawSpellPower, coefficientBasisPoints, 0, 0);
+	return doomCripplingPenaltyPercent(rawSpellPower, coefficientBasisPoints, 0);
 }
 
 std::optional<int64_t> soulReaperMissingHealthDamage(const JsonNode & rules, const SpellID spell,
@@ -588,18 +587,17 @@ int64_t soulReaperDamageAfterExecution(const int64_t effectiveMaximumHP,
 	return postMitigationDamage;
 }
 
-int64_t hexOfPainFlatDamage(int32_t spellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingPercent, int32_t empowerPercent, int32_t specialtyPercent, bool painweaver)
+int64_t hexOfPainFlatDamage(int32_t spellPower, int32_t coefficientBasisPoints, int32_t empowerPercent, int32_t specialtyPercent, bool painweaver)
 {
 	const int coefficient = painweaver ? coefficientBasisPoints * 120 / 100 : coefficientBasisPoints;
 	return 15 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		7LL * std::max(0, spellPower), 10, coefficient, warcastingPercent, empowerPercent, specialtyPercent);
+		7LL * std::max(0, spellPower), 10, coefficient, empowerPercent, specialtyPercent);
 }
 
 int64_t plagueTickDamage(int32_t spellPower, int32_t coefficientBasisPoints, int32_t specialtyPercent)
 {
 	return 25 + spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		8LL * std::max(0, spellPower), 10, coefficientBasisPoints, 0, 0, specialtyPercent);
+		8LL * std::max(0, spellPower), 10, coefficientBasisPoints, 0, specialtyPercent);
 }
 
 bool hasReanimatorPerk(const CGHeroInstance * hero)
@@ -621,7 +619,7 @@ std::optional<int64_t> reanimateBaseHealingPool(const JsonNode & rules, const CG
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
 		static_cast<int64_t>(REANIMATE_SPELL_POWER_HP_PER_POINT) * rawSpellPower, 1,
-		coefficientBasisPoints, 0, 0,
+		coefficientBasisPoints, 0,
 		hero ? hero->getNonDamageSpellSpecialtyBonusPercent(spell) : 0);
 	return REANIMATE_BASE_HEALING_HP + scaledPowerTerm;
 }
@@ -899,7 +897,7 @@ void validateRules(const JsonNode & rules)
 {
 	if(legacy(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "warcasting", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "pointBlankPreservesAdjacentExemption", "morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "schools", "adventureSpells", "spells", "factions", "factionWeights", "schoolSkills", "skillReplacements", "spellPoints", "mageGuildGeneration", "physicalDamageReductionCapPercent", "schoolRankPowerCoefficientPercent", "spellcraftEfficiencyPercent", "pointBlankPreservesAdjacentExemption", "morale", "creatureAbilities", "protectedAdventureBarriers", "heroLuck", "heroMorale"});
 	newHorizonsHeroLuck::validateRules(rules);
 	newHorizonsProtectedMobility::validateRulesSerialization(rules, true);
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
@@ -975,11 +973,6 @@ void validateRules(const JsonNode & rules)
 		for(size_t level = 0; level < expectedSlots.size(); ++level)
 			require(integer(generation["nonPreferredSlots"].Vector()[level], expectedSlots[level], expectedSlots[level]),
 				"canonical Mage Guild non-preferred slot profile");
-	}
-	if(rules.Struct().contains("warcasting"))
-	{
-		require(version >= DIRECT_DAMAGE_RULESET_VERSION, "Warcasting requires magic rules v2 or later");
-		require(rules["warcasting"].isBool(), "boolean Warcasting setting");
 	}
 	if(version >= DIRECT_DAMAGE_RULESET_VERSION)
 	{
@@ -1420,7 +1413,7 @@ int spellPowerCoefficientPercent(const JsonNode & rules, const CGHeroInstance * 
 
 
 std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
-	const SpellID spell, const int32_t rawSpellPower, const int warcastingBonusPercent,
+	const SpellID spell, const int32_t rawSpellPower,
 	const int empowerBonusPercent, const int additionalSpellPowerComponentPercent,
 	const std::optional<int> coefficientOverride)
 {
@@ -1432,8 +1425,7 @@ std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInsta
 	const int coefficientBasisPoints = coefficientOverride ? *coefficientOverride : spellPowerCoefficientBasisPoints(
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		rawSpellPower, SORROW_SPELL_POWER_PER_MORALE, coefficientBasisPoints,
-		warcastingBonusPercent, empowerBonusPercent);
+		rawSpellPower, SORROW_SPELL_POWER_PER_MORALE, coefficientBasisPoints, empowerBonusPercent);
 	return SORROW_BASE_MORALE_PENALTY + static_cast<int>(std::min<int64_t>(
 		SORROW_MAX_MORALE_PENALTY - SORROW_BASE_MORALE_PENALTY, scaledPowerTerm));
 }
@@ -1987,33 +1979,6 @@ int counterspellCost(int listedCost, bool countermage, bool countersequence)
 	if(!countermage && !countersequence)
 		return listedCost * 2;
 	return (listedCost * 7 + 3) / 4;
-}
-
-int metamagicRank(const CGHeroInstance * hero)
-{
-	if(!hero)
-		return 0;
-	const int learnedRank = hero->getPerkSkillRank(std::string(METAMAGIC_SKILL));
-	if(!rulesActive(hero->getMagicRules()))
-		return std::clamp(std::max(learnedRank, hero->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT)), 0, 3);
-	return std::clamp(learnedRank, 0, 3);
-}
-
-int metamagicCapacity(const CGHeroInstance * hero)
-{
-	const int rank = metamagicRank(hero);
-	if(!hero || !rulesActive(hero->getMagicRules()))
-		return rank;
-	if(rank == 0)
-		return 0;
-	// Skill bonuses already supply1/2/3; Halon's additive specialty supplies
-	// one more. Capacity is not a synthetic fourth mastery or bonus-only Skill.
-	return std::clamp(std::max(rank, hero->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT)), rank, rank + 1);
-}
-
-bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId)
-{
-	return hero && hero->hasActivePerk(std::string(METAMAGIC_SKILL), std::string(perkId));
 }
 
 int spellPowerDamagePerkBonusPercent(const JsonNode & rules, const CGHeroInstance * hero,

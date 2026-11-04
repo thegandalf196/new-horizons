@@ -57,8 +57,8 @@ public:
 	HeroRole getHeroRoleOrDefaultInefficient(const CGHeroInstance * hero) const;
 	HeroRole getHeroRoleOrDefault(const HeroPtr & heroPtr) const;
 	int selectBestSkillIndex(const HeroPtr & heroPtr, const std::vector<SecondarySkill> & skills) const;
-	bool shouldRerollLevelUpOffer(const HeroPtr & heroPtr, const std::vector<SecondarySkill> & skills,
-		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, int reachedLevel) const;
+	std::optional<size_t> connoisseurSkillCard(const HeroPtr & heroPtr,
+		const std::vector<SecondarySkill> & skills, int reachedLevel) const;
 	void update();
 	float evaluateSecSkill(SecondarySkill skill, const CGHeroInstance * hero) const;
 	float evaluateHero(const CGHeroInstance * hero) const;

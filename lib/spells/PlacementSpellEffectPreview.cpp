@@ -23,29 +23,29 @@ SpellEffectPreview quantity(const std::string & label, int64_t first, const std:
 }
 std::optional<SpellEffectPreview> placementSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
 	const CBattleInfoCallback * callback, const JsonNode & rules, int32_t power, int32_t directCoefficient,
-	int32_t numericalCoefficient, int32_t warcasting, int32_t empower)
+	int32_t numericalCoefficient, int32_t empower)
 {
 	if(spell.getJsonKey() == "new-horizons:verdantPrison")
-		return quantity("verdant", verdantPrisonHitPoints(power, numericalCoefficient, warcasting, empower,
+		return quantity("verdant", verdantPrisonHitPoints(power, numericalCoefficient, empower,
 			hero.hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.verdantWarden")),
 			"new-horizons.spellbook.verdantPlacement");
 	if(spell.getJsonKey() == "new-horizons:transfigureMatter")
 	{
 		const bool shaper = hero.hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.matterShaper");
-		return quantity("transfigure", transfigureHitPoints(power, numericalCoefficient, warcasting, empower, 1, shaper),
-			"new-horizons.spellbook.transfigureFootprint", transfigureHitPoints(power, numericalCoefficient, warcasting, empower, 2, shaper));
+		return quantity("transfigure", transfigureHitPoints(power, numericalCoefficient, empower, 1, shaper),
+			"new-horizons.spellbook.transfigureFootprint", transfigureHitPoints(power, numericalCoefficient, empower, 2, shaper));
 	}
 	if(!earthquakeRulesEnabled(rules, spell.getId()))
 		return std::nullopt;
 	const auto & profile = rules["spells"]["core:earthquake"]["earthquake"];
-	const auto sections = earthquakeSectionCount(profile, power, numericalCoefficient, warcasting, empower);
+	const auto sections = earthquakeSectionCount(profile, power, numericalCoefficient, empower);
 	if(callback && callback->hasFortifications())
 		return quantity("earthquakeSiege", earthquakeStructuralDamage(profile["structuralDamage"].Integer(),
 			hero.hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.geomancer")),
 			"new-horizons.spellbook.earthquakeSiege", sections);
 	const int coefficient = directCoefficient * (100 + spellPowerDamagePerkBonusPercent(rules, &hero, &spell)) / 100;
 	const auto overrideValue = hero.getEffectValue(&spell);
-	const auto raw = overrideValue != 0 ? overrideValue : earthquakeRawDamage(profile, power, coefficient, warcasting, empower);
+	const auto raw = overrideValue != 0 ? overrideValue : earthquakeRawDamage(profile, power, coefficient, empower);
 	return quantity("earthquakeField", spell.adjustRawDamage(&hero, nullptr, raw),
 		"new-horizons.spellbook.earthquakeMode", sections);
 }

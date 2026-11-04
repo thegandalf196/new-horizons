@@ -29,23 +29,21 @@ SpellEffectPreview quantity(const std::string & label, int64_t value, int32_t sc
 }
 }
 std::optional<SpellEffectPreview> knownUtilitySpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback * callback, const JsonNode & rules, int32_t power, int32_t coefficient,
-	int32_t warcasting, int32_t empower, int32_t additionalComponentPercent)
+	const CBattleInfoCallback * callback, const JsonNode & rules, int32_t power, int32_t coefficient, int32_t empower, int32_t additionalComponentPercent)
 {
-	if(const auto summoned = natureSummonSpellEffectPreview(hero, spell, power, coefficient, warcasting, empower))
+	if(const auto summoned = natureSummonSpellEffectPreview(hero, spell, power, coefficient, empower))
 		return summoned;
-	if(const auto restored = restorationSpellEffectPreview(hero, spell, rules, power, coefficient, warcasting, empower))
+	if(const auto restored = restorationSpellEffectPreview(hero, spell, rules, power, coefficient, empower))
 		return restored;
 	const auto family = spellVariantBase(rules, spell.getId());
 	if(family == SpellID::SLOW || family == SpellID::HASTE || family == SpellID::FORTUNE)
-		return buffSpellEffectPreview(hero, spell, rules, power, coefficient, warcasting, empower);
+		return buffSpellEffectPreview(hero, spell, rules, power, coefficient, empower);
 	if(spell.getJsonKey() == newHorizonsSorcery::FOCUS_MAGIC_SPELL)
 	{
 		const auto profile = newHorizonsSorceryRevision::focusRules(rules).value_or(newHorizonsSorceryRevision::FocusRules{
 			newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS, newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS,
 			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS});
-		auto result = quantity("focus", newHorizonsSorceryRevision::focusMarkBasisPoints(profile, power, coefficient,
-			warcasting, empower, hero.getNonDamageSpellSpecialtyBonusPercent(spell.getId())), 100);
+		auto result = quantity("focus", newHorizonsSorceryRevision::focusMarkBasisPoints(profile, power, coefficient, empower, hero.getNonDamageSpellSpecialtyBonusPercent(spell.getId())), 100);
 		// Each captured mark has this penetration rate regardless of its recipient.
 		result.qualificationKey.clear();
 		return result;
@@ -57,10 +55,10 @@ std::optional<SpellEffectPreview> knownUtilitySpellEffectPreview(const CGHeroIns
 			return SpellEffectPreview{};
 		return quantity("livingArmor", newHorizonsSorceryRevision::livingArmorHitPoints(
 			profile["baseHitPoints"].Integer(), profile["spellPowerCoefficient"].Integer(), power,
-			std::max(1, hero.getEffectPowerDivisor(&spell)), coefficient, warcasting, empower));
+			std::max(1, hero.getEffectPowerDivisor(&spell)), coefficient, empower));
 	}
 	if(spell.getJsonKey() == SHADOW_VAMPIRISM_SPELL)
-		return quantity("vampirism", vampirismHealBasisPoints(power, coefficient, warcasting, empower,
+		return quantity("vampirism", vampirismHealBasisPoints(power, coefficient, empower,
 			hero.hasActivePerk(std::string(SHADOW_MAGIC_SKILL), std::string(SHADOW_NIGHT_FEEDER_PERK))), 100);
 	if(spell.getJsonKey() == newHorizonsSoulChain::SPELL_ID)
 	{
@@ -72,15 +70,14 @@ std::optional<SpellEffectPreview> knownUtilitySpellEffectPreview(const CGHeroIns
 	}
 	if(spell.getJsonKey() == SHADOW_DOOM_SPELL)
 	{
-		auto result = quantity("doom", doomCripplingPenaltyPercent(power, coefficient, warcasting, empower));
+		auto result = quantity("doom", doomCripplingPenaltyPercent(power, coefficient, empower));
 		result.qualificationKey = "new-horizons.spellbook.doomRecipient";
 		return result;
 	}
 	if(const auto count = quicksandPatchCount(rules, &hero, spell.getId(), power,
-		std::max(1, hero.getEffectPowerDivisor(&spell)), warcasting, empower, additionalComponentPercent, coefficient))
+		std::max(1, hero.getEffectPowerDivisor(&spell)), empower, additionalComponentPercent, coefficient))
 		return quantity("patches", *count);
-	if(const auto morale = sorrowMoralePenalty(rules, &hero, spell.getId(), power,
-		warcasting, empower, additionalComponentPercent, coefficient))
+	if(const auto morale = sorrowMoralePenalty(rules, &hero, spell.getId(), power, empower, additionalComponentPercent, coefficient))
 		return quantity("morale", *morale);
 	if(const auto duration = curseDurationRounds(rules, &hero, spell.getId()))
 	{
@@ -101,7 +98,7 @@ std::optional<SpellEffectPreview> knownUtilitySpellEffectPreview(const CGHeroIns
 	{
 		const bool illusionist = hero.hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist");
 		auto result = quantity("phantom", newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, power,
-			illusionist, coefficient, warcasting, empower, hero.getNonDamageSpellSpecialtyBonusPercent(spell.getId())), 100);
+			illusionist, coefficient, empower, hero.getNonDamageSpellSpecialtyBonusPercent(spell.getId())), 100);
 		result.qualificationKey = "new-horizons.spellbook.phantomRecipient";
 		return result;
 	}

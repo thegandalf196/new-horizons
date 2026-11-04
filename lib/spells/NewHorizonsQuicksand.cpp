@@ -51,8 +51,7 @@ void validateQuicksandSpellRow(const JsonNode & rules, std::string_view spellIde
 }
 
 std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
-	const SpellID spell, const int32_t spellPower, const int32_t spellPowerDivisor,
-	const int warcastingBonusPercent, const int empowerBonusPercent,
+	const SpellID spell, const int32_t spellPower, const int32_t spellPowerDivisor, const int empowerBonusPercent,
 	const int additionalSpellPowerComponentPercent,
 	const std::optional<int> coefficientOverride)
 {
@@ -69,7 +68,7 @@ std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInsta
 		rules, hero, spell, additionalSpellPowerComponentPercent);
 	const int32_t divisor = detail::quicksandSpellPowerStep(rules, spellPowerDivisor);
 	const int64_t spellPowerPatches = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		spellPower, divisor, coefficientBasisPoints, warcastingBonusPercent, empowerBonusPercent);
+		spellPower, divisor, coefficientBasisPoints, empowerBonusPercent);
 	const int baseCount = QUICKSAND_BASE_PATCH_COUNT_V3 + static_cast<int>(std::min<int64_t>(
 		QUICKSAND_MAX_PATCH_COUNT_V3 - QUICKSAND_BASE_PATCH_COUNT_V3, spellPowerPatches));
 	// The additional patch is independent of Spell Power and follows the

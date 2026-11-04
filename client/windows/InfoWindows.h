@@ -36,6 +36,9 @@ class CSlider;
 /// text + comp. + ok button
 class CInfoWindow : public WindowBase
 {
+	// A nested explanation does not release its parent's pending dialog.
+	bool releasesDialog = true;
+	void addDetailsButton(const std::string & details, PlayerColor player);
 public:
 	using TButtonsInfo = std::vector<std::pair<AnimationPath, CFunctionList<void()>>>;
 	using TCompsInfo = std::vector<std::shared_ptr<CComponent>>;
@@ -50,14 +53,14 @@ public:
 
 	void sliderMoved(int to);
 
-	CInfoWindow(const std::string & Text, PlayerColor player, const TCompsInfo & comps = TCompsInfo(), const TButtonsInfo & Buttons = TButtonsInfo());
+	CInfoWindow(const std::string & Text, PlayerColor player, const TCompsInfo & comps = TCompsInfo(), const TButtonsInfo & Buttons = TButtonsInfo(), const std::string & details = {});
 	CInfoWindow();
 	~CInfoWindow();
 
 	//use only before the game starts! (showYesNoDialog in GAME->interface() must be used then)
 	static void showInfoDialog(const std::string & text, const TCompsInfo & components, PlayerColor player = PlayerColor(1));
 	static void showYesNoDialog(const std::string & text, const TCompsInfo & components, const CFunctionList<void()> & onYes, const CFunctionList<void()> & onNo, PlayerColor player = PlayerColor(1));
-	static std::shared_ptr<CInfoWindow> create(const std::string & text, PlayerColor playerID = PlayerColor(1), const TCompsInfo & components = TCompsInfo());
+	static std::shared_ptr<CInfoWindow> create(const std::string & text, PlayerColor playerID = PlayerColor(1), const TCompsInfo & components = TCompsInfo(), const std::string & details = {});
 
 	/// create text from title and description: {title}\n\n description
 	static std::string genText(const std::string & title, const std::string & description);

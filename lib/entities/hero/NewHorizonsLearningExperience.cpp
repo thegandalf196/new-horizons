@@ -14,11 +14,13 @@ namespace newHorizonsHeroes
 {
 int64_t calculateLearningSpecialtyExperience(const CGHeroInstance & hero, int64_t exp, int32_t additionalPercent)
 {
+	if(hero.hasActivePerk("new-horizons:learning", "new-horizons:learning.philosopher"))
+		additionalPercent += 25;
 	const auto specialty = hero.getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::NATURAL_PHILOSOPHER);
 	const auto learned = learningSpecialtyRules(&hero);
 	const auto exchange = learningExchangeSpecialtyRules(&hero);
 	const auto seer = swampSeerRules(&hero);
-	if((!specialty && !learned && !exchange && !seer) || exp <= 0)
+	if(exp <= 0)
 		return static_cast<TExpType>(
 			exp * (hero.valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT) + additionalPercent) / 100.0);
 	const auto scaledExperience = [](TExpType base, int64_t percent) -> TExpType
@@ -42,10 +44,11 @@ int64_t calculateLearningSpecialtyExperience(const CGHeroInstance & hero, int64_
 			return saturated;
 		return negative ? -static_cast<TExpType>(value) : static_cast<TExpType>(value);
 	};
-	// Only the captured specialty path uses checked integer scaling. The old
-	// policy-absent calculation retains its established floating-point behavior.
+	// Positive XP uses checked integer scaling, including additive Learning perks.
 	const auto ordinary = scaledExperience(exp,
 		static_cast<int64_t>(hero.valOfBonuses(BonusType::HERO_EXPERIENCE_GAIN_PERCENT)) + additionalPercent);
+	if(!specialty && !learned && !exchange && !seer)
+		return ordinary;
 	const auto learning = LIBRARY->identifiers()->getIdentifier(
 		ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:learning", true);
 	if(!learning || (!specialty && hero.getSecSkillLevel(SecondarySkill(*learning)) == MasteryLevel::NONE))

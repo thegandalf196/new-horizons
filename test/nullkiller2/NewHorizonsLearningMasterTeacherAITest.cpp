@@ -40,9 +40,9 @@ const PlayerColor HUMAN_PLAYER(0);
 const PlayerColor AI_PLAYER(1);
 const std::string LEARNING_SKILL = "new-horizons:learning";
 const std::string MENTOR_PERK = "new-horizons:learning.mentor";
-const std::string MASTER_TEACHER_PERK = "new-horizons:learning.masterTeacher";
-const std::string HISTORIAN_PERK = "new-horizons:learning.historian";
-const std::string FIELD_STUDY_PERK = "new-horizons:learning.fieldStudy";
+const std::string PHILOSOPHER_PERK = "new-horizons:learning.philosopher";
+const std::string BASIC_MENTOR_PERK = "new-horizons:learning.mentor";
+const std::string SEASONED_PERK = "new-horizons:learning.seasonedAdventurer";
 
 class MentorAiEnvironment final : public Environment
 {
@@ -165,7 +165,7 @@ protected:
 		const auto & catalog = perks["skills"][LEARNING_SKILL]["perks"].Vector();
 		const auto registered = std::find_if(catalog.begin(), catalog.end(), [](const auto & perk)
 		{
-			return perk["id"].String() == MASTER_TEACHER_PERK;
+			return perk["id"].String() == PHILOSOPHER_PERK;
 		});
 		ASSERT_NE(registered, catalog.end());
 		ASSERT_EQ((*registered)["effect"]["status"].String(), "active");
@@ -232,18 +232,15 @@ protected:
 			for(auto & perk : skillEntry.second["perks"].Vector())
 			{
 				const auto & id = perk["id"].String();
-				if(id == MASTER_TEACHER_PERK || id == FIELD_STUDY_PERK)
+				if(id == PHILOSOPHER_PERK || id == SEASONED_PERK || id == BASIC_MENTOR_PERK)
 				{
 					ASSERT_EQ(perk["effect"]["status"].String(), "active");
-					continue; // Preserve actual production registration, never activate Teacher.
+					continue; // Keep the production current-tier definitions active.
 				}
-				// Test-only passive prerequisite catalog: no active non-Mentor Basic
-				// Learning choice exists yet. No Historian mechanic is certified here.
-				perk["effect"]["status"].String() = id == HISTORIAN_PERK ? "active" : "planned";
+				perk["effect"]["status"].String() = "planned";
 			}
 		}
 		state.validate();
-		RecordProperty("standalone_prerequisite", "captured-test-only Historian Basic tier");
 	}
 
 	void acceptLowerPerk(CGameHandler & handler, const std::string & id)
@@ -271,7 +268,7 @@ protected:
 } // namespace
 
 
-TEST_F(NewHorizonsLearningMasterTeacherAITest, NullkillerChoosesLegalExpertAndMeetingForwardsAuthoritativeAward)
+TEST_F(NewHorizonsLearningMasterTeacherAITest, NullkillerChoosesCurrentPhilosopherAndPreservesOrdinaryMentorAward)
 {
 	startGame();
 	GameHandlerTestServer server(gameState(), AI_PLAYER);
@@ -281,10 +278,10 @@ TEST_F(NewHorizonsLearningMasterTeacherAITest, NullkillerChoosesLegalExpertAndMe
 	ASSERT_GE(learning.getNum(), 0);
 	handler.changeSecSkill(mentor, learning, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	isolateLearningOffers(mentor);
-	ASSERT_NO_FATAL_FAILURE(acceptLowerPerk(handler, HISTORIAN_PERK));
+	ASSERT_NO_FATAL_FAILURE(acceptLowerPerk(handler, BASIC_MENTOR_PERK));
 	handler.changeSecSkill(mentor, learning, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	isolateLearningOffers(mentor);
-	ASSERT_NO_FATAL_FAILURE(acceptLowerPerk(handler, FIELD_STUDY_PERK));
+	ASSERT_NO_FATAL_FAILURE(acceptLowerPerk(handler, SEASONED_PERK));
 	handler.changeSecSkill(mentor, learning, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	isolateLearningOffers(mentor);
 	const auto initialLevel = mentor->level;
@@ -295,7 +292,7 @@ TEST_F(NewHorizonsLearningMasterTeacherAITest, NullkillerChoosesLegalExpertAndMe
 	ASSERT_TRUE(query->hlu.skills.empty());
 	ASSERT_EQ(query->hlu.perks.size(), 1u);
 	EXPECT_EQ(query->hlu.perks.front().selection,
-		(newHorizonsHeroes::PerkSelection{LEARNING_SKILL, MASTER_TEACHER_PERK}));
+		(newHorizonsHeroes::PerkSelection{LEARNING_SKILL, PHILOSOPHER_PERK}));
 	EXPECT_EQ(query->hlu.perks.front().requiredRank, MasteryLevel::EXPERT);
 	handler.onAdvInterfaceReady(AI_PLAYER);
 	ASSERT_TRUE(query->prompted);
@@ -303,12 +300,12 @@ TEST_F(NewHorizonsLearningMasterTeacherAITest, NullkillerChoosesLegalExpertAndMe
 	ASSERT_EQ(outcome.status, std::future_status::ready);
 	ASSERT_TRUE(outcome.result.accepted) << outcome.result.error;
 	EXPECT_EQ(outcome.result.choice, 0);
-	ASSERT_TRUE(mentor->hasActivePerk(LEARNING_SKILL, MASTER_TEACHER_PERK));
-	ASSERT_FALSE(mentor->hasActivePerk(LEARNING_SKILL, MENTOR_PERK));
+	ASSERT_TRUE(mentor->hasActivePerk(LEARNING_SKILL, PHILOSOPHER_PERK));
+	ASSERT_TRUE(mentor->hasActivePerk(LEARNING_SKILL, MENTOR_PERK));
 	ASSERT_GT(mentor->level, recipient->level);
 	handler.changeSecSkill(recipient, learning, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	const auto before = recipient->exp;
-	const auto expected = recipient->calculateXp(500 * mentor->level);
+	const auto expected = recipient->calculateXp(250 * mentor->level);
 	handler.heroExchange(mentor->id, recipient->id);
 	EXPECT_EQ(recipient->exp - before, expected);
 	EXPECT_EQ(mentor->getNewHorizonsLearningMentorRecipients(),

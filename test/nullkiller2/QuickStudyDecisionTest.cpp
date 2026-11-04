@@ -6,6 +6,7 @@
 #include "lib/CRandomGenerator.h"
 #include "lib/entities/hero/NewHorizonsHeroRules.h"
 #include "lib/entities/hero/NewHorizonsPerkRules.h"
+#include "lib/entities/hero/SkillChoiceEligibility.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/modding/CModHandler.h"
 #include "lib/serializer/CMemorySerializer.h"
@@ -14,119 +15,81 @@ namespace
 {
 const PlayerColor OWNER(0);
 constexpr auto LEARNING = "new-horizons:learning";
-constexpr auto OFFENSE = "new-horizons:offense";
-constexpr auto LUCK = "new-horizons:luck";
 class QuickStudyDecisionTest : public NullkillerTest
 {
 protected:
-	CGHeroInstance * hero = nullptr;
-	std::unique_ptr<NK2AI::AIGateway> gateway;
-	newHorizonsHeroes::PerkOfferCandidate weak, strong;
-	newHorizonsHeroes::PerkOfferCandidate candidate(const std::string & skill, int tier)
-	{
-		for(const auto & definition : newHorizonsHeroes::perkOptions(hero->getPerkState().rules, skill))
-			if(definition.effect["status"].String() == "active"
-				&& newHorizonsHeroes::perkRequiredRank(definition.requiredRank) == tier
-				&& hero->getPerkState().canAcquirePerk(skill, definition.id, hero->getPerkSkillRank(skill)))
-				return {{skill, definition.id}, definition.name, definition.description, tier};
-		throw std::runtime_error("Missing actual active test perk");
-	}
-	void SetUp() override
-	{
-		NullkillerTest::SetUp();
-		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
-			GTEST_SKIP() << "Requires New Horizons content";
-		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
-		builder.size(36, false).playerActive(OWNER).hero({5, 5, 0}, HeroTypeID(0), OWNER)
-			.heroGarrison({{CreatureID(0), 10}});
-		startWithMap(std::move(builder));
-		hero = findHeroAt({5, 5, 0});
-		ASSERT_NE(hero, nullptr);
-		// An authored, otherwise empty development roster; retain the full captured registry/weights.
-		hero->secSkills.clear();
-		const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
-		auto setRank = [&](const std::string & skill, int rank)
-		{ hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)), rank, ChangeValueMode::ABSOLUTE); };
-		setRank(LEARNING, 1);
-		hero->applyPerkSelection({LEARNING, "new-horizons:learning.mentor"});
-		setRank(LEARNING, 2);
-		hero->applyPerkSelection({LEARNING, "new-horizons:learning.quickStudy"});
-		setRank(OFFENSE, 1);
-		hero->applyPerkSelection(candidate(OFFENSE, 1).selection);
-		setRank(OFFENSE, 2);
-		setRank(LUCK, 1);
-		weak = candidate(LUCK, 1);
-		strong = candidate(OFFENSE, 2);
-		hero->level = 6;
-		gateway = makeGateway(OWNER);
-		gateway->nullkiller->heroManager->update();
-	}
-	bool decide(const std::vector<SecondarySkill> & skills,
-		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, int level = 6)
-	{
-		return gateway->nullkiller->heroManager->shouldRerollLevelUpOffer(NK2AI::HeroPtr(hero, gateway->cc.get()), skills, perks, level);
-	}
+ CGHeroInstance * hero = nullptr;
+ std::unique_ptr<NK2AI::AIGateway> gateway;
+ SecondarySkill weak, best;
+ void SetUp() override
+ {
+  NullkillerTest::SetUp();
+  ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
+  TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+  builder.size(36, false).playerActive(OWNER).hero({5, 5, 0}, HeroTypeID(0), OWNER).heroGarrison({{CreatureID(0), 10}});
+  startWithMap(std::move(builder)); hero = findHeroAt({5, 5, 0}); ASSERT_NE(hero, nullptr);
+  hero->secSkills.clear();
+  const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
+  const auto learning = SecondarySkill(SecondarySkill::decode(LEARNING));
+  hero->setSecSkillLevel(learning, 1, ChangeValueMode::ABSOLUTE);
+  hero->applyPerkSelection({LEARNING, "new-horizons:learning.scholar"});
+  hero->setSecSkillLevel(learning, 2, ChangeValueMode::ABSOLUTE);
+  hero->applyPerkSelection({LEARNING, "new-horizons:learning.connoisseur"});
+  hero->level = 6;
+  gateway = makeGateway(OWNER); gateway->nullkiller->heroManager->update();
+  const auto pool = newHorizonsHeroes::connoisseurSkillCandidates(*gateway->cc, *hero, {});
+  ASSERT_GT(pool.size(), 1u);
+  const std::vector<SecondarySkill> cards(pool.begin(), pool.end());
+  best = cards[gateway->nullkiller->heroManager->selectBestSkillIndex(NK2AI::HeroPtr(hero, gateway->cc.get()), cards)];
+  const auto inferior = std::ranges::find_if(cards, [&](auto card)
+  {
+   return gateway->nullkiller->heroManager->selectBestSkillIndex(NK2AI::HeroPtr(hero, gateway->cc.get()), {card, best}) == 1;
+  });
+  ASSERT_NE(inferior, cards.end()); weak = *inferior;
+ }
+ std::optional<size_t> decide(std::vector<SecondarySkill> cards, int level = 6)
+ { return gateway->nullkiller->heroManager->connoisseurSkillCard(NK2AI::HeroPtr(hero, gateway->cc.get()), cards, level); }
+ void restrictAlternatives()
+ {
+  auto & rules = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+  for(auto & [key, weight] : rules["skillOfferWeights"].Struct()) weight.Integer() = 0;
+  rules["skillOfferWeights"][SecondarySkill::encode(best.getNum())].Integer() = 100;
+  rules["skillOfferWeights"][SecondarySkill::encode(weak.getNum())].Integer() = 100;
+ }
 };
 }
 
-TEST_F(QuickStudyDecisionTest, WeakBasicOfferHasPositiveEligibleAdvancedAlternativeWithoutChangingStateOrRng)
+TEST_F(QuickStudyDecisionTest, WeakSkillCardHasVisibleBetterAlternativeWithoutChangingStateOrRng)
 {
-	const auto state = hero->getPerkState().toJson();
-	const auto skills = hero->secSkills;
-	CMemorySerializer before;
-	dynamic_cast<CRandomGenerator &>(*getRNG()).serialize(before.oser);
-	CRandomGenerator::getDefault().serialize(before.oser);
-	EXPECT_TRUE(decide({}, {weak}));
-	EXPECT_EQ(hero->getPerkState().toJson(), state);
-	EXPECT_EQ(hero->secSkills, skills);
-	CMemorySerializer after;
-	dynamic_cast<CRandomGenerator &>(*getRNG()).serialize(after.oser);
-	CRandomGenerator::getDefault().serialize(after.oser);
-	EXPECT_EQ(before.extractBuffer(), after.extractBuffer());
+ const auto state = gameState()->saveToMemory();
+ CMemorySerializer before; dynamic_cast<CRandomGenerator &>(*getRNG()).serialize(before.oser); CRandomGenerator::getDefault().serialize(before.oser);
+ EXPECT_EQ(decide({weak}), 0u);
+ EXPECT_EQ(gameState()->saveToMemory(), state);
+ CMemorySerializer after; dynamic_cast<CRandomGenerator &>(*getRNG()).serialize(after.oser); CRandomGenerator::getDefault().serialize(after.oser);
+ EXPECT_EQ(before.extractBuffer(), after.extractBuffer());
 }
-
-TEST_F(QuickStudyDecisionTest, KeepsExistingAdvancedPerk)
+TEST_F(QuickStudyDecisionTest, KeepsExistingBestVisibleSkill)
+{ EXPECT_FALSE(decide({best})); }
+TEST_F(QuickStudyDecisionTest, ChoosesOnlyWeakerCardAndPreservesBetterCard)
+{ EXPECT_EQ(decide({best, weak}), 1u); }
+TEST_F(QuickStudyDecisionTest, ZeroWeightAlternativeIsNotAConnoisseurCandidate)
 {
-	EXPECT_FALSE(decide({}, {strong}));
+ restrictAlternatives();
+ auto & rules = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+ rules["skillOfferWeights"][SecondarySkill::encode(best.getNum())].Integer() = 0;
+ EXPECT_FALSE(decide({weak}));
 }
-
-TEST_F(QuickStudyDecisionTest, KeepsPositiveFactionSkillUsingExistingOfferEvaluator)
+TEST_F(QuickStudyDecisionTest, ExpertAlternativeStillRequiresCurrentRankEligibility)
 {
-	const auto faction = newHorizonsHeroes::factionSkill(hero->getPrimaryGrowthRules(), hero->getFactionID());
-	ASSERT_TRUE(faction);
-	ASSERT_TRUE(hero->canLearnSkill(*faction));
-	EXPECT_FALSE(decide({*faction}, {weak}));
+ restrictAlternatives();
+ hero->setSecSkillLevel(best, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+ EXPECT_FALSE(decide({weak}));
 }
-
-TEST_F(QuickStudyDecisionTest, RawZeroWeightUsesPositiveCanonicalSamplerProjection)
+TEST_F(QuickStudyDecisionTest, WrongReachedLevelOrUnselectedPerkNeverRerolls)
 {
-	auto & captured = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
-	captured["skillOfferWeights"][OFFENSE].Integer() = 0;
-	const auto weights = hero->getPerkState().quantizedParentWeights(hero->getPerkOfferWeightContext());
-	ASSERT_EQ(weights.at(OFFENSE), "4294967296");
-	EXPECT_TRUE(decide({}, {weak}));
+ EXPECT_FALSE(decide({weak}, 5));
+ const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
+ EXPECT_FALSE(decide({weak}));
 }
-
-TEST_F(QuickStudyDecisionTest, PreferredAlternativeStillRequiresCurrentRankEligibility)
-{
-	hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(OFFENSE)), 1, ChangeValueMode::ABSOLUTE);
-	ASSERT_FALSE(hero->getPerkState().canAcquirePerk(strong.selection.skillId,
-		strong.selection.perkId, hero->getPerkSkillRank(OFFENSE)));
-	EXPECT_FALSE(decide({}, {weak}));
-}
-
-TEST_F(QuickStudyDecisionTest, LegacyPolicyAndWrongReachedLevelNeverReroll)
-{
-	EXPECT_FALSE(decide({}, {weak}, 5));
-	auto & rules = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).rules;
-	rules.Struct().erase("quickStudyPolicy");
-	EXPECT_FALSE(decide({}, {weak}));
-}
-
-TEST_F(QuickStudyDecisionTest, EmptyOrMalformedOfferIsKept)
-{
-	EXPECT_FALSE(decide({}, {}));
-	auto malformed = weak;
-	malformed.requiredRank = 3;
-	EXPECT_FALSE(decide({}, {malformed}));
-}
+TEST_F(QuickStudyDecisionTest, EmptyOrMalformedSkillOfferIsKept)
+{ EXPECT_FALSE(decide({})); EXPECT_FALSE(decide({SecondarySkill::NONE})); }

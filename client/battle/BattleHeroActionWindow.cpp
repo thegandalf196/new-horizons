@@ -99,6 +99,7 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 		labels.push_back(std::make_shared<CLabel>(position.x + 32, position.y - 14, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, display.name));
 		effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(position.x - 34, position.y + 66, 140, 34), FONT_SMALL, ETextAlignment::TOPLEFT,
 			Colors::WHITE, ""));
+		addOrderDetailsButton(command, position + Point(74, 22), button, effectLabels.back());
 	}
 	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(28, 463, 472, 41), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
 		"Commands affect current troops only; no war machines.\nLater summons and clones do not inherit effects."));
@@ -142,6 +143,7 @@ void BattleHeroActionWindow::createOrdersLayout()
 		commands.emplace_back(command, button);
 		effectLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(left + 6, top + 92, orderWidth - 12, 28), FONT_SMALL,
 			ETextAlignment::TOPLEFT, Colors::WHITE, ""));
+		addOrderDetailsButton(command, Point(left + orderWidth - 22, top + 5), button, effectLabels.back());
 	}
 	targetReadback = std::make_shared<CMultiLineLabel>(Rect(16, 378, 516, 30), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "");
 	labels.push_back(targetReadback);
@@ -197,14 +199,13 @@ void BattleHeroActionWindow::setStateText(const std::string & text)
 }
 
 void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const JsonNode & rules,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent)
+	int divineMandateEfficiencyBonusPercent)
 {
 	const auto ratings = std::make_pair(hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE));
-	if(effectsInitialized && displayedRatings == ratings && displayedWarcastingBonus == warcastingBonusPercent
+	if(effectsInitialized && displayedRatings == ratings
 		&& displayedDivineMandateBonus == divineMandateEfficiencyBonusPercent)
 		return;
 	displayedRatings = ratings;
-	displayedWarcastingBonus = warcastingBonusPercent;
 	displayedDivineMandateBonus = divineMandateEfficiencyBonusPercent;
 	effectsInitialized = true;
 
@@ -214,7 +215,7 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 			continue; // Refreshed from live preparation below, outside the legacy rating cache.
 		// The snapshot's coefficient helper is the single source of truth for
 		// the preview. The client only formats the returned numbers.
-		const auto effects = commandEffects(rules, commands[i].first, hero, warcastingBonusPercent,
+		const auto effects = commandEffects(rules, commands[i].first, hero,
 			divineMandateEfficiencyBonusPercent);
 		if(i < effectLabels.size())
 			effectLabels[i]->setText(effects);
@@ -278,7 +279,7 @@ void BattleHeroActionWindow::refresh()
 	if(hero)
 	{
 		const auto preparedHold = callback->battlePrepareHeroOrderState(side, HeroCommand::HOLD_THE_LINE, {});
-		refreshEffects(*hero, rules, preparedHold ? preparedHold->warcastingBonusPercent : 0,
+		refreshEffects(*hero, rules,
 			preparedHold ? preparedHold->divineMandateEfficiencyBonusPercent() : 0);
 	}
 	const auto spellProblem = hero ? callback->battleCanCastSpell(hero, spells::Mode::HERO) : ESpellCastProblem::INVALID;

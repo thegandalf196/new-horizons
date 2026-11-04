@@ -29,6 +29,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/NewHorizonsDemonicGating.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -48,6 +49,12 @@ UnitActionPanel::UnitActionPanel(BattleInterface & owner)
 	rect = std::make_shared<TransparentFilledRectangle>(Rect(0, 0, pos.w + 1, pos.h + 1), ColorRGBA(0, 0, 0, 0), ColorRGBA(241, 216, 120, 255));
 }
 
+void UnitActionPanel::clearSelection()
+{
+	for(const auto & button : buttons)
+		button->setSelectedSilent(false);
+}
+
 void UnitActionPanel::restoreAllActions()
 {
 	owner.actionsController->resetCurrentStackPossibleActions();
@@ -65,6 +72,12 @@ void UnitActionPanel::setActions(int buttonIndex, const std::vector<PossiblePlay
 		const auto * hero = active ? owner.getBattle()->battleGetFightingHero(active->unitSide()) : nullptr;
 		if(!active || !hero)
 			return;
+		if(newHorizonsDemonicGating::usesTemporaryGating(hero))
+		{
+			if(newHorizonsDemonicGating::eligibleOriginalStack(*owner.getBattle(), *active, active->unitSide()))
+				owner.actionsController->selectDemonicGatingCreature(active->creatureId());
+			return;
+		}
 		const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
 		std::vector<CreatureID> creatures;
 		std::vector<std::string> entries;

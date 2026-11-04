@@ -12,6 +12,7 @@
 #include "CCastleInterface.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/NewHorizonsEstates.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../CPlayerInterface.h"
 #include "../widgets/Buttons.h"
@@ -321,12 +322,23 @@ void QuickRecruitmentWindow::initWindow(Rect startupPosition)
 	costBackground = std::make_shared<CPicture>(ImagePath::builtin("QuickRecruitmentWindow/costBackground.png"), pos.w/2-113, 335);
 }
 
+TResources QuickRecruitmentWindow::recruitmentCost(CreatureID creature, int amount) const
+{
+	return town->getTotalRecruitmentCost(creature, amount, newHorizonsEstates::recruitmentBuyer(town->getUpperArmy()));
+}
+
+int QuickRecruitmentWindow::recruitmentAmount(CreatureID creature, const TResources & resources, int available) const
+{
+	return town->getRecruitmentAmount(creature, resources, available,
+		newHorizonsEstates::recruitmentBuyer(town->getUpperArmy()));
+}
+
 void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePurchaseCard> > cards)
 {
 	auto allAvailableResources = GAME->interface()->cb->getResourceAmount();
 	for(auto i : std::views::reverse(cards))
 	{
-		si32 maxAmount = i->creatureOnTheCard->maxAmount(allAvailableResources);
+		si32 maxAmount = recruitmentAmount(i->creatureOnTheCard->getId(), allAvailableResources, i->maxAmount);
 		vstd::amin(maxAmount, i->maxAmount);
 		maxAmount = capByLargestLeadershipSlot(town, i->creatureOnTheCard->getId(), maxAmount);
 
@@ -338,7 +350,7 @@ void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePur
 			i->sliderMoved(maxAmount);
 
 		i->slider->scrollToMax();
-		allAvailableResources -= (i->creatureOnTheCard->getFullRecruitCost() * maxAmount);
+		allAvailableResources -= recruitmentCost(i->creatureOnTheCard->getId(), maxAmount);
 	}
 	maxButton->block(allAvailableResources == GAME->interface()->cb->getResourceAmount());
 }
@@ -404,10 +416,11 @@ void QuickRecruitmentWindow::updateAllSliders()
 {
 	auto allAvailableResources = GAME->interface()->cb->getResourceAmount();
 	for(auto i : std::views::reverse(cards))
-		allAvailableResources -= (i->creatureOnTheCard->getFullRecruitCost() * i->slider->getValue());
+		allAvailableResources -= recruitmentCost(i->creatureOnTheCard->getId(), i->slider->getValue());
 	for(auto i : cards)
 	{
-		si32 maxAmount = i->creatureOnTheCard->maxAmount(allAvailableResources);
+		const auto ownQuote = recruitmentCost(i->creatureOnTheCard->getId(), i->slider->getValue());
+		si32 maxAmount = recruitmentAmount(i->creatureOnTheCard->getId(), allAvailableResources + ownQuote, i->maxAmount);
 		vstd::amin(maxAmount, i->maxAmount);
 		const int maximumByLeadership = capByLargestLeadershipSlot(
 			town, i->creatureOnTheCard->getId(), i->maxAmount);
@@ -415,7 +428,7 @@ void QuickRecruitmentWindow::updateAllSliders()
 		if(maxAmount < 0)
 			continue;
 
-		const int64_t affordableTotal = static_cast<int64_t>(currentAmount) + maxAmount;
+		const int64_t affordableTotal = static_cast<int64_t>(maxAmount);
 		const int maximumTotal = static_cast<int>(std::max<int64_t>(0,
 			std::min<int64_t>({i->maxAmount, maximumByLeadership, affordableTotal})));
 		i->slider->setAmount(maximumTotal);

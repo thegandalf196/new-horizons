@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsDemonicGating.h"
 #include "../../lib/entities/hero/NewHorizonsDiplomacy.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
@@ -35,6 +36,7 @@
 #include "../../lib/mapObjects/SkeletonTransformer.h"
 #include "../../lib/serializer/CTypeList.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsWisdom.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/PacksForServer.h"
@@ -1270,7 +1272,7 @@ void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr h
 					ResourceSet unlockCost;
 					try
 					{
-						unlockCost = newHorizonsMagic::adventureSpellUnlockCost(cc->getMagicRules(), spellID);
+						unlockCost = newHorizonsWisdom::adventureSpellPurchaseCost(cc->getMagicRules(), spellID, *visitedTown);
 					}
 					catch(const std::exception & error)
 					{
@@ -1342,6 +1344,7 @@ void AIGateway::prepareDemonicReserve(const CGTownInstance * town)
 	if(!hero || town->getUpperArmy() != town || town->getOwner() != playerID
 		|| hero->getOwner() != playerID || nullkiller->isHeroLocked(hero))
 		return;
+	if(newHorizonsDemonicGating::usesTemporaryGating(hero)) return;
 	const int rank = hero->getPerkSkillRank("new-horizons:demonicGating");
 	const auto inferno = [](CreatureID creature)
 	{
@@ -1991,7 +1994,7 @@ void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * re
 				continue;
 		}
 
-		vstd::amin(count, cc->getResourceAmount() / d->getRecruitmentCost(creID));
+		count = d->getRecruitmentAmount(creID, cc->getResourceAmount(), count, recruitmentHero);
 		if(recruitmentCapacity)
 		{
 			recruitmentDestination = newHorizonsHeroes::recruitmentSlot(recruiter, creID, count);

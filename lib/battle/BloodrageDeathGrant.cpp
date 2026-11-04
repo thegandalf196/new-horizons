@@ -12,6 +12,7 @@ newHorizonsBloodrage::DeathGrant newHorizonsBloodrage::deathGrant(const CGHeroIn
 	bool firstDeath, bool eliteOrChampion, int rank, int cap, int currentPercent)
 {
 	const bool firstBlood = hasFirstBlood(hero);
-	const int increments = deathIncrementCount(firstDeath, eliteOrChampion, firstBlood, hasSlayer(hero));
+	const int increments = deathIncrementCount(firstDeath, eliteOrChampion, firstBlood, hasSlayer(hero))
+		+ (firstDeath && firstBlood && revisedPerks(hero) ? 1 : 0);
 	return {std::min(cap, currentPercent + increments * incrementForRank(rank)), firstBlood};
 }

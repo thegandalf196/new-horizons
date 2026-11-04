@@ -204,7 +204,7 @@ TEST_F(NewHorizonsVampirismTest, SpellPowerSchoolSpellcraftAndCastBonusesAffectO
 	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(rules, attackerSideHero, spell, 100), 4225);
 	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(rules, attackerSideHero, spell, 20), 2879);
-	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(rules, attackerSideHero, spell, 20, 20, 25), 3069);
+	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(rules, attackerSideHero, spell, 20, 25), 2974);
 
 	selectNightFeeder();
 	EXPECT_EQ(newHorizonsMagic::vampirismHealBasisPoints(rules, attackerSideHero, spell, 0), 4000);

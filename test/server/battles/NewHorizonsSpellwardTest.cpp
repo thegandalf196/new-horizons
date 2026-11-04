@@ -6,6 +6,8 @@
  * License: GNU General Public License v2.0 or later; see license.txt file in main folder
  */
 #include "StdInc.h"
+#include "../../../lib/battle/ArcaneInspiration.h"
+#include "../../../lib/battle/MagicalCreatureAttackDamage.h"
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 
@@ -922,4 +924,32 @@ TEST_F(MasterSpellwardTest, CurrentFireContextReadsCanonicalLevelAndRankInsteadO
 	EXPECT_EQ(protectedStack->save(), before);
 	CMemorySerializer randomAfter; randomAfter.oser & *gameHandler->randomizer;
 	EXPECT_EQ(randomAfter.extractBuffer(), randomBefore.extractBuffer());
+}
+
+TEST_F(MasterSpellwardTest, MagicalOrdinaryAttackUsesOnePassiveThorgrimSourceAndSupremacyPenetratesIt)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareMaster());
+	BattleAttackInfo incoming(attackerCaster, protectedStack, 0, true);
+	incoming.physicalDamage = false;
+	defenderSideHero->level = 10;
+	const auto evaluate = [&](const CStack * target)
+	{
+		auto shot = incoming;
+		shot.defender = target;
+		DamageEstimation damage;
+		damage.damage.min = damage.damage.max = 10000;
+		battle::applyMagicalAttackReduction(*battle(), shot, damage);
+		return damage.damage.min;
+	};
+	// No Inspiration is required for the passive. Thorgrim strengthens its one source.
+	EXPECT_EQ(evaluate(protectedStack), 8500);
+	EXPECT_FALSE(protectedStack->hasBonus(CSelector(arcaneInspiration::isActive)));
+	SetStackEffect inspiration;
+	inspiration.battleID = BattleID(0);
+	inspiration.toAdd.emplace_back(attackerCaster->unitId(), std::vector<Bonus>{
+		arcaneInspiration::activeMarker({15, arcaneInspiration::SUPREMACY, false},
+			PlayerColor(0), battle()->getRound())});
+	gameHandler->sendAndApply(inspiration);
+	// Ignore20% of the15% applicable magical reduction =>12%, not minus20points.
+	EXPECT_EQ(evaluate(protectedStack), 8800);
 }

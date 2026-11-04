@@ -8,12 +8,15 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/BattleForm.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/battle/NewHorizonsConfusionResolution.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -468,7 +471,10 @@ float spellApplicationChance(const Mechanics * spellMechanics, const battle::Uni
 {
 	if(!spellMechanics || !unit || !spellMechanics->isNegativeSpell() || !spellMechanics->isMagicalEffect())
 		return 1.0f;
-	float chance = 1.0f - static_cast<float>(std::clamp(unit->magicResistance(), 0, 100)) / 100.0f;
+	const auto * callback = spellMechanics->battle();
+	const int resistance = callback ? newHorizonsMetamagic::resistanceChance(unit->magicResistance(),
+		spellMechanics->getMetamagicCastProfile(), *callback, *unit) : unit->magicResistance();
+	float chance = 1.0f - static_cast<float>(std::clamp(resistance, 0, 100)) / 100.0f;
 	const auto * battle = spellMechanics->battle();
 	if(!battle || !battle->getBattle() || chance <= 0.0f || chance >= 1.0f)
 		return chance;
@@ -681,18 +687,6 @@ int64_t projectedSoulChainTriggerDamage(const Mechanics * spellMechanics,
 	const auto applicationChance = spellApplicationChance(spellMechanics, secondary);
 	const auto resistedExpectedDamage = expectedDamage * applicationChance;
 	return static_cast<int64_t>(std::llround(resistedExpectedDamage));
-}
-
-int32_t soulChainEchoBasisPoints(const Mechanics * spellMechanics)
-{
-	const auto * hero = spellMechanics ? spellMechanics->getHeroCaster() : nullptr;
-	const bool soulBinder = hero && hero->hasActivePerk(
-		"new-horizons:shadowMagic", "new-horizons:shadowMagic.soulBinder");
-	return spellMechanics
-		? newHorizonsSoulChain::echoPercentBasisPoints(
-			std::max(0, spellMechanics->getEffectPower()),
-			spellMechanics->getSpellPowerCoefficientBasisPoints(), soulBinder)
-		: 0;
 }
 
 float expectedSoulChainEchoValue(const Mechanics * spellMechanics,
@@ -1046,7 +1040,6 @@ std::vector<Target> enumerateSoulChainTargets(Mechanics * spellMechanics)
 		expectedTriggerDamage.emplace(enemy->unitId(), projectedSoulChainTriggerDamage(
 			spellMechanics, enemy, damageCache, battleState));
 
-	const auto echoBasisPoints = soulChainEchoBasisPoints(spellMechanics);
 	const auto completeTargetIsLegal = [&](const Target & target)
 	{
 		if(!newHorizonsSoulChain::validEnemyTargetSet(*battle, casterSide, target))
@@ -1064,6 +1057,7 @@ std::vector<Target> enumerateSoulChainTargets(Mechanics * spellMechanics)
 
 	for(const auto * primary : enemies)
 	{
+		const auto echoBasisPoints = spellMechanics->getRecipientSoulChainEchoBasisPoints(primary);
 		Target primaryOnly{Destination(primary)};
 		if(!completeTargetIsLegal(primaryOnly))
 			continue;
@@ -2177,15 +2171,7 @@ float SpellTargetEvaluator::spellLockPlacementValue(const Mechanics * spellMecha
 		}
 	}
 
-	const auto * hero = spellMechanics->getHeroCaster();
-	const bool spellbinder = hero && hero->hasActivePerk(
-		newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
-	int rounds = newHorizonsSorcery::spellLockDurationBasisPoints(
-		std::max(0, spellMechanics->getEffectPower()), spellbinder,
-		spellMechanics->getSpellPowerCoefficientBasisPoints(),
-		spellMechanics->getWarcastingBonusPercent());
-	rounds = spellMechanics->adjustEffectDuration(rounds);
-	rounds = std::clamp(rounds, 1, 5);
+	const auto rounds = spellMechanics->getRecipientSpellLockDuration(unit);
 	return value * (0.7f + 0.1f * static_cast<float>(rounds));
 }
 
@@ -2204,11 +2190,11 @@ float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMe
 	if(!liveTarget)
 		return 0.0f;
 
-	const int64_t baseDamage = newHorizonsMagic::poisonBaseDamageBasisPoints(
+	const int64_t baseDamage = spellMechanics->adjustMetamagicMagnitude(newHorizonsMagic::poisonBaseDamageBasisPoints(
 		std::max(0, spellMechanics->getEffectPower()),
 		spellMechanics->getSpellPowerCoefficientBasisPoints(),
 		spellMechanics->getEmpowerSpellBonusPercent(),
-		newHorizonsMagic::poisonBaseBonusPercent(spellMechanics->getHeroCaster()));
+		newHorizonsMagic::poisonBaseBonusPercent(spellMechanics->getHeroCaster())), liveTarget);
 	if(baseDamage <= 0)
 		return 0.0f;
 
@@ -2219,6 +2205,7 @@ float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMe
 	auto appliedPoison = liveTarget->acquireState();
 	if(!newHorizonsBulwark::applyPhysicalPoison(appliedPoison.get(), baseDamage, -1))
 		return 0.0f;
+	appliedPoison->physicalPoisonSpellSide = spellMechanics->getCasterSide();
 
 	if(!battleState)
 	{
@@ -2293,7 +2280,8 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 	// getEffectPower() is the captured raw cast Spell Power. The hero's separate
 	// effect-power divisor is for legacy effect formulas and must not reduce
 	// Plague's canonical raw-SP term.
-	const auto rawDamage = spellMechanics->getPlagueTickDamage();
+	const auto rawDamage = spellMechanics->adjustMetamagicMagnitude(
+		spellMechanics->getPlagueTickDamage(), liveTarget);
 	if(rawDamage <= 0)
 		return 0.0f;
 
@@ -2402,7 +2390,7 @@ float SpellTargetEvaluator::soulChainDelayedDamageValue(const Mechanics * spellM
 
 	const auto * primary = target.front().unitValue;
 	auto projectedPrimary = primary->acquireState();
-	const auto echoBasisPoints = soulChainEchoBasisPoints(spellMechanics);
+	const auto echoBasisPoints = spellMechanics->getRecipientSoulChainEchoBasisPoints(primary);
 	const auto primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
 	DamageCache damageCache;
 	float value = 0.0f;
@@ -2503,12 +2491,11 @@ float SpellTargetEvaluator::shadowGiftTradeValue(const Mechanics * spellMechanic
 
 	DamageCache originalDamageCache;
 	DamageCache projectedDamageCache;
-	const auto damageBonusBasisPoints = newHorizonsShadowGift::getDamageBonusBasisPoints(
+	const auto damageBonusBasisPoints = spellMechanics->adjustMetamagicMagnitude(newHorizonsShadowGift::getDamageBonusBasisPoints(
 		sacrificePercent,
 		std::max(0, spellMechanics->getEffectPower()),
 		spellMechanics->getSpellPowerCoefficientBasisPoints(),
-		spellMechanics->getWarcastingBonusPercent(),
-		spellMechanics->getEmpowerSpellBonusPercent());
+		spellMechanics->getEmpowerSpellBonusPercent()), recipient);
 	if(damageBonusBasisPoints <= 0)
 		return 0.0f;
 
@@ -2560,126 +2547,6 @@ float SpellTargetEvaluator::shadowGiftTradeValue(const Mechanics * spellMechanic
 	return std::max(0.0f, bestExpectedBenefit - healthCost);
 }
 
-std::optional<SpellTargetEvaluator::HandOfFateExpectedDamageValue>
-SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMechanics,
-	const Target & target, PlayerColor scoringPlayer, std::shared_ptr<CBattleInfoCallback> battleState)
-{
-	if(!isCanonicalHandOfFate(spellMechanics) || target.size() != 1 || !target.front().unitValue
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
-		return std::nullopt;
-
-	const auto * battle = spellMechanics->battle();
-	const auto casterSide = spellMechanics->getCasterSide();
-	if(!battle || (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER))
-		return std::nullopt;
-
-	if(!battleState)
-		battleState = std::shared_ptr<CBattleInfoCallback>(
-			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
-
-	const auto * primary = target.front().unitValue;
-	if(primary->unitSide() != battle->otherSide(casterSide)
-		|| !primary->alive() || !primary->isValidTarget(false))
-		return std::nullopt;
-
-	detail::ProblemImpl problem;
-	if(!spellMechanics->canBeCastAt(target, problem))
-		return std::nullopt;
-
-	// Spell resistance is resolved once for the selected target by the regular
-	// cast path.  Forecast its probability without drawing from the live RNG.
-	const float primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
-	const auto primaryDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(primary));
-	auto projectedPrimary = primary->acquireState();
-	const auto primaryHealthBefore = projectedPrimary->getAvailableHealth();
-	auto primaryDamageToApply = primaryDamage;
-	projectedPrimary->damage(primaryDamageToApply);
-	const auto actualPrimaryDamage = std::max<int64_t>(0,
-		primaryHealthBefore - projectedPrimary->getAvailableHealth());
-
-	DamageCache damageCache;
-	HandOfFateExpectedDamageValue result;
-	if(actualPrimaryDamage > 0 && primaryApplicationChance > 0.0f)
-	{
-		result.hostileDamageValue += AttackPossibility::calculateDamageReduce(nullptr, primary,
-			static_cast<uint64_t>(actualPrimaryDamage), damageCache, battleState) * primaryApplicationChance;
-	}
-
-	// Every living, on-field, non-turret stack remains in the draw pool,
-	// including stacks that will reject the secondary packet (for example, a
-	// Time Stopped or immune stack).  Rejection contributes zero value but never
-	// changes the probability of another recipient being chosen.
-	std::vector<const battle::Unit *> collateralPool;
-	for(const auto * unit : battle->battleGetAllUnits(false))
-	{
-		if(!unit || unit == primary || !unit->alive() || !unit->getPosition().isValid() || unit->isTurret())
-			continue;
-		collateralPool.push_back(unit);
-	}
-
-	const auto spillRawDamage = actualPrimaryDamage / 2;
-	if(collateralPool.empty() || spillRawDamage <= 0 || primaryApplicationChance <= 0.0f)
-		return result;
-	const auto * hero = spellMechanics->getHeroCaster();
-	const bool fateDealer = spellMechanics->usesNewHorizonsMagicV3() && hero && hero->hasActivePerk(
-		"new-horizons:chaosMagic", "new-horizons:chaosMagic.fateDealer");
-	const auto hostileToCaster = [&](const battle::Unit * recipient)
-	{
-		return spellMechanics->battle()->battleGetOwner(recipient) != spellMechanics->getCasterColor();
-	};
-	const auto hostileCount = std::ranges::count_if(collateralPool, [&](const battle::Unit * recipient)
-	{
-		return hostileToCaster(recipient);
-	});
-	const auto friendlyCount = collateralPool.size() - hostileCount;
-	const double poolSize = static_cast<double>(collateralPool.size());
-
-	float expectedHostileSpillValue = 0.0f;
-	float expectedFriendlySpillValue = 0.0f;
-	for(const auto * recipient : collateralPool)
-	{
-		// This check is deliberately after pool construction: an invalid or
-		// unreceptive recipient absorbs its share of the random selection chance.
-		if(!recipient->isValidTarget(false) || recipient->isInvincible()
-			|| recipient->hasImmunity(spellMechanics->getSpellId())
-			|| recipient->hasAbsoluteImmunity(spellMechanics->getSpellId())
-			|| !spellMechanics->isReceptive(recipient))
-			continue;
-
-		const auto adjustedDamage = std::max<int64_t>(0,
-			spellMechanics->adjustRecipientDamage(recipient, spillRawDamage));
-		if(adjustedDamage <= 0)
-			continue;
-
-		auto projectedRecipient = recipient->acquireState();
-		const auto recipientHealthBefore = projectedRecipient->getAvailableHealth();
-		auto recipientDamageToApply = adjustedDamage;
-		projectedRecipient->damage(recipientDamageToApply);
-		const auto actualRecipientDamage = std::max<int64_t>(0,
-			recipientHealthBefore - projectedRecipient->getAvailableHealth());
-		if(actualRecipientDamage <= 0)
-			continue;
-
-		const float recipientValue = AttackPossibility::calculateDamageReduce(nullptr, recipient,
-			static_cast<uint64_t>(actualRecipientDamage), damageCache, battleState)
-			* spellApplicationChance(spellMechanics, recipient);
-		// Selection is relative to the caster, scoring relative to the evaluating
-		// player. They need not be the same perspective on a controlled stack.
-		const double probability = fateDealer
-			? static_cast<double>(hostileToCaster(recipient)
-				? hostileCount + 2 * friendlyCount : friendlyCount) / (poolSize * poolSize)
-			: 1.0 / poolSize;
-		if(battle->battleGetOwner(recipient) == scoringPlayer)
-			expectedFriendlySpillValue += recipientValue * probability;
-		else
-			expectedHostileSpillValue += recipientValue * probability;
-	}
-
-	result.hostileDamageValue += expectedHostileSpillValue * primaryApplicationChance;
-	result.friendlyDamageValue += expectedFriendlySpillValue * primaryApplicationChance;
-	return result;
-}
-
 float SpellTargetEvaluator::realityWarpExchangeValue(const Environment * environment,
 	std::shared_ptr<CBattleInfoCallback> before, std::shared_ptr<CBattleInfoCallback> after,
 	PlayerColor scoringPlayer, const Target & selection, PlayerColor caster)
@@ -2723,7 +2590,8 @@ float SpellTargetEvaluator::realityWarpExchangeValue(const Environment * environ
 
 std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
 	Mechanics * spellMechanics, const Target & target, const Environment * environment,
-	std::shared_ptr<CBattleInfoCallback> battleState)
+	std::shared_ptr<CBattleInfoCallback> battleState, float * inspirationValue,
+	const heroSpellProjection::OutcomeValue & outcomeValue)
 {
 	if(!spellMechanics || !spellMechanics->getSpell()
 		|| spellMechanics->getSpell()->getJsonKey() != "new-horizons:confusion")
@@ -2773,8 +2641,30 @@ std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
 	const auto projectedUnit = projected->getForUpdate(unitID);
 	// Use the production effect for source-bound Confounder provenance and
 	// Berserk removal. The pending producer does not consume a random draw.
+	const auto side = spellMechanics->getCasterSide();
+	const auto prepared = outcomeValue ? projected->prepareHeroSpellAllowance(side, spellMechanics->getSpellId(), false, false) : std::nullopt;
+	if(outcomeValue && (!prepared || !projected->beginProjectedHeroAction(side, *prepared))) return std::nullopt;
 	spellMechanics->castEval(projected->getServerCallback(), Target{Destination(projectedUnit.get())});
-	return (before - pressure(projected)) * spellApplicationChance(spellMechanics, target.front().unitValue);
+	if(prepared && !projected->projectAcceptedHeroSpell(side, spellMechanics->getSpellId(), unitID,
+		false, false, false, false, *prepared)) return std::nullopt;
+	auto without = projected;
+	if(outcomeValue)
+	{
+		without = std::make_shared<HypotheticBattle>(environment, projected);
+		without->reverseArcaneInspirationEffects(projected->getArcaneInspirationEffects());
+	}
+	const auto chance = spellApplicationChance(spellMechanics, target.front().unitValue);
+	const auto original = (before - pressure(without)) * chance;
+	if(outcomeValue && inspirationValue)
+	{
+		auto coreBoard = outcomeValue ? std::make_shared<HypotheticBattle>(environment, battleState) : nullptr;
+		const auto core = outcomeValue(coreBoard, {}, false, false);
+		const auto kernel = [&](const auto & board) { return -pressure(board); };
+		const auto localCore = heroSpellProjection::localReceiptMarginal(coreBoard, kernel);
+		outcomeValue(projected, {}, true, true);
+		*inspirationValue = core + chance * (heroSpellProjection::localReceiptMarginal(projected, kernel) - localCore);
+	}
+	return original;
 }
 
 std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
@@ -2782,7 +2672,8 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 	const spells::effects::BattleFormEffect * battleFormEffect,
 	const Target & target,
 	const Environment * environment,
-	std::shared_ptr<CBattleInfoCallback> battleState)
+	std::shared_ptr<CBattleInfoCallback> battleState, float * inspirationValue,
+	const heroSpellProjection::OutcomeValue & outcomeValue)
 {
 	if(!spellMechanics || !battleFormEffect || !environment || target.size() != 1
 		|| !target.front().unitValue)
@@ -2821,7 +2712,7 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 
 	const auto unitId = originalTarget->unitId();
 	const auto offensivePressure = [&](const std::shared_ptr<HypotheticBattle> & projectedBattle,
-		DamageCache & damageCache) -> float
+		DamageCache & damageCache, int rounds) -> float
 	{
 		const auto * projectedTarget = projectedBattle->battleGetUnitByID(unitId);
 		if(!projectedTarget || !projectedTarget->alive() || projectedTarget->getCount() <= 0
@@ -2838,7 +2729,7 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 			: (actions.possibleAttacks.empty() ? 0.0f : actions.possibleAttacks.front().attackValue());
 
 		float value = 0.0f;
-		for(int turn = 0; turn < forecastRounds; ++turn)
+		for(int turn = 0; turn < rounds; ++turn)
 			if(projectedTarget->willMove(turn))
 				value += actionValue;
 		return value;
@@ -2852,8 +2743,19 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 	auto baselineBattle = std::make_shared<HypotheticBattle>(environment, battleState);
 	auto baselineTarget = baselineBattle->getForUpdate(unitId);
 	DamageCache baselineDamage;
-	const float baselinePressure = offensivePressure(baselineBattle, baselineDamage);
+	const float baselinePressure = offensivePressure(baselineBattle, baselineDamage, forecastRounds);
 
+	auto coreBoard = outcomeValue ? std::make_shared<HypotheticBattle>(environment, battleState) : nullptr;
+	const float coreOnly = outcomeValue ? outcomeValue(coreBoard, {}, false, false) : 0.0f;
+	const auto kernel = [&](const std::shared_ptr<HypotheticBattle> & board)
+	{
+		DamageCache local;
+		// Completion expires next round; keep its residual to the current activation.
+		return -offensivePressure(board, local, 1);
+	};
+	const auto localCore = outcomeValue ? heroSpellProjection::localReceiptMarginal(coreBoard, kernel) : 0.0f;
+	if(inspirationValue) *inspirationValue = coreOnly;
+	const auto applicationChance = spellApplicationChance(spellMechanics, originalTarget);
 	double signedPressureReduction = 0.0;
 	for(const auto & candidate : forms)
 	{
@@ -2861,7 +2763,8 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 		auto projectedTarget = projectedBattle->getForUpdate(unitId);
 		try
 		{
-			projectedTarget->beginBattleForm(candidate.form.creature, battleFormEffect->getDuration());
+			projectedTarget->beginBattleForm(candidate.form.creature, spells::effects::BattleFormEffect::durationWithExtend(
+				battleFormEffect->getDuration(), spellMechanics->getExtendSpellBonusRounds()));
 			projectedTarget->setPosition(candidate.form.landing);
 		}
 		catch(const std::exception &)
@@ -2870,14 +2773,26 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 		}
 
 		DamageCache projectedDamage;
-		const float candidatePressure = offensivePressure(projectedBattle, projectedDamage);
+		const float candidatePressure = offensivePressure(projectedBattle, projectedDamage, forecastRounds);
+		if(outcomeValue && inspirationValue)
+		{
+			if(spellMechanics->getSpell()->getJsonKey() == "new-horizons:polymorph")
+			{
+				SetStackEffect marker; marker.battleID = spellMechanics->getBattleID();
+				marker.toUpdate.emplace_back(unitId, std::vector<Bonus>{battle::polymorphMarker(
+					spellMechanics->getSpellId(), spellMechanics->getCasterColor())});
+				projectedBattle->getServerCallback()->apply(marker);
+			}
+			outcomeValue(projectedBattle, {}, false, true);
+			*inspirationValue += applicationChance * static_cast<double>(candidate.weight) / candidate.totalWeight
+				* (heroSpellProjection::localReceiptMarginal(projectedBattle, kernel) - localCore);
+		}
 		// Preserve both weakening rewards and strengthening penalties. In
 		// particular, do not clamp an unfavorable random form before averaging.
 		signedPressureReduction += static_cast<double>(baselinePressure - candidatePressure)
 			* static_cast<double>(candidate.weight) / static_cast<double>(candidate.totalWeight);
 	}
 
-	const auto applicationChance = spellApplicationChance(spellMechanics, originalTarget);
 	return static_cast<float>(signedPressureReduction) * applicationChance;
 }
 
@@ -3144,4 +3059,9 @@ void SpellTargetEvaluator::addIfCanBeCast(const spells::Mechanics * spellMechani
 	Destination des(hex);
 	if(spellMechanics->canBeCastAt({des}, ignored))
 		targets.push_back({des});
+}
+
+float SpellTargetEvaluator::applicationChance(const Mechanics * mechanics, const battle::Unit * recipient)
+{
+	return spellApplicationChance(mechanics, recipient);
 }

@@ -39,6 +39,7 @@ public:
 	UnitActionPanel(BattleInterface & owner);
 
 	void setPossibleActions(const std::vector<PossiblePlayerBattleAction> & actions);
+	void clearSelection();
 
 	std::vector<std::tuple<SpellID, bool>> getSpells() const;
 

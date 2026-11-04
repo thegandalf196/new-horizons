@@ -6,6 +6,8 @@
 
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
+#include "../../lib/battle/SideInBattle.h"
+#include <span>
 #include "../battle/SummonLifetimePresentation.h"
 #include <optional>
 #include <string>
@@ -21,6 +23,16 @@ struct InnateAbilityHelp
 	std::string details;
 	std::string iconPath;
 };
+
+inline std::optional<InnateAbilityHelp> demonicGateReinforcement(uint32_t unitId,
+	std::span<const SideInBattle::GatedDemonicStack> arrivedGates)
+{
+	for(const auto & gate : arrivedGates)
+		if(gate.unitId == unitId && gate.temporary)
+			return InnateAbilityHelp{"Temporary reinforcement",
+				"Arrived through a Demonic Gate. Disappears after combat and cannot open Gates.", {}};
+	return std::nullopt;
+}
 
 inline std::string replace(std::string text, std::string_view token, int value)
 {

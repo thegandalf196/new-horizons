@@ -6,6 +6,7 @@
 #include "StdInc.h"
 
 #include "HeroCommandFixture.h"
+#include "../../HistoricalFactionPerkRules.h"
 #include "../../battleAI/PurifyRuleFixtures.h"
 #include "../../../lib/spells/CurePhysicalAffliction.h"
 #include "../../../lib/battle/NewHorizonsGraveDust.h"
@@ -64,8 +65,10 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
+		// These Purify regressions retain the captured paired Divine Mandate
+		// rules; current passive automatic-Purify behavior has its own fixture.
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			historicalFactionPerkRules());
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 		if(magicVersion != newHorizonsMagic::CURRENT_RULESET_VERSION)
 		{
@@ -75,48 +78,24 @@ protected:
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, rules);
 	}
 
-	void acceptPerkThroughOffer(CGHeroInstance * hero, const std::string_view skillId,
-		const std::string_view perkId)
-	{
-		const auto rankLookup = [hero](const std::string & queriedSkillId)
-		{
-			return hero->getPerkSkillRank(queriedSkillId);
-		};
-
-		for(uint64_t seed = 0; seed < 4096; ++seed)
-		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
-			const auto selected = std::find_if(offer.begin(), offer.end(), [&](const auto & candidate)
-			{
-				return candidate.selection.skillId == skillId && candidate.selection.perkId == perkId;
-			});
-			if(selected == offer.end())
-				continue;
-
-			const auto choice = static_cast<size_t>(std::distance(offer.begin(), selected));
-			gameHandler->levelUpHero(hero, offer, choice, seed, false);
-			ASSERT_TRUE(hero->hasActivePerk(std::string(skillId), std::string(perkId)));
-			return;
-		}
-
-		FAIL() << perkId << " never appeared in a legal perk offer";
-	}
-
 	void selectPurifyingMandate()
 	{
 		const int skill = SecondarySkill::decode(divineMandateSkill);
 		ASSERT_GE(skill, 0);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::BASIC,
 			ChangeValueMode::ABSOLUTE);
-		acceptPerkThroughOffer(attackerSideHero, divineMandateSkill, sacredCommandPerk);
+		attackerSideHero->applyPerkSelection({divineMandateSkill, sacredCommandPerk});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(divineMandateSkill, sacredCommandPerk));
 		attackerSideHero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::ADVANCED,
 			ChangeValueMode::ABSOLUTE);
-		acceptPerkThroughOffer(attackerSideHero, divineMandateSkill, purifyingMandatePerk);
+		attackerSideHero->applyPerkSelection({divineMandateSkill, purifyingMandatePerk});
+		ASSERT_TRUE(attackerSideHero->hasActivePerk(divineMandateSkill, purifyingMandatePerk));
 	}
 
 	void prepare(int32_t spellPower = 0, bool purifier = false, bool purifyingMandate = false)
 	{
 		startGame();
+		ASSERT_TRUE(attackerSideHero->getPerkState().rules["divineMandatePolicy"].isNull());
 		const int lightMagic = SecondarySkill::decode(lightMagicSkill);
 		ASSERT_GE(lightMagic, 0);
 		if(purifier)
@@ -129,7 +108,7 @@ protected:
 			attackerSideHero->applyPerkSelection({lightMagicSkill, purifierPerk});
 		}
 		if(purifyingMandate)
-			selectPurifyingMandate();
+			ASSERT_NO_FATAL_FAILURE(selectPurifyingMandate());
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(purifySpell());

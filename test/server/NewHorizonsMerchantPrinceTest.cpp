@@ -48,7 +48,6 @@ namespace
 const PlayerColor PLAYER(0);
 constexpr auto ESTATES_SKILL = "new-horizons:estates";
 constexpr auto MERCHANT_PRINCE = "new-horizons:estates.merchantPrince";
-constexpr auto RESOURCE_BROKER = "new-horizons:estates.resourceBroker";
 
 class MockBuildAnalyzer final : public NK2AI::BuildAnalyzer
 {
@@ -252,24 +251,21 @@ TEST_F(NewHorizonsMerchantPrinceTest, ResidenceCannotCreateAMissingMarketplace)
 	EXPECT_FALSE(emptyTown->allowsTrade(EMarketMode::RESOURCE_RESOURCE));
 }
 
-TEST_F(NewHorizonsMerchantPrinceTest, OrdinaryRateCapAndResourceBrokerCompositionArePreserved)
+TEST_F(NewHorizonsMerchantPrinceTest, OrdinaryRateCapIsPreserved)
 {
-	startGame();
-	const int ordinary = marketTown->getMarketEfficiency();
-	ASSERT_NO_FATAL_FAILURE(acquireMerchantPrince(firstHero));
-	firstHero->setSecSkillLevel(estatesSkill(), MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	firstHero->applyPerkSelection({ESTATES_SKILL, RESOURCE_BROKER});
-	ASSERT_TRUE(firstHero->hasActivePerk(ESTATES_SKILL, RESOURCE_BROKER));
-	marketTown->setVisitingHero(firstHero);
-	const auto wood = GameResID(EGameResID::WOOD);
-	const auto gems = GameResID(EGameResID::GEMS);
-	EXPECT_DOUBLE_EQ(marketTown->getResourceExchangeEffectiveness(wood, gems),
-		std::min((ordinary + 3.0) / 20.0, 0.5) * 1.2);
-	gameState()->getPlayerState(PLAYER)->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::MARKETPLACE_ACCESS, BonusSource::OTHER, 100, BonusSourceID()));
-	EXPECT_EQ(marketTown->getMarketEfficiency(), ordinary + 102);
-	EXPECT_DOUBLE_EQ(marketTown->getMarketExchangeEffectiveness(), 0.5);
-	EXPECT_DOUBLE_EQ(marketTown->getResourceExchangeEffectiveness(wood, gems), 0.6);
+    startGame();
+    const int ordinary = marketTown->getMarketEfficiency();
+    ASSERT_NO_FATAL_FAILURE(acquireMerchantPrince(firstHero));
+    marketTown->setVisitingHero(firstHero);
+    const auto wood = GameResID(EGameResID::WOOD);
+    const auto gems = GameResID(EGameResID::GEMS);
+    EXPECT_DOUBLE_EQ(marketTown->getResourceExchangeEffectiveness(wood, gems),
+        std::min((ordinary + 3.0) / 20.0, 0.5));
+    gameState()->getPlayerState(PLAYER)->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+        BonusType::MARKETPLACE_ACCESS, BonusSource::OTHER, 100, BonusSourceID()));
+    EXPECT_EQ(marketTown->getMarketEfficiency(), ordinary + 102);
+    EXPECT_DOUBLE_EQ(marketTown->getMarketExchangeEffectiveness(), 0.5);
+    EXPECT_DOUBLE_EQ(marketTown->getResourceExchangeEffectiveness(wood, gems), 0.5);
 }
 
 TEST_F(NewHorizonsMerchantPrinceTest, ResourceTraderAndAuthoritativeTradeUseImprovedTownQuote)

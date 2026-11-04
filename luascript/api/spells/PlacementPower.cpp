@@ -11,22 +11,20 @@ namespace
 int64_t currentVerdantPrisonPower(const ::spells::Mechanics & m)
 {
 	const auto * hero = m.getHeroCaster();
-	return newHorizonsMagic::verdantPrisonHitPoints(m.getEffectPower(), m.getSpellPowerCoefficientBasisPoints(),
-		m.getWarcastingBonusPercent(), m.getEmpowerSpellBonusPercent(),
-		hero && hero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.verdantWarden"));
+	return m.adjustMetamagicMagnitude(newHorizonsMagic::verdantPrisonHitPoints(m.getEffectPower(), m.getSpellPowerCoefficientBasisPoints(), m.getEmpowerSpellBonusPercent(),
+		hero && hero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.verdantWarden")), nullptr);
 }
 int64_t currentTransfigurePower(const ::spells::Mechanics & m, int32_t footprint)
 {
 	const auto * hero = m.getHeroCaster();
-	return newHorizonsMagic::transfigureHitPoints(m.getEffectPower(), m.getSpellPowerCoefficientBasisPoints(),
-		m.getWarcastingBonusPercent(), m.getEmpowerSpellBonusPercent(), footprint,
-		hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.matterShaper"));
+	return m.adjustMetamagicMagnitude(newHorizonsMagic::transfigureHitPoints(m.getEffectPower(), m.getSpellPowerCoefficientBasisPoints(), m.getEmpowerSpellBonusPercent(), footprint,
+		hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.matterShaper")), nullptr);
 }
 int64_t currentEarthquakeStructuralPower(const ::spells::Mechanics & m)
 {
 	const auto * hero = m.getHeroCaster();
-	return newHorizonsMagic::earthquakeStructuralDamage(m.getNewHorizonsEarthquakeParameter("structuralDamage"),
-		hero && hero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.geomancer"));
+	return m.adjustMetamagicMagnitude(newHorizonsMagic::earthquakeStructuralDamage(m.getNewHorizonsEarthquakeParameter("structuralDamage"),
+		hero && hero->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.geomancer")), nullptr);
 }
 }
 void registerPlacementPowerMethods(MethodRegistrar & R)

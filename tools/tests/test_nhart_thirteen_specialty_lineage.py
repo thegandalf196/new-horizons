@@ -33,12 +33,20 @@ def ordinary_registry(root):
 
 
 def registry_artwork(table):
-    """Bind art only from each registry row's terminal optional artwork field."""
+    """Bind the declared artwork slot, before the optional short summary."""
+    string = r'"(?:\\.|[^"\\])*"'
+    # Hero is captured separately; creature/name/coefficient precede the enums
+    # and precise description. Only artwork may precede the optional summary.
+    fields = (rf'\s*(?:{string}\s*,\s*){{3}}BonusType::\w+\s*,\s*'
+              rf'BonusValueType::\w+\s*,\s*{string}'
+              rf'(?:\s*,\s*(?P<art>{string}|std::nullopt)(?:\s*,\s*{string})?)?\s*')
     bindings = {}
     for hero, body in re.findall(r'\{\s*"(core:[^"\n]+)",([^{}]*)\}', table):
         if hero in bindings:
             raise ValueError('Duplicate ordinary specialty identity')
-        artwork = re.search(r',\s*"(newHorizons/heroSpecialties/[^"\n]+)"\s*$', body)
+        row = re.fullmatch(fields, body)
+        artwork = re.fullmatch(r'"(newHorizons/heroSpecialties/[^"\n]+)"',
+                               row.group('art') or '') if row else None
         bindings[hero] = artwork.group(1) if artwork else None
     return bindings
 
@@ -84,7 +92,19 @@ class ThirteenSpecialtyLineageTest(unittest.TestCase):
             self.assertEqual(bindings[row['id']], 'newHorizons/heroSpecialties/' + row['identity'])
         self.assertIn('BonusNodeType::BATTLE_WIDE', source)
 
-    def test_registry_contract_rejects_missing_duplicate_wrong_and_nonterminal_art(self):
+    def test_artwork_slot_accepts_optional_summary_without_reading_description(self):
+        prefix = ('{"core:fixture", "core:creature", "Specialty", "coefficient", '
+                  'BonusType::NONE, BonusValueType::BASE_NUMBER, '
+                  '"Description, with an escaped \\"quote\\"", ')
+        art = 'newHorizons/heroSpecialties/Fixture'
+        for suffix in ('"' + art + '"', '"' + art + '", "Short summary, with punctuation"'):
+            self.assertEqual(registry_artwork(prefix + suffix + '}'), {'core:fixture': art})
+        for suffix in ('std::nullopt, "' + art + '"',
+                       '"WrongSlot", "' + art + '"',
+                       '"' + art + '", "summary", "extra"'):
+            self.assertIsNone(registry_artwork(prefix + suffix + '}')['core:fixture'])
+
+    def test_registry_contract_rejects_missing_duplicate_wrong_and_misplaced_art(self):
         _, table = ordinary_registry(ROOT)
         row = self.rows[0]
         hero = row['id']
@@ -92,7 +112,8 @@ class ThirteenSpecialtyLineageTest(unittest.TestCase):
         self.assertEqual(registry_artwork(table)[hero], art)
         for changed in (table.replace(art, 'newHorizons/heroSpecialties/WrongIdentity'),
                         table.replace('"' + art + '"', 'std::nullopt'),
-                        table.replace('"' + art + '"', '"' + art + '", "ignored"')):
+                        table.replace('"' + art + '"', 'std::nullopt, "' + art + '"'),
+                        table.replace('"' + art + '"', '"' + art + '", "ignored", "extra"')):
             self.assertNotEqual(registry_artwork(changed).get(hero), art)
         duplicate = re.search(r'\{\s*"' + re.escape(hero) + r'",[^{}]*\}', table).group()
         with self.assertRaisesRegex(ValueError, 'Duplicate'):

@@ -14,13 +14,13 @@ TEST(NewHorizonsNaturesWrathPowerTest, CanonicalFractionalAttenuationAndWorldroo
 	const std::array<int64_t, 3> worldroot{330, 306, 285};
 	for(int hop = 0; hop < 3; ++hop)
 	{
-		EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 10000, 0, 0, false, hop), ordinary[hop]);
-		EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 10000, 0, 0, true, hop), worldroot[hop]);
+		EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 10000, 0, false, hop), ordinary[hop]);
+		EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 10000, 0, true, hop), worldroot[hop]);
 	}
-	EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 15000, 0, 0, false, 0), 410);
-	EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 15000, 20, 50, true, 0), 704);
-	EXPECT_THROW(newHorizonsNaturesWrath::hopPower(100, 10000, 0, 0, false, 17), std::invalid_argument);
-	EXPECT_NO_THROW(newHorizonsNaturesWrath::hopPower(100, 10000, 0, 0, true, 18));
+	EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 15000, 0, false, 0), 410);
+	EXPECT_EQ(newHorizonsNaturesWrath::hopPower(100, 15000, 50, true, 0), 605);
+	EXPECT_THROW(newHorizonsNaturesWrath::hopPower(100, 10000, 0, false, 17), std::invalid_argument);
+	EXPECT_NO_THROW(newHorizonsNaturesWrath::hopPower(100, 10000, 0, true, 18));
 }
 
 TEST_F(NewHorizonsNaturesWrathTest, PaidExpertCastAlternatesDamageAndSurvivorOnlyHealing)
@@ -34,8 +34,8 @@ TEST_F(NewHorizonsNaturesWrathTest, PaidExpertCastAlternatesDamageAndSurvivorOnl
 		battle()->getMagicRules(), attackerSideHero, spell());
 	const auto mana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(cast(first));
-	EXPECT_EQ(beforeFirst - first->getAvailableHealth(), newHorizonsNaturesWrath::hopPower(100, coefficient, 0, 0, false, 0));
-	EXPECT_EQ(beforeThird - third->getAvailableHealth(), newHorizonsNaturesWrath::hopPower(100, coefficient, 0, 0, false, 2));
+	EXPECT_EQ(beforeFirst - first->getAvailableHealth(), newHorizonsNaturesWrath::hopPower(100, coefficient, 0, false, 0));
+	EXPECT_EQ(beforeThird - third->getAvailableHealth(), newHorizonsNaturesWrath::hopPower(100, coefficient, 0, false, 2));
 	EXPECT_EQ(friendly->getCount(), survivors);
 	EXPECT_EQ(friendly->getAvailableHealth(), survivors * friendly->getMaxHealth());
 	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
@@ -60,7 +60,7 @@ TEST_F(NewHorizonsNaturesWrathTest, HealthyAndImmuneConductorsKeepHopIndex)
 	const auto coefficient = newHorizonsMagic::spellPowerCoefficientBasisPoints(battle()->getMagicRules(), attackerSideHero, spell());
 	ASSERT_TRUE(cast(first));
 	EXPECT_EQ(first->getAvailableHealth(), health);
-	EXPECT_EQ(later - third->getAvailableHealth(), newHorizonsNaturesWrath::hopPower(100, coefficient, 0, 0, false, 2));
+	EXPECT_EQ(later - third->getAvailableHealth(), newHorizonsNaturesWrath::hopPower(100, coefficient, 0, false, 2));
 }
 
 TEST_F(NewHorizonsNaturesWrathTest, ResistantEnemyConductsWithoutDamageOrRerouting)

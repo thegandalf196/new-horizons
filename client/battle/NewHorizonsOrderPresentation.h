@@ -20,18 +20,19 @@ struct CommandDisplay
 	const char * image;
 	const char * name;
 	const char * description;
+	const char * summary;
 };
 inline const std::array<CommandDisplay, 10> commandDisplays = {{
-	{HeroCommand::CHARGE, "NH_charge_button", "Charge", "The first melee attack after moving at least 3 hexes gains bonus damage; extra movement adds more."},
-	{HeroCommand::FOCUS_FIRE, "NH_focusFire_button", "Focus Fire", "Choose one enemy stack. Friendly shooters gain damage against it and reduce range and obstacle penalties."},
-	{HeroCommand::RIPOSTE, "NH_riposte_button", "Riposte", "Friendly stacks take less melee damage and deal increased retaliation damage this round."},
-	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions. Iron Discipline also reduces magical damage."},
-	{HeroCommand::BRACE, "NH_brace_button", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack."},
-	{HeroCommand::PROTECT, "NH_protect_button", "Protect", "Choose a Protector and adjacent Ward. The first qualifying melee attack is redirected; Shield Master allows the first two."},
-	{HeroCommand::FLANK, "NH_flank_button", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides."},
-	{HeroCommand::FEINT, "NH_feint_button", "Feint", "Friendly troops take reduced physical retaliation damage through the end of this round."},
-	{HeroCommand::VANGUARD, "NH_vanguard_button", "Vanguard", "Friendly troops gain Creature Attack, Defense, Morale and Initiative. Undead and mechanical troops are unaffected; Morale immunity remains. Refreshes without stacking; issuing round counts toward duration."},
-	{HeroCommand::SECOND_WIND, "NH_secondWind_button", "Second Wind", "Choose a friendly stack that already completed its normal activation for an additional activation at reduced direct damage."}
+	{HeroCommand::CHARGE, "NH_charge_button", "Charge", "The first melee attack after moving at least 3 hexes gains bonus damage; extra movement adds more.", "Give friendly stacks bonus damage on their first melee attack after moving at least three hexes this activation."},
+	{HeroCommand::FOCUS_FIRE, "NH_focusFire_button", "Focus Fire", "Choose one enemy stack. Friendly shooters gain damage against it and reduce range and obstacle penalties.", "Choose an enemy stack; friendly shooters deal more damage to it and suffer smaller range and obstacle penalties this round."},
+	{HeroCommand::RIPOSTE, "NH_riposte_button", "Riposte", "Friendly stacks take less melee damage and deal increased retaliation damage this round.", "Friendly stacks take less melee damage and deal more retaliation damage this round."},
+	{HeroCommand::HOLD_THE_LINE, "NH_holdTheLine_button", "Hold the Line", "Friendly stacks take reduced physical damage while they remain in their issued positions. Iron Discipline also reduces magical damage.", "Friendly stacks take less physical damage this round while staying where they were when the Order was issued."},
+	{HeroCommand::BRACE, "NH_brace_button", "Brace", "Friendly stacks pre-emptively attack enemies that moved at least 3 hexes before a melee attack.", "This round, friendly stacks strike first against melee attackers that just moved at least three hexes."},
+	{HeroCommand::PROTECT, "NH_protect_button", "Protect", "Choose a Protector and adjacent Ward. The first qualifying melee attack is redirected; Shield Master allows the first two.", "Choose adjacent friendly Protector and Ward stacks; the Protector intercepts the first qualifying melee attack against the Ward."},
+	{HeroCommand::FLANK, "NH_flank_button", "Flank", "Choose one enemy stack. Friendly melee damage increases from additional distinct attack sides.", "Choose one enemy stack; friendly melee attacks deal more damage when coming from additional distinct sides."},
+	{HeroCommand::FEINT, "NH_feint_button", "Feint", "Friendly troops take reduced physical retaliation damage through the end of this round.", "Friendly stacks take less physical retaliation damage until round end."},
+	{HeroCommand::VANGUARD, "NH_vanguard_button", "Vanguard", "Friendly troops gain Creature Attack, Defense, Morale and Initiative. Undead and mechanical troops are unaffected; Morale immunity remains. Refreshes without stacking; issuing round counts toward duration.", "Temporarily grant eligible friendly stacks Attack, Defense, Morale and Initiative; Undead and mechanical creatures are unaffected."},
+	{HeroCommand::SECOND_WIND, "NH_secondWind_button", "Second Wind", "Choose a friendly stack that already completed its normal activation for an additional activation at reduced direct damage.", "Give a friendly stack that finished its normal activation another activation with reduced direct damage."}
 }};
 
 inline const CommandDisplay & commandDisplay(HeroCommand command)
@@ -305,7 +306,7 @@ inline RevisedOrderPreview revisedOrderPreview(const CPlayerBattleCallback & cal
 }
 
 inline std::string commandEffects(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero,
-	int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent)
+	int divineMandateEfficiencyBonusPercent)
 {
 	if(command == HeroCommand::FEINT || command == HeroCommand::VANGUARD)
 		return {}; // Revised previews use prepared snapshots, independently of the legacy rating cache.
@@ -320,8 +321,8 @@ inline std::string commandEffects(const JsonNode & rules, HeroCommand command, c
 		try
 		{
 			int value = command == HeroCommand::SECOND_WIND && key == "additionalActivationDamagePercent"
-				? heroCommands::secondWindPercent(hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent)
-				: heroCommands::coefficient(formula, hero, warcastingBonusPercent, divineMandateEfficiencyBonusPercent);
+				? heroCommands::secondWindPercent(hero, divineMandateEfficiencyBonusPercent)
+				: heroCommands::coefficient(formula, hero, divineMandateEfficiencyBonusPercent);
 			// Revised companions add fixed physical percentage points only to the
 			// primary effect; historical formulas and secondary riders stay intact.
 			if(heroCommands::isRevisedRules(rules)
@@ -343,7 +344,7 @@ inline std::string commandEffects(const JsonNode & rules, HeroCommand command, c
 		&& hero.hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
 	{
 		const int physicalReduction = std::clamp(heroCommands::coefficient(
-			effects["damageReductionPercent"], hero, warcastingBonusPercent,
+			effects["damageReductionPercent"], hero,
 			divineMandateEfficiencyBonusPercent), 0, 100);
 		if(!result.empty())
 			result += '\n';

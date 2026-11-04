@@ -26,14 +26,14 @@
 
 namespace
 {
-SpellID originalSpell(bool loynis)
+SpellID originalSpell()
 {
-	return SpellID(loynis ? SpellID::PRAYER : SpellID::PRECISION);
+	return SpellID(SpellID::PRAYER);
 }
 
-SpellID offensiveSpell(bool loynis)
+SpellID offensiveSpell()
 {
-	return SpellID(SpellID::decode(loynis ? "new-horizons:crusade" : "new-horizons:focusMagic"));
+	return SpellID(SpellID::decode("new-horizons:crusade"));
 }
 
 #ifdef ENABLE_BATTLE_AI
@@ -55,7 +55,6 @@ protected:
 	bool presetBook = false;
 	bool optIn = true;
 	bool explicitFalse = false;
-	bool loynis = true;
 	CStack * target = nullptr;
 
 	void SetUp() override
@@ -79,7 +78,7 @@ protected:
 		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
 			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
 		rules.Struct().erase("lighthouseDeparture");
-		// This suite's old-format controls represent the earlier Loynis/Zubin
+		// This suite's old-format controls represent the earlier Loynis
 		// profile, not the subsequently-authored Inteus/Halon feature.
 		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		if(!optIn)
@@ -98,16 +97,15 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		isolateHistoricalAdventurePolicies(*loaded);
 	}
-	void prepare(bool useLoynis = true)
+	void prepare()
 	{
-		loynis = useLoynis;
 		const CreatureID archer(CreatureID::decode("core:archer"));
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
-			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(loynis ? "core:loynis" : "core:zubin")), PlayerColor(0))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:loynis")), PlayerColor(0))
 			.heroGarrison({{archer, 100}});
 		if(presetBook)
-			builder.heroSpells({originalSpell(loynis)});
+			builder.heroSpells({originalSpell()});
 		builder.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:aislinn")), PlayerColor(1))
 			.heroGarrison({{archer, 100}});
 		startWithMap(std::move(builder));
@@ -146,11 +144,8 @@ protected:
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
-		action.spell = offensiveSpell(loynis);
-		if(loynis)
-			action.aimToHex(BattleHex::INVALID);
-		else
-			action.aimToUnit(target);
+		action.spell = offensiveSpell();
+		action.aimToHex(BattleHex::INVALID);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
 	void expectOriginalProducer()
@@ -175,14 +170,14 @@ protected:
 		const auto & original = producers.front().bonus;
 		EXPECT_EQ(original->parameters, nullptr);
 		const auto converted = attackerSideHero->getAllBonuses(Selector::typeSubtype(
-			BonusType::SPECIAL_PECULIAR_ENCHANT, BonusSubtypeID(originalSpell(loynis))));
+			BonusType::SPECIAL_PECULIAR_ENCHANT, BonusSubtypeID(originalSpell())));
 		ASSERT_EQ(converted->size(), 1u);
 		const auto & bonus = converted->front();
 		EXPECT_NE(bonus.get(), original.get());
 		EXPECT_EQ(bonus->val, 0);
 		EXPECT_EQ(bonus->stacking, "new-horizons:non-damage-spell-specialty:"
 			+ std::to_string(attackerSideHero->getHeroType()->getId().getNum()) + ":"
-			+ std::to_string(offensiveSpell(loynis).getNum()));
+			+ std::to_string(offensiveSpell().getNum()));
 		ASSERT_NE(bonus->parameters, nullptr);
 		EXPECT_NE(bonus->parameters.get(), original->parameters.get());
 		ASSERT_TRUE(bonus->parameters->isVector());
@@ -192,17 +187,12 @@ protected:
 	void expectValues(const battle::Unit * unit, int power) const
 	{
 		const auto bonuses = unit->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT,
-			BonusSourceID(offensiveSpell(loynis))));
-		ASSERT_EQ(bonuses->size(), loynis ? 5u : 1u);
+			BonusSourceID(offensiveSpell())));
+		ASSERT_EQ(bonuses->size(), 5u);
 		for(const auto & bonus : *bonuses)
 		{
 			EXPECT_EQ(bonus->turnsRemain, 3);
-			if(!loynis)
-			{
-				EXPECT_EQ(bonus->type, BonusType::COMBAT_EVENT_TRIGGER);
-				EXPECT_EQ(bonus->val, std::min(2000, 1000 + 5 * power * 120 / 100));
-			}
-			else if(bonus->type == BonusType::PRIMARY_SKILL)
+			if(bonus->type == BonusType::PRIMARY_SKILL)
 				EXPECT_EQ(bonus->val, std::min(6, 3 + power * 120 / (75 * 100)));
 			else if(bonus->type == BonusType::STACKS_INITIATIVE_FLAT)
 				EXPECT_EQ(bonus->val, std::min(3, 1 + power * 120 / (100 * 100)));
@@ -213,60 +203,57 @@ protected:
 		}
 	}
 
-	void expectDefaultPaid(bool useLoynis)
+	void expectDefaultPaid()
 	{
-		ASSERT_NO_FATAL_FAILURE(prepare(useLoynis));
-		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(offensiveSpell(loynis)));
-		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(originalSpell(loynis)));
-		EXPECT_TRUE(attackerSideHero->getHeroType()->spells.contains(originalSpell(loynis)));
-		EXPECT_FALSE(attackerSideHero->getHeroType()->spells.contains(offensiveSpell(loynis)));
-		EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell(loynis)), 20);
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(offensiveSpell()));
+		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(originalSpell()));
+		EXPECT_TRUE(attackerSideHero->getHeroType()->spells.contains(originalSpell()));
+		EXPECT_FALSE(attackerSideHero->getHeroType()->spells.contains(offensiveSpell()));
+		EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell()), 20);
 		expectConvertedProducer();
 		ASSERT_NO_FATAL_FAILURE(combat());
 		const auto hp = target->getAvailableHealth();
 		const auto movement = target->getMovementRange();
 		const auto mana = attackerSideHero->getManaAvailable();
 		ASSERT_TRUE(paidCast());
-		EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), loynis ? 24 : 11);
+		EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 24);
 		EXPECT_EQ(target->getAvailableHealth(), hp);
 		EXPECT_EQ(target->getMovementRange(), movement);
 		expectValues(target, 100);
 		EXPECT_FALSE(paidCast()) << "ordinary completed hero action cannot repeat";
 	}
 
-	void expectMapBook(bool useLoynis)
+	void expectMapBook()
 	{
 		presetBook = true;
-		ASSERT_NO_FATAL_FAILURE(prepare(useLoynis));
-		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(originalSpell(loynis)));
-		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(offensiveSpell(loynis)));
-		EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell(loynis)), 20);
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(originalSpell()));
+		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(offensiveSpell()));
+		EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell()), 20);
 		expectConvertedProducer();
 	}
 
-	void expectLegacy(bool useLoynis)
+	void expectLegacy()
 	{
 		legacyMagic = true;
-		ASSERT_NO_FATAL_FAILURE(prepare(useLoynis));
-		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(originalSpell(loynis)));
-		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(offensiveSpell(loynis)));
-		EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell(loynis)), 0);
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(originalSpell()));
+		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(offensiveSpell()));
+		EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell()), 0);
 		expectOriginalProducer();
 	}
 };
 
-TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisFreshDefaultPaidArmyEnchantment) { expectDefaultPaid(true); }
-TEST_F(NewHorizonsOffensiveSpecialtyTest, ZubinFreshDefaultPaidFirstShotEnchantment) { expectDefaultPaid(false); }
-TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisMapBookUnchanged) { expectMapBook(true); }
-TEST_F(NewHorizonsOffensiveSpecialtyTest, ZubinMapBookUnchanged) { expectMapBook(false); }
-TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisLegacyBookAndProducerUnchanged) { expectLegacy(true); }
-TEST_F(NewHorizonsOffensiveSpecialtyTest, ZubinLegacyBookAndProducerUnchanged) { expectLegacy(false); }
+TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisFreshDefaultPaidArmyEnchantment) { expectDefaultPaid(); }
+TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisMapBookUnchanged) { expectMapBook(); }
+TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisLegacyBookAndProducerUnchanged) { expectLegacy(); }
 
 TEST_F(NewHorizonsOffensiveSpecialtyTest, AbsentOptInPreservesOldFormatWritability)
 {
 	optIn = false;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(offensiveSpell(true)));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(offensiveSpell()));
 	expectOriginalProducer();
 	CMemorySerializer bytes;
 	bytes.oser.version = ESerializationVersion::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES;
@@ -282,8 +269,8 @@ TEST_F(NewHorizonsOffensiveSpecialtyTest, CurrentWorldRestoresAndOlderEnclosingW
 	restored.loadFromMemory(gameState()->saveToMemory());
 	const auto * hero = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(hero, nullptr);
-	EXPECT_TRUE(hero->spellbookContainsSpell(offensiveSpell(true)));
-	EXPECT_EQ(hero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell(true)), 20);
+	EXPECT_TRUE(hero->spellbookContainsSpell(offensiveSpell()));
+	EXPECT_EQ(hero->getNonDamageSpellSpecialtyBonusPercent(offensiveSpell()), 20);
 	const auto reject = [](auto & value)
 	{
 		CMemorySerializer bytes;
@@ -350,14 +337,14 @@ TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisDetachedFloorsCapsAndPaidMatchWi
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
 		HypotheticBattle projected(&environment, callback);
 		const auto mana = attackerSideHero->getManaAvailable();
-		spells::BattleCast cast(&projected, attackerSideHero, spells::Mode::HERO, offensiveSpell(true).toSpell());
-		const auto mechanics = offensiveSpell(true).toSpell()->battleMechanics(&cast);
+		spells::BattleCast cast(&projected, attackerSideHero, spells::Mode::HERO, offensiveSpell().toSpell());
+		const auto mechanics = offensiveSpell().toSpell()->battleMechanics(&cast);
 		spells::Target aim{spells::Destination(BattleHex::INVALID)};
 		ASSERT_TRUE(mechanics->canBeCastAt(aim));
 		mechanics->castEval(projected.getServerCallback(), aim);
 		expectValues(projected.battleGetUnitByID(target->unitId()), power);
 		EXPECT_TRUE(target->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT,
-			BonusSourceID(offensiveSpell(true))))->empty());
+			BonusSourceID(offensiveSpell())))->empty());
 		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	}
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
@@ -365,30 +352,5 @@ TEST_F(NewHorizonsOffensiveSpecialtyTest, LoynisDetachedFloorsCapsAndPaidMatchWi
 	expectValues(target, 100);
 }
 
-TEST_F(NewHorizonsOffensiveSpecialtyTest, ZubinDetachedFixedBaseFractionAndCapMatchPaidWithoutLiveMutation)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(false));
-	ASSERT_NO_FATAL_FAILURE(combat());
-	OffensivePredictionEnvironment environment(gameState());
-	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
-	for(const auto power : {0, 7, 100, 2000})
-	{
-		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
-		HypotheticBattle projected(&environment, callback);
-		const auto mana = attackerSideHero->getManaAvailable();
-		spells::BattleCast cast(&projected, attackerSideHero, spells::Mode::HERO, offensiveSpell(false).toSpell());
-		const auto mechanics = offensiveSpell(false).toSpell()->battleMechanics(&cast);
-		spells::Target aim{spells::Destination(projected.battleGetUnitByID(target->unitId()))};
-		ASSERT_TRUE(mechanics->canBeCastAt(aim));
-		mechanics->castEval(projected.getServerCallback(), aim);
-		expectValues(projected.battleGetUnitByID(target->unitId()), power);
-		EXPECT_TRUE(target->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT,
-			BonusSourceID(offensiveSpell(false))))->empty());
-		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	}
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
-	ASSERT_TRUE(paidCast());
-	expectValues(target, 100);
-}
 #endif
 }

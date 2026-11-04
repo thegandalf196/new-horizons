@@ -15,7 +15,7 @@ void CGHeroInstance::validateHeroBonusSerialization(BonusSerializationContext co
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	validateArmyBonusSerialization(context);
 	if(commander) commander->validateExportedBonusSerialization(context);
 }
@@ -24,7 +24,7 @@ void CGTownInstance::validateTownBonusSerialization(BonusSerializationContext co
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	validateArmyBonusSerialization(context);
 	townAndVis.validateExportedBonusSerialization(context);
 	for(const auto & [building, instance] : rewardableBuildings)
@@ -35,7 +35,7 @@ void CMap::validateOwnedBonusSerialization(BonusSerializationContext context) co
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	for(const auto & object : objects)
 	{
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))

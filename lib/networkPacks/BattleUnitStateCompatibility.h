@@ -39,6 +39,7 @@ void validateForEnvelope(const UnitChanges & change, Handler & h,
 	validateFrozenFeedback();
 	change.validateBattleFormSerialization(h);
 	change.validateConfusionSerialization(h);
+	change.validatePassiveFactionSerialization(h);
 	change.validateDreadCavalrySerialization(h);
 	change.validateMoraleActivationSerialization(h);
 	change.validateOpportunistSerialization(h);

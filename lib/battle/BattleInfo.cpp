@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../spells/NewHorizonsMetamagicEntry.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "../bonuses/NativeBonusGraphAccess.h"
 #include "../bonuses/NativeBonusGraphAdmission.h"
@@ -26,7 +27,7 @@
 #include "UnitTransitionSidecars.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../entities/creature/NewHorizonsMusterRules.h"
-#include "NewHorizonsWarcasting.h"
+#include "ArcaneInspiration.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsSwiftRebirth.h"
 #include "BattleForm.h"
@@ -144,32 +145,6 @@ void BattleInfo::setCrossSchoolFormulaState(BattleSide side, const newHorizonsCr
 		throw std::runtime_error("Invalid Cross-School Formula side");
 	newHorizonsCrossSchoolFormula::validateState(*this, state);
 	sides.at(side).crossSchoolFormula = state;
-}
-
-void BattleInfo::validateReactiveWeaveStates() const
-{
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		// Validate stored bytes even when the public accessor masks an inactive profile.
-		const auto & state = sides.at(side).warcastingState;
-		state.validateShape();
-		if(state.reactiveEmpowermentPercent != 0
-			&& (!newHorizonsWarcasting::enabled(getMagicRules())
-				|| state.reactiveEmpowermentPercent != newHorizonsWarcasting::reactiveEmpowerment(getSideHero(side))
-				|| static_cast<int64_t>(state.reactiveExpiryRound) > static_cast<int64_t>(getRound()) + 1))
-			throw std::runtime_error("Reactive Weave saved readiness has invalid capability or expiry");
-	}
-}
-
-void BattleInfo::armReactiveWeave(BattleSide side, int32_t receiptRound, int32_t empowerment)
-{
-	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| receiptRound != getRound() || !newHorizonsWarcasting::enabled(getMagicRules())
-		|| empowerment <= 0 || empowerment != newHorizonsWarcasting::reactiveEmpowerment(getSideHero(side)))
-		throw std::runtime_error("Reactive Weave receipt does not match the captured hero capability");
-	auto next = sides.at(side).warcastingState;
-	next.armReactive(receiptRound, empowerment);
-	sides.at(side).warcastingState = std::move(next);
 }
 
 void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState & state)
@@ -308,14 +283,6 @@ void BattleInfo::consumeArmorerLastStand(BattleSide side)
 	if(!newHorizonsArmorer::hasLastStand(battleGetFightingHero(side)))
 		throw std::runtime_error("Armorer Last Stand requires the active hero perk");
 	sides.at(side).armorerLastStandUsed = true;
-}
-
-const AlternatingHeroActionState & BattleInfo::getWarcastingState(BattleSide side) const
-{
-	static const AlternatingHeroActionState empty;
-	if(!newHorizonsWarcasting::enabled(magicRules))
-		return empty;
-	return sides.at(side).warcastingState;
 }
 
 BattleSide BattleInfo::gatedDemonicStackSide(uint32_t unitId) const
@@ -800,9 +767,9 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 		currentBattle->sides[i].bloodrageSpeedBonus = newHorizonsBloodrage::hasUnrelenting(heroes[i]) ? 1 : 0;
 		currentBattle->sides[i].bloodrageAdditionalRetaliations = newHorizonsBloodrage::hasBerserker(heroes[i]) ? 1 : 0;
 		currentBattle->sides[i].bloodrageLowHealthIncrement = newHorizonsBloodrage::hasBloodScent(heroes[i])
-			? newHorizonsBloodrage::incrementForRank(currentBattle->sides[i].bloodrageRank) : 0;
+			? newHorizonsBloodrage::conditionalIncrement(heroes[i]) : 0;
 		currentBattle->sides[i].bloodragePainIncrement = newHorizonsBloodrage::hasRageThroughPain(heroes[i])
-			? newHorizonsBloodrage::incrementForRank(currentBattle->sides[i].bloodrageRank) : 0;
+			? newHorizonsBloodrage::conditionalIncrement(heroes[i]) : 0;
 	}
 
 	currentBattle->tile = tile;
@@ -1361,11 +1328,6 @@ bool BattleInfo::getCounterspellArmed(BattleSide side) const
 	return getSide(side).counterspellArmed;
 }
 
-int32_t BattleInfo::getMetamagicPendingCount(BattleSide side) const
-{
-	return getSide(side).metamagicPendingCount;
-}
-
 int32_t BattleInfo::getMetamagicUsesConsumed(BattleSide side) const
 {
 	return getSide(side).metamagicUsesConsumed;
@@ -1477,6 +1439,8 @@ void BattleInfo::nextRound()
 	// are applied, so skip the decrement here to grant them their full configured duration
 	bool isFirstRound = round == 0;
 	round += 1;
+	arcaneInspiration::advanceRound(*this, round);
+	newHorizonsMetamagic::advanceRound(*this);
 	seizeInitiative.nextRound(round);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
@@ -1485,7 +1449,6 @@ void BattleInfo::nextRound()
 			spellResponse = {};
 		if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE))
 			sides.at(side).heroActionAllowances.resetForRound(round);
-		sides.at(side).warcastingState = sides.at(side).warcastingState.clearedIfExpired(round);
 	}
 
 	const auto roundTimedEffects = battle::roundTimedBonuses(magicRules);
@@ -1759,9 +1722,7 @@ battle::BattleEffectSnapshot BattleInfo::captureBattleEffects(uint32_t id) const
 	if(!stack || !stack->alive() || stack->isGhost() || stack->isTurret() || !stack->getPosition().isValid())
 		throw std::runtime_error("Spell-effect exchange endpoint is not a living battlefield stack");
 	battle::BattleEffectSnapshot result;
-	for(const auto & bonus : stack->getExportedBonusList())
-		if(bonus->source == BonusSource::SPELL_EFFECT)
-			result.effects.push_back(*bonus);
+	result.effects = getLocalSpellEffects(id);
 	result.sidecars = battle::captureBattleEffectSidecars(*stack);
 	result.recipientHealth = stack->acquireState()->save()["state"]["health"];
 	result.capacityHealthReferenceMax = stack->getCapacityHealthReferenceMax();

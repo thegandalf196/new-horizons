@@ -9,6 +9,7 @@
 #include "../callback/IGameEventCallback.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../entities/hero/NewHorizonsSwampSeer.h"
+#include "../entities/hero/NewHorizonsLearning.h"
 namespace Rewardable
 {
 void grantPrimaryAndExperience(IGameEventCallback & gameEvents, const Reward & reward,
@@ -17,7 +18,7 @@ void grantPrimaryAndExperience(IGameEventCallback & gameEvents, const Reward & r
 	const auto studyBefore = newHorizonsHeroes::captureStudyPrimarySnapshot(hero, source);
 	for(size_t i = 0; i < reward.primary.size(); ++i)
 		if(reward.primary[i] != 0)
-			gameEvents.changePrimSkill(&hero, PrimarySkill(static_cast<int>(i)), reward.primary[i], ChangeValueMode::RELATIVE);
+			gameEvents.changePrimSkill(&hero, PrimarySkill(static_cast<int>(i)), newHorizonsLearning::trainingPrimaryReward(&hero, source, reward.primary[i]), ChangeValueMode::RELATIVE);
 	const auto gained = newHorizonsHeroes::acceptedStudyPrimaryPoints(hero, studyBefore);
 	const auto experience = reward.calculateHeroExperienceForAcceptedReward(&hero, source, gained);
 	if(experience)

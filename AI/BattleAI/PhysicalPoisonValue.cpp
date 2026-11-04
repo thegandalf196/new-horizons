@@ -8,6 +8,18 @@ int64_t physicalPoisonValue::projectedDamage(const battle::CUnitState * state)
 {
 	if(!state || state->physicalPoisonBaseDamage <= 0 || state->physicalPoisonActivationsRemaining <= 0)
 		return 0;
+	// New spell-origin Poison must use native per-tick defenses and rounding.
+	if(state->physicalPoisonSpellSide != BattleSide::NONE)
+	{
+		auto projected = state->acquireState();
+		int64_t damage = 0;
+		for(int activation = 0; activation < 3 && projected->physicalPoisonActivationsRemaining > 0; ++activation)
+		{
+			damage += newHorizonsBulwark::physicalPoisonTickDamage(projected.get());
+			newHorizonsBulwark::advancePhysicalPoison(projected.get());
+		}
+		return damage;
+	}
 	const int64_t base = state->physicalPoisonBaseDamage;
 	const int remaining = state->physicalPoisonActivationsRemaining;
 	if(remaining >= 3)

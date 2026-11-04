@@ -10,7 +10,9 @@
 #include "../../SpellPointTestUtils.h"
 
 #include "../../../lib/GameConstants.h"
+#include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/bonuses/Bonus.h"
+#include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/json/JsonNode.h"
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -26,6 +28,7 @@
 
 #include <array>
 #include <utility>
+#include <limits>
 
 namespace
 {
@@ -410,4 +413,120 @@ TEST_F(NewHorizonsDivineRetributionTest, PendingJudgmentPaysAfterTheProtectedSta
 	endRound();
 	EXPECT_EQ(enemyHealthBefore - enemyAttacker->getAvailableHealth(), 60);
 	EXPECT_TRUE(protectionBonuses()->empty());
+}
+
+class NewHorizonsMarkedDivineRetributionTest : public NewHorizonsDivineRetributionTest
+{
+	void mapLoaded(CMap * map) override
+	{
+		NewHorizonsDivineRetributionTest::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	}
+};
+
+TEST_F(NewHorizonsMarkedDivineRetributionTest, PaidMarkedCastSnapshotsRatioThroughJudgmentAndActualPayout)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(4));
+	const auto meta = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
+	attackerSideHero->setSecSkillLevel(meta, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	auto state = protectedStack->acquireState();
+	state->arcaneMarks.set(BattleSide::ATTACKER, 5);
+	BattleUnitsChanged update;
+	update.battleID = BattleID(0);
+	update.changedStacks.emplace_back(protectedStack->unitId(), UnitChanges::EOperation::UPDATE);
+	update.changedStacks.back().data = state->save();
+	gameHandler->sendAndApply(update);
+	ASSERT_TRUE(castRetribution());
+	const auto protection = protectionBonuses();
+	ASSERT_EQ(protection->size(), 1u);
+	EXPECT_EQ(protection->front()->val, 262); // Native150 cap *175%, snapshot at cast.
+	EXPECT_EQ(protection->front()->parameters->toCustom<JsonNode>()["payoutRatioBasisPoints"].Integer(), 5250);
+	const auto hp = protectedStack->getAvailableHealth();
+	ASSERT_TRUE(attack(enemyAttacker, protectedStack->getPosition()));
+	ASSERT_EQ(hp - protectedStack->getAvailableHealth(), 200);
+	const auto judgments = judgmentBonuses();
+	ASSERT_EQ(judgments->size(), 1u);
+	EXPECT_EQ(judgments->front()->parameters->toCustom<JsonNode>()["payoutRatioBasisPoints"].Integer(), 5250);
+	const auto beforePayout = enemyAttacker->getAvailableHealth();
+	endRound();
+	EXPECT_EQ(beforePayout - enemyAttacker->getAvailableHealth(), 105); //200 *52.5%, below cap262.
+}
+
+TEST_F(NewHorizonsMarkedDivineRetributionTest, ScriptPayoutProducerCanonicalizesExactBoundsWithoutSourceMutation)
+{
+	for(const auto type : {BonusType::DIVINE_RETRIBUTION, BonusType::DIVINE_RETRIBUTION_JUDGED})
+		for(const int ratio : {3000, 5250, 6900})
+		{
+			Bonus marker;
+			marker.type = type;
+			marker.source = BonusSource::SPELL_EFFECT;
+			JsonNode parameters;
+			parameters["payoutRatioBasisPoints"].Float() = ratio;
+			parameters["actualHpDamage"].Integer() = 200;
+			marker.parameters = std::make_shared<BonusParameters>(parameters);
+			const auto original = marker.parameters;
+			EXPECT_THROW(newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(marker), std::runtime_error);
+			ASSERT_NO_THROW(newHorizonsDivineRetribution::canonicalizeScriptPayoutRatio(marker));
+			EXPECT_NE(marker.parameters, original);
+			EXPECT_EQ(original->toJsonNode(), parameters);
+			const auto canonical = marker.parameters->toJsonNode();
+			EXPECT_EQ(canonical["payoutRatioBasisPoints"].getType(), JsonNode::JsonType::DATA_INTEGER);
+			EXPECT_EQ(newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(marker), ratio);
+			EXPECT_EQ(canonical["actualHpDamage"].Integer(), 200);
+			CMemorySerializer wire;
+			wire.oser.version = wire.iser.version = ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+			ASSERT_NO_THROW(wire.oser & marker);
+			Bonus restored;
+			ASSERT_NO_THROW(wire.iser & restored);
+			EXPECT_EQ(newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(restored), ratio);
+		}
+}
+
+TEST_F(NewHorizonsMarkedDivineRetributionTest, ScriptPayoutProducerRejectsMalformedWithoutMutation)
+{
+	std::vector<JsonNode> malformed(1);
+	JsonNode value;
+	value.Bool() = true; malformed.push_back(value);
+	value = JsonNode{}; value.String() = "5250"; malformed.push_back(value);
+	for(const double number : {2999.0, 6901.0, 5250.5, std::numeric_limits<double>::infinity(),
+		-std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()})
+	{
+		value = JsonNode{}; value.Float() = number; malformed.push_back(value);
+	}
+	value = JsonNode{}; value.Integer() = 6901; malformed.push_back(value);
+	for(const auto type : {BonusType::DIVINE_RETRIBUTION, BonusType::DIVINE_RETRIBUTION_JUDGED})
+		for(const auto & bad : malformed)
+		{
+			Bonus marker;
+			marker.type = type;
+			JsonNode parameters;
+			parameters["payoutRatioBasisPoints"] = bad;
+			marker.parameters = std::make_shared<BonusParameters>(parameters);
+			const auto original = marker.parameters;
+			EXPECT_THROW(newHorizonsDivineRetribution::canonicalizeScriptPayoutRatio(marker), std::runtime_error);
+			EXPECT_EQ(marker.parameters, original);
+			EXPECT_THROW(newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(marker), std::runtime_error);
+		}
+}
+
+TEST_F(NewHorizonsMarkedDivineRetributionTest, ScriptPayoutProducerPreservesAbsentAndUnrelatedPayloads)
+{
+	for(const auto type : {BonusType::DIVINE_RETRIBUTION, BonusType::DIVINE_RETRIBUTION_JUDGED})
+	{
+		Bonus marker;
+		marker.type = type;
+		ASSERT_NO_THROW(newHorizonsDivineRetribution::canonicalizeScriptPayoutRatio(marker));
+		EXPECT_EQ(marker.parameters, nullptr);
+		EXPECT_FALSE(newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(marker));
+	}
+	Bonus unrelated;
+	unrelated.type = BonusType::STACKS_SPEED;
+	JsonNode parameters;
+	parameters["payoutRatioBasisPoints"].Float() = 5250.5;
+	unrelated.parameters = std::make_shared<BonusParameters>(parameters);
+	const auto original = unrelated.parameters;
+	ASSERT_NO_THROW(newHorizonsDivineRetribution::canonicalizeScriptPayoutRatio(unrelated));
+	EXPECT_EQ(unrelated.parameters, original);
+	EXPECT_EQ(unrelated.parameters->toJsonNode(), parameters);
 }

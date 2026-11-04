@@ -36,8 +36,7 @@ DLL_LINKAGE spells::Target route(const CBattleInfoCallback & battle,
 DLL_LINKAGE spells::Target route(const spells::Mechanics & mechanics, const battle::Unit * first);
 /// Exact rational attenuation, with a single final floor for this recipient.
 /// Worldroot multiplies only the Spell-Power-derived term by 110%.
-DLL_LINKAGE int64_t hopPower(int32_t spellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingPercent, int32_t empowerPercent, bool worldroot, int32_t hopIndex);
+DLL_LINKAGE int64_t hopPower(int32_t spellPower, int32_t coefficientBasisPoints, int32_t empowerPercent, bool worldroot, int32_t hopIndex);
 DLL_LINKAGE int64_t hopPower(const spells::Mechanics & mechanics, int32_t hopIndex);
 /// Read-only recipient damage. Applies caster modifiers and normal recipient
 /// defenses once; never draws or resolves resistance (the cast owns that).

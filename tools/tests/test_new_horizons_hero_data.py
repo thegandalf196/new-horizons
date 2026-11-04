@@ -101,8 +101,8 @@ WORKBOOK_REMAINING_STARTS = {
     'core:josephine': 'armorer.pavise',
     'core:neela': 'armorer.ironDiscipline',
     'core:fafner': 'warcasting.spellward',
-    'core:halon': 'warcasting.battleMeditation',
-    'core:rissa': 'estates.prospector',
+    'core:halon': 'warcasting.arcaneValor',
+    'core:rissa': 'estates.prosperity',
     'core:theodorus': 'learning.mentor',
     'core:solmyr': 'havocMagic.stormcaller',
     'core:cyra': 'sorceryMagic.temporalist',
@@ -113,7 +113,7 @@ WORKBOOK_REMAINING_STARTS = {
     'core:pyre': 'warMachines.masterGunner',
     'core:nymus': 'offense.executioner',
     'core:olema': 'spellcraft.concentration',
-    'core:calid': 'estates.prospector',
+    'core:calid': 'estates.prosperity',
     'core:xarfax': 'havocMagic.pyromancer',
     'core:zydar': 'spellcraft.spellPenetration',
     'core:vokial': 'offense.executioner',
@@ -145,7 +145,7 @@ WORKBOOK_REMAINING_STARTS = {
     'core:gird': 'spellcraft.arcaneFocus',
     'core:vey': 'discipline.inspirationalLeader',
     'core:dessa': 'logistics.pathfinding',
-    'core:zubin': 'archery.targetCaller',
+    'core:zubin': 'havocMagic.pyromancer',
     'core:gundula': 'offense.executioner',
     'core:bron': 'armorer.countercharge',
     'core:drakon': 'discipline.steadfast',
@@ -172,7 +172,7 @@ WORKBOOK_REMAINING_STARTS = {
     'core:inteus': 'havocMagic.pyromancer',
     'core:aenain': 'natureMagic.rootcaller',
     'core:gelare': 'estates.merchantPrince',
-    'core:grindan': 'estates.prospector',
+    'core:grindan': 'estates.prosperity',
 }
 
 # These settled profiles intentionally take precedence over workbook differences.
@@ -215,10 +215,10 @@ ACCEPTED_STARTS = {
     'core:jeddite': ('spellcraft.concentration', 1, 'shroudOfMalassa', 2),
     'core:geon': ('learning.eagleEye', 1, 'shroudOfMalassa', 1),
     'core:deemer': ('logistics.scouting', 2, 'shroudOfMalassa', 1),
-    'core:sephinroth': ('estates.prospector', 1, 'shroudOfMalassa', 1),
+    'core:sephinroth': ('estates.prosperity', 1, 'shroudOfMalassa', 1),
     'core:terek': ('battlecraft.tactics', 1, 'bloodrage', 1),
     'core:oris': ('learning.eagleEye', 1, 'bloodrage', 1),
-    'core:saurug': ('estates.prospector', 1, 'bloodrage', 1),
+    'core:saurug': ('estates.prosperity', 1, 'bloodrage', 1),
     'core:mirlanda': ('shadowMagic.witheringTouch', 1, 'bulwarkOfTheMire', 2),
     'core:rosic': ('wisdom.mysticism', 1, 'bulwarkOfTheMire', 1),
     'core:voy': ('logistics.navigation', 1, 'bulwarkOfTheMire', 1),
@@ -292,6 +292,19 @@ class HeroDataTest(unittest.TestCase):
                     authored = next(row for row in registry[parent]['perks'] if row['id'] == expected_perk)
                     self.assertEqual(authored['requires'], 'basic')
                     self.assertEqual(authored['effect']['status'], 'active')
+
+    def test_zubin_havoc_fireball_package_matches_shaman_specialty(self):
+        hero = json.loads((ROOT / 'config/heroes/stronghold.json').read_text())['zubin']
+        self.assertEqual(hero['class'], 'battlemage')
+        self.assertEqual(hero['spellbook'], ['fireball'])
+        self.assertEqual(hero['specialty'], {'spellScalingPercentage': 'fireball'})
+        self.assertEqual(self.rules['startingSkills']['startingDevelopmentProfiles']['core:zubin'], {
+            'skills': [{'skill': 'new-horizons:bloodrage', 'rank': 1},
+                       {'skill': 'new-horizons:havocMagic', 'rank': 1}],
+            'startingPerks': [{'skill': 'new-horizons:havocMagic',
+                              'perk': 'new-horizons:havocMagic.pyromancer'}],
+        })
+        self.assertEqual(self.rules['damageSpellSpecialties']['componentPercent'], 15)
 
     def test_generated_module_captures_all_144_packages_exactly(self):
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())

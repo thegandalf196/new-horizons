@@ -216,11 +216,10 @@ DLL_LINKAGE std::optional<int> sorrowDurationRounds(const JsonNode & rules, cons
 /// this new spell from installed content alone.
 DLL_LINKAGE bool vampirismEnabled(const JsonNode & rules, SpellID spell);
 /// Returns Vampirism lifesteal in basis points, including saved School ×
-/// Spellcraft, cast-specific Warcasting/Empower, and Night Feeder after the
+/// Spellcraft, cast-specific Empower, and Night Feeder after the
 /// ordinary 50% cap. Returns null for legacy or non-canonical spell rows.
 DLL_LINKAGE std::optional<int> vampirismHealBasisPoints(const JsonNode & rules,
-	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower,
-	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0,
+	const CGHeroInstance * hero, SpellID spell, int32_t rawSpellPower, int empowerSpellBonusPercent = 0,
 	int additionalSpellPowerComponentPercent = 0);
 /// Saved-v3 canonical Re-animate identity gate. Older snapshots never acquire
 /// the newly registered Shadow spell from installed content alone.
@@ -286,14 +285,15 @@ DLL_LINKAGE int blessDurationFromPowerTerm(int64_t spellPowerTerm);
 DLL_LINKAGE bool hasBenedictionPerk(const CGHeroInstance * hero);
 /// Dark Gift reduces Shadow Gift's actual HP sacrifice, never its selected damage tier.
 DLL_LINKAGE bool hasDarkGiftPerk(const CGHeroInstance * hero);
-/// Returns a hero-contextual spell description for presentation surfaces.
-/// Legacy saves and all other spells retain the ordinary static description.
+/// Plain effect summary; the full description retains calculated values and special rules.
+DLL_LINKAGE std::string spellSummaryForHero(const CGHeroInstance * hero,
+	const spells::Spell * spell, int schoolLevel);
+/// Returns the complete hero-contextual explanation, including calculated values.
 DLL_LINKAGE std::string spellDescriptionForHero(const CGHeroInstance * hero,
 	const spells::Spell * spell, int schoolLevel);
 /// Read only the supplied saved roster using the spell's canonical scoped key.
 /// Absent snapshots/rows/formulas return null; no installed definition fallback.
-DLL_LINKAGE int64_t hexOfPainFlatDamage(int32_t spellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingPercent, int32_t empowerPercent, int32_t specialtyPercent, bool painweaver);
+DLL_LINKAGE int64_t hexOfPainFlatDamage(int32_t spellPower, int32_t coefficientBasisPoints, int32_t empowerPercent, int32_t specialtyPercent, bool painweaver);
 DLL_LINKAGE int64_t plagueTickDamage(int32_t spellPower, int32_t coefficientBasisPoints,
 	int32_t specialtyPercent);
 DLL_LINKAGE std::optional<DirectDamageFormula> spellDirectDamage(const JsonNode & rules, const std::string & scopedIdentity);
@@ -341,17 +341,16 @@ DLL_LINKAGE int spellPowerCoefficientBasisPoints(const JsonNode & rules, const C
 	SpellID spell, int additionalSpellPowerComponentPercent = 0);
 /// Saved-v3 Sorrow's positive Morale penalty magnitude, or nullopt for legacy,
 /// missing, or non-canonical saved spell rows. The School × Spellcraft factors,
-/// Warcasting, and Empower scale raw Hero Spell Power before the final /70
+/// Empower scales raw Hero Spell Power before the final /70
 /// floor. Sorrow deliberately ignores the legacy primary-growth divisor.
 DLL_LINKAGE std::optional<int> sorrowMoralePenalty(const JsonNode & rules, const CGHeroInstance * hero,
-	SpellID spell, int32_t rawSpellPower, int warcastingBonusPercent = 0,
+	SpellID spell, int32_t rawSpellPower,
 	int empowerSpellBonusPercent = 0, int additionalSpellPowerComponentPercent = 0,
 	std::optional<int> coefficientOverride = std::nullopt);
 /// Saved-v3 Quicksand count, or nullopt for any other spell/profile. School,
-/// Spellcraft, Warcasting, and Empower scale only the Spell-Power term.
+/// Spellcraft and Empower scale only the Spell-Power term.
 DLL_LINKAGE std::optional<int> quicksandPatchCount(const JsonNode & rules, const CGHeroInstance * hero,
-	SpellID spell, int32_t spellPower, int32_t spellPowerDivisor = 1,
-	int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0,
+	SpellID spell, int32_t spellPower, int32_t spellPowerDivisor = 1, int empowerSpellBonusPercent = 0,
 	int additionalSpellPowerComponentPercent = 0,
 	std::optional<int> coefficientOverride = std::nullopt);
 /// True only when the saved v3 spell row opts into player-selected Quicksand
@@ -365,17 +364,17 @@ DLL_LINKAGE bool quicksandPlacementHexIsLegal(const CBattleInfoCallback & battle
 /// battle creature auras, Metamagic reductions, or Overcharge are applied.
 DLL_LINKAGE int empowerSpellBonusPercent(const JsonNode & rules, const CGHeroInstance * hero, SpellID spell,
 	int listedCostMultiplier = 1);
-/// Regeneration's saved-rate snapshot. School rank and Warcasting affect only
+/// Regeneration's saved-rate snapshot. School rank affects only
 /// the Spell Power term; Herbalist adds ten percentage points before the cap.
 DLL_LINKAGE int32_t regenerationRateMillionths(int32_t spellPower, int schoolRankCoefficientPercent,
-	bool herbalist, int warcastingBonusPercent = 0);
+	bool herbalist);
 /// Basis-point counterpart preserving fractional School × Spellcraft products
 /// until the Regeneration rate's final integer floor.
 DLL_LINKAGE int32_t regenerationRateMillionthsBasisPoints(int32_t spellPower, int coefficientBasisPoints,
-	bool herbalist, int warcastingBonusPercent = 0, int empowerSpellBonusPercent = 0);
+	bool herbalist, int empowerSpellBonusPercent = 0);
 /// Adds an original-cast specialty only to the SP-derived rate numerator, before its final floor.
 DLL_LINKAGE int32_t regenerationRateMillionthsBasisPointsWithSpecialty(int32_t spellPower, int coefficientBasisPoints,
-	bool herbalist, int warcastingBonusPercent, int empowerSpellBonusPercent, int specialtyPercent);
+	bool herbalist, int empowerSpellBonusPercent, int specialtyPercent);
 /// Resolve fixed-point Regeneration marks into healable surviving creature wounds.
 DLL_LINKAGE int64_t regenerationHealAmount(int64_t pendingMicroHealth, int64_t survivingWounds);
 /// New Horizons' detailed Sorcery rules make the existing Magic Arrow an

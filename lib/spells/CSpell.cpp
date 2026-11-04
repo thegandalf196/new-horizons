@@ -112,7 +112,7 @@ int64_t CSpell::calculateDamage(const spells::Caster * caster) const
 			const int64_t powerNumerator = static_cast<int64_t>(getBasePower()) * effectPower;
 			rawDamage = getLevelPower(effectLevel)
 				+ spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-					powerNumerator, divisor, coefficientBasisPoints, 0, empowerBonusPercent,
+					powerNumerator, divisor, coefficientBasisPoints, empowerBonusPercent,
 					damageSpecialtyPercent);
 		}
 	}

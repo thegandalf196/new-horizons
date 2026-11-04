@@ -176,14 +176,14 @@
 		"index": 108,
 		"class" : "battlemage",
 		"female": false,
-		"spellbook": [ "precision" ],
+		"spellbook": [ "fireball" ],
 		"skills":
 		[
 			{ "skill" : "wisdom", "level": "basic" },
 			{ "skill" : "artillery", "level": "basic" }
 		],
 		"specialty" : {
-			"spellFixedAdditive" : "precision"
+			"spellScalingPercentage" : "fireball"
 		}
 	},
 	"gundula":

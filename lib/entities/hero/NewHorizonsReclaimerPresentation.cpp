@@ -18,6 +18,7 @@ bool resolveReclaimerPresentation(const CHero & hero, const JsonNode & developme
 	if(!rule)
 		return false;
 	result.name = "Dark Reclaimer";
+	result.summary = "Convert some Necromancy Skeletons into Zombies when you own a Necropolis with a suitable dwelling.";
 	result.artwork = "newHorizons/heroSpecialties/VidominaDarkReclaimer";
 	result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:necromancy"));
 	result.description = "After ordinary Necromancy conversions, " + std::to_string(rule->conversionPercentPerLevel)

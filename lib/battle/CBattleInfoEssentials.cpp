@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../spells/NewHorizonsMetamagicMarks.h"
+#include "PassiveDivineMandate.h"
 #include "CBattleInfoEssentials.h"
 
 #include "../CStack.h"
@@ -44,7 +46,8 @@ const HeroActionAllowanceState & callbackAllowanceLedger(const CBattleInfoEssent
 
 uint8_t divineMandateMaximumPairs(const CGHeroInstance * hero)
 {
-	if(!hero || !hero->usesPrimaryGrowth())
+	if(!hero || newHorizonsPassiveDivineMandate::enabled(hero->getPerkState().rules)
+		|| !hero->usesPrimaryGrowth())
 		return 0;
 	const auto & savedRules = hero->getPrimaryGrowthRules();
 	if(!newHorizonsHeroes::usesRules(savedRules))
@@ -175,6 +178,10 @@ bool CBattleInfoEssentials::battleMetamagicFirstCounterspellNegated(BattleSide s
 
 bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side) const
 {
+	const auto * hero = getBattle() && (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		? battleGetFightingHero(side) : nullptr;
+	if(hero && newHorizonsMetamagic::usesArcaneMarks(hero->getPerkState().rules))
+		return false;
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return false;
 	if(!heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
@@ -203,10 +210,14 @@ std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battle
 	const bool lightSpell = isLightSpellInSavedRules(getBattle()->getMagicRules(), spell);
 	const auto mandate = battleGetDivineMandateStatus(side);
 	const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
+	const auto * hero = battleGetFightingHero(side);
+	const bool arcaneMarks = hero && newHorizonsMetamagic::usesArcaneMarks(hero->getPerkState().rules);
 	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, round,
-		[lightSpell, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
+		[lightSpell, mandateAvailable, arcaneMarks](const HeroActionAllowanceState::Grant & grant)
 		{
-			return HeroActionAllowanceState::grantAllowedForSpell(grant, lightSpell)
+			return (!arcaneMarks || (grant.source != HeroActionAllowanceState::GrantSource::METAMAGIC
+				&& grant.source != HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND))
+				&& HeroActionAllowanceState::grantAllowedForSpell(grant, lightSpell)
 				&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
 		});
 }
@@ -233,6 +244,10 @@ std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battle
 
 bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side, SpellID spell) const
 {
+	const auto * hero = getBattle() && (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		? battleGetFightingHero(side) : nullptr;
+	if(hero && newHorizonsMetamagic::usesArcaneMarks(hero->getPerkState().rules))
+		return false;
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return false;
 	if(!heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))

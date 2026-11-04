@@ -403,7 +403,7 @@ protected:
 		const auto coefficient = [&](const char * key)
 		{
 			const int intrinsic = heroCommands::coefficient(effects[key], *attackerSideHero,
-				order.warcastingBonusPercent, order.divineMandateEfficiencyBonusPercent());
+				order.divineMandateEfficiencyBonusPercent());
 			return heroCommands::orderPotency(intrinsic, intrinsic, order, projected->getMagicRules());
 		};
 		RecordProperty("RiposteNativeReduction", std::to_string(coefficient("meleeDamageReductionPercent")));

@@ -7,6 +7,69 @@ CONDITION = ('new-horizons:sorceryMagic.countermage', 'Arcane Ballistics',
              'NH_perk_arcane_ballistics', 'NH_perk_countermage')
 
 
+# Current Wisdom uses the same selected payloads under six explicitly revised
+# identities/roles. These test-only aliases preserve historical selection records.
+WISDOM_REBINDINGS = {
+    'new-horizons:wisdom.arcaneMemory': ('new-horizons:wisdom.spellFamiliarity', 'NH_perk_arcane_memory'),
+    'new-horizons:wisdom.sage': ('new-horizons:wisdom.spellScholar', 'NH_perk_wisdom_sage'),
+    'new-horizons:wisdom.deepKnowledge': ('new-horizons:wisdom.arcaneInsight', 'NH_perk_deep_knowledge'),
+    'new-horizons:wisdom.arcaneReservoir': ('new-horizons:wisdom.sage', 'NH_perk_arcane_reservoir'),
+    'new-horizons:wisdom.meditation': ('new-horizons:wisdom.manaFasting', 'NH_perk_meditation'),
+    'new-horizons:wisdom.preparedCaster': ('new-horizons:wisdom.arcaneMomentum', 'NH_perk_prepared_caster'),
+}
+
+WARCASTING_REBINDINGS = {
+    'new-horizons:warcasting.enchantedCommand': ('new-horizons:warcasting.arcaneValor', 'NH_perk_enchanted_command'),
+    'new-horizons:warcasting.arcaneChanneling': ('new-horizons:warcasting.spellshock', 'NH_perk_arcane_channeling'),
+    'new-horizons:warcasting.battleMeditation': ('new-horizons:warcasting.battleFocus', 'NH_perk_battle_meditation'),
+    'new-horizons:warcasting.combatCasting': ('new-horizons:warcasting.arcaneBulwark', 'NH_perk_combat_casting'),
+    'new-horizons:warcasting.martialChanneling': ('new-horizons:warcasting.enchantedWeapons', 'NH_perk_martial_channeling'),
+    'new-horizons:warcasting.tacticalWeaving': ('new-horizons:warcasting.lingeringInspiration', 'NH_perk_tactical_weaving'),
+    'new-horizons:warcasting.reactiveWeave': ('new-horizons:warcasting.arcaneReprisal', 'NH_perk_reactive_weave'),
+    'new-horizons:warcasting.masterSynthesis': ('new-horizons:warcasting.grandInspiration', 'NH_perk_master_synthesis'),
+    'new-horizons:warcasting.perfectRhythm': ('new-horizons:warcasting.arcaneSupremacy', 'NH_perk_perfect_rhythm'),
+}
+LEARNING_REBINDINGS = {
+    'new-horizons:learning.academicStudy': ('new-horizons:learning.seasonedAdventurer', 'NH_perk_academic_study'),
+    'new-horizons:learning.quickStudy': ('new-horizons:learning.connoisseur', 'NH_perk_quick_study'),
+    'new-horizons:learning.archivist': ('new-horizons:learning.duelLessons', 'NH_perk_archivist'),
+    'new-horizons:learning.sage': ('new-horizons:learning.prodigy', 'NH_perk_learning_sage'),
+    'new-horizons:learning.masterTeacher': ('new-horizons:learning.philosopher', 'NH_perk_master_teacher'),
+}
+ESTATES_REBINDINGS = {
+    'new-horizons:estates.prospector': ('new-horizons:estates.prosperity', 'NH_perk_prospector'),
+    'new-horizons:estates.steward': ('new-horizons:estates.stewardship', 'NH_perk_steward'),
+    'new-horizons:estates.investor': ('new-horizons:estates.conscription', 'NH_perk_investor'),
+    'new-horizons:estates.resourceBroker': ('new-horizons:estates.architect', 'NH_perk_resource_broker'),
+    'new-horizons:estates.estateNetwork': ('new-horizons:estates.mercenaryCompany', 'NH_perk_estate_network'),
+    'new-horizons:estates.financier': ('new-horizons:estates.banking', 'NH_perk_financier'),
+    'new-horizons:estates.magnate': ('new-horizons:estates.alchemist', 'NH_perk_magnate'),
+}
+REWORKED_PERK_REBINDINGS = {
+    **WISDOM_REBINDINGS, **WARCASTING_REBINDINGS, **LEARNING_REBINDINGS, **ESTATES_REBINDINGS,
+}
+
+
+def _header_before_rebindings(header, bindings, description):
+    """Reverse a finite exact alias set without hiding any unrelated header edit."""
+    historical = header
+    for old, (current, icon) in bindings.items():
+        before = '\t\t{"' + old + '", "' + icon + '"},\n'
+        after = '\t\t{"' + current + '", "' + icon + '"},\n'
+        if historical.count(after) != 1 or before in historical:
+            raise ValueError('Current ' + description + ' selected-resource binding changed')
+        historical = historical.replace(after, before, 1)
+    return historical
+
+
+def header_before_wisdom_rebindings(header):
+    return _header_before_rebindings(header, WISDOM_REBINDINGS, 'Wisdom')
+
+
+def header_before_reworked_perks(header):
+    return _header_before_rebindings(header, REWORKED_PERK_REBINDINGS, 'reworked perk')
+
+
 def header_before_perk_presentation(header):
     if 'std::string_view' not in header and 'NH_perk_arcane_ballistics' not in header:
         return header

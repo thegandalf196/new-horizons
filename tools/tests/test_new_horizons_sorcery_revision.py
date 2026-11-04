@@ -20,7 +20,8 @@ class SorceryRevisionSchemaTest(unittest.TestCase):
         self.assertEqual(rules['spells']['core:slow']['level'], 3)
         self.assertEqual(rules['spells']['new-horizons:massSlow']['costs'], [33] * 4)
         self.assertFalse(rules['spells']['core:haste']['ordinaryAcquisition'])
-        self.assertNotEqual(rules['spells']['core:haste'].get('heroAccess'), False)
+        self.assertIs(rules['spells']['core:haste']['heroAccess'], False)
+        del rules['spells']['core:haste']['heroAccess']  # Earlier captured Haste exception remains valid.
         del rules['spells']['new-horizons:focusMagic']['focusMagic']
         del rules['spells']['core:slow']['slow']
         del rules['spells']['new-horizons:summonLivingArmor']

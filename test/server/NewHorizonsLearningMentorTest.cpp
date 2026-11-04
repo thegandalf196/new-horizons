@@ -140,6 +140,20 @@ protected:
 		FAIL() << "Mentor award exceeded the bounded earned-level query count";
 	}
 
+	void settleCurrentQueries(CGameHandler & handler)
+	{
+		handler.onAdvInterfaceReady(PlayerColor(0));
+		for(int n = 0; n < 32; ++n)
+		{
+			const auto query = handler.queries->topQuery(PlayerColor(0));
+			if(!query) return;
+			ASSERT_TRUE(std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(query)
+				|| std::dynamic_pointer_cast<CGarrisonDialogQuery>(query));
+			ASSERT_TRUE(handler.queryReply(query->queryID, 0, PlayerColor(0)));
+		}
+		FAIL() << "Bounded current Mentor query settlement exceeded";
+	}
+
 	void expectClosedExchangeRoundTrip(const CGHeroInstance & mentor, const CGHeroInstance & recipient,
 		CreatureID creature)
 	{
@@ -227,6 +241,7 @@ TEST_F(NewHorizonsLearningMentorTest, FieldMeetingAwardsOncePerWeekAndLevelUpSit
 	EXPECT_EQ(secondRecipient->exp - secondBefore, nextWeekExpected);
 	EXPECT_EQ(mentor->getNewHorizonsLearningMentorLastWeek(), 1);
 
+	ASSERT_NO_FATAL_FAILURE(settleCurrentQueries(gameHandler));
 	const auto saved = gameState()->saveToMemory();
 	CGameState restored;
 	restored.preInit(LIBRARY);
@@ -397,6 +412,7 @@ TEST_F(NewHorizonsLearningMentorTest, TownVisitIsAMeetingAndPersistsTheAuthorita
 	gameHandler.heroVisitCastle(town, recipient);
 	EXPECT_EQ(recipient->exp, afterMeeting);
 
+	ASSERT_NO_FATAL_FAILURE(settleCurrentQueries(gameHandler));
 	const auto saved = gameState()->saveToMemory();
 	CGameState restored;
 	restored.preInit(LIBRARY);
@@ -406,11 +422,12 @@ TEST_F(NewHorizonsLearningMentorTest, TownVisitIsAMeetingAndPersistsTheAuthorita
 	EXPECT_EQ(restoredMentor->getNewHorizonsLearningMentorLastWeek(), 0);
 }
 
-TEST(NewHorizonsLearningMentorWire, StateRoundTripsAndOldFormatRejectsTheNewPacket)
+TEST(NewHorizonsLearningMentorWire, CurrentMentorPacketRoundtripsHeroWeekAndRecipient)
 {
 	SetNewHorizonsLearningMentorState outgoing;
 	outgoing.heroId = ObjectInstanceID(42);
 	outgoing.lastUseWeek = 9;
+	outgoing.recipientIds = {ObjectInstanceID(43), ObjectInstanceID::NONE};
 
 	CMemorySerializer wire;
 	wire.oser.version = ESerializationVersion::CURRENT;
@@ -422,8 +439,5 @@ TEST(NewHorizonsLearningMentorWire, StateRoundTripsAndOldFormatRejectsTheNewPack
 	EXPECT_EQ(incoming.heroId, outgoing.heroId);
 	EXPECT_EQ(incoming.lastUseWeek, outgoing.lastUseWeek);
 
-	CMemorySerializer legacyWire;
-	legacyWire.oser.version = ESerializationVersion::NEW_HORIZONS_MUSTER;
-	SetNewHorizonsLearningMentorState legacyOutgoing;
-	EXPECT_THROW(legacyWire.oser & legacyOutgoing, std::runtime_error);
+	EXPECT_EQ(incoming.recipientIds, outgoing.recipientIds);
 }

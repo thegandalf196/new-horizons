@@ -10,18 +10,9 @@ namespace newHorizonsHeroes
 {
 int scholarExchangeSpellBudget(const CGHeroInstance & teacher, const CGHeroInstance & recipient)
 {
-	const auto taught = learningExchangeSpecialtyRules(&teacher);
-	const auto received = learningExchangeSpecialtyRules(&recipient);
-	const auto currentMagic = [](const CGHeroInstance & hero)
-	{
-		const auto & magic = hero.getMagicRules();
-		return newHorizonsMagic::rulesActive(magic)
-			&& magic["rulesetVersion"].Integer() == newHorizonsMagic::CURRENT_RULESET_VERSION;
-	};
-	if(!currentMagic(teacher) || !currentMagic(recipient))
-		return 1;
-	return 1 + std::max(taught ? taught->additionalSpellsTaught : 0,
-		received ? received->additionalSpellsReceived : 0);
+	validateLearningExchangeSpecialtiesSerialization(teacher.getPrimaryGrowthRules(), true);
+	validateLearningExchangeSpecialtiesSerialization(recipient.getPrimaryGrowthRules(), true);
+	return std::numeric_limits<int>::max(); // All eligible unknown spells, never a specialty count.
 }
 std::optional<ScholarExchange> prepareScholarExchange(
 	const CGHeroInstance & first, const CGHeroInstance & second, int32_t week)
@@ -37,7 +28,7 @@ std::optional<ScholarExchange> prepareScholarExchange(
 	result.secondTeaches = second.getNewHorizonsScholarSpellsFor(first, static_cast<size_t>(secondBudget));
 	if(result.firstTeaches.empty() && result.secondTeaches.empty())
 		return std::nullopt;
-	result.directedBonus = firstBudget > 1 || secondBudget > 1;
+	result.directedBonus = true;
 	return result;
 }
 }

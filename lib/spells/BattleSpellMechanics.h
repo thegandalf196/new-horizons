@@ -61,6 +61,8 @@ public:
 	size_t getTargetedStackCount(const Target & target) const override final;
 	bool isCountingSpellTargets() const override { return countingSpellTargets; }
 	int64_t getTargetAwareEffectValue(const battle::Unit * target) const override;
+	int32_t getTargetAwareManaCost(const Target & target) const override;
+	BattleSide getEffectCasterSide() const override { return effectiveCasterSide(); }
 
 	/// Returns list of target types that can be targeted by spell
 	std::vector<AimType> getTargetTypes() const override final;
@@ -143,6 +145,7 @@ private:
 	BattleHexArray spellRangeInHexes(const BattleHex & centralHex) const;
 
 	Target transformSpellTarget(const Target & aimPoint) const;
+	battle::Units transformedRecipients(const Target & aim, bool prospectiveCost) const;
 
 	bool canCastAtTarget(const battle::Unit * target) const;
 };

@@ -13,6 +13,7 @@
 #endif
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleFlowProcessor.h"
+#include "../../lib/spells/NewHorizonsMetamagicPoints.h"
 #include "BattleActivationEffects.h"
 #include "BattleRoundHealing.h"
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
@@ -333,14 +334,6 @@ namespace
 		return false;
 	}
 
-	bool demonicGateFootprintHasObstacle(const CBattleInfoCallback & battle,
-		const BattleHex & position, bool doubleWide, BattleSide side)
-	{
-		for(const auto & hex : battle::Unit::getHexes(position, doubleWide, side))
-			if(hex.isAvailable() && !battle.battleGetAllObstaclesOnPos(hex, false).empty())
-				return true;
-		return false;
-	}
 
 	std::optional<BattleSide> quartermasterActiveSide(const CBattleInfoCallback & battle, uint32_t unitId)
 	{
@@ -662,6 +655,7 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	bnr.battleID = battle.getBattle()->getBattleID();
 	logGlobal->debug("Next round starts");
 	gameHandler->sendAndApply(bnr);
+	newHorizonsMetamagic::publishRoundEffects(*gameHandler->spellcastEnvironment(), battle);
 	const auto hydrasRegenerationSelector = hydrasSource.And(Selector::type()(BonusType::HP_REGENERATION));
 	for(const auto stackId : expiringHydrasVitalityStacks)
 	{
@@ -792,7 +786,7 @@ void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & b
 				continue;
 
 			const int64_t payout = newHorizonsMagic::divineRetributionPayout(actualHpDamage, rawCap,
-				static_cast<int32_t>(retributionistPercent));
+				static_cast<int32_t>(retributionistPercent), newHorizonsDivineRetribution::payoutRatioBasisPoints(*judgment));
 			if(payout <= 0)
 				continue;
 
@@ -800,7 +794,8 @@ void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & b
 			const auto protectedId = static_cast<uint32_t>(protectedUnitId);
 			hit.attackerID = protectedId;
 			hit.stackAttacked = stack->unitId();
-			hit.damageAmount = newHorizonsDivineRetribution::recipientDamage(battle, stack, payout);
+			hit.damageAmount = newHorizonsDivineRetribution::recipientDamage(battle, stack, payout,
+				judgment->spellCasterOwner);
 			hit.flags = BattleStackAttacked::SPELL_EFFECT;
 			hit.spellID = spell;
 			CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), stack->acquireState(),
@@ -830,236 +825,6 @@ void BattleFlowProcessor::resolveDivineRetribution(const CBattleInfoCallback & b
 
 	if(!cleanup.toRemove.empty())
 		gameHandler->sendAndApply(cleanup);
-}
-
-void BattleFlowProcessor::resolveDemonicGates(const CBattleInfoCallback & battle, bool endOfRoundPhase)
-{
-	for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const auto * concrete = dynamic_cast<const BattleInfo *>(battle.getBattle());
-		if(!concrete)
-			continue;
-		const auto snapshot = concrete->getSide(sideId);
-		if(snapshot.pendingDemonicGates.empty())
-			continue;
-		const auto * hero = battle.battleGetFightingHero(sideId);
-		const bool swiftGate = hero && hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.swiftGate");
-		const bool hellfireArrival = hero && hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.hellfireArrival");
-		const bool reinforcedGate = hero && hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.reinforcedGate");
-		const bool infernalBeacon = hero && hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.infernalBeacon");
-		const bool reserveDiscipline = hero && hero->hasActivePerk(
-			"new-horizons:demonicGating", "new-horizons:demonicGating.reserveDiscipline");
-
-		BattleDemonicGatingStateChanged update;
-		update.battleID = concrete->getBattleID();
-		update.side = sideId;
-		update.reserve = snapshot.demonicReserve;
-		update.gated = snapshot.gatedDemonicStacks;
-		update.chainGateArmed = snapshot.chainGateArmed;
-		update.masterGateUsed = snapshot.masterGateUsed;
-		std::vector<uint32_t> hellfireSources;
-
-		for(const auto & gate : snapshot.pendingDemonicGates)
-		{
-			const bool due = endOfRoundPhase
-				? gate.chainGateAccelerated || gate.arrivalRound <= concrete->getRound()
-					|| (swiftGate && gate.arrivalRound <= concrete->getRound() + 1)
-				: gate.arrivalRound <= concrete->getRound();
-			if(!due)
-			{
-				update.pending.push_back(gate);
-				continue;
-			}
-
-			if(!gate.creature.hasValue())
-			{
-				update.pending.push_back(gate);
-				continue;
-			}
-			const auto * creature = gate.creature.toCreature();
-			if(!creature || gate.count <= 0)
-			{
-				update.pending.push_back(gate);
-				continue;
-			}
-			auto accessibility = battle.getAccessibility();
-			const BattleHex arrival = gate.position;
-			if(!accessibility.accessibleForDemonicGateArrival(arrival, creature->isDoubleWide(), sideId,
-				gate.position, creature->isDoubleWide())
-				|| demonicGateFootprintHasObstacle(battle, arrival, creature->isDoubleWide(), sideId))
-			{
-				update.pending.push_back(gate);
-				continue;
-			}
-
-			battle::UnitInfo info;
-			info.id = concrete->battleNextUnitId();
-			info.count = gate.count;
-			info.type = gate.creature;
-			info.side = sideId;
-			info.position = arrival;
-			// These are real owned troops and must inherit ordinary hero bonuses.
-			// Their unit IDs are tracked separately so post-battle reserve
-			// reconciliation, rather than the summoned-creature path, owns them.
-			info.summoned = false;
-			BattleUnitsChanged add;
-			add.battleID = concrete->getBattleID();
-			add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
-			info.save(add.changedStacks.back().data);
-			gameHandler->sendAndApply(add);
-
-			const auto devilId = CreatureID(CreatureID::decode("core:devil"));
-			if(devilId.hasValue())
-			{
-				const auto * devil = devilId.toCreature();
-				if(devil && !devil->sounds.startMoving.empty())
-				{
-					BattleAnimationPlayed arrivalSound;
-					arrivalSound.battleID = concrete->getBattleID();
-					arrivalSound.sound = devil->sounds.startMoving;
-					arrivalSound.targets.push_back({static_cast<int32_t>(info.id), arrival});
-					gameHandler->sendAndApply(arrivalSound);
-				}
-			}
-
-			update.gated.push_back({info.id, gate.creature, gate.count});
-			const auto * gated = battle.battleGetStackByID(info.id, false);
-			int64_t reinforcedHealth = 0;
-			if(reinforcedGate && gated)
-			{
-				auto state = gated->acquireState();
-				reinforcedHealth = state->getAvailableHealth() * 20 / 100;
-				state->health.addTemporaryHitPoints(reinforcedHealth);
-				BattleUnitsChanged reinforce;
-				reinforce.battleID = concrete->getBattleID();
-				UnitChanges changed(info.id, UnitChanges::EOperation::UPDATE);
-				changed.data = state->save();
-				reinforce.changedStacks.push_back(std::move(changed));
-				gameHandler->sendAndApply(reinforce);
-				gated = battle.battleGetStackByID(info.id, false);
-			}
-
-			std::vector<Bonus> arrivalBonuses;
-			bool infernalBeaconActivated = false;
-			bool reserveDisciplineActivated = false;
-			if(infernalBeacon && gated)
-			{
-				const bool adjacentInfernoAlly = std::ranges::any_of(battle.battleAdjacentUnits(gated), [&battle, sideId, info](const auto * adjacent)
-				{
-					return adjacent && adjacent->alive() && adjacent->unitId() != info.id
-						&& battle.playerToSide(battle.battleGetOwner(adjacent)) == sideId
-						&& adjacent->creatureId().toCreature()->getFactionID() == FactionID::INFERNO;
-				});
-				if(adjacentInfernoAlly)
-				{
-					infernalBeaconActivated = true;
-					Bonus initiative(BonusDuration::N_TURNS, BonusType::STACKS_INITIATIVE_FLAT,
-						BonusSource::HERO_SPECIAL, 2, BonusSourceID(hero->id));
-					initiative.turnsRemain = endOfRoundPhase ? 2 : 1;
-					initiative.description.appendRawString("Infernal Beacon");
-					arrivalBonuses.push_back(std::move(initiative));
-				}
-			}
-			if(reserveDiscipline && gated)
-			{
-				reserveDisciplineActivated = true;
-				Bonus moraleFloor(BonusDuration::N_TURNS, BonusType::MINIMUM_MORALE,
-					BonusSource::HERO_SPECIAL, 0, BonusSourceID(hero->id));
-				moraleFloor.turnsRemain = endOfRoundPhase ? 2 : 1;
-				moraleFloor.description.appendRawString("Reserve Discipline");
-				arrivalBonuses.push_back(std::move(moraleFloor));
-			}
-			if(!arrivalBonuses.empty())
-			{
-				SetStackEffect effect;
-				effect.battleID = concrete->getBattleID();
-				effect.toAdd.emplace_back(info.id, std::move(arrivalBonuses));
-				gameHandler->sendAndApply(effect);
-			}
-
-			if(hellfireArrival)
-				hellfireSources.push_back(info.id);
-			BattleLogMessage message;
-			message.battleID = concrete->getBattleID();
-			const char * gateName = gate.chainGateAccelerated
-				? "Chain Gate"
-				: endOfRoundPhase ? "Swift Gate" : "Ordinary Gate";
-			MetaString line = MetaString::createFromRawString(gateName);
-			line.appendRawString(" brings forth ");
-			line.appendNumber(gate.count);
-			line.appendRawString(" ");
-			line.appendName(gate.creature, gate.count);
-			line.appendRawString(".");
-			if(reinforcedHealth > 0)
-			{
-				line.appendRawString(" Reinforced Gate grants ");
-				line.appendNumber(reinforcedHealth);
-				line.appendRawString(" temporary Health.");
-			}
-			if(infernalBeaconActivated)
-				line.appendRawString(" Infernal Beacon grants +2 Initiative.");
-			if(reserveDisciplineActivated)
-				line.appendRawString(" Reserve Discipline prevents negative Morale.");
-			message.lines.push_back(std::move(line));
-			gameHandler->sendAndApply(message);
-		}
-		gameHandler->sendAndApply(update);
-
-		// Publish the gated-stack identity before Hellfire emits its indirect
-		// damage packet.  That packet carries the gated unit as attackerID, so
-		// the shared visitor can authoritatively recognize a lethal Hellfire hit
-		// as a Chain Gate trigger.
-		for(const auto sourceId : hellfireSources)
-		{
-			const auto * gated = battle.battleGetStackByID(sourceId, false);
-			if(!gated)
-				continue;
-			std::vector<const battle::Unit *> enemies;
-			for(const auto * adjacent : battle.battleAdjacentUnits(gated))
-				if(adjacent && adjacent->alive() && adjacent->unitSide() != sideId)
-					enemies.push_back(adjacent);
-			const int64_t totalFireDamage = gated->getAvailableHealth() * 15 / 100;
-			const int64_t damagePerEnemy = enemies.empty() ? 0 : totalFireDamage / enemies.size();
-			if(damagePerEnemy <= 0)
-				continue;
-
-			StacksInjured injury;
-			injury.battleID = concrete->getBattleID();
-			BattleLogMessage hellfireLog;
-			hellfireLog.battleID = concrete->getBattleID();
-			for(const auto * enemy : enemies)
-			{
-				BattleStackAttacked hit;
-				hit.attackerID = sourceId;
-				hit.stackAttacked = enemy->unitId();
-				hit.damageAmount = spells::adjustUnmitigatedMagicalDamage(*enemy, damagePerEnemy);
-				hit.flags |= BattleStackAttacked::SPELL_EFFECT;
-				CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), enemy->acquireState(),
-					false, false, battle::DamageProvenance::SPELL);
-				MetaString hellfireLine = MetaString::createFromRawString("Hellfire from ");
-				hellfireLine.appendNumber(gated->getCount());
-				hellfireLine.appendRawString(" ");
-				hellfireLine.appendName(gated->creatureId(), gated->getCount());
-				hellfireLine.appendRawString(" hits ");
-				hellfireLine.appendNumber(enemy->getCount());
-				hellfireLine.appendRawString(" ");
-				hellfireLine.appendName(enemy->creatureId(), enemy->getCount());
-				hellfireLine.appendRawString(" for ");
-				hellfireLine.appendNumber(hit.damageAmount);
-				hellfireLine.appendRawString(" damage, killing ");
-				hellfireLine.appendNumber(hit.killedAmount);
-				hellfireLine.appendRawString(".");
-				hellfireLog.lines.push_back(std::move(hellfireLine));
-				injury.stacks.push_back(hit);
-			}
-			gameHandler->sendAndApply(injury);
-			gameHandler->sendAndApply(hellfireLog);
-		}
-	}
 }
 
 const CStack * BattleFlowProcessor::getNextStack(const CBattleInfoCallback & battle)

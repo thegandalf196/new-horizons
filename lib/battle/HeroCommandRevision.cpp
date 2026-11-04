@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "HeroCommandRevision.h"
 #include "HeroCommand.h"
+#include "PassiveDivineMandateVanguard.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsDivineMandate.h"
 #include "Unit.h"
@@ -256,7 +257,8 @@ bool isVanguardBonus(const Bonus * bonus)
 		&& bonus->duration == BonusDuration::N_TURNS
 		&& (bonus->type == BonusType::PRIMARY_SKILL || bonus->type == BonusType::MORALE
 			|| bonus->type == BonusType::STACKS_INITIATIVE
-			|| (bonus->type == BonusType::NONE && (bonus->val == 1 || bonus->val == 2)));
+			|| (bonus->type == BonusType::NONE && (bonus->val == 1 || bonus->val == 2))
+			|| newHorizonsPassiveDivineMandate::isVanguardRiderEntitlement(*bonus));
 }
 
 std::optional<ActiveVanguardBonuses> activeVanguardBonuses(const battle::Unit * unit)

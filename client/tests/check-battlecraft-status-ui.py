@@ -13,7 +13,7 @@ ACTION = (ROOT / "client/battle/StackInfoActionStatus.cpp").read_text(encoding="
 WINDOW = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 RULES = (ROOT / "lib/battle/NewHorizonsBattlecraft.cpp").read_text(encoding="utf-8")
 UNIT_STATE = (ROOT / "lib/battle/CUnitState.cpp").read_text(encoding="utf-8")
-CALLBACK = (ROOT / "lib/battle/CBattleInfoCallback.cpp").read_text(encoding="utf-8")
+CALLBACK = (ROOT / "lib/battle/DamagePayloadPreparation.cpp").read_text(encoding="utf-8")
 NATIVE = (ROOT / "test/battle/BattlecraftStatusPresentationTest.cpp").read_text(encoding="utf-8")
 
 

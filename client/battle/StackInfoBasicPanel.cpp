@@ -11,6 +11,8 @@
 #include "../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "../windows/SylvanFactionStatusPresentation.h"
 #include "StackInfoBasicPanel.h"
+#include "ArcaneMarkPresentation.h"
+#include "StackTemporaryStatusPresenter.h"
 #include "SummonLifetimePresentation.h"
 #include "FrozenStatusPresentation.h"
 #include "StackSpellStatusPresentation.h"
@@ -51,12 +53,6 @@ constexpr std::string_view FRAILTY_SPELL_KEY = "new-horizons:frailty";
 constexpr std::string_view PLAGUE_SPELL_KEY = "new-horizons:plague";
 
 using newHorizonsSylvanFactionPresentation::usesNewHorizonsBattleRules;
-
-struct StackStatusEntry
-{
-	newHorizonsBattleStatus::StackStatusIconKind kind;
-	std::optional<SpellID> spell;
-};
 
 struct FrailtyStatus
 {
@@ -518,32 +514,7 @@ std::string soulChainStatusSignature(const CStack * stack, const CPlayerBattleCa
 }
 
 
-std::string replaceStatusPlaceholder(std::string text, std::string_view token, const std::string & replacement)
-{
-	std::size_t position = 0;
-	while((position = text.find(token, position)) != std::string::npos)
-	{
-		text.replace(position, token.size(), replacement);
-		position += replacement.size();
-	}
-	return text;
-}
 
-std::string physicalPoisonTooltip(const newHorizonsBattleStatus::PhysicalPoisonStatus & status, std::size_t hiddenEffectCount)
-{
-	auto result = LIBRARY->generaltexth->translate("new-horizons.combat.physicalPoison.tooltip");
-	result = replaceStatusPlaceholder(result, "%LABEL",
-		LIBRARY->generaltexth->translate("new-horizons.combat.physicalPoison.label"));
-	result = replaceStatusPlaceholder(result, "%DAMAGE", std::to_string(status.nextTickDamage));
-	result = replaceStatusPlaceholder(result, "%ACTIVATIONS", std::to_string(status.activationsRemaining));
-	if(hiddenEffectCount > 0)
-	{
-		auto hidden = LIBRARY->generaltexth->translate("new-horizons.combat.physicalPoison.hiddenEffects");
-		hidden = replaceStatusPlaceholder(hidden, "%COUNT", std::to_string(hiddenEffectCount));
-		result += "\n" + hidden;
-	}
-	return result;
-}
 }
 
 StackInfoBasicPanel::StackInfoBasicPanel(
@@ -684,6 +655,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("IMRL22"), std::clamp(morale + 3, 0, 6), 0, 47, 131));
 	icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("ILCK22"), std::clamp(luck + 3, 0, 6), 0, 47, 143));
 
+
 	displayedMorale = morale;
 	displayedMoraleReadback = moraleReadback;
 	displayedLuckReadback = luckReadback;
@@ -737,174 +709,19 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	for(int i = 0; i < 3; i++)
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), 78, 0, firstPos.x + offset.x * i, firstPos.y + offset.y * i));
 
-	std::vector<SpellID> spells = stack->activeSpells();
-	std::vector<StackStatusEntry> statusEntries;
-	std::vector<newHorizonsBattleStatus::StackStatusIconKind> statusKinds;
-	std::size_t hiddenReanimateSpellEffects = 0;
-	std::size_t hiddenJudgedSpellEffects = 0;
-	std::size_t hiddenConfusionSpellEffects = 0;
-	for(const auto effect : spells)
-	{
-		//not all effects have graphics (for eg. Acid Breath)
-		//for modded spells iconEffect is added to SpellInt.def
-		const bool hasGraphics = (effect < SpellID::THUNDERBOLT) || (effect >= SpellID::AFTER_LAST);
-
-		if(!hasGraphics)
-			continue;
-		const auto * spell = effect.toSpell();
-		if(spell && newHorizonsBattleStatus::isConfusion(spell->getJsonKey())
-			&& !displayedStatus.confusion.active())
-		{
-			++hiddenConfusionSpellEffects;
-			continue;
-		}
-		if(spell && newHorizonsBattleStatus::isReanimate(spell->getJsonKey()))
-		{
-			// One-battle resurrected creatures are shown once as a generic temporary
-			// count below, rather than as both a spell and a creature-status icon.
-			++hiddenReanimateSpellEffects;
-			continue;
-		}
-		if(spell && newHorizonsBattleStatus::isDivineRetribution(spell->getJsonKey())
-			&& !displayedStatus.divineRetribution.active())
-		{
-			// Judged carries the spell source ID, but is not protection on this stack.
-			++hiddenJudgedSpellEffects;
-			continue;
-		}
-		const auto kind = newHorizonsStackSpellPresentation::statusIconKind(effect);
-		statusEntries.push_back({kind, effect});
-		statusKinds.push_back(kind);
-	}
-
-	const auto physicalPoison = displayedStatus.physicalPoison;
-	if(displayedStatus.frozen)
-	{
-		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::FROZEN, std::nullopt});
-		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::FROZEN);
-	}
-	if(physicalPoison.active())
-	{
-		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON, std::nullopt});
-		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON);
-	}
-	if(displayedStatus.shadowGift.hasMaximumHealthLoss())
-	{
-		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP, std::nullopt});
-		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP);
-	}
-	const auto retributionJudged = displayedStatus.divineRetributionJudged;
-	if(retributionJudged.active())
-	{
-		statusEntries.push_back({newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED, std::nullopt});
-		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED);
-	}
-	const auto temporaryCreatures = displayedStatus.temporaryCreatures;
-	if(temporaryCreatures.active())
-	{
-		const StackStatusEntry temporaryEntry{
-			newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES, std::nullopt};
-		statusEntries.insert(statusEntries.begin(), temporaryEntry);
-		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES);
-	}
-	const auto battleForm = displayedStatus.battleForm;
-	if(battleForm.active())
-	{
-		const StackStatusEntry battleFormEntry{
-			newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM, std::nullopt};
-		statusEntries.insert(statusEntries.begin(), battleFormEntry);
-		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM);
-	}
-	const auto totalEffectCount = spells.size() - hiddenReanimateSpellEffects - hiddenJudgedSpellEffects - hiddenConfusionSpellEffects
-		+ (temporaryCreatures.active() ? 1 : 0) + (physicalPoison.active() ? 1 : 0)
-		+ (displayedStatus.frozen ? 1 : 0)
-		+ (displayedStatus.shadowGift.hasMaximumHealthLoss() ? 1 : 0)
-		+ (retributionJudged.active() ? 1 : 0) + (battleForm.active() ? 1 : 0);
-	const auto displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
+	displayedArcaneMarks = arcaneMarkPresentation::counts(*stack);
+	displayedInspiration = arcaneInspirationPresentation::forStack(*stack, battleCallback.get());
+	StackTemporaryStatusPresenter temporaryStatuses(stack, displayedStatus, battleCallback.get());
+	const auto & displayPlan = temporaryStatuses.plan();
 	int printed = 0;
 	for(const auto entryIndex : displayPlan.visibleEntryIndices)
 	{
-		const auto & entry = statusEntries[entryIndex];
+		const auto & entry = temporaryStatuses.entry(entryIndex);
 		const auto slotX = firstPos.x + offset.x * printed;
 		const auto slotY = firstPos.y + offset.y * printed;
-		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::FROZEN)
+		if(temporaryStatuses.append(entryIndex, Point(slotX, slotY),
+			{labels, icons, temporaryCreatureIcons, physicalStatusIcons, statusTooltips}))
 		{
-			physicalStatusIcons.push_back(std::make_shared<newHorizonsFrozenPresentation::FrozenStatusIcon>(Point(slotX, slotY)));
-			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
-				ETextAlignment::BOTTOMRIGHT, ColorRGBA(178, 224, 244, 255), "F"));
-			const auto tooltip = newHorizonsFrozenPresentation::tooltip(displayedStatus.frozenShatterBonusPercent);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-			++printed;
-			continue;
-		}
-		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM)
-		{
-			const auto originalCreature = stack->battleFormOriginalCreature();
-			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("CPRSMALL"),
-				originalCreature.toCreature()->getIconIndex(), 0, slotX + 8, slotY + 2));
-			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
-				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW,
-				newHorizonsBattleStatus::battleFormDurationLabel(battleForm)));
-			const auto tooltip = newHorizonsBattleStatus::battleFormTooltip(battleForm);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-			++printed;
-			continue;
-		}
-		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::PHYSICAL_POISON)
-		{
-			// Physical Poison is a saved stack condition, not a magical Poison spell.
-			// Reuse the stock Poison frame without inserting a fake active-spell ID.
-			const auto poisonIconFrame = SpellID(SpellID::POISON).getNum() + 1;
-			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), poisonIconFrame, 0, slotX, slotY));
-			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE,
-				std::to_string(physicalPoison.activationsRemaining)));
-			const auto hiddenEffectCount = displayPlan.overflow ? totalEffectCount - displayPlan.visibleEntryIndices.size() : 0;
-			const auto tooltip = physicalPoisonTooltip(physicalPoison, hiddenEffectCount);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-			++printed;
-			continue;
-		}
-		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_CAP)
-		{
-			const SpellID shadowGiftId = SpellID::decode(std::string(newHorizonsBattleStatus::SHADOW_GIFT_SPELL_KEY));
-			const auto shadowGiftFrame = shadowGiftId.getNum() + 1;
-			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), shadowGiftFrame, 0, slotX, slotY));
-			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
-				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW,
-				"-" + TextOperations::formatMetric(displayedStatus.shadowGift.maximumHealthLost, 4)));
-			const auto tooltip = newHorizonsBattleStatus::shadowGiftCapTooltip(displayedStatus.shadowGift);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-			++printed;
-			continue;
-		}
-		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::TEMPORARY_CREATURES)
-		{
-			// Use the authored Re-animate art at its 30px battle-status size, centered
-			// in the existing SpellInt slot. The count and generic label explain the
-			// shared one-battle resurrection state without inventing a new frame.
-			temporaryCreatureIcons.push_back(std::make_shared<CPicture>(
-				ImagePath::builtin("NH_spell_reanimate_30.png"), Point(slotX + 9, slotY + 3)));
-			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
-				ETextAlignment::BOTTOMRIGHT, Colors::WHITE,
-				TextOperations::formatMetric(temporaryCreatures.remainingCount, 4)));
-			const auto tooltip = newHorizonsBattleStatus::temporaryCreatureTooltip(
-				temporaryCreatures.remainingCount);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-			++printed;
-			continue;
-		}
-		if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED)
-		{
-			const SpellID divineRetributionId = SpellID::decode(
-				std::string(newHorizonsBattleStatus::DIVINE_RETRIBUTION_SPELL_KEY));
-			const auto divineRetributionFrame = divineRetributionId.getNum() + 1;
-			icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"),
-				divineRetributionFrame, 0, slotX, slotY));
-			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
-				ETextAlignment::BOTTOMRIGHT, Colors::YELLOW,
-				TextOperations::formatMetric(retributionJudged.pendingHolyDamage, 4)));
-			const auto tooltip = newHorizonsBattleStatus::divineRetributionJudgedTooltip(retributionJudged);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 			++printed;
 			continue;
 		}
@@ -1114,13 +931,11 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		++printed;
 	}
 
-	if(spells.size() == hiddenReanimateSpellEffects + hiddenJudgedSpellEffects + hiddenConfusionSpellEffects && !temporaryCreatures.active()
-		&& !battleForm.active() && !physicalPoison.active() && !displayedStatus.shadowGift.hasMaximumHealthLoss()
-		&& !retributionJudged.active() && !displayedStatus.frozen)
+	if(temporaryStatuses.isEmpty())
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x, firstPos.y, 48, 36), EFonts::FONT_TINY, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[674]));
 	if(displayPlan.ellipsisUsesSlot)
 		labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));
-	else if(displayPlan.overflow && (physicalPoison.active() || displayedStatus.frozen))
+	else if(displayPlan.overflow && temporaryStatuses.hasPriorityStatus())
 	{
 		if(printed < 3)
 			labelsMultiline.push_back(std::make_shared<CMultiLineLabel>(Rect(firstPos.x + offset.x * 2, firstPos.y + offset.y * 2 - 4, 48, 36), EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "..."));
@@ -1167,6 +982,8 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 	if(current == displayedStatus && currentLuckReadback == displayedLuckReadback
 		&& displayedSummonRounds == (updatedInfo->alive() ? updatedInfo->summonRoundsRemaining : 0)
 		&& soulChainSignature == displayedSoulChainSignature
+		&& arcaneInspirationPresentation::forStack(*updatedInfo, battleCallback.get()) == displayedInspiration
+		&& arcaneMarkPresentation::counts(*updatedInfo) == displayedArcaneMarks
 		&& currentMorale == displayedMorale && currentMoraleReadback == displayedMoraleReadback)
 		return;
 

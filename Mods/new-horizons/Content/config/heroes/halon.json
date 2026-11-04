@@ -13,25 +13,21 @@
 		"texts": {
 			"specialty": {
 				"name": "Metamagic Adept",
-				"tooltip": "Metamagic: +1 use per combat",
-				"description": "Halon can use Metamagic one additional time per combat."
+				"tooltip": "Manual spells grant +1 Metamagic point",
+				"description": "Halon gains 1 additional Metamagic point after each spell he manually casts, up to 12 points."
 			}
 		},
 		"specialty": {
 			"secondary": null,
 			"bonuses": {
 				"mysticismExtra": null,
-				"metamagicUses": {
-					"type": "METAMAGIC_USES_PER_COMBAT",
-					"valueType": "BASE_NUMBER",
-					"val": 1
-				}
+				"metamagicUses": null
 			}
 		}
 	},
 	"core:sanya": {
 		"images": {"large": "HPL013CL.bmp", "small": "HPS013CL.bmp", "specialtyLarge": "NH_divineMandate_basic_medium.png", "specialtySmall": "NH_divineMandate_basic_small.png"},
-		"texts": {"specialty": {"name": "Divine Mandate", "tooltip": "Faction skill: Divine Mandate", "description": "Castle heroes begin with Divine Mandate. Once per combat, cast a Light Spell after issuing an Order, or issue an Order after casting a Light Spell."}},
+		"texts": {"specialty": {"name": "Divine Mandate", "tooltip": "Faction skill: Divine Mandate", "description": "Orders may automatically cast a useful Light blessing you know, free of Mana and additional Hero Actions."}},
 		"specialty": {"secondary": null}
 	},
 	"core:geon": {
@@ -61,12 +57,12 @@
 	},
 	"core:serena": {
 		"images": {"large": "HPL042WZ.bmp", "small": "HPS042WZ.bmp", "specialtyLarge": "NH_metamagic_prism_basic_medium.png", "specialtySmall": "NH_metamagic_prism_basic_small.png"},
-		"texts": {"specialty": {"name": "Metamagic", "tooltip": "Faction skill: Metamagic", "description": "Tower heroes begin with Metamagic. Once per combat, casting a Spell with the Hero Action permits one additional Spell."}},
+		"texts": {"specialty": {"name": "Metamagic", "tooltip": "Faction skill: Metamagic", "description": "Gain Metamagic points each round, up to 12, to strengthen spells and improve Magic Penetration."}},
 		"specialty": {"secondary": null}
 	},
 	"core:rion": {
 		"images": {"large": "HPL008CL.bmp", "small": "HPS008CL.bmp", "specialtyLarge": "NH_divineMandate_basic_medium.png", "specialtySmall": "NH_divineMandate_basic_small.png"},
-		"texts": {"specialty": {"name": "Divine Mandate", "tooltip": "Faction skill: Divine Mandate", "description": "Castle heroes begin with Divine Mandate. Once per combat, cast a Light Spell after issuing an Order, or issue an Order after casting a Light Spell."}},
+		"texts": {"specialty": {"name": "Divine Mandate", "tooltip": "Faction skill: Divine Mandate", "description": "Orders may automatically cast a useful Light blessing you know, free of Mana and additional Hero Actions."}},
 		"specialty": {"secondary": null}
 	},
 	"core:verdish": {
@@ -86,7 +82,7 @@
 	},
 	"core:ayden": {
 		"images": {"large": "HPL056DM.bmp", "small": "HPS056DM.bmp", "specialtyLarge": "NH_demonicGating_basic_medium.png", "specialtySmall": "NH_demonicGating_basic_small.png"},
-		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. A friendly Inferno stack can open a Gate so a reserve stack arrives at the start of the next round."}},
+		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. Original Inferno stacks can spend an activation to summon temporary same-type reinforcements at a nearby Gate."}},
 		"specialty": {"secondary": null}
 	},
 	"core:elleshar": {
@@ -112,7 +108,7 @@
 	},
 	"core:axsis": {
 		"images": {"large": "HPL058DM.bmp", "small": "HPS058DM.bmp", "specialtyLarge": "NH_demonicGating_basic_medium.png", "specialtySmall": "NH_demonicGating_basic_small.png"},
-		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. A friendly Inferno stack can open a Gate so a reserve stack arrives at the start of the next round."}},
+		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. Original Inferno stacks can spend an activation to summon temporary same-type reinforcements at a nearby Gate."}},
 		"specialty": {
 			"secondary": null,
 			"bonuses": {"mysticismExtra": null}
@@ -145,7 +141,7 @@
 	},
 	"core:zydar": {
 		"images": {"large": "HPL062DM.bmp", "small": "HPS062DM.bmp", "specialtyLarge": "NH_demonicGating_basic_medium.png", "specialtySmall": "NH_demonicGating_basic_small.png"},
-		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. A friendly Inferno stack can open a Gate so a reserve stack arrives at the start of the next round."}},
+		"texts": {"specialty": {"name": "Demonic Gating", "tooltip": "Faction skill: Demonic Gating", "description": "Inferno heroes begin with Demonic Gating. Original Inferno stacks can spend an activation to summon temporary same-type reinforcements at a nearby Gate."}},
 		"specialty": {"secondary": null}
 	},
 	"core:sandro": {

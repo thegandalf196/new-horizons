@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 HERO = (ROOT / "client/windows/CHeroWindow.cpp").read_text(encoding="utf-8")
+HERO += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
 BROWSER = (ROOT / "client/windows/NewHorizonsPerkBrowser.cpp").read_text(encoding="utf-8")
 BROWSER_HEADER = (ROOT / "client/windows/NewHorizonsPerkBrowser.h").read_text(encoding="utf-8")
 HELP = (ROOT / "client/windows/NewHorizonsPerkHelp.h").read_text(encoding="utf-8")
@@ -42,7 +43,7 @@ def main() -> None:
     require(BROWSER, "newHorizonsPerkAvailability::evaluatePerk(", "saved-rule eligibility classification")
     require(BROWSER, "newHorizonsPerkAvailability::explanation(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId))", "complete lock explanation in help")
     require(BROWSER, 'newHorizonsPerkHelp::format(&hero, skillId, perk.name', "shared perk explanation")
-    require(BROWSER, "addUsedEvents(SHOW_POPUP)", "right-click help hit area")
+    require(BROWSER, "addUsedEvents(LCLICK | SHOW_POPUP)", "persistent and right-click help hit area")
     require(BROWSER, "CRClickPopup::createAndPush(description", "native right-click explanation")
     require(BROWSER, "pos = area + pos.topLeft()", "card hit area uses the parent's absolute screen origin")
     help_area = BROWSER.split("class PerkBrowserHelpArea", 1)[1].split("};", 1)[0]

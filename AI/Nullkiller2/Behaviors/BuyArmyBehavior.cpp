@@ -13,6 +13,8 @@
 #include "../AIUtility.h"
 #include "../Goals/BuyArmy.h"
 #include "../Engine/Nullkiller.h"
+#include "../../../lib/mapObjects/CGTownInstance.h"
+#include "../../../lib/mapObjects/NewHorizonsEstates.h"
 
 namespace NK2AI
 {
@@ -43,10 +45,11 @@ Goals::TGoalVec BuyArmyBehavior::decompose(const Nullkiller * aiNk) const
 			return tasks;
 		}
 
-		auto townArmyAvailableToBuy = aiNk->armyManager->getArmyAvailableToBuyAsCCreatureSet(town, aiNk->getFreeResources());
+		const auto * buyer = newHorizonsEstates::recruitmentBuyer(town->getUpperArmy());
+		auto townArmyAvailableToBuy = aiNk->armyManager->getArmyAvailableToBuyAsCCreatureSet(town, aiNk->getFreeResources(), buyer);
 		const auto * portalSource = aiNk->aiGw->getBestPortalRecruitmentDwelling(town, town->getUpperArmy());
 		auto portalArmyAvailableToBuy = portalSource
-			? aiNk->armyManager->getArmyAvailableToBuyAsCCreatureSet(portalSource, aiNk->getFreeResources())
+			? aiNk->armyManager->getArmyAvailableToBuyAsCCreatureSet(portalSource, aiNk->getFreeResources(), buyer)
 			: nullptr;
 
 		for(const CGHeroInstance * targetHero : heroes)

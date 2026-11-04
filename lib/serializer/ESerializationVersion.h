@@ -316,12 +316,15 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION = 1152, // reserved resolved neutral-generation policy
 	NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES = 1153, // reserved combined successor; admit each module separately
 	NEW_HORIZONS_OPTIONAL_QUICK_STUDY = 1154, // reserved optional level-up reroll envelope
+	NEW_HORIZONS_PASSIVE_FACTION_SKILLS = 1155, // proposed combined new faction-skill capture/state epoch
+
+	NEW_HORIZONS_FACTION_SKILL_REVISIONS = 1156, // round-point Metamagic and revised faction perks
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
-	MINIMAL = RELEASE_170,
-	CURRENT = NEW_HORIZONS_OPTIONAL_QUICK_STUDY,
+	MINIMAL = NEW_HORIZONS_FACTION_SKILL_REVISIONS,
+	CURRENT = NEW_HORIZONS_FACTION_SKILL_REVISIONS,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2

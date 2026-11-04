@@ -344,8 +344,9 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetNewHorizonsSageGuildVisit>(301);
 	s.template registerType<RecruitTrainedStack>(302);
 	s.template registerType<BattleStructureRepaired>(303);
-	s.template registerType<SetReactiveWeaveState>(304);
+	// 304 reserved: retired Reactive Weave packet.
 	s.template registerType<BattleRapidResponseStateChanged>(305);
 	s.template registerType<BattleNormalActivationCompleted>(306);
 	s.template registerType<BattleCrisisCommandChanged>(307);
+	s.template registerType<SetMetamagicPointState>(308);
 }

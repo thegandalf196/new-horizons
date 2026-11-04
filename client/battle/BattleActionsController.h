@@ -279,6 +279,12 @@ class BattleActionsController
 	void reorderPossibleActionsPriority(const CStack * stack, const CStack * targetStack);
 
 	bool actionIsLegal(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);
+	std::string spellTargetManaStatus(PossiblePlayerBattleAction action, const BattleHex & targetHex);
+	std::string demonicGateStatus(const BattleHex & targetHex) const;
+	std::string demonicGateBlockedStatus() const;
+	bool demonicGateIsLegal(const BattleHex & targetHex) const;
+	void demonicGateClicked(const BattleHex & targetHex);
+	BattleAction prepareDemonicGateAction(const CStack & source, const BattleHex & targetHex) const;
 
 	void actionSetCursor(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);
 	void actionSetCursorBlocked(PossiblePlayerBattleAction action, const BattleHex & hoveredHex);

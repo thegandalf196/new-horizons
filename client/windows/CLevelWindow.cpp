@@ -4,7 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
-#include "GUIClasses.h"
+#include "CLevelWindow.h"
 #include "NewHorizonsCapturedPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
 #include "CHeroWindow.h"
@@ -96,7 +96,7 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	buttonRight.reset();
 	portrait.reset();
 	ok.reset();
-	reroll.reset();
+	rerollButtons.clear();
 	mainTitle.reset();
 	levelTitle.reset();
 	choiceInstruction.reset();
@@ -180,8 +180,10 @@ void CLevelWindow::updateLevelUpData(const CGHeroInstance * heroInstance, Primar
 {
 	OBJECT_CONSTRUCTION;
 
+	const auto previousChoice = selectedOfferIndex();
 	initLevelUpData(heroInstance, availableSkills, availablePerks, callback, gains);
 	createLevelUpControls(pskill);
+	restoreOfferSelection(previousChoice);
 	setRedrawParent(true);
 	redraw();
 }
@@ -189,6 +191,8 @@ void CLevelWindow::updateLevelUpData(const CGHeroInstance * heroInstance, Primar
 void CLevelWindow::createSkillBox()
 {
 	OBJECT_CONSTRUCTION;
+	const auto previousChoice = selectedOfferIndex();
+	rerollButtons.clear();
 
 	box.reset();
 	skillChoiceBox.reset();
@@ -244,7 +248,7 @@ void CLevelWindow::createSkillBox()
 				comp->customSubtitle = offeredRankText + "\n"
 					+ newHorizonsPerkHelp::skillLabel(hero, skill);
 				skillComps.push_back(comp);
-				comp->setHorizontalLayout(244, 84, true);
+				comp->setHorizontalLayout(rerollAvailable ? 156 : 244, 84, true);
 			}
 			else
 			{
@@ -275,7 +279,7 @@ void CLevelWindow::createSkillBox()
 		if(!skillComps.empty())
 		{
 			skillChoiceBox = std::make_shared<CComponentBox>(skillComps,
-				Rect(44, 300, 244, static_cast<int>(skillComps.size()) * 96 - 12),
+				Rect(44, 300, rerollAvailable ? 156 : 244, static_cast<int>(skillComps.size()) * 96 - 12),
 				[this](int){
 					perkChoiceActive = false;
 					if(perkChoiceBox)
@@ -314,6 +318,8 @@ void CLevelWindow::createSkillBox()
 		}
 	}
 
+	createRerollControls();
+	restoreOfferSelection(previousChoice);
 	setRedrawParent(true);
 	redraw();
 }
@@ -387,79 +393,4 @@ void CLevelWindow::close()
 		return;
 
 	CWindowObject::close();
-}
-
-void CLevelWindow::configureReroll(QueryID queryID, bool available, std::function<int()> callback)
-{
-	OBJECT_CONSTRUCTION;
-	levelQuery = queryID;
-	rerollAvailable = available && queryID >= 0 && !choiceOrder.empty();
-	rerollPending = false;
-	rerollRequest.reset();
-	rerollCallback = std::move(callback);
-	reroll.reset();
-	if(rerollAvailable)
-	{
-		reroll = std::make_shared<CButton>(Point(448, 532), AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Reroll", "Quick Study: replace these choices once. You may keep the original choices by selecting one instead."),
-			[this] { requestReroll(); });
-		reroll->setTextOverlay("Reroll", FONT_SMALL, Colors::YELLOW);
-	}
-	refreshRerollControls();
-}
-
-bool CLevelWindow::matchesQuery(QueryID queryID) const
-{
-	return levelQuery == queryID;
-}
-
-bool CLevelWindow::matchesHero(const CGHeroInstance * heroInstance) const
-{
-	return hero == heroInstance;
-}
-
-void CLevelWindow::refreshRerollControls()
-{
-	const bool waiting = rerollPending || selectionSubmitted;
-	if(reroll)
-		reroll->block(waiting || !rerollAvailable);
-	if(ok)
-		ok->block(waiting);
-	if(buttonLeft)
-		buttonLeft->block(waiting);
-	if(buttonRight)
-		buttonRight->block(waiting);
-	if(skillChoiceBox)
-		skillChoiceBox->setInputEnabled(!waiting);
-	if(perkChoiceBox)
-		perkChoiceBox->setInputEnabled(!waiting);
-}
-
-void CLevelWindow::requestReroll()
-{
-	if(!rerollAvailable || rerollPending || selectionSubmitted || !rerollCallback)
-		return;
-	// Latch before sending: repeated clicks and queued Accept cannot select
-	// the superseded offer while the authoritative replacement is pending.
-	rerollPending = true;
-	refreshRerollControls();
-	const int request = rerollCallback();
-	if(request >= 0)
-		rerollRequest = static_cast<uint32_t>(request);
-	else
-	{
-		rerollPending = false;
-		refreshRerollControls();
-	}
-}
-
-void CLevelWindow::rerollRequestApplied(uint32_t requestID, bool success)
-{
-	if(!rerollPending || !rerollRequest || *rerollRequest != requestID || success)
-		return;
-	// A rejection keeps the original offer. A successful ACK alone cannot
-	// unlock choices: wait for the matching authoritative offer refresh.
-	rerollPending = false;
-	rerollRequest.reset();
-	refreshRerollControls();
 }

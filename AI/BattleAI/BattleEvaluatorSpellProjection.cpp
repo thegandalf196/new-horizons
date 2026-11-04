@@ -35,7 +35,8 @@ void projectRegenerationRateSnapshot(HypotheticBattle & projectedBattle,
 	const spells::Target & acceptedTarget)
 {
 	const auto & savedRules = projectedBattle.getBattle()->getMagicRules();
-	if(!isCanonicalRegeneration(spell, savedRules) || !newHorizonsMagic::rulesActive(savedRules))
+	if(mechanics.getMetamagicCastProfile() || !isCanonicalRegeneration(spell, savedRules)
+		|| !newHorizonsMagic::rulesActive(savedRules))
 		return;
 
 	const auto regenerationMarker = Selector::source(BonusSource::SPELL_EFFECT,
@@ -48,7 +49,7 @@ void projectRegenerationRateSnapshot(HypotheticBattle & projectedBattle,
 	const auto rate = newHorizonsMagic::regenerationRateMillionthsBasisPointsWithSpecialty(
 		std::max<int32_t>(0, mechanics.getEffectPower()),
 		mechanics.getSpellPowerCoefficientBasisPoints(), herbalist,
-		mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent(),
+		mechanics.getEmpowerSpellBonusPercent(),
 		mechanics.getHerbalSurgeonRegenerationPercent());
 	for(const auto * unit : mechanics.getAffectedStacks(acceptedTarget))
 	{
@@ -90,6 +91,7 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 	cast.setCureAffliction(candidate.spellCureAffliction);
 	cast.setCurePhysicalAffliction(candidate.spellCurePhysicalAffliction);
 	cast.setMassSlow(candidate.spellMassSlow);
+	cast.setShadowGiftSacrificePercent(candidate.spellShadowGiftSacrificePercent);
 	if(admission.counterspell.wardActive)
 		cast.setCounterspell(admission.counterspell.wardSide, admission.counterspellNegated);
 	const bool observing = !admission.counterspellNegated && candidate.spell->getJsonKey() == newHorizonsLifeDrain::SPELL_KEY
@@ -121,7 +123,10 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 		}
 		else
 		{
-			mechanics->castEval(state.getServerCallback(), candidateTarget);
+			if(arrowContinuation::isArrow(candidate))
+				result.arrow = arrowContinuation::project(*mechanics, state, candidateTarget);
+			else
+				mechanics->castEval(state.getServerCallback(), candidateTarget);
 			// Mirror the authoritative fixed-point regeneration rate on the clone.
 			projectRegenerationRateSnapshot(state, *mechanics, candidate.spell, candidateTarget);
 		}
@@ -139,7 +144,10 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 			result.lifeDrain = std::move(preparedLifeDrain);
 	}
 	if(!result.accepted)
+	{
 		result.vines.reset();
+		result.arrow.reset();
+	}
 	return result;
 }
 }

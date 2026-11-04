@@ -8,6 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "../lib/spells/NewHorizonsWisdom.h"
+#include "../lib/battle/NewHorizonsDemonicGating.h"
+#include "../lib/battle/NewHorizonsBloodrage.h"
 #include "../lib/pathfinder/NewHorizonsProtectedMobility.h"
 #include "../lib/pathfinder/NewHorizonsLighthouse.h"
 #include "../lib/mapObjects/NewHorizonsAcademicStudy.h"
@@ -23,6 +26,8 @@
 #include "ServerSpellCastEnvironment.h"
 #include "TurnStartVisitScheduler.h"
 #include "battles/BattleProcessor.h"
+#include "battles/ElementalRebirthAftermath.h"
+#include "battles/ElementalCataclysmAftermath.h"
 #include "processors/HeroPoolProcessor.h"
 #include "processors/NewTurnProcessor.h"
 #include "processors/PlayerMessageProcessor.h"
@@ -176,160 +181,6 @@ IGameServer & CGameHandler::gameServer() const
 	return server;
 }
 
-void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill, bool continueProgression)
-{
-	if(hero && newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
-	{
-		const auto * definition = LIBRARY->skillh->getById(skill);
-		if(!definition || !hero->getPerkState().canAdvanceSkillNormally(definition->getJsonKey(),
-			hero->getSecSkillLevel(skill)))
-			throw std::runtime_error("New Horizons skill advancement requires its preceding perk tier");
-	}
-	changeSecSkill(hero, skill, 1, ChangeValueMode::RELATIVE);
-	if(continueProgression)
-		heroLevelUpChoiceDone(hero);
-}
-
-void CGameHandler::levelUpHero(const CGHeroInstance * hero,
-	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & offer, size_t choice, uint64_t seed,
-	bool continueProgression)
-{
-	if(!hero)
-		throw std::runtime_error("Cannot choose a perk for a missing hero");
-	const auto rankLookup = [hero](const std::string & skillId)
-	{
-		return hero->getPerkSkillRank(skillId);
-	};
-	// Validate without mutating authoritative state. The replicated pack below is
-	// the sole state-change path for the server and every connected client.
-	auto validated = hero->getPerkState();
-	validated.acceptOffer(offer, choice, rankLookup, seed, hero->getPerkOfferWeightContext());
-
-	HeroPerkChosen chosen;
-	chosen.hero = hero->id;
-	chosen.selection = offer.at(choice).selection;
-	const int previousSight = hero->getSightRadius();
-	sendAndApply(chosen);
-	if(hero->getOwner().isValidPlayer() && hero->getSightRadius() > previousSight)
-		changeFogOfWar(hero->getSightCenter(), hero->getSightRadius(), hero->getOwner(), ETileVisibility::REVEALED);
-	if(continueProgression)
-		heroLevelUpChoiceDone(hero);
-}
-
-void CGameHandler::heroLevelUpChoiceDone(const CGHeroInstance * hero)
-{
-	if(!offerHeroMastery(hero))
-		expGiven(hero);
-}
-
-bool CGameHandler::offerHeroMastery(const CGHeroInstance * hero)
-{
-	if(!hero->getOwner().isValidPlayer())
-		return false;
-	for(const auto & existing : queries->allQueries())
-		if(existing->getType() == CHeroMasteryDialogQuery::TYPE
-			&& static_cast<const CHeroMasteryDialogQuery &>(*existing).heroId == hero->id)
-			return true;
-	if(const auto offer = hero->prepareMasteryOffer())
-	{
-		if(hero->getSecSkillLevel(offer->skill) != MasteryLevel::EXPERT)
-			return false;
-		HeroMasteryOffer pack;
-		pack.offer = *offer;
-		sendAndApply(pack);
-	}
-	if(!hero->getMasteryState().pending
-		|| hero->getSecSkillLevel(hero->getMasteryState().pending->skill) != MasteryLevel::EXPERT)
-		return false;
-	queries->addQuery(std::make_shared<CHeroMasteryDialogQuery>(this, hero));
-	return true;
-}
-
-void CGameHandler::resumeMasteryQueries(PlayerColor player)
-{
-	if(!player.isValidPlayer() || !uiReadyForDialogs.contains(player) || queries->topQuery(player))
-		return;
-	const auto * state = gameInfo().getPlayerState(player);
-	if(!state)
-		return;
-	for(const auto * hero : state->getHeroes())
-		if(offerHeroMastery(hero))
-			return;
-}
-
-void CGameHandler::levelUpHero(const CGHeroInstance * hero)
-{
-	if(hero->getMasteryState().pending && offerHeroMastery(hero))
-		return;
-	// required exp for at least 1 lvl-up hasn't been reached
-	if (!hero->gainsLevel())
-	{
-		if (hero->getCommander() && hero->getCommander()->gainsLevel())
-			levelUpCommander(hero->getCommander());
-		return;
-	}
-
-	const bool artilleryExpertBeforeGain = hero->getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT;
-	const bool logisticsExpertBeforeGain = hero->getSecSkillLevel(SecondarySkill::LOGISTICS) == MasteryLevel::EXPERT
-		&& newHorizonsHeroes::masteryOptions(hero->getMasteryState().rules, SecondarySkill::LOGISTICS).has_value();
-	// give primary skill
-	logGlobal->trace("%s got level %d", hero->getNameTextID(), hero->level);
-	auto gains = randomizer->rollPrimarySkillsForLevelup(hero);
-	const auto primarySkill = PrimarySkill(std::distance(gains.begin(), std::max_element(gains.begin(), gains.end())));
-	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
-	{
-		const auto before = hero->getBasePrimarySkillValue(PrimarySkill(i));
-		if(gains[i])
-		{
-			SetPrimarySkill sps;
-			sps.id = hero->id;
-			sps.which = PrimarySkill(i);
-			sps.mode = ChangeValueMode::RELATIVE;
-			sps.val = gains[i];
-			sendAndApply(sps);
-		}
-		gains[i] = hero->getBasePrimarySkillValue(PrimarySkill(i)) - before;
-	}
-
-	HeroLevelUp hlu;
-	hlu.player = hero->tempOwner;
-	hlu.heroId = hero->id;
-	hlu.primskill = primarySkill;
-	hlu.primaryGains = gains;
-	hlu.artilleryExpertBeforeGain = artilleryExpertBeforeGain;
-	hlu.logisticsExpertBeforeGain = logisticsExpertBeforeGain;
-	newHorizonsLevelUp::prepareChoices(*this, hero, hlu);
-
-	const int reachedLevel = hero->level + 1;
-	const auto interval = newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().rules);
-	const bool activeQuickStudy = hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.quickStudy");
-	if(!interval && reachedLevel % 5 == 0 && activeQuickStudy)
-		newHorizonsLevelUp::prepareChoices(*this, hero, hlu);
-	if(interval)
-	{
-		hlu.reachedLevel = reachedLevel;
-		hlu.optionalRerollAvailable = activeQuickStudy && reachedLevel % *interval == 0
-			&& (!hlu.skills.empty() || !hlu.perks.empty());
-	}
-
-	if (!hero->getOwner().isValidPlayer())
-	{
-		sendAndApply(hlu);
-		if(hlu.skills.empty() && hlu.perks.empty())
-			levelUpHero(hero);
-		else if(!hlu.skills.empty())
-			levelUpHero(hero, hlu.skills.front());
-		else
-			levelUpHero(hero, hlu.perks, 0, hlu.perkOfferSeed);
-	}
-	else
-	{
-		auto levelUpQuery = std::make_shared<CHeroLevelUpDialogQuery>(this, hlu, hero);
-		queries->addQuery(levelUpQuery);
-		//level up will be called on query reply
-	}
-}
-
 void CGameHandler::levelUpCommander (const CCommanderInstance * c, int skill)
 {
 	SetCommanderProperty scp;
@@ -465,14 +316,6 @@ void CGameHandler::levelUpCommander(const CCommanderInstance * c)
 		auto commanderLevelUp = std::make_shared<CCommanderLevelUpDialogQuery>(this, clu, hero);
 		queries->addQuery(commanderLevelUp);
 	}
-}
-
-void CGameHandler::expGiven(const CGHeroInstance *hero)
-{
-	if (hero->gainsLevel())
-		levelUpHero(hero);
-	else if (hero->getCommander() && hero->getCommander()->gainsLevel())
-		levelUpCommander(hero->getCommander());
 }
 
 void CGameHandler::giveStackExperience(const CArmedInstance * army, TExpType val)
@@ -2005,7 +1848,10 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	if(const auto * start = dynamic_cast<const BattleStart *>(&pack))
 	{
 		if(start->info)
+		{
 			start->info->validateCapturedGamblerPolicy();
+			newHorizonsBloodrage::validateBattleStart(*start->info, gameInfo());
+		}
 	}
 	else if(const auto * attack = dynamic_cast<const BattleAttack *>(&pack))
 	{
@@ -2100,13 +1946,9 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		CreatureID creature = CreatureID::NONE;
 		int32_t countBefore = 0;
 	};
-	struct ElementalRebirthTrigger
-	{
-		BattleID battleID = BattleID::NONE;
-		newHorizonsElementalRebirth::DeathSnapshot snapshot;
-	};
+
 	std::map<uint32_t, PersonalBloodrageGain> personalBloodrageGains;
-	std::map<uint32_t, ElementalRebirthTrigger> elementalRebirthTriggers;
+	std::map<uint32_t, elementalRebirthAftermath::Trigger> elementalRebirthTriggers;
 	const auto capturePersonalBloodrageGains = [&](const BattleID & battleID,
 		const std::vector<BattleStackAttacked> & hits)
 	{
@@ -2144,7 +1986,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 				battleInfo->getRebirthChainUsed(unit->unitSide()), &battleInfo->getCreatureCategoryRules(),
 				battleInfo->getPhoenixSparkUsed(unit->unitSide()));
 			if(snapshot)
-				elementalRebirthTriggers.try_emplace(unit->unitId(), ElementalRebirthTrigger{battleID, *snapshot});
+				elementalRebirthTriggers.try_emplace(unit->unitId(), elementalRebirthAftermath::Trigger{battleID, *snapshot});
 		}
 	};
 
@@ -2189,7 +2031,9 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		captureElementalRebirthTriggers(injured->battleID, injured->stacks);
 	}
 
+	const auto cataclysms = elementalCataclysmAftermath::capture(*this, pack);
 	gameServer().applyPack(pack);
+	elementalCataclysmAftermath::resolve(*this, cataclysms);
 	for(const auto & [heroId, before] : archivistBefore)
 	{
 		const auto * hero = gameInfo().getHero(heroId);
@@ -2234,206 +2078,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		}
 	}
 	for(const auto & [unitId, trigger] : elementalRebirthTriggers)
-	{
-		auto snapshot = trigger.snapshot;
-		const auto * battleInfo = gameState().getBattle(trigger.battleID);
-		const auto * unit = battleInfo ? battleInfo->battleGetUnitByID(unitId) : nullptr;
-		if(!battleInfo || !newHorizonsElementalRebirth::stillEligibleDeath(unit, snapshot,
-			true, false, false, battleInfo->getRebirthChainUsed(snapshot.side)))
-			continue;
-
-		// First qualifying destruction spends Spark even if the Phoenix footprint
-		// is blocked. Other deaths in this batch retain ordinary Rebirth.
-		snapshot.phoenixSpark = snapshot.phoenixSpark && !battleInfo->getPhoenixSparkUsed(snapshot.side);
-		if(snapshot.phoenixSpark)
-		{
-			BattleUnitsChanged receipt;
-			receipt.battleID = trigger.battleID;
-			receipt.phoenixSparkConsumption = newHorizonsElementalRebirth::PhoenixSparkConsumption{snapshot.side, unitId};
-			sendAndApply(receipt);
-		}
-		const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
-			*battleInfo, battleInfo->getAccessibility(), snapshot);
-		if(candidates.empty())
-		{
-			logGlobal->warn("Elemental Rebirth has no legal Elite Elemental for corpse hex %d",
-				snapshot.corpsePosition.toInt());
-			continue;
-		}
-
-		const CreatureID creature = candidates.size() == 1 ? candidates.front()
-			: *RandomGeneratorUtil::nextItem(candidates, getRandomGenerator());
-		const auto desiredHP = newHorizonsElementalRebirth::targetHP(snapshot, creature, *battleInfo);
-		const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
-			battleInfo->getSideArmy(snapshot.side), creature,
-			battleInfo->getSidePlayer(snapshot.side), snapshot.side);
-		auto spawn = newHorizonsElementalRebirth::makeSpawnDescriptor(
-			battleInfo->battleNextUnitId(), creature, snapshot.side, snapshot.corpsePosition,
-			desiredHP, effectiveMaxHP, snapshot.chain);
-		if(!spawn)
-		{
-			logGlobal->error("Elemental Rebirth could not represent %lld HP for creature id %d",
-				static_cast<long long>(desiredHP), creature.getNum());
-			continue;
-		}
-
-		BattleUnitsChanged add;
-		add.battleID = trigger.battleID;
-		auto & addedUnit = add.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::ADD);
-		spawn->unit.save(addedUnit.data);
-		if(snapshot.chain)
-			add.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-				snapshot.side, snapshot.unitId, spawn->unit.id};
-		sendAndApply(add);
-
-		const auto * reborn = gameState().getBattle(trigger.battleID)->battleGetUnitByID(spawn->unit.id);
-		if(!reborn)
-			throw std::runtime_error("Elemental Rebirth stack was not published");
-		const auto actualFullHealth = reborn->getAvailableHealth();
-		if(actualFullHealth < spawn->health.targetAggregateHP)
-		{
-			logGlobal->error("Elemental Rebirth spawned %lld HP below its %lld HP target",
-				static_cast<long long>(actualFullHealth), static_cast<long long>(spawn->health.targetAggregateHP));
-			BattleUnitsChanged remove;
-			remove.battleID = trigger.battleID;
-			remove.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::REMOVE);
-			if(snapshot.chain)
-				remove.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-					snapshot.side, snapshot.unitId, spawn->unit.id, true};
-			sendAndApply(remove);
-			continue;
-		}
-
-		if(const auto ward = newHorizonsElementalRebirth::elementalWardBonus(snapshot.profile))
-		{
-			SetStackEffect applyWard;
-			applyWard.battleID = trigger.battleID;
-			applyWard.toAdd.emplace_back(spawn->unit.id, std::vector<Bonus>{*ward});
-			sendAndApply(applyWard);
-		}
-
-		const auto actualWound = actualFullHealth - spawn->health.targetAggregateHP;
-		if(actualWound > 0)
-		{
-			auto state = reborn->acquireState();
-			int64_t wound = actualWound;
-			state->damage(wound);
-			if(state->getAvailableHealth() != spawn->health.targetAggregateHP)
-			{
-				if(snapshot.chain)
-				{
-					BattleUnitsChanged rollback;
-					rollback.battleID = trigger.battleID;
-					rollback.changedStacks.emplace_back(spawn->unit.id, UnitChanges::EOperation::REMOVE);
-					rollback.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-						snapshot.side, snapshot.unitId, spawn->unit.id, true};
-					sendAndApply(rollback);
-				}
-				throw std::runtime_error("Elemental Rebirth failed to apply its exact aggregate HP target");
-			}
-
-			UnitChanges update(spawn->unit.id, UnitChanges::EOperation::UPDATE);
-			update.data = state->save();
-			update.healthDelta = -wound;
-			BattleUnitsChanged damaged;
-			damaged.battleID = trigger.battleID;
-			damaged.changedStacks.push_back(std::move(update));
-			sendAndApply(damaged);
-		}
-
-		if(snapshot.profile.swiftRebirth)
-		{
-			SetStackEffect swift;
-			swift.battleID = trigger.battleID;
-			swift.toAdd.emplace_back(spawn->unit.id, std::vector<Bonus>{
-				newHorizonsSwiftRebirth::marker(battleInfo->getRound())});
-			sendAndApply(swift);
-		}
-		const auto memory = newHorizonsElementalRebirth::elementalMemoryBonuses(snapshot, *reborn);
-		if(!memory.empty())
-		{
-			SetStackEffect inherited;
-			inherited.battleID = trigger.battleID;
-			inherited.toAdd.emplace_back(spawn->unit.id, memory);
-			sendAndApply(inherited);
-		}
-
-		BattleLogMessage log;
-		log.battleID = trigger.battleID;
-		MetaString line = MetaString::createFromRawString(snapshot.phoenixSpark ? "Phoenix Spark summons "
-			: snapshot.chain ? "Rebirth Chain summons " : "Elemental Rebirth summons ");
-		line.appendNumber(spawn->health.count);
-		line.appendRawString(" ");
-		line.appendName(creature, spawn->health.count);
-		line.appendRawString(" with ");
-		line.appendNumber(spawn->health.targetAggregateHP);
-		line.appendRawString(" HP at the fallen stack's position.");
-		if(snapshot.profile.greaterEssence && !snapshot.phoenixSpark)
-			line.appendRawString(" Greater Essence increases its rebirth health.");
-		if(snapshot.profile.elementalWard)
-			line.appendRawString(" Elemental Ward protects it from magical damage.");
-		log.lines.push_back(std::move(line));
-		sendAndApply(log);
-
-		if(snapshot.profile.primalBurst)
-		{
-			const auto * updatedBattle = gameState().getBattle(trigger.battleID);
-			const auto * burstSource = updatedBattle
-				? updatedBattle->battleGetUnitByID(spawn->unit.id) : nullptr;
-			if(!burstSource || !burstSource->alive())
-				continue;
-
-			const auto targetIds = newHorizonsElementalRebirth::adjacentHostileUnitIds(*updatedBattle, *burstSource);
-			const auto damageBudget = newHorizonsElementalRebirth::primalBurstDamageBudget(
-				burstSource->getAvailableHealth());
-			const auto damagePerTarget = newHorizonsElementalRebirth::primalBurstShare(
-				damageBudget, targetIds.size());
-			if(damagePerTarget <= 0)
-				continue;
-
-			StacksInjured burst;
-			burst.battleID = trigger.battleID;
-			BattleLogMessage burstLog;
-			burstLog.battleID = trigger.battleID;
-			for(const auto targetId : targetIds)
-			{
-				const auto * target = updatedBattle->battleGetUnitByID(targetId);
-				if(!target || !target->alive() || !target->unitType())
-					continue;
-
-				const auto rawDamage = newHorizonsMagicalAbilityDamage::adjustDamage(
-					*updatedBattle, *target, damagePerTarget);
-				if(rawDamage <= 0)
-					continue;
-
-				BattleStackAttacked hit;
-				hit.stackAttacked = targetId;
-				hit.attackerID = spawn->unit.id;
-				hit.damageAmount = rawDamage;
-				const auto targetCreature = target->creatureId();
-				const auto targetCount = target->getCount();
-				CStack::prepareAttacked(hit, getRandomGenerator(), target->acquireState(),
-					false, false, battle::DamageProvenance::SPELL);
-
-				MetaString damageLine = MetaString::createFromRawString("Primal Burst deals ");
-				damageLine.appendNumber(hit.damageAmount);
-				damageLine.appendRawString(" elemental damage to ");
-				damageLine.appendNumber(targetCount);
-				damageLine.appendRawString(" ");
-				damageLine.appendName(targetCreature, targetCount);
-				damageLine.appendRawString(".");
-				burstLog.lines.push_back(std::move(damageLine));
-				burst.stacks.push_back(std::move(hit));
-			}
-
-			if(!burst.stacks.empty())
-			{
-				// Publish the damage text before the single authoritative injury packet.
-				sendAndApply(burstLog);
-				sendAndApply(burst);
-			}
-		}
-	}
+		elementalRebirthAftermath::resolve(*this, unitId, trigger);
 
 	for(const auto & [unitId, gain] : personalBloodrageGains)
 	{
@@ -2447,7 +2092,7 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 		line.appendNumber(gain.countBefore);
 		line.appendRawString(" ");
 		line.appendName(gain.creature, gain.countBefore);
-		line.appendRawString(" gain one personal Bloodrage increment (");
+		line.appendRawString(" gain personal Bloodrage (");
 		line.appendNumber(unit->getPersonalBloodrageIncrement());
 		line.appendRawString(" percentage points; normal cap applies) for the rest of combat.");
 		log.lines.push_back(std::move(line));
@@ -3500,6 +3145,7 @@ bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, 
 		COMPLAIN_RETF("Building %s is already built in %s", t->getTown()->buildings.at(requestedID)->getNameTranslated() % t->getNameTextID());
 
 	const auto & requestedBuilding = t->getTown()->buildings.at(requestedID);
+	const auto paidCost = force ? ResourceSet() : t->getBuildingCost(requestedID);
 
 	//Vector with future list of built building and buildings in auto-mode that are not yet built.
 	std::vector<const CBuilding*> remainingAutoBuildings;
@@ -3530,12 +3176,6 @@ bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, 
 			break;
 		}
 	}
-
-	//Performs stuff that has to be done before new building is built
-	auto processBeforeBuiltStructure = [t, this](const BuildingID buildingID)
-	{
-		initializeRecruitmentForBuilding(t, buildingID);
-	};
 
 	//Checks if all requirements will be met with expected building list "buildingsThatWillBe"
 	auto areRequirementsFulfilled = [&buildingsThatWillBe](const BuildingID & buildID)
@@ -3585,19 +3225,19 @@ bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, 
 
 	// FIXME: it's done before NewStructures applied because otherwise town window wont be properly updated on client. That should be actually fixed on client and not on server.
 	for(auto builtID : ns.bid)
-		processBeforeBuiltStructure(builtID);
+		initializeRecruitmentForBuilding(t, builtID);
 
 	//Take cost
 	if(!force)
 	{
 		const PlayerColor ownerBeforePay = t->tempOwner;
-		giveResources(ownerBeforePay, -requestedBuilding->resources);
+		giveResources(ownerBeforePay, -paidCost);
 
 		// Only record statistics if the player is still a valid, in-game player.
 		// If they were eliminated during the resource deduction (rare but possible via custom
 		// map triggers), we skip the statistics update because the PlayerState no longer exists.
 		if(ownerBeforePay.isValidPlayer() && t->tempOwner == ownerBeforePay)
-			statistics->getPlayerAccumulator(ownerBeforePay).spentResourcesForBuildings += requestedBuilding->resources;
+			statistics->getPlayerAccumulator(ownerBeforePay).spentResourcesForBuildings += paidCost;
 	}
 
 	//We know what has been built, apply changes. Do this as final step to properly update town window
@@ -3780,7 +3420,7 @@ bool CGameHandler::unlockNewHorizonsAdventureSpell(ObjectInstanceID townId, int3
 	ResourceSet unlockCost;
 	try
 	{
-		unlockCost = newHorizonsMagic::adventureSpellUnlockCost(magicRules, spellID);
+		unlockCost = newHorizonsWisdom::adventureSpellPurchaseCost(magicRules, spellID, *town);
 	}
 	catch(const std::exception &)
 	{
@@ -3853,142 +3493,6 @@ bool CGameHandler::recruitToSlot(const StackLocation & location, const CCreature
 	pack.change = {hero->id, location.slot, creature->getId(), stack ? stack->getCount() : 0,
 		count, previous, next};
 	sendAndApply(pack);
-	return true;
-}
-
-bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dstid, CreatureID crid, int32_t cram,
-	int32_t fromLvl, PlayerColor player, ObjectInstanceID portalTownId)
-{
-	const auto * dwelling = dynamic_cast<const CGDwelling *>(gameInfo().getObj(objid));
-	const auto * town = dynamic_cast<const CGTownInstance *>(gameInfo().getObj(objid));
-	const auto * army = dynamic_cast<const CArmedInstance *>(gameInfo().getObj(dstid));
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(gameInfo().getObj(dstid));
-	const auto * portalTown = portalTownId == ObjectInstanceID::NONE ? nullptr : gameInfo().getTown(portalTownId);
-	const auto * c = crid.toCreature();
-
-	COMPLAIN_RET_FALSE_IF(!c, "Cannot recruit: invalid creature!");
-	const bool warMachine = c->warMachine != ArtifactID::NONE;
-
-	//TODO: check if hero is actually visiting object
-
-	COMPLAIN_RET_FALSE_IF(!dwelling || !army, "Cannot recruit: invalid object!");
-	COMPLAIN_RET_FALSE_IF(dwelling->getOwner() != player && dwelling->getOwner() != PlayerColor::UNFLAGGABLE, "Cannot recruit: dwelling not owned!");
-
-	if (portalTownId != ObjectInstanceID::NONE)
-	{
-		const bool externalDwelling = dwelling->ID == Obj::CREATURE_GENERATOR1 || dwelling->ID == Obj::CREATURE_GENERATOR4;
-		const bool destinationBelongsToPortal = portalTown
-			&& (army == portalTown
-				|| (hero && (hero == portalTown->getVisitingHero() || hero == portalTown->getGarrisonHero())));
-		COMPLAIN_RET_FALSE_IF(!newHorizonsMagic::rulesActive(gameInfo().getMagicRules())
-			|| !portalTown || portalTown->getOwner() != player
-			|| !portalTown->hasBuilt(BuildingSubID::PORTAL_OF_SUMMONING)
-			|| portalTown->portalSourceDwellingId != objid || dwelling->getOwner() != player,
-			"Portal source is not selected by an owned Portal of Summoning!");
-		COMPLAIN_RET_FALSE_IF(!externalDwelling,
-			"Portal recruitment requires an external creature dwelling!");
-		COMPLAIN_RET_FALSE_IF(warMachine,
-			"Portal recruitment cannot recruit war machines!");
-		COMPLAIN_RET_FALSE_IF(!destinationBelongsToPortal || army->getOwner() != player
-			|| (hero && hero->getOwner() != player),
-			"Portal recruitment destination must be the town or its visiting/garrisoned hero!");
-	}
-	else if (town)
-	{
-		COMPLAIN_RET_FALSE_IF(town != army && !hero, "Cannot recruit: invalid destination!");
-		COMPLAIN_RET_FALSE_IF(hero != town->getGarrisonHero() && hero != town->getVisitingHero(), "Cannot recruit: can only recruit to town or hero in town!!");
-	}
-	else
-	{
-		COMPLAIN_RET_FALSE_IF(getVisitingHero(dwelling) != hero, "Cannot recruit: can only recruit by visiting hero!");
-		COMPLAIN_RET_FALSE_IF(!hero || hero->getOwner() != player, "Cannot recruit: can only recruit to owned hero!");
-	}
-
-	//verify
-	bool found = false;
-	int level = 0;
-
-	for (; level < dwelling->creatures.size(); level++) //iterate through all levels
-	{
-		if ((fromLvl != -1) && (level !=fromLvl))
-			continue;
-		const auto &cur = dwelling->creatures.at(level); //current level info <amount, list of cr. ids>
-		int i = 0;
-		for (; i < cur.second.size(); i++) //look for crid among available creatures list on current level
-			if (cur.second.at(i) == crid)
-				break;
-
-		if (i < cur.second.size())
-		{
-			found = true;
-			cram = std::min<int32_t>(cram, cur.first); //reduce recruited amount up to available amount
-			break;
-		}
-	}
-	SlotID slot = newHorizonsHeroes::recruitmentSlot(army, crid, cram);
-	const auto costPerCreature = dwelling->getRecruitmentCost(crid);
-	const auto & resources = gameInfo().getPlayerState(army->tempOwner)->resources;
-	int32_t maxAffordableAmount = std::numeric_limits<int32_t>::max();
-	for(size_t resource = 0; resource < std::min(resources.size(), costPerCreature.size()); ++resource)
-	{
-		if(costPerCreature[resource] > 0)
-			maxAffordableAmount = std::min(maxAffordableAmount, resources[resource] / costPerCreature[resource]);
-	}
-
-	if((!found && complain("Cannot recruit: no such creatures!"))
-		|| (cram > maxAffordableAmount && complain("Cannot recruit: lack of resources!"))
-		|| (cram <= 0 && complain("Cannot recruit: cram <= 0!"))
-		|| (!slot.validSlot() && !warMachine && complain("Cannot recruit: no available slot!")))
-	{
-		return false;
-	}
-	if(!warMachine)
-	{
-		const int64_t recruitedStackSize = army->hasStackAtSlot(slot)
-			? static_cast<int64_t>(army->getStackCount(slot)) + static_cast<int64_t>(cram)
-			: static_cast<int64_t>(cram);
-		if(!validateLeadershipStack(army, crid, recruitedStackSize, "recruit"))
-			return false;
-	}
-
-	//recruit
-	TResources cost = costPerCreature * cram;
-	giveResources(army->tempOwner, -cost);
-	statistics->getPlayerAccumulator(army->tempOwner).spentResourcesForArmy += cost;
-
-	SetAvailableCreatures sac;
-	sac.tid = objid;
-	sac.creatures = dwelling->creatures;
-	sac.creatures[level].first -= cram;
-	sendAndApply(sac);
-
-	if (warMachine)
-	{
-		ArtifactID artId = c->warMachine;
-		const CArtifact * art = artId.toArtifact();
-
-		COMPLAIN_RET_FALSE_IF(!hero, "Only hero can buy war machines");
-		COMPLAIN_RET_FALSE_IF(artId == ArtifactID::CATAPULT, "Catapult cannot be recruited!");
-		COMPLAIN_RET_FALSE_IF(nullptr == art, "Invalid war machine artifact");
-		COMPLAIN_RET_FALSE_IF(hero->hasArt(artId),"Hero already has this machine!");
-
-		bool hasFreeSlot = false;
-		for(auto possibleSlot : art->getPossibleSlots().at(ArtBearer::HERO))
-			if (hero->getArt(possibleSlot) == nullptr)
-				hasFreeSlot = true;
-
-		if (!hasFreeSlot)
-		{
-			auto possibleSlot = art->getPossibleSlots().at(ArtBearer::HERO).front();
-			removeArtifact(ArtifactLocation(hero->id, possibleSlot));
-		}
-		return giveHeroNewArtifact(hero, artId, ArtifactPosition::FIRST_AVAILABLE);
-	}
-	else
-	{
-		if(!recruitToSlot(StackLocation(army->id, slot), c, cram))
-			throw std::runtime_error("Prevalidated direct recruitment was rejected");
-	}
 	return true;
 }
 
@@ -4129,7 +3633,10 @@ bool CGameHandler::arrangeDemonicReserve(ObjectInstanceID heroId, SlotID activeS
 	COMPLAIN_RET_FALSE_IF(!hero || !creature, "Cannot arrange Demonic Reserve: invalid hero or creature!");
 	COMPLAIN_RET_FALSE_IF(hero->getOwner() != player,
 		"Cannot arrange Demonic Reserve: hero does not belong to the requesting player!");
-	COMPLAIN_RET_FALSE_IF(hero->getPerkSkillRank("new-horizons:demonicGating") <= 0,
+	const bool temporaryGating = newHorizonsDemonicGating::usesTemporaryGating(hero);
+	COMPLAIN_RET_FALSE_IF(temporaryGating && toReserve,
+		"Cannot deposit into Demonic Reserve: temporary Gating permits only recovery of an existing reserve!");
+	COMPLAIN_RET_FALSE_IF(!temporaryGating && hero->getPerkSkillRank("new-horizons:demonicGating") <= 0,
 		"Cannot arrange Demonic Reserve: hero does not have Demonic Gating!");
 	COMPLAIN_RET_FALSE_IF(creature->getFactionID() != FactionID::INFERNO,
 		"Cannot arrange Demonic Reserve: only Inferno creatures are eligible!");
@@ -5323,9 +4830,10 @@ bool CGameHandler::queryReply(QueryID qid, std::optional<int32_t> answer, Player
 
 		COMPLAIN_RET("This player top query has different ID!"); //topQuery->queryID != qid
 	}
-	if(answer == CHeroLevelUpDialogQuery::REROLL_REPLY
+	if(answer && *answer <= CHeroLevelUpDialogQuery::REROLL_REPLY
 		&& topQuery->getType() == CHeroLevelUpDialogQuery::TYPE)
-		return static_cast<CHeroLevelUpDialogQuery &>(*topQuery).requestReroll(player);
+		return static_cast<CHeroLevelUpDialogQuery &>(*topQuery).requestReroll(player,
+			static_cast<size_t>(-2LL - *answer));
 	COMPLAIN_RET_FALSE_IF(topQuery->getType() == CHeroMasteryDialogQuery::TYPE, "Mastery requires a dedicated validated reply");
 	COMPLAIN_RET_FALSE_IF(!topQuery->endsByPlayerAnswer(), "This query cannot be ended by player's answer!");
 	COMPLAIN_RET_FALSE_IF(!topQuery->isValidReply(answer), "Invalid query reply");
@@ -5489,13 +4997,6 @@ void CGameHandler::objectVisited(const CGObjectInstance * visitedObject, const C
 	hv.heroId = h->id;
 	hv.player = h->tempOwner;
 	hv.starting = true;
-	if(const auto * town = dynamic_cast<const CGTownInstance *>(visitedObject);
-		town && town->getOwner() == h->getOwner() && newHorizonsMagic::rulesActive(gameState().getMagicRules()))
-	{
-		const auto calendar = gameInfo().getCalendar();
-		hv.newHorizonsMagnateOwnedTownVisitWeek =
-			newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
-	}
 	sendAndApply(hv);
 
 	std::string scriptHandler = visitedObject->getVisitScriptHandler();
@@ -5878,6 +5379,8 @@ bool CGameHandler::eraseStack(const StackLocation &sl, bool forceRemoval)
 	es.army = army->id;
 	es.slot = sl.slot;
 	sendAndApply(es);
+    if(const auto * mine = dynamic_cast<const CGMine *>(army))
+        mine->deliverPendingMercenaries(*this);
 	return true;
 }
 
@@ -6172,6 +5675,11 @@ bool CGameHandler::moveStack(const StackLocation &src, const StackLocation &dst,
 	rs.dstSlot = dst.slot;
 	rs.count = count;
 	sendAndApply(rs);
+    if(const auto * mine = dynamic_cast<const CGMine *>(srcArmy))
+        mine->deliverPendingMercenaries(*this);
+    if(dstArmy != srcArmy)
+        if(const auto * mine = dynamic_cast<const CGMine *>(dstArmy))
+            mine->deliverPendingMercenaries(*this);
 	return true;
 }
 
@@ -6247,6 +5755,11 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 		ss.srcSlot = sl1.slot;
 		ss.dstSlot = sl2.slot;
 		sendAndApply(ss);
+        if(const auto * mine = dynamic_cast<const CGMine *>(army1))
+            mine->deliverPendingMercenaries(*this);
+        if(army2 != army1)
+            if(const auto * mine = dynamic_cast<const CGMine *>(army2))
+                mine->deliverPendingMercenaries(*this);
 		return true;
 	}
 }
@@ -6686,11 +6199,9 @@ std::function<void()> CGameHandler::prepareChargeBasedSpellCompletion(const Obje
 	const auto * hero = gameInfo().getHero(heroObjectID);
 	assert(hero);
 	assert(hero->canCastThisSpell(spellID.toSpell()));
-	const bool arcaneMemoryActive = newHorizonsMagic::rulesActive(hero->getMagicRules())
-		&& hero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.arcaneMemory");
 
-	// Preserve permanent spell sources ahead of scrolls. A reusable spell scroll
-	// is a valid learning source even though it has no charge cost.
+
+	// Preserve permanent and reusable spell sources ahead of charged sources.
 	std::optional<std::pair<ArtifactInstanceID, uint16_t>> chargedArtifact;
 	std::optional<std::pair<ArtifactInstanceID, SpellID>> chargedScrollSource;
 	std::optional<std::pair<ArtifactInstanceID, SpellID>> reusableScrollSource;
@@ -6746,39 +6257,20 @@ std::function<void()> CGameHandler::prepareChargeBasedSpellCompletion(const Obje
 		}
 	}
 
-	const bool selectedReusableScroll = reusableScrollSource.has_value();
-	if(!selectedReusableScroll && hasInvalidChargedScroll)
+	if(reusableScrollSource || hasInvalidChargedScroll || !chargedArtifact)
 		return {};
+	const auto selectedArtifactId = chargedArtifact->first;
+	const auto selectedChargeCost = chargedArtifact->second;
+	const auto selectedScrollSource = chargedScrollSource;
 
-	std::optional<ArtifactInstanceID> selectedArtifactId;
-	std::optional<uint16_t> selectedChargeCost;
-	std::optional<std::pair<ArtifactInstanceID, SpellID>> selectedScrollSource;
-	if(selectedReusableScroll)
-	{
-		selectedArtifactId = reusableScrollSource->first;
-		selectedScrollSource = reusableScrollSource;
-	}
-	else
-	{
-		assert(chargedArtifact.has_value());
-		if(!chargedArtifact)
-			return {};
-		selectedArtifactId = chargedArtifact->first;
-		selectedChargeCost = chargedArtifact->second;
-		selectedScrollSource = chargedScrollSource;
-	}
-
-	if(selectedReusableScroll && !arcaneMemoryActive)
-		return {};
-
-	return [this, heroObjectID, spellID, selectedArtifactId, selectedChargeCost, arcaneMemoryActive, selectedScrollSource]()
+	return [this, heroObjectID, spellID, selectedArtifactId, selectedChargeCost, selectedScrollSource]()
 	{
 		const auto * currentHero = gameInfo().getHero(heroObjectID);
 		if(!currentHero)
 			return;
 
 		// Resolve this exact source again; an effect may have moved or removed it.
-		const auto * selectedArtifact = currentHero->getArtByInstanceId(*selectedArtifactId);
+		const auto * selectedArtifact = currentHero->getArtByInstanceId(selectedArtifactId);
 		if(!selectedArtifact)
 			return;
 		if(selectedScrollSource
@@ -6787,56 +6279,17 @@ std::function<void()> CGameHandler::prepareChargeBasedSpellCompletion(const Obje
 				|| selectedArtifact->getScrollSpellID() != spellID))
 			return;
 
-		bool sourceSettled = false;
-		if(selectedChargeCost)
 		{
 			const auto * artifactType = selectedArtifact->getType();
 			const auto currentChargeCost = artifactType->getChargeCost(spellID);
-			if(!currentChargeCost || *currentChargeCost != *selectedChargeCost
-				|| *selectedChargeCost > selectedArtifact->getCharges()
+			if(!currentChargeCost || *currentChargeCost != selectedChargeCost
+				|| selectedChargeCost > selectedArtifact->getCharges()
 				|| artifactType->getDischargeCondition() != DischargeArtifactCondition::SPELLCAST)
 				return;
 
-			DischargeArtifact message(*selectedArtifactId, *selectedChargeCost);
+			DischargeArtifact message(selectedArtifactId, selectedChargeCost);
 			message.artLoc.emplace(heroObjectID, currentHero->getArtPos(selectedArtifact));
 			sendAndApply(message);
-			sourceSettled = true;
-		}
-		else if(selectedScrollSource && !selectedArtifact->getType()->getChargeCost(spellID))
-		{
-			// Ordinary scrolls are reusable sources in this design; do not invent
-			// a depletion rule just to trigger Arcane Memory.
-			sourceSettled = true;
-		}
-
-		if(!sourceSettled || !arcaneMemoryActive || !selectedScrollSource)
-			return;
-
-		const auto * learner = gameInfo().getHero(heroObjectID);
-		if(learner && newHorizonsMagic::rulesActive(learner->getMagicRules())
-			&& learner->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.arcaneMemory"))
-		{
-			const auto * spellToLearn = selectedScrollSource->second.toSpell();
-			if(spellToLearn && learner->canLearnSpell(spellToLearn))
-			{
-				std::optional<BattleID> battleID;
-				if(learner->battle)
-					battleID = learner->battle->getBattleID();
-				MetaString line = MetaString::createFromRawString("%s learns ");
-				line.replaceTextID(learner->getNameTextID());
-				line.appendName(selectedScrollSource->second);
-				line.appendRawString(" from a scroll using Arcane Memory.");
-
-				changeSpells(learner, true, std::set<SpellID>{selectedScrollSource->second});
-
-				if(battleID)
-				{
-					BattleLogMessage message;
-					message.battleID = *battleID;
-					message.lines.push_back(std::move(line));
-					sendAndApply(message);
-				}
-			}
 		}
 	};
 }

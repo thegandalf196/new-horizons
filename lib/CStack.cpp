@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "bonuses/NativeBonusGraphAccess.h"
 #include "CStack.h"
+#include "battle/PassiveDivineMandate.h"
 #include "battle/AttackAbilityQueries.h"
 #include "battle/BattleBonusAcceptance.h"
 #include "battle/StackInitializationReceipts.h"
@@ -192,8 +193,10 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, bool d
 
 void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 	const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains,
-	const bool bypassTemporaryHitPoints, battle::DamageProvenance provenance)
+	const bool bypassTemporaryHitPoints, battle::DamageProvenance provenance, int64_t * postShieldBeforeCasualties)
 {
+	if(postShieldBeforeCasualties)
+		*postShieldBeforeCasualties = 0;
 	auto initialCount = customState->getCount();
 	const auto guardianSpiritBefore = customState->guardianSpiritHitPoints;
 
@@ -201,7 +204,7 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 	if(bypassTemporaryHitPoints)
 		customState->damageShadowGiftSacrifice(bsa.damageAmount);
 	else
-		customState->damage(bsa.damageAmount, destroyRemains, provenance);
+		customState->damage(bsa.damageAmount, destroyRemains, provenance, postShieldBeforeCasualties);
 	if(guardianSpiritBefore > 0 && customState->guardianSpiritHitPoints == 0)
 		bsa.flags |= BattleStackAttacked::GUARDIAN_SPIRIT_EXHAUSTED;
 
@@ -460,7 +463,8 @@ int CStack::unitSpeedBonus(const battle::Unit * unit) const
 
 int CStack::unitAdditionalRetaliations(const battle::Unit * unit) const
 {
-	return battle->battleBloodrageRetaliations(unit);
+	return battle->battleBloodrageRetaliations(unit)
+		+ newHorizonsPassiveDivineMandate::activeOrderRiders(*battle, unit).extraRetaliations;
 }
 
 int CStack::unitBloodragePainIncrement(const battle::Unit * unit) const

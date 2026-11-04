@@ -37,6 +37,8 @@ struct SpecialtySerializationContext
 	bool ordinaryMachineSpecialties = false;
 	bool ordinaryCombatSpecialties = false;
 	bool extendedOrdinarySpecialties = false;
+	/// Owned in-process copies must carry the complete 1155 unit-state envelope.
+	bool passiveFactionSkills = false;
 
 	bool operator==(const SpecialtySerializationContext &) const = default;
 
@@ -69,6 +71,7 @@ struct SpecialtySerializationContext
 		result.ordinaryMachineSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MACHINE_SPECIALTIES);
 		result.ordinaryCombatSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
 		result.extendedOrdinarySpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
+		result.passiveFactionSkills = h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 		return result;
 	}
 };

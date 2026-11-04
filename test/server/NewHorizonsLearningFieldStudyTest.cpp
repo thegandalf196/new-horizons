@@ -45,7 +45,7 @@ namespace
 {
 constexpr auto LEARNING_SKILL = "new-horizons:learning";
 constexpr auto LEARNING_MENTOR = "new-horizons:learning.mentor";
-constexpr auto LEARNING_QUICK_STUDY = "new-horizons:learning.quickStudy";
+constexpr auto LEARNING_CONNOISSEUR = "new-horizons:learning.connoisseur";
 constexpr auto FIELD_STUDY = "new-horizons:learning.fieldStudy";
 
 CreatureID creature(const char * id)
@@ -95,20 +95,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-		bool foundFieldStudy = false;
-		for(auto & perk : perkRules["skills"][LEARNING_SKILL]["perks"].Vector())
-		{
-			if(perk["id"].String() != FIELD_STUDY)
-				continue;
-
-			foundFieldStudy = true;
-			if(perk["effect"]["status"].String() == "planned")
-				perk["effect"]["status"].String() = "active";
-		}
-		if(!foundFieldStudy)
-			throw std::runtime_error("Missing Field Study from the New Horizons perk registry");
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
 	static SecondarySkill learningSkill()
@@ -168,7 +156,7 @@ protected:
 		ASSERT_TRUE(selectOfferedPerk(*gameHandler, hero, LEARNING_MENTOR, MasteryLevel::BASIC));
 		gameHandler->levelUpHero(hero, learning, false);
 		ASSERT_EQ(hero->getSecSkillLevel(learning), MasteryLevel::ADVANCED);
-		ASSERT_TRUE(selectOfferedPerk(*gameHandler, hero, LEARNING_QUICK_STUDY, MasteryLevel::ADVANCED));
+		ASSERT_TRUE(selectOfferedPerk(*gameHandler, hero, LEARNING_CONNOISSEUR, MasteryLevel::ADVANCED));
 		EXPECT_FALSE(hero->hasActivePerk(LEARNING_SKILL, FIELD_STUDY));
 	}
 
@@ -292,8 +280,14 @@ protected:
 		if(const auto * losingHero = context.loserHero)
 		{
 			const auto losingHeroBaseXp = casualtyBaseXp(result, loser, context);
-			EXPECT_EQ(result.exp[loser], losingHero->calculateXp(losingHeroBaseXp))
-				<< "Field Study must not modify the non-winning hero's ordinary result XP";
+			if(losingHero->hasActivePerk(LEARNING_SKILL, FIELD_STUDY))
+			{
+				ASSERT_GT(losingHeroBaseXp, 0);
+				EXPECT_EQ(result.exp[loser], losingHeroBaseXp * 145 / 100);
+			}
+			else
+				EXPECT_EQ(result.exp[loser], losingHero->calculateXp(losingHeroBaseXp))
+					<< "The unselected losing hero retains ordinary result XP";
 		}
 	}
 
@@ -354,13 +348,14 @@ TEST_F(NewHorizonsLearningFieldStudyTest, StrongerEnemyHeroRewardsTheAttackerFro
 		<< "The battle-result dialog must award the same XP amount that Field Study published";
 }
 
-TEST_F(NewHorizonsLearningFieldStudyTest, StrongerEnemyHeroRewardsTheDefenderWinner)
+TEST_F(NewHorizonsLearningFieldStudyTest, FieldStudyScalesBothSidesCombatXpIncludingTheLosingHero)
 {
 	startGame();
 	const auto pikeman = creature("core:pikeman");
 	setHeroArmy(attackerSideHero, pikeman, 20);
 	setHeroArmy(defenderSideHero, pikeman, 10);
 	acquireFieldStudy(defenderSideHero);
+	acquireFieldStudy(attackerSideHero);
 
 	const auto attackerArmyValue = attackerSideHero->getArmyStrength();
 	const auto defenderArmyValue = defenderSideHero->getArmyStrength();
@@ -370,6 +365,10 @@ TEST_F(NewHorizonsLearningFieldStudyTest, StrongerEnemyHeroRewardsTheDefenderWin
 	EXPECT_EQ(battle()->getSide(BattleSide::DEFENDER).initialArmyValue, defenderArmyValue);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroID, attackerSideHero->id);
 
+	// Give the losing attacker a positive casualty XP contribution too.
+	auto * defenderStack = stackAt(BattleSide::DEFENDER, SlotID(0));
+	ASSERT_NE(defenderStack, nullptr);
+	damageStack(defenderStack, defenderStack->getMaxHealth());
 	const auto xpContext = captureBattleXpContext(BattleSide::DEFENDER);
 	const auto query = finishBattle(BattleSide::DEFENDER);
 	expectWinnerXp(query, BattleSide::DEFENDER, 25, xpContext);
@@ -399,7 +398,7 @@ TEST_F(NewHorizonsLearningFieldStudyTest, StrongerWanderingMonsterRewardsTheHero
 	expectWinnerXp(query, BattleSide::ATTACKER, 25, xpContext);
 }
 
-TEST_P(NewHorizonsLearningFieldStudyComparisonTest, OnlySelectedAdvancedStudyAndStrictlyGreaterStartValueQualify)
+TEST_P(NewHorizonsLearningFieldStudyComparisonTest, SelectedAdvancedStudyAppliesRegardlessOfRelativeArmyValue)
 {
 	const auto & scenario = GetParam();
 	SCOPED_TRACE(scenario.name);
@@ -427,7 +426,7 @@ TEST_P(NewHorizonsLearningFieldStudyComparisonTest, OnlySelectedAdvancedStudyAnd
 
 	const auto xpContext = captureBattleXpContext(BattleSide::ATTACKER);
 	const auto query = finishBattle(BattleSide::ATTACKER);
-	expectWinnerXp(query, BattleSide::ATTACKER, 0, xpContext);
+	expectWinnerXp(query, BattleSide::ATTACKER, scenario.fieldStudySelected && !scenario.reduceLearningRank ? 25 : 0, xpContext);
 }
 
 INSTANTIATE_TEST_SUITE_P(EligibilityConditions, NewHorizonsLearningFieldStudyComparisonTest,
@@ -441,7 +440,7 @@ INSTANTIATE_TEST_SUITE_P(EligibilityConditions, NewHorizonsLearningFieldStudyCom
 		return std::string(info.param.name);
 	});
 
-TEST_F(NewHorizonsLearningFieldStudyTest, TownGarrisonWithoutFightingHeroDoesNotQualify)
+TEST_F(NewHorizonsLearningFieldStudyTest, TownGarrisonWithoutFightingHeroStillGrantsFieldStudy)
 {
 	startGame(true);
 	const auto pikeman = creature("core:pikeman");
@@ -465,10 +464,10 @@ TEST_F(NewHorizonsLearningFieldStudyTest, TownGarrisonWithoutFightingHeroDoesNot
 
 	const auto xpContext = captureBattleXpContext(BattleSide::ATTACKER);
 	const auto query = finishBattle(BattleSide::ATTACKER);
-	expectWinnerXp(query, BattleSide::ATTACKER, 0, xpContext);
+	expectWinnerXp(query, BattleSide::ATTACKER, 25, xpContext);
 }
 
-TEST_F(NewHorizonsLearningFieldStudyTest, InitialArmySnapshotRoundTripsBoundariesDefaultsAndRejectsOldWriters)
+TEST_F(NewHorizonsLearningFieldStudyTest, CurrentInitialArmySnapshotRoundTripsExactBoundaries)
 {
 	startGame();
 	const auto pikeman = creature("core:pikeman");
@@ -504,32 +503,4 @@ TEST_F(NewHorizonsLearningFieldStudyTest, InitialArmySnapshotRoundTripsBoundarie
 	EXPECT_EQ(restored.info->getSide(BattleSide::DEFENDER).initialArmyValue, std::optional<uint64_t>(0));
 	EXPECT_FALSE(restored.info->getSide(BattleSide::DEFENDER).initialArmyIsWandering);
 
-	CMemorySerializer oldWriter;
-	oldWriter.oser.version = ESerializationVersion::NEW_HORIZONS_INVESTOR_INCOME;
-	EXPECT_THROW(oldWriter.oser & currentSource, std::runtime_error);
-	EXPECT_TRUE(oldWriter.extractBuffer().empty())
-		<< "An old BattleStart writer must reject a captured Army Value before writing bytes";
-
-	BattleStart legacySource;
-	legacySource.battleID = BattleID(0);
-	legacySource.info = battleStartFixture::snapshot(*battle(), gameState().get());
-	ASSERT_NE(legacySource.info, nullptr);
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		legacySource.info->getSide(side).initialArmyValue.reset();
-		legacySource.info->getSide(side).initialArmyIsWandering = false;
-	}
-	CMemorySerializer legacy;
-	legacy.oser.version = ESerializationVersion::NEW_HORIZONS_INVESTOR_INCOME;
-	legacy.iser.version = ESerializationVersion::NEW_HORIZONS_INVESTOR_INCOME;
-	legacy.oser & legacySource;
-	legacy.iser.cb = gameState().get();
-	BattleStart legacyRestored;
-	legacy.iser & legacyRestored;
-	ASSERT_NE(legacyRestored.info, nullptr);
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		EXPECT_FALSE(legacyRestored.info->getSide(side).initialArmyValue.has_value());
-		EXPECT_FALSE(legacyRestored.info->getSide(side).initialArmyIsWandering);
-	}
 }

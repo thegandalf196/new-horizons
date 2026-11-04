@@ -27,6 +27,7 @@
 #include "../../lib/battle/NewHorizonsCoordinatedMarks.h"
 #include "../../lib/battle/NewHorizonsChargeSpecialties.h"
 #include "../../lib/battle/NewHorizonsReactiveDefense.h"
+#include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
@@ -59,7 +60,8 @@ bool hasTemporaryCombatModifier(const battle::Unit * unit)
 {
 	return unit && (newHorizonsCoordinatedMarks::hasMark(*unit) || unit->hasBonus(CSelector([](const Bonus * bonus)
 	{
-		return newHorizonsPrismaticVanguard::isEffect(bonus)
+		return arcaneInspiration::isEffect(bonus)
+			|| newHorizonsPrismaticVanguard::isEffect(bonus)
 			|| newHorizonsShroud::isEvasiveShroudProtection(bonus)
 			|| newHorizonsShieldAndSword::isProtection(bonus)
 			|| newHorizonsInfernoStrikeDebuffs::isEffect(bonus)

@@ -52,7 +52,7 @@ ChainActor::ChainActor(const CGHeroInstance * hero, HeroRole heroRole, uint64_t 
 ChainActor::ChainActor(const ChainActor * carrier, const ChainActor * other, const CCreatureSet * heroArmy)
 	:hero(carrier->hero), heroRole(carrier->heroRole), isMovable(true), creatureSet(heroArmy), chainMask(carrier->chainMask | other->chainMask),
 	baseActor(this), carrierParent(carrier), otherParent(other), heroFightingStrength(carrier->heroFightingStrength),
-	actorExchangeCount(carrier->actorExchangeCount + other->actorExchangeCount), armyCost(carrier->armyCost + other->armyCost), actorAction()
+	actorExchangeCount(carrier->actorExchangeCount + other->actorExchangeCount), armyCost(carrier->armyCost + other->getArmyCostForBuyer(carrier->hero)), actorAction()
 {
 	armyValue = getHeroArmyStrengthWithCommander(hero, heroArmy);
 }
@@ -257,13 +257,14 @@ ExchangeResult HeroExchangeMap::tryExchangeNoLock(const ChainActor * other)
 			return result;
 
 		TResources resources = aiNk->cc->getResourceAmount();
+		const auto otherCost = other->getArmyCostForBuyer(actor->hero);
 
-		if(!resources.canAfford(actor->armyCost + other->armyCost))
+		if(!resources.canAfford(actor->armyCost + otherCost))
 		{
 #if NK2AI_PATHFINDER_TRACE_LEVEL >= 2
 			logAi->trace(
 				"Can not afford exchange because of total cost %s but we have %s",
-				(actor->armyCost + other->armyCost).toString(),
+				(actor->armyCost + otherCost).toString(),
 				resources.toString());
 #endif
 			return result;
@@ -272,7 +273,7 @@ ExchangeResult HeroExchangeMap::tryExchangeNoLock(const ChainActor * other)
 		if(other->isMovable && other->armyValue <= actor->armyValue / 10 && other->armyValue < MIN_ARMY_STRENGTH_FOR_CHAIN)
 			return result;
 
-		TResources availableResources = resources - actor->armyCost - other->armyCost;
+		TResources availableResources = resources - actor->armyCost - otherCost;
 		HeroExchangeArmy * upgradedInitialArmy = tryUpgrade(actor->creatureSet, other->getActorObject(), availableResources);
 		HeroExchangeArmy * newArmy;
 
@@ -327,7 +328,7 @@ ExchangeResult HeroExchangeMap::tryExchangeNoLock(const ChainActor * other)
 
 		auto * exchanged = new HeroActor(actor, other, newArmy, aiNk);
 
-		exchanged->armyCost += newArmy->armyCost;
+		// HeroActor constructor already adds this accepted purchase reservation once.
 		result.actor = exchanged;
 		exchangeMap[other] = exchanged;
 
@@ -379,7 +380,8 @@ HeroExchangeArmy * HeroExchangeMap::tryUpgrade(
 			if (targetSlot.validSlot())
 			{
 				target->addToSlot(targetSlot, creatureToBuy.creID, creatureToBuy.count);
-				target->armyCost += creatureToBuy.creID.toCreature()->getFullRecruitCost() * creatureToBuy.count;
+				target->armyCost += aiNk->cc->getTown(upgrader->id)->getTotalRecruitmentCost(
+					creatureToBuy.creID, creatureToBuy.count, actor->hero);
 				target->requireBuyArmy = true;
 			}
 		}
@@ -425,10 +427,15 @@ DwellingActor::DwellingActor(const CGDwelling * dwelling, uint64_t chainMask, bo
 		getInitialTurn(waitForGrowth, dayOfWeek)),
 	dwelling(dwelling)
 {
-	for(auto & slot : creatureSet->Slots())
-	{
-		armyCost += slot.second->getCreatureID().toCreature()->getFullRecruitCost() * slot.second->getCount();
-	}
+	armyCost = getArmyCostForBuyer(nullptr);
+}
+
+TResources DwellingActor::getArmyCostForBuyer(const CGHeroInstance * buyer) const
+{
+	TResources cost;
+	for(const auto & [slot, stack] : creatureSet->Slots())
+		cost += dwelling->getTotalRecruitmentCost(stack->getCreatureID(), stack->getCount(), buyer);
+	return cost;
 }
 
 DwellingActor::~DwellingActor()

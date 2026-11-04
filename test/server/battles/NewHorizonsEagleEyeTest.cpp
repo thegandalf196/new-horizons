@@ -6,6 +6,8 @@
 #include "BattleTestFixture.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/filesystem/ResourcePath.h"
@@ -109,6 +111,12 @@ protected:
 			std::string(newHorizonsEagleEye::PERK_ID)))
 			attackerSideHero->applyPerkSelection({std::string(newHorizonsEagleEye::SKILL_ID),
 				std::string(newHorizonsEagleEye::PERK_ID)});
+	}
+	std::vector<std::byte> rng() const
+	{
+		CMemorySerializer bytes;
+		bytes.oser & *gameHandler->randomizer;
+		return bytes.extractBuffer();
 	}
 	void acceptResult()
 	{
@@ -216,11 +224,16 @@ TEST_F(NewHorizonsEagleEyeTest, HighestEligibleLevelAndEarliestTie)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_TRUE(newHorizonsEagleEye::enabled(attackerSideHero));
+	const auto random = rng();
 	ASSERT_TRUE(attackerSideHero->canLearnSpell(SpellID(SpellID::FROST_RING).toEntity(LIBRARY->spells())));
 	EXPECT_EQ(newHorizonsEagleEye::selectSpell(attackerSideHero,
-		{SpellID(SpellID::HASTE), SpellID(SpellID::FROST_RING), SpellID(SpellID::CHAIN_LIGHTNING)}), SpellID(SpellID::FROST_RING));
+		{SpellID(SpellID::HASTE), SpellID(SpellID::FROST_RING), SpellID(SpellID::CHAIN_LIGHTNING)}), SpellID(SpellID::CHAIN_LIGHTNING));
 	EXPECT_EQ(newHorizonsEagleEye::selectSpell(attackerSideHero,
 		{SpellID(SpellID::HASTE), SpellID(SpellID::MAGIC_ARROW), SpellID(SpellID::HASTE)}), SpellID(SpellID::HASTE));
+	EXPECT_EQ(newHorizonsEagleEye::selectSpells(attackerSideHero,
+		{SpellID::HASTE, SpellID::FROST_RING, SpellID::CHAIN_LIGHTNING, SpellID::MAGIC_ARROW, SpellID::HASTE, SpellID::ARMAGEDDON}),
+		(std::vector<SpellID>{SpellID::ARMAGEDDON, SpellID::CHAIN_LIGHTNING, SpellID::FROST_RING, SpellID::HASTE, SpellID::MAGIC_ARROW}));
+	EXPECT_EQ(rng(), random);
 }
 
 TEST_F(NewHorizonsEagleEyeTest, KnownOrSchoolIneligibleEntriesDoNotHideNextEligibleCast)
@@ -356,7 +369,7 @@ TEST_F(NewHorizonsEagleEyeTest, NimbusChoosesDistinctEligibleSpellsInStableLevel
 	const auto before = attackerSideHero->getSpellsInSpellbook();
 	EXPECT_EQ(newHorizonsEagleEye::selectSpells(attackerSideHero,
 		{SpellID::HASTE, SpellID::HASTE, SpellID::FROST_RING, SpellID::MAGIC_ARROW, SpellID::CHAIN_LIGHTNING}),
-		(std::vector<SpellID>{SpellID::FROST_RING, SpellID::HASTE}));
+		(std::vector<SpellID>{SpellID::CHAIN_LIGHTNING, SpellID::FROST_RING, SpellID::HASTE, SpellID::MAGIC_ARROW}));
 	EXPECT_EQ(attackerSideHero->getSpellsInSpellbook(), before);
 	EXPECT_TRUE(newHorizonsEagleEye::selectSpells(attackerSideHero, {}).empty());
 	attackerSideHero->addSpellToSpellbook(SpellID::FROST_RING);
@@ -367,13 +380,13 @@ TEST_F(NewHorizonsEagleEyeTest, NimbusChoosesDistinctEligibleSpellsInStableLevel
 		MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	EXPECT_TRUE(newHorizonsEagleEye::selectSpells(attackerSideHero, {SpellID::HASTE, SpellID::MAGIC_ARROW}).empty());
 }
-TEST_F(NewHorizonsEagleEyeTest, NimbusAbsentCaptureRetainsSingleSpellSelection)
+TEST_F(NewHorizonsEagleEyeTest, NimbusAbsentCaptureStillLearnsAllEligibleSpells)
 {
 	specialtyHero = "core:nimbus";
 	specialtyCaptured = false;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	EXPECT_EQ(newHorizonsEagleEye::selectSpells(attackerSideHero, {SpellID::HASTE, SpellID::MAGIC_ARROW}),
-		(std::vector<SpellID>{SpellID::HASTE}));
+		(std::vector<SpellID>{SpellID::HASTE, SpellID::MAGIC_ARROW}));
 }
 TEST_F(NewHorizonsEagleEyeTest, NimbusActualTwoEnemyCastsPublishBothWinnerSpells)
 {
@@ -453,7 +466,7 @@ TEST_F(NewHorizonsEagleEyeTest, NimbusRetainedDrawLearnsBothPriorEnemySpells)
 	const auto receipt = std::find_if(learningServer.learningReceipts.begin(), learningServer.learningReceipts.end(),
 		[learnerId](const ChangeSpells & entry) { return entry.hid == learnerId && entry.eagleEyeBonus; });
 	ASSERT_NE(receipt, learningServer.learningReceipts.end());
-	EXPECT_EQ(receipt->spells, (std::set<SpellID>{SpellID::HASTE, SpellID::MAGIC_ARROW}));
+	EXPECT_EQ(receipt->spells, (std::set<SpellID>{SpellID::HASTE, SpellID::MAGIC_ARROW, SpellID::ARMAGEDDON}));
 }
 
 TEST_F(NewHorizonsEagleEyeTest, NimbusPresentationUsesCapturedNumbersAndLegacyMagicEligibility)
@@ -466,7 +479,7 @@ TEST_F(NewHorizonsEagleEyeTest, NimbusPresentationUsesCapturedNumbersAndLegacyMa
 		attackerSideHero->getMagicRules(), std::nullopt, attackerSideHero);
 	EXPECT_EQ(current.name, "Grave Archivist");
 	EXPECT_NE(current.description.find("5% per hero level"), std::string::npos);
-	EXPECT_NE(current.description.find("1 additional distinct"), std::string::npos);
+	EXPECT_EQ(current.description.find("additional distinct"), std::string::npos);
 	EXPECT_THROW(newHorizonsHeroes::resolveSpecialtyPresentation(hero, rules, JsonNode(),
 		std::nullopt, attackerSideHero), std::invalid_argument);
 	auto absent = rules;
@@ -486,5 +499,6 @@ TEST_F(NewHorizonsEagleEyeTest, NimbusCapturedLegacyMagicPresentationKeepsAdditi
 		attackerSideHero->getPrimaryGrowthRules(), attackerSideHero->getMagicRules(),
 		std::nullopt, attackerSideHero);
 	EXPECT_EQ(legacy.name, "Grave Archivist");
-	EXPECT_NE(legacy.description.find("inactive under this game's legacy magic rules"), std::string::npos);
+	EXPECT_EQ(legacy.description.find("additional distinct"), std::string::npos);
+	EXPECT_NE(legacy.description.find("5% per hero level"), std::string::npos);
 }

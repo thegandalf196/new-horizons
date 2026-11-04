@@ -18,6 +18,7 @@
 #include "lib/modding/CModHandler.h"
 #include "lib/networkPacks/PacksForServer.h"
 #include "lib/spells/NewHorizonsMagic.h"
+#include "lib/spells/NewHorizonsWisdom.h"
 #include "mock/TinyH3MBuilder.h"
 #include "nullkiller2/NullkillerTest.h"
 
@@ -153,6 +154,55 @@ TEST_F(NewHorizonsAdventureSpellUnlockAITest, SkipsUnbuiltUnlockedAndUnaffordabl
 
 	ASSERT_EQ(client.requestedUnlocks.size(), 1u);
 	EXPECT_EQ(client.requestedUnlocks.front(), std::make_pair(town->id, 3));
+}
+
+TEST_F(NewHorizonsAdventureSpellUnlockAITest, VisitingScholarPriceReservesTwoSequentialPurchases)
+{
+	startGame();
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	ASSERT_GE(wisdom.getNum(), 0);
+	hero->setSecSkillLevel(wisdom, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	hero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.intelligence"});
+	hero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.spellScholar"});
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.spellScholar"));
+	town->addBuilding(BuildingID::MAGES_GUILD_1);
+	town->addBuilding(BuildingID::MAGES_GUILD_2);
+	ResourceSet discounted, full;
+	for(int tier : {1, 2})
+	{
+		const auto spell = newHorizonsMagic::adventureSpellForGuildLevel(gameState()->getMagicRules(), tier);
+		discounted += newHorizonsWisdom::adventureSpellPurchaseCost(gameState()->getMagicRules(), spell, *town);
+		full += newHorizonsMagic::adventureSpellUnlockCost(gameState()->getMagicRules(), spell);
+	}
+	ASSERT_NE(discounted, full);
+	setResources(discounted);
+	RecordingUnlockClient client;
+	interact(client);
+	ASSERT_EQ(client.requestedUnlocks.size(), 2u);
+	EXPECT_EQ(client.requestedUnlocks[0], std::make_pair(town->id, 1));
+	EXPECT_EQ(client.requestedUnlocks[1], std::make_pair(town->id, 2));
+}
+
+TEST_F(NewHorizonsAdventureSpellUnlockAITest, GarrisonScholarDoesNotDiscountVisitingHeroPurchase)
+{
+	startGame();
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	ASSERT_GE(wisdom.getNum(), 0);
+	hero->setSecSkillLevel(wisdom, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	hero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.intelligence"});
+	hero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.spellScholar"});
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.spellScholar"));
+	town->addBuilding(BuildingID::MAGES_GUILD_1);
+	const auto spell = newHorizonsMagic::adventureSpellForGuildLevel(gameState()->getMagicRules(), 1);
+	const auto discounted = newHorizonsWisdom::adventureSpellPurchaseCost(gameState()->getMagicRules(), spell, *town);
+	town->setVisitingHero(nullptr);
+	town->setGarrisonedHero(hero);
+	EXPECT_EQ(newHorizonsWisdom::adventureSpellPurchaseCost(gameState()->getMagicRules(), spell, *town),
+		newHorizonsMagic::adventureSpellUnlockCost(gameState()->getMagicRules(), spell));
+	setResources(discounted);
+	RecordingUnlockClient client;
+	interact(client);
+	EXPECT_TRUE(client.requestedUnlocks.empty());
 }
 
 TEST_F(NewHorizonsAdventureSpellUnlockAITest, LegacyMagicRulesDoNotSubmitUnlockRequests)

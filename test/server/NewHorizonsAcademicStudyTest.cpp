@@ -26,7 +26,7 @@ namespace
 {
 const PlayerColor PLAYER(0);
 constexpr auto LEARNING = "new-horizons:learning";
-constexpr auto ACADEMIC = "new-horizons:learning.academicStudy";
+constexpr auto FIELD_STUDY = "new-horizons:learning.fieldStudy";
 class StudyRecordingServer : public GameHandlerTestServer
 {
 public:
@@ -95,14 +95,14 @@ protected:
 			town->addBuilding(BuildingID(BuildingID::MAGES_GUILD_1 + index));
 		ASSERT_EQ(town->mageGuildLevel(), level);
 	}
-	void selectAcademic(CGHeroInstance * target)
+	void selectCurrentLearning(CGHeroInstance * target)
 	{
 		const SecondarySkill skill(SecondarySkill::decode(LEARNING));
 		target->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		target->applyPerkSelection({LEARNING, "new-horizons:learning.eagleEye"});
 		target->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-		target->applyPerkSelection({LEARNING, ACADEMIC});
-		ASSERT_TRUE(target->hasActivePerk(LEARNING, ACADEMIC));
+		target->applyPerkSelection({LEARNING, FIELD_STUDY});
+		ASSERT_TRUE(target->hasActivePerk(LEARNING, FIELD_STUDY));
 	}
 	void leave(CGHeroInstance * target)
 	{
@@ -112,10 +112,10 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsAcademicStudyTest, ZeroOneThreeFiveBuiltGuildLevelsUseActualRecipientLearning)
+TEST_F(NewHorizonsAcademicStudyTest, GuildVisitsAtAllBuiltLevelsGrantNoRetiredAcademicExperience)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_NO_FATAL_FAILURE(selectAcademic(hero));
+	ASSERT_NO_FATAL_FAILURE(selectCurrentLearning(hero));
 	hero->level = 20;
 	hero->exp = LIBRARY->heroh->reqExp(20);
 	StudyRecordingServer server(gameState());
@@ -125,8 +125,8 @@ TEST_F(NewHorizonsAcademicStudyTest, ZeroOneThreeFiveBuiltGuildLevelsUseActualRe
 		leave(hero);
 		const int levels = std::array<int, 4>{0, 1, 3, 5}[index];
 		const auto before = hero->exp;
-		const auto expected = hero->calculateXp(250 * levels);
-		EXPECT_EQ(newHorizonsLearning::academicStudyRawExperience(*hero, *towns[index]), 250 * levels);
+		const TExpType expected = 0;
+		EXPECT_EQ(newHorizonsLearning::academicStudyRawExperience(*hero, *towns[index]), 0);
 		handler.heroVisitCastle(towns[index], hero);
 		EXPECT_EQ(hero->exp, before + expected);
 		EXPECT_TRUE(hero->visitedObjects.contains(towns[index]->id));
@@ -137,7 +137,7 @@ TEST_F(NewHorizonsAcademicStudyTest, ZeroOneThreeFiveBuiltGuildLevelsUseActualRe
 TEST_F(NewHorizonsAcademicStudyTest, RepeatAndLaterGuildBuildCannotAwardAgain)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_NO_FATAL_FAILURE(selectAcademic(hero));
+	ASSERT_NO_FATAL_FAILURE(selectCurrentLearning(hero));
 	StudyRecordingServer server(gameState());
 	CGameHandler handler(server, gameState());
 	handler.heroVisitCastle(towns[0], hero);
@@ -150,7 +150,7 @@ TEST_F(NewHorizonsAcademicStudyTest, RepeatAndLaterGuildBuildCannotAwardAgain)
 	EXPECT_EQ(newHorizonsLearning::academicStudyExperience(*hero, *towns[0]), 0);
 }
 
-TEST_F(NewHorizonsAcademicStudyTest, ProspectivePreAcquisitionVisitConsumesOnlyThatTown)
+TEST_F(NewHorizonsAcademicStudyTest, CurrentLearningAcquisitionDoesNotEnableAcademicExperienceAtAnyTown)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	StudyRecordingServer server(gameState());
@@ -158,20 +158,20 @@ TEST_F(NewHorizonsAcademicStudyTest, ProspectivePreAcquisitionVisitConsumesOnlyT
 	const auto before = hero->exp;
 	handler.heroVisitCastle(towns[1], hero);
 	EXPECT_EQ(hero->exp, before);
-	ASSERT_NO_FATAL_FAILURE(selectAcademic(hero));
+	ASSERT_NO_FATAL_FAILURE(selectCurrentLearning(hero));
 	leave(hero);
 	handler.heroVisitCastle(towns[1], hero);
 	EXPECT_EQ(hero->exp, before);
 	leave(hero);
-	const auto expected = hero->calculateXp(750);
+	const TExpType expected = 0;
 	handler.heroVisitCastle(towns[2], hero);
 	EXPECT_EQ(hero->exp, before + expected);
 }
 
-TEST_F(NewHorizonsAcademicStudyTest, MarkerPrecedesLevelUpAndDoesNotPollutePlayerTeamOrBuildingHistory)
+TEST_F(NewHorizonsAcademicStudyTest, RetiredAcademicVisitDoesNotCreateLevelUpOrPollutePlayerTeamHistory)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_NO_FATAL_FAILURE(selectAcademic(hero));
+	ASSERT_NO_FATAL_FAILURE(selectCurrentLearning(hero));
 	hero->level = 1;
 	hero->exp = 0;
 	StudyRecordingServer server(gameState());
@@ -183,11 +183,11 @@ TEST_F(NewHorizonsAcademicStudyTest, MarkerPrecedesLevelUpAndDoesNotPollutePlaye
 	const auto playerVisits = gameState()->getPlayerState(PLAYER)->visitedObjects;
 	const auto globalVisits = gameState()->getPlayerState(PLAYER)->visitedObjectsGlobal;
 	const auto teamScouted = gameState()->getPlayerTeam(PLAYER)->scoutedObjects;
-	const auto expected = hero->calculateXp(1250);
+	const TExpType expected = 0;
 	handler.heroVisitCastle(towns[3], hero);
 	EXPECT_EQ(hero->exp, expected);
-	EXPECT_TRUE(server.markerBeforeExperience);
-	EXPECT_GT(hero->level, 1u);
+	EXPECT_FALSE(server.markerBeforeExperience);
+	EXPECT_EQ(hero->level, 1u);
 	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->visitedObjects, playerVisits);
 	EXPECT_TRUE(std::ranges::equal(gameState()->getPlayerState(PLAYER)->visitedObjectsGlobal,
 		globalVisits, [](const auto & lhs, const auto & rhs)
@@ -202,13 +202,13 @@ TEST_F(NewHorizonsAcademicStudyTest, MarkerPrecedesLevelUpAndDoesNotPollutePlaye
 TEST_F(NewHorizonsAcademicStudyTest, EachHeroHasIndependentTownHistoryAndCurrentSavePreservesIt)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_NO_FATAL_FAILURE(selectAcademic(hero));
-	ASSERT_NO_FATAL_FAILURE(selectAcademic(second));
+	ASSERT_NO_FATAL_FAILURE(selectCurrentLearning(hero));
+	ASSERT_NO_FATAL_FAILURE(selectCurrentLearning(second));
 	StudyRecordingServer server(gameState());
 	CGameHandler handler(server, gameState());
 	handler.heroVisitCastle(towns[1], hero);
 	leave(hero);
-	const auto expected = second->calculateXp(250);
+	const TExpType expected = 0;
 	const auto secondBefore = second->exp;
 	handler.heroVisitCastle(towns[1], second);
 	EXPECT_EQ(second->exp, secondBefore + expected);
@@ -236,24 +236,13 @@ TEST_F(NewHorizonsAcademicStudyTest, LegacyUnselectedVisitDoesNotAddNewMarkerOrE
 	EXPECT_EQ(server.markers, 0);
 }
 
-TEST_F(NewHorizonsAcademicStudyTest, HeroOnlyPacketRoundtripAndOldFormatPrefixGuardPreserveLegacyMode)
+TEST_F(NewHorizonsAcademicStudyTest, GenericHeroOnlyVisitPacketStillRoundtripsCurrentFields)
 {
 	ChangeObjectVisitors marker(ChangeObjectVisitors::VISITOR_ADD_HERO_ONLY, ObjectInstanceID(1), ObjectInstanceID(0));
-	const auto oldVersion = static_cast<ESerializationVersion>(
-		static_cast<int>(ESerializationVersion::NEW_HORIZONS_ACADEMIC_STUDY) - 1);
-	CMemorySerializer old;
-	old.oser.version = oldVersion;
-	EXPECT_THROW(old.oser & marker, std::runtime_error);
-	EXPECT_TRUE(old.extractBuffer().empty());
 	const auto copied = CMemorySerializer::deepCopy<CPackForClient>(marker);
 	const auto * decoded = dynamic_cast<const ChangeObjectVisitors *>(copied.get());
 	ASSERT_NE(decoded, nullptr);
 	EXPECT_EQ(decoded->mode, ChangeObjectVisitors::VISITOR_ADD_HERO_ONLY);
 	EXPECT_EQ(decoded->object, marker.object);
 	EXPECT_EQ(decoded->hero, marker.hero);
-	marker.mode = ChangeObjectVisitors::VISITOR_ADD_HERO;
-	CMemorySerializer legacy;
-	legacy.oser.version = oldVersion;
-	EXPECT_NO_THROW(legacy.oser & marker);
-	EXPECT_FALSE(legacy.extractBuffer().empty());
 }

@@ -93,8 +93,10 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			legacy ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magic = legacy ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+		if(!legacy && !fortuneChild)
+			magic["spells"]["core:haste"].Struct().erase("heroAccess"); // Historical six-successor capture.
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(!fortuneChild)
 		{
@@ -245,7 +247,7 @@ protected:
 				{ return stack->getPhantomInitialIntegrity() > 0; });
 			ASSERT_EQ(phantoms.size(), 1u);
 			EXPECT_EQ(phantoms.front()->getPhantomInitialIntegrity(),
-				newHorizonsSorcery::phantomArmyIntegrityWithModifiers(sourceHealth, power, false, coefficient, 0, 0, 20));
+				newHorizonsSorcery::phantomArmyIntegrityWithModifiers(sourceHealth, power, false, coefficient, 0, 20));
 			const auto * state = dynamic_cast<const battle::CUnitState *>(phantoms.front());
 			ASSERT_NE(state, nullptr);
 			EXPECT_EQ(state->getPhantomRoundsRemaining(), 2);
@@ -310,7 +312,8 @@ TEST_F(NewHorizonsRemainingSpellSpecialtyTest, FortuneChildDefaultProducerScales
 	fortuneChild = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(5));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell("core:fortune")));
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(spell("core:haste")));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell("core:haste")));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(spell("new-horizons:focusMagic")));
 	EXPECT_EQ(percent(*attackerSideHero), 0);
 	EXPECT_EQ(attackerSideHero->getFortuneChildLuckBonus(), 0);
 	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:luck"))), 1);
@@ -615,12 +618,12 @@ TEST_F(NewHorizonsRemainingSpellSpecialtyTest, PlagueTickAndChildReuseBoostedSna
 
 TEST(NewHorizonsRemainingSpecialtyFormulaTest, PhantomFractionBeforeCapAndFinalFloor)
 {
-	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 0, false, 10000, 0, 0, 20), 2000);
-	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 100, false, 10000, 0, 0, 20), 3800);
-	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 100, true, 10000, 0, 0, 20), 4750);
-	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 2000, true, 13000, 50, 30, 20), 5000);
-	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(923, 1, false, 10000, 0, 0, 20), 186);
-	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 100, false, 10000, 0, 0, 0),
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 0, false, 10000, 0, 20), 2000);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 100, false, 10000, 0, 20), 3800);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 100, true, 10000, 0, 20), 4750);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 2000, true, 13000, 30, 20), 5000);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(923, 1, false, 10000, 0, 20), 186);
+	EXPECT_EQ(newHorizonsSorcery::phantomArmyIntegrityWithModifiers(10000, 100, false, 10000, 0, 0),
 		newHorizonsSorcery::phantomArmyIntegrity(10000, 100, false));
 }
 }

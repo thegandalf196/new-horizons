@@ -147,7 +147,9 @@ CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2,
 		specialtyAreas[b] = std::make_shared<LRClickableAreaWText>();
 		specialtyAreas[b]->pos = Rect(Point(pos.x + 69 + 490 * b, pos.y + (qeLayout ? 41 : 45)), Point(32, 32));
 		specialtyAreas[b]->hoverText = LIBRARY->generaltexth->translate("core.heroscrn.27");
-		specialtyAreas[b]->text = hero->getSpecialtyDescriptionTranslated();
+		const auto specialty = heroSpecialtyPresentation(*hero);
+		specialtyAreas[b]->text = specialty.description;
+		specialtyAreas[b]->details = specialty.details;
 
 		experienceAreas[b] = std::make_shared<LRClickableAreaWText>();
 		experienceAreas[b]->pos = Rect(Point(pos.x + 105 + 490 * b, pos.y + (qeLayout ? 41 : 45)), Point(32, 32));

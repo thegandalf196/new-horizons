@@ -7,9 +7,91 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.88.2 (unreleased)
+## 0.88.2 Early Access
 
-Development source; release acceptance is still pending.
+Published packages and platform notes are available on the
+[release page](https://github.com/thegandalf196/new-horizons/releases).
+
+**A new game is required.** Version 0.88.2 cannot load saves from 0.88.1 or
+older development builds. Old save files are not converted or deleted; keep
+backups and use the matching older version to continue those games.
+
+### Skills and heroes
+
+- **Metamagic** strengthens spells through hero points instead of target marks
+  or extra spell actions. Start combat with one point, gain one each later
+  round, and stop at twelve. Each point grants 1% / 2% / 3% spell effectiveness
+  and Magic Penetration by rank.
+- Metamagic has **ten revised perks**, including **Arcane Wellspring**, which
+  starts combat with three points. Halon's **Metamagic Adept** grants one extra
+  point after each spell he manually casts, within the same twelve-point cap.
+- Dungeon's **Shadow Hex** grants +15% hero spell damage against flanked
+  enemies. **Exposed Weakness** makes flanking melee hits add another +20%
+  hero spell damage against that target until its next activation.
+- Conflux's **Elemental Conduit** grants +15% hero spell damage per living
+  friendly Reborn stack, including Rebirth Chain summons. **Elemental
+  Cataclysm** splits magical damage equal to 20% of a fallen Reborn stack's
+  maximum total HP among adjacent enemies.
+- **Divine Mandate** automatically casts a useful beneficial Light spell after
+  an Order, free of Mana and additional Hero Actions. Rank improves Order
+  efficiency and grants one, two or three free spell triggers per combat.
+- **Demonic Gating** summons temporary reinforcements of the same creature type
+  instead of drawing from a reserve. Each original stack may Gate once per
+  combat; ordinary reinforcements contain 30% of its current creatures and
+  arrive at the start of the next round.
+- Revised Gating perks include **Infernal Onslaught** (+15% attack and
+  retaliation damage), **Hellstride** (+2 Speed) and **Endless Legion**
+  (50% reinforcements). Gated creatures disappear after combat and cannot Gate.
+- **First Blood** grants three Bloodrage increments on the first qualifying
+  destruction. **Blood Scent** counts two extra increments against enemies
+  below half Health.
+- **Rage Through Pain** grants two personal increments when a stack first
+  takes damage. **Avatar of Rage** ignores 5% Creature Defense per increment,
+  up to 25%.
+- **Wisdom** has ten revised perks for Mana efficiency and spell effectiveness.
+  **Sage** grants +50 effective Knowledge; **Archmage** strengthens Level 4–5
+  spells and their penetration.
+- **Warcasting** grants friendly stacks **Arcane Inspiration** after a hero
+  combat spell: +5% / +10% / +15% attack and retaliation damage until the next
+  combat round. New perks develop its protection, penetration and retaliation.
+- **Learning** expands Scholar and Eagle Eye to all eligible spells.
+  **Connoisseur** rerolls one offered secondary Skill once at each level-up;
+  **Prodigy** grants three normal level-ups.
+- **Duel Lessons** grants 10% of a defeated enemy hero's **total Experience**,
+  rounded down. Philosopher adds 25 percentage points to Learning's XP bonus.
+- **Estates** keeps its 125 / 250 / 500 daily Gold income, with revised resource
+  income, recipient-hero recruitment discounts, building discounts and weekly
+  Rogue guards for owned mines.
+- Halon starts with **Arcane Valor**. Saurug, Sephinroth, Rissa, Calid and Grindan
+  start with **Prosperity**; their other specialties remain unchanged.
+- Nimbus, Sanya and Geon retain their Learning XP scaling; their extra-spell
+  bonuses are removed. Thane's **Sage of the Ages** remains a separate level-up
+  specialty from Wisdom's Sage and the retired Learning Sage.
+- In new games, **Fafner and Cyra** start with **Focus Magic** instead of the
+  retired Haste spell; Haste is excluded from current hero spell access.
+- **Zubin** becomes a Havoc Fireball specialist, starting with Fireball,
+  Basic Havoc Magic, Bloodrage and Pyromancer.
+
+### Combat and interface
+
+- Skill, perk, spell, Order and hero-specialty descriptions state their effects
+  in plain language. An **i** control in persistent help windows opens the
+  detailed formulas and interactions.
+- The hero screen has a **Temporary Effects** view and new information and
+  hourglass buttons, with clearer information-panel layout.
+- Experimental neutral-army calibration considers Leadership and available
+  troops instead of relying solely on a flat size multiplier.
+- Combat AI reuses equivalent damage and spell calculations while preserving
+  its tactical scoring and legal actions. Some battles and AI turns remain
+  slow.
+- Spell previews retain hero-adjusted values, and magical damage-protection
+  tooltips display their percentage correctly.
+
+Further creature-specialist reworks are reserved for **0.88.3**. Detailed perk
+and spell rules belong in the
+[player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
+
+Balance and selected artwork remain provisional.
 
 ## 0.88.1 Early Access
 

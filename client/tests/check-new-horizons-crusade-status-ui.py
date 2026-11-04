@@ -48,7 +48,7 @@ class CrusadeStatusUiSourceTest(unittest.TestCase):
 		self.assertIn("StackStatusIconKind::CRUSADE: return 2", PRESENTATION)
 		self.assertIn("newHorizonsBattleStatus::crusadeStatus(*spellBonuses)", PANEL)
 		self.assertIn("newHorizonsBattleStatus::crusadeTooltip(", PANEL)
-		self.assertIn('AnimationPath::builtin("SpellInt"), effect.getNum() + 1', PANEL)
+		self.assertIn('AnimationPath::builtin("SpellInt"), (wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1', PANEL)
 		self.assertIn("Rect(slotX, slotY, 48, 36), tooltip, tooltip", PANEL)
 
 

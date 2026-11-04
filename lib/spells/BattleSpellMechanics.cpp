@@ -8,11 +8,20 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsMetamagicMarks.h"
+#include "AutomaticHeroCast.h"
+#include "../battle/PassiveDivineMandate.h"
 #include "../entities/hero/NewHorizonsGenieSage.h"
 #include "../battle/NewHorizonsForestAmbush.h"
 
 #include "BattleSpellMechanics.h"
+#include "NewHorizonsMetamagicEffects.h"
+#include "NewHorizonsMetamagicRefresh.h"
+#include "NewHorizonsMetamagicPoints.h"
+#include "ArcaneInspirationCompletion.h"
+#include "../battle/PassiveDivineMandateInspiration.h"
 #include "CurePhysicalAffliction.h"
+#include "NewHorizonsRegeneration.h"
 #include "../battle/NewHorizonsSerpentsEmbrace.h"
 #include "NewHorizonsSpellcraft.h"
 
@@ -37,7 +46,6 @@
 #include "../battle/NewHorizonsFrozen.h"
 #include "../battle/NewHorizonsSoulChain.h"
 #include "../battle/NewHorizonsPuppetMaster.h"
-#include "../battle/NewHorizonsWarcasting.h"
 #include "../battle/Unit.h"
 #include "../bonuses/BonusParameters.h"
 #include "../bonuses/Updaters.h"
@@ -70,21 +78,6 @@ bool isLivingPhysicalPoisonTarget(const battle::Unit * unit)
 	return curePhysical::livingTarget(unit);
 }
 
-bool isNewHorizonsRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
-{
-	if(!spell || !newHorizonsMagic::spellAllowedBySavedRoster(savedRules, spell->getId()))
-		return false;
-	const auto base = newHorizonsMagic::spellVariantBase(savedRules, spell->getId());
-	const auto * definition = base.toSpell();
-	return definition && definition->getJsonKey() == newHorizonsMagic::NATURE_REGENERATION_SPELL;
-}
-
-bool isNewHorizonsMassRegenerationSpell(const CSpell * spell, const JsonNode & savedRules)
-{
-	return isNewHorizonsRegenerationSpell(spell, savedRules)
-		&& newHorizonsMagic::spellVariantBase(savedRules, spell->getId()) != spell->getId();
-}
-
 bool isNewHorizonsLifeDrainSpell(const CSpell * spell, const JsonNode & savedRules)
 {
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
@@ -105,71 +98,6 @@ bool isNewHorizonsSoulChainSpell(const CSpell * spell, const JsonNode & savedRul
 bool isNewHorizonsVengefulVinesSpell(const CSpell * spell, const JsonNode & savedRules)
 {
 	return spell && newHorizonsVengefulVines::enabled(savedRules, spell->getId());
-}
-
-bool isRegenerationTarget(const battle::Unit * unit)
-{
-	return curePhysical::livingTarget(unit) && !unit->isClone() && unit->getPhantomInitialIntegrity() <= 0;
-}
-
-bool hasRegenerationMarker(const battle::Unit * unit, SpellID regenerationSpell)
-{
-	if(!unit)
-		return false;
-	return unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(regenerationSpell))
-		.And(Selector::type()(BonusType::HP_REGENERATION)));
-}
-
-int32_t newHorizonsRegenerationRate(const BattleSpellMechanics & mechanics)
-{
-	const auto * hero = mechanics.getHeroCaster();
-	const bool herbalist = hero && hero->hasActivePerk(
-		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL),
-		std::string(newHorizonsMagic::NATURE_HERBALIST));
-	return newHorizonsMagic::regenerationRateMillionthsBasisPointsWithSpecialty(
-		std::max<int32_t>(0, mechanics.getEffectPower()), mechanics.getSpellPowerCoefficientBasisPoints(),
-		herbalist, mechanics.getWarcastingBonusPercent(), mechanics.getEmpowerSpellBonusPercent(),
-		mechanics.getHerbalSurgeonRegenerationPercent());
-}
-
-void applyRegenerationRateSnapshot(ServerCallback * server, const CBattleInfoCallback * battle,
-	const battle::Units & affectedUnits, const int32_t regenerationRate, SpellID regenerationSpell)
-{
-	if(!server || !battle)
-		return;
-
-	std::set<uint32_t> affectedUnitIds;
-	for(const auto * unit : affectedUnits)
-		if(unit)
-			affectedUnitIds.insert(unit->unitId());
-
-	for(const auto unitId : affectedUnitIds)
-	{
-		const auto * unit = battle->battleGetUnitByID(unitId);
-		if(!unit || !hasRegenerationMarker(unit, regenerationSpell))
-			continue;
-
-		auto state = unit->acquireState();
-		if(!state)
-			continue;
-		state->regenerationRateMillionths = regenerationRate;
-
-		UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
-		update.data = state->save();
-		BattleUnitsChanged changed;
-		changed.battleID = battle->getBattle()->getBattleID();
-		changed.changedStacks.push_back(std::move(update));
-		server->apply(changed);
-	}
-}
-
-void filterMassRegenerationTargets(effects::Effects::EffectsToApply & effectsToApply)
-{
-	for(auto & effect : effectsToApply)
-		vstd::erase_if(effect.second, [](const Destination & destination)
-		{
-			return !isRegenerationTarget(destination.unitValue);
-		});
 }
 
 class EffectPacketRecorder final : public ServerCallback
@@ -229,11 +157,53 @@ public:
 		, castSpellId(castSpellId)
 		, effectSpellId(effectSpellId)
 		, captureArmyChanges(captureArmyChanges)
+		, captureResolvedRecipients(mechanics.getMetamagicCastProfile()
+			|| mechanics.getAutomaticHeroCast().inspiringDuration > 0)
 	{
-		if(captureArmyChanges)
+		if(captureResolvedRecipients)
 			for(const auto * unit : battle.getBattle()->getUnitsIf([](const battle::Unit *) { return true; }))
 				if(unit)
-					initialControllers.emplace(unit->unitId(), battle.playerToSide(battle.battleGetOwner(unit)));
+				{
+					if(captureResolvedRecipients)
+						preexistingRecipientIds.insert(unit->unitId());
+				}
+	}
+
+	void recordResolvedSpellRecipient(uint32_t id) override
+	{
+		if(captureResolvedRecipients && mechanics.isGenuineHeroCast()
+			&& preexistingRecipientIds.contains(id) && battle.battleGetUnitByID(id))
+			resolvedRecipientIds.insert(id);
+	}
+
+	std::vector<uint32_t> resolvedSpellRecipientIds() const
+	{
+		return {resolvedRecipientIds.begin(), resolvedRecipientIds.end()};
+	}
+
+	void publishResolvedHeroEffects(bool counterspellNegated, std::optional<BattleSide> acceptedManualCaster = std::nullopt) const
+	{
+		if(!counterspellNegated && !acceptedManualCaster && !mechanics.isGenuineHeroCast())
+			publishDelayedHeroDamage();
+		const auto resolved = resolvedSpellRecipientIds();
+		arcaneInspiration::publishCompletedSpell(delegate, battle, mechanics, counterspellNegated, originalHeroInjuries, acceptedManualCaster);
+		newHorizonsMetamagic::publishPointCompletion(delegate, battle, mechanics, resolved, originalHeroInjuries, acceptedManualCaster);
+		if(!captureResolvedRecipients || counterspellNegated)
+			return;
+		newHorizonsMetamagic::publishResolvedMarks(delegate, mechanics.getMetamagicCastProfile(), battle, resolved);
+		const auto automatic = mechanics.getAutomaticHeroCast();
+		if(automatic.inspiringDuration > 0)
+		{
+			auto inspiration = newHorizonsPassiveDivineMandate::inspiringSpeedEffects(
+				battle, mechanics.getCasterSide(), automatic, resolved);
+			if(!inspiration.toAdd.empty())
+				delegate.apply(inspiration);
+		}
+	}
+
+	void publishDelayedHeroDamage() const
+	{
+		arcaneInspiration::publishDelayedSpellDamage(delegate, battle, mechanics, recordedInjuries);
 	}
 
 	void setCasterOwner(PlayerColor owner) { casterOwner = owner; }
@@ -283,6 +253,7 @@ public:
 	void apply(BattleLogMessage & pack) override { delegate.apply(pack); }
 	void apply(BattleStackMoved & pack) override
 	{
+		recordResolvedSpellRecipient(pack.stack);
 		const auto before = armySnapshot(pack.stack);
 		delegate.apply(pack);
 		recordArmyChange(before);
@@ -318,16 +289,6 @@ public:
 				duration == addedUnitDurations.end() ? 0 : duration->second});
 		}
 		return result;
-	}
-	std::vector<uint32_t> reactiveRecipients(BattleSide side) const
-	{
-		std::set<uint32_t> result;
-		if(const auto found = reactiveArmyChanges.find(side); found != reactiveArmyChanges.end())
-			result = found->second;
-		for(const auto & [id, before] : initialArmyStates)
-			if(before.exists && before.controllerSide == side && !sameArmyBonuses(before, armySnapshot(id)))
-				result.insert(id);
-		return {result.begin(), result.end()};
 	}
 
 	bool touchedStackEffects() const { return stackEffectsTouched; }
@@ -393,6 +354,7 @@ private:
 	SpellID castSpellId;
 	SpellID effectSpellId;
 	std::vector<BattleStackAttacked> recordedInjuries;
+	std::vector<BattleStackAttacked> originalHeroInjuries;
 	std::vector<HealingChange> recordedHealingChanges;
 	std::vector<uint32_t> addedUnitIds;
 	std::vector<std::pair<uint32_t, int32_t>> addedUnitDurations;
@@ -401,16 +363,16 @@ private:
 	bool effectChangesFinalized = false;
 	bool stackEffectsTouched = false;
 	bool captureArmyChanges;
+	bool captureResolvedRecipients;
+	std::set<uint32_t> preexistingRecipientIds;
+	std::set<uint32_t> resolvedRecipientIds;
 	std::set<BattleSide> actualArmyChanges;
-	std::map<BattleSide, std::set<uint32_t>> reactiveArmyChanges;
-	std::map<uint32_t, BattleSide> initialControllers;
 
 	struct ArmySnapshot
 	{
 		uint32_t unitId;
 		bool exists = false;
 		BattleSide side = BattleSide::NONE;
-		BattleSide controllerSide = BattleSide::NONE;
 		CreatureID creature;
 		BattleHex position;
 		int32_t count = 0;
@@ -431,8 +393,6 @@ private:
 			return result;
 		result.exists = true;
 		result.side = unit->unitSide();
-		if(const auto found = initialControllers.find(unitId); found != initialControllers.end())
-			result.controllerSide = found->second;
 		result.creature = unit->creatureId();
 		result.position = unit->getPosition();
 		result.count = unit->getCount();
@@ -488,8 +448,6 @@ private:
 			&& before.count == after.count && before.health == after.health
 			&& before.state == after.state)
 			return;
-		if(before.exists)
-			reactiveArmyChanges[before.controllerSide].insert(before.unitId);
 		// Sticky per applied packet: a later reversal does not erase an actual
 		// effect of this cast. Retain the old side even if the unit was removed.
 		if(before.exists)
@@ -515,14 +473,22 @@ private:
 		if(auto claim = overwhelmingFormulaClaim(battle, spell,
 			mechanics.getCapturedMdrPenetration(), pack.stacks))
 			delegate.apply(*claim);
+		for(const auto & injury : pack.stacks)
+			recordResolvedSpellRecipient(injury.stackAttacked);
 		recordedInjuries.insert(recordedInjuries.end(), pack.stacks.begin(), pack.stacks.end());
+		if(mechanics.isGenuineHeroCast())
+			originalHeroInjuries.insert(originalHeroInjuries.end(), pack.stacks.begin(), pack.stacks.end());
 	}
 
 	void record(BattleUnitsChanged & pack)
 	{
 		std::vector<ArmySnapshot> armyBefore;
 		for(const auto & change : pack.changedStacks)
+		{
+			if(change.operation == UnitChanges::EOperation::UPDATE)
+				recordResolvedSpellRecipient(change.id);
 			armyBefore.push_back(armySnapshot(change.id));
+		}
 		struct UnitState
 		{
 			uint32_t unitId;
@@ -667,6 +633,18 @@ private:
 	void record(SetStackEffect & pack)
 	{
 		stackEffectsTouched = true;
+		newHorizonsMetamagic::adjustAppliedBonuses(mechanics.getMetamagicCastProfile(), battle,
+			castSpellId, effectSpellId, preexistingRecipientIds, pack);
+		for(const auto & change : pack.toAdd)
+			recordResolvedSpellRecipient(change.first);
+		for(const auto & change : pack.toUpdate)
+			recordResolvedSpellRecipient(change.first);
+		for(const auto & change : pack.toRemove)
+			if(!change.second.empty())
+				recordResolvedSpellRecipient(change.first);
+		if(pack.exchange)
+			for(const auto & endpoint : pack.exchange->endpoints)
+				recordResolvedSpellRecipient(endpoint.id);
 		captureHypnotizeCeiling(pack);
 		if(casterOwner != PlayerColor::CANNOT_DETERMINE)
 		{
@@ -715,6 +693,8 @@ private:
 			stampHostility(pack.toUpdate);
 		}
 
+		newHorizonsMetamagic::replaceRecalculatedSpellBonuses(mechanics.getMetamagicCastProfile(), battle,
+			castSpellId, effectSpellId, preexistingRecipientIds, pack);
 		std::vector<uint32_t> touched;
 		const auto collect = [&touched](const auto & changes)
 		{
@@ -804,31 +784,62 @@ private:
 	}
 };
 
-void publishReactiveWeave(ServerCallback & server, const IBattleInfo & battle,
-	const EffectPacketRecorder & recorder, BattleSide casterSide, int32_t round)
-{
-	if(!newHorizonsWarcasting::enabled(battle.getMagicRules()))
-		return;
-	const auto victimSide = casterSide == BattleSide::ATTACKER ? BattleSide::DEFENDER : BattleSide::ATTACKER;
-	const auto empowerment = newHorizonsWarcasting::reactiveEmpowerment(battle.getSideHero(victimSide));
-	if(empowerment <= 0)
-		return;
-	const auto recipients = recorder.reactiveRecipients(victimSide);
-	if(recipients.empty())
-		return;
-	SetReactiveWeaveState receipt;
-	receipt.battleID = battle.getBattleID();
-	receipt.side = victimSide;
-	receipt.casterSide = casterSide;
-	receipt.round = round;
-	receipt.empowerment = empowerment;
-	receipt.recipients = recipients;
-	server.apply(receipt);
-}
-
 bool hasCounterpressureEffect(const EffectPacketRecorder & recorder, BattleSide victimSide)
 {
 	return recorder.changedArmy(victimSide);
+}
+
+struct ProjectionCompletionContext
+{
+	const IBattleInfo & battle;
+	const BattleSide casterSide;
+	const int32_t round;
+	const bool originalHeroCast;
+	const bool consumeResponse;
+	const SpellResponseState & responseAfterCast;
+};
+
+void completeHeroProjection(const BaseMechanics & mechanics, ServerCallback & server,
+	const ProjectionCompletionContext & completion, const EffectPacketRecorder * effectRecorder)
+{
+	if(effectRecorder)
+		effectRecorder->publishResolvedHeroEffects(mechanics.isCounterspellNegated(), completion.originalHeroCast ? std::optional(completion.casterSide) : std::nullopt);
+
+	if(mechanics.getAutomaticHeroCast().automatic())
+		server.recordCompletedAutomaticHeroSpellCast(completion.casterSide, mechanics.getSpellId(), mechanics.getAutomaticHeroCast());
+	else
+		server.recordCompletedHeroSpellCast(completion.casterSide, mechanics.battle()->battleGetSpellLevel(mechanics.getSpellId()));
+	if(completion.consumeResponse)
+	{
+		SetSpellResponseState consumedResponse;
+		consumedResponse.battleID = completion.battle.getBattleID();
+		consumedResponse.side = completion.casterSide;
+		consumedResponse.state = completion.responseAfterCast;
+		server.apply(consumedResponse);
+	}
+
+	if(completion.originalHeroCast && !mechanics.isCounterspellNegated() && effectRecorder)
+	{
+		const auto victimSide = mechanics.battle()->otherSide(completion.casterSide);
+		if(hasCounterpressureEffect(*effectRecorder, victimSide))
+		{
+			const auto * recipientHero = completion.battle.getSideHero(victimSide);
+			if(hasCounterpressurePerk(recipientHero))
+			{
+				auto armed = completion.battle.getSpellResponseState(victimSide);
+				const auto previous = armed;
+				armed.armAt(completion.round);
+				if(armed != previous)
+				{
+					SetSpellResponseState response;
+					response.battleID = completion.battle.getBattleID();
+					response.side = victimSide;
+					response.state = armed;
+					server.apply(response);
+				}
+			}
+		}
+	}
 }
 
 }
@@ -967,10 +978,10 @@ void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & 
 	Target unlockedTargets = targets;
 	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*this);
 	const auto * battleState = battle() ? battle()->getBattle() : nullptr;
-	if(battleState && isNewHorizonsMassRegenerationSpell(owner, battleState->getMagicRules()))
+	if(battleState && newHorizonsRegenerationEffects::isMassSpell(owner, battleState->getMagicRules()))
 		vstd::erase_if(unlockedTargets, [](const Destination & destination)
 		{
-			return !isRegenerationTarget(destination.unitValue);
+			return !newHorizonsRegenerationEffects::eligible(destination.unitValue);
 		});
 
 	if(isMagicalEffect())
@@ -1033,7 +1044,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// The shared Hero Action ledger is payload-aware: Divine Mandate's typed
 	// Spell grant may pay only for a Light spell. Keep this in the authoritative
 	// mechanics path so forged StartAction/cast metadata cannot spend a grant.
-	if(mode == Mode::HERO && battle()->battleUsesHeroCommands()
+	if(mode == Mode::HERO && !getAutomaticHeroCast().automatic() && battle()->battleUsesHeroCommands()
 		&& !battle()->battleGetSpellActionAllowance(casterSide, owner->getId()))
 		return adaptGenericProblem(problem);
 
@@ -1104,7 +1115,10 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	const bool selectiveDispel = isSelectiveDispel();
 	const bool massSlow = isMassSlow();
 	const auto * castingHero = dynamic_cast<const CGHeroInstance *>(caster);
-	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+	if(castingHero && isMetamagicFollowup()
+		&& newHorizonsMetamagic::usesArcaneMarks(castingHero->getPerkState().rules))
+		return adaptGenericProblem(problem);
+	const bool newHorizonsRegeneration = newHorizonsRegenerationEffects::isSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsHydrasVitality = owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL;
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
@@ -1120,7 +1134,15 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 		|| casterSide == BattleSide::NONE || battle()->battleWasTemporalFieldUsed(casterSide)))
 		return adaptGenericProblem(problem);
 
-	auto genProblem = battle()->battleCanCastSpell(caster, mode, owner->getId());
+	const auto automatic = getAutomaticHeroCast();
+	if(automatic.automatic() && (mode != Mode::HERO
+		|| !automaticHeroCastAllowed(*battle(), castingHero, owner, automatic)))
+		return adaptGenericProblem(problem);
+	// Triggered HERO casts retain native effects and immunities, but have no
+	// discretionary action allowance. CREATURE_ACTIVE preserves BLOCK_ALL_MAGIC
+	// while bypassing only the HERO allowance checks in the common permission gate.
+	auto genProblem = battle()->battleCanCastSpell(caster,
+		automatic.automatic() ? Mode::CREATURE_ACTIVE : mode, owner->getId());
 	// Orb of Inhibition (BLOCK_ALL_MAGIC) must not block level-0 creature abilities (stone gaze, death stare, ...)
 	if(genProblem == ESpellCastProblem::MAGIC_IS_BLOCKED && getSpellLevel() <= 0)
 		genProblem = ESpellCastProblem::OK;
@@ -1137,17 +1159,21 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 				logGlobal->debug("CSpell::canBeCast: invalid caster");
 				genProblem = ESpellCastProblem::NO_HERO_TO_CAST_SPELL;
 			}
-			else if(!castingHero->getArt(ArtifactPosition::SPELLBOOK))
+			else if(!automatic.automatic() && !castingHero->getArt(ArtifactPosition::SPELLBOOK))
 				genProblem = ESpellCastProblem::NO_SPELLBOOK;
-			else if(!castingHero->canCastThisSpell(owner))
+			else if(!automatic.automatic() && !castingHero->canCastThisSpell(owner))
 				genProblem = ESpellCastProblem::HERO_DOESNT_KNOW_SPELL;
 			else
 			{
-				int requiredMana = battle()->battleGetSpellCost(owner, castingHero,
+				int requiredMana = automatic.automatic() ? 0 : battle()->battleGetSpellCost(owner, castingHero,
 					massSlow ? 3 : 1, isMetamagicFollowup());
-				if(adjustableMagicArrow)
+				if(adjustableMagicArrow && !automatic.automatic())
 					requiredMana += selectedOvercharge;
-				if(castingHero->getManaAvailable() < requiredMana) //not enough Spell Points
+				if(const auto * metamagic = getMetamagicCastProfile(); metamagic && (metamagic->perks.manaAttunement || metamagic->perks.pointPolicy))
+					requiredMana = metamagic->perks.pointPolicy
+						? newHorizonsMetamagic::singularityManaCost(requiredMana, metamagic->perks, metamagic->singularityReached)
+						: newHorizonsMetamagic::adjustedManaCost(requiredMana, metamagic->perks, 1, 1);
+				if(castingHero->getManaAvailable() < requiredMana) // target selection validates the exact fraction
 					genProblem = ESpellCastProblem::NOT_ENOUGH_MANA;
 			}
 		}
@@ -1195,7 +1221,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			return adaptGenericProblem(problem);
 		const bool availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
 		{
-			return isRegenerationTarget(unit) && ownerMatches(unit, true) && !isSpellLocked(unit)
+			return newHorizonsRegenerationEffects::eligible(unit) && ownerMatches(unit, true) && !isSpellLocked(unit)
 				&& isReceptive(unit);
 		});
 		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
@@ -1221,7 +1247,7 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			return adaptGenericProblem(problem);
 		const bool availableTarget = std::ranges::any_of(battle()->battleGetAllUnits(false), [this](const battle::Unit * unit)
 		{
-			return isRegenerationTarget(unit) && ownerMatches(unit, true) && !isSpellLocked(unit)
+			return newHorizonsRegenerationEffects::eligible(unit) && ownerMatches(unit, true) && !isSpellLocked(unit)
 				&& isReceptive(unit);
 		});
 		return availableTarget ? true : adaptProblem(ESpellCastProblem::NO_APPROPRIATE_TARGET, problem);
@@ -1351,15 +1377,18 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		return false;
 	if(targetsSanctifiedStackDirectly(*this, target))
 		return false;
+	if(const auto * metamagic = getMetamagicCastProfile(); metamagic && (metamagic->perks.manaAttunement || metamagic->perks.pointPolicy))
+		if(getHeroCaster()->getManaAvailable() < getTargetAwareManaCost(target))
+			return adaptProblem(ESpellCastProblem::NOT_ENOUGH_MANA, problem);
 
 	const bool newHorizonsCure = isNewHorizonsCure();
 	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*this);
 	const bool newHorizonsHydrasVitality = owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL;
 	const bool newHorizonsPhysicalPoison = mode == Mode::HERO && getHeroCaster()
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
-	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+	const bool newHorizonsRegeneration = newHorizonsRegenerationEffects::isSpell(owner,
 		battle()->getBattle()->getMagicRules());
-	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
+	const bool newHorizonsMassRegeneration = newHorizonsRegenerationEffects::isMassSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
 		battle()->getBattle()->getMagicRules());
@@ -1539,7 +1568,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		}
 		if(!vitalityTarget)
 			return false;
-		if(!isRegenerationTarget(vitalityTarget)
+		if(!newHorizonsRegenerationEffects::eligible(vitalityTarget)
 			|| !ownerMatches(vitalityTarget, true)
 			|| isSpellLocked(vitalityTarget)
 			|| !isReceptive(vitalityTarget))
@@ -1551,8 +1580,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		// transform filters the target out.
 		const auto vitalityState = vitalityTarget->acquireState();
 		const int64_t referenceMaximum = vitalityState->getCapacityHealthReferenceMax();
-		const int64_t effectPercentMillionths = std::clamp<int64_t>(getEffectValue(),
-			25'000'000, 50'000'000);
+		const int64_t effectPercentMillionths = adjustMetamagicMagnitude(
+			std::clamp<int64_t>(getEffectValue(), 25'000'000, 50'000'000), vitalityTarget);
 		const int64_t targetMaximum = referenceMaximum
 			* (100'000'000 + effectPercentMillionths) / 100'000'000;
 		if(referenceMaximum <= 0 || targetMaximum > std::numeric_limits<int32_t>::max())
@@ -1567,7 +1596,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		if(target.size() != 1 || spellTarget.size() != 1)
 			return false;
 		const auto * regenerationTarget = spellTarget.front().unitValue;
-		if(!isRegenerationTarget(regenerationTarget)
+		if(!newHorizonsRegenerationEffects::eligible(regenerationTarget)
 			|| !ownerMatches(regenerationTarget, true)
 			|| isSpellLocked(regenerationTarget)
 			|| !isReceptive(regenerationTarget))
@@ -1631,45 +1660,6 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 	return effects->applicable(problem, this, target, spellTarget);
 }
 
-std::vector<const CStack *> BattleSpellMechanics::getAffectedStacks(const Target & target) const
-{
-	Target spellTarget = transformSpellTarget(target);
-	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
-		battle()->getBattle()->getMagicRules());
-
-	Target all;
-
-	effects->forEachEffect(getEffectLevel(), [&all, &target, &spellTarget, this](const effects::Effect * e, bool & stop)
-	{
-		Target one = e->transformTarget(this, target, spellTarget);
-		vstd::concatenate(all, one);
-	});
-
-	std::set<const CStack *> stacks;
-
-	for(const Destination & dest : all)
-	{
-		if(newHorizonsMassRegeneration && !isRegenerationTarget(dest.unitValue))
-			continue;
-		if(dest.unitValue && !dest.unitValue->isInvincible()
-			&& (!isMagicalEffect() || !isSpellLocked(dest.unitValue)))
-		{
-			//FIXME: remove and return battle::Unit
-			stacks.insert(battle()->battleGetStackByID(dest.unitValue->unitId(), false));
-		}
-	}
-
-	std::vector<const CStack *> res;
-	std::copy(stacks.begin(), stacks.end(), std::back_inserter(res));
-	return res;
-}
-
-int64_t BattleSpellMechanics::getTargetAwareEffectValue(const battle::Unit * target) const
-{
-	if(!target || !eventSnapshot || eventSnapshot->hasSpellcraftTargetSnapshot())
-		return getEffectValue();
-	return eventSnapshot->mechanicsForTarget({Destination(target)})->getEffectValue();
-}
 
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
@@ -1701,7 +1691,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 
 	const bool newHorizonsPhysicalPoison = mode == Mode::HERO && getHeroCaster()
 		&& newHorizonsMagic::physicalPoisonEnabled(battle()->getBattle()->getMagicRules(), owner->getId());
-	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+	const bool newHorizonsRegeneration = newHorizonsRegenerationEffects::isSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsHydrasVitality = owner->getJsonKey() == NEW_HORIZONS_HYDRAS_VITALITY_SPELL;
 	const bool newHorizonsLifeDrain = isNewHorizonsLifeDrainSpell(owner,
@@ -1755,7 +1745,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	sc.counterspellNegated = isCounterspellNegated();
 	sc.metamagicFollowup = isMetamagicFollowup();
 	sc.metamagicGrand = isMetamagicGrand();
-	sc.metamagicTargetUnitId = (!target.empty() && target.front().unitValue)
+	sc.metamagicTargetUnitId = !getAutomaticHeroCast().automatic() && !target.empty() && target.front().unitValue
 		? target.front().unitValue->unitId() : std::numeric_limits<uint32_t>::max();
 	sc.metamagicManaRefund = getMetamagicManaRefund();
 	sc.extendedSpell = sc.castByHero
@@ -1788,10 +1778,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 				knightlySequenceSpellCostReduction =
 					newHorizonsDivineMandate::knightlySequenceSpellCostReduction(casterHero);
 		}
-		spellCost = battle()->battleGetSpellCost(owner, casterHero,
-			isMassSlow() ? 3 : 1, isMetamagicFollowup());
-		if(newHorizonsMagic::magicArrowOverchargeEnabled(battle()->getBattle()->getMagicRules(), owner->getId()))
-			spellCost += getOvercharge();
+		spellCost = getTargetAwareManaCost(target);
 
 		if(nullptr != otherHero && !isCounterspellNegated()) //handle mana channel
 		{
@@ -1812,6 +1799,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	}
 	// Publish the exact resolved hero cost with the accepted-cast packet. This
 	// includes all cost modifiers and is independent of later mana refunds.
+	sc.automaticHeroCast = getAutomaticHeroCast();
 	sc.paidHeroManaCost = mode == Mode::HERO && sc.activeCast ? spellCost : 0;
 	sc.paidCounterspellManaCost = mode == Mode::HERO && sc.activeCast
 		? getCounterspellManaSpent() : 0;
@@ -1857,9 +1845,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	}
 	const uint8_t divineMandatePairsBeforeSpell = mode == Mode::HERO && casterHero && validHeroSide
 		? battle()->battleGetDivineMandateStatus(casterSide).completedPairs : 0;
-	bool spendsHeroAllowance = !sc.metamagicFollowup;
+	bool spendsHeroAllowance = !sc.metamagicFollowup && !getAutomaticHeroCast().automatic();
 	std::vector<uint32_t> sharedPurposeFirstRecipients;
-	if(mode == Mode::HERO && validHeroSide && battleRound >= 0
+	if(mode == Mode::HERO && !getAutomaticHeroCast().automatic() && validHeroSide && battleRound >= 0
 		&& heroCommands::supportedByRules(battleInfo->getHeroCommandRules(), HeroCommand::CHARGE))
 	{
 		const auto & allowances = battleInfo->getHeroActionAllowances(casterSide);
@@ -1880,9 +1868,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		else
 			spendsHeroAllowance = false;
 	}
-	const bool recoverBattleMeditation = sc.activeCast && casterHero && spendsHeroAllowance && validHeroSide
-		&& newHorizonsWarcasting::battleMeditationEligible(battleInfo->getMagicRules(), casterHero,
-			battleInfo->getWarcastingState(casterSide), battleRound);
+
 
 	std::vector<CompoundMirrorEffect> compoundMirrorEffects;
 	registerOverwhelmingFormulaCast(server);
@@ -1931,8 +1917,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	EffectPacketRecorder effectRecorder(*server, *battle(), *this, effectCasterOwner,
 		acceptedSpellId, effectSpellId,
 		originalHeroCast && !sc.counterspellNegated && battleRound >= 0
-			&& (hasCounterpressurePerk(battleInfo->getSideHero(battle()->otherSide(originalCasterSide)))
-				|| newHorizonsWarcasting::reactiveEmpowerment(battleInfo->getSideHero(battle()->otherSide(originalCasterSide))) > 0));
+			&& (hasCounterpressurePerk(battleInfo->getSideHero(battle()->otherSide(originalCasterSide)))));
 	if(!isCounterspellNegated())
 		doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
@@ -1983,21 +1968,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		consecratedDescription.lines.push_back(std::move(line));
 		server->apply(consecratedDescription);
 	}
-	if(mode == Mode::HERO && getWarcastingBonusPercent() > 0)
-	{
-		BattleLogMessage warcastingDescription;
-		warcastingDescription.battleID = battle()->getBattle()->getBattleID();
-		MetaString line;
-		line.appendTextID(caster->getCasterNameTextID());
-		line.appendRawString(" consumes Warcasting (+");
-		line.appendNumber(getWarcastingBonusPercent());
-		line.appendRawString("%) while casting ");
-		line.appendTextID(owner->getNameTextID());
-		if(isCounterspellNegated())
-			line.appendRawString("; the spell was counterspelled");
-		warcastingDescription.lines.push_back(std::move(line));
-		server->apply(warcastingDescription);
-	}
+
 
 	if(!isCounterspellNegated())
 	{
@@ -2018,8 +1989,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		}
 	}
 	if(newHorizonsRegeneration && !isCounterspellNegated())
-		applyRegenerationRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationRate(*this),
-			newHorizonsMagic::spellVariantBase(battle()->getBattle()->getMagicRules(), owner->getId()));
+		newHorizonsRegenerationEffects::applyRateSnapshot(&effectRecorder, battle(), affectedUnits, newHorizonsRegenerationEffects::rate(*this),
+			newHorizonsMagic::spellVariantBase(battle()->getBattle()->getMagicRules(), owner->getId()), getMetamagicCastProfile());
+	effectRecorder.publishResolvedHeroEffects(isCounterspellNegated(), originalHeroCast ? std::optional(originalCasterSide) : std::nullopt);
 	// BattleSpellCast spends the typed grant before effects resolve. Publish the
 	// benefit after restoration/cleansing so a valid restored corpse can receive it.
 	if(!sharedPurposeFirstRecipients.empty() && !sc.counterspellNegated)
@@ -2396,8 +2368,11 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		}
 		const auto divineMandatePairsAfterSpell = mode == Mode::HERO && casterHero && validHeroSide
 			? battle()->battleGetDivineMandateStatus(casterSide).completedPairs : divineMandatePairsBeforeSpell;
-		const auto chaplainReserve = newHorizonsDivineMandate::chaplainReserveRecovery(
-			casterHero, divineMandatePairsBeforeSpell, divineMandatePairsAfterSpell);
+		const auto chaplainReserve = getAutomaticHeroCast().kind == AutomaticHeroCastKind::DIVINE_MANDATE
+			? newHorizonsPassiveDivineMandate::manaRecovery(
+				newHorizonsPassiveDivineMandate::capturePolicy(casterHero))
+			: newHorizonsDivineMandate::chaplainReserveRecovery(
+				casterHero, divineMandatePairsBeforeSpell, divineMandatePairsAfterSpell);
 		if(chaplainReserve > 0)
 		{
 			const auto normalBeforeRecovery = casterHero->getNormalSpellPoints();
@@ -2416,28 +2391,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 				server->apply(reserveDescription);
 			}
 		}
-		if(recoverBattleMeditation)
-		{
-			const auto manaBeforeRecovery = casterHero->getNormalSpellPoints();
-			const auto recoveryCapacity = newHorizonsWarcasting::battleMeditationRecoveryAmount(manaBeforeRecovery);
-			if(recoveryCapacity > 0)
-				casterHero->spendMana(server, -recoveryCapacity);
-			const auto actualRecovery = std::max<int64_t>(0, casterHero->getNormalSpellPoints() - manaBeforeRecovery);
-			if(actualRecovery > 0)
-			{
-				BattleLogMessage meditationDescription;
-				meditationDescription.battleID = battle()->getBattle()->getBattleID();
-				MetaString line;
-				line.appendTextID(casterHero->getCasterNameTextID());
-				line.appendRawString(" recovers ");
-				line.appendNumber(static_cast<int32_t>(actualRecovery));
-				line.appendRawString(" Mana from Battle Meditation after casting ");
-				line.appendTextID(owner->getNameTextID());
-				line.appendRawString(".");
-				meditationDescription.lines.push_back(std::move(line));
-				server->apply(meditationDescription);
-			}
-		}
+
 		if(getMetamagicManaRefund() > 0)
 		{
 			const int32_t normalBeforeRefund = casterHero ? casterHero->getNormalSpellPoints() : 0;
@@ -2467,7 +2421,6 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 
 	if(originalHeroCast && !sc.counterspellNegated && battleRound >= 0)
 	{
-		publishReactiveWeave(*server, *battleInfo, effectRecorder, originalCasterSide, battleRound);
 		const auto victimSide = battle()->otherSide(originalCasterSide);
 		if(hasCounterpressureEffect(effectRecorder, victimSide))
 		{
@@ -2511,7 +2464,7 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	if(newHorizonsPandemonium::enabled(*this))
 		capturePandemoniumDebuffs();
 	affectedUnits.clear();
-	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
+	const bool newHorizonsMassRegeneration = newHorizonsRegenerationEffects::isMassSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	const bool newHorizonsSoulChain = isNewHorizonsSoulChainSpell(owner,
 		battle()->getBattle()->getMagicRules());
@@ -2570,7 +2523,7 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 		effectsToApply = effects->prepare(this, target, spellTarget);
 	const auto spellLockedUnits = filterSpellLockedEffects(target);
 	if(newHorizonsMassRegeneration)
-		filterMassRegenerationTargets(effectsToApply);
+		newHorizonsRegenerationEffects::filterMassTargets(effectsToApply);
 
 
 	auto unitTargets = collectTargets();
@@ -2718,9 +2671,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	activeResistanceServer = nullptr;
 	activeResistanceRng = nullptr;
 
-	const bool newHorizonsRegeneration = isNewHorizonsRegenerationSpell(owner,
+	const bool newHorizonsRegeneration = newHorizonsRegenerationEffects::isSpell(owner,
 		battle()->getBattle()->getMagicRules());
-	const bool newHorizonsMassRegeneration = isNewHorizonsMassRegenerationSpell(owner,
+	const bool newHorizonsMassRegeneration = newHorizonsRegenerationEffects::isMassSpell(owner,
 		battle()->getBattle()->getMagicRules());
 	affectedUnits.clear();
 	//TODO: evaluate caster updates (mana usage etc.)
@@ -2748,14 +2701,18 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	}
 	if(completedHeroProjection)
 	{
+		server->recordCompletedWisdomSpellCast(projectedCasterSide, getSpellId(), projectedRound, getAutomaticHeroCast().automatic());
 		registerOverwhelmingFormulaCast(server);
 		if(projectedHeroCaster == projectedBattleInfo->getSideHero(projectedCasterSide))
 			if(const auto receipt = newHorizonsCrossSchoolFormula::acceptedReceipt(*projectedBattleInfo, projectedCasterSide, getSpellId()))
 				server->recordCrossSchoolFormulaCast(projectedCasterSide, *receipt);
 	}
 	auto preparedReceipt = prepareProjectedEffects(target, completedHeroProjection);
+	// Negated automatic casts still publish accepted-cast history, without effects.
+	if(getAutomaticHeroCast().automatic() && isCounterspellNegated())
+		effectsToApply.clear();
 	if(newHorizonsMassRegeneration)
-		filterMassRegenerationTargets(effectsToApply);
+		newHorizonsRegenerationEffects::filterMassTargets(effectsToApply);
 
 	if(completedHeroProjection
 		&& newHorizonsSpellcraft::extendAvailable(*projectedBattleInfo, projectedCasterSide, *owner, getEffectLevel()))
@@ -2778,8 +2735,7 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		effectRecorder.emplace(*server, *battle(), *this, effectCasterOwner,
 			acceptedSpellId, effectSpellId,
 			projectedOriginalHeroCast && !isCounterspellNegated()
-				&& (hasCounterpressurePerk(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide)))
-					|| newHorizonsWarcasting::reactiveEmpowerment(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide))) > 0));
+				&& (hasCounterpressurePerk(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide)))));
 		effectServer = &*effectRecorder;
 	}
 
@@ -2789,45 +2745,15 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		p.first->apply(effectServer, this, p.second);
 
 	if(newHorizonsRegeneration && mode == Mode::HERO && getHeroCaster())
-		applyRegenerationRateSnapshot(effectServer, battle(), affectedUnits, newHorizonsRegenerationRate(*this),
-			newHorizonsMagic::spellVariantBase(battle()->getBattle()->getMagicRules(), owner->getId()));
+		newHorizonsRegenerationEffects::applyRateSnapshot(effectServer, battle(), affectedUnits, newHorizonsRegenerationEffects::rate(*this),
+			newHorizonsMagic::spellVariantBase(battle()->getBattle()->getMagicRules(), owner->getId()), getMetamagicCastProfile());
 
 	if(completedHeroProjection)
-	{
-		server->recordCompletedHeroSpellCast(casterSide, battle()->battleGetSpellLevel(getSpellId()));
-		if(consumeProjectedResponse)
-		{
-			SetSpellResponseState consumedResponse;
-			consumedResponse.battleID = projectedBattleInfo->getBattleID();
-			consumedResponse.side = projectedCasterSide;
-			consumedResponse.state = projectedResponseAfterCast;
-			server->apply(consumedResponse);
-		}
-
-		if(projectedOriginalHeroCast && !isCounterspellNegated() && effectRecorder)
-		{
-			publishReactiveWeave(*server, *projectedBattleInfo, *effectRecorder, projectedCasterSide, projectedRound);
-			const auto victimSide = battle()->otherSide(projectedCasterSide);
-			if(hasCounterpressureEffect(*effectRecorder, victimSide))
-			{
-				const auto * recipientHero = projectedBattleInfo->getSideHero(victimSide);
-				if(hasCounterpressurePerk(recipientHero))
-				{
-					auto armed = projectedBattleInfo->getSpellResponseState(victimSide);
-					const auto previous = armed;
-					armed.armAt(projectedRound);
-					if(armed != previous)
-					{
-						SetSpellResponseState response;
-						response.battleID = projectedBattleInfo->getBattleID();
-						response.side = victimSide;
-						response.state = armed;
-						server->apply(response);
-					}
-				}
-			}
-		}
-	}
+		completeHeroProjection(*this, *server,
+			{*projectedBattleInfo, projectedCasterSide, projectedRound, projectedOriginalHeroCast,
+				consumeProjectedResponse, projectedResponseAfterCast}, effectRecorder ? &*effectRecorder : nullptr);
+	else if(effectRecorder && !isCounterspellNegated())
+		effectRecorder->publishDelayedHeroDamage();
 	// Application can load additional Lua dependencies: certify again only once
 	// every effect and completed-cast reaction has returned successfully.
 	if(preparedReceipt.vines && newHorizonsVengefulVines::supportsProjection(*this, effectsToApply))

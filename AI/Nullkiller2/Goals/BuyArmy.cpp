@@ -105,10 +105,8 @@ void BuyArmy::accept(AIGateway * aiGw)
 		if(objid != CreatureID::NONE && ci.creID.getNum() != objid)
 			continue;
 
-		const auto recruitCost = candidate.source->getRecruitmentCost(ci.creID);
-		if(!recruitCost.empty())
-			vstd::amin(ci.count, res / recruitCost);
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy());
+		ci.count = candidate.source->getRecruitmentAmount(ci.creID, res, ci.count, hero);
 		const auto capacity = hero ? hero->getLeadershipSlotCapacity(ci.creID) : std::nullopt;
 		SlotID recruitmentDestination = newHorizonsHeroes::recruitmentSlot(
 			town->getUpperArmy(), ci.creID, ci.count);

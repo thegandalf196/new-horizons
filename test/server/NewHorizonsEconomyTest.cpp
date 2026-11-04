@@ -93,17 +93,7 @@ protected:
 			}
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 		}
-		if(overrideEstateNetworkPerkRules)
-		{
-			JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-			if(estateNetworkIsPlanned)
-			{
-				for(auto & perk : perkRules["skills"]["new-horizons:estates"]["perks"].Vector())
-					if(perk["id"].String() == "new-horizons:estates.estateNetwork")
-						perk["effect"]["status"].String() = "planned";
-			}
-			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
-		}
+
 	}
 
 	void startRampartGame(bool newHorizons, int townCount)
@@ -175,65 +165,6 @@ protected:
 		target->setSecSkillLevel(SecondarySkill(decoded), rank, ChangeValueMode::ABSOLUTE);
 	}
 
-	void startEstateNetworkGame(size_t townCount, bool planned = false)
-	{
-		useNewHorizonsRules = true;
-		overrideEstateNetworkPerkRules = true;
-		estateNetworkIsPlanned = planned;
-
-		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
-		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1));
-		for(size_t index = 0; index < townCount; ++index)
-			builder.town({4 + static_cast<int>(index % 4) * 7, 4 + static_cast<int>(index / 4) * 7, 0},
-				FactionID::RAMPART, PlayerColor(0));
-		builder.hero({32, 32, 0}, HeroTypeID(0), PlayerColor(0))
-			.hero({32, 28, 0}, HeroTypeID(1), PlayerColor(0));
-		startWithMap(std::move(builder));
-
-		towns = findAll<CGTownInstance>();
-		hero = findHeroAt({32, 32, 0});
-		secondHero = findHeroAt({32, 28, 0});
-		ASSERT_EQ(towns.size(), townCount);
-		ASSERT_NE(hero, nullptr);
-		ASSERT_NE(secondHero, nullptr);
-	}
-
-	void selectEstateNetwork(CGHeroInstance * target)
-	{
-		setEstatesRank(target, 2);
-		target->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
-		target->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.estateNetwork"});
-	}
-
-	void setOwnedTownCount(CGameHandler & handler, size_t ownedTownCount)
-	{
-		for(size_t index = 0; index < towns.size(); ++index)
-		{
-			const PlayerColor newOwner = index < ownedTownCount ? PlayerColor(0) : PlayerColor(1);
-			if(towns[index]->getOwner() != newOwner)
-				handler.setOwner(towns[index], newOwner);
-		}
-	}
-
-	void advanceToNextWeekStart(CGameHandler & handler, RecordingGameServer & server)
-	{
-		while(gameState()->day % 7 != 0)
-		{
-			handler.onNewTurn();
-			ASSERT_TRUE(server.lastNewTurn);
-			const auto & income = server.lastNewTurn->playerIncome.at(PlayerColor(0));
-			EXPECT_EQ(income[EGameResID::WOOD], 0);
-			EXPECT_EQ(income[EGameResID::ORE], 0);
-		}
-		handler.onNewTurn();
-	}
-
-	static int playerIncome(const NewTurn & turn, PlayerColor player, EGameResID resource)
-	{
-		const auto it = turn.playerIncome.find(player);
-		return it == turn.playerIncome.end() ? 0 : it->second[resource];
-	}
-
 	void selectTaxCollector(int rank = MasteryLevel::BASIC)
 	{
 		setEstatesRank(rank);
@@ -268,8 +199,6 @@ protected:
 	bool useNewHorizonsRules = false;
 	bool overrideTaxCollectorPerkRules = false;
 	bool taxCollectorIsPlanned = false;
-	bool overrideEstateNetworkPerkRules = false;
-	bool estateNetworkIsPlanned = false;
 	std::vector<CGTownInstance *> towns;
 	CGHeroInstance * hero = nullptr;
 	CGHeroInstance * secondHero = nullptr;
@@ -415,27 +344,27 @@ TEST_F(NewHorizonsEconomyTest, LegacyTreasuryAndMysticPondRemainUnchanged)
 	EXPECT_TRUE(towns.front()->newHorizonsMysticPondResources.empty());
 }
 
-TEST_F(NewHorizonsEconomyTest, TaxCollectorAddsFiftyGoldPerOwnedTown)
+TEST_F(NewHorizonsEconomyTest, TaxCollectorAddsHundredGoldPerOwnedTown)
 {
 	startTaxCollectorGame(1);
 	selectTaxCollector();
 
 	ASSERT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
-	expectFirstDailyIncomePack(50);
+	expectFirstDailyIncomePack(100);
 }
 
-TEST_F(NewHorizonsEconomyTest, TaxCollectorIncomeCapsAtTenOwnedTowns)
+TEST_F(NewHorizonsEconomyTest, TaxCollectorIncomeCapsAtFiveOwnedTowns)
 {
-	startTaxCollectorGame(10);
+	startTaxCollectorGame(5);
 	selectTaxCollector();
 
 	ASSERT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
 	expectFirstDailyIncomePack(500);
 }
 
-TEST_F(NewHorizonsEconomyTest, TaxCollectorIncomeRemainsCappedAboveTenOwnedTowns)
+TEST_F(NewHorizonsEconomyTest, TaxCollectorIncomeRemainsCappedAboveFiveOwnedTowns)
 {
-	startTaxCollectorGame(11);
+	startTaxCollectorGame(6);
 	selectTaxCollector();
 
 	ASSERT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
@@ -459,7 +388,7 @@ TEST_F(NewHorizonsEconomyTest, TaxCollectorUsesCurrentTownOwnershipForTheNextDai
 	RecordingGameServer server(gameState());
 	CGameHandler handler(server, gameState());
 	const int goldBefore = gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::GOLD];
-	const int firstExpectedIncome = ownedTownIncome() + 125 + 100;
+	const int firstExpectedIncome = ownedTownIncome() + 125 + 200;
 	handler.onNewTurn();
 	handler.onNewTurn();
 	ASSERT_TRUE(server.lastNewTurn);
@@ -468,7 +397,7 @@ TEST_F(NewHorizonsEconomyTest, TaxCollectorUsesCurrentTownOwnershipForTheNextDai
 	const int goldAfterFirstPack = gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::GOLD];
 	handler.setOwner(towns.back(), PlayerColor::NEUTRAL);
 	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->getTowns().size(), 1u);
-	const int secondExpectedIncome = ownedTownIncome() + 125 + 50;
+	const int secondExpectedIncome = ownedTownIncome() + 125 + 100;
 	handler.onNewTurn();
 	ASSERT_TRUE(server.lastNewTurn);
 	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::GOLD], secondExpectedIncome);
@@ -505,143 +434,5 @@ TEST_F(NewHorizonsEconomyTest, AdvancedEstatesCanSelectTheBasicTaxCollectorPerk)
 	selectTaxCollector(MasteryLevel::ADVANCED);
 
 	EXPECT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
-	EXPECT_EQ(hero->dailyIncome()[EGameResID::GOLD], 300);
-}
-
-TEST_F(NewHorizonsEconomyTest, EstateNetworkPaysFloorMinimumPerActiveHolderAtEachWeekStart)
-{
-	startEstateNetworkGame(6);
-	selectEstateNetwork(hero);
-	setEstatesRank(secondHero, 2);
-	secondHero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
-	towns.front()->setGarrisonedHero(secondHero);
-	ASSERT_EQ(towns.front()->getGarrisonHero(), secondHero);
-	EXPECT_FALSE(secondHero->hasActivePerk("new-horizons:estates", "new-horizons:estates.estateNetwork"));
-
-	RecordingGameServer server(gameState());
-	CGameHandler handler(server, gameState());
-	handler.onNewTurn(); // Day zero -> one is the first week start.
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(gameState()->day, 1u);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 2);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 2);
-
-	// A garrisoned hero is still an owned Estate Network holder. Town ownership
-	// is recalculated at each week boundary, and each active holder contributes
-	// the same town-count-based amount.
-	setOwnedTownCount(handler, 5);
-	advanceToNextWeekStart(handler, server);
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(gameState()->day, 8u);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 1);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 1);
-
-	setOwnedTownCount(handler, 3);
-	secondHero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.estateNetwork"});
-	ASSERT_TRUE(secondHero->hasActivePerk("new-horizons:estates", "new-horizons:estates.estateNetwork"));
-	advanceToNextWeekStart(handler, server);
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(gameState()->day, 15u);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 2);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 2);
-
-	setOwnedTownCount(handler, 2);
-	advanceToNextWeekStart(handler, server);
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 2);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 2);
-
-	setOwnedTownCount(handler, 1);
-	advanceToNextWeekStart(handler, server);
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 2);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 2);
-
-	// No town owned means the minimum-one clause does not apply.
-	towns.front()->setGarrisonedHero(nullptr);
-	setOwnedTownCount(handler, 0);
-	advanceToNextWeekStart(handler, server);
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 0);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 0);
-
-	// Restore six towns and two eligible heroes to establish per-holder stacking.
-	setOwnedTownCount(handler, 6);
-	towns.front()->setGarrisonedHero(secondHero);
-	advanceToNextWeekStart(handler, server);
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 4);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 4);
-}
-
-TEST_F(NewHorizonsEconomyTest, EstateNetworkRequiresAdvancedRankAndAnActiveSelectedPerk)
-{
-	startEstateNetworkGame(1);
-	setEstatesRank(hero, 1);
-	hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
-	EXPECT_FALSE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.estateNetwork"));
-	EXPECT_THROW(hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.estateNetwork"}), std::runtime_error);
-
-	RecordingGameServer server(gameState());
-	CGameHandler handler(server, gameState());
-	handler.onNewTurn();
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(playerIncome(*server.lastNewTurn, PlayerColor(0), EGameResID::WOOD), 0);
-	EXPECT_EQ(playerIncome(*server.lastNewTurn, PlayerColor(0), EGameResID::ORE), 0);
-
-	setEstatesRank(hero, 2);
-	hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.estateNetwork"});
-	EXPECT_TRUE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.estateNetwork"));
-	advanceToNextWeekStart(handler, server);
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 1);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 1);
-}
-
-TEST_F(NewHorizonsEconomyTest, PlannedEstateNetworkCannotBeSelectedOrGrantResources)
-{
-	startEstateNetworkGame(1, true);
-	setEstatesRank(hero, 2);
-	hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.taxCollector"});
-	EXPECT_THROW(hero->applyPerkSelection({"new-horizons:estates", "new-horizons:estates.estateNetwork"}), std::runtime_error);
-	EXPECT_FALSE(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.estateNetwork"));
-
-	RecordingGameServer server(gameState());
-	CGameHandler handler(server, gameState());
-	handler.onNewTurn();
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(playerIncome(*server.lastNewTurn, PlayerColor(0), EGameResID::WOOD), 0);
-	EXPECT_EQ(playerIncome(*server.lastNewTurn, PlayerColor(0), EGameResID::ORE), 0);
-}
-
-TEST_F(NewHorizonsEconomyTest, EstateNetworkDayOneGrantRespectsResourceCapAndDoesNotRepeatAfterSaveLoad)
-{
-	startEstateNetworkGame(6);
-	selectEstateNetwork(hero);
-	const auto startingWood = GameConstants::PLAYER_RESOURCES_CAP - 1;
-	gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::WOOD] = startingWood;
-
-	RecordingGameServer server(gameState());
-	CGameHandler handler(server, gameState());
-	handler.onNewTurn();
-	ASSERT_TRUE(server.lastNewTurn);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 2);
-	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources[EGameResID::WOOD], GameConstants::PLAYER_RESOURCES_CAP);
-	EXPECT_EQ(server.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 2);
-
-	const auto saved = gameState()->saveToMemory();
-	auto restored = std::make_shared<CGameState>();
-	restored->preInit(LIBRARY);
-	restored->loadFromMemory(saved);
-	ASSERT_EQ(restored->day, 1u);
-	ASSERT_TRUE(restored->getHero(hero->id)->getPerkState().hasSelection(
-		"new-horizons:estates", "new-horizons:estates.estateNetwork"));
-
-	RecordingGameServer restoredServer(restored);
-	CGameHandler restoredHandler(restoredServer, restored);
-	restoredHandler.onNewTurn(); // Day two is ordinary income, not another weekly trigger.
-	ASSERT_TRUE(restoredServer.lastNewTurn);
-	EXPECT_EQ(restoredServer.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::WOOD], 0);
-	EXPECT_EQ(restoredServer.lastNewTurn->playerIncome.at(PlayerColor(0))[EGameResID::ORE], 0);
-	EXPECT_EQ(restored->getPlayerState(PlayerColor(0))->resources[EGameResID::WOOD], GameConstants::PLAYER_RESOURCES_CAP);
+	EXPECT_EQ(hero->dailyIncome()[EGameResID::GOLD], 350);
 }

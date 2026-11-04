@@ -23,7 +23,6 @@
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsNecromancyCombat.h"
 #include "../../lib/battle/NewHorizonsRapidResponse.h"
-#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/SideInBattle.h"
 #include "../../lib/battle/SiegeInfo.h"
 #include "../../lib/constants/NumericConstants.h"
@@ -235,17 +234,6 @@ void HypotheticBattle::setCrossSchoolFormulaState(BattleSide side, const newHori
 	crossSchoolFormulaStates.at(side) = state;
 }
 
-void HypotheticBattle::armReactiveWeave(BattleSide side, int32_t receiptRound, int32_t empowerment)
-{
-	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| receiptRound != getRound() || !newHorizonsWarcasting::enabled(getMagicRules())
-		|| empowerment <= 0 || empowerment != newHorizonsWarcasting::reactiveEmpowerment(getSideHero(side)))
-		throw std::runtime_error("Reactive Weave receipt does not match the captured hero capability");
-	auto next = warcastingStates.at(side);
-	next.armReactive(receiptRound, empowerment);
-	warcastingStates.at(side) = std::move(next);
-}
-
 void HypotheticBattle::setSpellResponseState(BattleSide side, const SpellResponseState & state)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -400,11 +388,6 @@ void HypotheticBattle::recordRelentlessAssaultAttack(BattleSide side, uint32_t t
 	if(!hero || !hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::RELENTLESS_ASSAULT))
 		return;
 	relentlessAssaultStates.at(side).recordAttack(targetUnitId);
-}
-
-const AlternatingHeroActionState & HypotheticBattle::getWarcastingState(BattleSide side) const
-{
-	return warcastingStates.at(side);
 }
 
 const HeroActionAllowanceState & HypotheticBattle::getHeroActionAllowances(BattleSide side) const

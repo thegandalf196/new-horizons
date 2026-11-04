@@ -168,12 +168,12 @@ TEST_F(NewHorizonsQuicksandRuntimeTest, MireShaperAddsOneAfterScalingAndBaseCap)
 	const SpellID spell(SpellID::QUICKSAND);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 0), 3);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45), 3);
-	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45, 1, 25), 4);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45, 1), 3);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 180), 6);
 	auto historical = rules;
 	historical["spells"]["core:quicksand"].Struct().erase("rawSpellPowerPerPatch");
-	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45, 10, 25), 4);
-	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(historical, attackerSideHero, spell, 45, 10, 25), 3);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 45, 10), 3);
+	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(historical, attackerSideHero, spell, 45, 10), 3);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, attackerSideHero, spell, 180, 10), 6);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(historical, attackerSideHero, spell, 180, 10), 3);
 	EXPECT_EQ(newHorizonsMagic::quicksandPatchCount(rules, nullptr, spell, 180), 5);

@@ -8,7 +8,7 @@ import json
 
 # Exact reviewed records; extending accepted history requires a reviewed update.
 APPROVED_CONFIG_PROOFS = {
-    'Mods/new-horizons/Content/config/spells/newHorizons.json': '50ad20b5a76fc3f7eb5cd32e18766353bf618ead5dc906ca7eb219bf0ac9c9a1',
+    'Mods/new-horizons/Content/config/spells/newHorizons.json': '409291c1e97bbf2ef839131a5d76902248f5a50849f5edf708878f59ddb205f4',
     'Mods/new-horizons/Content/config/spells/massVariants.json': 'cd88c590bbb225f32f8d601f0e31c7d9efa58088d9e76db671a905a5f3885327',
 }
 

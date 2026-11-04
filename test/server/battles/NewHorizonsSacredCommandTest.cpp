@@ -237,10 +237,8 @@ TEST_F(NewHorizonsSacredCommandTest, LightFirstSacredOrderSnapshotsBonusAndChang
 	EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs, 1);
 	EXPECT_FALSE(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).pendingFollowup);
 
-	const int ordinaryCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero,
-		order->warcastingBonusPercent, 0);
-	const int sacredCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero,
-		order->warcastingBonusPercent, order->sacredCommandEfficiencyBonusPercent);
+	const int ordinaryCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero, 0);
+	const int sacredCoefficient = heroCommands::coefficient(chargeFormula(), *attackerSideHero, order->sacredCommandEfficiencyBonusPercent);
 	EXPECT_EQ(sacredCoefficient, ordinaryCoefficient + 1);
 	const int64_t capturedOrderDamage = chargeDamage();
 	EXPECT_GT(capturedOrderDamage, ordinaryDamage)
@@ -254,8 +252,8 @@ TEST_F(NewHorizonsSacredCommandTest, LightFirstSacredOrderSnapshotsBonusAndChang
 		<< "The detached comparison does not mutate the live issued Order";
 
 	const auto flatOnly = coefficientFormula(37, 0, 0);
-	EXPECT_EQ(heroCommands::coefficient(flatOnly, *attackerSideHero, 0, 0), 37);
-	EXPECT_EQ(heroCommands::coefficient(flatOnly, *attackerSideHero, 0, 10), 37)
+	EXPECT_EQ(heroCommands::coefficient(flatOnly, *attackerSideHero, 0), 37);
+	EXPECT_EQ(heroCommands::coefficient(flatOnly, *attackerSideHero, 10), 37)
 		<< "Sacred Command scales only Attack/Defense-derived Order components";
 
 	const auto currentOrders = battle()->battleGetHeroOrderStates(BattleSide::ATTACKER);
@@ -315,9 +313,8 @@ TEST_F(NewHorizonsSacredCommandTest, AnOrdinaryHeroOrderIsNotBoostedByTheSelecte
 	const auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(order);
 	EXPECT_EQ(order->sacredCommandEfficiencyBonusPercent, 0);
-	EXPECT_EQ(heroCommands::coefficient(chargeFormula(), *attackerSideHero,
-		order->warcastingBonusPercent, order->sacredCommandEfficiencyBonusPercent),
-		heroCommands::coefficient(chargeFormula(), *attackerSideHero, order->warcastingBonusPercent, 0));
+	EXPECT_EQ(heroCommands::coefficient(chargeFormula(), *attackerSideHero, order->sacredCommandEfficiencyBonusPercent),
+		heroCommands::coefficient(chargeFormula(), *attackerSideHero, 0));
 	EXPECT_TRUE(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).pendingFollowup)
 		<< "An ordinary Hero Order may open the paired Light Spell opportunity without receiving Sacred Command";
 	const int64_t ordinaryOrderDamage = chargeDamage();
@@ -338,9 +335,8 @@ TEST_F(NewHorizonsSacredCommandTest, UnselectedPerkLeavesTheAcceptedLightFirstFo
 	const auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER);
 	ASSERT_TRUE(order);
 	EXPECT_EQ(order->sacredCommandEfficiencyBonusPercent, 0);
-	EXPECT_EQ(heroCommands::coefficient(chargeFormula(), *attackerSideHero,
-		order->warcastingBonusPercent, order->sacredCommandEfficiencyBonusPercent),
-		heroCommands::coefficient(chargeFormula(), *attackerSideHero, order->warcastingBonusPercent, 0));
+	EXPECT_EQ(heroCommands::coefficient(chargeFormula(), *attackerSideHero, order->sacredCommandEfficiencyBonusPercent),
+		heroCommands::coefficient(chargeFormula(), *attackerSideHero, 0));
 	EXPECT_GT(chargeDamage(), ordinaryDamage)
 		<< "The ordinary Charge still applies; the unselected perk adds no extra efficiency";
 }

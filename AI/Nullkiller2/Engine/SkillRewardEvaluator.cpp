@@ -14,8 +14,6 @@
 #include "../../../lib/rewardable/Interface.h"
 #include "../../../lib/networkPacks/Component.h"
 #include "../../../lib/entities/hero/NewHorizonsSwampSeer.h"
-#include "../../../lib/mapObjects/NewHorizonsAcademicStudy.h"
-#include "../../../lib/mapObjects/NewHorizonsSage.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -128,24 +126,7 @@ float RewardEvaluator::getSkillReward(const CGObjectInstance * target, const CGH
 	switch(target->ID)
 	{
 	case Obj::TOWN:
-	{
-		const auto * town = dynamic_cast<const CGTownInstance *>(target);
-		if(!town || !hero)
-			return 0;
-		// Same units as an ordinary 1000-XP learning-stone benefit, including
-		// the recipient's actual Learning composition, without capture duplication.
-		float reward = static_cast<float>(newHorizonsLearning::academicStudyExperience(*hero, *town))
-			/ (1000.0f * std::sqrt(hero->level));
-		if(newHorizonsSage::firstGuildVisit(*hero, *town))
-			if(const auto spell = newHorizonsSage::selectSpell(*hero, *town))
-			{
-				const bool reveals = newHorizonsSage::wisdomReveal(*hero, *town).has_value();
-				const bool learns = newHorizonsSage::learningSelected(*hero);
-				if(reveals || learns)
-					reward += 0.5f * newHorizonsMagic::spellLevel(hero->getMagicRules(), *spell);
-			}
-		return reward;
-	}
+		return 0;
 	case Obj::STAR_AXIS:
 	case Obj::SCHOOL_OF_MAGIC:
 	case Obj::GARDEN_OF_REVELATION:

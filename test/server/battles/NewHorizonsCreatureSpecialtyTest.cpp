@@ -657,7 +657,8 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationU
 {
 	JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 	development.Struct().erase("fortuneChildSpecialty"); // Earlier captured Haste-successor presentation.
-	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	magic["spells"]["core:haste"].Struct().erase("heroAccess");
 	const std::array<std::pair<const char *, const char *>, 18> successors = {{
 		{"core:ash", "core:fireball"}, {"core:darkstorn", "new-horizons:hexOfPain"},
 		{"core:astral", "new-horizons:phantomArmy"}, {"core:septienna", "new-horizons:plague"},
@@ -667,7 +668,7 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, ApprovedSpellAndNavigationPresentationU
 		{"core:xsi", "new-horizons:frailty"}, {"core:aenain", "new-horizons:frailty"},
 		{"core:merist", "new-horizons:hydrasVitality"}, {"core:labetha", "new-horizons:guardianSpirit"},
 		{"core:inteus", "new-horizons:theChosen"}, {"core:loynis", "new-horizons:theChosen"},
-		{"core:zubin", "new-horizons:focusMagic"}, {"core:thant", "new-horizons:reanimate"}
+		{"core:zubin", "core:fireball"}, {"core:thant", "new-horizons:reanimate"}
 	}};
 	for(const auto & [heroId, spellId] : successors)
 	{

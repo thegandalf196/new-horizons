@@ -144,7 +144,7 @@ public:
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
 	void updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero);
 
-	/// Refresh read-only Counterspell and Warcasting indicators from authoritative battle state.
+	/// Refresh read-only Counterspell and faction indicators from authoritative battle state.
 	void updateCounterspellStatus();
 
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
@@ -178,6 +178,7 @@ public:
 
 	/// Set possible alternative options to fill unit actions panel
 	void setPossibleActions(const std::vector<PossiblePlayerBattleAction> & allActions);
+	void clearUnitActionSelection();
 
 	/// Keep the shared ordered-target/placement panel and shortcuts synchronized.
 	void updateBattleTargetSelectionControls();

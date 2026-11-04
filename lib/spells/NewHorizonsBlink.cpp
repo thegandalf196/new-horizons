@@ -28,11 +28,10 @@ const SpellID & blinkSpellId()
 }
 }
 
-int radiusFor(const int32_t rawSpellPower, const int32_t coefficientBasisPoints,
-	const int32_t warcastingBonusPercent)
+int radiusFor(const int32_t rawSpellPower, const int32_t coefficientBasisPoints)
 {
 	const int64_t scaledSpellPower = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		rawSpellPower, SPELL_POWER_PER_RADIUS, coefficientBasisPoints, warcastingBonusPercent, 0);
+		rawSpellPower, SPELL_POWER_PER_RADIUS, coefficientBasisPoints, 0);
 	return static_cast<int>(std::min<int64_t>(MAX_RADIUS, BASE_RADIUS + scaledSpellPower));
 }
 
@@ -51,8 +50,7 @@ std::optional<Preview> preview(const spells::Mechanics & mechanics, const battle
 		return std::nullopt;
 
 	Preview result;
-	result.radius = radiusFor(mechanics.getEffectPower(), mechanics.getSpellPowerCoefficientBasisPoints(),
-		mechanics.getWarcastingBonusPercent());
+	result.radius = radiusFor(mechanics.getEffectPower(), mechanics.getSpellPowerCoefficientBasisPoints());
 	const auto * hero = mechanics.getHeroCaster();
 	result.blinkmaster = hero && hero->hasActivePerk(std::string(CHAOS_SKILL), std::string(BLINKMASTER_PERK));
 

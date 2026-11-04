@@ -14,6 +14,7 @@
 #include "SorceryUtility.h"
 #include "ShadowMagnitudes.h"
 #include "TimedBuffs.h"
+#include "MetamagicBindings.h"
 #include "TrollSummonPower.h"
 #include "PlacementPower.h"
 #include "ElementalConvergencePower.h"
@@ -50,6 +51,7 @@
 namespace scripting::api
 {
 using ::spells::Mechanics;
+
 
 bool MechanicsProxy::hasPrecisionBombardment(const Mechanics & m)
 {
@@ -95,19 +97,7 @@ bool MechanicsProxy::ignoresTeleportInterveningBarriers(const Mechanics & m)
 
 const ::spells::Spell * MechanicsProxy::getEffectSpell(const Mechanics & m)
 {
-	const auto * castSpell = m.getSpell();
-	if(!castSpell)
-		return nullptr;
-
-	const auto * callback = m.battle();
-	const auto * battleState = callback ? callback->getBattle() : nullptr;
-	if(!battleState)
-		return castSpell;
-
-	const SpellID familyID = newHorizonsMagic::spellVariantBase(
-		battleState->getMagicRules(), castSpell->getId());
-	const auto * effectSpell = familyID.toSpell();
-	return effectSpell ? effectSpell : castSpell;
+	return newHorizonsMagic::effectSpellForCast(m);
 }
 
 bool MechanicsProxy::isNatureSpell(const Mechanics & m)
@@ -210,6 +200,7 @@ BattleHex MechanicsProxy::chooseBlinkmasterDestination(const Mechanics & m, cons
 void MechanicsProxy::registerMethods(MethodRegistrar & R)
 {
 	registerTimedUtilityMethods(R);
+	registerMetamagicMethods(R);
 	registerTimeStopRadiusMethods(R);
 	registerSorceryUtilityMethods(R);
 	registerShadowMagnitudeMethods(R);
@@ -312,7 +303,7 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getShadowGiftSacrificeCostBasisPoints>("getShadowGiftSacrificeCostBasisPoints", {},
 		"Returns the actual current/max HP sacrifice percentage in basis points, including Dark Gift's cost reduction.");
 	R.method<&Mechanics::getShadowGiftDamageBonusBasisPoints>("getShadowGiftDamageBonusBasisPoints", {},
-		"Returns the selected Shadow Gift damage bonus in basis points, with only the Spell Power term scaled by saved School, Spellcraft, Warcasting and Empower.");
+		"Returns the selected Shadow Gift damage bonus in basis points, with only the Spell Power term scaled by saved School, Spellcraft and Empower.");
 	R.method<&Mechanics::usesNewHorizonsMagic>("usesNewHorizonsMagic", {},
 		"True when the battle uses a saved New Horizons magic-rules snapshot.");
 	R.method<&Mechanics::usesNewHorizonsMagicV3>("usesNewHorizonsMagicV3", {},
@@ -385,17 +376,17 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.method<&Mechanics::scaleSpellPowerComponent>("scaleSpellPowerComponent",
 		{
 			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},
-			{"divisor", "Divisor applied after the optional Warcasting percentage; defaults to one."}
+			{"divisor", "Divisor applied after Empower; defaults to one."}
 		}, {},
-		"Applies this cast's snapshotted Warcasting percentage to an unranked Spell-Power-derived component, then divides "
+		"Applies Empower to an unranked Spell-Power-derived component, then divides "
 		"it with integer truncation. Fixed base and level-power terms must be added separately.");
 	R.method<&Mechanics::scaleSpellPowerComponentWithCoefficient>("scaleSpellPowerComponentWithCoefficient",
 		{
 			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},
-			{"divisor", "Divisor applied after the optional Warcasting percentage."},
+			{"divisor", "Divisor applied after Empower."},
 			{"coefficientPercent", "Saved school-rank Spell Power coefficient in percent."}
 		}, {},
-		"Applies the supplied percentage and this cast's snapshotted Warcasting percentage to a Spell-Power-derived component, "
+		"Applies the supplied percentage and Empower to a Spell-Power-derived component, "
 		"then divides it with integer truncation. Fixed base and level-power terms must be added separately.");
 	R.method<&Mechanics::getSpellPowerCoefficientBasisPoints>("getSpellPowerCoefficientBasisPoints", {},
 		"Returns the composed Spellcraft, school-rank and cast-specific Spell Power coefficient in basis points. "
@@ -416,29 +407,22 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 		"Returns the resolved originating cast's damage percentage for a later damage snapshot. No RNG.");
 	R.method<&Mechanics::getPlagueTickDamage>("getPlagueTickDamage", {},
 		"Returns the initial Plague snapshot; later ticks and children reuse this value.");
-	R.method<&Mechanics::getPhantomArmyIntegrity>("getPhantomArmyIntegrity",
-		{{"source", "Source whose current aggregate HP supplies the Integrity basis."}}, {},
-		"Scales only the Spell Power fraction, caps the base pool, then applies Illusionist and floors once.");
 	R.method<&Mechanics::getFrailtyDefenseLossBasisPoints>("getFrailtyDefenseLossBasisPoints", {},
 		"Returns Frailty's shared per-cast Creature Defense loss in basis points. The specialty scales only "
 		"the Spell Power component, preserving its fixed term, cast cap and Withering Touch addition.");
-	R.method<&Mechanics::getGuardianSpiritHitPoints>("getGuardianSpiritHitPoints",
-		{{"target", "Recipient whose captured Crown and Altar component applies."}}, {},
-		"Returns the shared Guardian Spirit protective pool with SP-only specialty and Healer modifiers, "
-		"then its fixed base and whole-pool Guardian modifier.");
 	R.method<&Mechanics::getNewHorizonsQuicksandPatchCount>("getNewHorizonsQuicksandPatchCount", {},
 		"Returns the authoritative saved-v3 Quicksand patch count with School, Spellcraft, "
-		"Warcasting, and Empower scaling; returns zero for legacy profiles and other spells.");
+		"Empower scaling; returns zero for legacy profiles and other spells.");
 	R.method<&Mechanics::getNewHorizonsLandMinePatchCount>("getNewHorizonsLandMinePatchCount", {},
 		"Returns the Land Mine placement count shared by casting, target selection and AI. "
 		"Saved-v3 Spell Power scaling affects only the additional mines, preserving the fixed base and cap.");
 	R.method<&Mechanics::scaleSpellPowerComponentWithCoefficientBasisPoints>("scaleSpellPowerComponentWithCoefficientBasisPoints",
 		{
 			{"numerator", "An explicitly Spell-Power-derived numerator, before applying its divisor."},
-			{"divisor", "Divisor applied after the composed coefficient and optional Warcasting percentage."},
+			{"divisor", "Divisor applied after the composed coefficient and Empower."},
 			{"coefficientBasisPoints", "Saved composed Spell Power coefficient in basis points; 10000 means 100%."}
 		}, {},
-		"Applies the supplied basis-point coefficient and this cast's snapshotted Warcasting percentage to a Spell-Power-derived component, "
+		"Applies the supplied basis-point coefficient and Empower to a Spell-Power-derived component, "
 		"then divides it with integer truncation. Fixed base and level-power terms must be added separately.");
 	R.method<&Mechanics::applySpecificSpellBonus>("applySpecificSpellBonus",
 		{{"value", "Base value to which spell-specific modifiers are applied. Use 0 for default"}}, {},

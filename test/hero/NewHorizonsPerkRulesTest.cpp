@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../HistoricalFactionPerkRules.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/constants/EntityIdentifiers.h"
@@ -27,7 +28,7 @@ namespace
 {
 JsonNode historicalOfferCodecRules()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	auto rules = historicalFactionPerkRules();
 	for(const auto key : {"quickStudyPolicy", "sylvanTacticsPolicy", "necromancyPolicy"})
 		rules.Struct().erase(key);
 	return rules;
@@ -56,6 +57,36 @@ TEST(NewHorizonsPerkRules, CanonicalRegistryValidatesAndLookupOwnsItsData)
 	EXPECT_EQ(perkRequiredRank(perk->requiredRank), 1);
 	rules["skills"].Struct().clear();
 	EXPECT_EQ(perk->id, skill->perks.front().id);
+}
+
+TEST(NewHorizonsPerkRules, OptionalDetailsOwnCapturedTextAndSurviveCurrentRoundtrip)
+{
+	using namespace newHorizonsHeroes;
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	auto & authored = rules["skills"]["new-horizons:offense"];
+	authored.Struct().erase("details");
+	authored["ranks"]["basic"].Struct().erase("details");
+	authored["perks"].Vector().front().Struct().erase("details");
+	const auto withoutDetails = perkSkill(rules, "new-horizons:offense");
+	ASSERT_TRUE(withoutDetails);
+	EXPECT_TRUE(withoutDetails->details.empty());
+	EXPECT_TRUE(withoutDetails->rankDetails("basic").empty());
+	EXPECT_TRUE(withoutDetails->perks.front().details.empty());
+
+	authored["details"].String() = "Captured skill explanation.";
+	authored["ranks"]["basic"]["details"].String() = "Captured Basic explanation.";
+	authored["perks"].Vector().front()["details"].String() = "Captured perk explanation.";
+	auto captured = perkSkill(rules, "new-horizons:offense");
+	ASSERT_TRUE(captured);
+	CMemorySerializer memory;
+	captured->serialize(memory.oser);
+	SkillDefinition restored;
+	restored.serialize(memory.iser);
+	EXPECT_EQ(restored, *captured);
+	rules["skills"].Struct().clear();
+	EXPECT_EQ(restored.details, "Captured skill explanation.");
+	EXPECT_EQ(restored.rankDetails("basic"), "Captured Basic explanation.");
+	EXPECT_EQ(restored.perks.front().details, "Captured perk explanation.");
 }
 
 TEST(NewHorizonsPerkRules, EmptyRegistryIsLegacyAndUnknownLookupStaysEmpty)
@@ -110,7 +141,7 @@ TEST(NewHorizonsPerkRules, RuntimeRejectsIdentityCardinalityRankAndEffectForgery
 	const auto before = unrelatedCorruption;
 	EXPECT_THROW(crisisCommandProfileActive(unrelatedCorruption), std::runtime_error);
 	EXPECT_THROW(validateCrisisCommandProfileSerialization(unrelatedCorruption, true), std::runtime_error);
-	EXPECT_THROW(validateWeightedPerkSerialization(unrelatedCorruption, true, true, true, true), std::runtime_error);
+	EXPECT_THROW(validateWeightedPerkSerialization(unrelatedCorruption, true, true, true, true, true), std::runtime_error);
 	EXPECT_EQ(unrelatedCorruption, before);
 }
 
@@ -148,10 +179,10 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyIsExplicitAndAbsentCapturedRegistr
 	ASSERT_EQ(current["offerWeightPolicyVersion"].Integer(), PERK_OFFER_WEIGHT_POLICY_VERSION);
 	EXPECT_TRUE(usesWeightedPerkOffers(current));
 	EXPECT_TRUE(JsonUtils::validate(current, "vcmi:newHorizonsPerks", "weighted perk registry"));
-	EXPECT_NO_THROW(validateWeightedPerkSerialization(current, true, true, true, true));
+	EXPECT_NO_THROW(validateWeightedPerkSerialization(current, true, true, true, true, true));
 	EXPECT_THROW(validateWeightedPerkSerialization(current, false), std::runtime_error);
 
-	auto capturedLegacy = current;
+	auto capturedLegacy = historicalFactionPerkRules(current);
 	capturedLegacy.Struct().erase("offerWeightPolicyVersion");
 	capturedLegacy.Struct().erase("perkOfferNormalization");
 	capturedLegacy.Struct().erase("perkProgressionPolicyVersion");
@@ -194,7 +225,7 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyRejectsMalformedAndUnknownVersions
 TEST(NewHorizonsPerkRules, CompatibilityRefusalsRetainMalformedStrictWeightedR2Order)
 {
 	using namespace newHorizonsHeroes;
-	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	auto rules = historicalFactionPerkRules();
 	// This control captures a pre-1153 policy; installed defaults cannot migrate it.
 	rules.Struct().erase("quickStudyPolicy");
 	ASSERT_TRUE(usesStrictPerkProgression(rules));
@@ -520,7 +551,7 @@ TEST(NewHorizonsPerkRules, StrictProgressionMarkerIsOrthogonalExactAndHistorical
 	ASSERT_EQ(current["perkProgressionPolicyVersion"].Integer(), 1);
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(current));
 	EXPECT_TRUE(newHorizonsHeroes::usesR2PerkOffers(current));
-	auto historical = current;
+	auto historical = historicalFactionPerkRules(current);
 	historical.Struct().erase("perkProgressionPolicyVersion");
 	historical.Struct().erase("quickStudyPolicy");
 	const auto before = historical;
@@ -609,7 +640,7 @@ TEST(NewHorizonsPerkRules, StrictEmptyMap1117WriterRefusesBeforeHeaderAndCurrent
 TEST(NewHorizonsPerkRules, OptionalQuickStudyRequiresItsOwnCapabilityAndPreservesCapturedAbsence)
 {
 	using namespace newHorizonsHeroes;
-	JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	auto current = historicalFactionPerkRules();
 	current["quickStudyPolicy"]["version"].Integer() = 1;
 	current["quickStudyPolicy"]["interval"].Integer() = 3;
 	const auto before = current;
@@ -634,4 +665,22 @@ TEST(NewHorizonsPerkRules, OptionalQuickStudyRequiresItsOwnCapabilityAndPreserve
 	GameSettings restored;
 	ASSERT_NO_THROW(restored.serialize(supported.iser));
 	EXPECT_EQ(restored.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), current);
+}
+
+TEST(NewHorizonsPerkRules, BloodrageRevisionIsOptionalStrictAndCaptured)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_EQ(rules["bloodragePolicy"]["version"].Integer(), 2);
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
+	CMemorySerializer serializer;
+	serializer.oser & rules;
+	JsonNode restored;
+	serializer.iser & restored;
+	EXPECT_EQ(restored, rules);
+	rules["bloodragePolicy"]["version"].Integer() = 1;
+	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error);
+	rules["bloodragePolicy"]["version"].Float() = 2.0;
+	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error);
+	rules.Struct().erase("bloodragePolicy");
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
 }

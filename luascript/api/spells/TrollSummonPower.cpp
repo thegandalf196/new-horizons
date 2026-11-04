@@ -24,9 +24,9 @@ int64_t currentTrollSummonHitPoints(const ::spells::Mechanics & mechanics)
 	const auto * hero = mechanics.getHeroCaster();
 	const bool beastcaller = hero && hero->hasActivePerk(
 		std::string(newHorizonsMagic::NATURE_MAGIC_SKILL), "new-horizons:natureMagic.beastcaller");
-	return newHorizonsMagic::trollSummonHitPoints(mechanics.getEffectPower(),
-		mechanics.getSpellPowerCoefficientBasisPoints(), mechanics.getWarcastingBonusPercent(),
-		mechanics.getEmpowerSpellBonusPercent(), beastcaller);
+	return mechanics.adjustMetamagicMagnitude(newHorizonsMagic::trollSummonHitPoints(mechanics.getEffectPower(),
+		mechanics.getSpellPowerCoefficientBasisPoints(),
+		mechanics.getEmpowerSpellBonusPercent(), beastcaller), nullptr);
 }
 }
 

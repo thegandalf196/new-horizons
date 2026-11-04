@@ -25,9 +25,10 @@
 namespace
 {
 using Version = ESerializationVersion;
-constexpr std::array legacyVersions{Version::MINIMAL, Version::CONTROL_LOSS_TRACKING};
+constexpr auto oldestFixtureVersion = Version::RELEASE_170;
+constexpr std::array legacyVersions{oldestFixtureVersion, Version::CONTROL_LOSS_TRACKING};
 constexpr uint32_t trailingMarker = 0x12345678;
-static_assert(Version::MINIMAL <= Version::CONTROL_LOSS_TRACKING);
+static_assert(oldestFixtureVersion <= Version::CONTROL_LOSS_TRACKING);
 static_assert(Version::CONTROL_LOSS_TRACKING < Version::QUEST_REWORK);
 
 template<typename T>

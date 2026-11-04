@@ -55,6 +55,7 @@ class NewHorizonsDamageSpecialtyTest : public HeroCommandFixture
 {
 protected:
 	bool enableDamageSpecialtyRules = true;
+	bool explicitMapStartingPackage = false;
 
 	void SetUp() override
 	{
@@ -96,8 +97,11 @@ protected:
 		builder.size(36, false)
 			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, heroType(specialistId), PlayerColor(0)).heroExperience(experience)
-			.heroGarrison({{pikeman, 100}})
-			.hero({7, 7, 0}, heroType("core:solmyr"), PlayerColor(1)).heroExperience(0)
+			.heroGarrison({{pikeman, 100}});
+		if(explicitMapStartingPackage)
+			builder.heroSpells({SpellID::BLESS})
+				.heroSecondarySkills({{SecondarySkill::ARCHERY, MasteryLevel::EXPERT}});
+		builder.hero({7, 7, 0}, heroType("core:solmyr"), PlayerColor(1)).heroExperience(0)
 			.heroGarrison({{pikeman, 100}});
 		startWithMap(std::move(builder));
 
@@ -146,6 +150,67 @@ TEST(NewHorizonsDamageSpecialtyFormulaTest, BoostsOnlyTheSpellPowerComponentAndR
 	EXPECT_EQ(formula.evaluateBasisPoints(1, 4, 10000, 0, 15), 22)
 		<< "7/4 Spell Power damage becomes 2.0125 before its one final floor";
 	EXPECT_THROW(formula.evaluateBasisPoints(1, 4, 10000, 0, 14), std::runtime_error);
+}
+
+TEST_F(NewHorizonsDamageSpecialtyTest, ZubinStartsAsHavocShamanWithFireballAndPaidDamageSpecialty)
+{
+	startSpecialistMap("core:zubin");
+	const auto fireball = SpellID(SpellID::FIREBALL).toSpell();
+	ASSERT_NE(fireball, nullptr);
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(SpellID::FIREBALL));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell("new-horizons:focusMagic")));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(SpellID::PRECISION));
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"))), MasteryLevel::BASIC);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:bloodrage"))), MasteryLevel::BASIC);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:archery"))), MasteryLevel::NONE);
+	EXPECT_TRUE(attackerSideHero->hasActivePerk("new-horizons:havocMagic", "new-horizons:havocMagic.pyromancer"));
+	EXPECT_EQ(attackerSideHero->getDamageSpellSpecialtyBonusPercent(SpellID::FIREBALL), 15);
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(spell("new-horizons:focusMagic")), 0);
+	EXPECT_TRUE(attackerSideHero->getHeroType()->nonDamageSpellSpecialtyProducers.empty());
+
+	prepareSpell(SpellID::FIREBALL, 10);
+	startBattleAndBeginCombat();
+	auto * target = addStack(BattleSide::DEFENDER, creature("core:pikeman"), BattleHex(12, 4), 1000);
+	ASSERT_NE(target, nullptr);
+	const auto formula = newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), fireball->getJsonKey());
+	ASSERT_TRUE(formula.has_value());
+	const auto expected = formula->evaluateBasisPoints(attackerSideHero->getEffectPower(fireball),
+		attackerSideHero->getEffectPowerDivisor(fireball),
+		newHorizonsMagic::directDamageSpellPowerCoefficientBasisPoints(battle()->getMagicRules(), attackerSideHero, fireball->getId())
+			* (100 + newHorizonsMagic::spellPowerDamagePerkBonusPercent(battle()->getMagicRules(), attackerSideHero, fireball)) / 100,
+		newHorizonsMagic::empowerSpellBonusPercent(battle()->getMagicRules(), attackerSideHero, fireball->getId()), 15);
+	spells::BattleCast forecast(battle(), attackerSideHero, spells::Mode::HERO, fireball);
+	EXPECT_EQ(fireball->battleMechanics(&forecast)->getEffectValue(), expected);
+	EXPECT_EQ(fireball->calculateDamage(attackerSideHero), expected);
+	attackerSideHero->level = 20;
+	EXPECT_EQ(fireball->calculateDamage(attackerSideHero), expected);
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto cost = battle()->battleGetSpellCost(fireball, attackerSideHero);
+	ASSERT_GT(cost, 0);
+	const auto health = target->getAvailableHealth();
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = SpellID::FIREBALL;
+	action.aimToHex(target->getPosition());
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(health - target->getAvailableHealth(), expected);
+	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), cost);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), cost);
+}
+
+TEST_F(NewHorizonsDamageSpecialtyTest, ZubinExplicitMapSpellbookAndSkillsRemainAuthored)
+{
+	explicitMapStartingPackage = true;
+	startSpecialistMap("core:zubin");
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(SpellID::BLESS));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(SpellID::FIREBALL));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(spell("new-horizons:focusMagic")));
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:archery"))), MasteryLevel::EXPERT);
+	EXPECT_EQ(attackerSideHero->getSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"))), MasteryLevel::NONE);
+	EXPECT_FALSE(attackerSideHero->hasActivePerk("new-horizons:havocMagic", "new-horizons:havocMagic.pyromancer"));
+	EXPECT_EQ(attackerSideHero->getDamageSpellSpecialtyBonusPercent(SpellID::FIREBALL), 15);
 }
 
 TEST_F(NewHorizonsDamageSpecialtyTest, CieleMagicArrowForecastAndAcceptedCastUseOnlyThePowerComponent)

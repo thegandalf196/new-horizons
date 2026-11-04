@@ -1,13 +1,16 @@
 /*
- * HypotheticSpellServer.cpp, part of VCMI engine
- *
- * Authors: listed in file AUTHORS in main folder
- *
- * License: GNU General Public License v2.0 or later
- * Full text of license available in license.txt file, in main folder
- *
- */
+	* HypotheticSpellServer.cpp, part of VCMI engine
+	*
+	* Authors: listed in file AUTHORS in main folder
+	*
+	* License: GNU General Public License v2.0 or later
+	* Full text of license available in license.txt file, in main folder
+	*
+	*/
 #include "StdInc.h"
+#include "../../lib/networkPacks/SetMetamagicPointState.h"
+#include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/spells/AutomaticHeroCast.h"
 #include "../../lib/ScopeGuard.h"
 #include "ProjectedInjuryLifecycle.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
@@ -55,10 +58,28 @@ void HypotheticBattle::HypotheticServerCallback::recordCompletedHeroSpellCast(Ba
 {
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 	{
+		if(auto & count = owner->projectedCastSpells.at(side); count)
+		{
+			if(*count == std::numeric_limits<int32_t>::max())
+				throw std::overflow_error("Projected completed spell count overflow");
+			++*count;
+		}
 		owner->heroSpellCastCompletedStates.at(side) = true;
 		if(spellLevel >= 1 && spellLevel <= GameConstants::SPELL_LEVELS)
 			owner->completedHeroSpellLevelMasks.at(side) |= static_cast<std::uint8_t>(1u << (spellLevel - 1));
 	}
+}
+
+void HypotheticBattle::HypotheticServerCallback::recordCompletedAutomaticHeroSpellCast(
+	BattleSide side, const SpellID & spell, const spells::AutomaticHeroCastReceipt & receipt)
+{
+	const auto * hero = owner->battleGetFightingHero(side);
+	if(!spells::automaticHeroCastAllowed(*owner, hero, spell.toSpell(), receipt))
+		throw std::runtime_error("Invalid automatic hero cast projection receipt");
+	if(receipt.kind == spells::AutomaticHeroCastKind::DIVINE_MANDATE)
+		owner->setPassiveDivineMandateUses(side, receipt.mandateUseOrdinal);
+
+	recordCompletedHeroSpellCast(side, owner->battleGetSpellLevel(spell));
 }
 
 vstd::RNG * HypotheticBattle::HypotheticServerCallback::getRNG()
@@ -115,8 +136,15 @@ bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const 
 
 void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 {
-	if(dynamic_cast<SetReactiveWeaveState *>(&pack) || dynamic_cast<SetSpellResponseState *>(&pack)
-		|| dynamic_cast<SetOverwhelmingFormulaState *>(&pack))
+	if(const auto * mana = dynamic_cast<const SetMana *>(&pack);
+		mana && mana->operation == SetMana::Operation::RESTORE_NORMAL)
+	{
+		owner->restoreProjectedNormalMana(*mana);
+		return;
+	}
+	if(dynamic_cast<SetSpellResponseState *>(&pack)
+		|| dynamic_cast<SetOverwhelmingFormulaState *>(&pack)
+		|| dynamic_cast<SetMetamagicPointState *>(&pack))
 	{
 		BattleStatePackVisitor visitor(*owner);
 		pack.visit(visitor);

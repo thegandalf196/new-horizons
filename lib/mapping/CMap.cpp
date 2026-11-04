@@ -1331,16 +1331,16 @@ void CMap::validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, boo
 			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().rules, supportsV1, supportsV2);
 }
 
-void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported) const
+void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported) const
 {
 	if(gameSettings)
-		gameSettings->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported, optionalRerollSupported);
+		gameSettings->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported, optionalRerollSupported);
+			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
 	for(const auto & hero : heroesPool)
 		if(hero)
-			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported, optionalRerollSupported);
+			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
 }
 
 

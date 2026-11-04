@@ -312,7 +312,6 @@ protected:
 		const auto prepared = battle()->battlePrepareHeroOrderState(
 			BattleSide::ATTACKER, HeroCommand::CHARGE, ids);
 		ASSERT_TRUE(prepared);
-		ASSERT_EQ(prepared->warcastingBonusPercent, 0);
 		ASSERT_EQ(prepared->divineMandateEfficiencyBonusPercent(), 0);
 		const auto & formula = battle()->getHeroCommandRules()["commands"]["charge"]
 			["effects"]["meleeDamagePercent"];

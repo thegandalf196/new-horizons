@@ -95,7 +95,7 @@ void CSelWindow::madeChoiceAndClose()
 	close();
 }
 
-CInfoWindow::CInfoWindow(const std::string & Text, PlayerColor player, const TCompsInfo & comps, const TButtonsInfo & Buttons)
+CInfoWindow::CInfoWindow(const std::string & Text, PlayerColor player, const TCompsInfo & comps, const TButtonsInfo & Buttons, const std::string & details)
 {
 	OBJECT_CONSTRUCTION;
 
@@ -130,7 +130,11 @@ CInfoWindow::CInfoWindow(const std::string & Text, PlayerColor player, const TCo
 	if(!comps.empty())
 		components = std::make_shared<CComponentBox>(comps, Rect(0,0,0,0));
 
+	if(!details.empty())
+		addDetailsButton(details, player);
 	CMessage::drawIWindow(this, Text, player);
+	if(!details.empty())
+		buttons.back()->moveBy(Point(0, (buttons.front()->pos.h - buttons.back()->pos.h) / 2));
 }
 
 CInfoWindow::CInfoWindow()
@@ -142,7 +146,7 @@ void CInfoWindow::close()
 {
 	WindowBase::close();
 
-	if(GAME->interface())
+	if(releasesDialog && GAME->interface())
 		GAME->interface()->showingDialog->setFree();
 }
 
@@ -173,11 +177,11 @@ void CInfoWindow::showYesNoDialog(const std::string & text, const TCompsInfo & c
 	ENGINE->windows().pushWindow(temp);
 }
 
-std::shared_ptr<CInfoWindow> CInfoWindow::create(const std::string & text, PlayerColor playerID, const TCompsInfo & components)
+std::shared_ptr<CInfoWindow> CInfoWindow::create(const std::string & text, PlayerColor playerID, const TCompsInfo & components, const std::string & details)
 {
 	std::vector<std::pair<AnimationPath, CFunctionList<void()>>> pom;
 	pom.emplace_back(AnimationPath::builtin("IOKAY.DEF"), nullptr);
-	return std::make_shared<CInfoWindow>(text, playerID, components, pom);
+	return std::make_shared<CInfoWindow>(text, playerID, components, pom, details);
 }
 
 std::string CInfoWindow::genText(const std::string & title, const std::string & description)

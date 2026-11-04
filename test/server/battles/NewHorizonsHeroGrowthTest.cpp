@@ -158,18 +158,18 @@ TEST_F(NewHorizonsVersionThreeHeroGrowthTest, GuaranteedConfiguredSkillBonusesRe
 namespace
 {
 constexpr auto WISDOM_SKILL_ID = "new-horizons:wisdom";
-constexpr auto DEEP_KNOWLEDGE_ID = "new-horizons:wisdom.deepKnowledge";
+constexpr auto ARCANE_INSIGHT_ID = "new-horizons:wisdom.arcaneInsight";
 
-bool setDeepKnowledgeStatus(JsonNode & rules, std::string_view status)
+bool setArcaneInsightStatus(JsonNode & rules, std::string_view status)
 {
 	auto & perks = rules["skills"][WISDOM_SKILL_ID]["perks"].Vector();
-	const auto deepKnowledge = std::find_if(perks.begin(), perks.end(), [](const JsonNode & perk)
+	const auto arcaneInsight = std::find_if(perks.begin(), perks.end(), [](const JsonNode & perk)
 	{
-		return perk["id"].String() == DEEP_KNOWLEDGE_ID;
+		return perk["id"].String() == ARCANE_INSIGHT_ID;
 	});
-	if(deepKnowledge == perks.end())
+	if(arcaneInsight == perks.end())
 		return false;
-	(*deepKnowledge)["effect"]["status"].String() = std::string(status);
+	(*arcaneInsight)["effect"]["status"].String() = std::string(status);
 	return true;
 }
 
@@ -262,11 +262,11 @@ class NewHorizonsInstalledSkillGrowthTest : public HeroCommandFixture
 		});
 	}
 
-	bool chooseDeepKnowledge(CGHeroInstance * hero)
+	bool chooseArcaneInsight(CGHeroInstance * hero)
 	{
 		return chooseOfferedPerk(hero, [](const auto & candidate)
 		{
-			return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+			return candidate.selection.perkId == ARCANE_INSIGHT_ID;
 		});
 	}
 };
@@ -377,7 +377,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ScopedSkillGrowthRandomizerContinues
 	EXPECT_TRUE(sawBonusRoll) << "10% skill chances should produce successful rolls";
 }
 
-TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAndCapturedSavedPerkState)
+TEST_F(NewHorizonsInstalledSkillGrowthTest, ArcaneInsightUsesLegalWisdomRanksAndCapturedSavedPerkState)
 {
 	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
 	if(!newHorizonsHeroes::usesRules(rules))
@@ -402,12 +402,12 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAnd
 		return hero->getPerkSkillRank(skillId);
 	};
 	const auto wisdomRules = hero->getPerkState().rules["skills"][WISDOM_SKILL_ID]["perks"].Vector();
-	const auto deepDefinition = std::find_if(wisdomRules.begin(), wisdomRules.end(), [](const JsonNode & perk)
+	const auto insightDefinition = std::find_if(wisdomRules.begin(), wisdomRules.end(), [](const JsonNode & perk)
 	{
-		return perk["id"].String() == DEEP_KNOWLEDGE_ID;
+		return perk["id"].String() == ARCANE_INSIGHT_ID;
 	});
-	ASSERT_NE(deepDefinition, wisdomRules.end());
-	ASSERT_EQ((*deepDefinition)["effect"]["status"].String(), "active");
+	ASSERT_NE(insightDefinition, wisdomRules.end());
+	ASSERT_EQ((*insightDefinition)["effect"]["status"].String(), "active");
 
 	const auto initialView = hero->getPrimaryGrowthView();
 	ASSERT_TRUE(initialView);
@@ -417,7 +417,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAnd
 	const auto basicOffer = hero->getPerkState().prepareOffer(rankLookup, 0, hero->getPerkOfferWeightContext());
 	EXPECT_FALSE(std::any_of(basicOffer.begin(), basicOffer.end(), [](const auto & candidate)
 	{
-		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+		return candidate.selection.perkId == ARCANE_INSIGHT_ID;
 	}));
 
 	ASSERT_TRUE(chooseBasicWisdomPerk(hero)) << "A Basic Wisdom perk should be selectable through the ordinary offer";
@@ -430,28 +430,28 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAnd
 	ASSERT_TRUE(advancedView);
 	ASSERT_EQ(advancedView->extraGrowth.size(), initialView->extraGrowth.size());
 	EXPECT_EQ(growthChance(*advancedView, wisdom), 20);
-	ASSERT_TRUE(chooseDeepKnowledge(hero)) << "Deep Knowledge should be offered after Basic perk selection and Advanced Wisdom";
-	EXPECT_TRUE(hero->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	ASSERT_TRUE(chooseArcaneInsight(hero)) << "Arcane Insight should be offered after Basic perk selection and Advanced Wisdom";
+	EXPECT_TRUE(hero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
 	EXPECT_TRUE(hero->getPerkState().canAdvanceSkillNormally(WISDOM_SKILL_ID, MasteryLevel::ADVANCED));
 
-	const auto deepView = hero->getPrimaryGrowthView();
-	ASSERT_TRUE(deepView);
-	ASSERT_EQ(deepView->extraGrowth.size(), advancedView->extraGrowth.size());
-	EXPECT_EQ(deepView->profile.growth, advancedView->profile.growth);
-	for(size_t index = 0; index < deepView->extraGrowth.size(); ++index)
+	const auto insightView = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(insightView);
+	ASSERT_EQ(insightView->extraGrowth.size(), advancedView->extraGrowth.size());
+	EXPECT_EQ(insightView->profile.growth, advancedView->profile.growth);
+	for(size_t index = 0; index < insightView->extraGrowth.size(); ++index)
 	{
 		const auto & before = advancedView->extraGrowth[index];
-		const auto & after = deepView->extraGrowth[index];
+		const auto & after = insightView->extraGrowth[index];
 		EXPECT_EQ(after.skill, before.skill) << "row " << index;
 		EXPECT_EQ(after.attribute, before.attribute) << "row " << index;
-		EXPECT_EQ(after.chancePercent, before.chancePercent + (before.skill == wisdom ? 10 : 0)) << "row " << index;
+		EXPECT_EQ(after.chancePercent, before.chancePercent) << "row " << index;
 	}
-	EXPECT_EQ(growthChance(*deepView, wisdom), 30);
+	EXPECT_EQ(growthChance(*insightView, wisdom), 20);
 
 	gameHandler->levelUpHero(hero, wisdom, false);
 	EXPECT_EQ(hero->getPerkSkillRank(WISDOM_SKILL_ID), MasteryLevel::EXPERT);
 	ASSERT_TRUE(hero->getPrimaryGrowthView());
-	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 40);
+	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 30);
 
 	CMemorySerializer memory;
 	memory.oser & *gameState();
@@ -461,26 +461,26 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAnd
 	memory.iser & restored;
 	auto * loaded = restored.getHero(hero->id);
 	ASSERT_NE(loaded, nullptr);
-	ASSERT_TRUE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
-	ASSERT_TRUE(loaded->getPrimaryGrowthView());
-	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 40);
-
-	loaded->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	EXPECT_FALSE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
-	ASSERT_TRUE(loaded->getPrimaryGrowthView());
-	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 10);
-	loaded->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	EXPECT_TRUE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	ASSERT_TRUE(loaded->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
 	ASSERT_TRUE(loaded->getPrimaryGrowthView());
 	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 30);
 
+	loaded->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(loaded->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
+	ASSERT_TRUE(loaded->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 10);
+	loaded->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	EXPECT_TRUE(loaded->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
+	ASSERT_TRUE(loaded->getPrimaryGrowthView());
+	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 20);
+
 	EXPECT_TRUE(std::any_of(loaded->getPerkState().selected.begin(), loaded->getPerkState().selected.end(),
-		[](const auto & selection) { return selection.skillId == WISDOM_SKILL_ID && selection.perkId != DEEP_KNOWLEDGE_ID; }));
+		[](const auto & selection) { return selection.skillId == WISDOM_SKILL_ID && selection.perkId != ARCANE_INSIGHT_ID; }));
 	auto plannedState = loaded->getPerkState();
-	ASSERT_TRUE(setDeepKnowledgeStatus(plannedState.rules, "planned"));
+	ASSERT_TRUE(setArcaneInsightStatus(plannedState.rules, "planned"));
 	std::erase_if(plannedState.selected, [](const auto & selection)
 	{
-		return selection.perkId == DEEP_KNOWLEDGE_ID;
+		return selection.perkId == ARCANE_INSIGHT_ID;
 	});
 	const auto plannedOffer = plannedState.prepareOffer([loaded](const std::string & skillId)
 	{
@@ -488,17 +488,17 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesLegalWisdomRanksAnd
 	}, 7, loaded->getPerkOfferWeightContext());
 	EXPECT_FALSE(std::any_of(plannedOffer.begin(), plannedOffer.end(), [](const auto & candidate)
 	{
-		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+		return candidate.selection.perkId == ARCANE_INSIGHT_ID;
 	}));
-	plannedState.selected.push_back({WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID});
+	plannedState.selected.push_back({WISDOM_SKILL_ID, ARCANE_INSIGHT_ID});
 	const_cast<newHorizonsHeroes::PerkState &>(loaded->getPerkState()) = std::move(plannedState);
-	EXPECT_FALSE(loaded->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	EXPECT_FALSE(loaded->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
 	ASSERT_TRUE(loaded->getPrimaryGrowthView());
 	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 20)
 		<< "a saved selected identity does not activate when its captured rules mark it planned";
 }
 
-TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesExactThirtyAndFortyPercentDrawBoundaries)
+TEST_F(NewHorizonsInstalledSkillGrowthTest, ArcaneInsightPreservesExactTwentyAndThirtyPercentDrawBoundaries)
 {
 	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
 	if(!newHorizonsHeroes::usesRules(rules))
@@ -519,7 +519,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesExactThirtyAndForty
 	hero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ASSERT_TRUE(chooseBasicWisdomPerk(hero));
 	gameHandler->levelUpHero(hero, wisdom, false);
-	ASSERT_TRUE(chooseDeepKnowledge(hero));
+	ASSERT_TRUE(chooseArcaneInsight(hero));
 
 	const auto verifyBoundary = [&](int chance, int successfulDraw, int failedDraw)
 	{
@@ -549,12 +549,12 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeUsesExactThirtyAndForty
 		EXPECT_EQ(newHorizonsHeroes::calculatePrimaryGrowth(view->profile, opportunities, draws), fixedGrowth);
 	};
 
-	verifyBoundary(30, 29, 30);
+	verifyBoundary(20, 19, 20);
 	gameHandler->levelUpHero(hero, wisdom, false);
-	verifyBoundary(40, 39, 40);
+	verifyBoundary(30, 29, 30);
 }
 
-TEST_F(NewHorizonsInstalledSkillGrowthTest, AuthoritativeLevelUpUsesPreOfferViewAndNextRollUsesSelectedDeepKnowledge)
+TEST_F(NewHorizonsInstalledSkillGrowthTest, AuthoritativeLevelUpUsesPreOfferViewAndPreservesGrowthAfterArcaneInsight)
 {
 	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
 	if(!newHorizonsHeroes::usesRules(rules))
@@ -585,11 +585,11 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, AuthoritativeLevelUpUsesPreOfferView
 	gameHandler->onAdvInterfaceReady(owner);
 	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(owner));
 	ASSERT_NE(query, nullptr);
-	const auto deepKnowledge = std::find_if(query->hlu.perks.begin(), query->hlu.perks.end(), [](const auto & candidate)
+	const auto arcaneInsight = std::find_if(query->hlu.perks.begin(), query->hlu.perks.end(), [](const auto & candidate)
 	{
-		return candidate.selection.perkId == DEEP_KNOWLEDGE_ID;
+		return candidate.selection.perkId == ARCANE_INSIGHT_ID;
 	});
-	ASSERT_NE(deepKnowledge, query->hlu.perks.end());
+	ASSERT_NE(arcaneInsight, query->hlu.perks.end());
 	ASSERT_EQ(query->hlu.primaryGains, expectedPrimaryGains)
 		<< "the authoritative primary roll is captured before the level-up perk offer";
 	const auto gainsBeforePerkChoice = query->hlu.primaryGains;
@@ -599,17 +599,17 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, AuthoritativeLevelUpUsesPreOfferView
 	GameRandomizer expectedNextRoll(*gameState());
 	atChoice.iser & expectedNextRoll;
 	const auto choice = query->hlu.skills.size()
-		+ static_cast<size_t>(std::distance(query->hlu.perks.begin(), deepKnowledge));
+		+ static_cast<size_t>(std::distance(query->hlu.perks.begin(), arcaneInsight));
 	ASSERT_TRUE(gameHandler->queryReply(query->queryID, static_cast<int32_t>(choice), owner));
-	EXPECT_TRUE(hero->hasActivePerk(WISDOM_SKILL_ID, DEEP_KNOWLEDGE_ID));
+	EXPECT_TRUE(hero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
 	ASSERT_TRUE(hero->getPrimaryGrowthView());
-	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 30);
+	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 20);
 	EXPECT_EQ(hero->getPrimaryGrowthView()->lastGains, gainsBeforePerkChoice);
 	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(hero),
 		expectedNextRoll.rollPrimarySkillsForLevelup(hero));
 }
 
-TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeCapsCustomHundredPercentWisdomChance)
+TEST_F(NewHorizonsInstalledSkillGrowthTest, ArcaneInsightLeavesCustomHundredPercentWisdomChanceUnchanged)
 {
 	wisdomGrowthChanceAtHundred = true;
 	const auto rules = LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS);
@@ -633,15 +633,47 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, DeepKnowledgeCapsCustomHundredPercen
 	gameHandler->levelUpHero(hero, wisdom, false);
 	ASSERT_TRUE(hero->getPrimaryGrowthView());
 	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 100);
-	ASSERT_TRUE(chooseDeepKnowledge(hero));
+	ASSERT_TRUE(chooseArcaneInsight(hero));
 	ASSERT_TRUE(hero->getPrimaryGrowthView());
 	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 100)
-		<< "Deep Knowledge must saturate a valid 100% configured chance instead of creating 110%";
+		<< "Arcane Insight leaves the configured 100% growth chance unchanged";
 	ASSERT_EQ(hero->getPrimaryGrowthView()->extraGrowth.size(), 1u);
 	auto expected = hero->getPrimaryGrowthView()->profile.growth;
 	++expected[PrimarySkill(PrimarySkill::KNOWLEDGE).getNum()];
 	EXPECT_EQ(gameHandler->randomizer->rollPrimarySkillsForLevelup(hero), expected)
 		<< "the authoritative helper must treat a capped 100% Wisdom roll as guaranteed Knowledge";
+}
+
+TEST_F(NewHorizonsInstalledSkillGrowthTest, SageCurrentWorldRoundtripPreservesBaseKnowledgeAndAddsEffectiveFiftyOnce)
+{
+	startGameWithWizard();
+	auto * hero = attackerSideHero;
+	const auto wisdom = wisdomSkill();
+	hero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(chooseBasicWisdomPerk(hero));
+	gameHandler->levelUpHero(hero, wisdom, false);
+	ASSERT_TRUE(chooseArcaneInsight(hero));
+	gameHandler->levelUpHero(hero, wisdom, false);
+	const auto before = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(before);
+	ASSERT_TRUE(chooseOfferedPerk(hero, [](const auto & candidate)
+		{ return candidate.selection.perkId == "new-horizons:wisdom.sage"; }));
+	const auto current = hero->getPrimaryGrowthView();
+	ASSERT_TRUE(current);
+	EXPECT_EQ(current->base, before->base);
+	EXPECT_EQ(current->modified[PrimarySkill::KNOWLEDGE], before->modified[PrimarySkill::KNOWLEDGE] + 50);
+	const auto saved = gameState()->saveToMemory();
+	auto restored = std::make_shared<CGameState>();
+	restored->preInit(LIBRARY);
+	restored->loadFromMemory(saved);
+	auto * loaded = restored->getHero(hero->id);
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->getPrimaryGrowthView()->base, before->base);
+	EXPECT_EQ(loaded->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), current->modified[PrimarySkill::KNOWLEDGE]);
+	EXPECT_EQ(loaded->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), current->modified[PrimarySkill::KNOWLEDGE]);
+	loaded->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	EXPECT_EQ(loaded->getPrimaryGrowthView()->base, before->base);
+	EXPECT_EQ(loaded->getPrimSkillLevel(PrimarySkill::KNOWLEDGE), before->modified[PrimarySkill::KNOWLEDGE]);
 }
 
 class NewHorizonsVersionTwoHeroGrowthTest : public NewHorizonsHeroGrowthTest
@@ -2447,7 +2479,6 @@ namespace
 {
 constexpr std::string_view ESTATES_SKILL_ID = "new-horizons:estates";
 constexpr std::string_view TAX_COLLECTOR_ID = "new-horizons:estates.taxCollector";
-constexpr std::string_view INVESTOR_ID = "new-horizons:estates.investor";
 constexpr int TEST_INCOME_HANDICAP_PERCENT = 50;
 
 HeroTypeID estatesHeroType(const char * identifier)
@@ -2542,7 +2573,6 @@ TEST_F(NewHorizonsEstatesSpecialtyFixture, LordHaartScalesOnlyEstatesIncomeAndKe
 	{
 		addOtherResourceIncome(hero, EGameResID::GOLD, 30);
 		addOtherResourceIncome(hero, EGameResID::WOOD, 2);
-		hero->setNewHorizonsInvestorDailyGold(100);
 		if(!hero->getPerkState().hasSelection(std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)))
 			hero->applyPerkSelection({std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)});
 		ASSERT_TRUE(hero->hasActivePerk(std::string(ESTATES_SKILL_ID), std::string(TAX_COLLECTOR_ID)));
@@ -2557,17 +2587,8 @@ TEST_F(NewHorizonsEstatesSpecialtyFixture, LordHaartScalesOnlyEstatesIncomeAndKe
 	{
 		lordHaart->setSecSkillLevel(estates, ranks[index], ChangeValueMode::ABSOLUTE);
 		ordinaryHero->setSecSkillLevel(estates, ranks[index], ChangeValueMode::ABSOLUTE);
-		if(index == 1)
-		{
-			for(auto * hero : {lordHaart, ordinaryHero})
-			{
-				hero->applyPerkSelection({std::string(ESTATES_SKILL_ID), std::string(INVESTOR_ID)});
-				ASSERT_TRUE(hero->hasActivePerk(std::string(ESTATES_SKILL_ID), std::string(INVESTOR_ID)));
-			}
-		}
 
-		const int sharedGold = 30 /* OTHER */ + 50 /* one Tax Collector town */
-			+ (index == 0 ? 0 : 100 /* Investor snapshot */);
+		const int sharedGold = 30 /* OTHER */ + 100 /* one Tax Collector town */;
 		const int64_t expectedSpecialistGold = vstd::divideAndCeil(
 			static_cast<int64_t>(specialistCoreIncome[index] + sharedGold) * TEST_INCOME_HANDICAP_PERCENT, 100);
 		const int64_t expectedOrdinaryGold = vstd::divideAndCeil(
@@ -2579,7 +2600,7 @@ TEST_F(NewHorizonsEstatesSpecialtyFixture, LordHaartScalesOnlyEstatesIncomeAndKe
 		const auto overbroadSpecialistGold = vstd::divideAndCeil(
 			static_cast<int64_t>(ordinaryCoreIncome[index] + sharedGold) * 120 * TEST_INCOME_HANDICAP_PERCENT, 10000);
 		EXPECT_NE(expectedSpecialistGold, overbroadSpecialistGold)
-			<< "The specialty must not scale OTHER income, Tax Collector, or Investor";
+			<< "The specialty must not scale OTHER income or Tax Collector";
 		EXPECT_EQ(lordHaart->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 20);
 		EXPECT_EQ(ordinaryHero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)), 0);
 		if(index + 1 == ranks.size())

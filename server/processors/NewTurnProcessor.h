@@ -51,9 +51,7 @@ class NewTurnProcessor : boost::noncopyable
 	std::vector<SetMovePoints> updateHeroesMovementPoints();
 
 	ResourceSet generatePlayerIncome(PlayerColor playerID, bool newWeek,
-		std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults,
-		const std::map<ObjectInstanceID, int32_t> & investorDailyGold,
-		const std::map<ObjectInstanceID, newHorizonsEconomy::MagnateIncome> & magnateTownIncome);
+		std::map<ObjectInstanceID, std::vector<GameResID>> & mysticPondResults);
 	SetAvailableCreatures generateTownGrowth(const CGTownInstance * town, EWeekType weekType, CreatureID creatureWeek, bool firstDay, int additionalGrowth);
 	RumorState pickNewRumor();
 	InfoWindow createInfoWindow(EWeekType weekType, CreatureID creatureWeek, bool newMonth, int additionalGrowth);

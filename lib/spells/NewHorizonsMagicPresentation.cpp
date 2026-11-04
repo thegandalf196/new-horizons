@@ -83,7 +83,7 @@ bool describeEarthquake(std::string & result, const CGHeroInstance * hero, const
 			"Fractured Ground lasts " + std::to_string(geomancer ? 4 : 3)
 			+ " rounds before eligible duration extensions; each entered hex costs one extra movement point. "
 			"Flying travel ignores this cost. No Initiative, Attack, Defense or retaliation penalty. "
-			"School rank, Spellcraft, Warcasting and Empower scale only Spell Power terms, not fixed bases or caps.";
+			"School rank, Spellcraft and Empower scale only Spell Power terms, not fixed bases or caps.";
 		return true;
 	}
 	return false;
@@ -102,10 +102,10 @@ bool describeLivingArmor(std::string & result, const CGHeroInstance * hero, cons
 	const int64_t pool = newHorizonsSorceryRevision::livingArmorHitPoints(
 		profile["baseHitPoints"].Integer(), profile["spellPowerCoefficient"].Integer(), static_cast<int32_t>(power),
 		std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)),
-		spellPowerCoefficientBasisPoints(rules, hero, spell->getId()), 0,
+		spellPowerCoefficientBasisPoints(rules, hero, spell->getId()),
 		empowerSpellBonusPercent(rules, hero, spell->getId()));
 	result = "Summon Living Armor on an empty hex. Current pool: " + std::to_string(pool)
-		+ " HP before battle-only Warcasting. Lifetime: " + std::to_string(profile["duration"].Integer())
+		+ " HP. Lifetime: " + std::to_string(profile["duration"].Integer())
 		+ " rounds, including this round. Eligible Extend Spell and Echoed Duration each add one round. "
 		"75% physical damage reduction; takes double magical damage. Time Stop pauses its lifetime. "
 		"Disappears after combat.";
@@ -127,7 +127,7 @@ bool describeSlow(std::string & result, const CGHeroInstance * hero, const spell
 		const int combinedCoefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
 		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
 		const int initiativeReduction = newHorizonsSorceryRevision::slowBaseReduction(static_cast<int32_t>(spellPower),
-			combinedCoefficientBasisPoints, 0, empowerSpellBonusPercent(rules, hero, spell->getId()));
+			combinedCoefficientBasisPoints, empowerSpellBonusPercent(rules, hero, spell->getId()));
 		const int variantPower = spellVariantPowerPercent(rules, spell->getId());
 		const auto displayedReduction = static_cast<int64_t>(-newHorizonsSorceryRevision::scaleSlowVariantValue(
 			casterEnchantValue(hero, SpellID::SLOW, -initiativeReduction), variantPower));
@@ -147,7 +147,7 @@ bool describeSlow(std::string & result, const CGHeroInstance * hero, const spell
 			+ " = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
 			"current reduction before target-specific specialties at Spell Power "
 			+ std::to_string(spellPower) + ": " + std::to_string(displayedReduction)
-			+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
+			+ "%. This estimate excludes the Inferno defender's Brimstone Stormclouds "
 			"+20 Spell Power bonus, which can further affect the battle cast.";
 		if(variantPower == 60)
 			result += " Mass Slow applies 60% of the final ordinary Slow reduction after its cap and target-specific "
@@ -352,7 +352,7 @@ bool describeSorrow(std::string & result, const CGHeroInstance * hero, const spe
 			+ "Current Shadow School factor: "
 			+ std::to_string(schoolCoefficient) + "%; combined School and Spellcraft factor: "
 			+ percentFromBasisPoints(combinedCoefficient) + ". At Spell Power " + std::to_string(spellPower)
-			+ ", the ordinary penalty is -" + std::to_string(penalty) + " Morale before battle-only Warcasting. "
+			+ ", the ordinary penalty is -" + std::to_string(penalty) + " Morale. "
 			"Morale remains subject to the global legal range.";
 		if(duration > SORROW_BASE_DURATION_ROUNDS)
 			result += " Malediction extends the duration by one round.";
@@ -397,5 +397,110 @@ void applyBaseDescription(std::string & result, const CGHeroInstance * hero, con
 		return;
 	if(describeSorrow(result, hero, spell))
 		return;
+}
+}
+
+namespace newHorizonsMagic
+{
+namespace
+{
+// Effect summaries only. Values, duration calculations and exceptions stay in
+// spellDescriptionForHero and its existing contextual presentation stages.
+constexpr std::pair<std::string_view, std::string_view> spellSummaries[] = {
+	{"core:armageddon", "Burn every creature on the battlefield, including allies, and damage fortifications."},
+	{"core:berserk", "Force one enemy stack to approach and attack the nearest creature, friend or foe, in melee."},
+	{"core:bless", "Make one friendly stack always roll its maximum creature damage."},
+	{"new-horizons:massBless", "Make all eligible friendly stacks always roll their maximum creature damage."},
+	{"core:chainLightning", "Strike one stack with lightning that jumps to nearby creatures, including allies, weakening with each jump."},
+	{"new-horizons:masterChainLightning", "Strike up to four stacks with lightning that jumps between nearby creatures, including allies, weakening with each jump."},
+	{"new-horizons:frailty", "Reduce one enemy stack's Creature Defense for the rest of battle; repeated casts strengthen the reduction."},
+	{"new-horizons:summonLivingArmor", "Summon temporary Living Armor that resists physical damage but takes extra magical damage."},
+	{"new-horizons:focusMagic", "Enchant a friendly shooter so its damaging shots mark enemies, helping all friendly shooters ignore part of their Defense."},
+	{"new-horizons:hexOfPain", "Curse one enemy stack to suffer Shadow damage after each attack or retaliation it makes."},
+	{"new-horizons:plague", "Afflict one stack with recurring magical damage that spreads to adjacent creatures, including allies."},
+	{"new-horizons:soulChain", "Link enemy stacks so damage to the secondary targets also harms the primary target."},
+	{"new-horizons:shadowGift", "Sacrifice part of a friendly stack's health for the rest of battle to temporarily add Shadow damage to its attacks."},
+	{"new-horizons:vampirism", "Let one friendly stack heal surviving creatures through damage from its attacks and retaliations; fallen creatures stay dead."},
+	{"new-horizons:reanimate", "Heal one friendly stack and temporarily restore fallen creatures from usable remains; restored creatures disappear after battle."},
+	{"new-horizons:soulReaper", "Deal Shadow damage that increases with the enemy stack's missing health, then finish survivors left near death."},
+	{"new-horizons:doom", "Reduce one enemy stack's damage, retaliation damage, Initiative, movement and Morale."},
+	{"new-horizons:shieldOfChaos", "Protect one stack against physical and magical damage while greatly reducing its Morale and Luck."},
+	{"new-horizons:handOfFate", "Damage one enemy stack, then strike another random surviving stack, friend or foe, based on the first target's actual health lost."},
+	{"new-horizons:holyWrath", "Deal Holy damage to one enemy stack, with extra damage against Undead and Inferno creatures."},
+	{"new-horizons:holyArmor", "Reduce magical damage taken by one friendly stack; non-damaging spells can still affect it."},
+	{"new-horizons:heavenlyGale", "Protect your army against physical ranged projectiles, including siege shots; melee attacks and spells remain effective."},
+	{"new-horizons:divineRetribution", "Protect one friendly stack by punishing creatures that damage it with Holy damage at round end."},
+	{"new-horizons:entangle", "Root one enemy ground stack, preventing movement while allowing attacks and retaliation; displacement breaks the roots."},
+	{"new-horizons:summonTrolls", "Summon temporary Trolls on an empty hex; they retain their natural regeneration and disappear after combat."},
+	{"new-horizons:elementalConvergence", "Summon temporary Elementals determined by the battlefield terrain on an empty hex."},
+	{"new-horizons:naturesWrath", "Chain through nearby stacks, damaging enemies and healing surviving allies; each jump weakens the effect."},
+	{"new-horizons:pandemonium", "Damage every battlefield stack, including allies, according to how many distinct debuffs it has."},
+	{"new-horizons:realityWarp", "Exchange transferable temporary magical buffs and debuffs between one friendly and one enemy stack, preserving their strength and remaining duration."},
+	{"new-horizons:polymorph", "Temporarily transform one enemy stack into a random same-tier creature, preserving its current total health."},
+	{"new-horizons:blink", "Teleport one friendly or enemy stack to a random nearby legal position without granting another activation."},
+	{"new-horizons:confusion", "Make one enemy stack randomly attack an enemy, Defend, or wander during its next activation; it will not attack its allies."},
+	{"new-horizons:puppetMaster", "Control one enemy stack for one activation, then grant it temporary immunity to further mental control."},
+	{"new-horizons:hydrasVitality", "Temporarily increase one friendly living stack's maximum health and regenerate surviving creatures each activation, without restoring casualties."},
+	{"new-horizons:verdantPrison", "Surround one enemy stack with temporary Dendroid Guards on available adjacent hexes."},
+	{"new-horizons:vengefulVines", "Damage enemies across three connected hexes and reduce their movement Speed for two rounds; allies are unharmed."},
+	{"new-horizons:theChosen", "Empower one friendly living stack with extra attacks, unlimited retaliations, Flying and Jousting; only one stack per army can be Chosen."},
+	{"new-horizons:purify", "Remove selected temporary magical debuffs from friendly stacks in an area; this spell does not heal."},
+	{"new-horizons:sanctuary", "Protect one friendly stack from deliberate attacks and hostile single-target spells until it moves or acts offensively; area effects still apply."},
+	{"new-horizons:guardianSpirit", "Give one friendly stack temporary protective health that absorbs physical creature damage; spells bypass it."},
+	{"new-horizons:lifeDrain", "Damage one enemy stack and heal surviving creatures in one friendly stack according to the damage actually dealt."},
+	{"new-horizons:stormOfDaggers", "Divide magical damage among one to five selected enemy stacks; selecting more targets increases the total damage pool."},
+	{"new-horizons:phantomArmy", "Temporarily copy one friendly stack; the phantom deals normal damage, resists physical damage and is vulnerable to magic."},
+	{"new-horizons:regeneration", "Restore part of surviving creatures' recent damage at their next activation for three rounds; fallen creatures stay dead."},
+	{"new-horizons:massRegeneration", "Give all eligible friendly living stacks Regeneration for three rounds, healing surviving creatures without restoring casualties."},
+	{"core:cure", "Heal one friendly stack and remove physical afflictions; fallen creatures stay dead."},
+	{"core:curse", "Make one enemy stack always roll its minimum creature damage."},
+	{"new-horizons:massCurse", "Make all eligible enemy stacks always roll their minimum creature damage."},
+	{"new-horizons:massSorrow", "Temporarily reduce the Morale of all eligible enemy stacks."},
+	{"core:dispel", "Remove all temporary magical buffs and debuffs from one friendly or enemy stack."},
+	{"new-horizons:disintegrate", "Damage one enemy stack and destroy the remains of creatures killed, preventing their restoration."},
+	{"core:earthquake", "Damage fortifications during a siege, or damage grounded creatures and create movement-hindering fractured ground in field combat."},
+	{"core:fireWall", "Create a wall of fire that burns creatures crossing or standing in it, including grounded flyers."},
+	{"core:fireball", "Burn every creature in a small area, including allies."},
+	{"core:forgetfulness", "Restrict one enemy stack to moving, basic melee attacks, Wait and Defend; its ordinary retaliation remains available."},
+	{"core:frostRing", "Damage creatures in a ring around the selected hex, including allies; the center is unharmed."},
+	{"core:iceBolt", "Deal cold damage to one enemy stack without changing its Speed or Initiative."},
+	{"core:implosion", "Damage one enemy stack based on its current health, then pull nearby creatures one hex closer."},
+	{"core:inferno", "Burn creatures in an area, including allies."},
+	{"core:landMine", "Place concealed explosive mines that damage enemy creatures stepping on them."},
+	{"core:lightningBolt", "Deal lightning damage to one enemy stack."},
+	{"core:magicArrow", "Deal magical damage to one enemy stack; Overcharge lets you spend more Mana for a stronger hit."},
+	{"core:meteorShower", "Damage creatures in an area, including allies, and damage nearby fortifications."},
+	{"core:misfortune", "Prevent one enemy stack's positive Luck from triggering and reduce the chance of its favorable random abilities."},
+	{"new-horizons:poison", "Poison one living enemy stack with increasing physical damage over its next three activations; Cure removes it, Dispel does not."},
+	{"core:quicksand", "Place concealed patches that stop walking creatures when entered; flying creatures ignore them."},
+	{"new-horizons:transfigureMatter", "Turn one ordinary physical obstacle into temporary Diamond Golems."},
+	{"core:resurrection", "Heal one friendly stack and permanently restore fallen creatures, up to its battle-start capacity."},
+	{"core:slow", "Temporarily reduce one enemy stack's Speed and Initiative."},
+	{"new-horizons:massSlow", "Temporarily reduce every eligible enemy stack's Speed and Initiative with a weaker version of Slow."},
+	{"core:sorrow", "Temporarily reduce one enemy stack's Morale."},
+	{"core:teleport", "Move one friendly stack to a selected legal hex, ignoring intervening barriers without granting another activation."},
+	{"new-horizons:spellLock", "Seal one stack against magic; remove allied debuffs or enemy buffs, and pause remaining magical effects' timers."},
+	{"new-horizons:timeStop", "Freeze an area until your next Hero Action; affected creatures cannot act or receive damage, healing or new effects, and their timers pause."},
+	{"core:summonBoat", "Bring an available boat to an adjacent legal water tile; uses your one Adventure Spell for the day."},
+	{"core:waterWalk", "Walk across water at increased movement cost until day end; finish on land and cast no other Adventure Spell that day."},
+	{"core:townPortal", "Teleport to your nearest controlled town and end today's movement; uses your one Adventure Spell for the day."},
+	{"core:fly", "Fly across terrain at increased movement cost until day end; protected barriers remain impassable, and you must land legally."},
+	{"core:dimensionDoor", "Teleport a short distance to a visible legal tile and end today's movement; protected barriers remain impassable."}
+};
+}
+
+std::string spellSummaryForHero(const CGHeroInstance * hero, const spells::Spell * spell, int schoolLevel)
+{
+	if(!spell)
+		return {};
+	if(hero && rulesActive(hero->getMagicRules())
+		&& (spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId())
+			|| isAdventureSpell(hero->getMagicRules(), spell->getId())))
+	{
+		for(const auto & [identity, summary] : spellSummaries)
+			if(identity == spell->getJsonKey())
+				return std::string(summary);
+	}
+	return spellDescriptionForHero(hero, spell, schoolLevel);
 }
 }

@@ -14,7 +14,6 @@ namespace newHorizonsMagic
 /// Caster-side deterministic scalar inputs; no recipient lookup or cast execution.
 struct DLL_LINKAGE HeroSpellCastContext
 {
-	int32_t warcasting = 0;
 	int32_t arcaneFocus = 0;
 	int32_t consecrated = 0;
 	int32_t counterpressure = 0;
@@ -24,7 +23,8 @@ struct DLL_LINKAGE HeroSpellCastContext
 	int32_t componentBonusPercent() const;
 };
 DLL_LINKAGE HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero,
-	const CSpell & spell, const CBattleInfoCallback & callback, bool followup, bool concentrated = false);
+	const CSpell & spell, const CBattleInfoCallback & callback, bool followup, bool concentrated = false,
+	bool automaticHeroCast = false);
 DLL_LINKAGE bool heroCastExtendAvailable(const CGHeroInstance & hero, const CSpell & spell,
 	const CBattleInfoCallback & callback, int32_t effectLevel);
 DLL_LINKAGE int32_t brimstoneSpellPowerBonus(const CGHeroInstance & hero, const CBattleInfoCallback & callback);

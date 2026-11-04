@@ -13,14 +13,14 @@
 namespace newHorizonsMagic
 {
 SpellEffectPreview buffSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const JsonNode & rules, int32_t power, int32_t coefficient, int32_t warcasting, int32_t empower)
+	const JsonNode & rules, int32_t power, int32_t coefficient, int32_t empower)
 {
 	const auto family = spellVariantBase(rules, spell.getId());
 	std::string label;
 	double value;
 	if(family == SpellID::SLOW)
 	{
-		value = -newHorizonsSorceryRevision::slowBaseReduction(power, coefficient, warcasting, empower);
+		value = -newHorizonsSorceryRevision::slowBaseReduction(power, coefficient, empower);
 		value = casterEnchantValue(&hero, family, value);
 		value = newHorizonsSorceryRevision::scaleSlowVariantValue(value, spellVariantPowerPercent(rules, spell.getId()));
 		label = newHorizonsSorceryRevision::slowAffectsSpeed(rules) ? "slowDual" : "slow";

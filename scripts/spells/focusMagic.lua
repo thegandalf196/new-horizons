@@ -19,7 +19,6 @@ function Script:apply(mechanics, server, target)
 	local battle = mechanics:getBattle()
 	local spellKey = mechanics:getSpell():getJsonKey()
 	local casterSide = mechanics:getCasterSide()
-	local basisPoints = mechanics:getArcaneBreachMarkBasisPoints()
 	local heroCaster = mechanics:getHeroCaster()
 	-- Store the provenance on the enchantment itself so it survives saves and
 	-- later perk changes. Missing parameters on older enchantments mean false.
@@ -45,7 +44,7 @@ function Script:apply(mechanics, server, target)
 			server:addUnitBonus(battle, unit, {
 				type = "COMBAT_EVENT_TRIGGER",
 				subtype = FOCUS_MAGIC_EVENT,
-				val = basisPoints,
+				val = mechanics:getRecipientArcaneBreachMarkBasisPoints(unit),
 				duration = ENUM.BonusDuration.nTurns,
 				turns = mechanics:adjustEffectDuration(DURATION_TURNS),
 				sourceType = ENUM.BonusSource.spellEffect,

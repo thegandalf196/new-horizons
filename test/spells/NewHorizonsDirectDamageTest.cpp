@@ -75,7 +75,7 @@ TEST(NewHorizonsDirectDamageTest, DamageSpecialtySupportsLargestDivisorAndReject
 	EXPECT_EQ(largest.evaluateBasisPoints(maximum, maximum, 100000, 1000, 15), INT64_C(127500000));
 	const int64_t denominator = static_cast<int64_t>(maximum) * INT64_C(2000000000);
 	EXPECT_EQ(spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		denominator - 1, maximum, 100000, 1000, 1000, 15), INT64_C(2782999999999))
+		denominator - 1, maximum, 100000, 1000, 15), INT64_C(252999999999))
 		<< "The remainder loop must not overflow signed arithmetic with a large divisor";
 	EXPECT_THROW(largest.evaluateBasisPoints(1, 1, 10000, 0, 14), std::runtime_error);
 	EXPECT_THROW(largest.evaluateBasisPoints(1, 1, 10000, 0, -1), std::runtime_error);

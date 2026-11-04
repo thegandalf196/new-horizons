@@ -69,6 +69,7 @@
 #include "windows/CSpellWindow.h"
 #include "windows/CTutorialWindow.h"
 #include "windows/GUIClasses.h"
+#include "windows/CLevelWindow.h"
 #include "windows/HeroMasteryWindow.h"
 #include "windows/InfoWindows.h"
 #include "windows/QuickRecruitmentWindow.h"
@@ -1090,14 +1091,14 @@ void CPlayerInterface::showInfoDialog(const std::string & text, std::shared_ptr<
 	showInfoDialog(text, intComps, soundBase::sound_todo);
 }
 
-void CPlayerInterface::showInfoDialog(const std::string &text, const std::vector<std::shared_ptr<CComponent>> & components, int soundID)
+void CPlayerInterface::showInfoDialog(const std::string &text, const std::vector<std::shared_ptr<CComponent>> & components, int soundID, const std::string & details)
 {
 	LOG_TRACE_PARAMS(logGlobal, "player=%s, text=%s, is GAME->interface()=%d", playerID % text % (this==GAME->interface()));
 	if (settings["session"]["autoSkip"].Bool() && !ENGINE->isKeyboardShiftDown())
 	{
 		return;
 	}
-	std::shared_ptr<CInfoWindow> temp = CInfoWindow::create(text, playerID, components);
+	std::shared_ptr<CInfoWindow> temp = CInfoWindow::create(text, playerID, components, details);
 	auto showDialog = [this, temp, soundID]()
 	{
 		ENGINE->sound().playSound(static_cast<soundBase::soundID>(soundID));

@@ -354,17 +354,20 @@ INSTANTIATE_TEST_SUITE_P(RegisteredStrongholdProfiles, ApprovedFortressStarts,
 	::testing::ValuesIn(strongholdStarts),
 	[](const auto & info) { return std::string(info.param.hero).substr(5); });
 
-TEST_F(NewHorizonsStartingDevelopmentTest, TerekDefaultTacticsLeavesActualHasteBookAndSpecialtyUnchanged)
+TEST_F(NewHorizonsStartingDevelopmentTest, TerekDefaultTacticsUsesCurrentFocusMagicBookAndSpecialty)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(strongholdStarts[0]));
-	EXPECT_TRUE(actor()->spellbookContainsSpell(SpellID::HASTE));
-	EXPECT_EQ(actor()->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 20);
+	const SpellID focus(SpellID::decode("new-horizons:focusMagic"));
+	EXPECT_FALSE(actor()->spellbookContainsSpell(SpellID::HASTE));
+	EXPECT_TRUE(actor()->spellbookContainsSpell(focus));
+	EXPECT_EQ(actor()->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
+	EXPECT_EQ(actor()->getNonDamageSpellSpecialtyBonusPercent(focus), 20);
 }
 
 TEST_F(NewHorizonsStartingDevelopmentTest, OrisDefaultEagleEyeSelectsObservedUnknownSpellWithoutMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(strongholdStarts[1]));
-	const SpellID observed(SpellID::HASTE);
+	const SpellID observed(SpellID::decode("new-horizons:focusMagic"));
 	actor()->removeSpellFromSpellbook(observed);
 	ASSERT_TRUE(actor()->canLearnSpell(observed.toSpell()));
 	ASSERT_TRUE(newHorizonsEagleEye::enabled(actor()));

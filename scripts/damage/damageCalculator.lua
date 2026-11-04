@@ -227,6 +227,9 @@ function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense
 		ignored = ignored + math.floor((info.meleeDefenseIgnorePercent or 0) * defense / 100)
 	end
 
+	if targetDefense then
+		ignored = ignored + math.floor((info.arcaneInspirationDefenseIgnorePercent or 0) * math.max(0, defense) / 100)
+	end
 	return -math.min(ignored, defense)
 end
 
@@ -577,7 +580,9 @@ function Script:calculate(battle, info)
 		return math.min(cap, math.max(1, math.floor(damage)))
 	end
 
-	local damageFactor = raising * lowering * physicalDamageReductionMultiplier
+	local inspirationMultiplier = (100 + (info.arcaneInspirationDamageBonusPercent or 0)) / 100
+		* (100 - (info.spellshockOutputPenaltyPercent or 0)) / 100
+	local damageFactor = raising * lowering * physicalDamageReductionMultiplier * inspirationMultiplier
 		* heroOrderMultiplier * preemptiveDamageMultiplier * cleaveMultiplier * archeryRangedMultiplier * rangedFollowUpMultiplier
 		* activationOutputMultiplier * sylvanMultiplier * sylvanDefenseMultiplier * phantomDamageMultiplier
 		* bulwarkImmovableMultiplier
@@ -595,7 +600,7 @@ function Script:calculate(battle, info)
 	local killsMin, killsMax = self:getCasualties(info, damageMin, damageMax)
 	local attackBeforeDefenseFactor = raising * heroOrderMultiplier * preemptiveDamageMultiplier
 		* cleaveMultiplier * rangedFollowUpMultiplier * activationOutputMultiplier
-		* sylvanMultiplier * ordinaryCreatureSpecialtyMultiplier * finalLuckMultiplier
+		* sylvanMultiplier * ordinaryCreatureSpecialtyMultiplier * finalLuckMultiplier * inspirationMultiplier
 
 	return {
 		damage = { min = damageMin, max = damageMax },

@@ -9,6 +9,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/entities/hero/CHero.h"
+#include "../../../lib/entities/hero/HeroStartingProjection.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForLobby.h"
@@ -45,6 +46,7 @@ class NewHorizonsHasteSpecialtyTest : public HeroCommandFixture
 {
 protected:
 	bool historicalList = false;
+	bool currentRoster = false;
 	CGHeroInstance * ordinary = nullptr;
 	CStack * target = nullptr;
 	CStack * controlTarget = nullptr;
@@ -58,9 +60,18 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+		// Existing Haste cases are captures from before its hero-roster retirement.
+		if(!currentRoster)
+			magic["spells"]["core:haste"].Struct().erase("heroAccess");
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(currentRoster)
+		{
+			rules.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+			return;
+		}
 		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
 		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
@@ -105,7 +116,7 @@ protected:
 	}
 	void prepare(const std::string & specialist = "core:cyra", int rawSpellPower = 67)
 	{
-		const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+		const CreatureID pikeman(CreatureID::decode(currentRoster ? "core:archer" : "core:pikeman"));
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(specialist)), PlayerColor(0))
@@ -125,12 +136,16 @@ protected:
 		{
 			if(!hero->getArt(ArtifactPosition::SPELLBOOK))
 				giveArtifact(hero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-			hero->addSpellToSpellbook(SpellID::HASTE);
+			if(!currentRoster)
+				hero->addSpellToSpellbook(SpellID::HASTE);
 			hero->setPrimarySkill(PrimarySkill::SPELL_POWER, rawSpellPower, ChangeValueMode::ABSOLUTE);
 			hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(SORCERY)),
 				MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 			hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(SPELLCRAFT)),
 				MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+			if(currentRoster)
+				hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:warcasting")),
+					MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 			setTestSpellPointTotal(hero, 100);
 		}
 		startBattle();
@@ -193,6 +208,81 @@ protected:
 		EXPECT_TRUE(found);
 	}
 };
+
+
+class CurrentHasteSuccessorTest : public NewHorizonsHasteSpecialtyTest,
+	public testing::WithParamInterface<const char *> {};
+
+TEST_P(CurrentHasteSuccessorTest, DefaultsPreviewSpecialtyAndPaidFocusCastAgree)
+{
+	currentRoster = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(GetParam(), 100));
+	const SpellID focus(SpellID::decode("new-horizons:focusMagic"));
+	const bool specialist = std::string_view(GetParam()) != "core:fafner";
+	const auto * type = attackerSideHero->getHeroType();
+	ASSERT_TRUE(type->spells.contains(SpellID::HASTE));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(SpellID::HASTE));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(focus));
+	const auto context = newHorizonsHeroes::startingHeroContext(gameState()->getSettings());
+	const auto projected = newHorizonsHeroes::projectStartingHero(*type, context);
+	EXPECT_FALSE(projected.spells.contains(SpellID::HASTE));
+	EXPECT_TRUE(projected.spells.contains(focus));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(focus), specialist ? 20 : 0);
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
+	if(specialist)
+	{
+		const auto selected = newHorizonsHeroes::resolveSpecialtyPresentation(*type,
+			attackerSideHero->getPrimaryGrowthRules(), attackerSideHero->getMagicRules(), std::nullopt);
+		const auto captured = attackerSideHero->getSpecialtyPresentation();
+		EXPECT_EQ(selected.spell, focus);
+		EXPECT_EQ(captured.spell, focus);
+		EXPECT_EQ(selected.name, focus.toSpell()->getNameTranslated());
+		EXPECT_EQ(captured.name, selected.name);
+		EXPECT_NE(captured.description.find("Creature Defense penetration per Arcane Breach mark"), std::string::npos);
+		EXPECT_EQ(captured.description.find("Speed bonus"), std::string::npos);
+		EXPECT_EQ(hastePrototype(attackerSideHero)->parameters, nullptr);
+	}
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, focus.toSpell());
+	const auto mechanics = focus.toSpell()->battleMechanics(&cast);
+	const int base = mechanics->getArcaneBreachMarkBasisPoints();
+	// No school, Spellcraft or Warcasting: the specialty scales only the SP component.
+	EXPECT_EQ(base, specialist ? 860 : 800);
+	const bool startsWithMetamagic = std::string_view(GetParam()) == "core:fafner"
+		|| std::string_view(GetParam()) == "core:cyra";
+	EXPECT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:metamagic"), startsWithMetamagic ? 1 : 0);
+	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER).points, startsWithMetamagic ? 1 : 0);
+	// Current round-one Basic Metamagic adds 1% to the recipient's outgoing magnitude.
+	const int predicted = mechanics->getRecipientArcaneBreachMarkBasisPoints(target);
+	EXPECT_EQ(predicted, startsWithMetamagic ? (specialist ? 868 : 808) : (specialist ? 860 : 800));
+	const auto mana = attackerSideHero->getManaAvailable();
+	BattleAction action;
+	action.actionType = EActionType::HERO_SPELL;
+	action.side = BattleSide::ATTACKER;
+	action.spell = focus;
+	action.aimToUnit(target);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
+	const auto effects = target->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(focus)));
+	ASSERT_EQ(effects->size(), 1u);
+	EXPECT_EQ(effects->front()->type, BonusType::COMBAT_EVENT_TRIGGER);
+	EXPECT_EQ(effects->front()->val, predicted);
+	CMemorySerializer memory;
+	memory.oser & *gameState();
+	CGameState copied;
+	copied.preInit(LIBRARY);
+	memory.iser.cb = &copied;
+	memory.iser.loadingGamestate = true;
+	memory.iser & copied;
+	const auto * restored = copied.getHero(attackerSideHero->id);
+	ASSERT_NE(restored, nullptr);
+	EXPECT_TRUE(restored->spellbookContainsSpell(focus));
+	EXPECT_FALSE(restored->spellbookContainsSpell(SpellID::HASTE));
+	EXPECT_EQ(restored->getNonDamageSpellSpecialtyBonusPercent(focus), specialist ? 20 : 0);
+	if(specialist)
+		EXPECT_EQ(restored->getSpecialtyPresentation().spell, focus);
+}
+INSTANTIATE_TEST_SUITE_P(CurrentRetiredHaste, CurrentHasteSuccessorTest,
+	testing::Values("core:fafner", "core:cyra", "core:brissa", "core:terek"));
 
 TEST_F(NewHorizonsHasteSpecialtyTest, CyraPaidCastScalesDurationOnlyAndKeepsPrototype)
 {
@@ -467,39 +557,5 @@ TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawRead
 		oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS)));
 }
 
-TEST_F(NewHorizonsHasteSpecialtyTest, PreviousVeteranReaderRejectsCapturedHeroAndWorldProfiles)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	CMemorySerializer heroMemory;
-	attackerSideHero->serialize(heroMemory.oser);
-	heroMemory.iser.version = ESerializationVersion::NEW_HORIZONS_VETERAN_COHESION;
-	heroMemory.iser.cb = gameState().get();
-	heroMemory.iser.loadingGamestate = true;
-	CGHeroInstance restoredHero(gameState().get());
-	try
-	{
-		restoredHero.serialize(heroMemory.iser);
-		FAIL() << "Old framing must reject the captured hero Haste profile";
-	}
-	catch(const std::runtime_error & error)
-	{
-		EXPECT_NE(std::string(error.what()).find("Haste specialty rules"), std::string::npos);
-	}
-	CMemorySerializer worldMemory;
-	gameState()->serialize(worldMemory.oser);
-	worldMemory.iser.version = ESerializationVersion::NEW_HORIZONS_VETERAN_COHESION;
-	CGameState restoredWorld;
-	restoredWorld.preInit(LIBRARY);
-	worldMemory.iser.cb = &restoredWorld;
-	worldMemory.iser.loadingGamestate = true;
-	try
-	{
-		restoredWorld.serialize(worldMemory.iser);
-		FAIL() << "Old framing must reject a world containing captured Haste rules";
-	}
-	catch(const std::runtime_error & error)
-	{
-		EXPECT_NE(std::string(error.what()).find("Haste specialty rules"), std::string::npos);
-	}
-}
+
 }

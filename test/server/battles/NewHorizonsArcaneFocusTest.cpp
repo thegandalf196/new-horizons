@@ -100,8 +100,7 @@ TEST_F(NewHorizonsArcaneFocusTest, FirstSorrowScalesOnlyItsPowerTermAndHistorySu
 
 	const auto & rules = battle()->getBattle()->getMagicRules();
 	EXPECT_EQ(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 54), 1);
-	EXPECT_EQ(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 54,
-		0, 0, newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS_BONUS_PERCENT), 2)
+	EXPECT_EQ(newHorizonsMagic::sorrowMoralePenalty(rules, attackerSideHero, SpellID::SORROW, 54, 0, newHorizonsMagic::SPELLCRAFT_ARCANE_FOCUS_BONUS_PERCENT), 2)
 		<< "The fixed base Morale penalty remains one; only the Spell Power term crosses its threshold";
 
 	const auto magicArrow = newHorizonsMagic::spellDirectDamage(rules, "core:magicArrow");

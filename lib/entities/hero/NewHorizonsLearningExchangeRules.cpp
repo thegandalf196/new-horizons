@@ -20,11 +20,7 @@ const char * rowName(LearningExchangeSpecialtyKind kind)
 	}
 	throw std::invalid_argument("Invalid learning exchange specialty kind");
 }
-const char * directionName(LearningExchangeSpecialtyKind kind)
-{
-	return kind == LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR
-		? "additionalSpellsTaught" : "additionalSpellsReceived";
-}
+
 }
 void validateLearningExchangeSpecialtiesSerialization(const JsonNode & development, bool supported)
 {
@@ -40,10 +36,9 @@ void validateLearningExchangeSpecialtiesSerialization(const JsonNode & developme
 		if(!table.Struct().contains(rowName(kind)))
 			continue;
 		const auto & row = table[rowName(kind)];
-		detail::fields(row, {"learningPercentPerLevel", "learningMaximumPercent", directionName(kind)});
+		detail::fields(row, {"learningPercentPerLevel", "learningMaximumPercent"});
 		detail::require(detail::integer(row["learningPercentPerLevel"], 0, 1000), "exchange learning percentage per level");
 		detail::require(detail::integer(row["learningMaximumPercent"], 0, 200), "exchange learning maximum percentage");
-		detail::require(detail::integer(row[directionName(kind)], 0, 1), "additional directional Scholar spells");
 	}
 }
 std::optional<LearningExchangeSpecialtyRules> learningExchangeSpecialtyRules(
@@ -59,10 +54,6 @@ std::optional<LearningExchangeSpecialtyRules> learningExchangeSpecialtyRules(
 	LearningExchangeSpecialtyRules result;
 	result.learningPercentPerLevel = static_cast<int>(row["learningPercentPerLevel"].Integer());
 	result.learningMaximumPercent = static_cast<int>(row["learningMaximumPercent"].Integer());
-	if(kind == LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR)
-		result.additionalSpellsTaught = static_cast<int>(row[directionName(kind)].Integer());
-	else
-		result.additionalSpellsReceived = static_cast<int>(row[directionName(kind)].Integer());
 	return result;
 }
 std::optional<LearningExchangeSpecialtyRules> learningExchangeSpecialtyRules(const CGHeroInstance * hero)

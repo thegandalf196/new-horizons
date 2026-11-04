@@ -34,14 +34,14 @@ int32_t currentVampirismHealBasisPoints(const ::spells::Mechanics & mechanics)
 		std::string(newHorizonsMagic::SHADOW_MAGIC_SKILL),
 		std::string(newHorizonsMagic::SHADOW_NIGHT_FEEDER_PERK));
 	return newHorizonsMagic::vampirismHealBasisPoints(std::max<int32_t>(0, mechanics.getEffectPower()),
-		mechanics.getSpellPowerCoefficientBasisPoints(), mechanics.getWarcastingBonusPercent(),
+		mechanics.getSpellPowerCoefficientBasisPoints(),
 		mechanics.getEmpowerSpellBonusPercent(), nightFeeder);
 }
 
 int32_t currentDoomCripplingPenaltyPercent(const ::spells::Mechanics & mechanics)
 {
 	return newHorizonsMagic::doomCripplingPenaltyPercent(mechanics.getEffectPower(),
-		mechanics.getSpellPowerCoefficientBasisPoints(), mechanics.getWarcastingBonusPercent(),
+		mechanics.getSpellPowerCoefficientBasisPoints(),
 		mechanics.getEmpowerSpellBonusPercent());
 }
 int32_t currentSoulChainEchoBasisPoints(const ::spells::Mechanics & mechanics)
@@ -68,6 +68,6 @@ void registerShadowMagnitudeMethods(MethodRegistrar & registrar)
 		"Target eligibility and conditional Initiative application are unchanged. No RNG.");
 	registrar.function<&currentSoulChainEchoBasisPoints>("getSoulChainEchoBasisPoints", {},
 		"Returns this cast's Soul Chain echo rate from its captured coefficient and Soul Binder. "
-		"Adds no independent Warcasting/Empower multiplier and does not resolve damage or links.");
+		"Adds no independent Empower multiplier and does not resolve damage or links.");
 }
 }

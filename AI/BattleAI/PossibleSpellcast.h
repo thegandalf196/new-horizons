@@ -93,6 +93,8 @@ public:
 	float spellSoulChainDelayedValue = 0.0f;
 	/// Net three-round offense minus real HP cost for canonical Shadow Gift.
 	float spellShadowGiftHeuristicValue = 0.0f;
+	/// Weighted completion marginal from the existing finite outcome loop, added once.
+	std::optional<float> spellInspirationExpectedValue;
 	/// Canonical New Horizons Fire Wall placement direction.  The target vector
 	/// used during AI evaluation contains the complete three-hex footprint, but
 	/// the authoritative action protocol carries only its start hex and this

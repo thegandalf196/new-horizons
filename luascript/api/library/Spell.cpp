@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../../lib/spells/NewHorizonsMetamagicEffects.h"
 
 #include "Spell.h"
 
@@ -102,10 +103,11 @@ int64_t SpellProxy::adjustDamage(const Spell & spell, const IBattleInfoCallback 
 			== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 	const int perkReductionBasisPoints = owner->isMagical()
 		? cb->battleGetPerkMagicalReductionBasisPoints(&target) : 0;
-	return owner->adjustRawDamage(caster, &target, rawDamage, 0,
+	const auto ordinary = owner->adjustRawDamage(caster, &target, rawDamage, 0,
 		cb->battleGetHoldTheLineMagicalReductionBasisPoints(&target), 100,
 		cb->battleUsesNewHorizonsMultiplicativeMDR(), useFractionalMagicalDamageReduction, true,
 		perkReductionBasisPoints);
+	return newHorizonsMetamagic::spellDamage(ordinary, nullptr, *cb, &target, caster->getCasterOwner());
 }
 
 std::vector<const spells::SpellSchoolType *> SpellProxy::getSchools(const Spell & spell)

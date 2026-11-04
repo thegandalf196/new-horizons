@@ -48,6 +48,9 @@ bool resolveAerialSupremacyPresentation(const CHero & hero, const JsonNode & rul
 	if(!enabled)
 		return false;
 	result.name = "Aerial Supremacy";
+	result.summary = *enabled
+		? "Griffins counter ranged attacks within movement range with melee, then return, once per round; Royal Griffins use ordinary retaliation limits."
+		: "Aerial Supremacy is disabled for this game.";
 	result.creature = CreatureID(CreatureID::decode("core:griffin"));
 	if(*enabled)
 		result.artwork = "newHorizons/heroSpecialties/EdricAerialSupremacy";

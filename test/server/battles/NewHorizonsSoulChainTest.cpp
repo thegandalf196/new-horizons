@@ -224,27 +224,23 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsSoulChainTest, CombatCastingEchoUsesSerializedCaptureAfterReadinessConsumption)
+TEST_F(NewHorizonsSoulChainTest, SpellPenetrationEchoUsesSerializedCapture)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto warcasting = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
-	ASSERT_TRUE(warcasting.hasValue());
-	attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.martialChanneling"});
-	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.combatCasting"});
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_TRUE(spellcraft.hasValue());
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"});
 	primary->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::CREATURE_ABILITY, 50,
 		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	battle()->getSide(BattleSide::ATTACKER).warcastingState.recordAcceptedAction(
-		AlternatingHeroActionState::Action::ORDER, battle()->getRound(), 20);
 	ASSERT_TRUE(cast(BattleSide::ATTACKER, {primary, secondary}));
 	const auto link = newHorizonsSoulChain::linkFor(secondary);
 	ASSERT_TRUE(link.has_value());
-	EXPECT_EQ(spells::capturedMdrPenetrations(link->mdrPenetration, primary->unitId()), (std::vector<int>{15}));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).warcastingState.bonusFor(
-		AlternatingHeroActionState::Action::SPELL, battle()->getRound()), 0);
+	EXPECT_EQ(spells::capturedMdrPenetrations(link->mdrPenetration, primary->unitId()), (std::vector<int>{20}));
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	const auto raw = newHorizonsSoulChain::echoDamage(500, link->echoBasisPoints);
-	const auto expected = spells::calculateMagicalDamageReduction(raw, {50}, std::vector<int>{15}).damageWithPenetration;
+	const auto expected = spells::calculateMagicalDamageReduction(raw, {50}, std::vector<int>{20}).damageWithPenetration;
 	const auto before = primary->getAvailableHealth();
 	injure(secondary, 500, attacker);
 	EXPECT_EQ(before - primary->getAvailableHealth(), expected);

@@ -11,7 +11,6 @@
 #include "../../SpellPointTestUtils.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
-#include "../../../lib/battle/AlternatingHeroActionState.h"
 #include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/bonuses/Limiters.h"
@@ -821,7 +820,7 @@ TEST_F(NewHorizonsTimeStopContentTest, SchoolRankThresholdsUseSharedPreviewAndAu
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 87, ChangeValueMode::ABSOLUTE);
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), MasteryLevel::NONE);
 	EXPECT_NE(description.find("115% of normal strength"), std::string::npos);
-	EXPECT_NE(description.find("Radius before battle-only Warcasting (hexes): 2 at Spell Power 87"),
+	EXPECT_NE(description.find("Radius (hexes): 2 at Spell Power 87"),
 		std::string::npos);
 
 	attackerSideHero->setSecSkillLevel(SecondarySkill(sorceryId), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
@@ -888,7 +887,7 @@ TEST_P(NewHorizonsTimeStopLegacyProfileTest, SchoolRankKeepsTheSavedV1V2RadiusAn
 	const auto description = newHorizonsMagic::spellDescriptionForHero(attackerSideHero, spell.toSpell(), MasteryLevel::NONE);
 	EXPECT_NE(description.find("School rank does not increase this radius."),
 		std::string::npos);
-	EXPECT_NE(description.find("Radius before battle-only Warcasting (hexes): 1 at Spell Power 99"), std::string::npos);
+	EXPECT_NE(description.find("Radius (hexes): 1 at Spell Power 99"), std::string::npos);
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -913,7 +912,7 @@ TEST(NewHorizonsTimeStopLegacyProfileTest, SavedV1RulesKeepTheUnrankedCoefficien
 		EXPECT_EQ(newHorizonsMagic::schoolRankPowerCoefficientPercent(rules, rank), 100);
 }
 
-TEST_F(NewHorizonsTimeStopContentTest, WarcastingScalesOnlyTheSpellPowerRadiusTerm)
+TEST_F(NewHorizonsTimeStopContentTest, RawSpellPowerThresholdMatchesPreviewAndAuthoritativeRadius)
 {
 	const auto spell = timeStopSpell();
 	ASSERT_TRUE(spell.hasValue());
@@ -938,19 +937,15 @@ TEST_F(NewHorizonsTimeStopContentTest, WarcastingScalesOnlyTheSpellPowerRadiusTe
 	const spells::Target aim{spells::Destination(center)};
 	spells::BattleCast ordinaryCast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
 	const auto ordinaryMechanics = spell.toSpell()->battleMechanics(&ordinaryCast);
-	EXPECT_EQ(ordinaryMechanics->getWarcastingBonusPercent(), 0);
 	const auto ordinaryAffected = ordinaryMechanics->getAffectedStacks(aim);
 	EXPECT_EQ(std::find(ordinaryAffected.begin(), ordinaryAffected.end(), outerStack), ordinaryAffected.end());
 
-	const auto round = battle()->getRound();
-	battle()->getSide(BattleSide::ATTACKER).warcastingState = {
-		AlternatingHeroActionState::Action::SPELL, 25, round + 1};
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	spells::BattleCast empoweredCast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
 	const auto empoweredMechanics = spell.toSpell()->battleMechanics(&empoweredCast);
 	ASSERT_NE(empoweredMechanics, nullptr);
 	EXPECT_EQ(empoweredMechanics->getSchoolRankPowerCoefficientPercent(), 100);
-	EXPECT_EQ(empoweredMechanics->getWarcastingBonusPercent(), 25);
-	EXPECT_EQ(empoweredMechanics->scaleSpellPowerComponentWithCoefficient(80, 100, 100), 1);
+	EXPECT_EQ(empoweredMechanics->scaleSpellPowerComponentWithCoefficient(100, 100, 100), 1);
 	const auto empoweredAffected = empoweredMechanics->getAffectedStacks(aim);
 	EXPECT_NE(std::find(empoweredAffected.begin(), empoweredAffected.end(), outerStack), empoweredAffected.end());
 	const auto empoweredHexes = empoweredMechanics->rangeInHexes(center);

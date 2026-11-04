@@ -4,7 +4,6 @@ Script.__index = Script
 
 local SPELL_ID = "new-horizons:soulChain"
 local STATUS_TRIGGER = "core:soulChainStatus"
-local STATUS_DURATION_ROUNDS = 2
 local MAX_TARGETS = 3
 
 local function reject(problem, mechanics)
@@ -18,10 +17,6 @@ local function isValidEnemy(self, mechanics, unit)
 	return unit ~= nil and unit:isAlive() and unit:isValidTarget(false)
 		and unit:getSide() ~= mechanics:getCasterSide()
 		and not unit:isInvincible() and self:isReceptive(mechanics, unit)
-end
-
-local function echoBasisPoints(mechanics)
-	return mechanics:getSoulChainEchoBasisPoints()
 end
 
 function Script:applicableGeneral(mechanics, problem)
@@ -73,8 +68,8 @@ function Script:apply(mechanics, server, target)
 	local battle = mechanics:getBattle()
 	local spellKey = mechanics:getSpell():getJsonKey()
 	local casterSide = mechanics:getCasterSide()
-	local duration = mechanics:adjustEffectDuration(STATUS_DURATION_ROUNDS)
-	local echoPercent = echoBasisPoints(mechanics)
+	local duration = mechanics:getScriptedRoundStatusDuration()
+	server:recordResolvedSpellRecipient(primary:unitID())
 
 	for index = 2, #target do
 		local secondary = target[index].unit
@@ -92,7 +87,7 @@ function Script:apply(mechanics, server, target)
 		server:addUnitBonus(battle, secondary, {
 			type = "COMBAT_EVENT_TRIGGER",
 			subtype = STATUS_TRIGGER,
-			val = echoPercent,
+			val = mechanics:getRecipientSoulChainEchoBasisPoints(secondary),
 			duration = ENUM.BonusDuration.nTurns,
 			turns = duration,
 			sourceType = ENUM.BonusSource.spellEffect,

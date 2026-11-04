@@ -13,6 +13,36 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:metamagic.arcaneCatalyst",
+    "new-horizons:metamagic.arcaneShield",
+    "new-horizons:metamagic.manaConduit",
+    "new-horizons:metamagic.lingeringMagic",
+    "new-horizons:metamagic.arcaneFeedback",
+    "new-horizons:metamagic.spellFracture",
+    "new-horizons:metamagic.arcaneWellspring",
+    "new-horizons:metamagic.arcaneAttunement",
+    "new-horizons:metamagic.arcaneEcho",
+    "new-horizons:metamagic.arcaneSingularity",
+    "new-horizons:divineMandate.sacredCommand",
+    "new-horizons:divineMandate.knightlyValor",
+    "new-horizons:divineMandate.chaplainSReserve",
+    "new-horizons:divineMandate.shieldOfFaith",
+    "new-horizons:divineMandate.righteousDiscipline",
+    "new-horizons:divineMandate.unwaveringStandard",
+    "new-horizons:divineMandate.inspiringLeadership",
+    "new-horizons:divineMandate.consecratedArms",
+    "new-horizons:divineMandate.mandateOfHeaven",
+    "new-horizons:divineMandate.divineFury",
+    "new-horizons:demonicGating.swiftGate",
+    "new-horizons:demonicGating.wideGate",
+    "new-horizons:demonicGating.hellfireArrival",
+    "new-horizons:demonicGating.reinforcedGate",
+    "new-horizons:demonicGating.infernalOnslaught",
+    "new-horizons:demonicGating.infernalBeacon",
+    "new-horizons:demonicGating.hellstride",
+    "new-horizons:demonicGating.infernalDiscipline",
+    "new-horizons:demonicGating.masterGate",
+    "new-horizons:demonicGating.endlessLegion",
     "new-horizons:battlecraft.rapidResponse",
     "new-horizons:discipline.heroicSpirit",
     "new-horizons:command.seizeInitiative",
@@ -29,7 +59,7 @@ ACTIVE_PERKS = {
     "new-horizons:havocMagic.cataclysm",
     "new-horizons:spellcraft.preciseCasting",
     "new-horizons:command.ironWill",
-    "new-horizons:warcasting.reactiveWeave",
+    "new-horizons:warcasting.arcaneReprisal",
     "new-horizons:recruitment.drillSergeant",
     "new-horizons:recruitment.fieldInstructor",
     "new-horizons:recruitment.reinforcementDrill",
@@ -39,28 +69,24 @@ ACTIVE_PERKS = {
     "new-horizons:spellcraft.crossSchoolFormula",
     "new-horizons:spellcraft.concentration",
     "new-horizons:spellcraft.extendSpell",
-    "new-horizons:divineMandate.divineDiscipline",
-    "new-horizons:divineMandate.crownAndAltar",
     "new-horizons:recruitment.recruiterSContacts",
     "new-horizons:elementalRebirth.phoenixSpark",
-    "new-horizons:wisdom.arcaneMemory",
-    "new-horizons:divineMandate.sharedPurpose",
-    "new-horizons:learning.sage",
+    "new-horizons:wisdom.spellFamiliarity",
+    "new-horizons:learning.prodigy",
     "new-horizons:wisdom.sage",
     "new-horizons:learning.scholar",
     "new-horizons:learning.historian",
-    "new-horizons:learning.archivist",
-    "new-horizons:divineMandate.royalStandard",
+    "new-horizons:learning.duelLessons",
     "new-horizons:shroudOfMalassa.deepFlank",
     "new-horizons:shroudOfMalassa.encircledDoom",
     "new-horizons:shroudOfMalassa.vanish",
-    "new-horizons:estates.magnate",
-    "new-horizons:learning.academicStudy",
-    "new-horizons:elementalRebirth.elementalMemory",
+    "new-horizons:estates.alchemist",
+    "new-horizons:learning.seasonedAdventurer",
+    "new-horizons:elementalRebirth.elementalConduit",
     "new-horizons:discipline.veteranCohesion",
-    "new-horizons:estates.steward",
+    "new-horizons:estates.stewardship",
     "new-horizons:elementalRebirth.swiftRebirth",
-    "new-horizons:estates.prospector",
+    "new-horizons:estates.prosperity",
     "new-horizons:estates.merchantPrince",
     "new-horizons:bloodrage.firstBlood",
     "new-horizons:bloodrage.slayer",
@@ -84,15 +110,9 @@ ACTIVE_PERKS = {
     "new-horizons:luck.serendipity",
     "new-horizons:battlecraft.preEmptiveStrike",
     "new-horizons:chaosMagic.frenziedCurse",
-    "new-horizons:divineMandate.sacredCommand",
-    "new-horizons:divineMandate.knightlySequence",
-    "new-horizons:divineMandate.mandateOfHeaven",
-    "new-horizons:divineMandate.purifyingMandate",
-    "new-horizons:divineMandate.consecratedCasting",
-    "new-horizons:divineMandate.chaplainSReserve",
     "new-horizons:elementalRebirth.primalBurst",
     "new-horizons:elementalRebirth.greaterEssence",
-    "new-horizons:elementalRebirth.elementalWard",
+    "new-horizons:elementalRebirth.elementalCataclysm",
     "new-horizons:chaosMagic.mindbreaker",
     "new-horizons:diplomacy.recruitmentPact",
     "new-horizons:diplomacy.envoy",
@@ -136,21 +156,21 @@ ACTIVE_PERKS = {
     "new-horizons:spellcraft.arcaneFocus",
     "new-horizons:spellcraft.grandFormula",
     "new-horizons:estates.taxCollector",
-    "new-horizons:estates.investor",
-    "new-horizons:estates.resourceBroker",
-    "new-horizons:estates.estateNetwork",
-    "new-horizons:estates.financier",
+    "new-horizons:estates.conscription",
+    "new-horizons:estates.architect",
+    "new-horizons:estates.mercenaryCompany",
+    "new-horizons:estates.banking",
     "new-horizons:estates.landSurveyor",
     "new-horizons:learning.mentor",
-    "new-horizons:learning.masterTeacher",
-    "new-horizons:learning.quickStudy",
+    "new-horizons:learning.philosopher",
+    "new-horizons:learning.connoisseur",
     "new-horizons:learning.fieldStudy",
     "new-horizons:learning.eagleEye",
     "new-horizons:chaosMagic.paradoxShield",
-    "new-horizons:wisdom.meditation",
+    "new-horizons:wisdom.manaFasting",
     "new-horizons:wisdom.manaConservation",
-    "new-horizons:wisdom.deepKnowledge",
-    "new-horizons:wisdom.preparedCaster",
+    "new-horizons:wisdom.arcaneInsight",
+    "new-horizons:wisdom.arcaneMomentum",
     "new-horizons:wisdom.archmage",
     "new-horizons:wisdom.mysticism",
     "new-horizons:command.combinedArms",
@@ -165,11 +185,11 @@ ACTIVE_PERKS = {
     "new-horizons:chaosMagic.blinkmaster",
     "new-horizons:chaosMagic.misfortuneWeaver",
     "new-horizons:shroudOfMalassa.backstab",
-    "new-horizons:shroudOfMalassa.ambusher",
+    "new-horizons:shroudOfMalassa.shadowHex",
     "new-horizons:shroudOfMalassa.shadowAssault",
     "new-horizons:shroudOfMalassa.noEscape",
     "new-horizons:shroudOfMalassa.evasiveShroud",
-    "new-horizons:shroudOfMalassa.nightProwler",
+    "new-horizons:shroudOfMalassa.exposedWeakness",
     "new-horizons:spellcraft.empowerSpell",
     "new-horizons:spellcraft.spellPenetration",
     "new-horizons:spellcraft.overwhelmingFormula",
@@ -191,7 +211,7 @@ ACTIVE_PERKS = {
     "new-horizons:logistics.wayfarer",
     "new-horizons:logistics.masterLogistician",
     "new-horizons:wisdom.intelligence",
-    "new-horizons:wisdom.arcaneReservoir",
+    "new-horizons:wisdom.spellScholar",
     "new-horizons:lightMagic.benediction",
     "new-horizons:lightMagic.healer",
     "new-horizons:lightMagic.guardian",
@@ -214,15 +234,15 @@ ACTIVE_PERKS = {
     "new-horizons:shadowMagic.nightFeeder",
     "new-horizons:shadowMagic.reanimator",
     "new-horizons:shadowMagic.grandMalediction",
-    "new-horizons:warcasting.martialChanneling",
-    "new-horizons:warcasting.arcaneChanneling",
+    "new-horizons:warcasting.enchantedWeapons",
+    "new-horizons:warcasting.spellshock",
     "new-horizons:warcasting.spellward",
-    "new-horizons:warcasting.tacticalWeaving",
-    "new-horizons:warcasting.battleMeditation",
-    "new-horizons:warcasting.masterSynthesis",
-    "new-horizons:warcasting.perfectRhythm",
-    "new-horizons:warcasting.enchantedCommand",
-    "new-horizons:warcasting.combatCasting",
+    "new-horizons:warcasting.lingeringInspiration",
+    "new-horizons:warcasting.battleFocus",
+    "new-horizons:warcasting.grandInspiration",
+    "new-horizons:warcasting.arcaneSupremacy",
+    "new-horizons:warcasting.arcaneValor",
+    "new-horizons:warcasting.arcaneBulwark",
     "new-horizons:archery.targetCaller",
     "new-horizons:archery.skirmisher",
     "new-horizons:archery.pointBlankShot",
@@ -233,16 +253,6 @@ ACTIVE_PERKS = {
     "new-horizons:archery.crossfire",
     "new-horizons:archery.deadeye",
     "new-horizons:archery.rainOfArrows",
-    "new-horizons:demonicGating.swiftGate",
-    "new-horizons:demonicGating.wideGate",
-    "new-horizons:demonicGating.hellfireArrival",
-    "new-horizons:demonicGating.reinforcedGate",
-    "new-horizons:demonicGating.mobileGate",
-    "new-horizons:demonicGating.infernalBeacon",
-    "new-horizons:demonicGating.chainGate",
-    "new-horizons:demonicGating.reserveDiscipline",
-    "new-horizons:demonicGating.masterGate",
-    "new-horizons:demonicGating.endlessLegion",
     "new-horizons:offense.shockAssault",
     "new-horizons:offense.encirclement",
     "new-horizons:offense.pursuit",
@@ -302,16 +312,6 @@ ACTIVE_PERKS = {
     "new-horizons:necromancy.ossuary",
     "new-horizons:necromancy.lordOfTheDead",
     "new-horizons:bloodrage.warDrums",
-    "new-horizons:metamagic.spellSequencing",
-    "new-horizons:metamagic.arcaneEconomy",
-    "new-horizons:metamagic.focusedPairing",
-    "new-horizons:metamagic.arcaneAcquisition",
-    "new-horizons:metamagic.echoedDuration",
-    "new-horizons:metamagic.splitFocus",
-    "new-horizons:metamagic.formulaReserve",
-    "new-horizons:metamagic.spellBuffer",
-    "new-horizons:metamagic.grandMetamagic",
-    "new-horizons:metamagic.perfectSequence",
     "new-horizons:battlecraft.entrench",
     "new-horizons:battlecraft.battlefieldMastery",
     "new-horizons:recruitment.volunteerNetwork",
@@ -400,6 +400,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def setUpClass(cls):
         cls.rules = load("config/newHorizonsPerks.json")
         cls.schema = load("config/schemas/newHorizonsPerks.json")
+        cls.historical = load(
+            "test/testdata/vcmi-test/content/test/newHorizonsHistoricalFactionPerks.json")
 
     def test_registry_validates_against_schema(self):
         Draft4Validator(self.schema).validate(self.rules)
@@ -441,7 +443,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertNotIn('new-horizons:luck.druidicLuck', perks)
         sylvan = next(p for p in self.rules['skills']['new-horizons:sylvanLuck']['perks']
                       if p['id'] == 'new-horizons:sylvanLuck.luckyRecovery')
-        description = 'A primary voluntary melee attack deals +10% physical damage after the attacker actually moves at least 1 hex and no more than half its current movement Speed, rounded down. Stationary attacks, retaliation, collateral, reactions and follow-up attacks do not receive this bonus.'
+        description = 'Moving at least 1 hex, up to half Speed, before a melee attack grants +10% damage.'
         self.assertEqual((sylvan['name'], sylvan['requires']), ('Measured Advance', 'basic'))
         self.assertEqual(sylvan['description'], description)
         self.assertEqual(sylvan['effect'], {'status': 'active', 'description': description})
@@ -479,8 +481,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                          [('new-horizons:sylvanLuck.' + key, name, tier)
                           for key, name, tier in expected])
         perfect = next(p for p in sylvan['perks'] if p['id'].endswith('.perfectMoment'))
-        self.assertIn('total of 3.5', perfect['description'])
-        self.assertIn('does not add Luck, force a Lucky Strike', perfect['description'])
+        self.assertEqual(perfect['description'], 'Creature Lucky Strikes deal 3.5× damage.')
+        self.assertEqual(perfect['effect']['description'], perfect['description'])
 
     def test_revised_order_perks_preserve_saved_ids_and_tiers(self):
         expected = (
@@ -502,8 +504,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 self.assertEqual(len(matches), 1)
                 perk = matches[0]
                 self.assertEqual((perk['name'], perk['requires']), (name, tier))
-                self.assertEqual(perk['description'], description)
-                self.assertEqual(perk['effect'], {'status': 'active', 'description': description})
+                self.assertEqual(perk.get('details', perk['description']), description)
+                self.assertEqual(perk['effect'], {'status': 'active', 'description': perk['description']})
 
     def test_necromancy_revision_keeps_ids_and_correct_tier_alternatives(self):
         skill = self.rules['skills']['new-horizons:necromancy']
@@ -525,29 +527,29 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             with self.subTest(perk=identity):
                 perk = perks[identity]
                 self.assertEqual((perk['name'], perk['requires']), (name, tier))
-                self.assertIn(effect, perk['description'])
+                self.assertIn(effect, perk.get('details', perk['description']))
                 self.assertEqual(perk['effect'], {
                     'status': 'active', 'description': perk['description']})
-        self.assertIn('not damage reduction', perks['darkConversion']['description'])
-        self.assertIn('Retaliations are unchanged', perks['soulHarvester']['description'])
-        self.assertIn('Multiple Double Strike effects do not add more strikes', perks['soulHarvester']['description'])
-        self.assertIn('up to 30 Mana per battle', perks['blackHarvest']['description'])
-        self.assertIn('Zombies and Grave Knowledge recovery do not count', perks['blackHarvest']['description'])
+        self.assertIn('not damage reduction', perks['darkConversion']['details'])
+        self.assertIn('Retaliations are unchanged', perks['soulHarvester']['details'])
+        self.assertIn('Multiple Double Strike effects do not add more strikes', perks['soulHarvester']['details'])
+        self.assertIn('up to 30 Mana per battle', perks['blackHarvest']['details'])
+        self.assertIn('Zombies and Grave Knowledge recovery do not count', perks['blackHarvest']['details'])
         self.assertIn('Grave Knowledge recovery is unchanged', perks['boneCollector']['description'])
-        self.assertIn('rounded down separately for each form', perks['graveKnowledge']['description'])
+        self.assertIn('rounded down separately for each form', perks['graveKnowledge']['details'])
         self.assertIn('Destroyed remains, summoned creatures and clones are excluded',
-                      perks['graveKnowledge']['description'])
-        self.assertNotIn('enemy', perks['graveKnowledge']['description'])
+                      perks['graveKnowledge']['details'])
+        self.assertNotIn('enemy', perks['graveKnowledge']['details'])
         self.assertNotIn('Construct', perks['deathLord']['description'])
-        self.assertIn('replaces', perks['lordOfTheDead']['description'])
+        self.assertIn('replaces', perks['lordOfTheDead']['details'])
         self.assertNotIn('boneAndSteel', perks)
         self.assertNotIn('deathMarch', perks)
         for rank, discount in zip(RANKS, (50, 60, 70)):
-            description = skill['ranks'][rank]['description']
+            description = skill['ranks'][rank].get('details', skill['ranks'][rank]['description'])
             self.assertIn(f'{discount}% less Leadership', description)
             self.assertIn('round their discounted requirement up', description)
             self.assertIn('minimum 1', description)
-        self.assertIn('Ordinary magical casualties are eligible', skill['description'])
+        self.assertIn('eligible enemy casualties', skill['description'])
         self.assertIn('explicitly destroyed or invalid remains are excluded', skill['description'])
 
     def test_necromancy_policy_is_optional_strict_and_configurable(self):
@@ -657,9 +659,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         )
         self.assertEqual(cleave["name"], "Cleave")
         self.assertEqual(cleave["requires"], "advanced")
-        self.assertEqual(cleave["description"], description)
+        self.assertEqual(cleave["details"], description)
         self.assertEqual(cleave["effect"]["status"], "active")
-        self.assertEqual(cleave["effect"]["description"], description)
+        self.assertEqual(cleave["effect"]["description"], cleave["description"])
 
     def test_vengeance_is_active_advanced_offense_perk(self):
         vengeance = next(
@@ -702,9 +704,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         )
         self.assertEqual(perk["name"], "No Quarter")
         self.assertEqual(perk["requires"], "expert")
-        self.assertEqual(perk["description"], description)
+        self.assertEqual(perk["details"], description)
         self.assertEqual(perk["effect"]["status"], "active")
-        self.assertEqual(perk["effect"]["description"], description)
+        self.assertEqual(perk["effect"]["description"], perk["description"])
 
     def test_all_ten_archery_perks_are_active_at_their_canonical_ranks(self):
         skill = self.rules["skills"]["new-horizons:archery"]
@@ -784,8 +786,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(len(all_perk_ids), 310)
         self.assertEqual(len(set(all_perk_ids)), 310)
 
-    def test_metamagic_text_describes_round_long_optional_spell_actions(self):
-        metamagic = self.rules["skills"]["new-horizons:metamagic"]
+    def test_historical_metamagic_text_describes_round_long_optional_spell_actions(self):
+        metamagic = self.historical["skills"]["new-horizons:metamagic"]
         for rank in RANKS:
             with self.subTest(rank=rank):
                 description = metamagic["ranks"][rank]["description"]
@@ -801,9 +803,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertIn("Both opportunities expire at the end of the round", grand)
         self.assertIn("neither can trigger Metamagic", grand)
 
-    def test_metamagic_rewards_distinguish_normal_restoration_from_buffer(self):
+    def test_historical_metamagic_rewards_distinguish_normal_restoration_from_buffer(self):
         perks = {
-            perk["id"]: perk for perk in self.rules["skills"]["new-horizons:metamagic"]["perks"]
+            perk["id"]: perk for perk in self.historical["skills"]["new-horizons:metamagic"]["perks"]
         }
         self.assertNotIn("new-horizons:metamagic.spellEcho", perks)
         self.assertNotIn("new-horizons:metamagic.countersequence", perks)
@@ -823,18 +825,140 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertIn("at least one additional Spell", reserve)
         self.assertIn("3 Normal Spell Points", reserve)
 
-    def test_spell_point_perks_keep_runtime_pool_terminology(self):
+    def test_historical_spell_point_perks_keep_runtime_pool_terminology(self):
         perks = {
             perk["name"]: perk["description"]
-            for perk in self.rules["skills"]["new-horizons:metamagic"]["perks"]
+            for perk in self.historical["skills"]["new-horizons:metamagic"]["perks"]
         }
         self.assertIn("Normal Spell Points", perks["Formula Reserve"])
         self.assertIn("Buffer Spell Points", perks["Spell Buffer"])
         intelligence = next(
             perk for perk in self.rules["skills"]["new-horizons:wisdom"]["perks"]
             if perk["name"] == "Intelligence"
-        )["description"]
+        )["details"]
         self.assertIn("floor(1.30 × effective Knowledge)", intelligence)
+
+    def test_current_faction_policies_are_strict(self):
+        validator = Draft4Validator(self.schema)
+        for key, expected in (
+            ('metamagicPolicy', {'version': 3, 'adeptAdditionalPoints': 1}),
+            ('divineMandatePolicy', {'version': 2}),
+            ('demonicGatingPolicy', {'version': 2}),
+        ):
+            with self.subTest(policy=key):
+                self.assertEqual(self.rules[key], expected)
+                validator.validate(self.rules)
+                for invalid in (None, {}, {'version': 1}, {'version': 4},
+                                {'version': '3'}, {'version': True},
+                                {**expected, 'unexpected': 1}):
+                    self.assertTrue(list(validator.iter_errors({**self.rules, key: invalid})))
+        for invalid in ({'version': 2}, {'version': 3, 'adeptAdditionalMarks': 1},
+                        {'version': 3, 'adeptAdditionalPoints': -1},
+                        {'version': 3, 'adeptAdditionalPoints': 13},
+                        {'version': 3, 'adeptAdditionalPoints': True},
+                        {'version': 3, 'adeptAdditionalPoints': 1.5}):
+            self.assertTrue(list(validator.iter_errors({**self.rules, 'metamagicPolicy': invalid})))
+
+    def test_current_metamagic_uses_round_points_and_complete_tier_pool(self):
+        skill = self.rules['skills']['new-horizons:metamagic']
+        self.assertIn('12 points', skill['description'])
+        self.assertNotIn('Arcane Mark', json.dumps(skill))
+        for rank, amount in zip(RANKS, (1, 2, 3)):
+            description = skill['ranks'][rank]['description']
+            self.assertIn('Start combat with 1 Metamagic point', description)
+            self.assertIn('gain 1 each later round, up to 12', description)
+            self.assertIn(f'+{amount}% spell effectiveness and Magic Penetration', description)
+        perks = {p['id'].split('.')[-1]: p for p in skill['perks']}
+        self.assertEqual(tuple(perks), (
+            'arcaneCatalyst', 'arcaneShield', 'manaConduit', 'lingeringMagic',
+            'arcaneFeedback', 'spellFracture', 'arcaneWellspring',
+            'arcaneAttunement', 'arcaneEcho', 'arcaneSingularity'))
+        self.assertIn('3 Metamagic points instead of 1', perks['arcaneWellspring']['description'])
+        self.assertIn('25% damage', perks['arcaneEcho']['description'])
+        self.assertIn('10 Metamagic points', perks['arcaneSingularity']['description'])
+        self.assertIn('25% less Mana', perks['arcaneSingularity']['description'])
+        names = [p['name'] for s in self.rules['skills'].values() for p in s['perks']]
+        for perk in perks.values():
+            self.assertEqual(names.count(perk['name']), 1)
+            self.assertLessEqual(len(perk['description'].split()), 25)
+
+    def test_current_dungeon_and_conflux_replacements_keep_other_perks(self):
+        expected = {
+            'shroudOfMalassa': ('shadowHex', 'exposedWeakness', 'ambusher', 'nightProwler'),
+            'elementalRebirth': ('elementalConduit', 'elementalCataclysm', 'elementalMemory', 'elementalWard'),
+        }
+        for skill, (basic, advanced, removed_basic, removed_advanced) in expected.items():
+            pool = {p['id'].split('.')[-1]: p for p in self.rules['skills']['new-horizons:' + skill]['perks']}
+            self.assertEqual(pool[basic]['requires'], 'basic')
+            self.assertEqual(pool[advanced]['requires'], 'advanced')
+            self.assertNotIn(removed_basic, pool)
+            self.assertNotIn(removed_advanced, pool)
+            self.assertEqual(len(pool), 10)
+            self.assertEqual([sum(p['requires'] == rank for p in pool.values()) for rank in RANKS], [4, 4, 2])
+
+    def test_current_divine_mandate_describes_automatic_known_light_support(self):
+        skill = self.rules['skills']['new-horizons:divineMandate']
+        for rank, efficiency, count in zip(RANKS, (5, 10, 15), (1, 2, 3)):
+            description = skill['ranks'][rank].get('details', skill['ranks'][rank]['description'])
+            self.assertIn(f'+{efficiency} percentage points on attribute-derived effects', description)
+            self.assertIn(f'Up to {count} Orders per combat', description)
+            self.assertIn('useful known beneficial Light spell', description)
+            self.assertIn('free of Mana and additional Hero Actions', description)
+            self.assertIn('No useful spell spends no activation', description)
+        perks = {p['id'].split('.')[-1]: p for p in skill['perks']}
+        self.assertEqual(tuple(perks), (
+            'sacredCommand', 'knightlyValor', 'chaplainSReserve', 'shieldOfFaith',
+            'righteousDiscipline', 'unwaveringStandard', 'inspiringLeadership',
+            'consecratedArms', 'mandateOfHeaven', 'divineFury'))
+        self.assertIn('restores three Mana', perks['chaplainSReserve']['description'])
+        self.assertIn('+2 Speed', perks['inspiringLeadership']['description'])
+        self.assertIn('Initiative is unchanged', perks['inspiringLeadership']['description'])
+        self.assertIn('five at Expert rank', perks['mandateOfHeaven']['description'])
+        self.assertIn('10% chance to cast free Holy Wrath', perks['divineFury']['description'])
+        self.assertIn('melee attacks, ranged attacks and retaliations', perks['divineFury']['details'])
+
+    def test_current_gating_describes_temporary_original_stack_reinforcements(self):
+        skill = self.rules['skills']['new-horizons:demonicGating']
+        self.assertIn('no reserve troops are required or consumed', skill['description'])
+        self.assertIn('Summoned stacks cannot Gate', skill['description'])
+        for rank, categories in zip(RANKS, ('Core', 'Core and Elite', 'Core, Elite and Champion')):
+            description = skill['ranks'][rank].get('details', skill['ranks'][rank]['description'])
+            self.assertIn(f'Original {categories} Inferno stacks may Gate once per combat', description)
+            self.assertIn('spending their creature activation', description)
+            self.assertIn('start of the next round', description)
+            self.assertIn('within three hexes', description)
+            self.assertIn('30% of current creatures, rounded down with a minimum of one', description)
+            self.assertIn('disappear after combat and cannot Gate', description)
+        perks = {p['id'].split('.')[-1]: p for p in skill['perks']}
+        self.assertEqual(tuple(perks), (
+            'swiftGate', 'wideGate', 'hellfireArrival', 'reinforcedGate',
+            'infernalOnslaught', 'infernalBeacon', 'hellstride', 'infernalDiscipline',
+            'masterGate', 'endlessLegion'))
+        self.assertIn('cannot be healed or resurrected', perks['reinforcedGate']['description'])
+        self.assertIn('does not increase Hellfire Arrival damage', perks['infernalOnslaught']['description'])
+        self.assertIn('Initiative is unchanged', perks['hellstride']['description'])
+        self.assertIn('does not spend', perks['masterGate']['description'])
+        self.assertIn('50%', perks['endlessLegion']['description'])
+
+    def test_historical_faction_fixture_keeps_retired_identities_and_no_new_policies(self):
+        historical = json.loads(json.dumps(self.rules))
+        for key in ('metamagicPolicy', 'divineMandatePolicy', 'demonicGatingPolicy'):
+            historical.pop(key)
+            self.assertNotIn(key, self.historical)
+        historical['skills'].update(self.historical['skills'])
+        Draft4Validator(self.schema).validate(historical)
+        for skill, retained, retired in (
+            ('metamagic', 'grandMetamagic', 'arcanePerfection'),
+            ('divineMandate', 'knightlySequence', 'knightlyValor'),
+            ('demonicGating', 'reserveDiscipline', 'infernalDiscipline'),
+        ):
+            perks = historical['skills'][f'new-horizons:{skill}']['perks']
+            ids = {p['id'].split('.')[-1] for p in perks}
+            self.assertIn(retained, ids)
+            self.assertNotIn(retired, ids)
+            self.assertEqual(len(ids), 10)
+            self.assertEqual({rank: sum(p['requires'] == rank for p in perks) for rank in RANKS},
+                             {'basic': 4, 'advanced': 4, 'expert': 2})
 
     def test_game_settings_schema_exposes_registry_without_activating_it(self):
         settings = load("config/schemas/gameSettings.json")

@@ -18,8 +18,6 @@ JsonNode exchangeRules()
 		table[key]["learningPercentPerLevel"].Integer() = 5;
 		table[key]["learningMaximumPercent"].Integer() = 100;
 	}
-	table["ecumenicalScholar"]["additionalSpellsTaught"].Integer() = 1;
-	table["occultScholar"]["additionalSpellsReceived"].Integer() = 1;
 	return rules;
 }
 }
@@ -69,12 +67,11 @@ TEST(NewHorizonsLearningExchangeRules, VersionOnlyAndExplicitZeroStayPresentWith
 	auto & row = source["learningExchangeSpecialties"]["ecumenicalScholar"];
 	row["learningPercentPerLevel"].Integer() = 0;
 	row["learningMaximumPercent"].Integer() = 0;
-	row["additionalSpellsTaught"].Integer() = 0;
 	const auto captured = resolveHeroRules(source, HeroClassID(0));
 	const auto rule = learningExchangeSpecialtyRules(captured, LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR);
 	ASSERT_TRUE(rule);
 	EXPECT_EQ(rule->learningPercentPerLevel, 0);
-	EXPECT_EQ(rule->additionalSpellsTaught, 0);
+	EXPECT_EQ(rule->learningMaximumPercent, 0);
 	source["learningExchangeSpecialties"].Struct().erase("ecumenicalScholar");
 	const auto versionOnly = resolveHeroRules(source, HeroClassID(0));
 	EXPECT_TRUE(versionOnly.Struct().contains("learningExchangeSpecialties"));

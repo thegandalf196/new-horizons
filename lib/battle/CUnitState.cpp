@@ -11,6 +11,8 @@
 #include "NewHorizonsAerialSupremacy.h"
 
 #include "CUnitState.h"
+#include "UnitStateEffectReceipts.h"
+#include "PhysicalPoisonSpellOrigin.h"
 #include "SummonLifetime.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsDiscipline.h"
@@ -2002,6 +2004,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeRaw("confusion", confusion, std::nullopt);
 	if(!handler.saving)
 		confusionState = ConfusionState::fromJson(confusion);
+	serializePassiveFactionUnitState(handler, arcaneMarks, demonicGateOpened, physicalPoisonSpellSide, arcaneShieldHitPoints);
 	handler.serializeBool("cloned", cloned);
 	handler.serializeBool("defending", defending);
 	handler.serializeBool("drainedMana", drainedMana);
@@ -2084,7 +2087,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("physicalPoisonBaseDamage", physicalPoisonBaseDamage, 0);
 	handler.serializeInt("physicalPoisonActivationsRemaining", physicalPoisonActivationsRemaining, 0);
 	handler.serializeInt("physicalPoisonSourceStackId", physicalPoisonSourceStackId, -1);
-	if(physicalPoisonBaseDamage < 0 || physicalPoisonActivationsRemaining < 0
+	if(!validPhysicalPoisonSpellOrigin(physicalPoisonSpellSide)
+		|| (physicalPoisonSpellSide != BattleSide::NONE && physicalPoisonBaseDamage == 0)
+		|| physicalPoisonBaseDamage < 0 || physicalPoisonActivationsRemaining < 0
 		|| physicalPoisonActivationsRemaining > 3
 		|| ((physicalPoisonBaseDamage == 0) != (physicalPoisonActivationsRemaining == 0)))
 		throw std::runtime_error("Invalid physical Poison state");
@@ -2202,33 +2207,6 @@ JsonNode CUnitState::save()
 	return data;
 }
 
-namespace
-{
-struct IncomingActivationReceipts
-{
-	ConfusionState confusion;
-	DreadCavalryState dreadCavalry;
-};
-IncomingActivationReceipts parseIncomingActivationReceipts(const JsonNode & data)
-{
-	const auto confusion = confusionStateFromUnitJson(data);
-	const auto dreadCavalry = dreadCavalryStateFromUnitJson(data);
-	//TODO: use instance resolver
-	const auto & savedPainIncrement = data["state"]["personalBloodrageIncrement"];
-	if(!savedPainIncrement.isNull())
-	{
-		if(savedPainIncrement.getType() != JsonNode::JsonType::DATA_INTEGER)
-			throw std::runtime_error("Personal Bloodrage increment must be an integer");
-		const int64_t rawIncrement = savedPainIncrement.Integer();
-		if(rawIncrement != 0 && rawIncrement != newHorizonsBloodrage::BASIC_INCREMENT
-			&& rawIncrement != newHorizonsBloodrage::ADVANCED_INCREMENT
-			&& rawIncrement != newHorizonsBloodrage::EXPERT_INCREMENT)
-			throw std::runtime_error("Invalid personal Bloodrage increment");
-	}
-	return {confusion, dreadCavalry};
-}
-}
-
 void CUnitState::load(const JsonNode & data)
 {
 	validateOwnedFormIdentifiers(data);
@@ -2269,7 +2247,7 @@ void CUnitState::load(const JsonNode & data)
 	newHorizonsAerialSupremacy::hasRoundState(data);
 	hasHeroicSpiritState(data);
 	hasMoraleActivationState(data);
-	const auto incomingActivation = parseIncomingActivationReceipts(data);
+	const auto incomingActivation = parseUnitStateEffectReceipts(data);
 	const bool previousBattleFormState = hasBattleFormState();
 	reset();
 	if(previousBattleFormState)
@@ -2279,6 +2257,10 @@ void CUnitState::load(const JsonNode & data)
 	petrifyingBloodRound = incomingBloodRound;
 	veteranCohesionEarned = retainedVeteranCohesion;
 	confusionState = incomingActivation.confusion;
+	arcaneMarks = incomingActivation.arcaneMarks;
+	arcaneShieldHitPoints = incomingActivation.arcaneShieldHitPoints;
+	demonicGateOpened = incomingActivation.demonicGateOpened;
+	physicalPoisonSpellSide = incomingActivation.physicalPoisonSpellSide;
 	dreadCavalryState = incomingActivation.dreadCavalry;
 	if(phantomInitialIntegrity < 0 || phantomIntegrity < 0 || phantomRoundsRemaining < 0
 		|| !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement)
@@ -2308,9 +2290,10 @@ void CUnitState::damage(int64_t & amount, bool destroyRemains)
 	damageInternal(amount, destroyRemains, false, DamageProvenance::OTHER);
 }
 
-void CUnitState::damage(int64_t & amount, bool destroyRemains, DamageProvenance provenance)
+void CUnitState::damage(int64_t & amount, bool destroyRemains, DamageProvenance provenance,
+	int64_t * postShieldBeforeCasualties)
 {
-	damageInternal(amount, destroyRemains, false, provenance);
+	damageInternal(amount, destroyRemains, false, provenance, postShieldBeforeCasualties);
 }
 
 void CUnitState::damageShadowGiftSacrifice(int64_t & amount)
@@ -2319,8 +2302,10 @@ void CUnitState::damageShadowGiftSacrifice(int64_t & amount)
 }
 
 void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
-	DamageProvenance provenance)
+	DamageProvenance provenance, int64_t * postShieldBeforeCasualties)
 {
+	if(postShieldBeforeCasualties)
+		*postShieldBeforeCasualties = 0;
 	if(isTimeStopped())
 	{
 		amount = 0;
@@ -2335,8 +2320,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	const int64_t halfHealthCeiling = maximumHealthBefore > 0
 		? maximumHealthBefore / 2 + maximumHealthBefore % 2 : 0;
 	int32_t eligiblePainIncrement = 0;
-	if(personalBloodrageIncrement == 0 && env && maximumHealthBefore > 0
-		&& availableHealthBefore >= halfHealthCeiling)
+	if(personalBloodrageIncrement == 0 && env && maximumHealthBefore > 0)
 	{
 		// Resolve the current controller before damage can kill the unit. The
 		// earned increment itself remains personal and follows this stack.
@@ -2347,15 +2331,9 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	const int32_t firstHPleftBefore = health.getFirstHPleft();
 	const int32_t countBefore = health.getCount();
 	const int32_t maximumCreatureHealth = getMaxHealth();
-	if(amount > 0 && provenance == DamageProvenance::PHYSICAL_CREATURE
-		&& guardianSpiritHitPoints > 0 && guardianSpiritRoundsRemaining > 0)
-	{
-		const auto absorbed = std::min(amount, guardianSpiritHitPoints);
-		amount -= absorbed;
-		guardianSpiritHitPoints -= absorbed;
-		if(guardianSpiritHitPoints == 0)
-			guardianSpiritRoundsRemaining = 0;
-	}
+	absorbDamageShields(amount, provenance, bypassTemporaryHitPoints);
+	if(postShieldBeforeCasualties)
+		*postShieldBeforeCasualties = amount;
 
 	if(cloned)
 	{
@@ -2427,8 +2405,8 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 		veteranCohesionEarned = true;
 	if(personalBloodrageIncrement == 0 && eligiblePainIncrement > 0
 		&& availableHealthAfter < availableHealthBefore
-		&& availableHealthBefore >= halfHealthCeiling
-		&& availableHealthAfter < halfHealthCeiling)
+		&& (newHorizonsBloodrage::firstDamagePainIncrement(eligiblePainIncrement)
+			|| (availableHealthBefore >= halfHealthCeiling && availableHealthAfter < halfHealthCeiling)))
 		personalBloodrageIncrement = eligiblePainIncrement;
 
 	if(!alive())

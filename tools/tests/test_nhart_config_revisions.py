@@ -25,7 +25,10 @@ class ArtConfigRevisionTest(unittest.TestCase):
         self.assertEqual(old['focusMagic']['level'], 3)
         self.assertEqual(old['focusMagic']['levels']['basic']['cost'], 11)
         self.assertIn('theChosen', config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, 4))
-        self.assertEqual(config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, 5), self.configs[CONFIG])
+        previous = config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, 5)
+        self.assertIn('Teleport one friendly or enemy stack to a random legal position',
+                      previous['blink']['levels']['base']['description'])
+        self.assertEqual(config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, 6), self.configs[CONFIG])
         mass = config_at_revision(self.configs[MASS], MASS, self.proofs, 0)
         self.assertEqual(mass['massSlow']['level'], 1)
         self.assertEqual(mass['massSlow']['levels']['basic']['cost'], 12)
@@ -67,7 +70,7 @@ class ArtConfigRevisionTest(unittest.TestCase):
         with self.assertRaises(ValueError): config_at_revision(self.configs[CONFIG], CONFIG, changed, 0)
         changed = copy.deepcopy(self.proofs); changed['extra'] = True
         with self.assertRaises(ValueError): config_at_revision(self.configs[CONFIG], CONFIG, changed, 0)
-        for revision in (True, -1, 6, '0'):
+        for revision in (True, -1, 7, '0'):
             with self.assertRaises(ValueError): config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, revision)
         with self.assertRaises(ValueError): config_at_revision({}, 'unknown.json', self.proofs, 0)
 

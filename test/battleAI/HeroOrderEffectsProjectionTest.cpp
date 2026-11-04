@@ -9,9 +9,8 @@
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
-#include "../../lib/battle/NewHorizonsEnchantedCommand.h"
+#include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
-#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 
 using namespace heroQueueTest;
@@ -28,7 +27,7 @@ protected:
 		const std::map<std::string, std::pair<const char *, const char *>> predecessors{
 			{"new-horizons:offense", {"new-horizons:offense.shockAssault", nullptr}},
 			{"new-horizons:discipline", {"new-horizons:discipline.inspirationalLeader", nullptr}},
-			{"new-horizons:warcasting", {"new-horizons:warcasting.martialChanneling", nullptr}},
+			{"new-horizons:warcasting", {"new-horizons:warcasting.arcaneValor", nullptr}},
 			{"new-horizons:command", {"new-horizons:command.aggressiveCommander", "new-horizons:command.veteranCommander"}},
 			{"new-horizons:divineMandate", {"new-horizons:divineMandate.sharedPurpose", "new-horizons:divineMandate.divineDiscipline"}}};
 		const auto & prior = predecessors.at(skill);
@@ -42,7 +41,7 @@ protected:
 	static bool issuedGrant(const Bonus * bonus)
 	{
 		const auto vengeance = newHorizonsOffense::vengeanceRetaliationBonus();
-		return newHorizonsEnchantedCommand::isMoraleBonus(bonus)
+		return arcaneInspiration::isEffect(bonus)
 			|| newHorizonsDiscipline::isHoldFastMoraleFloorBonus(bonus)
 			|| newHorizonsDivineMandate::isSharedPurposeMoraleBonus(bonus)
 			|| (bonus && bonus->source == vengeance.source && bonus->sid == vengeance.sid
@@ -94,7 +93,7 @@ protected:
 	{
 		auto result = state(value); // Units/grants, ledger, Seize and saved Orders.
 		for(const auto owner : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			result += wire(value.getWarcastingState(owner)) + wire(value.getFocusFireState(owner))
+			result += wire(value.getWisdomCombatState(owner)) + wire(value.getFocusFireState(owner))
 				+ wire(value.getDoubleCommandState(owner)) + wire(value.getPreCombatOrderState(owner));
 		return result;
 	}
@@ -172,21 +171,21 @@ TEST_F(HeroOrderEffectsProjectionTest, VengeanceInstallsExactlyOneNativeRetaliat
 	ASSERT_NO_FATAL_FAILURE(nativeParity(HeroCommand::RIPOSTE));
 }
 
-TEST_F(HeroOrderEffectsProjectionTest, WarcastingSnapshotPrecedesCompletionAndGrantsEnchantedCommand)
+TEST_F(HeroOrderEffectsProjectionTest, SuccessfulSpellInspiresRecipientsAndOrderDoesNotRefreshExpiredEffects)
 {
 	ASSERT_NO_FATAL_FAILURE(world());
-	ASSERT_NO_FATAL_FAILURE(perk("new-horizons:warcasting", "new-horizons:warcasting.enchantedCommand", MasteryLevel::ADVANCED));
+	ASSERT_NO_FATAL_FAILURE(perk("new-horizons:warcasting", "new-horizons:warcasting.arcaneValor", MasteryLevel::BASIC));
 	ASSERT_NO_FATAL_FAILURE(arena());
 	const auto healthy = actor->getAvailableHealth();
 	ASSERT_NO_FATAL_FAILURE(injure(actor, healthy - 1));
 	ASSERT_EQ(actor->getAvailableHealth(), healthy - 1);
 	ASSERT_TRUE(cast(attackerSideHero, SpellID::CURE, actor));
 	EXPECT_EQ(actor->getAvailableHealth(), healthy);
+	EXPECT_TRUE(actor->hasBonus(CSelector(arcaneInspiration::isActive)));
 	ASSERT_NO_FATAL_FAILURE(advanceRound());
 	ASSERT_NO_FATAL_FAILURE(activate(active));
 	ASSERT_NO_FATAL_FAILURE(project(HeroCommand::HOLD_THE_LINE));
-	EXPECT_GT(effects->order.warcastingBonusPercent, 0);
-	EXPECT_TRUE(child->battleGetUnitByID(actor->unitId())->hasBonus(newHorizonsEnchantedCommand::moraleBonusSelector()));
+	EXPECT_FALSE(child->battleGetUnitByID(actor->unitId())->hasBonus(CSelector(arcaneInspiration::isActive)));
 	ASSERT_NO_FATAL_FAILURE(nativeParity(HeroCommand::HOLD_THE_LINE));
 }
 
@@ -355,13 +354,13 @@ TEST_F(HeroOrderEffectsProjectionTest, AlteredFocusFireOrderTargetRejectsBeforeA
 	ASSERT_NO_FATAL_FAILURE(reject(altered));
 }
 
-TEST_F(HeroOrderEffectsProjectionTest, MalformedOrderRejectsBeforeLedgerSeizeOrWarcastingMutation)
+TEST_F(HeroOrderEffectsProjectionTest, MalformedOrderRejectsBeforeLedgerSeizeOrRecipientMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(world());
 	ASSERT_NO_FATAL_FAILURE(arena());
 	ASSERT_NO_FATAL_FAILURE(begin(HeroCommand::HOLD_THE_LINE));
 	auto altered = *effects;
-	altered.order.warcastingBonusPercent = 101;
+	altered.order.issuedRound = -1;
 	ASSERT_NO_FATAL_FAILURE(reject(altered));
 }
 

@@ -134,22 +134,21 @@ TEST(NewHorizonsSorceryTest, SpellLockSchoolCoefficientScalesPowerBeforeFloorAnd
 	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(110, false, 145), 2);
 	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(111, false, 145), 3);
 
-	// Warcasting is another percentage on the Spell Power term before the floor.
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(69, false, 115, 10), 2);
+	// Empower remains an independent percentage before the single floor.
+	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(69, false, 11500, 10), 2);
 	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(160, true, 145), 4);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(160, true, 145, 10), 4);
 	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(std::numeric_limits<int32_t>::max(), true,
-		1000, std::numeric_limits<int32_t>::max()), 4);
+		1000), 4);
 	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(std::numeric_limits<int32_t>::max(), true,
-		100'000, std::numeric_limits<int32_t>::max(), 1000), 4);
+		100'000, 1000), 4);
 	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, -1), std::invalid_argument);
 	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, 1001), std::invalid_argument);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, 100, -1), std::invalid_argument);
+	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 10000, -1), std::invalid_argument);
 	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(63, false, 12650), 1);
 	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(64, false, 12650), 2);
 	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(43, false, 18850), 2);
 	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 100001), std::invalid_argument);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 10000, 0, 1001),
+	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 10000, 1001),
 		std::invalid_argument);
 }
 

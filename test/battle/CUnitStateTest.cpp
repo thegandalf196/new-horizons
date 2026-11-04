@@ -294,6 +294,52 @@ TEST_F(UnitStateTest, battlecraftWaitBonusIsCopiedSerializedConsumedAndResetPerR
 	EXPECT_FALSE(copy.battlecraftWaitBonusUsed);
 }
 
+TEST_F(UnitStateTest, arcaneShieldAbsorbsIndependentlyAndRoundExpiryPreservesHydraPool)
+{
+	setDefaultExpectations();
+	initUnit();
+	subject.arcaneShieldHitPoints = 30;
+	subject.health.addTemporaryHitPoints(50);
+	const auto originalCreatureHealth = subject.health.getCreatureHealthAvailable();
+	int64_t damage = 40;
+	subject.damage(damage);
+	EXPECT_EQ(subject.arcaneShieldHitPoints, 0);
+	EXPECT_EQ(subject.health.getTemporaryHitPoints(), 40);
+	EXPECT_EQ(subject.health.getCreatureHealthAvailable(), originalCreatureHealth);
+
+	subject.arcaneShieldHitPoints = 20;
+	const auto saved = subject.save();
+	battle::CUnitStateDetached restored(&infoMock, &bonusMock);
+	restored.localInit(&envMock);
+	restored.load(saved);
+	EXPECT_EQ(restored.arcaneShieldHitPoints, 20);
+	EXPECT_EQ(restored.health.getTemporaryHitPoints(), 40);
+	battle::CUnitStateDetached copy(&infoMock, &bonusMock);
+	copy.localInit(&envMock);
+	copy = restored;
+	EXPECT_EQ(copy.arcaneShieldHitPoints, 20);
+	copy.afterNewRound();
+	EXPECT_EQ(copy.arcaneShieldHitPoints, 0);
+	EXPECT_EQ(copy.health.getTemporaryHitPoints(), 40);
+	EXPECT_EQ(restored.arcaneShieldHitPoints, 20);
+}
+
+TEST_F(UnitStateTest, arcaneShieldCannotPayShadowGiftSacrificeAndRejectsMalformedState)
+{
+	setDefaultExpectations();
+	initUnit();
+	subject.arcaneShieldHitPoints = 100;
+	const auto originalCreatureHealth = subject.health.getCreatureHealthAvailable();
+	int64_t sacrifice = 15;
+	subject.damageShadowGiftSacrifice(sacrifice);
+	EXPECT_EQ(subject.arcaneShieldHitPoints, 100);
+	EXPECT_EQ(subject.health.getCreatureHealthAvailable(), originalCreatureHealth - 15);
+	auto malformed = subject.save();
+	malformed["state"]["arcaneShieldHitPoints"].Integer() = -1;
+	EXPECT_THROW(subject.load(malformed), std::runtime_error);
+	EXPECT_EQ(subject.arcaneShieldHitPoints, 100);
+}
+
 TEST_F(UnitStateTest, getAttack)
 {
 	setDefaultExpectations();

@@ -6,7 +6,6 @@ local SPELL_ID = "new-horizons:hydrasVitality"
 local BASE_PERCENT_MILLIONTHS = 25000000
 local MAX_PERCENT_MILLIONTHS = 50000000
 local PERCENT_MILLIONTHS_PER_WHOLE = 100000000
-local BASE_DURATION_ROUNDS = 3
 
 local function reject(problem, mechanics)
 	if problem then
@@ -20,11 +19,12 @@ local function usesCanonicalRules(mechanics)
 		and mechanics:usesNewHorizonsMagicV3()
 end
 
-local function percentMillionths(mechanics)
+local function percentMillionths(mechanics, unit)
 	-- The shared spell mechanics returns percent-millionths (1e-4 of a basis
 	-- point), already including effective rank and school modifiers.
-	return math.max(BASE_PERCENT_MILLIONTHS,
+	local ordinary = math.max(BASE_PERCENT_MILLIONTHS,
 		math.min(MAX_PERCENT_MILLIONTHS, mechanics:getEffectValue()))
+	return mechanics:adjustMetamagicMagnitude(ordinary, unit)
 end
 
 local function enhancedMaximum(referenceMaximum, percent)
@@ -42,7 +42,7 @@ local function targetMaximum(mechanics, unit)
 	if unit == nil then return nil end
 	local state = unit:copy()
 	local referenceMaximum = state:getCapacityHealthReferenceMax()
-	local maximum = enhancedMaximum(referenceMaximum, percentMillionths(mechanics))
+	local maximum = enhancedMaximum(referenceMaximum, percentMillionths(mechanics, unit))
 	if maximum > 2147483647 then
 		-- Bonus values are signed 32-bit health capacities. Reject before costs
 		-- are paid rather than allowing the application path to wrap.
@@ -128,7 +128,7 @@ function Script:apply(mechanics, server, target)
 	-- bonus cannot turn empty HP capacity into current HP.
 	server:changeUnit(battle, state)
 
-	local duration = mechanics:adjustEffectDuration(BASE_DURATION_ROUNDS)
+	local duration = mechanics:getScriptedRoundStatusDuration()
 	server:addUnitBonus(battle, unit, {
 		type = "STACK_HEALTH",
 		val = targetMax,

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../NewHorizonsMetamagicEffects.h"
 
 #include "Effects.h"
 #include "BattleForm.h"
@@ -423,9 +424,12 @@ public:
 			auto state = unit->acquireState();
 			if(!state)
 				continue;
-			const bool applied = newHorizonsBulwark::applyPhysicalPoison(state.get(), baseDamage, -1);
+			server->recordResolvedSpellRecipient(unit->unitId());
+			const int64_t recipientDamage = mechanics->adjustMetamagicMagnitude(baseDamage, unit);
+			const bool applied = newHorizonsBulwark::applyPhysicalPoison(state.get(), recipientDamage, -1);
 			if(applied)
 			{
+				state->physicalPoisonSpellSide = mechanics->getEffectCasterSide();
 				BattleUnitsChanged changed;
 				changed.battleID = mechanics->getBattleID();
 				UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);
@@ -440,7 +444,7 @@ public:
 			if(applied)
 			{
 				line.appendRawString("Physical Poison afflicts %s for three activations, starting at ");
-				line.appendNumber(baseDamage);
+				line.appendNumber(recipientDamage);
 				line.appendRawString(" damage.");
 			}
 			else
@@ -656,8 +660,7 @@ public:
 		const auto * hero = mechanics->getHeroCaster();
 		const auto family = newHorizonsMagic::spellVariantBase(battle->getBattle()->getMagicRules(), mechanics->getSpellId());
 		const auto penalty = newHorizonsMagic::sorrowMoralePenalty(
-			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId(), mechanics->getEffectPower(),
-			mechanics->getWarcastingBonusPercent(), mechanics->getEmpowerSpellBonusPercent(),
+			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId(), mechanics->getEffectPower(), mechanics->getEmpowerSpellBonusPercent(),
 			mechanics->getCastSpellPowerComponentBonusPercent(), mechanics->getSpellPowerCoefficientBasisPoints());
 		const auto duration = newHorizonsMagic::sorrowDurationRounds(
 			battle->getBattle()->getMagicRules(), hero, mechanics->getSpellId());

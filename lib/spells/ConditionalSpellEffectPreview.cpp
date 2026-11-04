@@ -32,36 +32,35 @@ SpellEffectPreview value(const std::string & label, int64_t first, int32_t scale
 }
 }
 std::optional<SpellEffectPreview> conditionalSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t numericalCoefficient,
-	int32_t warcasting, int32_t empower, const CBattleInfoCallback * callback)
+	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t numericalCoefficient, int32_t empower, const CBattleInfoCallback * callback)
 {
 	if(!rulesActive(rules) || rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 		return std::nullopt;
 	if(const auto placed = placementSpellEffectPreview(hero, spell, callback, rules, power,
-		directCoefficient, numericalCoefficient, warcasting, empower))
+		directCoefficient, numericalCoefficient, empower))
 		return *placed;
 	if(spell.getJsonKey() == newHorizonsShadowGift::SPELL_ID)
 		return value("shadowGift", newHorizonsShadowGift::getDamageBonusBasisPoints(10, power,
-			numericalCoefficient, warcasting, empower), 100, "new-horizons.spellbook.shadowGiftChoice",
-			newHorizonsShadowGift::getDamageBonusBasisPoints(30, power, numericalCoefficient, warcasting, empower));
+			numericalCoefficient, empower), 100, "new-horizons.spellbook.shadowGiftChoice",
+			newHorizonsShadowGift::getDamageBonusBasisPoints(30, power, numericalCoefficient, empower));
 	if(const auto profile = newHorizonsImplosion::rulesFor(rules, spell.getId()))
 		return value("implosion", spell.adjustRawDamage(&hero, nullptr, newHorizonsImplosion::damage(
-			*profile, 10000, power, directCoefficient, warcasting, empower)), 100, "new-horizons.spellbook.healthRate");
+			*profile, 10000, power, directCoefficient, empower)), 100, "new-horizons.spellbook.healthRate");
 	if(spell.getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY)
 	{
-		const auto raw = newHorizonsNaturesWrath::hopPower(power, directCoefficient, warcasting, empower,
+		const auto raw = newHorizonsNaturesWrath::hopPower(power, directCoefficient, empower,
 			newHorizonsNaturesWrath::hasWorldroot(&hero), 0);
 		return value("naturesWrath", spell.adjustRawDamage(&hero, nullptr, raw), 1, "new-horizons.spellbook.naturesWrathRoute",
 			hero.getSpellBonus(&spell, raw, nullptr));
 	}
 	if(spell.getJsonKey() == newHorizonsPandemonium::SPELL_KEY)
 		return value("pandemonium", spell.adjustRawDamage(&hero, nullptr, newHorizonsPandemonium::rawPower(
-			power, numericalCoefficient, warcasting, empower, newHorizonsPandemonium::hasMaster(&hero), 1)),
+			power, numericalCoefficient, empower, newHorizonsPandemonium::hasMaster(&hero), 1)),
 			1, "new-horizons.spellbook.pandemoniumCount");
 	if(spell.getJsonKey() != SHADOW_SOUL_REAPER_SPELL && spell.getJsonKey() != "new-horizons:handOfFate"
 		&& spell.getJsonKey() != "new-horizons:holyWrath" && spell.getJsonKey() != "new-horizons:vengefulVines")
 		return std::nullopt;
-	const auto raw = directSpellRawPotential(hero, spell, rules, power, directCoefficient, warcasting, empower);
+	const auto raw = directSpellRawPotential(hero, spell, rules, power, directCoefficient, empower);
 	if(!raw)
 		return SpellEffectPreview{};
 	const auto ordinary = spell.adjustRawDamage(&hero, nullptr, *raw);

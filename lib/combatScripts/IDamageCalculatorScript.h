@@ -43,6 +43,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int physicalDamageReductionCapPercent = -1;
 	/// Percentage of the already-combined and capped physical damage reduction ignored by this attack.
 	int physicalDamageReductionIgnorePercent = 0;
+	int arcaneInspirationDamageBonusPercent = 0;
+	int spellshockOutputPenaltyPercent = 0;
+	int arcaneInspirationDefenseIgnorePercent = 0;
+	int arcaneBulwarkReductionPercent = 0;
 	/// Transient mark fact; enables penetration of the existing uncapped protection aggregate.
 	int coordinatedPhysicalProtectionIgnorePercent = 0;
 	/// Existing historical supplement penetration, captured before capped Lorelei addition.
@@ -202,6 +206,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("coordinatedPhysicalProtectionIgnorePercent", coordinatedPhysicalProtectionIgnorePercent, "One-use Feathered Feint entitlement, including historical uncapped physical protection.");
 		s("coordinatedMeleeDefenseIgnorePercent", coordinatedMeleeDefenseIgnorePercent, "One-use allied melee mark penetration of target Creature Defense.");
 		s("stormWingsDefenseIgnorePercent", stormWingsDefenseIgnorePercent, "Exact voluntary-flight penetration of target Creature Defense.");
+		s("arcaneInspirationDamageBonusPercent", arcaneInspirationDamageBonusPercent, "Core plus additive retaliation-only Battle Focus, one final attack factor.");
+		s("spellshockOutputPenaltyPercent", spellshockOutputPenaltyPercent, "Nonstacking outgoing attack/retaliation damage reduction.");
+		s("arcaneInspirationDefenseIgnorePercent", arcaneInspirationDefenseIgnorePercent, "Attack-local target Creature Defense penetration.");
+		s("arcaneBulwarkReductionPercent", arcaneBulwarkReductionPercent, "Independent active physical protection.");
 		s("physicalDamageReductionIgnorePercent", physicalDamageReductionIgnorePercent,
 			"Attack-local percentage of combined capped physical damage reduction ignored.");
 		s("runicEnduranceReductionPercent", runicEnduranceReductionPercent, "Captured independent physical protection against additional blows in one ordinary action.");

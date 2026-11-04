@@ -597,11 +597,6 @@ void SetArmorerDefiantState::validateAgainst(const CBattleInfoCallback & battle)
 		throw std::runtime_error("Defiant consumption has no eligible enemy denial");
 }
 
-void SetReactiveWeaveState::visitTyped(ICPackVisitor & visitor)
-{
-	visitor.visitSetReactiveWeaveState(*this);
-}
-
 void SetSpellResponseState::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetSpellResponseState(*this);
@@ -1114,10 +1109,16 @@ void LobbyStartGame::validateNewHorizonsLighthouseSerialization(bool supported) 
 }
 
 
-void LobbyStartGame::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported) const
+void LobbyStartGame::validateOwnedBonusSerialization(BonusSerializationContext context) const
 {
 	if(initializedGameState)
-		initializedGameState->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported, optionalRerollSupported);
+		initializedGameState->validateOwnedBonusSerialization(context);
+}
+
+void LobbyStartGame::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported) const
+{
+	if(initializedGameState)
+		initializedGameState->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
 }
 
 

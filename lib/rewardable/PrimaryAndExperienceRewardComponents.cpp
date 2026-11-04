@@ -9,6 +9,7 @@
 #include "../networkPacks/Component.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../entities/hero/NewHorizonsSwampSeer.h"
+#include "../entities/hero/NewHorizonsLearning.h"
 #include "../GameLibrary.h"
 #include "../entities/hero/CHeroHandler.h"
 #include <algorithm>
@@ -47,7 +48,7 @@ void appendPrimaryStudyComponents(std::vector<Component> & comps, const Reward &
 		if (reward.primary[i] != 0)
 		{
 			const PrimarySkill skill(static_cast<int>(i));
-			auto amount = reward.primary[i];
+			auto amount = newHorizonsLearning::trainingPrimaryReward(h, sourceObject, reward.primary[i]);
 			if(h && newHorizonsHeroes::isSwampSeerStudyObject(sourceObject) && newHorizonsHeroes::swampSeerRules(h))
 			{
 				const auto change = h->projectPrimarySkillChange(skill, amount, ChangeValueMode::RELATIVE);

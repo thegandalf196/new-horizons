@@ -23,7 +23,7 @@ void BattleEffectSnapshot::validateBonusSerialization(BonusSerializationContext 
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	for(const auto & effect : effects)
 		effect.validateAdjacencyCapabilitySerialization(context);
 }
@@ -32,7 +32,7 @@ void BattleEffectExchangeEndpoint::validateBonusSerialization(BonusSerialization
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	expected.validateBonusSerialization(context);
 	replacement.validateBonusSerialization(context);
 }
@@ -41,7 +41,7 @@ void BattleEffectExchange::validateBonusSerialization(BonusSerializationContext 
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	for(const auto & endpoint : endpoints)
 		endpoint.validateBonusSerialization(context);
 }

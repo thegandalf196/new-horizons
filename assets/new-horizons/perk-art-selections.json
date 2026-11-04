@@ -206,7 +206,7 @@
     },
     {
       "id": "new-horizons:necromancy.corpsePreservation",
-      "name": "Corpse Preservation",
+      "name": "Death March",
       "slug": "corpse-preservation",
       "version": "corpse-preservation-20261014-v1",
       "icon44": "NH_perk_corpse_preservation",
@@ -405,8 +405,8 @@
       "selection": "user-authorized-provisional-perk-drafts-2026-10-14"
     },
     {
-      "id": "new-horizons:elementalRebirth.elementalMemory",
-      "name": "Elemental Memory",
+      "id": "new-horizons:elementalRebirth.elementalConduit",
+      "name": "Elemental Conduit",
       "slug": "elemental-memory",
       "version": "elemental-memory-20261013-v1",
       "icon44": "NH_perk_elemental_memory",
@@ -430,8 +430,8 @@
       "selection": "user-authorized-provisional-perk-drafts-2026-10-14"
     },
     {
-      "id": "new-horizons:elementalRebirth.elementalWard",
-      "name": "Elemental Ward",
+      "id": "new-horizons:elementalRebirth.elementalCataclysm",
+      "name": "Elemental Cataclysm",
       "slug": "elemental-ward",
       "version": "elemental-ward-20261014-v1",
       "icon44": "NH_perk_elemental_ward",
@@ -1255,8 +1255,8 @@
       "selection": "user-authorized-provisional-perk-drafts-2026-10-14"
     },
     {
-      "id": "new-horizons:shroudOfMalassa.nightProwler",
-      "name": "Night Prowler",
+      "id": "new-horizons:shroudOfMalassa.exposedWeakness",
+      "name": "Exposed Weakness",
       "slug": "night-prowler",
       "version": "night-prowler-20261013-v1",
       "icon44": "NH_perk_night_prowler",
@@ -1281,7 +1281,7 @@
     },
     {
       "id": "new-horizons:necromancy.ossuary",
-      "name": "Ossuary",
+      "name": "Dead Man's Luck",
       "slug": "ossuary",
       "version": "ossuary-20261013-v1",
       "icon44": "NH_perk_ossuary",
@@ -1831,7 +1831,7 @@
     },
     {
       "id": "new-horizons:necromancy.soulHarvester",
-      "name": "Soul Harvester",
+      "name": "Tomb Guard",
       "slug": "soul-harvester",
       "version": "soul-harvester-20261013-v1",
       "icon44": "NH_perk_soul_harvester",

@@ -304,8 +304,8 @@ public:
 	/// Uses proposed positions when supplied and performs no state mutation.
 	int battleHeroOrderFlankMeleeDamagePercent(const BattleAttackInfo & attack) const;
 	/// Flank's per-additional-side bonus for this hero snapshot (Encirclement changes 4% to 7%).
-	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side, int warcastingBonusPercent = 0) const;
-	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side, int warcastingBonusPercent,
+	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side) const;
+	int battleHeroOrderFlankAdditionalSidePercent(BattleSide side,
 		int divineMandateEfficiencyBonusPercent) const;
 	/// Target liveness/hostility, not permission to issue again or a promise of available shots.
 	bool battleIsFocusFireTargetActive(BattleSide side) const;
@@ -532,9 +532,9 @@ protected:
 	/// Internal damage-calculation authority, preserving the caller's EXISTING
 	/// supplied-owner decision. Does not expose concealed hero lists/policy.
 	virtual int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
-		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const;
+		int divineMandateEfficiencyBonusPercent) const;
 	static int forwardHeroCommandCoefficient(const CBattleInfoCallback & source, const JsonNode & effect,
-		const CGHeroInstance & hero, int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent);
+		const CGHeroInstance & hero, int divineMandateEfficiencyBonusPercent);
 	int heroOrderCoefficient(const JsonNode & formula, const CGHeroInstance * hero,
 		const HeroOrderState * orderState, uint32_t recipient, bool scaleLucky = true) const;
 	virtual TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const;

@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "NewHorizonsBloodrageLegacyFixture.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/GameConstants.h"
@@ -42,6 +43,7 @@ public:
 class NewHorizonsBloodrageThresholdTest : public BattleTestFixture
 {
 protected:
+	bool historicalSerialization = false;
 	void SetUp() override
 	{
 		BattleTestFixture::SetUp();
@@ -69,6 +71,8 @@ protected:
 		if(activated != 2)
 			throw std::runtime_error("Missing Unrelenting or Berserker registry entry");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(rules));
+		if(historicalSerialization)
+			historicalBloodrageFixture::captureContext(*loaded);
 	}
 
 	SecondarySkill bloodrageSkill() const
@@ -450,6 +454,7 @@ TEST_F(NewHorizonsBloodrageThresholdTest, DetachedQualifyingDeathCrossesBothCurr
 
 TEST_F(NewHorizonsBloodrageThresholdTest, ThresholdBonusesRoundTripAndLegacyFormatsDefaultThemToZero)
 {
+	historicalSerialization = true;
 	startGame();
 	selectUnrelenting(attackerSideHero);
 	selectBerserker(defenderSideHero);
@@ -466,6 +471,7 @@ TEST_F(NewHorizonsBloodrageThresholdTest, ThresholdBonusesRoundTripAndLegacyForm
 	EXPECT_EQ(restored->getBloodrageSpeedBonus(BattleSide::DEFENDER), 0);
 	EXPECT_EQ(restored->getBloodrageAdditionalRetaliations(BattleSide::DEFENDER), 1);
 
+	historicalBloodrageFixture::capturePreArmyValueSnapshot(*battle());
 	CMemorySerializer rejected;
 	rejected.oser.version = ESerializationVersion::NEW_HORIZONS_BLOODRAGE_CAP;
 	try

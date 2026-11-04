@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "CapturedSpecialtySnapshotFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
@@ -38,6 +39,7 @@ void install(JsonNode & rules, const CombatPolicy & row, int value)
 JsonNode priorRules(bool includeFour = false, bool includeRanged = false, bool includeMaintenance = false, bool includeMachine = false)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	historicalHeroRulesTest::omitPost1152OrdinarySpecialties(rules);
 	for(const auto & entry : combatPolicies) policy(rules).Struct().erase(entry.key);
 	if(!includeMachine)
 		for(const char * key : {"gunneryProfessorInitiativeFlat", "gunneryProfessorFollowUpBonusPoints", "heavyBatterySiegeTermBonusPercent"})

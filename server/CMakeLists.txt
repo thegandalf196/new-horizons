@@ -2,6 +2,10 @@ set(vcmiservercommon_SRCS
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
+		battles/BattleOrderIssuance.cpp
+		battles/BattlePassiveDivineMandate.cpp
+		battles/BattleDemonicGatingAction.cpp
+		battles/BattleDemonicGatingArrival.cpp
 	battles/BattleCreatureBurn.cpp
 	battles/BattleCreatureBurn.h
 	battles/BattleToxicSting.cpp
@@ -23,7 +27,10 @@ set(vcmiservercommon_SRCS
 		battles/FrozenAttackResolution.cpp
 		battles/NewHorizonsManaLeeches.cpp
 		battles/NewHorizonsSerpentsEmbrace.cpp
+	battles/BattleLastStandDamage.cpp
 	battles/BattlePrimaryStrikeAftermath.cpp
+	battles/ElementalRebirthAftermath.cpp
+	battles/ElementalCataclysmAftermath.cpp
 	battles/BattlePurifyAction.cpp
 	battles/BattleMeleeSpecialtyCompletion.cpp
 	battles/BattleRoundHealing.cpp
@@ -39,7 +46,8 @@ set(vcmiservercommon_SRCS
 		battles/NewHorizonsLivingInferno.cpp
 		battles/BattleFlowProcessor.cpp
 		battles/BattleProcessor.cpp
-		battles/BattleResultProcessor.cpp
+		battles/BattleWisdomRecovery.cpp
+	battles/BattleResultProcessor.cpp
 		battles/NewHorizonsWellspringRecovery.cpp
 		battles/NewHorizonsRaisedArmy.cpp
 		battles/NewHorizonsNecromancyDelivery.cpp
@@ -64,8 +72,10 @@ set(vcmiservercommon_SRCS
 		processors/TurnOrderProcessor.cpp
 
 		CGameHandler.cpp
+		CreatureRecruitment.cpp
 		CreatureRewardTransfer.cpp
 		NeutralMonsterPopulation.cpp
+		HeroLevelProgression.cpp
 		NewHorizonsLearningMentor.cpp
 		NewHorizonsScholar.cpp
 		GlobalLobbyProcessor.cpp
@@ -96,7 +106,10 @@ set(vcmiservercommon_HEADERS
 		battles/FrozenAttackResolution.h
 		battles/NewHorizonsManaLeeches.h
 		battles/NewHorizonsSerpentsEmbrace.h
+	battles/BattleLastStandDamage.h
 	battles/BattlePrimaryStrikeAftermath.h
+	battles/ElementalRebirthAftermath.h
+	battles/ElementalCataclysmAftermath.h
 	battles/BattlePurifyAction.h
 	battles/BattleMeleeSpecialtyCompletion.h
 	battles/BattleRoundHealing.h
@@ -110,7 +123,8 @@ set(vcmiservercommon_HEADERS
 		battles/NewHorizonsLivingInferno.h
 		battles/BattleFlowProcessor.h
 		battles/BattleProcessor.h
-		battles/BattleResultProcessor.h
+		battles/BattleWisdomRecovery.h
+	battles/BattleResultProcessor.h
 		battles/NewHorizonsRaisedArmy.h
 		battles/NewHorizonsWellspringRecovery.h
 

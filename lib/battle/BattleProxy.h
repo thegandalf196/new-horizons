@@ -68,6 +68,10 @@ public:
 	{
 		return subject->getBattle()->getCrisisCommandState();
 	}
+	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override
+	{
+		return subject->getBattle()->getWisdomCombatState(side);
+	}
 	bool hasCompletedHeroSpellCast(BattleSide side) const override
 	{
 		return subject->getBattle()->hasCompletedHeroSpellCast(side);
@@ -79,10 +83,6 @@ public:
 	const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override
 	{
 		return subject->getBattle()->getCrossSchoolFormulaState(side);
-	}
-	const AlternatingHeroActionState & getWarcastingState(BattleSide side) const override
-	{
-		return subject->getBattle()->getWarcastingState(side);
 	}
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override
 	{
@@ -113,6 +113,7 @@ public:
 	int32_t getEnchanterCounter(BattleSide side) const override;
 	bool getTemporalFieldUsed(BattleSide side) const override;
 	bool getCounterspellArmed(BattleSide side) const override;
+	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
 	int32_t getMetamagicPendingCount(BattleSide side) const override;
 	int32_t getMetamagicUsesConsumed(BattleSide side) const override;
 	bool getMetamagicGrandUsed(BattleSide side) const override;
@@ -179,7 +180,7 @@ public:
 	const IBonusBearer * getBonusBearer() const override;
 protected:
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
-		int warcastingBonusPercent, int divineMandateEfficiencyBonusPercent) const override;
+		int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 	Subject subject;
 };

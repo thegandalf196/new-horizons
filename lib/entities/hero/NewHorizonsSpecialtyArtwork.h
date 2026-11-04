@@ -34,7 +34,7 @@ struct SpecialtyArtworkBinding
 	std::string_view target;
 	std::string_view stem;
 };
-inline constexpr std::array<SpecialtyArtworkBinding, 119> specialtyArtworkBindings = {{
+inline constexpr std::array<SpecialtyArtworkBinding, 118> specialtyArtworkBindings = {{
 	{"core:monere", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "MonereWispLine"},
 	{"core:pasis", SpecialtyArtworkFamily::Creature, "new-horizons:wisp", "PasisWispLine"},
 	{"core:gerwulf", SpecialtyArtworkFamily::Creature, "core:ballista", "GerwulfBallistaLine"},
@@ -67,7 +67,6 @@ inline constexpr std::array<SpecialtyArtworkBinding, 119> specialtyArtworkBindin
 	{"core:calh", SpecialtyArtworkFamily::Creature, "core:gog", "CalhGogLine"},
 	{"core:nymus", SpecialtyArtworkFamily::Creature, "core:pitFiend", "NymusPitFiendLine"},
 	{"core:straker", SpecialtyArtworkFamily::Creature, "core:walkingDead", "StrakerWalkingDeadLine"},
-	{"core:zubin", SpecialtyArtworkFamily::Spell, "new-horizons:focusMagic", "ZubinFocusMagic"},
 	{"core:gretchin", SpecialtyArtworkFamily::Creature, "core:goblin", "GretchinGoblinLine"},
 	{"core:shiva", SpecialtyArtworkFamily::Creature, "core:roc", "ShivaRocLine"},
 	{"core:tyraxor", SpecialtyArtworkFamily::Creature, "core:goblinWolfRider", "TyraxorGoblinWolfRiderLine"},

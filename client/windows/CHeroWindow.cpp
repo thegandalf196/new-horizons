@@ -17,6 +17,7 @@
 #include "NewHorizonsPerkHelp.h"
 #include "NewHorizonsPerkAvailability.h"
 #include "HeroSkillOddsWindow.h"
+#include "HeroTemporaryEffectsWindow.h"
 #include "wiki/WikiWindow.h"
 
 #include "CCreatureWindow.h"
@@ -56,33 +57,6 @@
 
 namespace
 {
-class HeroSkillOddsInfoMark : public CIntObject
-{
-	std::shared_ptr<GraphicalPrimitiveCanvas> circle;
-	std::shared_ptr<CLabel> info;
-
-public:
-	HeroSkillOddsInfoMark()
-	{
-		OBJECT_CONSTRUCTION;
-		pos = Rect(0, 0, 16, 16);
-
-		circle = std::make_shared<GraphicalPrimitiveCanvas>(Rect(0, 0, 16, 16));
-		constexpr std::array<Point, 13> outline = {
-			Point(8, 2), Point(11, 3), Point(13, 5), Point(14, 8), Point(13, 11),
-			Point(11, 13), Point(8, 14), Point(5, 13), Point(3, 11), Point(2, 8),
-			Point(3, 5), Point(5, 3), Point(8, 2)
-		};
-		for(size_t point = 0; point + 1 < outline.size(); ++point)
-			circle->addLine(outline[point], outline[point + 1], Colors::METALLIC_GOLD);
-
-		// FONT_TIMES supplies a real serif lowercase i; the unfilled center lets
-		// the hero-window leather texture show through.
-		info = std::make_shared<CLabel>(8, 8, EFonts::FONT_TIMES, ETextAlignment::CENTER,
-			Colors::METALLIC_GOLD, "i");
-	}
-};
-
 bool useNewHorizonsHeroLayout(const CGHeroInstance * hero)
 {
 	// Centered body plus native 14px frame and 8px shadow on each side.
@@ -186,17 +160,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 			});
 		growthButton->setHoverable(true);
 		if(newHorizonsLayout)
-		{
-			auto infoMark = std::make_shared<HeroSkillOddsInfoMark>();
-			growthButton->pos.w = infoMark->pos.w;
-			growthButton->pos.h = infoMark->pos.h;
-			growthButton->setOverlay(infoMark);
-			for(auto * child : growthButton->children)
-			{
-				if(child != infoMark.get())
-					child->disable();
-			}
-		}
+			growthButton->setImage(AnimationPath::builtin("NH_info_button_small"));
 	}
 
 	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(7, 559, 660, 19), 7, 559));
@@ -218,6 +182,14 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 		questlogButton = std::make_shared<CButton>(Point(314, 429), AnimationPath::builtin("hsbtns4.def"), CButton::tooltip(LIBRARY->generaltexth->translate("core.heroscrn.0")), [](){ GAME->interface()->showQuestLog(); }, EShortcut::ADVENTURE_QUEST_LOG);
 	}
 	questlogButton->block(!GAME->interface()->hasJournalEntries());
+	if(newHorizonsLayout)
+	{
+		temporaryEffectsButton = std::make_shared<CButton>(Point(560, 480), AnimationPath::builtin("hsbtns4.def"),
+			CButton::tooltip("Temporary effects", "Show this hero's active temporary bonuses, penalties and their expiry."),
+			[this]() { ENGINE->windows().createAndPushWindow<HeroTemporaryEffectsWindow>(*curHero); });
+		temporaryEffectsButton->setImage(AnimationPath::builtin("heroBackpack"));
+		temporaryEffectsButton->setOverlay(std::make_shared<CPicture>(ImagePath::builtin("NH_hero_temporary_effects_icon")));
+	}
 
 	formations = std::make_shared<CToggleGroup>(0);
 	formations->addToggle(0, std::make_shared<CToggleButton>(newHorizonsLayout ? Point(484, 544) : Point(481, 483), AnimationPath::builtin("hsbtns6.def"), std::make_pair(LIBRARY->generaltexth->translate("core.heroscrn.23"), LIBRARY->generaltexth->translate("core.heroscrn.29")), 0, EShortcut::HERO_TIGHT_FORMATION));
@@ -362,312 +334,6 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	CHeroWindow::updateArtifacts();
 }
 
-void CHeroWindow::configureNewHorizonsLayout()
-{
-	const auto move = [this](const auto & widget, Point point)
-	{
-		widget->moveTo(pos.topLeft() + point);
-	};
-	banner->disable();
-	move(name, Point(139, 32));
-	name->setMaxWidth(114);
-	move(title, Point(152, 61));
-	title->setMaxWidth(140);
-	move(portraitImage, Point(16, 18));
-	move(portraitArea, Point(16, 18));
-	move(portraitWikiArea, Point(16, 18));
-	move(quitButton, Point(740, 570));
-	move(backpackButton, Point(444, 480));
-	move(questlogButton, Point(502, 480));
-	move(dismissButton, Point(560, 480));
-	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(0, 608, 800, 16), 0, 608));
-
-	for(size_t i = 0; i < primSkillAreas.size(); ++i)
-	{
-		const int x = 236 + static_cast<int>(i) * 82;
-		move(primSkillAreas[i], Point(x, 12));
-		primSkillAreas[i]->pos.w = 82;
-		primSkillAreas[i]->pos.h = 76;
-		move(primSkillValues[i], Point(x + 40, 80));
-		move(primSkillImages[i == 3 ? 5 : i], Point(x + 4, 30));
-		move(labels[i], Point(x + 41, 21));
-		labels[i]->setMaxWidth(74);
-		labels[i]->setText(labels[i]->getText());
-		growthValues.push_back(std::make_shared<CLabel>(x + 54, 33, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "", 24));
-	}
-	move(primSkillImages[3], Point(294, 88));
-	move(primSkillImages[4], Point(14, 132));
-	move(specImage, Point(14, 88));
-	move(specArea, Point(12, 88));
-	move(expArea, Point(12, 132));
-	move(spellPointsArea, Point(292, 88));
-	move(morale, Point(579, 33));
-	move(luck, Point(661, 33));
-	move(labels[4], Point(62, 92));
-	move(labels[5], Point(62, 136));
-	move(labels[6], Point(342, 92));
-	for(size_t i = 4; i < 7; ++i)
-	{
-		labels[i]->setMaxWidth(88);
-		labels[i]->setText(labels[i]->getText());
-	}
-	specName = std::make_shared<CLabel>(62, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	expValue = std::make_shared<CLabel>(62, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	manaValue = std::make_shared<CLabel>(342, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	labels.push_back(std::make_shared<CLabel>(568, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Morale", 74));
-	labels.push_back(std::make_shared<CLabel>(650, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Luck", 74));
-	const auto skillsHeading = std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT,
-		Colors::YELLOW, "Skills / learned perks", 376);
-	labels.push_back(skillsHeading);
-	// The visible mark and its 16px click target follow the rendered heading
-	// width instead of occupying a fixed, empty-column gap.
-	move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 176));
-	for(size_t i = 0; i < secSkills.size(); ++i)
-	{
-		const int y = 192 + static_cast<int>(i) * 44;
-		move(secSkills[i], Point(12, y));
-		move(secSkillValues[i], Point(60, y + 4));
-		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this, Point(60, y + 22), 78, true);
-		secSkillValues[i]->setMaxWidth(74);
-		for(int ability = 0; ability < 3; ++ability)
-		{
-			const int x = 138 + ability * 98;
-			auto area = std::make_shared<LRClickableAreaWText>(Rect(x, y, 98, 44), "");
-			area->disable();
-			provisionalAbilityAreas.push_back(area);
-			provisionalAbilityIcons[i].push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, 0, x + 2, y));
-			provisionalAbilityIcons[i].back()->disable();
-			const std::array cellLabels = {
-				std::make_shared<CLabel>(x + 48, y + 14, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 44),
-				std::make_shared<CLabel>(x + 48, y + 4, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46),
-				std::make_shared<CLabel>(x + 48, y + 22, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 46)
-			};
-			for(const auto & label : cellLabels)
-			{
-				labels.push_back(label);
-				provisionalAbilityLabels[i].push_back(label);
-			}
-		}
-	}
-	leadershipArea = std::make_shared<LRClickableAreaWText>(Rect(152, 88, 140, 44), "Leadership capacity");
-	movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44), "Movement points");
-	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Siege rating available to this hero");
-	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Siege")})
-	{
-		const std::string fieldName = field.second;
-		// Movement is a first-class New Horizons derived attribute just like
-		// Leadership and Siege.  Keep its glyph in the same visual slot so the
-		// value is not presented as an unexplained text-only exception.
-		// Hero-specific icons draw at native size in these 44px rows; the generic
-		// Leadership capability symbol remains available for creature costs.
-		const auto iconKey = fieldName == "Leadership" ? "NH_hero_leadership_44"
-			: fieldName == "Movement" ? "NH_hero_movement_44" : "NH_capability_siege";
-		capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, 0, field.first.x, field.first.y));
-		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
-	}
-	// Keep the current total and class growth in separate fields, matching the
-	// primary-attribute readout. The total includes Leadership bonuses from
-	// artifacts and other sources; the adjacent growth value is class-only.
-	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 48);
-	leadershipGrowthValue = std::make_shared<CLabel>(250, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "", 40);
-	movementValue = std::make_shared<CLabel>(202, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	legacySiegeValue = std::make_shared<CLabel>(342, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-}
-
-void CHeroWindow::restoreLegacyLayout()
-{
-	OBJECT_CONSTRUCTION;
-	newHorizonsLayout = false;
-	setBackgroundPresentation(ImagePath::builtin(ENGINE->isRoeData() ? "HeroScr3" : "HeroScr4"), PLAYER_COLORED);
-	const auto move = [this](const auto & widget, Point point)
-	{
-		widget->moveTo(pos.topLeft() + point);
-	};
-	// Reuse the artifact and garrison owners. In particular, do not destroy an
-	// artifact holder to resize: its destructor can return a picked artifact.
-	if(arts)
-		move(arts, Point(-65, -8));
-	if(garr)
-	{
-		move(garr, Point(15, 485));
-		for(const auto & split : garr->splitButtons)
-			move(split, Point(539, 519));
-	}
-	banner->enable();
-	move(banner, Point(606, 8));
-	move(name, Point(190, 38));
-	name->setMaxWidth(0);
-	move(title, Point(175, 65));
-	title->setMaxWidth(180);
-	move(growthButton, Point(273, 53));
-	move(portraitImage, Point(19, 19));
-	move(portraitArea, Point(18, 18));
-	move(portraitWikiArea, Point(18, 18));
-	move(quitButton, Point(609, 516));
-	move(backpackButton, Point(424, 429));
-	move(questlogButton, Point(314, 429));
-	move(dismissButton, Point(534, 429));
-	if(!settings["general"]["enableUiEnhancements"].Bool())
-	{
-		backpackButton->disable();
-		move(dismissButton, Point(454, 429));
-		dismissLabel = std::make_shared<CTextBox>(LIBRARY->generaltexth->translate("core.jktext.8"), Rect(370, 430, 65, 35), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
-		questlogLabel = std::make_shared<CTextBox>(LIBRARY->generaltexth->translate("core.jktext.9"), Rect(510, 430, 65, 35), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
-	}
-	if(curHero->getCommander() && !commanderButton)
-	{
-		commanderButton = std::make_shared<CButton>(Point(317, 18), AnimationPath::builtin("heroCommander"), CButton::tooltipLocalized("vcmi.heroWindow.openCommander"), [this](){ commanderWindow(); }, EShortcut::HERO_COMMANDER);
-		commanderButton->setOverlay(std::make_shared<CPicture>(ImagePath::builtin("heroWindow/commanderButtonIcon")));
-	}
-	// Both entries are created as CToggleButton above; CToggleBase exposes state,
-	// not widget positioning. Recover the concrete button before moving it.
-	move(std::static_pointer_cast<CToggleButton>(formations->buttons.at(0)), Point(481, 483));
-	move(std::static_pointer_cast<CToggleButton>(formations->buttons.at(1)), Point(481, 519));
-	for(size_t i = 0; i < heroList.size(); ++i)
-		move(heroList[i], Point(612, 87 + static_cast<int>(i) * 54));
-	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(7, 559, 660, 19), 7, 559));
-	// Constructor-time activation only dispatches the base implementation.
-	// Register the completed replacement, but never steal an overlying modal's bar.
-	if(isActive())
-		statusbar->activate();
-	for(size_t i = 0; i < primSkillAreas.size(); ++i)
-	{
-		const int x = 30 + static_cast<int>(i) * 70;
-		move(primSkillAreas[i], Point(x, 109));
-		primSkillAreas[i]->pos.w = 42;
-		primSkillAreas[i]->pos.h = 64;
-		move(primSkillValues[i], Point(x + 23, 166));
-		move(primSkillImages[i == 3 ? 5 : i], Point(x + 2, 111));
-		move(labels[i], Point(x + 23, 99));
-	}
-	move(primSkillImages[3], Point(162, 230));
-	move(primSkillImages[4], Point(20, 230));
-	move(specImage, Point(18, 180));
-	move(specArea, Point(18, 180));
-	move(expArea, Point(18, 228));
-	move(spellPointsArea, Point(162, 228));
-	move(morale, Point(175, 179));
-	move(luck, Point(233, 179));
-	move(labels[4], Point(69, 183));
-	move(labels[5], Point(69, 232));
-	move(labels[6], Point(213, 232));
-	specName = std::make_shared<CLabel>(69, 205, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 104);
-	expValue = std::make_shared<CLabel>(68, 252);
-	manaValue = std::make_shared<CLabel>(211, 252);
-	for(size_t i = 0; i < 7; ++i)
-	{
-		labels[i]->setMaxWidth(0);
-		labels[i]->setText(LIBRARY->generaltexth->translate("core.jktext." + std::to_string(i + 1)));
-	}
-	for(size_t i = 7; i < labels.size(); ++i)
-		labels[i]->disable();
-	for(const auto & value : growthValues)
-		value->disable();
-	for(const auto & area : provisionalAbilityAreas)
-		area->disable();
-	for(const auto & icons : provisionalAbilityIcons)
-		for(const auto & icon : icons)
-			icon->disable();
-	leadershipArea->disable();
-	for(const auto & icon : capabilityIcons)
-		icon->disable();
-	movementArea->disable();
-	legacySiegeArea->disable();
-	leadershipValue->disable();
-	leadershipGrowthValue->disable();
-	movementValue->disable();
-	legacySiegeValue->disable();
-	move(learnedPerksSummary, Point(342, 404));
-	learnedPerksSummary->enable();
-	move(legacyLeadershipLabel, Point(438, 408));
-	move(legacySiegeLabel, Point(534, 408));
-	move(legacyLeadershipImage, Point(410, 404));
-	move(legacySiegeImage, Point(506, 404));
-	move(legacyBoneCollectorImage, Point(314, 404));
-	if(curHero->secSkills.size() > 8)
-	{
-		const int lines = (curHero->secSkills.size() + 1) / 2;
-		secSkillSlider = std::make_shared<CSlider>(Point(284, 276), 189, [this](int){ updateArtifacts(); }, 4, lines, 0, Orientation::VERTICAL, CSlider::BROWN);
-		secSkillSlider->setPanningStep(48);
-		secSkillSlider->setScrollBounds(Rect(-266, 0, secSkillSlider->pos.x - pos.x + secSkillSlider->pos.w, secSkillSlider->pos.h));
-	}
-	for(size_t i = 0; i < secSkills.size(); ++i)
-	{
-		const bool right = i % 2 != 0;
-		const int y = 276 + 48 * (i / 2);
-		move(secSkills[i], Point(right ? 162 : 18, y));
-		move(secSkillValues[i], Point(right ? 212 : 68, y + 4));
-		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this,
-			Point(right ? 212 : 68, y + 24), right && secSkillSlider ? 71 : 87, false);
-		secSkillValues[i]->setMaxWidth(right && secSkillSlider ? 71 : 87);
-	}
-}
-
-void CHeroWindow::demonicReserveClicked()
-{
-	if(!curHero || curHero->getPerkSkillRank("new-horizons:demonicGating") <= 0
-		|| curHero->getOwner() != GAME->interface()->playerID)
-		return;
-
-	const auto * selected = garr ? garr->getSelection() : nullptr;
-	if(selected && selected->getObj() == curHero && curHero->hasStackAtSlot(selected->getSlot()))
-	{
-		const SlotID slot = selected->getSlot();
-		const CreatureID creature = curHero->getCreature(slot)->getId();
-		const TQuantity count = curHero->getStackCount(slot);
-		if(creature.toCreature()->getFactionID() != FactionID::INFERNO)
-		{
-			GAME->interface()->showInfoDialog("Only Inferno creatures may enter the Demonic Reserve.");
-			return;
-		}
-		const int minimumActive = curHero->stacksCount() == 1 ? 1 : 0;
-		ENGINE->windows().createAndPushWindow<CSplitWindow>(creature.toCreature(),
-			[this, slot, creature](int, int reserveAmount)
-			{
-				if(reserveAmount > 0)
-					GAME->interface()->cb->arrangeDemonicReserve(curHero, slot, creature, reserveAmount, true);
-			}, minimumActive, 0, count, 0,
-			CSplitWindowOwner{curHero, "Hero: " + curHero->getObjectName().toString(&GAME->translator())},
-			CSplitWindowOwner{nullptr, "Demonic Reserve"});
-		return;
-	}
-
-	std::vector<CreatureID> creatures;
-	std::vector<std::string> entries;
-	for(const auto & [creature, count] : curHero->getDemonicReserve())
-	{
-		if(count <= 0)
-			continue;
-		creatures.push_back(creature);
-		entries.push_back((count == 1 ? creature.toCreature()->getNameSingularTranslated()
-			: creature.toCreature()->getNamePluralTranslated()) + "  " + std::to_string(count));
-	}
-	if(entries.empty())
-	{
-		GAME->interface()->showInfoDialog("The Demonic Reserve is empty. Select an Inferno stack first.");
-		return;
-	}
-	ENGINE->windows().pushWindow(std::make_shared<CObjectListWindow>(entries, nullptr,
-		"Demonic Reserve", "Choose creatures to return to the active army.",
-		[this, creatures](const int index)
-		{
-			if(index < 0 || static_cast<size_t>(index) >= creatures.size())
-				return;
-			const CreatureID creature = creatures[index];
-			const TQuantity count = curHero->getDemonicReserveCount(creature);
-			if(count <= 0)
-				return;
-			ENGINE->windows().createAndPushWindow<CSplitWindow>(creature.toCreature(),
-				[this, creature](int, int activeAmount)
-				{
-					if(activeAmount > 0)
-						GAME->interface()->cb->arrangeDemonicReserve(curHero, SlotID(), creature, activeAmount, false);
-				}, 0, 0, count, 0,
-				CSplitWindowOwner{nullptr, "Demonic Reserve"},
-				CSplitWindowOwner{curHero, "Hero: " + curHero->getObjectName().toString(&GAME->translator())});
-		}));
-}
-
 void CHeroWindow::onScreenResize()
 {
 	const bool refresh = newHorizonsLayout;
@@ -696,15 +362,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	OBJECT_CONSTRUCTION;
 
 	assert(curHero);
-	if(demonicReserveButton)
-	{
-		const bool hasGating = curHero->getPerkSkillRank("new-horizons:demonicGating") > 0;
-		if(hasGating)
-			demonicReserveButton->enable();
-		else
-			demonicReserveButton->disable();
-		demonicReserveButton->block(hasGating && curHero->getOwner() != GAME->interface()->playerID);
-	}
+	refreshDemonicReserveVisibility();
 	if(newHorizonsLayout && !useNewHorizonsHeroLayout(curHero))
 		restoreLegacyLayout();
 	// An inactive resize only changes presentation. The inherited refresh also
@@ -720,8 +378,9 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	const auto fullTitle = titleText.toString(&GAME->translator());
 	const bool titleElided = heroWindowLabelText::setTitle(*title, fullTitle, newHorizonsLayout);
 
-	specArea->text = curHero->getSpecialtyDescriptionTranslated();
 	const auto specialty = heroSpecialtyPresentation(*curHero);
+	specArea->text = specialty.description;
+	specArea->details = specialty.details;
 	specImage->setAnimationPath(specialty.animation(), specialty.frame());
 	specImage->setScale(Point(44, 44));
 	specArea->hoverText = specialty.name;
@@ -827,6 +486,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 					cellLabels.at(labelIndex + label)->setEnabled(false);
 				}
 				area->text.clear();
+				area->details.clear();
 				area->hoverText.clear();
 				area->disable();
 				provisionalAbilityIcons[g][ability]->disable();
@@ -857,6 +517,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 						+ "\n\n" + newHorizonsPerkAvailability::explanation(
 							{slot.status, slot.reason, slot.requiredRank}, newHorizonsPerkHelp::skillName(curHero, skillId));
 					area->text = details;
+					area->details = perk.details;
 					area->hoverText = details;
 				}
 				else
@@ -868,6 +529,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 						: tierSlotText(slot, newHorizonsPerkHelp::skillName(curHero, skillId)))
 						+ "\nClick the Skill to browse its ten perks; browsing never acquires a perk.";
 					area->text = details;
+					area->details.clear();
 					area->hoverText = details;
 				}
 				area->enable();

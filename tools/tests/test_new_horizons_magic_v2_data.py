@@ -12,7 +12,7 @@ HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS = frozenset({
     'core:bloodlust', 'core:counterstrike', 'core:deathRipple',
     'core:destroyUndead', 'core:disguise', 'core:disruptingRay',
     'core:earthElemental', 'core:fireElemental', 'core:fireShield',
-    'core:forceField', 'core:fortune', 'core:frenzy', 'core:hypnotize',
+    'core:forceField', 'core:fortune', 'core:frenzy', 'core:haste', 'core:hypnotize',
     'core:magicMirror', 'core:mirth', 'core:prayer', 'core:precision',
     'core:protectAir', 'core:protectEarth', 'core:protectFire',
     'core:protectWater', 'core:removeObstacle', 'core:sacrifice',
@@ -60,6 +60,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.v3_rules = load('config/newHorizonsMagic.json')
         self.rules = copy.deepcopy(self.v3_rules)
         self.rules['rulesetVersion'] = 2
+        self.rules.pop('pointBlankPreservesAdjacentExemption')
         self.rules.pop('schoolRankPowerCoefficientPercent')
         self.rules.pop('spellcraftEfficiencyPercent')
         # v2 is an earlier captured profile, not current v3 with a new version.
@@ -83,6 +84,24 @@ class MagicV2DataTest(unittest.TestCase):
                                 if 'variant' not in row}
         self.old_rules = legacy_rules(self.rules)
         self.formula_spell = 'core:magicArrow'
+
+    def test_point_blank_precedence_marker_is_current_boolean_only(self):
+        validator = Draft4Validator(self.v3, registry=self.registry)
+        self.assertIs(self.v3_rules['pointBlankPreservesAdjacentExemption'], True)
+        for value in (False, True):
+            current = copy.deepcopy(self.v3_rules)
+            current['pointBlankPreservesAdjacentExemption'] = value
+            validator.validate(current)
+        for invalid in (None, 0, 1, 'true', {}, []):
+            current = copy.deepcopy(self.v3_rules)
+            current['pointBlankPreservesAdjacentExemption'] = invalid
+            self.assertFalse(validator.is_valid(current))
+        for historical, older_validator in ((self.rules, self.validator),
+                                             (self.old_rules, self.old_validator)):
+            older_validator.validate(historical)
+            with_marker = copy.deepcopy(historical)
+            with_marker['pointBlankPreservesAdjacentExemption'] = True
+            self.assertFalse(older_validator.is_valid(with_marker))
 
     def test_captured_hero_luck_morale_defaults_and_module_match(self):
         expected = {
@@ -188,7 +207,7 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertEqual(
             non_ordinary_acquisition,
             HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS
-            | NEW_HORIZONS_NON_ORDINARY_ACQUISITION_SPELLS | {'core:haste'},
+            | NEW_HORIZONS_NON_ORDINARY_ACQUISITION_SPELLS,
         )
 
         for identity in sorted(HERO_INACCESSIBLE_NONCANONICAL_CORE_SPELLS):
@@ -203,6 +222,7 @@ class MagicV2DataTest(unittest.TestCase):
         expected = {
             'core:haste': {
                 'ordinaryAcquisition': False,
+                'heroAccess': False,
                 'schools': ['new-horizons:sorcery'],
                 'level': 1,
                 'costs': [4, 4, 3, 3],

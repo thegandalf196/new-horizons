@@ -75,7 +75,7 @@ function Script:apply(mechanics, server, target)
 	server:addUnitBonus(battle, unit, {
 		type = "COMBAT_EVENT_TRIGGER",
 		subtype = VAMPIRISM_STATUS,
-		val = healBasisPoints(mechanics),
+		val = mechanics:adjustMetamagicMagnitude(healBasisPoints(mechanics), unit),
 		duration = ENUM.BonusDuration.nTurns,
 		turns = STATUS_DURATION_ROUNDS + mechanics:getExtendSpellBonusRounds(),
 		sourceType = ENUM.BonusSource.spellEffect,

@@ -39,6 +39,91 @@ namespace newHorizonsHeroes
 {
 namespace
 {
+std::string nonDamageSpecialtySummary(SpellID source, SpellID target, const std::string & name)
+{
+	return name + (target.toSpell()->getJsonKey() == "new-horizons:focusMagic"
+		? " marks let friendly shooters ignore more enemy Defense."
+		: target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL
+		? " removes more enemy Defense through its Spell Power contribution."
+		: source == SpellID::BLESS || source == SpellID::HASTE
+		? " gains more duration from Spell Power."
+		: target.toSpell()->getJsonKey() == "new-horizons:hydrasVitality"
+		? " grants more maximum health through its Spell Power contribution."
+		: target.toSpell()->getJsonKey() == "new-horizons:guardianSpirit"
+		? " grants more protective health through its Spell Power contribution."
+		: target.toSpell()->getJsonKey() == "new-horizons:crusade"
+		? " grants stronger combat bonuses through its Spell Power contribution."
+		: " gains stronger healing from Spell Power.");
+}
+
+bool resolveDruidPresentation(const CHero & hero, const JsonNode & development, SpecialtyPresentation & result)
+{
+	if(const auto druids = druidSpecialtyRules(development))
+	{
+		const auto identity = hero.getJsonKey();
+		const LevelScaledSpecialty * scaling = nullptr;
+		MetaString description;
+		if(identity == "core:elleshar")
+		{
+			result.name = "High Lore";
+			result.summary = "Strengthen Intelligence's extra maximum Spell Points as the hero gains levels.";
+			result.artwork = "newHorizons/heroSpecialties/EllesharHighLore";
+			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
+			scaling = &druids->highLore;
+			description.appendRawString("The extra maximum Spell Points granted by Intelligence increase by ");
+		}
+		else if(identity == "core:gem")
+		{
+			result.name = "Restorative Sorceress";
+			result.summary = "Strengthen Cure's Spell Power healing and First Aid Tent creature healing as the hero gains levels.";
+			result.artwork = "newHorizons/heroSpecialties/GemRestorativeSorceress";
+			result.spell = SpellID::CURE;
+			scaling = &druids->restorativeSorceress;
+			description.appendRawString("The Spell Power healing component of Cure and creature healing by the First Aid Tent increase by ");
+		}
+		else if(identity == "core:malcom")
+		{
+			result.name = "Natural Philosopher";
+			result.summary = "Gain more experience through Learning, Learning Stones and Trees of Knowledge.";
+			result.artwork = "newHorizons/heroSpecialties/MalcomNaturalPhilosopher";
+			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
+			scaling = &druids->naturalPhilosopher;
+			description.appendRawString("The core experience bonus from Learning increases by ");
+		}
+		if(scaling)
+		{
+			description.appendNumber(scaling->percentPerLevel);
+			description.appendRawString("% per hero level, up to ");
+			description.appendNumber(scaling->maximumPercent);
+			description.appendRawString("%. Fractions round down.");
+			if(identity == "core:malcom")
+			{
+				description.appendRawString(" Learning Stones and Trees of Knowledge grant ");
+				description.appendNumber(druids->knowledgeObjectExperiencePercent);
+				description.appendRawString("% additional raw experience before ordinary experience modifiers.");
+			}
+			result.description = description.toString(LIBRARY->generaltexth.get());
+			return true;
+		}
+	}
+	return false;
+}
+
+bool resolveManaLeechesPresentation(const CHero & hero, const JsonNode & development, SpecialtyPresentation & result)
+{
+	if(hero.getJsonKey() == "core:ignatius")
+		if(const auto amount = manaLeechesAmount(development))
+		{
+			result.name = "Mana Leeches";
+			result.summary = "Imps and Familiars steal enemy hero Mana with damaging melee attacks and retaliations; Familiars also restore the stolen Mana to their hero.";
+			result.creature = CreatureID(CreatureID::IMP);
+			result.description = "Imp and Familiar damaging primary melee attack sequences steal up to "
+				+ std::to_string(*amount) + " enemy hero Mana, including retaliation. Familiars also restore the actual stolen amount to their hero's Normal Mana, up to capacity. Familiar spell channeling is unchanged.";
+			return true;
+		}
+	return false;
+}
+
 bool resolveIndividualPresentation(const CHero & hero,
 	const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero,
 	SpecialtyPresentation & result)
@@ -49,6 +134,9 @@ bool resolveIndividualPresentation(const CHero & hero,
 		if(const auto enabled = serpentsEmbracePolicy(development))
 		{
 			result.name = "Serpent’s Embrace";
+			result.summary = *enabled
+				? "Nagas and Naga Queens bind enemies with damaging melee attacks and retaliations, preventing movement until the attacker next acts or dies."
+				: "Serpent’s Embrace is disabled for this game.";
 			result.creature = CreatureID(CreatureID::decode("core:naga"));
 			result.description = *enabled ? "Damaging primary melee attacks by Nagas and Naga Queens bind their targets, including retaliation. Each source prevents voluntary movement and Teleport until its next activation or death. Other Naga holds remain independent. Cure and Dispel do not remove this physical restraint."
 				: "Serpent’s Embrace is disabled for this game.";
@@ -74,6 +162,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 		&& magic["spells"].Struct().contains("new-horizons:holyArmor"))
 	{
 		result.name = "Master Spellward";
+		result.summary = "Strengthen active Spellward's protection against magical damage as the hero gains levels.";
 		result.artwork = "newHorizons/heroSpecialties/ThorgrimMasterSpellward";
 		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
 		result.description = "While Spellward is active, its magical-damage reduction contribution increases by "
@@ -88,6 +177,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 		&& newHorizonsMagic::spellPointRulesActive(magic))
 	{
 		result.name = "Bottomless Mind";
+		result.summary = "Gain extra maximum Normal Spell Points per hero level while Intelligence is active.";
 		result.artwork = "newHorizons/heroSpecialties/AndraBottomlessMind";
 		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
 		result.description = "While Intelligence is active, Andra gains +"
@@ -106,6 +196,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 		&& newHorizonsMagic::spellPointRulesActive(magic))
 	{
 		result.name = "Arcane Preparation";
+		result.summary = "Begin combat with temporary Buffer based on Intelligence's extra Spell Points and the hero's level.";
 		result.artwork = "newHorizons/heroSpecialties/SerenaArcanePreparation";
 		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
 		result.description = "At combat start, Intelligence grants temporary Buffer equal to "
@@ -126,6 +217,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 			{ return bonus && bonus->type == BonusType::LUCK && bonus->stacking == fortuneMarker; })))
 	{
 		result.name = "Fortune's Child";
+		result.summary = "Grant the army extra Luck as the hero gains levels.";
 		result.artwork = "newHorizons/heroSpecialties/DaremythFortunesChild";
 		result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:luck"));
 		result.description = "Daremyth grants +" + std::to_string(fortune->luckPerStep)
@@ -137,51 +229,8 @@ bool resolveIndividualPresentation(const CHero & hero,
 		return true;
 	}
 
-	if(const auto druids = druidSpecialtyRules(development))
-	{
-		const auto identity = heroType->getJsonKey();
-		const LevelScaledSpecialty * scaling = nullptr;
-		MetaString description;
-		if(identity == "core:elleshar")
-		{
-			result.name = "High Lore";
-			result.artwork = "newHorizons/heroSpecialties/EllesharHighLore";
-			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
-			scaling = &druids->highLore;
-			description.appendRawString("The extra maximum Spell Points granted by Intelligence increase by ");
-		}
-		else if(identity == "core:gem")
-		{
-			result.name = "Restorative Sorceress";
-			result.artwork = "newHorizons/heroSpecialties/GemRestorativeSorceress";
-			result.spell = SpellID::CURE;
-			scaling = &druids->restorativeSorceress;
-			description.appendRawString("The Spell Power healing component of Cure and creature healing by the First Aid Tent increase by ");
-		}
-		else if(identity == "core:malcom")
-		{
-			result.name = "Natural Philosopher";
-			result.artwork = "newHorizons/heroSpecialties/MalcomNaturalPhilosopher";
-			result.skill = SecondarySkill(SecondarySkill::decode("new-horizons:learning"));
-			scaling = &druids->naturalPhilosopher;
-			description.appendRawString("The core experience bonus from Learning increases by ");
-		}
-		if(scaling)
-		{
-			description.appendNumber(scaling->percentPerLevel);
-			description.appendRawString("% per hero level, up to ");
-			description.appendNumber(scaling->maximumPercent);
-			description.appendRawString("%. Fractions round down.");
-			if(identity == "core:malcom")
-			{
-				description.appendRawString(" Learning Stones and Trees of Knowledge grant ");
-				description.appendNumber(druids->knowledgeObjectExperiencePercent);
-				description.appendRawString("% additional raw experience before ordinary experience modifiers.");
-			}
-			result.description = description.toString(LIBRARY->generaltexth.get());
-			return true;
-		}
-	}
+	if(resolveDruidPresentation(hero, development, result))
+		return true;
 
 	return false;
 }
@@ -229,6 +278,8 @@ bool resolveCreatureLinePresentation(const CHero & hero, const JsonNode & develo
 			description.appendRawString(" at level ");
 			description.appendNumber(rules->levelStep * rules->attributeMaximum);
 			description.appendRawString(".");
+			result.summary = creature.toCreature()->getNamePluralTranslated()
+				+ " and their upgrades gain Speed and Initiative, plus Attack and Defense as the hero gains levels.";
 			result.creature = creature;
 			result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
 				detail::SpecialtyArtworkFamily::Creature, creature.toCreature()->getJsonKey());
@@ -254,15 +305,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 		|| capturedHero->getPrimaryGrowthRules() != development || capturedHero->getMagicRules() != magic))
 		throw std::invalid_argument("Specialty presentation requires the matching captured context");
 
-	if(hero.getJsonKey() == "core:ignatius")
-		if(const auto amount = manaLeechesAmount(development))
-		{
-			result.name = "Mana Leeches";
-			result.creature = CreatureID(CreatureID::IMP);
-			result.description = "Imp and Familiar damaging primary melee attack sequences steal up to "
-				+ std::to_string(*amount) + " enemy hero Mana, including retaliation. Familiars also restore the actual stolen amount to their hero's Normal Mana, up to capacity. Familiar spell channeling is unchanged.";
-			return result;
-		}
+	if(resolveManaLeechesPresentation(hero, development, result))
+		return result;
 	if(resolveAerialSupremacyPresentation(hero, development, result)
 		|| resolveChosenSpecialtyPresentation(hero, development, magic, result)
 		|| resolveIndividualPresentation(hero, development, magic, capturedHero, result))
@@ -294,6 +338,9 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 					detail::SpecialtyArtworkFamily::Spell, target->toSpell()->getJsonKey());
 				result.name = target->toSpell()->getNameTranslated();
 				result.description = description.toString(LIBRARY->generaltexth.get());
+				result.summary = result.name + (producer.damage
+					? " gains stronger initial damage from Spell Power."
+					: " gains a stronger duration or protective Integrity contribution from Spell Power.");
 				return result;
 			}
 		}
@@ -314,6 +361,7 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 					detail::SpecialtyArtworkFamily::Spell, target.toSpell()->getJsonKey());
 				result.name = target.toSpell()->getNameTranslated();
 				result.description = description.toString(LIBRARY->generaltexth.get());
+				result.summary = result.name + " gains stronger damage from Spell Power.";
 				return result;
 			}
 
@@ -330,6 +378,8 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 				description.appendNumber(rules->componentPercent);
 				if(producer.spell == SpellID::BLESS)
 					description.appendRawString("% to its Spell Power-derived duration component before its normal duration cap.");
+				else if(target.toSpell()->getJsonKey() == "new-horizons:focusMagic")
+					description.appendRawString("% to its Spell Power-derived Creature Defense penetration per Arcane Breach mark. Its fixed term, cap and duration are unchanged.");
 				else if(producer.spell == SpellID::HASTE)
 					description.appendRawString("% to its Spell Power-derived duration component. Its Speed bonus is unchanged.");
 				else if(target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL)
@@ -347,6 +397,7 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 					detail::SpecialtyArtworkFamily::Spell, target.toSpell()->getJsonKey());
 				result.name = target.toSpell()->getNameTranslated();
 				result.description = description.toString(LIBRARY->generaltexth.get());
+				result.summary = nonDamageSpecialtySummary(producer.spell, target, result.name);
 				return result;
 			}
 		}
@@ -361,6 +412,7 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 			result.artwork = detail::resolvedSpecialtyArtwork(heroType->getJsonKey(),
 				detail::SpecialtyArtworkFamily::Skill, result.skill->toEntity(LIBRARY)->getJsonKey());
 			result.name = result.skill->toEntity(LIBRARY)->getNameTranslated();
+			result.summary = "Strengthen Logistics's daily Movement bonus; Navigation and other perks keep their ordinary effects.";
 			result.description = "Logistics's core Movement effect is increased by +" + std::to_string(rules->coreBonusPercent)
 				+ "%. Navigation's sea bonus and embark cost, and other perks, are unchanged.";
 			return result;
@@ -381,6 +433,7 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 				detail::SpecialtyArtworkFamily::Skill, result.skill->toEntity(LIBRARY)->getJsonKey());
 			result.name = result.skill->toEntity(LIBRARY)->getNameTranslated();
 			result.description = description.toString(LIBRARY->generaltexth.get());
+			result.summary = result.name + " grants stronger core numerical effects; its perks keep their ordinary effects.";
 			return result;
 		}
 

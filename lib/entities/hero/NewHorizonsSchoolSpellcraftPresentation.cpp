@@ -28,6 +28,8 @@ bool resolveSchoolSpellcraftPresentation(const CHero & hero, const JsonNode & de
 		return false;
 	result.artwork = "newHorizons/heroSpecialties/" + std::string(artwork[index]);
 	result.name = names[index];
+	result.summary = "Strengthen Spellcraft's " + std::string(index == 0 ? "damage bonus" : "numerical bonuses")
+		+ " for " + std::string(schools[index]) + " spells as the hero gains levels.";
 	result.description = "With Spellcraft learned, on " + std::string(schools[index]) + " spells, Spellcraft's Spell Power bonus increases by "
 		+ std::to_string(policy->percentPerLevel) + "% per hero level, up to +"
 		+ std::to_string(policy->maximumPercent) + "% of that bonus. ";

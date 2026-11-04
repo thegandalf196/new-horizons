@@ -78,9 +78,10 @@ function Script:apply(mechanics, server, target)
 			position = position,
 			summoned = true,
 			phantomIntegrity = integrity,
-			phantomDuration = mechanics:adjustEffectDuration(DURATION_ROUNDS)
+			phantomDuration = mechanics:adjustMetamagicDuration(mechanics:adjustEffectDuration(DURATION_ROUNDS), source)
 		})
 		if phantom == nil then goto continue end
+		server:recordResolvedSpellRecipient(source:unitID())
 
 		::continue::
 	end

@@ -278,7 +278,7 @@ void HypotheticBattle::projectPrimalBurst(const std::shared_ptr<StackWithBonuses
 		};
 		std::vector<PendingBurstHit> pendingHits;
 		pendingHits.reserve(hostileIds.size());
-		std::vector<newHorizonsReactiveDefense::Destruction> destroyed;
+		std::vector<PhysicalStrikeProjection::Destruction> destroyed;
 
 		// Match the authoritative batch: resolve every target, mitigation value,
 		// controller, and death-source snapshot before changing any recipient.
@@ -418,6 +418,7 @@ std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::
 			setRebirthChainUsed(snapshot.side, false);
 		return {};
 	}
+	addUnitBonus(descriptor->unit.id, {newHorizonsFactionSpellDamage::rebirthOutputMarker()});
 	elementalRebirthSpawnUnitIds.insert(descriptor->unit.id);
 	if(snapshot.profile.swiftRebirth)
 		addUnitBonus(descriptor->unit.id, {newHorizonsSwiftRebirth::marker(getRound())});

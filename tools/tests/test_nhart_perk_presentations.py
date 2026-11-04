@@ -4,7 +4,10 @@ import hashlib
 from pathlib import Path
 import unittest
 from .nhart_perk_presentations import (CONDITION, OVERLOAD_SUFFIX,
-    header_before_perk_presentation, source_bound_icon, validate_perk_presentation)
+    header_before_perk_presentation, source_bound_icon, validate_perk_presentation,
+    WISDOM_REBINDINGS, header_before_wisdom_rebindings,
+    WARCASTING_REBINDINGS, LEARNING_REBINDINGS, ESTATES_REBINDINGS,
+    header_before_reworked_perks)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -45,6 +48,45 @@ class PerkPresentationTest(unittest.TestCase):
             row = copy.deepcopy(self.row); row['resources'] = names
             with self.assertRaises(ValueError):
                 validate_perk_presentation(row, self.header)
+
+    def test_wisdom_alias_history_requires_exact_roles_and_preserves_unrelated_edits(self):
+        historical = header_before_wisdom_rebindings(self.header)
+        for old, (current, icon) in WISDOM_REBINDINGS.items():
+            before = '\t\t{"' + old + '", "' + icon + '"},\n'
+            after = '\t\t{"' + current + '", "' + icon + '"},\n'
+            self.assertEqual(historical.count(before), 1)
+            for changed in (self.header.replace(after, after.replace(icon, 'NH_wrong'), 1),
+                            self.header.replace(after, after * 2, 1),
+                            self.header + before):
+                with self.subTest(old=old), self.assertRaisesRegex(ValueError, 'Wisdom'):
+                    header_before_wisdom_rebindings(changed)
+        changed = self.header.replace('NH_perk_neutral', 'NH_changed_neutral')
+        self.assertEqual(header_before_wisdom_rebindings(changed),
+                         historical.replace('NH_perk_neutral', 'NH_changed_neutral'))
+
+    def assert_exact_rebinding_history(self, bindings):
+        historical = header_before_reworked_perks(self.header)
+        for old, (current, icon) in bindings.items():
+            before = '\t\t{"' + old + '", "' + icon + '"},\n'
+            after = '\t\t{"' + current + '", "' + icon + '"},\n'
+            self.assertEqual(historical.count(before), 1)
+            for changed in (self.header.replace(after, after.replace(icon, 'NH_wrong'), 1),
+                            self.header.replace(after, after * 2, 1),
+                            self.header.replace(after, '', 1), self.header + before):
+                with self.subTest(old=old), self.assertRaisesRegex(ValueError, 'reworked'):
+                    header_before_reworked_perks(changed)
+        changed = self.header.replace('NH_perk_neutral', 'NH_changed_neutral')
+        self.assertEqual(header_before_reworked_perks(changed),
+                         historical.replace('NH_perk_neutral', 'NH_changed_neutral'))
+
+    def test_warcasting_history_rejects_missing_duplicate_wrong_and_old_roles(self):
+        self.assert_exact_rebinding_history(WARCASTING_REBINDINGS)
+
+    def test_learning_history_rejects_missing_duplicate_wrong_and_old_roles(self):
+        self.assert_exact_rebinding_history(LEARNING_REBINDINGS)
+
+    def test_estates_history_rejects_missing_duplicate_wrong_and_old_roles(self):
+        self.assert_exact_rebinding_history(ESTATES_REBINDINGS)
 
     def test_only_exact_known_overload_is_reversible_for_header_history(self):
         base = header_before_perk_presentation(self.header)

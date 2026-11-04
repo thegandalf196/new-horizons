@@ -125,6 +125,8 @@ public:
 	void clearSelection();
 	/// Select the first component, if any.
 	void selectFirst();
+	/// Select a visible component by index without submitting its choice.
+	void selectIndex(size_t index);
 	/// Assign the displayed selection shortcuts in component order.
 	void setShortcuts(const std::vector<EShortcut> & shortcuts);
 

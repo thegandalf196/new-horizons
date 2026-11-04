@@ -147,6 +147,9 @@ bool resolveAdditionalSpecialtyPresentation(const CHero & hero, const JsonNode &
 	result.name = "Field Physician";
 	result.artwork = "newHorizons/heroSpecialties/RionFieldPhysician";
 	const bool cureActive = newHorizonsMagic::cureEnabled(magic, SpellID::CURE);
+	result.summary = cureActive
+		? "Improve Cure and First Aid Tent creature healing as the hero gains levels."
+		: "Improve First Aid Tent creature healing as the hero gains levels.";
 	result.description = std::string(cureActive ? "Cure and First Aid Tent creature healing increase by "
 		: "First Aid Tent creature healing increases by ")
 		+ std::to_string(rule->healingPercentPerLevel) + "% per hero level, up to +"

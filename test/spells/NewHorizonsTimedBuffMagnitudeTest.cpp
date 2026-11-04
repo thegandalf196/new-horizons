@@ -11,9 +11,9 @@ TEST(NewHorizonsTimedBuffMagnitudeTest, SlowSharesBaseCapAndLateTowardZeroVarian
 {
 	using newHorizonsSorceryRevision::slowBaseReduction;
 	using newHorizonsSorceryRevision::scaleSlowVariantValue;
-	EXPECT_EQ(slowBaseReduction(0, 12650, 10, 25), 20);
-	EXPECT_EQ(slowBaseReduction(100, 10000, 0, 0), 40);
-	EXPECT_EQ(slowBaseReduction(1000, 12650, 10, 25), 50);
+	EXPECT_EQ(slowBaseReduction(0, 12650, 25), 20);
+	EXPECT_EQ(slowBaseReduction(100, 10000, 0), 40);
+	EXPECT_EQ(slowBaseReduction(1000, 12650, 25), 50);
 	EXPECT_DOUBLE_EQ(scaleSlowVariantValue(-31, 60), -18);
 	EXPECT_DOUBLE_EQ(scaleSlowVariantValue(-31.9, 60), -19);
 	EXPECT_DOUBLE_EQ(scaleSlowVariantValue(-50, 60), -30);

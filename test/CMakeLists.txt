@@ -66,6 +66,16 @@ else()
 endif()
 
 set(test_SRCS
+		bonus/DivinePayoutSerializationTest.cpp
+		battle/ArcaneMarksActionGuardTest.cpp
+		battle/AutomaticHeroCastReceiptTest.cpp
+		battle/PassiveDivineMandatePolicyTest.cpp
+		game/HistoricalFactionPerkRulesTest.cpp
+		game/NewHorizonsPassiveFactionCaptureTest.cpp
+		hero/NewHorizonsPassiveFactionPolicyTest.cpp
+		server/battles/PassiveDivineActionBudgetTest.cpp
+		server/battles/PassiveDivineOrderCoverageTest.cpp
+		spells/NewHorizonsMetamagicMarksTest.cpp
 		../client/windows/SpellbookEntryPresentation.cpp
 		spells/SpellbookEntryPresentationTest.cpp
 		spells/SpellbookNativeFontPresentationTest.cpp
@@ -115,12 +125,12 @@ set(test_SRCS
 		server/battles/NewHorizonsGuildSpellHelpTest.cpp
 
 		battle/AutocombatPreferencesTest.cpp
-		battle/AlternatingHeroActionStateTest.cpp
 		battle/SpellResponseStateTest.cpp
 		battle/NewHorizonsCounterBatteryAITest.cpp
 		battle/BattleDeploymentOrderTest.cpp
 		battle/CasualtyProvenanceTest.cpp
 		battle/HeroActionAllowanceStateTest.cpp
+		battle/HeroOrderRecipientsTest.cpp
 		battle/HeroSpellAllowanceTransitionTest.cpp
 		battle/OrderTransitionCharacterizationTest.cpp
 		battle/BattleHexTest.cpp
@@ -359,6 +369,8 @@ set(test_SRCS
 		hero/NewHorizonsSkillSpecialtyQueryTest.cpp
 		hero/NewHorizonsHalonInitializationTest.cpp
 		hero/NewHorizonsHeroBiographyTest.cpp
+		hero/HeroTemporaryEffectsTest.cpp
+		hero/HeroMetamagicPointPresentationTest.cpp
 		hero/HistoricalHeroEpochFixture.h
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
@@ -412,7 +424,7 @@ set(test_SRCS
 		spells/NewHorizonsMagicArrowTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
 		spells/NewHorizonsMagicV2RulesTest.cpp
-		spells/WarcastingSpellComponentTest.cpp
+		spells/SpellPowerCompositionTest.cpp
 		spells/NewHorizonsMagicV2SchemaTest.cpp
 		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
@@ -520,6 +532,7 @@ set(test_SRCS
 		server/battles/SummonGuardiansTest.cpp
 		server/battles/TransmutationTest.cpp
 		server/battles/WarMachineControlTest.cpp
+		server/battles/AcceptedHeroSpellAllowanceTest.cpp
 		server/battles/HeroCommandTest.cpp
 		server/battles/NewHorizonsProtectLinkTest.cpp
 		server/battles/NewHorizonsMultipleOrderPacketsTest.cpp
@@ -556,6 +569,7 @@ set(test_SRCS
 		server/battles/TemporalFieldPerkTest.cpp
 		server/battles/CounterspellPerkTest.cpp
 		server/battles/TransfigureMatterPerkTest.cpp
+		server/battles/NewHorizonsWisdomRevisionTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsWarMachinesPerksTest.cpp
 		server/battles/NewHorizonsSpellcraftTargetDurationTest.cpp
@@ -568,6 +582,8 @@ set(test_SRCS
 		server/battles/NewHorizonsMetamagicUIFixtureExportTest.cpp
 		server/battles/NewHorizonsBloodrageUIFixtureExportTest.cpp
 		server/battles/NewHorizonsMetamagicTest.cpp
+		server/battles/NewHorizonsMetamagicPointsBattleTest.cpp
+		server/battles/NewHorizonsArcaneMarksBattleTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp
 		server/battles/NewHorizonsRewardSkillFilterTest.cpp
 		server/battles/NewHorizonsSkillFeedbackTest.cpp
@@ -614,6 +630,7 @@ set(test_SRCS
 		battle/NewHorizonsConfusionChoicesTest.cpp
 		battle/NewHorizonsConfusionResolutionTest.cpp
 		battle/NewHorizonsConfusionStateTest.cpp
+		battle/NewHorizonsPassiveFactionStateTest.cpp
 		battle/NewHorizonsForestAmbushStateTest.cpp
 		server/battles/NewHorizonsForestAmbushTest.cpp
 		battle/DreadCavalryStateTest.cpp
@@ -655,10 +672,12 @@ set(test_SRCS
 		server/battles/NewHorizonsNecromancyCampaignCaptureTest.cpp
 		server/battles/NewHorizonsReclaimerTest.cpp
 		server/battles/NewHorizonsReclaimerFixture.h
+		server/battles/NewHorizonsBloodrageLegacyFixture.h
 		server/battles/NewHorizonsBloodrageTest.cpp
 		server/battles/NewHorizonsBloodragePerksTest.cpp
 		server/battles/NewHorizonsBloodrageThresholdTest.cpp
 		server/battles/NewHorizonsDemonicGatingTest.cpp
+		server/battles/NewHorizonsTemporaryDemonicGatingTest.cpp
 		server/battles/NewHorizonsBulwarkRulesTest.cpp
 		server/battles/NewHorizonsBulwarkRuntimeTest.cpp
 		server/battles/NewHorizonsBattlecraftTest.cpp
@@ -779,14 +798,15 @@ set(test_SRCS
 		server/battles/NewHorizonsChainLightningProfileTest.cpp
 		server/battles/NewHorizonsBlessTest.cpp
 		server/battles/NewHorizonsWarcastingTest.cpp
+		server/battles/ArcaneInspirationTest.cpp
 		server/NewHorizonsSkeletonTransformerTest.cpp
-		battle/NewHorizonsEnchantedCommandTest.cpp
 		battle/OverwhelmingFormulaStateTest.cpp
 		battle/OverwhelmingFormulaProtocolTest.cpp
 		spells/OverwhelmingFormulaDamageTest.cpp
 		server/battles/OverwhelmingFormulaTest.cpp
 		server/battles/WarcastingScriptSpellTest.cpp
 		server/battles/NewHorizonsShroudTest.cpp
+		server/battles/NewHorizonsFactionSpellDamageTest.cpp
 		server/battles/NewHorizonsShroudNoEscapeTest.cpp
 		server/battles/NewHorizonsEvasiveShroudTest.cpp
 		server/battles/NewHorizonsAmbusherTest.cpp
@@ -859,18 +879,19 @@ set(test_SRCS
 		server/queries/NewHorizonsManaRegenerationArtifactTest.cpp
 		server/queries/NewHorizonsGlyphsOfFearTest.cpp
 		server/NewHorizonsEconomyTest.cpp
+		server/NewHorizonsEstatesPricesTest.cpp
+		server/NewHorizonsFourSkillUIFixtureExportTest.cpp
+        server/NewHorizonsEstatesIncomeTest.cpp
+        server/NewHorizonsEstatesMercenaryTest.cpp
+        server/NewHorizonsEstatesFixture.h
 		server/NewHorizonsEstatesFinancierTest.cpp
-		server/NewHorizonsEstatesInvestorTest.cpp
 		server/NewHorizonsEstatesLandSurveyorTest.cpp
-		server/NewHorizonsEstatesProspectorTest.cpp
 		server/NewHorizonsEstatesStewardTest.cpp
-		server/NewHorizonsEstatesMagnateTest.cpp
 		server/NewHorizonsAcademicStudyTest.cpp
 		server/queries/NewHorizonsScholarTest.cpp
 		server/queries/NewHorizonsLearningExchangeTest.cpp
 		server/queries/NewHorizonsSageTest.cpp
 		server/queries/NewHorizonsRecruitersContactsTest.cpp
-		server/NewHorizonsResourceBrokerTest.cpp
 		server/NewHorizonsLearningMentorTest.cpp
 		server/NewHorizonsLearningMasterTeacherTest.cpp
 		server/NewHorizonsLearningFieldStudyTest.cpp
@@ -909,6 +930,7 @@ set(test_SRCS
 )
 
 set(test_HEADERS
+		HistoricalFactionPerkRules.h
 		scripting/HistoricalTimedScript.h
 		scripting/HistoricalLifeDrainScript.h
 		scripting/HistoricalDamageCalculatorScript.h
@@ -978,6 +1000,9 @@ if(ENABLE_BATTLE_AI)
 
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
+		battleAI/PassiveFactionAIValueTest.cpp
+		battleAI/PassiveTemporaryGatingAITest.cpp
+		battleAI/PassiveDivineMandateAITest.cpp
 		server/battles/NewHorizonsAvatarOfRageTest.cpp
 		server/battles/NewHorizonsBloodrageDeathPerksTest.cpp
 		server/battles/NewHorizonsSwiftRebirthTest.cpp
@@ -1001,7 +1026,6 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsHeroicSpiritTest.cpp
 		server/battles/NewHorizonsMercenaryCombatTest.cpp
 		server/battles/NewHorizonsOpportunistTest.cpp
-		server/battles/NewHorizonsReactiveWeaveTest.cpp
 		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
 		battleAI/FutureAttackReactionTest.cpp
@@ -1023,6 +1047,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/DamageCalculationTimingRoutingTest.cpp
 		battleAI/ProtectAttackPreviewTest.cpp
 		battleAI/HeroOrderEffectsProjectionTest.cpp
+		battleAI/FactionRevisionProjectionTest.cpp
 		battleAI/LegacyHeroOrderProjectionTest.cpp
 		battleAI/BraceAttackPreviewTest.cpp
 		battleAI/BracePreemptiveForecastTest.cpp
@@ -1152,6 +1177,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HypotheticTimedSpellTest.cpp
 		battleAI/HypotheticObstacleTest.cpp
 		battleAI/HypotheticSpellServerRouteTest.cpp
+		battleAI/NewHorizonsWisdomAITest.cpp
+		battleAI/ArcaneInspirationAITest.cpp
 		battleAI/HypotheticWallTest.cpp
 		battleAI/AttackPreviewRainTargetsTest.cpp
 		battleAI/NewHorizonsSylvanTacticsAITest.cpp

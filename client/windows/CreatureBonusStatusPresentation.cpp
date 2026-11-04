@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "CreatureBonusStatusPresentation.h"
 #include "SylvanFactionStatusPresentation.h"
+#include "../battle/ArcaneInspirationPresentation.h"
 #include "../../lib/CStack.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/GameLibrary.h"
@@ -96,6 +97,13 @@ std::vector<Row> supplementalRows(const CStack * battleStack, const CStackInstan
 	if(battleStack->getBattle() && callback)
 	{
 		const auto battle = callback->getBattle(battleStack->getBattle()->getBattleID());
+		if(battle)
+		{
+			const auto inspiration = arcaneInspirationPresentation::forStack(*battleStack, battle.get());
+			if(inspiration.active())
+				rows.push_back({"Arcane Inspiration / Spellshock", ImagePath::builtin(arcaneInspirationPresentation::SMALL_ICON),
+					BonusSource::HERO_SPECIAL, inspiration.details});
+		}
 		if(battle)
 			for(const auto & text : newHorizonsSylvanFactionPresentation::currentRows(*battle, battleStack))
 			{

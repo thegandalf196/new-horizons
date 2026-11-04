@@ -20,7 +20,6 @@
 #include "SecondWindOpportunity.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/IBattleState.h"
-#include "../../lib/battle/NewHorizonsWarcasting.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
@@ -67,17 +66,12 @@ CanonicalOrderValue::CanonicalOrderValue(const CBattleInfoCallback & battle, Bat
 	combinedArmsEnabled = hero
 		&& heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
 		&& heroCommands::hasCombinedArms(hero);
-	const auto round = battle.battleGetRound();
-	orderAllowance = battle.battleGetOrderActionAllowance(side);
 	preparedOrder = hero
 		? battle.battlePrepareHeroOrderState(side, command, targetIds)
 		: std::optional<HeroOrderState>();
 	if(preparedOrder)
 		heroCommands::finalizeRevisedOrderSnapshot(*preparedOrder, battle.getBattle()->getMagicRules());
-	warcastingBonus = hero && orderAllowance
-		&& orderAllowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO
-		&& newHorizonsWarcasting::enabled(battle.getBattle()->getMagicRules())
-		? newHorizonsWarcasting::orderBonus(hero, battle.getBattle()->getWarcastingState(side), round) : 0;
+
 	divineMandateEfficiencyBonusPercent = preparedOrder
 		? preparedOrder->divineMandateEfficiencyBonusPercent() : 0;
 }
@@ -85,7 +79,7 @@ CanonicalOrderValue::CanonicalOrderValue(const CBattleInfoCallback & battle, Bat
 float CanonicalOrderValue::coefficient(const char * commandKey, const char * effectKey) const
 {
 	const auto & formula = (*commandRules)[commandKey]["effects"][effectKey];
-	return static_cast<float>(hero ? heroCommands::coefficient(formula, *hero, warcastingBonus,
+	return static_cast<float>(hero ? heroCommands::coefficient(formula, *hero,
 		divineMandateEfficiencyBonusPercent)
 		: heroCommands::coefficient(formula, 0, 0));
 }
@@ -279,7 +273,7 @@ float CanonicalOrderValue::flank(float flankDamage, float combinedArmsRangedPerc
 		++distinctSides;
 	const int additionalSides = std::max(0, distinctSides - 1);
 	const int additionalSidePercent = battle.battleHeroOrderFlankAdditionalSidePercent(
-		side, warcastingBonus, divineMandateEfficiencyBonusPercent);
+		side, divineMandateEfficiencyBonusPercent);
 	const auto meleeOrderValue = targetCanBeFlanked
 		? bestOwnMeleeDamage(target) * (flankDamage + additionalSides * additionalSidePercent) / 100.0f
 		: 0.0f;
@@ -337,7 +331,7 @@ float CanonicalOrderValue::secondWind(const Environment * environment,
 		if(!activation || hasSecondWindAttackOpportunity(*activation, target->unitId(), enemy->unitId()))
 			extraAttack = std::max(extraAttack, anyDamage(target, enemy));
 	const auto directDamagePercent = hero
-		? static_cast<float>(heroCommands::secondWindPercent(*hero, warcastingBonus,
+		? static_cast<float>(heroCommands::secondWindPercent(*hero,
 			divineMandateEfficiencyBonusPercent)) : 50.0f;
 	return extraAttack * directDamagePercent / 100.0f;
 }
@@ -398,7 +392,7 @@ DirectOrderValue CanonicalOrderValue::directValue(std::optional<int> focusFireSn
 	const auto flankDamage = coefficient("flank", "meleeDamagePercent");
 	const auto & flankFormula = (*commandRules)["flank"]["effects"]["meleeDamagePercent"];
 	const auto combinedArmsRangedPercent = combinedArmsEnabled
-		? static_cast<float>(heroCommands::combinedArmsFlankPercent(flankFormula, *hero, warcastingBonus,
+		? static_cast<float>(heroCommands::combinedArmsFlankPercent(flankFormula, *hero,
 			divineMandateEfficiencyBonusPercent))
 		: 0.0f;
 	if(command == HeroCommand::CHARGE)

@@ -54,10 +54,9 @@ struct DLL_LINKAGE WeightedDestination
 };
 
 /// Radius = min(4, 2 + floor(scaled Spell Power / 100)). The caller supplies
-/// the saved School x Spellcraft coefficient and Warcasting percentage. Blink
+/// the saved School x Spellcraft coefficient. Blink
 /// deliberately does not apply a legacy effect-power divisor or Empower.
-DLL_LINKAGE int radiusFor(int32_t rawSpellPower, int32_t coefficientBasisPoints,
-	int32_t warcastingBonusPercent);
+DLL_LINKAGE int radiusFor(int32_t rawSpellPower, int32_t coefficientBasisPoints);
 
 /// Returns nullopt when the cast is not saved-v3 Blink or `unit` is not a live,
 /// valid creature target in this battle. Geometry checks only landing footprints;

@@ -63,6 +63,9 @@ namespace scripting::api
 
 void ServerCallbackProxy::registerMethods(MethodRegistrar & R)
 {
+	R.method<&::ServerCallback::recordResolvedSpellRecipient>("recordResolvedSpellRecipient",
+		{{"unitID", "Actual accepted recipient of the resolving spell."}}, {},
+		"Records an accepted preexisting recipient without applying another effect.");
 	R.function<&ServerCallbackProxy::addUnit>("addUnit",
 		{
 			{"battle", "Battle in which the unit is created."},

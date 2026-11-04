@@ -12,6 +12,7 @@ struct HeroSpecialtyPresentation
 {
 	std::string name;
 	std::string description;
+	std::string details;
 	std::optional<CreatureID> creature;
 	size_t prototypeFrame = 0;
 	std::optional<SpellID> spell;
@@ -50,7 +51,8 @@ inline HeroSpecialtyPresentation heroSpecialtyPresentation(const CHero & hero,
 {
 	HeroSpecialtyPresentation result;
 	result.name = metadata.name;
-	result.description = metadata.description;
+	result.description = metadata.summary.empty() ? metadata.description : metadata.summary;
+	result.details = metadata.summary.empty() ? "" : metadata.description;
 	result.prototypeFrame = static_cast<size_t>(hero.imageIndex);
 	result.spell = metadata.spell;
 	result.skill = metadata.skill;

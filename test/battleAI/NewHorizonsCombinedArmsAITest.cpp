@@ -221,7 +221,7 @@ protected:
 			HeroCommand::FLANK, {enemy->unitId()});
 		ASSERT_TRUE(preparedOrder);
 		const auto combinedArmsPercent = heroCommands::combinedArmsFlankPercent(
-			flankFormula, *attackerSideHero, preparedOrder->warcastingBonusPercent);
+			flankFormula, *attackerSideHero);
 		EXPECT_NEAR(combinedArmsPercent, 7.2, 0.0001)
 			<< "Only the 12-point Attack-derived component gets Advanced Command efficiency and then is halved";
 

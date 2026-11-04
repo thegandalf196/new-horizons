@@ -31,6 +31,7 @@ set(lualib_SRCS
 		api/battle/SpellObstacleDescriptor.cpp
 
 		api/spells/Mechanics.cpp
+		api/spells/MetamagicBindings.cpp
 		api/spells/TimedUtility.cpp
 		api/spells/TimeStopRadius.cpp
 		api/spells/SorceryUtility.cpp
@@ -115,6 +116,7 @@ set(lualib_HDRS
 		api/library/SpellSchool.h
 
 		api/spells/Mechanics.h
+		api/spells/MetamagicBindings.h
 		api/spells/TimeStopRadius.h
 		api/spells/SorceryUtility.h
 		api/spells/ShadowMagnitudes.h

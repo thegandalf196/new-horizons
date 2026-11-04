@@ -11,14 +11,14 @@
 namespace newHorizonsMagic
 {
 SpellEffectPreview afflictionSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	int32_t power, int32_t damageCoefficient, int32_t warcasting, int32_t empower)
+	int32_t power, int32_t damageCoefficient, int32_t empower)
 {
 	const auto specialty = hero.getDamageSpellSpecialtyBonusPercent(spell.getId());
 	if(spell.getJsonKey() == "new-horizons:hexOfPain")
 	{
 		const bool painweaver = hero.hasActivePerk("new-horizons:shadowMagic", "new-horizons:shadowMagic.painweaver");
 		return {"new-horizons.spellbook.effect.hex", "new-horizons.spellbook.effect.hex.short",
-			SpellEffectPreview::Quantity{hexOfPainFlatDamage(power, damageCoefficient, warcasting, empower, specialty, painweaver),
+			SpellEffectPreview::Quantity{hexOfPainFlatDamage(power, damageCoefficient, empower, specialty, painweaver),
 				1, "new-horizons.spellbook.unit.number"},
 			SpellEffectPreview::Quantity{hexOfPainDamageSharePercent(), 1, "new-horizons.spellbook.unit.number"},
 			"new-horizons.spellbook.hexTrigger"};

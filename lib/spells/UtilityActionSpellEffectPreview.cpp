@@ -24,8 +24,7 @@ SpellEffectPreview action(const std::string & label, std::optional<int32_t> amou
 }
 }
 std::optional<SpellEffectPreview> utilityActionSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback * callback, const JsonNode & rules, int32_t power, int32_t coefficient,
-	int32_t warcasting, int32_t empower, bool followup)
+	const CBattleInfoCallback * callback, const JsonNode & rules, int32_t power, int32_t coefficient, int32_t empower, bool followup)
 {
 	if(!rulesActive(rules) || rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 		return std::nullopt;
@@ -40,7 +39,7 @@ std::optional<SpellEffectPreview> utilityActionSpellEffectPreview(const CGHeroIn
 	if(spell.getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL)
 		return action("spellLock", durationWithCastExtensions(newHorizonsSorcery::spellLockDurationBasisPoints(power,
 			hero.hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.spellbinder"),
-			coefficient, warcasting, empower), extend, echo));
+			coefficient, empower), extend, echo));
 	if(newHorizonsPurify::enabled(rules, spell.getId()))
 	{
 		auto result = action("purify", newHorizonsPurify::maximumSpellEffectChoices(rules, &hero, power));

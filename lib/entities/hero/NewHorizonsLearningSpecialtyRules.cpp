@@ -25,12 +25,12 @@ void validateLearningSpecialtyRows(const JsonNode & table)
 		const auto & row = table[rowName(kind)];
 		const bool archivist = kind == LearningSpecialtyKind::GRAVE_ARCHIVIST;
 		detail::fields(row, archivist
-			? std::initializer_list<std::string_view>{"learningPercentPerLevel", "learningMaximumPercent", "additionalEagleEyeSpells"}
+			? std::initializer_list<std::string_view>{"learningPercentPerLevel", "learningMaximumPercent"}
 			: std::initializer_list<std::string_view>{"learningPercentPerLevel", "learningMaximumPercent", "mentorExperiencePercent"});
 		detail::require(detail::integer(row["learningPercentPerLevel"], 0, 1000), "learning specialty percentage per level");
 		detail::require(detail::integer(row["learningMaximumPercent"], 0, 200), "learning specialty maximum percentage");
-		detail::require(archivist ? detail::integer(row["additionalEagleEyeSpells"], 0, 10)
-			: detail::integer(row["mentorExperiencePercent"], 0, 1000), "learning specialty additional effect");
+		if(!archivist)
+			detail::require(detail::integer(row["mentorExperiencePercent"], 0, 1000), "learning specialty Mentor effect");
 	}
 }
 std::optional<LearningSpecialtyRules> learningSpecialtyRules(const JsonNode & development, LearningSpecialtyKind kind)
@@ -45,9 +45,7 @@ std::optional<LearningSpecialtyRules> learningSpecialtyRules(const JsonNode & de
 	LearningSpecialtyRules result;
 	result.learning = {static_cast<int>(row["learningPercentPerLevel"].Integer()),
 		static_cast<int>(row["learningMaximumPercent"].Integer())};
-	if(kind == LearningSpecialtyKind::GRAVE_ARCHIVIST)
-		result.additionalEagleEyeSpells = static_cast<int>(row["additionalEagleEyeSpells"].Integer());
-	else
+	if(kind == LearningSpecialtyKind::SPIRIT_TEACHER)
 		result.mentorExperiencePercent = static_cast<int>(row["mentorExperiencePercent"].Integer());
 	return result;
 }
@@ -60,11 +58,6 @@ std::optional<LearningSpecialtyRules> learningSpecialtyRules(const CGHeroInstanc
 	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:oris")))
 		return learningSpecialtyRules(hero->getPrimaryGrowthRules(), LearningSpecialtyKind::SPIRIT_TEACHER);
 	return std::nullopt;
-}
-int additionalEagleEyeSpells(const CGHeroInstance * hero)
-{
-	const auto rules = learningSpecialtyRules(hero);
-	return rules ? rules->additionalEagleEyeSpells : 0;
 }
 int64_t mentorSpecialtyAward(const CGHeroInstance * mentor, int64_t ordinaryAward)
 {

@@ -48,11 +48,6 @@ void execute(CGameHandler & handler, const CGHeroInstance & first, const CGHeroI
 	const auto plan = newHorizonsHeroes::prepareScholarExchange(first, second, week);
 	if(!plan)
 		return;
-	SetNewHorizonsScholarMeeting receipt;
-	receipt.first = std::min(first.id, second.id);
-	receipt.second = std::max(first.id, second.id);
-	receipt.week = week;
-	handler.sendAndApply(receipt);
 	if(!plan->firstTeaches.empty())
 		handler.changeSpells(&second, true, std::set<SpellID>(plan->firstTeaches.begin(), plan->firstTeaches.end()));
 	if(!plan->secondTeaches.empty())

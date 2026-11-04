@@ -4,6 +4,8 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/CSpell.h"
 
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -433,4 +435,64 @@ TEST_F(NewHorizonsFireWallRuntimeTest, SecondWindLethalWallTriggerAdvancesBattle
 	EXPECT_GT(battle()->getActivationSerial(), activation);
 	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
 	EXPECT_NE(battle()->battleActiveUnit()->unitId(), target->unitId());
+}
+
+TEST_F(NewHorizonsFireWallRuntimeTest, InsightAndCurrentPointsSnapshotOutputAndDurationBeforeCompletion)
+{
+	prepareFireWall();
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:solmyr")));
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.arcaneMomentum"});
+	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.arcaneInsight"});
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	battle()->getSide(BattleSide::ATTACKER).metamagicPointState.points = 4;
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
+	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
+	ASSERT_NE(wall, nullptr);
+	EXPECT_EQ(wall->minimalDamage, 83); // Raw damage still precedes target MDR.
+	EXPECT_EQ(wall->capturedMdrPenetration["effectivenessBonusPercent"].Integer(), 37);
+	EXPECT_EQ(wall->turnsRemaining, 4); // floor3*(1+25%+12%), first Momentum cast still0.
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::FIRE_WALL), 1);
+	battle()->getSide(BattleSide::ATTACKER).metamagicPointState.points = 12;
+	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	CMemorySerializer wire;
+	wire.oser & *wall;
+	SpellCreatedObstacle restored;
+	wire.iser & restored;
+	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	spells::ObstacleCasterProxy proxy(PlayerColor(0), attackerSideHero, restored);
+	const SpellID trigger(SpellID::decode("core:fireWallTrigger"));
+	spells::BattleCast cast(battle(), &proxy, spells::Mode::PASSIVE, trigger.toSpell());
+	const auto mechanics = trigger.toSpell()->battleMechanics(&cast);
+	EXPECT_EQ(mechanics->adjustEffectValue(victim), 113); // floor83*1.37, never current1.36 or freshInsight.
+	EXPECT_EQ(mechanics->adjustEffectValue(victim), 113);
+	EXPECT_EQ(restored.turnsRemaining, 4);
+}
+
+TEST_F(NewHorizonsFireWallRuntimeTest, DelayedEffectivenessFollowsRecipientMdrThenOneFloorAndNativeCap)
+{
+	prepareFireWall();
+	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	SpellCreatedObstacle obstacle;
+	obstacle.ID = SpellID::FIRE_WALL;
+	obstacle.casterSide = BattleSide::ATTACKER;
+	obstacle.casterPowerDivisor = 10;
+	obstacle.minimalDamage = 7;
+	obstacle.damageSnapshot = true;
+	obstacle.capturedMdrPenetration["effectivenessBonusPercent"].Integer() = 25;
+	spells::ObstacleCasterProxy proxy(PlayerColor(0), attackerSideHero, obstacle);
+	const SpellID trigger(SpellID::decode("core:fireWallTrigger"));
+	spells::BattleCast cast(battle(), &proxy, spells::Mode::PASSIVE, trigger.toSpell());
+	const auto mechanics = trigger.toSpell()->battleMechanics(&cast);
+	EXPECT_EQ(mechanics->adjustEffectValue(victim), 3); // floor(floor7*0.5)*1.25; prescalingraw would give4.
+	EXPECT_EQ(mechanics->adjustEffectValue(victim), 3);
+	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::DAMAGE_RECEIVED_CAP, BonusSource::OTHER, 10, BonusSourceID()));
+	EXPECT_EQ(mechanics->adjustEffectValue(victim), 1);
 }

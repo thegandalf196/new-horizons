@@ -18,6 +18,7 @@
 #include "../../lib/constants/EntityIdentifiers.h"
 
 #include <array>
+#include <utility>
 
 class CGHeroInstance;
 class CCreature;
@@ -190,83 +191,6 @@ public:
 	 */
 	CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback, int leftMin, int rightMin,
 		int leftAmount, int rightAmount, CSplitWindowOwner leftOwner = {}, CSplitWindowOwner rightOwner = {});
-};
-
-/// Raised up level window where you can select one out of two skills
-class CLevelWindow : public CWindowObject
-{
-	// Native content640x568 plus CWindowObject's28x29 border fits800x600.
-public:
-	struct PrimaryGainSnapshot
-	{
-		ui32 level;
-		std::array<int, GameConstants::PRIMARY_SKILLS> gains;
-	};
-
-private:
-	std::optional<PrimaryGainSnapshot> primaryGains;
-	std::vector<std::shared_ptr<CIntObject>> primaryGainWidgets;
-	std::vector<std::shared_ptr<CLabel>> choiceHeaders;
-	std::shared_ptr<CHeroArea> portrait;
-	std::shared_ptr<CButton> ok;
-	std::shared_ptr<CLabel> mainTitle;
-	std::shared_ptr<CLabel> levelTitle;
-	std::shared_ptr<CLabel> choiceInstruction;
-	std::shared_ptr<CAnimImage> skillIcon;
-	std::shared_ptr<CLabel> skillValue;
-
-	std::shared_ptr<CComponentBox> box; //skills to select
-	std::shared_ptr<CComponentBox> skillChoiceBox;
-	std::shared_ptr<CComponentBox> perkChoiceBox;
-	std::function<void(ui32)> cb;
-	bool perkChoiceActive = false;
-
-	int skillViewOffset = 0;
-	std::shared_ptr<CButton> buttonLeft;
-	std::shared_ptr<CButton> buttonRight;
-
-	std::vector<SecondarySkill> skills;
-	std::vector<newHorizonsHeroes::PerkOfferCandidate> perks;
-	std::vector<size_t> choiceOrder;
-	/// The visible grid is arranged by category (skill/perk columns), so its
-	/// order is intentionally different from the paging order above.
-	std::vector<size_t> displayedChoiceOrder;
-	const CGHeroInstance * hero;
-
-	void initLevelUpData(const CGHeroInstance * heroInstance, const std::vector<SecondarySkill> & availableSkills,
-		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & availablePerks,
-		const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains);
-	void createLevelUpControls(PrimarySkill pskill);
-	void createSkillBox();
-	void submitSelection();
-
-public:
-	CLevelWindow(const CGHeroInstance *hero, PrimarySkill pskill, const std::vector<SecondarySkill> &skills,
-		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, std::function<void(ui32)> callback,
-		const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
-	void updateLevelUpData(const CGHeroInstance * heroInstance, PrimarySkill pskill,
-		const std::vector<SecondarySkill> & availableSkills,
-		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & availablePerks,
-		const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains = std::nullopt);
-	void setCloseOnSelection(bool value);
-	void configureReroll(QueryID queryID, bool available, std::function<int()> callback);
-	bool matchesQuery(QueryID queryID) const;
-	bool matchesHero(const CGHeroInstance * heroInstance) const;
-	void rerollRequestApplied(uint32_t requestID, bool success);
-
-	void close() override;
-
-private:
-	bool closeOnSelection = true;
-	bool selectionSubmitted = false;
-	QueryID levelQuery = QueryID::NONE;
-	std::shared_ptr<CButton> reroll;
-	std::function<int()> rerollCallback;
-	std::optional<uint32_t> rerollRequest;
-	bool rerollAvailable = false;
-	bool rerollPending = false;
-	void refreshRerollControls();
-	void requestReroll();
 };
 
 /// Town portal, castle gate window

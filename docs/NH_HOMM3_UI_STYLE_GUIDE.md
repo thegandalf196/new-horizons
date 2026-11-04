@@ -66,13 +66,19 @@ a clickable, gold-highlighted hover region, not a separate icon/button. Reuse
 the configured faction/tier image bounds and position. Guild level names use
 the ordinary Arabic1–5 convention consistently across factions.
 
-## Spell help text
+## Player-facing help text
 
 Start a spell's right-click help with a short, plain explanation of its effect,
 target and duration. A player should understand its practical use before reading
 any formula. Put calculated values, mathematical details and necessary exceptions
 in a separate paragraph. Prefer the current hero's actual values; keep saved-rule
 versions, implementation terminology and migration history out of player help.
+
+Use one plain sentence for each Skill or perk's main effect, preferably under
+25 words. State the benefit, amount and timing. Include an exception in that
+sentence only when it changes a player's decision; put other interactions in
+extended help or technical documentation. Use gameplay language instead of
+internal engine terminology.
 
 ## Build from the outside inward
 

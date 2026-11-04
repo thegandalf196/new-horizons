@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "HeroOrderEffects.h"
 #include "HeroCommandRoyalStandard.h"
+#include "PassiveDivineMandateVanguard.h"
 #include "CBattleInfoCallback.h"
 #include "Unit.h"
 #include "../bonuses/BonusList.h"
@@ -74,6 +75,12 @@ void appendVanguardGrants(IssuedOrderGrants & result, const CBattleInfoCallback 
 			if(std::binary_search(order.royalStandardRecipientUnitIds.begin(),
 				order.royalStandardRecipientUnitIds.end(), unit->unitId()))
 				add(BonusType::NONE, BonusSubtypeID(), static_cast<int>(side) + 1, BonusValueType::ADDITIVE_VALUE);
+			if(order.passiveDivineMandate && order.passiveDivineMandate->perks != 0)
+			{
+				add(BonusType::NONE, BonusSubtypeID(BonusCustomSubtype(static_cast<int>(side) + 1)),
+					order.passiveDivineMandate->perks, BonusValueType::BASE_NUMBER);
+				newHorizonsPassiveDivineMandate::validateVanguardRiderEntitlement(bonuses.back());
+			}
 			additions.emplace_back(unit->unitId(), std::move(bonuses));
 		}
 		if(!removals.empty())

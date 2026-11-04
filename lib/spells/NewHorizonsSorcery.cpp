@@ -138,7 +138,7 @@ int64_t phantomArmyIntegrity(int64_t sourceCurrentHealth, int32_t spellPower, bo
 }
 
 int64_t phantomArmyIntegrityWithModifiers(int64_t sourceCurrentHealth, int32_t spellPower,
-	bool illusionist, int32_t coefficientBasisPoints, int32_t warcastingPercent, int32_t empowerPercent,
+	bool illusionist, int32_t coefficientBasisPoints, int32_t empowerPercent,
 	int32_t specialtyPercent)
 {
 	validateSpellPower(spellPower);
@@ -146,7 +146,7 @@ int64_t phantomArmyIntegrityWithModifiers(int64_t sourceCurrentHealth, int32_t s
 		throw std::invalid_argument("Phantom Army source health cannot be negative");
 	constexpr int64_t precision = 10000;
 	const int64_t power = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		15LL * spellPower * precision, 1, coefficientBasisPoints, warcastingPercent, empowerPercent, specialtyPercent);
+		15LL * spellPower * precision, 1, coefficientBasisPoints, empowerPercent, specialtyPercent);
 	const int64_t fractions = PHANTOM_ARMY_BASE_INTEGRITY_PERCENT * 100LL * precision
 		+ std::min<int64_t>((PHANTOM_ARMY_INTEGRITY_CAP_PERCENT - PHANTOM_ARMY_BASE_INTEGRITY_PERCENT)
 			* 100LL * precision, power);
@@ -198,45 +198,41 @@ int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPer
 	return std::min(maximumRadius, TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
 }
 
-int32_t timeStopRadius(const int32_t rawSpellPower, const int32_t coefficientBasisPoints,
-	const int32_t warcastingBonusPercent, const int32_t empowerSpellBonusPercent, const bool chronomancer)
+int32_t timeStopRadius(const int32_t rawSpellPower, const int32_t coefficientBasisPoints, const int32_t empowerSpellBonusPercent, const bool chronomancer)
 {
 	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		rawSpellPower, TIME_STOP_POWER_PER_EXTRA_RADIUS, coefficientBasisPoints,
-		warcastingBonusPercent, empowerSpellBonusPercent);
+		rawSpellPower, TIME_STOP_POWER_PER_EXTRA_RADIUS, coefficientBasisPoints, empowerSpellBonusPercent);
 	const int32_t maximumRadius = TIME_STOP_BASE_MAX_RADIUS
 		+ (chronomancer ? TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
 	return static_cast<int32_t>(std::min<int64_t>(maximumRadius, TIME_STOP_BASE_RADIUS + scaledPowerTerm));
 }
 
-int spellLockDuration(int32_t spellPower, bool spellbinder, int32_t coefficientPercent,
-	int32_t warcastingBonusPercent)
+int spellLockDuration(int32_t spellPower, bool spellbinder, int32_t coefficientPercent)
 {
 	if(coefficientPercent < 0 || coefficientPercent > 1000)
 		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
 	return spellLockDurationBasisPoints(spellPower, spellbinder,
-		coefficientPercent * 100, warcastingBonusPercent);
+		coefficientPercent * 100);
 }
 
 int spellLockDurationBasisPoints(int32_t spellPower, bool spellbinder,
-	int32_t coefficientBasisPoints, int32_t warcastingBonusPercent, int32_t empowerSpellBonusPercent)
+	int32_t coefficientBasisPoints, int32_t empowerSpellBonusPercent)
 {
 	validateSpellPower(spellPower);
 	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
-		|| warcastingBonusPercent < 0
 		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
 		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
 
 	// Only 0, 1, and 2 Spell Power units can affect the capped duration. Clamp
-	// the exact numerator at the threshold for 2 before multiplying large
-	// accepted Warcasting percentages, preserving the historical nonnegative
+	// the exact numerator at the threshold for 2 before applying
+	// the accepted Empower percentage, preserving the nonnegative
 	// int32 range without overflowing an intermediate.
 	constexpr int64_t denominator = static_cast<int64_t>(SPELL_LOCK_POWER_PER_EXTRA_ROUND)
-		* 10000 * 100 * 100;
+		* 10000 * 100;
 	constexpr int64_t saturationThreshold = 2 * denominator;
 	int64_t scaledNumerator = spellPower;
-	const std::array<int64_t, 3> factors{
-		coefficientBasisPoints, 100LL + warcastingBonusPercent, 100LL + empowerSpellBonusPercent};
+	const std::array<int64_t, 2> factors{
+		coefficientBasisPoints, 100LL + empowerSpellBonusPercent};
 	for(const int64_t factor : factors)
 	{
 		if(factor == 0)

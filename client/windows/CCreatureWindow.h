@@ -15,6 +15,7 @@
 #include "CWindowObject.h"
 #include "CreatureBonusStatusPresentation.h"
 
+class CCreature;
 class CCommanderInstance;
 class CStackInstance;
 class CStack;
@@ -226,6 +227,7 @@ class CStackWindow : public CWindowObject
 	void resolveCategory();
 	void initSections();
 	void initBonusesList();
+	void appendInnateAbilityCards(const CStack * stack, const CStackInstance * strategic, const CCreature * creature);
 	void submitSelection();
 
 	void init();

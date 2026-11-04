@@ -1,9 +1,13 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../lib/battle/PassiveDivineMandate.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "HypotheticBattle.h"
 #include "../../lib/constants/NumericConstants.h"
 void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source, BattleSide side)
 {
+	metamagicPointStates[side] = source.getBattle()->getMetamagicPointState(side);
+	wisdomCombatStates[side] = source.getBattle()->getWisdomCombatState(side);
 	rapidResponseStates[side] = source.getBattle()->getRapidResponseState(side);
 	reducedExtraActivationStates[side] = source.getBattle()->getReducedExtraActivationState(side);
 	crossSchoolFormulaStates[side] = source.getBattle()->getCrossSchoolFormulaState(side);
@@ -17,7 +21,6 @@ void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source
 	rebirthChainUsedStates[side] = source.getBattle()->getRebirthChainUsed(side);
 	phoenixSparkUsedStates[side] = source.getBattle()->getPhoenixSparkUsed(side);
 	armorerDefiantStates[side] = source.getBattle()->getArmorerDefiantState(side);
-	warcastingStates[side] = source.getBattle()->getWarcastingState(side);
 	heroActionAllowances[side] = source.getBattle()->getHeroActionAllowances(side);
 	doubleCommandStates[side] = source.getBattle()->getDoubleCommandState(side);
 	preCombatOrderStates[side] = source.getBattle()->getPreCombatOrderState(side);
@@ -26,6 +29,12 @@ void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source
 	for(int32_t level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
 		if(source.getBattle()->hasCompletedHeroSpellLevel(side, level))
 			completedHeroSpellLevelMasks[side] |= static_cast<std::uint8_t>(1u << (level - 1));
+	const auto * snapshotHero = source.getBattle()->getSideHero(side);
+	if(snapshotHero && newHorizonsPassiveDivineMandate::enabled(snapshotHero->getPerkState().rules))
+		projectedCastSpells[side] = source.getBattle()->getCastSpells(side);
+	chainGateArmedStates[side] = source.getBattle()->getChainGateArmed(side);
+	masterGateUsedStates[side] = source.getBattle()->getMasterGateUsed(side);
+	passiveDivineMandateUses[side] = source.getBattle()->getPassiveDivineMandateUses(side);
 	counterspellArmedStates[side] = source.getBattle()->getCounterspellArmed(side);
 	countersequenceArmedStates[side] = source.getBattle()->getMetamagicCountersequenceArmed(side);
 	auto & meta = metamagicStates[side];

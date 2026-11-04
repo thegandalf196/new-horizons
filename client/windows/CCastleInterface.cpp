@@ -78,8 +78,10 @@
 #include "../../lib/mapObjects/CGDwelling.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/NewHorizonsEstates.h"
 #include "../../lib/mapObjects/TownBuildingInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsWisdom.h"
 #include "../../lib/spells/CSpell.h"
 #include "wiki/WikiWindow.h"
 
@@ -2240,7 +2242,8 @@ void CCreaInfo::clickPressed(const Point & cursorPosition)
 
 			si32 amount = town->creatures[i].first;
 			auto creatureId = ENGINE->isKeyboardCtrlDown() ? town->creatures[i].second.back() : town->creatures[i].second.front();
-			si32 maxAmount = creatureId.toCreature()->maxAmount(GAME->interface()->cb->getResourceAmount());
+			si32 maxAmount = town->getRecruitmentAmount(creatureId, GAME->interface()->cb->getResourceAmount(),
+				amount, newHorizonsEstates::recruitmentBuyer(town->getUpperArmy()));
 			vstd::amin(maxAmount, amount);
 
 			const auto * destination = town->getUpperArmy();
@@ -2662,32 +2665,13 @@ void CCastleInterface::recreateIcons()
 
 	fastMarket = std::make_shared<LRClickableArea>(Rect(163, 410, 64, 42), [this]() { builds->enterAnyMarket(); }, [this]()
 	{
-		MetaString total = MetaString::createFromTextID("new-horizons.economy.steward.total");
+		MetaString total = MetaString::createFromTextID("new-horizons.economy.stewardship.total");
 		total.replaceNumber(town->dailyIncome()[EGameResID::GOLD]);
-		MetaString contribution = MetaString::createFromTextID("new-horizons.economy.steward.contribution");
+		MetaString contribution = MetaString::createFromTextID("new-horizons.economy.stewardship.contribution");
 		contribution.replaceNumber(town->getStewardGoldBeforeHandicap());
-		MetaString help = MetaString::createFromTextID("new-horizons.economy.steward.help");
-		MetaString magnate = MetaString::createFromTextID("new-horizons.economy.magnate.contribution");
-		magnate.replaceNumber(town->getMagnateGoldBeforeHandicap());
-		std::string magnateDescription = magnate.toString(&GAME->translator());
-		if(town->getMagnateGoldBeforeHandicap() > 0)
-		{
-			MetaString beneficiary = MetaString::createFromTextID("new-horizons.economy.magnate.beneficiary");
-			beneficiary.replaceTextID(town->getNameTextID());
-			beneficiary.replaceNumber(static_cast<int64_t>(town->getNewHorizonsMagnateIncome().startDay)
-				+ newHorizonsEconomy::MagnateIncome::DURATION_DAYS - 1);
-			magnateDescription += "\n\n" + beneficiary.toString(&GAME->translator());
-		}
-		else
-		{
-			MetaString none = MetaString::createFromTextID("new-horizons.economy.magnate.none");
-			magnateDescription += "\n\n" + none.toString(&GAME->translator());
-		}
-		MetaString magnateHelp = MetaString::createFromTextID("new-horizons.economy.magnate.help");
-		magnateDescription += "\n\n" + magnateHelp.toString(&GAME->translator());
+		MetaString help = MetaString::createFromTextID("new-horizons.economy.stewardship.help");
 		CRClickPopup::createAndPush(CInfoWindow::genText(total.toString(&GAME->translator()),
-			contribution.toString(&GAME->translator()) + "\n\n" + help.toString(&GAME->translator())
-			+ "\n\n" + magnateDescription));
+			contribution.toString(&GAME->translator()) + "\n\n" + help.toString(&GAME->translator())));
 	});
 	{
 		const std::string factionKey = town->getTown()->faction->getJsonKey();
@@ -2987,16 +2971,18 @@ CBuildWindow::CBuildWindow(const CGTownInstance *Town, const CBuilding * Buildin
 	description = std::make_shared<CTextBox>(currentBuildingDescription(*building), Rect(33, 135, 329, 67), 0, FONT_MEDIUM, ETextAlignment::CENTER);
 	stateText = std::make_shared<CTextBox>(getTextForState(state), Rect(33, 216, 329, 67), 0, FONT_SMALL, ETextAlignment::CENTER);
 
+	const auto buildingCost = town->getBuildingCost(building->bid);
+
 	//Create components for all required resources
 	std::vector<std::shared_ptr<CComponent>> components;
 
 	for(GameResID i : LIBRARY->resourceTypeHandler->getAllObjects())
 	{
-		if(building->resources[i])
+		if(buildingCost[i])
 		{
 			MetaString message;
 			int resourceAmount = GAME->interface()->cb->getResourceAmount(i);
-			bool canAfford = resourceAmount >= building->resources[i];
+			bool canAfford = resourceAmount >= buildingCost[i];
 
 			if(!canAfford && state != EBuildingState::ALREADY_PRESENT && settings["general"]["enableUiEnhancements"].Bool())
 			{
@@ -3006,7 +2992,7 @@ CBuildWindow::CBuildWindow(const CGTownInstance *Town, const CBuilding * Buildin
 			else
 				message.appendRawString("%d");
 
-			message.replaceNumber(building->resources[i]);
+			message.replaceNumber(buildingCost[i]);
 			components.push_back(std::make_shared<CComponent>(ComponentType::RESOURCE, i, message.toString(&GAME->translator()), CComponent::small));
 		}
 	}
@@ -3675,7 +3661,6 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 	spells.clear();
 	emptyScrolls.clear();
 	auroraBorealisScrolls.clear();
-	sageSpellsButton.reset();
 
 	const CGTownInstance * town = GAME->interface()->cb->getTown(townId);
 
@@ -3710,34 +3695,6 @@ void CMageGuildScreen::updateSpells(ObjectInstanceID tID)
 		}
 	}
 
-	std::vector<std::shared_ptr<CComponent>> sageComponents;
-	for(int level = 0; level < town->mageGuildLevel(); ++level)
-		for(const auto spell : town->newHorizonsSageRevealedSpells.at(level))
-			sageComponents.push_back(std::make_shared<CComponent>(ComponentType::SPELL, spell));
-	if(!sageComponents.empty())
-	{
-		const auto title = LIBRARY->generaltexth->translate("new-horizons.sage.guildSpells");
-		sageSpellsButton = std::make_shared<CButton>(Point(650, 520),
-			AnimationPath::builtin("settingsWindow/button80"), CButton::tooltip(title),
-			[title, townId = townId]()
-			{
-				const auto * currentTown = GAME->interface()->cb->getTown(townId);
-				if(!currentTown)
-					return;
-				std::vector<std::shared_ptr<CComponent>> components;
-				for(int level = 0; level < currentTown->mageGuildLevel(); ++level)
-					for(const auto spell : currentTown->newHorizonsSageRevealedSpells.at(level))
-					{
-						Component component(ComponentType::SPELL, spell);
-						const auto requirement = currentGuildSpellRequirement(townId, spell.toSpell());
-						if(!requirement.empty())
-							component.helpReason = requirement;
-						components.push_back(std::make_shared<CComponent>(component));
-					}
-				GAME->interface()->showInfoDialog(title, components);
-			});
-		sageSpellsButton->setTextOverlay(title, FONT_SMALL, Colors::WHITE);
-	}
 	redraw();
 }
 
@@ -3843,7 +3800,7 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 			ResourceSet cost;
 			try
 			{
-				cost = newHorizonsMagic::adventureSpellUnlockCost(magicRules, spellId);
+				cost = newHorizonsWisdom::adventureSpellPurchaseCost(magicRules, spellId, *town);
 			}
 			catch(const std::exception &)
 			{

@@ -11,6 +11,8 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/GameLibrary.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/IGameSettings.h"
@@ -53,7 +55,6 @@ protected:
 	bool legacyMagic = false;
 	int learningPercentPerLevel = 5;
 	int learningMaximumPercent = 100;
-	int spellBonus = 1;
 	CGHeroInstance * sanya = nullptr;
 	CGHeroInstance * geon = nullptr;
 	CGHeroInstance * scholar = nullptr;
@@ -80,14 +81,18 @@ protected:
 				table[key]["learningPercentPerLevel"].Integer() = learningPercentPerLevel;
 				table[key]["learningMaximumPercent"].Integer() = learningMaximumPercent;
 			}
-			table["ecumenicalScholar"]["additionalSpellsTaught"].Integer() = spellBonus;
-			table["occultScholar"]["additionalSpellsReceived"].Integer() = spellBonus;
 		}
 		if(legacyMagic)
 			rules["startingSkills"].Struct().erase("startingBookReplacements");
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+	}
+	std::vector<std::byte> rng() const
+	{
+		CMemorySerializer bytes;
+		bytes.oser & *handler->randomizer;
+		return bytes.extractBuffer();
 	}
 	void prepare()
 	{
@@ -124,7 +129,7 @@ protected:
 	}
 };
 }
-TEST_F(NewHorizonsLearningExchangeTest, SanyaActualPartnerScholarMeetingTeachesTwoButLearnsOnlyOne)
+TEST_F(NewHorizonsLearningExchangeTest, SanyaPartnerScholarMeetingExchangesAllEligibleUnknownSpells)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
@@ -132,22 +137,24 @@ TEST_F(NewHorizonsLearningExchangeTest, SanyaActualPartnerScholarMeetingTeachesT
 	handler->changeSpells(sanya, true, {high, middle, low});
 	handler->changeSpells(scholar, true, {firstTie, otherTie});
 	ASSERT_TRUE(scholar->canLearnSpell(high.toSpell()));
+	const auto random = rng();
 	const auto plan = newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, 0);
+	EXPECT_EQ(rng(), random);
 	ASSERT_TRUE(plan);
-	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high, middle}));
-	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{firstTie}));
+	EXPECT_EQ(plan->firstTeaches, (std::vector<SpellID>{high, middle, low}));
+	EXPECT_EQ(plan->secondTeaches, (std::vector<SpellID>{firstTie, otherTie}));
 	EXPECT_EQ(sanya->getNewHorizonsScholarWeek(), -1);
 	EXPECT_FALSE(scholar->spellbookContainsSpell(high));
 	handler->heroExchange(sanya->id, scholar->id);
 	EXPECT_TRUE(scholar->spellbookContainsSpell(high));
 	EXPECT_TRUE(scholar->spellbookContainsSpell(middle));
-	EXPECT_FALSE(scholar->spellbookContainsSpell(low));
+	EXPECT_TRUE(scholar->spellbookContainsSpell(low));
 	EXPECT_TRUE(sanya->spellbookContainsSpell(firstTie));
-	EXPECT_FALSE(sanya->spellbookContainsSpell(otherTie));
-	EXPECT_EQ(server->receipts, 1);
-	EXPECT_EQ(server->noticeSpellCounts, (std::vector<size_t>{2, 1}));
+	EXPECT_TRUE(sanya->spellbookContainsSpell(otherTie));
+	EXPECT_EQ(server->receipts, 0);
+	EXPECT_EQ(server->noticeSpellCounts, (std::vector<size_t>{3, 2}));
 }
-TEST_F(NewHorizonsLearningExchangeTest, GeonActualPartnerScholarMeetingLearnsTwoButTeachesOnlyOne)
+TEST_F(NewHorizonsLearningExchangeTest, GeonPartnerScholarMeetingExchangesAllEligibleUnknownSpells)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
@@ -157,38 +164,37 @@ TEST_F(NewHorizonsLearningExchangeTest, GeonActualPartnerScholarMeetingLearnsTwo
 	handler->heroExchange(scholar->id, geon->id);
 	EXPECT_TRUE(geon->spellbookContainsSpell(high));
 	EXPECT_TRUE(geon->spellbookContainsSpell(middle));
-	EXPECT_FALSE(geon->spellbookContainsSpell(low));
+	EXPECT_TRUE(geon->spellbookContainsSpell(low));
 	EXPECT_TRUE(scholar->spellbookContainsSpell(firstTie));
-	EXPECT_FALSE(scholar->spellbookContainsSpell(otherTie));
-	EXPECT_EQ(server->receipts, 1);
-	EXPECT_EQ(server->noticeSpellCounts, (std::vector<size_t>{2, 1}));
+	EXPECT_TRUE(scholar->spellbookContainsSpell(otherTie));
+	EXPECT_EQ(server->receipts, 0);
+	EXPECT_EQ(server->noticeSpellCounts, (std::vector<size_t>{3, 2}));
 }
-TEST_F(NewHorizonsLearningExchangeTest, CoincidentDirectionalBonusesUseMaximumButDoNotGrantScholar)
+TEST_F(NewHorizonsLearningExchangeTest, UnlimitedBudgetDoesNotGrantScholarWithoutEitherParticipantsPerk)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	handler->changeSpells(sanya, true, {named("core:implosion"), named("core:magicArrow")});
-	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*sanya, *geon), 2);
-	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*geon, *sanya), 1);
+	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*sanya, *geon), std::numeric_limits<int>::max());
+	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*geon, *sanya), std::numeric_limits<int>::max());
 	EXPECT_FALSE(newHorizonsHeroes::prepareScholarExchange(*sanya, *geon, 0));
 	handler->heroExchange(sanya->id, geon->id);
 	EXPECT_FALSE(geon->spellbookContainsSpell(named("core:implosion")));
 	EXPECT_EQ(server->receipts, 0);
 	EXPECT_TRUE(server->noticeSpellCounts.empty());
 }
-TEST_F(NewHorizonsLearningExchangeTest, PairReceiptBlocksRepeatsAndAllowsNextWeekWithOnlyRemainingSpells)
+TEST_F(NewHorizonsLearningExchangeTest, SameWeekNewSpellsRemainExchangeableWithoutPairReceipt)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto high = named("core:implosion"), middle = named("core:lightningBolt"), low = named("core:magicArrow");
-	handler->changeSpells(sanya, true, {high, middle, low});
+	const auto high = named("core:implosion"), low = named("core:magicArrow");
+	handler->changeSpells(sanya, true, {high});
 	handler->heroExchange(sanya->id, scholar->id);
+	EXPECT_TRUE(scholar->spellbookContainsSpell(high));
+	handler->changeSpells(sanya, true, {low});
 	handler->heroExchange(scholar->id, sanya->id);
-	EXPECT_FALSE(scholar->spellbookContainsSpell(low));
-	EXPECT_EQ(server->receipts, 1);
-	gameState()->day = 8;
-	handler->heroExchange(sanya->id, scholar->id);
 	EXPECT_TRUE(scholar->spellbookContainsSpell(low));
-	EXPECT_EQ(server->receipts, 2);
-	EXPECT_EQ(sanya->getNewHorizonsScholarWeek(), 1);
+	EXPECT_EQ(server->receipts, 0);
+	EXPECT_EQ(sanya->getNewHorizonsScholarWeek(), -1);
+	EXPECT_FALSE(newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, 0));
 }
 TEST_F(NewHorizonsLearningExchangeTest, EmptySchoolBookEnemyAndScrollRestrictionsKeepOpportunityUnspent)
 {
@@ -222,8 +228,8 @@ TEST_F(NewHorizonsLearningExchangeTest, AbsentCapturedPolicyKeepsOrdinaryMeeting
 	handler->changeSpells(sanya, true, {named("core:implosion"), named("core:magicArrow")});
 	handler->heroExchange(sanya->id, scholar->id);
 	EXPECT_TRUE(scholar->spellbookContainsSpell(named("core:implosion")));
-	EXPECT_FALSE(scholar->spellbookContainsSpell(named("core:magicArrow")));
-	EXPECT_TRUE(server->noticeSpellCounts.empty());
+	EXPECT_TRUE(scholar->spellbookContainsSpell(named("core:magicArrow")));
+	EXPECT_EQ(server->noticeSpellCounts, (std::vector<size_t>{2}));
 }
 TEST_F(NewHorizonsLearningExchangeTest, CoreExperienceLevelFloorsCapsAndOtherModifiersStaySeparate)
 {
@@ -251,43 +257,41 @@ TEST_F(NewHorizonsLearningExchangeTest, CoreExperienceLevelFloorsCapsAndOtherMod
 	EXPECT_FALSE(newHorizonsHeroes::learningExchangeSpecialtyRules(scholar));
 	EXPECT_EQ(scholar->calculateXp(1000), 1100);
 }
-TEST_F(NewHorizonsLearningExchangeTest, CapturedPresentationStatesDirectionPartnerRequirementAndNoFreePerk)
+TEST_F(NewHorizonsLearningExchangeTest, SpecialtyPresentationDescribesOnlyRetainedCoreExperienceScaling)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto outgoing = sanya->getSpecialtyPresentation();
-	const auto incoming = geon->getSpecialtyPresentation();
-	EXPECT_EQ(outgoing.name, "Ecumenical Scholar");
-	EXPECT_EQ(incoming.name, "Occult Scholar");
-	EXPECT_NE(outgoing.description.find("teaches up to 1"), std::string::npos);
-	EXPECT_NE(incoming.description.find("learns up to 1"), std::string::npos);
-	EXPECT_NE(outgoing.description.find("Either participant must have active Scholar"), std::string::npos);
-	EXPECT_NE(incoming.description.find("No perk is granted"), std::string::npos);
+	for(const auto * hero : {sanya, geon})
+	{
+		const auto text = hero->getSpecialtyPresentation().description;
+		EXPECT_NE(text.find("5% per hero level"), std::string::npos);
+		EXPECT_EQ(text.find("teaches up to"), std::string::npos);
+		EXPECT_EQ(text.find("learns up to"), std::string::npos);
+	}
 }
-TEST_F(NewHorizonsLearningExchangeTest, LegacyMagicKeepsCoreExperienceButDisablesDirectedBonus)
+TEST_F(NewHorizonsLearningExchangeTest, AbsentMagicKeepsCoreExperienceButDoesNotPermitScholarExchange)
 {
 	legacyMagic = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	sanya->level = geon->level = 20;
 	EXPECT_EQ(sanya->calculateXp(1000), 1200);
 	EXPECT_EQ(geon->calculateXp(1000), 1200);
-	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*sanya, *geon), 1);
-	EXPECT_NE(sanya->getSpecialtyPresentation().description.find("inactive under this game's legacy magic rules"), std::string::npos);
+	EXPECT_FALSE(newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, 0));
 }
 
 TEST_F(NewHorizonsLearningExchangeTest, ExplicitZeroKeepsCaptureButOrdinaryExperienceAndMeetingOutput)
 {
-	learningPercentPerLevel = learningMaximumPercent = spellBonus = 0;
+	learningPercentPerLevel = learningMaximumPercent = 0;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	sanya->level = geon->level = 20;
 	ASSERT_TRUE(newHorizonsHeroes::learningExchangeSpecialtyRules(sanya));
 	EXPECT_EQ(sanya->calculateXp(1000), 1100);
 	EXPECT_EQ(geon->calculateXp(1000), 1100);
-	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*sanya, *geon), 1);
+	EXPECT_EQ(newHorizonsHeroes::scholarExchangeSpellBudget(*sanya, *geon), std::numeric_limits<int>::max());
 	handler->changeSpells(sanya, true, {named("core:implosion"), named("core:magicArrow")});
 	handler->heroExchange(sanya->id, scholar->id);
 	EXPECT_TRUE(scholar->spellbookContainsSpell(named("core:implosion")));
-	EXPECT_FALSE(scholar->spellbookContainsSpell(named("core:magicArrow")));
-	EXPECT_TRUE(server->noticeSpellCounts.empty());
+	EXPECT_TRUE(scholar->spellbookContainsSpell(named("core:magicArrow")));
+	EXPECT_EQ(server->noticeSpellCounts, (std::vector<size_t>{2}));
 	EXPECT_EQ(sanya->getSpecialtyPresentation().name, "Ecumenical Scholar");
 }
 TEST_F(NewHorizonsLearningExchangeTest, EachLearningRankUsesOnlyItsOwnCoreContribution)
@@ -323,17 +327,19 @@ TEST_F(NewHorizonsLearningExchangeTest, BoundedQueriesRejectMalformedEitherSideB
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	handler->changeSpells(sanya, true, {named("core:implosion"), named("core:magicArrow")});
 	EXPECT_TRUE(sanya->getNewHorizonsScholarSpellsFor(*scholar, 0).empty());
-	EXPECT_THROW(sanya->getNewHorizonsScholarSpellsFor(*scholar, 3), std::invalid_argument);
+	EXPECT_EQ(sanya->getNewHorizonsScholarSpellsFor(*scholar, 3).size(), 2u);
+	const auto random = rng();
 	const auto sanyaBook = sanya->getSpellsInSpellbook();
 	const auto partnerBook = scholar->getSpellsInSpellbook();
 	// Represent corrupted captured data on a non-specialist partner: strict
 	// present-table validation still precedes the caller's first state mutation.
 	auto & corrupt = const_cast<JsonNode &>(scholar->getPrimaryGrowthRules());
-	corrupt["learningExchangeSpecialties"]["occultScholar"]["additionalSpellsReceived"].Integer() = 2;
+	corrupt["learningExchangeSpecialties"]["occultScholar"]["learningMaximumPercent"].Integer() = -1;
 	EXPECT_THROW(newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, 0), std::runtime_error);
 	EXPECT_EQ(sanya->getNewHorizonsScholarWeek(), -1);
 	EXPECT_EQ(scholar->getNewHorizonsScholarWeek(), -1);
 	EXPECT_EQ(sanya->getSpellsInSpellbook(), sanyaBook);
 	EXPECT_EQ(scholar->getSpellsInSpellbook(), partnerBook);
 	EXPECT_EQ(server->receipts, 0);
+	EXPECT_EQ(rng(), random);
 }

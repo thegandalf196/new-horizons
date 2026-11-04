@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <stdexcept>
 
 #include "scripting/ApiTags.h"
 
@@ -21,6 +22,8 @@ namespace vstd
 }
 
 namespace newHorizonsCrossSchoolFormula { struct Receipt; }
+namespace spells { struct AutomaticHeroCastReceipt; }
+class SpellID;
 
 namespace battle
 {
@@ -80,11 +83,26 @@ public:
 
 	/// Records a completed hero spell in a detached projection; live callbacks do not mutate battle state.
 	virtual void recordCrossSchoolFormulaCast(BattleSide, const newHorizonsCrossSchoolFormula::Receipt &) {}
+	/// Observe only successfully applied canonical Inspiration/Spellshock packets, in
+	/// application order. Detached valuation may retain them; live/default is inert.
+	virtual void recordArcaneInspirationEffects(const SetStackEffect &) {}
+	/// Trusted effect acceptance receipt. Live/default callbacks retain no observer state.
+	virtual void recordResolvedSpellRecipient(uint32_t) {}
 	virtual void recordCompletedHeroSpellCast(BattleSide side) { (void)side; }
 	/// Detached accepted-cast receipt; live state is changed only by BattleSpellCast.
+	/// Detached branches override this; live state uses its validated BattleSpellCast receipt.
+	virtual void recordCompletedWisdomSpellCast(BattleSide, const SpellID &, int32_t, bool) {}
 	virtual void recordExtendSpellCast(BattleSide) {}
 	/// Records the saved level of a completed hero spell in a detached projection.
 	/// The default preserves older callbacks while remaining a no-op for live state.
+	/// Automatic HERO casts preserve real spell-completion hooks but cannot
+	/// consume/grant Hero Action allowances. Unsupported projections fail
+	/// explicitly instead of silently forgetting a combat-use/readiness change.
+	virtual void recordCompletedAutomaticHeroSpellCast(BattleSide, const SpellID &,
+		const spells::AutomaticHeroCastReceipt &)
+	{
+		throw std::logic_error("Projection does not support automatic hero spell completion");
+	}
 	virtual void recordCompletedHeroSpellCast(BattleSide side, int32_t spellLevel)
 	{
 		(void)spellLevel;

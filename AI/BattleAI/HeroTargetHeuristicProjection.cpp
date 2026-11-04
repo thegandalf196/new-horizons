@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "HeroTargetHeuristicProjection.h"
 #include "PossibleSpellcast.h"
+#include "HeroSpellExpectedValueProjection.h"
+#include "../../lib/spells/NewHorizonsBlink.h"
 #include "../../lib/spells/CSpell.h"
 
 #include <limits>
@@ -27,9 +29,12 @@ void heroSpellProjection::projectTargetHeuristic(PossibleSpellcast & ps,
 	}
 	targetId = ps.dest.front().unitValue->unitId();
 	if(counterspellNegated
-		|| !state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-			ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-			counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
+		|| !(ps.spell->getJsonKey() == newHorizonsBlink::SPELL_ID
+			? state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
+				ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
+				counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients)
+			: acceptTerminalEffects(state, side, ps, targetId, counterspell, counterspellNegated,
+				*spellAllowance, sharedPurposeSpellRecipients)))
 		ps.value = std::numeric_limits<float>::lowest();
 	else
 		ps.value = baseline + forecast;

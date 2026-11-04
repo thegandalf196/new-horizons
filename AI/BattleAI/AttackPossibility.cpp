@@ -8,9 +8,13 @@
  *
  */
 #include "StdInc.h"
+#include "PassiveDivineFuryValue.h"
+#include "AttackPreviewDiagnostics.h"
 #include "PhysicalPoisonValue.h"
 #include "ToxicStingValue.h"
 #include "PhysicalStrikeProjection.h"
+#include "BattleDamageValue.h"
+#include "HypotheticFactionAftermath.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
@@ -248,51 +252,6 @@ float AttackPossibility::calculateDamageReduce(
 	return damagePerEnemy * (enemiesKilled * KILL_BOUNTY + hpValue * HEALTH_BOUNTY);
 }
 
-int64_t AttackPossibility::evaluateBlockedShootersDmg(
-	const BattleAttackInfo & attackInfo,
-	BattleHex hex,
-	DamageCache & damageCache,
-	std::shared_ptr<CBattleInfoCallback> state)
-{
-	int64_t res = 0;
-
-	if(attackInfo.shooting)
-		return 0;
-
-	std::set<uint32_t> checkedUnits;
-
-	auto attacker = attackInfo.attacker;
-	const auto & hexes = attacker->getSurroundingHexes(hex);
-	for(const BattleHex & tile : hexes)
-	{
-		auto st = state->battleGetUnitByPos(tile, true);
-		if(!st || !state->battleMatchOwner(st, attacker))
-			continue;
-		if(vstd::contains(checkedUnits, st->unitId()))
-			continue;
-		if(!state->battleCanShoot(st))
-			continue;
-
-		checkedUnits.insert(st->unitId());
-
-		// FIXME: provide distance info for Jousting bonus
-		BattleAttackInfo rangeAttackInfo(st, attacker, 0, true);
-		rangeAttackInfo.defenderPos = hex;
-
-		BattleAttackInfo meleeAttackInfo(st, attacker, 0, false);
-		meleeAttackInfo.defenderPos = hex;
-
-		auto rangeDmg = state->battleExpectedLuckDamage(rangeAttackInfo);
-		auto meleeDmg = state->battleExpectedLuckDamage(meleeAttackInfo);
-		auto cachedDmg = damageCache.getOriginalDamage(st, attacker, state);
-
-		int64_t gain = rangeDmg - meleeDmg + 1;
-		res += gain * cachedDmg / std::max<int64_t>(1, rangeDmg);
-	}
-
-	return res;
-}
-
 AttackPossibility AttackPossibility::evaluate(
 	const BattleAttackInfo & inputAttack,
 	BattleHex hex,
@@ -456,6 +415,7 @@ AttackPossibility AttackPossibility::evaluate(
 		BattleAttackInfo potentialRetaliation(defender, attacker, 0, false);
 		potentialRetaliation.retaliation = true;
 		const bool projectsSylvanTactics = sylvanTacticsAI::needsProjection(*state);
+		const bool projectsFactionEffects = factionAftermathAI::needsProjection(*state);
 		const bool projectsGambler = AttackPreviewHitContext::hasGambler(*state);
 		// Keep the branch snapshot even after the current gift or round trigger is spent.
 		const bool projectsChainOfFortune = state->getBattle()
@@ -498,6 +458,8 @@ AttackPossibility AttackPossibility::evaluate(
 				defender, hex, defHex, attackInfo.shooting, longReachAttack);
 		auto & defenderUnits = targets.resolved;
 		auto & requestedDefenderUnits = targets.requested;
+		const bool projectsInspiration = arcaneInspirationAI::needsStrikeProjection(attacker, defenderUnits)
+			|| arcaneInspirationAI::needsStrikeProjection(attacker, requestedDefenderUnits);
 		auto & retaliatedUnits = targets.counter;
 
 		const bool projectsNightProwler = crossesNightProwlerEnemy || hasNightProwlerEffect
@@ -591,14 +553,14 @@ AttackPossibility AttackPossibility::evaluate(
 			&& state->getBattle()->getHeroOrderState(state->playerToSide(state->battleGetOwner(defender)), HeroCommand::BRACE).has_value();
 		const bool projectsOpportunist = ap.attack.physicalDamage && !ap.attack.retaliation
 			&& newHorizonsOpportunist::hasPerk(*state, attacker);
-		if(projectsSting || projectsSylvanTactics || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+		if(projectsInspiration || projectsSting || projectsSylvanTactics || projectsFactionEffects || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
 				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen || projectsLuckyRecovery || projectsBrace)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-	if(projectsSting || projectsSylvanTactics || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+	if(projectsInspiration || projectsSting || projectsSylvanTactics || projectsFactionEffects || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
@@ -645,18 +607,7 @@ AttackPossibility AttackPossibility::evaluate(
 		if(auto target = fortunePreview->getForUpdate(targetUnitId))
 			target->addUnitBonus({newHorizonsShroud::shadowAssaultSpentMarker(attackingSide)});
 	};
-	const auto scoreHexPain = [&](battle::CUnitState * recipient, int64_t damage)
-	{
-		if(!recipient || damage <= 0)
-			return;
 
-		const auto value = calculateDamageReduce(nullptr, recipient,
-			static_cast<uint64_t>(damage), damageCache, state);
-		if(state->battleMatchOwner(attacker, recipient, true))
-			ap.attackerDamageReduce += value;
-		else
-			ap.defenderDamageReduce += value;
-	};
 	ap.attackerState = ap.effectPreview
 			? std::static_pointer_cast<battle::CUnitState>(ap.effectPreview->getForUpdate(attacker->unitId()))
 			: attacker->acquireState();
@@ -1018,7 +969,10 @@ AttackPossibility AttackPossibility::evaluate(
 				const auto temporaryHealthBefore = defenderState->health.getTemporaryHitPoints();
 				if(u->unitId() == strike.defenderId)
 					stingPlan = toxicStingAI::prepare(*state, victimAttack, damageToApply, damageProvenance);
+				const bool fury = passiveDivineFuryAI::admitted(*state, victimAttack);
 				tactics.damage(*state, victimAttack, *defenderState, damageToApply, damageProvenance);
+				ap.defenderDamageReduce += passiveDivineFuryAI::expectedValue(state, *defenderState,
+					victimAttack, fury, damageCache);
 				strike.resolvedHits.emplace_back(u->unitId(), damageToApply);
 				petrifyingBloodAI::capture(state, *ap.attackerState, *defenderState, damageToApply,
 					victimAttack.shooting, victimAttack.physicalDamage, petrifyingBloodPending);
@@ -1259,7 +1213,7 @@ AttackPossibility AttackPossibility::evaluate(
 				projectedAttack.retaliation = strike.retaliation;
 				const auto painDamage = fortunePreview->projectHexOfPainStrike(
 					projectedAttack, strike.resolvedHits, strike.attackIndex);
-				scoreHexPain(preHexState.get(), painDamage);
+				battleDamageValue::addIndirectDamageValue(ap, attacker, preHexState.get(), painDamage, damageCache, state);
 			}
 			if(strikeManaLeech.amount > 0 && fortunePreview)
 			{
@@ -1536,7 +1490,7 @@ AttackPossibility AttackPossibility::evaluate(
 						const auto preHexState = ap.attackerState->acquireState();
 						const auto painDamage = fortunePreview->projectHexOfPainStrike(
 							cleaveAttack, cleave->resolvedHits, cleave->attackIndex);
-						scoreHexPain(preHexState.get(), painDamage);
+						battleDamageValue::addIndirectDamageValue(ap, attacker, preHexState.get(), painDamage, damageCache, state);
 					}
 					break;
 				}
@@ -1701,7 +1655,11 @@ AttackPossibility AttackPossibility::evaluate(
 					hit.retaliation = true;
 					hit.secondaryAttack = targetState->unitId() != retaliation->defenderId;
 					counterSting = toxicStingAI::prepare(*state, hit, actualDamage, retaliation->damageProvenance);
+					const bool fury = passiveDivineFuryAI::admitted(*state, hit);
 					tactics.damage(*state, hit, *targetState, actualDamage, retaliation->damageProvenance);
+					if(!hit.secondaryAttack)
+						ap.attackerDamageReduce += passiveDivineFuryAI::expectedValue(state, *targetState,
+							hit, fury, damageCache);
 				}
 				else
 					newHorizonsForestAmbush::damageFromAttack(*state, *targetState, actualDamage, battle::DamageProvenance::OTHER);
@@ -1793,7 +1751,7 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliationAttack.retaliation = true;
 					const auto painDamage = fortunePreview->projectHexOfPainStrike(
 						retaliationAttack, retaliationActualHits, retaliation->attackIndex);
-					scoreHexPain(preHexState.get(), painDamage);
+					battleDamageValue::addIndirectDamageValue(ap, attacker, preHexState.get(), painDamage, damageCache, state);
 				}
 			}
 			if(retaliation)
@@ -1914,11 +1872,7 @@ AttackPossibility AttackPossibility::evaluate(
 					projectsSylvanTactics, rootMayHaveSerpents});
 
 #if BATTLE_TRACE_LEVEL>=2
-		logAi->trace("BattleAI AP: %s -> %s at %d from %d, affects %d units: d:%lld a:%lld c:%lld s:%lld",
-			attackInfo.attacker->unitType()->getJsonKey(),
-			attackInfo.defender->unitType()->getJsonKey(),
-			ap.dest.toInt(), ap.from.toInt(), (int)ap.affectedUnits.size(),
-			ap.defenderDamageReduce, ap.attackerDamageReduce, ap.collateralDamageReduce, ap.shootersBlockedDmg);
+		attackPreviewDiagnostics::result("BattleAI AP", ap, attackInfo);
 #endif
 
 		if(serpentParent && !serpentSourceDeaths.empty())
@@ -1931,6 +1885,9 @@ AttackPossibility AttackPossibility::evaluate(
 		petrifyingBloodAI::complete(ap, state, petrifyingBloodPending, aerial.has_value(), damageCache);
 		meleeSpecialtyAI::complete(ap);
 
+		const auto reprisal = tactics.reprisalValue(damageCache, state, state->battleGetOwner(attacker));
+		ap.attackerDamageReduce += reprisal.first;
+		ap.defenderDamageReduce += reprisal.second;
 		if(!bestAp.dest.isValid() || ap.attackValue() > bestAp.attackValue())
 			bestAp = std::move(ap);
 	}
@@ -1939,11 +1896,7 @@ AttackPossibility AttackPossibility::evaluate(
 	bestAp.shootersBlockedDmg = evaluateBlockedShootersDmg(attackInfo, hex, damageCache, state);
 
 #if BATTLE_TRACE_LEVEL>=1
-	logAi->trace("BattleAI best AP: %s -> %s at %d from %d, affects %d units: d:%lld a:%lld c:%lld s:%lld",
-		attackInfo.attacker->unitType()->getJsonKey(),
-		attackInfo.defender->unitType()->getJsonKey(),
-		bestAp.dest.toInt(), bestAp.from.toInt(), (int)bestAp.affectedUnits.size(),
-		bestAp.defenderDamageReduce, bestAp.attackerDamageReduce, bestAp.collateralDamageReduce, bestAp.shootersBlockedDmg);
+	attackPreviewDiagnostics::result("BattleAI best AP", bestAp, attackInfo);
 #endif
 
 	//TODO other damage related to attack (eg. fire shield and other abilities)

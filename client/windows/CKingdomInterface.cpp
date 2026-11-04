@@ -11,6 +11,7 @@
 #include "SpellPointPresentation.h"
 #include "CKingdomInterface.h"
 #include "HeroSpecialtyPresentation.h"
+#include "NewHorizonsPerkHelp.h"
 
 #include "CCastleInterface.h"
 #include "CPlayerState.h"
@@ -169,9 +170,9 @@ void InfoBox::clickPressed(const Point & cursorPosition)
 	data->prepareMessage(text, comp);
 
 	if(comp)
-		GAME->interface()->showInfoDialog(text, CInfoWindow::TCompsInfo(1, comp));
+		GAME->interface()->showInfoDialog(text, CInfoWindow::TCompsInfo(1, comp), 0, data->getDetails());
 	else if (!text.empty())
-		GAME->interface()->showInfoDialog(text);
+		GAME->interface()->showInfoDialog(text, {}, 0, data->getDetails());
 }
 
 IInfoBoxData::IInfoBoxData(InfoType Type)
@@ -471,7 +472,12 @@ void InfoBoxHeroData::prepareMessage(std::string & text, std::shared_ptr<CCompon
 	switch(type)
 	{
 	case HERO_SPECIAL:
-		text = hero->getSpecialtyDescriptionTranslated();
+		text = heroSpecialtyPresentation(*hero).description;
+		break;
+	case HERO_SECONDARY_SKILL:
+		InfoBoxAbstractHeroData::prepareMessage(text, comp);
+		if(getValue() > 0)
+			text = newHorizonsPerkHelp::skillDescription(hero, SecondarySkill(getSubID()), static_cast<int>(getValue()));
 		break;
 	case HERO_MANA:
 	{

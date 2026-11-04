@@ -161,8 +161,13 @@ if "creatureCategoryColor" in CASTLE:
     raise AssertionError("fort ranks must not restore distinct category colors")
 require(CASTLE, "categoryViews", "fort headings retain the saved category text IDs")
 require(CASTLE, "newHorizonsCreatureCategoryUI::name(categoryViews[rank]", "fort headings use the active category translator")
-for stock_key in ("core.castinfo.0", "core.castinfo.1", "core.castinfo.2", "core.castinfo.3", "core.castinfo.4", "core.castinfo.5"):
+for stock_key in ("core.castinfo.0", "core.castinfo.1", "core.castinfo.2", "core.castinfo.3", "core.castinfo.4"):
     require(CASTLE, f'"{stock_key}"', f"fort cards reuse the stock translation for {stock_key}")
+growth_help = "townGrowthPresentation::description(town->getGrowthInfo(level), getMyCreature()->getId(), &GAME->translator())"
+ranked_descriptions = CASTLE.split("rankedStatDescriptions =", 1)[1].split("const int rowHeight", 1)[0]
+fallback_values = CASTLE.split("values.push_back(std::make_shared<LabeledValue>(sizes,", 1)[1]
+require(ranked_descriptions, growth_help, "ranked fort Growth explains the actual shared growth breakdown")
+require(fallback_values, growth_help, "fallback fort Growth explains the actual shared growth breakdown")
 for nh_key in (
     "new-horizons.fort.stat.initiative",
     "new-horizons.fort.stat.initiative.description",

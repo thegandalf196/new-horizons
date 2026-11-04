@@ -10,11 +10,11 @@
 #include <limits>
 namespace newHorizonsMagic
 {
-int32_t blessOrdinaryDuration(int32_t power, int32_t coefficient, int32_t warcasting,
+int32_t blessOrdinaryDuration(int32_t power, int32_t coefficient,
 	int32_t empower, int32_t specialty)
 {
 	return blessDurationFromPowerTerm(spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		power, BLESS_SPELL_POWER_DURATION_DIVISOR, coefficient, warcasting, empower, specialty));
+		power, BLESS_SPELL_POWER_DURATION_DIVISOR, coefficient, empower, specialty));
 }
 int32_t blessCasterDuration(const CGHeroInstance & hero, int32_t ordinary, bool brimstone)
 {

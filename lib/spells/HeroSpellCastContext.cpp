@@ -12,9 +12,7 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
 #include "../battle/HeroActionAllowanceState.h"
-#include "../battle/HeroCommand.h"
 #include "../battle/NewHorizonsDivineMandate.h"
-#include "../battle/NewHorizonsWarcasting.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/CGTownInstance.h"
 namespace newHorizonsMagic
@@ -45,7 +43,7 @@ int32_t HeroSpellCastContext::componentBonusPercent() const
 	return combined - 100;
 }
 HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback & callback, bool followup, bool concentrated)
+	const CBattleInfoCallback & callback, bool followup, bool concentrated, bool automaticHeroCast)
 {
 	HeroSpellCastContext result;
 	const auto casterSide = callback.playerToSide(hero.getCasterOwner());
@@ -53,19 +51,12 @@ HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero, const CSp
 		return result;
 	const auto * battleInfo = callback.getBattle();
 	const int32_t battleRound = battleInfo ? battleInfo->getRound() : -1;
-	const auto spellAllowance = !followup ? callback.battleGetSpellActionAllowance(casterSide, spell.getId())
+	const auto spellAllowance = !followup && !automaticHeroCast ? callback.battleGetSpellActionAllowance(casterSide, spell.getId())
 		: std::optional<HeroActionAllowanceState::Selection>{};
-	bool spendsHeroAllowance = !followup;
-	if(battleInfo && !followup && battleRound >= 0
-		&& heroCommands::supportedByRules(battleInfo->getHeroCommandRules(), HeroCommand::CHARGE))
-		spendsHeroAllowance = spellAllowance && spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
 	if(battleInfo && battleInfo->getSideHero(casterSide) == &hero && spellAllowance
 		&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
 		&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
 		result.consecrated = newHorizonsDivineMandate::consecratedCastingBonusPercent(&hero);
-	if(battleInfo && spendsHeroAllowance && newHorizonsWarcasting::enabled(battleInfo->getMagicRules()))
-		result.warcasting = newHorizonsWarcasting::spellBonus(&hero,
-			battleInfo->getWarcastingState(casterSide), battleInfo->getRound());
 	if(battleInfo && battleInfo->getSideHero(casterSide) == &hero
 		&& !battleInfo->hasCompletedHeroSpellCast(casterSide)
 		&& hero.hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),

@@ -4,6 +4,8 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../../lib/spells/ISpellMechanics.h"
+#include "../../../lib/spells/CSpell.h"
 
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -209,4 +211,31 @@ TEST_F(NewHorizonsLandMineRuntimeTest, FriendlyAndFlyingUnitsDoNotRevealOrConsum
 	EXPECT_TRUE(battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *flying));
 	EXPECT_EQ(flying->getAvailableHealth(), flyingHealth);
 	EXPECT_EQ(battle()->obstacles.size(), 2u);
+}
+
+TEST_F(NewHorizonsLandMineRuntimeTest, InsightIsCapturedOnceForHiddenMinesAndSurvivesLaterPerkLoss)
+{
+	prepareLandMine();
+	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
+	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.mysticism"});
+	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.arcaneInsight"});
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), landMineAction({70, 71})));
+	for(const auto & obstacle : battle()->obstacles)
+	{
+		const auto * mine = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
+		ASSERT_NE(mine, nullptr);
+		EXPECT_EQ(mine->minimalDamage, 107);
+		EXPECT_EQ(mine->capturedMdrPenetration["effectivenessBonusPercent"].Integer(), 25);
+		EXPECT_TRUE(mine->hidden);
+		EXPECT_FALSE(mine->nativeVisible);
+	}
+	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
+	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(70), 100);
+	const auto health = victim->getAvailableHealth();
+	ASSERT_TRUE(battle()->handleObstacleTriggersForUnit(*gameHandler->spellEnv, *victim));
+	EXPECT_EQ(health - victim->getAvailableHealth(), 133);
+	EXPECT_EQ(battle()->obstacles.size(), 1u);
+	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::LAND_MINE), 1);
 }

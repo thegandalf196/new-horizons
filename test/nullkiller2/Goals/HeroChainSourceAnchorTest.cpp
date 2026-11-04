@@ -276,7 +276,7 @@ protected:
 					}
 				}
 				ASSERT_FALSE(current->hasActivePerk("new-horizons:learning", "new-horizons:learning.mentor"));
-				ASSERT_FALSE(current->hasActivePerk("new-horizons:learning", "new-horizons:learning.masterTeacher"));
+				ASSERT_FALSE(current->hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"));
 				const auto capacity = current->getLeadershipSlotCapacity(CreatureID(0));
 				ASSERT_TRUE(capacity);
 				ASSERT_GE(capacity->maximum, 10);

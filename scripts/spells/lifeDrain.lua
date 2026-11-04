@@ -127,11 +127,14 @@ function Script:apply(mechanics, server, target)
 	local friendly = target[2].unit
 	local battle = mechanics:getBattle()
 	local enemyID = enemy:unitID()
+	server:recordResolvedSpellRecipient(enemyID)
+	server:recordResolvedSpellRecipient(friendly:unitID())
 	local damage, killed = server:damageUnit(
 		battle, enemy, mechanics:adjustEffectValue(enemy), false, mechanics:getUnitCaster(), true)
 	local current = battle:getUnitByID(enemyID)
 	if current then server:clearFrozenAfterDirectMagicDamage(battle, current) end
-	local healing = math.floor(damage * mechanics:getLifeDrainHealingPercent() / 100)
+	local healing = mechanics:adjustMetamagicMagnitude(
+		math.floor(damage * mechanics:getLifeDrainHealingPercent() / 100), friendly)
 	local healedHP = 0
 	if healing > 0 then
 		healedHP = server:healUnit(battle, friendly, healing, ENUM.HealLevel.heal, ENUM.HealPower.permanent)

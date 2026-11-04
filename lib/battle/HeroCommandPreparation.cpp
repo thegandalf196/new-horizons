@@ -12,7 +12,6 @@
 #include "NewHorizonsDivineMandate.h"
 #include "NewHorizonsIronWill.h"
 #include "NewHorizonsSwiftRebirth.h"
-#include "NewHorizonsWarcasting.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../bonuses/BonusSelector.h"
 
@@ -81,12 +80,12 @@ std::optional<HeroOrderState> CBattleInfoCallback::battleFinalizeHeroOrderState(
 				if(command == HeroCommand::FOCUS_FIRE)
 					result.crownAndAltarFocusFirePercent = heroCommands::coefficient(
 						newHorizonsDivineMandate::crownOrderFormula((*rules)["effects"]["rangedDamagePercent"], true),
-						*hero, result.warcastingBonusPercent, result.divineMandateEfficiencyBonusPercent());
+						*hero, result.divineMandateEfficiencyBonusPercent());
 				if(command == HeroCommand::HOLD_THE_LINE && result.holdMagicalReductionBasisPoints != 0)
 					result.crownAndAltarHoldReductionBasisPoints = static_cast<uint16_t>(std::clamp(
 						heroCommands::coefficient(newHorizonsDivineMandate::crownOrderFormula(
 							(*rules)["effects"]["damageReductionPercent"], true), *hero,
-							result.warcastingBonusPercent, result.divineMandateEfficiencyBonusPercent()), 0, 100)
+							result.divineMandateEfficiencyBonusPercent()), 0, 100)
 						* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
 			}
 		}
@@ -128,12 +127,9 @@ std::optional<heroCommands::RevisedOrderSnapshot> CBattleInfoCallback::battlePre
 	auto revision = heroCommands::scaledRevisedOrderSnapshot(command, issuedRound,
 		ratings.primary(PrimarySkill::ATTACK), ratings.primary(PrimarySkill::DEFENSE),
 		leadership, rules,
-		heroCommands::attributeEfficiencyPercent(*hero, PrimarySkill::ATTACK, order.warcastingBonusPercent,
-			order.divineMandateEfficiencyBonusPercent(), true),
-		heroCommands::attributeEfficiencyPercent(*hero, PrimarySkill::DEFENSE, order.warcastingBonusPercent,
-			order.divineMandateEfficiencyBonusPercent(), true),
-		heroCommands::leadershipEfficiencyPercent(*hero, order.warcastingBonusPercent,
-			order.divineMandateEfficiencyBonusPercent()));
+		heroCommands::attributeEfficiencyPercent(*hero, PrimarySkill::ATTACK, order.divineMandateEfficiencyBonusPercent(), true),
+		heroCommands::attributeEfficiencyPercent(*hero, PrimarySkill::DEFENSE, order.divineMandateEfficiencyBonusPercent(), true),
+		heroCommands::leadershipEfficiencyPercent(*hero, order.divineMandateEfficiencyBonusPercent()));
 	if(crown)
 		revision.crown = heroCommands::CrownRevisedOrderPotency{
 			revision.feintReductionPercent, revision.vanguardStatBonus, revision.vanguardInitiativePercent};
@@ -160,10 +156,9 @@ void CBattleInfoCallback::battleCaptureHeroOrderModifiers(BattleSide side, HeroO
 	const auto * hero = battleGetFightingHero(side);
 	const auto * rules = &getBattle()->getHeroCommandRules()["commands"][heroCommands::key(command)];
 	const auto allowance = battleGetOrderActionAllowance(side);
-	if(newHorizonsWarcasting::enabled(getBattle()->getMagicRules())
-		&& allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO)
-		result.warcastingBonusPercent = newHorizonsWarcasting::orderBonus(
-			hero, getBattle()->getWarcastingState(side), result.issuedRound);
+	const auto passive = newHorizonsPassiveDivineMandate::capturePolicy(hero);
+	if(passive.rank != 0)
+		result.passiveDivineMandate = passive;
 	if(allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
 		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
 	{
@@ -176,8 +171,7 @@ void CBattleInfoCallback::battleCaptureHeroOrderModifiers(BattleSide side, HeroO
 		&& hero->hasActivePerk(newHorizonsIronDiscipline::SKILL, newHorizonsIronDiscipline::PERK))
 	{
 		const int physicalReduction = std::clamp(heroCommands::coefficient(
-			(*rules)["effects"]["damageReductionPercent"], *hero, result.warcastingBonusPercent,
-			result.divineMandateEfficiencyBonusPercent()), 0, 100);
+			(*rules)["effects"]["damageReductionPercent"], *hero, result.divineMandateEfficiencyBonusPercent()), 0, 100);
 		result.holdMagicalReductionBasisPoints = static_cast<uint16_t>(physicalReduction
 			* newHorizonsIronDiscipline::BASIS_POINTS_PER_PHYSICAL_PERCENT);
 	}

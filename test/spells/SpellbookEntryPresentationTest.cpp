@@ -74,3 +74,43 @@ TEST(SpellbookEntryPresentationTest, FixedPointValuesSurviveLocalizationAndWidth
 	preview.primary->scale = 0;
 	EXPECT_THROW(spellbookPresentation::effectLine(preview, translator, textWidth), std::invalid_argument);
 }
+
+TEST(SpellbookEntryPresentationTest, RecipientSummaryKeepsExactQuantitiesWithoutWidthRounding)
+{
+	BookTranslator translator;
+	EXPECT_EQ(spellbookPresentation::effectSummary(damage(123456789), translator), "123456789 dmg");
+	newHorizonsMagic::SpellEffectPreview preview{
+		"regen", "regenShort", newHorizonsMagic::SpellEffectPreview::Quantity{-1875, 100, "percent"}, {}, {}};
+	EXPECT_EQ(spellbookPresentation::effectSummary(preview, translator), "-18.75%/turn");
+	preview.compactLabelKey.clear();
+	EXPECT_EQ(spellbookPresentation::effectSummary(preview, translator), "Heal -18.75% per turn");
+	EXPECT_EQ(spellbookPresentation::effectSummary({}, translator), "");
+}
+
+TEST(SpellbookEntryPresentationTest, ArmyGroupsKeepDifferentMagnitudesAndTimersWithoutDroppingRecipients)
+{
+	BookTranslator translator;
+	spellbookPresentation::GaleArmyPreview army{12, true, {}, {}};
+	const auto row = [](uint32_t id, const char * name, int hex, int64_t value, int rounds)
+	{
+		newHorizonsMagic::RecipientSpellEffectPreview effect{damage(value), rounds};
+		return spellbookPresentation::ArmySpellRecipient{id, name, 10, static_cast<int16_t>(hex), effect};
+	};
+	army.recipients = {row(1, "Pikemen", 54, 5000, 2), row(2, "Archers", 88, 8000, 3),
+		row(3, "Pikemen", 122, 5000, 2), row(4, "Swordsmen", 124, 5000, 3)};
+	const auto before = army.recipients;
+	const auto text = spellbookPresentation::armyEffectDetail(army, translator);
+	EXPECT_EQ(text, "Current army:\n5000 dmg | 2 rounds: 10 Pikemen (D4), 10 Pikemen (D8)"
+		"\n8000 dmg | 3 rounds: 10 Archers (D6)\n5000 dmg | 3 rounds: 10 Swordsmen (F8)");
+	EXPECT_EQ(spellbookPresentation::armyEffectDetail(army, translator), text);
+	for(size_t index = 0; index < army.recipients.size(); ++index)
+	{
+		EXPECT_EQ(army.recipients[index].unitId, before[index].unitId);
+		EXPECT_EQ(army.recipients[index].effect.effect, before[index].effect.effect);
+		EXPECT_EQ(army.recipients[index].effect.durationRounds, before[index].effect.durationRounds);
+	}
+	army.canCast = false;
+	army.problems = {"Not enough Mana."};
+	EXPECT_EQ(spellbookPresentation::armyEffectDetail(army, translator),
+		text + "\n\nCannot cast now.\nNot enough Mana.");
+}

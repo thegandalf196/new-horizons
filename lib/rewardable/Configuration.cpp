@@ -120,7 +120,7 @@ void Rewardable::Configuration::validateBonusSerialization(BonusSerializationCon
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
 	for(const auto & visit : info)
 		visit.reward.validateBonusSerialization(context);
 }

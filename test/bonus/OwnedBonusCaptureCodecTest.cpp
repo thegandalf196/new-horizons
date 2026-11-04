@@ -105,6 +105,7 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 	const auto extended = capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 	const auto optional = capabilities(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
 	const auto calibration = capabilities(Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION);
+	const auto passive = capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	EXPECT_EQ(optional, extended); // Quick Study adds no Bonus/specialty bit.
 	EXPECT_EQ(calibration, ordinary); // Neutral calibration also adds no Bonus/specialty bit.
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES, ordinary).version(),
@@ -115,6 +116,8 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 		Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION, calibration).version(),
 		Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS, passive).version(),
+		Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	CMemorySerializer writer;
 	EXPECT_EQ(writer.oser.version, Version::CURRENT); EXPECT_EQ(writer.iser.version, Version::CURRENT);
 	if(Version::CURRENT == Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES
@@ -123,6 +126,8 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 	else if(Version::CURRENT == Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES
 		|| Version::CURRENT == Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
+	else if(Version::CURRENT == Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS)
+		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	else
 		EXPECT_THROW(OwnedBonusCaptureCodec::current(), std::invalid_argument);
 }
@@ -143,10 +148,10 @@ TEST(OwnedBonusCaptureCodecTest, WireEpochAndNamedBonusProfileMustBothMatch)
 
 TEST(OwnedBonusCaptureCodecTest, IdenticalBonusMaskDoesNotAuthorizeAnUnknownWireEpoch)
 {
-	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY) + 1);
+	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS) + 1);
 	const auto mask = capabilities(unknown);
-	EXPECT_EQ(mask, capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
-	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(mask).version(), Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
+	EXPECT_EQ(mask, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(mask).version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(unknown, mask), std::invalid_argument);
 }
 
@@ -192,4 +197,17 @@ TEST(OwnedBonusCaptureCodecTest, QuickStudyProfileDoesNotSynthesizeExtendedSpeci
 	const auto partial = captured(true); // A single explicit optional coefficient is canonical too.
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromCapturedSpecialties(partial, optional).version(), codec.version());
 	EXPECT_EQ(partial["additionalSpecialties"]["ordinaryCreatureSpecialties"]["cinderReprisalDamagePercent"].Integer(), 0);
+}
+
+TEST(OwnedBonusCaptureCodecTest, Passive1155EpochCannotUseHistorical1153Or1154Capabilities)
+{
+	const auto passive = capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	const auto extended = capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
+	const auto optional = capabilities(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
+	EXPECT_NE(passive, extended);
+	EXPECT_NE(passive, optional);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES, passive), std::invalid_argument);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY, passive), std::invalid_argument);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS, extended), std::invalid_argument);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS, optional), std::invalid_argument);
 }

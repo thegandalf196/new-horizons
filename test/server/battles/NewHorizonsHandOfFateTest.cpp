@@ -269,14 +269,13 @@ TEST_F(NewHorizonsHandOfFateTest, OverkillUsesActualPrimaryHealthLossForFriendly
 	EXPECT_EQ(server.castsOf(handOfFateSpell()).front().damage, 255);
 }
 
-TEST_F(NewHorizonsHandOfFateTest, EmpoweredCollateralUsesCapturedPenetrationAndCurrentController)
+TEST_F(NewHorizonsHandOfFateTest, CollateralUsesCapturedSpellPenetrationAndCurrentController)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(100, 1000, true));
-	const auto warcasting = SecondarySkill(SecondarySkill::decode("new-horizons:warcasting"));
-	ASSERT_TRUE(warcasting.hasValue());
-	attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.martialChanneling"});
-	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.combatCasting"});
+	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
+	ASSERT_TRUE(spellcraft.hasValue());
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:spellcraft", "new-horizons:spellcraft.spellPenetration"});
 	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
 		BonusSubtypeID(SpellSchool::ANY)));
@@ -284,14 +283,12 @@ TEST_F(NewHorizonsHandOfFateTest, EmpoweredCollateralUsesCapturedPenetrationAndC
 	enemyCollateral->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(),
 		BonusSubtypeID(SpellSchool::ANY)));
-	battle()->getSide(BattleSide::ATTACKER).warcastingState.recordAcceptedAction(
-		AlternatingHeroActionState::Action::ORDER, battle()->getRound(), 20);
 	const auto primaryBefore = primary->getAvailableHealth();
 	const auto friendlyBefore = friendly->getAvailableHealth();
 	const auto enemyBefore = enemyCollateral->getAvailableHealth();
 	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell);
 	const auto mechanics = spell->battleMechanics(&event);
-	EXPECT_EQ(mechanics->adjustRecipientDamage(enemyCollateral, 10000), 5750);
+	EXPECT_EQ(mechanics->adjustRecipientDamage(enemyCollateral, 10000), 6000);
 	EXPECT_EQ(mechanics->adjustRecipientDamage(friendly, 10000), 5000);
 	const auto hypnosis = std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID());
@@ -299,7 +296,7 @@ TEST_F(NewHorizonsHandOfFateTest, EmpoweredCollateralUsesCapturedPenetrationAndC
 	enemyCollateral->addNewBonus(std::make_shared<Bonus>(*hypnosis));
 	ASSERT_EQ(battle()->battleGetOwner(friendly), defenderSideHero->getOwner());
 	ASSERT_EQ(battle()->battleGetOwner(enemyCollateral), attackerSideHero->getOwner());
-	EXPECT_EQ(mechanics->adjustRecipientDamage(friendly, 10000), 5750);
+	EXPECT_EQ(mechanics->adjustRecipientDamage(friendly, 10000), 6000);
 	EXPECT_EQ(mechanics->adjustRecipientDamage(enemyCollateral, 10000), 5000);
 	friendly->removeBonus(hypnosis);
 	enemyCollateral->removeBonuses(Selector::type()(BonusType::HYPNOTIZED));
@@ -308,15 +305,13 @@ TEST_F(NewHorizonsHandOfFateTest, EmpoweredCollateralUsesCapturedPenetrationAndC
 	const auto primaryLoss = primaryBefore - primary->getAvailableHealth();
 	ASSERT_GT(primaryLoss, 0);
 	const auto hostileExpected = spells::calculateMagicalDamageReduction(primaryLoss / 2,
-		{50}, std::vector<int>{15}).damageWithPenetration;
+		{50}, std::vector<int>{20}).damageWithPenetration;
 	const auto friendlyExpected = spells::calculateMagicalDamageReduction(primaryLoss / 2,
 		{50}, 0).damageWithPenetration;
 	const auto friendlyLoss = friendlyBefore - friendly->getAvailableHealth();
 	const auto enemyLoss = enemyBefore - enemyCollateral->getAvailableHealth();
 	EXPECT_TRUE((friendlyLoss == friendlyExpected && enemyLoss == 0)
 		|| (friendlyLoss == 0 && enemyLoss == hostileExpected));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).warcastingState.bonusFor(
-		AlternatingHeroActionState::Action::SPELL, battle()->getRound()), 0);
 }
 
 TEST_F(NewHorizonsHandOfFateTest, UniformMixedSidePoolAppliesOnlyTheChosenRecipientsOwnDefense)

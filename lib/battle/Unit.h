@@ -96,6 +96,11 @@ public:
 	virtual bool alive() const = 0;
 	virtual bool isGhost() const = 0;
 	virtual bool isFrozen() const = 0;
+	/// Original hero-side marks and original-stack Gate use survive control changes.
+	virtual int32_t metamagicMarks(BattleSide) const { return 0; }
+	virtual bool hasOpenedDemonicGate() const { return false; }
+	/// Stable hero side only for natively applied spell Poison; legacy/creature Poison is NONE.
+	virtual BattleSide physicalPoisonSpellOrigin() const { return BattleSide::NONE; }
 
 	bool isDead() const;
 	bool isTurret() const;
@@ -271,7 +276,7 @@ inline int64_t getMaximumHealth(const Unit & unit)
 class DLL_LINKAGE UnitInfo final : public scripting::ApiSerializable<UnitInfo>
 {
 public:
-    uint32_t id = 0;
+	uint32_t id = 0;
 	TQuantity count = 0;
 	CreatureID type;
 	BattleSide side = BattleSide::NONE;

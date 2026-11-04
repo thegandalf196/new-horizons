@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Keep the Warcasting battle indicator independent of skill rank/bonus size."""
+"""Guard native Inspiration readback and the shared contextual Hero Action UI."""
 
 from pathlib import Path
 
@@ -9,27 +9,27 @@ status = (ROOT / "client/battle/HeroInfoWindow.cpp").read_text(encoding="utf-8")
 layout = (ROOT / "client/battle/HeroInfoWindow.h").read_text(encoding="utf-8")
 window = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
 
-icon_selector = window.split("std::string warcastingIconName(", 1)[1].split("\n}\n", 1)[0]
-spell = icon_selector.split(
-    "if(action == AlternatingHeroActionState::Action::SPELL)", 1
-)[1].split("if(action == AlternatingHeroActionState::Action::ORDER)", 1)[0]
-order = icon_selector.split(
-    "if(action == AlternatingHeroActionState::Action::ORDER)", 1
-)[1]
-
-assert 'return "NH_perk_arcane_channeling_normal.png";' in spell
-assert 'return "NH_perk_martial_channeling_normal.png";' in order
-assert "empowerment" not in icon_selector
-assert "NH_warcasting_basic_small.png" not in status
-assert "NH_warcasting_advanced_small.png" not in status
-assert "NH_warcasting_expert_small.png" not in status
-
-assert "warcastingIconName(action)" in window
-assert "std::to_string(empowerment)" in window
-assert "std::to_string(warcasting.expiryRound)" in window
-assert '" Available through round "' in window
-assert '" (inclusive)."' in window
-assert 'entries.push_back({warcastingIconName(action), actionName, amount, tooltip});' in window
+inspiration = (ROOT / "client/battle/ArcaneInspirationPresentation.h").read_text(encoding="utf-8")
+strip = (ROOT / "client/battle/StackTemporaryStatusPresenter.cpp").read_text(encoding="utf-8")
+stack_panel = (ROOT / "client/battle/StackInfoBasicPanel.cpp").read_text(encoding="utf-8")
+creature_rows = (ROOT / "client/windows/CreatureBonusStatusPresentation.cpp").read_text(encoding="utf-8")
+for obsolete in ("getWarcastingState", "AlternatingHeroActionState", "Next eligible action:",
+                 "Reactive Weave", "readinessExpiryFor", "effectiveBonus"):
+    assert obsolete not in window, f"retired action readiness remains: {obsolete}"
+for readback in ("battle->battleGetOwner(&stack)", "activeProfile(stack, owner)", "retainedPercent(stack, owner)",
+                 "effectiveCorePercent(hero", "isSpellshock"):
+    assert readback in inspiration, f"shared Inspiration readback missing: {readback}"
+assert "stack.getOwner()" not in inspiration, "Inspiration readback must follow combat allegiance under Hypnotize"
+assert "next attack or retaliation" in inspiration
+assert "even while Inspiration is active" in inspiration
+assert "beginning of the next combat round" in inspiration
+assert "ArcaneInspirationPresentation.h" in creature_rows
+assert "inspiration.details" in creature_rows
+assert "if(entry.inspiration)" in strip
+assert "inspiration.details, inspiration.details" in strip
+assert "arcaneInspirationPresentation::forStack(*updatedInfo, battleCallback.get()) == displayedInspiration" in stack_panel
+for mutation in ("activeMarker(", "retainedMarker(", "advanceRound(", "addNewBonus("):
+    assert mutation not in inspiration, f"presentation mutates Inspiration: {mutation}"
 
 # Generic entries retain their own rows above one compact normal Hero Action state.
 assert "constexpr int effectAreaWidth = 70;" in layout
@@ -76,4 +76,4 @@ assert "heroBattleStatusHeight(BattleSide::DEFENDER)" in outside_layout
 assert "stackPanelBottom <= ENGINE->screenDimensions().y" in outside_layout
 assert "return false;" in outside_layout
 
-print("PASS: Warcasting art is rank-neutral, generic statuses size dynamically, the normal Hero Action is contextual, and short-screen layout falls back")
+print("PASS: native Inspiration markers replace readiness, statuses refresh, Hero Action remains contextual, and short-screen layout falls back")

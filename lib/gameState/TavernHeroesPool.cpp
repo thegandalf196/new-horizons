@@ -129,11 +129,6 @@ void TavernHeroesPool::onNewDay(bool completedDay)
 	{
 		auto heroPtr = owner->getMap().tryGetFromHeroPool(heroID);
 		assert(heroPtr);
-		// Preserve the Movement maximum against which the previous day was spent.
-		std::optional<int> previousMovementLimit;
-		if(completedDay && !vstd::contains(unusedHeroes, heroID)
-			&& heroPtr->hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.meditation"))
-			previousMovementLimit = heroPtr->movementPointsLimit();
 		// Pooled heroes are not part of CMap::objects and therefore do not see
 		// GameStatePackVisitor's on-map daily reset. The flag is inert for legacy
 		// rules, so clearing it unconditionally is safe and prevents a dismissed
@@ -152,9 +147,8 @@ void TavernHeroesPool::onNewDay(bool completedDay)
 		if (vstd::contains(unusedHeroes, heroID))
 			continue;
 
-		// Compute mana before refreshing Movement so Meditation reads yesterday's
-		// remaining points, while ordinary regeneration still observes expired bonuses.
-		heroPtr->setNormalSpellPoints(heroPtr->getManaNewTurn(completedDay, previousMovementLimit));
+		// Ordinary regeneration observes the expired daily bonuses.
+		heroPtr->setNormalSpellPoints(heroPtr->getManaNewTurn(completedDay));
 		heroPtr->setMovementPoints(heroPtr->movementPointsLimit());
 	}
 }

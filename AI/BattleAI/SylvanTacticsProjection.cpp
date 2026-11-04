@@ -70,7 +70,7 @@ bool dynamicDamage(const CBattleInfoCallback & battle,
 }
 
 void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAttackInfo & attack,
-	battle::CUnitState & target, int64_t & amount, battle::DamageProvenance provenance)
+	battle::CUnitState & target, int64_t & amount, battle::DamageProvenance provenance, int64_t * postShieldDamage)
 {
 	Pending * captured = nullptr;
 	bool mayRebirth = false;
@@ -104,7 +104,8 @@ void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAtt
 			captured = &*found;
 		}
 	}
-	newHorizonsForestAmbush::damageFromAttack(world, target, amount, provenance);
+	newHorizonsForestAmbush::receiveAttack(world, target);
+	target.damage(amount, false, provenance, postShieldDamage);
 	if(!captured) return;
 	captured->hits.emplace_back(target.unitId(), amount);
 	if(!target.alive() && !mayRebirth) captured->destroyed.push_back(target.unitId());

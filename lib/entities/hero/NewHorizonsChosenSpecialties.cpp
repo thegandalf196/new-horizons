@@ -36,6 +36,7 @@ bool resolveChosenSpecialtyPresentation(const CHero & hero, const JsonNode & dev
 	if(key == "core:inteus")
 	{
 		result.name = "Fervor";
+		result.summary = "The Chosen lasts +" + std::to_string(rules->inteusDurationBonus) + " rounds, beyond its ordinary duration cap.";
 		result.artwork = "newHorizons/heroSpecialties/InteusCrusade";
 		result.description = "The Chosen lasts +" + std::to_string(rules->inteusDurationBonus)
 			+ " rounds after its ordinary duration cap. Other duration extensions also apply. Its granted abilities are unchanged.";
@@ -43,6 +44,7 @@ bool resolveChosenSpecialtyPresentation(const CHero & hero, const JsonNode & dev
 	else
 	{
 		result.name = "Anointed Champions";
+		result.summary = "The Chosen costs " + std::to_string(rules->loynisManaDiscountPercent) + "% less Mana after Wisdom.";
 		result.artwork = "newHorizons/heroSpecialties/LoynisCrusade";
 		result.description = "The Chosen costs " + std::to_string(rules->loynisManaDiscountPercent)
 			+ "% less Mana after Wisdom, rounded up (minimum 1). Other cost modifiers still apply. Its granted abilities are unchanged.";

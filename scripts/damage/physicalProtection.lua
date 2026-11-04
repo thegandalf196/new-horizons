@@ -139,6 +139,7 @@ local function getPhysicalDamageReductionFactor(info)
 		table.insert(reductions, { info.heroOrderDamageReductionPercent or 0, 100 })
 	end
 
+	table.insert(reductions, { info.arcaneBulwarkReductionPercent or 0, 100 })
 	local remainingDamage = 1.0
 	for _, reduction in ipairs(reductions) do
 		local value = reduction[1]

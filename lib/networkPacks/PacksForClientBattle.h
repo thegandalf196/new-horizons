@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "NetPacksBase.h"
+#include "SetMetamagicPointState.h"
 #include "BattleChanges.h"
 #include "BattleUnitStateCompatibility.h"
 #include "PacksForClient.h"
@@ -30,6 +31,7 @@
 #include "../battle/NewHorizonsBattlecraft.h"
 #include "../battle/NewHorizonsElementalRebirth.h"
 #include "../battle/BattleInfo.h"
+#include "../spells/AutomaticHeroCast.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
 #include "../battle/BattleDeploymentState.h"
 #include "../battle/BattleHexArray.h"
@@ -61,6 +63,10 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving && info) info->validateSylvanTacticsSerialization(h);
 		if(h.saving && info)
+			info->validateMetamagicPointSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
+		if(h.saving && info)
+			info->validatePassiveFactionStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+		if(h.saving && info)
 			info->validateCapturedSideSpecialtiesSerialization(h);
 		if(h.saving && info)
 			info->validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
@@ -91,8 +97,6 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateMetamagicCapacitySerialization(h);
 		if(h.saving && info)
 			info->validateSharedPurposeSerialization(h);
-		if(h.saving && info)
-			info->validateReactiveWeaveSerialization(h);
 		if(h.saving && info)
 			info->validateSeizeInitiativeSerialization(h);
 		if(h.saving && info)
@@ -175,14 +179,6 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_RAGE_THROUGH_PAIN)
 			&& info->hasRageThroughPainState())
 			throw std::runtime_error("Cannot discard Rage Through Pain battle start state");
-		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SYNTHESIS)
-			&& (info->getWarcastingState(BattleSide::ATTACKER).hasConsumedBonus
-				|| info->getWarcastingState(BattleSide::DEFENDER).hasConsumedBonus))
-			throw std::runtime_error("Cannot discard Warcasting consumption history from BattleStart");
-		if(h.saving && info && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_ACTION_SEQUENCE)
-			&& (info->getWarcastingState(BattleSide::ATTACKER).hasRecentActionHistory()
-				|| info->getWarcastingState(BattleSide::DEFENDER).hasRecentActionHistory()))
-			throw std::runtime_error("Cannot discard Hero Action sequence history from BattleStart");
 		if(h.saving && info && !h.hasFeature(Handler::Version::BATTLE_FINAL_RELOCATION)
 			&& info->getDeploymentState().hasFinalRelocationState())
 			throw std::runtime_error("Cannot discard final relocation state from BattleStart");
@@ -304,6 +300,15 @@ struct DLL_LINKAGE BattleDemonicGatingStateChanged : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			for(const auto & gate : pending) gate.validate();
+			for(const auto & stack : gated) stack.validate();
+		}
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS)
+			&& (std::ranges::any_of(pending, [](const auto & gate) { return gate.temporary; })
+				|| std::ranges::any_of(gated, [](const auto & stack) { return stack.temporary; })))
+			throw std::runtime_error("Cannot discard temporary Gating snapshot provenance");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_CHAIN_GATE)
 			&& (chainGateArmed || std::any_of(pending.begin(), pending.end(), [](const auto & gate)
 			{
@@ -567,43 +572,6 @@ struct DLL_LINKAGE SetArmorerDefiantState : public CPackForClient
 /// Replicates a side's bounded response window after an accepted enemy spell or
 /// consumes it after that side accepts a hero spell.
 /// Published only after an accepted enemy Hero spell changed captured recipients.
-struct DLL_LINKAGE SetReactiveWeaveState : public CPackForClient
-{
-	BattleID battleID = BattleID::NONE;
-	BattleSide side = BattleSide::NONE;
-	BattleSide casterSide = BattleSide::NONE;
-	int32_t round = -1;
-	int32_t empowerment = 0;
-	std::vector<uint32_t> recipients;
-
-	void visitTyped(ICPackVisitor & visitor) override;
-	void validateShape() const
-	{
-		if(battleID == BattleID::NONE || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-			|| (casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
-			|| side == casterSide || round < 0 || round == std::numeric_limits<int32_t>::max()
-			|| empowerment <= 0 || recipients.empty()
-			|| recipients.back() == std::numeric_limits<uint32_t>::max()
-			|| !std::is_sorted(recipients.begin(), recipients.end())
-			|| std::adjacent_find(recipients.begin(), recipients.end()) != recipients.end())
-			throw std::runtime_error("Invalid Reactive Weave receipt");
-	}
-
-	template <typename Handler> void serialize(Handler & h)
-	{
-		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_REACTIVE_WEAVE))
-			throw std::runtime_error("Reactive Weave receipt requires its protocol version");
-		if(h.saving)
-			validateShape();
-		h & battleID;
-		h & side;
-		h & casterSide;
-		h & round;
-		h & empowerment;
-		h & recipients;
-		validateShape();
-	}
-};
 
 struct DLL_LINKAGE SetSpellResponseState : public CPackForClient
 {
@@ -1853,6 +1821,14 @@ struct DLL_LINKAGE EndAction : public CPackForClient
 
 struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 {
+	spells::AutomaticHeroCastReceipt automaticHeroCast;
+	void validateAutomaticHeroCast() const
+	{
+		automaticHeroCast.validateEnvelope(castByHero, activeCast, casterStack, side, paidHeroManaCost);
+		if(automaticHeroCast.automatic() && (metamagicFollowup || metamagicGrand || metamagicManaRefund != 0
+			|| metamagicTargetUnitId != std::numeric_limits<uint32_t>::max() || temporalFieldCast))
+			throw std::runtime_error("Automatic hero spell cannot carry additional-action metadata");
+	}
 	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
 	void validateHeroLuckReceipt() const
 	{
@@ -1893,6 +1869,9 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	{
 		if(h.saving)
 		{
+			validateAutomaticHeroCast();
+			if(automaticHeroCast.automatic() && !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+				throw std::runtime_error("Cannot discard automatic hero spell provenance");
 			validateHeroLuckReceipt();
 			if(heroLuck && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
 				throw std::runtime_error("Cannot discard hero spell Luck receipt");
@@ -2007,6 +1986,17 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 			h & heroLuck;
 		else if(!h.saving)
 			heroLuck.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
+		{
+			h & automaticHeroCast.kind;
+			h & automaticHeroCast.mandateUseOrdinal;
+			h & automaticHeroCast.issuingOrder;
+			h & automaticHeroCast.issuingRound;
+			h & automaticHeroCast.inspiringDuration;
+		}
+		else if(!h.saving)
+			automaticHeroCast = {};
+		validateAutomaticHeroCast();
 		validateHeroLuckReceipt();
 		assert(battleID != BattleID::NONE);
 	}

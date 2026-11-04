@@ -40,6 +40,8 @@ bool resolveGhostSpecialtyPresentation(const CHero & hero, const JsonNode & rule
 	if(hero.getJsonKey() != "core:vidomina" || !usesGhostUpgrade(rules))
 		return false;
 	result.name = "Soul Harvest";
+	result.summary = "Upgrade Wraiths to Ghosts; each eligible enemy creature they kill grants "
+		+ std::to_string(newHorizonsSoulHarvest::GHOSTS_PER_CREATURE_KILLED) + " extra Ghost for this battle only.";
 	result.artwork = "newHorizons/heroSpecialties/VidominaSoulHarvest";
 	result.creature = CreatureID(CreatureID::decode("new-horizons:ghost"));
 	result.description = "Vidomina may upgrade Wraiths to Ghosts at the ordinary upgrade cost. "

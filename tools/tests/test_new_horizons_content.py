@@ -148,10 +148,11 @@ def common_spells():
 
 
 def legacy_rules(rules):
-    """Return the same snapshot in the saved-compatible v1 shape."""
+    """Project test data into the closed v1 schema; not a runtime save adapter."""
     result = copy.deepcopy(rules)
     if result:
         result['rulesetVersion'] = 1
+        result.pop('pointBlankPreservesAdjacentExemption', None)
         result.pop('warcasting', None)
         result.pop('spellPoints', None)
         result.pop('mageGuildGeneration', None)
@@ -1121,15 +1122,11 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertEqual(patch['images']['large'], 'HPL041WZ.bmp')
         self.assertIsNone(patch['specialty']['secondary'])
         self.assertIsNone(patch['specialty']['bonuses']['mysticismExtra'])
-        self.assertEqual(patch['specialty']['bonuses']['metamagicUses'], {
-            'type': 'METAMAGIC_USES_PER_COMBAT',
-            'valueType': 'BASE_NUMBER',
-            'val': 1,
-        })
+        self.assertIsNone(patch['specialty']['bonuses']['metamagicUses'])
         self.assertEqual(patch['texts']['specialty'], {
             'name': 'Metamagic Adept',
-            'tooltip': 'Metamagic: +1 use per combat',
-            'description': 'Halon can use Metamagic one additional time per combat.',
+            'tooltip': 'Manual spells grant +1 Metamagic point',
+            'description': 'Halon gains 1 additional Metamagic point after each spell he manually casts, up to 12 points.',
         })
         module = load('Mods/new-horizons/mod.json')
         self.assertEqual(module['heroes'].count('config/heroes/halon.json'), 1)
@@ -1519,7 +1516,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                     patches['core:' + hero]['specialty']['bonuses']['mysticismExtra'])
         # The explicit Metamagic specialty remains intact; only its retired
         # Mysticism hook is cleared.
-        self.assertEqual(patches['core:halon']['specialty']['bonuses']['metamagicUses']['val'], 1)
+        self.assertIsNone(patches['core:halon']['specialty']['bonuses']['metamagicUses'])
 
     def test_phantom_army_is_a_common_active_sorcery_spell_and_replaces_clone(self):
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')

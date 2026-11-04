@@ -53,7 +53,10 @@ enum class ObjProperty : int8_t
 	NEW_HORIZONS_PROSPECTOR_LAST_WEEK,
 
 	// Explicit identity for unclaimed creature-bank loot; never inferred from stacks.
-	BANK_PENDING_CREATURE_REWARD
+	BANK_PENDING_CREATURE_REWARD,
+
+	NEW_HORIZONS_MINE_MERCENARY_WEEK,
+	NEW_HORIZONS_MINE_MERCENARY_PENDING
 };
 
 class NumericID : public StaticIdentifier<NumericID>

@@ -13,9 +13,9 @@ class CGTownInstance;
 namespace newHorizonsSage
 {
 DLL_LINKAGE bool firstGuildVisit(const CGHeroInstance & hero, const CGTownInstance & town);
-/// Eligible, undisplayed catalog restricted to captured per-level Guild schools.
+/// Retired Sage reward API: current rules return no hidden spell candidates.
 DLL_LINKAGE std::vector<SpellID> candidates(const CGHeroInstance & hero, const CGTownInstance & town);
-/// Highest level, then stable scoped spell identity. Does not consume a visit.
+/// Retired Sage reward API: current rules return no selected spell.
 DLL_LINKAGE std::optional<SpellID> selectSpell(const CGHeroInstance & hero, const CGTownInstance & town);
 DLL_LINKAGE std::optional<SpellID> wisdomReveal(const CGHeroInstance & hero, const CGTownInstance & town);
 DLL_LINKAGE bool learningSelected(const CGHeroInstance & hero);

@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "BattleTestFixture.h"
+#include "NewHorizonsBloodrageLegacyFixture.h"
 #include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -45,6 +46,7 @@ public:
 class NewHorizonsBloodScentTest : public BattleTestFixture
 {
 protected:
+	bool revisedBloodrage = false;
 	bool absentMagicRules = false;
 	void SetUp() override
 	{
@@ -67,6 +69,9 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroRules));
 		}
 		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(!revisedBloodrage)
+			rules.Struct().erase("bloodragePolicy");
+		rules.setOverrideFlag(true);
 		int activated = 0;
 		for(auto & perk : rules["skills"][std::string(BLOODRAGE_SKILL)]["perks"].Vector())
 		{
@@ -150,23 +155,11 @@ protected:
 class NewHorizonsBloodScentLegacySerializationTest : public NewHorizonsBloodScentTest
 {
 protected:
+	bool revisedBloodrage = false;
 	void mapLoaded(CMap * loaded) override
 	{
 		NewHorizonsBloodScentTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, JsonNode());
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
-		// This record predates independent combat-policy and spell-clause captures.
-		// Blood Scent is resolved from the selected perk, not the magic profile.
-		loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
-		loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT, JsonNode(100));
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
-		auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
-		for(auto & perk : perks["skills"]["new-horizons:command"]["perks"].Vector())
-			if(perk["id"].String() == "new-horizons:command.crisisCommand")
-				perk["effect"]["status"].String() = "planned";
-		perks.setOverrideFlag(true);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
-		isolateHistoricalAdventurePolicies(*loaded);
+		historicalBloodrageFixture::captureContext(*loaded);
 	}
 };
 }
@@ -560,4 +553,26 @@ TEST_F(NewHorizonsBloodScentTest, ActualActiveCreatureCastDoesNotReceiveRankOrBl
 		BattleAction::makeCreatureSpellcast(second, spells::Target{spells::Destination(secondTarget)}, SpellID::MAGIC_ARROW)));
 	EXPECT_EQ(secondBefore - secondTarget->getAvailableHealth(), baselineLoss);
 	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 20);
+}
+
+TEST_F(NewHorizonsBloodScentTest, RevisedTwoIncrementsAtFortyNineButNotFiftyPercent)
+{
+	revisedBloodrage = true;
+	startGame();
+	ASSERT_NO_FATAL_FAILURE(selectBloodScent(attackerSideHero));
+	startBattle();
+	ASSERT_EQ(battle()->getBloodrageLowHealthIncrement(BattleSide::ATTACKER), 10);
+	auto * source = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(3, 5), 1);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 5), 10);
+	ASSERT_EQ(target->getAvailableHealth(), 100);
+	setAvailableHealth(target, 50);
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(source, target), 0);
+	setAvailableHealth(target, 49);
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(source, target), 10);
+	battle()->getSide(BattleSide::ATTACKER).bloodrageDamagePercent = 15;
+	EXPECT_EQ(battle()->battleGetBloodrageDamagePercent(source, target), 20);
+	EXPECT_EQ(battle()->getBloodrageDamagePercent(BattleSide::ATTACKER), 15);
+	const auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(restored, nullptr);
+	EXPECT_EQ(restored->getBloodrageLowHealthIncrement(BattleSide::ATTACKER), 10);
 }
