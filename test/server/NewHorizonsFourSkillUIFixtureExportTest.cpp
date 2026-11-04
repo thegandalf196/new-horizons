@@ -90,6 +90,13 @@ protected:
             ? std::set<PlayerConnectionID>{PlayerConnectionID::FIRST_HUMAN} : std::set<PlayerConnectionID>{};
         settings.compOnly = settings.color != estatesTest::PLAYER;
     }
+    void mapLoaded(CMap * loaded) override
+    {
+        estatesTest::Fixture::mapLoaded(loaded);
+        // Export only shipping heroes; unused allowed heroes enter the saved tavern pool.
+        std::erase_if(loaded->allowedHeroes, [](HeroTypeID hero)
+            { return hero.toHeroType()->getModScope() == "vcmi-test"; });
+    }
     void TearDown() override
     {
         handler.reset();
@@ -167,6 +174,8 @@ protected:
     void checkWorld()
     {
         auto & world = handler->gameState();
+        for(const auto hero : world.getMap().allowedHeroes)
+            ASSERT_NE(hero.toHeroType()->getModScope(), "vcmi-test");
         const auto heroes = world.getHeroes(estatesTest::PLAYER);
         ASSERT_EQ(heroes.size(), 2u);
         const auto buyer = std::ranges::find_if(heroes, [](const auto * hero)
