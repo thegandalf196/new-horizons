@@ -4,7 +4,7 @@ The two independent captured settings have these fresh-world defaults:
 
 | Setting | Default | Admitted integers | Identity value |
 | --- | ---: | --- | ---: |
-| `creatures.neutralArmySizePercent` | 50 | 1–100 | 100 |
+| `creatures.neutralArmySizePercent` | 100 | 1–100 | 100 |
 | `creatures.recruitmentGrowthPercent` | 50 | 0–1000 | 100 |
 
 The neutral setting scales newly generated encounter armies. Recruitment growth

@@ -80,7 +80,9 @@ backups and use the matching older version to continue those games.
 - The hero screen has a **Temporary Effects** view and new information and
   hourglass buttons, with clearer information-panel layout.
 - Experimental neutral-army calibration considers Leadership and available
-  troops instead of relying solely on a flat size multiplier.
+  troops instead of relying solely on a flat size multiplier. The adjustable
+  neutral-size slider defaults to **100% of the calibrated counts**; independent
+  recruitment growth remains **50%**.
 - Combat AI reuses equivalent damage and spell calculations while preserving
   its tactical scoring and legal actions. Some battles and AI turns remain
   slow.

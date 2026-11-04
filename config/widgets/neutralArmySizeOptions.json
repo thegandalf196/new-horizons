@@ -36,7 +36,7 @@
 			"callback": "setNeutralArmySize",
 			"itemsVisible": 1,
 			"itemsTotal": 100,
-			"selected": 49,
+			"selected": 99,
 			"style": "blue",
 			"scrollBounds": {
 				"x": 0,

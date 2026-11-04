@@ -722,8 +722,8 @@
 			"newHorizonsCategories" : {},
 			// creatures on map will grow by specified percentage each week
 			"weeklyGrowthPercent" : 10,
-			// New games use half-sized neutral armies; captured historical absence remains100.
-			"neutralArmySizePercent" : 50,
+			// New games default to full Leadership-calibrated counts; historical absence retains the original-count percentage policy.
+			"neutralArmySizePercent" : 100,
 			"neutralLeadershipCalibration" : {
 				"version": 1,
 				"enabled": true,

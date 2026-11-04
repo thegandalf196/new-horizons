@@ -66,7 +66,7 @@ class NeutralArmySizeOptionTest(unittest.TestCase):
         self.assertEqual(slider["itemsTotal"], 100)
         percentages = [index + 1 for index in range(slider["itemsTotal"] - slider["itemsVisible"] + 1)]
         self.assertEqual(percentages, list(range(1, 101)))
-        self.assertEqual(slider["selected"] + 1, 50)
+        self.assertEqual(slider["selected"] + 1, 100)
         self.assertEqual(slider["callback"], "setNeutralArmySize")
         self.assertEqual(slider["style"], "blue")
 

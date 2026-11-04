@@ -165,13 +165,13 @@ TEST(NewHorizonsRecruitmentGrowth, NeutralAndRecruitmentCapturesRemainIndependen
 	EXPECT_EQ(newHorizonsNeutralArmies::scaleCount(7, newHorizonsNeutralArmies::percentage(settings)), 4);
 }
 
-TEST(NewHorizonsRecruitmentGrowth, AuthoredFreshDefaultsSelectHalfForBothIndependentSettings)
+TEST(NewHorizonsRecruitmentGrowth, AuthoredFreshDefaultsSelectFullNeutralAndHalfRecruitment)
 {
 	const JsonNode config(JsonPath::builtin("config/gameConfig"));
 	GameSettings settings;
 	settings.loadBase(config["settings"]);
 	EXPECT_EQ(newHorizonsRecruitmentGrowth::percentage(settings), 50);
-	EXPECT_EQ(newHorizonsNeutralArmies::percentage(settings), 50);
+	EXPECT_EQ(newHorizonsNeutralArmies::percentage(settings), 100);
 }
 
 TEST(NewHorizonsRecruitmentGrowth, IdentityCaptureRemainsWritableToPreviousCodec)
