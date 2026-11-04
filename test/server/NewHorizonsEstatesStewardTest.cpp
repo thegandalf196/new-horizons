@@ -51,7 +51,6 @@ public:
 class NewHorizonsEstatesStewardTest : public TinyMapGameTest
 {
 protected:
-	bool legacyPerks = false;
 	int incomePercent = 100;
 	CGTownInstance * town = nullptr;
 	CGTownInstance * otherTown = nullptr;
@@ -74,7 +73,7 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			legacyPerks ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 	void startGame()
 	{
@@ -218,10 +217,19 @@ TEST_F(NewHorizonsEstatesStewardTest, UnselectedResidentDoesNotGrantIncome)
 
 TEST_F(NewHorizonsEstatesStewardTest, MissingSavedRegistryDoesNotUseInstalledSteward)
 {
-	legacyPerks = true;
 	ASSERT_NO_FATAL_FAILURE(startGame());
-	const auto ordinary = ordinaryGold();
+	ASSERT_NO_FATAL_FAILURE(selectSteward(first));
 	town->setVisitingHero(first);
+	ASSERT_EQ(town->getStewardGoldBeforeHandicap(), 250);
+	// Current authored starts require their full registry during initialization.
+	// Model this hero's absent captured registry only after that valid setup;
+	// absence also requires no saved selections, rather than dangling perk IDs.
+	auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(first->getPerkState());
+	savedPerks = newHorizonsHeroes::PerkState{};
+	ASSERT_TRUE(savedPerks.rules.isNull());
+	ASSERT_TRUE(savedPerks.selected.empty());
+	ASSERT_NO_THROW(savedPerks.validate());
+	const auto ordinary = ordinaryGold();
 	ASSERT_FALSE(first->hasActivePerk(ESTATES, STEWARD));
 	EXPECT_EQ(town->getStewardGoldBeforeHandicap(), 0);
 	ASSERT_NO_FATAL_FAILURE(verifyNextDay(ordinary));

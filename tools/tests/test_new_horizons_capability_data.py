@@ -96,6 +96,7 @@ CANONICAL_LEADERSHIP_REQUIREMENTS = {
     'core:magicElemental': 320,
     'core:firebird': 650,
     'core:phoenix': 650,
+    'core:rogue': 90,
     'core:enchanter': 380,
     'core:sharpshooter': 170,
     'new-horizons:wisp': 140,
