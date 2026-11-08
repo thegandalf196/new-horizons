@@ -29,7 +29,9 @@
 #include "../lib/battle/CPlayerBattleCallback.h"
 #include "../lib/callback/CCallback.h"
 #include "../lib/callback/AIFactory.h"
+#include "../lib/callback/BattleAISelection.h"
 #include "../lib/callback/CBattleGameInterface.h"
+#include "../lib/callback/CAdventureAI.h"
 #include "../lib/callback/CGlobalAI.h"
 #include "../lib/callback/IGameInfoCallback.h"
 #include "../lib/filesystem/Filesystem.h"
@@ -40,6 +42,7 @@
 #include "../lib/UnlockGuard.h"
 #include "../lib/mapObjects/army/CArmedInstance.h"
 #include "../lib/mapping/CMapService.h"
+#include "../lib/mapping/CMap.h"
 #include "../lib/pathfinder/CGPathNode.h"
 #include "../lib/serializer/GameConnection.h"
 
@@ -423,6 +426,31 @@ void CClient::battleStarted(const BattleID & battleID)
 	std::shared_ptr<CPlayerInterface> def;
 	const auto & leftSide = info->getSide(BattleSide::LEFT_SIDE);
 	const auto & rightSide = info->getSide(BattleSide::RIGHT_SIDE);
+	const auto isHuman = [this](PlayerColor color)
+	{
+		const auto controller = battleints.find(color);
+		if(controller != battleints.end())
+			return controller->second->human;
+		const auto * player = color.isValidPlayer() ? gameInfo().getPlayerState(color, false) : nullptr;
+		return player && player->human;
+	};
+	const bool automatic = battleAISelection::automaticBattle(
+		isHuman(leftSide.color) || isHuman(rightSide.color), info->replayAllowed,
+		settings["adventure"]["quickCombat"].Bool(), gameState().getMap().battleOnly,
+		settings["adventure"]["forceQuickCombat"].Bool());
+	std::optional<std::string> quickAI;
+	if(settings["ai"]["quickCombatAI"].getType() == JsonNode::JsonType::DATA_STRING)
+		quickAI = settings["ai"]["quickCombatAI"].String();
+	// Neutral controllers persist between fights, but their search profile is
+	// immutable. Replace the controller before binding this battle's callback.
+	if((leftSide.color == PlayerColor::NEUTRAL || rightSide.color == PlayerColor::NEUTRAL)
+		&& vstd::contains(battleints, PlayerColor::NEUTRAL))
+	{
+		auto neutralAI = AIFactory::createBattleAI(battleAISelection::factoryName(
+			automatic, settings["ai"]["combatNeutralAI"].String(), quickAI));
+		neutralAI->initBattleInterface(playerEnvironments.at(PlayerColor::NEUTRAL), battleCallbacks.at(PlayerColor::NEUTRAL));
+		installNewBattleInterface(neutralAI, PlayerColor::NEUTRAL, false);
+	}
 
 	for(auto & battleCb : battleCallbacks)
 	{
@@ -434,7 +462,11 @@ void CClient::battleStarted(const BattleID & battleID)
 	auto callBattleStart = [&](PlayerColor color, BattleSide side)
 	{
 		if(vstd::contains(battleints, color))
+		{
+			if(auto adventureAI = std::dynamic_pointer_cast<CAdventureAI>(battleints[color]))
+				adventureAI->prepareBattleAISelection(battleID, automatic, quickAI);
 			battleints[color]->battleStart(info->battleID, leftSide.getArmy(), rightSide.getArmy(), info->tile, leftSide.getHero(), rightSide.getHero(), side, info->replayAllowed);
+		}
 	};
 	
 	callBattleStart(leftSide.color, BattleSide::LEFT_SIDE);

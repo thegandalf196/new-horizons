@@ -626,11 +626,11 @@
 			}
 		},
 		"ai" : {
-			"description" : "BattleAI keeps unlimited reference search. BattleAIBeamOne and BattleAIQuick explicitly select experimental search approximations that may change actions and outcomes; they apply to the configured controller, including visible auto-fight.",
+			"description" : "Auto-resolved battles use quickCombatAI independently of the ordinary combat controllers. Fast search may change decisions and casualties; BattleAI retains full reference search.",
 			"type" : "object",
 			"additionalProperties" : false,
 			"default" : {},
-			"required" : [ "adventureAlliedAI", "adventureEnemyAI", "combatEnemyAI", "combatAlliedAI", "combatNeutralAI" ],
+			"required" : [ "adventureAlliedAI", "adventureEnemyAI", "combatEnemyAI", "combatAlliedAI", "combatNeutralAI", "quickCombatAI" ],
 			"properties" : {
 				"adventureAlliedAI" : {
 					"type" : "string",
@@ -641,6 +641,12 @@
 					"type" : "string",
 					"enum" : [ "EmptyAI", "Nullkiller2" ],
 					"default" : "Nullkiller2"
+				},
+				"quickCombatAI" : {
+					"description" : "Combat AI for human Quick Combat and AI-versus-AI auto-resolved battles. BattleAIQuick is the Fast default with reduced search and potentially different decisions or casualties; BattleAI selects Full search and may take longer. Visible auto-fight and manually played battles use the ordinary combat controllers.",
+					"type" : "string",
+					"enum" : [ "BattleAIQuick", "BattleAI" ],
+					"default" : "BattleAIQuick"
 				},
 				"combatEnemyAI" : {
 					"type" : "string",

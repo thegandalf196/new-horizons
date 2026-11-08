@@ -87,6 +87,7 @@
 #include "../lib/GameConstants.h"
 #include "../lib/RoadHandler.h"
 #include "../lib/StartInfo.h"
+#include "../lib/callback/BattleAISelection.h"
 #include "../lib/TerrainHandler.h"
 #include "../lib/UnlockGuard.h"
 #include "../lib/VCMIDirs.h"
@@ -679,12 +680,12 @@ void CPlayerInterface::battleStart(const BattleID & battleID, const CCreatureSet
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
 
-	bool useQuickCombat = settings["adventure"]["quickCombat"].Bool() || GAME->map().getMap()->battleOnly;
-	bool forceQuickCombat = settings["adventure"]["forceQuickCombat"].Bool();
-
-	if ((replayAllowed && useQuickCombat) || forceQuickCombat)
+	const bool automatic = battleAISelection::automaticBattle(true, replayAllowed,
+		settings["adventure"]["quickCombat"].Bool(), GAME->map().getMap()->battleOnly,
+		settings["adventure"]["forceQuickCombat"].Bool());
+	if(automatic)
 	{
-		prepareAutoFightingAI(battleID, army1, army2, tile, hero1, hero2, side);
+		prepareAutoFightingAI(battleID, army1, army2, tile, hero1, hero2, side, automatic);
 	}
 
 	waitForAllDialogs();
@@ -2214,9 +2215,13 @@ bool CPlayerInterface::capturedAllEvents()
 	return false;
 }
 
-void CPlayerInterface::prepareAutoFightingAI(const BattleID &bid, const CCreatureSet *army1, const CCreatureSet *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, BattleSide side)
+void CPlayerInterface::prepareAutoFightingAI(const BattleID &bid, const CCreatureSet *army1, const CCreatureSet *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, BattleSide side, bool automatic)
 {
-	autofightingAI = AIFactory::createBattleAI(settings["ai"]["combatAlliedAI"].String());
+	std::optional<std::string_view> quickAI;
+	if(settings["ai"]["quickCombatAI"].getType() == JsonNode::JsonType::DATA_STRING)
+		quickAI = settings["ai"]["quickCombatAI"].String();
+	autofightingAI = AIFactory::createBattleAI(battleAISelection::factoryName(
+		automatic, settings["ai"]["combatAlliedAI"].String(), quickAI));
 
 	AutocombatPreferences autocombatPreferences = AutocombatPreferences();
 	autocombatPreferences.enableSpellsUsage = settings["battle"]["enableAutocombatSpells"].Bool();

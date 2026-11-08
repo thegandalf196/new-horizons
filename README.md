@@ -34,6 +34,13 @@ Moreover, in the original game, a Knight’s martial attributes work automatical
 
 In this series, with the notable exception of Heroes IV, heroes are generals, and generals ought to have martial abilities worth actively using in battle!
 
+### Faster auto-resolved battles
+
+Quick Combat and AI-versus-AI auto-resolved battles use **Fast** search by default.
+In the in-game Battle options, choose **Quick combat AI → Full** for the
+reference search. Fast can change decisions and casualties; Full can take longer.
+Visible auto-fight and manually played battles retain their ordinary combat AI.
+
 ### Orders
 
 That’s where Orders come in. In New Horizons, a hero normally has 1 Hero Action each combat round, spent either casting a Spell or issuing an Order. An Order costs no Mana; its cost is the opportunity to use that action for something else.

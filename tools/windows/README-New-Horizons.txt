@@ -29,36 +29,16 @@ installers. Do not select Data itself, an installer, or a compressed archive.
 No Qt launcher, recommended mods, server/host/address setup or separate server
 process is needed for the normal New Horizons single-player route.
 
-OPTIONAL FASTER COMBAT AI
--------------------------
-Close the game. Open this folder in File Explorer:
-  %LOCALAPPDATA%\HeroesIII-NewHorizons\config
-Back up settings.json, then edit its existing "ai" object to include:
+AUTO-RESOLVED COMBAT AI
+----------------------
+Fast is the default for your Quick Combat and AI-versus-AI auto-resolved battles.
+To change it, open the in-game settings, select Battle options, then choose
+Fast (default) or Full under Quick combat AI. No settings-file editing
+or Qt launcher is required.
 
-  "ai": {
-    "combatAlliedAI": "BattleAIQuick",
-    "combatNeutralAI": "BattleAIQuick",
-    "combatEnemyAI": "BattleAIQuick"
-  }
-
-Keep all other settings and existing ai entries. Add commas where required;
-there must be only one top-level "ai" object. If settings.json does not exist,
-create it with this complete content:
-
-{
-  "ai": {
-    "combatAlliedAI": "BattleAIQuick",
-    "combatNeutralAI": "BattleAIQuick",
-    "combatEnemyAI": "BattleAIQuick"
-  }
-}
-Start the game using Play-New-Horizons.cmd.
-
-combatAlliedAI controls your Quick Combat and visible Autofight.
-combatNeutralAI controls neutral creatures. combatEnemyAI controls the
-battle controller of Nullkiller2 AI players. Set only the keys you want.
-BattleAI is the default full-search profile; restore that value to opt out.
-BattleAIQuick is experimental: faster search can change decisions and casualties.
+Fast uses reduced search and can choose differently or change casualties.
+Full uses the reference search and may take longer. This choice does not change
+combat rules or the ordinary AI used in visible auto-fight or manual battles.
 
 DISK SPACE, SAFETY AND PRIVATE FILES
 ----------------------------------

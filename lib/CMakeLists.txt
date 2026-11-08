@@ -529,6 +529,7 @@ set(lib_MAIN_SRCS
 	callback/CAdventureAI.cpp
 	callback/Calendar.cpp
 	callback/AIFactory.cpp
+	callback/BattleAISelection.cpp
 	callback/CBattleCallback.cpp
 	callback/CCallback.cpp
 	callback/CGameInfoCallback.cpp
@@ -1373,6 +1374,7 @@ set(lib_MAIN_HEADERS
 	callback/CBattleCallback.h
 	callback/CBattleGameInterface.h
 	callback/AIFactory.h
+	callback/BattleAISelection.h
 	callback/CCallback.h
 	callback/CGameInfoCallback.h
 	callback/CGameInterface.h

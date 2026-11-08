@@ -30,8 +30,11 @@ One important class is `HypotheticBattle`. It is used to evaluate the effects of
 | `BattleAIBeamOne` | One shortlisted candidate | Uncapped |
 | `BattleAIQuick` | One shortlisted candidate | Two activation bodies |
 
-`BattleAI` remains the default. Uncapped retains the existing configured round
-horizon. Beam and prefix limits apply to admitted canonical ordinary-creature
+`ai.quickCombatAI` selects auto-resolved battles: `BattleAIQuick` (Fast) is
+the default; `BattleAI` selects Full. The in-game Battle options expose both
+choices. This setting covers human Quick Combat and AI-versus-AI auto battles;
+it is separate from visible auto-fight and manually played battle controllers.
+Uncapped retains the existing configured round horizon. Beam and prefix limits apply to admitted canonical ordinary-creature
 forecasts; unsupported contexts retain reference evaluation. These are search
 approximations: choices and casualties may change, while gameplay rules, damage
 formulas, resource costs and authoritative action validation remain unchanged.
@@ -48,11 +51,9 @@ Each controller owns an immutable profile. `activeStack` installs it in a scoped
 thread-local policy; nested scopes restore the preceding policy, and worker
 threads must enter their own scope. Diagnostic collection does not select it.
 
-`ai.combatAlliedAI` selects human auto-fight; `ai.combatNeutralAI` selects neutral
-controllers and supplies AI players' battle-controller names. The schema and
-launcher also expose `ai.combatEnemyAI`, but the current client does not route AI
-players through that setting independently. Profiles apply to the configured
-controller, including visible auto-fight, rather than only hidden quick combat.
+The ordinary `ai.combatAlliedAI`, `ai.combatNeutralAI` and `ai.combatEnemyAI`
+settings retain their `BattleAI` defaults for battles that are not auto-resolved.
+Changing the auto-resolved selector does not overwrite those settings.
 See [factory registration](../../lib/callback/AIFactory.cpp),
 [profile policy](../../AI/BattleAI/BattleSearchPolicy.h) and the
 [settings schema](../../config/schemas/settings.json).

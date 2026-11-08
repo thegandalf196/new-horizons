@@ -12,6 +12,17 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Fixed Water Walk paths that rejected a legal landing when the hero would finish
   with exactly zero Movement Points.
 
+## 0.89.1 Early Access
+
+- Auto-resolved battles now default to **Fast** combat AI for human Quick Combat
+  and AI-versus-AI fights. Fast uses reduced search and can change decisions and
+  casualties; it does not change combat rules.
+- Adds **Quick combat AI** to the in-game Battle options. Choose **Full**
+  for the reference search, which can take longer. Visible auto-fight and
+  manually played battles retain their ordinary combat AI.
+- This replaces the withdrawn 0.89 package. The 0.89 new-game requirement remains;
+  this update introduces no additional save-format change.
+
 ## 0.89 Early Access
 
 **A new game is required.** Older saves are not converted or rewritten; keep

@@ -94,6 +94,66 @@
 				}
 			]
 		},
+		{
+			"type": "label",
+			"font": "small",
+			"alignment": "left",
+			"color": "yellow",
+			"text": "vcmi.battleOptions.quickCombatAI.hover",
+			"position": {
+				"x": 380,
+				"y": 263
+			}
+		},
+		{
+			"name": "quickCombatAIPicker",
+			"type": "toggleGroup",
+			"position": {
+				"x": 500,
+				"y": 253
+			},
+			"items": [
+				{
+					"index": 0,
+					"type": "toggleButton",
+					"image": "settingsWindow/button46",
+					"help": "vcmi.battleOptions.quickCombatAI",
+					"position": {
+						"x": 0,
+						"y": 0
+					},
+					"items": [
+						{
+							"type": "label",
+							"font": "small",
+							"alignment": "center",
+							"color": "yellow",
+							"text": "vcmi.battleOptions.quickCombatAI.fast.hover"
+						}
+					]
+				},
+				{
+					"index": 1,
+					"type": "toggleButton",
+					"image": "settingsWindow/button46",
+					"help": "vcmi.battleOptions.quickCombatAI",
+					"position": {
+						"x": 49,
+						"y": 0
+					},
+					"items": [
+						{
+							"type": "label",
+							"font": "small",
+							"alignment": "center",
+							"color": "yellow",
+							"text": "vcmi.battleOptions.quickCombatAI.full.hover"
+						}
+					]
+				}
+			],
+			"callback": "quickCombatAIChanged"
+		},
 /////////////////////////////////////// Left section - checkboxes
 		{
 			"name": "generalOptionsLabels",

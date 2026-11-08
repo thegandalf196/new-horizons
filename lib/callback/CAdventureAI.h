@@ -10,10 +10,13 @@
 #pragma once
 
 #include "CGlobalAI.h"
+#include <optional>
+#include <utility>
 
 //class to  be inherited by adventure-only AIs, it cedes battle actions to given battle-AI
 class DLL_LINKAGE CAdventureAI : public CGlobalAI
 {
+	std::optional<std::pair<BattleID, std::string>> nextBattleAISelection;
 public:
 	CAdventureAI() = default;
 
@@ -21,6 +24,11 @@ public:
 	std::shared_ptr<CBattleCallback> cbc;
 
 	virtual std::string getBattleAIName() const = 0; //has to return name of the battle AI to be used
+
+	/// Client dispatch supplies the accepted per-battle presentation context.
+	/// Consumed once before factory creation; never saved or reused by another battle.
+	void prepareBattleAISelection(const BattleID & battleID, bool automatic,
+		std::optional<std::string> quick = std::nullopt);
 
 	//battle interface
 	void activeStack(const BattleID & battleID, const CStack * stack) override;

@@ -11,6 +11,9 @@
 #include "CAdventureAI.h"
 
 #include "AIFactory.h"
+#include "BattleAISelection.h"
+#include <stdexcept>
+#include <utility>
 
 CGlobalAI::CGlobalAI()
 {
@@ -27,12 +30,27 @@ void CAdventureAI::battleCatapultAttacked(const BattleID & battleID, const Catap
 	battleAI->battleCatapultAttacked(battleID, ca);
 }
 
+void CAdventureAI::prepareBattleAISelection(const BattleID & battleID, bool automatic,
+	std::optional<std::string> quick)
+{
+	if(battleAI)
+		throw std::logic_error("Cannot replace battle AI selection during an active battle");
+	nextBattleAISelection.reset();
+	if(!automatic)
+		return;
+	const auto setting = quick ? std::optional<std::string_view>(*quick) : std::nullopt;
+	nextBattleAISelection = std::make_pair(battleID, battleAISelection::factoryName(true, {}, setting));
+}
+
 void CAdventureAI::battleStart(const BattleID & battleID, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile,
 							   const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed)
 {
 	assert(!battleAI);
 	assert(cbc);
-	battleAI = AIFactory::createBattleAI(getBattleAIName());
+	const auto selected = std::exchange(nextBattleAISelection, std::nullopt);
+	if(selected && selected->first != battleID)
+		throw std::logic_error("Prepared battle AI selection belongs to another battle");
+	battleAI = AIFactory::createBattleAI(selected ? selected->second : getBattleAIName());
 	battleAI->initBattleInterface(env, cbc);
 	battleAI->battleStart(battleID, army1, army2, tile, hero1, hero2, side, replayAllowed);
 }

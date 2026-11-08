@@ -84,7 +84,17 @@ BattleOptionsTab::BattleOptionsTab(BattleInterface * owner)
 	{
 		showHealthBarCallback(value, owner);
 	});
+	addCallback("quickCombatAIChanged", [](int value)
+	{
+		if(value != 0 && value != 1)
+			return;
+		Settings quickAI = settings.write["ai"]["quickCombatAI"];
+		quickAI->String() = value == 1 ? "BattleAI" : "BattleAIQuick";
+	});
 	build(config);
+	widget<CToggleGroup>("quickCombatAIPicker")->setSelected(
+		settings["ai"]["quickCombatAI"].isString()
+			&& settings["ai"]["quickCombatAI"].String() == "BattleAI" ? 1 : 0);
 
 	std::shared_ptr<CToggleGroup> animationSpeedToggle = widget<CToggleGroup>("animationSpeedPicker");
 	animationSpeedToggle->setSelected(getAnimSpeed());
