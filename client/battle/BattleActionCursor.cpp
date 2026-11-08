@@ -8,6 +8,7 @@
 #include "../GameEngine.h"
 #include "../gui/CursorHandler.h"
 #include "../../lib/CStack.h"
+#include "../../lib/battle/PossiblePlayerBattleAction.h"
 
 void BattleActionsController::actionSetCursor(PossiblePlayerBattleAction action, const BattleHex & targetHex)
 {

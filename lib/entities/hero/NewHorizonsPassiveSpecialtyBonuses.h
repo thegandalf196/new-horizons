@@ -2,7 +2,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-class Bonus;
+struct Bonus;
 class CGHeroInstance;
 namespace newHorizonsHeroes
 {

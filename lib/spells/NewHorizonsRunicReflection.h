@@ -4,7 +4,7 @@
 #include <memory>
 #include <span>
 #include <vector>
-class Bonus;
+struct Bonus;
 class CGHeroInstance;
 namespace battle { class Unit; }
 namespace spells { class Mechanics; namespace effects { class Effect; } }

@@ -6,7 +6,7 @@
 #include <set>
 #include "../../lib/constants/EntityIdentifiers.h"
 class CBattleInfoCallback;
-class Bonus;
+struct Bonus;
 namespace battle { class Unit; }
 namespace attackAbilityPrefix
 {

@@ -2,7 +2,7 @@
 #pragma once
 #include "../constants/EntityIdentifiers.h"
 class CBattleInfoCallback;
-class Bonus;
+struct Bonus;
 struct BattleAttackInfo;
 namespace battle { class Unit; }
 namespace newHorizonsPassiveSpecialties
