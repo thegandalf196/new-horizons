@@ -145,16 +145,15 @@ private:
 		const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission,
 		BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent,
 		std::vector<petrifyingBloodAI::Pending> * bloodSequence,
-		SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused);
+		SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused, uint64_t * reusedScore);
 	const battle::Unit * selectExchangeTarget(const battle::Units & candidates,
 		const std::shared_ptr<StackWithBonuses> & attacker, bool shooting, bool isOur,
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & battle,
-		const BattleTargetProbeTiming * timing, SelectedProbeDamage & selected, uint64_t * offers);
+		const BattleTargetProbeTiming * timing, SelectedProbeDamage & selected, uint64_t * offers, bool reuseScore);
 	/// Finish one selected sequence only after its strikes/counters have replayed.
 	void completeSelectedAttack(const AttackPossibility & ap,
 		const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition, bool returnCommitted,
 		const std::optional<HypotheticBattle::ManaLeechReplay> & manaLeechReplay,
-		const std::set<uint32_t> & rebirthSpawnIdsBefore, size_t primalBurstFirstNewHit,
 		PlayerColor referenceController, DamageCache & damageCache);
 	std::optional<float> trackAerialExchange(const std::shared_ptr<StackWithBonuses> & attacker,
 		const std::shared_ptr<StackWithBonuses> & defender, bool shooting, bool isOurAttack,
@@ -178,14 +177,7 @@ private:
 		bool shooting, bool isOurAttack, DamageCache & damageCache,
 		const std::shared_ptr<HypotheticBattle> & hb, bool evaluateOnly,
 		bool allowRetaliation, std::optional<bool> * readyOverwatch);
-	void accountForNewElementalRebirthSpawns(const std::set<uint32_t> & idsBefore,
-		const battle::Unit * referenceActor, bool referenceActorIsOurs,
-		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb);
-	void accountForNewPrimalBurstHits(size_t firstNewHit, PlayerColor referenceController,
-		bool referenceActorIsOurs, DamageCache & damageCache,
-		const std::shared_ptr<HypotheticBattle> & hb);
 	BattleScore dpsScore;
-	std::set<uint32_t> scoredElementalRebirthSpawnUnitIds;
 };
 
 struct ReachabilityData
@@ -213,6 +205,8 @@ class ReachabilityMapCache
 
 	battle::Units computeOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex);
 public:
+	bool canReachByTurn(const battle::Unit &, const battle::Unit &, int turn, bool shooting,
+		const CBattleInfoCallback &) const;
 	const battle::Units & getOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex);
 	void update(const std::vector<battle::Units> & turnOrder, std::shared_ptr<HypotheticBattle> hb);
 };
@@ -245,6 +239,8 @@ struct DLL_LINKAGE BattleMovementTiming
 		/// Opt-in diagnostic counts only; no additional clocks or gameplay state.
 		uint64_t selectedProbeDamageOffers = 0;
 		uint64_t selectedProbeDamageUses = 0;
+		/// Same-interval DPS values retained in addition to selected raw damage.
+		uint64_t selectedProbeScoreUses = 0;
 		StageTiming activationStart;
 		/// Expiry/affliction completion and fortune/Swift end regions; not an activation count.
 		StageTiming activationEnd;
@@ -291,9 +287,12 @@ private:
 	bool initiativeStrikeEffects = false;
 	float negativeEffectMultiplier;
 	int simulationTurnsCount;
+	bool reuseSelectedProbeScore;
 
 	float scoreValue(const BattleScore & score) const;
 
+	bool acceptsExchangeAnchor(const AttackPossibility &, const HypotheticBattle &) const;
+	ReachabilityData noActionMembership(const HypotheticBattle &) const;
 	BattleScore calculateExchange(
 		const AttackPossibility & ap,
 		uint8_t turn,
@@ -311,11 +310,13 @@ private:
 		ReachabilityMapCache * returnCache, const std::shared_ptr<HypotheticBattle> & returnGeometry) const;
 
 public:
+	/// The final argument disables only selected-probe DPS reuse for parity checks.
 	BattleExchangeEvaluator(
 		std::shared_ptr<CBattleInfoCallback> cb,
 		std::shared_ptr<Environment> env,
 		float strengthRatio,
-		int simulationTurnsCount): cb(cb), env(env), simulationTurnsCount(simulationTurnsCount){
+		int simulationTurnsCount, bool reuseSelectedProbeScore = true)
+		: cb(cb), env(env), simulationTurnsCount(simulationTurnsCount), reuseSelectedProbeScore(reuseSelectedProbeScore){
 		negativeEffectMultiplier = strengthRatio >= 1 ? 1 : strengthRatio * strengthRatio;
 	}
 
@@ -327,6 +328,8 @@ public:
 		bool siegeDefense = false,
 		BattleBestTargetTiming * timing = nullptr);
 
+	float evaluateNoActionContinuation(const battle::Unit * actor, DamageCache & damageCache,
+		const std::shared_ptr<HypotheticBattle> & state) const;
 	float evaluateExchange(
 		const AttackPossibility & ap,
 		uint8_t turn,

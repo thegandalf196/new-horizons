@@ -46,10 +46,14 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-		for(const char * key : {"shieldAndSwordPhysicalReductionPercent", "sepulchralGripSpeedReduction"})
+		for(const char * key : {"shieldAndSwordPhysicalReductionPercent", "undyingHealingHP"})
 		{
 			if(mode == 1) policy.Struct().erase(key);
-			if(mode == 2) policy[key].Integer() = 0;
+			if(mode == 2)
+			{
+				if(std::string_view(key) == "undyingHealingHP") policy.Struct().erase(key);
+				else policy[key].Integer() = 0;
+			}
 		}
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);

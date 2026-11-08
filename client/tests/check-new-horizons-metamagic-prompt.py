@@ -12,7 +12,8 @@ mana_preview = (ROOT / "client/battle/BattleSpellManaPreview.cpp").read_text(enc
 interface_h = (ROOT / "client/battle/BattleInterface.h").read_text(encoding="utf-8")
 interface = (ROOT / "client/battle/BattleInterface.cpp").read_text(encoding="utf-8")
 window_h = (ROOT / "client/battle/BattleWindow.h").read_text(encoding="utf-8")
-window = (ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
+window = ((ROOT / "client/battle/BattleWindow.cpp").read_text(encoding="utf-8")
+          + (ROOT / "client/battle/BattleHeroStatus.cpp").read_text(encoding="utf-8"))
 hero_panel = (ROOT / "client/battle/HeroInfoWindow.cpp").read_text(encoding="utf-8")
 hero_panel_h = (ROOT / "client/battle/HeroInfoWindow.h").read_text(encoding="utf-8")
 actions_h = (ROOT / "client/battle/BattleActionsController.h").read_text(encoding="utf-8")
@@ -218,7 +219,7 @@ orders_window = (ROOT / "client/battle/BattleHeroActionWindow.cpp").read_text(en
 order_presentation = (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8")
 assert 'using namespace newHorizonsOrderPresentation;' in orders_window
 assert "callback->battleGetOrderActionAllowance(side)" in orders_window
-assert "orderActionOpportunityText(*orderSelection)" in orders_window
+assert "orderActionOpportunityText" not in orders_window
 assert "GrantSource::DOUBLE_COMMAND: return \"Double Command\";" in order_presentation
 assert "selection.expiryRound" in order_presentation
 assert "actionOpportunityContext" in orders_window

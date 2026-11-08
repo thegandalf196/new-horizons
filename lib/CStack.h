@@ -139,6 +139,7 @@ public:
 	int unitSpeedBonus(const battle::Unit * unit) const override;
 	bool unitSlowAffectsSpeed(const battle::Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const battle::Unit * unit) const override;
+	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const battle::Unit * unit) const override;
 	int unitAdditionalRetaliations(const battle::Unit * unit) const override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
 	bool unitHasVeteranCohesion(const battle::Unit * unit) const override;
@@ -314,6 +315,10 @@ public:
 		if(h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(h.saving) validateParalyzingGazeSerialization(h);
+		if(ordinarySpecialtyLastRound < -1
+			|| (h.saving && ordinarySpecialtyLastRound != -1
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)))
+			throw std::runtime_error("Cannot discard or encode invalid ordinary specialty round state");
 		if(h.saving) validateAerialSupremacySerialization(h);
 		if(h.saving) validateSerpentsEmbraceSerialization(h);
 		if(h.saving)
@@ -334,6 +339,8 @@ public:
 			dreadCavalryState.validateSerialization(h);
 		if(h.saving && getPhantomRoundsRemaining() > 3)
 			throw std::runtime_error("Binary stack descriptors cannot preserve extended Phantom lifetime");
+		if(h.saving && health.getResurrected() != 0)
+			throw std::runtime_error("Cannot save temporary creature members without their health state");
 		if(h.saving && hasCasualtyProvenanceState())
 			throw std::runtime_error("Cannot save magical casualty provenance without its health state");
 		if(h.saving && !newHorizonsBloodrage::isValidPersonalIncrement(personalBloodrageIncrement))
@@ -495,6 +502,11 @@ public:
 			physicalPoisonSourceStackId = -1;
 			physicalPoisonSpellSide = BattleSide::NONE;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+			h & ordinarySpecialtyLastRound;
+		else if(!h.saving) ordinarySpecialtyLastRound = -1;
+		if(ordinarySpecialtyLastRound < -1)
+			throw std::runtime_error("Invalid ordinary specialty round state");
 		if(!h.saving) battle::validatePhysicalPoisonSerialization(*this, true);
 	}
 

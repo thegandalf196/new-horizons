@@ -771,7 +771,10 @@ TEST_F(StackWithBonusesQueryTest, DetachedPosthitAndNestedLoansKeepExactLocalSpe
 	EXPECT_THROW(wrongInfo.sourceLocalEffectProvider(), std::runtime_error);
 	ForeignBearer unproven(*source);
 	battle::CUnitStateDetached unknown(source.get(), &unproven), missing(source.get(), nullptr);
-	unknown.localInit(child.get()); unknown = static_cast<const battle::CUnitState &>(*source);
+	// Initializing health already queries elemental provenance and must reject
+	// this intentionally unproven provider before any source-local read.
+	EXPECT_THROW(unknown.localInit(child.get()), std::invalid_argument);
+	unknown = static_cast<const battle::CUnitState &>(*source);
 	EXPECT_THROW(unknown.sourceLocalEffectProvider(), std::runtime_error);
 	EXPECT_THROW(missing.sourceLocalEffectProvider(), std::runtime_error);
 	EXPECT_THROW(StackWithBonuses(child.get(), &unknown), std::runtime_error);

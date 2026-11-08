@@ -4,6 +4,7 @@
 #include "HeroActionContinuation.h"
 #include "PossibleSpellcast.h"
 #include "HeroSpellOutcomeValue.h"
+#include "ElementalAttunementTerminalValue.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include <cmath>
 float BattleEvaluator::conditionalInspirationUtility(
@@ -42,6 +43,11 @@ void BattleEvaluator::includeSyntheticInspiration(PossibleSpellcast & candidate,
 	const std::shared_ptr<HypotheticBattle> & accepted, uint32_t actorId)
 {
 	if(!std::isfinite(candidate.value) || candidate.value == std::numeric_limits<float>::lowest()) return;
+	// Terminal spell heuristics omit the generic post-cast exchange. Credit only
+	// their newly activated elemental family, using the existing creature kernel.
+	candidate.value += elementalAttunementAI::terminalMarginal(accepted, side,
+		hb->getElementalAttunementMask(side), damageCache,
+		scoreEvaluator.getPositiveEffectMultiplier(), scoreEvaluator.getNegativeEffectMultiplier());
 	if(candidate.spellInspirationExpectedValue) candidate.value += *candidate.spellInspirationExpectedValue;
 	else candidate.value += conditionalInspirationUtility(accepted, actorId, false);
 }

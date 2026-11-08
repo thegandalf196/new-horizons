@@ -13,7 +13,6 @@ namespace newHorizonsHeroes
 {
 struct SpecialtyPresentation;
 DLL_LINKAGE bool ordinaryCreatureDamageIsStateful(const CBattleInfoCallback & battle);
-DLL_LINKAGE int ordinaryCreatureRoundHealing(const CBattleInfoCallback & battle, const battle::Unit & unit);
 DLL_LINKAGE void validateOrdinaryCreatureSpecialtiesSerialization(const JsonNode & development, bool supported);
 DLL_LINKAGE void validateOrdinaryCreatureExtensionsSerialization(const JsonNode & development, bool supported);
 DLL_LINKAGE void validateOrdinaryCreaturePolicyExtensionsSerialization(const JsonNode & development, bool supported);
@@ -34,8 +33,7 @@ DLL_LINKAGE std::shared_ptr<Bonus> ordinaryCreatureStrikeBonus(const CGHeroInsta
 DLL_LINKAGE std::shared_ptr<Bonus> ordinaryCreatureStrikeBonus(const CBattleInfoCallback & battle, const BattleAttackInfo & attack);
 DLL_LINKAGE int ordinaryCreatureProtectionPercent(const CBattleInfoCallback & battle, const BattleAttackInfo & attack);
 DLL_LINKAGE int ordinaryCreatureDamageMultiplier(const CBattleInfoCallback & battle, const BattleAttackInfo & attack);
-DLL_LINKAGE int ordinaryCreatureAttackPercent(const CGHeroInstance * hero, const BattleAttackInfo & attack,
-	bool victimHasOtherFriendlyNeighbor);
+DLL_LINKAGE int ordinaryCreatureAttackPercent(const CGHeroInstance * hero, const BattleAttackInfo & attack);
 DLL_LINKAGE int ordinaryCreatureRetaliationPercent(const CGHeroInstance * hero, const BattleAttackInfo & attack);
 DLL_LINKAGE bool resolveOrdinaryCreatureSpecialtyPresentation(const CHero & hero, const JsonNode & development,
 	SpecialtyPresentation & result);

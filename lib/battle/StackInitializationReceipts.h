@@ -28,6 +28,7 @@ class DLL_LINKAGE StackInitializationReceipts final
 	DreadCavalryState restoredDreadCavalry;
 	int32_t restoredOverwatchReadyRound;
 	int32_t restoredPetrifyingBloodRound;
+	int32_t restoredOrdinarySpecialtyRound;
 	int32_t restoredOverwatchUsedRound;
 	bool restoredMoraleExtraActivation;
 	bool restoredHeroicSpirit;

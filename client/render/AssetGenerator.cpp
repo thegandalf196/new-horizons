@@ -50,6 +50,9 @@ void AssetGenerator::initialize()
 		menuTitleSourceCrc32.clear();
 	}
 
+	imageFiles[ImagePath::builtin("NH_pointBlankShoot.png")] = [this](){ return createPointBlankCursor(false); };
+	imageFiles[ImagePath::builtin("NH_pointBlankShootPenalty.png")] = [this](){ return createPointBlankCursor(true); };
+
 	imageFiles[ImagePath::builtin("NH_MENU_GAMSELBK")] = [this](){ return createNewHorizonsMenuTitleImage("GAMSELBK"); };
 	imageFiles[ImagePath::builtin("NH_MENU_GAMSELB0")] = [this](){ return createNewHorizonsMenuTitleImage("GAMSELB0"); };
 	imageFiles[ImagePath::builtin("NH_MENU_GAMSELB1")] = [this](){ return createNewHorizonsMenuTitleImage("GAMSELB1"); };
@@ -1854,11 +1857,11 @@ AssetGenerator::AnimationLayoutMap AssetGenerator::createNewHorizonsOrdersButton
 			constexpr int border = 3;
 			auto image = createDialogBackground(Point(width, height));
 			auto canvas = image->getCanvas();
-			auto gauntlet = ENGINE->renderHandler().loadImage(ImageLocator(
-				ImagePath::builtin("NH_orders_gauntlet_" + stateName + ".png"), EImageBlitMode::SIMPLE));
+			auto commandIcon = ENGINE->renderHandler().loadImage(ImageLocator(
+				ImagePath::builtin("NH_orders_command_" + stateName + ".png"), EImageBlitMode::SIMPLE));
 			// Runtime art is already authored as a border-safe 48x36 state. A
 			// second reduction made the previous glyph read as a clipped fragment.
-			canvas.draw(gauntlet, Point(0, 0));
+			canvas.draw(commandIcon, Point(0, 0));
 			auto classic = ENGINE->renderHandler().loadAnimation(AnimationPath::builtin("ICM005"), EImageBlitMode::OPAQUE);
 			auto frame = classic->getImage(state);
 			canvas.draw(frame, Point(0, 0), Rect(0, 0, width, border));
@@ -2456,8 +2459,10 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 		canvas.drawColorBlended(army, ColorRGBA(0, 0, 0, 36));
 		recessed(army, false);
 	}
-	for(int column = 0; column < 6; ++column)
+	for(int column = 0; column < 4; ++column)
 		recessed(Rect(236 + column * 82, 12, 82, 76), false);
+	for(const Rect cell : {Rect(564, 12, 55, 76), Rect(619, 12, 55, 76), Rect(674, 12, 54, 76)})
+		recessed(cell, false);
 	for(int field = 0; field < 6; ++field)
 	{
 		recessed(Rect(12 + field % 3 * 140, 88 + field / 3 * 44, 140, 44), false);

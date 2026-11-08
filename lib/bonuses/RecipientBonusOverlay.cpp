@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "RecipientBonusOverlay.h"
+#include "../battle/NewHorizonsStun.h"
 #include "../battle/ArcaneInspiration.h"
 #include <type_traits>
 #include "../battle/NewHorizonsSepulchralGrip.h"
@@ -94,6 +95,7 @@ bool Layer::hasEdits() const
 
 bool isSnapshotHeroSpecialEffect(const Bonus * bonus)
 {
+	if(newHorizonsStun::isMarker(bonus)) return true;
 	if(arcaneInspiration::isEffect(bonus) || (bonus && bonus->isExtendedOrdinarySpecialtyEffect()))
 		return true;
 	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL)

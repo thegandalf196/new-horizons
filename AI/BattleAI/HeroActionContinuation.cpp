@@ -21,6 +21,13 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 	heroActionTiming::Continuation * timing)
 {
 	auto & stackActionScore = continuation.value;
+	if(state->wasCurrentActivationForfeited(modelActive->unitId()))
+	{
+		BattleExchangeEvaluator remaining(state, env, strengthRatio, simulationTurnsCount);
+		remaining.updateReachabilityMap(state);
+		stackActionScore = remaining.evaluateNoActionContinuation(modelActive.get(), innerCache, state);
+		return;
+	}
 	if(modelActive->alive() && (needFullEval || !cachedAttack.ap))
 	{
 		heroActionTiming::Scope measurement(timing ? &timing->full : nullptr);
@@ -76,6 +83,7 @@ void evaluateContinuation(AbsoluteContinuationUtility & continuation,
 
 		// Retain the cached accepted movement fact; missing/forced paths remain0.
 		updatedBai.voluntaryFlightDistance = cachedAttack.ap->attack.voluntaryFlightDistance;
+		updatedBai.voluntaryTravelDistance = cachedAttack.ap->attack.voluntaryTravelDistance;
 
 		auto updatedAttack = AttackPossibility::evaluate(updatedBai, cachedAttack.ap->from, innerCache, state, cachedAttack.ap->perfectMoment, std::nullopt, nullptr,
 			gnollHarriersAI::replaysSameApproach(*cachedAttack.ap, *updatedAttacker), cachedAttack.ap->validatedApproachOrigin);

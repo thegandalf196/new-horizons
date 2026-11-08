@@ -268,10 +268,13 @@ class DLL_LINKAGE CampaignState : public Campaign
 	std::time_t startTime = 0;
 	std::string saveDirectory;
 
+	static void validateNativePilotPools(const CampaignPoolType & scenarios, const GlobalPoolType & global, bool supported);
+
 public:
 	CampaignState() = default;
 	void validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
+	void validateNativePilotSerialization(bool supported) const;
 
 	/// Copies persist-flagged script variables of the given map into the campaign state.
 	void savePersistentVariables(const CMap & map);
@@ -354,13 +357,29 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+		if(h.saving)
 			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving)
 			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		h & static_cast<Campaign&>(*this);
-		h & scenarioHeroPool;
-		h & globalHeroPool;
+		if(h.saving)
+		{
+			h & scenarioHeroPool;
+			h & globalHeroPool;
+		}
+		else
+		{
+			CampaignPoolType incomingScenarios;
+			GlobalPoolType incomingGlobal;
+			h & incomingScenarios;
+			h & incomingGlobal;
+			validateNativePilotPools(incomingScenarios, incomingGlobal,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			scenarioHeroPool = std::move(incomingScenarios);
+			globalHeroPool = std::move(incomingGlobal);
+		}
 		if(!h.saving)
 			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));

@@ -1,4 +1,5 @@
 {
+	"new-horizons.combat.runicEndurance.reflected": "Runic Endurance reflects part of the spell.",
 	"new-horizons.combat.dreadCavalry.skip": "Skip charge",
 	"new-horizons.combat.dreadCavalry.skip.help": "Decline the optional Dread Cavalry charge without defending. Any existing Pursuit movement remains.",
 	"new-horizons.combat.dreadCavalry.preview": "Dread Cavalry: %d% damage (already included above); up to %d movement remaining. An adjacent enemy can be attacked with no movement left.",
@@ -64,7 +65,7 @@
 	"new-horizons.spellCost.listed": "Listed Spell Points: %d",
 	"new-horizons.spellCost.current": "Current base cost: %d",
 	"new-horizons.spellCost.stage": "%s: %d -> %d",
-	"new-horizons.spellCost.overcharge": "Optional Overcharge is added after target selection.",
+	"new-horizons.spellCost.overcharge": "Overcharge level adds an undiscounted surcharge after target selection.",
 	"new-horizons.spellCost.modifier.listedMultiplier": "Listed-cost multiplier",
 	"new-horizons.spellCost.modifier.chosenSpecialty": "Anointed Champions",
 	"new-horizons.spellCost.modifier.wisdom": "Wisdom",
@@ -350,5 +351,10 @@
 	"new-horizons.spellbook.effect.lifeDrain.short": "%sdmg/%s%heal",
 	"new-horizons.spellbook.effect.lifeDrain.short.narrow": "D%s/%s%H",
 	"new-horizons.spellbook.lifeDrainHealing": "Potential damage before target defenses, immunities and recipient-dependent effects. Optional cast settings use their unselected default; no random proc is assumed. Healing restores the shown percentage of actual damage dealt, rounded down and limited by the friendly recipient's wounds; it does not restore casualties. H denotes that healing percentage.",
-	"new-horizons.spellbook.lifeDrainFollowup": "Potential follow-up damage before target defenses and other target-dependent modifiers. Optional cast settings use their unselected default; no random proc is assumed. Healing restores the shown percentage of actual damage dealt, rounded down and limited by the friendly recipient's wounds; it does not restore casualties. H denotes that healing percentage."
+	"new-horizons.spellbook.lifeDrainFollowup": "Potential follow-up damage before target defenses and other target-dependent modifiers. Optional cast settings use their unselected default; no random proc is assumed. Healing restores the shown percentage of actual damage dealt, rounded down and limited by the friendly recipient's wounds; it does not restore casualties. H denotes that healing percentage.",
+	"new-horizons.combat.command.remaining": "Command: %d / %d",
+	"new-horizons.combat.command.exhausted": "No Command remaining. Orders cost 1 Command and the normal Hero Action.",
+	"new-horizons.combat.command.cost": "Issue this Order for 1 Command and the normal Hero Action.",
+	"new-horizons.combat.attunement.status": "Attuned",
+	"new-horizons.combat.attunement.description": "Attuned for the remainder of combat by an elemental hero spell."
 }

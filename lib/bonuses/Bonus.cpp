@@ -12,6 +12,10 @@
 #include "../battle/PassiveDivineMandateVanguard.h"
 #include "../spells/NewHorizonsDivineRetribution.h"
 #include "Bonus.h"
+#include "../battle/NewHorizonsStun.h"
+#include "../battle/NewHorizonsAttackControllers.h"
+#include "../battle/NewHorizonsCreatureSpecialtyCapabilities.h"
+#include "../battle/NewHorizonsSpecialtyProcs.h"
 #include "BonusParameters.h"
 #include "Limiters.h"
 #include "Updaters.h"
@@ -329,6 +333,12 @@ void appendOwnedEffectBonuses(const BonusParameters * parameters, std::vector<co
 
 bool isExtendedOrdinaryEffect(const Bonus * bonus)
 {
+	if(!bonus)
+		return false;
+	// The eight specialty families below require a nonempty reserved identity.
+	// Grave Dust also validates unnamed reserved-source and typed records.
+	if(bonus->stacking.empty() && bonus->statusIdentity.empty())
+		return newHorizonsGraveDust::validateRecord(*bonus);
 	return newHorizonsInfernoStrikeDebuffs::isEffect(bonus)
 		|| newHorizonsChargeSpecialties::isLanceFormation(bonus)
 		|| newHorizonsCoordinatedMarks::isMark(bonus)
@@ -378,6 +388,14 @@ void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters *
 		const auto * bonus = pending.back();
 		pending.pop_back();
 		if(!visited.insert(bonus).second) continue;
+		const bool stonecaller = newHorizonsCreatureSpecialtyCapabilities::isStonecallerShooterProfile(*bonus);
+		(void)newHorizonsAttackControllers::isCripple(bonus);
+		(void)newHorizonsStun::isMarker(bonus);
+		(void)newHorizonsSpecialtyProcs::isStrongWyvernPoison(bonus);
+		if(!context.nativeRulesRedesignSupported && ((bonus->type >= BonusType::MAGICAL_DAMAGE_IMMUNITY
+			&& bonus->type <= BonusType::NATIVE_RESISTANCE_REFLECTION) || newHorizonsStun::isMarker(bonus) || newHorizonsAttackControllers::isCripple(bonus)
+			|| newHorizonsSpecialtyProcs::isStrongWyvernPoison(bonus) || stonecaller))
+			throw std::runtime_error("Native passive Bonus requires format1157");
 		validateVanguardRiderSerialization(*bonus, context);
 		validateDivinePayoutSerialization(*bonus, context);
 		if(!context.adjacencyFiltersSupported
@@ -411,6 +429,14 @@ bool Bonus::isExtendedOrdinarySpecialtyEffect() const
 
 void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
 {
+	const bool stonecaller = newHorizonsCreatureSpecialtyCapabilities::isStonecallerShooterProfile(*this);
+	(void)newHorizonsAttackControllers::isCripple(this);
+	(void)newHorizonsStun::isMarker(this);
+	(void)newHorizonsSpecialtyProcs::isStrongWyvernPoison(this);
+	if(!context.nativeRulesRedesignSupported && ((type >= BonusType::MAGICAL_DAMAGE_IMMUNITY
+		&& type <= BonusType::NATIVE_RESISTANCE_REFLECTION) || newHorizonsStun::isMarker(this) || newHorizonsAttackControllers::isCripple(this)
+		|| newHorizonsSpecialtyProcs::isStrongWyvernPoison(this) || stonecaller))
+		throw std::runtime_error("Native passive Bonus requires format1157");
 	validateVanguardRiderSerialization(*this, context);
 	validateDivinePayoutSerialization(*this, context);
 	// Supported owner preflights stay constant-time; the direct codec still validates reserved provenance.
@@ -428,7 +454,8 @@ void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext c
 	}
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported)
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported
+		&& context.nativeRulesRedesignSupported)
 	{
 		if(limiter) limiter->validateBonusTypeSerialization(true, context.extendedOrdinarySpecialtiesSupported);
 		return;

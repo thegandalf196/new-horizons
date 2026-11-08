@@ -277,14 +277,16 @@ void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRando
 	heroCommands::validateRules(heroCommandRules);
 	magicRules = getSettings().getValue(EGameSettings::MAGIC_NEW_HORIZONS);
 	newHorizonsMagic::validateRules(magicRules);
-	heroDevelopmentRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
-	newHorizonsHeroes::validateHeroRules(heroDevelopmentRules, true);
+	auto capturedHeroDevelopmentRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+	newHorizonsHeroes::validateHeroRules(capturedHeroDevelopmentRules, true);
+	heroDevelopmentRules = std::move(capturedHeroDevelopmentRules);
 	heroCapabilityRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
 	newHorizonsHeroes::validateCapabilityRules(heroCapabilityRules, true);
 	heroMasteryRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES);
 	newHorizonsHeroes::validateMasteryRules(heroMasteryRules);
-	heroPerkRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
-	newHorizonsHeroes::validatePerkRules(heroPerkRules);
+	auto capturedHeroPerkRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+	newHorizonsHeroes::validatePerkRules(capturedHeroPerkRules);
+	heroPerkRules = std::move(capturedHeroPerkRules);
 	newHorizonsHeroes::validateWeightedPerkCapture(heroDevelopmentRules, heroPerkRules);
 	creatureCategoryRules = newHorizonsCreatures::captureCreatureCategoryRules(getSettings().getValue(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES));
 	if(newHorizonsHeroes::usesRules(heroDevelopmentRules) && !newHorizonsHeroes::usesRules(heroCommandRules))

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommand.h"
+#include "NewHorizonsCommandResources.h"
 #include "HeroCommandRevision.h"
 #include "HeroCommandCoefficient.h"
 #include "HeroCommandCoefficientMath.h"
@@ -90,7 +91,7 @@ void validateTargetedRules(const JsonNode & rules)
 
 void validateOrdersOnlyRules(const JsonNode & rules)
 {
-	exactFields(rules, {"schemaVersion", "rulesetVersion", "commands"});
+	exactFields(rules, {"schemaVersion", "rulesetVersion", "commands", "commandResourcePolicyVersion"});
 	if(rules["schemaVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
 		|| rules["schemaVersion"].Integer() != 1
 		|| rules["rulesetVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
@@ -279,7 +280,8 @@ bool supportedByRules(const JsonNode & rules, HeroCommand command)
 	// Advance, Aggressive and Defensive are retained solely so old enum values
 	// and save slots can be decoded. They are never part of the active command
 	// surface, including when a legacy v1/v2 snapshot is loaded.
-	if(!isActive(command) || !rules.isStruct() || rules.Struct().empty())
+	if(!isActive(command) || !rules.isStruct() || rules.Struct().empty()
+		|| !newHorizonsCommand::usesRules(rules))
 		return false;
 	const auto & version = rules["rulesetVersion"];
 	if((command == HeroCommand::FEINT || command == HeroCommand::VANGUARD) && !isRevisedRules(rules))
@@ -311,6 +313,8 @@ void validateRules(const JsonNode & rules)
 		return;
 	if(!rules.isStruct())
 		throw std::runtime_error("Invalid New Horizons combat ruleset shape");
+	if(!newHorizonsCommand::usesRules(rules))
+		throw std::runtime_error("Active Order rules require the finite Command policy");
 	if(isRevisedRules(rules))
 	{
 		validateRevisedRules(rules);

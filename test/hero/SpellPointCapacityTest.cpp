@@ -443,34 +443,36 @@ class HighLoreCapacityTest : public SpellPointCapacityTest
 {
 protected:
 	virtual bool captureHighLore() const { return true; }
+	virtual bool useHistoricalHighLoreCapture() const { return false; }
 	void mapLoaded(CMap * loaded) override
 	{
 		SpellPointCapacityTest::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		ASSERT_TRUE(development["druidSpecialties"].isStruct());
-		// This fixture isolates the preceding Druid epoch, including its
-		// faithful policy-absent full-world round trip.
+		// Isolate Druid capacity; incompatible original captures are tested separately.
 		development.Struct().erase("fortuneChildSpecialty");
 		development.Struct().erase("arcanePreparationSpecialty");
 		development.Struct().erase("bottomlessMindSpecialty");
 		development.Struct().erase("masterSpellwardSpecialty");
-		// These optional tables were introduced after the declared historical codec.
+		// Unrelated optional specialty tables do not participate in this capacity fixture.
 		for(const char * key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty"})
 			development.Struct().erase(key);
-		// Isolate Druid admission/codec guards from the same-epoch weighted
-		// offer feature; the existing fixture uses its historical offer helper.
-		JsonNode perks = captureHighLore() ? JsonNode(JsonPath::builtin("config/newHorizonsPerks"))
-			: necromancyTest::historicalRules();
+		// Capacity does not depend on offer weighting or progression. The original
+		// historical case retains its existing Necromancy capture wrapper.
+		JsonNode perks = useHistoricalHighLoreCapture() ? necromancyTest::historicalRules()
+			: JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		perks.Struct().erase("offerWeightPolicyVersion");
 		perks.Struct().erase("perkOfferNormalization");
 		perks.Struct().erase("perkProgressionPolicyVersion");
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
-		if(!captureHighLore())
+		if(useHistoricalHighLoreCapture())
 		{
 			development = historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK);
 			captureHistoricalWorldRules(*loaded);
 		}
+		else if(!captureHighLore())
+			development.Struct().erase("druidSpecialties");
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
 		for(const auto & object : loaded->objects)
@@ -495,6 +497,19 @@ class HighLoreAbsentCapacityTest : public HighLoreCapacityTest
 {
 protected:
 	bool captureHighLore() const override { return false; }
+};
+
+class HistoricalHighLoreCaptureTest : public HighLoreAbsentCapacityTest
+{
+protected:
+	bool useHistoricalHighLoreCapture() const override { return true; }
+	void SetUp() override
+	{
+		BattleTestFixture::SetUp();
+		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
+			GTEST_SKIP() << "Requires New Horizons";
+		// Initialization is the explicit rejection operation in the test body.
+	}
 };
 
 class SpellPointCapacityPlannedMysticismTest : public SpellPointCapacityWizardTest
@@ -772,7 +787,7 @@ TEST_F(HighLoreCapacityTest, SageKnowledgeParticipatesInHighLoreAndCurrentWorldC
 	expectPools(hero, 60, 17, 241);
 }
 
-TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndSurvivesPriorEpoch)
+TEST_F(HighLoreAbsentCapacityTest, CurrentCapturedAbsenceKeepsOrdinaryCapacityThroughCurrentWorldSaveLoad)
 {
 	for(const char * key : {"fortuneChildSpecialty", "arcanePreparationSpecialty"})
 	{
@@ -789,17 +804,12 @@ TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndS
 	EXPECT_FALSE(attackerSideHero->getDruidSpecialtyRules(newHorizonsHeroes::DruidSpecialtyKind::HIGH_LORE));
 	EXPECT_EQ(attackerSideHero->getHighLoreManaBonus(), 0);
 	expectPools(attackerSideHero, 60, 17, 131);
-	CMemorySerializer bytes;
-	bytes.oser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
-	bytes.iser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
-	// A detached hero codec does not rebuild inherited bonuses. Restore the
-	// real world through its ordinary post-load bonus-tree reconstruction.
-	ASSERT_NO_THROW(bytes.oser & *gameState());
+	// Use the actual current world snapshot path and its post-load bonus reconstruction.
+	const auto saved = gameState()->saveReplaySnapshot();
+	EXPECT_EQ(saved.version, ESerializationVersion::CURRENT);
 	CGameState restored;
 	restored.preInit(LIBRARY);
-	bytes.iser.loadingGamestate = true;
-	bytes.iser.cb = &restored;
-	ASSERT_NO_THROW(bytes.iser & restored);
+	ASSERT_NO_THROW(restored.loadReplaySnapshot(saved));
 	const auto * hero = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(hero, nullptr);
 	EXPECT_TRUE(hero->getPrimaryGrowthRules()["druidSpecialties"].isNull());
@@ -811,6 +821,17 @@ TEST_F(HighLoreAbsentCapacityTest, OlderCapturedAbsenceKeepsOrdinaryCapacityAndS
 	}
 	EXPECT_EQ(hero->getHighLoreManaBonus(), 0);
 	expectPools(hero, 60, 17, 131);
+}
+
+TEST_F(HistoricalHighLoreCaptureTest, OriginalStartingProfilesRejectAgainstIncompatibleCurrentPerkCatalog)
+{
+	const auto captured = historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK);
+	try { startGame(startsWithFortifiedTown()); FAIL() << "Incompatible historical starting perks must reject"; }
+	catch(const std::runtime_error & error)
+	{
+		EXPECT_STREQ(error.what(), "Invalid New Horizons hero rules: active Basic starting perk of installed generic parent");
+	}
+	EXPECT_EQ(historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK), captured);
 }
 
 TEST_F(SpellPointCapacityWizardTest, LosingExpertWisdomClampsNormalCapacityAndPreservesBuffer)

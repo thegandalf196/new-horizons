@@ -43,6 +43,8 @@ struct CachedAttack
 
 class DLL_EXPORT BattleEvaluator
 {
+	std::shared_ptr<MovementQueryCache> movementMemo;
+	std::shared_ptr<HypotheticBattle> createHypotheticBattle(const HypotheticBattle::Subject & source) const;
 	std::unique_ptr<PotentialTargets> targets;
 	std::shared_ptr<HypotheticBattle> hb;
 	BattleExchangeEvaluator scoreEvaluator;
@@ -90,7 +92,7 @@ class DLL_EXPORT BattleEvaluator
 		int abilityLevel, creatureSpellTiming::Sample * timing);
 	/// Leaves cast-only admission/value in ps; returns HP and future-DPS completion values.
 	std::pair<float, float> evaluateCreatureCastBeforeCompletion(const CStack * stack, PossibleSpellcast & ps);
-	bool applyCreatureCastProjection(HypotheticBattle & state, const CStack * stack, const PossibleSpellcast & ps);
+	bool applyCreatureCastProjection(HypotheticBattle & state, const CStack * stack, PossibleSpellcast & ps);
 
 public:
 	/// Effective chosen-spell proficiency, matching authoritative creature-cast resolution.
@@ -146,7 +148,8 @@ public:
 		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle);
 	/// Shared projected value for Frailty's bounded physical-damage increase on one target.
 	static float estimateProjectedFrailtyTargetValue(const battle::Unit * original, const battle::Unit * projected,
-		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle);
+		DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle,
+		DamageCache * explicitBefore = nullptr, bool effectiveAllegiance = false);
 	/// Shared projected value for one Hex of Pain target's reduced future attack value.
 	static float estimateProjectedHexOfPainTargetValue(const battle::Unit * original,
 		const battle::Unit * projected, const std::shared_ptr<HypotheticBattle> & projectedBattle);
@@ -177,7 +180,8 @@ public:
 		BattleID battleID,
 		BattleSide side,
 		float strengthRatio,
-		int simulationTurnsCount);
+		int simulationTurnsCount,
+		std::shared_ptr<MovementQueryCache> movementCache = nullptr);
 
 	BattleEvaluator(
 		std::shared_ptr<Environment> env,

@@ -149,8 +149,7 @@ std::optional<heroOrderValue::MeleeSequenceStop> unavailable(HypotheticBattle & 
 	using Stop = heroOrderValue::MeleeSequenceStop;
 	if(const auto policy = unavailablePolicies(battle))
 		return policy;
-	if(battle.hasReadyNativeRebirth(&actor) || battle.hasReadyNativeRebirth(&victim)
-		|| battle.captureElementalRebirthSource(actor) || battle.captureElementalRebirthSource(victim))
+	if(battle.hasReadyNativeRebirth(&actor) || battle.hasReadyNativeRebirth(&victim))
 		return Stop::REBIRTH_PENDING;
 	if(!supportedUnit(actor, battle) || !supportedUnit(victim, battle)
 		|| !singleTarget(battle, actor, victim, selectedTargetHex)

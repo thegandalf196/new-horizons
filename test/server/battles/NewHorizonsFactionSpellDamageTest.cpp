@@ -9,9 +9,8 @@
 #include "../../../lib/battle/NewHorizonsFactionSpellDamage.h"
 #include "../../../lib/battle/NewHorizonsShroud.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
-#include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
+#include "../../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../../lib/bonuses/BonusList.h"
-#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../server/battles/BattlePrimaryStrikeAftermath.h"
 
@@ -74,14 +73,7 @@ protected:
 			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
 		gameHandler->sendAndApply(remove);
 	}
-	void effect(CStack * unit, const Bonus & bonus)
-	{
-		SetStackEffect packet;
-		packet.battleID = BattleID(0);
-		packet.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{bonus});
-		gameHandler->sendAndApply(packet);
-	}
-	CStack * summon(BattleSide side, BattleHex position, int count, bool genuine = true)
+	CStack * summon(BattleSide side, BattleHex position, int count)
 	{
 		battle::UnitInfo info;
 		info.id = battle()->battleNextUnitId();
@@ -95,7 +87,6 @@ protected:
 		info.save(packet.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD).data);
 		gameHandler->sendAndApply(packet);
 		auto * unit = battle()->getStack(info.id, false);
-		if(genuine) effect(unit, faction::rebirthOutputMarker());
 		return unit;
 	}
 	void injure(CStack * unit, int64_t damage, uint32_t flags = 0)
@@ -142,47 +133,26 @@ TEST_F(NewHorizonsFactionSpellDamageTest, ShadowHexPerVictimAndExposureRefreshAn
 	EXPECT_EQ(faction::bonusPercent(*battle(), attackerSideHero, victim), 15);
 }
 
-TEST_F(NewHorizonsFactionSpellDamageTest, ConduitCountsLivingStacksAndRejectsUnrelatedSummons)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare("core:brissa", REBIRTH,
-		"new-horizons:elementalRebirth.elementalConduit"));
-	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
-	auto * large = summon(BattleSide::ATTACKER, BattleHex(50), 1000);
-	auto * chain = summon(BattleSide::ATTACKER, BattleHex(52), 1);
-	summon(BattleSide::ATTACKER, BattleHex(54), 100, false);
-	summon(BattleSide::DEFENDER, BattleHex(56), 100);
-	EXPECT_EQ(chain->getRebirthOriginalAggregateHP(), 0);
-	EXPECT_EQ(faction::livingRebirthCount(*battle(), *attackerSideHero), 2);
-	EXPECT_EQ(faction::bonusPercent(*battle(), attackerSideHero, victim), 30);
-	injure(large, large->getAvailableHealth());
-	EXPECT_EQ(faction::livingRebirthCount(*battle(), *attackerSideHero), 1);
-	EXPECT_EQ(faction::bonusPercent(*battle(), attackerSideHero, victim), 15);
-}
-
-TEST_F(NewHorizonsFactionSpellDamageTest, CataclysmUsesMaximumCapacityDividesOnceAndAppliesMagicalMitigation)
+TEST_F(NewHorizonsFactionSpellDamageTest, CurrentConfluxCastProfileDoesNotDependOnSummonRoster)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:brissa", REBIRTH,
 		"new-horizons:elementalRebirth.elementalConduit", "new-horizons:elementalRebirth.elementalCataclysm"));
-	auto * reborn = summon(BattleSide::ATTACKER, BattleHex(81), 11);
-	auto * first = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(80), 100);
-	auto * second = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(82), 100);
-	effect(first, Bonus(BonusDuration::ONE_BATTLE, BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS,
-		BonusSource::OTHER, 2000, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	const auto maximum = battle::getMaximumHealth(*reborn);
-	injure(reborn, reborn->getMaxHealth() + 3);
-	ASSERT_LT(reborn->getCount(), 11);
-	const auto beforeFirst = first->getAvailableHealth();
-	const auto beforeSecond = second->getAvailableHealth();
-	const auto share = faction::cataclysmShare(maximum, 2);
-	const auto expectedFirst = newHorizonsMagicalAbilityDamage::adjustDamage(*battle(), *first, share);
-	const auto expectedSecond = newHorizonsMagicalAbilityDamage::adjustDamage(*battle(), *second, share);
-	injure(reborn, reborn->getAvailableHealth());
-	EXPECT_EQ(beforeFirst - first->getAvailableHealth(), expectedFirst);
-	EXPECT_EQ(beforeSecond - second->getAvailableHealth(), expectedSecond);
-	EXPECT_LT(expectedFirst, expectedSecond);
-	const auto injuryCount = server.injuries.size();
-	injure(reborn, 1);
-	EXPECT_EQ(server.injuries.size(), injuryCount + 1) << "A repeated dead-unit hit cannot explode twice";
+	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
+	const auto capture = [&](SpellID spell)
+	{
+		return newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, spell);
+	};
+	EXPECT_EQ(capture(SpellID::MAGIC_ARROW).factionSpellDamageBonus, 15);
+	EXPECT_EQ(capture(SpellID::FIREBALL).factionSpellDamageBonus, 40);
+	auto * large = summon(BattleSide::ATTACKER, BattleHex(50), 1000);
+	summon(BattleSide::ATTACKER, BattleHex(52), 1);
+	summon(BattleSide::DEFENDER, BattleHex(56), 100);
+	EXPECT_EQ(capture(SpellID::MAGIC_ARROW).factionSpellDamageBonus, 15);
+	EXPECT_EQ(capture(SpellID::FIREBALL).factionSpellDamageBonus, 40);
+	EXPECT_EQ(faction::bonusPercent(*battle(), attackerSideHero, victim), 0);
+	injure(large, large->getAvailableHealth());
+	EXPECT_EQ(capture(SpellID::MAGIC_ARROW).factionSpellDamageBonus, 15);
+	EXPECT_EQ(capture(SpellID::FIREBALL).factionSpellDamageBonus, 40);
 }
 
 TEST_F(NewHorizonsFactionSpellDamageTest, OrdinarySummonsDoNotExplode)
@@ -190,15 +160,15 @@ TEST_F(NewHorizonsFactionSpellDamageTest, OrdinarySummonsDoNotExplode)
 	ASSERT_NO_FATAL_FAILURE(prepare("core:brissa", REBIRTH,
 		"new-horizons:elementalRebirth.elementalConduit", "new-horizons:elementalRebirth.elementalCataclysm"));
 	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(81), 100);
-	auto * unrelated = summon(BattleSide::ATTACKER, BattleHex(82), 10, false);
+	auto * unrelated = summon(BattleSide::ATTACKER, BattleHex(82), 10);
 	const auto health = victim->getAvailableHealth();
 	injure(unrelated, unrelated->getAvailableHealth());
 	EXPECT_EQ(victim->getAvailableHealth(), health);
 }
 
-TEST_F(NewHorizonsFactionSpellDamageTest, CurrentMarkerRoundTripKeepsCasterAndRebirthProvenance)
+TEST_F(NewHorizonsFactionSpellDamageTest, CurrentExposureMarkerRoundTripKeepsBothCasterSides)
 {
-	for(const auto & marker : {faction::rebirthOutputMarker(), faction::exposedWeaknessMarker(BattleSide::ATTACKER),
+	for(const auto & marker : {faction::exposedWeaknessMarker(BattleSide::ATTACKER),
 		faction::exposedWeaknessMarker(BattleSide::DEFENDER)})
 	{
 		CMemorySerializer memory;
@@ -209,50 +179,9 @@ TEST_F(NewHorizonsFactionSpellDamageTest, CurrentMarkerRoundTripKeepsCasterAndRe
 		EXPECT_EQ(restored.stacking, marker.stacking);
 		EXPECT_EQ(restored.source, marker.source);
 		EXPECT_EQ(restored.sid, marker.sid);
-		EXPECT_EQ(faction::isRebirthOutputMarker(&restored), faction::isRebirthOutputMarker(&marker));
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			EXPECT_EQ(faction::isExposedWeakness(&restored, side), faction::isExposedWeakness(&marker, side));
 	}
-	EXPECT_EQ(faction::cataclysmShare(104, 3), 6);
-	EXPECT_EQ(faction::cataclysmShare(4, 1), 0);
-	EXPECT_EQ(faction::cataclysmShare(100, 0), 0);
-}
-
-TEST_F(NewHorizonsFactionSpellDamageTest, ActualRebirthAndChainPublishPersistentProvenance)
-{
-	startGame();
-	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:brissa")));
-	const SecondarySkill skill(SecondarySkill::decode(std::string(REBIRTH)));
-	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	ASSERT_NO_FATAL_FAILURE(select(REBIRTH, "new-horizons:elementalRebirth.elementalConduit"));
-	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	ASSERT_NO_FATAL_FAILURE(select(REBIRTH, "new-horizons:elementalRebirth.rebirthChain"));
-	attackerSideHero->clearSlots();
-	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:peasant"), 101));
-	startBattle();
-	CStack * source = nullptr;
-	for(const auto * unit : battle()->battleGetAllUnits())
-		if(unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0))
-			source = battle()->getStack(unit->unitId(), false);
-	ASSERT_NE(source, nullptr);
-	const auto firstId = battle()->battleNextUnitId();
-	injure(source, source->getAvailableHealth());
-	auto * first = battle()->getStack(firstId, false);
-	ASSERT_NE(first, nullptr);
-	ASSERT_TRUE(faction::isRebirthOutput(*first));
-	EXPECT_GT(first->getRebirthOriginalAggregateHP(), 0);
-	EXPECT_EQ(faction::livingRebirthCount(*battle(), *attackerSideHero), 1);
-	const auto chainId = battle()->battleNextUnitId();
-	injure(first, first->getAvailableHealth());
-	auto * chain = battle()->getStack(chainId, false);
-	ASSERT_NE(chain, nullptr);
-	EXPECT_EQ(chain->getRebirthOriginalAggregateHP(), 0);
-	EXPECT_TRUE(faction::isRebirthOutput(*chain));
-	EXPECT_EQ(faction::livingRebirthCount(*battle(), *attackerSideHero), 1);
-	const auto afterChainId = battle()->battleNextUnitId();
-	injure(chain, chain->getAvailableHealth());
-	EXPECT_EQ(battle()->battleNextUnitId(), afterChainId);
-	EXPECT_EQ(faction::livingRebirthCount(*battle(), *attackerSideHero), 0);
 }
 
 TEST_F(NewHorizonsFactionSpellDamageTest, ActualHeroDamageSpellReceivesCurrentPerRecipientFlankingBonus)
@@ -274,31 +203,4 @@ TEST_F(NewHorizonsFactionSpellDamageTest, ActualHeroDamageSpellReceivesCurrentPe
 	const auto beforeEnhanced = target->getAvailableHealth();
 	ASSERT_TRUE(castOn(attackerSideHero, SpellID::MAGIC_ARROW, target));
 	EXPECT_EQ(beforeEnhanced - target->getAvailableHealth(), ordinary * 115 / 100);
-}
-
-TEST_F(NewHorizonsFactionSpellDamageTest, CataclysmInvincibleRecipientKeepsPoolShareWithoutTakingDamage)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare("core:brissa", REBIRTH,
-		"new-horizons:elementalRebirth.elementalConduit", "new-horizons:elementalRebirth.elementalCataclysm"));
-	auto * reborn = summon(BattleSide::ATTACKER, BattleHex(81), 11);
-	auto * invincible = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(80), 100);
-	auto * ordinary = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(82), 100);
-	effect(invincible, Bonus(BonusDuration::ONE_BATTLE, BonusType::INVINCIBLE,
-		BonusSource::OTHER, 1, BonusSourceID()));
-	ASSERT_TRUE(invincible->isInvincible());
-	const auto captured = faction::captureCataclysm(*battle(), *reborn);
-	ASSERT_TRUE(captured);
-	ASSERT_EQ(captured->targets.size(), 2u) << "Invincibility blocks damage, not adjacency or pool participation";
-	const auto share = faction::cataclysmShare(captured->maximumAggregateHP, 2);
-	ASSERT_GT(share, 0);
-	EXPECT_EQ(faction::cataclysmDamage(*battle(), *invincible, share), 0);
-	const auto ordinaryDamage = newHorizonsMagicalAbilityDamage::adjustDamage(*battle(), *ordinary, share);
-	const auto protectedHealth = invincible->getAvailableHealth();
-	const auto ordinaryHealth = ordinary->getAvailableHealth();
-	injure(reborn, reborn->getAvailableHealth());
-	EXPECT_EQ(invincible->getAvailableHealth(), protectedHealth);
-	EXPECT_EQ(ordinaryHealth - ordinary->getAvailableHealth(), ordinaryDamage);
-	ASSERT_FALSE(server.injuries.empty());
-	for(const auto & hit : server.injuries.back().stacks)
-		EXPECT_NE(hit.stackAttacked, invincible->unitId());
 }

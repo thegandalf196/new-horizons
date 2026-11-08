@@ -41,6 +41,9 @@ public:
 	int bloodragePain(BattleSide side) const override;
 	int magicResistance(const Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives necromancyPassives(BattleSide side) const override;
+	newHorizonsElementalAttunement::Profile elementalAttunementProfile(BattleSide side) const override;
+	bool knowsElementalAttunementProfile(BattleSide side) const override;
+	uint8_t elementalAttunementMask(BattleSide side) const override;
 	const JsonNode & magicRules() const override;
 };
 
@@ -69,6 +72,7 @@ public:
 	bool unitSlowAffectsSpeed(const Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit * unit) const override;
 	int unitAdditionalRetaliations(const Unit * unit) const override;
+	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const Unit * unit) const override;
 	int unitBloodragePainIncrement(const Unit * unit) const override;
 	bool unitHasVeteranCohesion(const Unit * unit) const override;
 	std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const Unit * unit) const override;

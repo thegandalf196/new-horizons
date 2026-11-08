@@ -93,7 +93,13 @@ else
 fi
 # Mimic EntryPoint's argv[0]-based chdir without running VCMI.
 cd -- "$(dirname -- "$0")"
-[[ -e new-horizons && ! -e vcmiclient && -e config && -d Mods && -e scripts ]]
+[[ -e new-horizons && ! -e vcmiclient && -e config && -d Mods ]]
+if [[ ${EXPECTED_SCRIPTS:-1} == 1 ]]; then
+	[[ -L scripts && -r scripts/damage/damageCalculator.lua ]]
+	[[ $(readlink -- scripts) == "$EXPECTED_ENGINE/scripts" ]]
+else
+	[[ ! -e scripts && ! -L scripts ]]
+fi
 [[ -e Mods/vcmi/mod.json && ! -e Mods/unwanted && ! -e Mods/roe-demo ]]
 if [[ ${EXPECTED_COMMANDS:-0} == 1 ]]; then
 	[[ -e Mods/new-horizons/mod.json && -d Mods/new-horizons/Images ]]
@@ -371,6 +377,19 @@ bash "$launcher" "${args[@]}" --verify-only > "$tmp/output"
 bash "$launcher" "${args[@]}" > "$tmp/output"
 [[ $(wc -l < "$STUB_RECEIPT") == 1 ]]
 [[ -e $profile/data/new-horizons/Saves/stub-save ]]
+# A native resource package has no scripts directory; no link (including a
+# dangling link) may be manufactured. Reusing that profile with a frozen package
+# must restore only the scripts actually supplied by that package.
+script_receipt="$tmp/script-resource-receipt"
+mv -- "$engine/scripts" "$tmp/frozen-script-resources"
+EXPECTED_SCRIPTS=0 STUB_RECEIPT="$script_receipt" \
+	bash "$launcher" "${args[@]}" --resources "$engine" > "$tmp/output"
+[[ $(wc -l < "$script_receipt") == 1 ]]
+mv -- "$tmp/frozen-script-resources" "$engine/scripts"
+EXPECTED_SCRIPTS=1 STUB_RECEIPT="$script_receipt" \
+	bash "$launcher" "${args[@]}" --resources "$engine" > "$tmp/output"
+[[ $(wc -l < "$script_receipt") == 2 ]]
+[[ -z $(find "$profile" -maxdepth 1 -name 'runtime.*' -print) ]]
 touch -- "$profile/data/new-horizons/unexpected"
 expect_fail "${args[@]}" --verify-only
 rm -- "$profile/data/new-horizons/unexpected"

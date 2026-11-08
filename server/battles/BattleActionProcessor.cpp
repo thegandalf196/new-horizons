@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
 #include "../../lib/battle/ArcaneReprisal.h"
 #include "../../lib/battle/PassiveDivineMandate.h"
 #include "../../lib/battle/PassiveDivineMandateInspiration.h"
@@ -97,13 +98,6 @@
 namespace
 {
 
-bool armorerLastStandEndedActivation(const CStack * stack)
-{
-	if(!stack)
-		return false;
-	const auto state = stack->acquireState();
-	return state && state->armorerLastStandEndedActivation;
-}
 
 bool isLongReachAttack(const CBattleInfoCallback & battle, const battle::Unit * attacker,
 	const battle::Unit * defender)
@@ -187,23 +181,7 @@ BattleHex resolveMovementDestination(const CBattleInfoCallback & battle, const b
 	return requested;
 }
 
-bool hasLegalHostileBallistaShot(const CBattleInfoCallback & battle, const battle::Unit * shooter)
-{
-	if(!shooter || !shooter->alive() || shooter->isGhost() || shooter->isTimeStopped() || !shooter->canMove()
-		|| !shooter->isBallista() || shooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
-		|| !battle.battleCanShoot(shooter))
-		return false;
 
-	for(const auto * target : battle.battleAliveUnits())
-	{
-		if(!target || !target->alive() || target->isGhost() || battle.battleMatchOwner(shooter, target, true))
-			continue;
-		for(const auto & hex : target->getHexes())
-			if(hex.isValid() && battle.battleCanShoot(shooter, hex))
-				return true;
-	}
-	return false;
-}
 
 bool isCreatureActionAllowedDuringForgetfulness(const CBattleInfoCallback & battle,
 	const BattleAction & action)
@@ -325,6 +303,11 @@ static void recordDivineRetributionDamage(const CBattleInfoCallback & battle, CG
 		parameters["actualHpDamage"].Integer() = accumulatedDamage;
 		parameters["rawCap"].Integer() = protection->val;
 		parameters["retributionistPercent"].Integer() = retributionistPercent;
+		if(protection->parameters)
+		{
+			const auto original = protection->parameters->toJsonNode();
+			if(!original["mdrPenetration"].isNull()) parameters["mdrPenetration"] = original["mdrPenetration"];
+		}
 		if(const auto ratio = newHorizonsDivineRetribution::capturedPayoutRatioBasisPoints(*protection))
 			parameters["payoutRatioBasisPoints"].Integer() = *ratio;
 
@@ -850,7 +833,7 @@ static bool validatePurifyAction(const CBattleInfoCallback & battle, const Battl
 
 	const bool clearsPhysicalPoison = vstd::contains_if(eligible, [](const auto & stack)
 	{
-		return stack.physicalPoisonAutomaticallyCleared || stack.graveDustAutomaticallyCleared;
+		return stack.physicalPoisonAutomaticallyCleared || stack.graveDustAutomaticallyCleared || stack.stunAutomaticallyCleared || stack.crippleAutomaticallyCleared;
 	});
 	return !action.spellPurifyChoices.empty() || clearsPhysicalPoison;
 }
@@ -1265,6 +1248,11 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		return false;
 	}
 
+	if(!newHorizonsPassiveSpecialties::permitsCreatureAttackTarget(battle, stack, destinationStack))
+	{
+		gameHandler->complain("An adjacent Dendroid protects this stack from direct creature targeting.");
+		return false;
+	}
 	if(dreadCavalry.before.pending && (!battle.battleHasPendingDreadCavalry(stack)
 		|| !newHorizonsDreadCavalry::permitsTarget(battle, stack, destinationStack)))
 		return false;
@@ -1475,7 +1463,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 			{counterBlocked, longWeaponAttack, longReachAttack, i, firstStrike, shroudBlocked, frozenBeforeHit}))
 		{
 			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
-				.counter = true, .retaliation = true});
+				.counter = true, .retaliation = true,
+				.defenderVoluntaryTravelDistance = i == 0 ? movementResult.distance : 0});
 			if(armorerLastStandEndedActivation(stack))
 				break;
 		}
@@ -1702,146 +1691,6 @@ void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & batt
 	gameHandler->sendAndApply(message);
 }
 
-bool BattleActionProcessor::doShootActionCore(const CBattleInfoCallback & battle, const BattleAction & ba,
-	bool allowPursuitContinuation)
-{
-	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
-	const bool pendingFollowUp = battle.battleHasPendingRangedFollowUp(stack);
-	battle::Target target = ba.getTarget(&battle);
-
-	if (!canStackAct(battle, stack))
-		return false;
-	const auto perfectMomentSide = battle.playerToSide(battle.battleGetOwner(stack));
-
-	if(target.empty())
-	{
-		gameHandler->complain("Destination required for shot action.");
-		return false;
-	}
-
-	auto destination = target.at(0).hexValue;
-
-	const CStack * destinationStack = battle.battleGetStackByPos(destination);
-
-	if (!battle.battleCanShootAction(stack, destination))
-	{
-		gameHandler->complain("Cannot shoot!");
-		return false;
-	}
-
-	const bool emptyTileAreaAttack = battle.battleCanTargetEmptyHex(stack);
-
-	if (!destinationStack && !emptyTileAreaAttack)
-	{
-		gameHandler->complain("No target to shoot!");
-		return false;
-	}
-	if(pendingFollowUp && (!destinationStack || !destinationStack->alive() || destinationStack->isGhost()
-		|| battle.battleMatchActionController(stack, destinationStack, true)))
-	{
-		gameHandler->complain("Master Gunner follow-up must target a living enemy creature.");
-		return false;
-	}
-	if(pendingFollowUp && !battle.battleCanTakeRangedFollowUp(stack))
-	{
-		gameHandler->complain("The Master Gunner follow-up is no longer usable.");
-		return false;
-	}
-
-	if(pendingFollowUp)
-	{
-		// This is its own player-selected attack action: do not route through the
-		// generic multi-attack loop, which would repeat this target automatically.
-		breakSanctuary(battle, stack);
-		auto rainOfArrows = beginRainOfArrows(battle, stack, destinationStack);
-		RelentlessAssaultActionContext relentlessAssault;
-		makeAttack(battle, stack, destinationStack,
-			{.targetHex = destination, .attackIndex = 1, .first = false, .ranged = true,
-				.perfectMomentSide = perfectMomentSide}, nullptr, &relentlessAssault, &rainOfArrows);
-		// The damage callback above observes the earned percentage. Clear only
-		// after that accepted attack has completed its shared damage calculation.
-		battleRangedFollowup::publish(battle, *gameHandler, stack, 0);
-		battleRangedFollowup::log(battle, *gameHandler, stack,
-			"%s fires the Master Gunner follow-up shot.");
-
-		BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);
-		BonusList defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
-		performOrdinaryRangedRetaliation(battle, destinationStack, stack);
-		removeBonuses(battle, stack, attackerBonusesToRemove);
-		removeBonuses(battle, destinationStack, defenderBonusesToRemove);
-		resolveRainOfArrows(battle, stack, rainOfArrows);
-		finalizeOpportunistSequence(battle, stack, stack->getMovementRange(0), allowPursuitContinuation);
-		return true;
-	}
-	// A ranged attack, including a valid area shot, is an offensive action.
-	breakSanctuary(battle, stack);
-	auto rainOfArrows = beginRainOfArrows(battle, stack, destinationStack);
-	RelentlessAssaultActionContext relentlessAssault;
-
-	bool firstStrike = false;
-	if(!emptyTileAreaAttack)
-	{
-		static const auto firstStrikeSelector = Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeAll).Or(Selector::typeSubtype(BonusType::FIRST_STRIKE, BonusCustomSubtype::damageTypeRanged));
-		firstStrike = destinationStack->hasBonus(firstStrikeSelector) && !destinationStack->hasBonusOfType(BonusType::NOT_ACTIVE);
-	}
-
-	if (!firstStrike)
-		makeAttack(battle, stack, destinationStack, {.targetHex = destination, .first = true, .ranged = true, .perfectMomentSide = perfectMomentSide}, nullptr, &relentlessAssault, &rainOfArrows);
-
-	BonusList attackerBonusesToRemove = *stack->getAllBonuses(Bonus::untilAfterAttackSequence);	//they need to be gathered here since bonuses with this duration added during attack (like blind) should not be removed
-	BonusList defenderBonusesToRemove;
-	if (destinationStack)
-		defenderBonusesToRemove = *destinationStack->getAllBonuses(Bonus::untilAfterAttackSequence);
-
-	//ranged counterattack
-	if(!emptyTileAreaAttack)
-		performOrdinaryRangedRetaliation(battle, destinationStack, stack);
-	//allow more than one additional attack
-
-	int totalRangedAttacks = stack->getTotalAttacks(true);
-
-	//TODO: move to CUnitState
-	const auto * attackingHero = battle.battleGetFightingHero(ba.side);
-	if(attackingHero)
-	{
-		totalRangedAttacks += attackingHero->valOfBonuses(BonusType::HERO_GRANTS_ATTACKS, BonusSubtypeID(stack->creatureId()));
-	}
-
-	for(int i = firstStrike ? 0:1; i < totalRangedAttacks; ++i)
-	{
-		if(stack->alive()
-			&& (emptyTileAreaAttack || destinationStack->alive())
-		&& stack->shots.canUse()
-		&& !armorerLastStandEndedActivation(stack))
-		{
-			// when the defender strikes first the opening shot above is skipped and this loop makes
-			// it instead, so the shot that abilities fire on is the first one this loop makes
-			makeAttack(battle, stack, destinationStack, {.targetHex = destination, .attackIndex = i, .first = i == 0, .ranged = true, .perfectMomentSide = i == 0 ? perfectMomentSide : BattleSide::NONE}, nullptr, &relentlessAssault, &rainOfArrows);
-		}
-	}
-
-	removeBonuses(battle, stack, attackerBonusesToRemove);
-	removeBonuses(battle, destinationStack, defenderBonusesToRemove);
-	resolveRainOfArrows(battle, stack, rainOfArrows);
-
-	const auto * masterGunnerHero = battle.battleGetOwnerHero(stack);
-	const auto state = stack->acquireState();
-	if(destinationStack && stack->alive() && !stack->isGhost()
-		&& !armorerLastStandEndedActivation(stack)
-		&& !battle.battleMatchOwner(stack, destinationStack, true)
-		&& stack->isBallista() && !stack->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
-		&& state && state->rangedFollowUpDamagePercent == 0
-		&& masterGunnerHero && masterGunnerHero->hasActivePerk(
-			"new-horizons:warMachines", "new-horizons:warMachines.masterGunner")
-		&& hasLegalHostileBallistaShot(battle, stack))
-	{
-		battleRangedFollowup::grant(battle, *gameHandler, stack, masterGunnerHero, newHorizonsMachineSpecialties::MASTER_GUNNER_ORDINARY_FOLLOW_UP_DAMAGE_PERCENT);
-	}
-	if(!allowPursuitContinuation || !battle.battleHasPendingRangedFollowUp(stack))
-		finalizeOpportunistSequence(battle, stack, stack->getMovementRange(0), allowPursuitContinuation);
-
-	return true;
-}
 
 bool BattleActionProcessor::doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
@@ -2345,6 +2194,19 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		&& !demonicBattle->getSide(ba.side).masterGateUsed
 		&& masterGateHero->hasActivePerk(
 			"new-horizons:demonicGating", "new-horizons:demonicGating.masterGate");
+	if(ba.actionType == EActionType::WALK_AND_ATTACK || ba.actionType == EActionType::SHOOT)
+	{
+		const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
+		const auto targets = ba.getTarget(&battle);
+		const auto expected = ba.actionType == EActionType::WALK_AND_ATTACK ? 2u : 1u;
+		const auto * target = targets.size() == expected
+			? battle.battleGetStackByPos(targets.back().hexValue) : nullptr;
+		if(!newHorizonsPassiveSpecialties::permitsCreatureAttackTarget(battle, unit, target))
+		{
+			gameHandler->complain("An adjacent Dendroid protects this stack from direct creature targeting.");
+			return false;
+		}
+	}
 	if(ba.perfectMoment)
 	{
 		const auto * unit = battle.battleGetStackByID(ba.stackNumber, false);
@@ -2358,6 +2220,8 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		bool legal = (melee || shooting || skirmisherShot)
 			&& battle.battleCanUsePerfectMoment(unit, target, shooting || skirmisherShot)
 			&& target && target->alive() && battle.battleMatchActionController(unit, target);
+		if(legal && !newHorizonsPassiveSpecialties::permitsCreatureAttackTarget(battle, unit, target))
+			legal = false;
 		if(legal && shooting)
 			legal = battle.battleCanShootAction(unit, target->getPosition());
 		if(legal && skirmisherShot)
@@ -2559,6 +2423,17 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 	{
 		gameHandler->complain("A protected stack cannot be selected by a direct attack or hostile single-target spell.");
 		return false;
+	}
+	// A rejected shot must not publish StartAction or mark the actor as moved.
+	// The ranged dispatcher repeats this shared legality check before the hit.
+	if(ba.actionType == EActionType::SHOOT)
+	{
+		const auto target = effectiveAction.getTarget(&battle);
+		if(target.empty() || !battle.battleCanShootAction(stack, target.front().hexValue))
+		{
+			gameHandler->complain("Cannot shoot!");
+			return false;
+		}
 	}
 	// WAIT provenance is published by StartAction. Validate a repeated request
 	// against the pre-action snapshot, before that packet marks the first legal
@@ -4072,6 +3947,11 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		bat.bsa,
 		attack.manaLeechSequenceSpent && *attack.manaLeechSequenceSpent);
 	const auto primaryEffects = preparePrimaryStrikeAftermath(battle, attacker, defender, attack, bat);
+	if(attack.hostileCreatureKills)
+		for(const auto & hit : bat.bsa)
+			if(const auto * victim = battle.battleGetUnitByID(hit.stackAttacked); victim
+				&& newHorizonsAttackControllers::barrageKillQualifies(battle, *attacker, *victim, hit.killedAmount))
+				*attack.hostileCreatureKills += hit.killedAmount;
 	gameHandler->sendAndApply(bat);
 	battlePrimaryStrikeAftermath::recordPrimaryMelee(primaryEffects, primaryMeleeTarget);
 
@@ -4412,9 +4292,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// sent before the triggers below so that anything they log lands after the attack description
 	gameHandler->sendAndApply(blm);
 
-	if(defender && !attack.cleaveFollowup)
-		handleAfterAttackCasting(battle, attacker, defender, payload);
-	battleToxicSting::apply(*gameHandler, *owner, battle, primaryEffects.toxicSting);
+	if(!resolvePrimaryAttackCasts(battle, attacker, defender, attack.cleaveFollowup, payload, primaryEffects)) return;
 
 	// priority alone decides what runs first, which is how life drain heals before a fire shield can
 	// burn the attacker down and how a death stare only lands after it. Not gated on anyone being
@@ -4551,6 +4429,9 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	// pre-emptive blow is not a normal retaliation for Riposte or retaliation
 	// consumption purposes.
 	bai.retaliation = bat.counter() && !bracePreemptive;
+	bai.voluntaryTravelDistance = !secondary && !bat.counter() ? attack.distance : 0;
+	bai.defenderVoluntaryTravelDistance = !secondary && bai.retaliation
+		? attack.defenderVoluntaryTravelDistance : 0;
 	bai.bracePreemptive = bracePreemptive;
 	bai.preemptiveDamagePercent = preemptiveDamagePercent;
 	bai.cleaveDamagePercent = cleaveDamagePercent;
@@ -4909,7 +4790,8 @@ void BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & bat
 	};
 
 	// predefined reactions name the event they react to in their subtype, and declare no priority
-	for (const auto & bonus : *self->getBonusesOfType(BonusType::ON_COMBAT_EVENT, BonusCustomSubtype(static_cast<int>(event))))
+	const auto eventBonuses = self->getBonusesOfType(BonusType::ON_COMBAT_EVENT, BonusCustomSubtype(static_cast<int>(event)));
+	for (const auto & bonus : *eventBonuses)
 	{
 		// what to do is the entire content of such a bonus, and the schema requires it, so one
 		// without it is content that already failed validation and reacts to nothing
@@ -4919,7 +4801,8 @@ void BattleActionProcessor::collectEventTriggers(const CBattleInfoCallback & bat
 
 	// a script instead reacts to every event it implements, so which script to run - the subtype -
 	// is not part of the selector here
-	for (const auto & bonus : *self->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER))
+	const auto scriptBonuses = self->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
+	for (const auto & bonus : *scriptBonuses)
 	{
 		ScriptID scriptID = bonus->subtype.as<ScriptID>();
 

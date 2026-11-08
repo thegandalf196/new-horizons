@@ -425,7 +425,8 @@ public:
 			if(!state)
 				continue;
 			server->recordResolvedSpellRecipient(unit->unitId());
-			const int64_t recipientDamage = mechanics->adjustMetamagicMagnitude(baseDamage, unit);
+			const int64_t recipientDamage = newHorizonsMetamagic::outgoingDamageMagnitude(
+				baseDamage, mechanics->getMetamagicCastProfile(), unit);
 			const bool applied = newHorizonsBulwark::applyPhysicalPoison(state.get(), recipientDamage, -1);
 			if(applied)
 			{

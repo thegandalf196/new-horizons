@@ -20,7 +20,7 @@
 #include "MapLayerHandler.h"
 #include "spells/SpellSchoolHandler.h"
 #include "CSkillHandler.h"
-#include "../luascript/LuaModule.h"
+#include "scripting/NativeModule.h"
 #include "entities/artifact/CArtHandler.h"
 #include "entities/faction/CTownHandler.h"
 #include "entities/hero/CHeroClassHandler.h"
@@ -244,7 +244,7 @@ void GameLibrary::initializeLibrary()
 	createHandler(obstacleHandler);
 	createHandler(mapLayerHandler);
 
-	scriptHandler = std::make_unique<scripting::LuaModule>();
+	scriptHandler = std::make_unique<scripting::NativeModule>();
 	scriptHandler->installScripting(*scriptTypeHandler);
 	modh->load();
 	modh->afterLoad();

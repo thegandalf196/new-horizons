@@ -100,6 +100,8 @@ public:
 	/// Battle-only hit points consumed before the stack's creature health.
 	int64_t getTemporaryHitPoints() const;
 	void addTemporaryHitPoints(int64_t amount);
+	/// Append full battle-only members without healing existing wounded cohorts.
+	bool appendTemporaryCreatures(int32_t count);
 	int64_t getCreatureHealthAvailable() const;
 	int64_t getTotalHealthOverride() const;
 	int64_t getShadowGiftMaximumHealthLost() const;
@@ -239,6 +241,7 @@ public:
 	int32_t personalBloodrageIncrement = 0;
 	/// Battle-long one-shot receipt; healing, death and round changes never rearm it.
 	bool veteranCohesionEarned = false;
+	int32_t ordinarySpecialtyLastRound = -1;
 	/// Tenths of a hit point per creature carried between capacity-regeneration activations.
 	int32_t capacityRegenerationRemainderTenths = 0;
 	bool timeStopTurnConsumedFlag;
@@ -407,6 +410,7 @@ public:
 	int32_t intrinsicMagicalDamageReductionPercent() const override;
 	int32_t intrinsicPhysicalDamageReductionPercent() const override;
 	newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const override;
+	newHorizonsElementalAttunement::UnitPassives elementalAttunementPassives() const override;
 	uint32_t getMaxHealth() const override;
 
 	/// Install the transient Phantom Army durability profile after the stack has

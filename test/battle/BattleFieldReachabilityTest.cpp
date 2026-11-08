@@ -6,6 +6,7 @@
 #include "../../client/battle/BattleFieldReachability.h"
 #include "../../lib/CStack.h"
 #include "../server/battles/HeroCommandFixture.h"
+#include "../hero/NewHorizonsHeroRulesFixture.h"
 #include <stdexcept>
 
 TEST(BattleFieldReachabilityTest, ActorSwitchRefreshesBeforePaintAndReusesForBothConsumers)
@@ -77,7 +78,15 @@ TEST(BattleFieldReachabilityTest, FailedRefreshRemainsDirtyUntilSuccessfulRetry)
 }
 
 class BattleFieldReachabilityGeometryTest : public HeroCommandFixture
-{};
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		if(!useCommands)
+			captureLegacyPerkOfferPolicy(*loaded);
+	}
+};
 
 TEST_F(BattleFieldReachabilityGeometryTest, ActiveSwitchMatchesFreshMovementAndAttackGeometryWithoutDraw)
 {

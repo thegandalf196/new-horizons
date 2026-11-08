@@ -50,6 +50,7 @@ struct DLL_LINKAGE CastProfile
 	const CGHeroInstance * hero = nullptr;
 	BattleSide heroSide = BattleSide::NONE;
 	int32_t points = 0;
+	int32_t factionSpellDamageBonus = 0;
 	bool singularityReached = false;
 	int32_t chaosShieldLimitBasisPoints = 8000; // Actual originating hero's Paradox cap.
 };

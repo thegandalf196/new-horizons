@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "PhysicalAffliction.h"
 #include "NewHorizonsGraveDust.h"
+#include "NewHorizonsAttackControllers.h"
 
 #include "CUnitState.h"
 #include "../bonuses/BonusList.h"
@@ -120,8 +121,10 @@ void validateMarkerGroup(const GroupKey & key, const std::vector<Bonus> & bonuse
 		// Frozen is represented by its marker alone. Creature-source IDs can
 		// coincide with the bearer's intrinsic native bonuses; those are not
 		// part of this physical affliction and must never be cleansed with it.
-		if(result.kind == "frozen")
+		if(result.kind == "frozen" || result.kind == "stun")
 			result.effects.clear();
+		if(result.kind == "cripple")
+			std::erase_if(result.effects, [](const Bonus & effect) { return !newHorizonsAttackControllers::isCripple(&effect); });
 		return;
 	}
 
@@ -428,10 +431,11 @@ std::vector<Bonus> removalPlan(const battle::Unit & unit, const Affliction & aff
 	for(const auto & bonus : unitBonuses(unit))
 		if(bonus.source == affliction.source && bonus.sid == affliction.sourceID)
 		{
-			if(affliction.kind == "frozen")
+			if(affliction.kind == "cripple" && !newHorizonsAttackControllers::isCripple(&bonus)) continue;
+			if(affliction.kind == "frozen" || affliction.kind == "stun")
 			{
 				const auto metadata = markerMetadata(bonus);
-				if(!metadata || metadata->kind != "frozen")
+				if(!metadata || metadata->kind != affliction.kind)
 					continue;
 			}
 			result.push_back(bonus);

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
 #include <compare>
+#include "AttackAbilityPrefix.h"
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -33,6 +34,7 @@ struct Outcome
 {
 	bool available = false;
 	std::map<uint32_t, Budget> budgets;
+	std::set<attackAbilityPrefix::StatusKey> completedStatuses;
 	auto operator<=>(const Outcome &) const = default;
 };
 class Opportunities

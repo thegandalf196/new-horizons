@@ -20,6 +20,7 @@
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
+#include "../../lib/combatScripts/NativeDamageCalculator.h"
 #include "../../lib/modding/IdentifierStorage.h"
 #include "../../lib/scripting/ScriptHandler.h"
 #include <any>
@@ -519,7 +520,7 @@ TEST_F(DamageFinalizationParityTest, RawLuckScalarAndFullGetterFallbackKeepDamag
 		}
 }
 
-// Pair-local prefix characterization uses the existing real-Lua recorder and
+// Pair-local prefix characterization uses the existing production recorder and
 // complete payload/state/RNG oracles above. It also runs before production reuse.
 class DamagePrefixReuseParityTest : public DamageFinalizationParityTest
 {
@@ -632,6 +633,7 @@ protected:
 		ASSERT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
 		const auto projected = projectedSnapshot(); // Materialize canonical branch views before the immutable batch.
 		ScopedCalculatorRegistry registry;
+		ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(registry.ordinary()), nullptr);
 		auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary());
 		registry.install(recorder);
 		const auto native = nativeSnapshot();
@@ -652,8 +654,14 @@ protected:
 		EXPECT_EQ(timing.nativePhysicalModifiers.calls, 2u);
 		EXPECT_EQ(timing.nativeHeroOrders.calls, 2u);
 		EXPECT_EQ(timing.nativeFinalization.calls, 2u);
-		EXPECT_EQ(timing.bonusPreparation.calls, 2u);
-		EXPECT_EQ(timing.luaCall.calls, 2u);
+		EXPECT_EQ(timing.initialCalls, 1u);
+		EXPECT_EQ(timing.luckySecondCalls + timing.unluckySecondCalls, 1u);
+		EXPECT_EQ(timing.nativePayload.calls, 2u);
+		// The delegating recorder does not introduce optional Lua-oracle work.
+		EXPECT_EQ(timing.bonusPreparation.calls, 0u);
+		EXPECT_EQ(timing.bonusPreparation.nanoseconds, 0u);
+		EXPECT_EQ(timing.luaCall.calls, 0u);
+		EXPECT_EQ(timing.luaCall.nanoseconds, 0u);
 		EXPECT_EQ(nativeSnapshot(), native);
 		EXPECT_EQ(projectedSnapshot(), projected);
 		EXPECT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
@@ -678,6 +686,7 @@ TEST_F(DamagePrefixReuseParityTest, OrdinaryDamageNeverNeedsUnknownOrThrowingScr
 	for(const auto capability : {Capability::UNKNOWN, Capability::QUERY_FAILURE, Capability::CANONICAL})
 	{
 		ScopedCalculatorRegistry registry;
+		ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(registry.ordinary()), nullptr);
 		auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary(), capability);
 		registry.install(recorder);
 		const auto expected = child->battleExpectedLuckDamage(attack);
@@ -691,7 +700,13 @@ TEST_F(DamagePrefixReuseParityTest, OrdinaryDamageNeverNeedsUnknownOrThrowingScr
 		expectPayload(recorder->payloads[1], recorder->payloads[3]);
 		EXPECT_EQ(recorder->events, "CCCC");
 		EXPECT_EQ(timing.nativeAttackContext.calls, 2u);
-		EXPECT_EQ(timing.luaCall.calls, 2u);
+		EXPECT_EQ(timing.initialCalls, 1u);
+		EXPECT_EQ(timing.luckySecondCalls, 1u);
+		EXPECT_EQ(timing.nativePayload.calls, 2u);
+		EXPECT_EQ(timing.bonusPreparation.calls, 0u);
+		EXPECT_EQ(timing.bonusPreparation.nanoseconds, 0u);
+		EXPECT_EQ(timing.luaCall.calls, 0u);
+		EXPECT_EQ(timing.luaCall.nanoseconds, 0u);
 	}
 	EXPECT_EQ(nativeSnapshot(), native);
 	EXPECT_EQ(projectedSnapshot(), projected);
@@ -897,6 +912,7 @@ TEST_F(DamagePrefixReuseParityTest, NoSecondLuckCalculationRunsOneFullNativeCalc
 		BonusType::NO_LUCK, BonusSource::OTHER, 1, BonusSourceID())});
 	ASSERT_EQ(child->battleGetAttackLuck(actor.get(), attack.defender, false), 0);
 	ScopedCalculatorRegistry registry;
+	ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(registry.ordinary()), nullptr);
 	auto recorder = std::make_shared<RecordingCalculator>(registry.ordinary(), Capability::QUERY_FAILURE);
 	registry.install(recorder);
 	damageCalculationTiming::Sample timing;
@@ -907,7 +923,14 @@ TEST_F(DamagePrefixReuseParityTest, NoSecondLuckCalculationRunsOneFullNativeCalc
 	EXPECT_EQ(recorder->events, "C");
 	EXPECT_EQ(timing.nativeAttackContext.calls, 1u);
 	EXPECT_EQ(timing.nativeFinalization.calls, 1u);
-	EXPECT_EQ(timing.luaCall.calls, 1u);
+	EXPECT_EQ(timing.initialCalls, 1u);
+	EXPECT_EQ(timing.luckySecondCalls, 0u);
+	EXPECT_EQ(timing.unluckySecondCalls, 0u);
+	EXPECT_EQ(timing.nativePayload.calls, 1u);
+	EXPECT_EQ(timing.bonusPreparation.calls, 0u);
+	EXPECT_EQ(timing.bonusPreparation.nanoseconds, 0u);
+	EXPECT_EQ(timing.luaCall.calls, 0u);
+	EXPECT_EQ(timing.luaCall.nanoseconds, 0u);
 }
 
 TEST_F(DamagePrefixReuseParityTest, ForeignGameContextCannotHideBehindExactNativeBattleType)

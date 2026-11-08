@@ -4,6 +4,12 @@
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/gameState/ReplayLog.h"
 #include "../../lib/battle/NewHorizonsCreatureBurn.h"
+#include "../../lib/battle/NewHorizonsInfernoStrikeDebuffs.h"
+#include "../../lib/battle/NewHorizonsChargeSpecialties.h"
+#include "../../lib/battle/NewHorizonsCoordinatedMarks.h"
+#include "../../lib/battle/NewHorizonsReactiveDefense.h"
+#include "../../lib/battle/NewHorizonsGnollHarriers.h"
+#include "../../lib/battle/NewHorizonsPrismaticVanguard.h"
 #include "../../lib/battle/NewHorizonsGraveDust.h"
 #include "../../lib/battle/BattleEffectExchange.h"
 #include "../../lib/bonuses/BonusList.h"
@@ -265,5 +271,91 @@ TEST(ExtendedOrdinaryBonusSerialization, LegacyBytesAndPreTriggerReusedReadKeepT
 	ASSERT_NO_THROW(triggerReader.iser & source);
 	EXPECT_FALSE(source.parameters); // Decoded absence owns and clears this field from901 onward.
 	EXPECT_EQ(encode(source, trigger), triggerBytes);
+}
+
+// Frozen pre-fastpath behavior: preserve classification and exception text.
+bool originalExtendedClassification(const Bonus & bonus)
+{
+	return newHorizonsInfernoStrikeDebuffs::isEffect(&bonus)
+		|| newHorizonsChargeSpecialties::isLanceFormation(&bonus)
+		|| newHorizonsCoordinatedMarks::isMark(&bonus)
+		|| newHorizonsReactiveDefense::isSolidarityProtection(&bonus)
+		|| newHorizonsReactiveDefense::isIronHideSpent(&bonus)
+		|| newHorizonsCreatureBurn::isBurn(&bonus)
+		|| newHorizonsGnollHarriers::isMovementHistory(&bonus)
+		|| newHorizonsPrismaticVanguard::isEffect(&bonus)
+		|| newHorizonsGraveDust::validateRecord(bonus);
+}
+std::pair<int, std::string> classificationOutcome(const Bonus & bonus, bool original)
+{
+	try
+	{
+		return {original ? originalExtendedClassification(bonus) : bonus.isExtendedOrdinarySpecialtyEffect(), {}};
+	}
+	catch(const std::invalid_argument & error) { return {2, error.what()}; }
+	catch(const std::runtime_error & error) { return {3, error.what()}; }
+}
+TEST_F(ExtendedOrdinaryBonusSerializationTest, EmptyIdentityKeepsOrdinaryRecordsAndTypedHealingValidation)
+{
+	for(const auto source : {BonusSource::OTHER, BonusSource::HERO_SPECIAL,
+		BonusSource::CREATURE_ABILITY, BonusSource::SPELL_EFFECT})
+	{
+		auto plain = ordinary();
+		plain.source = source;
+		EXPECT_FALSE(plain.isExtendedOrdinarySpecialtyEffect());
+		EXPECT_EQ(classificationOutcome(plain, false), classificationOutcome(plain, true));
+	}
+	for(const int value : {-1, 0, 1, 10'000, 10'001})
+	{
+		auto healing = ordinary();
+		healing.type = BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS;
+		healing.valType = BonusValueType::BASE_NUMBER;
+		healing.val = value;
+		EXPECT_EQ(classificationOutcome(healing, false), classificationOutcome(healing, true));
+		if(value < 0 || value > 10'000)
+			EXPECT_THROW(healing.isExtendedOrdinarySpecialtyEffect(), std::invalid_argument);
+		else
+			EXPECT_FALSE(healing.isExtendedOrdinarySpecialtyEffect());
+	}
+	auto wrongType = ordinary();
+	wrongType.type = BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS;
+	wrongType.valType = BonusValueType::ADDITIVE_VALUE;
+	EXPECT_THROW(wrongType.isExtendedOrdinarySpecialtyEffect(), std::invalid_argument);
+}
+TEST_F(ExtendedOrdinaryBonusSerializationTest, EmptyIdentityCannotHideReservedOrTypedGraveDust)
+{
+	auto reserved = ordinary();
+	reserved.sid = BonusSourceID(BonusCustomSource::newHorizonsGraveDust);
+	EXPECT_THROW(reserved.isExtendedOrdinarySpecialtyEffect(), std::invalid_argument);
+	EXPECT_EQ(classificationOutcome(reserved, false), classificationOutcome(reserved, true));
+	auto typed = newHorizonsGraveDust::records(5000, PlayerColor(0)).front();
+	typed.stacking.clear();
+	typed.statusIdentity.clear();
+	typed.source = BonusSource::ARTIFACT;
+	typed.sid = BonusSourceID(); // Only typed parameters claim Grave Dust now.
+	EXPECT_THROW(typed.isExtendedOrdinarySpecialtyEffect(), std::invalid_argument);
+	EXPECT_EQ(classificationOutcome(typed, false), classificationOutcome(typed, true));
+	for(auto record : newHorizonsGraveDust::records(5000, PlayerColor(0)))
+	{
+		record.stacking.clear();
+		record.statusIdentity.clear();
+		EXPECT_THROW(record.isExtendedOrdinarySpecialtyEffect(), std::invalid_argument);
+		EXPECT_EQ(classificationOutcome(record, false), classificationOutcome(record, true));
+	}
+}
+TEST_F(ExtendedOrdinaryBonusSerializationTest, NamedHalfNamedAndMalformedMarkersKeepFrozenClassification)
+{
+	startGame();
+	for(const auto & original : markers())
+		for(int edit = 0; edit < 5; ++edit)
+		{
+			auto record = original;
+			if(edit == 1) record.stacking.clear();
+			if(edit == 2) record.statusIdentity.clear();
+			if(edit == 3) { record.stacking.clear(); record.statusIdentity.clear(); }
+			if(edit == 4) record.source = BonusSource::ARTIFACT;
+			SCOPED_TRACE(original.stacking + " edit=" + std::to_string(edit));
+			EXPECT_EQ(classificationOutcome(record, false), classificationOutcome(record, true));
+		}
 }
 }

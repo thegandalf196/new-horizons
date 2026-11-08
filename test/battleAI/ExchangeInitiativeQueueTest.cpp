@@ -511,3 +511,34 @@ TEST_F(ExchangeInitiativeQueueTest, CanonicalRefreshCannotReinsertSpentRapidAndS
 	EXPECT_EQ(projectedHitTest::serialized(branch->getSeizeInitiativeState()), seizeBefore);
 	EXPECT_EQ(newHorizonsRapidResponse::pendingWaiter(*branch, BattleSide::ATTACKER), pending);
 }
+
+TEST_F(ExchangeInitiativeQueueTest, FutureActorBudgetStopsAtBoundaryAndCannotRenewInitialExemption)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto branch = simulation();
+	const auto original = queue(branch);
+	ASSERT_EQ(original.size(), 3u);
+	const auto authorityRng = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto openingBefore = branch->battleGetUnitByID(opening->unitId())->acquireState()->save();
+	ExchangeInitiativeQueue scheduled(branch, false);
+	ExchangeActorBudget capped(2), unlimited(0);
+	scheduled.beginRound(original, original);
+	for(const auto * expected : original)
+	{
+		const auto * actor = scheduled.next();
+		ASSERT_EQ(actor, expected);
+		EXPECT_TRUE(capped.enter(actor->unitId() == opening->unitId()));
+		EXPECT_TRUE(unlimited.enter(actor->unitId() == opening->unitId()));
+	}
+	EXPECT_EQ(capped.futureActorsVisited(), 2u);
+	ASSERT_EQ(scheduled.next(), nullptr);
+	// A new scheduled round does not reset the budget or exempt this actor again.
+	scheduled.beginRound(original, original);
+	ASSERT_EQ(scheduled.next(), original.front());
+	EXPECT_FALSE(capped.enter(true));
+	EXPECT_TRUE(unlimited.enter(true));
+	EXPECT_EQ(capped.futureActorsVisited(), 2u);
+	EXPECT_EQ(unlimited.futureActorsVisited(), 3u);
+	EXPECT_EQ(branch->battleGetUnitByID(opening->unitId())->acquireState()->save(), openingBefore);
+	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), authorityRng);
+}

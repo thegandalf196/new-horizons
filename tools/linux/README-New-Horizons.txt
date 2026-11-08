@@ -3,7 +3,7 @@ HEROES III: NEW HORIZONS — Linux x86-64
 This build targets Ubuntu 26.04. It is system-library-dependent, not a universal
 Linux/AppImage bundle. Other distributions/releases are not verified. Keep the
 new-horizons executable, libvcmi.so, the four declared SDL3 runtime libraries,
-config, scripts, Mods and launcher files
+config, Mods and launcher files
 together. Extract the whole package into a directory you can read and execute;
 do not mix binaries or resources from different releases.
 

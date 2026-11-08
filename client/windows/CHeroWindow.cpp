@@ -559,6 +559,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 
 	if(newHorizonsLayout)
 	{
+		refreshCommandReadout();
 		const auto leadership = curHero->getLeadershipCapacity();
 		const bool perSlotLeadership = leadership && curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 2;
 		const int leadershipPerLevel = perSlotLeadership
@@ -566,6 +567,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 			: 0;
 		leadershipValue->setText(leadership ? std::to_string(leadership->capacity) : "--");
 		leadershipGrowthValue->setText(perSlotLeadership ? "+" + std::to_string(leadershipPerLevel) : "");
+		alignAttributeReadouts();
 		leadershipArea->text = !leadership ? "No saved Leadership rules for this hero. Display icon is illustrative."
 			: perSlotLeadership ? "Leadership: " + std::to_string(leadership->capacity)
 				+ " total, including artifacts and other modifiers. Growth per hero level: +" + std::to_string(leadershipPerLevel)

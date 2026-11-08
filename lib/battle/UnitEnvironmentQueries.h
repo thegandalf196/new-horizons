@@ -38,6 +38,11 @@ public:
 	virtual int bloodragePain(BattleSide side) const = 0;
 	virtual int magicResistance(const Unit * unit) const = 0;
 	virtual newHorizonsNecromancy::CombatPassives necromancyPassives(BattleSide side) const = 0;
+	virtual newHorizonsElementalAttunement::Profile elementalAttunementProfile(BattleSide) const { return {}; }
+	virtual uint8_t elementalAttunementMask(BattleSide) const { return 0; }
+	virtual bool knowsElementalAttunementProfile(BattleSide) const { return true; }
+	/// Current public unit observations are distinct from private prospective hero policy.
+	virtual std::optional<newHorizonsElementalAttunement::UnitPassives> committedElementalAttunement(const Unit *) const { return std::nullopt; }
 	virtual newHorizonsNecromancy::CombatPassives filterNecromancyPassives(
 		const newHorizonsNecromancy::CombatPassives & captured, CreatureID creature) const;
 	virtual const JsonNode & magicRules() const = 0;
@@ -60,6 +65,7 @@ public:
 	bool unitSlowAffectsSpeed(const Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit * unit) const override;
 	int unitAdditionalRetaliations(const Unit * unit) const override;
+	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const Unit * unit) const override;
 	int unitBloodragePainIncrement(const Unit * unit) const override;
 	bool unitHasVeteranCohesion(const Unit * unit) const override;
 	std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const Unit * unit) const override;

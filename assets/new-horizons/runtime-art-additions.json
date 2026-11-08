@@ -14901,6 +14901,171 @@
       ],
       "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending.",
       "newManifestSha256": "fd5c139b1970e67bf3f78e67e4172c257a271f34b19a8a616af134cc02de2a27"
+    },
+    {
+      "baselineArchiveSha256": "cb9d429999cb8875cd62dfd5472f9caee83e1ca4ba891c2a72e846e1432c99e5",
+      "baselineManifestSha256": "fd5c139b1970e67bf3f78e67e4172c257a271f34b19a8a616af134cc02de2a27",
+      "baselineEntriesSha256": "b6cc8ba1458074c92415e502f19fbe7c99124256a7be8e57fb424f5e0ce8ab46",
+      "baselineHeaderSha256": "ed5869bbd2950d68954d7240a01c9fdaae2814fda746afc45ddf7fa8ba9b11d6",
+      "baselineCount": 5722,
+      "entryCount": 5727,
+      "newArchiveSha256": "5fa9abccb0ddb146108a57c844241e19ff465237818043fd50e2d02c54930cdd",
+      "resources": [
+        "SPRITES/NH_orders_command.json",
+        "SPRITES/NH_orders_command_disabled.png",
+        "SPRITES/NH_orders_command_highlighted.png",
+        "SPRITES/NH_orders_command_normal.png",
+        "SPRITES/NH_orders_command_pressed.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "orderEntryButtons": [
+        {
+          "id": "new-horizons:ordersCommandEntry",
+          "family": "orders-command-entry-button",
+          "resources": [
+            "SPRITES/NH_orders_command.json",
+            "SPRITES/NH_orders_command_disabled.png",
+            "SPRITES/NH_orders_command_highlighted.png",
+            "SPRITES/NH_orders_command_normal.png",
+            "SPRITES/NH_orders_command_pressed.png"
+          ],
+          "sourceEntries": [
+            {
+              "resource": "SPRITES/NH_orders_command_normal.png",
+              "source": "Mods/new-horizons/Images/NH_orders_command_normal.png",
+              "size": 2123,
+              "sha256": "6499545822f1a734d76828744627e29f6c82a044b1bb0e3bca2143c229dc2b24",
+              "family": "orders-command-entry-button",
+              "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+              "selection": "Selected by the owner for the Orders/Command entry icon.",
+              "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_orders_command_pressed.png",
+              "source": "Mods/new-horizons/Images/NH_orders_command_pressed.png",
+              "size": 2096,
+              "sha256": "53ee83dda2ac31217c373ed387c480363158c75777ec4f9aa848cb8c2970f724",
+              "family": "orders-command-entry-button",
+              "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+              "selection": "Selected by the owner for the Orders/Command entry icon.",
+              "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_orders_command_disabled.png",
+              "source": "Mods/new-horizons/Images/NH_orders_command_disabled.png",
+              "size": 2064,
+              "sha256": "38354f13e81742c3059389704222419d8e2b63cd3e560da4e686b97da8729285",
+              "family": "orders-command-entry-button",
+              "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+              "selection": "Selected by the owner for the Orders/Command entry icon.",
+              "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_orders_command_highlighted.png",
+              "source": "Mods/new-horizons/Images/NH_orders_command_highlighted.png",
+              "size": 2133,
+              "sha256": "2e0fad8fc3bf8440ac53ba29aa9d2ee1c6e3d92253d8712159fd8999d503e2b4",
+              "family": "orders-command-entry-button",
+              "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+              "selection": "Selected by the owner for the Orders/Command entry icon.",
+              "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+            },
+            {
+              "resource": "SPRITES/NH_orders_command.json",
+              "source": "Mods/new-horizons/Images/NH_orders_command.json",
+              "size": 405,
+              "sha256": "7e9f6fa7790558110128aeda04feb110bbd331a80a38fd6bacf7cbeda7215cd6",
+              "family": "orders-command-entry-button",
+              "origin": "Purpose-made native four-state descriptor for the owner-supplied Orders/Command illustration; no original-game raster pixels.",
+              "selection": "Selected Orders/Command entry icon, preserving normal, pressed, disabled and highlighted state order.",
+              "approval": "Owner-authorized integration; descriptor validation completed; in-game rendered acceptance pending."
+            }
+          ],
+          "sourceMasterSha256": "459aa68a47294fa1a185547a6e8353eb9988ab76bc18db980d01fcf58c920690",
+          "nativeCanvas": [
+            48,
+            36
+          ],
+          "states": [
+            "normal",
+            "pressed",
+            "disabled",
+            "highlighted"
+          ],
+          "origin": "Owner-supplied transparent dagger and parchment illustration. Native export retains the complete subject and existing external button frame.",
+          "selection": "Owner selected the supplied image for Orders/Command.",
+          "approval": "Integration authorized; Final visual approval and rendered acceptance pending."
+        }
+      ],
+      "approval": "Owner-authorized integration; rendered acceptance and Final visual approval pending.",
+      "newManifestSha256": "e4bcdb4860d28b76c17816ab660d0c22d9b604110cf6a6276d4b18243e2dd557",
+      "reusedBindings": [],
+      "configRevisions": {
+        "Mods/new-horizons/Content/config/spells/newHorizons.json": 6,
+        "Mods/new-horizons/Content/config/spells/massVariants.json": 1
+      },
+      "nonStatusConfigSha256": "ad09c8ac0215b80e3b4a7bee51c270f40d6f928dcc979f75ad9dbebdf5c064e9"
+    },
+    {
+      "baselineArchiveSha256": "5fa9abccb0ddb146108a57c844241e19ff465237818043fd50e2d02c54930cdd",
+      "baselineManifestSha256": "e4bcdb4860d28b76c17816ab660d0c22d9b604110cf6a6276d4b18243e2dd557",
+      "baselineEntriesSha256": "2d1c18e9621de6f0f34e4f76547936f5b5f53c0044bad0bcbaca1e57b56b548c",
+      "baselineHeaderSha256": "ed5869bbd2950d68954d7240a01c9fdaae2814fda746afc45ddf7fa8ba9b11d6",
+      "baselineCount": 5727,
+      "entryCount": 5728,
+      "newArchiveSha256": "5d95006e14c4b1608cc96ee65879fd569896a3f868b6d604f527c531a2926216",
+      "resources": [
+        "SPRITES/NH_broghild_poison_red.json"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "configRevisions": {
+        "Mods/new-horizons/Content/config/spells/newHorizons.json": 6,
+        "Mods/new-horizons/Content/config/spells/massVariants.json": 1
+      },
+      "nonStatusConfigSha256": "ad09c8ac0215b80e3b4a7bee51c270f40d6f928dcc979f75ad9dbebdf5c064e9",
+      "nativeEffectAliases": [
+        {
+          "id": "new-horizons:broghildStrongPoison",
+          "family": "native-specialty-effect-aliases",
+          "resources": [
+            "SPRITES/NH_broghild_poison_red.json"
+          ],
+          "sourceEntries": [
+            {
+              "resource": "SPRITES/NH_broghild_poison_red.json",
+              "source": "Mods/new-horizons/Images/NH_broghild_poison_red.json",
+              "size": 14830,
+              "sha256": "ac6b4c5e82f1f1f62c60dbd82caa2bc32f1b077367498f6842b7ef1e516bfac3",
+              "family": "native-specialty-effect-aliases",
+              "origin": "Authored animation descriptor references purchaser-supplied SP11_.DEF with an immutable red/green channel palette remap. Original frame pixels remain external; no copied raster payload.",
+              "selection": "Selected for the accepted Broghild stronger Monarch poison appearance after native bitmap comparison.",
+              "approval": "Provisional technical integration selected; native bitmap preview inspected. Final visual approval and in-game rendered acceptance pending; no license grant for referenced original resources."
+            }
+          ],
+          "originalExternalResource": "SP11_.DEF",
+          "originalExternalResourceSha256": "d17a6011caa515d5a4b9f04ef635e1a4117edf5bd38ede2b83f354e122d5ba35",
+          "nativeFrames": 20,
+          "nativeGroup": 0,
+          "reservedPaletteIndicesPreserved": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "origin": "Authored animation descriptor references purchaser-supplied SP11_.DEF with an immutable red/green channel palette remap. Original frame pixels remain external; no copied raster payload.",
+          "selection": "Selected for the accepted Broghild stronger Monarch poison appearance after native bitmap comparison.",
+          "approval": "Provisional technical integration selected; native bitmap preview inspected. Final visual approval and in-game rendered acceptance pending; no license grant for referenced original resources."
+        }
+      ],
+      "approval": "Provisional technical integration selected; native bitmap preview inspected. Final visual approval and in-game rendered acceptance pending; no license grant for referenced original resources.",
+      "newManifestSha256": "cc8d73d9a6cac6308bc2896ca53daed2c909d4ce5f407870b0c99416c2830060"
     }
   ]
 }

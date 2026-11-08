@@ -499,7 +499,7 @@ def source_archive(root, output, revision):
     return excluded
 
 
-CURATED_RESOURCE_TREES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
+CURATED_RESOURCE_TREES = ('config', 'Mods/vcmi', 'Mods/new-horizons')
 RUNTIME_ART_PACK = 'Mods/new-horizons/NewHorizons.nhart'
 RUNTIME_ART_MANIFEST = 'assets/new-horizons/runtime-art-manifest.json'
 LOOSE_ART_TREES = ('Mods/new-horizons/Images', 'Mods/new-horizons/Content/sprites',
@@ -557,7 +557,8 @@ def stage_engine_resources(install, package, expected_manifest=None):
     packed_sources = verify_runtime_art(install, expected_manifest)
     def ignore_packed(directory, names):
         return [name for name in names
-                if (Path(directory) / name).relative_to(install).as_posix() in packed_sources]
+                if name.lower().endswith('.lua')
+                or (Path(directory) / name).relative_to(install).as_posix() in packed_sources]
     for directory in CURATED_RESOURCE_TREES:
         shutil.copytree(install / directory, package / directory, ignore=ignore_packed)
     verify_runtime_art(package, expected_manifest)

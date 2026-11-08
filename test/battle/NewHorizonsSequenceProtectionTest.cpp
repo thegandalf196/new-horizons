@@ -4,12 +4,13 @@
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
-#include "../../lib/battle/NewHorizonsSequenceProtection.h"
+#include "../../lib/spells/NewHorizonsRunicReflection.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
 #if ENABLE_BATTLE_AI
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -23,8 +24,6 @@ namespace
 class NewHorizonsSequenceProtectionTest : public HeroCommandFixture
 {
 protected:
-	bool historical = false;
-	bool zero = false;
 	CStack * source = nullptr;
 	CStack * target = nullptr;
 	void mapLoaded(CMap * map) override
@@ -32,11 +31,10 @@ protected:
 		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
-		for(const char * key : {"cyclopeanBreachIgnorePercent", "runicEnduranceReductionPercent"})
-			if(historical) rules["additionalSpecialties"]["ordinaryCreatureSpecialties"].Struct().erase(key);
-			else rules["additionalSpecialties"]["ordinaryCreatureSpecialties"][key].Integer() = zero ? 0 : 25;
+
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 	void prepare(bool yog, bool machine = false)
 	{
@@ -51,6 +49,12 @@ protected:
 		gameHandler = std::make_shared<CGameHandler>(server, gameState());
 		attackerSideHero = findHeroByOwner(PlayerColor(0));
 		defenderSideHero = findHeroByOwner(PlayerColor(1));
+		if(machine)
+		{
+			const SecondarySkill skill(SecondarySkill::decode("new-horizons:warMachines"));
+			attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.masterGunner"));
+		}
 		startBattle();
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);
@@ -99,159 +103,8 @@ public:
 };
 #endif
 }
-TEST_F(NewHorizonsSequenceProtectionTest, YogPenetratesProtectionWithoutChangingCreatureDefenseOrRange)
-{
-	prepare(true);
-	BattleAttackInfo shot(source, target, 0, true);
-	const auto plain = battle()->calculateDmgRange(shot);
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), shot), 25);
-	protectTarget();
-	const auto protectedShot = battle()->calculateDmgRange(shot);
-	// 40% reduction loses one quarter of its effect: 30% remains.
-	EXPECT_NEAR(protectedShot.damage.min, plain.damage.min * 0.7, 1.0);
-	EXPECT_NEAR(protectedShot.damage.max, plain.damage.max * 0.7, 1.0);
-	EXPECT_EQ(protectedShot.damageBeforeDefense.min, plain.damageBeforeDefense.min);
-	const auto defense = target->getDefense(true);
-	const auto range = source->getShootingRangeDistance();
-	const auto distance = source->getRangedFullDamageDistance();
-	for(int exclusion = 0; exclusion < 6; ++exclusion)
-	{
-		auto other = shot;
-		if(exclusion == 0) other.shooting = false;
-		if(exclusion == 1) other.physicalDamage = false;
-		if(exclusion == 2) other.secondaryAttack = true;
-		if(exclusion == 3) other.retaliation = true;
-		if(exclusion == 4) other.bracePreemptive = true;
-		if(exclusion == 5) other.cleaveDamagePercent = 50;
-		EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), other), 0);
-	}
-	EXPECT_EQ(target->getDefense(true), defense);
-	EXPECT_EQ(source->getShootingRangeDistance(), range);
-	EXPECT_EQ(source->getRangedFullDamageDistance(), distance);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, UfretinAdditionalBlowIsIndependentAndNewActionStartsUnprotected)
-{
-	prepare(false); protectTarget();
-	BattleAttackInfo hit(source, target, 0, false);
-	const auto first = battle()->calculateDmgRange(hit);
-	hit.ordinaryAttackIndex = 1;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 25);
-	const auto second = battle()->calculateDmgRange(hit);
-	EXPECT_NEAR(second.damage.min, first.damage.min * 0.75, 1.0);
-	EXPECT_EQ(second.damageBeforeDefense.min, first.damageBeforeDefense.min);
-	for(int index : {2, 5})
-	{
-		hit.ordinaryAttackIndex = index;
-		EXPECT_EQ(battle()->calculateDmgRange(hit).damage.min, second.damage.min);
-	}
-	const BattleAttackInfo nextAction(source, target, 0, false);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), nextAction), 0);
-	EXPECT_EQ(battle()->calculateDmgRange(nextAction).damage.min, first.damage.min);
-	EXPECT_EQ(hit.reverse().ordinaryAttackIndex, 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, UfretinExcludesReactionsAndFriendlyBlows)
-{
-	prepare(false);
-	BattleAttackInfo hit(source, target, 0, false); hit.ordinaryAttackIndex = 1;
-	for(int exclusion = 1; exclusion < 6; ++exclusion)
-	{
-		auto other = hit;
-		if(exclusion == 1) other.retaliation = true;
-		if(exclusion == 2) other.bracePreemptive = true;
-		if(exclusion == 3) other.preemptiveDamagePercent = 50;
-		if(exclusion == 4) other.cleaveDamagePercent = 50;
-		if(exclusion == 5) other.physicalDamage = false;
-		EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), other), 0);
-	}
-	source->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, UfretinUsesStrikePositionForFirstAndRepeatedCollateral)
-{
-	prepare(false);
-	BattleAttackInfo collateral(source, target, 0, false);
-	collateral.secondaryAttack = true;
-	const auto first = battle()->calculateDmgRange(collateral);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), collateral), 0);
-	collateral.ordinaryAttackIndex = 1;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), collateral), 25);
-	EXPECT_NEAR(battle()->calculateDmgRange(collateral).damage.min, first.damage.min * 0.75, 1.0);
-	collateral.ordinaryAttackIndex = 0;
-	EXPECT_EQ(battle()->calculateDmgRange(collateral).damage.min, first.damage.min);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, YogSpecialtyFollowsEffectiveArmyHero)
-{
-	prepare(true);
-	BattleAttackInfo shot(source, target, 0, true);
-	source->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), shot), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, UfretinProtectsOrdinaryPhysicalMultiShotButNotFirstShot)
-{
-	prepare(false);
-	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(2, 2), 10);
-	BattleAttackInfo shot(shooter, target, 0, true);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), shot), 0);
-	shot.ordinaryAttackIndex = 1;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), shot), 25);
-	auto * machine = addStack(BattleSide::ATTACKER, creatureByName("core:ballista"), BattleHex(2, 3), 1);
-	shot.attacker = machine;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), shot), 25);
-	shot.ordinaryAttackIndex = 0;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), shot), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, UfretinUsesEffectiveDwarfFormAndReversion)
-{
-	prepare(false);
-	BattleAttackInfo hit(source, target, 0, false); hit.ordinaryAttackIndex = 1;
-	target->beginBattleForm(creatureByName("core:pikeman"), 2);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 0);
-	target->endBattleForm();
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 25);
-	auto * borrowed = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(7, 6), 10);
-	hit.defender = borrowed;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 0);
-	borrowed->beginBattleForm(creatureByName("core:dwarf"), 2);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 25);
-	borrowed->endBattleForm();
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, YogUsesEffectiveCyclopsFormAndReversion)
-{
-	prepare(true);
-	BattleAttackInfo shot(source, target, 0, true);
-	source->beginBattleForm(creatureByName("core:marksman"), 2);
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), shot), 0);
-	source->endBattleForm();
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), shot), 25);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, HistoricalAbsenceRetainsOldUfretinIdentity)
-{
-	historical = true; prepare(false);
-	EXPECT_FALSE(newHorizonsHeroes::hasOrdinaryCreatureSpecialty(defenderSideHero));
-	BattleAttackInfo hit(source, target, 0, false); hit.ordinaryAttackIndex = 1;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, HistoricalAbsenceRetainsOldYogIdentity)
-{
-	historical = true; prepare(true);
-	EXPECT_FALSE(newHorizonsHeroes::hasOrdinaryCreatureSpecialty(attackerSideHero));
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), BattleAttackInfo(source, target, 0, true)), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, ExplicitZeroRetainsYogReplacementWithoutPenetration)
-{
-	zero = true; prepare(true);
-	EXPECT_TRUE(newHorizonsHeroes::hasOrdinaryCreatureSpecialty(attackerSideHero));
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), BattleAttackInfo(source, target, 0, true)), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, ExplicitZeroRetainsUfretinReplacementWithoutProtection)
-{
-	zero = true; prepare(false);
-	EXPECT_TRUE(newHorizonsHeroes::hasOrdinaryCreatureSpecialty(defenderSideHero));
-	BattleAttackInfo hit(source, target, 0, false); hit.ordinaryAttackIndex = 1;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, AuthoritativeWolfRaiderSequenceProtectsOnlySecondPrimary)
+
+TEST_F(NewHorizonsSequenceProtectionTest, AuthoritativeWolfRaiderSequenceHasNoRetiredAdditionalHitProtection)
 {
 	prepare(false); beginCombat();
 	ASSERT_EQ(battle()->battleActiveUnit(), source);
@@ -270,6 +123,7 @@ TEST_F(NewHorizonsSequenceProtectionTest, AuthoritativeWolfRaiderSequenceProtect
 	EXPECT_EQ(server.attacks[1].bsa[0].damageAmount, second.min);
 	EXPECT_EQ(health - target->getAvailableHealth(), first.min + second.min);
 }
+
 TEST_F(NewHorizonsSequenceProtectionTest, AuthoritativeRepeatedCollateralUsesTheSharedBlowIndex)
 {
 	prepare(false);
@@ -294,6 +148,7 @@ TEST_F(NewHorizonsSequenceProtectionTest, AuthoritativeRepeatedCollateralUsesThe
 			}
 	EXPECT_EQ(damage, (std::vector<int64_t>{first, second}));
 }
+
 TEST_F(NewHorizonsSequenceProtectionTest, SeparatelySelectedMasterGunnerShotStartsNewProtectionSequence)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
@@ -306,7 +161,7 @@ TEST_F(NewHorizonsSequenceProtectionTest, SeparatelySelectedMasterGunnerShotStar
 	const auto expected = battle()->calculateDmgRange(selected).damage;
 	ASSERT_EQ(expected.min, expected.max);
 	selected.ordinaryAttackIndex = 1;
-	ASSERT_LT(battle()->calculateDmgRange(selected).damage.max, expected.max);
+	ASSERT_EQ(battle()->calculateDmgRange(selected).damage.max, expected.max);
 	const auto before = target->getAvailableHealth();
 	const auto shots = source->shots.available();
 	server.attacks.clear();
@@ -316,7 +171,9 @@ TEST_F(NewHorizonsSequenceProtectionTest, SeparatelySelectedMasterGunnerShotStar
 	EXPECT_EQ(source->shots.available(), shots - 1);
 	EXPECT_FALSE(battle()->battleHasPendingRangedFollowUp(source));
 }
+
 #if ENABLE_BATTLE_AI
+
 TEST_F(NewHorizonsSequenceProtectionTest, VictimMetadataPhasePreservesPrimaryCollateralAndFreshActionContext)
 {
 	prepare(false);
@@ -344,6 +201,7 @@ TEST_F(NewHorizonsSequenceProtectionTest, VictimMetadataPhasePreservesPrimaryCol
 	EXPECT_EQ(collateral.luckyStrike, battle()->getLuckRollRules().affectsAllTargets);
 	EXPECT_EQ(collateral.chargeDistance, 0);
 }
+
 TEST_F(NewHorizonsSequenceProtectionTest, ProjectedSequenceMatchesNativeAndPreservesLiveStateAndRng)
 {
 	prepare(false); beginCombat();
@@ -375,6 +233,7 @@ TEST_F(NewHorizonsSequenceProtectionTest, ProjectedSequenceMatchesNativeAndPrese
 	EXPECT_EQ(randomBytes(*rng), random);
 	EXPECT_EQ(randomBytes(*gameHandler->randomizer), rolls);
 }
+
 TEST_F(NewHorizonsSequenceProtectionTest, ProjectedRepeatedCollateralRetainsStrikePosition)
 {
 	prepare(false);
@@ -401,6 +260,7 @@ TEST_F(NewHorizonsSequenceProtectionTest, ProjectedRepeatedCollateralRetainsStri
 	EXPECT_EQ(health - (*victim)->getAvailableHealth(), first + second);
 	EXPECT_EQ(target->getAvailableHealth(), health);
 }
+
 TEST_F(NewHorizonsSequenceProtectionTest, ProjectedSelectedMasterGunnerShotResetsLegacyEventIndex)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
@@ -427,106 +287,120 @@ TEST_F(NewHorizonsSequenceProtectionTest, ProjectedSelectedMasterGunnerShotReset
 	EXPECT_EQ(target->getAvailableHealth(), health);
 	EXPECT_TRUE(battle()->battleHasPendingRangedFollowUp(source));
 }
-TEST_F(NewHorizonsSequenceProtectionTest, YogBranchDamageUsesSamePenetrationWithoutChangingLiveBonuses)
-{
-	prepare(true); protectTarget();
-	SequenceEnvironment env(gameState());
-	auto branch = std::make_shared<HypotheticBattle>(&env, std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)));
-	const auto actor = branch->getForUpdate(source->unitId());
-	const auto victim = branch->getForUpdate(target->unitId());
-	const auto live = battle()->calculateDmgRange(BattleAttackInfo(source, target, 0, true));
-	const auto forecast = branch->calculateDmgRange(BattleAttackInfo(actor.get(), victim.get(), 0, true));
-	EXPECT_EQ(live.damage.min, forecast.damage.min); EXPECT_EQ(live.damage.max, forecast.damage.max);
-	EXPECT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*branch));
-	victim->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID())});
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*branch, BattleAttackInfo(actor.get(), victim.get(), 0, true)), 0);
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), BattleAttackInfo(source, target, 0, true)), 25);
-}
+
 #endif
 
-TEST_F(NewHorizonsSequenceProtectionTest, NativePlayerCannotReadHiddenYogPolicyButOwnAndAuthorityCan)
+TEST_F(NewHorizonsSequenceProtectionTest, YogNoLongerPenetratesIndependentProtectionOrChangesDefenseAndRange)
 {
-	prepare(true);
-	const CPlayerBattleCallback hidden(battle(), PlayerColor(1));
-	const CPlayerBattleCallback known(battle(), PlayerColor(0));
-	const BattleAttackInfo shot(source, target, 0, true);
-	ASSERT_EQ(hidden.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
-	ASSERT_EQ(known.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).legacyHero(), attackerSideHero);
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(hidden, shot), 0);
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(known, shot), 25);
-	EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*battle(), shot), 25);
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	BattleAttackInfo shot(source, target, 0, true);
+	const auto ordinary = battle()->calculateDmgRange(shot);
+	const auto defense = target->getDefense(true);
+	const auto range = source->getShootingRangeDistance();
+	const auto fullDamage = source->getRangedFullDamageDistance();
+	protectTarget();
+	const auto protectedDamage = battle()->calculateDmgRange(shot);
+	EXPECT_NEAR(protectedDamage.damage.min, ordinary.damage.min * .6, 1.0);
+	EXPECT_EQ(protectedDamage.damageBeforeDefense.min, ordinary.damageBeforeDefense.min);
+	EXPECT_EQ(protectedDamage.damageBeforeDefense.max, ordinary.damageBeforeDefense.max);
+	EXPECT_EQ(target->getDefense(true), defense);
+	EXPECT_EQ(source->getShootingRangeDistance(), range);
+	EXPECT_EQ(source->getRangedFullDamageDistance(), fullDamage);
 }
-TEST_F(NewHorizonsSequenceProtectionTest, NativePlayerCannotReadHiddenUfretinPolicyButOwnAndAuthorityCan)
+
+TEST_F(NewHorizonsSequenceProtectionTest, UfretinHasNoAdditionalHitReductionIncludingRepeatedCollateral)
 {
-	prepare(false);
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
+	protectTarget();
+	for(const bool secondary : {false, true})
+	{
+		BattleAttackInfo hit(source, target, 0, false); hit.secondaryAttack = secondary;
+		const auto ordinary = battle()->calculateDmgRange(hit);
+		for(const int index : {1, 2, 5})
+		{
+			hit.ordinaryAttackIndex = index;
+			const auto repeated = battle()->calculateDmgRange(hit);
+			EXPECT_EQ(repeated.damage.min, ordinary.damage.min);
+			EXPECT_EQ(repeated.damage.max, ordinary.damage.max);
+			EXPECT_EQ(repeated.damageBeforeDefense.min, ordinary.damageBeforeDefense.min);
+			EXPECT_EQ(repeated.damageBeforeDefense.max, ordinary.damageBeforeDefense.max);
+		}
+	}
+}
+
+TEST_F(NewHorizonsSequenceProtectionTest, RunicNativeShareTracksEffectiveFormWithoutAddingResistance)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*target), 40);
+	EXPECT_EQ(target->magicResistance(), 40);
+	auto * dwarf = addStack(BattleSide::DEFENDER, creatureByName("core:dwarf"), BattleHex(7, 6), 10);
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*dwarf), 20);
+	EXPECT_EQ(dwarf->magicResistance(), 20);
+	const auto runicRows = [&]()
+	{
+		return std::ranges::count_if(defenderSideHero->getExportedBonusList(), [this](const auto & bonus)
+		{
+			return bonus && bonus->type == BonusType::NATIVE_RESISTANCE_REFLECTION
+				&& bonus->source == BonusSource::HERO_SPECIAL && bonus->sid == BonusSourceID(defenderSideHero->getHeroTypeID())
+				&& bonus->stacking == "nativeResistanceReflection";
+		});
+	};
+	EXPECT_EQ(runicRows(), 2);
+	for(int refresh = 0; refresh < 2; ++refresh)
+	{
+		defenderSideHero->initHero(*gameHandler->randomizer);
+		EXPECT_EQ(runicRows(), 2);
+		EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*dwarf), 20);
+		EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*target), 40);
+	}
+	target->beginBattleForm(creatureByName("core:pikeman"), 2);
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*target), 0);
+	EXPECT_EQ(target->magicResistance(), 0);
+	target->endBattleForm();
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*target), 40);
+	auto * borrowed = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(8, 6), 10);
+	borrowed->beginBattleForm(creatureByName("core:dwarf"), 2);
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*borrowed), 20);
+	borrowed->endBattleForm();
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*borrowed), 0);
+}
+
+TEST_F(NewHorizonsSequenceProtectionTest, CurrentNumericRunicEffectIsPublicWhileItsHeroPolicyRemainsHidden)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
 	const CPlayerBattleCallback hidden(battle(), PlayerColor(0));
 	const CPlayerBattleCallback known(battle(), PlayerColor(1));
-	BattleAttackInfo hit(source, target, 0, false); hit.ordinaryAttackIndex = 1;
 	ASSERT_EQ(hidden.battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
 	ASSERT_EQ(known.battleGetVisibleHeroPolicy(BattleSide::DEFENDER).legacyHero(), defenderSideHero);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(hidden, hit), 0);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(known, hit), 25);
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*battle(), hit), 25);
-	hit.ordinaryAttackIndex = 0;
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(known, hit), 0);
-}
-TEST_F(NewHorizonsSequenceProtectionTest, VisibilityPolicyUsesEffectiveOwnerRatherThanOriginalSide)
-{
-	prepare(false);
-	const CPlayerBattleCallback ufretinView(battle(), PlayerColor(1));
-	auto * borrowed = addStack(BattleSide::ATTACKER, creatureByName("core:dwarf"), BattleHex(4, 5), 10);
-	borrowed->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
-	BattleAttackInfo hit(source, borrowed, 0, false); hit.ordinaryAttackIndex = 1;
-	ASSERT_EQ(borrowed->unitSide(), BattleSide::ATTACKER);
-	ASSERT_EQ(ufretinView.battleGetOwner(borrowed), PlayerColor(1));
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(ufretinView, hit), 25);
-	const CPlayerBattleCallback hidden(battle(), PlayerColor(0));
-	EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(hidden, hit), 0);
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*hidden.battleGetUnitByID(target->unitId())), 40);
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*known.battleGetUnitByID(target->unitId())), 40);
+	SetStackEffect control; control.battleID = BattleID(0);
+	control.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID())});
+	gameHandler->sendAndApply(control);
+	ASSERT_EQ(battle()->battleGetOwner(target), PlayerColor(0));
+	EXPECT_EQ(target->unitSide(), BattleSide::DEFENDER);
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*target), 40);
+	auto * foreign = addStack(BattleSide::ATTACKER, creatureByName("core:dwarf"), BattleHex(4, 6), 10);
+	EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*foreign), 0);
 }
 #if ENABLE_BATTLE_AI
-TEST_F(NewHorizonsSequenceProtectionTest, ProjectionCannotReadHiddenYogPolicyButKnownAndAuthorityCan)
+TEST_F(NewHorizonsSequenceProtectionTest, UnknownRunicProjectionKeepsNumericNativeShareWithoutPromotingHeroKnowledge)
 {
-	prepare(true);
+	ASSERT_NO_FATAL_FAILURE(prepare(false));
 	SequenceEnvironment env(gameState());
-	const std::shared_ptr<CBattleInfoCallback> authority(gameState(), battle());
-	const std::vector<std::pair<std::shared_ptr<CBattleInfoCallback>, int>> views{
-		{std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1)), 0},
-		{std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)), 25}, {authority, 25}};
-	for(const auto & [view, expected] : views)
+	const auto view = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto parent = std::make_shared<HypotheticBattle>(&env, view);
+	auto child = std::make_shared<HypotheticBattle>(&env, parent);
+	auto sibling = std::make_shared<HypotheticBattle>(&env, parent);
+	const auto before = target->save();
+	for(const auto & branch : {parent, child, sibling})
 	{
-		const auto knowledge = expected == 0 ? VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN
-			: VisibleHeroPolicy::Knowledge::VISIBLE_HERO;
-		ASSERT_EQ(view->battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), knowledge);
-		auto branch = std::make_shared<HypotheticBattle>(&env, view);
-		const auto actor = branch->getForUpdate(source->unitId());
+		ASSERT_EQ(branch->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
 		const auto victim = branch->getForUpdate(target->unitId());
-		ASSERT_EQ(branch->battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), knowledge);
-		EXPECT_EQ(newHorizonsSequenceProtection::cyclopeanBreachPercent(*branch,
-			BattleAttackInfo(actor.get(), victim.get(), 0, true)), expected);
+		EXPECT_EQ(newHorizonsRunicReflection::nativeChance(*victim), 40);
+		EXPECT_EQ(victim->magicResistance(), 40);
 	}
-}
-TEST_F(NewHorizonsSequenceProtectionTest, ProjectionCannotReadHiddenUfretinPolicyButKnownAndAuthorityCan)
-{
-	prepare(false);
-	SequenceEnvironment env(gameState());
-	const std::shared_ptr<CBattleInfoCallback> authority(gameState(), battle());
-	const std::vector<std::pair<std::shared_ptr<CBattleInfoCallback>, int>> views{
-		{std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0)), 0},
-		{std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1)), 25}, {authority, 25}};
-	for(const auto & [view, expected] : views)
-	{
-		const auto knowledge = expected == 0 ? VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN
-			: VisibleHeroPolicy::Knowledge::VISIBLE_HERO;
-		ASSERT_EQ(view->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), knowledge);
-		auto branch = std::make_shared<HypotheticBattle>(&env, view);
-		const auto actor = branch->getForUpdate(source->unitId());
-		const auto victim = branch->getForUpdate(target->unitId());
-		BattleAttackInfo hit(actor.get(), victim.get(), 0, false); hit.ordinaryAttackIndex = 1;
-		ASSERT_EQ(branch->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), knowledge);
-		EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*branch, hit), expected);
-		hit.ordinaryAttackIndex = 0;
-		EXPECT_EQ(newHorizonsSequenceProtection::runicEndurancePercent(*branch, hit), 0);
-	}
+	EXPECT_EQ(target->save(), before);
 }
 #endif

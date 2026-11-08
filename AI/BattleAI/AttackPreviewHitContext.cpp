@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "SpecialtyProcValue.h"
 #include "GnollHarriersProjection.h"
 #include "../../lib/battle/NewHorizonsGnollHarriers.h"
 #include "DamageCacheMarks.h"
@@ -22,6 +23,8 @@
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 
@@ -44,7 +47,8 @@ AttackPreviewHitContext::PrimaryStatusAdmission AttackPreviewHitContext::primary
 			attackInfo.physicalDamage, false);
 	const bool projectsSoulHarvest = newHorizonsSoulHarvest::qualifies(state, *attacker, *defender, attackInfo.physicalDamage)
 		|| newHorizonsSoulHarvest::qualifies(state, *defender, *attacker, attackInfo.physicalDamage);
-	const bool projectsGaze = paralyzingGazeAI::needsProjection(state, attackInfo) || newHorizonsOrdinaryStrike::needsProjection(state, attackInfo)
+	const bool projectsGaze = specialtyProcAI::Opportunities::requiresPreview(state, attackInfo)
+		|| paralyzingGazeAI::needsProjection(state, attackInfo) || newHorizonsOrdinaryStrike::needsProjection(state, attackInfo)
 		|| newHorizonsChargeSpecialties::requiresChargeMovementPreview(state, *attacker, *defender)
 		|| PhysicalStrikeProjection::needsProjection(state, attacker, defender)
 		|| newHorizonsGnollHarriers::trackingRequired(state);
@@ -403,7 +407,10 @@ void AttackPreviewHitContext::prepareVictimStrike(BattleAttackInfo & attack,
 		attack.chargeDistance = 0;
 	if(input.index > 0 || attack.secondaryAttack || attack.retaliation
 		|| attack.bracePreemptive || attack.preemptiveDamagePercent != 0 || attack.cleaveDamagePercent != 0)
+	{
 		attack.voluntaryFlightDistance = 0;
+		attack.voluntaryTravelDistance = 0;
+	}
 	if(input.strike.perfectMoment || input.strike.perfectFortune)
 	{
 		attack.luckyStrike = !attack.secondaryAttack || state.getBattle()->getLuckRollRules().affectsAllTargets;
@@ -412,4 +419,32 @@ void AttackPreviewHitContext::prepareVictimStrike(BattleAttackInfo & attack,
 	attack.defenderPos = attack.defender->getPosition();
 	if(!attack.secondaryAttack)
 		input.strike.lanceFormation = newHorizonsChargeSpecialties::lanceFormation(state, attack);
+}
+
+void AttackPreviewHitContext::prepareRetaliationVictim(BattleAttackInfo & counter,
+	const BattleAttackInfo & primary)
+{
+	counter.retaliation = true;
+	counter.secondaryAttack = counter.defender->unitId() != primary.attacker->unitId();
+	counter.defenderVoluntaryTravelDistance = counter.secondaryAttack ? 0 : primary.voluntaryTravelDistance;
+}
+
+AttackPreviewHitContext::CounterAdmission AttackPreviewHitContext::captureCounterAdmission(
+	const CBattleInfoCallback & state, const battle::Unit * actor, const battle::Unit * target, bool physical)
+{
+	return {newHorizonsSerpentsEmbrace::qualifiesAttack(state, actor, target, false, physical, false),
+		newHorizonsManaLeeches::entitlement(state, actor, target, false, physical, false)};
+}
+AttackPreviewHitContext::CounterVictimAdmission AttackPreviewHitContext::captureCounterVictim(
+	const CBattleInfoCallback & state, const battle::Unit * actor, const battle::Unit & target,
+	bool primary, bool physical, int round)
+{
+	CounterVictimAdmission result;
+	if(!actor) return result;
+	result.soulHarvest = newHorizonsSoulHarvest::qualifies(state, *actor, target, physical);
+	result.willRebirth = result.soulHarvest && target.valOfBonuses(BonusType::REBIRTH) > 0 && target.canCast();
+	result.countBefore = result.soulHarvest ? target.getCount() : 0;
+	result.freezes = primary && newHorizonsFrozen::isFreezingTouchAttacker(*actor, state.getBattle()->getMagicRules())
+		&& newHorizonsFrozen::canApply(*target.acquireState(), round);
+	return result;
 }

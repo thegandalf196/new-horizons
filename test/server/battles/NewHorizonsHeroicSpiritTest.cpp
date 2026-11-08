@@ -46,6 +46,7 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true;
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires New Horizons";
 	}
@@ -102,6 +103,7 @@ protected:
 	void prepare(bool selected = true)
 	{
 		startGame();
+		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 		if(selected)
 		{
 			select("new-horizons:discipline.steadfast", MasteryLevel::BASIC);
@@ -157,29 +159,32 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsHeroicSpiritTest, AcceptedFlexibleOrderGrantsOneOrderButBonusOrderCannotChain)
+TEST_F(NewHorizonsHeroicSpiritTest, AcceptedOrderSnapshotsMoraleEfficiencyWithoutAnExtraActionOrRandomDraw)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
-	const auto round = battle()->getRound();
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(4));
+	CMemorySerializer before;
+	before.oser & *gameHandler->randomizer;
+	const auto randomState = before.extractBuffer();
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	const auto & granted = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
-	EXPECT_EQ(granted.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 1, 0}));
-	ASSERT_EQ(granted.heroicSpiritProcessedReceipts.size(), 1u);
-	const auto processed = granted.heroicSpiritProcessedReceipts;
-	const auto bonus = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
-	ASSERT_TRUE(bonus);
-	EXPECT_EQ(bonus->source, HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT);
-	EXPECT_FALSE(granted.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, round));
-	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
-	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(round),
-		(HeroActionAllowanceState::Counts{}));
-	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).heroicSpiritProcessedReceipts, processed);
-	EXPECT_FALSE(actor->heroicSpiritRetaliation);
-	EXPECT_EQ(actor->counterAttacks.total(), 1);
+	const auto order = battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE);
+	ASSERT_TRUE(order);
+	EXPECT_EQ(order->heroicSpiritEfficiencyBonusPercent, 20);
+	EXPECT_FALSE(order->heroMorale);
+	EXPECT_EQ(order->heroMoraleActionGrantId, 0u);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, resources.remaining - 1);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1), (HeroActionAllowanceState::Counts{}));
+	EXPECT_TRUE(battle()->getHeroActionAllowances(BattleSide::ATTACKER).heroicSpiritProcessedReceipts.empty());
+	EXPECT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
+	CMemorySerializer after;
+	after.oser & *gameHandler->randomizer;
+	EXPECT_EQ(after.extractBuffer(), randomState);
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(1));
+	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE), order);
 }
 
-TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionConsumesSavedOrderOnlyGrantWithoutRecursion)
+TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionKeepsSpentCommandWithoutRetiredGrant)
 {
 	selectLuckyDay = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -196,12 +201,13 @@ TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionConsumesSa
 	ASSERT_TRUE(sourceOrder);
 	ASSERT_TRUE(sourceOrder->heroLuck);
 	ASSERT_TRUE(sourceOrder->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay));
-	ASSERT_TRUE(sourceOrder->heroMorale);
-	ASSERT_TRUE(sourceOrder->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit));
+	EXPECT_FALSE(sourceOrder->heroMorale);
+	EXPECT_EQ(sourceOrder->heroicSpiritEfficiencyBonusPercent, 15);
 	const auto sourceLedger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
 	const auto round = battle()->getRound();
-	ASSERT_EQ(sourceLedger.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 1, 0}));
-	ASSERT_EQ(sourceLedger.heroicSpiritProcessedReceipts.size(), 1u);
+	ASSERT_EQ(sourceLedger.remainingCounts(round), (HeroActionAllowanceState::Counts{}));
+	ASSERT_TRUE(sourceLedger.heroicSpiritProcessedReceipts.empty());
+	const auto sourceResources = battle()->getCommandResources(BattleSide::ATTACKER);
 	const auto actorId = actor->unitId();
 	const auto enemyId = enemy->unitId();
 	const auto actorState = actor->acquireState()->save();
@@ -259,7 +265,7 @@ TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionConsumesSa
 	ASSERT_EQ(restoredHero->luckVal(), attackerSideHero->luckVal());
 	ASSERT_EQ(restoredHero->moraleVal(), attackerSideHero->moraleVal());
 	ASSERT_TRUE(newHorizonsHeroLuck::hasLuckyDay(restoredHero));
-	ASSERT_TRUE(newHorizonsHeroicSpirit::hasPerk(restoredHero));
+	ASSERT_TRUE(restoredHero->hasActivePerk(newHorizonsHeroicSpirit::SKILL, newHorizonsHeroicSpirit::PERK));
 	ASSERT_EQ(restoredBattle->getRound(), round);
 	ASSERT_NE(restoredBattle->battleActiveUnit(), nullptr);
 	ASSERT_EQ(restoredBattle->battleActiveUnit()->unitId(), actorId);
@@ -268,6 +274,7 @@ TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionConsumesSa
 	EXPECT_EQ(restoredEnemy->acquireState()->save(), enemyState);
 	EXPECT_EQ(restoredBattle->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE), sourceOrder);
 	EXPECT_EQ(restoredBattle->getHeroActionAllowances(BattleSide::ATTACKER), sourceLedger);
+	EXPECT_EQ(restoredBattle->getCommandResources(BattleSide::ATTACKER), sourceResources);
 	// BattleStart intentionally restores INITIAL pools; no paid-mana resume claim.
 	EXPECT_EQ(restoredHero->getNormalSpellPoints(), initialNormal);
 	EXPECT_EQ(restoredHero->getBufferSpellPoints(), initialBuffer);
@@ -288,30 +295,13 @@ TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionConsumesSa
 	EXPECT_EQ(restoredBattle->getHeroActionAllowances(BattleSide::ATTACKER), sourceLedger);
 	EXPECT_EQ(restoredActor->acquireState()->save(), actorState);
 
-	CMemorySerializer expectedWire(sourceRandomizer);
-	GameRandomizer expected(*replica);
-	expectedWire.iser & expected;
-	auto expectedLuck = expected.rollHeroLuck(restoredHero->id, restoredHero->luckVal());
-	ASSERT_TRUE(expectedLuck);
-	expectedLuck->mark(newHorizonsHeroLuck::Proc::LuckyDay);
-	ASSERT_TRUE(restoredBattle->battleCanBeginHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
-	ASSERT_TRUE(restoredHandler->battles->makePlayerBattleAction(restoredId, PlayerColor(0),
-		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE)));
-	EXPECT_EQ(savedRandomizer(*restoredHandler->randomizer), savedRandomizer(expected));
-	const auto continued = restoredBattle->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE);
-	ASSERT_TRUE(continued);
-	EXPECT_EQ(continued->heroLuck, expectedLuck);
-	EXPECT_FALSE(continued->heroMorale);
-	EXPECT_EQ(continued->heroMoraleActionGrantId, 0u);
-	EXPECT_EQ(restoredBattle->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE), sourceOrder);
-	EXPECT_EQ(restoredBattle->getHeroOrderStates(BattleSide::ATTACKER).size(), 2u);
-	const auto & spent = restoredBattle->getHeroActionAllowances(BattleSide::ATTACKER);
-	EXPECT_EQ(spent.remainingCounts(round), (HeroActionAllowanceState::Counts{}));
-	EXPECT_EQ(spent.heroicSpiritProcessedReceipts, sourceLedger.heroicSpiritProcessedReceipts);
-	EXPECT_EQ(spent.nextGrantId, sourceLedger.nextGrantId);
+	EXPECT_FALSE(restoredBattle->battleCanBeginHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
 	EXPECT_FALSE(restoredHandler->battles->makePlayerBattleAction(restoredId, PlayerColor(0),
-		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
-	EXPECT_EQ(savedRandomizer(*restoredHandler->randomizer), savedRandomizer(expected));
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE)));
+	EXPECT_EQ(savedRandomizer(*restoredHandler->randomizer), sourceRandomizer);
+	EXPECT_EQ(restoredBattle->getHeroOrderStates(BattleSide::ATTACKER).size(), 1u);
+	EXPECT_EQ(restoredBattle->getHeroActionAllowances(BattleSide::ATTACKER), sourceLedger);
+	EXPECT_EQ(restoredBattle->getCommandResources(BattleSide::ATTACKER), sourceResources);
 	EXPECT_EQ(battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE), sourceOrder);
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), sourceLedger);
 	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), sourceRandomizer);
@@ -319,52 +309,37 @@ TEST_F(NewHorizonsHeroicSpiritTest, ComposedBattleAndRngReconstructionConsumesSa
 	EXPECT_EQ(enemy->acquireState()->save(), enemyState);
 }
 
-TEST_F(NewHorizonsHeroicSpiritTest, RequiredDoubleCommandRunsBeforeHeroicBonusAndNeitherBonusChainsMorale)
+TEST_F(NewHorizonsHeroicSpiritTest, MasterCommanderAndHeroicSpiritCannotChainAdditionalOrders)
 {
 	selectDoubleCommand = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_TRUE(newHorizonsHeroicSpirit::hasPerk(attackerSideHero));
-	ASSERT_TRUE(heroCommands::hasDoubleCommand(attackerSideHero));
-	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
-	const auto round = battle()->getRound();
+	ASSERT_NO_FATAL_FAILURE(setHeroMorale(6));
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
-	ASSERT_EQ(ledger.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 2, 0}));
-	ASSERT_EQ(ledger.heroicSpiritProcessedReceipts.size(), 1u);
-	const auto processed = ledger.heroicSpiritProcessedReceipts;
-	ASSERT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	const auto required = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
-	ASSERT_TRUE(required);
-	EXPECT_EQ(required->source, HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND);
-	ASSERT_TRUE(issue(HeroCommand::HOLD_THE_LINE));
+	const auto order = battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE);
+	ASSERT_TRUE(order);
+	EXPECT_EQ(order->heroicSpiritEfficiencyBonusPercent, 30);
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(battle()->getDoubleCommandState(BattleSide::ATTACKER).used);
-	EXPECT_EQ(ledger.remainingCounts(round), (HeroActionAllowanceState::Counts{0, 1, 0}));
-	EXPECT_EQ(ledger.heroicSpiritProcessedReceipts, processed);
-	const auto moraleBonus = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
-	ASSERT_TRUE(moraleBonus);
-	EXPECT_EQ(moraleBonus->source, HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT);
-	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
-	EXPECT_EQ(ledger.remainingCounts(round), (HeroActionAllowanceState::Counts{}));
-	EXPECT_EQ(ledger.heroicSpiritProcessedReceipts, processed);
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	const auto & orders = battle()->getHeroOrderStates(BattleSide::ATTACKER);
-	ASSERT_EQ(orders.size(), 3u);
-	EXPECT_EQ(orders[0].command, HeroCommand::CHARGE);
-	EXPECT_EQ(orders[1].command, HeroCommand::HOLD_THE_LINE);
-	EXPECT_EQ(orders[2].command, HeroCommand::RIPOSTE);
+	EXPECT_FALSE(battle()->getDoubleCommandState(BattleSide::ATTACKER).used);
+	EXPECT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_FALSE(issue(HeroCommand::RIPOSTE));
+	EXPECT_EQ(battle()->getHeroOrderStates(BattleSide::ATTACKER).size(), 1u);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, resources.remaining - 1);
+	EXPECT_TRUE(battle()->getHeroActionAllowances(BattleSide::ATTACKER).heroicSpiritProcessedReceipts.empty());
 }
 
-TEST_F(NewHorizonsHeroicSpiritTest, UnusedMoraleOrderAndProcessedReceiptExpireAtNextRound)
+TEST_F(NewHorizonsHeroicSpiritTest, NextRoundRenewsOnlyTheOrdinaryActionWithoutRefillingCommand)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	ASSERT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound()).orderActions, 1u);
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1).orderActions, 0u);
 	advanceRound();
 	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
 	EXPECT_EQ(ledger.remainingCounts(battle()->getRound()), (HeroActionAllowanceState::Counts{1, 0, 0}));
 	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), resources);
 }
 
 TEST_F(NewHorizonsHeroicSpiritTest, ZeroHeroMoraleNeverGrantsAnOrder)
@@ -398,15 +373,19 @@ TEST_F(NewHorizonsHeroicSpiritTest, PositiveHeroMoraleWithoutPerkNeverGrantsAnOr
 	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
 }
 
-TEST_F(NewHorizonsHeroicSpiritTest, DisabledMoraleChanceRecordsResolutionWithoutGrant)
+TEST_F(NewHorizonsHeroicSpiritTest, ZeroMoraleRollChanceDoesNotDisableDeterministicCommandEfficiency)
 {
 	chanceSucceeds = false;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(setHeroMorale(3));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto order = battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE);
+	ASSERT_TRUE(order);
+	EXPECT_EQ(order->heroicSpiritEfficiencyBonusPercent, 15);
+	EXPECT_FALSE(order->heroMorale);
 	const auto & ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
 	EXPECT_EQ(ledger.remainingCounts(battle()->getRound()), (HeroActionAllowanceState::Counts{}));
-	EXPECT_EQ(ledger.heroicSpiritProcessedReceipts.size(), 1u);
+	EXPECT_TRUE(ledger.heroicSpiritProcessedReceipts.empty());
 }
 
 TEST_F(NewHorizonsHeroicSpiritTest, ActualCreatureMoraleStillOccursWithoutRetiredRetaliationGrant)

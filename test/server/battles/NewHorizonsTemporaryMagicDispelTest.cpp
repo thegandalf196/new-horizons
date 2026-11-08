@@ -8,8 +8,7 @@
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
-#include "../../../luascript/StdInc.h"
-#include "../../../luascript/api/library/Bonus.h"
+#include "../../../lib/spells/effects/native/StatusHelpers.h"
 
 namespace
 {
@@ -213,19 +212,19 @@ TEST_F(NewHorizonsTemporaryMagicDispelTest, AllTemporaryLifetimesAreRemovedButPe
 	}
 }
 
-TEST(NewHorizonsTemporaryMagicDispelRulesTest, TemporaryLifetimeProxyIncludesActivationFlagsAndRejectsPermanentMixtures)
+TEST(NewHorizonsTemporaryMagicDispelRulesTest, TemporaryLifetimeIncludesActivationFlagsAndRejectsPermanentMixtures)
 {
 	Bonus effect;
 	for(unsigned bit = 1; bit < BonusDuration::Size; ++bit)
 	{
 		effect.duration = static_cast<BonusDuration::Type>(1u << bit);
-		EXPECT_TRUE(scripting::api::BonusProxy::isTemporary(effect));
+		EXPECT_TRUE(spells::effects::native::status::isTemporary(effect));
 	}
 	for(const auto duration : {BonusDuration::Type(0), BonusDuration::Type(BonusDuration::PERMANENT),
 		BonusDuration::Type(BonusDuration::PERMANENT | BonusDuration::N_TURNS)})
 	{
 		effect.duration = duration;
-		EXPECT_FALSE(scripting::api::BonusProxy::isTemporary(effect));
+		EXPECT_FALSE(spells::effects::native::status::isTemporary(effect));
 	}
 }
 

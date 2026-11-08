@@ -13,14 +13,27 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
-void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender, SpellID onlySpell)
+#include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
+#include "../../lib/battle/BattleInfo.h"
+#include "../../lib/gameState/CGameState.h"
+void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender, SpellID onlySpell, bool specialtyStrike)
 {
+	const auto nativeBattleId = battle.getBattle()->getBattleID();
+	const auto * nativeOwner = gameHandler->gameState().getBattle(nativeBattleId);
+	const auto sourceId = attacker->unitId();
+	const auto targetId = defender->unitId();
 	ObjectInstanceID ownerArmy = battle.getBattle()->getSideArmy(attacker->unitSide())->id;
 
-	if(attacker->hasBonusOfType(attackMode))
+	auto additional = attackMode == BonusType::SPELL_AFTER_ATTACK
+		? newHorizonsSpecialtyProcs::additionalAttackSpells(battle, *attacker, ranged) : std::vector<SpellID>{};
+	// Broghild grants the EXISTING native Poison ability, including its trigger
+	// controller. The two new strike procs retain primary-strike admission.
+	if(!specialtyStrike) std::erase_if(additional, [](SpellID spell) { return spell != SpellID::POISON; });
+	if(attacker->hasBonusOfType(attackMode) || !additional.empty())
 	{
 		TConstBonusListPtr spells = attacker->getBonuses(Selector::type()(attackMode));
 		std::set<SpellID> spellsToCast = getSpellsForAttackCasting(spells, defender);
+		spellsToCast.insert(additional.begin(), additional.end());
 
 		for(SpellID spellID : spellsToCast)
 		{
@@ -34,8 +47,11 @@ void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bo
 			}
 			const auto ability = attackAbilityQueries::parameters(*attacker, attackMode, spellID, ranged);
 			const int32_t spellLevel = ability.spellLevel;
-			const int chance = ability.chance;
+			const auto specialtyChance = specialtyStrike || (attackMode == BonusType::SPELL_AFTER_ATTACK && spellID == SpellID::POISON)
+				? newHorizonsSpecialtyProcs::attackSpellChance(battle, *attacker, spellID, ranged) : std::nullopt;
+			const int chance = specialtyChance.value_or(ability.chance);
 			castMe = ability.castMe;
+			if(specialtyChance) castMe = true;
 
 			const CSpell * spell = SpellID(spellID).toSpell();
 			spells::AbilityCaster caster(attacker, spellLevel);
@@ -78,6 +94,11 @@ void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bo
 			if(castMe)
 			{
 				parameters.cast(gameHandler->spellcastEnvironment(), target);
+				const auto * current = gameHandler->gameState().getBattle(nativeBattleId);
+				if(!current || current != nativeOwner) return;
+				attacker = current->battleGetStackByID(sourceId, false);
+				defender = current->battleGetStackByID(targetId, false);
+				if(!attacker || !defender) return;
 			}
 		}
 	}
@@ -90,11 +111,11 @@ std::set<SpellID> BattleActionProcessor::getSpellsForAttackCasting(const TConstB
 
 /// Legacy spell-casting abilities only - combat event reactions run from makeAttack instead, and
 /// deliberately without these gates.
-void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload)
+void BattleActionProcessor::handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload, bool specialtyStrike)
 {
 	if(!attacker->alive()) // can be already dead, e.g. from retaliation
 		return;
 
 	if(defender->alive())
-		attackCasting(battle, payload.ranged, BonusType::SPELL_AFTER_ATTACK, attacker, defender);
+		attackCasting(battle, payload.ranged, BonusType::SPELL_AFTER_ATTACK, attacker, defender, SpellID(), specialtyStrike);
 }

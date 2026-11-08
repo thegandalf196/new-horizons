@@ -28,6 +28,8 @@ struct DLL_LINKAGE BattleAttackInfo
 	int chargeDistance = 0;
 	/// Actual voluntary flight for this exact first blow; unknown, forced or teleported travel is zero.
 	/// Simulation and detached callers must supply validated movement facts, never infer this from distance.
+	int voluntaryTravelDistance = 0; // Validated voluntary path; never inferred from charge/geometry.
+	int defenderVoluntaryTravelDistance = 0; // Matching ordinary retaliation only.
 	int voluntaryFlightDistance = 0; // Ephemeral; not serialized or carried by reverse().
 	bool shooting      = false;
 	/// Whether this is physical creature damage. Spell-like attacks are marked

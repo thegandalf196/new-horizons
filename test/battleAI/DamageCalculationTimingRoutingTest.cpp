@@ -8,6 +8,9 @@
 #include "../../lib/battle/DamageCalculationTiming.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/CRandomGenerator.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/combatScripts/NativeDamageCalculator.h"
+#include "../../lib/scripting/ScriptHandler.h"
 
 namespace
 {
@@ -17,6 +20,7 @@ protected:
 	void check(int luck)
 	{
 		ASSERT_NO_FATAL_FAILURE(prepare());
+		ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(LIBRARY->scriptTypes()->getDamageCalculator()), nullptr);
 		const auto delta = luck - child->battleGetAttackLuck(incoming, braced, false);
 		incoming->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::LUCK, BonusSource::OTHER, delta, BonusSourceID()));
@@ -47,8 +51,15 @@ protected:
 		EXPECT_EQ(sample.unluckySecondCalls, luck < 0 ? 1u : 0u);
 		const auto calculations = luck == 0 ? 1u : 2u;
 		EXPECT_EQ(sample.nativePayload.calls, calculations);
-		EXPECT_EQ(sample.bonusPreparation.calls, calculations);
-		EXPECT_EQ(sample.luaCall.calls, calculations);
+		EXPECT_EQ(sample.nativeAttackContext.calls, calculations);
+		EXPECT_EQ(sample.nativePhysicalModifiers.calls, calculations);
+		EXPECT_EQ(sample.nativeHeroOrders.calls, calculations);
+		EXPECT_EQ(sample.nativeFinalization.calls, calculations);
+		// The production calculator performs no optional Lua-oracle bridge work.
+		EXPECT_EQ(sample.bonusPreparation.calls, 0u);
+		EXPECT_EQ(sample.bonusPreparation.nanoseconds, 0u);
+		EXPECT_EQ(sample.luaCall.calls, 0u);
+		EXPECT_EQ(sample.luaCall.nanoseconds, 0u);
 		EXPECT_EQ(sample.suppressedStages, 0u);
 		EXPECT_EQ(actor->save(), actorBefore);
 		EXPECT_EQ(target->save(), targetBefore);

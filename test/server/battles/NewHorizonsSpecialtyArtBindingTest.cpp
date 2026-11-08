@@ -16,6 +16,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include <array>
 #include <tuple>
+#include <string_view>
 
 namespace
 {
@@ -56,6 +57,7 @@ protected:
 	bool historicalCreatureLineCapture = false;
 	void mapLoaded(CMap * loaded) override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		if(historicalCreatureLineCapture)
 		{
@@ -205,9 +207,10 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, CreatureArtRequiresMatchingConvertedT
 		development, magic, ballista).artwork);
 }
 
-TEST_F(NewHorizonsSpecialtyArtBindingTest, PasisAndChristianCapturedStartsUseTheirNativePairsWithoutMutation)
+class CapturedOrdinaryArtPairTest : public NewHorizonsSpecialtyArtBindingTest, public testing::WithParamInterface<bool> {};
+TEST_P(CapturedOrdinaryArtPairTest, CurrentAndAuthoredOmissionKeepTheirSelectedNativePairsWithoutMutation)
 {
-	historicalCreatureLineCapture = true;
+	historicalCreatureLineCapture = GetParam();
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
 		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:pasis")), PlayerColor(0))
@@ -216,9 +219,9 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, PasisAndChristianCapturedStartsUseThe
 	startWithMap(std::move(builder));
 	for(const auto & [position, target, artwork] : std::array{
 		std::tuple{int3(5, 5, 0), CreatureID(CreatureID::decode("new-horizons:wisp")),
-			"newHorizons/heroSpecialties/PasisWispLine"},
+			GetParam() ? "newHorizons/heroSpecialties/PasisWispLine" : "newHorizons/heroSpecialties/PasisPrismaticScreen"},
 		std::tuple{int3(6, 5, 0), CreatureID(CreatureID::BALLISTA),
-			"newHorizons/heroSpecialties/ChristianBallistaLine"}})
+			GetParam() ? "newHorizons/heroSpecialties/ChristianBallistaLine" : "newHorizons/heroSpecialties/ChristianRangefinder"}})
 	{
 		const auto * hero = findHeroAt(position);
 		ASSERT_NE(hero, nullptr);
@@ -236,6 +239,8 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, PasisAndChristianCapturedStartsUseThe
 		EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), beforeBonuses);
 	}
 }
+
+INSTANTIATE_TEST_SUITE_P(CurrentAndExplicitOmission, CapturedOrdinaryArtPairTest, testing::Bool());
 
 TEST_F(NewHorizonsSpecialtyArtBindingTest, AndraAndThorgrimNeedCapturedMagicRules)
 {
@@ -358,6 +363,61 @@ constexpr std::array<ResolvedArtCase, 95> resolvedArtCases = {{
 	{"core:labetha", "nonDamageSpellSpecialties", "new-horizons:guardianSpirit", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Spell, "LabethaGuardianSpirit"},
 }};
 
+// Selected ordinary definitions are pinned independently of the live capture
+// and presentation helpers. The generic95 registration cases above stay intact.
+constexpr std::array<ResolvedArtCase, 44> approvedOrdinaryArtCases = {{
+	{"core:gurnisson", "ordinaryCreatureSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GurnissonHeavyBattery"},
+	{"core:kalt", "ordinaryCreatureSpecialties", "core:waterElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "KaltTidalRenewal"},
+	{"core:valeska", "ordinaryCreatureSpecialties", "core:archer", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ValeskaCloseQuartersDrill"},
+	{"core:sorsha", "ordinaryCreatureSpecialties", "core:swordsman", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "SorshaShieldAndSword"},
+	{"core:tyris", "ordinaryCreatureSpecialties", "core:cavalier", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TyrisLanceFormation"},
+	{"core:ufretin", "ordinaryCreatureSpecialties", "core:dwarf", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "UfretinRunicEndurance"},
+	{"core:ryland", "ordinaryCreatureSpecialties", "core:dendroidGuard", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "RylandLivingBastion"},
+	{"core:clancy", "ordinaryCreatureSpecialties", "core:unicorn", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ClancyUnicornSanctuary"},
+	{"core:aeris", "ordinaryCreatureSpecialties", "core:pegasus", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "AerisWingbeat"},
+	{"core:ingham", "ordinaryCreatureSpecialties", "core:monk", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "InghamConsecratedTarget"},
+	{"core:fiona", "ordinaryCreatureSpecialties", "core:hellHound", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "FionaPackPursuit"},
+	{"core:calh", "ordinaryCreatureSpecialties", "core:gog", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "CalhScorchingImpact"},
+	{"core:nymus", "ordinaryCreatureSpecialties", "core:pitFiend", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "NymusCruelOverseer"},
+	{"core:straker", "ordinaryCreatureSpecialties", "core:walkingDead", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "StrakerSepulchralGrip"},
+	{"core:gretchin", "ordinaryCreatureSpecialties", "core:goblin", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GretchinMobPressure"},
+	{"core:shiva", "ordinaryCreatureSpecialties", "core:roc", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ShivaStormWings"},
+	{"core:tyraxor", "ordinaryCreatureSpecialties", "core:goblinWolfRider", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TyraxorRidersExploit"},
+	{"core:vokial", "ordinaryCreatureSpecialties", "core:vampire", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "VokialBloodScent"},
+	{"core:krellion", "ordinaryCreatureSpecialties", "core:ogre", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "KrellionOgreBulwark"},
+	{"core:drakon", "ordinaryCreatureSpecialties", "core:gnoll", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "DrakonGnollHarriers"},
+	{"core:broghild", "ordinaryCreatureSpecialties", "core:wyvern", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "BroghildWyvernsPrey"},
+	{"core:alkin", "ordinaryCreatureSpecialties", "core:gorgon", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "AlkinIronHide"},
+	{"core:korbac", "ordinaryCreatureSpecialties", "core:serpentFly", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "KorbacEvasiveFlight"},
+	{"core:wystan", "ordinaryCreatureSpecialties", "core:lizardman", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "WystanMarshSharpshooter"},
+	{"core:moandor", "ordinaryCreatureSpecialties", "core:lich", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "MoandorGraveDust"},
+	{"core:galthran", "ordinaryCreatureSpecialties", "core:skeleton", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "GalthranBoneFormation"},
+	{"core:dace", "ordinaryCreatureSpecialties", "core:minotaur", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "DaceUnbrokenChallenge"},
+	{"core:shakti", "ordinaryCreatureSpecialties", "core:troglodyte", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ShaktiMassedSpears"},
+	{"core:synca", "ordinaryCreatureSpecialties", "core:manticore", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "SyncaToxicSting"},
+	{"core:yog", "ordinaryCreatureSpecialties", "core:cyclop", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "YogCyclopeanBreach"},
+	{"core:jabarkas", "ordinaryCreatureSpecialties", "core:orc", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "JabarkasCruelVolley"},
+	{"core:charna", "ordinaryCreatureSpecialties", "core:wight", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "CharnaChillingPresence"},
+	{"core:thunar", "ordinaryCreatureSpecialties", "core:earthElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ThunarEarthshaper"},
+	{"core:lacus", "ordinaryCreatureSpecialties", "core:waterElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "LacusUndertow"},
+	{"core:ignissa", "ordinaryCreatureSpecialties", "core:fireElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "IgnissaEmberbrand"},
+	{"core:piquedram", "ordinaryCreatureSpecialties", "core:stoneGargoyle", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "PiquedramStoneSentinel"},
+	{"core:erdamon", "ordinaryCreatureSpecialties", "core:earthElemental", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "ErdamonStonecaller"},
+	{"core:vey", "ordinaryCreatureSpecialties", "core:ogreMage", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "VeyOgreWarcaller"},
+	{"core:josephine", "ordinaryCreatureSpecialties", "core:stoneGolem", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "JosephineFieldReassembly"},
+	{"core:torosar", "ordinaryCreatureSpecialties", "core:ballista", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TorosarGunneryProfessor"},
+	{"core:theodorus", "ordinaryCreatureSpecialties", "core:mage", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "TheodorusMeasuredVolley"},
+	{"core:lorelei", "ordinaryCreatureSpecialties", "core:harpy", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "LoreleiFeatheredFeint"},
+	{"core:marius", "ordinaryCreatureSpecialties", "core:demon", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "MariusDemonicSolidarity"},
+	{"core:rashka", "ordinaryCreatureSpecialties", "core:efreet", newHorizonsHeroes::detail::SpecialtyArtworkFamily::Creature, "RashkaCinderReprisal"},
+}};
+const ResolvedArtCase & currentExpectedArt(const ResolvedArtCase & generic)
+{
+	for(const auto & current : approvedOrdinaryArtCases)
+		if(std::string_view(current.hero) == generic.hero) return current;
+	return generic;
+}
+
 void expectResolvedArt(const CHero & hero, const newHorizonsHeroes::SpecialtyPresentation & metadata,
 	const ResolvedArtCase & row)
 {
@@ -411,11 +471,14 @@ protected:
 
 	void mapLoaded(CMap * loaded) override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(historical)
 		{
 			const std::string_view policy = resolvedArtCases.at(GetParam()).policy;
+			if(std::string_view(currentExpectedArt(resolvedArtCases.at(GetParam())).policy) == "ordinaryCreatureSpecialties")
+				development["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
 			development.Struct().erase(std::string(policy));
 			// Remove dependent opt-ins too, retaining a valid historical context.
 			if(policy == "creatureLineSpecialties")
@@ -445,7 +508,7 @@ protected:
 TEST_P(ResolvedSpecialtyArtTest, CapturedMechanicAndStartingProjectionUseSameArtWithoutMutation)
 {
 	prepare();
-	const auto & row = resolvedArtCases.at(GetParam());
+	const auto & row = currentExpectedArt(resolvedArtCases.at(GetParam()));
 	SCOPED_TRACE(row.hero);
 	const auto * hero = findHeroAt({5, 5, 0});
 	ASSERT_NE(hero, nullptr);
@@ -462,7 +525,7 @@ TEST_P(ResolvedSpecialtyArtTest, CapturedMechanicAndStartingProjectionUseSameArt
 	EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), beforeBonuses);
 }
 
-TEST_P(ResolvedSpecialtyArtTest, AbsentCapturedFamilyPolicyKeepsHistoricalFallback)
+TEST_P(ResolvedSpecialtyArtTest, AbsentCapturedGoverningPoliciesDoNotResurrectInstalledDefaults)
 {
 	historical = true;
 	prepare();

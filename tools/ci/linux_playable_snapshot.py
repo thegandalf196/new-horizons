@@ -36,10 +36,10 @@ SNAPSHOT_RE = re.compile(r"snapshot-([0-9a-f]{64})\Z")
 RUNTIME_LIBRARY_RE = re.compile(r"lib[A-Za-z0-9_+-][A-Za-z0-9_.+-]*\.so(?:\.[0-9]+)*\Z")
 CLIENT_NAME = 'new-horizons'
 LEGACY_CLIENT_NAME = 'vcmiclient'
-PAYLOAD_ROOTS = (CLIENT_NAME, "libvcmi.so", "config", "scripts",
+PAYLOAD_ROOTS = (CLIENT_NAME, "libvcmi.so", "config",
                  "Mods/vcmi", "Mods/new-horizons")
 REQUIRED_FILES = ("config/filesystem.json", "config/newHorizonsCombat.json",
-                  "config/newHorizonsMagic.json", "scripts/damage/damageCalculator.lua",
+                  "config/newHorizonsMagic.json",
                   "Mods/vcmi/mod.json", "Mods/new-horizons/mod.json")
 ART_MANIFEST = Path(__file__).resolve().parents[2] / 'assets/new-horizons/runtime-art-manifest.json'
 
@@ -125,6 +125,8 @@ def source_payload(client, resources, runtime_libraries=()):
     for name in PAYLOAD_ROOTS[2:]:
         source = resources / name
         files.update(checked_tree_files(source, name))
+    # Historical rules are retained in source only as a migration oracle.
+    files = {name: path for name, path in files.items() if not name.lower().endswith('.lua')}
     missing = [name for name in REQUIRED_FILES if name not in files]
     if missing:
         fail("Candidate is missing required curated resources: " + ", ".join(missing))
@@ -638,7 +640,7 @@ def main():
     freeze_parser = subparsers.add_parser("freeze", help="copy a just-built candidate into an immutable local snapshot")
     freeze_parser.add_argument("--client", type=Path, required=True)
     freeze_parser.add_argument("--resources", type=Path, required=True,
-                               help="build bin directory containing config/scripts/Mods resource links")
+                               help="build bin directory containing config/Mods resource links")
     freeze_parser.add_argument("--store", type=Path, required=True)
     freeze_parser.add_argument("--runtime-library", dest="runtime_libraries", type=Path,
                                action="append", default=[],

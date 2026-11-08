@@ -2,11 +2,14 @@
 #include "StdInc.h"
 #include "PhysicalStrikeProjection.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
+#include "../../lib/battle/NewHorizonsAttackControllers.h"
 #include "StackWithBonuses.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 
 namespace
 {
@@ -16,9 +19,8 @@ std::optional<PhysicalStrikeProjection::Destruction> configuredCasualty(
 	if(!unit.alive()) return std::nullopt;
 	const auto solidarity = newHorizonsReactiveDefense::solidarityConfiguredPercent(battle, unit.unitSide()) > 0
 		? newHorizonsReactiveDefense::captureDestruction(unit) : std::nullopt;
-	const auto cataclysm = newHorizonsFactionSpellDamage::captureCataclysm(battle, unit);
-	if(!solidarity && !cataclysm) return std::nullopt;
-	return PhysicalStrikeProjection::Destruction{unit.unitId(), solidarity, cataclysm};
+	if(!solidarity) return std::nullopt;
+	return PhysicalStrikeProjection::Destruction{unit.unitId(), solidarity};
 }
 }
 std::optional<PhysicalStrikeProjection::Destruction> PhysicalStrikeProjection::captureForecastDamage(
@@ -63,12 +65,10 @@ void PhysicalStrikeProjection::completeDamagePacket(HypotheticBattle & battle,
 	std::span<const Destruction> candidates)
 {
 	std::vector<newHorizonsReactiveDefense::Destruction> destroyed;
-	std::map<uint32_t, newHorizonsFactionSpellDamage::Cataclysm> cataclysms;
 	for(const auto & candidate : candidates)
 		if(const auto * unit = battle.battleGetUnitByID(candidate.unit); unit && !unit->alive())
 		{
 			if(candidate.solidarity) destroyed.push_back(*candidate.solidarity);
-			if(candidate.cataclysm) cataclysms.try_emplace(candidate.unit, *candidate.cataclysm);
 		}
 	for(const auto & plan : newHorizonsReactiveDefense::solidarityAftermath(battle, destroyed))
 	{
@@ -76,8 +76,6 @@ void PhysicalStrikeProjection::completeDamagePacket(HypotheticBattle & battle,
 		recipient->removeUnitBonus(plan.remove);
 		recipient->addUnitBonus(plan.add);
 	}
-	for(const auto & [id, explosion] : cataclysms)
-		battle.projectCataclysms(std::span(&explosion, 1));
 }
 int64_t PhysicalStrikeProjection::applyExpectedReactionDamage(HypotheticBattle & battle,
 	const BattleAttackInfo & attack, battle::CUnitState & target)
@@ -99,7 +97,9 @@ bool PhysicalStrikeProjection::needsProjection(const CBattleInfoCallback & battl
 	const battle::Unit * actor, const battle::Unit * target)
 {
 	using namespace newHorizonsReactiveDefense;
-	return solidarityConfiguredPercent(battle, BattleSide::ATTACKER) > 0
+	return newHorizonsSpecialtyEvents::needsStrikeEvents(battle, actor, target)
+		|| newHorizonsSpecialtyEvents::needsStrikeEvents(battle, target, actor)
+		|| solidarityConfiguredPercent(battle, BattleSide::ATTACKER) > 0
 		|| solidarityConfiguredPercent(battle, BattleSide::DEFENDER) > 0
 		|| (actor && ironHideConfiguredPercent(battle, *actor) > 0)
 		|| (target && ironHideConfiguredPercent(battle, *target) > 0);
@@ -121,6 +121,9 @@ void PhysicalStrikeProjection::damage(const CBattleInfoCallback & world, const B
 		auto plan = newHorizonsFactionSpellDamage::exposedWeakness(*branch, hit);
 		if(!plan.add.empty()) exposures.emplace_back(attack.attacker->unitId(), std::move(plan));
 	}
+	if(branch && attack.attacker && !hit.secondaryAttack)
+		for(auto & plan : newHorizonsSpecialtyEvents::acceptedStrike(*branch, hit))
+			specialtyEvents.emplace_back(attack.attacker->unitId(), std::move(plan));
 	const auto reprisal = inspiration.prepare(hit, amount);
 	int64_t postShieldDamage = 0;
 	sylvan.damage(world, attack, target, amount, provenance, &postShieldDamage);
@@ -142,6 +145,16 @@ void PhysicalStrikeProjection::finish(uint32_t attackerId)
 	sylvan.finish(attackerId); // Preserve the existing Sylvan completion order.
 	if(!branch) return;
 
+	// Earned receipts survive zero damage, lethal hits and subsequent Stasis.
+	// They are consumed before the ordinary counterstrike, including on a corpse.
+	for(const auto & [actor, plan] : specialtyEvents)
+		if(actor == attackerId)
+		{
+			auto target = branch->getForUpdate(plan.target);
+			target->removeUnitBonus(plan.remove);
+			target->addUnitBonus(plan.add);
+		}
+	std::erase_if(specialtyEvents, [attackerId](const auto & pending) { return pending.first == attackerId; });
 	std::vector<Destruction> packet;
 	for(const auto & death : deaths)
 	{
@@ -169,7 +182,9 @@ void PhysicalStrikeProjection::restoreEffects(HypotheticBattle & destination,
 {
 	const CSelector effects([](const Bonus * bonus)
 	{
-		return arcaneInspiration::isEffect(bonus)
+		return newHorizonsSpecialtyEvents::isReceipt(bonus)
+			|| newHorizonsAttackControllers::isCripple(bonus)
+			|| arcaneInspiration::isEffect(bonus)
 			|| newHorizonsReactiveDefense::isSolidarityProtection(bonus)
 			|| newHorizonsReactiveDefense::isIronHideSpent(bonus)
 			|| newHorizonsFactionSpellDamage::isExposedWeakness(bonus, BattleSide::ATTACKER)
@@ -190,4 +205,13 @@ void PhysicalStrikeProjection::restoreEffects(HypotheticBattle & destination,
 		recipient->removeUnitBonus(effects);
 		recipient->addUnitBonus(values);
 	}
+}
+
+bool PhysicalStrikeProjection::needsExposureProjection(const CBattleInfoCallback & battle)
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		if(const auto * hero = battle.battleGetFightingHero(side); hero
+			&& hero->hasActivePerk("new-horizons:shroudOfMalassa", "new-horizons:shroudOfMalassa.exposedWeakness"))
+			return true;
+	return false;
 }

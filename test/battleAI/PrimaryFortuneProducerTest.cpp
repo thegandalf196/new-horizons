@@ -152,6 +152,7 @@ void expectCalls(const std::vector<DamageAttackInfo> & expected, const std::vect
 class PrimaryFortuneProducerTest : public ProjectedTargetHitFixture
 {
 protected:
+	PrimaryFortuneProducerTest() { useRevisedOrders = true; }
 	uint32_t actorId = 0, targetId = 0, otherId = 0, allyId = 0;
 	void prepareProducer()
 	{
@@ -199,11 +200,13 @@ protected:
 			result.push_back(projectedHitTest::serialized(branch->getHeroOrderStates(side)));
 			result.push_back(projectedHitTest::serialized(branch->getHeroActionAllowances(side)));
 			result.push_back(projectedHitTest::serialized(branch->getWisdomCombatState(side)));
+			result.push_back(projectedHitTest::serialized(branch->getElementalAttunementMask(side)));
+			result.push_back(projectedHitTest::serialized(branch->hasCommandResourceObservation(side)));
+			if(branch->hasCommandResourceObservation(side))
+				result.push_back(projectedHitTest::serialized(branch->getCommandResources(side)));
 		}
 		result.push_back(projectedHitTest::serialized(branch->getActiveStackID()));
 		result.push_back(projectedHitTest::serialized(branch->battleGetRound()));
-		result.push_back(projectedHitTest::serialized(branch->getElementalRebirthSpawnUnitIds()));
-		result.push_back(projectedHitTest::serialized(branch->getProjectedPrimalBurstHits().size()));
 		return result;
 	}
 	float strike(const std::shared_ptr<HypotheticBattle> & branch, uint32_t target, bool probe)

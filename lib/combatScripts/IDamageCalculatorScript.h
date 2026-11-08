@@ -53,6 +53,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int legacyPhysicalDamageReductionIgnorePercent = 0;
 	/// Independent captured unit passive, separate from Armorer, Orders and bonus-source groups.
 	int intrinsicPhysicalDamageReductionPercent = 0;
+	int elementalAttunementDamagePercent = 0;
+	int stoneboundPhysicalReductionBasisPoints = 0;
 	int coordinatedMeleeDefenseIgnorePercent = 0; // One consumed ordinary allied melee mark.
 	int stormWingsDefenseIgnorePercent = 0; // Exact first-primary voluntary-flight contribution.
 	int runicEnduranceReductionPercent = 0; // Independent attack-sequence protection source.
@@ -96,6 +98,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int frozenShatterFinalDamageMultiplier = 100;
 	/// Captured ordinary creature specialty; separate from Orders and native effects.
 	int ordinaryCreatureSpecialtyDamagePercent = 100;
+	int commandBeneficiaryDamageMultiplierPercent = 100;
 	/// Crossfire's additive ranged premium for this shot only.
 	int archeryCrossfireDamagePercent = 0;
 	/// High Arc halves distance penalties and ignores obstacle penalties on physical shots.
@@ -216,6 +219,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("ironHideReductionPercent", ironHideReductionPercent, "Captured independent physical protection against the first primary melee hit this round.");
 		s("intrinsicPhysicalDamageReductionPercent", intrinsicPhysicalDamageReductionPercent,
 			"Independent intrinsic physical reduction before the shared cap and final floor.");
+		s("elementalAttunementDamagePercent", elementalAttunementDamagePercent, "Current elemental-family additive attack damage.");
+		s("stoneboundPhysicalReductionBasisPoints", stoneboundPhysicalReductionBasisPoints, "Independent Spell Power-derived physical protection.");
 		s("heavenlyGaleDamageReductionBasisPoints", heavenlyGaleDamageReductionBasisPoints,
 			"Heavenly Gale's independent ranged physical reduction in basis points.");
 		s("targetedRangedCommandPercent", targetedRangedCommandPercent, "Target-specific additive ranged premium.");
@@ -303,6 +308,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("rangedFollowUpDamagePercent", rangedFollowUpDamagePercent,
 			"Final multiplicative percentage for an earned Ballista follow-up shot; 100 is neutral.");
 		s("sylvanAttackMultipliers", sylvanAttackMultipliers, "Independent captured Sylvan Tactics physical damage factors.");
+		s("commandBeneficiaryDamageMultiplierPercent", commandBeneficiaryDamageMultiplierPercent, "Independent Unbroken Ranks incoming damage multiplier.");
 		s("sylvanDefenseMultipliers", sylvanDefenseMultipliers, "Independent captured Sylvan Tactics target defenses, omitted from damageBeforeDefense.");
 		s("sylvanLuckyStrikeTotalPercent", sylvanLuckyStrikeTotalPercent, "Total creature Lucky Strike multiplier; zero retains ordinary policy.");
 		s("activationOutputPercent", activationOutputPercent,

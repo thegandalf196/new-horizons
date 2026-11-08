@@ -11,6 +11,7 @@
 
 #include "NewHorizonsBattleStatus.h"
 #include "ArcaneInspirationPresentation.h"
+#include "ElementalAttunementPresentation.h"
 #include "../../lib/Point.h"
 
 class CStack;
@@ -52,6 +53,7 @@ private:
 	const CStack * stack;
 	const newHorizonsBattleStatus::StackInfoStatusSnapshot & status;
 	arcaneInspirationPresentation::Readout inspiration;
+	elementalAttunementPresentation::Readout attunement;
 	std::vector<Entry> entries;
 	newHorizonsBattleStatus::StackStatusDisplayPlan displayPlan;
 	std::size_t totalEffectCount = 0;

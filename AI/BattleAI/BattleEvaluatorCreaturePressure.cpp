@@ -7,6 +7,7 @@
 #include "../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "BattleEvaluator.h"
 #include "CreatureSpellTiming.h"
+#include "RunicReflectionValue.h"
 #include <bit>
 #include "../../lib/CStack.h"
 #include "../../lib/CRandomGenerator.h"
@@ -33,7 +34,7 @@ void recordCreatureSelection(creatureSpellTiming::Sample & timing, const Possibl
 }
 
 bool BattleEvaluator::applyCreatureCastProjection(HypotheticBattle & state,
-	const CStack * stack, const PossibleSpellcast & ps)
+	const CStack * stack, PossibleSpellcast & ps)
 {
 	std::optional<newHorizonsPuppetMaster::ActionControllerCaster> actionCaster;
 	const spells::Caster * caster = stack;
@@ -48,6 +49,11 @@ bool BattleEvaluator::applyCreatureCastProjection(HypotheticBattle & state,
 	if(!ps.spell->canBeCast(&state, spells::Mode::CREATURE_ACTIVE, caster)
 		|| !mechanics->canBeCastAt(ps.dest))
 		return false;
+	const std::shared_ptr<HypotheticBattle> borrowed(&state, [](auto *) {});
+	const auto reflected = runicReflectionAI::expectedValue(*mechanics, ps.dest, playerID, borrowed, {1, 1, 1, true});
+	ps.spellRunicExpectedValue = reflected.value;
+	ps.spellRunicEstimatePartial = reflected.partial;
+	if(reflected.partial) return false;
 	cast.castEval(state.getServerCallback(), ps.dest);
 	return true;
 }
@@ -85,7 +91,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestRandomCreatureSpell(co
 	const auto battle = cb->getBattle(battleID);
 	auto baseline = creatureSpellTiming::measure(timing ? &timing->baselineSetup : nullptr, [&]()
 	{
-		return std::make_shared<HypotheticBattle>(env.get(), battle);
+		return createHypotheticBattle(battle);
 	});
 	DamageCache baselineCache(&damageCache);
 	const float baselinePressure = beneficialCreaturePressure(baseline, stack->unitId(), baselineCache, timing ? &timing->baseline : nullptr);
@@ -215,7 +221,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 				{
 					auto baseline = creatureSpellTiming::measure(timing ? &timing->baselineSetup : nullptr, [&]()
 					{
-						return std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+						return createHypotheticBattle(cb->getBattle(battleID));
 					});
 					DamageCache cache(&damageCache);
 					beneficialBaseline = beneficialCreaturePressure(baseline, stack->unitId(), cache, timing ? &timing->baseline : nullptr);
@@ -269,7 +275,7 @@ float BattleEvaluator::beneficialCreatureOutcomeValue(const CStack * caster,
 		return 0;
 	auto state = creatureSpellTiming::measure(timing ? &timing->outcomeSetup : nullptr, [&]()
 	{
-		return std::make_shared<HypotheticBattle>(env.get(), battle);
+		return createHypotheticBattle(battle);
 	});
 	const auto * projectedCaster = state->battleGetUnitByID(caster->unitId());
 	const auto * projectedRecipient = state->battleGetUnitByID(recipient->unitId());
@@ -301,7 +307,7 @@ float BattleEvaluator::expectedBeneficialCreatureSpellValue(const CStack * caste
 	const auto ability = caster->getBonus(Selector::type()(BonusType::RANDOM_SPELLCASTER));
 	if(pool.empty() || !ability)
 		return 0;
-	auto baseline = std::make_shared<HypotheticBattle>(env.get(), battle);
+	auto baseline = createHypotheticBattle(battle);
 	DamageCache cache(&damageCache);
 	const float baselinePressure = beneficialCreaturePressure(baseline, caster->unitId(), cache);
 	double total = 0;
@@ -321,7 +327,7 @@ float BattleEvaluator::beneficialCreatureSpellOutcomeValue(const CStack * caster
 		BonusType::SPELLCASTER, BonusSubtypeID(spell->getId())));
 	if(!ability)
 		return 0;
-	auto baseline = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+	auto baseline = createHypotheticBattle(cb->getBattle(battleID));
 	DamageCache cache(&damageCache);
 	return beneficialCreatureOutcomeValue(caster, recipient, spell,
 		creatureAbilitySpellLevel(caster, spell, ability->val),

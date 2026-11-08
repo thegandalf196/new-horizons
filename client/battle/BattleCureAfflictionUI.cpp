@@ -41,6 +41,10 @@ std::vector<std::string> curePhysicalAfflictionChoices(const JsonNode & rules, c
 		choices.emplace_back("frozen");
 	if(spells::curePhysical::livingTarget(target) && spells::curePhysical::present(rules, *target, "graveDust"))
 		choices.emplace_back("graveDust");
+	if(spells::curePhysical::livingTarget(target) && spells::curePhysical::present(rules, *target, "stun"))
+		choices.emplace_back("stun");
+	if(spells::curePhysical::livingTarget(target) && spells::curePhysical::present(rules, *target, "cripple"))
+		choices.emplace_back("cripple");
 	return choices;
 }
 
@@ -81,7 +85,7 @@ void BattleInterface::installCureAfflictionUI()
 		for(const auto choice : choices)
 			names.push_back(choice.toSpell()->getNameTranslated());
 		for(const auto & kind : physicalChoices)
-			names.push_back(kind == "frozen" ? LIBRARY->generaltexth->translate("new-horizons.combat.frozen.label") : "Grave Dust");
+			names.push_back(kind == "frozen" ? LIBRARY->generaltexth->translate("new-horizons.combat.frozen.label") : kind == "stun" ? "Stun" : kind == "cripple" ? "Cripple" : "Grave Dust");
 		const auto targetID = initialTarget->unitId();
 		const auto heroID = currentHero()->id;
 		const CureAfflictionSession session(owner, actionsController->getCastingSession());

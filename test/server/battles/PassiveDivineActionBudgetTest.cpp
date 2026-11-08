@@ -6,6 +6,7 @@
 #include "../../../lib/battle/SideInBattle.h"
 #include "../../../lib/battle/PassiveDivineMandateSpellPool.h"
 #include "../../../lib/spells/NewHorizonsTimedUtility.h"
+#include "../../../lib/spells/NewHorizonsMetamagicRefresh.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsPurify.h"
@@ -23,6 +24,7 @@ class PassiveDivineActionBudgetTest : public HeroCommandFixture
 {
 protected:
 	bool enableRetiredCrusade = false;
+	bool historicalMetamagic = false;
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -32,8 +34,14 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		if(historicalMetamagic)
+		{
+			perks["metamagicPolicy"] = JsonNode();
+			perks["metamagicPolicy"]["version"].Integer() = 2;
+			perks.setOverrideFlag(true);
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 		if(enableRetiredCrusade)
 			magic["spells"]["new-horizons:crusade"]["active"].Bool() = true;
@@ -441,9 +449,13 @@ TEST_F(PassiveDivineActionBudgetTest, ShortFixedTimerRefreshRetainsNativeOrdinar
 	EXPECT_EQ(after->front()->val, value); // Native ordinary refresh keeps the old stronger amount.
 }
 
-TEST_F(PassiveDivineActionBudgetTest, MarkedRecipientUsesConfiguredDurationAndPrecastPotency)
+TEST_F(PassiveDivineActionBudgetTest, HistoricalMarkedRecipientUsesConfiguredDurationAndPrecastPotency)
 {
+	historicalMetamagic = true;
 	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 0));
+	const auto & captured = attackerSideHero->getPerkState().rules["metamagicPolicy"];
+	ASSERT_EQ(captured["version"].Integer(), 2);
+	ASSERT_TRUE(captured["adeptAdditionalPoints"].isNull());
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	ASSERT_EQ(server.casts.size(), 1);
 	const auto spell = server.casts.front().announcement.spellID;
@@ -486,4 +498,88 @@ TEST_F(PassiveDivineActionBudgetTest, MarkedRecipientUsesConfiguredDurationAndPr
 	EXPECT_EQ(after->front()->val, preview->effect.primary->value);
 	EXPECT_EQ(after->front()->turnsRemain, *preview->durationRounds);
 	EXPECT_EQ(target->metamagicMarks(BattleSide::ATTACKER), 4); // This fresh mark did not strengthen its own cast.
+}
+
+
+TEST_F(PassiveDivineActionBudgetTest, RecalculatedRefreshRequiresMetamagicOrWisdomEffectiveness)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 100));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_EQ(server.casts.size(), 1);
+	const auto spell = server.casts.front().announcement.spellID;
+	const auto * target = battle()->battleActiveUnit();
+	const auto initial = target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
+	ASSERT_EQ(initial->size(), 1);
+	ASSERT_GT(initial->front()->val, 30);
+	for(int policy = 0; policy < 5; ++policy)
+	{
+		SCOPED_TRACE(policy);
+		newHorizonsMetamagic::CastProfile profile;
+		profile.hero = attackerSideHero;
+		profile.heroSide = BattleSide::ATTACKER;
+		profile.perks.pointPolicy = policy == 1 || policy == 3;
+		profile.perks.rank = policy == 2 || policy == 3 ? 3 : 0;
+		profile.perks.wisdomEffectivenessBonus = policy == 4 ? 5 : 0;
+		Bonus incoming = *initial->front();
+		incoming.val = 30;
+		SetStackEffect packet;
+		packet.toUpdate.emplace_back(target->unitId(), std::vector<Bonus>{incoming});
+		newHorizonsMetamagic::replaceRecalculatedSpellBonuses(&profile, *battle(),
+			spell, spell, {target->unitId()}, packet);
+		if(policy < 2)
+		{
+			EXPECT_TRUE(packet.toAdd.empty());
+			EXPECT_TRUE(packet.toRemove.empty());
+			ASSERT_EQ(packet.toUpdate.front().second.size(), 1);
+		}
+		else
+		{
+			ASSERT_EQ(packet.toAdd.size(), 1);
+			ASSERT_EQ(packet.toRemove.size(), 1);
+			EXPECT_EQ(packet.toRemove.front().second.front().val, initial->front()->val);
+			EXPECT_EQ(packet.toAdd.front().second.front().val, incoming.val);
+			EXPECT_EQ(packet.toAdd.front().second.front().turnsRemain, initial->front()->turnsRemain);
+			EXPECT_TRUE(packet.toUpdate.front().second.empty());
+		}
+	}
+	EXPECT_EQ(target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)))->front()->val,
+		initial->front()->val);
+}
+
+TEST_F(PassiveDivineActionBudgetTest, CurrentNonTowerMarksDoNotScaleAutomaticLight)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 0));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_EQ(server.casts.size(), 1);
+	const auto spell = server.casts.front().announcement.spellID;
+	const auto * target = battle()->battleActiveUnit();
+	const auto meta = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
+	attackerSideHero->setSecSkillLevel(meta, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"});
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"));
+	auto state = target->acquireState();
+	state->arcaneMarks.set(BattleSide::ATTACKER, 3);
+	BattleUnitsChanged marks;
+	marks.battleID = BattleID(0);
+	auto & changed = marks.changedStacks.emplace_back(target->unitId(), UnitChanges::EOperation::UPDATE);
+	changed.data = state->save();
+	gameHandler->sendAndApply(marks);
+	auto receipt = server.casts.front().announcement.automaticHeroCast;
+	++receipt.mandateUseOrdinal;
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	cast.setAutomaticHeroCast(receipt);
+	const auto mechanics = cast.mechanicsForTarget({battle::Destination(target)});
+	ASSERT_NE(mechanics->getMetamagicCastProfile(), nullptr);
+	EXPECT_EQ(mechanics->getMetamagicCastProfile()->perks.rank, 0);
+	const auto preview = newHorizonsMagic::recipientSpellEffectPreview(*mechanics, target);
+	ASSERT_TRUE(preview);
+	ASSERT_TRUE(preview->effect.primary);
+	EXPECT_EQ(preview->effect.primary->value, 30);
+	ASSERT_TRUE(preview->durationRounds);
+	EXPECT_EQ(*preview->durationRounds, 2);
+	const auto rng = utilityRngState();
+	EXPECT_TRUE(newHorizonsPassiveDivineMandate::buildSpellPool(*battle(), *attackerSideHero,
+		receipt, {target->unitId()}).empty());
+	EXPECT_EQ(utilityRngState(), rng);
+	EXPECT_EQ(target->metamagicMarks(BattleSide::ATTACKER), 3);
 }

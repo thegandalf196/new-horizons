@@ -48,6 +48,7 @@ protected:
 
 	void mapLoaded(CMap * map) override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
@@ -135,7 +136,7 @@ protected:
 		model->getServerCallback()->apply(injury);
 	}
 
-	void prepareStrategicRebirth()
+	void prepareConfluxCasualty()
 	{
 		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
 		startGame();
@@ -145,8 +146,6 @@ protected:
 		const auto skill = "new-horizons:elementalRebirth";
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)),
 			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({skill, "new-horizons:elementalRebirth.primalBurst"});
-		ASSERT_TRUE(attackerSideHero->hasActivePerk(skill, "new-horizons:elementalRebirth.primalBurst"));
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:peasant"), 100));
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), creatureByName("core:peasant"), 1000));
 		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureByName("core:peasant"), 10000));
@@ -168,7 +167,8 @@ protected:
 			}
 		ASSERT_NE(actor, nullptr);
 		ASSERT_NE(victim, nullptr);
-		ASSERT_GT(actor->getBattleStartMaximumAggregateHP(), 0);
+		ASSERT_GT(actor->getAvailableHealth(), 0);
+		ASSERT_GT(actor->getMaxHealth(), 0);
 		beginCombat();
 		ASSERT_TRUE(castOn(defenderSideHero, plague(), actor));
 		environment = std::make_shared<PlagueCompletionEnvironment>(gameState());
@@ -694,36 +694,30 @@ TEST_F(NewHorizonsPlagueCompletionAITest, NativeRebirthStillScoresFinalizedDamag
 	EXPECT_FLOAT_EQ(exchange.getScore().ourDamageReduce, once);
 }
 
-TEST_F(NewHorizonsPlagueCompletionAITest, ElementalRebirthAndPrimalBurstStaySeparateAndAreScoredOnce)
+TEST_F(NewHorizonsPlagueCompletionAITest, ConfluxPlagueDeathScoresExactlyOnceWithoutReplacementOrExplosion)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareStrategicRebirth());
+	ASSERT_NO_FATAL_FAILURE(prepareConfluxCasualty());
 	auto model = projection();
-	ASSERT_TRUE(model->captureElementalRebirthSource(*model->battleGetUnitByID(actor->unitId())).has_value());
-	BattleHex adjacent = BattleHex::INVALID;
-	for(const auto hex : model->battleGetUnitByID(actor->unitId())->getSurroundingHexes())
-		if(hex.isAvailable() && !model->battleGetUnitByPos(hex, true))
-		{
-			adjacent = hex;
-			break;
-		}
-	ASSERT_TRUE(adjacent.isAvailable());
-	model->moveUnit(victim->unitId(), adjacent);
+	const auto count = model->battleGetAllUnits(false).size();
+	const auto enemyHealth = model->battleGetUnitByID(victim->unitId())->getAvailableHealth();
+	const auto liveWorld = gameState()->saveToMemory();
 	DamageCache cache;
 	BattleExchangeVariant exchange;
 	exchange.completePlagueActivation(actor->unitId(), model->getSidePlayer(BattleSide::ATTACKER), true, cache, model);
 	ASSERT_EQ(model->getProjectedPlagueHits().size(), 1u);
-	ASSERT_EQ(model->getElementalRebirthSpawnUnitIds().size(), 1u);
-	ASSERT_EQ(model->getProjectedPrimalBurstHits().size(), 1u);
+	EXPECT_FALSE(model->battleGetUnitByID(actor->unitId())->alive());
+	EXPECT_EQ(model->battleGetAllUnits(false).size(), count);
 	EXPECT_EQ(model->getProjectedPlagueHits().front().preHitTarget->unitId(), actor->unitId());
-	EXPECT_EQ(model->getProjectedPrimalBurstHits().front().preHitTarget->unitId(), victim->unitId());
+	EXPECT_EQ(model->battleGetUnitByID(victim->unitId())->getAvailableHealth(), enemyHealth);
 	EXPECT_GT(exchange.getScore().ourDamageReduce, 0);
-	EXPECT_GT(exchange.getScore().enemyDamageReduce, 0);
+	EXPECT_FLOAT_EQ(exchange.getScore().enemyDamageReduce, 0);
 	const auto once = exchange.getScore();
 	exchange.completePlagueActivation(actor->unitId(), model->getSidePlayer(BattleSide::ATTACKER), true, cache, model);
-	EXPECT_EQ(model->getElementalRebirthSpawnUnitIds().size(), 1u);
-	EXPECT_EQ(model->getProjectedPrimalBurstHits().size(), 1u);
+	EXPECT_EQ(model->getProjectedPlagueHits().size(), 1u);
+	EXPECT_EQ(model->battleGetAllUnits(false).size(), count);
 	EXPECT_FLOAT_EQ(exchange.getScore().ourDamageReduce, once.ourDamageReduce);
 	EXPECT_FLOAT_EQ(exchange.getScore().enemyDamageReduce, once.enemyDamageReduce);
+	EXPECT_EQ(gameState()->saveToMemory(), liveWorld);
 }
 
 TEST_F(NewHorizonsPlagueCompletionAITest, InitialUninfectedCastHeuristicRemainsSeparateFromOngoingReceipts)

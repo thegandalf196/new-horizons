@@ -4,12 +4,15 @@
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include <string_view>
 
 namespace
 {
 JsonNode passiveRules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	// These epoch-1155 fixtures explicitly retain historical marks-based capture.
+	rules["metamagicPolicy"] = JsonNode(JsonMap{});
 	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 		rules[key]["version"].Integer() = 2;
 	rules.setOverrideFlag(true);
@@ -22,7 +25,7 @@ auto settingsBytes(GameSettings & settings)
 	settings.serialize(bytes.oser);
 	return bytes.extractBuffer();
 }
-std::vector<JsonNode> malformedPolicies()
+std::vector<JsonNode> malformedPolicies(bool metamagic = false)
 {
 	std::vector<JsonNode> result{JsonNode(), JsonNode(JsonMap{})};
 	JsonNode value;
@@ -31,7 +34,7 @@ std::vector<JsonNode> malformedPolicies()
 	value = JsonNode(); value["version"] = JsonNode(); result.push_back(value);
 	value = JsonNode(); value["version"].String() = "2"; result.push_back(value);
 	value = JsonNode(); value["version"].Float() = 2.0; result.push_back(value);
-	for(const int version : {0, 1, 3})
+	for(const int version : {0, 1, metamagic ? 4 : 3})
 	{
 		value = JsonNode(); value["version"].Integer() = version; result.push_back(value);
 	}
@@ -55,7 +58,7 @@ template<typename Value> void rejectsOldPrefix(Value & value)
 TEST(NewHorizonsPassiveFactionPolicy, PresentMalformedPoliciesRejectWithoutMutation)
 {
 	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
-		for(const auto & malformed : malformedPolicies())
+		for(const auto & malformed : malformedPolicies(std::string_view(key) == "metamagicPolicy"))
 		{
 			auto rules = passiveRules(); rules[key] = malformed;
 			const auto before = rules;
@@ -64,6 +67,19 @@ TEST(NewHorizonsPassiveFactionPolicy, PresentMalformedPoliciesRejectWithoutMutat
 			EXPECT_THROW(state.validate(), std::runtime_error) << key;
 			EXPECT_EQ(rules, before);
 		}
+}
+
+TEST(NewHorizonsPassiveFactionPolicy, CurrentMetamagicPointsCannotLeakIntoHistoricalMarksCapture)
+{
+	auto rules = passiveRules();
+	rules["metamagicPolicy"] = JsonNode(JsonMap{});
+	rules["metamagicPolicy"]["version"].Integer() = 3;
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
+	rules["metamagicPolicy"]["adeptAdditionalPoints"].Integer() = 1;
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
+	// Merely relabelling current data as historical must still reject.
+	rules["metamagicPolicy"]["version"].Integer() = 2;
+	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error);
 }
 
 TEST(NewHorizonsPassiveFactionPolicy, MetamagicOnlyAllowsBoundedIntegerAdeptMarks)

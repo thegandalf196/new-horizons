@@ -9,6 +9,7 @@
 		"heroCommands": {
 			"schemaVersion": 1,
 			"rulesetVersion": 4,
+			"commandResourcePolicyVersion": 1,
 			"perkBonuses": { "spearheadDamagePercent": 5, "shieldMasterReductionPercent": 5, "combinedArmsFeintReductionPercent": 5 },
 			"commands": {
 				"charge": {

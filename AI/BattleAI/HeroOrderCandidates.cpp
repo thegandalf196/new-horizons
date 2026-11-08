@@ -12,6 +12,7 @@
 #include "HeroOrderCandidateRules.h"
 
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/callback/CBattleCallback.h"
 
 namespace heroOrderCandidates
@@ -117,6 +118,9 @@ void appendOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	CBattleCallback & callback, BattleID battleID, BattleSide side,
 	bool mandatoryOrder, const Valuation & valuation)
 {
+	const auto battle = callback.getBattle(battleID);
+	if(!battle || !newHorizonsCommand::available(*battle, side))
+		return; // Reject the exhausted resource before target enumeration or valuation.
 	appendSideWideOrders(possibleCasts, callback, battleID, side, mandatoryOrder, valuation);
 	appendTargetedOrders(possibleCasts, callback, battleID, side, mandatoryOrder, valuation);
 }

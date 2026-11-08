@@ -34,8 +34,11 @@ connection and authoritative simulation thread, not a new external server or
 loopback transport. UI submits requests; authoritative code validates and changes
 state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
-Orders and spells compete for the shared Hero Action; Orders have no mana-like
-currency. Human and AI decisions must use the same legal action/target rules.
+Orders and spells compete for the shared Hero Action. Each accepted Order also
+spends one point from the fighting hero's finite, battle-local Command pool.
+Command does not regenerate during combat. Exhaustion prevents further Orders
+without preventing legal spells or creature actions. Human and AI decisions must
+use the same legal action, resource and target rules.
 Expanded Hero Attack/Defense ratings feed the specified command/formula systems,
 not unchanged original creature damage arithmetic.
 

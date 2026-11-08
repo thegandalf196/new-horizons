@@ -47,3 +47,26 @@ private:
 	std::map<uint32_t, const battle::Unit *> members;
 	battle::Units remaining;
 };
+
+/// Call-local optional search prefix budget. Zero retains the existing full horizon.
+/// Enter only live scheduled bodies, before activation start; never per strike.
+class ExchangeActorBudget
+{
+	unsigned limit;
+	unsigned futureVisited = 0;
+	bool initialExempted = false;
+public:
+	explicit ExchangeActorBudget(unsigned limit) : limit(limit) {}
+	bool enter(bool initialChosenUnit)
+	{
+		if(initialChosenUnit && !initialExempted)
+		{
+			initialExempted = true;
+			return true;
+		}
+		if(limit && futureVisited >= limit) return false;
+		++futureVisited;
+		return true;
+	}
+	unsigned futureActorsVisited() const { return futureVisited; }
+};

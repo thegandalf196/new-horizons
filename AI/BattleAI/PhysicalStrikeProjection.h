@@ -18,7 +18,6 @@ public:
 	{
 		uint32_t unit;
 		std::optional<newHorizonsReactiveDefense::Destruction> solidarity;
-		std::optional<newHorizonsFactionSpellDamage::Cataclysm> cataclysm;
 	};
 private:
 	HypotheticBattle * branch;
@@ -31,8 +30,10 @@ private:
 	};
 	std::vector<Death> deaths;
 	std::vector<std::pair<uint32_t, newHorizonsOrdinaryStrike::EffectPlan>> exposures;
+	std::vector<std::pair<uint32_t, newHorizonsOrdinaryStrike::EffectPlan>> specialtyEvents;
 public:
 	explicit PhysicalStrikeProjection(HypotheticBattle * value) : branch(value), sylvan(value), inspiration(value) {}
+	static bool needsExposureProjection(const CBattleInfoCallback &);
 	static bool needsProjection(const CBattleInfoCallback &, const battle::Unit *, const battle::Unit *);
 	/// Explicit damage only. Generic removal, value restoration and spawn wounds are not events.
 	static std::optional<Destruction> captureForecastDamage(

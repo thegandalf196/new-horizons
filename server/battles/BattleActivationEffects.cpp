@@ -12,6 +12,7 @@
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
+#include "../../lib/battle/NewHorizonsElementalAttunement.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/HydrasVitalityIdentity.h"
 #include "../../lib/bonuses/BonusSelector.h"
@@ -114,12 +115,16 @@ void applyExistingRecovery(CGameHandler * gameHandler, const CBattleInfoCallback
 void applyPhysicalPoison(CGameHandler * gameHandler, const CBattleInfoCallback & battle, const CStack * creatureStack,
 	std::shared_ptr<battle::CUnitState> & state)
 {
-	int64_t poisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
+	const int64_t rawPoisonTick = newHorizonsBulwark::physicalPoisonTickDamage(state.get());
+	int64_t poisonTick = rawPoisonTick;
 	if(state && (state->physicalPoisonSpellOrigin() == BattleSide::ATTACKER
 		|| state->physicalPoisonSpellOrigin() == BattleSide::DEFENDER))
 		poisonTick = newHorizonsMetamagic::spellDamage(poisonTick, nullptr, battle, creatureStack,
-			battle.sideToPlayer(state->physicalPoisonSpellOrigin()));
-	if(creatureStack->alive() && state && poisonTick > 0)
+			battle.sideToPlayer(state->physicalPoisonSpellOrigin()), false);
+	if(state && rawPoisonTick > 0)
+		poisonTick = newHorizonsElementalAttunement::stoneboundPhysicalDamage(poisonTick,
+			state->elementalAttunementPassives().physicalReductionBasisPoints);
+	if(creatureStack->alive() && state && rawPoisonTick > 0)
 	{
 		const int64_t guardianSpiritBefore = state->guardianSpiritHitPoints;
 		const auto poisonSourceStackId = state->physicalPoisonSourceStackId;

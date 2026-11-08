@@ -12,6 +12,7 @@
 #include "BattleDamageValue.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/NewHorizonsStun.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/HeroCommandRevision.h"
@@ -326,14 +327,20 @@ float CanonicalOrderValue::secondWind(const Environment * environment,
 		return 0.0f;
 	const auto activation = projectSecondWindActivation(battle, environment, projectionSource,
 		side, target->unitId());
+	const auto * projected = activation ? dynamic_cast<const HypotheticBattle *>(activation.get()) : nullptr;
+	const bool recoveredLaterActivation = newHorizonsStun::isStunned(*target) && projected
+		&& projected->currentForfeitCompleted(target->unitId())
+		&& !newHorizonsStun::isStunned(*projected->battleGetUnitByID(target->unitId()));
 	float extraAttack = 0.0f;
 	for(const auto * enemy : enemyUnits)
-		if(!activation || hasSecondWindAttackOpportunity(*activation, target->unitId(), enemy->unitId()))
+		if(recoveredLaterActivation || !activation || hasSecondWindAttackOpportunity(*activation, target->unitId(), enemy->unitId()))
 			extraAttack = std::max(extraAttack, anyDamage(target, enemy));
 	const auto directDamagePercent = hero
 		? static_cast<float>(heroCommands::secondWindPercent(*hero,
 			divineMandateEfficiencyBonusPercent)) : 50.0f;
-	return extraAttack * directDamagePercent / 100.0f;
+	// Recovery is a shortlist prior only; full continuation prices the consumed
+	// immediate activation and the ordinary future queue, without adding this term.
+	return recoveredLaterActivation ? extraAttack : extraAttack * directDamagePercent / 100.0f;
 }
 
 DamageEstimation CanonicalOrderValue::estimateExtraCounter(const battle::Unit * own,

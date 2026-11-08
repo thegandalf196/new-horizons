@@ -2,6 +2,7 @@
 #pragma once
 #include "NewHorizonsSerpentsEmbrace.h"
 #include "BattleToxicSting.h"
+#include "../../lib/battle/NewHorizonsAttackControllers.h"
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 struct BattleAttackInfo;
 namespace battlePrimaryStrikeAftermath
@@ -11,9 +12,13 @@ struct Prepared
 	uint32_t source = 0;
 	uint32_t target = 0;
 	bool gaze = false;
+	bool specialtySpellStrike = false;
+	int stunChance = 0;
+	newHorizonsAttackControllers::Strike attackController;
 	std::optional<newHorizonsToxicSting::Plan> toxicSting;
 	bool hostilePrimaryMelee = false;
 	std::optional<newHorizonsSerpentsEmbrace::PreparedBinding> binding;
+	std::vector<newHorizonsOrdinaryStrike::EffectPlan> specialtyEvents;
 	newHorizonsOrdinaryStrike::EffectPlan ordinary;
 	newHorizonsOrdinaryStrike::EffectPlan lanceFormation;
 	newHorizonsOrdinaryStrike::EffectPlan graveDust;

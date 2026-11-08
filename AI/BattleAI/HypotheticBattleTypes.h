@@ -131,13 +131,6 @@ public:
 	}
 };
 
-struct ProjectedPrimalBurstHit
-{
-	std::shared_ptr<StackWithBonuses> preHitTarget;
-	PlayerColor targetController;
-	int64_t actualDamage = 0;
-	bool elementalCataclysm = false;
-};
 
 struct ProjectedPlagueHit
 {

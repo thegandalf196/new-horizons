@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsShieldAndSword.h"
+#include "NewHorizonsSpecialtyEvents.h"
 #include "CBattleInfoCallback.h"
 #include "NewHorizonsCombatSkills.h"
 #include "Unit.h"
@@ -15,14 +16,7 @@ namespace
 constexpr auto identity = "new-horizons:ordinary-creature-specialty:core:sorsha:shieldAndSword";
 int reduction(const CBattleInfoCallback & battle, const battle::Unit & actor)
 {
-	const int percent = newHorizonsHeroes::ordinaryCreatureSpecialtyValue(battle, actor, "core:sorsha");
-	if(percent <= 0)
-		return 0;
-	const auto family = CreatureID(CreatureID::decode("core:swordsman"));
-	if(!actor.unitType() || !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(&actor)
-		|| (actor.creatureId() != family && !family.toCreature()->isMyDirectOrIndirectUpgrade(actor.unitType())))
-		return 0;
-	return percent;
+	return newHorizonsSpecialtyEvents::sorshaReduction(battle, actor);
 }
 }
 bool isProtection(const Bonus * bonus)
@@ -72,7 +66,7 @@ newHorizonsOrdinaryStrike::EffectPlan completion(const CBattleInfoCallback & bat
 	protection.stacking = identity;
 	protection.statusIdentity = "shieldAndSword";
 	protection.statusTags = {BonusStatusTag::NON_TRANSFERABLE};
-	protection.description.appendRawString("Shield and Sword: " + std::to_string(percent)
+	protection.description.appendRawString("Sword and Shield: " + std::to_string(percent)
 		+ "% less physical damage until the next Creature Activation");
 	result.target = actor.unitId();
 	result.add.push_back(std::move(protection));

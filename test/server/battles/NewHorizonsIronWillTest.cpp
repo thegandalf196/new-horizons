@@ -304,7 +304,7 @@ TEST_F(NewHorizonsIronWillTest, DetachedStasisPassAndGenuineCompletionIsolatePar
 		->scheduledFor(friendly->unitId(), child->getRound()));
 	child->removeUnitBonus(friendly->unitId(), {stopped});
 	EXPECT_FALSE(child->battleGetUnitByID(friendly->unitId())->isTimeStopped());
-	child->completeSwiftNormalActivation(friendly->unitId());
+	child->completeNormalActivation(friendly->unitId());
 	EXPECT_FALSE(child->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::RIPOSTE)
 		->scheduledFor(friendly->unitId(), child->getRound()));
 	EXPECT_TRUE(parent->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::RIPOSTE)

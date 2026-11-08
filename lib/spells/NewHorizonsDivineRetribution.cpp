@@ -82,7 +82,7 @@ int32_t payoutRatioBasisPoints(const Bonus & marker)
 }
 
 int64_t recipientDamage(const CBattleInfoCallback & battle,
-	const battle::Unit * recipient, int64_t rawPayout, PlayerColor spellOwner)
+	const battle::Unit * recipient, int64_t rawPayout, PlayerColor spellOwner, const JsonNode * capturedOffensive)
 {
 	if(!recipient || rawPayout <= 0)
 		return 0;
@@ -93,13 +93,13 @@ int64_t recipientDamage(const CBattleInfoCallback & battle,
 	if(!state || !spell.hasValue() || !newHorizonsMagic::rulesActive(rules)
 		|| rules["rulesetVersion"].Integer() != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
 		|| !newHorizonsMagic::spellAllowedBySavedRoster(rules, spell))
-		return newHorizonsMetamagic::spellDamage(rawPayout, nullptr, battle, recipient, spellOwner);
+		return newHorizonsMetamagic::deferredSpellDamage(rawPayout, capturedOffensive, battle, recipient, spellOwner);
 	// A delayed judgment is not another cast. Its cap already captures the
 	// original SP scaling; do not synthesize a caster or apply that scaling again.
 	const auto ordinary = spell.toSpell()->adjustRawDamage(nullptr, recipient, rawPayout, 0,
 		battle.battleGetHoldTheLineMagicalReductionBasisPoints(recipient), 100,
 		battle.battleUsesNewHorizonsMultiplicativeMDR(), true, false,
 		battle.battleGetPerkMagicalReductionBasisPoints(recipient));
-	return newHorizonsMetamagic::spellDamage(ordinary, nullptr, battle, recipient, spellOwner);
+	return newHorizonsMetamagic::deferredSpellDamage(ordinary, capturedOffensive, battle, recipient, spellOwner);
 }
 }

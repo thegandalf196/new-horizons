@@ -382,6 +382,16 @@ void PerkState::normalizeLegacyTierConflicts()
 void PerkState::validate() const
 {
 	validatePerkRules(rules);
+	validateSelections();
+}
+std::shared_ptr<const nativeRules::PreparedPilotPerks> PerkState::prepareNativeRules() const
+{
+	auto result = preparePilotPerkRules(rules);
+	validateSelections();
+	return result;
+}
+void PerkState::validateSelections() const
+{
 	if(!usesPerkRules(rules))
 	{
 		if(!selected.empty())

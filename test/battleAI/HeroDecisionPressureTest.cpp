@@ -7,6 +7,9 @@
 #include "../../AI/BattleAI/HeroActionAdmission.h"
 #include "../../AI/BattleAI/CanonicalOrderValue.h"
 #include "../../lib/bonuses/Limiters.h"
+#include "../../lib/mapObjects/CGCreature.h"
+#include "../../lib/ScopeGuard.h"
+#include "../../AI/BattleAI/ArrowContinuationReuse.h"
 #include <limits>
 #include <stdexcept>
 
@@ -143,4 +146,51 @@ TEST_F(HeroDecisionPressureTest, ActorBatchSourceRechecksReboundReceiverBeforeUs
 	static_cast<BattleProxy &>(*child) = static_cast<const BattleProxy &>(*replacement);
 	EXPECT_FALSE(child->hasCanonicalDamageQuerySources());
 	EXPECT_FALSE(admission.admits(*target));
+}
+
+TEST_F(HeroDecisionPressureTest, ExactNativeNeutralArmySourceIsAdmittedForArrowAndDescendant)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePolicy());
+	CGCreature neutral(gameState().get());
+	incoming->attachToSource(neutral);
+	const auto detach = vstd::makeScopeGuard([&] { incoming->detachFromSource(neutral); });
+	const auto actor = child->getForUpdate(braced->unitId());
+	const auto target = child->getForUpdate(incoming->unitId());
+	heroActionProjection::CanonicalSourceAdmission admission(*actor, *child);
+	EXPECT_TRUE(admission.admits(*target));
+	EXPECT_TRUE(arrowContinuation::sourcesSupported(*child, target->unitId()));
+	auto descendant = std::make_shared<HypotheticBattle>(environment.get(), child);
+	EXPECT_TRUE(arrowContinuation::sourcesSupported(*descendant, target->unitId()));
+}
+
+namespace
+{
+class ForeignNeutralSource final : public CGCreature
+{
+public:
+	using CGCreature::CGCreature;
+	mutable unsigned queries = 0;
+	TConstBonusListPtr getAllBonuses(const CSelector &, const std::string &) const override
+	{
+		++queries;
+		throw std::runtime_error("Foreign neutral bonus query must not run during admission");
+	}
+};
+}
+TEST_F(HeroDecisionPressureTest, DerivedNeutralGetterIsRejectedWithoutDispatch)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePolicy());
+	ForeignNeutralSource neutral(gameState().get());
+	incoming->attachToSource(neutral);
+	const auto detach = vstd::makeScopeGuard([&] { incoming->detachFromSource(neutral); });
+	EXPECT_FALSE(arrowContinuation::sourcesSupported(*child, incoming->unitId()));
+	EXPECT_EQ(neutral.queries, 0u);
+}
+TEST_F(HeroDecisionPressureTest, ExactNeutralWithForeignWorldCallbackRemainsRejected)
+{
+	ASSERT_NO_FATAL_FAILURE(preparePolicy());
+	CGCreature neutral(nullptr);
+	incoming->attachToSource(neutral);
+	const auto detach = vstd::makeScopeGuard([&] { incoming->detachFromSource(neutral); });
+	EXPECT_FALSE(arrowContinuation::sourcesSupported(*child, incoming->unitId()));
 }

@@ -17,6 +17,8 @@
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
+#include "../../lib/battle/NewHorizonsStun.h"
+#include "../../lib/battle/NewHorizonsAttackControllers.h"
 
 #include <limits>
 #include <map>
@@ -108,6 +110,35 @@ bool applySelection(const PurifySelectionProjection & selection, HypotheticBattl
 	}
 	return selectionProjected;
 }
+std::set<uint32_t> applyAutomaticAfflictions(HypotheticBattle & state,
+	const std::vector<newHorizonsPurify::EligibleStack> & eligible, const std::set<uint32_t> & manuallyPoisoned)
+{
+	std::set<uint32_t> resolved;
+	for(const auto & row : eligible)
+		if(row.physicalPoisonAutomaticallyCleared || manuallyPoisoned.contains(row.unitId))
+			if(newHorizonsPurify::clearPhysicalPoison(state.getForUpdate(row.unitId).get())) resolved.insert(row.unitId);
+	for(const auto & row : eligible)
+	{
+		const auto * unit = state.battleGetUnitByID(row.unitId);
+		if(!unit) continue;
+		if(row.graveDustAutomaticallyCleared)
+		{
+			const auto removed = spells::curePhysical::graveDustRemoval(*unit);
+			if(!removed.empty()) { state.removeUnitBonus(row.unitId, removed); resolved.insert(row.unitId); }
+		}
+		if(row.stunAutomaticallyCleared)
+		{
+			const auto removed = newHorizonsStun::removalPlan(*state.battleGetUnitByID(row.unitId));
+			if(!removed.empty()) { state.removeUnitBonus(row.unitId, removed); resolved.insert(row.unitId); }
+		}
+		if(row.crippleAutomaticallyCleared)
+		{
+			const auto removed = newHorizonsAttackControllers::crippleRemoval(*state.battleGetUnitByID(row.unitId));
+			if(!removed.empty()) { state.removeUnitBonus(row.unitId, removed); resolved.insert(row.unitId); }
+		}
+	}
+	return resolved;
+}
 }
 
 void heroSpellProjection::projectPurifySelection(PossibleSpellcast & ps, HypotheticBattle & state,
@@ -120,7 +151,14 @@ void heroSpellProjection::projectPurifySelection(PossibleSpellcast & ps, Hypothe
 	const auto selection = collectSelection(ps);
 	const bool applyPurifyingMandate = ps.divineMandateFollowup
 		&& newHorizonsDivineMandate::hasPurifyingMandatePerk(hero);
-	const bool selectionProjected = applySelection(selection, state, applyPurifyingMandate);
+	const auto eligible = ps.dest.size() == 1 && !ps.dest.front().unitValue
+		? newHorizonsPurify::eligibleStacks(state, side, ps.dest.front().hexValue,
+			hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), newHorizonsPurify::hasPurifierPerk(hero))
+		: std::vector<newHorizonsPurify::EligibleStack>{};
+	const bool selected = selection.selectedUnits.empty() || applySelection(selection, state, applyPurifyingMandate);
+	const auto automatic = selected ? applyAutomaticAfflictions(state, eligible, selection.physicalPoisonUnits)
+		: std::set<uint32_t>{};
+	const bool selectionProjected = selected && (!selection.selectedUnits.empty() || !automatic.empty());
 
 	// Purify deliberately accepts the projected action before testing negation.
 	if(!selectionProjected
@@ -152,26 +190,9 @@ std::optional<std::vector<uint32_t>> heroSpellProjection::projectAutomaticPurify
 		if(!applySelection(selection, state, false)) return std::nullopt;
 		resolved.insert(selection.selectedUnits.begin(), selection.selectedUnits.end());
 	}
-	// Native auxiliary ordering is groups, stored Poison, then Grave Dust. Use
-	// the same shared eligibility/clear/removal helpers, including Purifier's
-	// automatic afflictions outside the selected spell-group cap.
-	for(const auto & row : eligible)
-		if(row.physicalPoisonAutomaticallyCleared || manuallyPoisoned.contains(row.unitId))
-		{
-			auto unit = state.getForUpdate(row.unitId);
-			if(newHorizonsPurify::clearPhysicalPoison(unit.get())) resolved.insert(row.unitId);
-		}
-	for(const auto & row : eligible)
-		if(row.graveDustAutomaticallyCleared)
-		{
-			const auto * unit = state.battleGetUnitByID(row.unitId);
-			const auto removed = spells::curePhysical::graveDustRemoval(*unit);
-			if(!removed.empty())
-			{
-				state.removeUnitBonus(row.unitId, removed);
-				if(spells::curePhysical::graveDustRemoval(*state.battleGetUnitByID(row.unitId)).empty())
-					resolved.insert(row.unitId);
-			}
-		}
+	// Shared auxiliary order follows the selected groups; automatic afflictions
+	// remain outside the base selection cap and require Purifier eligibility.
+	const auto automatic = applyAutomaticAfflictions(state, eligible, manuallyPoisoned);
+	resolved.insert(automatic.begin(), automatic.end());
 	return std::vector<uint32_t>{resolved.begin(), resolved.end()};
 }

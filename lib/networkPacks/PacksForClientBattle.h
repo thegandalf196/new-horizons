@@ -20,6 +20,7 @@
 
 #include "NetPacksBase.h"
 #include "SetMetamagicPointState.h"
+#include "SetElementalAttunementState.h"
 #include "BattleChanges.h"
 #include "BattleUnitStateCompatibility.h"
 #include "PacksForClient.h"
@@ -1821,6 +1822,13 @@ struct DLL_LINKAGE EndAction : public CPackForClient
 
 struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 {
+	bool strongWyvernPoison = false; // Accepted native caster provenance for the red poison visual.
+	void validateStrongWyvernPoison() const
+	{
+		if(strongWyvernPoison && (spellID != SpellID::POISON || castByHero || casterStack < 0 || activeCast
+			|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)))
+			throw std::runtime_error("Invalid stronger Wyvern Poison visual receipt");
+	}
 	spells::AutomaticHeroCastReceipt automaticHeroCast;
 	void validateAutomaticHeroCast() const
 	{
@@ -1867,6 +1875,12 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateStrongWyvernPoison();
+			if(strongWyvernPoison && !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+				throw std::runtime_error("Cannot discard stronger Wyvern Poison visual provenance");
+		}
 		if(h.saving)
 		{
 			validateAutomaticHeroCast();
@@ -1996,6 +2010,10 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		}
 		else if(!h.saving)
 			automaticHeroCast = {};
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+			h & strongWyvernPoison;
+		else if(!h.saving) strongWyvernPoison = false;
+		validateStrongWyvernPoison();
 		validateAutomaticHeroCast();
 		validateHeroLuckReceipt();
 		assert(battleID != BattleID::NONE);

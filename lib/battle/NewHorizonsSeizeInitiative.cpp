@@ -77,109 +77,25 @@ void SeizeInitiativeState::complete(uint32_t id)
 
 namespace newHorizonsSeizeInitiative
 {
-bool eligible(const CBattleInfoCallback & cb, BattleSide side, const battle::Unit * unit)
+bool eligible(const CBattleInfoCallback &, BattleSide, const battle::Unit *)
 {
-	if(!cb.getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| !unit || !unit->alive() || unit->isGhost() || unit->isTimeStopped()
-		|| newHorizonsFrozen::isFrozen(*unit) || !unit->willMove()
-		|| cb.battleGetOwner(unit) != cb.getBattle()->getSidePlayer(side))
-		return false;
-	const auto & state = cb.getBattle()->getSeizeInitiativeState();
-	return state.sides.at(static_cast<size_t>(side)).enabled
-		&& state.round == cb.battleGetRound() && !state.completed(unit->unitId());
+	return false;
 }
 
-SeizeInitiativeState capturePaidOrder(const CBattleInfoCallback & cb, BattleSide side)
+SeizeInitiativeState capturePaidOrder(const CBattleInfoCallback &, BattleSide)
 {
-	auto state = cb.getBattle()->getSeizeInitiativeState();
-	auto & receipt = state.sides.at(static_cast<size_t>(side));
-	if(!receipt.enabled || receipt.triggered)
-		return state;
-	receipt.triggered = true;
-	std::vector<battle::Units> turns;
-	cb.battleGetTurnOrder(turns, 0, 1, 0, BattleSide::NONE, false, false);
-	if(turns.empty())
-		return state;
-	const auto * active = cb.battleActiveUnit();
-	for(auto it = turns.front().rbegin(); it != turns.front().rend(); ++it)
-		if((!active || (*it)->unitId() != active->unitId()) && eligible(cb, side, *it))
-		{
-			receipt.recipient = (*it)->unitId();
-			if(active)
-			{
-				receipt.anchor = active->unitId();
-				receipt.awaitingAnchor = true;
-			}
-			break;
-		}
-	return state;
+	return {};
 }
 
-void reorder(const CBattleInfoCallback & cb, battle::Units & queue, bool protectActive)
+void reorder(const CBattleInfoCallback &, battle::Units &, bool)
 {
-	const auto & state = cb.getBattle()->getSeizeInitiativeState();
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const auto & receipt = state.sides.at(static_cast<size_t>(side));
-		if(receipt.awaitingAnchor || receipt.recipient == SeizeInitiativeState::NO_UNIT)
-			continue;
-		const auto chosen = std::find_if(queue.begin(), queue.end(), [&](const auto * unit)
-		{
-			return unit->unitId() == receipt.recipient && eligible(cb, side, unit);
-		});
-		if(chosen == queue.end())
-			continue;
-		// Leave enemy positions untouched, and protect an already active extra.
-		std::vector<size_t> positions;
-		for(size_t index = 0; index < queue.size(); ++index)
-			if(!(protectActive && index == 0 && queue[index] == cb.battleActiveUnit())
-				&& cb.battleGetOwner(queue[index]) == cb.getBattle()->getSidePlayer(side))
-				positions.push_back(index);
-		const auto chosenIndex = static_cast<size_t>(chosen - queue.begin());
-		const auto last = std::find(positions.begin(), positions.end(), chosenIndex);
-		if(last == positions.end())
-			continue;
-		const auto * recipient = *chosen;
-		for(auto it = last; it != positions.begin(); --it)
-			queue[*it] = queue[*std::prev(it)];
-		queue[positions.front()] = recipient;
-	}
+
 }
 
-void validateReferences(const CBattleInfoCallback & cb, const SeizeInitiativeState & state)
+void validateReferences(const CBattleInfoCallback &, const SeizeInitiativeState & state)
 {
 	state.validateShape();
-	if(!state.enabled())
-		return;
-	if(state.round != cb.battleGetRound())
-		throw std::runtime_error("Seize Initiative round mismatch");
-	const auto units = cb.battleGetUnitsIf([](const auto *) { return true; });
-	const auto present = [&](uint32_t id)
-	{
-		return id == SeizeInitiativeState::NO_UNIT || std::count_if(units.begin(), units.end(), [id](const auto * unit)
-			{ return unit && unit->unitId() == id; }) == 1;
-	};
-	if(!present(state.active))
-		throw std::runtime_error("Seize Initiative active reference missing or ambiguous");
-	if(state.active != SeizeInitiativeState::NO_UNIT
-		&& static_cast<int64_t>(state.active) != cb.getBattle()->getActiveStackID())
-	{
-		const auto & crisis = cb.getBattle()->getCrisisCommandState();
-		const bool suspended = !crisis.returns.empty()
-			&& (crisis.returns.back().phase == newHorizonsCrisisCommand::Phase::CHOICE
-				|| crisis.returns.back().phase == newHorizonsCrisisCommand::Phase::GRANTED_EXTRA)
-			&& crisis.returns.back().round == state.round
-			&& crisis.returns.back().suspendedSeizeActive == state.active
-			&& crisis.returns.back().suspendedSeizeActiveNormal == state.activeNormal
-			&& static_cast<int64_t>(crisis.returns.back().anchor) == cb.getBattle()->getActiveStackID();
-		if(!suspended)
-			throw std::runtime_error("Seize Initiative active ledger does not match battle anchor");
-	}
-	for(auto id : state.normalCompleted)
-		if(!present(id))
-			throw std::runtime_error("Seize Initiative completed reference missing or ambiguous");
-	for(const auto & receipt : state.sides)
-		if(!present(receipt.recipient) || !present(receipt.anchor))
-			throw std::runtime_error("Seize Initiative recipient reference missing or ambiguous");
+	if(state.enabled())
+		throw std::runtime_error("Seize Initiative is retired in the current rules");
 }
 }

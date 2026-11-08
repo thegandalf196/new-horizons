@@ -80,6 +80,7 @@ set(lualib_HDRS
 		LuaSpellEffect.h
 		LuaCombatEventScript.h
 		LuaDamageCalculatorScript.h
+		DeclaredBonusTypes.h
 		LuaScriptPool.h
 		LuaScriptFactory.h
 		LuaStack.h

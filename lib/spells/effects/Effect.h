@@ -47,6 +47,10 @@ enum class ForecastImplementation
 	CANONICAL_LIFE_DRAIN
 };
 
+/// Native-only attestation of a replayable resisted recipient component.
+/// This is not an authored JSON capability or a new spell action.
+enum class ResistanceShareKind { Unsupported, Damage, Timed, NaturesWrath, Pandemonium, LifeDrain };
+
 struct SpellEffectValue : public scripting::ApiSerializable<SpellEffectValue>
 {
 	int64_t hpDelta = 0; // positive -> healed health points, negative -> damage
@@ -88,6 +92,7 @@ public:
 	{
 		return ForecastImplementation::UNKNOWN;
 	}
+	virtual ResistanceShareKind resistanceShareKind() const { return ResistanceShareKind::Unsupported; }
 
 	// TODO: document me
 	virtual void adjustTargetTypes(std::vector<TargetType> & types, const Mechanics * m) const {};

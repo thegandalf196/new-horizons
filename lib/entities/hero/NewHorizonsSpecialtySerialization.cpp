@@ -3,6 +3,9 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../nativeRules/PreparedPilotRules.h"
+#include <algorithm>
+#include "NewHorizonsPassiveSpecialtyRules.h"
 #include "NewHorizonsGenieSage.h"
 #include "NewHorizonsSpecialtySerialization.h"
 #include "NewHorizonsOrdinaryCreatureSpecialties.h"
@@ -24,8 +27,28 @@
 namespace newHorizonsHeroes
 {
 void validateCapturedSpecialtiesSerialization(const JsonNode & development,
-	const SpecialtySerializationContext & context)
+	const SpecialtySerializationContext & context, bool pilotOverrideFragments)
 {
+	if(!pilotOverrideFragments)
+		nativeRules::validatePilotCreatures(development, context.nativeRulesRedesign);
+	else
+	{
+		JsonNode raw;
+		raw["heroes"]["newHorizons"] = development;
+		nativeRules::validatePilotOverrides(raw, context.nativeRulesRedesign);
+		// A raw overlay containing only the new child need not repeat its
+		// inherited Additional Specialties parent. Other fields keep their guards.
+		const auto & additional = development["additionalSpecialties"];
+		if(additional.isStruct() && additional.Struct().contains("preparedCreatureSpecialties")
+			&& std::all_of(additional.Struct().begin(), additional.Struct().end(), [](const auto & entry)
+			{ return entry.first == "preparedCreatureSpecialties" || entry.first == "version"; }))
+		{
+			JsonNode otherFields = development;
+			otherFields.Struct().erase("additionalSpecialties");
+			validateCapturedSpecialtiesSerialization(otherFields, context, true);
+			return;
+		}
+	}
 	validateIndividualSpecialtiesSerialization(development, context.fortuneAndArcane,
 		context.individualRiders, context.schoolSpellcraft, context.additional, context.recovery);
 	validateLearningExchangeSpecialtiesSerialization(development, context.remainingRiders);
@@ -43,6 +66,7 @@ void validateCapturedSpecialtiesSerialization(const JsonNode & development,
 	validateDreadCavalrySerialization(development, context.dreadCavalry);
 	validateGenieSageSerialization(development, context.genieSage);
 	validateOrdinaryCreatureSpecialtiesSerialization(development, context.ordinaryCreatureSpecialties);
+	validatePassiveSpecialtySerialization(development, context.nativeRulesRedesign);
 	validateOrdinaryCreatureExtensionsSerialization(development, context.adjacencyFilters);
 	validateOrdinaryCreaturePolicyExtensionsSerialization(development, context.ordinaryCreaturePolicyExtensions);
 	validateOrdinaryRangedSpecialtiesSerialization(development, context.ordinaryRangedSpecialties);
@@ -80,6 +104,7 @@ void validateCurrentSpecialtyRules(const JsonNode & development)
 	current.ordinaryMachineSpecialties = true;
 	current.ordinaryCombatSpecialties = true;
 	current.extendedOrdinarySpecialties = true;
+	current.nativeRulesRedesign = true;
 	validateCapturedSpecialtiesSerialization(development, current);
 }
 

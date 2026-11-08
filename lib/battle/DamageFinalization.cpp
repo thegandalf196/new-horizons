@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsSpecialtyEvents.h"
+#include "NewHorizonsAttackControllers.h"
 #include "ArcaneInspiration.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "CBattleInfoCallback.h"
@@ -16,7 +18,6 @@
 #include "NewHorizonsArchery.h"
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsFrozen.h"
-#include "NewHorizonsSequenceProtection.h"
 #include "NewHorizonsReactiveDefense.h"
 #include "NewHorizonsCoordinatedMarks.h"
 #include "NewHorizonsChargeSpecialties.h"
@@ -38,9 +39,15 @@ constexpr int FORTIFICATION_ENGINEER_SIEGE_PERCENT = 125;
 void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	DamageAttackInfo & payload, const IBattleInfo * currentBattle) const
 {
+	const auto attunement = info.attacker->elementalAttunementPassives();
+	payload.elementalAttunementDamagePercent = info.shooting
+		? attunement.rangedDamagePercent : attunement.meleeDamagePercent;
+	payload.stoneboundPhysicalReductionBasisPoints = info.physicalDamage && info.defender
+		? info.defender->elementalAttunementPassives().physicalReductionBasisPoints : 0;
 	payload.intrinsicPhysicalDamageReductionPercent = info.physicalDamage && info.defender
 		? info.defender->intrinsicPhysicalDamageReductionPercent()
-			+ newHorizonsHeroes::ordinaryCreatureProtectionPercent(*this, info) : 0;
+			+ newHorizonsHeroes::ordinaryCreatureProtectionPercent(*this, info)
+			+ newHorizonsSpecialtyEvents::retaliationReduction(*this, info) : 0;
 	const auto coordinatedPenetration = newHorizonsCoordinatedMarks::penetration(*this, info);
 	payload.coordinatedMeleeDefenseIgnorePercent = coordinatedPenetration.creatureDefensePercent;
 	payload.coordinatedPhysicalProtectionIgnorePercent = coordinatedPenetration.physicalProtectionPercent;
@@ -57,12 +64,9 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	if(coordinatedPenetration.physicalProtectionPercent > 0)
 		payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
 			+ coordinatedPenetration.physicalProtectionPercent);
-	payload.runicEnduranceReductionPercent = newHorizonsSequenceProtection::runicEndurancePercent(*this, info);
+	payload.runicEnduranceReductionPercent = 0; // Reserved numeric envelope; the retired specialty has no producer.
 	payload.ironHideReductionPercent = newHorizonsReactiveDefense::ironHidePercent(*this, info);
-	const int sequenceProtectionIgnore = newHorizonsSequenceProtection::cyclopeanBreachPercent(*this, info);
-	payload.legacyPhysicalDamageReductionIgnorePercent = std::min(100, existingProtectionIgnore + sequenceProtectionIgnore);
-	payload.physicalDamageReductionIgnorePercent = std::min(100, payload.physicalDamageReductionIgnorePercent
-		+ sequenceProtectionIgnore);
+	payload.legacyPhysicalDamageReductionIgnorePercent = existingProtectionIgnore;
 	const bool finalLuckPolicy = getBattle()->getRawFinalDirectPhysicalLuckPolicy();
 	const bool luckEligible = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(info.attacker, info.physicalDamage);
 	payload.luckyStrike = info.luckyStrike && (!finalLuckPolicy || luckEligible);
@@ -80,7 +84,11 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	}
 	newHorizonsSylvanTactics::finalizeDamage(*this, info, payload);
 	payload.unluckyStrike = info.unluckyStrike && (!finalLuckPolicy || luckEligible);
-	payload.ordinaryCreatureSpecialtyDamagePercent = newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*this, info);
+	payload.ordinaryCreatureSpecialtyDamagePercent = newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*this, info)
+		* newHorizonsSpecialtyEvents::firstStrikeFinalMultiplier(*this, info) / 100;
+	if(info.physicalDamage && info.shooting && !info.secondaryAttack)
+		payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
+			* newHorizonsAttackControllers::ballistaPhysicalDamagePercent(*this, *info.attacker) / 100;
 	payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
 		* (100 + newHorizonsPrismaticVanguard::activeDamagePercent(info)) / 100;
 	payload.deathBlow = info.deathBlow;

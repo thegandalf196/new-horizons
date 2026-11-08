@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsCommandResources.h"
 #include "../spells/NewHorizonsMetamagicEntry.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "../bonuses/NativeBonusGraphAccess.h"
@@ -517,6 +518,8 @@ void BattleInfo::setHeroOrderState(BattleSide side, const std::optional<HeroOrde
 
 void BattleInfo::setDoubleCommandState(BattleSide side, const DoubleCommandState & state)
 {
+	if(state != DoubleCommandState{})
+		throw std::runtime_error("Double Command is retired in current rules");
 	state.validateShape();
 	auto & sideState = sides.at(side);
 	if(sideState.doubleCommandState.orderPending() && !state.orderPending())
@@ -529,6 +532,8 @@ void BattleInfo::setDoubleCommandState(BattleSide side, const DoubleCommandState
 
 void BattleInfo::setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state)
 {
+	if(state != PreCombatOrderState{})
+		throw std::runtime_error("Battle Plan opening Orders are retired in current rules");
 	auto & sideState = sides.at(side);
 	const auto & previous = sideState.preCombatOrderState;
 	state.validateTransitionFrom(previous);
@@ -776,10 +781,6 @@ std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const
 	currentBattle->terrainType = terrain;
 	currentBattle->battlefieldType = battlefieldType;
 	currentBattle->round = 0;
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		currentBattle->seizeInitiative.sides.at(static_cast<size_t>(side)).enabled = heroes[side]
-			&& heroes[side]->hasActivePerk(std::string(newHorizonsSeizeInitiative::SKILL_KEY),
-				std::string(newHorizonsSeizeInitiative::PERK_KEY));
 	currentBattle->seizeInitiative.nextRound(0);
 	currentBattle->activeStack = -1;
 	currentBattle->replayAllowed = false;

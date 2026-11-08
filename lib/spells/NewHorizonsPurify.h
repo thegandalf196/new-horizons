@@ -43,6 +43,8 @@ struct DLL_LINKAGE EligibleStack
 	bool physicalPoisonAutomaticallyCleared = false;
 	/// Only canonical Grave Dust is an additional automatic Purifier cleanse.
 	bool graveDustAutomaticallyCleared = false;
+	bool stunAutomaticallyCleared = false;
+	bool crippleAutomaticallyCleared = false;
 	int maximumSpellEffectChoices = 0;
 };
 

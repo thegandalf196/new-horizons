@@ -189,12 +189,12 @@ TEST_F(NewHorizonsRecruitmentGrowthWorldTest, NewDwellingConstructionScalesIniti
 	EXPECT_EQ(town()->creatures[0].first, 37u);
 }
 
-TEST_F(NewHorizonsRecruitmentGrowthWorldTest, ShippedDefaultsWithoutExplicitPercentOverridesProduceAndCaptureHalf)
+TEST_F(NewHorizonsRecruitmentGrowthWorldTest, ShippedDefaultsCaptureHalfRecruitmentAndFullNeutralPercentage)
 {
 	useShippedDefaults = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	EXPECT_EQ(newHorizonsRecruitmentGrowth::percentage(gameState()->getSettings()), 50);
-	EXPECT_EQ(newHorizonsNeutralArmies::percentage(gameState()->getSettings()), 50);
+	EXPECT_EQ(newHorizonsNeutralArmies::percentage(gameState()->getSettings()), 100);
 	GameHandlerTestServer server(gameState(), PlayerColor(0));
 	CGameHandler handler(server, gameState());
 	handler.onNewTurn();

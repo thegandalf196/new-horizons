@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "nativeRules/PreparedPilotRules.h"
 #include "GameSettings.h"
+#include "entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "mapObjects/NewHorizonsNeutralArmies.h"
 #include "mapObjects/NewHorizonsNeutralCalibration.h"
 #include "mapObjects/NewHorizonsRecruitmentGrowth.h"
@@ -172,6 +174,23 @@ const std::vector<GameSettings::SettingOption> GameSettings::settingProperties =
 		{EGameSettings::INTERFACE_PLAYER_COLORED_BACKGROUND,              "interface", "playerColoredBackground"              },
 	};
 
+namespace
+{
+void validateOrdinaryHeroRuleMerge(const JsonNode & base, const JsonNode & input)
+{
+	JsonNode candidate = base;
+	JsonUtils::mergeCopy(candidate, input);
+	nativeRules::validatePilotCreatures(candidate);
+	newHorizonsHeroes::validateOrdinaryCreatureSpecialtiesSerialization(candidate, true);
+}
+void validatePilotPerkMerge(const JsonNode & base, const JsonNode & input)
+{
+	JsonNode candidate = base;
+	JsonUtils::mergeCopy(candidate, input);
+	nativeRules::validatePilotPerks(candidate);
+}
+}
+
 void GameSettings::loadBase(const JsonNode & input)
 {
 	if(input.isVector())
@@ -180,6 +199,9 @@ void GameSettings::loadBase(const JsonNode & input)
 		return;
 	}
 	JsonUtils::validate(input, "vcmi:gameSettings", input.getModScope());
+	validatePilotPerkMerge(baseSettings[static_cast<size_t>(EGameSettings::HEROES_NEW_HORIZONS_PERKS)], input["heroes"]["newHorizonsPerks"]);
+	validateOrdinaryHeroRuleMerge(baseSettings[static_cast<size_t>(EGameSettings::HEROES_NEW_HORIZONS)],
+		input["heroes"]["newHorizons"]);
 	newHorizonsNeutralArmies::validateOverrides(input, true);
 	newHorizonsRecruitmentGrowth::validateOverrides(input, true);
 	newHorizonsNeutralArmies::calibration::validate(input["creatures"][newHorizonsNeutralArmies::calibration::SETTING_KEY]);
@@ -250,8 +272,19 @@ void GameSettings::loadSavedOverrides(const JsonNode & input)
 	loadOverrides(saved);
 }
 
+void GameSettings::validateSpecialtyOverrideSerialization(const JsonNode & overrides,
+	const newHorizonsHeroes::SpecialtySerializationContext & context) const
+{
+	nativeRules::validatePilotOverrides(overrides, context.nativeRulesRedesign);
+	newHorizonsHeroes::validateCapturedSpecialtiesSerialization(overrides["heroes"]["newHorizons"], context, true);
+}
+
 void GameSettings::loadOverrides(const JsonNode & input)
 {
+	validatePilotPerkMerge(baseSettings[static_cast<size_t>(EGameSettings::HEROES_NEW_HORIZONS_PERKS)], input["heroes"]["newHorizonsPerks"]);
+	// Reject a malformed effective hero policy before changing any option.
+	validateOrdinaryHeroRuleMerge(baseSettings[static_cast<size_t>(EGameSettings::HEROES_NEW_HORIZONS)],
+		input["heroes"]["newHorizons"]);
 	// Validate the two new scalar rows together before any option is changed.
 	// This is admission only; absence normalization remains binary-load-only.
 	newHorizonsHeroes::validatePassiveFactionPolicies(input["heroes"]["newHorizonsPerks"]);
@@ -273,8 +306,13 @@ void GameSettings::loadOverrides(const JsonNode & input)
 
 void GameSettings::addOverride(EGameSettings option, const JsonNode & input)
 {
+	if(option == EGameSettings::HEROES_NEW_HORIZONS)
+		validateOrdinaryHeroRuleMerge(baseSettings[static_cast<size_t>(option)], input);
 	if(option == EGameSettings::HEROES_NEW_HORIZONS_PERKS)
+	{
+		validatePilotPerkMerge(baseSettings[static_cast<size_t>(option)], input);
 		newHorizonsHeroes::validatePassiveFactionPolicies(input);
+	}
 	if(option == EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)
 		newHorizonsNeutralArmies::calibration::validate(input);
 	if(option == EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK

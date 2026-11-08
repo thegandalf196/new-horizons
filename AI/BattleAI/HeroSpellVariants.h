@@ -10,6 +10,7 @@ class CBattleInfoCallback;
 class CGHeroInstance;
 class CSpell;
 class PossibleSpellcast;
+namespace battle { class Unit; }
 namespace spells { class BattleCast; class Mechanics; }
 namespace heroSpellVariants
 {
@@ -27,5 +28,7 @@ struct Prepared
 /// Legacy candidates retain their original earlier admission path.
 bool targetAdmitted(const PossibleSpellcast &, spells::BattleCast &,
 	std::unique_ptr<spells::Mechanics> &);
+bool activationForfeitChanged(const battle::Unit &, const battle::Unit &);
+bool recoveredCreatureActivation(const std::string & kind, const battle::Unit & before, const battle::Unit & after);
 Prepared prepare(const CBattleInfoCallback &, const CGHeroInstance *, const CSpell *, BattleSide);
 }

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsSpecialtyRoundEffects.h"
 #include "NewHorizonsAerialSupremacy.h"
 
 #include "CUnitState.h"
@@ -1510,17 +1511,6 @@ bool CUnitState::canShootBlocked() const
 	return !isNewHorizonsFrozen() && bonusCache.hasBonus(UnitBonusValuesProxy::HAS_FREE_SHOOTING);
 }
 
-bool CUnitState::canShoot() const
-{
-	return !isNewHorizonsFrozen() && newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
-		&& shots.canUse(1)
-		&& bonusCache.getBonusValue(UnitBonusValuesProxy::FORGETFULL) < 100; //100% forgetfulness disables shooting
-}
-
-bool CUnitState::isShooter() const
-{
-	return shots.total() > 0;
-}
 
 int64_t CUnitState::getAvailableHealth() const
 {
@@ -1764,10 +1754,6 @@ int32_t CUnitState::getBattleFormViewRevision() const
 	return battleFormViewRevision;
 }
 
-uint32_t CUnitState::getMaxHealth() const
-{
-	return std::max(1, bonusCache.getBonusValue(UnitBonusValuesProxy::STACK_HEALTH));
-}
 
 BattleHex CUnitState::getPosition() const
 {
@@ -1973,7 +1959,10 @@ std::shared_ptr<Unit> CUnitState::acquire() const
 {
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
 	ret->captureBonusProviderDispatch();
-	ret->localInit(env);
+	// Cloning copies the complete typed value inventory, including health and
+	// ammo. Do not initialize a reset/formless intermediate through the live
+	// environment before its source form and provenance have been copied.
+	ret->bindStateEnvironment(env);
 	*ret = *this;
 	return ret;
 }
@@ -1982,7 +1971,10 @@ std::shared_ptr<CUnitState> CUnitState::acquireState() const
 {
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
 	ret->captureBonusProviderDispatch();
-	ret->localInit(env);
+	// Cloning copies the complete typed value inventory, including health and
+	// ammo. Do not initialize a reset/formless intermediate through the live
+	// environment before its source form and provenance have been copied.
+	ret->bindStateEnvironment(env);
 	*ret = *this;
 	return ret;
 }
@@ -2209,6 +2201,7 @@ JsonNode CUnitState::save()
 
 void CUnitState::load(const JsonNode & data)
 {
+	const auto incomingSpecialtyRound = newHorizonsSpecialtyEvents::roundReceiptFromJson(data, ordinarySpecialtyLastRound);
 	validateOwnedFormIdentifiers(data);
 	const int32_t incomingBloodRound = petrifyingBloodRoundFromJson(data, petrifyingBloodRound);
 	summonLifetimeFromJson(data["state"]);
@@ -2255,6 +2248,7 @@ void CUnitState::load(const JsonNode & data)
 	JsonDeserializer deser(nullptr, data);
 	deser.serializeStruct("state", *this);
 	petrifyingBloodRound = incomingBloodRound;
+	ordinarySpecialtyLastRound = incomingSpecialtyRound;
 	veteranCohesionEarned = retainedVeteranCohesion;
 	confusionState = incomingActivation.confusion;
 	arcaneMarks = incomingActivation.arcaneMarks;

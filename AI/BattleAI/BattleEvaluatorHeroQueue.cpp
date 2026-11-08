@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "ActivationForfeit.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleEvaluator.h"
@@ -115,7 +116,7 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 	const std::shared_ptr<HypotheticBattle> & state, const battle::Unit * unit,
 	battle::Units & remainingQueue, size_t queueIndex)
 {
-	const bool frozenForfeits = newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
+	const bool frozenForfeits = activationForfeit::pending(*state, *unit, BattleUnitTurnReason::TURN_QUEUE);
 	const bool syntheticStoppedSlot = unit->isTimeStopped();
 	if(frozenForfeits)
 		state->nextTurnPreservingFrozenForfeit(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
@@ -123,17 +124,7 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 		state->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	if(frozenForfeits)
 	{
-		const auto frozen = newHorizonsFrozen::removalPlan(*unit);
-		state->getForUpdate(unit->unitId())->removeUnitBonus(CSelector([](const Bonus * bonus)
-		{
-			return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
-		}));
-		state->getForUpdate(unit->unitId())->consumeNoQuarterActivation();
-		newHorizonsPlague::completeActivation(*state, *state->getServerCallback(), unit->unitId());
-		const auto current = state->getForUpdate(unit->unitId());
-		if(current->alive() && !current->isGhost() && !current->isTimeStopped()
-			&& newHorizonsFrozen::isFrozen(*current))
-			current->removeUnitBonus(frozen);
+		state->completeForfeitedActivation(unit->unitId());
 		state->completeSeizeInitiativeActivation(unit->unitId());
 		battle::Units remaining(remainingQueue.begin() + queueIndex + 1, remainingQueue.end());
 		newHorizonsSeizeInitiative::reorder(*state, remaining, false);
@@ -212,7 +203,7 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 		&& !completed->isTimeStopped() && completed->pursuitMovementRemaining == 0 && !completed->dreadCavalryState.pending
 		&& !state->battleHasPendingRangedFollowUp(completed.get()))
 		newHorizonsPlague::completeActivation(*state, *state->getServerCallback(), unit->unitId());
-	state->completeSwiftNormalActivation(unit->unitId());
+	state->completeNormalActivation(unit->unitId());
 	newHorizonsDivineMandate::completeDisciplineActivation(*state, unit->unitId());
 	state->completeSeizeInitiativeActivation(unit->unitId());
 	if(state->getSeizeInitiativeState().enabled())

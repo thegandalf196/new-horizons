@@ -21,6 +21,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMetamagicPoints.h"
+#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 
 namespace
 {
@@ -51,6 +52,8 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
+			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
@@ -234,71 +237,20 @@ TEST_F(FactionRevisionProjectionTest, ExposureUsesFlankingHeroProvenanceAndExpir
 	EXPECT_EQ(faction::bonusPercent(*projected, attackerSideHero, target.get()), 15);
 }
 
-TEST_F(FactionRevisionProjectionTest, CataclysmUsesSharedCapacityAndMitigationAndDeduplicatesPacketDeaths)
+TEST_F(FactionRevisionProjectionTest, ConduitAndAreaBonusAreCapturedWithoutRebornStacks)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:elementalRebirth", "new-horizons:elementalRebirth.elementalConduit",
 		"new-horizons:elementalRebirth.elementalCataclysm"));
-	battle::UnitInfo info;
-	info.id = battle()->battleNextUnitId();
-	info.type = creatureByName("core:earthElemental");
-	info.count = 11;
-	info.position = BattleHex(81);
-	info.side = BattleSide::ATTACKER;
-	info.summoned = true;
-	BattleUnitsChanged add;
-	add.battleID = battle()->getBattleID();
-	info.save(add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD).data);
-	gameHandler->sendAndApply(add);
-	auto * reborn = battle()->getStack(info.id, false);
-	reborn->addNewBonus(std::make_shared<Bonus>(faction::rebirthOutputMarker()));
-	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSource::OTHER, 2000,
-		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
-	auto * collateral = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(82), 1000);
-	auto * invincible = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(64), 1000);
-	invincible->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::INVINCIBLE,
-		BonusSource::OTHER, 0, BonusSourceID()));
-	const auto invincibleHealth = invincible->getAvailableHealth();
 	auto projected = branch();
-	auto sibling = branch();
-	const auto source = projected->getForUpdate(info.id);
-	const auto captured = faction::captureCataclysm(*projected, *source);
-	ASSERT_TRUE(captured);
-	ASSERT_EQ(captured->targets.size(), 3u) << "Invincibility does not reallocate its captured share";
-	const auto share = faction::cataclysmShare(captured->maximumAggregateHP, captured->targets.size());
-	const auto expected = newHorizonsMagicalAbilityDamage::adjustDamage(*projected,
-		*projected->battleGetUnitByID(victim->unitId()), share);
-	const auto before = victim->getAvailableHealth();
 	const auto random = rng();
-	auto packet = injury(*source, source->getAvailableHealth(), *projected);
-	packet.stacks.push_back(packet.stacks.front());
-	projected->getServerCallback()->apply(packet);
-	EXPECT_EQ(before - projected->battleGetUnitByID(victim->unitId())->getAvailableHealth(), expected);
-	EXPECT_EQ(projected->battleGetUnitByID(invincible->unitId())->getAvailableHealth(), invincibleHealth);
-	EXPECT_EQ(faction::livingRebirthCount(*projected, *attackerSideHero), 0);
-	EXPECT_EQ(faction::livingRebirthCount(*sibling, *attackerSideHero), 1);
-	EXPECT_EQ(victim->getAvailableHealth(), before);
-	ASSERT_EQ(projected->getProjectedPrimalBurstHits().size(), 2u);
-	EXPECT_EQ(projected->getProjectedPrimalBurstHits().front().actualDamage, expected);
+	const auto ordinary = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, projected.get(), true, SpellID::MAGIC_ARROW);
+	const auto area = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, projected.get(), true, SpellID::FIREBALL);
+	const auto chain = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, projected.get(), true, SpellID::CHAIN_LIGHTNING);
+	EXPECT_EQ(ordinary.factionSpellDamageBonus, 15);
+	EXPECT_EQ(area.factionSpellDamageBonus, 40);
+	EXPECT_EQ(chain.factionSpellDamageBonus, 15);
+	EXPECT_EQ(projected->getElementalAttunementMask(BattleSide::ATTACKER), 0);
 	EXPECT_EQ(rng(), random);
-	BattleAttackInfo attack(victim, reborn, 0, false);
-	AttackPossibility selected(victim->getPosition(), reborn->getPosition(), attack);
-	selected.attackerState = projected->getForUpdate(victim->unitId());
-	selected.affectedUnits.push_back(projected->getForUpdate(reborn->unitId()));
-	selected.effectPreview = projected;
-	auto restored = branch();
-	SelectedAttackReceipt receipt(selected);
-	receipt.captureDamage(*restored);
-	EXPECT_EQ(receipt.damage().at(victim->unitId()), 0)
-		<< "Replayed Cataclysm cannot also become residual actor damage";
-	applyProjectedBestAction(*restored, victim, selected);
-	EXPECT_EQ(restored->battleGetUnitByID(collateral->unitId())->getAvailableHealth(),
-		projected->battleGetUnitByID(collateral->unitId())->getAvailableHealth())
-		<< "An indirect victim outside affectedUnits still belongs to the selected snapshot";
-	// Apply one original death to authority: duplicate entries are an AI dedup control.
-	packet.stacks.resize(1);
-	gameHandler->sendAndApply(packet);
-	EXPECT_EQ(projected->battleGetUnitByID(victim->unitId())->getAvailableHealth(), victim->getAvailableHealth());
 }
 
 TEST_F(FactionRevisionProjectionTest, ManaConduitRestoresOnlyPrivateNormalPoolAtRoundStart)
@@ -314,52 +266,21 @@ TEST_F(FactionRevisionProjectionTest, ManaConduitRestoresOnlyPrivateNormalPoolAt
 	EXPECT_EQ(rng(), random);
 }
 
-TEST_F(FactionRevisionProjectionTest, ProjectedRebirthAndChainCarryConduitProvenanceOnlyInTheirBranch)
+TEST_F(FactionRevisionProjectionTest, ConfluxDeathChangesNeitherConduitStrengthNorBattlefieldRoster)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:elementalRebirth", "new-horizons:elementalRebirth.elementalConduit",
-		"new-horizons:elementalRebirth.rebirthChain", nullptr, true));
-	// Rebirth requires an original army slot and HP captured at battle start;
-	// addStack's late, slotless units cannot represent the eligible source.
-	ASSERT_TRUE(newHorizonsElementalRebirth::isEligibleSource(*actor));
-	ASSERT_GT(actor->getBattleStartMaximumAggregateHP(), 0);
-	ASSERT_FALSE(newHorizonsElementalRebirth::isEligibleSource(*victim));
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:elementalRebirth", "new-horizons:elementalRebirth.elementalConduit"));
 	auto projected = branch();
 	auto sibling = branch();
 	const auto random = rng();
+	const auto count = projected->battleGetAllUnits(false).size();
 	const auto original = projected->getForUpdate(actor->unitId());
-	const auto captured = projected->captureElementalRebirthSource(*original);
-	ASSERT_TRUE(captured);
-	EXPECT_EQ(captured->battleStartMaximumAggregateHP, actor->getBattleStartMaximumAggregateHP());
-	ASSERT_FALSE(captured->chain);
-	auto firstDeath = injury(*original, original->getAvailableHealth(), *projected);
-	projected->getServerCallback()->apply(firstDeath);
-	ASSERT_EQ(projected->getElementalRebirthSpawnUnitIds().size(), 1u);
-	const auto firstId = *projected->getElementalRebirthSpawnUnitIds().begin();
-	const auto first = projected->getForUpdate(firstId);
-	ASSERT_TRUE(first);
-	EXPECT_GT(first->getRebirthOriginalAggregateHP(), 0);
-	EXPECT_TRUE(first->hasBonus(CSelector(faction::isRebirthOutputMarker)));
-	EXPECT_EQ(faction::livingRebirthCount(*projected, *attackerSideHero), 1);
-	auto secondDeath = injury(*first, first->getAvailableHealth(), *projected);
-	projected->getServerCallback()->apply(secondDeath);
-	ASSERT_EQ(projected->getElementalRebirthSpawnUnitIds().size(), 2u);
-	for(const auto id : projected->getElementalRebirthSpawnUnitIds())
-		EXPECT_TRUE(projected->battleGetUnitByID(id)->hasBonus(CSelector(faction::isRebirthOutputMarker)));
-	EXPECT_TRUE(projected->getRebirthChainUsed(BattleSide::ATTACKER));
-	EXPECT_EQ(faction::livingRebirthCount(*projected, *attackerSideHero), 1);
-	EXPECT_EQ(faction::livingRebirthCount(*sibling, *attackerSideHero), 0);
-	EXPECT_EQ(faction::livingRebirthCount(*battle(), *attackerSideHero), 0);
-	const auto secondId = *std::find_if(projected->getElementalRebirthSpawnUnitIds().begin(),
-		projected->getElementalRebirthSpawnUnitIds().end(), [firstId](uint32_t id) { return id != firstId; });
-	const auto second = projected->getForUpdate(secondId);
-	ASSERT_TRUE(second);
-	EXPECT_EQ(second->getRebirthOriginalAggregateHP(), 0);
-	auto thirdDeath = injury(*second, second->getAvailableHealth(), *projected);
-	projected->getServerCallback()->apply(thirdDeath);
-	EXPECT_EQ(projected->getElementalRebirthSpawnUnitIds().size(), 2u);
-	EXPECT_EQ(faction::livingRebirthCount(*projected, *attackerSideHero), 0);
-	EXPECT_FALSE(sibling->getRebirthChainUsed(BattleSide::ATTACKER));
-	EXPECT_FALSE(battle()->getRebirthChainUsed(BattleSide::ATTACKER));
+	auto death = injury(*original, original->getAvailableHealth(), *projected);
+	projected->getServerCallback()->apply(death);
+	EXPECT_FALSE(projected->battleGetUnitByID(actor->unitId())->alive());
+	EXPECT_EQ(projected->battleGetAllUnits(false).size(), count);
+	EXPECT_EQ(newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, projected.get(), true,
+		SpellID::MAGIC_ARROW).factionSpellDamageBonus, 15);
+	EXPECT_EQ(projected->getElementalAttunementMask(BattleSide::ATTACKER), 0);
 	EXPECT_TRUE(sibling->battleGetUnitByID(actor->unitId())->alive());
 	EXPECT_TRUE(actor->alive());
 	EXPECT_EQ(rng(), random);

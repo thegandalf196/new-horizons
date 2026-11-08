@@ -22,6 +22,8 @@
 #include "../GameConstants.h"
 #include "BattleHex.h"
 #include "HeroCommand.h"
+#include "NewHorizonsCommandResources.h"
+#include "NewHorizonsElementalAttunement.h"
 #include "FocusFireState.h"
 #include "SylvanLuckState.h"
 #include "AdverseCombatRerollState.h"
@@ -136,6 +138,9 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	ObjectInstanceID heroID; //may be empty if army is not commanded by hero
 	ObjectInstanceID armyObjectID; //adv. map object with army that participates in battle; may be same as hero
 
+	newHorizonsCommand::ResourceState commandResources;
+	uint8_t elementalAttunementMask = 0;
+	newHorizonsElementalAttunement::Profile elementalAttunementProfile;
 	bool heroCommandUsed = false;
 	// Decode-only compatibility slot. New Horizons no longer emits or exposes
 	// doctrines; this member remains so old HERO_COMMANDS records retain their
@@ -352,6 +357,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	void validateDoubleCommandState() const
 	{
+		if(doubleCommandState != DoubleCommandState{})
+			throw std::runtime_error("Double Command is retired in the current rules");
 		doubleCommandState.validateShape();
 		heroActionAllowances.validateShape();
 		const auto doubleGrants = static_cast<uint32_t>(std::count_if(
@@ -374,6 +381,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	void validatePreCombatOrderState() const
 	{
+		if(preCombatOrderState != PreCombatOrderState{})
+			throw std::runtime_error("The Battle Plan opening window is retired in current rules");
 		preCombatOrderState.validateShape();
 		heroActionAllowances.validateShape();
 		if(preCombatOrderState.phase == PreCombatOrderState::Phase::ORDER_REQUIRED)
@@ -453,6 +462,20 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		commandResources.validate();
+		elementalAttunementProfile.validate();
+		if(elementalAttunementMask > 15) throw std::runtime_error("Invalid elemental Attunement mask");
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)
+			&& (commandResources.initialized || elementalAttunementMask != 0))
+			throw std::runtime_error("Cannot discard native rules redesign battle state");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+		{
+			h & commandResources;
+			h & elementalAttunementMask;
+			h & elementalAttunementProfile;
+			if(elementalAttunementMask > 15) throw std::runtime_error("Invalid elemental Attunement mask");
+		}
+		else if(!h.saving) { commandResources = {}; elementalAttunementMask = 0; elementalAttunementProfile = {}; }
 		if(h.saving)
 			metamagicPointState.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
 		if(h.saving)

@@ -51,6 +51,14 @@ def registry_artwork(table):
     return bindings
 
 
+def assert_battle_wide_aura_delegation(case, source):
+    """The reviewed aura producer moved to the typed native pilot module."""
+    case.assertIn('nativeRules::configureAdjacentSpecialtyBonus(*bonus, creature, aura)', source)
+    producer = (ROOT / 'lib/nativeRules/NativeRulePilots.cpp').read_text()
+    case.assertIn('BonusNodeType::BATTLE_WIDE', producer)
+    case.assertIn('bonus.propagationUpdater = std::make_shared<OwnerUpdater>()', producer)
+
+
 class ThirteenSpecialtyLineageTest(unittest.TestCase):
     def setUp(self):
         self.waves = json.loads((ROOT / 'assets/new-horizons/runtime-art-additions.json').read_text())['waves']
@@ -90,7 +98,7 @@ class ThirteenSpecialtyLineageTest(unittest.TestCase):
         self.assertEqual(len(earlier), 6)
         for row in earlier + self.rows:
             self.assertEqual(bindings[row['id']], 'newHorizons/heroSpecialties/' + row['identity'])
-        self.assertIn('BonusNodeType::BATTLE_WIDE', source)
+        assert_battle_wide_aura_delegation(self, source)
 
     def test_artwork_slot_accepts_optional_summary_without_reading_description(self):
         prefix = ('{"core:fixture", "core:creature", "Specialty", "coefficient", '

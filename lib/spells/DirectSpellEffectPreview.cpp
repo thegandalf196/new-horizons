@@ -36,6 +36,14 @@ std::optional<int64_t> directSpellRawPotential(const CGHeroInstance & hero, cons
 	int64_t raw;
 	if(const auto overrideValue = hero.getEffectValue(&spell); overrideValue != 0)
 		raw = overrideValue;
+	else if(magicArrowOverchargeEnabled(rules, spell.getId()))
+	{
+		const auto arrow = magicArrowDamageBasisPoints(rules, spell.getId(), power, divisor, 0,
+			magicArrowOverchargeModifiers(&hero), damageCoefficient, empower, specialty);
+		if(!arrow)
+			return std::nullopt;
+		raw = *arrow;
+	}
 	else if(const auto formula = spellDirectDamage(rules, spell.getJsonKey()))
 		raw = formula->evaluateBasisPoints(power, divisor, damageCoefficient, empower, specialty);
 	else

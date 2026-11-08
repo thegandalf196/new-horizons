@@ -3,6 +3,8 @@
 #include "SpellTargetsEvaluator.h"
 #include "HypotheticBattle.h"
 #include "AttackPossibility.h"
+#include "RunicReflectionValue.h"
+#include "../../lib/spells/effects/native/Damage.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/spells/CSpell.h"
@@ -44,7 +46,7 @@ float resolvedFateOutcome(const heroSpellProjection::OutcomeValue & value, const
 std::optional<SpellTargetEvaluator::HandOfFateExpectedDamageValue>
 SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMechanics,
 	const Target & target, PlayerColor scoringPlayer, std::shared_ptr<CBattleInfoCallback> battleState, const Environment * environment,
-	const heroSpellProjection::OutcomeValue & outcomeValue)
+	const heroSpellProjection::OutcomeValue & outcomeValue, const std::shared_ptr<HypotheticBattle> & runicBoard)
 {
 	if(!canonicalFate(spellMechanics) || target.size() != 1 || !target.front().unitValue
 		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
@@ -137,6 +139,7 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 
 	float expectedHostileSpillValue = 0.0f;
 	float expectedFriendlySpillValue = 0.0f;
+	const auto * nativeDamage = spellMechanics->findEffect<spells::effects::native::Damage>();
 	for(const auto * recipient : collateralPool)
 	{
 		// This check is deliberately after pool construction: an invalid or
@@ -166,6 +169,10 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 			? static_cast<double>(hostileToCaster(recipient)
 				? hostileCount + 2 * friendlyCount : friendlyCount) / (poolSize * poolSize)
 			: 1.0 / poolSize;
+		if(nativeDamage && runicBoard)
+			result.runicSpillValue += static_cast<float>(primaryApplicationChance * probability)
+				* runicReflectionAI::expectedRawDamageShare(*spellMechanics, *nativeDamage, *recipient,
+					spillRawDamage, scoringPlayer, runicBoard, {1, 1, 1, false});
 		if(outcomeValue)
 		{
 			const auto collateral = injury(*spellMechanics, recipient->unitId(), actualRecipientDamage);

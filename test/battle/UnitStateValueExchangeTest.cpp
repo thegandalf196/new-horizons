@@ -17,6 +17,7 @@
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/CStack.h"
+#include "../../lib/ScopeGuard.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -361,6 +362,49 @@ TEST_F(UnitStateValueExchangeTest, HistoricalEmptyPassiveUnitReceiptRemainsReada
 	EXPECT_EQ(second.metamagicMarks(BattleSide::ATTACKER), 0);
 	EXPECT_FALSE(second.hasOpenedDemonicGate());
 	EXPECT_EQ(second.physicalPoisonSpellOrigin(), BattleSide::NONE);
+}
+
+TEST_F(UnitStateValueExchangeTest, AcquireCopiesCompleteStateBeforeTheEnvironmentCanObserveAClone)
+{
+	seedFirst();
+	struct CompleteStateEnvironment final : UnitEnvironmentMock
+	{
+		const battle::CUnitState & source;
+		mutable int queries = 0;
+		explicit CompleteStateEnvironment(const battle::CUnitState & source) : source(source) {}
+		newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const battle::Unit * unit) const override
+		{
+			++queries;
+			const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
+			if(!state || state->defending != source.defending
+				|| state->castSpellThisTurn != source.castSpellThisTurn
+				|| state->physicalPoisonBaseDamage != source.physicalPoisonBaseDamage
+				|| state->getPosition() != source.getPosition())
+				throw std::logic_error("Environment observed a reset, unpublished clone");
+			return {};
+		}
+	} environment(first);
+	first.bindStateEnvironment(&environment);
+	auto restore = vstd::makeScopeGuard([&] { first.bindStateEnvironment(&firstEnvironment); });
+	std::shared_ptr<battle::CUnitState> typed;
+	std::shared_ptr<battle::Unit> generic;
+	ASSERT_NO_THROW(typed = first.acquireState());
+	ASSERT_NO_THROW(generic = first.acquire());
+	EXPECT_EQ(environment.queries, 0);
+	ASSERT_NE(typed, nullptr); ASSERT_NE(generic, nullptr);
+	const auto source = first.save();
+	EXPECT_EQ(typed->save(), source);
+	EXPECT_EQ(std::dynamic_pointer_cast<battle::CUnitState>(generic)->save(), source);
+	EXPECT_EQ(typed->getMaxHealth(), 20);
+	EXPECT_TRUE(typed->usesStateEnvironment(environment));
+	EXPECT_EQ(typed->shots.available(), first.shots.available());
+	EXPECT_EQ(typed->counterAttacks.available(), first.counterAttacks.available());
+	const auto before = first.getAvailableHealth();
+	int64_t damage = 1;
+	typed->damage(damage);
+	typed->shots.use();
+	EXPECT_EQ(first.getAvailableHealth(), before);
+	EXPECT_EQ(first.save(), source);
 }
 
 }

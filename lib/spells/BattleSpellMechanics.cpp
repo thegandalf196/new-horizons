@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMetamagicMarks.h"
+#include "SpellBonusProvenance.h"
+#include "../battle/NewHorizonsSpecialtyProcs.h"
 #include "AutomaticHeroCast.h"
 #include "../battle/PassiveDivineMandate.h"
 #include "../entities/hero/NewHorizonsGenieSage.h"
@@ -29,6 +31,7 @@
 #include "CSpell.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsMagic.h"
+#include "../battle/NewHorizonsElementalAttunement.h"
 #include "NewHorizonsCrossSchoolFormula.h"
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsNaturesWrath.h"
@@ -648,49 +651,18 @@ private:
 		captureHypnotizeCeiling(pack);
 		if(casterOwner != PlayerColor::CANNOT_DETERMINE)
 		{
-			// Stamp incoming copies. Generic updates may only extend the old timer,
-			// but special refreshable statuses such as Guardian Spirit replace their marker.
-			const auto stampSpellCaster = [this](auto & changes)
-			{
-				for(auto & change : changes)
-				{
-					for(auto & bonus : change.second)
-					{
-						if(bonus.source != BonusSource::SPELL_EFFECT
-							|| (bonus.sid != BonusSourceID(castSpellId)
-								&& bonus.sid != BonusSourceID(effectSpellId)))
-							continue;
-						bonus.spellCasterOwner = casterOwner;
-					}
-				}
-			};
-			stampSpellCaster(pack.toAdd);
-			stampSpellCaster(pack.toUpdate);
-
-			const auto stampHostility = [&](auto & changes)
+			const auto stamp = [&](auto & changes)
 			{
 				for(auto & [unitId, bonuses] : changes)
 				{
 					const auto * recipient = battle.battleGetUnitByID(unitId);
-					if(!recipient)
-						continue;
-					const auto recipientOwner = battle.battleGetOwner(recipient);
-					if(recipientOwner == PlayerColor::CANNOT_DETERMINE)
-						continue;
-					const bool appliedByEnemy = casterOwner != recipientOwner;
+					const auto recipientOwner = recipient ? battle.battleGetOwner(recipient) : PlayerColor::CANNOT_DETERMINE;
 					for(auto & bonus : bonuses)
-					{
-						if(bonus.type != BonusType::MORALE || bonus.val >= 0
-							|| bonus.source != BonusSource::SPELL_EFFECT
-							|| (bonus.sid != BonusSourceID(castSpellId)
-								&& bonus.sid != BonusSourceID(effectSpellId)))
-							continue;
-						bonus.appliedByEnemy = appliedByEnemy;
-					}
+						stampSpellBonusProvenance(bonus, castSpellId, effectSpellId, casterOwner, recipientOwner);
 				}
 			};
-			stampHostility(pack.toAdd);
-			stampHostility(pack.toUpdate);
+			stamp(pack.toAdd);
+			stamp(pack.toUpdate);
 		}
 
 		newHorizonsMetamagic::replaceRecalculatedSpellBonuses(mechanics.getMetamagicCastProfile(), battle,
@@ -975,6 +947,7 @@ BattleSpellMechanics::~BattleSpellMechanics() = default;
 
 void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & targets, bool indirect, bool ignoreImmunity) const
 {
+	if(runicReadOnly || runicRetiredCaster) throw std::logic_error("Read-only Runic view cannot apply effects");
 	Target unlockedTargets = targets;
 	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*this);
 	const auto * battleState = battle() ? battle()->getBattle() : nullptr;
@@ -1101,15 +1074,10 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 	// Overcharge is an action parameter, not a client-side damage hint.  Keep
 	// the legality gate in the authoritative mechanics path so malformed or
 	// stale requests cannot spend a hero action/mana with a different effect.
-	const int selectedOvercharge = getOvercharge();
-	const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
-		dynamic_cast<const CGHeroInstance *>(caster));
-	const bool adjustableMagicArrow = newHorizonsMagic::magicArrowOverchargeEnabled(
-		battle()->getBattle()->getMagicRules(), owner->getId());
-	if(selectedOvercharge < 0
-		|| (!adjustableMagicArrow && selectedOvercharge != 0)
-		|| (adjustableMagicArrow && selectedOvercharge > newHorizonsMagic::magicArrowMaxOvercharge(
-			battle()->getBattle()->getMagicRules(), owner->getId(), getEffectPower(), modifiers)))
+	const auto & chargeRules = battle()->getBattle()->getMagicRules();
+	if(!newHorizonsMagic::magicArrowSelectionValid(chargeRules, owner->getId(),
+		dynamic_cast<const CGHeroInstance *>(caster), getEffectPower(), getOvercharge(),
+		mode == Mode::HERO && !getAutomaticHeroCast().automatic()))
 		return adaptGenericProblem(problem);
 
 	const bool selectiveDispel = isSelectiveDispel();
@@ -1167,8 +1135,14 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			{
 				int requiredMana = automatic.automatic() ? 0 : battle()->battleGetSpellCost(owner, castingHero,
 					massSlow ? 3 : 1, isMetamagicFollowup());
-				if(adjustableMagicArrow && !automatic.automatic())
-					requiredMana += selectedOvercharge;
+				if(!automatic.automatic())
+				{
+					const auto chargedCost = newHorizonsMagic::magicArrowManaCost(chargeRules, owner->getId(),
+						requiredMana, getOvercharge());
+					if(!chargedCost)
+						return adaptGenericProblem(problem);
+					requiredMana = *chargedCost;
+				}
 				if(const auto * metamagic = getMetamagicCastProfile(); metamagic && (metamagic->perks.manaAttunement || metamagic->perks.pointPolicy))
 					requiredMana = metamagic->perks.pointPolicy
 						? newHorizonsMetamagic::singularityManaCost(requiredMana, metamagic->perks, metamagic->singularityReached)
@@ -1663,6 +1637,7 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
+	if(runicReadOnly || runicRetiredCaster) throw std::logic_error("Read-only Runic view cannot cast");
 	if(eventSnapshot && !eventSnapshot->hasSpellcraftTargetSnapshot()
 		&& mode == Mode::HERO && getHeroCaster()
 		&& getHeroCaster()->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
@@ -1671,6 +1646,10 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		eventSnapshot->mechanicsForTarget(target)->cast(server, target);
 		return;
 	}
+	runicCreatureCaster.reset();
+	runicOffensiveProfile.reset();
+	pendingRunicShares.clear();
+	reflectedRunicShares.clear();
 	// wouldResist may be called from script target preparation or from a
 	// secondary-hit consumer while an authoritative cast is running. Keep its
 	// callback and RNG access strictly inside this cast, including all early
@@ -1678,6 +1657,10 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	const auto clearResistanceContext = vstd::makeScopeGuard([this]()
 	{
 		clearPandemoniumDebuffs();
+		if(!runicRetiredCaster) runicCreatureCaster.reset();
+		runicOffensiveProfile.reset();
+		pendingRunicShares.clear();
+		reflectedRunicShares.clear();
 		activeResistanceServer = nullptr;
 		activeResistanceRng = nullptr;
 		resistanceRolls.clear();
@@ -1752,6 +1735,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		&& newHorizonsSpellcraft::extendAvailable(*battle()->getBattle(), casterSide, *owner, getEffectLevel());
 
 	sc.activeCast = false;
+	sc.strongWyvernPoison = newHorizonsSpecialtyProcs::isStrongWyvernPoisonCast(*this);
 	sc.temporalFieldCast = isMassSlow();
 	affectedUnits.clear();
 
@@ -1873,7 +1857,11 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	std::vector<CompoundMirrorEffect> compoundMirrorEffects;
 	registerOverwhelmingFormulaCast(server);
 	if(!isCounterspellNegated())
+	{
 		beforeCast(server, sc, *server->getRNG(), target, &compoundMirrorEffects);
+		prepareRunicReflections(sc, *server->getRNG());
+	}
+	RunicCasterLifetime casterLifetime(*this);
 
 	if(logMetamagicFollowup)
 	{
@@ -1986,6 +1974,17 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 			effectRecorder.setCasterOwner(battle()->sideToPlayer(effectiveCasterSide()));
 			for(const auto & effect : part.effects)
 				effect.first->apply(&effectRecorder, this, effect.second);
+		}
+		if(!pendingRunicShares.empty())
+		{
+			mode = previousMode;
+			prepareRunicReflections(sc, *server->getRNG(), true);
+		}
+		if(!reflectedRunicShares.empty())
+		{
+			mode = Mode::MAGIC_MIRROR;
+			effectRecorder.setCasterOwner(battle()->sideToPlayer(effectiveCasterSide()));
+			applyRunicReflections(&effectRecorder);
 		}
 	}
 	if(newHorizonsRegeneration && !isCounterspellNegated())
@@ -2342,7 +2341,7 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		const int32_t bufferBeforePayment = originalHeroCast ? casterHero->getBufferSpellPoints() : 0;
 		const int32_t temporaryBeforePayment = originalHeroCast
 			? battleInfo->getTemporaryBufferRemaining(originalCasterSide) : 0;
-		caster->spendMana(server, spellCost);
+		casterLifetime.spendMana(server, spellCost);
 		if(heroLuckOrigin && heroLuck && heroLuck->has(newHorizonsHeroLuck::Proc::ErraticMana))
 		{
 			// Effects may alter pools before payment; capture only the real charge,
@@ -2442,6 +2441,10 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		}
 	}
 
+	if(originalHeroCast && !getAutomaticHeroCast().automatic() && !sc.counterspellNegated
+		&& casterHero == battleInfo->getSideHero(originalCasterSide))
+		newHorizonsElementalAttunement::publishCompletedHeroCast(*server, *battle(), originalCasterSide, sc.spellID);
+
 	// send empty event to client
 	// temporary(?) workaround to force animations to trigger
 	StacksInjured fakeEvent;
@@ -2536,6 +2539,9 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 	for(const auto * unit : spellLockedUnits)
 		if(!vstd::contains(resisted, unit))
 			resisted.push_back(unit);
+
+	// Retain each rejected recipient's own component before filtering it out.
+	recordResistanceShares(effectsToApply);
 
 	//and update targets
 	for(auto & p : effectsToApply)
@@ -2649,6 +2655,7 @@ battle::Units BattleSpellMechanics::filterSpellLockedEffects(const Target & aimP
 
 void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)
 {
+	if(runicReadOnly || runicRetiredCaster) throw std::logic_error("Read-only Runic view cannot execute a projection");
 	vinesProjectionReceipt.reset();
 	lifeDrainReceipt.reset();
 	if(delegateConcentratedProjection(server, target))

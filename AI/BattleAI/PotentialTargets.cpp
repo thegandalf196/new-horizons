@@ -28,6 +28,7 @@ PotentialTargets::PotentialTargets(
 {
 	auto evaluationState = state;
 	auto attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
+	if(evaluationState->wasCurrentActivationForfeited(attacker->unitId())) return;
 
 	//FIXME: this should part of battleGetAvailableHexes
 	const bool puppetControlled = newHorizonsPuppetMaster::hasValidControlMarker(*evaluationState, attackerInfo);
@@ -65,6 +66,11 @@ PotentialTargets::PotentialTargets(
 	for(auto defender : aliveUnits)
 	{
 		if(!newHorizonsDreadCavalry::permitsTarget(*evaluationState, attackerInfo, defender)) continue;
+		// Canonical action admission rejects protected primaries before AP scoring.
+		// Native forced-action selection remains its own authoritative route.
+		if(!berserk && !evaluationState->battleCanAttackUnitAction(attackerInfo, defender)
+			&& !evaluationState->battleCanShootAction(attackerInfo, defender->getPosition()))
+			continue;
 		// Sanctuary bars this unit only as a deliberately selected enemy primary.
 		// Attacks whose primary is another stack may still include it as collateral.
 		const bool sanctuaryEnemy = newHorizonsForestAmbush::protectsDirectTarget(defender)

@@ -50,6 +50,7 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true;
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";
 	}
@@ -117,6 +118,7 @@ protected:
 
 	void selectDoubleCommand(CGHeroInstance * hero)
 	{
+		hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 		const int decoded = SecondarySkill::decode(commandSkill);
 		ASSERT_GE(decoded, 0);
 		const auto skill = SecondarySkill(decoded);
@@ -222,302 +224,65 @@ TEST_F(NewHorizonsDoubleCommandTest, ExpertPerkUsesTheOrdinaryRankGatedOfferPath
 	EXPECT_TRUE(attackerSideHero->hasActivePerk(commandSkill, doubleCommandPerk));
 }
 
-TEST_F(NewHorizonsDoubleCommandTest, OnlyAHeroPaidOrderTriggersOnceAndTheFollowUpMustBeDifferent)
+TEST_F(NewHorizonsDoubleCommandTest, MasterCommanderPaidOrderCannotCreateAnImmediateFollowup)
 {
 	startGameWithPerk(true);
-	CStack * active = nullptr;
-	CStack * shooter = nullptr;
-	CStack * enemy = nullptr;
+	CStack * active = nullptr, * shooter = nullptr, * enemy = nullptr;
 	startCommandBattle(active, shooter, enemy);
-
-	grantOrderAllowance(BattleSide::ATTACKER);
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
+	const auto serial = battle()->getActivationSerial();
 	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::CHARGE));
-	auto commandState = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	EXPECT_FALSE(commandState.used);
-	EXPECT_EQ(commandState.phase, DoubleCommandState::Phase::NONE);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, resources.remaining - 1);
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-
-	const auto afterTypedOrder = battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound());
-	EXPECT_EQ(afterTypedOrder.heroActions, 1u);
-	EXPECT_EQ(afterTypedOrder.orderActions, 0u);
-
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroAction(0)))
-		<< "A Hero-paid spell is not an Order and must not trigger Double Command";
-	commandState = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	EXPECT_FALSE(commandState.used);
+	EXPECT_EQ(battle()->getDoubleCommandState(BattleSide::ATTACKER).phase, DoubleCommandState::Phase::NONE);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1).heroActions, 0u);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1).orderActions, 0u);
+	EXPECT_EQ(battle()->battleActiveUnit(), active);
+	EXPECT_EQ(battle()->getActivationSerial(), serial);
+	const auto orders = battle()->getHeroOrderStates(BattleSide::ATTACKER);
+	EXPECT_FALSE(issue(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
+	EXPECT_EQ(battle()->getHeroOrderStates(BattleSide::ATTACKER), orders);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, resources.remaining - 1);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeDefend(active)));
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-
-	advanceRound();
-	auto & attackerAllowances = battle()->getSide(BattleSide::ATTACKER).heroActionAllowances;
-	const auto validAllowances = attackerAllowances;
-	attackerAllowances.nextGrantId = std::numeric_limits<uint32_t>::max();
-	ASSERT_NO_THROW(attackerAllowances.validateShape());
-	const auto exhaustedAllowances = attackerAllowances;
-	const auto doubleCommandBeforeExhaustion = battle()->getDoubleCommandState(BattleSide::ATTACKER);
-	const auto ordersBeforeExhaustion = battle()->getHeroOrderStates(BattleSide::ATTACKER);
-	const auto startsBeforeExhaustion = server.startedActions.size();
-	EXPECT_FALSE(issue(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE))
-		<< "A HERO-paid Order cannot start Double Command without a grant ID for its follow-up";
-	EXPECT_EQ(attackerAllowances, exhaustedAllowances);
-	EXPECT_EQ(battle()->getDoubleCommandState(BattleSide::ATTACKER), doubleCommandBeforeExhaustion);
-	EXPECT_EQ(battle()->getHeroOrderStates(BattleSide::ATTACKER), ordersBeforeExhaustion);
-	EXPECT_EQ(server.startedActions.size(), startsBeforeExhaustion)
-		<< "Exhausted continuation provenance must be rejected before StartAction";
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	attackerAllowances = validAllowances;
-	ASSERT_NO_THROW(attackerAllowances.validateShape());
-
-	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
-	commandState = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	ASSERT_TRUE(commandState.used);
-	EXPECT_EQ(commandState.phase, DoubleCommandState::Phase::ORDER_REQUIRED);
-	EXPECT_EQ(commandState.firstOrder, HeroCommand::HOLD_THE_LINE);
-	EXPECT_EQ(commandState.issuedRound, battle()->getRound());
-	EXPECT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-
-	const auto pendingBudget = battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound());
-	ASSERT_EQ(pendingBudget.heroActions, 0u);
-	ASSERT_EQ(pendingBudget.orderActions, 1u);
-	const auto pendingStartedActions = server.startedActions.size();
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		BattleAction::makeDefend(active)))
-		<< "A Creature Action cannot interrupt Double Command's mandatory immediate Order";
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroAction(0)))
-		<< "A spell cannot replace the mandatory Order continuation";
-	EXPECT_EQ(server.startedActions.size(), pendingStartedActions)
-		<< "Rejected Creature and spell actions must not enter StartAction";
-	EXPECT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_FALSE(issue(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE))
-		<< "The same Order cannot be repeated inside the immediate Double Command sequence";
-	EXPECT_FALSE(issueTargeted(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE,
-		static_cast<uint32_t>(std::numeric_limits<int32_t>::max())))
-		<< "An invalid target must not spend or clear the pending continuation";
-	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound()), pendingBudget);
-	EXPECT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-
-	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::BRACE));
-	commandState = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	EXPECT_TRUE(commandState.used);
-	EXPECT_EQ(commandState.phase, DoubleCommandState::Phase::NONE);
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	auto orders = battle()->battleGetHeroOrderStates(BattleSide::ATTACKER);
-	ASSERT_EQ(orders.size(), 2u);
-	EXPECT_EQ(orders[0].command, HeroCommand::HOLD_THE_LINE);
-	EXPECT_EQ(orders[1].command, HeroCommand::BRACE);
-	EXPECT_EQ(orders[0].issuedRound, orders[1].issuedRound);
-	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::BRACE);
-	const auto completedBudget = battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound());
-	EXPECT_EQ(completedBudget.heroActions, 0u);
-	EXPECT_EQ(completedBudget.orderActions, 0u);
-
-	advanceRound();
-	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::RIPOSTE));
-	commandState = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	EXPECT_TRUE(commandState.used);
-	EXPECT_EQ(commandState.phase, DoubleCommandState::Phase::NONE);
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER))
-		<< "A later Hero-paid Order cannot trigger the once-per-combat benefit again";
-	EXPECT_EQ(battle()->battleGetHeroOrderStates(BattleSide::ATTACKER).size(), 1u);
-	EXPECT_EQ(battle()->battleGetActiveOrder(BattleSide::ATTACKER), HeroCommand::RIPOSTE);
 }
 
-TEST_F(NewHorizonsDoubleCommandTest, PendingChoiceDescriptorRoundTripsAndDetachedAIProjectionsRemainIndependent)
+TEST_F(NewHorizonsDoubleCommandTest, CurrentDescriptorKeepsPaidResourcesWithoutRetiredPendingChoice)
 {
 	startGameWithPerk();
-	CStack * active = nullptr;
-	CStack * shooter = nullptr;
-	CStack * enemy = nullptr;
+	CStack * active = nullptr, * shooter = nullptr, * enemy = nullptr;
 	startCommandBattle(active, shooter, enemy);
-
 	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::CHARGE));
-	ASSERT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	const auto pending = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	ASSERT_EQ(pending.phase, DoubleCommandState::Phase::ORDER_REQUIRED);
-	ASSERT_EQ(pending.firstOrder, HeroCommand::CHARGE);
-
-	CMemorySerializer older;
-	older.oser.version = ESerializationVersion::NEW_HORIZONS_MULTIPLE_ORDERS;
-	EXPECT_THROW(older.oser & *battle(), std::runtime_error);
-	EXPECT_TRUE(older.extractBuffer().empty())
-		<< "A pre-Double-Command writer must reject pending or used perk state before writing bytes";
-
-	// Binary CStack data omits CUnitState, so this verifies serialized battle
-	// metadata and structural IDs only; it does not claim resumable combat.
-	auto descriptor = battleStartFixture::snapshot(*battle(), gameState().get());
-	ASSERT_NE(descriptor, nullptr);
-	EXPECT_EQ(descriptor->getDoubleCommandState(BattleSide::ATTACKER), pending);
-	EXPECT_EQ(descriptor->getHeroActionAllowances(BattleSide::ATTACKER),
-		battle()->getHeroActionAllowances(BattleSide::ATTACKER));
-	EXPECT_EQ(descriptor->getHeroOrderStates(BattleSide::ATTACKER),
-		battle()->getHeroOrderStates(BattleSide::ATTACKER));
-	EXPECT_EQ(descriptor->getActiveStackID(), static_cast<int32_t>(pending.anchorStackId));
-	auto * descriptorAnchor = descriptor->getStack(descriptor->getActiveStackID(), false);
-	ASSERT_NE(descriptorAnchor, nullptr);
-	EXPECT_EQ(descriptorAnchor->unitId(), pending.anchorStackId);
-	ASSERT_NO_THROW(descriptor->validateDoubleCommandStructure());
-	const auto missingAnchorId = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
-	descriptor->getSide(BattleSide::ATTACKER).doubleCommandState.anchorStackId = missingAnchorId;
-	EXPECT_THROW(descriptor->validateDoubleCommandStructure(), std::runtime_error)
-		<< "A decoded pending continuation must reject a missing structural anchor reference";
-	descriptor->getSide(BattleSide::ATTACKER).doubleCommandState.anchorStackId = pending.anchorStackId;
-	EXPECT_NO_THROW(descriptor->validateDoubleCommandStructure());
-
-	DoubleCommandEnvironment environment(gameState());
-	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
-	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
-	auto branch = std::make_shared<HypotheticBattle>(&environment, parent);
-	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
-	EXPECT_TRUE(parent->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_TRUE(branch->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_TRUE(sibling->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_TRUE(parent->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(branch->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(sibling->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	const auto projectedOrder = branch->prepareHeroOrderAllowance(BattleSide::ATTACKER);
-	ASSERT_TRUE(projectedOrder);
-	EXPECT_EQ(projectedOrder->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
-	EXPECT_EQ(projectedOrder->action.receipt.source, HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND);
-	ASSERT_TRUE(branch->beginProjectedHeroOrder(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE,
-		{}, *projectedOrder));
-	ASSERT_TRUE(branch->projectAcceptedHeroOrder(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE,
-		{}, *projectedOrder));
-	EXPECT_FALSE(branch->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_TRUE(parent->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_TRUE(sibling->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_FALSE(branch->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(parent->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(sibling->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-
-	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::BRACE));
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(parent->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_FALSE(branch->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_TRUE(sibling->getDoubleCommandState(BattleSide::ATTACKER).orderPending());
-	EXPECT_TRUE(parent->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_FALSE(branch->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	EXPECT_TRUE(sibling->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
+	const auto snapshot = battleStartFixture::snapshot(*battle(), gameState().get());
+	ASSERT_NE(snapshot, nullptr);
+	EXPECT_EQ(snapshot->getCommandResources(BattleSide::ATTACKER), resources);
+	EXPECT_EQ(snapshot->getDoubleCommandState(BattleSide::ATTACKER).phase, DoubleCommandState::Phase::NONE);
+	EXPECT_EQ(snapshot->getHeroActionAllowances(BattleSide::ATTACKER), battle()->getHeroActionAllowances(BattleSide::ATTACKER));
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_MULTIPLE_ORDERS;
+	EXPECT_THROW(old.oser & *battle(), std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
 }
 
-TEST_F(NewHorizonsDoubleCommandTest, SecondWindActivationWaitsUntilTheImmediateFollowUpResolves)
+TEST_F(NewHorizonsDoubleCommandTest, IntrinsicSecondWindStartsWithoutAnAdditionalOrderDecision)
 {
 	startGameWithPerk();
-	startBattle();
-	clearStartingUnits();
-	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
-	auto * target = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(54), 100);
-	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(71), 100);
-	ASSERT_NE(active, nullptr);
-	ASSERT_NE(target, nullptr);
-	ASSERT_NE(enemy, nullptr);
-	beginWith(active);
+	CStack * active = nullptr, * target = nullptr, * enemy = nullptr;
+	startCommandBattle(active, target, enemy);
 	target->movedThisRound = true;
-
-	ASSERT_FALSE(issueTargeted(BattleSide::ATTACKER, HeroCommand::SECOND_WIND,
+	const auto before = battle()->getCommandResources(BattleSide::ATTACKER);
+	EXPECT_FALSE(issueTargeted(BattleSide::ATTACKER, HeroCommand::SECOND_WIND,
 		static_cast<uint32_t>(std::numeric_limits<int32_t>::max())));
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), before);
 	ASSERT_TRUE(issueTargeted(BattleSide::ATTACKER, HeroCommand::SECOND_WIND, target->unitId()));
-	const auto deferred = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	ASSERT_EQ(deferred.phase, DoubleCommandState::Phase::ORDER_REQUIRED);
-	EXPECT_EQ(deferred.deferredSecondWindTargetUnitId, target->unitId());
-	EXPECT_EQ(battle()->battleActiveUnit(), active)
-		<< "Second Wind must not begin its extra activation before the immediate follow-up choice";
-	const auto secondWind = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
-	ASSERT_TRUE(secondWind);
-	EXPECT_FALSE(secondWind->secondWindActive);
-
-	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::BRACE));
-	EXPECT_EQ(battle()->battleActiveUnit(), target)
-		<< "The deferred extra activation starts after the distinct follow-up is committed";
-	const auto completed = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	EXPECT_TRUE(completed.used);
-	EXPECT_EQ(completed.phase, DoubleCommandState::Phase::NONE);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, before.remaining - 1);
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	const auto activeSecondWind = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
-	ASSERT_TRUE(activeSecondWind);
-	EXPECT_TRUE(activeSecondWind->secondWindActive);
-
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
-		battle()->battleGetOwner(target), BattleAction::makeDefend(target)));
-	const auto spent = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
-	ASSERT_TRUE(spent);
-	EXPECT_FALSE(spent->secondWindActive);
-	EXPECT_TRUE(battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER).used)
-		<< "The once-per-combat Double Command state survives the deferred activation";
-}
-
-TEST_F(NewHorizonsDoubleCommandTest, EightDistinctOrdersExhaustTheImmediateChoiceWithoutStalling)
-{
-	startGameWithPerk();
-	startBattle();
-	clearStartingUnits();
-	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
-	auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(71), 100);
-	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), BattleHex(3, 5), 100);
-	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(14, 5), 100);
-	ASSERT_NE(active, nullptr);
-	ASSERT_NE(ward, nullptr);
-	ASSERT_NE(shooter, nullptr);
-	ASSERT_NE(enemy, nullptr);
-	ASSERT_TRUE(battle()->battleCanShoot(shooter, enemy->getPosition()));
-	beginWith(active);
-	shooter->movedThisRound = true;
-
-	for(const auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE})
-	{
-		grantOrderAllowance(BattleSide::ATTACKER);
-		ASSERT_TRUE(issue(BattleSide::ATTACKER, command));
-	}
-	grantOrderAllowance(BattleSide::ATTACKER);
-	ASSERT_TRUE(issueTargeted(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE, enemy->unitId()));
-	for(const auto command : {HeroCommand::RIPOSTE, HeroCommand::BRACE})
-	{
-		grantOrderAllowance(BattleSide::ATTACKER);
-		ASSERT_TRUE(issue(BattleSide::ATTACKER, command));
-	}
-	grantOrderAllowance(BattleSide::ATTACKER);
-	ASSERT_TRUE(issueProtect(active, ward));
-	grantOrderAllowance(BattleSide::ATTACKER);
-	ASSERT_TRUE(issueTargeted(BattleSide::ATTACKER, HeroCommand::FLANK, enemy->unitId()));
-
-	EXPECT_FALSE(battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER).used)
-		<< "Dedicated Order allowances do not start the once-per-combat sequence";
-	ASSERT_EQ(battle()->battleGetHeroOrderStates(BattleSide::ATTACKER).size(), 7u);
-	const auto beforeTrigger = battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound());
-	ASSERT_EQ(beforeTrigger.heroActions, 1u);
-	ASSERT_EQ(beforeTrigger.orderActions, 0u);
-
-	ASSERT_TRUE(issueTargeted(BattleSide::ATTACKER, HeroCommand::SECOND_WIND, shooter->unitId()));
-	const auto exhausted = battle()->getBattle()->getDoubleCommandState(BattleSide::ATTACKER);
-	EXPECT_TRUE(exhausted.used);
-	EXPECT_EQ(exhausted.phase, DoubleCommandState::Phase::NONE)
-		<< "With all seven alternative Orders already issued, the mandatory continuation exhausts cleanly";
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-	const auto orders = battle()->battleGetHeroOrderStates(BattleSide::ATTACKER);
-	ASSERT_EQ(orders.size(), 8u);
-	for(const auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE, HeroCommand::FOCUS_FIRE,
-		HeroCommand::RIPOSTE, HeroCommand::BRACE, HeroCommand::PROTECT, HeroCommand::FLANK,
-		HeroCommand::SECOND_WIND})
-		EXPECT_EQ(std::ranges::count(orders, command, &HeroOrderState::command), 1);
-	EXPECT_EQ(battle()->battleActiveUnit(), shooter)
-		<< "Auto-exhausting the optional extra Order still releases the deferred Second Wind activation";
-	const auto activeSecondWind = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
-	ASSERT_TRUE(activeSecondWind);
-	EXPECT_TRUE(activeSecondWind->secondWindActive);
-	const auto afterExhaustion = battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound());
-	EXPECT_EQ(afterExhaustion.heroActions, 0u);
-	EXPECT_EQ(afterExhaustion.orderActions, 0u);
-
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
-		battle()->battleGetOwner(shooter), BattleAction::makeDefend(shooter)));
-	const auto spent = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
-	ASSERT_TRUE(spent);
-	EXPECT_FALSE(spent->secondWindActive);
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	EXPECT_EQ(battle()->battleActiveUnit(), target);
+	const auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
+	ASSERT_TRUE(order);
+	EXPECT_TRUE(order->secondWindActive);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeDefend(target)));
+	EXPECT_FALSE(battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND)->secondWindActive);
+	EXPECT_FALSE(battle()->getDoubleCommandState(BattleSide::ATTACKER).used);
 }

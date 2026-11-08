@@ -39,19 +39,7 @@ void SelectedAttackReceipt::captureDamage(HypotheticBattle & branch)
 			finalDamage[id] = std::max<int64_t>(0, finalDamage[id] - landing->second);
 		observations.push_back({id, before, projected});
 	}
-	// Cataclysm resolves again at the original strike/death boundary. Its
-	// captured HP loss is not an unclassified residual hit on the actor.
-	if(effectOwner)
-	{
-		const auto & hits = effectOwner->getProjectedPrimalBurstHits();
-		for(size_t index = branch.getProjectedPrimalBurstHits().size(); index < hits.size(); ++index)
-		{
-			const auto & hit = hits[index];
-			if(!hit.elementalCataclysm || !hit.preHitTarget) continue;
-			if(auto found = finalDamage.find(hit.preHitTarget->unitId()); found != finalDamage.end())
-				found->second = std::max<int64_t>(0, found->second - hit.actualDamage);
-		}
-	}
+
 }
 
 BattleHex selectedAttackReceipt::commitMovement(const AttackPossibility & ap, battle::CUnitState & actor,
@@ -162,17 +150,12 @@ void selectedAttackReceipt::applyCapturedDamage(HypotheticBattle & branch,
 	const std::shared_ptr<StackWithBonuses> & recipient, int64_t damage)
 {
 	const bool wasAlive = recipient->alive();
-	const auto rebirthSource = wasAlive ? branch.captureElementalRebirthSource(*recipient) : std::nullopt;
-	const bool nativeRebirth = branch.hasReadyNativeRebirth(recipient.get());
 	const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(branch, *recipient);
 	recipient->damage(damage);
 	if(wasAlive && !recipient->alive())
 		branch.releaseSerpentBindingsForDeath(*recipient);
 	branch.recordBloodrageTransition(recipient, wasAlive);
 	if(destroyed) PhysicalStrikeProjection::completeDamagePacket(branch, std::span(&*destroyed, 1));
-	if(rebirthSource)
-		branch.projectElementalRebirth(recipient.get(), *rebirthSource,
-			wasAlive && !recipient->alive(), recipient->isClone(), nativeRebirth);
 }
 
 int64_t selectedAttackReceipt::grantSoulHarvest(battle::CUnitState & actor, int64_t killedCreatures)

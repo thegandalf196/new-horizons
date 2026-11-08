@@ -18,10 +18,17 @@ void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source
 	relentlessAssaultStates[side] = source.getBattle()->getRelentlessAssaultState(side);
 	battlecraftMasteryAwardRounds[side] = source.getBattle()->getBattlecraftMasteryAwardRound(side);
 	armorerLastStandUsedStates[side] = source.getBattle()->armorerLastStandUsed(side);
-	rebirthChainUsedStates[side] = source.getBattle()->getRebirthChainUsed(side);
-	phoenixSparkUsedStates[side] = source.getBattle()->getPhoenixSparkUsed(side);
 	armorerDefiantStates[side] = source.getBattle()->getArmorerDefiantState(side);
 	heroActionAllowances[side] = source.getBattle()->getHeroActionAllowances(side);
+	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(&source))
+		commandResources[side] = parent->commandResources.at(side);
+	else
+	{
+		const auto knowledge = source.battleGetVisibleHeroPolicy(side).kind();
+		if(knowledge == VisibleHeroPolicy::Knowledge::VISIBLE_HERO
+			|| knowledge == VisibleHeroPolicy::Knowledge::KNOWN_ABSENT)
+			commandResources[side] = source.getBattle()->getCommandResources(side);
+	}
 	doubleCommandStates[side] = source.getBattle()->getDoubleCommandState(side);
 	preCombatOrderStates[side] = source.getBattle()->getPreCombatOrderState(side);
 	heroSpellCastCompletedStates[side] = source.getBattle()->hasCompletedHeroSpellCast(side);

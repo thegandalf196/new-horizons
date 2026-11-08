@@ -711,6 +711,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 	displayedArcaneMarks = arcaneMarkPresentation::counts(*stack);
 	displayedInspiration = arcaneInspirationPresentation::forStack(*stack, battleCallback.get());
+	displayedAttunement = elementalAttunementPresentation::forUnit(*stack);
 	StackTemporaryStatusPresenter temporaryStatuses(stack, displayedStatus, battleCallback.get());
 	const auto & displayPlan = temporaryStatuses.plan();
 	int printed = 0;
@@ -983,6 +984,7 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 		&& displayedSummonRounds == (updatedInfo->alive() ? updatedInfo->summonRoundsRemaining : 0)
 		&& soulChainSignature == displayedSoulChainSignature
 		&& arcaneInspirationPresentation::forStack(*updatedInfo, battleCallback.get()) == displayedInspiration
+		&& elementalAttunementPresentation::forUnit(*updatedInfo) == displayedAttunement
 		&& arcaneMarkPresentation::counts(*updatedInfo) == displayedArcaneMarks
 		&& currentMorale == displayedMorale && currentMoraleReadback == displayedMoraleReadback)
 		return;

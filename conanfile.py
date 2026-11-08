@@ -8,10 +8,11 @@ import os
 
 class VCMIApp(VCMI):
     generators = "CMakeDeps"
-    # Keep the preserved upstream dependency recipe unchanged. Only SDL_image
-    # uses our separately exported, revision-tracked interlace patch recipe.
+    # Preserve the upstream recipe, but omit the retired production Lua runtime.
+    # SDL_image uses our revision-tracked interlace patch recipe.
     requires = ["sdl_image/3.4.4@newhorizons/patched" if requirement.startswith("sdl_image/")
-                else requirement for requirement in VCMI.requires]
+                else requirement for requirement in VCMI.requires
+                if not requirement.startswith(("lua/", "luajit/"))]
 
     def _pathForCmake(self, path: str) -> str:
         # CMake doesn't like \ in strings

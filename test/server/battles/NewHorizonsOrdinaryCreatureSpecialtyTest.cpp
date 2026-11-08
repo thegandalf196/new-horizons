@@ -13,6 +13,7 @@
 #include "FullGameSnapshotTypes.h"
 #include "../../../lib/callback/GameRandomizer.h"
 #include <tuple>
+#include <string_view>
 #include <set>
 #include <vector>
 #include "../../../client/windows/HeroSpecialtyPresentation.h"
@@ -20,6 +21,7 @@
 #include "../../../lib/modding/ModScope.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/battle/NewHorizonsPuppetMaster.h"
+#include "../../../lib/battle/NewHorizonsAttackControllers.h"
 
 namespace
 {
@@ -38,7 +40,7 @@ protected:
 		if(historical)
 			rules["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
 		if(zeroCoefficients)
-			for(const char * key : {"retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"})
+			for(const char * key : {"retaliationDamagePercent", "maximumHealthPercent", "resistanceAuraPoints"})
 				rules["additionalSpecialties"]["ordinaryCreatureSpecialties"][key].Integer() = 0;
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
@@ -143,6 +145,12 @@ TEST_P(NewHorizonsOrdinaryCreatureSpecialtyTest, CurrentCaptureTargetsBothFormsO
 			EXPECT_EQ(bonus->val, value);
 		}
 		EXPECT_FALSE(defenderSideHero->getStackPtr(SlotID(slot))->getBonus(specialtySelector()));
+		if(std::string_view(hero) == "core:thunar")
+		{
+			EXPECT_EQ(stack->hasBonusOfType(BonusType::SHOOTER), slot < 2);
+			EXPECT_EQ(stack->valOfBonuses(BonusType::SHOTS), slot < 2 ? 12 : 0);
+			EXPECT_EQ(stack->hasBonusOfType(BonusType::NO_MELEE_PENALTY), slot < 2);
+		}
 	}
 	const auto before = attackerSideHero->getExportedBonusList().size();
 	attackerSideHero->initHero(*gameHandler->randomizer);
@@ -205,34 +213,35 @@ TEST_P(NewHorizonsOrdinaryCreatureSpecialtyTest, ExistingConsumersUseCapturedBon
 	auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 1000);
 	ASSERT_NE(unit, nullptr);
 	ASSERT_NE(victim, nullptr);
-	if(type == BonusType::NO_MELEE_PENALTY || type == BonusType::NO_DISTANCE_PENALTY)
+	if(std::string_view(hero) == "core:valeska")
+	{
+		EXPECT_EQ(newHorizonsAttackControllers::barrageDamagePercent(*battle(), *unit), 50);
+		EXPECT_FALSE(unit->hasBonusOfType(BonusType::NO_MELEE_PENALTY));
+		EXPECT_FALSE(unit->hasBonusOfType(BonusType::FREE_SHOOTING));
+		EXPECT_FALSE(unit->hasBonusOfType(BonusType::NO_WALL_PENALTY));
+		EXPECT_TRUE(newHorizonsArchery::hasPointBlankShot(attackerSideHero));
+		EXPECT_TRUE(battle()->battleCanShoot(unit, victim->getPosition()));
+	}
+	if(std::string_view(hero) == "core:thunar")
+	{
+		EXPECT_TRUE(unit->isShooter()); EXPECT_EQ(unit->shots.total(), 12);
+		EXPECT_TRUE(unit->hasBonusOfType(BonusType::NO_MELEE_PENALTY));
+		EXPECT_FALSE(unit->hasBonusOfType(BonusType::NO_DISTANCE_PENALTY));
+		EXPECT_EQ(unit->valOfBonuses(Selector::type()(BonusType::DEFENSIVE_STANCE)
+			.And(Selector::sourceTypeSel(BonusSource::HERO_SPECIAL))), 0);
+	}
+	if(type == BonusType::NO_DISTANCE_PENALTY)
 	{
 		EXPECT_FALSE(unit->hasBonusOfType(BonusType::FREE_SHOOTING));
 		EXPECT_FALSE(unit->hasBonusOfType(BonusType::NO_WALL_PENALTY));
-		// Valeska keeps her accepted starting Point-Blank Shot perk. The
-		// specialty changes melee damage, not the independent shooting rule.
-		const bool pointBlank = newHorizonsArchery::hasPointBlankShot(attackerSideHero);
-		EXPECT_EQ(pointBlank, type == BonusType::NO_MELEE_PENALTY);
-		EXPECT_EQ(battle()->battleCanShoot(unit, victim->getPosition()), pointBlank);
-		if(type == BonusType::NO_DISTANCE_PENALTY)
-		{
-			EXPECT_FALSE(unit->hasBonusOfType(BonusType::NO_MELEE_PENALTY));
-			EXPECT_FALSE(battle()->battleHasDistancePenalty(unit, BattleHex(18), BattleHex(168)));
-			attackerSideHero->removeBonuses(specialtySelector());
-			EXPECT_TRUE(battle()->battleHasDistancePenalty(unit, BattleHex(18), BattleHex(168)));
-			EXPECT_EQ(battle()->battleCanShoot(unit, victim->getPosition()), pointBlank);
-		}
-		else
-		{
-			BattleAttackInfo attack(unit, victim, 0, false);
-			const auto trained = battle()->calculateDmgRange(attack);
-			attackerSideHero->removeBonuses(specialtySelector());
-			const auto ordinary = battle()->calculateDmgRange(attack);
-			EXPECT_GT(trained.damage.max, ordinary.damage.max);
-			EXPECT_EQ(battle()->battleCanShoot(unit, victim->getPosition()), pointBlank);
-		}
+		EXPECT_FALSE(unit->hasBonusOfType(BonusType::NO_MELEE_PENALTY));
+		EXPECT_FALSE(newHorizonsArchery::hasPointBlankShot(attackerSideHero));
+		EXPECT_FALSE(battle()->battleCanShoot(unit, victim->getPosition()));
+		EXPECT_FALSE(battle()->battleHasDistancePenalty(unit, BattleHex(18), BattleHex(168)));
+		attackerSideHero->removeBonuses(specialtySelector());
+		EXPECT_TRUE(battle()->battleHasDistancePenalty(unit, BattleHex(18), BattleHex(168)));
 	}
-	if(type == BonusType::NONE)
+	if(std::string_view(hero) == "core:dace")
 	{
 		BattleAttackInfo attack(unit, victim, 0, false);
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureRetaliationPercent(attackerSideHero, attack), 0);
@@ -279,34 +288,6 @@ TEST_P(NewHorizonsOrdinaryCreatureSpecialtyTest, ExistingConsumersUseCapturedBon
 		attack.attacker = unrelated;
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureRetaliationPercent(attackerSideHero, attack), 0);
 	}
-	if(type == BonusType::DEFENSIVE_STANCE)
-	{
-		const auto defenseSelector = Selector::typeSubtype(BonusType::PRIMARY_SKILL,
-			BonusSubtypeID(PrimarySkill::DEFENSE));
-		const int baseDefense = unit->valOfBonuses(defenseSelector);
-		ASSERT_GT(baseDefense, 4); // This fixture does not use the weak-creature fallback.
-		for(const auto & bonus : *unit->getBonuses(defenseSelector))
-		{
-			ASSERT_NE(bonus->valType, BonusValueType::PERCENT_TO_ALL);
-			ASSERT_NE(bonus->valType, BonusValueType::INDEPENDENT_MIN);
-			ASSERT_NE(bonus->valType, BonusValueType::INDEPENDENT_MAX);
-			ASSERT_FALSE(bonus->valType == BonusValueType::PERCENT_TO_SOURCE && bonus->source == BonusSource::OTHER);
-			ASSERT_FALSE(bonus->valType == BonusValueType::PERCENT_TO_TARGET_TYPE && bonus->targetSourceType == BonusSource::OTHER);
-		}
-		const int trainedStance = unit->valOfBonuses(BonusType::DEFENSIVE_STANCE);
-		const auto trained = newHorizonsArmorer::buildDefendStance(unit);
-		attackerSideHero->removeBonuses(specialtySelector());
-		const int ordinaryStance = unit->valOfBonuses(BonusType::DEFENSIVE_STANCE);
-		const auto ordinary = newHorizonsArmorer::buildDefendStance(unit);
-		EXPECT_EQ(trainedStance - ordinaryStance, value);
-		// The flat stance input participates in ordinary Defend's +20%, before
-		// the standard integer floor. Its final difference need not equal +3.
-		const int64_t expectedDifference = (static_cast<int64_t>(baseDefense) + trainedStance) * 120 / 100
-			- (static_cast<int64_t>(baseDefense) + ordinaryStance) * 120 / 100;
-		EXPECT_EQ(trained.defenseIncrease - ordinary.defenseIncrease, expectedDifference);
-		for(const auto & bonus : trained.bonuses)
-			EXPECT_EQ(bonus.duration, BonusDuration::STACK_GETS_TURN);
-	}
 	if(type == BonusType::STACK_HEALTH)
 	{
 		const auto maximum = unit->getMaxHealth();
@@ -344,10 +325,10 @@ TEST_P(NewHorizonsOrdinaryCreatureSpecialtyTest, ExistingConsumersUseCapturedBon
 }
 
 INSTANTIATE_TEST_SUITE_P(SixIdentities, NewHorizonsOrdinaryCreatureSpecialtyTest, ::testing::Values(
-	SpecialtyCase{"core:valeska", "core:archer", "core:marksman", BonusType::NO_MELEE_PENALTY, 1, "ValeskaCloseQuartersDrill", "ValeskaArcherLine"},
+	SpecialtyCase{"core:valeska", "core:archer", "core:marksman", BonusType::NONE, 50, "ValeskaCloseQuartersDrill", "ValeskaArcherLine"},
 	SpecialtyCase{"core:wystan", "core:lizardman", "core:lizardWarrior", BonusType::NO_DISTANCE_PENALTY, 1, "WystanMarshSharpshooter", "WystanLizardmanLine"},
 	SpecialtyCase{"core:dace", "core:minotaur", "core:minotaurKing", BonusType::NONE, 25, "DaceUnbrokenChallenge", "DaceMinotaurLine"},
-	SpecialtyCase{"core:thunar", "core:earthElemental", "core:magmaElemental", BonusType::DEFENSIVE_STANCE, 3, "ThunarEarthshaper", "ThunarEarthElementalLine"},
+	SpecialtyCase{"core:thunar", "core:earthElemental", "core:magmaElemental", BonusType::NONE, 12, "ThunarEarthshaper", "ThunarEarthElementalLine"},
 	SpecialtyCase{"core:erdamon", "core:earthElemental", "core:magmaElemental", BonusType::STACK_HEALTH, 20, "ErdamonStonecaller", "ErdamonEarthElementalLine"},
 	SpecialtyCase{"core:clancy", "core:unicorn", "core:warUnicorn", BonusType::SPELL_RESISTANCE_AURA, 10, "ClancyUnicornSanctuary", "ClancyUnicornLine"}));
 
@@ -461,7 +442,7 @@ TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, CurrentSettingsRoundtripAndPrev
 TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, InvalidAndUnknownCoefficientsReject)
 {
 	const JsonNode original(JsonPath::builtin("config/newHorizonsHeroes"));
-	for(const char * key : {"retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"})
+	for(const char * key : {"retaliationDamagePercent", "maximumHealthPercent", "resistanceAuraPoints"})
 		for(int invalid : {-1, 101})
 		{
 			auto rules = original;
@@ -472,52 +453,44 @@ TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, InvalidAndUnknownCoefficientsRe
 	rules["additionalSpecialties"]["ordinaryCreatureSpecialties"]["unknown"].Integer() = 1;
 	EXPECT_THROW(newHorizonsHeroes::validateOrdinaryCreatureSpecialtiesSerialization(rules, true), std::runtime_error);
 }
-TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, FirstSix1144RetainsRoundtripAndEveryNewKeyRejectsBeforeSettingsPrefix)
+TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, Independent1144LeafRetainsRoundtripAndCurrentRecipesRejectBeforeSettingsPrefix)
 {
-	JsonNode firstSix(JsonPath::builtin("config/newHorizonsHeroes"));
-	auto & firstSixPolicy = firstSix["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	const auto capturedPolicy = firstSixPolicy;
-	const std::set<std::string> firstSixFields{"version", "closeQuartersDrill", "marshSharpshooter",
-		"retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"};
-	std::vector<std::string> laterKeys;
-	for(const auto & entry : capturedPolicy.Struct())
-		if(!firstSixFields.contains(entry.first))
-			laterKeys.push_back(entry.first);
-	for(const auto & key : laterKeys)
-		firstSixPolicy.Struct().erase(key);
-	ASSERT_EQ(firstSixPolicy.Struct().size(), firstSixFields.size());
-	GameSettings oldSettings;
-	oldSettings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, firstSix);
-	CMemorySerializer old;
-	old.oser.version = ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES;
-	ASSERT_NO_THROW(oldSettings.serialize(old.oser));
-	GameSettings restored;
-	old.iser.version = ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES;
-	ASSERT_NO_THROW(restored.serialize(old.iser));
-	EXPECT_EQ(restored.getValue(EGameSettings::HEROES_NEW_HORIZONS), firstSix);
-	for(const auto & key : laterKeys)
+	const JsonNode installed(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto & captured = installed["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	const std::set<std::string> originalFields{"version", "marshSharpshooter", "retaliationDamagePercent", "maximumHealthPercent", "resistanceAuraPoints"};
+	JsonNode leaf; leaf.setOverrideFlag(true);
+	leaf["additionalSpecialties"]["version"].Integer() = 1;
+	for(const auto & key : originalFields) leaf["additionalSpecialties"]["ordinaryCreatureSpecialties"][key] = captured[key];
+	GameSettings settings; settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, leaf);
+	CMemorySerializer old; old.oser.version = static_cast<ESerializationVersion>(1144);
+	ASSERT_NO_THROW(settings.serialize(old.oser));
+	old.iser.version = static_cast<ESerializationVersion>(1144);
+	GameSettings restored; ASSERT_NO_THROW(restored.serialize(old.iser));
+	EXPECT_EQ(restored.getValue(EGameSettings::HEROES_NEW_HORIZONS), leaf);
+	const std::vector<std::vector<std::string>> groups{
+		{"chillingPresenceReductionPercent", "chillingPresenceMoraleReduction", "chillingPresenceLuckReduction"},
+		{"boneFormationFirstBandSize", "boneFormationFirstBandLimit", "boneFormationSecondBandSize", "boneFormationSecondBandLimit", "boneFormationRemainingBandSize"},
+		{"furyOfTheHordeAttack", "furyOfTheHordeDefense", "furyOfTheHordeDamage", "orcRageMaximumDamagePercent"},
+		{"dispellingShotMageChancePercent", "dispellingShotArchMageChancePercent"},
+		{"cripplingBoltSpeedReduction", "cripplingBoltDuration"},
+		{"lanceFormationDefensePerHex", "lanceFormationMaximumDefense"},
+		{"stormWingsDefenseIgnorePercent", "stormWingsMinimumFlightDistance"}};
+	for(const auto & [key, value] : captured.Struct())
 	{
-		// These two capabilities have finite positive domains, not arbitrary percentages.
-		const int positive = key == "rangefinderFullDamageDistance" || key == "ogreBulwarkRetaliations"
-			? static_cast<int>(capturedPolicy[key].Integer()) : 20;
-		const char * companion = key == "gunneryProfessorInitiativeFlat" ? "gunneryProfessorFollowUpBonusPoints"
-			: key == "gunneryProfessorFollowUpBonusPoints" ? "gunneryProfessorInitiativeFlat" : nullptr;
-		for(int value : {0, positive})
-		{
-			auto extended = firstSix;
-			auto & policy = extended["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-			if(companion)
-				policy[companion] = capturedPolicy[companion];
-			policy[key].Integer() = value;
-			GameSettings settings;
-			settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, extended);
-			CMemorySerializer unsupported;
-			unsupported.oser.version = ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES;
-			EXPECT_THROW(settings.serialize(unsupported.oser), std::runtime_error) << key;
-			EXPECT_TRUE(unsupported.extractBuffer().empty()) << key;
-			CMemorySerializer current;
-			EXPECT_NO_THROW(settings.serialize(current.oser));
-		}
+		if(originalFields.contains(key)) continue;
+		SCOPED_TRACE(key);
+		auto extended = leaf;
+		auto & policy = extended["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+		policy[key] = value;
+		for(const auto & group : groups)
+			if(vstd::contains(group, key)) for(const auto & member : group) policy[member] = captured[member];
+		GameSettings current; ASSERT_NO_THROW(current.addOverride(EGameSettings::HEROES_NEW_HORIZONS, extended));
+		CMemorySerializer unsupported; unsupported.oser.version = static_cast<ESerializationVersion>(1144);
+		EXPECT_THROW(current.serialize(unsupported.oser), std::runtime_error);
+		EXPECT_TRUE(unsupported.extractBuffer().empty());
+		CMemorySerializer wire; ASSERT_NO_THROW(current.serialize(wire.oser));
+		GameSettings roundtrip; ASSERT_NO_THROW(roundtrip.serialize(wire.iser));
+		EXPECT_EQ(roundtrip.getValue(EGameSettings::HEROES_NEW_HORIZONS), extended);
 	}
 }
 

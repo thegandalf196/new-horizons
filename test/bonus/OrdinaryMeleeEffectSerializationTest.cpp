@@ -249,7 +249,7 @@ TEST_F(OrdinaryMeleeEffectSerializationTest, ChangeListsCommanderAndRewardConfig
 		currentRoundtrip(reward);
 	}
 }
-TEST_F(OrdinaryMeleeEffectSerializationTest, ReplayUsesDeclaredCodecAndRefusesMislabeledHistoricalBonus)
+TEST_F(OrdinaryMeleeEffectSerializationTest, CurrentReplayRoundTripsAndHistoricalOriginsRejectBeforeBonusDecode)
 {
 	startGame();
 	for(const int captured : {20, -1, 100, -100})
@@ -268,7 +268,11 @@ TEST_F(OrdinaryMeleeEffectSerializationTest, ReplayUsesDeclaredCodecAndRefusesMi
 		for(const auto epoch : oldEpochs)
 		{
 			payload.version = epoch;
-			expectMarkerRefusal([&] { ReplayPackSerializer::read(payload, gameState().get()); });
+			const auto before = payload;
+			try { ReplayPackSerializer::read(payload, gameState().get()); FAIL() << "Unsupported replay origin must reject"; }
+			catch(const std::runtime_error & error)
+			{ EXPECT_EQ(std::string(error.what()), "Unsupported replay payload encoding version"); }
+			EXPECT_EQ(payload, before);
 		}
 	}
 }

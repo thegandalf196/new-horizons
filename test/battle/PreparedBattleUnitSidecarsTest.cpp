@@ -10,6 +10,7 @@
 #include "../../lib/battle/PreparedBattleUnitSidecars.h"
 #include "../../lib/battle/ProjectedBattleWorldArena.h"
 #include "../../lib/battle/NewHorizonsCrisisCommand.h"
+#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/battle/NewHorizonsBloodrage.h"
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -35,16 +36,12 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(map);
 		const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		ASSERT_TRUE(newHorizonsCrisisCommand::activeProfile(perks));
+		ASSERT_TRUE(newHorizonsCommand::usesPerkRules(perks));
+		ASSERT_FALSE(newHorizonsCrisisCommand::activeProfile(perks));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
 	void select(CGHeroInstance * hero)
 	{
-		const SecondarySkill command(SecondarySkill::decode(newHorizonsCrisisCommand::SKILL));
-		hero->setSecSkillLevel(command, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-		hero->applyPerkSelection({newHorizonsCrisisCommand::SKILL, "new-horizons:command.aggressiveCommander"});
-		hero->applyPerkSelection({newHorizonsCrisisCommand::SKILL, newHorizonsCrisisCommand::PERK});
-		ASSERT_TRUE(newHorizonsCrisisCommand::eligible(hero));
 		const SecondarySkill rage(SecondarySkill::decode("new-horizons:bloodrage"));
 		hero->setSecSkillLevel(rage, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		hero->applyPerkSelection({"new-horizons:bloodrage", "new-horizons:bloodrage.firstBlood"});
@@ -53,10 +50,18 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true; // Current finite Command rules, not the historical V3 snapshot.
 		startGame();
 		ASSERT_NO_FATAL_FAILURE(select(attackerSideHero));
 		ASSERT_NO_FATAL_FAILURE(select(defenderSideHero));
 		startBattle();
+		for(const auto side : {ATT, DEF})
+		{
+			const auto & resource = battle()->getCommandResources(side);
+			ASSERT_TRUE(resource.initialized);
+			ASSERT_GT(resource.remaining, 0);
+			ASSERT_EQ(resource.remaining, resource.maximum);
+		}
 		first = addStack(ATT, CreatureID(0), BattleHex(leftHex), 4);
 		second = addStack(DEF, CreatureID(0), BattleHex(rightHex), 4);
 	}
@@ -70,7 +75,7 @@ protected:
 			auto & value = battle()->getSide(side);
 			writer.oser & value.orderStates & value.reducedExtraActivation;
 			writer.oser & value.rebirthChainUsed & value.phoenixSparkUsed & value.bloodrageDamagePercent;
-			writer.oser & value.activeOrder & value.heroActionAllowances;
+			writer.oser & value.activeOrder & value.heroActionAllowances & value.commandResources;
 		}
 		auto crisis = battle()->getCrisisCommandState();
 		auto seize = battle()->getSeizeInitiativeState();
@@ -101,10 +106,14 @@ TEST_F(PreparedBattleUnitSidecarsTest, SuccessfulDeathTransfersBothSidesAndPrese
 {
 	const auto firstJson = first->save(), secondJson = second->save();
 	const auto firstDeath = death(*first), secondDeath = death(*second);
+	const auto attackerCommand = battle()->getCommandResources(ATT);
+	const auto defenderCommand = battle()->getCommandResources(DEF);
 	capture();
 	arena->applyUnitChanges({secondDeath, firstDeath, UnitChanges(second->unitId(), BattleChanges::EOperation::REMOVE),
 		UnitChanges(first->unitId(), BattleChanges::EOperation::REMOVE)});
-	ASSERT_EQ(arena->crisisState().pending.size(), 2);
+	ASSERT_TRUE(arena->crisisState().pending.empty());
+	ASSERT_FALSE(arena->crisisState().used.at(static_cast<size_t>(ATT)));
+	ASSERT_FALSE(arena->crisisState().used.at(static_cast<size_t>(DEF)));
 	ASSERT_TRUE(arena->firstBloodUsed());
 	ASSERT_GT(arena->bloodrageDamage(ATT), battle()->getBloodrageDamagePercent(ATT));
 	ASSERT_GT(arena->bloodrageDamage(DEF), battle()->getBloodrageDamagePercent(DEF));
@@ -122,6 +131,8 @@ TEST_F(PreparedBattleUnitSidecarsTest, SuccessfulDeathTransfersBothSidesAndPrese
 		EXPECT_EQ(battle()->getRebirthChainUsed(side), arena->rebirthChainUsed(side));
 		EXPECT_EQ(battle()->getPhoenixSparkUsed(side), arena->phoenixSparkUsed(side));
 	}
+	EXPECT_EQ(battle()->getCommandResources(ATT), attackerCommand);
+	EXPECT_EQ(battle()->getCommandResources(DEF), defenderCommand);
 	EXPECT_EQ(first->save(), firstJson);
 	EXPECT_EQ(second->save(), secondJson);
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
@@ -136,7 +147,7 @@ TEST_F(PreparedBattleUnitSidecarsTest, BindingOriginCannotBeRecapturedAtPlanCons
 	EXPECT_EQ(sidecarBytes(), bytes);
 }
 
-TEST_F(PreparedBattleUnitSidecarsTest, AsymmetricSideValuesAndSingleCrisisReceiptKeepExactSideIdentity)
+TEST_F(PreparedBattleUnitSidecarsTest, AsymmetricBloodrageValuesKeepExactSideIdentityWithoutCrisisReceipt)
 {
 	battle()->getSide(ATT).bloodrageDamagePercent = 1;
 	battle()->getSide(DEF).bloodrageDamagePercent = 7;
@@ -148,7 +159,8 @@ TEST_F(PreparedBattleUnitSidecarsTest, AsymmetricSideValuesAndSingleCrisisReceip
 	ASSERT_TRUE(plan.commit());
 	EXPECT_EQ(battle()->getBloodrageDamagePercent(ATT), arena->bloodrageDamage(ATT));
 	EXPECT_EQ(battle()->getBloodrageDamagePercent(DEF), arena->bloodrageDamage(DEF));
-	EXPECT_TRUE(battle()->getCrisisCommandState().used.at(static_cast<size_t>(ATT)));
+	EXPECT_TRUE(battle()->getCrisisCommandState().pending.empty());
+	EXPECT_FALSE(battle()->getCrisisCommandState().used.at(static_cast<size_t>(ATT)));
 	EXPECT_FALSE(battle()->getCrisisCommandState().used.at(static_cast<size_t>(DEF)));
 }
 
@@ -345,64 +357,60 @@ class PreparedBattleElementalSidecarsTest : public NewHorizonsRebirthChainFixtur
 protected:
 	std::unique_ptr<Arena> arena;
 	void TearDown() override { arena.reset(); NewHorizonsRebirthChainFixture::TearDown(); }
-	void prepareSpark()
+	void prepareCorpse()
 	{
-		startGame();
-		defenderSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:brissa")));
-		defenderSideHero->clearSlots();
-		attackerSideHero->clearSlots();
-		const SecondarySkill skill(SecondarySkill::decode(SKILL));
-		defenderSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		defenderSideHero->applyPerkSelection({SKILL, "new-horizons:elementalRebirth.primalBurst"});
-		defenderSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-		defenderSideHero->applyPerkSelection({SKILL, CHAIN});
-		defenderSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-		defenderSideHero->applyPerkSelection({SKILL, "new-horizons:elementalRebirth.phoenixSpark"});
-		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creature("core:angel"), 3));
-		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creature("core:pikeman"), 100));
-		startBattle();
-		for(const auto * unit : battle()->battleGetAllUnits(false))
-			if(unit->unitSide() == DEF && unit->unitSlot() == SlotID(0))
-				source = battle()->getStack(unit->unitId(), false);
-		ASSERT_NE(source, nullptr);
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		ASSERT_FALSE(newHorizonsElementalRebirth::activeProfile(defenderSideHero));
 		auto lethal = source->getAvailableHealth();
 		source->damage(lethal);
 		ASSERT_FALSE(source->alive());
 	}
 };
 
-TEST_F(PreparedBattleElementalSidecarsTest, ChainConsumptionTransfersFlagButNotPrivateAddedRoot)
+TEST_F(PreparedBattleElementalSidecarsTest, RetiredChainCannotPublishSidecarsOrPrivateAddedRoot)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto * reborn = firstReborn();
-	ASSERT_NE(reborn, nullptr);
-	auto lethal = reborn->getAvailableHealth();
-	reborn->damage(lethal);
-	const auto packet = candidate(reborn);
-	const auto originalRoots = battle()->stacks.size();
+	ASSERT_NO_FATAL_FAILURE(prepareCorpse());
+	const auto packet = retiredCandidate();
+	const auto roots = battle()->stacks.size();
+	const auto state = source->save();
 	arena = std::make_unique<Arena>(*battle());
-	arena->applyPacket(packet);
-	ASSERT_TRUE(arena->rebirthChainUsed(DEF));
-	ASSERT_FALSE(battle()->getRebirthChainUsed(DEF));
-	Plan plan(*battle(), *arena);
-	ASSERT_TRUE(plan.commit());
-	EXPECT_TRUE(battle()->getRebirthChainUsed(DEF));
-	EXPECT_EQ(battle()->stacks.size(), originalRoots);
+	EXPECT_THROW(arena->applyPacket(packet), std::runtime_error);
+	EXPECT_THROW((Plan(*battle(), *arena)), std::logic_error);
+	EXPECT_FALSE(battle()->getRebirthChainUsed(DEF));
+	EXPECT_EQ(battle()->stacks.size(), roots);
+	EXPECT_EQ(source->save(), state);
 }
 
-TEST_F(PreparedBattleElementalSidecarsTest, PhoenixConsumptionTransfersFlagWithoutResurrectingLiveStack)
+TEST_F(PreparedBattleElementalSidecarsTest, RetiredPhoenixCannotPublishUseOrResurrectLiveStack)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareSpark());
+	ASSERT_NO_FATAL_FAILURE(prepareCorpse());
 	BattleUnitsChanged packet;
 	packet.battleID = BattleID(0);
 	packet.phoenixSparkConsumption = newHorizonsElementalRebirth::PhoenixSparkConsumption{DEF, source->unitId()};
+	const auto roots = battle()->stacks.size();
+	const auto state = source->save();
 	arena = std::make_unique<Arena>(*battle());
-	arena->applyPacket(packet);
-	ASSERT_TRUE(arena->phoenixSparkUsed(DEF));
-	ASSERT_FALSE(battle()->getPhoenixSparkUsed(DEF));
+	EXPECT_THROW(arena->applyPacket(packet), std::runtime_error);
+	EXPECT_THROW((Plan(*battle(), *arena)), std::logic_error);
+	EXPECT_FALSE(battle()->getPhoenixSparkUsed(DEF));
+	EXPECT_EQ(battle()->stacks.size(), roots);
+	EXPECT_EQ(source->save(), state);
+}
+
+TEST_F(PreparedBattleElementalSidecarsTest, IndependentSummonDoesNotPublishPrivateRootOrRetiredTokens)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareCorpse());
+	auto packet = retiredCandidate();
+	packet.rebirthChainConsumption.reset(); // Ordinary independent summon; no retired effect request.
+	const auto roots = battle()->stacks.size();
+	arena = std::make_unique<Arena>(*battle());
+	ASSERT_NO_THROW(arena->applyPacket(packet));
+	ASSERT_NE(arena->findUnit(packet.changedStacks.front().id), nullptr);
 	Plan plan(*battle(), *arena);
 	ASSERT_TRUE(plan.commit());
-	EXPECT_TRUE(battle()->getPhoenixSparkUsed(DEF));
-	EXPECT_FALSE(source->alive());
+	EXPECT_EQ(battle()->stacks.size(), roots); // Sidecar commit never adopts the private added root.
+	EXPECT_EQ(battle()->battleGetUnitByID(packet.changedStacks.front().id), nullptr);
+	EXPECT_FALSE(battle()->getRebirthChainUsed(DEF));
+	EXPECT_FALSE(battle()->getPhoenixSparkUsed(DEF));
 }
 }

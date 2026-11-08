@@ -6,7 +6,6 @@
 #include "StdInc.h"
 #include "InitialExportBattleSubject.h"
 #include "HypotheticBattle.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include <stdexcept>
 
 void InitialExportBattleSubject::addSequenceBonus(const HypotheticBattle & branch, uint32_t id,
@@ -23,7 +22,6 @@ void InitialExportBattleSubject::addSequenceBonus(const HypotheticBattle & branc
 	{
 		if(bonus.source == BonusSource::SPELL_EFFECT || bonus.type == BonusType::PHYSICAL_AFFLICTION
 			|| bonus.type == BonusType::CONFUSION_PENDING || bonus.type == BonusType::GUARDIAN_SPIRIT
-			|| newHorizonsSwiftRebirth::isLifecycleMarker(bonus)
 			|| (!forceAdd && (bonus.hasStatusMetadata() || recipient.hasBonusFrom(BonusSource::SPELL_EFFECT))))
 			throw std::invalid_argument("Originating effect requires shared native refresh/control projection");
 	}

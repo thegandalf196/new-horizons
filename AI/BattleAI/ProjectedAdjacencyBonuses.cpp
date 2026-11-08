@@ -11,6 +11,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
 #include "../../lib/battle/BattleForm.h"
 #include "../../lib/bonuses/BonusGraphQuery.h"
 #include "../../lib/bonuses/BonusLimitation.h"
@@ -33,6 +34,49 @@ struct ProjectedAdjacencySources
 
 namespace
 {
+// The inherited selected list has already run normal source, limiter, updater,
+// adjacency and clock evaluation. Preserve the old merge's predicate order and
+// call count; allocate a replacement only when membership really changes.
+TConstBonusListPtr mergeSelectedOverlay(TConstBonusListPtr inherited,
+	const recipientBonusOverlay::View & overlay, const CSelector & selector, bool unstacked)
+{
+	TBonusListPtr changed;
+	const bool hasSnapshot = unstacked ? overlay.unstackedSnapshot.has_value()
+		: overlay.stackedSnapshot.has_value();
+	for(size_t index = 0; index < inherited->size(); ++index)
+	{
+		const auto & record = (*inherited)[index];
+		const bool keep = !overlay.removed.contains(record)
+			&& !(hasSnapshot && recipientBonusOverlay::isCapturedProjectionEffect(record.get(), overlay.capturedGroups));
+		if(!keep && !changed)
+		{
+			changed = std::make_shared<BonusList>();
+			for(size_t previous = 0; previous < index; ++previous)
+				changed->push_back((*inherited)[previous]);
+		}
+		else if(keep && changed)
+			changed->push_back(record);
+	}
+	const auto writable = [&]() -> BonusList &
+	{
+		if(!changed)
+			changed = std::make_shared<BonusList>(*inherited);
+		return *changed;
+	};
+	if(unstacked && overlay.unstackedSnapshot)
+		for(const auto & record : *overlay.unstackedSnapshot)
+			if(record && selector(record.get()))
+				writable().push_back(record);
+	if(!unstacked && overlay.stackedSnapshot)
+		for(const auto & record : *overlay.stackedSnapshot)
+			if(selector(&record))
+				writable().push_back(std::make_shared<Bonus>(record));
+	for(const auto & record : overlay.added)
+		if(selector(record.get()))
+			writable().push_back(record);
+	return changed ? TConstBonusListPtr(changed) : inherited;
+}
+
 constexpr std::string_view PASIS_STACKING = "new-horizons:ordinary-creature-specialty:core:pasis";
 
 /// Native topology with ONLY the authorized source pointers. Hidden records
@@ -77,24 +121,26 @@ struct ProjectedAdjacencyQuery
 namespace
 {
 TConstBonusListPtr projectedNativeBaseline(const CStack & native,
-	const BonusEvaluationContext & evaluation, const ProjectedAdjacencySources & sources)
+	const BonusEvaluationContext & evaluation, const ProjectedAdjacencySources & sources,
+	const TConstBonusListPtr & baseline, bool dynamicTemplates)
 {
 	std::set<const Bonus *> identities;
 	for(const auto & record : sources.records)
-		identities.insert(record.get());
+		if(dynamicTemplates || !newHorizonsPassiveSpecialties::isDynamicPassiveBonus(*record))
+			identities.insert(record.get());
 	{
 		NativeBonusGraphAccess access;
 		AuthorizedGraph graph(identities);
 		BonusList raw, accepted;
 		collectBonusGraph(graph, native, raw);
 		limitBonuses(raw, accepted, evaluation);
-		const auto baseline = native.CBonusSystemNode::getUnstackedBonuses(Selector::all);
 		auto replacement = std::make_shared<BonusList>();
 		std::map<const Bonus *, size_t> remaining;
 		for(const auto & record : accepted)
 			++remaining[record.get()];
 		for(const auto & record : *baseline)
 		{
+			if(dynamicTemplates && newHorizonsPassiveSpecialties::isDynamicPassiveBonus(*record)) continue;
 			if(!identities.contains(record.get()))
 				replacement->push_back(record);
 			else if(remaining[record.get()] > 0)
@@ -121,31 +167,23 @@ std::shared_ptr<const ProjectedAdjacencySources> ProjectedAdjacencyBonuses::capt
 		return {}; // The existing owned graph already projects these records.
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(&source))
 		return parent->initialExportSubject() ? nullptr : sourcesFor(*parent);
-	std::vector<const CGHeroInstance *> heroes;
+	auto result = std::make_shared<ProjectedAdjacencySources>();
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		const auto policy = source.battleGetVisibleHeroPolicy(side);
 		const auto * hero = policy.legacyHero();
-		if(policy.kind() != VisibleHeroPolicy::Knowledge::VISIBLE_HERO || !hero
-			|| !hero->getHeroType() || hero->getHeroType()->getJsonKey() != "core:pasis"
-			|| !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero)
-			|| hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"]
-				["prismaticScreenReductionPercent"].Integer() <= 0)
-			continue;
-		heroes.push_back(hero);
-	}
-	if(heroes.empty())
-		return {}; // No roster, native graph traversal or raw queries on this lane.
-	auto result = std::make_shared<ProjectedAdjacencySources>();
-	{
+		if(policy.kind() != VisibleHeroPolicy::Knowledge::VISIBLE_HERO || !hero || !hero->getHeroType()) continue;
 		NativeBonusGraphAccess access;
-		for(const auto * hero : heroes)
-			for(const auto & record : hero->getExportedBonusList())
-				if(record && record->stacking == PASIS_STACKING && record->source == BonusSource::HERO_SPECIAL
-					&& record->sid == BonusSourceID(hero->getHeroTypeID())
-					&& record->type == BonusType::SPELL_DAMAGE_REDUCTION && record->val > 0
-					&& record->limiter && !record->updater && !record->propagationUpdater)
-					result->records.push_back(record);
+		for(const auto & record : hero->getExportedBonusList())
+		{
+			if(!record || record->source != BonusSource::HERO_SPECIAL
+				|| record->sid != BonusSourceID(hero->getHeroTypeID())) continue;
+			const bool pasis = record->stacking == PASIS_STACKING
+				&& record->type == BonusType::SPELL_DAMAGE_REDUCTION && record->val > 0
+				&& record->limiter && !record->updater && !record->propagationUpdater;
+			if(pasis || newHorizonsPassiveSpecialties::isDynamicPassiveBonus(*record))
+				result->records.push_back(record);
+		}
 	}
 	return result->records.empty() ? nullptr : result;
 }
@@ -176,6 +214,7 @@ const CStack * ProjectedAdjacencyBonuses::nativeSource(const StackWithBonuses & 
 	{
 		if(typeid(*layer) != typeid(StackWithBonuses) || !seen.insert(layer).second || seen.size() > 512
 			|| !layer->originalUnit || layer->originalUnit->unitId() != unit.unitId()
+			|| layer->originalUnit->getBonusBearer() != layer->origBearer
 			|| layer->damageScoringBonuses || layer->damageScoringUnstackedBonuses
 			|| layer->owner->initialExportSubject())
 			return nullptr;
@@ -189,15 +228,16 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	const CSelector & selector, const std::string & cachingStr, bool unstacked)
 {
 	const auto sources = sourcesFor(*unit.owner);
-	if(!sources || unit.damageScoringBonuses || unit.owner->initialExportSubject())
+	if((!sources && !unit.owner->committedBonusOperations)
+		|| unit.damageScoringBonuses || unit.owner->initialExportSubject())
 		return {};
+	// Reject a rebound proxy certificate before following borrowed native
+	// providers or asking the graph to execute any updater.
+	unit.owner->validateCurrentBonusOperationSource();
 	const auto * native = nativeSource(unit);
 	if(!native)
 		return {}; // Foreign providers retain their existing unsupported semantics.
 	const auto policy = unit.owner->battleGetVisibleHeroPolicy(native->unitSide());
-	if(policy.kind() != VisibleHeroPolicy::Knowledge::VISIBLE_HERO
-		&& policy.kind() != VisibleHeroPolicy::Knowledge::KNOWN_ABSENT)
-		return {}; // Unknown recipient provenance is not known-absent authority.
 	auto units = unit.owner->battleGetUnitsIf([](const battle::Unit *) { return true; });
 	const auto found = std::ranges::find_if(units, [&unit](const battle::Unit * candidate)
 		{ return candidate && candidate->unitId() == unit.unitId(); });
@@ -227,11 +267,23 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	}
 	if(!nativeBattle)
 		return {}; // Foreign provenance has no authorized adjacency domain.
-	const BonusEvaluationContext evaluation(*native, unit, roster,
-		{policy.legacyHero(), nativeBattle});
+	TConstBonusListPtr baseline;
+	{
+		NativeBonusGraphAccess access;
+		baseline = native->CBonusSystemNode::getUnstackedBonuses(Selector::all);
+	}
+	const auto numeric = unit.owner->currentBonusOperationBaseline(*native, unit, roster, *baseline);
+	if(!numeric && !sources) return {};
+	if(numeric) baseline = numeric;
+	if(sources)
+	{
+		const BonusEvaluationContext evaluation(*native, unit, roster,
+			{policy.legacyHero(), nativeBattle});
+		baseline = projectedNativeBaseline(*native, evaluation, *sources, baseline, !numeric);
+	}
 	ProjectedAdjacencyQuery query;
 	query.veteranCohesionEarned = native->veteranCohesionEarned;
-	query.baseline = projectedNativeBaseline(*native, evaluation, *sources);
+	query.baseline = std::move(baseline);
 	return unit.mergeBonusesImpl(selector, cachingStr, unstacked, &query);
 }
 
@@ -320,10 +372,17 @@ TConstBonusListPtr StackWithBonuses::mergeBonusesImpl(const CSelector & selector
 			: origBearer->getAllBonuses(sourceSelector, originalCachingStr);
 	originalList = frozenInheritedClockQuery(std::move(originalList), mergeSelector, unstacked, adjacency);
 	const auto overlay = recipientOverlayView();
-	if(!replaceNativeCreatureBonuses && overlay.added.empty() && overlay.updated.empty()
-		&& overlay.removed.empty() && !overlay.stackedSnapshot && !overlay.unstackedSnapshot
+	if(!replaceNativeCreatureBonuses && overlay.updated.empty()
 		&& !overlay.veteranCohesionEarned && hasStableInheritedBonusList())
-		return newHorizonsDiscipline::veteranCohesionBonuses(originalList, selector, veteranCohesionEarned);
+	{
+		// The old empty-overlay lane needs no scan. Edits remain query-local:
+		// refreshes, forms and foreign/unstable sources keep the original merge.
+		const bool empty = overlay.added.empty() && overlay.removed.empty()
+			&& !overlay.stackedSnapshot && !overlay.unstackedSnapshot;
+		const auto selected = empty ? originalList
+			: mergeSelectedOverlay(originalList, overlay, selector, unstacked);
+		return newHorizonsDiscipline::veteranCohesionBonuses(selected, selector, veteranCohesionEarned);
+	}
 
 	auto ret = std::make_shared<BonusList>();
 	recipientBonusOverlay::copyInherited(*ret, *originalList, overlay, unstacked);

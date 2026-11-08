@@ -23,6 +23,7 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
+#include "../../lib/combatScripts/NativeDamageCalculator.h"
 #include "../../lib/modding/IdentifierStorage.h"
 #include "../../lib/scripting/ScriptHandler.h"
 #include <functional>
@@ -164,12 +165,17 @@ Sample measure(const std::function<void()> & prepare)
 	return sample;
 }
 
-void expectCalculations(const Sample & sample, uint64_t expected)
+void expectCalculations(const Sample & sample, uint64_t expected, size_t recordedCalculations)
 {
+	EXPECT_EQ(recordedCalculations, expected);
 	EXPECT_EQ(sample.initialCalls, expected);
 	EXPECT_EQ(sample.nativePayload.calls, expected);
-	EXPECT_EQ(sample.bonusPreparation.calls, expected);
-	EXPECT_EQ(sample.luaCall.calls, expected);
+	// These two scopes belong exclusively to the optional Lua oracle bridge.
+	// Native work remains observed by payload counts and the real calculator.
+	EXPECT_EQ(sample.bonusPreparation.calls, 0u);
+	EXPECT_EQ(sample.bonusPreparation.nanoseconds, 0u);
+	EXPECT_EQ(sample.luaCall.calls, 0u);
+	EXPECT_EQ(sample.luaCall.nanoseconds, 0u);
 	EXPECT_EQ(sample.luckySecondCalls, 0u);
 	EXPECT_EQ(sample.unluckySecondCalls, 0u);
 	EXPECT_EQ(sample.suppressedStages, 0u);
@@ -333,6 +339,7 @@ protected:
 		{
 			ScopedCalculatorRegistry registry;
 			ASSERT_NE(registry.ordinary(), nullptr);
+			ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(registry.ordinary()), nullptr);
 			ASSERT_EQ(registry.ordinary()->forecastImplementation(*model), DamageForecastImplementation::CANONICAL);
 			auto calculator = std::make_shared<RecordingCalculator>(registry.ordinary(), capability);
 			registry.install(calculator);
@@ -351,8 +358,8 @@ protected:
 			EXPECT_EQ(calculator->events, std::string(8, 'C'));
 			calculator->reset();
 			const auto optimized = measure([&]() { terminal.buildCreaturePressureCache(model, BattleSide::ATTACKER); });
-			expectCalculations(ordinary, 8);
-			expectCalculations(optimized, fast ? 2 : 8);
+			expectCalculations(ordinary, 8, calls.size());
+			expectCalculations(optimized, fast ? 2 : 8, calculator->calls.size());
 			if(fast)
 				EXPECT_EQ(calculator->calls, (std::vector<std::pair<uint32_t, uint32_t>>(calls.begin(), calls.begin() + 2)));
 			else
@@ -601,10 +608,12 @@ protected:
 				referenceCalculations = calculator->calls.size();
 				EXPECT_EQ(timing.selectedProbeDamageOffers, 0u);
 				EXPECT_EQ(timing.selectedProbeDamageUses, 0u);
+				EXPECT_EQ(timing.selectedProbeScoreUses, 0u);
 			}
 			else if(optimized)
 			{
 				ASSERT_GT(timing.selectedProbeDamageUses, 0u);
+				EXPECT_EQ(timing.selectedProbeScoreUses, timing.selectedProbeDamageUses);
 				EXPECT_GE(timing.selectedProbeDamageOffers, timing.selectedProbeDamageUses);
 				ASSERT_GE(referenceCalculations, calculator->calls.size());
 				EXPECT_EQ(referenceCalculations - calculator->calls.size(), timing.selectedProbeDamageUses);
@@ -615,6 +624,7 @@ protected:
 				EXPECT_EQ(ledger, *expectedLedger);
 				EXPECT_EQ(calculator->calls.size(), referenceCalculations);
 				EXPECT_EQ(timing.selectedProbeDamageUses, 0u);
+				EXPECT_EQ(timing.selectedProbeScoreUses, 0u);
 				if(capability == Capability::REVOKED_AFTER_ADMISSION)
 					EXPECT_GT(timing.selectedProbeDamageOffers, 0u); // Admitted first, revoked before consume.
 				else EXPECT_EQ(timing.selectedProbeDamageOffers, 0u);
@@ -838,6 +848,7 @@ protected:
 			ASSERT_GE(timing.targetProbes.calls, 2u);
 			EXPECT_EQ(timing.selectedProbeDamageOffers, 0u);
 			EXPECT_EQ(timing.selectedProbeDamageUses, 0u);
+			EXPECT_EQ(timing.selectedProbeScoreUses, 0u);
 			if(specialized)
 			{
 				if(capability == Capability::CANONICAL)

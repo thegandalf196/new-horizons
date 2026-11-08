@@ -136,6 +136,8 @@ void CSettingsView::fillValidCombatAILibraries(QComboBox * comboBox, QString act
 
 #ifdef ENABLE_BATTLE_AI
 	comboBox->addItem(tr("BattleAI (default, recommended)"), "BattleAI");
+	comboBox->addItem(tr("BattleAIBeamOne (experimental)"), "BattleAIBeamOne");
+	comboBox->addItem(tr("BattleAIQuick (experimental)"), "BattleAIQuick");
 #endif
 
 #ifdef ENABLE_MMAI

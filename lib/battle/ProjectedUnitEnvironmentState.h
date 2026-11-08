@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #pragma once
+#include "NewHorizonsElementalAttunement.h"
 #include <array>
 #include "SylvanLuckState.h"
 #include "MetamagicPointState.h"
@@ -28,6 +29,8 @@ public:
 		bool ammoArtifact = false;
 		bool veteranCohesion = false;
 		newHorizonsNecromancy::CombatPassives necromancy;
+		newHorizonsElementalAttunement::Profile elementalAttunementProfile;
+		bool elementalAttunementProfileKnown = true;
 		int bloodrageRank = 0;
 		int bloodrageCap = 0;
 		int bloodrageSpeed = 0;
@@ -39,6 +42,7 @@ public:
 		SylvanLuckState fortune;
 		MetamagicPointState metamagicPoints;
 		int bloodrageDamagePercent = 0;
+		uint8_t elementalAttunementMask = 0;
 	};
 private:
 	BattleSideArray<SideInputs> captured;

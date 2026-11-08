@@ -733,5 +733,27 @@
 	},
 	"PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS" : {
 		"description" : "Physical resistance: ${val.basisPoints} less physical damage."
+	},
+	"MAGICAL_DAMAGE_IMMUNITY": {
+		"description": "{Magical Damage Immunity}\nThis unit is immune to magical damage. Non-damaging magical effects remain applicable unless another ability prevents them."
+	},
+	"CANNOT_SHOOT": {
+		"description": "{Melee Only}\nThis unit cannot make ranged attacks."
+	},
+	"CREATURE_ATTACK_TARGET_PROTECTION": {
+		"description": "{Protected from Creature Attacks}\nEnemy creatures cannot deliberately target this unit with ordinary melee or ranged attacks while this protection remains active. This does not prevent spells or collateral damage."
+	},
+	"CASUALTY_DAMAGE_PERCENTAGE": {
+		"description": "{Casualty-Scaled Damage}\nOrdinary melee attacks and retaliations against the primary victim gain damage from the applicable native-count casualty deficit. Wounds alone do not count."
+	},
+	"DYNAMIC_CREATURE_DAMAGE": {
+		"hidden": true,
+		"blockDescriptionPropagation": true
+	},
+	"PHYSICAL_DEFENSE": {
+		"description": "{Physical Defense}\nThis unit gains ${val} Creature Defense against physical attacks. This bonus does not reduce magical damage."
+	},
+	"NATIVE_RESISTANCE_REFLECTION": {
+		"description": "{Native Resistance Reflection}\nOn the ordinary resistance roll, this unit's native ${val}% Magic Resistance outcome is replaced by hostile-spell reflection, subject to normal eligibility and caps. This adds no Magic Resistance or independent chance. Illegal reflection is resisted; reflected spells cannot reflect again."
 	}
 }

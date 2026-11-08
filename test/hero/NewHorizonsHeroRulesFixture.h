@@ -30,12 +30,28 @@ inline constexpr std::array<const char *, 17> extendedOrdinaryKeys = {
 	"prismaticVanguardPhysicalDamagePercent", "siegeSapperCreatureDefenseIgnorePercent"
 };
 
+inline constexpr const char * nativeRedesignKeys[] = {
+	"packPursuitSpeed", "undertowDefensePerAttack", "goblinFrenzyDamagePercent",
+	"evasiveFlightReductionPercentPerHex", "risingTideCreaturesPerRound", "undyingHealingHP",
+	"bloodScentMaximumDamagePercent", "treantmootProtection", "chillingPresenceReductionPercent",
+	"chillingPresenceMoraleReduction", "chillingPresenceLuckReduction", "boneFormationFirstBandSize",
+	"boneFormationFirstBandLimit", "boneFormationSecondBandSize", "boneFormationSecondBandLimit",
+	"boneFormationRemainingBandSize", "perfectMountMagicalDamageImmunity", "furyOfTheHordeAttack",
+	"furyOfTheHordeDefense", "furyOfTheHordeDamage", "orcRageMaximumDamagePercent",
+	"wyvernVenomPolicyVersion", "dispellingShotMageChancePercent", "dispellingShotArchMageChancePercent",
+	"cyclopeanStunChancePercent", "stonecallerAmmunition", "archshamanSpellMastery", "goldStandardUpgrade",
+	"relentlessBarrageDamagePercent", "pointBlankShotDamageBonusPercent", "cripplingBoltSpeedReduction",
+	"cripplingBoltDuration", "incendiaryShotPolicyVersion", "ogreBloodlustPolicyVersion", "runicReflectionPolicyVersion"
+};
+
 // An explicit pre1153 fixture must not inherit any later ordinary specialty
 // from installed defaults, even when its own tested coefficient is absent.
 inline void omitPost1152OrdinarySpecialties(JsonNode & rules)
 {
 	auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 	for(const auto * key : extendedOrdinaryKeys)
+		policy.Struct().erase(key);
+	for(const auto * key : nativeRedesignKeys)
 		policy.Struct().erase(key);
 }
 }

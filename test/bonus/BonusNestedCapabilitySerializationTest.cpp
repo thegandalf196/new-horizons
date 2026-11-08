@@ -214,7 +214,7 @@ TEST(BonusNestedCapabilitySerialization, TypedHatesTraitSubtypeRejectsWhileSameC
 
 TEST(BonusNestedCapabilitySerialization, PreTriggerBonusBytesAndReusedReadIgnoreUnserializedParameters)
 {
-	for(const auto version : {ESerializationVersion::MINIMAL, static_cast<ESerializationVersion>(899),
+	for(const auto version : {static_cast<ESerializationVersion>(893), static_cast<ESerializationVersion>(899),
 		static_cast<ESerializationVersion>(900)})
 	{
 		ASSERT_LT(version, ESerializationVersion::BONUS_TRIGGER);
@@ -290,7 +290,7 @@ TEST(BonusNestedCapabilitySerialization, NodeAndStoredListPropagateActualTargetP
 TEST(BonusNestedCapabilitySerialization, DirectParametersAlwaysOwnTheirRootButChildBonusesHonorTargetCodec)
 {
 	auto root = effects(marker(20));
-	for(const auto version : {ESerializationVersion::MINIMAL, static_cast<ESerializationVersion>(900)})
+	for(const auto version : {static_cast<ESerializationVersion>(893), static_cast<ESerializationVersion>(900)})
 	{
 		CMemorySerializer wire;
 		wire.oser.version = version;

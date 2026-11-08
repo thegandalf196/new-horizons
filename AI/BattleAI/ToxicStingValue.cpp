@@ -19,17 +19,24 @@ Budget budget(const battle::CUnitState & unit)
 	return {unit.physicalPoisonBaseDamage, unit.physicalPoisonActivationsRemaining,
 		unit.physicalPoisonSourceStackId, unit.physicalPoisonSpellSide};
 }
-void prefix(std::map<Outcome, double> & outcomes, const creatureAbilityChance::Rounding & chance)
+void prefix(std::map<Outcome, double> & outcomes, const creatureAbilityChance::Rounding & chance,
+	const std::optional<attackAbilityPrefix::StatusKey> & condition)
 {
 	std::map<Outcome, double> next;
 	for(const auto & [state, mass] : outcomes)
 	{
+		if(condition && attackAbilityPrefix::alreadyApplied(state.completedStatuses, *condition))
+		{
+			next[state] += mass;
+			continue;
+		}
 		const auto transition = nominalAbilityChance::harmful(chance, state.available);
 		for(int i = 0; i < 4; ++i)
 			if(transition[i] > 0)
 			{
 				auto result = state;
 				result.available = i < 2;
+				if(condition && i % 2) result.completedStatuses.insert(*condition);
 				next[std::move(result)] += mass * transition[i];
 			}
 	}
@@ -164,12 +171,13 @@ float Opportunities::preparedValue(const std::shared_ptr<HypotheticBattle> & bat
 	if(!newHorizonsToxicSting::livingTarget(*target)
 		|| queryBattle->battleGetOwner(source.get()) == queryBattle->battleGetOwner(target.get()))
 		return 0;
-	const auto info = attackAbilityPrefix::query(*queryBattle, *source, *target, attack.shooting);
+	const auto info = attackAbilityPrefix::query(*queryBattle, *source, *target, attack.shooting,
+		!attack.secondaryAttack && !attack.bracePreemptive && attack.preemptiveDamagePercent == 0 && attack.cleaveDamagePercent == 0);
 	const auto side = queryBattle->playerToSide(queryBattle->battleGetOwner(target.get()));
 	auto [entry, inserted] = ledgers.try_emplace(side);
 	auto & ledger = entry->second;
 	if(inserted)
-		ledger.outcomes[Outcome{info.initialNominalRerollAvailability > 0, {}}] = 1;
+		ledger.outcomes[Outcome{info.initialNominalRerollAvailability > 0, {}, {}}] = 1;
 	if(!inserted && info.adverseFactVisible && info.initialNominalRerollAvailability == 0)
 	{
 		std::map<Outcome, double> spent;
@@ -183,9 +191,10 @@ float Opportunities::preparedValue(const std::shared_ptr<HypotheticBattle> & bat
 	ledger.sources.try_emplace(plan->target, plan->source);
 	// Only current native eligibility is queried. Counterfactual effects of
 	// unrelated passive spells and future revival choices remain unvalued.
-	for(const auto id : info.eligibleHarmfulAttempts)
-		prefix(ledger.outcomes, creatureAbilityChance::rounding(*source,
-			attackAbilityQueries::parameters(*source, BonusType::SPELL_AFTER_ATTACK, id, attack.shooting).chance));
+	for(const auto & attempt : info.attempts)
+		if(attempt.harmful) prefix(ledger.outcomes, creatureAbilityChance::rounding(*source, attempt.chancePercent), attempt.condition);
+	if(info.stunChancePercent > 0)
+		prefix(ledger.outcomes, creatureAbilityChance::rounding(*source, info.stunChancePercent), info.stunCondition);
 	return attempt(ledger.outcomes, *plan, creatureAbilityChance::rounding(*source, plan->chancePercent),
 		queryBattle, *source, *target, cache, measure);
 }

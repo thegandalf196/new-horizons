@@ -22,6 +22,8 @@ bool BattleSpellMechanics::canCastCure(Problem & problem, const CGHeroInstance *
 
 		if(curePhysical::present(rules, *unit, "frozen")
 			|| curePhysical::present(rules, *unit, "graveDust")
+			|| curePhysical::present(rules, *unit, "stun")
+			|| curePhysical::present(rules, *unit, "cripple")
 			|| !newHorizonsMagic::cureAfflictions(rules, unit).empty()
 			|| unit->getSurvivingMissingHealth() > 0)
 			return true;

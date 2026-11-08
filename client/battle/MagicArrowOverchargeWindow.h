@@ -36,9 +36,11 @@ struct MagicArrowOverchargeValues
 	int projectedKills = 0;
 	int magicResistancePercent = 0;
 	bool previewAvailable = false;
+	bool costAvailable = false;
 	bool legal = true;       ///< The selected target still passes spell target validation.
 	bool affordable = false;
 	std::string targetDescription;
+	std::string unavailableReason;
 };
 
 /// Context for one target-selection -> overcharge -> confirmation sequence.

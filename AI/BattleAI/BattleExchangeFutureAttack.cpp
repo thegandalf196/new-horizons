@@ -123,6 +123,7 @@ std::optional<float> BattleExchangeVariant::trackFutureMovementReaction(
 	// This existing path was selected as a voluntary approach, never a forced
 	// reaction, teleport or later blow. Walking movement carries no flight fact.
 	incoming.voluntaryFlightDistance = reachable.params.flying ? distance : 0;
+	incoming.voluntaryTravelDistance = distance;
 	const auto projected = AttackPossibility::evaluate(incoming, approach, damageCache, branch, false, std::nullopt, nullptr, approach != actor->getPosition(), actor->getPosition());
 	const bool hasBraceReceipt = std::ranges::any_of(projected.fortuneStrikes,
 		[](const auto & strike) { return strike.bracePreemptive; });

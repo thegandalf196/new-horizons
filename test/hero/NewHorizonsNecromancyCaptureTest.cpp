@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
+#include "../HistoricalFactionPerkRules.h"
 #include "../server/battles/HistoricalNecromancy087Fixture.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/GameSettings.h"
@@ -14,12 +15,21 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include <utility>
 
 namespace
 {
+JsonNode isolatedNecromancyRules(JsonNode rules)
+{
+	// These raw codec fixtures isolate Necromancy from later independent captures.
+	rules = historicalFactionPerkRules(std::move(rules));
+	rules.Struct().erase("sylvanTacticsPolicy");
+	rules.Struct().erase("connoisseurPolicy");
+	return rules;
+}
 JsonNode capturedNecromancy(bool current = true)
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	JsonNode rules = isolatedNecromancyRules(JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	if(!current)
 		rules.Struct().erase(newHorizonsNecromancy::POLICY_KEY);
 	rules.setOverrideFlag(true);
@@ -154,6 +164,9 @@ TEST(NewHorizonsNecromancyCapture, HeroAndEnclosingMapWritersRefuseBeforeTheirPr
 	const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).rules = capturedNecromancy();
 	rejectsBeforePrefix(*hero);
 	CMap map(nullptr);
+	// A detached map has installed definitions, not initialized world captures.
+	map.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
+	map.overrideGameSetting(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(100));
 	map.width = map.height = 1;
 	map.mapLayers = {MapLayerId::SURFACE};
 	map.initTerrain();
@@ -184,7 +197,10 @@ TEST(NewHorizonsNecromancyCapture, WorldCaptureRejectsLossyWriterBeforePrefix)
 
 TEST(NewHorizonsNecromancyCapture, PublishedV1RulesRoundTripUnderTheirOriginalFormat)
 {
-	const auto published = necromancy087Test::rules();
+	const auto captured = necromancy087Test::rules();
+	const auto published = isolatedNecromancyRules(captured);
+	EXPECT_EQ(published["skills"]["new-horizons:necromancy"], captured["skills"]["new-horizons:necromancy"]);
+	EXPECT_EQ(published[newHorizonsNecromancy::POLICY_KEY], captured[newHorizonsNecromancy::POLICY_KEY]);
 	ASSERT_EQ(published[newHorizonsNecromancy::POLICY_KEY]["version"].Integer(), 1);
 	ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(published));
 	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(published, true, false));

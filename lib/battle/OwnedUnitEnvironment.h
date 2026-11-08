@@ -54,11 +54,14 @@ public:
 	bool unitSlowAffectsSpeed(const Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit * unit) const override;
 	int unitAdditionalRetaliations(const Unit * unit) const override;
+	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const Unit * unit) const override;
 	int unitBloodragePainIncrement(const Unit * unit) const override;
 	bool unitHasVeteranCohesion(const Unit * unit) const override;
 	std::optional<std::pair<int32_t, int32_t>> unitMoraleLimits(const Unit * unit) const override;
 	std::optional<std::pair<int32_t, int32_t>> unitLuckLimits(const Unit * unit) const override;
 private:
+	static std::optional<newHorizonsElementalAttunement::UnitPassives> capturedElementalUnit(
+		const Facts & facts, const Unit & unit);
 	friend class OwnedUnitBonusFrame;
 	/// Exact retained source occurrence + info/provider ancestry; not an ID-only permit.
 	std::unique_ptr<OwnedUnitEnvironment> forDerivedSubject(const Unit & source,

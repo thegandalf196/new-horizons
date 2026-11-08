@@ -8,6 +8,11 @@
  *
  */
 #include "StdInc.h"
+#include "RunicReflectionValue.h"
+#include "MoraleActivationValue.h"
+#include "MisfortuneValue.h"
+#include "ActivationForfeit.h"
+#include "CreatureActivationValue.h"
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
@@ -310,32 +315,7 @@ bool isHexOfPainTriggerBonus(const Bonus * bonus)
 	return bonus->subtype.toString() == newHorizonsHexOfPainAI::TRIGGER_ID;
 }
 
-float expectedMoraleActivationChange(int morale)
-{
-	if(morale == 0)
-		return 0.0f;
-
-	const auto settings = LIBRARY->engineSettings();
-	const auto & chanceByMorale = settings->getVector(morale > 0
-		? EGameSettings::COMBAT_GOOD_MORALE_CHANCE
-		: EGameSettings::COMBAT_BAD_MORALE_CHANCE);
-	const int diceSize = settings->getInteger(EGameSettings::COMBAT_MORALE_DICE_SIZE);
-	if(chanceByMorale.empty() || diceSize <= 0)
-		return 0.0f;
-
-	const auto chanceIndex = std::min<size_t>(static_cast<size_t>(std::abs(morale)), chanceByMorale.size()) - 1;
-	const auto chance = std::max<int64_t>(0, chanceByMorale[chanceIndex]);
-	const auto sign = morale > 0 ? 1.0f : -1.0f;
-	return sign * static_cast<float>(chance) / static_cast<float>(diceSize);
-}
-
-float expectedMoraleActivationChange(const CBattleInfoCallback & battle, const battle::Unit * unit)
-{
-	if(!unit || !unit->alive() || unit->unaffectedByMorale())
-		return 0.0f;
-
-	return expectedMoraleActivationChange(battle.battleGetMorale(unit));
-}
+using moraleActivationValue::expectedMoraleActivationChange;
 
 int timedSpellEffectRounds(const battle::Unit * unit, SpellID spell, BonusType effectType)
 {
@@ -370,47 +350,8 @@ int misfortuneEffectRounds(const battle::Unit * unit)
 		BonusType::FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS);
 }
 
-float expectedTargetActivationValue(const battle::Unit * target,
-	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & projectedBattle)
-{
-	if(!target || !target->alive() || target->getCount() <= 0
-		|| target->isGhost() || target->isTurret() || !projectedBattle)
-		return 0.0f;
+using creatureActivationValue::expectedTargetActivationValue;
 
-	float bestActionValue = 0.0f;
-	for(const auto * friendly : projectedBattle->battleGetAllUnits(false))
-	{
-		if(!friendly || !friendly->alive() || !friendly->isValidTarget(true)
-			|| friendly->isGhost() || friendly->isTurret()
-			|| friendly->unitSide() == target->unitSide())
-			continue;
-
-		const bool shooting = projectedBattle->battleCanShoot(target, friendly->getPosition());
-		const int attackCount = AttackPossibility::getAttackCount(*target, shooting, *projectedBattle);
-		if(attackCount <= 0)
-			continue;
-
-		const auto perAttackDamage = damageCache.getDamage(target, friendly, projectedBattle);
-		const auto availableHealth = std::max<int64_t>(0, friendly->getAvailableHealth());
-		const auto cappedPerAttackDamage = std::min(perAttackDamage, availableHealth);
-		const auto attackDamage = std::min(availableHealth,
-			cappedPerAttackDamage * static_cast<int64_t>(attackCount));
-		if(attackDamage <= 0)
-			continue;
-
-		bestActionValue = std::max(bestActionValue, static_cast<float>(AttackPossibility::calculateDamageReduce(
-			nullptr, friendly, static_cast<uint64_t>(attackDamage), damageCache, projectedBattle)));
-	}
-
-	// Forecast the expected value of one activation after the same source-aware
-	// Fearless query used by the server's turn-start fear roll. This is a nominal
-	// chance estimate; seeded combat-ability bias and Twist of Fate history are
-	// not projected here.
-	const int fearChance = target->hasBonusOfType(BonusType::FEARFUL)
-		? std::clamp(projectedBattle->battleGetFearChance(target), 0, 100)
-		: 0;
-	return bestActionValue * static_cast<float>(100 - fearChance) / 100.0f;
-}
 
 float holdFastMoraleGrantValue(const CBattleInfoCallback & battle, const battle::Unit * original,
 	const battle::Unit * projected, DamageCache & damageCache,
@@ -681,7 +622,7 @@ float BattleEvaluator::estimateProjectedCurseTargetValue(const battle::Unit * or
 
 float BattleEvaluator::estimateProjectedFrailtyTargetValue(const battle::Unit * original,
 	const battle::Unit * projected, DamageCache & damageCache,
-	const std::shared_ptr<HypotheticBattle> & projectedBattle)
+	const std::shared_ptr<HypotheticBattle> & projectedBattle, DamageCache * explicitBefore, bool effectiveAllegiance)
 {
 	if(!original || !projected || !original->alive() || !projected->alive()
 		|| projected->getCount() <= 0 || projected->isGhost() || projected->isTurret()
@@ -697,8 +638,12 @@ float BattleEvaluator::estimateProjectedFrailtyTargetValue(const battle::Unit * 
 	{
 		if(!friendly || !friendly->alive() || !friendly->isValidTarget(true)
 			|| friendly->isGhost() || friendly->isTurret()
-			|| friendly->unitSide() == projected->unitSide())
+			|| (effectiveAllegiance
+				? projectedBattle->battleGetOwner(friendly) == projectedBattle->battleGetOwner(projected)
+				: friendly->unitSide() == projected->unitSide()))
 			continue;
+		if(effectiveAllegiance && !projectedBattle->battleCanAttackUnitAction(friendly, projected)
+			&& !projectedBattle->battleCanShootAction(friendly, projected->getPosition())) continue;
 
 		const bool shooting = projectedBattle->battleCanShoot(friendly, projected->getPosition());
 		const int attackCount = AttackPossibility::getAttackCount(*friendly, shooting, *projectedBattle);
@@ -709,8 +654,9 @@ float BattleEvaluator::estimateProjectedFrailtyTargetValue(const battle::Unit * 
 		// retains the live pre-cast damage snapshot. Compare one activation from
 		// every allied stack, then cap their combined gain at this target's current
 		// available health. This deliberately uses no guessed effect duration.
-		const auto originalDamage = std::max<int64_t>(0,
-			damageCache.getOriginalDamage(friendly, projected, projectedBattle));
+		const auto originalDamage = std::max<int64_t>(0, explicitBefore
+			? explicitBefore->getDamage(friendly, original, projectedBattle)
+			: damageCache.getOriginalDamage(friendly, projected, projectedBattle));
 		const auto projectedDamage = std::max<int64_t>(0,
 			damageCache.getDamage(friendly, projected, projectedBattle));
 		if(projectedDamage <= originalDamage)
@@ -1026,8 +972,8 @@ float projectedCapacityRegenerationValue(
 			const int64_t baselineHealthBefore = baselineUnit
 				? static_cast<int64_t>(baselineUnit->getAvailableHealth()) : 0;
 
-			const bool forecastForfeits = unit && newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
-			const bool baselineForfeits = baselineUnit && newHorizonsFrozen::forfeitsNormalActivation(*baselineUnit, BattleUnitTurnReason::TURN_QUEUE);
+			const bool forecastForfeits = unit && activationForfeit::pending(*forecast, *unit, BattleUnitTurnReason::TURN_QUEUE);
+			const bool baselineForfeits = baselineUnit && activationForfeit::pending(*baseline, *baselineUnit, BattleUnitTurnReason::TURN_QUEUE);
 			if(unit && unit->alive())
 				forecast->nextTurn(unitId, BattleUnitTurnReason::TURN_QUEUE);
 			if(baselineUnit && baselineUnit->alive())
@@ -1066,8 +1012,8 @@ float projectedCapacityRegenerationValue(
 					expireCompletedProjectedBerserkActivation(*forecast,
 						forecast->battleGetUnitByID(unitId));
 			}
-			if(currentForecastUnit)
-				{
+			if(currentForecastUnit && !forecast->currentForfeitCompleted(currentForecastUnit->unitId()))
+			{
 				forecast->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
 				newHorizonsDivineMandate::completeDisciplineActivation(*forecast, unitId);
 			}
@@ -1080,8 +1026,8 @@ float projectedCapacityRegenerationValue(
 					expireCompletedProjectedBerserkActivation(*baseline,
 						baseline->battleGetUnitByID(unitId));
 			}
-			if(currentBaselineUnit)
-				{
+			if(currentBaselineUnit && !baseline->currentForfeitCompleted(currentBaselineUnit->unitId()))
+			{
 				baseline->getForUpdate(unitId)->removeUnitBonus(Bonus::UntilActivationEnds);
 				newHorizonsDivineMandate::completeDisciplineActivation(*baseline, unitId);
 			}
@@ -1124,7 +1070,7 @@ float projectedVampirismValue(
 
 				const bool beginsActivation = forecast->battleBeginsActivation(
 					unit, BattleUnitTurnReason::TURN_QUEUE);
-				const bool frozenForfeits = newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
+				const bool frozenForfeits = activationForfeit::pending(*forecast, *unit, BattleUnitTurnReason::TURN_QUEUE);
 				forecast->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 				unit = forecast->getForUpdate(queuedUnit->unitId()).get();
 				if(!frozenForfeits && beginsActivation && unit->alive())
@@ -1153,6 +1099,7 @@ float projectedVampirismValue(
 							forecast->battleGetUnitByID(queuedUnit->unitId()));
 				}
 
+				if(!forecast->currentForfeitCompleted(queuedUnit->unitId()))
 				{
 				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
 				newHorizonsDivineMandate::completeDisciplineActivation(*forecast, queuedUnit->unitId());
@@ -2133,8 +2080,6 @@ std::pair<float, float> completeProjectedPlagueValue(HypotheticBattle & battle, 
 	}));
 	actor->consumeNoQuarterActivation();
 	const auto firstPlague = battle.getProjectedPlagueHits().size();
-	const auto firstBurst = battle.getProjectedPrimalBurstHits().size();
-	const auto spawnsBefore = battle.getElementalRebirthSpawnUnitIds();
 	newHorizonsPlague::completeActivation(battle, *battle.getServerCallback(), unitId);
 	std::pair<float, float> value{};
 	DamageCache cache;
@@ -2150,22 +2095,6 @@ std::pair<float, float> completeProjectedPlagueValue(HypotheticBattle & battle, 
 	const auto & plague = battle.getProjectedPlagueHits();
 	for(size_t i = firstPlague; i < plague.size(); ++i)
 		addHit(plague[i], plague[i].finalizedDamage);
-	const auto & burst = battle.getProjectedPrimalBurstHits();
-	for(size_t i = firstBurst; i < burst.size(); ++i)
-		addHit(burst[i], burst[i].actualDamage);
-	for(const auto id : battle.getElementalRebirthSpawnUnitIds())
-		if(!spawnsBefore.contains(id))
-		{
-			const auto * spawned = battle.battleGetUnitByID(id);
-			if(spawned && spawned->alive())
-			{
-				const float sign = battle.battleGetOwner(spawned) == perspective ? 1.0f : -1.0f;
-				value.first += sign * static_cast<float>(spawned->getAvailableHealth());
-				if(scoringBattle)
-					value.second += sign * AttackPossibility::calculateDamageReduce(nullptr, spawned,
-						static_cast<uint64_t>(spawned->getAvailableHealth()), cache, scoringBattle);
-			}
-		}
 	return value;
 }
 
@@ -2571,43 +2500,6 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	// use the same health-value scale.
 	return defendValueWithSharedCover >= std::max<int64_t>(1, stack->getAvailableHealth() / 20);
 }
-}
-
-BattleEvaluator::BattleEvaluator(
-	std::shared_ptr<Environment> env,
-	std::shared_ptr<CBattleCallback> cb,
-	const battle::Unit * activeStack,
-	PlayerColor playerID,
-	BattleID battleID,
-	BattleSide side,
-	float strengthRatio,
-	int simulationTurnsCount)
-	:scoreEvaluator(cb->getBattle(battleID), env, strengthRatio, simulationTurnsCount),
-	cachedAttack(), playerID(playerID), side(side), env(env),
-	cb(cb), strengthRatio(strengthRatio), battleID(battleID), simulationTurnsCount(simulationTurnsCount)
-{
-	hb = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
-	damageCache.buildDamageCache(hb, side);
-
-	targets = std::make_unique<PotentialTargets>(activeStack, damageCache, hb);
-}
-
-BattleEvaluator::BattleEvaluator(
-	std::shared_ptr<Environment> env,
-	std::shared_ptr<CBattleCallback> cb,
-	std::shared_ptr<HypotheticBattle> hb,
-	DamageCache & damageCache,
-	const battle::Unit * activeStack,
-	PlayerColor playerID,
-	BattleID battleID,
-	BattleSide side,
-	float strengthRatio,
-	int simulationTurnsCount)
-	:scoreEvaluator(cb->getBattle(battleID), env, strengthRatio, simulationTurnsCount),
-	cachedAttack(), playerID(playerID), side(side), env(env), cb(cb), hb(hb),
-	damageCache(damageCache), strengthRatio(strengthRatio), battleID(battleID), simulationTurnsCount(simulationTurnsCount)
-{
-	targets = std::make_unique<PotentialTargets>(activeStack, damageCache, hb);
 }
 
 std::vector<BattleHex> BattleEvaluator::getBrokenWallMoatHexes() const
@@ -3143,9 +3035,6 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 bool BattleEvaluator::canCastSpell()
 {
 	const auto battleView = cb->getBattle(battleID);
-	if(battleView->battleHasPendingDoubleCommand(side)
-		|| battleView->battleHasPendingPreCombatOrder(side))
-		return true;
 	const auto mandate = battleView->battleGetDivineMandateStatus(side);
 	if(mandate.active)
 	{
@@ -3174,6 +3063,8 @@ bool BattleEvaluator::canCastSpell()
 
 	if(!mandate.active && battleView->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
 		return true;
+	if(!newHorizonsCommand::available(*battleView, side))
+		return false;
 	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
 		riposteCommand(), braceCommand()})
 	{
@@ -3194,10 +3085,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 {
 	if(orderExperiment) orderExperiment->reset();
 	const auto battleView = cb->getBattle(battleID);
-	const bool mandatoryDoubleCommand = battleView->battleHasPendingDoubleCommand(side);
-	const bool mandatoryPreCombatOrder = battleView->battleHasPendingPreCombatOrder(side);
-	const bool mandatoryOrder = mandatoryDoubleCommand || mandatoryPreCombatOrder
-		|| battleView->getBattle()->getCrisisCommandState().choice();
+	constexpr bool mandatoryOrder = false;
 	auto hero = battleView->battleGetMyHero();
 	if(!hero)
 		return false;
@@ -3208,8 +3096,6 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			battleView->getBattle()->getRound(), heroActionTiming::captureStackId(activeStack)});
 
 	LOGL("Casting spells sounds like fun. Let's see...");
-	// Double Command and Battle Plan both require an Order before any ordinary
-	// spell or creature action. Battle Plan's typed grant is not a HERO action.
 	const bool legacyMetamagicFollowup = !mandatoryOrder
 		&& battleView->battleCanUseMetamagicFollowup(side);
 	const auto divineMandateStatus = battleView->battleGetDivineMandateStatus(side);
@@ -3340,7 +3226,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			{
 				if(selectiveDispel && !canUseSelectiveDispel)
 					continue;
-				spells::BattleCast temp(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+				const std::shared_ptr<CBattleInfoCallback> selectionBoard = isCanonicalPurify(spell)
+					? std::static_pointer_cast<CBattleInfoCallback>(hb)
+					: std::static_pointer_cast<CBattleInfoCallback>(cb->getBattle(battleID));
+				spells::BattleCast temp(selectionBoard.get(), hero, spells::Mode::HERO, spell);
 				temp.setMetamagicFollowup(metamagicFollowup);
 				temp.setMetamagicGrand(metamagicGrandChoice);
 				temp.setCureAffliction(cureAffliction);
@@ -3352,7 +3241,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				{
 					for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
 					{
-						spells::BattleCast candidateCast(cb->getBattle(battleID).get(), hero, spells::Mode::HERO, spell);
+						spells::BattleCast candidateCast(selectionBoard.get(), hero, spells::Mode::HERO, spell);
 						candidateCast.setMetamagicFollowup(metamagicFollowup);
 						candidateCast.setMetamagicGrand(metamagicGrandChoice);
 						candidateCast.setCureAffliction(cureAffliction);
@@ -3501,7 +3390,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								continue;
 
 							const auto targetId = ps.dest.front().unitValue->unitId();
-							auto projected = std::make_shared<HypotheticBattle>(env.get(), battleCallback);
+							auto projected = createHypotheticBattle(battleCallback);
 							const auto * projectedUnit = projected->battleGetUnitByID(targetId);
 							if(!projectedUnit)
 								continue;
@@ -3619,14 +3508,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	cb->getBattle(battleID)->battleGetTurnOrder(vampirismTurnOrder, 0,
 		newHorizonsMagic::VAMPIRISM_BASE_DURATION_ROUNDS);
 
-	const auto * battleState = battleView->getBattle();
-	const bool unresolvedPreCombatOrder = battleState->getPreCombatOrderState(BattleSide::ATTACKER).isUnresolved()
-		|| battleState->getPreCombatOrderState(BattleSide::DEFENDER).isUnresolved();
-	if(!mandatoryOrder && !unresolvedPreCombatOrder)
+	if(!mandatoryOrder)
 	{
 		bool enemyHadTurn = false;
 
-		auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+		auto state = createHypotheticBattle(cb->getBattle(battleID));
 
 		evaluateHeroActionQueue(valueOfStack, turnOrder, state, 0, &enemyHadTurn);
 
@@ -3681,7 +3567,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				}
 				auto candidateReuse = values.beginCandidate(ps);
 				battleEvaluatorProjection::SpellProjection projection;
-				auto state = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+				auto state = createHypotheticBattle(cb->getBattle(battleID));
 				const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
 					? cachedAttack.score : 0.0f;
 				heroActionProjection::Admission admission;
@@ -3694,6 +3580,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				size_t verdantPrisonDendroidStackCount = 0;
 
 				admission = heroActionProjection::admitCandidate(*state, side, ps);
+				const auto includeRunicValue = vstd::makeScopeGuard([&]()
+				{
+					if(admission.admitted && !counterspellNegated && ps.value > std::numeric_limits<float>::lowest() / 2)
+						ps.value += ps.spellRunicExpectedValue;
+				});
 				if(!admission.admitted)
 				{
 					ps.value = std::numeric_limits<float>::lowest();
@@ -3935,7 +3826,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					{
 						auto original = cb->getBattle(battleID)->battleGetUnitByID(u->unitId());
 						return !original || u->getMovementRange() != original->getMovementRange()
-							|| newHorizonsFrozen::isFrozen(*u) != newHorizonsFrozen::isFrozen(*original)
+							|| heroSpellVariants::activationForfeitChanged(*original, *u)
 							|| (u->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 								!= original->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE))
 							|| (slowFamily
@@ -4109,8 +4000,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					auto newHealth = unit->getAvailableHealth();
 					auto oldHealth = vstd::find_or(healthOfStack, unit->unitId(), 0); // old health value may not exist for newly summoned units
 					auto original = cb->getBattle(battleID)->battleGetUnitByID(unit->unitId());
-					if(ps.spellCurePhysicalAffliction == "frozen" && original
-						&& newHorizonsFrozen::isFrozen(*original) && !newHorizonsFrozen::isFrozen(*unit)
+					if(original && heroSpellVariants::recoveredCreatureActivation(ps.spellCurePhysicalAffliction, *original, *unit)
 						&& state->battleGetActionController(unit) == playerID
 						&& unit->alive() && unit->canMove() && unit->willMove(0))
 					{
@@ -4118,9 +4008,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						// stack's lost normal action can still be valuable when the active
 						// stack cannot seed an exchange. Use a real legal action's value,
 						// as a lower bound, not an extra sum over the same queued benefit.
-						PotentialTargets recoveredActions(unit, innerCache, state);
-						const float recoveredValue = std::max(0.0f,
-							static_cast<float>(recoveredActions.bestActionValue()));
+						const auto recoveredValue = creatureActivationValue::bestLegalActionValue(unit, innerCache, state);
 						stackActionScore = std::max(stackActionScore, baseline
 							+ recoveredValue * scoreEvaluator.getPositiveEffectMultiplier());
 					}
@@ -4331,7 +4219,7 @@ std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(co
 {
 	using ValueMap = PossibleSpellcast::ValueMap;
 
-	auto projected = std::make_shared<HypotheticBattle>(env.get(), cb->getBattle(battleID));
+	auto projected = createHypotheticBattle(cb->getBattle(battleID));
 	auto & state = *projected;
 	TStacks all = cb->getBattle(battleID)->battleGetAllStacks(false);
 
@@ -4402,7 +4290,7 @@ std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(co
 	// A free creature cast keeps its activation. Cast-only collateral has already
 	// passed the existing rejection above; an obligatory Plague loss is instead
 	// a signed completion cost, not a reason to reject every offensive spell.
-	ps.value = totalGain;
+	ps.value = totalGain + ps.spellRunicExpectedValue;
 	return ps.spell->canCastWithoutSkip() ? std::pair<float, float>{}
 		: completeProjectedPlagueValue(state, stack->unitId(), playerID, projected);
 }

@@ -143,16 +143,37 @@
 		"additionalSpecialties": {
 			"description": "Optional captured additional individual specialties. Absent rows preserve prior behavior; coefficients are provisional balance values.",
 			"type": "object", "additionalProperties": false, "not": {"type": "null"},
-			"minProperties": 1, "maxProperties": 11,
+			"minProperties": 1, "maxProperties": 12,
 			"required": ["version"],
 			"properties": {
 				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
 				"ordinaryCreatureSpecialties": {
  "type": "object", "additionalProperties": false,
- "required": ["version", "closeQuartersDrill", "marshSharpshooter", "retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"],
+ "required": [
+   "version",
+   "relentlessBarrageDamagePercent",
+   "marshSharpshooter",
+   "retaliationDamagePercent",
+   "stonecallerAmmunition",
+   "maximumHealthPercent"
+ ],
  "dependencies": {
- "gunneryProfessorInitiativeFlat": ["gunneryProfessorFollowUpBonusPoints"],
- "gunneryProfessorFollowUpBonusPoints": ["gunneryProfessorInitiativeFlat"],
+ "cripplingBoltSpeedReduction": ["cripplingBoltDuration"],
+ "cripplingBoltDuration": ["cripplingBoltSpeedReduction"],
+ "dispellingShotMageChancePercent": ["dispellingShotArchMageChancePercent"],
+ "dispellingShotArchMageChancePercent": ["dispellingShotMageChancePercent"],
+ "chillingPresenceReductionPercent": ["chillingPresenceMoraleReduction", "chillingPresenceLuckReduction"],
+ "chillingPresenceMoraleReduction": ["chillingPresenceLuckReduction", "chillingPresenceReductionPercent"],
+ "chillingPresenceLuckReduction": ["chillingPresenceMoraleReduction", "chillingPresenceReductionPercent"],
+ "boneFormationFirstBandSize": ["boneFormationFirstBandLimit", "boneFormationSecondBandSize", "boneFormationSecondBandLimit", "boneFormationRemainingBandSize"],
+ "furyOfTheHordeAttack": ["furyOfTheHordeDefense", "furyOfTheHordeDamage", "orcRageMaximumDamagePercent"],
+ "boneFormationFirstBandLimit": ["boneFormationFirstBandSize", "boneFormationSecondBandSize", "boneFormationSecondBandLimit", "boneFormationRemainingBandSize"],
+ "boneFormationSecondBandSize": ["boneFormationFirstBandSize", "boneFormationFirstBandLimit", "boneFormationSecondBandLimit", "boneFormationRemainingBandSize"],
+ "boneFormationSecondBandLimit": ["boneFormationFirstBandSize", "boneFormationFirstBandLimit", "boneFormationSecondBandSize", "boneFormationRemainingBandSize"],
+ "boneFormationRemainingBandSize": ["boneFormationFirstBandSize", "boneFormationFirstBandLimit", "boneFormationSecondBandSize", "boneFormationSecondBandLimit"],
+ "furyOfTheHordeDefense": ["furyOfTheHordeAttack", "furyOfTheHordeDamage", "orcRageMaximumDamagePercent"],
+ "furyOfTheHordeDamage": ["furyOfTheHordeAttack", "furyOfTheHordeDefense", "orcRageMaximumDamagePercent"],
+ "orcRageMaximumDamagePercent": ["furyOfTheHordeAttack", "furyOfTheHordeDefense", "furyOfTheHordeDamage"],
  "lanceFormationDefensePerHex": ["lanceFormationMaximumDefense"],
  "lanceFormationMaximumDefense": ["lanceFormationDefensePerHex"],
  "stormWingsDefenseIgnorePercent": ["stormWingsMinimumFlightDistance"],
@@ -160,41 +181,51 @@
  },
  "properties": {
  "version": {"type": "integer", "enum": [1]},
- "closeQuartersDrill": {"type": "integer", "enum": [1]},
+ "relentlessBarrageDamagePercent": {"type": "integer", "enum": [50]},
  "marshSharpshooter": {"type": "integer", "enum": [1]},
  "retaliationDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "defendDefense": {"type": "integer", "minimum": 0, "maximum": 100},
+ "stonecallerAmmunition": {"type": "integer", "enum": [12]},
  "maximumHealthPercent": {"type": "integer", "minimum": 0, "maximum": 100},
  "resistanceAuraPoints": {"type": "integer", "minimum": 0, "maximum": 100},
  "massedSpearsDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "packPursuitDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "bloodScentDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "livingBastionDefense": {"type": "integer", "minimum": 0, "maximum": 100},
- "chillingPresenceReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "boneFormationDefense": {"type": "integer", "minimum": 0, "maximum": 100},
+ "packPursuitSpeed": {"type": "integer", "minimum": 0, "maximum": 100},
+ "bloodScentMaximumDamagePercent": {"type": "integer", "enum": [100]},
+ "treantmootProtection": {"type": "integer", "enum": [1]},
+ "chillingPresenceMoraleReduction": {"type": "integer", "enum": [1]},
+ "chillingPresenceLuckReduction": {"type": "integer", "enum": [1]},
+ "boneFormationFirstBandSize": {"type": "integer", "enum": [10]},
+ "boneFormationFirstBandLimit": {"type": "integer", "enum": [100]},
+ "boneFormationSecondBandSize": {"type": "integer", "enum": [20]},
+ "boneFormationSecondBandLimit": {"type": "integer", "enum": [300]},
+ "boneFormationRemainingBandSize": {"type": "integer", "enum": [50]},
+ "perfectMountMagicalDamageImmunity": {"type": "integer", "enum": [1]},
+ "furyOfTheHordeAttack": {"type": "integer", "enum": [2]},
+ "furyOfTheHordeDefense": {"type": "integer", "enum": [2]},
+ "furyOfTheHordeDamage": {"type": "integer", "enum": [1]},
+ "orcRageMaximumDamagePercent": {"type": "integer", "enum": [100]},
+ "wyvernVenomPolicyVersion": {"type": "integer", "enum": [1]},
+ "dispellingShotMageChancePercent": {"type": "integer", "enum": [20]},
+ "dispellingShotArchMageChancePercent": {"type": "integer", "enum": [40]},
+ "cyclopeanStunChancePercent": {"type": "integer", "enum": [25]},
+ "chillingPresenceReductionPercent": {"type": "integer", "enum": [10]},
  "stoneSentinelReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "ogreWarcallerDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "undertowRetaliationPercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "wyvernsPreyDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "mobPressureDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "wingbeatInitiativePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "measuredVolleyMdrPenetrationPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "archshamanSpellMastery": {"type": "integer", "enum": [2]},
+ "undertowDefensePerAttack": {"type": "integer", "minimum": 0, "maximum": 100},
+ "goblinFrenzyDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
  "prismaticScreenReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "evasiveFlightReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "evasiveFlightReductionPercentPerHex": {"type": "integer", "minimum": 0, "maximum": 100},
  "ridersExploitDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "tidalRenewalHealingHP": {"type": "integer", "minimum": 0, "maximum": 100},
- "cruelVolleyDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "rangefinderFullDamageDistance": {"type": "integer", "enum": [0, 12]},
- "fieldReassemblyHealingHP": {"type": "integer", "minimum": 0, "maximum": 100},
- "fieldMaintenanceHealingHP": {"type": "integer", "minimum": 0, "maximum": 100},
- "ogreBulwarkRetaliations": {"type": "integer", "enum": [0, 1]},
- "gunneryProfessorInitiativeFlat": {"type": "integer", "minimum": 0, "maximum": 100},
- "gunneryProfessorFollowUpBonusPoints": {"type": "integer", "minimum": 0, "maximum": 40},
+ "risingTideCreaturesPerRound": {"type": "integer", "minimum": 0, "maximum": 100},
+ "pointBlankShotDamageBonusPercent": {"type": "integer", "enum": [100]},
+ "goldStandardUpgrade": {"type": "integer", "enum": [1]},
+ "cripplingBoltSpeedReduction": {"type": "integer", "enum": [3]},
+ "cripplingBoltDuration": {"type": "integer", "enum": [3]},
+ "ogreBloodlustPolicyVersion": {"type": "integer", "enum": [1]},
+ "incendiaryShotPolicyVersion": {"type": "integer", "enum": [1]},
  "heavyBatterySiegeTermBonusPercent": {"type": "integer", "minimum": 0, "maximum": 100},
  "shieldAndSwordPhysicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "sepulchralGripSpeedReduction": {"type": "integer", "minimum": 0, "maximum": 100},
- "cyclopeanBreachIgnorePercent": {"type": "integer", "minimum": 0, "maximum": 100},
- "runicEnduranceReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+ "undyingHealingHP": {"type": "integer", "minimum": 0, "maximum": 100},
+ "runicReflectionPolicyVersion": {"type": "integer", "enum": [1]},
  "scorchingImpactDamageReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
  "cruelOverseerDefenseReduction": {"type": "integer", "minimum": 0, "maximum": 100},
  "lanceFormationDefensePerHex": {"type": "integer", "minimum": 0, "maximum": 100},
@@ -325,8 +356,190 @@
 							}
 						}
 					}
+				},
+				"preparedCreatureSpecialties": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": ["version", "heroes"],
+					"properties": {
+						"version": {"type": "integer", "enum": [1]},
+						"heroes": {
+							"type": "object",
+							"additionalProperties": false,
+							"minProperties": 1,
+							"maxProperties": 3,
+							"properties": {
+								"core:fiona": {
+									"type": "object",
+									"additionalProperties": false,
+									"required": ["mechanics"],
+									"properties": {
+										"mechanics": {
+											"type": "object",
+											"additionalProperties": false,
+											"required": ["version", "operations"],
+											"properties": {
+												"version": {"type": "integer", "enum": [1]},
+												"operations": {
+													"type": "array",
+													"minItems": 1,
+													"maxItems": 1,
+													"items": {
+														"type": "object",
+														"additionalProperties": false,
+														"required": ["operation", "source", "target", "stage", "lifetime", "type", "value", "valueMode", "family", "includeUpgrades"],
+														"properties": {
+															"operation": {"enum": ["bonus"]},
+															"source": {"enum": ["heroSpecialty"]},
+															"target": {"enum": ["creatureFamily"]},
+															"stage": {"enum": ["attachment"]},
+															"lifetime": {"enum": ["permanent"]},
+															"type": {"enum": ["STACKS_SPEED"]},
+															"value": {"type": "integer", "minimum": -100000, "maximum": 100000},
+															"valueMode": {"enum": ["ADDITIVE_VALUE"]},
+															"family": {"enum": ["core:hellHound"]},
+															"includeUpgrades": {"enum": [true]}
+														}
+													}
+												}
+											}
+										}
+									}
+								},
+								"core:clancy": {
+									"type": "object",
+									"additionalProperties": false,
+									"required": ["mechanics"],
+									"properties": {
+										"mechanics": {
+											"type": "object",
+											"additionalProperties": false,
+											"required": ["version", "operations"],
+											"properties": {
+												"version": {"type": "integer", "enum": [1]},
+												"operations": {
+													"type": "array",
+													"minItems": 1,
+													"maxItems": 1,
+													"items": {
+														"type": "object",
+														"additionalProperties": false,
+														"required": ["operation", "source", "target", "stage", "lifetime", "type", "value", "valueMode", "family", "includeUpgrades"],
+														"properties": {
+															"operation": {"enum": ["bonus"]},
+															"source": {"enum": ["heroSpecialty"]},
+															"target": {"enum": ["creatureFamily"]},
+															"stage": {"enum": ["attachment"]},
+															"lifetime": {"enum": ["permanent"]},
+															"type": {"enum": ["SPELL_RESISTANCE_AURA"]},
+															"value": {"type": "integer", "minimum": -100000, "maximum": 100000},
+															"valueMode": {"enum": ["ADDITIVE_VALUE"]},
+															"family": {"enum": ["core:unicorn"]},
+															"includeUpgrades": {"enum": [true]}
+														}
+													}
+												}
+											}
+										}
+									}
+								},
+								"core:pasis": {
+									"type": "object",
+									"additionalProperties": false,
+									"required": ["mechanics"],
+									"properties": {
+										"mechanics": {
+											"type": "object",
+											"additionalProperties": false,
+											"required": ["version", "operations"],
+											"properties": {
+												"version": {"type": "integer", "enum": [1]},
+												"operations": {
+													"type": "array",
+													"minItems": 1,
+													"maxItems": 1,
+													"items": {
+														"type": "object",
+														"additionalProperties": false,
+														"required": [
+															"operation",
+															"source",
+															"target",
+															"stage",
+															"lifetime",
+															"type",
+															"value",
+															"valueMode",
+															"family",
+															"includeUpgrades",
+															"aura"
+														],
+														"properties": {
+															"operation": {"enum": ["bonus"]},
+															"source": {"enum": ["heroSpecialty"]},
+															"target": {"enum": ["adjacentArmy"]},
+															"stage": {"enum": ["spatialQuery"]},
+															"lifetime": {"enum": ["permanent"]},
+															"type": {"enum": ["SPELL_DAMAGE_REDUCTION"]},
+															"value": {"type": "integer", "minimum": -100000, "maximum": 100000},
+															"valueMode": {"enum": ["BASE_NUMBER"]},
+															"family": {"enum": ["new-horizons:wisp"]},
+															"includeUpgrades": {"enum": [true]},
+															"aura": {"enum": ["directMagicProtection"]}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
-			}
+			},
+			"allOf": [
+				{
+					"not": {
+						"required": ["ordinaryCreatureSpecialties", "preparedCreatureSpecialties"],
+						"properties": {
+							"ordinaryCreatureSpecialties": {"required": ["packPursuitSpeed"]},
+							"preparedCreatureSpecialties": {"properties": {"heroes": {"required": ["core:fiona"]}}}
+						}
+					}
+				},
+				{
+					"not": {
+						"required": ["ordinaryCreatureSpecialties", "preparedCreatureSpecialties"],
+						"properties": {
+							"ordinaryCreatureSpecialties": {"required": ["resistanceAuraPoints"]},
+							"preparedCreatureSpecialties": {"properties": {"heroes": {"required": ["core:clancy"]}}}
+						}
+					}
+				},
+				{
+					"not": {
+						"required": ["ordinaryCreatureSpecialties", "preparedCreatureSpecialties"],
+						"properties": {
+							"ordinaryCreatureSpecialties": {"required": ["prismaticScreenReductionPercent"]},
+							"preparedCreatureSpecialties": {"properties": {"heroes": {"required": ["core:pasis"]}}}
+						}
+					}
+				},
+				{
+					"anyOf": [
+						{"not": {"required": ["ordinaryCreatureSpecialties"]}},
+						{
+							"required": ["ordinaryCreatureSpecialties"],
+							"properties": {"ordinaryCreatureSpecialties": {"required": ["resistanceAuraPoints"]}}
+						},
+						{
+							"required": ["preparedCreatureSpecialties"],
+							"properties": {"preparedCreatureSpecialties": {"required": ["heroes"], "properties": {"heroes": {"required": ["core:clancy"]}}}}
+						}
+					]
+				}
+			]
 		},
 		"recoverySpecialties": {
 			"description": "Optional captured recovery and creature-healing specialties. Absent rows preserve prior behavior; coefficients are provisional balance values.",

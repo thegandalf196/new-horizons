@@ -79,6 +79,7 @@ private:
 	mutable std::map<std::string, std::optional<ResourcePath>> menuTitleSourcePaths;
 	mutable std::map<std::string, std::optional<std::uint32_t>> menuTitleSourceCrc32;
 
+	CanvasPtr createPointBlankCursor(bool penalty) const;
 	CanvasPtr createNewHorizonsMenuTitleImage(const std::string & resource) const;
 	CanvasPtr createAcademyTownIconBuiltToday(
 		const std::string & normalImage,

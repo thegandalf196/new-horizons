@@ -8,8 +8,7 @@
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/NewHorizonsRapidResponse.h"
 #include "../../lib/battle/NewHorizonsSeizeInitiative.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
-#include "../../lib/battle/NewHorizonsElementalRebirth.h"
+#include "../../lib/battle/NewHorizonsElementalAttunement.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 
@@ -17,9 +16,11 @@
 
 namespace heroQueueTest
 {
-TEST_F(HeroQueueSelectorTest, PaidSeizeAnchorCompletionReordersExistingRecipientBeforeEnemyStop)
+TEST_F(HeroQueueSelectorTest, GrandMarshalPaidOrderPreservesNormalQueueAndDivineSpellForecast)
 {
+	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(world());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 	ASSERT_NO_FATAL_FAILURE(selectPerk(attackerSideHero, "new-horizons:command",
 		"new-horizons:command.aggressiveCommander", MasteryLevel::BASIC));
 	ASSERT_NO_FATAL_FAILURE(selectPerk(attackerSideHero, "new-horizons:command",
@@ -31,12 +32,10 @@ TEST_F(HeroQueueSelectorTest, PaidSeizeAnchorCompletionReordersExistingRecipient
 	ASSERT_NO_FATAL_FAILURE(arena());
 	ASSERT_NO_FATAL_FAILURE(injure(actor, actor->getAvailableHealth() - 100));
 	ASSERT_EQ(actor->getSurvivingMissingHealth(), 100);
+	const auto normalQueue = queue();
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	const auto & receipt = battle()->getSeizeInitiativeState().sides.at(0);
-	ASSERT_TRUE(receipt.enabled);
-	ASSERT_TRUE(receipt.awaitingAnchor);
-	ASSERT_EQ(receipt.anchor, active->unitId());
-	ASSERT_NE(receipt.recipient, SeizeInitiativeState::NO_UNIT);
+	EXPECT_EQ(queue(), normalQueue);
+	EXPECT_EQ(battle()->getSeizeInitiativeState(), SeizeInitiativeState{});
 	const auto allowance = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::CURE);
 	ASSERT_TRUE(allowance);
 	ASSERT_EQ(allowance->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
@@ -46,14 +45,13 @@ TEST_F(HeroQueueSelectorTest, PaidSeizeAnchorCompletionReordersExistingRecipient
 	target.emplace_back(actor);
 	ASSERT_TRUE(spell->canBeCast(battle(), spells::Mode::HERO, attackerSideHero));
 	ASSERT_TRUE(spell->battleMechanics(&cure)->canBeCastAt(target));
-	RecordProperty("seizeRecipient", std::to_string(receipt.recipient));
-	RecordProperty("seizeAnchor", std::to_string(receipt.anchor));
 	ASSERT_NO_FATAL_FAILURE(characterize(true));
-	EXPECT_TRUE(battle()->getSeizeInitiativeState().sides.at(0).awaitingAnchor);
+	EXPECT_EQ(battle()->getSeizeInitiativeState(), SeizeInitiativeState{});
 }
 
 TEST_F(HeroQueueSelectorTest, RapidResponseForecastMovesLatestExistingEqualInitiativeWaiterOnly)
 {
+	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(world());
 	ASSERT_NO_FATAL_FAILURE(selectPerk(attackerSideHero, "new-horizons:battlecraft",
 		"new-horizons:battlecraft.entrench", MasteryLevel::BASIC));
@@ -93,6 +91,7 @@ TEST_F(HeroQueueSelectorTest, RapidResponseForecastMovesLatestExistingEqualIniti
 
 TEST_F(HeroQueueSelectorTest, CarriedDivineDisciplineRecipientCompletesOnlyInSelectorForecast)
 {
+	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(world());
 	ASSERT_NO_FATAL_FAILURE(selectPerk(attackerSideHero, "new-horizons:divineMandate",
 		"new-horizons:divineMandate.consecratedCasting", MasteryLevel::BASIC));
@@ -120,8 +119,9 @@ TEST_F(HeroQueueSelectorTest, CarriedDivineDisciplineRecipientCompletesOnlyInSel
 		->scheduledFor(actor->unitId(), battle()->getRound()));
 }
 
-TEST_F(HeroQueueSelectorTest, EarnedSwiftSpawnHasExistingStablePrioritySlotBeforeCounterspellStop)
+TEST_F(HeroQueueSelectorTest, AttunementDeathAddsNoQueueEntryAndIndependentSummonUsesNormalOrdering)
 {
+	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(world());
 	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:brissa")));
 	defenderSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:brissa")));
@@ -150,7 +150,6 @@ TEST_F(HeroQueueSelectorTest, EarnedSwiftSpawnHasExistingStablePrioritySlotBefor
 	ASSERT_NE(enemy, nullptr);
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 	ASSERT_NO_FATAL_FAILURE(activate(active));
-	ASSERT_TRUE(newHorizonsElementalRebirth::isEligibleSource(*source));
 	ASSERT_NO_FATAL_FAILURE(spendEnemyAllowance());
 	const auto nextId = battle()->battleNextUnitId();
 	StacksInjured packet;
@@ -161,21 +160,40 @@ TEST_F(HeroQueueSelectorTest, EarnedSwiftSpawnHasExistingStablePrioritySlotBefor
 	hit.damageAmount = source->getAvailableHealth();
 	CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), source->acquireState());
 	gameHandler->sendAndApply(packet);
+	EXPECT_EQ(battle()->battleNextUnitId(), nextId);
+	ASSERT_EQ(battle()->getStack(nextId, false), nullptr);
+	ASSERT_FALSE(source->alive());
+	// Independent summons retain ordinary placement/queue handling. The retired
+	// Storm Bolts identifier cannot create a special activation-priority slot.
+	battle::UnitInfo summoned;
+	summoned.id = nextId; summoned.type = creatureByName("core:fireElemental");
+	summoned.side = BattleSide::DEFENDER; summoned.position = source->getPosition();
+	summoned.count = 2; summoned.summoned = true;
+	BattleUnitsChanged add; add.battleID = BattleID(0);
+	add.changedStacks.emplace_back(summoned.id, UnitChanges::EOperation::ADD);
+	summoned.save(add.changedStacks.back().data);
+	gameHandler->sendAndApply(add);
 	actor = battle()->getStack(nextId, false);
 	ASSERT_NE(actor, nullptr);
-	ASSERT_TRUE(newHorizonsSwiftRebirth::priorityEligible(*actor, battle()->getRound()));
-	// The current actor must not kill a queued Swift recipient before its slot.
+	ASSERT_TRUE(actor->isSummoned());
+	effect(actor, Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_INITIATIVE_BASE,
+		BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(), BonusValueType::BASE_NUMBER));
+	effect(enemy, Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_INITIATIVE_BASE,
+		BonusSource::OTHER, 1000, BonusSourceID(), BonusSubtypeID(), BonusValueType::BASE_NUMBER));
+	const auto turns = queue();
+	ASSERT_FALSE(turns.empty());
+	const auto actorSlot = std::ranges::find(turns.front(), actor->unitId());
+	const auto enemySlot = std::ranges::find(turns.front(), enemy->unitId());
+	ASSERT_NE(actorSlot, turns.front().end()); ASSERT_NE(enemySlot, turns.front().end());
+	EXPECT_LT(enemySlot, actorSlot);
 	effect(active, Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_SPEED,
 		BonusSource::OTHER, -static_cast<int64_t>(active->getMovementRange()), BonusSourceID()));
-	ASSERT_EQ(active->getMovementRange(), 0u);
-	ASSERT_GT(BattleHex::getDistance(active->getPosition(), actor->getPosition()), 2);
-	// Give the known Cure a useful target without changing the earned Swift slot.
-	ASSERT_EQ(active->getCount(), 100);
 	ASSERT_NO_FATAL_FAILURE(injure(active, active->getAvailableHealth() - 100));
-	ASSERT_EQ(active->getCount(), 100);
 	ASSERT_EQ(active->getSurvivingMissingHealth(), 100);
-	ASSERT_NO_FATAL_FAILURE(expectBeforeEnemy(actor));
-	ASSERT_NO_FATAL_FAILURE(characterize(true));
-	EXPECT_TRUE(newHorizonsSwiftRebirth::priorityEligible(*actor, battle()->getRound()));
+	const auto nextAfterSummon = battle()->battleNextUnitId();
+	ASSERT_NO_FATAL_FAILURE(characterize(false));
+	EXPECT_EQ(battle()->battleNextUnitId(), nextAfterSummon);
+	EXPECT_EQ(queue(), turns);
+
 }
 }

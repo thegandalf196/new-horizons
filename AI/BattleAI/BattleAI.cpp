@@ -50,12 +50,6 @@
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))
 
 
-CBattleAI::CBattleAI(heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse)
-	: heroValueObserver(observer), vinesReuseControl(vinesReuse), side(BattleSide::NONE),
-	wasWaitingForRealize(false)
-{
-}
-
 CBattleAI::~CBattleAI()
 {
 	if(cb)
@@ -63,35 +57,6 @@ CBattleAI::~CBattleAI()
 		//Restore previous state of CB - it may be shared with the main AI (like VCAI)
 		cb->waitTillRealize = wasWaitingForRealize;
 	}
-}
-
-void logHexNumbers()
-{
-#if BATTLE_TRACE_LEVEL >= 1
-	logVisual->updateWithLock("hexes", [](IVisualLogBuilder & b)
-		{
-			for(BattleHex hex = BattleHex(0); hex < GameConstants::BFIELD_SIZE; ++hex)
-				b.addText(hex, std::to_string(hex.toInt()));
-		});
-#endif
-}
-
-void CBattleAI::initBattleInterface(std::shared_ptr<Environment> ENV, std::shared_ptr<CBattleCallback> CB)
-{
-	env = ENV;
-	cb = CB;
-	playerID = *CB->getPlayerID();
-	wasWaitingForRealize = CB->waitTillRealize;
-	CB->waitTillRealize = false;
-	movesSkippedByDefense = 0;
-
-	logHexNumbers();
-}
-
-void CBattleAI::initBattleInterface(std::shared_ptr<Environment> ENV, std::shared_ptr<CBattleCallback> CB, AutocombatPreferences autocombatPreferences)
-{
-	initBattleInterface(ENV, CB);
-	autobattlePreferences = autocombatPreferences;
 }
 
 BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)
@@ -361,44 +326,10 @@ BattleAction CBattleAI::choosePursuitMovement(const std::shared_ptr<CBattleInfoC
 
 void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 {
+	const battleSearch::Scope search(searchProfile);
 	TimingScope timing(timingState.load(), battleID, stack);
 	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
 	const auto battleCallback = cb->getBattle(battleID);
-	const auto hasMandatoryOrder = [&]()
-	{
-		return battleCallback->getBattle()->getCrisisCommandState().choice()
-			|| battleCallback->battleHasPendingDoubleCommand(side)
-			|| battleCallback->battleHasPendingPreCombatOrder(side);
-	};
-	if(hasMandatoryOrder())
-	{
-		// Mandatory opening/continuation Orders precede every creature action,
-		// including the special siege, gating, and healing-tent paths below. The
-		// evaluator keeps legal choices even when their ordinary heuristic is nonpositive.
-		auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
-		{
-			return makeEvaluator(battleID, stack);
-		});
-		if(timing.measure(&TimingSummary::heroAction, [&]
-		{
-			return attemptHeroAction(evaluator, stack);
-		}))
-			return;
-		if(hasMandatoryOrder())
-		{
-			if(battleCallback->getBattle()->getCrisisCommandState().choice())
-			{
-				auto decline = BattleAction::makeNoAction(stack);
-				decline.side = side;
-				timing.submitUnitAction(cb, battleID, decline);
-				return;
-			}
-			// Never substitute a creature action while the authority still has an
-			// unresolved mandatory Order window.
-			logAi->error("BattleAI could not resolve a pending mandatory Hero Order");
-			return;
-		}
-	}
 
 	auto timeElapsed = [](std::chrono::time_point<std::chrono::high_resolution_clock> start) -> uint64_t
 	{

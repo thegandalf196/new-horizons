@@ -6,10 +6,11 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 
 class HeroPositiveProcPresentationTest(unittest.TestCase):
-    def test_order_only_opportunity_names_heroic_spirit(self):
+    def test_retired_order_only_opportunity_is_absent(self):
         window = (ROOT/'client/battle/NewHorizonsOrderPresentation.h').read_text()
-        method = window.split('std::string orderAllowanceSourceName', 1)[1].split('\nstd::string ', 1)[0]
-        self.assertIn('case HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT: return "Heroic Spirit";', method)
+        self.assertNotIn('orderAllowanceSourceName', window)
+        self.assertNotIn('Double Command Order follow-up', window)
+        self.assertNotIn('Heroic Spirit Order opportunity', window)
 
     def test_existing_positive_resources_only(self):
         effects = (ROOT/'client/battle/BattleEffectsController.cpp').read_text()
@@ -42,7 +43,8 @@ class HeroPositiveProcPresentationTest(unittest.TestCase):
         order = (ROOT/'client/battle/BattleOrderPresentation.cpp').read_text().split('void BattleInterface::presentAcceptedHeroOrder', 1)[1]
         self.assertLess(order.index('std::move(pendingHeroOrderPresentation)'), order.index('presentHeroPositiveProcs('))
         self.assertIn('state->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay)', order)
-        self.assertIn('state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit)', order)
+        self.assertNotIn('newHorizonsHeroLuck::Proc::HeroicSpirit', order)
+        self.assertIn('nullptr, 0);', order)
 
 if __name__ == '__main__':
     unittest.main()

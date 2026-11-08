@@ -23,16 +23,13 @@
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
 #include "../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
-#include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/CStack.h"
 #include <typeinfo>
 
 
-using hypotheticEffectSnapshotRules::hasElementalMemory;
 using hypotheticEffectSnapshotRules::hasSnapshotHeroSpecialEffects;
 using hypotheticEffectSnapshotRules::hasTimedMagicalSpellEffects;
 using hypotheticEffectSnapshotRules::isCapturedProjectionEffect;
@@ -40,13 +37,6 @@ using hypotheticEffectSnapshotRules::isInPhysicalAfflictionGroup;
 
 namespace hypotheticEffectSnapshotRules
 {
-bool hasElementalMemory(const battle::Unit & unit)
-{
-	return unit.hasBonus(CSelector([](const Bonus * bonus)
-	{
-		return bonus && newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus);
-	}));
-}
 
 bool timedProjectionEffect(const Bonus * bonus,
 	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
@@ -56,7 +46,9 @@ bool timedProjectionEffect(const Bonus * bonus,
 
 bool hasTimedMagicalSpellEffects(const IBonusBearer & bearer)
 {
-	return newHorizonsSorcery::isSpellLocked(bearer) || bearer.hasBonus(CSelector([](const Bonus * bonus)
+	return bearer.hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
+		BonusSourceID(SpellID(SpellID::POISON))).And(Selector::type()(BonusType::POISON)))
+		|| newHorizonsSorcery::isSpellLocked(bearer) || bearer.hasBonus(CSelector([](const Bonus * bonus)
 	{
 		return bonus && bonus->turnsRemain > 0
 			&& (newHorizonsSorcery::isPreservedSpellLockEffect(bonus, true)
@@ -106,7 +98,6 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
 	battleStartMaximumAggregateHP(Stack->getBattleStartMaximumAggregateHP()),
-	rebirthOriginalAggregateHP(Stack->getRebirthOriginalAggregateHP()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
 	player(Stack->unitOwner()),
@@ -114,7 +105,10 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	treeVersionLocal(0)
 {
 	setOriginalBearer(Stack->getBonusBearer());
-	localInit(ownedQuerySource ? static_cast<const battle::IUnitEnvironment *>(ownedQuerySource.get()) : Owner);
+	// Borrowed state is copied in full below; do not query HP before its form
+	// provenance exists. Owned providers retain their separate initialization.
+	if(ownedQuerySource) localInit(ownedQuerySource.get());
+	else bindStateEnvironment(Owner);
 
 	battle::CUnitState::operator=(*Stack);
 	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
@@ -122,8 +116,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
 		captureLocalSpellEffects();
-	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
-		|| hasElementalMemory(*this)
+	if(newHorizonsFrozen::isFrozen(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
 		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers
 		|| hasSnapshotHeroSpecialEffects(*this))
@@ -138,7 +131,6 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	sourceCreatureType(Stack->unitType()->getId()),
 	baseAmount(Stack->unitBaseAmount()),
 	battleStartMaximumAggregateHP(Stack->getBattleStartMaximumAggregateHP()),
-	rebirthOriginalAggregateHP(Stack->getRebirthOriginalAggregateHP()),
 	id(Stack->unitId()),
 	side(Stack->unitSide()),
 	player(Stack->unitOwner()),
@@ -146,7 +138,10 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	treeVersionLocal(0)
 {
 	setOriginalBearer(Stack->getBonusBearer());
-	localInit(ownedQuerySource ? static_cast<const battle::IUnitEnvironment *>(ownedQuerySource.get()) : Owner);
+	// Borrowed state is copied in full below; do not query HP before its form
+	// provenance exists. Owned providers retain their separate initialization.
+	if(ownedQuerySource) localInit(ownedQuerySource.get());
+	else bindStateEnvironment(Owner);
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
@@ -155,8 +150,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
 		captureLocalSpellEffects();
-	if(newHorizonsFrozen::isFrozen(*this) || newHorizonsSwiftRebirth::lifecycle(*this)
-		|| hasElementalMemory(*this)
+	if(newHorizonsFrozen::isFrozen(*this)
 		|| hasBonus(CSelector(newHorizonsDivineMandate::isSharedPurposeMoraleBonus))
 		|| hasBonus(CSelector(newHorizonsTraining::isTrainingBonus)) || snapshotSpellTimers
 		|| hasSnapshotHeroSpecialEffects(*this))
@@ -170,7 +164,6 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	type(info.type.toCreature()),
 	sourceCreatureType(info.type),
 	baseAmount(info.count),
-	rebirthOriginalAggregateHP(info.rebirthOriginalAggregateHP),
 	id(info.id),
 	side(info.side),
 	slot(SlotID::SUMMONED_SLOT_PLACEHOLDER),
@@ -208,7 +201,6 @@ StackWithBonuses & StackWithBonuses::operator=(const battle::CUnitState & other)
 {
 	battle::CUnitState::operator=(other);
 	battleStartMaximumAggregateHP = other.getBattleStartMaximumAggregateHP();
-	rebirthOriginalAggregateHP = other.getRebirthOriginalAggregateHP();
 	return *this;
 }
 
@@ -253,10 +245,6 @@ int64_t StackWithBonuses::getBattleStartMaximumAggregateHP() const
 	return battleStartMaximumAggregateHP;
 }
 
-int64_t StackWithBonuses::getRebirthOriginalAggregateHP() const
-{
-	return rebirthOriginalAggregateHP;
-}
 
 TConstBonusListPtr StackWithBonuses::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {

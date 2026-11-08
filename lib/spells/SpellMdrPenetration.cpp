@@ -24,6 +24,10 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 	if(mode != Mode::HERO || !hero || !newHorizonsMagic::rulesActive(hero->getMagicRules()))
 		return result;
 	result["sourceHeroCasterId"].Integer() = hero->id.getNum();
+	// Capture offensive faction output for delayed statuses as well as obstacles.
+	// Absence remains the identity value and leaves unrelated spell packets intact.
+	if(metamagic && metamagic->factionSpellDamageBonus > 0)
+		result["factionSpellDamageBonusPercent"].Integer() = metamagic->factionSpellDamageBonus;
 	// Placement spells can be neutral. Capture their uniform output independently
 	// of penetration eligibility, before the existing hostile-only guard below.
 	if(metamagic && (newHorizonsMagic::isLandMine(owner->getId()) || newHorizonsMagic::isFireWall(owner->getId())))

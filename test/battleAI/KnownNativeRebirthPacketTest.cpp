@@ -60,7 +60,6 @@ protected:
 		environment = std::make_unique<RebirthPacketEnvironment>(gameState());
 		projected = std::make_shared<HypotheticBattle>(environment.get(),
 			std::shared_ptr<CBattleInfoCallback>(gameState(), battle()));
-		ASSERT_TRUE(projected->captureElementalRebirthSource(*source));
 		ASSERT_TRUE(projected->hasReadyNativeRebirth(source));
 	}
 	auto randomState()
@@ -107,22 +106,19 @@ protected:
 		StacksInjured packet; packet.battleID = BattleID(0); packet.stacks.push_back(hit);
 		projected->getServerCallback()->apply(packet);
 		EXPECT_EQ(projected->battleGetUnitByID(source->unitId())->alive(), mode == 1);
-		const auto & spawns = projected->getElementalRebirthSpawnUnitIds();
-		EXPECT_EQ(spawns.size(), mode == 0 ? 1u : 0u);
-		if(mode == 0)
-		{
-			const auto * spawned = projected->battleGetUnitByID(*spawns.begin());
-			ASSERT_NE(spawned, nullptr); EXPECT_TRUE(spawned->alive()); EXPECT_TRUE(spawned->isSummoned());
-			EXPECT_NE(spawned->unitId(), source->unitId());
-		}
+		EXPECT_EQ(projected->battleGetUnitsIf([](const battle::Unit *) { return true; }).size(),
+			battle()->battleGetUnitsIf([](const battle::Unit *) { return true; }).size());
+		for(const auto * original : battle()->battleGetAllUnits(false))
+			EXPECT_NE(projected->battleGetUnitByID(original->unitId()), nullptr);
+		EXPECT_EQ(projected->getElementalAttunementMask(BattleSide::DEFENDER), 0);
 		EXPECT_EQ(source->acquireState()->save(), live);
 		EXPECT_EQ(sibling->battleGetUnitByID(source->unitId())->acquireState()->save(), live);
-		EXPECT_TRUE(sibling->getElementalRebirthSpawnUnitIds().empty());
+		EXPECT_EQ(sibling->getElementalAttunementMask(BattleSide::DEFENDER), 0);
 		EXPECT_EQ(randomState(), rng);
 	}
 };
-TEST_F(KnownNativeRebirthPacketTest, AcceptedFailedNativeRebirthAllowsSeparateElementalRebirth) { resolve(0); }
-TEST_F(KnownNativeRebirthPacketTest, AcceptedSuccessfulNativeRebirthKeepsSameUnitAndSuppressesElemental) { resolve(1); }
-TEST_F(KnownNativeRebirthPacketTest, FlaglessForecastRetainsReadinessFallback) { resolve(2); }
-TEST_F(KnownNativeRebirthPacketTest, AcceptedCloneDestructionRemainsIneligibleForElementalRebirth) { resolve(3); }
+TEST_F(KnownNativeRebirthPacketTest, AcceptedFailedNativeRebirthDoesNotCreateReplacementUnits) { resolve(0); }
+TEST_F(KnownNativeRebirthPacketTest, AcceptedSuccessfulNativeRebirthKeepsSameUnit) { resolve(1); }
+TEST_F(KnownNativeRebirthPacketTest, FlaglessForecastLeavesNativeChargeLedgerUnchanged) { resolve(2); }
+TEST_F(KnownNativeRebirthPacketTest, AcceptedCloneDestructionDoesNotCreateReplacementUnits) { resolve(3); }
 }

@@ -1,5 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../battle/NewHorizonsPassiveSpecialties.h"
+#include "../battle/NewHorizonsCommandResources.h"
 #include "NewHorizonsMetamagicEffects.h"
 #include "NewHorizonsMetamagicTimedStatus.h"
 #include "ISpellMechanics.h"
@@ -14,6 +16,7 @@
 #include "NewHorizonsRestorationPools.h"
 #include "../battle/NewHorizonsSoulChain.h"
 #include "../battle/NewHorizonsFactionSpellDamage.h"
+#include "../battle/NewHorizonsElementalAttunement.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
 #include "../battle/CUnitState.h"
@@ -113,6 +116,8 @@ CastProfile captureHeroCastProfile(const CGHeroInstance * hero, const IBattleInf
 		if(battle->getSideHero(side) == hero)
 		{
 			result.hero = hero;
+			result.factionSpellDamageBonus = newHorizonsElementalAttunement::spellDamageBonusPercent(
+				battle->getElementalAttunementProfile(side), battle->getMagicRules(), spell);
 			result.perks = profile(hero);
 			result.perks.wisdomEffectivenessBonus = newHorizonsWisdom::effectivenessBonusPercent(hero, *battle, side, spell);
 			if(result.perks.pointPolicy)
@@ -162,19 +167,23 @@ int64_t outgoingMagnitude(int64_t ordinary, const CastProfile * cast, const batt
 }
 
 int64_t spellDamage(int64_t ordinary, const CastProfile * cast, const CBattleInfoCallback & callback,
-	const battle::Unit * recipient, PlayerColor spellOwner)
+	const battle::Unit * recipient, PlayerColor spellOwner, bool magicalDamage)
 {
 	if(!recipient)
 		return ordinary;
-	const int32_t factionBonus = newHorizonsFactionSpellDamage::bonusPercent(callback, cast ? cast->hero : nullptr, recipient);
+	if(magicalDamage && newHorizonsPassiveSpecialties::magicalDamageImmune(*recipient))
+		return 0;
+	const int32_t factionBonus = newHorizonsFactionSpellDamage::bonusPercent(callback, cast ? cast->hero : nullptr, recipient)
+		+ (cast ? cast->factionSpellDamageBonus : 0);
 	const int32_t offensiveBonus = recipientBonusPercent(cast, recipient) + factionBonus;
 	const int32_t defensiveReduction = fortification(callback, *recipient, spellOwner);
 	if(offensiveBonus == 0 && defensiveReduction == 0)
-		return ordinary;
+		return newHorizonsCommand::mitigateIncomingDamage(callback, recipient, ordinary);
 	const int capPercent = offensiveBonus > 0 ? recipient->valOfBonuses(BonusType::DAMAGE_RECEIVED_CAP) : 0;
 	const int64_t cap = capPercent > 0 ? static_cast<int64_t>(recipient->getMaxHealth()) * capPercent / 100 : 0;
-	return spellDamageOutput(ordinary, cast ? cast->perks : Profile{},
+	const auto adjusted = spellDamageOutput(ordinary, cast ? cast->perks : Profile{},
 		cast ? castCounter(*cast, recipient->metamagicMarks(cast->heroSide)) : 0, defensiveReduction, cap, factionBonus);
+	return newHorizonsCommand::mitigateIncomingDamage(callback, recipient, adjusted);
 }
 
 int32_t resistanceChance(int32_t ordinary, const CastProfile * cast,

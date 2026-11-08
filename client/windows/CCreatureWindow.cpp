@@ -367,7 +367,7 @@ CStackWindow::OrderIndicatorsSection::OrderIndicatorsSection(CStackWindow * owne
 		const int x = 6 + static_cast<int>(index % columns) * 58;
 		const int y = static_cast<int>(index / columns) * 53;
 		const auto & indicator = indicators[index];
-		orderIcons.push_back(std::make_shared<CPicture>(ImagePath::builtin("NH_orders_gauntlet_normal.png"), x, y));
+		orderIcons.push_back(std::make_shared<CPicture>(ImagePath::builtin("NH_orders_command_normal.png"), x, y));
 		clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(x, y, 48, 36),
 			indicator.description, indicator.description));
 		labels.push_back(std::make_shared<CLabel>(x + 24, y + 47, FONT_TINY, ETextAlignment::BOTTOMCENTER,

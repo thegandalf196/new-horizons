@@ -15,7 +15,8 @@ class HypotheticBattle;
 struct ProjectedAdjacencySources;
 struct ProjectedAdjacencyQuery;
 
-/// Ordinary recipient projection of actual, visible Pasis exports only.
+/// Current native recipient operations: authorized visible exports plus opaque
+/// numeric current-effect operations for exact native source occurrences.
 /// Does not import a world, expose unknown sources or own the native lifetime.
 class ProjectedAdjacencyBonuses
 {

@@ -31,6 +31,7 @@ battle::ProjectedUnitEnvironmentState battle::ProjectedUnitEnvironmentState::cap
 		inputs.ammoArtifact = heroHasAmmoCartArtifact(hero);
 		inputs.veteranCohesion = newHorizonsDiscipline::hasVeteranCohesion(hero);
 		inputs.necromancy = newHorizonsNecromancy::captureCombatPassives(hero);
+		inputs.elementalAttunementProfile = source.getElementalAttunementProfile(side);
 		inputs.bloodrageRank = source.getBloodrageRank(side);
 		inputs.bloodrageCap = source.getBloodrageCapPercent(side);
 		inputs.bloodrageSpeed = source.getBloodrageSpeedBonus(side);
@@ -40,6 +41,7 @@ battle::ProjectedUnitEnvironmentState battle::ProjectedUnitEnvironmentState::cap
 		state.fortune = source.getSylvanLuckState(side);
 		state.metamagicPoints = source.getMetamagicPointState(side);
 		state.bloodrageDamagePercent = source.getBloodrageDamagePercent(side);
+		state.elementalAttunementMask = source.getElementalAttunementMask(side);
 	}
 	return result;
 }

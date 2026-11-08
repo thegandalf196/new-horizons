@@ -100,13 +100,13 @@ const std::array<ExpectedStart, 6> dungeonStarts{{
 	{"core:jeddite", "new-horizons:spellcraft", 1, "new-horizons:spellcraft.concentration", "new-horizons:shroudOfMalassa", MasteryLevel::ADVANCED},
 	{"core:geon", "new-horizons:learning", 1, "new-horizons:learning.eagleEye", "new-horizons:shroudOfMalassa"},
 	{"core:deemer", "new-horizons:logistics", 2, "new-horizons:logistics.scouting", "new-horizons:shroudOfMalassa"},
-	{"core:sephinroth", "new-horizons:estates", 1, "new-horizons:estates.prospector", "new-horizons:shroudOfMalassa"}
+	{"core:sephinroth", "new-horizons:estates", 1, "new-horizons:estates.prosperity", "new-horizons:shroudOfMalassa"}
 }};
 
 const std::array<ExpectedStart, 3> strongholdStarts{{
 	{"core:terek", "new-horizons:battlecraft", 1, "new-horizons:battlecraft.tactics", "new-horizons:bloodrage"},
 	{"core:oris", "new-horizons:learning", 1, "new-horizons:learning.eagleEye", "new-horizons:bloodrage"},
-	{"core:saurug", "new-horizons:estates", 1, "new-horizons:estates.prospector", "new-horizons:bloodrage"}
+	{"core:saurug", "new-horizons:estates", 1, "new-horizons:estates.prosperity", "new-horizons:bloodrage"}
 }};
 
 class NewHorizonsStartingDevelopmentTest : public TinyMapGameTest
@@ -114,6 +114,8 @@ class NewHorizonsStartingDevelopmentTest : public TinyMapGameTest
 protected:
 	bool absent = false;
 	bool absentDruidSpecialty = false;
+	bool isolateCoreMysticism = false;
+	bool isolateCoreIntelligence = false;
 	bool previousFormatContext = false;
 	bool legacy = false;
 	bool explicitSkills = false;
@@ -151,6 +153,20 @@ protected:
 			// default-book feature whose key is deliberately not down-writable.
 			rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
 		}
+		if(isolateCoreMysticism)
+			rules["recoverySpecialties"].Struct().erase("ritualReserve");
+		if(isolateCoreIntelligence)
+			rules.Struct().erase("bottomlessMindSpecialty");
+		if(previousFormatContext)
+		{
+			// Optional families captured after the pre-starting-profile epoch.
+			// Retain its actual hero schema, class rows and unrelated content.
+			for(const auto * key : {"individualSpecialties", "schoolSpellcraftSpecialties",
+				"additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties",
+				"swampSeerSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty",
+				"livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties"})
+				rules.Struct().erase(key);
+		}
 		if(legacy)
 			rules = JsonNode();
 		rules.setOverrideFlag(true);
@@ -172,12 +188,18 @@ protected:
 			magic["spells"]["core:dispel"].Struct().erase("temporaryMagicalEffectsOnly");
 			magic["spells"]["core:curse"].Struct().erase("schoolRankDurations");
 			magic["spells"]["core:fireWall"].Struct().erase("burnGroundedFlyers");
+			for(auto & [identity, row] : magic["spells"].Struct())
+				for(const auto * key : {"focusMagic", "slow", "livingArmor"})
+					row.Struct().erase(key);
 			magic.setOverrideFlag(true);
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magic);
 			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
 			perks.Struct().erase("offerWeightPolicyVersion");
 			perks.Struct().erase("perkOfferNormalization");
 			perks.Struct().erase("perkProgressionPolicyVersion");
+			for(const auto * key : {"sylvanTacticsPolicy", "necromancyPolicy", "connoisseurPolicy",
+				"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
+				perks.Struct().erase(key);
 			for(auto & perk : perks["skills"]["new-horizons:command"]["perks"].Vector())
 				if(perk["id"].String() == "new-horizons:command.crisisCommand")
 					perk["effect"]["status"].String() = "planned";
@@ -375,10 +397,12 @@ TEST_F(NewHorizonsStartingDevelopmentTest, OrisDefaultEagleEyeSelectsObservedUnk
 	EXPECT_FALSE(actor()->spellbookContainsSpell(observed));
 }
 
-TEST_F(NewHorizonsStartingDevelopmentTest, SaurugDefaultProspectorPaysActualGemMineOnceAndPreservesGemIncome)
+TEST_F(NewHorizonsStartingDevelopmentTest, SaurugDefaultProsperityPreservesGemSpecialtyWithoutRetiredMineWindfall)
 {
 	ownedGemMine = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(strongholdStarts[2]));
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::WOOD], 1);
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::ORE], 1);
 	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GEMS], 1);
 	auto * mine = findObjectAt({20, 10, 0});
 	ASSERT_NE(mine, nullptr);
@@ -393,17 +417,19 @@ TEST_F(NewHorizonsStartingDevelopmentTest, SaurugDefaultProspectorPaysActualGemM
 	};
 	visit();
 	ResourceSet expected;
-	expected[EGameResID::GEMS] = 1;
 	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources - before, expected);
-	EXPECT_GE(actor()->getNewHorizonsProspectorLastWeek(), 0);
+	EXPECT_EQ(actor()->getNewHorizonsProspectorLastWeek(), -1);
 	visit();
 	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources - before, expected);
 	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GEMS], 1);
 }
 
-TEST_F(NewHorizonsStartingDevelopmentTest, JaegarDefaultMysticismFeedsActualDailyNormalMana)
+TEST_F(NewHorizonsStartingDevelopmentTest, JaegarAuthoredMysticismWithoutRecoverySpecialtyFeedsDailyNormalMana)
 {
+	isolateCoreMysticism = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(dungeonStarts[1]));
+	EXPECT_FALSE(actor()->getPrimaryGrowthRules()["recoverySpecialties"].Struct().contains("ritualReserve"));
+	expectStart(dungeonStarts[1], *actor());
 	actor()->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 	actor()->setNormalSpellPoints(0);
 	EXPECT_EQ(actor()->getManaNewTurn(true), 10);
@@ -412,7 +438,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, JaegarDefaultMysticismFeedsActualDail
 TEST_F(NewHorizonsStartingDevelopmentTest, GeonDefaultEagleEyeSelectsUnknownObservedSpellWithoutMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(dungeonStarts[3]));
-	const SpellID observed(SpellID::HASTE);
+	const SpellID observed(SpellID::decode("new-horizons:focusMagic"));
 	actor()->removeSpellFromSpellbook(observed);
 	ASSERT_TRUE(actor()->canLearnSpell(observed.toSpell()));
 	ASSERT_TRUE(newHorizonsEagleEye::enabled(actor()));
@@ -430,10 +456,12 @@ TEST_F(NewHorizonsStartingDevelopmentTest, DeemerDefaultRetainsAdvancedTrainingA
 	EXPECT_EQ(actor()->getDamageSpellSpecialtyBonusPercent(SpellID::METEOR_SHOWER), 15);
 }
 
-TEST_F(NewHorizonsStartingDevelopmentTest, SephinrothDefaultProspectorPaysActualOwnedCrystalVisitOnlyOnce)
+TEST_F(NewHorizonsStartingDevelopmentTest, SephinrothDefaultProsperityPreservesCrystalSpecialtyWithoutRetiredMineWindfall)
 {
 	ownedCrystalMine = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(dungeonStarts[5]));
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::WOOD], 1);
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::ORE], 1);
 	EXPECT_EQ(actor()->dailyIncome()[EGameResID::CRYSTAL], 1);
 	auto * mine = findObjectAt({20, 10, 0});
 	ASSERT_NE(mine, nullptr);
@@ -448,9 +476,8 @@ TEST_F(NewHorizonsStartingDevelopmentTest, SephinrothDefaultProspectorPaysActual
 	};
 	visit();
 	ResourceSet expected;
-	expected[EGameResID::CRYSTAL] = 1;
 	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources - before, expected);
-	EXPECT_GE(actor()->getNewHorizonsProspectorLastWeek(), 0);
+	EXPECT_EQ(actor()->getNewHorizonsProspectorLastWeek(), -1);
 	visit();
 	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources - before, expected);
 	EXPECT_EQ(actor()->dailyIncome()[EGameResID::CRYSTAL], 1);
@@ -471,7 +498,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, IsraDefaultHistorianBoostsOnlyPrimary
 TEST_F(NewHorizonsStartingDevelopmentTest, NimbusDefaultEagleEyeSelectsObservedUnknownSpellWithoutMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(necropolisStarts[4]));
-	const SpellID observed(SpellID::HASTE);
+	const SpellID observed(SpellID::decode("new-horizons:focusMagic"));
 	actor()->removeSpellFromSpellbook(observed);
 	ASSERT_TRUE(actor()->canLearnSpell(observed.toSpell()));
 	ASSERT_TRUE(newHorizonsEagleEye::enabled(actor()));
@@ -492,7 +519,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, NagashDefaultTaxCollectorPreservesGol
 {
 	ownedTown = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(necropolisStarts[7]));
-	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 525);
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 575);
 }
 
 TEST_F(NewHorizonsStartingDevelopmentTest, AydenDefaultIntelligenceFeedsRealNormalManaCapacity)
@@ -551,8 +578,8 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AineDefaultTaxCollectorUsesActualOwne
 {
 	ownedTown = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[3]));
-	// Ordinary +125 Estates, unchanged +350 specialty, and +50 for one town.
-	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 525);
+	// Ordinary +125 Estates, unchanged +350 specialty, and +100 for one town.
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 575);
 	EXPECT_EQ(actor()->getHeroType()->getJsonKey(), "core:aine");
 }
 
@@ -581,7 +608,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, EllesharOlderCapturedAbsenceKeepsOrdi
 TEST_F(NewHorizonsStartingDevelopmentTest, MalcomDefaultEagleEyeSelectsObservedSpellWithoutMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(rampartStarts[3]));
-	const SpellID observed(SpellID::HASTE);
+	const SpellID observed(SpellID::decode("new-horizons:focusMagic"));
 	actor()->removeSpellFromSpellbook(observed);
 	ASSERT_TRUE(actor()->canLearnSpell(observed.toSpell()));
 	ASSERT_TRUE(newHorizonsEagleEye::enabled(actor()));
@@ -621,7 +648,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, InghamDefaultMysticismSuppliesRealDai
 TEST_F(NewHorizonsStartingDevelopmentTest, SanyaDefaultEagleEyeSelectsUnknownObservedSpellWithoutMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(castleStarts[2]));
-	const SpellID observed(SpellID::HASTE);
+	const SpellID observed(SpellID::decode("new-horizons:focusMagic"));
 	actor()->removeSpellFromSpellbook(observed);
 	ASSERT_TRUE(actor()->canLearnSpell(observed.toSpell()));
 	ASSERT_TRUE(newHorizonsEagleEye::enabled(actor()));
@@ -648,9 +675,13 @@ TEST_F(NewHorizonsStartingDevelopmentTest, RosicDefaultMysticismActuallyRestores
 	EXPECT_EQ(actor()->getManaNewTurn(true), 10);
 }
 
-TEST_F(NewHorizonsStartingDevelopmentTest, AndraDefaultIntelligenceActuallyExpandsNormalCapacity)
+TEST_F(NewHorizonsStartingDevelopmentTest, AndraAuthoredIntelligenceWithoutIndependentSpecialtyExpandsNormalCapacity)
 {
+	isolateCoreIntelligence = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(fortressStarts[2]));
+	EXPECT_FALSE(actor()->getPrimaryGrowthRules().Struct().contains("bottomlessMindSpecialty"));
+	expectStart(fortressStarts[2], *actor());
+	EXPECT_EQ(actor()->getBottomlessMindManaBonus(), 0);
 	actor()->setPrimarySkill(PrimarySkill::KNOWLEDGE, 101, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(actor()->manaLimit(), 131);
 }
@@ -689,7 +720,7 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AuthoredFactionRanksRemainStrictAndFo
 TEST_F(NewHorizonsStartingDevelopmentTest, TivaDefaultEagleEyeActuallySelectsLegallyObservedUnknownSpell)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(fortressStarts[3]));
-	const SpellID observed(SpellID::HASTE);
+	const SpellID observed(SpellID::decode("new-horizons:focusMagic"));
 	actor()->removeSpellFromSpellbook(observed);
 	ASSERT_TRUE(actor()->canLearnSpell(observed.toSpell()));
 	ASSERT_TRUE(newHorizonsEagleEye::enabled(actor()));
@@ -828,6 +859,17 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AbsentCollectionRemainsWritableInPrev
 	absent = true;
 	previousFormatContext = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	const JsonNode installed(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto & captured = actor()->getPrimaryGrowthRules();
+	for(const auto * key : {"schemaVersion", "rulesetVersion", "classProfiles"})
+		EXPECT_EQ(captured[key], installed[key]);
+	EXPECT_FALSE(captured["startingSkills"].Struct().contains("startingDevelopmentProfiles"));
+	EXPECT_FALSE(captured.Struct().contains("recoverySpecialties"));
+	EXPECT_FALSE(captured.Struct().contains("additionalSpecialties"));
+	const auto & capturedPerks = actor()->getPerkState().rules;
+	for(const auto * key : {"sylvanTacticsPolicy", "necromancyPolicy", "connoisseurPolicy",
+		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
+		EXPECT_FALSE(capturedPerks.Struct().contains(key));
 	CMemorySerializer bytes;
 	bytes.oser.version = static_cast<ESerializationVersion>(
 		static_cast<int>(ESerializationVersion::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES) - 1);

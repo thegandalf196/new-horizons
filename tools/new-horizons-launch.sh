@@ -70,7 +70,7 @@ for source in "$assets" "$resources" "$(dirname -- "$client")"; do
 	[[ $profile != "$source" && $profile != "$source/"* && $source != "$profile/"* ]] || fail 'Profile overlaps input assets or engine files.'
 done
 [[ $profile != / ]] || fail 'Root is not a profile.'
-for item in config/filesystem.json Mods/vcmi/mod.json scripts/damage/damageCalculator.lua; do
+for item in config/filesystem.json Mods/vcmi/mod.json; do
 	[[ -r $resources/$item ]] || fail "Missing engine resource: $item"
 done
 # Old frozen previews remain usable. New command candidates must carry the whole
@@ -174,7 +174,7 @@ if [[ -e $profile ]]; then
 			else
 				managedRuntime=false
 			fi
-			for name in libvcmi.so config scripts Data Maps Mp3 Mods; do
+			for name in libvcmi.so config Data Maps Mp3 Mods; do
 				[[ -e $staleRuntime/$name || -L $staleRuntime/$name ]] || managedRuntime=false
 			done
 			if $managedRuntime; then
@@ -272,7 +272,11 @@ mkdir -- "$runtime/Mods"
 ln -s -- "$client" "$runtime/new-horizons"
 ln -s -- "$(dirname -- "$client")/libvcmi.so" "$runtime/libvcmi.so"
 ln -s -- "$resources/config" "$runtime/config"
-ln -s -- "$resources/scripts" "$runtime/scripts"
+# Frozen clients may still require their supplied script resources. Native
+# packages omit this directory; do not create a missing link or require Lua.
+if [[ -d $resources/scripts ]]; then
+	ln -s -- "$resources/scripts" "$runtime/scripts"
+fi
 ln -s -- "$resources/Mods/vcmi" "$runtime/Mods/vcmi"
 if $curatedCommands; then
 	ln -s -- "$resources/Mods/new-horizons" "$runtime/Mods/new-horizons"

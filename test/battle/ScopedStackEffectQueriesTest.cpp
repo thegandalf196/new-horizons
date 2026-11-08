@@ -12,6 +12,7 @@ protected:
 	CStack * target = nullptr;
 	void prepare()
 	{
+		useRevisedOrders = true; // Use the current finite Command profile for this query fixture.
 		ASSERT_NO_FATAL_FAILURE(prepareCommands());
 		target = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(93), 3);
 		ASSERT_NE(target, nullptr);

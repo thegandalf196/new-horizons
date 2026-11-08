@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsPurify.h"
+#include "../battle/NewHorizonsStun.h"
+#include "../battle/NewHorizonsAttackControllers.h"
 #include "CurePhysicalAffliction.h"
 #include "../battle/PhysicalAffliction.h"
 
@@ -224,9 +226,11 @@ std::vector<EligibleStack> eligibleStacks(const CBattleInfoCallback & battle, co
 		stack.physicalPoison = hasPhysicalPoison(unit);
 		stack.physicalPoisonAutomaticallyCleared = purifierPerk && stack.physicalPoison;
 		stack.graveDustAutomaticallyCleared = purifierPerk && !spells::curePhysical::graveDustRemoval(*unit).empty();
+		stack.stunAutomaticallyCleared = purifierPerk && newHorizonsStun::isStunned(*unit);
+		stack.crippleAutomaticallyCleared = purifierPerk && !newHorizonsAttackControllers::crippleRemoval(*unit).empty();
 		stack.maximumSpellEffectChoices = cap;
 
-		if(stack.spellEffectGroups.empty() && !stack.physicalPoison && !stack.graveDustAutomaticallyCleared)
+		if(stack.spellEffectGroups.empty() && !stack.physicalPoison && !stack.graveDustAutomaticallyCleared && !stack.stunAutomaticallyCleared && !stack.crippleAutomaticallyCleared)
 			continue;
 		result.push_back(std::move(stack));
 	}
@@ -256,7 +260,7 @@ std::vector<uint32_t> prospectiveRecipients(const CBattleInfoCallback & battle,
 	const auto rows = eligibleStacks(battle, casterSide, center, spellPower, purifierPerk);
 	std::set<uint32_t> recipients;
 	for(const auto & row : rows)
-		if(row.physicalPoisonAutomaticallyCleared || row.graveDustAutomaticallyCleared)
+		if(row.physicalPoisonAutomaticallyCleared || row.graveDustAutomaticallyCleared || row.stunAutomaticallyCleared || row.crippleAutomaticallyCleared)
 			recipients.insert(static_cast<uint32_t>(row.unitId));
 	for(const auto & [unitId, spell] : choices)
 	{

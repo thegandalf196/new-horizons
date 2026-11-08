@@ -1,45 +1,20 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsMaintenanceSpecialties.h"
-#include "CBattleInfoCallback.h"
-#include "Unit.h"
-#include "../entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
-#include "../entities/hero/CHero.h"
-#include "../mapObjects/CGHeroInstance.h"
-#include "../CCreatureHandler.h"
-#include "../bonuses/BonusList.h"
-#include "../bonuses/BonusSelector.h"
+#include "../bonuses/Bonus.h"
 #include "../bonuses/Limiters.h"
-#include <algorithm>
 #include <stdexcept>
 #include <typeinfo>
 namespace newHorizonsMaintenanceSpecialties
 {
-int woundHealing(const CBattleInfoCallback & battle, const battle::Unit & unit, Trigger trigger)
+// Current specialties grant no maintenance healing or Defend retaliation budget.
+int woundHealing(const CBattleInfoCallback &, const battle::Unit &, Trigger)
 {
-	if(!unit.alive() || unit.isGhost() || unit.isTimeStopped())
-		return 0;
-	const auto * hero = battle.battleGetFightingHero(unit.unitSide());
-	if(!hero || !hero->getHeroType() || !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero))
-		return 0;
-	const bool defend = trigger == Trigger::VOLUNTARY_DEFEND;
-	if(hero->getHeroType()->getJsonKey() != (defend ? "core:josephine" : "core:gerwulf"))
-		return 0;
-	const auto family = CreatureID(CreatureID::decode(defend ? "core:ironGolem" : "core:ballista"));
-	if(unit.creatureId() != family && !family.toCreature()->isMyDirectOrIndirectUpgrade(unit.creatureId().toCreature()))
-		return 0;
-	const auto & policy = hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	const int budget = static_cast<int>(policy[defend ? "fieldReassemblyHealingHP" : "fieldMaintenanceHealingHP"].Integer());
-	return static_cast<int>(std::min<int64_t>(budget,
-		std::max<int64_t>(0, static_cast<int64_t>(unit.getMaxHealth()) - unit.getFirstHPleft())));
+	return 0;
 }
-int activationHealing(const CBattleInfoCallback & battle, const battle::Unit & unit, BattleUnitTurnReason reason)
+int activationHealing(const CBattleInfoCallback &, const battle::Unit &, BattleUnitTurnReason)
 {
-	if(!battle.battleBeginsActivation(&unit, reason)
-		|| ((reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
-			&& unit.waited()))
-		return 0;
-	return woundHealing(battle, unit, Trigger::ACTIVATION_START);
+	return 0;
 }
 bool isDefendRetaliationBonus(const Bonus * bonus)
 {
@@ -60,13 +35,8 @@ bool isDefendRetaliationBonus(const Bonus * bonus)
 		throw std::runtime_error("Invalid Ogre Bulwark specialty provenance");
 	return true;
 }
-int defendRetaliations(const battle::Unit & unit)
+int defendRetaliations(const battle::Unit &)
 {
-	if(!unit.alive() || unit.isGhost() || !unit.defended())
-		return 0;
-	static const auto selector = Selector::type()(BonusType::ADDITIONAL_RETALIATION).And(
-		CSelector(isDefendRetaliationBonus));
-	const auto bonus = unit.getAllBonuses(selector, "newHorizonsOgreBulwark")->getFirst(Selector::all);
-	return bonus ? bonus->val : 0;
+	return 0;
 }
 }

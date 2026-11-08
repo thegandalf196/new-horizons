@@ -30,6 +30,7 @@ auto options(const PossibleSpellcast & c)
 		std::bit_cast<uint32_t>(c.spellPlacementHeuristicValue),
 		bits(c.spellHandOfFateExpectedValue), bits(c.spellBattleFormExpectedValue),
 		bits(c.spellPuppetMasterExpectedValue), bits(c.spellConfusionExpectedValue),
+		std::bit_cast<uint32_t>(c.spellRunicExpectedValue), c.spellRunicEstimatePartial,
 		std::bit_cast<uint32_t>(c.spellNaturePoisonValue),
 		std::bit_cast<uint32_t>(c.spellSoulChainDelayedValue),
 		std::bit_cast<uint32_t>(c.spellShadowGiftHeuristicValue), c.spellFireWallDirection);

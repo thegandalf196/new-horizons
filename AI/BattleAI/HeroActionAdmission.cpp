@@ -11,6 +11,7 @@
 #include "../../lib/CPlayerState.h"
 #include "../../lib/CStack.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
 #include "../../lib/entities/artifact/CArtifact.h"
@@ -46,6 +47,8 @@ Admission admitCandidate(HypotheticBattle & state, BattleSide side, const Possib
 	}
 	else
 	{
+		if(!state.hasCommandResourceObservation(side) || !newHorizonsCommand::available(state, side))
+			return result;
 		result.orderAllowance = state.prepareHeroOrderAllowance(side);
 		if(!result.orderAllowance)
 			return result;
@@ -118,7 +121,7 @@ bool canonicalDamageSourceNode(const CBonusSystemNode & node, const BattleInfo &
 				return false;
 	return type == typeid(CBonusSystemNode) || type == typeid(CStack)
 		|| type == typeid(CStackInstance) || type == typeid(CGHeroInstance)
-		|| type == typeid(CArmedInstance) || type == typeid(CGTownInstance)
+		|| type == typeid(CArmedInstance) || type == typeid(CGTownInstance) || type == typeid(CGCreature)
 		|| type == typeid(CCreature) || type == typeid(CArtifact) || type == typeid(CArtifactInstance)
 		|| type == typeid(PlayerState) || type == typeid(TeamState) || type == typeid(BattleInfo);
 }

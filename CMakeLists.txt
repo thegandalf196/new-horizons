@@ -164,6 +164,10 @@ endif()
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_INNOEXTRACT "Enable innoextract for GOG file extraction in launcher" ON "ENABLE_LAUNCHER" OFF)
 cmake_dependent_option(ENABLE_GITVERSION "Enable Version.cpp with Git commit hash" ON "NOT ENABLE_GOLDMASTER" OFF)
+option(ENABLE_LUA_ORACLE "Build the historical Lua backend for migration tests only" OFF)
+if(ENABLE_LUA_ORACLE AND (NOT ENABLE_TEST OR ENABLE_MINIMAL_LIB))
+	message(FATAL_ERROR "ENABLE_LUA_ORACLE requires ENABLE_TEST and the full library")
+endif()
 cmake_dependent_option(ENABLE_TEMPLATE_EDITOR "Enable template editor inside map editor" ON "ENABLE_EDITOR" OFF)
 
 option(VCMI_PORTMASTER "PortMaster build" OFF)
@@ -637,6 +641,9 @@ endif()
 
 if(NOT ENABLE_MINIMAL_LIB)
 	find_package(TBB REQUIRED)
+	# Production rules are compiled C++. Lua is an optional differential-test oracle.
+endif()
+if(ENABLE_LUA_ORACLE)
 	find_package(luajit)
 
 	if(TARGET luajit::luajit)
@@ -745,11 +752,12 @@ endif()
 
 add_subdirectory(lib)
 
-if (ENABLE_CLIENT OR ENABLE_TEST)
+# The full server also links the core AIFactory and its enabled implementations.
+if (ENABLE_CLIENT OR ENABLE_TEST OR ENABLE_SERVER)
 	add_subdirectory_with_folder("AI" AI)
 endif()
 
-if(NOT ENABLE_MINIMAL_LIB)
+if(ENABLE_LUA_ORACLE)
 	add_subdirectory(luascript)
 endif()
 
@@ -942,11 +950,11 @@ if(ANDROID)
 		vcmi_install_libs_symlink("${CMAKE_SYSROOT}/usr/lib/${ANDROID_SYSROOT_LIB_SUBDIR}/${stlLibName}")
 	endif()
 else()
-	install(DIRECTORY scripts DESTINATION ${DATA_DIR})
 	install(DIRECTORY config DESTINATION ${DATA_DIR}
 		PATTERN "newHorizonsMagicAssets.json" EXCLUDE)
 	if (ENABLE_CLIENT OR ENABLE_SERVER)
 		install(DIRECTORY Mods DESTINATION ${DATA_DIR}
+			PATTERN "*.lua" EXCLUDE
 			REGEX "/new-horizons/(Images|Content/(sprites|data))(/|$)" EXCLUDE)
 		install(FILES docs/NHART_FORMAT.md docs/NHART_DELIVERY.md
 			DESTINATION ${DATA_DIR}/Mods/new-horizons/notices)

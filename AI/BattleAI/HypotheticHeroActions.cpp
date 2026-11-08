@@ -41,7 +41,6 @@ ui8 timeStopSideMask(BattleSide side)
 std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepareHeroSpellAllowance(
 	BattleSide side, SpellID spell, bool metamagicFollowup, bool grand) const
 {
-	if(crisisCommand.choice()) return {};
 	const auto & ledger = heroActionAllowances.at(side);
 	if(ledger.currentRound < 0)
 	{
@@ -123,6 +122,10 @@ std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepa
 std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepareHeroOrderAllowance(
 	BattleSide side) const
 {
+	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !hasCommandResourceObservation(side) || !newHorizonsCommand::available(*this, side))
+		return {};
+	const auto & resources = getCommandResources(side);
 	const auto & ledger = heroActionAllowances.at(side);
 	if(ledger.currentRound < 0)
 	{
@@ -133,7 +136,7 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 		action.receipt = {0, HeroActionAllowanceState::ActionKind::ORDER,
 			HeroActionAllowanceState::AllowanceKind::HERO,
 			HeroActionAllowanceState::GrantSource::OTHER, projectedRound};
-		return ProjectedOrderAllowance{action, ledger, ledger, metamagicStates.at(side)};
+		return ProjectedOrderAllowance{action, ledger, ledger, metamagicStates.at(side), resources};
 	}
 
 	try
@@ -141,21 +144,16 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 		auto nextLedger = ledger;
 		if(nextLedger.currentRound != projectedRound)
 			return {};
-		const auto crisisFilter = [this, side](const HeroActionAllowanceState::Grant & grant)
-			{ return crisisCommand.allowsGrant(side, grant); };
+		const auto crisisFilter = [](const HeroActionAllowanceState::Grant & grant)
+			{ return grant.allowance == HeroActionAllowanceState::AllowanceKind::HERO; };
 		const auto selection = orderActionTransition::select(nextLedger, projectedRound, crisisFilter);
 		if(!selection)
-			return {};
-		if(selection->allowance == HeroActionAllowanceState::AllowanceKind::HERO
-			&& nextLedger.nextGrantId == std::numeric_limits<uint32_t>::max()
-			&& !doubleCommandStates.at(side).used
-			&& heroCommands::hasDoubleCommand(battleGetFightingHero(side)))
 			return {};
 		const auto receipt = orderActionTransition::consume(nextLedger, selection->grantId, projectedRound, crisisFilter);
 		if(!receipt)
 			return {};
 		return ProjectedOrderAllowance{{side, *receipt, true, projectedActionEpochs.at(side)},
-			ledger, std::move(nextLedger), metamagicStates.at(side)};
+			ledger, std::move(nextLedger), metamagicStates.at(side), resources};
 	}
 	catch(const std::exception &)
 	{
@@ -358,6 +356,9 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 		serverCallback->recordCompletedWisdomSpellCast(side, spell, projectedRound, false);
 		if(!counterspellNegated) completeSyntheticInspiration(side);
 	}
+	if(!counterspellNegated)
+		setElementalAttunementMask(side, newHorizonsElementalAttunement::completedHeroCastMask(
+			*this, side, spell, getElementalAttunementMask(side)));
 	finishProjectedHeroAction(side, prepared);
 	return true;
 }

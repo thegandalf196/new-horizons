@@ -129,6 +129,7 @@ public:
 	virtual void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) {}
 	virtual void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) {}
 	virtual void visitSetMetamagicPointState(SetMetamagicPointState & pack) {}
+	virtual void visitSetElementalAttunementState(SetElementalAttunementState & pack) {}
 	virtual void visitSetSpellResponseState(SetSpellResponseState & pack) {}
 	virtual void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) {}
 	virtual void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) {}

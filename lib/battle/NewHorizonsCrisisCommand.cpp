@@ -34,9 +34,9 @@ void validateProfileSerialization(const JsonNode & rules, bool supported)
 	newHorizonsHeroes::validateCrisisCommandProfileSerialization(rules, supported);
 }
 
-bool eligible(const CGHeroInstance * hero)
+bool eligible(const CGHeroInstance *)
 {
-	return hero && activeProfile(hero->getPerkState().rules) && hero->hasActivePerk(SKILL, PERK);
+	return false;
 }
 
 const battle::Unit * anchor(const CBattleInfoCallback & battle, BattleSide side)
@@ -124,36 +124,8 @@ SeizeInitiativeState State::seizeContextAfterTransition(const State & previous,
 
 void State::validateShape() const
 {
-	if(pending.size() > 2 || returns.size() > 2)
-		throw std::runtime_error("Invalid Crisis Command nesting");
-	std::array<bool, 2> assigned{};
-	for(const auto & receipt : pending)
-	{
-		if(!sideValid(receipt.side) || receipt.unit == NO_UNIT
-			|| !used.at(static_cast<size_t>(receipt.side)) || assigned.at(static_cast<size_t>(receipt.side)))
-			throw std::runtime_error("Invalid Crisis Command pending receipt");
-		assigned.at(static_cast<size_t>(receipt.side)) = true;
-	}
-	for(size_t index = 0; index < returns.size(); ++index)
-	{
-		const auto & frame = returns[index];
-		if(!sideValid(frame.responder) || !used.at(static_cast<size_t>(frame.responder))
-			|| assigned.at(static_cast<size_t>(frame.responder)) || frame.anchor == NO_UNIT
-			|| frame.grant == 0 || frame.round < 1 || frame.originalActor < -1
-			|| (frame.suspendedSeizeActiveNormal && frame.suspendedSeizeActive == NO_UNIT)
-			|| (frame.suspendedSeizeActive != NO_UNIT
-				&& (frame.originalActor < 0 || frame.suspendedSeizeActive != static_cast<uint32_t>(frame.originalActor)))
-			|| (frame.phase != Phase::CHOICE && frame.phase != Phase::GRANTED_EXTRA)
-			|| (frame.kind != ReturnKind::ACTION && frame.kind != ReturnKind::NEXT_STACK)
-			|| (frame.kind == ReturnKind::ACTION && (!sideValid(frame.action.side)
-				|| frame.action.isBattleEndAction() || frame.action.actionType == EActionType::END_TACTIC_PHASE
-				|| (frame.action.isUnitAction() && (frame.originalActor < 0
-					|| frame.action.stackNumber != static_cast<uint32_t>(frame.originalActor)))))
-			|| (index + 1 < returns.size() && frame.phase != Phase::GRANTED_EXTRA)
-			|| (frame.kind == ReturnKind::NEXT_STACK && (frame.masterGate || frame.pursuit || frame.ranged)))
-			throw std::runtime_error("Invalid Crisis Command return frame");
-		assigned.at(static_cast<size_t>(frame.responder)) = true;
-	}
+	if(meaningful())
+		throw std::runtime_error("Crisis Command is retired in the current rules");
 }
 
 void State::validate(const IBattleInfo & battle, BattleSide replacementSide,

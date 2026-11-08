@@ -585,7 +585,6 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAnd
 
 	const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(hero);
 	EXPECT_EQ(modifiers.maximumBonus, 1);
-	EXPECT_EQ(modifiers.damagePercentTenths, 175);
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(gameState()->getMagicRules(),
 		SpellID(SpellID::MAGIC_ARROW), 150, modifiers), 6);
 
@@ -603,7 +602,6 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAnd
 
 	const auto restoredModifiers = newHorizonsMagic::magicArrowOverchargeModifiers(restoredHero);
 	EXPECT_EQ(restoredModifiers.maximumBonus, 1);
-	EXPECT_EQ(restoredModifiers.damagePercentTenths, 175);
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(restored.getMagicRules(),
 		SpellID(SpellID::MAGIC_ARROW), 150, restoredModifiers), 6);
 }

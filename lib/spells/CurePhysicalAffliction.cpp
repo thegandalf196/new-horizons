@@ -3,6 +3,8 @@
 #include "CurePhysicalAffliction.h"
 #include "../battle/NewHorizonsFrozen.h"
 #include "../battle/NewHorizonsGraveDust.h"
+#include "../battle/NewHorizonsStun.h"
+#include "../battle/NewHorizonsAttackControllers.h"
 #include "../battle/PhysicalAffliction.h"
 #include "../battle/Unit.h"
 #include "../bonuses/BonusList.h"
@@ -20,7 +22,7 @@ bool livingTarget(const battle::Unit * unit)
 
 bool validKind(const std::string_view kind)
 {
-	return kind == "frozen" || kind == "graveDust";
+	return kind == "frozen" || kind == "graveDust" || kind == "stun" || kind == "cripple";
 }
 std::vector<Bonus> graveDustRemoval(const battle::Unit & unit)
 {
@@ -41,6 +43,8 @@ bool present(const JsonNode & rules, const battle::Unit & unit, const std::strin
 {
 	if(kind == "frozen") return newHorizonsFrozen::enabled(rules) && newHorizonsFrozen::isFrozen(unit);
 	if(kind == "graveDust") return !graveDustRemoval(unit).empty();
+	if(kind == "cripple") return !newHorizonsAttackControllers::crippleRemoval(unit).empty();
+	if(kind == "stun") return newHorizonsStun::isStunned(unit);
 	return false;
 }
 }

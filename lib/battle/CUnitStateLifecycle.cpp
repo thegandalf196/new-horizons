@@ -37,6 +37,7 @@ void CUnitState::reset()
 	cloned = false;
 	personalBloodrageIncrement = 0;
 	veteranCohesionEarned = false;
+	ordinarySpecialtyLastRound = -1;
 	activationMovementBonus = 0;
 	defending = false;
 	drainedMana = false;

@@ -33,5 +33,5 @@ DLL_LINKAGE void canonicalizeScriptPayoutRatio(Bonus & marker);
 /// Captured pre-v3 contexts retain their existing base; current recipient-only defenses remain separate.
 DLL_LINKAGE int64_t recipientDamage(const CBattleInfoCallback & battle,
 	const battle::Unit * recipient, int64_t rawPayout,
-	PlayerColor spellOwner = PlayerColor::CANNOT_DETERMINE);
+	PlayerColor spellOwner = PlayerColor::CANNOT_DETERMINE, const JsonNode * capturedOffensive = nullptr);
 }

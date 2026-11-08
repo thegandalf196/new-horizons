@@ -303,6 +303,9 @@ public:
 	{
 		startBattle();
 		redirectUnitsToFake();
+		EXPECT_CALL(battleMock, getSidePlayer(BattleSide::ATTACKER)).WillRepeatedly(Return(PlayerColor(0)));
+		EXPECT_CALL(battleMock, getSidePlayer(BattleSide::DEFENDER)).WillRepeatedly(Return(PlayerColor(1)));
+		EXPECT_NE(subject.battleGetOwner(&attacker), subject.battleGetOwner(&defender));
 
 		return subject.getAttackedBattleUnits(
 			&attacker, &defender,

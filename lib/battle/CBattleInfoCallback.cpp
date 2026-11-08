@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsPassiveSpecialties.h"
+#include "NewHorizonsCommandResources.h"
 #include "ArcaneInspiration.h"
 #include "MagicalCreatureAttackDamage.h"
 #include "../spells/NewHorizonsWisdom.h"
@@ -31,7 +33,6 @@
 #include "../gameState/CGameState.h"
 #include "UnitAdjacency.h"
 #include "NewHorizonsFrozen.h"
-#include "NewHorizonsSwiftRebirth.h"
 
 #include <vcmi/scripting/Service.h>
 #include <vstd/RNG.h>
@@ -408,6 +409,8 @@ bool CBattleInfoCallback::battleHeroCommandCommonAvailable(BattleSide side, Hero
 		return false;
 	if(!getBattle() || !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), command)
 		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return false;
+	if(!newHorizonsCommand::available(*this, side))
 		return false;
 	const auto & doubleCommand = getBattle()->getDoubleCommandState(side);
 	if((doubleCommand.orderPending()
@@ -1032,96 +1035,6 @@ bool CBattleInfoCallback::battleHasBastionProtection(const battle::Unit * defend
 		return false;
 	const auto orderState = battleGetHeroOrderState(side, HeroCommand::HOLD_THE_LINE);
 	return orderState && battleIsHoldTheLineRecipient(*orderState, defender);
-}
-
-bool CBattleInfoCallback::battleOrderBenefitAppliesTo(const HeroOrderState & state, BattleSide side,
-	const battle::Unit * unit) const
-{
-	if(!getBattle() || !unit || !unit->alive() || unit->isGhost()
-		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
-		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), state.command)
-		|| (state.command != HeroCommand::VANGUARD && !state.scheduledFor(unit->unitId(), battleGetRound()))
-		|| battleGetOwner(unit) != sideToPlayer(side)
-		|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER)
-		return false;
-
-	switch(state.command)
-	{
-	case HeroCommand::CHARGE:
-		return !state.containsConsumed(unit->unitId());
-	case HeroCommand::FOCUS_FIRE:
-	{
-		const auto mark = battleGetFocusFireState(side);
-		const auto * hero = battleGetFightingHero(side);
-		const bool eligibleFocusAttacker = battleIsFocusFireRecipient(unit, side)
-			|| (heroCommands::hasCombinedArms(hero) && unit->isMeleeAttacker()
-				&& !unit->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
-		return eligibleFocusAttacker && battleIsFocusFireTargetActive(side) && mark
-			&& mark->issuedRound == state.issuedRound
-			&& mark->targetUnitId == state.primaryTargetUnitId
-			&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), unit->unitId());
-	}
-	case HeroCommand::VANGUARD:
-		return heroCommands::activeVanguardBonuses(unit).has_value();
-	case HeroCommand::FEINT:
-	case HeroCommand::RIPOSTE:
-	case HeroCommand::BRACE:
-		return true;
-	case HeroCommand::HOLD_THE_LINE:
-		return battleIsHoldTheLineRecipient(state, unit);
-	case HeroCommand::PROTECT:
-	{
-		if(state.protectBroken || state.protectInterceptionsConsumed >= state.protectInterceptionLimit)
-			return false;
-		const auto * protector = battleGetUnitByID(state.primaryTargetUnitId);
-		const auto * ward = battleGetUnitByID(state.secondaryTargetUnitId);
-		if(!protector || !ward || !protector->alive() || !ward->alive()
-			|| protector->isGhost() || ward->isGhost()
-			|| battleGetOwner(protector) != sideToPlayer(side)
-			|| battleGetOwner(ward) != sideToPlayer(side)
-			|| !heroCommands::orderUnitsAdjacent(protector, ward))
-			return false;
-		return unit->unitId() == protector->unitId() || unit->unitId() == ward->unitId();
-	}
-	case HeroCommand::FLANK:
-	{
-		const auto * target = battleGetUnitByID(state.primaryTargetUnitId);
-		if(!target || !target->alive() || target->isGhost() || target->isTurret()
-			|| battleGetOwner(target) == sideToPlayer(side) || !state.flankFor(target->unitId()))
-			return false;
-		if(unit->isMeleeAttacker())
-			return true;
-		const auto * hero = battleGetFightingHero(side);
-		return heroCommands::hasCombinedArms(hero) && newHorizonsArchery::isOrdinaryPhysicalShooter(unit);
-	}
-	case HeroCommand::SECOND_WIND:
-		return state.secondWindActive && state.primaryTargetUnitId == unit->unitId();
-	default:
-		return false;
-	}
-}
-
-bool CBattleInfoCallback::battleHasCommandingPresence(const battle::Unit * unit) const
-{
-	if(!getBattle() || !unit || !unit->alive() || unit->isGhost()
-		|| !heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules()))
-		return false;
-	const auto side = playerToSide(battleGetOwner(unit));
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return false;
-	const auto * controllerHero = battleGetOwnerHero(unit);
-	if(!controllerHero || !controllerHero->hasActivePerk(
-		"new-horizons:command", "new-horizons:command.commandingPresence"))
-		return false;
-	if(heroCommands::activeVanguardBonuses(unit))
-		return true; // Stasis can preserve a native grant beyond its latest side snapshot.
-	const auto orderStates = battleGetHeroOrderStates(side);
-	return std::ranges::any_of(orderStates, [this, side, unit](const HeroOrderState & orderState)
-	{
-		return battleOrderBenefitAppliesTo(orderState, side, unit);
-	});
 }
 
 int CBattleInfoCallback::battleGetFearChance(const battle::Unit * affected) const
@@ -1963,7 +1876,7 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	if(activeUnit)
 	{
 		//its first turn and active unit hasn't taken any action yet - must be placed at the beginning of queue, no matter what
-		if(turn == 0 && !newHorizonsSwiftRebirth::normalActivationCompleted(*activeUnit, battleGetRound())
+		if(turn == 0
 			&& (activeUnit->willMove() || stoppedTurnReady(activeUnit)
 			|| frozenTurnReady(activeUnit, 0)))
 		{
@@ -1995,8 +1908,6 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 
 	for(const auto * unit : allUnits)
 	{
-		if(actualTurn == 0 && newHorizonsSwiftRebirth::normalActivationCompleted(*unit, battleGetRound()))
-			continue;
 		if((actualTurn == 0 && !unit->willMove() && !stoppedTurnReady(unit) && !frozenTurnReady(unit, 0)) //we are considering current round and unit won't move
 		|| (actualTurn > 0 && !unit->canMove(turn) && !frozenTurnReady(unit, turn)) //unit won't be able to move in later rounds
 		|| (actualTurn == 0 && unit == activeUnit && !turns.at(0).empty() && unit == turns.front().front())) //it's active unit already added at the beginning of queue
@@ -2024,27 +1935,6 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 		}
 	}
 
-	if(actualTurn == 0)
-	{
-		battle::Units swift;
-		for(auto & phaseUnits : phases)
-		{
-			for(const auto * unit : phaseUnits)
-				if(newHorizonsSwiftRebirth::priorityEligible(*unit, battleGetRound()))
-					swift.push_back(unit);
-			vstd::erase_if(phaseUnits, [this](const battle::Unit * unit)
-			{
-				return newHorizonsSwiftRebirth::priorityEligible(*unit, battleGetRound());
-			});
-		}
-		std::ranges::sort(swift, {}, &battle::Unit::unitId);
-		for(const auto * unit : swift)
-		{
-			turns.back().push_back(unit);
-			if(turnsIsFull())
-				return;
-		}
-	}
 
 	std::ranges::sort(phases[BattlePhases::SIEGE], CMP_stack(BattlePhases::SIEGE, actualTurn, sideThatLastMoved));
 	std::copy(phases[BattlePhases::SIEGE].begin(), phases[BattlePhases::SIEGE].end(), std::back_inserter(turns.back()));
@@ -2558,6 +2448,8 @@ bool CBattleInfoCallback::battleCanAttackUnitAction(const battle::Unit * attacke
 		return false;
 	if(!attacker)
 		throw std::runtime_error("Undefined attacker in battleCanAttackUnitAction!");
+	if(!newHorizonsPassiveSpecialties::permitsCreatureAttackTarget(*this, attacker, target))
+		return false;
 	if(!newHorizonsDreadCavalry::permitsTarget(*this, attacker, target))
 		return false;
 	if(!target || target->isInvincible()
@@ -2884,6 +2776,8 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 bool CBattleInfoCallback::battleCanShootAction(const battle::Unit * attacker, const BattleHex & dest) const
 {
 	if(!getBattle() || !dest.isAvailable() || !attacker)
+		return false;
+	if(!newHorizonsPassiveSpecialties::permitsCreatureAttackTarget(*this, attacker, battleGetUnitByPos(dest)))
 		return false;
 	if(battleCounterBatteryControlsMachineTargetsOnly(attacker)
 		&& !battleIsCounterBatteryMachineTarget(attacker, battleGetUnitByPos(dest)))
@@ -3284,170 +3178,6 @@ AccessibilityInfo CBattleInfoCallback::getAccessibility(const battle::Unit * sta
 	return getAccessibility(stack->getHexes());
 }
 
-ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const
-{
-	ReachabilityInfo ret;
-	ret.accessibility = accessibility;
-	ret.params = params;
-
-	ret.predecessors.fill(BattleHex::INVALID);
-	ret.distances.fill(ReachabilityInfo::INFINITE_DIST);
-
-	if(!params.startPosition.isValid()) //if got call for arrow turrets
-		return ret;
-
-	const BattleHexArray obstacles = getStoppers(params.perspective);
-	auto checkParams = params;
-	checkParams.ignoreKnownAccessible = true; //Ignore starting hexes obstacles
-
-	std::queue<BattleHex> hexq; //bfs queue
-
-	//first element
-	hexq.push(params.startPosition);
-	ret.distances[params.startPosition.toInt()] = 0;
-
-	std::array<bool, GameConstants::BFIELD_SIZE> accessibleCache{};
-	std::array<int32_t, GameConstants::BFIELD_SIZE> movementCostByHex{};
-	bool hasMovementCost = false;
-	auto traversalAccessibility = accessibility;
-	if(params.ghostWalk && !params.passThrough)
-	{
-		// Keep the original accessibility below for endpoint validation, while
-		// letting the BFS treat every occupied creature tile as ordinary floor.
-		for(auto & tile : traversalAccessibility)
-			if(tile == EAccessibility::ALIVE_STACK)
-				tile = EAccessibility::ACCESSIBLE;
-	}
-	else if(!params.passThrough)
-	{
-		// Passing Lines is narrower than Ghost Walk: only the selected friendly
-		// footprints are relaxed, and only where the final accessibility map
-		// still identifies a living stack (obstacles/walls remain blockers).
-		for(int hex = 0; hex < GameConstants::BFIELD_SIZE; ++hex)
-			if(params.friendlyTransit.test(static_cast<size_t>(hex))
-				&& traversalAccessibility[hex] == EAccessibility::ALIVE_STACK)
-				traversalAccessibility[hex] = EAccessibility::ACCESSIBLE;
-	}
-	for(int hex = 0; hex < GameConstants::BFIELD_SIZE; hex++)
-	{
-		const BattleHex position(static_cast<si16>(hex));
-		accessibleCache[hex] = params.passThrough
-			? traversalAccessibility.accessibleForPassThroughTransit(position, params.doubleWide, params.side)
-			: traversalAccessibility.accessible(position, params.doubleWide, params.side);
-	}
-
-	for(const auto & obstacle : battleGetAllObstacles(params.perspective))
-	{
-		const auto * spellObstacle = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get());
-		if(!spellObstacle || spellObstacle->turnsRemaining == 0 || spellObstacle->movementCost <= 0)
-			continue;
-
-		for(const auto & hex : spellObstacle->getAffectedTiles())
-		{
-			if(!hex.isValid())
-				continue;
-
-			auto & movementCost = movementCostByHex[hex.toInt()];
-			movementCost = std::max(movementCost, spellObstacle->movementCost);
-			hasMovementCost = true;
-		}
-	}
-
-	while(!hexq.empty()) //bfs loop
-	{
-		const BattleHex curHex = hexq.front();
-		hexq.pop();
-
-		//walking stack can't step past the obstacles
-		if(isInObstacle(curHex, obstacles, checkParams))
-			continue;
-
-		for(const BattleHex & neighbour : curHex.getNeighbouringTiles())
-		{
-			int additionalCost = 0;
-			if(hasMovementCost)
-			{
-				const auto & currentFootprint = battle::Unit::getHexes(curHex, params.doubleWide, params.side);
-				const auto & neighbourFootprint = battle::Unit::getHexes(neighbour, params.doubleWide, params.side);
-				for(const auto & hex : neighbourFootprint)
-					if(hex.isValid() && !currentFootprint.contains(hex))
-						additionalCost += movementCostByHex[hex.toInt()];
-			}
-
-			if(params.bypassEnemyStacks && !params.passThrough)
-			{
-				auto enemyToBypass = params.destructibleEnemyTurns.at(neighbour.toInt());
-
-				if(enemyToBypass >= 0)
-					additionalCost += enemyToBypass;
-			}
-
-			const uint32_t costToNeighbour = ret.distances.at(curHex.toInt())
-				+ static_cast<uint32_t>(1 + additionalCost);
-
-			const uint32_t costFoundSoFar = ret.distances[neighbour.toInt()];
-
-			if(accessibleCache[neighbour.toInt()] && costToNeighbour < costFoundSoFar)
-			{
-				hexq.push(neighbour);
-				ret.distances[neighbour.toInt()] = costToNeighbour;
-				ret.predecessors[neighbour.toInt()] = curHex;
-			}
-		}
-	}
-
-	return ret;
-}
-
-bool CBattleInfoCallback::isInObstacle(
-	const BattleHex & hex,
-	const BattleHexArray & obstacleHexes,
-	const ReachabilityInfo::Parameters & params) const
-{
-
-	for(const auto & occupiedHex : battle::Unit::getHexes(hex, params.doubleWide, params.side))
-	{
-		if(params.ignoreKnownAccessible && params.knownAccessible->contains(occupiedHex))
-			continue;
-
-		if(obstacleHexes.contains(occupiedHex))
-		{
-			if(occupiedHex == BattleHex::GATE_BRIDGE)
-			{
-				if(battleGetGateState() != EGateState::DESTROYED && params.side == BattleSide::ATTACKER)
-					return true;
-			}
-			else
-				return true;
-		}
-	}
-
-	return false;
-}
-
-BattleHexArray CBattleInfoCallback::getStoppers(BattleSide whichSidePerspective) const
-{
-	BattleHexArray ret;
-	RETURN_IF_NOT_BATTLE(ret);
-
-	for(auto &oi : battleGetAllObstacles(whichSidePerspective))
-	{
-		if(!battleIsObstacleVisibleForSide(*oi, whichSidePerspective))
-			continue;
-
-		for(const auto & hex : oi->getStoppingTile())
-		{
-			if(hex == BattleHex::GATE_BRIDGE && oi->obstacleType == CObstacleInstance::MOAT)
-			{
-				if(battleGetGateState() == EGateState::OPENED || battleGetGateState() == EGateState::DESTROYED)
-					continue; // this tile is disabled by drawbridge on top of it
-			}
-			ret.insert(hex);
-		}
-	}
-	return ret;
-}
-
 BattleHex CBattleInfoCallback::getClosestHexToTargetInRange(const ReachabilityInfo & cache, const Unit & unit, const BattleHex & targetHex) const
 {
 	if (unit.hasBonusOfType(BonusType::FLYING))
@@ -3494,7 +3224,8 @@ std::vector<ForcedAction> CBattleInfoCallback::getBerserkForcedActions(const bat
 	const bool canonicalBerserk = newHorizonsMagic::berserkUsesSingleCreatureTarget(getBattle()->getMagicRules());
 	auto targets = battleGetUnitsIf([this, berserker, canonicalBerserk](const battle::Unit * u)
 	{
-		return admitsBerserkTarget(*this, berserker, u, canonicalBerserk);
+		return admitsBerserkTarget(*this, berserker, u, canonicalBerserk)
+			&& newHorizonsPassiveSpecialties::permitsCreatureAttackTarget(*this, berserker, u);
 	});
 	if(targets.empty())
 		return {};
@@ -3738,39 +3469,6 @@ void CBattleInfoCallback::configurePassingLines(const battle::Unit * mover, Reac
 			params.friendlyTransit.set(static_cast<size_t>(hex.toInt()));
 		}
 	}
-}
-
-ReachabilityInfo CBattleInfoCallback::getReachability(const ReachabilityInfo::Parameters & params) const
-{
-	if(params.flying)
-		return getFlyingReachability(params);
-	else
-	{
-		auto accessibility = getAccessibility(* params.knownAccessible);
-
-		accessibility.destructibleEnemyTurns = std::make_shared<const TBattlefieldTurnsArray>(
-			params.destructibleEnemyTurns);
-
-		return makeBFS(accessibility, params);
-	}
-}
-
-ReachabilityInfo CBattleInfoCallback::getFlyingReachability(const ReachabilityInfo::Parameters & params) const
-{
-	ReachabilityInfo ret;
-	ret.accessibility = getAccessibility(* params.knownAccessible);
-	ret.params = params;
-
-	for(int i = 0; i < GameConstants::BFIELD_SIZE; i++)
-	{
-		if(ret.accessibility.accessible(i, params.doubleWide, params.side))
-		{
-			ret.predecessors[i] = params.startPosition;
-			ret.distances[i] = BattleHex::getDistance(params.startPosition, i);
-		}
-	}
-
-	return ret;
 }
 
 AttackableTiles CBattleInfoCallback::getPotentiallyAttackableHexes(

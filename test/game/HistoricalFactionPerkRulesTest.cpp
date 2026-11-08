@@ -13,7 +13,7 @@ bool factionSkill(const std::string & id)
 }
 void expectHistoricalRegistry(const JsonNode & result, const JsonNode & installed)
 {
-	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy"})
+	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 		EXPECT_FALSE(result.Struct().contains(key));
 	for(const auto & [id, skill] : installed["skills"].Struct())
 		if(!factionSkill(id))
@@ -24,13 +24,11 @@ void expectHistoricalRegistry(const JsonNode & result, const JsonNode & installe
 TEST(HistoricalFactionPerkRules, FullRegistryOverrideCannotMergeNewPoliciesBack)
 {
 	auto installed = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy"})
-		installed[key]["version"].Integer() = 2;
 	JsonNode base(JsonPath::builtin("config/newHorizonsCombat"));
 	base["heroes"]["newHorizonsPerks"] = installed;
 	GameSettings settings;
 	settings.loadBase(base);
-	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy"})
+	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 		ASSERT_TRUE(settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS).Struct().contains(key));
 
 	const auto historical = historicalFactionPerkRules(installed);
@@ -38,7 +36,7 @@ TEST(HistoricalFactionPerkRules, FullRegistryOverrideCannotMergeNewPoliciesBack)
 	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, historical);
 	expectHistoricalRegistry(settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), installed);
 	for(const auto & [key, value] : installed.Struct())
-		if(key != "skills" && key != "metamagicPolicy" && key != "divineMandatePolicy" && key != "demonicGatingPolicy")
+		if(key != "skills" && key != "metamagicPolicy" && key != "divineMandatePolicy" && key != "demonicGatingPolicy" && key != "bloodragePolicy")
 			EXPECT_EQ(settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS)[key], value) << key;
 }
 

@@ -8,6 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "PhysicalCleanseValue.h"
+#include "CreatureActivationValue.h"
+#include "../../lib/battle/NewHorizonsStun.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
@@ -1203,6 +1207,7 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 	if(isCanonicalPurify(spellMechanics))
 	{
 		std::vector<Target> purifyTargets;
+		physicalCleanseAI::MobilityQuery mobility;
 		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 		{
 			const BattleHex center(index);
@@ -1212,7 +1217,7 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 			Target target{Destination(center)};
 			detail::ProblemImpl problem;
 			if(spellMechanics->canBeCastAt(target, problem)
-				&& purifySelection(spellMechanics, target).value > 0.0f)
+				&& purifySelection(spellMechanics, target, &mobility).value > 0.0f)
 				purifyTargets.push_back(std::move(target));
 		}
 		return purifyTargets;
@@ -1541,8 +1546,10 @@ std::optional<float> SpellTargetEvaluator::havocStructuralHPValue(
 }
 
 SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(
-	const Mechanics * spellMechanics, const Target & target)
+	const Mechanics * spellMechanics, const Target & target, physicalCleanseAI::MobilityQuery * mobility)
 {
+	physicalCleanseAI::MobilityQuery localMobility;
+	if(!mobility) mobility = &localMobility;
 	PurifySelection selection;
 	if(!isCanonicalPurify(spellMechanics) || target.size() != 1
 		|| target.front().unitValue != nullptr || !target.front().hexValue.isValid())
@@ -1577,6 +1584,10 @@ SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(
 		if(!unit || !unit->alive())
 			continue;
 
+		if(eligible.stunAutomaticallyCleared && !newHorizonsFrozen::isFrozen(*unit))
+			selection.value += creatureActivationValue::expectedTargetActivationValue(unit, damageCache, battleState, true);
+		if(eligible.crippleAutomaticallyCleared)
+			selection.value += mobility->crippleValue(*callback, *unit);
 		float physicalPoisonValue = 0.0f;
 		if(eligible.physicalPoison || eligible.physicalPoisonAutomaticallyCleared)
 		{

@@ -12,6 +12,7 @@
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../AI/BattleAI/HeroDecisionPressure.h"
+#include "../../AI/BattleAI/HeroOrderCandidates.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/StartInfo.h"
 #include "../../lib/CRandomGenerator.h"
@@ -19,6 +20,8 @@
 #include "../../lib/GameConstants.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/HeroCommand.h"
+#include "../../lib/battle/NewHorizonsCommandResources.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -64,12 +67,14 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true;
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";
 	}
 
 	void selectBattlePlan()
 	{
+		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 		const int decoded = SecondarySkill::decode(commandSkill);
 		ASSERT_GE(decoded, 0);
 		const auto skill = SecondarySkill(decoded);
@@ -95,118 +100,123 @@ protected:
 		FAIL() << "No legal Basic Command Battle Plan offer";
 	}
 
-	void preparePendingOpening()
+	void activateOwn()
+	{
+		BattleSetActiveStack packet; packet.battleID = BattleID(0);
+		packet.stack = active->unitId(); packet.reason = BattleUnitTurnReason::TURN_QUEUE;
+		gameHandler->sendAndApply(packet);
+	}
+	void prepareOrdinaryOpening()
 	{
 		startGame();
-		selectBattlePlan();
+		ASSERT_NO_FATAL_FAILURE(selectBattlePlan());
 		startBattle();
-		ASSERT_EQ(battle()->getPreCombatOrderState(BattleSide::ATTACKER).phase,
-			PreCombatOrderState::Phase::AVAILABLE);
-		beginCombat();
-		const auto & pending = battle()->getPreCombatOrderState(BattleSide::ATTACKER);
-		ASSERT_EQ(pending.phase, PreCombatOrderState::Phase::ORDER_REQUIRED);
-		ASSERT_TRUE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
-		active = battle()->getStack(static_cast<int>(pending.anchorStackId), false);
-		ASSERT_NE(active, nullptr);
+		ASSERT_EQ(battle()->getPreCombatOrderState(BattleSide::ATTACKER).phase, PreCombatOrderState::Phase::NOT_GRANTED);
+		BattleUnitsChanged remove; remove.battleID = BattleID(0);
+		for(const auto * unit : battle()->battleGetAllUnits(false))
+			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+		gameHandler->sendAndApply(remove);
+		active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
+		auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(71), 100);
+		SetStackEffect quiet; quiet.battleID = BattleID(0);
+		for(const auto * unit : {active, enemy}) quiet.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{
+			Bonus(BonusDuration::ONE_BATTLE, BonusType::NO_MORALE, BonusSource::OTHER, 1, BonusSourceID())});
+		gameHandler->sendAndApply(quiet);
+		beginCombat(); activateOwn();
+		ASSERT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
 		ASSERT_EQ(battle()->battleActiveUnit(), active);
-
 		callback = std::make_shared<RecordingBattlePlanCallback>();
 		callback->onBattleStarted(battle());
 		environment = std::make_shared<BattlePlanAIEnvironment>(gameState());
 	}
+
 };
 }
 
-TEST_F(NewHorizonsBattlePlanAITest, BooklessEvaluatorSubmitsAndServerAcceptsTheMandatoryOpeningOrder)
+TEST_F(NewHorizonsBattlePlanAITest, BooklessCandidatesUseTheOrdinaryActionAndBattlePlanCapacity)
 {
-	preparePendingOpening();
+	ASSERT_NO_FATAL_FAILURE(prepareOrdinaryOpening());
 	ASSERT_FALSE(attackerSideHero->hasSpellbook());
-	ASSERT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1).heroActions, 1u);
-	ASSERT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1).orderActions, 1u);
-	const auto startedBeforeEvaluation = server.startedActions.size();
-
-	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
-		BattleSide::ATTACKER, 1.0f, 2);
-	ASSERT_TRUE(evaluator.canCastSpell())
-		<< "A pending Battle Plan is a mandatory Order choice, not an optional spell decision";
-	ASSERT_TRUE(evaluator.attemptCastingSpell(active, true))
-		<< "The opening choice must submit an Order without a spellbook or ordinary creature forecast";
-
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	const auto & selected = callback->submitted.front();
-	ASSERT_EQ(selected.actionType, EActionType::HERO_COMMAND);
-	ASSERT_EQ(selected.side, BattleSide::ATTACKER);
-	EXPECT_TRUE(heroCommands::isActive(selected.command));
-	EXPECT_EQ(server.startedActions.size(), startedBeforeEvaluation)
-		<< "AI evaluation must not mutate the authoritative battle before submitting its request";
-	EXPECT_TRUE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
-
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
-	EXPECT_EQ(server.startedActions.size(), startedBeforeEvaluation + 1);
-	EXPECT_EQ(server.startedActions.back().ba.actionType, EActionType::HERO_COMMAND);
-	EXPECT_EQ(battle()->getPreCombatOrderState(BattleSide::ATTACKER).phase,
-		PreCombatOrderState::Phase::COMPLETED);
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
+	EXPECT_EQ(resources.maximum, newHorizonsCommand::maximum(attackerSideHero->level, 1, true, 0));
+	const auto started = server.startedActions.size();
+	const auto before = gameState()->saveToMemory();
+	class PositiveValuation final : public heroOrderCandidates::Valuation
+	{
+	public:
+		float score(const heroOrderCandidates::ValuationRequest &) const override { return 1.0f; }
+	} valuation;
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	EXPECT_TRUE(evaluator.canCastSpell());
+	std::vector<PossibleSpellcast> candidates;
+	heroOrderCandidates::appendOrders(candidates, *callback, BattleID(0), BattleSide::ATTACKER, false, valuation);
+	ASSERT_FALSE(candidates.empty());
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(server.startedActions.size(), started);
+	const auto chosen = std::find_if(candidates.begin(), candidates.end(), [](const auto & value) { return value.command == HeroCommand::BRACE; });
+	ASSERT_NE(chosen, candidates.end());
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, chosen->command)));
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, resources.remaining - 1);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound()).heroActions, 0u);
 	EXPECT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
-	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1).heroActions, 1u);
+	EXPECT_EQ(battle()->battleActiveUnit(), active);
 }
 
-TEST_F(NewHorizonsBattlePlanAITest, RealActiveStackResolvesNativeOpeningBeforeCreatureAction)
+TEST_F(NewHorizonsBattlePlanAITest, ExhaustedBattlePlanSkipsOrderScoringAndRealAiStillActsWithItsCreature)
 {
-	ASSERT_NO_FATAL_FAILURE(preparePendingOpening());
-	ASSERT_FALSE(attackerSideHero->hasSpellbook());
-
-	int own = 0, opposing = 0;
-	for(const auto * unit : battle()->battleGetAllStacks())
-		(unit->unitSide() == BattleSide::ATTACKER ? own : opposing)
-			+= unit->getCount() * unit->creatureId().toCreature()->getAIValue();
-	const float ratio = opposing ? static_cast<float>(own) / opposing : 1.0f;
-	const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
-	const auto before = gameState()->saveToMemory();
-	const auto serialized = [](const auto & value)
+	ASSERT_NO_FATAL_FAILURE(prepareOrdinaryOpening());
+	const int capacity = battle()->getCommandResources(BattleSide::ATTACKER).maximum;
+	for(int used = 0; used < capacity; ++used)
 	{
-		CMemorySerializer memory;
-		memory.oser & value;
-		return memory.extractBuffer();
-	};
+		activateOwn();
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+			BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::BRACE)));
+		ASSERT_NO_FATAL_FAILURE(endRound());
+	}
+	activateOwn();
+	ASSERT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, 0);
+	ASSERT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound()).heroActions, 1u);
+	class CountingValuation final : public heroOrderCandidates::Valuation
+	{
+	public:
+		mutable unsigned calls = 0;
+		float score(const heroOrderCandidates::ValuationRequest &) const override { ++calls; return 1.0f; }
+	} valuation;
+	const auto serialized = [](const auto & value) { CMemorySerializer bytes; bytes.oser & value; return bytes.extractBuffer(); };
+	const auto before = gameState()->saveToMemory();
 	const auto randomBefore = serialized(*gameHandler->randomizer);
 	const auto fixtureBefore = serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
 	const auto ambientBefore = serialized(CRandomGenerator::getDefault());
-	std::vector<std::byte> directRequest;
+	std::vector<PossibleSpellcast> candidates;
+	for(const bool mandatory : {false, true})
+		heroOrderCandidates::appendOrders(candidates, *callback, BattleID(0), BattleSide::ATTACKER, mandatory, valuation);
+	EXPECT_TRUE(candidates.empty()); EXPECT_EQ(valuation.calls, 0u);
 	for(const bool enabled : {false, true})
 	{
-		callback->submitted.clear();
 		heroDecisionPressure::Experiment experiment;
-		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, ratio, horizon);
-		ASSERT_TRUE(evaluator.attemptCastingSpell(active, false, nullptr, nullptr, nullptr, nullptr,
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+		EXPECT_FALSE(evaluator.canCastSpell());
+		EXPECT_FALSE(evaluator.attemptCastingSpell(active, false, nullptr, nullptr, nullptr, nullptr,
 			enabled ? &experiment : nullptr));
-		ASSERT_EQ(callback->submitted.size(), 1u);
-		EXPECT_EQ(experiment.baselineAttempts, 0u);
-		EXPECT_FALSE(experiment.baselineReady);
-		const auto request = serialized(callback->submitted.front());
-		if(!enabled) directRequest = request;
-		else EXPECT_EQ(request, directRequest);
+		EXPECT_EQ(experiment.baselineAttempts, 0u); EXPECT_FALSE(experiment.baselineReady);
+		EXPECT_TRUE(callback->submitted.empty());
 		EXPECT_EQ(gameState()->saveToMemory(), before);
 		EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
 		EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
 		EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
 	}
-	callback->submitted.clear();
 	CBattleAI ai;
-	AutocombatPreferences preferences;
-	preferences.enableSpellsUsage = false;
+	AutocombatPreferences preferences; preferences.enableSpellsUsage = false;
 	ai.initBattleInterface(environment, callback, preferences);
-	ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
-		attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
+	ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0), attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
 	ai.activeStack(BattleID(0), active);
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_EQ(serialized(callback->submitted.front()), directRequest);
+	EXPECT_TRUE(callback->submitted.empty());
+	ASSERT_EQ(callback->unitActions.size(), 1u);
 	EXPECT_EQ(gameState()->saveToMemory(), before);
 	EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
 	EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
 	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
-	EXPECT_TRUE(callback->unitActions.empty());
-	const auto & chosen = callback->submitted.front();
-	ASSERT_EQ(chosen.actionType, EActionType::HERO_COMMAND);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), chosen));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->unitActions.front()));
 	EXPECT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
 }

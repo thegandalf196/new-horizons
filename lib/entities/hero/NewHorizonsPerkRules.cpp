@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "../../nativeRules/PreparedPilotRules.h"
 #include "NewHorizonsPerkRules.h"
+#include "../../battle/NewHorizonsElementalAttunement.h"
 #include "NewHorizonsNecromancyPolicy.h"
 #include "NewHorizonsHeroRules.h"
 
@@ -20,10 +22,9 @@
 
 namespace newHorizonsHeroes
 {
-bool crisisCommandProfileActive(const JsonNode & rules)
+bool crisisCommandProfileActive(const JsonNode &)
 {
-	const auto definition = perkDefinition(rules, "new-horizons:command", "new-horizons:command.crisisCommand");
-	return definition && definition->effect["status"].String() == "active";
+	return false;
 }
 
 void validateCrisisCommandProfileSerialization(const JsonNode & rules, bool supported)
@@ -96,7 +97,7 @@ void validateDetails(const JsonNode & node, const std::string & context)
 
 void validateRank(const JsonNode & rank, const std::string & context)
 {
-	fields(rank, {"description", "details", "effect"});
+	fields(rank, {"description", "details", "effect", "mechanics"});
 	validateDetails(rank, context);
 	require(rank["description"].isString() && !rank["description"].String().empty(), context + " description");
 	validateEffect(rank["effect"], context);
@@ -105,7 +106,7 @@ void validateRank(const JsonNode & rank, const std::string & context)
 void validatePerk(const JsonNode & node, const std::string & skillId, const std::string & context,
 	std::set<std::string> & identities)
 {
-	fields(node, {"id", "name", "requires", "description", "details", "effect"});
+	fields(node, {"id", "name", "requires", "description", "details", "effect", "mechanics"});
 	validateDetails(node, context);
 	for(const auto * key : {"id", "name", "requires", "description"})
 		require(node[key].isString() && !node[key].String().empty(), context + " nonempty " + key);
@@ -206,16 +207,31 @@ void validatePassiveFactionPolicies(const JsonNode & rules)
 	}
 }
 
+static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedPilotPerks * collector);
 void validatePerkRules(const JsonNode & rules)
+{
+	validatePerkRulesImpl(rules, nullptr);
+}
+std::shared_ptr<const nativeRules::PreparedPilotPerks> preparePilotPerkRules(const JsonNode & rules)
+{
+	auto result = std::make_shared<nativeRules::PreparedPilotPerks>();
+	validatePerkRulesImpl(rules, result.get());
+	return result;
+}
+
+static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedPilotPerks * collector)
 {
 	if(!usesPerkRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
-		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "connoisseurPolicy",
+		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "commandPolicyVersion", "elementalAttunementPolicy", "connoisseurPolicy",
 		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"});
 	validatePassiveFactionPolicies(rules);
 	quickStudyRerollInterval(rules);
+	require(rules["commandPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& rules["commandPolicyVersion"].Integer() == 1, "commandPolicyVersion");
+	newHorizonsElementalAttunement::validatePolicy(rules);
 	usesSylvanTactics(rules);
 	newHorizonsNecromancy::validatePolicy(rules);
 	require(integer(rules["schemaVersion"], PERK_SCHEMA_VERSION, PERK_SCHEMA_VERSION), "schemaVersion");
@@ -273,13 +289,17 @@ void validatePerkRules(const JsonNode & rules)
 		require(node["description"].isString() && !node["description"].String().empty(), "skill description");
 		fields(node["ranks"], {"basic", "advanced", "expert"});
 		for(const auto * rank : {"basic", "advanced", "expert"})
+		{
 			validateRank(node["ranks"][rank], key + " rank " + rank);
+			nativeRules::validatePilotRankRow(key, rank, node["ranks"][rank], collector);
+		}
 		require(node["perks"].isVector() && node["perks"].Vector().size() == PERK_CANONICAL_POOL_SIZE,
 			key + " must have ten perks");
 		std::array<size_t, 3> counts{};
 		for(size_t i = 0; i < node["perks"].Vector().size(); ++i)
 		{
 			validatePerk(node["perks"].Vector()[i], key, key + " perk " + std::to_string(i), identities);
+			nativeRules::validatePilotPerkRow(key, node["perks"].Vector()[i], collector);
 			const auto & prerequisite = node["perks"].Vector()[i]["requires"].String();
 			if(prerequisite == "basic")
 				++counts[0];

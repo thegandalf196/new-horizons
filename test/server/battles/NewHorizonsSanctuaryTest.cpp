@@ -246,10 +246,14 @@ TEST_F(NewHorizonsSanctuaryTest, AcceptedMovementAndOffensiveCreatureCastBreakSa
 	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::SPELLCASTER, BonusSource::CREATURE_ABILITY, 1, BonusSourceID(),
 		BonusSubtypeID(SpellID(SpellID::MAGIC_ARROW))));
+	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::CASTS, BonusSource::CREATURE_ABILITY, 1, BonusSourceID()));
+	ASSERT_TRUE(enemy->canCast());
 	const auto healthBefore = sanctified->getAvailableHealth();
 	spells::Target target{battle::Destination(sanctified)};
 	ASSERT_TRUE(submit(enemy, BattleAction::makeCreatureSpellcast(enemy, target, SpellID::MAGIC_ARROW)));
 	EXPECT_FALSE(hasSanctuary(enemy));
+	EXPECT_EQ(enemy->casts.available(), 0);
 	EXPECT_LT(sanctified->getAvailableHealth(), healthBefore);
 }
 

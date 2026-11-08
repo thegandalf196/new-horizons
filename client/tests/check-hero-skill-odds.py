@@ -18,7 +18,13 @@ assert 'move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()
 assert 'growthButton->setImage(AnimationPath::builtin("NH_info_button_small"))' in hero
 assert "class HeroSkillOddsInfoMark" not in hero, "Do not restore the floating vector mark"
 assert 'movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44)' in layout
-assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44)' in layout
+assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(728, 12, 64, 76)' in layout
+# Siege occupies the third top-right stat column after Morale and Luck.
+assert 'move(morale, Point(579, 33))' in layout
+assert 'move(luck, Point(661, 33))' in layout
+assert 'AnimationPath::builtin("NH_capability_siege_32")' in layout
+assert 'Rect(744, 40, 32, 32)' in layout
+assert 661 + 53 <= 728 and 744 + 32 <= 800
 data = read_resource("SPRITES/NH_hero_growth_entry_normal.png")
 width, height = struct.unpack(">II", data[16:24])
 assert (width, height) == (24, 24), "Legacy entry-control frame size changed"
@@ -31,7 +37,7 @@ info_mark_size = 16
 button_y = 176
 upper_row_bottom = 132 + 44
 first_skill_row = 192
-assert button_y >= upper_row_bottom, "Button overlaps the Movement/Siege row"
+assert button_y >= upper_row_bottom, "Button overlaps the Movement row"
 assert button_y + info_mark_size <= first_skill_row, "Button overlaps first skill row"
 assert 14 + 376 + info_mark_size <= 440, "Button leaves skills panel at maximum heading width"
 assert 'hero.getPrimaryGrowthRules()' in window

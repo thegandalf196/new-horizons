@@ -8,6 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "ActivationForfeit.h"
+#include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
+#include "../../lib/battle/NewHorizonsSpecialtyRoundEffects.h"
 #include "../../lib/spells/NewHorizonsMetamagicPoints.h"
 #include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/ArcaneInspirationCompletion.h"
@@ -35,7 +38,6 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
 using hypotheticLifecycleDiagnostics::LifecycleTimingScope;
@@ -50,13 +52,6 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	if(deploymentState.independent && deploymentState.activeSide() != BattleSide::NONE)
 		throw std::runtime_error("Cannot advance a battle round with unresolved deployment phase");
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		if(preCombatOrderStates.at(side).isUnresolved())
-			throw std::runtime_error("Cannot advance a battle round with unresolved Battle Plan choice");
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		if(doubleCommandStates.at(side).orderPending()
-			|| doubleCommandStates.at(side).secondWindReady())
-			throw std::runtime_error("Cannot advance a battle round with unresolved Double Command continuation");
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		if(projectedCastSpells[side]) projectedCastSpells[side] = 0;
@@ -74,6 +69,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	// BattleInfo grants opening effects their full duration in round one.
 	const bool firstRound = projectedRound == 0;
 	++projectedRound;
+	forfeitedActivations.clear();
 	advanceMetamagicPoints();
 	arcaneInspiration::advanceRound(*this, projectedRound);
 	seizeInitiative.nextRound(projectedRound);
@@ -136,9 +132,8 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	// pending ghosts and form restoration are already resolved; no activation occurs.
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
-		auto healing = static_cast<int64_t>(newHorizonsHeroes::ordinaryCreatureRoundHealing(*this, *unit));
-		if(healing > 0)
-			getForUpdate(unit->unitId())->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+		if(newHorizonsSpecialtyEvents::needsRoundEffects(*this, *unit, projectedRound))
+			newHorizonsSpecialtyEvents::applyRound(*this, *getForUpdate(unit->unitId()), projectedRound);
 	}
 	// Unlike opening unit enchantments, obstacle timers tick on every round
 	// transition. Authoritative BattleFlowProcessor then removes zero timers.
@@ -167,11 +162,11 @@ bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	auto unit = getForUpdate(unitId);
 	if(!unit || !unit->alive() || !unit->canMove() || unit->hadMorale || unit->defending
-		|| unit->waited() || unit->fear || battleGetMorale(unit.get()) <= 0
-		|| newHorizonsSwiftRebirth::blocksAdditionalActivation(*unit, getRound()))
+		|| unit->waited() || unit->fear || battleGetMorale(unit.get()) <= 0)
 		return false;
+	const bool forfeits = activationForfeit::pending(*this, *unit, BattleUnitTurnReason::MORALE);
 	nextTurn(unitId, BattleUnitTurnReason::MORALE);
-	return true;
+	return !forfeits;
 }
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
@@ -188,33 +183,27 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason, Hy
 void HypotheticBattle::nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason,
 	HypotheticLifecycleTiming * timing)
 {
-	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
-	const auto * unit = battleGetUnitByID(unitId);
-	if(!unit || !newHorizonsFrozen::forfeitsNormalActivation(*unit, reason))
-		throw std::invalid_argument("Deferred Frozen thaw requires a Frozen normal forfeiture");
-	nextTurnImpl(unitId, reason, true, timing);
+	nextTurnPreservingForfeit(unitId, reason, timing);
 }
 
 void HypotheticBattle::applyProjectedPoison(const std::shared_ptr<StackWithBonuses> & unit)
 {
 	const auto poisonOrigin = unit->physicalPoisonSpellOrigin();
-	auto poisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
+	const auto rawPoisonDamage = newHorizonsBulwark::physicalPoisonTickDamage(unit.get());
+	auto poisonDamage = rawPoisonDamage;
 	if(poisonOrigin == BattleSide::ATTACKER || poisonOrigin == BattleSide::DEFENDER)
 		poisonDamage = newHorizonsMetamagic::spellDamage(poisonDamage, nullptr, *this, unit.get(),
-			sideToPlayer(poisonOrigin));
-	if(poisonDamage > 0)
+			sideToPlayer(poisonOrigin), false);
+	poisonDamage = newHorizonsElementalAttunement::stoneboundPhysicalDamage(poisonDamage,
+		unit->elementalAttunementPassives().physicalReductionBasisPoints);
+	if(rawPoisonDamage > 0)
 	{
 		const bool wasAlive = unit->alive();
-		const auto rebirthSource = wasAlive ? captureElementalRebirthSource(*unit) : std::nullopt;
-		const bool nativeRebirth = hasReadyNativeRebirth(unit.get());
 		const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(*this, *unit);
 		unit->damage(poisonDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 		if(wasAlive && !unit->alive())
 			releaseSerpentBindingsForDeath(*unit);
 		if(destroyed) PhysicalStrikeProjection::completeDamagePacket(*this, std::span(&*destroyed, 1));
-		if(rebirthSource)
-			projectElementalRebirth(unit.get(), *rebirthSource,
-				wasAlive && !unit->alive(), unit->isClone(), nativeRebirth);
 		newHorizonsBulwark::advancePhysicalPoison(unit.get());
 		if(!unit->alive()) newHorizonsBulwark::clearPhysicalPoison(unit.get());
 		BattleStackAttacked injury;
@@ -236,7 +225,6 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	unit->moraleExtraActivation = getMoraleExtraDamagePercent() != 100 && reason == BattleUnitTurnReason::MORALE;
 	const bool redeploy = unit->defended() && !unit->armorerLastStandDefending;
 	const bool waited = unit->waited();
-	newHorizonsHeroicSpirit::beginActivation(*unit, reason);
 	prismaticVanguardAI::begin(*this, *unit, reason);
 	{
 		LifecycleTimingScope measurement(timing ? &timing->activationExpiryRemoval : nullptr);
@@ -278,6 +266,21 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	if(maintenanceHealing > 0)
 		unit->heal(maintenanceHealing, EHealLevel::HEAL, EHealPower::PERMANENT);
 
+	if(!unit->isTimeStopped() && !unit->waiting && unit->hasBonusOfType(BonusType::POISON))
+	{
+		const auto health = unit->getBonus(Selector::source(BonusSource::SPELL_EFFECT,
+			BonusSourceID(SpellID(SpellID::POISON))).And(Selector::type()(BonusType::STACK_HEALTH)));
+		if(health)
+		{
+			auto next = *health;
+			next.val = newHorizonsSpecialtyProcs::poisonRampValue(*unit, *health);
+			if(next.val < health->val)
+			{
+				unit->removeUnitBonus(std::vector<Bonus>{*health});
+				unit->addUnitBonus({next});
+			}
+		}
+	}
 	applyProjectedPoison(unit);
 	if(unit->bulwarkMireGripApplied)
 	{
@@ -315,16 +318,8 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 			extra = secondWind && secondWind->secondWindActive && secondWind->primaryTargetUnitId == unitId;
 		}
 	}
-	if(extra && newHorizonsSwiftRebirth::blocksAdditionalActivation(*unit, getRound()))
-		return;
 	if(reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
-	{
 		seizeInitiative.begin(unitId, true);
-		if(newHorizonsSwiftRebirth::normalActivationCompleted(*unit, getRound()))
-			return;
-		if(const auto next = newHorizonsSwiftRebirth::reserveNormalActivationPlan(*unit, getRound()))
-			updateUnitBonus(unitId, {*next});
-	}
 	if(reason == BattleUnitTurnReason::TURN_QUEUE)
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
@@ -338,16 +333,19 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 	if(extra)
 		seizeInitiative.begin(unitId, false);
 	const bool frozenNormalSlot = newHorizonsFrozen::forfeitsNormalActivation(*unit, reason);
-	if(frozenNormalSlot || (unit->isTimeStopped()
+	const bool forfeits = activationForfeit::pending(*this, *unit, reason);
+	if(battleBeginsActivation(unit.get(), reason))
+	{
+		forfeitedActivations.erase(unitId);
+		if(forfeits) forfeitedActivations.emplace(unitId, ForfeitedActivation{projectedRound, reason});
+	}
+	if(forfeits || (unit->isTimeStopped()
 		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)))
 	{
-		const auto next = newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, getRound());
-		if(next)
-			updateUnitBonus(unitId, {*next});
-		newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId, frozenNormalSlot);
+		newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId, forfeits);
 	}
 	// An extra opportunity cannot spend the normal-slot incapacitation receipt.
-	if(newHorizonsFrozen::isFrozen(*unit) && !frozenNormalSlot)
+	if(newHorizonsFrozen::isFrozen(*unit) && !frozenNormalSlot && !forfeits)
 		return;
 	if(reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
@@ -414,11 +412,10 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 			battleGetOwnerHero(unit.get()), unit.get(), reason));
 
 	unit->afterGetsTurn(reason);
-	if(frozenNormalSlot)
+	if(forfeits)
 	{
 		unit->movedThisRound = true;
-		if(!deferFrozenThaw)
-			unit->removeUnitBonus(newHorizonsFrozen::removalPlan(*unit));
+		if(!deferFrozenThaw) completeForfeitedActivation(unitId);
 	}
 	if(const auto owned = initialExportSubject())
 		owned->captureBranchValues(*this);
@@ -427,8 +424,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 {
 	auto unit = getForUpdate(activeStack->unitId());
-	if(const auto next = newHorizonsSwiftRebirth::reserveNormalActivationPlan(*unit, getRound()))
-		updateUnitBonus(unit->unitId(), {*next});
+
 
 	resetActiveUnit();
 	newHorizonsForestAmbush::acceptWait(*this, *unit);
@@ -450,7 +446,7 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 		owned->captureBranchValues(*this);
 }
 
-void HypotheticBattle::completeSwiftNormalActivation(uint32_t unitId)
+void HypotheticBattle::completeNormalActivation(uint32_t unitId)
 {
 	// Forecast consumers call this only at a completed activation boundary,
 	// never for Wait/continuations; stasis passes use the separate nextTurn path.
@@ -459,6 +455,5 @@ void HypotheticBattle::completeSwiftNormalActivation(uint32_t unitId)
 	unit->forestAmbush.finishActivation();
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		fortuneStates.at(side).tactics.endActivation();
-	if(const auto next = newHorizonsSwiftRebirth::completeNormalActivationPlan(*unit, getRound()))
-		updateUnitBonus(unitId, {*next});
+
 }

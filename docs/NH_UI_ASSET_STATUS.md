@@ -24,7 +24,7 @@ Inspect native parchment/dark-status contrast, alpha, clipping and compact detai
 
 The creature encyclopedia shortcut reuses existing button art and resolved scoped identity, preserves the underlying creature window, and excludes ephemeral/Commander/special windows. Bounded Linux Pikeman evidence covers opening/closing and captured Rank/Initiative/Leadership; all custom/upgraded/pregame/Windows breadth is separate.
 
-Heroic Spirit's Order-only opportunity is named separately from flexible Hero Action availability. Storm targeting retains ordered badges/readback, Undo, Cancel without spend and paid Confirm; Hold footprints use issue-time head/rear geometry. Earlier failed redraw captures are not current successful evidence.
+The hero-action interface displays remaining/maximum Command separately from the shared Hero Action. Heroic Spirit modifies the accepted Order's efficiency snapshot and creates no additional action or chooser. Storm targeting retains ordered badges/readback, Undo, Cancel without spend and paid Confirm; Hold footprints use issue-time head/rear geometry. Earlier failed redraw captures are not current successful evidence.
 
 Selected Cabir/Magi/Wisp sprites, portraits/projectiles and Guild/school composites retain their origin/rights records. No different icon demonstrates a distinct specialty mechanic. New engine layout remains governed by [UI guide](NH_HOMM3_UI_STYLE_GUIDE.md); offline [editor](NH_UI_EDITOR.md) previews are not runtime adapters.
 

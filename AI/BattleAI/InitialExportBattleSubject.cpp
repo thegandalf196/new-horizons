@@ -79,6 +79,16 @@ void InitialExportBattleSubject::setPreCombatOrderState(BattleSide, const PreCom
 	rejectSourceMutation();
 }
 
+void InitialExportBattleSubject::setCommandResources(BattleSide, const newHorizonsCommand::ResourceState &)
+{
+	rejectSourceMutation();
+}
+
+void InitialExportBattleSubject::setElementalAttunementMask(BattleSide, uint8_t)
+{
+	rejectSourceMutation();
+}
+
 void InitialExportBattleSubject::setDeploymentState(const BattleDeploymentState &)
 {
 	rejectSourceMutation();
@@ -239,15 +249,7 @@ void InitialExportBattleSubject::setMetamagicPointState(BattleSide, const Metama
 	rejectSourceMutation();
 }
 
-void InitialExportBattleSubject::setRebirthChainUsed(BattleSide, bool)
-{
-	rejectSourceMutation();
-}
 
-void InitialExportBattleSubject::setPhoenixSparkUsed(BattleSide, bool)
-{
-	rejectSourceMutation();
-}
 
 void InitialExportBattleSubject::setLuckSerendipityState(BattleSide, const LuckSerendipityState &)
 {

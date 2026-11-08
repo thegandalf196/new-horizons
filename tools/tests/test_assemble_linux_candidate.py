@@ -342,7 +342,7 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         (self.resources / 'config/private.json').write_bytes(b'{}')
         self.rejected('inventory differs')
         (self.resources / 'config/private.json').unlink()
-        (self.resources / 'scripts/damage/damageCalculator.lua').unlink()
+        (self.resources / 'config/newHorizonsMagic.json').unlink()
         self.rejected('Missing required')
 
     def test_missing_or_changed_notice_refused(self):

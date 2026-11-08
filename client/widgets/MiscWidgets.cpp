@@ -836,8 +836,11 @@ void MoraleLuckBox::set(const AFactionMember * node)
 			: (morale ? "IMRL42" : "ILCK42");
 		image = std::make_shared<CAnimImage>(AnimationPath::builtin(imageName),
 			std::clamp(*component.value + 3, 0, 6));
-		image->moveBy(Point(pos.w / 2 - image->pos.w / 2, pos.h / 2 - image->pos.h / 2));
-		if(settings["general"]["enableUiEnhancements"].Bool())
+		image->moveBy(Point(pos.w / 2 - image->pos.w / 2, (pos.h - (centeredReadout ? 16 : 0)) / 2 - image->pos.h / 2));
+		if(centeredReadout)
+			label = std::make_shared<CLabel>(pos.w / 2, pos.h - 8, FONT_SMALL, ETextAlignment::CENTER,
+				Colors::WHITE, std::to_string(*component.value));
+		else if(settings["general"]["enableUiEnhancements"].Bool())
 			label = std::make_shared<CLabel>((image->pos.topLeft() - pos.topLeft()).x + (small ? 28 : 40),
 				(image->pos.topLeft() - pos.topLeft()).y + (small ? 20 : 38), EFonts::FONT_TINY,
 				ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(*component.value));
@@ -899,8 +902,11 @@ void MoraleLuckBox::set(const AFactionMember * node)
 		imageName = morale ? "IMRL42" : "ILCK42";
 
 	image = std::make_shared<CAnimImage>(AnimationPath::builtin(imageName), std::clamp(*component.value + 3, 0, 6));
-	image->moveBy(Point(pos.w/2 - image->pos.w/2, pos.h/2 - image->pos.h/2)); //center icon
-	if(settings["general"]["enableUiEnhancements"].Bool())
+	image->moveBy(Point(pos.w/2 - image->pos.w/2, (pos.h - (centeredReadout ? 16 : 0))/2 - image->pos.h/2)); //center icon
+	if(centeredReadout)
+		label = std::make_shared<CLabel>(pos.w / 2, pos.h - 8, FONT_SMALL, ETextAlignment::CENTER,
+			Colors::WHITE, std::to_string(morale ? modifierList->totalValue() : *component.value));
+	else if(settings["general"]["enableUiEnhancements"].Bool())
 		label = std::make_shared<CLabel>((image->pos.topLeft() - pos.topLeft()).x + (small ? 28 : 40), (image->pos.topLeft() - pos.topLeft()).y + (small ? 20 : 38), EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(morale ? modifierList->totalValue() : *component.value));
 }
 

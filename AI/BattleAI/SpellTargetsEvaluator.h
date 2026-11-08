@@ -19,6 +19,7 @@
 class Environment;
 class CBattleInfoCallback;
 struct ReachabilityInfo;
+namespace physicalCleanseAI { class MobilityQuery; }
 
 namespace spells::effects
 {
@@ -39,6 +40,7 @@ public:
 		float hostileDamageValue = 0.0f;
 		float friendlyDamageValue = 0.0f;
 		float inspirationValue = 0.0f;
+		float runicSpillValue = 0.0f;
 	};
 
 	/// Existing negative magical application forecast, including native marks
@@ -81,7 +83,7 @@ public:
 	/// Selects the most valuable legal negative source groups for each friendly
 	/// stack around a canonical Purify center. The result is a read-only snapshot.
 	static PurifySelection purifySelection(const spells::Mechanics * spellMechanics,
-		const spells::Target & target);
+		const spells::Target & target, physicalCleanseAI::MobilityQuery * mobility = nullptr);
 	/// Returns a deterministic pressure value for a canonical New Horizons Land
 	/// Mine placement.  The value is deliberately read-only and only considers
 	/// the live battle snapshot; it is used by BattleAI when a mine has no
@@ -141,7 +143,8 @@ public:
 		const spells::Target & target,
 		PlayerColor scoringPlayer,
 		std::shared_ptr<CBattleInfoCallback> battleState = {}, const Environment * environment = nullptr,
-		const heroSpellProjection::OutcomeValue & outcomeValue = heroSpellProjection::OutcomeValue());
+		const heroSpellProjection::OutcomeValue & outcomeValue = heroSpellProjection::OutcomeValue(),
+		const std::shared_ptr<HypotheticBattle> & runicBoard = {});
 	/// Scores a battle-form cast as the signed mean reduction in the target's
 	/// reachable offensive pressure across the complete shared candidate pool.
 	/// Every outcome is projected on a detached battle with a fresh damage cache;

@@ -228,13 +228,14 @@ public:
 
 class RangedAttackAnimation : public AttackAnimation
 {
-	void setAnimationGroup();
-	void initializeProjectile();
 	void emitProjectile();
 	void emitExplosion();
 
 protected:
 	bool projectileEmitted;
+	bool presentationAborted = false;
+	void setAnimationGroup();
+	virtual void initializeProjectile();
 
 	virtual ECreatureAnimType getUpwardsGroup() const = 0;
 	virtual ECreatureAnimType getForwardGroup() const = 0;
@@ -258,11 +259,13 @@ class ShootingAnimation : public RangedAttackAnimation
 	ECreatureAnimType getForwardGroup() const override;
 	ECreatureAnimType getDownwardsGroup() const override;
 
+	void initializeProjectile() override;
 	void createProjectile(const Point & from, const Point & dest) const override;
 	uint32_t getAttackClimaxFrame() const override;
 
 public:
 	ShootingAnimation(BattleInterface & owner, const CStack * attacker, BattleHex dest, const CStack * defender);
+	bool init() override;
 
 };
 

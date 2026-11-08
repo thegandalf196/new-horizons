@@ -55,6 +55,7 @@ private:
 			unit.noQuarterMoraleActivationsRemaining,
 			unit.personalBloodrageIncrement,
 			unit.veteranCohesionEarned,
+			unit.ordinarySpecialtyLastRound,
 			unit.capacityRegenerationRemainderTenths,
 			unit.timeStopTurnConsumedFlag,
 			unit.regenerationRateMillionths,

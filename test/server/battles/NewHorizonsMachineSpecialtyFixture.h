@@ -13,11 +13,9 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-		for(const char * key : {"gunneryProfessorInitiativeFlat", "gunneryProfessorFollowUpBonusPoints", "heavyBatterySiegeTermBonusPercent"})
-		{
-			if(captureMode == 1) policy.Struct().erase(key);
-			if(captureMode == 2) policy[key].Integer() = 0;
-		}
+		const char * key = preparingHero == "core:torosar" ? "incendiaryShotPolicyVersion" : "heavyBatterySiegeTermBonusPercent";
+		if(captureMode == 1) policy.Struct().erase(key);
+		if(captureMode == 2) policy[key].Integer() = 0;
 		if(!keepMasterGunner)
 		{
 			auto & perks = rules["startingSkills"]["startingDevelopmentProfiles"][preparingHero]["startingPerks"].Vector();

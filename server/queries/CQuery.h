@@ -38,7 +38,7 @@ enum class QueryType : uint8_t
 	HeroMovement,
 	TimerPause,
 	Generic,
-	LuaScript,
+	MapEvent, // Retains the historical map-script query ordinal.
 	HeroMasteryDialog,
 	NecromancyChoice,
 	Unknown

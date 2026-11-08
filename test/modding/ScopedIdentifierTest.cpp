@@ -34,6 +34,11 @@ TEST(ScopedIdentifierTest, QualifiedDuplicateNamesResolveAndUnqualifiedNameIsRej
 	EXPECT_EQ(*coreID, 37);
 	EXPECT_EQ(*testModID, 73);
 	EXPECT_FALSE(identifiers.getIdentifier(ModScope::scopeGame(), "skill", "identifierScopeProbe").has_value());
+
+	EXPECT_EQ(identifiers.getIdentifier(ModScope::scopeGame(), "skill", "core:identifierScopeProbe", true), coreID);
+	EXPECT_FALSE(identifiers.getIdentifier(ModScope::scopeGame(), "skill", "core:identifierscopeprobe", true).has_value());
+	EXPECT_EQ(identifiers.getIdentifierCaseInsensitive(ModScope::scopeGame(), "skill", "core:IdEnTiFiErScOpEpRoBe", true), coreID);
+	EXPECT_FALSE(identifiers.getIdentifierCaseInsensitive(ModScope::scopeGame(), "skill", "core:missingIdentifierScopeProbe", true).has_value());
 }
 
 }

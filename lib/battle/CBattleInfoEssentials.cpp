@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsCommandResources.h"
 #include "../spells/NewHorizonsMetamagicMarks.h"
 #include "PassiveDivineMandate.h"
 #include "CBattleInfoEssentials.h"
@@ -226,20 +227,17 @@ std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battle
 	BattleSide side) const
 {
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE))
+		|| !newHorizonsCommand::usesRules(getBattle()->getHeroCommandRules()))
 		return {};
 	const auto round = battleGetRound();
 	const auto & allowances = callbackAllowanceLedger(*this, side);
-	if(round < 0 || allowances.currentRound != round)
+	const auto & resources = getBattle()->getCommandResources(side);
+	if(round < 0 || allowances.currentRound != round || !resources.initialized || resources.remaining == 0)
 		return {};
-	const auto mandate = battleGetDivineMandateStatus(side);
-	const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
 	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round,
-		[this, side, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
-		{
-			return getBattle()->getCrisisCommandState().allowsGrant(side, grant)
-				&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
-		});
+		[](const HeroActionAllowanceState::Grant & grant)
+		{ return grant.allowance == HeroActionAllowanceState::AllowanceKind::HERO
+			&& grant.source == HeroActionAllowanceState::GrantSource::ROUND; });
 }
 
 bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side, SpellID spell) const

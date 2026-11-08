@@ -82,6 +82,7 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 	}
 
 	const auto previousProvider = adjacencyProvider(*changedStack);
+	const auto previousCount = changedStack->getCount();
 	bool killed = (-healthDelta) >= changedStack->getAvailableHealth();//todo: check using alive state once rebirth will be handled separately
 
 	bool resurrected = !changedStack->alive() && healthDelta > 0;
@@ -103,9 +104,10 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 		changedStack->removeBonusesRecursive(Bonus::UntilBeingAttacked);
 	}
 
-	if(healthDelta < 0)
+	if(healthDelta < 0 || changedStack->getCount() != previousCount)
 	{
-		changedStack->nodeHasChanged();	//bonuses with TIMES_STACK_SIZE updater may change
+		// Current-count updaters must refresh after losses AND restoration.
+		changedStack->nodeHasChanged();
 	}
 
 	resurrected = resurrected || (killed && changedStack->alive());

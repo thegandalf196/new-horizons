@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "NewHorizonsCommandResources.h"
 #include "CBattleInfoCallback.h"
 #include "DamagePayloadPreparation.h"
 #include "IBattleState.h"
@@ -29,6 +30,8 @@ bool eligibleDamageOrderUnit(const battle::Unit * unit)
 void CBattleInfoCallback::prepareDamageOrders(const BattleAttackInfo & info,
 	DamagePayloadPreparation & p) const
 {
+	if(newHorizonsCommand::unbrokenRanks(*this, info.defender))
+		p.payload.commandBeneficiaryDamageMultiplierPercent = 80;
 	if(heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
 		&& info.attacker && info.defender && !info.attacker->isGhost() && !info.defender->isGhost())
 	{

@@ -26,6 +26,9 @@ newHorizonsHeroes::PerkState state()
 	result.rules.Struct().erase("sylvanTacticsPolicy");
 	result.rules.Struct().erase("necromancyPolicy");
 	result.rules.Struct().erase("quickStudyPolicy");
+	// Pure legacy offer states do not carry later faction or reroll captures.
+	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "connoisseurPolicy"})
+		result.rules.Struct().erase(key);
 	return result;
 }
 
@@ -464,6 +467,8 @@ TEST(NewHorizonsPerkState, HistoricalRetiredSpellBufferMigratesToSpellEchoAcross
 	constexpr auto skill = "new-horizons:metamagic";
 	constexpr auto retired = "new-horizons:metamagic.spellBuffer";
 	constexpr auto replacement = "new-horizons:metamagic.spellEcho";
+	const JsonNode historical(JsonPath::builtin("test/newHorizonsHistoricalFactionPerks"));
+	legacy.rules["skills"][skill] = historical["skills"][skill];
 	for(auto & perk : legacy.rules["skills"][skill]["perks"].Vector())
 	{
 		if(perk["id"].String() != replacement && perk["id"].String() != retired)
@@ -523,6 +528,8 @@ TEST(NewHorizonsPerkState, RevivedSpellBufferSurvivesJsonAndBinaryLoadsForNewOrU
 		auto current = state();
 		current.rules["rulesetVersion"].Integer() = version;
 		current.rules["sourceSha256"].String() = sourceSha256;
+		const JsonNode historical(JsonPath::builtin("test/newHorizonsHistoricalFactionPerks"));
+		current.rules["skills"][skill] = historical["skills"][skill];
 		for(auto & perk : current.rules["skills"][skill]["perks"].Vector())
 		{
 			if(perk["id"].String() != replacement && perk["id"].String() != revived)

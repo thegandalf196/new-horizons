@@ -133,6 +133,7 @@ struct DLL_LINKAGE HeroOrderState
 	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
 	std::optional<newHorizonsHeroLuck::Receipt> heroMorale;
 	uint32_t heroMoraleActionGrantId = 0;
+	int32_t heroicSpiritEfficiencyBonusPercent = 0;
 	bool luckyDay() const { return heroLuck && heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay); }
 	template<typename Handler> void validateHeroLuckSerialization(Handler & h) const
 	{
@@ -198,7 +199,7 @@ struct DLL_LINKAGE HeroOrderState
 	/// Combined Divine Mandate efficiency used by existing Order formulas.
 	int32_t divineMandateEfficiencyBonusPercent() const
 	{
-		return sacredCommandEfficiencyBonusPercent + knightlySequenceEfficiencyBonusPercent
+		return heroicSpiritEfficiencyBonusPercent + sacredCommandEfficiencyBonusPercent + knightlySequenceEfficiencyBonusPercent
 			+ (passiveDivineMandate
 				? newHorizonsPassiveDivineMandate::orderEfficiencyPercent(*passiveDivineMandate) : 0);
 	}
@@ -279,6 +280,12 @@ struct DLL_LINKAGE HeroOrderState
 		if(h.saving && knightlySequenceEfficiencyBonusPercent != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_KNIGHTLY_SEQUENCE))
 			throw std::runtime_error("Cannot discard Knightly Sequence Order snapshot");
+		if(h.saving && heroicSpiritEfficiencyBonusPercent != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+			throw std::runtime_error("Cannot discard Heroic Spirit issuance efficiency");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+			h & heroicSpiritEfficiencyBonusPercent;
+		else if(!h.saving) heroicSpiritEfficiencyBonusPercent = 0;
 		if(h.saving)
 			validateShape();
 		h & command;

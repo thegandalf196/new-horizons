@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "CUnitState.h"
 #include "../bonuses/BonusList.h"
+#include "../bonuses/NativeBonusGraphAccess.h"
 #include "../spells/CSpell.h"
 #include "../spells/NewHorizonsSorcery.h"
 namespace battle
@@ -12,13 +13,34 @@ std::optional<bool> CUnitState::legacyTimeStopSpellMatch(SpellID spell) const
 }
 bool CUnitState::isTimeStopped() const
 {
-	if(hasBonusOfType(BonusType::TIME_STOP))
+	// Time Stop markers are never suppressed. A suppression marker still needs
+	// the ordinary legacy query below, which selects before suppression stacking.
+	static const CSelector markers = Selector::type()(BonusType::TIME_STOP).Or(
+		Selector::type()(BonusType::NONE).And(Selector::sourceType()(BonusSource::SPELL_EFFECT)))
+		.Or(Selector::type()(BonusType::CREATURE_ABILITY_SUPPRESSION));
+	static const std::string cacheKey = "battle.CUnitState.timeStopMarkers";
+	TConstBonusListPtr effects;
+	{
+		NativeBonusGraphAccess graphAccess;
+		effects = getBonusesBeforeCreatureAbilitySuppression(markers, cacheKey, false);
+	}
+	// A dedicated marker wins before consulting any captured legacy identity.
+	if(vstd::contains_if(*effects, [](const std::shared_ptr<Bonus> & bonus)
+	{
+		return bonus && bonus->type == BonusType::TIME_STOP;
+	}))
 		return true;
 
-	// Compatibility with the original data-only fallback marker.  New saves
-	// use the dedicated TIME_STOP bonus, but an in-flight legacy battle may
-	// still carry a hidden NONE marker from the Lua implementation.
-	const auto effects = getBonuses(Selector::sourceType()(BonusSource::SPELL_EFFECT));
+	// Under suppression, same-type bonuses from other sources can stack away a
+	// legacy marker in the pre-suppression cache. Preserve the original query's
+	// source selection and stacking order; even an unrecognized marker falls back.
+	if(vstd::contains_if(*effects, [](const std::shared_ptr<Bonus> & bonus)
+	{
+		return bonus && bonus->type == BonusType::CREATURE_ABILITY_SUPPRESSION;
+	}))
+		effects = getBonuses(Selector::sourceType()(BonusSource::SPELL_EFFECT));
+
+	// Preserve recognition of the original data-only NONE spell marker.
 	return vstd::contains_if(*effects, [this](const std::shared_ptr<Bonus> & bonus)
 	{
 		if(!bonus || bonus->type != BonusType::NONE || !bonus->sid.as<SpellID>().hasValue())

@@ -8,6 +8,23 @@
 #include <algorithm>
 namespace attackPreviewMovement
 {
+TargetCells targetCells(const BattleAttackInfo & attack, const battle::Unit & requested,
+	BattleHex from, bool aerial, const CBattleInfoCallback & state)
+{
+	TargetCells result;
+	if(attack.shooting || aerial) result.cells.insert(requested.getPosition());
+	else
+	{
+		result.cells = state.meleeAttackHexes(attack.attacker, &requested, from);
+		if(result.cells.empty() && state.isMeleeAttackPossibleWithLongReach(attack.attacker, &requested, from))
+		{
+			result.cells.insert(requested.getPosition());
+			result.longReach = true;
+		}
+	}
+	return result;
+}
+
 std::optional<AttackPossibility> project(const BattleAttackInfo & attackInfo, BattleHex hex,
 	DamageCache & damageCache, const std::shared_ptr<CBattleInfoCallback> & state, bool perfectMoment,
 	const std::optional<newHorizonsAerialSupremacy::Excursion> & aerial, const dreadCavalryAI::Action & dreadAction, bool validatedVoluntaryApproach, BattleHex approachOrigin)

@@ -25,6 +25,8 @@
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
 #include "MetamagicPointState.h"
+#include "NewHorizonsCommandResources.h"
+#include "NewHorizonsElementalAttunement.h"
 #include "WisdomCombatState.h"
 #include "NewHorizonsSeizeInitiative.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
@@ -208,6 +210,17 @@ public:
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 	virtual bool getTemporalFieldUsed(BattleSide side) const { return false; }
 	virtual bool getCounterspellArmed(BattleSide side) const { return false; }
+	virtual const newHorizonsCommand::ResourceState & getCommandResources(BattleSide) const
+	{
+		static const newHorizonsCommand::ResourceState empty;
+		return empty;
+	}
+	virtual uint8_t getElementalAttunementMask(BattleSide) const { return 0; }
+	virtual const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide) const
+	{
+		static const newHorizonsElementalAttunement::Profile empty;
+		return empty;
+	}
 	virtual const MetamagicPointState & getMetamagicPointState(BattleSide) const
 	{
 		static const MetamagicPointState empty;
@@ -395,6 +408,10 @@ public:
 	{
 		throw std::runtime_error("Battle state cannot record Cross-School Formula");
 	}
+	virtual void setCommandResources(BattleSide, const newHorizonsCommand::ResourceState &)
+	{ throw std::runtime_error("Battle does not support finite Command resources"); }
+	virtual void setElementalAttunementMask(BattleSide, uint8_t)
+	{ throw std::runtime_error("Battle does not support elemental Attunement"); }
 	virtual void setMetamagicPointState(BattleSide, const MetamagicPointState &)
 	{
 		throw std::logic_error("Battle state cannot record Metamagic points");

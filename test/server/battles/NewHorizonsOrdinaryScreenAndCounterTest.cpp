@@ -13,6 +13,7 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../../lib/battle/NewHorizonsFrozen.h"
+#include "../../../lib/battle/NewHorizonsSpecialtyEvents.h"
 #include "../../../lib/spells/CSpell.h"
 #if ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/HypotheticBattle.h"
@@ -37,10 +38,10 @@ protected:
 		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
-		for(const char * key : {"prismaticScreenReductionPercent", "evasiveFlightReductionPercent", "ridersExploitDamagePercent"})
+		for(const char * key : {"prismaticScreenReductionPercent", "evasiveFlightReductionPercentPerHex", "ridersExploitDamagePercent"})
 			if(historical)
 				rules["additionalSpecialties"]["ordinaryCreatureSpecialties"].Struct().erase(key);
-			else if(zero)
+			else if(zero && std::string_view(key) != "evasiveFlightReductionPercentPerHex")
 				rules["additionalSpecialties"]["ordinaryCreatureSpecialties"][key].Integer() = 0;
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
@@ -134,13 +135,15 @@ TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, PrismaticScreenKeepsNativeArmyUn
 	EXPECT_EQ(spell->adjustRawDamage(defenderSideHero, ally, 10000, 0, 0, 100, true, true, false), 8500);
 	EXPECT_EQ(spell->adjustRawDamage(attackerSideHero, victim, 10000, 0, 0, 100, true, true, false), 10000);
 }
-TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, EvasiveFlightProtectsOnlyOrdinaryPrimaryCounterDamage)
+TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, EvasiveFlightUsesVoluntaryTravelOnlyForItsOrdinaryPrimaryCounter)
 {
 	prepare("core:korbac", "core:fireDragonFly");
 	BattleAttackInfo attack(victim, actor, 0, false);
 	const auto unprotected = battle()->calculateDmgRange(attack);
 	attack.retaliation = true;
-	EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureProtectionPercent(*battle(), attack), 20);
+	EXPECT_EQ(newHorizonsSpecialtyEvents::retaliationReduction(*battle(), attack), 0);
+	attack.defenderVoluntaryTravelDistance = 4;
+	EXPECT_EQ(newHorizonsSpecialtyEvents::retaliationReduction(*battle(), attack), 12);
 	const auto protectedRange = battle()->calculateDmgRange(attack);
 	EXPECT_LT(protectedRange.damage.min, unprotected.damage.min);
 	EXPECT_LT(protectedRange.damage.max, unprotected.damage.max);
@@ -152,7 +155,7 @@ TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, EvasiveFlightProtectsOnlyOrdinar
 		if(exclusion == 2) excluded.bracePreemptive = true;
 		if(exclusion == 3) excluded.preemptiveDamagePercent = 50;
 		if(exclusion == 4) excluded.physicalDamage = false;
-		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureProtectionPercent(*battle(), excluded), 0);
+		EXPECT_EQ(newHorizonsSpecialtyEvents::retaliationReduction(*battle(), excluded), 0);
 	}
 }
 TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, RidersExploitReadsAllowanceRatherThanAttackBlockingOrTemporaryInability)
@@ -227,14 +230,15 @@ TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, ProjectedEvasiveFlightUsesEffect
 	const auto counter = branch->getForUpdate(victim->unitId());
 	BattleAttackInfo reaction(counter.get(), fly.get(), 0, false);
 	reaction.retaliation = true;
-	EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureProtectionPercent(*branch, reaction), 20);
+	reaction.defenderVoluntaryTravelDistance = 4;
+	EXPECT_EQ(newHorizonsSpecialtyEvents::retaliationReduction(*branch, reaction), 12);
 	fly->addUnitBonus({marker(BonusType::HYPNOTIZED)});
 	counter->addUnitBonus({marker(BonusType::HYPNOTIZED)});
-	EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureProtectionPercent(*branch, reaction), 0);
+	EXPECT_EQ(newHorizonsSpecialtyEvents::retaliationReduction(*branch, reaction), 0);
 }
 #endif
 
-TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, EachNewOptionalKeyIncludingZeroRejects1144Capture)
+TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, EachOptionalPolicyRejectsUnsupportedCapture)
 {
 	const auto context = [](ESerializationVersion version)
 	{
@@ -248,9 +252,9 @@ TEST_F(NewHorizonsOrdinaryScreenAndCounterTest, EachNewOptionalKeyIncludingZeroR
 		"retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"};
 	std::erase_if(policy.Struct(), [&](const auto & row) { return !legacy.contains(row.first); });
 	EXPECT_NO_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(development, context(ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES)));
-	for(const char * key : {"prismaticScreenReductionPercent", "evasiveFlightReductionPercent", "ridersExploitDamagePercent"})
+	for(const char * key : {"prismaticScreenReductionPercent", "evasiveFlightReductionPercentPerHex", "ridersExploitDamagePercent"})
 	{
-		policy[key].Integer() = 0;
+		policy[key].Integer() = std::string_view(key) == "evasiveFlightReductionPercentPerHex" ? 3 : 0;
 		EXPECT_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(development, context(ESerializationVersion::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES)), std::runtime_error);
 		EXPECT_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(development, context(ESerializationVersion::NEW_HORIZONS_ADJACENCY_FILTERS)), std::runtime_error);
 		EXPECT_NO_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(development, context(ESerializationVersion::CURRENT)));

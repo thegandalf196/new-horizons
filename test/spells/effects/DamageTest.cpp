@@ -12,9 +12,11 @@
 #include "EffectFixture.h"
 
 #include <vstd/RNG.h>
+#include <stdexcept>
 
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/json/JsonNode.h"
+#include "../../../lib/spells/CSpell.h"
 
 #include "mock/mock_UnitEnvironment.h"
 
@@ -167,9 +169,24 @@ public:
 
 
 protected:
+	battle::UnitFake & addDamageCopyUnit()
+	{
+		auto & unit = unitsFake.add(BattleSide::ATTACKER);
+		const CreatureID id(0);
+		const auto * creature = id.toCreature();
+		if(!creature) throw std::runtime_error("Damage fixture creature is unavailable");
+		EXPECT_CALL(unit, unitType()).WillRepeatedly(Return(creature));
+		EXPECT_CALL(unit, creatureId()).WillRepeatedly(Return(id));
+		return unit; // Identity only: each case still owns its explicit health bonuses.
+	}
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		const SpellID spell(SpellID::MAGIC_ARROW);
+		ASSERT_NE(spell.toSpell(), nullptr);
+		EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(spell.toSpell()));
+		EXPECT_CALL(mechanicsMock, getSpellId()).WillRepeatedly(Return(spell));
+		EXPECT_CALL(mechanicsMock, getUnitCaster()).WillRepeatedly(Return(nullptr));
 	}
 };
 
@@ -361,7 +378,7 @@ TEST_F(DamageApplyTest, GetHealthChangeUsesInjuredUnitCopyForCasualties)
 	const int32_t unitAmount = 25;
 	const int32_t unitHP = 100;
 	const uint32_t unitId = 42;
-	auto & targetUnit = unitsFake.add(BattleSide::ATTACKER);
+	auto & targetUnit = addDamageCopyUnit();
 
 	targetUnit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, unitHP, BonusSourceID()));
 	EXPECT_CALL(targetUnit, unitId()).WillRepeatedly(Return(unitId));
@@ -410,7 +427,7 @@ TEST_F(DamageApplyTest, GetHealthChangeConsumesTemporaryHealthOnCopyBeforeCreatu
 	const int32_t unitAmount = 25;
 	const int32_t unitHP = 100;
 	const uint32_t unitId = 42;
-	auto & targetUnit = unitsFake.add(BattleSide::ATTACKER);
+	auto & targetUnit = addDamageCopyUnit();
 
 	targetUnit.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, unitHP, BonusSourceID()));
 	EXPECT_CALL(targetUnit, unitId()).WillRepeatedly(Return(unitId));

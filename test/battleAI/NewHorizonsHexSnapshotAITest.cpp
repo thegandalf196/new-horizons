@@ -55,6 +55,7 @@ class NewHorizonsHexSnapshotAITest : public HeroCommandFixture
 protected:
 	void mapLoaded(CMap * map) override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
@@ -478,7 +479,7 @@ protected:
 		ASSERT_EQ(branch->hasReadyNativeRebirth(victim.get()), ready);
 		ASSERT_EQ(victim->getPhantomInitialIntegrity(), 0);
 		ASSERT_FALSE(victim->isClone());
-		ASSERT_FALSE(branch->captureElementalRebirthSource(*victim).has_value());
+		ASSERT_EQ(branch->getElementalAttunementMask(BattleSide::DEFENDER), 0);
 		ASSERT_TRUE(branch->battleCanTriggerCleave(source.get()));
 		const auto sourceState = source->save();
 		const auto victimState = victim->save();
@@ -495,7 +496,7 @@ protected:
 		EXPECT_EQ(victim->save(), victimState);
 		EXPECT_EQ(victim->casts.available(), charges);
 		EXPECT_EQ(branch->hasReadyNativeRebirth(victim.get()), ready);
-		EXPECT_TRUE(branch->getElementalRebirthSpawnUnitIds().empty());
+		EXPECT_EQ(branch->battleGetAllUnits(true).size(), liveBefore.size());
 		DamageCache cache;
 
 		cache.buildDamageCache(branch, BattleSide::ATTACKER);
@@ -536,7 +537,7 @@ protected:
 			for(const auto & bonus : *probeRebirthOwner)
 				probeRebirth.push_back(bonus->toJsonNode());
 			EXPECT_EQ(probeRebirth, rawRebirth);
-			EXPECT_TRUE(branch->getElementalRebirthSpawnUnitIds().empty());
+			EXPECT_EQ(branch->battleGetAllUnits(true).size(), liveBefore.size());
 			EXPECT_EQ(randomizerSnapshot(), rngBefore);
 		}
 		// Applied detached lethal hit must retain the same native-precedence
@@ -547,7 +548,7 @@ protected:
 		EXPECT_EQ(victim->casts.available(), charges);
 		EXPECT_EQ(collateral->getAvailableHealth(), secondary->getAvailableHealth() - (ready ? 0 : cleaveDamage));
 		EXPECT_EQ(source->cleaveUsedThisActivation, !ready);
-		EXPECT_TRUE(branch->getElementalRebirthSpawnUnitIds().empty());
+		EXPECT_EQ(branch->battleGetAllUnits(true).size(), liveBefore.size());
 		std::vector<JsonNode> appliedRebirth;
 		const auto appliedRebirthOwner = victim->getBonusesOfType(BonusType::REBIRTH);
 		for(const auto & bonus : *appliedRebirthOwner)
@@ -560,8 +561,8 @@ protected:
 			EXPECT_EQ(parent->getForUpdate(id)->save(), snapshot);
 		for(const auto & [id, snapshot] : siblingBefore)
 			EXPECT_EQ(sibling->getForUpdate(id)->save(), snapshot);
-		EXPECT_TRUE(parent->getElementalRebirthSpawnUnitIds().empty());
-		EXPECT_TRUE(sibling->getElementalRebirthSpawnUnitIds().empty());
+		EXPECT_EQ(parent->battleGetAllUnits(true).size(), parentBefore.size());
+		EXPECT_EQ(sibling->battleGetAllUnits(true).size(), siblingBefore.size());
 		for(const auto & untouched : {parent, sibling})
 		{
 			const auto * native = untouched->battleGetUnitByID(phoenix->unitId());

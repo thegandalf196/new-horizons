@@ -190,6 +190,11 @@ diagnostic settings, before claiming a timing improvement.
   and sum exactly to native_payload nanoseconds. Completed calls reach all four;
   exceptions record only reached intervals. These are nested wall-time regions,
   not additional elapsed time or CPU samples.
+  The following two fields describe the optional historical Lua test backend;
+  the fixed native production calculator leaves them zero. Native fact capture
+  and numerical evaluation remain inside the enclosing dynamic damage interval.
+  Use a sampling profile of `nativeDamage::capture` and `nativeDamage::calculate`
+  to distinguish them; do not interpret zero Lua fields as zero damage work.
   bonus_preparation includes declaration initialization (and its first-use Lua
   bonusTypes call), effective bonus lookup and presence maps. lua_call includes
   input/output conversion, Lua execution and native callbacks, not pure Lua CPU.

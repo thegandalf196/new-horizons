@@ -12,6 +12,7 @@
 
 #include "../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../lib/bonuses/BonusEnum.h"
+#include "DeclaredBonusTypes.h"
 
 namespace scripting
 {
@@ -34,7 +35,7 @@ private:
 	/// Bonus types the script declares an interest in, with the key each is reported under. Asked
 	/// for once - the answer is a property of the script, and the script does not change.
 	mutable std::once_flag declaredOnce;
-	mutable std::unordered_map<BonusType, std::string> declared;
+	mutable DeclaredBonusTypes declared;
 
 	void ensureDeclared(const CBattleInfoCallback & battle) const;
 	/// Which of the declared types this unit carries, as the lookup table the script reads.

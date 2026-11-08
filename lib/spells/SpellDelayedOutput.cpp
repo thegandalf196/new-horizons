@@ -18,6 +18,7 @@ CastProfile captureDelayedCastProfile(const spells::Caster * caster)
 	// live hero/perk/point history is read at this later passive trigger.
 	result.perks.wisdomEffectivenessBonus = static_cast<int32_t>(value.Integer());
 	result.heroSide = proxy->sourceObstacle().casterSide;
+	result.factionSpellDamageBonus = capturedOffensiveProfile(&proxy->getCapturedMdrPenetration()).factionSpellDamageBonus;
 	return result;
 }
 

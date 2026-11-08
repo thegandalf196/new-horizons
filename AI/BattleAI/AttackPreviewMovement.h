@@ -3,6 +3,9 @@
 #include "AttackPossibility.h"
 namespace attackPreviewMovement
 {
+struct TargetCells { BattleHexArray cells; bool longReach = false; };
+TargetCells targetCells(const BattleAttackInfo &, const battle::Unit &, BattleHex from,
+	bool aerial, const CBattleInfoCallback &);
 /// Existing pre-attack movement/reaction prefix; no additional candidate or path search.
 std::optional<AttackPossibility> project(const BattleAttackInfo & attack, BattleHex hex,
 	DamageCache & damageCache, const std::shared_ptr<CBattleInfoCallback> & state, bool perfectMoment,

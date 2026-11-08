@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
+#include "../../lib/battle/NewHorizonsAttackControllers.h"
 #include <algorithm>
 #include <set>
 #include <utility>
@@ -86,6 +87,8 @@ struct DefiantDenialProjection
 /// multi-strike exchange into one post-hoc transition.
 struct FortuneStrikeProjection
 {
+	/// Native accepted-primary controller value; no retained subject/caster pointers.
+	newHorizonsAttackControllers::Strike attackController;
 	/// Prehit source facts; replay after this accepted primary, before retaliation.
 	newHorizonsOrdinaryStrike::EffectPlan lanceFormation;
 	/// nullopt retains legacy inference; a captured UNKNOWN must stay unknown
@@ -203,7 +206,8 @@ private:
 	void buildUnitDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side, bool terminalPressure);
 	bool tracksRangedMarks(uint32_t defenderId) const;
 	bool tracksTemporaryCombatModifier(uint32_t defenderId) const;
-	void rememberTemporaryCombatModifiers(const battle::Unit * attacker, const battle::Unit * defender);
+	void rememberTemporaryCombatModifiers(const battle::Unit * attacker, const battle::Unit * defender,
+		const CBattleInfoCallback & battle);
 	bool tracksAmbusher(uint32_t attackerId) const;
 	bool tracksShadowAssault(uint32_t defenderId) const;
 	bool tracksNightProwler(uint32_t attackerId) const;
@@ -257,6 +261,8 @@ public:
 	// Detached unit states borrow their bonus bearer. Keep a per-candidate
 	// mark projection alive for as long as its returned states can be read.
 	std::shared_ptr<HypotheticBattle> effectPreview;
+	/// Internal exchange metadata for a proven consumed activation, never a selectable action.
+	bool noActionAnchor = false;
 	/// Local receipt distinguishes a newly completed return from a pre-existing target mark.
 	std::optional<uint32_t> completedReturnMarkTarget;
 	/// Native return entitlement is captured before landing; publication follows Blood.

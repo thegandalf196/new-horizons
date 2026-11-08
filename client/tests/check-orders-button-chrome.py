@@ -16,12 +16,13 @@ for token in ('"normal", "pressed", "disabled", "highlighted"',
               'constexpr int width = 48', 'constexpr int height = 36', 'constexpr int border = 3',
               'createDialogBackground(Point(width, height))', 'AnimationPath::builtin("ICM005")',
               'classic->getImage(state)',
-              'canvas.draw(gauntlet, Point(0, 0))',
+              'canvas.draw(commandIcon, Point(0, 0))',
               'Rect(0, 0, width, border)', 'Rect(0, height - border, width, border)',
               'Rect(0, border, border, height - 2 * border)',
               'Rect(width - border, border, border, height - 2 * border)'):
     assert token in button, token
-assert button.index('canvas.draw(gauntlet') < button.index('canvas.draw(frame'), "subject may overwrite chrome"
+assert 'ImagePath::builtin("NH_orders_command_" + stateName + ".png")' in button
+assert button.index('canvas.draw(commandIcon') < button.index('canvas.draw(frame'), "subject may overwrite chrome"
 window = (ROOT / "client/battle/BattleWindow.cpp").read_text()
 assert 'Point(595, 560), AnimationPath::builtin("NH_orders_gauntlet_framed")' in window
 assert 595 + 48 <= 646, "Orders overlaps Cast slot"

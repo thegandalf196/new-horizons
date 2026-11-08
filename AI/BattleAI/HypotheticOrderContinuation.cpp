@@ -6,8 +6,6 @@
 #include "StdInc.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/NewHorizonsBulwark.h"
-#include "../../lib/battle/NewHorizonsHeroicSpirit.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
 HypotheticBattle::ProjectedOrderContinuation HypotheticBattle::projectOrderContinuation(
@@ -21,20 +19,12 @@ HypotheticBattle::ProjectedOrderContinuation HypotheticBattle::projectOrderConti
 		|| prepared.action.epoch + 1 != projectedActionEpochs.at(side)
 		|| getHeroOrderState(side, effects.order.command) != std::optional<HeroOrderState>(effects.order))
 		return {};
-	// Native Order RNG stays authoritative. This is the deterministic mainline,
-	// with stochastic outcomes explicitly unvalued, not their expected utility.
-	const bool heroicSpiritUnvalued = newHorizonsHeroicSpirit::canRollOrderMorale(hero, prepared.action.receipt);
-	const bool randomOutcomesUnvalued = newHorizonsHeroLuck::hasLuckyDay(hero) || heroicSpiritUnvalued;
-	auto continuation = getDoubleCommandState(side);
-	// The shared spell/Order model values one accepted Hero Action followed by
-	// a unit exchange. Future Hero choices are unvalued and remain untouched.
-	const bool futureHeroChoices = continuation.orderPending()
-		|| prepared.action.receipt.source == HeroActionAllowanceState::GrantSource::BATTLE_PLAN
-		|| heroicSpiritUnvalued;
+	// Only the ordinary accepted Order remains. Independent Lucky Day outcomes
+	// retain their established conservative forecast; Heroic Spirit is deterministic.
+	const bool randomOutcomesUnvalued = newHorizonsHeroLuck::hasLuckyDay(hero);
+	const bool futureHeroChoices = false;
 	std::optional<uint32_t> recipient;
-	if(continuation.secondWindReady())
-		recipient = continuation.deferredSecondWindTargetUnitId;
-	else if(effects.order.command == HeroCommand::SECOND_WIND && !continuation.orderPending())
+	if(effects.order.command == HeroCommand::SECOND_WIND)
 		recipient = effects.order.primaryTargetUnitId;
 	if(recipient)
 	{
@@ -43,17 +33,10 @@ HypotheticBattle::ProjectedOrderContinuation HypotheticBattle::projectOrderConti
 		// Reuse the same existing approximate activation as spell/unit exchange.
 		// Native obstacle/Rebirth outcomes remain explicit unvalued knowledge.
 		if(!order || order->primaryTargetUnitId != *recipient || !target || !target->alive()
-			|| target->isGhost()
-			|| newHorizonsSwiftRebirth::blocksAdditionalActivation(*target, projectedRound))
+			|| target->isGhost())
 			return {};
 		const bool activationEffectsUnvalued = !battleGetAllObstacles().empty()
 			|| (newHorizonsBulwark::physicalPoisonTickDamage(target->acquireState().get()) > 0 && hasReadyNativeRebirth(target));
-		if(continuation.secondWindReady())
-		{
-			if(continuation.consumeSecondWindContinuation() != recipient)
-				return {};
-			setDoubleCommandState(side, continuation);
-		}
 		order->secondWindActive = true;
 		setHeroOrderState(side, *order);
 		nextTurn(*recipient, BattleUnitTurnReason::HERO_COMMAND);

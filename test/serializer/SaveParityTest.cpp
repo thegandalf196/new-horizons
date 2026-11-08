@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
+#include "../map/LegacyMapImportFixtures.h"
 #include "../../tools/native/SaveParityInput.h"
 #include "../../tools/native/SaveParityEvidence.h"
 #include "../../lib/CPlayerState.h"
@@ -25,7 +26,6 @@
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include <fstream>
 #include <exception>
-#include <vstd/CLoggerBase.h>
 
 namespace
 {
@@ -157,28 +157,6 @@ struct RandomizerImage
 	}
 };
 
-class ChunkExecutionLog final : public vstd::CLoggerBase
-{
-	vstd::CLoggerBase * previous = logMod;
-	mutable std::vector<std::string> messages;
-public:
-	ChunkExecutionLog() { logMod = this; }
-	~ChunkExecutionLog() override { logMod = previous; }
-	void log(ELogLevel::ELogLevel, const std::string & message) const override { messages.push_back(message); }
-	void log(ELogLevel::ELogLevel level, const boost::format & format) const override { log(level, format.str()); }
-	ELogLevel::ELogLevel getEffectiveLevel() const override { return ELogLevel::TRACE; }
-	bool isDebugEnabled() const override { return true; }
-	bool isTraceEnabled() const override { return true; }
-	size_t executions() const
-	{
-		return std::count_if(messages.begin(), messages.end(), [](const auto & message)
-		{
-			return message.find("failed to run:") != std::string::npos
-				&& message.find("NH_SAVE_PARITY_CHUNK_EXECUTED") != std::string::npos;
-		});
-	}
-};
-
 saveParity::Evidence coverageStart()
 {
 	saveParity::Evidence result;
@@ -306,21 +284,58 @@ TEST_F(SaveParityTest, OrdinaryEnvelopeDecodesAllServerStateWithoutChangingInput
 	EXPECT_EQ(first->world->getHeroPerkRules(), gameState()->getHeroPerkRules());
 }
 
-TEST_F(SaveParityTest, MapChunkIsNotConstructedByInspectionButNormalLoadRetainsDispatcher)
+TEST_F(SaveParityTest, AuthoredMapChunkIsInspectedWithoutExecutionButNormalLoadRejectsIt)
 {
 	map()->scriptSource = "error('NH_SAVE_PARITY_CHUNK_EXECUTED'); return {}";
 	TemporarySave save;
 	write(save);
-	ChunkExecutionLog execution;
+	const auto original = save.contents();
 	auto decoded = saveParity::readSave(save.path);
-	EXPECT_EQ(execution.executions(), 0);
 	EXPECT_EQ(decoded->world->getMapEventDispatcher(), nullptr);
 	EXPECT_EQ(decoded->world->getMap().scriptSource, map()->scriptSource);
 	saveParity::LoadedSave ordinary;
 	CLoadFile file(save.path, ordinary.world.get());
-	ordinary.world->loadGame(file);
-	EXPECT_NE(ordinary.world->getMapEventDispatcher(), nullptr);
-	EXPECT_EQ(execution.executions(), 1);
+	EXPECT_THROW(ordinary.world->loadGame(file), std::runtime_error);
+	EXPECT_EQ(ordinary.world->getMapEventDispatcher(), nullptr);
+	EXPECT_EQ(save.contents(), original);
+}
+
+TEST_F(SaveParityTest, GeneratedHotAMapChunkIsMigratedByNormalLoadAndNativeSourceSurvivesResave)
+{
+	std::vector<std::string> resources;
+	for(int index = 0; index < GameConstants::RESOURCE_QUANTITY; ++index)
+		resources.push_back(GameResID::encode(index));
+	map()->scriptSource = legacyMapFixtures::generatedProgram("", resources);
+	TemporarySave save;
+	write(save);
+	const auto original = save.contents();
+	auto inspected = saveParity::readSave(save.path);
+	EXPECT_EQ(inspected->world->getMapEventDispatcher(), nullptr);
+	EXPECT_EQ(inspected->world->getMap().scriptSource, map()->scriptSource);
+
+	saveParity::LoadedSave ordinary;
+	CLoadFile input(save.path, ordinary.world.get());
+	ordinary.world->loadGame(input);
+	input.load(*ordinary.handler);
+	ASSERT_NE(ordinary.world->getMapEventDispatcher(), nullptr);
+	const auto migrated = ordinary.world->getMap().scriptSource;
+	ASSERT_FALSE(migrated.empty());
+	EXPECT_EQ(migrated.front(), '{');
+	EXPECT_EQ(save.contents(), original);
+
+	TemporarySave resaved;
+	CSaveFile output;
+	ordinary.world->saveGame(output);
+	output.save(*ordinary.handler);
+	output.write(resaved.path);
+	saveParity::LoadedSave reloaded;
+	CLoadFile nativeInput(resaved.path, reloaded.world.get());
+	reloaded.world->loadGame(nativeInput);
+	nativeInput.load(*reloaded.handler);
+	EXPECT_NE(reloaded.world->getMapEventDispatcher(), nullptr);
+	EXPECT_EQ(reloaded.world->getMap().scriptSource, migrated);
+	EXPECT_EQ(saveParity::firstDifference(saveParity::capture(*ordinary.handler),
+		saveParity::capture(*reloaded.handler)), "");
 }
 
 TEST_F(SaveParityTest, OnlyStatisticsTimestampsAreNormalizedAndOwnerIsRestored)
@@ -521,6 +536,9 @@ TEST(SaveParityCoverageTest, ChangedPacketOrderCountAndMarksRemainDifferent)
 	EXPECT_NE(saveParity::firstDifference(left, right), "");
 	right = left;
 	right.chapters[0].packs.pop_back();
+	EXPECT_THROW(serialize(right.chapters), std::runtime_error);
+	right.chapters[0].packVersions.pop_back();
+	right.chapters[0].turns[0].lastPack = right.chapters[0].packs.size();
 	right.channels["replay"] = serialize(right.chapters);
 	EXPECT_NE(saveParity::firstDifference(left, right), "");
 	right = left;

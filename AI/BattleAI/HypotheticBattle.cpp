@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "MoraleActivationValue.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "../../lib/battle/OwnedBattleFrameBatch.h"
@@ -50,16 +51,18 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	bonusTreeVersion(1)
 {
 	captureNecromancyPassives(*realBattle);
+	captureElementalAttunement(realBattle);
+	captureCurrentBonusOperations(realBattle);
 	crisisCommand = realBattle->getBattle()->getCrisisCommandState();
 	const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get());
 	if(parent)
 	{
+		movementMemo = parent->movementMemo;
 		mayContainSerpentBindings = parent->mayContainSerpentBindings;
 		projectedMana = parent->projectedMana;
 		manaLeechStartingPools = projectedMana;
-		elementalRebirthSpawnUnitIds = parent->elementalRebirthSpawnUnitIds;
-		projectedPrimalBurstHits = parent->projectedPrimalBurstHits;
 		projectedPlagueHits = parent->projectedPlagueHits;
+		forfeitedActivations = parent->forfeitedActivations;
 		bloodrageFirstBloodUsed = parent->bloodrageFirstBloodUsed;
 		inheritOwnedFrames(*parent);
 	}
@@ -489,14 +492,7 @@ float HypotheticBattle::projectMoraleActivationDelta(const battle::Unit * origin
 	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		|| playerToSide(battleGetOwner(original)) != side)
 		return delta * horizon;
-	auto & suppression = moraleSuppressionStates.at(side);
-	if(!suppression.consume(before < 0.0f || after < 0.0f))
-		return delta * horizon;
-
-	// Approximate one prospective activation in this candidate branch. The rest
-	// of the horizon remains exposed; actual first-trigger ordering is unknown.
-	const float protectedDelta = std::max(0.0f, after) - std::max(0.0f, before);
-	return delta * horizon + (protectedDelta - delta) * std::min(1.0f, horizon);
+	return moraleActivationValue::projectDelta(before, after, horizon, moraleSuppressionStates.at(side));
 }
 
 int32_t HypotheticBattle::getRound() const
@@ -610,35 +606,9 @@ void HypotheticBattle::applyArmorerLastStandDefend(uint32_t unitId)
 		addUnitBonus(unitId, {*stance.holdFastBonus});
 }
 
-bool HypotheticBattle::getRebirthChainUsed(BattleSide side) const
-{
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return false;
-	return rebirthChainUsedStates.at(side);
-}
 
-void HypotheticBattle::setRebirthChainUsed(BattleSide side, bool used)
-{
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		throw std::invalid_argument("Invalid hypothetical Rebirth Chain side");
-	rebirthChainUsedStates.at(side) = used;
-}
 
-bool HypotheticBattle::getPhoenixSparkUsed(BattleSide side) const
-{
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		throw std::invalid_argument("Invalid hypothetical Phoenix Spark side");
-	return phoenixSparkUsedStates.at(side);
-}
 
-void HypotheticBattle::setPhoenixSparkUsed(BattleSide side, bool used)
-{
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		throw std::invalid_argument("Invalid hypothetical Phoenix Spark side");
-	if(!used && phoenixSparkUsedStates.at(side))
-		throw std::invalid_argument("Cannot restore a spent hypothetical Phoenix Spark use");
-	phoenixSparkUsedStates.at(side) = used;
-}
 
 int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
 {

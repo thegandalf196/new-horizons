@@ -1,4 +1,7 @@
 set(battleAI_SRCS
+		MovementQueryCache.cpp
+		HypotheticMovement.cpp
+		BattleEvaluatorMovement.cpp
 		AttackPossibility.cpp
 		CoordinatedMarkProjection.cpp
 		AttackPreviewMovement.cpp
@@ -38,6 +41,8 @@ set(battleAI_SRCS
 		PreemptiveAttackRequest.cpp
 		BracePrimaryState.cpp
 		BattleAI.cpp
+		BattleAIConfiguration.cpp
+		BattleSearchPolicy.cpp
 		BattleAIEvaluation.cpp
 		BattleAITiming.cpp
 		DefendEvaluation.cpp
@@ -72,6 +77,22 @@ set(battleAI_SRCS
 		BattleEvaluatorTemporaryGating.cpp
 		FixedActionValue.cpp
 		HeroSpellVariants.cpp
+		ElementalAttunementTerminalValue.cpp
+		CreatureActivationValue.cpp
+	HypotheticElementalAttunement.cpp
+	HypotheticCurrentBonusOperations.cpp
+	HypotheticActivationForfeit.cpp
+	BattleExchangeNoAction.cpp
+	BattleExchangeReachability.cpp
+	SpecialtyProcValue.cpp
+	RunicControlValue.cpp
+	MoraleActivationValue.cpp
+	RunicReflectionValue.cpp
+	AttackDamageValue.cpp
+	PhysicalCleanseValue.cpp
+	BarrageValue.cpp
+	AttackControllerProjection.cpp
+	BarrageProbability.cpp
 		HypotheticAutomaticSpell.cpp
 		LightSpellProtectionValue.cpp
 		LightSpellResponseValue.cpp
@@ -143,8 +164,6 @@ set(battleAI_SRCS
 		HypotheticWisdom.cpp
 		HypotheticArcaneInspiration.cpp
 		SyntheticInspirationUtility.cpp
-		HypotheticFactionAftermath.cpp
-		HypotheticFactionAftermath.h
 		HypotheticActivation.cpp
 		HypotheticUnitUpdates.cpp
 		HypotheticLifeDrainObservation.cpp
@@ -172,6 +191,7 @@ set(battleAI_SRCS
 )
 
 set(battleAI_HEADERS
+		MovementQueryCache.h
 		StdInc.h
 
 		AttackPossibility.h
@@ -236,6 +256,18 @@ set(battleAI_HEADERS
 		AttackPreviewDiagnostics.h
 		FixedActionValue.h
 		HeroSpellVariants.h
+		ElementalAttunementTerminalValue.h
+		ActivationForfeit.h
+		SpecialtyProcValue.h
+		MisfortuneValue.h
+		RunicControlValue.h
+		MoraleActivationValue.h
+		RunicReflectionValue.h
+		PhysicalCleanseValue.h
+		BarrageValue.h
+		AttackControllerProjection.h
+		BarrageProbability.h
+		CreatureActivationValue.h
 		LightSpellProtectionValue.h
 		PassiveDivineFuryValue.h
 		PassiveDivineMandateProjection.h
@@ -278,6 +310,7 @@ set(battleAI_HEADERS
 		BattleExchangeVariant.h
 		SelectedProbeDamage.h
 		CreatureCandidateScreening.h
+		BattleSearchPolicy.h
 		MovementCandidateScreening.h
 		ExchangeInitiativeQueue.h
 		BattleExchangeAftermath.h

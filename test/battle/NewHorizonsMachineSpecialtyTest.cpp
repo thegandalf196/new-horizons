@@ -4,6 +4,7 @@
 #include "../../lib/battle/NewHorizonsMachineSpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/mapObjects/army/CStackBasicDescriptor.h"
+#include "../../lib/battle/BattleHexArray.h"
 #include <stdexcept>
 
 class NewHorizonsMachineSpecialtyTest : public NewHorizonsMachineSpecialtyFixture
@@ -21,20 +22,21 @@ protected:
 		EXPECT_EQ(actor->acquireState()->shots.available(), shots - 1);
 		EXPECT_TRUE(battle()->battleHasPendingRangedFollowUp(actor));
 		EXPECT_EQ(battle()->battleGetRangedFollowUpDamagePercent(actor), percent);
+		EXPECT_EQ(server.castsOf(SpellID(SpellID::FIREBALL)).size(), mode == 0 ? 1u : 0u);
 	}
 };
 
-TEST_F(NewHorizonsMachineSpecialtyTest, CapturedTorosarAcceptedShotGrantsEightyPercent)
+TEST_F(NewHorizonsMachineSpecialtyTest, FieryShotKeepsOrdinarySixtyPercentMasterGunnerAllowance)
 {
-	ASSERT_NO_FATAL_FAILURE(assertAcceptedFollowUp(0, 80));
+	ASSERT_NO_FATAL_FAILURE(assertAcceptedFollowUp(0, 60));
 }
-TEST_F(NewHorizonsMachineSpecialtyTest, MissingTorosarKeysKeepLegacySixtyPercent)
+TEST_F(NewHorizonsMachineSpecialtyTest, AuthoredFieryShotOmissionKeepsOrdinarySixtyPercent)
 {
 	ASSERT_NO_FATAL_FAILURE(assertAcceptedFollowUp(1, 60));
 }
-TEST_F(NewHorizonsMachineSpecialtyTest, ZeroTorosarKeysKeepLegacySixtyPercent)
+TEST_F(NewHorizonsMachineSpecialtyTest, ExplicitZeroFieryShotPolicyIsRejectedAtAdmission)
 {
-	ASSERT_NO_FATAL_FAILURE(assertAcceptedFollowUp(2, 60));
+	EXPECT_THROW(prepare("core:torosar", 2), std::runtime_error);
 }
 TEST_F(NewHorizonsMachineSpecialtyTest, TorosarWithoutLearnedMasterGunnerGetsNoFreeShot)
 {
@@ -47,20 +49,73 @@ TEST_F(NewHorizonsMachineSpecialtyTest, TorosarWithoutLearnedMasterGunnerGetsNoF
 	ASSERT_EQ(battle()->battleActiveUnit(), actor);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeShotAttack(actor, victim)));
 	EXPECT_FALSE(battle()->battleHasPendingRangedFollowUp(actor));
+	EXPECT_EQ(server.castsOf(SpellID(SpellID::FIREBALL)).size(), 1);
+}
+TEST_F(NewHorizonsMachineSpecialtyTest, AcceptedMasterGunnerFollowUpAlsoCastsFireballWithoutAnotherHeroAction)
+{
+	ASSERT_NO_FATAL_FAILURE(assertAcceptedFollowUp(0, 60));
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto shots = actor->shots.available();
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeShotAttack(actor, victim)));
+	EXPECT_EQ(actor->shots.available(), shots - 1);
+	EXPECT_EQ(server.castsOf(SpellID(SpellID::FIREBALL)).size(), 2);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	for(const auto & cast : server.castsOf(SpellID(SpellID::FIREBALL)))
+	{
+		EXPECT_FALSE(cast.announcement.castByHero);
+		EXPECT_FALSE(cast.announcement.activeCast);
+	}
+}
+TEST_F(NewHorizonsMachineSpecialtyTest, ActualLethalRearHexShotCentersFireballOnTheAcceptedImpact)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:torosar", 0, false));
+	auto * primary = addStack(BattleSide::DEFENDER, creatureByName("core:centaur"), BattleHex(10, 7), 1);
+	ASSERT_NE(primary, nullptr); ASSERT_EQ(primary->getHexes().size(), 2);
+	const auto head = primary->getPosition();
+	BattleHex impact;
+	for(const auto hex : primary->getHexes()) if(hex != head) impact = hex;
+	ASSERT_TRUE(impact.isValid());
+	BattleHex impactOnly, headOnly;
+	for(const auto hex : impact.getNeighbouringTiles())
+		if(hex.isAvailable() && BattleHex::getDistance(head, hex) > 1 && !battle()->battleGetUnitByPos(hex, true))
+			impactOnly = hex;
+	for(const auto hex : head.getNeighbouringTiles())
+		if(hex.isAvailable() && BattleHex::getDistance(impact, hex) > 1 && !battle()->battleGetUnitByPos(hex, true))
+			headOnly = hex;
+	ASSERT_TRUE(impactOnly.isValid()); ASSERT_TRUE(headOnly.isValid());
+	auto * inside = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), impactOnly, 1000);
+	auto * outside = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), headOnly, 1000);
+	ASSERT_NE(inside, nullptr); ASSERT_NE(outside, nullptr);
+	const auto insideHealth = inside->getAvailableHealth(), outsideHealth = outside->getAvailableHealth();
+	const auto primaryId = primary->unitId(), insideId = inside->unitId(), outsideId = outside->unitId();
+	forceActorFirst(); forceMaximumDamage(actor); beginCombat();
+	ASSERT_EQ(battle()->battleActiveUnit(), actor);
+	auto shot = BattleAction::makeShotAttack(actor, primary); shot.aimToHex(impact);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), shot));
+	const auto casts = server.castsOf(SpellID(SpellID::FIREBALL)); ASSERT_EQ(casts.size(), 1);
+	EXPECT_EQ(casts.front().announcement.tile, impact);
+	const auto * current = gameState()->getBattle(BattleID(0)); ASSERT_NE(current, nullptr);
+	const auto * defeated = current->battleGetStackByID(primaryId, false); ASSERT_NE(defeated, nullptr);
+	EXPECT_FALSE(defeated->alive());
+	const auto * hit = current->battleGetStackByID(insideId, false);
+	const auto * untouched = current->battleGetStackByID(outsideId, false);
+	ASSERT_NE(hit, nullptr); ASSERT_NE(untouched, nullptr);
+	EXPECT_LT(hit->getAvailableHealth(), insideHealth);
+	EXPECT_EQ(untouched->getAvailableHealth(), outsideHealth);
 }
 TEST_F(NewHorizonsMachineSpecialtyTest, FollowUpBoundsDoNotCreateAnAllowance)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:torosar"));
 	EXPECT_EQ(newHorizonsMachineSpecialties::masterGunnerFollowUpDamagePercent(attackerSideHero, 0), 0);
-	EXPECT_EQ(newHorizonsMachineSpecialties::masterGunnerFollowUpDamagePercent(attackerSideHero, 90), 100);
+	EXPECT_EQ(newHorizonsMachineSpecialties::masterGunnerFollowUpDamagePercent(attackerSideHero, 90), 90);
 	EXPECT_EQ(newHorizonsMachineSpecialties::masterGunnerFollowUpDamagePercent(nullptr, 60), 60);
 	EXPECT_THROW(newHorizonsMachineSpecialties::masterGunnerFollowUpDamagePercent(attackerSideHero, -1), std::runtime_error);
 	EXPECT_THROW(newHorizonsMachineSpecialties::masterGunnerFollowUpDamagePercent(attackerSideHero, 101), std::runtime_error);
 }
-TEST_F(NewHorizonsMachineSpecialtyTest, TorosarInitiativeBonusIsFlatAndFixedDamageIsUnchanged)
+TEST_F(NewHorizonsMachineSpecialtyTest, FieryShotDoesNotGrantRetiredInitiativeAndFixedPhysicalDamageIsUnchanged)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:torosar"));
-	EXPECT_EQ(actor->valOfBonuses(BonusType::STACKS_INITIATIVE_FLAT), 2);
+	EXPECT_EQ(actor->valOfBonuses(BonusType::STACKS_INITIATIVE_FLAT), 0);
 	EXPECT_EQ(upgraded->valOfBonuses(BonusType::STACKS_INITIATIVE_FLAT), 0);
 	const auto siege = attackerSideHero->getSiegeCapabilities();
 	ASSERT_TRUE(siege);

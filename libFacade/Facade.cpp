@@ -9,6 +9,6 @@
  */
 
 // vcmiFacade is an aggregator shared library that bundles vcmiCore with
-// every AI implementation and the Lua scripting backend. It carries no
+// every AI implementation and the compiled rules. It carries no
 // code of its own - this translation unit exists only because CMake
 // requires every library target to have at least one source file.

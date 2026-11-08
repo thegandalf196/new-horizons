@@ -15,10 +15,9 @@ bool hasPerk(const CGHeroInstance * hero)
 		&& hero->hasActivePerk(SKILL, PERK);
 }
 
-bool canRollOrderMorale(const CGHeroInstance * hero, const HeroActionAllowanceState::Receipt & receipt)
+bool canRollOrderMorale(const CGHeroInstance *, const HeroActionAllowanceState::Receipt &)
 {
-	return HeroActionAllowanceState::isHeroicSpiritTrigger(receipt)
-		&& hasPerk(hero) && hero->moraleVal() > 0;
+	return false;
 }
 
 bool canGrantEarnedMorale(const battle::CUnitState &, const CGHeroInstance *)

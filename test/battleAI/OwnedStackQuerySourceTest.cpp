@@ -101,7 +101,15 @@ std::shared_ptr<Frame> fixtureFrame(const std::vector<std::shared_ptr<Bonus>> & 
 	return Frame::fromOwnedInputs(std::move(input));
 }
 }
-class OwnedStackQuerySourceTest : public HeroCommandFixture {};
+class OwnedStackQuerySourceTest : public HeroCommandFixture
+{
+protected:
+	void SetUp() override
+	{
+		useRevisedOrders = true; // This fixture loads a current1157 owner world.
+		HeroCommandFixture::SetUp();
+	}
+};
 
 TEST_F(OwnedStackQuerySourceTest, ExplicitOwnedBindingKeepsInitialHealthAndQueriesCurrentCountWithoutNativeProvider)
 {

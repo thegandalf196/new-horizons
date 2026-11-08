@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsChargeSpecialties.h"
+#include "NewHorizonsSpecialtyEvents.h"
 #include "BattleAttackInfo.h"
 #include "CBattleInfoCallback.h"
 #include "NewHorizonsCombatSkills.h"
@@ -10,12 +11,19 @@
 #include "../bonuses/BonusList.h"
 #include "../entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../entities/hero/CHero.h"
 #include <stdexcept>
 namespace newHorizonsChargeSpecialties
 {
 namespace
 {
 constexpr auto identity = "new-horizons:ordinary-creature-specialty:core:tyris:lanceFormation";
+bool visibleOwnerIs(const CBattleInfoCallback & battle, const battle::Unit * actor, const char * identity)
+{
+	if(!actor) return false;
+	const auto * hero = newHorizonsHeroes::ordinaryCreatureVisibleOwnerHero(battle, *actor);
+	return hero && hero->getHeroType() && hero->getHeroType()->getJsonKey() == identity;
+}
 bool firstPrimary(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	return attack.attacker && attack.defender && attack.attacker->alive() && attack.defender->alive()
@@ -50,6 +58,7 @@ bool requiresChargeMovementPreview(const CBattleInfoCallback & battle,
 	const BattleAttackInfo ordinary(&actor, &defender, 0, false);
 	if(!firstPrimary(battle, ordinary))
 		return false;
+	if(newHorizonsSpecialtyEvents::requiresTravelReceipt(battle, actor)) return true;
 	if(family(actor, "core:cavalier") && actor.hasBonusOfType(BonusType::JOUSTING)
 		&& !defender.hasBonusOfType(BonusType::CHARGE_IMMUNITY))
 		return newHorizonsHeroes::ordinaryCreatureSpecialtyValue(battle, actor, "core:tyris") > 0;
@@ -86,6 +95,7 @@ bool isLanceFormation(const Bonus * bonus)
 newHorizonsOrdinaryStrike::EffectPlan lanceFormation(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	newHorizonsOrdinaryStrike::EffectPlan result;
+	if(!attack.defender || !visibleOwnerIs(battle, attack.attacker, "core:tyris")) return result;
 	if(!firstPrimary(battle, attack) || attack.chargeDistance <= 0 || !family(*attack.attacker, "core:cavalier")
 		|| !attack.attacker->hasBonusOfType(BonusType::JOUSTING)
 		|| attack.defender->hasBonusOfType(BonusType::CHARGE_IMMUNITY))
@@ -115,6 +125,7 @@ newHorizonsOrdinaryStrike::EffectPlan lanceFormation(const CBattleInfoCallback &
 }
 int stormWingsDefenseIgnorePercent(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
+	if(!attack.defender || !visibleOwnerIs(battle, attack.attacker, "core:shiva")) return 0;
 	if(!firstPrimary(battle, attack) || !family(*attack.attacker, "core:roc")
 		|| !attack.attacker->hasBonusOfType(BonusType::FLYING))
 		return 0;

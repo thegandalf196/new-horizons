@@ -52,7 +52,7 @@ void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bo
 	if(!supported)
 		throw std::runtime_error("Additional individual specialties require the new save format");
 	const auto & table = development["additionalSpecialties"];
-	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy", "ordinaryCreatureSpecialties"});
+	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy", "ordinaryCreatureSpecialties", "preparedCreatureSpecialties"});
 	validateOrdinaryCreatureSpecialtiesSerialization(development, true);
 	detail::require(detail::integer(table["version"], 1, 1), "additional specialty version");
 	validateLearningSpecialtyRows(table);

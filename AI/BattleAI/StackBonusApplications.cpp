@@ -13,7 +13,6 @@
 #include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
 #include "../../lib/battle/StackEffectRecordRules.h"
@@ -32,8 +31,7 @@ namespace
 {
 bool protectedOrdinaryIncoming(const StackWithBonuses & unit, const Bonus & bonus)
 {
-	return !newHorizonsSwiftRebirth::isLifecycleMarker(bonus)
-		&& stackEffectRecordRules::incomingProtected(unit, bonus);
+	return stackEffectRecordRules::incomingProtected(unit, bonus);
 }
 void applyGuardianSpiritBonus(StackWithBonuses & unit, const Bonus & bonus)
 {
@@ -81,7 +79,6 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 		++treeVersionLocal;
 		return;
 	}
-	stackEffectVectorRules::validateSwiftRecords(*this, bonus, true);
 	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
@@ -100,8 +97,7 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 	bool acceptedFrozen = false;
 	for(const auto & stamped : stampedBonuses)
 	{
-		// Match canonical record replay: Swift lifecycle has its own admission
-		// before Time Stop; Confusion/physical metadata was validated above.
+		// Confusion and physical metadata were validated before Time Stop admission.
 		if(protectedOrdinaryIncoming(*this, stamped)) continue;
 		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
@@ -143,7 +139,6 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 		++treeVersionLocal;
 		return;
 	}
-	stackEffectVectorRules::validateSwiftRecords(*this, bonus, false);
 	captureLocalSpellEffects();
 	for(const auto & entry : bonus)
 		if(entry.type == BonusType::CONFUSION_PENDING)
@@ -155,21 +150,12 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 	bool acceptedFrozen = false;
 	for(const auto & stamped : stampedBonuses)
 	{
-		// Match canonical record replay: Swift lifecycle has its own admission
-		// before Time Stop; Confusion/physical metadata was validated above.
+		// Confusion and physical metadata were validated before Time Stop admission.
 		if(protectedOrdinaryIncoming(*this, stamped)) continue;
 		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
 		acceptedFrozen |= frozenApplication && newHorizonsFrozen::markerApplicationRound(stamped).has_value();
-		if(newHorizonsSwiftRebirth::isLifecycleMarker(stamped))
-		{
-			removeUnitBonus(CSelector([](const Bonus * candidate)
-			{
-				return newHorizonsSwiftRebirth::isLifecycleMarker(*candidate);
-			}));
-			bonusesToAdd.push_back(std::make_shared<Bonus>(stamped));
-		}
-		else if(stamped.type == BonusType::CONFUSION_PENDING)
+		if(stamped.type == BonusType::CONFUSION_PENDING)
 		{
 			auto next = confusionState;
 			next.applyPending(stamped.spellCasterOwner, stamped.val == 2);

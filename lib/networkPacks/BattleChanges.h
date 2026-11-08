@@ -211,7 +211,7 @@ public:
 			throw std::runtime_error("Cannot discard temporary summon lifetime in an older format");
 	}
 
-	template <typename Handler> void validateSerializationPrefix(Handler & h)
+	template <typename Handler> void validateSerializationPrefix(Handler & h) const
 	{
 		if(h.saving) validatePetrifyingBloodSerialization(h);
 		if(h.saving) validateTimedSummonSerialization(h);

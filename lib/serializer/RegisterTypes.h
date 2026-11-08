@@ -349,4 +349,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<BattleNormalActivationCompleted>(306);
 	s.template registerType<BattleCrisisCommandChanged>(307);
 	s.template registerType<SetMetamagicPointState>(308);
+	s.template registerType<SetElementalAttunementState>(309);
 }

@@ -372,22 +372,26 @@ TEST_F(NewHorizonsStingHarriersTest, MovementHistoryDescriptorRoundtripRetainsEx
 {
 	prepare(true); commitHistory();
 	const auto before = victim->getUnstackedBonuses(CSelector(harriers::isMovementHistory))->toJsonNode();
-	CMemorySerializer current;
-	EXPECT_THROW(battleStartFixture::writeDescriptors(*battle(), current), std::runtime_error);
-	EXPECT_TRUE(current.extractBuffer().empty());
-	constexpr auto version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
-	CMemorySerializer wire;
-	wire.oser.version = version;
-	ASSERT_NO_THROW(battleStartFixture::writeDescriptors(*battle(), wire));
-	wire.iser.version = version; wire.iser.cb = gameState().get();
-	auto restored = std::make_unique<BattleInfo>(gameState().get());
-	ASSERT_NO_THROW(wire.iser & *restored);
-	const auto * loaded = restored->getStack(victim->unitId(), false); ASSERT_NE(loaded, nullptr);
-	BonusList decoded;
-	loaded->getExportedBonusList().getBonuses(decoded, CSelector(harriers::isMovementHistory));
-	EXPECT_EQ(decoded.toJsonNode(), before);
-	ASSERT_NO_THROW(restored->localInit());
-	EXPECT_EQ(loaded->getUnstackedBonuses(CSelector(harriers::isMovementHistory))->toJsonNode(), before);
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES;
+	EXPECT_THROW(battleStartFixture::writeDescriptors(*battle(), old), std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+	for(const auto version : {ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES,
+		ESerializationVersion::CURRENT})
+	{
+		CMemorySerializer wire;
+		wire.oser.version = version;
+		ASSERT_NO_THROW(battleStartFixture::writeDescriptors(*battle(), wire));
+		wire.iser.version = version; wire.iser.cb = gameState().get();
+		auto restored = std::make_unique<BattleInfo>(gameState().get());
+		ASSERT_NO_THROW(wire.iser & *restored);
+		const auto * loaded = restored->getStack(victim->unitId(), false); ASSERT_NE(loaded, nullptr);
+		BonusList decoded;
+		loaded->getExportedBonusList().getBonuses(decoded, CSelector(harriers::isMovementHistory));
+		EXPECT_EQ(decoded.toJsonNode(), before);
+		ASSERT_NO_THROW(restored->localInit());
+		EXPECT_EQ(loaded->getUnstackedBonuses(CSelector(harriers::isMovementHistory))->toJsonNode(), before);
+	}
 	auto malformed = *victim->getFirstBonus(CSelector(harriers::isMovementHistory)); malformed.val = 2;
 	EXPECT_THROW(harriers::isMovementHistory(&malformed), std::runtime_error);
 }

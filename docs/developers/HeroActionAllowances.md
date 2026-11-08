@@ -1,99 +1,79 @@
-# Contextual combat action opportunities
+# Combat Hero Actions and finite Command
 
 ## Status and authority
 
-This document describes the engine boundary for the action rules in the
-canonical [private design specification](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md). The legacy
-three-counter allowance proposal was superseded during the completed
-[Overrides migration](../NH_OVERRIDE_MIGRATION.md). This is not a second gameplay
-specification and does not claim that every consumer is already migrated.
+This document describes the engine boundary for the current action rules in the
+canonical [private design specification](https://github.com/thegandalf196/new-horizons-docs/blob/main/canon/game-design.md).
+The [save boundary](Serialization.md#current-save-boundary) requires a new game;
+earlier saves are rejected without conversion or deletion.
 
 ## Core contract
 
-Each hero receives the ordinary shared Hero Action for the round. That action
-may pay for either one spell or one Order. Creature activations are separate and
-never consume the hero's action.
+Each hero receives the ordinary shared Hero Action for the round. A spell and an
+Order compete for that action. Creature activations remain separate.
 
-Some mechanics create a contextual opportunity to perform a particular action,
-such as Metamagic permitting another spell or a perk permitting a different
-Order. These opportunities are source-specific permissions, not a general token
-currency and not three independent Hero/Spell/Order counters. They must retain:
+Each fighting hero also owns a finite battle-side Command pool. Battle entry
+initializes remaining Command to its calculated maximum once. Every accepted
+Order consumes exactly one Command in addition to its ordinary Hero Action.
+Command never regenerates during combat. Capacity queries, deserialization and
+hypothetical copies must preserve expenditure rather than rerun initialization.
+At zero Command, otherwise legal spells and creature actions remain available.
 
-- their source and eligibility restriction;
-- their expiry and any once-per-combat budget;
-- the provenance of the accepted action that created or consumed them;
-- authoritative serialization when they can cross a save boundary.
-
-An opportunity never authorizes out-of-turn input. Existing side control and
-activation-window rules still apply. A restricted spell opportunity cannot issue
-an Order, and an Order opportunity cannot cast a spell.
+All heroes retain the ordinary Order roster; Command Skill availability does not
+gate access to Orders. The current Battle Plan, Unbroken Ranks, Master Commander,
+Grand Marshal and Heroic Spirit effects create no extra Hero Actions, mandatory
+Order choices, precombat/reactive Order windows or creature-activation insertion.
+Heroic Spirit contributes to the immutable issuance-time Order efficiency
+snapshot; later Morale changes do not alter an issued Order.
 
 ## Authoritative transitions
 
-Validation queries eligibility without mutating state. Consumption occurs only
-when the server accepts the complete action. Canceling a dialog, choosing an
-invalid target, or receiving a rejected request spends nothing. An accepted spell
-that is subsequently countered has still used the opportunity that paid for it.
+Validation queries eligibility without mutating resources. The authoritative
+simulation accepts a complete legal action before consuming its payment exactly
+once. Canceling a dialog, canceling targeting, an invalid target or a rejected
+request spends neither Command nor the Hero Action. An accepted spell that is
+subsequently countered has still consumed its action and Mana payment.
 
-All consumers must use the same authoritative eligibility query: spell and Order
-controls, server validation, replicated state, AI simulation and execution,
-combat logging, and save/load. Cast histories remain histories; they must not be
-reconstructed as action budgets. Stable source identity and expiry resolve any
-case in which more than one contextual permission could pay for the same action.
+Spell and Order controls, authoritative admission, replicated state and AI must
+share the same eligibility and payment rules. Command affordability is checked
+before target enumeration or detailed Order projection wherever practical. AI
+hypothetical states spend an isolated copy, never the live pool. Cast histories
+remain histories and must not be reconstructed as action budgets.
 
-Distinct active Orders coexist for their normal durations. Issuing a second
-different Order does not replace the first, and no grant may create a recursive
-extra-action loop unless a canonical rule explicitly says so.
+The typed allowance ledger retains action provenance, source restrictions and
+expiry for explicitly supported native permissions. An enum or retained helper
+cannot grant an opportunity by itself. Retired Double Command, Battle Plan and
+Heroic Spirit action-grant states are rejected by current battle admission;
+`OrderActionTransition` helpers do not override that boundary. Callers retain
+staged state, publication and commit timing; server preparation and replicated
+state validation remain independent trust boundaries.
 
-Shared deterministic Order composition lives in
-`lib/battle/OrderActionTransition.{h,cpp}`. It delegates selection/payment to the
-typed allowance ledger and composes receipts, Double Command continuation and
-Heroic Spirit capacity checks. Callers retain admission, grant predicates, staged
-state, RNG, publication and commit timing. The helper does not add rollback:
-detached projections preserve their existing partial-failure behavior. Server
-preparation and replicated-state validation remain independent trust boundaries.
+Distinct active Orders coexist for their independent durations. Their benefit
+lifecycle remains separate from the spent Command point, which is never refunded.
 
-## Metamagic
+## Metamagic and presentation
 
-When the ordinary Hero Action is used to cast a spell, Metamagic may open one
-additional Spell opportunity according to its current rank, sequence budget, and
-perk restrictions. It lasts until the end of the current round, does not force an
-immediate follow-up, cannot issue an Order, and cannot itself trigger another
-ordinary Metamagic grant. Creature movement, attacks, Wait, and Defend remain
-legal while it is available; the spellbook does not reopen automatically.
+Current Metamagic uses bounded hero points and does not create an additional
+Spell opportunity. Point state and spell histories are distinct from permission
+to cast. An automatic secondary spell likewise does not imply an extra manual
+Hero Action or authorize an Order.
 
-The sequence use is charged when the additional spell is actually accepted, not
-merely when the opportunity becomes available. Formula Reserve, Spell Buffer,
-Grand Metamagic, and other source-specific behavior remain separate canonical
-rules; do not generalize one source's timing or eligibility to all opportunities.
-Spell-sequence metadata must remain distinct from the permission to cast.
-
-## Presentation
-
-The hero battle panel presents the ordinary Hero Action and any currently usable
-contextual spell or Order opportunity in the established leather, red, and gold
-style. It must not imply that every hero owns three refillable counters. Generic
-provider-driven Skill status appears beneath the action state, so Metamagic points
-and future faction resources can share the same UI without a hardcoded
-Metamagic-only field.
-
-Help text identifies the source, eligible action, remaining uses where relevant,
-and expiry. Controls remain the ordinary spellbook and Order controls rather than
-inventing a replacement Wait button or automatically opening a modal. The compact
-Overcharge/casting modal is centered, but its placement does not change action
-semantics.
+The hero-action panel displays remaining/maximum Command and the shared Hero
+Action separately. Disabled Orders explain exhausted Command or an unavailable
+action. Spell controls use spell eligibility independently of Command. Cancel
+remains available, including at zero Command; the UI must not force a retired
+follow-up chooser. Skill status uses the existing provider interface and selected
+leather, red and gold presentation.
 
 ## Required validation
 
-- A spell and an Order compete for the single ordinary Hero Action.
-- A contextual Spell opportunity cannot issue an Order, and vice versa.
-- Intervening creature actions leave an unexpired Metamagic opportunity usable.
-- Expiry, round refresh, once-per-combat use, and save/load occur exactly once.
-- Canceled or rejected actions spend nothing; accepted countered spells do spend.
-- Additional casts do not recursively trigger ordinary Metamagic grants.
-- Distinct Orders can coexist for their normal independent durations.
-- AI projection and execution agree with authoritative eligibility and cannot loop.
-- UI status and logs reflect accepted transitions and their actual source.
-- Old saves migrate explicitly; unrepresentable active state fails visibly.
-- Warcasting, Battle Meditation, Time Stop, Counterspell, and every implemented
-  source-specific opportunity have focused provenance and expiry regressions.
+- A spell and an Order compete for the ordinary shared Hero Action.
+- An accepted Order spends exactly one Command and one ordinary Hero Action.
+- Canceled or rejected attempts and previews spend nothing.
+- Zero Command blocks Orders early without blocking legal spells or creatures.
+- Copies and descriptor roundtrips retain spent Command without refilling it.
+- Current profiles reject retired pending grants and activation-reordering state.
+- Issued Order snapshots retain captured efficiency and ordinary expiry rules.
+- AI projection agrees with authoritative resources and never mutates live state.
+- UI source checks complement native and rendered validation; neither substitutes
+  for the other. Descriptor roundtrips do not establish running-battle health save.

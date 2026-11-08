@@ -30,8 +30,8 @@ public:
 	EActionType actionType; //use ActionType enum for values
 
 	SpellID spell;
-	/// Additional mana selected for Sorcery Magic Arrow.  Zero preserves the
-	/// ordinary fixed-cost cast and all legacy action semantics.
+	/// Selected Sorcery Magic Arrow charge level, not an additional Mana amount.
+	/// Zero selects the ordinary cast; the saved rules determine each level's full price.
 	si32 spellOvercharge = 0;
 	/// Requests the target-aware Selective Dispel mode. The server validates
 	/// the spell, hero and saved perk before accepting this optional mode.

@@ -77,18 +77,18 @@ TEST_P(NewHorizonsThirteenSpecialtyArtTest, AbsentConversionContextRetainsProtot
 	EXPECT_EQ(view.frame(), static_cast<size_t>(hero.imageIndex));
 }
 INSTANTIATE_TEST_SUITE_P(SelectedThirteen, NewHorizonsThirteenSpecialtyArtTest, ::testing::Values(
-	ArtCase{"core:ryland", "livingBastionDefense", "RylandLivingBastion"},
+	ArtCase{"core:ryland", "treantmootProtection", "RylandLivingBastion"},
 	ArtCase{"core:charna", "chillingPresenceReductionPercent", "CharnaChillingPresence"},
-	ArtCase{"core:galthran", "boneFormationDefense", "GalthranBoneFormation"},
+	ArtCase{"core:galthran", "boneFormationFirstBandSize", "GalthranBoneFormation"},
 	ArtCase{"core:shakti", "massedSpearsDamagePercent", "ShaktiMassedSpears"},
-	ArtCase{"core:fiona", "packPursuitDamagePercent", "FionaPackPursuit"},
-	ArtCase{"core:vokial", "bloodScentDamagePercent", "VokialBloodScent"},
+	ArtCase{"core:fiona", "packPursuitSpeed", "FionaPackPursuit"},
+	ArtCase{"core:vokial", "bloodScentMaximumDamagePercent", "VokialBloodScent"},
 	ArtCase{"core:piquedram", "stoneSentinelReductionPercent", "PiquedramStoneSentinel"},
-	ArtCase{"core:vey", "ogreWarcallerDamagePercent", "VeyOgreWarcaller"},
-	ArtCase{"core:lacus", "undertowRetaliationPercent", "LacusUndertow"},
-	ArtCase{"core:broghild", "wyvernsPreyDamagePercent", "BroghildWyvernsPrey"},
-	ArtCase{"core:gretchin", "mobPressureDamagePercent", "GretchinMobPressure"},
-	ArtCase{"core:aeris", "wingbeatInitiativePercent", "AerisWingbeat"},
-	ArtCase{"core:theodorus", "measuredVolleyMdrPenetrationPercent", "TheodorusMeasuredVolley"}
+	ArtCase{"core:vey", "archshamanSpellMastery", "VeyOgreWarcaller"},
+	ArtCase{"core:lacus", "undertowDefensePerAttack", "LacusUndertow"},
+	ArtCase{"core:broghild", "wyvernVenomPolicyVersion", "BroghildWyvernsPrey"},
+	ArtCase{"core:gretchin", "goblinFrenzyDamagePercent", "GretchinMobPressure"},
+	ArtCase{"core:aeris", "perfectMountMagicalDamageImmunity", "AerisWingbeat"},
+	ArtCase{"core:theodorus", "dispellingShotMageChancePercent", "TheodorusMeasuredVolley"}
 ));
 }

@@ -45,47 +45,6 @@ std::string crisisRandomState(CRandomGenerator & generator)
 
 // Corrupt only transmitted descriptor data, after the source's write preflight.
 // This exercises real current-format decode admission without mutating live units.
-class CrisisDescriptorCorruptor
-{
-	battleStartFixture::DescriptorWriter writer;
-	uint32_t anchor;
-	bool missingReference;
-public:
-	using Version = ESerializationVersion;
-	static constexpr bool saving = true;
-	CrisisDescriptorCorruptor(BinarySerializer & encoder, uint32_t anchor, bool missingReference)
-		: writer(encoder), anchor(anchor), missingReference(missingReference) {}
-	bool hasFeature(Version version) const { return writer.hasFeature(version); }
-	template<typename T> CrisisDescriptorCorruptor & operator&(T & value)
-	{
-		writer & value;
-		return *this;
-	}
-	CrisisDescriptorCorruptor & operator&(newHorizonsCrisisCommand::State & value)
-	{
-		auto copy = value;
-		if(missingReference) copy.returns.back().anchor = newHorizonsCrisisCommand::NO_UNIT - 1;
-		writer & copy;
-		return *this;
-	}
-	CrisisDescriptorCorruptor & operator&(std::vector<std::unique_ptr<CStack>> & units)
-	{
-		if(missingReference) { writer & units; return *this; }
-		std::vector<std::unique_ptr<CStack>> descriptors;
-		for(const auto & unit : units)
-		{
-			CStackBasicDescriptor base(unit->unitType()->getId(), unit->unitId() == anchor ? 0 : unit->unitBaseAmount());
-			auto copy = std::make_unique<CStack>(&base, unit->unitOwner(), static_cast<int>(unit->unitId()),
-				unit->unitSide(), unit->unitSlot());
-			copy->initialPosition = unit->initialPosition;
-			for(const auto & bonus : unit->getExportedBonusList()) copy->addNewBonus(std::make_shared<Bonus>(*bonus));
-			descriptors.push_back(std::move(copy));
-		}
-		writer & descriptors;
-		return *this;
-	}
-};
-
 class NewHorizonsCrisisCommandTest : public HeroCommandFixture
 {
 protected:
@@ -97,6 +56,7 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true;
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires New Horizons";
 	}
@@ -104,16 +64,18 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(map);
 		const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		ASSERT_TRUE(newHorizonsCrisisCommand::activeProfile(perks)) << "Requires shipped active Crisis registration";
+		ASSERT_FALSE(newHorizonsCrisisCommand::activeProfile(perks)) << "Current rules must not enable reactive Orders";
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
 	void select(CGHeroInstance * hero)
 	{
+		hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 		hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsCrisisCommand::SKILL)),
 			MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		hero->applyPerkSelection({newHorizonsCrisisCommand::SKILL, "new-horizons:command.aggressiveCommander"});
 		hero->applyPerkSelection({newHorizonsCrisisCommand::SKILL, newHorizonsCrisisCommand::PERK});
-		ASSERT_TRUE(newHorizonsCrisisCommand::eligible(hero));
+		ASSERT_TRUE(hero->hasActivePerk(newHorizonsCrisisCommand::SKILL, newHorizonsCrisisCommand::PERK));
+		ASSERT_FALSE(newHorizonsCrisisCommand::eligible(hero));
 	}
 	void activate(const CStack * unit)
 	{
@@ -126,21 +88,12 @@ protected:
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), battle()->battleGetActionController(unit),
 			wait ? BattleAction::makeWait(unit) : BattleAction::makeDefend(unit));
 	}
-	void prepare(bool actorDies = false, bool both = false, bool selected = true, bool seize = false)
+	void prepare(bool actorDies = false, bool both = false, bool selected = true)
 	{
 		startGame();
 		recipient = actorDies ? BattleSide::ATTACKER : BattleSide::DEFENDER;
 		if(selected) select(actorDies ? attackerSideHero : defenderSideHero);
 		if(both) select(actorDies ? defenderSideHero : attackerSideHero);
-		if(seize)
-		{
-			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:command")),
-				MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-			attackerSideHero->applyPerkSelection({"new-horizons:command", "new-horizons:command.aggressiveCommander"});
-			attackerSideHero->applyPerkSelection({"new-horizons:command", "new-horizons:command.veteranCommander"});
-			attackerSideHero->applyPerkSelection({"new-horizons:command", "new-horizons:command.seizeInitiative"});
-			ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:command", "new-horizons:command.seizeInitiative"));
-		}
 		startBattle();
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);
@@ -172,13 +125,6 @@ protected:
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), battle()->sideToPlayer(recipient),
 			BattleAction::makeHeroCommand(recipient, command));
 	}
-	bool decline()
-	{
-		const auto & state = battle()->getCrisisCommandState();
-		const auto * anchor = battle()->getStack(state.returns.back().anchor);
-		auto pass = BattleAction::makeNoAction(anchor); pass.side = recipient;
-		return gameHandler->battles->makePlayerBattleAction(BattleID(0), battle()->sideToPlayer(recipient), pass);
-	}
 	void injure(const std::vector<CStack *> & units, uint32_t source)
 	{
 		StacksInjured pack;
@@ -206,203 +152,104 @@ struct CrisisOldPrefix
 		throw std::runtime_error("Unexpected old-format prefix");
 	}
 };
-#if ENABLE_BATTLE_AI
-class CrisisEnvironment final : public Environment
-{
-	std::shared_ptr<CGameState> state;
-public:
-	explicit CrisisEnvironment(std::shared_ptr<CGameState> value) : state(std::move(value)) {}
-	const Services * services() const override { return LIBRARY; }
-	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
-	const GameCb * game() const override { return state.get(); }
-};
-class CrisisCallback final : public CBattleCallback
-{
-public:
-	std::vector<BattleAction> submitted;
-	std::vector<BattleAction> unitActions;
-	explicit CrisisCallback(PlayerColor player) : CBattleCallback(player, nullptr) {}
-	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override { submitted.push_back(action); }
-	void battleMakeUnitAction(const BattleID &, const BattleAction & action) override { unitActions.push_back(action); }
-};
-#endif
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, EnemyKillImmediatelyRoutesDefenderFreeOrderThenResumesCompletedAction)
+TEST_F(NewHorizonsCrisisCommandTest, EnemyKillCompletesWithoutReactiveOrderOrCommandPayment)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto heroBefore = battle()->battleHeroActionAllowanceCounts(recipient).heroActions;
+	const auto resources = battle()->getCommandResources(recipient);
+	const auto allowances = battle()->getHeroActionAllowances(recipient);
+	const auto serial = battle()->getActivationSerial();
 	ASSERT_TRUE(kill());
-	ASSERT_FALSE(victim->alive());
-	ASSERT_TRUE(battle()->getCrisisCommandState().choice());
-	EXPECT_EQ(battle()->getCrisisCommandState().chooser(), recipient);
-	EXPECT_EQ(server.stackActivations.back().reason, BattleUnitTurnReason::CRISIS_ORDER);
-	EXPECT_FALSE(battle()->battleBeginsActivation(battle()->battleActiveUnit(), BattleUnitTurnReason::CRISIS_ORDER));
-	const auto attacks = server.attacks.size();
-	ASSERT_TRUE(issue());
-	EXPECT_FALSE(battle()->getCrisisCommandState().choice());
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-	EXPECT_EQ(server.attacks.size(), attacks) << "Resumption must not replay the killing action";
-	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(recipient).heroActions, heroBefore);
-	EXPECT_TRUE(battle()->battleGetHeroOrderState(recipient, HeroCommand::HOLD_THE_LINE));
-	EXPECT_TRUE(std::any_of(server.stackActivations.begin(), server.stackActivations.end(), [](const auto & pack)
-		{ return pack.reason == BattleUnitTurnReason::CRISIS_RESUME; }));
+	EXPECT_FALSE(victim->alive());
+	EXPECT_TRUE(actor->movedThisRound);
+	EXPECT_TRUE(std::ranges::none_of(server.stackActivations,
+		[](const auto & event) { return event.reason == BattleUnitTurnReason::CRISIS_ORDER; }));
+	EXPECT_FALSE(battle()->getCrisisCommandState().meaningful());
+	EXPECT_EQ(battle()->getCommandResources(recipient), resources);
+	EXPECT_EQ(battle()->getHeroActionAllowances(recipient), allowances);
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	EXPECT_TRUE(battle()->battleActiveUnit()->alive());
+	EXPECT_GT(battle()->getActivationSerial(), serial);
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, RejectedCreatureSpellAndWrongSideRequestsPreserveExactFreeChoice)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	const auto grants = battle()->getHeroActionAllowances(recipient);
-	const auto * anchor = battle()->battleGetStackByID(battle()->getCrisisCommandState().returns.back().anchor);
-	ASSERT_FALSE(action(anchor));
-	auto invalidDecline = BattleAction::makeNoAction(anchor); invalidDecline.side = BattleSide::ATTACKER;
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), invalidDecline));
-	auto spell = BattleAction::makeHeroCommand(recipient, HeroCommand::HOLD_THE_LINE);
-	spell.actionType = EActionType::HERO_SPELL; spell.spell = SpellID::HASTE;
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), spell));
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE)));
-	EXPECT_EQ(battle()->getHeroActionAllowances(recipient), grants);
-	EXPECT_TRUE(battle()->getCrisisCommandState().choice());
-	ASSERT_TRUE(issue());
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, DeclineSpendsNoHeroActionAndDoesNotActWithTheTemporaryAnchor)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	const auto * anchor = battle()->battleActiveUnit();
-	const auto moved = anchor->moved(); const auto waited = anchor->waited();
-	const auto actions = server.startedActions.size();
-	const auto hero = battle()->battleHeroActionAllowanceCounts(recipient).heroActions;
-	ASSERT_TRUE(decline());
-	EXPECT_EQ(server.startedActions.size(), actions);
-	EXPECT_EQ(anchor->moved(), moved); EXPECT_EQ(anchor->waited(), waited);
-	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(recipient).heroActions, hero);
-	EXPECT_TRUE(battle()->getCrisisCommandState().used.at(1));
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, FreeSecondWindRunsBeforeOriginalFlowWithoutDiscardingItsExtra)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	activate(reserve); ASSERT_TRUE(action(reserve)); activate(actor);
-	// Accepted Defend spends the activation without setting movedThisRound;
-	// canonical Second Wind explicitly accepts this defending provenance.
-	ASSERT_TRUE(reserve->defended()); ASSERT_TRUE(kill());
-	// battleCanConfirmHeroCommand is the Focus Fire confirmation interface;
-	// targeted canonical Orders use the complete prepared-state validation.
-	ASSERT_EQ(battle()->battleGetHeroOrderTargetRejection(recipient, HeroCommand::SECOND_WIND,
-		{reserve->unitId()}), heroCommands::TargetRejection::NONE);
-	ASSERT_TRUE(battle()->battlePrepareHeroOrderState(recipient, HeroCommand::SECOND_WIND,
-		{reserve->unitId()}).has_value());
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
-		BattleAction::makeTargetedHeroCommand(recipient, HeroCommand::SECOND_WIND, reserve->unitId())));
-	ASSERT_EQ(battle()->battleActiveUnit(), reserve);
-	ASSERT_EQ(battle()->getCrisisCommandState().returns.size(), 1u);
-	EXPECT_EQ(battle()->getCrisisCommandState().returns.back().phase, newHorizonsCrisisCommand::Phase::GRANTED_EXTRA);
-	const auto attacks = server.attacks.size();
-	ASSERT_TRUE(action(reserve));
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-	EXPECT_EQ(server.attacks.size(), attacks);
-	const auto secondWind = battle()->battleGetHeroOrderState(recipient, HeroCommand::SECOND_WIND);
-	ASSERT_TRUE(secondWind); EXPECT_FALSE(secondWind->secondWindActive);
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, StoppedAnchorRoutesOnlyHeroChoiceWithoutStartingOrThawingItsActivation)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	// The stopped stack remains the lowest-ID input anchor, but cannot itself
-	// receive Hold while outside time. Keep a genuine eligible Order recipient.
-	auto * recipientUnit = addStack(recipient, creatureByName("core:pikeman"), BattleHex(12, 2), 100);
-	ASSERT_GT(recipientUnit->unitId(), reserve->unitId());
-	SetStackEffect stop; stop.battleID = BattleID(0);
-	stop.toAdd.emplace_back(reserve->unitId(), std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID())});
-	gameHandler->sendAndApply(stop);
-	ASSERT_TRUE(reserve->isTimeStopped());
-	const auto moved = reserve->moved();
-	ASSERT_TRUE(kill());
-	ASSERT_EQ(battle()->battleActiveUnit(), reserve);
-	EXPECT_FALSE(battle()->battleBeginsActivation(reserve, BattleUnitTurnReason::CRISIS_ORDER));
-	ASSERT_TRUE(issue());
-	EXPECT_TRUE(reserve->isTimeStopped()); EXPECT_EQ(reserve->moved(), moved);
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, RetaliationDestroysOriginalActorAndFreeSecondWindStillReturnsSafely)
+TEST_F(NewHorizonsCrisisCommandTest, RetaliationKillCannotSuspendOriginalActionForAnOrder)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
-	activate(reserve); ASSERT_TRUE(action(reserve)); activate(actor);
-	ASSERT_TRUE(kill()); ASSERT_FALSE(actor->alive());
-	ASSERT_TRUE(battle()->getCrisisCommandState().choice());
-	EXPECT_EQ(battle()->getCrisisCommandState().returns.back().originalActor, static_cast<int32_t>(actor->unitId()));
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		BattleAction::makeTargetedHeroCommand(recipient, HeroCommand::SECOND_WIND, reserve->unitId())));
-	ASSERT_EQ(battle()->battleActiveUnit(), reserve); ASSERT_TRUE(action(reserve));
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty()); EXPECT_FALSE(actor->alive());
-	EXPECT_NE(battle()->getActiveStackID(), static_cast<int32_t>(actor->unitId()));
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, WholeInjuryBatchCapturesTwoDeathsOnceAndNeverOpensMidSequence)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto * extra = addStack(recipient, creatureByName("core:peasant"), BattleHex(12, 7), 1);
-	const auto activations = server.stackActivations.size();
-	injure({victim, extra}, reserve->unitId());
-	ASSERT_FALSE(victim->alive()); ASSERT_FALSE(extra->alive());
-	EXPECT_EQ(server.stackActivations.size(), activations);
-	EXPECT_FALSE(battle()->getCrisisCommandState().choice());
-	ASSERT_EQ(battle()->getCrisisCommandState().pending.size(), 1u);
-	ASSERT_TRUE(action(actor)); ASSERT_TRUE(battle()->getCrisisCommandState().choice());
-	ASSERT_TRUE(issue());
-	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(recipient).heroActions, 1u);
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, SummonedStackDestructionQualifiesButRemovalAloneDoesNot)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	victim->summoned = true;
-	BattleUnitsChanged remove; remove.battleID = BattleID(0);
-	auto * temporary = addStack(recipient, creatureByName("core:peasant"), BattleHex(12, 7), 1);
-	remove.changedStacks.emplace_back(temporary->unitId(), UnitChanges::EOperation::REMOVE);
-	gameHandler->sendAndApply(remove);
+	const auto resources = battle()->getCommandResources(recipient);
+	const auto allowances = battle()->getHeroActionAllowances(recipient);
+	ASSERT_TRUE(kill());
+	EXPECT_FALSE(actor->alive());
 	EXPECT_FALSE(battle()->getCrisisCommandState().meaningful());
-	ASSERT_TRUE(kill()); EXPECT_TRUE(battle()->getCrisisCommandState().choice());
+	EXPECT_EQ(battle()->getCommandResources(recipient), resources);
+	EXPECT_EQ(battle()->getHeroActionAllowances(recipient), allowances);
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	EXPECT_NE(battle()->battleActiveUnit(), actor);
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, CurrentControllerIsCapturedBeforeDeathRemovesHypnosis)
+TEST_F(NewHorizonsCrisisCommandTest, WholeInjuryBatchIncludingCloneAndSummonCreatesNoReactiveChoice)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
-	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+	auto clone = victim->acquireState(); clone->cloned = true;
+	BattleUnitsChanged update;
+	update.battleID = BattleID(0);
+	update.changedStacks.emplace_back(victim->unitId(), UnitChanges::EOperation::UPDATE);
+	update.changedStacks.back().data = clone->save();
+	gameHandler->sendAndApply(update);
+	battle::UnitInfo info;
+	info.id = battle()->battleNextUnitId(); info.type = creatureByName("core:peasant");
+	info.side = BattleSide::DEFENDER; info.position = BattleHex(10, 5); info.count = 1; info.summoned = true;
+	BattleUnitsChanged add; add.battleID = BattleID(0);
+	add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+	info.save(add.changedStacks.back().data);
+	gameHandler->sendAndApply(add);
+	auto * summon = battle()->getStack(info.id, false);
+	ASSERT_NE(summon, nullptr); ASSERT_TRUE(summon->isSummoned());
+	const auto defenderResources = battle()->getCommandResources(BattleSide::DEFENDER);
+	const auto attackerResources = battle()->getCommandResources(BattleSide::ATTACKER);
+	const auto additions = server.unitAdditionRounds.size();
+	injure({victim, summon}, actor->unitId());
+	EXPECT_FALSE(victim->alive()); EXPECT_FALSE(summon->alive());
+	EXPECT_FALSE(battle()->getCrisisCommandState().meaningful());
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::DEFENDER), defenderResources);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), attackerResources);
+	EXPECT_EQ(server.unitAdditionRounds.size(), additions);
+}
+
+TEST_F(NewHorizonsCrisisCommandTest, ControlledDeathDoesNotTransferAReactiveOrderToEitherHero)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	SetStackEffect control;
+	control.battleID = BattleID(0);
+	control.toAdd.emplace_back(victim->unitId(), std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID())});
+	gameHandler->sendAndApply(control);
 	ASSERT_EQ(battle()->battleGetOwner(victim), PlayerColor(0));
+	const auto attackerActions = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto defenderActions = battle()->getHeroActionAllowances(BattleSide::DEFENDER);
 	injure({victim}, actor->unitId());
-	ASSERT_EQ(battle()->getCrisisCommandState().pending.size(), 1u);
-	EXPECT_EQ(battle()->getCrisisCommandState().pending.front().side, BattleSide::ATTACKER);
-	EXPECT_TRUE(battle()->getCrisisCommandState().used.at(0)); EXPECT_FALSE(battle()->getCrisisCommandState().used.at(1));
+	EXPECT_FALSE(battle()->getCrisisCommandState().meaningful());
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), attackerActions);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER), defenderActions);
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, PuppetControllerReceivesDestructionReceiptWithoutChangingPhysicalAllegiance)
+TEST_F(NewHorizonsCrisisCommandTest, PuppetControlledDeathCreatesNoReactiveGrantAndKeepsPhysicalAllegiance)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
-	const auto spell = SpellID(SpellID::decode(std::string(newHorizonsPuppetMaster::SPELL_ID)));
-	SetStackEffect control; control.battleID = BattleID(0);
-	control.toAdd.emplace_back(victim->unitId(), std::vector<Bonus>{newHorizonsPuppetMaster::controlMarker(spell, PlayerColor(0))});
+	SetStackEffect control;
+	control.battleID = BattleID(0);
+	control.toAdd.emplace_back(victim->unitId(), std::vector<Bonus>{newHorizonsPuppetMaster::controlMarker(
+		SpellID(SpellID::decode(std::string(newHorizonsPuppetMaster::SPELL_ID))), PlayerColor(0))});
 	gameHandler->sendAndApply(control);
 	ASSERT_EQ(battle()->battleGetOwner(victim), PlayerColor(1));
 	ASSERT_EQ(battle()->battleGetActionController(victim), PlayerColor(0));
+	const auto attackerActions = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto defenderActions = battle()->getHeroActionAllowances(BattleSide::DEFENDER);
 	injure({victim}, actor->unitId());
-	ASSERT_EQ(battle()->getCrisisCommandState().pending.size(), 1u);
-	EXPECT_EQ(battle()->getCrisisCommandState().pending.front().side, BattleSide::ATTACKER);
-	EXPECT_TRUE(battle()->getCrisisCommandState().used.at(0)); EXPECT_FALSE(battle()->getCrisisCommandState().used.at(1));
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, UnselectedCapturedPerkDoesNotGrantAFreeOrder)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false)); ASSERT_TRUE(kill());
+	EXPECT_EQ(victim->unitSide(), BattleSide::DEFENDER);
 	EXPECT_FALSE(battle()->getCrisisCommandState().meaningful());
-	EXPECT_FALSE(std::any_of(server.stackActivations.begin(), server.stackActivations.end(), [](const auto & packet)
-		{ return packet.reason == BattleUnitTurnReason::CRISIS_ORDER; }));
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), attackerActions);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER), defenderActions);
 }
 
 TEST_F(NewHorizonsCrisisCommandTest, BattleFinalizationDoesNotExposeAChoice)
@@ -416,54 +263,44 @@ TEST_F(NewHorizonsCrisisCommandTest, BattleFinalizationDoesNotExposeAChoice)
 		{ return packet.reason == BattleUnitTurnReason::CRISIS_ORDER; }));
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, SuspendedMetadataRoundTripsAndOlderBattleStartRejectsBeforeItsPrefix)
+TEST_F(NewHorizonsCrisisCommandTest, UnselectedReplacementPerkDoesNotGrantAFreeOrder)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	CMemorySerializer metadata;
-	auto state = battle()->getCrisisCommandState(); metadata.oser & state;
-	newHorizonsCrisisCommand::State restored; metadata.iser & restored;
-	ASSERT_EQ(restored.returns.size(), 1u);
-	EXPECT_TRUE(restored.returns.front().sameContinuation(state.returns.front()));
-	EXPECT_EQ(restored.used, state.used); restored.validate(*battle());
-	// Descriptor-only roundtrip deliberately does not claim restored live HP.
-	auto descriptor = battleStartFixture::snapshot(*battle(), gameState().get());
-	ASSERT_EQ(descriptor->getCrisisCommandState().returns.size(), 1u);
-	EXPECT_EQ(descriptor->getCrisisCommandState().returns.front().originalActor, state.returns.front().originalActor);
-	CrisisOldPrefix old;
-	BattleStart start; start.info = std::move(descriptor);
-	EXPECT_THROW(start.serialize(old), std::runtime_error); EXPECT_EQ(old.fields, 0);
+	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false));
+	const auto resources = battle()->getCommandResources(recipient);
+	ASSERT_TRUE(kill());
+	EXPECT_FALSE(battle()->getCrisisCommandState().meaningful());
+	EXPECT_EQ(battle()->getCommandResources(recipient), resources);
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, CurrentDescriptorDecodeRejectsMissingSuspensionReference)
+TEST_F(NewHorizonsCrisisCommandTest, PostDeathDescriptorKeepsNoSuspensionOrRetiredAllowance)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	const auto original = battle()->getCrisisCommandState();
-	CMemorySerializer wire;
-	CrisisDescriptorCorruptor writer(wire.oser, original.returns.back().anchor, true);
-	ASSERT_NO_THROW(battle()->serialize(writer));
-	wire.iser.cb = gameState().get();
-	auto decoded = std::make_unique<BattleInfo>(gameState().get());
-	EXPECT_THROW(wire.iser & *decoded, std::runtime_error);
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.back().sameContinuation(original.returns.back()));
+	const auto descriptor = battleStartFixture::snapshot(*battle(), gameState().get());
+	ASSERT_NE(descriptor, nullptr);
+	EXPECT_FALSE(descriptor->getCrisisCommandState().meaningful());
+	EXPECT_EQ(descriptor->getCommandResources(recipient), battle()->getCommandResources(recipient));
+	EXPECT_EQ(descriptor->getHeroActionAllowances(recipient), battle()->getHeroActionAllowances(recipient));
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, DescriptorReferencesDoNotWaiveImpossibleLiveAnchorAfterBinding)
+TEST_F(NewHorizonsCrisisCommandTest, RetiredStatePacketRejectsWithoutChangingActionsResourcesOrActor)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	const auto original = battle()->getCrisisCommandState();
-	CMemorySerializer wire;
-	CrisisDescriptorCorruptor writer(wire.oser, original.returns.back().anchor, false);
-	ASSERT_NO_THROW(battle()->serialize(writer));
-	wire.iser.cb = gameState().get();
-	auto decoded = std::make_unique<BattleInfo>(gameState().get());
-	ASSERT_NO_THROW(wire.iser & *decoded);
-	EXPECT_NO_THROW(decoded->getCrisisCommandState().validateSerializedReferences(*decoded));
-	auto restore = vstd::makeScopeGuard([&] { decoded.reset(); battle()->localInit(); });
-	EXPECT_THROW(decoded->localInit(), std::runtime_error);
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.back().sameContinuation(original.returns.back()));
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto actions = battle()->getHeroActionAllowances(recipient);
+	const auto resources = battle()->getCommandResources(recipient);
+	const auto active = battle()->getActiveStackID();
+	BattleCrisisCommandChanged forged;
+	forged.battleID = BattleID(0); forged.state.used[0] = true;
+	EXPECT_THROW(gameHandler->sendAndApply(forged), std::runtime_error);
+	EXPECT_FALSE(battle()->getCrisisCommandState().meaningful());
+	EXPECT_EQ(battle()->getHeroActionAllowances(recipient), actions);
+	EXPECT_EQ(battle()->getCommandResources(recipient), resources);
+	EXPECT_EQ(battle()->getActiveStackID(), active);
+	CMemorySerializer bytes;
+	EXPECT_THROW(bytes.oser & forged, std::runtime_error);
+	EXPECT_TRUE(bytes.extractBuffer().empty());
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, ActiveProfileRejectsBeforeSettingsHeroMapWorldAndLobbyPrefixes)
+TEST_F(NewHorizonsCrisisCommandTest, CurrentRulesRejectBeforeOlderSettingsHeroMapWorldAndLobbyPrefixes)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CrisisOldPrefix settings, hero, map, world, lobby;
@@ -477,298 +314,34 @@ TEST_F(NewHorizonsCrisisCommandTest, ActiveProfileRejectsBeforeSettingsHeroMapWo
 	EXPECT_THROW(start.serialize(lobby), std::runtime_error); EXPECT_EQ(lobby.fields, 0);
 }
 
-TEST(NewHorizonsCrisisCommandProtocolTest, PlannedAndAbsentProfilesRemainOldCompatibleWhileMalformedAndRawActiveDoNot)
+TEST(NewHorizonsCrisisCommandProtocolTest, EmptyStateCodecRoundTripsButRetiredRawStateCannotBeAdmitted)
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-	// Capture historical absence of later offer policies so the old writer
-	// and raw reader assertions exercise the Crisis Command compatibility fence.
-	for(const auto key : {"perkProgressionPolicyVersion", "offerWeightPolicyVersion", "perkOfferNormalization"})
-		rules.Struct().erase(key);
-	for(auto & perk : rules["skills"][newHorizonsCrisisCommand::SKILL]["perks"].Vector())
-		if(perk["id"].String() == newHorizonsCrisisCommand::PERK) perk["effect"]["status"].String() = "planned";
-	EXPECT_NO_THROW(newHorizonsCrisisCommand::validateProfileSerialization(JsonNode(), false));
-	EXPECT_NO_THROW(newHorizonsCrisisCommand::validateProfileSerialization(rules, false));
-	newHorizonsHeroes::PerkState original; original.rules = rules;
-	CMemorySerializer compatible; compatible.oser.version = static_cast<ESerializationVersion>(static_cast<int>(ESerializationVersion::NEW_HORIZONS_CRISIS_COMMAND) - 1);
-	EXPECT_NO_THROW(compatible.oser & original);
-	for(auto & perk : rules["skills"][newHorizonsCrisisCommand::SKILL]["perks"].Vector())
-		if(perk["id"].String() == newHorizonsCrisisCommand::PERK) perk["effect"]["status"].String() = "active";
-	original.rules = rules;
-	CMemorySerializer raw; raw.oser & original;
-	raw.iser.version = compatible.oser.version;
-	newHorizonsHeroes::PerkState rejected;
-	EXPECT_THROW(raw.iser & rejected, std::runtime_error);
-	for(auto & perk : rules["skills"][newHorizonsCrisisCommand::SKILL]["perks"].Vector())
-		if(perk["id"].String() == newHorizonsCrisisCommand::PERK) perk["effect"]["status"].Bool() = true;
-	EXPECT_THROW(newHorizonsCrisisCommand::activeProfile(rules), std::runtime_error);
+	newHorizonsCrisisCommand::State empty, decoded;
+	CMemorySerializer valid;
+	ASSERT_NO_THROW(valid.oser & empty);
+	ASSERT_NO_THROW(valid.iser & decoded);
+	EXPECT_FALSE(decoded.meaningful());
+	newHorizonsCrisisCommand::State retired; retired.used[0] = true;
+	CMemorySerializer rejected;
+	EXPECT_THROW(rejected.oser & retired, std::runtime_error);
+	EXPECT_TRUE(rejected.extractBuffer().empty());
+	CMemorySerializer raw;
+	raw.oser & retired.used & retired.pending & retired.returns; // Bypass writer only to exercise raw reader validation.
+	EXPECT_THROW(raw.iser & decoded, std::runtime_error);
 }
 
-TEST_F(NewHorizonsCrisisCommandTest, InvalidStateCannotRewriteHeroAllowanceOrSuspendedAction)
+TEST(NewHorizonsCrisisCommandProtocolTest, CurrentAndOlderWritersRejectEveryRetiredOrderGrantBeforePrefixes)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	const auto heroCount = battle()->battleHeroActionAllowanceCounts(recipient).heroActions;
-	BattleCrisisCommandChanged forged; forged.battleID = BattleID(0);
-	forged.state = battle()->getCrisisCommandState(); forged.state.returns.back().action.actionType = EActionType::WAIT;
-	EXPECT_THROW(gameHandler->sendAndApply(forged), std::runtime_error);
-	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(recipient).heroActions, heroCount);
-	EXPECT_TRUE(battle()->getCrisisCommandState().choice());
+	using Ledger = HeroActionAllowanceState;
+	for(const auto source : {Ledger::GrantSource::CRISIS_COMMAND, Ledger::GrantSource::BATTLE_PLAN,
+		Ledger::GrantSource::DOUBLE_COMMAND, Ledger::GrantSource::HEROIC_SPIRIT})
+		for(const auto version : {ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_MULTIPLE_ORDERS})
+		{
+			Ledger::Grant grant;
+			grant.id = 1; grant.allowance = Ledger::AllowanceKind::ORDER; grant.source = source;
+			grant.grantedRound = 1; grant.expiryRound = 1;
+			CMemorySerializer bytes; bytes.oser.version = version;
+			EXPECT_THROW(bytes.oser & grant, std::runtime_error);
+			EXPECT_TRUE(bytes.extractBuffer().empty());
+		}
 }
-
-TEST_F(NewHorizonsCrisisCommandTest, CrisisPacketsAndGrantRejectOlderWritersBeforeAnyPrefix)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	BattleCrisisCommandChanged transition; transition.battleID = BattleID(0);
-	transition.state = battle()->getCrisisCommandState();
-	CrisisOldPrefix state;
-	EXPECT_THROW(transition.serialize(state), std::runtime_error); EXPECT_EQ(state.fields, 0);
-	BattleSetActiveStack anchor; anchor.battleID = BattleID(0);
-	anchor.stack = transition.state.returns.back().anchor; anchor.reason = BattleUnitTurnReason::CRISIS_ORDER;
-	CrisisOldPrefix activation;
-	EXPECT_THROW(anchor.serialize(activation), std::runtime_error); EXPECT_EQ(activation.fields, 0);
-	auto grant = *std::find_if(battle()->getHeroActionAllowances(recipient).grants.begin(),
-		battle()->getHeroActionAllowances(recipient).grants.end(), [](const auto & value)
-		{ return value.source == HeroActionAllowanceState::GrantSource::CRISIS_COMMAND; });
-	CrisisOldPrefix allowance;
-	EXPECT_THROW(grant.serialize(allowance), std::runtime_error); EXPECT_EQ(allowance.fields, 0);
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, OppositeHolderDeathDuringGrantedExtraNestsThenResumesBothActionsExactlyOnce)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
-	BattleUnitsChanged remove; remove.battleID = BattleID(0);
-	remove.changedStacks.emplace_back(other->unitId(), UnitChanges::EOperation::REMOVE);
-	gameHandler->sendAndApply(remove);
-	auto * fragile = addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(3, 7), 1);
-	activate(reserve); ASSERT_TRUE(action(reserve)); activate(actor);
-	ASSERT_TRUE(kill());
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
-		BattleAction::makeTargetedHeroCommand(BattleSide::DEFENDER, HeroCommand::SECOND_WIND, reserve->unitId())));
-	ASSERT_EQ(battle()->battleActiveUnit(), reserve);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
-		BattleAction::makeShotAttack(reserve, fragile)));
-	ASSERT_FALSE(fragile->alive());
-	ASSERT_EQ(battle()->getCrisisCommandState().returns.size(), 2u);
-	ASSERT_EQ(battle()->getCrisisCommandState().chooser(), BattleSide::ATTACKER);
-	const auto attacks = server.attacks.size();
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE)));
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-	EXPECT_EQ(server.attacks.size(), attacks);
-	EXPECT_TRUE(battle()->getCrisisCommandState().used.at(0)); EXPECT_TRUE(battle()->getCrisisCommandState().used.at(1));
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, CloneDeathQualifiesAndLaterDestructionCannotReenterConsumedHero)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	BattleUnitsChanged clone; clone.battleID = BattleID(0);
-	clone.changedStacks.emplace_back(victim->unitId(), UnitChanges::EOperation::UPDATE);
-	clone.changedStacks.back().data = victim->save(); clone.changedStacks.back().data["state"]["cloned"].Bool() = true;
-	gameHandler->sendAndApply(clone);
-	ASSERT_TRUE(kill()); ASSERT_TRUE(battle()->getCrisisCommandState().choice()); ASSERT_TRUE(decline());
-	auto * later = addStack(recipient, creatureByName("core:peasant"), BattleHex(12, 7), 1);
-	injure({later}, actor->unitId());
-	EXPECT_TRUE(battle()->getCrisisCommandState().pending.empty());
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-}
-
-#if ENABLE_BATTLE_AI
-TEST_F(NewHorizonsCrisisCommandTest, DetachedFreeOrderProjectionUsesExactGrantWithoutSpendingOrMutatingLiveState)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	CrisisEnvironment environment(gameState());
-	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1));
-	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
-	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
-	auto * rng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator()); ASSERT_NE(rng, nullptr);
-	const auto randomBefore = crisisRandomState(*rng);
-	const auto heroCount = battle()->battleHeroActionAllowanceCounts(recipient).heroActions;
-	const auto prepared = child->prepareHeroOrderAllowance(recipient); ASSERT_TRUE(prepared);
-	EXPECT_EQ(prepared->action.receipt.source, HeroActionAllowanceState::GrantSource::CRISIS_COMMAND);
-	ASSERT_TRUE(child->beginProjectedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
-	ASSERT_TRUE(child->projectAcceptedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
-	EXPECT_FALSE(child->getCrisisCommandState().choice());
-	EXPECT_TRUE(parent->getCrisisCommandState().choice()); EXPECT_TRUE(battle()->getCrisisCommandState().choice());
-	EXPECT_EQ(child->getHeroActionAllowances(recipient).remainingCounts(child->getRound()).heroActions, heroCount);
-	EXPECT_EQ(crisisRandomState(*rng), randomBefore);
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, ActualDefendingAISelectsARealFreeOrderAndAuthorityResumesTheEnemyFlow)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare()); ASSERT_TRUE(kill());
-	auto callback = std::make_shared<CrisisCallback>(PlayerColor(1)); callback->onBattleStarted(battle());
-	auto environment = std::make_shared<CrisisEnvironment>(gameState());
-	const auto * anchor = battle()->battleGetStackByID(battle()->getCrisisCommandState().returns.back().anchor);
-	const auto hp = reserve->getAvailableHealth();
-	auto * rng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator()); ASSERT_NE(rng, nullptr);
-	const auto randomBefore = crisisRandomState(*rng);
-	const auto heroCount = battle()->battleHeroActionAllowanceCounts(recipient).heroActions;
-	BattleEvaluator evaluator(environment, callback, anchor, PlayerColor(1), BattleID(0), recipient, 1.0f, 2);
-	evaluator.selectStackAction(anchor);
-	ASSERT_TRUE(evaluator.attemptCastingSpell(anchor));
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	const auto chosen = callback->submitted.front(); ASSERT_EQ(chosen.actionType, EActionType::HERO_COMMAND);
-	EXPECT_EQ(reserve->getAvailableHealth(), hp); EXPECT_TRUE(battle()->getCrisisCommandState().choice());
-	EXPECT_EQ(crisisRandomState(*rng), randomBefore);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), chosen));
-	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(recipient).heroActions, heroCount);
-	if(chosen.command == HeroCommand::SECOND_WIND)
-	{
-		const auto * activeStack = battle()->battleGetStackByID(battle()->getActiveStackID());
-		ASSERT_NE(activeStack, nullptr);
-		ASSERT_TRUE(action(activeStack));
-	}
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-}
-#endif
-
-TEST_F(NewHorizonsCrisisCommandTest, SeizeInterruptedNormalContextSurvivesCurrentChoiceSnapshotAndDetachedReturn)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(false, false, true, true));
-	const auto original = battle()->getSeizeInitiativeState();
-	ASSERT_EQ(original.active, actor->unitId()); ASSERT_TRUE(original.activeNormal);
-	ASSERT_TRUE(kill());
-	const auto & frame = battle()->getCrisisCommandState().returns.back();
-	ASSERT_NE(frame.anchor, actor->unitId());
-	EXPECT_EQ(frame.suspendedSeizeActive, actor->unitId());
-	EXPECT_TRUE(frame.suspendedSeizeActiveNormal);
-	EXPECT_EQ(battle()->getSeizeInitiativeState().active, actor->unitId());
-	auto descriptor = battleStartFixture::snapshot(*battle(), gameState().get());
-	auto rebind = vstd::makeScopeGuard([&] { descriptor.reset(); battle()->localInit(); });
-	ASSERT_TRUE(descriptor);
-	EXPECT_EQ(descriptor->getActiveStackID(), frame.anchor);
-	EXPECT_EQ(descriptor->getCrisisCommandState().returns.back().suspendedSeizeActive, actor->unitId());
-	EXPECT_EQ(descriptor->getSeizeInitiativeState(), battle()->getSeizeInitiativeState());
-	EXPECT_NO_THROW(newHorizonsSeizeInitiative::validateReferences(*descriptor, descriptor->getSeizeInitiativeState()));
-	BattleCrisisCommandChanged forged; forged.battleID = BattleID(0);
-	forged.state = battle()->getCrisisCommandState();
-	forged.state.returns.back().suspendedSeizeActiveNormal = false;
-	EXPECT_THROW(gameHandler->sendAndApply(forged), std::runtime_error);
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.back().suspendedSeizeActiveNormal);
-#if ENABLE_BATTLE_AI
-	CrisisEnvironment environment(gameState());
-	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(1));
-	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
-	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
-	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
-	const auto prepared = child->prepareHeroOrderAllowance(recipient); ASSERT_TRUE(prepared);
-	ASSERT_TRUE(child->beginProjectedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
-	ASSERT_TRUE(child->projectAcceptedHeroOrder(recipient, HeroCommand::HOLD_THE_LINE, {}, *prepared));
-	EXPECT_TRUE(child->getCrisisCommandState().returns.empty());
-	EXPECT_EQ(child->getActiveStackID(), actor->unitId());
-	EXPECT_EQ(child->getSeizeInitiativeState(), original);
-	EXPECT_TRUE(parent->getCrisisCommandState().choice());
-	EXPECT_TRUE(sibling->getCrisisCommandState().choice());
-	EXPECT_EQ(parent->getSeizeInitiativeState(), original);
-	EXPECT_TRUE(battle()->getCrisisCommandState().choice());
-#endif
-	ASSERT_TRUE(decline());
-	EXPECT_TRUE(battle()->getSeizeInitiativeState().completed(actor->unitId()));
-}
-
-TEST_F(NewHorizonsCrisisCommandTest, CrisisSecondWindRestoresOriginalNormalSlotAndReleasesPaidSeizeAnchorOnce)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(false, false, true, true));
-	activate(reserve); ASSERT_TRUE(action(reserve)); activate(actor);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE)));
-	const auto paid = battle()->getSeizeInitiativeState().sides.at(0);
-	ASSERT_TRUE(paid.triggered); ASSERT_TRUE(paid.awaitingAnchor);
-	ASSERT_EQ(paid.anchor, actor->unitId()); ASSERT_EQ(paid.recipient, other->unitId());
-	ASSERT_TRUE(kill());
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1),
-		BattleAction::makeTargetedHeroCommand(recipient, HeroCommand::SECOND_WIND, reserve->unitId())));
-	ASSERT_EQ(battle()->battleActiveUnit(), reserve);
-	ASSERT_FALSE(battle()->getSeizeInitiativeState().activeNormal);
-	ASSERT_EQ(battle()->getSeizeInitiativeState().active, reserve->unitId());
-	EXPECT_TRUE(battle()->getSeizeInitiativeState().sides.at(0).awaitingAnchor);
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.back().suspendedSeizeActiveNormal);
-	const auto attacks = server.attacks.size();
-	ASSERT_TRUE(action(reserve));
-	const auto & resumed = battle()->getSeizeInitiativeState();
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-	EXPECT_TRUE(resumed.completed(actor->unitId()));
-	EXPECT_TRUE(resumed.completed(reserve->unitId()));
-	EXPECT_EQ(std::count(resumed.normalCompleted.begin(), resumed.normalCompleted.end(), actor->unitId()), 1);
-	EXPECT_EQ(std::count(resumed.normalCompleted.begin(), resumed.normalCompleted.end(), reserve->unitId()), 1);
-	EXPECT_TRUE(resumed.sides.at(0).triggered);
-	EXPECT_FALSE(resumed.sides.at(0).awaitingAnchor);
-	EXPECT_EQ(resumed.sides.at(0).anchor, SeizeInitiativeState::NO_UNIT);
-	EXPECT_EQ(battle()->battleActiveUnit(), other);
-	EXPECT_EQ(server.attacks.size(), attacks);
-}
-
-#if ENABLE_BATTLE_AI
-TEST_F(NewHorizonsCrisisCommandTest, RealActiveStackResolvesNativeCrisisBeforePhysicalAnchorAction)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_TRUE(kill());
-	auto callback = std::make_shared<CrisisCallback>(PlayerColor(1));
-	callback->onBattleStarted(battle());
-	auto environment = std::make_shared<CrisisEnvironment>(gameState());
-	const auto * anchor = battle()->battleGetStackByID(battle()->getCrisisCommandState().returns.back().anchor);
-	ASSERT_NE(anchor, nullptr);
-
-	int own = 0, opposing = 0;
-	for(const auto * unit : battle()->battleGetAllStacks())
-		(unit->unitSide() == recipient ? own : opposing)
-			+= unit->getCount() * unit->creatureId().toCreature()->getAIValue();
-	const float ratio = opposing ? static_cast<float>(own) / opposing : 1.0f;
-	const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
-	const auto before = gameState()->saveToMemory();
-	const auto serialized = [](const auto & value)
-	{
-		CMemorySerializer memory;
-		memory.oser & value;
-		return memory.extractBuffer();
-	};
-	const auto randomBefore = serialized(*gameHandler->randomizer);
-	const auto fixtureBefore = serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
-	const auto ambientBefore = serialized(CRandomGenerator::getDefault());
-	std::vector<std::byte> directRequest;
-	for(const bool enabled : {false, true})
-	{
-		callback->submitted.clear();
-		heroDecisionPressure::Experiment experiment;
-		BattleEvaluator evaluator(environment, callback, anchor, PlayerColor(1), BattleID(0), recipient, ratio, horizon);
-		ASSERT_TRUE(evaluator.attemptCastingSpell(anchor, false, nullptr, nullptr, nullptr, nullptr,
-			enabled ? &experiment : nullptr));
-		ASSERT_EQ(callback->submitted.size(), 1u);
-		EXPECT_EQ(experiment.baselineAttempts, 0u);
-		EXPECT_FALSE(experiment.baselineReady);
-		const auto request = serialized(callback->submitted.front());
-		if(!enabled) directRequest = request;
-		else EXPECT_EQ(request, directRequest);
-		EXPECT_EQ(gameState()->saveToMemory(), before);
-		EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
-		EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
-		EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
-	}
-	callback->submitted.clear();
-	CBattleAI ai;
-	AutocombatPreferences preferences;
-	preferences.enableSpellsUsage = false;
-	ai.initBattleInterface(environment, callback, preferences);
-	ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
-		attackerSideHero, defenderSideHero, recipient, false);
-	ai.activeStack(BattleID(0), anchor);
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_EQ(serialized(callback->submitted.front()), directRequest);
-	EXPECT_EQ(gameState()->saveToMemory(), before);
-	EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
-	EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
-	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
-	EXPECT_TRUE(callback->unitActions.empty());
-	const auto & chosen = callback->submitted.front();
-	ASSERT_EQ(chosen.actionType, EActionType::HERO_COMMAND);
-	const auto heroActions = battle()->battleHeroActionAllowanceCounts(recipient).heroActions;
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(1), chosen));
-	EXPECT_EQ(battle()->battleHeroActionAllowanceCounts(recipient).heroActions, heroActions);
-	if(chosen.command == HeroCommand::SECOND_WIND)
-	{
-		const auto * current = battle()->battleGetStackByID(battle()->getActiveStackID());
-		ASSERT_NE(current, nullptr);
-		ASSERT_TRUE(action(current));
-	}
-	EXPECT_TRUE(battle()->getCrisisCommandState().returns.empty());
-}
-#endif

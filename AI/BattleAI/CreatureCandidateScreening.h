@@ -12,6 +12,15 @@ namespace battle { class Unit; }
 
 namespace creatureCandidateScreening
 {
+/// Explicit changed-choice search profile; exact native forecast sources only.
+/// No hero/faction or timed-effect whitelist; retained APs keep their full owner.
+bool supportsForecastBeam(const battle::Unit * actor, const HypotheticBattle & state,
+	bool forced, bool siegeDefense);
+/// Same source fallback as width selection; zero means unlimited actors.
+unsigned admittedFutureActorLimit(const battle::Unit * actor, const HypotheticBattle & state, bool forced);
+/// First finite maximum in existing ordinal order. Invalid/empty means FULL.
+std::optional<size_t> forecastBeamIndex(std::span<const float> immediate);
+
 /// Current visible ordinary-mechanics domain shared with movement screening.
 /// Opposing hidden policy stays unknown; no hidden Hero address is inspected.
 /// This certifies supported forecast inputs, never optimality or hidden rules.

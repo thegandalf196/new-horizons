@@ -16,6 +16,8 @@ set(vcmiclientcommon_SRCS
 	adventureMap/TurnTimerWidget.cpp
 
 	battle/BattleActionsController.cpp
+	battle/BattleActionCursor.cpp
+	battle/BattlePointBlankPresentation.cpp
 	battle/BattleDemonicGateUI.cpp
 	battle/BattleMagicArrowUI.cpp
 	battle/BattleSpellManaPreview.cpp
@@ -26,6 +28,11 @@ set(vcmiclientcommon_SRCS
 	battle/BattleFieldController.cpp
 	battle/BattleHero.cpp
 	battle/BattleHeroActionWindow.cpp
+	battle/BattleHeroStatus.cpp
+	battle/BattleSpellPresentation.cpp
+	battle/BattleRangedAnimation.cpp
+	battle/ThunarRangedPresentation.cpp
+	battle/BattleHeroActionAvailability.cpp
 	battle/MagicArrowOverchargeWindow.cpp
 	battle/PurifyWindow.cpp
 	battle/ShadowGiftWindow.cpp
@@ -128,6 +135,7 @@ set(vcmiclientcommon_SRCS
 	replay/ReplaySelectionWindow.cpp
 
 	render/AssetGenerator.cpp
+	render/PointBlankCursor.cpp
 	render/CAnimation.cpp
 	render/CDefFile.cpp
 	render/ColorFilter.cpp
@@ -197,6 +205,7 @@ set(vcmiclientcommon_SRCS
 	windows/HeroStartingPreview.cpp
 	windows/CHeroWindow.cpp
 	windows/CHeroWindowLayout.cpp
+	windows/HeroWindowCommandReadout.cpp
 	windows/CHeroDemonicReserve.cpp
 	windows/HeroGrowthWindow.cpp
 	windows/HeroSkillOddsWindow.cpp
@@ -302,6 +311,7 @@ set(vcmiclientcommon_HEADERS
 	adventureMap/TurnTimerWidget.h
 
 	battle/BattleActionsController.h
+	battle/BattlePointBlankPresentation.h
 	battle/BattleMovementPreview.h
 	battle/BattleAnimationClasses.h
 	battle/BattleConsole.h
@@ -311,6 +321,9 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleHero.h
 	battle/HeroPositiveProcPresentation.h
 	battle/BattleHeroActionWindow.h
+	battle/ElementalAttunementPresentation.h
+	battle/PoisonPresentation.h
+	battle/ThunarRangedPresentation.h
 	battle/MagicArrowOverchargeWindow.h
 	battle/PurifyWindow.h
 	battle/SelectiveDispelWindow.h

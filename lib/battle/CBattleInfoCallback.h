@@ -17,6 +17,7 @@
 #include <functional>
 
 #include "ReachabilityInfo.h"
+#include "BattleMovementQuery.h"
 #include "BattleAttackInfo.h"
 #include "RelentlessAssaultState.h"
 #include "HeroCommand.h"
@@ -526,6 +527,11 @@ private:
 		BattleHex defenderPos, const battle::MeleeContactFootprint * contact) const;
 
 protected:
+	/// Memoization may reuse only the pure solver result, after current visible
+	/// movement inputs have been captured. Live callbacks use the ordinary solver.
+	virtual battle::MovementPaths movementPaths(const AccessibilityInfo & accessibility,
+		const ReachabilityInfo::Parameters & params, const BattleHexArray & stoppers,
+		EGateState gateState, const std::array<std::int32_t, GameConstants::BFIELD_SIZE> & movementCosts) const;
 	bool appendCreatureContinuationActions(const CStack * stack,
 		std::vector<PossiblePlayerBattleAction> & actions) const;
 	void finalizeDamagePayload(const BattleAttackInfo & info, DamageAttackInfo & payload, const IBattleInfo * currentBattle) const;
@@ -553,7 +559,6 @@ protected:
 	bool battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const;
 	ReachabilityInfo getFlyingReachability(const ReachabilityInfo::Parameters & params) const;
 	ReachabilityInfo makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const;
-	bool isInObstacle(const BattleHex & hex, const BattleHexArray & obstacles, const ReachabilityInfo::Parameters & params) const;
 	BattleHexArray getStoppers(BattleSide whichSidePerspective) const; //get hexes with stopping obstacles (quicksands)
 	std::vector<std::shared_ptr<const CObstacleInstance>> getAffectedObstaclesAtPositions(
 		const battle::Unit * unit, const BattleHexArray & positions, const BattleHexArray & passed) const;

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "BattleEvaluator.h"
+#include "RunicReflectionValue.h"
 #include "HeroActionAdmission.h"
 #include "SpellTargetsEvaluator.h"
 #include "BlinkPositionValue.h"
@@ -141,10 +142,13 @@ bool BattleEvaluator::prepareExpectedOutcomes(PossibleSpellcast & candidate, spe
 	if(spell->getJsonKey() == "new-horizons:handOfFate" && newHorizonsMagic::rulesActive(view->getBattle()->getMagicRules())
 		&& newHorizonsMagic::spellAllowedBySavedRoster(view->getBattle()->getMagicRules(), spell->getId()))
 	{
-		const auto damage = SpellTargetEvaluator::handOfFateExpectedDamageValue(&mechanics, ps.dest, playerID, view, env.get(), outcome);
+		const auto damage = SpellTargetEvaluator::handOfFateExpectedDamageValue(&mechanics, ps.dest, playerID, view, env.get(), outcome, hb);
 		if(!damage) return false;
 		ps.spellHandOfFateExpectedValue = damage->hostileDamageValue * scoreEvaluator.getPositiveEffectMultiplier()
 			- 4.0f * damage->friendlyDamageValue * scoreEvaluator.getNegativeEffectMultiplier();
+		*ps.spellHandOfFateExpectedValue += damage->runicSpillValue >= 0
+			? damage->runicSpillValue * scoreEvaluator.getPositiveEffectMultiplier()
+			: damage->runicSpillValue * 4 * scoreEvaluator.getNegativeEffectMultiplier();
 		store(damage->inspirationValue);
 	}
 	if(const auto * form = mechanics.findEffect<spells::effects::BattleFormEffect>())
@@ -170,7 +174,12 @@ bool BattleEvaluator::prepareExpectedOutcomes(PossibleSpellcast & candidate, spe
 		ps.spellPuppetMasterExpectedValue = value * scoreEvaluator.getPositiveEffectMultiplier(); store(marginal);
 		if(*ps.spellPuppetMasterExpectedValue + ps.spellInspirationExpectedValue.value_or(0) <= 0) return false;
 	}
-	return true;
+	const auto runic = runicReflectionAI::expectedValue(mechanics, ps.dest, playerID, hb,
+		{scoreEvaluator.getPositiveEffectMultiplier(), scoreEvaluator.getNegativeEffectMultiplier(), 4, false});
+	ps.spellRunicExpectedValue = runic.value;
+	ps.spellRunicEstimatePartial = runic.partial;
+	// Unsupported reflected control cannot enter the ordinary zero-risk queue.
+	return !runic.partial;
 }
 
 bool BattleEvaluator::prepareBlinkOutcome(PossibleSpellcast & ps, spells::Mechanics & mechanics, uint32_t actorId)

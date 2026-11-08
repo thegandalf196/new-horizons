@@ -177,7 +177,8 @@ def legacy_rules(rules):
             spell.pop('heroAccess', None)
             spell.pop('restoration', None)
             for key in ('variant', 'propagationLimit', 'implosion', 'ignoreInterveningBarriers',
-                        'temporaryMagicalEffectsOnly', 'schoolRankDurations', 'burnGroundedFlyers', 'focusMagic', 'slow', 'livingArmor'):
+                        'temporaryMagicalEffectsOnly', 'schoolRankDurations', 'burnGroundedFlyers', 'focusMagic', 'slow', 'livingArmor',
+                        'magicArrow', 'elementalTag', 'elementalAreaDamage'):
                 spell.pop(key, None)
     return result
 
@@ -1030,7 +1031,7 @@ class NewHorizonsContentTest(unittest.TestCase):
         arrow = self.rules['spells']['core:magicArrow']
         self.assertEqual(arrow['schools'], ['new-horizons:sorcery'])
         self.assertEqual(arrow['level'], 1)
-        self.assertEqual(arrow['directDamage'], {'base': 20, 'powerCoefficient': 20})
+        self.assertEqual(arrow['directDamage'], {'base': 20, 'powerCoefficient': 10})
         self.assertEqual({name for name, spell in self.rules['spells'].items()
                           if 'directDamage' in spell}, {
                               'core:armageddon',

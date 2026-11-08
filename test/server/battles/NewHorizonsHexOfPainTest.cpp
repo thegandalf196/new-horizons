@@ -9,8 +9,6 @@
 #include "StdInc.h"
 
 #include "HeroCommandFixture.h"
-#include "../../../luascript/StdInc.h"
-#include "../../../luascript/LuaStack.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../spells/HistoricalCrusadeRules.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -395,21 +393,16 @@ TEST_F(NewHorizonsHexOfPainTest, RetaliationTriggersItsOwnReactiveShadowDamage)
 	EXPECT_EQ(reactiveInjury.front().damageAmount, 15 + counterDamage / 10); // integer division floors the 10% share
 }
 
-TEST_F(NewHorizonsHexOfPainTest, LuaIntegralPayloadIsPreparedBeforeStrictSchemaValidation)
+TEST_F(NewHorizonsHexOfPainTest, LegacyFloatingPayloadIsPreparedBeforeStrictSchemaValidation)
 {
 	const auto & schema = LIBRARY->scriptTypes()->getById(combatEvent).parametersSchema;
 	for(int side : {0, 1})
 		for(int share : {0, 10, 20, 100})
 		{
-			std::unique_ptr<lua_State, decltype(&lua_close)> state(luaL_newstate(), lua_close);
-			ASSERT_NE(state, nullptr);
-			const std::string source = "return {addInfo={casterSide=" + std::to_string(side)
-				+ ",damageSharePercent=" + std::to_string(share) + "}}";
-			ASSERT_EQ(luaL_dostring(state.get(), source.c_str()), 0);
-			JsonNode descriptor;
-			scripting::LuaStack stack(state.get());
-			stack.get(stack.absindex(-1), descriptor);
-			JsonNode parameters = descriptor["addInfo"];
+			// Saved Lua-era descriptors represented integral values as doubles.
+			JsonNode parameters;
+			parameters["casterSide"].Float() = side;
+			parameters["damageSharePercent"].Float() = share;
 			ASSERT_EQ(parameters["casterSide"].getType(), JsonNode::JsonType::DATA_FLOAT);
 			ASSERT_EQ(parameters["damageSharePercent"].getType(), JsonNode::JsonType::DATA_FLOAT);
 			LIBRARY->scriptTypes()->prepareParameters(combatEvent, parameters, TextIdentifier(""));
@@ -421,7 +414,7 @@ TEST_F(NewHorizonsHexOfPainTest, LuaIntegralPayloadIsPreparedBeforeStrictSchemaV
 		}
 }
 
-TEST_F(NewHorizonsHexOfPainTest, InvalidLuaPayloadRemainsInvalidInsteadOfBeingTruncated)
+TEST_F(NewHorizonsHexOfPainTest, InvalidLegacyPayloadRemainsInvalidInsteadOfBeingTruncated)
 {
 	const auto & schema = LIBRARY->scriptTypes()->getById(combatEvent).parametersSchema;
 	for(double side : {0.5, 2.0, 9223372036854775808.0})

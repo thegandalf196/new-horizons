@@ -120,6 +120,18 @@ def main() -> None:
     if "NEW_HORIZONS_MAGIC_MISSILE" in CONTROLLER + INTERFACE + WINDOW:
         raise AssertionError("frontend must not activate the abandoned Magic Missile draft")
 
+    # Choices are bound to one hero and casting session. Prices and legal caps
+    # are recomputed by the canonical mechanics rather than inferred from q.
+    require(INTERFACE, "hero->id != heroId", "hero identity binding")
+    require(INTERFACE, "active->getBattleID() != battleId", "battle identity binding")
+    require(INTERFACE, "getCastingSession() != castingSession", "casting-session binding")
+    require(INTERFACE, "hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER)", "ordinary Spell Power cap input")
+    require(INTERFACE, "getTargetAwareManaCost(targetCheck)", "canonical total payment")
+    require(INTERFACE, "overcharge < 0 || overcharge > values.maximumOvercharge", "current legal-cap validation")
+    for obsolete in ("values.additionalMana = overcharge", "Spend one more optional Mana", "Spend one less optional Mana"):
+        if obsolete in WINDOW:
+            raise AssertionError("obsolete level-equals-Mana convention: " + obsolete)
+
     # Rendering is a pure operation.  CLabel::setText and CButton::block both
     # request a redraw; calling refresh() from show/showAll would synchronously
     # re-enter showAll and recurse until the stack overflows.  The widget is

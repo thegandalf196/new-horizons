@@ -55,7 +55,78 @@ set(lib_SRCS
 )
 
 set(lib_MAIN_SRCS
+	combatScripts/NativeCombatEvents.cpp
+	combatScripts/NativeJsonParameters.cpp
+	combatScripts/nativeEvents/NativeEventCommon.cpp
+	combatScripts/nativeEvents/NativeEventPackets.cpp
+	combatScripts/nativeEvents/NativeEventCasting.cpp
+	combatScripts/nativeEvents/NativeAttackEvents.cpp
+	combatScripts/nativeEvents/NativeRecoveryEvents.cpp
+	combatScripts/nativeEvents/NativeReflectEvents.cpp
+	combatScripts/nativeEvents/NativeSetupEvents.cpp
+	combatScripts/nativeEvents/NativeFocusMagic.cpp
+	scripting/NativeModule.cpp
+	scripting/NativeScriptFactory.cpp
+	scripting/NativeMapEventDispatcher.cpp
+	scripting/nativeMap/EventRuntime.cpp
+	scripting/nativeMap/EventActions.cpp
+	scripting/nativeMap/EventQuests.cpp
+	scripting/nativeMap/EventDialogs.cpp
+	scripting/nativeMap/EventRewards.cpp
+	scripting/nativeMap/EventExpressions.cpp
+	scripting/nativeMap/EventConditions.cpp
+	scripting/nativeMap/LegacyHotaParser.cpp
+	scripting/nativeMap/LegacyHotaPredicates.cpp
+	scripting/nativeMap/LegacyHotaActions.cpp
+	scripting/nativeMap/LegacyHotaImport.cpp
+	scripting/nativeMap/LegacyHotaValidation.cpp
+	mapping/HotaEventActions.cpp
+	mapping/HotaEventRewards.cpp
+	mapping/HotaEventPredicates.cpp
+	spells/effects/native/SummoningAndRelocation.cpp
+	spells/effects/native/NativeRelocation.cpp
+	spells/effects/native/NativePhantomArmy.cpp
+	spells/effects/native/NativeSummon.cpp
+	spells/effects/native/NativeTimedSummons.cpp
+	spells/effects/native/NativeDemonSummon.cpp
+	spells/effects/native/NativeReanimate.cpp
+	spells/effects/native/NativeSacrifice.cpp
+	spells/effects/native/NativeNatureHealth.cpp
+	spells/effects/native/NativeOrderedNature.cpp
+	spells/effects/native/NativeVerdantPrison.cpp
+	spells/effects/native/NativeTransfigureMatter.cpp
+	spells/effects/native/StructurePackets.cpp
+	spells/effects/native/StructureGeometry.cpp
+	spells/effects/native/Catapult.cpp
+	spells/effects/native/Earthquake.cpp
+	spells/effects/native/ObstaclePlacement.cpp
+	spells/effects/native/ObstacleApplication.cpp
+	spells/effects/native/ObstacleEffects.cpp
+	spells/effects/native/HavocStructures.cpp
 	filesystem/SavegamePath.cpp
+	combatScripts/NativeDamageCalculator.cpp
+	combatScripts/NativeDamageCapture.cpp
+	combatScripts/NativeDamageFactors.cpp
+	combatScripts/NativePhysicalProtection.cpp
+	spells/effects/native/NativeSpellFactory.cpp
+	spells/effects/native/UnitEffect.cpp
+	spells/effects/native/Damage.cpp
+	spells/effects/native/DamageApplication.cpp
+	spells/effects/native/Heal.cpp
+	spells/effects/native/LifeDrain.cpp
+	spells/effects/native/TimedConversion.cpp
+	spells/effects/native/TimedPower.cpp
+	spells/effects/native/TimedApplication.cpp
+	spells/SpellBonusProvenance.cpp
+	spells/effects/native/TimedNumericBonuses.cpp
+	spells/effects/native/TimedRecipientPlan.cpp
+	spells/effects/native/TimedDescription.cpp
+	spells/effects/native/StatusHelpers.cpp
+	spells/effects/native/RoundStatusEffects.cpp
+	spells/effects/native/SingleTargetStatuses.cpp
+	spells/effects/native/UtilityEffects.cpp
+	spells/effects/native/LocationUtilities.cpp
+	spells/effects/native/CreatureUtilities.cpp
 
 	battle/AccessibilityInfo.cpp
 	battle/BattleForm.cpp
@@ -180,7 +251,6 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsGraveDust.h
 	battle/NewHorizonsShieldAndSword.cpp
 	battle/NewHorizonsSepulchralGrip.cpp
-		battle/NewHorizonsSequenceProtection.cpp
 	battle/NewHorizonsOrdinaryRangedSpecialtyRules.cpp
 	battle/NewHorizonsParalyzingGaze.cpp
 	battle/NewHorizonsAerialSupremacy.cpp
@@ -275,7 +345,30 @@ set(lib_MAIN_SRCS
 	battle/Destination.cpp
 	battle/IBattleState.cpp
 	battle/ReachabilityInfo.cpp
+	battle/BattleMovementQuery.cpp
+	battle/BattleMovementDirect.cpp
+	battle/BattleMovementQueryCompilation.cpp
+	battle/BattleReachability.cpp
 	battle/SideInBattle.cpp
+	battle/SpecialtyEventPolicy.cpp
+	battle/NewHorizonsSpecialtyRoundEffects.cpp
+	battle/NewHorizonsPassiveSpecialties.cpp
+	battle/NewHorizonsCreatureSpecialtyCapabilities.cpp
+	battle/NewHorizonsSpecialtyEvents.cpp
+	battle/NewHorizonsSpecialtyProcs.cpp
+	battle/NewHorizonsAttackControllers.cpp
+	battle/NewHorizonsPoisonRefresh.cpp
+	battle/NewHorizonsStun.cpp
+	battle/CHealthTemporaryGrowth.cpp
+	battle/CommittedElementalEffects.cpp
+	battle/CommittedBonusOperations.cpp
+	battle/HeroOrderBenefitQueries.cpp
+	battle/NewHorizonsElementalAttunementCast.cpp
+	battle/ElementalAttunementState.cpp
+	battle/NewHorizonsElementalAttunementUnits.cpp
+	battle/NewHorizonsElementalAttunementPolicy.cpp
+	battle/NewHorizonsElementalAttunement.cpp
+	battle/NewHorizonsCommandResources.cpp
 	battle/SiegeInfo.cpp
 	battle/Unit.cpp
 	battle/UnitAdjacency.cpp
@@ -484,6 +577,9 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsAdditionalSpecialties.cpp
 	entities/hero/OrdinaryCreatureSpecialtyRegistry.cpp
 	entities/hero/NewHorizonsOrdinaryCreatureSpecialties.cpp
+	entities/hero/NewHorizonsPassiveSpecialtyRules.cpp
+	entities/hero/NewHorizonsCreatureSpecialtyCapabilities.cpp
+	entities/hero/NewHorizonsPassiveSpecialtyBonuses.cpp
 	entities/hero/NewHorizonsManaLeeches.cpp
 	entities/hero/NewHorizonsSerpentsEmbrace.cpp
 	entities/hero/NewHorizonsForestAmbush.cpp
@@ -519,6 +615,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsLeadership.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
 	entities/hero/HeroMachineCapabilities.cpp
+	entities/hero/SiegeCapabilityRead.cpp
 	entities/hero/NewHorizonsMasteryRules.cpp
 	entities/hero/NewHorizonsMasteryState.cpp
 	entities/hero/NewHorizonsMasteryEffects.cpp
@@ -550,6 +647,7 @@ set(lib_MAIN_SRCS
 
 	gameState/CGameStateSpecialtyPreflight.cpp
 	gameState/CGameState.cpp
+	gameState/NativePilotAdmission.cpp
 	gameState/MapObjectInitialization.cpp
 	gameState/CGameStateCampaign.cpp
 	gameState/GameStatePackVisitor.cpp
@@ -595,6 +693,9 @@ set(lib_MAIN_SRCS
 	gameState/NeutralArmyStartOption.cpp
 	mapObjects/NewHorizonsRecruitmentGrowth.cpp
 	mapObjects/CGHeroInstance.cpp
+	mapObjects/CGHeroCreatureSpecialties.cpp
+	mapObjects/CGHeroSkillBonuses.cpp
+	mapObjects/HeroLeadershipQueries.cpp
 	mapObjects/HeroEstateIncome.cpp
 	mapObjects/TownEstateEconomy.cpp
 	mapObjects/DwellingRecruitmentCost.cpp
@@ -641,6 +742,7 @@ set(lib_MAIN_SRCS
 	mapping/MapSpecialtyPreflight.cpp
 	mapping/MapBonusPreflight.cpp
 	mapping/CMap.cpp
+	mapping/NativePilotSerialization.cpp
 	mapping/CMapHeader.cpp
 	mapping/CMapEditManager.cpp
 	mapping/CMapInfo.cpp
@@ -748,6 +850,9 @@ set(lib_MAIN_SRCS
 	spells/BattleSpellMechanics.cpp
 	spells/BattleSpellTargetProtection.cpp
 	spells/BattleSpellMirror.cpp
+	spells/BattleSpellRunicReflection.cpp
+	spells/NewHorizonsRunicReflection.cpp
+	spells/RunicCreatureCaster.cpp
 	spells/BonusCaster.cpp
 	spells/IncomingSpellDamage.cpp
 	spells/CSpell.cpp
@@ -791,6 +896,13 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
 	spells/NewHorizonsMagic.cpp
+	nativeRules/NativeRulePilots.cpp
+	nativeRules/PreparedPilotRules.cpp
+	nativeRules/MechanicsSourceAdapters.cpp
+	nativeRules/MechanicsAuthoring.cpp
+	nativeRules/PreparedBonusRule.cpp
+	spells/SpellOffensiveOutput.cpp
+	spells/NewHorizonsMagicArrow.cpp
 	spells/NewHorizonsQuicksand.cpp
 	spells/NewHorizonsTravelDayEnd.cpp
 	spells/NewHorizonsMagicPresentation.cpp
@@ -814,6 +926,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsCrossSchoolFormula.cpp
 	spells/ExternalCaster.cpp
 	spells/ISpellMechanics.cpp
+	spells/SpellRecipientDamage.cpp
 	spells/SpellCreatureDomain.cpp
 	spells/SummonedCreatureHealth.cpp
 	spells/ObstacleCasterProxy.cpp
@@ -949,6 +1062,21 @@ set(lib_HEADERS
 )
 
 set(lib_MAIN_HEADERS
+	combatScripts/NativeCombatEvents.h
+	combatScripts/nativeEvents/NativeEventCommon.h
+	combatScripts/NativeJsonParameters.h
+	scripting/nativeMap/EventCodes.h
+	scripting/nativeMap/EventRuntime.h
+	scripting/nativeMap/LegacyHotaImport.h
+	scripting/nativeMap/LegacyHotaPrelude.h
+	scripting/NativeMapEventDispatcher.h
+	scripting/NativeModule.h
+	scripting/NativeScriptFactory.h
+	spells/effects/native/Catapult.h
+	spells/effects/native/ObstaclePlacement.h
+	spells/effects/native/StructureCommon.h
+	spells/effects/native/SummonHelpers.h
+	spells/effects/native/SummoningAndRelocation.h
 	filesystem/SavegamePath.h
 
 	../include/vstd/ContainerUtils.h
@@ -1055,7 +1183,6 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsOrdinaryStrike.h
 	battle/NewHorizonsShieldAndSword.h
 	battle/NewHorizonsSepulchralGrip.h
-		battle/NewHorizonsSequenceProtection.h
 	battle/NewHorizonsOrdinaryRangedSpecialtyRules.h
 	battle/NewHorizonsParalyzingGaze.h
 	battle/NewHorizonsAerialSupremacy.h
@@ -1144,9 +1271,24 @@ set(lib_MAIN_HEADERS
 	battle/IUnitInfo.h
 	battle/PossiblePlayerBattleAction.h
 	battle/ReachabilityInfo.h
+	battle/BattleMovementQuery.h
+	battle/MovementSolver.h
 	battle/WisdomCombatState.h
 	spells/NewHorizonsWisdom.h
 	battle/SideInBattle.h
+	battle/SpecialtyEventPolicy.h
+	battle/NewHorizonsSpecialtyRoundEffects.h
+	battle/NewHorizonsPassiveSpecialties.h
+	battle/NewHorizonsCreatureSpecialtyCapabilities.h
+	battle/NewHorizonsSpecialtyEvents.h
+	battle/NewHorizonsSpecialtyProcs.h
+	battle/NewHorizonsAttackControllers.h
+	battle/NewHorizonsStun.h
+	battle/CommittedElementalEffects.h
+	battle/CommittedBonusOperations.h
+	networkPacks/SetElementalAttunementState.h
+	battle/NewHorizonsElementalAttunement.h
+	battle/NewHorizonsCommandResources.h
 	battle/MetamagicPointState.h
 	networkPacks/SetMetamagicPointState.h
 	battle/SiegeInfo.h
@@ -1302,6 +1444,9 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsAdditionalSpecialties.h
 	entities/hero/OrdinaryCreatureSpecialtyRegistry.h
 	entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h
+	entities/hero/NewHorizonsPassiveSpecialtyRules.h
+	entities/hero/NewHorizonsCreatureSpecialtyCapabilities.h
+	entities/hero/NewHorizonsPassiveSpecialtyBonuses.h
 	entities/hero/NewHorizonsManaLeeches.h
 	entities/hero/NewHorizonsSerpentsEmbrace.h
 	entities/hero/NewHorizonsForestAmbush.h
@@ -1323,6 +1468,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/HeroStartingProjection.h
 	entities/hero/NewHorizonsLeadership.h
 	entities/hero/NewHorizonsCapabilityRules.h
+	entities/hero/SiegeCapabilityRead.h
 	entities/hero/NewHorizonsMasteryRules.h
 	entities/hero/NewHorizonsMasteryState.h
 	entities/hero/NewHorizonsMasteryEffects.h
@@ -1599,6 +1745,12 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsLightDamage.h
 	spells/KnownUtilitySpellEffectPreview.h
 	spells/NewHorizonsMagic.h
+	nativeRules/NativeRulePilots.h
+	nativeRules/PreparedPilotRules.h
+	nativeRules/MechanicsSourceAdapters.h
+	nativeRules/MechanicsAuthoring.h
+	nativeRules/PreparedBonusRule.h
+	spells/NewHorizonsMagicArrow.h
 	spells/NewHorizonsCureHealing.h
 	spells/NewHorizonsMagicInternal.h
 	spells/NewHorizonsMagicPresentation.h
@@ -1622,6 +1774,9 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsCrossSchoolFormula.h
 	spells/ExternalCaster.h
 	spells/ISpellMechanics.h
+	spells/NewHorizonsRunicReflection.h
+	spells/SpellBonusProvenance.h
+	spells/RunicCreatureCaster.h
 	spells/ObstacleCasterProxy.h
 	spells/Problem.h
 	spells/ProxyCaster.h
@@ -1643,6 +1798,18 @@ set(lib_MAIN_HEADERS
 	combatScripts/CombatEventPayload.h
 	combatScripts/ICombatEventScript.h
 	combatScripts/IDamageCalculatorScript.h
+	combatScripts/NativeDamageCalculator.h
+	combatScripts/NativeDamageFacts.h
+	combatScripts/NativeDamageFactors.h
+	combatScripts/NativePhysicalProtection.h
+	spells/effects/native/NativeSpellFactory.h
+	spells/effects/native/UnitEffect.h
+	spells/effects/native/Damage.h
+	spells/effects/native/Heal.h
+	spells/effects/native/LifeDrain.h
+	spells/effects/native/Timed.h
+	spells/effects/native/StatusHelpers.h
+	spells/effects/native/SpellEffect.h
 
 	scripting/ScriptHandler.h
 	scripting/ScriptService.h
@@ -1712,6 +1879,18 @@ endif()
 assign_source_group(${lib_SRCS} ${lib_HEADERS})
 
 add_library(vcmiMain OBJECT ${lib_SRCS} ${lib_HEADERS})
+
+# Preserve the sequential double arithmetic and final floors of combat rules.
+# Contracting multiply/add or reassociating products can change a one-HP result.
+set(native_rule_sources ${lib_MAIN_SRCS})
+list(FILTER native_rule_sources INCLUDE REGEX "^(combatScripts/Native|combatScripts/nativeEvents/|spells/effects/native/|scripting/nativeMap/)")
+if(MSVC)
+	set_property(SOURCE ${native_rule_sources}
+		APPEND PROPERTY COMPILE_OPTIONS "/fp:strict")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+	set_property(SOURCE ${native_rule_sources}
+		APPEND PROPERTY COMPILE_OPTIONS "-fno-fast-math;-ffp-contract=off")
+endif()
 
 target_compile_definitions(vcmiMain PRIVATE "VCMI_DLL=1")
 target_link_libraries(vcmiMain PUBLIC

@@ -19,7 +19,7 @@ from git_source_snapshot import git, source_snapshot
 from mingw_runtime import audit_directory, stage_gnu_runtime, stage_ogg_loader_alias
 
 HELPERS = ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'README-New-Horizons.txt', 'dirs.json')
-RESOURCES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
+RESOURCES = ('config', 'Mods/vcmi', 'Mods/new-horizons')
 NOTICE_FAMILIES = ('', 'academy', 'magic-assets', 'Mage Guilds', 'creatures/wisp/handoff-v3',
                    'creatures/cabir-master', 'creatures/cabir-master/v3', 'creatures/cabir/v3',
                    'creatures/magi-palette/v1')
@@ -86,7 +86,7 @@ def stage_committed_resources(root, revision, destination, legacy_frozen_loose_a
             # Selected resources are shipped solely inside the verified pack.
             # In particular, the readable authoring config can intentionally
             # differ from the complete selected resolver embedded in NHART.
-            if member.name in excluded_sources:
+            if member.name in excluded_sources or member.name.lower().endswith('.lua'):
                 continue
             target = destination / member.name
             target.parent.mkdir(parents=True, exist_ok=True)

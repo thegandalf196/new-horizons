@@ -53,7 +53,8 @@ std::string physicalPoisonTooltip(const newHorizonsBattleStatus::PhysicalPoisonS
 
 StackTemporaryStatusPresenter::StackTemporaryStatusPresenter(const CStack * stack,
 	const newHorizonsBattleStatus::StackInfoStatusSnapshot & status, const CBattleInfoCallback * battle)
-	: stack(stack), status(status), inspiration(arcaneInspirationPresentation::forStack(*stack, battle))
+	: stack(stack), status(status), inspiration(arcaneInspirationPresentation::forStack(*stack, battle)),
+	attunement(elementalAttunementPresentation::forUnit(*stack))
 {
 	const auto spells = stack->activeSpells();
 
@@ -147,12 +148,18 @@ StackTemporaryStatusPresenter::StackTemporaryStatusPresenter(const CStack * stac
 		entries.push_back({newHorizonsBattleStatus::StackStatusIconKind::ORDINARY, std::nullopt, false, true});
 		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::ORDINARY);
 	}
+	if(attunement.attuned)
+	{
+		entries.push_back({newHorizonsBattleStatus::StackStatusIconKind::ELEMENTAL_ATTUNEMENT, std::nullopt});
+		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::ELEMENTAL_ATTUNEMENT);
+	}
+
 	totalEffectCount = spells.size() - hiddenReanimateSpellEffects - hiddenJudgedSpellEffects - hiddenConfusionSpellEffects
 		+ (temporaryCreatures.active() ? 1 : 0) + (physicalPoison.active() ? 1 : 0)
 		+ (status.frozen ? 1 : 0)
 		+ (status.shadowGift.hasMaximumHealthLoss() ? 1 : 0)
 		+ (retributionJudged.active() ? 1 : 0) + (battleForm.active() ? 1 : 0)
-		+ (!arcaneMarks.empty() ? 1 : 0) + (inspiration.active() ? 1 : 0);
+		+ (!arcaneMarks.empty() ? 1 : 0) + (inspiration.active() ? 1 : 0) + (attunement.attuned ? 1 : 0);
 	displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
 	empty = totalEffectCount == 0;
 }
@@ -174,6 +181,17 @@ bool StackTemporaryStatusPresenter::append(std::size_t index, const Point & posi
 	const auto battleForm = status.battleForm;
 	const auto hiddenEffectCount = displayPlan.overflow
 		? totalEffectCount - displayPlan.visibleEntryIndices.size() : 0;
+	if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::ELEMENTAL_ATTUNEMENT)
+	{
+		widgets.physicalStatusIcons.push_back(std::make_shared<CAnimImage>(
+			AnimationPath::builtin(elementalAttunementPresentation::ICON), 0, Rect(slotX + 8, slotY + 2, 32, 32)));
+		widgets.labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
+			ETextAlignment::BOTTOMRIGHT, Colors::YELLOW, "A"));
+		const auto tooltip = elementalAttunementPresentation::tooltip(attunement);
+		widgets.statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
+			Rect(slotX, slotY, 48, 36), tooltip, tooltip));
+		return true;
+	}
 	if(entry.inspiration)
 	{
 		widgets.physicalStatusIcons.push_back(std::make_shared<CPicture>(

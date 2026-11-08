@@ -83,7 +83,7 @@ TEST_P(NewHorizonsSylvanTacticsAITest, FleetfootWaitAndRedeploymentNeverChangeIn
 	EXPECT_EQ(actor->getMovementRange(), speed + (GetParam() ? 1 : 0));
 	EXPECT_EQ(actor->getMovementRange(1), speed - (GetParam() ? 1 : 0));
 	EXPECT_EQ(actor->getInitiative(), initiative);
-	model->completeSwiftNormalActivation(actor->unitId());
+	model->completeNormalActivation(actor->unitId());
 	EXPECT_EQ(actor->getMovementRange(), speed - (GetParam() ? 1 : 0));
 }
 

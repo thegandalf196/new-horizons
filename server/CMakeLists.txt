@@ -29,8 +29,15 @@ set(vcmiservercommon_SRCS
 		battles/NewHorizonsSerpentsEmbrace.cpp
 	battles/BattleLastStandDamage.cpp
 	battles/BattlePrimaryStrikeAftermath.cpp
-	battles/ElementalRebirthAftermath.cpp
-	battles/ElementalCataclysmAftermath.cpp
+	battles/BattleSpecialtyProcs.cpp
+	battles/BattleSpecialtyAttackControllers.cpp
+	battles/BattleSpecialtyAttackControllers.h
+	battles/BattleRangedAttack.cpp
+	battles/BattleRelentlessBarrage.cpp
+	battles/BattlePrimaryAttackCasting.cpp
+	battles/BattleStunActivation.cpp
+	battles/BattleActivationDispatch.cpp
+	battles/BattleSpecialtyProcs.h
 	battles/BattlePurifyAction.cpp
 	battles/BattleMeleeSpecialtyCompletion.cpp
 	battles/BattleRoundHealing.cpp
@@ -57,7 +64,7 @@ set(vcmiservercommon_SRCS
 
 		queries/BattleQueries.cpp
 		queries/CQuery.cpp
-		queries/LuaScriptQuery.cpp
+		queries/MapEventQuery.cpp
 		queries/MapQueries.cpp
 		queries/HeroLevelUpOffer.cpp
 		queries/VisitQueries.cpp
@@ -108,8 +115,6 @@ set(vcmiservercommon_HEADERS
 		battles/NewHorizonsSerpentsEmbrace.h
 	battles/BattleLastStandDamage.h
 	battles/BattlePrimaryStrikeAftermath.h
-	battles/ElementalRebirthAftermath.h
-	battles/ElementalCataclysmAftermath.h
 	battles/BattlePurifyAction.h
 	battles/BattleMeleeSpecialtyCompletion.h
 	battles/BattleRoundHealing.h
@@ -130,7 +135,7 @@ set(vcmiservercommon_HEADERS
 
 		queries/BattleQueries.h
 		queries/CQuery.h
-		queries/LuaScriptQuery.h
+		queries/MapEventQuery.h
 		queries/MapQueries.h
 		queries/HeroLevelUpOffer.h
 		queries/VisitQueries.h

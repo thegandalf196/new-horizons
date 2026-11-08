@@ -46,7 +46,7 @@
 		"mathVersion": 1
 	},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "8c836dc53d48dc1212cfbe0e8c940054a8f088fca0590e6a738324cbcf618101",
+	"sourceSha256": "72f2402cc52504a43e558f84cc1ee537bbb3bd46ef4bf026149ceada8f83a470",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -742,6 +742,21 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly army receives +1 Morale."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "skillRank",
+								"target": "army",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "MORALE",
+								"value": 1,
+								"valueMode": "BASE_NUMBER"
+							}
+						]
 					}
 				},
 				"advanced": {
@@ -749,6 +764,21 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly army receives +2 Morale total."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "skillRank",
+								"target": "army",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "MORALE",
+								"value": 2,
+								"valueMode": "BASE_NUMBER"
+							}
+						]
 					}
 				},
 				"expert": {
@@ -756,6 +786,21 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly army receives +3 Morale total."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "skillRank",
+								"target": "army",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "MORALE",
+								"value": 3,
+								"valueMode": "BASE_NUMBER"
+							}
+						]
 					}
 				}
 			},
@@ -854,11 +899,12 @@
 					"id": "new-horizons:discipline.heroicSpirit",
 					"name": "Heroic Spirit",
 					"requires": "expert",
-					"description": "After an ordinary Order, positive hero Morale may grant one additional Order-only Hero Action. Bonus Orders cannot trigger further Morale.",
+					"description": "Each point of positive hero Morale grants +5 percentage points of Command Efficiency to attribute-derived Order components, capped at +30 percentage points.",
 					"effect": {
 						"status": "active",
-						"description": "After an ordinary Order, positive hero Morale may grant one additional Order-only Hero Action. Bonus Orders cannot trigger further Morale."
-					}
+						"description": "Each point of positive hero Morale grants +5 percentage points of Command Efficiency to attribute-derived Order components, capped at +30 percentage points."
+					},
+					"details": "Capture the issuing hero's actual Morale when the Order is accepted: min(30, 5 × max(0, hero Morale)) percentage points. The issued Order retains that strength. This grants no additional Hero Action."
 				}
 			]
 		},
@@ -1004,31 +1050,31 @@
 			"name": "Command",
 			"domain": "Martial",
 			"availability": "Might-exclusive",
-			"description": "Strengthen Orders that use your hero’s attributes.",
+			"description": "Increase maximum Command and strengthen attribute-derived Order components.",
 			"ranks": {
 				"basic": {
-					"description": "Your Orders gain +10% to effects determined by your hero’s attributes.",
+					"description": "Increase maximum Command by 1; attribute-derived Order components operate at 110% Command Efficiency.",
 					"effect": {
 						"status": "active",
-						"description": "Your Orders gain +10% to effects determined by your hero’s attributes."
+						"description": "Increase maximum Command by 1; attribute-derived Order components operate at 110% Command Efficiency."
 					},
-					"details": "Attribute-derived components of Orders operate at 110% Command Efficiency."
+					"details": "The rank grants +1 maximum Command in total. Attribute-derived Order components operate at 110% Command Efficiency; fixed base portions remain unchanged."
 				},
 				"advanced": {
-					"description": "Your Orders gain +20% to effects determined by your hero’s attributes.",
+					"description": "Increase maximum Command by 2; attribute-derived Order components operate at 120% Command Efficiency.",
 					"effect": {
 						"status": "active",
-						"description": "Your Orders gain +20% to effects determined by your hero’s attributes."
+						"description": "Increase maximum Command by 2; attribute-derived Order components operate at 120% Command Efficiency."
 					},
-					"details": "Attribute-derived components operate at 120% Command Efficiency."
+					"details": "The rank grants +2 maximum Command in total. Attribute-derived Order components operate at 120% Command Efficiency; fixed base portions remain unchanged."
 				},
 				"expert": {
-					"description": "Your Orders gain +30% to effects determined by your hero’s attributes.",
+					"description": "Increase maximum Command by 3; attribute-derived Order components operate at 130% Command Efficiency.",
 					"effect": {
 						"status": "active",
-						"description": "Your Orders gain +30% to effects determined by your hero’s attributes."
+						"description": "Increase maximum Command by 3; attribute-derived Order components operate at 130% Command Efficiency."
 					},
-					"details": "Attribute-derived components operate at 130% Command Efficiency."
+					"details": "The rank grants +3 maximum Command in total. Attribute-derived Order components operate at 130% Command Efficiency; fixed base portions remain unchanged."
 				}
 			},
 			"perks": [
@@ -1066,10 +1112,10 @@
 					"id": "new-horizons:command.battlePlan",
 					"name": "Battle Plan",
 					"requires": "basic",
-					"description": "Once per combat, immediately before the first Creature Activation of round 1, issue one Order without consuming the hero's Hero Action for that round.",
+					"description": "Increase maximum Command by 1.",
 					"effect": {
 						"status": "active",
-						"description": "Once per combat, immediately before the first Creature Activation of round 1, issue one Order without consuming the hero's Hero Action for that round."
+						"description": "Increase maximum Command by 1."
 					}
 				},
 				{
@@ -1106,35 +1152,34 @@
 				},
 				{
 					"id": "new-horizons:command.crisisCommand",
-					"name": "Crisis Command",
+					"name": "Unbroken Ranks",
 					"requires": "advanced",
-					"description": "Once per combat, when a friendly stack is completely destroyed, immediately issue one Order without consuming the Hero Action.",
+					"description": "Friendly stacks currently benefiting from your Orders take 20% less damage from attacks and spells.",
 					"effect": {
 						"status": "active",
-						"description": "Once per combat, when a friendly stack is completely destroyed, immediately issue one Order without consuming the Hero Action."
-					}
+						"description": "Friendly stacks currently benefiting from your Orders take 20% less damage from attacks and spells."
+					},
+					"details": "Applies once while at least one actual Order benefit remains active on the recipient. It ends when the last benefit expires, is consumed or is broken. Independent mitigation combines multiplicatively; an Order record alone is insufficient."
 				},
 				{
 					"id": "new-horizons:command.doubleCommand",
-					"name": "Double Command",
+					"name": "Master Commander",
 					"requires": "expert",
-					"description": "Your first Order each combat grants one immediate additional different Order.",
+					"description": "All attribute-derived Order components receive an additional +15 percentage points of Command Efficiency. Fixed base portions are unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Your first Order each combat grants one immediate additional different Order."
-					},
-					"details": "The first time each combat the hero uses the Hero Action to issue an Order, immediately issue one additional different Order. The same Order cannot be issued twice in that sequence."
+						"description": "All attribute-derived Order components receive an additional +15 percentage points of Command Efficiency. Fixed base portions are unchanged."
+					}
 				},
 				{
 					"id": "new-horizons:command.seizeInitiative",
-					"name": "Seize Initiative",
+					"name": "Grand Marshal",
 					"requires": "expert",
-					"description": "Your first Order each combat moves the latest-scheduled friendly stack with an unspent normal activation to act after the current activation.",
+					"description": "Increase your hero's actual Leadership by 20%.",
 					"effect": {
 						"status": "active",
-						"description": "Your first Order each combat moves the latest-scheduled friendly stack with an unspent normal activation to act after the current activation."
-					},
-					"details": "The first time each combat the hero uses the Hero Action to issue an Order, the friendly stack scheduled latest in the current initiative order among those that have not completed their normal Creature Activation becomes the next friendly stack to activate after the current activation ends."
+						"description": "Increase your hero's actual Leadership by 20%."
+					}
 				}
 			]
 		},
@@ -1199,6 +1244,18 @@
 					"effect": {
 						"status": "active",
 						"description": "A friendly stack protected by Sanctuary also gains +2 Morale while Sanctuary remains active."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "sanctuaryKeeper",
+								"source": "spellAddition",
+								"target": "spellRecipient",
+								"stage": "castApplication",
+								"lifetime": "parentStatus"
+							}
+						]
 					}
 				},
 				{
@@ -1716,10 +1773,10 @@
 					"id": "new-horizons:sorceryMagic.overcharger",
 					"name": "Overcharger",
 					"requires": "basic",
-					"description": "Magic Arrow gains +1 maximum Overcharge and each Overcharge point increases base damage by 17.5% instead of 15%.",
+					"description": "Magic Arrow gains one additional maximum Overcharge level.",
 					"effect": {
 						"status": "active",
-						"description": "Magic Arrow gains +1 maximum Overcharge and each Overcharge point increases base damage by 17.5% instead of 15%."
+						"description": "Magic Arrow gains one additional maximum Overcharge level."
 					}
 				},
 				{
@@ -1898,6 +1955,18 @@
 					"effect": {
 						"status": "active",
 						"description": "Forgetfulness also suppresses the target's passive offensive creature abilities for its duration."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "creatureSuppression",
+								"source": "spellAddition",
+								"target": "spellRecipient",
+								"stage": "castApplication",
+								"lifetime": "rounds"
+							}
+						]
 					}
 				},
 				{
@@ -2951,6 +3020,21 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly army receives +1 Luck."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "skillRank",
+								"target": "army",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "LUCK",
+								"value": 1,
+								"valueMode": "BASE_NUMBER"
+							}
+						]
 					}
 				},
 				"advanced": {
@@ -2958,6 +3042,21 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly army receives +2 Luck total."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "skillRank",
+								"target": "army",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "LUCK",
+								"value": 2,
+								"valueMode": "BASE_NUMBER"
+							}
+						]
 					}
 				},
 				"expert": {
@@ -2965,6 +3064,21 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly army receives +3 Luck total."
+					},
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "skillRank",
+								"target": "army",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "LUCK",
+								"value": 3,
+								"valueMode": "BASE_NUMBER"
+							}
+						]
 					}
 				}
 			},
@@ -4169,144 +4283,145 @@
 		},
 		"new-horizons:elementalRebirth": {
 			"id": "new-horizons:elementalRebirth",
-			"name": "Elemental Rebirth",
+			"name": "Elemental Attunement",
 			"domain": "Faction",
 			"availability": "Conflux heroes only",
-			"description": "Fallen non-summoned friendly stacks create temporary Elite Elementals, with HP based on their maximum total HP at combat start.",
+			"description": "Casting an elemental hero spell Attunes matching Elementals, Firebirds and Phoenixes for the remainder of combat.",
 			"ranks": {
 				"basic": {
-					"description": "Fallen non-summoned allies create temporary random Elite Elementals with 25% of the lost stack’s battle-start maximum total HP.",
+					"description": "Attuned creatures deal +20% attack damage for the remainder of combat.",
 					"effect": {
 						"status": "active",
-						"description": "Fallen non-summoned allies create temporary random Elite Elementals with 25% of the lost stack’s battle-start maximum total HP."
+						"description": "Attuned creatures deal +20% attack damage for the remainder of combat."
 					},
-					"details": "When a non-summoned allied stack is destroyed, summon a random Elite Elemental stack at that position with aggregate HP equal to 25% of the destroyed stack's maximum aggregate HP."
+					"details": "Successfully casting a Fire, Water, Air or Earth hero spell Attunes the corresponding Elemental family. Firebirds and Phoenixes qualify for any element. Attunement applies to melee attacks, ranged attacks and retaliations, and never stacks."
 				},
 				"advanced": {
-					"description": "Fallen non-summoned allies create temporary random Elite Elementals with 40% of the lost stack’s battle-start maximum total HP.",
+					"description": "Attuned creatures deal +30% attack damage for the remainder of combat.",
 					"effect": {
 						"status": "active",
-						"description": "Fallen non-summoned allies create temporary random Elite Elementals with 40% of the lost stack’s battle-start maximum total HP."
+						"description": "Attuned creatures deal +30% attack damage for the remainder of combat."
 					},
-					"details": "Reborn Elemental HP becomes 40% of the destroyed stack's maximum aggregate HP."
+					"details": "Successfully casting a Fire, Water, Air or Earth hero spell Attunes the corresponding Elemental family. Firebirds and Phoenixes qualify for any element. Attunement applies to melee attacks, ranged attacks and retaliations, and never stacks."
 				},
 				"expert": {
-					"description": "Fallen non-summoned allies create temporary random Elite Elementals with 50% of the lost stack’s battle-start maximum total HP.",
+					"description": "Attuned creatures deal +40% attack damage for the remainder of combat.",
 					"effect": {
 						"status": "active",
-						"description": "Fallen non-summoned allies create temporary random Elite Elementals with 50% of the lost stack’s battle-start maximum total HP."
+						"description": "Attuned creatures deal +40% attack damage for the remainder of combat."
 					},
-					"details": "Reborn Elemental HP becomes 50% of the destroyed stack's maximum aggregate HP."
+					"details": "Successfully casting a Fire, Water, Air or Earth hero spell Attunes the corresponding Elemental family. Firebirds and Phoenixes qualify for any element. Attunement applies to melee attacks, ranged attacks and retaliations, and never stacks."
 				}
 			},
 			"perks": [
 				{
 					"id": "new-horizons:elementalRebirth.elementalAttunement",
-					"name": "Elemental Attunement",
+					"name": "Magma Weapons",
 					"requires": "basic",
-					"description": "A reborn Elemental that matches the current battlefield terrain receives +20% aggregate HP.",
+					"description": "Attuned creatures deal an additional +20 percentage points of melee attack and retaliation damage.",
 					"effect": {
 						"status": "active",
-						"description": "A reborn Elemental that matches the current battlefield terrain receives +20% aggregate HP."
+						"description": "Attuned creatures deal an additional +20 percentage points of melee attack and retaliation damage."
 					}
 				},
 				{
 					"id": "new-horizons:elementalRebirth.swiftRebirth",
-					"name": "Swift Rebirth",
+					"name": "Storm Bolts",
 					"requires": "basic",
-					"description": "New Reborn Elementals act after the current activation, at most once that round.",
+					"description": "Attuned creatures deal an additional +20 percentage points of ranged attack damage.",
 					"effect": {
 						"status": "active",
-						"description": "New Reborn Elementals act after the current activation, at most once that round."
-					},
-					"details": "A newly reborn Elemental is inserted into the current Initiative cycle immediately after the current Creature Activation, but cannot receive more than one activation in the round."
+						"description": "Attuned creatures deal an additional +20 percentage points of ranged attack damage."
+					}
 				},
 				{
 					"id": "new-horizons:elementalRebirth.elementalConduit",
 					"name": "Elemental Conduit",
 					"requires": "basic",
-					"description": "Your hero deals +15% spell damage per living friendly Reborn stack, including Rebirth Chain summons.",
+					"description": "Your hero's damaging spells deal 15% more damage.",
 					"effect": {
 						"status": "active",
-						"description": "Your hero deals +15% spell damage per living friendly Reborn stack, including Rebirth Chain summons."
-					},
-					"details": "Each living friendly genuine Reborn stack adds 15% to hero spell damage. Rebirth Chain and Phoenix Spark outputs count; clones and ordinary summons do not."
+						"description": "Your hero's damaging spells deal 15% more damage."
+					}
 				},
 				{
 					"id": "new-horizons:elementalRebirth.primalBurst",
-					"name": "Primal Burst",
+					"name": "Water Veil",
 					"requires": "basic",
-					"description": "When a reborn Elemental appears, adjacent enemies suffer elemental damage equal to 10% of the reborn stack's aggregate HP, divided evenly among them.",
+					"description": "Attuned creatures take 20% less magical damage from spells.",
 					"effect": {
 						"status": "active",
-						"description": "When a reborn Elemental appears, adjacent enemies suffer elemental damage equal to 10% of the reborn stack's aggregate HP, divided evenly among them."
+						"description": "Attuned creatures take 20% less magical damage from spells."
 					}
 				},
 				{
 					"id": "new-horizons:elementalRebirth.greaterEssence",
 					"name": "Greater Essence",
 					"requires": "advanced",
-					"description": "Elemental Rebirth creates an additional +15 percentage points of the destroyed stack's maximum HP.",
+					"description": "Your Elementals, Firebirds and Phoenixes gain 25% maximum HP.",
 					"effect": {
 						"status": "active",
-						"description": "Elemental Rebirth creates an additional +15 percentage points of the destroyed stack's maximum HP."
+						"description": "Your Elementals, Firebirds and Phoenixes gain 25% maximum HP."
 					}
+				},
+				{
+					"id": "new-horizons:elementalRebirth.adaptiveElement",
+					"name": "Stonebound Magic",
+					"requires": "advanced",
+					"description": "All friendly creatures take 0.25% less physical damage per point of your hero's final Spell Power, capped at 15%.",
+					"effect": {
+						"status": "active",
+						"description": "All friendly creatures take 0.25% less physical damage per point of your hero's final Spell Power, capped at 15%."
+					},
+					"details": "Physical reduction is min(1500, 25 × final hero Spell Power) basis points, independent of Skill rank and Attunement. Apply only to physical damage components and multiply with independent protection. Perfect Convergence contributes through actual Spell Power."
+				},
+				{
+					"id": "new-horizons:elementalRebirth.rebirthChain",
+					"name": "Primal Vigilance",
+					"requires": "advanced",
+					"description": "Attuned creatures gain one additional retaliation per round.",
+					"effect": {
+						"status": "active",
+						"description": "Attuned creatures gain one additional retaliation per round."
+					},
+					"details": "Increase the normal retaliation allowance by one while Attuned, preserving retaliations already spent. Repeated elemental casts do not replenish the allowance; normal round resets and retaliation restrictions still apply."
 				},
 				{
 					"id": "new-horizons:elementalRebirth.elementalCataclysm",
 					"name": "Elemental Cataclysm",
 					"requires": "advanced",
-					"description": "Destroyed Reborn stacks split magical damage equal to 20% of their maximum total HP evenly among adjacent enemies.",
+					"description": "Your hero's elemental area-damage spells deal 25% more damage.",
 					"effect": {
 						"status": "active",
-						"description": "Destroyed Reborn stacks split magical damage equal to 20% of their maximum total HP evenly among adjacent enemies."
+						"description": "Your hero's elemental area-damage spells deal 25% more damage."
 					},
-					"details": "On a genuine Reborn stack’s death, create a generic magical damage pool equal to floor(20% of its predeath effective maximum aggregate HP). Divide evenly among adjacent eligible enemies, rounding down and discarding the remainder. Apply ordinary magical mitigation; this is not a hero spell or Hero Action."
+					"details": "Requires both an elemental spell tag and explicit area-damage eligibility. Chain and other multi-target spells do not automatically qualify. Adds to Elemental Conduit for +40% spell damage when both apply."
 				},
 				{
-					"id": "new-horizons:elementalRebirth.adaptiveElement",
-					"name": "Adaptive Element",
-					"requires": "advanced",
-					"description": "Instead of a fully random Elemental, Rebirth selects from Elemental types appropriate to the current battlefield terrain.",
+					"id": "new-horizons:elementalRebirth.phoenixSpark",
+					"name": "Primordial Host",
+					"requires": "expert",
+					"description": "Your Elementals, Firebirds and Phoenixes require 20% less Leadership.",
 					"effect": {
 						"status": "active",
-						"description": "Instead of a fully random Elemental, Rebirth selects from Elemental types appropriate to the current battlefield terrain."
+						"description": "Your Elementals, Firebirds and Phoenixes require 20% less Leadership."
 					}
-				},
-				{
-					"id": "new-horizons:elementalRebirth.rebirthChain",
-					"name": "Rebirth Chain",
-					"requires": "advanced",
-					"description": "Once per combat, a fallen Reborn Elemental creates another random Elite Elemental with 25% of its original HP; the replacement cannot trigger Rebirth.",
-					"effect": {
-						"status": "active",
-						"description": "Once per combat, a fallen Reborn Elemental creates another random Elite Elemental with 25% of its original HP; the replacement cannot trigger Rebirth."
-					},
-					"details": "Once per combat, when a reborn Elemental is destroyed, summon a second random Elite Elemental with 25% of that reborn stack's original HP. This second Elemental cannot trigger Rebirth."
 				},
 				{
 					"id": "new-horizons:elementalRebirth.perfectConvergence",
 					"name": "Perfect Convergence",
 					"requires": "expert",
-					"description": "Rebirth always creates the Elemental assigned to the current terrain.",
+					"description": "Increase your hero's actual Spell Power by 25%.",
 					"effect": {
 						"status": "active",
-						"description": "Rebirth always creates the Elemental assigned to the current terrain."
-					},
-					"details": "Every Rebirth uses the primary Elemental type associated with the current battlefield terrain by the Elemental Convergence terrain mapping instead of a random Elemental."
-				},
-				{
-					"id": "new-horizons:elementalRebirth.phoenixSpark",
-					"name": "Phoenix Spark",
-					"requires": "expert",
-					"description": "Once per combat, your first fallen original Champion creates a temporary Phoenix with 25% of its battle-start maximum total HP.",
-					"effect": {
-						"status": "active",
-						"description": "Once per combat, your first fallen original Champion creates a temporary Phoenix with 25% of its battle-start maximum total HP."
-					},
-					"details": "Once per combat, your first fallen original Champion becomes a temporary Phoenix with 25% of its battle-start maximum total HP, replacing normal Rebirth and Greater Essence. The use is spent even if placement fails. Primal Burst, Swift Rebirth, Elemental Conduit and Elemental Cataclysm apply; terrain matching and further Rebirth do not."
+						"description": "Increase your hero's actual Spell Power by 25%."
+					}
 				}
 			]
 		}
+	},
+	"commandPolicyVersion": 1,
+	"elementalAttunementPolicy": {
+		"version": 1
 	}
 }

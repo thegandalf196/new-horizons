@@ -48,6 +48,7 @@ protected:
 
 	void SetUp() override
 	{
+		useRevisedOrders = true; // Current perk snapshots require the finite Command profile.
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";

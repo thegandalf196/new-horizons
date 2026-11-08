@@ -36,7 +36,10 @@ void replaceRecalculatedSpellBonuses(const CastProfile * cast, const CBattleInfo
 	SpellID acceptedSpell, SpellID effectSpell, const std::set<uint32_t> & preexistingRecipientIds,
 	SetStackEffect & packet)
 {
-	if(!cast || packet.exchange || packet.toUpdate.empty())
+	// A genuine Hero context also exists without either effectiveness system.
+	// Such casts keep ordinary native refresh instead of replacing magnitude.
+	if(!cast || (cast->perks.rank == 0 && cast->perks.wisdomEffectivenessBonus == 0)
+		|| packet.exchange || packet.toUpdate.empty())
 		return;
 	std::map<uint32_t, LocalReplacements> local;
 	decltype(packet.toAdd) replacementAdds;

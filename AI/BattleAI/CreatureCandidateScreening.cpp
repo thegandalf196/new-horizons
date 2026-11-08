@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include "BattleSearchPolicy.h"
 #include "BattleExchangeVariant.h"
 #include "VisibleCandidateWorld.h"
 #include "CreatureCandidateScreening.h"
@@ -182,6 +183,42 @@ bool supportedNormalMelee(const battle::Unit * actor, const PotentialTargets & t
 
 namespace creatureCandidateScreening
 {
+bool supportsForecastBeam(const battle::Unit * actor, const HypotheticBattle & state,
+	bool forced, bool siegeDefense)
+{
+	if(!battleSearch::forecastBeamOne()) return false;
+	bool supported = actor && !forced && !siegeDefense && !state.getDefendedTown()
+		&& state.hasCanonicalDamageQuerySources()
+		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(actor);
+	if(supported)
+	{
+		const auto * script = LIBRARY->scriptTypes()->getDamageCalculator();
+		try
+		{
+			supported = script && script->forecastImplementation(state) == DamageForecastImplementation::CANONICAL;
+		}
+		catch(const std::exception &) { supported = false; }
+	}
+	return supported;
+}
+
+unsigned admittedFutureActorLimit(const battle::Unit * actor, const HypotheticBattle & state, bool forced)
+{
+	const auto limit = battleSearch::forecastFutureActors();
+	return limit && !supportsForecastBeam(actor, state, forced, false) ? 0 : limit;
+}
+
+std::optional<size_t> forecastBeamIndex(std::span<const float> immediate)
+{
+	std::optional<size_t> best;
+	for(size_t index = 0; index < immediate.size(); ++index)
+	{
+		if(!std::isfinite(immediate[index])) return {};
+		if(!best || immediate[index] > immediate[*best]) best = index;
+	}
+	return best;
+}
+
 bool supportsVisibleOrdinaryMelee(const battle::Unit * actor, const HypotheticBattle & state)
 {
 	return supportedOrdinaryState(actor, state);
@@ -249,6 +286,17 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 {
 	EvaluationResult result(targets.bestAction());
 	std::optional<size_t> waitedIncumbent;
+	std::optional<size_t> beam;
+	if(creatureCandidateScreening::supportsForecastBeam(activeStack, *hb, targets.berserk, siegeDefense))
+	{
+		std::vector<float> immediate;
+		for(const auto & ap : targets.possibleAttacks)
+			immediate.push_back(ap.damageDiff(getPositiveEffectMultiplier(), getNegativeEffectMultiplier()));
+		beam = creatureCandidateScreening::forecastBeamIndex(immediate);
+		if(beam)
+			result = EvaluationResult(targets.possibleAttacks[*beam]);
+	}
+
 
 	if(!activeStack->acquireState()->waitedThisTurn && !activeStack->acquireState()->hadMorale)
 	{
@@ -264,6 +312,8 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 
 		for(auto & ap : targets.possibleAttacks)
 		{
+			if(beam && static_cast<size_t>(&ap - targets.possibleAttacks.data()) != *beam)
+				continue;
 			if (siegeDefense && !hb->battleIsInsideWalls(ap.from))
 				continue;
 
@@ -303,10 +353,13 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 			return result; // lets wait
 	}
 
-	const auto retained = creatureCandidateScreening::normalMeleeForecasts(activeStack, targets, *hb,
+	const auto retained = beam ? std::vector<bool>(targets.possibleAttacks.size(), true)
+		: creatureCandidateScreening::normalMeleeForecasts(activeStack, targets, *hb,
 		siegeDefense, getPositiveEffectMultiplier(), getNegativeEffectMultiplier(), waitedIncumbent);
 	for(auto & ap : targets.possibleAttacks)
 	{
+		if(beam && static_cast<size_t>(&ap - targets.possibleAttacks.data()) != *beam)
+			continue;
 		if(!retained[static_cast<size_t>(&ap - targets.possibleAttacks.data())])
 			continue;
 		if (siegeDefense && !hb->battleIsInsideWalls(ap.from))

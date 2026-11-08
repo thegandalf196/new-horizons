@@ -18,6 +18,7 @@ using namespace heroQueueTest;
 class HeroOrderEffectsProjectionTest : public HeroQueueSelectorTest
 {
 protected:
+	HeroOrderEffectsProjectionTest() { useRevisedOrders = true; }
 	std::optional<heroCommands::PreparedOrderEffects> effects;
 	std::optional<HypotheticBattle::ProjectedOrderAllowance> allowance;
 	static constexpr auto side = BattleSide::ATTACKER;
@@ -228,19 +229,25 @@ TEST_F(HeroOrderEffectsProjectionTest, ImmediateSecondWindUsesExistingActivation
 	EXPECT_EQ(child->getActiveStackID(), actor->unitId());
 }
 
-TEST_F(HeroOrderEffectsProjectionTest, DoubleCommandChoiceRemainsUnvaluedWithinSharedUnitHorizon)
+TEST_F(HeroOrderEffectsProjectionTest, MasterCommanderUsesCurrentActorHorizonWithoutAnotherHeroChoice)
 {
+	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(world());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 	ASSERT_NO_FATAL_FAILURE(perk("new-horizons:command", "new-horizons:command.doubleCommand", MasteryLevel::EXPERT));
 	ASSERT_NO_FATAL_FAILURE(arena());
+	const auto resources = battle()->getCommandResources(side);
 	ASSERT_NO_FATAL_FAILURE(project(HeroCommand::CHARGE));
-	const auto before = wire(child->getDoubleCommandState(side));
+	const auto outside = observation();
 	const auto result = child->projectOrderContinuation(side, *allowance, *effects);
 	EXPECT_EQ(result.kind, HypotheticBattle::ProjectedOrderContinuation::Kind::CURRENT_ACTOR);
 	EXPECT_EQ(result.actor, active->unitId());
-	EXPECT_TRUE(result.futureHeroChoicesUnvalued);
-	EXPECT_TRUE(child->getDoubleCommandState(side).orderPending());
-	EXPECT_EQ(wire(child->getDoubleCommandState(side)), before);
+	EXPECT_FALSE(result.futureHeroChoicesUnvalued);
+	EXPECT_EQ(child->getDoubleCommandState(side), DoubleCommandState{});
+	EXPECT_EQ(child->getCommandResources(side).remaining, resources.remaining - 1);
+	EXPECT_FALSE(child->prepareHeroOrderAllowance(side));
+	EXPECT_EQ(observation(), outside);
+	ASSERT_NO_FATAL_FAILURE(nativeParity(HeroCommand::CHARGE));
 }
 
 TEST_F(HeroOrderEffectsProjectionTest, CrownAndSharedPurposeKeepOriginalPairRecipientIntersection)
@@ -288,16 +295,33 @@ TEST_F(HeroOrderEffectsProjectionTest, BraceInstallsNativeRoundSnapshot)
 	ASSERT_NO_FATAL_FAILURE(nativeParity(HeroCommand::BRACE));
 }
 
-TEST_F(HeroOrderEffectsProjectionTest, DoubleCommandFollowupPreservesPrimaryOrderAndGrantIdentity)
+TEST_F(HeroOrderEffectsProjectionTest, PaidPrimaryOrderCannotYieldAReplacementPerkFollowupOrAnotherPayment)
 {
+	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(world());
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 	ASSERT_NO_FATAL_FAILURE(perk("new-horizons:command", "new-horizons:command.doubleCommand", MasteryLevel::EXPERT));
 	ASSERT_NO_FATAL_FAILURE(arena());
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	ASSERT_NO_FATAL_FAILURE(project(HeroCommand::HOLD_THE_LINE));
-	EXPECT_EQ(child->getHeroOrderStates(side).size(), 2);
-	EXPECT_EQ(allowance->action.receipt.source, HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND);
-	ASSERT_NO_FATAL_FAILURE(nativeParity(HeroCommand::HOLD_THE_LINE));
+	ASSERT_NO_FATAL_FAILURE(stage());
+	const auto outside = observation();
+	const auto before = prefix(*child);
+	const auto resources = child->getCommandResources(side);
+	const auto order = child->getHeroOrderState(side, HeroCommand::CHARGE);
+	ASSERT_TRUE(order);
+	EXPECT_FALSE(child->prepareHeroOrderAllowance(side));
+	EXPECT_EQ(child->getHeroOrderStates(side).size(), 1);
+	EXPECT_EQ(child->getHeroOrderState(side, HeroCommand::CHARGE), order);
+	EXPECT_EQ(child->getDoubleCommandState(side), DoubleCommandState{});
+	const auto & ledger = child->getHeroActionAllowances(side);
+	EXPECT_TRUE(std::none_of(ledger.grants.begin(), ledger.grants.end(), [](const auto & grant)
+		{ return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND; }));
+	EXPECT_EQ(child->getCommandResources(side), resources);
+	EXPECT_EQ(prefix(*child), before);
+	EXPECT_EQ(observation(), outside);
+	EXPECT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_EQ(battle()->getHeroOrderStates(side).size(), 1);
+	EXPECT_EQ(battle()->getCommandResources(side), resources);
 }
 
 TEST_F(HeroOrderEffectsProjectionTest, SecondWindRunsKnownActivationAndLabelsUnvaluedObstacleOutcomes)

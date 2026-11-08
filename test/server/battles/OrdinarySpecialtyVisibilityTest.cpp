@@ -5,7 +5,8 @@
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include "../../../lib/battle/NewHorizonsPuppetMaster.h"
-#include "../../../lib/battle/NewHorizonsRangefinder.h"
+#include "../../../lib/battle/NewHorizonsAttackControllers.h"
+#include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/CRandomGenerator.h"
@@ -19,21 +20,24 @@
 #endif
 namespace
 {
-enum class Kind { DAMAGE, PROTECTION, STRIKE };
+enum class Kind { DAMAGE, PROTECTION, STRIKE, SPEED, POLICY };
 struct SpecialtyCase { const char * hero; const char * creature; const char * key; Kind kind; int value = 17; };
-constexpr std::array<SpecialtyCase, 12> cases{{
+constexpr std::array<SpecialtyCase, 15> cases{{
 	{"core:dace", "core:minotaur", "retaliationDamagePercent", Kind::DAMAGE},
 	{"core:shakti", "core:troglodyte", "massedSpearsDamagePercent", Kind::DAMAGE},
-	{"core:fiona", "core:hellHound", "packPursuitDamagePercent", Kind::DAMAGE},
-	{"core:vokial", "core:vampire", "bloodScentDamagePercent", Kind::DAMAGE},
-	{"core:lacus", "core:waterElemental", "undertowRetaliationPercent", Kind::DAMAGE},
-	{"core:broghild", "core:wyvern", "wyvernsPreyDamagePercent", Kind::DAMAGE},
-	{"core:gretchin", "core:goblin", "mobPressureDamagePercent", Kind::DAMAGE},
+	{"core:fiona", "core:hellHound", "packPursuitSpeed", Kind::SPEED, 5},
+	{"core:vokial", "core:vampire", "bloodScentMaximumDamagePercent", Kind::POLICY, 100},
+	{"core:lacus", "core:waterElemental", "undertowDefensePerAttack", Kind::POLICY, 1},
+	{"core:broghild", "core:wyvern", "wyvernVenomPolicyVersion", Kind::POLICY, 1},
+	{"core:gretchin", "core:goblin", "goblinFrenzyDamagePercent", Kind::POLICY, 50},
 	{"core:tyraxor", "core:goblinWolfRider", "ridersExploitDamagePercent", Kind::DAMAGE},
-	{"core:jabarkas", "core:orc", "cruelVolleyDamagePercent", Kind::DAMAGE},
-	{"core:korbac", "core:serpentFly", "evasiveFlightReductionPercent", Kind::PROTECTION},
-	{"core:aeris", "core:pegasus", "wingbeatInitiativePercent", Kind::STRIKE},
-	{"core:theodorus", "core:mage", "measuredVolleyMdrPenetrationPercent", Kind::STRIKE}}};
+	{"core:jabarkas", "core:orc", "furyOfTheHordeAttack", Kind::POLICY, 2},
+	{"core:korbac", "core:serpentFly", "evasiveFlightReductionPercentPerHex", Kind::POLICY, 3},
+	{"core:aeris", "core:pegasus", "perfectMountMagicalDamageImmunity", Kind::POLICY, 1},
+	{"core:theodorus", "core:mage", "dispellingShotMageChancePercent", Kind::POLICY, 20},
+	{"core:kalt", "core:waterElemental", "risingTideCreaturesPerRound", Kind::POLICY, 1},
+	{"core:straker", "core:walkingDead", "undyingHealingHP", Kind::POLICY, 100},
+	{"core:sorsha", "core:swordsman", "shieldAndSwordPhysicalReductionPercent", Kind::POLICY, 40}}};
 class OrdinarySpecialtyVisibilityFixture : public HeroCommandFixture
 {
 protected:
@@ -96,6 +100,8 @@ protected:
 	}
 	int contribution(const CBattleInfoCallback & view, const BattleAttackInfo & hit) const
 	{
+		if(selected->kind == Kind::SPEED || selected->kind == Kind::POLICY)
+			return newHorizonsHeroes::ordinaryCreatureSpecialtyValue(view, *hit.attacker, selected->hero);
 		if(selected->kind == Kind::PROTECTION) return newHorizonsHeroes::ordinaryCreatureProtectionPercent(view, hit);
 		if(selected->kind == Kind::DAMAGE) return newHorizonsHeroes::ordinaryCreatureDamageMultiplier(view, hit) - 100;
 		const auto effect = newHorizonsHeroes::ordinaryCreatureStrikeBonus(view, hit);
@@ -107,6 +113,12 @@ protected:
 		const auto hit = attack(source, target);
 		const int expected = visible && mode == 0 ? selected->value : 0;
 		EXPECT_EQ(contribution(view, hit), expected);
+		if(selected->kind == Kind::SPEED || selected->kind == Kind::POLICY)
+		{
+			EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureAttackPercent(
+				newHorizonsHeroes::ordinaryCreatureVisibleOwnerHero(view, *source), hit), 0);
+			EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureProtectionPercent(view, hit), 0);
+		}
 		if(selected->kind == Kind::STRIKE)
 		{
 			EXPECT_EQ(newHorizonsOrdinaryStrike::needsProjection(view, hit), expected > 0);
@@ -139,7 +151,15 @@ class OrdinarySpecialtyVisibilityTest : public OrdinarySpecialtyVisibilityFixtur
 	public ::testing::WithParamInterface<std::tuple<int, int>> {};
 TEST_P(OrdinarySpecialtyVisibilityTest, RealPlayerKnownHiddenAndAuthorityDoNotReadHiddenCapturedCoefficients)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare(cases.at(std::get<0>(GetParam())), std::get<1>(GetParam())));
+	const auto & row = cases.at(std::get<0>(GetParam()));
+	const auto variant = std::get<1>(GetParam());
+	if(variant == 1 && (row.kind == Kind::SPEED || row.kind == Kind::POLICY)
+		&& std::string_view(row.hero) != "core:sorsha")
+	{
+		EXPECT_THROW(prepare(row, variant), std::runtime_error);
+		return;
+	}
+	ASSERT_NO_FATAL_FAILURE(prepare(row, variant));
 	const auto before = worldAndRng();
 	CPlayerBattleCallback known(battle(), PlayerColor(0)), hidden(battle(), PlayerColor(1));
 	ASSERT_EQ(hidden.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
@@ -163,7 +183,15 @@ public:
 };
 TEST_P(OrdinarySpecialtyVisibilityTest, ProjectedKnownHiddenAndAllKnowingKeepTheSamePerspectiveBoundary)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare(cases.at(std::get<0>(GetParam())), std::get<1>(GetParam())));
+	const auto & row = cases.at(std::get<0>(GetParam()));
+	const auto variant = std::get<1>(GetParam());
+	if(variant == 1 && (row.kind == Kind::SPEED || row.kind == Kind::POLICY)
+		&& std::string_view(row.hero) != "core:sorsha")
+	{
+		EXPECT_THROW(prepare(row, variant), std::runtime_error);
+		return;
+	}
+	ASSERT_NO_FATAL_FAILURE(prepare(row, variant));
 	const auto before = worldAndRng();
 	VisibilityEnvironment environment(gameState());
 	for(const auto player : {PlayerColor(0), PlayerColor(1), PlayerColor::SPECTATOR})
@@ -182,8 +210,8 @@ TEST_P(OrdinarySpecialtyVisibilityTest, ProjectedKnownHiddenAndAllKnowingKeepThe
 	EXPECT_EQ(worldAndRng(), before);
 }
 #endif
-INSTANTIATE_TEST_SUITE_P(TwelveFamiliesCurrentZeroHistorical, OrdinarySpecialtyVisibilityTest,
-	::testing::Combine(::testing::Range(0, 12), ::testing::Range(0, 3)));
+INSTANTIATE_TEST_SUITE_P(FifteenFamiliesCurrentStrictZeroAndAbsent, OrdinarySpecialtyVisibilityTest,
+	::testing::Combine(::testing::Range(0, 15), ::testing::Range(0, 3)));
 TEST_F(OrdinarySpecialtyVisibilityFixture, NativeEffectiveOwnerTracksHypnotizeWhilePuppetKeepsOriginalArmy)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(cases.front()));
@@ -237,34 +265,40 @@ TEST_F(OrdinarySpecialtyVisibilityFixture, UnavailableCallbackDoesNotInventEntit
 	EXPECT_EQ(own.battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
 	EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureVisibleOwnerHero(own, *victim), defenderSideHero);
 }
-TEST_F(OrdinarySpecialtyVisibilityFixture, VisiblePublishedCreatureBonusesRemainReadableWithHiddenHeroPolicy)
+TEST_F(OrdinarySpecialtyVisibilityFixture, HiddenValeskaPolicyDoesNotInventBarrageOrRetiredMeleeWaiver)
 {
-	constexpr SpecialtyCase valeska{"core:valeska", "core:archer", "closeQuartersDrill", Kind::DAMAGE, 1};
+	constexpr SpecialtyCase valeska{"core:valeska", "core:archer", "relentlessBarrageDamagePercent", Kind::POLICY, 50};
 	ASSERT_NO_FATAL_FAILURE(prepare(valeska));
 	CPlayerBattleCallback hidden(battle(), PlayerColor(1));
 	ASSERT_EQ(newHorizonsHeroes::ordinaryCreatureVisibleOwnerHero(hidden, *actor), nullptr);
-	EXPECT_TRUE(actor->hasBonusOfType(BonusType::NO_MELEE_PENALTY));
-	EXPECT_FALSE(actor->hasBonusOfType(BonusType::FREE_SHOOTING));
+	EXPECT_EQ(newHorizonsAttackControllers::barrageDamagePercent(*battle(), *actor), 50);
+	EXPECT_EQ(newHorizonsAttackControllers::barrageDamagePercent(hidden, *actor), 0);
+	EXPECT_FALSE(actor->hasBonusOfType(BonusType::NO_MELEE_PENALTY));
 }
-TEST_F(OrdinarySpecialtyVisibilityFixture, PublishedRangefinderEnvelopeIsNotReclassifiedAsHiddenCapturedRules)
+TEST_F(OrdinarySpecialtyVisibilityFixture, HiddenChristianPolicyDoesNotInventAPhysicalMultiplierOrRetiredRange)
 {
-	constexpr SpecialtyCase christian{"core:christian", "core:ballista", "rangefinderFullDamageDistance", Kind::DAMAGE, 12};
+	constexpr SpecialtyCase christian{"core:christian", "core:ballista", "pointBlankShotDamageBonusPercent", Kind::POLICY, 100};
 	ASSERT_NO_FATAL_FAILURE(prepare(christian));
 	CPlayerBattleCallback hidden(battle(), PlayerColor(1));
 	ASSERT_EQ(newHorizonsHeroes::ordinaryCreatureVisibleOwnerHero(hidden, *actor), nullptr);
-	EXPECT_EQ(newHorizonsRangefinder::fullDamageDistance(*actor), 12);
+	EXPECT_EQ(newHorizonsAttackControllers::ballistaPhysicalDamagePercent(*battle(), *actor), 200);
+	EXPECT_EQ(newHorizonsAttackControllers::ballistaPhysicalDamagePercent(hidden, *actor), 100);
+	EXPECT_FALSE(actor->hasBonusOfType(BonusType::LIMITED_SHOOTING_RANGE));
 }
-TEST_F(OrdinarySpecialtyVisibilityFixture, AlreadyPublishedWingbeatStaysObservableWhenItsSourceHeroIsHidden)
+TEST_F(OrdinarySpecialtyVisibilityFixture, AlreadyPublishedCrippleStaysObservableWhenItsSourceHeroIsHidden)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare(cases.at(10)));
-	const auto plan = newHorizonsOrdinaryStrike::plan(*battle(), attack(actor, victim), 1);
-	ASSERT_EQ(plan.add.size(), 1u);
-	victim->addNewBonus(std::make_shared<Bonus>(plan.add.front()));
+	constexpr SpecialtyCase gerwulf{"core:gerwulf", "core:ballista", "cripplingBoltSpeedReduction", Kind::POLICY, 3};
+	ASSERT_NO_FATAL_FAILURE(prepare(gerwulf));
+	const auto speed = victim->getMovementRange(0);
+	const auto plan = newHorizonsAttackControllers::captureStrike(*battle(), BattleAttackInfo(actor, victim, 0, true), 1);
+	ASSERT_EQ(plan.cripple.add.size(), 2);
+	SetStackEffect effect; effect.battleID = BattleID(0); effect.toAdd.emplace_back(victim->unitId(), plan.cripple.add);
+	gameHandler->sendAndApply(effect);
 	CPlayerBattleCallback hidden(battle(), PlayerColor(1));
 	ASSERT_EQ(newHorizonsHeroes::ordinaryCreatureVisibleOwnerHero(hidden, *actor), nullptr);
-	EXPECT_TRUE(victim->hasBonus(CSelector(newHorizonsOrdinaryStrike::isInitiativeEffect)));
-	EXPECT_TRUE(newHorizonsOrdinaryStrike::mayChangeInitiative(hidden));
-	expectContribution(hidden, actor, victim, false);
+	EXPECT_EQ(newHorizonsAttackControllers::crippleRemoval(*victim).size(), 2);
+	EXPECT_EQ(victim->getMovementRange(0), std::max<int64_t>(0, static_cast<int64_t>(speed) - 3));
+	EXPECT_FALSE(newHorizonsOrdinaryStrike::mayChangeInitiative(hidden));
 }
 TEST_F(OrdinarySpecialtyVisibilityFixture, ActualNativeDamagePreviewKeepsAuthorityPremiumButDoesNotReadHiddenDacePolicy)
 {

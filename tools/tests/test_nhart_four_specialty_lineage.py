@@ -6,7 +6,8 @@ import unittest
 from .nhart_legacy_art_lineage import _digest
 from .nhart_specialty_lineage import (CURRENT_ORIGINAL_COHORT, CURRENT_THIRTEEN_COHORT,
                                       CURRENT_FOUR_COHORT, CURRENT_FOUR_SPECIALTIES, specialty_family)
-from .test_nhart_thirteen_specialty_lineage import ordinary_registry, registry_artwork
+from .test_nhart_thirteen_specialty_lineage import (ordinary_registry, registry_artwork,
+                                                  assert_battle_wide_aura_delegation)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -41,7 +42,7 @@ class FourSpecialtyLineageTest(unittest.TestCase):
         bindings = registry_artwork(table)
         for row in self.rows:
             self.assertEqual(bindings[row['id']], 'newHorizons/heroSpecialties/' + row['identity'])
-        self.assertIn('BonusNodeType::BATTLE_WIDE', source)
+        assert_battle_wide_aura_delegation(self, source)
 
     def test_four_cohort_cannot_relabel_earlier_or_future_records(self):
         for row in self.rows:

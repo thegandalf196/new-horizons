@@ -22,16 +22,13 @@ int coefficient(const CGHeroInstance * hero, std::string_view identity, const ch
 	return static_cast<int>(hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"][key].Integer());
 }
 }
-int masterGunnerFollowUpDamagePercent(const CGHeroInstance * hero, int ordinaryPercent)
+int masterGunnerFollowUpDamagePercent(const CGHeroInstance *, int ordinaryPercent)
 {
 	if(ordinaryPercent < 0 || ordinaryPercent > 100)
 		throw std::runtime_error("Invalid ordinary Master Gunner percentage");
 	if(ordinaryPercent == 0)
 		return 0;
-	const int bonus = coefficient(hero, "core:torosar", "gunneryProfessorFollowUpBonusPoints");
-	if(bonus == 0 || !hero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.masterGunner"))
-		return ordinaryPercent;
-	return std::min(100, ordinaryPercent + bonus);
+	return ordinaryPercent;
 }
 int siegeOutput(const CGHeroInstance & hero, const JsonNode & rules, int siegeRating, const std::string & output)
 {

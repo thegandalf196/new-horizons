@@ -1,6 +1,9 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsOrdinaryStrike.h"
+#include "NewHorizonsStun.h"
+#include "NewHorizonsAttackControllers.h"
+#include "NewHorizonsSpecialtyEvents.h"
 #include "NewHorizonsCreatureBurn.h"
 #include "NewHorizonsReactiveDefense.h"
 #include "NewHorizonsCoordinatedMarks.h"
@@ -21,20 +24,12 @@ namespace newHorizonsOrdinaryStrike
 {
 bool isStrikeEffect(const Bonus * bonus)
 {
+	if(newHorizonsSpecialtyEvents::isReceipt(bonus) || newHorizonsStun::isMarker(bonus) || newHorizonsAttackControllers::isCripple(bonus)) return true;
 	if(newHorizonsGraveDust::isEffect(bonus)) return true;
 	if(newHorizonsCreatureBurn::isBurn(bonus) || newHorizonsReactiveDefense::isIronHideSpent(bonus) || newHorizonsReactiveDefense::isSolidarityProtection(bonus)
 		|| newHorizonsInfernoStrikeDebuffs::isEffect(bonus) || newHorizonsCoordinatedMarks::isMark(bonus) || newHorizonsSepulchralGrip::isEffect(bonus) || newHorizonsShieldAndSword::isProtection(bonus))
 		return true;
-	if(!bonus || bonus->source != BonusSource::HERO_SPECIAL
-		|| bonus->duration != BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION
-		|| !vstd::contains(bonus->statusTags, BonusStatusTag::DEBUFF)
-		|| !vstd::contains(bonus->statusTags, BonusStatusTag::NON_TRANSFERABLE))
-		return false;
-	return (bonus->type == BonusType::STACKS_INITIATIVE && bonus->statusIdentity == "wingbeat"
-		&& bonus->val < 0 && bonus->sid == BonusSourceID(HeroTypeID(HeroTypeID::decode("core:aeris"))))
-		|| (bonus->type == BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION
-			&& bonus->statusIdentity == "measuredVolley" && bonus->val > 0
-			&& bonus->sid == BonusSourceID(HeroTypeID(HeroTypeID::decode("core:theodorus"))));
+	return false;
 }
 bool isInitiativeEffect(const Bonus * bonus)
 {
@@ -42,14 +37,6 @@ bool isInitiativeEffect(const Bonus * bonus)
 }
 bool mayChangeInitiative(const CBattleInfoCallback & battle)
 {
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const auto * hero = battle.battleGetFightingHero(side);
-		if(hero && hero->getHeroType() && hero->getHeroType()->getJsonKey() == "core:aeris"
-			&& newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero)
-			&& hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"]["wingbeatInitiativePercent"].Integer() > 0)
-			return true;
-	}
 	for(const auto * unit : battle.battleGetUnitsIf([](const battle::Unit * unit) { return unit != nullptr; }))
 		if(unit && unit->hasBonus(CSelector(isInitiativeEffect)))
 			return true;
@@ -59,7 +46,8 @@ bool mayChangeInitiative(const CBattleInfoCallback & battle)
 bool needsProjection(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	return attack.attacker && attack.defender
-		&& (newHorizonsGraveDustStrike::eligible(battle, attack)
+		&& (newHorizonsSpecialtyEvents::needsStrikeEvents(battle, attack.attacker, attack.defender)
+			|| newHorizonsGraveDustStrike::eligible(battle, attack)
 			|| newHorizonsCreatureBurn::eligible(battle, attack)
 			|| (!attack.shooting && newHorizonsCreatureBurn::eligible(battle, attack.reverse()))
 			|| newHorizonsReactiveDefense::ironHidePercent(battle, attack) > 0

@@ -33,7 +33,6 @@
 #include "../../mock/mock_ServerCallback.h"
 
 #include "../../../lib/battle/CBattleInfoCallback.h"
-#include "../../../luascript/LuaScriptPool.h"
 
 #include <vcmi/events/EventBus.h>
 
@@ -71,7 +70,6 @@ public:
 
 	battle::UnitsFake unitsFake;
 
-	std::shared_ptr<LuaModule> luaModule;
 	std::unique_ptr<scripting::Pool> pool;
 	std::shared_ptr<battle::BattleFake> battleFake;
 

@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "AttackControllerProjection.h"
+#include "ActivationForfeit.h"
 #include "PhysicalStrikeProjection.h"
 #include "BattleDamageValue.h"
 #include "CoordinatedMarkProjection.h"
@@ -20,7 +22,6 @@
 #include "CreatureCandidateScreening.h"
 #include "MeleeSpecialtyProjection.h"
 #include "ExchangeInitiativeQueue.h"
-#include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include "../../lib/battle/NewHorizonsCreatureBurn.h"
 #include "BattleExchangeAftermath.h"
 #include "PetrifyingBloodValue.h"
@@ -113,6 +114,7 @@ public:
 	}
 	uint64_t * selectedProbeOffers() { return timing ? &local.selectedProbeDamageOffers : nullptr; }
 	uint64_t * selectedProbeUses() { return timing ? &local.selectedProbeDamageUses : nullptr; }
+	uint64_t * selectedProbeScoreUses() { return timing ? &local.selectedProbeScoreUses : nullptr; }
 	HypotheticLifecycleTiming * lifecycleSubsets()
 	{
 		return timing ? &local.lifecycleSubsets : nullptr;
@@ -144,6 +146,7 @@ public:
 		timing->body.calls += local.body.calls;
 		timing->selectedProbeDamageOffers += local.selectedProbeDamageOffers;
 		timing->selectedProbeDamageUses += local.selectedProbeDamageUses;
+		timing->selectedProbeScoreUses += local.selectedProbeScoreUses;
 		if(timing->collectProbeDamageCache)
 			timing->targetProbeDamageCache.accumulate(local.targetProbeDamageCache);
 		// Nested subsets are aggregated separately, never added to classified body time.
@@ -287,8 +290,7 @@ float BattleExchangeVariant::trackAttack(
 			return 0; // Same pre-mutation skip contract as an unavailable actor.
 	}
 	PhysicalStrikeProjection tactics(hb.get());
-	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
-	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
+
 
 	auto attacker = hb->getForUpdate(ap.attack.attacker->unitId());
 	if(!attacker || attacker->armorerLastStandEndedActivation)
@@ -356,13 +358,7 @@ float BattleExchangeVariant::trackAttack(
 			int64_t primaryBodyHealthLoss = 0;
 			std::vector<std::pair<uint32_t, int64_t>> actualHits;
 			actualHits.reserve(strike.hits.size());
-			struct PendingRebirth
-			{
-				newHorizonsElementalRebirth::DeathSnapshot snapshot;
-				bool cloneKilled = false;
-				bool nativeRebirth = false;
-			};
-			std::map<uint32_t, PendingRebirth> pendingRebirths;
+
 			bool enemyStackKilled = false;
 			bool endedActiveActivationThisStrike = false;
 			int64_t harvestCasualties = 0;
@@ -380,12 +376,6 @@ float BattleExchangeVariant::trackAttack(
 				const bool harvestMayRebirth = harvestEligible && hb->hasReadyNativeRebirth(target.get());
 				const int32_t harvestCountBefore = harvestEligible ? target->getCount() : 0;
 				const auto wasAlive = target->alive();
-				if(wasAlive && !pendingRebirths.contains(unitId))
-				{
-					if(const auto snapshot = hb->captureElementalRebirthSource(*target))
-						pendingRebirths.emplace(unitId, PendingRebirth{
-							*snapshot, target->isClone(), hb->hasReadyNativeRebirth(target.get())});
-				}
 				const auto healthBefore = target->getAvailableHealth();
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
@@ -453,17 +443,14 @@ float BattleExchangeVariant::trackAttack(
 			}
 			battleExchangeAftermath::replayPrimaryStatuses(*hb, projectedAttack, strike,
 				actualHits, serpentBinding, gazeAdmitted, primaryBodyHealthLoss);
+			attackControllerAI::applyCripple(*hb, strike.attackController);
 			tactics.finish(projectedAttack.attacker->unitId());
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
 				strike.resolvedLuck, true, strike.perfectFortune, strike.perfectFortuneSide,
 				strike.luckSerendipitySide, strike.luckSerendipityOrdinaryAttack);
+			for(const auto & injury : attackControllerAI::apply(*hb, strike.attackController))
+				if(injury.before->unitId() == attacker->unitId()) projectedAttackerDamage += injury.healthLoss;
 			hb->projectRangedMarkStrike(projectedAttack, actualHits);
-			for(const auto & [unitId, pending] : pendingRebirths)
-			{
-				auto target = hb->getForUpdate(unitId);
-				hb->projectElementalRebirth(target.get(), pending.snapshot,
-					!target->alive(), pending.cloneKilled, pending.nativeRebirth);
-			}
 			const auto aerialReflectionLoss = aerialRetaliationAI::replaySourceAftermath(*hb, strike);
 			if(projectedAttacker->unitId() == attacker->unitId()) projectedAttackerDamage += aerialReflectionLoss;
 			const auto healthBeforeHexOfPain = projectedAttacker->getAvailableHealth();
@@ -572,7 +559,7 @@ float BattleExchangeVariant::trackAttack(
 		}
 	}
 	completeSelectedAttack(ap, hb, *attacker, originalPosition, returnCommitted, manaLeechReplay,
-		rebirthSpawnIdsBefore, primalBurstFirstNewHit, referenceController, damageCache);
+		referenceController, damageCache);
 
 	return attackValue;
 }
@@ -591,7 +578,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	DamageCacheAdmission * mainProbeAdmission,
 	BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent,
 	std::vector<petrifyingBloodAI::Pending> * bloodSequence,
-	SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused)
+	SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused, uint64_t * reusedScore)
 {
 	if(actionResult)
 		*actionResult = {};
@@ -616,8 +603,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	}
 
 	PhysicalStrikeProjection tactics(hb.get());
-	const auto rebirthSpawnIdsBefore = hb->getElementalRebirthSpawnUnitIds();
-	const auto primalBurstFirstNewHit = hb->getProjectedPrimalBurstHits().size();
+
 	const auto referenceController = hb->battleGetOwner(attacker.get());
 	static const std::string cachingStringBlocksRetaliation = "type_BLOCKS_RETALIATION";
 	static const auto selectorBlocksRetaliation = Selector::type()(BonusType::BLOCKS_RETALIATION);
@@ -658,24 +644,10 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	const bool frozenBeforeHit = !evaluateOnly && newHorizonsFrozen::isFrozen(*defender);
 
 	preparationMeasurement.finish();
-	int64_t attackDamage;
-	{
-		MovementExchangeScope damageMeasurement(evaluateOnly && probeTiming ? probeTiming->mainDamage : nullptr);
-		// Redirected Protect spends interception state before this point: never reuse it.
-		const auto retained = !evaluateOnly && !protectIntercepted && selected
-			? selected->consume(*hb, *attacker, *defender, shooting) : std::nullopt;
-		if(retained)
-		{
-			attackDamage = *retained;
-			if(reused) ++*reused;
-		}
-		else
-			attackDamage = damageCache.getDamage(attacker.get(), defender.get(), hb,
-				evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr,
-				evaluateOnly ? mainProbeAdmission : nullptr);
-		if(evaluateOnly && !protectIntercepted && produced)
-			produced->record(*hb, *attacker, *defender, shooting, attackDamage);
-	}
+	SelectedProbeDamage::Evaluation ordinaryHit(attacker, defender, hb, damageCache,
+		shooting, evaluateOnly, protectIntercepted, probeTiming, mainProbeAdmission,
+		produced, selected, reused, reusedScore);
+	int64_t attackDamage = ordinaryHit.damage();
 	const auto attackLastStand = AttackPreviewHitContext::resolveUnspentLastStand(*hb, projectedAttack, defender.get(), attackDamage);
 	attackDamage = attackLastStand.first.damageToApply;
 	const auto attackDamageProvenance = battleAIDamageProvenance(
@@ -687,13 +659,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 		defender.get(), attackDamage, attackDamageProvenance);
 	const int64_t actualDamage = projectedAttackDamage.appliedDamage;
 	const auto primaryBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, defender->health.getTemporaryHitPoints());
-	float defenderDamageReduce;
-	{
-		MovementExchangeScope scoreMeasurement(evaluateOnly && probeTiming ? probeTiming->dpsScore : nullptr);
-		defenderDamageReduce = AttackPossibility::calculateDamageReduce(attacker.get(), defender.get(),
-			projectedAttackDamage.healthLoss, damageCache, hb,
-			evaluateOnly && probeTiming ? probeTiming->damageCache : nullptr);
-	}
+	float defenderDamageReduce = ordinaryHit.damageReduce(projectedAttackDamage.healthLoss);
 	float attackerDamageReduce = 0;
 	std::vector<petrifyingBloodAI::Pending> localBloodSequence;
 	auto & petrifyingBloodPending = bloodSequence ? *bloodSequence : localBloodSequence;
@@ -702,8 +668,6 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	const bool defenderWasAlive = defender->alive();
 	const int32_t defenderHarvestCountBefore = harvestEligible ? defender->getCount() : 0;
 	const int64_t defenderHealthBeforeAttack = defender->getAvailableHealth();
-	const auto defenderRebirthSource = !evaluateOnly && defenderWasAlive
-		? hb->captureElementalRebirthSource(*defender) : std::nullopt;
 	// Applied attacks retain their pre-hit native-Rebirth receipt. A probe
 	// needs this query only if its post-attack state can actually trigger Cleave.
 	const bool defenderMayRebirth = !evaluateOnly && hb->hasReadyNativeRebirth(defender.get());
@@ -769,9 +733,6 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			primaryFortune->resolvedLuck, true, primaryFortune->perfectFortune,
 			primaryFortune->controllerSide, primaryFortune->controllerSide, primaryFortune->ordinaryLuckAttack);
 		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
-		if(defenderRebirthSource)
-			hb->projectElementalRebirth(defender.get(), *defenderRebirthSource,
-				defenderWasAlive && !defender->alive(), defender->isClone(), defenderMayRebirth);
 		if(relentlessAssaultTargetUnitId)
 			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
@@ -874,8 +835,6 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 					*projectedAttacker, *target, cleaveAttack.physicalDamage);
 				const bool targetWasAlive = target->alive();
 				const int32_t targetHarvestCountBefore = cleaveHarvestEligible ? target->getCount() : 0;
-				const auto targetRebirthSource = targetWasAlive
-					? hb->captureElementalRebirthSource(*target) : std::nullopt;
 				const bool targetMayRebirth = hb->hasReadyNativeRebirth(target.get());
 				tactics.damage(*hb, cleaveAttack, *target, cleaveDamage, cleaveProvenance);
 				petrifyingBloodAI::capture(hb, *projectedAttacker, *target, resolvedCleaveDamage,
@@ -905,9 +864,6 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 					cleaveResolvedLuck, true, cleavePerfectFortune, cleavePerfectFortuneSide,
 					cleavePerfectFortuneSide, cleaveSerendipityOrdinaryAttack);
 				hb->projectRangedMarkStrike(cleaveAttack, {{target->unitId(), cleaveDamage}});
-				if(targetRebirthSource)
-					hb->projectElementalRebirth(target.get(), *targetRebirthSource,
-						targetWasAlive && !target->alive(), target->isClone(), targetMayRebirth);
 			}
 				projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
 				if(newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
@@ -983,8 +939,6 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			*defender, *attacker, retaliationAttack.physicalDamage);
 		const bool attackerWasAlive = attacker->alive();
 		const int32_t attackerHarvestCountBefore = counterHarvestEligible ? attacker->getCount() : 0;
-		const auto attackerRebirthSource = attackerWasAlive
-			? hb->captureElementalRebirthSource(*attacker) : std::nullopt;
 		const bool attackerMayRebirth = hb->hasReadyNativeRebirth(attacker.get());
 		tactics.damage(*hb, retaliationAttack, *attacker, retaliationDamage, retaliationProvenance);
 		petrifyingBloodAI::capture(hb, *defender, *attacker, actualDamage,
@@ -1018,9 +972,6 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()),
 			retaliationResolvedLuck, true, retaliationPerfectFortune, retaliationPerfectFortuneSide,
 			retaliationPerfectFortuneSide, retaliationSerendipityOrdinaryAttack);
-		if(attackerRebirthSource)
-			hb->projectElementalRebirth(attacker.get(), *attackerRebirthSource,
-				attackerWasAlive && !attacker->alive(), attacker->isClone(), attackerMayRebirth);
 		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
 		if(newHorizonsHexOfPainAI::hasEffect(defender.get()))
 		{
@@ -1046,8 +997,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 		logAi->trace("Attack has zero score def:%2f att:%2f", defenderDamageReduce, attackerDamageReduce);
 	}
 #endif
-	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, attacker.get(), isOurAttack, damageCache, hb);
-	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, isOurAttack, damageCache, hb);
+
 
 	return score;
 }
@@ -1083,7 +1033,8 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 	auto dists = getReachabilityWithEnemyBypass(activeStack, damageCache, hb);
 	auto flying = activeStack->hasBonusOfType(BonusType::FLYING);
-	const bool screenMovement = creatureCandidateScreening::supportsVisibleOrdinaryMelee(activeStack, *hb);
+	const bool beamMovement = creatureCandidateScreening::supportsForecastBeam(activeStack, *hb, targets.berserk, false);
+	const bool screenMovement = !beamMovement && creatureCandidateScreening::supportsVisibleOrdinaryMelee(activeStack, *hb);
 
 	for(const battle::Unit * enemy : targets.unreachableEnemies)
 	{
@@ -1125,6 +1076,12 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 		const auto hexes = screenMovement
 			? movementCandidateScreening::promisingApproaches(enemy->getAttackableHexes(activeStack), dists, speed)
 			: enemy->getAttackableHexes(activeStack);
+		std::optional<BattleHex> beamHex;
+		if(beamMovement)
+			for(const auto hex : hexes)
+				if(dists.isReachable(hex) && (!beamHex
+					|| dists.distances[hex.toInt()] < dists.distances[beamHex->toInt()]))
+					beamHex = hex;
 		auto enemySpeed = enemy->getMovementRange();
 		auto speedRatio = speed / static_cast<float>(enemySpeed);
 		auto multiplier = (speedRatio > 1 ? 1 : speedRatio) * penaltyMultiplier;
@@ -1132,6 +1089,8 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 		for(auto & hex : hexes)
 		{
 			if (!dists.isReachable(hex))
+				continue;
+			if(beamHex && hex != *beamHex)
 				continue;
 			// FIXME: provide distance info for Jousting bonus
 			auto bai = BattleAttackInfo(activeStack, enemy, 0, cb->battleCanShoot(activeStack));
@@ -1263,24 +1222,22 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 	logAi->trace("Battle exchange at %d", ap.attack.shooting ? ap.dest.toInt() : ap.from.toInt());
 #endif
 
-	if(cb->battleGetMySide() == BattleSide::LEFT_SIDE
-		&& cb->battleGetGateState() == EGateState::BLOCKED
-		&& ap.attack.defender->coversPos(BattleHex::GATE_BRIDGE))
-	{
+	if(!acceptsExchangeAnchor(ap, *hb))
 		return BattleScore(EvaluationResult::INEFFECTIVE_SCORE, 0);
-	}
 
 	battle::Units ourStacks;
 	battle::Units enemyStacks;
 
-	if(hb->battleGetUnitByID(ap.attack.defender->unitId())->alive())
+	if(!ap.noActionAnchor && hb->battleGetUnitByID(ap.attack.defender->unitId())->alive())
 		enemyStacks.push_back(ap.attack.defender);
 
 	ReachabilityMapCache returnGateCache;
-	const auto returnGeometry = prepareReturnGateReachability(ap, hb, returnGateCache);
+	const auto returnGeometry = ap.noActionAnchor ? std::shared_ptr<HypotheticBattle>{}
+		: prepareReturnGateReachability(ap, hb, returnGateCache);
 
 	ReachabilityData exchangeUnits = measurement.measure(&BattleMovementTiming::ExchangeTiming::membership, [&]()
 	{
+		if(ap.noActionAnchor) return noActionMembership(*hb);
 		return getExchangeUnitsWithGeometry(ap, turn, targets, hb, additionalUnits,
 			returnGeometry ? &returnGateCache : nullptr, returnGeometry);
 	});
@@ -1298,7 +1255,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		exchangeUnits.units, ourStacks, enemyStacks);
 
 	setupMeasurement.finish();
-	bool canUseAp = true;
+	bool canUseAp = !ap.noActionAnchor;
 
 	std::set<uint32_t> blockedShooters;
 
@@ -1306,6 +1263,13 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		? simulationTurnsCount
 		: turn + turnOrder.size();
 
+	const auto futureActorLimit = creatureCandidateScreening::admittedFutureActorLimit(
+		ap.attack.attacker, *hb, targets.berserk);
+	ExchangeActorBudget actorBudget(futureActorLimit);
+	const auto finishScore = [&]()
+	{
+		return battleExchangeAftermath::finalizeExchangeScore(v.getScore(), simulationTurnsCount, totalTurnsCount, turn);
+	};
 	ExchangeInitiativeQueue exchangeQueue(exchangeBattle, initiativeStrikeEffects);
 	for(int exchangeTurn = 0; exchangeTurn < simulationTurnsCount; exchangeTurn++)
 	{
@@ -1317,6 +1281,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		exchangeQueue.beginRound(turnOrder.at(queueTurn), exchangeUnits.units.at(queueTurn));
 		while(const auto * activeUnit = exchangeQueue.next())
 		{
+			if(ap.noActionAnchor && exchangeTurn == 0 && activeUnit->unitId() == ap.attack.attacker->unitId()) continue;
 			bool isOur = exchangeBattle->battleMatchOwner(ap.attack.attacker, activeUnit, true);
 			battle::Units & attackerQueue = isOur ? ourStacks : enemyStacks;
 			battle::Units & oppositeQueue = isOur ? enemyStacks : ourStacks;
@@ -1342,8 +1307,10 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			const bool initialChosenUnit = canUseAp
 				&& activeUnit->unitId() == ap.attack.attacker->unitId()
 				&& !(attacker->waiting && attacker->forestAmbush.concealed);
+			if(!actorBudget.enter(initialChosenUnit))
+				return finishScore(); // Complete prior bodies; leave next activation/partial round unstarted.
 			const bool frozenForfeits = !initialChosenUnit
-				&& newHorizonsFrozen::forfeitsNormalActivation(*attacker, BattleUnitTurnReason::TURN_QUEUE);
+				&& activationForfeit::pending(*exchangeBattle, *attacker, BattleUnitTurnReason::TURN_QUEUE);
 			if(!initialChosenUnit)
 			{
 				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationStart));
@@ -1360,8 +1327,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				if(fortuneActivation)
 				{
 					MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));
-					exchangeBattle->endFortuneActivation();
-					exchangeBattle->completeSwiftNormalActivation(attacker->unitId());
+					exchangeBattle->finishProjectedActivation(attacker->unitId());
 					fortuneActivation = false;
 				}
 			};
@@ -1399,7 +1365,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			auto targetUnit = ap.attack.defender;
 			SelectedProbeDamage selectedDamage;
 
-			if(!isOur || !exchangeBattle->battleGetUnitByID(targetUnit->unitId())->alive())
+			if(ap.noActionAnchor || !isOur || !exchangeBattle->battleGetUnitByID(targetUnit->unitId())->alive())
 			{
 #if BATTLE_TRACE_LEVEL>=2
 				logAi->trace("Best target selector for %s", attacker->getDescription());
@@ -1413,17 +1379,18 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				const auto selectBestTarget = [&](const battle::Units & candidates)
 				{
 					return v.selectExchangeTarget(candidates, attacker, shooting, isOur, damageCache,
-						exchangeBattle, timing ? &probeTiming : nullptr, selectedDamage, measurement.selectedProbeOffers());
+						exchangeBattle, timing ? &probeTiming : nullptr, selectedDamage, measurement.selectedProbeOffers(), reuseSelectedProbeScore);
 				};
 
 				auto unitsInOppositeQueueExceptInaccessible = oppositeQueue;
 
 				vstd::erase_if(unitsInOppositeQueueExceptInaccessible, [&](const battle::Unit * u)->bool
 					{
-						return vstd::contains(exchangeUnits.shooters, u);
+						return vstd::contains(exchangeUnits.shooters, u)
+							|| (ap.noActionAnchor && !reachabilityMap.canReachByTurn(*attacker, *u, exchangeTurn, shooting, *exchangeBattle));
 					});
 
-				if(!isOur
+				if(!ap.noActionAnchor && !isOur
 					&& exchangeTurn == 0
 					&& exchangeUnits.units.at(exchangeTurn).at(0)->unitId() != ap.attack.attacker->unitId()
 					&& !vstd::contains(exchangeUnits.enemyUnitsReachingAttacker, attacker->unitId()))
@@ -1440,8 +1407,9 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				}
 				else
 				{
-					auto reachable = exchangeBattle->battleGetUnitsIf([this, &exchangeBattle, &attacker, &returnGeometry, &returnGateCache](const battle::Unit * u) -> bool
+					auto reachable = exchangeBattle->battleGetUnitsIf([this, &exchangeBattle, &attacker, &returnGeometry, &returnGateCache, &ap, exchangeTurn, shooting](const battle::Unit * u) -> bool
 						{
+							if(ap.noActionAnchor) return reachabilityMap.canReachByTurn(*attacker, *u, exchangeTurn, shooting, *exchangeBattle);
 							if(u->unitSide() == attacker->unitSide())
 								return false;
 
@@ -1499,7 +1467,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 					{
 						return v.trackAttackWithSelectedDamage(attacker, defender, shooting, isOur, damageCache, exchangeBattle,
 							false, i == 0, nullptr, nullptr, nullptr, &actionResult, &manaLeechSequenceSpent, &bloodSequence,
-							nullptr, i == 0 ? &selectedDamage : nullptr, measurement.selectedProbeUses());
+							nullptr, i == 0 ? &selectedDamage : nullptr, measurement.selectedProbeUses(), measurement.selectedProbeScoreUses());
 					});
 
 					primaryMeleePerformed |= actionResult.primaryMeleePerformed;
@@ -1547,7 +1515,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 		});
 	}
 
-	return battleExchangeAftermath::finalizeExchangeScore(v.getScore(), simulationTurnsCount, totalTurnsCount, turn);
+	return finishScore();
 }
 
 bool BattleExchangeEvaluator::canBeHitThisTurn(const AttackPossibility & ap)
@@ -1564,124 +1532,6 @@ bool BattleExchangeEvaluator::canBeHitThisTurn(const AttackPossibility & ap)
 	}
 
 	return false;
-}
-
-void ReachabilityMapCache::update(const std::vector<battle::Units> & turnOrder, std::shared_ptr<HypotheticBattle> hb)
-{
-	for(auto turn : turnOrder)
-	{
-		for(auto u : turn)
-		{
-			if(!vstd::contains(unitReachabilityMap, u->unitId()))
-			{
-				unitReachabilityMap[u->unitId()] = hb->getReachability(u);
-			}
-		}
-	}
-
-	hexReachabilityPerTurn.clear();
-}
-
-void BattleExchangeEvaluator::updateReachabilityMap(std::shared_ptr<HypotheticBattle> hb)
-{
-	const int TURN_DEPTH = 2;
-
-	turnOrder.clear();
-
-	hb->battleGetTurnOrder(turnOrder, std::numeric_limits<int>::max(), TURN_DEPTH);
-	reachabilityMap.update(turnOrder, hb);
-	initiativeStrikeEffects = newHorizonsOrdinaryStrike::mayChangeInitiative(*hb);
-}
-
-const battle::Units & ReachabilityMapCache::getOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex)
-{
-	auto & turnData = hexReachabilityPerTurn[turn];
-
-	if (!turnData.isValid[hex.toInt()])
-	{
-		turnData.hexes[hex.toInt()] = computeOneTurnReachableUnits(cb, env, turnOrder, turn, hex);
-		turnData.isValid.set(hex.toInt());
-	}
-
-	return turnData.hexes[hex.toInt()];
-}
-
-battle::Units ReachabilityMapCache::computeOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex)
-{
-	battle::Units result;
-	if(turnOrder.empty())
-		return result;
-	// These queries never advance or mutate the projection. Reuse it only for
-	// this hex/turn-order evaluation; no state is retained across cache misses.
-	HypotheticBattle turnBattle(env.get(), cb);
-
-	for(int i = 0; i < turnOrder.size(); i++, turn++)
-	{
-		auto & turnQueue = turnOrder[i];
-
-		for(const battle::Unit * unit : turnQueue)
-		{
-			if(unit->isTurret())
-				continue;
-
-			if(turnBattle.battleCanShoot(unit))
-			{
-				result.push_back(unit);
-
-				continue;
-			}
-
-			auto unitSpeed = unit->getMovementRange(turn);
-			auto radius = unitSpeed * (turn + 1);
-
-			auto reachabilityIter = unitReachabilityMap.find(unit->unitId());
-			assert(reachabilityIter != unitReachabilityMap.end()); // missing updateReachabilityMap call?
-
-			std::optional<ReachabilityInfo> fallbackReachability;
-			const ReachabilityInfo * reachability = nullptr;
-			if(reachabilityIter != unitReachabilityMap.end())
-				reachability = &reachabilityIter->second;
-			else
-			{
-				fallbackReachability.emplace(turnBattle.getReachability(unit));
-				reachability = &*fallbackReachability;
-			}
-			const ReachabilityInfo & unitReachability = *reachability;
-
-			// Distances may be finite through Passing Lines (or Ghost Walk) even
-			// when this occupied hex is not a legal movement destination.
-			bool reachable = unitReachability.isReachable(hex)
-				&& unitReachability.distances.at(hex.toInt()) <= radius;
-
-			if(!reachable && unitReachability.accessibility[hex.toInt()] == EAccessibility::ALIVE_STACK)
-			{
-				const battle::Unit * hexStack = turnBattle.battleGetUnitByPos(hex);
-
-				if(hexStack && controlledByDifferentPlayer(turnBattle, unit, hexStack))
-				{
-					for(const BattleHex & neighbour : hex.getNeighbouringTiles())
-					{
-						reachable = unitReachability.isReachable(neighbour)
-							&& unitReachability.distances.at(neighbour.toInt()) <= radius;
-
-						if(reachable) break;
-					}
-				}
-			}
-
-			if(reachable)
-			{
-				result.push_back(unit);
-			}
-		}
-	}
-
-	return result;
-}
-
-const battle::Units & BattleExchangeEvaluator::getOneTurnReachableUnits(uint8_t turn, const BattleHex & hex) const
-{
-	return reachabilityMap.getOneTurnReachableUnits(cb, env, turnOrder, turn, hex);
 }
 
 // avoid blocking path for stronger stack by weaker stack

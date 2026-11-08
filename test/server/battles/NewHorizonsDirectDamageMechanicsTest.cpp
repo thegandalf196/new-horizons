@@ -89,6 +89,13 @@ JsonNode savedFormula(int base = 20, int coefficient = 20)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = 2;
+	rules["spells"][arrowKey].Struct().erase("magicArrow");
+	for(auto & [id, row] : rules["spells"].Struct())
+	{
+		(void)id;
+		row.Struct().erase("elementalTag");
+		row.Struct().erase("elementalAreaDamage");
+	}
 	rules.Struct().erase("schoolRankPowerCoefficientPercent");
 	rules.Struct().erase("spellcraftEfficiencyPercent");
 	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = base;
@@ -96,11 +103,11 @@ JsonNode savedFormula(int base = 20, int coefficient = 20)
 	return rules;
 }
 
-JsonNode savedV3Formula(int base = 20, int coefficient = 20)
+JsonNode savedV3Formula()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = base;
-	rules["spells"][arrowKey]["directDamage"]["powerCoefficient"].Integer() = coefficient;
+	rules["spells"][arrowKey]["directDamage"]["base"].Integer() = 20;
+	rules["spells"][arrowKey]["directDamage"]["powerCoefficient"].Integer() = 10;
 	return rules;
 }
 
@@ -116,6 +123,9 @@ JsonNode magicRulesForVersion(int version)
 	for(auto & [spellId, spell] : rules["spells"].Struct())
 	{
 		(void)spellId;
+		spell.Struct().erase("magicArrow");
+		spell.Struct().erase("elementalTag");
+		spell.Struct().erase("elementalAreaDamage");
 		spell.Struct().erase("selectedPlacement");
 		spell.Struct().erase("rawSpellPowerPerPatch");
 		spell.Struct().erase("earthquake");
@@ -150,6 +160,9 @@ JsonNode magicRulesForVersion(int version)
 		spell.Struct().erase("active");
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
+		spell.Struct().erase("magicArrow");
+		spell.Struct().erase("elementalTag");
+		spell.Struct().erase("elementalAreaDamage");
 	}
 	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
 	{
@@ -201,6 +214,9 @@ JsonNode savedV1MagicRules()
 		spell.Struct().erase("active");
 		spell.Struct().erase("directDamage");
 		spell.Struct().erase("cureAfflictions");
+		spell.Struct().erase("magicArrow");
+		spell.Struct().erase("elementalTag");
+		spell.Struct().erase("elementalAreaDamage");
 	}
 	for(auto it = rules["spells"].Struct().begin(); it != rules["spells"].Struct().end();)
 	{
@@ -537,7 +553,10 @@ protected:
 		forceRealHeroScale = true;
 		usePerks = true;
 		authoredRules = savedV3Formula();
-		for(auto & cost : authoredRules["spells"][arrowKey]["costs"].Vector())
+		selectedSpellKey = "core:lightningBolt";
+		authoredRules["spells"][selectedSpellKey]["directDamage"]["base"].Integer() = 20;
+		authoredRules["spells"][selectedSpellKey]["directDamage"]["powerCoefficient"].Integer() = 20;
+		for(auto & cost : authoredRules["spells"][selectedSpellKey]["costs"].Vector())
 			cost.Integer() = listedCost;
 		prepare();
 		selectEmpowerSpell();
@@ -934,6 +953,7 @@ TEST_P(NewHorizonsSlowLegacyProfileTest, SavedV1AndV2KeepConfiguredRankMagnitude
 TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuthoritativeActionAgree)
 {
 	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 24, ChangeValueMode::ABSOLUTE);
 	ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), 10);
@@ -946,7 +966,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	spells::detail::ProblemImpl problem;
 	ASSERT_TRUE(mechanics->canBeCast(problem));
 	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
-	ASSERT_EQ(mechanics->getEffectValue(), 68);
+	ASSERT_EQ(mechanics->getEffectValue(), 44);
 	const auto before = target->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
@@ -954,7 +974,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	HypotheticBattle predicted(&environment, callback);
 	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
 	prediction.castEval(predicted.getServerCallback(), destination);
-	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 68);
+	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 44);
 	EXPECT_EQ(target->getAvailableHealth(), before);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	BattleAction action;
@@ -963,10 +983,10 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, RealHeroLegalityAiPredictionAndAuth
 	action.spell = spell->getId();
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(before - target->getAvailableHealth(), 68);
+	EXPECT_EQ(before - target->getAvailableHealth(), 44);
 	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(before - target->getAvailableHealth(), 68) << "Rejected second hero action must not apply damage";
+	EXPECT_EQ(before - target->getAvailableHealth(), 44) << "Rejected second hero action must not apply damage";
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, V3SchoolRanksScaleOnlySavedCoefficientAndMultiSchoolUsesHighestOnce)
@@ -983,9 +1003,9 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, V3SchoolRanksScaleOnlySavedCoeffici
 	const auto formula = newHorizonsMagic::spellDirectDamage(battle()->getMagicRules(), arrowKey);
 	ASSERT_TRUE(formula);
 	EXPECT_EQ(formula->base, 20);
-	EXPECT_EQ(formula->powerCoefficient, 20);
+	EXPECT_EQ(formula->powerCoefficient, 10);
 
-	const std::array<int64_t, 4> expected{220, 250, 280, 310};
+	const std::array<int64_t, 4> expected{120, 135, 150, 165};
 	const std::array<int, 4> expectedPercent{100, 115, 130, 145};
 	for(int rank = MasteryLevel::NONE; rank <= MasteryLevel::EXPERT; ++rank)
 	{
@@ -1000,7 +1020,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, V3SchoolRanksScaleOnlySavedCoeffici
 		EXPECT_EQ(spell->calculateDamage(attackerSideHero), expected[static_cast<size_t>(rank)])
 			<< "The spellbook damage estimate must use the same ranked coefficient";
 	}
-	EXPECT_EQ(newHorizonsMagic::directDamageValue(battle()->getMagicRules(), arrowKey, 100, 10, 145), 310);
+	EXPECT_EQ(newHorizonsMagic::directDamageValue(battle()->getMagicRules(), arrowKey, 100, 10, 145), 165);
 
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
@@ -1008,7 +1028,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, V3SchoolRanksScaleOnlySavedCoeffici
 	spells::BattleCast multiSchool(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
 	multiSchool.setSpellLevel(0);
 	multiSchool.setEffectPower(100);
-	EXPECT_EQ(spell->battleMechanics(&multiSchool)->getEffectValue(), 310);
+	EXPECT_EQ(spell->battleMechanics(&multiSchool)->getEffectValue(), 165);
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(newHorizonsMagic::spellPowerCoefficientPercent(battle()->getMagicRules(), attackerSideHero, spell->getId()), 145)
@@ -1039,8 +1059,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellcraftComposesWithSchoolRanksIn
 	spells::BattleCast basicCast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
 	basicCast.setSpellLevel(0);
 	basicCast.setEffectPower(100);
-	EXPECT_EQ(spell->battleMechanics(&basicCast)->getEffectValue(), 273);
-	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 273)
+	EXPECT_EQ(spell->battleMechanics(&basicCast)->getEffectValue(), 146);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 146)
 		<< "Spellbook forecast and cast effect must use the same fractional coefficient";
 
 	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
@@ -1049,8 +1069,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellcraftComposesWithSchoolRanksIn
 	spells::BattleCast advancedCast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
 	advancedCast.setSpellLevel(0);
 	advancedCast.setEffectPower(100);
-	EXPECT_EQ(spell->battleMechanics(&advancedCast)->getEffectValue(), 296);
-	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 296);
+	EXPECT_EQ(spell->battleMechanics(&advancedCast)->getEffectValue(), 158);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 158);
 
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
@@ -1059,8 +1079,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellcraftComposesWithSchoolRanksIn
 	spells::BattleCast expertCast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
 	expertCast.setSpellLevel(0);
 	expertCast.setEffectPower(100);
-	EXPECT_EQ(spell->battleMechanics(&expertCast)->getEffectValue(), 397);
-	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 397);
+	EXPECT_EQ(spell->battleMechanics(&expertCast)->getEffectValue(), 208);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 208);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, EmpowerSpellUsesFinalWisdomAdjustedCostThresholdOfTwelve)
@@ -1094,8 +1114,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OldV3SnapshotWithoutSpellcraftField
 	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::PASSIVE, spell);
 	cast.setSpellLevel(0);
 	cast.setEffectPower(100);
-	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), 310);
-	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 310);
+	EXPECT_EQ(spell->battleMechanics(&cast)->getEffectValue(), 165);
+	EXPECT_EQ(spell->calculateDamage(attackerSideHero), 165);
 
 	const auto * slow = SpellID(SpellID::SLOW).toSpell();
 	ASSERT_NE(slow, nullptr);
@@ -1629,7 +1649,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	spells::detail::ProblemImpl problem;
 	ASSERT_TRUE(mechanics->canBeCast(problem));
 	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
-	EXPECT_EQ(mechanics->getEffectValue(), 496);
+	EXPECT_EQ(mechanics->getEffectValue(), 745);
 
 	const auto before = target->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
@@ -1639,7 +1659,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
 	prediction.setOvercharge(4);
 	prediction.castEval(predicted.getServerCallback(), destination);
-	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 496);
+	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 745);
 	EXPECT_EQ(target->getAvailableHealth(), before);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 
@@ -1650,13 +1670,14 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeUsesTheSamePred
 	action.spellOvercharge = 4;
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(before - target->getAvailableHealth(), 496);
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 8);
+	EXPECT_EQ(before - target->getAvailableHealth(), 745);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 75);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeHealthChangeForecastCopiesWoundsAndTemporaryHealth)
 {
 	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 
@@ -1677,7 +1698,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeHealthChangeFor
 	spells::detail::ProblemImpl problem;
 	ASSERT_TRUE(mechanics->canBeCast(problem));
 	ASSERT_TRUE(mechanics->canBeCastAt(aim, problem));
-	ASSERT_EQ(mechanics->getEffectValue(), 352);
+	ASSERT_EQ(mechanics->getEffectValue(), 520);
 
 	// Compute expected casualties by applying the selected raw damage to a real
 	// detached copy of the wounded, temporarily reinforced stack.
@@ -1699,7 +1720,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeHealthChangeFor
 		return false;
 	});
 	EXPECT_EQ(forecast.hpDelta, expectedHealthDelta);
-	EXPECT_EQ(forecast.hpDelta, -352);
+	EXPECT_EQ(forecast.hpDelta, -520);
 	EXPECT_EQ(forecast.unitsDelta, expectedUnitsDelta);
 
 	// The hover-style forecast mutates only its copy. The original stack still
@@ -1723,6 +1744,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeHealthChangeFor
 TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNotOverchargeSurcharge)
 {
 	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	const int wisdomId = SecondarySkill::decode("new-horizons:wisdom");
@@ -1730,7 +1752,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNot
 	attackerSideHero->setSecSkillLevel(SecondarySkill(wisdomId), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 
 	// Magic Arrow is listed at four mana. Expert Wisdom discounts the base to
-	// ceil(4 * .70) = 3; four selected overcharge points are then added in full.
+	// ceil(4 * .70) = 3; the q4 surcharge of 71 is then added in full.
 	ASSERT_EQ(attackerSideHero->getListedSpellCost(spell), 4);
 	ASSERT_EQ(attackerSideHero->getSpellCost(spell), 3);
 	ASSERT_EQ(battle()->battleGetSpellCost(spell, attackerSideHero), 3);
@@ -1743,14 +1765,16 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, WisdomDiscountsMagicArrowBaseButNot
 	action.spellOvercharge = 4;
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 7);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 74);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuthoritativeCastToSixPoints)
 {
 	forceRealHeroScale = true;
 	usePerks = true;
+	authoredRules = savedV3Formula();
 	prepare();
+	setTestSpellPointTotal(attackerSideHero, 200);
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 150, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(
 		SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 1, ChangeValueMode::ABSOLUTE);
@@ -1770,7 +1794,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	spells::detail::ProblemImpl problem;
 	ASSERT_TRUE(mechanics->canBeCast(problem));
 	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
-	EXPECT_EQ(mechanics->getEffectValue(), 656);
+	EXPECT_EQ(mechanics->getEffectValue(), 1227);
 
 	const auto before = target->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
@@ -1780,7 +1804,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	spells::BattleCast prediction(&predicted, attackerSideHero, spells::Mode::HERO, spell);
 	prediction.setOvercharge(6);
 	prediction.castEval(predicted.getServerCallback(), destination);
-	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 656);
+	EXPECT_EQ(before - predicted.battleGetUnitByID(target->unitId())->getAvailableHealth(), 1227);
 	EXPECT_EQ(target->getAvailableHealth(), before);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 
@@ -1791,8 +1815,8 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, OverchargerExtendsPredictionAndAuth
 	action.spellOvercharge = 6;
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(before - target->getAvailableHealth(), 656);
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 10);
+	EXPECT_EQ(before - target->getAvailableHealth(), 1227);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - 140);
 }
 
 TEST_F(NewHorizonsDirectDamageMechanicsTest, ConductorUsesAuthoredPerJumpMultipliersInPredictionAndCast)
@@ -2005,7 +2029,10 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, SpellPenetrationCaptureMatchesDelay
 {
 	forceRealHeroScale = true;
 	usePerks = true;
-	authoredRules = savedV3Formula(10000, 0);
+	authoredRules = savedV3Formula();
+	selectedSpellKey = "core:lightningBolt";
+	authoredRules["spells"][selectedSpellKey]["directDamage"]["base"].Integer() = 10000;
+	authoredRules["spells"][selectedSpellKey]["directDamage"]["powerCoefficient"].Integer() = 0;
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
 	const auto reduction = std::make_shared<Bonus>(BonusDuration::PERMANENT,
@@ -2206,9 +2233,10 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, PlannedTemporalistInAnOlderSnapshot
 	EXPECT_EQ(slowBonuses->front()->turnsRemain, ordinaryDuration);
 }
 
-TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegacyOverchargeAtomically)
+TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeOverchargeAtomically)
 {
 	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	const auto before = target->getAvailableHealth();
@@ -2228,6 +2256,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsOutOfRangeAndLegac
 TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowRejectsMissingTargetBeforeSpendingManaOrAction)
 {
 	forceRealHeroScale = true;
+	authoredRules = savedV3Formula();
 	prepare();
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	const auto before = target->getAvailableHealth();

@@ -4,6 +4,7 @@
 #include "ProjectedTargetHitFixture.h"
 #include "../../AI/BattleAI/MovementCandidateScreening.h"
 #include "../../AI/BattleAI/CreatureCandidateScreening.h"
+#include "../../AI/BattleAI/BattleSearchPolicy.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include <array>
@@ -338,4 +339,35 @@ TEST_F(MovementCreatureDecisionProfileTest, DISABLED_NullWholeCreatureDecisionTi
 	RecordProperty("CreatureDecisionClockScope", "fresh BattleEvaluator construction/selectStackAction(NULL)/destruction; four samples; no HeroAction/fullcallback/turn");
 	RecordProperty("CreatureDecisionPreparation", "current native fixture; world startTime1700000000; all seeds1337; one NULL warmup then one separately instrumented diagnostic; native/global caches retained");
 	RecordProperty("CreatureDecisionForecast", "current NH; strengthRatio0.5; two-round horizon; fixture default difficulty unchanged; no timing threshold");
+}
+
+TEST(MovementCandidateScreeningTest, DiagnosticBeamKeepsFirstMaximumAndInvalidValuesKeepFullSearch)
+{
+	const std::array<float, 4> values{-4.0f, 7.0f, 7.0f, 2.0f};
+	EXPECT_EQ(creatureCandidateScreening::forecastBeamIndex(values), 1u);
+	const std::array<float, 2> invalid{7.0f, std::numeric_limits<float>::quiet_NaN()};
+	EXPECT_FALSE(creatureCandidateScreening::forecastBeamIndex(invalid));
+	EXPECT_FALSE(creatureCandidateScreening::forecastBeamIndex(std::span<const float>{}));
+}
+
+TEST_F(MovementCandidateForecastTest, ProductionQuickProfileRetainsNativeAdmissionFallbacksAndReferenceOverride)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto model = simulation();
+	const auto before = worldAndRng();
+	EXPECT_FALSE(creatureCandidateScreening::supportsForecastBeam(actor, *model, false, false));
+	{
+		const battleSearch::Scope quick(battleSearch::Profile::BeamOneTwoActors);
+		EXPECT_TRUE(creatureCandidateScreening::supportsForecastBeam(actor, *model, false, false));
+		EXPECT_EQ(creatureCandidateScreening::admittedFutureActorLimit(actor, *model, false), 2u);
+		EXPECT_FALSE(creatureCandidateScreening::supportsForecastBeam(nullptr, *model, false, false));
+		EXPECT_FALSE(creatureCandidateScreening::supportsForecastBeam(actor, *model, true, false));
+		EXPECT_FALSE(creatureCandidateScreening::supportsForecastBeam(actor, *model, false, true));
+		EXPECT_EQ(creatureCandidateScreening::admittedFutureActorLimit(nullptr, *model, false), 0u);
+		const battleSearch::Scope full(battleSearch::Profile::Full);
+		EXPECT_FALSE(creatureCandidateScreening::supportsForecastBeam(actor, *model, false, false));
+		EXPECT_EQ(creatureCandidateScreening::admittedFutureActorLimit(actor, *model, false), 0u);
+	}
+	EXPECT_FALSE(battleSearch::forecastBeamOne());
+	EXPECT_EQ(worldAndRng(), before);
 }

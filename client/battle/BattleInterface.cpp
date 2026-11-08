@@ -370,6 +370,8 @@ void BattleInterface::installPurifyUI()
 			display.maximumSpellEffectChoices = eligible.maximumSpellEffectChoices;
 			display.physicalPoisonAutomaticallyCleared = eligible.physicalPoisonAutomaticallyCleared;
 			display.graveDustAutomaticallyCleared = eligible.graveDustAutomaticallyCleared;
+			display.stunAutomaticallyCleared = eligible.stunAutomaticallyCleared;
+			display.crippleAutomaticallyCleared = eligible.crippleAutomaticallyCleared;
 			if(eligible.physicalPoison && !eligible.physicalPoisonAutomaticallyCleared)
 				display.eligibleEffects.emplace_back(newHorizonsPurify::physicalPoisonChoiceID(), "Physical Poison");
 			for(const auto sourceSpell : eligible.spellEffectGroups)
@@ -380,6 +382,8 @@ void BattleInterface::installPurifyUI()
 			}
 			context.purifierWillClearPhysicalPoison |= display.physicalPoisonAutomaticallyCleared;
 			context.purifierWillClearGraveDust |= display.graveDustAutomaticallyCleared;
+			context.purifierWillClearStun |= display.stunAutomaticallyCleared;
+			context.purifierWillClearCripple |= display.crippleAutomaticallyCleared;
 			context.stacks.push_back(std::move(display));
 		}
 
@@ -387,7 +391,8 @@ void BattleInterface::installPurifyUI()
 		{
 			return !stack.eligibleEffects.empty();
 		});
-		if(!hasSelectableEffects && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust)
+		if(!hasSelectableEffects && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust
+			&& !context.purifierWillClearStun && !context.purifierWillClearCripple)
 		{
 			if(actionsController)
 				actionsController->endCastingSpell();
@@ -425,7 +430,8 @@ void BattleInterface::installPurifyUI()
 
 			const bool clearsAutomaticPhysicalEffect = std::ranges::any_of(currentEligible, [](const auto & eligible)
 			{
-				return eligible.physicalPoisonAutomaticallyCleared || eligible.graveDustAutomaticallyCleared;
+				return eligible.physicalPoisonAutomaticallyCleared || eligible.graveDustAutomaticallyCleared
+					|| eligible.stunAutomaticallyCleared || eligible.crippleAutomaticallyCleared;
 			});
 			if(accepted->empty() && !clearsAutomaticPhysicalEffect)
 				return false;
@@ -961,9 +967,6 @@ void BattleInterface::sendCommand(BattleAction command, const CStack * actor)
 	if(!creatureContinuationUI::read(*getBattle(), actor).normalizeCommand(command.actionType))
 		return;
 
-	const auto & crisis = getBattle()->getBattle()->getCrisisCommandState();
-	if(crisis.choice() && command.actionType != EActionType::HERO_COMMAND
-		&& command.actionType != EActionType::NO_ACTION) return;
 	if(isDeploymentPhase())
 	{
 		// The deployment window permits only the active human's movement
@@ -1150,58 +1153,7 @@ void BattleInterface::spellCast(const BattleSpellCast * sc)
 		displaySpellHit(spell, targetedTile);
 	});
 
-	const bool usesChainRay = !spell->animationInfo.ray.empty() && !sc->affectedCres.empty();
-
-	//queuing affect animation
-	if(usesChainRay)
-	{
-		// only the primary (first) target gets the full affect; the rest get the trailing spark frames
-		const auto & affect = spell->animationInfo.affect;
-		SpellAnimationQueue sparks(affect.begin() + (affect.empty() ? 0 : 1), affect.end());
-
-		std::vector<Point> targetPoints;
-		for(size_t i = 0; i < sc->affectedCres.size(); ++i)
-		{
-			auto stack = getBattle()->battleGetStackByID(sc->affectedCres[i], false);
-			if(!stack)
-				continue;
-
-			BattleHex hex = stack->getPosition();
-			if(i == 0)
-				addToAnimationStage(EAnimationEvents::HIT, [this, spell, hex](){ displaySpellEffect(spell, hex); });
-			else
-				addToAnimationStage(EAnimationEvents::HIT, [this, spell, sparks, hex](){ displaySpellAnimationQueue(spell, sparks, hex, false); });
-
-			Point directionOffset(30, 0);
-			targetPoints.push_back(stacksController->getStackPositionAtHex(hex, stack) + Point(225, 225) + (stacksController->facingRight(stack) ? -directionOffset : directionOffset));
-		}
-
-		const CStack * casterStack = getBattle()->battleGetStackByID(sc->casterStack);
-		addToAnimationStage(EAnimationEvents::HIT, [this, casterStack, targetPoints, spell](){
-			stacksController->addNewAnim(new ChainLightningAnimation(*this, casterStack, targetPoints, spell));
-		});
-	}
-	else
-	{
-		size_t affectedIndex = 0;
-		for(auto & elem : sc->affectedCres)
-		{
-			auto stack = getBattle()->battleGetStackByID(elem, false);
-			assert(stack);
-			if(stack)
-			{
-				// secondary affected targets (e.g. the sacrificed unit) use a distinct effect if the spell defines one
-				bool useSecondary = affectedIndex > 0 && !spell->animationInfo.affectSecondary.empty();
-				addToAnimationStage(EAnimationEvents::HIT, [this, stack, spell, useSecondary](){
-					if(useSecondary)
-						displaySpellAnimationQueue(spell, spell->animationInfo.affectSecondary, stack->getPosition(), false);
-					else
-						displaySpellEffect(spell, stack->getPosition());
-				});
-			}
-			++affectedIndex;
-		}
-	}
+	queueSpellAffectedAnimations(*sc, spell);
 
 	for(auto & elem : sc->reflectedCres)
 	{
@@ -1280,60 +1232,6 @@ void BattleInterface::displayBattleLog(const std::vector<MetaString> & battleLog
 	}
 }
 
-void BattleInterface::displaySpellAnimationQueue(const CSpell * spell, const SpellAnimationQueue & q, const BattleHex & destinationTile, bool isHit)
-{
-	for(const auto & animation : q)
-	{
-		if(animation.pause > 0)
-			stacksController->addNewAnim(new DummyAnimation(*this, animation.pause));
-
-		if (!animation.effectName.empty())
-		{
-			const CStack * destStack = getBattle()->battleGetStackByPos(destinationTile, false);
-
-			if (destStack)
-				stacksController->addNewAnim(new ColorTransformAnimation(*this, destStack, animation.effectName, spell ));
-		}
-
-		if(!animation.resourceName.empty())
-		{
-			int flags = 0;
-
-			if (isHit)
-				flags |= EffectAnimation::FORCE_ON_TOP;
-
-			if (animation.verticalPosition == VerticalPosition::BOTTOM)
-				flags |= EffectAnimation::ALIGN_TO_BOTTOM;
-
-			if (!destinationTile.isValid())
-				flags |= EffectAnimation::SCREEN_FILL;
-
-			if (!destinationTile.isValid())
-				stacksController->addNewAnim(new EffectAnimation(*this, animation.resourceName, flags, animation.transparency));
-			else
-				stacksController->addNewAnim(new EffectAnimation(*this, animation.resourceName, destinationTile, flags, animation.transparency));
-		}
-	}
-}
-
-void BattleInterface::displaySpellCast(const CSpell * spell, const BattleHex & destinationTile)
-{
-	if(spell)
-		displaySpellAnimationQueue(spell, spell->animationInfo.cast, destinationTile, false);
-}
-
-void BattleInterface::displaySpellEffect(const CSpell * spell, const BattleHex & destinationTile)
-{
-	if(spell)
-		displaySpellAnimationQueue(spell, spell->animationInfo.affect, destinationTile, false);
-}
-
-void BattleInterface::displaySpellHit(const CSpell * spell, const BattleHex & destinationTile)
-{
-	if(spell)
-		displaySpellAnimationQueue(spell, spell->animationInfo.hit, destinationTile, true);
-}
-
 CPlayerInterface *BattleInterface::getCurrentPlayerInterface() const
 {
 	return curInt.get();
@@ -1360,22 +1258,6 @@ void BattleInterface::activateStack()
 	fieldController->redrawBackgroundWithHexes();
 	actionsController->activateStack();
 	ENGINE->fakeMouseMove();
-	presentPendingHeroOrderChoice();
-}
-
-void BattleInterface::presentPendingHeroOrderChoice()
-{
-	if(!curInt || curInt->isAutoFightOn || !makingTurn() || isDeploymentPhase()
-		|| actionsController->heroOrderTargetingModeActive()
-		|| actionsController->heroSpellcastingModeActive())
-		return;
-	const auto callback = getBattle();
-	if((!callback->getBattle()->getCrisisCommandState().choice()
-		&& !callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
-		&& !callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
-		|| !ENGINE->windows().findWindows<BattleHeroActionWindow>().empty())
-		return;
-	ENGINE->windows().createAndPushWindow<BattleHeroActionWindow>(CPlayerInterface::battleInt, true);
 }
 
 bool BattleInterface::makingTurn() const

@@ -64,6 +64,7 @@ protected:
 
 	void SetUp() override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";

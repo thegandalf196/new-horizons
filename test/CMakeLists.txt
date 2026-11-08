@@ -5,6 +5,21 @@ find_package(Threads REQUIRED)
 option(ENABLE_NEW_HORIZONS_MANAGED_TESTS
 	"Compile opt-in tests requiring an isolated registered70 profile and NH_REQUIRE_MANAGED_MISSILE_PROFILE=1" OFF)
 
+# The production movement kernel has no resource or game-bootstrap dependency.
+add_executable(nhBattleMovementSolverTest battle/BattleMovementSolverTest.cpp)
+add_test(NAME nhBattleMovementSolverTest COMMAND nhBattleMovementSolverTest)
+set_tests_properties(nhBattleMovementSolverTest PROPERTIES TIMEOUT 30 LABELS "battle;movement")
+add_executable(nhBattleMovementCompilationTest battle/BattleMovementCompilationTest.cpp)
+target_link_libraries(nhBattleMovementCompilationTest PRIVATE vcmi)
+add_test(NAME nhBattleMovementCompilationTest COMMAND nhBattleMovementCompilationTest)
+set_tests_properties(nhBattleMovementCompilationTest PROPERTIES TIMEOUT 60 LABELS "battle;movement")
+if(ENABLE_LUA_ORACLE)
+	add_executable(nhLuaDeclaredBonusTypesTest scripting/LuaDeclaredBonusTypesTest.cpp)
+	target_link_libraries(nhLuaDeclaredBonusTypesTest PRIVATE vcmi)
+	add_test(NAME nhLuaDeclaredBonusTypesTest COMMAND nhLuaDeclaredBonusTypesTest)
+	set_tests_properties(nhLuaDeclaredBonusTypesTest PROPERTIES TIMEOUT 60 LABELS "battle;damage;lua-oracle")
+endif()
+
 # Pure saved-view navigation state; no renderer or gameplay fixture implied.
 add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNavigationTest.cpp)
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
@@ -67,6 +82,7 @@ endif()
 
 set(test_SRCS
 		bonus/DivinePayoutSerializationTest.cpp
+		bonus/PreparedNativeBonusRuleTest.cpp
 		battle/ArcaneMarksActionGuardTest.cpp
 		battle/AutomaticHeroCastReceiptTest.cpp
 		battle/PassiveDivineMandatePolicyTest.cpp
@@ -107,6 +123,7 @@ set(test_SRCS
  		CMemoryBufferTest.cpp
 		serializer/JsonUpdaterTest.cpp
 		serializer/SaveParityTest.cpp
+		serializer/CompletedMapEventSaveTest.cpp
 		serializer/BattleActionExportTest.cpp
 		serializer/CurePhysicalSelectorSerializationTest.cpp
 		../tools/native/BattleActionExport.cpp
@@ -144,6 +161,7 @@ set(test_SRCS
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp
 		battle/CUnitStateTest.cpp
+		battle/UnitTimeStopQueryTest.cpp
 		battle/HealingReceiptTest.cpp
 		battle/IncomingHealingTest.cpp
 		battle/GraveDustIdentityTest.cpp
@@ -385,6 +403,7 @@ set(test_SRCS
 		map/CGArtifactRegressionTest.cpp
 		map/MapComparer.cpp
 		map/MapScriptTest.cpp
+		scripting/NativeCombatEventDispatchTest.cpp
 		map/TinyH3MBuilderTest.cpp
 		map/NewHorizonsStartingDevelopmentTest.cpp
 		map/NewHorizonsNavigationSuccessorTest.cpp
@@ -422,6 +441,55 @@ set(test_SRCS
 		spells/OrientedSpellPatternTest.cpp
 		spells/MagicalDamageReductionTest.cpp
 		spells/NewHorizonsMagicArrowTest.cpp
+		server/battles/NewHorizonsElementalAttunementCombatTest.cpp
+		battle/NewHorizonsElementalAttunementTest.cpp
+		battleAI/NativeRulesResourceProjectionTest.cpp
+		battleAI/AttunementAllegianceProjectionTest.cpp
+		server/battles/NewHorizonsMagicArrowChargeMechanicsTest.cpp
+		server/battles/NewHorizonsFiniteCommandTest.cpp
+		serializer/NewHorizonsFixedOrdinaryPolicySerializationTest.cpp
+		serializer/CurrentOrdinaryOwnerFixture.h
+		battleAI/NativeSpecialtyProjectionTest.cpp
+		battleAI/NativePassiveSpecialtyProjectionTest.cpp
+		battleAI/NativeSpecialtyProcAITest.cpp
+		battleAI/NativeStunProjectionTest.cpp
+		nullkiller2/NewHorizonsGoldStandardAITest.cpp
+		battleAI/NativeCreatureCapabilityAITest.cpp
+		battleAI/BarrageProbabilityTest.cpp
+		battleAI/KrellionOpportunityTest.cpp
+		battleAI/RunicReflectionValueTest.cpp
+		battleAI/PhysicalCleanseMobilityTest.cpp
+		battleAI/BarrageValueTest.cpp
+		battleAI/AttackControllerProjectionTest.cpp
+		server/battles/NewHorizonsRisingTideTransitionTest.cpp
+		server/battles/NewHorizonsSpecialtyRoundEventsTest.cpp
+		server/battles/NewHorizonsPassiveSpecialtyTest.cpp
+		server/battles/NewHorizonsSpecialtyProcTest.cpp
+		server/battles/NewHorizonsAttackControllerTest.cpp
+		spells/NewHorizonsRunicReflectionTest.cpp
+		server/battles/NewHorizonsRunicReflectionCombatTest.cpp
+		server/battles/NewHorizonsRunicPairedReflectionTest.cpp
+		server/battles/NewHorizonsRunicCasterLifetimeTest.cpp
+		server/battles/NewHorizonsRunicReviewRegressionTest.cpp
+		server/battles/NewHorizonsTimedNumericPlanTest.cpp
+		bonus/MechanicsAuthoringTest.cpp
+		server/battles/PreparedPilotFixture.h
+		server/battles/PreparedPilotOwnerTest.cpp
+		server/battles/PreparedPilotAdmissionTest.cpp
+		server/battles/RunicReflectionFixture.h
+		server/battles/NewHorizonsSpecialtyProcFixture.h
+		server/battles/NewHorizonsStunActivationTest.cpp
+		server/battles/NewHorizonsStunLifetimeTest.cpp
+		client/PoisonPresentationTest.cpp
+		client/ThunarRangedPresentationTest.cpp
+		server/battles/StoneboundPeriodicDamageTest.cpp
+		server/NewHorizonsGoldStandardUpgradeTest.cpp
+		server/battles/NewHorizonsCreatureSpecialtyCapabilityTest.cpp
+		battleAI/StoneboundPeriodicProjectionTest.cpp
+		server/battles/CommittedBonusOperationsTest.cpp
+		server/battles/NewHorizonsSpecialtyStrikeEventsTest.cpp
+		server/battles/NewHorizonsSpecialtyEventFixture.h
+	spells/NewHorizonsMagicArrowChargeTest.cpp
 		spells/NewHorizonsMagicSchemaTest.cpp
 		spells/NewHorizonsMagicV2RulesTest.cpp
 		spells/SpellPowerCompositionTest.cpp
@@ -499,6 +567,7 @@ set(test_SRCS
 		server/battles/FocusMagicSpellTest.cpp
 		spells/NewHorizonsFocusParameterSchemaTest.cpp
 		server/battles/NewHorizonsHexOfPainTest.cpp
+		server/battles/NativeTimedSiblingOrderTest.cpp
 		server/battles/NewHorizonsShadowGiftTest.cpp
 		server/battles/NewHorizonsPlagueTest.cpp
 		server/battles/NewHorizonsPlagueControlSpellLockTest.cpp
@@ -516,7 +585,6 @@ set(test_SRCS
 		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsNecromancyCombatTest.cpp
 		server/battles/NewHorizonsElementalConvergenceTest.cpp
-		server/battles/NewHorizonsRebirthTerrainTest.cpp
 		server/battles/NewHorizonsRebirthChainTest.cpp
 		server/battles/NewHorizonsChaplainReserveTest.cpp
 		server/battles/NewHorizonsConsecratedCastingTest.cpp
@@ -646,7 +714,6 @@ set(test_SRCS
 		server/battles/NewHorizonsOrdinaryStrikeSpecialtyTest.cpp
 		server/battles/OrdinarySpecialtyVisibilityTest.cpp
 	server/battles/NewHorizonsOrdinaryScreenAndCounterTest.cpp
-	server/battles/NewHorizonsTidalRenewalTest.cpp
 	server/battles/NewHorizonsOrdinaryCreatureSpecialtyTest.cpp
 		server/battles/NewHorizonsConditionalCreatureSpecialtyTest.cpp
 		server/battles/NewHorizonsCreatureAuraSpecialtyTest.cpp
@@ -1005,9 +1072,6 @@ if(ENABLE_BATTLE_AI)
 		battleAI/PassiveDivineMandateAITest.cpp
 		server/battles/NewHorizonsAvatarOfRageTest.cpp
 		server/battles/NewHorizonsBloodrageDeathPerksTest.cpp
-		server/battles/NewHorizonsSwiftRebirthTest.cpp
-		server/battles/NewHorizonsElementalMemoryTest.cpp
-		server/battles/NewHorizonsPhoenixSparkTest.cpp
 		server/battles/NewHorizonsVeteranCohesionTest.cpp
 		server/battles/NewHorizonsRoyalStandardTest.cpp
 		server/battles/NewHorizonsDeepFlankTest.cpp
@@ -1056,20 +1120,26 @@ if(ENABLE_BATTLE_AI)
 		battleAI/MeleeResourceOrderTest.cpp
 		battleAI/MovementBonusProvenanceTest.cpp
 		battleAI/ReachabilityMapProjectionTest.cpp
+		battleAI/MovementQueryCacheTest.cpp
+		battleAI/MovementQueryAdmissionTest.cpp
+		battleAI/MovementQueryProjectionTest.cpp
 		battleAI/EnemyBypassReachabilityTest.cpp
 		battleAI/DamageCacheObstacleVisibilityTest.cpp
 		battleAI/CreaturePressureCachePreparationTest.cpp
+		battleAI/SelectedProbeScoreTest.cpp
 		battleAI/RegenerationBaselineReuseTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
 		battleAI/ExchangeInitiativeQueueTest.cpp
 		battleAI/CreatureCandidateBaselineTest.cpp
 		battleAI/MovementCandidateScreeningTest.cpp
+		battleAI/BattleSearchPolicyTest.cpp
 		battleAI/OrdinaryStrikeEvaluatorIntegrationTest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp
 		battleAI/AppliedStrikeFactsTest.cpp
 		battleAI/BattleShroudStrikeTest.cpp
 		battleAI/StackWithBonusesQueryTest.cpp
+		battleAI/SelectedBonusOverlayReuseTest.cpp
 		battleAI/OrdinaryMeleeRetaliationTest.cpp
 		battleAI/OriginalMeleeSequenceTest.cpp
 		battleAI/NewHorizonsSerpentsEmbraceAITest.cpp
@@ -1110,14 +1180,12 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsWispLongReachAITest.cpp
 		battleAI/NewHorizonsDoubleCommandAITest.cpp
 		battleAI/NewHorizonsDivineMandateAITest.cpp
-		battleAI/NewHorizonsElementalRebirthAITest.cpp
 		battleAI/KnownNativeRebirthPacketTest.cpp
 		battleAI/InfernoStrikeDebuffAITest.cpp
 		battleAI/PrismaticVanguardAITest.cpp
 		battleAI/ReactiveDefenseProjectionTest.cpp
 		battleAI/NewHorizonsCoordinatedMarkAITest.cpp
 		battleAI/ReactiveDefenseDirectRoutesTest.cpp
-		battleAI/NewHorizonsRebirthChainAITest.cpp
 		battleAI/NewHorizonsBattlePlanAITest.cpp
 		battleAI/AttackResourceProjectionTest.cpp
 		battleAI/DamageReductionControlTest.cpp
@@ -1393,6 +1461,20 @@ if(ENABLE_NULLKILLER2_AI)
 			scripting/LuaCombatEventIdentityTest.cpp
 			scripting/LuaStackFieldKeyTest.cpp
 			scripting/LuaObstacleVisibilityTest.cpp)
+		target_sources(vcmitest PRIVATE scripting/NativeCombatEventsParityTest.cpp
+			scripting/NativeCombatEventAuthorityParityTest.cpp
+			scripting/NativeDamageCaptureParityTest.cpp
+			scripting/NativeJsonParametersParityTest.cpp
+			spells/effects/NativeSpellLuaParityTest.cpp
+			spells/effects/NativeHealthSpellLuaParityTest.cpp
+			spells/effects/NativeStatusSpellLuaParityTest.cpp
+			spells/effects/NativeLocationSpellLuaParityTest.cpp
+			spells/effects/NativeUtilitySpellLuaParityTest.cpp
+			spells/effects/NativeCreatureSpellLuaParityTest.cpp
+			spells/effects/NativeHealthTransferSpellLuaParityTest.cpp
+			spells/effects/NativeStructureSpellLuaParityTest.cpp
+			spells/effects/NativeSummonWorldLuaParityTest.cpp
+			spells/effects/NativeTransferWorldLuaParityTest.cpp)
 	endif()
 	set(vcmitest_LIBS gtest gmock vcmiMain vcmiservercommon TBB::tbb ${SYSTEM_LIBS})
 	foreach(optional_vcmitest_target IN ITEMS vcmiLua EmptyAI StupidAI MMAI)
@@ -1404,6 +1486,45 @@ else()
 	set(vcmitest_LIBS gtest gmock vcmi vcmiservercommon ${SYSTEM_LIBS})
 endif()
 target_link_libraries(vcmitest PRIVATE ${vcmitest_LIBS})
+
+# Pure generated-source migration, with an explicit resource catalogue and no
+# game bootstrap. Execution/continuation cases remain in MapScriptTest.
+add_executable(nhNativeMapImportTest map/NativeMapImportTest.cpp)
+target_link_libraries(nhNativeMapImportTest PRIVATE gtest_main vcmi ${SYSTEM_LIBS})
+add_test(NAME nhNativeMapImportTest COMMAND nhNativeMapImportTest)
+set_tests_properties(nhNativeMapImportTest PROPERTIES TIMEOUT 60 LABELS "native-rules;map;component")
+
+add_executable(nhNativeCombatEventDispatchTest scripting/NativeCombatEventDispatchTest.cpp)
+target_link_libraries(nhNativeCombatEventDispatchTest PRIVATE gtest_main vcmi ${SYSTEM_LIBS})
+add_test(NAME nhNativeCombatEventDispatchTest COMMAND nhNativeCombatEventDispatchTest)
+set_tests_properties(nhNativeCombatEventDispatchTest PROPERTIES TIMEOUT 60 LABELS "native-rules;battle;component")
+
+add_executable(nhNativeRuleRegistrationTest scripting/NativeRuleRegistrationTest.cpp)
+target_link_libraries(nhNativeRuleRegistrationTest PRIVATE gtest_main vcmi ${SYSTEM_LIBS})
+add_test(NAME nhNativeRuleRegistrationTest COMMAND nhNativeRuleRegistrationTest)
+set_tests_properties(nhNativeRuleRegistrationTest PROPERTIES TIMEOUT 60 LABELS "native-rules;component"
+	ENVIRONMENT "NH_RULE_SOURCE_ROOT=${CMAKE_SOURCE_DIR}")
+
+if(ENABLE_LUA_ORACLE)
+	# No game bootstrap for this one conversion-only case. Descriptor cases in
+	# the same source still run under vcmitest's initialized game library.
+	add_executable(nhNativeJsonParametersParityTest scripting/NativeJsonParametersParityTest.cpp)
+	target_include_directories(nhNativeJsonParametersParityTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+	target_link_libraries(nhNativeJsonParametersParityTest PRIVATE gtest_main gmock vcmiMain vcmiLua TBB::tbb ${SYSTEM_LIBS})
+	# The embedded core's AIFactory references every enabled native AI. Include
+	# their objects here as in the facade, without loading another core instance.
+	foreach(oracle_ai IN ITEMS EmptyAI BattleAI Nullkiller2 StupidAI MMAI)
+		if(TARGET ${oracle_ai})
+			target_link_libraries(nhNativeJsonParametersParityTest PRIVATE ${oracle_ai})
+		endif()
+	endforeach()
+	add_test(NAME nhNativeJsonParametersParityTest COMMAND nhNativeJsonParametersParityTest
+		--gtest_filter=NativeJsonParametersParity.CapturedTreesMatchActualInterpreterConversionIncludingTypesAndScopes)
+	set_tests_properties(nhNativeJsonParametersParityTest PROPERTIES TIMEOUT 60 LABELS "native-rules;lua-oracle;component")
+	add_custom_command(TARGET vcmitest POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake_modules/create_link.cmake
+			${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/scripts)
+endif()
 
 target_include_directories(vcmitest
 		PUBLIC	${CMAKE_CURRENT_SOURCE_DIR}
@@ -1461,3 +1582,5 @@ if(ENABLE_NH_BUG_REPORT_REGRESSION)
 	set_tests_properties(nhBugReportDraftTest nhBugReportDataTest PROPERTIES
 		LABELS "nh-pure;ui;privacy" TIMEOUT 10)
 endif()
+
+include(NativeMigrationTests.cmake)

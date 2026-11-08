@@ -106,7 +106,51 @@
 		"mireHexer": {"percentPerLevel": 5, "maximumPercent": 100}
 	},
 	"additionalSpecialties": {
-		"ordinaryCreatureSpecialties": {"version": 1, "closeQuartersDrill": 1, "marshSharpshooter": 1, "retaliationDamagePercent": 25, "defendDefense": 3, "maximumHealthPercent": 20, "resistanceAuraPoints": 10, "massedSpearsDamagePercent": 20, "packPursuitDamagePercent": 20, "bloodScentDamagePercent": 20, "livingBastionDefense": 3, "chillingPresenceReductionPercent": 10, "boneFormationDefense": 3, "stoneSentinelReductionPercent": 20, "ogreWarcallerDamagePercent": 10, "undertowRetaliationPercent": 25, "wyvernsPreyDamagePercent": 20, "mobPressureDamagePercent": 20, "wingbeatInitiativePercent": 15, "measuredVolleyMdrPenetrationPercent": 20, "prismaticScreenReductionPercent": 15, "evasiveFlightReductionPercent": 20, "ridersExploitDamagePercent": 20, "tidalRenewalHealingHP": 10, "cruelVolleyDamagePercent": 20, "rangefinderFullDamageDistance": 12, "fieldReassemblyHealingHP": 10, "fieldMaintenanceHealingHP": 25, "ogreBulwarkRetaliations": 1, "gunneryProfessorInitiativeFlat": 2, "gunneryProfessorFollowUpBonusPoints": 20, "heavyBatterySiegeTermBonusPercent": 25, "shieldAndSwordPhysicalReductionPercent": 20, "sepulchralGripSpeedReduction": 1, "cyclopeanBreachIgnorePercent": 25, "runicEnduranceReductionPercent": 25},
+		"ordinaryCreatureSpecialties": {
+			"version": 1,
+			"relentlessBarrageDamagePercent": 50,
+			"marshSharpshooter": 1,
+			"retaliationDamagePercent": 25,
+			"stonecallerAmmunition": 12,
+			"maximumHealthPercent": 20,
+			"massedSpearsDamagePercent": 20,
+			"chillingPresenceReductionPercent": 10,
+			"stoneSentinelReductionPercent": 20,
+			"archshamanSpellMastery": 2,
+			"undertowDefensePerAttack": 1,
+			"goblinFrenzyDamagePercent": 50,
+			"evasiveFlightReductionPercentPerHex": 3,
+			"ridersExploitDamagePercent": 20,
+			"risingTideCreaturesPerRound": 1,
+			"pointBlankShotDamageBonusPercent": 100,
+			"goldStandardUpgrade": 1,
+			"cripplingBoltSpeedReduction": 3,
+			"cripplingBoltDuration": 3,
+			"ogreBloodlustPolicyVersion": 1,
+			"incendiaryShotPolicyVersion": 1,
+			"heavyBatterySiegeTermBonusPercent": 25,
+			"shieldAndSwordPhysicalReductionPercent": 40,
+			"undyingHealingHP": 100,
+			"runicReflectionPolicyVersion": 1,
+			"bloodScentMaximumDamagePercent": 100,
+			"treantmootProtection": 1,
+			"chillingPresenceMoraleReduction": 1,
+			"chillingPresenceLuckReduction": 1,
+			"boneFormationFirstBandSize": 10,
+			"boneFormationFirstBandLimit": 100,
+			"boneFormationSecondBandSize": 20,
+			"boneFormationSecondBandLimit": 300,
+			"boneFormationRemainingBandSize": 50,
+			"perfectMountMagicalDamageImmunity": 1,
+			"furyOfTheHordeAttack": 2,
+			"furyOfTheHordeDefense": 2,
+			"furyOfTheHordeDamage": 1,
+			"orcRageMaximumDamagePercent": 100,
+			"wyvernVenomPolicyVersion": 1,
+			"dispellingShotMageChancePercent": 20,
+			"dispellingShotArchMageChancePercent": 40,
+			"cyclopeanStunChancePercent": 25
+		},
 		"version": 1,
 		"manaLeeches": {"manaPerDamagingAttackSequence": 1},
 		"serpentsEmbrace": {"enabled": true},
@@ -116,7 +160,70 @@
 		"fieldPhysician": {"healingPercentPerLevel": 5, "healingMaximumPercent": 100},
 		"manaFurnace": {"restorePointsPerLevel": 2, "maximumRestorePoints": 40},
 		"graveArchivist": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100},
-		"spiritTeacher": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "mentorExperiencePercent": 25}
+		"spiritTeacher": {"learningPercentPerLevel": 5, "learningMaximumPercent": 100, "mentorExperiencePercent": 25},
+		"preparedCreatureSpecialties": {
+			"version": 1,
+			"heroes": {
+				"core:fiona": {
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "heroSpecialty",
+								"target": "creatureFamily",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "STACKS_SPEED",
+								"value": 5,
+								"valueMode": "ADDITIVE_VALUE",
+								"family": "core:hellHound",
+								"includeUpgrades": true
+							}
+						]
+					}
+				},
+				"core:clancy": {
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "heroSpecialty",
+								"target": "creatureFamily",
+								"stage": "attachment",
+								"lifetime": "permanent",
+								"type": "SPELL_RESISTANCE_AURA",
+								"value": 10,
+								"valueMode": "ADDITIVE_VALUE",
+								"family": "core:unicorn",
+								"includeUpgrades": true
+							}
+						]
+					}
+				},
+				"core:pasis": {
+					"mechanics": {
+						"version": 1,
+						"operations": [
+							{
+								"operation": "bonus",
+								"source": "heroSpecialty",
+								"target": "adjacentArmy",
+								"stage": "spatialQuery",
+								"lifetime": "permanent",
+								"type": "SPELL_DAMAGE_REDUCTION",
+								"value": 15,
+								"valueMode": "BASE_NUMBER",
+								"family": "new-horizons:wisp",
+								"includeUpgrades": true,
+								"aura": "directMagicProtection"
+							}
+						]
+					}
+				}
+			}
+		}
 	},
 	"recoverySpecialties": {
 		"version": 1,

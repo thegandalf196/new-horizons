@@ -258,6 +258,7 @@ class MoraleLuckBox : public LRClickableAreaWTextComp
 public:
 	bool morale; //true if morale, false if luck
 	bool small;
+	bool centeredReadout = false; // Hero-panel opt-in; other callers retain native overlay placement.
 
 	void set(const AFactionMember *node);
 	void set(const CStack * stack, const CBattleInfoCallback * battleCallback);

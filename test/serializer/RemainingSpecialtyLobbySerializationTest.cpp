@@ -41,7 +41,6 @@ protected:
 			auto & row = table["ecumenicalScholar"];
 			row["learningPercentPerLevel"].Integer() = 5;
 			row["learningMaximumPercent"].Integer() = 100;
-			row["additionalSpellsTaught"].Integer() = 1;
 		}
 		if(families & 2)
 		{
@@ -179,18 +178,16 @@ TEST_F(RemainingSpecialtyLobbySerializationTest, AllFamiliesCurrentWorldAndLobby
 	families = 7;
 	currentRoundtripAndOldRefusal();
 }
-TEST_F(RemainingSpecialtyLobbySerializationTest, AbsentFamiliesAllowActualRecoveryWorldAndLobbyRoundtrip)
+TEST_F(RemainingSpecialtyLobbySerializationTest, RetiredRecoveryCaptureCannotStartCurrentWorld)
 {
+	const auto captured = historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES);
+	auto candidate = captured;
+	const std::string expected = "Invalid New Horizons hero rules: unknown field additionalEagleEyeSpells";
+	try { newHorizonsHeroes::validateHeroRules(candidate, true); FAIL() << "Retired capture must reject"; }
+	catch(const std::runtime_error & error) { EXPECT_EQ(error.what(), expected); }
+	EXPECT_EQ(candidate, captured);
+	// Preserve the actual historical capture; never trim it into a fictitious compatible world.
 	historicalRecoveryFormat = true;
-	ASSERT_NO_FATAL_FAILURE(startGame());
-	ASSERT_TRUE(gameState()->currentBattles.empty());
-	expectRecoveryFormat(*gameState());
-	auto source = packet();
-	CMemorySerializer old;
-	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_RECOVERY_SPECIALTIES;
-	ASSERT_NO_THROW(source.serialize(old.oser));
-	LobbyStartGame decoded;
-	ASSERT_NO_THROW(decoded.serialize(old.iser));
-	ASSERT_NE(decoded.initializedGameState, nullptr);
-	samePolicies(*decoded.initializedGameState);
+	try { startGame(); FAIL() << "Retired capture must not initialize a current world"; }
+	catch(const std::runtime_error & error) { EXPECT_EQ(error.what(), expected); }
 }

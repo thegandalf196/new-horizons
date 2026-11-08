@@ -32,6 +32,13 @@ def check() -> None:
     assert "physicalPoisonChoiceID()" in picker
     assert "physicalPoisonAutomaticallyCleared" in picker
     assert "display.graveDustAutomaticallyCleared = eligible.graveDustAutomaticallyCleared" in picker
+    for kind, title in (("stun", "Stun"), ("cripple", "Cripple")):
+        assert f"display.{kind}AutomaticallyCleared = eligible.{kind}AutomaticallyCleared" in picker
+        assert f"context.purifierWillClear{title} |= display.{kind}AutomaticallyCleared" in picker
+        assert f"eligible.{kind}AutomaticallyCleared" in picker
+        assert f"if(stack.{kind}AutomaticallyCleared)" in WINDOW
+        assert f"!context.purifierWillClear{title}" in picker
+        assert WINDOW.count(f"!context.purifierWillClear{title}") == 2
     assert "context.purifierWillClearGraveDust |= display.graveDustAutomaticallyCleared" in picker
     assert "eligible.physicalPoisonAutomaticallyCleared || eligible.graveDustAutomaticallyCleared" in picker
     assert "if(stack.graveDustAutomaticallyCleared)" in WINDOW

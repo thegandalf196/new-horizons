@@ -126,7 +126,9 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 	else if(Version::CURRENT == Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES
 		|| Version::CURRENT == Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
-	else if(Version::CURRENT == Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS)
+	else if(Version::CURRENT == Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS
+		|| Version::CURRENT == Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS
+		|| Version::CURRENT == Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	else
 		EXPECT_THROW(OwnedBonusCaptureCodec::current(), std::invalid_argument);
@@ -148,7 +150,7 @@ TEST(OwnedBonusCaptureCodecTest, WireEpochAndNamedBonusProfileMustBothMatch)
 
 TEST(OwnedBonusCaptureCodecTest, IdenticalBonusMaskDoesNotAuthorizeAnUnknownWireEpoch)
 {
-	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS) + 1);
+	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN) + 1);
 	const auto mask = capabilities(unknown);
 	EXPECT_EQ(mask, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(mask).version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
@@ -210,4 +212,70 @@ TEST(OwnedBonusCaptureCodecTest, Passive1155EpochCannotUseHistorical1153Or1154Ca
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY, passive), std::invalid_argument);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS, extended), std::invalid_argument);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS, optional), std::invalid_argument);
+}
+
+TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDefaultCloneWithoutChangingWriter)
+{
+	const auto revised = capabilities(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS);
+	const auto passive = capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	ASSERT_EQ(revised, passive);
+	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS, revised);
+	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), codec.version());
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
+		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
+		capabilities(Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)), std::invalid_argument);
+	auto marker = burn();
+	ASSERT_TRUE(newHorizonsCreatureBurn::isBurn(marker.get()));
+	auto owned = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::LUCK,
+		BonusSource::OTHER, 2, BonusSourceID());
+	owned->bonusOwner = PlayerColor(1);
+	const auto copied = ownedBonusPayloads::copy({marker, marker, owned});
+	ASSERT_EQ(copied->roots().size(), 3u);
+	EXPECT_EQ(copied->roots()[0], copied->roots()[1]);
+	EXPECT_NE(copied->roots()[0], marker);
+	EXPECT_EQ(copied->roots()[0]->val, marker->val);
+	EXPECT_EQ(copied->roots()[0]->bonusOwner, marker->bonusOwner);
+	EXPECT_NE(copied->roots()[2], owned);
+	EXPECT_EQ(copied->roots()[2]->bonusOwner, PlayerColor(1));
+	CMemorySerializer ordinary;
+	EXPECT_EQ(ordinary.oser.version, Version::CURRENT);
+	EXPECT_EQ(ordinary.iser.version, Version::CURRENT);
+	EXPECT_NE(ordinary.oser.version, codec.version());
+}
+
+TEST(OwnedBonusCaptureCodecTest, NativeRules1157UsesExistingBonusProfileWithoutChangingPersistence)
+{
+	const auto native = capabilities(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
+	ASSERT_EQ(native, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN, native);
+	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), codec.version());
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN,
+		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);
+	auto partial = native;
+	partial.passiveFactionSkills = false;
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN, partial),
+		std::invalid_argument);
+	auto marker = burn();
+	ASSERT_TRUE(newHorizonsCreatureBurn::isBurn(marker.get()));
+	auto owned = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::LUCK,
+		BonusSource::OTHER, 2, BonusSourceID());
+	owned->bonusOwner = PlayerColor(1);
+	const auto copied = ownedBonusPayloads::copy({marker, marker, owned}, codec);
+	ASSERT_EQ(copied->roots().size(), 3u);
+	EXPECT_EQ(copied->roots()[0], copied->roots()[1]);
+	EXPECT_NE(copied->roots()[0], marker);
+	EXPECT_EQ(copied->roots()[0]->val, marker->val);
+	EXPECT_EQ(copied->roots()[0]->bonusOwner, marker->bonusOwner);
+	EXPECT_NE(copied->roots()[2], owned);
+	EXPECT_EQ(copied->roots()[2]->bonusOwner, PlayerColor(1));
+	auto invalidBurn = burn();
+	invalidBurn->bonusOwner = PlayerColor(1);
+	EXPECT_THROW(ownedBonusPayloads::copy({invalidBurn}, codec), std::runtime_error);
+	CMemorySerializer persistence;
+	EXPECT_EQ(persistence.oser.version, Version::CURRENT);
+	EXPECT_EQ(persistence.iser.version, Version::CURRENT);
+	EXPECT_NE(persistence.oser.version, codec.version());
 }

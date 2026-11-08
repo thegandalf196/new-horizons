@@ -186,6 +186,7 @@ public:
 
 	virtual ~BattleCast();
 
+
 	///IBattleCast
 	const CSpell * getSpell() const override;
 	Mode getMode() const override;
@@ -391,6 +392,15 @@ public:
 
 	virtual bool isReceptive(const battle::Unit * target) const = 0;
 	virtual bool wouldResist(const battle::Unit * target) const = 0;
+	/// Same captured numbers and a Runic-only reflected ownership view. This
+	/// view supports read-only value/target queries and refuses execution.
+	virtual std::unique_ptr<Mechanics> runicReflectionView() const { return {}; }
+	/// Exact recipient-share replay; secondary effects must not be generated again.
+	virtual bool isRunicReflectionShare() const { return false; }
+	/// Canonical consumer receipt: retains a resisted share's original chain index.
+	virtual void recordResistanceShare(const effects::Effect *, const battle::Unit *, size_t) const {}
+	/// Canonical post-primary collateral retains its resolved raw spill budget.
+	virtual void recordResistanceDamageShare(const effects::Effect *, const battle::Unit *, int64_t) const {}
 
 	virtual std::vector<AimType> getTargetTypes() const = 0;
 

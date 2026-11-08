@@ -5,8 +5,13 @@
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/battle/NewHorizonsRangefinder.h"
+#include "../../lib/battle/NewHorizonsAttackControllers.h"
+#include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/bonuses/Limiters.h"
 #include <stdexcept>
 #include "../../lib/CCreatureHandler.h"
@@ -32,10 +37,10 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-		for(const char * key : {"cruelVolleyDamagePercent", "rangefinderFullDamageDistance"})
+		for(const char * key : {"furyOfTheHordeAttack", "furyOfTheHordeDefense", "furyOfTheHordeDamage",
+			"orcRageMaximumDamagePercent", "pointBlankShotDamageBonusPercent"})
 		{
 			if(GetParam() == 1) policy.Struct().erase(key);
-			if(GetParam() == 2) policy[key].Integer() = 0;
 		}
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
@@ -91,6 +96,33 @@ protected:
 				return stack.get();
 		return nullptr;
 	}
+	static std::shared_ptr<Bonus> historicalEnvelope()
+	{
+		auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::LIMITED_SHOOTING_RANGE,
+			BonusSource::HERO_SPECIAL, 255, BonusSourceID(HeroTypeID(HeroTypeID::decode("core:christian"))),
+			BonusSubtypeID(), BonusValueType::BASE_NUMBER);
+		bonus->stacking = "new-horizons:ordinary-creature-specialty:core:christian";
+		bonus->limiter = std::make_shared<CCreatureTypeLimiter>(*CreatureID(CreatureID::decode("core:ballista")).toCreature(), true);
+		bonus->parameters = std::make_shared<BonusParameters>(12);
+		return bonus;
+	}
+	void damage(CStack & unit, int64_t amount)
+	{
+		auto state = unit.acquireState(); const auto before = state->getAvailableHealth();
+		state->damage(amount); publish(unit.unitId(), *state, state->getAvailableHealth() - before);
+	}
+	void restore(CStack & unit)
+	{
+		auto state = unit.acquireState(); const auto before = state->getAvailableHealth();
+		int64_t amount = state->getTotalHealth(); state->heal(amount, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
+		publish(unit.unitId(), *state, state->getAvailableHealth() - before);
+	}
+	void publish(uint32_t id, battle::CUnitState & state, int64_t delta)
+	{
+		BattleUnitsChanged changed; changed.battleID = BattleID(0);
+		UnitChanges update(id, UnitChanges::EOperation::UPDATE); update.data = state.save(); update.healthDelta = delta;
+		changed.changedStacks.push_back(std::move(update)); gameHandler->sendAndApply(changed);
+	}
 	static void limited(CStack & stack, int maximum, int fullDamage)
 	{
 		auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT,
@@ -98,6 +130,12 @@ protected:
 		bonus->parameters = std::make_shared<BonusParameters>(fullDamage);
 		stack.addNewBonus(bonus);
 	}
+};
+class RangedDamagePayloadProbe final : public CPlayerBattleCallback
+{
+public:
+	using CPlayerBattleCallback::CPlayerBattleCallback;
+	using CBattleInfoCallback::finalizeDamagePayload;
 };
 #if ENABLE_BATTLE_AI
 class RangedPairEnvironment final : public Environment
@@ -116,30 +154,21 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianActualCaptureAndStartupRetain
 	prepare("core:christian");
 	expectCapturedSpecialtyArt("ChristianRangefinder", "ChristianBallistaLine", CreatureID(CreatureID::BALLISTA));
 	ASSERT_NE(machine(), nullptr);
-	EXPECT_EQ(newHorizonsHeroes::hasOrdinaryCreatureSpecialty(attackerSideHero), GetParam() != 1);
+	EXPECT_EQ(newHorizonsHeroes::hasOrdinaryCreatureSpecialty(attackerSideHero), GetParam() == 0);
 	EXPECT_TRUE(attackerSideHero->hasActivePerk("new-horizons:warMachines", "new-horizons:warMachines.masterGunner"));
-	const auto siege = attackerSideHero->getSiegeCapabilities();
-	ASSERT_TRUE(siege);
+	const auto siege = attackerSideHero->getSiegeCapabilities(); ASSERT_TRUE(siege);
 	EXPECT_EQ(siege->ballistaDamage, 50 + 2 * siege->siegeRating);
 	EXPECT_EQ(machine()->getShootingRangeDistance(), 255);
-	EXPECT_EQ(machine()->getRangedFullDamageDistance(), GetParam() == 0 ? 12 : 10);
-	if(GetParam() != 1)
-		EXPECT_NE(attackerSideHero->getSpecialtyPresentation().description.find(GetParam() == 0
-			? "12 hexes" : "10 hexes"), std::string::npos);
-	const auto envelope = machine()->getBonus(CSelector([](const Bonus * bonus)
-		{ return bonus && newHorizonsRangefinder::isEnvelope(*bonus); }));
-	EXPECT_EQ(static_cast<bool>(envelope), GetParam() != 1);
-	if(envelope)
-	{
-		EXPECT_EQ(envelope->val, 255);
-		EXPECT_EQ(envelope->parameters->toNumber(), GetParam() == 0 ? 12 : 10);
-	}
+	EXPECT_EQ(machine()->getRangedFullDamageDistance(), 10);
+	EXPECT_FALSE(newHorizonsRangefinder::fullDamageDistance(*machine()));
+	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureSpecialtyBonus(*attackerSideHero));
+	EXPECT_EQ(newHorizonsAttackControllers::ballistaPhysicalDamagePercent(*battle(), *machine()), GetParam() == 0 ? 200 : 100);
+	if(GetParam() == 0) EXPECT_EQ(attackerSideHero->getSpecialtyPresentation().name, "Point-Blank Shot");
 }
-TEST_P(NewHorizonsOrdinaryRangedPairTest, ReservedEnvelopeRequiresTheExactProducedFamilyLimiterAndEffectRange)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, IndependentLegacyEnvelopeRetainsExactFamilyLimiterAndEffectRange)
 {
 	prepare("core:christian");
-	const auto original = newHorizonsHeroes::ordinaryCreatureSpecialtyBonus(*attackerSideHero);
-	if(GetParam() == 1) { EXPECT_FALSE(original); return; }
+	const auto original = historicalEnvelope();
 	ASSERT_TRUE(original);
 	EXPECT_TRUE(newHorizonsRangefinder::isEnvelope(*original));
 	for(int mutation = 0; mutation < 5; ++mutation)
@@ -161,8 +190,7 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, ReservedEnvelopeRequiresTheExactProduc
 TEST_P(NewHorizonsOrdinaryRangedPairTest, MalformedVisibleEnvelopeCannotDisappearFromActualLegalRangeQueries)
 {
 	prepare("core:christian");
-	const auto original = newHorizonsHeroes::ordinaryCreatureSpecialtyBonus(*attackerSideHero);
-	if(GetParam() == 1) { EXPECT_FALSE(original); return; }
+	const auto original = historicalEnvelope();
 	ASSERT_TRUE(original);
 	// This opposing Ballista has no valid Christian marker to mask the malformed one.
 	auto * isolated = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:ballista")), BattleHex(14, 7), 1);
@@ -176,23 +204,43 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, MalformedVisibleEnvelopeCannotDisappea
 	EXPECT_THROW(isolated->getShootingRangeDistance(), std::runtime_error);
 	EXPECT_THROW(newHorizonsRangefinder::fullDamageDistance(*isolated), std::runtime_error);
 }
-TEST_P(NewHorizonsOrdinaryRangedPairTest, SingleDistanceQuerySafelyReturnsAbsenceOrCapturedPenalty)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, CurrentChristianHasNoLegacyEnvelopeAndKeepsOrdinaryDistanceQuery)
 {
 	prepare("core:christian");
 	auto * source = machine(); ASSERT_NE(source, nullptr);
 	const BattleHex from(1, 7), empty(13, 7);
-	const auto result = newHorizonsRangefinder::distancePenalty(*source, from, empty, *battle());
-	if(GetParam() == 1)
-	{
-		EXPECT_FALSE(result.has_value());
-		EXPECT_TRUE(battle()->battleHasDistancePenalty(source, from, empty));
-	}
-	else
-	{
-		ASSERT_TRUE(result.has_value());
-		EXPECT_EQ(*result, GetParam() != 0);
-		EXPECT_EQ(battle()->battleHasDistancePenalty(source, from, empty), *result);
-	}
+	EXPECT_FALSE(newHorizonsRangefinder::distancePenalty(*source, from, empty, *battle()));
+	EXPECT_TRUE(battle()->battleHasDistancePenalty(source, from, empty));
+}
+TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianMultiplierEntersTheActualPhysicalPrimaryDamagePayloadOnly)
+{
+	prepare("core:christian");
+	auto * source = machine(); auto * target = unit(BattleSide::DEFENDER, 0);
+	ASSERT_NE(source, nullptr); ASSERT_NE(target, nullptr);
+	RangedDamagePayloadProbe probe(battle(), PlayerColor(0));
+	BattleAttackInfo hit(source, target, 0, true);
+	DamageAttackInfo primary; probe.finalizeDamagePayload(hit, primary, battle());
+	EXPECT_EQ(primary.ordinaryCreatureSpecialtyDamagePercent, GetParam() == 0 ? 200 : 100);
+	hit.secondaryAttack = true;
+	DamageAttackInfo collateral; probe.finalizeDamagePayload(hit, collateral, battle());
+	EXPECT_EQ(collateral.ordinaryCreatureSpecialtyDamagePercent, 100);
+	hit.secondaryAttack = false; hit.physicalDamage = false;
+	DamageAttackInfo magical; probe.finalizeDamagePayload(hit, magical, battle());
+	EXPECT_EQ(magical.ordinaryCreatureSpecialtyDamagePercent, 100);
+}
+TEST_P(NewHorizonsOrdinaryRangedPairTest, IndependentLegacyEnvelopeLeafKeepsItsCodecBoundaryWithoutACurrentProducer)
+{
+	prepare("core:christian");
+	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureSpecialtyBonus(*attackerSideHero));
+	auto bonus = historicalEnvelope();
+	CMemorySerializer unsupported; unsupported.oser.version = static_cast<ESerializationVersion>(1147);
+	EXPECT_THROW(unsupported.oser & *bonus, std::runtime_error);
+	EXPECT_TRUE(unsupported.extractBuffer().empty());
+	CMemorySerializer historical; historical.oser.version = static_cast<ESerializationVersion>(1148);
+	ASSERT_NO_THROW(historical.oser & *bonus);
+	historical.iser.version = static_cast<ESerializationVersion>(1148);
+	Bonus restored; ASSERT_NO_THROW(historical.iser & restored);
+	EXPECT_EQ(restored.toJsonNode(), bonus->toJsonNode());
 }
 TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianActualDistanceCallbackAndDamageAgreeAtTenElevenTwelveThirteen)
 {
@@ -211,7 +259,7 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianActualDistanceCallbackAndDama
 	for(int distance : {10, 11, 12, 13})
 	{
 		target->setPosition(BattleHex(1 + distance, 5));
-		const bool penalized = distance > (GetParam() == 0 ? 12 : 10);
+		const bool penalized = distance > 10;
 		EXPECT_EQ(battle()->battleHasDistancePenalty(source, source->getPosition(), target->getPosition()), penalized);
 		const auto actual = battle()->calculateDmgRange(BattleAttackInfo(source, target, 0, true));
 		// The reflection diagnostic excludes negative lowering factors, including distance.
@@ -234,12 +282,12 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianLegalMaximumAndEquipmentWaive
 	auto * source = machine(); ASSERT_NE(source, nullptr);
 	limited(*source, 11, 8);
 	EXPECT_EQ(source->getShootingRangeDistance(), 11);
-	EXPECT_EQ(source->getRangedFullDamageDistance(), GetParam() == 0 ? 12 : GetParam() == 2 ? 10 : 8);
+	EXPECT_EQ(source->getRangedFullDamageDistance(), 8);
 	source->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::NO_DISTANCE_PENALTY, BonusSource::OTHER, 1, BonusSourceID()));
 	EXPECT_EQ(source->getShootingRangeDistance(), 11);
 	EXPECT_FALSE(battle()->battleHasDistancePenalty(source, BattleHex(1, 5), BattleHex(15, 5)));
-	EXPECT_EQ(source->getRangedFullDamageDistance(), GetParam() == 1 ? 8 : 255);
+	EXPECT_EQ(source->getRangedFullDamageDistance(), 8);
 }
 TEST_P(NewHorizonsOrdinaryRangedPairTest, ActualGoldenBowStillWaivesDistanceAndWalls)
 {
@@ -251,73 +299,72 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, ActualGoldenBowStillWaivesDistanceAndW
 	EXPECT_EQ(source->getRangedFullDamageDistance(), 255);
 	EXPECT_EQ(source->getShootingRangeDistance(), 255);
 }
-TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianDoublewideNearestFootprintDoesNotGrantOtherShootersTheEnvelope)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, OrdinaryDoublewideDistanceUsesNearestFootprintWithoutAChristianEnvelope)
 {
 	prepare("core:christian");
-	auto * source = machine(); ASSERT_NE(source, nullptr);
-	source->setPosition(BattleHex(1, 7));
+	auto * source = machine(); ASSERT_NE(source, nullptr); source->setPosition(BattleHex(1, 7));
 	auto * wide = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:centaur")), BattleHex(13, 7), 3);
 	ASSERT_NE(wide, nullptr); ASSERT_EQ(wide->getHexes().size(), 2u);
-	for(const auto hex : wide->getHexes())
-		EXPECT_EQ(battle()->battleHasDistancePenalty(source, source->getPosition(), hex), GetParam() != 0);
+	for(const int tile : {10, 12, 13})
+	{
+		wide->setPosition(BattleHex(tile, 7));
+		int nearest = GameConstants::BFIELD_SIZE;
+		for(const auto hex : wide->getHexes()) nearest = std::min<int>(nearest, BattleHex::getDistance(source->getPosition(), hex));
+		for(const auto hex : wide->getHexes())
+			EXPECT_EQ(battle()->battleHasDistancePenalty(source, source->getPosition(), hex), nearest > 10);
+	}
 	auto * unrelated = unit(BattleSide::ATTACKER, 0); ASSERT_NE(unrelated, nullptr);
 	EXPECT_EQ(unrelated->getRangedFullDamageDistance(), 10);
 	EXPECT_FALSE(newHorizonsRangefinder::fullDamageDistance(*unrelated));
 }
-TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasActualDamageUsesVictimDeficitAndRestorationForBothOrcForms)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasBothOrcFormsAreMeleeWithFixedStatsAndOwnCasualtyRage)
 {
 	prepare("core:jabarkas");
 	expectCapturedSpecialtyArt("JabarkasCruelVolley", "JabarkasOrcLine", creatureByName("core:orc"));
 	auto * target = unit(BattleSide::DEFENDER, 0); ASSERT_NE(target, nullptr);
-	target->setPosition(BattleHex(8, 5));
 	for(int slot : {0, 1})
 	{
 		auto * source = unit(BattleSide::ATTACKER, slot); ASSERT_NE(source, nullptr);
-		source->setPosition(BattleHex(1, 5));
-		BattleAttackInfo attack(source, target, 0, true);
-		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), attack), 100);
-		int64_t damage = target->getMaxHealth(); target->damage(damage);
-		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), attack), GetParam() == 0 ? 120 : 100);
-		const auto boosted = battle()->calculateDmgRange(attack);
-		auto magical = attack; magical.physicalDamage = false;
-		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), magical), 100);
-		auto collateral = attack; collateral.secondaryAttack = true;
-		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), collateral), GetParam() == 0 ? 120 : 100);
-		int64_t healing = target->getTotalHealth();
-		target->heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
-		EXPECT_EQ(target->getCount(), target->unitBaseAmount());
-		EXPECT_GT(target->getKilled(), 0);
-		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), attack), 100);
-		const auto ordinary = battle()->calculateDmgRange(attack);
-		if(GetParam() == 0)
-		{
-			EXPECT_GE(boosted.damageBeforeDefense.min, ordinary.damageBeforeDefense.min * 120 / 100);
-			EXPECT_LE(boosted.damageBeforeDefense.min, ordinary.damageBeforeDefense.min * 120 / 100 + 1);
-		}
+		EXPECT_EQ(source->isShooter(), GetParam() == 1);
+		EXPECT_EQ(source->valOfBonuses(Selector::typeSubtype(BonusType::PRIMARY_SKILL, PrimarySkill::ATTACK)
+			.And(Selector::sourceTypeSel(BonusSource::HERO_SPECIAL))), GetParam() == 0 ? 2 : 0);
+		EXPECT_EQ(source->valOfBonuses(Selector::typeSubtype(BonusType::PRIMARY_SKILL, PrimarySkill::DEFENSE)
+			.And(Selector::sourceTypeSel(BonusSource::HERO_SPECIAL))), GetParam() == 0 ? 2 : 0);
+		EXPECT_EQ(source->valOfBonuses(Selector::typeSubtype(BonusType::CREATURE_DAMAGE, BonusCustomSubtype::creatureDamageBoth)
+			.And(Selector::sourceTypeSel(BonusSource::HERO_SPECIAL))), GetParam() == 0 ? 1 : 0);
+		BattleAttackInfo melee(source, target, 0, false);
+		EXPECT_EQ(newHorizonsPassiveSpecialties::casualtyDamagePercent(melee), 0);
+		damage(*target, target->getMaxHealth());
+		EXPECT_EQ(newHorizonsPassiveSpecialties::casualtyDamagePercent(melee), 0);
+		damage(*source, source->getMaxHealth());
+		EXPECT_EQ(newHorizonsPassiveSpecialties::casualtyDamagePercent(melee), GetParam() == 0 ? 10 : 0);
+		melee.retaliation = true;
+		EXPECT_EQ(newHorizonsPassiveSpecialties::casualtyDamagePercent(melee), GetParam() == 0 ? 10 : 0);
+		restore(*source);
+		EXPECT_EQ(source->getCount(), source->unitBaseAmount());
+		EXPECT_EQ(newHorizonsPassiveSpecialties::casualtyDamagePercent(melee), 0);
 	}
 }
-TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasActualServerShotUsesTheSameAcceptedDamageRange)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasActualMeleeUsesAcceptedDamageAndCurrentConversionRejectsShoot)
 {
 	prepare("core:jabarkas");
 	auto * source = unit(BattleSide::ATTACKER, 0); ASSERT_NE(source, nullptr);
 	auto * target = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:pikeman")), BattleHex(8, 7), 1000);
-	ASSERT_NE(target, nullptr);
-	source->setPosition(BattleHex(1, 7));
-	int64_t casualty = target->getMaxHealth(); target->damage(casualty);
+	ASSERT_NE(target, nullptr); source->setPosition(BattleHex(7, 7));
 	for(const auto bound : {BonusValueType::INDEPENDENT_MIN, BonusValueType::INDEPENDENT_MAX})
 		source->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACKS_INITIATIVE_BASE,
 			BonusSource::OTHER, 1000, BonusSourceID(), BonusSubtypeID(), bound));
 	for(const auto type : {BonusType::NO_LUCK, BonusType::NO_MORALE})
 		source->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, type, BonusSource::OTHER, 1, BonusSourceID()));
-	beginCombat();
-	ASSERT_EQ(battle()->battleActiveUnit(), source);
-	ASSERT_TRUE(battle()->battleCanShoot(source, target->getPosition()));
-	const auto expected = battle()->calculateDmgRange(BattleAttackInfo(source, target, 0, true));
+	blockRetaliation(source); damage(*source, source->getMaxHealth());
+	beginCombat(); ASSERT_EQ(battle()->battleActiveUnit(), source);
+	if(GetParam() == 0)
+		EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeShotAttack(source, target)));
+	const auto expected = battle()->calculateDmgRange(BattleAttackInfo(source, target, 0, false));
 	const auto health = target->getAvailableHealth();
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeShotAttack(source, target)));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeMeleeAttack(source, target, source->getPosition())));
 	const auto actual = health - target->getAvailableHealth();
-	EXPECT_GE(actual, expected.damage.min);
-	EXPECT_LE(actual, expected.damage.max);
+	EXPECT_GE(actual, expected.damage.min); EXPECT_LE(actual, expected.damage.max);
 }
 TEST_P(NewHorizonsOrdinaryRangedPairTest, CapturedReinitializationIsIdempotentAndWorldRoundtripRetainsIdentity)
 {
@@ -333,29 +380,35 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, CapturedReinitializationIsIdempotentAn
 	EXPECT_EQ(loaded->getPrimaryGrowthRules(), policy);
 	EXPECT_EQ(loaded->getExportedBonusList().toJsonNode(), bonuses);
 }
-TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianPermanentAffiliationSurvivesAllegianceSwitch)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianMultiplierUsesCurrentVisibleOwnerWithoutRetiredPermanentRange)
 {
 	prepare("core:christian");
 	auto * source = machine(); ASSERT_NE(source, nullptr);
 	source->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
 		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_EQ(battle()->battleGetOwner(source), PlayerColor(1));
-	EXPECT_EQ(source->getRangedFullDamageDistance(), GetParam() == 0 ? 12 : 10);
+	EXPECT_EQ(battle()->battleGetOwnerHero(source), defenderSideHero);
+	EXPECT_EQ(source->getRangedFullDamageDistance(), 10);
+	EXPECT_EQ(newHorizonsAttackControllers::ballistaPhysicalDamagePercent(*battle(), *source), 100);
 }
-TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasControlSwitchDoesNotGraftOriginalHeroPremiumToNewOwner)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasPreparedNativeConversionSurvivesControlWithoutGraftingToForeignOrcs)
 {
 	prepare("core:jabarkas");
 	auto * source = unit(BattleSide::ATTACKER, 0); ASSERT_NE(source, nullptr);
 	auto * target = addStack(BattleSide::ATTACKER, CreatureID(CreatureID::decode("core:pikeman")), BattleHex(8, 7), 10);
 	ASSERT_NE(target, nullptr);
-	int64_t damage = target->getMaxHealth(); target->damage(damage);
+	damage(*source, source->getMaxHealth());
 	source->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
 		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
 	EXPECT_EQ(battle()->battleGetOwnerHero(source), defenderSideHero);
-	EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), BattleAttackInfo(source, target, 0, true)), 100);
+	EXPECT_EQ(source->isShooter(), GetParam() == 1);
+	EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), BattleAttackInfo(source, target, 0, false)), GetParam() == 0 ? 110 : 100);
+	const auto * foreign = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:orc")), BattleHex(14, 7), 10);
+	ASSERT_NE(foreign, nullptr); EXPECT_TRUE(foreign->isShooter());
+	EXPECT_FALSE(foreign->hasBonusOfType(BonusType::CASUALTY_DAMAGE_PERCENTAGE));
 }
+
 #if ENABLE_BATTLE_AI
-TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasHypotheticalCacheTracksVictimLossAndFullTemporaryRestoration)
+TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasHypotheticalCacheTracksOwnCasualtiesAndFullTemporaryRestoration)
 {
 	prepare("core:jabarkas"); beginCombat();
 	RangedPairEnvironment environment(gameState());
@@ -366,9 +419,9 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, JabarkasHypotheticalCacheTracksVictimL
 	DamageCache cache;
 	for(int stage = 0; stage < 3; ++stage)
 	{
-		if(stage == 1) { int64_t damage = target->getMaxHealth(); target->damage(damage); }
-		if(stage == 2) { int64_t healing = target->getTotalHealth(); target->heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE); }
-		const BattleAttackInfo attack(source.get(), target.get(), 0, true);
+		if(stage == 1) { int64_t damage = source->getMaxHealth(); source->damage(damage); }
+		if(stage == 2) { int64_t healing = source->getTotalHealth(); source->heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE); }
+		const BattleAttackInfo attack(source.get(), target.get(), 0, GetParam() == 1);
 		DamageCache historicalFresh;
 		auto & currentCache = GetParam() == 0 ? cache : historicalFresh;
 		EXPECT_EQ(currentCache.getDamage(source.get(), target.get(), model), model->battleExpectedLuckDamage(attack));
@@ -387,7 +440,7 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianHypotheticalCacheAndReadoutTr
 	for(int distance : {10, 11, 12, 13, 10})
 	{
 		target->setPosition(BattleHex(1 + distance, 5));
-		EXPECT_EQ(source->getRangedFullDamageDistance(), GetParam() == 0 ? 12 : 10);
+		EXPECT_EQ(source->getRangedFullDamageDistance(), 10);
 		const BattleAttackInfo attack(source.get(), target.get(), 0, true);
 		DamageCache historicalFresh;
 		auto & currentCache = GetParam() == 0 ? cache : historicalFresh;
@@ -395,4 +448,14 @@ TEST_P(NewHorizonsOrdinaryRangedPairTest, ChristianHypotheticalCacheAndReadoutTr
 	}
 }
 #endif
-INSTANTIATE_TEST_SUITE_P(CurrentHistoricalZero, NewHorizonsOrdinaryRangedPairTest, ::testing::Values(0, 1, 2));
+INSTANTIATE_TEST_SUITE_P(CurrentAndAuthoredOmission, NewHorizonsOrdinaryRangedPairTest, ::testing::Values(0, 1));
+
+TEST(OrdinaryRangedReplacementPolicies, ExplicitZeroFixedRecipesRejectWithoutInventingLegacyRules)
+{
+	for(const char * key : {"pointBlankShotDamageBonusPercent", "furyOfTheHordeAttack", "furyOfTheHordeDefense", "furyOfTheHordeDamage", "orcRageMaximumDamagePercent"})
+	{
+		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		rules["additionalSpecialties"]["ordinaryCreatureSpecialties"][key].Integer() = 0;
+		EXPECT_THROW(newHorizonsHeroes::validateOrdinaryCreatureSpecialtiesSerialization(rules, true), std::runtime_error);
+	}
+}

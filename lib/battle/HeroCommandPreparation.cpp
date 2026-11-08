@@ -6,6 +6,7 @@
 #include "CBattleInfoCallback.h"
 #include "HeroCommandAdjacency.h"
 #include "HeroCommandCoefficient.h"
+#include "NewHorizonsCommandResources.h"
 #include "IBattleState.h"
 #include "CUnitState.h"
 #include "NewHorizonsArchery.h"
@@ -205,6 +206,7 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 	if(result.issuedRound < 1)
 		return reject(Reason::UNAVAILABLE);
 	battleCaptureHeroOrderModifiers(side, result);
+	result.heroicSpiritEfficiencyBonusPercent = newHorizonsCommand::heroicSpiritEfficiency(hero);
 
 	if(command == HeroCommand::FEINT || command == HeroCommand::VANGUARD)
 	{

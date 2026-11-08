@@ -12,6 +12,23 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Fixed Water Walk paths that rejected a legal landing when the hero would finish
   with exactly zero Movement Points.
 
+## 0.89 Early Access
+
+**A new game is required.** Older saves are not converted or rewritten; keep
+backups and use the matching older version to continue those games.
+
+- Revises 32 existing hero specialties with native creature and combat mechanics.
+- Gives every fighting hero finite Command. Orders spend one Command point and
+  the ordinary Hero Action; revised Command perks and Heroic Spirit provide
+  passive benefits.
+- Adds selectable Overcharge levels to Magic Arrow, with stronger damage and
+  nonlinear Mana prices.
+- Replaces Conflux Elemental Rebirth with **Elemental Attunement**: elemental
+  spellcasting strengthens matching creatures already on the battlefield.
+- Updates hero information and combat readouts for the revised rules.
+- Reduces repeated combat-AI validation work. One controlled battle measured
+  a 12.08% reduction in median quick-combat time; this is not an across-game gain.
+
 ## 0.88.2 Early Access
 
 Published packages and platform notes are available on the

@@ -181,6 +181,7 @@ enum class StackStatusIconKind
 	SHADOW_GIFT_BUFF,
 	SHADOW_GIFT_CAP,
 	FOCUS_OR_ARCANE,
+	ELEMENTAL_ATTUNEMENT,
 	ORDINARY
 };
 
@@ -215,6 +216,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 5;
 		case StackStatusIconKind::SHADOW_GIFT_CAP: return 6;
 		case StackStatusIconKind::FOCUS_OR_ARCANE: return 7;
+		case StackStatusIconKind::ELEMENTAL_ATTUNEMENT: return 6;
 		case StackStatusIconKind::ORDINARY: return 8;
 	}
 	return 9;

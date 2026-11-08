@@ -97,7 +97,17 @@ TEST_F(MachineGenericBonusSerializationTest, EffectPacketsAndDeclaredReplayDoNot
 			ASSERT_EQ(decoded.front().second.size(), 1u);
 			EXPECT_EQ(decoded.front().second.front().toJsonNode(), changes->front().second.front().toJsonNode());
 			auto payload = ReplayPackSerializer::write(source);
-			payload.version = epoch; // These packet fields are identical throughout1144..1150.
+			EXPECT_EQ(payload.version, Version::CURRENT);
+			payload.version = epoch;
+			if(epoch < Version::MINIMAL)
+			{
+				const auto before = payload;
+				try { ReplayPackSerializer::read(payload, gameState().get()); FAIL() << "Unsupported replay origin must reject"; }
+				catch(const std::runtime_error & error)
+				{ EXPECT_EQ(std::string(error.what()), "Unsupported replay payload encoding version"); }
+				EXPECT_EQ(payload, before);
+				continue; // Raw historical packet codecs above remain independently exercised.
+			}
 			auto replay = ReplayPackSerializer::read(payload, gameState().get());
 			auto * effect = dynamic_cast<SetStackEffect *>(replay.get());
 			ASSERT_NE(effect, nullptr);

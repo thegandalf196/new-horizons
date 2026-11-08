@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
+#include "../HistoricalFactionPerkRules.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
@@ -88,8 +89,9 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
 		if(historicalPerkPolicy)
 		{
-			auto perks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
-			perks.Struct().erase("quickStudyPolicy");
+			// Explicit authored raw-1151 fixture: no later faction/reroll policies.
+			auto perks = historicalFactionPerkRules(loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS));
+			perks.Struct().erase("connoisseurPolicy");
 			perks.setOverrideFlag(true);
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		}
@@ -186,6 +188,7 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, InitialTaxonomyPreservesPlayerPrisonerRe
 
 TEST_F(NewHorizonsNeutralArmyWorldTest, SaveReloadResaveDoesNotHalveAgainAndOldEnvelopesRejectBeforePrefix)
 {
+	historicalPerkPolicy = true; // Unrelated later policies must not mask the neutral-size guard.
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	rejectsOldPrefix(dynamic_cast<const GameSettings &>(map()->getSettings()));
 	rejectsOldPrefix(*map());
@@ -806,13 +809,13 @@ TEST_F(NewHorizonsNeutralCalibrationWorldTest, CurrentReplaySnapshotKeepsVersion
 	ASSERT_NO_FATAL_FAILURE(expectNeutralRefill(restored, handler, true));
 }
 
-TEST_F(NewHorizonsNeutralArmyWorldTest, HistoricalReplayAbsenceStaysDisabledUnderEnabledDefaultsThroughCurrentResave)
+TEST_F(NewHorizonsNeutralArmyWorldTest, HistoricalReplayOriginRejectsWhileCurrentDisabledCaptureResavesUnchanged)
 {
 	ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION);
 	historicalPerkPolicy = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	// The installed new-world definition really is enabled; historical absence
-	// must not inherit it. The old payload below is written at its actual epoch.
+	// Current disabled capture must not inherit installed enabled defaults.
+	// The raw old payload has its true origin and must fail replay admission.
 	CMap installed(gameState().get());
 	ASSERT_TRUE(installed.getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)["enabled"].Bool());
 	map()->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
@@ -824,8 +827,13 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, HistoricalReplayAbsenceStaysDisabledUnde
 		old.oser & *gameState();
 	}
 	const ReplayPayload historical{old.extractBuffer(), old.oser.version};
-	auto restored = emptyNeutralWorld();
-	restored->loadReplaySnapshot(historical);
+	// The positive world is genuinely encoded/decoded at CURRENT, never relabelled old bytes.
+	auto restored = calibratedRoundTrip(*gameState());
+	const auto before = restored->saveReplaySnapshot();
+	try { restored->loadReplaySnapshot(historical); FAIL() << "Unsupported replay origin must reject"; }
+	catch(const std::runtime_error & error)
+	{ EXPECT_EQ(std::string(error.what()), "Unsupported replay payload encoding version"); }
+	EXPECT_EQ(restored->saveReplaySnapshot(), before);
 	EXPECT_FALSE(newHorizonsNeutralArmies::calibration::Rules(restored->getSettings().getValue(
 		EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)).enabled());
 	const auto current = restored->saveReplaySnapshot();

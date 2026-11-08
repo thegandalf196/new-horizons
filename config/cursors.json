@@ -56,6 +56,8 @@
 	"combatBlocked"       : { "pivotX" : 12, "pivotY" : 12, "animation" : "CRCOMBAT", "frame" :  0},
 	"combatMove"          : { "pivotX" : 10, "pivotY" : 14, "animation" : "CRCOMBAT", "frame" :  1},
 	"combatFly"           : { "pivotX" : 14, "pivotY" : 14, "animation" : "CRCOMBAT", "frame" :  2},
+	"combatPointBlankShoot": { "pivotX" : 12, "pivotY" : 12, "image" : "NH_pointBlankShoot.png" },
+	"combatPointBlankShootPenalty": { "pivotX" : 14, "pivotY" : 0, "image" : "NH_pointBlankShootPenalty.png" },
 	"combatShoot"         : { "pivotX" : 12, "pivotY" : 12, "animation" : "CRCOMBAT", "frame" :  3},
 	"combatHero"          : { "pivotX" : 12, "pivotY" : 12, "animation" : "CRCOMBAT", "frame" :  4},
 	"combatQuery"         : { "pivotX" :  8, "pivotY" : 12, "animation" : "CRCOMBAT", "frame" :  5},

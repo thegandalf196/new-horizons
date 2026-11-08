@@ -9,6 +9,7 @@
 #include "UnitEnvironmentQueries.h"
 #include "UnitOwnershipQuery.h"
 #include "Unit.h"
+#include "UnitCreatureResolver.h"
 #include "NewHorizonsBloodrage.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../spells/NewHorizonsSorceryRevision.h"
@@ -190,4 +191,22 @@ newHorizonsNecromancy::CombatPassives battle::UnitEnvironmentQueries::unitNecrom
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return {};
 	return context.filterNecromancyPassives(context.necromancyPassives(side), unit->creatureId());
+}
+
+newHorizonsElementalAttunement::UnitPassives battle::UnitEnvironmentQueries::unitElementalAttunement(const Unit * unit) const
+{
+	if(!context.available() || !unit) return {};
+	context.requireSubject(*unit);
+	if(const auto observed = context.committedElementalAttunement(unit)) return *observed;
+	const auto side = unit->unitSide(); // Army passives follow the original hero bonus source.
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) return {};
+	if(!context.knowsElementalAttunementProfile(side))
+		throw std::invalid_argument("Unknown hero policy requires admitted current elemental unit facts");
+	const auto profile = context.elementalAttunementProfile(side);
+	if(profile.rank == 0) return {};
+	const auto mask = context.elementalAttunementMask(side);
+	if(const auto * resolver = unit->unitCreatureResolver())
+		return newHorizonsElementalAttunement::passivesForCreatureKey(profile, mask,
+			resolver->encode(unit->creatureId().getNum()));
+	return newHorizonsElementalAttunement::passivesForCreature(profile, mask, unit->creatureId());
 }

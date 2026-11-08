@@ -7,7 +7,7 @@ There are two types of AI: adventure and battle.
 
 We have 3 battle AIs so far:
 
-* BattleAI - strongest
+* BattleAI - reference search, with the profiles described below
 * StupidAI - for neutrals, should be simple so that experienced players can abuse it
 * Empty AI - should do nothing at all. If needed another battle AI can be introduced.  
 
@@ -19,6 +19,43 @@ When you call `unit->getAttack()` it summarizes all these bonuses and returns th
 One important class is `HypotheticBattle`. It is used to evaluate the effects of an action without changing the actual gamestate. It is a wrapper around `CPlayerSpecificCallback` or another `HypotheticBattle` so it can provide you data, Internally it has a set of modified unit states and intercepts some calls to underlying callback and returns these internal states instead. These states in turn are wrappers around original units and contain modified bonuses (`CStackWithBonuses`). So if you need to emulate an attack you can call `hypotheticbattle.getforupdate()` and it will return the `CStackWithBonuses` which you can safely change.  
 
 ## BattleAI
+
+### Search profiles
+
+`AIFactory` registers three names for the same BattleAI implementation:
+
+| Factory name | Candidate beam | Future-actor prefix |
+| --- | --- | --- |
+| `BattleAI` | Existing reference search | Uncapped |
+| `BattleAIBeamOne` | One shortlisted candidate | Uncapped |
+| `BattleAIQuick` | One shortlisted candidate | Two activation bodies |
+
+`BattleAI` remains the default. Uncapped retains the existing configured round
+horizon. Beam and prefix limits apply to admitted canonical ordinary-creature
+forecasts; unsupported contexts retain reference evaluation. These are search
+approximations: choices and casualties may change, while gameplay rules, damage
+formulas, resource costs and authoritative action validation remain unchanged.
+
+The prefix counts living scheduled creature bodies, not individual strikes.
+Only the chosen action's already-active body is exempt, at most once. Each
+admitted body completes its ordered strikes, retaliations and lifecycle before
+the next budget check. A no-action continuation has already spent its anchor
+activation, so every future body counts, including that anchor in a later round.
+A prefix may end before the chosen action is reached; it does not guarantee a
+complete exchange forecast.
+
+Each controller owns an immutable profile. `activeStack` installs it in a scoped
+thread-local policy; nested scopes restore the preceding policy, and worker
+threads must enter their own scope. Diagnostic collection does not select it.
+
+`ai.combatAlliedAI` selects human auto-fight; `ai.combatNeutralAI` selects neutral
+controllers and supplies AI players' battle-controller names. The schema and
+launcher also expose `ai.combatEnemyAI`, but the current client does not route AI
+players through that setting independently. Profiles apply to the configured
+controller, including visible auto-fight, rather than only hidden quick combat.
+See [factory registration](../../lib/callback/AIFactory.cpp),
+[profile policy](../../AI/BattleAI/BattleSearchPolicy.h) and the
+[settings schema](../../config/schemas/settings.json).
 
 ### Responsibility boundaries
 

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "BattleRoundHealing.h"
+#include "../../lib/battle/NewHorizonsSpecialtyRoundEffects.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../CGameHandler.h"
 #include "../../lib/CStack.h"
@@ -55,15 +56,17 @@ void afterRound(CGameHandler & gameHandler, const CBattleInfoCallback & battle)
 {
 	for(const auto * unit : battle.battleGetAllUnits(false))
 	{
-		const auto healing = newHorizonsHeroes::ordinaryCreatureRoundHealing(battle, *unit);
-		if(healing <= 0)
-			continue;
-		BattleTriggerEffect effect;
-		effect.battleID = battle.getBattle()->getBattleID();
-		effect.stackID = unit->unitId();
-		effect.effect = BonusType::HP_REGENERATION;
-		effect.val = healing;
-		publishRegeneration(gameHandler, battle, *unit, effect);
+		if(!unit || !newHorizonsSpecialtyEvents::needsRoundEffects(battle, *unit, battle.battleGetRound())) continue;
+		auto state = unit->acquireState();
+		const auto before = state->getAvailableHealth();
+		if(!newHorizonsSpecialtyEvents::applyRound(battle, *state, battle.battleGetRound())) continue;
+		BattleUnitsChanged changed;
+		changed.battleID = battle.getBattle()->getBattleID();
+		UnitChanges update(unit->unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save();
+		update.healthDelta = state->getAvailableHealth() - before;
+		changed.changedStacks.push_back(std::move(update));
+		gameHandler.sendAndApply(changed);
 	}
 }
 

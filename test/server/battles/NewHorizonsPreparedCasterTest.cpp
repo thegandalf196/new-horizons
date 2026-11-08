@@ -298,8 +298,8 @@ TEST_F(NewHorizonsSpellFamiliarityTest, FirstSpellHasNoDiscountAndParticularSpel
 
 	const auto firstMana = attackerSideHero->getManaAvailable();
 	ASSERT_TRUE(issueMagicArrow(target, 4));
-	EXPECT_EQ(firstMana - attackerSideHero->getManaAvailable(), wisdomCost + 4)
-		<< "The first cast has no Familiarity discount; Overcharge still adds all four Mana";
+	EXPECT_EQ(firstMana - attackerSideHero->getManaAvailable(), wisdomCost + 71)
+		<< "The first cast has no Familiarity discount; q4 adds its full 71 Mana surcharge";
 	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::MAGIC_ARROW), 1);
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::DEFENDER));

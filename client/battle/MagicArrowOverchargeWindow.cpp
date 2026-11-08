@@ -55,13 +55,13 @@ MagicArrowOverchargeWindow::MagicArrowOverchargeWindow(MagicArrowOverchargeConte
 		ETextAlignment::CENTER, Colors::YELLOW, "");
 
 	minus = std::make_shared<CButton>(Point(12, 84), AnimationPath::builtin("settingsWindow/button80"),
-		CButton::tooltip("Reduce Overcharge", "Spend one less optional Mana on Magic Arrow."),
+		CButton::tooltip("Reduce Overcharge", "Choose one lower Overcharge level. The Mana cost is shown below."),
 		[this] { setOvercharge((slider ? slider->getValue() : 0) - 1); });
 	minus->setTextOverlay("-", FONT_BIG, Colors::WHITE);
 	minus->setHoverable(true);
 
 	plus = std::make_shared<CButton>(Point(WINDOW_WIDTH - 92, 84), AnimationPath::builtin("settingsWindow/button80"),
-		CButton::tooltip("Increase Overcharge", "Spend one more optional Mana on Magic Arrow."),
+		CButton::tooltip("Increase Overcharge", "Choose one higher Overcharge level. The Mana cost is shown below."),
 		[this] { setOvercharge((slider ? slider->getValue() : 0) + 1); });
 	plus->setTextOverlay("+", FONT_BIG, Colors::WHITE);
 	plus->setHoverable(true);
@@ -95,27 +95,31 @@ MagicArrowOverchargeWindow::MagicArrowOverchargeWindow(MagicArrowOverchargeConte
 
 MagicArrowOverchargeValues MagicArrowOverchargeWindow::valuesFor(int overcharge) const
 {
-	const int maximum = std::max(0, context.initial.maximumOvercharge);
-	overcharge = std::clamp(overcharge, 0, maximum);
 	if(context.evaluate)
 		return context.evaluate(overcharge);
 
-	// Without a target-aware core evaluator, never invent a damage projection.
+	// A missing canonical evaluator cannot supply prices or validate a choice.
 	MagicArrowOverchargeValues values = context.initial;
 	values.overcharge = overcharge;
 	values.previewAvailable = false;
-	values.additionalMana = overcharge;
-	values.totalMana = values.baseMana + values.additionalMana;
-	values.affordable = values.totalMana <= values.availableMana;
+	values.legal = false;
+	values.affordable = false;
+	values.costAvailable = false;
+	values.unavailableReason = "Casting context unavailable. Cancel and choose again.";
 	return values;
 }
 
 void MagicArrowOverchargeWindow::setOvercharge(int overcharge)
 {
-	const int maximum = std::max(0, context.initial.maximumOvercharge);
+	const auto current = valuesFor(slider ? slider->getValue() : 0);
+	const int maximum = std::max(0, current.maximumOvercharge);
+	context.initial.maximumOvercharge = maximum;
 	overcharge = std::clamp(overcharge, 0, maximum);
-	if(slider && slider->getValue() != overcharge)
+	if(slider)
+	{
+		slider->setAmount(maximum + 1);
 		slider->scrollTo(overcharge, false);
+	}
 	refresh();
 }
 
@@ -129,8 +133,11 @@ void MagicArrowOverchargeWindow::refresh()
 	if(targetLabel->getText() != targetSummary)
 		targetLabel->setText(targetSummary);
 	overchargeLabel->setText("Overcharge " + std::to_string(values.overcharge) + " / " + std::to_string(values.maximumOvercharge));
-	costLabel->setText("Mana: base " + std::to_string(values.baseMana) + "  surcharge " + signedMana(values.additionalMana)
+	if(values.costAvailable)
+		costLabel->setText("Mana: base " + std::to_string(values.baseMana) + "  surcharge " + signedMana(values.additionalMana)
 		+ "\nTotal: " + std::to_string(values.totalMana) + " / available " + std::to_string(values.availableMana));
+	else
+		costLabel->setText("Mana: -- (selection unavailable)");
 	if(values.previewAvailable)
 		damageLabel->setText("No Overcharge: " + std::to_string(values.baseDamage) + " damage, " + std::to_string(values.baseKills)
 			+ " estimated kills\nWith Overcharge " + std::to_string(values.overcharge) + ": "
@@ -139,7 +146,8 @@ void MagicArrowOverchargeWindow::refresh()
 		damageLabel->setText("No Overcharge: -- damage, -- estimated kills\nWith Overcharge " + std::to_string(values.overcharge)
 			+ ": -- damage, -- estimated kills");
 
-	const std::string state = !values.legal ? "Target unavailable. Cancel and choose again."
+	const std::string state = !values.unavailableReason.empty() ? values.unavailableReason
+		: !values.legal ? "Target or hero unavailable. Cancel and choose again."
 		: !values.affordable ? "Not enough Mana."
 		: !values.previewAvailable ? "Forecast unavailable."
 		: "";

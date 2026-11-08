@@ -127,11 +127,6 @@ std::optional<SpellID> authoredNonDamageSpellReplacement(const CGHeroInstance & 
 	return newHorizonsHeroes::authoredNonDamageSpellReplacement(*hero.getHeroType(), hero.getPrimaryGrowthRules(), hero.getMagicRules(), source);
 }
 
-std::string creatureLineSpecialtyMarker(HeroTypeID heroType, CreatureID creature, std::string_view stat)
-{
-	return "new-horizons:creature-line-specialty:" + std::to_string(heroType.getNum()) + ":"
-		+ std::to_string(creature.getNum()) + ":" + std::string(stat);
-}
 
 std::string damageSpellSpecialtyMarker(HeroTypeID heroType, SpellID spell)
 {
@@ -453,40 +448,6 @@ void CGHeroInstance::setMovementPoints(int points)
 		movement = std::max(0, points);
 }
 
-std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity() const
-{
-	return getLeadershipCapacity(*this);
-}
-
-std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity(const CCreatureSet & army) const
-{
-	if(!newHorizonsHeroes::usesRules(capabilityRules))
-		return std::nullopt;
-	const int trainedLeadership = std::max(0, valOfBonuses(BonusType::LEADERSHIP));
-	if(capabilityRules["rulesetVersion"].Integer() >= 2)
-		return newHorizonsHeroes::LeadershipCapacity{
-			static_cast<int64_t>(newHorizonsHeroes::capabilityLeadershipRating(capabilityRules, level)) + trainedLeadership, 0, 100};
-	uint64_t used = 0;
-	// Version 1 counts adventure army creatures, including undead, one per unit.
-	// Commanders and artifact machines are not roster slots; battle-only arrivals
-	// do not rewrite the adventure army. Splitting a stack cannot change usage.
-	for(const auto & [slot, stack] : army.Slots())
-	{
-		if(stack->getCount() < 0)
-			throw std::runtime_error("Leadership requires resolved adventure army counts");
-		used += static_cast<uint64_t>(stack->getCount());
-	}
-	auto result = newHorizonsHeroes::capabilityLeadership(capabilityRules, level,
-		getSecSkillLevel(SecondarySkill::LEADERSHIP), used);
-	result.capacity += trainedLeadership;
-	return result;
-}
-
-std::optional<newHorizonsHeroes::LeadershipSlotCapacity> CGHeroInstance::getLeadershipSlotCapacity(CreatureID creature) const
-{
-	return newHorizonsHeroes::heroLeadershipSlotCapacity(*this, creature);
-}
-
 int CGHeroInstance::movementPointsLimit() const
 {
 	auto layer = inBoat() ? getBoat()->layer : EPathfindingLayer::LAND;
@@ -744,8 +705,11 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 	if(!isFake && !perkRulesCaptured)
 	{
-		perkState.rules = cb->getHeroPerkRules();
-		perkState.validate();
+		newHorizonsHeroes::PerkState candidate;
+		candidate.rules = cb->getHeroPerkRules();
+		auto prepared = candidate.prepareNativeRules();
+		perkState = std::move(candidate);
+		preparedPilotPerks = std::move(prepared);
 		perkRulesCaptured = true;
 	}
 	if(!isFake && !capabilityRulesCaptured)
@@ -754,9 +718,13 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		capabilityRulesCaptured = true;
 		nodeHasChanged();
 	}
+	if(!preparedPilotPerks) preparedPilotPerks = perkState.prepareNativeRules();
 	if(creationInitialization)
 	{
-		primaryGrowthRules = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
+		auto candidate = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
+		auto prepared = nativeRules::preparePilotCreature(candidate, getHeroTypeID());
+		primaryGrowthRules = std::move(candidate);
+		preparedCreatureMechanics = std::move(prepared);
 		primaryGrowthCaptured = true;
 		nodeHasChanged();
 	}
@@ -1089,7 +1057,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 			continue;
 		addNewBonus(b);
 	}
-	if(convertsCreatureLineSpecialty)
+	if(convertsCreatureLineSpecialty || preparedCreatureMechanics)
 		refreshCreatureLineSpecialtyBonuses(true);
 	newHorizonsHeroes::refreshWheelOfFortune(*this);
 
@@ -1225,64 +1193,6 @@ void CGHeroInstance::pickRandomObject(IGameRandomizer & gameRandomizer)
 		setType(ID, getHeroClass()->getIndex());
 
 	this->subID = oldSubID;
-}
-
-void CGHeroInstance::recreateSecondarySkillsBonuses()
-{
-	auto secondarySkillsBonuses = getBonusesFrom(BonusSource::SECONDARY_SKILL);
-	for(const auto & bonus : *secondarySkillsBonuses)
-		removeBonus(bonus);
-
-	for(const auto & skill_info : secSkills)
-		if(skill_info.second > 0)
-			updateSkillBonus(SecondarySkill(skill_info.first), skill_info.second);
-}
-
-void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
-{
-	removeBonuses(Selector::source(BonusSource::SECONDARY_SKILL, BonusSourceID(which)));
-
-	if(val > 0)
-	{
-		const auto newHorizonsOffenseSkill = LIBRARY->identifiers()->getIdentifier(
-			ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:offense", true);
-		const int offenseSpecialtyPercent = newHorizonsOffenseSkill && which == SecondarySkill(*newHorizonsOffenseSkill)
-			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::OFFENCE)) : 0;
-		const auto newHorizonsEstatesSkill = LIBRARY->identifiers()->getIdentifier(
-			ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:estates", true);
-		const int estatesSpecialtyPercent = newHorizonsEstatesSkill && which == SecondarySkill(*newHorizonsEstatesSkill)
-			? getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ESTATES)) : 0;
-		auto skillBonus = newHorizonsSylvanTactics::rankBonuses(*this, which, val,
-			(*LIBRARY->skillh)[which]->at(val).effects);
-		for(const auto& b : skillBonus)
-		{
-			auto bonus = std::make_shared<Bonus>(*b);
-			if(offenseSpecialtyPercent > 0
-				&& bonus->type == BonusType::PERCENTAGE_DAMAGE_BOOST
-				&& bonus->subtype == BonusCustomSubtype::damageTypeMelee
-				&& bonus->valType == BonusValueType::BASE_NUMBER
-				&& bonus->source == BonusSource::SECONDARY_SKILL
-				&& bonus->sid == BonusSourceID(which))
-				bonus->val = bonus->val * (100 + offenseSpecialtyPercent) / 100;
-			if(estatesSpecialtyPercent > 0
-				&& bonus->type == BonusType::GENERATE_RESOURCE
-				&& bonus->subtype == BonusSubtypeID(GameResID(EGameResID::GOLD))
-				&& bonus->valType == BonusValueType::BASE_NUMBER
-				&& bonus->source == BonusSource::SECONDARY_SKILL
-				&& bonus->sid == BonusSourceID(which))
-				bonus->val = bonus->val * (100 + estatesSpecialtyPercent) / 100;
-			addNewBonus(bonus);
-		}
-	}
-
-	const auto luckSkillIndex = LIBRARY->identifiers()->getIdentifier(
-		ModScope::scopeGame(), SecondarySkill::entityType(), "new-horizons:luck", true);
-	if(luckSkillIndex && which == SecondarySkill(*luckSkillIndex)
-		&& hasActivePerk("new-horizons:luck", "new-horizons:luck.fortuneSFavor"))
-	{
-		addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-			BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE, BonusSource::SECONDARY_SKILL, 25, BonusSourceID(which)));
-	}
 }
 
 void CGHeroInstance::setPropertyDer(ObjProperty what, ObjPropertyID identifier)
@@ -2852,38 +2762,6 @@ void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS
 	nodeHasChanged();
 }
 
-void CGHeroInstance::validateDefaultCreatureLineSerialization(bool supported) const
-{
-	newHorizonsHeroes::validateDefaultCreatureLineSerialization(primaryGrowthRules, supported);
-	if(primaryGrowthRules.isStruct() && primaryGrowthRules.Struct().contains("creatureLineSpecialtyTarget"))
-	{
-		const auto target = newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID());
-		if(!target || !getHeroType()->creatureLineSpecialtyAlias
-			|| getHeroType()->creatureLineSpecialtyAlias->creature != CreatureID(CreatureID::PSYCHIC_ELEMENTAL))
-			throw std::runtime_error("Captured Wisp specialty belongs only to the exact native Psychic producer");
-		const auto original = getHeroType()->creatureLineSpecialtyAlias->creature;
-		const std::array<std::string, 4> staleMarkers = {
-			creatureLineSpecialtyMarker(getHeroTypeID(), original, "speed"),
-			creatureLineSpecialtyMarker(getHeroTypeID(), original, "initiative"),
-			creatureLineSpecialtyMarker(getHeroTypeID(), original, "attack"),
-			creatureLineSpecialtyMarker(getHeroTypeID(), original, "defense")
-		};
-		if(std::ranges::any_of(getExportedBonusList(), [&staleMarkers](const auto & bonus)
-		{
-			return bonus && std::ranges::find(staleMarkers, bonus->stacking) != staleMarkers.end();
-		}))
-			throw std::runtime_error("Captured Wisp specialty cannot retain Psychic target markers");
-	}
-}
-
-CreatureID CGHeroInstance::getCreatureLineSpecialtyTarget() const
-{
-	validateDefaultCreatureLineSerialization(true);
-	if(primaryGrowthRules.isStruct() && primaryGrowthRules.Struct().contains("creatureLineSpecialtyTarget"))
-		return *newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID());
-	const auto * hero = getHeroType();
-	return hero && hero->creatureLineSpecialtyAlias ? hero->creatureLineSpecialtyAlias->creature : CreatureID();
-}
 
 int CGHeroInstance::getFortuneChildLuckBonus() const
 {
@@ -2913,52 +2791,6 @@ void CGHeroInstance::refreshFortuneChildSpecialtyBonus()
 	nodeHasChanged();
 }
 
-void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
-{
-	if(createIfMissing)
-		if(auto bonus = newHorizonsHeroes::ordinaryCreatureSpecialtyBonus(*this))
-		{
-			removeBonuses(CSelector([&bonus](const Bonus * existing)
-			{ return existing && existing->source == bonus->source && existing->sid == bonus->sid
-				&& existing->stacking == bonus->stacking; }));
-			addNewBonus(bonus);
-		}
-
-	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
-	const CHero * heroType = getHeroType();
-	if(!rules || !heroType || !heroType->creatureLineSpecialtyAlias)
-		return;
-
-	const CreatureID creature = getCreatureLineSpecialtyTarget();
-	const std::array<std::string, 4> markers = {
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "speed"),
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "initiative"),
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "attack"),
-		creatureLineSpecialtyMarker(heroType->getId(), creature, "defense")
-	};
-	const auto & existingBonuses = getExportedBonusList();
-	const bool hasMarkers = std::ranges::any_of(existingBonuses, [&markers](const auto & bonus)
-	{
-		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
-	});
-	if(!createIfMissing && !hasMarkers)
-		return;
-
-	const CCreature * specCreature = creature.toCreature();
-	if(!specCreature)
-		return;
-
-	removeBonuses(CSelector([markers](const Bonus * bonus)
-	{
-		return bonus && std::ranges::find(markers, bonus->stacking) != markers.end();
-	}));
-
-	if(newHorizonsHeroes::replacesGenericCreatureSpecialty(this))
-		return;
-
-	for(auto & bonus : newHorizonsHeroes::creatureLineSpecialtyBonuses(*this, *rules, creature, markers))
-		addNewBonus(bonus);
-}
 
 void CGHeroInstance::attachCommanderToArmy()
 {

@@ -12,14 +12,15 @@
 
 #include "../scripting/ScriptVariablesStorage.h"
 #include "../constants/EntityIdentifiers.h"
+#include "../json/JsonNode.h"
 
 class MapReaderH3M;
 class TextIdentifier;
 class CMap;
 
 /// Converts the HotA (Horn of the Abyss) event-scripting bytecode embedded in a
-/// H3M map into equivalent Lua source. Pure recursive-descent emission: each
-/// helper consumes one node from the reader and returns its Lua text.
+/// H3M map into a versioned native event program. Parsing consumes the original
+/// field order; the resulting data is evaluated by the native continuation engine.
 class HotaScriptConverter
 {
 public:
@@ -31,11 +32,10 @@ public:
 	void readScript();
 
 
-	/// Consumes the whole HotA event-system block. The result is empty when the map has
-	/// no active event system.
+	/// Finalizes the native program after map-object identities have been resolved.
 	void convert(CMap * map, const std::map<si32, ObjectInstanceID> & questIdentifierToId);
 
-	/// Stable key of the Lua handler for an event bucket + id. Shared by the converter (which emits
+	/// Stable key of the native handler for an event bucket + id. Shared by the converter (which emits
 	/// the handler table key) and the H3M loader (which tags objects/events with the handler to fire).
 	std::string eventHandlerName(const std::string & bucket, int eventID);
 
@@ -55,28 +55,30 @@ private:
 	// H3M object identifiers referenced by object-identity predicates, resolved to names by the loader
 	std::set<uint32_t> referencedObjects;
 
-	std::string events;
-	std::string variablesTable;
+	JsonNode events;
+	JsonNode variablesTable;
 
-	std::string loadEventList(const std::string & bucket);
-	std::string loadVariables(); // reads declarations, returns the `Vars` id->name Lua table
+	void loadEventList(const std::string & bucket);
+	void loadVariables();
 	void loadEventMap();
 
-	std::string loadActions(int indent); ///< multi-line statement block, each line indented by `indent` tabs
-	std::string loadCondition(); ///< single Lua boolean expression
-	std::string loadConditionInternal();
-	std::string loadExpression(); ///< single Lua numeric expression
-	std::string loadExpressionInternal();
+	JsonNode loadActions();
+	JsonNode loadAction(int code);
+	void loadControlAction(int code, JsonNode & node);
+	void loadRewardAction(int code, JsonNode & node);
+	JsonNode loadCondition();
+	JsonNode loadConditionInternal();
+	JsonNode loadExpression();
+	JsonNode loadExpressionInternal();
 
 	/// Error for a field whose meaning is not known yet, naming the map and the event being converted
 	std::runtime_error unsupported(const std::string & message) const;
 
-	std::string loadImageList(int count);
-	std::string localizedText(const std::string & role); ///< reads a text field, returns a Lua MetaString table holding its identifier
+	JsonNode loadImageList(int count);
+	std::string localizedText(const std::string & role);
 
-	std::string loadQuestReferences(CMap * map, const std::map<si32, ObjectInstanceID> & questIdentifierToId);
+	JsonNode loadQuestReferences(CMap * map, const std::map<si32, ObjectInstanceID> & questIdentifierToId);
 
-	/// Records an H3M object identifier and returns the Lua expression that looks up its runtime
-	/// object name in the loader-populated `questObjects` table.
+	/// Records an H3M object identifier and returns its native program lookup key.
 	std::string questObjectRef(uint32_t identifier);
 };

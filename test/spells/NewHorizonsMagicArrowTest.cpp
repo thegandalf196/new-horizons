@@ -16,11 +16,9 @@ namespace
 JsonNode activeRules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
-	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
-	rules.Struct().erase("schoolRankPowerCoefficientPercent");
-	rules.Struct().erase("spellcraftEfficiencyPercent");
+	rules["spells"]["core:magicArrow"]["magicArrow"]["version"].Integer() = 1;
 	rules["spells"]["core:magicArrow"]["directDamage"]["base"].Integer() = 20;
-	rules["spells"]["core:magicArrow"]["directDamage"]["powerCoefficient"].Integer() = 20;
+	rules["spells"]["core:magicArrow"]["directDamage"]["powerCoefficient"].Integer() = 10;
 	return rules;
 }
 }
@@ -37,28 +35,27 @@ TEST(NewHorizonsMagicArrowTest, DetailedSorceryFormulaAndCapAreDeterministic)
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(rules, arrow, 1000), 5);
 
 	// With the New Horizons primary-rating divisor of ten, SP 24 still means
-	// the declared 20 + 2*24 = 68 raw damage.
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 24, 10, 0), 68);
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 0), 220);
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 1), 253);
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 2), 286);
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 3), 319);
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 4), 352);
+	// the declared 20 + 24 = 44 raw damage.
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 24, 10, 0), 44);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 0), 120);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 1), 220);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 2), 320);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 3), 420);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 4), 520);
 }
 
-TEST(NewHorizonsMagicArrowTest, OverchargerRaisesCapAndUsesSeventeenPointFivePercentSteps)
+TEST(NewHorizonsMagicArrowTest, OverchargerRaisesOnlyTheCapacityByOneLevel)
 {
 	const auto rules = activeRules();
 	const SpellID arrow(SpellID::MAGIC_ARROW);
 	newHorizonsMagic::MagicArrowOverchargeModifiers modifiers;
 	modifiers.maximumBonus = 1;
-	modifiers.damagePercentTenths = 175;
 
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(rules, arrow, 0, modifiers), 3);
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(rules, arrow, 150, modifiers), 6);
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaxOvercharge(rules, arrow, 1000, modifiers), 6);
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 1, modifiers), 258);
-	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 150, 10, 6, modifiers), 656);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 100, 10, 1, modifiers), 220);
+	EXPECT_EQ(newHorizonsMagic::magicArrowDamage(rules, arrow, 150, 10, 6, modifiers), 1070);
 }
 
 TEST(NewHorizonsMagicArrowTest, LegacyAndWrongSpellDoNotGainOvercharge)

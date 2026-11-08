@@ -160,6 +160,7 @@ public:
 	virtual int32_t intrinsicMagicalDamageReductionPercent() const { return 0; }
 	virtual int32_t intrinsicPhysicalDamageReductionPercent() const { return 0; }
 	virtual newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const { return {}; }
+	virtual newHorizonsElementalAttunement::UnitPassives elementalAttunementPassives() const { return {}; }
 
 	/// returns total health that unit still has
 	virtual int64_t getAvailableHealth() const = 0;

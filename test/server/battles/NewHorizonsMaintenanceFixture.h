@@ -4,10 +4,13 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/callback/GameRandomizer.h"
+#include <string>
+#include <vector>
 class NewHorizonsMaintenanceFixture : public HeroCommandFixture
 {
 protected:
 	int captureMode = 0;
+	std::string maintainedHero;
 	CStack * actor = nullptr;
 	CStack * upgraded = nullptr;
 	CStack * victim = nullptr;
@@ -17,7 +20,11 @@ protected:
 		HeroCommandFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-		for(const char * key : {"fieldReassemblyHealingHP", "fieldMaintenanceHealingHP", "ogreBulwarkRetaliations"})
+		const std::vector<const char *> keys = maintainedHero == "core:josephine"
+			? std::vector<const char *>{"goldStandardUpgrade"} : maintainedHero == "core:krellion"
+			? std::vector<const char *>{"ogreBloodlustPolicyVersion"}
+			: std::vector<const char *>{"cripplingBoltSpeedReduction", "cripplingBoltDuration"};
+		for(const char * key : keys)
 		{
 			if(captureMode == 1) policy.Struct().erase(key);
 			if(captureMode == 2) policy[key].Integer() = 0;
@@ -28,6 +35,7 @@ protected:
 	void prepare(const char * hero, int mode = 0)
 	{
 		captureMode = mode;
+		maintainedHero = hero;
 		const bool golem = std::string_view(hero) == "core:josephine";
 		const bool ogre = std::string_view(hero) == "core:krellion";
 		const auto base = CreatureID(CreatureID::decode(golem ? "core:ironGolem" : ogre ? "core:ogre" : "core:pikeman"));
@@ -55,6 +63,16 @@ protected:
 		}
 		ASSERT_NE(actor, nullptr); ASSERT_NE(victim, nullptr);
 		actor->setPosition(BattleHex(3, 5)); victim->setPosition(BattleHex(8, 5));
+	}
+	void injure(CStack & unit, int64_t amount)
+	{
+		auto state = unit.acquireState();
+		const auto health = state->getAvailableHealth();
+		state->damage(amount);
+		BattleUnitsChanged change; change.battleID = BattleID(0);
+		UnitChanges update(unit.unitId(), UnitChanges::EOperation::UPDATE);
+		update.data = state->save(); update.healthDelta = state->getAvailableHealth() - health;
+		change.changedStacks.push_back(std::move(update)); gameHandler->sendAndApply(change);
 	}
 	void forceActorFirst()
 	{

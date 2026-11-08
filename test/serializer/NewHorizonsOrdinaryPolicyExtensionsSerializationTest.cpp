@@ -11,24 +11,19 @@ namespace
 using Version = ESerializationVersion;
 using newHorizonsHeroes::SpecialtySerializationContext;
 using newHorizonsHeroes::validateCapturedSpecialtiesSerialization;
-constexpr std::array<std::pair<const char *, int>, 4> extensions{{
-	{"prismaticScreenReductionPercent", 15}, {"evasiveFlightReductionPercent", 20},
-	{"ridersExploitDamagePercent", 20}, {"tidalRenewalHealingHP", 10}}};
-constexpr std::array<const char *, 13> previousKeys{{
-	"massedSpearsDamagePercent", "packPursuitDamagePercent", "bloodScentDamagePercent",
-	"livingBastionDefense", "chillingPresenceReductionPercent", "boneFormationDefense",
-	"stoneSentinelReductionPercent", "ogreWarcallerDamagePercent", "undertowRetaliationPercent",
-	"wyvernsPreyDamagePercent", "mobPressureDamagePercent", "wingbeatInitiativePercent",
-	"measuredVolleyMdrPenetrationPercent"}};
+constexpr std::array<std::pair<const char *, int>, 2> extensions{{
+	{"prismaticScreenReductionPercent", 15},
+	{"ridersExploitDamagePercent", 20}}};
+constexpr std::array<const char *, 2> previousKeys{{
+	"massedSpearsDamagePercent", "stoneSentinelReductionPercent"}};
 JsonNode captured()
 {
 	JsonNode rules;
 	rules["additionalSpecialties"]["version"].Integer() = 1;
 	auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 	policy["version"].Integer() = 1;
-	policy["closeQuartersDrill"].Integer() = 1;
 	policy["marshSharpshooter"].Integer() = 1;
-	for(const char * key : {"retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"})
+	for(const char * key : {"retaliationDamagePercent", "maximumHealthPercent", "resistanceAuraPoints"})
 		policy[key].Integer() = 0;
 	return rules;
 }
@@ -85,7 +80,7 @@ TEST(OrdinaryPolicyExtensionsSerialization, EveryNewKeyIncludingZeroRequires1146
 		}
 }
 
-TEST(OrdinaryPolicyExtensionsSerialization, ExactThirteenPreviousKeysKeepTheir1145Boundary)
+TEST(OrdinaryPolicyExtensionsSerialization, UnchangedPreviousKeysKeepTheir1145Boundary)
 {
 	ASSERT_NO_THROW(validateCapturedSpecialtiesSerialization(captured(), context(Version::NEW_HORIZONS_ORDINARY_CREATURE_SPECIALTIES)));
 	for(const char * key : previousKeys)
@@ -98,7 +93,7 @@ TEST(OrdinaryPolicyExtensionsSerialization, ExactThirteenPreviousKeysKeepTheir11
 	}
 }
 
-TEST(OrdinaryPolicyExtensionsSerialization, UnknownAndTwentyFourInvalidValuesRemainShapeErrors)
+TEST(OrdinaryPolicyExtensionsSerialization, UnknownAndTwelveInvalidValuesRemainShapeErrors)
 {
 	for(const auto & [key, value] : extensions)
 		for(int kind = 0; kind < 6; ++kind)
@@ -165,7 +160,7 @@ TEST(OrdinaryPolicyExtensionsSerialization, Mislabeled1145ReadRejectsBeforeInsta
 	}
 }
 
-TEST(OrdinaryPolicyExtensionsSerialization, MissingFourKeysKeep1145AndCurrentRawBytesAndAbsence)
+TEST(OrdinaryPolicyExtensionsSerialization, MissingUnchangedExtensionKeysKeep1145AndCurrentRawBytesAndAbsence)
 {
 	auto rules = captured();
 	for(const char * key : previousKeys) policy(rules)[key].Integer() = 0;

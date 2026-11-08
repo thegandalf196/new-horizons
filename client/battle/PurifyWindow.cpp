@@ -188,6 +188,14 @@ PurifyWindow::PurifyWindow(PurifyContext context_)
 			selection->options.push_back({stack.unitId, stack.stackName, SpellID::NONE,
 				"Grave Dust (Purifier removes this extra effect)", stack.maximumSpellEffectChoices, true,
 				"Purifier removes Grave Dust without using a selection slot."});
+		if(stack.stunAutomaticallyCleared)
+			selection->options.push_back({stack.unitId, stack.stackName, SpellID::NONE,
+				"Stun (Purifier removes this extra effect)", stack.maximumSpellEffectChoices, true,
+				"Purifier removes Stun without using a selection slot."});
+		if(stack.crippleAutomaticallyCleared)
+			selection->options.push_back({stack.unitId, stack.stackName, SpellID::NONE,
+				"Cripple (Purifier removes this extra effect)", stack.maximumSpellEffectChoices, true,
+				"Purifier removes Cripple without using a selection slot."});
 	}
 
 	OBJECT_CONSTRUCTION;
@@ -249,18 +257,24 @@ void PurifyWindow::refresh()
 		state += "\nPurifier also removes physical Poison from each affected stack.";
 	if(context.purifierWillClearGraveDust)
 		state += "\nPurifier also removes Grave Dust from each affected stack.";
+	if(context.purifierWillClearStun)
+		state += "\nPurifier also removes Stun from each affected stack.";
+	if(context.purifierWillClearCripple)
+		state += "\nPurifier also removes Cripple from each affected stack.";
 	if(selection->options.empty())
 		state = "No eligible temporary spell effects are in this area. Confirm is unavailable.";
 	if(stateLabel && stateLabel->getText() != state)
 		stateLabel->setText(state);
 
 	const bool hasSelectableGroups = !selection->selected.empty();
-	confirmButton->block(!context.confirm || (!hasSelectableGroups && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust));
+	confirmButton->block(!context.confirm || (!hasSelectableGroups && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust
+		&& !context.purifierWillClearStun && !context.purifierWillClearCripple));
 }
 
 void PurifyWindow::confirm()
 {
-	if(!context.confirm || (selection->selected.empty() && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust))
+	if(!context.confirm || (selection->selected.empty() && !context.purifierWillClearPhysicalPoison && !context.purifierWillClearGraveDust
+		&& !context.purifierWillClearStun && !context.purifierWillClearCripple))
 	{
 		refresh();
 		return;

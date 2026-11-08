@@ -7,6 +7,7 @@
 #include "OwnedUnitEnvironmentPolicy.h"
 #include "LiveUnitEnvironmentContext.h"
 #include "UnitOwnershipQuery.h"
+#include "Unit.h"
 namespace battle
 {
 OwnedUnitEnvironmentPolicy::OwnedUnitEnvironmentPolicy(const CBattleInfoCallback & observer)
@@ -26,6 +27,8 @@ OwnedUnitEnvironmentPolicy::OwnedUnitEnvironmentPolicy(const CBattleInfoCallback
 		input.ammoArtifact = source.sideHasAmmoArtifact(side);
 		input.veteranCohesion = source.sideHasVeteranCohesion(side);
 		input.necromancy = source.necromancyPassives(side);
+		input.elementalAttunementProfile = source.elementalAttunementProfile(side);
+		input.elementalAttunementProfileKnown = source.knowsElementalAttunementProfile(side);
 		input.bloodrageRank = source.bloodrageRank(side);
 		input.bloodrageCap = source.bloodrageCap(side);
 		input.bloodrageSpeed = source.bloodrageSpeed(side);
@@ -33,7 +36,9 @@ OwnedUnitEnvironmentPolicy::OwnedUnitEnvironmentPolicy(const CBattleInfoCallback
 		input.bloodragePain = source.bloodragePain(side);
 		auto & state = states.at(side); state.fortune = source.fortune(side);
 		state.bloodrageDamagePercent = source.bloodrageDamage(side);
+		state.elementalAttunementMask = source.elementalAttunementMask(side);
 	}
+	committedElementalEffects = source.committedElementalEffects();
 }
 std::shared_ptr<const OwnedUnitEnvironmentPolicy> OwnedUnitEnvironmentPolicy::capture(const CBattleInfoCallback & observer)
 {

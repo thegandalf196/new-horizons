@@ -12,10 +12,13 @@
 #include "../../json/JsonNode.h"
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
+
+namespace nativeRules { class PreparedPilotPerks; }
 
 namespace newHorizonsHeroes
 {
@@ -106,6 +109,7 @@ DLL_LINKAGE std::optional<int> quickStudyRerollInterval(const JsonNode & rules);
 /// semantics and are accepted; an active registry must match the canonical
 /// schema's cardinalities and preserve every scoped identity.
 DLL_LINKAGE void validatePerkRules(const JsonNode & rules);
+DLL_LINKAGE std::shared_ptr<const nativeRules::PreparedPilotPerks> preparePilotPerkRules(const JsonNode & rules);
 /// Absent markers preserve historical skills; present policies are strict captured objects.
 DLL_LINKAGE void validatePassiveFactionPolicies(const JsonNode & rules);
 /// Only the explicit captured marker opts into weighted perk selection.

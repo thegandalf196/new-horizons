@@ -36,6 +36,23 @@ SpellEffectPreview quantity(const std::string & label, int64_t value, int32_t sc
 	return {"new-horizons.spellbook.effect." + label, "new-horizons.spellbook.effect." + label + ".short",
 		SpellEffectPreview::Quantity{value, scale, UNIT}, {}, "new-horizons.spellbook.targetUnknown"};
 }
+void adjustFactionDamagePreview(SpellEffectPreview & result, const CGHeroInstance & hero,
+	const CSpell & spell, const JsonNode & rules)
+{
+	constexpr std::string_view prefix = "new-horizons.spellbook.effect.";
+	if(!result.labelKey.starts_with(prefix)) return;
+	const auto label = std::string_view(result.labelKey).substr(prefix.size());
+	// These are numeric damage readouts, not certification of a native effect.
+	// Do not multiply status strength, duration, secondary counts or healing.
+	static const std::set<std::string_view> primaryDamage{"damage", "lifeDrain", "poison", "plague", "hex",
+		"storm", "naturesWrath", "pandemonium", "implosion", "vines", "holyWrath", "handOfFate",
+		"soulReaper", "earthquakeField", "mines"};
+	static const std::set<std::string_view> secondaryDamage{"storm", "naturesWrath", "holyWrath", "soulReaper"};
+	if(result.primary && primaryDamage.contains(label))
+		result.primary->value = newHorizonsMetamagic::factionSpellDamagePreview(result.primary->value, hero, spell, rules);
+	if(result.secondary && secondaryDamage.contains(label))
+		result.secondary->value = newHorizonsMetamagic::factionSpellDamagePreview(result.secondary->value, hero, spell, rules);
+}
 // BaseMechanics captures Bless duration before follow-up raw-power bonuses.
 int initialSpellPower(const CGHeroInstance & hero, const CSpell & spell, const CBattleInfoCallback * callback)
 {
@@ -167,6 +184,7 @@ SpellEffectPreview spellEffectPreview(const CGHeroInstance & hero, const CSpell 
 {
 	auto result = resolveSpellEffectPreview(hero, spell, callback, followup);
 	adjustTargetFreePreview(result, hero, spell, callback, followup);
+	adjustFactionDamagePreview(result, hero, spell, callback && callback->getBattle() ? callback->getBattle()->getMagicRules() : hero.getMagicRules());
 	if(!result.compactLabelKey.empty())
 		result.narrowLabelKey = result.compactLabelKey + ".narrow";
 	return result;

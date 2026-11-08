@@ -26,6 +26,9 @@ class CapturedBattleInfo final : public ownedFrameCapture::RefusingBattleInfo
 	BattleSideArray<PlayerColor> players;
 	JsonNode heroRules, magicRules;
 	newHorizonsCreatures::CreatureCategoryRules categories;
+	BattleSideArray<std::optional<newHorizonsCommand::ResourceState>> commandResources;
+	BattleSideArray<newHorizonsElementalAttunement::Profile> elementalProfiles;
+	BattleSideArray<uint8_t> elementalMasks;
 	std::vector<std::shared_ptr<const OwnedUnitBonusFrame>> frames;
 public:
 	CapturedBattleInfo(const CBattleInfoCallback & source, const OwnedBattleFrameBatch & batch)
@@ -35,7 +38,18 @@ public:
 		heroRules(source.getBattle()->getHeroCommandRules()), magicRules(source.getBattle()->getMagicRules()),
 		categories(source.getBattle()->getCreatureCategoryRules())
 	{
-		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER}) players.at(side) = source.getBattle()->getSidePlayer(side);
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			players.at(side) = source.getBattle()->getSidePlayer(side);
+			// Current family activation is a battlefield fact. Prospective hero
+			// policy and the Order budget retain the original observer boundary.
+			elementalMasks.at(side) = source.getBattle()->getElementalAttunementMask(side);
+			if(source.battleGetMySide() == BattleSide::ALL_KNOWING || source.battleGetMySide() == side)
+			{
+				commandResources.at(side) = source.getBattle()->getCommandResources(side);
+				elementalProfiles.at(side) = source.getBattle()->getElementalAttunementProfile(side);
+			}
+		}
 		for(const auto & occurrence : batch.occurrences()) frames.push_back(occurrence.frame);
 	}
 	BattleID getBattleID() const override { return battleId; }
@@ -50,6 +64,17 @@ public:
 	const JsonNode & getHeroCommandRules() const override { return heroRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return categories; }
+	const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override
+	{
+		const auto & captured = commandResources.at(side);
+		if(!captured) throw std::logic_error("Owned opposing Command budget was not captured");
+		return *captured;
+	}
+	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override
+	{
+		return elementalProfiles.at(side); // Empty for an unknown opposing hero.
+	}
+	uint8_t getElementalAttunementMask(BattleSide side) const override { return elementalMasks.at(side); }
 	Units getUnitsIf(const UnitFilter & predicate) const override
 	{
 		Units result;

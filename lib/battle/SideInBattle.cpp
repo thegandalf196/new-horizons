@@ -16,6 +16,9 @@
 
 void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town)
 {
+	commandResources = newHorizonsCommand::initialState(Hero);
+	elementalAttunementMask = 0;
+	elementalAttunementProfile = newHorizonsElementalAttunement::captureProfile(Hero);
 	passiveDivineMandateUses = 0;
 	manaFurnaceRecoveredNormal = 0;
 	manaLeechesRecoveredNormal = 0;

@@ -12,6 +12,8 @@
 #include "../../lib/battle/MetamagicPointState.h"
 #include "../../lib/battle/WisdomCombatState.h"
 #include "../../lib/battle/NewHorizonsFactionSpellDamage.h"
+#include "../../lib/battle/NewHorizonsCommandResources.h"
+#include "../../lib/battle/NewHorizonsElementalAttunement.h"
 
 #include <cstdint>
 #include <map>
@@ -31,7 +33,6 @@
 #include "../../lib/battle/GraveDustEffectChanges.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
 #include "../../lib/battle/HeroOrderEffects.h"
-#include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/battle/ReducedExtraActivationState.h"
 #include "../../lib/battle/SpellResponseState.h"
 #include "../../lib/battle/OverwhelmingFormulaState.h"
@@ -44,15 +45,25 @@ struct SetMana;
 class InitialExportBattleSubject;
 class OwnedStackQuerySource;
 class OwnedFrameEffectQueries;
-namespace battle { class OwnedBattleFrameBatch; class OwnedUnitBonusFrame; }
+class MovementQueryCache;
+namespace specialtyProcAI { class Opportunities; }
+class ProjectedBonusRoster;
+class BonusList;
+class CStack;
+namespace battle { class OwnedBattleFrameBatch; class OwnedUnitBonusFrame; class CommittedElementalEffects; class CommittedBonusOperations; }
 
 class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment,
 	public newHorizonsGraveDust::OrderedEffectChangePreflight
 {
 	friend class InitialExportBattleSubject;
 	friend class ProjectedAdjacencyBonuses;
+	friend class specialtyProcAI::Opportunities;
 	friend class OwnedStackQuerySource;
 	friend class OwnedFrameEffectQueries;
+	std::shared_ptr<MovementQueryCache> movementMemo;
+	battle::MovementPaths movementPaths(const AccessibilityInfo & accessibility,
+		const ReachabilityInfo::Parameters & params, const BattleHexArray & stoppers,
+		EGateState gateState, const std::array<std::int32_t, GameConstants::BFIELD_SIZE> & movementCosts) const override;
 	const SetStackEffect * ordinaryValidatedPacket = nullptr;
 	std::vector<std::shared_ptr<const SetStackEffect>> arcaneInspirationEffects;
 	void completeSyntheticInspiration(BattleSide side);
@@ -87,6 +98,35 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	mutable bool mayContainSerpentBindings = false;
 	BattleSideArray<newHorizonsNecromancy::CombatPassives> necromancyPassives;
 	void captureNecromancyPassives(const CBattleInfoCallback & source);
+	BattleSideArray<newHorizonsElementalAttunement::Profile> elementalAttunementProfiles;
+	BattleSideArray<uint8_t> elementalAttunementMasks;
+	BattleSideArray<bool> elementalAttunementProfileKnown;
+	struct CommittedElementalFacts
+	{
+		std::shared_ptr<const battle::Unit> source;
+		const IBonusBearer * provider = nullptr;
+		CreatureID creature;
+		CreatureID originalCreature;
+		PlayerColor controller;
+		int32_t formRevision = 0;
+	};
+	std::map<uint32_t, CommittedElementalFacts> committedElementalFacts;
+	std::shared_ptr<const battle::CommittedElementalEffects> committedElementalEffects;
+	std::shared_ptr<const battle::CommittedBonusOperations> committedBonusOperations;
+	void captureCurrentBonusOperations(const Subject & source);
+	void validateCurrentBonusOperationSource() const;
+	TConstBonusListPtr currentBonusOperationBaseline(const CStack & native,
+		const StackWithBonuses & unit, const ProjectedBonusRoster & roster,
+		const BonusList & nativeBaseline) const;
+	struct ForfeitedActivation
+	{
+		int32_t round;
+		BattleUnitTurnReason reason;
+		bool completed = false;
+	};
+	std::map<uint32_t, ForfeitedActivation> forfeitedActivations;
+	void captureElementalAttunement(const Subject & source);
+	bool admitsCommittedElementalFacts(const battle::Unit & unit, const CommittedElementalFacts & facts, unsigned depth = 0) const;
 	battle::Units ownedExportUnitsIf(const battle::UnitFilter & predicate) const;
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
 		int divineMandateEfficiencyBonusPercent) const override;
@@ -142,6 +182,9 @@ public:
 	const Environment * env;
 
 	HypotheticBattle(const Environment * ENV, Subject realBattle);
+	/// Pure-query storage only; inherited by descendants, never attached to the live battle.
+	const std::shared_ptr<MovementQueryCache> & movementQueryCache() const { return movementMemo; }
+	void setMovementQueryCache(std::shared_ptr<MovementQueryCache> cache) { movementMemo = std::move(cache); }
 	/// Caller retains its actual source lease through construction. Session owns
 	/// controller/activation freshness; historical Batch is data, not authority.
 	HypotheticBattle(const Environment * ENV, Subject realBattle,
@@ -172,6 +215,11 @@ public:
 	int unitSpeedBonus(const battle::Unit * unit) const override { return battleBloodrageSpeed(unit); }
 	bool unitSlowAffectsSpeed(const battle::Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const battle::Unit * unit) const override;
+	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const battle::Unit * unit) const override;
+	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override
+	{ return elementalAttunementProfiles.at(side); }
+	uint8_t getElementalAttunementMask(BattleSide side) const override { return elementalAttunementMasks.at(side); }
+	void setElementalAttunementMask(BattleSide side, uint8_t mask) override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
 	bool unitHasVeteranCohesion(const battle::Unit * unit) const override;
 	std::optional<int> unitMagicResistance(const battle::Unit * unit) const override;
@@ -225,6 +273,17 @@ public:
 	/// Consume the copied Protect state immediately after hypothetical redirection, before effects resolve.
 	bool consumeHeroOrderProtectInterception(uint32_t wardUnitId, uint32_t protectorUnitId);
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override;
+	const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override
+	{
+		if(!commandResources.at(side)) throw std::logic_error("Projected Command resource observation unavailable");
+		return *commandResources.at(side);
+	}
+	bool hasCommandResourceObservation(BattleSide side) const { return commandResources.at(side).has_value(); }
+	void setCommandResources(BattleSide side, const newHorizonsCommand::ResourceState & state) override
+	{
+		if(!commandResources.at(side)) throw std::logic_error("Cannot replace an unavailable Command resource observation");
+		state.validate(); commandResources.at(side) = state;
+	}
 	const newHorizonsCrisisCommand::State & getCrisisCommandState() const override { return crisisCommand; }
 	void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override
 	{
@@ -308,6 +367,7 @@ public:
 		HeroActionAllowanceState allowancesBefore;
 		HeroActionAllowanceState allowancesAfter;
 		ProjectedMetamagicSnapshot metamagicBefore;
+		newHorizonsCommand::ResourceState commandResourcesBefore;
 
 		bool operator==(const ProjectedOrderAllowance &) const = default;
 	};
@@ -386,10 +446,6 @@ public:
 	void setArmorerDefiantState(BattleSide side, const ArmorerDefiantState & state) override;
 	void consumeArmorerLastStand(BattleSide side) override;
 	void applyArmorerLastStandDefend(uint32_t unitId);
-	bool getRebirthChainUsed(BattleSide side) const override;
-	void setRebirthChainUsed(BattleSide side, bool used) override;
-	bool getPhoenixSparkUsed(BattleSide side) const override;
-	void setPhoenixSparkUsed(BattleSide side, bool used) override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override;
 	int32_t getBloodrageCapPercent(BattleSide side) const override;
 	int32_t getBloodrageSpeedBonus(BattleSide side) const override;
@@ -433,7 +489,7 @@ public:
 		}
 	}
 	/// A completed forecast action, not WAIT or a same-activation continuation.
-	void completeSwiftNormalActivation(uint32_t unitId);
+	void completeNormalActivation(uint32_t unitId);
 	MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override
 	{
 		return moraleSuppressionStates.at(side);
@@ -478,7 +534,13 @@ public:
 	void nextRound(HypotheticLifecycleTiming * timing);
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) override;
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason, HypotheticLifecycleTiming * timing);
-	/// Begin a proven Frozen normal forfeiture without thawing before its end effects.
+	bool wasCurrentActivationForfeited(uint32_t unitId) const;
+	bool currentForfeitCompleted(uint32_t unitId) const;
+	void completeForfeitedActivation(uint32_t unitId);
+	void finishProjectedActivation(uint32_t unitId);
+	void nextTurnPreservingForfeit(uint32_t unitId, BattleUnitTurnReason reason,
+		HypotheticLifecycleTiming * timing = nullptr);
+	/// Compatibility entry for existing Frozen callers; same typed forfeit path.
 	void nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason,
 		HypotheticLifecycleTiming * timing = nullptr);
 	/// Explicit accepted positive-Morale projection, not an RNG or reason-based grant.
@@ -508,20 +570,8 @@ public:
 	void removeObstacle(uint32_t id) override;
 
 	uint32_t nextUnitId() const override;
-	std::optional<newHorizonsElementalRebirth::DeathSnapshot> captureElementalRebirthSource(
-		const battle::Unit & unit) const;
-	void projectCataclysms(std::span<const newHorizonsFactionSpellDamage::Cataclysm> captured);
 	bool hasReadyNativeRebirth(const battle::Unit * unit) const;
-	std::optional<uint32_t> projectElementalRebirth(const battle::Unit * postHitUnit,
-		const newHorizonsElementalRebirth::DeathSnapshot & snapshot, bool hitKilled,
-		bool cloneKilled, bool nativeRebirth);
-	const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const { return elementalRebirthSpawnUnitIds; }
 	const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const { return projectedPlagueHits; }
-	bool isElementalRebirthSpawn(uint32_t unitId) const { return elementalRebirthSpawnUnitIds.contains(unitId); }
-	const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const
-	{
-		return projectedPrimalBurstHits;
-	}
 
 	int64_t getActualDamage(const DamageRange & damage, int32_t attackerCount, vstd::RNG & rng) const override;
 	std::vector<SpellID> getUsedSpells(BattleSide side) const override;
@@ -546,14 +596,12 @@ public:
 	const scripting::Pool & getScriptContextPool() const override;
 
 private:
-	/// IDs created by this branch's Elemental Rebirth projection; never serialized.
 	void nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason, bool deferFrozenThaw,
 		HypotheticLifecycleTiming * timing);
 	void applyProjectedPoison(const std::shared_ptr<StackWithBonuses> & unit);
 	void applyProjectedActivationStartEffects(uint32_t unitId,
 		const std::shared_ptr<StackWithBonuses> & unit, BattleUnitTurnReason reason,
 		HypotheticLifecycleTiming * timing);
-	void projectPrimalBurst(const std::shared_ptr<StackWithBonuses> & projected);
 	struct LifeDrainFriendlyObservation
 	{
 		uint32_t id;
@@ -567,10 +615,6 @@ private:
 	std::shared_ptr<StackWithBonuses> getForUpdateImpl(uint32_t id);
 	void invalidateLifeDrainFriendlyObservation(uint32_t id) noexcept;
 	newHorizonsCrisisCommand::State crisisCommand;
-	std::set<uint32_t> elementalRebirthSpawnUnitIds;
-	/// Actual magical HP losses from the accepted projected Primal Burst batches.
-	/// Pre-hit snapshots are owned so branch copies don't borrow mutable/live units.
-	std::vector<ProjectedPrimalBurstHit> projectedPrimalBurstHits;
 	/// AI-only finalized injury receipts; immutable targets are copied with branches.
 	std::vector<ProjectedPlagueHit> projectedPlagueHits;
 	BattleDeploymentState deploymentState;
@@ -579,6 +623,7 @@ private:
 	/// Newest Order is last; updates by command preserve this issuance order.
 	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
+	BattleSideArray<std::optional<newHorizonsCommand::ResourceState>> commandResources;
 	BattleSideArray<DoubleCommandState> doubleCommandStates;
 	BattleSideArray<PreCombatOrderState> preCombatOrderStates;
 	BattleSideArray<bool> heroSpellCastCompletedStates;
@@ -586,8 +631,6 @@ private:
 	BattleSideArray<int32_t> battlecraftMasteryAwardRounds;
 	/// Branch-local once-per-combat consumption for Armorer's first qualifying Last Stand.
 	BattleSideArray<bool> armorerLastStandUsedStates;
-	BattleSideArray<bool> rebirthChainUsedStates;
-	BattleSideArray<bool> phoenixSparkUsedStates;
 	BattleSideArray<ArmorerDefiantState> armorerDefiantStates;
 	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
 	BattleSideArray<std::optional<int32_t>> projectedCastSpells;

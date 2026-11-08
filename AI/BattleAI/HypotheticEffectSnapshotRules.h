@@ -19,7 +19,6 @@ namespace battle { class Unit; }
 
 namespace hypotheticEffectSnapshotRules
 {
-bool hasElementalMemory(const battle::Unit & unit);
 using recipientBonusOverlay::isSnapshotHeroSpecialEffect;
 using recipientBonusOverlay::isInPhysicalAfflictionGroup;
 using recipientBonusOverlay::isCapturedProjectionEffect;

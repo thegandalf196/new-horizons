@@ -117,6 +117,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				|| std::find(divineMandateRecipients.begin(), divineMandateRecipients.end(),
 					HeroOrderState::INVALID_UNIT_ID) != divineMandateRecipients.end())
 				throw std::runtime_error("Invalid Divine Mandate recipient receipt");
+			if(source == GrantSource::DOUBLE_COMMAND || source == GrantSource::BATTLE_PLAN
+				|| source == GrantSource::CRISIS_COMMAND || source == GrantSource::HEROIC_SPIRIT)
+				throw std::runtime_error("Retired extra Order allowance in current rules");
 			if(id == 0 || !isValid(allowance) || !isValid(source)
 				|| grantedRound < 0 || expiryRound < grantedRound
 				|| (source == GrantSource::ROUND

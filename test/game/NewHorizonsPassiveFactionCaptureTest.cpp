@@ -17,6 +17,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(map);
 		authored = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		// Capture the marks-based version-two policy without version-three points.
+		authored["metamagicPolicy"] = JsonNode(JsonMap{});
 		for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 			authored[key]["version"].Integer() = 2;
 		if(corrupt)

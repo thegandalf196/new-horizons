@@ -26,7 +26,6 @@
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
 #include "../../lib/spells/HydrasVitalityIdentity.h"

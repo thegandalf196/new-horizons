@@ -14,8 +14,7 @@
 #include "../../../lib/gameState/GameStatePackVisitor.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
-#include "../../../luascript/StdInc.h"
-#include "../../../luascript/api/callback/ServerCallback.h"
+#include "../../../lib/spells/effects/native/StructureCommon.h"
 #include "../../../server/ServerSpellCastEnvironment.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
@@ -327,8 +326,8 @@ TEST_F(NewHorizonsWarMachinesPerksTest, BreachCarryUsesFinalDamageOnlyOnceAndRem
 	const auto preview = battle()->battleGetBreachmakerPreview(catapult, EWallPart::BOTTOM_WALL, raw);
 	ASSERT_EQ(preview.part, EWallPart::BOTTOM_TOWER);
 	EXPECT_EQ(preview.damage, (raw - 1) / 2);
-	scripting::api::ServerCallbackProxy::catapultAttack(*gameHandler->spellcastEnvironment(),
-		*battle(), catapult, EWallPart::BOTTOM_WALL, 1);
+	const nativeEvents::Context context{*gameHandler->spellcastEnvironment(), *battle(), nullptr, nullptr, {}, {}};
+	spells::effects::native::structure::catapultAttack(context, catapult, EWallPart::BOTTOM_WALL, 1);
 	EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BOTTOM_WALL), 0);
 	EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BOTTOM_TOWER), 0);
 	EXPECT_EQ(battle()->getWallStructuralHP(EWallPart::BELOW_GATE), 200);

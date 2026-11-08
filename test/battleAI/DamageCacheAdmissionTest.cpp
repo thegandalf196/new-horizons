@@ -12,8 +12,13 @@
 #include "../../lib/battle/DamageCalculationTiming.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../lib/CRandomGenerator.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/combatScripts/NativeDamageCalculator.h"
+#include "../../lib/scripting/ScriptHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/BattleLayout.h"
+#include "../../lib/int3.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
@@ -70,32 +75,77 @@ public:
 	const CGHeroInstance * attacker = nullptr;
 	const CGHeroInstance * defender = nullptr;
 	mutable std::vector<BattleSide> queries;
+	mutable bool failNextHero = false;
 	CountingHeroBattle() : BattleInfo(nullptr) {}
 	const CGHeroInstance * getSideHero(BattleSide side) const override
 	{
 		queries.push_back(side);
+		if(failNextHero)
+		{
+			failNextHero = false;
+			throw std::runtime_error("fixture visible-hero query failure");
+		}
 		return side == BattleSide::ATTACKER ? attacker : defender;
 	}
 };
 
+// Query-only missing-capability view over an existing final branch. Never used
+// as a projection source, world recipe, or mutation authority.
+class MissingFocusRulesView final : public BattleProxy
+{
+	JsonNode rules;
+public:
+	explicit MissingFocusRulesView(std::shared_ptr<HypotheticBattle> source)
+		: BattleProxy(source), rules(source->getBattle()->getHeroCommandRules())
+	{
+		rules["commands"].Struct().erase("focusFire");
+	}
+	const JsonNode & getHeroCommandRules() const override { return rules; }
+	BattleID getBattleID() const override { return subject->getBattle()->getBattleID(); }
+	const scripting::Pool & getScriptContextPool() const override { return subject->getBattle()->getScriptContextPool(); }
+	std::vector<SpellID> getUsedSpells(BattleSide side) const override { return subject->getBattle()->getUsedSpells(side); }
+	uint32_t nextUnitId() const override { return subject->getBattle()->nextUnitId(); }
+	int64_t getActualDamage(const DamageRange &, int32_t, vstd::RNG &) const override
+	{
+		throw std::logic_error("Missing-Focus query view cannot realize damage");
+	}
+	int3 getLocation() const override { return subject->getBattle()->getLocation(); }
+	BattleLayout getLayout() const override { return subject->getBattle()->getLayout(); }
+	void nextRound() override { rejectMutation(); }
+	void nextTurn(uint32_t, BattleUnitTurnReason) override { rejectMutation(); }
+	void addUnit(uint32_t, const JsonNode &) override { rejectMutation(); }
+	void updateUnit(uint32_t, const JsonNode &, int64_t) override { rejectMutation(); }
+	void moveUnit(uint32_t, const BattleHex &) override { rejectMutation(); }
+	void removeUnit(uint32_t) override { rejectMutation(); }
+	void addUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+	void updateUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+	void removeUnitBonus(uint32_t, const std::vector<Bonus> &) override { rejectMutation(); }
+	void setWallState(EWallPart, EWallState) override { rejectMutation(); }
+	void addObstacle(const ObstacleChanges &) override { rejectMutation(); }
+	void updateObstacle(const ObstacleChanges &) override { rejectMutation(); }
+	void removeObstacle(uint32_t) override { rejectMutation(); }
+private:
+	[[noreturn]] static void rejectMutation() { throw std::logic_error("Missing-Focus query view cannot mutate battle"); }
+};
+static_assert(!std::is_abstract_v<MissingFocusRulesView>);
+
 class DamageCacheAdmissionTest : public ProjectedTargetHitFixture
 {
 protected:
-	bool legacyRootAdmission = false;
+	bool finiteProtectRoster = false;
 	void mapLoaded(CMap * loaded) override
 	{
+		useRevisedOrders = true;
 		ProjectedTargetHitFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		if(legacyRootAdmission)
+		if(finiteProtectRoster)
 		{
-			// Supported historical command capture, NOT Commands-off. Retain full
-			// current hero/perk rules, including strict progression and weights.
-			const JsonNode config(JsonPath::builtin("config/newHorizonsCombatV2"));
-			auto rules = config["combat"]["heroCommands"];
-			rules["schemaVersion"].Integer() = 1;
-			rules["rulesetVersion"].Integer() = 1;
-			rules["commands"].Struct().erase("focusFire");
+			// Authored custom roster in a current-format game, not a historical save
+			// or canonical V4 roster. Keep finite payment and current perk policies.
+			const JsonNode file(JsonPath::builtin("config/newHorizonsCombatV3"));
+			auto rules = file["combat"]["heroCommands"];
+			rules["commandResourcePolicyVersion"].Integer() = 1;
 			heroCommands::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
 		}
@@ -119,6 +169,7 @@ protected:
 	void compareMainBatch(const std::shared_ptr<StackWithBonuses> & actor,
 		const battle::Units & targets, bool shooting = false)
 	{
+		ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(LIBRARY->scriptTypes()->getDamageCalculator()), nullptr);
 		DamageCache expectedCache;
 		expectedCache.buildDamageCache(child, BattleSide::ATTACKER);
 		DamageCache actualCache;
@@ -130,8 +181,10 @@ protected:
 		const auto defaultRng = projectedHitTest::serialized(CRandomGenerator::getDefault());
 		const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
 		const auto gameRng = projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
-		const auto spawns = child->getElementalRebirthSpawnUnitIds();
-		const auto bursts = child->getProjectedPrimalBurstHits().size();
+		const auto masks = std::pair{child->getElementalAttunementMask(BattleSide::ATTACKER),
+			child->getElementalAttunementMask(BattleSide::DEFENDER)};
+		const auto resources = child->getCommandResources(BattleSide::ATTACKER);
+		const auto opponentResourcesKnown = child->hasCommandResourceObservation(BattleSide::DEFENDER);
 		DamageCacheAdmission admission(*actor, *child);
 		BattleExchangeVariant expected;
 		BattleExchangeVariant actual;
@@ -160,9 +213,12 @@ protected:
 				{
 					EXPECT_GT(cacheTiming.calculation.initialCalls, 0u);
 					EXPECT_EQ(cacheTiming.calculation.nativePayload.calls,
-						cacheTiming.calculation.bonusPreparation.calls);
-					EXPECT_EQ(cacheTiming.calculation.nativePayload.calls,
-						cacheTiming.calculation.luaCall.calls);
+						cacheTiming.calculation.initialCalls + cacheTiming.calculation.luckySecondCalls
+						+ cacheTiming.calculation.unluckySecondCalls);
+					EXPECT_EQ(cacheTiming.calculation.bonusPreparation.calls, 0u);
+					EXPECT_EQ(cacheTiming.calculation.bonusPreparation.nanoseconds, 0u);
+					EXPECT_EQ(cacheTiming.calculation.luaCall.calls, 0u);
+					EXPECT_EQ(cacheTiming.calculation.luaCall.nanoseconds, 0u);
 				}
 			}
 		}
@@ -170,8 +226,10 @@ protected:
 		EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), defaultRng);
 		EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
 		EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
-		EXPECT_EQ(child->getElementalRebirthSpawnUnitIds(), spawns);
-		EXPECT_EQ(child->getProjectedPrimalBurstHits().size(), bursts);
+		EXPECT_EQ((std::pair{child->getElementalAttunementMask(BattleSide::ATTACKER),
+			child->getElementalAttunementMask(BattleSide::DEFENDER)}), masks);
+		EXPECT_EQ(child->getCommandResources(BattleSide::ATTACKER), resources);
+		EXPECT_EQ(child->hasCommandResourceObservation(BattleSide::DEFENDER), opponentResourcesKnown);
 	}
 };
 }
@@ -179,7 +237,12 @@ protected:
 TEST_F(DamageCacheAdmissionTest, ConstructionIsLazyAndActorBonusFactsAreReadOnce)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto original = child->getForUpdate(incoming->unitId());
+	// A generic counting bearer proves no opaque hidden-unit provenance.
+	const auto hidden = child->getForUpdate(incoming->unitId());
+	CountingBearer unsealed(*hidden);
+	battle::CUnitStateDetached refused(hidden.get(), &unsealed);
+	EXPECT_THROW(refused.localInit(child.get()), std::invalid_argument);
+	const auto original = child->getForUpdate(braced->unitId());
 	CountingBearer counter(*original);
 	battle::CUnitStateDetached actor(original.get(), &counter);
 	actor.localInit(child.get());
@@ -203,7 +266,6 @@ TEST_F(DamageCacheAdmissionTest, ConstructionIsLazyAndActorBonusFactsAreReadOnce
 
 TEST_F(DamageCacheAdmissionTest, MainProbesMatchUncachedScoresStateAndBothRngs)
 {
-	legacyRootAdmission = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto * other = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(94), 20);
 	resetChild();
@@ -213,15 +275,16 @@ TEST_F(DamageCacheAdmissionTest, MainProbesMatchUncachedScoresStateAndBothRngs)
 
 TEST_F(DamageCacheAdmissionTest, WrongActorAndSiblingBranchFallBackToIndependentAdmission)
 {
-	legacyRootAdmission = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto actor = child->getForUpdate(incoming->unitId());
 	const auto defender = child->getForUpdate(braced->unitId());
-	DamageCacheAdmission wrongActor(*defender, *child);
+	const auto view = std::make_shared<MissingFocusRulesView>(child);
+	DamageCacheAdmission wrongActor(*defender, *view);
 	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), live);
 	const auto siblingActor = sibling->getForUpdate(incoming->unitId());
 	siblingActor->addUnitBonus({newHorizonsCombatSkills::gamblerLuckPenalty()});
-	DamageCacheAdmission wrongBranch(*siblingActor, *sibling);
+	const auto siblingView = std::make_shared<MissingFocusRulesView>(sibling);
+	DamageCacheAdmission wrongBranch(*siblingActor, *siblingView);
 	ASSERT_TRUE(wrongBranch.hasGamblerPenalty());
 	const JsonNode canonical(JsonPath::builtin("config/newHorizonsCombat"));
 	CountingRulesBattle otherRules(canonical["combat"]["heroCommands"]);
@@ -231,13 +294,17 @@ TEST_F(DamageCacheAdmissionTest, WrongActorAndSiblingBranchFallBackToIndependent
 	ASSERT_FALSE(wrongBranch.supportsFocusFire());
 	DamageCache cache;
 	cache.buildDamageCache(child, BattleSide::ATTACKER);
-	const auto expected = cache.getDamage(actor.get(), defender.get(), child);
+	const auto expected = cache.getDamage(actor.get(), defender.get(), view);
 	for(auto * hint : {&wrongActor, &wrongBranch, &wrongRules})
 	{
 		DamageCacheProbeTiming timing;
-		EXPECT_EQ(cache.getDamage(actor.get(), defender.get(), child, &timing, hint), expected);
+		EXPECT_EQ(cache.getDamage(actor.get(), defender.get(), view, &timing, hint), expected);
 		EXPECT_EQ(timing.dynamicBypasses, 0u);
 		EXPECT_EQ(timing.rootCacheHits, 1u);
+		DamageCacheProbeTiming currentTiming;
+		EXPECT_EQ(cache.getDamage(actor.get(), defender.get(), child, &currentTiming, hint), expected);
+		EXPECT_EQ(currentTiming.dynamicBypasses, 1u);
+		EXPECT_EQ(currentTiming.rootCacheHits, 0u);
 	}
 }
 
@@ -293,12 +360,19 @@ TEST_F(DamageCacheAdmissionTest, DetachedAfterAttackCannotConsumeOriginalActorFa
 
 TEST_F(DamageCacheAdmissionTest, ProtectTargetsAndReverseDpsKeepIndependentLiveChecks)
 {
+	finiteProtectRoster = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	child.reset(); // End the observation interval before native roster/action changes.
 	const auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(94), 20);
 	activate(braced->unitId());
+	const auto commandBefore = battle()->getCommandResources(BattleSide::ATTACKER);
+	const auto actionsBefore = battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound()).heroActions;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT,
 			braced->unitId(), ward->unitId())));
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, commandBefore.remaining - 1);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound()).heroActions,
+		actionsBefore - 1);
 	activate(incoming->unitId());
 	resetChild();
 	const auto actor = child->getForUpdate(incoming->unitId());
@@ -308,9 +382,24 @@ TEST_F(DamageCacheAdmissionTest, ProtectTargetsAndReverseDpsKeepIndependentLiveC
 	EXPECT_EQ(child->getHeroOrderStates(BattleSide::ATTACKER), orders);
 }
 
+TEST_F(DamageCacheAdmissionTest, CurrentV4ProtectAttemptIsUnavailableAndSpendsNoCommandOrHeroAction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	child.reset();
+	const auto * ward = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(94), 20);
+	activate(braced->unitId());
+	ASSERT_TRUE(heroCommands::isRevisedRules(battle()->getHeroCommandRules()));
+	ASSERT_FALSE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::PROTECT));
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
+	const auto actions = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makePairedHeroCommand(BattleSide::ATTACKER, HeroCommand::PROTECT, braced->unitId(), ward->unitId())));
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), resources);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), actions);
+}
+
 TEST_F(DamageCacheAdmissionTest, ParallelSiblingBatchesOwnSeparateFactsAndDamageCaches)
 {
-	legacyRootAdmission = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), live);
 	const auto leftActor = child->getForUpdate(incoming->unitId());
@@ -363,13 +452,16 @@ TEST_F(DamageCacheAdmissionTest, SavedRulesSupportIsLazyAndCachesTrueAndFalseWit
 	auto legacy = targeted["combat"]["heroCommands"];
 	legacy["rulesetVersion"].Integer() = 1;
 	legacy["commands"].Struct().erase("focusFire");
-	heroCommands::validateRules(legacy);
+	EXPECT_THROW(heroCommands::validateRules(legacy), std::runtime_error);
 	auto unknown = canonical["combat"]["heroCommands"];
 	unknown["rulesetVersion"].Integer() = 999;
 	auto malformed = unknown;
 	malformed["rulesetVersion"].String() = "future";
+	auto missingFocus = canonical["combat"]["heroCommands"];
+	missingFocus["commands"].Struct().erase("focusFire");
 	const std::vector<std::pair<JsonNode, bool>> variants{
-		{canonical["combat"]["heroCommands"], true}, {targeted["combat"]["heroCommands"], true},
+		{canonical["combat"]["heroCommands"], true}, {missingFocus, false},
+		{targeted["combat"]["heroCommands"], false},
 		{legacy, false}, {unknown, false}, {malformed, false}, {JsonNode(), false}};
 	for(const auto & [rules, expected] : variants)
 	{
@@ -526,7 +618,6 @@ TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyCharacterizesCapturedIdentityAndC
 
 TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyMainProbesMatchScoresStateAndRngsWithBothPresenceStates)
 {
-	legacyRootAdmission = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:tyraxor")));
 	const auto * other = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(94), 20);
@@ -578,15 +669,13 @@ TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyFailureDoesNotPublishAndRetryPres
 	const auto actor = child->getForUpdate(incoming->unitId());
 	CountingHeroBattle source;
 	source.attacker = attackerSideHero;
-	auto & policy = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules())
-		["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	const auto valid = policy;
-	policy["version"].Integer() = 999; // Native captured-policy validation throws.
+	// Captured JSON is validated at admission, not on the bounded damage query.
+	// Fail the actual visible-Hero query to exercise cache publication/retry.
+	source.failNextHero = true;
 	DamageCacheAdmission admission(*actor, source);
 	EXPECT_TRUE(source.queries.empty());
 	EXPECT_THROW(admission.ordinaryCreatureDamageIsStateful(), std::runtime_error);
 	EXPECT_EQ(source.queries.size(), 1u);
-	policy = valid;
 	EXPECT_TRUE(admission.ordinaryCreatureDamageIsStateful());
 	EXPECT_TRUE(admission.ordinaryCreatureDamageIsStateful());
 	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER, BattleSide::ATTACKER}));
@@ -611,11 +700,14 @@ TEST_F(DamageCacheAdmissionTest, LuckyCanonicalMainBatchRetainsEveryTargetScoreA
 {
 	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	// Native roster changes precede the immutable observation interval.
+	child.reset();
+	const auto * other = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(90), 30);
+	resetChild();
 	auto actor = child->getForUpdate(braced->unitId());
 	actor->addUnitBonus(std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
 		BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID())});
 	ASSERT_GT(child->battleGetAttackLuck(actor.get(), incoming, false), 0);
-	const auto * other = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(90), 30);
 	ASSERT_NO_FATAL_FAILURE(compareMainBatch(actor, {incoming, other, incoming, other}));
 }
 
@@ -623,6 +715,7 @@ TEST_F(DamageCacheAdmissionTest, ActualMainProbeKeepsBothFullCalculationsDamageS
 {
 	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(LIBRARY->scriptTypes()->getDamageCalculator()), nullptr);
 	auto actor = child->getForUpdate(braced->unitId());
 	auto target = child->getForUpdate(incoming->unitId());
 	actor->addUnitBonus(std::vector<Bonus>{Bonus(BonusDuration::ONE_BATTLE,
@@ -645,7 +738,16 @@ TEST_F(DamageCacheAdmissionTest, ActualMainProbeKeepsBothFullCalculationsDamageS
 	EXPECT_EQ(timing.dynamicBypasses, 1u);
 	EXPECT_EQ(timing.calculation.nativeAttackContext.calls, 2u);
 	EXPECT_EQ(timing.calculation.nativeFinalization.calls, 2u);
-	EXPECT_EQ(timing.calculation.luaCall.calls, 2u);
+	EXPECT_EQ(timing.calculation.initialCalls, 1u);
+	EXPECT_EQ(timing.calculation.luckySecondCalls, 1u);
+	EXPECT_EQ(timing.calculation.unluckySecondCalls, 0u);
+	EXPECT_EQ(timing.calculation.nativePayload.calls, 2u);
+	EXPECT_EQ(timing.calculation.nativePhysicalModifiers.calls, 2u);
+	EXPECT_EQ(timing.calculation.nativeHeroOrders.calls, 2u);
+	EXPECT_EQ(timing.calculation.bonusPreparation.calls, 0u);
+	EXPECT_EQ(timing.calculation.bonusPreparation.nanoseconds, 0u);
+	EXPECT_EQ(timing.calculation.luaCall.calls, 0u);
+	EXPECT_EQ(timing.calculation.luaCall.nanoseconds, 0u);
 	EXPECT_EQ(snapshot(), state);
 	EXPECT_EQ(gameState()->saveToMemory(), world);
 	EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), defaultRng);

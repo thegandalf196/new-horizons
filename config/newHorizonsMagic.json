@@ -10,9 +10,6 @@
 		"damageMultiplierPercent": 200,
 		"manaRefundPercent": 50
 	},
-	"heroMorale": {
-		"heroicSpiritChanceScalePercent": 100
-	},
 	"protectedAdventureBarriers": true,
 	"creatureAbilities": {
 		"rulesetVersion": 1,
@@ -112,14 +109,16 @@
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
-			]
+			],
+			"elementalTag": "air"
 		},
 		"core:airShield": {
 			"ordinaryAcquisition": false,
 			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
-			]
+			],
+			"elementalTag": "air"
 		},
 		"core:animateDead": {
 			"schools": [
@@ -241,7 +240,8 @@
 			"directDamage": {
 				"base": 130,
 				"powerCoefficient": 18
-			}
+			},
+			"elementalTag": "air"
 		},
 		"new-horizons:masterChainLightning": {
 			"schools": [
@@ -258,7 +258,8 @@
 			"directDamage": {
 				"base": 130,
 				"powerCoefficient": 18
-			}
+			},
+			"elementalTag": "air"
 		},
 		"core:clone": {
 			"schools": [
@@ -698,14 +699,20 @@
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
-			]
+			],
+			"elementalTag": "earth"
 		},
 		"core:earthquake": {
 			"schools": [
 				"new-horizons:nature"
 			],
 			"level": 3,
-			"costs": [12, 12, 12, 12],
+			"costs": [
+				12,
+				12,
+				12,
+				12
+			],
 			"earthquake": {
 				"radius": 2,
 				"duration": 3,
@@ -717,7 +724,8 @@
 				"baseDamage": 30,
 				"powerNumerator": 4,
 				"powerDivisor": 5
-			}
+			},
+			"elementalTag": "earth"
 		},
 		"core:fireElemental": {
 			"ordinaryAcquisition": false,
@@ -725,14 +733,16 @@
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
-			]
+			],
+			"elementalTag": "fire"
 		},
 		"core:fireShield": {
 			"ordinaryAcquisition": false,
 			"heroAccess": false,
 			"schools": [
 				"new-horizons:havoc"
-			]
+			],
+			"elementalTag": "fire"
 		},
 		"core:fireWall": {
 			"schools": [
@@ -749,7 +759,9 @@
 				"base": 40,
 				"powerCoefficient": 10
 			},
-			"burnGroundedFlyers": true
+			"burnGroundedFlyers": true,
+			"elementalTag": "fire",
+			"elementalAreaDamage": true
 		},
 		"core:fireball": {
 			"schools": [
@@ -765,7 +777,9 @@
 			"directDamage": {
 				"base": 25,
 				"powerCoefficient": 8
-			}
+			},
+			"elementalTag": "fire",
+			"elementalAreaDamage": true
 		},
 		"core:forceField": {
 			"ordinaryAcquisition": false,
@@ -814,7 +828,9 @@
 			"directDamage": {
 				"base": 55,
 				"powerCoefficient": 11
-			}
+			},
+			"elementalTag": "water",
+			"elementalAreaDamage": true
 		},
 		"core:haste": {
 			"ordinaryAcquisition": false,
@@ -858,7 +874,8 @@
 			"directDamage": {
 				"base": 45,
 				"powerCoefficient": 10
-			}
+			},
+			"elementalTag": "water"
 		},
 		"core:implosion": {
 			"schools": [
@@ -893,7 +910,9 @@
 			"directDamage": {
 				"base": 70,
 				"powerCoefficient": 12
-			}
+			},
+			"elementalTag": "fire",
+			"elementalAreaDamage": true
 		},
 		"core:landMine": {
 			"schools": [
@@ -909,7 +928,8 @@
 			"directDamage": {
 				"base": 60,
 				"powerCoefficient": 11
-			}
+			},
+			"elementalTag": "fire"
 		},
 		"core:lightningBolt": {
 			"schools": [
@@ -925,7 +945,8 @@
 			"directDamage": {
 				"base": 20,
 				"powerCoefficient": 15
-			}
+			},
+			"elementalTag": "air"
 		},
 		"core:magicArrow": {
 			"schools": [
@@ -940,7 +961,10 @@
 			],
 			"directDamage": {
 				"base": 20,
-				"powerCoefficient": 20
+				"powerCoefficient": 10
+			},
+			"magicArrow": {
+				"version": 1
 			}
 		},
 		"core:magicMirror": {
@@ -975,7 +999,9 @@
 			"structures": {
 				"fortificationDamagePercent": 50,
 				"destroyOrdinaryObstacles": true
-			}
+			},
+			"elementalTag": "earth",
+			"elementalAreaDamage": true
 		},
 		"core:mirth": {
 			"ordinaryAcquisition": false,
@@ -1027,28 +1053,32 @@
 			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
-			]
+			],
+			"elementalTag": "air"
 		},
 		"core:protectEarth": {
 			"ordinaryAcquisition": false,
 			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
-			]
+			],
+			"elementalTag": "earth"
 		},
 		"core:protectFire": {
 			"ordinaryAcquisition": false,
 			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
-			]
+			],
+			"elementalTag": "fire"
 		},
 		"core:protectWater": {
 			"ordinaryAcquisition": false,
 			"heroAccess": false,
 			"schools": [
 				"new-horizons:light"
-			]
+			],
+			"elementalTag": "water"
 		},
 		"core:quicksand": {
 			"rawSpellPowerPerPatch": 60,
@@ -1062,7 +1092,8 @@
 				16,
 				13,
 				13
-			]
+			],
+			"elementalTag": "earth"
 		},
 		"core:removeObstacle": {
 			"ordinaryAcquisition": false,
@@ -1176,7 +1207,8 @@
 				"new-horizons:nature"
 			],
 			"ordinaryAcquisition": false,
-			"heroAccess": false
+			"heroAccess": false,
+			"elementalTag": "earth"
 		},
 		"core:teleport": {
 			"schools": [
@@ -1243,7 +1275,8 @@
 			"schools": [
 				"new-horizons:nature",
 				"new-horizons:havoc"
-			]
+			],
+			"elementalTag": "water"
 		},
 		"core:weakness": {
 			"schools": [

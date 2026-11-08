@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.20)
+project(NHNativeDamageOracle LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+enable_testing()
+find_package(Boost CONFIG REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LUAJIT REQUIRED IMPORTED_TARGET luajit)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	message(FATAL_ERROR "This isolated oracle harness requires ELF dead-section elimination")
+endif()
+get_filename_component(NH_ROOT "../.." ABSOLUTE)
+add_executable(nhNativeDamageOracleTest NativeDamageOracleTest.cpp NativeDamageBenchmark.cpp
+	${NH_ROOT}/lib/combatScripts/NativeDamageCalculator.cpp
+	${NH_ROOT}/lib/combatScripts/NativeDamageFactors.cpp
+	${NH_ROOT}/lib/combatScripts/NativePhysicalProtection.cpp)
+target_include_directories(nhNativeDamageOracleTest PRIVATE ${NH_ROOT} ${NH_ROOT}/include ${NH_ROOT}/lib)
+target_link_libraries(nhNativeDamageOracleTest PRIVATE Boost::headers PkgConfig::LUAJIT)
+target_compile_options(nhNativeDamageOracleTest PRIVATE -ffunction-sections -fdata-sections -fno-fast-math -ffp-contract=off)
+target_link_options(nhNativeDamageOracleTest PRIVATE -Wl,--gc-sections)
+add_test(NAME nhNativeDamageOracleTest COMMAND nhNativeDamageOracleTest ${NH_ROOT})
+set_tests_properties(nhNativeDamageOracleTest PROPERTIES TIMEOUT 120 LABELS "battle;damage;lua-oracle")

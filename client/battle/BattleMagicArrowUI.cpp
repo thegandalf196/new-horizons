@@ -14,7 +14,6 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
-#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/effects/Effect.h"
 
@@ -39,12 +38,8 @@ std::optional<spells::effects::SpellEffectValue> previewArrowChange(
 	std::optional<spells::effects::SpellEffectValue> result;
 	mechanics->forEachEffect([&](const spells::effects::Effect & effect)
 	{
-		// Magic Arrow currently has one directDamage effect. Stop at that
-		// effect so adding another spell effect cannot double-count this
-		// single-hit preview.
 		if(effect.name != "directDamage")
 			return false;
-
 		const auto effectTarget = effect.transformTarget(mechanics.get(), aim, canonicalTarget);
 		result = effect.getHealthChange(mechanics.get(), effectTarget);
 		return true;
@@ -52,158 +47,146 @@ std::optional<spells::effects::SpellEffectValue> previewArrowChange(
 	return result;
 }
 
-int targetManaCost(const CBattleInfoCallback & battle, const CGHeroInstance & hero,
-	const CSpell & spell, const battle::Unit & target, bool followup, int overcharge)
+struct ArrowSelection
 {
-	spells::BattleCast cast(&battle, &hero, spells::Mode::HERO, &spell);
-	cast.setMetamagicFollowup(followup);
-	cast.setMetamagicTargetUnitId(target.unitId());
-	cast.setOvercharge(overcharge);
-	const auto mechanics = spell.battleMechanics(&cast);
-	spells::Target aim;
-	aim.emplace_back(&target, target.getPosition());
-	return mechanics->getTargetAwareManaCost(aim);
-}
+	std::weak_ptr<BattleInterface> owner;
+	BattleID battleId;
+	ObjectInstanceID heroId;
+	uint32_t targetUnitId;
+	SpellID spellId;
+	bool metamagicFollowup;
+	uint64_t castingSession;
 
-int maximumTargetOvercharge(const CBattleInfoCallback & battle, const CGHeroInstance & hero,
-	const CSpell & spell, const battle::Unit & target, bool followup, int ordinaryBase, int formulaMaximum)
-{
-	spells::BattleCast cast(&battle, &hero, spells::Mode::HERO, &spell);
-	cast.setMetamagicFollowup(followup);
-	const auto mechanics = spell.battleMechanics(&cast);
-	const auto * profile = mechanics->getMetamagicCastProfile();
-	if(!profile)
-		return static_cast<int>(std::min<int64_t>(formulaMaximum,
-			std::max<int64_t>(0, hero.getManaAvailable() - ordinaryBase)));
-	const std::array<uint32_t, 1> recipients{target.unitId()};
-	const auto counts = newHorizonsMetamagic::manaTargetCounts(profile, battle, recipients);
-	return std::max(0, newHorizonsMetamagic::maximumAffordableOvercharge(
-		hero.getManaAvailable(), ordinaryBase, formulaMaximum, profile->perks, counts.qualifying, counts.affected,
-		profile->singularityReached));
-}
+	struct Current
+	{
+		std::shared_ptr<BattleInterface> owner;
+		std::shared_ptr<CPlayerBattleCallback> callback;
+		const CGHeroInstance * hero;
+		const battle::Unit * target;
+		const CSpell * spell;
+	};
+
+	std::optional<Current> current() const
+	{
+		const auto active = owner.lock();
+		if(!active || CPlayerInterface::battleInt != active || !active->curInt
+			|| active->getBattleID() != battleId || !active->curInt->cb || !active->actionsController
+			|| active->actionsController->getCastingSession() != castingSession
+			|| !active->actionsController->heroSpellcastingModeActive())
+			return std::nullopt;
+		const auto callback = active->curInt->cb->getBattle(battleId);
+		const auto * hero = active->currentHero();
+		const auto * spell = spellId.toSpell();
+		if(!callback || !callback->getBattle() || !hero || hero->id != heroId
+			|| !spell || spellId != SpellID(SpellID::MAGIC_ARROW)
+			|| !newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), spellId))
+			return std::nullopt;
+		const auto * target = callback->battleGetUnitByID(targetUnitId);
+		if(!target || !target->alive())
+			return std::nullopt;
+		return Current{active, callback, hero, target, spell};
+	}
+
+	MagicArrowOverchargeValues evaluate(int overcharge) const
+	{
+		MagicArrowOverchargeValues values;
+		values.overcharge = overcharge;
+		values.legal = false;
+		values.unavailableReason = "Casting context changed. Cancel and choose again.";
+		const auto state = current();
+		if(!state)
+			return values;
+		const auto & [active, callback, hero, target, spell] = *state;
+		const auto & rules = callback->getBattle()->getMagicRules();
+		const int powerForCap = hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+		values.maximumOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(rules, spellId,
+			powerForCap, newHorizonsMagic::magicArrowOverchargeModifiers(hero));
+		values.availableMana = hero->getManaAvailable();
+		values.targetDescription = "Target: " + std::to_string(target->getCount()) + " "
+			+ target->unitType()->getNamePluralTranslated();
+		values.magicResistancePercent = std::clamp(target->magicResistance(), 0, 100);
+		if(overcharge < 0 || overcharge > values.maximumOvercharge)
+		{
+			values.unavailableReason = "This Overcharge level is no longer legal.";
+			return values;
+		}
+
+		spells::BattleCast legality(callback.get(), hero, spells::Mode::HERO, spell);
+		legality.setMetamagicFollowup(metamagicFollowup);
+		legality.setMetamagicTargetUnitId(targetUnitId);
+		legality.setOvercharge(overcharge);
+		const auto mechanics = spell->battleMechanics(&legality);
+		battle::Target targetCheck;
+		targetCheck.emplace_back(target, target->getPosition());
+		spells::detail::ProblemImpl legalityProblem;
+		values.legal = mechanics->canBeCast(legalityProblem)
+			&& mechanics->canBeCastAt(targetCheck, legalityProblem);
+		values.totalMana = mechanics->getTargetAwareManaCost(targetCheck);
+		legality.setOvercharge(0);
+		values.baseMana = spell->battleMechanics(&legality)->getTargetAwareManaCost(targetCheck);
+		values.costAvailable = true;
+		values.additionalMana = values.totalMana - values.baseMana;
+		values.affordable = values.totalMana >= 0 && values.totalMana <= values.availableMana;
+		values.unavailableReason = !values.affordable ? "Not enough Mana."
+			: !values.legal ? "Casting is no longer available. Cancel and choose again." : "";
+
+		const auto baseChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, 0);
+		const auto selectedChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, overcharge);
+		if(!baseChange || !selectedChange)
+			return values;
+		values.previewAvailable = true;
+		values.baseDamage = std::max<int64_t>(0, -baseChange->hpDelta);
+		values.projectedDamage = std::max<int64_t>(0, -selectedChange->hpDelta);
+		values.baseKills = static_cast<int>(std::clamp<int64_t>(-baseChange->unitsDelta, 0, target->getCount()));
+		values.projectedKills = static_cast<int>(std::clamp<int64_t>(-selectedChange->unitsDelta, 0, target->getCount()));
+		return values;
+	}
+
+	bool confirm(const BattleAction & pending, int overcharge) const
+	{
+		const auto state = current();
+		const auto values = evaluate(overcharge);
+		if(!state || !values.legal || !values.affordable)
+			return false;
+		BattleAction action = pending;
+		action.target.clear();
+		action.aimToUnit(state->target);
+		action.spellOvercharge = overcharge;
+		state->owner->curInt->cb->battleMakeSpellAction(battleId, action);
+		if(state->owner->actionsController)
+			state->owner->actionsController->endCastingSpell();
+		return true;
+	}
+};
 }
 
 void BattleInterface::installMagicArrowOverchargeUI()
 {
 	if(!actionsController)
 		return;
-
 	actionsController->setMagicArrowOverchargeFactory(
-		[this](const BattleAction & pending, const BattleHex & targetHex, const CStack * initialTarget)
+		[this](const BattleAction & pending, const BattleHex &, const CStack * initialTarget)
 			-> std::optional<MagicArrowOverchargeContext>
 		{
-			if(!curInt || !curInt->cb || !initialTarget)
-				return std::nullopt;
-
-			const auto callback = curInt->cb->getBattle(getBattleID());
-			if(!callback || !callback->getBattle())
-				return std::nullopt;
-
-			const auto * spell = pending.spell.toSpell();
 			const auto * hero = currentHero();
-			if(!spell || spell->id != SpellID(SpellID::MAGIC_ARROW) || !hero
-				|| !newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), spell->id))
+			if(!hero || !initialTarget || !curInt || !curInt->cb)
 				return std::nullopt;
-
-			const uint32_t targetUnitID = initialTarget->unitId();
-			const BattleID localBattleID = getBattleID();
-			const int32_t spellPower = hero->getEffectPower(spell);
-			const int formulaMaximumOvercharge = newHorizonsMagic::magicArrowMaxOvercharge(
-				callback->getBattle()->getMagicRules(), spell->id, spellPower,
-				newHorizonsMagic::magicArrowOverchargeModifiers(hero));
-			const bool metamagicFollowup = pending.metamagicFollowup;
-			const int baseMana = callback->battleGetSpellCostBreakdown(spell, hero, 1, metamagicFollowup).finalCost;
-			const int maximumOvercharge = maximumTargetOvercharge(*callback, *hero, *spell,
-				*initialTarget, metamagicFollowup, baseMana, formulaMaximumOvercharge);
-
-			// The shared helper discounts the complete cost, including Overcharge.
-			// Its affordability search performs only bounded scalar arithmetic.
-			const auto evaluate = [this, localBattleID, targetUnitID, spell, maximumOvercharge,
-				metamagicFollowup]
-				(int overcharge)
-				-> MagicArrowOverchargeValues
-			{
-				MagicArrowOverchargeValues values;
-				values.maximumOvercharge = maximumOvercharge;
-				values.overcharge = std::clamp(overcharge, 0, maximumOvercharge);
-
-				if(!curInt || !curInt->cb || curInt->cb->getBattle(localBattleID) == nullptr)
-					return values;
-				const auto callback = curInt->cb->getBattle(localBattleID);
-				const auto * hero = currentHero();
-				if(!callback || !callback->getBattle() || !hero)
-					return values;
-				const auto * target = callback->battleGetUnitByID(targetUnitID);
-				if(!target)
-					return values;
-
-				values.baseMana = targetManaCost(*callback, *hero, *spell, *target, metamagicFollowup, 0);
-				values.totalMana = targetManaCost(*callback, *hero, *spell, *target, metamagicFollowup, values.overcharge);
-				values.additionalMana = values.totalMana - values.baseMana;
-				values.availableMana = hero->getManaAvailable();
-				values.affordable = values.totalMana <= values.availableMana;
-				values.targetDescription = "Target: " + std::to_string(target->getCount()) + " "
-					+ target->unitType()->getNamePluralTranslated();
-				values.magicResistancePercent = std::clamp(target->magicResistance(), 0, 100);
-
-				spells::BattleCast legality(callback.get(), hero, spells::Mode::HERO, spell);
-				legality.setMetamagicFollowup(metamagicFollowup);
-				legality.setMetamagicTargetUnitId(targetUnitID);
-				legality.setOvercharge(values.overcharge);
-				spells::detail::ProblemImpl legalityProblem;
-				battle::Target targetCheck;
-				targetCheck.emplace_back(target, target->getPosition());
-				values.legal = spell->battleMechanics(&legality)->canBeCastAt(targetCheck, legalityProblem);
-
-
-				const auto baseChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, 0);
-				const auto selectedChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, values.overcharge);
-				if(!baseChange || !selectedChange)
-					return values;
-				values.previewAvailable = true;
-				values.baseDamage = std::max<int64_t>(0, -baseChange->hpDelta);
-				values.projectedDamage = std::max<int64_t>(0, -selectedChange->hpDelta);
-				values.baseKills = static_cast<int>(std::clamp<int64_t>(-baseChange->unitsDelta, 0, target->getCount()));
-				values.projectedKills = static_cast<int>(std::clamp<int64_t>(-selectedChange->unitsDelta, 0, target->getCount()));
-				return values;
-			};
-
+			const ArrowSelection selection{CPlayerInterface::battleInt, getBattleID(), hero->id,
+				initialTarget->unitId(), pending.spell, pending.metamagicFollowup, actionsController->getCastingSession()};
+			if(!selection.current())
+				return std::nullopt;
 			MagicArrowOverchargeContext context;
 			context.anchor = ENGINE->getCursorPosition();
-			context.initial = evaluate(0);
-			context.evaluate = evaluate;
-			context.confirm = [this, pending, localBattleID, targetUnitID, spell, formulaMaximumOvercharge,
-				metamagicFollowup](int overcharge)
-				-> bool
+			context.initial = selection.evaluate(0);
+			context.evaluate = [selection](int overcharge) { return selection.evaluate(overcharge); };
+			context.confirm = [selection, pending](int overcharge) { return selection.confirm(pending, overcharge); };
+			context.cancel = [selection]
 			{
-				if(!curInt || !curInt->cb || curInt->cb->getBattle(localBattleID) == nullptr)
-					return false;
-				const auto callback = curInt->cb->getBattle(localBattleID);
-				const auto * hero = currentHero();
-				if(!callback || !callback->getBattle() || !hero || overcharge < 0 || overcharge > formulaMaximumOvercharge
-					|| !newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), spell->id))
-					return false;
-				const auto * target = callback->battleGetUnitByID(targetUnitID);
-				if(!target)
-					return false;
-
-				const int totalCost = targetManaCost(*callback, *hero, *spell, *target, metamagicFollowup, overcharge);
-				if(totalCost < 0 || totalCost > hero->getManaAvailable())
-					return false;
-
-				BattleAction action = pending;
-				action.target.clear();
-				action.aimToUnit(target);
-				action.spellOvercharge = overcharge;
-				curInt->cb->battleMakeSpellAction(localBattleID, action);
-				if(actionsController)
-					actionsController->endCastingSpell();
-				return true;
-			};
-			context.cancel = [this]
-			{
-				if(actionsController)
-					actionsController->endCastingSpell();
+				if(const auto active = selection.owner.lock(); active && CPlayerInterface::battleInt == active
+					&& active->getBattleID() == selection.battleId && active->currentHero()
+					&& active->currentHero()->id == selection.heroId && active->actionsController
+					&& active->actionsController->getCastingSession() == selection.castingSession)
+					active->actionsController->endCastingSpell();
 			};
 			return context;
 		});

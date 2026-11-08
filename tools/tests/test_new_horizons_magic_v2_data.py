@@ -78,7 +78,8 @@ class MagicV2DataTest(unittest.TestCase):
             row.pop('restoration', None)
             for key in ('propagationLimit', 'implosion', 'ignoreInterveningBarriers',
                         'temporaryMagicalEffectsOnly', 'schoolRankDurations',
-                        'burnGroundedFlyers', 'theChosen', 'focusMagic', 'slow', 'livingArmor'):
+                        'burnGroundedFlyers', 'theChosen', 'focusMagic', 'slow', 'livingArmor',
+                        'magicArrow', 'elementalTag', 'elementalAreaDamage'):
                 row.pop(key, None)
         self.rules['spells'] = {key: row for key, row in self.rules['spells'].items()
                                 if 'variant' not in row}
@@ -110,10 +111,10 @@ class MagicV2DataTest(unittest.TestCase):
             'damageMultiplierPercent': 200, 'manaRefundPercent': 50,
         }
         self.assertEqual(self.v3_rules['heroLuck'], expected)
-        self.assertEqual(self.v3_rules['heroMorale'], {'heroicSpiritChanceScalePercent': 100})
+        self.assertNotIn('heroMorale', self.v3_rules)
         module = load('Mods/new-horizons/mod.json')['settings']['magic']['newHorizons']
         self.assertEqual(module['heroLuck'], expected)
-        self.assertEqual(module['heroMorale'], self.v3_rules['heroMorale'])
+        self.assertNotIn('heroMorale', module)
         # Reuse established curves rather than silently creating independent dice.
         self.assertEqual(load('config/newHorizonsCombat.json')['combat']['goodLuckChance'],
                          list(range(4, 41, 4)))
@@ -121,6 +122,8 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertEqual(self.v3_rules['morale']['diceSize'], 100)
 
     def test_hero_action_blocks_are_optional_v3_only_and_structurally_closed(self):
+        # Historical optional chance metadata is absent from the current default.
+        self.v3_rules['heroMorale'] = {'heroicSpiritChanceScalePercent': 100}
         validator = Draft4Validator(self.v3, registry=self.registry)
         old = copy.deepcopy(self.v3_rules)
         for block in ('heroLuck', 'heroMorale'):
@@ -142,6 +145,8 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertNotIn('heroMorale', self.old_rules)
 
     def test_hero_action_values_have_strict_integer_bounds(self):
+        # Historical optional chance metadata is absent from the current default.
+        self.v3_rules['heroMorale'] = {'heroicSpiritChanceScalePercent': 100}
         validator = Draft4Validator(self.v3, registry=self.registry)
         for block in ('heroLuck', 'heroMorale'):
             for field in self.v3_rules[block]:
@@ -530,6 +535,8 @@ class MagicV2DataTest(unittest.TestCase):
         self.assertFalse(validator.is_valid(changed))
 
     def test_historical_projections_remove_later_clauses_without_mutating_source(self):
+        # Exercise the retained optional schema using an explicit historical field.
+        self.v3_rules['heroMorale'] = {'heroicSpiritChanceScalePercent': 100}
         current = copy.deepcopy(self.v3_rules)
         old = legacy_rules(current)
         self.old_validator.validate(old)
@@ -625,7 +632,7 @@ class MagicV2DataTest(unittest.TestCase):
 
     def test_warcasting_is_optional_but_strictly_boolean_and_v2_only(self):
         changed = copy.deepcopy(self.rules)
-        changed.pop('warcasting')
+        changed.pop('warcasting', None)
         self.validator.validate(changed)
         for value in (False, True):
             changed['warcasting'] = value

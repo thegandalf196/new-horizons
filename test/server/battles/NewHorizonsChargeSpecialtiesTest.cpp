@@ -4,6 +4,9 @@
 #include "../../../server/battles/BattleActionProcessor.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/NewHorizonsChargeSpecialties.h"
+#include "../../../lib/battle/NewHorizonsSpecialtyEvents.h"
+#include "../../../lib/battle/BattleInfo.h"
+#include "../../mock/mock_battle_Unit.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/bonuses/BonusSelector.h"
 #include "../../../lib/GameLibrary.h"
@@ -79,13 +82,14 @@ protected:
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 	}
-	void prepare(bool shiva = false, bool upgraded = false)
+	void prepare(bool shiva = false, bool upgraded = false,
+		const char * heroOverride = nullptr, const char * creatureOverride = nullptr)
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
-			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(shiva ? "core:shiva" : "core:tyris")), PlayerColor(0)).heroExperience(0)
-			.heroGarrison({{creatureByName(shiva ? (upgraded ? "core:thunderbird" : "core:roc")
-				: (upgraded ? "core:champion" : "core:cavalier")), 20}})
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(heroOverride ? heroOverride : (shiva ? "core:shiva" : "core:tyris"))), PlayerColor(0)).heroExperience(0)
+			.heroGarrison({{creatureByName(creatureOverride ? creatureOverride : (shiva ? (upgraded ? "core:thunderbird" : "core:roc")
+				: (upgraded ? "core:champion" : "core:cavalier"))), 20}})
 			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(1)).heroExperience(0)
 			.heroGarrison({{creatureByName("core:walkingDead"), 200}});
 		startWithMap(std::move(builder)); server.gameState = gameState(); observed.gameState = gameState();
@@ -618,5 +622,138 @@ TEST_F(NewHorizonsChargeSpecialtiesTest, FutureActorReusesExistingApproachForCha
 	EXPECT_GT(healthBefore - target->getAvailableHealth(), noFlight);
 	EXPECT_EQ(actor->getPosition(), origin);
 	EXPECT_EQ(victim->getAvailableHealth(), healthBefore);
+}
+#endif
+
+#if ENABLE_BATTLE_AI
+namespace
+{
+// A foreign provider with ordinary valid native data. Only ownership metadata
+// may be read when no relevant owner exists; family bonus work must stay unused.
+class EligibilityProbe final : public testing::NiceMock<UnitMock>
+{
+public:
+	mutable int siegeQueries = 0;
+	explicit EligibilityProbe(const CStack & source)
+	{
+		using namespace testing;
+		ON_CALL(*this, unitSide()).WillByDefault(Return(source.unitSide()));
+		ON_CALL(*this, isHypnotized()).WillByDefault(Return(false));
+		ON_CALL(*this, alive()).WillByDefault(Return(source.alive()));
+		ON_CALL(*this, isGhost()).WillByDefault(Return(source.isGhost()));
+		ON_CALL(*this, unitSlot()).WillByDefault(Return(source.unitSlot()));
+		ON_CALL(*this, unitType()).WillByDefault(Return(source.unitType()));
+		ON_CALL(*this, creatureId()).WillByDefault(Return(source.creatureId()));
+		ON_CALL(*this, creatureIndex()).WillByDefault(Return(source.creatureIndex()));
+		ON_CALL(*this, unitId()).WillByDefault(Return(source.unitId()));
+		ON_CALL(*this, getPosition()).WillByDefault(Return(source.getPosition()));
+		ON_CALL(*this, getTreeVersion()).WillByDefault(Return(source.getTreeVersion()));
+		ON_CALL(*this, getAllBonuses(_, _)).WillByDefault(Invoke(
+			[this, &source](const CSelector & selector, const std::string & key)
+			{
+				Bonus sentinel; sentinel.type = BonusType::SIEGE_WEAPON;
+				if(selector(&sentinel)) ++siegeQueries;
+				return source.getAllBonuses(selector, key);
+			}));
+		ON_CALL(*this, getUnstackedBonuses(_)).WillByDefault(Invoke(
+			[&source](const CSelector & selector) { return source.getUnstackedBonuses(selector); }));
+	}
+};
+class AbsentHeroEligibilityView final : public BattleInfo
+{
+	const BattleInfo & source;
+public:
+	explicit AbsentHeroEligibilityView(const BattleInfo & source) : BattleInfo(source.cb), source(source) {}
+	PlayerColor getSidePlayer(BattleSide side) const override { return source.getSidePlayer(side); }
+	const CGHeroInstance * getSideHero(BattleSide) const override { return nullptr; }
+};
+static_assert(!std::is_abstract_v<AbsentHeroEligibilityView>);
+void expectUnrelatedFeatures(const CBattleInfoCallback & callback, EligibilityProbe & actor, const battle::Unit & target)
+{
+	BattleAttackInfo attack(&actor, &target, 4, false); attack.voluntaryFlightDistance = 4;
+	EXPECT_EQ(newHorizonsSpecialtyEvents::sorshaReduction(callback, actor), 0);
+	EXPECT_EQ(newHorizonsSpecialtyEvents::firstStrikeFinalMultiplier(callback, attack), 100);
+	EXPECT_FALSE(newHorizonsSpecialtyEvents::requiresTravelReceipt(callback, actor));
+	EXPECT_EQ(charge::stormWingsDefenseIgnorePercent(callback, attack), 0);
+	EXPECT_TRUE(charge::lanceFormation(callback, attack).add.empty());
+	EXPECT_EQ(actor.siegeQueries, 0);
+}
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, AbsentOwnerForeignProviderSkipsUnrelatedFamilyQueries)
+{
+	prepare(true);
+	EligibilityProbe probe(*actor);
+	AbsentHeroEligibilityView view(*battle());
+	EXPECT_EQ(view.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), VisibleHeroPolicy::Knowledge::KNOWN_ABSENT);
+	expectUnrelatedFeatures(view, probe, *victim);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, WrongCanonicalOwnerSkipsUnrelatedFamilyQueriesAndKeepsStateAndRng)
+{
+	prepare(false, false, "core:aenain", "core:airElemental");
+	EligibilityProbe probe(*actor);
+	const auto sourceState = actor->save(), targetState = victim->save();
+	auto * rng = dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator());
+	ASSERT_NE(rng, nullptr); const auto before = chargeAIWire(*rng);
+	expectUnrelatedFeatures(*battle(), probe, *victim);
+	EXPECT_EQ(actor->save(), sourceState); EXPECT_EQ(victim->save(), targetState);
+	EXPECT_EQ(chargeAIWire(*rng), before);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, HiddenOwnerSkipsUnrelatedFamilyQueriesWithoutRevealingShiva)
+{
+	prepare(true); EligibilityProbe probe(*actor);
+	CPlayerBattleCallback view(battle(), PlayerColor(1));
+	ASSERT_NE(view.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+	expectUnrelatedFeatures(view, probe, *victim);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, HypnotizedOwnerUsesEffectiveControllerBeforeFamilyAdmission)
+{
+	prepare(true); EligibilityProbe probe(*actor);
+	ON_CALL(probe, isHypnotized()).WillByDefault(testing::Return(true));
+	ASSERT_EQ(battle()->battleGetOwner(&probe), PlayerColor(1));
+	expectUnrelatedFeatures(*battle(), probe, *victim);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, ApplicableShivaStillRunsOrdinaryAdmissionAndKeepsEffects)
+{
+	prepare(true); EligibilityProbe probe(*actor);
+	BattleAttackInfo attack(&probe, victim, 4, false); attack.voluntaryFlightDistance = 4;
+	EXPECT_EQ(charge::stormWingsDefenseIgnorePercent(*battle(), attack), 25);
+	EXPECT_GT(probe.siegeQueries, 0);
+	attack.retaliation = true;
+	EXPECT_EQ(charge::stormWingsDefenseIgnorePercent(*battle(), attack), 0);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, ApplicableTyrisRetainsCappedDefenseAndForgedMarkerRejection)
+{
+	prepare(); EligibilityProbe probe(*actor); BattleAttackInfo attack(&probe, victim, 7, false);
+	const auto result = charge::lanceFormation(*battle(), attack);
+	ASSERT_EQ(result.add.size(), 1u); EXPECT_EQ(result.add.front().val, 5);
+	EXPECT_GT(probe.siegeQueries, 0);
+	auto forged = result.add.front(); forged.source = BonusSource::OTHER;
+	EXPECT_THROW(charge::isLanceFormation(&forged), std::runtime_error);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, ApplicableSorshaRetainsCapturedReductionAndOrdinaryAdmission)
+{
+	prepare(false, false, "core:sorsha", "core:swordsman"); EligibilityProbe probe(*actor);
+	const auto expected = attackerSideHero->getPrimaryGrowthRules()["additionalSpecialties"]
+		["ordinaryCreatureSpecialties"]["shieldAndSwordPhysicalReductionPercent"].Integer();
+	ASSERT_GT(expected, 0);
+	EXPECT_EQ(newHorizonsSpecialtyEvents::sorshaReduction(*battle(), probe), expected);
+	EXPECT_GT(probe.siegeQueries, 0);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, ApplicableGretchinRetainsFirstStrikeAndReservedReceiptValidation)
+{
+	prepare(false, false, "core:gretchin", "core:goblin"); EligibilityProbe probe(*actor);
+	const auto expected = attackerSideHero->getPrimaryGrowthRules()["additionalSpecialties"]
+		["ordinaryCreatureSpecialties"]["goblinFrenzyDamagePercent"].Integer();
+	ASSERT_GT(expected, 0); BattleAttackInfo attack(&probe, victim, 0, false);
+	EXPECT_EQ(newHorizonsSpecialtyEvents::firstStrikeFinalMultiplier(*battle(), attack), 100 + expected);
+	EXPECT_GT(probe.siegeQueries, 0);
+	Bonus forged; forged.stacking = "new-horizons:ordinary-creature-specialty:core:gretchin:goblinFrenzySpent";
+	EXPECT_THROW(newHorizonsSpecialtyEvents::isGoblinFrenzySpent(&forged), std::runtime_error);
+}
+TEST_F(NewHorizonsChargeSpecialtiesTest, ApplicableKorbacRetainsTravelRequirementAndOrdinaryAdmission)
+{
+	prepare(false, false, "core:korbac", "core:serpentFly"); EligibilityProbe probe(*actor);
+	EXPECT_TRUE(newHorizonsSpecialtyEvents::requiresTravelReceipt(*battle(), probe));
+	EXPECT_GT(probe.siegeQueries, 0);
 }
 #endif

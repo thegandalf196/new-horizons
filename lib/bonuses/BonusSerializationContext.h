@@ -15,6 +15,7 @@ struct BonusSerializationContext
 	bool ordinaryCombatSpecialtiesSupported = false;
 	bool extendedOrdinarySpecialtiesSupported = false;
 	bool passiveFactionSkillsSupported = false;
+	bool nativeRulesRedesignSupported = false;
 
 	template<typename Handler>
 	static BonusSerializationContext fromHandler(const Handler & handler)
@@ -25,6 +26,7 @@ struct BonusSerializationContext
 			handler.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES),
 			handler.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES),
 			handler.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES),
-			handler.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS)};
+			handler.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS),
+			handler.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)};
 	}
 };

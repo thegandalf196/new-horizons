@@ -29,6 +29,37 @@ installers. Do not select Data itself, an installer, or a compressed archive.
 No Qt launcher, recommended mods, server/host/address setup or separate server
 process is needed for the normal New Horizons single-player route.
 
+OPTIONAL FASTER COMBAT AI
+-------------------------
+Close the game. Open this folder in File Explorer:
+  %LOCALAPPDATA%\HeroesIII-NewHorizons\config
+Back up settings.json, then edit its existing "ai" object to include:
+
+  "ai": {
+    "combatAlliedAI": "BattleAIQuick",
+    "combatNeutralAI": "BattleAIQuick",
+    "combatEnemyAI": "BattleAIQuick"
+  }
+
+Keep all other settings and existing ai entries. Add commas where required;
+there must be only one top-level "ai" object. If settings.json does not exist,
+create it with this complete content:
+
+{
+  "ai": {
+    "combatAlliedAI": "BattleAIQuick",
+    "combatNeutralAI": "BattleAIQuick",
+    "combatEnemyAI": "BattleAIQuick"
+  }
+}
+Start the game using Play-New-Horizons.cmd.
+
+combatAlliedAI controls your Quick Combat and visible Autofight.
+combatNeutralAI controls neutral creatures. combatEnemyAI controls the
+battle controller of Nullkiller2 AI players. Set only the keys you want.
+BattleAI is the default full-search profile; restore that value to opt out.
+BattleAIQuick is experimental: faster search can change decisions and casualties.
+
 DISK SPACE, SAFETY AND PRIVATE FILES
 ----------------------------------
 A first import needs free space for a full additional copy of Data, Maps and
@@ -58,8 +89,8 @@ New saves use a separate New Horizons directory:
 Earlier %LOCALAPPDATA%\HeroesIII-NewHorizons\Saves files are not moved or
 deleted.
 
-SAVE COMPATIBILITY - 0.88.2
-Start a new game. This version cannot load saves from 0.88.1 or older development
+SAVE COMPATIBILITY - 0.89.0
+Start a new game. This version cannot load saves from 0.88.2 or older release/development
 builds, and no save conversion is provided. Keep your old save files and backups;
 use the matching older version to continue those games. Copying an old save into
 the new directory does not make it compatible.

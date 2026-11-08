@@ -1,5 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../battle/NewHorizonsPassiveSpecialties.h"
+#include "../battle/NewHorizonsCommandResources.h"
 #include "NewHorizonsMetamagicPoints.h"
 #include "NewHorizonsMetamagicEntry.h"
 #include "../CStack.h"
@@ -45,7 +47,8 @@ void echo(ServerCallback & server, const CBattleInfoCallback & callback, SpellID
 	for(const auto & [id, original] : originals)
 	{
 		const auto * unit = callback.battleGetUnitByID(id);
-		if(!unit || !unit->alive() || unit->isGhost() || echoDamage(original) == 0)
+		if(!unit || !unit->alive() || unit->isGhost() || echoDamage(original) == 0
+			|| newHorizonsPassiveSpecialties::magicalDamageImmune(*unit))
 			continue;
 		auto state = unit->acquireState();
 		BattleStackAttacked hit;
@@ -53,7 +56,7 @@ void echo(ServerCallback & server, const CBattleInfoCallback & callback, SpellID
 		hit.attackerID = std::numeric_limits<uint32_t>::max();
 		hit.spellID = spell;
 		hit.flags = BattleStackAttacked::SPELL_EFFECT | BattleStackAttacked::SECONDARY;
-		hit.damageAmount = echoDamage(original);
+		hit.damageAmount = newHorizonsCommand::mitigateIncomingDamage(callback, unit, echoDamage(original));
 		CStack::prepareAttacked(hit, *server.getRNG(), state, false, false, battle::DamageProvenance::SPELL);
 		StacksInjured packet;
 		packet.battleID = callback.getBattle()->getBattleID();

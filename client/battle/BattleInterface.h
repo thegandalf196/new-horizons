@@ -142,6 +142,7 @@ class BattleInterface
 
 	void playIntroSoundAndUnlockInterface();
 	void onIntroSoundPlayed();
+	void queueSpellAffectedAnimations(const BattleSpellCast & receipt, const CSpell * spell);
 	void installMagicArrowOverchargeUI();
 	void installShadowGiftUI();
 	void installSelectiveDispelUI();
@@ -157,7 +158,6 @@ public:
 		cureAfflictionPresenter = std::move(presenter);
 	}
 	/// Show an authoritative immediate Order continuation through the ordinary chooser.
-	void presentPendingHeroOrderChoice();
 	/// copy of initial armies (for result window)
 	const CCreatureSet *army1;
 	const CCreatureSet *army2;
@@ -259,9 +259,11 @@ public:
 
 	void displayBattleLog(const std::vector<MetaString> & battleLog);
 
-	void displaySpellAnimationQueue(const CSpell * spell, const SpellAnimationQueue & q, const BattleHex & destinationTile, bool isHit);
+	void displaySpellAnimationQueue(const CSpell * spell, const SpellAnimationQueue & q, const BattleHex & destinationTile, bool isHit,
+		const AnimationPath & resourceOverride = AnimationPath());
 	void displaySpellCast(const CSpell * spell, const BattleHex & destinationTile); //displays spell`s cast animation
-	void displaySpellEffect(const CSpell * spell, const BattleHex & destinationTile); //displays spell`s affected animation
+	void displaySpellEffect(const CSpell * spell, const BattleHex & destinationTile,
+		const AnimationPath & resourceOverride = AnimationPath()); //displays spell`s affected animation
 	void displaySpellHit(const CSpell * spell, const BattleHex & destinationTile); //displays spell`s affected animation
 
 	void endAction(const BattleAction & action);

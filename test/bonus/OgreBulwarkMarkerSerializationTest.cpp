@@ -230,7 +230,7 @@ TEST_F(OgreBulwarkMarkerSerializationTest, ChangeListsCommanderAndRewardConfigur
 		currentRoundtrip(reward);
 	}
 }
-TEST_F(OgreBulwarkMarkerSerializationTest, ReplayUsesDeclaredCodecAndRefusesMislabeledHistoricalBonus)
+TEST_F(OgreBulwarkMarkerSerializationTest, CurrentReplayRoundTripsAndHistoricalOriginsRejectBeforeBonusDecode)
 {
 	startGame();
 	for(const int captured : {0, 1})
@@ -249,7 +249,11 @@ TEST_F(OgreBulwarkMarkerSerializationTest, ReplayUsesDeclaredCodecAndRefusesMisl
 		for(const auto epoch : oldEpochs)
 		{
 			payload.version = epoch;
-			expectMarkerRefusal([&] { ReplayPackSerializer::read(payload, gameState().get()); });
+			const auto before = payload;
+			try { ReplayPackSerializer::read(payload, gameState().get()); FAIL() << "Unsupported replay origin must reject"; }
+			catch(const std::runtime_error & error)
+			{ EXPECT_EQ(std::string(error.what()), "Unsupported replay payload encoding version"); }
+			EXPECT_EQ(payload, before);
 		}
 	}
 }

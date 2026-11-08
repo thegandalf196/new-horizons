@@ -201,42 +201,14 @@ void HypotheticBattle::HypotheticServerCallback::apply(StacksInjured & pack)
 		snapshot->freezeDamageScoringBonusSnapshot();
 		plagueHits.push_back({snapshot, owner->battleGetOwner(target.get()), hit.damageAmount});
 	}
-	struct PendingRebirth
-	{
-		newHorizonsElementalRebirth::DeathSnapshot snapshot;
-		bool cloneKilled = false;
-		bool nativeRebirth = false;
-	};
-	std::map<uint32_t, PendingRebirth> pendingRebirths;
-	for(const auto & hit : pack.stacks)
-	{
-		auto unit = owner->getForUpdate(hit.stackAttacked);
-		if(!unit || !unit->alive() || pendingRebirths.contains(hit.stackAttacked))
-			continue;
-		auto snapshot = owner->captureElementalRebirthSource(*unit);
-		if(!snapshot)
-			continue;
-		// Accepted destruction flags encode the resolved same-unit result. Mere
-		// readiness remains the fallback only for a flagless forecast packet.
-		const bool nativeRebirth = hit.killed() || hit.cloneKilled()
-			? hit.willRebirth() : owner->hasReadyNativeRebirth(unit.get());
-		pendingRebirths.emplace(hit.stackAttacked, PendingRebirth{
-			*snapshot, unit->isClone(), nativeRebirth});
-	}
+
 
 	projectedInjuryLifecycle::before(*owner, pack.stacks);
 	BattleStatePackVisitor visitor(*owner);
 	pack.visit(visitor);
 	projectedInjuryLifecycle::after(*owner, pack.stacks);
 	PhysicalStrikeProjection::completeDamagePacket(*owner, destroyed);
-	for(const auto & [unitId, pending] : pendingRebirths)
-	{
-		auto unit = owner->getForUpdate(unitId);
-		const bool hitKilled = unit && !unit->alive();
-		owner->projectElementalRebirth(unit.get(), pending.snapshot, hitKilled,
-			pending.cloneKilled, pending.nativeRebirth);
-	}
-	// Publish only after successful state application and its existing rebirth handling.
+	// Publish only after successful state application.
 	owner->projectedPlagueHits.insert(owner->projectedPlagueHits.end(), plagueHits.begin(), plagueHits.end());
 }
 

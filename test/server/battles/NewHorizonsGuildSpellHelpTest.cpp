@@ -41,10 +41,10 @@ protected:
 
 TEST_F(NewHorizonsGuildSpellHelpTest, UnknownLevelThreeFourFiveShowExactAcquisitionRanks)
 {
-	const auto focus = named("new-horizons:focusMagic");
-	ASSERT_NO_FATAL_FAILURE(prepare(focus));
+	const auto teleport = named("core:teleport");
+	ASSERT_NO_FATAL_FAILURE(prepare(teleport));
 	for(const auto & [spell, rank, school] : std::array<std::tuple<SpellID, int, const char *>, 3>{{
-		{focus, 1, "new-horizons:sorceryMagic"},
+		{teleport, 1, "new-horizons:sorceryMagic"},
 		{named("core:meteorShower"), 2, "new-horizons:havocMagic"},
 		{named("core:armageddon"), 3, "new-horizons:havocMagic"}}})
 	{

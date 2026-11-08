@@ -59,14 +59,15 @@ bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 	resistance->resolved = true;
 	auto * const server = activeResistanceServer;
 	auto * const rng = activeResistanceRng;
-	const auto draw = [rng, firstResult, probability, firstDraw = true]() mutable
+	const auto draw = [rng, firstResult, probability, resistance, firstDraw = true]() mutable
 	{
 		if(firstDraw)
 		{
 			firstDraw = false;
 			return firstResult;
 		}
-		return rng->nextInt(0, 99) < probability;
+		resistance->sample = rng->nextInt(0, 99);
+		return resistance->sample < probability;
 	};
 	const bool finalResult = server->resolveAdverseCombatRoll(battle()->getBattle()->getBattleID(),
 		recipientControllerSide, true, false, draw);
@@ -123,8 +124,9 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 				continue;
 			const int prob = newHorizonsMetamagic::resistanceChance(std::min(unit->magicResistance(), 100),
 				getMetamagicCastProfile(), *battle(), *unit); // probability of resistance in %
-			const bool didResist = rng.nextInt(0, 99) < prob;
-			resistanceRolls.push_back({unit->unitId(), prob, didResist, false});
+			const int sample = rng.nextInt(0, 99);
+			const bool didResist = sample < prob;
+			resistanceRolls.push_back({unit->unitId(), prob, didResist, false, sample});
 			if(didResist)
 				resistantUnitIds.insert(unit->unitId());
 		}
@@ -145,6 +147,8 @@ bool BattleSpellMechanics::usesCompoundMirror() const
 
 bool BattleSpellMechanics::ownerMatches(const battle::Unit * unit, bool sameOwner) const
 {
+	if(applyingRunicShare)
+		return unit && ((battle()->battleGetOwner(unit) == battle()->sideToPlayer(effectiveCasterSide())) == sameOwner);
 	if(usesCompoundMirror())
 		return unit && ((battle()->battleGetOwner(unit) == getCasterColor()) == sameOwner);
 	return BaseMechanics::ownerMatches(unit, sameOwner);
@@ -205,8 +209,9 @@ bool BattleSpellMechanics::prepareCompoundMirror(ServerCallback * server, Battle
 			if(!isSpellLocked(redirected))
 			{
 				const int probability = std::min(redirected->magicResistance(), 100);
-				const bool resisted = rng.nextInt(0, 99) < probability;
-				resistanceRolls.push_back({redirected->unitId(), probability, resisted, false});
+				const int sample = rng.nextInt(0, 99);
+				const bool resisted = sample < probability;
+				resistanceRolls.push_back({redirected->unitId(), probability, resisted, false, sample});
 				if(resisted)
 					resistantUnitIds.insert(redirected->unitId());
 			}
@@ -217,7 +222,11 @@ bool BattleSpellMechanics::prepareCompoundMirror(ServerCallback * server, Battle
 			|| wouldResist(damageTarget))
 		{
 			if(damageTarget)
+			{
 				sc.resistedCres.insert(damageTarget->unitId());
+				if(isRunicReflection(damageTarget))
+					recordResistanceShares(effects->prepare(this, aim, transformSpellTarget(aim)));
+			}
 			continue;
 		}
 		effectsToApply = effects->prepare(this, aim, transformSpellTarget(aim));
@@ -240,7 +249,8 @@ bool BattleSpellMechanics::isReflected(ServerCallback * server, const battle::Un
 		return false;
 	const std::vector<int> directSpellRange = { 0 };
 	bool isDirectSpell = !isMassive() && owner -> getLevelInfo(getRangeLevel()).range == directSpellRange;
-	bool spellIsReflectable = isDirectSpell && (mode == Mode::HERO || mode == Mode::MAGIC_MIRROR) && isNegativeSpell();
+	bool spellIsReflectable = isDirectSpell && !applyingRunicShare
+		&& (mode == Mode::HERO || mode == Mode::MAGIC_MIRROR) && isNegativeSpell();
 	bool targetCanReflectSpell = spellIsReflectable && unit->getAllBonuses(Selector::type()(BonusType::MAGIC_MIRROR))->size()>0;
 	const bool friendlyBlink = owner->getJsonKey() == newHorizonsBlink::SPELL_ID && unit->unitSide() == casterSide;
 	if(!targetCanReflectSpell || friendlyBlink)

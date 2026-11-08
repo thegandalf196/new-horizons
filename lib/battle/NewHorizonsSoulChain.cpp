@@ -227,6 +227,6 @@ int64_t adjustedEchoDamage(const CBattleInfoCallback & battle, const BattleSide 
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
 				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
 		true, battle.battleGetPerkMagicalReductionBasisPoints(primary), penetrations);
-	return newHorizonsMetamagic::spellDamage(ordinary, nullptr, battle, primary, caster->getCasterOwner());
+	return newHorizonsMetamagic::deferredSpellDamage(ordinary, capturedPenetration, battle, primary, caster->getCasterOwner());
 }
 }

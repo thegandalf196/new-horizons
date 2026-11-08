@@ -8,6 +8,9 @@
  *
  */
 #pragma once
+#include "NewHorizonsCommandResources.h"
+#include "NewHorizonsElementalAttunement.h"
+#include "../spells/NewHorizonsMagicArrow.h"
 
 #include "../bonuses/BonusSerializationContext.h"
 
@@ -248,6 +251,11 @@ public:
 		newHorizonsProtectedMobility::validateRulesSerialization(magicRules, supported);
 	}
 	const SpellResponseState & getSpellResponseState(BattleSide side) const override;
+	const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override;
+	void setCommandResources(BattleSide side, const newHorizonsCommand::ResourceState & state) override;
+	uint8_t getElementalAttunementMask(BattleSide side) const override;
+	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override;
+	void setElementalAttunementMask(BattleSide side, uint8_t mask) override;
 	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
 	void setMetamagicPointState(BattleSide side, const MetamagicPointState & state) override;
 	void validateMetamagicPointSerialization(bool supported) const;
@@ -847,6 +855,12 @@ public:
 				throw std::runtime_error("Cannot discard No Quarter battle state");
 			heroCommands::validateRevisedRulesSerialization(heroCommandRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
+			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsMagic::validateMagicArrowChargeSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			heroCommands::validateRules(heroCommandRules);
 			for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				sides.at(side).sylvanLuck.validateSerializationPrefix(h);
@@ -1033,6 +1047,12 @@ public:
 			{
 				heroCommands::validateRevisedRulesSerialization(heroCommandRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
+			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsMagic::validateMagicArrowChargeSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			heroCommands::validateRules(heroCommandRules);
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 					&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))

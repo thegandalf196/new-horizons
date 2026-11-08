@@ -53,6 +53,8 @@ std::shared_ptr<const CBattleInfoCallback> projectSecondWindActivation(const CBa
 bool hasSecondWindAttackOpportunity(const CBattleInfoCallback & activation,
 	uint32_t recipientId, uint32_t enemyId)
 {
+	if(const auto * projected = dynamic_cast<const HypotheticBattle *>(&activation);
+		projected && projected->wasCurrentActivationForfeited(recipientId)) return false;
 	const auto * recipient = activation.battleGetUnitByID(recipientId);
 	const auto * enemy = activation.battleGetUnitByID(enemyId);
 	if(!recipient || !enemy || !recipient->alive() || !enemy->alive() || !recipient->canMove())

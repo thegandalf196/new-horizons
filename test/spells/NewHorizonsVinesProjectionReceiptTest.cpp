@@ -10,6 +10,7 @@
 #include "../server/battles/NewHorizonsElementalTerrainFixture.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "../../lib/battle/CUnitState.h"
+#include "../../lib/battle/NewHorizonsElementalAttunement.h"
 #include "../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -144,6 +145,7 @@ TEST(NewHorizonsVinesProjectionReceipt, EqualRecipientListsDoNotEraseResolvedCon
 class NewHorizonsVinesProjectionIntegration : public NewHorizonsElementalTerrainFixture
 {
 protected:
+	NewHorizonsVinesProjectionIntegration() { useRevisedOrders = true; }
 	std::shared_ptr<ReceiptEnvironment> environment;
 	std::shared_ptr<CBattleCallback> callback;
 	std::shared_ptr<CBattleInfoCallback> projectionSource;
@@ -152,20 +154,20 @@ protected:
 	const BattleHex firstHex{8, 5}, secondHex{9, 5};
 	SpellID vines() const { return SpellID(SpellID::decode(std::string(newHorizonsVengefulVines::SPELL_KEY))); }
 
-	void prepare(bool concentration = false, bool rebirth = false)
+	void prepare(bool concentration = false, bool lethalConflux = false)
 	{
 		startGame();
 		attackerSideHero->clearSlots();
 		defenderSideHero->clearSlots();
-		if(rebirth)
+		if(lethalConflux)
 		{
 			defenderSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:brissa")));
 			defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:elementalRebirth")),
 				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		}
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 1000));
-		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureByName("core:peasant"), rebirth ? 1 : 1000));
-		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), creatureByName("core:peasant"), rebirth ? 1 : 1000));
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureByName("core:peasant"), lethalConflux ? 1 : 1000));
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), creatureByName("core:peasant"), lethalConflux ? 1 : 1000));
 		if(concentration)
 		{
 			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft")),
@@ -199,19 +201,21 @@ protected:
 			gameHandler->sendAndApply(move);
 		}
 		beginCombat();
-		// The Rebirth order witness intentionally knows both hero profiles. A
-		// player-0 forecast must not invent the hidden defender's death reactions.
+		// The lethal Conflux receipt witness intentionally knows both hero profiles. A
+		// player-0 forecast must not invent hidden defender policy.
 		callback = std::make_shared<CBattleCallback>(PlayerColor(0), nullptr);
 		callback->onBattleStarted(battle());
 		projectionSource = callback->getBattle(BattleID(0));
-		if(rebirth)
+		if(lethalConflux)
 		{
 			projectionSource = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
 			ASSERT_EQ(projectionSource->battleGetMySide(), BattleSide::ALL_KNOWING);
 			ASSERT_EQ(projectionSource->battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
-			ASSERT_TRUE(newHorizonsElementalRebirth::activeProfile(defenderSideHero));
-			ASSERT_GT(first->getBattleStartMaximumAggregateHP(), 0);
-			ASSERT_GT(second->getBattleStartMaximumAggregateHP(), 0);
+			ASSERT_GT(newHorizonsElementalAttunement::captureProfile(defenderSideHero).rank, 0);
+			ASSERT_GT(first->getAvailableHealth(), 0);
+			ASSERT_GT(second->getAvailableHealth(), 0);
+			ASSERT_GT(first->getMaxHealth(), 0);
+			ASSERT_GT(second->getMaxHealth(), 0);
 		}
 		environment = std::make_shared<ReceiptEnvironment>(gameState());
 	}
@@ -267,25 +271,29 @@ TEST_F(NewHorizonsVinesProjectionIntegration, DistinctGeometryKeepsOrderedInputs
 	EXPECT_EQ(randomState(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureRng);
 }
 
-TEST_F(NewHorizonsVinesProjectionIntegration, ReversedRecipientsChangeActualRebirthIdentityAllocation)
+TEST_F(NewHorizonsVinesProjectionIntegration, ReversedRecipientsKeepOrderedReceiptsWithoutReplacementUnits)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
 	auto one = branch(), two = branch();
 	const auto serverRng = randomState(*gameHandler->randomizer);
 	const auto fixtureRng = randomState(dynamic_cast<CRandomGenerator &>(*getRNG()));
-	ASSERT_TRUE(one->captureElementalRebirthSource(*one->battleGetUnitByID(first->unitId())));
-	ASSERT_TRUE(one->captureElementalRebirthSource(*one->battleGetUnitByID(second->unitId())));
+	const auto originalUnits = unitsSnapshot(*one).size();
 	const auto firstCast = project(*one, target({firstHex, secondHex, BattleHex(10, 5)}));
 	const auto reverseCast = project(*two, target({secondHex, firstHex, BattleHex(7, 5)}));
 	ASSERT_TRUE(firstCast->vengefulVinesProjectionReceipt());
 	ASSERT_TRUE(reverseCast->vengefulVinesProjectionReceipt());
 	EXPECT_NE(firstCast->vengefulVinesProjectionReceipt(), reverseCast->vengefulVinesProjectionReceipt());
-	ASSERT_EQ(one->getElementalRebirthSpawnUnitIds().size(), 2u);
-	ASSERT_EQ(two->getElementalRebirthSpawnUnitIds().size(), 2u);
-	const auto allocatedFirst = *one->getElementalRebirthSpawnUnitIds().begin();
-	EXPECT_EQ(one->battleGetUnitByID(allocatedFirst)->getPosition(), firstHex);
-	EXPECT_EQ(two->battleGetUnitByID(allocatedFirst)->getPosition(), secondHex);
-	EXPECT_NE(unitsSnapshot(*one), unitsSnapshot(*two));
+	EXPECT_EQ(unitsSnapshot(*one).size(), originalUnits);
+	EXPECT_EQ(unitsSnapshot(*two).size(), originalUnits);
+	for(const auto * source : {first, second})
+	{
+		ASSERT_NE(one->battleGetUnitByID(source->unitId()), nullptr);
+		ASSERT_NE(two->battleGetUnitByID(source->unitId()), nullptr);
+		EXPECT_FALSE(one->battleGetUnitByID(source->unitId())->alive());
+		EXPECT_FALSE(two->battleGetUnitByID(source->unitId())->alive());
+	}
+	EXPECT_EQ(one->getElementalAttunementMask(BattleSide::DEFENDER), 0);
+	EXPECT_EQ(two->getElementalAttunementMask(BattleSide::DEFENDER), 0);
 	EXPECT_TRUE(first->alive());
 	EXPECT_TRUE(second->alive());
 	EXPECT_EQ(randomState(*gameHandler->randomizer), serverRng);

@@ -9,11 +9,13 @@
     "ghost-creature-animation",
     "ghost-creature-portraits",
     "guild-room-composites-and-bindings",
+    "hero-interface-buttons",
     "hero-specialty-icons",
     "mage-guild-town-art-and-ui",
     "magi-and-archmagi",
-    "wisps-and-projectiles",
-    "hero-interface-buttons"
+    "native-specialty-effect-aliases",
+    "orders-command-entry-button",
+    "wisps-and-projectiles"
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
@@ -24,11 +26,13 @@
     "ghost-creature-animation": 1,
     "ghost-creature-portraits": 2,
     "guild-room-composites-and-bindings": 10,
+    "hero-interface-buttons": 11,
     "hero-specialty-icons": 236,
     "mage-guild-town-art-and-ui": 81,
     "magi-and-archmagi": 348,
     "wisps-and-projectiles": 208,
-    "hero-interface-buttons": 11
+    "orders-command-entry-button": 5,
+    "native-specialty-effect-aliases": 1
   },
   "entries": [
     {
@@ -57250,6 +57254,66 @@
       "sha256": "7389b47d2fc2eeebfb3ed040c2f8601fae0c25a61ddbf2a4b710b5ecf2c560ae",
       "size": 589,
       "source": "Mods/new-horizons/Images/NH_info_button_small_pressed.png"
+    },
+    {
+      "resource": "SPRITES/NH_orders_command.json",
+      "source": "Mods/new-horizons/Images/NH_orders_command.json",
+      "size": 405,
+      "sha256": "7e9f6fa7790558110128aeda04feb110bbd331a80a38fd6bacf7cbeda7215cd6",
+      "family": "orders-command-entry-button",
+      "origin": "Purpose-made native four-state descriptor for the owner-supplied Orders/Command illustration; no original-game raster pixels.",
+      "selection": "Selected Orders/Command entry icon, preserving normal, pressed, disabled and highlighted state order.",
+      "approval": "Owner-authorized integration; descriptor validation completed; in-game rendered acceptance pending."
+    },
+    {
+      "resource": "SPRITES/NH_orders_command_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_orders_command_disabled.png",
+      "size": 2064,
+      "sha256": "38354f13e81742c3059389704222419d8e2b63cd3e560da4e686b97da8729285",
+      "family": "orders-command-entry-button",
+      "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+      "selection": "Selected by the owner for the Orders/Command entry icon.",
+      "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+    },
+    {
+      "resource": "SPRITES/NH_orders_command_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_orders_command_highlighted.png",
+      "size": 2133,
+      "sha256": "2e0fad8fc3bf8440ac53ba29aa9d2ee1c6e3d92253d8712159fd8999d503e2b4",
+      "family": "orders-command-entry-button",
+      "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+      "selection": "Selected by the owner for the Orders/Command entry icon.",
+      "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+    },
+    {
+      "resource": "SPRITES/NH_orders_command_normal.png",
+      "source": "Mods/new-horizons/Images/NH_orders_command_normal.png",
+      "size": 2123,
+      "sha256": "6499545822f1a734d76828744627e29f6c82a044b1bb0e3bca2143c229dc2b24",
+      "family": "orders-command-entry-button",
+      "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+      "selection": "Selected by the owner for the Orders/Command entry icon.",
+      "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+    },
+    {
+      "resource": "SPRITES/NH_orders_command_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_orders_command_pressed.png",
+      "size": 2096,
+      "sha256": "53ee83dda2ac31217c373ed387c480363158c75777ec4f9aa848cb8c2970f724",
+      "family": "orders-command-entry-button",
+      "origin": "Owner-supplied dagger and parchment illustration with alpha; aspect-preserving premultiplied-alpha native reduction and mechanical interaction states. Classic button chrome remains external game artwork.",
+      "selection": "Selected by the owner for the Orders/Command entry icon.",
+      "approval": "Owner-authorized integration of the supplied illustration; native export review completed; Final visual approval and in-game rendered acceptance pending."
+    },
+    {
+      "resource": "SPRITES/NH_broghild_poison_red.json",
+      "source": "Mods/new-horizons/Images/NH_broghild_poison_red.json",
+      "size": 14830,
+      "sha256": "ac6b4c5e82f1f1f62c60dbd82caa2bc32f1b077367498f6842b7ef1e516bfac3",
+      "family": "native-specialty-effect-aliases",
+      "origin": "Authored animation descriptor references purchaser-supplied SP11_.DEF with an immutable red/green channel palette remap. Original frame pixels remain external; no copied raster payload.",
+      "selection": "Selected for the accepted Broghild stronger Monarch poison appearance after native bitmap comparison.",
+      "approval": "Provisional technical integration selected; native bitmap preview inspected. Final visual approval and in-game rendered acceptance pending; no license grant for referenced original resources."
     }
   ]
 }

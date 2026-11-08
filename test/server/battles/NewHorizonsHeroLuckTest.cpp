@@ -9,6 +9,7 @@
 #include "../../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../../lib/battle/NewHorizonsHeroicSpirit.h"
+#include "../../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/callback/GameRandomizer.h"
@@ -35,6 +36,7 @@ std::vector<std::byte> savedRandomizer(GameRandomizer & randomizer)
 class HeroLuckOrderTest : public HeroCommandFixture, public ::testing::WithParamInterface<HeroCommand>
 {
 protected:
+	HeroLuckOrderTest() { useRevisedOrders = true; }
 	int chance = 100;
 	CStack * friendly = nullptr;
 	CStack * protector = nullptr;
@@ -74,6 +76,8 @@ protected:
 	void prepareLuckyOrder()
 	{
 		startGame();
+		if(compoundCapacity)
+			attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 		const SecondarySkill skill(SecondarySkill::decode("new-horizons:luck"));
 		ASSERT_TRUE(skill.hasValue());
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
@@ -452,27 +456,42 @@ TEST_F(HeroLuckOrderTest, DedicatedHeroStreamsRemainIsolatedAndRoundTripTheirNex
 	EXPECT_TRUE(old.extractBuffer().empty());
 }
 
-TEST_F(HeroLuckOrderTest, CompoundDoubleCommandAndHeroicSpiritCapacityRejectsBeforeEitherDrawOrApply)
+TEST_F(HeroLuckOrderTest, ReplacementCommandPerksNeedNoCompanionGrantCapacityOrMoraleDraw)
 {
+	useRevisedOrders = true;
 	compoundCapacity = true;
 	ASSERT_NO_FATAL_FAILURE(prepareLuckyOrder());
-	ASSERT_TRUE(heroCommands::hasDoubleCommand(attackerSideHero));
-	ASSERT_TRUE(newHorizonsHeroicSpirit::hasPerk(attackerSideHero));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:command", "new-horizons:command.doubleCommand"));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.heroicSpirit"));
+	ASSERT_FALSE(heroCommands::hasDoubleCommand(attackerSideHero));
+	ASSERT_FALSE(newHorizonsHeroicSpirit::hasPerk(attackerSideHero));
 	ASSERT_GT(attackerSideHero->moraleVal(), 0);
-	// Synthetic identity-space boundary only; all skill selections and the
-	// command request use ordinary validated production admission.
+	// The retired companion grants needed two new identities. The paid Order
+	// now consumes its existing ordinary allowance even at this boundary.
 	auto & side = battle()->getSide(BattleSide::ATTACKER);
 	side.heroActionAllowances.nextGrantId = std::numeric_limits<uint32_t>::max() - 1;
 	ASSERT_NO_THROW(side.heroActionAllowances.validateShape());
-	const auto allowances = side.heroActionAllowances;
-	const auto doubleCommand = side.doubleCommandState;
-	const auto orders = side.orderStates;
+	const auto nextGrant = side.heroActionAllowances.nextGrantId;
+	const auto command = battle()->getCommandResources(BattleSide::ATTACKER);
 	const auto rng = savedRandomizer(*gameHandler->randomizer);
-	EXPECT_FALSE(issue(HeroCommand::CHARGE));
-	EXPECT_EQ(side.heroActionAllowances, allowances);
-	EXPECT_EQ(side.doubleCommandState, doubleCommand);
-	EXPECT_EQ(side.orderStates, orders);
-	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), rng);
+	GameRandomizer expected(*gameState());
+	CMemorySerializer rngWire(rng);
+	rngWire.iser & expected;
+	ASSERT_TRUE(expected.rollHeroLuck(attackerSideHero->id, attackerSideHero->luckVal()));
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto accepted = battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE);
+	ASSERT_TRUE(accepted);
+	ASSERT_TRUE(accepted->heroLuck);
+	EXPECT_TRUE(accepted->luckyDay());
+	EXPECT_FALSE(accepted->heroMorale);
+	EXPECT_EQ(side.heroActionAllowances.nextGrantId, nextGrant);
+	EXPECT_EQ(side.doubleCommandState, DoubleCommandState{});
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, command.remaining - 1);
+	EXPECT_EQ(side.heroActionAllowances.remainingCounts(battle()->battleGetRound()).heroActions, 0u);
+	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), savedRandomizer(expected));
+	const auto after = savedRandomizer(*gameHandler->randomizer);
+	EXPECT_FALSE(issue(HeroCommand::BRACE));
+	EXPECT_EQ(savedRandomizer(*gameHandler->randomizer), after);
 }
 
 TEST_F(HeroLuckOrderTest, ZeroCreatureLuckChanceDoesNotCreateOrAdvanceActorStreams)

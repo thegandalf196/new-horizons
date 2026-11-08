@@ -58,7 +58,11 @@ class BattleFlowProcessor : boost::noncopyable
 
 	void removeObstacle(const CBattleInfoCallback & battle, const CObstacleInstance & obstacle);
 	void stackTurnTrigger(const CBattleInfoCallback & battle, const CStack * stack);
-	void setActiveStack(const CBattleInfoCallback & battle, const battle::Unit * stack, BattleUnitTurnReason reason);
+	/// True when dispatch already completed or retired the activation without input.
+	bool setActiveStack(const CBattleInfoCallback & battle, const battle::Unit * stack, BattleUnitTurnReason reason);
+	void completeStunnedActivation(const CBattleInfoCallback & battle, uint32_t unitId);
+	bool activationFireWallCoversUnit(const CBattleInfoCallback & battle, const battle::Unit & unit) const;
+	void clearReducedActivation(const CBattleInfoCallback & battle, uint32_t unitId);
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 	double calculateTowerAttackValue(const CBattleInfoCallback& battle, const CStack* attacker, const CStack* target) const;
 	void resolveDivineRetribution(const CBattleInfoCallback & battle);

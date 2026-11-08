@@ -3,19 +3,34 @@
 ## Current save boundary
 
 New Horizons 0.88.2 requires a new game. The current writer and minimum accepted
-format are both **1156**, `NEW_HORIZONS_FACTION_SKILL_REVISIONS`.
+format are both **1157**, `NEW_HORIZONS_NATIVE_RULES_REDESIGN`.
 `MINIMAL` and `CURRENT` in `ESerializationVersion` use that feature value.
 `CLoadFile` rejects earlier save formats before reading their payload; there is
 no save conversion or migration path in this revision. Existing files remain
 untouched. The file-loader minimum does not by itself validate connection-version
 negotiation.
 
-Format1156 carries round-point Metamagic, revised Dungeon and Conflux perks,
-and optional detailed Skill/perk help. Historical format descriptions below
+Format1157 adds finite Command resources, Elemental Attunement state and the
+revised Magic Arrow profile. It also retains round-point Metamagic, revised
+Dungeon perks and optional detailed Skill/perk help. Historical descriptions below
 explain prior layouts; they do not grant ordinary save-load admission.
 Explicit local bonus-clone profiles remain separate from on-disk save support
 and must retain their own exact validation. A format declaration alone does
 not establish successful save/reload, gameplay or platform acceptance.
+
+### Native rules redesign
+
+New games capture the revised Command, Attunement and Magic Arrow policies.
+An Overcharge selection is a level, not an additional Mana payment; readers and
+writers must retain its profile identity together with the spell rules.
+Elemental spell tags are captured independently of magic schools.
+
+Battle-side state owns maximum and remaining Command and the four-bit elemental
+Attunement mask. Deserialization and hypothetical copies preserve expenditure
+and active elements; neither operation runs battle-start initialization or
+refills Command. Order snapshots retain their issuance-time Heroic Spirit
+efficiency. The retired extra-Order and Rebirth-summoning mechanics are outside
+the current rules. Earlier save formats are rejected instead of migrated.
 
 ## Captured army generation settings
 
@@ -484,23 +499,19 @@ This extension does not implement complete midbattle save/resume; the existing
 health/provenance and creature-form fail-closed restrictions still apply.
 Implementation and focused validation are tracked separately under UP108.
 
-## Elemental Rebirth starting HP basis (source/native accepted)
+## Reserved Rebirth descriptor fields
 
-`NEW_HORIZONS_ELEMENTAL_REBIRTH` appends a nonnegative frozen battle-start
-maximum aggregate HP basis to the `CStack` descriptor. Zero means uncaptured or
-ineligible; older reads default to zero rather than inventing historical HP.
-Initial eligible stacks capture once after battle-start bonus initialization,
-not when evaluator copies are created or later health/HP bonuses change.
-Detached views retain/delegate this immutable metadata. Unsupported old-format
-writes must reject a populated basis before direct and enclosing payloads.
+`NEW_HORIZONS_ELEMENTAL_REBIRTH` retains the nonnegative frozen
+`CStack::battleStartMaximumAggregateHP` descriptor field. The separately gated
+original-output HP field also remains reserved. Unsupported leaf and enclosing
+writers must not silently drop populated metadata. These capability values and
+codec checks do not authorize replacement summons: current format 1157 uses
+Elemental Attunement and has no Rebirth creation path.
 
-Temporary Elemental creation uses ordinary unit-addition and exact-health state
-updates; no new packet type or normal-Mana-like resource is introduced. This
-metadata extension does not implement complete midbattle save/resume: existing
-health/provenance and creature-form fail-closed restrictions remain in effect.
-UP046 verifies current descriptor-basis roundtrip and unsupported old-writer
-rejection. This is not a whole-combat health/save restoration claim. Graphical
-acceptance and playable delivery remain separate.
+Descriptor roundtrips do not restore general unit health or casualty provenance.
+Ordinary game saves do not serialize an ongoing battle, and unsupported active
+health/provenance state must fail closed rather than initialize invented health.
+Independent ordinary summoning spells remain separate from the retired mechanic.
 
 ## Explicit elemental spell damage
 
@@ -692,20 +703,18 @@ on an older writer before its payload. Authoritative recruitment validates the
 owned built Portal, matching selected still-owned source, and town-associated
 destination before charging resources or deducting the source's real stock.
 
-## New Horizons immediate Double Command continuation
+## Reserved Double Command continuation fields
 
-`NEW_HORIZONS_DOUBLE_COMMAND` appends a per-side combat-used marker and contextual
-Order/Second Wind continuation, plus an ORDER-only allowance source. Accepted
-`StartAction` and `BattleHeroOrderStateChanged` packets carry validated optional
-transitions. Older records default to unused; writers targeting an older format
-reject populated state or grants before writing bytes rather than dropping them.
+`NEW_HORIZONS_DOUBLE_COMMAND` and its descriptor fields remain reserved numeric
+and codec identities. Current `SideInBattle` validation rejects a nonempty
+`DoubleCommandState`; retained leaf codecs or allowance enums cannot admit a
+retired Order-only grant into a current battle. Each accepted ordinary Order
+instead consumes one finite Command point and the shared Hero Action.
 
-Battle descriptors validate ledger, round, Order and unit references on decode.
-Alive, ghost and current-controller checks require initialized unit state and run
-after `BattleStart::localInit` and before writes. This does not add midbattle
-save/resume: binary stack descriptors omit `CUnitState`, and ordinary game saves
-do not serialize ongoing battles. Descriptor roundtrip tests must not initialize
-fresh health and present that as restored combat state.
+Battle descriptors still validate ledger, round and unit references. These
+structural checks do not add running-battle save/resume: binary stack descriptors
+omit general `CUnitState` health, and ordinary saves do not serialize ongoing
+battles. Fresh health initialization is not restored combat state.
 
 ## Sorcery revision and timed summons
 

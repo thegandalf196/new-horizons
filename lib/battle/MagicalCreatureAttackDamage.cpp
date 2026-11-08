@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "NewHorizonsPassiveSpecialties.h"
 #include "MagicalCreatureAttackDamage.h"
 #include "ArcaneInspiration.h"
 #include "BattleAttackInfo.h"
@@ -15,6 +16,12 @@ void applyMagicalAttackReduction(const CBattleInfoCallback & callback,
 {
 	if(attack.physicalDamage || !attack.defender)
 		return;
+	if(newHorizonsPassiveSpecialties::magicalDamageImmune(*attack.defender))
+	{
+		damage.damage.min = damage.damage.max = 0;
+		damage.kills.min = damage.kills.max = 0;
+		return;
+	}
 	std::vector<int> reductions;
 	const int intrinsic = attack.defender->intrinsicMagicalDamageReductionPercent();
 	if(intrinsic > 0)

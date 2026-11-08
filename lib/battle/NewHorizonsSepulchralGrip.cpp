@@ -32,26 +32,8 @@ bool isEffect(const Bonus * bonus)
 		throw std::runtime_error("Invalid Sepulchral Grip specialty provenance");
 	return true;
 }
-std::shared_ptr<Bonus> primaryHit(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
+std::shared_ptr<Bonus> primaryHit(const CBattleInfoCallback &, const BattleAttackInfo &)
 {
-	if(!attack.attacker || !attack.defender || !attack.physicalDamage || attack.shooting
-		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent > 0
-		|| attack.cleaveDamagePercent > 0)
-		return nullptr;
-	const int amount = newHorizonsHeroes::ordinaryCreatureSpecialtyValue(battle, *attack.attacker, "core:straker");
-	if(amount <= 0)
-		return nullptr;
-	const auto family = CreatureID(CreatureID::decode("core:walkingDead"));
-	if(!attack.attacker->unitType() || (attack.attacker->creatureId() != family
-		&& !family.toCreature()->isMyDirectOrIndirectUpgrade(attack.attacker->unitType())))
-		return nullptr;
-	auto effect = std::make_shared<Bonus>(BonusDuration::STACK_ACTIVATION, BonusType::STACKS_MOVEMENT_RANGE,
-		BonusSource::HERO_SPECIAL, -amount, BonusSourceID(HeroTypeID(HeroTypeID::decode("core:straker"))));
-	effect->stacking = identity;
-	effect->statusIdentity = "sepulchralGrip";
-	effect->statusTags = {BonusStatusTag::DEBUFF, BonusStatusTag::NON_TRANSFERABLE};
-	effect->description.appendRawString("Sepulchral Grip: -" + std::to_string(amount)
-		+ " Speed through the affected stack's next accepted Creature Action; Initiative is unchanged");
-	return effect;
+	return nullptr;
 }
 }

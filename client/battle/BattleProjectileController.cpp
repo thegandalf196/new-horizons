@@ -14,6 +14,8 @@
 #include "BattleSiegeController.h"
 #include "BattleStacksController.h"
 #include "CreatureAnimation.h"
+#include "ThunarRangedPresentation.h"
+#include "../../lib/battle/NewHorizonsCreatureSpecialtyCapabilities.h"
 
 #include "render/CAnimation.h"
 #include "render/Canvas.h"
@@ -180,6 +182,9 @@ const CCreature & BattleProjectileController::getShooter(const CStack * stack) c
 {
 	const CCreature * creature = stack->unitType();
 
+	if(newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*stack))
+		return *creature; // Specialty missile/pose data is scoped below; no Archer prototype fallback.
+
 	if(stack->isTurret())
 		creature = owner.siegeController->getTurretCreature(stack->initialPosition);
 
@@ -194,12 +199,14 @@ const CCreature & BattleProjectileController::getShooter(const CStack * stack) c
 
 bool BattleProjectileController::stackUsesRayProjectile(const CStack * stack) const
 {
-	return !getShooter(stack).animation.projectileRay.empty();
+	return !newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*stack)
+		&& !getShooter(stack).animation.projectileRay.empty();
 }
 
 bool BattleProjectileController::stackUsesMissileProjectile(const CStack * stack) const
 {
-	return !getShooter(stack).animation.projectileImageName.empty();
+	return newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*stack)
+		|| !getShooter(stack).animation.projectileImageName.empty();
 }
 
 void BattleProjectileController::initStackProjectile(const CStack * stack)
@@ -208,7 +215,9 @@ void BattleProjectileController::initStackProjectile(const CStack * stack)
 		return;
 
 	const CCreature & creature = getShooter(stack);
-	projectilesCache[creature.animation.projectileImageName] = createProjectileImage(creature.animation.projectileImageName);
+	const auto imageName = newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*stack)
+		? AnimationPath::builtin(thunarRangedPresentation::PROJECTILE) : creature.animation.projectileImageName;
+	projectilesCache[imageName] = createProjectileImage(imageName);
 }
 
 std::shared_ptr<CAnimation> BattleProjectileController::createProjectileImage(const AnimationPath & path )
@@ -226,7 +235,8 @@ std::shared_ptr<CAnimation> BattleProjectileController::createProjectileImage(co
 std::shared_ptr<CAnimation> BattleProjectileController::getProjectileImage(const CStack * stack)
 {
 	const CCreature & creature = getShooter(stack);
-	AnimationPath imageName = creature.animation.projectileImageName;
+	AnimationPath imageName = newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*stack)
+		? AnimationPath::builtin(thunarRangedPresentation::PROJECTILE) : creature.animation.projectileImageName;
 
 	if (!projectilesCache.count(imageName))
 		initStackProjectile(stack);
@@ -311,6 +321,9 @@ float BattleProjectileController::computeProjectileFlightTime( Point from, Point
 
 int BattleProjectileController::computeProjectileFrameID( Point from, Point dest, const CStack * stack)
 {
+	if(newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*stack))
+		return 0; // Native PCYCLBX angle data is twelve zeros; use its first boulder frame.
+
 	const CCreature & creature = getShooter(stack);
 
 	auto & angles = creature.animation.missileFrameAngles;

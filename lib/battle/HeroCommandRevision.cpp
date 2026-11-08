@@ -75,7 +75,10 @@ void validateRevisedRulesSerialization(const JsonNode & rules, bool supported)
 
 void validateRevisedRules(const JsonNode & rules)
 {
-	fields(rules, {"schemaVersion", "rulesetVersion", "commands", "perkBonuses"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "commands", "perkBonuses", "commandResourcePolicyVersion"});
+	if(rules["commandResourcePolicyVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
+		|| rules["commandResourcePolicyVersion"].Integer() != 1)
+		throw std::runtime_error("Invalid finite Command policy version");
 	if(rules["schemaVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
 		|| rules["schemaVersion"].Integer() != 1)
 		throw std::runtime_error("Invalid revised Order schema version");

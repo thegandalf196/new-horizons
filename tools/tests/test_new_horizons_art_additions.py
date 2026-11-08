@@ -283,7 +283,7 @@ class ArtAdditionsTest(unittest.TestCase):
         historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 current_id = WAVE_CURRENT_IDS.get(row['id'], row['id'])
@@ -336,12 +336,76 @@ class ArtAdditionsTest(unittest.TestCase):
         for wave in self.waves:
             validate_hero_interface_buttons(wave.get('heroInterfaceButtons', []), manifest, read_resource)
 
+    def test_selected_orders_entry_preserves_states_safe_inset_and_source_identity(self):
+        rows = [row for wave in self.waves for row in wave.get('orderEntryButtons', [])]
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row['id'], 'new-horizons:ordersCommandEntry')
+        self.assertEqual(row['family'], 'orders-command-entry-button')
+        self.assertEqual(row['sourceMasterSha256'],
+                         '459aa68a47294fa1a185547a6e8353eb9988ab76bc18db980d01fcf58c920690')
+        self.assertEqual(row['nativeCanvas'], [48, 36])
+        states = ['normal', 'pressed', 'disabled', 'highlighted']
+        self.assertEqual(row['states'], states)
+        names = {'SPRITES/NH_orders_command.json'} | {
+            'SPRITES/NH_orders_command_' + state + '.png' for state in states}
+        self.assertEqual(set(row['resources']), names)
+        manifest = {entry['resource']: entry for entry in self.manifest['entries']}
+        self.assertEqual({entry['resource'] for entry in row['sourceEntries']}, names)
+        for entry in row['sourceEntries']:
+            self.assertEqual(manifest[entry['resource']], entry)
+            self.assertEqual(hashlib.sha256(read_resource(entry['resource'])).hexdigest(), entry['sha256'])
+        descriptor = json.loads(read_resource('SPRITES/NH_orders_command.json'))
+        self.assertEqual(descriptor, {'images': [
+            {'group': 0, 'frame': index, 'file': 'NH_orders_command_' + state + '.png'}
+            for index, state in enumerate(states)]})
+        hashes = set()
+        for state in states:
+            name = 'SPRITES/NH_orders_command_' + state + '.png'
+            image = open_image(name)
+            self.assertEqual((image.size, image.mode), ((48, 36), 'RGBA'))
+            self.assertEqual(image.getchannel('A').getextrema(), (0, 255))
+            left, top, right, bottom = image.getchannel('A').getbbox()
+            self.assertTrue(3 <= left < right <= 45 and 3 <= top < bottom <= 33)
+            hashes.add(hashlib.sha256(read_resource(name)).hexdigest())
+        self.assertEqual(len(hashes), 4)
+
+    def test_stronger_poison_alias_preserves_external_frames_and_reserved_palette(self):
+        rows = [row for wave in self.waves for row in wave.get('nativeEffectAliases', [])]
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row['id'], 'new-horizons:broghildStrongPoison')
+        self.assertEqual(row['family'], 'native-specialty-effect-aliases')
+        name = 'SPRITES/NH_broghild_poison_red.json'
+        self.assertEqual(row['resources'], [name])
+        manifest = {entry['resource']: entry for entry in self.manifest['entries']}
+        self.assertEqual(row['sourceEntries'], [manifest[name]])
+        self.assertNotIn('SPRITES/SP11_.DEF', {key.upper() for key in manifest})
+        payload = read_resource(name)
+        self.assertEqual(hashlib.sha256(payload).hexdigest(),
+                         'ac6b4c5e82f1f1f62c60dbd82caa2bc32f1b077367498f6842b7ef1e516bfac3')
+        descriptor = json.loads(payload)
+        self.assertEqual(set(descriptor), {'paletteRemap', 'images'})
+        self.assertEqual(descriptor['images'], [
+            {'group': 0, 'frame': index, 'defFile': 'SP11_.DEF', 'defGroup': 0, 'defFrame': index}
+            for index in range(20)])
+        self.assertEqual(row['reservedPaletteIndicesPreserved'], list(range(8)))
+        self.assertEqual(row['originalExternalResource'], 'SP11_.DEF')
+        self.assertEqual(row['originalExternalResourceSha256'],
+                         'd17a6011caa515d5a4b9f04ef635e1a4117edf5bd38ede2b83f354e122d5ba35')
+        for index, color in descriptor['paletteRemap'].items():
+            self.assertTrue(8 <= int(index) <= 255)
+            self.assertEqual(len(color), 3)
+            self.assertTrue(all(type(channel) is int and 0 <= channel <= 255 for channel in color))
+        self.assertIn('in-game rendered acceptance pending', row['approval'])
+
     def test_header_baseline_and_status_only_graphics(self):
         for index, wave in enumerate(self.waves):
             # Interface-button wave was selected after the faction rebindings;
             # earlier wave anchors must still see their exact original IDs.
-            header = header_before_reworked_perks(self.header)
-            if not wave.get('heroInterfaceButtons'):
+            current_header = wave.get('orderEntryButtons') or wave.get('nativeEffectAliases')
+            header = self.header if current_header else header_before_reworked_perks(self.header)
+            if not wave.get('heroInterfaceButtons') and not current_header:
                 header = header_before_faction_rebindings(header)
             for later in self.waves[index:]:
                 for row in later['perks']:

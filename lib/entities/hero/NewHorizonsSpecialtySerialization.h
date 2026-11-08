@@ -39,6 +39,7 @@ struct SpecialtySerializationContext
 	bool extendedOrdinarySpecialties = false;
 	/// Owned in-process copies must carry the complete 1155 unit-state envelope.
 	bool passiveFactionSkills = false;
+	bool nativeRulesRedesign = false;
 
 	bool operator==(const SpecialtySerializationContext &) const = default;
 
@@ -72,6 +73,7 @@ struct SpecialtySerializationContext
 		result.ordinaryCombatSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
 		result.extendedOrdinarySpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 		result.passiveFactionSkills = h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+		result.nativeRulesRedesign = h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
 		return result;
 	}
 };
@@ -82,7 +84,7 @@ DLL_LINKAGE void validateCurrentSpecialtyRules(const JsonNode & development);
 /// Validate all captured specialty families in the historical order, without
 /// resolving installed defaults, changing the snapshot or consuming wire bytes.
 DLL_LINKAGE void validateCapturedSpecialtiesSerialization(const JsonNode & development,
-	const SpecialtySerializationContext & context);
+	const SpecialtySerializationContext & context, bool pilotOverrideFragments = false);
 /// Copy present specialty families in their existing deterministic resolution order.
 DLL_LINKAGE void copyCapturedIndividualSpecialties(JsonNode & target, const JsonNode & source);
 

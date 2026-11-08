@@ -8,11 +8,13 @@
  *
  */
 #include "StdInc.h"
+#include "../../battle/NewHorizonsCommandResources.h"
 #include "NewHorizonsLeadership.h"
 #include "HeroStartingProjection.h"
 #include "NewHorizonsCapabilityRules.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsNecromancyPolicy.h"
+#include "../../battle/NewHorizonsElementalAttunement.h"
 
 #include "../../mapObjects/CGHeroInstance.h"
 
@@ -61,7 +63,10 @@ std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
 	if(result)
 	{
 		applyStartingLeadershipBonus(*result, hero.valOfBonuses(BonusType::LEADERSHIP));
+		result->leadership = static_cast<int>(newHorizonsCommand::effectiveLeadership(hero, result->leadership));
+		result->maximum = result->leadership / result->requirement;
 		newHorizonsNecromancy::applyLeadershipPolicy(*result, hero, creature);
+		newHorizonsElementalAttunement::applyLeadershipPolicy(*result, hero, creature);
 	}
 	return result;
 }

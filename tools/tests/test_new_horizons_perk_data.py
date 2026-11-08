@@ -622,14 +622,16 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 candidate = {**self.rules, 'necromancyPolicy': value}
                 self.assertTrue(list(validator.iter_errors(candidate)))
 
-    def test_heroic_spirit_is_an_expert_order_only_hero_morale_perk(self):
+    def test_heroic_spirit_is_an_expert_captured_hero_morale_efficiency_perk(self):
         perk = next(p for p in self.rules['skills']['new-horizons:discipline']['perks']
                     if p['id'] == 'new-horizons:discipline.heroicSpirit')
         self.assertEqual((perk['name'], perk['requires']), ('Heroic Spirit', 'expert'))
         self.assertEqual(perk['effect']['status'], 'active')
         self.assertEqual(perk['description'], perk['effect']['description'])
-        self.assertIn('one additional Order-only Hero Action', perk['description'])
-        self.assertIn('Bonus Orders cannot trigger further Morale', perk['description'])
+        self.assertIn('+5 percentage points', perk['description'])
+        self.assertIn('capped at +30 percentage points', perk['description'])
+        self.assertIn('issuing hero', perk['details'])
+        self.assertIn('no additional Hero Action', perk['details'])
         self.assertNotIn('retaliation', perk['description'])
 
     def test_provenance_metadata_and_runtime_selection_limits(self):

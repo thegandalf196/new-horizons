@@ -12,8 +12,9 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/ArcaneInspiration.h"
+#include "../../lib/networkPacks/SetMetamagicPointState.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
-#include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
@@ -22,6 +23,7 @@
 #include "../../lib/spells/NewHorizonsShadowMagnitudes.h"
 #include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/NewHorizonsSpellcraft.h"
+#include "../../lib/battle/NewHorizonsElementalAttunement.h"
 #include <bit>
 #include <tuple>
 #include <type_traits>
@@ -91,12 +93,13 @@ class LifeDrainCandidateValueReuseAITest : public HeroCommandFixture
 protected:
 	bool addLightSchool = false;
 	bool completedLedgers = false;
+	bool currentPointFixture = false;
 	CStack * active = nullptr;
 	CStack * fullFriend = nullptr;
 	CStack * woundedFriend = nullptr;
 	CStack * enemy = nullptr;
 	std::shared_ptr<LifeDrainCallback> callback;
-	std::shared_ptr<CPlayerBattleCallback> knownRebirthView;
+	std::shared_ptr<CPlayerBattleCallback> knownConfluxView;
 	std::shared_ptr<projectedHitTest::Environment> environment;
 	void SetUp() override
 	{
@@ -106,6 +109,7 @@ protected:
 	}
 	void mapLoaded(CMap * loaded) override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
@@ -119,6 +123,12 @@ protected:
 	void prepare(bool withPerkAndFrozen)
 	{
 		startGame();
+		if(currentPointFixture)
+		{
+			attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:aine")));
+			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
+				MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		}
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		for(const auto known : attackerSideHero->getSpellsInSpellbook())
 			attackerSideHero->removeSpellFromSpellbook(known);
@@ -194,18 +204,26 @@ protected:
 		packet.changedStacks.push_back(std::move(change));
 		gameHandler->sendAndApply(packet);
 	}
-	void enableCurrentMarks(int first, int second)
+	void enableCurrentPoints(int points, int first, int second)
 	{
-		const int skill = SecondarySkill::decode("new-horizons:metamagic");
-		ASSERT_GE(skill, 0);
-		attackerSideHero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		const auto profile = newHorizonsMetamagic::profile(attackerSideHero);
-		ASSERT_TRUE(newHorizonsMetamagic::usesArcaneMarks(attackerSideHero->getPerkState().rules));
+		ASSERT_TRUE(newHorizonsMetamagic::usesPoints(attackerSideHero->getPerkState().rules));
+		ASSERT_FALSE(newHorizonsMetamagic::usesArcaneMarks(attackerSideHero->getPerkState().rules));
+		ASSERT_TRUE(profile.pointPolicy);
 		ASSERT_EQ(profile.rank, 3);
-		ASSERT_FALSE(profile.residualMagic);
-		ASSERT_FALSE(profile.arcaneAmplification);
-		ASSERT_FALSE(profile.arcanePerfection);
-		ASSERT_EQ(profile.adeptAdditionalMarks, 0);
+		ASSERT_FALSE(profile.arcaneCatalyst);
+		ASSERT_FALSE(profile.arcaneAttunement);
+		ASSERT_FALSE(profile.arcaneShield);
+		ASSERT_EQ(profile.adeptAdditionalPoints, 0);
+		SetMetamagicPointState update;
+		update.battleID = BattleID(0); update.side = BattleSide::ATTACKER;
+		update.round = battle()->getRound();
+		update.state = battle()->getMetamagicPointState(BattleSide::ATTACKER);
+		ASSERT_LE(update.state.points, points);
+		update.state.points = points;
+		gameHandler->sendAndApply(update);
+		ASSERT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER).points, points);
+		// Serialized unit counters are inert under the current hero-point policy.
 		ASSERT_NO_FATAL_FAILURE(setMarks(active, first, 4));
 		ASSERT_NO_FATAL_FAILURE(setMarks(fullFriend, second, 0));
 		ASSERT_NO_FATAL_FAILURE(setMarks(woundedFriend, 5, 3));
@@ -267,7 +285,7 @@ protected:
 		gameHandler->sendAndApply(next);
 		finishSetup();
 	}
-	void prepareRebirth()
+	void prepareConfluxCasualty()
 	{
 		startGame();
 		attackerSideHero->clearSlots();
@@ -275,9 +293,7 @@ protected:
 		defenderSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:brissa")));
 		ASSERT_NO_FATAL_FAILURE(select(defenderSideHero, "new-horizons:elementalRebirth",
 			"new-horizons:elementalRebirth.primalBurst", MasteryLevel::BASIC));
-		const auto profile = newHorizonsElementalRebirth::activeProfile(defenderSideHero);
-		ASSERT_TRUE(profile);
-		ASSERT_TRUE(profile->primalBurst);
+		ASSERT_GT(newHorizonsElementalAttunement::captureProfile(defenderSideHero).rank, 0);
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 1000));
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), creatureByName("core:archer"), 1000));
 		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(2), creatureByName("core:archer"), 1000));
@@ -309,8 +325,8 @@ protected:
 		ASSERT_NE(fullFriend, nullptr);
 		ASSERT_NE(woundedFriend, nullptr);
 		ASSERT_NE(enemy, nullptr);
-		ASSERT_TRUE(newHorizonsElementalRebirth::isEligibleSource(*enemy));
-		ASSERT_GT(enemy->getBattleStartMaximumAggregateHP(), 0);
+		ASSERT_GT(enemy->getAvailableHealth(), 0);
+		ASSERT_GT(enemy->getMaxHealth(), 0);
 		for(const auto & [stack, position] : positions)
 		{
 			BattleStackMoved moved;
@@ -320,28 +336,27 @@ protected:
 			gameHandler->sendAndApply(moved);
 		}
 		beginCombat();
-		ASSERT_NO_FATAL_FAILURE(woundRebirthSource());
+		ASSERT_NO_FATAL_FAILURE(woundConfluxSource());
 		finishSetup();
-		knownRebirthView = std::make_shared<KnownLifeDrainBattleView>(battle());
+		knownConfluxView = std::make_shared<KnownLifeDrainBattleView>(battle());
 		ASSERT_EQ(callback->getPlayerID(), std::make_optional(PlayerColor(0)));
 		ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetMySide(), BattleSide::ATTACKER);
 		ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetMyHero(), attackerSideHero);
 		ASSERT_EQ(callback->getBattle(BattleID(0))->battleGetFightingHero(BattleSide::DEFENDER), nullptr);
-		ASSERT_EQ(knownRebirthView->battleGetMySide(), BattleSide::ALL_KNOWING);
-		ASSERT_EQ(knownRebirthView->battleGetFightingHero(BattleSide::ATTACKER), attackerSideHero);
-		ASSERT_EQ(knownRebirthView->battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
-		ASSERT_EQ(knownRebirthView->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(),
+		ASSERT_EQ(knownConfluxView->battleGetMySide(), BattleSide::ALL_KNOWING);
+		ASSERT_EQ(knownConfluxView->battleGetFightingHero(BattleSide::ATTACKER), attackerSideHero);
+		ASSERT_EQ(knownConfluxView->battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
+		ASSERT_EQ(knownConfluxView->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(),
 			VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
-		ASSERT_EQ(knownRebirthView->getBattle()->getSidePlayer(BattleSide::DEFENDER), defenderSideHero->getOwner());
-		ASSERT_EQ(knownRebirthView->battleGetActionController(active), PlayerColor(0));
-		const auto knownProfile = newHorizonsElementalRebirth::activeProfile(knownRebirthView->battleGetFightingHero(BattleSide::DEFENDER));
-		ASSERT_TRUE(knownProfile);
-		ASSERT_EQ(knownProfile->rank, MasteryLevel::BASIC);
-		ASSERT_TRUE(knownProfile->primalBurst);
+		ASSERT_EQ(knownConfluxView->getBattle()->getSidePlayer(BattleSide::DEFENDER), defenderSideHero->getOwner());
+		ASSERT_EQ(knownConfluxView->battleGetActionController(active), PlayerColor(0));
+		const auto knownProfile = newHorizonsElementalAttunement::captureProfile(knownConfluxView->battleGetFightingHero(BattleSide::DEFENDER));
+		ASSERT_EQ(knownProfile.rank, MasteryLevel::BASIC);
 	}
-	void woundRebirthSource()
+	void woundConfluxSource()
 	{
-		const auto originalBasis = enemy->getBattleStartMaximumAggregateHP();
+		const auto originalMaximum = enemy->getMaxHealth();
+		const auto originalCount = enemy->getCount();
 		int64_t wound = enemy->getAvailableHealth() - 10;
 		ASSERT_GT(wound, 0);
 		auto injured = enemy->acquireState();
@@ -354,7 +369,8 @@ protected:
 		injury.changedStacks.push_back(std::move(change));
 		gameHandler->sendAndApply(injury);
 		ASSERT_EQ(enemy->getAvailableHealth(), 10);
-		ASSERT_EQ(enemy->getBattleStartMaximumAggregateHP(), originalBasis);
+		ASSERT_EQ(enemy->getMaxHealth(), originalMaximum);
+		ASSERT_LT(enemy->getCount(), originalCount);
 	}
 
 	std::vector<std::byte> snapshot()
@@ -382,7 +398,8 @@ protected:
 		{
 			append(unit->unitId());
 			append(unit->getBattleStartMaximumAggregateHP());
-			append(unit->getRebirthOriginalAggregateHP());
+			append(unit->getMaxHealth());
+			append(unit->elementalAttunementPassives().attuned);
 		}
 		return bytes;
 	}
@@ -531,40 +548,27 @@ TEST_F(LifeDrainCandidateValueReuseAITest, AdditionalLightMembershipRetainsEvery
 	ASSERT_NO_FATAL_FAILURE(compare(false));
 }
 
-TEST_F(LifeDrainCandidateValueReuseAITest, LethalActualPrimalBurstChangingChosenFriendCannotCertify)
+TEST_F(LifeDrainCandidateValueReuseAITest, LethalConfluxDrainKeepsUntouchedFriendReceiptAndCreatesNoReplacement)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareRebirth());
-	RecordProperty("ProjectionKnowledge", "known authority projection; separate player-scoped AI parity");
+	ASSERT_NO_FATAL_FAILURE(prepareConfluxCasualty());
 	const auto before = snapshot();
-	HypotheticBattle child(environment.get(), knownRebirthView);
-	ASSERT_EQ(child.battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
-	ASSERT_EQ(child.getSideHero(BattleSide::DEFENDER), defenderSideHero);
-	const auto * source = child.battleGetUnitByID(enemy->unitId());
-	ASSERT_NE(source, nullptr);
-	const auto death = child.captureElementalRebirthSource(*source);
-	ASSERT_TRUE(death);
-	EXPECT_EQ(death->battleStartMaximumAggregateHP, enemy->getBattleStartMaximumAggregateHP());
-	ASSERT_FALSE(newHorizonsElementalRebirth::legalCandidatePool(child.getCreatureCategoryRules(),
-		child.getAccessibility(source), source->getPosition(), source->unitSide()).empty());
+	HypotheticBattle child(environment.get(), knownConfluxView);
+	const auto count = child.battleGetAllUnits(false).size();
+	const auto friendHealth = child.battleGetUnitByID(active->unitId())->getAvailableHealth();
 	const auto result = project(active, child);
 	ASSERT_TRUE(result.accepted);
-	EXPECT_FALSE(result.lifeDrain);
+	ASSERT_TRUE(result.lifeDrain);
 	EXPECT_FALSE(child.battleGetUnitByID(enemy->unitId())->alive());
-	ASSERT_FALSE(child.getElementalRebirthSpawnUnitIds().empty());
-	bool selectedFriendHit = false;
-	for(const auto & hit : child.getProjectedPrimalBurstHits())
-		if(hit.preHitTarget && hit.preHitTarget->unitId() == active->unitId() && hit.actualDamage > 0)
-			selectedFriendHit = true;
-	ASSERT_TRUE(selectedFriendHit); // Native damage producer actually changed the observed friend.
-	HypotheticBattle outside(environment.get(), knownRebirthView);
+	EXPECT_EQ(child.battleGetAllUnits(false).size(), count);
+	EXPECT_EQ(child.battleGetUnitByID(active->unitId())->getAvailableHealth(), friendHealth);
+	EXPECT_EQ(child.getElementalAttunementMask(BattleSide::DEFENDER), 0);
+	HypotheticBattle outside(environment.get(), knownConfluxView);
 	const auto unaffected = project(fullFriend, outside);
 	ASSERT_TRUE(unaffected.accepted);
-	ASSERT_TRUE(unaffected.lifeDrain); // The same real lethal machinery can certify an untouched friend.
-	ASSERT_FALSE(outside.getElementalRebirthSpawnUnitIds().empty());
+	ASSERT_TRUE(unaffected.lifeDrain);
 	EXPECT_EQ(child.battleGetFightingHero(BattleSide::DEFENDER), defenderSideHero);
 	EXPECT_EQ(snapshot(), before);
-	// The unchanged player callback separately checks full AI parity without inferring hidden policy.
-	ASSERT_NO_FATAL_FAILURE(compare()); // Other legal, unaffected full pairs must still produce hits.
+	ASSERT_NO_FATAL_FAILURE(compare());
 }
 
 TEST_F(LifeDrainCandidateValueReuseAITest, CompletedFormulaResponseAndInspirationEffectsMatchForFullFriends)
@@ -579,14 +583,32 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CompletedFormulaResponseAndInspiratio
 	ASSERT_EQ(first.getSideHero(BattleSide::DEFENDER), defenderSideHero);
 	ASSERT_TRUE(defenderSideHero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
 		std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE)));
+	spells::BattleCast beforeCast(&first, attackerSideHero, spells::Mode::HERO, lifeDrainId().toSpell());
+	const auto beforeMechanics = beforeCast.mechanicsForTarget({spells::Destination(first.battleGetUnitByID(enemy->unitId())),
+		spells::Destination(first.battleGetUnitByID(active->unitId()))});
+	ASSERT_EQ(beforeMechanics->getCastSpellPowerComponentBonusPercent(), 10);
 	const auto a = project(active, first);
 	const auto b = project(fullFriend, second);
 	ASSERT_TRUE(a.accepted);
 	ASSERT_TRUE(b.accepted);
-	ASSERT_TRUE(a.lifeDrain);
-	ASSERT_TRUE(b.lifeDrain);
-	EXPECT_EQ(a.lifeDrain, b.lifeDrain);
-	EXPECT_EQ(a.lifeDrain->castSpellPowerComponentBonusPercent, 10);
+	// Completed Arcane Inspiration refreshes the friendly army even when the
+	// Life Drain healing endpoint was full. That is not a reusable no-op.
+	EXPECT_FALSE(a.lifeDrain);
+	EXPECT_FALSE(b.lifeDrain);
+	const auto inspirationWire = [](const battle::Unit & unit)
+	{
+		std::vector<Bonus> records;
+		for(const auto & bonus : *unit.getBonuses(CSelector(arcaneInspiration::isEffect))) records.push_back(*bonus);
+		return projectedHitTest::serialized(records);
+	};
+	for(const auto * source : {active, fullFriend})
+	{
+		const auto * after = first.battleGetUnitByID(source->unitId());
+		ASSERT_NE(after, nullptr);
+		EXPECT_EQ(after->getAvailableHealth(), source->getAvailableHealth());
+		EXPECT_NE(inspirationWire(*after), inspirationWire(*source));
+		EXPECT_GT(arcaneInspiration::activeProfile(*after, PlayerColor(0)).corePercent, 0);
+	}
 	for(const auto * child : {&first, &second})
 	{
 		EXPECT_EQ(child->getCrossSchoolFormulaState(BattleSide::ATTACKER).spell, lifeDrainId());
@@ -607,35 +629,38 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CompletedFormulaResponseAndInspiratio
 		heroSelectionTest::snapshot(second, *gameHandler->randomizer, dynamic_cast<CRandomGenerator &>(*getRNG())));
 	EXPECT_EQ(first.battleGetFightingHero(BattleSide::DEFENDER), nullptr);
 	EXPECT_EQ(snapshot(), before);
-	ASSERT_NO_FATAL_FAILURE(compare());
+	ASSERT_NO_FATAL_FAILURE(compare(false)); // Every full friendly endpoint receives completion effects.
 }
 
-TEST_F(LifeDrainCandidateValueReuseAITest, CurrentFullFriendsGainingOwnMarksRejectReceiptEvenWithoutHealing)
+TEST_F(LifeDrainCandidateValueReuseAITest, CurrentHeroPointsPreserveFullFriendReceiptsDespiteDormantUnitMarks)
 {
+	currentPointFixture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(false));
-	ASSERT_NO_FATAL_FAILURE(enableCurrentMarks(0, 4));
+	ASSERT_NO_FATAL_FAILURE(enableCurrentPoints(4, 0, 4));
 	const auto before = snapshot();
 	for(const auto * friendly : {active, fullFriend})
 	{
 		HypotheticBattle child(environment.get(), callback->getBattle(BattleID(0)));
 		const auto result = project(friendly, child);
 		ASSERT_TRUE(result.accepted);
-		EXPECT_FALSE(result.lifeDrain);
+		ASSERT_TRUE(result.lifeDrain);
 		const auto * after = child.battleGetUnitByID(friendly->unitId());
 		ASSERT_NE(after, nullptr);
 		EXPECT_EQ(after->getAvailableHealth(), friendly->getAvailableHealth());
-		EXPECT_EQ(after->metamagicMarks(BattleSide::ATTACKER), friendly->metamagicMarks(BattleSide::ATTACKER) + 1);
+		EXPECT_EQ(after->metamagicMarks(BattleSide::ATTACKER), friendly->metamagicMarks(BattleSide::ATTACKER));
 		EXPECT_EQ(after->metamagicMarks(BattleSide::DEFENDER), friendly->metamagicMarks(BattleSide::DEFENDER));
-		EXPECT_NE(after->acquireState()->save(), friendly->acquireState()->save());
+		EXPECT_EQ(after->acquireState()->save(), friendly->acquireState()->save());
+		EXPECT_EQ(child.getMetamagicPointState(BattleSide::ATTACKER).points, 4);
 	}
 	EXPECT_EQ(snapshot(), before);
-	ASSERT_NO_FATAL_FAILURE(compare(false)); // All full recipients gain marks; wounded recipient heals.
+	ASSERT_NO_FATAL_FAILURE(compare()); // Full recipients remain equivalent; wounded recipient still heals.
 }
 
-TEST_F(LifeDrainCandidateValueReuseAITest, CurrentSaturatedFullFriendsKeepFullStateAndPositiveHitParity)
+TEST_F(LifeDrainCandidateValueReuseAITest, CurrentMaximumHeroPointsKeepFullStateAndPositiveHitParity)
 {
+	currentPointFixture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
-	ASSERT_NO_FATAL_FAILURE(enableCurrentMarks(5, 5));
+	ASSERT_NO_FATAL_FAILURE(enableCurrentPoints(12, 5, 5));
 	const auto before = snapshot();
 	for(const auto * friendly : {active, fullFriend})
 	{
@@ -647,14 +672,16 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CurrentSaturatedFullFriendsKeepFullSt
 		ASSERT_NE(after, nullptr);
 		EXPECT_EQ(after->acquireState()->save(), friendly->acquireState()->save());
 		EXPECT_EQ(after->metamagicMarks(BattleSide::ATTACKER), 5);
+		EXPECT_EQ(child.getMetamagicPointState(BattleSide::ATTACKER).points, 12);
 		EXPECT_EQ(after->metamagicMarks(BattleSide::DEFENDER), friendly->metamagicMarks(BattleSide::DEFENDER));
 	}
 	EXPECT_EQ(snapshot(), before);
 	ASSERT_NO_FATAL_FAILURE(compare()); // Every score bit, original pair, action, state and both RNGs; positive hits.
 }
 
-TEST_F(LifeDrainCandidateValueReuseAITest, CurrentWoundedSaturatedFriendScalesActualHealingAndCannotCertify)
+TEST_F(LifeDrainCandidateValueReuseAITest, CurrentMaximumHeroPointsScaleActualHealingWithoutActivatingDormantMarks)
 {
+	currentPointFixture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(false));
 	BattleUnitsChanged removed;
 	removed.battleID = BattleID(0);
@@ -662,7 +689,7 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CurrentWoundedSaturatedFriendScalesAc
 	gameHandler->sendAndApply(removed);
 	woundedFriend = addStack(BattleSide::ATTACKER, creatureByName("core:azureDragon"), BattleHex(4, 7), 1);
 	ASSERT_NE(woundedFriend, nullptr);
-	ASSERT_NO_FATAL_FAILURE(enableCurrentMarks(5, 5));
+	ASSERT_NO_FATAL_FAILURE(enableCurrentPoints(12, 5, 5));
 	int64_t wound = 800;
 	auto injured = woundedFriend->acquireState();
 	injured->damage(wound);
@@ -682,13 +709,14 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CurrentWoundedSaturatedFriendScalesAc
 	ASSERT_NE(target, nullptr);
 	const auto damage = enemy->getAvailableHealth() - child.battleGetUnitByID(enemy->unitId())->getAvailableHealth();
 	const auto ordinary = damage * newHorizonsMagic::lifeDrainHealingPercent(attackerSideHero) / 100;
-	const auto expected = ordinary * 175 / 100; // Expert15% per ownmark, five marks, no extra magnitude perks.
+	const auto expected = ordinary * 136 / 100; // Expert:3% per hero point,12points; recipient marks are inert.
 	ASSERT_GT(ordinary, 0);
 	ASSERT_GT(expected, ordinary);
 	ASSERT_LT(expected, 800); // No capacity clamp can conceal the recipient multiplier.
 	EXPECT_EQ(target->getAvailableHealth() - woundedFriend->getAvailableHealth(), expected);
 	EXPECT_EQ(target->metamagicMarks(BattleSide::ATTACKER), 5);
 	EXPECT_EQ(target->metamagicMarks(BattleSide::DEFENDER), 3);
+	EXPECT_EQ(child.getMetamagicPointState(BattleSide::ATTACKER).points, 12);
 	EXPECT_EQ(snapshot(), before);
 	ASSERT_NO_FATAL_FAILURE(compare());
 }

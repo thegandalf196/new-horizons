@@ -30,6 +30,8 @@ struct PurifyStackChoices
 	std::vector<std::pair<SpellID, std::string>> eligibleEffects;
 	bool physicalPoisonAutomaticallyCleared = false;
 	bool graveDustAutomaticallyCleared = false;
+	bool stunAutomaticallyCleared = false;
+	bool crippleAutomaticallyCleared = false;
 };
 
 using PurifyEffectSelection = std::vector<std::pair<int32_t, SpellID>>;
@@ -44,6 +46,8 @@ struct PurifyContext
 	int maximumSpellEffectChoices = 1;
 	bool purifierWillClearPhysicalPoison = false;
 	bool purifierWillClearGraveDust = false;
+	bool purifierWillClearStun = false;
+	bool purifierWillClearCripple = false;
 	std::vector<PurifyStackChoices> stacks;
 	std::function<bool(const PurifyEffectSelection &)> confirm;
 	std::function<void()> cancel;

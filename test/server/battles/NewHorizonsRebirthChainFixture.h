@@ -22,6 +22,7 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true;
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the separate New Horizons native profile";
 	}
@@ -91,32 +92,21 @@ protected:
 		gameHandler->sendAndApply(pack);
 	}
 
-	CStack * firstReborn()
+	BattleUnitsChanged retiredCandidate()
 	{
-		injure(source, source->getAvailableHealth());
-		for(const auto * unit : battle()->battleGetAllUnits(false))
-			if(unit->alive() && unit->getRebirthOriginalAggregateHP() > 0)
-				return battle()->getStack(unit->unitId(), false);
-		return nullptr;
-	}
-
-	BattleUnitsChanged candidate(CStack * first)
-	{
-		const auto pool = newHorizonsElementalRebirth::legalCandidatePool(
-			battle()->getCreatureCategoryRules(), battle()->getAccessibility(), first->getPosition(), first->unitSide());
-		if(pool.empty())
-			throw std::runtime_error("No Chain candidate in fixture");
-		const auto type = pool.front();
-		const auto maxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
-			battle()->getSideArmy(first->unitSide()), type, first->unitOwner(), first->unitSide());
-		auto output = newHorizonsElementalRebirth::makeSpawnDescriptor(battle()->battleNextUnitId(),
-			type, first->unitSide(), first->getPosition(), first->getRebirthOriginalAggregateHP() / 4, maxHP, true);
+		battle::UnitInfo info;
+		info.id = battle()->battleNextUnitId();
+		info.type = creature("core:fireElemental");
+		info.side = source->unitSide();
+		info.position = source->getPosition();
+		info.count = 1;
+		info.summoned = true;
 		BattleUnitsChanged add;
 		add.battleID = BattleID(0);
 		add.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-			first->unitSide(), first->unitId(), output->unit.id};
-		add.changedStacks.emplace_back(output->unit.id, UnitChanges::EOperation::ADD);
-		output->unit.save(add.changedStacks.back().data);
+			info.side, source->unitId(), info.id};
+		add.changedStacks.emplace_back(info.id, UnitChanges::EOperation::ADD);
+		info.save(add.changedStacks.back().data);
 		return add;
 	}
 };

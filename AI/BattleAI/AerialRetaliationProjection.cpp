@@ -90,16 +90,12 @@ int64_t replaySourceAftermath(HypotheticBattle & branch, const FortuneStrikeProj
 	const int64_t before = source->getAvailableHealth();
 	if(source->alive() && strike.aerialReflectionDamage > 0)
 	{
-		const auto rebirthSource = branch.captureElementalRebirthSource(*source);
-		const bool nativeRebirth = branch.hasReadyNativeRebirth(source.get());
 		auto damage = strike.aerialReflectionDamage;
 		const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(branch, *source);
 		source->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 		if(!source->alive()) branch.releaseSerpentBindingsForDeath(*source);
 		branch.recordBloodrageTransition(source, true);
 		if(destroyed) PhysicalStrikeProjection::completeDamagePacket(branch, std::span(&*destroyed, 1));
-		if(rebirthSource) branch.projectElementalRebirth(source.get(), *rebirthSource,
-			!source->alive(), source->isClone(), nativeRebirth);
 	}
 	const int64_t lost = std::max<int64_t>(0, before - source->getAvailableHealth());
 	if(source->alive() && strike.aerialVampirismHealing > 0)

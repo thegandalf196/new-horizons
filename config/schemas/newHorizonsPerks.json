@@ -13,6 +13,8 @@
 	"required": [
 		"schemaVersion",
 		"rulesetVersion",
+		"commandPolicyVersion",
+		"elementalAttunementPolicy",
 		"sourceDocument",
 		"sourceSha256",
 		"maxSkillChoices",
@@ -21,6 +23,8 @@
 		"skills"
 	],
 	"properties": {
+		"elementalAttunementPolicy": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Current deterministic Conflux Attunement and revised perk meanings; a full active registry requires version 1."},
+		"commandPolicyVersion": {"type": "integer", "enum": [1], "description": "Current finite-Command perk meanings; a full active registry must carry version 1."},
 		"metamagicPolicy": {"$ref": "#/definitions/metamagicPolicyV3"},
 		"divineMandatePolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
 		"demonicGatingPolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
@@ -54,7 +58,349 @@
 			"type": "object",
 			"minProperties": 31,
 			"maxProperties": 31,
-			"additionalProperties": {"$ref": "#/definitions/skill"}
+			"additionalProperties": {"$ref": "#/definitions/skill"},
+			"properties": {
+				"new-horizons:discipline": {
+					"type": "object",
+					"required": ["id", "name", "domain", "availability", "description", "ranks", "perks"],
+					"additionalProperties": false,
+					"properties": {
+						"id": {"enum": ["new-horizons:discipline"]},
+						"name": {"type": "string", "minLength": 1},
+						"domain": {"type": "string", "enum": ["Martial", "Magic", "Hybrid", "Strategic", "Faction"]},
+						"availability": {
+							"type": "string",
+							"enum": [
+								"All heroes",
+								"Might-exclusive",
+								"Magic-exclusive",
+								"Castle heroes only",
+								"Rampart heroes only",
+								"Tower heroes only",
+								"Dungeon heroes only",
+								"Inferno heroes only",
+								"Necropolis heroes only",
+								"Stronghold heroes only",
+								"Fortress heroes only",
+								"Conflux heroes only"
+							]
+						},
+						"description": {"type": "string", "minLength": 1},
+						"details": {"type": "string", "minLength": 1},
+						"ranks": {
+							"type": "object",
+							"required": ["basic", "advanced", "expert"],
+							"additionalProperties": false,
+							"properties": {
+								"basic": {
+									"type": "object",
+									"required": ["description", "effect"],
+									"additionalProperties": false,
+									"properties": {
+										"description": {"type": "string", "minLength": 1},
+										"details": {"type": "string", "minLength": 1},
+										"effect": {"$ref": "#/definitions/effect"},
+										"mechanics": {"$ref": "#/definitions/preparedRankMechanicsV1"}
+									}
+								},
+								"advanced": {
+									"type": "object",
+									"required": ["description", "effect"],
+									"additionalProperties": false,
+									"properties": {
+										"description": {"type": "string", "minLength": 1},
+										"details": {"type": "string", "minLength": 1},
+										"effect": {"$ref": "#/definitions/effect"},
+										"mechanics": {"$ref": "#/definitions/preparedRankMechanicsV1"}
+									}
+								},
+								"expert": {
+									"type": "object",
+									"required": ["description", "effect"],
+									"additionalProperties": false,
+									"properties": {
+										"description": {"type": "string", "minLength": 1},
+										"details": {"type": "string", "minLength": 1},
+										"effect": {"$ref": "#/definitions/effect"},
+										"mechanics": {"$ref": "#/definitions/preparedRankMechanicsV1"}
+									}
+								}
+							}
+						},
+						"perks": {"type": "array", "minItems": 10, "maxItems": 10, "items": {"$ref": "#/definitions/perk"}}
+					}
+				},
+				"new-horizons:chaosMagic": {
+					"type": "object",
+					"required": ["id", "name", "domain", "availability", "description", "ranks", "perks"],
+					"additionalProperties": false,
+					"properties": {
+						"id": {"enum": ["new-horizons:chaosMagic"]},
+						"name": {"type": "string", "minLength": 1},
+						"domain": {"type": "string", "enum": ["Martial", "Magic", "Hybrid", "Strategic", "Faction"]},
+						"availability": {
+							"type": "string",
+							"enum": [
+								"All heroes",
+								"Might-exclusive",
+								"Magic-exclusive",
+								"Castle heroes only",
+								"Rampart heroes only",
+								"Tower heroes only",
+								"Dungeon heroes only",
+								"Inferno heroes only",
+								"Necropolis heroes only",
+								"Stronghold heroes only",
+								"Fortress heroes only",
+								"Conflux heroes only"
+							]
+						},
+						"description": {"type": "string", "minLength": 1},
+						"details": {"type": "string", "minLength": 1},
+						"ranks": {
+							"type": "object",
+							"required": ["basic", "advanced", "expert"],
+							"additionalProperties": false,
+							"properties": {
+								"basic": {"$ref": "#/definitions/rank"},
+								"advanced": {"$ref": "#/definitions/rank"},
+								"expert": {"$ref": "#/definitions/rank"}
+							}
+						},
+						"perks": {
+							"type": "array",
+							"minItems": 10,
+							"maxItems": 10,
+							"items": {
+								"oneOf": [
+									{
+										"type": "object",
+										"required": ["id", "name", "requires", "description", "effect"],
+										"additionalProperties": false,
+										"properties": {
+											"id": {"enum": ["new-horizons:chaosMagic.mindbreaker"]},
+											"name": {"type": "string", "minLength": 1},
+											"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},
+											"description": {"type": "string", "minLength": 1},
+											"details": {"type": "string", "minLength": 1},
+											"effect": {"$ref": "#/definitions/effect"},
+											"mechanics": {
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["version", "operations"],
+												"properties": {
+													"version": {"type": "integer", "enum": [1]},
+													"operations": {
+														"type": "array",
+														"minItems": 1,
+														"maxItems": 1,
+														"items": {
+															"type": "object",
+															"additionalProperties": false,
+															"required": ["operation", "source", "target", "stage", "lifetime"],
+															"properties": {
+																"operation": {"enum": ["creatureSuppression"]},
+																"source": {"enum": ["spellAddition"]},
+																"target": {"enum": ["spellRecipient"]},
+																"stage": {"enum": ["castApplication"]},
+																"lifetime": {"enum": ["rounds"]}
+															}
+														}
+													}
+												}
+											}
+										}
+									},
+									{
+										"type": "object",
+										"required": ["id", "name", "requires", "description", "effect"],
+										"additionalProperties": false,
+										"properties": {
+											"id": {"type": "string", "minLength": 1},
+											"name": {"type": "string", "minLength": 1},
+											"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},
+											"description": {"type": "string", "minLength": 1},
+											"details": {"type": "string", "minLength": 1},
+											"effect": {"$ref": "#/definitions/effect"}
+										},
+										"not": {"required": ["id"], "properties": {"id": {"enum": ["new-horizons:chaosMagic.mindbreaker"]}}}
+									}
+								]
+							}
+						}
+					}
+				},
+				"new-horizons:luck": {
+					"type": "object",
+					"required": ["id", "name", "domain", "availability", "description", "ranks", "perks"],
+					"additionalProperties": false,
+					"properties": {
+						"id": {"enum": ["new-horizons:luck"]},
+						"name": {"type": "string", "minLength": 1},
+						"domain": {"type": "string", "enum": ["Martial", "Magic", "Hybrid", "Strategic", "Faction"]},
+						"availability": {
+							"type": "string",
+							"enum": [
+								"All heroes",
+								"Might-exclusive",
+								"Magic-exclusive",
+								"Castle heroes only",
+								"Rampart heroes only",
+								"Tower heroes only",
+								"Dungeon heroes only",
+								"Inferno heroes only",
+								"Necropolis heroes only",
+								"Stronghold heroes only",
+								"Fortress heroes only",
+								"Conflux heroes only"
+							]
+						},
+						"description": {"type": "string", "minLength": 1},
+						"details": {"type": "string", "minLength": 1},
+						"ranks": {
+							"type": "object",
+							"required": ["basic", "advanced", "expert"],
+							"additionalProperties": false,
+							"properties": {
+								"basic": {
+									"type": "object",
+									"required": ["description", "effect"],
+									"additionalProperties": false,
+									"properties": {
+										"description": {"type": "string", "minLength": 1},
+										"details": {"type": "string", "minLength": 1},
+										"effect": {"$ref": "#/definitions/effect"},
+										"mechanics": {"$ref": "#/definitions/preparedRankMechanicsV1"}
+									}
+								},
+								"advanced": {
+									"type": "object",
+									"required": ["description", "effect"],
+									"additionalProperties": false,
+									"properties": {
+										"description": {"type": "string", "minLength": 1},
+										"details": {"type": "string", "minLength": 1},
+										"effect": {"$ref": "#/definitions/effect"},
+										"mechanics": {"$ref": "#/definitions/preparedRankMechanicsV1"}
+									}
+								},
+								"expert": {
+									"type": "object",
+									"required": ["description", "effect"],
+									"additionalProperties": false,
+									"properties": {
+										"description": {"type": "string", "minLength": 1},
+										"details": {"type": "string", "minLength": 1},
+										"effect": {"$ref": "#/definitions/effect"},
+										"mechanics": {"$ref": "#/definitions/preparedRankMechanicsV1"}
+									}
+								}
+							}
+						},
+						"perks": {"type": "array", "minItems": 10, "maxItems": 10, "items": {"$ref": "#/definitions/perk"}}
+					}
+				},
+				"new-horizons:lightMagic": {
+					"type": "object",
+					"required": ["id", "name", "domain", "availability", "description", "ranks", "perks"],
+					"additionalProperties": false,
+					"properties": {
+						"id": {"enum": ["new-horizons:lightMagic"]},
+						"name": {"type": "string", "minLength": 1},
+						"domain": {"type": "string", "enum": ["Martial", "Magic", "Hybrid", "Strategic", "Faction"]},
+						"availability": {
+							"type": "string",
+							"enum": [
+								"All heroes",
+								"Might-exclusive",
+								"Magic-exclusive",
+								"Castle heroes only",
+								"Rampart heroes only",
+								"Tower heroes only",
+								"Dungeon heroes only",
+								"Inferno heroes only",
+								"Necropolis heroes only",
+								"Stronghold heroes only",
+								"Fortress heroes only",
+								"Conflux heroes only"
+							]
+						},
+						"description": {"type": "string", "minLength": 1},
+						"details": {"type": "string", "minLength": 1},
+						"ranks": {
+							"type": "object",
+							"required": ["basic", "advanced", "expert"],
+							"additionalProperties": false,
+							"properties": {
+								"basic": {"$ref": "#/definitions/rank"},
+								"advanced": {"$ref": "#/definitions/rank"},
+								"expert": {"$ref": "#/definitions/rank"}
+							}
+						},
+						"perks": {
+							"type": "array",
+							"minItems": 10,
+							"maxItems": 10,
+							"items": {
+								"oneOf": [
+									{
+										"type": "object",
+										"required": ["id", "name", "requires", "description", "effect"],
+										"additionalProperties": false,
+										"properties": {
+											"id": {"enum": ["new-horizons:lightMagic.sanctuaryKeeper"]},
+											"name": {"type": "string", "minLength": 1},
+											"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},
+											"description": {"type": "string", "minLength": 1},
+											"details": {"type": "string", "minLength": 1},
+											"effect": {"$ref": "#/definitions/effect"},
+											"mechanics": {
+												"type": "object",
+												"additionalProperties": false,
+												"required": ["version", "operations"],
+												"properties": {
+													"version": {"type": "integer", "enum": [1]},
+													"operations": {
+														"type": "array",
+														"minItems": 1,
+														"maxItems": 1,
+														"items": {
+															"type": "object",
+															"additionalProperties": false,
+															"required": ["operation", "source", "target", "stage", "lifetime"],
+															"properties": {
+																"operation": {"enum": ["sanctuaryKeeper"]},
+																"source": {"enum": ["spellAddition"]},
+																"target": {"enum": ["spellRecipient"]},
+																"stage": {"enum": ["castApplication"]},
+																"lifetime": {"enum": ["parentStatus"]}
+															}
+														}
+													}
+												}
+											}
+										}
+									},
+									{
+										"type": "object",
+										"required": ["id", "name", "requires", "description", "effect"],
+										"additionalProperties": false,
+										"properties": {
+											"id": {"type": "string", "minLength": 1},
+											"name": {"type": "string", "minLength": 1},
+											"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},
+											"description": {"type": "string", "minLength": 1},
+											"details": {"type": "string", "minLength": 1},
+											"effect": {"$ref": "#/definitions/effect"}
+										},
+										"not": {"required": ["id"], "properties": {"id": {"enum": ["new-horizons:lightMagic.sanctuaryKeeper"]}}}
+									}
+								]
+							}
+						}
+					}
+				}
+			}
 		}
 	},
 	"definitions": {
@@ -183,6 +529,64 @@
 					"minItems": 10,
 					"maxItems": 10,
 					"items": {"$ref": "#/definitions/perk"}
+				}
+			}
+		},
+		"preparedRankMechanicsV1": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["version", "operations"],
+			"properties": {
+				"version": {"type": "integer", "enum": [1]},
+				"operations": {
+					"type": "array",
+					"minItems": 1,
+					"maxItems": 8,
+					"items": {
+						"oneOf": [
+							{
+								"type": "object",
+								"additionalProperties": false,
+								"required": ["operation", "source", "target", "stage", "lifetime", "type", "value", "valueMode"],
+								"properties": {
+									"operation": {"enum": ["bonus"]},
+									"source": {"enum": ["skillRank"]},
+									"target": {"enum": ["army"]},
+									"stage": {"enum": ["attachment"]},
+									"lifetime": {"enum": ["permanent"]},
+									"type": {
+										"enum": [
+											"MORALE",
+											"LUCK",
+											"STACKS_SPEED",
+											"SPELL_RESISTANCE_AURA",
+											"PERCENTAGE_DAMAGE_BOOST",
+											"GENERAL_ATTACK_REDUCTION",
+											"SPELL_DAMAGE_REDUCTION"
+										]
+									},
+									"value": {"type": "integer", "minimum": -100000, "maximum": 100000},
+									"valueMode": {"enum": ["BASE_NUMBER", "ADDITIVE_VALUE", "PERCENT_TO_BASE"]}
+								}
+							},
+							{
+								"type": "object",
+								"additionalProperties": false,
+								"required": ["operation", "source", "target", "stage", "lifetime", "type", "value", "valueMode", "primarySkill"],
+								"properties": {
+									"operation": {"enum": ["bonus"]},
+									"source": {"enum": ["skillRank"]},
+									"target": {"enum": ["army"]},
+									"stage": {"enum": ["attachment"]},
+									"lifetime": {"enum": ["permanent"]},
+									"type": {"enum": ["PRIMARY_SKILL"]},
+									"value": {"type": "integer", "minimum": -100000, "maximum": 100000},
+									"valueMode": {"enum": ["BASE_NUMBER", "ADDITIVE_VALUE", "PERCENT_TO_BASE"]},
+									"primarySkill": {"enum": ["attack", "defense"]}
+								}
+							}
+						]
+					}
 				}
 			}
 		}

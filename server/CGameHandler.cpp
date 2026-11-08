@@ -26,15 +26,13 @@
 #include "ServerSpellCastEnvironment.h"
 #include "TurnStartVisitScheduler.h"
 #include "battles/BattleProcessor.h"
-#include "battles/ElementalRebirthAftermath.h"
-#include "battles/ElementalCataclysmAftermath.h"
 #include "processors/HeroPoolProcessor.h"
 #include "processors/NewTurnProcessor.h"
 #include "processors/PlayerMessageProcessor.h"
 #include "processors/TurnOrderProcessor.h"
 #include "queries/BattleQueries.h"
 #include "queries/QueriesProcessor.h"
-#include "queries/LuaScriptQuery.h"
+#include "queries/MapEventQuery.h"
 #include "queries/MapQueries.h"
 #include "queries/HeroLevelUpOffer.h"
 #include "queries/VisitQueries.h"
@@ -53,8 +51,6 @@
 
 #include "../lib/battle/BattleInfo.h"
 #include "../lib/battle/NewHorizonsDivineMandate.h"
-#include "../lib/battle/NewHorizonsElementalRebirth.h"
-#include "../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../lib/battle/NewHorizonsSoulChain.h"
 #include "../lib/bonuses/BonusParameters.h"
@@ -1389,7 +1385,7 @@ void CGameHandler::showScriptDialog(BlockingDialog * iw)
 {
 	// The dialog sits above the paused script's query; its reply is stashed there and consumed when
 	// the script query is exposed and resumes the coroutine.
-	auto scriptQuery = std::dynamic_pointer_cast<LuaScriptQuery>(queries->topQuery(iw->player));
+	auto scriptQuery = std::dynamic_pointer_cast<MapEventQuery>(queries->topQuery(iw->player));
 	if(!scriptQuery)
 	{
 		logGlobal->error("showScriptDialog called without an active script query for player %s", iw->player.toString());
@@ -1406,16 +1402,16 @@ void CGameHandler::showScriptDialog(BlockingDialog * iw)
 void CGameHandler::runScriptedEvent(scripting::MapEventDispatcher & dispatcher, PlayerColor player, ObjectInstanceID visitingHero,
 	const std::function<std::optional<int>(scripting::MapEventDispatcher &)> & dispatch)
 {
-	// The script may pause on a blocking action; a LuaScriptQuery keeps its coroutine alive between
+	// The script may pause on a blocking action; a MapEventQuery keeps its coroutine alive between
 	// resumptions and stays on the stack (blocking the event from ending) until the script finishes.
-	auto scriptQuery = std::make_shared<LuaScriptQuery>(this, player);
+	auto scriptQuery = std::make_shared<MapEventQuery>(this, player);
 	if(visitingHero.hasValue())
 		scriptQuery->setVisitingHero(visitingHero);
 	queries->addQuery(scriptQuery);
 
 	auto handle = dispatch(dispatcher);
 	if(handle)
-		scriptQuery->setCoroutine(*handle);
+		scriptQuery->setContinuation(*handle);
 	else
 		queries->popIfTop(scriptQuery);
 }
@@ -1948,7 +1944,6 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	};
 
 	std::map<uint32_t, PersonalBloodrageGain> personalBloodrageGains;
-	std::map<uint32_t, elementalRebirthAftermath::Trigger> elementalRebirthTriggers;
 	const auto capturePersonalBloodrageGains = [&](const BattleID & battleID,
 		const std::vector<BattleStackAttacked> & hits)
 	{
@@ -1964,29 +1959,6 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			if(unit && unit->getPersonalBloodrageIncrement() == 0)
 				personalBloodrageGains.emplace(unit->unitId(),
 					PersonalBloodrageGain{battleID, unit->creatureId(), unit->getCount()});
-		}
-	};
-	auto captureElementalRebirthTriggers = [&](const BattleID & battleID,
-		const std::vector<BattleStackAttacked> & hits)
-	{
-		const auto * battleInfo = gameState().getBattle(battleID);
-		if(!battleInfo)
-			return;
-
-		for(const auto & hit : hits)
-		{
-			if(!hit.killed() || hit.cloneKilled() || hit.willRebirth())
-				continue;
-
-			const auto * unit = battleInfo->battleGetUnitByID(hit.stackAttacked);
-			if(!unit)
-				continue;
-			const auto * hero = battleInfo->getSideHero(unit->unitSide());
-			const auto snapshot = newHorizonsElementalRebirth::captureDeathSource(*unit, hero,
-				battleInfo->getRebirthChainUsed(unit->unitSide()), &battleInfo->getCreatureCategoryRules(),
-				battleInfo->getPhoenixSparkUsed(unit->unitSide()));
-			if(snapshot)
-				elementalRebirthTriggers.try_emplace(unit->unitId(), elementalRebirthAftermath::Trigger{battleID, *snapshot});
 		}
 	};
 
@@ -2022,18 +1994,14 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 	{
 		captureSoulChainTriggers(attack->battleID, attack->bsa);
 		capturePersonalBloodrageGains(attack->battleID, attack->bsa);
-		captureElementalRebirthTriggers(attack->battleID, attack->bsa);
 	}
 	else if(const auto * injured = dynamic_cast<const StacksInjured *>(&pack))
 	{
 		captureSoulChainTriggers(injured->battleID, injured->stacks);
 		capturePersonalBloodrageGains(injured->battleID, injured->stacks);
-		captureElementalRebirthTriggers(injured->battleID, injured->stacks);
 	}
 
-	const auto cataclysms = elementalCataclysmAftermath::capture(*this, pack);
 	gameServer().applyPack(pack);
-	elementalCataclysmAftermath::resolve(*this, cataclysms);
 	for(const auto & [heroId, before] : archivistBefore)
 	{
 		const auto * hero = gameInfo().getHero(heroId);
@@ -2077,8 +2045,6 @@ void CGameHandler::sendAndApply(CPackForClient & pack)
 			}
 		}
 	}
-	for(const auto & [unitId, trigger] : elementalRebirthTriggers)
-		elementalRebirthAftermath::resolve(*this, unitId, trigger);
 
 	for(const auto & [unitId, gain] : personalBloodrageGains)
 	{

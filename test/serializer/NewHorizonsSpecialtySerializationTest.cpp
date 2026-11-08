@@ -23,7 +23,6 @@ JsonNode captured(bool withRow = true)
 		auto & row = table["ecumenicalScholar"];
 		row["learningPercentPerLevel"].Integer() = 0;
 		row["learningMaximumPercent"].Integer() = 0;
-		row["additionalSpellsTaught"].Integer() = 0;
 	}
 	return result;
 }
@@ -65,6 +64,9 @@ TEST(NewHorizonsSpecialtySerialization, InvalidPresentCaptureRejectsEvenForCurre
 {
 	auto rules = captured();
 	rules["learningExchangeSpecialties"]["unknown"].Integer() = 1;
+	EXPECT_THROW(validateCapturedSpecialtiesSerialization(rules, context(Version::CURRENT)), std::runtime_error);
+	rules = captured();
+	rules["learningExchangeSpecialties"]["ecumenicalScholar"]["additionalSpellsTaught"].Integer() = 0;
 	EXPECT_THROW(validateCapturedSpecialtiesSerialization(rules, context(Version::CURRENT)), std::runtime_error);
 }
 TEST(NewHorizonsSpecialtySerialization, HistoricalAbsenceIsReadOnlyAndNeverInstalled)

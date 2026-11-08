@@ -138,7 +138,7 @@ public:
 	void showGarrisonDialog(ObjectInstanceID upobj, ObjectInstanceID hid, bool removableUnits, const MetaString & customTitle) override;
 	void showObjectWindow(const CGObjectInstance * object, EOpenWindowMode window, const CGHeroInstance * visitor, bool addQuery) override;
 
-	/// Runs a converted map-event handler under a LuaScriptQuery so blocking script actions can pause and
+	/// Runs a converted map-event handler under a MapEventQuery so blocking script actions can pause and
 	/// later resume it. `dispatch` invokes the specific dispatcher entry point and returns its coroutine
 	/// handle (empty when the handler finished without pausing).
 	void runScriptedEvent(scripting::MapEventDispatcher & dispatcher, PlayerColor player, ObjectInstanceID visitingHero,

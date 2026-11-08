@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "NewHorizonsCapabilityRules.h"
+#include "SiegeCapabilityRead.h"
 #include "../../battle/NewHorizonsMachineSpecialties.h"
 #include <algorithm>
 std::optional<newHorizonsHeroes::SiegeCapabilities> CGHeroInstance::getSiegeCapabilities() const
@@ -17,7 +18,11 @@ std::optional<newHorizonsHeroes::SiegeCapabilities> CGHeroInstance::getSiegeCapa
 	result.artilleryRank = artillery;
 	result.ballisticsRank = getSecSkillLevel(SecondarySkill::BALLISTICS);
 	result.firstAidRank = getSecSkillLevel(SecondarySkill::FIRST_AID);
-	result.ballistaDamageMultiplier = newHorizonsHeroes::capabilityBallistaMultiplier(capabilityRules, artillery);
+	std::optional<newHorizonsHeroes::SiegeCapabilityRead> siegeRead;
+	if(typeid(*this) == typeid(CGHeroInstance))
+		siegeRead.emplace(capabilityRules, artillery);
+	result.ballistaDamageMultiplier = siegeRead ? siegeRead->ballistaMultiplier()
+		: newHorizonsHeroes::capabilityBallistaMultiplier(capabilityRules, artillery);
 	result.ballistaControlChance = control(CreatureID::BALLISTA);
 	result.catapultControlChance = control(CreatureID::CATAPULT);
 	result.firstAidControlChance = control(CreatureID::FIRST_AID_TENT);
@@ -35,14 +40,16 @@ std::optional<newHorizonsHeroes::SiegeCapabilities> CGHeroInstance::getSiegeCapa
 			? std::clamp<int>(getSecSkillLevel(SecondarySkill(canonicalId)), 0, 3)
 			: 0;
 		result.warMachinesRank = rank;
-		result.siegeRating = newHorizonsHeroes::capabilitySiegeRating(capabilityRules, rank);
+		result.siegeRating = siegeRead ? siegeRead->siegeRating(rank)
+			: newHorizonsHeroes::capabilitySiegeRating(capabilityRules, rank);
 		if(capabilityRules["rulesetVersion"].Integer() >= 4)
 			result.siegeRating = std::max(0, result.siegeRating + valOfBonuses(BonusType::SIEGE_RATING));
 		result.ballistaDamage = newHorizonsMachineSpecialties::siegeOutput(*this, capabilityRules, result.siegeRating, "ballistaDamage");
 		result.catapultStructuralDamage = newHorizonsMachineSpecialties::siegeOutput(*this, capabilityRules, result.siegeRating, "catapultStructuralDamage");
 		result.firstAidHealing = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "firstAidHealing");
 		result.defensiveTowerDamage = newHorizonsHeroes::capabilitySiegeOutput(capabilityRules, result.siegeRating, "defensiveTowerDamage");
-		const int directControl = newHorizonsHeroes::capabilityDirectControlChance(capabilityRules, rank);
+		const int directControl = siegeRead ? siegeRead->directControlChance(rank)
+			: newHorizonsHeroes::capabilityDirectControlChance(capabilityRules, rank);
 		result.ballistaControlChance = directControl;
 		result.catapultControlChance = directControl;
 		result.firstAidControlChance = directControl;

@@ -85,6 +85,9 @@ public:
 	/// Signed next-activation reduction across the shared weighted Confusion
 	/// outcomes; detached evaluation never chooses a live random behavior.
 	std::optional<float> spellConfusionExpectedValue;
+	/// Nominal redirected recipient-share delta, added once only after acceptance.
+	float spellRunicExpectedValue = 0;
+	bool spellRunicEstimatePartial = false;
 	/// Marginal three-activation physical Poison value for canonical Nature
 	/// Poison, whose immediate cast does not change health.
 	float spellNaturePoisonValue = 0.0f;

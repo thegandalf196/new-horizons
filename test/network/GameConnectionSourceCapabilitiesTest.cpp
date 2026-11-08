@@ -21,9 +21,26 @@ TEST(GameConnectionSourceCapabilitiesTest, ActualCurrentCapabilityLeavesDefaultC
 {
 	auto endpoint = std::make_shared<Endpoint>(); GameConnection connection(endpoint);
 	const auto before = OwnedBonusCaptureCodec::current().version();
-	const auto capabilities = connection.captureSpecialtySerializationContext(endpoint);
+	ESerializationVersion observed = ESerializationVersion::NONE;
+	const auto capabilities = connection.captureSpecialtySerializationContext(endpoint, &observed);
+	EXPECT_EQ(observed, ESerializationVersion::CURRENT);
+	EXPECT_TRUE(capabilities.passiveFactionSkills);
+	EXPECT_EQ(before, ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(observed, capabilities).version(), before);
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(capabilities).version(), before);
 	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), before);
+	PlayerStartsTurn turn;
+	turn.player = PlayerColor(2);
+	connection.sendPack(turn);
+	const auto bytes = endpoint->sent;
+	auto decoded = connection.retrievePack(bytes);
+	const auto * restored = dynamic_cast<const PlayerStartsTurn *>(decoded.get());
+	ASSERT_NE(restored, nullptr);
+	EXPECT_EQ(restored->player, turn.player);
+	connection.captureSpecialtySerializationContext(endpoint, &observed);
+	EXPECT_EQ(observed, ESerializationVersion::CURRENT);
+	connection.sendPack(turn);
+	EXPECT_EQ(endpoint->sent, bytes);
 }
 TEST(GameConnectionSourceCapabilitiesTest, ExplicitKnown1153IsLocalAndRejectsUnknownShapes)
 {
@@ -32,8 +49,7 @@ TEST(GameConnectionSourceCapabilitiesTest, ExplicitKnown1153IsLocalAndRejectsUnk
 	const auto capabilities = connection.captureSpecialtySerializationContext(endpoint);
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(capabilities).version(), ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(),
-		ESerializationVersion::CURRENT < ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES
-			? ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES : ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
+		ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	auto partial = capabilities; partial.ordinaryCombatSpecialties = false;
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceCapabilities(partial), std::invalid_argument);
 	newHorizonsHeroes::SpecialtySerializationContext unknown;
@@ -48,14 +64,13 @@ TEST(GameConnectionSourceCapabilitiesTest, WrongAliasedOrExpiredConnectionCannot
 	alias.reset(); endpoint.reset();
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(foreign), std::logic_error);
 }
-TEST(GameConnectionSourceCapabilitiesTest, UnknownEpochRefusesEvenWhenNamedFeatureMaskMatchesKnown1153)
+TEST(GameConnectionSourceCapabilitiesTest, UnknownEpochRefusesEvenWhenNamedFeatureMaskMatchesKnown1155)
 {
 	auto endpoint = std::make_shared<Endpoint>(); GameConnection connection(endpoint);
 	connection.setSerializationVersion(static_cast<ESerializationVersion>(std::max(static_cast<int32_t>(ESerializationVersion::CURRENT), static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY)) + 1));
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(endpoint), std::logic_error);
 	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(),
-		ESerializationVersion::CURRENT < ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES
-			? ESerializationVersion::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES : ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
+		ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 }
 
 TEST(GameConnectionSourceCapabilitiesTest, Established1151ReadWriteEpochDoesNotFollowTheDefaultWriterAlias)
@@ -90,7 +105,7 @@ TEST(GameConnectionSourceCapabilitiesTest, Neutral1152SeparatesActualWireEpochFr
 
 TEST(GameConnectionSourceCapabilitiesTest, ReservedProfilesObserveExactEpochAndNeverGuessUnknown)
 {
-	for(const auto [wire, profile] : {std::pair{1151, 1151}, {1152, 1151}, {1153, 1153}, {1154, 1153}, {1155, 1155}})
+	for(const auto [wire, profile] : {std::pair{1151, 1151}, {1152, 1151}, {1153, 1153}, {1154, 1153}, {1155, 1155}, {1156, 1155}})
 	{
 		auto endpoint = std::make_shared<Endpoint>(); GameConnection connection(endpoint);
 		connection.setSerializationVersion(static_cast<ESerializationVersion>(wire));
@@ -113,7 +128,7 @@ TEST(GameConnectionSourceCapabilitiesTest, FailedEpochCaptureLeavesSentinelAndEx
 		EXPECT_THROW(connection.captureSpecialtySerializationContext(invalid, &observed), std::logic_error);
 		EXPECT_EQ(observed, ESerializationVersion::NONE);
 	}
-	connection.setSerializationVersion(static_cast<ESerializationVersion>(1156));
+	connection.setSerializationVersion(static_cast<ESerializationVersion>(static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN) + 1));
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(endpoint, &observed), std::invalid_argument);
 	EXPECT_EQ(observed, ESerializationVersion::NONE);
 	separateOwner.reset(); separatePointer.reset(); endpoint.reset();
@@ -196,7 +211,7 @@ TEST(GameConnectionSourceCapabilitiesTest, FailedEpochObservationNeverWritesTheC
 	std::shared_ptr<INetworkConnection> differentPointer(endpoint, foreign.get());
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(differentPointer, &observed), std::logic_error);
 	EXPECT_EQ(observed, ESerializationVersion::NONE);
-	connection.setSerializationVersion(static_cast<ESerializationVersion>(static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS) + 1));
+	connection.setSerializationVersion(static_cast<ESerializationVersion>(static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN) + 1));
 	EXPECT_THROW(connection.captureSpecialtySerializationContext(endpoint, &observed), std::invalid_argument);
 	EXPECT_EQ(observed, ESerializationVersion::NONE);
 	separateOwner.reset(); differentPointer.reset(); endpoint.reset();

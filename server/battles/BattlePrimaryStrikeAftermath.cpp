@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "BattlePrimaryStrikeAftermath.h"
+#include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
+#include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
 #include "../../lib/battle/NewHorizonsCreatureBurn.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/NewHorizonsReactiveDefense.h"
@@ -57,6 +59,14 @@ Prepared prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & at
 		&& battle.battleGetOwner(attack.attacker) != battle.battleGetOwner(attack.defender);
 	const auto primary = std::ranges::find(hits, result.target, &BattleStackAttacked::stackAttacked);
 	const int64_t damage = primary == hits.end() ? 0 : primary->damageAmount;
+	if(primary != hits.end())
+	{
+		result.attackController = newHorizonsAttackControllers::captureStrike(battle, attack, damage);
+		result.specialtyEvents = newHorizonsSpecialtyEvents::acceptedStrike(battle, attack);
+		result.specialtySpellStrike = !attack.secondaryAttack && !attack.bracePreemptive
+			&& attack.preemptiveDamagePercent == 0 && attack.cleaveDamagePercent == 0;
+		result.stunChance = newHorizonsSpecialtyProcs::stunChance(battle, attack);
+	}
 	result.gaze = newHorizonsParalyzingGaze::qualifiesAttack(battle, attack.attacker, attack.defender,
 		attack.shooting, attack.physicalDamage, attack.secondaryAttack) && damage > 0;
 	result.binding = newHorizonsSerpentsEmbrace::prepareBinding(battle, attack.attacker, attack.defender,
@@ -87,10 +97,12 @@ void apply(CGameHandler & game, const CBattleInfoCallback & battle, const Prepar
 	newHorizonsSerpentsEmbrace::applyBinding(game, battle, prepared.binding);
 	if(prepared.gaze)
 		newHorizonsParalyzingGaze::applyAfterShot(game, battle, prepared.source, prepared.target, true);
+	for(const auto & plan : prepared.specialtyEvents) applyOrdinaryEffect(game, battle, plan);
 	applyOrdinaryEffect(game, battle, prepared.ordinary);
 	applyOrdinaryEffect(game, battle, prepared.lanceFormation);
 	if(!prepared.graveDust.add.empty()) applyOrdinaryEffect(game, battle, prepared.graveDust);
 	applyOrdinaryEffect(game, battle, prepared.exposedWeakness);
+	applyOrdinaryEffect(game, battle, prepared.attackController.cripple);
 }
 void applyOrdinaryEffect(CGameHandler & game, const CBattleInfoCallback & battle,
 	const newHorizonsOrdinaryStrike::EffectPlan & effectPlan)
@@ -103,14 +115,15 @@ void applyOrdinaryEffect(CGameHandler & game, const CBattleInfoCallback & battle
 	effect.battleID = battle.getBattle()->getBattleID();
 	std::vector<Bonus> remove;
 	for(const auto & bonus : effectPlan.remove)
-		if(available || newHorizonsCoordinatedMarks::isMark(&bonus)
+		if(available || newHorizonsSpecialtyEvents::isReceipt(&bonus) || newHorizonsCoordinatedMarks::isMark(&bonus)
 			|| (!recipient->isTimeStopped() && newHorizonsReactiveDefense::isIronHideSpent(&bonus)))
 			remove.push_back(bonus);
 	if(!remove.empty())
 		effect.toRemove.emplace_back(effectPlan.target, std::move(remove));
 	std::vector<Bonus> add;
 	for(const auto & bonus : effectPlan.add)
-		if(available || (!recipient->isTimeStopped() && newHorizonsReactiveDefense::isIronHideSpent(&bonus)))
+		if(available || newHorizonsSpecialtyEvents::isReceipt(&bonus)
+			|| (!recipient->isTimeStopped() && newHorizonsReactiveDefense::isIronHideSpent(&bonus)))
 			add.push_back(bonus);
 	if(!add.empty())
 		effect.toAdd.emplace_back(effectPlan.target, std::move(add));

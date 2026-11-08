@@ -16,6 +16,7 @@
 #include "../GameConstants.h"
 #include "BattleSide.h"
 #include "NewHorizonsNecromancyCombat.h"
+#include "NewHorizonsElementalAttunement.h"
 
 class CCreature;
 
@@ -42,6 +43,7 @@ public:
 	virtual bool unitSlowAffectsSpeed(const Unit *) const { return false; }
 	virtual newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit *) const { return {}; }
 	virtual int unitAdditionalRetaliations(const Unit *) const { return 0; }
+	virtual newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const Unit *) const { return {}; }
 	virtual int unitBloodragePainIncrement(const Unit *) const { return 0; }
 	virtual bool unitHasVeteranCohesion(const Unit *) const { return false; }
 	/// Saved-context Morale range for this unit, or nullopt to use legacy engine limits.

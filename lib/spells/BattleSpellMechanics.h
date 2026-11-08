@@ -63,6 +63,14 @@ public:
 	int64_t getTargetAwareEffectValue(const battle::Unit * target) const override;
 	int32_t getTargetAwareManaCost(const Target & target) const override;
 	BattleSide getEffectCasterSide() const override { return effectiveCasterSide(); }
+	const newHorizonsMetamagic::CastProfile * getMetamagicCastProfile() const override
+	{ return applyingRunicShare && runicOffensiveProfile ? &*runicOffensiveProfile : BaseMechanics::getMetamagicCastProfile(); }
+	std::unique_ptr<Mechanics> runicReflectionView() const override;
+	bool isRunicReflectionShare() const override { return applyingRunicShare; }
+	int32_t getDirectCreatureActivationDamagePercent() const override
+	{ return applyingRunicShare ? runicCreatureOutputPercent : BaseMechanics::getDirectCreatureActivationDamagePercent(); }
+	int32_t getInspirationalLeaderCreatureDamagePercent() const override
+	{ return applyingRunicShare ? runicCreatureInspirationPercent : BaseMechanics::getInspirationalLeaderCreatureDamagePercent(); }
 
 	/// Returns list of target types that can be targeted by spell
 	std::vector<AimType> getTargetTypes() const override final;
@@ -73,6 +81,8 @@ public:
 
 	/// Returns true if unit would resist the spell due to magic resistance
 	bool wouldResist(const battle::Unit * unit) const override;
+	void recordResistanceShare(const effects::Effect * effect, const battle::Unit * unit, size_t index) const override;
+	void recordResistanceDamageShare(const effects::Effect * effect, const battle::Unit * unit, int64_t raw) const override;
 	using BaseMechanics::ownerMatches;
 	bool ownerMatches(const battle::Unit * unit, bool sameOwner) const override;
 
@@ -86,6 +96,21 @@ public:
 	bool counteringSelector(const Bonus * bonus) const;
 
 private:
+	struct RunicCasterLifetime
+	{
+		BattleSpellMechanics & mechanics;
+		const Caster * original;
+		const battle::Unit * originalUnit;
+		bool paysCasts;
+		explicit RunicCasterLifetime(BattleSpellMechanics &);
+		~RunicCasterLifetime();
+		RunicCasterLifetime(const RunicCasterLifetime &) = delete;
+		void spendMana(ServerCallback *, int32_t) const;
+	};
+	struct RunicReadOnlyView {};
+	BattleSpellMechanics(const BattleSpellMechanics & source, RunicReadOnlyView);
+	bool runicReadOnly = false;
+	bool runicRetiredCaster = false;
 	bool canCastCure(Problem & problem, const CGHeroInstance * castingHero) const;
 	struct ResistanceRoll
 	{
@@ -93,7 +118,30 @@ private:
 		int probability;
 		bool resisted;
 		bool resolved = false;
+		int sample = 99;
 	};
+
+	struct RunicShare
+	{
+		const effects::Effect * effect;
+		uint32_t unitId;
+		size_t index;
+		int64_t capturedCount = 0;
+		int64_t rawDamage = -1;
+		uint32_t reflectorId = std::numeric_limits<uint32_t>::max();
+	};
+	std::unique_ptr<Caster> runicCreatureCaster;
+	std::optional<newHorizonsMetamagic::CastProfile> runicOffensiveProfile;
+	int32_t runicCreatureOutputPercent = 100;
+	int32_t runicCreatureInspirationPercent = 100;
+	bool applyingRunicShare = false;
+	mutable std::vector<RunicShare> pendingRunicShares;
+	std::vector<RunicShare> reflectedRunicShares;
+	bool isRunicReflection(const battle::Unit * unit) const;
+	void recordResistanceShares(const effects::Effects::EffectsToApply & prepared) const;
+	const battle::Unit * chooseRunicRecipient(const std::vector<RunicShare> & shares, vstd::RNG & rng, const battle::Unit * reflector) const;
+	void prepareRunicReflections(BattleSpellCast & cast, vstd::RNG & rng, bool late = false);
+	void applyRunicReflections(ServerCallback * server);
 
 	std::optional<BattleCast> eventSnapshot;
 	mutable bool countingSpellTargets = false;

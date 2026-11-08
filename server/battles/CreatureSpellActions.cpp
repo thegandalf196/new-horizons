@@ -13,6 +13,11 @@
 
 bool BattleActionProcessor::prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba)
 {
+	if(ba.spellOvercharge != 0)
+	{
+		gameHandler->complain("Creature spell actions cannot request a paid Hero charge level.");
+		return false;
+	}
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
 	battle::Target target = ba.getTarget(&battle);
 	SpellID spellID = ba.spell;

@@ -202,6 +202,7 @@ public:
 
 	/// Returns list of identities of heroes currently present in pool
 	std::vector<HeroTypeID> getHeroesInPool() const;
+	void validateNativePilotSerialization(bool supported) const;
 	/// Validate all serialized hero receipts before an enclosing writer's prefix.
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
 	const std::vector<int3> & getProtectedAdventureMobilityTiles() const;
@@ -368,6 +369,8 @@ public:
 	template <typename Handler>
 	void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 		if(h.saving)
 			newHorizonsNeutralArmies::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 		if(h.saving)

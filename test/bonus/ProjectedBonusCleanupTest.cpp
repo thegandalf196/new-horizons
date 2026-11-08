@@ -28,6 +28,20 @@ std::vector<std::shared_ptr<Bonus>> pointers(const BonusList & values)
 {
 	return {values.begin(), values.end()};
 }
+
+uint32_t nativePropagatedCleanupEvents(bool precedingEvent)
+{
+	CBonusSystemNode source(BonusNodeType::PLAYER), recipient(BonusNodeType::STACK_BATTLE);
+	recipient.attachTo(source);
+	auto effect = speed(4, BonusDuration::UNTIL_BEING_ATTACKED);
+	effect->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::PLAYER);
+	source.addNewBonus(effect);
+	const auto before = uint32_t(PreparedBonusGraphStorage::currentGeneration());
+	if(precedingEvent) source.nodeHasChanged();
+	source.removeBonusesRecursive(Bonus::UntilBeingAttacked);
+	return uint32_t(PreparedBonusGraphStorage::currentGeneration()) - before;
+}
+
 }
 
 class ProjectedBonusCleanupTest : public Test
@@ -131,13 +145,17 @@ TEST_F(ProjectedBonusCleanupTest, DistinctPointerOccurrencesAreRemovedWithoutDed
 	EXPECT_TRUE(root.getExportedBonusList().empty());
 }
 
-TEST_F(ProjectedBonusCleanupTest, PropagatedRemovalRetainsSharedUnmatchedPointersAndBorrowedGenerationPolicy)
+TEST_F(ProjectedBonusCleanupTest, PropagatedRemovalRetainsSharedPointersAndItsNativeAdvancingEvent)
 {
+	const auto nativeEvents = nativePropagatedCleanupEvents(false);
+	ASSERT_EQ(nativeEvents, 1u);
 	auto propagated = speed(4, BonusDuration::UNTIL_BEING_ATTACKED);
 	propagated->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::PLAYER);
 	root.addNewBonus(propagated);
 	auto permanent = speed(6);
 	leaf.addNewBonus(permanent);
+	const auto retained = leaf.getAllBonuses(Selector::all, "propagated-cleanup");
+	const auto retainedPointers = pointers(*retained);
 	graph.capture(root);
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
 	graph.removeBonusesRecursive(root, Bonus::UntilBeingAttacked);
@@ -145,9 +163,15 @@ TEST_F(ProjectedBonusCleanupTest, PropagatedRemovalRetainsSharedUnmatchedPointer
 	EXPECT_EQ(graph.query(leaf, Selector::all, false)->totalValue(), 6);
 	EXPECT_EQ(leaf.getAllBonuses(Selector::all, "propagated-cleanup")->totalValue(), 10);
 	EXPECT_EQ(graph.values(leaf).accepted.front(), permanent);
-	// No preceding advancing event: preserve possible borrowed-stamp refusal,
-	// never promote this removal into a made-up global generation increment.
-	EXPECT_THROW((PreparedBonusGraphFinalization(graph, authority)), std::logic_error);
+	// Native unpropagation supplies its own advancing event.
+	PreparedBonusGraphFinalization plan(graph, authority);
+	ASSERT_TRUE(plan.readyToCommit());
+	ASSERT_TRUE(plan.commit());
+	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + nativeEvents);
+	EXPECT_EQ(leaf.getAllBonuses(Selector::all, "propagated-cleanup")->totalValue(), 6);
+	EXPECT_EQ(leaf.getExportedBonusList().front(), permanent);
+	EXPECT_EQ(retained->totalValue(), 10);
+	EXPECT_EQ(pointers(*retained), retainedPointers);
 }
 
 TEST_F(ProjectedBonusCleanupTest, SelectorAllocationRefusalAfterPrefixPoisonsOnlyPrivateOwner)
@@ -171,20 +195,24 @@ TEST_F(ProjectedBonusCleanupTest, SelectorAllocationRefusalAfterPrefixPoisonsOnl
 	EXPECT_THROW((PreparedBonusGraphFinalization(graph, authority)), std::logic_error);
 }
 
-TEST_F(ProjectedBonusCleanupTest, PriorAdvancingEventAllowsOrderedPropagatedCleanupWithoutInventedPromotion)
+TEST_F(ProjectedBonusCleanupTest, ExplicitAndPropagatedAdvancingEventsBothSurviveOrderedCleanup)
 {
+	const auto nativeEvents = nativePropagatedCleanupEvents(true);
+	ASSERT_EQ(nativeEvents, 2u);
 	auto propagated = speed(4, BonusDuration::UNTIL_BEING_ATTACKED);
 	propagated->propagator = std::make_shared<CPropagatorNodeType>(BonusNodeType::PLAYER);
 	root.addNewBonus(propagated);
-	leaf.addNewBonus(speed(6));
+	auto permanent = speed(6);
+	leaf.addNewBonus(permanent);
 	graph.capture(root);
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
 	graph.nodeHasChanged(root);
 	graph.removeBonusesRecursive(root, Bonus::UntilBeingAttacked);
 	PreparedBonusGraphFinalization plan(graph, authority);
 	ASSERT_TRUE(plan.commit());
-	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + 1);
+	EXPECT_EQ(uint32_t(PreparedBonusGraphStorage::currentGeneration()), uint32_t(generation) + nativeEvents);
 	EXPECT_EQ(leaf.getAllBonuses(Selector::all, "advanced-cleanup")->totalValue(), 6);
+	EXPECT_EQ(leaf.getExportedBonusList().front(), permanent);
 }
 
 TEST_F(ProjectedBonusCleanupTest, SelectionCompletesForOneNodeBeforeFirstRemoval)

@@ -43,79 +43,13 @@ BattleScore battleExchangeAftermath::finalizeExchangeScore(BattleScore score,
 	return score;
 }
 
-void BattleExchangeVariant::accountForNewElementalRebirthSpawns(
-	const std::set<uint32_t> & idsBefore, const battle::Unit * referenceActor,
-	const bool referenceActorIsOurs, DamageCache & damageCache,
-	const std::shared_ptr<HypotheticBattle> & hb)
-{
-	if(!referenceActor)
-		return;
 
-	for(const auto unitId : hb->getElementalRebirthSpawnUnitIds())
-	{
-		if(idsBefore.contains(unitId) || !scoredElementalRebirthSpawnUnitIds.insert(unitId).second)
-			continue;
-
-		const auto * spawned = hb->battleGetUnitByID(unitId);
-		if(!spawned || !spawned->alive() || !spawned->unitType() || spawned->getAvailableHealth() <= 0)
-			continue;
-
-		const auto enemies = hb->battleGetUnitsIf([&](const battle::Unit * candidate)
-		{
-			return candidate && candidate->alive() && candidate->unitType()
-				&& candidate->getPosition().isValid()
-				&& !hb->battleMatchOwner(spawned, candidate);
-		});
-		if(enemies.empty())
-			continue;
-
-		const auto fullHealth = static_cast<int64_t>(spawned->getCount()) * spawned->getMaxHealth();
-		if(fullHealth <= 0)
-			continue;
-
-		// Keep this in the exchange's damage-reduction/DPS units: scale one ordinary
-		// projected attack by the exact surviving HP fraction. This is a bounded
-		// representative-target approximation, not a full initiative-branch forecast.
-		const auto projectedDamage = std::max<int64_t>(0,
-			damageCache.getOriginalDamage(spawned, enemies.front(), hb));
-		const float spawnValue = static_cast<float>(projectedDamage)
-			* static_cast<float>(spawned->getAvailableHealth()) / static_cast<float>(fullHealth);
-		const bool sameSideAsReference = spawned->unitSide() == referenceActor->unitSide();
-		const bool spawnIsOurs = referenceActorIsOurs ? sameSideAsReference : !sameSideAsReference;
-		if(spawnIsOurs)
-			dpsScore.enemyDamageReduce += spawnValue;
-		else
-			dpsScore.ourDamageReduce += spawnValue;
-	}
-}
-
-void BattleExchangeVariant::accountForNewPrimalBurstHits(const size_t firstNewHit,
-	const PlayerColor referenceController, const bool referenceActorIsOurs,
-	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb)
-{
-	const auto & hits = hb->getProjectedPrimalBurstHits();
-	for(size_t index = firstNewHit; index < hits.size(); ++index)
-	{
-		const auto & hit = hits[index];
-		if(!hit.preHitTarget || hit.actualDamage <= 0)
-			continue;
-		const auto value = AttackPossibility::calculateDamageReduce(nullptr, hit.preHitTarget.get(),
-			static_cast<uint64_t>(hit.actualDamage), damageCache, hb);
-		const bool targetSharesReferenceController = hit.targetController == referenceController;
-		const bool targetIsOurs = targetSharesReferenceController == referenceActorIsOurs;
-		if(targetIsOurs)
-			dpsScore.ourDamageReduce += value;
-		else
-			dpsScore.enemyDamageReduce += value;
-	}
-}
 
 void BattleExchangeVariant::completePlagueActivation(uint32_t unitId, PlayerColor referenceController,
 	bool referenceActorIsOurs, DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb)
 {
 	const auto firstHit = hb->getProjectedPlagueHits().size();
-	const auto rebirthBefore = hb->getElementalRebirthSpawnUnitIds();
-	const auto firstPrimalBurstHit = hb->getProjectedPrimalBurstHits().size();
+
 	const auto actor = hb->getForUpdate(unitId);
 	newHorizonsPlague::completeActivation(*hb, *hb->getServerCallback(), unitId);
 	const auto & hits = hb->getProjectedPlagueHits();
@@ -130,25 +64,25 @@ void BattleExchangeVariant::completePlagueActivation(uint32_t unitId, PlayerColo
 		else
 			dpsScore.enemyDamageReduce += value;
 	}
-	accountForNewElementalRebirthSpawns(rebirthBefore, actor.get(), referenceActorIsOurs, damageCache, hb);
-	accountForNewPrimalBurstHits(firstPrimalBurstHit, referenceController, referenceActorIsOurs, damageCache, hb);
+
 }
 
 void BattleExchangeVariant::completeFrozenActivation(const std::shared_ptr<StackWithBonuses> & attacker, bool referenceActorIsOurs,
 	DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & exchangeBattle)
 {
-	const auto frozen = newHorizonsFrozen::removalPlan(*attacker);
-	attacker->removeUnitBonus(CSelector([](const Bonus * bonus)
+	const auto firstHit = exchangeBattle->getProjectedPlagueHits().size();
+	const auto controller = exchangeBattle->battleGetOwner(attacker.get());
+	exchangeBattle->completeForfeitedActivation(attacker->unitId());
+	const auto & hits = exchangeBattle->getProjectedPlagueHits();
+	for(size_t index = firstHit; index < hits.size(); ++index)
 	{
-		return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
-	}));
-	attacker->consumeNoQuarterActivation();
-	completePlagueActivation(attacker->unitId(), exchangeBattle->battleGetOwner(attacker.get()),
-		referenceActorIsOurs, damageCache, exchangeBattle);
-	const auto current = exchangeBattle->getForUpdate(attacker->unitId());
-	if(current->alive() && !current->isGhost() && !current->isTimeStopped()
-		&& newHorizonsFrozen::isFrozen(*current))
-		current->removeUnitBonus(frozen);
+		const auto & hit = hits[index];
+		const auto value = AttackPossibility::calculateDamageReduce(nullptr, hit.preHitTarget.get(),
+			static_cast<uint64_t>(hit.finalizedDamage), damageCache, exchangeBattle);
+		const bool ours = (hit.targetController == controller) == referenceActorIsOurs;
+		if(ours) dpsScore.ourDamageReduce += value;
+		else dpsScore.enemyDamageReduce += value;
+	}
 }
 
 namespace battleExchangeAftermath
@@ -231,7 +165,6 @@ void battleExchangeAftermath::applyPrimaryStatuses(HypotheticBattle & battle,
 void BattleExchangeVariant::completeSelectedAttack(const AttackPossibility & ap,
 	const std::shared_ptr<HypotheticBattle> & hb, StackWithBonuses & attacker, BattleHex originalPosition, bool returnCommitted,
 	const std::optional<HypotheticBattle::ManaLeechReplay> & manaLeechReplay,
-	const std::set<uint32_t> & rebirthSpawnIdsBefore, size_t primalBurstFirstNewHit,
 	PlayerColor referenceController, DamageCache & damageCache)
 {
 	bool returned = returnCommitted;
@@ -254,8 +187,7 @@ void BattleExchangeVariant::completeSelectedAttack(const AttackPossibility & ap,
 #endif
 	if(manaLeechReplay)
 		hb->applyManaLeechReplay(*manaLeechReplay);
-	accountForNewElementalRebirthSpawns(rebirthSpawnIdsBefore, &attacker, true, damageCache, hb);
-	accountForNewPrimalBurstHits(primalBurstFirstNewHit, referenceController, true, damageCache, hb);
+
 	meleeSpecialtyAI::complete(*hb, attacker.unitId(), meleeSpecialtyAI::completedPrimaryMelee(ap));
 	if(returned)
 		coordinatedMarkAI::replayReturn(ap, *hb, originalPosition);

@@ -200,6 +200,11 @@ std::vector<int> collectMagicalDamageReductionSources(const CSpell & spell, cons
 	std::vector<int> sources;
 	if(!affectedCreature || !spell.isMagical())
 		return sources;
+	if(!spell.isCreatureAbility())
+	{
+		const int veil = affectedCreature->elementalAttunementPassives().spellReductionBasisPoints;
+		if(veil > 0) sources.push_back(veil);
+	}
 	const auto * bearer = affectedCreature->getBonusBearer();
 	// Preserve the existing multi-school rule: the first matching school
 	// supplies school-specific sources; each bonus remains independent.

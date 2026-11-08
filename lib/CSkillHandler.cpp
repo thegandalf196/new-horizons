@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "CSkillHandler.h"
+#include "nativeRules/NativeRulePilots.h"
 
 #include <algorithm>
 #include <array>
@@ -132,7 +133,7 @@ void CSkill::addNewBonus(const std::shared_ptr<Bonus> & b, int level)
 		b->description.appendTextID(getNameTextID());
 		b->description.appendRawString(" %+d");
 	}
-	levels[level-1].effects.push_back(b);
+	levels[level-1].effects.push_back(nativeRules::prepareSkillRankBonus(b));
 }
 
 const CSkill::LevelInfo & CSkill::at(int level) const

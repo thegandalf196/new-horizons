@@ -30,6 +30,7 @@ class BattleHeroActionWindow final : public CWindowObject
 	std::shared_ptr<CButton> cancel;
 	std::shared_ptr<CMultiLineLabel> orderInstructions;
 	std::shared_ptr<CLabel> state;
+	std::shared_ptr<CLabel> commandPool;
 	std::vector<std::shared_ptr<CIntObject>> labels;
 	std::vector<std::shared_ptr<CMultiLineLabel>> effectLabels;
 	std::pair<int, int> displayedRatings;
@@ -38,6 +39,7 @@ class BattleHeroActionWindow final : public CWindowObject
 
 	std::shared_ptr<BattleInterface> currentBattle() const;
 	void refresh();
+	bool refreshCommandButtons(const std::shared_ptr<BattleInterface> & owner, const CGHeroInstance * hero);
 	void createOrdersLayout();
 	void addOrderDetailsButton(HeroCommand command, Point position, const std::shared_ptr<CButton> & order,
 		const std::shared_ptr<CMultiLineLabel> & effect);

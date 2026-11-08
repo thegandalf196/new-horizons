@@ -17,7 +17,9 @@ HERO_WINDOW = ROOT / "client/windows/CHeroWindow.cpp"
 DEVELOPMENT_WINDOW = ROOT / "client/windows/HeroGrowthWindow.cpp"
 ASSET_GENERATOR = ROOT / "client/render/AssetGenerator.cpp"
 
-action = ACTION.read_text(encoding="utf-8") + (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8")
+action = (ACTION.read_text(encoding="utf-8")
+          + (ROOT / "client/battle/BattleHeroActionAvailability.cpp").read_text(encoding="utf-8")
+          + (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8"))
 controller = CONTROLLER.read_text(encoding="utf-8")
 creature_window = CREATURE_WINDOW.read_text(encoding="utf-8") + (ROOT / "client/windows/NewHorizonsOrderIndicators.h").read_text(encoding="utf-8")
 hero_window = HERO_WINDOW.read_text(encoding="utf-8")
@@ -142,5 +144,18 @@ assert '"Legacy siege capabilities' in development_window
 assert "getHeroCommandUsed" not in controller
 assert "battleGetActiveOrder" not in controller
 assert "setHeroCommand" not in action + controller
+
+# Finite Command is a separate requirement from the shared Hero Action. A zero
+# pool must skip target enumeration, but leave ordinary spellcasting available.
+availability = (ROOT / "client/battle/BattleHeroActionAvailability.cpp").read_text()
+assert "newHorizonsCommand::available(*callback, side)" in availability
+assert "getCommandResources(side)" in availability
+assert '"Command " + std::to_string(resources.remaining)' in availability
+assert "const bool targetReady = commonAvailable && supported && targeted" in availability
+assert "const bool hasTargets = commonAvailable && supported && targeted" in availability
+assert "spellButton->block(!canAct || !canSpell);" in availability
+for retired in ("battleHasPendingDoubleCommand", "battleHasPendingPreCombatOrder", "getCrisisCommandState", "presentPendingHeroOrderChoice"):
+    assert retired not in action + controller + (ROOT / "client/battle/BattleInterface.cpp").read_text()
+assert "Costs 1 Command and the shared Hero Action" in action
 
 print("New Horizons Orders client surface: PASS")

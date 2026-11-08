@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommand.h"
+#include "NewHorizonsCommandResources.h"
 #include "HeroCommandCoefficient.h"
 #include "HeroCommandCoefficientMath.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -16,14 +17,15 @@ constexpr char COMMAND_SKILL[] = "new-horizons:command";
 constexpr char VETERAN_COMMANDER_PERK[] = "new-horizons:command.veteranCommander";
 constexpr char COMBINED_ARMS_PERK[] = "new-horizons:command.combinedArms";
 constexpr char DOUBLE_COMMAND_PERK[] = "new-horizons:command.doubleCommand";
-constexpr char BATTLE_PLAN_PERK[] = "new-horizons:command.battlePlan";
 constexpr int VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT = 25;
 
 }
 
 int efficiencyPercent(const CGHeroInstance & hero)
 {
-	return 100 + std::clamp(hero.getPerkSkillRank("new-horizons:command"), 0, 3) * 10;
+	return 100 + std::clamp(hero.getPerkSkillRank("new-horizons:command"), 0, 3) * 10
+		+ (newHorizonsCommand::usesPerkRules(&hero)
+			&& hero.hasActivePerk(COMMAND_SKILL, DOUBLE_COMMAND_PERK) ? 15 : 0);
 }
 
 int leadershipEfficiencyPercent(const CGHeroInstance & hero,
@@ -31,7 +33,7 @@ int leadershipEfficiencyPercent(const CGHeroInstance & hero,
 {
 	const int veteranCommanderBonus = hero.hasActivePerk(COMMAND_SKILL, VETERAN_COMMANDER_PERK)
 		? VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT : 0;
-	return efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, 15)
+	return efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, newHorizonsCommand::usesPerkRules(&hero) ? 60 : 15)
 		+ veteranCommanderBonus;
 }
 
@@ -62,14 +64,14 @@ bool hasCombinedArms(const CGHeroInstance * hero)
 	return hero && hero->hasActivePerk(COMMAND_SKILL, COMBINED_ARMS_PERK);
 }
 
-bool hasDoubleCommand(const CGHeroInstance * hero)
+bool hasDoubleCommand(const CGHeroInstance *)
 {
-	return hero && hero->hasActivePerk(COMMAND_SKILL, DOUBLE_COMMAND_PERK);
+	return false;
 }
 
-bool hasBattlePlan(const CGHeroInstance * hero)
+bool hasBattlePlan(const CGHeroInstance *)
 {
-	return hero && hero->hasActivePerk(COMMAND_SKILL, BATTLE_PLAN_PERK);
+	return false;
 }
 
 double combinedArmsFocusFirePercent(int rangedDamagePercent, const CGHeroInstance & hero)

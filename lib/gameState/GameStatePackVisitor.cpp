@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsCommandResources.h"
+#include "../battle/NewHorizonsElementalAttunement.h"
 #include "../spells/NewHorizonsMetamagicMarks.h"
 #include "../spells/AutomaticHeroCast.h"
 #include "../battle/PassiveDivineMandate.h"
@@ -2753,6 +2755,10 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		auto & side = commandBattle->getSide(pack.ba.side);
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			commandBattle->getHeroCommandRules(), HeroCommand::CHARGE);
+		auto nextCommandResources = side.commandResources;
+		const bool finiteCommands = newHorizonsCommand::usesRules(commandBattle->getHeroCommandRules());
+		if(finiteCommands && !nextCommandResources.spend())
+			throw std::runtime_error("Accepted Order has no remaining Command");
 		std::optional<HeroActionAllowanceState::Receipt> orderReceipt;
 		std::vector<uint32_t> sharedPurposeRecipients;
 		auto nextAllowances = side.heroActionAllowances;
@@ -2763,6 +2769,9 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 				&& mandate.completedPairs < mandate.maximumPairs;
 			const auto orderGrantFilter = [mandateAvailable, commandBattle, &pack](const HeroActionAllowanceState::Grant & grant)
 			{
+				if(newHorizonsCommand::usesRules(commandBattle->getHeroCommandRules()))
+					return grant.allowance == HeroActionAllowanceState::AllowanceKind::HERO
+						&& grant.source == HeroActionAllowanceState::GrantSource::ROUND;
 				return commandBattle->getCrisisCommandState().allowsGrant(pack.ba.side, grant)
 					&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
 			};
@@ -2816,6 +2825,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		}
 		if(sharedActionBudget)
 			side.heroActionAllowances = std::move(nextAllowances);
+		if(finiteCommands) side.commandResources = nextCommandResources;
 		if(acceptedDoubleCommandState)
 			commandBattle->setDoubleCommandState(pack.ba.side, *acceptedDoubleCommandState);
 		if(acceptedDoubleCommandState)
@@ -3143,6 +3153,7 @@ void GameStatePackVisitor::visitSetBattlecraftMasteryAward(SetBattlecraftMastery
 
 void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 {
+	pack.validateStrongWyvernPoison();
 	pack.validateAutomaticHeroCast();
 	pack.validateHeroLuckReceipt();
 	if(pack.activeCast && pack.castByHero && pack.casterStack < 0

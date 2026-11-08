@@ -103,8 +103,10 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::vector<std::shared_ptr<CLabel>> growthValues;
 	std::shared_ptr<CLabel> leadershipValue;
 	std::shared_ptr<CLabel> leadershipGrowthValue;
-	std::vector<std::shared_ptr<CAnimImage>> capabilityIcons;
+	std::vector<std::shared_ptr<CIntObject>> capabilityIcons;
 	std::shared_ptr<CLabel> movementValue;
+	std::shared_ptr<CLabel> commandValue;
+	std::shared_ptr<LRClickableAreaWText> commandArea;
 	std::shared_ptr<CLabel> legacySiegeValue;
 	std::shared_ptr<LRClickableAreaWText> leadershipArea;
 	std::shared_ptr<LRClickableAreaWText> movementArea;
@@ -115,6 +117,9 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<CAnimImage> legacyLeadershipImage;
 	std::shared_ptr<CAnimImage> legacySiegeImage;
 	std::shared_ptr<CAnimImage> legacyBoneCollectorImage;
+	void addCommandIcon();
+	void refreshCommandReadout();
+	void alignAttributeReadouts();
 	void configureNewHorizonsLayout();
 	void restoreLegacyLayout();
 	void refreshHero(bool refreshArtifactInteraction);

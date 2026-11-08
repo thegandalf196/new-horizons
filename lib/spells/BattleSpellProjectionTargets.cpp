@@ -23,6 +23,7 @@
 #include "../ScopeGuard.h"
 
 #include <set>
+#include <limits>
 
 namespace spells
 {
@@ -109,7 +110,8 @@ int32_t Mechanics::getTargetAwareManaCost(const Target &) const
 	int32_t result = callback->battleGetSpellCost(getSpellId().toSpell(), hero, isMassSlow() ? 3 : 1,
 		isMetamagicFollowup());
 	if(newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), getSpellId()))
-		result += getOvercharge();
+		result = newHorizonsMagic::magicArrowManaCost(callback->getBattle()->getMagicRules(), getSpellId(),
+			result, getOvercharge()).value_or(std::numeric_limits<int32_t>::max());
 	return result;
 }
 

@@ -79,8 +79,8 @@ TEST_P(NewHorizonsFourSpecialtyArtTest, AbsentConversionContextRetainsPrototypeP
 }
 INSTANTIATE_TEST_SUITE_P(SelectedFour, NewHorizonsFourSpecialtyArtTest, ::testing::Values(
 	ArtCase{"core:pasis", "prismaticScreenReductionPercent", "PasisPrismaticScreen", "Prismatic Screen"},
-	ArtCase{"core:kalt", "tidalRenewalHealingHP", "KaltTidalRenewal", "Tidal Renewal"},
-	ArtCase{"core:korbac", "evasiveFlightReductionPercent", "KorbacEvasiveFlight", "Evasive Flight"},
+	ArtCase{"core:kalt", "risingTideCreaturesPerRound", "KaltTidalRenewal", "Rising Tide"},
+	ArtCase{"core:korbac", "evasiveFlightReductionPercentPerHex", "KorbacEvasiveFlight", "Evasive Flight"},
 	ArtCase{"core:tyraxor", "ridersExploitDamagePercent", "TyraxorRidersExploit", "Rider's Exploit"}
 ));
 }

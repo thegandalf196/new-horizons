@@ -38,6 +38,7 @@ inline auto candidateOptions(const PossibleSpellcast & c)
 		std::bit_cast<uint32_t>(c.spellPlacementHeuristicValue),
 		optionBits(c.spellHandOfFateExpectedValue), optionBits(c.spellBattleFormExpectedValue),
 		optionBits(c.spellPuppetMasterExpectedValue), optionBits(c.spellConfusionExpectedValue),
+		std::bit_cast<uint32_t>(c.spellRunicExpectedValue), c.spellRunicEstimatePartial,
 		std::bit_cast<uint32_t>(c.spellNaturePoisonValue),
 		std::bit_cast<uint32_t>(c.spellSoulChainDelayedValue),
 		std::bit_cast<uint32_t>(c.spellShadowGiftHeuristicValue), c.spellFireWallDirection);

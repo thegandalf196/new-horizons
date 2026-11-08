@@ -87,3 +87,20 @@ newHorizonsNecromancy::CombatPassives battle::ProjectedUnitEnvironment::unitNecr
 {
 	return queries.unitNecromancyPassives(unit);
 }
+
+newHorizonsElementalAttunement::Profile battle::ProjectedUnitEnvironmentContext::elementalAttunementProfile(BattleSide side) const
+{
+	return values.inputs(side).elementalAttunementProfile;
+}
+bool battle::ProjectedUnitEnvironmentContext::knowsElementalAttunementProfile(BattleSide side) const
+{
+	return values.inputs(side).elementalAttunementProfileKnown;
+}
+uint8_t battle::ProjectedUnitEnvironmentContext::elementalAttunementMask(BattleSide side) const
+{
+	return values.state(side).elementalAttunementMask;
+}
+newHorizonsElementalAttunement::UnitPassives battle::ProjectedUnitEnvironment::unitElementalAttunement(const Unit * unit) const
+{
+	return queries.unitElementalAttunement(unit);
+}

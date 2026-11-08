@@ -7,6 +7,9 @@
 
 void HeroOrderState::validateShape() const
 {
+	if(heroicSpiritEfficiencyBonusPercent < 0 || heroicSpiritEfficiencyBonusPercent > 30
+		|| heroicSpiritEfficiencyBonusPercent % 5 != 0)
+		throw std::runtime_error("Invalid Heroic Spirit issuance efficiency");
 	if(passiveDivineMandate)
 	{
 		passiveDivineMandate->validate();

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMagic.h"
+#include "../battle/NewHorizonsElementalAttunement.h"
 #include "NewHorizonsShadowMagnitudes.h"
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagicPresentation.h"
@@ -1044,6 +1045,7 @@ void validateRules(const JsonNode & rules)
 	}
 	require(rules["spells"].isStruct(), "spell mappings required");
 	validateCanonicalSpellClausesSerialization(rules, true, true);
+	newHorizonsElementalAttunement::validateSpellMetadata(rules);
 	std::set<int> mapped;
 	for(const auto & [name, data] : rules["spells"].Struct())
 	{
@@ -1052,7 +1054,8 @@ void validateRules(const JsonNode & rules)
 		else if(version < SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "ordinaryAcquisition"});
 		else
-			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "rawSpellPowerPerPatch", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers", "theChosen", "focusMagic", "slow", "livingArmor"});
+			fields(data, {"schools", "level", "costs", "directDamage", "active", "cureAfflictions", "selectedPlacement", "rawSpellPowerPerPatch", "ordinaryAcquisition", "heroAccess", "variant", "earthquake", "structures", "restoration", "propagationLimit", "implosion", "ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers", "theChosen", "focusMagic", "slow", "livingArmor", "magicArrow", "elementalTag", "elementalAreaDamage"});
+		validateMagicArrowSpellRow(rules, name, data);
 		newHorizonsTheChosen::validateSpellRow(rules, name, data);
 		newHorizonsSorceryRevision::validateSpellRow(rules, name, data);
 		if(data.Struct().contains("implosion"))
@@ -1501,24 +1504,6 @@ int64_t regenerationHealAmount(const int64_t pendingMicroHealth, const int64_t s
 	return std::min<int64_t>(pendingMicroHealth / REGENERATION_MARK_SCALE, survivingWounds);
 }
 
-bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell)
-{
-	if(spell != SpellID(SpellID::MAGIC_ARROW) || legacy(rules))
-		return false;
-	if(!rules.isStruct() || !integer(rules["rulesetVersion"], DIRECT_DAMAGE_RULESET_VERSION, CURRENT_RULESET_VERSION))
-		return false;
-
-	// Read the saved roster, rather than installed content.  This keeps old
-	// v1 saves on their old Magic Arrow semantics even when a newer module is
-	// installed.  The explicit v2+ formula is the compatibility marker for the
-	// Sorcery overcharge contract; a saved roster without it is not activated.
-	if(!spellAllowedBySavedRoster(rules, spell))
-		return false;
-	if(!spellDirectDamage(rules, spell.toSpell()->getJsonKey()))
-		return false;
-
-	return vstd::contains_if(spellSchools(rules, spell), sorceryMember);
-}
 
 bool cureEnabled(const JsonNode & rules, SpellID spell)
 {
@@ -1618,16 +1603,6 @@ std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit 
 	return result;
 }
 
-MagicArrowOverchargeModifiers magicArrowOverchargeModifiers(const CGHeroInstance * hero)
-{
-	MagicArrowOverchargeModifiers result;
-	if(hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.overcharger"))
-	{
-		result.maximumBonus = 1;
-		result.damagePercentTenths = 175;
-	}
-	return result;
-}
 
 int spellDurationBonus(const CGHeroInstance * hero, SpellID spell)
 {
@@ -1637,46 +1612,6 @@ int spellDurationBonus(const CGHeroInstance * hero, SpellID spell)
 	return 0;
 }
 
-int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower,
-	MagicArrowOverchargeModifiers modifiers)
-{
-	if(!magicArrowOverchargeEnabled(rules, spell))
-		return 0;
-	if(spellPower < 0)
-		throw std::runtime_error("Magic Arrow spell power cannot be negative");
-
-	// Base maximum = min(5, 2 + floor(SP / 50)); active saved perks may
-	// extend it. Spell Power is the primary rating; the divisor is applied only
-	// to fixed-point coefficients when the damage value is evaluated.
-	return std::min(5, 2 + spellPower / 50) + modifiers.maximumBonus;
-}
-
-std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
-	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers,
-	int coefficientPercent, int empowerSpellBonusPercent)
-{
-	if(!magicArrowOverchargeEnabled(rules, spell))
-		return std::nullopt;
-	if(spellPower < 0 || divisor <= 0 || coefficientPercent < 0 || coefficientPercent > 1000
-		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
-		return std::nullopt;
-
-	const int maxOvercharge = magicArrowMaxOvercharge(rules, spell, spellPower, modifiers);
-	if(overcharge < 0 || overcharge > maxOvercharge)
-		return std::nullopt;
-
-	// Base Damage = 20 + 2 * SP.  The v2 saved directDamage row is explicit and
-	// authoritative (including a saved zero).  Both the authored coefficients
-	// and the fallback below use the same fixed-point scale, so hero rating
-	// divisors remain deterministic if this helper is reused by tooling.
-	const auto savedFormula = spellDirectDamage(rules, spell.toSpell()->getJsonKey());
-	const int64_t baseDamage = savedFormula
-		? savedFormula->evaluateBasisPoints(spellPower, divisor, coefficientPercent * 100,
-			empowerSpellBonusPercent)
-		: DirectDamageFormula{20, 20}.evaluateBasisPoints(spellPower, divisor, coefficientPercent * 100,
-			empowerSpellBonusPercent);
-	return baseDamage * (1000 + modifiers.damagePercentTenths * overcharge) / 1000;
-}
 
 std::vector<SpellSchool> activeSchools(const JsonNode & rules)
 {

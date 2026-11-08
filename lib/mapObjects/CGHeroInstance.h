@@ -16,6 +16,7 @@
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "../nativeRules/PreparedPilotRules.h"
 #include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../entities/hero/SpellPointState.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -298,6 +299,10 @@ public:
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
+	const nativeRules::PreparedPilotPerks * getPreparedPilotPerks() const { return preparedPilotPerks.get(); }
+	const nativeRules::PreparedPilotCreature * getPreparedCreatureMechanics() const { return preparedCreatureMechanics.get(); }
+	/// Rebuild immutable definitions only from this hero's admitted captured rows.
+	void rebuildPreparedNativeRules();
 	/// Immutable offer context derived only from captured primary-growth rules.
 	newHorizonsHeroes::PerkState::OfferWeightContext getPerkOfferWeightContext() const;
 	int32_t getNewHorizonsInvestorDailyGold() const { return newHorizonsInvestorDailyGold; }
@@ -667,6 +672,8 @@ private:
 	newHorizonsHeroes::MasteryState masteryState;
 	bool perkRulesCaptured = false;
 	newHorizonsHeroes::PerkState perkState;
+	std::shared_ptr<const nativeRules::PreparedPilotPerks> preparedPilotPerks;
+	std::shared_ptr<const nativeRules::PreparedPilotCreature> preparedCreatureMechanics;
 	/// Investor's fixed per-day bonus captured from the owner's treasury at week start.
 	int32_t newHorizonsInvestorDailyGold = 0;
 	// Loader-only creation intent; binary/crossover snapshots are never fresh default requests.
@@ -726,6 +733,10 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+			nativeRules::validatePilotPerks(perkState.rules, false);
+		if(h.saving)
+			nativeRules::validatePilotCreatures(primaryGrowthRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 		if(h.saving)
 			validateHeroBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving) newHorizonsHeroes::validateSylvanTacticsSerialization(perkState.rules,
@@ -925,7 +936,17 @@ public:
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_GROWTH))
 		{
-			h & primaryGrowthRules;
+			if(h.saving)
+				h & primaryGrowthRules;
+			else
+			{
+				JsonNode candidate;
+				h & candidate;
+				nativeRules::validatePilotCreatures(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+				auto prepared = nativeRules::preparePilotCreature(candidate, getHeroTypeID());
+				primaryGrowthRules = std::move(candidate);
+				preparedCreatureMechanics = std::move(prepared);
+			}
 			h & lastPrimaryGains;
 			if(!h.saving)
 			{
@@ -970,6 +991,7 @@ public:
 		else if(!h.saving)
 		{
 			primaryGrowthRules = JsonNode();
+			preparedCreatureMechanics.reset();
 			lastPrimaryGains.fill(0);
 		}
 
@@ -1088,13 +1110,27 @@ public:
 			masteryState = newHorizonsHeroes::MasteryState();
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERKS))
-			h & perkState;
+		{
+			if(h.saving)
+				h & perkState;
+			else
+			{
+				newHorizonsHeroes::PerkState candidate;
+				std::shared_ptr<const nativeRules::PreparedPilotPerks> prepared;
+				candidate.serialize(h, &prepared);
+				perkState = std::move(candidate);
+				preparedPilotPerks = std::move(prepared);
+			}
+		}
 		else
 		{
 			if(h.saving && (newHorizonsHeroes::usesPerkRules(perkState.rules) || !perkState.selected.empty()))
 				throw std::runtime_error("New Horizons perk state requires the new save format");
 			if(!h.saving)
+			{
 				perkState = newHorizonsHeroes::PerkState();
+				preparedPilotPerks.reset();
+			}
 		}
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_INVESTOR_INCOME))

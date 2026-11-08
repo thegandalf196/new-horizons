@@ -68,6 +68,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
+#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
@@ -207,14 +208,6 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 	});
 	addShortcut(EShortcut::GLOBAL_CANCEL, [this]()
 	{
-		if(this->owner.actionsController->heroOrderTargetingModeActive()
-			&& (this->owner.getBattle()->battleHasPendingDoubleCommand(this->owner.getBattle()->battleGetMySide())
-				|| this->owner.getBattle()->battleHasPendingPreCombatOrder(this->owner.getBattle()->battleGetMySide())))
-		{
-			this->owner.actionsController->cancelHeroOrderTargeting();
-			this->owner.presentPendingHeroOrderChoice();
-			return;
-		}
 		this->owner.actionsController->endCastingSpell();
 	});
 	setShortcutBlocked(EShortcut::GLOBAL_ACCEPT, true);
@@ -252,11 +245,13 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 				reason = "Finish or cancel spell targeting first.";
 			else if(!owner.makingTurn())
 				reason = "It is not your turn.";
+			else if(!newHorizonsCommand::available(*owner.getBattle(), owner.getBattle()->battleGetMySide()))
+				reason = "No Command remains. You can still use ordinary creature actions and legal spells.";
 			else if(ordersButton->isBlocked())
 				reason = "Battle input is temporarily unavailable.";
 			else
 				reason = "Open Orders to inspect commands and their current availability.";
-			CRClickPopup::createAndPush(reason + "\n\nOrders require no mana or spellbook. Opening or reading the panel spends nothing. Spells and Orders share one hero action per round.");
+			CRClickPopup::createAndPush(reason + "\n\nEach Order costs 1 Command and the shared Hero Action. No Mana or spellbook is required. Command does not regenerate during combat. Opening or reading the panel spends nothing.");
 		});
 		// Use the configurable interface's normal single-dispatch path: it defers
 		// to an active assigned button. loadButtonHotkey attaches the callback once.
@@ -679,111 +674,6 @@ void BattleWindow::updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero
 	setPositionInfoWindow();
 }
 
-void BattleWindow::refreshHeroBattleStatus(BattleSide side)
-{
-	const auto battleCallback = owner.getBattle();
-	if(!battleCallback)
-		return;
-	const auto * battle = battleCallback->getBattle();
-	if(!battle)
-		return;
-
-	std::vector<CombatStatusEntry> entries;
-	const bool counterspellArmed = battleCallback->battleWasCounterspellArmed(side);
-	if(counterspellArmed)
-	{
-		entries.push_back({{}, "Ward", "ARMED",
-			CInfoWindow::genText("Counterspell Ward", "The Counterspell ward is armed for this side.")});
-	}
-
-	const auto * visibleHero = battleCallback->battleGetFightingHero(side);
-
-	if(const auto * hero = visibleHero)
-	{
-		for(const auto & skill : LIBRARY->skillh->objects)
-		{
-			if(!skill || skill->getCombatStatusProvider() == CSkill::CombatStatusProvider::NONE)
-				continue;
-			const int skillRank = hero->getPerkSkillRank(skill->getJsonKey());
-			if(skillRank <= 0)
-				continue;
-
-			std::string value;
-			std::string providerDetails;
-			bool replaceProviderDescription = false;
-			switch(skill->getCombatStatusProvider())
-			{
-				case CSkill::CombatStatusProvider::METAMAGIC_USES:
-				{
-					const auto readout = passiveFactionSkillPresentation::metamagic(*hero, *battleCallback, side);
-					if(!readout)
-						continue;
-					value = readout->value;
-					providerDetails = readout->details;
-					replaceProviderDescription = readout->replacesProviderDescription;
-					break;
-				}
-				case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:
-				{
-					const int cap = battle->getBloodrageCapPercent(side);
-					if(cap <= 0)
-						continue;
-					const int current = std::clamp(battle->getBloodrageDamagePercent(side), 0, cap);
-					// Keep current/cap legible in the compact 42 px value column.
-					// The localized tooltip carries the fully expanded explanation.
-					value = "+" + std::to_string(current) + "/" + std::to_string(cap) + "%";
-					break;
-				}
-				case CSkill::CombatStatusProvider::DIVINE_MANDATE_USES:
-				{
-					const auto readout = passiveFactionSkillPresentation::divineMandate(*hero, *battleCallback, side);
-					if(!readout)
-						continue;
-					value = readout->value;
-					providerDetails = readout->details;
-					replaceProviderDescription = readout->replacesProviderDescription;
-					break;
-				}
-				case CSkill::CombatStatusProvider::NONE:
-					continue;
-			}
-			const auto description = replaceProviderDescription ? std::string{}
-				: skill->getCombatStatusDescriptionTranslated();
-			const auto details = providerDetails.empty()
-				? (description.empty() ? value : description + "\n\n" + value)
-				: (description.empty() ? providerDetails : description + "\n\n" + providerDetails);
-			entries.push_back({skill->at(std::clamp(skillRank, 1, 3)).iconSmall,
-				skill->getNameTranslated(), value, CInfoWindow::genText(skill->getNameTranslated(), details)});
-		}
-	}
-
-	const bool showNormalHeroAction = battleCallback->battleUsesHeroCommands()
-		&& battle->getSideHero(side) != nullptr;
-	const auto actionCounts = showNormalHeroAction
-		? battleCallback->battleHeroActionAllowanceCounts(side)
-		: HeroActionAllowanceState::Counts{};
-	const bool normalHeroActionAvailable = showNormalHeroAction && actionCounts.heroActions > 0;
-
-	const auto panel = side == BattleSide::ATTACKER ? attackerHeroWindow : defenderHeroWindow;
-	if(panel)
-		panel->setBattleStatus(entries, normalHeroActionAvailable, showNormalHeroAction);
-
-	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
-	if(statusArea)
-		statusArea->setStatus(entries, normalHeroActionAvailable, showNormalHeroAction);
-}
-
-int BattleWindow::heroBattleStatusHeight(BattleSide side) const
-{
-	if(settings["battle"]["stickyHeroInfoWindows"].Bool())
-	{
-		const auto panel = side == BattleSide::ATTACKER ? attackerHeroWindow : defenderHeroWindow;
-		return panel ? panel->battleStatusHeight() : 0;
-	}
-
-	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
-	return statusArea ? statusArea->statusHeight() : 0;
-}
 
 void BattleWindow::updateCounterspellStatus()
 {

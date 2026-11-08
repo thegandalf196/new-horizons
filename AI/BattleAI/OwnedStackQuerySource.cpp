@@ -122,3 +122,13 @@ std::optional<bool> OwnedStackQuerySource::unitLegacyTimeStopSpellMatch(const ba
 	const auto & basis = current(unit);
 	return battle::OwnedFrameBranchQueries::environment(basis).unitLegacyTimeStopSpellMatch(&basis.unit(), spell);
 }
+
+newHorizonsElementalAttunement::UnitPassives OwnedStackQuerySource::unitElementalAttunement(const battle::Unit * unit) const
+{
+	const auto & basis = current(unit);
+	const auto side = unit->unitSide();
+	if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
+		&& owner.elementalAttunementProfileKnown.at(side))
+		return owner.unitElementalAttunement(unit);
+	return battle::OwnedFrameBranchQueries::environment(basis).unitElementalAttunement(&basis.unit());
+}

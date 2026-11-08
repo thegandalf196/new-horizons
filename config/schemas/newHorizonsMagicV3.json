@@ -189,6 +189,7 @@
 	"definitions": {
 		"spell": {
 			"type": "object",
+			"dependencies": {"elementalAreaDamage": ["elementalTag"]},
 			"required": ["schools"],
 			"additionalProperties": false,
 			"properties": {
@@ -221,6 +222,9 @@
 					"not": {"type": "null"},
 					"description": "Whether heroes may cast and acquire this common spell. Omission defaults to true for compatibility with older saved-v3 profiles; this does not disable creature or world-effect behavior."
 				},
+				"elementalTag": {"type": "string", "enum": ["fire", "water", "air", "earth"], "description": "Captured elemental association independent of Magic School and Orb damageElement. Omission is untagged."},
+				"elementalAreaDamage": {"type": "boolean", "enum": [true], "description": "Explicit elemental area-damage eligibility; chain and other multi-target spells are not automatically areas."},
+				"magicArrow": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Captured coefficient-based Arrow with nonlinear Overcharge prices; omission preserves historical percentage charging."},
 				"directDamage": {"$ref": "#/definitions/directDamage"},
 				"ignoreInterveningBarriers": {
 					"type": "boolean",

@@ -49,6 +49,8 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 	// converts all existing overrides into a single json node for serialization
 	JsonNode getAllOverrides() const;
 	void loadSavedOverrides(const JsonNode & input);
+	void validateSpecialtyOverrideSerialization(const JsonNode & overrides,
+		const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 
 public:
 	static void validateCombatScalarOverrides(const JsonNode & input, bool finalLuckSupported, bool moraleSupported);
@@ -302,8 +304,7 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
-			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
-				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
+			validateSpecialtyOverrideSerialization(overrides, newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
 			newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 			newHorizonsHeroes::validateMasterSpellwardSerialization(overrides["heroes"]["newHorizons"],
@@ -373,8 +374,7 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
-			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(overrides["heroes"]["newHorizons"],
-				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
+			validateSpecialtyOverrideSerialization(overrides, newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
 			newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
 				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 			newHorizonsHeroes::validateMasterSpellwardSerialization(overrides["heroes"]["newHorizons"],

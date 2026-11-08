@@ -3,7 +3,7 @@
 #######################################
 #
 # Aggregator library that bundles vcmiMain plus every AI implementation
-# and the Lua scripting backend into a single shipped artifact called
+# into a single shipped artifact called
 # 'vcmi' (libvcmi.so / VCMI_lib.dll). All consumers link this target
 # instead of the individual static libraries.
 #
@@ -29,9 +29,7 @@ endif()
 target_link_libraries(vcmi PRIVATE vcmiMain)
 
 if(NOT ENABLE_MINIMAL_LIB)
-	target_link_libraries(vcmi PRIVATE vcmiLua)
-
-	if(ENABLE_CLIENT OR ENABLE_TEST)
+	if(ENABLE_CLIENT OR ENABLE_TEST OR ENABLE_SERVER)
 		target_link_libraries(vcmi PRIVATE EmptyAI)
 
 		if(ENABLE_NULLKILLER2_AI)
@@ -84,10 +82,8 @@ if(COPY_CONFIG_ON_BUILD)
 	add_custom_command(TARGET vcmi POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/config
 		COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/Mods
-		COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/scripts
 		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake_modules/create_link.cmake ${CMAKE_SOURCE_DIR}/config ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/config
 		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake_modules/create_link.cmake ${CMAKE_SOURCE_DIR}/Mods ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/Mods
-		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake_modules/create_link.cmake ${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/scripts
 	)
 endif()
 

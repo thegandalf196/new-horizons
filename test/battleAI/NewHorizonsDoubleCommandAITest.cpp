@@ -23,6 +23,7 @@
 #include "../../lib/IGameSettings.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/HeroCommand.h"
+#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/gameState/CGameState.h"
@@ -78,6 +79,7 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true;
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";
 	}
@@ -85,19 +87,8 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		bool found = false;
-		for(auto & perk : perks["skills"][commandSkill]["perks"].Vector())
-		{
-			if(perk["id"].String() == doubleCommandPerk)
-			{
-				perk["effect"]["status"].String() = "active";
-				found = true;
-			}
-		}
-		if(!found)
-			throw std::runtime_error("Missing Double Command registry entry");
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	}
 
 	void acceptPerk(CGHeroInstance * hero, const std::string & perkId)
@@ -124,6 +115,7 @@ protected:
 
 	void selectDoubleCommand(CGHeroInstance * hero)
 	{
+		hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:orrin")));
 		const int decoded = SecondarySkill::decode(commandSkill);
 		ASSERT_GE(decoded, 0);
 		const auto skill = SecondarySkill(decoded);
@@ -146,43 +138,6 @@ protected:
 		gameHandler->sendAndApply(changes);
 	}
 
-	void spendDefenderHeroAllowanceAsSpell()
-	{
-		const auto round = battle()->getRound();
-		auto ledgerCopy = battle()->getHeroActionAllowances(BattleSide::DEFENDER);
-		const auto selection = ledgerCopy.eligibleAllowance(
-			HeroActionAllowanceState::ActionKind::SPELL, round);
-		ASSERT_TRUE(selection);
-		EXPECT_EQ(selection->allowance, HeroActionAllowanceState::AllowanceKind::HERO);
-		EXPECT_EQ(selection->source, HeroActionAllowanceState::GrantSource::ROUND);
-		uint8_t metamagicUsesConsumed = 0;
-		uint8_t metamagicPendingCount = 0;
-		bool metamagicGrandUsed = false;
-		const auto receipt = HeroSpellAllowanceTransition::commitAcceptedCast(ledgerCopy,
-			selection->grantId, round, false, false, 0, false, metamagicUsesConsumed,
-			metamagicPendingCount, metamagicGrandUsed, 0);
-		ASSERT_TRUE(receipt);
-		EXPECT_EQ(receipt->receipt.action, HeroActionAllowanceState::ActionKind::SPELL);
-		EXPECT_EQ(receipt->receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
-		EXPECT_EQ(receipt->receipt.round, round);
-		EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER)
-			.remainingCounts(round).heroActions, 1u)
-			<< "Receipt inspection must not mutate the authoritative battle budget";
-
-		BattleAction spell;
-		spell.actionType = EActionType::HERO_SPELL;
-		spell.side = BattleSide::DEFENDER;
-		spell.spell = SpellID::HASTE;
-		spell.aimToUnit(enemy);
-		const auto startedActions = server.startedActions.size();
-		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
-			battle()->sideToPlayer(BattleSide::DEFENDER), spell));
-		ASSERT_EQ(server.startedActions.size(), startedActions + 1);
-		EXPECT_EQ(server.startedActions.back().ba.actionType, EActionType::HERO_SPELL);
-		EXPECT_EQ(server.startedActions.back().ba.side, BattleSide::DEFENDER);
-		EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::DEFENDER)
-			.remainingCounts(round).heroActions, 0u);
-	}
 
 	bool issue(HeroCommand command)
 	{
@@ -190,13 +145,10 @@ protected:
 			BattleAction::makeHeroCommand(BattleSide::ATTACKER, command));
 	}
 
-	void preparePendingChoice()
+	void prepareSpentOrdinaryAction()
 	{
 		startGame();
 		selectDoubleCommand(attackerSideHero);
-		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-		defenderSideHero->addSpellToSpellbook(SpellID::HASTE);
-		setTestSpellPointTotal(defenderSideHero, 100);
 		startBattle();
 		clearStartingUnits();
 		active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(70), 100);
@@ -207,19 +159,14 @@ protected:
 
 		BattleSetActiveStack activate;
 		activate.battleID = BattleID(0);
-		activate.stack = enemy->unitId();
-		activate.reason = BattleUnitTurnReason::TURN_QUEUE;
-		gameHandler->sendAndApply(activate);
-		ASSERT_EQ(battle()->battleActiveUnit(), enemy);
-		spendDefenderHeroAllowanceAsSpell();
 		activate.stack = active->unitId();
+		activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 		gameHandler->sendAndApply(activate);
 		ASSERT_EQ(battle()->battleActiveUnit(), active);
 
 		ASSERT_TRUE(issue(HeroCommand::CHARGE));
-		ASSERT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-		ASSERT_EQ(battle()->getDoubleCommandState(BattleSide::ATTACKER).phase,
-			DoubleCommandState::Phase::ORDER_REQUIRED);
+		ASSERT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+		ASSERT_EQ(battle()->getDoubleCommandState(BattleSide::ATTACKER), DoubleCommandState{});
 
 		callback = std::make_shared<RecordingDoubleCommandCallback>();
 		callback->onBattleStarted(battle());
@@ -227,149 +174,93 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsDoubleCommandAITest, MandatoryChoiceSubmitsAndResolvesOneDistinctOrder)
+TEST_F(NewHorizonsDoubleCommandAITest, MasterCommanderCannotSubmitAnOrderAfterTheOrdinaryActionWasSpent)
 {
-	preparePendingChoice();
-	const auto pending = battle()->getDoubleCommandState(BattleSide::ATTACKER);
-	ASSERT_EQ(pending.firstOrder, HeroCommand::CHARGE);
-	const auto pendingBudget = battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound());
-	ASSERT_EQ(pendingBudget.heroActions, 0u);
-	ASSERT_EQ(pendingBudget.orderActions, 1u);
-	const auto startedActions = server.startedActions.size();
-
-	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
-		BattleSide::ATTACKER, 1.0f, 2);
-	ASSERT_TRUE(evaluator.canCastSpell())
-		<< "The evaluator must recognize a pending mandatory continuation even though the Hero Action was spent";
-	ASSERT_TRUE(evaluator.attemptCastingSpell(active, true))
-		<< "The evaluator must submit the mandatory Order instead of declining after ordinary forecast evaluation";
-
-	ASSERT_EQ(callback->heroActions.size(), 1u)
-		<< "The pending Double Command must submit exactly one Order request";
-	EXPECT_TRUE(callback->creatureActions.empty())
-		<< "The pending choice must not submit a Creature Action";
-	const auto & selected = callback->heroActions.front();
-	ASSERT_EQ(selected.actionType, EActionType::HERO_COMMAND);
-	ASSERT_TRUE(heroCommands::isActive(selected.command));
-	EXPECT_NE(selected.command, pending.firstOrder);
-	EXPECT_TRUE(battle()->battleCanUseHeroCommand(BattleSide::ATTACKER, selected.command)
-		|| battle()->battleCanBeginHeroCommand(BattleSide::ATTACKER, selected.command));
-	EXPECT_EQ(server.startedActions.size(), startedActions)
-		<< "AI candidate evaluation is read-only until the selected Order reaches the server";
-
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
-	ASSERT_EQ(server.startedActions.size(), startedActions + 1);
-	EXPECT_EQ(server.startedActions.back().ba.actionType, EActionType::HERO_COMMAND);
-	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
+	ASSERT_NO_FATAL_FAILURE(prepareSpentOrdinaryAction());
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(commandSkill, doubleCommandPerk));
+	const auto counts = battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(battle()->getRound());
+	ASSERT_EQ(counts.heroActions, 0u);
+	ASSERT_EQ(counts.orderActions, 0u);
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
+	ASSERT_GT(resources.remaining, 0);
+	const auto before = gameState()->saveToMemory();
+	const auto started = server.startedActions.size();
+	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	EXPECT_FALSE(evaluator.canCastSpell());
+	EXPECT_FALSE(evaluator.attemptCastingSpell(active, true));
+	EXPECT_TRUE(callback->heroActions.empty());
+	EXPECT_TRUE(callback->creatureActions.empty());
+	EXPECT_FALSE(issue(HeroCommand::BRACE));
+	EXPECT_EQ(server.startedActions.size(), started);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), resources);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
 	const auto orders = battle()->battleGetHeroOrderStates(BattleSide::ATTACKER);
-	ASSERT_EQ(orders.size(), 2u);
-	EXPECT_EQ(orders[0].command, HeroCommand::CHARGE);
-	EXPECT_EQ(orders[1].command, selected.command);
-	EXPECT_NE(orders[0].command, orders[1].command);
-	const auto resolvedBudget = battle()->getHeroActionAllowances(BattleSide::ATTACKER)
-		.remainingCounts(battle()->getRound());
-	EXPECT_EQ(resolvedBudget.heroActions, 0u);
-	EXPECT_EQ(resolvedBudget.orderActions, 0u);
-	const auto resolved = battle()->getDoubleCommandState(BattleSide::ATTACKER);
-	EXPECT_TRUE(resolved.used);
-	EXPECT_EQ(resolved.phase, DoubleCommandState::Phase::NONE);
+	ASSERT_EQ(orders.size(), 1u);
+	EXPECT_EQ(orders.front().command, HeroCommand::CHARGE);
 }
 
-TEST_F(NewHorizonsDoubleCommandAITest, CandidateGenerationRetainsNonpositiveMandatoryContinuationWithoutSpendingIt)
+TEST_F(NewHorizonsDoubleCommandAITest, MandatoryFlagCannotBypassOrdinaryAllowanceBeforeHeuristicScoring)
 {
-	ASSERT_NO_FATAL_FAILURE(preparePendingChoice());
-	class NegativeValuation final : public heroOrderCandidates::Valuation
+	ASSERT_NO_FATAL_FAILURE(prepareSpentOrdinaryAction());
+	class CountingValuation final : public heroOrderCandidates::Valuation
 	{
 	public:
-		float score(const heroOrderCandidates::ValuationRequest &) const override { return -7.0f; }
+		mutable unsigned calls = 0;
+		float score(const heroOrderCandidates::ValuationRequest &) const override { ++calls; return -7.0f; }
 	} valuation;
-	const auto ledgerBefore = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
-	const auto pendingBefore = battle()->getDoubleCommandState(BattleSide::ATTACKER);
-	const auto ordersBefore = battle()->battleGetHeroOrderStates(BattleSide::ATTACKER);
-	const auto actionsBefore = server.startedActions.size();
+	const auto ledger = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
+	const auto orders = battle()->battleGetHeroOrderStates(BattleSide::ATTACKER);
+	const auto before = gameState()->saveToMemory();
+	const auto started = server.startedActions.size();
 	std::vector<PossibleSpellcast> optional, mandatory;
 	heroOrderCandidates::appendOrders(optional, *callback, BattleID(0), BattleSide::ATTACKER, false, valuation);
 	heroOrderCandidates::appendOrders(mandatory, *callback, BattleID(0), BattleSide::ATTACKER, true, valuation);
-	EXPECT_TRUE(optional.empty());
-	ASSERT_FALSE(mandatory.empty());
-	for(const auto & candidate : mandatory)
-	{
-		EXPECT_NE(candidate.command, pendingBefore.firstOrder);
-		EXPECT_FLOAT_EQ(candidate.commandHeuristicValue, -7.0f);
-	}
-	const auto wire = [](const auto & state)
-	{
-		CMemorySerializer memory;
-		memory.oser & state;
-		return memory.extractBuffer();
-	};
-	EXPECT_EQ(wire(battle()->getHeroActionAllowances(BattleSide::ATTACKER)), wire(ledgerBefore));
-	EXPECT_EQ(wire(battle()->getDoubleCommandState(BattleSide::ATTACKER)), wire(pendingBefore));
-	EXPECT_EQ(wire(battle()->battleGetHeroOrderStates(BattleSide::ATTACKER)), wire(ordersBefore));
-	EXPECT_EQ(server.startedActions.size(), actionsBefore);
-	EXPECT_TRUE(callback->heroActions.empty());
-	EXPECT_TRUE(callback->creatureActions.empty());
+	EXPECT_TRUE(optional.empty()); EXPECT_TRUE(mandatory.empty());
+	EXPECT_EQ(valuation.calls, 0u);
+	const auto wire = [](const auto & value) { CMemorySerializer bytes; bytes.oser & value; return bytes.extractBuffer(); };
+	EXPECT_EQ(wire(battle()->getHeroActionAllowances(BattleSide::ATTACKER)), wire(ledger));
+	EXPECT_EQ(wire(battle()->getDoubleCommandState(BattleSide::ATTACKER)), wire(DoubleCommandState{}));
+	EXPECT_EQ(wire(battle()->battleGetHeroOrderStates(BattleSide::ATTACKER)), wire(orders));
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), resources);
+	EXPECT_EQ(server.startedActions.size(), started);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_TRUE(callback->heroActions.empty()); EXPECT_TRUE(callback->creatureActions.empty());
 }
 
-TEST_F(NewHorizonsDoubleCommandAITest, RealActiveStackResolvesNativePendingSecondOrderBeforeCreatureAction)
+TEST_F(NewHorizonsDoubleCommandAITest, RealActiveStackContinuesWithCreatureActionWithoutAnotherOrderDecision)
 {
-	ASSERT_NO_FATAL_FAILURE(preparePendingChoice());
-	ASSERT_TRUE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
-
-	int own = 0, opposing = 0;
-	for(const auto * unit : battle()->battleGetAllStacks())
-		(unit->unitSide() == BattleSide::ATTACKER ? own : opposing)
-			+= unit->getCount() * unit->creatureId().toCreature()->getAIValue();
-	const float ratio = opposing ? static_cast<float>(own) / opposing : 1.0f;
-	const int horizon = gameState()->getStartInfo()->difficulty < 4 ? 2 : 10;
+	ASSERT_NO_FATAL_FAILURE(prepareSpentOrdinaryAction());
+	const auto serialized = [](const auto & value) { CMemorySerializer bytes; bytes.oser & value; return bytes.extractBuffer(); };
 	const auto before = gameState()->saveToMemory();
-	const auto serialized = [](const auto & value)
-	{
-		CMemorySerializer memory;
-		memory.oser & value;
-		return memory.extractBuffer();
-	};
 	const auto randomBefore = serialized(*gameHandler->randomizer);
 	const auto fixtureBefore = serialized(dynamic_cast<CRandomGenerator &>(*getRNG()));
 	const auto ambientBefore = serialized(CRandomGenerator::getDefault());
-	std::vector<std::byte> directRequest;
 	for(const bool enabled : {false, true})
 	{
-		callback->heroActions.clear();
 		heroDecisionPressure::Experiment experiment;
-		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, ratio, horizon);
-		ASSERT_TRUE(evaluator.attemptCastingSpell(active, false, nullptr, nullptr, nullptr, nullptr,
+		BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+		EXPECT_FALSE(evaluator.attemptCastingSpell(active, false, nullptr, nullptr, nullptr, nullptr,
 			enabled ? &experiment : nullptr));
-		ASSERT_EQ(callback->heroActions.size(), 1u);
 		EXPECT_EQ(experiment.baselineAttempts, 0u);
 		EXPECT_FALSE(experiment.baselineReady);
-		const auto request = serialized(callback->heroActions.front());
-		if(!enabled) directRequest = request;
-		else EXPECT_EQ(request, directRequest);
+		EXPECT_TRUE(callback->heroActions.empty());
 		EXPECT_EQ(gameState()->saveToMemory(), before);
 		EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
 		EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
 		EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
 	}
-	callback->heroActions.clear();
 	CBattleAI ai;
-	AutocombatPreferences preferences;
-	preferences.enableSpellsUsage = false;
+	AutocombatPreferences preferences; preferences.enableSpellsUsage = false;
 	ai.initBattleInterface(environment, callback, preferences);
-	ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
-		attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
+	ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0), attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
 	ai.activeStack(BattleID(0), active);
-	ASSERT_EQ(callback->heroActions.size(), 1u);
-	EXPECT_EQ(serialized(callback->heroActions.front()), directRequest);
+	EXPECT_TRUE(callback->heroActions.empty());
+	ASSERT_EQ(callback->creatureActions.size(), 1u);
 	EXPECT_EQ(gameState()->saveToMemory(), before);
 	EXPECT_EQ(serialized(*gameHandler->randomizer), randomBefore);
 	EXPECT_EQ(serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), fixtureBefore);
 	EXPECT_EQ(serialized(CRandomGenerator::getDefault()), ambientBefore);
-	EXPECT_TRUE(callback->creatureActions.empty());
-	const auto & chosen = callback->heroActions.front();
-	ASSERT_EQ(chosen.actionType, EActionType::HERO_COMMAND);
-	EXPECT_NE(chosen.command, battle()->getDoubleCommandState(BattleSide::ATTACKER).firstOrder);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), chosen));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->creatureActions.front()));
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
 }

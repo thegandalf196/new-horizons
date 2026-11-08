@@ -90,14 +90,14 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 		return;
 
 	// The pending action was consumed above, so repeated EndAction cannot
-	// replay either proc. Successful Luck and Morale have separate receipts.
+	// replay Lucky Day. Heroic Spirit now contributes captured efficiency, not a proc.
 	if(state)
 		presentHeroPositiveProcs(action.side,
 			state->heroLuck && state->heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay), false, false,
-			state->heroMorale && state->heroMorale->has(newHorizonsHeroLuck::Proc::HeroicSpirit),
+			false,
 			false, static_cast<int>(action.command),
 			state->heroLuck ? &*state->heroLuck : nullptr,
-			state->heroMorale ? &*state->heroMorale : nullptr, state->heroMoraleActionGrantId);
+			nullptr, 0);
 
 	// Reuse presentation resources only, never spell definitions/mechanics.
 	// Each Order has a distinct troop effect; Second Wind uses retired Mirth.

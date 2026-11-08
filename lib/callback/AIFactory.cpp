@@ -50,10 +50,11 @@ std::shared_ptr<CBattleGameInterface> AIFactory::createBattleAI(const std::strin
 {
 	logGlobal->info("Creating battle AI %s", name);
 
-	if(name == "BattleAI")
 #ifdef ENABLE_BATTLE_AI
-		return std::make_shared<CBattleAI>();
+	if(const auto profile = battleSearch::profileForAIName(name))
+		return std::make_shared<CBattleAI>(nullptr, nullptr, *profile);
 #else
+	if(name == "BattleAI" || name == "BattleAIBeamOne" || name == "BattleAIQuick")
 		throw std::runtime_error("BattleAI is not available in this build!");
 #endif
 

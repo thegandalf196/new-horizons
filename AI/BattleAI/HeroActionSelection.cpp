@@ -41,10 +41,12 @@ std::optional<Selection> choose(std::span<const PossibleSpellcast> candidates,
 {
 	if(candidates.empty())
 		return std::nullopt;
-	size_t best = 0;
+	std::optional<size_t> best;
 	for(size_t index = 0; index < candidates.size(); ++index)
 	{
 		const auto & candidate = candidates[index];
+		if(candidate.spellRunicEstimatePartial)
+			continue;
 		if(observer)
 		{
 			observer->candidate({index, candidate.command,
@@ -60,10 +62,12 @@ std::optional<Selection> choose(std::span<const PossibleSpellcast> candidates,
 				observer->candidateIdentity(index, std::move(identity));
 			}
 		}
-		if(index != 0 && candidates[best].value < candidate.value)
+		if(!best || candidates[*best].value < candidate.value)
 			best = index;
 	}
-	Selection result{best, admission(candidates[best], baseline, mandatoryOrder)};
+	if(!best)
+		return std::nullopt;
+	Selection result{*best, admission(candidates[*best], baseline, mandatoryOrder)};
 	if(observer)
 		observer->selected({result.ordinal, baseline, result.disposition});
 	return result;

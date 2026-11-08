@@ -118,6 +118,7 @@ local function getPhysicalDamageReductionFactor(info)
 	end
 
 	table.insert(reductions, { info.newHorizonsArmorerReductionPercent or 0, 100 })
+	table.insert(reductions, { info.stoneboundPhysicalReductionBasisPoints or 0, 10000 })
 	local intrinsicReduction = info.intrinsicPhysicalDamageReductionPercent or 0
 	if intrinsicReduction > 0 then
 		table.insert(reductions, { intrinsicReduction, 100 })

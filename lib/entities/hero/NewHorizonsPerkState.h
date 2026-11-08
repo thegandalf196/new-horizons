@@ -6,6 +6,9 @@
 #pragma once
 
 #include "NewHorizonsPerkRules.h"
+#include "../../nativeRules/PreparedPilotRules.h"
+#include "../../battle/NewHorizonsCommandResources.h"
+#include "../../battle/NewHorizonsElementalAttunement.h"
 #include "NewHorizonsNecromancyPolicy.h"
 
 #include <functional>
@@ -74,6 +77,7 @@ class DLL_LINKAGE PerkState
 private:
 	void migrateRetiredPerks();
 	void normalizeLegacyTierConflicts();
+	void validateSelections() const;
 
 public:
 	JsonNode rules;
@@ -86,6 +90,7 @@ public:
 	/// Shared captured-policy admission; exceptional Skill ranks do not skip perk tiers.
 	bool canAcquirePerk(const std::string & skillId, const std::string & perkId, int currentRank) const;
 	void validate() const;
+	std::shared_ptr<const nativeRules::PreparedPilotPerks> prepareNativeRules() const;
 	void select(const std::string & skillId, const std::string & perkId, int currentRank);
 	/// Weight lookup reads captured hero rules. Old captured policy ignores it.
 	/// Active policy requires explicit captured-table or verified legacy context.
@@ -123,8 +128,15 @@ public:
 	JsonNode toJson() const;
 	static PerkState fromJson(const JsonNode & node);
 
-	template<typename Handler> void serialize(Handler & h)
+	template<typename Handler> void serialize(Handler & h, std::shared_ptr<const nativeRules::PreparedPilotPerks> * prepared = nullptr)
 	{
+		if(h.saving)
+		{
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+				nativeRules::validatePilotPerks(rules, false);
+			newHorizonsCommand::validateRulesSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsElementalAttunement::validatePolicySerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+		}
 		if(h.saving) newHorizonsHeroes::validateSylvanTacticsSerialization(rules,
 			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		const JsonNode & capturedRules = rules;
@@ -147,6 +159,10 @@ public:
 		if(h.saving) h & rules;
 		else h & decodedRules;
 		const auto & incomingRules = h.saving ? rules : decodedRules;
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
+			nativeRules::validatePilotPerks(incomingRules, false);
+		newHorizonsCommand::validateRulesSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+		newHorizonsElementalAttunement::validatePolicySerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 		validateSylvanTacticsSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		if(!h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(incomingRules,
@@ -161,13 +177,19 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(!h.saving)
 			validateCrisisCommandProfileSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
-		if(!h.saving) rules = std::move(decodedRules);
-		h & selected;
-		if(!h.saving)
+		if(h.saving)
+			h & selected;
+		else
 		{
-			migrateRetiredPerks();
-			normalizeLegacyTierConflicts();
-			validate();
+			PerkState candidate;
+			candidate.rules = std::move(decodedRules);
+			h & candidate.selected;
+			candidate.migrateRetiredPerks();
+			candidate.normalizeLegacyTierConflicts();
+			const auto incomingPrepared = prepared ? candidate.prepareNativeRules() : nullptr;
+			if(!prepared) candidate.validate();
+			*this = std::move(candidate);
+			if(prepared) *prepared = incomingPrepared;
 		}
 	}
 };

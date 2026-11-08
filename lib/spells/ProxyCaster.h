@@ -12,11 +12,14 @@
 
 #include <vcmi/spells/Caster.h>
 
+class CBattleInfoCallback;
+
 namespace spells
 {
 
 class DLL_LINKAGE ProxyCaster : public Caster
 {
+	friend bool admitsRunicCreatureCaster(const Caster &, const CBattleInfoCallback &);
 public:
 	ProxyCaster(const Caster * actualCaster_);
 	virtual ~ProxyCaster();

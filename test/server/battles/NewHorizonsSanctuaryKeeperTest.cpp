@@ -49,7 +49,9 @@ SpellID sanctuarySpell()
 	return SpellID(SpellID::decode(std::string(sanctuarySpellKey)));
 }
 
-JsonNode savedV2MagicRules()
+// This is a deliberately incoherent downgrade of CURRENT defaults, not an
+// independently captured historical profile. Current-only fields must reject it.
+JsonNode incoherentV2MagicRules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	rules["rulesetVersion"].Integer() = newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION;
@@ -114,6 +116,7 @@ protected:
 
 	void SetUp() override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";
@@ -130,7 +133,7 @@ protected:
 			throw std::runtime_error("Missing Sanctuary Keeper from the New Horizons perk registry");
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, useSavedV2Rules
-			? savedV2MagicRules()
+			? incoherentV2MagicRules()
 			: JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		captureLegacyPerkOfferPolicy(*loaded);
 	}
@@ -390,9 +393,10 @@ TEST_F(NewHorizonsSanctuaryKeeperTest, UnselectedPerkDoesNotAddMoraleToSanctuary
 	EXPECT_TRUE(sanctuaryMoraleBonuses(protectedStack)->empty());
 }
 
-TEST_F(NewHorizonsSanctuaryKeeperTest, SavedV2SanctuaryRowDoesNotEnableTheKeeperBonus)
+TEST_F(NewHorizonsSanctuaryKeeperTest, IncoherentV2DowngradeRejectsAndCurrentKeeperStillApplies)
 {
-	prepare(true, false, true);
+	EXPECT_THROW(incoherentV2MagicRules(), std::runtime_error);
+	prepare();
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(std::string(lightMagicSkillKey),
 		std::string(sanctuaryKeeperPerkKey)));
 	ASSERT_TRUE(newHorizonsMagic::spellAllowedBySavedRoster(battle()->getMagicRules(), sanctuarySpell()));
@@ -400,8 +404,8 @@ TEST_F(NewHorizonsSanctuaryKeeperTest, SavedV2SanctuaryRowDoesNotEnableTheKeeper
 
 	ASSERT_TRUE(cast(protectedStack, sanctuarySpell(), protectedStack));
 	EXPECT_TRUE(protectedStack->hasBonusOfType(BonusType::SANCTIFIED));
-	EXPECT_EQ(morale(protectedStack), moraleBefore);
-	EXPECT_TRUE(sanctuaryMoraleBonuses(protectedStack)->empty());
+	EXPECT_EQ(morale(protectedStack), moraleBefore + 2);
+	EXPECT_EQ(sanctuaryMoraleBonuses(protectedStack)->size(), 1);
 }
 
 TEST_F(NewHorizonsSanctuaryKeeperTest, DetachedCastEvalRefreshesMaterializedForecastWithoutStackingOrChangingLiveState)

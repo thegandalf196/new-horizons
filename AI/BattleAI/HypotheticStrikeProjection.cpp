@@ -13,10 +13,8 @@
 #include "NewHorizonsHexOfPain.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
-#include "../../lib/battle/NewHorizonsElementalRebirth.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
-#include "../../lib/battle/NewHorizonsSwiftRebirth.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/combatScripts/ICombatEventScript.h"
 #include "../../lib/GameLibrary.h"
@@ -238,16 +236,6 @@ void HypotheticBattle::projectFortuneStrike(const BattleAttackInfo & attack,
 	fortune.finishPositiveStrike(adjacentFriends, enemyStackKilled);
 }
 
-std::optional<newHorizonsElementalRebirth::DeathSnapshot> HypotheticBattle::captureElementalRebirthSource(
-	const battle::Unit & unit) const
-{
-	const auto side = unit.unitSide();
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return {};
-	return newHorizonsElementalRebirth::captureDeathSource(
-		unit, battleGetFightingHero(side), getRebirthChainUsed(side),
-		&getCreatureCategoryRules(), getPhoenixSparkUsed(side));
-}
 
 bool HypotheticBattle::hasReadyNativeRebirth(const battle::Unit * unit) const
 {
@@ -257,179 +245,7 @@ bool HypotheticBattle::hasReadyNativeRebirth(const battle::Unit * unit) const
 		&& unit->getPhantomInitialIntegrity() == 0;
 }
 
-void HypotheticBattle::projectPrimalBurst(const std::shared_ptr<StackWithBonuses> & projected)
-{
-	const auto hostileIds = newHorizonsElementalRebirth::adjacentHostileUnitIds(*this, *projected);
-	const auto damageBudget = newHorizonsElementalRebirth::primalBurstDamageBudget(
-		projected->getAvailableHealth());
-	const auto rawShare = newHorizonsElementalRebirth::primalBurstShare(damageBudget, hostileIds.size());
-	if(rawShare > 0)
-	{
-		struct PendingBurstHit
-		{
-			uint32_t unitId;
-			std::shared_ptr<StackWithBonuses> preHitTarget;
-			PlayerColor targetController;
-			int64_t adjustedDamage;
-			int64_t healthBefore;
-			std::optional<newHorizonsElementalRebirth::DeathSnapshot> rebirthSource;
-			bool cloneKilled;
-			bool nativeRebirth;
-		};
-		std::vector<PendingBurstHit> pendingHits;
-		pendingHits.reserve(hostileIds.size());
-		std::vector<PhysicalStrikeProjection::Destruction> destroyed;
 
-		// Match the authoritative batch: resolve every target, mitigation value,
-		// controller, and death-source snapshot before changing any recipient.
-		for(const auto targetId : hostileIds)
-		{
-			auto target = getForUpdate(targetId);
-			if(!target || !target->alive())
-				continue;
-			const auto adjustedDamage = newHorizonsMagicalAbilityDamage::adjustDamage(
-				*this, *target, rawShare);
-			if(adjustedDamage <= 0)
-				continue;
-			if(const auto death = PhysicalStrikeProjection::captureForecastDamage(*this, *target)) destroyed.push_back(*death);
-			auto preHitTarget = std::make_shared<StackWithBonuses>(this, target.get());
-			preHitTarget->freezeDamageScoringBonusSnapshot();
-			pendingHits.push_back({targetId, std::move(preHitTarget), battleGetOwner(target.get()),
-				adjustedDamage, target->getAvailableHealth(), captureElementalRebirthSource(*target),
-				target->isClone(), hasReadyNativeRebirth(target.get())});
-		}
-
-		for(const auto & hit : pendingHits)
-		{
-			auto target = getForUpdate(hit.unitId);
-			if(!target || !target->alive())
-				continue;
-			auto appliedDamage = hit.adjustedDamage;
-			target->damage(appliedDamage, false, battle::DamageProvenance::SPELL);
-			if(!target->alive())
-				releaseSerpentBindingsForDeath(*target);
-			const auto actualDamage = std::max<int64_t>(0,
-				hit.healthBefore - target->getAvailableHealth());
-			if(actualDamage <= 0)
-				continue;
-			target->removeUnitBonus(Bonus::UntilBeingAttacked);
-			projectedPrimalBurstHits.push_back({hit.preHitTarget, hit.targetController, actualDamage});
-		}
-
-		PhysicalStrikeProjection::completeDamagePacket(*this, destroyed);
-
-		// Only after the complete damage batch do its deaths trigger new rebirths.
-		for(const auto & hit : pendingHits)
-		{
-			if(!hit.rebirthSource)
-				continue;
-			auto target = getForUpdate(hit.unitId);
-			projectElementalRebirth(target.get(), *hit.rebirthSource,
-				!target || !target->alive(), hit.cloneKilled, hit.nativeRebirth);
-		}
-	}
-}
-
-std::optional<uint32_t> HypotheticBattle::projectElementalRebirth(const battle::Unit * postHitUnit,
-	const newHorizonsElementalRebirth::DeathSnapshot & captured, const bool hitKilled,
-	const bool cloneKilled, const bool nativeRebirth)
-{
-	auto snapshot = captured;
-	if(!newHorizonsElementalRebirth::stillEligibleDeath(
-		postHitUnit, snapshot, hitKilled, cloneKilled, nativeRebirth,
-		getRebirthChainUsed(snapshot.side)))
-		return {};
-
-	snapshot.phoenixSpark = snapshot.phoenixSpark && !getPhoenixSparkUsed(snapshot.side);
-	if(snapshot.phoenixSpark)
-	{
-		BattleUnitsChanged receipt;
-		receipt.battleID = getBattleID();
-		receipt.phoenixSparkConsumption = newHorizonsElementalRebirth::PhoenixSparkConsumption{snapshot.side, snapshot.unitId};
-		getServerCallback()->apply(receipt);
-	}
-	const auto candidates = newHorizonsElementalRebirth::legalCandidatePool(
-		*this, getAccessibility(), snapshot);
-	if(candidates.empty())
-		return {};
-
-	// This is a private representative outcome for one hypothetical branch. Never draw
-	// from the authoritative game RNG or mutate the live battle's random stream.
-	size_t candidateIndex = 0;
-	if(candidates.size() > 1)
-	{
-		auto * rng = getServerCallback()->getRNG();
-		if(!rng)
-			return {};
-		candidateIndex = static_cast<size_t>(rng->nextInt(static_cast<int>(candidates.size()) - 1));
-	}
-	if(candidateIndex >= candidates.size())
-		return {};
-	const auto creature = candidates[candidateIndex];
-	const auto * sourceArmy = getSideArmy(snapshot.side);
-	const auto owner = getSidePlayer(snapshot.side);
-	const auto effectiveMaxHP = newHorizonsElementalRebirth::effectiveSummonMaxHP(
-		sourceArmy, creature, owner, snapshot.side);
-	auto descriptor = newHorizonsElementalRebirth::makeSpawnDescriptor(nextUnitId(), creature,
-		snapshot.side, snapshot.corpsePosition, newHorizonsElementalRebirth::targetHP(snapshot, creature, *this),
-		effectiveMaxHP, snapshot.chain);
-	if(!descriptor)
-		return {};
-
-	if(snapshot.chain)
-	{
-		// The shared ADD visitor reserves this branch's quota before publishing the
-		// second generation. Nested Primal Burst deaths must observe the spent use.
-		BattleUnitsChanged add;
-		add.battleID = getBattleID();
-		add.rebirthChainConsumption = newHorizonsElementalRebirth::ChainConsumption{
-			snapshot.side, snapshot.unitId, descriptor->unit.id};
-		auto & added = add.changedStacks.emplace_back(descriptor->unit.id, UnitChanges::EOperation::ADD);
-		descriptor->unit.save(added.data);
-		getServerCallback()->apply(add);
-	}
-	else
-	{
-		JsonNode data;
-		descriptor->unit.save(data);
-		addUnit(descriptor->unit.id, data);
-	}
-	if(const auto ward = newHorizonsElementalRebirth::elementalWardBonus(snapshot.profile))
-		addUnitBonus(descriptor->unit.id, {*ward});
-	auto projected = getForUpdate(descriptor->unit.id);
-	const auto fullHealth = projected->getAvailableHealth();
-	if(fullHealth < descriptor->health.targetAggregateHP)
-	{
-		removeUnit(descriptor->unit.id);
-		if(snapshot.chain)
-			setRebirthChainUsed(snapshot.side, false);
-		return {};
-	}
-	const auto wound = fullHealth - descriptor->health.targetAggregateHP;
-	if(wound > 0)
-	{
-		auto appliedDamage = wound;
-		projected->damage(appliedDamage);
-	}
-	if(projected->getAvailableHealth() != descriptor->health.targetAggregateHP)
-	{
-		removeUnit(descriptor->unit.id);
-		if(snapshot.chain)
-			setRebirthChainUsed(snapshot.side, false);
-		return {};
-	}
-	addUnitBonus(descriptor->unit.id, {newHorizonsFactionSpellDamage::rebirthOutputMarker()});
-	elementalRebirthSpawnUnitIds.insert(descriptor->unit.id);
-	if(snapshot.profile.swiftRebirth)
-		addUnitBonus(descriptor->unit.id, {newHorizonsSwiftRebirth::marker(getRound())});
-	const auto memory = newHorizonsElementalRebirth::elementalMemoryBonuses(snapshot, *projected);
-	if(!memory.empty())
-		addUnitBonus(descriptor->unit.id, memory);
-
-	if(snapshot.profile.primalBurst)
-		projectPrimalBurst(projected);
-	return descriptor->unit.id;
-}
 
 void HypotheticBattle::projectRangedMarkStrike(const BattleAttackInfo & attack,
 	const std::vector<std::pair<uint32_t, int64_t>> & hits)
@@ -485,9 +301,6 @@ int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack
 	if(triggers->empty())
 		return 0;
 	const auto healthBefore = attacker->getAvailableHealth();
-	const auto rebirthSource = attacker->alive()
-		? captureElementalRebirthSource(*attacker) : std::nullopt;
-	const bool nativeRebirth = hasReadyNativeRebirth(attacker.get());
 	CombatEventPayload payload;
 	payload.ranged = attack.shooting;
 	payload.isCounter = attack.retaliation;
@@ -526,9 +339,6 @@ int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack
 			attacker.get(), attack.defender ? battleGetUnitByID(attack.defender->unitId()) : nullptr,
 			parameters, payload);
 	}
-	if(rebirthSource)
-		projectElementalRebirth(attacker.get(), *rebirthSource,
-			attacker->alive() == false, attacker->isClone(), nativeRebirth);
 
 	return std::max<int64_t>(0, healthBefore - attacker->getAvailableHealth());
 }

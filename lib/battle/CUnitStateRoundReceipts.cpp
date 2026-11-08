@@ -26,6 +26,9 @@ void CUnitState::serializeJsonRoundReceipts(JsonSerializeFormat & handler)
 	handler.serializeInt("battlecraftPreemptiveStrikeRound", battlecraftPreemptiveStrikeRound, -1);
 	if(battlecraftPreemptiveStrikeRound < -1)
 		throw std::runtime_error("Invalid Battlecraft Pre-emptive Strike round marker");
+	handler.serializeInt("ordinarySpecialtyLastRound", ordinarySpecialtyLastRound, -1);
+	if(ordinarySpecialtyLastRound < -1)
+		throw std::runtime_error("Invalid ordinary specialty round receipt");
 	handler.serializeInt("petrifyingBloodRound", petrifyingBloodRound, -1);
 	if(petrifyingBloodRound < -1)
 		throw std::runtime_error("Invalid Petrifying Blood round receipt");

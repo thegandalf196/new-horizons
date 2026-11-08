@@ -430,6 +430,6 @@ int64_t adjustedTickDamage(const CBattleInfoCallback & battle, BattleSide caster
 			&& battle.getBattle()->getMagicRules()["rulesetVersion"].Integer()
 				== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION,
 		true, battle.battleGetPerkMagicalReductionBasisPoints(target), penetrations);
-	return newHorizonsMetamagic::spellDamage(ordinary, nullptr, battle, target, caster->getCasterOwner());
+	return newHorizonsMetamagic::deferredSpellDamage(ordinary, capturedPenetration, battle, target, caster->getCasterOwner());
 }
 }

@@ -76,59 +76,16 @@ bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side,
 {
 	const auto command = effects ? effects->order.command : legacyCommand;
 	const auto & action = prepared.action;
-	const bool crisisOrder = crisisCommand.choice();
-	if(crisisOrder && (crisisCommand.chooser() != side
-		|| action.receipt.source != HeroActionAllowanceState::GrantSource::CRISIS_COMMAND
-		|| action.receipt.grantId != crisisCommand.returns.back().grant)) return false;
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::ORDER
-		|| !isCurrentPreparedOrderAction(side, prepared, true))
+		|| !action.isHeroAction() || !isCurrentPreparedOrderAction(side, prepared, true))
+		return false;
+	const bool finiteCommand = newHorizonsCommand::usesRules(getHeroCommandRules());
+	auto paidResources = getCommandResources(side);
+	if(finiteCommand && (command == HeroCommand::NONE || !paidResources.spend()))
+		return false;
+	if(command != HeroCommand::NONE && !heroCommands::isActive(command))
 		return false;
 	const auto mandateStatus = battleGetDivineMandateStatus(side);
-	const bool projectingCommand = command != HeroCommand::NONE;
-	if(projectingCommand && !heroCommands::isActive(command))
-		return false;
-	auto & doubleCommand = doubleCommandStates.at(side);
-	auto & preCombatOrder = preCombatOrderStates.at(side);
-	const bool resolvingDoubleCommand = doubleCommand.orderPending();
-	const bool resolvingPreCombatOrder = preCombatOrder.orderPending();
-	if(resolvingDoubleCommand && resolvingPreCombatOrder)
-		return false;
-	if(resolvingPreCombatOrder)
-	{
-		const auto * active = activeUnitId >= 0
-			? battleGetUnitByID(static_cast<uint32_t>(activeUnitId)) : nullptr;
-		if(!projectingCommand || !prepared.action.typedLedger
-			|| action.receipt.source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN
-			|| !active || !active->alive() || active->isGhost() || active->isTurret()
-			|| active->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			|| active->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER
-			|| active->unitSlot() == SlotID::WAR_MACHINES_SLOT
-			|| preCombatOrder.issuedRound != projectedRound || projectedRound != 1
-			|| preCombatOrder.anchorStackId != active->unitId()
-			|| battleGetOwner(active) != sideToPlayer(side))
-			return false;
-		auto completed = preCombatOrder;
-		completed.complete();
-		completed.validateTransitionFrom(preCombatOrder);
-	}
-	else if(action.receipt.source == HeroActionAllowanceState::GrantSource::BATTLE_PLAN)
-		return false;
-	if(resolvingDoubleCommand)
-	{
-		const auto * active = activeUnitId >= 0
-			? battleGetUnitByID(static_cast<uint32_t>(activeUnitId)) : nullptr;
-		if(!projectingCommand || !prepared.action.typedLedger
-			|| action.receipt.source != HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND
-			|| !active || !active->alive() || active->isGhost()
-			|| doubleCommand.issuedRound != projectedRound
-			|| doubleCommand.anchorStackId != active->unitId()
-			|| battleGetOwner(active) != sideToPlayer(side)
-			|| command == doubleCommand.firstOrder)
-			return false;
-	}
-	else if(projectingCommand && action.receipt.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
-		return false;
-	// Legacy effects historically follow begin cleanup and precede accounting.
 	if(legacyCommand != HeroCommand::NONE)
 		applyProjectedLegacyHeroOrder(side);
 	const auto * enchantedOrder = effects ? &effects->order : nullptr;
@@ -144,8 +101,6 @@ bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side,
 			projectedRound, false, mandateStatus.maximumPairs, recipients);
 		heroActionAllowances.at(side) = std::move(nextLedger);
 	}
-	if(projectingCommand && action.isHeroAction())
-		setSeizeInitiativeState(newHorizonsSeizeInitiative::capturePaidOrder(*this, side));
 
 	if(effects)
 	{
@@ -156,54 +111,8 @@ bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side,
 	newHorizonsDivineMandate::applySharedPurpose(*this, *this, side, sharedPurposeOverlap);
 	if(effects)
 		heroCommands::applyIssuedOrderGrants(*this, heroCommands::prepareIssuedOrderGrants(*this, side, effects->order));
-	if(resolvingPreCombatOrder)
-		preCombatOrder.complete();
-	else if(resolvingDoubleCommand)
-		doubleCommand = orderActionTransition::completeDoubleCommand(doubleCommand, command);
-	else if(projectingCommand && action.typedLedger && action.isHeroAction())
-	{
-		const auto * hero = battleGetFightingHero(side);
-		const auto * active = activeUnitId >= 0
-			? battleGetUnitByID(static_cast<uint32_t>(activeUnitId)) : nullptr;
-		const auto anchor = active && active->alive() && !active->isGhost()
-			&& battleGetOwner(active) == sideToPlayer(side)
-			? active->unitId() : DoubleCommandState::INVALID_UNIT_ID;
-		const uint32_t deferredTarget = command == HeroCommand::SECOND_WIND && effects
-			? effects->order.primaryTargetUnitId : DoubleCommandState::INVALID_UNIT_ID;
-		const auto nextDoubleCommand = orderActionTransition::preparePrimaryDoubleCommand(
-			doubleCommand, action.receipt, heroCommands::hasDoubleCommand(hero), command, projectedRound, anchor, deferredTarget);
-		if(nextDoubleCommand)
-		{
-			doubleCommand = *nextDoubleCommand;
-			auto & allowances = heroActionAllowances.at(side);
-			allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::ORDER,
-				HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND, projectedRound);
-
-			// Match the authoritative no-alternative path: do not leave an orphaned
-			// grant or a pending phase when the primary Order exhausted every other
-			// legal Order for this battle state.
-			const bool hasDistinctAlternative = std::any_of(heroCommands::CANONICAL_COMMANDS.begin(),
-				heroCommands::CANONICAL_COMMANDS.end(), [this, side, command](HeroCommand candidate)
-				{
-					return candidate != command && battleCanBeginHeroCommand(side, candidate);
-				});
-			if(!hasDistinctAlternative)
-			{
-				orderActionTransition::exhaustDoubleCommand(doubleCommand, allowances, projectedRound);
-			}
-		}
-	}
+	if(finiteCommand)
+		commandResources.at(side) = paidResources;
 	finishProjectedHeroAction(side, prepared);
-	if(crisisOrder)
-	{
-		if(command == HeroCommand::SECOND_WIND)
-			crisisCommand.returns.back().phase = newHorizonsCrisisCommand::Phase::GRANTED_EXTRA;
-		else
-		{
-			auto returned = crisisCommand;
-			returned.returns.pop_back();
-			setCrisisCommandState(returned);
-		}
-	}
 	return true;
 }

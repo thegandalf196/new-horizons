@@ -26,8 +26,17 @@ DLL_LINKAGE int32_t outgoingDuration(int32_t ordinary, const CastProfile * cast,
 	const battle::Unit * recipient);
 DLL_LINKAGE int64_t outgoingMagnitude(int64_t ordinary, const CastProfile * cast,
 	const battle::Unit * recipient);
-DLL_LINKAGE int64_t spellDamage(int64_t ordinary, const CastProfile * cast,
+/// Capture offensive damage, rather than a status coefficient, exactly once.
+DLL_LINKAGE int64_t outgoingDamageMagnitude(int64_t ordinary, const CastProfile * cast,
+	const battle::Unit * recipient);
+/// Deferred damage never re-reads current hero perks or repeats cast-time scaling.
+DLL_LINKAGE CastProfile capturedOffensiveProfile(const JsonNode * captured);
+DLL_LINKAGE int64_t deferredSpellDamage(int64_t ordinary, const JsonNode * captured,
 	const CBattleInfoCallback & battle, const battle::Unit * recipient, PlayerColor spellOwner);
+DLL_LINKAGE int64_t factionSpellDamagePreview(int64_t ordinary,
+	const CGHeroInstance & hero, const CSpell & spell, const JsonNode & rules);
+DLL_LINKAGE int64_t spellDamage(int64_t ordinary, const CastProfile * cast,
+	const CBattleInfoCallback & battle, const battle::Unit * recipient, PlayerColor spellOwner, bool magicalDamage = true);
 DLL_LINKAGE int32_t resistanceChance(int32_t ordinary, const CastProfile * cast,
 	const CBattleInfoCallback & battle, const battle::Unit & recipient);
 /// Only this cast's new/updated spell bonuses are transformed. Removed bonuses,

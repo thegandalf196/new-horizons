@@ -9,6 +9,7 @@
 #include <optional>
 #include "../../lib/battle/NewHorizonsAerialSupremacy.h"
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
+#include "../../lib/battle/NewHorizonsManaLeeches.h"
 #include "../../lib/battle/IBattleInfoCallback.h"
 #include "../../lib/battle/BattleSide.h"
 #include <memory>
@@ -62,6 +63,8 @@ public:
 	};
 	static void prepareVictimStrike(BattleAttackInfo & attack, const CBattleInfoCallback & state,
 		const VictimStrikeInput & input);
+	/// Only the original primary receives its validated voluntary-travel receipt.
+	static void prepareRetaliationVictim(BattleAttackInfo & counter, const BattleAttackInfo & primary);
 	static bool anyNightProwler(const battle::Units & units);
 	/// Separate phases preserve creature-admission query order in the caller.
 	static void capturePrimaryFortune(FortuneStrikeProjection & receipt,
@@ -73,6 +76,20 @@ public:
 	FortuneStrikeProjection capturePreemptiveStrike(const BattleAttackInfo & attack,
 		battle::CUnitState & actor, int64_t requestedDamage, int64_t appliedDamage, bool perfectFortune,
 		BattleSide perfectFortuneSide, bool brace, battle::DamageProvenance provenance) const;
+	struct CounterAdmission
+	{
+		bool serpentBinding = false;
+		newHorizonsManaLeeches::Entitlement manaLeech;
+	};
+	static CounterAdmission captureCounterAdmission(const CBattleInfoCallback & state,
+		const battle::Unit * actor, const battle::Unit * target, bool physical);
+	struct CounterVictimAdmission
+	{
+		bool soulHarvest = false, willRebirth = false, freezes = false;
+		int32_t countBefore = 0;
+	};
+	static CounterVictimAdmission captureCounterVictim(const CBattleInfoCallback & state,
+		const battle::Unit * actor, const battle::Unit & target, bool primary, bool physical, int round);
 	struct SoulHarvestHit
 	{
 		bool eligible;

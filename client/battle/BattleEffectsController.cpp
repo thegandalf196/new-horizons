@@ -17,6 +17,9 @@
 #include "BattleStacksController.h"
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
+#include "PoisonPresentation.h"
+#include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
+#include "../../lib/bonuses/BonusList.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -39,6 +42,7 @@
 #include "../../lib/logging/CLogger.h"
 
 #include <atomic>
+#include <algorithm>
 
 namespace
 {
@@ -206,8 +210,23 @@ void BattleEffectsController::battleTriggerEffect(const BattleTriggerEffect & bt
 			displayEffect(EBattleEffect::MANA_DRAIN, AudioPath::builtin("MANADRAI"), stack->getPosition());
 			break;
 		case BonusType::POISON:
-			displayEffect(EBattleEffect::POISON, AudioPath::builtin("POISON"), stack->getPosition());
+		{
+			const auto caps = stack->getBonuses(Selector::type()(BonusType::POISON).And(
+				Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::POISON)))));
+			const bool strong = std::ranges::any_of(*caps, [](const auto & bonus)
+			{
+				return bonus && newHorizonsSpecialtyProcs::isStrongWyvernPoison(bonus.get());
+			});
+			if(strong)
+			{
+				BattleHexArray tiles;
+				tiles.insert(stack->getPosition());
+				displayAnimation(AnimationPath::builtin(poisonPresentation::RED_CLOUD), AudioPath::builtin("POISON"), tiles);
+			}
+			else
+				displayEffect(EBattleEffect::POISON, AudioPath::builtin("POISON"), stack->getPosition());
 			break;
+		}
 		case BonusType::FEARFUL:
 			displayEffect(EBattleEffect::FEAR, AudioPath::builtin("FEAR"), stack->getPosition(), 0.5);
 			break;

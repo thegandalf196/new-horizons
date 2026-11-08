@@ -94,6 +94,7 @@ class BattleActionProcessor : boost::noncopyable
 		int damagePercent = 0;
 	};
 
+	static bool armorerLastStandEndedActivation(const CStack *);
 	BattleProcessor * owner;
 	CGameHandler * gameHandler;
 	/// Scoped dispatch provenance, never gameplay/save state. Automatic forced
@@ -162,6 +163,8 @@ class BattleActionProcessor : boost::noncopyable
 		bool * manaLeechSequenceSpent = nullptr;
 		std::optional<newHorizonsAerialSupremacy::Excursion> aerialExcursion;
 		int dreadCavalryDamagePercent = 100;
+		int defenderVoluntaryTravelDistance = 0; // Matching ordinary retaliation only.
+		int64_t * hostileCreatureKills = nullptr; // Action-local normal-sequence receipt, never passed to Barrage.
 	};
 
 	/// Action-local accounting for Rain of Arrows. The original primary footprint
@@ -215,8 +218,10 @@ class BattleActionProcessor : boost::noncopyable
 	/// Marks every hit of a spell-like attack as caused by the spell, so that the client animates it.
 	void markSpellLikeAttack(const CStack * attacker, BattleAttack & bat) const;
 
-	void handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload);
-	void attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender, SpellID onlySpell = SpellID());
+	void handleAfterAttackCasting(const CBattleInfoCallback & battle, const CStack * attacker, const CStack * defender, const CombatEventPayload & payload, bool specialtyStrike);
+	bool resolvePrimaryAttackCasts(const CBattleInfoCallback &, const CStack *&, const CStack *&, bool,
+		const CombatEventPayload &, const battlePrimaryStrikeAftermath::Prepared &);
+	void attackCasting(const CBattleInfoCallback & battle, bool ranged, BonusType attackMode, const battle::Unit * attacker, const CStack * defender, SpellID onlySpell = SpellID(), bool specialtyStrike = false);
 
 	void handlePetrifyingBlood(const CBattleInfoCallback & battle, const CStack * attacker, const BattleAttack & attack);
 	void resolvePetrifyingBlood(const CBattleInfoCallback & battle, const PendingPetrifyingBlood & pending);
@@ -268,6 +273,9 @@ class BattleActionProcessor : boost::noncopyable
 	bool doWalkAndSpellcastAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doShootAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
 	bool doShootActionCore(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation);
+	bool performPendingRangedFollowUp(const CBattleInfoCallback &, const CStack *, const CStack *, BattleHex, BattleSide, bool);
+	void performRelentlessBarrage(const CBattleInfoCallback &, const CStack *, const CStack *, BattleHex, int,
+		RelentlessAssaultActionContext &, RainOfArrowsAction &);
 	bool doCatapultAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doUnitSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba);
 	bool doHealAction(const CBattleInfoCallback & battle, const BattleAction & ba);

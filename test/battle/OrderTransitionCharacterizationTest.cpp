@@ -161,6 +161,19 @@ public:
 class OrderTransitionAICharacterizationTest : public HeroCommandFixture
 {
 protected:
+	bool historicalMandate = false;
+	void mapLoaded(CMap * loaded) override
+	{
+		HeroCommandFixture::mapLoaded(loaded);
+		if(!historicalMandate)
+			return;
+		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+		const JsonNode historical(JsonPath::builtin("test/newHorizonsHistoricalFactionPerks"));
+		rules["skills"]["new-horizons:divineMandate"] = historical["skills"]["new-horizons:divineMandate"];
+		rules.Struct().erase("divineMandatePolicy");
+		rules.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, rules);
+	}
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
@@ -539,6 +552,8 @@ TEST_F(OrderTransitionAICharacterizationTest, RealInactivePerkStillValidatesMalf
 
 TEST_F(OrderTransitionAICharacterizationTest, RealDoubleCommandPrimaryFollowupExhaustionAndLateGrantFailureStayDistinct)
 {
+	// This trace characterizes the saved paired-action policy, not passive auto-casts.
+	historicalMandate = true;
 	startGame();
 	const auto skill = SecondarySkill(SecondarySkill::decode("new-horizons:command"));
 	ASSERT_TRUE(skill.hasValue());

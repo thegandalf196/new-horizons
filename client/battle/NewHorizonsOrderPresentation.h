@@ -43,41 +43,6 @@ inline const CommandDisplay & commandDisplay(HeroCommand command)
 	return commandDisplays.front();
 }
 
-inline std::string orderAllowanceSourceName(HeroActionAllowanceState::GrantSource source)
-{
-	switch(source)
-	{
-		case HeroActionAllowanceState::GrantSource::ROUND: return {};
-		case HeroActionAllowanceState::GrantSource::METAMAGIC: return "Metamagic";
-		case HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND: return "Grand Metamagic";
-		case HeroActionAllowanceState::GrantSource::PERK: return "Perk";
-		case HeroActionAllowanceState::GrantSource::ARTIFACT: return "Artifact";
-		case HeroActionAllowanceState::GrantSource::OTHER: return "Special ability";
-		case HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND: return "Double Command";
-		case HeroActionAllowanceState::GrantSource::BATTLE_PLAN: return "Battle Plan";
-		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
-		case HeroActionAllowanceState::GrantSource::CRISIS_COMMAND: return "Crisis Command";
-		case HeroActionAllowanceState::GrantSource::HEROIC_SPIRIT: return "Heroic Spirit";
-	}
-	return "Additional ability";
-}
-
-inline std::string orderActionOpportunityText(const HeroActionAllowanceState::Selection & selection)
-{
-	const auto source = orderAllowanceSourceName(selection.source);
-	if(source.empty())
-		return {};
-
-	if(selection.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND)
-		return "Double Command Order follow-up: choose a different Order now; expires in round "
-			+ std::to_string(selection.expiryRound) + ".";
-	if(selection.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE)
-		return "Divine Mandate Order follow-up available through the end of round "
-			+ std::to_string(selection.expiryRound) + ".";
-	return source + " Order opportunity available through the end of round "
-		+ std::to_string(selection.expiryRound) + ".";
-}
-
 inline std::vector<CommandDisplay> visibleCommandDisplays(const JsonNode * rules)
 {
 	std::vector<CommandDisplay> result;

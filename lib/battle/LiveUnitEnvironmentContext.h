@@ -5,12 +5,15 @@
  * Full text of license available in license.txt file, in main folder
  */
 #pragma once
+#include <memory>
 #include "UnitEnvironmentQueries.h"
 #include "UnitOwnershipQuery.h"
 
 class CBattleInfoCallback;
 namespace battle
 {
+class CommittedElementalEffects;
+class CommittedBonusOperations;
 /// Lazy live metadata adapter: each formula still requests only its old inputs
 /// at the old query point. No eager capture of unrelated hero bonuses.
 class DLL_LINKAGE LiveUnitEnvironmentContext final : public UnitEnvironmentContext
@@ -34,6 +37,13 @@ public:
 	int bloodragePain(BattleSide side) const override;
 	int magicResistance(const Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives necromancyPassives(BattleSide side) const override;
+	newHorizonsElementalAttunement::Profile elementalAttunementProfile(BattleSide side) const override;
+	uint8_t elementalAttunementMask(BattleSide side) const override;
+	bool knowsElementalAttunementProfile(BattleSide side) const override;
+	std::optional<newHorizonsElementalAttunement::UnitPassives> committedElementalAttunement(const Unit * unit) const override;
+	/// Capture numeric transition effects only during the exact native source interval.
+	std::shared_ptr<const CommittedElementalEffects> committedElementalEffects() const;
+	std::shared_ptr<const CommittedBonusOperations> committedBonusOperations() const;
 	const JsonNode & magicRules() const override;
 };
 }

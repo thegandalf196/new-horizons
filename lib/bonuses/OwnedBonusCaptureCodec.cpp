@@ -33,6 +33,8 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 		profile = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
 		break;
 	case Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS:
+	case Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS: // No new Bonus-only representation.
+	case Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN: // Command/Attunement state lives outside Bonus payloads.
 		profile = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
 		break;
 	default:

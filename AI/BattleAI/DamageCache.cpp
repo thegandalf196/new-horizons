@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
+#include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
 #include "../../lib/battle/NewHorizonsPrismaticVanguard.h"
 #include "SylvanTacticsProjection.h"
 #include "DreadCavalryProjection.h"
@@ -60,7 +62,8 @@ bool hasTemporaryCombatModifier(const battle::Unit * unit)
 {
 	return unit && (newHorizonsCoordinatedMarks::hasMark(*unit) || unit->hasBonus(CSelector([](const Bonus * bonus)
 	{
-		return arcaneInspiration::isEffect(bonus)
+		return newHorizonsSpecialtyEvents::isReceipt(bonus)
+			|| arcaneInspiration::isEffect(bonus)
 			|| newHorizonsPrismaticVanguard::isEffect(bonus)
 			|| newHorizonsShroud::isEvasiveShroudProtection(bonus)
 			|| newHorizonsShieldAndSword::isProtection(bonus)
@@ -84,11 +87,17 @@ using damageCacheDetail::hasRangedMarkEffect;
 using damageCacheDetail::hasNightProwlerBonus;
 using attackCount::hasPendingRangedFollowUp;
 
-void DamageCache::rememberTemporaryCombatModifiers(const battle::Unit * attacker, const battle::Unit * defender)
+void DamageCache::rememberTemporaryCombatModifiers(const battle::Unit * attacker, const battle::Unit * defender,
+	const CBattleInfoCallback & battle)
 {
 	for(const auto * unit : {attacker, defender})
-		if(hasTemporaryCombatModifier(unit))
+	{
+		const auto attunement = unit->elementalAttunementPassives();
+		if(hasTemporaryCombatModifier(unit) || newHorizonsPassiveSpecialties::hasDynamicDamagePassive(*unit)
+			|| attunement.attuned
+			|| attunement.physicalReductionBasisPoints > 0 || newHorizonsCommand::unbrokenRanks(battle, unit))
 			temporaryCombatModifierUnits.insert(unit->unitId());
+	}
 }
 
 void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb)
@@ -104,7 +113,7 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 		intrinsicMdrTargets.insert(defender->unitId());
 	if(defender->intrinsicPhysicalDamageReductionPercent() > 0)
 		intrinsicPdrTargets.insert(defender->unitId());
-	rememberTemporaryCombatModifiers(attacker, defender);
+	rememberTemporaryCombatModifiers(attacker, defender, *hb);
 	if(newHorizonsReactiveDefense::ironHideConfiguredPercent(*hb, *defender) > 0)
 		temporaryCombatModifierUnits.insert(defender->unitId());
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker));
@@ -266,7 +275,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		intrinsicPdrTargets.insert(defender->unitId());
 	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
 		rangedMarkTargets.insert(defender->unitId());
-	rememberTemporaryCombatModifiers(attacker, defender);
+	rememberTemporaryCombatModifiers(attacker, defender, *hb);
 	if(newHorizonsReactiveDefense::ironHideConfiguredPercent(*hb, *defender) > 0)
 		temporaryCombatModifierUnits.insert(defender->unitId());
 	DamageCacheAdmission localAdmission(*attacker, *hb);

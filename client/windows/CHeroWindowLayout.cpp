@@ -52,11 +52,11 @@ void CHeroWindow::configureNewHorizonsLayout()
 		primSkillAreas[i]->pos.w = 82;
 		primSkillAreas[i]->pos.h = 76;
 		move(primSkillValues[i], Point(x + 40, 80));
-		move(primSkillImages[i == 3 ? 5 : i], Point(x + 4, 30));
+		move(primSkillImages[i == 3 ? 5 : i], Point(x + 20, 30));
 		move(labels[i], Point(x + 41, 21));
 		labels[i]->setMaxWidth(74);
 		labels[i]->setText(labels[i]->getText());
-		growthValues.push_back(std::make_shared<CLabel>(x + 54, 33, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "", 24));
+		growthValues.push_back(std::make_shared<CLabel>(x + 54, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::GREEN, "", 32));
 	}
 	move(primSkillImages[3], Point(294, 88));
 	move(primSkillImages[4], Point(14, 132));
@@ -64,21 +64,37 @@ void CHeroWindow::configureNewHorizonsLayout()
 	move(specArea, Point(12, 88));
 	move(expArea, Point(12, 132));
 	move(spellPointsArea, Point(292, 88));
-	move(morale, Point(579, 33));
-	move(luck, Point(661, 33));
+	// Three compact native glyphs share the leather band ending at728.
+	// The blue hero-list strip starts at734 and is never a status cell.
+	morale->small = true;
+	luck->small = true;
+	morale->centeredReadout = true;
+	luck->centeredReadout = true;
+	move(morale, Point(576, 30));
+	morale->pos.w = 30;
+	morale->pos.h = 58;
+	move(luck, Point(631, 30));
+	luck->pos.w = 30;
+	luck->pos.h = 58;
 	move(labels[4], Point(62, 92));
 	move(labels[5], Point(62, 136));
 	move(labels[6], Point(342, 92));
 	for(size_t i = 4; i < 7; ++i)
 	{
+		labels[i]->alignment = ETextAlignment::TOPCENTER;
+		move(labels[i], Point(i == 6 ? 342 : 62, i == 5 ? 136 : 92));
+		// Reused TOPLEFT labels retain their old measured width. Give centered
+		// text the actual pane, rather than adding that width to a center anchor.
+		labels[i]->pos.w = 88;
+		labels[i]->pos.h = 0;
 		labels[i]->setMaxWidth(88);
 		labels[i]->setText(labels[i]->getText());
 	}
-	specName = std::make_shared<CLabel>(62, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	expValue = std::make_shared<CLabel>(62, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	manaValue = std::make_shared<CLabel>(342, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	labels.push_back(std::make_shared<CLabel>(568, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Morale", 74));
-	labels.push_back(std::make_shared<CLabel>(650, 13, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "Luck", 74));
+	specName = std::make_shared<CLabel>(106, 110, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 88);
+	expValue = std::make_shared<CLabel>(106, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 88);
+	manaValue = std::make_shared<CLabel>(386, 110, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 88);
+	labels.push_back(std::make_shared<CLabel>(591, 21, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Morale", 50));
+	labels.push_back(std::make_shared<CLabel>(646, 21, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Luck", 50));
 	const auto skillsHeading = std::make_shared<CLabel>(16, 176, FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::YELLOW, "Skills / learned perks", 376);
 	labels.push_back(skillsHeading);
@@ -114,27 +130,34 @@ void CHeroWindow::configureNewHorizonsLayout()
 	}
 	leadershipArea = std::make_shared<LRClickableAreaWText>(Rect(152, 88, 140, 44), "Leadership capacity");
 	movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44), "Movement points");
-	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Siege rating available to this hero");
-	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement"), std::make_pair(Point(292, 132), "Siege")})
+	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(674, 12, 54, 76), "Siege rating available to this hero");
+	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement")})
 	{
 		const std::string fieldName = field.second;
 		// Movement is a first-class New Horizons derived attribute just like
-		// Leadership and Siege.  Keep its glyph in the same visual slot so the
+		// Leadership. Keep its glyph in the same visual slot so the
 		// value is not presented as an unexplained text-only exception.
 		// Hero-specific icons draw at native size in these 44px rows; the generic
 		// Leadership capability symbol remains available for creature costs.
-		const auto iconKey = fieldName == "Leadership" ? "NH_hero_leadership_44"
-			: fieldName == "Movement" ? "NH_hero_movement_44" : "NH_capability_siege";
+		const auto iconKey = fieldName == "Leadership" ? "NH_hero_leadership_44" : "NH_hero_movement_44";
 		capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, 0, field.first.x, field.first.y));
-		labels.push_back(std::make_shared<CLabel>(field.first.x + 50, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, field.second, 88));
+		labels.push_back(std::make_shared<CLabel>(field.first.x + 94, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, field.second, 88));
 	}
 	// Keep the current total and class growth in separate fields, matching the
 	// primary-attribute readout. The total includes Leadership bonuses from
 	// artifacts and other sources; the adjacent growth value is class-only.
-	leadershipValue = std::make_shared<CLabel>(202, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 48);
-	leadershipGrowthValue = std::make_shared<CLabel>(250, 110, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::YELLOW, "", 40);
-	movementValue = std::make_shared<CLabel>(202, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
-	legacySiegeValue = std::make_shared<CLabel>(342, 154, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 88);
+	leadershipValue = std::make_shared<CLabel>(226, 118, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "", 48);
+	leadershipGrowthValue = std::make_shared<CLabel>(266, 118, FONT_SMALL, ETextAlignment::CENTER, Colors::GREEN, "", 40);
+	movementValue = std::make_shared<CLabel>(246, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 88);
+	// All three status glyphs are30px, below the42px primary attributes.
+	capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_siege_32"),
+		0, Rect(686, 36, 30, 30)));
+	labels.push_back(std::make_shared<CLabel>(701, 21, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Siege", 50));
+	legacySiegeValue = std::make_shared<CLabel>(701, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "", 44);
+	commandArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Command capacity");
+	addCommandIcon();
+	labels.push_back(std::make_shared<CLabel>(386, 136, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Command", 88));
+	commandValue = std::make_shared<CLabel>(386, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 88);
 }
 
 void CHeroWindow::restoreLegacyLayout()
@@ -211,6 +234,12 @@ void CHeroWindow::restoreLegacyLayout()
 	move(specArea, Point(18, 180));
 	move(expArea, Point(18, 228));
 	move(spellPointsArea, Point(162, 228));
+	morale->small = false;
+	luck->small = false;
+	morale->centeredReadout = false;
+	luck->centeredReadout = false;
+	morale->pos.w = luck->pos.w = 53;
+	morale->pos.h = luck->pos.h = 45;
 	move(morale, Point(175, 179));
 	move(luck, Point(233, 179));
 	move(labels[4], Point(69, 183));
@@ -221,6 +250,7 @@ void CHeroWindow::restoreLegacyLayout()
 	manaValue = std::make_shared<CLabel>(211, 252);
 	for(size_t i = 0; i < 7; ++i)
 	{
+		labels[i]->alignment = i < 4 ? ETextAlignment::CENTER : ETextAlignment::TOPLEFT;
 		labels[i]->setMaxWidth(0);
 		labels[i]->setText(LIBRARY->generaltexth->translate("core.jktext." + std::to_string(i + 1)));
 	}
@@ -237,6 +267,8 @@ void CHeroWindow::restoreLegacyLayout()
 	for(const auto & icon : capabilityIcons)
 		icon->disable();
 	movementArea->disable();
+	commandArea->disable();
+	commandValue->disable();
 	legacySiegeArea->disable();
 	leadershipValue->disable();
 	leadershipGrowthValue->disable();

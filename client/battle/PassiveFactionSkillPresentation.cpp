@@ -4,6 +4,9 @@
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/PassiveDivineMandate.h"
+#include "../../lib/battle/NewHorizonsElementalAttunement.h"
+#include <array>
+#include <bit>
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsMetamagicMarks.h"
@@ -40,6 +43,33 @@ std::optional<SkillStatusText> metamagic(const CGHeroInstance & hero,
 		return std::nullopt;
 	const int consumed = std::clamp(battle.battleMetamagicUsesConsumed(side), 0, total);
 	return SkillStatusText{std::to_string(total - consumed) + " / " + std::to_string(total), {}, false};
+}
+
+std::optional<SkillStatusText> elementalAttunement(const CGHeroInstance & hero,
+	const CBattleInfoCallback & battle, BattleSide side)
+{
+	if(!newHorizonsElementalAttunement::usesRules(&hero) || !battle.getBattle())
+		return std::nullopt;
+	const auto profile = newHorizonsElementalAttunement::captureProfile(&hero);
+	if(profile.rank <= 0)
+		return std::nullopt;
+	const auto mask = battle.getBattle()->getElementalAttunementMask(side);
+	std::string active;
+	for(const auto & [bit, name] : std::array<std::pair<uint8_t, const char *>, 4>{{
+		{1, "Air"}, {2, "Fire"}, {4, "Water"}, {8, "Earth"}}})
+	{
+		if((mask & bit) == 0)
+			continue;
+		if(!active.empty())
+			active += ", ";
+		active += name;
+	}
+	std::string details = "Your elemental spells Attune the corresponding friendly Elementals for the rest of combat."
+		"\n\nActive elements: " + (active.empty() ? std::string("none") : active)
+		+ ".\nAttuned creatures receive the skill rank's attack damage bonus."
+		" Firebirds and Phoenixes benefit from any active element, once."
+		"\nRepeated casts do not stack Attunement.";
+	return SkillStatusText{std::to_string(std::popcount(mask)) + "/4", std::move(details), true};
 }
 
 std::optional<SkillStatusText> divineMandate(const CGHeroInstance & hero,

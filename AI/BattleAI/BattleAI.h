@@ -18,6 +18,7 @@
 #include "StackWithBonuses.h"
 #include "HypotheticBattleTypes.h"
 #include "VinesCandidateValueReuse.h"
+#include "BattleSearchPolicy.h"
 
 class CSpell;
 class CBattleInfoCallback;
@@ -64,6 +65,7 @@ class CBattleAI : public CBattleGameInterface
 	// Optional test-driver-owned value observers; never preferences or game state.
 	heroActionSelection::Observer * heroValueObserver;
 	VinesCandidateValueReuse::TestControl * vinesReuseControl;
+	const battleSearch::Profile searchProfile;
 	BattleEvaluator makeEvaluator(const BattleID & battleID, const CStack * stack);
 	bool attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack);
 
@@ -188,7 +190,8 @@ public:
 	std::optional<TimingSummary> getTimingSummary() const;
 
 	explicit CBattleAI(heroActionSelection::Observer * observer = nullptr,
-		VinesCandidateValueReuse::TestControl * vinesReuse = nullptr);
+		VinesCandidateValueReuse::TestControl * vinesReuse = nullptr,
+		battleSearch::Profile searchProfile = battleSearch::Profile::Full);
 	~CBattleAI();
 
 	void initBattleInterface(std::shared_ptr<Environment> ENV, std::shared_ptr<CBattleCallback> CB) override;

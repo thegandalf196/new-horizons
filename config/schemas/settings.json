@@ -626,6 +626,7 @@
 			}
 		},
 		"ai" : {
+			"description" : "BattleAI keeps unlimited reference search. BattleAIBeamOne and BattleAIQuick explicitly select experimental search approximations that may change actions and outcomes; they apply to the configured controller, including visible auto-fight.",
 			"type" : "object",
 			"additionalProperties" : false,
 			"default" : {},
@@ -643,17 +644,17 @@
 				},
 				"combatEnemyAI" : {
 					"type" : "string",
-					"enum" : [ "EmptyAI", "StupidAI", "BattleAI", "MMAI" ],
+					"enum" : [ "EmptyAI", "StupidAI", "BattleAI", "BattleAIBeamOne", "BattleAIQuick", "MMAI" ],
 					"default" : "BattleAI"
 				},
 				"combatAlliedAI" : {
 					"type" : "string",
-					"enum" : [ "EmptyAI", "StupidAI", "BattleAI", "MMAI" ],
+					"enum" : [ "EmptyAI", "StupidAI", "BattleAI", "BattleAIBeamOne", "BattleAIQuick", "MMAI" ],
 					"default" : "BattleAI"
 				},
 				"combatNeutralAI" : {
 					"type" : "string",
-					"enum" : [ "EmptyAI", "StupidAI", "BattleAI", "MMAI" ],
+					"enum" : [ "EmptyAI", "StupidAI", "BattleAI", "BattleAIBeamOne", "BattleAIQuick", "MMAI" ],
 					"default" : "BattleAI"
 				}
 			}

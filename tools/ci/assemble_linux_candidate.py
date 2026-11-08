@@ -24,7 +24,7 @@ from stage_linux_client import verify_candidate
 from client_features import client_feature_files, FILENAME as CLIENT_FEATURES
 
 
-TREES = ('config', 'scripts', 'Mods/vcmi', 'Mods/new-horizons')
+TREES = ('config', 'Mods/vcmi', 'Mods/new-horizons')
 PLATFORM_FILES = {
     f'share/icons/hicolor/{size}x{size}/apps/new-horizons.png':
     f'clientapp/icons/new-horizons.{size}x{size}.png'
@@ -146,6 +146,7 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
         expected = {name for name, member in source_files.items()
                     if member.isfile() and any(name.startswith(tree + '/') for tree in TREES)
                     and name != 'config/newHorizonsMagicAssets.json'
+                    and not name.lower().endswith('.lua')
                     and not re.match(r'Mods/new-horizons/(Images|Content/(sprites|data))(/|$)', name)}
         if set(files) - {'new-horizons', 'libvcmi.so', CLIENT_FEATURES} != expected | NOTICES.keys() | PLATFORM_FILES.keys():
             raise RuntimeError('Installed curated inventory differs from source/CMake notice mapping')

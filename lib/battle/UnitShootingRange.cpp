@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "CUnitState.h"
+#include "NewHorizonsCreatureAbilitySuppression.h"
 #include "NewHorizonsRangefinder.h"
 #include "../bonuses/BonusParameters.h"
 #include "../bonuses/BonusSelector.h"
@@ -44,5 +45,19 @@ uint8_t CUnitState::getShootingRangeDistance() const
 
 	return shootingRangeDistance;
 }
+
+bool CUnitState::canShoot() const
+{
+	return !isNewHorizonsFrozen() && !hasBonusOfType(BonusType::CANNOT_SHOOT)
+		&& newHorizonsCreatureAbilitySuppression::suppressionLevel(*this) == 0
+		&& shots.canUse(1)
+		&& bonusCache.getBonusValue(UnitBonusValuesProxy::FORGETFULL) < 100; //100% forgetfulness disables shooting
+}
+
+bool CUnitState::isShooter() const
+{
+	return shots.total() > 0 && !hasBonusOfType(BonusType::CANNOT_SHOOT);
+}
+
 
 }

@@ -36,6 +36,8 @@ AttackPossibility VisibleCandidateWorld::evaluate(const std::shared_ptr<const Vi
 			|| !attacker->hasBonusOfType(BonusType::FLYING) || validatedVoluntaryFlightDistance != distance)))
 		throw std::invalid_argument("Invalid accepted candidate flight fact");
 	attack.voluntaryFlightDistance = validatedVoluntaryFlightDistance;
+	attack.voluntaryTravelDistance = validatedVoluntaryApproach && !shooting
+		&& from.isAvailable() && from != attacker->getPosition() ? distance : 0;
 	if(shooting && from.isValid() && from != attacker->getPosition()
 		&& newHorizonsArchery::canUseSkirmisher(owner->heroPolicy(attacker->unitSide()).legacyHero(), attacker))
 	{

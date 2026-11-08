@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "CSpell.h"
+#include "../battle/NewHorizonsPassiveSpecialties.h"
 
 #include "Problem.h"
 #include "SpellSchoolHandler.h"
@@ -485,6 +486,9 @@ int64_t CSpell::adjustRawDamage(const spells::Caster * caster, const battle::Uni
 	int perkMagicalDamageReductionBasisPoints,
 	const std::vector<int> & independentPenetrationsPercent) const
 {
+	if(isMagical() && isDamage() && affectedCreature
+		&& newHorizonsPassiveSpecialties::magicalDamageImmune(*affectedCreature))
+		return 0;
 	auto ret = rawDamage;
 	ignoreSpellDamageReductionPercent = std::clamp(ignoreSpellDamageReductionPercent, 0, 100);
 	//affected creature-specific part

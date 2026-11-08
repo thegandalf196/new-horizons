@@ -18,6 +18,7 @@ struct DivineRetributionProtection
 	int roundsRemaining = 0;
 	PlayerColor spellCasterOwner = PlayerColor::CANNOT_DETERMINE;
 	int32_t payoutRatioBasisPoints = 3000;
+	JsonNode mdrPenetration;
 };
 
 DivineRetributionProtection divineRetributionProtection(const battle::Unit * unit, SpellID spell)
@@ -37,11 +38,13 @@ DivineRetributionProtection divineRetributionProtection(const battle::Unit * uni
 			continue;
 
 		int retributionistPercent = 100;
+		JsonNode mdrPenetration;
 		if(bonus->parameters)
 		{
 			try
 			{
 				const auto & parameters = bonus->parameters->toCustom<JsonNode>();
+				mdrPenetration = parameters["mdrPenetration"];
 				const auto percent = parameters["retributionistPercent"];
 				if(percent.isNumber())
 					retributionistPercent = static_cast<int>(percent.Integer());
@@ -56,7 +59,7 @@ DivineRetributionProtection divineRetributionProtection(const battle::Unit * uni
 			std::max(0, bonus->val),
 			std::clamp(retributionistPercent, 100, 120),
 			std::clamp(static_cast<int>(bonus->turnsRemain), 0, 2), bonus->spellCasterOwner,
-			newHorizonsDivineRetribution::payoutRatioBasisPoints(*bonus)};
+			newHorizonsDivineRetribution::payoutRatioBasisPoints(*bonus), mdrPenetration};
 		const int64_t currentExposure = static_cast<int64_t>(current.rawCap)
 			* current.retributionistPercent * current.roundsRemaining;
 		const int64_t resultExposure = static_cast<int64_t>(result.rawCap)
@@ -212,10 +215,10 @@ float divineRetributionThreatValue(const battle::Unit * liveTarget,
 					perAttackDamage * static_cast<long double>(attackCount));
 				beforeResponse = std::max(beforeResponse,
 					newHorizonsDivineRetribution::recipientDamage(liveBattle, attacker,
-						divineRetributionDamage(before, actualDamage, roundOffset), before.spellCasterOwner));
+						divineRetributionDamage(before, actualDamage, roundOffset), before.spellCasterOwner, &before.mdrPenetration));
 				afterResponse = std::max(afterResponse,
 					newHorizonsDivineRetribution::recipientDamage(*projectedBattle, projectedAttacker,
-						divineRetributionDamage(after, actualDamage, roundOffset), after.spellCasterOwner));
+						divineRetributionDamage(after, actualDamage, roundOffset), after.spellCasterOwner, &after.mdrPenetration));
 			}
 
 			if(afterResponse <= beforeResponse)

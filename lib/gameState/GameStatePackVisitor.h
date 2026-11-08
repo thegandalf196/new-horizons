@@ -152,6 +152,7 @@ public:
 	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetMetamagicPointState(SetMetamagicPointState & pack) override;
+	void visitSetElementalAttunementState(SetElementalAttunementState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;
@@ -190,6 +191,7 @@ public:
 	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
 	void visitSetMetamagicPointState(SetMetamagicPointState & pack) override;
+	void visitSetElementalAttunementState(SetElementalAttunementState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
 	void visitSetOverwhelmingFormulaState(SetOverwhelmingFormulaState & pack) override;

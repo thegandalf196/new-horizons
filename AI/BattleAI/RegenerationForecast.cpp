@@ -1,5 +1,6 @@
 /* RegenerationForecast.cpp, VCMI / New Horizons, GPL v2.0 or later. */
 #include "StdInc.h"
+#include "ActivationForfeit.h"
 #include "RegenerationForecast.h"
 #include "ProjectedBestAction.h"
 #include "BattleEvaluatorProjection.h"
@@ -117,8 +118,8 @@ float projectedRegenerationValue(
 				}
 			}
 
-			const bool forecastForfeits = unit && newHorizonsFrozen::forfeitsNormalActivation(*unit, BattleUnitTurnReason::TURN_QUEUE);
-			const bool baselineForfeits = baselineUnit && newHorizonsFrozen::forfeitsNormalActivation(*baselineUnit, BattleUnitTurnReason::TURN_QUEUE);
+			const bool forecastForfeits = unit && activationForfeit::pending(*forecast, *unit, BattleUnitTurnReason::TURN_QUEUE);
+			const bool baselineForfeits = baselineUnit && activationForfeit::pending(*baseline, *baselineUnit, BattleUnitTurnReason::TURN_QUEUE);
 			if(unit && unit->alive())
 				forecast->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 			if(baselineUnit && baselineUnit->alive())
@@ -137,8 +138,8 @@ float projectedRegenerationValue(
 					expireCompletedProjectedBerserkActivation(*forecast,
 						forecast->battleGetUnitByID(queuedUnit->unitId()));
 			}
-			if(currentForecastUnit)
-				{
+			if(currentForecastUnit && !forecast->currentForfeitCompleted(currentForecastUnit->unitId()))
+			{
 				forecast->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
 				newHorizonsDivineMandate::completeDisciplineActivation(*forecast, queuedUnit->unitId());
 			}
@@ -151,8 +152,8 @@ float projectedRegenerationValue(
 					expireCompletedProjectedBerserkActivation(*baseline,
 						baseline->battleGetUnitByID(queuedUnit->unitId()));
 			}
-			if(currentBaselineUnit)
-				{
+			if(currentBaselineUnit && !baseline->currentForfeitCompleted(currentBaselineUnit->unitId()))
+			{
 				baseline->getForUpdate(queuedUnit->unitId())->removeUnitBonus(Bonus::UntilActivationEnds);
 				newHorizonsDivineMandate::completeDisciplineActivation(*baseline, queuedUnit->unitId());
 			}

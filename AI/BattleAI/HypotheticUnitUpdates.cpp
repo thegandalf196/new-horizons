@@ -83,6 +83,9 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 	changed->position = destination;
 	if(!moved)
 		return;
+	// Native current-army auras depend on the whole projected roster. Moving
+	// one occurrence invalidates every recipient's cached attribute query.
+	++bonusTreeVersion;
 
 	const auto unitsAdjacent = [](const battle::Unit * first, const battle::Unit * second)
 	{
@@ -161,8 +164,6 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 			shooter->afterAttack(true, false, true);
 			shooter->removeUnitBonus(Bonus::UntilAttack);
 			shooter->removeUnitBonus(Bonus::UntilOwnAttack);
-			const auto source = captureElementalRebirthSource(*mover);
-			const bool nativeRebirth = hasReadyNativeRebirth(mover.get());
 			const auto healthBefore = mover->getAvailableHealth();
 			PhysicalStrikeProjection tactics(this);
 			tactics.damage(*this, attack, *mover, damage, battle::DamageProvenance::PHYSICAL_CREATURE);
@@ -174,8 +175,7 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 				mover->removeUnitBonus(Bonus::UntilBeingAttacked);
 			result.push_back({shooterId, to, healthLoss});
 			recordBloodrageTransition(mover, true);
-			if(source)
-				projectElementalRebirth(mover.get(), *source, !mover->alive(), mover->isClone(), nativeRebirth);
+
 		}
 	}
 	if(auto wall = newHorizonsLivingInferno::obstacle(*this, livingInferno, mover->getPosition()))

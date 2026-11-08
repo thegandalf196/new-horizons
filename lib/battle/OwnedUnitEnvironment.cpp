@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "OwnedUnitEnvironment.h"
 #include "OwnedUnitEnvironmentPolicy.h"
+#include "CommittedElementalEffects.h"
 #include "UnitOwnershipQuery.h"
 #include "UnitMagicResistanceQuery.h"
 #include "CUnitState.h"
@@ -131,6 +132,18 @@ public:
 	int bloodragePain(BattleSide side) const override { return inputs(side).bloodragePain; }
 	int magicResistance(const Unit * unit) const override { return resistance.query(unit); }
 	newHorizonsNecromancy::CombatPassives necromancyPassives(BattleSide side) const override { return inputs(side).necromancy; }
+	newHorizonsElementalAttunement::Profile elementalAttunementProfile(BattleSide side) const override { return inputs(side).elementalAttunementProfile; }
+	uint8_t elementalAttunementMask(BattleSide side) const override { return sideState(side).elementalAttunementMask; }
+	bool knowsElementalAttunementProfile(BattleSide side) const override { return inputs(side).elementalAttunementProfileKnown; }
+	std::optional<newHorizonsElementalAttunement::UnitPassives> committedElementalAttunement(const Unit * unit) const override
+	{
+		if(!unit) return std::nullopt;
+		requireSubject(*unit);
+		const auto side = unit->unitSide();
+		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) return std::nullopt;
+		if(knowsElementalAttunementProfile(side)) return std::nullopt;
+		return OwnedUnitEnvironment::capturedElementalUnit(facts, *unit);
+	}
 	newHorizonsNecromancy::CombatPassives filterNecromancyPassives(
 		const newHorizonsNecromancy::CombatPassives & captured, CreatureID creature) const override
 	{
@@ -151,6 +164,17 @@ const BattleSideArray<ProjectedUnitEnvironmentState::SideState> & OwnedUnitEnvir
 {
 	if(!facts.enginePolicy) throw std::logic_error("Missing opaque engine environment owner");
 	return facts.enginePolicy->states;
+}
+std::optional<newHorizonsElementalAttunement::UnitPassives> OwnedUnitEnvironment::capturedElementalUnit(
+	const Facts & facts, const Unit & unit)
+{
+	// Public Facts/OrderedOccurrences constructors have no permission to reuse
+	// numeric observations by ID. Only the sealed engine-owned policy does.
+	if(!facts.enginePolicy)
+		throw std::invalid_argument("Unknown hero effects require sealed current unit observations");
+	if(!facts.enginePolicy->committedElementalEffects)
+		throw std::invalid_argument("Missing admitted current elemental transition policy");
+	return facts.enginePolicy->committedElementalEffects->evaluate(unit);
 }
 OwnedUnitEnvironment::OwnedUnitEnvironment(std::vector<std::shared_ptr<const Unit>> units, Facts facts)
 	: OwnedUnitEnvironment(std::move(units), std::move(facts), nullptr) {}
@@ -211,4 +235,9 @@ newHorizonsNecromancy::CombatPassives OwnedUnitEnvironment::unitNecromancyPassiv
 {
 	return data->queries.unitNecromancyPassives(unit);
 }
+}
+
+newHorizonsElementalAttunement::UnitPassives battle::OwnedUnitEnvironment::unitElementalAttunement(const Unit * unit) const
+{
+	return data->queries.unitElementalAttunement(unit);
 }

@@ -16,6 +16,7 @@
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
+#include "../../lib/entities/hero/SiegeCapabilityRead.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/serializer/ESerializationVersion.h"
@@ -406,4 +407,73 @@ TEST(NewHorizonsCapabilityRules, RejectsOutOfRangeRanksAndUntrainedCapabilityBon
 	auto untrainedSiege = rules;
 	untrainedSiege["siege"]["ballistaDamageMultiplier"].Vector()[0].Integer() = 2;
 	EXPECT_THROW(newHorizonsHeroes::validateResolvedCapabilityRules(untrainedSiege), std::runtime_error);
+}
+
+TEST(NewHorizonsCapabilityRules, OperationSiegeReadMatchesCapturedTablesAcrossFreshRanks)
+{
+	JsonNode authored(JsonPath::builtin("config/newHorizonsCapabilities"));
+	auto saved = newHorizonsHeroes::resolveCapabilityRules(authored,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	saved["siege"]["ballistaDamageMultiplier"].Vector()[2].Integer() = 7;
+	saved["siege"]["siegeRating"].Vector()[2].Integer() = 77;
+	saved["siege"]["directControlChance"].Vector()[2].Integer() = 47;
+	authored["siege"]["siegeRating"].Vector()[2].Integer() = 88;
+	for(int artillery = 0; artillery <= 3; ++artillery)
+	{
+		const newHorizonsHeroes::SiegeCapabilityRead read(saved, artillery);
+		EXPECT_EQ(read.ballistaMultiplier(), newHorizonsHeroes::capabilityBallistaMultiplier(saved, artillery));
+		for(int freshRank = 0; freshRank <= 3; ++freshRank)
+		{
+			EXPECT_EQ(read.siegeRating(freshRank), newHorizonsHeroes::capabilitySiegeRating(saved, freshRank));
+			EXPECT_EQ(read.directControlChance(freshRank), newHorizonsHeroes::capabilityDirectControlChance(saved, freshRank));
+		}
+		EXPECT_EQ(read.siegeRating(2), 77);
+		EXPECT_EQ(read.directControlChance(2), 47);
+	}
+}
+
+TEST(NewHorizonsCapabilityRules, OperationSiegeReadPreservesLegacyAndRankErrors)
+{
+	const auto legacy = resolvedCapabilities();
+	const auto failure = [](const auto & call)
+	{
+		try { call(); return std::string(); }
+		catch(const std::runtime_error & error) { return std::string(error.what()); }
+	};
+	for(int rank = 0; rank <= 3; ++rank)
+	{
+		const newHorizonsHeroes::SiegeCapabilityRead read(legacy, rank);
+		EXPECT_EQ(read.ballistaMultiplier(), newHorizonsHeroes::capabilityBallistaMultiplier(legacy, rank));
+		for(int queried : {-1, 0, 3, 4})
+		{
+			EXPECT_EQ(failure([&] { read.siegeRating(queried); }),
+				failure([&] { newHorizonsHeroes::capabilitySiegeRating(legacy, queried); }));
+			EXPECT_EQ(failure([&] { read.directControlChance(queried); }),
+				failure([&] { newHorizonsHeroes::capabilityDirectControlChance(legacy, queried); }));
+		}
+	}
+	for(int invalid : {-1, 4})
+		EXPECT_EQ(failure([&] { newHorizonsHeroes::SiegeCapabilityRead read(legacy, invalid); }),
+			failure([&] { newHorizonsHeroes::capabilityBallistaMultiplier(legacy, invalid); }));
+}
+
+TEST(NewHorizonsCapabilityRules, OperationSiegeReadRejectsMalformedContextBeforeRankArithmetic)
+{
+	const JsonNode authored(JsonPath::builtin("config/newHorizonsCapabilities"));
+	auto bad = newHorizonsHeroes::resolveCapabilityRules(authored,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	bad["leadership"]["creatureRequirements"].Struct().begin()->second.Integer() = 0;
+	const auto failure = [](const auto & call)
+	{
+		try { call(); return std::string(); }
+		catch(const std::runtime_error & error) { return std::string(error.what()); }
+	};
+	for(int rank : {-1, 0, 3, 4})
+	{
+		const auto original = failure([&] { newHorizonsHeroes::capabilityBallistaMultiplier(bad, rank); });
+		ASSERT_FALSE(original.empty());
+		EXPECT_EQ(failure([&] { newHorizonsHeroes::SiegeCapabilityRead read(bad, rank); }), original);
+	}
+	EXPECT_THROW(newHorizonsHeroes::capabilitySiegeRating(bad, 0), std::runtime_error);
+	EXPECT_THROW(newHorizonsHeroes::capabilityDirectControlChance(bad, 0), std::runtime_error);
 }

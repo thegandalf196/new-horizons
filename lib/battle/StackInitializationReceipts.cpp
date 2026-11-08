@@ -23,6 +23,7 @@ battle::StackInitializationReceipts::StackInitializationReceipts(const CUnitStat
 	restoredDreadCavalry = state.dreadCavalryState;
 	restoredOverwatchReadyRound = state.battlecraftOverwatchReadyRound;
 	restoredPetrifyingBloodRound = state.petrifyingBloodRound;
+	restoredOrdinarySpecialtyRound = state.ordinarySpecialtyLastRound;
 	restoredOverwatchUsedRound = state.battlecraftOverwatchUsedRound;
 	restoredMoraleExtraActivation = state.moraleExtraActivation;
 	restoredHeroicSpirit = state.heroicSpiritRetaliation;
@@ -58,6 +59,7 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 	state.dreadCavalryState = restoredDreadCavalry;
 	state.battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
 	state.petrifyingBloodRound = restoredPetrifyingBloodRound;
+	state.ordinarySpecialtyLastRound = restoredOrdinarySpecialtyRound;
 	state.battlecraftOverwatchUsedRound = restoredOverwatchUsedRound;
 	state.moraleExtraActivation = restoredMoraleExtraActivation;
 	state.heroicSpiritRetaliation = restoredHeroicSpirit;

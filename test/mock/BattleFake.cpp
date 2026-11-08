@@ -35,12 +35,14 @@ void UnitFake::makeDead()
 void UnitFake::redirectBonusesToFake()
 {
 	ON_CALL(*this, getAllBonuses(_, _)).WillByDefault(Invoke(&bonusFake, &BonusBearerMock::getAllBonuses));
+	ON_CALL(*this, getUnstackedBonuses(_)).WillByDefault(Invoke(&bonusFake, &BonusBearerMock::getUnstackedBonuses));
 	ON_CALL(*this, getTreeVersion()).WillByDefault(Invoke(&bonusFake, &BonusBearerMock::getTreeVersion));
 }
 
 void UnitFake::expectAnyBonusSystemCall()
 {
 	EXPECT_CALL(*this, getAllBonuses(_, _)).Times(AtLeast(0));
+	EXPECT_CALL(*this, getUnstackedBonuses(_)).Times(AtLeast(0));
 	EXPECT_CALL(*this, getTreeVersion()).Times(AtLeast(0));
 }
 

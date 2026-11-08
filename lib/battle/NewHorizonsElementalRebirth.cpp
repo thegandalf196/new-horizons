@@ -78,46 +78,9 @@ DeathSnapshot withElementalMemory(DeathSnapshot snapshot, const battle::Unit & u
 }
 }
 
-std::optional<ActiveProfile> activeProfile(const CGHeroInstance * hero)
+std::optional<ActiveProfile> activeProfile(const CGHeroInstance *)
 {
-	if(!hero || hero->getFactionID() != FactionID::CONFLUX
-		|| !newHorizonsHeroes::usesRules(hero->getPrimaryGrowthRules()))
-		return std::nullopt;
-
-	static const SecondarySkill skill(SecondarySkill::decode(std::string(SKILL_ID)));
-	if(skill.getNum() < 0)
-		return std::nullopt;
-	const auto factionSkill = newHorizonsHeroes::factionSkill(hero->getPrimaryGrowthRules(), FactionID::CONFLUX);
-	if(!factionSkill || *factionSkill != skill)
-		return std::nullopt;
-
-	const int rank = hero->getSecSkillLevel(skill);
-	if(rank < 1 || rank > 3)
-		return std::nullopt;
-
-	const auto & savedPerkRules = hero->getPerkState().rules;
-	if(!newHorizonsHeroes::usesPerkRules(savedPerkRules))
-		return std::nullopt;
-	const auto definition = newHorizonsHeroes::perkSkill(savedPerkRules, SKILL_ID);
-	if(!definition)
-		return std::nullopt;
-
-	const auto rankKey = RANK_IDS[static_cast<size_t>(rank - 1)];
-	const auto & status = definition->ranks[std::string(rankKey)]["effect"]["status"];
-	if(!status.isString() || status.String() != "active")
-		return std::nullopt;
-
-	return ActiveProfile{rank, HEALTH_PERCENTAGES[static_cast<size_t>(rank - 1)],
-		hero->hasActivePerk(std::string(SKILL_ID), std::string(PRIMAL_BURST_ID)),
-		hero->hasActivePerk(std::string(SKILL_ID), std::string(GREATER_ESSENCE_ID)),
-		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_WARD_ID)),
-		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(REBIRTH_CHAIN_ID)),
-		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_ATTUNEMENT_ID)),
-		rank >= MasteryLevel::ADVANCED && hero->hasActivePerk(std::string(SKILL_ID), std::string(ADAPTIVE_ELEMENT_ID)),
-		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PERFECT_CONVERGENCE_ID)),
-		hero->hasActivePerk(std::string(SKILL_ID), "new-horizons:elementalRebirth.swiftRebirth"),
-		hero->hasActivePerk(std::string(SKILL_ID), std::string(ELEMENTAL_MEMORY_ID)),
-		rank >= MasteryLevel::EXPERT && hero->hasActivePerk(std::string(SKILL_ID), std::string(PHOENIX_SPARK_ID))};
+	return std::nullopt; // Retired: Elemental Attunement never creates replacement units.
 }
 
 int64_t primalBurstDamageBudget(int64_t rebornAggregateHP)

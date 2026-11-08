@@ -65,8 +65,8 @@ ReplayLog knownLog()
 {
 	ReplayLog result;
 	result.configure(true, 2);
-	result.beginDay(1, {{std::byte{4}}, Version::NEW_HORIZONS_FLY_DAY_END});
-	result.addPack(packet(Version::NEW_HORIZONS_FLY_DAY_END));
+	result.beginDay(1, {{std::byte{4}}, Version::CURRENT});
+	result.addPack(packet(Version::CURRENT));
 	return result;
 }
 }
@@ -89,13 +89,21 @@ TEST(ReplayPayloadVersionTest, LegacyPayloadsStayUnknownAndByteExactAcrossCurren
 	EXPECT_EQ(encode(log, Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES), old);
 }
 
-TEST(ReplayPayloadVersionTest, ActualPacketCodecUsesEachOldIntermediateAndCurrentVersion)
+TEST(ReplayPayloadVersionTest, CurrentPacketAdmissionRejectsPriorOriginsWhileRawHistoricalCodecsRemainExplicit)
 {
 	for(const auto version : {Version::NEW_HORIZONS_FLY_DAY_END,
 		Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES, Version::CURRENT})
 	{
 		const auto payload = packet(version);
-		auto decoded = ReplayPackSerializer::read(payload, nullptr);
+		if(version != Version::CURRENT)
+			EXPECT_THROW(ReplayPackSerializer::read(payload, nullptr), std::runtime_error);
+		else
+			EXPECT_NE(ReplayPackSerializer::read(payload, nullptr), nullptr);
+		// Direct memory-codec characterization does not grant replay/file admission.
+		CMemorySerializer historical(payload.bytes);
+		historical.iser.version = version;
+		std::unique_ptr<CPack> decoded;
+		historical.iser & decoded;
 		const auto * start = dynamic_cast<const PlayerStartsTurn *>(decoded.get());
 		ASSERT_NE(start, nullptr);
 		EXPECT_EQ(start->player, PlayerColor(2));
@@ -106,9 +114,9 @@ TEST(ReplayPayloadVersionTest, ActualPacketCodecUsesEachOldIntermediateAndCurren
 	response.state.armedInRound = 0;
 	auto current = ReplayPackSerializer::write(response);
 	EXPECT_EQ(current.version, Version::CURRENT);
-	// Native feature guards, not a trial decode or permissive parser, reject
-	// an explicit incompatible origin. CURRENT fallback would accept this.
-	current.version = Version::MINIMAL;
+	// Production admission rejects an incompatible origin before codec dispatch.
+	// Relabeling as CURRENT instead would silently accept this payload.
+	current.version = Version::NEW_HORIZONS_FLY_DAY_END;
 	EXPECT_THROW(ReplayPackSerializer::read(current, nullptr), std::runtime_error);
 	current.version = Version::NONE;
 	EXPECT_THROW(ReplayPackSerializer::read(current, nullptr), std::runtime_error);
@@ -116,10 +124,10 @@ TEST(ReplayPayloadVersionTest, ActualPacketCodecUsesEachOldIntermediateAndCurren
 	EXPECT_THROW(ReplayPackSerializer::read(current, nullptr), std::runtime_error);
 }
 
-TEST(ReplayPayloadVersionTest, MixedSameChapterCopyMoveAndResavePreserveEveryOrigin)
+TEST(ReplayPayloadVersionTest, CurrentAndOpaqueSameChapterCopyMoveAndResavePreserveEveryOrigin)
 {
 	auto log = knownLog();
-	log.addPack(packet(Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES));
+	log.addPack(ReplayPayload{packet(Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES).bytes});
 	log.addPack(packet(Version::CURRENT));
 	const auto expected = encode(log);
 	auto copy = log;
@@ -127,11 +135,11 @@ TEST(ReplayPayloadVersionTest, MixedSameChapterCopyMoveAndResavePreserveEveryOri
 	EXPECT_EQ(encode(moved), expected);
 	const auto restored = decode(expected, Version::CURRENT);
 	const auto & chapter = restored.getChapters().front();
-	EXPECT_EQ(chapter.snapshotVersion, Version::NEW_HORIZONS_FLY_DAY_END);
-	EXPECT_EQ(chapter.packVersions, (std::vector<Version>{Version::NEW_HORIZONS_FLY_DAY_END,
-		Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES, Version::CURRENT}));
-	for(size_t i = 0; i < chapter.packs.size(); ++i)
-		EXPECT_NE(ReplayPackSerializer::read(chapter.packPayload(i), nullptr), nullptr);
+	EXPECT_EQ(chapter.snapshotVersion, Version::CURRENT);
+	EXPECT_EQ(chapter.packVersions, (std::vector<Version>{Version::CURRENT, Version::NONE, Version::CURRENT}));
+	EXPECT_NE(ReplayPackSerializer::read(chapter.packPayload(0), nullptr), nullptr);
+	EXPECT_THROW(ReplayPackSerializer::read(chapter.packPayload(1), nullptr), std::runtime_error);
+	EXPECT_NE(ReplayPackSerializer::read(chapter.packPayload(2), nullptr), nullptr);
 }
 
 TEST(ReplayPayloadVersionTest, KnownProvenanceCannotBeDroppedBeforeChapterLogOrWorldPrefix)
@@ -176,7 +184,7 @@ TEST(ReplayPayloadVersionTest, InvalidStorageAndVersionRefuseWithoutChangingExis
 TEST(ReplayPayloadVersionTest, PreparedMixedBatchReservesBothArraysAndPublishesExactPairsWithoutAllocation)
 {
 	auto log = knownLog();
-	PreparedReplayAppend::Records records{packet(Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES), packet(Version::CURRENT)};
+	PreparedReplayAppend::Records records{ReplayPayload{packet(Version::CURRENT).bytes}, packet(Version::CURRENT)};
 	const auto expected = records;
 	const auto * retainedBytes = records.front().bytes.data();
 	PreparedReplayAppend plan(log, std::move(records), 1, [] { return ReplayPayload{}; },
@@ -217,7 +225,7 @@ TEST(ReplayPayloadVersionTest, LegacyReadClearsKnownMetadataOnReusedStorage)
 	EXPECT_EQ(reused.getChapters().front().packVersions, (std::vector<Version>{Version::NONE}));
 }
 
-TEST(ReplayPayloadVersionTest, ActualOldAndCurrentConsecutiveSidesUseTheirOriginAndKeepNativeGuards)
+TEST(ReplayPayloadVersionTest, RawHistoricalAndCurrentConsecutiveSideCodecsKeepTheirExplicitOriginAndNativeGuards)
 {
 	std::array<SideInBattle, 2> sides{SideInBattle(nullptr), SideInBattle(nullptr)};
 	sides[0].color = PlayerColor(0);
@@ -229,13 +237,13 @@ TEST(ReplayPayloadVersionTest, ActualOldAndCurrentConsecutiveSidesUseTheirOrigin
 	const ReplayPayload historical{encode(sides, Version::NEW_HORIZONS_FLY_DAY_END), Version::NEW_HORIZONS_FLY_DAY_END};
 	const auto decodeSides = [](const ReplayPayload & payload)
 	{
-		replayPayload::requireKnownVersion(payload.version);
 		CMemorySerializer wire(payload.bytes);
 		wire.iser.version = payload.version;
 		std::array<SideInBattle, 2> result{SideInBattle(nullptr), SideInBattle(nullptr)};
 		wire.iser & result;
 		return result;
 	};
+	EXPECT_THROW(replayPayload::requireKnownVersion(historical.version), std::runtime_error);
 	const auto old = decodeSides(historical);
 	EXPECT_EQ(old[1].sylvanLuck, sides[1].sylvanLuck);
 	EXPECT_EQ(old[0].manaFurnaceRecoveredNormal, 0);
@@ -248,6 +256,25 @@ TEST(ReplayPayloadVersionTest, ActualOldAndCurrentConsecutiveSidesUseTheirOrigin
 	EXPECT_EQ(current[0].manaFurnaceRecoveredNormal, 7);
 	EXPECT_EQ(current[1].manaFurnaceRecoveredNormal, 9);
 	EXPECT_EQ(current[1].sylvanLuck, sides[1].sylvanLuck);
+}
+
+TEST(ReplayPayloadVersionTest, PriorOriginsRejectBeforeChangingSnapshotPacketOrPreparedHistory)
+{
+	for(const auto version : {Version::NEW_HORIZONS_FLY_DAY_END, Version::NEW_HORIZONS_ADDITIONAL_SPECIALTIES})
+	{
+		SCOPED_TRACE(static_cast<int32_t>(version));
+		ReplayLog empty;
+		empty.configure(true, 2);
+		EXPECT_THROW(empty.beginDay(1, {{std::byte{4}}, version}), std::runtime_error);
+		EXPECT_TRUE(empty.getChapters().empty());
+		auto log = knownLog();
+		const auto before = encode(log);
+		EXPECT_THROW(log.addPack(packet(version)), std::runtime_error);
+		EXPECT_EQ(encode(log), before);
+		EXPECT_THROW((PreparedReplayAppend(log, {packet(version)}, 1, [] { return ReplayPayload{}; },
+			PreparedReplayAppend::RecordingMode::UNCONDITIONAL)), std::runtime_error);
+		EXPECT_EQ(encode(log), before);
+	}
 }
 
 TEST(ReplayPayloadVersionTest, ActualIllegalChainStateStillRejectsUnderItsCorrectVersion)

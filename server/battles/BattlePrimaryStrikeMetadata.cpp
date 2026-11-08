@@ -10,8 +10,12 @@ battlePrimaryStrikeAftermath::Prepared BattleActionProcessor::preparePrimaryStri
 	const AttackDescriptor & attack, const BattleAttack & packet) const
 {
 	BattleAttackInfo primaryStrike(attacker, defender, attack.distance, attack.ranged);
+	// Preserve the accepted clicked hex, including a two-hex body's rear tile.
+	primaryStrike.defenderPos = attack.targetHex;
 	primaryStrike.physicalDamage = !packet.spellLike();
 	primaryStrike.voluntaryFlightDistance = attack.voluntaryFlightDistance;
+	primaryStrike.voluntaryTravelDistance = !attack.retaliation ? attack.distance : 0;
+	primaryStrike.defenderVoluntaryTravelDistance = attack.defenderVoluntaryTravelDistance;
 	primaryStrike.retaliation = attack.retaliation;
 	primaryStrike.secondaryAttack = attack.cleaveFollowup || attack.brace || attack.bulwarkPreemptive
 		|| attack.preemptiveDamagePercent > 0 || attack.archeryCounterfire || attack.battlecraftOverwatch;

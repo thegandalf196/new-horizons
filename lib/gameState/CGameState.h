@@ -8,6 +8,10 @@
  *
  */
 #pragma once
+#include "../battle/NewHorizonsCommandResources.h"
+#include "../battle/NewHorizonsElementalAttunement.h"
+#include "../spells/NewHorizonsMagicArrow.h"
+#include "../nativeRules/PreparedPilotRules.h"
 
 #include "../bonuses/BonusSerializationContext.h"
 
@@ -272,6 +276,7 @@ public:
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
 	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const;
+	void validateNativePilotSerialization(bool supported) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
@@ -401,6 +406,13 @@ public:
 			throw std::runtime_error("Cannot discard captured creature ability rules in an older world format");
 		if(h.saving)
 		{
+			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsMagic::validateMagicArrowChargeSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			heroCommands::validateRules(heroCommandRules);
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 				&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
@@ -446,7 +458,13 @@ public:
 			{
 				heroCommands::validateRevisedRulesSerialization(heroCommandRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
-				heroCommands::validateRules(heroCommandRules);
+				newHorizonsCommand::validateRulesSerialization(heroCommandRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			newHorizonsMagic::validateMagicArrowChargeSerialization(magicRules,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			heroCommands::validateRules(heroCommandRules);
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 					&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
 					throw std::runtime_error("Targeted world rules require the new save format");
@@ -488,7 +506,15 @@ public:
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_GROWTH))
 		{
-			h & heroDevelopmentRules;
+			if(h.saving)
+				h & heroDevelopmentRules;
+			else
+			{
+				JsonNode candidate;
+				h & candidate;
+				nativeRules::validatePilotCreatures(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+				heroDevelopmentRules = std::move(candidate);
+			}
 			if(!h.saving) newHorizonsHeroes::validateNavigationStartSerialization(heroDevelopmentRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
 			if(!h.saving) newHorizonsHeroes::validateDefaultCreatureLineSerialization(heroDevelopmentRules,
@@ -565,7 +591,15 @@ public:
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PERKS))
 		{
-			h & heroPerkRules;
+			if(h.saving)
+				h & heroPerkRules;
+			else
+			{
+				JsonNode candidate;
+				h & candidate;
+				nativeRules::validatePilotPerks(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+				heroPerkRules = std::move(candidate);
+			}
 			if(!h.saving) newHorizonsNecromancy::validatePolicySerialization(heroPerkRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));

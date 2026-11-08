@@ -18,6 +18,7 @@
 #include "../json/JsonNode.h"
 #include "../constants/EntityIdentifiers.h"
 #include "NewHorizonsDirectDamage.h"
+#include "NewHorizonsMagicArrow.h"
 #include "../battle/BattleSide.h"
 
 class CGHeroInstance;
@@ -377,11 +378,6 @@ DLL_LINKAGE int32_t regenerationRateMillionthsBasisPointsWithSpecialty(int32_t s
 	bool herbalist, int empowerSpellBonusPercent, int specialtyPercent);
 /// Resolve fixed-point Regeneration marks into healable surviving creature wounds.
 DLL_LINKAGE int64_t regenerationHealAmount(int64_t pendingMicroHealth, int64_t survivingWounds);
-/// New Horizons' detailed Sorcery rules make the existing Magic Arrow an
-/// adjustable spell.  The optional overcharge is deliberately enabled only
-/// for a saved roster which classifies the canonical core spell as Sorcery;
-/// legacy worlds therefore retain the original fixed-cost/fixed-effect cast.
-DLL_LINKAGE bool magicArrowOverchargeEnabled(const JsonNode & rules, SpellID spell);
 /// True only when the saved New Horizons row explicitly opts Cure into its
 /// single-target, selected-physical-affliction behavior. Missing settings keep
 /// older snapshots on the original Cure mechanics.
@@ -406,26 +402,10 @@ DLL_LINKAGE int64_t poisonBaseDamageBasisPoints(int32_t spellPower, int coeffici
 /// currently present on this unit. Results are sorted by SpellID for stable UI
 /// and AI enumeration; legacy/unspecified Cure profiles return no candidates.
 DLL_LINKAGE std::vector<SpellID> cureAfflictions(const JsonNode & rules, const battle::Unit * unit);
-struct DLL_LINKAGE MagicArrowOverchargeModifiers
-{
-	int maximumBonus = 0;
-	/// Percentage in tenths: 175 means 17.5% per selected point.
-	int damagePercentTenths = 150;
-
-	bool operator==(const MagicArrowOverchargeModifiers &) const = default;
-};
-DLL_LINKAGE MagicArrowOverchargeModifiers magicArrowOverchargeModifiers(const CGHeroInstance * hero);
 /// Returns a saved-perk duration adjustment for an ordinary hero cast.
 /// Explicit BattleCast duration overrides are handled by the caller and must
 /// not be modified by this helper.
 DLL_LINKAGE int spellDurationBonus(const CGHeroInstance * hero, SpellID spell);
-DLL_LINKAGE int magicArrowMaxOvercharge(const JsonNode & rules, SpellID spell, int32_t spellPower,
-	MagicArrowOverchargeModifiers modifiers = {});
-/// Returns the raw pre-resistance damage for a legal overcharge selection.
-/// The divisor is the caster's New Horizons primary-rating coefficient scale.
-DLL_LINKAGE std::optional<int64_t> magicArrowDamage(const JsonNode & rules, SpellID spell,
-	int32_t spellPower, int32_t divisor, int overcharge, MagicArrowOverchargeModifiers modifiers = {},
-	int coefficientPercent = 100, int empowerSpellBonusPercent = 0);
 DLL_LINKAGE std::vector<SpellSchool> activeSchools(const JsonNode & rules);
 /// Returns the six canonical Magic School Skills captured by the saved rules.
 /// Legacy worlds have no New Horizons school-skill catalogue.

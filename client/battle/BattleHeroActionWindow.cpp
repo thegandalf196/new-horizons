@@ -68,7 +68,7 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 		return;
 	}
 	labels.push_back(std::make_shared<CLabel>(320, 29, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Hero action"));
-	labels.push_back(std::make_shared<CLabel>(320, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One per round: Spell or Order"));
+	commandPool = std::make_shared<CLabel>(320, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "");
 	state = std::make_shared<CLabel>(320, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
 
 	spellButton = std::make_shared<CButton>(Point(36, 110), AnimationPath::builtin("NH_spells_button"),
@@ -113,7 +113,7 @@ void BattleHeroActionWindow::createOrdersLayout()
 {
 	// Orders share the native 64px four-state button contract.
 	labels.push_back(std::make_shared<CLabel>(320, 27, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Orders"));
-	labels.push_back(std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "One shared hero action: Spell or Order"));
+	commandPool = std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "");
 	state = std::make_shared<CLabel>(320, 78, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
 	const int orderWidth = 148;
 	const int orderHeight = 126;
@@ -161,25 +161,7 @@ void BattleHeroActionWindow::createOrdersLayout()
 
 void BattleHeroActionWindow::cancelSelection()
 {
-	if(auto owner = currentBattle())
-	{
-		const auto callback = owner->getBattle();
-		const auto & crisis = callback->getBattle()->getCrisisCommandState();
-		if(crisis.choice())
-		{
-			const auto * anchor = callback->battleGetStackByID(crisis.returns.back().anchor);
-			if(!anchor) return;
-			auto decline = BattleAction::makeNoAction(anchor);
-			decline.side = crisis.chooser();
-			close();
-			owner->sendCommand(decline, anchor);
-			return;
-		}
-		if(callback->battleHasPendingDoubleCommand(callback->battleGetMySide())
-			|| callback->battleHasPendingPreCombatOrder(callback->battleGetMySide()))
-			return;
-	}
-	close();
+	close(); // Inspecting or cancelling an ordinary Order never spends resources.
 }
 
 std::shared_ptr<BattleInterface> BattleHeroActionWindow::currentBattle() const
@@ -226,206 +208,8 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 		commands[i].second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (effects.empty() ? "" : "\n\nCurrent effect: " + effects)
 			+ combinedArmsHelp(rules, commands[i].first, &hero)
-			+ "\nOne shared hero action; no mana." + coverage));
+			+ "\nCosts 1 Command and the shared Hero Action; no Mana." + coverage));
 	}
-}
-
-void BattleHeroActionWindow::refresh()
-{
-	auto owner = currentBattle();
-	const bool pendingDoubleCommand = owner && owner->getBattle()->battleHasPendingDoubleCommand(
-		owner->getBattle()->battleGetMySide());
-	const bool pendingPreCombatOrder = owner && owner->getBattle()->battleHasPendingPreCombatOrder(
-		owner->getBattle()->battleGetMySide());
-	const bool pendingCrisis = owner && owner->getBattle()->getBattle()->getCrisisCommandState().choice();
-	const bool pendingOrder = pendingDoubleCommand || pendingPreCombatOrder || pendingCrisis;
-	if(cancel)
-		cancel->block(pendingOrder && !pendingCrisis);
-	if(!owner)
-	{
-		if(spellButton)
-			spellButton->block(true);
-		for(auto & entry : commands)
-		{
-			entry.second->block(true);
-			entry.second->setBorderColor(std::nullopt);
-			entry.second->setHelp(CButton::tooltip(HeroCommandUI::name(entry.first),
-				"Battle no longer available. Close this window."));
-		}
-		if(targetReadback)
-			targetReadback->setText("Battle no longer available");
-		setStateText("Battle no longer available. Close this window.");
-		return;
-	}
-	auto callback = owner->getBattle();
-	const auto side = callback->battleGetMySide();
-	const auto divineMandateStatus = callback->battleGetDivineMandateStatus(side);
-	const auto & divineMandateFollowup = divineMandateStatus.pendingFollowup;
-	const bool pendingDivineMandateSpell = divineMandateFollowup
-		&& divineMandateFollowup->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-		&& divineMandateFollowup->allowance == HeroActionAllowanceState::AllowanceKind::SPELL;
-	std::string actionOpportunityContext;
-	const auto orderSelection = callback->battleUsesHeroCommands()
-		? callback->battleGetOrderActionAllowance(side)
-		: std::optional<HeroActionAllowanceState::Selection>{};
-	if(orderSelection)
-		actionOpportunityContext = orderActionOpportunityText(*orderSelection);
-	else if(pendingDivineMandateSpell)
-		actionOpportunityContext = "Divine Mandate Light Spell follow-up available through the end of round "
-			+ std::to_string(divineMandateFollowup->expiryRound) + ".";
-	const bool canAct = owner->makingTurn() && !owner->curInt->isAutoFightOn && !owner->isInTacticsMode() && !owner->actionsController->heroSpellcastingModeActive();
-	const auto * hero = owner->currentHero();
-	const auto & rules = callback->getBattle()->getHeroCommandRules();
-	if(hero)
-	{
-		const auto preparedHold = callback->battlePrepareHeroOrderState(side, HeroCommand::HOLD_THE_LINE, {});
-		refreshEffects(*hero, rules,
-			preparedHold ? preparedHold->divineMandateEfficiencyBonusPercent() : 0);
-	}
-	const auto spellProblem = hero ? callback->battleCanCastSpell(hero, spells::Mode::HERO) : ESpellCastProblem::INVALID;
-	const bool canSpell = spellButton && hero
-		&& (spellProblem == ESpellCastProblem::OK || spellProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT);
-	if(spellButton)
-		spellButton->block(!canAct || !canSpell || pendingCrisis);
-	const auto actionCounts = callback->battleUsesHeroCommands()
-		? callback->battleHeroActionAllowanceCounts(side)
-		: HeroActionAllowanceState::Counts{};
-	const bool normalHeroActionAvailable = callback->battleUsesHeroCommands() && actionCounts.heroActions > 0;
-	bool anyCommand = false;
-	const auto orderBudgetSpent = [&]
-	{
-		if(callback->battleUsesHeroCommands())
-		{
-			const auto round = callback->battleGetRound();
-			const auto & allowances = callback->getBattle()->getHeroActionAllowances(side);
-			return round < 0 || allowances.currentRound != round
-				|| !allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round);
-		}
-		return callback->getBattle()->getHeroCommandUsed(side) || callback->battleCastSpells(side) != 0;
-	};
-	const auto commonReason = [&]
-	{
-		if(!callback->battleUsesHeroCommands())
-			return std::string("Orders are not enabled in this battle.");
-		if(!hero)
-			return std::string("No commanding hero is available.");
-		if(owner->curInt->isAutoFightOn)
-			return std::string("Autofight controls this battle.");
-		if(owner->isInTacticsMode())
-			return std::string("Orders are unavailable during tactics.");
-		if(owner->actionsController->heroSpellcastingModeActive())
-			return std::string("Finish or cancel spell targeting first.");
-		if(!owner->makingTurn())
-			return std::string("It is not your turn.");
-		if(orderBudgetSpent())
-		{
-			if(!actionOpportunityContext.empty())
-				return actionOpportunityContext;
-			return std::string("No Hero or Order action is available.");
-		}
-		return std::string();
-	};
-	for(size_t i = 0; i < commands.size(); ++i)
-	{
-		auto & entry = commands[i];
-		const bool supported = heroCommands::supportedByRules(rules, entry.first);
-		const bool targeted = isTargeted(entry.first);
-		const bool commonAvailable = commonReason().empty();
-		const bool targetReady = !targeted || !supported || !canAct || !hero
-			? false : callback->battleCanBeginHeroCommand(side, entry.first);
-		const bool hasTargets = targeted && supported && canAct && hero
-			&& !callback->battleGetHeroCommandTargets(side, entry.first).empty();
-		const bool available = supported && canAct && hero
-			&& (targeted ? targetReady : callback->battleCanUseHeroCommand(side, entry.first));
-		const bool protectPairUnavailable = entry.first == HeroCommand::PROTECT && targeted && supported
-			&& commonAvailable && canAct && hero && !targetReady;
-		// Keep the Protect control clickable in this one disabled state so its
-		// activation-time recheck can explain that no legal footprint pair exists.
-		// It remains visibly marked unavailable and never submits a packet.
-		entry.second->block(!available && !protectPairUnavailable);
-		// CButton::block removes SHOW_POPUP along with left-click/key input.
-		// Restore only right-click help so unavailable Orders remain inspectable
-		// without making a disabled command issuable.
-		entry.second->addUsedEvents(SHOW_POPUP);
-		anyCommand |= available;
-		std::string reason = commonReason();
-		if(reason.empty() && !supported)
-			reason = "This Order is not available in this battle.";
-		if(reason.empty() && !available)
-			reason = unavailableOrderReason(*callback, side, entry.first, hasTargets);
-		// Re-prepare revised Orders on every refresh so Leadership, perk, saved-rule
-		// and allowance changes cannot leave a stale numerical preview.
-		const auto revisedPreview = revisedOrderPreview(*callback, side, entry.first, hero);
-		if(!revisedPreview.label.empty() && i < effectLabels.size()
-			&& effectLabels[i]->getText() != revisedPreview.label)
-			effectLabels[i]->setText(revisedPreview.label);
-		const auto & display = commandDisplay(entry.first);
-		std::string flankReadback;
-		if(entry.first == HeroCommand::FLANK)
-		{
-			const auto activeFlank = callback->battleGetHeroOrderState(side, HeroCommand::FLANK);
-			if(activeFlank)
-			{
-				const auto * target = activeFlank->flankFor(activeFlank->primaryTargetUnitId);
-				flankReadback = "\n\nContributing attack sides relative to the marked target: ";
-				flankReadback += newHorizonsFlankReadback::formatDirections(target ? target->sideMask : 0);
-				flankReadback += ".";
-			}
-		}
-		entry.second->setHelp(CButton::tooltip(display.name,
-			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
-			+ flankReadback + revisedPreview.help
-			+ revisedActiveHelp(callback->battleGetHeroOrderState(side, entry.first), callback->battleGetRound())
-			+ combinedArmsHelp(rules, entry.first, hero)
-			+ (actionOpportunityContext.empty() ? "" : "\n\n" + actionOpportunityContext)
-			+ "\nSpends an available Hero or Order action; no mana."));
-		if(protectPairUnavailable)
-			entry.second->setBorderColor(Colors::ORANGE);
-		else if(callback->battleGetHeroOrderState(side, entry.first))
-			entry.second->setBorderColor(Colors::YELLOW);
-		else
-			entry.second->setBorderColor(std::nullopt);
-	}
-	const auto order = callback->battleGetActiveOrder(side);
-	if(targetReadback)
-	{
-		const auto readback = activeOrderReadback(*callback, side, rules, order);
-		if(targetReadback->getText() != readback)
-			targetReadback->setText(readback);
-	}
-	std::string availability = normalHeroActionAvailable
-		? "Normal Hero Action available" : "Normal Hero Action spent";
-	if(ordersOnly)
-	{
-		// These are observed UI phases and authoritative shared-budget fields,
-		// not reconstructed eligibility rules or a promise that issuance succeeds.
-		if(!callback->battleUsesHeroCommands())
-			availability = "Orders unavailable in this battle";
-		else if(!hero)
-			availability = "No hero available";
-		else if(owner->curInt->isAutoFightOn)
-			availability = "Autofight controls this battle";
-		else if(owner->isInTacticsMode())
-			availability = "Unavailable during tactics";
-		else if(owner->actionsController->heroSpellcastingModeActive())
-			availability = "Finish or cancel spell targeting";
-		else if(!owner->makingTurn())
-			availability = "Not your turn";
-		else if(orderBudgetSpent())
-			availability = "No Hero or Order action available";
-		else
-			availability = anyCommand ? "Order available" : "No Order currently available";
-	}
-	std::string stateText = pendingCrisis
-		? "Crisis Command: choose one free Order now, or Cancel to decline"
-		: pendingPreCombatOrder
-		? "Battle Plan: choose a free opening Order now"
-		: pendingDoubleCommand
-		? "Double Command: choose a different Order now"
-		: "Order: " + HeroCommandUI::name(order) + " | " + availability;
-	if(!actionOpportunityContext.empty())
-		stateText += " | " + actionOpportunityContext;
-	setStateText(stateText);
 }
 
 void BattleHeroActionWindow::chooseTargetedCommand(HeroCommand command)

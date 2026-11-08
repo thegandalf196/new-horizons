@@ -41,7 +41,7 @@ resulting player package without additional private runtime-library injection.
 
 Build platform: Ubuntu 26.04 x86-64, ordinary GCC/G++ 15.2.0, C++20, CMake/Ninja.
 Install suitable build tools and the development providers recorded in the header
-inventory: Boost, SDL3/image/mixer/ttf, LuaJIT, oneTBB, minizip/zlib, squish, libcurl and the
+inventory: Boost, SDL3/image/mixer/ttf, oneTBB, minizip/zlib, squish, libcurl and the
 FFmpeg codec/format/util/swscale/swresample development packages. Their exact
 observed versions/source records accompany the package. No proprietary compiler
 IR/plugin or LTO step was used in the recorded application build.
@@ -78,7 +78,7 @@ matching libcurl headers. Select the matching system libcurl library explicitly;
 do not silently substitute undeclared headers or a private SDK.
 
 For the curated flat package retain new-horizons, its matching libvcmi.so, the
-explicitly admitted declared runtime providers, config, scripts, Mods/vcmi and
+explicitly admitted declared runtime providers, config, Mods/vcmi and
 Mods/new-horizons, plus the launcher, notices and
 identity/source records. Do not copy the installed optional demo, builder tools,
 purchaser assets or personal files. Recheck ELF imports, $ORIGIN, privacy and all

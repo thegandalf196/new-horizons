@@ -53,7 +53,7 @@ void LuaDamageCalculatorScript::ensureDeclared(const CBattleInfoCallback & battl
 			// factor that reads it - the rest of the calculator has no business failing over it
 			try
 			{
-				declared.try_emplace(static_cast<BonusType>(BonusTypeID::decode(name)), name);
+				declared.add(static_cast<BonusType>(BonusTypeID::decode(name)), name);
 			}
 			catch(const IdentifierResolutionException &)
 			{
@@ -73,18 +73,11 @@ std::unordered_map<std::string, bool> LuaDamageCalculatorScript::carriedBonuses(
 	// both then share the one cached list
 	static const auto allBonuses = BonusFilter{}.compile();
 
-	std::unordered_map<std::string, bool> result;
-
 	const auto bonuses = unit->getAllBonuses(allBonuses.first, allBonuses.second);
-	for(const auto & bonus : *bonuses)
+	return declared.collect(*bonuses, [](const auto & bonus)
 	{
-		auto entry = declared.find(bonus->type);
-
-		if(entry != declared.end())
-			result.try_emplace(entry->second, true);
-	}
-
-	return result;
+		return bonus->type;
+	});
 }
 
 DamageForecastImplementation LuaDamageCalculatorScript::forecastImplementation(const CBattleInfoCallback & battle) const

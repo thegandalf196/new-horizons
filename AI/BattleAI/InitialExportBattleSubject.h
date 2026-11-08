@@ -49,6 +49,8 @@ public:
 	void nextTurn(uint32_t, BattleUnitTurnReason) override;
 	void setSeizeInitiativeState(const SeizeInitiativeState &) override;
 	void setPreCombatOrderState(BattleSide, const PreCombatOrderState &) override;
+	void setCommandResources(BattleSide, const newHorizonsCommand::ResourceState &) override;
+	void setElementalAttunementMask(BattleSide, uint8_t) override;
 	void setDeploymentState(const BattleDeploymentState &) override;
 	void addUnit(uint32_t, const JsonNode &) override;
 	void updateUnit(uint32_t, const JsonNode &, int64_t) override;
@@ -81,8 +83,6 @@ public:
 	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override;
 	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
 	void setMetamagicPointState(BattleSide, const MetamagicPointState &) override;
-	void setRebirthChainUsed(BattleSide, bool) override;
-	void setPhoenixSparkUsed(BattleSide, bool) override;
 	void setLuckSerendipityState(BattleSide, const LuckSerendipityState &) override;
 	void setArmorerDefiantState(BattleSide, const ArmorerDefiantState &) override;
 	void awardBattlecraftMastery(BattleSide, uint32_t, int32_t, BattlecraftMasteryAction) override;

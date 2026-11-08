@@ -344,8 +344,27 @@ void CampaignState::validateDefaultCreatureLineSerialization(bool supported) con
 		newHorizonsHeroes::validateDefaultCreatureLineSerialization(hero["primaryGrowthRules"], supported);
 }
 
+void CampaignState::validateNativePilotPools(const CampaignPoolType & scenarios, const GlobalPoolType & global, bool supported)
+{
+	const auto validate = [&](const JsonNode & hero)
+	{
+		nativeRules::validatePilotPerks(hero["perkState"]["rules"], supported);
+		nativeRules::validatePilotCreatures(hero["primaryGrowthRules"], supported);
+	};
+	for(const auto & [scenario, pool] : scenarios)
+		for(const auto & hero : pool) validate(hero);
+	for(const auto & [id, hero] : global) validate(hero);
+}
+
+void CampaignState::validateNativePilotSerialization(bool supported) const
+{
+	validateNativePilotPools(scenarioHeroPool, globalHeroPool, supported);
+}
+
 JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 {
+	nativeRules::validatePilotPerks(hero->getPerkState().rules);
+	nativeRules::validatePilotCreatures(hero->getPrimaryGrowthRules());
 	JsonNode node;
 	JsonSerializer handler(nullptr, node);
 	hero->serializeJsonOptions(handler);
@@ -379,6 +398,7 @@ std::shared_ptr<CGHeroInstance> CampaignState::crossoverDeserialize(const JsonNo
 	hero->masteryRulesCaptured = true;
 	hero->perkState = newHorizonsHeroes::PerkState::fromJson(node["perkState"]);
 	hero->perkRulesCaptured = true;
+	hero->rebuildPreparedNativeRules();
 	hero->refreshMasteryBonuses();
 	hero->nodeHasChanged();
 	if (map)

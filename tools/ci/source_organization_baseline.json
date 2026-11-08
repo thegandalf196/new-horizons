@@ -95,8 +95,10 @@
       "sha256": "ae9d5d3f50fb2bcd70accc15f3f12e9a489d916a7e32476cd08170e23df999a3"
     },
     "AI/BattleAI/BattleExchangeVariant.h": {
-      "beforeSHA": "f6935d2bb1d041d80780863485de2b05c24fe375115b92391b4681bf8748e763",
-      "composition_predecessor_review": "IR-FOUR-COMBAT-1151-COMPLETION-COMPLETE-MANUAL-20261030",
+      "sha256": "6e385f9dd4161fa231027c2818cf52fcfb31f24e86bb46d81d4df266721ec140",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 10 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
       "functions": [
         {
           "symbol": "BattleScore::BattleScore(float enemyDamageReduce, float ourDamageReduce) :enemyDamageReduce(enemyDamageReduce), ourDamageReduce(ourDamageReduce)#1",
@@ -134,28 +136,21 @@
           "end": 127
         },
         {
-          "symbol": "BattleExchangeEvaluator::BattleExchangeEvaluator( std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, float strengthRatio, int simulationTurnsCount): cb(cb), env(env), simulationTurnsCount(simulationTurnsCount)#1",
-          "start": 314,
-          "end": 320
+          "symbol": "BattleExchangeEvaluator::BattleExchangeEvaluator( std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, float strengthRatio, int simulationTurnsCount, bool reuseSelectedProbeScore = true) : cb(cb), env(env), simulationTurnsCount(simulationTurnsCount), reuseSelectedProbeScore(reuseSelectedProbeScore)#1",
+          "start": 318,
+          "end": 325
         },
         {
           "symbol": "BattleExchangeEvaluator::float getPositiveEffectMultiplier() const#1",
-          "start": 359,
-          "end": 359
+          "start": 364,
+          "end": 364
         },
         {
           "symbol": "BattleExchangeEvaluator::float getNegativeEffectMultiplier() const#1",
-          "start": 360,
-          "end": 360
+          "start": 365,
+          "end": 365
         }
-      ],
-      "previousManualSHA": "dc5eeaad2d170aaf020f7935e634d8951a44b4bff3a0e611baf833265b61a5b8",
-      "previous_review": "IR-1145-GP-VARIANT-HEADER-COMPLETE-FCD73531-20261030",
-      "rationale": "Complete exact10-callable inventory. Old source pin and every prior physical boundary reconcile to the maintained parser; changed hunks and inline/declaration changes inspected. All10 existing inline bodies retained; new Reprisal declarations add no body. Two inherited empty-default declaration recoveries remain covered. All definitions/nested lambdas retained. Coverage only, not numerical exemption or runtime acceptance.",
-      "review": "IR-FINAL-WARCASTING-AI-COMPLETE-MANUAL-COVERAGE-20261104",
-      "review_scope": "Complete exact final header/Exchange body inventory after7d617+495e, not a parser exclusion or numeric growth waiver.",
-      "review_status": "INDEPENDENT_COMPLETE_HEADER_BODY_INVENTORY_SOURCE_REVIEWED_NATIVE_UNRUN",
-      "sha256": "df80aeae4cbb9a03b8008a37363900599b97a432b3546500a9f58afba5adc937"
+      ]
     },
     "AI/BattleAI/DamageCacheTimingScope.h": {
       "functions": [
@@ -228,619 +223,322 @@
       "sha256": "247cdfe27811667c1d5d4e5987d7e1fcf02f8057b6807f8d7636587248d29123"
     },
     "AI/BattleAI/HypotheticBattle.h": {
-      "sha256": "7b16d9c56759ad2b2283e2936129cdaaa93c7ca4e99551b3b42e2fa75ed5ffc8",
-      "review": "IR-FINAL-WARCASTING-AI-COMPLETE-MANUAL-COVERAGE-20261104",
-      "rationale": "Complete exact60-callable inventory. Old source pin and every prior physical boundary reconcile to the maintained parser; changed hunks and inline/declaration changes inspected. Complete60 bodies include the canonical receipt getter; other new methods are declarations. One inherited empty-vector default recovery omits no body. All definitions/nested lambdas retained. Coverage only, not numerical exemption or runtime acceptance.",
+      "sha256": "c19371c42efdab7254a68b6358a6c44cbba9a906ca5181c70671ec67541aadfb",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 62 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
       "functions": [
         {
           "symbol": "HypotheticBattle::const auto & getArcaneInspirationEffects() const#1",
-          "start": 95,
-          "end": 95
+          "start": 100,
+          "end": 100
         },
         {
           "symbol": "HypotheticBattle::bool mayHaveSerpentBindings() const noexcept#1",
-          "start": 102,
-          "end": 102
+          "start": 107,
+          "end": 107
         },
         {
           "symbol": "HypotheticBattle::bool hasProjectedManaLeech() const noexcept#1",
-          "start": 117,
-          "end": 117
+          "start": 122,
+          "end": 122
         },
         {
           "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
-          "start": 127,
-          "end": 127
-        },
-        {
-          "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
-          "start": 128,
+          "start": 132,
           "end": 132
         },
         {
-          "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
+          "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
           "start": 133,
-          "end": 133
+          "end": 137
+        },
+        {
+          "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
+          "start": 138,
+          "end": 138
+        },
+        {
+          "symbol": "HypotheticBattle::const std::shared_ptr<MovementQueryCache> & movementQueryCache() const#1",
+          "start": 151,
+          "end": 151
+        },
+        {
+          "symbol": "HypotheticBattle::void setMovementQueryCache(std::shared_ptr<MovementQueryCache> cache)#1",
+          "start": 152,
+          "end": 152
         },
         {
           "symbol": "HypotheticBattle::const IBattleInfo * getBattle() const override#1",
-          "start": 149,
-          "end": 149
+          "start": 157,
+          "end": 157
         },
         {
           "symbol": "HypotheticBattle::std::optional<PlayerColor> getPlayerID() const override#1",
-          "start": 150,
-          "end": 150
+          "start": 158,
+          "end": 158
         },
         {
           "symbol": "HypotheticBattle::int32_t getBloodrageRank(BattleSide side) const override#1",
-          "start": 164,
-          "end": 164
-        },
-        {
-          "symbol": "HypotheticBattle::int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override#1",
-          "start": 169,
-          "end": 169
-        },
-        {
-          "symbol": "HypotheticBattle::int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override#1",
-          "start": 170,
-          "end": 170
-        },
-        {
-          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
-          "start": 171,
-          "end": 171
-        },
-        {
-          "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
           "start": 172,
           "end": 172
         },
         {
-          "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
+          "symbol": "HypotheticBattle::int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override#1",
+          "start": 177,
+          "end": 177
+        },
+        {
+          "symbol": "HypotheticBattle::int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override#1",
+          "start": 178,
+          "end": 178
+        },
+        {
+          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
           "start": 179,
-          "end": 183
+          "end": 179
+        },
+        {
+          "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
+          "start": 180,
+          "end": 180
+        },
+        {
+          "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
+          "start": 187,
+          "end": 191
         },
         {
           "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 194,
-          "end": 194
+          "start": 202,
+          "end": 202
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 202,
-          "end": 206
+          "start": 210,
+          "end": 214
         },
         {
           "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 209,
-          "end": 209
+          "start": 217,
+          "end": 217
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 228,
-          "end": 228
+          "start": 236,
+          "end": 236
         },
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 229,
-          "end": 238
-        },
-        {
-          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 239,
-          "end": 242
-        },
-        {
-          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-          "start": 243,
+          "start": 237,
           "end": 246
         },
         {
-          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 248,
-          "end": 248
+          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
+          "start": 247,
+          "end": 250
         },
         {
-          "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
-          "start": 250,
-          "end": 251
-        },
-        {
-          "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
-          "start": 252,
-          "end": 252
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
-          "start": 253,
-          "end": 253
-        },
-        {
-          "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
-          "start": 254,
+          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "start": 251,
           "end": 254
         },
         {
-          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
           "start": 256,
           "end": 256
         },
         {
-          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
+          "start": 258,
+          "end": 259
+        },
+        {
+          "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
           "start": 260,
           "end": 260
         },
         {
-          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
           "start": 261,
           "end": 261
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
           "start": 262,
           "end": 262
         },
         {
-          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
-          "start": 263,
-          "end": 263
-        },
-        {
-          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
           "start": 264,
           "end": 264
         },
         {
-          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
-          "start": 265,
+          "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
+          "start": 268,
           "end": 268
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
           "start": 269,
+          "end": 269
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
+          "start": 270,
+          "end": 270
+        },
+        {
+          "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
+          "start": 271,
+          "end": 271
+        },
+        {
+          "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
+          "start": 272,
           "end": 272
         },
         {
-          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
           "start": 273,
           "end": 276
         },
         {
+          "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
+          "start": 277,
+          "end": 280
+        },
+        {
+          "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
+          "start": 281,
+          "end": 284
+        },
+        {
           "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
-          "start": 363,
-          "end": 363
+          "start": 371,
+          "end": 371
         },
         {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 369,
-          "end": 369
+          "start": 377,
+          "end": 377
         },
         {
           "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 370,
-          "end": 370
+          "start": 378,
+          "end": 378
         },
         {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 379,
-          "end": 379
+          "start": 387,
+          "end": 387
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 399,
-          "end": 399
-        },
-        {
-          "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
-          "start": 400,
-          "end": 400
-        },
-        {
-          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-          "start": 401,
-          "end": 401
-        },
-        {
-          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
-          "start": 402,
-          "end": 402
-        },
-        {
-          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
-          "start": 403,
+          "start": 407,
           "end": 407
         },
         {
-          "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
+          "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
           "start": 408,
-          "end": 412
+          "end": 408
+        },
+        {
+          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
+          "start": 409,
+          "end": 409
+        },
+        {
+          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "start": 410,
+          "end": 410
+        },
+        {
+          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "start": 411,
+          "end": 415
+        },
+        {
+          "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
+          "start": 416,
+          "end": 420
         },
         {
           "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 413,
-          "end": 413
+          "start": 421,
+          "end": 421
         },
         {
           "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 414,
-          "end": 417
+          "start": 422,
+          "end": 425
         },
         {
           "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-          "start": 418,
-          "end": 423
+          "start": 426,
+          "end": 431
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 424,
-          "end": 434
+          "start": 432,
+          "end": 442
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 437,
-          "end": 440
+          "start": 445,
+          "end": 448
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 441,
-          "end": 445
+          "start": 449,
+          "end": 453
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 450,
-          "end": 450
+          "start": 458,
+          "end": 458
         },
         {
           "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
-          "start": 451,
-          "end": 451
+          "start": 459,
+          "end": 459
         },
         {
           "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-          "start": 518,
-          "end": 518
+          "start": 526,
+          "end": 526
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 519,
-          "end": 519
+          "start": 527,
+          "end": 527
         },
         {
           "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
-          "start": 520,
-          "end": 520
+          "start": 528,
+          "end": 528
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
-          "start": 521,
-          "end": 524
+          "start": 529,
+          "end": 532
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 535,
-          "end": 538
+          "start": 543,
+          "end": 546
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 668,
-          "end": 668
+          "start": 676,
+          "end": 676
         },
         {
           "symbol": "HypotheticBattle::HypotheticEnvironment::void closeNativeSource() noexcept#1",
-          "start": 698,
-          "end": 698
+          "start": 706,
+          "end": 706
         }
-      ],
-      "previous_review": "IR-CURRENT225-AI22-INDEPENDENT-UI-20261103",
-      "review_history": [
-        {
-          "sha256": "3b839bc98f41096b86b785446c458be7646e0dea5f83f02bdcffdead254d23b1",
-          "review": "IR-PASSIVE-FACTION-MANUAL-COMPLETE-ROOT-20261102",
-          "rationale": "Complete exact afterimage callable inventory, reconciled to source2488 exact maintained manual inventory. Every old callable retained; all changed source hunks and recovery contexts inspected. 54 retained complete callable bodies byte-exact; 1 changed retained bodies and 4 new bodies explicitly inventoried. Full physical signatures/spans include nested lambdas. Inherited default-argument parser recovery is covered by complete callable inventory, not excluded. No new limits/exclusions, mechanics/native or rendered acceptance. Root independently verified all retained/changed/added callable byte spans against exact2488 baseline, read every changed hunk and new body, and confirmed complete callable coverage. Added-body witness hashes omit final LF; retained hashes include it, verified exactly. Covers parser recovery only; native gameplay/build and growth-baseline approval remain separate.",
-          "functions": [
-            {
-              "symbol": "HypotheticBattle::bool mayHaveSerpentBindings() const noexcept#1",
-              "start": 93,
-              "end": 93
-            },
-            {
-              "symbol": "HypotheticBattle::bool hasProjectedManaLeech() const noexcept#1",
-              "start": 108,
-              "end": 108
-            },
-            {
-              "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
-              "start": 118,
-              "end": 118
-            },
-            {
-              "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
-              "start": 119,
-              "end": 123
-            },
-            {
-              "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
-              "start": 124,
-              "end": 124
-            },
-            {
-              "symbol": "HypotheticBattle::const IBattleInfo * getBattle() const override#1",
-              "start": 140,
-              "end": 140
-            },
-            {
-              "symbol": "HypotheticBattle::std::optional<PlayerColor> getPlayerID() const override#1",
-              "start": 141,
-              "end": 141
-            },
-            {
-              "symbol": "HypotheticBattle::int32_t getBloodrageRank(BattleSide side) const override#1",
-              "start": 155,
-              "end": 155
-            },
-            {
-              "symbol": "HypotheticBattle::int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override#1",
-              "start": 160,
-              "end": 160
-            },
-            {
-              "symbol": "HypotheticBattle::int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override#1",
-              "start": 161,
-              "end": 161
-            },
-            {
-              "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
-              "start": 162,
-              "end": 162
-            },
-            {
-              "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
-              "start": 163,
-              "end": 163
-            },
-            {
-              "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
-              "start": 170,
-              "end": 174
-            },
-            {
-              "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-              "start": 185,
-              "end": 185
-            },
-            {
-              "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-              "start": 193,
-              "end": 197
-            },
-            {
-              "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-              "start": 200,
-              "end": 200
-            },
-            {
-              "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-              "start": 221,
-              "end": 221
-            },
-            {
-              "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-              "start": 222,
-              "end": 231
-            },
-            {
-              "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-              "start": 232,
-              "end": 235
-            },
-            {
-              "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-              "start": 236,
-              "end": 239
-            },
-            {
-              "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-              "start": 241,
-              "end": 241
-            },
-            {
-              "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
-              "start": 243,
-              "end": 244
-            },
-            {
-              "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
-              "start": 245,
-              "end": 245
-            },
-            {
-              "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
-              "start": 246,
-              "end": 246
-            },
-            {
-              "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
-              "start": 247,
-              "end": 247
-            },
-            {
-              "symbol": "HypotheticBattle::bool getCounterspellArmed(BattleSide side) const override#1",
-              "start": 249,
-              "end": 249
-            },
-            {
-              "symbol": "HypotheticBattle::int32_t getMetamagicPendingCount(BattleSide side) const override#1",
-              "start": 250,
-              "end": 250
-            },
-            {
-              "symbol": "HypotheticBattle::int32_t getMetamagicUsesConsumed(BattleSide side) const override#1",
-              "start": 251,
-              "end": 251
-            },
-            {
-              "symbol": "HypotheticBattle::bool getMetamagicGrandUsed(BattleSide side) const override#1",
-              "start": 252,
-              "end": 252
-            },
-            {
-              "symbol": "HypotheticBattle::SpellID getMetamagicFirstSpell(BattleSide side) const override#1",
-              "start": 253,
-              "end": 253
-            },
-            {
-              "symbol": "HypotheticBattle::uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override#1",
-              "start": 254,
-              "end": 254
-            },
-            {
-              "symbol": "HypotheticBattle::const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override#1",
-              "start": 255,
-              "end": 258
-            },
-            {
-              "symbol": "HypotheticBattle::bool getMetamagicFirstCounterspellNegated(BattleSide side) const override#1",
-              "start": 259,
-              "end": 262
-            },
-            {
-              "symbol": "HypotheticBattle::bool getMetamagicCountersequenceArmed(BattleSide side) const override#1",
-              "start": 263,
-              "end": 266
-            },
-            {
-              "symbol": "HypotheticBattle::ui8 getProjectedPendingTimeStopHeroActionSides() const#1",
-              "start": 353,
-              "end": 353
-            },
-            {
-              "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-              "start": 359,
-              "end": 359
-            },
-            {
-              "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-              "start": 360,
-              "end": 360
-            },
-            {
-              "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-              "start": 369,
-              "end": 369
-            },
-            {
-              "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-              "start": 389,
-              "end": 389
-            },
-            {
-              "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
-              "start": 390,
-              "end": 390
-            },
-            {
-              "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-              "start": 391,
-              "end": 391
-            },
-            {
-              "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
-              "start": 392,
-              "end": 392
-            },
-            {
-              "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
-              "start": 393,
-              "end": 397
-            },
-            {
-              "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-              "start": 398,
-              "end": 402
-            },
-            {
-              "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-              "start": 403,
-              "end": 403
-            },
-            {
-              "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-              "start": 404,
-              "end": 407
-            },
-            {
-              "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-              "start": 408,
-              "end": 413
-            },
-            {
-              "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-              "start": 414,
-              "end": 424
-            },
-            {
-              "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-              "start": 427,
-              "end": 430
-            },
-            {
-              "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-              "start": 431,
-              "end": 435
-            },
-            {
-              "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-              "start": 440,
-              "end": 440
-            },
-            {
-              "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
-              "start": 441,
-              "end": 441
-            },
-            {
-              "symbol": "HypotheticBattle::const std::set<uint32_t> & getElementalRebirthSpawnUnitIds() const#1",
-              "start": 507,
-              "end": 507
-            },
-            {
-              "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-              "start": 508,
-              "end": 508
-            },
-            {
-              "symbol": "HypotheticBattle::bool isElementalRebirthSpawn(uint32_t unitId) const#1",
-              "start": 509,
-              "end": 509
-            },
-            {
-              "symbol": "HypotheticBattle::const std::vector<ProjectedPrimalBurstHit> & getProjectedPrimalBurstHits() const#1",
-              "start": 510,
-              "end": 513
-            },
-            {
-              "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-              "start": 524,
-              "end": 527
-            },
-            {
-              "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-              "start": 650,
-              "end": 650
-            },
-            {
-              "symbol": "HypotheticBattle::HypotheticEnvironment::void closeNativeSource() noexcept#1",
-              "start": 680,
-              "end": 680
-            }
-          ],
-          "previous_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101"
-        }
-      ],
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "review_scope": "Exact cc4747c4 AI successor, with matching gameplay shared state/callback/helper dependencies. No future growth, native/render acceptance, or adoption authorization."
+      ]
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
       "functions": [
@@ -6962,23 +6660,17 @@
       "previous_review": "IR-EXTENDED-CURE-1152-COMPLETE-MANUAL-20261030"
     },
     "lib/battle/CBattleInfoCallback.h": {
-      "composition_predecessor_review": "IR-COMPOSED-FEATURE-SIX-CALLABLES-20261029",
-      "execution_removal_predecessor_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
+      "sha256": "ea3fd7e3d4baf3c087a3a6ee21fb3f82f99171f61954774284f3f8bf0a821446",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 1 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
       "functions": [
         {
           "symbol": "FirstAidHealingPreview::int64_t totalHealedHP() const#1",
-          "start": 101,
-          "end": 104
+          "start": 102,
+          "end": 105
         }
-      ],
-      "prefix_predecessor_review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "proposed_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-      "rationale": "Independent complete exact-source callable coverage inspection: 1 body-bearing definitions with complete original signatures and full physical spans. All retained and new/modified bodies plus all source outside those bodies inspected; macro/type recovery remains visible and no omission found. Preserves inherited extraction obligations; coverage only, no numeric growth, mechanics, native or runtime approval. Exact declaration-only common-header composition retains every inventoried callable body; only physical spans and exact header identity are renewed. Complete inventory review is pending independently; no parser exclusion, numeric allowance or runtime acceptance is claimed. The explicit requested-spell overload is declaration-only. The sole inline body, its complete span and every existing declaration remain unchanged; no additional callable body is introduced. Exact v5: Complete body inventory over exact composed header bytes; all body-bearing functions/lambdas retained, including added owned guards/accessors/default classifier body. Existing empty-brace default arguments in bodyless declarations normalize at identical width solely for parser measurement; no callable or runtime source is removed. Complete header diff reviewed; declarations/data initializers are not omitted callable bodies. Exact prefix successor: preserve every pre-existing callable body; new source-identity API is declaration-only in HB/CBBC and one pure one-line SourceBinding wrapper in existing types. No callable is omitted. Exact R6 execution removal: unused pair-prefix execution/key/fact/copy/counter machinery is removed; sequential full native preparation/finalization/Lua and custom virtual dispatch remain. Current exact size/hash ratchets downward; prior reuse rationale is historical and grants no surviving execution authority. Complete source diff and all 1 retained body-bearing definitions independently checked: body bytes exact and only declaration-removal span shifts; inherited parser recoveries remain explicitly covered. Exact complete 1 callable bodies retained from fresh pinned parser, all prior symbols unchanged; inherited declaration-only missing type recovery unchanged. Changed declarations/serialize body inspected; no executable callable omitted, new pending gap, exclusion or parser waiver.",
-      "review": "IR-ARCANE-INSPIRATION-COMPLETE-MANUAL-20261103",
-      "review_scope": "Exact standalone primary R6 execution removal only; native/build/ABI/render/performance acceptance unrun. All meaningful inherited deferrals remain; no new ceiling or future growth credit.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "80d3e072659e7909ee26b475d06f32bcdbb6250f91c859795202e7ead555bfed",
-      "previous_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101"
+      ]
     },
     "lib/battle/CPlayerBattleCallback.cpp": {
       "functions": [
@@ -12083,6 +11775,10 @@
       "sha256": "8a66820e4a8fd8b0dd8f1de65cee50338b1c44c76444b8a731dcae2502ee1abb"
     },
     "server/CGameHandler.h": {
+      "sha256": "966025d6664cfdd18e118c3f62857235147cc79bbae17c653f0bf5d8506bdf10",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 2 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
       "functions": [
         {
           "symbol": "CGameHandler::const CGameState & gameState() const#1",
@@ -12094,13 +11790,7 @@
           "start": 300,
           "end": 319
         }
-      ],
-      "rationale": "Complete exact header inventory independently read and source-compared: only gameState104 and serialize296-307 are handwritten callable bodies, both byte-identical. Added construction helper is a declaration; Portal defaults move to its declaration. Inherited missing:type_identifier234 remains an explicitly retained raw parser diagnostic, not hidden coverage. No implementation body or serialization field order added. Exact complete 2 callable bodies retained from fresh pinned parser, all prior symbols unchanged; inherited declaration-only missing type recovery unchanged. Changed declarations/serialize body inspected; no executable callable omitted, new pending gap, exclusion or parser waiver.",
-      "review": "IR-LEARNING-COMPLETE-MANUAL-20261103",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "b59712532f62b45d26d3b75bedb35f637765b9c89a696e13e9ea83804658fda1",
-      "previous_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
-      "review_scope": "Exact Quick Study 51-path source composition1a912929 reviewed939e59fa over current neutral2 and DPS, retaining Root9ff/Endpoint75d/public-wire5c. Selective metadata only; inherited obligations retained. GUIClasses.h finite631-to642 declaration/state exception accompanies focused window extraction; no ceiling, exclusion or future growth credit. Optional current4 activation is separately reviewed. No native, file/replay, genuine UI or publication proof."
+      ]
     },
     "server/CVCMIServer.h": {
       "functions": [
@@ -18039,6 +17729,298 @@
           "end": 304
         }
       ]
+    },
+    "lib/combatScripts/nativeEvents/NativeEventCommon.h": {
+      "sha256": "552c8b60201b2fb3ded97e34f0887934a5fe51817b246605401bb0d2e19dfe7f",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 0 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
+      "functions": []
+    },
+    "lib/scripting/nativeMap/LegacyHotaImport.h": {
+      "sha256": "cf71f45b7c5e40556c9c5d47e9fc9cce52de19dd825bf258cd8157df69b8ba05",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 0 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
+      "functions": []
+    },
+    "lib/spells/effects/native/StatusHelpers.h": {
+      "sha256": "5ff7bc1fcfcfe359234c7b39d5f861baf752754a26c794ad3fdc3a095a705332",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 0 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
+      "functions": []
+    },
+    "test/scripting/NativeDamageCaptureParityTest.cpp": {
+      "sha256": "c9583a80e8d88ca93115c318b1f787c4e436c9777b5c72750916706461bccb41",
+      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact-content callable inventory: 24 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
+      "functions": [
+        {
+          "symbol": "Values values(const DamageEstimation & result)#1",
+          "start": 20,
+          "end": 24
+        },
+        {
+          "symbol": "CaptureOracle::std::unordered_map<std::string, bool> presence(const battle::Unit & unit) const#1",
+          "start": 33,
+          "end": 41
+        },
+        {
+          "symbol": "CaptureOracle::explicit CaptureOracle(scripting::LuaContext & lua) : lua(lua)#1",
+          "start": 47,
+          "end": 51
+        },
+        {
+          "symbol": "CaptureOracle::DamageEstimation calculate(const CBattleInfoCallback & battle, DamageAttackInfo & payload) const override#1",
+          "start": 52,
+          "end": 70
+        },
+        {
+          "symbol": "CaptureOracle::DamageForecastImplementation forecastImplementation(const CBattleInfoCallback &) const override#1",
+          "start": 71,
+          "end": 72
+        },
+        {
+          "symbol": "OracleFactory::explicit OracleFactory(std::shared_ptr<IDamageCalculatorScript> oracle) : oracle(std::move(oracle))#1",
+          "start": 79,
+          "end": 79
+        },
+        {
+          "symbol": "OracleFactory::void initialize(const ScriptTypeDescription &) override#1",
+          "start": 80,
+          "end": 80
+        },
+        {
+          "symbol": "OracleFactory::std::shared_ptr<IDamageCalculatorScript> createDamageCalculatorScript(const std::string &) const override#1",
+          "start": 81,
+          "end": 81
+        },
+        {
+          "symbol": "OracleFactory::std::shared_ptr<ICombatEventScript> createCombatEventScript(const std::string &) const override#1",
+          "start": 82,
+          "end": 82
+        },
+        {
+          "symbol": "OracleFactory::std::shared_ptr<spells::effects::Effect> createSpellEffect(const std::string &) const override#1",
+          "start": 83,
+          "end": 83
+        },
+        {
+          "symbol": "OracleRegistry::explicit OracleRegistry(const std::shared_ptr<CaptureOracle> & oracle)#1",
+          "start": 93,
+          "end": 109
+        },
+        {
+          "symbol": "OracleRegistry::OracleRegistry(const std::shared_ptr<CaptureOracle> & oracle)::[&]#1",
+          "start": 102,
+          "end": 102
+        },
+        {
+          "symbol": "OracleRegistry::~OracleRegistry()#1",
+          "start": 110,
+          "end": 114
+        },
+        {
+          "symbol": "std::vector<JsonNode> snapshot(const HypotheticBattle & branch)#1",
+          "start": 117,
+          "end": 127
+        },
+        {
+          "symbol": "void decorate(StackWithBonuses & attacker, StackWithBonuses & defender, int variation)#1",
+          "start": 129,
+          "end": 166
+        },
+        {
+          "symbol": "decorate(StackWithBonuses & attacker, StackWithBonuses & defender, int variation)::[](BonusType type, int value, BonusSubtypeID subtype = {})#1",
+          "start": 132,
+          "end": 133
+        },
+        {
+          "symbol": "NativeDamageCaptureParityTest::virtual int cap() const#1",
+          "start": 171,
+          "end": 171
+        },
+        {
+          "symbol": "NativeDamageCaptureParityTest::void mapLoaded(CMap * map) override#1",
+          "start": 172,
+          "end": 180
+        },
+        {
+          "symbol": "NativeDamageCaptureParityTest::void compare()#1",
+          "start": 181,
+          "end": 240
+        },
+        {
+          "symbol": "NativeLegacyDamageCaptureParityTest::int cap() const override#1",
+          "start": 243,
+          "end": 243
+        },
+        {
+          "symbol": "NativeZeroCapDamageCaptureParityTest::int cap() const override#1",
+          "start": 245,
+          "end": 245
+        },
+        {
+          "symbol": "TEST_F(NativeDamageCaptureParityTest, FullLiveCaptureMatchesLuaWithCurrentProtection)#1",
+          "start": 248,
+          "end": 249
+        },
+        {
+          "symbol": "TEST_F(NativeLegacyDamageCaptureParityTest, FullLiveCaptureMatchesLuaWithHistoricalProtection)#1",
+          "start": 250,
+          "end": 251
+        },
+        {
+          "symbol": "TEST_F(NativeZeroCapDamageCaptureParityTest, FullLiveCaptureMatchesLuaWithExplicitZeroCap)#1",
+          "start": 252,
+          "end": 253
+        }
+      ]
+    },
+    "test/server/battles/NativeTimedSiblingOrderTest.cpp": {
+      "sha256": "c0fabe6a66d2c2569252b01d8314572d784665ffc3fd85db6d6e48beb051529e",
+      "review": "IR-NATIVE-TIMED-PERK-CHAIN-COMPLETE-COVERAGE-20261105",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_PERK_CHAIN_FIXTURE_COVERAGE_REVIEWED",
+      "rationale": "Complete exact503-line successor Timed fixture inventory:27 body-bearing definitions, including retained erase_if lambda, mapLoaded, final parameterized replay and trace lambda. Four added lines select and assert the real Basic Blinkmaster prerequisite before Advanced Mindbreaker via existing hero perk API; no Timed assertions or state/packet/RNG normalization change. Raw default-argument recovery at143 remains explicit; in-memory masking only that default yields zero diagnostics with identical complete callable spans. Independent complete exact-source/span review establishes coverage only; no numeric or runtime/performance approval.",
+      "functions": [
+        {
+          "symbol": "bool fixedDiseaseMarker(const Bonus & bonus)#1",
+          "start": 36,
+          "end": 41
+        },
+        {
+          "symbol": "std::string comparableBonus(const Bonus & bonus, bool diseaseContract)#1",
+          "start": 43,
+          "end": 50
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::ObservableState observe(CStack & unit, CStack & enemy, bool diseaseContract = false)#1",
+          "start": 56,
+          "end": 94
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::void applyPacket(SetStackEffect packet)#1",
+          "start": 95,
+          "end": 99
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::std::vector<SetStackEffect> captureTimed(CStack & unit, const char * key, int level, int power = 125, bool mass = false)#1",
+          "start": 100,
+          "end": 131
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::captureTimed(CStack & unit, const char * key, int level, int power = 125, bool mass = false)::[&](SetStackEffect & packet)#1",
+          "start": 111,
+          "end": 111
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::captureTimed(CStack & unit, const char * key, int level, int power = 125, bool mass = false)::[&](const JsonNode & config)#1",
+          "start": 113,
+          "end": 118
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::static std::vector<Bonus> additions(const std::vector<SetStackEffect> & packets)#1",
+          "start": 132,
+          "end": 141
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::void allPermutations(CStack & unit, CStack & enemy, const std::vector<Bonus> & bonuses, const std::function<std::vector<SetStackEffect>()> & recast = {})#1",
+          "start": 142,
+          "end": 228
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::allPermutations(CStack & unit, CStack & enemy, const std::vector<Bonus> & bonuses, const std::function<std::vector<SetStackEffect>()> & recast = {})::[&](const std::vector<Bonus> & records)#1",
+          "start": 158,
+          "end": 168
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::allPermutations(CStack & unit, CStack & enemy, const std::vector<Bonus> & bonuses, const std::function<std::vector<SetStackEffect>()> & recast = {})::[&]#1",
+          "start": 174,
+          "end": 184
+        },
+        {
+          "symbol": "NativeTimedSiblingOrderTest::allPermutations(CStack & unit, CStack & enemy, const std::vector<Bonus> & bonuses, const std::function<std::vector<SetStackEffect>()> & recast = {})::[](const Bonus & b)#1",
+          "start": 219,
+          "end": 219
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, CoreAbilityBundlesCommuteThroughAuthoritativeReplayAndDamageQueries)#1",
+          "start": 231,
+          "end": 245
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, CoreAbilityBundlesCommuteThroughAuthoritativeReplayAndDamageQueries)::[&]#1",
+          "start": 240,
+          "end": 240
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, CuratedCrusadeAndChaosBundlesCommuteThroughAuthoritativeReplayAndDamageQueries)#1",
+          "start": 247,
+          "end": 263
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, CuratedCrusadeAndChaosBundlesCommuteThroughAuthoritativeReplayAndDamageQueries)::[&]#1",
+          "start": 258,
+          "end": 258
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, LoadedPrayerAndBlindLevelsCommuteAfterRealConversion)#1",
+          "start": 265,
+          "end": 281
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, LoadedPrayerAndBlindLevelsCommuteAfterRealConversion)::[&]#1",
+          "start": 276,
+          "end": 276
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, PoisonOrderPreservesWoundedCapacityTrackedHealth)#1",
+          "start": 283,
+          "end": 296
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, PoisonOrderPreservesWoundedCapacityTrackedHealth)::[&]#1",
+          "start": 292,
+          "end": 292
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, DiseaseStampOffsetsPreserveSavedClocksAndLaterAfflictionSelection)#1",
+          "start": 298,
+          "end": 395
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, DiseaseStampOffsetsPreserveSavedClocksAndLaterAfflictionSelection)::[&](std::vector<Bonus> values)#1",
+          "start": 309,
+          "end": 315
+        },
+        {
+          "symbol": "TEST_F(NativeTimedSiblingOrderTest, DiseaseStampOffsetsPreserveSavedClocksAndLaterAfflictionSelection)::[&](const std::string & kind)#1",
+          "start": 316,
+          "end": 321
+        },
+        {
+          "symbol": "NativeTimedDynamicOrderTest::void mapLoaded(CMap * loaded) override#1",
+          "start": 402,
+          "end": 426
+        },
+        {
+          "symbol": "NativeTimedDynamicOrderTest::mapLoaded(CMap * loaded) override::[](const auto & row)#1",
+          "start": 411,
+          "end": 414
+        },
+        {
+          "symbol": "TEST_P(NativeTimedDynamicOrderTest, ShippedDynamicFamiliesAndKeeperCommuteThroughApplicationRecastAndCleanup)#1",
+          "start": 429,
+          "end": 501
+        },
+        {
+          "symbol": "TEST_P(NativeTimedDynamicOrderTest, ShippedDynamicFamiliesAndKeeperCommuteThroughApplicationRecastAndCleanup)::[&]#1",
+          "start": 466,
+          "end": 466
+        }
+      ]
     }
   },
   "schema": 1,
@@ -18321,42 +18303,13 @@
       "sha256": "e006e07bcad6e704c41af5af607ad207825bc331f8deb7312800245be867c577"
     },
     "AI/BattleAI/BattleEvaluator.cpp": {
-      "deferral": "Before regrowth, extract the next cohesive candidate preparation/terminal dispatch stage taking immutable candidate, prepared allowance, visible board and typed completion receipts. Preserve original distributions, one existing-horizon core pair per candidate, zero endpoint full continuations, no eager outcome cache/search/RNG and exact history/action identity.",
+      "lines": 4376,
+      "sha256": "5e507a40717dc4fe83afecb8dbdd4c18d9438c24f1d575be2a3af757dde9e26b",
       "kind": "exception",
-      "lines": 4413,
-      "owner": "ai_engineer",
-      "previous_review": "arrow-continuation-reuse-v2-independent-source-review",
-      "prior_group_d_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "File4696to4413/attempt1208to1132 shrink through focused expected-outcome, Blink and Fate owners. New focused main functions stay<=143. Central selection retains existing legal candidates and admission/Counterspell precedence. Finalb350 routes already-admitted zero/negative positional Blink plus positive core through expected terminal valuation instead of RNGStub midpoint.",
-      "review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
-      "review_scope": "Exact seven frozen layers, including final Blink b350. Shrinking debt ratchets existing records; new focused functions remain below150. No future growth credit, changed limits/exclusions, native/rendered proof or publication authority.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "9ee1b1b2f7350d6f1c6b16ededc0e9e4e66a44940b9232aa81ec3cb3580c6ced",
-      "review_history": [
-        {
-          "lines": 5343,
-          "rationale": "Cast-only validation/application moves into the focused creature-pressure owner with named-only action-controller proxy; central evaluator and completion method shrink, with ordinary-caster behavior retained. Exact 5351 to 5347 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. GroupD exact renewal: Extract ordered Defend capability reads into focused DefendEvaluation; repair and usable adjacent-counter proxy use shared authority. File5347→5345 and Defend407→404; no new search and no whole-file reduction claim. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation. Removes only an unused fieldless RNGStub automatic local from creature-cast completion valuation. Its default construction/destruction has no gameplay RNG or other observable effect; the actual projected battle RNG owner is unchanged. File5344 to5343 and affected method81 to80; no moved code. All inherited extraction and runtime obligations remain; no future regrowth credit, ceiling increase, exclusion or performance claim.",
-          "review": "IR-PHASE2-COMBAT-AI-ORGANIZATION-RATCHET-20261101",
-          "review_scope": "Exact private047bb composition whole file 5347 physical lines; bounded technical ceiling renewal only. No future growth, native, rendered or actual-Main gate claim. Exact7046+fe996 actual423 composition only; future capability/typed-marker admission, native/rendered/performance and writer authority remain pending. No ceiling increase. Exact bounded consolidation/unused-local ratchet only. Seven constrained prechange cases passed; postchange and adjacent native acceptance remain pending. No source move or new production file.",
-          "review_status": "INDEPENDENT_SOURCE_REVIEWED_PRECHANGE_PASS_POSTCHANGE_PENDING",
-          "sha256": "985505d30f56b08debea47cbd5eec09e02dcc6a55d02bec240ecc43ddd1a8ded",
-          "unit": "AI/BattleAI/BattleEvaluator.cpp"
-        },
-        {
-          "unit": "AI/BattleAI/BattleEvaluator.cpp",
-          "deferral": "Existing owner: before further substantive growth, extract the relevant cohesive state-aware admission or ordered serializer routing into its existing typed domain owner with old-policy, sequencing and branch-isolation characterization. Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. The R3 source review fulfills only the structural accepted-Order finalization/routing extraction through HeroActionAdmission::completeOrder. Before activation or further selector expansion, validate prerefactor/default-null, mandatory, historical and Second Wind continuation behavior, preserving allowance snapshots and rejected/accepted order atomicity in sequence. Retain V3 candidate/value/state/both-RNG characterization and test that revised Feint/Vanguard never enter candidate forecast combat search, full/cached continuation, movement or exchange. The new15-line bounded exception does not discharge the existing LightActionValue extraction or authorize another monolithic extension. Owner ai_engineer: next cohesive extraction is Defend incoming-threat/preemptive groups with explicit visible-state inputs and unchanged old-policy action/score/RNG characterization. Existing404-line Defend and1178-line spell method remain debt; native seven cases and old-policy regression required. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
-          "kind": "exception",
-          "lines": 5338,
-          "owner": "ai_engineer",
-          "previous_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-          "prior_group_d_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-          "rationale": "Exact inactive R3 shortlist composition: BattleEvaluator shrinks from 5343 to 5320 physical lines. Existing accepted-Order finalization moves cohesively into HeroActionAdmission::completeOrder, and its stack valuation adapter moves into HeroOrderCandidates::CanonicalValuation with executable tokens and borrowing lifetime preserved. Optional call-local Focus Fire/Riposte scouting stays in the focused HeroDecisionPressure owner; retained final values still use the existing full scorer. This independently reviewed exception covers only these exact bytes and does not accept performance, quality, activation, source-volume savings or future regrowth. The urgent corrective rollback supersedes only the former adapter-relocation claim: the exact PRE-local adapter must share translation-unit ownership with its unchanged anonymous canonical helper. Removing the unintended public adapter/global prototype reduces total production by13 lines despite restoring18 local lines. This exact bounded correction grants no future growth or default-ceiling increase; all existing deferred extractions and acceptance gates remain binding.",
-          "review": "IR-CURRENT-ORDER-SHORTLIST-R3-ORGANIZATION-20261101; IR-R3-LOCAL-VALUATION-LINKAGE-ROLLBACK-SOURCE-20261102",
-          "review_scope": "Independent R3 source and organization review only. Full candidate 84270ef9e0c3c580a1b27218562dada80928b820402cbf99ae2d0181b503ccc7; source review IR-CURRENT-ORDER-SHORTLIST-R3-SOURCE-20261101. Pinned-parser measurements, strict private patch endpoints, ordered extraction and source/cache/visibility/fallback boundaries verified. No compilation, native, rendered, timing, full-repository growth-gate, gameplay quality or default-activation acceptance. Preserve all remaining inherited extraction and verification obligations. IR-R3-LOCAL-VALUATION-LINKAGE-ROLLBACK-SOURCE-20261102: Exact urgent corrective source review: restore the PRE-byte-exact local19-line valuation adapter beside its existing anonymous-namespace helper; remove erroneous external forward declaration and public CanonicalValuation interface. File5320→5338 remains5 below PRE5343; method1178→1196 remains6 below PRE1202. This bounded18-line partial rollback preserves all other executable bodies, shortlist policy, default-null behavior and inherited extraction obligations. Compile/link and native acceptance remain unrun; no future growth credit.",
-          "review_status": "INDEPENDENT_CORRECTIVE_SOURCE_REVIEWED_NATIVE_PENDING",
-          "sha256": "f7aaec3f41f1f87c3b27401528513c1ef4e016264fe5d10e02040ed1dcce9e26"
-        }
-      ]
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 4413 to 4376 physical lines. Hypothetical construction/cache attachment moves to BattleEvaluatorMovement; file shrinks37lines.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before regrowth, extract the next cohesive candidate preparation/terminal dispatch stage taking immutable candidate, prepared allowance, visible board and typed completion receipts. Preserve original distributions, one existing-horizon core pair per candidate, zero endpoint full continuations, no eager outcome cache/search/RNG and exact history/action identity."
     },
     "AI/BattleAI/BattleEvaluator.cpp::BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const BattleHexArray & hexes, const PotentialTargets & targets, BattleMovementTiming * timing, std::pair<float, float> * movementCompletionValue)#1": {
       "kind": "legacy",
@@ -18379,40 +18332,13 @@
       "sha256": "987775ef07bd9e7ed00647095a7f77ea812eadf037447fd8c3867dd7b6d98cc0"
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse, RegenerationBaselineReuse::TestControl * regenerationReuse, heroDecisionPressure::Experiment * orderExperiment, arrowContinuation::Reuse::TestControl * arrowReuse)#1": {
-      "deferral": "Before regrowth, extract the next cohesive candidate preparation/terminal dispatch stage taking immutable candidate, prepared allowance, visible board and typed completion receipts. Preserve original distributions, one existing-horizon core pair per candidate, zero endpoint full continuations, no eager outcome cache/search/RNG and exact history/action identity.",
-      "kind": "exception",
       "lines": 1132,
-      "owner": "ai_engineer",
-      "previous_review": "arrow-continuation-reuse-v2-independent-source-review",
-      "rationale": "File4696to4413/attempt1208to1132 shrink through focused expected-outcome, Blink and Fate owners. New focused main functions stay<=143. Central selection retains existing legal candidates and admission/Counterspell precedence. Finalb350 routes already-admitted zero/negative positional Blink plus positive core through expected terminal valuation instead of RNGStub midpoint.",
-      "review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
-      "review_scope": "Exact seven frozen layers, including final Blink b350. Shrinking debt ratchets existing records; new focused functions remain below150. No future growth credit, changed limits/exclusions, native/rendered proof or publication authority.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "446932f9f007e56bb1bab644b6b06b95f86e839621d63a041c34bfaa3411f4f0",
-      "review_history": [
-        {
-          "lines": 1202,
-          "rationale": "Exact bounded revised-army routing correction: file5336-to5351 and attemptCastingSpell1187-to1202, only15 net physical lines. Revised Feint/Vanguard candidate admission bypasses legacy perk forecasts; accepted native projection remains mandatory, then a focused external valuation owner supplies final baseline-plus-marginal utility before projectOrderContinuation or generic combat search. Other captured policies and the six retained current Orders keep their previous dispatch, effect projection, scoring and action path. The additional routing is necessary to correct the accepted no-additional-combat-search contract without rewriting the existing giant selector during the urgent correction. No new valuation algorithm, cache, serialization, lifecycle mechanism or broad responsibility enters this owner. This exception is limited to these exact bytes and size; no ceiling, exclusion or future regrowth allowance changes.",
-          "review": "revised-army-order-heuristic",
-          "review_scope": "exact-combat-ai-organization-source-only-no-runtime-certification",
-          "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
-          "sha256": "e14e561e468989d7411983eb69d18d8d8a3e7759b368bd151814e606914582ab",
-          "unit": "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse, RegenerationBaselineReuse::TestControl * regenerationReuse)#1"
-        },
-        {
-          "unit": "AI/BattleAI/BattleEvaluator.cpp::bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells, heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse, LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse, RegenerationBaselineReuse::TestControl * regenerationReuse, heroDecisionPressure::Experiment * orderExperiment)#1",
-          "deferral": "Owner: AI engineer. Interface/acceptance: Extract legacy Light/Crusade immediate valuation into a focused LightActionValue interface consuming before/after callbacks and native cache; preserve signed-utility parity, active-unit exclusion, legality, RNG and candidate performance. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. The R3 source review fulfills only the structural accepted-Order finalization/routing extraction through HeroActionAdmission::completeOrder. Before activation or further selector expansion, validate prerefactor/default-null, mandatory, historical and Second Wind continuation behavior, preserving allowance snapshots and rejected/accepted order atomicity in sequence. Retain V3 candidate/value/state/both-RNG characterization and test that revised Feint/Vanguard never enter candidate forecast combat search, full/cached continuation, movement or exchange. The new15-line bounded exception does not discharge the existing LightActionValue extraction or authorize another monolithic extension.",
-          "kind": "exception",
-          "lines": 1196,
-          "owner": "ai_engineer",
-          "previous_review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-          "rationale": "Exact inactive R3 signature/routing and extraction: attemptCastingSpell shrinks from 1202 to 1178 physical lines. Accepted-Order finalization and the valuation adapter have cohesive existing owners; the selector retains small optional shortlist routing and unchanged native submission. The experiment is null by default, bypasses mandatory choices, declines only supported estimated alternatives and never blends cheap ranks into final full scores. Native prerefactor/default-null, mandatory, historical and Second Wind characterization remains pending. This exact-byte exception grants no ceiling increase or future growth credit. The urgent corrective rollback supersedes only the former adapter-relocation claim: the exact PRE-local adapter must share translation-unit ownership with its unchanged anonymous canonical helper. Removing the unintended public adapter/global prototype reduces total production by13 lines despite restoring18 local lines. This exact bounded correction grants no future growth or default-ceiling increase; all existing deferred extractions and acceptance gates remain binding.",
-          "review": "IR-CURRENT-ORDER-SHORTLIST-R3-ORGANIZATION-20261101; IR-R3-LOCAL-VALUATION-LINKAGE-ROLLBACK-SOURCE-20261102",
-          "review_scope": "Independent R3 source and organization review only. Full candidate 84270ef9e0c3c580a1b27218562dada80928b820402cbf99ae2d0181b503ccc7; source review IR-CURRENT-ORDER-SHORTLIST-R3-SOURCE-20261101. Pinned-parser measurements, strict private patch endpoints, ordered extraction and source/cache/visibility/fallback boundaries verified. No compilation, native, rendered, timing, full-repository growth-gate, gameplay quality or default-activation acceptance. Preserve all remaining inherited extraction and verification obligations. IR-R3-LOCAL-VALUATION-LINKAGE-ROLLBACK-SOURCE-20261102: Exact urgent corrective source review: restore the PRE-byte-exact local19-line valuation adapter beside its existing anonymous-namespace helper; remove erroneous external forward declaration and public CanonicalValuation interface. File5320→5338 remains5 below PRE5343; method1178→1196 remains6 below PRE1202. This bounded18-line partial rollback preserves all other executable bodies, shortlist policy, default-null behavior and inherited extraction obligations. Compile/link and native acceptance remain unrun; no future growth credit.",
-          "review_status": "INDEPENDENT_CORRECTIVE_SOURCE_REVIEWED_NATIVE_PENDING",
-          "sha256": "788e3bd6ad50bb08fd3d096cee6b8304fbc71ff27271d447be0af9025905e2f2"
-        }
-      ]
+      "sha256": "6cfd78b7652f20871ffaa12bff5a35e615d900c583d9816fbf15d9903f4a0f5a",
+      "kind": "exception",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 1132 to 1132 physical lines. Only hypothetical-branch construction calls route through the extracted createHypotheticBattle helper; existing candidate enumeration/scoring/ordering is unchanged. Coupling full HeroAction extraction into this port would widen mechanics risk.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before regrowth, extract the next cohesive candidate preparation/terminal dispatch stage taking immutable candidate, prepared allowance, visible board and typed completion receipts. Preserve original distributions, one existing-horizon core pair per candidate, zero endpoint full continuations, no eager outcome cache/search/RNG and exact history/action identity."
     },
     "AI/BattleAI/BattleEvaluator.cpp::bool defensiveStanceMakesDefendWorthwhile(const Environment * environment, const std::shared_ptr<HypotheticBattle> & battle, const battle::Unit * stack, DamageCache & damageCache)#1": {
       "deferral": " Owner ai_engineer: next cohesive extraction is Defend incoming-threat/preemptive groups with explicit visible-state inputs and unchanged old-policy action/score/RNG characterization. Existing404-line Defend and1202-line spell method remain debt; native seven cases and old-policy regression required. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
@@ -18454,16 +18380,13 @@
       "sha256": "b2b19d319afd875b96c3f5786f7c463941792c9293e7ede55aa8f819141d7098"
     },
     "AI/BattleAI/BattleEvaluatorCreaturePressure.cpp::std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * details)#1": {
-      "deferral": "Keep recipient admission/ordinary cast/pressure boundaries explicit. Any substantive selector growth requires renewed responsibility review; do not transfer remaining giant Hero action work here.",
-      "kind": "exception",
       "lines": 126,
-      "owner": "ai_engineer",
-      "previous_review": "IR-CREATURE-SELECTION-DIAGNOSTIC-SOURCE-20261025",
-      "rationale": "Existing bounded creature-cast enumeration retains its random candidate, compares authorized named Genie options, and delegates actual-effect pressure through the current controller; no new search horizon or RNG policy. Exact 109 to 126 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding.",
-      "review": "IR-GENIE-STABLE-CASUALTY-REFERENCE-20261029",
-      "review_scope": "Exact 126-line selector span 124-249: stable pre-cast casualty references and float pressure; enumeration, legality, horizon and RNG unchanged. Inherited extraction obligations retained; native pending.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "1cb89122552b69fea3b48f087900f0d378fc8186f87792dcca8c3b3b80adc56b"
+      "sha256": "2b60393f882a84506389059d9933035936f56e60331c55f05fb1b3faa9a95e47",
+      "kind": "exception",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 126 to 126 physical lines. Existing creature spell forecast only routes hypothetical branch construction through extracted factory; no candidate/score policy change.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Keep recipient admission/ordinary cast/pressure boundaries explicit. Any substantive selector growth requires renewed responsibility review; do not transfer remaining giant Hero action work here."
     },
     "AI/BattleAI/BattleEvaluatorHeroQueue.cpp::void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueMap & values, const std::shared_ptr<HypotheticBattle> & state, const battle::Unit * unit, battle::Units & remainingQueue, size_t queueIndex)#1": {
       "deferral": "Existing owner: before further substantive growth, extract the relevant cohesive state-aware admission or ordered serializer routing into its existing typed domain owner with old-policy, sequencing and branch-isolation characterization.  Before further substantive growth of this method, ai_engineer must extract its post-action completion/remaining-queue stage into a focused hero-queue completion owner. Inputs: branch, actor ID, whether an actual action was modeled, synthetic/Frozen status and remaining-queue suffix; retain score accumulation and action selection in BattleEvaluator. Preserve activation-end cleanup, Plague/Swift/Discipline/Seize/Rapid order, existing priority permutations, no new actors or extra chains, and native/sibling/RNG isolation. Acceptance: selected rider replay, no-rider exact ordering, Frozen forfeiture, existing Seize/Rapid priority cases and native hero-counterspell boundary; reduce this exact129 baseline. This exception permits only the current one-line routing addition, not another mechanic or growth. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
@@ -18517,36 +18440,22 @@
       "sha256": "c5ea67d1bcf5f9ca27733eaf25a2d42f9d594153a6c8010ca0276b7cb7ec01d0"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp": {
-      "composition_predecessor_review": "PROPOSED-IR-CURRENT704-REBASED-FINITE-PREREQUISITES-20261031",
-      "deferral": "Extract the next touched ordered strike/result stage before growth, passing selected damage/probe state and typed observations. Preserve native post-shield application, terminal/deferred reuse, no double mutation/scoring and parent-state/RNG isolation.",
+      "lines": 1739,
+      "sha256": "34cbc96089917200cb2a5ab2cdc5460c5b0b1e20ebaf4dc65ec5bb82592c0bb9",
       "kind": "exception",
-      "lines": 1757,
-      "owner": "ai_engineer",
-      "previous_review": "IR-SELECTED-PROBE-RAW-RECEIPT-BOUNDED-SOURCE-20261103",
-      "proposal_predecessor_review": "IR-COHESIVE750-PREREQUISITE-COMPOSITION-20261031",
-      "rationale": "File1759to1757/selected-damage477to474 shrink. Focused BattleExchangeArcaneInspiration owns actual-Reprisal-only probe and typed once-only scoring; charge-only cases keep the cheap path. Selected/deferred dispatch and signed current-controller perspective remain with existing exchange execution.",
-      "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
-      "review_scope": "Exact seven frozen layers, including final Blink b350. Shrinking debt ratchets existing records; new focused functions remain below150. No future growth credit, changed limits/exclusions, native/rendered proof or publication authority.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "54c232b8b3c41beca66a07dbff96b71f1208f8fa95b34e8649d5edef614a7b81",
-      "source_predecessor_review": "IR-CREATURE-MOVEMENT-SCREENING-SOURCE-20261102"
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 1757 to 1739 physical lines. Selected first-hit calculation delegates to existing/new SelectedProbeDamage while preserving live Last Stand/projection; file shrinks18lines.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Extract the next touched ordered strike/result stage before growth, passing selected damage/probe state and typed observations. Preserve native post-shield application, terminal/deferred reuse, no double mutation/scoring and parent-state/RNG isolation."
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::BattleScore BattleExchangeEvaluator::calculateExchange( const AttackPossibility & ap, uint8_t turn, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, const battle::Units & additionalUnits, BattleMovementTiming::ExchangeTiming * timing) const#1": {
-      "composition_predecessor_review": "PROPOSED-IR-CURRENT704-REBASED-FINITE-PREREQUISITES-20261031",
-      "deferral": "AI engineer: before further substantive growth, extract post-attack outcomes and per-hit casualty completion through existing SelectedAttackReceipt and BattleExchangeFutureAttack; preserve selected order, no double harvest, wounded-actor growth and partial-Rebirth exclusion. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Exact bounded1151 change only. Exact341to344 adds one action-local receipt, monotonic aggregation and focused final completion after Petrifying Blood. No extra search or action. Before further growth extract the future-actor sequence application stage with explicit action-result receipt, preserving extra-hit/reaction stop, effect expiry and owned branch/RNG. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Existing 465-line strike phase and351-line activation/exchange evaluator retain a bounded integration exception only. Separate activation/finalization/dead-actor boundary and receipt-commit phases with old score/cache/query/RNG order characterized before further substantive growth. Preserve all inherited shrinking baselines, eligibility, captured-absence, lifecycle, query-borrow, packet/RNG and source-order obligations. This exact proposed renewal grants no future growth or first-writer/live-factory permission; independent metadata review, coherent build and focused native acceptance remain required. Selected-probe exact successor: ai_engineer retains the ordered pre-hit/raw-resolution, application and aftermath extraction obligation for the renamed private strike, using explicit branch-local actor/resolved-target identity and bounded typed receipts. Preserve public/direct versus private-selector ownership, Protect/specialized early return and consume-once/first-hit fallback, Last Stand/clamping/Fortune/Hex/reaction/status order, capability/getDamage exceptions, exact score/query/action/HP/cache state, hidden-side visibility, sibling/live isolation and all native/AI RNG streams. Keep each extracted stage below150 lines and its focused owner below1000; do not relocate the477-line body intact. Before any further substantive affected-area growth, characterize then extract the next cohesive stage. Current file1759/function300 reductions are ratchets; the private477 exception is only the reviewed12-line receipt-routing substitution over the465-line predecessor. No global ceiling, unrelated or future growth allowance is granted. Native boundary corrections, useful-use/net-cost measurement and final performance admission remain separate pending gates.",
-      "kind": "exception",
       "lines": 300,
-      "owner": "ai_engineer",
-      "previous_review": "IR-FOUR-COMBAT-1151-WITH-COMPLETION-20261030",
-      "proposal_predecessor_review": "IR-COHESIVE750-PREREQUISITE-COMPOSITION-20261031",
-      "rationale": "Exact shrinking 358to341 orchestration method via cohesive26-line participant-partition extraction. Explicit battle/reference/indexed rounds/two output queues preserve map.at traversal, seed contents, native candidate/effective reference ownership semantics, pointer duplicate identity, turret-before-query skip, projected alive filter and trace ordering. New scheduler reuses canonical ordering only for watched Wingbeat branches and retains original finite membership and no-rider pointer/order path; no added actors, actions or search. Exact341to344 adds one action-local receipt, monotonic aggregation and focused final completion after Petrifying Blood. No extra search or action. Before further growth extract the future-actor sequence application stage with explicit action-result receipt, preserving extra-hit/reaction stop, effect expiry and owned branch/RNG. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation. Exact finite composition: Exchange membership and geometry gathering move to the focused membership owner. Gate-open return geometry is rebound once into a local cache for this exchange; parent and sibling caches remain unchanged. Selected movement replay and net landing-damage accounting retain one charge and existing reaction/resource order. The remaining exchange/evaluator extraction obligations are not discharged. Selected fallback damage and final score completion move to their existing receipt and aftermath owners. Activation, dead-actor boundaries and future-actor application remain separate extraction obligations; action/result, score, cache and RNG order must remain exact. Exact one-line compiler correction adds explicit references to two already-live function locals in a synchronous predicate. No line/ceiling growth or query/candidate/cache/RNG changes; inherited debts and deferrals remain unchanged. Independent source review covers this exact correction; native acceptance remains pending. Exact336to300 ratchet: ordered main-target probes and winner-local raw receipt selection move to focused47-line selectTargetWithDamage, preserving empty/singleton cases, source order, strict-greater ties, borrowed callback/child lifetime, every target query, private strike/action completion and unchanged scoring/horizon/RNG policy. Remaining activation, finalization and future-actor application obligations are retained.",
-      "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "IR-SELECTED-PROBE-RAW-RECEIPT-BOUNDED-SOURCE-20261103",
-      "review_scope": "Exact approved production448a2a2a163d46ec6bef7842ee64046cfe47168d522c2f167371d81a50778f48 only. Same file1778to1759; calculateExchange336to300 through focused selection owner; old public scalar465 becomes private477 with exact inverse proof outside raw-resolution routing, and public compatibility wrapper12 lives in SelectedProbeDamage.cpp. Include new132cpp/30header and other owner growth: total production net+170, not LOC or performance improvement. Preserve ALL inherited semantic/extraction deferrals. Header full10-body manual record already adopted and unchanged. Source clear only; native/trajectory/quality/net-cost acceptance pending; no blanket growth approval.",
-      "review_status": "INDEPENDENT_BOUNDED_SOURCE_REVIEW_NATIVE_AND_TIMING_ACCEPTANCE_PENDING",
-      "sha256": "afef12a9625761d296a666b58cec1c9ceadd97ec6844c17069f2be9bae355f5e",
-      "source_predecessor_review": "IR-B71-RETURN-GEOMETRY-REFERENCE-CAPTURE-20261031"
+      "sha256": "a4f840f4e2a509a7b0c4fa7f262cc40e3980926fdfb70d350ba651a08982c211",
+      "kind": "exception",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 300 to 300 physical lines. Only branch construction routes through extracted createHypotheticBattle helper; exchange simulation remains existing authority. Full exchange extraction is deliberately separate to preserve ordering.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. AI engineer: before further substantive growth, extract post-attack outcomes and per-hit casualty completion through existing SelectedAttackReceipt and BattleExchangeFutureAttack; preserve selected order, no double harvest, wounded-actor growth and partial-Rebirth exclusion. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. Before further affected-area expansion, ai_engineer must extract cohesive future per-actor attack/action dispatch with explicit full-action versus single-hit results and timing ownership, retaining membership, queue, horizon and scoring policy in the evaluator. Preserve requested-Ward geometry, resolved-Protector readiness, actual physical distance, first/extra-hit ownership, Overwatch/Brace/counter ordering, callback visibility, detached probe/sibling/live isolation and both RNGs. Require unchanged native2 oracles, real evaluateExchange multiattack/native parity and maintained Overwatch regressions. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Exact bounded1151 change only. Exact341to344 adds one action-local receipt, monotonic aggregation and focused final completion after Petrifying Blood. No extra search or action. Before further growth extract the future-actor sequence application stage with explicit action-result receipt, preserving extra-hit/reaction stop, effect expiry and owned branch/RNG. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Existing 465-line strike phase and351-line activation/exchange evaluator retain a bounded integration exception only. Separate activation/finalization/dead-actor boundary and receipt-commit phases with old score/cache/query/RNG order characterized before further substantive growth. Preserve all inherited shrinking baselines, eligibility, captured-absence, lifecycle, query-borrow, packet/RNG and source-order obligations. This exact proposed renewal grants no future growth or first-writer/live-factory permission; independent metadata review, coherent build and focused native acceptance remain required. Selected-probe exact successor: ai_engineer retains the ordered pre-hit/raw-resolution, application and aftermath extraction obligation for the renamed private strike, using explicit branch-local actor/resolved-target identity and bounded typed receipts. Preserve public/direct versus private-selector ownership, Protect/specialized early return and consume-once/first-hit fallback, Last Stand/clamping/Fortune/Hex/reaction/status order, capability/getDamage exceptions, exact score/query/action/HP/cache state, hidden-side visibility, sibling/live isolation and all native/AI RNG streams. Keep each extracted stage below150 lines and its focused owner below1000; do not relocate the477-line body intact. Before any further substantive affected-area growth, characterize then extract the next cohesive stage. Current file1759/function300 reductions are ratchets; the private477 exception is only the reviewed12-line receipt-routing substitution over the465-line predecessor. No global ceiling, unrelated or future growth allowance is granted. Native boundary corrections, useful-use/net-cost measurement and final performance admission remain separate pending gates."
     },
     "AI/BattleAI/BattleExchangeVariant.cpp::MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable( const battle::Unit * activeStack, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, BattleMovementTiming * timing)#1": {
       "kind": "legacy",
@@ -18571,21 +18480,6 @@
       "review_scope": "Exact7d617cce+495eabe4 aftere805/a4bece; preserve inherited deferrals and prior policy/art/CMake contracts. No future growth credit.",
       "review_status": "INDEPENDENT_BOUNDED_SOURCE_COMPOSITION_REVIEWED_NATIVE_UNRUN",
       "sha256": "5e8a678ae51c9ec24ed08e269e89cdfe27947be61a9e8bd97126931ef5a7342e"
-    },
-    "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttackWithSelectedDamage( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission, BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent, std::vector<petrifyingBloodAI::Pending> * bloodSequence, SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused)#1": {
-      "deferral": "Extract the next touched ordered strike/result stage before growth, passing selected damage/probe state and typed observations. Preserve native post-shield application, terminal/deferred reuse, no double mutation/scoring and parent-state/RNG isolation.",
-      "kind": "exception",
-      "lines": 474,
-      "owner": "ai_engineer",
-      "previous_review": "IR-SELECTED-PROBE-RAW-RECEIPT-BOUNDED-SOURCE-20261103",
-      "rationale": "File1759to1757/selected-damage477to474 shrink. Focused BattleExchangeArcaneInspiration owns actual-Reprisal-only probe and typed once-only scoring; charge-only cases keep the cheap path. Selected/deferred dispatch and signed current-controller perspective remain with existing exchange execution.",
-      "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
-      "review_scope": "Exact seven frozen layers, including final Blink b350. Shrinking debt ratchets existing records; new focused functions remain below150. No future growth credit, changed limits/exclusions, native/rendered proof or publication authority.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "095b6d4aee6115e6fa5eaf978ef1894ea5919978ae3c9e524bf3620432d67fd1",
-      "source_predecessor_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "renamed_from": "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttack( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission, BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent, std::vector<petrifyingBloodAI::Pending> * bloodSequence)#1"
     },
     "AI/BattleAI/CanonicalOrderValue.cpp": {
       "deferral": "Keep deterministic Order rules shared. Further changes should extract the touched Order-family utility with explicit visible recipients/current state, preserving typed grants, faction exceptions, native recipient/lifetime order and source/RNG purity.",
@@ -18679,53 +18573,22 @@
       "sha256": "e50afee4d8f9422ce51e2c41110f63c165a206a657b1097d31e74549f52bc6d7"
     },
     "AI/BattleAI/HypotheticBattle.cpp": {
-      "composition_predecessor_review": "IR-PRISMATIC-SOURCE-BINDING-V3-EXACT-20261030",
-      "deferral": "Further branch-state growth should use a focused value transition owner with explicit side/round/receipt, preserving constructor copying, live/child/sibling separation, callback ownership and current point/Wisdom/action identity.",
+      "lines": 759,
+      "sha256": "0590df595a1cad32276d767ff670d17a91eaef84a9c47c35bfef9afbc488c736",
       "kind": "exception",
-      "lines": 758,
-      "owner": "ai_engineer",
-      "previous_review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
-      "rationale": "Retains the prior 767-to-750 branch-owner extraction. Urgent bounded successor adds eight lines for pending typed/creature Poison admission and current/empty projected-effect capture in the existing constructor pass. HP, shields, ticks and provenance stay value-owned; future parent Spellshock is filtered. Refactoring branch lifecycle together with this state-isolation correction would increase risk. No search, continuation, RNG or serialized-state change.",
-      "review": "IR-ARCANE-LIFETIME-POISON-STATE-EXACT-20261104",
-      "review_scope": "Exact 750-to-758 file and 73-to-80 constructor delta only; all other callable bodies and allowances unchanged. Existing owned-frame and ordinary unpoisoned lazy paths retained. Source review only; no native/rendered proof, future growth credit or publication authority.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "aae8de50f4aef7a79a0e42563f041d7665198772cd27da8e96138e927573c8f2"
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 758 to 759 physical lines. One inherited movementMemo initializer attaches the per-decision exact cache. No new gameplay algorithm is placed in this file.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Further branch-state growth should use a focused value transition owner with explicit side/round/receipt, preserving constructor copying, live/child/sibling separation, callback ownership and current point/Wisdom/action identity."
     },
     "AI/BattleAI/HypotheticBattle.h": {
-      "composition_predecessor_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "deferral": "Before another projected state family expands the header, extract the cohesive completion observation holder. Preserve exact callback lifetime, immutable packet copies, transaction reset and reverse application order. Minimum checks: failed apply has no receipt, core/shock refresh restores prior status, ordinary candidate effects/HP remain, no source/sibling/RNG change.",
-      "execution_removal_predecessor_review": "IR-DPS-FORTUNE-CONFIGURED-FLAGS-PROJECTION-SOURCE-20261101",
+      "lines": 731,
+      "sha256": "c19371c42efdab7254a68b6358a6c44cbba9a906ca5181c70671ec67541aadfb",
       "kind": "exception",
-      "lines": 723,
-      "owner": "ai_engineer",
-      "prefix_predecessor_review": "IR-ORDINARY-P0-DUST-CLOCK-R7-SOURCE-20261101",
-      "previous_exact_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-      "previous_review": "IR-WISDOM-MECHANICS-AI-EXACT-SOURCE-SUCCESSOR-20261103",
-      "proposed_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-      "rationale": "Exact720to723 header exception adds a private ordered canonical receipt vector and narrow getter/helper declarations. Storage/reversal and Poison processing live in focused .cpp owners. Complete60-body manual inventory separately covers the inherited default-argument recovery; no saved state or ownership relaxation.",
-      "review": "IR-FINAL-WARCASTING-AI-COMPOSED-EXACT-SOURCE-20261104",
-      "review_scope": "Exact seven frozen layers, including final Blink b350. Shrinking debt ratchets existing records; new focused functions remain below150. No future growth credit, changed limits/exclusions, native/rendered proof or publication authority.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "7b16d9c56759ad2b2283e2936129cdaaa93c7ca4e99551b3b42e2fa75ed5ffc8",
-      "review_history": [
-        {
-          "composition_predecessor_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-          "deferral": "AI owner: further header additions require cohesive projected action/allowance receipt-type extraction into existing HypotheticBattleTypes with nested API aliases, complete manual inventory and admission/finish/replay invariants. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Owner: ai_engineer. Before further substantive growth, extract cohesive physical attack preview/replay resource stages behind typed preflight/commit interfaces; preserve stale pre-mutation rejection, strike/retaliation order, both RNGs, unit/cache/score parity and hidden-side visibility. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further affected projection/strike growth, extract the next cohesive ordered aftermath/lifecycle stage behind explicit pre-hit admission, post-damage eligibility and source-death receipts. Preserve native callback visibility, owned list/unit lifetime, InitialExport routing, parent/sibling isolation, HP/cache/score and both RNGs; compare preview, selected and future sequences. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Preserve all inherited shrinking baselines, eligibility, captured-absence, lifecycle, query-borrow, packet/RNG and source-order obligations. This exact proposed renewal grants no future growth or first-writer/live-factory permission; independent metadata review, coherent build and focused native acceptance remain required. Exact v5 bounded follow-up: AI/gameplay owners must extract coherent branch query/capability declarations into focused existing types/owners before further header growth, retaining construction/source lifetime, parent identity, created/form refusals and ABI rebuild. Exact688 only; no future growth credit. Exact ordinary successor preserves every inherited obligation: the projected-action receipt is the one extracted subtype, not blanket completion of allowance/capability debt. Before further growth, AI/engine owners must extract the next cohesive projected allowance/capability declaration group into existing types/owners, preserving nested source spelling, refusal/receipt identity, parent/current query isolation, packet/RNG order and coherent ABI rebuild. No ceiling increase or future growth credit. Exact finite prefix successor only; retain all inherited extraction/lifetime/visibility/order/RNG obligations. No future/unrelated growth, source authority, default activation or higher ceiling is granted. Before further affected header/admission growth, preserve inherited receipt/allowance and query-stage extraction obligations; this tiny readonlyprojection grants no general inline growth. Validate full/custom/native/finalHB query andstate/RNG behavior after coherent rebuild.",
-          "execution_removal_predecessor_review": "IR-DPS-FORTUNE-CONFIGURED-FLAGS-PROJECTION-SOURCE-20261101",
-          "kind": "exception",
-          "lines": 705,
-          "owner": "ai_engineer",
-          "prefix_predecessor_review": "IR-ORDINARY-P0-DUST-CLOCK-R7-SOURCE-20261101",
-          "previous_exact_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-          "previous_review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-          "proposed_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-          "rationale": "Two one-line Tactics stat overrides delegate to shared battle queries. Full51-callable coverage is separately reviewed; projected ownership/receipt extraction debt remains binding. Exact 640 to 642 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding. V3 exact source-binding extraction: 642to640 physical lines; three source fields become one focused HypotheticSourceBinding. All51 original inline callable bodies remain exact; complete manual inventory renewed. No further header growth credit. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation. Exact finite composition: Only the shared landed-unit trigger and existing fortification mutator declarations are routed; source-compatible native state ownership and all retained body inventories remain exact. Exact v5 EXCEPTION_EXACT_OWNED_INTERFACE: 643→688: bounded owned branch/current frame declarations and explicit capability refusals, plus fortification-source argument; substantive implementations in focused owners. No hidden hero policy export, native after-unlock callback or generalAI willingness. Exact ordinary ordered successor: existing ProjectedActionReceipt definition moves to existing HypotheticBattleTypes with nested alias; all retained header bodies remain byte-exact and the moved body is exact modulo enclosing indentation/type spelling. Header shrinks688to682 despite bounded validation routing/state. This is responsibility relocation, not elimination; combined production change grows84lines. No serialized field or save format changes; a coherent rebuild of all C++ type consumers is required. Exact typed ordered-owner successor: new read-only preflight interface routes the visitor to the actual nonnative backend; authoritative BattleInfo remains forced native and legacy fallback unchanged. All retained header bodies are byte-exact; exact header685 remains below actual688 predecessor. Shared interface RTTI is anchored by exported out-of-line core destructor, with no broad IBattleState vtable change; coherent HB-dependent rebuild still required. Earlier proposed682 applied before this three-line declaration/base/include successor and is not the final size. Exact prefix successor: Exact685to689 declaration-only source-identity check plus distinctly named receiver-key calculation wrapper; implementation is in the focused admission owner. This narrow required query-source boundary is not inline header implementation growth or completion/waiver of inherited receipt/allowance extraction debt. Preserve all existing header obligations before any unrelated growth. Exact pair-local native prefix preparation only. Both normal and rolled Lua arithmetic and every flag-dependent finalizer still execute; no score/search/choice/RNG, visibility, saved policy, ownership, serialization or generic cache change. Known immutable source admission is separate from script identity; custom/unknown/owned domains keep ordinary virtual dispatch. No compile/native/measurement acceptance or future growth credit. Exact current projection is owned beside the existing value state/getter; no borrowed history or generic cache/context. One-line finalHBoverride retains samefortuneStates.at(side) bounds lookup and reads configuredflags, not spent availability. Exact R6 execution removal: unused pair-prefix execution/key/fact/copy/counter machinery is removed; sequential full native preparation/finalization/Lua and custom virtual dispatch remain. Current exact size/hash ratchets downward; prior reuse rationale is historical and grants no surviving execution authority. Exact independently reviewed688→705 current passive branch-state interface: small optional cast-counter/snapshot declarations and short shared-query overrides, with substantive rules remaining in focused owners. Complete exact59-callable manual coverage remains unchanged. Four actual200341 paid/automatic/fork/rejected-round/historical cases now close the identified direct counter evidence gap only. No blanket header, AI-routing, owned-frame, performance or future-growth approval.",
-          "review": "PROPOSED-EXACT-HYPOTHETIC-COUNTER-4-20261103",
-          "review_scope": "Finite prior-independent-source-review plus now-executed focused evidence only; proposal requires independent metadata review. All inherited scope/deferrals remain; no limits/exclusions/global-gate acceptance.",
-          "review_status": "PROPOSED_EXACT_METADATA_REVIEW_REQUIRED",
-          "sha256": "3b839bc98f41096b86b785446c458be7646e0dea5f83f02bdcffdead254d23b1"
-        }
-      ]
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 723 to 731 physical lines. Adds forward declaration, shared memo member/accessor and override declaration only; movement implementation lives in HypotheticMovement.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before another projected state family expands the header, extract the cohesive completion observation holder. Preserve exact callback lifetime, immutable packet copies, transaction reset and reverse application order. Minimum checks: failed apply has no receipt, core/shock refresh restores prior status, ordinary candidate effects/HP remain, no source/sibling/RNG change."
     },
     "AI/BattleAI/HypotheticHeroActions.cpp::bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target, bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated, const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients)#1": {
       "kind": "exception",
@@ -19943,15 +19806,13 @@
       "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
     },
     "CMakeLists.txt": {
-      "deferral": "Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only.",
+      "lines": 1134,
+      "sha256": "d10fdec92cabedc4b4e8e57d06a010fec5b00ad64a464800d769fbddc485cc9d",
       "kind": "exception",
-      "lines": 1126,
-      "owner": "engine_engineer",
-      "rationale": "Exact default-OFF save-inspection option and seven lines of component routing/full-library refusal only. Cohesive tool target remains in tools/native/CMakeLists.txt; this mixed root is not a mechanical registry. Existing three CMake functions unchanged; no gameplay or unrelated target-policy expansion.",
-      "review": "IR-STAGE13-INTEGRATION-THREE-RATCHETS-20261017",
-      "review_scope": "exact-stage13-shared-decode-and-opt-in-tool-three-ratchets-only-no-runtime-or-future-growth",
-      "review_status": "APPROVED_SOURCE_SCOPE_ONLY",
-      "sha256": "52ed18d648bad6134d958fd9c1607b065fba788c41a609f3b93c948b9c9707a3"
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 1126 to 1134 physical lines. Mechanical native source/strict-FP lists and optional Lua-oracle/build gates remain coherent registries; source line count is not runtime concentration. Do not fragment registries merely for a numeric ceiling.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only."
     },
     "Global.h": {
       "kind": "legacy",
@@ -22630,22 +22491,13 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "combined_predecessor_review": "PROPOSED-IR-CURRENT704-REBASED-FINITE-PREREQUISITES-20261031",
-      "composition_predecessor_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "deferral": "Keep build registration mechanical. Future eligibility changes must remain in focused explicit callback/hero/card-pool owner, preserving faction/map/class/slot/perk legality, no RNG, all-offered exclusions and authoritative server admission; remeasure composed CMake with other owners.",
+      "lines": 1873,
+      "sha256": "0f259f9c8b468cc717a87d738d2d1af064d51734b16325180874352015da5b94",
       "kind": "exception",
-      "lines": 1760,
-      "owner": "engine_engineer",
-      "prefix_predecessor_review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "previous_review": "IR-ESTATES-POST-B26-MECHANICAL-CMAKE-20261103",
-      "prior_group_d_review": "IR-ORDINARY-RANGED-1148-COMBINED-20261030",
-      "proposed_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "rationale": "Exact1759to1760; focused source/header registration only. Added paths exist; no command/function/condition/target/link/options/private-input change. Preserves every prior registration and inherited coherent target membership obligations.",
-      "review": "IR-FOUR-SKILL-FINAL-MECHANICAL-REGISTRY-20261104",
-      "review_scope": "Exact current3client and1lib registrations only, eachsingle membership; removing precisely these lines reconstructs reviewed predecessor byte-for-byte. No future growth, target reconfiguration, native/rendered or publication approval.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "43c5a546a058755c47a91c2620028479410cd165ef9a6db5b62f8a803abbec58",
-      "neutral_predecessor_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101"
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 1760 to 1873 physical lines. Mechanical native source/strict-FP lists and optional Lua-oracle/build gates remain coherent registries; source line count is not runtime concentration. Do not fragment registries merely for a numeric ceiling.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Keep build registration mechanical. Future eligibility changes must remain in focused explicit callback/hero/card-pool owner, preserving faction/map/class/slot/perk legality, no RNG, all-offered exclusions and authoritative server admission; remeasure composed CMake with other owners."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -22849,20 +22701,13 @@
       "sha256": "713b4546640ebd00009f9a353d1b26afa66176eee089882374b9d440b3e2a10c"
     },
     "lib/battle/CBattleInfoCallback.cpp": {
-      "composition_predecessor_review": "IR-MACHINE2-1150-COMBINED-EXACT-20261030",
-      "deferral": "Next substantive damage-routing growth should extract explicit ordinary attack mitigation stages receiving callback, BattleAttackInfo const& and damage bounds, with current owner policy, physical/magical classification, caps and casualty recomputation tests. Coordinate final engine scalar API removal.",
-      "execution_removal_predecessor_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
+      "lines": 4367,
+      "sha256": "8188e4912b4413ed32c48ed2daaef9c240a54da187d48b7433cdf742a461467d",
       "kind": "exception",
-      "lines": 4564,
-      "prefix_predecessor_review": "IR-VISIBLE-OBSTACLE-EXACT-DELEGATE-20261031",
-      "previous_review": "IR-WISDOM-GAMEPLAY-EXACT-SUCCESSOR-SOURCE-20261103",
-      "proposed_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-      "rationale": "File4566to4564 removes old Order bonus plumbing and routes ordinary magical creature attack mitigation to focused46-line shared owner. Spellward uses existing Thorgrim-aware source alongside prior intrinsic reduction once; source-specific spell-only reductions are not widened.",
-      "review": "IR-ARCANE-INSPIRATION-EXACT-PRODUCTION-20261103",
-      "review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "d0ebe049a0065eb8c379cc355d857e90458a5d8a3f210e4491ac0f4480119079",
-      "owner": "gameplay_engineer"
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 4564 to 4367 physical lines. Movement input capture/direct solver is extracted into BattleReachability/BattleMovementDirect and query components; file shrinks197lines.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Next substantive damage-routing growth should extract explicit ordinary attack mitigation stages receiving callback, BattleAttackInfo const& and damage bounds, with current owner policy, physical/magical classification, caps and casualty recomputation tests. Coordinate final engine scalar API removal."
     },
     "lib/battle/CBattleInfoCallback.cpp::BattleHex CBattleInfoCallback::fromWhichHexAttack(const battle::Unit * attacker, const BattleHex & target, const BattleHex::EDir & direction, bool allowLongWeapon) const#1": {
       "kind": "legacy",
@@ -22872,15 +22717,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "8d642b72ebfa65adf25762acc0dda0d7fd38c4763f536c5f0ff97c708330506d"
-    },
-    "lib/battle/CBattleInfoCallback.cpp::ReachabilityInfo CBattleInfoCallback::makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const#1": {
-      "kind": "legacy",
-      "lines": 114,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 114 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "16b9059b565256fbbf13ea79687f1524084b750d2e3fe0817b91b0f335566345"
     },
     "lib/battle/CBattleInfoCallback.cpp::int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster, int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const#1": {
       "deferral": "Next substantive cost expansion should extract the staged battle Mana calculation using explicit caster/spell/multiplier/history and current modifiers; retain ordered breakdown, target-aware costs, free automatic behavior and rejected-action atomicity.",
@@ -22934,20 +22770,13 @@
       "sha256": "69179bbe44ce19533239e4ecfa37009f4662a2d346b9fc5e048b2a3f652b1075"
     },
     "lib/battle/CBattleInfoCallback.h": {
-      "composition_predecessor_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "deferral": "Keep shared callback coefficient interface focused; any next growth must extract relevant rule context with explicit visible callback/owner facts, preserving faction allowance and captured-policy boundaries.",
-      "execution_removal_predecessor_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
+      "lines": 568,
+      "sha256": "ea3fd7e3d4baf3c087a3a6ee21fb3f82f99171f61954774284f3f8bf0a821446",
       "kind": "exception",
-      "lines": 563,
-      "owner": "engine_engineer",
-      "prefix_predecessor_review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "previous_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-      "proposed_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-      "rationale": "563 unchanged-sized header revises only obsolete Warcasting parameter declarations/overloads; substantive damage logic stays outside header. Existing three unnamed/default argument parser recoveries retain complete one-body inventory.",
-      "review": "IR-ARCANE-INSPIRATION-EXACT-PRODUCTION-20261103",
-      "review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "80d3e072659e7909ee26b475d06f32bcdbb6250f91c859795202e7ead555bfed"
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 563 to 568 physical lines. Adds reachability helper declaration and protected movement override seam only; no new inline algorithm.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Keep shared callback coefficient interface focused; any next growth must extract relevant rule context with explicit visible callback/owner facts, preserving faction allowance and captured-policy boundaries."
     },
     "lib/battle/CBattleInfoEssentials.cpp": {
       "deferral": "No future growth permission; actual recipient sequence/shared replay/common absolute horizon and native source/alias intervals remain required. Exact v5 bounded follow-up: Before further affected expansion, owning specialist must extract the next cohesive query/selection/ordered-transition responsibility; preserve all inherited source/ownership/order/RNG/lifecycle obligations and shrinking baselines. No unrelated or future growth credit. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
@@ -24411,42 +24240,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "901eb66b54326e53766654f328fd262e77d67d0dc38bed4d13e1b6fd5dac7e4a"
-    },
-    "lib/mapping/HotaScriptConverter.cpp": {
-      "kind": "legacy",
-      "lines": 1010,
-      "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1010 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8a9f20b593bc1eaa954281bc775c49e6278085c56d6f80ec62b77c0735e790bd"
-    },
-    "lib/mapping/HotaScriptConverter.cpp::static std::string helpersPrelude()#1": {
-      "kind": "legacy",
-      "lines": 89,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 89 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6271550864f97d241ae137b0efd4b347c3e1d76fac994522f1182f32307dffbd"
-    },
-    "lib/mapping/HotaScriptConverter.cpp::std::string HotaScriptConverter::loadActions(int indent)#1": {
-      "kind": "legacy",
-      "lines": 353,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 353 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ba444378df1160e4ff8c4056340025f9fbd3d6fddfc5cf4a903761b8adb4c4a9"
-    },
-    "lib/mapping/HotaScriptConverter.cpp::std::string HotaScriptConverter::loadConditionInternal()#1": {
-      "kind": "legacy",
-      "lines": 111,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 111 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "32a155c159053bfa0d49b5c8398d05fe5c789d0fd1663b509a1baece7ed15b31"
     },
     "lib/mapping/MapEditUtils.cpp::CTerrainViewPatternConfig::CTerrainViewPatternConfig()#1": {
       "kind": "legacy",
@@ -26285,16 +26078,13 @@
       "sha256": "ff6d701a3b48eb3884669ef58659585508fcf6654b5fc6789f55750c423f3868"
     },
     "server/CGameHandler.cpp": {
-      "deferral": "Before further substantive query/progression growth keep admission, single-card draw and ordinary progression in focused owners; preserve owner/top/stale/index/once/RNG rejection atomicity, normal queue/mastery choices, raw XP offset, native caps and specialty growth. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
-      "kind": "exception",
       "lines": 6295,
-      "owner": "gameplay_engineer",
-      "previous_review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
-      "rationale": "Retains the prior 6431-to-6295 Estates extraction. Urgent one-condition giveSpells correction requires a real shared Sage visit reward before publishing the retired visit receipt. File remains 6295 lines and giveSpells remains 61; ordinary spell grants and every other body are byte-identical. Coupling Guild orchestration extraction to this bounded regression correction would increase risk.",
-      "review": "IR-SAGE-NO-REWARD-RECEIPT-EXACT-20261104",
-      "review_scope": "Exact one-condition hasVisitReward receipt gate only. All numeric allowances, ordinary Guild learning, packet order outside the removed obsolete receipt and other callable bodies unchanged. Source review only; native/rendered/platform acceptance and publication authority remain separate.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "7ca66e80b7e875fce1e4113bb1be9ce645b62a1e836114f914941049db487bcc"
+      "sha256": "ccbc82957097a7c8bb7638e20c7ad06a7b9b3cfa434997ad41ff5ce6b309375a",
+      "kind": "exception",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 6295 to 6295 physical lines. Existing scripted-query routing only renames LuaScriptQuery to MapEventQuery and keeps existing authoritative query handling; zero line growth. Broader query-handler extraction during migration would increase state-lifecycle risk.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before further substantive query/progression growth keep admission, single-card draw and ordinary progression in focused owners; preserve owner/top/stale/index/once/RNG rejection atomicity, normal queue/mastery choices, raw XP offset, native caps and specialty growth. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit."
     },
     "server/CGameHandler.cpp::bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)#1": {
       "deferral": "Owner: gameplay_engineer with engine_engineer review. Before further growth, extract cohesive ArmyExchange orchestration from arrangeStacks: explicit swap/merge/split inputs, exact query/packet order, source/destination ownership, last-stack and Leadership validation. Characterize legal bank splits and rejected hostile/oversized transfers before changing the boundary.",
@@ -27061,24 +26851,22 @@
       "sha256": "83e6b42f7c226fd654d9e1da07670dbe747011973200d97a60fc69892333740e"
     },
     "tools/ci/assemble_linux_candidate.py::assemble#1": {
-      "kind": "legacy",
-      "lines": 119,
-      "owner": "engine_engineer",
-      "rationale": "Independently reviewed client-bound delivery marker integration; cohesive checksum and installed-binary admission owners preserve validation order and legacy markerless snapshots. Exact file/function reductions verified with pinned parser; pure fixture coverage remains distinct from linked and rendered acceptance.",
-      "review": "IR-CLIENT-FEATURES-DELIVERY-EXP-20261028-V2",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4e03e8be174432664f6b4efd49f13b0901c099f25685a8e3056d0b132552a997"
+      "lines": 120,
+      "sha256": "9f59d7d68fa314527ce9247070644a5a9eb231f3a66e9e525b2e4ab2290cc784",
+      "kind": "exception",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 119 to 120 physical lines. Existing assembly function gains native resource-filter exclusion; one line growth, no extra ownership.",
+      "deferral": "Owner: engine_engineer. Before next substantive expansion, extract payload inventory/resource filtering and its validation into a focused pure inventory/filter boundary returning the exact payload manifest before any package mutation. Preserve exact-source binding, selected art and licensing, native binary/facade identity, complete manifest agreement, and negative tests proving invalid input causes no partial package mutation. Keep extracted callables <=150 lines and files <=1000 lines. Only the present native Lua-resource filter at the recorded hash/size is excepted; no future growth allowance. "
     },
     "tools/ci/linux_playable_snapshot.py": {
-      "deferral": " Before further growth, the engine engineer owns a reviewed candidate-validation/pointer-commit extraction retaining begin_validation/finish_validation and freeze/promote/validate APIs. Keep payload assembly and process-group supervision separate. Preserve one-shot/default/ABA/stale/mutation/deadline/temp-cleanup and CLI import/rollback tests.",
+      "lines": 683,
+      "sha256": "e6c2d7e6926c1c479c82509ad07b7f8b59f7bee73a4fdd19666ce6e4f8780eab",
       "kind": "exception",
-      "lines": 681,
-      "owner": "engine_engineer",
-      "rationale": "Optional commit-admission deadline is checked after verification and pointer fsync immediately before replacement. Existing one-shot ticket and lease semantics remain; no new process, signals or rollback. Exact bounded 17-line correction only.",
-      "review": "IR-SNAPSHOT-COMMIT-DEADLINE-20261029",
-      "review_scope": "Exact 681-line publication owner; cohesive nine-line predicate and existing call-chain propagation, no future-growth or runtime certification.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "2f220c853947aa384b6ebf2c3328c10b73d72663720837260114f77b29d5d6e8"
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 681 to 683 physical lines. Narrow native package contract removes Lua dependency/resource requirements; snapshot validation/promote ownership stays existing.",
+      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below.  Before further growth, the engine engineer owns a reviewed candidate-validation/pointer-commit extraction retaining begin_validation/finish_validation and freeze/promote/validate APIs. Keep payload assembly and process-group supervision separate. Preserve one-shot/default/ABA/stale/mutation/deadline/temp-cleanup and CLI import/rollback tests."
     },
     "tools/ci/package_mingw_client.py::main#1": {
       "kind": "legacy",
@@ -27090,13 +26878,13 @@
       "sha256": "324307e156dabcbfd015206d779896042d271138dda9bae9e0abd8f4be941e06"
     },
     "tools/ci/package_new_horizons_windows.py": {
-      "kind": "legacy",
-      "lines": 703,
-      "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 703 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "3558b3b21ff7dfa21b4cfbc8e121fa344967c318891f66002370cc0b3b043757"
+      "lines": 704,
+      "sha256": "fd6d76535b6ea4455165e3ead5f222ccd63694031294ab38c22f4d90a30a0b12",
+      "kind": "exception",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 703 to 704 physical lines. Narrow packaging resource filter excludes Lua; no new package architecture.",
+      "deferral": "Owner: engine_engineer. Before next substantive expansion, extract payload inventory/resource filtering and its validation into a focused pure inventory/filter boundary returning the exact payload manifest before any package mutation. Preserve exact-source binding, selected art and licensing, native binary/facade identity, complete manifest agreement, and negative tests proving invalid input causes no partial package mutation. Keep extracted callables <=150 lines and files <=1000 lines. Only the present native Lua-resource filter at the recorded hash/size is excepted; no future growth allowance. "
     },
     "tools/ci/package_new_horizons_windows.py::collect_notices#1": {
       "kind": "legacy",
@@ -27736,6 +27524,39 @@
       "deferral": "Before further family growth, extract the touched Form/Confusion expected-value owner with Mechanics, visible target/board, environment and synchronous outcome callback. Preserve original probabilities, signed utility, lazy per-state caches, one core pair, zero endpoint continuations, native duration/marker and completion exactly once.",
       "review_scope": "Exact seven frozen layers, including final Blink b350. Shrinking debt ratchets existing records; new focused functions remain below150. No future growth credit, changed limits/exclusions, native/rendered proof or publication authority.",
       "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN"
+    },
+    "AI/BattleAI/BattleExchangeVariant.cpp::float BattleExchangeVariant::trackAttackWithSelectedDamage( std::shared_ptr<StackWithBonuses> attacker, std::shared_ptr<StackWithBonuses> defender, bool shooting, bool isOurAttack, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, bool evaluateOnly, bool allowRetaliation, std::optional<bool> * readyOverwatch, const BattleTargetProbeTiming * probeTiming, DamageCacheAdmission * mainProbeAdmission, BattleExchangeAttackResult * actionResult, bool * manaLeechSequenceSpent, std::vector<petrifyingBloodAI::Pending> * bloodSequence, SelectedProbeDamage * produced, SelectedProbeDamage * selected, uint64_t * reused, uint64_t * reusedScore)#1": {
+      "lines": 454,
+      "sha256": "db731803f7a584dd1cbedd7fc231a3bd53fd8a2f09d93f1765f31025d4e79a80",
+      "kind": "exception",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: new/signature-changed to 454 physical lines. Qualified preexisting method changes signature for one score-reuse output; explicit old-method association is474 to454lines, not a newly introduced454-line routine. Calculation/receipt responsibility is extracted into SelectedProbeDamage; preserve remaining strike sequence ownership.",
+      "deferral": "Owner: ai_engineer. Before next substantive expansion, extract the next ordered first-hit/raw-resolution/application/aftermath stage behind typed strike inputs/results and selected-probe receipts; new or expanded extracted units must stay <=150 callable lines and <=1000 file lines. Require consume-once, Protect redirection, live Last Stand, ordered packet/RNG, exact score parity, and parent-branch isolation regressions. No further growth credit for this exact454-line inherited method. Preserve prior same-method obligation verbatim: Extract the next touched ordered strike/result stage before growth, passing selected damage/probe state and typed observations. Preserve native post-shield application, terminal/deferred reuse, no double mutation/scoring and parent-state/RNG isolation."
+    },
+    "AI/BattleAI/HypotheticBattle.cpp::HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle, std::shared_ptr<const battle::OwnedBattleFrameBatch> batch) : BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)), sourceBinding(subject, *realBattle, batch || ownedFrameSource(realBattle)), env(ENV), bonusTreeVersion(1)#1": {
+      "lines": 81,
+      "sha256": "5815f7fa85bae835743a968fbb1832e9803ce2d60f07f44f6faad9ad2f7344d5",
+      "kind": "review",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: 80 to 81 physical lines. One shared movement cache inheritance initializer changes constructor80 to81lines; state binding/initialization order preserved."
+    },
+    "lib/battle/BattleMovementDirect.cpp::battle::MovementPaths battle::solveMovementDirect(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params, const BattleHexArray & obstacles, EGateState gateState, const std::array<std::int32_t, GameConstants::BFIELD_SIZE> & movementCosts)#1": {
+      "lines": 90,
+      "sha256": "4b6bcd14ac2db4071a5bad39eca3b5b804d89612e544775db278c7f17bef9b41",
+      "kind": "review",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: new/signature-changed to 90 physical lines. Cohesive exact ordered direct movement solver;90lines, below150ceiling. Preserve FIFO/predecessor output and weighted paths as one bounded algorithm."
+    },
+    "lib/scripting/nativeMap/LegacyHotaActions.cpp::scripting::nativeMap::legacy::JsonNode action(const JsonNode & value, const std::string & bucket)#1": {
+      "lines": 115,
+      "sha256": "e90f440adbd7c47b8ff1370d2828c6f467a621155cf2038231884ecea87282fc",
+      "kind": "review",
+      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
+      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
+      "rationale": "Archive native-port exact scope: new/signature-changed to 115 physical lines. Cohesive fixed legacy action grammar dispatcher;115lines, below150ceiling, delegates native family validation rather than adding generic Lua execution."
     }
   }
 }

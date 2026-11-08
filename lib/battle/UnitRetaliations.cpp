@@ -34,7 +34,8 @@ int32_t CRetaliations::total() const
 	// creature retaliation: the reworked perk grants a typed Hero Order action.
 	const int64_t additionalRetaliations = (env
 		? static_cast<int64_t>(env->unitAdditionalRetaliations(owner))
-			+ env->unitNecromancyPassives(owner).additionalRetaliations : 0)
+			+ env->unitNecromancyPassives(owner).additionalRetaliations
+			+ env->unitElementalAttunement(owner).additionalRetaliations : 0)
 		+ newHorizonsMaintenanceSpecialties::defendRetaliations(*owner);
 	if(newHorizonsCreatureAbilitySuppression::suppressionLevel(*owner) >= 2)
 	{

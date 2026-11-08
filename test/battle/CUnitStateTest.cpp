@@ -487,10 +487,12 @@ TEST_F(UnitStateTest, destroyRemainsIsSerializedAndLegacyDamageDoesNotMarkIt)
 	restored.load(saved);
 	EXPECT_EQ(restored.getUnusableRemains(), 2);
 
-	// Saves produced before the ledger existed omit the optional field and
-	// therefore retain ordinary resurrection semantics.
+	// Saves produced before the remains ledger existed also predate casualty
+	// provenance. Omit both later ledgers to retain ordinary resurrection semantics.
 	auto legacySaved = saved;
 	legacySaved["state"]["health"].Struct().erase("unusableRemains");
+	legacySaved["state"]["health"].Struct().erase("casualtyProvenanceInitialized");
+	legacySaved["state"]["health"].Struct().erase("casualtyProvenance");
 	restored.load(legacySaved);
 	EXPECT_EQ(restored.getUnusableRemains(), 0);
 }

@@ -8,6 +8,8 @@
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/PhysicalAffliction.h"
+#include "../../lib/battle/NewHorizonsStun.h"
+#include "../../lib/battle/NewHorizonsAttackControllers.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
@@ -90,6 +92,30 @@ void clearGraveDust(CGameHandler & gameHandler, const CBattleInfoCallback & batt
 		}
 	if(!message.lines.empty()) gameHandler.sendAndApply(message);
 }
+void clearPhysicalMarkers(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+	const std::vector<newHorizonsPurify::EligibleStack> & eligible, std::set<uint32_t> & affectedRecipients)
+{
+	SetStackEffect change;
+	change.battleID = battle.getBattle()->getBattleID();
+	for(const auto & stack : eligible)
+		if(stack.stunAutomaticallyCleared || stack.crippleAutomaticallyCleared)
+			if(const auto * unit = battle.battleGetUnitByID(stack.unitId))
+			{
+				auto removed = stack.stunAutomaticallyCleared ? newHorizonsStun::removalPlan(*unit) : std::vector<Bonus>{};
+				if(stack.crippleAutomaticallyCleared)
+				{
+					auto cripple = newHorizonsAttackControllers::crippleRemoval(*unit);
+					removed.insert(removed.end(), cripple.begin(), cripple.end());
+				}
+				if(!removed.empty()) change.toRemove.emplace_back(unit->unitId(), std::move(removed));
+			}
+	if(change.toRemove.empty()) return;
+	gameHandler.sendAndApply(change);
+	for(const auto & entry : change.toRemove)
+		if(const auto * unit = battle.battleGetUnitByID(entry.first); unit && !newHorizonsStun::isStunned(*unit)
+			&& newHorizonsAttackControllers::crippleRemoval(*unit).empty())
+			affectedRecipients.insert(entry.first);
+}
 }
 std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
 	const BattleAction & action, const CGHeroInstance * hero, const bool purifyingMandate)
@@ -169,6 +195,7 @@ std::vector<uint32_t> applyPurifyAction(CGameHandler & gameHandler, const CBattl
 
 	clearStoredPoison(gameHandler, battle, eligible, manuallySelectedPhysicalPoison, affectedRecipients);
 	clearGraveDust(gameHandler, battle, eligible, affectedRecipients);
+	clearPhysicalMarkers(gameHandler, battle, eligible, affectedRecipients);
 
 	if(!purifyingMandate || magicallyCleansedUnits.empty())
 		return {affectedRecipients.begin(), affectedRecipients.end()};

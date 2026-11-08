@@ -27,6 +27,8 @@ class OwnedFixtureUnit final : public UnitMock
 {
 public:
 	BonusList raw;
+	const Resolver * creatureResolver = nullptr;
+	const battle::UnitCreatureResolver * unitCreatureResolver() const override { return creatureResolver; }
 	bool living = true, hypnotized = false;
 	OwnedFixtureUnit(uint32_t id, BattleSide side, const CCreature * type, int hex = 50)
 	{
@@ -216,4 +218,44 @@ TEST(OwnedUnitEnvironmentTest, AffiliationPresenceDistinguishesMissingFromActual
 	EXPECT_NO_THROW(Environment({}, values));
 	values.colors.at(BattleSide::ATTACKER).reset();
 	EXPECT_THROW(Environment({}, values), std::invalid_argument);
+}
+
+TEST(OwnedUnitEnvironmentTest, KnownAttunementUsesOwnedCreatureKeysWithoutGlobalLibrary)
+{
+	auto fire = creature(false); fire.key = "core:fireElemental";
+	Resolver types({fire});
+	auto subject = std::make_shared<OwnedFixtureUnit>(17, BattleSide::ATTACKER, types.creature(CreatureID(1)));
+	subject->creatureResolver = &types;
+	auto values = facts();
+	auto & profile = values.inputs.at(BattleSide::ATTACKER)->elementalAttunementProfile;
+	profile.rank = 3; profile.magmaWeapons = true; profile.greaterEssence = true;
+	profile.primalVigilance = true; profile.waterVeil = true;
+	values.states.at(BattleSide::ATTACKER)->elementalAttunementMask = 2;
+	Environment env({subject}, values);
+	WithoutLibrary absent;
+	const auto passives = env.unitElementalAttunement(subject.get());
+	EXPECT_EQ(passives.meleeDamagePercent, 60);
+	EXPECT_EQ(passives.maximumHealthPercent, 25);
+	EXPECT_EQ(passives.additionalRetaliations, 1);
+	EXPECT_EQ(passives.spellReductionBasisPoints, 2000);
+	subject->hypnotized = true;
+	EXPECT_EQ(env.unitEffectiveOwner(subject.get()), PlayerColor(1));
+	EXPECT_EQ(env.unitElementalAttunement(subject.get()), passives);
+	env.state(BattleSide::ATTACKER).elementalAttunementMask = 0;
+	const auto inactive = env.unitElementalAttunement(subject.get());
+	EXPECT_FALSE(inactive.attuned);
+	EXPECT_EQ(inactive.maximumHealthPercent, 25);
+	EXPECT_EQ(inactive.additionalRetaliations, 0);
+}
+TEST(OwnedUnitEnvironmentTest, GenericFactsCannotInventObservedHiddenUnitEffects)
+{
+	Resolver types({creature(false)});
+	auto subject = std::make_shared<OwnedFixtureUnit>(17, BattleSide::ATTACKER, types.creature(CreatureID(1)));
+	auto sameIdForeign = std::make_shared<OwnedFixtureUnit>(17, BattleSide::ATTACKER, types.creature(CreatureID(1)));
+	auto values = facts();
+	values.inputs.at(BattleSide::ATTACKER)->elementalAttunementProfileKnown = false;
+	Environment env({subject}, values);
+	WithoutLibrary absent;
+	EXPECT_THROW(env.unitElementalAttunement(subject.get()), std::invalid_argument);
+	EXPECT_THROW(env.unitElementalAttunement(sameIdForeign.get()), std::invalid_argument);
 }

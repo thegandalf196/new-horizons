@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "HeroCommand.h"
 #include "HeroCommandCoefficient.h"
+#include "NewHorizonsCommandResources.h"
 #include "HeroCommandCoefficientMath.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/PrimarySkillPolicy.h"
@@ -47,7 +48,7 @@ int CoefficientInputs::primary(PrimarySkill skill) const
 
 int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
 {
-	int efficiency = efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, 15);
+	int efficiency = efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, newHorizonsCommand::usesPerkRules(&hero) ? 60 : 15);
 	if(includeCommanderPerks && attribute == PrimarySkill::ATTACK
 		&& hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
 		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;

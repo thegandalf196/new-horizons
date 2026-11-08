@@ -90,6 +90,19 @@ protected:
 	}
 };
 
+class HistoricalColdBonusContextTest : public ColdBonusContextTest
+{
+protected:
+	void mapLoaded(CMap * map) override
+	{
+		ColdBonusContextTest::mapLoaded(map);
+		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		perks.Struct().erase("sylvanTacticsPolicy");
+		perks.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+	}
+};
+
 TEST_F(ColdBonusContextTest, ExplicitBoundBattleProvidesColdTerrainWithoutNativeMutation)
 {
 	bind(battle());
@@ -146,9 +159,12 @@ TEST_F(ColdBonusContextTest, ColdHeroUsesProjectedParentRatherThanEmptyNativeGra
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 }
 
-TEST_F(ColdBonusContextTest, ProjectedHeroFollowsExactFirstParentAndDetachOrder)
+TEST_F(HistoricalColdBonusContextTest, ProjectedHeroFollowsExactFirstParentAndDetachOrder)
 {
 	ASSERT_NO_FATAL_FAILURE(selectWildChance());
+	ASSERT_TRUE(attackerSideHero->getPerkState().rules["sylvanTacticsPolicy"].isNull());
+	ASSERT_TRUE(defenderSideHero->getPerkState().rules["sylvanTacticsPolicy"].isNull());
+	ASSERT_FALSE(defenderSideHero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.wildChance"));
 	bind(battle());
 	graph->attachToSource(*original, *attackerSideHero);
 	graph->attachToSource(*original, *defenderSideHero);
