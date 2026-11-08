@@ -5,8 +5,10 @@
 #include "../../lib/logging/VisualLogger.h"
 
 CBattleAI::CBattleAI(heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse,
-	battleSearch::Profile profile)
-	: heroValueObserver(observer), vinesReuseControl(vinesReuse), searchProfile(profile), side(BattleSide::NONE),
+	battleSearch::Profile profile, std::shared_ptr<const battleAIDiagnostic::Mask> diagnosticMask,
+	battleAIDiagnostic::Observer * diagnosticObserver)
+	: heroValueObserver(observer), vinesReuseControl(vinesReuse), searchProfile(profile),
+	diagnosticAdmissionMask(std::move(diagnosticMask)), diagnosticAdmissionObserver(diagnosticObserver), side(BattleSide::NONE),
 	wasWaitingForRealize(false)
 {
 }

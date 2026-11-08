@@ -1133,6 +1133,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/CreatureCandidateBaselineTest.cpp
 		battleAI/MovementCandidateScreeningTest.cpp
 		battleAI/BattleSearchPolicyTest.cpp
+		battleAI/BattleAIDiagnosticAdmissionTest.cpp
 		battleAI/OrdinaryStrikeEvaluatorIntegrationTest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp

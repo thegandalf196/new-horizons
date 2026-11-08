@@ -42,6 +42,8 @@ set(battleAI_SRCS
 		BracePrimaryState.cpp
 		BattleAI.cpp
 		BattleAIConfiguration.cpp
+		BattleAIDiagnosticAdmission.cpp
+		DiagnosticBattleAIFactory.cpp
 		BattleSearchPolicy.cpp
 		BattleAIEvaluation.cpp
 		BattleAITiming.cpp
@@ -191,6 +193,9 @@ set(battleAI_SRCS
 )
 
 set(battleAI_HEADERS
+		BattleEvaluatorSpellCandidates.h
+		BattleAIDiagnosticAdmission.h
+		DiagnosticBattleAIFactory.h
 		MovementQueryCache.h
 		StdInc.h
 

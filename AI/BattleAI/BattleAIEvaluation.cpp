@@ -11,6 +11,7 @@
 #include "BattleAI.h"
 #include "BattleEvaluator.h"
 #include "HeroDecisionPressure.h"
+#include "BattleAIDiagnosticAdmission.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/StartInfo.h"
@@ -56,6 +57,13 @@ bool CBattleAI::attemptHeroAction(BattleEvaluator & evaluator, const CStack * st
 {
 	heroDecisionPressure::Experiment shortlist;
 
-	return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage,
-		heroValueObserver, vinesReuseControl, nullptr, nullptr, &shortlist);
+	if(!diagnosticAdmissionMask)
+		return evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage,
+			heroValueObserver, vinesReuseControl, nullptr, nullptr, &shortlist);
+	battleAIDiagnostic::Counts counts;
+	battleAIDiagnostic::Admission admission(*diagnosticAdmissionMask, counts);
+	const bool submitted = evaluator.attemptCastingSpell(stack, autobattlePreferences.enableSpellsUsage,
+		heroValueObserver, vinesReuseControl, nullptr, nullptr, &shortlist, nullptr, &admission);
+	if(diagnosticAdmissionObserver) diagnosticAdmissionObserver->completedHeroAdmission(counts);
+	return submitted;
 }

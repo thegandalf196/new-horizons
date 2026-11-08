@@ -24,6 +24,7 @@ class CSpell;
 class CBattleInfoCallback;
 class BattleEvaluator;
 namespace heroActionSelection { class Observer; }
+namespace battleAIDiagnostic { class Mask; class Observer; }
 
 /*
 struct CurrentOffensivePotential
@@ -66,6 +67,8 @@ class CBattleAI : public CBattleGameInterface
 	heroActionSelection::Observer * heroValueObserver;
 	VinesCandidateValueReuse::TestControl * vinesReuseControl;
 	const battleSearch::Profile searchProfile;
+	const std::shared_ptr<const battleAIDiagnostic::Mask> diagnosticAdmissionMask;
+	battleAIDiagnostic::Observer * diagnosticAdmissionObserver;
 	BattleEvaluator makeEvaluator(const BattleID & battleID, const CStack * stack);
 	bool attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack);
 
@@ -191,7 +194,9 @@ public:
 
 	explicit CBattleAI(heroActionSelection::Observer * observer = nullptr,
 		VinesCandidateValueReuse::TestControl * vinesReuse = nullptr,
-		battleSearch::Profile searchProfile = battleSearch::Profile::Full);
+		battleSearch::Profile searchProfile = battleSearch::Profile::Full,
+		std::shared_ptr<const battleAIDiagnostic::Mask> diagnosticMask = nullptr,
+		battleAIDiagnostic::Observer * diagnosticObserver = nullptr);
 	~CBattleAI();
 
 	void initBattleInterface(std::shared_ptr<Environment> ENV, std::shared_ptr<CBattleCallback> CB) override;

@@ -20,6 +20,7 @@
 #include "HypotheticBattle.h"
 #include "HeroSpellOutcomeValue.h"
 
+namespace battleAIDiagnostic { class Admission; }
 namespace creatureSpellTiming { struct Sample; struct Pressure; }
 
 class CSpell;
@@ -77,7 +78,8 @@ class DLL_EXPORT BattleEvaluator
 	std::vector<SpellOption> collectCastableHeroSpellOptions(
 		const std::shared_ptr<CPlayerBattleCallback> & battleView, const CGHeroInstance * hero,
 		bool allowSpells, bool mandatoryOrder, bool legacyMetamagicFollowup,
-		const DivineMandateStatus & divineMandateStatus) const;
+		const DivineMandateStatus & divineMandateStatus,
+		const battleAIDiagnostic::Admission * admission) const;
 	bool evaluateHeroActionQueue(PossibleSpellcast::ValueMap & values,
 		const std::vector<battle::Units> & queue, std::shared_ptr<HypotheticBattle> state,
 		size_t minTurnSpan, bool * enemyHadTurnOut);
@@ -127,7 +129,8 @@ public:
 		LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse = nullptr,
 		RegenerationBaselineReuse::TestControl * regenerationReuse = nullptr,
 		heroDecisionPressure::Experiment * orderExperiment = nullptr,
-		arrowContinuation::Reuse::TestControl * arrowReuse = nullptr);
+		arrowContinuation::Reuse::TestControl * arrowReuse = nullptr,
+		const battleAIDiagnostic::Admission * admission = nullptr);
 	bool canCastSpell();
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * timing = nullptr);
 	/// Deterministic full-pool forecast; does not choose the eventual random spell.

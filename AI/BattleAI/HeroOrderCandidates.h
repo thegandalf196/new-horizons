@@ -14,6 +14,7 @@
 
 #include <memory>
 
+namespace battleAIDiagnostic { class Admission; }
 class CBattleCallback;
 class CPlayerBattleCallback;
 
@@ -41,5 +42,6 @@ public:
 /// target validation remain callback queries; this component never submits actions.
 void appendOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	CBattleCallback & callback, BattleID battleID, BattleSide side,
-	bool mandatoryOrder, const Valuation & valuation);
+	bool mandatoryOrder, const Valuation & valuation,
+	const battleAIDiagnostic::Admission * admission = nullptr);
 }

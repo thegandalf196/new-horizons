@@ -25,6 +25,7 @@
 #include "HeroPurifyProjection.h"
 #include "HeroTargetHeuristicProjection.h"
 #include "HeroOrderCandidates.h"
+#include "BattleEvaluatorSpellCandidates.h"
 #include "CanonicalOrderValue.h"
 #include "HeroDecisionPressure.h"
 #include "TheChosenValue.h"
@@ -109,22 +110,6 @@
 
 using battleEvaluatorProjection::isCanonicalVerdantPrison;
 using battleEvaluatorProjection::isCanonicalRegeneration;
-
-enum class SpellTypes
-{
-	ADVENTURE, BATTLE, OTHER
-};
-
-SpellTypes spellType(const CSpell * spell)
-{
-	if(!spell->isCombat() || spell->isCreatureAbility())
-		return SpellTypes::OTHER;
-
-	if(spell->isOffensive() || spell->hasEffects() || spell->hasBattleEffects())
-		return SpellTypes::BATTLE;
-
-	return SpellTypes::OTHER;
-}
 
 bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell)
 {
@@ -3032,56 +3017,12 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 	return BattleAction::makeDefend(stack);
 }
 
-bool BattleEvaluator::canCastSpell()
-{
-	const auto battleView = cb->getBattle(battleID);
-	const auto mandate = battleView->battleGetDivineMandateStatus(side);
-	if(mandate.active)
-	{
-		const auto * hero = battleView->battleGetMyHero();
-		if(hero && hero->hasSpellbook())
-			for(const auto & spell : LIBRARY->spellh->objects)
-			{
-				const auto selection = battleView->battleGetSpellActionAllowance(side, spell->getId());
-				const bool metamagicFollowup = selection
-					&& battleView->battleCanUseMetamagicFollowup(side, spell->getId());
-				const bool grand = HeroSpellAllowanceTransition::activatesGrand(metamagicFollowup,
-					battleView->battleMetamagicPendingCount(side),
-					battleView->battleMetamagicSequenceSpells(side).size(),
-					battleView->battleMetamagicUsesConsumed(side),
-					newHorizonsMagic::metamagicRank(hero),
-					newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-					battleView->battleMetamagicGrandUsed(side));
-				if(selection && (spellType(spell.get()) == SpellTypes::BATTLE || isCounterspell(spell.get()))
-					&& spell->canBeCast(battleView.get(), spells::Mode::HERO, hero, grand))
-					return true;
-			}
-	}
-	auto hero = battleView->battleGetMyHero();
-	if(!hero)
-		return false;
-
-	if(!mandate.active && battleView->battleCanCastSpell(hero, spells::Mode::HERO) == ESpellCastProblem::OK)
-		return true;
-	if(!newHorizonsCommand::available(*battleView, side))
-		return false;
-	for(auto command : {HeroCommand::CHARGE, HeroCommand::HOLD_THE_LINE,
-		riposteCommand(), braceCommand()})
-	{
-		if(battleView->battleCanUseHeroCommand(side, command))
-			return true;
-	}
-	for(auto command : {HeroCommand::FOCUS_FIRE, protectCommand(), flankCommand(), secondWindCommand()})
-		if(battleView->battleCanBeginHeroCommand(side, command))
-			return true;
-	return false;
-}
-
 bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allowSpells,
 	heroActionSelection::Observer * observer, VinesCandidateValueReuse::TestControl * vinesReuse,
 	LifeDrainCandidateValueReuse::TestControl * lifeDrainReuse,
 	RegenerationBaselineReuse::TestControl * regenerationReuse,
-	heroDecisionPressure::Experiment * orderExperiment, arrowContinuation::Reuse::TestControl * arrowReuse)
+	heroDecisionPressure::Experiment * orderExperiment, arrowContinuation::Reuse::TestControl * arrowReuse,
+	const battleAIDiagnostic::Admission * admission)
 {
 	if(orderExperiment) orderExperiment->reset();
 	const auto battleView = cb->getBattle(battleID);
@@ -3103,7 +3044,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	// selectable alternative. Project exactly the transition the server applies.
 	//Get all spells we can cast
 	auto possibleSpells = collectCastableHeroSpellOptions(battleView, hero, allowSpells,
-		mandatoryOrder, legacyMetamagicFollowup, divineMandateStatus);
+		mandatoryOrder, legacyMetamagicFollowup, divineMandateStatus, admission);
 	const bool hasFollowupCandidate = !mandatoryOrder && (divineMandateStatus.active
 		? std::any_of(possibleSpells.begin(), possibleSpells.end(), [](const SpellOption & option)
 		{
@@ -3116,7 +3057,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	const auto battleCallback = battleView;
 	vstd::erase_if(possibleSpells, [&](const SpellOption & option)
 	{
-		if(spellType(option.spell) != SpellTypes::BATTLE && !isCounterspell(option.spell))
+		if(!battleSpellCandidates::isBattleSpell(option.spell) && !isCounterspell(option.spell))
 			return true;
 
 		// New Horizons spells may be present in installed content when evaluating
@@ -3460,7 +3401,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				request.targets, request.focusFirePercent, environment, cache, request.battle);
 		}
 	} orderValuation(env.get(), damageCache);
-	heroOrderCandidates::appendOrders(possibleCasts, *cb, battleID, side, mandatoryOrder, orderValuation);
+	heroOrderCandidates::appendOrders(possibleCasts, *cb, battleID, side, mandatoryOrder, orderValuation, admission);
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
 	if(possibleCasts.empty())
 		return false;

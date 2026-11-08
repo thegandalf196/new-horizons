@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "HeroOrderCandidates.h"
 #include "HeroOrderCandidateRules.h"
+#include "BattleAIDiagnosticAdmission.h"
 
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/NewHorizonsCommandResources.h"
@@ -21,7 +22,8 @@ namespace
 {
 void appendSideWideOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	CBattleCallback & callback, BattleID battleID, BattleSide side,
-	bool mandatoryOrder, const Valuation & valuation)
+	bool mandatoryOrder, const Valuation & valuation,
+	const battleAIDiagnostic::Admission * admission)
 {
 	// Authoritative queries decide whether an Order allowance is available.
 	// Possessing a Spell Action must not hide a separate legal Order Action.
@@ -34,6 +36,7 @@ void appendSideWideOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	{
 		if(!revised && (command == HeroCommand::FEINT || command == HeroCommand::VANGUARD))
 			continue;
+		if(admission && !admission->permits(command)) continue;
 		const auto battleView = callback.getBattle(battleID);
 		if(battleView->battleCanUseHeroCommand(side, command))
 		{
@@ -52,13 +55,15 @@ void appendSideWideOrders(std::vector<PossibleSpellcast> & possibleCasts,
 
 void appendTargetedOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	CBattleCallback & callback, BattleID battleID, BattleSide side,
-	bool mandatoryOrder, const Valuation & valuation)
+	bool mandatoryOrder, const Valuation & valuation,
+	const battleAIDiagnostic::Admission * admission)
 {
 	const auto revised = heroCommands::isRevisedRules(callback.getBattle(battleID)->getBattle()->getHeroCommandRules());
 	for(auto command : {HeroCommand::FOCUS_FIRE, protectCommand(), flankCommand(), secondWindCommand()})
 	{
 		if(revised && (command == protectCommand() || command == flankCommand()))
 			continue;
+		if(admission && !admission->permits(command)) continue;
 		for(const auto & targetIds : orderTargetOptions(*callback.getBattle(battleID), side, command))
 		{
 			if(!commandTargetIsLegal(*callback.getBattle(battleID), side, command, targetIds))
@@ -116,12 +121,14 @@ void appendTargetedOrders(std::vector<PossibleSpellcast> & possibleCasts,
 
 void appendOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	CBattleCallback & callback, BattleID battleID, BattleSide side,
-	bool mandatoryOrder, const Valuation & valuation)
+	bool mandatoryOrder, const Valuation & valuation,
+	const battleAIDiagnostic::Admission * admission)
 {
+	if(admission) admission->requireSupportedContext(mandatoryOrder, false);
 	const auto battle = callback.getBattle(battleID);
 	if(!battle || !newHorizonsCommand::available(*battle, side))
 		return; // Reject the exhausted resource before target enumeration or valuation.
-	appendSideWideOrders(possibleCasts, callback, battleID, side, mandatoryOrder, valuation);
-	appendTargetedOrders(possibleCasts, callback, battleID, side, mandatoryOrder, valuation);
+	appendSideWideOrders(possibleCasts, callback, battleID, side, mandatoryOrder, valuation, admission);
+	appendTargetedOrders(possibleCasts, callback, battleID, side, mandatoryOrder, valuation, admission);
 }
 }
