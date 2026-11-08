@@ -5,6 +5,8 @@
 #include "../../AI/BattleAI/DiagnosticBattleAIFactory.h"
 #include "../../AI/BattleAI/HeroOrderCandidates.h"
 #include "../../AI/BattleAI/BattleAI.h"
+#include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/ISpellMechanics.h"
 #include <algorithm>
 #include <stdexcept>
 using namespace battleAIDiagnostic;
@@ -27,6 +29,18 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(world());
 		if(arrow) ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::MAGIC_ARROW, "new-horizons:sorceryMagic"));
 		ASSERT_NO_FATAL_FAILURE(arena());
+		if(arrow)
+		{
+			// The queue fixture's Angels can win before the enemy acts. Retain
+			// only this witness's remote active unit and enemy for spell selection.
+			BattleUnitsChanged remove;
+			remove.battleID = BattleID(0);
+			for(const auto * unit : {actor, waiter})
+				remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+			gameHandler->sendAndApply(remove);
+			actor = waiter = nullptr;
+			ASSERT_EQ(battle()->battleGetAllStacks(false).size(), 2u);
+		}
 		callback = std::make_shared<QueueCallback>();
 		callback->onBattleStarted(battle());
 		live = callback->getBattle(BattleID(0));
@@ -146,8 +160,16 @@ TEST_F(BattleAIDiagnosticAdmissionTest, OneManualSpellIdPrunesAnOtherwiseSubmitt
 	Spec control; control.suppressAllOrders = true;
 	const auto controlMask = Mask::prepare(control);
 	Counts controlCounts; Admission controlAdmission(*controlMask, controlCounts);
+	const auto * arrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_TRUE(arrow->canBeCast(live.get(), spells::Mode::HERO, attackerSideHero));
+	spells::BattleCast legal(live.get(), attackerSideHero, spells::Mode::HERO, arrow);
+	ASSERT_TRUE(arrow->battleMechanics(&legal)->canBeCastAt({spells::Destination(enemy)}));
+	ASSERT_GT(arrow->calculateDamage(attackerSideHero), 0);
+	ASSERT_LT(arrow->calculateDamage(attackerSideHero), enemy->getAvailableHealth());
 	const auto before = observation();
 	BattleEvaluator original(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1, 2);
+	(void)original.selectStackAction(active);
+	ASSERT_TRUE(original.canCastSpell());
 	ASSERT_TRUE(original.attemptCastingSpell(active, true, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &controlAdmission));
 	ASSERT_EQ(callback->heroRequests.size(), 1u);
 	EXPECT_EQ(callback->heroRequests.front().spell, SpellID(SpellID::MAGIC_ARROW));
@@ -156,6 +178,8 @@ TEST_F(BattleAIDiagnosticAdmissionTest, OneManualSpellIdPrunesAnOtherwiseSubmitt
 	const auto mask = Mask::prepare(filtered);
 	Counts counts; Admission admission(*mask, counts);
 	BattleEvaluator pruned(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1, 2);
+	(void)pruned.selectStackAction(active);
+	ASSERT_TRUE(pruned.canCastSpell());
 	EXPECT_FALSE(pruned.attemptCastingSpell(active, true, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &admission));
 	EXPECT_EQ(counts.spellRowsPruned, 1u);
 	EXPECT_TRUE(callback->heroRequests.empty());
