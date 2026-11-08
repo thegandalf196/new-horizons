@@ -12,6 +12,7 @@
 #include "../../lib/battle/NewHorizonsOpportunist.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include <typeinfo>
 namespace dreadCavalryAI
 {
 bool hasActivationState(const battle::Unit * unit)
@@ -54,6 +55,12 @@ Action begin(const CBattleInfoCallback & battle, const BattleAttackInfo & attack
 	result.luckyBefore = state->luckyOwnAttackSequence;
 	result.enabled = result.before.pending ? battle.battleHasPendingDreadCavalry(state)
 		: !result.before.usedThisActivation && newHorizonsDreadCavalry::entitlement(battle, state).has_value();
+	// Only enabled continuations or raw pending returns consume movement facts.
+	// Keep foreign query owners and invalid pending states on the eager path.
+	if(!result.enabled && !result.before.pending
+		&& typeid(battle) == typeid(HypotheticBattle) && typeid(*state) == typeid(StackWithBonuses)
+		&& battle.battleGetUnitByID(result.actor) == state && battle.hasCanonicalDamageQuerySources())
+		return result;
 	result.movementBudget = state->getMovementRange(0);
 	if(result.before.pending)
 		result.movementBudget = std::min(result.movementBudget, result.before.remainingMovement);

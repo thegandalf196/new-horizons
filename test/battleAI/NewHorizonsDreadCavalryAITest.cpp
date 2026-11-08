@@ -9,6 +9,10 @@
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/battle/NewHorizonsOpportunist.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/ReachabilityInfo.h"
+#include <chrono>
+#include <limits>
 namespace
 {
 class DreadEnvironment final : public Environment
@@ -321,4 +325,152 @@ TEST_F(NewHorizonsDreadCavalryAITest, SelectedContinuationRestoresConsumedPursui
 	EXPECT_EQ(replayed->pursuitMovementRemaining, 3);
 	EXPECT_EQ(actor->pursuitMovementRemaining, 5);
 	EXPECT_TRUE(source->dreadCavalryState.pending);
+}
+
+TEST_F(NewHorizonsDreadCavalryAITest, InactiveNativeMovementFactsAreUnusedByTheCompleteAttackPreview)
+{
+	captured = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	DreadEnvironment environment(gameState());
+	auto model = environment.model(battle());
+	const auto actor = model->getForUpdate(source->unitId());
+	const auto target = model->getForUpdate(victim->unitId());
+	ASSERT_TRUE(model->hasCanonicalDamageQuerySources());
+	const BattleHex from(6, 5);
+	BattleAttackInfo attack(actor.get(), target.get(), 1, false);
+	const auto liveBefore = source->save(), actorBefore = actor->save();
+	const auto targetBefore = target->save();
+	const auto authorityRng = bytes(*gameHandler->randomizer);
+	const auto forecastRng = bytes(CRandomGenerator::getDefault());
+	const auto context = dreadCavalryAI::begin(*model, attack, from);
+	ASSERT_FALSE(context.enabled);
+	ASSERT_FALSE(context.before.pending);
+	EXPECT_EQ(context.actor, actor->unitId());
+	EXPECT_EQ(context.controller, model->playerToSide(model->battleGetActionController(actor.get())));
+	EXPECT_EQ(context.luckyBefore, actor->luckyOwnAttackSequence);
+	EXPECT_EQ(context.movementBudget, 0); // Native inactive path did not capture movement facts.
+	EXPECT_EQ(context.movementCost, 0);
+
+	// Supply the old eager movement facts to the real downstream consumer.
+	auto eager = context;
+	eager.movementBudget = actor->getMovementRange(0);
+	eager.movementCost = model->getReachability(actor.get()).distances[from.toInt()];
+	ASSERT_GT(eager.movementBudget, 0);
+	ASSERT_EQ(eager.movementCost, 1);
+	DamageCache lazyDamage, eagerDamage;
+	const auto lazy = AttackPossibility::evaluate(attack, from, lazyDamage, model);
+	const auto reference = AttackPossibility::evaluate(attack, from, eagerDamage, model,
+		false, std::nullopt, &eager);
+	EXPECT_EQ(lazy.attackValue(), reference.attackValue());
+	EXPECT_EQ(lazy.attackerDamageReduce, reference.attackerDamageReduce);
+	EXPECT_EQ(lazy.defenderDamageReduce, reference.defenderDamageReduce);
+	EXPECT_EQ(lazy.from, reference.from); EXPECT_EQ(lazy.dest, reference.dest);
+	ASSERT_TRUE(lazy.attackerState); ASSERT_TRUE(reference.attackerState);
+	EXPECT_EQ(lazy.attackerState->save(), reference.attackerState->save());
+	ASSERT_EQ(lazy.affectedUnits.size(), reference.affectedUnits.size());
+	for(size_t index = 0; index < lazy.affectedUnits.size(); ++index)
+	{
+		EXPECT_EQ(lazy.affectedUnits[index]->unitId(), reference.affectedUnits[index]->unitId());
+		EXPECT_EQ(lazy.affectedUnits[index]->acquireState()->save(), reference.affectedUnits[index]->acquireState()->save());
+	}
+	EXPECT_EQ(source->save(), liveBefore); EXPECT_EQ(actor->save(), actorBefore);
+	EXPECT_EQ(target->save(), targetBefore);
+	EXPECT_EQ(bytes(*gameHandler->randomizer), authorityRng);
+	EXPECT_EQ(bytes(CRandomGenerator::getDefault()), forecastRng);
+}
+
+TEST_F(NewHorizonsDreadCavalryAITest, EnabledAndInvalidPendingContextsKeepTheirNativeMovementAccounting)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	DreadEnvironment environment(gameState());
+	auto first = environment.model(battle());
+	const auto initialActor = first->getForUpdate(source->unitId());
+	const auto initialTarget = first->getForUpdate(victim->unitId());
+	const BattleHex firstFrom(6, 5);
+	const auto initial = dreadCavalryAI::begin(*first,
+		BattleAttackInfo(initialActor.get(), initialTarget.get(), 1, false), firstFrom);
+	ASSERT_TRUE(initial.enabled); ASSERT_FALSE(initial.before.pending);
+	EXPECT_EQ(initial.movementBudget, initialActor->getMovementRange(0));
+	EXPECT_EQ(initial.movementCost, first->getReachability(initialActor.get()).distances[firstFrom.toInt()]);
+	ASSERT_TRUE(killFirst()); // Genuine authority grants the pending receipt.
+	auto pending = environment.model(battle());
+	const auto actor = pending->getForUpdate(source->unitId());
+	const auto target = pending->getForUpdate(other->unitId());
+	actor->dreadCavalryState.controller = BattleSide::DEFENDER; // Raw receipt remains pending, but its controller no longer matches.
+	const auto before = actor->save();
+	const BattleHex from(8, 5);
+	const auto context = dreadCavalryAI::begin(*pending,
+		BattleAttackInfo(actor.get(), target.get(), 2, false), from);
+	ASSERT_TRUE(context.before.pending); ASSERT_FALSE(context.enabled);
+	const auto range = actor->getMovementRange(0);
+	ASSERT_LE(range, static_cast<uint32_t>(std::numeric_limits<int>::max()));
+	const auto budget = std::min(static_cast<int>(range), actor->dreadCavalryState.remainingMovement);
+	ASSERT_GT(budget, 0);
+	EXPECT_EQ(context.movementBudget, budget);
+	const auto cost = pending->getReachability(actor.get()).distances[from.toInt()];
+	EXPECT_EQ(context.movementCost, cost < ReachabilityInfo::INFINITE_DIST ? static_cast<int>(cost) : context.movementBudget);
+	EXPECT_GT(context.movementCost, 0);
+	EXPECT_EQ(actor->save(), before);
+}
+
+TEST_F(NewHorizonsDreadCavalryAITest, ForeignCallbackSourceRetainsInactiveEagerMovementQueries)
+{
+	captured = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	class Foreign final : public CPlayerBattleCallback
+	{
+	public:
+		using CPlayerBattleCallback::CPlayerBattleCallback;
+		mutable size_t reads = 0;
+		const IBattleInfo * getBattle() const override { ++reads; return CPlayerBattleCallback::getBattle(); }
+	};
+	auto foreign = std::make_shared<Foreign>(battle(), PlayerColor(0));
+	DreadEnvironment environment(gameState());
+	auto model = environment.model(foreign.get());
+	const auto actor = model->getForUpdate(source->unitId());
+	const auto target = model->getForUpdate(victim->unitId());
+	ASSERT_FALSE(model->hasCanonicalDamageQuerySources());
+	const auto reads = foreign->reads;
+	const BattleHex from(6, 5);
+	const auto context = dreadCavalryAI::begin(*model,
+		BattleAttackInfo(actor.get(), target.get(), 1, false), from);
+	ASSERT_FALSE(context.enabled); ASSERT_FALSE(context.before.pending);
+	EXPECT_GT(foreign->reads, reads);
+	EXPECT_EQ(context.movementBudget, actor->getMovementRange(0));
+	EXPECT_EQ(context.movementCost, model->getReachability(actor.get()).distances[from.toInt()]);
+	EXPECT_GT(context.movementBudget, 0); EXPECT_EQ(context.movementCost, 1);
+}
+
+TEST_F(NewHorizonsDreadCavalryAITest, FixedNativeInactiveBeginBatchKeepsStateAndReportsItsActualDuration)
+{
+	captured = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	DreadEnvironment environment(gameState());
+	auto model = environment.model(battle());
+	const auto actor = model->getForUpdate(source->unitId());
+	const auto target = model->getForUpdate(victim->unitId());
+	ASSERT_TRUE(model->hasCanonicalDamageQuerySources());
+	const auto actorBefore = actor->save(), targetBefore = target->save();
+	const auto authorityRng = bytes(*gameHandler->randomizer);
+	const auto forecastRng = bytes(CRandomGenerator::getDefault());
+	const BattleAttackInfo attack(actor.get(), target.get(), 1, false);
+	constexpr uint64_t calls = 64;
+	uint64_t actorChecksum = 0, enabledCount = 0, pendingCount = 0;
+	const auto start = std::chrono::steady_clock::now();
+	for(uint64_t index = 0; index < calls; ++index)
+	{
+		const auto context = dreadCavalryAI::begin(*model, attack, BattleHex(6, 5));
+		actorChecksum += context.actor;
+		enabledCount += context.enabled;
+		pendingCount += context.before.pending;
+	}
+	const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::steady_clock::now() - start).count();
+	RecordProperty("fixedNativeInactiveBeginCalls", static_cast<int>(calls));
+	RecordProperty("fixedNativeInactiveBeginNanoseconds", std::to_string(nanoseconds));
+	EXPECT_EQ(actorChecksum, calls * actor->unitId());
+	EXPECT_EQ(enabledCount, 0u); EXPECT_EQ(pendingCount, 0u);
+	EXPECT_EQ(actor->save(), actorBefore); EXPECT_EQ(target->save(), targetBefore);
+	EXPECT_EQ(bytes(*gameHandler->randomizer), authorityRng);
+	EXPECT_EQ(bytes(CRandomGenerator::getDefault()), forecastRng);
 }
