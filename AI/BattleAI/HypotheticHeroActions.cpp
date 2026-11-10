@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "HypotheticBattle.h"
+#include "OwnedStackQuerySource.h"
+#include "../../lib/battle/OwnedFrameBranchQueries.h"
 #include "../../lib/battle/OrderActionTransition.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../lib/battle/TimeStopState.h"
@@ -123,9 +125,11 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 	BattleSide side) const
 {
 	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| !hasCommandResourceObservation(side) || !newHorizonsCommand::available(*this, side))
+		|| !newHorizonsCommand::available(*this, side))
 		return {};
-	const auto & resources = getCommandResources(side);
+	const bool finite = newHorizonsCommand::usesFiniteResources(getHeroCommandRules());
+	if(finite && !hasCommandResourceObservation(side)) return {};
+	const auto resources = finite ? getCommandResources(side) : newHorizonsCommand::ResourceState{};
 	const auto & ledger = heroActionAllowances.at(side);
 	if(ledger.currentRound < 0)
 	{
@@ -264,6 +268,21 @@ void HypotheticBattle::expireProjectedTimeStops(BattleSide casterSide)
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto projected = getForUpdate(unit->unitId());
+		if(projected->ownedQuerySource)
+		{
+			if(projected->isTimeStopped())
+			{
+				battle::OwnedFrameBranchQueries::removeMatching(
+					*projected->ownedQuerySource->retainedFrame(),
+					CSelector([casterSide, subject = projected.get()](const Bonus * bonus)
+					{
+						return bonus && timeStopState::isStateBonus(*bonus, *subject)
+							&& timeStopState::belongsToSide(*bonus, casterSide);
+					}));
+				++projected->treeVersionLocal;
+			}
+			continue;
+		}
 		projected->removeUnitBonus(CSelector([casterSide](const Bonus * bonus)
 		{
 			return bonus && timeStopState::isStateBonus(*bonus)

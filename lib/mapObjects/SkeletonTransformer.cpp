@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsLeadership.h"
 #include "SkeletonTransformer.h"
 
 #include "CGHeroInstance.h"
@@ -117,7 +118,8 @@ Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
 	int64_t remaining = result.skeletonCount;
 	for(auto & stack : projected)
 	{
-		if(stack.creature != CreatureID::SKELETON || stack.count >= maximum)
+		if(stack.creature != CreatureID::SKELETON || stack.count >= maximum
+			|| !newHorizonsHeroes::armySlotAccepts(&army, stack.slot, CreatureID::SKELETON, stack.count))
 			continue;
 		const int64_t added = std::min(remaining, maximum - stack.count);
 		if(added > 0)
@@ -135,6 +137,8 @@ Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
 			continue;
 		const int64_t count = std::min(remaining, maximum);
 		const SlotID slot(index);
+		if(!newHorizonsHeroes::armySlotAccepts(&army, slot, CreatureID::SKELETON, count))
+			continue;
 		projected.push_back({slot, CreatureID::SKELETON, count});
 		outputs.push_back({slot, count});
 		remaining -= count;

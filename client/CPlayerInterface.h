@@ -48,6 +48,7 @@ class MotionInterested;
 class PlayerLocalState;
 class TimeInterested;
 class HeroMovementController;
+struct CommandEnhancementOfferView;
 
 namespace boost
 {
@@ -86,6 +87,9 @@ class CPlayerInterface : public CGameInterface
 	std::unique_ptr<HeroMovementController> movementController;
 	std::unique_ptr<PathfinderCache> pathfinderCache;
 public: // TODO: make private
+	void queueCommandEnhancement(CommandEnhancementOfferView offer, QueryID query,
+		std::function<int(int)> submit);
+	void commandProgressionChanged(ObjectInstanceID hero) override;
 	std::unique_ptr<ArtifactsUIController> artifactController;
 	std::shared_ptr<Environment> env;
 
@@ -132,6 +136,7 @@ protected: // Call-ins from server, should not be called directly, but only via 
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID,
 		bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) override;
 	void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) override;
+	void heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhancementOffer & offer, QueryID queryID) override;
 	void commanderGotLevel (const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID) override;
 	void heroInGarrisonChange(const CGTownInstance *town) override;
 	void heroMoved(const TryMoveHero & details, bool verbose = true) override;

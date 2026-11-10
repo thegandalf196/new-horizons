@@ -4,6 +4,7 @@
  */
 #pragma once
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
+#include "../../lib/entities/hero/NewHorizonsCommandArmy.h"
 #include "../../lib/GameConstants.h"
 #include <optional>
 #include <vector>
@@ -23,7 +24,11 @@ struct RaisedArmyAddition
 	TQuantity count;
 };
 
-using RaisedArmyPlan = std::vector<RaisedArmyAddition>;
+struct RaisedArmyPlan : std::vector<RaisedArmyAddition>
+{
+	using std::vector<RaisedArmyAddition>::vector;
+	std::optional<newHorizonsHeroes::CommandArmyPlan> commandArrangement;
+};
 
 
 struct PreparedBattleNecromancy

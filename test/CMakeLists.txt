@@ -25,6 +25,10 @@ add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNa
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
 add_executable(nhHeroMasteryDialogStateTest ../client/tests/HeroMasteryDialogStateTest.cpp)
 add_test(NAME nhHeroMasteryDialogStateTest COMMAND nhHeroMasteryDialogStateTest)
+add_executable(nhCommandEnhancementDialogStateTest ../client/tests/CommandEnhancementDialogStateTest.cpp)
+target_compile_features(nhCommandEnhancementDialogStateTest PRIVATE cxx_std_20)
+add_test(NAME nhCommandEnhancementDialogStateTest COMMAND nhCommandEnhancementDialogStateTest)
+set_tests_properties(nhCommandEnhancementDialogStateTest PROPERTIES TIMEOUT 10 LABELS "nh-pure;state;command")
 add_executable(nhCureAfflictionSessionTest ../client/tests/CureAfflictionSessionTest.cpp)
 add_test(NAME nhCureAfflictionSessionTest COMMAND nhCureAfflictionSessionTest)
 if(ENABLE_NH_CURE_CLIENT_INTEGRATION)
@@ -81,6 +85,20 @@ else()
 endif()
 
 set(test_SRCS
+		hero/NewHorizonsCommandRulesTest.cpp
+		hero/NewHorizonsCommandStateTest.cpp
+		hero/NewHorizonsCommandPlacementTest.cpp
+		hero/NewHorizonsCommandProtocolTest.cpp
+		hero/NewHorizonsCommandCapabilityTest.cpp
+		game/CommandNeutralWorldTest.cpp
+		game/CastleStartingPackageTest.cpp
+		bonus/CommandArmyBonusSerializationTest.cpp
+		battle/WarfareStateTest.cpp
+		battle/OrderFormationTest.cpp
+		battle/CommandArmyBonusesTest.cpp
+		server/battles/CommandArmyProjectionTest.cpp
+		server/battles/CommandProgressionIntegrationTest.cpp
+		server/battles/NewHorizonsWarfareTest.cpp
 		bonus/DivinePayoutSerializationTest.cpp
 		bonus/PreparedNativeBonusRuleTest.cpp
 		battle/ArcaneMarksActionGuardTest.cpp
@@ -1067,6 +1085,8 @@ if(ENABLE_BATTLE_AI)
 
 	list(APPEND test_SRCS
 		${BATTLE_AI_TEST_SRCS}
+		battleAI/CommandAuthorityProjectionTest.cpp
+		battleAI/HeroicSpiritProjectionTest.cpp
 		battleAI/PassiveFactionAIValueTest.cpp
 		battleAI/PassiveTemporaryGatingAITest.cpp
 		battleAI/PassiveDivineMandateAITest.cpp
@@ -1272,6 +1292,8 @@ endif()
 
 if(ENABLE_NULLKILLER2_AI)
 	list(APPEND test_SRCS
+		nullkiller2/CommandArmyAdmissionTest.cpp
+		nullkiller2/CommandEnhancementChoiceTest.cpp
 		server/NewHorizonsMerchantPrinceTest.cpp
 		nullkiller2/NewHorizonsProspectorAITest.cpp
 		nullkiller2/NewHorizonsGhostUpgradeAITest.cpp

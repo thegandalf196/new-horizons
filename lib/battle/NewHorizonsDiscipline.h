@@ -10,6 +10,8 @@
 
 #include "../bonuses/Bonus.h"
 #include "../bonuses/BonusSelector.h"
+#include <utility>
+#include <vector>
 
 class CGHeroInstance;
 
@@ -28,7 +30,25 @@ DLL_LINKAGE bool hasEspritDeCorps(const CGHeroInstance * hero);
 /// The unstacked form permits the battle's separate Steadfast adjustment.
 DLL_LINKAGE TConstBonusListPtr espritDeCorpsMoraleBonuses(const CGHeroInstance * hero,
 	const IBonusBearer & bearer, bool stackBonuses = true);
+/// Pure source adjustment, using limiter-applied/updater-processed raw Morale records.
+DLL_LINKAGE TConstBonusListPtr espritDeCorpsMoraleBonuses(TConstBonusListPtr unstacked,
+	PlayerColor owner, bool stackBonuses = true);
 DLL_LINKAGE int32_t espritDeCorpsMoraleAdjustment(const CGHeroInstance * hero, const IBonusBearer & bearer);
+/// Derived hero-only inputs absent from the raw bonus graph. Capture once at
+/// authoritative export; descendants retain these values, never a live hero query.
+struct HeroMoraleContext
+{
+	bool hasHero = false;
+	bool espritDeCorps = false;
+	PlayerColor owner = PlayerColor::CANNOT_DETERMINE;
+	std::pair<int32_t, int32_t> limits{0, 0};
+	std::vector<Bonus> glyphs;
+};
+DLL_LINKAGE HeroMoraleContext captureHeroMoraleContext(const CGHeroInstance * hero);
+/// Same source adjustment, stacking, derived contributions and flags as actual
+/// hero moraleVal(). Records must be this hero's current unstacked graph view,
+/// not creature-recipient records or an already adjusted effective Morale list.
+DLL_LINKAGE int heroMoraleValue(const HeroMoraleContext & context, TConstBonusListPtr unstacked);
 DLL_LINKAGE bool hasHoldFast(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasFearless(const CGHeroInstance * hero);
 DLL_LINKAGE bool hasVeteranCohesion(const CGHeroInstance * hero);

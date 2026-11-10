@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "PacksForLobby.h"
+#include "../StartInfo.h"
 #include "../gameState/CGameState.h"
 
 void LobbyStartGame::validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported, bool schoolSupported, bool additionalSupported, bool recoverySupported) const
@@ -16,6 +17,12 @@ void LobbyStartGame::validateNewHorizonsIndividualSpecialtiesSerialization(bool 
 void LobbyStartGame::validateNewHorizonsSpecialtySerialization(
 	const newHorizonsHeroes::SpecialtySerializationContext & context) const
 {
+	// This preflight runs before either lobby payload. Include policy3 in the
+	// enclosing guard instead of waiting for a nested hero/world writer to fail.
+	if(initializedStartInfo)
+		initializedStartInfo->validateCommandSerialization(context.commandAuthority);
+	if(initializedGameState)
+		initializedGameState->validateCommandSerialization(context.commandAuthority);
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsSpecialtySerialization(context);
 }

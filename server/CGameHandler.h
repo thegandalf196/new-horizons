@@ -217,6 +217,8 @@ public:
 	void visitCastleObjects(const CGTownInstance * obj, const std::vector<const CGHeroInstance * > & visitors);
 	void heroLevelUpChoiceDone(const CGHeroInstance * hero);
 	bool offerHeroMastery(const CGHeroInstance * hero);
+	bool offerHeroCommandEnhancement(const CGHeroInstance * hero);
+	bool heroCommandEnhancementReply(QueryID qid, ObjectInstanceID hero, int64_t milestone, int32_t choice, PlayerColor player);
 	void resumeMasteryQueries(PlayerColor player);
 	bool heroMasteryReply(QueryID qid, ObjectInstanceID hero, uint64_t sequence, int32_t choice, PlayerColor player);
 	/// Set continueProgression=false when the caller must acknowledge a query only after the choice pack.

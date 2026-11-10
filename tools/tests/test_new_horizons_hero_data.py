@@ -42,7 +42,7 @@ CANONICAL_SKILLS = (
     'new-horizons:luck', 'new-horizons:divineMandate', 'new-horizons:sylvanLuck',
     'new-horizons:metamagic', 'new-horizons:demonicGating', 'new-horizons:necromancy',
     'new-horizons:shroudOfMalassa', 'new-horizons:bloodrage',
-    'new-horizons:bulwarkOfTheMire', 'new-horizons:elementalRebirth',
+    'new-horizons:bulwarkOfTheMire', 'new-horizons:elementalRebirth', 'new-horizons:authority',
 )
 
 CANONICAL_WEIGHT_ROWS = {
@@ -329,19 +329,19 @@ class HeroDataTest(unittest.TestCase):
             self.assertEqual({key: value for key, value in effective.items() if key != 'class'},
                              {key: value for key, value in prototype.items() if key != 'class'})
 
-    def test_swapped_classes_use_existing_primary_and_army_capacity_profiles(self):
+    def test_swapped_classes_use_existing_primary_and_command_profiles(self):
         capabilities = json.loads((ROOT / 'config/newHorizonsCapabilities.json').read_text())
         swaps = json.loads((ROOT / 'Mods/new-horizons/Content/config/heroes/classSwaps.json').read_text())
-        for hero, primary, leadership, caps in (
-                ('core:halon', [30, 20, 20, 30], 875, [17, 10, 6]),
-                ('core:thane', [5, 5, 45, 45], 650, [13, 8, 4])):
+        self.assertEqual(capabilities['rulesetVersion'], 5)
+        self.assertNotIn('classProfiles', capabilities)
+        self.assertNotIn('leadership', capabilities)
+        for hero, primary, interval in (
+                ('core:halon', [30, 20, 20, 30], 3),
+                ('core:thane', [5, 5, 45, 45], 4)):
             with self.subTest(hero=hero):
                 class_id = swaps[hero]['class']
                 self.assertEqual(self.rules['classProfiles'][class_id]['starting'], primary)
-                self.assertEqual(capabilities['classProfiles'][class_id]['base'], leadership)
-                requirements = capabilities['leadership']['creatureRequirements']
-                self.assertEqual([leadership // requirements[creature] for creature in
-                                  ('core:gremlin', 'core:stoneGargoyle', 'core:ironGolem')], caps)
+                self.assertEqual(capabilities['armyCommand']['classLevelIntervals'][class_id], interval)
 
     def test_legacy_starting_skill_migration_table_is_canonical_and_honest(self):
         self.assertEqual(self.rules['startingSkills']['legacySkillMigrations'], {
@@ -493,10 +493,11 @@ class HeroDataTest(unittest.TestCase):
 
     def test_every_class_has_exact_canonical_skill_offer_weights(self):
         self.assertEqual(set(self.rules['skillOfferWeights']), set(CANONICAL_WEIGHT_ROWS))
-        self.assertEqual(len(CANONICAL_SKILLS), 31)
+        self.assertEqual(len(CANONICAL_SKILLS), 32)
+        authority_weights = dict(zip(CANONICAL_STARTS, (8, 3, 8, 2, 6, 1, 8, 3, 7, 3, 8, 2, 10, 6, 10, 2, 6, 1)))
         for class_id, row in CANONICAL_WEIGHT_ROWS.items():
             with self.subTest(hero_class=class_id):
-                values = [int(value) for value in row.split()]
+                values = [int(value) for value in row.split()] + [authority_weights[class_id]]
                 self.assertEqual(len(values), len(CANONICAL_SKILLS))
                 self.assertEqual(self.rules['skillOfferWeights'][class_id],
                                  dict(zip(CANONICAL_SKILLS, values)))

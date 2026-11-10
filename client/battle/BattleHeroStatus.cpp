@@ -10,7 +10,6 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/IBattleState.h"
-#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
 void BattleWindow::refreshHeroBattleStatus(BattleSide side)
@@ -34,14 +33,6 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 
 	if(const auto * hero = visibleHero)
 	{
-		if(battleCallback->battleUsesHeroCommands())
-		{
-			const auto & pool = battle->getCommandResources(side);
-			entries.push_back({{}, "Command", std::to_string(pool.remaining) + "/" + std::to_string(pool.maximum),
-				CInfoWindow::genText("Command", "Remaining Command: " + std::to_string(pool.remaining)
-					+ " of " + std::to_string(pool.maximum)
-					+ ". Each Order costs 1 Command and the shared Hero Action. Command does not regenerate during combat.")});
-		}
 		if(const auto attunement = passiveFactionSkillPresentation::elementalAttunement(*hero, *battleCallback, side))
 			entries.push_back({{}, "Attunement", attunement->value,
 				CInfoWindow::genText("Elemental Attunement", attunement->details)});
@@ -129,4 +120,3 @@ int BattleWindow::heroBattleStatusHeight(BattleSide side) const
 	const auto statusArea = side == BattleSide::ATTACKER ? attackerHeroStatus : defenderHeroStatus;
 	return statusArea ? statusArea->statusHeight() : 0;
 }
-

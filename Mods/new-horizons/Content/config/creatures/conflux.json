@@ -1,5 +1,6 @@
 {
 	"core:airElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 550
 		},
@@ -30,12 +31,14 @@
 		"growth": 4,
 		"shots": 16,
 		"abilities": {
+			"assimilation": {"type": "ASSIMILATION"},
 			"noObstaclePenalty": {
 				"type": "NO_WALL_PENALTY"
 			}
 		}
 	},
 	"core:waterElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 550
 		},
@@ -66,6 +69,7 @@
 		"growth": 4,
 		"shots": 0,
 		"abilities": {
+			"assimilation": {"type": "ASSIMILATION"},
 			"shooter": null
 		},
 		"graphics": {
@@ -76,6 +80,7 @@
 		}
 	},
 	"core:fireElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 550
 		},
@@ -91,6 +96,7 @@
 		"growth": 4
 	},
 	"core:energyElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 750
 		},
@@ -106,6 +112,7 @@
 		"growth": 4
 	},
 	"core:earthElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 550
 		},
@@ -121,6 +128,7 @@
 		"growth": 4
 	},
 	"core:magmaElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 750
 		},
@@ -134,6 +142,12 @@
 		"speed": 5,
 		"initiative": 7,
 		"growth": 4
+	},
+	"core:psychicElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}}
+	},
+	"core:magicElemental": {
+		"abilities": {"assimilation": {"type": "ASSIMILATION"}}
 	},
 	"core:pixie": {
 		"upgrades": ["core:sprite"]

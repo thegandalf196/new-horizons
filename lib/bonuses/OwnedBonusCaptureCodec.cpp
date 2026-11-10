@@ -34,8 +34,13 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 		break;
 	case Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS:
 	case Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS: // No new Bonus-only representation.
-	case Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN: // Command/Attunement state lives outside Bonus payloads.
 		profile = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+		break;
+	case Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN:
+		profile = Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN;
+		break;
+	case Version::NEW_HORIZONS_COMMAND_AUTHORITY:
+		profile = Version::NEW_HORIZONS_COMMAND_AUTHORITY;
 		break;
 	default:
 		throw std::invalid_argument("Unknown owned bonus source epoch");
@@ -58,6 +63,10 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceCapabilities(
 		version = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
 	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS}))
 		version = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
+	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN}))
+		version = Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN;
+	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_COMMAND_AUTHORITY}))
+		version = Version::NEW_HORIZONS_COMMAND_AUTHORITY;
 	else throw std::invalid_argument("Unknown or partial owned bonus capture capabilities");
 	return OwnedBonusCaptureCodec(version);
 }

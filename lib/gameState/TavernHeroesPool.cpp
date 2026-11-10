@@ -15,6 +15,8 @@
 #include "../callback/Calendar.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "../mapObjects/army/CSimpleArmy.h"
+#include "../entities/hero/NewHorizonsCommandArmy.h"
 #include "../mapping/CMap.h"
 
 TavernHeroesPool::TavernHeroesPool(CGameState * owner)
@@ -51,18 +53,30 @@ TavernSlotRole TavernHeroesPool::getSlotRole(HeroTypeID hero) const
 
 void TavernHeroesPool::setHeroForPlayer(PlayerColor player, TavernHeroSlot slot, HeroTypeID hero, CSimpleArmy & army, TavernSlotRole role, bool replenishPoints)
 {
-	vstd::erase_if(currentTavern, [&](const TavernSlot & entry){
-		return entry.player == player && entry.slot == slot;
-	});
-
 	if (hero == HeroTypeID::NONE)
+	{
+		vstd::erase_if(currentTavern, [&](const TavernSlot & entry){ return entry.player == player && entry.slot == slot; });
 		return;
+	}
 
 	auto h = owner->getMap().tryGetFromHeroPool(hero);
 	assert(h != nullptr);
 
-	if (army)
+	if(army && h->getArmyCommand())
+	{
+		std::vector<newHorizonsHeroes::CommandPlacementStack> stacks;
+		for(const auto & [position, row] : army.army)
+			stacks.push_back({row.first, row.second, newHorizonsHeroes::commandArmyCreatureTraits(*h, row.first), position});
+		const auto plan = newHorizonsHeroes::planCommandPlacement(h->getArmyCommand()->effective(), stacks);
+		if(!plan) throw std::runtime_error("Tavern hero army cannot fit its unlocked Command slots");
+		CSimpleArmy arranged;
+		for(const auto & row : *plan)
+			arranged.setCreature(row.slot, stacks[row.inputIndex].creature, static_cast<TQuantity>(stacks[row.inputIndex].count));
+		h->setToArmy(arranged);
+	}
+	else if(army)
 		h->setToArmy(army);
+	vstd::erase_if(currentTavern, [&](const TavernSlot & entry){ return entry.player == player && entry.slot == slot; });
 
 	if (replenishPoints)
 	{

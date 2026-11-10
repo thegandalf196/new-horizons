@@ -34,11 +34,13 @@ connection and authoritative simulation thread, not a new external server or
 loopback transport. UI submits requests; authoritative code validates and changes
 state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
-Orders and spells compete for the shared Hero Action. Each accepted Order also
-spends one point from the fighting hero's finite, battle-local Command pool.
-Command does not regenerate during combat. Exhaustion prevents further Orders
-without preventing legal spells or creature actions. Human and AI decisions must
-use the same legal action, resource and target rules.
+Orders and spells compete for the shared Hero Action. Current Command is an
+unspent army-progression attribute, not an Order payment or battle-local pool.
+It governs persistent slot permissions and captured enhancement awards. Human and
+AI decisions must use the same legal action, placement and target rules; see
+[Hero Action allowances](developers/HeroActionAllowances.md). The Command/Authority
+save boundary requires a new game; earlier saves are rejected without conversion
+or deletion, as described in [Serialization](developers/Serialization.md#current-save-boundary).
 Expanded Hero Attack/Defense ratings feed the specified command/formula systems,
 not unchanged original creature damage arithmetic.
 

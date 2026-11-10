@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../HistoricalFactionPerkRules.h"
+#include "../hero/HistoricalCapabilityRules.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
@@ -446,6 +447,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		NewHorizonsNeutralArmyWorldTest::mapLoaded(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
 	}
 };
@@ -478,6 +480,7 @@ TEST_F(NewHorizonsNeutralCalibrationWorldTest, ScriptedEncounterKeepsPercentageW
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CMap isolated(gameState().get());
 	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
 	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
 	auto ordinary = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
 	auto scripted = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
@@ -511,6 +514,7 @@ TEST_F(NewHorizonsNeutralCalibrationWorldTest, BankConfigurationAndPhysicalStack
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CMap isolated(gameState().get());
 	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
 	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
 	auto bank = initialArmy<CRewardableObject>(isolated, PlayerColor::UNFLAGGABLE, 100);
 	bank->configuration.info.emplace_back();
@@ -588,6 +592,7 @@ TEST_F(NewHorizonsNeutralCalibrationWorldTest, QuestTargetKeepsAuthoredEncounter
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CMap isolated(gameState().get());
 	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
 	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
 	auto target = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
 	target->id = ObjectInstanceID(5);
@@ -667,7 +672,7 @@ TEST_F(NewHorizonsNeutralCalibrationWorldTest, ExplicitDefinitionCapturesOnceInd
 	}
 	GameSettings reference;
 	reference.addOverride(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
-		JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+		historicalCapabilityRulesV4());
 	reference.addOverride(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
 		JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
 	reference.addOverride(EGameSettings::CREATURES_RECRUITMENT_GROWTH_PERCENT, JsonNode(50));
@@ -814,10 +819,11 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, HistoricalReplayOriginRejectsWhileCurren
 	ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION);
 	historicalPerkPolicy = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	// Current disabled capture must not inherit installed enabled defaults.
+	// Current disabled captures and installed defaults both use stock counts.
 	// The raw old payload has its true origin and must fail replay admission.
 	CMap installed(gameState().get());
-	ASSERT_TRUE(installed.getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION)["enabled"].Bool());
+	ASSERT_EQ(installed.getSettings().getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION),
+		newHorizonsNeutralArmies::calibration::disabledSnapshot());
 	map()->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, JsonNode());
 	const auto randomBefore = bytes(dynamic_cast<CRandomGenerator &>(*getRNG()));
 	CMemorySerializer old;
@@ -856,6 +862,7 @@ TEST_F(NewHorizonsNeutralCalibrationWorldTest, NeverFleeAloneKeepsCalibrationWhi
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CMap isolated(gameState().get());
 	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
 	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
 	auto ordinary = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
 	auto resolute = initialArmy<CGCreature>(isolated, PlayerColor::NEUTRAL, 43);
@@ -878,6 +885,7 @@ TEST_F(NewHorizonsNeutralCalibrationWorldTest, AllForOneFireElementalFlagsDoNotB
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CMap isolated(gameState().get());
 	isolated.overrideGameSetting(option, JsonNode(50));
+	isolated.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
 	isolated.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, fixedCalibration());
 	// Original ROE guard 725 is 60 Fire Elementals, Savage/NeverFlees, with
 	// no message, reward or no-growth tag. Use those inputs with this fixture's

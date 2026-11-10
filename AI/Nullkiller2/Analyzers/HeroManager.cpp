@@ -69,6 +69,7 @@ const SecondarySkillEvaluator HeroManager::mainSkillsEvaluator = SecondarySkillE
 				{SecondarySkill::EAGLE_EYE, -1},
 				{SecondarySkill::NAVIGATION, -1}
 			}),
+		std::make_shared<CommandClassSkillRule>(true),
 		std::make_shared<ExistingSkillRule>(),
 		std::make_shared<WisdomRule>(),
 		std::make_shared<AtLeastOneMagicRule>()
@@ -84,6 +85,7 @@ const SecondarySkillEvaluator HeroManager::scoutSkillsEvaluator = SecondarySkill
 				{SecondarySkill::PATHFINDING, 1},
 				{SecondarySkill::SCHOLAR, 1}
 			}),
+		std::make_shared<CommandClassSkillRule>(false),
 		std::make_shared<ExistingSkillRule>()
 	});
 
@@ -103,8 +105,8 @@ float HeroManager::evaluateSecSkill(SecondarySkill skill, const CGHeroInstance *
 		float score = mainSkillsEvaluator.evaluateSecSkill(hero, skill);
 		const int armorer = SecondarySkill::decode("new-horizons:armorer");
 		const int archery = SecondarySkill::decode("new-horizons:archery");
-		if((armorer >= 0 && skill == SecondarySkill(armorer))
-			|| (archery >= 0 && skill == SecondarySkill(archery)))
+		if(!hero->getArmyCommandRules() && ((armorer >= 0 && skill == SecondarySkill(armorer))
+			|| (archery >= 0 && skill == SecondarySkill(archery))))
 		{
 			score = 2.0f;
 			ExistingSkillRule().evaluateScore(hero, skill, score);

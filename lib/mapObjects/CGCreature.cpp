@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsLeadership.h"
 #include "CGCreature.h"
 #include "CGHeroInstance.h"
 
@@ -744,6 +745,20 @@ void CGCreature::joinDecision(IGameEventCallback & gameEvents, const CGHeroInsta
 	}
 	else //accepted
 	{
+		if(h->getArmyCommand())
+		{
+			const auto count = forecast.usesNewHorizonsRules ? forecast.joiningAmount : getJoiningAmount();
+			std::vector<newHorizonsHeroes::RecruitmentSlot> incoming;
+			for(const auto & [slot, stack] : Slots()) incoming.push_back({slot, stack->getCreatureID(), count});
+			if(!newHorizonsHeroes::planCommandArmyAddition(*h, newHorizonsHeroes::commandArmySlots(*h), incoming))
+			{
+				InfoWindow window;
+				window.player = h->getOwner();
+				window.text.appendRawString("These creatures cannot fit your unlocked army slots. No Gold or Recruitment Pact was spent.");
+				gameEvents.showInfoDialog(&window);
+				return;
+			}
+		}
 		if(!gameEvents.validateNeutralDiplomacyOffer(this, h, cost))
 		{
 			showExpiredDiplomacyOffer(gameEvents, h);
@@ -1066,36 +1081,6 @@ ui32 CGCreature::hashByPosition() const
 	ui32 R2 = (R1 >> 16) & 0x7fff;
 
 	return R2;
-}
-
-void CGCreature::giveReward(IGameEventCallback & gameEvents, const CGHeroInstance * h) const
-{
-	InfoWindow iw;
-	iw.player = h->tempOwner;
-
-	if(!resources.empty())
-	{
-		gameEvents.giveResources(h->tempOwner, resources);
-		for(const auto & res : LIBRARY->resourceTypeHandler->getAllObjects())
-		{
-			if(resources[res] > 0)
-				iw.components.emplace_back(ComponentType::RESOURCE, res, resources[res]);
-		}
-	}
-
-	if(gainedArtifact != ArtifactID::NONE)
-	{
-		gameEvents.giveHeroNewArtifact(h, gainedArtifact, ArtifactPosition::FIRST_AVAILABLE);
-		iw.components.emplace_back(ComponentType::ARTIFACT, gainedArtifact);
-	}
-
-	if(!iw.components.empty())
-	{
-		iw.type = EInfoWindowMode::AUTO;
-		iw.text.appendTextID("core.advevent.183"); // % has found treasure
-		iw.text.replaceTextID(h->getNameTextID());
-		gameEvents.showInfoDialog(&iw);
-	}
 }
 
 static const std::vector<std::string> CHARACTER_JSON  =

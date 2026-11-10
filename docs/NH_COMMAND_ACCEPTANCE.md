@@ -12,7 +12,8 @@ Horizons gameplay.
   shared Hero Action budget as spellcasting. No fixed default Order substitutes
   for legal comparative AI decisions.
 - Bookless or mana-empty heroes retain legal Orders. Spells and Orders have
-  separate controls; neither grants an extra action.
+  separate controls; neither grants an extra action. Command is unspent army
+  progression, not an Order payment or exhaustion pool.
 - Rejected/cancelled commands preserve state and allowances atomically. Verify
   ownership, controller, phase, action-spent and legacy-rule contexts.
 - Different Orders coexist under their own recipient/lifetime rules; reissuing
@@ -24,9 +25,14 @@ Horizons gameplay.
   captured Protect, Flank, Encirclement, Shield Master, Combined Arms or Crusader
   behavior using current defaults.
 - Feint reduces physical retaliation damage only; its final reduction remains
-  capped at 60% after Command, Warcasting and Combined Arms modifiers. Vanguard
+  capped at 60% after Warfare, Warcasting and Combined Arms modifiers. Vanguard
   grants native bonuses to its eligible issue-time recipients; verify refresh,
   expiry, stasis and coexistence with other Orders.
+- Formation rating replaces only Second Wind damage, Feint potency and Vanguard
+  duration inputs formerly supplied by numerical Leadership. Preserve the other
+  Attack/Defense formulas and Vanguard potency/Initiative, including their
+  existing rounding, fixed bases, movement terms and caps. Live, preview and AI
+  must consume the same captured policy and component-specific efficiency.
 - Spearhead adds 5 percentage points to Charge damage; Shield Master adds 5
   percentage points to Hold the Line physical damage reduction. Combined Arms
   retains the half-strength Focus Fire melee benefit and adds 5 percentage

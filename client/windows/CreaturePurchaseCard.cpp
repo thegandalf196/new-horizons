@@ -201,28 +201,27 @@ void CreaturePurchaseCard::initCompactView()
 		LIBRARY->generaltexth->allTexts[217], LIBRARY->generaltexth->allTexts[217]));
 	purchaseAmount = std::make_shared<CLabel>(62, 104, FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, "0", 38);
 
-	const std::array<std::string, 8> statNames =
+	const std::array<std::string, 7> statNames =
 	{
 		LIBRARY->generaltexth->allTexts[190], LIBRARY->generaltexth->allTexts[191], LIBRARY->generaltexth->allTexts[199],
 		LIBRARY->generaltexth->allTexts[388], LIBRARY->generaltexth->allTexts[193],
 		LIBRARY->generaltexth->translate("new-horizons.fort.stat.initiative"),
-		LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost"), LIBRARY->generaltexth->allTexts[194]
+		LIBRARY->generaltexth->allTexts[194]
 	};
-	const std::array<std::string, 8> statDescriptions =
+	const std::array<std::string, 7> statDescriptions =
 	{
 		LIBRARY->generaltexth->translate("core.castinfo.0"), LIBRARY->generaltexth->translate("core.castinfo.1"),
 		LIBRARY->generaltexth->translate("core.castinfo.2"), LIBRARY->generaltexth->translate("core.castinfo.3"),
 		LIBRARY->generaltexth->translate("core.castinfo.4"),
 		LIBRARY->generaltexth->translate("new-horizons.fort.stat.initiative.description"),
-		LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost.description"),
 		LIBRARY->generaltexth->translate("core.castinfo.5")
 	};
-	const std::array<ImagePath, 8> statIcons =
+	const std::array<ImagePath, 7> statIcons =
 	{
 		ImagePath::builtin("stackWindow/iconAttack"), ImagePath::builtin("stackWindow/iconDefense"),
 		ImagePath::builtin("stackWindow/iconDamage"), ImagePath::builtin("stackWindow/iconHealth"),
 		ImagePath::builtin("stackWindow/iconSpeed"), ImagePath::builtin("stackWindow/iconInitiative"),
-		ImagePath(), ImagePath::builtin("stackWindow/iconGrowth")
+		ImagePath::builtin("stackWindow/iconGrowth")
 	};
 	constexpr int statTop = 16;
 	constexpr int statRowHeight = 11;
@@ -234,15 +233,9 @@ void CreaturePurchaseCard::initCompactView()
 		const int x = statLeft;
 		const int y = statTop + row * statRowHeight;
 		const int iconSize = 10;
-		if(index == 6)
-			compactStatIcons[index] = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_creature_leadership_20"), 0,
-				Rect(x, y, iconSize, iconSize));
-		else
-		{
-			auto icon = std::make_shared<CPicture>(statIcons[index], x, y);
-			icon->scaleTo(Point(iconSize, iconSize));
-			compactStatIcons[index] = icon;
-		}
+		auto icon = std::make_shared<CPicture>(statIcons[index], x, y);
+		icon->scaleTo(Point(iconSize, iconSize));
+		compactStatIcons[index] = icon;
 		const int valueX = x + statColumnWidth;
 		compactStatValues[index] = std::make_shared<CLabel>(valueX, y + statRowHeight - 1,
 			FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, "0", statColumnWidth - iconSize - 3);
@@ -278,14 +271,7 @@ void CreaturePurchaseCard::updateCompactStats()
 		return;
 	const std::string minDamage = std::to_string(creatureOnTheCard->getMinDamage(false));
 	const std::string maxDamage = std::to_string(creatureOnTheCard->getMaxDamage(false));
-	int leadershipCost = 0;
-	if(GAME && GAME->interface() && GAME->interface()->cb)
-	{
-		const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
-		if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
-			leadershipCost = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(capabilityRules, creatureOnTheCard->getId());
-	}
-	const std::array<std::string, 8> values =
+	const std::array<std::string, 7> values =
 	{
 		std::to_string(creatureOnTheCard->getAttack(false)),
 		std::to_string(creatureOnTheCard->getDefense(false)),
@@ -293,7 +279,6 @@ void CreaturePurchaseCard::updateCompactStats()
 		std::to_string(creatureOnTheCard->getMaxHealth()),
 		std::to_string(creatureOnTheCard->getBaseSpeed()),
 		std::to_string(creatureOnTheCard->getBaseInitiative()),
-		std::to_string(leadershipCost),
 		std::to_string(parent->getWeeklyGrowth(recruitmentLevel))
 	};
 	for(size_t index = 0; index < compactStatValues.size(); ++index)

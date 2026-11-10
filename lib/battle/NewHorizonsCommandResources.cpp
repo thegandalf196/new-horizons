@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsCommandResources.h"
+#include "NewHorizonsWarfare.h"
 #include "CBattleInfoCallback.h"
 #include "BattleInfo.h"
 #include "BattleProxy.h"
@@ -38,8 +39,9 @@ bool ResourceState::spend()
 	--remaining;
 	return true;
 }
-bool usesRules(const JsonNode & rules) { return marker(rules, "commandResourcePolicyVersion"); }
-bool usesPerkRules(const JsonNode & rules) { return marker(rules, "commandPolicyVersion"); }
+bool usesFiniteResources(const JsonNode & rules) { return marker(rules, "commandResourcePolicyVersion"); }
+bool usesRules(const JsonNode & rules) { return usesFiniteResources(rules) || newHorizonsWarfare::usesRules(rules); }
+bool usesPerkRules(const JsonNode & rules) { return marker(rules, "commandPolicyVersion") || newHorizonsWarfare::enabled(rules); }
 bool usesPerkRules(const CGHeroInstance * hero)
 {
 	return hero && usesPerkRules(hero->getPerkState().rules);
@@ -56,7 +58,7 @@ int maximum(int level, int rank, bool battlePlan, int equipmentBonus)
 }
 ResourceState initialState(const CGHeroInstance * hero)
 {
-	if(!usesPerkRules(hero)) return {};
+	if(!usesPerkRules(hero) || newHorizonsWarfare::enabled(hero)) return {};
 	const auto equipment = hero->getBonuses(CSelector([](const Bonus * bonus)
 		{ return bonus->type == BonusType::COMMAND_CAPACITY && bonus->source == BonusSource::ARTIFACT; }));
 	const int capacity = maximum(hero->level, hero->getPerkSkillRank("new-horizons:command"),
@@ -68,8 +70,15 @@ bool available(const CBattleInfoCallback & battle, BattleSide side)
 	if(!battle.getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)) return false;
 	if(!usesRules(battle.getBattle()->getHeroCommandRules())) return false;
 	if(battle.battleGetVisibleHeroPolicy(side).kind() != VisibleHeroPolicy::Knowledge::VISIBLE_HERO) return false;
+	if(newHorizonsWarfare::usesRules(battle.getBattle()->getHeroCommandRules())) return true;
 	const auto & state = battle.getBattle()->getCommandResources(side);
 	return state.initialized && state.remaining > 0;
+}
+ResourceState acceptedOrderResources(const JsonNode & rules, ResourceState before)
+{
+	if(usesFiniteResources(rules) && !before.spend())
+		throw std::runtime_error("Accepted historical Order has no remaining Command");
+	return before;
 }
 int heroicSpiritEfficiencyForMorale(int morale)
 {
@@ -77,13 +86,18 @@ int heroicSpiritEfficiencyForMorale(int morale)
 }
 int heroicSpiritEfficiency(const CGHeroInstance * hero)
 {
+	return heroicSpiritEfficiency(hero, hero ? hero->moraleVal() : 0);
+}
+int heroicSpiritEfficiency(const CGHeroInstance * hero, int heroMorale)
+{
 	if(!usesPerkRules(hero) || hero->getPerkSkillRank("new-horizons:discipline") < MasteryLevel::EXPERT
 		|| !hero->hasActivePerk("new-horizons:discipline", "new-horizons:discipline.heroicSpirit")) return 0;
-	return heroicSpiritEfficiencyForMorale(hero->moraleVal());
+	return heroicSpiritEfficiencyForMorale(heroMorale);
 }
 int64_t effectiveLeadership(const CGHeroInstance & hero, int64_t ordinary)
 {
-	if(!usesPerkRules(&hero) || !perk(&hero, "new-horizons:command.seizeInitiative")) return ordinary;
+	if(!usesPerkRules(&hero) || newHorizonsWarfare::enabled(&hero)
+		|| !perk(&hero, "new-horizons:command.seizeInitiative")) return ordinary;
 	return ordinary + (ordinary * 20 + 50) / 100;
 }
 

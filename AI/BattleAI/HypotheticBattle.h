@@ -29,6 +29,7 @@
 
 #include "HypotheticBattleTypes.h"
 #include "StackWithBonuses.h"
+#include "HypotheticUnitEnvironment.h"
 #include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
@@ -81,6 +82,10 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	static bool ownedFrameSource(const Subject & source);
 	void captureHeroActionState(const CBattleInfoCallback & source, BattleSide side);
 	void captureSideCombatState(const CBattleInfoCallback & source, BattleSide side);
+	void captureWarfareStats(const CBattleInfoCallback & source);
+	void captureUnitSnapshots(const CBattleInfoCallback & source, bool hasParent);
+	BattleSideArray<int> orderBenefitStatValues{};
+	HypotheticUnitEnvironment projectedUnitEnvironment{*this};
 	void captureFortificationState(const CBattleInfoCallback & actualSource);
 	int battleGetRetreatPermission(BattleSide side, BonusType permission) const override;
 	void applyOwnedEffectChanges(const SetStackEffect & packet);
@@ -131,6 +136,7 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
 		int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
+	int visibleHeroMorale(BattleSide side) const override;
 public:
 	const auto & getArcaneInspirationEffects() const { return arcaneInspirationEffects; }
 	void reverseArcaneInspirationEffects(std::span<const std::shared_ptr<const SetStackEffect>> receipts);
@@ -208,6 +214,8 @@ public:
 	std::shared_ptr<InitialExportBattleSubject> initialExportSubject() const;
 
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
+	int unitWarfareStatBonus(const battle::Unit * unit) const override;
+	const battle::IUnitEnvironment * unitEnvironment() const { return &projectedUnitEnvironment; }
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
 	int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override { return battleSylvanTacticsSpeed(unit, turn); }
 	int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override { return battleSylvanTacticsInitiativePercent(unit); }

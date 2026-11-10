@@ -694,40 +694,7 @@ void CGHeroInstance::updateAppearance()
 void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 {
 	assert(validTypes(true));
-	const bool creationInitialization = !isFake && !primaryGrowthCaptured;
-	if(creationInitialization)
-		protectedAdventureFlightLayer = EPathfindingLayer::LAND;
-	if(!isFake && !masteryRulesCaptured)
-	{
-		masteryState.rules = cb->getHeroMasteryRules();
-		masteryState.validate();
-		masteryRulesCaptured = true;
-	}
-	if(!isFake && !perkRulesCaptured)
-	{
-		newHorizonsHeroes::PerkState candidate;
-		candidate.rules = cb->getHeroPerkRules();
-		auto prepared = candidate.prepareNativeRules();
-		perkState = std::move(candidate);
-		preparedPilotPerks = std::move(prepared);
-		perkRulesCaptured = true;
-	}
-	if(!isFake && !capabilityRulesCaptured)
-	{
-		capabilityRules = newHorizonsHeroes::resolveCapabilityRules(cb->getHeroCapabilityRules(), getHeroClass()->getId());
-		capabilityRulesCaptured = true;
-		nodeHasChanged();
-	}
-	if(!preparedPilotPerks) preparedPilotPerks = perkState.prepareNativeRules();
-	if(creationInitialization)
-	{
-		auto candidate = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
-		auto prepared = nativeRules::preparePilotCreature(candidate, getHeroTypeID());
-		primaryGrowthRules = std::move(candidate);
-		preparedCreatureMechanics = std::move(prepared);
-		primaryGrowthCaptured = true;
-		nodeHasChanged();
-	}
+	const bool creationInitialization = captureInitialDevelopmentRules(isFake);
 	
 	if (gender == EHeroGender::DEFAULT)
 		gender = getHeroType()->gender;
@@ -853,6 +820,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 			getHeroType()->startingPerks, [this](const std::string & skill){ return getPerkSkillRank(skill); });
 	}
 
+	if(creationInitialization)
+		initializeCommandProgression();
 	setFormation(EArmyFormation::LOOSE);
 	if (!stacksCount()) //standard army//initial army
 	{
@@ -872,6 +841,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	{
 		levelUpAutomatically(gameRandomizer);
 	}
+	if(creationInitialization)
+		normalizeStartingCommandArmy();
 
 	// load base hero bonuses, TODO: per-map loading of base hero bonuses
 	// must be done separately from global bonuses since recruitable heroes in taverns 
@@ -2605,38 +2576,6 @@ newHorizonsHeroes::PerkState::OfferWeightContext CGHeroInstance::getPerkOfferWei
 	}, std::move(referenceWeights)};
 }
 
-int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
-{
-	const auto decoded = LIBRARY->identifiers()->getIdentifier(
-		ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
-	if(!decoded)
-		return 0;
-	const SecondarySkill skill(*decoded);
-	// Optional perk queries require an exact canonical identity, never a legacy
-	// unscoped alias. Required captured registry validation remains separate.
-	if(SecondarySkill::encode(*decoded) != skillId)
-		return 0;
-	return getSecSkillLevel(skill);
-}
-
-bool CGHeroInstance::hasActivePerk(const std::string & skillId, const std::string & perkId) const
-{
-	if(!perkState.hasSelection(skillId, perkId))
-		return false;
-
-	// This private saved state is validated on initialization, selection and load.
-	// Combat estimates query individual perks thousands of times: do not project
-	// every selection (and revalidate the entire registry) for each damage estimate.
-	// Read the current rank rather than caching enabled flags across skill changes.
-	for(const auto & perk : perkState.rules["skills"][skillId]["perks"].Vector())
-	{
-		if(perk["id"].String() == perkId)
-			return perk["effect"]["status"].String() == "active"
-				&& getPerkSkillRank(skillId) >= newHorizonsHeroes::perkRequiredRank(perk["requires"].String());
-	}
-	return false;
-}
-
 bool CGHeroInstance::usesNewHorizonsNecromancy() const
 {
 	return getNewHorizonsNecromancyRank() > 0;
@@ -2796,28 +2735,6 @@ void CGHeroInstance::attachCommanderToArmy()
 {
 	if (commander)
 		commander->setArmy(this);
-}
-
-void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
-{
-	while(gainsLevel())
-	{
-		auto gains = gameRandomizer.rollPrimarySkillsForLevelup(this);
-		const auto proposedSecondarySkills = gameRandomizer.rollSecondarySkills(this);
-		captureMasteryEligibility(level + 1);
-
-		for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
-		{
-			const auto before = getBasePrimarySkillValue(PrimarySkill(i));
-			if(gains[i])
-				setPrimarySkill(PrimarySkill(i), gains[i], ChangeValueMode::RELATIVE);
-			gains[i] = getBasePrimarySkillValue(PrimarySkill(i)) - before;
-		}
-		if(!proposedSecondarySkills.empty())
-			setSecSkillLevel(proposedSecondarySkills.front(), 1, ChangeValueMode::RELATIVE);
-
-		levelUp(gains);
-	}
 }
 
 bool CGHeroInstance::hasVisions(const CGObjectInstance * target, BonusSubtypeID subtype) const

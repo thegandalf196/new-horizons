@@ -79,10 +79,15 @@ bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side,
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::ORDER
 		|| !action.isHeroAction() || !isCurrentPreparedOrderAction(side, prepared, true))
 		return false;
-	const bool finiteCommand = newHorizonsCommand::usesRules(getHeroCommandRules());
-	auto paidResources = getCommandResources(side);
-	if(finiteCommand && (command == HeroCommand::NONE || !paidResources.spend()))
-		return false;
+	const bool finiteCommand = newHorizonsCommand::usesFiniteResources(getHeroCommandRules());
+	newHorizonsCommand::ResourceState paidResources;
+	try
+	{
+		paidResources = newHorizonsCommand::acceptedOrderResources(getHeroCommandRules(),
+			finiteCommand ? getCommandResources(side) : newHorizonsCommand::ResourceState{});
+	}
+	catch(const std::exception &) { return false; }
+	if(finiteCommand && command == HeroCommand::NONE) return false;
 	if(command != HeroCommand::NONE && !heroCommands::isActive(command))
 		return false;
 	const auto mandateStatus = battleGetDivineMandateStatus(side);

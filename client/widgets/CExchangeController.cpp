@@ -19,25 +19,18 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
 namespace
 {
-bool checkLeadershipSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
+bool checkCommandSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
 	SlotID leftSlot, SlotID rightSlot)
 {
 	const auto * leftCreature = leftArmy ? leftArmy->getCreature(leftSlot) : nullptr;
 	const auto * rightCreature = rightArmy ? rightArmy->getCreature(rightSlot) : nullptr;
-	if(!leftCreature || !rightCreature)
-		return UIHelper::checkLeadershipTransfer(leftArmy, rightArmy, leftSlot, rightSlot,
-			leftCreature ? leftArmy->getStackCount(leftSlot) : 0)
-			&& UIHelper::checkLeadershipTransfer(rightArmy, leftArmy, rightSlot, leftSlot,
-				rightCreature ? rightArmy->getStackCount(rightSlot) : 0);
-
-	// A swap replaces each stack; equal types are merged through the normal
-	// garrison path instead and are not sent here.
-	return UIHelper::checkLeadershipResult(rightArmy, leftCreature->getId(), leftArmy->getStackCount(leftSlot))
-		&& UIHelper::checkLeadershipResult(leftArmy, rightCreature->getId(), rightArmy->getStackCount(rightSlot));
+	return (!leftCreature || UIHelper::checkArmySlot(rightArmy, rightSlot, leftCreature->getId()))
+		&& (!rightCreature || UIHelper::checkArmySlot(leftArmy, leftSlot, rightCreature->getId()));
 }
 }
 
@@ -61,7 +54,7 @@ void CExchangeController::swapArmy()
 	{
 		if (left->hasStackAtSlot(slotID) && right->hasStackAtSlot(slotID))
 		{
-			if(!checkLeadershipSwap(left, right, slotID, slotID))
+			if(!checkCommandSwap(left, right, slotID, slotID))
 				return;
 			GAME->interface()->cb->swapCreatures(left, right, slotID, slotID);
 		}
@@ -82,7 +75,9 @@ void CExchangeController::swapArmy()
 		if (leftIt == leftSlots.end() || rightIt == rightSlots.end())
 			break;
 
-		if(!checkLeadershipSwap(left, right, leftIt->first, rightIt->first))
+		if(!checkCommandSwap(left, right, leftIt->first, rightIt->first)
+			|| !UIHelper::checkArmySlot(left, rightIt->first, rightIt->second->getCreatureID())
+			|| !UIHelper::checkArmySlot(right, leftIt->first, leftIt->second->getCreatureID()))
 			return;
 		GAME->interface()->cb->swapCreatures(left, right, leftIt->first, rightIt->first);
 
@@ -98,8 +93,7 @@ void CExchangeController::swapArmy()
 	for(; leftIt != leftSlots.end(); leftIt++)
 		if (!right->hasStackAtSlot(leftIt->first))
 		{
-			if(!UIHelper::checkLeadershipTransfer(left, right, leftIt->first, leftIt->first,
-				left->getStackCount(leftIt->first)))
+			if(!UIHelper::checkArmySlot(right, leftIt->first, leftIt->second->getCreatureID()))
 				return;
 			GAME->interface()->cb->swapCreatures(left, right, leftIt->first, leftIt->first);
 		}
@@ -107,8 +101,7 @@ void CExchangeController::swapArmy()
 	for(; rightIt != rightSlots.end(); rightIt++)
 		if (!left->hasStackAtSlot(rightIt->first))
 		{
-			if(!UIHelper::checkLeadershipTransfer(right, left, rightIt->first, rightIt->first,
-				right->getStackCount(rightIt->first)))
+			if(!UIHelper::checkArmySlot(left, rightIt->first, rightIt->second->getCreatureID()))
 				return;
 			GAME->interface()->cb->swapCreatures(left, right, rightIt->first, rightIt->first);
 		}
@@ -144,7 +137,7 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 	if(creature == nullptr)
 		return;
 
-	SlotID targetSlot = target->getSlotFor(creature);
+	SlotID targetSlot = newHorizonsHeroes::recruitmentSlot(target, creature->getId());
 	if(!targetSlot.validSlot())
 		return;
 
@@ -158,17 +151,13 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 
 	if(target->getCreature(targetSlot))
 	{
-		// A same-creature destination is a combine request. The server computes
-		// the legal partial amount and retains a required last source stack.
-		if(!UIHelper::hasNoLeadershipCapacityForMerge(source, target, sourceSlot, targetSlot))
-			GAME->interface()->cb->mergeStacks(source, target, sourceSlot, targetSlot);
+		GAME->interface()->cb->mergeStacks(source, target, sourceSlot, targetSlot);
 		return;
 	}
 
 	if(mustKeepLastSourceCreature)
 	{
-		// This is a whole-stack move intent. The server retains one unit and
-		// clamps the transfer to the receiving hero's current Leadership limit.
+		// Whole-stack intent retains the source's required last creature.
 		GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
 		return;
 	}
@@ -176,7 +165,7 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 	const TQuantity amountToMove = sourceCount;
 	if(amountToMove <= 0)
 		return;
-	if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot, amountToMove))
+	if(!UIHelper::checkArmySlot(target, targetSlot, creature->getId()))
 		return;
 
 	GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
@@ -191,10 +180,20 @@ void CExchangeController::moveSingleStackCreature(bool leftToRight, SlotID sourc
 	if(creature == nullptr || source->stacksCount() == 1)
 		return;
 
-	SlotID targetSlot = forceEmptySlotTarget ? target->getFreeSlot() : target->getSlotFor(creature);
+	SlotID targetSlot = newHorizonsHeroes::recruitmentSlot(target, creature->getId());
+	if(forceEmptySlotTarget)
+	{
+		targetSlot = SlotID();
+		for(const auto empty : target->getFreeSlots())
+			if(UIHelper::armySlotProblem(target, empty, creature->getId()).empty())
+			{
+				targetSlot = empty;
+				break;
+			}
+	}
 	if(targetSlot.validSlot())
 	{
-		if(!UIHelper::checkLeadershipTransfer(source, target, sourceSlot, targetSlot, 1))
+		if(!UIHelper::checkArmySlot(target, targetSlot, creature->getId()))
 			return;
 		GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot, target->getStackCount(targetSlot) + 1);
 	}

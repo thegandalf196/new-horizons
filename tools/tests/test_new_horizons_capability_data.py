@@ -5,6 +5,9 @@ import unittest
 import subprocess
 import sys
 import tempfile
+import re
+import copy
+from jsonschema import Draft4Validator
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -109,38 +112,66 @@ class CapabilityDataTest(unittest.TestCase):
     def setUp(self):
         self.rules = json.loads((ROOT / 'config/newHorizonsCapabilities.json').read_text())
 
-    def test_exact_canonical_class_profiles(self):
+    def test_current_command_replaces_retired_class_profiles(self):
         self.assertEqual(self.rules['schemaVersion'], 1)
-        self.assertEqual(self.rules['rulesetVersion'], 4)
-        self.assertEqual(self.rules['classProfiles'], CANONICAL_CLASS_PROFILES)
+        self.assertEqual(self.rules['rulesetVersion'], 5)
+        self.assertNotIn('classProfiles', self.rules)
+        self.assertNotIn('leadership', self.rules)
+        intervals = self.rules['armyCommand']['classLevelIntervals']
+        might = {'knight', 'ranger', 'alchemist', 'demoniac', 'deathknight',
+                 'overlord', 'barbarian', 'beastmaster', 'planeswalker'}
+        self.assertEqual(intervals, {key: 3 if key.split(':')[1] in might else 4
+                                     for key in CANONICAL_CLASS_PROFILES})
 
-    def test_canonical_per_slot_leadership_requirements(self):
-        leadership = self.rules['leadership']
-        self.assertEqual(set(leadership), {
-            'globalScalePercent', 'upgradeMultiplierPercent', 'upgradeRounding',
-            'creatureRequirements',
-        })
+    def test_historical_v4_fixture_preserves_retired_tables(self):
+        fixture = (ROOT / 'test/hero/HistoricalCapabilityRules.h').read_text()
+        captured = json.loads(re.search(r'R"\((.*?)\)"', fixture, re.S).group(1))
+        self.assertEqual(captured['classProfiles'], CANONICAL_CLASS_PROFILES)
+        leadership = captured['leadership']
         self.assertEqual(leadership['globalScalePercent'], 100)
         self.assertEqual(leadership['creatureRequirements'], CANONICAL_LEADERSHIP_REQUIREMENTS)
+        self.assertEqual(captured['siege'], self.rules['siege'])
+        self.assertEqual(captured['warMachineShop'], self.rules['warMachineShop'])
 
-    def test_fresh_leadership_upgrade_multiplier_preserves_every_base_value(self):
-        leadership = self.rules['leadership']
-        self.assertEqual(leadership['upgradeMultiplierPercent'], 100)
-        self.assertEqual(leadership['upgradeRounding'], 1)
+    def test_v5_schema_requires_command_and_excludes_retired_fields_even_null(self):
+        schema = json.loads((ROOT / 'config/schemas/newHorizonsCapabilities.json').read_text())
+        Draft4Validator.check_schema(schema)
+        validator = Draft4Validator(schema)
+        validator.validate(self.rules)
+        for key in ('classProfiles', 'leadership', 'profile'):
+            for value in (None, {}, {'base': 1, 'perLevel': 1}):
+                invalid = copy.deepcopy(self.rules)
+                invalid[key] = value
+                self.assertFalse(validator.is_valid(invalid), (key, value))
+        invalid = copy.deepcopy(self.rules)
+        del invalid['armyCommand']
+        self.assertFalse(validator.is_valid(invalid))
+        invalid = copy.deepcopy(self.rules)
+        invalid['armyCommand'] = None
+        self.assertFalse(validator.is_valid(invalid))
 
-        def upgraded_requirement(base):
-            multiplier = leadership['upgradeMultiplierPercent']
-            rounding = leadership['upgradeRounding']
-            return ((base * multiplier + 50 * rounding) // (100 * rounding)) * rounding
+    def test_schema_retains_historical_v1_through_v4(self):
+        schema = json.loads((ROOT / 'config/schemas/newHorizonsCapabilities.json').read_text())
+        validator = Draft4Validator(schema)
+        fixture = (ROOT / 'test/hero/HistoricalCapabilityRules.h').read_text()
+        historical = json.loads(re.search(r'R"\((.*?)\)"', fixture, re.S).group(1))
+        for version in range(1, 5):
+            saved = copy.deepcopy(historical)
+            saved['rulesetVersion'] = version
+            if version < 4:
+                del saved['warMachineShop']
+            if version < 3:
+                saved['siege'] = {'ballistaDamageMultiplier': [1, 2, 3, 4]}
+            if version == 1:
+                saved['leadership'] = {'skillBonusPercent': [0, 10, 20, 30],
+                                       'minimumMovementPercent': 50}
+            with self.subTest(version=version):
+                validator.validate(saved)
 
-        for base in CANONICAL_LEADERSHIP_REQUIREMENTS.values():
-            with self.subTest(base=base):
-                self.assertEqual(upgraded_requirement(base), base)
-
-    def test_module_description_matches_fresh_upgrade_leadership_policy(self):
+    def test_module_description_identifies_current_command_policy(self):
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
-        self.assertIn("ordinary creature upgrades retain the base form's Leadership requirement", module['description'])
-        self.assertIn('Older saves retain their captured rules.', module['description'])
+        self.assertIn('Command/Authority', module['description'])
+        self.assertIn('older saves are not converted', module['description'])
         self.assertNotIn('upgraded creatures require 120%', module['description'])
 
     def test_siege_rank_table_remains_canonical(self):

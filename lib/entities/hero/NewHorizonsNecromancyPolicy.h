@@ -18,7 +18,7 @@ namespace newHorizonsHeroes { struct LeadershipSlotCapacity; }
 namespace newHorizonsNecromancy
 {
 inline constexpr const char * POLICY_KEY = "necromancyPolicy";
-inline constexpr int POLICY_VERSION = 2;
+inline constexpr int POLICY_VERSION = 3;
 
 /// New-game coefficients are captured with the perk identities and tiers.
 /// Absence preserves historical conversion perks and undiscounted Leadership.
@@ -38,6 +38,7 @@ struct DLL_LINKAGE Policy
 	int boneCollectorRaiseBonusPercent = 0;
 	int soulHarvesterManaPerRaisedCreature = 0;
 	int soulHarvesterManaCap = 0;
+	int lordOfTheDeadMaximumHealthPercent = 0;
 
 	bool operator==(const Policy &) const = default;
 };
@@ -45,12 +46,16 @@ struct DLL_LINKAGE Policy
 DLL_LINKAGE std::optional<Policy> policy(const JsonNode & capturedPerkRules);
 DLL_LINKAGE void validatePolicy(const JsonNode & capturedPerkRules);
 DLL_LINKAGE void validatePolicySerialization(const JsonNode & capturedPerkRules, bool supportsV1, bool supportsV2);
+/// Independent revision-3 capability gate, called by every Command/Authority envelope.
+/// The older two-capability check above retains its revision-1/2 responsibilities.
+DLL_LINKAGE void validateCommandPolicySerialization(const JsonNode & capturedPerkRules, bool supported);
 DLL_LINKAGE bool isSkeletonFamily(CreatureID creature);
 /// Copied direct-upgrade membership, retaining native invalid/base-ID short circuits.
 DLL_LINKAGE bool isSkeletonFamily(CreatureID creature, const std::optional<std::set<CreatureID>> & upgrades);
 /// Discount once with a wide numerator, round up, and retain a minimum cost of one.
 DLL_LINKAGE int discountedLeadershipRequirement(int baseRequirement, int reductionPercent);
 DLL_LINKAGE int skeletonLeadershipReductionPercent(const CGHeroInstance * hero, CreatureID creature);
+DLL_LINKAGE int lordOfTheDeadMaximumHealthPercent(const CGHeroInstance * hero, CreatureID creature);
 /// Read-only passive queries; the caller supplies the applicable hero/controller.
 DLL_LINKAGE int deathMarchSpeed(const CGHeroInstance * hero, CreatureID creature);
 DLL_LINKAGE int bonewardMagicalReductionPercent(const CGHeroInstance * hero, CreatureID creature);

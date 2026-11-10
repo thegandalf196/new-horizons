@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../../GameConstants.h"
+#include "NewHorizonsCommandArmy.h"
 #include "../../constants/EntityIdentifiers.h"
 #include <cstdint>
 #include <optional>
@@ -58,12 +59,6 @@ DLL_LINKAGE std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
 
 /// Read-only occupied slot for recruitment forecasting; counts stay wide across
 /// repeated purchases. This is transient input, not saved army state.
-struct DLL_LINKAGE RecruitmentSlot
-{
-	SlotID slot;
-	CreatureID creature;
-	int64_t count;
-};
 
 /// Shared matching/empty/best-headroom resolver. Slots must be valid and unique;
 /// row order is immaterial. An absent maximum preserves getSlotFor ordering.

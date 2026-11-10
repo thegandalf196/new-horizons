@@ -37,7 +37,8 @@ constexpr int PERK_MAX_SKILL_CHOICES = 2;
 constexpr int PERK_MAX_PERK_CHOICES = 2;
 /// The Version 1.0 contract allows at most three learned perks per Skill.
 constexpr int PERK_MAX_PERKS_PER_SKILL = 3;
-constexpr size_t PERK_CANONICAL_SKILL_COUNT = 31;
+constexpr size_t PERK_LEGACY_SKILL_COUNT = 31;
+constexpr size_t PERK_CANONICAL_SKILL_COUNT = 32;
 constexpr size_t PERK_CANONICAL_POOL_SIZE = 10;
 constexpr size_t PERK_BASIC_POOL_SIZE = 4;
 constexpr size_t PERK_ADVANCED_POOL_SIZE = 4;
@@ -102,6 +103,10 @@ DLL_LINKAGE bool usesSylvanTactics(const JsonNode & rules);
 DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
 
 DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);
+/// Strict captured {version:1} marker; absence retains the historical 31-Skill roster.
+DLL_LINKAGE bool usesCommandAuthorityPolicy(const JsonNode & rules);
+DLL_LINKAGE size_t canonicalSkillCount(const JsonNode & rules);
+DLL_LINKAGE void validateSkillOfferWeightRow(const JsonNode & classWeights, const JsonNode & rules);
 /// Absence preserves the historical automatic fifth-level policy.
 DLL_LINKAGE std::optional<int> quickStudyRerollInterval(const JsonNode & rules);
 

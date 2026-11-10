@@ -7,6 +7,7 @@
 #include "HeroCommand.h"
 #include "HeroCommandCoefficient.h"
 #include "NewHorizonsCommandResources.h"
+#include "NewHorizonsWarfare.h"
 #include "HeroCommandCoefficientMath.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/PrimarySkillPolicy.h"
@@ -48,13 +49,15 @@ int CoefficientInputs::primary(PrimarySkill skill) const
 
 int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)
 {
-	int efficiency = efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, newHorizonsCommand::usesPerkRules(&hero) ? 60 : 15);
+	const auto warfare = newHorizonsWarfare::policy(&hero);
+	int efficiency = efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0,
+		warfare ? 2000 : (newHorizonsCommand::usesPerkRules(&hero) ? 60 : 15));
 	if(includeCommanderPerks && attribute == PrimarySkill::ATTACK
 		&& hero.hasActivePerk(COMMAND_SKILL, AGGRESSIVE_COMMANDER_PERK))
-		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
+		efficiency += warfare ? warfare->aggressiveEfficiencyBonusPercent : BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
 	if(includeCommanderPerks && attribute == PrimarySkill::DEFENSE
 		&& hero.hasActivePerk(COMMAND_SKILL, DEFENSIVE_COMMANDER_PERK))
-		efficiency += BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
+		efficiency += warfare ? warfare->defensiveEfficiencyBonusPercent : BASIC_COMMANDER_EFFICIENCY_BONUS_PERCENT;
 	return efficiency;
 }
 

@@ -104,6 +104,9 @@ public:
 	virtual void visitHeroMasteryOffer(HeroMasteryOffer & pack) {}
 	virtual void visitHeroMasteryDialog(HeroMasteryDialog & pack) {}
 	virtual void visitHeroMasteryChosen(HeroMasteryChosen & pack) {}
+	virtual void visitHeroCommandProgression(HeroCommandProgression & pack) {}
+	virtual void visitHeroCommandEnhancementDialog(HeroCommandEnhancementDialog & pack) {}
+	virtual void visitHeroCommandEnhancementChosen(HeroCommandEnhancementChosen & pack) {}
 	virtual void visitCommanderLevelUp(CommanderLevelUp & pack) {}
 	virtual void visitBlockingDialog(BlockingDialog & pack) {}
 	virtual void visitGarrisonDialog(GarrisonDialog & pack) {}
@@ -194,6 +197,7 @@ public:
 	virtual void visitBuildBoat(BuildBoat & pack) {}
 	virtual void visitQueryReply(QueryReply & pack) {}
 	virtual void visitHeroMasteryReply(HeroMasteryReply & pack) {}
+	virtual void visitHeroCommandEnhancementReply(HeroCommandEnhancementReply & pack) {}
 	virtual void visitMakeAction(MakeAction & pack) {}
 	virtual void visitDigWithHero(DigWithHero & pack) {}
 	virtual void visitCastAdvSpell(CastAdvSpell & pack) {}

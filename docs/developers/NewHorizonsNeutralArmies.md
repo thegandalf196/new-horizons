@@ -12,6 +12,11 @@ scales new town and external-dwelling recruitment supply, including generated
 initial stock. Neither setting rebases hero armies or existing saved populations.
 Their separate capture and generation boundaries are described below.
 
+Fresh neutrals use stock encounter counts: `neutralLeadershipCalibration` defaults
+to the minimal `{"version":1,"enabled":false}` object. Wandering stacks retain
+normal 10% weekly growth and the existing 4,000-creature growth cap; that cap does
+not clamp authored initial counts. Recruitment remains independently **50%**.
+
 ## Neutral army counts
 
 Each positive stack count becomes `ceil(count * percent / 100)` using wide
@@ -56,6 +61,48 @@ when installed defaults differ. A reduced capture requires
 `NEW_HORIZONS_NEUTRAL_ARMY_SIZE`; unsupported writers reject it before direct
 settings/map/world/lobby prefixes, and readers reject unsupported reduced
 overrides before applying them. Identity captures remain old-format compatible.
+
+### Command capability boundary
+
+Disabled calibration returns before reading any hero capability, recruitment
+supply, Gold budget or class-reference curve. Ordinary generated formations also
+skip calibration-value lookups. Fresh defaults therefore do not depend on the
+retired Leadership system, even outside a Command context.
+
+Fresh worlds with an explicit `armyCommand` policy capture
+`neutralLeadershipCalibration` as disabled. They do not construct a replacement
+Command curve or apply hero slot/tier restrictions to neutral containers. The
+neutral size percentage, recruitment percentage and ordinary wandering growth
+settings keep their independent values and rounding.
+
+`calibration::capture` is a fresh-world operation; loading never calls it.
+Historical calibration definitions without Command retain their old capture
+arithmetic, and `calibration::Rules` decodes existing numerical curves without
+consulting installed capabilities. Even an explicitly supplied historical curve
+does not opt a newly initialized Command world back into retired count costs.
+
+### Stock generation boundaries
+
+The comparison baseline is upstream VCMI **1.6.8**, commit
+[`a92e29e008049e09ceaf896b162e439a6d9ca3f3`](https://github.com/vcmi/vcmi/tree/a92e29e008049e09ceaf896b162e439a6d9ca3f3).
+The restored default removes the additional neutral percentage/curve reduction;
+creature definitions and separately authored content rules still supply their
+ordinary inputs.
+
+| Producer | Stock/default count rule and preserved choices |
+| --- | --- |
+| Authored and randomized monsters | `CGCreature::initObj` retains positive authored counts; zero rolls the creature's adventure-map minimum/maximum, with the existing minimum-one repair. |
+| RMG guards | `ObjectManager::chooseGuard` retains the global/zone strength tables, species selection and 0.75–1.25 randomization. Weak/normal/strong and authored template budgets remain distinct. |
+| Fresh object armies | `initializeWorld` captures 100%/disabled and returns without rewriting stacks, reward guards or fractional monster power. |
+| Wandering weekly growth | `CGCreature::newTurn` retains fractional power, 10% growth, no-growth tags and the original cap; no repeat percentage or curve is applied. |
+| Monthly population | `spawnWanderingMonsters` retains free-tile selection, shuffle and creature random amount. Disabled calibration and 100% are identity. The fork's authoritative RNG remains in use. |
+| Neutral-town garrisons | Initial authored armies remain intact; `updateNeutralTownGarrison` retains fort/village chances, tier/upgrade rolls and one base-growth reinforcement. Recruitment-stock rules remain separate. |
+| Dwelling guards | Initial/default guards and `updateGuards` use three times creature base growth; explicit custom guard descriptors remain authored. The recruitment percentage does not scale guards. |
+| Banks and rewardables | Initial guards remain raw; renewal uses raw generated configuration at 100%/disabled, preserving other rewards and random streams. |
+
+An unset scenario slider continues to mean **Map/default** and submits no
+percentage. A map override retains its relative encounter choice; an explicitly
+selected scenario percentage overrides it. There is no hidden 50% neutral factor.
 
 ## Recruitment growth
 
@@ -110,3 +157,11 @@ checks where the producer already draws randomness. Source or schema validation
 does not establish a native pass, rendered stock/label agreement, AI use or save
 compatibility. Performance and pacing acceptance require representative gameplay;
 a count test does not establish easier creeping or faster combat.
+
+`StockNeutralWorldTest` covers actual fresh H3M initialization against an explicit
+stock-count control at the same seed, authored/rolled counts, unchanged seven-slot
+guards and RNG, percentage precedence, weekly fractional growth/cap, dwelling and
+bank renewal, monthly raw-producer parity and load/resave without count rebasing.
+`NewHorizonsNeutralCalibration.ShippedDisabledDefaultNeverReadsHeroGoldOrRecruitmentReferences`
+rejects any reference-settings lookup in the stock capture path. Historical curve
+tests use explicit historical fixtures rather than depending on installed defaults.

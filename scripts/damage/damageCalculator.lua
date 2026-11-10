@@ -592,6 +592,7 @@ function Script:calculate(battle, info)
 		* ((info.frozenShatterFinalDamageMultiplier or 100) / 100)
 		* ordinaryCreatureSpecialtyMultiplier
 		* finalLuckMultiplier
+		* math.max(0, (info.commandBeneficiaryDamageMultiplierPercent or 100) / 100)
 	damageFactor = self:applyLegacyPhysicalProtection(info, damageFactor,
 		usesPhysicalDamageReductionStage, penetratesLegacyProtection, legacyProtectionMultiplier)
 	local stabilizePdrRounding = usesPhysicalDamageReductionStage and physicalDamageReductionMultiplier < 1

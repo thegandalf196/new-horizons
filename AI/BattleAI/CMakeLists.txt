@@ -1,4 +1,8 @@
 set(battleAI_SRCS
+		CanonicalOrderCoefficient.cpp
+		HypotheticWarfare.cpp
+		HypotheticUnitSnapshots.cpp
+		RevisedOrderValue.cpp
 		MovementQueryCache.cpp
 		HypotheticMovement.cpp
 		BattleEvaluatorMovement.cpp

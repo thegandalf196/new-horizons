@@ -69,9 +69,10 @@ New saves use a separate New Horizons directory:
 Earlier %LOCALAPPDATA%\HeroesIII-NewHorizons\Saves files are not moved or
 deleted.
 
-SAVE COMPATIBILITY - 0.89.0
-Start a new game. This version cannot load saves from 0.88.2 or older release/development
-builds, and no save conversion is provided. Keep your old save files and backups;
+SAVE COMPATIBILITY - 0.89.2 (unreleased development metadata)
+Start a new game, including when upgrading from 0.89 or 0.89.1. The current and
+minimum accepted save format is 1158. Earlier saves are rejected before payload
+loading, not converted, rewritten or deleted. Keep your old save files and backups;
 use the matching older version to continue those games. Copying an old save into
 the new directory does not make it compatible.
 

@@ -13,7 +13,7 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 
 std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity(const CCreatureSet & army) const
 {
-	if(!newHorizonsHeroes::usesRules(capabilityRules))
+	if(!newHorizonsHeroes::usesLegacyLeadership(capabilityRules))
 		return std::nullopt;
 	const int trainedLeadership = std::max(0, valOfBonuses(BonusType::LEADERSHIP));
 	if(capabilityRules["rulesetVersion"].Integer() >= 2)
@@ -40,4 +40,3 @@ std::optional<newHorizonsHeroes::LeadershipSlotCapacity> CGHeroInstance::getLead
 {
 	return newHorizonsHeroes::heroLeadershipSlotCapacity(*this, creature);
 }
-

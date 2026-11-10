@@ -295,7 +295,7 @@
 		}
 	},
 	"discipline": {
-		"name": "Discipline",
+		"name": "Leadership",
 		"specialty": [],
 		"tags": {
 			"special": true
@@ -413,7 +413,7 @@
 		}
 	},
 	"command": {
-		"name": "Command",
+		"name": "Warfare",
 		"specialty": [],
 		"tags": {
 			"special": true
@@ -423,7 +423,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Increase maximum Command by 1; attribute-derived Order components operate at 110% Command Efficiency.",
+			"description": "Attribute-derived Order components operate at 110% Order Efficiency; fixed base components are unchanged.",
 			"images": {
 				"small": "SECSK32:0:60",
 				"medium": "SECSKILL:0:60",
@@ -439,7 +439,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Increase maximum Command by 2; attribute-derived Order components operate at 120% Command Efficiency.",
+			"description": "Attribute-derived Order components operate at 120% Order Efficiency; fixed base components are unchanged.",
 			"images": {
 				"small": "SECSK32:0:61",
 				"medium": "SECSKILL:0:61",
@@ -455,7 +455,7 @@
 			}
 		},
 		"expert": {
-			"description": "Increase maximum Command by 3; attribute-derived Order components operate at 130% Command Efficiency.",
+			"description": "Attribute-derived Order components operate at 130% Order Efficiency; fixed base components are unchanged.",
 			"images": {
 				"small": "SECSK32:0:62",
 				"medium": "SECSKILL:0:62",
@@ -469,6 +469,42 @@
 					"val": 0
 				}
 			}
+		}
+	},
+	"authority": {
+		"name": "Authority",
+		"specialty": [],
+		"tags": {"special": true},
+		"gainChance": {"might": 1, "magic": 1},
+		"basic": {
+			"description": "+1 Command.",
+			"images": {
+				"small": "NH_authority_basic_small.png",
+				"medium": "NH_authority_basic_medium.png",
+				"large": "NH_authority_basic_large.png",
+				"scenarioBonus": "NH_authority_basic_scenarioBonus.png"
+			},
+			"effects": {}
+		},
+		"advanced": {
+			"description": "+2 Command total.",
+			"images": {
+				"small": "NH_authority_advanced_small.png",
+				"medium": "NH_authority_advanced_medium.png",
+				"large": "NH_authority_advanced_large.png",
+				"scenarioBonus": "NH_authority_advanced_scenarioBonus.png"
+			},
+			"effects": {}
+		},
+		"expert": {
+			"description": "+3 Command total.",
+			"images": {
+				"small": "NH_authority_expert_small.png",
+				"medium": "NH_authority_expert_medium.png",
+				"large": "NH_authority_expert_large.png",
+				"scenarioBonus": "NH_authority_expert_scenarioBonus.png"
+			},
+			"effects": {}
 		}
 	},
 	"lightMagic": {
@@ -1653,7 +1689,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "After victory, raise Skeletons from 10% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 50% less Leadership.",
+			"description": "After victory, raise Skeletons from 10% of eligible enemy casualties.",
 			"images": {
 				"small": "SECSK32:0:39",
 				"medium": "SECSKILL:0:39",
@@ -1669,7 +1705,7 @@
 			}
 		},
 		"advanced": {
-			"description": "After victory, raise Skeletons from 20% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 60% less Leadership.",
+			"description": "After victory, raise Skeletons from 20% of eligible enemy casualties.",
 			"images": {
 				"small": "SECSK32:0:40",
 				"medium": "SECSKILL:0:40",
@@ -1685,7 +1721,7 @@
 			}
 		},
 		"expert": {
-			"description": "After victory, raise Skeletons from 30% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 70% less Leadership.",
+			"description": "After victory, raise Skeletons from 30% of eligible enemy casualties.",
 			"images": {
 				"small": "SECSK32:0:41",
 				"medium": "SECSKILL:0:41",

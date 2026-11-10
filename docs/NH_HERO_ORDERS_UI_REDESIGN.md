@@ -10,9 +10,10 @@ work; a single-Hero restriction is not implied.
 
 Map actual saved data and available operations to overview/details or purposeful
 tabs. Preserve portrait, equipment/backpack, army interaction, navigation and help.
-Show total/base/growth, Leadership cost/capacity and contextual rule-family-absent
-states accurately. Do not paint labels into a generated screenshot or expose
-fictitious editable operations.
+Show total/base/growth, Command's natural/Authority breakdown, persistent slot
+permissions/enhancements and contextual rule-family-absent states accurately.
+Current creature views must omit retired Leadership costs/count budgets. Do not
+paint labels into a generated screenshot or expose fictitious editable operations.
 
 ## Actual integration surfaces
 

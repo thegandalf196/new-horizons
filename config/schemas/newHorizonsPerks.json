@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	"title": "New Horizons generic Skills and perks",
-	"description": "Canonical data-only registry for the 31 New Horizons Skills and their ten-perk pools. Effect status is explicit: planned effects are source design records and must not be treated as active runtime behavior.",
+	"description": "Captured Skills and ten-perk pools: Command/Authority policy 1 requires 32 Skills; historical absence retains 31. Planned effects are not active runtime behavior.",
 	"type": "object",
 	"additionalProperties": false,
 	"dependencies": {
@@ -13,7 +13,6 @@
 	"required": [
 		"schemaVersion",
 		"rulesetVersion",
-		"commandPolicyVersion",
 		"elementalAttunementPolicy",
 		"sourceDocument",
 		"sourceSha256",
@@ -22,7 +21,27 @@
 		"maxPerksPerSkill",
 		"skills"
 	],
+	"oneOf": [
+		{
+			"required": ["commandPolicyVersion"],
+			"not": {"anyOf": [{"required": ["commandAuthorityPolicy"]}, {"required": ["warfarePolicyVersion"]}]},
+			"properties": {
+				"skills": {"minProperties": 31, "maxProperties": 31, "not": {"required": ["new-horizons:authority"]}},
+				"necromancyPolicy": {"not": {"properties": {"version": {"enum": [3]}}}}
+			}
+		},
+		{
+			"required": ["commandAuthorityPolicy", "warfarePolicyVersion", "necromancyPolicy"],
+			"not": {"required": ["commandPolicyVersion"]},
+			"properties": {
+				"skills": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"]},
+				"necromancyPolicy": {"properties": {"version": {"enum": [3]}}}
+			}
+		}
+	],
 	"properties": {
+		"commandAuthorityPolicy": {"$ref": "#/definitions/commandAuthorityPolicy"},
+		"warfarePolicyVersion": {"type": "integer", "enum": [1]},
 		"elementalAttunementPolicy": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Current deterministic Conflux Attunement and revised perk meanings; a full active registry requires version 1."},
 		"commandPolicyVersion": {"type": "integer", "enum": [1], "description": "Current finite-Command perk meanings; a full active registry must carry version 1."},
 		"metamagicPolicy": {"$ref": "#/definitions/metamagicPolicyV3"},
@@ -57,7 +76,7 @@
 		"skills": {
 			"type": "object",
 			"minProperties": 31,
-			"maxProperties": 31,
+			"maxProperties": 32,
 			"additionalProperties": {"$ref": "#/definitions/skill"},
 			"properties": {
 				"new-horizons:discipline": {
@@ -404,12 +423,44 @@
 		}
 	},
 	"definitions": {
+		"commandAuthorityPolicy": {
+			"type": "object", "additionalProperties": false,
+			"required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}
+		},
+		"commandAuthorityParameters": {
+			"type": "object", "additionalProperties": false, "minProperties": 1,
+			"properties": {
+				"commandBonus": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"orderEfficiencyPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"attackEfficiencyBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"defenseEfficiencyBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"firstOrderEfficiencyBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"allEfficiencyBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"efficiencyBonusPPPerMorale": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"maximumEfficiencyBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"creatureAttack": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"creatureDefense": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"maximumHealthPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"initiative": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"battlefieldSpeed": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"additionalRetaliations": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"magicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"directAttackDamagePercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"attackAndSpellReductionPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"focusFireMeleeBonusPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"feintReductionBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"feintReductionCapPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"requiresActiveOrder": {"enum": [true]},
+				"slotGrades": {"type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true, "items": {"enum": ["core", "elite", "champion"]}}
+			}
+		},
 		"passiveFactionSkillPolicyV2": {"type": "object", "additionalProperties": false, "minProperties": 1, "maxProperties": 1, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [2]}}, "description": "Captured version 2 selects the revised faction Skill. Absence preserves its historical policy and definitions."},
 		"metamagicPolicyV3": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [3]}, "adeptAdditionalPoints": {"type": "integer", "minimum": 0, "maximum": 12}}},
 		"necromancyPolicy": {
 			"oneOf": [
 				{"$ref": "#/definitions/necromancyPolicyV1"},
-				{"$ref": "#/definitions/necromancyPolicyV2"}
+				{"$ref": "#/definitions/necromancyPolicyV2"},
+				{"$ref": "#/definitions/necromancyPolicyV3"}
 			]
 		},
 		"necromancyPolicyV1": {
@@ -468,11 +519,33 @@
 				"soulHarvesterManaCap": {"type": "integer", "minimum": 0, "maximum": 1000000}
 			}
 		},
+		"necromancyPolicyV3": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "Command/Authority Skeleton policy: no rank Leadership-cost discounts; Lord of the Dead grants maximum HP. Historical versions remain separate.",
+			"required": ["version", "lordOfTheDeadMaximumHealthPercent", "deathMarchSpeed", "bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations", "graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent", "bonewardMagicResistancePercent", "tombGuardDoubleStrike", "deadMansLuckBonus", "boneCollectorRaiseBonusPercent", "soulHarvesterManaPerRaisedCreature", "soulHarvesterManaCap"],
+			"properties": {
+				"version": {"type": "integer", "enum": [3]},
+				"lordOfTheDeadMaximumHealthPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"deathMarchSpeed": {"type": "integer", "minimum": 0, "maximum": 100},
+				"bonewardMagicalReductionPercent": {"type": "integer", "enum": [0]},
+				"tombGuardAdditionalRetaliations": {"type": "integer", "enum": [0]},
+				"graveplatePhysicalReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"graveKnowledgeRecoveryPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"bonewardMagicResistancePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"tombGuardDoubleStrike": {"type": "boolean"},
+				"deadMansLuckBonus": {"type": "integer", "minimum": 0, "maximum": 10},
+				"boneCollectorRaiseBonusPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"soulHarvesterManaPerRaisedCreature": {"type": "integer", "minimum": 0, "maximum": 100},
+				"soulHarvesterManaCap": {"type": "integer", "minimum": 0, "maximum": 1000000}
+			}
+		},
 		"effect": {
 			"type": "object",
 			"required": ["status", "description"],
 			"additionalProperties": false,
 			"properties": {
+				"parameters": {"$ref": "#/definitions/commandAuthorityParameters"},
 				"status": {"type": "string", "enum": ["active", "planned"]},
 				"description": {"type": "string", "minLength": 1}
 			}
@@ -489,9 +562,14 @@
 		},
 		"perk": {
 			"type": "object",
+			"dependencies": {"legacyIdentity": {"properties": {"id": {"enum": ["new-horizons:command.decisiveOrders"]}}}},
 			"required": ["id", "name", "requires", "description", "effect"],
 			"additionalProperties": false,
 			"properties": {
+				"legacyIdentity": {
+					"type": "object", "additionalProperties": false, "required": ["id", "commandPolicyVersion"],
+					"properties": {"id": {"enum": ["new-horizons:command.seizeInitiative"]}, "commandPolicyVersion": {"type": "integer", "enum": [1]}}
+				},
 				"id": {"type": "string", "minLength": 1},
 				"name": {"type": "string", "minLength": 1},
 				"requires": {"type": "string", "enum": ["basic", "advanced", "expert"]},

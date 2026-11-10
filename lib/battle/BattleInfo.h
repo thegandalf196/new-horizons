@@ -43,6 +43,7 @@ namespace battle { struct BattleUnitSidecarFields; }
 
 class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallback, public IBattleState, public GameCallbackHolder
 {
+	void validateCommandCaptureSerialization(bool revisedOrders, bool nativeRules, bool commandAuthority) const;
 	friend struct battle::BattleUnitSidecarFields;
 	BattleSideArray<SideInBattle> sides; //sides[0] - attacker, sides[1] - defender
 	std::unique_ptr<BattleLayout> layout;
@@ -853,15 +854,9 @@ public:
 				throw std::runtime_error("Cannot discard Relentless Assault battle state");
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NO_QUARTER) && hasNoQuarterState())
 				throw std::runtime_error("Cannot discard No Quarter battle state");
-			heroCommands::validateRevisedRulesSerialization(heroCommandRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
-			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
-			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
-			newHorizonsMagic::validateMagicArrowChargeSerialization(magicRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
-			heroCommands::validateRules(heroCommandRules);
+			validateCommandCaptureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 			for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				sides.at(side).sylvanLuck.validateSerializationPrefix(h);
 			validateFocusFireStates();
@@ -1045,15 +1040,9 @@ public:
 			h & heroCommandRules;
 			if(!h.saving)
 			{
-				heroCommands::validateRevisedRulesSerialization(heroCommandRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
-			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
-			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
-			newHorizonsMagic::validateMagicArrowChargeSerialization(magicRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
-			heroCommands::validateRules(heroCommandRules);
+				validateCommandCaptureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS),
+					h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN),
+					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_TARGETED_COMMANDS)
 					&& heroCommands::supportedByRules(heroCommandRules, HeroCommand::FOCUS_FIRE))
 					throw std::runtime_error("Targeted battle rules require the new save format");

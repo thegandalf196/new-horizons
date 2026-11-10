@@ -7,6 +7,7 @@
 #include "InitialExportWorld.h"
 #include "InitialExportEffectQueries.h"
 #include "../../lib/battle/BattleAccessibilityQuery.h"
+#include "../../lib/battle/BattleInfo.h"
 #include "MovementBonusProvenance.h"
 #include "../../lib/CStack.h"
 #include <optional>
@@ -49,10 +50,12 @@ struct InitialExportWorld::Data
 	bool unrecordedEnvironment = false;
 	bool unrecordedProgramInputs = false;
 	std::unique_ptr<battle::ProjectedBattleWorldArena> arena;
+	const BattleSideArray<newHorizonsDiscipline::HeroMoraleContext> moraleContexts;
 	bool failed = false;
 	bool effectQueriesOnly = false;
 
-	explicit Data(BattleInfo & original) : original(original), arena(std::make_unique<battle::ProjectedBattleWorldArena>(original)) {}
+	Data(BattleInfo & original, const BattleSideArray<newHorizonsDiscipline::HeroMoraleContext> & contexts)
+		: original(original), arena(std::make_unique<battle::ProjectedBattleWorldArena>(original)), moraleContexts(contexts) {}
 	void requireUsable() const
 	{
 		if(failed)
@@ -152,7 +155,12 @@ struct InitialExportWorld::Data
 };
 
 InitialExportWorld::ExportHandle::ExportHandle(std::shared_ptr<const Identity> identity) : identity(std::move(identity)) {}
-InitialExportWorld::InitialExportWorld(BattleInfo & original) : impl(std::make_unique<Data>(original)) {}
+InitialExportWorld::InitialExportWorld(BattleInfo & original)
+	: InitialExportWorld(original, {newHorizonsDiscipline::captureHeroMoraleContext(original.battleGetFightingHero(BattleSide::ATTACKER)),
+		newHorizonsDiscipline::captureHeroMoraleContext(original.battleGetFightingHero(BattleSide::DEFENDER))}) {}
+InitialExportWorld::InitialExportWorld(BattleInfo & original,
+	const BattleSideArray<newHorizonsDiscipline::HeroMoraleContext> & moraleContexts)
+	: impl(std::make_unique<Data>(original, moraleContexts)) {}
 InitialExportWorld::~InitialExportWorld() = default;
 
 size_t InitialExportWorld::size() const
@@ -290,7 +298,7 @@ std::unique_ptr<InitialExportWorld> InitialExportWorld::fork() const
 {
 	impl->requireUsable();
 	if(impl->effectQueriesOnly) throw std::logic_error("Disposable effect queries cannot fork unrecorded changes");
-	auto result = std::make_unique<InitialExportWorld>(impl->original);
+	auto result = std::unique_ptr<InitialExportWorld>(new InitialExportWorld(impl->original, impl->moraleContexts));
 	for(const auto & operation : impl->program)
 		result->impl->append(operation);
 	// Replaying missing inputs does not repair an earlier operation which
@@ -327,6 +335,13 @@ TConstBonusListPtr InitialExportWorld::projectedHeroBonuses(BattleSide side, boo
 {
 	impl->requireUsable();
 	return impl->arena->projectedHeroBonuses(side, unstacked);
+}
+
+int InitialExportWorld::projectedHeroMorale(BattleSide side) const
+{
+	impl->requireUsable();
+	return newHorizonsDiscipline::heroMoraleValue(impl->moraleContexts.at(side),
+		impl->arena->projectedHeroBonuses(side, true));
 }
 
 std::unique_ptr<InitialExportWorld::EffectQueries> InitialExportWorld::effectQueries() const

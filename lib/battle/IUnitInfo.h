@@ -40,6 +40,8 @@ public:
 	virtual int unitSylvanTacticsInitiativePercent(const Unit *) const { return 0; }
 	virtual int unitFortuneSpeed(const Unit *) const { return 0; }
 	virtual int unitSpeedBonus(const Unit *) const { return 0; }
+	/// Dynamic active-Order contribution; never cache in a unit's bonus-tree cache.
+	virtual int unitWarfareStatBonus(const Unit *) const { return 0; }
 	virtual bool unitSlowAffectsSpeed(const Unit *) const { return false; }
 	virtual newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit *) const { return {}; }
 	virtual int unitAdditionalRetaliations(const Unit *) const { return 0; }

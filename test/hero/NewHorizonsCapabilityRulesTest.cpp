@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "HistoricalCapabilityRules.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/bonuses/Bonus.h"
@@ -42,9 +43,9 @@ JsonNode resolvedCapabilities()
 }
 }
 
-TEST(NewHorizonsCapabilityRules, ActualCanonicalDataHasFullDeclaredMightAndMagicProfiles)
+TEST(NewHorizonsCapabilityRules, HistoricalV4HasFullDeclaredMightAndMagicProfiles)
 {
-	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto rules = historicalCapabilityRulesV4();
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsCapabilities", "canonical capability data"));
 	ASSERT_NO_THROW(newHorizonsHeroes::validateCapabilityRules(rules, true));
 	EXPECT_EQ(rules["rulesetVersion"].Integer(), 4);
@@ -107,7 +108,7 @@ TEST(NewHorizonsCapabilityRules, SkeletonTransformerRequiresExplicitSavedMarkerA
 
 TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits)
 {
-	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto rules = historicalCapabilityRulesV4();
 	const auto knight = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
@@ -130,7 +131,7 @@ TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits
 
 TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndPerSlotCapacity)
 {
-	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto rules = historicalCapabilityRulesV4();
 	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));
 	size_t edges = 0;
@@ -159,7 +160,7 @@ TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndP
 
 TEST(NewHorizonsCapabilityRules, HistoricalUpgradeMultiplierAndExplicitOverridesSurviveRoundTrip)
 {
-	JsonNode historical(JsonPath::builtin("config/newHorizonsCapabilities"));
+	auto historical = historicalCapabilityRulesV4();
 	historical["leadership"]["upgradeMultiplierPercent"].Integer() = 120;
 	historical["leadership"]["upgradeRounding"].Integer() = 10;
 	historical["leadership"]["creatureRequirements"]["core:sprite"].Integer() = 60;
@@ -251,7 +252,7 @@ TEST(NewHorizonsCapabilityRules, SavedBlacksmithInventoryPricesAndLegacyFallback
 	ASSERT_TRUE(tie);
 	EXPECT_EQ(*tie, 100);
 
-	JsonNode legacy = rules;
+	JsonNode legacy = historicalCapabilityRulesV4();
 	legacy["rulesetVersion"].Integer() = 3;
 	legacy.Struct().erase("warMachineShop");
 	legacy.Struct().erase("skeletonTransformer");
@@ -307,11 +308,11 @@ TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndE
 	EXPECT_TRUE(wrapped(JsonNode(JsonMap{})));
 	std::vector<JsonNode> invalid(10, original);
 	invalid[0]["schemaVersion"].Integer() = 2;
-	invalid[1]["classProfiles"].Struct().begin()->second["base"].Integer() = 0;
-	invalid[2]["classProfiles"].Struct().begin()->second["perLevel"].Float() = 2.5;
+	invalid[1]["classProfiles"]["core:knight"]["base"].Integer() = 0;
+	invalid[2]["profile"]["perLevel"].Float() = 2.5;
 	invalid[3]["leadership"]["globalScalePercent"].Integer() = 0;
 	invalid[4]["leadership"]["upgradeMultiplierPercent"].Integer() = 0;
-	invalid[5]["leadership"]["creatureRequirements"].Struct().begin()->second.Integer() = 0;
+	invalid[5].Struct().erase("armyCommand");
 	invalid[6]["siege"]["ballistaDamageMultiplier"].Vector()[3].Integer() = 101;
 	invalid[7]["warMachineShop"]["inventory"].Vector()[0].String() = "core:catapult";
 	invalid[8]["warMachineShop"]["favoredMachineByFaction"].Struct().erase("core:stronghold");
@@ -328,13 +329,13 @@ TEST(NewHorizonsCapabilityRules, WorldCoverageAndResolvedSnapshotsDoNotFollowNew
 {
 	const JsonNode original(JsonPath::builtin("config/newHorizonsCapabilities"));
 	auto missing = original;
-	missing["classProfiles"].Struct().erase(missing["classProfiles"].Struct().begin());
+	missing["armyCommand"]["classLevelIntervals"].Struct().erase(missing["armyCommand"]["classLevelIntervals"].Struct().begin());
 	EXPECT_THROW(newHorizonsHeroes::validateCapabilityRules(missing, true), std::runtime_error);
 	EXPECT_NO_THROW(newHorizonsHeroes::validateCapabilityRules(missing, false));
 	auto unknown = original;
-	unknown["classProfiles"]["missing-mod:unknownClass"] = original["classProfiles"].Struct().begin()->second;
+	unknown["armyCommand"]["classLevelIntervals"]["missing-mod:unknownClass"].Integer() = 3;
 	EXPECT_THROW(newHorizonsHeroes::validateCapabilityRules(unknown, false), std::runtime_error);
-	auto mutableDefaults = original;
+	auto mutableDefaults = historicalCapabilityRulesV4();
 	// A historical +20% class capture must survive the restored fresh defaults.
 	mutableDefaults["classProfiles"]["core:knight"]["base"].Integer() = 1230;
 	const auto saved = newHorizonsHeroes::resolveCapabilityRules(mutableDefaults,
@@ -462,7 +463,7 @@ TEST(NewHorizonsCapabilityRules, OperationSiegeReadRejectsMalformedContextBefore
 	const JsonNode authored(JsonPath::builtin("config/newHorizonsCapabilities"));
 	auto bad = newHorizonsHeroes::resolveCapabilityRules(authored,
 		HeroClassID(HeroClassID::decode("core:knight")));
-	bad["leadership"]["creatureRequirements"].Struct().begin()->second.Integer() = 0;
+	bad["siege"]["ballistaDamageMultiplier"].Vector()[0].Integer() = 0;
 	const auto failure = [](const auto & call)
 	{
 		try { call(); return std::string(); }

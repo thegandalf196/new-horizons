@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "OwnedUnitEnvironment.h"
 #include "OwnedUnitEnvironmentPolicy.h"
+#include "OwnedFrameBranchQueries.h"
 #include "CommittedElementalEffects.h"
 #include "UnitOwnershipQuery.h"
 #include "UnitMagicResistanceQuery.h"
@@ -70,6 +71,8 @@ public:
 		resistance(*this), queries(*this)
 	{
 		(void)rules(facts); // Retain the original required-rules construction admission.
+		for(const auto & entry : facts.warfareStatBonuses)
+			if(entry.second < 0) throw std::invalid_argument("Negative owned Warfare stat contribution");
 		if(facts.enginePolicy) policyStates = OwnedUnitEnvironment::capturedStates(facts);
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			if(!facts.colors.at(side) || !knownAffiliation(*facts.colors.at(side))
@@ -153,6 +156,18 @@ public:
 		return result;
 	}
 	const JsonNode & magicRules() const override { return rules(facts); }
+	int warfareStats(const Unit & unit) const
+	{
+		requireSubject(unit);
+		if(!unit.alive() || unit.isGhost()) return 0;
+		const auto override = facts.warfareStatBonuses.find(unit.unitId());
+		if(override != facts.warfareStatBonuses.end()) return override->second;
+		if(!facts.enginePolicy) return 0;
+		const auto found = facts.enginePolicy->warfareStatBonuses.find(unit.unitId());
+		if(found == facts.enginePolicy->warfareStatBonuses.end())
+			throw std::invalid_argument("Owned Warfare stats require the captured occurrence");
+		return found->second;
+	}
 };
 const ProjectedUnitEnvironmentState::SideInputs & OwnedUnitEnvironment::capturedInputs(const Facts & facts, BattleSide side)
 {
@@ -215,6 +230,28 @@ int OwnedUnitEnvironment::unitSylvanTacticsInitiativePercent(const Unit * unit) 
 }
 int OwnedUnitEnvironment::unitFortuneSpeed(const Unit * unit) const { return data->queries.unitFortuneSpeed(unit); }
 int OwnedUnitEnvironment::unitSpeedBonus(const Unit * unit) const { return data->queries.unitSpeedBonus(unit); }
+int OwnedUnitEnvironment::unitWarfareStatBonus(const Unit * unit) const { return unit ? data->warfareStats(*unit) : 0; }
+std::shared_ptr<CUnitState> OwnedUnitEnvironment::acquireStateWithWarfareStatBonus(
+	const std::shared_ptr<OwnedUnitBonusFrame> & frame, int value)
+{
+	if(!frame || value < 0) throw std::invalid_argument("Invalid owned Warfare stat loan");
+	struct Loan
+	{
+		std::shared_ptr<OwnedUnitBonusFrame> frozen;
+		OwnedUnitBonusFrame::Scratch scratch;
+		std::unique_ptr<OwnedUnitEnvironment> environment;
+		explicit Loan(const std::shared_ptr<OwnedUnitBonusFrame> & frame) : frozen(frame->fork()), scratch(frozen->scratch()) {}
+	};
+	auto loan = std::make_shared<Loan>(frame);
+	const auto & source = dynamic_cast<const OwnedUnitEnvironment &>(OwnedFrameBranchQueries::environment(*loan->frozen));
+	auto facts = source.data->facts;
+	facts.warfareStatBonuses[loan->scratch.unit().unitId()] = value;
+	// Both the descriptor/provider and roster are retained immutable copies.
+	loan->environment = std::unique_ptr<OwnedUnitEnvironment>(new OwnedUnitEnvironment(
+		source.data->units, std::move(facts), &loan->scratch.unit()));
+	loan->scratch.unit().bindStateEnvironment(loan->environment.get());
+	return std::shared_ptr<CUnitState>(loan, &loan->scratch.unit());
+}
 bool OwnedUnitEnvironment::unitSlowAffectsSpeed(const Unit * unit) const { return data->queries.unitSlowAffectsSpeed(unit); }
 int OwnedUnitEnvironment::unitAdditionalRetaliations(const Unit * unit) const { return data->queries.unitAdditionalRetaliations(unit); }
 int OwnedUnitEnvironment::unitBloodragePainIncrement(const Unit * unit) const { return data->queries.unitBloodragePainIncrement(unit); }

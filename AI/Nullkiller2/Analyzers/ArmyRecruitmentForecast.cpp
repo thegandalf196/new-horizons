@@ -56,6 +56,16 @@ std::vector<creInfo> ArmyManager::getArmyAvailableToBuy(
 		ci.count = dwelling->getRecruitmentAmount(ci.creID, availableRes, ci.count, carrier);
 		if(ci.count <= 0)
 			continue;
+		if(carrier && carrier->getArmyCommand())
+		{
+			const auto plan = newHorizonsHeroes::planCommandRecruitment(*carrier, projectedSlots, ci.creID, ci.count);
+			if(!plan) continue;
+			ci.level = i;
+			creaturesInDwellings.push_back(ci);
+			projectedSlots = plan->slots;
+			availableRes -= dwelling->getTotalRecruitmentCost(ci.creID, ci.count, carrier);
+			continue;
+		}
 
 		const auto capacity = carrier ? carrier->getLeadershipSlotCapacity(ci.creID) : std::nullopt;
 		const std::optional<int64_t> maximum = capacity

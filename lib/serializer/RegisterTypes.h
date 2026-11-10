@@ -350,4 +350,8 @@ void registerTypes(Serializer &s)
 	s.template registerType<BattleCrisisCommandChanged>(307);
 	s.template registerType<SetMetamagicPointState>(308);
 	s.template registerType<SetElementalAttunementState>(309);
+	s.template registerType<HeroCommandProgression>(310);
+	s.template registerType<HeroCommandEnhancementDialog>(311);
+	s.template registerType<HeroCommandEnhancementChosen>(312);
+	s.template registerType<HeroCommandEnhancementReply>(313);
 }

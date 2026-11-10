@@ -40,6 +40,8 @@ struct SpecialtySerializationContext
 	/// Owned in-process copies must carry the complete 1155 unit-state envelope.
 	bool passiveFactionSkills = false;
 	bool nativeRulesRedesign = false;
+	/// Bonus-only projection admission; does not activate a hero's army policy.
+	bool commandAuthority = false;
 
 	bool operator==(const SpecialtySerializationContext &) const = default;
 
@@ -74,6 +76,7 @@ struct SpecialtySerializationContext
 		result.extendedOrdinarySpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 		result.passiveFactionSkills = h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 		result.nativeRulesRedesign = h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
+		result.commandAuthority = h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY);
 		return result;
 	}
 };

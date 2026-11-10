@@ -151,9 +151,11 @@ void validateGlyphsOfFearAura(const JsonNode & node)
 	require(integer(node["morale"], -1000, -1), "Glyphs of Fear hostile Morale");
 }
 
-void common(const JsonNode & rules)
+void common(const JsonNode & rules, bool resolved)
 {
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
+	if(rules.Struct().contains("armyCommand"))
+		validateArmyCommandPolicy(rules["armyCommand"], resolved);
 	if(rules.Struct().contains("artifactManaRegeneration"))
 		validateArtifactManaRegeneration(rules["artifactManaRegeneration"]);
 	if(rules.Struct().contains("glyphsOfFearAura"))
@@ -165,7 +167,13 @@ void common(const JsonNode & rules)
 		fields(rules["skeletonTransformer"], {"aggregateHealthPercent"});
 		require(integer(rules["skeletonTransformer"]["aggregateHealthPercent"], 1, 100), "Skeleton Transformer health percent");
 	}
-	if(rules["rulesetVersion"].Integer() == 1)
+	if(rules["rulesetVersion"].Integer() == 5)
+	{
+		require(rules.Struct().contains("armyCommand"), "v5 requires armyCommand");
+		require(!rules.Struct().contains("leadership") && !rules.Struct().contains("classProfiles")
+			&& !rules.Struct().contains("profile"), "v5 cannot contain retired Leadership tables");
+	}
+	else if(rules["rulesetVersion"].Integer() == 1)
 	{
 		fields(rules["leadership"], {"skillBonusPercent", "minimumMovementPercent"});
 		rankValues(rules["leadership"]["skillBonusPercent"], 0, 1000, 0);
@@ -226,18 +234,43 @@ void resolvedRank(const JsonNode & rules, int rank)
 }
 }
 
+bool usesLegacyLeadership(const JsonNode & rules)
+{
+	return usesRules(rules) && rules["rulesetVersion"].Integer() < 5
+		&& !rules.Struct().contains("armyCommand");
+}
+
+bool isWorldCapabilityRules(const JsonNode & rules)
+{
+	return rules.isStruct() && (rules.Struct().contains("classProfiles")
+		|| (rules["armyCommand"].isStruct() && rules["armyCommand"].Struct().contains("classLevelIntervals")));
+}
+
 void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura"});
-	common(rules);
-	require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
+	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand"});
+	common(rules, false);
 	std::set<int> seen;
-	for(const auto & [key, value] : rules["classProfiles"].Struct())
+	if(rules["rulesetVersion"].Integer() < 5)
 	{
-		require(seen.insert(resolveClass(key)).second, "duplicate resolved class");
-		profile(value);
+		require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
+		for(const auto & [key, value] : rules["classProfiles"].Struct())
+		{
+			require(seen.insert(resolveClass(key)).second, "duplicate resolved class");
+			profile(value);
+		}
+	}
+	if(rules.Struct().contains("armyCommand"))
+	{
+		std::set<int> commandClasses;
+		for(const auto & [key, interval] : rules["armyCommand"]["classLevelIntervals"].Struct())
+			require(commandClasses.insert(resolveClass(key)).second, "duplicate army Command class");
+		if(rules["rulesetVersion"].Integer() < 5)
+			require(commandClasses == seen, "army Command intervals must cover exactly the captured capability classes");
+		else
+			seen = std::move(commandClasses);
 	}
 	if(requireAllClasses)
 		for(const auto & heroClass : LIBRARY->heroclassesh->objects)
@@ -249,9 +282,10 @@ void validateResolvedCapabilityRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura"});
-	common(rules);
-	profile(rules["profile"]);
+	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand"});
+	common(rules, true);
+	if(rules["rulesetVersion"].Integer() < 5)
+		profile(rules["profile"]);
 }
 
 JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
@@ -260,8 +294,10 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 		return JsonNode();
 	validateCapabilityRules(rules, false);
 	JsonNode result;
-	for(const auto * key : {"schemaVersion", "rulesetVersion", "leadership", "siege"})
+	for(const auto * key : {"schemaVersion", "rulesetVersion", "siege"})
 		result[key] = rules[key];
+	if(rules["rulesetVersion"].Integer() < 5)
+		result["leadership"] = rules["leadership"];
 	if(rules["rulesetVersion"].Integer() >= 4)
 		result["warMachineShop"] = rules["warMachineShop"];
 	if(!rules["skeletonTransformer"].isNull())
@@ -270,9 +306,12 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 		result["artifactManaRegeneration"] = rules["artifactManaRegeneration"];
 	if(rules.Struct().contains("glyphsOfFearAura"))
 		result["glyphsOfFearAura"] = rules["glyphsOfFearAura"];
-	for(const auto & [key, value] : rules["classProfiles"].Struct())
-		if(resolveClass(key) == heroClass.getNum())
-			result["profile"] = value;
+	if(rules.Struct().contains("armyCommand"))
+		result["armyCommand"] = resolveArmyCommandPolicy(rules["armyCommand"], HeroClassID::encode(heroClass.getNum()));
+	if(rules["rulesetVersion"].Integer() < 5)
+		for(const auto & [key, value] : rules["classProfiles"].Struct())
+			if(resolveClass(key) == heroClass.getNum())
+				result["profile"] = value;
 	validateResolvedCapabilityRules(result);
 	return result;
 }
@@ -281,7 +320,7 @@ std::optional<int> capabilitySkeletonTransformerHealthPercent(const JsonNode & r
 {
 	if(!usesRules(rules) || rules["skeletonTransformer"].isNull())
 		return std::nullopt;
-	if(rules.Struct().contains("classProfiles"))
+	if(isWorldCapabilityRules(rules))
 		validateCapabilityRules(rules, false);
 	else
 		validateResolvedCapabilityRules(rules);
@@ -327,74 +366,6 @@ std::optional<GlyphsOfFearAura> capabilityGlyphsOfFearAura(const JsonNode & rule
 	validateGlyphsOfFearAura(rules["glyphsOfFearAura"]);
 	return GlyphsOfFearAura{static_cast<int>(rules["glyphsOfFearAura"]["radius"].Integer()),
 		static_cast<int>(rules["glyphsOfFearAura"]["morale"].Integer())};
-}
-
-LeadershipCapacity capabilityLeadership(const JsonNode & rules, int level, int leadershipRank, uint64_t used)
-{
-	resolvedRank(rules, leadershipRank);
-	require(rules["rulesetVersion"].Integer() == 1, "aggregate Leadership is legacy v1 only");
-	return leadershipCapacity(rules["profile"]["base"].Integer(), rules["profile"]["perLevel"].Integer(),
-		level, rules["leadership"]["skillBonusPercent"].Vector()[leadershipRank].Integer(), used,
-		rules["leadership"]["minimumMovementPercent"].Integer());
-}
-
-int capabilityLeadershipRating(const JsonNode & rules, int level)
-{
-	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
-	validateResolvedCapabilityRules(rules);
-	require(rules["rulesetVersion"].Integer() >= 2, "per-slot Leadership requires ruleset v2+");
-	require(level >= 1, "hero level");
-	const int64_t unscaled = static_cast<int64_t>(rules["profile"]["base"].Integer())
-		+ static_cast<int64_t>(rules["profile"]["perLevel"].Integer()) * (level - 1);
-	const int64_t scaled = unscaled * rules["leadership"]["globalScalePercent"].Integer() / 100;
-	return static_cast<int>(std::min<int64_t>(scaled, std::numeric_limits<int>::max()));
-}
-
-int capabilityLeadershipPerLevel(const JsonNode & rules)
-{
-	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
-	validateResolvedCapabilityRules(rules);
-	require(rules["rulesetVersion"].Integer() >= 2, "per-slot Leadership requires ruleset v2+");
-	const int64_t scaled = static_cast<int64_t>(rules["profile"]["perLevel"].Integer())
-		* rules["leadership"]["globalScalePercent"].Integer() / 100;
-	return static_cast<int>(std::min<int64_t>(scaled, std::numeric_limits<int>::max()));
-}
-
-int capabilityCreatureLeadershipRequirement(const JsonNode & rules, CreatureID creature)
-{
-	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
-	if(rules.Struct().contains("classProfiles"))
-		validateCapabilityRules(rules, false);
-	else
-		validateResolvedCapabilityRules(rules);
-	if(rules["rulesetVersion"].Integer() < 2 || !creature.hasValue() || !creature.toCreature())
-		return 0;
-	const auto & requirements = rules["leadership"]["creatureRequirements"];
-	for(const auto & [key, value] : requirements.Struct())
-		if(resolveCreature(key) == creature.getNum())
-			return value.Integer();
-	for(const auto & [key, value] : requirements.Struct())
-	{
-		const auto * base = CreatureID(resolveCreature(key)).toCreature();
-		if(base && vstd::contains(base->upgrades, creature))
-		{
-			const int64_t numerator = static_cast<int64_t>(value.Integer())
-				* rules["leadership"]["upgradeMultiplierPercent"].Integer();
-			const int rounding = rules["leadership"]["upgradeRounding"].Integer();
-			return static_cast<int>(((numerator + 50LL * rounding) / (100LL * rounding)) * rounding);
-		}
-	}
-	return 0;
-}
-
-std::optional<LeadershipSlotCapacity> capabilityLeadershipSlot(
-	const JsonNode & rules, int level, CreatureID creature)
-{
-	const int requirement = capabilityCreatureLeadershipRequirement(rules, creature);
-	if(requirement <= 0)
-		return std::nullopt;
-	const int leadership = capabilityLeadershipRating(rules, level);
-	return LeadershipSlotCapacity{leadership, requirement, leadership / requirement};
 }
 
 int capabilityBallistaMultiplier(const JsonNode & rules, int artilleryRank)

@@ -7,6 +7,7 @@
  */
 #include "StdInc.h"
 #include "CGameHandler.h"
+#include "CommandArmyAdmission.h"
 #include "../lib/mapObjects/CGDwelling.h"
 #include "../lib/mapObjects/CGTownInstance.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
@@ -25,6 +26,41 @@
 #include "../lib/StartInfo.h"
 
 #define COMPLAIN_RET_FALSE_IF(cond, txt) do {if (cond){complain(txt); return false;}} while(0)
+
+namespace
+{
+std::optional<newHorizonsHeroes::CommandArmyPlan> prepareRecruitmentPlacement(
+	const CArmedInstance * army, const CGHeroInstance * hero, CreatureID crid, int32_t cram,
+	bool warMachine, SlotID & slot)
+{
+	slot = newHorizonsHeroes::recruitmentSlot(army, crid, cram);
+	std::optional<newHorizonsHeroes::CommandArmyPlan> commandPlan;
+	if(!warMachine && hero && hero->getArmyCommand())
+	{
+		const std::array incoming{newHorizonsHeroes::RecruitmentSlot{SlotID(0), crid, cram}};
+		commandPlan = newHorizonsHeroes::planCommandArmyAddition(*hero,
+			newHorizonsHeroes::commandArmySlots(*hero), incoming);
+		if(commandPlan)
+			for(const auto & move : commandPlan->moves)
+				if(!move.withinDestination) slot = move.destination;
+	}
+	return commandPlan;
+}
+
+const char * warMachineRecruitmentError(const CGHeroInstance * hero, ArtifactID artId)
+{
+	const auto * art = artId.toArtifact();
+	if(!hero)
+		return "Only hero can buy war machines";
+	if(artId == ArtifactID::CATAPULT)
+		return "Catapult cannot be recruited!";
+	if(nullptr == art)
+		return "Invalid war machine artifact";
+	if(hero->hasArt(artId))
+		return "Hero already has this machine!";
+	return nullptr;
+}
+}
 
 bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dstid, CreatureID crid, int32_t cram,
 	int32_t fromLvl, PlayerColor player, ObjectInstanceID portalTownId)
@@ -96,7 +132,8 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 			break;
 		}
 	}
-	SlotID slot = newHorizonsHeroes::recruitmentSlot(army, crid, cram);
+	SlotID slot;
+	auto commandPlan = prepareRecruitmentPlacement(army, hero, crid, cram, warMachine, slot);
 	const auto * buyer = newHorizonsEstates::recruitmentBuyer(army);
 	const auto & resources = gameInfo().getPlayerState(army->tempOwner)->resources;
 	const auto maxAffordableAmount = dwelling->getRecruitmentAmount(crid, resources, cram, buyer);
@@ -104,7 +141,8 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	if((!found && complain("Cannot recruit: no such creatures!"))
 		|| (cram > maxAffordableAmount && complain("Cannot recruit: lack of resources!"))
 		|| (cram <= 0 && complain("Cannot recruit: cram <= 0!"))
-		|| (!slot.validSlot() && !warMachine && complain("Cannot recruit: no available slot!")))
+		|| ((!slot.validSlot() || (hero && hero->getArmyCommand() && !commandPlan)) && !warMachine
+			&& complain("Cannot recruit: no legal arrangement in unlocked army slots!")))
 	{
 		return false;
 	}
@@ -113,22 +151,19 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 		const int64_t recruitedStackSize = army->hasStackAtSlot(slot)
 			? static_cast<int64_t>(army->getStackCount(slot)) + static_cast<int64_t>(cram)
 			: static_cast<int64_t>(cram);
-		if(!validateLeadershipStack(army, crid, recruitedStackSize, "recruit"))
+		if(!commandPlan && !commandArmyAdmission::validateSlot(*this, army, slot, crid, recruitedStackSize, "recruit"))
 			return false;
 	}
 
 	if(warMachine)
 	{
-		const auto artId = c->warMachine;
-		const auto * art = artId.toArtifact();
-		COMPLAIN_RET_FALSE_IF(!hero, "Only hero can buy war machines");
-		COMPLAIN_RET_FALSE_IF(artId == ArtifactID::CATAPULT, "Catapult cannot be recruited!");
-		COMPLAIN_RET_FALSE_IF(nullptr == art, "Invalid war machine artifact");
-		COMPLAIN_RET_FALSE_IF(hero->hasArt(artId),"Hero already has this machine!");
-
+		const auto * error = warMachineRecruitmentError(hero, c->warMachine);
+		COMPLAIN_RET_FALSE_IF(error, error);
 	}
 
 	//recruit
+	if(commandPlan)
+		commandArmyAdmission::rearrange(*this, *army, *commandPlan);
 	TResources cost = dwelling->getTotalRecruitmentCost(crid, cram, buyer);
 	giveResources(army->tempOwner, -cost);
 	statistics->getPlayerAccumulator(army->tempOwner).spentResourcesForArmy += cost;

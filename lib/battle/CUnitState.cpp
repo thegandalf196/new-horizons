@@ -1929,32 +1929,6 @@ int CUnitState::getMaxDamage(bool ranged) const
 		bonusCache.getBonusValue(UnitBonusValuesProxy::MAX_DAMAGE_MELEE);
 }
 
-int CUnitState::getAttack(bool ranged) const
-{
-	int attack = ranged ?
-		bonusCache.getBonusValue(UnitBonusValuesProxy::ATTACK_RANGED):
-		bonusCache.getBonusValue(UnitBonusValuesProxy::ATTACK_MELEE);
-
-	vstd::amax(attack, 0);
-	return attack;
-}
-
-int CUnitState::getDefense(bool ranged) const
-{
-	int defence = ranged ?
-					  bonusCache.getBonusValue(UnitBonusValuesProxy::DEFENCE_RANGED):
-					  bonusCache.getBonusValue(UnitBonusValuesProxy::DEFENCE_MELEE);
-
-	vstd::amax(defence, 0);
-	return defence;
-}
-
-int CUnitState::getDefenseIgnoringDefensiveStance(bool ranged) const
-{
-	const int stanceBonus = ranged ? defensiveStanceRangedBonus : defensiveStanceMeleeBonus;
-	return std::max(0, getDefense(ranged) - (defended() ? stanceBonus : 0));
-}
-
 std::shared_ptr<Unit> CUnitState::acquire() const
 {
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
@@ -2154,14 +2128,6 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	si16 posValue = position.toInt();
 	handler.serializeInt("position", posValue);
 	position = posValue;
-}
-
-void CUnitState::bindStateEnvironment(const IUnitEnvironment * env_) noexcept
-{
-	env = env_;
-
-	shots.setEnv(env);
-	counterAttacks.setEnv(env);
 }
 
 bool CUnitState::archeryCrossfireAvailable(BattleSide side, uint32_t currentShooter, int32_t round) const

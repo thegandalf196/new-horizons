@@ -22,6 +22,7 @@
 #include "NewHorizonsCreatureCategoryUI.h"
 
 #include "../CPlayerInterface.h"
+#include "../UIHelper.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
 #include "../PlayerLocalState.h"
@@ -127,9 +128,9 @@ constexpr int NH_FORT_CARD_GAP = 4;
 constexpr int NH_FORT_SIDE_MARGIN = 12;
 constexpr int NH_FORT_CARDS_PER_ROW = 3;
 constexpr int NH_FORT_FOOTER_HEIGHT = 48;
-constexpr int NH_FORT_STAT_COUNT = 8;
+constexpr int NH_FORT_STAT_COUNT = 7;
 constexpr int NH_FORT_COMPACT_STAT_COLUMNS = 2;
-constexpr int NH_FORT_COMPACT_STAT_ROWS = NH_FORT_STAT_COUNT / NH_FORT_COMPACT_STAT_COLUMNS;
+constexpr int NH_FORT_COMPACT_STAT_ROWS = (NH_FORT_STAT_COUNT + NH_FORT_COMPACT_STAT_COLUMNS - 1) / NH_FORT_COMPACT_STAT_COLUMNS;
 constexpr int NH_FORT_COMPACT_PORTRAIT_HEIGHT = 15;
 constexpr int NH_FORT_CONFLUX_COMPACT_PORTRAIT_MAX_HEIGHT = 40;
 int rankedFortTinyFontHeight()
@@ -2247,25 +2248,8 @@ void CCreaInfo::clickPressed(const Point & cursorPosition)
 			vstd::amin(maxAmount, amount);
 
 			const auto * destination = town->getUpperArmy();
-			if(const auto * hero = dynamic_cast<const CGHeroInstance *>(destination))
-			{
-				if(const auto capacity = hero->getLeadershipSlotCapacity(creatureId))
-				{
-					const auto slot = newHorizonsHeroes::recruitmentSlot(
-						destination, creatureId, std::numeric_limits<int32_t>::max());
-					if(slot.validSlot())
-					{
-						const int64_t existingCount = destination->slotEmpty(slot)
-							? 0
-							: destination->getStackCount(slot);
-						const int64_t headroom = std::max<int64_t>(0,
-							static_cast<int64_t>(capacity->maximum) - existingCount);
-						maxAmount = static_cast<si32>(std::min<int64_t>(maxAmount, headroom));
-					}
-					else
-						maxAmount = 0;
-				}
-			}
+			if(!UIHelper::recruitmentPosition(destination, creatureId, maxAmount).validSlot())
+				maxAmount = 0;
 
 			if(maxAmount > 0)
 				GAME->interface()->cb->recruitCreatures(town, town->getUpperArmy(), creatureId, maxAmount, level);
@@ -3402,7 +3386,6 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 			LIBRARY->generaltexth->allTexts[388],
 			LIBRARY->generaltexth->allTexts[193],
 			LIBRARY->generaltexth->translate("new-horizons.fort.stat.initiative"),
-			LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost"),
 			LIBRARY->generaltexth->allTexts[194]
 		};
 		const std::array<std::string, NH_FORT_STAT_COUNT> rankedStatDescriptions =
@@ -3413,7 +3396,6 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 			LIBRARY->generaltexth->translate("core.castinfo.3"),
 			LIBRARY->generaltexth->translate("core.castinfo.4"),
 			LIBRARY->generaltexth->translate("new-horizons.fort.stat.initiative.description"),
-			LIBRARY->generaltexth->translate("new-horizons.fort.stat.leadershipCost.description"),
 			townGrowthPresentation::description(town->getGrowthInfo(level), getMyCreature()->getId(), &GAME->translator())
 		};
 		const int rowHeight = rankedLayout ? rankedFortStatRowHeight(cardHeight, compactStatGrid, compactPortraitHeight) : 20;
@@ -3428,8 +3410,7 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 				tinyFont->getStringWidth(rankedStatNames[3]),
 				tinyFont->getStringWidth(rankedStatNames[4]),
 				tinyFont->getStringWidth(rankedStatNames[5]),
-				tinyFont->getStringWidth(rankedStatNames[6]),
-				tinyFont->getStringWidth(rankedStatNames[7])
+				tinyFont->getStringWidth(rankedStatNames[6])
 			}))
 			: 0;
 		const int statValueWidth = rankedLayout
@@ -3466,7 +3447,6 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 				ImagePath::builtin("stackWindow/iconHealth"),
 				ImagePath::builtin("stackWindow/iconSpeed"),
 				ImagePath::builtin("stackWindow/iconInitiative"),
-				ImagePath(),
 				ImagePath::builtin("stackWindow/iconGrowth")
 			};
 			for(size_t index = 0; index < statIconPaths.size(); ++index)
@@ -3475,16 +3455,9 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 				const int iconSize = std::max(1, std::min(rankedStatIconWidth, rect.h - 1));
 				const int iconX = rect.x + (rankedStatIconWidth - iconSize) / 2;
 				const int iconY = rect.y + (rect.h - iconSize) / 2;
-				if(index == 6)
-					rankedStatIcons.push_back(std::make_shared<CAnimImage>(
-						AnimationPath::builtin("NH_creature_leadership_20"), 0,
-						Rect(iconX, iconY, iconSize, iconSize)));
-				else
-				{
-					auto icon = std::make_shared<CPicture>(statIconPaths[index], iconX, iconY);
-					icon->scaleTo(Point(iconSize, iconSize));
-					rankedStatIcons.push_back(icon);
-				}
+				auto icon = std::make_shared<CPicture>(statIconPaths[index], iconX, iconY);
+				icon->scaleTo(Point(iconSize, iconSize));
+				rankedStatIcons.push_back(icon);
 			}
 			const auto rankedValueRect = [&rankedStatRect](size_t index)
 			{
@@ -3500,20 +3473,12 @@ CFortScreen::RecruitArea::RecruitArea(int posX, int posY, const CGTownInstance *
 			values.push_back(std::make_shared<LabeledValue>(rankedValueRect(4), rankedStatNames[4], rankedStatDescriptions[4], getMyCreature()->getBaseSpeed(), true));
 			values.push_back(std::make_shared<LabeledValue>(rankedValueRect(5), rankedStatNames[5], rankedStatDescriptions[5], getMyCreature()->getBaseInitiative(), true));
 
-			int leadershipCost = 0;
-			if(GAME && GAME->interface() && GAME->interface()->cb)
-			{
-				const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
-				if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
-					leadershipCost = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(capabilityRules, getMyCreature()->getId());
-			}
-			values.push_back(std::make_shared<LabeledValue>(rankedValueRect(6), rankedStatNames[6], rankedStatDescriptions[6], leadershipCost > 0 ? std::to_string(leadershipCost) : "--", true));
 			if(town->getFactionID() == FactionID::CONFLUX && town->creatures[level].second.empty())
-				values.push_back(std::make_shared<LabeledValue>(rankedValueRect(7), rankedStatNames[7],
-					rankedStatDescriptions[7], std::string("0"), true));
+				values.push_back(std::make_shared<LabeledValue>(rankedValueRect(6), rankedStatNames[6],
+					rankedStatDescriptions[6], std::string("0"), true));
 			else
-				values.push_back(std::make_shared<LabeledValue>(rankedValueRect(7), rankedStatNames[7],
-					rankedStatDescriptions[7], town->creatureGrowth(level), true));
+				values.push_back(std::make_shared<LabeledValue>(rankedValueRect(6), rankedStatNames[6],
+					rankedStatDescriptions[6], town->creatureGrowth(level), true));
 		}
 		else
 		{

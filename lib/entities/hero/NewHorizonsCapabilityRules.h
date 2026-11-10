@@ -10,12 +10,13 @@
 #pragma once
 
 #include "NewHorizonsLeadership.h"
+#include "NewHorizonsCommandRules.h"
 #include "../../constants/EntityIdentifiers.h"
 #include "../../json/JsonNode.h"
 
 namespace newHorizonsHeroes
 {
-constexpr int CAPABILITY_RULESET_VERSION = 4;
+constexpr int CAPABILITY_RULESET_VERSION = 5;
 
 struct DLL_LINKAGE SiegeCapabilities
 {
@@ -53,13 +54,18 @@ struct DLL_LINKAGE LeadershipSlotCapacity
 DLL_LINKAGE void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses);
 DLL_LINKAGE void validateResolvedCapabilityRules(const JsonNode & rules);
 DLL_LINKAGE JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass);
+/// V5 and any explicit armyCommand policy retire numerical Leadership entirely.
+DLL_LINKAGE bool usesLegacyLeadership(const JsonNode & rules);
+/// Distinguishes world tables from resolved hero captures, including V5 without classProfiles.
+DLL_LINKAGE bool isWorldCapabilityRules(const JsonNode & rules);
 
 /// These require a nonempty resolved snapshot, not current installation defaults.
 /// Skill ranks are original NONE..EXPERT; later mastery choices are separate state.
 DLL_LINKAGE LeadershipCapacity capabilityLeadership(const JsonNode & resolvedRules,
 	int level, int leadershipRank, uint64_t used);
-/// Canonical v2 Leadership is a per-slot limit. A zero requirement means the
-/// creature is outside this saved original-content table and is not restricted.
+/// Historical v2-v4 Leadership is a per-slot limit. Current Command captures
+/// return zero rating/growth/requirement and no slot capacity, never old values.
+/// A zero historical requirement means the creature is outside its saved table.
 DLL_LINKAGE int capabilityLeadershipRating(const JsonNode & resolvedRules, int level);
 DLL_LINKAGE int capabilityLeadershipPerLevel(const JsonNode & resolvedRules);
 DLL_LINKAGE int capabilityCreatureLeadershipRequirement(const JsonNode & resolvedRules, CreatureID creature);

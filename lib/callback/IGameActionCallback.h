@@ -65,6 +65,7 @@ public:
 
 	/// Returns request ID, or -1 without submission. No cancel/default choice.
 	virtual int chooseHeroMastery(ObjectInstanceID hero, QueryID queryID, uint64_t sequence, int choice) { return -1; }
+	virtual int chooseCommandEnhancement(ObjectInstanceID hero, QueryID queryID, int64_t milestone, int choice) { return -1; }
 	virtual int selectionMade(int selection, QueryID queryID) =0;
 	virtual int sendQueryReply(std::optional<int32_t> reply, QueryID queryID) =0;
 	virtual int swapCreatures(const CArmedInstance *s1, const CArmedInstance *s2, SlotID p1, SlotID p2)=0;//swaps creatures between two possibly different garrisons // TODO: AI-unsafe code - fix it!

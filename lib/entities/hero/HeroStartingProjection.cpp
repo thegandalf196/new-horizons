@@ -12,6 +12,7 @@
 #include "../../CSkillHandler.h"
 #include "../../CCreatureHandler.h"
 #include "../artifact/CArtifact.h"
+#include "../creature/NewHorizonsAssimilation.h"
 #include "../../mapping/CMap.h"
 #include "../../spells/CSpellHandler.h"
 #include "../../spells/NewHorizonsMagic.h"
@@ -21,6 +22,23 @@
 
 namespace newHorizonsHeroes
 {
+CreatureID defaultStartingArmyCreature(const CHero & hero, const JsonNode & capabilities,
+	CreatureID creature, bool commandSpecialist)
+{
+	const auto & policy = capabilities["armyCommand"];
+	if(!policy.isStruct() || !policy.Struct().contains("defaultStartingArmyVersion"))
+		return creature; // An older capture never inherits the installed default.
+	if(!capturedCommandRules(capabilities))
+		return creature;
+	if(!hero.heroClass || hero.heroClass->faction != FactionID::CASTLE || commandSpecialist)
+		return creature;
+	if(creature == CreatureID(CreatureID::decode("core:griffin")))
+		return CreatureID(CreatureID::decode("core:swordsman"));
+	if(creature == CreatureID(CreatureID::decode("core:royalGriffin")))
+		return CreatureID(CreatureID::decode("core:crusader"));
+	return creature;
+}
+
 bool guaranteesDefaultFirstAidTent(HeroTypeID hero, const JsonNode & development)
 {
 	if(!usesRules(development))
@@ -387,7 +405,21 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 				result.spells.insert(spell);
 		}
 	result.army = overrides.army.value_or(hero.initialArmy);
-	if(!overrides.army && usesRules(capabilities) && capabilities["rulesetVersion"].Integer() >= 2)
+	if(!overrides.army)
+	{
+		// Fresh defaults resolve the same target captured by initHero. Authored
+		// Skills suppress that migration; a resolved snapshot needs its own marker.
+		std::optional<CreatureID> target;
+		if((!context.resolved && !overrides.skills)
+			|| (context.resolved && development.isStruct()
+				&& development.Struct().contains("creatureLineSpecialtyTarget")))
+			target = defaultCreatureLineTarget(development, hero.getId());
+		for(auto & row : result.army)
+			row.creature = defaultStartingArmyCreature(hero, capabilities, row.creature,
+				newHorizonsCreatures::isCommandSpecialistCreature(
+					hero, development, context.magic, target, row.creature));
+	}
+	if(!overrides.army && !capturedCommandRules(capabilities) && usesRules(capabilities) && capabilities["rulesetVersion"].Integer() >= 2)
 		for(auto & row : result.army)
 			if(row.creature.hasValue() && row.creature.toCreature()->warMachine == ArtifactID::NONE)
 			{
@@ -402,4 +434,3 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 	return result;
 }
 }
-

@@ -128,36 +128,24 @@ void CHeroWindow::configureNewHorizonsLayout()
 			}
 		}
 	}
-	leadershipArea = std::make_shared<LRClickableAreaWText>(Rect(152, 88, 140, 44), "Leadership capacity");
+	commandArea = std::make_shared<LRClickableAreaWText>(Rect(152, 88, 140, 44), LIBRARY->generaltexth->translate("new-horizons.command.description"));
 	movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44), "Movement points");
 	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(674, 12, 54, 76), "Siege rating available to this hero");
-	for(const auto & field : {std::make_pair(Point(152, 88), "Leadership"), std::make_pair(Point(152, 132), "Movement")})
+	for(const auto & field : {std::make_pair(Point(152, 132), "Movement")})
 	{
-		const std::string fieldName = field.second;
-		// Movement is a first-class New Horizons derived attribute just like
-		// Leadership. Keep its glyph in the same visual slot so the
-		// value is not presented as an unexplained text-only exception.
-		// Hero-specific icons draw at native size in these 44px rows; the generic
-		// Leadership capability symbol remains available for creature costs.
-		const auto iconKey = fieldName == "Leadership" ? "NH_hero_leadership_44" : "NH_hero_movement_44";
+		const auto iconKey = "NH_hero_movement_44";
 		capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, 0, field.first.x, field.first.y));
 		labels.push_back(std::make_shared<CLabel>(field.first.x + 94, field.first.y + 4, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, field.second, 88));
 	}
-	// Keep the current total and class growth in separate fields, matching the
-	// primary-attribute readout. The total includes Leadership bonuses from
-	// artifacts and other sources; the adjacent growth value is class-only.
-	leadershipValue = std::make_shared<CLabel>(226, 118, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "", 48);
-	leadershipGrowthValue = std::make_shared<CLabel>(266, 118, FONT_SMALL, ETextAlignment::CENTER, Colors::GREEN, "", 40);
 	movementValue = std::make_shared<CLabel>(246, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 88);
 	// All three status glyphs are30px, below the42px primary attributes.
 	capabilityIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_siege_32"),
 		0, Rect(686, 36, 30, 30)));
 	labels.push_back(std::make_shared<CLabel>(701, 21, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "Siege", 50));
 	legacySiegeValue = std::make_shared<CLabel>(701, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "", 44);
-	commandArea = std::make_shared<LRClickableAreaWText>(Rect(292, 132, 140, 44), "Command capacity");
 	addCommandIcon();
-	labels.push_back(std::make_shared<CLabel>(386, 136, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Command", 88));
-	commandValue = std::make_shared<CLabel>(386, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 88);
+	labels.push_back(std::make_shared<CLabel>(246, 92, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, LIBRARY->generaltexth->translate("new-horizons.command.name"), 88));
+	commandValue = std::make_shared<CLabel>(246, 118, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "", 88);
 }
 
 void CHeroWindow::restoreLegacyLayout()
@@ -263,15 +251,12 @@ void CHeroWindow::restoreLegacyLayout()
 	for(const auto & icons : provisionalAbilityIcons)
 		for(const auto & icon : icons)
 			icon->disable();
-	leadershipArea->disable();
 	for(const auto & icon : capabilityIcons)
 		icon->disable();
 	movementArea->disable();
 	commandArea->disable();
 	commandValue->disable();
 	legacySiegeArea->disable();
-	leadershipValue->disable();
-	leadershipGrowthValue->disable();
 	movementValue->disable();
 	legacySiegeValue->disable();
 	move(learnedPerksSummary, Point(342, 404));

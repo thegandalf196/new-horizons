@@ -9,7 +9,18 @@
 			"minProperties": 6,
 			"required": ["schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "extraGrowth"],
 			"additionalProperties": false,
+			"oneOf": [
+				{
+					"required": ["commandAuthorityPolicy", "skillOfferWeights"],
+					"properties": {"skillOfferWeights": {"additionalProperties": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"], "properties": {"new-horizons:authority": {"type": "integer", "minimum": 1, "maximum": 100}}}}}
+				},
+				{
+					"not": {"required": ["commandAuthorityPolicy"]},
+					"properties": {"skillOfferWeights": {"additionalProperties": {"minProperties": 31, "maxProperties": 31, "not": {"required": ["new-horizons:authority"]}}}}
+				}
+			],
 			"properties": {
+				"commandAuthorityPolicy": {"$ref": "newHorizonsPerks.json#/definitions/commandAuthorityPolicy"},
 				"lighthouseDeparture": {
 					"type": "object", "additionalProperties": false,
 					"required": ["enabled", "seaMovementPercent"],

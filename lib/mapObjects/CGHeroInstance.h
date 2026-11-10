@@ -14,6 +14,8 @@
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
+#include "../entities/hero/NewHorizonsCommandState.h"
+#include "../entities/hero/NewHorizonsCommandPlacement.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
 #include "../nativeRules/PreparedPilotRules.h"
@@ -297,6 +299,27 @@ public:
 	int getArcanePreparationPercent() const;
 	int32_t getArcanePreparationBufferBonus() const;
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
+	/// Read-only owning-world Order policy; battle projections use their callback snapshot.
+	const JsonNode & getHeroOrderRules() const;
+	std::optional<newHorizonsHeroes::CommandRules> getArmyCommandRules() const;
+	std::optional<newHorizonsHeroes::CommandValue> getArmyCommand() const;
+	const newHorizonsHeroes::CommandState & getCommandState() const { return commandState; }
+	newHorizonsHeroes::CommandCreatureTraits getCommandCreatureTraits(CreatureID creature) const;
+	newHorizonsHeroes::CommandPlacementError getCommandSlotEligibility(SlotID slot, CreatureID creature) const;
+	newHorizonsHeroes::CommandPlacementError getCommandSlotEligibility(SlotID slot, CreatureID creature,
+		bool intrinsicAssimilation) const;
+	std::optional<newHorizonsHeroes::CommandSlotModifiers> getCommandSlotModifiers(SlotID slot) const;
+	/// Packet/initialization adapters only; advancement/query ownership stays on the simulation thread.
+	size_t captureCommandProgression();
+	void initializeCommandProgression();
+	void normalizeStartingCommandArmy();
+	void beginCommandLevelEvent();
+	bool hasPendingCommandLevelEvent() const { return commandLevelEventPending; }
+	void completeCommandLevelEvent(uint32_t acquiredLevel, int authorityRank);
+	void selectCommandEnhancement(int64_t milestone, newHorizonsHeroes::CommandEnhancement enhancement);
+	JsonNode commandProgressionToJson() const;
+	void restoreCommandProgression(const JsonNode & node);
+	void validateCommandSerialization(bool supported) const;
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
 	const nativeRules::PreparedPilotPerks * getPreparedPilotPerks() const { return preparedPilotPerks.get(); }
@@ -667,7 +690,12 @@ protected:
 
 private:
 	bool capabilityRulesCaptured = false;
+	bool captureInitialDevelopmentRules(bool isFake);
 	JsonNode capabilityRules;
+	newHorizonsHeroes::CommandState commandState;
+	// An ordinary level must finish its Skill/perk choice before earning Command.
+	// Such queries cannot be saved; enhancement entitlements, once captured, can.
+	bool commandLevelEventPending = false;
 	bool masteryRulesCaptured = false;
 	newHorizonsHeroes::MasteryState masteryState;
 	bool perkRulesCaptured = false;
@@ -733,6 +761,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 			nativeRules::validatePilotPerks(perkState.rules, false);
 		if(h.saving)
@@ -1000,6 +1030,8 @@ public:
 			h & capabilityRules;
 			if(!h.saving)
 			{
+				newHorizonsHeroes::validateArmyCommandSerialization(capabilityRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(capabilityRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
 				newHorizonsHeroes::validateGlyphsOfFearSerialization(capabilityRules,
@@ -1233,5 +1265,11 @@ public:
 			newHorizonsLastAcceptedCombatDay = -1;
 		if(!h.saving)
 			validateRecoverySpecialtyStateSerialization(true);
+		commandState.serialize(h, getArmyCommandRules());
+		if(!h.saving)
+		{
+			commandLevelEventPending = false;
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+		}
 	}
 };

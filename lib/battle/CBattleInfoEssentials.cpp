@@ -223,23 +223,6 @@ std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battle
 		});
 }
 
-std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battleGetOrderActionAllowance(
-	BattleSide side) const
-{
-	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| !newHorizonsCommand::usesRules(getBattle()->getHeroCommandRules()))
-		return {};
-	const auto round = battleGetRound();
-	const auto & allowances = callbackAllowanceLedger(*this, side);
-	const auto & resources = getBattle()->getCommandResources(side);
-	if(round < 0 || allowances.currentRound != round || !resources.initialized || resources.remaining == 0)
-		return {};
-	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round,
-		[](const HeroActionAllowanceState::Grant & grant)
-		{ return grant.allowance == HeroActionAllowanceState::AllowanceKind::HERO
-			&& grant.source == HeroActionAllowanceState::GrantSource::ROUND; });
-}
-
 bool CBattleInfoEssentials::battleCanUseMetamagicFollowup(BattleSide side, SpellID spell) const
 {
 	const auto * hero = getBattle() && (side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)

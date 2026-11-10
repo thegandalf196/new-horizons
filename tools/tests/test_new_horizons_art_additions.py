@@ -10,6 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 import import_new_horizons_art_wave as importer
+from prepare_new_horizons_authority_art import binding_block as authority_binding_block
 from .nhart_perk_presentations import (header_before_perk_presentation, validate_perk_presentation,
     validate_perk_payload, REWORKED_PERK_REBINDINGS, header_before_reworked_perks)
 from .nhart_sylvan_perk_presentations import validate_sylvan_family
@@ -51,6 +52,7 @@ FACTION_RENAMES = {
     'new-horizons:elementalRebirth.elementalWard': ('new-horizons:elementalRebirth.elementalCataclysm', 'NH_perk_elemental_ward'),
 }
 WAVE_CURRENT_IDS = {
+    'new-horizons:command.seizeInitiative': 'new-horizons:command.decisiveOrders',
     **{old: current for old, (current, _) in REWORKED_PERK_REBINDINGS.items()},
     **{old: current for old, (current, _) in FACTION_RENAMES.items()},
     'new-horizons:divineMandate.sharedPurpose': 'new-horizons:divineMandate.shieldOfFaith',
@@ -86,8 +88,26 @@ def config_at_wave(config, waves, index, config_path):
     return historical
 
 
+def header_before_decisive_orders_alias(header):
+    """Undo the released-passive Warfare alias before removing any art wave."""
+    decisive = '\t\t{"new-horizons:command.decisiveOrders", "NH_perk_seize_initiative"},\n'
+    if 'new-horizons:command.decisiveOrders' in header:
+        if header.count(decisive) != 1 or '\t\t{"new-horizons:command.seizeInitiative", "NH_perk_seize_initiative"},\n' not in header:
+            raise ValueError('Unrecognized Decisive Orders alias or lost historical Warfare identity')
+        return header.replace(decisive, '', 1)
+    return header
+
+
 def perk_header_history_forms(header):
     """Retain exact hashes across the approved inline-map/table extraction."""
+    previous = header_before_decisive_orders_alias(header)
+    if previous != header:
+        return (header,) + perk_header_history_forms(previous)
+    authority = authority_binding_block()
+    if 'NH_perk_authority_' in header:
+        if header.count(authority) != 1:
+            raise ValueError('Unrecognized owner-supplied Authority binding block')
+        return (header,) + perk_header_history_forms(header.replace(authority, '', 1))
     previous = header_before_perk_presentation(header)
     if previous != header:
         return (header,) + perk_header_history_forms(previous)
@@ -115,6 +135,20 @@ def perk_header_history_forms(header):
 
 
 class PerkHeaderHistoryTest(unittest.TestCase):
+    def test_decisive_orders_alias_reversal_is_exact_and_never_uses_authority_art(self):
+        header = (ROOT / importer.HEADER).read_text()
+        alias = '\t\t{"new-horizons:command.decisiveOrders", "NH_perk_seize_initiative"},\n'
+        historical = '\t\t{"new-horizons:command.seizeInitiative", "NH_perk_seize_initiative"},\n'
+        without_alias = header.replace(alias, '')
+        current = without_alias + alias
+        self.assertIn(without_alias, perk_header_history_forms(current))
+        for malformed in (current + alias, current.replace(historical, ''),
+                          current.replace(alias, alias.replace('NH_perk_seize_initiative',
+                                                               'NH_perk_authority_grand_marshal'))):
+            with self.subTest(malformed=malformed[-120:]):
+                with self.assertRaises(ValueError):
+                    perk_header_history_forms(malformed)
+
     inline = '''#pragma once
 
 #include <map>
@@ -283,13 +317,21 @@ class ArtAdditionsTest(unittest.TestCase):
         historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) for name in row['resources']}
             self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 current_id = WAVE_CURRENT_IDS.get(row['id'], row['id'])
                 self.assertIn(current_id, current_ids)
                 self.assertEqual(lookup[current_id], row['icon44'])
                 self.assertEqual(historical[row['id']], row['icon44'])
+                if row['id'] == 'new-horizons:command.seizeInitiative':
+                    successor = next(perk for perk in roster['skills']['new-horizons:command']['perks']
+                                     if perk['id'] == current_id)
+                    self.assertEqual(successor['legacyIdentity'],
+                                     {'id': row['id'], 'commandPolicyVersion': 1})
+                    self.assertEqual(lookup['new-horizons:authority.grandMarshal'],
+                                     'NH_perk_authority_grand_marshal')
+                    self.assertNotEqual(lookup[current_id], lookup['new-horizons:authority.grandMarshal'])
                 self.assertEqual(len(row['resources']), 7)
                 stem = row['icon44']
                 for size in (44, 32):
@@ -403,8 +445,12 @@ class ArtAdditionsTest(unittest.TestCase):
         for index, wave in enumerate(self.waves):
             # Interface-button wave was selected after the faction rebindings;
             # earlier wave anchors must still see their exact original IDs.
-            current_header = wave.get('orderEntryButtons') or wave.get('nativeEffectAliases')
-            header = self.header if current_header else header_before_reworked_perks(self.header)
+            current_header = wave.get('orderEntryButtons') or wave.get('nativeEffectAliases') or wave.get('suppliedAuthority')
+            # Validate the complete current binding before reversing the wave
+            # that originally introduced Seize Initiative's historical row.
+            header = header_before_decisive_orders_alias(self.header)
+            if not current_header:
+                header = header_before_reworked_perks(header)
             if not wave.get('heroInterfaceButtons') and not current_header:
                 header = header_before_faction_rebindings(header)
             for later in self.waves[index:]:

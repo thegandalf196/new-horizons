@@ -53,6 +53,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	captureNecromancyPassives(*realBattle);
 	captureElementalAttunement(realBattle);
 	captureCurrentBonusOperations(realBattle);
+	captureWarfareStats(*realBattle);
 	crisisCommand = realBattle->getBattle()->getCrisisCommandState();
 	const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get());
 	if(parent)
@@ -93,37 +94,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	localEnvironment.reset(new HypotheticEnvironment(this, env));
 	serverCallback.reset(new HypotheticServerCallback(this));
 	if(ownedFrameBatch) { localEnvironment->closeNativeSource(); env = localEnvironment.get(); }
-	// The remaining units retain the existing lazy projection policy. Frozen's
-	// next-slot receipt must be a branch snapshot: reading it for the first time
-	// after a parent Shatter/thaw cannot import that later parent's mutation.
-	// Capture Morale origin and pending Poison before the parent can advance.
-	if(ownedFrameBatch) { getForUpdate(static_cast<uint32_t>(activeUnitId)); return; }
-	for(const auto * unit : realBattle->battleGetAllUnits(false))
-	{
-		// Fold root status admission into the existing visible-unit snapshot pass.
-		// Descendants copied the bit above and perform no marker-admission scan.
-		if(!parent && !mayContainSerpentBindings && unit->hasBonusOfType(BonusType::BIND_EFFECT))
-		{
-			const auto bindings = unit->getBonuses(Selector::type()(BonusType::BIND_EFFECT));
-			for(const auto & bonus : *bindings)
-				if(bonus) noteSerpentBindingAdmission(*bonus);
-		}
-		const bool pendingPoison = unit->physicalPoisonSpellOrigin() != BattleSide::NONE
-			|| newHorizonsBulwark::physicalPoisonTickDamage(dynamic_cast<const battle::CUnitState *>(unit)) > 0;
-		if(unit->unitId() == static_cast<uint32_t>(activeUnitId)
-			|| hasTimedMagicalSpellEffects(*unit)
-			|| hasSnapshotHeroSpecialEffects(*unit)
-			|| newHorizonsNecromancy::needsCombatPassiveSnapshot(*unit)
-			|| newHorizonsFrozen::isFrozen(*unit)
-			|| pendingPoison
-			|| (dynamic_cast<const battle::CUnitState *>(unit)
-				&& dynamic_cast<const battle::CUnitState *>(unit)->moraleExtraActivation))
-		{
-			const auto captured = getForUpdate(unit->unitId());
-			if(pendingPoison)
-				captured->captureEffects();
-		}
-	}
+	captureUnitSnapshots(*realBattle, parent != nullptr);
 }
 
 bool HypotheticBattle::hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const

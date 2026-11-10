@@ -68,7 +68,7 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 		return;
 	}
 	labels.push_back(std::make_shared<CLabel>(320, 29, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Hero action"));
-	commandPool = std::make_shared<CLabel>(320, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "");
+	labels.push_back(std::make_shared<CLabel>(320, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "Orders use the shared Hero Action; no Mana or Command is spent."));
 	state = std::make_shared<CLabel>(320, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
 
 	spellButton = std::make_shared<CButton>(Point(36, 110), AnimationPath::builtin("NH_spells_button"),
@@ -113,7 +113,7 @@ void BattleHeroActionWindow::createOrdersLayout()
 {
 	// Orders share the native 64px four-state button contract.
 	labels.push_back(std::make_shared<CLabel>(320, 27, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, "Orders"));
-	commandPool = std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "");
+	labels.push_back(std::make_shared<CLabel>(320, 53, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "Orders use the shared Hero Action; no Mana or Command is spent."));
 	state = std::make_shared<CLabel>(320, 78, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
 	const int orderWidth = 148;
 	const int orderHeight = 126;
@@ -183,14 +183,8 @@ void BattleHeroActionWindow::setStateText(const std::string & text)
 void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const JsonNode & rules,
 	int divineMandateEfficiencyBonusPercent)
 {
-	const auto ratings = std::make_pair(hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE));
-	if(effectsInitialized && displayedRatings == ratings
-		&& displayedDivineMandateBonus == divineMandateEfficiencyBonusPercent)
-		return;
-	displayedRatings = ratings;
-	displayedDivineMandateBonus = divineMandateEfficiencyBonusPercent;
-	effectsInitialized = true;
-
+	// Command and standing perks also affect these values. Re-read the shared
+	// calculation on refresh; only changed labels request a redraw.
 	for(size_t i = 0; i < commands.size(); ++i)
 	{
 		if(commands[i].first == HeroCommand::FEINT || commands[i].first == HeroCommand::VANGUARD)
@@ -199,16 +193,8 @@ void BattleHeroActionWindow::refreshEffects(const CGHeroInstance & hero, const J
 		// the preview. The client only formats the returned numbers.
 		const auto effects = commandEffects(rules, commands[i].first, hero,
 			divineMandateEfficiencyBonusPercent);
-		if(i < effectLabels.size())
+		if(i < effectLabels.size() && effectLabels[i]->getText() != effects)
 			effectLabels[i]->setText(effects);
-		const auto & display = commandDisplay(commands[i].first);
-		const std::string coverage = isTargeted(commands[i].first)
-			? "\n\nTargets are checked again when you confirm."
-			: "\n\nOnly eligible troops present when the Order is issued receive it; later summons and clones do not inherit it.";
-		commands[i].second->setHelp(CButton::tooltip(display.name,
-			std::string(display.description) + (effects.empty() ? "" : "\n\nCurrent effect: " + effects)
-			+ combinedArmsHelp(rules, commands[i].first, &hero)
-			+ "\nCosts 1 Command and the shared Hero Action; no Mana." + coverage));
 	}
 }
 

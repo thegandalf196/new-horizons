@@ -48,10 +48,10 @@ DLL_LINKAGE SpecialtyPresentation resolveSpecialtyPresentation(const CHero & her
 	const CGHeroInstance * capturedHero = nullptr);
 
 constexpr int HERO_RULESET_VERSION = 1;
-/// The New Horizons offer table must cover the complete 31-Skill runtime roster.
+/// The current offer table covers 32 Skills; the explicit policy marker selects it.
 /// Keep this count beside the runtime validator
 /// so an incomplete table cannot silently fall back to legacy chances.
-constexpr size_t HERO_SKILL_OFFER_COUNT = 31;
+constexpr size_t HERO_SKILL_OFFER_COUNT = 32;
 
 struct DLL_LINKAGE SkillGrowthChance
 {

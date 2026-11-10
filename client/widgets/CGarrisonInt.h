@@ -40,6 +40,9 @@ class CGarrisonSlot : public CIntObject
 	std::shared_ptr<CAnimImage> artifactImage;
 	std::shared_ptr<CAnimImage> selectionImage; // image for selection, not always visible
 	std::shared_ptr<CLabel> stackCount;
+	ObjectInstanceID displayedArmy = ObjectInstanceID::NONE;
+	uint32_t displayedLevel = 0;
+	int displayedAuthorityRank = -1;
 
 public:
 	bool viewInfo();
@@ -68,6 +71,9 @@ public:
 	void clickPressed(const Point & cursorPosition) override;
 	void hover (bool on) override; //call-in
 	void gesture(bool on, const Point & initialPosition, const Point & finalPosition) override;
+	void showAll(Canvas & to) override;
+	void show(Canvas & to) override;
+	bool commandLocked() const;
 
 	void update();
 	CGarrisonSlot(CGarrisonInt *Owner, int x, int y, SlotID IID, EGarrisonType Upg, const CStackInstance * creature_);
@@ -92,16 +98,8 @@ class CGarrisonInt :public CIntObject
 	bool checkSelected(const CGarrisonSlot * selected, TQuantity min = 0) const;
 	bool isStackTransferLocked(const CGarrisonSlot * selected) const;
 	bool showStackTransferError(const CGarrisonSlot * selected) const;
-	/// Check the same per-stack Leadership rule as the authoritative server
-	/// before sending a user initiated transfer.  This is only a UI fast path;
-	/// the server repeats the validation for stale or malicious requests.
-	bool checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
-		SlotID sourceSlot, SlotID destinationSlot, TQuantity amount) const;
-	bool checkLeadershipSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
+	bool checkCommandSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
 		SlotID leftSlot, SlotID rightSlot) const;
-	bool checkLeadershipBulkMove(const CArmedInstance * source, const CArmedInstance * destination,
-		SlotID protectedSourceSlot) const;
-	bool checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount) const;
 
 	std::map<EGarrisonType, const CArmedInstance*> armedObjs;
 
@@ -130,7 +128,7 @@ public:
 	bool getSplittingMode();
 
 	bool hasEmptySlot(EGarrisonType type) const;
-	SlotID getEmptySlot(EGarrisonType type) const;
+	SlotID getEmptySlot(EGarrisonType type, CreatureID creature = CreatureID::NONE) const;
 
 	void setArmy(const CArmedInstance * army, EGarrisonType type);
 	void addSplitBtn(std::shared_ptr<CButton> button);

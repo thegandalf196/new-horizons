@@ -143,7 +143,7 @@ bool StackWithBonuses::hasCanonicalDamageQuerySources(const HypotheticBattle & b
 	while(layer)
 	{
 		if(typeid(*layer) != typeid(StackWithBonuses) || seen.size() >= 512 || !seen.insert(layer).second
-			|| layer->ownedQuerySource || !layer->owner || !layer->usesStateEnvironment(*layer->owner)
+			|| layer->ownedQuerySource || !layer->owner || !layer->usesStateEnvironment(*layer->owner->unitEnvironment())
 			|| !layer->owner->hasCanonicalDamageQuerySources()
 			|| layer->owner->initialExportSubject() || !layer->type || typeid(*layer->type) != typeid(CCreature)
 			|| layer->hasBattleFormState() || layer->damageScoringBonuses || layer->damageScoringUnstackedBonuses

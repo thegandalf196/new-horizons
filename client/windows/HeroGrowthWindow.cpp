@@ -6,6 +6,7 @@
 #include "SpellPointPresentation.h"
 #include "HeroGrowthWindow.h"
 #include "HeroGrowthPerkPresentation.h"
+#include "CommandPresentation.h"
 
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -136,7 +137,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	// These saved families are independent: primary growth does not opt an old
 	// hero into capacity rules, and capacity does not supply a growth profile.
 	const auto growth = hero.getPrimaryGrowthView();
-	const auto leadership = hero.getLeadershipCapacity();
+	const auto command = hero.getArmyCommand();
 	const auto siege = hero.getSiegeCapabilities();
 	const auto masteries = hero.getMasteryView();
 	const auto & perkState = hero.getPerkState();
@@ -154,7 +155,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 			return hero.getPerkSkillRank(left) > hero.getPerkSkillRank(right);
 		});
 	}
-	navigation.refresh({growth.has_value(), leadership.has_value(), siege.has_value(), masteries.has_value(), perks});
+	navigation.refresh({growth.has_value(), command.has_value(), siege.has_value(), masteries.has_value(), perks});
 	const bool showPerkPool = navigation.selected() == HeroDevelopmentSection::PERKS && !perkSkillIds.empty();
 	// The pool is deliberately compact: all ten entries remain visible in a
 	// two-column grid, while the learned-Skill selector pages independently.
@@ -223,7 +224,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	// below leadership/siege paragraphs in one long scroll region.
 	sectionTexts = {
 		"No saved primary growth profile for this hero.",
-		"No saved leadership capacity view for this hero.",
+		"No Command progression view for this hero.",
 		"No saved siege capability view for this hero.",
 		"No saved mastery rules for this hero.",
 		"This hero has no perks available."
@@ -250,18 +251,11 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		else
 			growthText += " This saved growth profile has no skill-based extra points.";
 	}
-	if(leadership)
+	if(command)
 	{
-		if(hero.getCapabilityRules()["rulesetVersion"].Integer() >= 2)
-		{
-			leadershipText = "Leadership: " + std::to_string(leadership->capacity) + ".\n";
-			leadershipText += "Every army slot is checked independently. Maximum creatures in a stack = floor(Hero Leadership / Creature Leadership Requirement).\n";
-			leadershipText += "Command and Recruitment do not increase this capacity or discount requirements.";
-		}
-		else
-		{
-			leadershipText = "Legacy aggregate Leadership preview: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity) + ".";
-		}
+		leadershipText = commandPresentation::commandHelp(hero);
+		for(int slot = 0; slot < 7; ++slot)
+			leadershipText += "\n\n" + commandPresentation::slotHelp(hero, SlotID(slot));
 	}
 	if(siege)
 	{
@@ -482,7 +476,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	const std::array<EShortcut, HeroDevelopmentNavigation::SECTION_COUNT> sectionShortcuts = {
 		EShortcut::SELECT_INDEX_1, EShortcut::SELECT_INDEX_2, EShortcut::SELECT_INDEX_3, EShortcut::SELECT_INDEX_4, EShortcut::SELECT_INDEX_5
 	};
-	const std::array<const char *, HeroDevelopmentNavigation::SECTION_COUNT> sectionNames = {"Growth", "Leadership", "Siege", "Masteries", "Perks"};
+	const std::array<const char *, HeroDevelopmentNavigation::SECTION_COUNT> sectionNames = {"Growth", "Command", "Siege", "Masteries", "Perks"};
 	for(size_t i = 0; i < sectionButtons.size(); ++i)
 	{
 		const auto section = static_cast<HeroDevelopmentSection>(i);

@@ -12,6 +12,7 @@
 #include "../bonuses/BonusSerializationContext.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsMasteryRules.h"
+#include "../entities/hero/NewHorizonsCommandOffer.h"
 #include "../entities/hero/NewHorizonsLegendaryReputation.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
@@ -2008,6 +2009,50 @@ struct DLL_LINKAGE HeroMasteryChosen : public CPackForClient
 	{
 		h & hero;
 		newHorizonsHeroes::serializeMasterySequence(h, sequence);
+		h & choice;
+	}
+};
+
+/// Completes one ordinary level event after its Skill/perk choice. No final-level catch-up.
+struct DLL_LINKAGE HeroCommandProgression : public CPackForClient
+{
+	ObjectInstanceID hero;
+	uint32_t level = 0;
+	int32_t authorityRank = 0;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY))
+			throw std::runtime_error("Command progression requires a new game");
+		h & hero;
+		h & level;
+		h & authorityRank;
+	}
+};
+
+struct DLL_LINKAGE HeroCommandEnhancementDialog : public Query
+{
+	newHorizonsHeroes::CommandEnhancementOffer offer;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY))
+			throw std::runtime_error("Command enhancement offer requires a new game");
+		h & queryID;
+		h & offer;
+	}
+};
+
+struct DLL_LINKAGE HeroCommandEnhancementChosen : public CPackForClient
+{
+	newHorizonsHeroes::CommandEnhancementOffer offer;
+	int32_t choice = -1;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY))
+			throw std::runtime_error("Command enhancement choice requires a new game");
+		h & offer;
 		h & choice;
 	}
 };

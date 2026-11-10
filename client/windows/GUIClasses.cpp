@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include <boost/algorithm/string/replace.hpp>
 #include "GUIClasses.h"
 #include "NewHorizonsPerkHelp.h"
 #include "NewHorizonsCreatureCategoryUI.h"
@@ -332,27 +333,12 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 			card->amount, newHorizonsEstates::recruitmentBuyer(dst));
 
 		vstd::amin(maxAmount, card->amount);
-		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(dst))
-		{
-			if(const auto capacity = hero->getLeadershipSlotCapacity(card->creature->getId()))
-			{
-				const auto slot = newHorizonsHeroes::recruitmentSlot(
-					dst, card->creature->getId(), std::numeric_limits<int32_t>::max());
-				if(slot.validSlot())
-				{
-					const int alreadyPresent = dst->getStackCount(slot);
-					vstd::amin(maxAmount, std::max(0, capacity->maximum - alreadyPresent));
-				}
-				else
-					maxAmount = 0;
-				leadershipLimit->setText("Leadership: " + std::to_string(capacity->maximum)
-					+ " max in slot (" + std::to_string(capacity->requirement) + " each)");
-			}
-			else
-				leadershipLimit->setText("");
-		}
-		else
-			leadershipLimit->setText("");
+		const auto slot = UIHelper::recruitmentPosition(dst, card->creature->getId(), maxAmount);
+		if(!slot.validSlot() && !card->creature->warMachine.hasValue())
+			maxAmount = 0;
+		leadershipLimit->setText(card->creature->warMachine.hasValue() ? LIBRARY->generaltexth->translate("new-horizons.command.placement.equipment")
+			: slot.validSlot() ? boost::replace_all_copy(LIBRARY->generaltexth->translate("new-horizons.command.placement.destination"),
+				"%SLOT%", UIHelper::armyPositionName(dst, slot)) : LIBRARY->generaltexth->translate("new-horizons.command.placement.noPosition"));
 
 		slider->setAmount(maxAmount);
 
@@ -393,23 +379,14 @@ void CRecruitmentWindow::updateLeadershipProposalHelp(int proposedCount)
 
 	leadershipHelp->text.clear();
 	leadershipHelp->hoverText.clear();
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(dst);
-	if(!selected || !hero)
+	if(!selected || !dst || selected->creature->warMachine.hasValue())
 	{
 		leadershipHelp->disable();
 		return;
 	}
 
-	const auto capacity = hero->getLeadershipSlotCapacity(selected->creature->getId());
-	if(!capacity)
-	{
-		leadershipHelp->disable();
-		return;
-	}
-
-	const auto slot = newHorizonsHeroes::recruitmentSlot(dst, selected->creature->getId(), proposedCount);
-	const int existing = slot.validSlot() ? dst->getStackCount(slot) : 0;
-	const auto text = UIHelper::getNewHorizonsLeadershipProposalText(*capacity, existing, proposedCount);
+	const auto slot = UIHelper::recruitmentPosition(dst, selected->creature->getId(), proposedCount);
+	const auto text = UIHelper::armySlotPreview(dst, slot, selected->creature->getId());
 	leadershipHelp->text = text;
 	leadershipHelp->hoverText = text;
 	if(leadershipHelp->isDisabled())
@@ -427,23 +404,10 @@ void CRecruitmentWindow::buy()
 {
 	CreatureID crid =  selected->creature->getId();
 	const int requestedCount = slider->getValue();
-	SlotID dstslot = newHorizonsHeroes::recruitmentSlot(dst, crid, requestedCount);
+	SlotID dstslot = UIHelper::recruitmentPosition(dst, crid, requestedCount);
 	const CGHeroInstance * hero = dynamic_cast<const CGHeroInstance *>(dst);
-	if(hero)
-	{
-		if(const auto capacity = hero->getLeadershipSlotCapacity(crid))
-		{
-			const int alreadyPresent = dstslot.validSlot() ? dst->getStackCount(dstslot) : 0;
-			if(slider->getValue() + alreadyPresent > capacity->maximum)
-			{
-				GAME->interface()->showInfoDialog("Leadership limit exceeded: this hero can command at most "
-					+ std::to_string(capacity->maximum) + " creatures of this type ("
-					+ std::to_string(capacity->requirement) + " Leadership each; hero Leadership "
-					+ std::to_string(capacity->leadership) + ").");
-				return;
-			}
-		}
-	}
+	if(!selected->creature->warMachine.hasValue() && !UIHelper::checkArmySlot(dst, dstslot, crid))
+		return;
 
 	if (selected->creature->warMachine.hasValue() && hero)
 	{
@@ -718,6 +682,8 @@ CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, i
 	splitCreature(creature),
 	leftArmy(leftOwnerInfo.army),
 	rightArmy(rightOwnerInfo.army),
+	leftSlot(leftOwnerInfo.slot),
+	rightSlot(rightOwnerInfo.slot),
 	leftMin(leftMin_),
 	rightMin(rightMin_)
 {
@@ -844,40 +810,34 @@ void CSplitWindow::setAmount(int value, bool left)
 void CSplitWindow::updateLeadershipReadback()
 {
 	const auto updateSide = [this](const std::shared_ptr<LRClickableAreaWText> & help,
-		const CArmedInstance * army, int initialCount, int currentCount)
+		const CArmedInstance * army, SlotID slot)
 	{
 		if(!help)
 			return;
 
 		help->text.clear();
 		help->hoverText.clear();
-		const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
-		if(!hero || !splitCreature)
+		if(!army || !splitCreature || !slot.validSlot())
 		{
 			help->disable();
 			return;
 		}
 
-		const auto capacity = hero->getLeadershipSlotCapacity(splitCreature->getId());
-		if(!capacity)
-		{
-			help->disable();
-			return;
-		}
-
-		const int64_t normalizedInitial = std::max<int64_t>(0, initialCount);
-		const int64_t normalizedCurrent = std::max<int64_t>(0, currentCount);
-		const int64_t existingCount = std::min(normalizedInitial, normalizedCurrent);
-		const int64_t incomingCount = std::max<int64_t>(0, normalizedCurrent - normalizedInitial);
-		const auto text = UIHelper::getNewHorizonsLeadershipProposalText(*capacity, existingCount, incomingCount);
+		const auto text = UIHelper::armySlotPreview(army, slot, splitCreature->getId());
 		help->text = text;
 		help->hoverText = text;
 		if(help->isDisabled())
 			help->enable();
 	};
 
-	updateSide(leftLeadershipHelp, leftArmy, initialLeftAmount, leftAmount);
-	updateSide(rightLeadershipHelp, rightArmy, initialRightAmount, rightAmount);
+	updateSide(leftLeadershipHelp, leftArmy, leftSlot);
+	updateSide(rightLeadershipHelp, rightArmy, rightSlot);
+	const auto illegalSide = [this](const CArmedInstance * army, SlotID slot, int amount)
+	{
+		return amount > 0 && army && slot.validSlot()
+			&& !UIHelper::armySlotProblem(army, slot, splitCreature->getId()).empty();
+	};
+	ok->block(illegalSide(leftArmy, leftSlot, leftAmount) || illegalSide(rightArmy, rightSlot, rightAmount));
 }
 
 void CSplitWindow::apply()
@@ -1464,10 +1424,10 @@ void CTransformerWindow::updateConversionPreview()
 		statusText = "new-horizons.ui.skeletonTransformer.lastStack";
 		break;
 	case PlanStatus::LEADERSHIP_LIMIT:
-		statusText = "new-horizons.ui.skeletonTransformer.leadership";
+		statusText = "new-horizons.ui.skeletonTransformer.historicalLeadership";
 		break;
 	case PlanStatus::OUTPUT_CAPACITY:
-		statusText = "new-horizons.ui.skeletonTransformer.capacity";
+		statusText = "new-horizons.command.placement.skeletonTransformer";
 		break;
 	}
 

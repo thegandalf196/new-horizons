@@ -23,6 +23,7 @@ bool hasLeadershipCapacityRules(const CGHeroInstance * hero, const CCreatureSet 
 {
 	if(!hero || !army)
 		return false;
+	if(hero->getArmyCommand()) return true;
 
 	for(const auto & slot : army->Slots())
 		if(hero->getLeadershipSlotCapacity(slot.second->getCreatureID()))
@@ -40,9 +41,17 @@ bool canReceiveStack(const CArmedInstance * destination, CreatureID creature, in
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
 	if(!hero)
 		return true;
+	if(hero->getArmyCommand())
+		return newHorizonsHeroes::commandRecruitmentSlot(*hero,
+			newHorizonsHeroes::commandArmySlots(*destination), creature, resultingCount).validSlot();
 
 	const auto capacity = hero->getLeadershipSlotCapacity(creature);
 	return !capacity || capacity->accepts(resultingCount);
+}
+
+bool canReceiveStack(const CArmedInstance * destination, SlotID slot, CreatureID creature, int64_t resultingCount)
+{
+	return newHorizonsHeroes::armySlotAccepts(destination, slot, creature, resultingCount);
 }
 
 namespace
@@ -87,20 +96,20 @@ bool canSwapStacks(const CArmedInstance * first, const CArmedInstance * second,
 
 	if(firstStack && secondStack)
 	{
-		return canReceiveStack(second, firstStack->getCreatureID(), firstStack->getCount())
-			&& canReceiveStack(first, secondStack->getCreatureID(), secondStack->getCount());
+		return canReceiveStack(second, secondSlot, firstStack->getCreatureID(), firstStack->getCount())
+			&& canReceiveStack(first, firstSlot, secondStack->getCreatureID(), secondStack->getCount());
 	}
 
 	if(firstStack)
 	{
 		if(sourceWouldLoseLastStack(first, second, firstStack->getCount(), firstStack->getCount()))
 			return false;
-		return canReceiveStack(second, firstStack->getCreatureID(), firstStack->getCount());
+		return canReceiveStack(second, secondSlot, firstStack->getCreatureID(), firstStack->getCount());
 	}
 
 	if(sourceWouldLoseLastStack(second, first, secondStack->getCount(), secondStack->getCount()))
 		return false;
-	return canReceiveStack(first, secondStack->getCreatureID(), secondStack->getCount());
+	return canReceiveStack(first, firstSlot, secondStack->getCreatureID(), secondStack->getCount());
 }
 
 bool canMergeOrSwapStacks(const CArmedInstance * source, const CArmedInstance * destination,
@@ -118,8 +127,8 @@ bool canMergeOrSwapStacks(const CArmedInstance * source, const CArmedInstance * 
 	{
 		if(sourceWouldLoseLastStack(source, destination, incoming->getCount(), incoming->getCount()))
 			return false;
-		return canReceiveStack(destination, incoming->getCreatureID(),
-			incoming->getCount() + existing->getCount());
+		return canReceiveStack(destination, destinationSlot, incoming->getCreatureID(),
+			int64_t(incoming->getCount()) + existing->getCount());
 	}
 
 	return canSwapStacks(source, destination, sourceSlot, destinationSlot);
@@ -160,7 +169,7 @@ bool canSplitStack(const CArmedInstance * source, const CArmedInstance * destina
 		|| sourceWouldLoseLastStack(source, destination, transferCount, incoming->getCount()))
 		return false;
 
-	return canReceiveStack(destination, incoming->getCreatureID(), resultingDestinationCount);
+	return canReceiveStack(destination, destinationSlot, incoming->getCreatureID(), resultingDestinationCount);
 }
 
 int maxLegalTransferCount(const CArmedInstance * source, const CArmedInstance * destination,
@@ -179,8 +188,11 @@ int maxLegalTransferCount(const CArmedInstance * source, const CArmedInstance * 
 			? incoming->getCount() : 0;
 
 	const int existingCount = existing ? existing->getCount() : 0;
+	if(!canReceiveStack(destination, destinationSlot, incoming->getCreatureID(), existingCount))
+		return 0;
 	int result = maximumDestinationAddition(destination, incoming->getCreatureID(), existingCount,
 		incoming->getCount());
+	result = std::min(result, std::numeric_limits<int>::max() - existingCount);
 	if(sourceWouldLoseLastStack(source, destination, result, incoming->getCount()))
 		result = std::min(result, std::max(0, incoming->getCount() - 1));
 	return result;

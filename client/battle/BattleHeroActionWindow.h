@@ -30,12 +30,8 @@ class BattleHeroActionWindow final : public CWindowObject
 	std::shared_ptr<CButton> cancel;
 	std::shared_ptr<CMultiLineLabel> orderInstructions;
 	std::shared_ptr<CLabel> state;
-	std::shared_ptr<CLabel> commandPool;
 	std::vector<std::shared_ptr<CIntObject>> labels;
 	std::vector<std::shared_ptr<CMultiLineLabel>> effectLabels;
-	std::pair<int, int> displayedRatings;
-	int displayedDivineMandateBonus = -1;
-	bool effectsInitialized = false;
 
 	std::shared_ptr<BattleInterface> currentBattle() const;
 	void refresh();

@@ -43,6 +43,24 @@ bool validRaisedArmyState(const CArmedInstance & army)
 std::optional<RaisedArmyPlan> planRaisedArmy(const CArmedInstance & army,
 	const std::vector<std::pair<CreatureID, int64_t>> & outputs)
 {
+	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(&army); hero && hero->getArmyCommand())
+	{
+		std::vector<newHorizonsHeroes::RecruitmentSlot> incoming;
+		for(const auto & [creature, count] : outputs)
+		{
+			if(count < 0 || (count > 0 && !creature.hasValue())) return std::nullopt;
+			if(count > 0) incoming.push_back({SlotID(incoming.size()), creature, count});
+		}
+		auto arrangement = newHorizonsHeroes::planCommandArmyAddition(*hero,
+			newHorizonsHeroes::commandArmySlots(army), incoming);
+		if(!arrangement) return std::nullopt;
+		RaisedArmyPlan result;
+		for(const auto & move : arrangement->moves)
+			if(!move.withinDestination)
+				result.push_back({move.destination, incoming.at(move.source.getNum()).creature, move.count});
+		result.commandArrangement = std::move(arrangement);
+		return result;
+	}
 	struct ProjectedSlot
 	{
 		CreatureID creature = CreatureID::NONE;

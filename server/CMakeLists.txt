@@ -1,4 +1,7 @@
 set(vcmiservercommon_SRCS
+		CommandArmyAdmission.cpp
+		LegacyArmyJoin.cpp
+		queries/CommandEnhancementQuery.cpp
 		StdInc.cpp
 
 		battles/BattleActionProcessor.cpp
@@ -101,6 +104,7 @@ set(vcmiservercommon_SRCS
 )
 
 set(vcmiservercommon_HEADERS
+		CommandArmyAdmission.h
 		StdInc.h
 
 		battles/BattleActionProcessor.h

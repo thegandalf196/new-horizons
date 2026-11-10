@@ -78,6 +78,9 @@ public:
 	void visitHeroMasteryOffer(HeroMasteryOffer & pack) override;
 	void visitHeroMasteryDialog(HeroMasteryDialog & pack) override;
 	void visitHeroMasteryChosen(HeroMasteryChosen & pack) override;
+	void visitHeroCommandProgression(HeroCommandProgression & pack) override;
+	void visitHeroCommandEnhancementDialog(HeroCommandEnhancementDialog & pack) override;
+	void visitHeroCommandEnhancementChosen(HeroCommandEnhancementChosen & pack) override;
 	void visitCommanderLevelUp(CommanderLevelUp & pack) override;
 	void visitBlockingDialog(BlockingDialog & pack) override;
 	void visitGarrisonDialog(GarrisonDialog & pack) override;

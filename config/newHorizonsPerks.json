@@ -1,6 +1,8 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
+	"commandAuthorityPolicy": {"version": 1},
+	"warfarePolicyVersion": 1,
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
 	"sylvanTacticsPolicy": 1,
@@ -21,14 +23,8 @@
 		"version": 1
 	},
 	"necromancyPolicy": {
-		"version": 2,
-		"skeletonLeadershipReductionPercent": [
-			0,
-			50,
-			60,
-			70
-		],
-		"lordOfTheDeadLeadershipReductionPercent": 90,
+		"version": 3,
+		"lordOfTheDeadMaximumHealthPercent": 25,
 		"deathMarchSpeed": 2,
 		"bonewardMagicalReductionPercent": 0,
 		"tombGuardAdditionalRetaliations": 0,
@@ -46,7 +42,7 @@
 		"mathVersion": 1
 	},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "72f2402cc52504a43e558f84cc1ee537bbb3bd46ef4bf026149ceada8f83a470",
+	"sourceSha256": "ac39785ce46e7eb3b80d8ffe0dfe91595ba5845984b28360804db0d1f8e7083a",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -732,7 +728,7 @@
 		},
 		"new-horizons:discipline": {
 			"id": "new-horizons:discipline",
-			"name": "Discipline",
+			"name": "Leadership",
 			"domain": "Martial",
 			"availability": "All heroes",
 			"description": "Increase army Morale and protect troops from panic.",
@@ -899,12 +895,13 @@
 					"id": "new-horizons:discipline.heroicSpirit",
 					"name": "Heroic Spirit",
 					"requires": "expert",
-					"description": "Each point of positive hero Morale grants +5 percentage points of Command Efficiency to attribute-derived Order components, capped at +30 percentage points.",
+					"description": "Each point of positive hero Morale grants +5 percentage points of Order Efficiency to attribute-derived Order components, capped at +30 percentage points.",
 					"effect": {
 						"status": "active",
-						"description": "Each point of positive hero Morale grants +5 percentage points of Command Efficiency to attribute-derived Order components, capped at +30 percentage points."
+						"description": "Each point of positive hero Morale grants +5 percentage points of Order Efficiency to attribute-derived Order components, capped at +30 percentage points.",
+						"parameters": {"efficiencyBonusPPPerMorale": 5, "maximumEfficiencyBonusPP": 30}
 					},
-					"details": "Capture the issuing hero's actual Morale when the Order is accepted: min(30, 5 × max(0, hero Morale)) percentage points. The issued Order retains that strength. This grants no additional Hero Action."
+					"details": "Capture the issuing hero's actual Morale when the Order is accepted: min(30, 5 × max(0, hero Morale)) percentage points. The issued Order retains that strength. Slot-specific Courage is not hero Morale. This grants no additional Hero Action."
 				}
 			]
 		},
@@ -1047,34 +1044,37 @@
 		},
 		"new-horizons:command": {
 			"id": "new-horizons:command",
-			"name": "Command",
+			"name": "Warfare",
 			"domain": "Martial",
 			"availability": "Might-exclusive",
-			"description": "Increase maximum Command and strengthen attribute-derived Order components.",
+			"description": "Strengthen battlefield Orders without increasing Command or granting additional actions.",
 			"ranks": {
 				"basic": {
-					"description": "Increase maximum Command by 1; attribute-derived Order components operate at 110% Command Efficiency.",
+					"description": "Attribute-derived Order components operate at 110% Order Efficiency; fixed base components are unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Increase maximum Command by 1; attribute-derived Order components operate at 110% Command Efficiency."
+						"description": "Attribute-derived Order components operate at 110% Order Efficiency; fixed base components are unchanged.",
+						"parameters": {"orderEfficiencyPercent": 110}
 					},
-					"details": "The rank grants +1 maximum Command in total. Attribute-derived Order components operate at 110% Command Efficiency; fixed base portions remain unchanged."
+					"details": "Fixed base portions remain unchanged. Efficiency bonuses add as percentage points. Warfare grants no Command, resource capacity or additional action."
 				},
 				"advanced": {
-					"description": "Increase maximum Command by 2; attribute-derived Order components operate at 120% Command Efficiency.",
+					"description": "Attribute-derived Order components operate at 120% Order Efficiency; fixed base components are unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Increase maximum Command by 2; attribute-derived Order components operate at 120% Command Efficiency."
+						"description": "Attribute-derived Order components operate at 120% Order Efficiency; fixed base components are unchanged.",
+						"parameters": {"orderEfficiencyPercent": 120}
 					},
-					"details": "The rank grants +2 maximum Command in total. Attribute-derived Order components operate at 120% Command Efficiency; fixed base portions remain unchanged."
+					"details": "Fixed base portions remain unchanged. Efficiency bonuses add as percentage points. Warfare grants no Command, resource capacity or additional action."
 				},
 				"expert": {
-					"description": "Increase maximum Command by 3; attribute-derived Order components operate at 130% Command Efficiency.",
+					"description": "Attribute-derived Order components operate at 130% Order Efficiency; fixed base components are unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Increase maximum Command by 3; attribute-derived Order components operate at 130% Command Efficiency."
+						"description": "Attribute-derived Order components operate at 130% Order Efficiency; fixed base components are unchanged.",
+						"parameters": {"orderEfficiencyPercent": 130}
 					},
-					"details": "The rank grants +3 maximum Command in total. Attribute-derived Order components operate at 130% Command Efficiency; fixed base portions remain unchanged."
+					"details": "Fixed base portions remain unchanged. Efficiency bonuses add as percentage points. Warfare grants no Command, resource capacity or additional action."
 				}
 			},
 			"perks": [
@@ -1082,20 +1082,22 @@
 					"id": "new-horizons:command.aggressiveCommander",
 					"name": "Aggressive Commander",
 					"requires": "basic",
-					"description": "Attack-derived components of Orders receive an additional +20 percentage points of Command Efficiency.",
+					"description": "Attack-derived components of Orders receive an additional +20 percentage points of Order Efficiency.",
 					"effect": {
 						"status": "active",
-						"description": "Attack-derived components of Orders receive an additional +20 percentage points of Command Efficiency."
+						"description": "Attack-derived components of Orders receive an additional +20 percentage points of Order Efficiency.",
+						"parameters": {"attackEfficiencyBonusPP": 20}
 					}
 				},
 				{
 					"id": "new-horizons:command.defensiveCommander",
 					"name": "Defensive Commander",
 					"requires": "basic",
-					"description": "Defense-derived components of Orders receive an additional +20 percentage points of Command Efficiency.",
+					"description": "Defense-derived components of Orders receive an additional +20 percentage points of Order Efficiency.",
 					"effect": {
 						"status": "active",
-						"description": "Defense-derived components of Orders receive an additional +20 percentage points of Command Efficiency."
+						"description": "Defense-derived components of Orders receive an additional +20 percentage points of Order Efficiency.",
+						"parameters": {"defenseEfficiencyBonusPP": 20}
 					}
 				},
 				{
@@ -1112,20 +1114,23 @@
 					"id": "new-horizons:command.battlePlan",
 					"name": "Battle Plan",
 					"requires": "basic",
-					"description": "Increase maximum Command by 1.",
+					"description": "The first successfully issued Order each combat gains +20 percentage points of efficiency on its attribute-derived components.",
 					"effect": {
 						"status": "active",
-						"description": "Increase maximum Command by 1."
-					}
+						"description": "The first successfully issued Order each combat gains +20 percentage points of efficiency on its attribute-derived components.",
+						"parameters": {"firstOrderEfficiencyBonusPP": 20}
+					},
+					"details": "The Order spends its ordinary Hero Action. Rejected Orders, previews and cancelled targeting do not consume this benefit. No free precombat Order or Command capacity is granted."
 				},
 				{
 					"id": "new-horizons:command.veteranCommander",
 					"name": "Veteran Commander",
 					"requires": "advanced",
-					"description": "Leadership-derived components of Orders receive an additional +25 percentage points of Command Efficiency.",
+					"description": "Friendly stacks currently benefiting from your Orders gain +2 Creature Attack and +2 Creature Defense.",
 					"effect": {
 						"status": "active",
-						"description": "Leadership-derived components of Orders receive an additional +25 percentage points of Command Efficiency."
+						"description": "Friendly stacks currently benefiting from your Orders gain +2 Creature Attack and +2 Creature Defense.",
+						"parameters": {"creatureAttack": 2, "creatureDefense": 2, "requiresActiveOrder": true}
 					}
 				},
 				{
@@ -1135,7 +1140,8 @@
 					"description": "Focus Fire grants melee attacks half its damage bonus; Feint reduces retaliation damage by 5 additional percentage points, capped at 60%.",
 					"effect": {
 						"status": "active",
-						"description": "Focus Fire grants melee attacks half its damage bonus; Feint reduces retaliation damage by 5 additional percentage points, capped at 60%."
+						"description": "Focus Fire grants melee attacks half its damage bonus; Feint reduces retaliation damage by 5 additional percentage points, capped at 60%.",
+						"parameters": {"focusFireMeleeBonusPercent": 50, "feintReductionBonusPP": 5, "feintReductionCapPercent": 60}
 					},
 					"details": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Feint! grants an additional +5 percentage points of retaliation damage reduction, up to its final 60% cap."
 				},
@@ -1157,7 +1163,8 @@
 					"description": "Friendly stacks currently benefiting from your Orders take 20% less damage from attacks and spells.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly stacks currently benefiting from your Orders take 20% less damage from attacks and spells."
+						"description": "Friendly stacks currently benefiting from your Orders take 20% less damage from attacks and spells.",
+						"parameters": {"attackAndSpellReductionPercent": 20, "requiresActiveOrder": true}
 					},
 					"details": "Applies once while at least one actual Order benefit remains active on the recipient. It ends when the last benefit expires, is consumed or is broken. Independent mitigation combines multiplicatively; an Order record alone is insufficient."
 				},
@@ -1165,21 +1172,163 @@
 					"id": "new-horizons:command.doubleCommand",
 					"name": "Master Commander",
 					"requires": "expert",
-					"description": "All attribute-derived Order components receive an additional +15 percentage points of Command Efficiency. Fixed base portions are unchanged.",
+					"description": "All attribute-derived Order components receive an additional +15 percentage points of Order Efficiency. Fixed base portions are unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "All attribute-derived Order components receive an additional +15 percentage points of Command Efficiency. Fixed base portions are unchanged."
+						"description": "All attribute-derived Order components receive an additional +15 percentage points of Order Efficiency. Fixed base portions are unchanged.",
+						"parameters": {"allEfficiencyBonusPP": 15}
 					}
 				},
 				{
-					"id": "new-horizons:command.seizeInitiative",
-					"name": "Grand Marshal",
+					"id": "new-horizons:command.decisiveOrders",
+					"name": "Decisive Orders",
 					"requires": "expert",
-					"description": "Increase your hero's actual Leadership by 20%.",
+					"description": "Friendly stacks currently benefiting from your Orders deal +10% direct creature-attack damage.",
 					"effect": {
 						"status": "active",
-						"description": "Increase your hero's actual Leadership by 20%."
+						"description": "Friendly stacks currently benefiting from your Orders deal +10% direct creature-attack damage.",
+						"parameters": {"directAttackDamagePercent": 10, "requiresActiveOrder": true}
+					},
+					"legacyIdentity": {"id": "new-horizons:command.seizeInitiative", "commandPolicyVersion": 1},
+					"details": "Replaces the released passive Warfare Grand Marshal only under commandPolicyVersion 1. Historical activation-reordering Seize Initiative is not migrated. Melee, ranged and retaliation attacks qualify, including magical creature attacks; spells, healing, reflection and damage-over-time do not. Multiple qualifying Orders never multiply this passive bonus."
+				}
+			]
+		},
+		"new-horizons:authority": {
+			"id": "new-horizons:authority",
+			"name": "Authority",
+			"domain": "Martial",
+			"availability": "All heroes",
+			"description": "Increase Command and passively train the creatures occupying your army slots.",
+			"details": "Available to Might and Magic heroes. Class offer weights follow physical attribute growth. Rank bonuses are totals, not cumulative awards. Perks apply by occupied slot grade, including creatures with Assimilation, with no additional selection or Command bonus. Slot enhancements remain independent acquisition-level snapshots.",
+			"ranks": {
+				"basic": {
+					"description": "+1 Command.",
+					"effect": {"status": "active", "description": "+1 Command.", "parameters": {"commandBonus": 1}}
+				},
+				"advanced": {
+					"description": "+2 Command total.",
+					"effect": {"status": "active", "description": "+2 Command total.", "parameters": {"commandBonus": 2}}
+				},
+				"expert": {
+					"description": "+3 Command total.",
+					"effect": {"status": "active", "description": "+3 Command total.", "parameters": {"commandBonus": 3}}
+				}
+			},
+			"perks": [
+				{
+					"id": "new-horizons:authority.offensiveDrills",
+					"name": "Offensive Drills",
+					"requires": "basic",
+					"description": "Creatures occupying Core slots gain +2 Creature Attack.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying Core slots gain +2 Creature Attack.",
+						"parameters": {"slotGrades": ["core"], "creatureAttack": 2}
 					}
+				},
+				{
+					"id": "new-horizons:authority.defensiveDrills",
+					"name": "Defensive Drills",
+					"requires": "basic",
+					"description": "Creatures occupying Core slots gain +2 Creature Defense.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying Core slots gain +2 Creature Defense.",
+						"parameters": {"slotGrades": ["core"], "creatureDefense": 2}
+					}
+				},
+				{
+					"id": "new-horizons:authority.conditioning",
+					"name": "Conditioning",
+					"requires": "basic",
+					"description": "Creatures occupying Core slots gain +10% maximum HP.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying Core slots gain +10% maximum HP.",
+						"parameters": {"slotGrades": ["core"], "maximumHealthPercent": 10}
+					}
+				},
+				{
+					"id": "new-horizons:authority.battleReadiness",
+					"name": "Battle Readiness",
+					"requires": "basic",
+					"description": "Creatures occupying Core slots gain +1 Initiative.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying Core slots gain +1 Initiative.",
+						"parameters": {"slotGrades": ["core"], "initiative": 1}
+					}
+				},
+				{
+					"id": "new-horizons:authority.officerCorps",
+					"name": "Officer Corps",
+					"requires": "advanced",
+					"description": "Creatures occupying Elite slots gain +2 Creature Attack and +2 Creature Defense.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying Elite slots gain +2 Creature Attack and +2 Creature Defense.",
+						"parameters": {"slotGrades": ["elite"], "creatureAttack": 2, "creatureDefense": 2}
+					}
+				},
+				{
+					"id": "new-horizons:authority.maneuverTraining",
+					"name": "Maneuver Training",
+					"requires": "advanced",
+					"description": "Creatures occupying any army slot gain +1 battlefield Speed; adventure Movement is unchanged.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying any army slot gain +1 battlefield Speed; adventure Movement is unchanged.",
+						"parameters": {"slotGrades": ["core", "elite", "champion"], "battlefieldSpeed": 1}
+					}
+				},
+				{
+					"id": "new-horizons:authority.counterattackTraining",
+					"name": "Counterattack Training",
+					"requires": "advanced",
+					"description": "Creatures occupying any army slot gain +1 ordinary retaliation per round.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying any army slot gain +1 ordinary retaliation per round.",
+						"parameters": {"slotGrades": ["core", "elite", "champion"], "additionalRetaliations": 1}
+					},
+					"details": "Does not grant ranged retaliation, override retaliation prevention or creature eligibility, or increase an unlimited retaliation allowance."
+				},
+				{
+					"id": "new-horizons:authority.protectiveTraining",
+					"name": "Protective Training",
+					"requires": "advanced",
+					"description": "Creatures occupying any army slot take 10% less magical damage.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying any army slot take 10% less magical damage.",
+						"parameters": {"slotGrades": ["core", "elite", "champion"], "magicalReductionPercent": 10}
+					},
+					"details": "An independent standing mitigation source, separate from acquisition-scaled Warding. Normal magical mitigation and the final 95% reduction limit still apply."
+				},
+				{
+					"id": "new-horizons:authority.veteranCorps",
+					"name": "Veteran Corps",
+					"requires": "expert",
+					"description": "Creatures occupying Core slots deal +15% direct creature-attack damage.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying Core slots deal +15% direct creature-attack damage.",
+						"parameters": {"slotGrades": ["core"], "directAttackDamagePercent": 15}
+					},
+					"details": "Includes melee attacks, ranged attacks and retaliations, including ordinary magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage."
+				},
+				{
+					"id": "new-horizons:authority.grandMarshal",
+					"name": "Grand Marshal",
+					"requires": "expert",
+					"description": "Creatures occupying Elite and Champion slots deal +10% direct creature-attack damage.",
+					"effect": {
+						"status": "active",
+						"description": "Creatures occupying Elite and Champion slots deal +10% direct creature-attack damage.",
+						"parameters": {"slotGrades": ["elite", "champion"], "directAttackDamagePercent": 10}
+					},
+					"details": "Includes melee attacks, ranged attacks and retaliations, including ordinary magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage. This is distinct from Warfare's retired Grand Marshal and grants no Command."
 				}
 			]
 		},
@@ -2816,7 +2965,7 @@
 						"status": "active",
 						"description": "Creatures recruited directly into this hero’s army cost 10% fewer resources."
 					},
-					"details": "Apply the discount only when this hero is the actual recruitment recipient, including field dwelling and War Machine purchases. Recruitment into a town’s upper army uses its garrison hero; a town without a garrison hero receives no discount, even if a visiting hero owns Conscription. For each resource, charge ceil(undiscounted unit price × recruited count × 90 / 100), preserving zero costs. Ten units costing 1 Gold each therefore cost 9 Gold, rather than rounding each unit separately. Preserve normal recruitment availability, free sources, ownership and Leadership checks."
+					"details": "Apply the discount only when this hero is the actual recruitment recipient, including field dwelling and War Machine purchases. Recruitment into a town’s upper army uses its garrison hero; a town without a garrison hero receives no discount, even if a visiting hero owns Conscription. For each resource, charge ceil(undiscounted unit price × recruited count × 90 / 100), preserving zero costs. Ten units costing 1 Gold each therefore cost 9 Gold, rather than rounding each unit separately. Preserve normal recruitment availability, free sources, ownership and legal Command placement."
 				},
 				{
 					"id": "new-horizons:estates.architect",
@@ -2838,7 +2987,7 @@
 						"status": "active",
 						"description": "Each week, every owned mine gains Rogues equal to this hero’s current level."
 					},
-					"details": "At the start of each week, every owned mine gains Rogues equal to each active holder’s current hero level; add qualifying holders’ contributions. Merge with existing Rogues or use a free native garrison slot. If all seven slots are occupied without Rogues, preserve undelivered guards in a pending reserve rather than overwriting troops or losing units. Keep native mine-garrison transfers and Leadership checks when a hero collects guards; this grants no additional Hero Action."
+					"details": "At the start of each week, every owned mine gains Rogues equal to each active holder’s current hero level; add qualifying holders’ contributions. Merge with existing Rogues or use a free native garrison slot. If all seven slots are occupied without Rogues, preserve undelivered guards in a pending reserve rather than overwriting troops or losing units. Keep native mine-garrison transfers and legal Command placement when a hero collects guards; this grants no additional Hero Action."
 				},
 				{
 					"id": "new-horizons:estates.banking",
@@ -3877,31 +4026,31 @@
 			"name": "Necromancy",
 			"domain": "Faction",
 			"availability": "Necropolis heroes only",
-			"description": "After victory, raise permanent Skeletons from eligible enemy casualties and reduce Skeleton and Skeleton Warrior Leadership requirements; ordinary magical casualties qualify, but explicitly destroyed or invalid remains are excluded.",
+			"description": "After victory, raise permanent Skeletons from eligible enemy casualties; ordinary magical casualties qualify, but explicitly destroyed or invalid remains are excluded.",
 			"ranks": {
 				"basic": {
-					"description": "After victory, raise Skeletons from 10% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 50% less Leadership.",
+					"description": "After victory, raise Skeletons from 10% of eligible enemy casualties.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, raise Skeletons from 10% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 50% less Leadership."
+						"description": "After victory, raise Skeletons from 10% of eligible enemy casualties."
 					},
-					"details": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 50% less Leadership; round their discounted requirement up to a whole point, minimum 1."
+					"details": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Permanent army entry follows unlocked slot and tier eligibility; no creature-count budget applies."
 				},
 				"advanced": {
-					"description": "After victory, raise Skeletons from 20% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 60% less Leadership.",
+					"description": "After victory, raise Skeletons from 20% of eligible enemy casualties.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, raise Skeletons from 20% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 60% less Leadership."
+						"description": "After victory, raise Skeletons from 20% of eligible enemy casualties."
 					},
-					"details": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 60% less Leadership; round their discounted requirement up to a whole point, minimum 1."
+					"details": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Permanent army entry follows unlocked slot and tier eligibility; no creature-count budget applies."
 				},
 				"expert": {
-					"description": "After victory, raise Skeletons from 30% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 70% less Leadership.",
+					"description": "After victory, raise Skeletons from 30% of eligible enemy casualties.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, raise Skeletons from 30% of eligible enemy casualties; your Skeletons and Skeleton Warriors require 70% less Leadership."
+						"description": "After victory, raise Skeletons from 30% of eligible enemy casualties."
 					},
-					"details": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Skeletons and Skeleton Warriors commanded by this hero require 70% less Leadership; round their discounted requirement up to a whole point, minimum 1."
+					"details": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Permanent army entry follows unlocked slot and tier eligibility; no creature-count budget applies."
 				}
 			},
 			"perks": [
@@ -4003,12 +4152,13 @@
 					"id": "new-horizons:necromancy.lordOfTheDead",
 					"name": "Lord of the Dead",
 					"requires": "expert",
-					"description": "Your Skeletons and Skeleton Warriors require 90% less Leadership, rounded up, minimum 1; this replaces the rank bonus.",
+					"description": "Your Skeletons and Skeleton Warriors gain +25% maximum HP.",
 					"effect": {
 						"status": "active",
-						"description": "Your Skeletons and Skeleton Warriors require 90% less Leadership, rounded up, minimum 1; this replaces the rank bonus."
+						"description": "Your Skeletons and Skeleton Warriors gain +25% maximum HP.",
+						"parameters": {"maximumHealthPercent": 25}
 					},
-					"details": "Skeletons and Skeleton Warriors commanded by this hero require 90% less Leadership. This replaces Necromancy's rank-based reduction; round the discounted requirement up to a whole point, minimum 1."
+					"details": "Applies only to Skeletons and Skeleton Warriors commanded by this hero, through the normal maximum-HP bonus and rounding pipeline. This grants no Command or additional slots."
 				}
 			]
 		},
@@ -4401,11 +4551,13 @@
 					"id": "new-horizons:elementalRebirth.phoenixSpark",
 					"name": "Primordial Host",
 					"requires": "expert",
-					"description": "Your Elementals, Firebirds and Phoenixes require 20% less Leadership.",
+					"description": "Your Elementals, Firebirds and Phoenixes deal +15% direct creature-attack and retaliation damage.",
 					"effect": {
 						"status": "active",
-						"description": "Your Elementals, Firebirds and Phoenixes require 20% less Leadership."
-					}
+						"description": "Your Elementals, Firebirds and Phoenixes deal +15% direct creature-attack and retaliation damage.",
+						"parameters": {"directAttackDamagePercent": 15}
+					},
+					"details": "A standing damage bonus independent of Elemental Attunement. Includes melee, ranged and retaliation attacks, including magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage; this does not grant Assimilation to Firebirds or Phoenixes."
 				},
 				{
 					"id": "new-horizons:elementalRebirth.perfectConvergence",
@@ -4420,7 +4572,6 @@
 			]
 		}
 	},
-	"commandPolicyVersion": 1,
 	"elementalAttunementPolicy": {
 		"version": 1
 	}

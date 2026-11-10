@@ -170,26 +170,6 @@ SideInBattle * findBattleSide(CGameState & gs, ObjectInstanceID heroID)
 	return nullptr;
 }
 
-bool hasSameHeroOrderIssuance(const HeroOrderState & previous, const HeroOrderState & next)
-{
-	return previous.command == next.command
-		&& previous.issuedRound == next.issuedRound
-		&& previous.primaryTargetUnitId == next.primaryTargetUnitId
-		&& previous.secondaryTargetUnitId == next.secondaryTargetUnitId
-		&& previous.protectInterceptionLimit == next.protectInterceptionLimit
-		&& previous.anchors == next.anchors
-
-		&& previous.sacredCommandEfficiencyBonusPercent == next.sacredCommandEfficiencyBonusPercent
-		&& previous.knightlySequenceEfficiencyBonusPercent == next.knightlySequenceEfficiencyBonusPercent
-		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints
-		&& previous.royalStandardRecipientUnitIds == next.royalStandardRecipientUnitIds
-		&& previous.ironWillLifetime == next.ironWillLifetime
-		&& previous.divineDisciplineRecipientUnitIds == next.divineDisciplineRecipientUnitIds
-		&& previous.crownAndAltarRecipientUnitIds == next.crownAndAltarRecipientUnitIds
-		&& previous.crownAndAltarFocusFirePercent == next.crownAndAltarFocusFirePercent
-		&& previous.crownAndAltarHoldReductionBasisPoints == next.crownAndAltarHoldReductionBasisPoints;
-}
-
 void validateHeroOrderStateMutation(const IBattleInfo & battle, BattleSide side,
 	const std::vector<HeroOrderState> & updated)
 {
@@ -207,7 +187,7 @@ void validateHeroOrderStateMutation(const IBattleInfo & battle, BattleSide side,
 	{
 		const auto & before = previous[index];
 		const auto & after = updated[index];
-		if(!hasSameHeroOrderIssuance(before, after))
+		if(!heroCommands::sameIssuance(before, after))
 			throw std::runtime_error("Canonical Hero Order state update changed its issuance snapshot");
 		const auto preservesProgress = [](const auto & nextProgress, const auto & previousProgress)
 		{
@@ -557,15 +537,6 @@ void GameStatePackVisitor::visitGiveStackExperience(GiveStackExperience & pack)
 		army->getStackPtr(slot.first)->giveAverageStackExperience(slot.second);
 
 	army->nodeHasChanged();
-}
-
-void GameStatePackVisitor::visitSetSecSkill(SetSecSkill & pack)
-{
-	CGHeroInstance *hero = gs.getHero(pack.id);
-	const auto previousRank = hero->getSecSkillLevel(pack.which);
-	hero->setSecSkillLevel(pack.which, pack.val, pack.mode);
-	if(hero->getSecSkillLevel(pack.which) < previousRank)
-		spellPointHeroes.insert(pack.id);
 }
 
 void GameStatePackVisitor::visitSetCommanderProperty(SetCommanderProperty & pack)
@@ -2111,35 +2082,6 @@ void GameStatePackVisitor::visitSetObjectProperty(SetObjectProperty & pack)
 	}
 }
 
-void GameStatePackVisitor::visitHeroMasteryOffer(HeroMasteryOffer & pack)
-{
-	auto * hero = gs.getHero(pack.offer.hero);
-	if(!hero)
-		throw std::runtime_error("Mastery offer for a missing hero");
-	hero->applyMasteryOffer(pack.offer);
-}
-
-void GameStatePackVisitor::visitHeroMasteryChosen(HeroMasteryChosen & pack)
-{
-	auto * hero = gs.getHero(pack.hero);
-	if(!hero)
-		throw std::runtime_error("Mastery choice for a missing hero");
-	hero->applyMasteryChoice(pack.sequence, pack.choice);
-}
-
-void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
-{
-	newHorizonsHeroes::applyLevelUpOffer(gs.getHero(pack.heroId), pack);
-}
-
-void GameStatePackVisitor::visitHeroPerkChosen(HeroPerkChosen & pack)
-{
-	auto * hero = gs.getHero(pack.hero);
-	if(!hero)
-		throw std::runtime_error("Perk choice for a missing hero");
-	hero->applyPerkSelection(pack.selection);
-}
-
 void GameStatePackVisitor::visitCommanderLevelUp(CommanderLevelUp & pack)
 {
 	auto * hero = gs.getHero(pack.heroId);
@@ -2755,10 +2697,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		auto & side = commandBattle->getSide(pack.ba.side);
 		const bool sharedActionBudget = heroCommands::supportedByRules(
 			commandBattle->getHeroCommandRules(), HeroCommand::CHARGE);
-		auto nextCommandResources = side.commandResources;
-		const bool finiteCommands = newHorizonsCommand::usesRules(commandBattle->getHeroCommandRules());
-		if(finiteCommands && !nextCommandResources.spend())
-			throw std::runtime_error("Accepted Order has no remaining Command");
+		const auto nextCommandResources = newHorizonsCommand::acceptedOrderResources(
+			commandBattle->getHeroCommandRules(), side.commandResources);
 		std::optional<HeroActionAllowanceState::Receipt> orderReceipt;
 		std::vector<uint32_t> sharedPurposeRecipients;
 		auto nextAllowances = side.heroActionAllowances;
@@ -2825,7 +2765,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		}
 		if(sharedActionBudget)
 			side.heroActionAllowances = std::move(nextAllowances);
-		if(finiteCommands) side.commandResources = nextCommandResources;
+		side.commandResources = nextCommandResources;
 		if(acceptedDoubleCommandState)
 			commandBattle->setDoubleCommandState(pack.ba.side, *acceptedDoubleCommandState);
 		if(acceptedDoubleCommandState)

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsCommandAdmission.h"
 #include "CampaignState.h"
 #include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 
@@ -363,6 +364,7 @@ void CampaignState::validateNativePilotSerialization(bool supported) const
 
 JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 {
+	hero->validateCommandSerialization(true);
 	nativeRules::validatePilotPerks(hero->getPerkState().rules);
 	nativeRules::validatePilotCreatures(hero->getPrimaryGrowthRules());
 	JsonNode node;
@@ -372,6 +374,8 @@ JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 		node["primaryGrowthRules"] = hero->primaryGrowthRules;
 	if(newHorizonsHeroes::usesRules(hero->capabilityRules))
 		node["capabilityRules"] = hero->capabilityRules;
+	if(hero->getArmyCommandRules())
+		node["commandProgression"] = hero->commandProgressionToJson();
 	if(newHorizonsHeroes::usesRules(hero->masteryState.rules))
 		node["masteryState"] = hero->masteryState.toJson();
 	if(newHorizonsHeroes::usesPerkRules(hero->perkState.rules))
@@ -383,6 +387,7 @@ JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 
 std::shared_ptr<CGHeroInstance> CampaignState::crossoverDeserialize(const JsonNode & node, CMap * map) const
 {
+	newHorizonsHeroes::validateCommandCrossover(node, true);
 	JsonDeserializer handler(nullptr, const_cast<JsonNode&>(node));
 	auto hero = std::make_shared<CGHeroInstance>(map ? map->cb : nullptr);
 	hero->ID = Obj::HERO;
@@ -394,6 +399,7 @@ std::shared_ptr<CGHeroInstance> CampaignState::crossoverDeserialize(const JsonNo
 	hero->capabilityRules = node["capabilityRules"];
 	newHorizonsHeroes::validateResolvedCapabilityRules(hero->capabilityRules);
 	hero->capabilityRulesCaptured = true;
+	hero->restoreCommandProgression(node["commandProgression"]);
 	hero->masteryState = newHorizonsHeroes::MasteryState::fromJson(node["masteryState"]);
 	hero->masteryRulesCaptured = true;
 	hero->perkState = newHorizonsHeroes::PerkState::fromJson(node["perkState"]);

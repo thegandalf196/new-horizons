@@ -90,7 +90,17 @@ public:
 		const CGHeroInstance * buyer = nullptr) const = 0;
 };
 
-class StackUpgradeInfo;
+class StackUpgradeInfo
+{
+public:
+	CreatureID initialCreature;
+	CreatureID upgradedCreature;
+	TResources cost;
+	int count;
+	uint64_t upgradeValue;
+
+	StackUpgradeInfo(CreatureID initial, CreatureID upgraded, int count);
+};
 
 class DLL_EXPORT ArmyManager : public IArmyManager
 {
@@ -98,6 +108,9 @@ private:
 	CPlayerSpecificInfoCallback * cpsic; //this is enough, but we downcast from CCallback
 	const Nullkiller * aiNk;
 	std::map<CreatureID, SlotInfo> totalArmy;
+	std::vector<SlotInfo> projectArmyAdmission(const CCreatureSet * destination, const CCreatureSet * source,
+		const CGHeroInstance * receiver, const CGHeroInstance * sourceHero, const std::vector<SlotInfo> & desired,
+		armyFormation::ArmyExchangeProjection * plan) const;
 
 public:
 	ArmyManager(CPlayerSpecificInfoCallback * cpsic, const Nullkiller * ai): cpsic(cpsic), aiNk(ai) {}

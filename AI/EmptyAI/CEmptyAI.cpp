@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CEmptyAI.h"
+#include "../CommandEnhancementChoice.h"
 #include "../../lib/networkPacks/Component.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -47,6 +48,12 @@ void CEmptyAI::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, Que
 {
 	if(const auto * hero = cb->getHero(offer.hero))
 		cb->chooseHeroMastery(offer.hero, queryID, offer.sequence, newHorizonsHeroes::chooseMasteryForArmy(offer, *hero, cb.get()));
+}
+
+void CEmptyAI::heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhancementOffer & offer, QueryID queryID)
+{
+	if(const auto * hero = cb->getHero(offer.hero); hero && hero->getOwner() == offer.player)
+		cb->chooseCommandEnhancement(offer.hero, queryID, offer.milestone, commandAI::chooseEnhancement(offer, *hero));
 }
 
 void CEmptyAI::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,

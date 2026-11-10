@@ -2,6 +2,7 @@
  * NewHorizonsMuster.cpp, part of VCMI engine
  */
 #include "StdInc.h"
+#include "../../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "NewHorizonsMuster.h"
 
 #include "../../../lib/CCreatureHandler.h"
@@ -24,6 +25,9 @@ namespace
 			return 0;
 		if(!hero)
 			return amount;
+		if(hero->getArmyCommand())
+			return newHorizonsHeroes::planCommandRecruitment(*hero,
+				newHorizonsHeroes::commandArmySlots(*hero), creature, amount) ? amount : 0;
 
 		const auto capacity = hero->getLeadershipSlotCapacity(creature);
 		if(!capacity)
@@ -43,7 +47,7 @@ std::optional<int> amountMultiplier(const int recruitmentRank,
 }
 
 std::optional<Candidate> chooseBroadMusterSplit(const std::vector<CoreMusterRow> & coreRows,
-	const int totalAmount, const bool broadMusterActive, const int64_t bestSoloRecruitableArmyValue)
+	const int totalAmount, const bool broadMusterActive, const int64_t bestSoloRecruitableArmyValue, const CGHeroInstance * hero)
 {
 	if(!broadMusterActive || totalAmount <= 1 || coreRows.size() < 2)
 		return std::nullopt;
@@ -75,6 +79,13 @@ std::optional<Candidate> chooseBroadMusterSplit(const std::vector<CoreMusterRow>
 			for(int firstAmount = 1; firstAmount < totalAmount; ++firstAmount)
 			{
 				const int secondAmount = totalAmount - firstAmount;
+				if(hero && hero->getArmyCommand())
+				{
+					const std::array incoming{newHorizonsHeroes::RecruitmentSlot{SlotID(0), first.creature, firstAmount},
+						newHorizonsHeroes::RecruitmentSlot{SlotID(1), second.creature, secondAmount}};
+					if(!newHorizonsHeroes::planCommandArmyAddition(*hero,
+						newHorizonsHeroes::commandArmySlots(*hero), incoming)) continue;
+				}
 				const auto admitted = [](const CoreMusterRow & row, const int count)
 				{
 					if(!row.leadershipMaximum)
@@ -175,8 +186,10 @@ std::optional<Candidate> chooseTownCandidate(const CGDwelling & town,
 		// Keep row order as the final tie breaker.  This is deterministic and
 		// avoids a different choice merely because map/entity IDs happened to
 		// be allocated differently in a test fixture.
-		if(!best || candidate.armyValue > best->armyValue
-			|| (candidate.armyValue == best->armyValue && candidate.row < best->row))
+		const bool command = hero && hero->getArmyCommand();
+		const auto score = command ? candidate.recruitableArmyValue : candidate.armyValue;
+		const auto oldScore = best ? (command ? best->recruitableArmyValue : best->armyValue) : -1;
+		if(!best || score > oldScore || (score == oldScore && candidate.row < best->row))
 			best = candidate;
 	}
 
@@ -186,7 +199,7 @@ std::optional<Candidate> chooseTownCandidate(const CGDwelling & town,
 			newHorizonsCreatures::CreatureCategory::CORE, modifiers);
 		if(coreAmount)
 		{
-			if(auto split = chooseBroadMusterSplit(coreRows, *coreAmount, true, bestSoloRecruitableArmyValue))
+			if(auto split = chooseBroadMusterSplit(coreRows, *coreAmount, true, bestSoloRecruitableArmyValue, hero))
 				return split;
 		}
 	}

@@ -22,8 +22,13 @@
 #include "../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../lib/networkPacks/ArtifactLocation.h"
 #include "../lib/CRandomGenerator.h"
-#include "widgets/NewHorizonsLeadershipReadback.h"
+#include "../lib/CCreatureHandler.h"
+#include "../lib/texts/CGeneralTextHandler.h"
+#include "windows/CommandPresentation.h"
+#include "../lib/entities/creature/NewHorizonsAssimilation.h"
+#include "../lib/entities/hero/NewHorizonsCommandArmy.h"
 #include "GameInstance.h"
+#include <boost/algorithm/string/replace.hpp>
 
 std::vector<Component> UIHelper::getArtifactsComponents(const CArtifactSet & artSet, const std::vector<MoveArtifactInfo> & movedPack)
 {
@@ -202,106 +207,118 @@ std::string UIHelper::getEagleEyeInfoWindowText(const CGHeroInstance & hero, con
 	return text.toString(&GAME->translator());
 }
 
-bool UIHelper::checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount)
+std::string UIHelper::armySlotProblem(const CArmedInstance * army, SlotID slot, CreatureID creature)
 {
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
+	if(!army)
+		return GAME->translator().translate("new-horizons.command.placement.noArmy");
+	if(!slot.validSlot())
+		return GAME->translator().translate("new-horizons.command.placement.noPosition");
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
 	if(!hero)
-		return true;
+		return {};
+	const auto error = newHorizonsHeroes::commandArmySlotEligibility(hero, slot, creature);
+	using newHorizonsHeroes::CommandPlacementError;
+	switch(error)
+	{
+	case CommandPlacementError::NONE: return {};
+	case CommandPlacementError::INVALID_SLOT:
+		return GAME->translator().translate("new-horizons.command.placement.invalidSlot");
+	case CommandPlacementError::LOCKED_SLOT:
+	{
+		auto text = GAME->translator().translate("new-horizons.command.slot.locked");
+		boost::replace_all(text, "%REQUIRED%", std::to_string(
+			newHorizonsHeroes::commandSlotView(hero->getArmyCommand()->effective(), slot).unlockCommand));
+		return text;
+	}
+	case CommandPlacementError::UNKNOWN_CREATURE_TIER:
+		return GAME->translator().translate("new-horizons.command.placement.unknownTier");
+	case CommandPlacementError::TIER_NOT_PERMITTED:
+	{
+		const auto grade = newHorizonsHeroes::commandSlotView(hero->getArmyCommand()->effective(), slot).grade;
+		auto text = GAME->translator().translate("new-horizons.command.slot.illegalTier");
+		boost::replace_all(text, "%SLOT%", commandPresentation::slotName(slot));
+		boost::replace_all(text, "%TIERS%", GAME->translator().translate(grade == newHorizonsHeroes::CommandSlotGrade::CORE
+			? "new-horizons.command.slot.tiers.core" : grade == newHorizonsHeroes::CommandSlotGrade::ELITE
+				? "new-horizons.command.slot.tiers.elite" : "new-horizons.command.slot.tiers.champion"));
+		boost::replace_all(text, "%CREATURE%", GAME->translator().translate(creature.toCreature()->getNamePluralTextID()));
+		return text;
+	}
+	}
+	return GAME->translator().translate("new-horizons.command.placement.unavailable");
+}
 
-	const auto capacity = hero->getLeadershipSlotCapacity(creature);
-	if(!capacity || capacity->accepts(resultingCount))
+bool UIHelper::checkArmySlot(const CArmedInstance * army, SlotID slot, CreatureID creature)
+{
+	const auto problem = armySlotProblem(army, slot, creature);
+	if(problem.empty())
 		return true;
-
-	GAME->interface()->showInfoDialog(
-		"Leadership limit exceeded: this hero can command at most "
-		+ std::to_string(capacity->maximum) + " creatures of this type ("
-		+ std::to_string(capacity->requirement) + " Leadership each; hero Leadership "
-		+ std::to_string(capacity->leadership) + ").");
+	GAME->interface()->showInfoDialog(problem);
 	return false;
 }
 
-bool UIHelper::checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
-	SlotID sourceSlot, SlotID destinationSlot, TQuantity amount)
+std::string UIHelper::armySlotPreview(const CArmedInstance * army, SlotID slot, CreatureID creature)
 {
-	if(!source || !destination || amount <= 0)
-		return true;
-
-	const auto * sourceCreature = source->getCreature(sourceSlot);
-	if(!sourceCreature)
-		return true;
-
-	const auto * destinationCreature = destination->getCreature(destinationSlot);
-	if(destinationCreature && destinationCreature != sourceCreature)
-		return true; // The server's normal type validation reports this case.
-
-	const TQuantity existing = destinationCreature
-		? destination->getStackCount(destinationSlot)
-		: 0;
-	return checkLeadershipResult(destination, sourceCreature->getId(), existing + amount);
-}
-
-bool UIHelper::hasNoLeadershipCapacityForMerge(const CArmedInstance * source, const CArmedInstance * destination,
-	SlotID sourceSlot, SlotID destinationSlot)
-{
-	if(!source || !destination)
-		return false;
-
-	const auto * sourceCreature = source->getCreature(sourceSlot);
-	if(!sourceCreature || destination->getCreature(destinationSlot) != sourceCreature)
-		return false;
-
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
-	if(!hero)
-		return false;
-
-	const auto capacity = hero->getLeadershipSlotCapacity(sourceCreature->getId());
-	if(!capacity)
-		return false;
-
-	return destination->getStackCount(destinationSlot) >= capacity->maximum;
-}
-
-std::string UIHelper::getNewHorizonsLeadershipProposalText(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
-	int64_t existingCount, int64_t incomingCount)
-{
-	if(!GAME)
-		return {};
-
-	const auto proposal = newHorizonsLeadershipReadback::evaluate(capacity, existingCount, incomingCount);
-	MetaString text;
-	text.appendTextID("new-horizons.combat.leadership.proposal");
-	text.replaceTokenNumber("%ADDED%", proposal.addedLeadership);
-	text.replaceTokenNumber("%DEMAND%", proposal.resultingDemand);
-	text.replaceTokenNumber("%CAPACITY%", proposal.leadership);
-	text.replaceTokenNumber("%MAX%", proposal.maximumCount);
-	text.replaceTokenNumber("%LEGAL%", proposal.legalIncomingCount);
-
-	if(proposal.excess > 0)
+	std::string text = armySlotProblem(army, slot, creature);
+	if(text.empty())
 	{
-		text.appendEOL();
-		text.appendTextID("new-horizons.combat.leadership.proposalExcess");
-		text.replaceTokenNumber("%EXCESS%", proposal.excess);
+		text = GAME->translator().translate("new-horizons.command.placement.legal");
+		boost::replace_all(text, "%SLOT%", armyPositionName(army, slot));
 	}
-	return text.toString(&GAME->translator());
+	if(GAME && GAME->interface() && GAME->interface()->cb)
+		if(const auto category = GAME->interface()->cb->getCreatureCategory(creature))
+		{
+			auto tier = GAME->translator().translate("new-horizons.command.placement.creatureTier");
+			boost::replace_all(tier, "%TIER%", GAME->translator().translate(category->nameTextId));
+			text += "\n" + tier;
+		}
+	if(newHorizonsCreatures::hasIntrinsicAssimilation(creature))
+		text += "\n" + GAME->translator().translate("new-horizons.command.assimilation.preview");
+	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+		hero && newHorizonsCreatures::isCommandSpecialistCreature(*hero, creature))
+		text += "\n" + GAME->translator().translate("new-horizons.command.placement.specialty");
+	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(army); hero && slot.validSlot())
+		text += "\n" + commandPresentation::slotHelp(*hero, slot);
+	return text;
 }
 
-std::string UIHelper::getNewHorizonsLeadershipProposalSummary(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
-	int64_t existingCount, int64_t incomingCount)
+std::string UIHelper::armyPositionName(const CArmedInstance * army, SlotID slot)
 {
-	if(!GAME)
-		return {};
+	if(!slot.validSlot())
+		return GAME->translator().translate("new-horizons.command.placement.noPosition");
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+	if(hero && hero->getArmyCommand())
+		return commandPresentation::slotName(slot);
+	auto text = GAME->translator().translate("new-horizons.command.placement.position");
+	boost::replace_all(text, "%POSITION%", std::to_string(slot.getNum() + 1));
+	return text;
+}
 
-	const auto proposal = newHorizonsLeadershipReadback::evaluate(capacity, existingCount, incomingCount);
-	MetaString text;
-	text.appendTextID("new-horizons.combat.leadership.transfer");
-	text.replaceTokenNumber("%RESULTING%", proposal.resultingCount);
-	text.replaceTokenNumber("%MAX%", proposal.maximumCount);
-	text.replaceTokenNumber("%ADDED%", proposal.addedLeadership);
-	text.replaceTokenNumber("%LEGAL%", proposal.legalIncomingCount);
-	if(proposal.excess > 0)
-	{
-		text.appendTextID("new-horizons.combat.leadership.transferExcess");
-		text.replaceTokenNumber("%EXCESS%", proposal.excess);
-	}
-	return text.toString(&GAME->translator());
+SlotID UIHelper::recruitmentPosition(const CArmedInstance * army, CreatureID creature, int64_t count)
+{
+	if(!army || count <= 0)
+		return SlotID();
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+	if(!hero || !hero->getArmyCommand())
+		return army->getSlotFor(creature.toCreature());
+	const std::array incoming = {newHorizonsHeroes::RecruitmentSlot{SlotID(0), creature, count}};
+	const auto plan = newHorizonsHeroes::planCommandArmyAddition(*hero,
+		newHorizonsHeroes::commandArmySlots(*army), incoming);
+	if(plan)
+		for(const auto & move : plan->moves)
+			if(!move.withinDestination)
+				return move.destination;
+	return SlotID();
+}
+
+bool UIHelper::checkRecruitmentPlan(const CArmedInstance * army,
+	std::span<const newHorizonsHeroes::RecruitmentSlot> incoming)
+{
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+	if(!hero || !hero->getArmyCommand() || incoming.empty())
+		return true;
+	if(newHorizonsHeroes::planCommandArmyAddition(*hero,
+		newHorizonsHeroes::commandArmySlots(*army), incoming))
+		return true;
+	GAME->interface()->showInfoDialog(GAME->translator().translate("new-horizons.command.placement.recruitment"));
+	return false;
 }

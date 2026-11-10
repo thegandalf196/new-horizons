@@ -181,17 +181,18 @@ std::vector<TQuantity> generatedCounts(const CArmedInstance & army,
 {
 	std::vector<TQuantity> result;
 	const int percent = eligible(army) ? percentage(army.cb->getSettings()) : 100;
-	std::vector<calibration::FormationStack> formation;
 	for(const auto & [creature, count] : raw)
-	{
 		result.push_back(count);
-		formation.push_back({count, creature.toCreature()->getAIValue()});
-	}
-	if(eligible(army) && calibratable(army) && formation.size() <= 7)
+	if(eligible(army) && calibratable(army) && raw.size() <= 7)
 	{
 		const auto rules = capturedRules(army);
 		if(rules.enabled() && !protectedEncounters(army.cb->gameState().getMap()).contains(army.id))
+		{
+			std::vector<calibration::FormationStack> formation;
+			for(const auto & [creature, count] : raw)
+				formation.push_back({count, creature.toCreature()->getAIValue()});
 			result = rules.counts(formation);
+		}
 	}
 	for(auto & count : result)
 		count = scaleCount(count, percent);
@@ -204,6 +205,8 @@ void scaleGeneratedGuards(const CArmedInstance & army, Rewardable::Configuration
 		return;
 	const int percent = percentage(army.cb->getSettings());
 	const auto rules = capturedRules(army);
+	if(percent == 100 && !rules.enabled())
+		return;
 	const bool ordinary = rules.enabled() && calibratable(army)
 		&& !protectedEncounters(army.cb->gameState().getMap()).contains(army.id);
 	scaleConfiguration(raw, percent, ordinary ? rules : calibration::Rules(JsonNode()));
@@ -213,11 +216,13 @@ void initializeWorld(CMap & map)
 {
 	const int percent = percentage(map.getSettings());
 	map.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(percent));
+	// Fresh Command worlds explicitly freeze calibration off. Neutral containers
+	// retain this percentage and ordinary growth, without hero slot restrictions.
 	const auto snapshot = calibration::capture(map.getSettings());
 	map.overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION, snapshot);
 	const calibration::Rules rules(snapshot);
 	if(percent == 100 && !rules.enabled())
-		return; // Legacy identity preserves army, experience and bonus caches exactly.
+		return; // Stock identity preserves army, experience and bonus caches exactly.
 
 	const auto protectedTargets = rules.enabled() ? protectedEncounters(map) : std::set<ObjectInstanceID>{};
 	for(const auto & object : map.getObjects())

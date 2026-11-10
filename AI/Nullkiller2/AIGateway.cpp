@@ -1436,7 +1436,7 @@ void AIGateway::prepareDemonicReserve(const CGTownInstance * town)
 					if(otherSlot != destination && other.first == active.first)
 					{
 						canWithdraw = other.second <= std::numeric_limits<TQuantity>::max() - active.second
-							&& armyFormation::canReceiveStack(hero, active.first, other.second + active.second);
+							&& armyFormation::canReceiveStack(hero, otherSlot, active.first, int64_t(other.second) + active.second);
 						break;
 					}
 				if(!canWithdraw)
@@ -1451,7 +1451,7 @@ void AIGateway::prepareDemonicReserve(const CGTownInstance * town)
 					const auto removed = power(active.first, active.second);
 					if(!value || !removed || *value < *removed
 						|| *value > std::numeric_limits<uint64_t>::max() - (baseline - *removed)
-						|| !armyFormation::canReceiveStack(hero, stock.first, amount))
+						|| !armyFormation::canReceiveStack(hero, destination, stock.first, amount))
 						continue;
 					const bool opener = inferno(stock.first) || std::ranges::any_of(originalHero, [&](const auto & other)
 						{ return other.first != destination && inferno(other.second.first); });
@@ -1938,82 +1938,6 @@ void AIGateway::recruitPortalCreatures(const CGTownInstance * town, const CArmed
 
 	selectPortalRecruitmentDwelling(town, source);
 	recruitCreatures(source, recruiter, town->id);
-}
-
-void AIGateway::recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter, ObjectInstanceID portalTownId)
-{
-	//now used only for visited dwellings / towns, not BuyArmy goal
-	if(hasPendingMuster(d))
-	{
-		logAi->debug("Deferring recruitment from dwelling %s until its Muster result is replicated", d->getObjectNameTextID());
-		return;
-	}
-	for(int i = 0; i < d->creatures.size(); i++)
-	{
-		if(!d->creatures[i].second.size())
-			continue;
-
-		int count = d->creatures[i].first;
-		CreatureID creID = d->creatures[i].second.back();
-		SlotID recruitmentDestination = newHorizonsHeroes::recruitmentSlot(recruiter, creID, count);
-		const auto * recruitmentHero = dynamic_cast<const CGHeroInstance *>(recruiter);
-		const auto recruitmentCapacity = recruitmentHero
-			? recruitmentHero->getLeadershipSlotCapacity(creID)
-			: std::nullopt;
-		if(recruitmentCapacity && !recruitmentDestination.validSlot())
-			vstd::amin(count, static_cast<int>(std::min<int64_t>(
-				std::max<int64_t>(0, recruitmentCapacity->maximum), std::numeric_limits<int>::max())));
-		if(count <= 0)
-			continue;
-
-		if(!recruitmentDestination.validSlot())
-		{
-			bool freedSlot = false;
-			for(const auto & stack : recruiter->Slots())
-			{
-				if(!stack.second->getType())
-					continue;
-
-				auto duplicatingSlot = recruiter->getSlotFor(stack.second->getCreature());
-
-				if(duplicatingSlot != stack.first
-					&& armyFormation::canMergeOrSwapStacks(recruiter, recruiter, stack.first, duplicatingSlot))
-				{
-					cc->mergeStacks(recruiter, recruiter, stack.first, duplicatingSlot);
-					freedSlot = true;
-					break;
-				}
-			}
-
-			if(!freedSlot)
-			{
-				continue;
-			}
-			recruitmentDestination = newHorizonsHeroes::recruitmentSlot(recruiter, creID, count);
-			if(!recruitmentDestination.validSlot())
-				continue;
-		}
-
-		count = d->getRecruitmentAmount(creID, cc->getResourceAmount(), count, recruitmentHero);
-		if(recruitmentCapacity)
-		{
-			recruitmentDestination = newHorizonsHeroes::recruitmentSlot(recruiter, creID, count);
-			const int64_t alreadyPresent = recruitmentDestination.validSlot()
-				&& recruiter->hasStackAtSlot(recruitmentDestination)
-				? recruiter->getStackCount(recruitmentDestination)
-				: 0;
-			const int64_t headroom = recruitmentDestination.validSlot()
-				? std::max<int64_t>(0, static_cast<int64_t>(recruitmentCapacity->maximum) - alreadyPresent)
-				: std::max<int64_t>(0, recruitmentCapacity->maximum);
-			vstd::amin(count, static_cast<int>(std::min<int64_t>(headroom, std::numeric_limits<int>::max())));
-		}
-		if(count > 0)
-			cc->recruitCreatures(d, recruiter, creID, count, i, portalTownId);
-	}
-
-	if(portalTownId == ObjectInstanceID::NONE)
-		if(const auto * town = dynamic_cast<const CGTownInstance *>(d))
-			recruitPortalCreatures(town, recruiter);
 }
 
 void AIGateway::battleStart(const BattleID & battleID, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed)

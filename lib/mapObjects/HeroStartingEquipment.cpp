@@ -7,9 +7,11 @@
 #include "../CCreatureHandler.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../entities/artifact/CArtifact.h"
+#include "../entities/creature/NewHorizonsAssimilation.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsCommandArmy.h"
 #include "../gameState/CGameState.h"
 #include "../IGameSettings.h"
 #include "../serializer/JsonSerializeFormat.h"
@@ -80,6 +82,7 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 		dst = this;
 
 	int warMachinesGiven = 0;
+	std::vector<newHorizonsHeroes::CommandPlacementStack> commandStacks;
 
 	auto stacksCountChances = cb->getSettings().getVector(EGameSettings::HEROES_STARTING_STACKS_CHANCES);
 	int stacksCountInitRandomNumber = rand.nextInt(1, 100);
@@ -91,7 +94,7 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 		if (stacksCountInitRandomNumber > stacksCountChances[stackNo])
 			continue;
 
-		auto & stack = getHeroType()->initialArmy[stackNo];
+		auto stack = getHeroType()->initialArmy[stackNo];
 
 		int count = rand.nextInt(stack.minAmount, stack.maxAmount);
 
@@ -101,6 +104,9 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 			continue;
 		}
 
+		stack.creature = newHorizonsHeroes::defaultStartingArmyCreature(*getHeroType(),
+			getCapabilityRules(), stack.creature,
+			newHorizonsCreatures::isCommandSpecialistCreature(*this, stack.creature));
 		const CCreature * creature = stack.creature.toCreature();
 
 		if(creature->warMachine != ArtifactID::NONE) //war machine
@@ -135,6 +141,12 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 		}
 		else
 		{
+			if(getArmyCommand())
+			{
+				commandStacks.push_back({stack.creature, count, newHorizonsHeroes::commandArmyCreatureTraits(*this, stack.creature),
+					SlotID(stackNo - warMachinesGiven)});
+				continue;
+			}
 			if(const auto capacity = getLeadershipSlotCapacity(stack.creature))
 			{
 				if(count > capacity->maximum)
@@ -146,5 +158,12 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 			}
 			dst->setCreature(SlotID(stackNo-warMachinesGiven), stack.creature, count);
 		}
+	}
+	if(getArmyCommand())
+	{
+		const auto plan = newHorizonsHeroes::planCommandPlacement(getArmyCommand()->effective(), commandStacks);
+		if(!plan) throw std::runtime_error("Starting army has no legal Command slot arrangement: " + getHeroType()->getJsonKey());
+		for(const auto & row : *plan)
+			dst->setCreature(row.slot, commandStacks[row.inputIndex].creature, static_cast<TQuantity>(commandStacks[row.inputIndex].count));
 	}
 }

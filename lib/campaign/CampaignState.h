@@ -275,6 +275,8 @@ public:
 	void validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
 	void validateNativePilotSerialization(bool supported) const;
+	void validateCommandSerialization(bool supported) const;
+	static void validateCommandPools(const CampaignPoolType & scenarios, const GlobalPoolType & global, bool supported);
 
 	/// Copies persist-flagged script variables of the given map into the campaign state.
 	void savePersistentVariables(const CMap & map);
@@ -357,6 +359,8 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+		if(h.saving)
 			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 		if(h.saving)
 			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
@@ -377,6 +381,8 @@ public:
 			h & incomingGlobal;
 			validateNativePilotPools(incomingScenarios, incomingGlobal,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			validateCommandPools(incomingScenarios, incomingGlobal,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 			scenarioHeroPool = std::move(incomingScenarios);
 			globalHeroPool = std::move(incomingGlobal);
 		}

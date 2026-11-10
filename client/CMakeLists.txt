@@ -1,4 +1,9 @@
 set(vcmiclientcommon_SRCS
+	CPlayerInterfaceProgressionDialogs.cpp
+	HeroProgressionNetPacks.cpp
+	widgets/CommandArmySlotPresentation.cpp
+	windows/CommandPresentation.cpp
+	windows/CommandEnhancementWindow.cpp
 	StdInc.cpp
 	MetamagicPointUI.cpp
 

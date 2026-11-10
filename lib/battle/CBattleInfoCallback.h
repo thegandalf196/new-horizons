@@ -136,6 +136,8 @@ public:
 	/// Empty for invalid, absent or hidden sides. Provider dispatch occurs only
 	/// after visibility admission; projected providers must not use native values.
 	TConstBonusListPtr battleGetHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked = false) const;
+	/// Actual visible hero Morale, including derived sources, limits and hero flags; no rolls.
+	int battleGetHeroMorale(BattleSide side) const;
 	/// Battle snapshot only; never falls back to world or installed settings.
 	std::optional<newHorizonsCreatures::CreatureCategoryView> battleGetCreatureCategory(CreatureID creature) const;
 	/// Whether a living, actual defensive tower is controlled by the saved Fortification Engineer perk.
@@ -192,6 +194,10 @@ public:
 		const battle::Unit * unit) const;
 	/// Whether the current controller's Commanding Presence currently floors this unit's Morale.
 	bool battleHasCommandingPresence(const battle::Unit * unit) const;
+	/// Flat Creature Attack/Defense from an active Veteran Commander benefit.
+	int battleWarfareStatBonus(const battle::Unit * unit) const;
+	/// Exact read-only captured formula seam for live damage and AI branches.
+	int battleSecondWindPercent(BattleSide side, const HeroOrderState & order, uint32_t recipient, bool crown = false) const;
 	/// Effective turn-start FEARFUL chance after the current controller's Fearless protection.
 	int battleGetFearChance(const battle::Unit * affected) const;
 	bool battleCanConfirmHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId) const;
@@ -544,6 +550,7 @@ protected:
 	int heroOrderCoefficient(const JsonNode & formula, const CGHeroInstance * hero,
 		const HeroOrderState * orderState, uint32_t recipient, bool scaleLucky = true) const;
 	virtual TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const;
+	virtual int visibleHeroMorale(BattleSide side) const;
 	bool battleCanShootActionWithoutCounterBatteryRestriction(const battle::Unit * attacker, const BattleHex & dest) const;
 	heroCommands::TargetRejection battleFocusFireTargetRejection(BattleSide side, HeroCommand command,
 		uint32_t targetUnitId) const;

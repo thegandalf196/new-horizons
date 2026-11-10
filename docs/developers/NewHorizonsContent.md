@@ -11,7 +11,7 @@ are deferred; Doctrine is retired. Provisional coefficients are tunable, not fin
 balance. Never turn obsolete summaries, artwork or saved legacy profiles into
 current default rules.
 
-`config/newHorizonsPerks.json` is the generated Skill/perk catalogue;
+`config/newHorizonsPerks.json` is the manually maintained runtime Skill/perk catalogue;
 `config/newHorizonsHeroes.json` supplies captured Hero policies;
 `Mods/new-horizons/Content/config/` contains curated entity overrides.
 Use `tools/update-new-horizons-module.py` and its focused tests rather than
@@ -19,13 +19,33 @@ hand-editing generated metadata. Confirm actual tool options before invocation.
 Canonical source identity and regeneration consistency are content gates, not
 gameplay certification.
 
-### Initial Leadership and generated recruitment
+### Army Command and generated metadata
 
-Fresh `config/newHorizonsCapabilities.json` captures restore all eighteen class
-`classProfiles.base` values from before the 0.87.1 starting-Leadership increase.
-`classProfiles.perLevel`, the global Leadership scale, creature requirements and
-upgrade parity are unchanged. Existing hero captures retain their actual stored
-profiles; do not rewrite them from the installed registry during load.
+Current `armyCommand` captures own slot permissions and enhancement formulas.
+The current catalogue has 32 Skills. Stable `new-horizons:discipline` is displayed
+as Leadership; stable `new-horizons:command` is Warfare; `new-horizons:authority`
+is the separate all-hero Command Skill. Do not rename historical IDs or infer
+their captured effects from a current label. The current save boundary is
+[new-game-only](Serialization.md#current-save-boundary); numerical Leadership
+values and finite Order points are not converted to Command.
+
+Edit authored registries and texts directly. No private design document is read
+by public builds or source tests. The existing module generator refreshes module
+settings/translations, registered Skill entities and metadata from those public
+inputs; it does not generate a new design or rewrite native consumers. With
+`NH_PYTHON` set to a verified absolute interpreter, run:
+
+```sh
+"$NH_PYTHON" -B tools/update-new-horizons-module.py
+"$NH_PYTHON" -B tools/update-new-horizons-module.py --check
+```
+
+Use its explicit `--refresh-authority-weights` authoring mode only when updating
+Authority weights from the existing primary growth vectors; `--check` verifies
+the derivation without writing. The other existing manual generators are
+`tools/update-new-horizons-categories.py` and
+`tools/update-new-horizons-convenience.py`; inspect their options for their own
+outputs. They do not migrate saved armies or synchronize every localized string.
 
 The independent neutral-army and recruitment-growth settings, including initial
 recruitment supply, use the [army generation runtime contract](NewHorizonsNeutralArmies.md).
@@ -149,14 +169,15 @@ compound interaction. Useful maintained entry points include:
   source/catalogue/entity consistency.
 - `test/hero/NewHorizonsHeroRulesTest.cpp`,
   `NewHorizonsPrimaryGrowthTest.cpp`, `NewHorizonsPerkRulesTest.cpp` and
-  `NewHorizonsLeadershipTest.cpp`: captured rules and progression/capacity.
+  `NewHorizonsCommandRulesTest.cpp`, `NewHorizonsCommandStateTest.cpp` and
+  `NewHorizonsCommandPlacementTest.cpp`: captured progression and slot admission.
 - `test/server/battles/NewHorizonsCommandTest.cpp`,
   `NewHorizonsDemonicGatingTest.cpp`, `NewHorizonsPlagueTest.cpp` and
   `NewHorizonsSpellLockControlTest.cpp`: real validated battle transitions.
 - `test/battleAI/NewHorizonsGenieSupportAITest.cpp`: shared creature casts,
   target-pool legality, deterministic forecasting and actual AI requests.
 - `test/nullkiller2/` and `NH_AI_EXCHANGES.md`: adventure planning, physical
-  army conservation and carrier-aware Leadership.
+  army conservation and Command-aware slot admission.
 
 A detached forecast must not consume live RNG or mutate live/parent/sibling state.
 Exercise lifecycle before and after accepted actions, not only synthetic bonuses.

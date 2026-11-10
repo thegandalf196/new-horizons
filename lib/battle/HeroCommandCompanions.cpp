@@ -5,8 +5,12 @@
 #include "StdInc.h"
 #include "HeroCommand.h"
 #include "NewHorizonsCommandResources.h"
+#include "NewHorizonsWarfare.h"
 #include "HeroCommandCoefficient.h"
 #include "HeroCommandCoefficientMath.h"
+#include "OrderFormation.h"
+#include "../callback/IGameInfoCallback.h"
+#include "../IGameSettings.h"
 #include "../mapObjects/CGHeroInstance.h"
 
 namespace heroCommands
@@ -23,6 +27,9 @@ constexpr int VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT = 25;
 
 int efficiencyPercent(const CGHeroInstance & hero)
 {
+	if(const auto warfare = newHorizonsWarfare::policy(&hero))
+		return warfare->rankEfficiencyPercent[std::clamp(hero.getPerkSkillRank(COMMAND_SKILL), 0, 3)]
+			+ (hero.hasActivePerk(COMMAND_SKILL, DOUBLE_COMMAND_PERK) ? warfare->masterCommanderEfficiencyBonusPercent : 0);
 	return 100 + std::clamp(hero.getPerkSkillRank("new-horizons:command"), 0, 3) * 10
 		+ (newHorizonsCommand::usesPerkRules(&hero)
 			&& hero.hasActivePerk(COMMAND_SKILL, DOUBLE_COMMAND_PERK) ? 15 : 0);
@@ -31,6 +38,8 @@ int efficiencyPercent(const CGHeroInstance & hero)
 int leadershipEfficiencyPercent(const CGHeroInstance & hero,
 	int divineMandateEfficiencyBonusPercent)
 {
+	if(newHorizonsWarfare::enabled(&hero))
+		return efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, 2000);
 	const int veteranCommanderBonus = hero.hasActivePerk(COMMAND_SKILL, VETERAN_COMMANDER_PERK)
 		? VETERAN_COMMANDER_EFFICIENCY_BONUS_PERCENT : 0;
 	return efficiencyPercent(hero) + std::clamp(divineMandateEfficiencyBonusPercent, 0, newHorizonsCommand::usesPerkRules(&hero) ? 60 : 15)
@@ -51,6 +60,14 @@ int secondWindPercent(const CGHeroInstance & hero,
 int secondWindPercent(const CGHeroInstance & hero,
 	int divineMandateEfficiencyBonusPercent, bool crownAndAltar)
 {
+	if(newHorizonsWarfare::enabled(&hero))
+	{
+		const auto command = hero.getArmyCommand();
+		if(!command) throw std::runtime_error("Second Wind requires captured Command and combat rules");
+		return orderFormation::secondWindPercent(hero.getHeroOrderRules(),
+			hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE), command->effective(),
+			leadershipEfficiencyPercent(hero, divineMandateEfficiencyBonusPercent), crownAndAltar);
+	}
 	int64_t leadership = 0;
 	if(const auto capacity = hero.getLeadershipCapacity())
 		leadership = capacity->capacity;
@@ -78,7 +95,9 @@ double combinedArmsFocusFirePercent(int rangedDamagePercent, const CGHeroInstanc
 {
 	if(!hasCombinedArms(&hero))
 		return 0;
-	return static_cast<double>(rangedDamagePercent) / 2.0;
+	const int share = newHorizonsWarfare::enabled(&hero)
+		? newHorizonsWarfare::perkValue(hero, COMBINED_ARMS_PERK, "focusFireMeleeBonusPercent") : 50;
+	return static_cast<double>(rangedDamagePercent) * share / 100.0;
 }
 
 double combinedArmsFlankPercent(const JsonNode & meleeDamageFormula, const CGHeroInstance & hero)

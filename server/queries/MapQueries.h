@@ -150,6 +150,23 @@ private:
 	bool prompted = false;
 };
 
+class CommandEnhancementQuery : public CQuery
+{
+	bool prompted = false;
+public:
+	static constexpr QueryType TYPE = QueryType::HeroCommandEnhancement;
+	CommandEnhancementQuery(CGameHandler * owner, newHorizonsHeroes::CommandEnhancementOffer offer);
+	const newHorizonsHeroes::CommandEnhancementOffer offer;
+	bool accepted = false;
+	bool wasPrompted() const { return prompted; }
+	bool endsByPlayerAnswer() const override { return false; }
+	bool blocksPack(const CPackForServer * pack) const override;
+	void onAdded(PlayerColor color) override;
+	void onExposure(QueryPtr topQuery) override;
+	void onRemoval(PlayerColor color) override;
+	void notifyObjectAboutRemoval(const CGObjectInstance * object, const CGHeroInstance * hero) const override;
+};
+
 class CCommanderLevelUpDialogQuery : public CDialogQuery
 {
 public:

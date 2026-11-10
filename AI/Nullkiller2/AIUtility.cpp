@@ -718,41 +718,6 @@ uint64_t ownedMineArmyReward(const Nullkiller * aiNk, const CGHeroInstance * her
 	return aiNk->armyManager->howManyReinforcementsCanGet(hero, hero, mine, TerrainId::NONE);
 }
 
-// todo: move to obj manager
-uint64_t externalMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGDwelling * dwelling)
-{
-	if(!hero || !dwelling || hero->getOwner() != aiNk->playerID
-		|| dwelling->getOwner() != aiNk->playerID)
-		return 0;
-	const auto calendar = aiNk->cc->getCalendar();
-	const int week = ::newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
-	::newHorizonsMuster::PerkModifiers modifiers;
-	modifiers.masterRecruiter = hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
-		std::string(::newHorizonsMuster::MASTER_RECRUITER_PERK));
-	if(hero->getNewHorizonsMusterUsesThisWeek(week) >= ::newHorizonsMuster::maximumUsesPerWeek(modifiers)
-		|| dwelling->getNewHorizonsMusterLastWeek() == week || aiNk->aiGw->hasPendingMuster(dwelling))
-		return 0;
-	const auto candidate = newHorizonsMuster::chooseExternalCandidate(*dwelling, *aiNk->cc,
-		hero->getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL)),
-		hero->hasActivePerk(std::string(::newHorizonsMuster::RECRUITMENT_SKILL),
-			std::string(::newHorizonsMuster::EXTERNAL_RECRUITER_PERK)));
-	if(!candidate)
-		return 0;
-	auto slot = newHorizonsHeroes::recruitmentSlot(hero, candidate->creature, candidate->amount);
-	if(!slot.validSlot())
-		slot = newHorizonsHeroes::recruitmentSlot(hero, candidate->creature, 1);
-	if(!slot.validSlot())
-		return 0;
-	int amount = candidate->amount;
-	if(const auto capacity = hero->getLeadershipSlotCapacity(candidate->creature))
-	{
-		const int current = hero->hasStackAtSlot(slot) ? hero->getStackCount(slot) : 0;
-		amount = std::min(amount, std::max(0, capacity->maximum - current));
-	}
-	amount = dwelling->getRecruitmentAmount(candidate->creature, aiNk->cc->getResourceAmount(), amount, hero);
-	return static_cast<uint64_t>(std::max(0, amount)) * candidate->creature.toCreature()->getAIValue();
-}
-
 uint64_t townMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGTownInstance * town)
 {
 	if(!hero || !town || hero->getOwner() != aiNk->playerID || town->getOwner() != aiNk->playerID
@@ -779,8 +744,18 @@ uint64_t townMusterArmyReward(const Nullkiller * aiNk, const CGHeroInstance * he
 		return 0;
 	auto resources = aiNk->cc->getResourceAmount();
 	const auto * buyer = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy());
-	const auto recruitableValue = [hero, buyer, town, &resources](CreatureID creature, int amount) -> uint64_t
+	auto projectedSlots = newHorizonsHeroes::commandArmySlots(*hero);
+	const auto recruitableValue = [hero, buyer, town, &resources, &projectedSlots](CreatureID creature, int amount) -> uint64_t
 	{
+		if(hero->getArmyCommand())
+		{
+			amount = town->getRecruitmentAmount(creature, resources, amount, buyer);
+			const auto plan = newHorizonsHeroes::planCommandRecruitment(*hero, projectedSlots, creature, amount);
+			if(!plan) return 0;
+			projectedSlots = plan->slots;
+			resources -= town->getTotalRecruitmentCost(creature, amount, buyer);
+			return static_cast<uint64_t>(amount) * creature.toCreature()->getAIValue();
+		}
 		auto slot = newHorizonsHeroes::recruitmentSlot(hero, creature, amount);
 		if(!slot.validSlot())
 			slot = newHorizonsHeroes::recruitmentSlot(hero, creature, 1);

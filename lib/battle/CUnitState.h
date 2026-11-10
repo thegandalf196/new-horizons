@@ -26,6 +26,7 @@
 class JsonSerializeFormat;
 class JsonNode;
 class UnitChanges;
+class CBattleInfoCallback;
 
 namespace vstd
 {
@@ -551,6 +552,9 @@ private:
 	bool validStateCreature(CreatureID id) const;
 	void serializeStateCreature(JsonSerializeFormat & handler, const std::string & field, CreatureID & id) const;
 	const IUnitEnvironment * env = nullptr;
+	/// Environment identity only: rebound with env, never copied as gameplay state.
+	const CBattleInfoCallback * warfareContext = nullptr;
+	int warfareStatBonus() const;
 	int32_t activationMovementBonus = 0;
 	int32_t frozenAppliedRound = -1;
 	int64_t phantomInitialIntegrity = 0;

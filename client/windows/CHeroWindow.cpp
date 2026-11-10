@@ -63,7 +63,7 @@ bool useNewHorizonsHeroLayout(const CGHeroInstance * hero)
 	// Never force a global resolution or hide skills/optional Commander mechanics.
 	const auto viewport = ENGINE->screenDimensions();
 	const bool hasNewHorizonsView = hero && (hero->getPrimaryGrowthView().has_value()
-		|| hero->getLeadershipCapacity().has_value() || hero->getSiegeCapabilities().has_value()
+		|| hero->getArmyCommand().has_value() || hero->getSiegeCapabilities().has_value()
 		|| newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules));
 	return hasNewHorizonsView && !ENGINE->isRoeData()
 		&& settings["general"]["enableUiEnhancements"].Bool()
@@ -145,7 +145,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	banner = std::make_shared<CAnimImage>(AnimationPath::builtin("CREST58"), GAME->interface()->playerID.getNum(), 0, 606, 8);
 	name = std::make_shared<CLabel>(190, 38, EFonts::FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW);
 	const bool showsGrowth = hero->getPrimaryGrowthView().has_value();
-	const bool showsCapabilities = hero->getLeadershipCapacity().has_value() || hero->getSiegeCapabilities().has_value();
+	const bool showsCapabilities = hero->getArmyCommand().has_value() || hero->getSiegeCapabilities().has_value();
 	const bool showsMasteries = hero->getMasteryView().has_value();
 	const bool showsPerks = newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules);
 	const bool showsDevelopment = showsGrowth || showsCapabilities || showsMasteries || showsPerks;
@@ -314,9 +314,10 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 
 	learnedPerksSummary = std::make_shared<CTextBox>("", Rect(342, 404, 65, 24), 0,
 		FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
-	legacyLeadershipLabel = std::make_shared<CLabel>(438, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Lead --", 65);
+	legacyLeadershipLabel = std::make_shared<CLabel>(438, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 65);
 	legacySiegeLabel = std::make_shared<CLabel>(534, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Siege --", 65);
-	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_leadership_24"), 0, Rect(410, 404, 24, 24));
+	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_orders_command"), 0, Rect(410, 404, 24, 24));
+	legacyCommandArea = std::make_shared<LRClickableAreaWText>(Rect(410, 404, 92, 24), LIBRARY->generaltexth->translate("new-horizons.command.description"));
 	legacySiegeImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_siege_32"), 0, Rect(506, 404, 24, 24));
 	legacyBoneCollectorImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_bone_collector"), 0, Rect(314, 404, 24, 24));
 	if(newHorizonsLayout)
@@ -326,6 +327,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 		legacyLeadershipLabel->disable();
 		legacySiegeLabel->disable();
 		legacyLeadershipImage->disable();
+		legacyCommandArea->disable();
 		legacySiegeImage->disable();
 		legacyBoneCollectorImage->disable();
 	}
@@ -560,20 +562,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	if(newHorizonsLayout)
 	{
 		refreshCommandReadout();
-		const auto leadership = curHero->getLeadershipCapacity();
-		const bool perSlotLeadership = leadership && curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 2;
-		const int leadershipPerLevel = perSlotLeadership
-			? newHorizonsHeroes::capabilityLeadershipPerLevel(curHero->getCapabilityRules())
-			: 0;
-		leadershipValue->setText(leadership ? std::to_string(leadership->capacity) : "--");
-		leadershipGrowthValue->setText(perSlotLeadership ? "+" + std::to_string(leadershipPerLevel) : "");
 		alignAttributeReadouts();
-		leadershipArea->text = !leadership ? "No saved Leadership rules for this hero. Display icon is illustrative."
-			: perSlotLeadership ? "Leadership: " + std::to_string(leadership->capacity)
-				+ " total, including artifacts and other modifiers. Growth per hero level: +" + std::to_string(leadershipPerLevel)
-				+ ". Each army slot is limited independently: maximum stack size = floor(Leadership / that creature's Leadership Requirement)."
-			: "Legacy Leadership preview: " + std::to_string(leadership->used) + " / " + std::to_string(leadership->capacity)
-				+ " aggregate creatures. Display icon is illustrative.";
 		movementValue->setText(std::to_string(curHero->movementPointsRemaining()) + "/" + std::to_string(curHero->movementPointsLimit()));
 		movementArea->text = "Movement points remaining / current limit: " + std::to_string(curHero->movementPointsRemaining())
 			+ " / " + std::to_string(curHero->movementPointsLimit()) + ".";
@@ -659,17 +648,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 					}
 				}
 			}
-			if(const auto leadership = curHero->getLeadershipCapacity())
-			{
-				legacyLeadershipLabel->setText("Leadership " + std::to_string(leadership->capacity));
-				legacyLeadershipLabel->enable();
-				legacyLeadershipImage->enable();
-			}
-			else
-			{
-				legacyLeadershipLabel->disable();
-				legacyLeadershipImage->disable();
-			}
+			refreshLegacyCommandReadout();
 			if(const auto siege = curHero->getSiegeCapabilities())
 			{
 				legacySiegeLabel->setText(curHero->getCapabilityRules()["rulesetVersion"].Integer() >= 3
@@ -793,7 +772,7 @@ void CHeroWindow::updateGarrisons()
 {
 	garr->recreateSlots();
 	if(newHorizonsLayout)
-		updateArtifacts(); // Refresh live capacity/movement too; retain the existing artifact holder.
+		refreshCommandPresentation(); // Covered windows must not change the shared artifact cursor.
 	else
 		morale->set(curHero);
 }

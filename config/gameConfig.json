@@ -722,52 +722,12 @@
 			"newHorizonsCategories" : {},
 			// creatures on map will grow by specified percentage each week
 			"weeklyGrowthPercent" : 10,
-			// New games default to full Leadership-calibrated counts; historical absence retains the original-count percentage policy.
+			// Stock VCMI encounter counts; maps and explicit scenario choices may override the percentage.
 			"neutralArmySizePercent" : 100,
+			// Historical curves remain readable, but fresh defaults do not generate one.
 			"neutralLeadershipCalibration" : {
 				"version": 1,
-				"enabled": true,
-				"unlockWeeks": [
-					1,
-					1,
-					1,
-					2,
-					2,
-					3,
-					4
-				],
-				"stages": [
-					{
-						"heroLevel": 1,
-						"weeks": 1,
-						"unlockedLines": 3,
-						"troopGold": 4000
-					},
-					{
-						"heroLevel": 5,
-						"weeks": 2,
-						"unlockedLines": 4,
-						"troopGold": 8000
-					},
-					{
-						"heroLevel": 10,
-						"weeks": 4,
-						"unlockedLines": 6,
-						"troopGold": 18000
-					},
-					{
-						"heroLevel": 20,
-						"weeks": 8,
-						"unlockedLines": 7,
-						"troopGold": 40000
-					},
-					{
-						"heroLevel": 30,
-						"weeks": 16,
-						"unlockedLines": 7,
-						"troopGold": 80000
-					}
-				]
+				"enabled": false
 			},
 			// Final newly generated recruitment, rounded up once; stored stock is unchanged.
 			"recruitmentGrowthPercent" : 50,

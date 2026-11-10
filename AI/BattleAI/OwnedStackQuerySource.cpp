@@ -37,7 +37,7 @@ const battle::OwnedUnitBonusFrame & OwnedStackQuerySource::current(const battle:
 std::shared_ptr<battle::CUnitState> OwnedStackQuerySource::acquireState() const
 {
 	current();
-	return battle::OwnedFrameBranchQueries::acquireState(frame);
+	return battle::OwnedUnitEnvironment::acquireStateWithWarfareStatBonus(frame, owner.unitWarfareStatBonus(&subject));
 }
 std::vector<Bonus> OwnedStackQuerySource::localSpellEffects() const
 {
@@ -80,6 +80,11 @@ int OwnedStackQuerySource::unitSpeedBonus(const battle::Unit * unit) const
 {
 	const auto & basis = current(unit);
 	return battle::OwnedFrameBranchQueries::environment(basis).unitSpeedBonus(&basis.unit());
+}
+int OwnedStackQuerySource::unitWarfareStatBonus(const battle::Unit * unit) const
+{
+	current(unit); // Exact subject admission, then current branch membership.
+	return owner.unitWarfareStatBonus(unit);
 }
 bool OwnedStackQuerySource::unitSlowAffectsSpeed(const battle::Unit * unit) const
 {

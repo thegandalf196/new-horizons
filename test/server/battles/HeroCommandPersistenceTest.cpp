@@ -20,7 +20,11 @@
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/serializer/ESerializationVersion.h"
 
-class HeroCommandPersistenceTest : public HeroCommandFixture {};
+class HeroCommandPersistenceTest : public HeroCommandFixture
+{
+protected:
+	HeroCommandPersistenceTest() { useRevisedOrders = true; }
+};
 
 TEST(HeroOrderStatePersistenceTest, IronDisciplineSnapshotRoundTripsDefaultsForOldSavesAndRejectsDownsave)
 {

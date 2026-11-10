@@ -417,6 +417,10 @@ void HeroMasteryOffer::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMa
 void HeroMasteryDialog::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryDialog(*this); }
 void HeroMasteryChosen::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryChosen(*this); }
 void HeroMasteryReply::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroMasteryReply(*this); }
+void HeroCommandProgression::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroCommandProgression(*this); }
+void HeroCommandEnhancementDialog::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroCommandEnhancementDialog(*this); }
+void HeroCommandEnhancementChosen::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroCommandEnhancementChosen(*this); }
+void HeroCommandEnhancementReply::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroCommandEnhancementReply(*this); }
 void HeroPerkChosen::visitTyped(ICPackVisitor & visitor) { visitor.visitHeroPerkChosen(*this); }
 
 void HeroLevelUp::visitTyped(ICPackVisitor & visitor)

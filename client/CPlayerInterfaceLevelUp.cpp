@@ -25,6 +25,7 @@ void CPlayerInterface::heroGotLevel(const CGHeroInstance * hero, PrimarySkill ps
 void CPlayerInterface::heroGotLevelWithReroll(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill>& skills,
 	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID, bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel)
 {
+	commandProgressionChanged(hero->id);
 	auto availableSkills = skills;
 	auto availablePerks = perks;
 	std::optional<CLevelWindow::PrimaryGainSnapshot> primaryGains;

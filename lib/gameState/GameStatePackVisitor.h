@@ -97,6 +97,8 @@ public:
 	void visitHeroPerkChosen(HeroPerkChosen & pack) override;
 	void visitHeroMasteryOffer(HeroMasteryOffer & pack) override;
 	void visitHeroMasteryChosen(HeroMasteryChosen & pack) override;
+	void visitHeroCommandProgression(HeroCommandProgression & pack) override;
+	void visitHeroCommandEnhancementChosen(HeroCommandEnhancementChosen & pack) override;
 	void visitCommanderLevelUp(CommanderLevelUp & pack) override;
 	void visitBattleStart(BattleStart & pack) override;
 	void visitBattleSetActiveStack(BattleSetActiveStack & pack) override;

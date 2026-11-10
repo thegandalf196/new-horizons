@@ -477,6 +477,12 @@ void ApplyGhNetPackVisitor::visitHeroMasteryReply(HeroMasteryReply & pack)
 	result = gh.heroMasteryReply(pack.qid, pack.hero, pack.sequence, pack.choice, pack.player);
 }
 
+void ApplyGhNetPackVisitor::visitHeroCommandEnhancementReply(HeroCommandEnhancementReply & pack)
+{
+	gh.throwIfWrongPlayer(connection, &pack);
+	result = gh.heroCommandEnhancementReply(pack.qid, pack.hero, pack.milestone, pack.choice, pack.player);
+}
+
 void ApplyGhNetPackVisitor::visitQueryReply(QueryReply & pack)
 {
 	gh.throwIfWrongPlayer(connection, &pack);

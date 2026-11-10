@@ -24,6 +24,7 @@
 #include "battle/StackFormSourceIdentity.h"
 #include "battle/UnitQueryTerrain.h"
 #include "battle/NewHorizonsBloodrage.h"
+#include "battle/CommandArmyBonuses.h"
 
 #include <utility>
 
@@ -137,6 +138,7 @@ public:
 	int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override;
 	int unitFortuneSpeed(const battle::Unit * unit) const override;
 	int unitSpeedBonus(const battle::Unit * unit) const override;
+	int unitWarfareStatBonus(const battle::Unit * unit) const override;
 	bool unitSlowAffectsSpeed(const battle::Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const battle::Unit * unit) const override;
 	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const battle::Unit * unit) const override;
@@ -293,6 +295,7 @@ public:
 
 	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
+		if(h.saving) commandArmyBonuses::validateSerialization(*this, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 		if(h.saving)
 			validateExportedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving) validatePetrifyingBloodSerialization(h);

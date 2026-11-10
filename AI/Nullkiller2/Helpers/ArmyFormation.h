@@ -81,6 +81,7 @@ DLL_EXPORT ArmyExchangeProjection projectArmyExchange(
 DLL_EXPORT bool hasLeadershipCapacityRules(const CGHeroInstance * hero, const CCreatureSet * army);
 
 bool canReceiveStack(const CArmedInstance * destination, CreatureID creature, int resultingCount);
+bool canReceiveStack(const CArmedInstance * destination, SlotID slot, CreatureID creature, int64_t resultingCount);
 bool canSwapStacks(const CArmedInstance * first, const CArmedInstance * second,
 	SlotID firstSlot, SlotID secondSlot);
 bool canMergeOrSwapStacks(const CArmedInstance * source, const CArmedInstance * destination,

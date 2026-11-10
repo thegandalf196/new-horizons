@@ -62,6 +62,21 @@ and `1250` becomes `12.5%`. Display metadata does not change damage rules.
 Binary bonus types continue to serialize their existing enum values. The typed
 `NONE` encoder sentinel and invalid-index rejection are unchanged.
 
+### Command army projection serialization
+
+Bonuses recognized by `commandArmyBonuses::isProjectedBonus` require format1158,
+`NEW_HORIZONS_COMMAND_AUTHORITY`. Direct Bonus and enclosing Bonus/parameter,
+list and node preflights reject downlevel output before their payload prefixes,
+including projections nested in combat-event parameters. Readers also reject
+these records under earlier formats.
+
+`OwnedBonusCaptureCodec` uses an explicit1158 local clone profile for current
+sources, separately from transport/save admission. Historical1151,1153 and1155
+profiles remain recognized;1156 shares1155, and native1157 uses its own profile.
+An exact known capability mask and source epoch must agree. Unknown epochs and
+partial masks are rejected; selecting a clone representation never activates a
+hero policy or permits loading an older world.
+
 ## Explicit status tags
 
 `Bonus::statusTags` records opt-in status classification. `DEBUFF` means the

@@ -55,6 +55,10 @@ struct DLL_LINKAGE StartingHeroProjection
 };
 
 DLL_LINKAGE StartingHeroContext startingHeroContext(const IGameSettings & settings);
+/// Generated DEFAULT rows only. The caller supplies resolved specialty eligibility;
+/// this pure captured-policy substitution never rolls or changes stack amounts.
+DLL_LINKAGE CreatureID defaultStartingArmyCreature(const CHero & hero, const JsonNode & capabilities,
+	CreatureID creature, bool commandSpecialist);
 DLL_LINKAGE bool guaranteesDefaultFirstAidTent(HeroTypeID hero, const JsonNode & development);
 DLL_LINKAGE std::vector<int> startingArmyChances(const StartingHeroProjection & projection,
 	const StartingHeroOverrides & overrides, std::vector<int> ordinary);

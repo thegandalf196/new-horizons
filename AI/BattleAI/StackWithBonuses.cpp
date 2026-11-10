@@ -108,7 +108,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	// Borrowed state is copied in full below; do not query HP before its form
 	// provenance exists. Owned providers retain their separate initialization.
 	if(ownedQuerySource) localInit(ownedQuerySource.get());
-	else bindStateEnvironment(Owner);
+	else bindStateEnvironment(Owner->unitEnvironment());
 
 	battle::CUnitState::operator=(*Stack);
 	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
@@ -141,7 +141,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	// Borrowed state is copied in full below; do not query HP before its form
 	// provenance exists. Owned providers retain their separate initialization.
 	if(ownedQuerySource) localInit(ownedQuerySource.get());
-	else bindStateEnvironment(Owner);
+	else bindStateEnvironment(Owner->unitEnvironment());
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
@@ -185,7 +185,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 		ownedBearer->attachToSource(*army);
 	ownedBearer->attachToSource(*type);
 
-	localInit(Owner);
+	localInit(Owner->unitEnvironment());
 
 	position = info.position;
 	summoned = info.summoned;

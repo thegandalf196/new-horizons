@@ -23,8 +23,8 @@ JsonNode captured(bool extended)
 {
 	JsonNode result; result["additionalSpecialties"]["version"].Integer() = 1;
 	auto & policy = result["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	policy["version"].Integer() = 1; policy["closeQuartersDrill"].Integer() = policy["marshSharpshooter"].Integer() = 1;
-	for(const auto * key : {"retaliationDamagePercent", "defendDefense", "maximumHealthPercent", "resistanceAuraPoints"}) policy[key].Integer() = 0;
+	policy["version"].Integer() = policy["marshSharpshooter"].Integer() = 1;
+	for(const auto * key : {"retaliationDamagePercent", "maximumHealthPercent", "resistanceAuraPoints"}) policy[key].Integer() = 0;
 	if(extended) policy["cinderReprisalDamagePercent"].Integer() = 0; // Presence incl0 requires the exact reserved capability.
 	return result;
 }
@@ -127,9 +127,11 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 		|| Version::CURRENT == Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 	else if(Version::CURRENT == Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS
-		|| Version::CURRENT == Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS
-		|| Version::CURRENT == Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)
+		|| Version::CURRENT == Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	else if(Version::CURRENT == Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN
+		|| Version::CURRENT == Version::NEW_HORIZONS_COMMAND_AUTHORITY)
+		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
 	else
 		EXPECT_THROW(OwnedBonusCaptureCodec::current(), std::invalid_argument);
 }
@@ -150,10 +152,10 @@ TEST(OwnedBonusCaptureCodecTest, WireEpochAndNamedBonusProfileMustBothMatch)
 
 TEST(OwnedBonusCaptureCodecTest, IdenticalBonusMaskDoesNotAuthorizeAnUnknownWireEpoch)
 {
-	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN) + 1);
+	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::NEW_HORIZONS_COMMAND_AUTHORITY) + 1);
 	const auto mask = capabilities(unknown);
-	EXPECT_EQ(mask, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
-	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(mask).version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	EXPECT_EQ(mask, capabilities(Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(mask).version(), Version::NEW_HORIZONS_COMMAND_AUTHORITY);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(unknown, mask), std::invalid_argument);
 }
 
@@ -221,7 +223,7 @@ TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDe
 	ASSERT_EQ(revised, passive);
 	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS, revised);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
-	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), codec.version());
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
 		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
@@ -245,18 +247,20 @@ TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDe
 	EXPECT_NE(ordinary.oser.version, codec.version());
 }
 
-TEST(OwnedBonusCaptureCodecTest, NativeRules1157UsesExistingBonusProfileWithoutChangingPersistence)
+TEST(OwnedBonusCaptureCodecTest, NativeRules1157AndCommandAuthority1158HaveExplicitDistinctProfiles)
 {
-	const auto native = capabilities(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
-	ASSERT_EQ(native, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
-	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN, native);
-	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
+	const auto native = capabilities(Version::NEW_HORIZONS_COMMAND_AUTHORITY);
+	ASSERT_NE(native, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY, native);
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN,
+		capabilities(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)).version(), Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
+	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_COMMAND_AUTHORITY);
 	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), codec.version());
-	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN,
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY,
 		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);
 	auto partial = native;
 	partial.passiveFactionSkills = false;
-	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN, partial),
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY, partial),
 		std::invalid_argument);
 	auto marker = burn();
 	ASSERT_TRUE(newHorizonsCreatureBurn::isBurn(marker.get()));
@@ -277,5 +281,5 @@ TEST(OwnedBonusCaptureCodecTest, NativeRules1157UsesExistingBonusProfileWithoutC
 	CMemorySerializer persistence;
 	EXPECT_EQ(persistence.oser.version, Version::CURRENT);
 	EXPECT_EQ(persistence.iser.version, Version::CURRENT);
-	EXPECT_NE(persistence.oser.version, codec.version());
+	EXPECT_EQ(persistence.oser.version, codec.version());
 }

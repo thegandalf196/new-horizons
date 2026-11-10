@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "ArmyFormation.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/entities/hero/NewHorizonsLeadership.h"
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -39,10 +40,12 @@ int projectedStackCount(const ProjectedArmyState & army)
 	return std::ranges::count_if(army, [](const ProjectedSlotState & slot) { return slot.occupied; });
 }
 
-bool acceptsStack(const CGHeroInstance * hero, CreatureID creature, int count)
+bool acceptsStack(const CGHeroInstance * hero, SlotID slot, CreatureID creature, int count)
 {
 	if(!hero || !creature.hasValue() || count < 0)
 		return count >= 0;
+	if(hero->getArmyCommand())
+		return newHorizonsHeroes::commandArmySlotEligibility(hero, slot, creature) == newHorizonsHeroes::CommandPlacementError::NONE;
 
 	const auto capacity = hero->getLeadershipSlotCapacity(creature);
 	return !capacity || capacity->accepts(count);
@@ -86,8 +89,8 @@ bool canApplyProjectedTransfer(
 
 	if(existing.occupied && existing.creature != incoming.creature)
 	{
-		if(!acceptsStack(destinationHero, incoming.creature, incoming.count)
-			|| !acceptsStack(sourceHero, existing.creature, existing.count))
+		if(!acceptsStack(destinationHero, destinationSlot, incoming.creature, incoming.count)
+			|| !acceptsStack(sourceHero, sourceSlot, existing.creature, existing.count))
 			return false;
 
 		maximumTransfer = incoming.count;
@@ -96,6 +99,7 @@ bool canApplyProjectedTransfer(
 	}
 
 	const int existingCount = existing.occupied ? existing.count : 0;
+	if(!acceptsStack(destinationHero, destinationSlot, incoming.creature, existingCount)) return false;
 	maximumTransfer = maximumAddition(destinationHero, incoming.creature, existingCount, incoming.count);
 	if(sourceNeedsLastStack && projectedStackCount(source) == 1)
 		maximumTransfer = std::min(maximumTransfer, std::max(0, incoming.count - 1));
@@ -249,7 +253,8 @@ class ExchangeProjectionPlanner
 			if(target.slot.validSlot())
 				continue;
 			for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-				if(!reservedReceiverSlots[i] && !receiver[i].occupied)
+				if(!reservedReceiverSlots[i] && !receiver[i].occupied
+					&& acceptsStack(receiverHero, SlotID(i), target.stack.creature, target.stack.count))
 				{
 					target.slot = static_cast<SlotID>(i);
 					reservedReceiverSlots[i] = true;
@@ -388,6 +393,40 @@ ArmyExchangeProjection projectArmyExchange(const CCreatureSet * receiverArmy, co
 	const CGHeroInstance * receiverHero, const CGHeroInstance * sourceHero,
 	const std::vector<DesiredArmyStack> & desiredReceiver)
 {
+	if(receiverHero && receiverHero->getArmyCommand() && receiverArmy && sourceArmy && receiverArmy != sourceArmy)
+	{
+		std::map<CreatureID, int64_t> missing;
+		for(const auto & row : desiredReceiver) missing[row.creature] += row.count;
+		for(const auto & [slot, stack] : receiverArmy->Slots()) missing[stack->getCreatureID()] -= stack->getCount();
+		std::vector<newHorizonsHeroes::RecruitmentSlot> incoming;
+		int64_t left = 0;
+		for(const auto & [slot, stack] : sourceArmy->Slots())
+		{
+			const auto amount = std::min<int64_t>(stack->getCount(), std::max<int64_t>(0, missing[stack->getCreatureID()]));
+			if(amount > 0) incoming.push_back({slot, stack->getCreatureID(), amount});
+			missing[stack->getCreatureID()] -= amount;
+			left += stack->getCount() - amount;
+		}
+		if(left == 0 && sourceArmy->needsLastStack() && !incoming.empty())
+		{
+			--incoming.back().count;
+			if(incoming.back().count == 0) incoming.pop_back();
+		}
+		if(const auto plan = newHorizonsHeroes::planCommandArmyAddition(*receiverHero,
+			newHorizonsHeroes::commandArmySlots(*receiverArmy), incoming))
+		{
+			ArmyExchangeProjection result;
+			auto receiver = makeProjectedArmy(receiverArmy), source = makeProjectedArmy(sourceArmy);
+			for(const auto & move : plan->moves)
+				applyProjectedTransfer(result, receiver, source,
+					move.withinDestination ? ArmyExchangeSide::RECEIVER : ArmyExchangeSide::SOURCE,
+					move.source, move.destination, move.count, receiverHero, sourceHero,
+					receiverArmy->needsLastStack(), sourceArmy->needsLastStack(), move.withinDestination);
+			appendProjectedSlots(receiver, result.receiverSlots);
+			appendProjectedSlots(source, result.sourceSlots);
+			return result;
+		}
+	}
 	return ExchangeProjectionPlanner(receiverArmy, sourceArmy, receiverHero, sourceHero).run(desiredReceiver);
 }
 }

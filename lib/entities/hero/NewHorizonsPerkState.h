@@ -8,6 +8,7 @@
 #include "NewHorizonsPerkRules.h"
 #include "../../nativeRules/PreparedPilotRules.h"
 #include "../../battle/NewHorizonsCommandResources.h"
+#include "NewHorizonsCommandAdmission.h"
 #include "../../battle/NewHorizonsElementalAttunement.h"
 #include "NewHorizonsNecromancyPolicy.h"
 
@@ -132,6 +133,7 @@ public:
 	{
 		if(h.saving)
 		{
+			validateCommandPerkSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 				nativeRules::validatePilotPerks(rules, false);
 			newHorizonsCommand::validateRulesSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
@@ -159,6 +161,7 @@ public:
 		if(h.saving) h & rules;
 		else h & decodedRules;
 		const auto & incomingRules = h.saving ? rules : decodedRules;
+		validateCommandPerkSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 			nativeRules::validatePilotPerks(incomingRules, false);
 		newHorizonsCommand::validateRulesSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));

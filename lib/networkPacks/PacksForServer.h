@@ -848,6 +848,25 @@ struct DLL_LINKAGE HeroMasteryReply : public CPackForServer
 	}
 };
 
+struct DLL_LINKAGE HeroCommandEnhancementReply : public CPackForServer
+{
+	QueryID qid;
+	ObjectInstanceID hero;
+	int64_t milestone = 0;
+	int32_t choice = -1;
+	void visitTyped(ICPackVisitor & visitor) override;
+	template<typename Handler> void serialize(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY))
+			throw std::runtime_error("Command enhancement reply requires a new game");
+		h & static_cast<CPackForServer &>(*this);
+		h & qid;
+		h & hero;
+		h & milestone;
+		h & choice;
+	}
+};
+
 struct DLL_LINKAGE MakeAction : public CPackForServer
 {
 	MakeAction() = default;

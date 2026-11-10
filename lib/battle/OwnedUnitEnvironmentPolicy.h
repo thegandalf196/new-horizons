@@ -2,6 +2,7 @@
 #pragma once
 #include "ProjectedUnitEnvironmentState.h"
 #include <memory>
+#include <map>
 class CBattleInfoCallback;
 namespace battle
 {
@@ -17,6 +18,7 @@ class DLL_LINKAGE OwnedUnitEnvironmentPolicy final : boost::noncopyable
 	friend class OwnedBattleFrameCapture;
 	BattleSideArray<ProjectedUnitEnvironmentState::SideInputs> inputs;
 	BattleSideArray<ProjectedUnitEnvironmentState::SideState> states;
+	std::map<uint32_t, int> warfareStatBonuses;
 	/// Only admitted exact-subject queries can consume these current numeric effects.
 	std::shared_ptr<const CommittedElementalEffects> committedElementalEffects;
 

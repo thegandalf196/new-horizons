@@ -185,5 +185,6 @@ protected:
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
 		int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
+	int visibleHeroMorale(BattleSide side) const override;
 	Subject subject;
 };

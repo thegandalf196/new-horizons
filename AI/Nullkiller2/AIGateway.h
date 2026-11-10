@@ -115,6 +115,7 @@ public:
 	void yourTurn(QueryID queryID) override;
 
 	void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) override;
+	void heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhancementOffer & offer, QueryID queryID) override;
 	void heroGotLevel(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID) override; //one combined skill/perk choice
 	void heroGotLevelWithReroll(const CGHeroInstance * hero, PrimarySkill pskill,

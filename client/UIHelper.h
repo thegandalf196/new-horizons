@@ -16,6 +16,7 @@
 #include "../lib/texts/MetaString.h"
 
 #include <cstdint>
+#include <span>
 
 struct MoveArtifactInfo;
 struct Component;
@@ -31,7 +32,7 @@ struct NecromancyResult;
 
 namespace newHorizonsHeroes
 {
-struct LeadershipSlotCapacity;
+struct RecruitmentSlot;
 }
 
 namespace UIHelper
@@ -47,21 +48,13 @@ namespace UIHelper
     std::string getNewHorizonsNecromancyInfoWindowText(const newHorizonsNecromancy::NecromancyResult & result);
     std::string getArtifactsInfoWindowText();
     std::string getEagleEyeInfoWindowText(const CGHeroInstance & hero, const std::set<SpellID> & spells);
-    /// Client-side fast path for the authoritative per-stack Leadership rule.
-    /// A false result only suppresses this UI request; the server validates it
-    /// again against current state.
-    bool checkLeadershipResult(const CArmedInstance * destination, CreatureID creature, TQuantity resultingCount);
-    bool checkLeadershipTransfer(const CArmedInstance * source, const CArmedInstance * destination,
-        SlotID sourceSlot, SlotID destinationSlot, TQuantity amount);
-    /// True when a same-creature merge into an occupied hero stack has no
-    /// Leadership headroom. This is only a UI no-op hint; the server remains
-    /// authoritative for every transfer request.
-    bool hasNoLeadershipCapacityForMerge(const CArmedInstance * source, const CArmedInstance * destination,
-        SlotID sourceSlot, SlotID destinationSlot);
-    /// Localized, read-only explanation of requested per-slot Leadership demand.
-    std::string getNewHorizonsLeadershipProposalText(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
-        int64_t existingCount, int64_t incomingCount);
-    /// Compact localized summary for the existing army-transfer hover line.
-    std::string getNewHorizonsLeadershipProposalSummary(const newHorizonsHeroes::LeadershipSlotCapacity & capacity,
-        int64_t existingCount, int64_t incomingCount);
+    /// Shared legality is a UI preflight only; the simulation validates every request again.
+    std::string armySlotProblem(const CArmedInstance * army, SlotID slot, CreatureID creature);
+    bool checkArmySlot(const CArmedInstance * army, SlotID slot, CreatureID creature);
+    std::string armySlotPreview(const CArmedInstance * army, SlotID slot, CreatureID creature);
+    std::string armyPositionName(const CArmedInstance * army, SlotID slot);
+    /// Recruitment requests let simulation apply a complete shared rearrangement plan.
+    SlotID recruitmentPosition(const CArmedInstance * army, CreatureID creature, int64_t count);
+    bool checkRecruitmentPlan(const CArmedInstance * army,
+        std::span<const newHorizonsHeroes::RecruitmentSlot> incoming);
 }

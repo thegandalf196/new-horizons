@@ -9,7 +9,6 @@
 #include "../widgets/TextControls.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/IBattleState.h"
-#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
 using namespace newHorizonsOrderPresentation;
@@ -24,8 +23,6 @@ std::string commandUnavailableReason(BattleInterface & owner)
 		return "Orders are not enabled in this battle.";
 	if(!owner.currentHero())
 		return "No commanding hero is available.";
-	if(!newHorizonsCommand::available(*callback, side))
-		return "No Command remains. Command is not replenished during combat.";
 	if(owner.curInt->isAutoFightOn)
 		return "Autofight controls this battle.";
 	if(owner.isInTacticsMode())
@@ -77,12 +74,17 @@ bool BattleHeroActionWindow::refreshCommandButtons(const std::shared_ptr<BattleI
 			&& effectLabels[i]->getText() != revisedPreview.label)
 			effectLabels[i]->setText(revisedPreview.label);
 		const auto & display = commandDisplay(entry.first);
+		const auto effect = i < effectLabels.size() ? effectLabels[i]->getText() : std::string{};
+		const auto coverage = targeted ? "\n\nTargets are checked again when you confirm."
+			: "\n\nOnly eligible troops present when the Order is issued receive it; later summons and clones do not inherit it.";
 		entry.second->setHelp(CButton::tooltip(display.name,
 			std::string(display.description) + (reason.empty() ? "\n\nReady: choose this Order." : "\n\nDisabled: " + reason)
+			+ (effect.empty() ? "" : "\n\nCurrent effect: " + effect)
 			+ revisedPreview.help
 			+ revisedActiveHelp(callback->battleGetHeroOrderState(side, entry.first), callback->battleGetRound())
+			+ formationFormulaHelp(rules, entry.first)
 			+ combinedArmsHelp(rules, entry.first, hero)
-			+ "\nCosts 1 Command and the shared Hero Action; no Mana."));
+			+ "\nUses the shared Hero Action; no Mana or Command is spent." + coverage));
 		entry.second->setBorderColor(protectPairUnavailable ? std::optional<ColorRGBA>(Colors::ORANGE)
 			: callback->battleGetHeroOrderState(side, entry.first) ? std::optional<ColorRGBA>(Colors::YELLOW)
 			: std::nullopt);
@@ -115,11 +117,6 @@ void BattleHeroActionWindow::refresh()
 	const auto side = callback->battleGetMySide();
 	const auto * hero = owner->currentHero();
 	const auto & rules = callback->getBattle()->getHeroCommandRules();
-	const auto & resources = callback->getBattle()->getCommandResources(side);
-	const std::string poolText = "Command " + std::to_string(resources.remaining) + " / "
-		+ std::to_string(resources.maximum) + " | Each Order costs 1 Command and 1 Hero Action";
-	if(commandPool && commandPool->getText() != poolText)
-		commandPool->setText(poolText);
 	if(hero)
 	{
 		const auto preparedHold = callback->battlePrepareHeroOrderState(side, HeroCommand::HOLD_THE_LINE, {});
@@ -132,7 +129,7 @@ void BattleHeroActionWindow::refresh()
 	const bool canSpell = hero && (spellProblem == ESpellCastProblem::OK
 		|| spellProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT);
 	if(spellButton)
-		spellButton->block(!canAct || !canSpell); // Command exhaustion does not block spellcasting.
+		spellButton->block(!canAct || !canSpell);
 	const bool anyCommand = refreshCommandButtons(owner, hero);
 	const auto order = callback->battleGetActiveOrder(side);
 	if(targetReadback)

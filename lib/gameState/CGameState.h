@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "../battle/NewHorizonsCommandResources.h"
+#include "../battle/NewHorizonsWarfare.h"
 #include "../battle/NewHorizonsElementalAttunement.h"
 #include "../spells/NewHorizonsMagicArrow.h"
 #include "../nativeRules/PreparedPilotRules.h"
@@ -18,6 +19,7 @@
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
+#include "../entities/hero/NewHorizonsCommandAdmission.h"
 #include "../entities/hero/NewHorizonsMasteryRules.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
 #include "../entities/hero/NewHorizonsNecromancyPolicy.h"
@@ -277,6 +279,7 @@ public:
 	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const;
 	void validateNativePilotSerialization(bool supported) const;
+	void validateCommandSerialization(bool supported) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
@@ -407,6 +410,7 @@ public:
 		if(h.saving)
 		{
 			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
@@ -460,6 +464,8 @@ public:
 					h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
 				newHorizonsCommand::validateRulesSerialization(heroCommandRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+				newHorizonsWarfare::validateRulesSerialization(heroCommandRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			newHorizonsMagic::validateMagicArrowChargeSerialization(magicRules,
@@ -570,6 +576,8 @@ public:
 			h & heroCapabilityRules;
 			if(!h.saving)
 			{
+				newHorizonsHeroes::validateArmyCommandSerialization(heroCapabilityRules,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(heroCapabilityRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
 				newHorizonsHeroes::validateGlyphsOfFearSerialization(heroCapabilityRules,
@@ -598,6 +606,8 @@ public:
 				JsonNode candidate;
 				h & candidate;
 				nativeRules::validatePilotPerks(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+				newHorizonsHeroes::validateCommandPerkSerialization(candidate,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 				heroPerkRules = std::move(candidate);
 			}
 			if(!h.saving) newHorizonsNecromancy::validatePolicySerialization(heroPerkRules,

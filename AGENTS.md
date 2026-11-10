@@ -35,9 +35,10 @@ user directs; do not silently return to its backlog after a task handoff.
 Current phase: **Phase 2 - stabilization and integration**.
 See `docs/NH_PHASE1_EXIT_AUDIT.md` for the Phase 1 exit evidence and
 `docs/NH_DEVELOPMENT_PHASES.md` for detailed phase criteria.
-New Horizons 0.88.2 Early Access is [publicly available](https://github.com/thegandalf196/new-horizons/releases/tag/v0.88.2).
-It is distinct from the earlier withdrawn experimental preview; Phase 2 remains
-active, and this release is not a Version 1.0 release candidate.
+Current source metadata targets **0.89.2 (unreleased)**; native gameplay, rendered
+UI and platform-package acceptance remain pending. The latest published release
+is [0.89.1 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.89.1).
+Phase 2 remains active; the development version is not a Version 1.0 release candidate.
 
 Prioritize crashes/corruption, save/load, incorrect mechanics, action and
 activation integrity, initiative, targeting, effect lifecycles, interactions,

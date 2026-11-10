@@ -6,6 +6,11 @@
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
+Source metadata targets **0.89.2 (unreleased)**. See the
+[pending changelog](docs/NEW_HORIZONS_CHANGELOG.md#0892--unreleased) for its scope;
+native gameplay, rendered UI and platform-package acceptance remain pending.
+The Wiki describes published rules; its 0.89.2 revision follows release publication.
+
 ## Before you begin
 
 Heroes III was love at first sight for me, back in the early 2000s. After Heroes III, I played Heroes IV, Then Heroes II, then Heroes I, then Heroes V, then King’s Bounty: The Legend, then Heroes VII. Each installment has its merits, in my opinion, but none hooked me quite like the third one. I kept coming back. And over the years, I collected ideas.
@@ -49,7 +54,7 @@ Charge! rewards troops that advance far enough before making a melee attack. Foc
 
 And every ordinary Order competes with your spellcasting for that round. Sometimes saving Mana is sensible. Sometimes the spell is worth far more than the command you’d otherwise issue. That does not mean Might Heroes only use orders while Magic Heroes only use spells. No, the Knight keeps his spellbook, and the Wizard can give orders (I wrote this, and immediately thought to myself ‘this reads too much like AI’, but I liked the contrast, and the imagery it provoked in me, so I kept it).
 
-Their specializations make the choice different. Might heroes can develop Command, which increases the contribution their attributes make to Orders. Magic heroes can develop Wisdom, which reduces ordinary spell costs and supports their magical endurance.
+Their specializations make the choice different. Might heroes can develop Warfare, which increases the contribution their attributes make to Orders. Magic heroes can develop Wisdom, which reduces ordinary spell costs and supports their magical endurance. Both can learn Authority to develop their army slots.
 
 ### Primary skills -> Attributes
 
@@ -85,9 +90,9 @@ Playing Baldur’s Gate 3 helped me put a finger on that feeling. Small numbers 
 
 An angel should remain an extraordinary thing to have at your side.
 
-That’s part of the reason for Leadership. In New Horizons, Leadership is a Secondary Attribute that limits how many creatures a hero can command in each stack (yes, exactly like in really great, and often forgotten, King’s Bounty: The Legend).
+The 0.89.2 development rules express that concern through Command, an unspent Secondary Attribute that develops the hero’s seven persistent army slots. Three Core slots are available at the start; further Command unlocks three Elite slots and a Champion slot, then grants repeating enhancement choices. One Core enhancement is shared by all three Core slots, and each award keeps the hero level at which it was acquired.
 
-Every creature has a Leadership Requirement, and each of the army’s 7 slots is checked independently against the hero’s capacity. Filling one slot doesn’t reduce the capacity available in the others. That allows the same commander to lead a substantial group of ordinary troops alongside a small number of exceptional creatures. Leadership develops with the hero, and its progression favors naturally martial classes. Leading larger formations becomes another part of their identity.
+Command limits which creatures can occupy a slot, rather than imposing a creature-count cap. Creature specialists can place their resolved specialty line in Core slots without changing its actual tier. Authority adds Command and passive slot training; the renamed Leadership Skill instead develops Morale. Leading stronger formations becomes another part of a hero’s development.
 
 The early battles in Heroes already give me reasons to count carefully. I’d like to carry that attention further into the game, through armies whose size leaves room for their character.
 

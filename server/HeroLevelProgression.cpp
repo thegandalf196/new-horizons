@@ -14,8 +14,21 @@
 #include "../lib/mapObjects/army/CCommanderInstance.h"
 #include "../lib/gameState/CGameState.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
+#include "../lib/mapObjects/CGTownInstance.h"
 #include "../lib/mapping/CMap.h"
 #include "../lib/networkPacks/PacksForClient.h"
+
+namespace
+{
+bool hasHeroLevelQuery(const QueriesProcessor & queries, ObjectInstanceID hero)
+{
+	for(const auto & query : queries.allQueries())
+		if(query->getType() == CHeroLevelUpDialogQuery::TYPE
+			&& static_cast<const CHeroLevelUpDialogQuery &>(*query).hero->id == hero)
+			return true;
+	return false;
+}
+}
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill, bool continueProgression)
 {
@@ -29,6 +42,36 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill
 	changeSecSkill(hero, skill, 1, ChangeValueMode::RELATIVE);
 	if(continueProgression)
 		heroLevelUpChoiceDone(hero);
+}
+
+void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill which, int val, ChangeValueMode mode)
+{
+	if(!hero)
+	{
+		logGlobal->error("changeSecSkill provided no hero");
+		return;
+	}
+	const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), which);
+	const auto skill = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+	if(!skill)
+	{
+		// Map/script rewards must not resurrect retired Skills.
+		logGlobal->warn("Ignoring retired or unavailable secondary skill %s for hero %s",
+			SecondarySkill::encode(which.getNum()), hero->nodeName());
+		return;
+	}
+	SetSecSkill change;
+	change.id = hero->id;
+	change.which = *skill;
+	change.val = val;
+	change.mode = mode;
+	sendAndApply(change);
+	if(!hero->hasPendingCommandLevelEvent())
+		offerHeroCommandEnhancement(hero);
+	if(const auto * town = hero->getVisitedTown())
+		giveSpells(town, hero, hero == town->getVisitingHero());
+	if(hero->getOwner().isValidPlayer())
+		changeFogOfWar(hero->getSightCenter(), hero->getSightRadius(), hero->getOwner(), ETileVisibility::REVEALED);
 }
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero,
@@ -62,6 +105,16 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero,
 
 void CGameHandler::heroLevelUpChoiceDone(const CGHeroInstance * hero)
 {
+	if(hero->hasPendingCommandLevelEvent())
+	{
+		HeroCommandProgression event;
+		event.hero = hero->id;
+		event.level = hero->level;
+		event.authorityRank = hero->getPerkSkillRank("new-horizons:authority");
+		sendAndApply(event);
+	}
+	if(offerHeroCommandEnhancement(hero) || hasHeroLevelQuery(*queries, hero->id))
+		return;
 	if(!offerHeroMastery(hero))
 		expGiven(hero);
 }
@@ -97,12 +150,16 @@ void CGameHandler::resumeMasteryQueries(PlayerColor player)
 	if(!state)
 		return;
 	for(const auto * hero : state->getHeroes())
-		if(offerHeroMastery(hero))
+		if(offerHeroCommandEnhancement(hero) || offerHeroMastery(hero))
 			return;
 }
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 {
+	if(hasHeroLevelQuery(*queries, hero->id))
+		return;
+	if(offerHeroCommandEnhancement(hero))
+		return;
 	if(hero->getMasteryState().pending && offerHeroMastery(hero))
 		return;
 	// required exp for at least 1 lvl-up hasn't been reached
@@ -156,7 +213,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 	{
 		sendAndApply(hlu);
 		if(hlu.skills.empty() && hlu.perks.empty())
-			levelUpHero(hero);
+			heroLevelUpChoiceDone(hero);
 		else if(!hlu.skills.empty())
 			levelUpHero(hero, hlu.skills.front());
 		else

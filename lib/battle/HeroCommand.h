@@ -134,9 +134,13 @@ struct DLL_LINKAGE HeroOrderState
 	std::optional<newHorizonsHeroLuck::Receipt> heroMorale;
 	uint32_t heroMoraleActionGrantId = 0;
 	int32_t heroicSpiritEfficiencyBonusPercent = 0;
+	int32_t battlePlanEfficiencyBonusPercent = 0;
 	bool luckyDay() const { return heroLuck && heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay); }
 	template<typename Handler> void validateHeroLuckSerialization(Handler & h) const
 	{
+		if(h.saving && battlePlanEfficiencyBonusPercent != 0
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY))
+			throw std::runtime_error("Cannot discard Battle Plan issuance efficiency");
 		if(h.saving && (heroLuck || heroMorale || heroMoraleActionGrantId != 0)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK))
 			throw std::runtime_error("Cannot discard Hero Luck or Morale Order receipt");
@@ -182,6 +186,7 @@ struct DLL_LINKAGE HeroOrderState
 
 	template <typename Handler> void validateRoyalStandardSerialization(Handler & h) const
 	{
+		validateHeroLuckSerialization(h);
 		if(h.saving && ironWillLifetime && !h.hasFeature(Handler::Version::NEW_HORIZONS_IRON_WILL))
 			throw std::runtime_error("Cannot discard Iron Will Order lifetime");
 		if(h.saving && (!crownAndAltarRecipientUnitIds.empty() || crownAndAltarFocusFirePercent != 0
@@ -199,7 +204,7 @@ struct DLL_LINKAGE HeroOrderState
 	/// Combined Divine Mandate efficiency used by existing Order formulas.
 	int32_t divineMandateEfficiencyBonusPercent() const
 	{
-		return heroicSpiritEfficiencyBonusPercent + sacredCommandEfficiencyBonusPercent + knightlySequenceEfficiencyBonusPercent
+		return battlePlanEfficiencyBonusPercent + heroicSpiritEfficiencyBonusPercent + sacredCommandEfficiencyBonusPercent + knightlySequenceEfficiencyBonusPercent
 			+ (passiveDivineMandate
 				? newHorizonsPassiveDivineMandate::orderEfficiencyPercent(*passiveDivineMandate) : 0);
 	}
@@ -390,6 +395,10 @@ struct DLL_LINKAGE HeroOrderState
 		}
 		else if(!h.saving)
 			passiveDivineMandate.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY))
+			h & battlePlanEfficiencyBonusPercent;
+		else if(!h.saving)
+			battlePlanEfficiencyBonusPercent = 0;
 		validateHeroLuckSerialization(h);
 		if(!h.saving)
 			validateShape();
@@ -413,6 +422,7 @@ constexpr uint16_t BASIS_POINTS_PER_PHYSICAL_PERCENT = HeroOrderState::BASIS_POI
 
 namespace heroCommands
 {
+DLL_LINKAGE bool sameIssuance(const HeroOrderState & previous, const HeroOrderState & next);
 constexpr int RULESET_VERSION = 1;
 constexpr int TARGETED_RULESET_VERSION = 2;
 /// Historical Orders-only snapshots (partial three-Order or original eight-Order).
@@ -466,8 +476,8 @@ DLL_LINKAGE int coefficient(const JsonNode & effect, const CGHeroInstance & hero
 DLL_LINKAGE int efficiencyPercent(const CGHeroInstance & hero);
 DLL_LINKAGE int leadershipEfficiencyPercent(const CGHeroInstance & hero,
 	int divineMandateEfficiencyBonusPercent);
-/// Divine Mandate scales only Second Wind's Leadership-derived
-/// part; its base 50% damage component remains flat.
+/// Native hero adapter; captured Warfare uses formation rating, historical rules
+/// retain Leadership. Battle/AI callers use battleSecondWindPercent for projections.
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero,
 	int divineMandateEfficiencyBonusPercent);
 DLL_LINKAGE int secondWindPercent(const CGHeroInstance & hero,

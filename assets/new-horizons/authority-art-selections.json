@@ -1,0 +1,1363 @@
+{
+  "format": 1,
+  "sourceSheetSha256": "4e8df0ef4074697155d01484e6752de4b4c2009e26be4cde3e6a6461fd374bc8",
+  "sourceSize": [
+    1448,
+    1086
+  ],
+  "sourceMode": "RGBA",
+  "sourceMetadataKeys": [],
+  "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+  "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+  "approval": "Provisional; no Final approval; in-game rendered acceptance pending",
+  "rights": "Owner confirms the supplied sheet was generated with ChatGPT and selects it for New Horizons distribution. No new ownership, CC0, generation by this agent or Final visual approval claimed. Native templates retain upstream Various / CC BY-SA 4.0 declaration and mixed Heroes III provenance; no blanket underlying-pixel clearance asserted. Third-party rights and license obligations are not waived.",
+  "extraction": "alpha32 connected ownership seeds (minimum100 pixels), four-neighbor distance partition; reviewed source envelopes exclude only distant alpha-below32 specks retained in private full partitions; alpha unchanged inside envelopes; premultiplied RGBa LANCZOS contain; no chroma key",
+  "subjects": [
+    {
+      "id": "authority",
+      "name": "Authority",
+      "sheetOrder": 1,
+      "alphaBounds": [
+        10,
+        2,
+        381,
+        369
+      ],
+      "fullPartitionAlphaBounds": [
+        0,
+        10,
+        380,
+        367
+      ],
+      "alphaMass": 20665765,
+      "excludedAlphaMass": 46,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 97559,
+      "partialAlphaPixels": 97494
+    },
+    {
+      "id": "offensiveDrills",
+      "name": "Offensive Drills",
+      "sheetOrder": 2,
+      "alphaBounds": [
+        381,
+        27,
+        719,
+        362
+      ],
+      "fullPartitionAlphaBounds": [
+        371,
+        27,
+        737,
+        395
+      ],
+      "alphaMass": 16994655,
+      "excludedAlphaMass": 84,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 80459,
+      "partialAlphaPixels": 80394
+    },
+    {
+      "id": "defensiveDrills",
+      "name": "Defensive Drills",
+      "sheetOrder": 3,
+      "alphaBounds": [
+        739,
+        0,
+        1063,
+        370
+      ],
+      "fullPartitionAlphaBounds": [
+        729,
+        0,
+        1101,
+        369
+      ],
+      "alphaMass": 15120283,
+      "excludedAlphaMass": 176,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 72092,
+      "partialAlphaPixels": 71982
+    },
+    {
+      "id": "conditioning",
+      "name": "Conditioning",
+      "sheetOrder": 4,
+      "alphaBounds": [
+        1082,
+        11,
+        1448,
+        369
+      ],
+      "fullPartitionAlphaBounds": [
+        1087,
+        15,
+        1447,
+        371
+      ],
+      "alphaMass": 20419561,
+      "excludedAlphaMass": 5,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 91234,
+      "partialAlphaPixels": 91207
+    },
+    {
+      "id": "battleReadiness",
+      "name": "Battle Readiness",
+      "sheetOrder": 5,
+      "alphaBounds": [
+        0,
+        356,
+        368,
+        719
+      ],
+      "fullPartitionAlphaBounds": [
+        0,
+        354,
+        396,
+        741
+      ],
+      "alphaMass": 21528718,
+      "excludedAlphaMass": 201,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 107419,
+      "partialAlphaPixels": 107414
+    },
+    {
+      "id": "officerCorps",
+      "name": "Officer Corps",
+      "sheetOrder": 6,
+      "alphaBounds": [
+        368,
+        357,
+        717,
+        719
+      ],
+      "fullPartitionAlphaBounds": [
+        351,
+        344,
+        710,
+        734
+      ],
+      "alphaMass": 17915632,
+      "excludedAlphaMass": 73,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 80035,
+      "partialAlphaPixels": 80011
+    },
+    {
+      "id": "maneuverTraining",
+      "name": "Maneuver Training",
+      "sheetOrder": 7,
+      "alphaBounds": [
+        719,
+        358,
+        1070,
+        718
+      ],
+      "fullPartitionAlphaBounds": [
+        703,
+        349,
+        1092,
+        727
+      ],
+      "alphaMass": 15561665,
+      "excludedAlphaMass": 113,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 79208,
+      "partialAlphaPixels": 79175
+    },
+    {
+      "id": "counterattackTraining",
+      "name": "Counterattack Training",
+      "sheetOrder": 8,
+      "alphaBounds": [
+        1072,
+        372,
+        1445,
+        724
+      ],
+      "fullPartitionAlphaBounds": [
+        1071,
+        360,
+        1437,
+        993
+      ],
+      "alphaMass": 16048376,
+      "excludedAlphaMass": 790,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 78960,
+      "partialAlphaPixels": 78936
+    },
+    {
+      "id": "protectiveTraining",
+      "name": "Protective Training",
+      "sheetOrder": 9,
+      "alphaBounds": [
+        0,
+        718,
+        369,
+        1080
+      ],
+      "fullPartitionAlphaBounds": [
+        0,
+        717,
+        372,
+        1086
+      ],
+      "alphaMass": 23483261,
+      "excludedAlphaMass": 89,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 106830,
+      "partialAlphaPixels": 106811
+    },
+    {
+      "id": "veteranCorps",
+      "name": "Veteran Corps",
+      "sheetOrder": 10,
+      "alphaBounds": [
+        354,
+        711,
+        718,
+        1079
+      ],
+      "fullPartitionAlphaBounds": [
+        345,
+        712,
+        736,
+        1086
+      ],
+      "alphaMass": 21815679,
+      "excludedAlphaMass": 251,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 106638,
+      "partialAlphaPixels": 106587
+    },
+    {
+      "id": "grandMarshal",
+      "name": "Grand Marshal",
+      "sheetOrder": 11,
+      "alphaBounds": [
+        717,
+        719,
+        1087,
+        1086
+      ],
+      "fullPartitionAlphaBounds": [
+        715,
+        710,
+        1382,
+        1086
+      ],
+      "alphaMass": 23097304,
+      "excludedAlphaMass": 169,
+      "excludedAlphaMaximum": 1,
+      "nonzeroAlphaPixels": 101999,
+      "partialAlphaPixels": 101958
+    }
+  ],
+  "templates": {
+    "secondarySkillSmallBlank.png": "eed48ae89b037457aa783baa5e9dd3ed820a95b6a7a991a7840ce34c3d49d197",
+    "secondarySkillBlank.png": "77203d8fcc0258dd0919ded950414c31cd34f04d78ade1bf15a5d06f67644333",
+    "secondarySkillLargeBlank.png": "4fe1e46fbfae83eb327ecfab0e9c33c623b439ef0d862a9a1c60031f567d114b",
+    "bonusBlank.png": "12b3f4bb28b71fd0a72eecbf1bf4d3fd3388371aa15c95b4bc04fa4249eb0ce5"
+  },
+  "slots": {
+    "small": {
+      "nativeSize": [
+        32,
+        32
+      ],
+      "template": "secondarySkillSmallBlank.png",
+      "foregroundRectangle": [
+        2,
+        2,
+        30,
+        26
+      ],
+      "rankMarkerSourceRole": "small",
+      "rankMarkerSourceRectangle": [
+        8,
+        27,
+        24,
+        32
+      ],
+      "rankMarkerPosition": [
+        8,
+        27
+      ]
+    },
+    "medium": {
+      "nativeSize": [
+        44,
+        44
+      ],
+      "template": "secondarySkillBlank.png",
+      "foregroundRectangle": [
+        3,
+        3,
+        41,
+        36
+      ],
+      "rankMarkerSourceRole": "medium",
+      "rankMarkerSourceRectangle": [
+        12,
+        38,
+        32,
+        44
+      ],
+      "rankMarkerPosition": [
+        12,
+        38
+      ]
+    },
+    "large": {
+      "nativeSize": [
+        82,
+        93
+      ],
+      "template": "secondarySkillLargeBlank.png",
+      "foregroundRectangle": [
+        5,
+        5,
+        77,
+        80
+      ],
+      "rankMarkerSourceRole": "large",
+      "rankMarkerSourceRectangle": [
+        24,
+        81,
+        58,
+        93
+      ],
+      "rankMarkerPosition": [
+        24,
+        81
+      ]
+    },
+    "scenarioBonus": {
+      "nativeSize": [
+        58,
+        64
+      ],
+      "template": "bonusBlank.png",
+      "foregroundRectangle": [
+        3,
+        3,
+        55,
+        54
+      ],
+      "rankMarkerSourceRole": "medium",
+      "rankMarkerSourceRectangle": [
+        12,
+        38,
+        32,
+        44
+      ],
+      "rankMarkerPosition": [
+        19,
+        56
+      ]
+    }
+  },
+  "rankMarkerSources": {
+    "SPRITES/NH_battlecraft_basic_small.png": "7e35eefed29069e3183ffe24178525033ad1187bc61d9092aeee869e61bb53c0",
+    "SPRITES/NH_battlecraft_basic_medium.png": "0adc258b51b9e8dae29845649c2158743172f9c2f6bdae4e80bf08f3b4e928be",
+    "SPRITES/NH_battlecraft_basic_large.png": "594bf919ce52afe883bae35268aa61259396f1e23d9a85177c87798a54d81561",
+    "SPRITES/NH_battlecraft_advanced_small.png": "eeeb16032343147070e24256dd57289e8366aeea21fb169096ac916e535e954c",
+    "SPRITES/NH_battlecraft_advanced_medium.png": "af07574c91be5c65bc5cc343e14e3750c5bfc8a14b4629d84ec14e4616213dfd",
+    "SPRITES/NH_battlecraft_advanced_large.png": "c8cbfb157a60508ff684aed62e4ce07c0b792a596fcc3c675962ab5715c9e222",
+    "SPRITES/NH_battlecraft_expert_small.png": "a02a7cb36f2e6022d85a878c0bb15ee8b5cc58b75942ea8b988da0a454f18919",
+    "SPRITES/NH_battlecraft_expert_medium.png": "27ae9512a2f43f621663fb35f883a79779a9fa0d50f10c9ff6a69e6c1e1d88ab",
+    "SPRITES/NH_battlecraft_expert_large.png": "e15b4316aa44db1e99bc0839ab892735a070ef6bc1096760d8e1ab1ffea5859d"
+  },
+  "templateRepository": "vcmi-mods/modder-tools-pack",
+  "templateRevision": "e21c90192cb2faf2c4d41347141248e19283a5ce",
+  "ranks": [
+    {
+      "rank": "basic",
+      "images": {
+        "small": "NH_authority_basic_small.png",
+        "medium": "NH_authority_basic_medium.png",
+        "large": "NH_authority_basic_large.png",
+        "scenarioBonus": "NH_authority_basic_scenarioBonus.png"
+      }
+    },
+    {
+      "rank": "advanced",
+      "images": {
+        "small": "NH_authority_advanced_small.png",
+        "medium": "NH_authority_advanced_medium.png",
+        "large": "NH_authority_advanced_large.png",
+        "scenarioBonus": "NH_authority_advanced_scenarioBonus.png"
+      }
+    },
+    {
+      "rank": "expert",
+      "images": {
+        "small": "NH_authority_expert_small.png",
+        "medium": "NH_authority_expert_medium.png",
+        "large": "NH_authority_expert_large.png",
+        "scenarioBonus": "NH_authority_expert_scenarioBonus.png"
+      }
+    }
+  ],
+  "perks": [
+    {
+      "id": "new-horizons:authority.offensiveDrills",
+      "name": "Offensive Drills",
+      "icon44": "NH_perk_authority_offensive_drills"
+    },
+    {
+      "id": "new-horizons:authority.defensiveDrills",
+      "name": "Defensive Drills",
+      "icon44": "NH_perk_authority_defensive_drills"
+    },
+    {
+      "id": "new-horizons:authority.conditioning",
+      "name": "Conditioning",
+      "icon44": "NH_perk_authority_conditioning"
+    },
+    {
+      "id": "new-horizons:authority.battleReadiness",
+      "name": "Battle Readiness",
+      "icon44": "NH_perk_authority_battle_readiness"
+    },
+    {
+      "id": "new-horizons:authority.officerCorps",
+      "name": "Officer Corps",
+      "icon44": "NH_perk_authority_officer_corps"
+    },
+    {
+      "id": "new-horizons:authority.maneuverTraining",
+      "name": "Maneuver Training",
+      "icon44": "NH_perk_authority_maneuver_training"
+    },
+    {
+      "id": "new-horizons:authority.counterattackTraining",
+      "name": "Counterattack Training",
+      "icon44": "NH_perk_authority_counterattack_training"
+    },
+    {
+      "id": "new-horizons:authority.protectiveTraining",
+      "name": "Protective Training",
+      "icon44": "NH_perk_authority_protective_training"
+    },
+    {
+      "id": "new-horizons:authority.veteranCorps",
+      "name": "Veteran Corps",
+      "icon44": "NH_perk_authority_veteran_corps"
+    },
+    {
+      "id": "new-horizons:authority.grandMarshal",
+      "name": "Grand Marshal",
+      "icon44": "NH_perk_authority_grand_marshal"
+    }
+  ],
+  "resources": [
+    "SPRITES/NH_authority_advanced_large.png",
+    "SPRITES/NH_authority_advanced_medium.png",
+    "SPRITES/NH_authority_advanced_scenarioBonus.png",
+    "SPRITES/NH_authority_advanced_small.png",
+    "SPRITES/NH_authority_basic_large.png",
+    "SPRITES/NH_authority_basic_medium.png",
+    "SPRITES/NH_authority_basic_scenarioBonus.png",
+    "SPRITES/NH_authority_basic_small.png",
+    "SPRITES/NH_authority_expert_large.png",
+    "SPRITES/NH_authority_expert_medium.png",
+    "SPRITES/NH_authority_expert_scenarioBonus.png",
+    "SPRITES/NH_authority_expert_small.png",
+    "SPRITES/NH_perk_authority_battle_readiness.json",
+    "SPRITES/NH_perk_authority_battle_readiness.png",
+    "SPRITES/NH_perk_authority_battle_readiness_32.png",
+    "SPRITES/NH_perk_authority_battle_readiness_disabled.png",
+    "SPRITES/NH_perk_authority_battle_readiness_highlighted.png",
+    "SPRITES/NH_perk_authority_battle_readiness_normal.png",
+    "SPRITES/NH_perk_authority_battle_readiness_pressed.png",
+    "SPRITES/NH_perk_authority_conditioning.json",
+    "SPRITES/NH_perk_authority_conditioning.png",
+    "SPRITES/NH_perk_authority_conditioning_32.png",
+    "SPRITES/NH_perk_authority_conditioning_disabled.png",
+    "SPRITES/NH_perk_authority_conditioning_highlighted.png",
+    "SPRITES/NH_perk_authority_conditioning_normal.png",
+    "SPRITES/NH_perk_authority_conditioning_pressed.png",
+    "SPRITES/NH_perk_authority_counterattack_training.json",
+    "SPRITES/NH_perk_authority_counterattack_training.png",
+    "SPRITES/NH_perk_authority_counterattack_training_32.png",
+    "SPRITES/NH_perk_authority_counterattack_training_disabled.png",
+    "SPRITES/NH_perk_authority_counterattack_training_highlighted.png",
+    "SPRITES/NH_perk_authority_counterattack_training_normal.png",
+    "SPRITES/NH_perk_authority_counterattack_training_pressed.png",
+    "SPRITES/NH_perk_authority_defensive_drills.json",
+    "SPRITES/NH_perk_authority_defensive_drills.png",
+    "SPRITES/NH_perk_authority_defensive_drills_32.png",
+    "SPRITES/NH_perk_authority_defensive_drills_disabled.png",
+    "SPRITES/NH_perk_authority_defensive_drills_highlighted.png",
+    "SPRITES/NH_perk_authority_defensive_drills_normal.png",
+    "SPRITES/NH_perk_authority_defensive_drills_pressed.png",
+    "SPRITES/NH_perk_authority_grand_marshal.json",
+    "SPRITES/NH_perk_authority_grand_marshal.png",
+    "SPRITES/NH_perk_authority_grand_marshal_32.png",
+    "SPRITES/NH_perk_authority_grand_marshal_disabled.png",
+    "SPRITES/NH_perk_authority_grand_marshal_highlighted.png",
+    "SPRITES/NH_perk_authority_grand_marshal_normal.png",
+    "SPRITES/NH_perk_authority_grand_marshal_pressed.png",
+    "SPRITES/NH_perk_authority_maneuver_training.json",
+    "SPRITES/NH_perk_authority_maneuver_training.png",
+    "SPRITES/NH_perk_authority_maneuver_training_32.png",
+    "SPRITES/NH_perk_authority_maneuver_training_disabled.png",
+    "SPRITES/NH_perk_authority_maneuver_training_highlighted.png",
+    "SPRITES/NH_perk_authority_maneuver_training_normal.png",
+    "SPRITES/NH_perk_authority_maneuver_training_pressed.png",
+    "SPRITES/NH_perk_authority_offensive_drills.json",
+    "SPRITES/NH_perk_authority_offensive_drills.png",
+    "SPRITES/NH_perk_authority_offensive_drills_32.png",
+    "SPRITES/NH_perk_authority_offensive_drills_disabled.png",
+    "SPRITES/NH_perk_authority_offensive_drills_highlighted.png",
+    "SPRITES/NH_perk_authority_offensive_drills_normal.png",
+    "SPRITES/NH_perk_authority_offensive_drills_pressed.png",
+    "SPRITES/NH_perk_authority_officer_corps.json",
+    "SPRITES/NH_perk_authority_officer_corps.png",
+    "SPRITES/NH_perk_authority_officer_corps_32.png",
+    "SPRITES/NH_perk_authority_officer_corps_disabled.png",
+    "SPRITES/NH_perk_authority_officer_corps_highlighted.png",
+    "SPRITES/NH_perk_authority_officer_corps_normal.png",
+    "SPRITES/NH_perk_authority_officer_corps_pressed.png",
+    "SPRITES/NH_perk_authority_protective_training.json",
+    "SPRITES/NH_perk_authority_protective_training.png",
+    "SPRITES/NH_perk_authority_protective_training_32.png",
+    "SPRITES/NH_perk_authority_protective_training_disabled.png",
+    "SPRITES/NH_perk_authority_protective_training_highlighted.png",
+    "SPRITES/NH_perk_authority_protective_training_normal.png",
+    "SPRITES/NH_perk_authority_protective_training_pressed.png",
+    "SPRITES/NH_perk_authority_veteran_corps.json",
+    "SPRITES/NH_perk_authority_veteran_corps.png",
+    "SPRITES/NH_perk_authority_veteran_corps_32.png",
+    "SPRITES/NH_perk_authority_veteran_corps_disabled.png",
+    "SPRITES/NH_perk_authority_veteran_corps_highlighted.png",
+    "SPRITES/NH_perk_authority_veteran_corps_normal.png",
+    "SPRITES/NH_perk_authority_veteran_corps_pressed.png"
+  ],
+  "sourceEntries": [
+    {
+      "resource": "SPRITES/NH_authority_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_authority_advanced_large.png",
+      "size": 18008,
+      "sha256": "8322226ed9dd490656a5b51b7f9c2b98b4a27d8724effff16bd0e26b77412916",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_authority_advanced_medium.png",
+      "size": 5648,
+      "sha256": "6c6bc5cd6829fa6da7f876f258d78df109084bbd33aa5b7f96512be825717457",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_authority_advanced_scenarioBonus.png",
+      "size": 10489,
+      "sha256": "293caca3ebd66d904ccde9c447d55d63dc2b768378e3327e1ecd21df04d160d9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_authority_advanced_small.png",
+      "size": 3125,
+      "sha256": "1ac73bafbaa3eb636bf7a852651852842ae7bbf105ab61c4b5535286c8202580",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_authority_basic_large.png",
+      "size": 17999,
+      "sha256": "6d7f081f8543082f3595e3de665624a009a728b02a6adf32b3ec6e5e41d25222",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_authority_basic_medium.png",
+      "size": 5640,
+      "sha256": "5a41198ee788e8a77c1ab83861d763665cfeae3fff7c831a32b7342835a6c06a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_authority_basic_scenarioBonus.png",
+      "size": 10485,
+      "sha256": "bd63e2c22ca59940be375a91e0a9119444532a1ffd232bd268d48f58ee7ed1ca",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_authority_basic_small.png",
+      "size": 3120,
+      "sha256": "052d3221128cca1cf565fb4a7f29f1af4b37b5d460295ea020cb36593d0f70c5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_authority_expert_large.png",
+      "size": 18006,
+      "sha256": "fdec714dc944d69b08bcfc4b9489379af7c0ace5a6758bb4a267fa0596e028d3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_authority_expert_medium.png",
+      "size": 5659,
+      "sha256": "84aa2aab56d0758c4330b0642db5568f817070faf1bad98a44942079fff706f6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_authority_expert_scenarioBonus.png",
+      "size": 10497,
+      "sha256": "af4171ed3b3b3a0ecada792f84d79b520f2a7226f93eba0fb13068846fe5ec3b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_authority_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_authority_expert_small.png",
+      "size": 3135,
+      "sha256": "b51467fdc280eeae9a2cfaf4e753680cb5e6d5eee647485d73e0f26976cc8655",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_battle_readiness.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_battle_readiness.json",
+      "size": 473,
+      "sha256": "e50abe64608ecad7e4a3a4929492f666b55ac7b11fa65795836d51e63fc0a3a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_battle_readiness.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_battle_readiness.png",
+      "size": 4759,
+      "sha256": "cb8a772e03790dde40a3978c449f9daa692bc59f52bbeb73895b18d751a447d1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_battle_readiness_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_battle_readiness_32.png",
+      "size": 2663,
+      "sha256": "20c5b903a35b8c68d37f4baa20f5c99ca76ce177bb5094d95824bc1812749683",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_battle_readiness_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_battle_readiness_disabled.png",
+      "size": 4627,
+      "sha256": "70898bdcad46beb58efdd146772cf9ae79348878270f91583d2ea8d6f7f2b99b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_battle_readiness_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_battle_readiness_highlighted.png",
+      "size": 4735,
+      "sha256": "e65a7f926db82ce48aa15d6232444440f53e6ba606aefd30466d3714ae399c97",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_battle_readiness_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_battle_readiness_normal.png",
+      "size": 4759,
+      "sha256": "cb8a772e03790dde40a3978c449f9daa692bc59f52bbeb73895b18d751a447d1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_battle_readiness_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_battle_readiness_pressed.png",
+      "size": 4672,
+      "sha256": "adb6dc6257d8481f677089417d772eef0d1a1a7b982ce6afa4b86152bc70f862",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_conditioning.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_conditioning.json",
+      "size": 457,
+      "sha256": "1d3582ffd0d4693dcaa177197a0a57468db9b7ca76984a10dd88faaf15f50ea9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_conditioning.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_conditioning.png",
+      "size": 4446,
+      "sha256": "343d51250ce3fca7274c3eab7697d3cd259459ac0a863c5de861f8a35b053454",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_conditioning_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_conditioning_32.png",
+      "size": 2415,
+      "sha256": "dc321abf773b0e3351ade0e04ee211b6c57391a3ad066079d575615bad84ccca",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_conditioning_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_conditioning_disabled.png",
+      "size": 4306,
+      "sha256": "05a3a2d0bba952afcdd8b157e7891861ee4646c6adf7906d65ec77a385b98ac8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_conditioning_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_conditioning_highlighted.png",
+      "size": 4420,
+      "sha256": "517b1407cdfb87daa016b022e1dff778289ca8f61af7bda2375289f70f626ceb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_conditioning_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_conditioning_normal.png",
+      "size": 4446,
+      "sha256": "343d51250ce3fca7274c3eab7697d3cd259459ac0a863c5de861f8a35b053454",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_conditioning_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_conditioning_pressed.png",
+      "size": 4364,
+      "sha256": "2b669d411651d972194fc76f9d6f414522baa957236e446d506cd2ccdbc5041a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_counterattack_training.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_counterattack_training.json",
+      "size": 497,
+      "sha256": "53d8f65dc1b809c9b6bdc2c6bfb78cfb1a682ab8982b65b62e45182c4b18a11c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_counterattack_training.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_counterattack_training.png",
+      "size": 3993,
+      "sha256": "586cec3bdae5db47fe7965a5205ee4bdcb17b9b361afecef11ad87bfd2aff029",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_counterattack_training_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_counterattack_training_32.png",
+      "size": 2186,
+      "sha256": "af3445376d38bba555d31680c77c63a02e0ea70217e0f7a147eee3ae9cdde91b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_counterattack_training_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_counterattack_training_disabled.png",
+      "size": 3925,
+      "sha256": "f837166ec02060c54edc9105b5536ec67f378494b8aa3d1486d5d7ca3178b128",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_counterattack_training_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_counterattack_training_highlighted.png",
+      "size": 3998,
+      "sha256": "b49b4a6b869dc72b91630b31eb823595aedfbc036a24d51f79747ee2a9d4ecec",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_counterattack_training_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_counterattack_training_normal.png",
+      "size": 3993,
+      "sha256": "586cec3bdae5db47fe7965a5205ee4bdcb17b9b361afecef11ad87bfd2aff029",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_counterattack_training_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_counterattack_training_pressed.png",
+      "size": 3931,
+      "sha256": "53616a51dcd87b79d2c375e2b8d9da53538d57a2c1235cb247eb9ca533af6f94",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_defensive_drills.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_defensive_drills.json",
+      "size": 473,
+      "sha256": "ca24d8c0646baeaedd374c2a2170af719c6c0a6a4273d485eca693bdc12292a2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_defensive_drills.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_defensive_drills.png",
+      "size": 3859,
+      "sha256": "6be2332ce2686fe82012b58b482132a9103cf93d2b09697ccc32e53c449a235e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_defensive_drills_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_defensive_drills_32.png",
+      "size": 2268,
+      "sha256": "5516e8ef8a7f9c8fa019d33fd8ebc822b9d5b7914b5042cd7316346375c12a15",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_defensive_drills_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_defensive_drills_disabled.png",
+      "size": 3774,
+      "sha256": "d3a66f1a69789ca71f8bb5dfee2e78a82df20b737e2d99dd655ad1dfda8e29d1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_defensive_drills_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_defensive_drills_highlighted.png",
+      "size": 3894,
+      "sha256": "47167b50f8acc26facfabae83ed97b01090b682bb4752c708d02b008669225d2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_defensive_drills_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_defensive_drills_normal.png",
+      "size": 3859,
+      "sha256": "6be2332ce2686fe82012b58b482132a9103cf93d2b09697ccc32e53c449a235e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_defensive_drills_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_defensive_drills_pressed.png",
+      "size": 3806,
+      "sha256": "5e42f8abb30b0f715d6bcdfbcd28d4fe002164ff2117521fed2ab1a187e91158",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_grand_marshal.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_grand_marshal.json",
+      "size": 461,
+      "sha256": "abee1ebd41d2372a13c58abe2227b62ed6d74c25a4a654230d0a7ec8447f33b8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_grand_marshal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_grand_marshal.png",
+      "size": 4696,
+      "sha256": "92daab65f88e477dbdce127a69d5bf259ced323142a2eccf48f71ee97afedb43",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_grand_marshal_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_grand_marshal_32.png",
+      "size": 2562,
+      "sha256": "28449dbed5a54faebec3c6ab5c43133e35da0f1d63ddd6290e3c35cc46e24934",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_grand_marshal_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_grand_marshal_disabled.png",
+      "size": 4650,
+      "sha256": "e002386d3313a03958c9284f0ff7ac32f6b0f06508cd968718d13807d4a78699",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_grand_marshal_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_grand_marshal_highlighted.png",
+      "size": 4736,
+      "sha256": "4cdf85524aa15de2603f19acfc0fa5f125ce70df125620889178e3fc8c53f16f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_grand_marshal_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_grand_marshal_normal.png",
+      "size": 4696,
+      "sha256": "92daab65f88e477dbdce127a69d5bf259ced323142a2eccf48f71ee97afedb43",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_grand_marshal_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_grand_marshal_pressed.png",
+      "size": 4621,
+      "sha256": "e2e69e287993691f988dc6380dee924bbcd5ea017bd9553125bb67941006bd67",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_maneuver_training.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_maneuver_training.json",
+      "size": 477,
+      "sha256": "ead0e50288d4f41216881d2f549bc87a164cfff4ad013f8fec64f4861f4cfbb5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_maneuver_training.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_maneuver_training.png",
+      "size": 4332,
+      "sha256": "4902584e0910d8388328874447c1661cd2da312ab18fd275adb0aed5483e1334",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_maneuver_training_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_maneuver_training_32.png",
+      "size": 2438,
+      "sha256": "3ee8435e2a0605cd0b79f31734515a26febb95416384781a6d54130290de2983",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_maneuver_training_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_maneuver_training_disabled.png",
+      "size": 4280,
+      "sha256": "f9f406bbd03eeb1f5602853f043cd8e4175c3ba66755620295aa3b48d1d729da",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_maneuver_training_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_maneuver_training_highlighted.png",
+      "size": 4352,
+      "sha256": "ed1c84e4065d4323adc2ea3a9fe4eb0dfc4c8f5b0c465b779027275e14daea60",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_maneuver_training_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_maneuver_training_normal.png",
+      "size": 4332,
+      "sha256": "4902584e0910d8388328874447c1661cd2da312ab18fd275adb0aed5483e1334",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_maneuver_training_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_maneuver_training_pressed.png",
+      "size": 4284,
+      "sha256": "5a5d3df6d3861a7d449a7c6f003d806e2e4fcd1a4782aa604938d90b9b307639",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_offensive_drills.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_offensive_drills.json",
+      "size": 473,
+      "sha256": "7527f86ddaac448bf5454cfed4055749eab072859ad4aa2545838d08ce62763f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_offensive_drills.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_offensive_drills.png",
+      "size": 4755,
+      "sha256": "dbbd4964962ff3edbc5bf90fe3f66851e7a4f44574cb7382e8945833f1ed4875",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_offensive_drills_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_offensive_drills_32.png",
+      "size": 2657,
+      "sha256": "1876d9b303e2a16d95fd22038a377ef4576d5b80febe3daefce91f6382ac6233",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_offensive_drills_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_offensive_drills_disabled.png",
+      "size": 4685,
+      "sha256": "f09e803370cdaea8ce3242bafd5f857e50b531ee29ef8fa024092c4b82b291d0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_offensive_drills_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_offensive_drills_highlighted.png",
+      "size": 4793,
+      "sha256": "8245facf4150a57841294604f2bc95435db20da769e2f3dba849bf1092c9924d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_offensive_drills_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_offensive_drills_normal.png",
+      "size": 4755,
+      "sha256": "dbbd4964962ff3edbc5bf90fe3f66851e7a4f44574cb7382e8945833f1ed4875",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_offensive_drills_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_offensive_drills_pressed.png",
+      "size": 4699,
+      "sha256": "bcbca4f8c27acb0dce3ca3034e01f1fc0ba5b44aef606244b68eb941858fd397",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_officer_corps.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_officer_corps.json",
+      "size": 461,
+      "sha256": "133b76d312cced3d10c4b353d1c5c7d6803c65f81625e490d5c31786f4d9acf5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_officer_corps.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_officer_corps.png",
+      "size": 4030,
+      "sha256": "2cd7ea0e9ea3b18c4866e4a63f80d5b08851bf344ee3d1e6f1fada54035287d7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_officer_corps_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_officer_corps_32.png",
+      "size": 2228,
+      "sha256": "0c8ee444676d7fc414415b1ecf1bcd3280a5d9fc3584b0304c7e9de4fdfe0057",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_officer_corps_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_officer_corps_disabled.png",
+      "size": 3946,
+      "sha256": "5dcf3d41c2d514e888b9868bc0dda41bdc486a517e0f7953f1ae35a82347cb2f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_officer_corps_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_officer_corps_highlighted.png",
+      "size": 4068,
+      "sha256": "92c17982421480c125b5073fae75cc6df9818a3fd94f62bdf2e101b53cad3103",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_officer_corps_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_officer_corps_normal.png",
+      "size": 4030,
+      "sha256": "2cd7ea0e9ea3b18c4866e4a63f80d5b08851bf344ee3d1e6f1fada54035287d7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_officer_corps_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_officer_corps_pressed.png",
+      "size": 3962,
+      "sha256": "3bf241adf1cd26638998294db408589f0d277e356a73c4d1ced23892c11b6cc9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_protective_training.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_protective_training.json",
+      "size": 485,
+      "sha256": "f914541c7da7878e560b64e3a5f5c3cf8b33f1e3d996974576c910e8fe352517",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_protective_training.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_protective_training.png",
+      "size": 4468,
+      "sha256": "07cf0a76c6b8640b1a41ae12655957254c0eed3a218ead0a2e0dd66ea953004f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_protective_training_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_protective_training_32.png",
+      "size": 2412,
+      "sha256": "819ff42af95ebfea5bf21519689855e339c631ad27353ca9c11bc995b7e4c0c2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_protective_training_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_protective_training_disabled.png",
+      "size": 4281,
+      "sha256": "8846709ecb616c56f159a5ee38f7b45a7955bb3f799af4bae8ace7afbddd265d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_protective_training_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_protective_training_highlighted.png",
+      "size": 4403,
+      "sha256": "1e25f0e59f961fce56bb8d2dbd842e7eb59b58de35b64a1d270e0f20a4e893c3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_protective_training_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_protective_training_normal.png",
+      "size": 4468,
+      "sha256": "07cf0a76c6b8640b1a41ae12655957254c0eed3a218ead0a2e0dd66ea953004f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_protective_training_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_protective_training_pressed.png",
+      "size": 4392,
+      "sha256": "947c362fc2ca155cf49af5ec294bd821032c09b97828a5f95544e353e9b13131",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_veteran_corps.json",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_veteran_corps.json",
+      "size": 461,
+      "sha256": "523cc5cef6706217cb1b6df5708f57642e3eee57154e996092a82db1e3ff484b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_veteran_corps.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_veteran_corps.png",
+      "size": 5012,
+      "sha256": "f4126f381a44c30b7424b328db365172b1328ccb37195917402e139634587aeb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_veteran_corps_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_veteran_corps_32.png",
+      "size": 2694,
+      "sha256": "71a01b1aa201081fe47e82d61e605f79686fb2c621988c633a500a4e4ac233a7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_veteran_corps_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_veteran_corps_disabled.png",
+      "size": 4828,
+      "sha256": "949e112e12a845f565076afb2a906739209eb590ee538ec99e0b0d7b9f732b71",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_veteran_corps_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_veteran_corps_highlighted.png",
+      "size": 5065,
+      "sha256": "648e57a59ed146bd2f0b29532e7ed46a4cd6e5ee35aebe9c14e734008e23982d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_veteran_corps_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_veteran_corps_normal.png",
+      "size": 5012,
+      "sha256": "f4126f381a44c30b7424b328db365172b1328ccb37195917402e139634587aeb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_authority_veteran_corps_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_authority_veteran_corps_pressed.png",
+      "size": 4904,
+      "sha256": "c400fa727a83088536e84e04fc9940b279a8879481108bc20b160f2c32dd8caa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent",
+      "selection": "owner-selected ChatGPT-generated Authority sheet for New Horizons distribution; visual integration authorized 2026-11-09",
+      "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
+    }
+  ]
+}

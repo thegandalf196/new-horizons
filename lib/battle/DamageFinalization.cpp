@@ -17,6 +17,7 @@
 #include "NewHorizonsPrismaticVanguard.h"
 #include "NewHorizonsArchery.h"
 #include "NewHorizonsCombatSkills.h"
+#include "NewHorizonsWarfare.h"
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsReactiveDefense.h"
 #include "NewHorizonsCoordinatedMarks.h"
@@ -140,4 +141,5 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	if(currentBattle && newHorizonsFrozen::qualifiesForShatter(info, currentBattle->getMagicRules()))
 		payload.frozenShatterFinalDamageMultiplier = 100
 			+ newHorizonsFrozen::shatterBonusPercent(currentBattle->getMagicRules());
+	newHorizonsWarfare::appendAttackModifiers(*this, info, payload);
 }

@@ -68,6 +68,7 @@
 #include "../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../lib/entities/hero/NewHorizonsLeadership.h"
+#include "CommandArmyAdmission.h"
 
 #include "../lib/filesystem/Filesystem.h"
 #include "../lib/filesystem/SavegamePath.h"
@@ -394,44 +395,6 @@ void CGameHandler::changePrimSkill(const CGHeroInstance * hero, PrimarySkill whi
 	sps.mode = mode;
 	sps.val = val;
 	sendAndApply(sps);
-}
-
-void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill which, int val, ChangeValueMode mode)
-{
-	if(!hero)
-	{
-		logGlobal->error("changeSecSkill provided no hero");
-		return;
-	}
-	const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), which);
-	const auto skill = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
-	if(!skill)
-	{
-		// This is the last authoritative boundary shared by map rewards,
-		// scripted rewards and other server-side teachers.  A retired New
-		// Horizons skill must not be resurrected by a raw SetSecSkill request.
-		logGlobal->warn("Ignoring retired or unavailable secondary skill %s for hero %s",
-			SecondarySkill::encode(which.getNum()), hero->nodeName());
-		return;
-	}
-
-	SetSecSkill sss;
-	sss.id = hero->id;
-	sss.which = *skill;
-	sss.val = val;
-	sss.mode = mode;
-	sendAndApply(sss);
-
-	if (hero->getVisitedTown())
-	{
-		const auto * town = hero->getVisitedTown();
-		giveSpells(town, hero, hero == town->getVisitingHero());
-	}
-
-	// Our scouting range may have changed - update it
-	if (hero->getOwner().isValidPlayer())
-		changeFogOfWar(hero->getSightCenter(), hero->getSightRadius(), hero->getOwner(), ETileVisibility::REVEALED);
-
 }
 
 void CGameHandler::handleClientDisconnection(GameConnectionID connectionID, const std::vector<PlayerConnectionID> & disconnectedPlayerIds)
@@ -1461,43 +1424,6 @@ void CGameHandler::giveResources(PlayerColor player, const ResourceSet & resourc
 	sr.player = player;
 	sr.res = resources;
 	sendAndApply(sr);
-}
-
-void CGameHandler::giveCreatures(const CGHeroInstance * hero, const CCreatureSet &creatures)
-{
-	if (!hero->canBeMergedWith(creatures, true))
-	{
-		complain("Unable to give creatures! Hero does not have enough free slots to receive them!");
-		return;
-	}
-	if(!validateLeadershipArmyAddition(hero, creatures))
-		return;
-
-	for (const auto & unit : creatures.Slots())
-	{
-		SlotID pos = hero->getSlotFor(unit.second->getCreature());
-		if (!pos.validSlot())
-		{
-			//try to merge two other stacks to make place
-			std::pair<SlotID, SlotID> toMerge;
-			if (hero->mergeableStacks(toMerge))
-			{
-				if(!moveStack(StackLocation(hero->id, toMerge.first), StackLocation(hero->id, toMerge.second)))
-					return;
-				pos = toMerge.first;
-			}
-		}
-		if(!pos.validSlot() || (!hero->slotEmpty(pos) && hero->getCreature(pos) != unit.second->getCreature()))
-		{
-			complain("Unable to give creatures: no valid destination slot remained.");
-			return;
-		}
-
-		if (hero->hasStackAtSlot(pos))
-			changeStackCount(StackLocation(hero->id, pos), unit.second->getCount(), ChangeValueMode::RELATIVE);
-		else
-			insertNewStack(StackLocation(hero->id, pos), unit.second->getCreature(), unit.second->getCount());
-	}
 }
 
 void CGameHandler::takeCreatures(ObjectInstanceID objid, const std::vector<CStackBasicDescriptor> &creatures, bool forceRemoval)
@@ -2598,7 +2524,11 @@ bool CGameHandler::bulkSplitStack(SlotID slotSrc, ObjectInstanceID srcOwner, si3
 
 	if(freeSlots.empty() && complain("No empty stacks"))
 		return false;
-	if(!validateLeadershipStack(army, creatureSet.getCreature(slotSrc)->getId(), howMany, "split"))
+	std::erase_if(freeSlots, [&](SlotID slot)
+	{
+		return !newHorizonsHeroes::armySlotAccepts(army, slot, creatureSet.getCreature(slotSrc)->getId(), howMany);
+	});
+	if(freeSlots.empty() && complain("No unlocked compatible slot for this split."))
 		return false;
 
 	BulkRebalanceStacks bulkRS;
@@ -2651,13 +2581,15 @@ bool CGameHandler::bulkMergeStacks(SlotID slotSrc, ObjectInstanceID srcOwner)
 		return false;
 
 	int64_t maximumCount = std::numeric_limits<TQuantity>::max();
-	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(army))
+	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(army); hero && !hero->getArmyCommand())
 	{
 		const auto capacity = hero->getLeadershipSlotCapacity(currentCreature->getId());
 		if(capacity)
 			maximumCount = std::min<int64_t>(maximumCount, capacity->maximum);
 	}
 	const int64_t targetCount = creatureSet.getStackCount(slotSrc);
+	if(!commandArmyAdmission::validateSlot(*this, army, slotSrc, currentCreature->getId(), targetCount, "merge"))
+		return false;
 	int64_t remainingCapacity = std::max<int64_t>(0, maximumCount - targetCount);
 	if(remainingCapacity == 0)
 	{
@@ -2701,9 +2633,29 @@ bool CGameHandler::bulkMoveArmy(ObjectInstanceID srcArmy, ObjectInstanceID destA
 
 	const auto * armySrc = dynamic_cast<const CArmedInstance*>(gameInfo().getObjInstance(srcArmy));
 	const auto * armyDest = dynamic_cast<const CArmedInstance*>(gameInfo().getObjInstance(destArmy));
+	if(!armySrc || !armyDest || armySrc == armyDest)
+		COMPLAIN_RET("Invalid bulk army transfer.");
 
 	if(!vstd::contains(armySrc->stacks, srcSlot) && complain(complainNoCreatures))
 		return false;
+	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(armyDest); hero && hero->getArmyCommand())
+	{
+		auto incoming = newHorizonsHeroes::commandArmySlots(*armySrc);
+		if(armySrc->needsLastStack())
+		{
+			for(auto & row : incoming) if(row.slot == srcSlot) --row.count;
+			std::erase_if(incoming, [](const auto & row) { return row.count == 0; });
+		}
+		const auto plan = newHorizonsHeroes::planCommandArmyAddition(*hero,
+			newHorizonsHeroes::commandArmySlots(*hero), incoming);
+		if(!plan) COMPLAIN_RET("The army cannot fit the hero's unlocked tier slots.");
+		commandArmyAdmission::rearrange(*this, *hero, *plan);
+		for(const auto & move : plan->moves)
+			if(!move.withinDestination && !moveStack(StackLocation(armySrc->id, move.source),
+				StackLocation(hero->id, move.destination), move.count))
+				throw std::runtime_error("Preflighted bulk Command transfer was rejected");
+		return true;
+	}
 
 	auto freeSlots = armyDest->getFreeSlots();
 	bool allTroopsMoved = true;
@@ -2763,7 +2715,7 @@ bool CGameHandler::bulkMoveArmy(ObjectInstanceID srcArmy, ObjectInstanceID destA
 	{
 		const auto creature = armySrc->getCreature(move.srcSlot)->getId();
 		plannedDestinationCounts[move.dstSlot] += move.count;
-		if(!validateLeadershipStack(armyDest, creature, plannedDestinationCounts[move.dstSlot], "move"))
+		if(!commandArmyAdmission::validateSlot(*this, armyDest, move.dstSlot, creature, plannedDestinationCounts[move.dstSlot], "move"))
 			return false;
 	}
 
@@ -2787,20 +2739,28 @@ bool CGameHandler::bulkSplitAndRebalanceStack(SlotID slotSrc, ObjectInstanceID s
 	if(actualAmount <= 1 && complain(complainNoCreatures))
 		return false;
 
-	auto freeSlot = creatureSet.getFreeSlot();
 	const auto * currentCreature = creatureSet.getCreature(slotSrc);
+	auto freeSlot = SlotID();
+	for(const auto slot : creatureSet.getFreeSlots())
+		if(newHorizonsHeroes::armySlotAccepts(army, slot, currentCreature->getId(), 1))
+		{
+			freeSlot = slot;
+			break;
+		}
 
 	if(freeSlot == SlotID() && creatureSet.isCreatureBalanced(currentCreature))
 		return true;
 
 	auto creatureSlots = creatureSet.getCreatureSlots(currentCreature, slotSrc, 1); // Ignore slots where's only 1 creature
-	TQuantity totalCreatures = creatureSet.getStackCount(slotSrc);
+	int64_t totalCreatures = creatureSet.getStackCount(slotSrc);
 
 	for(auto slot : creatureSlots)
 		totalCreatures += creatureSet.getStackCount(slot);
 
 	if(totalCreatures <= 1 && complain("Total creatures number is invalid"))
 		return false;
+	if(totalCreatures > std::numeric_limits<TQuantity>::max())
+		COMPLAIN_RET("Smart rebalancing would overflow its intermediate stack count.");
 
 	BulkRebalanceStacks bulkSRS;
 
@@ -2839,8 +2799,8 @@ bool CGameHandler::bulkSplitAndRebalanceStack(SlotID slotSrc, ObjectInstanceID s
 
 	int slotsLeft = creatureSlots.size() + 1; // + srcSlot
 	TQuantity unitsToMove = totalCreatures - slotsLeft;
-	const TQuantity largestFinalStack = vstd::divideAndCeil(totalCreatures, slotsLeft);
-	if(!validateLeadershipStack(army, currentCreature->getId(), largestFinalStack, "split"))
+	const TQuantity largestFinalStack = vstd::divideAndCeil(static_cast<TQuantity>(totalCreatures), slotsLeft);
+	if(!commandArmyAdmission::validateSlot(*this, army, slotSrc, currentCreature->getId(), largestFinalStack, "split"))
 		return false;
 
 	// 3) re-split creatures in a balanced way
@@ -3448,7 +3408,7 @@ bool CGameHandler::recruitToSlot(const StackLocation & location, const CCreature
 		return false;
 	const int64_t total = (stack ? stack->getCount() : 0) + static_cast<int64_t>(count);
 	if(total > std::numeric_limits<int32_t>::max()
-		|| !validateLeadershipStack(hero, creature->getId(), total, "recruit"))
+		|| !commandArmyAdmission::validateSlot(*this, hero, location.slot, creature->getId(), total, "recruit"))
 		return false;
 	const auto previous = stack ? stack->getTrainingReceipt() : newHorizonsTraining::Receipt{};
 	const auto next = newHorizonsTraining::afterRecruitment(*hero, creature->getId(),
@@ -3632,16 +3592,21 @@ bool CGameHandler::arrangeDemonicReserve(ObjectInstanceID heroId, SlotID activeS
 		const auto found = reserve.find(creatureId);
 		COMPLAIN_RET_FALSE_IF(found == reserve.end() || found->second < amount,
 			"Cannot arrange Demonic Reserve: reserve does not contain the requested creatures!");
-		const SlotID destination = hero->getSlotFor(creatureId);
+		const auto commandPlan = hero->getArmyCommand() ? newHorizonsHeroes::planCommandRecruitment(*hero,
+			newHorizonsHeroes::commandArmySlots(*hero), creatureId, amount) : std::nullopt;
+		const SlotID destination = commandPlan ? newHorizonsHeroes::commandRecruitmentDestination(*commandPlan)
+			: newHorizonsHeroes::recruitmentSlot(hero, creatureId, amount);
 		COMPLAIN_RET_FALSE_IF(destination == SlotID(),
 			"Cannot arrange Demonic Reserve: active army has no compatible slot!");
-		const TQuantity destinationCount = hero->hasStackAtSlot(destination)
+		const TQuantity destinationCount = commandPlan ? std::ranges::find(commandPlan->slots, destination,
+			&newHorizonsHeroes::RecruitmentSlot::slot)->count - amount : hero->hasStackAtSlot(destination)
 			? hero->getStackCount(destination)
 			: 0;
 		COMPLAIN_RET_FALSE_IF(destinationCount > std::numeric_limits<TQuantity>::max() - amount,
 			"Cannot arrange Demonic Reserve: active stack count overflow!");
-		if(!validateLeadershipStack(hero, creatureId, destinationCount + amount, "armyaddition"))
+		if(!commandPlan && !commandArmyAdmission::validateSlot(*this, hero, destination, creatureId, destinationCount + amount, "armyaddition"))
 			return false;
+		if(commandPlan) commandArmyAdmission::rearrange(*this, *hero, *commandPlan);
 
 		found->second -= amount;
 		if(found->second == 0)
@@ -3675,7 +3640,7 @@ bool CGameHandler::upgradeCreature(ObjectInstanceID objid, SlotID pos, CreatureI
 	{
 		return false;
 	}
-	if(!validateLeadershipStack(obj, upgID, crQuantity, "upgrade"))
+	if(!commandArmyAdmission::validateSlot(*this, obj, pos, upgID, crQuantity, "upgrade"))
 		return false;
 	TResources totalCost = upgradeInfo.getUpgradeCostsFor(upgID) * crQuantity;
 
@@ -3698,7 +3663,7 @@ bool CGameHandler::changeStackType(const StackLocation &sl, const CCreature *c)
 
 	if (!obj->hasStackAtSlot(sl.slot))
 		COMPLAIN_RET("Cannot find a stack to change type");
-	if(!validateLeadershipStack(obj, c->getId(), obj->getStackCount(sl.slot), "armyaddition"))
+	if(!commandArmyAdmission::validateSlot(*this, obj, sl.slot, c->getId(), obj->getStackCount(sl.slot), "armyaddition"))
 		return false;
 
 	SetStackType sst;
@@ -3711,6 +3676,8 @@ bool CGameHandler::changeStackType(const StackLocation &sl, const CCreature *c)
 
 bool CGameHandler::moveArmy(const CArmedInstance *src, const CArmedInstance *dst, bool allowMerging)
 {
+	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(dst); hero && hero->getArmyCommand())
+		return commandArmyAdmission::transfer(*this, *src, *hero, allowMerging);
 	assert(src->canBeMergedWith(*dst, allowMerging));
 	struct ProjectedSlot
 	{
@@ -4570,8 +4537,7 @@ bool CGameHandler::transformInUndead(const IMarket *market, const CGHeroInstance
 	if (!customTargerBonus->empty())
 		resCreature = customTargerBonus->front()->subtype.as<CreatureID>();
 
-	changeStackType(StackLocation(army->id, slot), resCreature.toCreature());
-	return true;
+	return changeStackType(StackLocation(army->id, slot), resCreature.toCreature());
 }
 
 bool CGameHandler::transformInUndead(const IMarket * market, const CGHeroInstance * hero,
@@ -4606,7 +4572,7 @@ bool CGameHandler::transformInUndead(const IMarket * market, const CGHeroInstanc
 			|| outputSlots[output.slot.getNum()] || output.count <= 0
 			|| output.count > std::numeric_limits<TQuantity>::max())
 			COMPLAIN_RET("Invalid Skeleton Transformer output!");
-		if(!validateLeadershipStack(army, CreatureID::SKELETON, output.count, "skeletontransformer"))
+		if(!commandArmyAdmission::validateSlot(*this, army, output.slot, CreatureID::SKELETON, output.count, "skeletontransformer"))
 			return false;
 		outputSlots[output.slot.getNum()] = true;
 	}
@@ -5309,13 +5275,14 @@ bool CGameHandler::sacrificeArtifact(const IMarket * market, const CGHeroInstanc
 bool CGameHandler::insertNewStack(const StackLocation &sl, const CCreature *c, TQuantity count)
 {
 	const auto * army = dynamic_cast<const CArmedInstance*>(gameInfo().getObj(sl.army));
-
+	if(!army || !c || count <= 0)
+		COMPLAIN_RET("Cannot insert an invalid creature stack.");
 	if (army->hasStackAtSlot(sl.slot))
 		COMPLAIN_RET("Slot is already taken!");
 
 	if (!sl.slot.validSlot())
 		COMPLAIN_RET("Cannot insert stack to that slot!");
-	if(!validateLeadershipStack(army, c->getId(), count, "armyaddition"))
+	if(!commandArmyAdmission::validateSlot(*this, army, sl.slot, c->getId(), count, "armyaddition"))
 		return false;
 
 	InsertNewStack ins;
@@ -5355,9 +5322,9 @@ bool CGameHandler::changeStackCount(const StackLocation &sl, TQuantity count, Ch
 	const auto * army = dynamic_cast<const CArmedInstance*>(gameInfo().getObj(sl.army));
 
 	TQuantity currentCount = army->getStackCount(sl.slot);
-	const TQuantity resultingCount = mode == ChangeValueMode::ABSOLUTE ? count : currentCount + count;
-	if(resultingCount > currentCount && !validateLeadershipStack(
-		army, army->getCreature(sl.slot)->getId(), resultingCount, "armyaddition"))
+	const int64_t resultingCount = mode == ChangeValueMode::ABSOLUTE ? count : int64_t(currentCount) + count;
+	if(resultingCount > currentCount && !commandArmyAdmission::validateSlot(*this,
+		army, sl.slot, army->getCreature(sl.slot)->getId(), resultingCount, "armyaddition"))
 		return false;
 	if ((mode == ChangeValueMode::ABSOLUTE && count < 0)
 		|| (mode == ChangeValueMode::RELATIVE && -count > currentCount))
@@ -5388,9 +5355,9 @@ bool CGameHandler::addToSlot(const StackLocation &sl, const CCreature *c, TQuant
 
 	const CCreature *slotC = army->getCreature(sl.slot);
 	if (!slotC) //slot is empty
-		insertNewStack(sl, c, count);
+		return insertNewStack(sl, c, count);
 	else if (c == slotC)
-		changeStackCount(sl, count, ChangeValueMode::RELATIVE);
+		return changeStackCount(sl, count, ChangeValueMode::RELATIVE);
 	else
 	{
 		COMPLAIN_RET("Cannot add " + c->getNamePluralTranslated() + " to slot " + std::to_string(sl.slot.getNum()) + "!");
@@ -5462,101 +5429,16 @@ void CGameHandler::tryJoiningArmy(const CArmedInstance *src, const CArmedInstanc
 		}
 	}
 
-	// A New Horizons hero may accept more joining creatures than one of their
-	// Leadership-limited slots can hold.  Treat this like any other partial
-	// exchange: move the legal amount now and leave the remainder in the source
-	// army for the garrison dialog.  Calling moveStack with the full amount would
-	// correctly fail validation, but would also turn an ordinary join decision
-	// into a server error for both human players and AI.
-	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(dst))
+	if(recruitingHero && recruitingHero->getArmyCommand())
 	{
-		struct PlannedJoin
-		{
-			SlotID source;
-			SlotID destination;
-			TQuantity count;
-		};
-		struct ProjectedSlot
-		{
-			CreatureID creature;
-			TQuantity count = 0;
-			bool occupied = false;
-		};
-		std::array<ProjectedSlot, GameConstants::ARMY_SIZE> projected;
-		for(const auto & [slot, stack] : dst->Slots())
-			projected[slot.getNum()] = {stack->getCreatureID(), stack->getCount(), true};
-
-		std::vector<PlannedJoin> plan;
-		bool leadershipLimited = false;
-		for(const auto & [sourceSlot, sourceStack] : src->Slots())
-		{
-			const auto creature = sourceStack->getCreatureID();
-			int destinationIndex = -1;
-			for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-				if(projected[i].occupied && projected[i].creature == creature)
-				{
-					destinationIndex = i;
-					break;
-				}
-			if(destinationIndex < 0)
-				for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-					if(!projected[i].occupied)
-					{
-						destinationIndex = i;
-						projected[i] = {creature, 0, true};
-						break;
-					}
-			if(destinationIndex < 0)
-			{
-				// A full destination may need a manual duplicate-stack merge
-				// before this creature has a slot.  Keep the authoritative
-				// exchange dialog, but do not run the legacy all-or-nothing
-				// mover when Leadership would constrain the eventual stack.
-				leadershipLimited |= hero->getLeadershipSlotCapacity(creature).has_value();
-				continue;
-			}
-
-			auto legalTransfer = sourceStack->getCount();
-			if(const auto capacity = hero->getLeadershipSlotCapacity(creature))
-			{
-				legalTransfer = std::max<TQuantity>(0,
-					std::min<TQuantity>(legalTransfer, capacity->maximum - projected[destinationIndex].count));
-				leadershipLimited |= legalTransfer < sourceStack->getCount();
-			}
-			projected[destinationIndex].count += legalTransfer;
-			plan.push_back({sourceSlot, SlotID(destinationIndex), legalTransfer});
-		}
-
-		if(leadershipLimited)
-		{
-			if(acceptedNeutralOffer && logGlobal->isDebugEnabled())
-			{
-				logGlobal->debug("Leadership-limited accepted neutral offer: sourceObjectId=%d destinationHeroId=%d incomingStacks=%d plannedMoves=%d",
-					src->id.getNum(), hero->id.getNum(), src->stacksCount(), static_cast<int>(plan.size()));
-				for(const auto & [sourceSlot, sourceStack] : src->Slots())
-				{
-					const auto planned = std::ranges::find(plan, sourceSlot, &PlannedJoin::source);
-					const int64_t plannedCount = planned == plan.end() ? 0 : planned->count;
-					const int destinationSlot = planned != plan.end() && planned->destination.validSlot()
-						? planned->destination.getNum() : -1;
-					const auto capacity = hero->getLeadershipSlotCapacity(sourceStack->getCreatureID());
-					logGlobal->debug("Leadership join plan: sourceSlot=%d destinationSlot=%d creatureId=%d offeredCount=%d plannedCount=%lld remainder=%lld leadership=%d requirement=%d capacity=%d",
-						sourceSlot.getNum(), destinationSlot, sourceStack->getCreatureID().getNum(), sourceStack->getCount(),
-						static_cast<long long>(plannedCount),
-						static_cast<long long>(sourceStack->getCount()) - plannedCount,
-						capacity ? capacity->leadership : -1,
-						capacity ? capacity->requirement : -1,
-						capacity ? capacity->maximum : -1);
-				}
-			}
-			for(const auto & move : plan)
-				if(move.count > 0)
-					moveStack(StackLocation(src->id, move.source), StackLocation(dst->id, move.destination), move.count);
-			if(src->stacksCount() > 0)
-				showGarrisonDialog(src->id, dst->id, true, MetaString());
-			return;
-		}
+		if(newHorizonsHeroes::planCommandArmyAddition(*recruitingHero, *dst, *src, allowMerging))
+			moveArmy(src, dst, allowMerging);
+		else
+			showGarrisonDialog(src->id, dst->id, true, MetaString());
+		return;
 	}
+	if(recruitingHero && commandArmyAdmission::tryLegacyLimitedJoin(*this, *src, *recruitingHero))
+		return;
 
 	if (!src->canBeMergedWith(*dst, allowMerging))
 	{
@@ -5626,7 +5508,7 @@ bool CGameHandler::moveStack(const StackLocation &src, const StackLocation &dst,
 		return false;
 	}
 	if((srcArmy != dstArmy || src.slot != dst.slot)
-		&& !validateLeadershipStack(dstArmy, srcArmy->getCreature(src.slot)->getId(), destinationCount, "move"))
+		&& !commandArmyAdmission::validateSlot(*this, dstArmy, dst.slot, srcArmy->getCreature(src.slot)->getId(), destinationCount, "move"))
 	{
 		logGlobal->debug("Leadership move rejected: sourceObjectId=%d sourceSlot=%d sourceCurrentCount=%d destinationObjectId=%d destinationSlot=%d destinationCurrentCount=%lld transfer=%d",
 			srcArmy->id.getNum(), src.slot.getNum(), srcArmy->getStackCount(src.slot), dstArmy->id.getNum(), dst.slot.getNum(),
@@ -5712,8 +5594,8 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 	}
 	else
 	{
-		if(!validateLeadershipStack(army1, army2->getCreature(sl2.slot)->getId(), army2->getStackCount(sl2.slot), "swap")
-			|| !validateLeadershipStack(army2, army1->getCreature(sl1.slot)->getId(), army1->getStackCount(sl1.slot), "swap"))
+		if(!commandArmyAdmission::validateSlot(*this, army1, sl1.slot, army2->getCreature(sl2.slot)->getId(), army2->getStackCount(sl2.slot), "swap")
+			|| !commandArmyAdmission::validateSlot(*this, army2, sl2.slot, army1->getCreature(sl1.slot)->getId(), army1->getStackCount(sl1.slot), "swap"))
 			return false;
 		SwapStacks ss;
 		ss.srcArmy = army1->id;
@@ -5750,61 +5632,11 @@ bool CGameHandler::validateLeadershipStack(const CArmedInstance * destination, C
 
 bool CGameHandler::validateLeadershipArmyAddition(const CGHeroInstance * destination, const CCreatureSet & incoming)
 {
-	struct ProjectedSlot
-	{
-		CreatureID creature;
-		TQuantity count = 0;
-		bool occupied = false;
-	};
-	std::array<ProjectedSlot, GameConstants::ARMY_SIZE> projected;
-	for(const auto & [slot, stack] : destination->Slots())
-		projected[slot.getNum()] = {stack->getCreatureID(), stack->getCount(), true};
-	for(const auto & entry : incoming.Slots())
-	{
-		const auto & stack = entry.second;
-		int target = -1;
-		for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-			if(projected[i].occupied && projected[i].creature == stack->getCreatureID())
-			{
-				target = i;
-				break;
-			}
-		if(target < 0)
-			for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-				if(!projected[i].occupied)
-				{
-					target = i;
-					break;
-				}
-		if(target < 0)
-		{
-			int mergeSource = -1;
-			int mergeDestination = -1;
-			for(int i = 0; i < GameConstants::ARMY_SIZE && mergeSource < 0; ++i)
-				for(int j = 0; j < GameConstants::ARMY_SIZE; ++j)
-					if(i != j && projected[i].occupied && projected[j].occupied
-						&& projected[i].creature == projected[j].creature)
-					{
-						mergeSource = i;
-						mergeDestination = j;
-						break;
-					}
-			if(mergeSource < 0)
-				return false;
-			projected[mergeDestination].count += projected[mergeSource].count;
-			if(!validateLeadershipStack(destination, projected[mergeDestination].creature,
-				projected[mergeDestination].count, "armyaddition"))
-				return false;
-			projected[mergeSource] = {};
-			target = mergeSource;
-		}
-		if(!projected[target].occupied)
-			projected[target] = {stack->getCreatureID(), 0, true};
-		projected[target].count += stack->getCount();
-		if(!validateLeadershipStack(destination, projected[target].creature, projected[target].count, "armyaddition"))
-			return false;
-	}
-	return true;
+	if(destination->getArmyCommand())
+		return newHorizonsHeroes::planCommandArmyAddition(*destination, *destination, incoming).has_value()
+			|| (complain("The army cannot fit the hero's unlocked tier slots."), false);
+	return newHorizonsHeroes::canMergeArmies(&incoming, destination, destination)
+		|| (complain("The army exceeds the historical receiving army limits."), false);
 }
 
 bool CGameHandler::putArtifact(const ArtifactLocation & al, const ArtifactInstanceID & id, std::optional<bool> askAssemble)

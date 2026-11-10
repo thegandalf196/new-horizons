@@ -30,6 +30,7 @@ public:
 	int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override;
 	int unitFortuneSpeed(const battle::Unit * unit) const override;
 	int unitSpeedBonus(const battle::Unit * unit) const override;
+	int unitWarfareStatBonus(const battle::Unit * unit) const override;
 	bool unitSlowAffectsSpeed(const battle::Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const battle::Unit * unit) const override;
 	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const battle::Unit * unit) const override;

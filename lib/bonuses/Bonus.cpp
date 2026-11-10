@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "../battle/PassiveDivineMandateVanguard.h"
+#include "../battle/CommandArmyBonuses.h"
 #include "../spells/NewHorizonsDivineRetribution.h"
 #include "Bonus.h"
 #include "../battle/NewHorizonsStun.h"
@@ -377,6 +378,12 @@ void validateVanguardRiderSerialization(const Bonus & bonus, BonusSerializationC
 		throw std::runtime_error("Unsupported passive Vanguard rider entitlement format");
 }
 
+void validateCommandArmySerialization(const Bonus & bonus, BonusSerializationContext context)
+{
+	if(commandArmyBonuses::isProjectedBonus(bonus) && !context.commandAuthoritySupported)
+		throw std::runtime_error("Army Command bonus requires format1158");
+}
+
 void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters * parameters, BonusSerializationContext context)
 {
 	std::vector<const Bonus *> pending;
@@ -388,6 +395,7 @@ void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters *
 		const auto * bonus = pending.back();
 		pending.pop_back();
 		if(!visited.insert(bonus).second) continue;
+		validateCommandArmySerialization(*bonus, context);
 		const bool stonecaller = newHorizonsCreatureSpecialtyCapabilities::isStonecallerShooterProfile(*bonus);
 		(void)newHorizonsAttackControllers::isCripple(bonus);
 		(void)newHorizonsStun::isMarker(bonus);
@@ -429,6 +437,7 @@ bool Bonus::isExtendedOrdinarySpecialtyEffect() const
 
 void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
 {
+	validateCommandArmySerialization(*this, context);
 	const bool stonecaller = newHorizonsCreatureSpecialtyCapabilities::isStonecallerShooterProfile(*this);
 	(void)newHorizonsAttackControllers::isCripple(this);
 	(void)newHorizonsStun::isMarker(this);
@@ -455,7 +464,7 @@ void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext c
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
 		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported
-		&& context.nativeRulesRedesignSupported)
+		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported)
 	{
 		if(limiter) limiter->validateBonusTypeSerialization(true, context.extendedOrdinarySpecialtiesSupported);
 		return;
@@ -467,6 +476,7 @@ void BonusParameters::validateAdjacencyCapabilitySerialization(BonusSerializatio
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported
+		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported) return;
 	validateUnsupportedOwnedBonuses(nullptr, this, context);
 }

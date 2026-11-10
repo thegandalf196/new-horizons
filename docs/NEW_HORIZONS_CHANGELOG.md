@@ -7,8 +7,38 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## Unreleased
+## 0.89.2 — Unreleased
 
+Development source and metadata only. Native gameplay, rendered UI, save/reload
+and platform-package acceptance remain pending; this entry does not announce a
+published release.
+
+**A new game is required, including when upgrading from 0.89 or 0.89.1.**
+Current and minimum save format are **1158**. Earlier saves are rejected before
+payload loading, not converted, rewritten or deleted. Keep backups and the
+matching older version to continue them.
+
+- Replaces per-stack Leadership capacity and finite Order payment with unspent
+  **Command**: seven persistent slots, progressive Elite/Champion unlocks and
+  repeating enhancement choices. Each award keeps its acquisition level; one
+  Core choice improves all three Core slots.
+- Adds **Authority**, available to both hero archetypes, for Command and passive
+  slot training. The former Command Skill becomes Might-exclusive **Warfare**;
+  Discipline becomes **Leadership**, focused on Morale. Orders still use the
+  ordinary Hero Action without spending army Command.
+- Only Second Wind's damage, Feint's potency and Vanguard's duration replace
+  retired numerical Leadership with the formation rating. Other Attack/Defense
+  components retain their formulas.
+- Creature specialists gain Core placement permission for their resolved
+  specialty line and upgrades without changing the creatures' actual tier.
+  Ordinary generated Castle starting packages replace Griffins with Swordsmen
+  (Royal Griffins with Crusaders); Griffin specialists retain their Griffin line.
+  Authored/current armies and original count rolls are preserved.
+- Restores **100% stock neutral encounter counts**, with Leadership calibration
+  disabled. Neutral-size overrides remain available; **50% recruitment growth**
+  is a separate setting. Ordinary wandering weekly growth remains unchanged.
+- Retains Magic Arrow Overcharge, Elemental Attunement and the **Fast/Full**
+  quick-combat choice from 0.89/0.89.1.
 - Fixed Water Walk paths that rejected a legal landing when the hero would finish
   with exactly zero Movement Points.
 

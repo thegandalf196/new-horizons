@@ -76,6 +76,7 @@ private:
 	const JsonNode * commandRules = nullptr;
 	bool combinedArmsEnabled = false;
 	int divineMandateEfficiencyBonusPercent = 0;
+	int secondWindDamagePercent = 50;
 
 	float coefficient(const char * commandKey, const char * effectKey) const;
 	float anyDamage(const battle::Unit * attackerUnit, const battle::Unit * defenderUnit) const;

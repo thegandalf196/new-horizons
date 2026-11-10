@@ -25,6 +25,7 @@ class InitialExportBattleSubject final : public BattleProxy
 	int heroCommandCoefficient(const JsonNode & effect, const CGHeroInstance & hero,
 		int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
+	int visibleHeroMorale(BattleSide side) const override;
 public:
 	static std::shared_ptr<InitialExportBattleSubject> capture(Subject subject, BattleInfo & native);
 	/// Explicit native handle, exact full-information source and complete roster.

@@ -91,8 +91,8 @@ private:
 	std::shared_ptr<CCreatureClickArea> creatureClickArea;
 	std::shared_ptr<CAnimImage> compactPortrait;
 	std::shared_ptr<CLabel> compactName;
-	std::array<std::shared_ptr<CLabel>, 8> compactStatValues;
-	std::array<std::shared_ptr<CIntObject>, 8> compactStatIcons;
+	std::array<std::shared_ptr<CLabel>, 7> compactStatValues;
+	std::array<std::shared_ptr<CIntObject>, 7> compactStatIcons;
 	std::vector<std::shared_ptr<LRClickableAreaWText>> compactStatHelp;
 	std::vector<std::shared_ptr<CIntObject>> compactCostWidgets;
 	std::vector<CompactCostEntry> compactCostEntries;

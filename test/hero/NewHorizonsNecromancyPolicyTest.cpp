@@ -4,6 +4,11 @@
  */
 #include "StdInc.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
+#include "../../lib/entities/hero/NewHorizonsCommandAdmission.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
+#include "../../lib/entities/hero/NewHorizonsPerkState.h"
+#include "../../lib/filesystem/ResourcePath.h"
+#include "../../lib/GameSettings.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
@@ -82,7 +87,7 @@ TEST(NewHorizonsNecromancyPolicy, RejectsMissingUnknownAndUnsupportedFields)
 	unknown[newHorizonsNecromancy::POLICY_KEY]["extra"].Integer() = 1;
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(unknown), std::runtime_error);
 	auto future = capturedPolicy();
-	future[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 3;
+	future[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 4;
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(future), std::runtime_error);
 	JsonNode nullPolicy;
 	nullPolicy[newHorizonsNecromancy::POLICY_KEY] = JsonNode();
@@ -173,6 +178,10 @@ TEST(NewHorizonsNecromancyPolicy, VersionTwoFieldsAndSerializationRemainDistinct
 	ASSERT_TRUE(newHorizonsNecromancy::policy(current));
 	EXPECT_TRUE(newHorizonsNecromancy::policy(current)->tombGuardDoubleStrike);
 	EXPECT_EQ(newHorizonsNecromancy::policy(current)->version, 2);
+	EXPECT_EQ(newHorizonsNecromancy::policy(current)->lordOfTheDeadMaximumHealthPercent, 0);
+	EXPECT_EQ(newHorizonsNecromancy::policy(current)->lordOfTheDeadLeadershipReductionPercent, 90);
+	EXPECT_EQ(newHorizonsNecromancy::policy(current)->skeletonLeadershipReductionPercent, (std::array<int, 4>{0, 50, 60, 70}));
+	EXPECT_NO_THROW(newHorizonsHeroes::validateCommandPerkSerialization(current, false));
 	EXPECT_FALSE(newHorizonsNecromancy::policy(historical)->tombGuardDoubleStrike);
 	EXPECT_EQ(newHorizonsNecromancy::policy(historical)->tombGuardAdditionalRetaliations, 1);
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicySerialization(current, true, false), std::runtime_error);
@@ -198,4 +207,97 @@ TEST(NewHorizonsNecromancyPolicy, VersionTwoFieldsAndSerializationRemainDistinct
 	row["tombGuardAdditionalRetaliations"].Integer() = 0;
 	row["bonewardMagicalReductionPercent"].Integer() = 30;
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(current), std::runtime_error);
+}
+
+TEST(NewHorizonsNecromancyPolicy, ActualShippedRegistryPassesNativeValidationAndPreparationWithPolicyThree)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
+	EXPECT_NE(newHorizonsHeroes::preparePilotPerkRules(rules), nullptr);
+	const auto captured = newHorizonsNecromancy::policy(rules);
+	ASSERT_TRUE(captured);
+	EXPECT_EQ(captured->version, 3);
+	EXPECT_EQ(captured->lordOfTheDeadMaximumHealthPercent, 25);
+	EXPECT_EQ(captured->skeletonLeadershipReductionPercent, (std::array<int, 4>{0, 0, 0, 0}));
+	EXPECT_EQ(captured->lordOfTheDeadLeadershipReductionPercent, 0);
+	EXPECT_FALSE(rules["necromancyPolicy"].Struct().contains("skeletonLeadershipReductionPercent"));
+	EXPECT_FALSE(rules["necromancyPolicy"].Struct().contains("lordOfTheDeadLeadershipReductionPercent"));
+	newHorizonsHeroes::PerkState state;
+	state.rules = rules;
+	ASSERT_NO_THROW(state.validate());
+	CMemorySerializer memory;
+	memory.oser & state;
+	newHorizonsHeroes::PerkState restored;
+	memory.iser & restored;
+	EXPECT_EQ(restored.rules, rules);
+	EXPECT_EQ(newHorizonsNecromancy::policy(restored.rules), captured);
+}
+
+TEST(NewHorizonsNecromancyPolicy, VersionThreeRejectsRetiredFieldsAndMalformedHealthWithoutChangingHistory)
+{
+	const JsonNode shipped(JsonPath::builtin("config/newHorizonsPerks"));
+	for(const auto * key : {"skeletonLeadershipReductionPercent", "lordOfTheDeadLeadershipReductionPercent"})
+	{
+		auto rules = shipped;
+		rules["necromancyPolicy"][key] = capturedPolicy()["necromancyPolicy"][key];
+		EXPECT_THROW(newHorizonsNecromancy::validatePolicy(rules), std::runtime_error);
+	}
+	for(const JsonNode value : {JsonNode(), JsonNode(-1), JsonNode(25.5), JsonNode(true), JsonNode(1000001)})
+	{
+		auto rules = shipped;
+		rules["necromancyPolicy"]["lordOfTheDeadMaximumHealthPercent"] = value;
+		EXPECT_THROW(newHorizonsNecromancy::validatePolicy(rules), std::runtime_error);
+	}
+	auto missing = shipped;
+	missing["necromancyPolicy"].Struct().erase("lordOfTheDeadMaximumHealthPercent");
+	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(missing), std::runtime_error);
+	for(int version : {1, 2})
+	{
+		auto historical = shipped;
+		historical["necromancyPolicy"]["version"].Integer() = version;
+		EXPECT_THROW(newHorizonsNecromancy::validatePolicy(historical), std::runtime_error);
+	}
+	auto unmarked = shipped;
+	unmarked.Struct().erase("commandAuthorityPolicy");
+	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(unmarked), std::runtime_error);
+	const auto historical = newHorizonsNecromancy::policy(capturedPolicy());
+	ASSERT_TRUE(historical);
+	EXPECT_EQ(historical->lordOfTheDeadMaximumHealthPercent, 0);
+	EXPECT_EQ(historical->lordOfTheDeadLeadershipReductionPercent, 90);
+}
+
+TEST(NewHorizonsNecromancyPolicy, VersionThreeRequiresItsEpochEvenWithoutTheCommandMarker)
+{
+	const JsonNode shipped(JsonPath::builtin("config/newHorizonsPerks"));
+	JsonNode bare;
+	bare["necromancyPolicy"] = shipped["necromancyPolicy"];
+	EXPECT_THROW(newHorizonsHeroes::validateCommandPerkSerialization(bare, false), std::runtime_error);
+	EXPECT_NO_THROW(newHorizonsHeroes::validateCommandPerkSerialization(bare, true));
+	EXPECT_NO_THROW(newHorizonsHeroes::validateCommandPerkSerialization(capturedPolicy(), false));
+	const auto previous = ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN;
+	newHorizonsHeroes::PerkState state;
+	state.rules = shipped;
+	ASSERT_NO_THROW(state.validate());
+	CMemorySerializer writer;
+	writer.oser.version = previous;
+	EXPECT_THROW(state.serialize(writer.oser), std::runtime_error);
+	EXPECT_TRUE(writer.extractBuffer().empty());
+	// An old-format reader must refuse before installing either rules or choices.
+	newHorizonsHeroes::PerkState destination;
+	const auto before = destination.toJson();
+	CMemorySerializer reader;
+	reader.oser & shipped;
+	reader.iser.version = previous;
+	EXPECT_THROW(destination.serialize(reader.iser), std::runtime_error);
+	EXPECT_EQ(destination.toJson(), before);
+	GameSettings settings;
+	JsonNode overrides;
+	overrides["heroes"]["newHorizonsPerks"] = bare;
+	EXPECT_THROW(newHorizonsHeroes::validateCommandOverrides(overrides, false), std::runtime_error);
+	const auto settingsBefore = settings.getFullConfig();
+	CMemorySerializer settingsReader;
+	settingsReader.oser & overrides;
+	settingsReader.iser.version = previous;
+	EXPECT_THROW(settings.serialize(settingsReader.iser), std::runtime_error);
+	EXPECT_EQ(settings.getFullConfig(), settingsBefore);
 }

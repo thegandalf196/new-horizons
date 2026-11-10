@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "BattleProxy.h"
 #include "IBattleState.h"
+#include "NewHorizonsDiscipline.h"
 #include "../bonuses/BonusList.h"
 #include "../mapObjects/CGHeroInstance.h"
 
@@ -32,8 +33,30 @@ TConstBonusListPtr CBattleInfoCallback::visibleHeroBonuses(BattleSide side,
 	return empty;
 }
 
+int CBattleInfoCallback::battleGetHeroMorale(BattleSide side) const
+{
+	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !battleDoWeKnowAbout(side))
+		return 0;
+	if(const auto * world = dynamic_cast<const CBattleInfoCallback *>(getBattle()); world && world != this)
+		return world->battleGetHeroMorale(side);
+	return visibleHeroMorale(side);
+}
+
+int CBattleInfoCallback::visibleHeroMorale(BattleSide side) const
+{
+	return newHorizonsDiscipline::heroMoraleValue(
+		newHorizonsDiscipline::captureHeroMoraleContext(battleGetFightingHero(side)),
+		battleGetHeroBonuses(side, Selector::all, true));
+}
+
 TConstBonusListPtr BattleProxy::visibleHeroBonuses(BattleSide side,
 	const CSelector & selector, bool unstacked) const
 {
 	return subject->battleGetHeroBonuses(side, selector, unstacked);
+}
+
+int BattleProxy::visibleHeroMorale(BattleSide side) const
+{
+	return subject->battleGetHeroMorale(side);
 }

@@ -10,7 +10,11 @@
 #include "NewHorizonsDiscipline.h"
 
 #include "../mapObjects/CGHeroInstance.h"
+#include "../mapObjects/NewHorizonsGlyphsOfFear.h"
 #include "../bonuses/BonusList.h"
+#include "../GameLibrary.h"
+#include "../IGameSettings.h"
+#include "../spells/NewHorizonsMagic.h"
 
 #include <unordered_map>
 #include <limits>
@@ -45,13 +49,18 @@ TConstBonusListPtr espritDeCorpsMoraleBonuses(const CGHeroInstance * hero,
 	if(!hasEspritDeCorps(hero))
 		return stackBonuses ? bearer.getBonuses(selector) : bearer.getUnstackedBonuses(selector);
 
+	return espritDeCorpsMoraleBonuses(bearer.getUnstackedBonuses(selector), hero->tempOwner, stackBonuses);
+}
+
+TConstBonusListPtr espritDeCorpsMoraleBonuses(TConstBonusListPtr unstacked,
+	PlayerColor owner, bool stackBonuses)
+{
 	auto adjusted = std::make_shared<BonusList>();
 	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> copies;
-	const auto bonuses = bearer.getUnstackedBonuses(selector);
-	for(const auto & bonus : *bonuses)
+	for(const auto & bonus : *unstacked)
 	{
 		const bool hostile = bonus->appliedByEnemy
-			|| (bonus->bonusOwner != PlayerColor::CANNOT_DETERMINE && bonus->bonusOwner != hero->tempOwner);
+			|| (bonus->bonusOwner != PlayerColor::CANNOT_DETERMINE && bonus->bonusOwner != owner);
 		if(bonus->source == BonusSource::ARMY && bonus->val < 0 && !hostile)
 		{
 			auto & copy = copies[bonus.get()];
@@ -68,6 +77,64 @@ TConstBonusListPtr espritDeCorpsMoraleBonuses(const CGHeroInstance * hero,
 	if(stackBonuses)
 		adjusted->stackBonuses();
 	return adjusted;
+}
+
+HeroMoraleContext captureHeroMoraleContext(const CGHeroInstance * hero)
+{
+	HeroMoraleContext result;
+	if(!hero)
+		return result;
+	result.hasHero = true;
+	result.espritDeCorps = hasEspritDeCorps(hero);
+	result.owner = hero->tempOwner;
+	if(const auto limits = newHorizonsMagic::moraleLimits(hero->getMagicRules()))
+		result.limits = *limits;
+	else
+		result.limits = {-static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size()),
+			static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size())};
+	for(const auto & bonus : *newHorizonsGlyphsOfFear::moraleBonuses(hero))
+		result.glyphs.push_back(*bonus);
+	return result;
+}
+
+int heroMoraleValue(const HeroMoraleContext & context, TConstBonusListPtr unstacked)
+{
+	if(!context.hasHero)
+		return 0;
+	const auto [minimum, maximum] = context.limits;
+	// AFactionMember precedence: maximum wins even over immunity; immunity wins
+	// over floors. Only flags actually admitted by the hero graph participate.
+	if(unstacked->getFirst(Selector::type()(BonusType::MAX_MORALE)))
+		return maximum;
+	const auto unaffected = Selector::type()(BonusType::NON_LIVING).Or(Selector::type()(BonusType::MECHANICAL))
+		.Or(Selector::type()(BonusType::UNDEAD)).Or(Selector::type()(BonusType::SIEGE_WEAPON))
+		.Or(Selector::type()(BonusType::NO_MORALE));
+	if(unstacked->getFirst(unaffected))
+		return 0;
+	auto ordinary = std::make_shared<BonusList>();
+	unstacked->getBonuses(*ordinary, Selector::type()(BonusType::MORALE));
+	TConstBonusListPtr morale;
+	if(context.espritDeCorps)
+		morale = espritDeCorpsMoraleBonuses(ordinary, context.owner);
+	else
+	{
+		ordinary->stackBonuses();
+		morale = ordinary;
+	}
+	// Glyphs are appended AFTER ordinary stacking by CGHeroInstance.
+	BonusList effective;
+	morale->getAllBonuses(effective);
+	for(const auto & bonus : context.glyphs)
+		effective.push_back(std::make_shared<Bonus>(bonus));
+	int result = std::clamp(effective.totalValue(), minimum, maximum);
+	BonusList floors;
+	unstacked->getBonuses(floors, Selector::type()(BonusType::MINIMUM_MORALE));
+	if(!floors.empty())
+	{
+		floors.stackBonuses();
+		result = std::max(result, floors.totalValue());
+	}
+	return std::clamp(result, minimum, maximum);
 }
 
 int32_t espritDeCorpsMoraleAdjustment(const CGHeroInstance * hero, const IBonusBearer & bearer)

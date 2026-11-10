@@ -13,6 +13,13 @@ from jsonschema import Draft4Validator
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:command.battlePlan",
+    "new-horizons:command.veteranCommander",
+    "new-horizons:command.decisiveOrders",
+    *{"new-horizons:authority." + key for key in (
+        "offensiveDrills", "defensiveDrills", "conditioning", "battleReadiness",
+        "officerCorps", "maneuverTraining", "counterattackTraining", "protectiveTraining",
+        "veteranCorps", "grandMarshal")},
     "new-horizons:metamagic.arcaneCatalyst",
     "new-horizons:metamagic.arcaneShield",
     "new-horizons:metamagic.manaConduit",
@@ -45,7 +52,6 @@ ACTIVE_PERKS = {
     "new-horizons:demonicGating.endlessLegion",
     "new-horizons:battlecraft.rapidResponse",
     "new-horizons:discipline.heroicSpirit",
-    "new-horizons:command.seizeInitiative",
     "new-horizons:diplomacy.mercenaryCaptain",
     "new-horizons:diplomacy.loyalMercenaries",
     "new-horizons:diplomacy.legendaryReputation",
@@ -127,7 +133,6 @@ ACTIVE_PERKS = {
     "new-horizons:battlecraft.redeployment",
     "new-horizons:battlecraft.tactics",
     "new-horizons:battlecraft.passingLines",
-    "new-horizons:command.battlePlan",
     "new-horizons:command.doubleCommand",
     "new-horizons:bloodrage.bloodScent",
     "new-horizons:bloodrage.rageThroughPain",
@@ -181,7 +186,6 @@ ACTIVE_PERKS = {
     "new-horizons:discipline.fearless",
     "new-horizons:command.aggressiveCommander",
     "new-horizons:command.defensiveCommander",
-    "new-horizons:command.veteranCommander",
     "new-horizons:chaosMagic.blinkmaster",
     "new-horizons:chaosMagic.misfortuneWeaver",
     "new-horizons:shroudOfMalassa.backstab",
@@ -365,6 +369,7 @@ EXPECTED_SKILLS = (
     "new-horizons:discipline",
     "new-horizons:recruitment",
     "new-horizons:command",
+    "new-horizons:authority",
     "new-horizons:lightMagic",
     "new-horizons:shadowMagic",
     "new-horizons:natureMagic",
@@ -505,7 +510,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 perk = matches[0]
                 self.assertEqual((perk['name'], perk['requires']), (name, tier))
                 self.assertEqual(perk.get('details', perk['description']), description)
-                self.assertEqual(perk['effect'], {'status': 'active', 'description': perk['description']})
+                self.assertEqual(perk['effect']['status'], 'active')
+                self.assertEqual(perk['effect']['description'], perk['description'])
 
     def test_necromancy_revision_keeps_ids_and_correct_tier_alternatives(self):
         skill = self.rules['skills']['new-horizons:necromancy']
@@ -520,7 +526,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             ('deathLord', 'Graveplate', 'advanced', '20% less physical damage'),
             ('ossuary', "Dead Man's Luck", 'advanced', '+3 Luck'),
             ('soulHarvester', 'Tomb Guard', 'expert', 'strike twice'),
-            ('lordOfTheDead', 'Lord of the Dead', 'expert', '90% less Leadership'),
+            ('lordOfTheDead', 'Lord of the Dead', 'expert', 'maximum-HP bonus'),
         )
         self.assertEqual(len(perks), len(expected))
         for identity, name, tier, effect in expected:
@@ -529,7 +535,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 self.assertEqual((perk['name'], perk['requires']), (name, tier))
                 self.assertIn(effect, perk.get('details', perk['description']))
                 self.assertEqual(perk['effect'], {
-                    'status': 'active', 'description': perk['description']})
+                    'status': 'active', 'description': perk['description'],
+                    **({'parameters': {'maximumHealthPercent': 25}} if identity == 'lordOfTheDead' else {})})
         self.assertIn('not damage reduction', perks['darkConversion']['details'])
         self.assertIn('Retaliations are unchanged', perks['soulHarvester']['details'])
         self.assertIn('Multiple Double Strike effects do not add more strikes', perks['soulHarvester']['details'])
@@ -541,23 +548,22 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                       perks['graveKnowledge']['details'])
         self.assertNotIn('enemy', perks['graveKnowledge']['details'])
         self.assertNotIn('Construct', perks['deathLord']['description'])
-        self.assertIn('replaces', perks['lordOfTheDead']['details'])
+        self.assertEqual(perks['lordOfTheDead']['effect']['parameters'], {'maximumHealthPercent': 25})
         self.assertNotIn('boneAndSteel', perks)
         self.assertNotIn('deathMarch', perks)
-        for rank, discount in zip(RANKS, (50, 60, 70)):
+        for rank, raising in zip(RANKS, (10, 20, 30)):
             description = skill['ranks'][rank].get('details', skill['ranks'][rank]['description'])
-            self.assertIn(f'{discount}% less Leadership', description)
-            self.assertIn('round their discounted requirement up', description)
-            self.assertIn('minimum 1', description)
+            self.assertIn(f'{raising}% of eligible living enemy casualties', description)
+            self.assertNotIn('Leadership', description)
+            self.assertIn('slot and tier eligibility', description)
         self.assertIn('eligible enemy casualties', skill['description'])
         self.assertIn('explicitly destroyed or invalid remains are excluded', skill['description'])
 
     def test_necromancy_policy_is_optional_strict_and_configurable(self):
         policy = self.rules['necromancyPolicy']
         self.assertEqual(policy, {
-            'version': 2,
-            'skeletonLeadershipReductionPercent': [0, 50, 60, 70],
-            'lordOfTheDeadLeadershipReductionPercent': 90,
+            'version': 3,
+            'lordOfTheDeadMaximumHealthPercent': 25,
             'deathMarchSpeed': 2,
             'bonewardMagicalReductionPercent': 0,
             'tombGuardAdditionalRetaliations': 0,
@@ -573,6 +579,11 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         validator = Draft4Validator(self.schema)
         absent = json.loads(json.dumps(self.rules))
         del absent['necromancyPolicy']
+        self.assertFalse(validator.is_valid(absent))
+        absent.pop('commandAuthorityPolicy')
+        absent.pop('warfarePolicyVersion')
+        absent['commandPolicyVersion'] = 1
+        absent['skills'].pop('new-horizons:authority')
         validator.validate(absent)
         version1 = {
             'version': 1,
@@ -584,11 +595,16 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             'graveplatePhysicalReductionPercent': 20,
             'graveKnowledgeRecoveryPercent': 20,
         }
-        validator.validate({**self.rules, 'necromancyPolicy': version1})
+        validator.validate({**absent, 'necromancyPolicy': version1})
+        version2 = {k: v for k, v in policy.items() if k != 'lordOfTheDeadMaximumHealthPercent'}
+        version2.update(version=2, skeletonLeadershipReductionPercent=[0, 50, 60, 70],
+                        lordOfTheDeadLeadershipReductionPercent=90)
+        validator.validate({**absent, 'necromancyPolicy': version2})
+        self.assertFalse(validator.is_valid({**self.rules, 'necromancyPolicy': version2}))
+        self.assertFalse(validator.is_valid({**absent, 'necromancyPolicy': policy}))
         configurable = json.loads(json.dumps(self.rules))
         configurable['necromancyPolicy'].update({
-            'skeletonLeadershipReductionPercent': [0, 0, 1, 99],
-            'lordOfTheDeadLeadershipReductionPercent': 99,
+            'lordOfTheDeadMaximumHealthPercent': 100,
             'deathMarchSpeed': 0,
             'graveplatePhysicalReductionPercent': 100,
             'graveKnowledgeRecoveryPercent': 0,
@@ -600,14 +616,14 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             'soulHarvesterManaCap': 1000000,
         })
         validator.validate(configurable)
-        invalid = [None, {}, {**policy, 'unknown': 1}, {**policy, 'version': 3},
+        invalid = [None, {}, {**policy, 'unknown': 1}, {**policy, 'version': 4},
                    {**version1, 'tombGuardDoubleStrike': True}]
         invalid.extend({k: v for k, v in policy.items() if k != omitted} for omitted in policy)
         invalid.extend({**policy, 'skeletonLeadershipReductionPercent': value} for value in (
             [0, 50, 60], [0, 50, 60, 70, 80], [1, 50, 60, 70],
             [0, -1, 60, 70], [0, 50, 60, 100], [0, 50.5, 60, 70], '50'))
         invalid.extend({**policy, key: value} for key, value in (
-            ('lordOfTheDeadLeadershipReductionPercent', 100),
+            ('lordOfTheDeadMaximumHealthPercent', -1),
             ('deathMarchSpeed', -1), ('bonewardMagicalReductionPercent', 1),
             ('tombGuardAdditionalRetaliations', 1),
             ('graveplatePhysicalReductionPercent', -1), ('graveplatePhysicalReductionPercent', 101),
@@ -644,9 +660,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(self.rules["maxPerkChoices"], 2)
         self.assertEqual(self.rules["maxPerksPerSkill"], 3)
 
-    def test_canonical_31_skill_roster(self):
+    def test_current_32_skill_roster(self):
         self.assertEqual(tuple(self.rules["skills"]), EXPECTED_SKILLS)
-        self.assertEqual(len(self.rules["skills"]), 31)
+        self.assertEqual(len(self.rules["skills"]), 32)
 
     def test_cleave_is_active_advanced_offense_perk(self):
         cleave = next(
@@ -765,7 +781,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                 for rank in RANKS:
                     effect = skill["ranks"][rank]["effect"]
                     expected_status = "active" if (skill_id in ACTIVE_RANK_SKILLS or
-                                                   skill_id == "new-horizons:spellcraft") else "planned"
+                                                   skill_id in {"new-horizons:spellcraft", "new-horizons:authority"}) else "planned"
                     self.assertEqual(effect["status"], expected_status)
                     self.assertTrue(effect["description"])
                     self.assertEqual(skill["ranks"][rank]["description"], effect["description"])
@@ -785,8 +801,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                     self.assertTrue(perk["description"])
                     all_perk_ids.append(perk["id"])
 
-        self.assertEqual(len(all_perk_ids), 310)
-        self.assertEqual(len(set(all_perk_ids)), 310)
+        self.assertEqual(len(all_perk_ids), 320)
+        self.assertEqual(len(set(all_perk_ids)), 320)
 
     def test_historical_metamagic_text_describes_round_long_optional_spell_actions(self):
         metamagic = self.historical["skills"]["new-horizons:metamagic"]

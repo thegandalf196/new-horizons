@@ -2,23 +2,27 @@
 """Initial captured typed-authoring data; not native or rendered acceptance."""
 import copy
 import unittest
-from jsonschema import Draft4Validator
-from test_new_horizons_content import load
+from jsonschema import Draft4Validator, RefResolver
+if __package__:
+ from .test_new_horizons_content import ROOT, load
+else:
+ from test_new_horizons_content import ROOT, load
 
 SCALARS={'core:fiona':'packPursuitSpeed','core:clancy':'resistanceAuraPoints','core:pasis':'prismaticScreenReductionPercent'}
 class InitialAuthoringDataTest(unittest.TestCase):
  def setUp(self):
   self.perks=load('config/newHorizonsPerks.json');self.heroes=load('config/newHorizonsHeroes.json')
   self.perk_schema=Draft4Validator(load('config/schemas/newHorizonsPerks.json'))
-  self.hero_schema=Draft4Validator(load('config/schemas/newHorizonsHeroes.json'))
+  schema=load('config/schemas/newHorizonsHeroes.json')
+  self.hero_schema=Draft4Validator(schema,resolver=RefResolver(base_uri=(ROOT/'config/schemas').as_uri()+'/',referrer=schema))
  def test_six_rank_defaults_are_captured_once_outside_effect(self):
   for sid,kind in [('new-horizons:luck','LUCK'),('new-horizons:discipline','MORALE')]:
    for level,rank in enumerate(['basic','advanced','expert'],1):
     row=self.perks['skills'][sid]['ranks'][rank]
     self.assertEqual(row['mechanics'],{'version':1,'operations':[{'operation':'bonus','source':'skillRank','target':'army','stage':'attachment','lifetime':'permanent','type':kind,'value':level,'valueMode':'BASE_NUMBER'}]})
     self.assertEqual(set(row['effect']),{'status','description'})
-  self.assertEqual(len(self.perks['skills']),31)
-  self.assertEqual(sum(len(s['perks'])for s in self.perks['skills'].values()),310)
+   self.assertEqual(len(self.perks['skills']),32)
+   self.assertEqual(sum(len(s['perks'])for s in self.perks['skills'].values()),320)
  def test_two_timed_rows_have_only_native_slot_contracts(self):
   for sid,pid,operation,lifetime in [('new-horizons:lightMagic','new-horizons:lightMagic.sanctuaryKeeper','sanctuaryKeeper','parentStatus'),('new-horizons:chaosMagic','new-horizons:chaosMagic.mindbreaker','creatureSuppression','rounds')]:
    row=next(p for p in self.perks['skills'][sid]['perks']if p['id']==pid)

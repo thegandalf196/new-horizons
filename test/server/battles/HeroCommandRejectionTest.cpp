@@ -12,7 +12,11 @@
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 
-class HeroCommandRejectionTest : public HeroCommandFixture {};
+class HeroCommandRejectionTest : public HeroCommandFixture
+{
+protected:
+	HeroCommandRejectionTest() { useRevisedOrders = true; }
+};
 
 TEST_F(HeroCommandRejectionTest, RejectedCommandRestoresControlWithoutStartingActionOrExpiringBonuses)
 {

@@ -3,6 +3,8 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "OrderFormation.h"
+#include "NewHorizonsWarfare.h"
 #include "HeroCommandRevision.h"
 #include "HeroCommand.h"
 #include "PassiveDivineMandateVanguard.h"
@@ -75,10 +77,15 @@ void validateRevisedRulesSerialization(const JsonNode & rules, bool supported)
 
 void validateRevisedRules(const JsonNode & rules)
 {
+	if(newHorizonsWarfare::usesRules(rules))
+	{
+		orderFormation::validateRules(rules);
+		return;
+	}
 	fields(rules, {"schemaVersion", "rulesetVersion", "commands", "perkBonuses", "commandResourcePolicyVersion"});
 	if(rules["commandResourcePolicyVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
-		|| rules["commandResourcePolicyVersion"].Integer() != 1)
-		throw std::runtime_error("Invalid finite Command policy version");
+		|| rules["commandResourcePolicyVersion"].Integer() != 1 || !rules["warfarePolicyVersion"].isNull())
+		throw std::runtime_error("Invalid Order resource policy version");
 	if(rules["schemaVersion"].getType() != JsonNode::JsonType::DATA_INTEGER
 		|| rules["schemaVersion"].Integer() != 1)
 		throw std::runtime_error("Invalid revised Order schema version");

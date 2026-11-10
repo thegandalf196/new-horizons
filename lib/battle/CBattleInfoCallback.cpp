@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "NewHorizonsPassiveSpecialties.h"
 #include "NewHorizonsCommandResources.h"
+#include "NewHorizonsWarfare.h"
 #include "ArcaneInspiration.h"
 #include "MagicalCreatureAttackDamage.h"
 #include "../spells/NewHorizonsWisdom.h"
@@ -548,50 +549,6 @@ bool CBattleInfoCallback::battleCanBeginHeroCommand(BattleSide side, HeroCommand
 		return false;
 	}
 	return battleCanUseHeroCommand(side, command);
-}
-
-std::optional<FocusFireState> CBattleInfoCallback::battlePrepareFocusFireState(BattleSide side,
-	uint32_t targetUnitId) const
-{
-	if(!battleCanConfirmHeroCommand(side, HeroCommand::FOCUS_FIRE, targetUnitId))
-		return {};
-	FocusFireState result;
-	result.targetUnitId = targetUnitId;
-	result.issuedRound = battleGetRound();
-	const auto * hero = battleGetFightingHero(side);
-	const auto & formula = getBattle()->getHeroCommandRules()["commands"]["focusFire"]["effects"]["rangedDamagePercent"];
-	const auto allowance = battleGetOrderActionAllowance(side);
-	const bool spendsHeroAllowance = !heroCommands::supportedByRules(getBattle()->getHeroCommandRules(), HeroCommand::CHARGE)
-		|| (allowance && allowance->allowance == HeroActionAllowanceState::AllowanceKind::HERO);
-
-	const auto sacredCommandBonus = allowance
-		&& allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
-		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-		? newHorizonsDivineMandate::sacredCommandEfficiencyBonusPercent(hero) : 0;
-	const auto knightlySequenceBonus = allowance
-		&& allowance->allowance == HeroActionAllowanceState::AllowanceKind::ORDER
-		&& allowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-		? newHorizonsDivineMandate::knightlySequenceOrderBonusPercent(hero) : 0;
-	result.rangedDamagePercent = heroCommands::coefficient(formula, *hero,
-		sacredCommandBonus + knightlySequenceBonus
-			+ newHorizonsPassiveDivineMandate::orderEfficiencyPercent(
-				newHorizonsPassiveDivineMandate::capturePolicy(hero)));
-	const bool includeMeleeRecipients = heroCommands::isCanonicalRules(getBattle()->getHeroCommandRules())
-		&& heroCommands::hasCombinedArms(hero);
-	const auto recipients = battleGetUnitsIf([this, side, includeMeleeRecipients](const battle::Unit * unit)
-	{
-		if(battleIsFocusFireRecipient(unit, side))
-			return true;
-		return includeMeleeRecipients && unit && unit->alive() && !unit->isGhost()
-			&& unit->isMeleeAttacker() && battleGetOwner(unit) == sideToPlayer(side)
-			&& !unit->isTurret() && !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
-	});
-	for(const auto * unit : recipients)
-		result.recipientUnitIds.push_back(unit->unitId());
-	std::sort(result.recipientUnitIds.begin(), result.recipientUnitIds.end());
-	result.validateShape();
-	return result;
 }
 
 std::optional<FocusFireState> CBattleInfoCallback::battleGetFocusFireState(BattleSide side) const

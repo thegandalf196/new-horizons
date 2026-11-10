@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsPerkRules.h"
 #include "NewHorizonsLearningExchangeSpecialties.h"
 #include "NewHorizonsSwampSeer.h"
 #include "HeroStartingProjection.h"
@@ -238,22 +239,11 @@ void validateExcludedSkills(const JsonNode & excludedSkills)
 	}
 }
 
-void validateSkillOfferWeightRow(const JsonNode & classWeights)
+void validateSkillOfferWeights(const JsonNode & rules, bool requireAllClasses)
 {
-	require(classWeights.isStruct() && classWeights.Struct().size() == HERO_SKILL_OFFER_COUNT,
-		"canonical skill offer table must contain exactly 31 skills");
-
-	std::set<int> seenSkills;
-	for(const auto & [skill, weight] : classWeights.Struct())
-	{
-		const auto skillId = resolve(SecondarySkill::entityType(), skill);
-		require(seenSkills.insert(skillId).second, "duplicate skill offer skill");
-		require(integer(weight, 0, 100), "skill offer weight");
-	}
-}
-
-void validateSkillOfferWeights(const JsonNode & offerWeights, bool requireAllClasses)
-{
+	const auto & offerWeights = rules["skillOfferWeights"];
+	if(usesCommandAuthorityPolicy(rules))
+		require(offerWeights.isStruct(), "Command/Authority requires its complete offer table");
 	if(offerWeights.isNull())
 		return;
 
@@ -263,7 +253,7 @@ void validateSkillOfferWeights(const JsonNode & offerWeights, bool requireAllCla
 	{
 		require(seenClasses.insert(resolve(HeroClassID::entityType(), heroClass)).second,
 			"duplicate skill offer class");
-		validateSkillOfferWeightRow(classWeights);
+		validateSkillOfferWeightRow(classWeights, rules);
 	}
 
 	if(requireAllClasses)
@@ -504,7 +494,8 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties"});
+	usesCommandAuthorityPolicy(rules);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties", "commandAuthorityPolicy"});
 	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
@@ -520,7 +511,7 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 	if(rules.Struct().contains("defaultCreatureLineReplacements"))
 		require(creatureLineSpecialtyRules(rules).has_value(), "default successor needs creature-line coefficients");
 	validateExcludedSkills(rules["excludedSkills"]);
-	validateSkillOfferWeights(rules["skillOfferWeights"], requireAllClasses);
+	validateSkillOfferWeights(rules, requireAllClasses);
 	validateStartingSkills(rules["startingSkills"], requireAllClasses);
 	require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
 	std::set<int> seen;
@@ -547,7 +538,8 @@ void validateResolvedHeroRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties"});
+	usesCommandAuthorityPolicy(rules);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties", "commandAuthorityPolicy"});
 	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
@@ -563,8 +555,8 @@ void validateResolvedHeroRules(const JsonNode & rules)
 	if(rules.Struct().contains("defaultCreatureLineReplacements"))
 		require(creatureLineSpecialtyRules(rules).has_value(), "default successor needs creature-line coefficients");
 	validateExcludedSkills(rules["excludedSkills"]);
-	if(!rules["skillOfferWeights"].isNull())
-		validateSkillOfferWeightRow(rules["skillOfferWeights"]);
+	if(usesCommandAuthorityPolicy(rules) || !rules["skillOfferWeights"].isNull())
+		validateSkillOfferWeightRow(rules["skillOfferWeights"], rules);
 	validateStartingSkills(rules["startingSkills"], false);
 	validateProfile(rules["profile"], rules["maxPrimary"].Integer());
 }
@@ -574,6 +566,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	if(!usesRules(rules))
 		return JsonNode();
 	JsonNode result;
+	if(rules.Struct().contains("commandAuthorityPolicy"))
+		result["commandAuthorityPolicy"] = rules["commandAuthorityPolicy"];
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "extraGrowth"})
 		result[key] = rules[key];
 	if(rules.Struct().contains("defaultCreatureLineReplacements"))

@@ -11,8 +11,10 @@
 #include "../../nativeRules/PreparedPilotRules.h"
 #include "NewHorizonsPerkRules.h"
 #include "../../battle/NewHorizonsElementalAttunement.h"
+#include "../../battle/NewHorizonsWarfare.h"
 #include "NewHorizonsNecromancyPolicy.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsRuleValidation.h"
 
 #include <array>
 #include <cmath>
@@ -81,9 +83,42 @@ bool scopedId(std::string_view id)
 	return true;
 }
 
+void validateEffectParameters(const JsonNode & parameters)
+{
+	fields(parameters, {"commandBonus", "orderEfficiencyPercent", "attackEfficiencyBonusPP",
+		"defenseEfficiencyBonusPP", "firstOrderEfficiencyBonusPP", "allEfficiencyBonusPP",
+		"efficiencyBonusPPPerMorale", "maximumEfficiencyBonusPP", "creatureAttack", "creatureDefense",
+		"maximumHealthPercent", "initiative", "battlefieldSpeed", "additionalRetaliations",
+		"magicalReductionPercent", "directAttackDamagePercent", "attackAndSpellReductionPercent",
+		"focusFireMeleeBonusPercent", "feintReductionBonusPP", "feintReductionCapPercent",
+		"slotGrades", "requiresActiveOrder"});
+	require(!parameters.Struct().empty(), "nonempty effect parameters");
+	for(const auto & [key, value] : parameters.Struct())
+	{
+		if(key == "requiresActiveOrder")
+			require(value.isBool() && value.Bool(), "requiresActiveOrder must be true");
+		else if(key == "slotGrades")
+		{
+			require(value.isVector() && !value.Vector().empty() && value.Vector().size() <= 3, "slotGrades");
+			std::set<std::string> grades;
+			for(const auto & grade : value.Vector())
+			{
+				require(grade.isString() && (grade.String() == "core" || grade.String() == "elite"
+					|| grade.String() == "champion"), "slot grade");
+				require(grades.insert(grade.String()).second, "duplicate slot grade");
+			}
+		}
+		else
+			require(value.getType() == JsonNode::JsonType::DATA_INTEGER && integer(value, 0, 1000000),
+				"nonnegative integer effect parameter " + key);
+	}
+}
+
 void validateEffect(const JsonNode & effect, const std::string & context)
 {
-	fields(effect, {"status", "description"});
+	fields(effect, {"status", "description", "parameters"});
+	if(effect.Struct().contains("parameters"))
+		validateEffectParameters(effect["parameters"]);
 	require(effect["status"].isString() && (effect["status"].String() == "active"
 		|| effect["status"].String() == "planned"), context + " effect status");
 	require(effect["description"].isString() && !effect["description"].String().empty(), context + " effect description");
@@ -106,7 +141,16 @@ void validateRank(const JsonNode & rank, const std::string & context)
 void validatePerk(const JsonNode & node, const std::string & skillId, const std::string & context,
 	std::set<std::string> & identities)
 {
-	fields(node, {"id", "name", "requires", "description", "details", "effect", "mechanics"});
+	fields(node, {"id", "name", "requires", "description", "details", "effect", "mechanics", "legacyIdentity"});
+	if(node.Struct().contains("legacyIdentity"))
+	{
+		const auto & legacy = node["legacyIdentity"];
+		fields(legacy, {"id", "commandPolicyVersion"});
+		require(node["id"].isString() && node["id"].String() == "new-horizons:command.decisiveOrders"
+			&& legacy["id"].isString() && legacy["id"].String() == "new-horizons:command.seizeInitiative"
+			&& legacy["commandPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& legacy["commandPolicyVersion"].Integer() == 1, "released Grand Marshal identity mapping");
+	}
 	validateDetails(node, context);
 	for(const auto * key : {"id", "name", "requires", "description"})
 		require(node[key].isString() && !node[key].String().empty(), context + " nonempty " + key);
@@ -150,6 +194,40 @@ void parseSkill(const JsonNode & node, SkillDefinition & result)
 bool usesPerkRules(const JsonNode & rules)
 {
 	return !rules.isNull() && !(rules.isStruct() && rules.Struct().empty());
+}
+
+bool usesCommandAuthorityPolicy(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("commandAuthorityPolicy"))
+		return false;
+	const auto & policy = rules["commandAuthorityPolicy"];
+	fields(policy, {"version"});
+	require(policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& policy["version"].Integer() == 1, "commandAuthorityPolicy version");
+	return true;
+}
+
+size_t canonicalSkillCount(const JsonNode & rules)
+{
+	return usesCommandAuthorityPolicy(rules) ? PERK_CANONICAL_SKILL_COUNT : PERK_LEGACY_SKILL_COUNT;
+}
+
+void validateSkillOfferWeightRow(const JsonNode & classWeights, const JsonNode & rules)
+{
+	require(classWeights.isStruct() && classWeights.Struct().size() == canonicalSkillCount(rules),
+		"complete policy-specific skill offer table required");
+	require(classWeights.Struct().contains("new-horizons:authority") == usesCommandAuthorityPolicy(rules),
+		"Authority offer row requires the Command/Authority policy");
+
+	std::set<int> seenSkills;
+	for(const auto & [skill, weight] : classWeights.Struct())
+	{
+		const auto skillId = detail::resolve(SecondarySkill::entityType(), skill);
+		require(seenSkills.insert(skillId).second, "duplicate skill offer skill");
+		require(integer(weight, 0, 100), "skill offer weight");
+		if(skill == "new-horizons:authority")
+			require(integer(weight, 1, 100), "Authority must be offerable to every captured class");
+	}
 }
 
 int perkRequiredRank(std::string_view prerequisite)
@@ -226,11 +304,27 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
 		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "commandPolicyVersion", "elementalAttunementPolicy", "connoisseurPolicy",
-		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"});
+		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion"});
 	validatePassiveFactionPolicies(rules);
+	newHorizonsWarfare::validatePolicy(rules);
 	quickStudyRerollInterval(rules);
-	require(rules["commandPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& rules["commandPolicyVersion"].Integer() == 1, "commandPolicyVersion");
+	if(usesCommandAuthorityPolicy(rules))
+	{
+		require(!rules.Struct().contains("commandPolicyVersion"), "finite Command policy conflicts with Command/Authority");
+		require(rules["necromancyPolicy"].isStruct()
+			&& rules["necromancyPolicy"]["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& rules["necromancyPolicy"]["version"].Integer() == 3, "Command/Authority requires Necromancy policy3");
+		require(rules["warfarePolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& rules["warfarePolicyVersion"].Integer() == 1, "warfarePolicyVersion");
+	}
+	else
+	{
+		require(!rules.Struct().contains("warfarePolicyVersion"), "Warfare requires Command/Authority policy");
+		require(!rules["necromancyPolicy"].isStruct() || !rules["necromancyPolicy"]["version"].isNumber()
+			|| rules["necromancyPolicy"]["version"].Integer() != 3, "Necromancy policy3 requires Command/Authority");
+		require(rules["commandPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& rules["commandPolicyVersion"].Integer() == 1, "commandPolicyVersion");
+	}
 	newHorizonsElementalAttunement::validatePolicy(rules);
 	usesSylvanTactics(rules);
 	newHorizonsNecromancy::validatePolicy(rules);
@@ -266,8 +360,10 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	require(integer(rules["maxPerkChoices"], PERK_MAX_PERK_CHOICES, PERK_MAX_PERK_CHOICES), "maxPerkChoices");
 	require(integer(rules["maxPerksPerSkill"], PERK_MAX_PERKS_PER_SKILL, PERK_MAX_PERKS_PER_SKILL),
 		"maxPerksPerSkill");
-	require(rules["skills"].isStruct() && rules["skills"].Struct().size() == PERK_CANONICAL_SKILL_COUNT,
+	require(rules["skills"].isStruct() && rules["skills"].Struct().size() == canonicalSkillCount(rules),
 		"complete skill coverage required");
+	require(rules["skills"].Struct().contains("new-horizons:authority") == usesCommandAuthorityPolicy(rules),
+		"Authority requires the Command/Authority policy");
 	std::set<std::string> skills;
 	std::set<std::string> identities;
 	for(const auto & [key, node] : rules["skills"].Struct())
@@ -356,6 +452,8 @@ void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & 
 	require(usesRules(development), "weighted perk capture requires hero rules");
 	validateHeroRules(development, true);
 	require(development["skillOfferWeights"].isStruct(), "weighted perk capture requires the full skill offer table");
+	require(usesCommandAuthorityPolicy(development) == usesCommandAuthorityPolicy(perks),
+		"hero and perk Command/Authority markers must agree");
 }
 
 std::optional<SkillDefinition> perkSkill(const JsonNode & rules, std::string_view skillId)

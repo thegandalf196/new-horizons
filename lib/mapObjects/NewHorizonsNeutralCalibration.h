@@ -47,7 +47,8 @@ public:
 
 DLL_LINKAGE JsonNode disabledSnapshot();
 
-/// Fresh definition -> immutable numeric curve. Captured curves never recalculate.
+/// Fresh worlds with armyCommand capture disabled, without reading retired costs.
+/// Historical definitions/captures retain their curve; Rules decodes without capture.
 DLL_LINKAGE JsonNode capture(const IGameSettings & settings);
 DLL_LINKAGE void validate(const JsonNode & value);
 DLL_LINKAGE void validateOverrides(const JsonNode & settings, bool supported);

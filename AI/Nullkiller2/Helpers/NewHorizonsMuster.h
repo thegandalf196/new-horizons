@@ -86,7 +86,7 @@ struct CoreMusterRow
 /// counts; the comparison value includes only recruits the current hero can
 /// admit under its per-stack Leadership capacity. Ties preserve the solo path.
 std::optional<Candidate> chooseBroadMusterSplit(const std::vector<CoreMusterRow> & coreRows,
-	int totalAmount, bool broadMusterActive, int64_t bestSoloRecruitableArmyValue);
+	int totalAmount, bool broadMusterActive, int64_t bestSoloRecruitableArmyValue, const CGHeroInstance * hero = nullptr);
 
 /// Choose the most valuable legal row from a town's replicated recruitment
 /// roster.  Rows with no New Horizons category are intentionally ignored so

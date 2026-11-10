@@ -3,6 +3,7 @@
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "NewHorizonsCommandResources.h"
+#include "NewHorizonsWarfare.h"
 #include "NewHorizonsArchery.h"
 #include "HeroCommandAdjacency.h"
 #include "HeroCommandRoyalStandard.h"
@@ -97,7 +98,10 @@ namespace newHorizonsCommand
 {
 bool beneficiary(const CBattleInfoCallback & battle, const battle::Unit * unit)
 {
-	if(!battle.getBattle() || !unit || !unit->alive() || unit->isGhost()) return false;
+	if(!battle.getBattle() || !unit || !unit->alive() || unit->isGhost()
+		|| !heroCommands::isCanonicalRules(battle.getBattle()->getHeroCommandRules())
+		|| unit->isTurret() || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+		|| unit->unitSlot() == SlotID::COMMANDER_SLOT_PLACEHOLDER) return false;
 	const auto side = battle.playerToSide(battle.battleGetOwner(unit));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) return false;
 	if(heroCommands::activeVanguardBonuses(unit)) return true;
@@ -107,12 +111,15 @@ bool beneficiary(const CBattleInfoCallback & battle, const battle::Unit * unit)
 }
 int64_t mitigateIncomingDamage(const CBattleInfoCallback & battle, const battle::Unit * unit, int64_t ordinary)
 {
+	if(newHorizonsWarfare::enabled(unit ? battle.battleGetOwnerHero(unit) : nullptr))
+		return newHorizonsWarfare::reduceDamage(ordinary, newHorizonsWarfare::incomingReduction(battle, unit));
 	if(ordinary <= 0 || !unbrokenRanks(battle, unit)) return ordinary;
 	return ordinary / 5 * 4 + ordinary % 5 * 4 / 5;
 }
 bool unbrokenRanks(const CBattleInfoCallback & battle, const battle::Unit * unit)
 {
 	const auto * hero = unit ? battle.battleGetOwnerHero(unit) : nullptr;
+	if(newHorizonsWarfare::enabled(hero)) return newHorizonsWarfare::incomingReduction(battle, unit) > 0;
 	return usesPerkRules(hero) && hero->hasActivePerk("new-horizons:command", "new-horizons:command.crisisCommand") && beneficiary(battle, unit);
 }
 }

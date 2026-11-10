@@ -275,12 +275,23 @@ std::vector<TQuantity> Rules::counts(const std::vector<FormationStack> & formati
 JsonNode capture(const IGameSettings & settings)
 {
 	const auto & definition = settings.getValue(EGameSettings::CREATURES_NEUTRAL_LEADERSHIP_CALIBRATION);
-	validate(definition);
 	if(!active(definition))
+	{
+		validate(definition);
+		return disabledSnapshot(); // Stock generation needs no hero, Gold or recruitment reference.
+	}
+	const auto & capability = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
+	// Fresh Command worlds do not acquire the retired count-cost curve, even
+	// from an explicit historical curve override. Rules(snapshot) still decodes
+	// existing captures independently; load never recaptures a world.
+	if(capability.isStruct() && capability.Struct().contains("armyCommand"))
+	{
+		newHorizonsHeroes::validateArmyCommandPolicy(capability["armyCommand"], false);
 		return disabledSnapshot();
+	}
+	validate(definition);
 	if(definition.Struct().contains("curve"))
 		return definition;
-	const auto & capability = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
 	if(!capability.isStruct() || capability.Struct().empty())
 		return disabledSnapshot(); // Core/historical contexts do not acquire NH capacity rules.
 	newHorizonsHeroes::validateCapabilityRules(capability, false);

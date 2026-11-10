@@ -5,6 +5,8 @@
 #pragma once
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/NewHorizonsWarfare.h"
+#include "../../lib/battle/OrderFormation.h"
 #include "NewHorizonsBattleStatus.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include <array>
@@ -164,6 +166,48 @@ inline std::string revisedActiveHelp(const std::optional<HeroOrderState> & state
 	return state && state->revision ? "\n\nActive effect: " + revisedSnapshotText(*state, currentRound) : "";
 }
 
+inline std::string formationFormulaHelp(const JsonNode & rules, HeroCommand command)
+{
+	if(!newHorizonsWarfare::usesRules(rules))
+		return {};
+	const auto & formation = rules["formationRating"];
+	const auto & definition = rules["commands"][heroCommands::key(command)];
+	const auto & effects = definition["effects"];
+	std::string text = "\n\nFormation rating R = floor((Attack + Defense) / "
+		+ formation["attributeDivisor"].toCompactString() + ") + "
+		+ formation["commandMultiplier"].toCompactString() + " x Command.";
+	if(command == HeroCommand::FEINT || command == HeroCommand::SECOND_WIND)
+	{
+		const auto & formula = effects[command == HeroCommand::FEINT
+			? "retaliationDamageReductionPercent" : "additionalActivationDamagePercent"];
+		text += std::string(command == HeroCommand::FEINT
+			? "\nPhysical retaliation reduction" : "\nExtra activation direct damage")
+			+ " = min(" + formula["cap"].toCompactString() + ", round("
+			+ formula["base"].toCompactString() + " + " + formula["formationRating"].toCompactString()
+			+ " x R x E))%.";
+	}
+	else if(command == HeroCommand::VANGUARD)
+	{
+		const auto & duration = definition["duration"];
+		const auto & stats = effects["primaryAndMorale"];
+		const auto & initiative = effects["initiativePercent"];
+		text += "\nDuration = clamp(1 + floor(R x E / "
+			+ duration["formationRatingPerRound"].toCompactString() + "), "
+			+ duration["minimum"].toCompactString() + ", " + duration["maximum"].toCompactString()
+			+ ") rounds, including the issuing round."
+			+ "\nM = min(Attack x attack efficiency, Defense x defense efficiency)."
+			+ "\nAttack/Defense/Morale bonus = min(" + stats["cap"].toCompactString()
+			+ ", " + stats["base"].toCompactString() + " + floor(M / " + stats["ratingStep"].toCompactString() + "))."
+			+ "\nInitiative bonus = min(" + initiative["cap"].toCompactString()
+			+ ", round(" + initiative["base"].toCompactString() + " + "
+			+ initiative["minimumRating"].toCompactString() + " x M))%.";
+	}
+	else
+		return {};
+	return text + "\nE is applicable Order Efficiency / 100. Efficiency scales derived terms only; fixed bases stay unchanged."
+		+ " Eligible perks and Luck may further modify the displayed preview.";
+}
+
 inline std::string commandName(HeroCommand command)
 {
 	return command == HeroCommand::NONE ? "None" : commandDisplay(command).name;
@@ -247,7 +291,7 @@ inline RevisedOrderPreview revisedOrderPreview(const CPlayerBattleCallback & cal
 {
 	if(command != HeroCommand::FEINT && command != HeroCommand::VANGUARD)
 		return {};
-	// Preparation captures Leadership, efficiencies, perks and saved rules. It
+	// Preparation captures Command, formation, efficiencies, perks and saved rules. It
 	// remains read-only; finalize this owned copy without rolling a Luck proc.
 	auto prepared = hero ? callback.battlePrepareHeroOrderState(side, command, std::vector<uint32_t>{})
 		: std::optional<HeroOrderState>{};
@@ -281,11 +325,18 @@ inline std::string commandEffects(const JsonNode & rules, HeroCommand command, c
 	std::string result;
 	for(const auto & [key, formula] : effects.Struct())
 	{
-		if(!formula.isStruct() || !formula["base"].isNumber() || !formula["attack"].isNumber() || !formula["defense"].isNumber())
+		const bool secondWind = command == HeroCommand::SECOND_WIND && key == "additionalActivationDamagePercent";
+		const bool formation = secondWind && newHorizonsWarfare::usesRules(rules);
+		if(!formula.isStruct() || !formula["base"].isNumber()
+			|| (formation ? !formula["formationRating"].isNumber()
+				: !formula["attack"].isNumber() || !formula["defense"].isNumber()))
 			continue;
 		try
 		{
-			int value = command == HeroCommand::SECOND_WIND && key == "additionalActivationDamagePercent"
+			int value = formation ? orderFormation::secondWindPercent(rules,
+				hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE),
+				orderFormation::command(hero), heroCommands::leadershipEfficiencyPercent(hero, divineMandateEfficiencyBonusPercent))
+				: secondWind
 				? heroCommands::secondWindPercent(hero, divineMandateEfficiencyBonusPercent)
 				: heroCommands::coefficient(formula, hero, divineMandateEfficiencyBonusPercent);
 			// Revised companions add fixed physical percentage points only to the

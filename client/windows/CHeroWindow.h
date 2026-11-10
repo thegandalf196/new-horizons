@@ -101,24 +101,23 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::array<std::vector<std::shared_ptr<CLabel>>, 8> provisionalAbilityLabels;
 	std::array<std::vector<std::shared_ptr<CAnimImage>>, 8> provisionalAbilityIcons;
 	std::vector<std::shared_ptr<CLabel>> growthValues;
-	std::shared_ptr<CLabel> leadershipValue;
-	std::shared_ptr<CLabel> leadershipGrowthValue;
 	std::vector<std::shared_ptr<CIntObject>> capabilityIcons;
 	std::shared_ptr<CLabel> movementValue;
 	std::shared_ptr<CLabel> commandValue;
 	std::shared_ptr<LRClickableAreaWText> commandArea;
 	std::shared_ptr<CLabel> legacySiegeValue;
-	std::shared_ptr<LRClickableAreaWText> leadershipArea;
 	std::shared_ptr<LRClickableAreaWText> movementArea;
 	std::shared_ptr<LRClickableAreaWText> legacySiegeArea;
 	std::shared_ptr<CTextBox> learnedPerksSummary;
 	std::shared_ptr<CLabel> legacyLeadershipLabel;
 	std::shared_ptr<CLabel> legacySiegeLabel;
 	std::shared_ptr<CAnimImage> legacyLeadershipImage;
+	std::shared_ptr<LRClickableAreaWText> legacyCommandArea;
 	std::shared_ptr<CAnimImage> legacySiegeImage;
 	std::shared_ptr<CAnimImage> legacyBoneCollectorImage;
 	void addCommandIcon();
 	void refreshCommandReadout();
+	void refreshLegacyCommandReadout();
 	void alignAttributeReadouts();
 	void configureNewHorizonsLayout();
 	void restoreLegacyLayout();
@@ -132,6 +131,7 @@ public:
 	CHeroWindow(const CGHeroInstance * hero);
 
 	void updateArtifacts() override;
+	void refreshCommandPresentation();
 	void keyPressed(EShortcut key) override;
 	void onScreenResize() override;
 

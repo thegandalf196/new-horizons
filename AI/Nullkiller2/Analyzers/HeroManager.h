@@ -94,6 +94,15 @@ public:
 	void evaluateScore(const CGHeroInstance * hero, SecondarySkill skill, float & score) const override;
 };
 
+/// Current captured class affinities and immediate Command rank benefits.
+class CommandClassSkillRule : public ISecondarySkillRule
+{
+	bool mainHero;
+public:
+	explicit CommandClassSkillRule(bool mainHero) : mainHero(mainHero) {}
+	void evaluateScore(const CGHeroInstance * hero, SecondarySkill skill, float & score) const override;
+};
+
 // Allows to get wisdom at 12 lvl
 class WisdomRule : public ISecondarySkillRule
 {

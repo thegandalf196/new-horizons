@@ -23,22 +23,12 @@
 
 namespace NK2AI
 {
-class StackUpgradeInfo
+StackUpgradeInfo::StackUpgradeInfo(CreatureID initial, CreatureID upgraded, int count)
+	:initialCreature(initial), upgradedCreature(upgraded), count(count)
 {
-public:
-	CreatureID initialCreature;
-	CreatureID upgradedCreature;
-	TResources cost;
-	int count;
-	uint64_t upgradeValue;
-
-	StackUpgradeInfo(CreatureID initial, CreatureID upgraded, int count)
-		:initialCreature(initial), upgradedCreature(upgraded), count(count)
-	{
-		cost = (upgradedCreature.toCreature()->getFullRecruitCost() - initialCreature.toCreature()->getFullRecruitCost()) * count;
-		upgradeValue = (upgradedCreature.toCreature()->getAIValue() - initialCreature.toCreature()->getAIValue()) * count;
-	}
-};
+	cost = (upgradedCreature.toCreature()->getFullRecruitCost() - initialCreature.toCreature()->getFullRecruitCost()) * count;
+	upgradeValue = (upgradedCreature.toCreature()->getAIValue() - initialCreature.toCreature()->getAIValue()) * count;
+}
 
 void ArmyUpgradeInfo::addArmyToBuy(std::vector<SlotInfo> army)
 {
@@ -302,44 +292,7 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 		|| armyFormation::hasLeadershipCapacityRules(sourceHero, target)
 		|| armyFormation::hasLeadershipCapacityRules(sourceHero, source);
 	if(leadershipRulesApply)
-	{
-		std::vector<armyFormation::DesiredArmyStack> desiredArmy;
-		int freeStackSlots = GameConstants::ARMY_SIZE;
-
-		for(const auto & slot : resultingArmy)
-		{
-			int remainingCount = slot.count;
-			const auto capacity = receiverHero
-				? receiverHero->getLeadershipSlotCapacity(slot.creature->getId())
-				: std::nullopt;
-			const int maximumStackCount = capacity
-				? capacity->maximum
-				: remainingCount;
-
-			while(remainingCount > 0 && freeStackSlots > 0 && maximumStackCount > 0)
-			{
-				const int stackCount = std::min(remainingCount, maximumStackCount);
-				desiredArmy.push_back({slot.creature->getId(), stackCount});
-				remainingCount -= stackCount;
-				--freeStackSlots;
-			}
-		}
-
-		const auto projection = armyFormation::projectArmyExchange(
-			target, source, receiverHero, sourceHero, desiredArmy);
-		// Preserve the exact executable plan behind the valuation. Reprojecting
-		// its resulting army can reserve different duplicate slots and lose swaps.
-		if(exchangePlan)
-			*exchangePlan = projection;
-		std::vector<SlotInfo> projectedArmy;
-		projectedArmy.reserve(projection.receiverSlots.size());
-		for(const auto & slot : projection.receiverSlots)
-		{
-			const auto * creature = slot.creature.toCreature();
-			projectedArmy.push_back({creature, slot.count, evaluateStackPower(creature, slot.count)});
-		}
-		return projectedArmy;
-	}
+		return projectArmyAdmission(target, source, receiverHero, sourceHero, resultingArmy, exchangePlan);
 
 	if(resultingArmy.size() <= GameConstants::ARMY_SIZE
 		&& allowedFactions.size() == alignmentMap.size()
@@ -493,84 +446,6 @@ std::vector<SlotInfo> ArmyManager::convertToSlots(const CCreatureSet * army) con
 	}
 
 	return result;
-}
-
-std::vector<StackUpgradeInfo> ArmyManager::getHillFortUpgrades(
-	const CCreatureSet * army, const CGHeroInstance * carrier) const
-{
-	std::vector<StackUpgradeInfo> upgrades;
-
-	for(const auto & creature : army->Slots())
-	{
-		CreatureID initial = creature.second->getCreatureID();
-		auto possibleUpgrades = initial.toCreature()->upgrades;
-		if(carrier)
-		{
-			vstd::erase_if(possibleUpgrades, [&](CreatureID upgradeCreature)
-			{
-				const auto capacity = carrier->getLeadershipSlotCapacity(upgradeCreature);
-				return capacity && !capacity->accepts(creature.second->getCount());
-			});
-		}
-
-		if(possibleUpgrades.empty())
-			continue;
-
-		CreatureID strongestUpgrade = *vstd::maxElementByFun(possibleUpgrades, [](CreatureID cre) -> uint64_t
-		{
-			return cre.toCreature()->getAIValue();
-		});
-
-		StackUpgradeInfo upgrade = StackUpgradeInfo(initial, strongestUpgrade, creature.second->getCount());
-
-		if(initial.toCreature()->getLevel() == 1)
-			upgrade.cost = TResources();
-
-		upgrades.push_back(upgrade);
-	}
-
-	return upgrades;
-}
-
-std::vector<StackUpgradeInfo> ArmyManager::getDwellingUpgrades(
-	const CCreatureSet * army, const CGDwelling * dwelling, const CGHeroInstance * carrier) const
-{
-	std::vector<StackUpgradeInfo> upgrades;
-
-	for(const auto & creature : army->Slots())
-	{
-		CreatureID initial = creature.second->getCreatureID();
-		auto possibleUpgrades = initial.toCreature()->upgrades;
-
-		vstd::erase_if(possibleUpgrades, [&](CreatureID creID) -> bool
-		{
-			const auto capacity = carrier ? carrier->getLeadershipSlotCapacity(creID) : std::nullopt;
-			if(capacity && !capacity->accepts(creature.second->getCount()))
-				return true;
-
-			for(auto pair : dwelling->creatures)
-			{
-				if(vstd::contains(pair.second, creID))
-					return false;
-			}
-
-			return true;
-		});
-
-		if(possibleUpgrades.empty())
-			continue;
-
-		CreatureID strongestUpgrade = *vstd::maxElementByFun(possibleUpgrades, [](CreatureID cre) -> uint64_t
-		{
-			return cre.toCreature()->getAIValue();
-		});
-
-		StackUpgradeInfo upgrade = StackUpgradeInfo(initial, strongestUpgrade, creature.second->getCount());
-
-		upgrades.push_back(upgrade);
-	}
-
-	return upgrades;
 }
 
 std::vector<StackUpgradeInfo> ArmyManager::getPossibleUpgrades(

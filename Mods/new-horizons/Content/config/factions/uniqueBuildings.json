@@ -10,19 +10,8 @@
 				},
 				"special3": {
 					"name": "Brotherhood of the Sword",
-					"description": "The Brotherhood of the Sword trains each visiting hero in Leadership.",
-					"configuration": {
-						"visitMode": "hero",
-						"notVisitedTooltip": "Training available for this hero.",
-						"visitedTooltip": "This hero has already trained here.",
-						"onVisitedMessage": "This hero has already received training from the Brotherhood of the Sword.",
-						"rewards": [
-							{
-								"message": "The Brotherhood of the Sword permanently increases this hero's Leadership by 100.",
-								"bonuses": [ { "type": "LEADERSHIP", "val": 100 } ]
-							}
-						]
-					}
+					"description": "Defending creatures gain +2 Morale. Also improves access to Thieves' Guild information.",
+					"configuration": null
 				}
 			}
 		}

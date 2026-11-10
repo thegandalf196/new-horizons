@@ -314,7 +314,7 @@ void validateRules(const JsonNode & rules)
 	if(!rules.isStruct())
 		throw std::runtime_error("Invalid New Horizons combat ruleset shape");
 	if(!newHorizonsCommand::usesRules(rules))
-		throw std::runtime_error("Active Order rules require the finite Command policy");
+		throw std::runtime_error("Active Order rules require a recognized issuance policy");
 	if(isRevisedRules(rules))
 	{
 		validateRevisedRules(rules);

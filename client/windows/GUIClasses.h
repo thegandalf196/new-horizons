@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "CSplitWindow.h"
 
 #include "CWindowObject.h"
 #include "../../lib/ResourceSet.h"
@@ -139,58 +140,6 @@ public:
 	CRecruitmentWindow(const CGDwelling * Dwelling, int Level, const CArmedInstance * Dst, const std::function<void(CreatureID,int)> & Recruit, const std::function<void()> & onClose, int y_offset = 0);
 	void availableCreaturesChanged();
 	void close() override;
-};
-
-/// Split window where creatures can be split up into two single unit stacks
-struct CSplitWindowOwner
-{
-	const CArmedInstance * army = nullptr;
-	std::string label;
-};
-
-class CSplitWindow : public CWindowObject
-{
-	std::function<void(int, int)> callback;
-	int leftAmount;
-	int rightAmount;
-	int initialLeftAmount;
-	int initialRightAmount;
-	const CCreature * splitCreature;
-	const CArmedInstance * leftArmy;
-	const CArmedInstance * rightArmy;
-
-	int leftMin;
-	int rightMin;
-	std::shared_ptr<CLabel> title;
-	std::shared_ptr<CSlider> slider;
-	std::shared_ptr<CCreaturePic> animLeft;
-	std::shared_ptr<CCreaturePic> animRight;
-	std::shared_ptr<CButton> ok;
-	std::shared_ptr<CButton> cancel;
-	std::shared_ptr<CTextInput> leftInput;
-	std::shared_ptr<CTextInput> rightInput;
-	std::shared_ptr<CAnimImage> leftOwnerMarker;
-	std::shared_ptr<CAnimImage> rightOwnerMarker;
-	std::shared_ptr<LRClickableAreaWText> leftLeadershipHelp;
-	std::shared_ptr<LRClickableAreaWText> rightLeadershipHelp;
-	std::shared_ptr<CMultiLineLabel> leftOwnerLabel;
-	std::shared_ptr<CMultiLineLabel> rightOwnerLabel;
-
-	void setAmountText(std::string text, bool left);
-	void setAmount(int value, bool left);
-	void updateLeadershipReadback();
-	void sliderMoved(int value);
-	void apply();
-
-public:
-	/**
-	 * creature - displayed creature
-	 * callback(leftAmount, rightAmount) - function to call on close
-	 * leftMin, rightMin - minimal amount of creatures in each stack
-	 * leftAmount, rightAmount - amount of creatures in each stack
-	 */
-	CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback, int leftMin, int rightMin,
-		int leftAmount, int rightAmount, CSplitWindowOwner leftOwner = {}, CSplitWindowOwner rightOwner = {});
 };
 
 /// Town portal, castle gate window

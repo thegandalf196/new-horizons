@@ -71,6 +71,7 @@
 #include "windows/GUIClasses.h"
 #include "windows/CLevelWindow.h"
 #include "windows/HeroMasteryWindow.h"
+#include "windows/CommandEnhancementWindow.h"
 #include "windows/InfoWindows.h"
 #include "windows/QuickRecruitmentWindow.h"
 #include "windows/settings/SettingsMainWindow.h"
@@ -476,6 +477,7 @@ void CPlayerInterface::heroSecondarySkillChanged(const CGHeroInstance * hero, in
 
 	localState->verifyPath(hero);
 	adventureInt->onHeroChanged(hero);// secondary skill can change primary skill / mana limit
+	commandProgressionChanged(hero->id);
 }
 
 void CPlayerInterface::heroManaPointsChanged(const CGHeroInstance * hero)
@@ -505,54 +507,6 @@ void CPlayerInterface::receivedResource()
 	ENGINE->windows().totalRedraw();
 }
 
-
-void CPlayerInterface::heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID)
-{
-	EVENT_HANDLER_CALLED_BY_CLIENT;
-	// Copy the actual saved offer before queuing; never reconstruct it from
-	// current defaults or a later hero level. Preserve authoritative option order.
-	auto show = [this, offer, queryID]()
-	{
-		closeActiveLevelUpDialog();
-		auto submit = [this, hero = offer.hero, sequence = offer.sequence, queryID](int choice)
-		{
-			return cb->chooseHeroMastery(hero, queryID, sequence, choice);
-		};
-		showingDialog->setBusy();
-		ENGINE->windows().createAndPushWindow<HeroMasteryWindow>(offer, queryID, std::move(submit));
-	};
-	createAndQueueDialog(PendingDialog::Type::Blocking, std::move(show), queryID);
-	tryShowNextPendingDialog();
-}
-
-void CPlayerInterface::commanderGotLevel(const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID)
-{
-	EVENT_HANDLER_CALLED_BY_CLIENT;
-	auto showCallback = [this, commander, skills = std::move(skills), queryID]() mutable
-	{
-		ENGINE->sound().playSound(soundBase::heroNewLevel);
-		auto callback = [this, queryID](ui32 selection)
-		{
-			if(queryID < 0)
-				return;
-
-			cb->selectionMade(selection, queryID);
-		};
-
-		closeActiveLevelUpDialog();
-
-		auto levelWindow = std::make_shared<CStackWindow>(commander, skills, callback);
-
-		// Free the visible-dialog gate as soon as the player makes a choice.
-		// The query-backed dialog queue still keeps manual input blocked until the
-		// server resolves this level-up step and advances the chain.
-		levelWindow->setCloseOnSelection(queryID < 0);
-		ENGINE->windows().pushWindow(levelWindow);
-	};
-
-	createAndQueueDialog(PendingDialog::Type::Blocking, std::move(showCallback), queryID);
-	tryShowNextPendingDialog();
-}
 
 void CPlayerInterface::heroInGarrisonChange(const CGTownInstance *town)
 {
@@ -1393,6 +1347,10 @@ void CPlayerInterface::showGarrisonDialog(const CArmedInstance * up, const CGHer
 
 void CPlayerInterface::requestRealized( PackageApplied *pa )
 {
+	// Request identities are connection-wide; each window accepts only its own
+	// in-flight failure. A successful ACK never closes an enhancement query.
+	for(const auto & window : ENGINE->windows().findWindows<CommandEnhancementWindow>())
+		window->requestApplied(pa->requestID, pa->result);
 	if(pa->packType == CTypeList::getInstance().getTypeID<QueryReply>(nullptr))
 		for(const auto & window : ENGINE->windows().findWindows<CLevelWindow>())
 			window->rerollRequestApplied(pa->requestID, pa->result);
@@ -1419,6 +1377,8 @@ void CPlayerInterface::closeActiveLevelUpDialog()
 		levelWindow->close();
 	else if(auto masteryWindow = ENGINE->windows().topWindow<HeroMasteryWindow>())
 		masteryWindow->close(); // Refuses dismissal until its matching query resolves.
+	else if(auto enhancementWindow = ENGINE->windows().topWindow<CommandEnhancementWindow>())
+		enhancementWindow->close();
 	else if(auto commanderWindow = ENGINE->windows().topWindow<CStackWindow>(); commanderWindow && commanderWindow->isCommanderLevelUpDialog())
 		commanderWindow->close();
 }
@@ -1429,6 +1389,12 @@ void CPlayerInterface::queryResolved(QueryID queryID)
 	// The window matches its own query and defers closure until it is topmost.
 	for(const auto & window : ENGINE->windows().findWindows<HeroMasteryWindow>())
 		window->queryResolved(queryID);
+	for(const auto & window : ENGINE->windows().findWindows<CommandEnhancementWindow>())
+	{
+		if(window->matchesQuery(queryID))
+			commandProgressionChanged(window->heroID());
+		window->queryResolved(queryID);
+	}
 	auto dialog = findPendingDialog(queryID);
 	if(dialog == dialogs.end())
 		return;
@@ -2039,6 +2005,14 @@ std::list<CPlayerInterface::PendingDialog>::iterator CPlayerInterface::findQuery
 
 void CPlayerInterface::tryShowNextPendingDialog()
 {
+	for(const auto & window : ENGINE->windows().findWindows<CommandEnhancementWindow>())
+	{
+		if(!ENGINE->windows().isTopWindow(window.get()))
+			return;
+		window->close();
+		if(ENGINE->windows().isTopWindow(window.get()))
+			return;
+	}
 	// Do not bury a resolved-but-covered mastery window with another dialog.
 	// update() retries this after the user dismisses the covering popup. Never
 	// close from activate(), which would mutate WindowHandler during activation.

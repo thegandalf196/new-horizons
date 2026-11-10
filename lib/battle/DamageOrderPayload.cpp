@@ -175,9 +175,8 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 			if(attackerState.secondWindActive && attackerState.primaryTargetUnitId == info.attacker->unitId())
 			{
 				const int orderMultiplier = heroCommands::orderPotency(
-					heroCommands::secondWindPercent(*attack,
-						attackerState.divineMandateEfficiencyBonusPercent()),
-					newHorizonsDivineMandate::crownSecondWindPercent(*attack, attackerState, info.attacker->unitId()),
+					battleSecondWindPercent(attackerSide, attackerState, info.attacker->unitId()),
+					battleSecondWindPercent(attackerSide, attackerState, info.attacker->unitId(), true),
 					attackerState, getBattle()->getMagicRules());
 				if(orderMultiplier != 100)
 				{

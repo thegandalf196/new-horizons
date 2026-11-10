@@ -23,9 +23,14 @@ Policy readPolicy(const JsonNode & row)
 {
 	Policy result{};
 	result.version = static_cast<int>(row["version"].Integer());
-	for(size_t rank = 0; rank < result.skeletonLeadershipReductionPercent.size(); ++rank)
-		result.skeletonLeadershipReductionPercent[rank] = static_cast<int>(row["skeletonLeadershipReductionPercent"].Vector()[rank].Integer());
-	result.lordOfTheDeadLeadershipReductionPercent = static_cast<int>(row["lordOfTheDeadLeadershipReductionPercent"].Integer());
+	if(result.version < 3)
+	{
+		for(size_t rank = 0; rank < result.skeletonLeadershipReductionPercent.size(); ++rank)
+			result.skeletonLeadershipReductionPercent[rank] = static_cast<int>(row["skeletonLeadershipReductionPercent"].Vector()[rank].Integer());
+		result.lordOfTheDeadLeadershipReductionPercent = static_cast<int>(row["lordOfTheDeadLeadershipReductionPercent"].Integer());
+	}
+	else
+		result.lordOfTheDeadMaximumHealthPercent = static_cast<int>(row["lordOfTheDeadMaximumHealthPercent"].Integer());
 	result.deathMarchSpeed = static_cast<int>(row["deathMarchSpeed"].Integer());
 	result.bonewardMagicalReductionPercent = static_cast<int>(row["bonewardMagicalReductionPercent"].Integer());
 	result.tombGuardAdditionalRetaliations = static_cast<int>(row["tombGuardAdditionalRetaliations"].Integer());
@@ -42,6 +47,26 @@ Policy readPolicy(const JsonNode & row)
 	}
 	return result;
 }
+
+void validateLeadershipFields(const JsonNode & row)
+{
+	using namespace newHorizonsHeroes::detail;
+	if(row["version"].Integer() >= 3)
+	{
+		require(!row.Struct().contains("skeletonLeadershipReductionPercent")
+			&& !row.Struct().contains("lordOfTheDeadLeadershipReductionPercent"), "Retired Necromancy Leadership fields");
+		require(integer(row["lordOfTheDeadMaximumHealthPercent"], 0, 1000000), "Lord of the Dead maximum Health");
+		return;
+	}
+	require(!row.Struct().contains("lordOfTheDeadMaximumHealthPercent"), "Historical Lord of the Dead fields");
+	const auto & reductions = row["skeletonLeadershipReductionPercent"];
+	require(reductions.isVector() && reductions.Vector().size() == 4,
+		"Necromancy requires four rank Leadership reductions");
+	for(const auto & value : reductions.Vector())
+		require(integer(value, 0, 99), "Necromancy Leadership reduction");
+	require(reductions.Vector().front().Integer() == 0, "Necromancy unlearned rank must not reduce Leadership");
+	require(integer(row["lordOfTheDeadLeadershipReductionPercent"], 0, 99), "Lord of the Dead Leadership reduction");
+}
 }
 
 std::optional<Policy> policy(const JsonNode & capturedPerkRules)
@@ -56,8 +81,10 @@ std::optional<Policy> policy(const JsonNode & capturedPerkRules)
 		"bonewardMagicalReductionPercent", "tombGuardAdditionalRetaliations",
 		"graveplatePhysicalReductionPercent", "graveKnowledgeRecoveryPercent",
 		"bonewardMagicResistancePercent", "tombGuardDoubleStrike", "deadMansLuckBonus",
-		"boneCollectorRaiseBonusPercent", "soulHarvesterManaPerRaisedCreature", "soulHarvesterManaCap"});
+		"boneCollectorRaiseBonusPercent", "soulHarvesterManaPerRaisedCreature", "soulHarvesterManaCap",
+		"lordOfTheDeadMaximumHealthPercent"});
 	require(integer(row["version"], 1, POLICY_VERSION), "Necromancy policy version");
+	validateLeadershipFields(row);
 	if(row["version"].Integer() == 1)
 	{
 		for(const auto * key : {"bonewardMagicResistancePercent", "tombGuardDoubleStrike", "deadMansLuckBonus",
@@ -75,17 +102,6 @@ std::optional<Policy> policy(const JsonNode & capturedPerkRules)
 		require(integer(row["bonewardMagicalReductionPercent"], 0, 0)
 			&& integer(row["tombGuardAdditionalRetaliations"], 0, 0), "Retired Necromancy passive coefficients");
 	}
-	const auto & reductions = row["skeletonLeadershipReductionPercent"];
-	require(reductions.isVector() && reductions.Vector().size() == 4,
-		"Necromancy requires four rank Leadership reductions");
-	for(const auto & value : reductions.Vector())
-	{
-		require(integer(value, 0, 99), "Necromancy Leadership reduction");
-	}
-	require(reductions.Vector().front().Integer() == 0,
-		"Necromancy unlearned rank must not reduce Leadership");
-	require(integer(row["lordOfTheDeadLeadershipReductionPercent"], 0, 99),
-		"Lord of the Dead Leadership reduction");
 	require(integer(row["deathMarchSpeed"], 0, 100), "Death March Speed");
 	require(integer(row["bonewardMagicalReductionPercent"], 0, 100),
 		"Boneward magical reduction");
@@ -108,6 +124,13 @@ void validatePolicySerialization(const JsonNode & capturedPerkRules, bool suppor
 	const auto captured = policy(capturedPerkRules);
 	if(captured && (!supportsV1 || (captured->version >= 2 && !supportsV2)))
 		throw std::runtime_error("Cannot discard captured Necromancy policy");
+}
+
+void validateCommandPolicySerialization(const JsonNode & capturedPerkRules, bool supported)
+{
+	const auto captured = policy(capturedPerkRules);
+	if(captured && captured->version >= 3 && !supported)
+		throw std::runtime_error("Necromancy policy3 requires the Command/Authority format");
 }
 
 int discountedLeadershipRequirement(int baseRequirement, int reductionPercent)
@@ -143,9 +166,16 @@ int leadershipReduction(const CGHeroInstance & hero, const Policy & captured)
 int skeletonLeadershipReductionPercent(const CGHeroInstance * hero, CreatureID creature)
 {
 	const auto captured = activePolicy(hero, creature);
-	if(!captured)
+	if(!captured || captured->version >= 3)
 		return 0;
 	return leadershipReduction(*hero, *captured);
+}
+
+int lordOfTheDeadMaximumHealthPercent(const CGHeroInstance * hero, CreatureID creature)
+{
+	const auto captured = activePolicy(hero, creature);
+	return captured && captured->version >= 3 && hero->hasActivePerk(SKILL_ID, LORD_OF_THE_DEAD_ID)
+		? captured->lordOfTheDeadMaximumHealthPercent : 0;
 }
 
 int deathMarchSpeed(const CGHeroInstance * hero, CreatureID creature)
@@ -208,7 +238,7 @@ void applyLeadershipPolicy(newHorizonsHeroes::LeadershipSlotCapacity & capacity,
 	const CGHeroInstance & hero, CreatureID creature)
 {
 	const auto captured = activePolicy(&hero, creature);
-	if(!captured)
+	if(!captured || captured->version >= 3)
 		return;
 	// Both forms use the captured base-family price, even if a map authored an
 	// explicit upgrade row. Historical snapshots without this policy are untouched.

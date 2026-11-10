@@ -119,7 +119,7 @@ newHorizonsElementalAttunement::UnitPassives HypotheticBattle::unitElementalAttu
 			if(projected->owner != this && battleGetUnitByID(unit->unitId()) != unit)
 				throw std::invalid_argument("Projected elemental facts require a branch-bound unit");
 		if(const auto * detached = dynamic_cast<const battle::CUnitStateDetached *>(unit))
-			if(!detached->usesStateEnvironment(*this))
+			if(!detached->usesStateEnvironment(*unitEnvironment()))
 				throw std::invalid_argument("Detached elemental facts require the branch environment");
 		const auto found = committedElementalFacts.find(unit->unitId());
 		if(!committedElementalEffects || found == committedElementalFacts.end()

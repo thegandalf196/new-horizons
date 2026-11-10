@@ -251,6 +251,7 @@ class JsonNode;
 	BONUS_NAME(DYNAMIC_CREATURE_DAMAGE) /*immutable public dependency marker for projected count/adjacency reevaluation*/ \
 	BONUS_NAME(PHYSICAL_DEFENSE) /*additive creature defense against physical attacks only*/ \
 	BONUS_NAME(NATIVE_RESISTANCE_REFLECTION) /*native Magic Resistance share redirected on its existing resistance draw*/ \
+	BONUS_NAME(ASSIMILATION) /*intrinsic permission to occupy any unlocked permanent army slot; never changes actual creature tier*/ \
 
 	/* end of list */
 

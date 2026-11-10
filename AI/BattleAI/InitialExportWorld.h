@@ -6,6 +6,7 @@
 #pragma once
 #include "../../lib/battle/ProjectedBattleWorldArena.h"
 #include "../../lib/battle/ProjectedUnitEnvironmentState.h"
+#include "../../lib/battle/NewHorizonsDiscipline.h"
 
 /// AI-owned ordered graph/value program over canonical graph-bound recipients.
 /// Not a CBattleInfoCallback, legality validator, hidden-info adapter or commit.
@@ -15,6 +16,8 @@ class InitialExportWorld final
 {
 	struct Data;
 	std::unique_ptr<Data> impl;
+	InitialExportWorld(BattleInfo & original,
+		const BattleSideArray<newHorizonsDiscipline::HeroMoraleContext> & moraleContexts);
 public:
 	class EffectQueries;
 	struct Source
@@ -77,6 +80,7 @@ public:
 	/// Parent/program/expiry are unchanged; damage is native in/out on success.
 	JsonNode snapshotAfterPhysicalDamage(Source source, int64_t & damage) const;
 	TConstBonusListPtr projectedHeroBonuses(BattleSide side, bool unstacked) const;
+	int projectedHeroMorale(BattleSide side) const;
 	/// Exact recipient query history, never a native originating EXPORT.
 	void installRecipientOverlays(Source source, std::vector<recipientBonusOverlay::Layer> layers);
 	bool hasUnresolvedRecipientOverlays() const;

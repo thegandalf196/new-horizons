@@ -68,6 +68,7 @@ public:
 	void visitBuildBoat(BuildBoat & pack) override;
 	void visitQueryReply(QueryReply & pack) override;
 	void visitHeroMasteryReply(HeroMasteryReply & pack) override;
+	void visitHeroCommandEnhancementReply(HeroCommandEnhancementReply & pack) override;
 	void visitMakeAction(MakeAction & pack) override;
 	void visitDigWithHero(DigWithHero & pack) override;
 	void visitCastAdvSpell(CastAdvSpell & pack) override;

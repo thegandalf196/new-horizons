@@ -12,6 +12,16 @@
 
 // Constant binding data; the runtime map remains lazy below.
 inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindings[] = {
+		{"new-horizons:authority.offensiveDrills", "NH_perk_authority_offensive_drills"},
+		{"new-horizons:authority.defensiveDrills", "NH_perk_authority_defensive_drills"},
+		{"new-horizons:authority.conditioning", "NH_perk_authority_conditioning"},
+		{"new-horizons:authority.battleReadiness", "NH_perk_authority_battle_readiness"},
+		{"new-horizons:authority.officerCorps", "NH_perk_authority_officer_corps"},
+		{"new-horizons:authority.maneuverTraining", "NH_perk_authority_maneuver_training"},
+		{"new-horizons:authority.counterattackTraining", "NH_perk_authority_counterattack_training"},
+		{"new-horizons:authority.protectiveTraining", "NH_perk_authority_protective_training"},
+		{"new-horizons:authority.veteranCorps", "NH_perk_authority_veteran_corps"},
+		{"new-horizons:authority.grandMarshal", "NH_perk_authority_grand_marshal"},
 		{"new-horizons:metamagic.arcaneCatalyst", "NH_perk_arcane_acquisition"},
 		{"new-horizons:metamagic.arcaneShield", "NH_perk_echoed_duration"},
 		{"new-horizons:metamagic.manaConduit", "NH_perk_arcane_economy"},
@@ -101,6 +111,7 @@ inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindin
 		{"new-horizons:command.defensiveCommander", "NH_perk_defensive_commander"},
 		{"new-horizons:command.doubleCommand", "NH_perk_double_command"},
 		{"new-horizons:command.seizeInitiative", "NH_perk_seize_initiative"},
+		{"new-horizons:command.decisiveOrders", "NH_perk_seize_initiative"},
 		{"new-horizons:command.veteranCommander", "NH_perk_veteran_commander"},
 		{"new-horizons:discipline.espritDeCorps", "NH_perk_esprit_de_corps"},
 		{"new-horizons:discipline.fearless", "NH_perk_fearless"},

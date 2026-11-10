@@ -2,33 +2,54 @@
 
 ## Current save boundary
 
-New Horizons 0.88.2 requires a new game. The current writer and minimum accepted
-format are both **1157**, `NEW_HORIZONS_NATIVE_RULES_REDESIGN`.
+The unreleased 0.89.2 Command/Authority redesign requires a new game, including
+when upgrading from 0.89 or 0.89.1. The current writer and minimum accepted format
+are both **1158**, `NEW_HORIZONS_COMMAND_AUTHORITY`.
 `MINIMAL` and `CURRENT` in `ESerializationVersion` use that feature value.
 `CLoadFile` rejects earlier save formats before reading their payload; there is
 no save conversion or migration path in this revision. Existing files remain
 untouched. The file-loader minimum does not by itself validate connection-version
 negotiation.
 
-Format1157 adds finite Command resources, Elemental Attunement state and the
-revised Magic Arrow profile. It also retains round-point Metamagic, revised
-Dungeon perks and optional detailed Skill/perk help. Historical descriptions below
+Format1158 adds captured army Command acquisition history, Authority and passive
+Warfare. Command is unspent progression, not the finite Order pool introduced in
+1157. Elemental Attunement, Magic Arrow, round-point Metamagic, revised Dungeon
+perks and optional detailed Skill/perk help retain their existing profiles.
+Historical descriptions below
 explain prior layouts; they do not grant ordinary save-load admission.
 Explicit local bonus-clone profiles remain separate from on-disk save support
 and must retain their own exact validation. A format declaration alone does
 not establish successful save/reload, gameplay or platform acceptance.
 
-### Native rules redesign
+### Command/Authority capture
 
-New games capture the revised Command, Attunement and Magic Arrow policies.
+Hero Command state stores a high-water receipt, last capture level and ordered
+awards. Each award retains milestone, recipient, acquisition level, optional
+selected enhancement and fixed contribution. Binary/JSON reads validate a
+candidate before installation; load, copy and preview never earn awards or
+recompute their acquisition-level values. A captured Command hero missing its
+history is invalid, rather than reconstructed from its current level.
+
+The 1158 guards cover captured settings/map/world/start data, hero progression,
+campaign crossover and dedicated enhancement query/update packets. Unsupported
+writes must reject populated state before their enclosing prefixes; readers must
+not install partial history. Current captures require coherent Command/Authority
+and Warfare markers and reject the retired finite-payment policy. Retained
+historical readers and local descriptor profiles do not admit pre1158 save files,
+convert numerical Leadership, or reinterpret old perks under current labels.
+
+### Retained native rules profiles
+
+New games retain the Attunement and Magic Arrow policies.
 An Overcharge selection is a level, not an additional Mana payment; readers and
 writers must retain its profile identity together with the spell rules.
 Elemental spell tags are captured independently of magic schools.
 
-Battle-side state owns maximum and remaining Command and the four-bit elemental
-Attunement mask. Deserialization and hypothetical copies preserve expenditure
-and active elements; neither operation runs battle-start initialization or
-refills Command. Order snapshots retain their issuance-time Heroic Spirit
+Battle-side state owns the four-bit elemental Attunement mask and the Hero Action
+ledger. Deserialization and hypothetical copies preserve active elements and
+action expenditure; neither operation reruns battle-start initialization.
+The old maximum/remaining Command fields remain historical layout, not a current
+payment source. Order snapshots retain their issuance-time Heroic Spirit
 efficiency. The retired extra-Order and Rebirth-summoning mechanics are outside
 the current rules. Earlier save formats are rejected instead of migrated.
 
@@ -505,7 +526,7 @@ Implementation and focused validation are tracked separately under UP108.
 `CStack::battleStartMaximumAggregateHP` descriptor field. The separately gated
 original-output HP field also remains reserved. Unsupported leaf and enclosing
 writers must not silently drop populated metadata. These capability values and
-codec checks do not authorize replacement summons: current format 1157 uses
+codec checks do not authorize replacement summons: current format1158 retains
 Elemental Attunement and has no Rebirth creation path.
 
 Descriptor roundtrips do not restore general unit health or casualty provenance.
@@ -709,7 +730,7 @@ destination before charging resources or deducting the source's real stock.
 and codec identities. Current `SideInBattle` validation rejects a nonempty
 `DoubleCommandState`; retained leaf codecs or allowance enums cannot admit a
 retired Order-only grant into a current battle. Each accepted ordinary Order
-instead consumes one finite Command point and the shared Hero Action.
+consumes the shared Hero Action, with no Command payment.
 
 Battle descriptors still validate ledger, round and unit references. These
 structural checks do not add running-battle save/resume: binary stack descriptors

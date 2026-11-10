@@ -5,6 +5,7 @@
 #include "ArcaneInspiration.h"
 #include "BattleAttackInfo.h"
 #include "CBattleInfoCallback.h"
+#include "CommandArmyBonuses.h"
 #include "CurrentFireBasis.h"
 #include "Unit.h"
 #include "../spells/MagicalDamageReduction.h"
@@ -22,7 +23,10 @@ void applyMagicalAttackReduction(const CBattleInfoCallback & callback,
 		damage.kills.min = damage.kills.max = 0;
 		return;
 	}
-	std::vector<int> reductions;
+	// The attack calculator does not consume SPELL_DAMAGE_REDUCTION bonuses.
+	// Admit these two projected sources here, once, alongside intrinsic/Spellward
+	// so the common aggregate cap and relative penetration cover the whole fold.
+	auto reductions = commandArmyBonuses::magicalReductionBasisPoints(*attack.defender);
 	const int intrinsic = attack.defender->intrinsicMagicalDamageReductionPercent();
 	if(intrinsic > 0)
 		reductions.push_back(std::clamp(intrinsic, 0, 100) * 100);

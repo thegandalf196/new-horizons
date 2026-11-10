@@ -39,6 +39,8 @@ OwnedUnitEnvironmentPolicy::OwnedUnitEnvironmentPolicy(const CBattleInfoCallback
 		state.elementalAttunementMask = source.elementalAttunementMask(side);
 	}
 	committedElementalEffects = source.committedElementalEffects();
+	for(const auto * unit : observer.battleGetAllUnits(false))
+		warfareStatBonuses.emplace(unit->unitId(), observer.battleWarfareStatBonus(unit));
 }
 std::shared_ptr<const OwnedUnitEnvironmentPolicy> OwnedUnitEnvironmentPolicy::capture(const CBattleInfoCallback & observer)
 {

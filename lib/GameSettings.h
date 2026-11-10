@@ -18,6 +18,7 @@
 #include "entities/hero/NewHorizonsHeroRules.h"
 #include "spells/NewHorizonsMagic.h"
 #include "entities/hero/NewHorizonsCapabilityRules.h"
+#include "entities/hero/NewHorizonsCommandAdmission.h"
 #include "battle/NewHorizonsPlague.h"
 #include "entities/hero/NewHorizonsPerkRules.h"
 #include "entities/hero/NewHorizonsNecromancyPolicy.h"
@@ -53,6 +54,10 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 		const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 
 public:
+	void validateCommandSerialization(bool supported) const
+	{
+		newHorizonsHeroes::validateCommandOverrides(getAllOverrides(), supported);
+	}
 	static void validateCombatScalarOverrides(const JsonNode & input, bool finalLuckSupported, bool moraleSupported);
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
 	void validateProtectedAdventureMobilitySerialization(bool supported) const
@@ -244,6 +249,7 @@ public:
 		{
 			validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			JsonNode overrides = getAllOverrides();
+			newHorizonsHeroes::validateCommandOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 			newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
 			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
@@ -317,6 +323,7 @@ public:
 		{
 			JsonNode overrides;
 			h & overrides;
+			newHorizonsHeroes::validateCommandOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 			validateCombatScalarOverrides(overrides,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));

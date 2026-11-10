@@ -57,6 +57,8 @@ std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
 	const CGHeroInstance & hero, CreatureID creature)
 {
 	const auto & rules = hero.getCapabilityRules();
+	if(hero.getArmyCommand())
+		return std::nullopt; // Current army Command has no numerical Leadership limit or discount.
 	if(!usesRules(rules) || rules["rulesetVersion"].Integer() < 2)
 		return std::nullopt;
 	auto result = capabilityLeadershipSlot(rules, hero.level, creature);
@@ -81,6 +83,8 @@ bool canMergeArmies(const CCreatureSet * source, const CCreatureSet * destinatio
 {
 	if(!source || !destination || source == destination)
 		return false;
+	if(hero && hero->getArmyCommand())
+		return planCommandArmyAddition(*hero, *destination, *source).has_value();
 
 	// Keep the ordinary slot/merge rule identical to garrisonSwap/moveArmy.
 	// Leadership is checked below against the same projected slots that the
@@ -185,6 +189,8 @@ SlotID recruitmentSlot(const CArmedInstance * army, CreatureID creature, int64_t
 		return SlotID();
 
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+	if(hero && hero->getArmyCommand())
+		return commandRecruitmentSlot(*hero, commandArmySlots(*army), creature, requestedAmount);
 	const auto capacity = hero && requestedAmount > 0
 		? hero->getLeadershipSlotCapacity(creature) : std::nullopt;
 	const std::optional<int64_t> maximum = capacity

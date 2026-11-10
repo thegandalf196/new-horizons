@@ -5,8 +5,35 @@
 #include "StdInc.h"
 #include "HeroCommand.h"
 
+bool heroCommands::sameIssuance(const HeroOrderState & previous, const HeroOrderState & next)
+{
+	return previous.command == next.command
+		&& previous.issuedRound == next.issuedRound
+		&& previous.primaryTargetUnitId == next.primaryTargetUnitId
+		&& previous.secondaryTargetUnitId == next.secondaryTargetUnitId
+		&& previous.protectInterceptionLimit == next.protectInterceptionLimit
+		&& previous.anchors == next.anchors
+		&& previous.battlePlanEfficiencyBonusPercent == next.battlePlanEfficiencyBonusPercent
+		&& previous.heroicSpiritEfficiencyBonusPercent == next.heroicSpiritEfficiencyBonusPercent
+		&& previous.heroLuck == next.heroLuck && previous.heroMorale == next.heroMorale
+		&& previous.heroMoraleActionGrantId == next.heroMoraleActionGrantId
+		&& previous.passiveDivineMandate == next.passiveDivineMandate
+		&& previous.revision == next.revision
+		&& previous.sacredCommandEfficiencyBonusPercent == next.sacredCommandEfficiencyBonusPercent
+		&& previous.knightlySequenceEfficiencyBonusPercent == next.knightlySequenceEfficiencyBonusPercent
+		&& previous.holdMagicalReductionBasisPoints == next.holdMagicalReductionBasisPoints
+		&& previous.royalStandardRecipientUnitIds == next.royalStandardRecipientUnitIds
+		&& previous.ironWillLifetime == next.ironWillLifetime
+		&& previous.divineDisciplineRecipientUnitIds == next.divineDisciplineRecipientUnitIds
+		&& previous.crownAndAltarRecipientUnitIds == next.crownAndAltarRecipientUnitIds
+		&& previous.crownAndAltarFocusFirePercent == next.crownAndAltarFocusFirePercent
+		&& previous.crownAndAltarHoldReductionBasisPoints == next.crownAndAltarHoldReductionBasisPoints;
+}
+
 void HeroOrderState::validateShape() const
 {
+	if(battlePlanEfficiencyBonusPercent < 0 || battlePlanEfficiencyBonusPercent > 1000)
+		throw std::runtime_error("Invalid Battle Plan issuance efficiency");
 	if(heroicSpiritEfficiencyBonusPercent < 0 || heroicSpiritEfficiencyBonusPercent > 30
 		|| heroicSpiritEfficiencyBonusPercent % 5 != 0)
 		throw std::runtime_error("Invalid Heroic Spirit issuance efficiency");

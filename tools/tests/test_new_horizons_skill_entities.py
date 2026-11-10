@@ -226,7 +226,7 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
         canonical_ids = tuple(self.perks["skills"])
         runtime_ids = tuple(f"new-horizons:{key}" for key in self.skills)
         self.assertEqual(runtime_ids, canonical_ids)
-        self.assertEqual(len(runtime_ids), 31)
+        self.assertEqual(len(runtime_ids), 32)
         for key, skill in self.skills.items():
             with self.subTest(skill=key):
                 self.assertNotIn(":", key)
@@ -312,6 +312,9 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                     expected = {"might": 6, "magic": 2} if key == "offense" else {"might": 2, "magic": 6}
                     self.assertEqual(skill["gainChance"], expected)
                     self.assertNotIn("special", skill.get("tags", {}))
+                elif key == "authority":
+                    self.assertEqual(skill["gainChance"], {"might": 1, "magic": 1})
+                    self.assertTrue(skill["tags"].get("special"))
                 else:
                     self.assertEqual(skill["gainChance"], {"might": 0, "magic": 0})
                     self.assertTrue(skill["tags"].get("special"))
@@ -329,7 +332,10 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         skill[rank]["description"],
                         canonical["ranks"][rank]["description"],
                     )
-                    if key in ACTIVE_RANK_EFFECTS:
+                    if key == "authority":
+                        self.assertEqual(canonical["ranks"][rank]["effect"]["status"], "active")
+                        self.assertEqual(skill[rank]["effects"], {})
+                    elif key in ACTIVE_RANK_EFFECTS:
                         self.assertEqual(
                             canonical["ranks"][rank]["effect"]["status"], "active"
                         )

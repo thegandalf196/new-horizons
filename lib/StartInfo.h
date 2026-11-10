@@ -133,6 +133,7 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 	EStartMode mode;
 	void validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
+	void validateCommandSerialization(bool supported) const;
 	ui8 difficulty; //0=easy; 4=impossible
 
 	using TPlayerInfos = std::map<PlayerColor, PlayerSettings>;
@@ -166,6 +167,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 	void serialize(Handler &h)
 	{
 		if(h.saving)
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+		if(h.saving)
 			extraOptionsInfo.validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		if(h.saving)
 			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
@@ -183,6 +186,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 		h & mapname;
 		h & mapGenOptions;
 		h & campState;
+		if(!h.saving)
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 		if(!h.saving)
 			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
@@ -237,6 +242,8 @@ struct DLL_LINKAGE LobbyState
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving && si)
 			si->validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+		if(h.saving && si)
+			si->validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
 		h & si;
 		h & mi;
 		h & playerNames;

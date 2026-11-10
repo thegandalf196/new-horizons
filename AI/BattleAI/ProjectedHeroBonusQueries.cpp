@@ -21,6 +21,17 @@ TConstBonusListPtr HypotheticBattle::visibleHeroBonuses(BattleSide side,
 	return BattleProxy::visibleHeroBonuses(side, selector, unstacked);
 }
 
+int HypotheticBattle::visibleHeroMorale(BattleSide side) const
+{
+	if(usesOwnedFrameQueries()) throw std::logic_error("Owned Hero policy queries require captured canonical dependencies");
+	if(const auto owned = initialExportSubject())
+	{
+		owned->synchronizeValues(*this);
+		return owned->battleGetHeroMorale(side);
+	}
+	return BattleProxy::visibleHeroMorale(side);
+}
+
 TConstBonusListPtr InitialExportBattleSubject::visibleHeroBonuses(BattleSide side,
 	const CSelector & selector, bool unstacked) const
 {
@@ -28,4 +39,9 @@ TConstBonusListPtr InitialExportBattleSubject::visibleHeroBonuses(BattleSide sid
 	auto selected = std::make_shared<BonusList>();
 	all->getBonuses(*selected, selector);
 	return selected;
+}
+
+int InitialExportBattleSubject::visibleHeroMorale(BattleSide side) const
+{
+	return owned->projectedHeroMorale(side);
 }

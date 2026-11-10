@@ -44,9 +44,10 @@ profiles outside both the extracted package and the original installation.
 Saves are stored in <profile>/data/new-horizons/Saves. Earlier releases used
 <profile>/data/vcmi/Saves; those files are not moved or deleted.
 
-SAVE COMPATIBILITY — 0.88.2
-Start a new game. This version cannot load saves from 0.88.1 or older development
-builds, and no save conversion is provided. Keep your old save files and backups;
+SAVE COMPATIBILITY — 0.89.2 (unreleased development metadata)
+Start a new game, including when upgrading from 0.89 or 0.89.1. The current and
+minimum accepted save format is 1158. Earlier saves are rejected before payload
+loading, not converted, rewritten or deleted. Keep your old save files and backups;
 use the matching older version to continue those games. Copying an old save into
 the new directory does not make it compatible.
 

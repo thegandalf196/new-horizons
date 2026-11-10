@@ -41,6 +41,7 @@ enum class QueryType : uint8_t
 	MapEvent, // Retains the historical map-script query ordinal.
 	HeroMasteryDialog,
 	NecromancyChoice,
+	HeroCommandEnhancement,
 	Unknown
 };
 

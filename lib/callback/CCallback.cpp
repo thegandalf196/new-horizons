@@ -56,6 +56,20 @@ int CCallback::chooseHeroMastery(ObjectInstanceID hero, QueryID queryID, uint64_
 	return sendRequest(pack);
 }
 
+int CCallback::chooseCommandEnhancement(ObjectInstanceID hero, QueryID queryID, int64_t milestone, int choice)
+{
+	ASSERT_IF_CALLED_WITH_PLAYER
+	if(queryID < 0 || hero.getNum() < 0 || milestone < 6 || choice < 0 || choice >= 9)
+		return -1;
+	HeroCommandEnhancementReply pack;
+	pack.qid = queryID;
+	pack.hero = hero;
+	pack.milestone = milestone;
+	pack.choice = choice;
+	pack.player = *getPlayerID();
+	return sendRequest(pack);
+}
+
 int CCallback::selectionMade(int selection, QueryID queryID)
 {
 	return sendQueryReply(selection, queryID);

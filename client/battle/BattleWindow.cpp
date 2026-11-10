@@ -68,7 +68,6 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
-#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 
@@ -245,13 +244,13 @@ BattleWindow::BattleWindow(BattleInterface & Owner)
 				reason = "Finish or cancel spell targeting first.";
 			else if(!owner.makingTurn())
 				reason = "It is not your turn.";
-			else if(!newHorizonsCommand::available(*owner.getBattle(), owner.getBattle()->battleGetMySide()))
-				reason = "No Command remains. You can still use ordinary creature actions and legal spells.";
+			else if(owner.getBattle()->battleHeroActionAllowanceCounts(owner.getBattle()->battleGetMySide()).heroActions == 0)
+				reason = "The shared Hero Action has already been spent this round.";
 			else if(ordersButton->isBlocked())
 				reason = "Battle input is temporarily unavailable.";
 			else
 				reason = "Open Orders to inspect commands and their current availability.";
-			CRClickPopup::createAndPush(reason + "\n\nEach Order costs 1 Command and the shared Hero Action. No Mana or spellbook is required. Command does not regenerate during combat. Opening or reading the panel spends nothing.");
+			CRClickPopup::createAndPush(reason + "\n\nOrders use the shared Hero Action. No Mana, Command expenditure or spellbook is required. Opening or reading the panel spends nothing.");
 		});
 		// Use the configurable interface's normal single-dispatch path: it defers
 		// to an active assigned button. loadButtonHotkey attaches the callback once.

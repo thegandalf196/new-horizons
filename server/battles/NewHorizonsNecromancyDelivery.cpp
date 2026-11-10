@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "NewHorizonsRaisedArmy.h"
 #include "../CGameHandler.h"
+#include "../CommandArmyAdmission.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/CStack.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -81,6 +82,8 @@ std::optional<RaisedArmyDelivery> selectRaisedArmyDelivery(const CGHeroInstance 
 }
 void applyRaisedArmy(CGameHandler & handler, const CArmedInstance & army, const RaisedArmyPlan & plan)
 {
+	if(plan.commandArrangement)
+		commandArmyAdmission::rearrange(handler, army, *plan.commandArrangement);
 	for(const auto & addition : plan)
 	{
 		const StackLocation location(army.id, addition.slot);

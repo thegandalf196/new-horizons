@@ -7,13 +7,47 @@
 	"required": [
 		"schemaVersion",
 		"rulesetVersion",
-		"commandResourcePolicyVersion",
 		"commands",
 		"perkBonuses"
 	],
 	"additionalProperties": false,
+	"oneOf": [
+		{
+			"required": ["commandResourcePolicyVersion"],
+			"properties": {
+				"warfarePolicyVersion": {"not": {}},
+				"formationRating": {"not": {}},
+				"commands": {"properties": {
+				"feint": {"properties": {"effects": {"properties": {"retaliationDamageReductionPercent": {"required": ["leadership"]}}}}},
+				"vanguard": {"properties": {"duration": {"required": ["leadershipPerRound"]}}},
+				"secondWind": {"properties": {"effects": {"properties": {"additionalActivationDamagePercent": {"required": ["attack", "defense"]}}}}}
+			}}}
+		},
+		{
+			"required": ["warfarePolicyVersion", "formationRating"],
+			"properties": {
+				"commandResourcePolicyVersion": {"not": {}},
+				"commands": {"properties": {
+				"feint": {"properties": {"effects": {"properties": {"retaliationDamageReductionPercent": {"required": ["formationRating"]}}}}},
+				"vanguard": {"properties": {"duration": {"required": ["formationRatingPerRound"]}}},
+				"secondWind": {"properties": {"effects": {"properties": {"additionalActivationDamagePercent": {"required": ["formationRating", "cap"]}}}}}
+			}}}
+		}
+	],
 	"properties": {
-		"commandResourcePolicyVersion": {"type": "integer", "enum": [1], "description": "Current finite per-battle Command pool; a full version-4 Order profile requires version 1."},
+		"formationRating": {
+			"type": "object",
+			"required": ["version", "attributeDivisor", "commandMultiplier"],
+			"additionalProperties": false,
+			"description": "Provisional R=floor((max(0,A)+max(0,D))/attributeDivisor)+commandMultiplier*max(0,Command). Efficiency scales only rating-derived terms; attack/defense coefficient labels retain Warfare specialization ownership.",
+			"properties": {
+				"version": {"type": "integer", "enum": [1]},
+				"attributeDivisor": {"type": "integer", "minimum": 1, "maximum": 1000000},
+				"commandMultiplier": {"type": "integer", "minimum": 0, "maximum": 1000000}
+			}
+		},
+		"warfarePolicyVersion": {"type": "integer", "enum": [1], "description": "Orders spend the ordinary Hero Action without a consumable Command pool."},
+		"commandResourcePolicyVersion": {"type": "integer", "enum": [1], "description": "Historical finite per-battle Command profile; retains its captured formulas."},
 		"schemaVersion": {
 			"type": "integer",
 			"enum": [
@@ -95,6 +129,16 @@
 		}
 	},
 	"definitions": {
+		"formationCoefficient": {
+			"type": "object",
+			"required": ["base", "formationRating", "cap"],
+			"additionalProperties": false,
+			"properties": {
+				"base": {"type": "number", "minimum": 0, "maximum": 100},
+				"formationRating": {"type": "number", "minimum": 0, "maximum": 1000000},
+				"cap": {"type": "integer", "minimum": 0, "maximum": 100}
+			}
+		},
 		"coefficient": {
 			"type": "object",
 			"minProperties": 3,
@@ -194,7 +238,7 @@
 							"$ref": "#/definitions/coefficient"
 						},
 						"additionalActivationDamagePercent": {
-							"$ref": "#/definitions/coefficient"
+							"oneOf": [{"$ref": "#/definitions/coefficient"}, {"$ref": "#/definitions/formationCoefficient"}]
 						}
 					}
 				}
@@ -377,11 +421,15 @@
 							"type": "object",
 							"required": [
 								"base",
-								"leadership",
 								"cap"
+							],
+							"oneOf": [
+								{"required": ["leadership"], "properties": {"formationRating": {"not": {}}}},
+								{"required": ["formationRating"], "properties": {"leadership": {"not": {}}}}
 							],
 							"additionalProperties": false,
 							"properties": {
+								"formationRating": {"type": "number", "minimum": 0, "maximum": 1000000},
 								"base": {
 									"type": "number",
 									"minimum": 0,
@@ -426,12 +474,16 @@
 				"duration": {
 					"type": "object",
 					"required": [
-						"leadershipPerRound",
 						"minimum",
 						"maximum"
 					],
+					"oneOf": [
+						{"required": ["leadershipPerRound"], "properties": {"formationRatingPerRound": {"not": {}}}},
+						{"required": ["formationRatingPerRound"], "properties": {"leadershipPerRound": {"not": {}}}}
+					],
 					"additionalProperties": false,
 					"properties": {
+						"formationRatingPerRound": {"type": "number", "minimum": 0, "exclusiveMinimum": true, "maximum": 1000000},
 						"leadershipPerRound": {
 							"type": "number",
 							"minimum": 0,

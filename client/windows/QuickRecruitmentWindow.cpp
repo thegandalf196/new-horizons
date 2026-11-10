@@ -14,7 +14,9 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/NewHorizonsEstates.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
+#include "../../lib/entities/hero/NewHorizonsCommandArmy.h"
 #include "../CPlayerInterface.h"
+#include "../UIHelper.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/CreatureCostBox.h"
 #include "../widgets/Slider.h"
@@ -100,28 +102,13 @@ bool hasCompleteCategoryContext(const CGTownInstance * town)
 	return found && std::ranges::all_of(categoryCounts, [](size_t count){ return count <= 5; });
 }
 
-int capByLargestLeadershipSlot(const CGTownInstance * town, CreatureID creature, int requestedMaximum)
+int legalRecruitmentAmount(const CGTownInstance * town, CreatureID creature, int requestedMaximum)
 {
 	if(!town)
 		return requestedMaximum;
 
-	const auto * army = town->getUpperArmy();
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
-	if(!hero)
-		return requestedMaximum;
-
-	const auto capacity = hero->getLeadershipSlotCapacity(creature);
-	if(!capacity)
-		return requestedMaximum;
-
-	const auto slot = newHorizonsHeroes::recruitmentSlot(
-		army, creature, std::numeric_limits<int32_t>::max());
-	if(!slot.validSlot())
-		return 0;
-
-	const int64_t existingCount = army->slotEmpty(slot) ? 0 : army->getStackCount(slot);
-	const int64_t headroom = std::max<int64_t>(0, static_cast<int64_t>(capacity->maximum) - existingCount);
-	return static_cast<int>(std::min<int64_t>(requestedMaximum, headroom));
+	return UIHelper::recruitmentPosition(town->getUpperArmy(), creature, requestedMaximum).validSlot()
+		? requestedMaximum : 0;
 }
 
 std::vector<CreatureID> displayVariantsAtLevel(const CGTownInstance * town, size_t level, bool built)
@@ -340,7 +327,7 @@ void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePur
 	{
 		si32 maxAmount = recruitmentAmount(i->creatureOnTheCard->getId(), allAvailableResources, i->maxAmount);
 		vstd::amin(maxAmount, i->maxAmount);
-		maxAmount = capByLargestLeadershipSlot(town, i->creatureOnTheCard->getId(), maxAmount);
+		maxAmount = legalRecruitmentAmount(town, i->creatureOnTheCard->getId(), maxAmount);
 
 		i->slider->setAmount(maxAmount);
 
@@ -358,7 +345,18 @@ void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePur
 
 void QuickRecruitmentWindow::purchaseUnits()
 {
-	int freeSlotsLeft = town->getUpperArmy()->getFreeSlots().size();
+	const auto * army = town->getUpperArmy();
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+	const bool commandArmy = hero && hero->getArmyCommand().has_value();
+	std::vector<newHorizonsHeroes::RecruitmentSlot> incoming;
+	if(commandArmy)
+		for(const auto & card : std::views::reverse(cards))
+			if(card->slider->getValue() > 0)
+				incoming.push_back({SlotID(static_cast<int>(incoming.size())),
+					card->creatureOnTheCard->getId(), card->slider->getValue()});
+	if(!UIHelper::checkRecruitmentPlan(army, incoming))
+		return;
+	int freeSlotsLeft = army->getFreeSlots().size();
 
 	for(auto selected : std::views::reverse(cards))
 	{
@@ -368,12 +366,12 @@ void QuickRecruitmentWindow::purchaseUnits()
 		const int level = selected->recruitmentLevel;
 
 		CreatureID crid = selected->creatureOnTheCard->getId();
-		SlotID dstslot = newHorizonsHeroes::recruitmentSlot(
+		SlotID dstslot = UIHelper::recruitmentPosition(
 			town->getUpperArmy(), crid, selected->slider->getValue());
 		if(!dstslot.validSlot())
 			continue;
 
-		if(town->getUpperArmy()->slotEmpty(dstslot))
+		if(!commandArmy && town->getUpperArmy()->slotEmpty(dstslot))
 		{
 			if(freeSlotsLeft == 0)
 				continue;
@@ -422,7 +420,7 @@ void QuickRecruitmentWindow::updateAllSliders()
 		const auto ownQuote = recruitmentCost(i->creatureOnTheCard->getId(), i->slider->getValue());
 		si32 maxAmount = recruitmentAmount(i->creatureOnTheCard->getId(), allAvailableResources + ownQuote, i->maxAmount);
 		vstd::amin(maxAmount, i->maxAmount);
-		const int maximumByLeadership = capByLargestLeadershipSlot(
+		const int maximumByPlacement = legalRecruitmentAmount(
 			town, i->creatureOnTheCard->getId(), i->maxAmount);
 		const int currentAmount = i->slider->getValue();
 		if(maxAmount < 0)
@@ -430,7 +428,7 @@ void QuickRecruitmentWindow::updateAllSliders()
 
 		const int64_t affordableTotal = static_cast<int64_t>(maxAmount);
 		const int maximumTotal = static_cast<int>(std::max<int64_t>(0,
-			std::min<int64_t>({i->maxAmount, maximumByLeadership, affordableTotal})));
+			std::min<int64_t>({i->maxAmount, maximumByPlacement, affordableTotal})));
 		i->slider->setAmount(maximumTotal);
 		if(currentAmount > maximumTotal)
 		{

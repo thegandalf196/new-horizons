@@ -1,49 +1,46 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "CHeroWindow.h"
-#include "../CPlayerInterface.h"
+#include "CommandPresentation.h"
 #include "../GameEngine.h"
 #include "../render/IRenderHandler.h"
 #include "render/Canvas.h"
 #include "render/CanvasImage.h"
 #include "../widgets/Images.h"
-#include "../battle/BattleInterface.h"
 #include "../widgets/MiscWidgets.h"
 #include "../widgets/TextControls.h"
-#include "../../lib/battle/CPlayerBattleCallback.h"
-#include "../../lib/battle/IBattleState.h"
-#include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
+#include <boost/algorithm/string/replace.hpp>
+
+void CHeroWindow::refreshCommandPresentation()
+{
+	refreshHero(isActive());
+}
+
+void CHeroWindow::refreshLegacyCommandReadout()
+{
+	const auto command = curHero->getArmyCommand();
+	legacyCommandArea->setEnabled(command.has_value());
+	legacyLeadershipLabel->setEnabled(command.has_value());
+	legacyLeadershipImage->setEnabled(command.has_value());
+	if(command)
+	{
+		legacyCommandArea->text = commandPresentation::commandHelp(*curHero);
+		auto label = LIBRARY->generaltexth->translate("new-horizons.command.value");
+		boost::replace_all(label, "%COMMAND%", std::to_string(command->effective()));
+		legacyCommandArea->hoverText = label;
+		legacyLeadershipLabel->setText(label);
+	}
+}
 
 void CHeroWindow::refreshCommandReadout()
 {
-	// This helper returns a detached capacity calculation; it never initializes
-	// or replenishes a battle. Only authoritative battle acceptance spends it.
-	const auto capacity = newHorizonsCommand::initialState(curHero);
-	commandValue->setText(capacity.initialized ? std::to_string(capacity.maximum) : "--");
-	commandArea->text = capacity.initialized
-		? "Maximum Command per battle: " + std::to_string(capacity.maximum)
-			+ ". A new battle starts with this capacity. Each Order costs 1 Command and the shared Hero Action. Command does not regenerate during combat."
-		: "No saved Command rules are available for this hero.";
-	const auto battleInterface = CPlayerInterface::battleInt;
-	const auto callback = battleInterface ? battleInterface->getBattle() : nullptr;
-	if(!callback || !callback->getBattle())
-		return;
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const auto * fightingHero = callback->battleGetFightingHero(side);
-		if(!fightingHero || fightingHero->id != curHero->id)
-			continue;
-		const auto & pool = callback->getBattle()->getCommandResources(side);
-		if(pool.initialized)
-		{
-			commandValue->setText(std::to_string(pool.remaining) + "/" + std::to_string(pool.maximum));
-			commandArea->text = "Command remaining / maximum in this battle: "
-				+ std::to_string(pool.remaining) + "/" + std::to_string(pool.maximum)
-				+ ". Each Order costs 1 Command and the shared Hero Action. Spent Command is not replenished during combat.";
-		}
-		return;
-	}
+	const auto value = curHero->getArmyCommand();
+	commandArea->text = commandPresentation::commandHelp(*curHero);
+	commandArea->hoverText = commandArea->text;
+	commandValue->setText(value ? std::to_string(value->effective()) : "--");
 }
 
 void CHeroWindow::alignAttributeReadouts()
@@ -60,8 +57,6 @@ void CHeroWindow::alignAttributeReadouts()
 	};
 	for(size_t i = 0; i < primSkillValues.size(); ++i)
 		centerGroup(primSkillValues[i], growthValues[i], 277 + static_cast<int>(i) * 82, 80);
-	if(leadershipValue && leadershipGrowthValue)
-		centerGroup(leadershipValue, leadershipGrowthValue, 246, 118);
 }
 
 void CHeroWindow::addCommandIcon()
@@ -79,5 +74,5 @@ void CHeroWindow::addCommandIcon()
 		canvas.draw(source, Point(0, 0), Rect(10, 2, 27, 31));
 	}
 	foreground->scaleTo(Point(37, 42), EScalingAlgorithm::BILINEAR);
-	capabilityIcons.push_back(std::make_shared<CPicture>(foreground, Point(297, 133)));
+	capabilityIcons.push_back(std::make_shared<CPicture>(foreground, Point(157, 89)));
 }

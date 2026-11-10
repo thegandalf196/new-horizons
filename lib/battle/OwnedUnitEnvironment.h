@@ -13,6 +13,7 @@ namespace battle
 class OwnedUnitBonusFrame;
 class OwnedUnitEnvironmentPolicy;
 class CUnitStateDetached;
+class CUnitState;
 /// Pure copied metadata + retained ordered owned-unit references. Not live admission.
 /// Full frame/recipe owner must retain this environment through every descendant loan.
 class DLL_LINKAGE OwnedUnitEnvironment final : public IUnitEnvironment, boost::noncopyable
@@ -28,6 +29,7 @@ public:
 		std::optional<std::pair<int32_t, int32_t>> legacyLuckLimits; // Captured engine vector lengths, including concrete zero.
 		std::optional<std::pair<int32_t, int32_t>> legacyMoraleLimits; // Captured engine vector lengths; zero is meaningful.
 		std::optional<JsonNode> magicRules; // Engaged null is genuine legacy rules; disengaged is unknown.
+		std::map<uint32_t, int> warfareStatBonuses; // Pure explicit per-occurrence snapshot overrides, not Hero policy.
 		/// Opaque engine-only canonical unit-query dependency owner. Its presence
 		/// grants no Hero metadata or source/capture authority; no public getters.
 		std::shared_ptr<const OwnedUnitEnvironmentPolicy> enginePolicy;
@@ -51,6 +53,10 @@ public:
 	int unitSylvanTacticsInitiativePercent(const Unit * unit) const override;
 	int unitFortuneSpeed(const Unit * unit) const override;
 	int unitSpeedBonus(const Unit * unit) const override;
+	int unitWarfareStatBonus(const Unit * unit) const override;
+	/// Retained fixed loan: copied stat value cannot read an advancing HB/live parent.
+	static std::shared_ptr<CUnitState> acquireStateWithWarfareStatBonus(
+		const std::shared_ptr<OwnedUnitBonusFrame> & frame, int value);
 	bool unitSlowAffectsSpeed(const Unit * unit) const override;
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const Unit * unit) const override;
 	int unitAdditionalRetaliations(const Unit * unit) const override;

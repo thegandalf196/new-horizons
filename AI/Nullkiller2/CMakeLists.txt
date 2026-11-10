@@ -1,4 +1,9 @@
 set(Nullkiller2_SRCS
+		AdventureArmyRecruitment.cpp
+		AIGatewayCommandEnhancement.cpp
+		Analyzers/ArmyUpgradeForecast.cpp
+		Analyzers/ArmyAdmissionForecast.cpp
+		Analyzers/CommandSkillValue.cpp
 		Pathfinding/AIPathfinderConfig.cpp
 		Pathfinding/AIPathfinder.cpp
 		Pathfinding/AIPathNodeExport.cpp

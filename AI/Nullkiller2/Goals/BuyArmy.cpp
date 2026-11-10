@@ -22,6 +22,47 @@ namespace NK2AI
 
 using namespace Goals;
 
+namespace
+{
+struct RecruitmentCandidate
+{
+	const CGDwelling * source = nullptr;
+	ObjectInstanceID portalTownId = ObjectInstanceID::NONE;
+	creInfo creature;
+};
+
+std::vector<RecruitmentCandidate> buildRecruitmentCandidates(
+	AIGateway * aiGw, const CGTownInstance * town, int objid)
+{
+	auto armyToBuy = aiGw->nullkiller->armyManager->getArmyAvailableToBuy(town->getUpperArmy(), town);
+	std::vector<RecruitmentCandidate> candidates;
+	candidates.reserve(armyToBuy.size());
+	for(const auto & creature : armyToBuy)
+	{
+		// The legacy extra town row is not Portal stock. Portal candidates below
+		// are scored directly from the real selected external dwelling.
+		if(newHorizonsMagic::rulesActive(aiGw->cc->getMagicRules()) && creature.level >= 0
+			&& static_cast<size_t>(creature.level) >= town->getTown()->creatures.size())
+			continue;
+		candidates.push_back({town, ObjectInstanceID::NONE, creature});
+	}
+
+	const auto * portalDwelling = aiGw->getBestPortalRecruitmentDwelling(town, town->getUpperArmy());
+	if(portalDwelling)
+	{
+		auto portalArmy = aiGw->nullkiller->armyManager->getArmyAvailableToBuy(
+			town->getUpperArmy(), portalDwelling);
+		for(const auto & creature : portalArmy)
+		{
+			if(objid != CreatureID::NONE && creature.creID.getNum() != objid)
+				continue;
+			candidates.push_back({portalDwelling, town->id, creature});
+		}
+	}
+	return candidates;
+}
+}
+
 bool BuyArmy::operator==(const BuyArmy & other) const
 {
 	return town == other.town && objid == other.objid;
@@ -48,38 +89,8 @@ void BuyArmy::accept(AIGateway * aiGw)
 
 	auto upgradeSuccessful = aiGw->makePossibleUpgrades(town);
 
-	auto armyToBuy = aiGw->nullkiller->armyManager->getArmyAvailableToBuy(town->getUpperArmy(), town);
-	struct RecruitmentCandidate
-	{
-		const CGDwelling * source = nullptr;
-		ObjectInstanceID portalTownId = ObjectInstanceID::NONE;
-		creInfo creature;
-	};
-	std::vector<RecruitmentCandidate> candidates;
+	auto candidates = buildRecruitmentCandidates(aiGw, town, objid);
 	bool portalSourceSelectionSubmitted = false;
-	candidates.reserve(armyToBuy.size());
-	for(const auto & creature : armyToBuy)
-	{
-		// The legacy extra town row is not Portal stock. Portal candidates below
-		// are scored directly from the real selected external dwelling.
-		if(newHorizonsMagic::rulesActive(aiGw->cc->getMagicRules()) && creature.level >= 0
-			&& static_cast<size_t>(creature.level) >= town->getTown()->creatures.size())
-			continue;
-		candidates.push_back({town, ObjectInstanceID::NONE, creature});
-	}
-
-	const auto * portalDwelling = aiGw->getBestPortalRecruitmentDwelling(town, town->getUpperArmy());
-	if(portalDwelling)
-	{
-		auto portalArmy = aiGw->nullkiller->armyManager->getArmyAvailableToBuy(
-			town->getUpperArmy(), portalDwelling);
-		for(const auto & creature : portalArmy)
-		{
-			if(objid != CreatureID::NONE && creature.creID.getNum() != objid)
-				continue;
-			candidates.push_back({portalDwelling, town->id, creature});
-		}
-	}
 
 	if(candidates.empty())
 	{
@@ -107,6 +118,19 @@ void BuyArmy::accept(AIGateway * aiGw)
 
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(town->getUpperArmy());
 		ci.count = candidate.source->getRecruitmentAmount(ci.creID, res, ci.count, hero);
+		if(hero && hero->getArmyCommand())
+		{
+			if(!newHorizonsHeroes::planCommandRecruitment(*hero,
+				newHorizonsHeroes::commandArmySlots(*hero), ci.creID, ci.count)) continue;
+			if(candidate.portalTownId != ObjectInstanceID::NONE && !portalSourceSelectionSubmitted)
+			{
+				aiGw->selectPortalRecruitmentDwelling(town, candidate.source);
+				portalSourceSelectionSubmitted = true;
+			}
+			aiGw->cc->recruitCreatures(candidate.source, hero, ci.creID, ci.count, ci.level, candidate.portalTownId);
+			valueBought += ci.count * ci.creID.toCreature()->getAIValue();
+			continue;
+		}
 		const auto capacity = hero ? hero->getLeadershipSlotCapacity(ci.creID) : std::nullopt;
 		SlotID recruitmentDestination = newHorizonsHeroes::recruitmentSlot(
 			town->getUpperArmy(), ci.creID, ci.count);

@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "../entities/hero/NewHorizonsMasteryRules.h"
+#include "../entities/hero/NewHorizonsCommandOffer.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
 
 #include "CBattleGameInterface.h"
@@ -34,6 +35,8 @@ public:
 
 	//pskill is gained primary skill, interface has to choose one of given skills and call callback with selection id
 	virtual void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) {}
+	virtual void heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhancementOffer & offer, QueryID queryID) {}
+	virtual void commandProgressionChanged(ObjectInstanceID hero) {}
 	virtual void heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)=0;
 	virtual void heroGotLevelWithReroll(const CGHeroInstance * hero, PrimarySkill pskill,

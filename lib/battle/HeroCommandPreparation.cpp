@@ -3,10 +3,12 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "OrderFormation.h"
 #include "CBattleInfoCallback.h"
 #include "HeroCommandAdjacency.h"
 #include "HeroCommandCoefficient.h"
 #include "NewHorizonsCommandResources.h"
+#include "NewHorizonsWarfare.h"
 #include "IBattleState.h"
 #include "CUnitState.h"
 #include "NewHorizonsArchery.h"
@@ -115,17 +117,23 @@ std::optional<heroCommands::RevisedOrderSnapshot> CBattleInfoCallback::battlePre
 	const auto issuedRound = order.issuedRound;
 	const auto * hero = battleGetFightingHero(side);
 	const auto & originalRules = getBattle()->getHeroCommandRules()["commands"][heroCommands::key(command)];
-	const auto rules = crown ? heroCommands::crownRevisedOrderDefinition(originalRules, command) : originalRules;
+	const bool formation = newHorizonsWarfare::usesRules(getBattle()->getHeroCommandRules());
+	const auto rules = crown && !formation ? heroCommands::crownRevisedOrderDefinition(originalRules, command) : originalRules;
 	const auto ownCombatUnit = [this, side](const battle::Unit * unit)
 	{
 		return battleOwnOrderUnitRejection(side, unit) == heroCommands::TargetRejection::NONE;
 	};
 	int64_t leadership = 0;
-	if(const auto capacity = hero->getLeadershipCapacity())
-		leadership = capacity->capacity;
+	if(!formation)
+		if(const auto capacity = hero->getLeadershipCapacity()) leadership = capacity->capacity;
 	const auto ratings = heroCommands::CoefficientInputs::projected(*hero,
 		visibleHeroBonuses(side, Selector::type()(BonusType::PRIMARY_SKILL), false));
-	auto revision = heroCommands::scaledRevisedOrderSnapshot(command, issuedRound,
+	auto revision = formation ? orderFormation::snapshot(getBattle()->getHeroCommandRules(), command, issuedRound,
+		ratings.primary(PrimarySkill::ATTACK), ratings.primary(PrimarySkill::DEFENSE), orderFormation::command(*hero),
+		heroCommands::attributeEfficiencyPercent(*hero, PrimarySkill::ATTACK, order.divineMandateEfficiencyBonusPercent(), true),
+		heroCommands::attributeEfficiencyPercent(*hero, PrimarySkill::DEFENSE, order.divineMandateEfficiencyBonusPercent(), true),
+		heroCommands::leadershipEfficiencyPercent(*hero, order.divineMandateEfficiencyBonusPercent()), crown)
+		: heroCommands::scaledRevisedOrderSnapshot(command, issuedRound,
 		ratings.primary(PrimarySkill::ATTACK), ratings.primary(PrimarySkill::DEFENSE),
 		leadership, rules,
 		heroCommands::attributeEfficiencyPercent(*hero, PrimarySkill::ATTACK, order.divineMandateEfficiencyBonusPercent(), true),
@@ -157,6 +165,8 @@ void CBattleInfoCallback::battleCaptureHeroOrderModifiers(BattleSide side, HeroO
 	const auto * hero = battleGetFightingHero(side);
 	const auto * rules = &getBattle()->getHeroCommandRules()["commands"][heroCommands::key(command)];
 	const auto allowance = battleGetOrderActionAllowance(side);
+	result.heroicSpiritEfficiencyBonusPercent = newHorizonsCommand::heroicSpiritEfficiency(hero, battleGetHeroMorale(side));
+	result.battlePlanEfficiencyBonusPercent = newHorizonsWarfare::battlePlanBonus(*this, side);
 	const auto passive = newHorizonsPassiveDivineMandate::capturePolicy(hero);
 	if(passive.rank != 0)
 		result.passiveDivineMandate = passive;
@@ -206,7 +216,6 @@ std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateIm
 	if(result.issuedRound < 1)
 		return reject(Reason::UNAVAILABLE);
 	battleCaptureHeroOrderModifiers(side, result);
-	result.heroicSpiritEfficiencyBonusPercent = newHorizonsCommand::heroicSpiritEfficiency(hero);
 
 	if(command == HeroCommand::FEINT || command == HeroCommand::VANGUARD)
 	{

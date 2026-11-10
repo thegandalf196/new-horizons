@@ -9,7 +9,8 @@
 		"heroCommands": {
 			"schemaVersion": 1,
 			"rulesetVersion": 4,
-			"commandResourcePolicyVersion": 1,
+			"warfarePolicyVersion": 1,
+			"formationRating": {"version": 1, "attributeDivisor": 2, "commandMultiplier": 10},
 			"perkBonuses": { "spearheadDamagePercent": 5, "shieldMasterReductionPercent": 5, "combinedArmsFeintReductionPercent": 5 },
 			"commands": {
 				"charge": {
@@ -46,7 +47,7 @@
 					"effects": {
 						"retaliationDamageReductionPercent": {
 							"base": 15,
-							"leadership": 0.015,
+							"formationRating": 0.10,
 							"cap": 60
 						}
 					}
@@ -55,7 +56,7 @@
 					"kind": "order",
 					"coverage": "ownNonUndeadNonMechanicalAtIssue",
 					"duration": {
-						"leadershipPerRound": 750,
+						"formationRatingPerRound": 150,
 						"minimum": 1,
 						"maximum": 3
 					},
@@ -75,7 +76,7 @@
 				"secondWind": {
 					"kind": "order", "coverage": "ownLivingNonWarMachines", "duration": "round",
 					"target": "friendlyCompletedActivation",
-					"effects": { "additionalActivationDamagePercent": { "base": 50, "attack": 0, "defense": 0 } }
+					"effects": { "additionalActivationDamagePercent": { "base": 50, "formationRating": 0.10, "cap": 100 } }
 				}
 			}
 		}

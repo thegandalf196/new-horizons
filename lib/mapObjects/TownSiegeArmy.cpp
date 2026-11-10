@@ -79,7 +79,8 @@ void mergeLeadershipGarrison(const CGTownInstance & town, const CGHeroInstance &
 		SlotID weakest;
 		auto weakestPower = remaining.getPower();
 		for(const auto & [slot, stack] : hero.Slots())
-			if(stack->getPower() < weakestPower)
+			if(stack->getPower() < weakestPower
+				&& newHorizonsHeroes::armySlotAccepts(&hero, slot, creature, remaining.getCount()))
 			{
 				weakest = slot;
 				weakestPower = stack->getPower();
@@ -95,6 +96,23 @@ void CGTownInstance::mergeGarrisonOnSiege(IGameEventCallback & gameEvents) const
 	const auto * hero = getVisitingHero();
 	if(!hero)
 		return;
+	if(hero->getArmyCommand())
+	{
+		// Town storage is unrestricted; retain every blocked town stack.
+		if(const auto plan = newHorizonsHeroes::planCommandArmyAddition(*hero, *hero, *this))
+		{
+			for(const auto & move : plan->moves)
+			{
+				const StackLocation from(move.withinDestination ? hero->id : id, move.source);
+				const StackLocation to(hero->id, move.destination);
+				const bool accepted = move.swap ? gameEvents.swapStacks(from, to) : gameEvents.moveStack(from, to, move.count);
+				if(!accepted) throw std::runtime_error("Preflighted siege Command transfer was rejected");
+			}
+		}
+		else
+			mergeLeadershipGarrison(*this, *hero, gameEvents);
+		return;
+	}
 	if(std::ranges::any_of(Slots(), [hero](const auto & entry)
 	{
 		return hero->getLeadershipSlotCapacity(entry.second->getCreatureID()).has_value();

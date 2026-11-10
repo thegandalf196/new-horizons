@@ -55,6 +55,30 @@ set(lib_SRCS
 )
 
 set(lib_MAIN_SRCS
+	battle/NewHorizonsWarfare.cpp
+	battle/NewHorizonsWarfareQueries.cpp
+	battle/HeroCommandFocusFire.cpp
+	battle/HeroActionAllowanceState.cpp
+	battle/DamageFinalizationWarfare.cpp
+	battle/CommandArmyBonuses.cpp
+	battle/UnitCombatStats.cpp
+	battle/StackUnitEnvironment.cpp
+	battle/OrderFormation.cpp
+	entities/creature/NewHorizonsAssimilation.cpp
+	entities/hero/NewHorizonsCommandRules.cpp
+	entities/hero/NewHorizonsCommandState.cpp
+	entities/hero/NewHorizonsCommandStateJson.cpp
+	entities/hero/NewHorizonsCommandPlacement.cpp
+	entities/hero/NewHorizonsCommandArmy.cpp
+	entities/hero/NewHorizonsCommandOffer.cpp
+	entities/hero/NewHorizonsCommandAdmission.cpp
+	entities/hero/NewHorizonsCapabilityRulesLeadership.cpp
+	gameState/CommandAuthorityAdmission.cpp
+	gameState/CommandProgressionPacks.cpp
+	mapObjects/HeroCommandProgression.cpp
+	mapObjects/HeroCommandArmy.cpp
+	mapObjects/CreatureJoinReward.cpp
+	mapObjects/DwellingRecruitment.cpp
 	combatScripts/NativeCombatEvents.cpp
 	combatScripts/NativeJsonParameters.cpp
 	combatScripts/nativeEvents/NativeEventCommon.cpp
@@ -1063,6 +1087,16 @@ set(lib_HEADERS
 )
 
 set(lib_MAIN_HEADERS
+	battle/NewHorizonsWarfare.h
+	battle/CommandArmyBonuses.h
+	battle/OrderFormation.h
+	entities/creature/NewHorizonsAssimilation.h
+	entities/hero/NewHorizonsCommandRules.h
+	entities/hero/NewHorizonsCommandState.h
+	entities/hero/NewHorizonsCommandPlacement.h
+	entities/hero/NewHorizonsCommandArmy.h
+	entities/hero/NewHorizonsCommandOffer.h
+	entities/hero/NewHorizonsCommandAdmission.h
 	combatScripts/NativeCombatEvents.h
 	combatScripts/nativeEvents/NativeEventCommon.h
 	combatScripts/NativeJsonParameters.h

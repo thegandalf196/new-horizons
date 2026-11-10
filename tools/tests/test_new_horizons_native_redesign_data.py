@@ -6,7 +6,7 @@ import json
 import unittest
 from pathlib import Path
 
-from jsonschema import Draft4Validator
+from jsonschema import Draft4Validator, RefResolver
 from referencing import Registry, Resource
 
 
@@ -15,6 +15,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def load(path):
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
+
+
+def local_validator(name):
+    schema = load(f"config/schemas/{name}.json")
+    return Draft4Validator(schema, resolver=RefResolver(
+        base_uri=(ROOT / "config/schemas").as_uri() + "/", referrer=schema))
 
 
 class NativeRedesignDataTest(unittest.TestCase):
@@ -30,9 +36,11 @@ class NativeRedesignDataTest(unittest.TestCase):
         self.magic_validator = Draft4Validator(schemas["newHorizonsMagicV3"], registry=registry)
 
     def test_new_default_profiles_and_module_are_identical(self):
-        self.assertEqual(self.perks["commandPolicyVersion"], 1)
+        self.assertEqual(self.perks["warfarePolicyVersion"], 1)
+        self.assertEqual(self.perks["commandAuthorityPolicy"], {"version": 1})
         self.assertEqual(self.perks["elementalAttunementPolicy"], {"version": 1})
-        self.assertEqual(self.orders["commandResourcePolicyVersion"], 1)
+        self.assertEqual(self.orders["warfarePolicyVersion"], 1)
+        self.assertNotIn("commandResourcePolicyVersion", self.orders)
         self.magic_validator.validate(self.magic)
         Draft4Validator(load("config/schemas/newHorizonsPerks.json")).validate(self.perks)
         Draft4Validator(load("config/schemas/newHorizonsCombatV4.json")).validate(self.orders)
@@ -42,11 +50,11 @@ class NativeRedesignDataTest(unittest.TestCase):
         self.assertEqual(module["settings"]["combat"]["heroCommands"], self.orders)
         self.assertEqual(module["skills"], self.skill_entities)
 
-    def test_active_profiles_cannot_omit_or_spoof_finite_command_markers(self):
+    def test_active_profiles_cannot_omit_or_spoof_warfare_and_attunement_markers(self):
         for rules, schema, key in (
-                (self.perks, "newHorizonsPerks", "commandPolicyVersion"),
+                (self.perks, "newHorizonsPerks", "warfarePolicyVersion"),
                 (self.perks, "newHorizonsPerks", "elementalAttunementPolicy"),
-                (self.orders, "newHorizonsCombatV4", "commandResourcePolicyVersion")):
+                (self.orders, "newHorizonsCombatV4", "warfarePolicyVersion")):
             validator = Draft4Validator(load(f"config/schemas/{schema}.json"))
             missing = copy.deepcopy(rules)
             missing.pop(key)
@@ -84,7 +92,7 @@ class NativeRedesignDataTest(unittest.TestCase):
         retired = ("undertowRetaliationPercent", "mobPressureDamagePercent",
                    "evasiveFlightReductionPercent", "tidalRenewalHealingHP",
                    "sepulchralGripSpeedReduction")
-        validator = Draft4Validator(load("config/schemas/newHorizonsHeroes.json"))
+        validator = local_validator("newHorizonsHeroes")
         validator.validate(heroes)
         for key in retired:
             self.assertNotIn(key, ordinary)
@@ -107,15 +115,17 @@ class NativeRedesignDataTest(unittest.TestCase):
         command = self.perks["skills"]["new-horizons:command"]
         self.assertEqual(command["availability"], "Might-exclusive")
         expected = {"battlePlan": "Battle Plan", "crisisCommand": "Unbroken Ranks",
-                    "doubleCommand": "Master Commander", "seizeInitiative": "Grand Marshal"}
+                    "doubleCommand": "Master Commander", "decisiveOrders": "Decisive Orders"}
         for row in command["perks"]:
             suffix = row["id"].split(".")[-1]
             if suffix in expected:
                 self.assertEqual(row["name"], expected[suffix])
             self.assertNotIn("immediately issue", row["description"])
-        for rank, extra in zip(("basic", "advanced", "expert"), (1, 2, 3)):
+        self.assertNotIn("new-horizons:command.seizeInitiative", {row["id"] for row in command["perks"]})
+        for rank, efficiency in zip(("basic", "advanced", "expert"), (110, 120, 130)):
             text = command["ranks"][rank]["description"]
-            self.assertIn(f"maximum Command by {extra}", text)
+            self.assertIn(f"{efficiency}% Order Efficiency", text)
+            self.assertNotIn("maximum Command", text)
             self.assertEqual(self.skill_entities["command"][rank]["description"], text)
 
     def test_attunement_ten_perks_preserve_tier_counts_and_ids(self):

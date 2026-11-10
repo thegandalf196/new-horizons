@@ -1,5 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../hero/HistoricalCapabilityRules.h"
+#include "../hero/CommandTestSupport.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/json/JsonValidator.h"
 #include "../../lib/mapObjects/NewHorizonsNeutralCalibration.h"
@@ -208,7 +210,7 @@ namespace
 {
 void configureSingleKnightReference(GameSettings & settings, int recruitmentPercent)
 {
-	JsonNode capabilities(JsonPath::builtin("config/newHorizonsCapabilities"));
+	auto capabilities = historicalCapabilityRulesV4();
 	const auto knight = capabilities["classProfiles"]["core:knight"];
 	capabilities["classProfiles"].Struct().clear();
 	capabilities["classProfiles"]["core:knight"] = knight;
@@ -263,4 +265,72 @@ TEST(NewHorizonsNeutralCalibration, PositiveRecruitmentKeepsTheExactFiftyPercent
 	EXPECT_EQ(capture(half), captured);
 	EXPECT_EQ(newHorizonsRecruitmentGrowth::percentage(half), 50);
 	EXPECT_EQ(newHorizonsRecruitmentGrowth::scale(7, 50), 4);
+}
+
+TEST(NewHorizonsNeutralCalibration, FreshCommandCaptureIgnoresEveryRetiredInputAndHistoricalCurveOverride)
+{
+	GameSettings settings;
+	configureSingleKnightReference(settings, 50);
+	auto capability = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
+	capability["armyCommand"] = commandTest::policy();
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capability);
+	EXPECT_EQ(capture(settings), disabledSnapshot());
+	capability["classProfiles"]["core:knight"]["base"].Integer() = 1;
+	capability["classProfiles"]["core:knight"]["perLevel"].Integer() = 1000000;
+	capability["leadership"]["globalScalePercent"].Integer() = 10000;
+	capability["leadership"]["creatureRequirements"]["core:pikeman"].Integer() = 1000000;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capability);
+	EXPECT_EQ(capture(settings), disabledSnapshot());
+	// An enabled saved curve is not adopted when capturing a fresh Command world.
+	settings.addOverride(option, curve());
+	EXPECT_EQ(capture(settings), disabledSnapshot());
+	capability.Struct().erase("classProfiles");
+	capability.Struct().erase("leadership");
+	capability["rulesetVersion"].Integer() = 5;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capability);
+	EXPECT_EQ(capture(settings), disabledSnapshot());
+	EXPECT_EQ(newHorizonsRecruitmentGrowth::percentage(settings), 50);
+}
+
+TEST(NewHorizonsNeutralCalibration, HistoricalCurveDecodeNeverConsultsCurrentCommandPolicy)
+{
+	GameSettings settings;
+	configureSingleKnightReference(settings, 50);
+	settings.addOverride(option, curve());
+	EXPECT_EQ(capture(settings), curve());
+	const Rules historical(settings.getValue(option));
+	EXPECT_EQ(historical.budget(3000), 1500);
+	EXPECT_EQ(historical.counts({{100, 60}, {100, 60}, {100, 60}}), (std::vector<TQuantity>{22, 22, 22}));
+	auto capability = settings.getValue(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES);
+	capability["armyCommand"] = commandTest::policy();
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capability);
+	// Decoding captured history is deliberately different from fresh capture.
+	EXPECT_EQ(Rules(settings.getValue(option)).budget(3000), 1500);
+	EXPECT_EQ(settings.getValue(option), curve());
+}
+
+TEST(NewHorizonsNeutralCalibration, ShippedDisabledDefaultNeverReadsHeroGoldOrRecruitmentReferences)
+{
+	const JsonNode installed(JsonPath::builtin("config/gameConfig"));
+	const auto & definition = installed["settings"]["creatures"][SETTING_KEY];
+	ASSERT_EQ(definition, disabledSnapshot());
+	class StockOnlySettings final : public IGameSettings
+	{
+		JsonNode definition;
+	public:
+		explicit StockOnlySettings(JsonNode value) : definition(std::move(value)) {}
+		JsonNode getFullConfig() const override { throw std::runtime_error("Unexpected full settings read"); }
+		const JsonNode & getValue(EGameSettings requested) const override
+		{
+			if(requested != option)
+				throw std::runtime_error("Stock neutrals must not read reference settings");
+			return definition;
+		}
+	};
+	StockOnlySettings settings(definition);
+	EXPECT_EQ(capture(settings), disabledSnapshot());
+	const Rules stock(capture(settings));
+	EXPECT_FALSE(stock.enabled());
+	EXPECT_EQ(stock.budget(std::numeric_limits<int64_t>::max()), std::numeric_limits<int64_t>::max());
+	EXPECT_EQ(stock.counts({{4001, 0}, {1000000, 0}}), (std::vector<TQuantity>{4001, 1000000}));
 }

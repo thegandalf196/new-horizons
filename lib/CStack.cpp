@@ -14,6 +14,7 @@
 #include "battle/AttackAbilityQueries.h"
 #include "battle/BattleBonusAcceptance.h"
 #include "battle/StackInitializationReceipts.h"
+#include "battle/CommandArmyBonuses.h"
 
 #include <vstd/RNG.h>
 
@@ -64,6 +65,7 @@ void CStack::localInit(BattleInfo * battleInfo)
 		// auras use this owned stack, not the ownerless creature definition.
 		attachTo(*army);
 	}
+	commandArmyBonuses::initialize(*this);
 	receipts.initialize(*this, this, initialPosition);
 }
 
@@ -429,54 +431,6 @@ void CStack::captureBattleStartMaximumAggregateHP()
 const IBonusBearer* CStack::getBonusBearer() const
 {
 	return this;
-}
-
-bool CStack::unitHasAmmoCart(const battle::Unit * unit) const
-{
-	return battle->battleUnitHasAmmoCart(unit);
-}
-
-PlayerColor CStack::unitEffectiveOwner(const battle::Unit * unit) const
-{
-	return battle->battleGetOwner(unit);
-}
-
-int CStack::unitSylvanTacticsSpeed(const battle::Unit * unit, int turn) const
-{
-	return battle->battleSylvanTacticsSpeed(unit, turn);
-}
-
-int CStack::unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const
-{
-	return battle->battleSylvanTacticsInitiativePercent(unit);
-}
-
-int CStack::unitFortuneSpeed(const battle::Unit * unit) const
-{
-	return battle->battleFortuneSpeed(unit);
-}
-
-int CStack::unitSpeedBonus(const battle::Unit * unit) const
-{
-	return battle->battleBloodrageSpeed(unit);
-}
-
-int CStack::unitAdditionalRetaliations(const battle::Unit * unit) const
-{
-	return battle->battleBloodrageRetaliations(unit)
-		+ newHorizonsPassiveDivineMandate::activeOrderRiders(*battle, unit).extraRetaliations;
-}
-
-int CStack::unitBloodragePainIncrement(const battle::Unit * unit) const
-{
-	return battle ? battle->battleBloodragePainIncrement(unit) : 0;
-}
-
-std::optional<int> CStack::unitMagicResistance(const battle::Unit * unit) const
-{
-	if(!battle || !unit)
-		return std::nullopt;
-	return battle->battleGetMagicResistance(unit);
 }
 
 uint32_t CStack::unitId() const

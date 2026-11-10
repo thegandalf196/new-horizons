@@ -181,9 +181,6 @@ std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (compl
 		if(showNewHorizonsStats)
 		{
 			stats.push_back({tr("new-horizons.fort.stat.initiative"), std::to_string(creature->getBaseInitiative())});
-			const int requirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
-				*capabilityRules, creature->getId());
-			stats.push_back({tr("new-horizons.fort.stat.leadershipCost"), requirement > 0 ? std::to_string(requirement) : "--"});
 		}
 		stats.push_back({tr("core.help.439.help"), std::to_string(fakeStack.getMaxHealth())});
 		stats.push_back({tr("core.genrltxt.194"),    std::to_string(creature->getGrowth())});

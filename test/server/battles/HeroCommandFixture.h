@@ -11,6 +11,7 @@
 
 #include "BattleTestFixture.h"
 #include "../../SpellPointTestUtils.h"
+#include "../../hero/HistoricalCapabilityRules.h"
 #include "../../../lib/battle/HeroCommand.h"
 #include "../../../lib/filesystem/ResourcePath.h"
 #include "../../../lib/mapping/CMap.h"
@@ -40,7 +41,10 @@ protected:
 		// A legacy-command fixture must also retain legacy primary ratings.
 		// Expanded ratings without their required commands is invalid, not legacy.
 		if(!useCommands)
+		{
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
+		}
 	}
 
 	void prepareCommands(bool spellbook = false)

@@ -8,6 +8,7 @@
  */
 #include "StdInc.h"
 #include "CGameHandler.h"
+#include "CommandArmyAdmission.h"
 
 #include "../lib/CStack.h"
 #include "../lib/mapObjects/CRewardableObject.h"
@@ -39,6 +40,8 @@ void collectBankCreatures(CGameHandler & handler, const CArmedInstance & source,
 				const bool occupied = hero.hasStackAtSlot(destination);
 				if(pass == 0 ? !occupied || hero.getStackPtr(destination)->getCreatureID() != creature : occupied)
 					continue;
+				if(!newHorizonsHeroes::armySlotAccepts(&hero, destination, creature, 1))
+					continue;
 				const auto currentCount = occupied ? hero.getStackCount(destination) : 0;
 				auto count = std::min(source.getStackCount(sourceSlot), std::numeric_limits<TQuantity>::max() - currentCount);
 				if(const auto capacity = hero.getLeadershipSlotCapacity(creature))
@@ -62,10 +65,10 @@ void CGameHandler::giveCreatures(const CArmedInstance * obj, const CGHeroInstanc
 	}
 	const auto * bank = dynamic_cast<const CRewardableObject *>(obj);
 	const bool bankReward = bank && bank->ID == Obj::CREATURE_BANK
-		&& std::ranges::any_of(creatures.Slots(), [hero](const auto & entry)
+		&& (hero->getArmyCommand().has_value() || std::ranges::any_of(creatures.Slots(), [hero](const auto & entry)
 		{
 			return hero->getLeadershipSlotCapacity(entry.second->getCreatureID()).has_value();
-		});
+		}));
 	// Keep the existing nonbank and direct-reward admission contracts. Banks can
 	// retain a partial reward and therefore must reach the validated exchange.
 	if(!bankReward && hero->canBeMergedWith(creatures, true) && !validateLeadershipArmyAddition(hero, creatures))
@@ -83,7 +86,10 @@ void CGameHandler::giveCreatures(const CArmedInstance * obj, const CGHeroInstanc
 
 	if(bankReward)
 	{
-		collectBankCreatures(*this, *obj, *hero);
+		if(hero->getArmyCommand() && newHorizonsHeroes::planCommandArmyAddition(*hero, *hero, *obj))
+			moveArmy(obj, hero, true);
+		else
+			collectBankCreatures(*this, *obj, *hero);
 		if(obj->stacksCount() == 0)
 		{
 			setObjPropertyValue(obj->id, ObjProperty::BANK_PENDING_CREATURE_REWARD, false);
@@ -93,4 +99,41 @@ void CGameHandler::giveCreatures(const CArmedInstance * obj, const CGHeroInstanc
 	tryJoiningArmy(obj, hero, remove, true);
 	if(bankReward && obj->stacksCount() == 0)
 		setObjPropertyValue(obj->id, ObjProperty::BANK_PENDING_CREATURE_REWARD, false);
+}
+
+void CGameHandler::giveCreatures(const CGHeroInstance * hero, const CCreatureSet & creatures)
+{
+	if(hero->getArmyCommand())
+	{
+		commandArmyAdmission::give(*this, *hero, creatures);
+		return;
+	}
+	if(!hero->canBeMergedWith(creatures, true))
+	{
+		complain("Unable to give creatures! Hero does not have enough free slots to receive them!");
+		return;
+	}
+	if(!validateLeadershipArmyAddition(hero, creatures)) return;
+	for(const auto & [slot, stack] : creatures.Slots())
+	{
+		auto position = hero->getSlotFor(stack->getCreature());
+		if(!position.validSlot())
+		{
+			std::pair<SlotID, SlotID> merge;
+			if(hero->mergeableStacks(merge))
+			{
+				if(!moveStack({hero->id, merge.first}, {hero->id, merge.second})) return;
+				position = merge.first;
+			}
+		}
+		if(!position.validSlot() || (!hero->slotEmpty(position) && hero->getCreature(position) != stack->getCreature()))
+		{
+			complain("Unable to give creatures: no valid destination slot remained.");
+			return;
+		}
+		if(hero->hasStackAtSlot(position))
+			changeStackCount({hero->id, position}, stack->getCount(), ChangeValueMode::RELATIVE);
+		else
+			insertNewStack({hero->id, position}, stack->getCreature(), stack->getCount());
+	}
 }

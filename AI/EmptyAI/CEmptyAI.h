@@ -23,6 +23,7 @@ public:
 	void yourTacticPhase(const BattleID & battleID, int distance) override;
 	void activeStack(const BattleID & battleID, const CStack * stack) override;
 	void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) override;
+	void heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhancementOffer & offer, QueryID queryID) override;
 	void heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID) override;
 	void commanderGotLevel (const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID) override;

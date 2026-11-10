@@ -8,6 +8,7 @@
 #include "../../../lib/gameState/UpgradeInfo.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/army/CStackInstance.h"
+#include "../../../lib/entities/hero/NewHorizonsLeadership.h"
 namespace NK2AI::armyUpgrade
 {
 namespace
@@ -27,6 +28,14 @@ std::optional<CreatureID> choose(const CStackInstance & stack, const UpgradeInfo
 	std::vector<CreatureID> viable;
 	for(const auto upgrade : offers.getAvailableUpgrades())
 	{
+		if(carrier && carrier->getArmyCommand())
+		{
+			const auto found = std::ranges::find_if(carrier->Slots(), [&stack](const auto & row) { return row.second.get() == &stack; });
+			if(found != carrier->Slots().end()
+				&& newHorizonsHeroes::armySlotAccepts(carrier, found->first, upgrade, stack.getCount()))
+				viable.push_back(upgrade);
+			continue;
+		}
 		const auto capacity = carrier ? carrier->getLeadershipSlotCapacity(upgrade) : std::nullopt;
 		if(!capacity || capacity->accepts(stack.getCount()))
 			viable.push_back(upgrade);

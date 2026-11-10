@@ -39,7 +39,7 @@ CLoadFile::CLoadFile(const boost::filesystem::path & fname, IGameInfoCallback * 
 	sfile.read(reinterpret_cast<char*>(&serializer.version), sizeof(serializer.version));
 
 	if(serializer.version < ESerializationVersion::MINIMAL)
-		throw std::runtime_error("Error: too old file format detected in '" + fname.string() + "'!");
+		throw std::runtime_error("Error: this save predates the Command/Authority redesign; start a new game. File: '" + fname.string() + "'.");
 
 	if(serializer.version > ESerializationVersion::CURRENT)
 	{

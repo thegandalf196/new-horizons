@@ -1,19 +1,20 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema",
 	"title": "Saved New Horizons hero capability rules",
-	"description": "Saved Leadership, Siege, and War Machine shop rules. Ruleset v1 preserves the retired aggregate soft-cap preview; v2 uses independent per-slot creature limits; v3 adds canonical War Machines rank tables; v4 adds the saved universal Blacksmith inventory and faction prices.",
+	"description": "Saved capability rules. V5 requires armyCommand and excludes retired Leadership growth and creature costs. V1-V4 remain historical readers; Siege and War Machine shop formulas are unchanged.",
 	"type": "object",
 	"oneOf": [
 		{"maxProperties": 0},
 		{
-			"required": ["schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege"],
+			"required": ["schemaVersion", "rulesetVersion", "siege"],
 			"additionalProperties": false,
 			"dependencies": {
-				"skeletonTransformer": {"properties": {"rulesetVersion": {"enum": [4]}}}
+				"skeletonTransformer": {"properties": {"rulesetVersion": {"enum": [4, 5]}}}
 			},
 			"allOf": [{
 				"oneOf": [
 					{
+						"required": ["classProfiles", "leadership"],
 						"not": {"required": ["warMachineShop"]},
 						"properties": {
 							"rulesetVersion": {"enum": [1]},
@@ -22,6 +23,7 @@
 						}
 					},
 					{
+						"required": ["classProfiles", "leadership"],
 						"not": {"required": ["warMachineShop"]},
 						"properties": {
 							"rulesetVersion": {"enum": [2]},
@@ -30,6 +32,7 @@
 						}
 					},
 					{
+						"required": ["classProfiles", "leadership"],
 						"not": {"required": ["warMachineShop"]},
 						"properties": {
 							"rulesetVersion": {"enum": [3]},
@@ -38,16 +41,26 @@
 						}
 					},
 					{
-						"required": ["warMachineShop"],
+						"required": ["warMachineShop", "classProfiles", "leadership"],
 						"properties": {
 							"rulesetVersion": {"enum": [4]},
 							"leadership": {"required": ["creatureRequirements"]},
+							"siege": {"required": ["outputs", "siegeRating", "directControlChance"]}
+						}
+					},
+					{
+						"required": ["warMachineShop", "armyCommand"],
+						"properties": {
+							"rulesetVersion": {"enum": [5]},
+							"classProfiles": {"not": {}},
+							"leadership": {"not": {}},
 							"siege": {"required": ["outputs", "siegeRating", "directControlChance"]}
 						}
 					}
 				]
 			}],
 			"properties": {
+				"armyCommand": {"$ref": "#/definitions/armyCommand"},
 				"artifactManaRegeneration": {
 					"type": "object",
 					"required": [
@@ -146,7 +159,7 @@
 					"properties": {"aggregateHealthPercent": {"type": "integer", "minimum": 1, "maximum": 100}}
 				},
 				"schemaVersion": {"type": "integer", "enum": [1]},
-				"rulesetVersion": {"type": "integer", "enum": [1, 2, 3, 4]},
+				"rulesetVersion": {"type": "integer", "enum": [1, 2, 3, 4, 5]},
 				"classProfiles": {
 					"type": "object", "minProperties": 1,
 					"additionalProperties": {
@@ -224,6 +237,90 @@
 		}
 	],
 	"definitions": {
+		"armyCommand": {
+			"type": "object",
+			"required": ["version", "classLevelIntervals", "authorityRankBonuses", "enhancements", "authorityPerks"],
+			"additionalProperties": false,
+			"properties": {
+				"version": {"type": "integer", "enum": [1]},
+				"defaultStartingArmyVersion": {
+					"description": "Generated default Castle packages replace Griffin with Swordsman and Royal Griffin with Crusader unless the resolved specialty grants that source line Core permission. Counts and authored armies are unchanged. Absence retains the captured original package.",
+					"type": "integer", "enum": [1]
+				},
+				"classLevelIntervals": {
+					"type": "object", "minProperties": 1, "additionalProperties": false,
+					"properties": {
+						"core:knight": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:cleric": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:ranger": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:druid": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:alchemist": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:wizard": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:demoniac": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:heretic": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:deathknight": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:necromancer": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:overlord": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:warlock": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:barbarian": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:battlemage": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:beastmaster": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:witch": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:planeswalker": {"$ref": "#/definitions/commandLevelInterval"},
+						"core:elementalist": {"$ref": "#/definitions/commandLevelInterval"}
+					}
+				},
+				"authorityRankBonuses": {
+					"type": "array", "minItems": 4, "maxItems": 4,
+					"items": [
+						{"type": "integer", "enum": [0]},
+						{"type": "integer", "minimum": 0, "maximum": 1000},
+						{"type": "integer", "minimum": 0, "maximum": 1000},
+						{"type": "integer", "minimum": 0, "maximum": 1000}
+					]
+				},
+				"enhancements": {
+					"type": "object", "additionalProperties": false,
+					"required": ["readiness", "mobility", "counterattack", "weaponDrill", "guardDrill", "fortune", "courage", "endurance", "warding"],
+					"properties": {
+						"readiness": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"mobility": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"counterattack": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"weaponDrill": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"guardDrill": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"fortune": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"courage": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"endurance": {"$ref": "#/definitions/commandEnhancementFormula"},
+						"warding": {"$ref": "#/definitions/commandEnhancementFormula"}
+					}
+				},
+				"authorityPerks": {
+					"type": "object", "additionalProperties": false,
+					"required": ["offensiveDrills", "defensiveDrills", "conditioning", "battleReadiness", "officerCorps", "maneuverTraining", "counterattackTraining", "protectiveTraining", "veteranCorps", "grandMarshal"],
+					"properties": {
+						"offensiveDrills": {"$ref": "#/definitions/authorityPassiveValue"},
+						"defensiveDrills": {"$ref": "#/definitions/authorityPassiveValue"},
+						"conditioning": {"$ref": "#/definitions/authorityPassiveValue"},
+						"battleReadiness": {"$ref": "#/definitions/authorityPassiveValue"},
+						"officerCorps": {"$ref": "#/definitions/authorityPassiveValue"},
+						"maneuverTraining": {"$ref": "#/definitions/authorityPassiveValue"},
+						"counterattackTraining": {"$ref": "#/definitions/authorityPassiveValue"},
+						"protectiveTraining": {"$ref": "#/definitions/authorityPassiveValue"},
+						"veteranCorps": {"$ref": "#/definitions/authorityPassiveValue"},
+						"grandMarshal": {"$ref": "#/definitions/authorityPassiveValue"}
+					}
+				}
+			}
+		},
+		"commandLevelInterval": {"type": "integer", "minimum": 1, "maximum": 1000000},
+		"commandEnhancementFormula": {
+			"type": "object", "additionalProperties": false, "required": ["levelDivisor", "multiplier"],
+			"properties": {
+				"levelDivisor": {"type": "integer", "minimum": 1, "maximum": 1000000},
+				"multiplier": {"type": "integer", "minimum": 0, "maximum": 1000000}
+			}
+		},
+		"authorityPassiveValue": {"type": "integer", "minimum": 0, "maximum": 1000000},
 		"warMachineShop": {
 			"type": "object",
 			"required": ["inventory", "discountPercent", "roundingGold", "favoredMachineByFaction"],
