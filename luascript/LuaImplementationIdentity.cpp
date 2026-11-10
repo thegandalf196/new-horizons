@@ -97,12 +97,23 @@ constexpr auto CALCULATOR_LAYERS = []
 	return result;
 }();
 
-// The extracted physical stage is an exact first patch, not an arbitrary import.
-constexpr auto PHYSICAL_PROTECTION_CALCULATOR_LAYERS = []
+// Retain the exact historical physical stage and its existing patches.
+constexpr auto HISTORICAL_PHYSICAL_PROTECTION_CALCULATOR_LAYERS = []
 {
 	std::array<ReviewedLayer, 10> result{};
 	result[0] = {"damage/damageCalculator", "a44dcb1ffce9a7f5300f2026a1e3b1ca72ae30b88c21a3c11f269aeafdf75a93"};
 	result[1] = {"damage/physicalProtection", "f8821b7c9ae90ad1a95b7cf048cbce23fc3180f1ccc8ca4999a9cb31204d318c"};
+	for(size_t index = 0; index < CALCULATOR_PATCHES.size(); ++index)
+		result[index + 2] = CALCULATOR_PATCHES[index];
+	return result;
+}();
+
+// The current physical stage incorporates the command beneficiary and protection updates.
+constexpr auto PHYSICAL_PROTECTION_CALCULATOR_LAYERS = []
+{
+	std::array<ReviewedLayer, 10> result{};
+	result[0] = {"damage/damageCalculator", "fdda87a4eee410a5925498aaff0a4d4c6cc08b97a36d8bf146886dc95e062715"};
+	result[1] = {"damage/physicalProtection", "456ca76fa15012d83772264bf7e8df0e6fd5934f6bb62333fee4103987bcd50e"};
 	for(size_t index = 0; index < CALCULATOR_PATCHES.size(); ++index)
 		result[index + 2] = CALCULATOR_PATCHES[index];
 	return result;
@@ -212,6 +223,7 @@ LuaImplementationIdentity LuaImplementationIdentity::fromScript(const LuaScriptI
 		result.sharedArithmeticTimed = true;
 	}
 	else if(matchesReviewedLayers(script, CALCULATOR_LAYERS)
+		|| matchesReviewedLayers(script, HISTORICAL_PHYSICAL_PROTECTION_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, PHYSICAL_PROTECTION_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, POINT_BLANK_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, INSPIRATION_CALCULATOR_LAYERS))
