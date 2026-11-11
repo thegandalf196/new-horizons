@@ -21481,15 +21481,15 @@
     },
     "client/battle/BattleWindow.cpp": {
       "deferral": "Owner: ui_developer. Before further continuation control binding, move its cohesive button/help/shortcut planning into existing CreatureContinuationUI, retaining ordinary and Master Gunner priority, read-only authoritative callbacks, actual output/budget help and rendered enabled/disabled/cancel/reopen evidence. Exact1583 exception only. Exact bounded API/readback migration only: no new rule decisions in this hotspot. UI owner must extract the next touched ShadowGift chooser, temporary-status widget renderer, or hero-status assembly into a cohesive owner before further substantive growth, preserving callback lifetime, current query/ownership, cached-before-redraw ordering and guarded native rendering. Existing obligations remain binding.",
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1422,
       "owner": "ui_developer",
-      "previous_review": "IR-RELEASE0882-CLIENT-STRUCTURE-20261103",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "rationale": "1422->1422 physical lines: BattleWindow::endWithAutocombat now passes true (automatic) to prepareAutoFightingAI so in-battle auto-resolve invokes fast Quick Combat (BattleAIQuick) rather than deliberative tactical BattleAI. No widget, layout, lifetime, or command dispatch expansion; thread ownership and combat-restart invariants preserved.",
+      "review": "IR-BATTLE-AUTOCOMBAT-QUICK-AI-20261110",
       "review_scope": "Exact frozen Warcasting682cf post-Wisdom delta and Learning86f UI only. GUIClasses647 is explicitly excluded/HOLD pending focused header extraction. Tiny label/test/EOF successor requires separate parent review. No future growth or gameplay/render/publication proof.",
       "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "81267bf0f38f368b6afa2e194636796597d5fcdcbc0dc2febac98e29eb911d6d",
+      "sha256": "27270b6e030ff145e76ac028476df666d69b858ef874aa8690f0d3ddfa767713",
       "completed_p_predecessor": {
         "kind": "legacy",
         "lines": 1423,
@@ -21988,13 +21988,13 @@
       "sha256": "d9fe14e0914985d93fe706994b5edf37190255168d7e52c241608371cb5f5472"
     },
     "client/render/AssetGenerator.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 2794,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 2789 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.\n\nComplete file read: registrations/lookup 40-338, Academy/creature portraits and map layers 340-665, menu metadata/path/CRC/composition 667-885, wrappers/color/background recipes 887-1245, palette/mean/button/slider generation 1247-1558, creature/resource panels 1560-1842, buttons/gate/hero/adventure surfaces 1844-2140, icons/dialog/split/hero/level-up/table/recruitment/university recipes 2142-2794. Runtime-generated images do not make this handwritten C++ generated source. Registry, resource admission/caches and many independent composition families are real concentration debt. Freeze unchanged 2794-line bytes; numerical proximity of stale metadata is not design approval.",
-      "review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
+      "rationale": "2794->2794 physical lines: createNewHorizonsOrdersButton restores NH_orders_gauntlet_ sprite prefix for classic golden gauntlet orders button presentation per user gameplay direction. No generator structure or algorithm growth; existing layout maps and caching contracts intact.",
+      "review": "IR-ORDERS-GAUNTLET-BUTTON-RESTORE-20261110",
       "review_scope": "Complete independent reading of the exact listed source unit and its responsibility boundaries at f86a363b65005005fde9d6d53151ab97d7f03fa4; unchanged pre-existing bytes only, no future growth allowance.",
-      "sha256": "6ecac1847d979ce4a9dbdb5082a309cc57fc89a826bacd6222f54fdb685e0742",
+      "sha256": "05091713b25181728441167ea26023e22d279d7688dd12d4c02e785f2eea20b6",
       "review_history": [
         {
           "kind": "legacy",
