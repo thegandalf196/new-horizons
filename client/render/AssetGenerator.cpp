@@ -1858,7 +1858,7 @@ AssetGenerator::AnimationLayoutMap AssetGenerator::createNewHorizonsOrdersButton
 			auto image = createDialogBackground(Point(width, height));
 			auto canvas = image->getCanvas();
 			auto commandIcon = ENGINE->renderHandler().loadImage(ImageLocator(
-				ImagePath::builtin("NH_orders_command_" + stateName + ".png"), EImageBlitMode::SIMPLE));
+				ImagePath::builtin("NH_orders_gauntlet_" + stateName + ".png"), EImageBlitMode::SIMPLE));
 			// Runtime art is already authored as a border-safe 48x36 state. A
 			// second reduction made the previous glyph read as a clipped fragment.
 			canvas.draw(commandIcon, Point(0, 0));

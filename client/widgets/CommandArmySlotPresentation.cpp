@@ -54,21 +54,19 @@ void CGarrisonSlot::showAll(Canvas & to)
 	if(!command)
 		return;
 	const auto view = newHorizonsHeroes::commandSlotView(command->effective(), ID);
-	const auto color = commandArmySlotPresentation::border(view.grade);
-	to.drawBorder(pos, color, 2);
 	if(owner->getSelection() == this && view.unlocked)
 		to.drawBorder(Rect(pos.x + 3, pos.y + 3, pos.w - 6, pos.h - 6), Colors::YELLOW);
-	if(!view.unlocked)
+	if(!myStack)
 	{
-		to.drawColorBlended(Rect(pos.x + 2, pos.y + 2, pos.w - 4, pos.h - 4), ColorRGBA(90, 90, 90, 165));
-		to.drawText(pos.center(), FONT_TINY, Colors::WHITE, ETextAlignment::CENTER,
-			LIBRARY->generaltexth->translate("new-horizons.command.slot.lockedMarker"));
+		const char * numeral = view.grade == newHorizonsHeroes::CommandSlotGrade::CORE ? "I"
+			: view.grade == newHorizonsHeroes::CommandSlotGrade::ELITE ? "II" : "III";
+		to.drawText(pos.center(), FONT_BIG, ColorRGBA(220, 220, 220, 80), ETextAlignment::CENTER, numeral);
 	}
-	else if(view.enhancementTier)
+	if(view.unlocked && view.enhancementTier)
 	{
 		auto label = LIBRARY->generaltexth->translate(view.enhancementTier > 99
 			? "new-horizons.command.enhancement.markerOverflow" : "new-horizons.command.enhancement.marker");
 		boost::replace_all(label, "%TIER%", std::to_string(view.enhancementTier));
-		to.drawText(Point(pos.x + pos.w - 3, pos.y + 3), FONT_TINY, color, ETextAlignment::TOPRIGHT, label);
+		to.drawText(Point(pos.x + pos.w - 3, pos.y + 3), FONT_TINY, Colors::WHITE, ETextAlignment::TOPRIGHT, label);
 	}
 }

@@ -107,7 +107,7 @@ std::string commandHelp(const CGHeroInstance & hero)
 
 namespace
 {
-std::string authorityHelp(const CGHeroInstance & hero, SlotID slot, const CommandRules & rules)
+[[maybe_unused]] std::string authorityHelp(const CGHeroInstance & hero, SlotID slot, const CommandRules & rules)
 {
 	auto text = "\n" + LIBRARY->generaltexth->translate("new-horizons.command.authority.sources");
 	bool any = false;
@@ -139,53 +139,41 @@ std::string slotHelp(const CGHeroInstance & hero, SlotID slot)
 	if(!value || !rules)
 		return {};
 	const auto view = commandSlotView(value->effective(), slot);
-	auto status = LIBRARY->generaltexth->translate(view.unlocked
-		? "new-horizons.command.slot.unlocked" : "new-horizons.command.slot.locked");
-	boost::replace_all(status, "%REQUIRED%", std::to_string(view.unlockCommand));
-	std::string text = "{" + slotName(slot) + "}\n" + status + "\n"
-		+ LIBRARY->generaltexth->translate(view.grade == CommandSlotGrade::CORE ? "new-horizons.command.slot.core"
-			: view.grade == CommandSlotGrade::ELITE ? "new-horizons.command.slot.elite" : "new-horizons.command.slot.champion");
-	text += "\n" + LIBRARY->generaltexth->translate("new-horizons.command.slot.permissionExceptions");
-	text += "\n" + LIBRARY->generaltexth->translate("new-horizons.command.slot.bonusSource");
-	auto tier = LIBRARY->generaltexth->translate("new-horizons.command.enhancement.tier");
-	boost::replace_all(tier, "%TIER%", std::to_string(view.enhancementTier));
-	text += "\n" + tier + "\n" + LIBRARY->generaltexth->translate("new-horizons.command.enhancement.awards");
-	bool any = false;
-	for(const auto & award : hero.getCommandState().getAwards())
+
+	std::string text = "{" + slotName(slot) + "}\n";
+
+	if(!view.unlocked)
 	{
-		if(!commandRecipientContains(award.recipient, slot))
-			continue;
-		auto acquisition = LIBRARY->generaltexth->translate("new-horizons.command.enhancement.acquisition");
-		boost::replace_all(acquisition, "%MILESTONE%", std::to_string(award.milestone));
-		boost::replace_all(acquisition, "%LEVEL%", std::to_string(award.acquisitionLevel));
-		auto bonus = LIBRARY->generaltexth->translate("new-horizons.command.enhancement.pending");
-		if(award.enhancement)
+		auto lockedText = LIBRARY->generaltexth->translate("new-horizons.command.slot.locked");
+		boost::replace_all(lockedText, "%REQUIRED%", std::to_string(view.unlockCommand));
+		text += lockedText + "\n";
+	}
+	else
+	{
+		text += LIBRARY->generaltexth->translate("new-horizons.command.slot.unlockedMarker") + "\n";
+	}
+
+	text += LIBRARY->generaltexth->translate(
+		view.grade == CommandSlotGrade::CORE ? "new-horizons.command.slot.core"
+		: view.grade == CommandSlotGrade::ELITE ? "new-horizons.command.slot.elite"
+		: "new-horizons.command.slot.champion");
+
+	if(view.unlocked)
+	{
+		if(const auto totals = hero.getCommandSlotModifiers(slot))
 		{
-			bonus = LIBRARY->generaltexth->translate("new-horizons.command.enhancement.bonus");
-			boost::replace_all(bonus, "%NAME%", enhancementName(*award.enhancement));
-			boost::replace_all(bonus, "%BONUS%",
-				modifiers(commandEnhancementModifiers(*award.enhancement, award.contribution)));
+			CommandModifiers total = totals->enhancements;
+			total.add(totals->authority);
+			const auto modText = modifiers(total);
+			if(modText != LIBRARY->generaltexth->translate("new-horizons.command.modifier.none"))
+			{
+				auto label = LIBRARY->generaltexth->translate("new-horizons.command.enhancement.total");
+				boost::replace_all(label, "%BONUS%", modText);
+				text += "\n\n" + label;
+			}
 		}
-		boost::replace_all(acquisition, "%BONUS%", bonus);
-		text += "\n" + acquisition;
-		if(award.recipient == CommandRecipient::CORE_BLOCK)
-			text += "\n" + LIBRARY->generaltexth->translate("new-horizons.command.enhancement.sharedCoreAward");
-		if(award.milestone > value->effective())
-			text += "\n" + LIBRARY->generaltexth->translate("new-horizons.command.enhancement.inactive");
-		any = true;
 	}
-	if(!any)
-		text += "\n" + LIBRARY->generaltexth->translate("new-horizons.command.enhancement.none");
-	text += authorityHelp(hero, slot, *rules);
-	if(const auto totals = hero.getCommandSlotModifiers(slot))
-	{
-		auto enhancements = LIBRARY->generaltexth->translate("new-horizons.command.enhancement.total");
-		boost::replace_all(enhancements, "%BONUS%", modifiers(totals->enhancements));
-		auto authority = LIBRARY->generaltexth->translate("new-horizons.command.enhancement.authority");
-		boost::replace_all(authority, "%BONUS%", modifiers(totals->authority));
-		text += "\n" + enhancements + "\n" + authority;
-	}
-	text += "\n" + LIBRARY->generaltexth->translate("new-horizons.command.slot.limits");
+
 	return text;
 }
 }

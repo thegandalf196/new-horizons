@@ -21,7 +21,7 @@ for token in ('"normal", "pressed", "disabled", "highlighted"',
               'Rect(0, border, border, height - 2 * border)',
               'Rect(width - border, border, border, height - 2 * border)'):
     assert token in button, token
-assert 'ImagePath::builtin("NH_orders_command_" + stateName + ".png")' in button
+assert 'ImagePath::builtin("NH_orders_gauntlet_" + stateName + ".png")' in button
 assert button.index('canvas.draw(commandIcon') < button.index('canvas.draw(frame'), "subject may overwrite chrome"
 window = (ROOT / "client/battle/BattleWindow.cpp").read_text()
 assert 'Point(595, 560), AnimationPath::builtin("NH_orders_gauntlet_framed")' in window
