@@ -7,40 +7,87 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.89.2 — Unreleased
-
-Development source and metadata only. Native gameplay, rendered UI, save/reload
-and platform-package acceptance remain pending; this entry does not announce a
-published release.
+## 0.90 Early Access
 
 **A new game is required, including when upgrading from 0.89 or 0.89.1.**
 Current and minimum save format are **1158**. Earlier saves are rejected before
 payload loading, not converted, rewritten or deleted. Keep backups and the
-matching older version to continue them.
+matching older version to continue older playthroughs.
 
-- Replaces per-stack Leadership capacity and finite Order payment with unspent
-  **Command**: seven persistent slots, progressive Elite/Champion unlocks and
-  repeating enhancement choices. Each award keeps its acquisition level; one
-  Core choice improves all three Core slots.
-- Adds **Authority**, available to both hero archetypes, for Command and passive
-  slot training. The former Command Skill becomes Might-exclusive **Warfare**;
-  Discipline becomes **Leadership**, focused on Morale. Orders still use the
-  ordinary Hero Action without spending army Command.
-- Only Second Wind's damage, Feint's potency and Vanguard's duration replace
-  retired numerical Leadership with the formation rating. Other Attack/Defense
-  components retain their formulas.
-- Creature specialists gain Core placement permission for their resolved
-  specialty line and upgrades without changing the creatures' actual tier.
-  Ordinary generated Castle starting packages replace Griffins with Swordsmen
-  (Royal Griffins with Crusaders); Griffin specialists retain their Griffin line.
-  Authored/current armies and original count rolls are preserved.
-- Restores **100% stock neutral encounter counts**, with Leadership calibration
-  disabled. Neutral-size overrides remain available; **50% recruitment growth**
-  is a separate setting. Ordinary wandering weekly growth remains unchanged.
-- Retains Magic Arrow Overcharge, Elemental Attunement and the **Fast/Full**
-  quick-combat choice from 0.89/0.89.1.
-- Fixed Water Walk paths that rejected a legal landing when the hero would finish
-  with exactly zero Movement Points.
+Special thanks to **Matrix4767**, whose extensive discussions on Discord helped
+shape and refine the mechanics, design, and direction of this release.
+
+### Command and Authority redesign
+
+- Replaces per-stack Leadership capacity and finite per-battle Order pools with
+  persistent **Command**: an unspent Secondary Attribute developing seven
+  persistent army slots.
+- **Slot Tiers**: Heroes start with three **Core** slots (**I**), unlocking three
+  **Elite** slots (**II**) and one **Champion** slot (**III**) as Command grows.
+- **Slot Enhancements**: Continuing Command investment awards repeating enhancement
+  choices (e.g. Core slot improvements shared across all three Core slots, preserving
+  the hero level when acquired).
+- **Creature Specialists**: Creature specialists gain Core placement permission
+  for their resolved specialty line and its upgrades without changing the creatures'
+  actual tier.
+- **Streamlined Army Slot UI**: Removed intrusive "Locked" text boxes and colored
+  borders from locked slots. Empty and locked slots now display clean, translucent
+  Roman numerals (**I**, **II**, **III**) corresponding to their tier, with locked
+  slots remaining transparent.
+- **Concise Slot Tooltips**: Right-clicking an army slot now displays a concise,
+  direct summary (slot name, requirement/status, allowed tiers, and active slot
+  bonuses) without scrolling.
+- **Orders Battle Icon**: Restored the classic golden gauntlet icon for the Orders
+  button in the battle interface.
+
+### Skills and perks
+
+- **Authority**: A new secondary skill available to both Might and Magic hero
+  archetypes, providing Command progression and passive slot training.
+- **Warfare**: Might-exclusive skill specializing in Orders (replacing the old
+  finite-point Command skill).
+- **Leadership**: Refocused entirely on battlefield Morale and spirit (formerly
+  Discipline). Orders still use the ordinary Hero Action without consuming army
+  Command.
+- **Metamagic**: Spells scale dynamically with hero round points (starting at 1,
+  gaining 1 per round up to a maximum of 12; each point increases spell
+  effectiveness and Magic Penetration). Includes ten revised perks such as
+  **Arcane Wellspring** and Halon's **Metamagic Adept**.
+- **Town & School Perks**:
+  - **Dungeon**: **Shadow Hex** (+15% spell damage vs flanked enemies) and
+    **Exposed Weakness** (+20% spell damage following flanking melee hits).
+  - **Conflux**: **Elemental Conduit** (+15% spell damage per living Reborn stack)
+    and **Elemental Cataclysm** (20% of fallen Reborn stack HP dealt to adjacent
+    enemies).
+  - **Light / Divine**: **Divine Mandate** automatically triggers a beneficial Light
+    spell after an Order without Mana or Hero Action costs.
+- **Comprehensive 32-Skill Matrix**: Full 32-skill progression with 10 authored
+  perks per skill.
+
+### Combat and Quick Combat
+
+- **In-Battle Auto-Combat (`Q`)**: Pressing `Q` during manual tactical combat now
+  resolves with fast Quick Combat AI (`BattleAIQuick`), instantly finishing the
+  battle rather than running the deliberative, turn-by-turn tactical AI.
+- **Quick Combat AI Settings**: Choose between **Fast** (default for Quick Combat
+  and AI-vs-AI battles, drastically reducing auto-resolve duration) and **Full**
+  (the comprehensive reference search) in Settings → Battle.
+- **Magic Arrow Overcharge**: Selectable Overcharge tiers empower Magic Arrow with
+  substantially amplified damage in exchange for non-linear Mana costs, giving
+  the fundamental spell scaling utility into late-game engagements.
+- **Elemental Attunement**: Replaces Conflux Elemental Rebirth; casting elemental
+  spells directly empowers and augments matching elemental stacks on the field.
+
+### Map and balance adjustments
+
+- **Castle Starting Armies**: Default Castle starting setups replace Griffins with
+  Swordsmen (and Royal Griffins with Crusaders); Griffin specialists uniquely
+  retain their Griffin lineage.
+- **100% Stock Neutrals**: Restored authentic 100% stock neutral encounter sizes
+  without Leadership calibration. Map recruitment growth remains independently
+  configured at 50%.
+- **Pathfinding**: Fixed Water Walk landing rejection when a hero lands with
+  exactly zero remaining Movement Points.
 
 ## 0.89.1 Early Access
 

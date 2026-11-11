@@ -2,7 +2,7 @@
 
 ## Current save boundary
 
-The unreleased 0.89.2 Command/Authority redesign requires a new game, including
+The 0.90 Command/Authority redesign requires a new game, including
 when upgrading from 0.89 or 0.89.1. The current writer and minimum accepted format
 are both **1158**, `NEW_HORIZONS_COMMAND_AUTHORITY`.
 `MINIMAL` and `CURRENT` in `ESerializationVersion` use that feature value.

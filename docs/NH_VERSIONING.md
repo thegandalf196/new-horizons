@@ -2,12 +2,11 @@
 
 The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json). Menu and generated module read it; development versions may be ahead of the published releases. The version alone does not establish release publication or playable acceptance.
 
-Current source metadata is **0.89.2, unreleased**. Its Command/Authority revision
-requires a new game even from 0.89.1: writer and minimum accepted save format are
+Current source metadata is **0.90.0**. Its Command/Authority revision
+requires a new game even from 0.89.x: writer and minimum accepted save format are
 both **1158**. Earlier saves are rejected without conversion or modification.
 See the [save boundary](developers/Serialization.md#current-save-boundary) and
-[pending changelog](NEW_HORIZONS_CHANGELOG.md#0892--unreleased); native, rendered
-and platform-package acceptance remain separate from this metadata update.
+[changelog](NEW_HORIZONS_CHANGELOG.md#090-early-access).
 
 Product version, VCMI engine revision, save-schema version and Git commit are separate identities. Save epochs change only for actual compatibility boundaries. Source-matched Windows/Linux packages must record the same full source revision; selected playable promotion is a separate validated operation.
 

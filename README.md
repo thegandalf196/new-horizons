@@ -6,10 +6,9 @@
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
-Source metadata targets **0.89.2 (unreleased)**. See the
-[pending changelog](docs/NEW_HORIZONS_CHANGELOG.md#0892--unreleased) for its scope;
-native gameplay, rendered UI and platform-package acceptance remain pending.
-The Wiki describes published rules; its 0.89.2 revision follows release publication.
+Source metadata targets **0.90.0**. See the
+[changelog](docs/NEW_HORIZONS_CHANGELOG.md#090-early-access) for its scope.
+The Wiki describes published rules; its 0.90 revision follows release publication.
 
 ## Before you begin
 
@@ -28,6 +27,8 @@ VCMI deserves a particularly heartfelt thank-you. Its contributors have undertak
 This project is a fork of VCMI, but I decided to detach it after parting ways with the project; this isn’t a recreation of VCMI with new mod support or anything like that. No, not at all. This is the version of Heroes III I’ve long dreamed of bringing to life. VCMI is the foundation, the engine, the mountain atop which I’m building the castle whose doors I’m opening to you now.
 
 My eventual change of direction carries no diminished regard for their work. To everyone who has contributed to VCMI: thank you. I know enough about the task to appreciate how much I owe that starting point.
+
+A very special thank-you goes to **Matrix4767**, whose insightful discussions in Discord have been instrumental in shaping, testing, and refining the ideas, mechanics, and design of this mod.
 
 ## What’s the difference between a Knight and a Wizard?
 
@@ -90,7 +91,7 @@ Playing Baldur’s Gate 3 helped me put a finger on that feeling. Small numbers 
 
 An angel should remain an extraordinary thing to have at your side.
 
-The 0.89.2 development rules express that concern through Command, an unspent Secondary Attribute that develops the hero’s seven persistent army slots. Three Core slots are available at the start; further Command unlocks three Elite slots and a Champion slot, then grants repeating enhancement choices. One Core enhancement is shared by all three Core slots, and each award keeps the hero level at which it was acquired.
+The 0.90 rules express that concern through Command, an unspent Secondary Attribute that develops the hero’s seven persistent army slots. Three Core slots are available at the start; further Command unlocks three Elite slots and a Champion slot, then grants repeating enhancement choices. One Core enhancement is shared by all three Core slots, and each award keeps the hero level at which it was acquired.
 
 Command limits which creatures can occupy a slot, rather than imposing a creature-count cap. Creature specialists can place their resolved specialty line in Core slots without changing its actual tier. Authority adds Command and passive slot training; the renamed Leadership Skill instead develops Morale. Leading stronger formations becomes another part of a hero’s development.
 

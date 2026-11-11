@@ -31,8 +31,8 @@ class CreatureCategoryDataTest(unittest.TestCase):
 
     def test_complete_roster_is_explicit_not_level_inference(self):
         assignments = self.rules['creatures']
-        self.assertEqual(len(assignments), 128)
-        self.assertEqual(sum(value == 'core' for value in assignments.values()), 52)
+        self.assertEqual(len(assignments), 130)
+        self.assertEqual(sum(value == 'core' for value in assignments.values()), 54)
         self.assertEqual(sum(value == 'elite' for value in assignments.values()), 58)
         self.assertEqual(sum(value == 'champion' for value in assignments.values()), 18)
         self.assertEqual(assignments['core:swordsman'], 'core')
