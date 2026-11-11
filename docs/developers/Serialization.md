@@ -131,7 +131,7 @@ dereference them; initialized alive/ghost/controller checks follow the appropria
 local initialization. Detached battle teardown must not clear army links owned by
 another battle. Descriptor fixtures must project independent stacks and faithful
 metadata without mutating the original graph or serializing attached live stacks
-as independent. The [battle descriptor limits](#new-horizons-immediate-double-command-continuation)
+as independent. The [battle descriptor limits](#reserved-double-command-continuation-fields)
 below still apply; this does not add ongoing-battle world-save or general health
 restoration support.
 
