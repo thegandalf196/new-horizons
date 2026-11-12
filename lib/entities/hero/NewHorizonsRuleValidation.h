@@ -38,7 +38,13 @@ inline int resolve(const std::string & type, const std::string & key)
 {
 	const auto separator = key.find(':');
 	require(separator != std::string::npos && separator > 0 && separator + 1 < key.size(), "scoped " + type);
-	const auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), type, key, true);
+	auto id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), type, key, true);
+	if(!id.has_value())
+	{
+		id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), type, key.substr(separator + 1), false);
+		if(!id.has_value() && type == "secondarySkill" && key.substr(separator + 1) == "discipline")
+			id = LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), type, "core:leadership", false);
+	}
 	require(id.has_value() && *id >= 0, "unknown " + type + " " + key);
 	return *id;
 }

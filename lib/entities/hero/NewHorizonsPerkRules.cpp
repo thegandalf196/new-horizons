@@ -85,7 +85,11 @@ bool scopedId(std::string_view id)
 
 void validateEffectParameters(const JsonNode & parameters)
 {
-	fields(parameters, {"commandBonus", "orderEfficiencyPercent", "attackEfficiencyBonusPP",
+	fields(parameters, {"commandBonus", "leadershipPercent", "coreLeadershipPercent",
+		"eliteChampionLeadershipPercent", "nativeFactionLeadershipPercent", "foreignFactionLeadershipPercent",
+		"meleeLeadershipPercent", "rangedLeadershipPercent", "regimentalLeadershipPercent",
+		"combinedArmsLeadershipPercent", "allStacksLeadershipPercent", "skeletonRequirementDiscountPercent",
+		"orderEfficiencyPercent", "attackEfficiencyBonusPP",
 		"defenseEfficiencyBonusPP", "firstOrderEfficiencyBonusPP", "allEfficiencyBonusPP",
 		"efficiencyBonusPPPerMorale", "maximumEfficiencyBonusPP", "creatureAttack", "creatureDefense",
 		"maximumHealthPercent", "initiative", "battlefieldSpeed", "additionalRetaliations",
@@ -311,9 +315,9 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	if(usesCommandAuthorityPolicy(rules))
 	{
 		require(!rules.Struct().contains("commandPolicyVersion"), "finite Command policy conflicts with Command/Authority");
-		require(rules["necromancyPolicy"].isStruct()
-			&& rules["necromancyPolicy"]["version"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& rules["necromancyPolicy"]["version"].Integer() == 3, "Command/Authority requires Necromancy policy3");
+		require(!rules.Struct().contains("necromancyPolicy")
+			|| (rules["necromancyPolicy"].isStruct() && rules["necromancyPolicy"]["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& (rules["necromancyPolicy"]["version"].Integer() == 2 || rules["necromancyPolicy"]["version"].Integer() == 3)), "Command/Authority requires Necromancy policy2 or policy3");
 		require(rules["warfarePolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
 			&& rules["warfarePolicyVersion"].Integer() == 1, "warfarePolicyVersion");
 	}

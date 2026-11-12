@@ -18395,9 +18395,9 @@
     },
     "lib/entities/hero/NewHorizonsPerkRules.cpp::newHorizonsHeroes::static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedPilotPerks * collector)#1": {
       "lines": 111,
-      "sha256": "f27c3ffbea4da9703aba9d6f22393d7309556611f98690e28347153042ee9a93",
+      "sha256": "07a9e50e40618120c28b0d9bfabad4e4df9f72f0141b7fb6678c02ebdabb20ff",
       "kind": "exception",
-      "review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109",
+      "review": "IR-COMMAND-AUTHORITY-NECROMANCY2-20261111",
       "review_category": "ordinary-function-review",
       "rationale": "93->111, below150: policy coherence selects current Authority/Warfare/Necromancy3 versus historical finite Command, then the same complete skill/rank/perk validation continues. Parameter and policy validators are already delegated to small helpers. Protected invariant: Captured marker agreement, exact canonical pool/identity counts, version/type checks and prepared-collector validation remain in one schema admission owner. No live state is installed, no RNG and no UI/AI policy duplicated.",
       "deferral": "Gameplay engineer: further policy-version growth should factor the captured policy-header/coherence stage into a pure validator before the unchanged skill iteration; preserve rejection before prepared-rule installation and strict historical readers. Current111-line schema traversal is a normal review-trigger unit.",

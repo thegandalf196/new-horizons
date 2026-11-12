@@ -74,7 +74,7 @@ int64_t rating(const JsonNode & rules, int attack, int defense, int64_t command)
 int64_t command(const CGHeroInstance & hero)
 {
 	const auto captured = hero.getArmyCommand();
-	if(!captured) throw std::runtime_error("Formation formula requires captured army Command");
+	if(!captured) return 0;
 	return captured->effective();
 }
 
