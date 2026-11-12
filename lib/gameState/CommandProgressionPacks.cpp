@@ -21,6 +21,11 @@ void GameStatePackVisitor::visitSetSecSkill(SetSecSkill & pack)
 void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const auto * hero = gs.getHero(pack.heroId);
+	if(hero && pack.skills.empty())
+	{
+		newHorizonsHeroes::applyLevelUpOffer(gs.getHero(pack.heroId), pack);
+		return;
+	}
 	if(hero && pack.replacesQueryID == QueryID::NONE && hero->hasPendingCommandLevelEvent())
 		throw std::runtime_error("Previous ordinary level choice is unfinished");
 	newHorizonsHeroes::applyLevelUpOffer(gs.getHero(pack.heroId), pack);

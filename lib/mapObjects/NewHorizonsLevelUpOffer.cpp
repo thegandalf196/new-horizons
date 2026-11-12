@@ -11,6 +11,21 @@ void newHorizonsHeroes::applyLevelUpOffer(CGHeroInstance * hero, const HeroLevel
 {
 	if(!hero)
 		throw std::runtime_error("Level-up offer for a missing hero");
+	if(pack.skills.empty())
+	{
+		// Major System Rework Part VII: Dedicated follow-up perk offer for an acquired skill rank.
+		if(!pack.perks.empty())
+		{
+			if(pack.perkOfferSeed < 0 || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+				throw std::runtime_error("Invalid New Horizons perk offer envelope");
+			for(const auto & candidate : pack.perks)
+			{
+				if(candidate.selection.perkId.empty() || candidate.selection.skillId.empty())
+					throw std::runtime_error("Malformed New Horizons perk offer candidate");
+			}
+		}
+		return;
+	}
 	if(!pack.perks.empty() || pack.perkOfferSeed != 0)
 	{
 		if(pack.perkOfferSeed < 0 || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
