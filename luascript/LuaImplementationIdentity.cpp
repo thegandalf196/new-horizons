@@ -140,6 +140,15 @@ constexpr auto INSPIRATION_CALCULATOR_LAYERS = []
 	return result;
 }();
 
+// Current Leadership efficiency root incorporates stack efficiency scaling;
+// historical pairs and every other ordered patch keep their exact identities.
+constexpr auto LEADERSHIP_EFFICIENCY_CALCULATOR_LAYERS = []
+{
+	auto result = INSPIRATION_CALCULATOR_LAYERS;
+	result[0] = {"damage/damageCalculator", "1fa05bbc7fd68c88b814ba56e1efde8bcbf39a69d8442995182c84eed5d0588f"};
+	return result;
+}();
+
 std::string digest(std::string_view source)
 {
 	return nhart::hex(nhart::sha256(std::span<const ui8>(
@@ -226,7 +235,8 @@ LuaImplementationIdentity LuaImplementationIdentity::fromScript(const LuaScriptI
 		|| matchesReviewedLayers(script, HISTORICAL_PHYSICAL_PROTECTION_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, PHYSICAL_PROTECTION_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, POINT_BLANK_CALCULATOR_LAYERS)
-		|| matchesReviewedLayers(script, INSPIRATION_CALCULATOR_LAYERS))
+		|| matchesReviewedLayers(script, INSPIRATION_CALCULATOR_LAYERS)
+		|| matchesReviewedLayers(script, LEADERSHIP_EFFICIENCY_CALCULATOR_LAYERS))
 		result.canonicalDamageCalculator = true;
 	return result;
 }
