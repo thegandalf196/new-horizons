@@ -21,6 +21,7 @@
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
 #include "FrozenStatusPresentation.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -498,6 +499,27 @@ void BattleStacksController::showStackAmountBox(Canvas & canvas, const CStack * 
 	}
 	canvas.draw(amountBG, boxPosition);
 	canvas.drawText(textPosition, EFonts::FONT_TINY, Colors::WHITE, ETextAlignment::CENTER, TextOperations::formatMetric(displayedCount, 4));
+
+	if(!settings["battle"].Struct().contains("showLeadershipEfficiency") || settings["battle"]["showLeadershipEfficiency"].Bool())
+	{
+		const auto battle = owner.getBattle();
+		const auto * hero = battle ? battle->battleGetOwnerHero(stack) : nullptr;
+		if(hero && stack->alive())
+		{
+			const double eff = newHorizonsHeroes::stackLeadershipEfficiency(
+				hero, stack->creatureId(), displayedCount);
+			if(eff < 0.999)
+			{
+				const int pct = std::clamp(static_cast<int>(std::round(eff * 100.0)), 1, 99);
+				const std::string badge = std::to_string(pct) + "%";
+				const Point effPos = Point(textPosition.x, boxPosition.y + amountBG->dimensions().y + 5);
+				const Rect bgRect(effPos.x - 12, effPos.y - 4, 24, 9);
+				canvas.drawColor(bgRect, ColorRGBA(25, 8, 8, 220));
+				canvas.drawBorder(bgRect, ColorRGBA(180, 50, 50, 240));
+				canvas.drawText(effPos, EFonts::FONT_TINY, ColorRGBA(255, 140, 140, 255), ETextAlignment::CENTER, badge);
+			}
+		}
+	}
 }
 
 void BattleStacksController::showStack(Canvas & canvas, const CStack * stack)

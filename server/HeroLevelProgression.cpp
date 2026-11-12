@@ -60,18 +60,58 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 			SecondarySkill::encode(which.getNum()), hero->nodeName());
 		return;
 	}
+	const int oldRank = hero->getSecSkillLevel(*skill);
 	SetSecSkill change;
 	change.id = hero->id;
 	change.which = *skill;
 	change.val = val;
 	change.mode = mode;
 	sendAndApply(change);
+	const int newRank = hero->getSecSkillLevel(*skill);
 	if(!hero->hasPendingCommandLevelEvent())
 		offerHeroCommandEnhancement(hero);
 	if(const auto * town = hero->getVisitedTown())
 		giveSpells(town, hero, hero == town->getVisitingHero());
 	if(hero->getOwner().isValidPlayer())
 		changeFogOfWar(hero->getSightCenter(), hero->getSightRadius(), hero->getOwner(), ETileVisibility::REVEALED);
+
+	if(newRank > oldRank && newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+	{
+		if(!hasHeroLevelQuery(*queries, hero->id))
+		{
+			const auto * def = LIBRARY->skillh->getById(*skill);
+			if(def)
+			{
+				const auto skillId = def->getJsonKey();
+				const auto * pState = gameInfo().getPlayerState(hero->getOwner());
+				const bool isHuman = pState && pState->isHuman();
+
+				for(int rank = oldRank + 1; rank <= newRank && rank <= 3; ++rank)
+				{
+					const auto candidates = hero->getPerkState().candidatesForSkillTier(skillId, rank);
+					if(!candidates.empty())
+					{
+						if(!isHuman)
+						{
+							levelUpHero(hero, candidates, 0, 0, false);
+						}
+						else
+						{
+							HeroLevelUp perkHlu;
+							perkHlu.player = hero->getOwner();
+							perkHlu.heroId = hero->id;
+							perkHlu.skills.clear();
+							perkHlu.perks = candidates;
+							perkHlu.perkOfferSeed = 0;
+							perkHlu.reachedLevel = hero->level;
+							auto perkQuery = std::make_shared<CHeroLevelUpDialogQuery>(this, perkHlu, hero);
+							queries->addQuery(perkQuery);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero,

@@ -42,10 +42,16 @@ void CHeroWindow::refreshLegacyCommandReadout()
 
 void CHeroWindow::refreshCommandReadout()
 {
-	const auto value = curHero->getArmyCommand();
+	const auto capacity = curHero->getLeadershipCapacity();
 	commandArea->text = commandPresentation::commandHelp(*curHero);
 	commandArea->hoverText = commandArea->text;
-	commandValue->setText(value ? std::to_string(value->effective()) : "--");
+	if(capacity)
+		commandValue->setText(std::to_string(capacity->capacity));
+	else
+	{
+		const auto value = curHero->getArmyCommand();
+		commandValue->setText(value ? std::to_string(value->effective()) : "--");
+	}
 }
 
 void CHeroWindow::alignAttributeReadouts()

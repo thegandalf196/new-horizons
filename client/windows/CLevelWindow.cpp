@@ -229,8 +229,19 @@ void CLevelWindow::createSkillBox()
 			if(row < perkChoices.size())
 				displayedChoiceOrder.push_back(perkChoices[row]);
 		}
-		choiceHeaders.push_back(std::make_shared<CLabel>(166, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
-		choiceHeaders.push_back(std::make_shared<CLabel>(474, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
+		if(!skillChoices.empty() && !perkChoices.empty())
+		{
+			choiceHeaders.push_back(std::make_shared<CLabel>(166, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
+			choiceHeaders.push_back(std::make_shared<CLabel>(474, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
+		}
+		else if(!skillChoices.empty())
+		{
+			choiceHeaders.push_back(std::make_shared<CLabel>(320, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
+		}
+		else if(!perkChoices.empty())
+		{
+			choiceHeaders.push_back(std::make_shared<CLabel>(320, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
+		}
 
 		std::vector<std::shared_ptr<CSelectableComponent>> skillComps;
 		std::vector<std::shared_ptr<CSelectableComponent>> perkComps;
@@ -279,8 +290,9 @@ void CLevelWindow::createSkillBox()
 		// a single offer stays aligned with the first recess rather than centered.
 		if(!skillComps.empty())
 		{
+			const int x = perkComps.empty() ? (640 - (rerollAvailable ? 156 : 244)) / 2 : 44;
 			skillChoiceBox = std::make_shared<CComponentBox>(skillComps,
-				Rect(44, 300, rerollAvailable ? 156 : 244, static_cast<int>(skillComps.size()) * 96 - 12),
+				Rect(x, 300, rerollAvailable ? 156 : 244, static_cast<int>(skillComps.size()) * 96 - 12),
 				[this](int){
 					perkChoiceActive = false;
 					if(perkChoiceBox)
@@ -289,8 +301,9 @@ void CLevelWindow::createSkillBox()
 		}
 		if(!perkComps.empty())
 		{
+			const int x = skillComps.empty() ? (640 - 244) / 2 : 352;
 			perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
-				Rect(352, 300, 244, static_cast<int>(perkComps.size()) * 96 - 12),
+				Rect(x, 300, 244, static_cast<int>(perkComps.size()) * 96 - 12),
 				[this](int){
 					perkChoiceActive = true;
 					if(skillChoiceBox)
@@ -316,6 +329,11 @@ void CLevelWindow::createSkillBox()
 		{
 			perkChoiceActive = false;
 			skillChoiceBox->selectFirst();
+		}
+		else if(perkChoiceBox)
+		{
+			perkChoiceActive = true;
+			perkChoiceBox->selectFirst();
 		}
 	}
 

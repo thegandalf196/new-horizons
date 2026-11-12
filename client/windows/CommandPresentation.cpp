@@ -77,6 +77,42 @@ std::string modifiers(const CommandModifiers & values)
 
 std::string commandHelp(const CGHeroInstance & hero)
 {
+	if(const auto cap = hero.getLeadershipCapacity())
+	{
+		const auto & rules = hero.getCapabilityRules();
+		int base = 0;
+		int perLevel = 0;
+		if(rules.isStruct() && rules.Struct().contains("profile") && rules["profile"].isStruct())
+		{
+			base = rules["profile"]["base"].Integer();
+			perLevel = rules["profile"]["perLevel"].Integer();
+		}
+		const int levelGains = (hero.level - 1) * perLevel;
+		const int trainedLeadership = std::max(0, hero.valOfBonuses(BonusType::LEADERSHIP));
+		const int authorityRank = hero.getPerkSkillRank("new-horizons:authority");
+		int authorityPercent = 0;
+		if(authorityRank == 1) authorityPercent = 15;
+		else if(authorityRank == 2) authorityPercent = 30;
+		else if(authorityRank >= 3) authorityPercent = 45;
+
+		std::string text = "{Leadership: " + std::to_string(cap->capacity) + "}\n";
+		text += "Governs the military capacity of the hero's army.\n\n";
+		if(base > 0)
+		{
+			text += "- Starting rating: " + std::to_string(base) + "\n";
+			text += "- Level growth: +" + std::to_string(perLevel) + " / level (+" + std::to_string(levelGains) + " total)\n";
+		}
+		if(authorityPercent > 0)
+			text += "- Authority Skill: +" + std::to_string(authorityPercent) + "%\n";
+		if(trainedLeadership > 0)
+			text += "- Bonus Leadership: +" + std::to_string(trainedLeadership) + "\n";
+		text += "- Effective rating: " + std::to_string(cap->capacity) + "\n\n";
+		text += "Stacks exceeding full-efficiency capacity (C = floor(L / R)) deal smoothly scaled damage via square root:\n";
+		text += "N_eff = C + (N - C) * sqrt(C / N)\n";
+		text += "Defense, health, speed, and spells remain fully intact.";
+		return text;
+	}
+
 	const auto value = hero.getArmyCommand();
 	if(!value)
 		return LIBRARY->generaltexth->translate("new-horizons.command.unavailable");

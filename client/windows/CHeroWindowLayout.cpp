@@ -187,11 +187,11 @@ void CHeroWindow::configureNewHorizonsLayout()
 	for(size_t i = 0; i < secSkills.size(); ++i)
 	{
 		const int y = 236 + static_cast<int>(i) * 38;
-		move(secSkills[i], Point(12, y));
-		move(secSkillValues[i], Point(60, y + 2));
-		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this, Point(60, y + 18), 78, true);
-		move(secSkillNames[i], Point(60, y + 18));
-		secSkillValues[i]->setMaxWidth(74);
+		move(secSkills[i], Point(14, y + 2));
+		move(secSkillValues[i], Point(52, y + 2));
+		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this, Point(52, y + 18), 82, true);
+		move(secSkillNames[i], Point(52, y + 18));
+		secSkillValues[i]->setMaxWidth(82);
 		for(int ability = 0; ability < 3; ++ability)
 		{
 			const int x = 138 + ability * 98;
@@ -199,18 +199,19 @@ void CHeroWindow::configureNewHorizonsLayout()
 			move(area, Point(x, y));
 			area->disable();
 			provisionalAbilityAreas.push_back(area);
-			auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, 0, x + 2, y + 2);
+			auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, Rect(x + 2, y + 2, 32, 32));
+			icon->setScale(Point(32, 32));
 			move(icon, Point(x + 2, y + 2));
 			icon->disable();
 			provisionalAbilityIcons[i].push_back(icon);
 			const std::array cellLabels = {
-				std::make_shared<CLabel>(x + 38, y + 11, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 56),
-				std::make_shared<CLabel>(x + 38, y + 2, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 56),
-				std::make_shared<CLabel>(x + 38, y + 20, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 56)
+				std::make_shared<CLabel>(x + 36, y + 11, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 62),
+				std::make_shared<CLabel>(x + 36, y + 2, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 62),
+				std::make_shared<CLabel>(x + 36, y + 20, FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, "", 62)
 			};
 			for(size_t c = 0; c < cellLabels.size(); ++c)
 			{
-				const Point offsets[3] = { Point(x + 38, y + 11), Point(x + 38, y + 2), Point(x + 38, y + 20) };
+				const Point offsets[3] = { Point(x + 36, y + 11), Point(x + 36, y + 2), Point(x + 36, y + 20) };
 				move(cellLabels[c], offsets[c]);
 				labels.push_back(cellLabels[c]);
 				provisionalAbilityLabels[i].push_back(cellLabels[c]);

@@ -658,16 +658,49 @@ std::map<std::string, std::string> PerkState::quantizedParentWeights(const Offer
 	return result;
 }
 
+std::vector<PerkOfferCandidate> PerkState::candidatesForSkillTier(const std::string & skillId, int tier) const
+{
+	if(!usesPerkRules(rules) || tier <= 0 || tier > 3)
+		return {};
+	validate();
+	std::vector<PerkOfferCandidate> result;
+	for(const auto & skillNode : rules["skills"].Vector())
+	{
+		if(skillNode["id"].String() != skillId)
+			continue;
+		for(const auto & perkNode : skillNode["perks"].Vector())
+		{
+			if(perkNode["effect"]["status"].String() != "active")
+				continue;
+			const auto & perkId = perkNode["id"].String();
+			if(hasSelection(skillId, perkId))
+				continue;
+			const int requiredRank = perkRequiredRank(perkNode["requires"].String());
+			if(requiredRank != tier)
+				continue;
+			result.push_back(PerkOfferCandidate{
+				{skillId, perkId},
+				perkNode["name"].String(),
+				perkNode["description"].String(),
+				requiredRank
+			});
+		}
+		break;
+	}
+	return result;
+}
+
 void PerkState::acceptOffer(const std::vector<PerkOfferCandidate> & offer, size_t choice,
 	const std::function<int(const std::string &)> & rankLookup, uint64_t seed,
 	const OfferWeightContext & weightContext)
 {
 	validate();
-	if(offer.empty() || offer.size() > static_cast<size_t>(PERK_MAX_PERK_CHOICES) || choice >= offer.size())
+	if(offer.empty() || choice >= offer.size())
 		throw std::runtime_error("Invalid New Horizons perk offer selection");
-	if(offer != prepareOffer(rankLookup, seed, weightContext))
-		throw std::runtime_error("Stale or forged New Horizons perk offer");
 	const auto & selectedCandidate = offer[choice];
+	const auto tierPool = candidatesForSkillTier(selectedCandidate.selection.skillId, selectedCandidate.requiredRank);
+	if(offer != tierPool && offer != prepareOffer(rankLookup, seed, weightContext))
+		throw std::runtime_error("Stale or forged New Horizons perk offer");
 	select(selectedCandidate.selection.skillId, selectedCandidate.selection.perkId,
 		rankLookup(selectedCandidate.selection.skillId));
 }

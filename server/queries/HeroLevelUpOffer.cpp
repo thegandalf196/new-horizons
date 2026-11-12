@@ -21,6 +21,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/MiscObjects.h"
 #include "../../lib/networkPacks/PacksForServer.h"
+#include "../../lib/CPlayerState.h"
 
 #include "HeroLevelUpOffer.h"
 #include "../../lib/callback/GameRandomizer.h"
@@ -203,10 +204,44 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 	if(choice < hlu.skills.size())
 	{
 		logGlobal->trace("Completing hero level-up query. %s gains skill %d", hero->getNameTextID(), answer.value());
-		// Apply the authoritative choice before acknowledging the dialog. The client may
-		// refresh hero state as soon as QueryResolved arrives.
-		gh->levelUpHero(hero, hlu.skills[choice], false);
+		const auto skill = hlu.skills[choice];
+		const int rankAfterGain = hero->getSecSkillLevel(skill) + 1;
+		gh->levelUpHero(hero, skill, false);
 		gh->sendQueryResolved(queryID);
+
+		if(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+		{
+			const auto * def = LIBRARY->skillh->getById(skill);
+			if(def)
+			{
+				const auto skillId = def->getJsonKey();
+				const auto tierPool = hero->getPerkState().candidatesForSkillTier(skillId, rankAfterGain);
+				if(!tierPool.empty())
+				{
+					const auto * pState = gh->gameInfo().getPlayerState(hero->getOwner());
+					const bool isHuman = pState && pState->isHuman();
+					if(!isHuman)
+					{
+						gh->levelUpHero(hero, tierPool, 0, 0, false);
+						gh->heroLevelUpChoiceDone(hero);
+					}
+					else
+					{
+						HeroLevelUp perkHlu;
+						perkHlu.player = hero->getOwner();
+						perkHlu.heroId = hero->id;
+						perkHlu.skills.clear();
+						perkHlu.perks = tierPool;
+						perkHlu.perkOfferSeed = 0;
+						perkHlu.reachedLevel = hero->level;
+						auto perkQuery = std::make_shared<CHeroLevelUpDialogQuery>(gh, perkHlu, hero);
+						gh->queries->addQuery(perkQuery);
+						return;
+					}
+				}
+			}
+		}
+
 		gh->heroLevelUpChoiceDone(hero);
 		return;
 	}
@@ -293,9 +328,8 @@ void newHorizonsLevelUp::prepareChoices(CGameHandler & handler, const CGHeroInst
 	const size_t maxSkillChoices = static_cast<size_t>(perkState.rules["maxSkillChoices"].Integer());
 	if(hlu.skills.size() > maxSkillChoices)
 		hlu.skills.resize(maxSkillChoices);
-	hlu.perkOfferSeed = static_cast<uint32_t>(handler.randomizer->getDefault().nextInt());
-	hlu.perks = perkState.prepareOffer([hero](const std::string & skillId)
-	{
-		return hero->getPerkSkillRank(skillId);
-	}, hlu.perkOfferSeed, hero->getPerkOfferWeightContext());
+	// In the unified progression system, level-up offers only secondary skills.
+	// Perks are selected in the follow-up modal for the newly acquired rank.
+	hlu.perks.clear();
+	hlu.perkOfferSeed = 0;
 }

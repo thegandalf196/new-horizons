@@ -269,7 +269,8 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	{
 		bool isSmallBox = (secSkillSlider && i%2 == 1);
 		Rect r(i%2 == 0  ?  18  :  162,  276 + 48 * (i/2), isSmallBox ? 120 : 136,  42);
-		secSkills.emplace_back(std::make_shared<CSecSkillPlace>(r.topLeft(), CSecSkillPlace::ImageSize::MEDIUM));
+		secSkills.emplace_back(std::make_shared<CSecSkillPlace>(r.topLeft(),
+			newHorizonsLayout ? CSecSkillPlace::ImageSize::SMALL : CSecSkillPlace::ImageSize::MEDIUM));
 
 		int x = (i % 2) ? 212 : 68;
 		int y = 280 + 48 * (i/2);
@@ -500,11 +501,31 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 					? newHorizonsPerkAvailability::evaluateSelectionSlot(perkState, skillId, skillRank, ability)
 					: newHorizonsPerkAvailability::evaluateTier(
 						perkState, skillId, skillRank, static_cast<int>(ability + 1));
-				cellLabels.at(labelIndex)->setText(slot.selectedPerk
-					? slot.selectedPerk->name : shortTierReason(slot.reason));
-				cellLabels.at(labelIndex + 1)->setText(selectionSlots && !slot.selectedPerk
-					? "Perk slot" : newHorizonsPerkAvailability::tierName(slot.requiredRank));
-				cellLabels.at(labelIndex + 2)->setText(newHorizonsPerkAvailability::statusName(slot.status));
+				if(slot.selectedPerk)
+				{
+					const auto & perk = *slot.selectedPerk;
+					const auto & perkName = perk.name;
+					const auto spacePos = perkName.find(' ');
+					if(spacePos != std::string::npos && perkName.length() > 9)
+					{
+						cellLabels.at(labelIndex)->setText(perkName.substr(0, spacePos));
+						cellLabels.at(labelIndex + 1)->setText(newHorizonsPerkAvailability::tierName(slot.requiredRank));
+						cellLabels.at(labelIndex + 2)->setText(perkName.substr(spacePos + 1));
+					}
+					else
+					{
+						cellLabels.at(labelIndex)->setText(perkName);
+						cellLabels.at(labelIndex + 1)->setText(newHorizonsPerkAvailability::tierName(slot.requiredRank));
+						cellLabels.at(labelIndex + 2)->setText("Acquired");
+					}
+				}
+				else
+				{
+					cellLabels.at(labelIndex)->setText(shortTierReason(slot.reason));
+					cellLabels.at(labelIndex + 1)->setText(selectionSlots && !slot.selectedPerk
+						? "Perk slot" : newHorizonsPerkAvailability::tierName(slot.requiredRank));
+					cellLabels.at(labelIndex + 2)->setText(newHorizonsPerkAvailability::statusName(slot.status));
+				}
 				for(size_t label = 0; label < 3; ++label)
 					cellLabels.at(labelIndex + label)->setEnabled(true);
 				if(slot.selectedPerk)

@@ -15,6 +15,7 @@
 #include "render/Canvas.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include <boost/algorithm/string/replace.hpp>
 
@@ -47,6 +48,22 @@ void CGarrisonSlot::showAll(Canvas & to)
 {
 	CIntObject::showAll(to);
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(getObj());
+	if(hero && myStack && myStack->valid(true) && myStack->getType())
+	{
+		const double eff = newHorizonsHeroes::stackLeadershipEfficiency(
+			hero, myStack->getType()->getId(), myStack->getCount(), hero);
+		if(eff < 0.999)
+		{
+			const int pct = std::clamp(static_cast<int>(std::round(eff * 100.0)), 1, 99);
+			const std::string badgeText = std::to_string(pct) + "%";
+			const int bw = 24;
+			const int bh = 10;
+			const Rect badgeRect(pos.x + pos.w - bw - 2, pos.y + 2, bw, bh);
+			to.drawColor(badgeRect, ColorRGBA(35, 10, 10, 220));
+			to.drawBorder(badgeRect, ColorRGBA(220, 60, 60, 240));
+			to.drawText(Point(badgeRect.x + bw / 2, badgeRect.y + 1), FONT_TINY, ColorRGBA(255, 160, 160, 255), ETextAlignment::TOPCENTER, badgeText);
+		}
+	}
 	const auto command = hero ? hero->getArmyCommand() : std::nullopt;
 	displayedArmy = getObj() ? getObj()->id : ObjectInstanceID::NONE;
 	displayedLevel = hero ? hero->level : 0;

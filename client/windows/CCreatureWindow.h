@@ -20,6 +20,7 @@ class CCommanderInstance;
 class CStackInstance;
 class CStack;
 class UpgradeInfo;
+class CGHeroInstance;
 
 class UnitView;
 class CTabbedInt;
@@ -98,6 +99,15 @@ class CStackWindow : public CWindowObject
 		std::vector<std::shared_ptr<CMultiLineLabel>> labels;
 	public:
 		TrainingSection(CStackWindow * owner, int yOffset);
+	};
+
+	class LeadershipSection : public CWindowSection
+	{
+		std::vector<std::shared_ptr<CPicture>> backgrounds;
+		std::vector<std::shared_ptr<CMultiLineLabel>> labels;
+		std::vector<std::shared_ptr<LRClickableAreaWText>> clickableAreas;
+	public:
+		LeadershipSection(CStackWindow * owner, int yOffset, const CGHeroInstance * hero, CreatureID creatureId, int64_t count);
 	};
 
 	class BonusLineSection : public CWindowSection
@@ -208,6 +218,7 @@ class CStackWindow : public CWindowObject
 
 	std::shared_ptr<CWindowSection> mainSection;
 	std::shared_ptr<CWindowSection> trainingSection;
+	std::shared_ptr<CWindowSection> leadershipSection;
 	std::shared_ptr<CWindowSection> activeSpellsSection;
 	std::shared_ptr<CWindowSection> orderIndicatorsSection;
 	std::shared_ptr<CWindowSection> commanderMainSection;

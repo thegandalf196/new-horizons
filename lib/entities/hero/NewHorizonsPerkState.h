@@ -119,6 +119,8 @@ public:
 	std::vector<PerkOfferCandidate> prepareOffer(
 		const std::function<int(const std::string &)> & rankLookup, uint64_t seed,
 		const OfferWeightContext & weightContext = {}) const;
+	/// Gathers all active, unselected perks for a given skill and specific rank tier.
+	std::vector<PerkOfferCandidate> candidatesForSkillTier(const std::string & skillId, int tier) const;
 	/// Exact decimal integer weights used by the R2 sampler, common2^32 scale.
 	/// Read-only numerical projection; never samples or examines eligibility.
 	std::map<std::string, std::string> quantizedParentWeights(const OfferWeightContext & context) const;
