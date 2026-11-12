@@ -12,10 +12,8 @@
 #include "render/Canvas.h"
 
 HeroExperienceBar::HeroExperienceBar(Point pos_, Point size_)
-	: CIntObject(0)
+	: CIntObject(0, pos_)
 {
-	pos.x = pos_.x;
-	pos.y = pos_.y;
 	pos.w = size_.x;
 	pos.h = size_.y;
 }
