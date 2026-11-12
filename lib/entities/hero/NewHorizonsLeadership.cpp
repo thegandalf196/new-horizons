@@ -17,7 +17,7 @@
 #include "../../battle/NewHorizonsElementalAttunement.h"
 #include "../../CCreatureHandler.h"
 #include "../../GameLibrary.h"
-#include "../../entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../creature/NewHorizonsCreatureCategoryRules.h"
 
 #include "../../mapObjects/CGHeroInstance.h"
 

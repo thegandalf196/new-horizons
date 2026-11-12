@@ -30036,10 +30036,10 @@
     },
     "lib/entities/hero/NewHorizonsLeadership.cpp": {
       "lines": 508,
-      "sha256": "1781812a8ced7e5960b728605f45efaf970bf201269d53133a037fb56f5c6b99",
+      "sha256": "ec6a0aa0e26ac09f8f6063699236bf271acd3bcc06522e51cdd00269d874ebba",
       "kind": "exception",
-      "review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261111",
-      "rationale": "Major system rework: restore Leadership secondary attribute, square-root stack efficiency, and redesign hero UI with Mana, Mana Regen, Vision, and Movement.",
+      "review": "IR-NORMALIZE-INCLUDE-LEADERSHIP-20261111",
+      "rationale": "Normalize relative include to ../creature/NewHorizonsCreatureCategoryRules.h following repository include policy.",
       "deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "owner": "gameplay_engineer"
     },
