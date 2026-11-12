@@ -2441,11 +2441,11 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 	};
 	for(int row = 0; row < 8; ++row)
 	{
-		recessed(Rect(12, 192 + row * 44, 126, 44), false);
+		recessed(Rect(12, 236 + row * 38, 126, 36), false);
 		for(int ability = 0; ability < 3; ++ability)
 		{
-			recessed(Rect(138 + ability * 98, 192 + row * 44, 98, 44), false);
-			const Rect placeholder(140 + ability * 98, 198 + row * 44, 32, 32);
+			recessed(Rect(138 + ability * 98, 236 + row * 38, 98, 36), false);
+			const Rect placeholder(140 + ability * 98, 238 + row * 38, 32, 32);
 			canvas.drawColorBlended(placeholder, ColorRGBA(0, 0, 0, 36));
 			canvas.drawBorder(placeholder, edge);
 		}
@@ -2463,22 +2463,31 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() cons
 		recessed(Rect(236 + column * 82, 12, 82, 76), false);
 	for(const Rect cell : {Rect(564, 12, 55, 76), Rect(619, 12, 55, 76), Rect(674, 12, 54, 76)})
 		recessed(cell, false);
-	for(int field = 0; field < 6; ++field)
-	{
-		recessed(Rect(12 + field % 3 * 140, 88 + field / 3 * 44, 140, 44), false);
-		if(field == 1 || field == 4 || field == 5)
-		{
-			const Rect placeholder(14 + field % 3 * 140, 88 + field / 3 * 44, 44, 44);
-			canvas.drawColorBlended(placeholder, ColorRGBA(0, 0, 0, 36));
-			canvas.drawBorder(placeholder, edge);
-		}
-	}
+
+	// Line 1: Specialty (left) and Experience (right)
+	recessed(Rect(12, 88, 136, 44), false);
+	recessed(Rect(154, 88, 278, 44), false);
+
+	// Lines 2 & 3: Hero Stats Panel (Leadership, Mana, Mana Regen on Row 1; Movement, Vision on Row 2)
+	recessed(Rect(12, 136, 420, 76), true);
+	// Horizontal divider between stat rows
+	canvas.drawLine(Point(14, 174), Point(430, 174), ColorRGBA(45, 31, 20), ColorRGBA(45, 31, 20));
+	canvas.drawLine(Point(14, 175), Point(430, 175), ColorRGBA(128, 100, 75), ColorRGBA(128, 100, 75));
+	// Vertical dividers in subrow 1 (Leadership | Mana | Mana Regen)
+	canvas.drawLine(Point(152, 138), Point(152, 172), ColorRGBA(45, 31, 20), ColorRGBA(45, 31, 20));
+	canvas.drawLine(Point(153, 138), Point(153, 172), ColorRGBA(128, 100, 75), ColorRGBA(128, 100, 75));
+	canvas.drawLine(Point(292, 138), Point(292, 172), ColorRGBA(45, 31, 20), ColorRGBA(45, 31, 20));
+	canvas.drawLine(Point(293, 138), Point(293, 172), ColorRGBA(128, 100, 75), ColorRGBA(128, 100, 75));
+	// Vertical divider in subrow 2 (Movement | Vision)
+	canvas.drawLine(Point(222, 176), Point(222, 210), ColorRGBA(45, 31, 20), ColorRGBA(45, 31, 20));
+	canvas.drawLine(Point(223, 176), Point(223, 210), ColorRGBA(128, 100, 75), ColorRGBA(128, 100, 75));
+
 	recessed(Rect(12, 12, 216, 76), false);
 	// Major boundaries are stronger than cell edges. Keep decoration outside
 	// the native equipment/tray controls; all consumer coordinates stay unchanged.
 	recessed(Rect(434, 89, 296, 430), true);
 	recessed(Rect(440, 426, 286, 53), true);
-	recessed(Rect(10, 190, 424, 354), true);
+	recessed(Rect(10, 218, 424, 322), true);
 	recessed(Rect(10, 542, 724, 66), true);
 	recessed(Rect(734, 12, 58, 596), true);
 	canvas.drawBorder(Rect(0, 608, 800, 16), edge);

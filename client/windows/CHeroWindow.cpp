@@ -316,7 +316,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 		FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE);
 	legacyLeadershipLabel = std::make_shared<CLabel>(438, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "", 65);
 	legacySiegeLabel = std::make_shared<CLabel>(534, 408, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, "Siege --", 65);
-	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_orders_command"), 0, Rect(410, 404, 24, 24));
+	legacyLeadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_leadership_24"), 0, Rect(410, 404, 24, 24));
 	legacyCommandArea = std::make_shared<LRClickableAreaWText>(Rect(410, 404, 92, 24), LIBRARY->generaltexth->translate("new-horizons.command.description"));
 	legacySiegeImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_capability_siege_32"), 0, Rect(506, 404, 24, 24));
 	legacyBoneCollectorImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_bone_collector"), 0, Rect(314, 404, 24, 24));
@@ -552,60 +552,10 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		secSkills[g]->setSkillForHero(*curHero, skill, level);
 	}
 
-	std::ostringstream expstr;
-	expstr << curHero->exp;
-	expValue->setText(expstr.str());
-
-	manaValue->setText(spellPointPresentation::readout(curHero->getManaAvailable(),
-		curHero->manaLimit(), curHero->getBufferSpellPoints()));
-
 	if(newHorizonsLayout)
 	{
-		refreshCommandReadout();
+		refreshMiddlePaneReadout();
 		alignAttributeReadouts();
-		movementValue->setText(std::to_string(curHero->movementPointsRemaining()) + "/" + std::to_string(curHero->movementPointsLimit()));
-		movementArea->text = "Movement points remaining / current limit: " + std::to_string(curHero->movementPointsRemaining())
-			+ " / " + std::to_string(curHero->movementPointsLimit()) + ".";
-		const auto landMovement = newHorizonsMovement::currentDailyMovementBreakdown(curHero, false);
-		const auto seaMovement = newHorizonsMovement::currentDailyMovementBreakdown(curHero, true);
-		if(landMovement && seaMovement)
-		{
-			const auto signedValue = [](const std::int64_t value)
-			{
-				return value > 0 ? "+" + std::to_string(value) : std::to_string(value);
-			};
-			const auto appendLimitBreakdown = [&signedValue, this](const char * label,
-				const newHorizonsMovement::DailyMovementBreakdown & breakdown)
-			{
-				movementArea->text += "\n" + std::string(label) + " maximum: " + std::to_string(breakdown.limit)
-					+ ". Inputs in order (including Logistics and other active bonuses): 200 base; base adjustment " + signedValue(breakdown.baseAdjustment)
-					+ "; " + signedValue(breakdown.percentageToBase) + "% to base; flat " + signedValue(breakdown.flat)
-					+ "; " + signedValue(breakdown.percentageToAll) + "% to all.";
-				if(breakdown.lowerBound)
-					movementArea->text += " Minimum bound: " + std::to_string(*breakdown.lowerBound) + ".";
-				if(breakdown.upperBound)
-					movementArea->text += " Maximum bound: " + std::to_string(*breakdown.upperBound) + ".";
-			};
-
-			appendLimitBreakdown("Land", *landMovement);
-			appendLimitBreakdown("Sea", *seaMovement);
-			if(curHero->hasActivePerk("new-horizons:logistics", "new-horizons:logistics.navigation"))
-				movementArea->text += "\nSea includes Navigation's +25% in its percent-to-base total.";
-
-			const auto turnInfo = curHero->getTurnInfo(0);
-			movementArea->text += "\nSteps: 10 orthogonal / 14 diagonal; final tile cost rounds up after modifiers.";
-			movementArea->text += "\nTerrain: x1.40 non-native, x1.80 Desert, x1.00 native. Native means the hero or entire army qualifies; one native stack alone does not suffice.";
-			if(turnInfo->hasNewHorizonsPathfinding())
-				movementArea->text += " Active Pathfinding halves only the terrain surcharge.";
-			if(turnInfo->hasNewHorizonsWayfarer())
-				movementArea->text += " Active Wayfarer caps the terrain multiplier at x1.25 after Pathfinding.";
-			movementArea->text += "\nRoad: x0.67.";
-			if(turnInfo->hasNewHorizonsRoadmaster())
-				movementArea->text += " Active Roadmaster further multiplies road cost by x0.75.";
-			movementArea->text += "\nSpecial travel: Water Walk/Fly steps use x1.50. Creature Speed is not a Movement modifier.";
-		}
-		else
-			movementArea->text += " Display icon is illustrative.";
 		const auto siege = curHero->getSiegeCapabilities();
 		legacySiegeValue->setText(siege ? std::to_string(siege->siegeRating) : "--");
 		legacySiegeArea->text = "Siege rating used by Ballista, Catapult, First Aid Tent and defensive tower formulas. It is not spent.\n";
@@ -616,6 +566,15 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 					+ ", First Aid " + std::to_string(siege->firstAidRank) + ". Open Hero development for saved damage/control details.");
 		else
 			legacySiegeArea->text += "No saved siege capability rules for this hero.";
+	}
+	else
+	{
+		std::ostringstream expstr;
+		expstr << curHero->exp;
+		expValue->setText(expstr.str());
+
+		manaValue->setText(spellPointPresentation::readout(curHero->getManaAvailable(),
+			curHero->manaLimit(), curHero->getBufferSpellPoints()));
 	}
 
 	// Legacy-sized hero windows do not have the New Horizons ability grid.

@@ -59,6 +59,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int stormWingsDefenseIgnorePercent = 0; // Exact first-primary voluntary-flight contribution.
 	int runicEnduranceReductionPercent = 0; // Independent attack-sequence protection source.
 	int ironHideReductionPercent = 0; // Independent first-primary-melee-hit protection this round.
+	double leadershipEfficiency = 1.0; // Square-root Leadership stack damage efficiency (0.0 to 1.0).
 	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
 	int heavenlyGaleDamageReductionBasisPoints = 0;
 	bool luckyStrike = false;
@@ -217,6 +218,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Attack-local percentage of combined capped physical damage reduction ignored.");
 		s("runicEnduranceReductionPercent", runicEnduranceReductionPercent, "Captured independent physical protection against additional blows in one ordinary action.");
 		s("ironHideReductionPercent", ironHideReductionPercent, "Captured independent physical protection against the first primary melee hit this round.");
+		s("leadershipEfficiency", leadershipEfficiency, "Leadership stack damage efficiency (0.0 to 1.0).");
 		s("intrinsicPhysicalDamageReductionPercent", intrinsicPhysicalDamageReductionPercent,
 			"Independent intrinsic physical reduction before the shared cap and final floor.");
 		s("elementalAttunementDamagePercent", elementalAttunementDamagePercent, "Current elemental-family additive attack damage.");

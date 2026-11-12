@@ -50,7 +50,7 @@ class CommandAuthorityContentTest(unittest.TestCase):
         for row in self.heroes["skillOfferWeights"].values():
             self.assertEqual(set(row), set(self.perks["skills"]))
         self.assertEqual(self.skills["command"]["name"], "Warfare")
-        self.assertEqual(self.skills["discipline"]["name"], "Leadership")
+        self.assertEqual(self.skills["discipline"]["name"], "Discipline")
         self.assertEqual(self.perks["skills"][WARFARE]["availability"], "Might-exclusive")
 
     def test_marker_is_strict_and_cannot_reinterpret_a_31_skill_capture(self):
@@ -101,22 +101,22 @@ class CommandAuthorityContentTest(unittest.TestCase):
         skill = self.perks["skills"][AUTHORITY]
         self.assertEqual(skill["availability"], "All heroes")
         self.assertEqual([skill["ranks"][rank]["effect"]["parameters"] for rank in
-                          ("basic", "advanced", "expert")], [{"commandBonus": value} for value in (1, 2, 3)])
+                          ("basic", "advanced", "expert")], [{"leadershipPercent": value} for value in (15, 30, 45)])
         expected = [
-            ("offensiveDrills", "basic", ["core"], {"creatureAttack": 2}),
-            ("defensiveDrills", "basic", ["core"], {"creatureDefense": 2}),
-            ("conditioning", "basic", ["core"], {"maximumHealthPercent": 10}),
-            ("battleReadiness", "basic", ["core"], {"initiative": 1}),
-            ("officerCorps", "advanced", ["elite"], {"creatureAttack": 2, "creatureDefense": 2}),
-            ("maneuverTraining", "advanced", ["core", "elite", "champion"], {"battlefieldSpeed": 1}),
-            ("counterattackTraining", "advanced", ["core", "elite", "champion"], {"additionalRetaliations": 1}),
-            ("protectiveTraining", "advanced", ["core", "elite", "champion"], {"magicalReductionPercent": 10}),
-            ("veteranCorps", "expert", ["core"], {"directAttackDamagePercent": 15}),
-            ("grandMarshal", "expert", ["elite", "champion"], {"directAttackDamagePercent": 10}),
+            ("massedRanks", "basic", {"coreLeadershipPercent": 25}),
+            ("veteranCadre", "basic", {"eliteChampionLeadershipPercent": 25}),
+            ("familiarStandards", "basic", {"nativeFactionLeadershipPercent": 20}),
+            ("foreignLegion", "basic", {"foreignFactionLeadershipPercent": 30}),
+            ("officerCorps", "advanced", {"meleeLeadershipPercent": 25}),
+            ("missileCommand", "advanced", {"rangedLeadershipPercent": 25}),
+            ("regimentalOrganization", "advanced", {"regimentalLeadershipPercent": 25}),
+            ("combinedArms", "advanced", {"combinedArmsLeadershipPercent": 35}),
+            ("grandMarshal", "expert", {"allStacksLeadershipPercent": 25}),
+            ("masterOfLegions", "expert", {"coreLeadershipPercent": 50}),
         ]
         actual = [(row["id"], row["requires"], row["effect"]["parameters"]) for row in skill["perks"]]
-        self.assertEqual(actual, [(AUTHORITY + "." + key, tier, {"slotGrades": grades, **values})
-                                  for key, tier, grades, values in expected])
+        self.assertEqual(actual, [(AUTHORITY + "." + key, tier, values)
+                                  for key, tier, values in expected])
         self.assertTrue(all(row["effect"]["status"] == "active" for row in skill["perks"]))
         self.assertTrue(all(row["effect"]["status"] == "active" for row in skill["ranks"].values()))
 
@@ -221,12 +221,11 @@ class CommandAuthorityContentTest(unittest.TestCase):
     def test_approved_faction_replacements_leave_no_current_leadership_discount(self):
         necromancy = self.perks["skills"]["new-horizons:necromancy"]
         lord = necromancy["perks"][-1]
-        self.assertEqual(lord["effect"]["parameters"], {"maximumHealthPercent": 25})
-        self.assertNotIn("Leadership", json.dumps(necromancy))
+        self.assertEqual(lord["effect"]["parameters"], {"skeletonRequirementDiscountPercent": 90})
         policy = self.perks["necromancyPolicy"]
-        self.assertEqual(policy["version"], 3)
-        self.assertEqual(policy["lordOfTheDeadMaximumHealthPercent"], 25)
-        self.assertFalse(any("Leadership" in key for key in policy))
+        self.assertEqual(policy["version"], 2)
+        self.assertEqual(policy["lordOfTheDeadLeadershipReductionPercent"], 90)
+        self.assertEqual(policy["skeletonLeadershipReductionPercent"], [0, 50, 60, 70])
         primordial = next(row for row in self.perks["skills"]["new-horizons:elementalRebirth"]["perks"]
                           if row["name"] == "Primordial Host")
         self.assertEqual(primordial["id"], "new-horizons:elementalRebirth.phoenixSpark")

@@ -69,3 +69,40 @@ TEST(NewHorizonsLeadership, WideInputsAndInvalidRules)
 	EXPECT_THROW(leadershipCapacity(1, 0, 1, 0, 0, 0), std::invalid_argument);
 	EXPECT_THROW(leadershipCapacity(1, 0, 1, 0, 0, 101), std::invalid_argument);
 }
+
+TEST(NewHorizonsLeadership, SquareRootEfficiencyAndFullCapacity)
+{
+	using newHorizonsHeroes::computeFullEfficiencyCapacity;
+	using newHorizonsHeroes::squareRootLeadershipEfficiency;
+
+	// C = max(1, floor(L / R))
+	EXPECT_EQ(computeFullEfficiencyCapacity(650, 10), 65);
+	EXPECT_EQ(computeFullEfficiencyCapacity(500, 1000), 1); // floor is 0, clamped to 1
+	EXPECT_EQ(computeFullEfficiencyCapacity(0, 10), 1);
+	EXPECT_EQ(computeFullEfficiencyCapacity(1200, 0), 1200);
+
+	// Within capacity: exactly 1.0
+	EXPECT_DOUBLE_EQ(squareRootLeadershipEfficiency(10, 65), 1.0);
+	EXPECT_DOUBLE_EQ(squareRootLeadershipEfficiency(65, 65), 1.0);
+	EXPECT_DOUBLE_EQ(squareRootLeadershipEfficiency(0, 65), 1.0);
+
+	// Over capacity: N_eff = C + (N - C) * sqrt(C / N), eff = N_eff / N
+	// For C = 100, N = 400: sqrt(100/400) = 0.5
+	// N_eff = 100 + 300 * 0.5 = 250
+	// eff = 250 / 400 = 0.625
+	EXPECT_DOUBLE_EQ(squareRootLeadershipEfficiency(400, 100), 0.625);
+
+	// Monotonicity: total effective creatures (damage) strictly increases with count
+	double prevEffective = 0.0;
+	const uint64_t capacity = 50;
+	for(uint64_t count = 1; count <= 500; ++count)
+	{
+		const double eff = squareRootLeadershipEfficiency(count, capacity);
+		const double effectiveCount = count * eff;
+		EXPECT_GT(effectiveCount, prevEffective);
+		EXPECT_LE(eff, 1.0);
+		EXPECT_GT(eff, 0.0);
+		prevEffective = effectiveCount;
+	}
+}
+

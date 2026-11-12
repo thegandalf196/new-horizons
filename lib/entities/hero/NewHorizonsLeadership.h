@@ -57,6 +57,36 @@ DLL_LINKAGE int leadershipMovement(int unscaledMovement, int movementPercent);
 DLL_LINKAGE std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
 	const CGHeroInstance & hero, CreatureID creature);
 
+/// Computes effective Hero Leadership for commanding a specific creature stack,
+/// applying Authority rank and applicable Authority perks according to the formula:
+/// L_effective = floor(L_hero * (1 + A + P_B + P_A + P_E)).
+DLL_LINKAGE int64_t stackEffectiveLeadership(const CGHeroInstance & hero, CreatureID creature,
+	const CCreatureSet * armyContext = nullptr);
+
+/// Computes effective Creature Leadership Requirement, applying Necromancy rank
+/// and Lord of the Dead discounts for Skeletons/Skeleton Warriors:
+/// R_effective = max(1, ceil(R_base * (1 - d))).
+DLL_LINKAGE int64_t stackEffectiveRequirement(const CGHeroInstance * hero, CreatureID creature);
+
+/// Computes full-efficiency capacity from numerical ratings:
+/// C = max(1, floor(L_effective / R_effective)).
+DLL_LINKAGE int64_t computeFullEfficiencyCapacity(int64_t effectiveLeadership, int64_t effectiveRequirement);
+
+/// Computes full-efficiency capacity for a creature stack:
+/// C = max(1, floor(L_effective / R_effective)).
+DLL_LINKAGE int64_t stackFullEfficiencyCapacity(const CGHeroInstance * hero, CreatureID creature,
+	const CCreatureSet * armyContext = nullptr);
+
+/// Square-root Leadership Efficiency for a stack of count creatures against capacity.
+/// When count <= capacity, returns 1.0.
+/// When count > capacity, returns (capacity + (count - capacity) * sqrt(capacity / count)) / count.
+DLL_LINKAGE double squareRootLeadershipEfficiency(int64_t count, int64_t capacity);
+
+/// Computes stack Leadership Efficiency for an army stack in [0.0, 1.0].
+/// Hero-less armies and neutral armies return 1.0.
+DLL_LINKAGE double stackLeadershipEfficiency(const CGHeroInstance * hero, CreatureID creature,
+	int64_t count, const CCreatureSet * armyContext = nullptr);
+
 /// Read-only occupied slot for recruitment forecasting; counts stay wide across
 /// repeated purchases. This is transient input, not saved army state.
 

@@ -295,7 +295,7 @@
 		}
 	},
 	"discipline": {
-		"name": "Leadership",
+		"name": "Discipline",
 		"specialty": [],
 		"tags": {
 			"special": true
@@ -477,7 +477,7 @@
 		"tags": {"special": true},
 		"gainChance": {"might": 1, "magic": 1},
 		"basic": {
-			"description": "+1 Command.",
+			"description": "Increases effective Leadership by +15%.",
 			"images": {
 				"small": "NH_authority_basic_small.png",
 				"medium": "NH_authority_basic_medium.png",
@@ -487,7 +487,7 @@
 			"effects": {}
 		},
 		"advanced": {
-			"description": "+2 Command total.",
+			"description": "Increases effective Leadership by +30% total.",
 			"images": {
 				"small": "NH_authority_advanced_small.png",
 				"medium": "NH_authority_advanced_medium.png",
@@ -497,7 +497,7 @@
 			"effects": {}
 		},
 		"expert": {
-			"description": "+3 Command total.",
+			"description": "Increases effective Leadership by +45% total.",
 			"images": {
 				"small": "NH_authority_expert_small.png",
 				"medium": "NH_authority_expert_medium.png",

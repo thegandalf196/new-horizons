@@ -173,13 +173,17 @@ void common(const JsonNode & rules, bool resolved)
 		require(!rules.Struct().contains("leadership") && !rules.Struct().contains("classProfiles")
 			&& !rules.Struct().contains("profile"), "v5 cannot contain retired Leadership tables");
 	}
-	else if(rules["rulesetVersion"].Integer() == 1)
+	else if(rules["rulesetVersion"].Integer() == 6)
+	{
+		require(!rules.Struct().contains("armyCommand"), "v6 cannot contain retired armyCommand");
+	}
+	if(rules["rulesetVersion"].Integer() == 1)
 	{
 		fields(rules["leadership"], {"skillBonusPercent", "minimumMovementPercent"});
 		rankValues(rules["leadership"]["skillBonusPercent"], 0, 1000, 0);
 		require(integer(rules["leadership"]["minimumMovementPercent"], 1, 100), "minimumMovementPercent");
 	}
-	else
+	else if(rules["rulesetVersion"].Integer() != 5)
 	{
 		fields(rules["leadership"], {"globalScalePercent", "upgradeMultiplierPercent", "upgradeRounding", "creatureRequirements"});
 		require(integer(rules["leadership"]["globalScalePercent"], 1, 10000), "globalScalePercent");
@@ -236,7 +240,7 @@ void resolvedRank(const JsonNode & rules, int rank)
 
 bool usesLegacyLeadership(const JsonNode & rules)
 {
-	return usesRules(rules) && rules["rulesetVersion"].Integer() < 5
+	return usesRules(rules) && rules["rulesetVersion"].Integer() != 5
 		&& !rules.Struct().contains("armyCommand");
 }
 
@@ -253,7 +257,7 @@ void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses)
 	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand"});
 	common(rules, false);
 	std::set<int> seen;
-	if(rules["rulesetVersion"].Integer() < 5)
+	if(rules["rulesetVersion"].Integer() != 5)
 	{
 		require(rules["classProfiles"].isStruct() && !rules["classProfiles"].Struct().empty(), "class profiles");
 		for(const auto & [key, value] : rules["classProfiles"].Struct())
@@ -284,7 +288,7 @@ void validateResolvedCapabilityRules(const JsonNode & rules)
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand"});
 	common(rules, true);
-	if(rules["rulesetVersion"].Integer() < 5)
+	if(rules["rulesetVersion"].Integer() != 5)
 		profile(rules["profile"]);
 }
 
@@ -296,7 +300,7 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 	JsonNode result;
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "siege"})
 		result[key] = rules[key];
-	if(rules["rulesetVersion"].Integer() < 5)
+	if(rules["rulesetVersion"].Integer() != 5)
 		result["leadership"] = rules["leadership"];
 	if(rules["rulesetVersion"].Integer() >= 4)
 		result["warMachineShop"] = rules["warMachineShop"];
@@ -308,7 +312,7 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 		result["glyphsOfFearAura"] = rules["glyphsOfFearAura"];
 	if(rules.Struct().contains("armyCommand"))
 		result["armyCommand"] = resolveArmyCommandPolicy(rules["armyCommand"], HeroClassID::encode(heroClass.getNum()));
-	if(rules["rulesetVersion"].Integer() < 5)
+	if(rules["rulesetVersion"].Integer() != 5)
 		for(const auto & [key, value] : rules["classProfiles"].Struct())
 			if(resolveClass(key) == heroClass.getNum())
 				result["profile"] = value;

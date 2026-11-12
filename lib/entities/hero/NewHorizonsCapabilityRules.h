@@ -16,7 +16,7 @@
 
 namespace newHorizonsHeroes
 {
-constexpr int CAPABILITY_RULESET_VERSION = 5;
+constexpr int CAPABILITY_RULESET_VERSION = 6;
 
 struct DLL_LINKAGE SiegeCapabilities
 {

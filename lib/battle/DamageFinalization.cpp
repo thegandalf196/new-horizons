@@ -29,6 +29,7 @@
 #include "../mapObjects/CGTownInstance.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsLeadership.h"
 
 namespace
 {
@@ -94,6 +95,16 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 		* (100 + newHorizonsPrismaticVanguard::activeDamagePercent(info)) / 100;
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
+	if(!info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))
+	{
+		const auto * hero = battleGetOwnerHero(info.attacker);
+		payload.leadershipEfficiency = newHorizonsHeroes::stackLeadershipEfficiency(
+			hero, info.attacker->creatureId(), info.attacker->getCount());
+	}
+	else
+	{
+		payload.leadershipEfficiency = 1.0;
+	}
 	if(info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))
 	{
 		if(const auto * hero = battleGetOwnerHero(info.attacker))

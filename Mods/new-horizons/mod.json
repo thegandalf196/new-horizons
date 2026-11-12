@@ -6282,89 +6282,162 @@
 			},
 			"newHorizonsCapabilities": {
 				"schemaVersion": 1,
-				"rulesetVersion": 5,
-				"armyCommand": {
-					"version": 1,
-					"defaultStartingArmyVersion": 1,
-					"classLevelIntervals": {
-						"core:knight": 3,
-						"core:cleric": 4,
-						"core:ranger": 3,
-						"core:druid": 4,
-						"core:alchemist": 3,
-						"core:wizard": 4,
-						"core:demoniac": 3,
-						"core:heretic": 4,
-						"core:deathknight": 3,
-						"core:necromancer": 4,
-						"core:overlord": 3,
-						"core:warlock": 4,
-						"core:barbarian": 3,
-						"core:battlemage": 4,
-						"core:beastmaster": 3,
-						"core:witch": 4,
-						"core:planeswalker": 3,
-						"core:elementalist": 4
-					},
-					"authorityRankBonuses": [
-						0,
-						1,
-						2,
-						3
-					],
-					"enhancements": {
-						"readiness": {
-							"levelDivisor": 20,
-							"multiplier": 1
-						},
-						"mobility": {
-							"levelDivisor": 20,
-							"multiplier": 1
-						},
-						"counterattack": {
-							"levelDivisor": 20,
-							"multiplier": 1
-						},
-						"weaponDrill": {
-							"levelDivisor": 10,
-							"multiplier": 1
-						},
-						"guardDrill": {
-							"levelDivisor": 10,
-							"multiplier": 1
-						},
-						"fortune": {
-							"levelDivisor": 10,
-							"multiplier": 1
-						},
-						"courage": {
-							"levelDivisor": 10,
-							"multiplier": 1
-						},
-						"endurance": {
-							"levelDivisor": 10,
-							"multiplier": 5
-						},
-						"warding": {
-							"levelDivisor": 10,
-							"multiplier": 5
-						}
-					},
-					"authorityPerks": {
-						"offensiveDrills": 2,
-						"defensiveDrills": 2,
-						"conditioning": 10,
-						"battleReadiness": 1,
-						"officerCorps": 2,
-						"maneuverTraining": 1,
-						"counterattackTraining": 1,
-						"protectiveTraining": 10,
-						"veteranCorps": 15,
-						"grandMarshal": 10
-					}
-				},
+				"rulesetVersion": 6,
 				"skeletonTransformer": {
 					"aggregateHealthPercent": 50
+				},
+				"classProfiles": {
+					"core:knight": {
+						"base": 1625,
+						"perLevel": 95
+					},
+					"core:cleric": {
+						"base": 875,
+						"perLevel": 45
+					},
+					"core:ranger": {
+						"base": 1550,
+						"perLevel": 90
+					},
+					"core:druid": {
+						"base": 725,
+						"perLevel": 35
+					},
+					"core:alchemist": {
+						"base": 1250,
+						"perLevel": 70
+					},
+					"core:wizard": {
+						"base": 650,
+						"perLevel": 30
+					},
+					"core:demoniac": {
+						"base": 1625,
+						"perLevel": 95
+					},
+					"core:heretic": {
+						"base": 875,
+						"perLevel": 45
+					},
+					"core:deathknight": {
+						"base": 1475,
+						"perLevel": 85
+					},
+					"core:necromancer": {
+						"base": 875,
+						"perLevel": 45
+					},
+					"core:overlord": {
+						"base": 1625,
+						"perLevel": 95
+					},
+					"core:warlock": {
+						"base": 800,
+						"perLevel": 40
+					},
+					"core:barbarian": {
+						"base": 1850,
+						"perLevel": 110
+					},
+					"core:battlemage": {
+						"base": 1250,
+						"perLevel": 70
+					},
+					"core:beastmaster": {
+						"base": 1850,
+						"perLevel": 110
+					},
+					"core:witch": {
+						"base": 800,
+						"perLevel": 40
+					},
+					"core:planeswalker": {
+						"base": 1325,
+						"perLevel": 75
+					},
+					"core:elementalist": {
+						"base": 650,
+						"perLevel": 30
+					}
+				},
+				"leadership": {
+					"globalScalePercent": 100,
+					"upgradeMultiplierPercent": 100,
+					"upgradeRounding": 1,
+					"creatureRequirements": {
+						"core:pikeman": 60,
+						"core:archer": 90,
+						"core:swordsman": 150,
+						"core:griffin": 220,
+						"core:monk": 320,
+						"core:cavalier": 450,
+						"core:angel": 650,
+						"core:centaur": 60,
+						"core:dwarf": 90,
+						"core:woodElf": 140,
+						"core:pegasus": 210,
+						"core:dendroidGuard": 280,
+						"core:unicorn": 420,
+						"core:greenDragon": 650,
+						"core:gremlin": 50,
+						"core:stoneGargoyle": 80,
+						"core:ironGolem": 140,
+						"core:mage": 300,
+						"core:genie": 240,
+						"core:naga": 450,
+						"core:giant": 650,
+						"core:imp": 50,
+						"core:gog": 90,
+						"core:hellHound": 150,
+						"core:demon": 220,
+						"core:pitFiend": 320,
+						"core:efreet": 430,
+						"core:devil": 650,
+						"core:skeleton": 45,
+						"core:walkingDead": 80,
+						"core:wight": 130,
+						"new-horizons:ghost": 130,
+						"core:vampire": 230,
+						"core:lich": 330,
+						"core:blackKnight": 470,
+						"core:boneDragon": 650,
+						"core:troglodyte": 55,
+						"core:harpy": 90,
+						"core:beholder": 140,
+						"core:medusa": 230,
+						"core:minotaur": 330,
+						"core:manticore": 430,
+						"core:redDragon": 650,
+						"core:goblin": 50,
+						"core:goblinWolfRider": 90,
+						"core:orc": 140,
+						"core:ogre": 250,
+						"core:roc": 300,
+						"core:cyclop": 450,
+						"core:behemoth": 650,
+						"core:gnoll": 55,
+						"core:lizardman": 90,
+						"core:serpentFly": 140,
+						"core:basilisk": 230,
+						"core:gorgon": 340,
+						"core:wyvern": 430,
+						"core:hydra": 650,
+						"core:pixie": 45,
+						"core:sprite": 45,
+						"core:airElemental": 250,
+						"core:waterElemental": 250,
+						"core:fireElemental": 250,
+						"core:earthElemental": 250,
+						"core:psychicElemental": 320,
+						"core:magicElemental": 320,
+						"core:firebird": 650,
+						"core:phoenix": 650,
+						"core:rogue": 90,
+						"core:enchanter": 380,
+						"core:sharpshooter": 170,
+						"new-horizons:wisp": 140,
+						"new-horizons:wispUpgrade": 140
+					}
 				},
 				"siege": {
 					"ballistaDamageMultiplier": [
@@ -6504,8 +6577,14 @@
 					"version": 1
 				},
 				"necromancyPolicy": {
-					"version": 3,
-					"lordOfTheDeadMaximumHealthPercent": 25,
+					"version": 2,
+					"skeletonLeadershipReductionPercent": [
+						0,
+						50,
+						60,
+						70
+					],
+					"lordOfTheDeadLeadershipReductionPercent": 90,
 					"deathMarchSpeed": 2,
 					"bonewardMagicalReductionPercent": 0,
 					"tombGuardAdditionalRetaliations": 0,
@@ -7209,7 +7288,7 @@
 					},
 					"new-horizons:discipline": {
 						"id": "new-horizons:discipline",
-						"name": "Leadership",
+						"name": "Discipline",
 						"domain": "Martial",
 						"availability": "All heroes",
 						"description": "Increase army Morale and protect troops from panic.",
@@ -7714,102 +7793,90 @@
 						"name": "Authority",
 						"domain": "Martial",
 						"availability": "All heroes",
-						"description": "Increase Command and passively train the creatures occupying your army slots.",
-						"details": "Available to Might and Magic heroes. Class offer weights follow physical attribute growth. Rank bonuses are totals, not cumulative awards. Perks apply by occupied slot grade, including creatures with Assimilation, with no additional selection or Command bonus. Slot enhancements remain independent acquisition-level snapshots.",
+						"description": "Universal Martial Skill specializing effective Leadership.",
+						"details": "Available to Might and Magic heroes. Class offer weights follow physical attribute growth. Increases effective Leadership for stack capacity calculations.",
 						"ranks": {
 							"basic": {
-								"description": "+1 Command.",
+								"description": "Increases effective Leadership by +15%.",
 								"effect": {
 									"status": "active",
-									"description": "+1 Command.",
+									"description": "Increases effective Leadership by +15%.",
 									"parameters": {
-										"commandBonus": 1
+										"leadershipPercent": 15
 									}
 								}
 							},
 							"advanced": {
-								"description": "+2 Command total.",
+								"description": "Increases effective Leadership by +30% total.",
 								"effect": {
 									"status": "active",
-									"description": "+2 Command total.",
+									"description": "Increases effective Leadership by +30% total.",
 									"parameters": {
-										"commandBonus": 2
+										"leadershipPercent": 30
 									}
 								}
 							},
 							"expert": {
-								"description": "+3 Command total.",
+								"description": "Increases effective Leadership by +45% total.",
 								"effect": {
 									"status": "active",
-									"description": "+3 Command total.",
+									"description": "Increases effective Leadership by +45% total.",
 									"parameters": {
-										"commandBonus": 3
+										"leadershipPercent": 45
 									}
 								}
 							}
 						},
 						"perks": [
 							{
-								"id": "new-horizons:authority.offensiveDrills",
-								"name": "Offensive Drills",
+								"id": "new-horizons:authority.massedRanks",
+								"name": "Massed Ranks",
 								"requires": "basic",
-								"description": "Creatures occupying Core slots gain +2 Creature Attack.",
+								"description": "Increases effective Leadership by +25% when calculating capacity for Core creatures.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying Core slots gain +2 Creature Attack.",
+									"description": "Increases effective Leadership by +25% when calculating capacity for Core creatures.",
 									"parameters": {
-										"slotGrades": [
-											"core"
-										],
-										"creatureAttack": 2
+										"coreLeadershipPercent": 25
 									}
 								}
 							},
 							{
-								"id": "new-horizons:authority.defensiveDrills",
-								"name": "Defensive Drills",
+								"id": "new-horizons:authority.veteranCadre",
+								"name": "Veteran Cadre",
 								"requires": "basic",
-								"description": "Creatures occupying Core slots gain +2 Creature Defense.",
+								"description": "Increases effective Leadership by +25% when calculating capacity for Elite and Champion creatures.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying Core slots gain +2 Creature Defense.",
+									"description": "Increases effective Leadership by +25% when calculating capacity for Elite and Champion creatures.",
 									"parameters": {
-										"slotGrades": [
-											"core"
-										],
-										"creatureDefense": 2
+										"eliteChampionLeadershipPercent": 25
 									}
 								}
 							},
 							{
-								"id": "new-horizons:authority.conditioning",
-								"name": "Conditioning",
+								"id": "new-horizons:authority.familiarStandards",
+								"name": "Familiar Standards",
 								"requires": "basic",
-								"description": "Creatures occupying Core slots gain +10% maximum HP.",
+								"description": "Increases effective Leadership by +20% when calculating capacity for creatures belonging to the hero's native faction.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying Core slots gain +10% maximum HP.",
+									"description": "Increases effective Leadership by +20% when calculating capacity for creatures belonging to the hero's native faction.",
 									"parameters": {
-										"slotGrades": [
-											"core"
-										],
-										"maximumHealthPercent": 10
+										"nativeFactionLeadershipPercent": 20
 									}
 								}
 							},
 							{
-								"id": "new-horizons:authority.battleReadiness",
-								"name": "Battle Readiness",
+								"id": "new-horizons:authority.foreignLegion",
+								"name": "Foreign Legion",
 								"requires": "basic",
-								"description": "Creatures occupying Core slots gain +1 Initiative.",
+								"description": "Increases effective Leadership by +30% when calculating capacity for creatures not belonging to the hero's native faction.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying Core slots gain +1 Initiative.",
+									"description": "Increases effective Leadership by +30% when calculating capacity for creatures not belonging to the hero's native faction.",
 									"parameters": {
-										"slotGrades": [
-											"core"
-										],
-										"initiative": 1
+										"foreignFactionLeadershipPercent": 30
 									}
 								}
 							},
@@ -7817,109 +7884,79 @@
 								"id": "new-horizons:authority.officerCorps",
 								"name": "Officer Corps",
 								"requires": "advanced",
-								"description": "Creatures occupying Elite slots gain +2 Creature Attack and +2 Creature Defense.",
+								"description": "Increases effective Leadership by +25% when calculating capacity for melee creature stacks.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying Elite slots gain +2 Creature Attack and +2 Creature Defense.",
+									"description": "Increases effective Leadership by +25% when calculating capacity for melee creature stacks.",
 									"parameters": {
-										"slotGrades": [
-											"elite"
-										],
-										"creatureAttack": 2,
-										"creatureDefense": 2
+										"meleeLeadershipPercent": 25
 									}
 								}
 							},
 							{
-								"id": "new-horizons:authority.maneuverTraining",
-								"name": "Maneuver Training",
+								"id": "new-horizons:authority.missileCommand",
+								"name": "Missile Command",
 								"requires": "advanced",
-								"description": "Creatures occupying any army slot gain +1 battlefield Speed; adventure Movement is unchanged.",
+								"description": "Increases effective Leadership by +25% when calculating capacity for ranged creature stacks.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying any army slot gain +1 battlefield Speed; adventure Movement is unchanged.",
+									"description": "Increases effective Leadership by +25% when calculating capacity for ranged creature stacks.",
 									"parameters": {
-										"slotGrades": [
-											"core",
-											"elite",
-											"champion"
-										],
-										"battlefieldSpeed": 1
+										"rangedLeadershipPercent": 25
 									}
 								}
 							},
 							{
-								"id": "new-horizons:authority.counterattackTraining",
-								"name": "Counterattack Training",
+								"id": "new-horizons:authority.regimentalOrganization",
+								"name": "Regimental Organization",
 								"requires": "advanced",
-								"description": "Creatures occupying any army slot gain +1 ordinary retaliation per round.",
+								"description": "Increases effective Leadership by +25% for all stacks in an army containing creatures from at least three distinct non-repeated creature lines.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying any army slot gain +1 ordinary retaliation per round.",
+									"description": "Increases effective Leadership by +25% for all stacks in an army containing creatures from at least three distinct non-repeated creature lines.",
 									"parameters": {
-										"slotGrades": [
-											"core",
-											"elite",
-											"champion"
-										],
-										"additionalRetaliations": 1
+										"regimentalLeadershipPercent": 25
 									}
-								},
-								"details": "Does not grant ranged retaliation, override retaliation prevention or creature eligibility, or increase an unlimited retaliation allowance."
+								}
 							},
 							{
-								"id": "new-horizons:authority.protectiveTraining",
-								"name": "Protective Training",
+								"id": "new-horizons:authority.combinedArms",
+								"name": "Combined Arms",
 								"requires": "advanced",
-								"description": "Creatures occupying any army slot take 10% less magical damage.",
+								"description": "Increases effective Leadership by +35% for all stacks in an army containing at least one Core, one Elite, and one Champion creature.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying any army slot take 10% less magical damage.",
+									"description": "Increases effective Leadership by +35% for all stacks in an army containing at least one Core, one Elite, and one Champion creature.",
 									"parameters": {
-										"slotGrades": [
-											"core",
-											"elite",
-											"champion"
-										],
-										"magicalReductionPercent": 10
+										"combinedArmsLeadershipPercent": 35
 									}
-								},
-								"details": "An independent standing mitigation source, separate from acquisition-scaled Warding. Normal magical mitigation and the final 95% reduction limit still apply."
-							},
-							{
-								"id": "new-horizons:authority.veteranCorps",
-								"name": "Veteran Corps",
-								"requires": "expert",
-								"description": "Creatures occupying Core slots deal +15% direct creature-attack damage.",
-								"effect": {
-									"status": "active",
-									"description": "Creatures occupying Core slots deal +15% direct creature-attack damage.",
-									"parameters": {
-										"slotGrades": [
-											"core"
-										],
-										"directAttackDamagePercent": 15
-									}
-								},
-								"details": "Includes melee attacks, ranged attacks and retaliations, including ordinary magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage."
+								}
 							},
 							{
 								"id": "new-horizons:authority.grandMarshal",
 								"name": "Grand Marshal",
 								"requires": "expert",
-								"description": "Creatures occupying Elite and Champion slots deal +10% direct creature-attack damage.",
+								"description": "Increases effective Leadership by +25% for all stacks.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures occupying Elite and Champion slots deal +10% direct creature-attack damage.",
+									"description": "Increases effective Leadership by +25% for all stacks.",
 									"parameters": {
-										"slotGrades": [
-											"elite",
-											"champion"
-										],
-										"directAttackDamagePercent": 10
+										"allStacksLeadershipPercent": 25
 									}
-								},
-								"details": "Includes melee attacks, ranged attacks and retaliations, including ordinary magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage. This is distinct from Warfare's retired Grand Marshal and grants no Command."
+								}
+							},
+							{
+								"id": "new-horizons:authority.masterOfLegions",
+								"name": "Master of Legions",
+								"requires": "expert",
+								"description": "Increases effective Leadership by +50% when calculating capacity for Core creatures.",
+								"effect": {
+									"status": "active",
+									"description": "Increases effective Leadership by +50% when calculating capacity for Core creatures.",
+									"parameters": {
+										"coreLeadershipPercent": 50
+									}
+								}
 							}
 						]
 					},
@@ -10743,15 +10780,15 @@
 								"id": "new-horizons:necromancy.lordOfTheDead",
 								"name": "Lord of the Dead",
 								"requires": "expert",
-								"description": "Your Skeletons and Skeleton Warriors gain +25% maximum HP.",
+								"description": "Reduce Leadership Requirement of Skeletons and Skeleton Warriors by 90% total.",
 								"effect": {
 									"status": "active",
-									"description": "Your Skeletons and Skeleton Warriors gain +25% maximum HP.",
+									"description": "Reduce Leadership Requirement of Skeletons and Skeleton Warriors by 90% total.",
 									"parameters": {
-										"maximumHealthPercent": 25
+										"skeletonRequirementDiscountPercent": 90
 									}
 								},
-								"details": "Applies only to Skeletons and Skeleton Warriors commanded by this hero, through the normal maximum-HP bonus and rounding pipeline. This grants no Command or additional slots."
+								"details": "Reduces the effective Leadership Requirement of Skeletons and Skeleton Warriors commanded by this hero by 90%."
 							}
 						]
 					},
@@ -11569,7 +11606,7 @@
 			}
 		},
 		"discipline": {
-			"name": "Leadership",
+			"name": "Discipline",
 			"specialty": [],
 			"tags": {
 				"special": true
@@ -11756,7 +11793,7 @@
 				"magic": 1
 			},
 			"basic": {
-				"description": "+1 Command.",
+				"description": "Increases effective Leadership by +15%.",
 				"images": {
 					"small": "NH_authority_basic_small.png",
 					"medium": "NH_authority_basic_medium.png",
@@ -11766,7 +11803,7 @@
 				"effects": {}
 			},
 			"advanced": {
-				"description": "+2 Command total.",
+				"description": "Increases effective Leadership by +30% total.",
 				"images": {
 					"small": "NH_authority_advanced_small.png",
 					"medium": "NH_authority_advanced_medium.png",
@@ -11776,7 +11813,7 @@
 				"effects": {}
 			},
 			"expert": {
-				"description": "+3 Command total.",
+				"description": "Increases effective Leadership by +45% total.",
 				"images": {
 					"small": "NH_authority_expert_small.png",
 					"medium": "NH_authority_expert_medium.png",

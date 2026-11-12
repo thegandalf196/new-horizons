@@ -23,8 +23,9 @@
 		"version": 1
 	},
 	"necromancyPolicy": {
-		"version": 3,
-		"lordOfTheDeadMaximumHealthPercent": 25,
+		"version": 2,
+		"skeletonLeadershipReductionPercent": [0, 50, 60, 70],
+		"lordOfTheDeadLeadershipReductionPercent": 90,
 		"deathMarchSpeed": 2,
 		"bonewardMagicalReductionPercent": 0,
 		"tombGuardAdditionalRetaliations": 0,
@@ -728,7 +729,7 @@
 		},
 		"new-horizons:discipline": {
 			"id": "new-horizons:discipline",
-			"name": "Leadership",
+			"name": "Discipline",
 			"domain": "Martial",
 			"availability": "All heroes",
 			"description": "Increase army Morale and protect troops from panic.",
@@ -1199,136 +1200,132 @@
 			"name": "Authority",
 			"domain": "Martial",
 			"availability": "All heroes",
-			"description": "Increase Command and passively train the creatures occupying your army slots.",
-			"details": "Available to Might and Magic heroes. Class offer weights follow physical attribute growth. Rank bonuses are totals, not cumulative awards. Perks apply by occupied slot grade, including creatures with Assimilation, with no additional selection or Command bonus. Slot enhancements remain independent acquisition-level snapshots.",
+			"description": "Universal Martial Skill specializing effective Leadership.",
+			"details": "Available to Might and Magic heroes. Class offer weights follow physical attribute growth. Increases effective Leadership for stack capacity calculations.",
 			"ranks": {
 				"basic": {
-					"description": "+1 Command.",
-					"effect": {"status": "active", "description": "+1 Command.", "parameters": {"commandBonus": 1}}
+					"description": "Increases effective Leadership by +15%.",
+					"effect": {"status": "active", "description": "Increases effective Leadership by +15%.", "parameters": {"leadershipPercent": 15}}
 				},
 				"advanced": {
-					"description": "+2 Command total.",
-					"effect": {"status": "active", "description": "+2 Command total.", "parameters": {"commandBonus": 2}}
+					"description": "Increases effective Leadership by +30% total.",
+					"effect": {"status": "active", "description": "Increases effective Leadership by +30% total.", "parameters": {"leadershipPercent": 30}}
 				},
 				"expert": {
-					"description": "+3 Command total.",
-					"effect": {"status": "active", "description": "+3 Command total.", "parameters": {"commandBonus": 3}}
+					"description": "Increases effective Leadership by +45% total.",
+					"effect": {"status": "active", "description": "Increases effective Leadership by +45% total.", "parameters": {"leadershipPercent": 45}}
 				}
 			},
 			"perks": [
 				{
-					"id": "new-horizons:authority.offensiveDrills",
-					"name": "Offensive Drills",
+					"id": "new-horizons:authority.massedRanks",
+					"name": "Massed Ranks",
 					"requires": "basic",
-					"description": "Creatures occupying Core slots gain +2 Creature Attack.",
+					"description": "Increases effective Leadership by +25% when calculating capacity for Core creatures.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying Core slots gain +2 Creature Attack.",
-						"parameters": {"slotGrades": ["core"], "creatureAttack": 2}
+						"description": "Increases effective Leadership by +25% when calculating capacity for Core creatures.",
+						"parameters": {"coreLeadershipPercent": 25}
 					}
 				},
 				{
-					"id": "new-horizons:authority.defensiveDrills",
-					"name": "Defensive Drills",
+					"id": "new-horizons:authority.veteranCadre",
+					"name": "Veteran Cadre",
 					"requires": "basic",
-					"description": "Creatures occupying Core slots gain +2 Creature Defense.",
+					"description": "Increases effective Leadership by +25% when calculating capacity for Elite and Champion creatures.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying Core slots gain +2 Creature Defense.",
-						"parameters": {"slotGrades": ["core"], "creatureDefense": 2}
+						"description": "Increases effective Leadership by +25% when calculating capacity for Elite and Champion creatures.",
+						"parameters": {"eliteChampionLeadershipPercent": 25}
 					}
 				},
 				{
-					"id": "new-horizons:authority.conditioning",
-					"name": "Conditioning",
+					"id": "new-horizons:authority.familiarStandards",
+					"name": "Familiar Standards",
 					"requires": "basic",
-					"description": "Creatures occupying Core slots gain +10% maximum HP.",
+					"description": "Increases effective Leadership by +20% when calculating capacity for creatures belonging to the hero's native faction.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying Core slots gain +10% maximum HP.",
-						"parameters": {"slotGrades": ["core"], "maximumHealthPercent": 10}
+						"description": "Increases effective Leadership by +20% when calculating capacity for creatures belonging to the hero's native faction.",
+						"parameters": {"nativeFactionLeadershipPercent": 20}
 					}
 				},
 				{
-					"id": "new-horizons:authority.battleReadiness",
-					"name": "Battle Readiness",
+					"id": "new-horizons:authority.foreignLegion",
+					"name": "Foreign Legion",
 					"requires": "basic",
-					"description": "Creatures occupying Core slots gain +1 Initiative.",
+					"description": "Increases effective Leadership by +30% when calculating capacity for creatures not belonging to the hero's native faction.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying Core slots gain +1 Initiative.",
-						"parameters": {"slotGrades": ["core"], "initiative": 1}
+						"description": "Increases effective Leadership by +30% when calculating capacity for creatures not belonging to the hero's native faction.",
+						"parameters": {"foreignFactionLeadershipPercent": 30}
 					}
 				},
 				{
 					"id": "new-horizons:authority.officerCorps",
 					"name": "Officer Corps",
 					"requires": "advanced",
-					"description": "Creatures occupying Elite slots gain +2 Creature Attack and +2 Creature Defense.",
+					"description": "Increases effective Leadership by +25% when calculating capacity for melee creature stacks.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying Elite slots gain +2 Creature Attack and +2 Creature Defense.",
-						"parameters": {"slotGrades": ["elite"], "creatureAttack": 2, "creatureDefense": 2}
+						"description": "Increases effective Leadership by +25% when calculating capacity for melee creature stacks.",
+						"parameters": {"meleeLeadershipPercent": 25}
 					}
 				},
 				{
-					"id": "new-horizons:authority.maneuverTraining",
-					"name": "Maneuver Training",
+					"id": "new-horizons:authority.missileCommand",
+					"name": "Missile Command",
 					"requires": "advanced",
-					"description": "Creatures occupying any army slot gain +1 battlefield Speed; adventure Movement is unchanged.",
+					"description": "Increases effective Leadership by +25% when calculating capacity for ranged creature stacks.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying any army slot gain +1 battlefield Speed; adventure Movement is unchanged.",
-						"parameters": {"slotGrades": ["core", "elite", "champion"], "battlefieldSpeed": 1}
+						"description": "Increases effective Leadership by +25% when calculating capacity for ranged creature stacks.",
+						"parameters": {"rangedLeadershipPercent": 25}
 					}
 				},
 				{
-					"id": "new-horizons:authority.counterattackTraining",
-					"name": "Counterattack Training",
+					"id": "new-horizons:authority.regimentalOrganization",
+					"name": "Regimental Organization",
 					"requires": "advanced",
-					"description": "Creatures occupying any army slot gain +1 ordinary retaliation per round.",
+					"description": "Increases effective Leadership by +25% for all stacks in an army containing creatures from at least three distinct non-repeated creature lines.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying any army slot gain +1 ordinary retaliation per round.",
-						"parameters": {"slotGrades": ["core", "elite", "champion"], "additionalRetaliations": 1}
-					},
-					"details": "Does not grant ranged retaliation, override retaliation prevention or creature eligibility, or increase an unlimited retaliation allowance."
+						"description": "Increases effective Leadership by +25% for all stacks in an army containing creatures from at least three distinct non-repeated creature lines.",
+						"parameters": {"regimentalLeadershipPercent": 25}
+					}
 				},
 				{
-					"id": "new-horizons:authority.protectiveTraining",
-					"name": "Protective Training",
+					"id": "new-horizons:authority.combinedArms",
+					"name": "Combined Arms",
 					"requires": "advanced",
-					"description": "Creatures occupying any army slot take 10% less magical damage.",
+					"description": "Increases effective Leadership by +35% for all stacks in an army containing at least one Core, one Elite, and one Champion creature.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying any army slot take 10% less magical damage.",
-						"parameters": {"slotGrades": ["core", "elite", "champion"], "magicalReductionPercent": 10}
-					},
-					"details": "An independent standing mitigation source, separate from acquisition-scaled Warding. Normal magical mitigation and the final 95% reduction limit still apply."
-				},
-				{
-					"id": "new-horizons:authority.veteranCorps",
-					"name": "Veteran Corps",
-					"requires": "expert",
-					"description": "Creatures occupying Core slots deal +15% direct creature-attack damage.",
-					"effect": {
-						"status": "active",
-						"description": "Creatures occupying Core slots deal +15% direct creature-attack damage.",
-						"parameters": {"slotGrades": ["core"], "directAttackDamagePercent": 15}
-					},
-					"details": "Includes melee attacks, ranged attacks and retaliations, including ordinary magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage."
+						"description": "Increases effective Leadership by +35% for all stacks in an army containing at least one Core, one Elite, and one Champion creature.",
+						"parameters": {"combinedArmsLeadershipPercent": 35}
+					}
 				},
 				{
 					"id": "new-horizons:authority.grandMarshal",
 					"name": "Grand Marshal",
 					"requires": "expert",
-					"description": "Creatures occupying Elite and Champion slots deal +10% direct creature-attack damage.",
+					"description": "Increases effective Leadership by +25% for all stacks.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures occupying Elite and Champion slots deal +10% direct creature-attack damage.",
-						"parameters": {"slotGrades": ["elite", "champion"], "directAttackDamagePercent": 10}
-					},
-					"details": "Includes melee attacks, ranged attacks and retaliations, including ordinary magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage. This is distinct from Warfare's retired Grand Marshal and grants no Command."
+						"description": "Increases effective Leadership by +25% for all stacks.",
+						"parameters": {"allStacksLeadershipPercent": 25}
+					}
+				},
+				{
+					"id": "new-horizons:authority.masterOfLegions",
+					"name": "Master of Legions",
+					"requires": "expert",
+					"description": "Increases effective Leadership by +50% when calculating capacity for Core creatures.",
+					"effect": {
+						"status": "active",
+						"description": "Increases effective Leadership by +50% when calculating capacity for Core creatures.",
+						"parameters": {"coreLeadershipPercent": 50}
+					}
 				}
 			]
 		},
@@ -4152,13 +4149,13 @@
 					"id": "new-horizons:necromancy.lordOfTheDead",
 					"name": "Lord of the Dead",
 					"requires": "expert",
-					"description": "Your Skeletons and Skeleton Warriors gain +25% maximum HP.",
+					"description": "Reduce Leadership Requirement of Skeletons and Skeleton Warriors by 90% total.",
 					"effect": {
 						"status": "active",
-						"description": "Your Skeletons and Skeleton Warriors gain +25% maximum HP.",
-						"parameters": {"maximumHealthPercent": 25}
+						"description": "Reduce Leadership Requirement of Skeletons and Skeleton Warriors by 90% total.",
+						"parameters": {"skeletonRequirementDiscountPercent": 90}
 					},
-					"details": "Applies only to Skeletons and Skeleton Warriors commanded by this hero, through the normal maximum-HP bonus and rounding pipeline. This grants no Command or additional slots."
+					"details": "Reduces the effective Leadership Requirement of Skeletons and Skeleton Warriors commanded by this hero by 90%."
 				}
 			]
 		},

@@ -14,17 +14,17 @@ assert "createAndPushWindow<HeroSkillOddsWindow>(*curHero)" in hero
 assert "createAndPushWindow<HeroGrowthWindow>" not in hero
 assert "Open Hero development for the saved growth profile" not in hero
 assert 'Colors::YELLOW, "Skills / learned perks", 376' in layout
-assert 'move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 176))' in layout
+assert 'move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 219))' in layout
 assert 'growthButton->setImage(AnimationPath::builtin("NH_info_button_small"))' in hero
 assert "class HeroSkillOddsInfoMark" not in hero, "Do not restore the floating vector mark"
-assert 'movementArea = std::make_shared<LRClickableAreaWText>(Rect(152, 132, 140, 44)' in layout
-assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(728, 12, 64, 76)' in layout
+assert 'movementArea = std::make_shared<LRClickableAreaWText>(Rect(12, 174, 210, 38)' in layout
+assert 'legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(674, 12, 54, 76)' in layout
 # Siege occupies the third top-right stat column after Morale and Luck.
-assert 'move(morale, Point(579, 33))' in layout
-assert 'move(luck, Point(661, 33))' in layout
+assert 'move(morale, Point(576, 30))' in layout
+assert 'move(luck, Point(631, 30))' in layout
 assert 'AnimationPath::builtin("NH_capability_siege_32")' in layout
-assert 'Rect(744, 40, 32, 32)' in layout
-assert 661 + 53 <= 728 and 744 + 32 <= 800
+assert 'Rect(686, 36, 30, 30)' in layout
+assert 631 + 30 <= 674 and 686 + 30 <= 800
 data = read_resource("SPRITES/NH_hero_growth_entry_normal.png")
 width, height = struct.unpack(">II", data[16:24])
 assert (width, height) == (24, 24), "Legacy entry-control frame size changed"
@@ -34,9 +34,9 @@ for resource, size in (("SPRITES/NH_info_button_small_normal.png", 16),
     image = read_resource(resource)
     assert struct.unpack(">II", image[16:24]) == (size, size), resource
 info_mark_size = 16
-button_y = 176
-upper_row_bottom = 132 + 44
-first_skill_row = 192
+button_y = 219
+upper_row_bottom = 136 + 76
+first_skill_row = 236
 assert button_y >= upper_row_bottom, "Button overlaps the Movement row"
 assert button_y + info_mark_size <= first_skill_row, "Button overlaps first skill row"
 assert 14 + 376 + info_mark_size <= 440, "Button leaves skills panel at maximum heading width"

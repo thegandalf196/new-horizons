@@ -12,6 +12,7 @@ from nhart_test_resources import ArtPath
 IMAGES = ArtPath()
 HERO = (ROOT / "client/windows/CHeroWindow.cpp").read_text(encoding="utf-8")
 HERO += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
+HERO += (ROOT / "client/windows/HeroWindowCommandReadout.cpp").read_text(encoding="utf-8")
 GROWTH = (ROOT / "client/windows/HeroGrowthWindow.cpp").read_text(encoding="utf-8")
 
 
@@ -31,10 +32,10 @@ def verify_image(stem: str, size: int) -> None:
 def main() -> None:
     require(HERO, '"NH_hero_leadership_24"', "legacy hero Leadership binding")
     require(HERO, "Rect(410, 404, 24, 24)", "legacy Leadership display dimensions")
-    require(HERO, 'fieldName == "Leadership" ? "NH_hero_leadership_44"', "hero-pane Leadership binding")
-    require(HERO, 'fieldName == "Movement" ? "NH_hero_movement_44"', "hero-pane Movement binding")
-    require(HERO, 'Rect(152, 88, 140, 44)', "Leadership tooltip area dimensions")
-    require(HERO, 'Rect(152, 132, 140, 44)', "Movement tooltip area dimensions")
+    require(HERO, '"NH_hero_leadership_44"', "hero-pane Leadership binding")
+    require(HERO, '"NH_hero_movement_44"', "hero-pane Movement binding")
+    require(HERO, 'Rect(12, 136, 140, 38)', "Leadership tooltip area dimensions")
+    require(HERO, 'Rect(12, 174, 210, 38)', "Movement tooltip area dimensions")
     require(HERO, '"Movement points remaining / current limit: "', "Movement tooltip readout")
     require(HERO, "currentDailyMovementBreakdown(curHero, false)", "shared land Movement breakdown")
     require(HERO, "currentDailyMovementBreakdown(curHero, true)", "shared sea Movement breakdown")

@@ -35,7 +35,7 @@
 			"not": {"required": ["commandPolicyVersion"]},
 			"properties": {
 				"skills": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"]},
-				"necromancyPolicy": {"properties": {"version": {"enum": [3]}}}
+				"necromancyPolicy": {"properties": {"version": {"enum": [2, 3]}}}
 			}
 		}
 	],
@@ -431,6 +431,17 @@
 			"type": "object", "additionalProperties": false, "minProperties": 1,
 			"properties": {
 				"commandBonus": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"leadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"coreLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"eliteChampionLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"nativeFactionLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"foreignFactionLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"meleeLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"rangedLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"regimentalLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"combinedArmsLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"allStacksLeadershipPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"skeletonRequirementDiscountPercent": {"type": "integer", "minimum": 0, "maximum": 100},
 				"orderEfficiencyPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
 				"attackEfficiencyBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
 				"defenseEfficiencyBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},

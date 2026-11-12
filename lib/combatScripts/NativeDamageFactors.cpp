@@ -123,6 +123,11 @@ std::pair<double, double> baseDamage(const DamageAttackInfo & info, const Facts 
 	}
 	low *= attacker.count;
 	high *= attacker.count;
+	if(!attacker.has(BonusType::SIEGE_WEAPON) && info.leadershipEfficiency > 0.0 && info.leadershipEfficiency < 1.0)
+	{
+		low *= info.leadershipEfficiency;
+		high *= info.leadershipEfficiency;
+	}
 	if(attacker.has(BonusType::SIEGE_WEAPON) && info.machineBaseDamage > 0)
 		low = high = info.machineBaseDamage;
 	return {low, high};

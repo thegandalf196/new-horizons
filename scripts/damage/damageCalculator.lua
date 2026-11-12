@@ -180,8 +180,12 @@ end
 function Script:getBaseDamage(info)
 	local minDamage, maxDamage = self:getBaseDamageBlessCurse(info)
 	local count = info.attacker:getCount()
+	local eff = 1.0
+	if not self:hasBonusOfType(info.attackerBonuses, "SIEGE_WEAPON") then
+		eff = info.leadershipEfficiency or 1.0
+	end
 
-	return minDamage * count, maxDamage * count
+	return minDamage * count * eff, maxDamage * count * eff
 end
 
 -- ---- attack against defense ------------------------------------------------------------------

@@ -419,7 +419,8 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 				newHorizonsCreatures::isCommandSpecialistCreature(
 					hero, development, context.magic, target, row.creature));
 	}
-	if(!overrides.army && !capturedCommandRules(capabilities) && usesRules(capabilities) && capabilities["rulesetVersion"].Integer() >= 2)
+	if(!overrides.army && !capturedCommandRules(capabilities) && usesRules(capabilities)
+		&& capabilities["rulesetVersion"].Integer() >= 2 && capabilities["rulesetVersion"].Integer() < 6)
 		for(auto & row : result.army)
 			if(row.creature.hasValue() && row.creature.toCreature()->warMachine == ArtifactID::NONE)
 			{

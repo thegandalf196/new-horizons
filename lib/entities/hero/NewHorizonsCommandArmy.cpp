@@ -12,12 +12,7 @@ namespace newHorizonsHeroes
 {
 CommandCreatureTraits commandArmyCreatureTraits(const CGHeroInstance & hero, CreatureID creature)
 {
-	auto traits = hero.getCommandCreatureTraits(creature);
-	// Adapter to the matcher's permission classes only. Public creature traits
-	// and all actual-tier consumers keep the creature's real captured category.
-	if(newHorizonsCreatures::isCommandSpecialistCreature(hero, creature))
-		traits.category = newHorizonsCreatures::CreatureCategory::CORE;
-	return traits;
+	return hero.getCommandCreatureTraits(creature);
 }
 
 CommandPlacementError commandArmySlotEligibility(const CGHeroInstance * hero, SlotID slot, CreatureID creature)
@@ -34,8 +29,7 @@ bool armySlotAccepts(const CArmedInstance * army, SlotID slot, CreatureID creatu
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
 	if(hero && hero->getArmyCommand())
 		return commandArmySlotEligibility(hero, slot, creature) == CommandPlacementError::NONE;
-	const auto capacity = hero ? hero->getLeadershipSlotCapacity(creature) : std::nullopt;
-	return !capacity || count <= capacity->maximum;
+	return true;
 }
 
 std::string commandPlacementMessage(CommandPlacementError error)

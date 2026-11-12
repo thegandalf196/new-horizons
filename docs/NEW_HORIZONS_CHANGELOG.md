@@ -17,38 +17,41 @@ matching older version to continue older playthroughs.
 Special thanks to **Matrix4767**, whose extensive discussions on Discord helped
 shape and refine the mechanics, design, and direction of this release.
 
-### Command and Authority redesign
+### Leadership and Army Composition Rework
 
-- Replaces per-stack Leadership capacity and finite per-battle Order pools with
-  persistent **Command**: an unspent Secondary Attribute developing seven
-  persistent army slots.
-- **Slot Tiers**: Heroes start with three **Core** slots (**I**), unlocking three
-  **Elite** slots (**II**) and one **Champion** slot (**III**) as Command grows.
-- **Slot Enhancements**: Continuing Command investment awards repeating enhancement
-  choices (e.g. Core slot improvements shared across all three Core slots, preserving
-  the hero level when acquired).
-- **Creature Specialists**: Creature specialists gain Core placement permission
-  for their resolved specialty line and its upgrades without changing the creatures'
-  actual tier.
-- **Streamlined Army Slot UI**: Removed intrusive "Locked" text boxes and colored
-  borders from locked slots. Empty and locked slots now display clean, translucent
-  Roman numerals (**I**, **II**, **III**) corresponding to their tier, with locked
-  slots remaining transparent.
-- **Concise Slot Tooltips**: Right-clicking an army slot now displays a concise,
-  direct summary (slot name, requirement/status, allowed tiers, and active slot
-  bonuses) without scrolling.
-- **Orders Battle Icon**: Restored the classic golden gauntlet icon for the Orders
-  button in the battle interface.
+- **Restored Leadership Secondary Attribute**: Leadership returns as a core Secondary
+  Attribute reflecting martial command capacity. Hero starting Leadership and growth
+  follow the class's actual Primary Attribute progression ($M = A_g + D_g$,
+  $L_{\text{start}} = 500 + 75M$, $L_{\text{growth}} = 20 + 5M$ per level) across all
+  18 hero classes.
+- **Seven Unrestricted Army Slots**: Every hero has all seven army slots unconditionally
+  available from level 1. Creatures are no longer restricted to specific slots by tier.
+- **Square-Root Leadership Efficiency**: When a hero commands a stack exceeding their
+  full-efficiency capacity ($C = \max(1, \lfloor L/R \rfloor)$), offensive direct creature
+  attacks scale with diminishing returns via square-root efficiency
+  ($N_{\text{effective}} = C + (N - C)\sqrt{C / N}$), ensuring stacks can be arbitrarily
+  large and additional units always increase net damage without hard prohibitions. Stack
+  hit points, retaliations, defense, speed, and adventure mobility remain unaffected.
+- **New Hero UI Layout**: Completely refreshed hero status panel with dedicated readouts
+  for Leadership, Mana, Mana Regeneration, Vision range, and Movement, alongside an
+  integrated hero Experience progression bar and custom icons.
 
 ### Skills and perks
 
-- **Authority**: A new secondary skill available to both Might and Magic hero
-  archetypes, providing Command progression and passive slot training.
-- **Warfare**: Might-exclusive skill specializing in Orders (replacing the old
-  finite-point Command skill).
-- **Leadership**: Refocused entirely on battlefield Morale and spirit (formerly
-  Discipline). Orders still use the ordinary Hero Action without consuming army
-  Command.
+- **Authority Redesign**: Universal secondary skill specializing Leadership effectiveness
+  (+15% Basic, +30% Advanced, +45% Expert). Features 10 redesigned perks tailored to army
+  composition: Massed Ranks (+25% Core), Veteran Cadre (+25% Elite/Champion), Familiar
+  Standards (+20% native faction), Foreign Legion (+30% non-native), Officer Corps (+25%
+  melee), Missile Command (+25% ranged), Regimental Organization (+25% for 3+ distinct
+  creature lines), Combined Arms (+35% for all three tiers present), Grand Marshal (+25%
+  all stacks), and Master of Legions (+50% Core).
+- **Discipline**: Restored original name for the Morale-boosting secondary skill (+1/+2/+3
+  Morale).
+- **Warfare**: Preserved Might-exclusive skill specializing battlefield Orders and tactical
+  Hero Actions.
+- **Necromancy & Skeleton Discounts**: Necromancy restores creature Leadership Requirement
+  reductions for Skeletons and Skeleton Warriors (50% Basic, 60% Advanced, 70% Expert).
+  The *Lord of the Dead* perk provides a 90% total Skeleton Leadership Requirement discount.
 - **Metamagic**: Spells scale dynamically with hero round points (starting at 1,
   gaining 1 per round up to a maximum of 12; each point increases spell
   effectiveness and Magic Penetration). Includes ten revised perks such as

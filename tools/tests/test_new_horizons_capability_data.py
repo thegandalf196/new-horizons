@@ -108,20 +108,39 @@ CANONICAL_LEADERSHIP_REQUIREMENTS = {
 }
 
 
+REWORK_CLASS_PROFILES = {
+    'core:knight': {'base': 1625, 'perLevel': 95},
+    'core:cleric': {'base': 875, 'perLevel': 45},
+    'core:ranger': {'base': 1550, 'perLevel': 90},
+    'core:druid': {'base': 725, 'perLevel': 35},
+    'core:alchemist': {'base': 1250, 'perLevel': 70},
+    'core:wizard': {'base': 650, 'perLevel': 30},
+    'core:demoniac': {'base': 1625, 'perLevel': 95},
+    'core:heretic': {'base': 875, 'perLevel': 45},
+    'core:deathknight': {'base': 1475, 'perLevel': 85},
+    'core:necromancer': {'base': 875, 'perLevel': 45},
+    'core:overlord': {'base': 1625, 'perLevel': 95},
+    'core:warlock': {'base': 800, 'perLevel': 40},
+    'core:barbarian': {'base': 1850, 'perLevel': 110},
+    'core:battlemage': {'base': 1250, 'perLevel': 70},
+    'core:beastmaster': {'base': 1850, 'perLevel': 110},
+    'core:witch': {'base': 800, 'perLevel': 40},
+    'core:planeswalker': {'base': 1325, 'perLevel': 75},
+    'core:elementalist': {'base': 650, 'perLevel': 30},
+}
+
+
 class CapabilityDataTest(unittest.TestCase):
     def setUp(self):
         self.rules = json.loads((ROOT / 'config/newHorizonsCapabilities.json').read_text())
 
-    def test_current_command_replaces_retired_class_profiles(self):
+    def test_current_ruleset_restores_leadership_and_retires_command(self):
         self.assertEqual(self.rules['schemaVersion'], 1)
-        self.assertEqual(self.rules['rulesetVersion'], 5)
-        self.assertNotIn('classProfiles', self.rules)
-        self.assertNotIn('leadership', self.rules)
-        intervals = self.rules['armyCommand']['classLevelIntervals']
-        might = {'knight', 'ranger', 'alchemist', 'demoniac', 'deathknight',
-                 'overlord', 'barbarian', 'beastmaster', 'planeswalker'}
-        self.assertEqual(intervals, {key: 3 if key.split(':')[1] in might else 4
-                                     for key in CANONICAL_CLASS_PROFILES})
+        self.assertEqual(self.rules['rulesetVersion'], 6)
+        self.assertNotIn('armyCommand', self.rules)
+        self.assertEqual(self.rules['classProfiles'], REWORK_CLASS_PROFILES)
+        self.assertEqual(self.rules['leadership']['globalScalePercent'], 100)
+        self.assertEqual(self.rules['leadership']['creatureRequirements'], CANONICAL_LEADERSHIP_REQUIREMENTS)
 
     def test_historical_v4_fixture_preserves_retired_tables(self):
         fixture = (ROOT / 'test/hero/HistoricalCapabilityRules.h').read_text()
@@ -133,21 +152,13 @@ class CapabilityDataTest(unittest.TestCase):
         self.assertEqual(captured['siege'], self.rules['siege'])
         self.assertEqual(captured['warMachineShop'], self.rules['warMachineShop'])
 
-    def test_v5_schema_requires_command_and_excludes_retired_fields_even_null(self):
+    def test_v6_schema_validates_current_rules_and_excludes_command(self):
         schema = json.loads((ROOT / 'config/schemas/newHorizonsCapabilities.json').read_text())
         Draft4Validator.check_schema(schema)
         validator = Draft4Validator(schema)
         validator.validate(self.rules)
-        for key in ('classProfiles', 'leadership', 'profile'):
-            for value in (None, {}, {'base': 1, 'perLevel': 1}):
-                invalid = copy.deepcopy(self.rules)
-                invalid[key] = value
-                self.assertFalse(validator.is_valid(invalid), (key, value))
         invalid = copy.deepcopy(self.rules)
-        del invalid['armyCommand']
-        self.assertFalse(validator.is_valid(invalid))
-        invalid = copy.deepcopy(self.rules)
-        invalid['armyCommand'] = None
+        invalid['armyCommand'] = {'version': 1}
         self.assertFalse(validator.is_valid(invalid))
 
     def test_schema_retains_historical_v1_through_v4(self):

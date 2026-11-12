@@ -105,6 +105,20 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<CLabel> movementValue;
 	std::shared_ptr<CLabel> commandValue;
 	std::shared_ptr<LRClickableAreaWText> commandArea;
+	std::shared_ptr<CLabel> leadershipLabel;
+	std::shared_ptr<CLabel> manaRegenLabel;
+	std::shared_ptr<CLabel> manaRegenValue;
+	std::shared_ptr<LRClickableAreaWText> manaRegenArea;
+	std::shared_ptr<CLabel> visionLabel;
+	std::shared_ptr<CLabel> visionValue;
+	std::shared_ptr<LRClickableAreaWText> visionArea;
+	std::shared_ptr<class HeroExperienceBar> xpProgressBar;
+	std::shared_ptr<CAnimImage> leadershipImage;
+	std::shared_ptr<CAnimImage> movementDynamicImage;
+	std::shared_ptr<CLabel> movementDynamicLabel;
+	std::shared_ptr<CPicture> manaOrbImage;
+	std::shared_ptr<CPicture> manaRegenImage;
+	std::shared_ptr<CPicture> visionImage;
 	std::shared_ptr<CLabel> legacySiegeValue;
 	std::shared_ptr<LRClickableAreaWText> movementArea;
 	std::shared_ptr<LRClickableAreaWText> legacySiegeArea;
@@ -117,6 +131,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::shared_ptr<CAnimImage> legacyBoneCollectorImage;
 	void addCommandIcon();
 	void refreshCommandReadout();
+	void refreshMiddlePaneReadout();
 	void refreshLegacyCommandReadout();
 	void alignAttributeReadouts();
 	void configureNewHorizonsLayout();

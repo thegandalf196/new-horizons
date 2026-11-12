@@ -9,7 +9,7 @@
 			"required": ["schemaVersion", "rulesetVersion", "siege"],
 			"additionalProperties": false,
 			"dependencies": {
-				"skeletonTransformer": {"properties": {"rulesetVersion": {"enum": [4, 5]}}}
+				"skeletonTransformer": {"properties": {"rulesetVersion": {"enum": [4, 5, 6]}}}
 			},
 			"allOf": [{
 				"oneOf": [
@@ -54,6 +54,15 @@
 							"rulesetVersion": {"enum": [5]},
 							"classProfiles": {"not": {}},
 							"leadership": {"not": {}},
+							"siege": {"required": ["outputs", "siegeRating", "directControlChance"]}
+						}
+					},
+					{
+						"required": ["warMachineShop", "classProfiles", "leadership"],
+						"properties": {
+							"rulesetVersion": {"enum": [6]},
+							"armyCommand": {"not": {}},
+							"leadership": {"required": ["creatureRequirements"]},
 							"siege": {"required": ["outputs", "siegeRating", "directControlChance"]}
 						}
 					}
@@ -159,7 +168,7 @@
 					"properties": {"aggregateHealthPercent": {"type": "integer", "minimum": 1, "maximum": 100}}
 				},
 				"schemaVersion": {"type": "integer", "enum": [1]},
-				"rulesetVersion": {"type": "integer", "enum": [1, 2, 3, 4, 5]},
+				"rulesetVersion": {"type": "integer", "enum": [1, 2, 3, 4, 5, 6]},
 				"classProfiles": {
 					"type": "object", "minProperties": 1,
 					"additionalProperties": {
