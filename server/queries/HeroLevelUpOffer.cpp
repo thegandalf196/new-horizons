@@ -214,7 +214,6 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 	{
 		logGlobal->trace("Completing hero level-up query. %s gains skill %d", hero->getNameTextID(), answer.value());
 		const auto skill = hlu.skills[choice];
-		const int rankAfterGain = hero->getSecSkillLevel(skill) + 1;
 		gh->levelUpHero(hero, skill, false);
 		gh->sendQueryResolved(queryID);
 
@@ -224,36 +223,6 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 			{
 				if(q->getType() == TYPE && static_cast<const CHeroLevelUpDialogQuery &>(*q).hero->id == hero->id)
 					return;
-			}
-
-			const auto * def = LIBRARY->skillh->getById(skill);
-			if(def)
-			{
-				const auto skillId = def->getJsonKey();
-				const auto tierPool = hero->getPerkState().candidatesForSkillTier(skillId, rankAfterGain);
-				if(!tierPool.empty())
-				{
-					const auto * pState = gh->gameInfo().getPlayerState(hero->getOwner());
-					const bool isHuman = pState && pState->isHuman();
-					if(!isHuman)
-					{
-						gh->levelUpHero(hero, tierPool, 0, 0, false);
-						gh->heroLevelUpChoiceDone(hero);
-					}
-					else
-					{
-						HeroLevelUp perkHlu;
-						perkHlu.player = hero->getOwner();
-						perkHlu.heroId = hero->id;
-						perkHlu.skills.clear();
-						perkHlu.perks = tierPool;
-						perkHlu.perkOfferSeed = 0;
-						perkHlu.reachedLevel = hero->level;
-						auto perkQuery = std::make_shared<CHeroLevelUpDialogQuery>(gh, perkHlu, hero);
-						gh->queries->addQuery(perkQuery);
-						return;
-					}
-				}
 			}
 		}
 
