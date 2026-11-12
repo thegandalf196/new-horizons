@@ -136,8 +136,18 @@ int leadershipMovement(int unscaledMovement, int movementPercent)
 int64_t stackEffectiveLeadership(const CGHeroInstance & hero, CreatureID creature,
 	const CCreatureSet * armyContext)
 {
-	const auto & rules = hero.getCapabilityRules();
-	const int baseLeadership = capabilityLeadershipRating(rules, hero.level);
+	const JsonNode * rules = &hero.getCapabilityRules();
+	JsonNode resolvedFallback;
+	if((!newHorizonsHeroes::usesRules(*rules) || !rules->isStruct() || !rules->Struct().contains("profile"))
+		&& hero.getCallback() && hero.getHeroClass())
+	{
+		resolvedFallback = resolveCapabilityRules(hero.getCallback()->getHeroCapabilityRules(), hero.getHeroClass()->getId());
+		rules = &resolvedFallback;
+	}
+	if(!newHorizonsHeroes::usesRules(*rules) || !rules->isStruct() || !rules->Struct().contains("profile"))
+		return 0;
+
+	const int baseLeadership = capabilityLeadershipRating(*rules, hero.level);
 	const int trainedLeadership = std::max(0, hero.valOfBonuses(BonusType::LEADERSHIP));
 	const int64_t L_hero = static_cast<int64_t>(baseLeadership) + trainedLeadership;
 
@@ -226,8 +236,18 @@ int64_t stackEffectiveRequirement(const CGHeroInstance * hero, CreatureID creatu
 	if(!creature.hasValue() || !creature.toCreature())
 		return 1;
 
-	const JsonNode & rules = hero ? hero->getCapabilityRules() : JsonNode();
-	int baseRequirement = capabilityCreatureLeadershipRequirement(rules, creature);
+	const JsonNode * rules = hero ? &hero->getCapabilityRules() : nullptr;
+	JsonNode resolvedFallback;
+	if(hero && (!rules || !newHorizonsHeroes::usesRules(*rules) || !rules->isStruct() || !rules->Struct().contains("leadership"))
+		&& hero->getCallback() && hero->getHeroClass())
+	{
+		resolvedFallback = resolveCapabilityRules(hero->getCallback()->getHeroCapabilityRules(), hero->getHeroClass()->getId());
+		rules = &resolvedFallback;
+	}
+
+	int baseRequirement = (rules && newHorizonsHeroes::usesRules(*rules))
+		? capabilityCreatureLeadershipRequirement(*rules, creature)
+		: 0;
 	if(baseRequirement <= 0)
 		baseRequirement = 50;
 
@@ -268,6 +288,17 @@ int64_t stackFullEfficiencyCapacity(const CGHeroInstance * hero, CreatureID crea
 	if(!hero)
 		return std::numeric_limits<int64_t>::max();
 
+	const JsonNode * rules = &hero->getCapabilityRules();
+	JsonNode resolvedFallback;
+	if((!newHorizonsHeroes::usesRules(*rules) || !rules->isStruct() || !rules->Struct().contains("profile"))
+		&& hero->getCallback() && hero->getHeroClass())
+	{
+		resolvedFallback = resolveCapabilityRules(hero->getCallback()->getHeroCapabilityRules(), hero->getHeroClass()->getId());
+		rules = &resolvedFallback;
+	}
+	if(!newHorizonsHeroes::usesRules(*rules) || !usesLegacyLeadership(*rules))
+		return std::numeric_limits<int64_t>::max();
+
 	const int64_t effectiveLeadership = stackEffectiveLeadership(*hero, creature, armyContext);
 	const int64_t effectiveRequirement = stackEffectiveRequirement(hero, creature);
 
@@ -292,6 +323,17 @@ double stackLeadershipEfficiency(const CGHeroInstance * hero, CreatureID creatur
 	int64_t count, const CCreatureSet * armyContext)
 {
 	if(!hero || count <= 0)
+		return 1.0;
+
+	const JsonNode * rules = &hero->getCapabilityRules();
+	JsonNode resolvedFallback;
+	if((!newHorizonsHeroes::usesRules(*rules) || !rules->isStruct() || !rules->Struct().contains("profile"))
+		&& hero->getCallback() && hero->getHeroClass())
+	{
+		resolvedFallback = resolveCapabilityRules(hero->getCallback()->getHeroCapabilityRules(), hero->getHeroClass()->getId());
+		rules = &resolvedFallback;
+	}
+	if(!newHorizonsHeroes::usesRules(*rules) || !usesLegacyLeadership(*rules))
 		return 1.0;
 
 	const int64_t capacity = stackFullEfficiencyCapacity(hero, creature, armyContext);

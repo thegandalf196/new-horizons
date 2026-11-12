@@ -44,7 +44,8 @@ LeadershipCapacity capabilityLeadership(const JsonNode & rules, int level, int l
 
 int capabilityLeadershipRating(const JsonNode & rules, int level)
 {
-	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
+	if(!usesRules(rules))
+		return 0;
 	validateResolvedCapabilityRules(rules);
 	if(!usesLegacyLeadership(rules))
 		return 0;
@@ -58,7 +59,8 @@ int capabilityLeadershipRating(const JsonNode & rules, int level)
 
 int capabilityLeadershipPerLevel(const JsonNode & rules)
 {
-	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
+	if(!usesRules(rules))
+		return 0;
 	validateResolvedCapabilityRules(rules);
 	if(!usesLegacyLeadership(rules))
 		return 0;
@@ -70,7 +72,8 @@ int capabilityLeadershipPerLevel(const JsonNode & rules)
 
 int capabilityCreatureLeadershipRequirement(const JsonNode & rules, CreatureID creature)
 {
-	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
+	if(!usesRules(rules))
+		return 0;
 	if(isWorldCapabilityRules(rules))
 		validateCapabilityRules(rules, false);
 	else

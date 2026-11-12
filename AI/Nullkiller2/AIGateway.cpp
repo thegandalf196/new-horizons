@@ -1079,6 +1079,11 @@ void AIGateway::makeTurn()
 	{
 		logAi->debug("Making turn thread has been terminated. We'll end without calling endTurn");
 	}
+	catch (const std::exception & e)
+	{
+		logAi->error("Exception in NK2 makeTurn: %s. Ending turn gracefully.", e.what());
+		endTurn();
+	}
 }
 
 void AIGateway::purchaseUsefulWarMachines(
