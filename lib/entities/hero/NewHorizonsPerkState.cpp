@@ -664,28 +664,31 @@ std::vector<PerkOfferCandidate> PerkState::candidatesForSkillTier(const std::str
 		return {};
 	validate();
 	std::vector<PerkOfferCandidate> result;
-	for(const auto & skillNode : rules["skills"].Vector())
+	if(!rules["skills"].isStruct())
+		return {};
+	const auto & skillsMap = rules["skills"].Struct();
+	const auto it = skillsMap.find(skillId);
+	if(it == skillsMap.end())
+		return {};
+	const auto & skillNode = it->second;
+	if(!skillNode["perks"].isVector())
+		return {};
+	for(const auto & perkNode : skillNode["perks"].Vector())
 	{
-		if(skillNode["id"].String() != skillId)
+		if(perkNode["effect"]["status"].String() != "active")
 			continue;
-		for(const auto & perkNode : skillNode["perks"].Vector())
-		{
-			if(perkNode["effect"]["status"].String() != "active")
-				continue;
-			const auto & perkId = perkNode["id"].String();
-			if(hasSelection(skillId, perkId))
-				continue;
-			const int requiredRank = perkRequiredRank(perkNode["requires"].String());
-			if(requiredRank != tier)
-				continue;
-			result.push_back(PerkOfferCandidate{
-				{skillId, perkId},
-				perkNode["name"].String(),
-				perkNode["description"].String(),
-				requiredRank
-			});
-		}
-		break;
+		const auto & perkId = perkNode["id"].String();
+		if(hasSelection(skillId, perkId))
+			continue;
+		const int requiredRank = perkRequiredRank(perkNode["requires"].String());
+		if(requiredRank != tier)
+			continue;
+		result.push_back(PerkOfferCandidate{
+			{skillId, perkId},
+			perkNode["name"].String(),
+			perkNode["description"].String(),
+			requiredRank
+		});
 	}
 	return result;
 }

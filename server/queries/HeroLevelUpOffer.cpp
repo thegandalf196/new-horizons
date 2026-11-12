@@ -220,6 +220,12 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 
 		if(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
 		{
+			for(const auto & q : gh->queries->allQueries())
+			{
+				if(q->getType() == TYPE && static_cast<const CHeroLevelUpDialogQuery &>(*q).hero->id == hero->id)
+					return;
+			}
+
 			const auto * def = LIBRARY->skillh->getById(skill);
 			if(def)
 			{
