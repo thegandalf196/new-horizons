@@ -423,70 +423,7 @@ CStackWindow::TrainingSection::TrainingSection(CStackWindow * owner, int yOffset
 			FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, lines[index]));
 }
 
-CStackWindow::LeadershipSection::LeadershipSection(CStackWindow * owner, int yOffset, const CGHeroInstance * hero, CreatureID creatureId, int64_t count)
-	: CWindowSection(owner, {}, yOffset)
-{
-	OBJECT_CONSTRUCTION;
-	if(!hero || count <= 0)
-		return;
 
-	pos.w = owner->pos.w;
-	const auto heroCap = hero->getLeadershipCapacity();
-	const int64_t L_base = heroCap ? heroCap->capacity : 0;
-	const int64_t L_eff = newHorizonsHeroes::stackEffectiveLeadership(*hero, creatureId);
-	const int64_t R_eff = newHorizonsHeroes::stackEffectiveRequirement(hero, creatureId);
-	const int64_t C = newHorizonsHeroes::computeFullEfficiencyCapacity(L_eff, R_eff);
-	const double eff = newHorizonsHeroes::squareRootLeadershipEfficiency(count, C);
-	const int effPct = std::clamp(static_cast<int>(std::round(eff * 100.0)), 1, 100);
-
-	std::vector<std::string> lines;
-	std::string line1 = "Leadership Efficiency: " + std::to_string(effPct) + "%";
-	if(effPct < 100)
-	{
-		const int64_t effectiveCount = static_cast<int64_t>(std::round(count * eff));
-		line1 += " (Effective strength: " + std::to_string(effectiveCount) + " / " + std::to_string(count) + " creatures)";
-	}
-	else
-	{
-		line1 += " (Full offensive efficiency)";
-	}
-	lines.push_back(line1);
-
-	std::string line2 = "Full Capacity: " + std::to_string(C) + " | Hero Leadership: "
-		+ (L_eff != L_base ? std::to_string(L_eff) + " (Base " + std::to_string(L_base) + ")" : std::to_string(L_base))
-		+ " | Creature Req: " + std::to_string(R_eff);
-	lines.push_back(line2);
-
-	pos.h = static_cast<int>(lines.size()) * 30;
-	for(size_t index = 0; index < lines.size(); ++index)
-	{
-		auto background = std::make_shared<CPicture>(ImagePath::builtin("stackWindow/bonus-effects"),
-			0, static_cast<int>(index) * 30);
-		background->scaleTo(Point(pos.w, 30));
-		backgrounds.push_back(background);
-	}
-	for(size_t index = 0; index < lines.size(); ++index)
-	{
-		const auto color = (index == 0 && effPct < 100) ? ColorRGBA(255, 160, 160, 255) : Colors::WHITE;
-		labels.push_back(std::make_shared<CMultiLineLabel>(Rect(6, static_cast<int>(index) * 30 + 4, pos.w - 12, 26),
-			FONT_TINY, ETextAlignment::TOPLEFT, color, lines[index]));
-	}
-
-	std::string tooltip = "Leadership Efficiency: " + std::to_string(effPct) + "%\n"
-		+ "Hero Leadership: " + std::to_string(L_eff) + (L_eff != L_base ? " (Base " + std::to_string(L_base) + " + Authority bonuses)\n" : "\n")
-		+ "Creature Requirement: " + std::to_string(R_eff) + "\n"
-		+ "Full-Efficiency Capacity: " + std::to_string(C) + " creatures\n"
-		+ "Current Stack Count: " + std::to_string(count) + "\n";
-	if(effPct < 100)
-	{
-		tooltip += "This stack exceeds hero Leadership capacity (" + std::to_string(count) + " > " + std::to_string(C) + "). Direct creature attacks and retaliations deal " + std::to_string(effPct) + "% of unrestricted damage due to diminishing returns. HP is unaffected.";
-	}
-	else
-	{
-		tooltip += "This stack operates within hero Leadership capacity and deals 100% damage.";
-	}
-	clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(0, 0, pos.w, pos.h), tooltip, tooltip));
-}
 
 CStackWindow::BonusLineSection::BonusLineSection(CStackWindow * owner, size_t lineIndex)
 	: CWindowSection(owner, ImagePath::builtin("stackWindow/bonus-effects"), 0)
@@ -819,6 +756,7 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		LIBRARY->generaltexth->zelp[441].first,//SPEED
 		"Initiative",
 		LIBRARY->generaltexth->allTexts[399],//MANA
+		"Leadership Cost",
 		"Rank"
 	};
 
@@ -834,6 +772,7 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		"%d (%d)",
 		"%d (%d)",
 		"%d (%d)",
+		"%s",
 		"%s"
 	};
 
@@ -892,11 +831,14 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		"stackWindow/iconAttack", "stackWindow/iconDefense", "stackWindow/iconShots", "stackWindow/iconDamage",
 		"stackWindow/iconHealth", "stackWindow/iconHealthLeft", "stackWindow/iconSpeed"
 	};
-	static const std::array<int, 10> iconY = {
-		31, 49, 69, 88, 107, 126, 144, 164, 183, 202
+	static const std::array<int, 11> iconY = {
+		31, 49, 69, 88, 107, 126, 144, 164, 183, 202, 220
 	};
 	for(size_t i = 0; i < baseIconNames.size(); i++)
 		statIcons[i] = std::make_shared<CPicture>(ImagePath::builtin(baseIconNames[i]), 117, iconY[i]);
+
+	const bool showLeadership = showNewHorizonsStats
+		|| (parent->info->owner && parent->info->owner->getLeadershipSlotCapacity(parent->info->creature->getId()).has_value());
 
 	if(showNewHorizonsStats)
 	{
@@ -910,6 +852,11 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		statIcons[static_cast<size_t>(EStat::MANA)] = std::make_shared<CPicture>(
 			ImagePath::builtin("stackWindow/iconMana"), 117, iconY[static_cast<size_t>(EStat::MANA) - 1]);
 	}
+
+	if(showLeadership)
+		statIcons[static_cast<size_t>(EStat::LEADERSHIP)] = std::make_shared<CAnimImage>(
+			AnimationPath::builtin("NH_creature_leadership_20"), 0,
+			Rect(116, iconY[statRow(EStat::LEADERSHIP)], 20, 20));
 
 	if(showRank)
 		statIcons[static_cast<size_t>(EStat::RANK)] = std::make_shared<CAnimImage>(
@@ -971,6 +918,73 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 
 		morale->set(parent->info->stackNode);
 		luck->set(parent->info->stackNode);
+	}
+
+	if(showLeadership)
+	{
+		const auto leadershipCount = parent->info->stack
+			? parent->info->creatureCount
+			: (parent->info->stackNode ? parent->info->stackNode->getCount() : 1);
+		int leadershipRequirement = 0;
+		std::optional<newHorizonsHeroes::LeadershipSlotCapacity> leadershipCapacity;
+		const auto * hero = parent->info->owner;
+		if(!hero && parent->info->stack && parent->info->stack->getBattle())
+			hero = parent->info->stack->getBattle()->battleGetOwnerHero(parent->info->stack);
+		if(hero)
+		{
+			leadershipCapacity = hero->getLeadershipSlotCapacity(parent->info->creature->getId());
+			if(leadershipCapacity)
+				leadershipRequirement = leadershipCapacity->requirement;
+		}
+		else
+		{
+			const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
+			if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
+				leadershipRequirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
+					capabilityRules, parent->info->creature->getId());
+		}
+
+		const auto costText = leadershipRequirement > 0 ? std::to_string(leadershipRequirement) : "--";
+		const auto capacityText = leadershipCapacity
+			? " (" + std::to_string(leadershipCount) + "/" + std::to_string(leadershipCapacity->maximum) + ")"
+			: "";
+		addStatLabel(EStat::LEADERSHIP, costText + capacityText);
+
+		std::string tooltip = "{Leadership Cost: " + costText + "}\n";
+		if(leadershipCapacity)
+		{
+			const int64_t L_base = leadershipCapacity->leadership;
+			const int64_t R_eff = leadershipCapacity->requirement;
+			const int64_t C = leadershipCapacity->maximum;
+			const double eff = newHorizonsHeroes::squareRootLeadershipEfficiency(leadershipCount, C);
+			const int effPct = std::clamp(static_cast<int>(std::round(eff * 100.0)), 1, 100);
+			tooltip += "Leadership Efficiency: " + std::to_string(effPct) + "%\n"
+				+ "Stack Size: " + std::to_string(leadershipCount) + "\n"
+				+ "Full-Efficiency Capacity: " + std::to_string(C) + " creatures\n"
+				+ "Hero Leadership: " + std::to_string(L_base) + "\n"
+				+ "Creature Leadership Requirement: " + std::to_string(R_eff) + "\n\n";
+			if(effPct < 100)
+			{
+				const int64_t effectiveCount = static_cast<int64_t>(std::round(leadershipCount * eff));
+				tooltip += "Offensive efficiency is reduced to " + std::to_string(effPct) + "% ("
+					+ std::to_string(effectiveCount) + " effective creatures contributing damage).\n"
+					+ "Defense, health, speed, and retaliations remain fully intact.";
+			}
+			else
+			{
+				tooltip += "This stack operates at 100% full offensive efficiency.";
+			}
+		}
+		else
+		{
+			tooltip += "\nEach creature of this type requires " + costText
+				+ " Leadership from the commanding hero for full combat efficiency.\n"
+				+ "Stacks exceeding the hero's Leadership capacity fight with smoothly scaled offensive efficiency via square root.";
+		}
+		leadershipArea = std::make_shared<LRClickableAreaWText>(
+			Rect(114, iconY[statRow(EStat::LEADERSHIP)], 194, 20),
+			"Leadership Cost: " + costText + capacityText,
+			tooltip);
 	}
 
 	if(showRank)
@@ -1483,14 +1497,7 @@ void CStackWindow::initSections()
 		}
 	}
 
-	const auto * leadershipHero = info->owner;
-	if(!leadershipHero && info->stack && info->stack->getBattle())
-		leadershipHero = info->stack->getBattle()->battleGetOwnerHero(info->stack);
-	if(leadershipHero && info->creature && info->creatureCount > 0)
-	{
-		leadershipSection = std::make_shared<LeadershipSection>(this, pos.h, leadershipHero, info->creature->getId(), info->creatureCount);
-		pos.h += leadershipSection->pos.h;
-	}
+
 
 	if(info->commander)
 	{

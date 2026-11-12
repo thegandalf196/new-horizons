@@ -165,6 +165,7 @@ class CStackWindow : public CWindowObject
 			SPEED,
 			INITIATIVE,
 			MANA,
+			LEADERSHIP,
 			RANK,
 			AFTER_LAST
 		};
@@ -173,11 +174,12 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<CPicture> deadCommanderOverlay;
 		std::shared_ptr<LRClickableArea> animationArea;
 		std::shared_ptr<CLabel> name;
-		std::array<std::shared_ptr<CIntObject>, 10> statIcons;
+		std::array<std::shared_ptr<CIntObject>, 11> statIcons;
 		std::shared_ptr<CPicture> icons;
 		std::shared_ptr<MoraleLuckBox> morale;
 		std::shared_ptr<MoraleLuckBox> luck;
 		std::shared_ptr<LRClickableAreaWText> rankArea;
+		std::shared_ptr<LRClickableAreaWText> leadershipArea;
 
 		std::vector<std::shared_ptr<CLabel>> stats;
 
@@ -193,8 +195,8 @@ class CStackWindow : public CWindowObject
 
 		static ImagePath getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank);
 
-		std::array<std::string, 10> statNames;
-		std::array<std::string, 10> statFormats;
+		std::array<std::string, 11> statNames;
+		std::array<std::string, 11> statFormats;
 	public:
 		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank);
 	};
@@ -218,7 +220,6 @@ class CStackWindow : public CWindowObject
 
 	std::shared_ptr<CWindowSection> mainSection;
 	std::shared_ptr<CWindowSection> trainingSection;
-	std::shared_ptr<CWindowSection> leadershipSection;
 	std::shared_ptr<CWindowSection> activeSpellsSection;
 	std::shared_ptr<CWindowSection> orderIndicatorsSection;
 	std::shared_ptr<CWindowSection> commanderMainSection;

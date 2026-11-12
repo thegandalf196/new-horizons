@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "../../battle/NewHorizonsCommandResources.h"
+#include "../../callback/IGameInfoCallback.h"
+#include "CHeroClass.h"
 #include "NewHorizonsLeadership.h"
 #include "HeroStartingProjection.h"
 #include "NewHorizonsCapabilityRules.h"
@@ -299,15 +301,21 @@ double stackLeadershipEfficiency(const CGHeroInstance * hero, CreatureID creatur
 std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
 	const CGHeroInstance & hero, CreatureID creature)
 {
-	const auto & rules = hero.getCapabilityRules();
-	if(!usesRules(rules) || (rules["rulesetVersion"].Integer() < 2 && rules["rulesetVersion"].Integer() != 6))
+	const JsonNode * rules = &hero.getCapabilityRules();
+	JsonNode resolvedFallback;
+	if((!usesRules(*rules) || !rules->Struct().contains("profile")) && hero.getCallback() && hero.getHeroClass())
+	{
+		resolvedFallback = resolveCapabilityRules(hero.getCallback()->getHeroCapabilityRules(), hero.getHeroClass()->getId());
+		rules = &resolvedFallback;
+	}
+	if(!usesRules(*rules) || ((*rules)["rulesetVersion"].Integer() < 2 && (*rules)["rulesetVersion"].Integer() != 6))
 		return std::nullopt;
 
 	const int64_t effectiveLeadership = stackEffectiveLeadership(hero, creature, hero.getArmy());
 	const int64_t effectiveRequirement = stackEffectiveRequirement(&hero, creature);
 	const int64_t maximum = std::max<int64_t>(1, effectiveLeadership / effectiveRequirement);
 
-	auto result = capabilityLeadershipSlot(rules, hero.level, creature);
+	auto result = capabilityLeadershipSlot(*rules, hero.level, creature);
 	if(result)
 	{
 		result->leadership = static_cast<int>(effectiveLeadership);

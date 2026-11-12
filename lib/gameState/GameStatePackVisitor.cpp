@@ -1434,9 +1434,6 @@ void GameStatePackVisitor::visitRecruitTrainedStack(RecruitTrainedStack & pack)
 		gs.getCalendar().getCurrentDay(), pack.change.previous);
 	if(expected != pack.change.next)
 		throw std::runtime_error("Invalid direct recruitment training provenance");
-	if(const auto capacity = hero->getLeadershipSlotCapacity(pack.change.creature);
-		capacity && static_cast<int64_t>(pack.change.expectedCount) + pack.change.recruitedCount > capacity->maximum)
-		throw std::runtime_error("Direct training recruitment exceeds Leadership");
 	newHorizonsTraining::applyValidatedBatch(gs, batch);
 }
 

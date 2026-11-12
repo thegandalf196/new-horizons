@@ -5,6 +5,8 @@
 #include "HeroExperienceBar.h"
 #include "SpellPointPresentation.h"
 #include "../GameEngine.h"
+#include "../GameInstance.h"
+#include "../CPlayerInterface.h"
 #include "../render/IRenderHandler.h"
 #include "render/Canvas.h"
 #include "render/CanvasImage.h"
@@ -12,7 +14,10 @@
 #include "../widgets/MiscWidgets.h"
 #include "../widgets/TextControls.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/callback/IGameInfoCallback.h"
+#include "../../lib/callback/CCallback.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/entities/hero/CHeroHandler.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/pathfinder/NewHorizonsMovement.h"
@@ -49,6 +54,21 @@ void CHeroWindow::refreshCommandReadout()
 		commandValue->setText(std::to_string(capacity->capacity));
 	else
 	{
+		if(curHero && curHero->getHeroClass() && GAME && GAME->interface() && GAME->interface()->cb)
+		{
+			const auto & worldRules = GAME->interface()->cb->getHeroCapabilityRules();
+			if(newHorizonsHeroes::usesRules(worldRules))
+			{
+				const auto resolved = newHorizonsHeroes::resolveCapabilityRules(worldRules, curHero->getHeroClass()->getId());
+				if(newHorizonsHeroes::usesRules(resolved) && resolved.Struct().contains("profile"))
+				{
+					const int rating = newHorizonsHeroes::capabilityLeadershipRating(resolved, curHero->level);
+					const int64_t effective = newHorizonsCommand::effectiveLeadership(*curHero, rating);
+					commandValue->setText(std::to_string(effective));
+					return;
+				}
+			}
+		}
 		const auto value = curHero->getArmyCommand();
 		commandValue->setText(value ? std::to_string(value->effective()) : "--");
 	}

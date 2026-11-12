@@ -71,30 +71,7 @@ bool useNewHorizonsHeroLayout(const CGHeroInstance * hero)
 		&& viewport.x >= 844 && viewport.y >= 668;
 }
 
-std::string shortTierReason(newHorizonsPerkAvailability::Reason reason)
-{
-	using newHorizonsPerkAvailability::Reason;
-	switch(reason)
-	{
-	case Reason::NONE:
-		return "Eligible";
-	case Reason::NO_CATALOGUE:
-		return "No data";
-	case Reason::SKILL_NOT_LEARNED:
-		return "Skill needed";
-	case Reason::PLANNED_INACTIVE:
-		return "Inactive";
-	case Reason::INSUFFICIENT_RANK:
-		return "Rank needed";
-	case Reason::EARLIER_TIER_MISSING:
-		return "Earlier tier";
-	case Reason::TIER_OCCUPIED:
-		return "Tier filled";
-	case Reason::PER_SKILL_CAP:
-		return "Per-Skill limit";
-	}
-	return "Unavailable";
-}
+
 
 std::string tierSlotText(const newHorizonsPerkAvailability::TierSlot & slot, std::string_view skillName)
 {
@@ -506,28 +483,32 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 					const auto & perk = *slot.selectedPerk;
 					const auto & perkName = perk.name;
 					const auto spacePos = perkName.find(' ');
-					if(spacePos != std::string::npos && perkName.length() > 9)
+					if(spacePos != std::string::npos && perkName.length() > 8)
 					{
-						cellLabels.at(labelIndex)->setText(perkName.substr(0, spacePos));
-						cellLabels.at(labelIndex + 1)->setText(newHorizonsPerkAvailability::tierName(slot.requiredRank));
+						cellLabels.at(labelIndex)->setText("");
+						cellLabels.at(labelIndex + 1)->setText(perkName.substr(0, spacePos));
 						cellLabels.at(labelIndex + 2)->setText(perkName.substr(spacePos + 1));
 					}
 					else
 					{
 						cellLabels.at(labelIndex)->setText(perkName);
-						cellLabels.at(labelIndex + 1)->setText(newHorizonsPerkAvailability::tierName(slot.requiredRank));
-						cellLabels.at(labelIndex + 2)->setText("Acquired");
+						cellLabels.at(labelIndex + 1)->setText("");
+						cellLabels.at(labelIndex + 2)->setText("");
 					}
 				}
 				else
 				{
-					cellLabels.at(labelIndex)->setText(shortTierReason(slot.reason));
-					cellLabels.at(labelIndex + 1)->setText(selectionSlots && !slot.selectedPerk
-						? "Perk slot" : newHorizonsPerkAvailability::tierName(slot.requiredRank));
-					cellLabels.at(labelIndex + 2)->setText(newHorizonsPerkAvailability::statusName(slot.status));
+					if(slot.status == newHorizonsPerkAvailability::Status::AVAILABLE)
+						cellLabels.at(labelIndex)->setText("Available");
+					else if(slot.status == newHorizonsPerkAvailability::Status::LOCKED)
+						cellLabels.at(labelIndex)->setText("Locked");
+					else
+						cellLabels.at(labelIndex)->setText(newHorizonsPerkAvailability::statusName(slot.status));
+					cellLabels.at(labelIndex + 1)->setText("");
+					cellLabels.at(labelIndex + 2)->setText("");
 				}
 				for(size_t label = 0; label < 3; ++label)
-					cellLabels.at(labelIndex + label)->setEnabled(true);
+					cellLabels.at(labelIndex + label)->setEnabled(!cellLabels.at(labelIndex + label)->getText().empty());
 				if(slot.selectedPerk)
 				{
 					const auto & perk = *slot.selectedPerk;

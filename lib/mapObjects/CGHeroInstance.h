@@ -102,7 +102,6 @@ private:
 	ui32 movement; //remaining movement points
 	bool inTownGarrison; // if hero is in town garrison
 
-	IGameInfoCallback * getCallback() const final { return cb; }
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
 	TConstBonusListPtr getMoraleBonuses() const override;
 	bool isSpellbinderHatGrantEligible(const SpellID & spell) const;
@@ -112,6 +111,7 @@ private:
 		bool ignoreSchoolProficiency, bool logWarnings, bool allowAdventureGuildUnlock) const;
 
 public:
+	IGameInfoCallback * getCallback() const final { return cb; }
 	CreatureID getCreatureLineSpecialtyTarget() const;
 	void validateHeroBonusSerialization(BonusSerializationContext context) const;
 

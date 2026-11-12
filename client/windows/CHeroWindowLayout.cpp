@@ -199,9 +199,9 @@ void CHeroWindow::configureNewHorizonsLayout()
 			move(area, Point(x, y));
 			area->disable();
 			provisionalAbilityAreas.push_back(area);
-			auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, Rect(x + 2, y + 2, 32, 32));
-			icon->setScale(Point(32, 32));
-			move(icon, Point(x + 2, y + 2));
+			auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_neutral"), 0, Rect(x + 4, y + 4, 28, 28));
+			icon->setScale(Point(28, 28));
+			move(icon, Point(x + 4, y + 4));
 			icon->disable();
 			provisionalAbilityIcons[i].push_back(icon);
 			const std::array cellLabels = {

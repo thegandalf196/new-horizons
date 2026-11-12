@@ -107,18 +107,25 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 
 	createSkillBox();
 
-	const auto choicePageCount = std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
+	const auto choicePageCount = skills.empty()
+		? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
+		: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 	if(choicePageCount > 1)
 	{
 		buttonLeft = std::make_shared<CButton>(Point(24, 532), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
+			const auto pages = skills.empty()
+				? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
+				: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 			if(skillViewOffset > 0)
 				skillViewOffset--;
 			else
-				skillViewOffset = static_cast<int>(std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2)) - 1;
+				skillViewOffset = static_cast<int>(pages) - 1;
 			createSkillBox();
 		}, EShortcut::MOVE_LEFT);
 		buttonRight = std::make_shared<CButton>(Point(66, 532), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
-			const auto pages = std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
+			const auto pages = skills.empty()
+				? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
+				: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 			if(skillViewOffset < static_cast<int>(pages) - 1)
 				skillViewOffset++;
 			else
@@ -132,8 +139,11 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	portrait->addClickCallback(nullptr);
 	portrait->addRClickCallback([hero = hero](){ ENGINE->windows().createAndPushWindow<CRClickPopupInt>(std::make_shared<CHeroWindow>(hero)); });
 	ok = std::make_shared<CButton>(Point(288, 532), AnimationPath::builtin("IOKAY"), CButton::tooltip(), std::bind(&CLevelWindow::submitSelection, this), EShortcut::GLOBAL_ACCEPT);
+	const std::string instructionText = (skills.empty() && !perks.empty())
+		? "Choose one perk"
+		: (!skills.empty() && perks.empty() ? "Choose one secondary skill" : "Choose one skill or perk");
 	choiceInstruction = std::make_shared<CLabel>(320, 516, FONT_SMALL, ETextAlignment::CENTER,
-		Colors::WHITE, "Choose one skill or perk");
+		Colors::WHITE, instructionText);
 
 	//%s has gained a level.
 	MetaString mainTitleText;
@@ -200,26 +210,40 @@ void CLevelWindow::createSkillBox()
 	perkChoiceBox.reset();
 	choiceHeaders.clear();
 
-	const auto choicePageCount = std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
+	const auto choicePageCount = skills.empty()
+		? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
+		: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 	const auto page = choicePageCount ? std::min<size_t>(skillViewOffset, choicePageCount - 1) : 0;
 	std::vector<size_t> choicesToShow;
-	for(size_t i = page * 2; i < std::min(skills.size(), page * 2 + 2); ++i)
-		choicesToShow.push_back(i);
-	for(size_t i = page * 2; i < std::min(perks.size(), page * 2 + 2); ++i)
-		choicesToShow.push_back(skills.size() + i);
+	if(skills.empty())
+	{
+		for(size_t i = page * 4; i < std::min(perks.size(), page * 4 + 4); ++i)
+			choicesToShow.push_back(i);
+	}
+	else
+	{
+		for(size_t i = page * 2; i < std::min(skills.size(), page * 2 + 2); ++i)
+			choicesToShow.push_back(i);
+		for(size_t i = page * 2; i < std::min(perks.size(), page * 2 + 2); ++i)
+			choicesToShow.push_back(skills.size() + i);
+	}
 	if(!choicesToShow.empty())
 	{
-		// Keep the two categories in their own columns.  The canonical offer
-		// limits are two skills and two perks; the paging fallback still handles
-		// legacy/extended offers without allowing a long perk name to collide
-		// with the primary-gain summary.
+		// Keep the two categories in their own columns. The canonical offer
+		// limits are two skills or up to four perks for the newly acquired rank.
 		std::vector<size_t> skillChoices;
 		std::vector<size_t> perkChoices;
 		for(const auto choice : choicesToShow)
 		{
-			auto & category = choice < skills.size() ? skillChoices : perkChoices;
-			if(category.size() < 2)
-				category.push_back(choice);
+			if(choice < skills.size())
+			{
+				if(skillChoices.size() < 2)
+					skillChoices.push_back(choice);
+			}
+			else
+			{
+				perkChoices.push_back(choice);
+			}
 		}
 		displayedChoiceOrder.clear();
 		for(size_t row = 0; row < std::max(skillChoices.size(), perkChoices.size()); ++row)
@@ -240,7 +264,17 @@ void CLevelWindow::createSkillBox()
 		}
 		else if(!perkChoices.empty())
 		{
-			choiceHeaders.push_back(std::make_shared<CLabel>(320, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
+			const auto & firstPerk = perks.front();
+			const int decoded = SecondarySkill::decode(firstPerk.selection.skillId == "new-horizons:necromancy"
+				? "core:necromancy" : firstPerk.selection.skillId);
+			const SecondarySkill iconSkill = decoded >= 0 && SecondarySkill::encode(decoded) == firstPerk.selection.skillId
+				? SecondarySkill(decoded)
+				: (firstPerk.selection.skillId == "new-horizons:necromancy"
+					? SecondarySkill(SecondarySkill::NECROMANCY) : SecondarySkill(SecondarySkill::NONE));
+			const auto parentName = iconSkill != SecondarySkill::NONE
+				? newHorizonsPerkHelp::skillLabel(hero, iconSkill) : firstPerk.selection.skillId;
+			const auto headerText = newHorizonsPerkHelp::tierName(firstPerk.requiredRank) + " " + parentName + " perk choices";
+			choiceHeaders.push_back(std::make_shared<CLabel>(320, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, headerText));
 		}
 
 		std::vector<std::shared_ptr<CSelectableComponent>> skillComps;
@@ -301,14 +335,28 @@ void CLevelWindow::createSkillBox()
 		}
 		if(!perkComps.empty())
 		{
-			const int x = skillComps.empty() ? (640 - 244) / 2 : 352;
-			perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
-				Rect(x, 300, 244, static_cast<int>(perkComps.size()) * 96 - 12),
-				[this](int){
-					perkChoiceActive = true;
-					if(skillChoiceBox)
-						skillChoiceBox->clearSelection();
-				}, 12, 4, 12, 1);
+			if(skillComps.empty() && perkComps.size() > 2)
+			{
+				const int rows = static_cast<int>((perkComps.size() + 1) / 2);
+				perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
+					Rect(44, 300, 552, rows * 96 - 12),
+					[this](int){
+						perkChoiceActive = true;
+						if(skillChoiceBox)
+							skillChoiceBox->clearSelection();
+					}, 12, 4, 12, 2);
+			}
+			else
+			{
+				const int x = skillComps.empty() ? (640 - 244) / 2 : 352;
+				perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
+					Rect(x, 300, 244, static_cast<int>(perkComps.size()) * 96 - 12),
+					[this](int){
+						perkChoiceActive = true;
+						if(skillChoiceBox)
+							skillChoiceBox->clearSelection();
+					}, 12, 4, 12, 1);
+			}
 		}
 		std::vector<EShortcut> skillShortcuts;
 		std::vector<EShortcut> perkShortcuts;

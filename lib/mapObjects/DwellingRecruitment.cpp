@@ -54,11 +54,6 @@ void collectFree(IGameEventCallback & events, const CGDwelling & dwelling, const
 	else
 	{
 		slot = legacyDestination(events, hero, creature, count, merge);
-		if(const auto capacity = hero.getLeadershipSlotCapacity(creature))
-		{
-			const auto existing = slot.validSlot() && hero.hasStackAtSlot(slot) ? hero.getStackCount(slot) : 0;
-			count = std::max(0, std::min(count, capacity->maximum - existing));
-		}
 	}
 	if(!slot.validSlot() || count == 0) { message(events, hero, creature, 425); return; }
 	SetAvailableCreatures stock;

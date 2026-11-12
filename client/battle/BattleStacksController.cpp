@@ -512,11 +512,45 @@ void BattleStacksController::showStackAmountBox(Canvas & canvas, const CStack * 
 			{
 				const int pct = std::clamp(static_cast<int>(std::round(eff * 100.0)), 1, 99);
 				const std::string badge = std::to_string(pct) + "%";
-				const Point effPos = Point(textPosition.x, boxPosition.y + amountBG->dimensions().y + 5);
-				const Rect bgRect(effPos.x - 12, effPos.y - 4, 24, 9);
-				canvas.drawColor(bgRect, ColorRGBA(25, 8, 8, 220));
-				canvas.drawBorder(bgRect, ColorRGBA(180, 50, 50, 240));
-				canvas.drawText(effPos, EFonts::FONT_TINY, ColorRGBA(255, 140, 140, 255), ETextAlignment::CENTER, badge);
+				const int badgeX = textPosition.x - 20;
+				const int badgeY = boxPosition.y + amountBG->dimensions().y + 2;
+				const Rect badgeRect(badgeX, badgeY, 41, 15);
+				canvas.drawColor(badgeRect, ColorRGBA(24, 18, 14, 235));
+
+				const ColorRGBA goldLight(180, 135, 50, 255);
+				const ColorRGBA goldDark(120, 85, 30, 255);
+				canvas.drawLine(Point(badgeX + 1, badgeY), Point(badgeX + 39, badgeY), goldLight, goldLight);
+				canvas.drawLine(Point(badgeX, badgeY + 1), Point(badgeX, badgeY + 13), goldLight, goldLight);
+				canvas.drawLine(Point(badgeX + 1, badgeY + 14), Point(badgeX + 39, badgeY + 14), goldDark, goldDark);
+				canvas.drawLine(Point(badgeX + 40, badgeY + 1), Point(badgeX + 40, badgeY + 13), goldDark, goldDark);
+
+				const ColorRGBA goldCorner(150, 110, 40, 255);
+				canvas.drawPoint(Point(badgeX + 1, badgeY + 1), goldCorner);
+				canvas.drawPoint(Point(badgeX + 39, badgeY + 1), goldCorner);
+				canvas.drawPoint(Point(badgeX + 1, badgeY + 13), goldCorner);
+				canvas.drawPoint(Point(badgeX + 39, badgeY + 13), goldCorner);
+
+				struct BadgePixel { uint8_t x, y, r, g, b; };
+				static constexpr BadgePixel brokenSwordPixels[] = {
+					{ 10, 1, 91, 49, 40 }, { 11, 1, 165, 99, 90 }, { 12, 1, 191, 132, 121 }, { 13, 1, 200, 140, 116 },
+					{ 9, 2, 74, 44, 35 }, { 10, 2, 181, 111, 98 }, { 11, 2, 201, 126, 117 }, { 12, 2, 192, 118, 107 }, { 13, 2, 196, 113, 89 },
+					{ 6, 3, 67, 45, 34 }, { 8, 3, 58, 40, 29 }, { 9, 3, 160, 98, 84 }, { 10, 3, 193, 111, 95 }, { 11, 3, 193, 103, 85 }, { 12, 3, 187, 92, 73 }, { 13, 3, 153, 66, 48 },
+					{ 5, 4, 89, 63, 48 }, { 6, 4, 169, 136, 104 }, { 7, 4, 56, 32, 26 }, { 8, 4, 127, 87, 69 }, { 9, 4, 190, 113, 90 }, { 10, 4, 179, 88, 70 }, { 11, 4, 181, 87, 62 }, { 12, 4, 154, 61, 48 }, { 13, 4, 76, 33, 26 },
+					{ 5, 5, 78, 50, 37 }, { 6, 5, 167, 122, 94 }, { 7, 5, 147, 111, 90 }, { 8, 5, 176, 126, 105 }, { 9, 5, 157, 79, 64 }, { 10, 5, 159, 73, 54 }, { 11, 5, 138, 58, 45 }, { 12, 5, 76, 37, 29 },
+					{ 4, 6, 74, 41, 32 }, { 5, 6, 125, 82, 65 }, { 6, 6, 186, 151, 131 }, { 7, 6, 202, 179, 163 }, { 8, 6, 175, 135, 122 }, { 9, 6, 128, 63, 57 }, { 10, 6, 120, 59, 45 }, { 11, 6, 57, 31, 25 },
+					{ 4, 7, 109, 58, 45 }, { 5, 7, 171, 122, 100 }, { 6, 7, 194, 169, 156 }, { 7, 7, 198, 179, 166 }, { 8, 7, 187, 152, 135 }, { 9, 7, 154, 97, 81 }, { 10, 7, 66, 38, 32 },
+					{ 3, 8, 51, 32, 24 }, { 4, 8, 92, 38, 32 }, { 5, 8, 163, 106, 89 }, { 6, 8, 187, 152, 132 }, { 7, 8, 180, 143, 126 }, { 8, 8, 150, 101, 93 }, { 9, 8, 117, 71, 59 },
+					{ 4, 9, 128, 47, 38 }, { 5, 9, 144, 67, 58 }, { 6, 9, 154, 95, 84 }, { 7, 9, 157, 100, 85 }, { 8, 9, 121, 75, 64 }, { 9, 9, 64, 38, 34 }, { 11, 9, 55, 23, 17 },
+					{ 3, 10, 102, 39, 29 }, { 4, 10, 159, 53, 41 }, { 5, 10, 90, 36, 30 }, { 6, 10, 68, 33, 31 }, { 7, 10, 99, 58, 47 }, { 8, 10, 76, 46, 38 }, { 10, 10, 80, 29, 23 }, { 11, 10, 119, 37, 27 },
+					{ 2, 11, 82, 34, 26 }, { 3, 11, 166, 53, 38 }, { 4, 11, 132, 47, 34 }, { 10, 11, 77, 30, 22 }, { 11, 11, 93, 32, 24 },
+					{ 2, 12, 121, 47, 33 }, { 3, 12, 149, 51, 35 }, { 4, 12, 60, 27, 23 },
+					{ 2, 13, 75, 35, 27 }, { 3, 13, 54, 27, 20 }
+				};
+				for(const auto & p : brokenSwordPixels)
+					canvas.drawPoint(Point(badgeX + p.x, badgeY + p.y), ColorRGBA(p.r, p.g, p.b, 255));
+
+				const Point textPos(badgeX + 27, badgeY + 8);
+				canvas.drawText(textPos, EFonts::FONT_TINY, ColorRGBA(245, 240, 225, 255), ETextAlignment::CENTER, badge);
 			}
 		}
 	}

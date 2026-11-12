@@ -12,22 +12,7 @@ CommandPlacementError commandPlacementEligibility(std::optional<int64_t> command
 {
 	if(!slot.validSlot())
 		return CommandPlacementError::INVALID_SLOT;
-	if(!command)
-		return CommandPlacementError::NONE;
-	const auto view = commandSlotView(*command, slot);
-	if(!view.unlocked)
-		return CommandPlacementError::LOCKED_SLOT;
-	if(creature.assimilation)
-		return CommandPlacementError::NONE;
-	if(!creature.category)
-		return CommandPlacementError::UNKNOWN_CREATURE_TIER;
-	using Category = newHorizonsCreatures::CreatureCategory;
-	if(*creature.category != Category::CORE && *creature.category != Category::ELITE && *creature.category != Category::CHAMPION)
-		return CommandPlacementError::UNKNOWN_CREATURE_TIER;
-	const bool permitted = *creature.category == Category::CORE
-		|| view.grade == CommandSlotGrade::CHAMPION
-		|| (*creature.category == Category::ELITE && view.grade == CommandSlotGrade::ELITE);
-	return permitted ? CommandPlacementError::NONE : CommandPlacementError::TIER_NOT_PERMITTED;
+	return CommandPlacementError::NONE;
 }
 
 namespace

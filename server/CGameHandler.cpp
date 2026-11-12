@@ -2581,20 +2581,12 @@ bool CGameHandler::bulkMergeStacks(SlotID slotSrc, ObjectInstanceID srcOwner)
 		return false;
 
 	int64_t maximumCount = std::numeric_limits<TQuantity>::max();
-	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(army); hero && !hero->getArmyCommand())
-	{
-		const auto capacity = hero->getLeadershipSlotCapacity(currentCreature->getId());
-		if(capacity)
-			maximumCount = std::min<int64_t>(maximumCount, capacity->maximum);
-	}
 	const int64_t targetCount = creatureSet.getStackCount(slotSrc);
 	if(!commandArmyAdmission::validateSlot(*this, army, slotSrc, currentCreature->getId(), targetCount, "merge"))
 		return false;
 	int64_t remainingCapacity = std::max<int64_t>(0, maximumCount - targetCount);
 	if(remainingCapacity == 0)
 	{
-		if(!validateLeadershipStack(army, currentCreature->getId(), targetCount + 1, "merge"))
-			return false;
 		complain("Cannot exceed the maximum stack size!");
 		return false;
 	}
@@ -2916,12 +2908,6 @@ bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8
 		const TQuantity sourceCount = s1->getStackCount(p1);
 		const TQuantity destinationCount = s2->getStackCount(p2);
 		int64_t maximumCount = std::numeric_limits<TQuantity>::max();
-		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(s2))
-		{
-			const auto capacity = hero->getLeadershipSlotCapacity(s1->getCreature(p1)->getId());
-			if(capacity)
-				maximumCount = std::min<int64_t>(maximumCount, capacity->maximum);
-		}
 		const int64_t availableCapacity = std::max<int64_t>(0, maximumCount - destinationCount);
 		int64_t transferCount = std::min<int64_t>(sourceCount, availableCapacity);
 		const bool mustKeepLastSourceCreature = id1 != id2 && s1->needsLastStack() && s1->stacksCount() == 1;
@@ -2937,12 +2923,6 @@ bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8
 				if(player == s1->tempOwner)
 					notifyCannotMoveLastCreature(*this, player);
 				return false;
-			}
-			if(const auto * hero = dynamic_cast<const CGHeroInstance *>(s2))
-			{
-				const auto capacity = hero->getLeadershipSlotCapacity(s1->getCreature(p1)->getId());
-				if(capacity && destinationCount >= capacity->maximum)
-					return validateLeadershipStack(s2, s1->getCreature(p1)->getId(), static_cast<int64_t>(destinationCount) + 1, "merge");
 			}
 			if(destinationCount == std::numeric_limits<TQuantity>::max())
 				complain("Cannot exceed the maximum stack size!");
@@ -5556,7 +5536,6 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 		if(!source->hasStackAtSlot(sourceLocation.slot))
 			return moveStack(sourceLocation, destinationLocation);
 		const int64_t sourceCount = source->getStackCount(sourceLocation.slot);
-		const auto * creature = source->getCreature(sourceLocation.slot);
 		const bool mustKeepLastSourceCreature = source->id != destination->id
 			&& source->needsLastStack() && source->stacksCount() == 1;
 		// Whole-stack drags are move intents: reserve a required last creature,
@@ -5566,15 +5545,6 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 		{
 			notifyCannotMoveLastCreature(*this, source->tempOwner);
 			return false;
-		}
-		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(destination))
-		{
-			if(const auto capacity = hero->getLeadershipSlotCapacity(creature->getId()))
-			{
-				if(capacity->maximum <= 0)
-					return validateLeadershipStack(destination, creature->getId(), 1, "swap");
-				transferCount = std::min<int64_t>(transferCount, capacity->maximum);
-			}
 		}
 		if(transferCount <= 0 && mustKeepLastSourceCreature && sourceCount > 0)
 		{
@@ -5615,28 +5585,15 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 bool CGameHandler::validateLeadershipStack(const CArmedInstance * destination, CreatureID creature,
 	int64_t resultingCount, const char * operation)
 {
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(destination);
-	if(!hero)
-		return true;
-	const auto capacity = hero->getLeadershipSlotCapacity(creature);
-	if(!capacity || (resultingCount >= 0 && resultingCount <= capacity->maximum))
-		return true;
-	logGlobal->debug("Leadership admission rejected: operation=%s destinationObjectId=%d destinationHeroId=%d creatureId=%d resultingCount=%lld capacity=%d requirement=%d leadership=%d",
-		operation ? operation : "unspecified", destination->id.getNum(), hero->id.getNum(), creature.getNum(),
-		static_cast<long long>(resultingCount), capacity->maximum, capacity->requirement, capacity->leadership);
-	complain("Leadership limit exceeded: this hero can command at most " + std::to_string(capacity->maximum)
-		+ " creatures of this type (" + std::to_string(capacity->requirement)
-		+ " Leadership each; hero Leadership " + std::to_string(capacity->leadership) + ").");
-	return false;
+	// Under square-root Leadership Efficiency, stacks may contain any positive count.
+	// Insufficient Leadership results in reduced offensive efficiency, not rejection.
+	return true;
 }
 
 bool CGameHandler::validateLeadershipArmyAddition(const CGHeroInstance * destination, const CCreatureSet & incoming)
 {
-	if(destination->getArmyCommand())
-		return newHorizonsHeroes::planCommandArmyAddition(*destination, *destination, incoming).has_value()
-			|| (complain("The army cannot fit the hero's unlocked tier slots."), false);
 	return newHorizonsHeroes::canMergeArmies(&incoming, destination, destination)
-		|| (complain("The army exceeds the historical receiving army limits."), false);
+		|| (complain("The army exceeds the receiving army limits."), false);
 }
 
 bool CGameHandler::putArtifact(const ArtifactLocation & al, const ArtifactInstanceID & id, std::optional<bool> askAssemble)

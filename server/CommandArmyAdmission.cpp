@@ -18,19 +18,9 @@ bool validateSlot(CGameHandler & handler, const CArmedInstance * army, SlotID sl
 		handler.complain("Invalid army slot or creature count.");
 		return false;
 	}
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
-	if(!hero || !hero->getArmyCommand())
-	{
-		const auto capacity = hero ? hero->getLeadershipSlotCapacity(creature) : std::nullopt;
-		if(!capacity || count <= capacity->maximum) return true;
-		handler.complain("Leadership limit exceeded: this hero can command at most " + std::to_string(capacity->maximum)
-			+ " creatures of this type (" + std::to_string(capacity->requirement)
-			+ " Leadership each; hero Leadership " + std::to_string(capacity->leadership) + ").");
-		return false;
-	}
-	const auto error = newHorizonsHeroes::commandArmySlotEligibility(hero, slot, creature);
-	if(error == newHorizonsHeroes::CommandPlacementError::NONE) return true;
-	return handler.complain(newHorizonsHeroes::commandPlacementMessage(error)), false;
+	// All 7 army slots are unrestricted; creature stacks of any positive count are legal.
+	// Offensive damage scales via Leadership Efficiency; stacks are not rejected.
+	return true;
 }
 
 void rearrange(CGameHandler & handler, const CArmedInstance & army,

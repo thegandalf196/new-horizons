@@ -148,13 +148,22 @@ void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
 		return !newHorizonsHeroes::isValidLevelUpSkillChoice(gh->gameInfo(), hero, skill);
 	});
 
-	// Perk replies are validated against the complete deterministic offer, not a
-	// filtered subset. Rebuild it from the saved seed and current hero ranks so
-	// the offer reflects current eligibility while retaining seeded ordering.
-	hlu.perks = hero->getPerkState().prepareOffer([this](const std::string & skillId)
+	if(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
 	{
-		return hero->getPerkSkillRank(skillId);
-	}, hlu.perkOfferSeed, perkWeightContext());
+		if(!hlu.skills.empty())
+		{
+			// Major System Rework Part VII: Primary level-up dialog offers ONLY skills.
+			// Perks are never offered alongside skills.
+			hlu.perks.clear();
+		}
+		// If hlu.skills is empty, hlu.perks holds the full tier pool of eligible perks
+		// for the newly acquired rank. Retain it authoritative without prepareOffer() overwriting it.
+	}
+	else
+	{
+		hlu.perks.clear();
+	}
+
 	// All current Skill cards are excluded from the shared replacement pool,
 	// so every valid card index has the same availability. Publish authority.
 	hlu.optionalRerollAvailable = hlu.optionalRerollAvailable && !rerollCandidates().empty();
