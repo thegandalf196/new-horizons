@@ -131,10 +131,17 @@ void CComponent::init(ComponentType Type, ComponentSubType Subtype, std::optiona
 	}
 }
 
+void CComponent::clearLines()
+{
+	for(auto & label : lines)
+		removeChild(label.get());
+	lines.clear();
+}
+
 void CComponent::setHorizontalLayout(int width, int height, bool centerContent)
 {
 	OBJECT_CONSTRUCTION;
-	lines.clear();
+	clearLines();
 	pos.w = width;
 	pos.h = height;
 	image->moveTo(pos.topLeft() + Point(2, (height - image->pos.h) / 2));

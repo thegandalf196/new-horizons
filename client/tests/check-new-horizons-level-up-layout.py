@@ -56,8 +56,6 @@ def main() -> None:
     require(LEVEL, 'AnimationPath::builtin("PSKIL42")', "canonical primary skill icon animation")
     require(LEVEL, 'Rect(x, 296, skillComps.size() == 1 ? 252 : 552, 206)', "skill choice box")
     require(LEVEL, 'Rect(x, 304, perkComps.size() == 1 ? 236 : 528, rows * 80 - 16)', "perk choice box")
-    require(LEVEL, 'parentSkill->setHorizontalLayout(228, 34, true)', "centered parent Skill identity")
-    require(LEVEL, 'parentSkill->moveTo(pos.topLeft() + Point(8, 48))', "parent identity within perk card")
     require(COMPONENT, 'width - image->pos.w - 12', "wrapped caption beside native icon")
     require(COMPONENT, 'pos.h = height', "fixed component height before box layout")
     require(LEVEL, 'Point(24, 516)', "paging below choice cards")

@@ -59,6 +59,8 @@ public:
 	/// Bound a choice card and place its wrapped caption beside the icon.
 	/// Opt-in centering moves the icon and measured caption as one group.
 	void setHorizontalLayout(int width, int height, bool centerContent = false);
+	/// Clear any subtitle labels under the icon.
+	void clearLines();
 
 	CComponent(ComponentType Type, ComponentSubType Subtype, std::optional<int32_t> Val = std::nullopt, ESize imageSize=large, EFonts font = FONT_SMALL);
 	CComponent(ComponentType Type, ComponentSubType Subtype, const std::string & Val, ESize imageSize=large, EFonts font = FONT_SMALL);

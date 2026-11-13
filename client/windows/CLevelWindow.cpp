@@ -55,6 +55,7 @@ public:
 		  perkRows(perks)
 	{
 		OBJECT_CONSTRUCTION;
+		clearLines();
 		pos.w = 252;
 		pos.h = 206;
 
@@ -79,8 +80,8 @@ public:
 			const int rowY = 58 + static_cast<int>(i) * 36;
 			const auto & row = perkRows[i];
 
-			auto pImg = std::make_shared<CAnimImage>(AnimationPath::builtin(row.icon), 0, 0,
-				pos.x + 12, pos.y + rowY + 3);
+			auto pImg = std::make_shared<CAnimImage>(AnimationPath::builtin(row.icon), 0,
+				Rect(pos.x + 14, pos.y + rowY + 5, 26, 26));
 			perkImages.push_back(pImg);
 			addChild(pImg.get());
 
@@ -93,7 +94,7 @@ public:
 
 	void showAll(Canvas & to) override
 	{
-		to.drawColor(pos, ColorRGBA(24, 18, 14, 230));
+		to.drawColor(pos, ColorRGBA(28, 20, 15, 255));
 		if(selected)
 		{
 			to.drawBorder(pos, Colors::BRIGHT_YELLOW);
@@ -101,7 +102,7 @@ public:
 		}
 		else
 		{
-			to.drawBorder(pos, ColorRGBA(140, 105, 45, 200));
+			to.drawBorder(pos, ColorRGBA(140, 105, 45, 255));
 		}
 		if(image)
 		{
@@ -110,7 +111,7 @@ public:
 		}
 		const int dividerY = pos.y + 56;
 		to.drawLine(Point(pos.x + 8, dividerY), Point(pos.x + pos.w - 8, dividerY),
-			ColorRGBA(140, 105, 45, 180), ColorRGBA(140, 105, 45, 180));
+			ColorRGBA(140, 105, 45, 255), ColorRGBA(140, 105, 45, 255));
 
 		for(size_t i = 0; i < perkImages.size(); ++i)
 		{
@@ -118,13 +119,13 @@ public:
 			{
 				to.drawBorder(Rect(perkImages[i]->pos.x - 1, perkImages[i]->pos.y - 1,
 					perkImages[i]->pos.w + 2, perkImages[i]->pos.h + 2),
-					ColorRGBA(150, 115, 40, 220));
+					ColorRGBA(150, 115, 40, 255));
 			}
 			const int rowY = pos.y + 58 + static_cast<int>(i) * 36;
 			if(i + 1 < perkImages.size())
 			{
 				to.drawLine(Point(pos.x + 12, rowY + 36), Point(pos.x + pos.w - 12, rowY + 36),
-					ColorRGBA(100, 75, 35, 120), ColorRGBA(100, 75, 35, 120));
+					ColorRGBA(100, 75, 35, 255), ColorRGBA(100, 75, 35, 255));
 			}
 		}
 		CIntObject::showAll(to);
@@ -144,6 +145,7 @@ public:
 			hasSkill ? skill : SecondarySkill(0), name, CComponent::medium)
 	{
 		OBJECT_CONSTRUCTION;
+		clearLines();
 		setCustomIcon(icon);
 		pos.w = 236;
 		pos.h = 64;
@@ -153,10 +155,10 @@ public:
 			image->moveTo(pos.topLeft() + Point(10, 10));
 		}
 
-		titleLabel = std::make_shared<CMultiLineLabel>(Rect(60, 0, 168, 64), FONT_MEDIUM,
+		titleLabel = std::make_shared<CMultiLineLabel>(Rect(62, 0, 166, 64), FONT_MEDIUM,
 			ETextAlignment::CENTERLEFT, Colors::WHITE, name);
 		if(titleLabel->textSize.y > 52)
-			titleLabel = std::make_shared<CMultiLineLabel>(Rect(60, 0, 168, 64), FONT_SMALL,
+			titleLabel = std::make_shared<CMultiLineLabel>(Rect(62, 0, 166, 64), FONT_SMALL,
 				ETextAlignment::CENTERLEFT, Colors::WHITE, name);
 		addChild(titleLabel.get());
 
@@ -165,12 +167,12 @@ public:
 		parentSkill->customSubtitle = parentName + "\n"
 			+ GAME->translator().translate("core.skilllev", requiredRank - 1);
 		parentSkill->setHorizontalLayout(228, 34, true);
-		parentSkill->moveTo(pos.topLeft() + Point(8, 48));
+		removeChild(parentSkill.get());
 	}
 
 	void showAll(Canvas & to) override
 	{
-		to.drawColor(pos, ColorRGBA(24, 18, 14, 230));
+		to.drawColor(pos, ColorRGBA(28, 20, 15, 255));
 		if(selected)
 		{
 			to.drawBorder(pos, Colors::BRIGHT_YELLOW);
@@ -178,7 +180,7 @@ public:
 		}
 		else
 		{
-			to.drawBorder(pos, ColorRGBA(140, 105, 45, 200));
+			to.drawBorder(pos, ColorRGBA(140, 105, 45, 255));
 		}
 		if(image)
 		{
@@ -246,13 +248,13 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 
 	const auto choicePageCount = skills.empty()
 		? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
-		: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
+		: (skills.size() + 1) / 2;
 	if(choicePageCount > 1)
 	{
 		buttonLeft = std::make_shared<CButton>(Point(24, 516), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
 			const auto pages = skills.empty()
 				? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
-				: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
+				: (skills.size() + 1) / 2;
 			if(skillViewOffset > 0)
 				skillViewOffset--;
 			else
@@ -262,7 +264,7 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 		buttonRight = std::make_shared<CButton>(Point(66, 516), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
 			const auto pages = skills.empty()
 				? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
-				: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
+				: (skills.size() + 1) / 2;
 			if(skillViewOffset < static_cast<int>(pages) - 1)
 				skillViewOffset++;
 			else
@@ -353,7 +355,7 @@ void CLevelWindow::createSkillBox()
 
 	const auto choicePageCount = skills.empty()
 		? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
-		: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
+		: (skills.size() + 1) / 2;
 	const auto page = choicePageCount ? std::min<size_t>(skillViewOffset, choicePageCount - 1) : 0;
 	std::vector<size_t> choicesToShow;
 	if(skills.empty())
@@ -365,8 +367,6 @@ void CLevelWindow::createSkillBox()
 	{
 		for(size_t i = page * 2; i < std::min(skills.size(), page * 2 + 2); ++i)
 			choicesToShow.push_back(i);
-		for(size_t i = page * 2; i < std::min(perks.size(), page * 2 + 2); ++i)
-			choicesToShow.push_back(skills.size() + i);
 	}
 	if(!choicesToShow.empty())
 	{
@@ -432,12 +432,18 @@ void CLevelWindow::createSkillBox()
 				const auto skillName = newHorizonsPerkHelp::skillLabel(hero, skill);
 
 				std::vector<CLevelUpSkillCardComponent::PerkRowInfo> perkRows;
-				const auto * def = skill.toSkill();
-				const std::string skillId = def ? def->getJsonKey() : "";
 				if(hero && hero->getPerkState().rules["skills"].isStruct())
 				{
 					const auto & skillsMap = hero->getPerkState().rules["skills"].Struct();
-					const auto it = skillsMap.find(skillId);
+					std::string rawId = skill.toSkill() ? skill.toSkill()->getJsonKey() : "";
+					auto it = skillsMap.find(rawId);
+					if(it == skillsMap.end())
+						it = skillsMap.find(SecondarySkill::encode(skill.getNum()));
+					if(it == skillsMap.end() && rawId.starts_with("core:"))
+						it = skillsMap.find("new-horizons:" + rawId.substr(5));
+					if(it == skillsMap.end() && !rawId.starts_with("new-horizons:"))
+						it = skillsMap.find("new-horizons:" + rawId);
+
 					if(it != skillsMap.end() && it->second["perks"].isVector())
 					{
 						const std::string rankReq = offeredRank == 1 ? "basic" : (offeredRank == 2 ? "advanced" : "expert");
