@@ -84,8 +84,17 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 			const auto * pState = gameInfo().getPlayerState(hero->getOwner());
 			const bool isHuman = pState && pState->isHuman();
 
-			for(int rank = oldRank + 1; rank <= newRank && rank <= 3; ++rank)
+			for(int rank = 1; rank <= newRank && rank <= 3; ++rank)
 			{
+				const bool tierOccupied = std::any_of(hero->getPerkState().selected.begin(), hero->getPerkState().selected.end(), [&](const auto & entry)
+				{
+					if(entry.skillId != skillId) return false;
+					const auto def = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules, entry.skillId, entry.perkId);
+					return def && newHorizonsHeroes::perkRequiredRank(def->requiredRank) == rank;
+				});
+				if(tierOccupied)
+					continue;
+
 				const auto candidates = hero->getPerkState().candidatesForSkillTier(skillId, rank);
 				if(!candidates.empty())
 				{

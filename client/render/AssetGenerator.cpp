@@ -2519,11 +2519,6 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground() c
 	};
 	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
 		recessed(Rect(24 + i * 148, 190, 140, 72));
-	for(int row = 0; row < 2; ++row)
-	{
-		recessed(Rect(44, 300 + row * 96, 244, 84));
-		recessed(Rect(352, 300 + row * 96, 244, 84));
-	}
 	return image;
 }
 

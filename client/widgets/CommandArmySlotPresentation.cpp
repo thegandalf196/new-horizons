@@ -60,50 +60,45 @@ void CGarrisonSlot::showAll(Canvas & to)
 			const bool isSmall = owner && owner->smallIcons;
 			if(!isSmall)
 			{
-				// Discrete, translucent pill in top-right corner
-				const int bw = 27;
-				const int bh = 10;
+				// Discrete, polished badge in top-right corner with gold border and dark leather background
+				const int bw = 30;
+				const int bh = 11;
 				const int badgeX = pos.x + pos.w - bw - 2;
 				const int badgeY = pos.y + 2;
 				const Rect badgeRect(badgeX, badgeY, bw, bh);
-				to.drawColor(badgeRect, ColorRGBA(10, 8, 6, 150));
-				to.drawBorder(badgeRect, ColorRGBA(90, 70, 30, 140));
+				to.drawColor(badgeRect, ColorRGBA(36, 26, 18, 230));
+				to.drawBorder(badgeRect, ColorRGBA(160, 120, 45, 240));
 
-				// Miniature broken sword icon
-				to.drawPoint(Point(badgeX + 3, badgeY + 2), ColorRGBA(200, 130, 100, 210));
-				to.drawPoint(Point(badgeX + 4, badgeY + 2), ColorRGBA(210, 140, 110, 210));
-				to.drawPoint(Point(badgeX + 2, badgeY + 3), ColorRGBA(180, 100, 80, 210));
-				to.drawPoint(Point(badgeX + 3, badgeY + 3), ColorRGBA(220, 190, 170, 230));
-				to.drawPoint(Point(badgeX + 4, badgeY + 3), ColorRGBA(190, 100, 80, 210));
-				to.drawPoint(Point(badgeX + 2, badgeY + 4), ColorRGBA(190, 90, 70, 210));
-				to.drawPoint(Point(badgeX + 3, badgeY + 4), ColorRGBA(170, 80, 60, 210));
-				to.drawPoint(Point(badgeX + 1, badgeY + 5), ColorRGBA(150, 60, 45, 210));
-				to.drawPoint(Point(badgeX + 2, badgeY + 6), ColorRGBA(160, 50, 40, 210));
-				to.drawPoint(Point(badgeX + 4, badgeY + 6), ColorRGBA(120, 40, 30, 210));
-				to.drawPoint(Point(badgeX + 1, badgeY + 7), ColorRGBA(140, 45, 35, 210));
+				// Miniature bright red broken sword icon
+				to.drawPoint(Point(badgeX + 3, badgeY + 2), ColorRGBA(220, 130, 90, 255));
+				to.drawPoint(Point(badgeX + 4, badgeY + 2), ColorRGBA(240, 150, 110, 255));
+				to.drawPoint(Point(badgeX + 2, badgeY + 3), ColorRGBA(200, 70, 50, 255));
+				to.drawPoint(Point(badgeX + 3, badgeY + 3), ColorRGBA(255, 200, 180, 255));
+				to.drawPoint(Point(badgeX + 4, badgeY + 3), ColorRGBA(210, 80, 60, 255));
+				to.drawPoint(Point(badgeX + 2, badgeY + 4), ColorRGBA(220, 70, 50, 255));
+				to.drawPoint(Point(badgeX + 3, badgeY + 4), ColorRGBA(180, 50, 35, 255));
+				to.drawPoint(Point(badgeX + 1, badgeY + 5), ColorRGBA(200, 160, 70, 255)); // gold hilt
+				to.drawPoint(Point(badgeX + 2, badgeY + 6), ColorRGBA(220, 180, 80, 255));
+				to.drawPoint(Point(badgeX + 4, badgeY + 6), ColorRGBA(170, 130, 50, 255));
+				to.drawPoint(Point(badgeX + 1, badgeY + 7), ColorRGBA(150, 110, 40, 255));
 
-				// Discrete warm muted text
-				to.drawText(Point(badgeX + 16, badgeY + 5), FONT_TINY, ColorRGBA(215, 205, 185, 190), ETextAlignment::CENTER, badgeText);
+				// Crisp cream text
+				to.drawText(Point(badgeX + 18, badgeY + 6), FONT_TINY, ColorRGBA(245, 235, 215, 255), ETextAlignment::CENTER, badgeText);
 			}
 			else
 			{
-				// Discrete 9x9 miniature corner badge for small (32x32) slots
-				const int bw = 9;
-				const int bh = 9;
-				const int badgeX = pos.x + pos.w - bw - 1;
-				const int badgeY = pos.y + 1;
-				const Rect badgeRect(badgeX, badgeY, bw, bh);
-				to.drawColor(badgeRect, ColorRGBA(10, 8, 6, 160));
-				to.drawBorder(badgeRect, ColorRGBA(90, 70, 30, 140));
-
-				to.drawPoint(Point(badgeX + 4, badgeY + 2), ColorRGBA(200, 130, 100, 220));
-				to.drawPoint(Point(badgeX + 3, badgeY + 3), ColorRGBA(210, 150, 120, 220));
-				to.drawPoint(Point(badgeX + 4, badgeY + 3), ColorRGBA(180, 90, 70, 220));
-				to.drawPoint(Point(badgeX + 2, badgeY + 4), ColorRGBA(220, 190, 170, 240));
-				to.drawPoint(Point(badgeX + 3, badgeY + 4), ColorRGBA(170, 80, 60, 220));
-				to.drawPoint(Point(badgeX + 2, badgeY + 5), ColorRGBA(170, 70, 50, 220));
-				to.drawPoint(Point(badgeX + 1, badgeY + 6), ColorRGBA(150, 50, 40, 220));
-				to.drawPoint(Point(badgeX + 3, badgeY + 6), ColorRGBA(120, 40, 30, 220));
+				// On 32x32 thumbnails: NO black background box!
+				// Only a clean miniature 6x6 red broken-sword mark directly on the corner.
+				const int sx = pos.x + pos.w - 8;
+				const int sy = pos.y + 2;
+				to.drawPoint(Point(sx + 4, sy + 0), ColorRGBA(240, 140, 100, 255));
+				to.drawPoint(Point(sx + 3, sy + 1), ColorRGBA(255, 70, 50, 255));
+				to.drawPoint(Point(sx + 4, sy + 1), ColorRGBA(210, 50, 35, 255));
+				to.drawPoint(Point(sx + 2, sy + 2), ColorRGBA(255, 80, 60, 255));
+				to.drawPoint(Point(sx + 3, sy + 2), ColorRGBA(200, 40, 30, 255));
+				to.drawPoint(Point(sx + 1, sy + 3), ColorRGBA(220, 170, 75, 255)); // gold hilt
+				to.drawPoint(Point(sx + 2, sy + 3), ColorRGBA(240, 190, 85, 255));
+				to.drawPoint(Point(sx + 0, sy + 4), ColorRGBA(170, 120, 45, 255));
 			}
 		}
 	}

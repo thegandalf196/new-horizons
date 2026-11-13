@@ -116,7 +116,7 @@ class CComponentBox : public CIntObject
 
 	//get distance between these copmonents
 	int getDistance(CComponent *left, CComponent * right);
-	void placeComponents(bool selectable);
+	void placeComponents(bool selectable, bool showOr = true);
 
 public:
 	/// return index of selected item
@@ -138,5 +138,5 @@ public:
 	/// will also create "or" labels between components
 	/// onSelect - optional function that will be called every time on selection change
 	CComponentBox(std::vector<std::shared_ptr<CSelectableComponent>> components, Rect position, std::function<void(int newID)> onSelect = nullptr);
-	CComponentBox(std::vector<std::shared_ptr<CSelectableComponent>> components, Rect position, std::function<void(int newID)> onSelect, int betweenImagesMin, int betweenSubtitlesMin, int betweenRows, int componentsInRow);
+	CComponentBox(std::vector<std::shared_ptr<CSelectableComponent>> components, Rect position, std::function<void(int newID)> onSelect, int betweenImagesMin, int betweenSubtitlesMin, int betweenRows, int componentsInRow, bool showOr = true);
 };

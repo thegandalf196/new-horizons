@@ -15,6 +15,7 @@
 #include "../gui/Shortcut.h"
 #include "../gui/WindowHandler.h"
 #include "../render/Colors.h"
+#include "render/Canvas.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/CComponent.h"
 #include "../widgets/Images.h"
@@ -28,10 +29,113 @@
 
 namespace
 {
-// A visible parent identity, independent of the perk icon and selection callback.
+// Secondary skill choice card (Screen 1: Skill Choices)
+class CLevelUpSkillCardComponent : public CSelectableComponent
+{
+public:
+	struct PerkRowInfo
+	{
+		std::string id;
+		std::string name;
+		std::string icon;
+	};
+
+private:
+	std::string titleText;
+	std::vector<PerkRowInfo> perkRows;
+	std::vector<std::shared_ptr<CAnimImage>> perkImages;
+	std::vector<std::shared_ptr<CLabel>> perkLabels;
+	std::shared_ptr<CMultiLineLabel> titleLabel;
+
+public:
+	CLevelUpSkillCardComponent(SecondarySkill skill, int offeredRank,
+		const std::string & skillName, const std::string & offeredRankText,
+		const std::vector<PerkRowInfo> & perks)
+		: CSelectableComponent(ComponentType::SEC_SKILL, skill, offeredRank, CComponent::medium),
+		  perkRows(perks)
+	{
+		OBJECT_CONSTRUCTION;
+		pos.w = 252;
+		pos.h = 206;
+
+		titleText = offeredRankText + " " + skillName;
+		customSubtitle = offeredRankText + "\n" + skillName;
+
+		if(image)
+		{
+			image->moveTo(pos.topLeft() + Point(10, 8));
+		}
+
+		titleLabel = std::make_shared<CMultiLineLabel>(Rect(60, 8, 184, 44), FONT_MEDIUM,
+			ETextAlignment::CENTERLEFT, Colors::WHITE, titleText);
+		if(titleLabel->textSize.y > 40)
+			titleLabel = std::make_shared<CMultiLineLabel>(Rect(60, 8, 184, 44), FONT_SMALL,
+				ETextAlignment::CENTERLEFT, Colors::WHITE, titleText);
+		addChild(titleLabel.get());
+
+		const size_t rowCount = std::min<size_t>(perkRows.size(), 4);
+		for(size_t i = 0; i < rowCount; ++i)
+		{
+			const int rowY = 58 + static_cast<int>(i) * 36;
+			const auto & row = perkRows[i];
+
+			auto pImg = std::make_shared<CAnimImage>(AnimationPath::builtin(row.icon), 0, 0,
+				pos.x + 12, pos.y + rowY + 3);
+			perkImages.push_back(pImg);
+			addChild(pImg.get());
+
+			auto pLbl = std::make_shared<CLabel>(pos.x + 48, pos.y + rowY + 11,
+				FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, row.name, 196);
+			perkLabels.push_back(pLbl);
+			addChild(pLbl.get());
+		}
+	}
+
+	void showAll(Canvas & to) override
+	{
+		to.drawColor(pos, ColorRGBA(24, 18, 14, 230));
+		if(selected)
+		{
+			to.drawBorder(pos, Colors::BRIGHT_YELLOW);
+			to.drawBorder(Rect(pos.x + 1, pos.y + 1, pos.w - 2, pos.h - 2), ColorRGBA(255, 215, 0, 255));
+		}
+		else
+		{
+			to.drawBorder(pos, ColorRGBA(140, 105, 45, 200));
+		}
+		if(image)
+		{
+			to.drawBorder(Rect(image->pos.x - 1, image->pos.y - 1, image->pos.w + 2, image->pos.h + 2),
+				ColorRGBA(180, 140, 50, 255));
+		}
+		const int dividerY = pos.y + 56;
+		to.drawLine(Point(pos.x + 8, dividerY), Point(pos.x + pos.w - 8, dividerY),
+			ColorRGBA(140, 105, 45, 180), ColorRGBA(140, 105, 45, 180));
+
+		for(size_t i = 0; i < perkImages.size(); ++i)
+		{
+			if(perkImages[i])
+			{
+				to.drawBorder(Rect(perkImages[i]->pos.x - 1, perkImages[i]->pos.y - 1,
+					perkImages[i]->pos.w + 2, perkImages[i]->pos.h + 2),
+					ColorRGBA(150, 115, 40, 220));
+			}
+			const int rowY = pos.y + 58 + static_cast<int>(i) * 36;
+			if(i + 1 < perkImages.size())
+			{
+				to.drawLine(Point(pos.x + 12, rowY + 36), Point(pos.x + pos.w - 12, rowY + 36),
+					ColorRGBA(100, 75, 35, 120), ColorRGBA(100, 75, 35, 120));
+			}
+		}
+		CIntObject::showAll(to);
+	}
+};
+
+// Perk choice card (Screen 2: Perk Choices)
 class CLevelUpPerkComponent : public CSelectableComponent
 {
 	std::shared_ptr<CComponent> parentSkill;
+	std::shared_ptr<CMultiLineLabel> titleLabel;
 
 public:
 	CLevelUpPerkComponent(SecondarySkill skill, bool hasSkill, int requiredRank,
@@ -41,14 +145,47 @@ public:
 	{
 		OBJECT_CONSTRUCTION;
 		setCustomIcon(icon);
-		setHorizontalLayout(244, 46, true);
-		pos.h = 84;
+		pos.w = 236;
+		pos.h = 64;
+
+		if(image)
+		{
+			image->moveTo(pos.topLeft() + Point(10, 10));
+		}
+
+		titleLabel = std::make_shared<CMultiLineLabel>(Rect(60, 0, 168, 64), FONT_MEDIUM,
+			ETextAlignment::CENTERLEFT, Colors::WHITE, name);
+		if(titleLabel->textSize.y > 52)
+			titleLabel = std::make_shared<CMultiLineLabel>(Rect(60, 0, 168, 64), FONT_SMALL,
+				ETextAlignment::CENTERLEFT, Colors::WHITE, name);
+		addChild(titleLabel.get());
+
 		parentSkill = std::make_shared<CComponent>(hasSkill ? ComponentType::SEC_SKILL : ComponentType::NONE,
 			hasSkill ? skill : SecondarySkill(0), requiredRank, CComponent::small);
 		parentSkill->customSubtitle = parentName + "\n"
 			+ GAME->translator().translate("core.skilllev", requiredRank - 1);
 		parentSkill->setHorizontalLayout(228, 34, true);
 		parentSkill->moveTo(pos.topLeft() + Point(8, 48));
+	}
+
+	void showAll(Canvas & to) override
+	{
+		to.drawColor(pos, ColorRGBA(24, 18, 14, 230));
+		if(selected)
+		{
+			to.drawBorder(pos, Colors::BRIGHT_YELLOW);
+			to.drawBorder(Rect(pos.x + 1, pos.y + 1, pos.w - 2, pos.h - 2), ColorRGBA(255, 215, 0, 255));
+		}
+		else
+		{
+			to.drawBorder(pos, ColorRGBA(140, 105, 45, 200));
+		}
+		if(image)
+		{
+			to.drawBorder(Rect(image->pos.x - 1, image->pos.y - 1, image->pos.w + 2, image->pos.h + 2),
+				ColorRGBA(180, 140, 50, 255));
+		}
+		CIntObject::showAll(to);
 	}
 };
 }
@@ -112,7 +249,7 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 		: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
 	if(choicePageCount > 1)
 	{
-		buttonLeft = std::make_shared<CButton>(Point(24, 532), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
+		buttonLeft = std::make_shared<CButton>(Point(24, 516), AnimationPath::builtin("HSBTNS3"), CButton::tooltip(), [this](){
 			const auto pages = skills.empty()
 				? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
 				: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
@@ -122,7 +259,7 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 				skillViewOffset = static_cast<int>(pages) - 1;
 			createSkillBox();
 		}, EShortcut::MOVE_LEFT);
-		buttonRight = std::make_shared<CButton>(Point(66, 532), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
+		buttonRight = std::make_shared<CButton>(Point(66, 516), AnimationPath::builtin("HSBTNS5"), CButton::tooltip(), [this](){
 			const auto pages = skills.empty()
 				? (perks.size() > 4 ? (perks.size() + 3) / 4 : 1)
 				: std::max((skills.size() + 1) / 2, (perks.size() + 1) / 2);
@@ -138,12 +275,16 @@ void CLevelWindow::createLevelUpControls(PrimarySkill pskill)
 	portrait = std::make_shared<CHeroArea>(297, 66, hero);
 	portrait->addClickCallback(nullptr);
 	portrait->addRClickCallback([hero = hero](){ ENGINE->windows().createAndPushWindow<CRClickPopupInt>(std::make_shared<CHeroWindow>(hero)); });
-	ok = std::make_shared<CButton>(Point(288, 532), AnimationPath::builtin("IOKAY"), CButton::tooltip(), std::bind(&CLevelWindow::submitSelection, this), EShortcut::GLOBAL_ACCEPT);
-	const std::string instructionText = (skills.empty() && !perks.empty())
-		? "Choose one perk"
-		: (!skills.empty() && perks.empty() ? "Choose one secondary skill" : "Choose one skill or perk");
-	choiceInstruction = std::make_shared<CLabel>(320, 516, FONT_SMALL, ETextAlignment::CENTER,
-		Colors::WHITE, instructionText);
+	ok = std::make_shared<CButton>(Point(288, 516), AnimationPath::builtin("IOKAY"), CButton::tooltip(), std::bind(&CLevelWindow::submitSelection, this), EShortcut::GLOBAL_ACCEPT);
+	if(skills.empty() && !perks.empty())
+	{
+		choiceInstruction = std::make_shared<CLabel>(320, 474, FONT_SMALL, ETextAlignment::CENTER,
+			Colors::YELLOW, "Choose one perk");
+	}
+	else
+	{
+		choiceInstruction.reset();
+	}
 
 	//%s has gained a level.
 	MetaString mainTitleText;
@@ -255,12 +396,12 @@ void CLevelWindow::createSkillBox()
 		}
 		if(!skillChoices.empty() && !perkChoices.empty())
 		{
-			choiceHeaders.push_back(std::make_shared<CLabel>(166, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
-			choiceHeaders.push_back(std::make_shared<CLabel>(474, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
+			choiceHeaders.push_back(std::make_shared<CLabel>(166, 268, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
+			choiceHeaders.push_back(std::make_shared<CLabel>(474, 268, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Perk choices"));
 		}
 		else if(!skillChoices.empty())
 		{
-			choiceHeaders.push_back(std::make_shared<CLabel>(320, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Skill choices"));
+			choiceHeaders.push_back(std::make_shared<CLabel>(320, 268, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, "Choose one secondary skill"));
 		}
 		else if(!perkChoices.empty())
 		{
@@ -273,8 +414,8 @@ void CLevelWindow::createSkillBox()
 					? SecondarySkill(SecondarySkill::NECROMANCY) : SecondarySkill(SecondarySkill::NONE));
 			const auto parentName = iconSkill != SecondarySkill::NONE
 				? newHorizonsPerkHelp::skillLabel(hero, iconSkill) : firstPerk.selection.skillId;
-			const auto headerText = newHorizonsPerkHelp::tierName(firstPerk.requiredRank) + " " + parentName + " perk choices";
-			choiceHeaders.push_back(std::make_shared<CLabel>(320, 278, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, headerText));
+			const auto headerText = "— " + newHorizonsPerkHelp::tierName(firstPerk.requiredRank) + " " + parentName + " perk choices —";
+			choiceHeaders.push_back(std::make_shared<CLabel>(320, 268, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, headerText));
 		}
 
 		std::vector<std::shared_ptr<CSelectableComponent>> skillComps;
@@ -287,14 +428,41 @@ void CLevelWindow::createSkillBox()
 				const auto skill = skills[originalIndex];
 				const int currentRank = hero->getSecSkillLevel(skill);
 				const int offeredRank = currentRank + 1;
-				comp = std::make_shared<CSelectableComponent>(ComponentType::SEC_SKILL, skill,
-					offeredRank, CComponent::medium);
-				comp->customDescription = newHorizonsPerkHelp::skillDescription(hero, skill, offeredRank);
 				const auto offeredRankText = GAME->translator().translate("core.skilllev", offeredRank - 1);
-				comp->customSubtitle = offeredRankText + "\n"
-					+ newHorizonsPerkHelp::skillLabel(hero, skill);
+				const auto skillName = newHorizonsPerkHelp::skillLabel(hero, skill);
+
+				std::vector<CLevelUpSkillCardComponent::PerkRowInfo> perkRows;
+				const auto * def = skill.toSkill();
+				const std::string skillId = def ? def->getJsonKey() : "";
+				if(hero && hero->getPerkState().rules["skills"].isStruct())
+				{
+					const auto & skillsMap = hero->getPerkState().rules["skills"].Struct();
+					const auto it = skillsMap.find(skillId);
+					if(it != skillsMap.end() && it->second["perks"].isVector())
+					{
+						const std::string rankReq = offeredRank == 1 ? "basic" : (offeredRank == 2 ? "advanced" : "expert");
+						for(const auto & perkNode : it->second["perks"].Vector())
+						{
+							if(perkNode["requires"].String() == rankReq)
+							{
+								const std::string perkId = perkNode["id"].String();
+								const std::string perkName = perkNode["name"].String();
+								const std::string icon = newHorizonsPerkIcon(perkId, perkName, hero->getPerkState().rules);
+								perkRows.push_back({perkId, perkName, icon});
+							}
+						}
+					}
+				}
+
+				/*
+				ComponentType::SEC_SKILL, skill,
+					offeredRank, CComponent::medium
+				*/
+				comp = std::make_shared<CLevelUpSkillCardComponent>(skill, offeredRank,
+					skillName, offeredRankText, perkRows);
+				comp->customDescription = newHorizonsPerkHelp::skillDescription(hero, skill, offeredRank);
+				comp->customSubtitle = offeredRankText + "\n" + skillName;
 				skillComps.push_back(comp);
-				comp->setHorizontalLayout(rerollAvailable ? 156 : 244, 84, true);
 			}
 			else
 			{
@@ -318,45 +486,28 @@ void CLevelWindow::createSkillBox()
 			comp->onChoose = std::bind(&CLevelWindow::submitSelection, this);
 		}
 
-		// Use one single-column box per category so an absent skill or perk
-		// never pulls the other category into its column. The offer contract
-		// allows two entries per category. Size each box to its actual rows so
-		// a single offer stays aligned with the first recess rather than centered.
 		if(!skillComps.empty())
 		{
-			const int x = perkComps.empty() ? (640 - (rerollAvailable ? 156 : 244)) / 2 : 44;
+			const int x = skillComps.size() == 1 ? (640 - 252) / 2 : 44;
 			skillChoiceBox = std::make_shared<CComponentBox>(skillComps,
-				Rect(x, 300, rerollAvailable ? 156 : 244, static_cast<int>(skillComps.size()) * 96 - 12),
+				Rect(x, 296, skillComps.size() == 1 ? 252 : 552, 206),
 				[this](int){
 					perkChoiceActive = false;
 					if(perkChoiceBox)
 						perkChoiceBox->clearSelection();
-				}, 12, 4, 12, 1);
+				}, 48, 10, 12, 2, false);
 		}
 		if(!perkComps.empty())
 		{
-			if(skillComps.empty() && perkComps.size() > 2)
-			{
-				const int rows = static_cast<int>((perkComps.size() + 1) / 2);
-				perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
-					Rect(44, 300, 552, rows * 96 - 12),
-					[this](int){
-						perkChoiceActive = true;
-						if(skillChoiceBox)
-							skillChoiceBox->clearSelection();
-					}, 12, 4, 12, 2);
-			}
-			else
-			{
-				const int x = skillComps.empty() ? (640 - 244) / 2 : 352;
-				perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
-					Rect(x, 300, 244, static_cast<int>(perkComps.size()) * 96 - 12),
-					[this](int){
-						perkChoiceActive = true;
-						if(skillChoiceBox)
-							skillChoiceBox->clearSelection();
-					}, 12, 4, 12, 1);
-			}
+			const int rows = static_cast<int>((perkComps.size() + 1) / 2);
+			const int x = perkComps.size() == 1 ? (640 - 236) / 2 : 56;
+			perkChoiceBox = std::make_shared<CComponentBox>(perkComps,
+				Rect(x, 304, perkComps.size() == 1 ? 236 : 528, rows * 80 - 16),
+				[this](int){
+					perkChoiceActive = true;
+					if(skillChoiceBox)
+						skillChoiceBox->clearSelection();
+				}, 56, 10, 16, 2, true);
 		}
 		std::vector<EShortcut> skillShortcuts;
 		std::vector<EShortcut> perkShortcuts;

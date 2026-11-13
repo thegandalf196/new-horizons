@@ -54,40 +54,25 @@ def main() -> None:
         raise AssertionError("New Horizons hero layout runs before fallback widgets are constructed")
     require(LEVEL, '"newHorizonsLevelUpBackground.png"', "taller level-up background")
     require(LEVEL, 'AnimationPath::builtin("PSKIL42")', "canonical primary skill icon animation")
-    require(LEVEL, 'Rect(44, 300, rerollAvailable ? 156 : 244, static_cast<int>(skillComps.size()) * 96 - 12)', "row-sized skill column")
-    require(LEVEL, 'Rect(352, 300, 244, static_cast<int>(perkComps.size()) * 96 - 12)', "row-sized perk column")
-    require(LEVEL, 'comp->setHorizontalLayout(rerollAvailable ? 156 : 244, 84, true)', "skill text reserves room only for available per-card reroll controls")
+    require(LEVEL, 'Rect(x, 296, skillComps.size() == 1 ? 252 : 552, 206)', "skill choice box")
+    require(LEVEL, 'Rect(x, 304, perkComps.size() == 1 ? 236 : 528, rows * 80 - 16)', "perk choice box")
     require(LEVEL, 'parentSkill->setHorizontalLayout(228, 34, true)', "centered parent Skill identity")
     require(LEVEL, 'parentSkill->moveTo(pos.topLeft() + Point(8, 48))', "parent identity within perk card")
     require(COMPONENT, 'width - image->pos.w - 12', "wrapped caption beside native icon")
     require(COMPONENT, 'pos.h = height', "fixed component height before box layout")
-    require(LEVEL, 'Point(24, 532)', "paging below choice cards")
-    require(LEVEL, 'Point(66, 532)', "next-page control clear of confirmation")
-    require(LEVEL, 'Point(288, 532)', "confirmation below choice cards")
+    require(LEVEL, 'Point(24, 516)', "paging below choice cards")
+    require(LEVEL, 'Point(66, 516)', "next-page control clear of confirmation")
+    require(LEVEL, 'Point(288, 516)', "confirmation below choice cards")
     require(LEVEL, 'if(!skillComps.empty())', "no empty skill component box")
     require(LEVEL, 'if(!perkComps.empty())', "no empty perk component box")
-    # CComponentBox vertically centers its total row height; prove the worst
-    # supported page fits before that math runs, rather than allowing a
-    # negative centering offset and overflowing the confirmation/footer.
-    row_height, row_gap, column_top = 84, 12, 300
-    for count in (1, 2):
-        column_height = count * 96 - 12
-        content_height = count * row_height + (count - 1) * row_gap
-        assert content_height <= column_height
-        first_top = column_top + (column_height - content_height) // 2
-        last_bottom = first_top + content_height
-        assert first_top == column_top  # One offer stays in the first recess.
-        assert last_bottom <= 480 < 516 < 532
-    assert 44 + 244 < 352 and 352 + 244 < 640 - 12
-    assert 532 + 32 <= 568 and 568 + 29 <= 600
+    assert 44 + 252 < 344 and 344 + 252 < 640 - 12
+    assert 516 + 32 <= 568 and 568 + 29 <= 600
     background = ASSETS.split("AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground()", 1)[1].split(
         "AssetGenerator::CanvasPtr AssetGenerator::createStackExperienceDialogBackground", 1)[0]
     require(background, 'createDialogBackground(Point(640, 568))', "continuous leather within logical viewport")
     require(background, 'Rect(18, 18, headerWidth, 166)', "connected native portrait/banner header")
-    require(background, 'recessed(Rect(44, 300 + row * 96, 244, 84))', "skill recess matches card bounds")
-    require(background, 'recessed(Rect(352, 300 + row * 96, 244, 84))', "perk recess matches card bounds")
     assert 'Rect(0, topFrame, source->width(), height)' not in background, "decorated middle repeats behind offers"
-    require(LEVEL, "category.size() < 2", "two-choice category cap")
+    require(LEVEL, "skillChoices.size() < 2", "two-choice category cap")
     require(LEVEL, "choicePageCount", "per-category paging")
     require(LEVEL, "skillChoiceBox->setShortcuts", "global skill choice shortcuts")
     require(LEVEL, "perkChoiceBox->setShortcuts", "global perk choice shortcuts")

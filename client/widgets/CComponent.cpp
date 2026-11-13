@@ -543,23 +543,29 @@ void CComponentBox::setShortcuts(const std::vector<EShortcut> & shortcuts)
 
 Point CComponentBox::getOrTextPos(CComponent *left, CComponent *right)
 {
-	int leftSubtitle  = ( left->pos.w -  left->image->pos.w) / 2;
-	int rightSubtitle = (right->pos.w - right->image->pos.w) / 2;
+	const int leftImgW = left->image ? left->image->pos.w : left->pos.w;
+	const int rightImgW = right->image ? right->image->pos.w : right->pos.w;
+	int leftSubtitle  = ( left->pos.w -  leftImgW) / 2;
+	int rightSubtitle = (right->pos.w - rightImgW) / 2;
 	int fullDistance = getDistance(left, right) + leftSubtitle + rightSubtitle;
 
-	return Point(fullDistance/2 - leftSubtitle, (left->image->pos.h + right->image->pos.h) / 4);
+	const int leftImgH = left->image ? left->image->pos.h : left->pos.h;
+	const int rightImgH = right->image ? right->image->pos.h : right->pos.h;
+	return Point(fullDistance/2 - leftSubtitle, (leftImgH + rightImgH) / 4);
 }
 
 int CComponentBox::getDistance(CComponent *left, CComponent *right)
 {
-	int leftSubtitle  = ( left->pos.w -  left->image->pos.w) / 2;
-	int rightSubtitle = (right->pos.w - right->image->pos.w) / 2;
+	const int leftImgW = left->image ? left->image->pos.w : left->pos.w;
+	const int rightImgW = right->image ? right->image->pos.w : right->pos.w;
+	int leftSubtitle  = ( left->pos.w -  leftImgW) / 2;
+	int rightSubtitle = (right->pos.w - rightImgW) / 2;
 	int subtitlesOffset = leftSubtitle + rightSubtitle;
 
 	return std::max(betweenSubtitlesMin, betweenImagesMin - subtitlesOffset);
 }
 
-void CComponentBox::placeComponents(bool selectable)
+void CComponentBox::placeComponents(bool selectable, bool showOr)
 {
 	OBJECT_CONSTRUCTION;
 	if (components.empty())
@@ -642,11 +648,11 @@ void CComponentBox::placeComponents(bool selectable)
 			currentX += freeSpace;
 			if (prevComp)
 			{
-				if (selectable)
+				if (selectable && showOr)
 				{
 					Point orPos = Point(currentX - freeSpace, currentY) + getOrTextPos(prevComp.get(), iter->get());
 
-					orLabels.push_back(std::make_shared<CLabel>(orPos.x, orPos.y, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[4]));
+					orLabels.push_back(std::make_shared<CLabel>(orPos.x, orPos.y, FONT_MEDIUM, ETextAlignment::CENTER, Colors::YELLOW, LIBRARY->generaltexth->allTexts[4]));
 				}
 				currentX += getDistance(prevComp.get(), iter->get());
 			}
@@ -683,7 +689,7 @@ CComponentBox::CComponentBox(std::vector<std::shared_ptr<CSelectableComponent>> 
 {
 }
 
-CComponentBox::CComponentBox(std::vector<std::shared_ptr<CSelectableComponent>> _components, Rect position, std::function<void(int newID)> _onSelect, int betweenImagesMin, int betweenSubtitlesMin, int betweenRows, int componentsInRow):
+CComponentBox::CComponentBox(std::vector<std::shared_ptr<CSelectableComponent>> _components, Rect position, std::function<void(int newID)> _onSelect, int betweenImagesMin, int betweenSubtitlesMin, int betweenRows, int componentsInRow, bool showOr):
 	components(_components.begin(), _components.end()),
 	onSelect(_onSelect),
 	betweenImagesMin(betweenImagesMin),
@@ -693,7 +699,7 @@ CComponentBox::CComponentBox(std::vector<std::shared_ptr<CSelectableComponent>> 
 {
 	setRedrawParent(true);
 	pos = position + pos.topLeft();
-	placeComponents(true);
+	placeComponents(true, showOr);
 
 	assert(!components.empty());
 

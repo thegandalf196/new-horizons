@@ -515,7 +515,7 @@ void BattleStacksController::showStackAmountBox(Canvas & canvas, const CStack * 
 				const int badgeX = textPosition.x - 20;
 				const int badgeY = boxPosition.y + amountBG->dimensions().y + 2;
 				const Rect badgeRect(badgeX, badgeY, 41, 15);
-				canvas.drawColor(badgeRect, ColorRGBA(24, 18, 14, 235));
+				canvas.drawColor(badgeRect, ColorRGBA(20, 14, 10, 255));
 
 				const ColorRGBA goldLight(180, 135, 50, 255);
 				const ColorRGBA goldDark(120, 85, 30, 255);

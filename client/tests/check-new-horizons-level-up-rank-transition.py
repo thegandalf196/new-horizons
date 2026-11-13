@@ -41,7 +41,7 @@ def verify_rank_transition_wiring() -> None:
         create_skill_box, "if(originalIndex < skills.size())"
     )
     else_at = create_skill_box.index("else", skill_end)
-    _, _, perk_branch = braced_block(create_skill_box, "else")
+    _, _, perk_branch = braced_block(create_skill_box[else_at:], "else")
     assert skill_start < skill_end < else_at
 
     require(skill_branch, "const auto skill = skills[originalIndex];", "rank-choice Skill identity")
