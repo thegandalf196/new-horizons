@@ -479,6 +479,11 @@
 	},
 	"energyElemental" :
 	{
+		"name" :
+		{
+			"singular" : "Plasma Elemental",
+			"plural" : "Plasma Elementals"
+		},
 		"index": 129,
 		"level": 4,
 		"faction": "conflux",

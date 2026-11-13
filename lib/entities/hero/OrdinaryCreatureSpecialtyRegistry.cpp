@@ -143,7 +143,7 @@ const std::array<OrdinaryCreatureSpecialty, 48> ordinaryCreatureSpecialties{{
 		BonusValueType::BASE_NUMBER, "Efreet and Efreet Sultan ordinary retaliations leave one delayed Fire damage tick on the primary attacker, based on %VALUE%% of actual creature HP lost. The strongest pending burn is retained without adding ticks. It resolves at the victim's next genuine activation; Wait resumption and continuations do not repeat it. Native Fire Shield is unchanged.",
 		"newHorizons/heroSpecialties/RashkaCinderReprisal"},
 	{"core:ignissa", "core:fireElemental", "Emberbrand", "emberbrandDamagePercent", BonusType::NONE,
-		BonusValueType::BASE_NUMBER, "Fire and Energy Elemental primary ordinary melee hits leave one delayed Fire damage tick, based on %VALUE%% of actual creature HP lost. Ordinary retaliation qualifies; collateral and pre-emptive hits do not. The strongest pending burn is retained without adding ticks and resolves at the victim's next genuine activation.",
+		BonusValueType::BASE_NUMBER, "Fire and Plasma Elemental primary ordinary melee hits leave one delayed Fire damage tick, based on %VALUE%% of actual creature HP lost. Ordinary retaliation qualifies; collateral and pre-emptive hits do not. The strongest pending burn is retained without adding ticks and resolves at the victim's next genuine activation.",
 		"newHorizons/heroSpecialties/IgnissaEmberbrand"},
 	{"core:moandor", "core:lich", "Grave Dust", "graveDustHealingReductionBasisPoints", BonusType::NONE,
 		BonusValueType::BASE_NUMBER, "Primary Lich and Power Lich shots deposit Grave Dust, reducing received eligible healing by %VALUE% basis points until the victim completes an accepted Creature Action, including Wait. Cloud collateral is unchanged.",

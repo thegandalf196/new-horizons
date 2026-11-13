@@ -46,11 +46,11 @@ bool resolveLivingInfernoPresentation(const CHero & hero,
 	if(!policy)
 		return false;
 	result.name = "Living Inferno";
-	result.summary = "Moving Fire and Energy Elementals leave fire trails dealing " + std::to_string(policy->damagePerCreature)
+	result.summary = "Moving Fire and Plasma Elementals leave fire trails dealing " + std::to_string(policy->damagePerCreature)
 		+ " Fire damage per creature for " + std::to_string(policy->durationRounds) + " rounds; trails can burn allies.";
 	result.artwork = "newHorizons/heroSpecialties/FiurLivingInferno";
 	result.creature = CreatureID(CreatureID::decode("core:fireElemental"));
-	result.description = "Fire and Energy Elementals leave fire on vacated hexes along voluntary movement, "
+	result.description = "Fire and Plasma Elementals leave fire on vacated hexes along voluntary movement, "
 		"including flight. Each trail deals " + std::to_string(policy->damagePerCreature)
 		+ " Fire damage per creature present when movement begins, using Fire Wall's normal immunities "
 		"and reductions. It lasts " + std::to_string(policy->durationRounds)

@@ -16,7 +16,7 @@ return-after-attack movement do not create a trail. The walking path comes
 from existing committed movement packets, including interrupted prefixes.
 The final occupied footprint is excluded, including both hexes of a wide unit.
 
-Energy Elementals fly. Native flying packets contain the destination only and
+Plasma Elementals fly. Native flying packets contain the destination only and
 presentation travels directly between the two screen positions. The shared
 trail helper projects that straight segment with integer rational cube
 interpolation, sampling once per hex distance. At equal squared cube distance,

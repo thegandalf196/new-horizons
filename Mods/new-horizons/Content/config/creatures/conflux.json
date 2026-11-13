@@ -96,6 +96,10 @@
 		"growth": 4
 	},
 	"core:energyElemental": {
+		"name": {
+			"singular": "Plasma Elemental",
+			"plural": "Plasma Elementals"
+		},
 		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 750

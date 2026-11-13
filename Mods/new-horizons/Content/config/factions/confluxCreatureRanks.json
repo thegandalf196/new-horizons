@@ -183,7 +183,7 @@
 				},
 				"horde2": {
 					"name": "Vault of Ashes",
-					"description": "The Vault of Ashes increases weekly Fire and Energy Elemental growth by 2.",
+					"description": "The Vault of Ashes increases weekly Fire and Plasma Elemental growth by 2.",
 					"requires": [ "dwellingLvl4" ],
 					"cost#override": {
 						"gold": 1000,
