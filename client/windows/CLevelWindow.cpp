@@ -81,11 +81,11 @@ public:
 			const auto & row = perkRows[i];
 
 			auto pImg = std::make_shared<CAnimImage>(AnimationPath::builtin(row.icon), 0,
-				Rect(pos.x + 14, pos.y + rowY + 5, 26, 26));
+				Rect(14, rowY + 5, 26, 26));
 			perkImages.push_back(pImg);
 			addChild(pImg.get());
 
-			auto pLbl = std::make_shared<CLabel>(pos.x + 48, pos.y + rowY + 11,
+			auto pLbl = std::make_shared<CLabel>(48, rowY + 11,
 				FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, row.name, 196);
 			perkLabels.push_back(pLbl);
 			addChild(pLbl.get());
