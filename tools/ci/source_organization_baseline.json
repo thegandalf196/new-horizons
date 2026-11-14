@@ -3954,11 +3954,11 @@
     },
     "client/windows/GUIClasses.h": {
       "functions": [],
-      "rationale": "Complete 511-line header is the reviewed 516-line declaration-only header minus five obsolete recruitment presentation members/declarations. Classes, nested classes, field initializers and declarations contain no callable bodies. The same two vector/image default arguments in CObjectListWindow declarations cause parser recovery at lines 192-193; complete callable inventory remains empty.",
-      "review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
-      "sha256": "0ee5577512432dfae941b188c573d759b26928a733cac2501d5428683db0ee35",
-      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-MANUAL",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_NATIVE_RENDERED_UNRUN",
+      "rationale": "Complete513-line header read independently. All classes/nested classes contain declarations and field/default initializers, no inline callable bodies. The two pre-existing CObjectListWindow vector/image default arguments still produce parser recovery; raw-row identity and layoutCards declarations add no callable body. Complete exact-file callable inventory is empty.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "sha256": "19a44aa9305adef5b0a9dd50e7f9c764eee9963e59f32fd567d80aa11fc778cf",
+      "previous_review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_RUNTIME_UNRUN",
       "review_scope": "Complete exact-file callable inventory only; no numeric-growth, C++ or runtime acceptance.",
       "confirmation_predecessor_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101"
     },
@@ -18142,6 +18142,85 @@
           "end": 466
         }
       ]
+    },
+    "test/server/battles/SethMummyCombatTest.cpp": {
+      "sha256": "6295a63c4ef5d64de7bf1bb068a46279b356885b414346a4ced3619fdb197e63",
+      "functions": [
+        {
+          "symbol": "SethMummyCombatTest::void SetUp() override#1",
+          "start": 30,
+          "end": 35
+        },
+        {
+          "symbol": "SethMummyCombatTest::void prepare(bool royal, bool ranged, bool siege = false)#1",
+          "start": 37,
+          "end": 72
+        },
+        {
+          "symbol": "SethMummyCombatTest::void activateActor()#1",
+          "start": 74,
+          "end": 81
+        },
+        {
+          "symbol": "SethMummyCombatTest::bool strike(bool ranged)#1",
+          "start": 83,
+          "end": 88
+        },
+        {
+          "symbol": "SethMummyCombatTest::void nextCurseRoll(bool success)#1",
+          "start": 92,
+          "end": 111
+        },
+        {
+          "symbol": "SethMummyCombatTest::void expectOrdinaryAttack(bool ranged)#1",
+          "start": 113,
+          "end": 122
+        },
+        {
+          "symbol": "TEST_F(SethMummyCombatTest, LoadedUpgradePreservesOrdinaryMummyStatsAndCanonicalEconomics)#1",
+          "start": 125,
+          "end": 175
+        },
+        {
+          "symbol": "SethMummyCurseTest::void resolve(bool succeeds, bool immune = false)#1",
+          "start": 180,
+          "end": 232
+        },
+        {
+          "symbol": "TEST_P(SethMummyCurseTest, SuccessfulNativeProcPreservesDurationAndHeroResources)#1",
+          "start": 235,
+          "end": 235
+        },
+        {
+          "symbol": "TEST_P(SethMummyCurseTest, FailedNativeRollDoesNotCastCurse)#1",
+          "start": 236,
+          "end": 236
+        },
+        {
+          "symbol": "TEST_P(SethMummyCurseTest, SpecificCurseImmunityPreventsTheNativeProc)#1",
+          "start": 237,
+          "end": 237
+        },
+        {
+          "symbol": "TEST_F(SethMummyCombatTest, RoyalMeleeUsesFullDamageAndDoesNotSpendAmmunition)#1",
+          "start": 240,
+          "end": 260
+        },
+        {
+          "symbol": "TEST_F(SethMummyCombatTest, RoyalNormalBlockingAndAmmoRejectWithoutDamageOrHeroPayment)#1",
+          "start": 262,
+          "end": 285
+        },
+        {
+          "symbol": "TEST_F(SethMummyCombatTest, RoyalSiegeShotKeepsOrdinaryDistanceAndWallPenalties)#1",
+          "start": 287,
+          "end": 299
+        }
+      ],
+      "review": "IR-091-REPAIR-SETH-LEGAL-SHOT-20261114",
+      "rationale": "Complete300-line test source read independently, including original293-line manual review and exact seven-line legal ranged-comparison repair. Same14 authored callable bodies; no callable added or removed. RoyalMelee now240-260; later two cases262-285 and287-299. Parser recovery remains only the pre-existing parenthesized pointer-to-member EXPECT_EQ at146. All actual melee health/ammunition assertions retained; no broad parser ignore or executable acceptance.",
+      "review_status": "INDEPENDENT_COMPLETE_CALLABLE_SOURCE_INVENTORY_RUNTIME_UNRUN",
+      "review_scope": "Whole exact300-line test source, complete14-callable inventory only; no production size exception or runtime approval."
     }
   },
   "schema": 1,
@@ -18225,15 +18304,15 @@
       "rationale": "Exact newly triggered bounded unit reviewed for its named responsibility and explicit stage boundary; remains below default ceiling. No future growth, native or gameplay acceptance is conferred."
     },
     "client/battle/BattleProjectileController.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "owner": "ui_developer",
-      "review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "review_scope": "Complete independent reading of the exact listed source unit and its responsibility boundaries at f86a363b65005005fde9d6d53151ab97d7f03fa4; unchanged pre-existing bytes only, no future growth allowance.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
-      "lines": 513,
-      "sha256": "c4fe6498018bf7575a94fa5bd51ff3f867986980190b29c0ce96b7abbf53e200",
-      "rationale": "No old unit record exists. Independent complete review: projectile trajectory/draw/tick implementations 29-175, shooter/resource selection/cache 177-245, emit/render/tick/removal 247-310, trajectory/frame/factory assembly 312-438 and jagged-ray/color generation 440-513. This is a 513-line existing f86 file, not a new unit introduced by metadata. The controller is mainly coherent projectile presentation but includes an extractable ray geometry family. Actual phaseStart and visibility owners have separate purposes: finite one-update birth deferral versus first-render removal protection; this review does not conflate them or claim no-render gameplay acceptance.",
-      "deferral": "Next bounded extraction (ui_developer with engine_engineer for rendering lifecycle review, spans [[440, 487]]): Before ray-generation growth, extract midpoint-displaced geometry and symmetric gradient expansion into a focused ray presentation value builder. Interface: Input target points, jaggedness/depth and color keys/width; return owned path/colors. Keep emit/play/removal and shooter cache in the controller; visual randomness stays separate from simulation RNG. Invariants: AnimationPhaseStart defers at most one update independently of rendering; ProjectileFlightLifecycle removal remains protected until render attempt for protected flights; Missing artwork render attempts still release removal protection; Ray hop/linger order and null-shooter spell ownership remain unchanged; No unit/gameplay state or authoritative RNG mutation. Acceptance: Characterize path endpoints/hop segment counts, gradient symmetry, short/missing-art flights, emit/removal and phase-start cases; retain existing lifecycle tests and obtain later rendered flight/restart evidence.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "lines": 523,
+      "sha256": "8683ab4aa4bc83ecfde3045ad90c5f680dee4f8bb03c1c575fd3f970aa7ee56d",
+      "rationale": "513 to523: generic temporal-phase advance/indexing and validated phase-count selection extend the existing missile presentation owner. Pure frame arithmetic is isolated in25-line DirectionalMissileFrames; existing visibility, phase-start, cache, ray, projectile lifetime and simulation boundaries remain. Exact bounded integration below1000, not a future growth allowance.",
+      "deferral": "Retain existing ray geometry extraction obligation and its endpoints/gradient/hop/lifecycle acceptance. Before further substantive missile-factory growth, extract immutable angle/phase preparation; keep live emit/removal and ownership here.",
       "next_bounded_extraction": {
         "owner": "ui_developer with engine_engineer for rendering lifecycle review",
         "source_spans": [
@@ -18252,7 +18331,9 @@
           "No unit/gameplay state or authoritative RNG mutation"
         ],
         "acceptance": "Characterize path endpoints/hop segment counts, gradient symmetry, short/missing-art flights, emit/removal and phase-start cases; retain existing lifecycle tests and obtain later rendered flight/restart evidence."
-      }
+      },
+      "previous_review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
+      "inherited_deferral": "\nNext bounded extraction (ui_developer with engine_engineer for rendering lifecycle review, spans [[440, 487]]): Before ray-generation growth, extract midpoint-displaced geometry and symmetric gradient expansion into a focused ray presentation value builder. Interface: Input target points, jaggedness/depth and color keys/width; return owned path/colors. Keep emit/play/removal and shooter cache in the controller; visual randomness stays separate from simulation RNG. Invariants: AnimationPhaseStart defers at most one update independently of rendering; ProjectileFlightLifecycle removal remains protected until render attempt for protected flights; Missing artwork render attempts still release removal protection; Ray hop/linger order and null-shooter spell ownership remain unchanged; No unit/gameplay state or authoritative RNG mutation. Acceptance: Characterize path endpoints/hop segment counts, gradient symmetry, short/missing-art flights, emit/removal and phase-start cases; retain existing lifecycle tests and obtain later rendered flight/restart evidence."
     },
     "AI/BattleAI/HeroActionContinuation.cpp::heroActionUtility::void evaluateContinuation(AbsoluteContinuationUtility & continuation, const std::shared_ptr<StackWithBonuses> & modelActive, bool needFullEval, const CachedAttack & cachedAttack, DamageCache & innerCache, const std::shared_ptr<HypotheticBattle> & state, const std::shared_ptr<Environment> & env, float strengthRatio, int simulationTurnsCount, const BattleExchangeEvaluator & scoreEvaluator, PotentialTargets * targets, heroActionTiming::Continuation * timing)#1": {
       "kind": "legacy",
@@ -20141,26 +20222,6 @@
       },
       "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN"
     },
-    "AI/Nullkiller2/Analyzers/ArmyRecruitmentForecast.cpp::NK2AI::std::vector<creInfo> ArmyManager::getArmyAvailableToBuy( const CCreatureSet * hero, const CGDwelling * dwelling, TResources availableRes, uint8_t turn, const CGHeroInstance * carrier) const#1": {
-      "kind": "exception",
-      "lines": 136,
-      "owner": "ai_engineer",
-      "rationale": "126->136, below150: a ten-line current-Command branch delegates placement to planCommandRecruitment, carries its projected slots, appends the admitted row and decrements the same local budget. This remains one sequential stock/resource/army forecast, not authoritative recruitment. Protected invariant: Descending dwelling-row priority, growth bounds, affordability lookup, portal level identity and operation-local budget remain ordered. New branch avoids legacy disband/cap policy; no live resources, stock or army mutation.",
-      "review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109",
-      "review_scope": "Exact five-layer28-path afterimages only. Shrinking units are not newly exempted; unchanged/expanded routing and existing above-ceiling debt have explicit bounded exceptions. No future size credit, native/rendered proof or publication authority.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "9e3d096dbbe2a038ec32414bbeb1212e1911af2fa382791e16944494e64bea18",
-      "previous_review": "IR-RECRUITMENT-GROWTH-UI-AI-COMPOSED-20261028",
-      "deferral": "Keep deterministic eligibility, affordability and discounts in their shared owners; AI owns candidate policy and utility. Before further substantive growth, extract the next touched object-specific quote/command stage preserving actual buyer, current resources, iteration/command order, visibility, exactly-once reservation and source/RNG purity. Existing above-ceiling command/dispatcher debt must continue shrinking. Expanded exact review: AI engineer: if another recruitment policy is added, extract the legacy row replacement/disband decision into a pure typed row-admission helper receiving projectedSlots/resources. Preserve row order, exact cost deduction and current shared-planner delegation; ordinary136-line review does not waive150.",
-      "review_category": "ordinary-function-review",
-      "completed_p_predecessor": {
-        "kind": "review",
-        "lines": 126,
-        "sha256": "6d37862d47fe74373b160ba1bbf9dfaa3652a1838b75aee66f4a5f110906b4aa",
-        "review": "IR-FINAL-LEARNING-ESTATES-AI-PRICE-COMPANY-20261104",
-        "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN"
-      }
-    },
     "AI/Nullkiller2/Analyzers/BuildAnalyzer.cpp::NK2AI::BuildingInfo BuildAnalyzer::getBuildingOrPrerequisite( const CGTownInstance * town, BuildingID b, std::unique_ptr<ArmyManager> & armyManager, std::shared_ptr<CCallback> & cc, bool excludeDwellingDependencies)#1": {
       "kind": "legacy",
       "lines": 164,
@@ -20727,16 +20788,16 @@
     },
     "client/CMakeLists.txt": {
       "combined_predecessor_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
-      "deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
+      "deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "kind": "exception",
-      "lines": 736,
+      "lines": 738,
       "owner": "engine_engineer",
-      "previous_review": "IR-FORT-COMPACT-SIDE-LAYOUT-INDEPENDENT-20261113-V1",
-      "rationale": "Six mechanical source/header registrations for the extracted creature-stat presentation and panel generator; existing target flags, linkage and build control are unchanged.",
-      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
-      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "d5f95fa447c0e49ea1144a4bd81229aacb3fa52fc54f2fdfa44ffb7781ef9449",
+      "previous_review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "rationale": "Two mechanical registrations add the focused recruitment translation unit and directional-frame value header; target flags, link dependencies and conditional build logic are unchanged. Existing build-list obligations remain.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "9bfea238ed84bcaf39cb1dccdc6a4dd48fcd3d039bf3db4fb2329112763d9091",
       "previous_exact_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
@@ -20747,7 +20808,7 @@
         "review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
         "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY"
       },
-      "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy."
+      "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations."
     },
     "client/CPlayerInterface.cpp": {
       "deferral": "Owner: engine_engineer with ui_developer. Extract a focused read-only BattleAttack-to-StackAttackInfo receipt-forwarding adapter, preserving absent optional defaults, exact actor/target/flag values and client-before-apply lifecycle. Require ordinary/null and typed receipt characterization plus actual attack/restart cleanup transitions before further substantive expansion. Additionally owner: engine_engineer with ui_developer. Before substantive activation growth, characterize and extract focused activation dispatch with explicit registered battle callback, allied AI handoff and human-window ownership. Preserve synchronous/detached initiation and teardown ordering; require exactly one fallback submission with no subsequent UI access for missing-window integration, ordinary/AI/finished branches, and guarded restart/menu/new-scenario cleanup transitions. All inherited deferrals remain in force; this +1 is not a reduction. Preserve all inherited receipt/activation dispatch deferrals. Before substantive dialog-flow expansion, extract cohesive info-dialog construction/queue routing with exact pending-dialog and nested-window closure characterization; this two-line substitution grants no further growth. Exact bounded declaration/include/UI removal only; no new rule responsibilities. Preserve prior UI extraction duties before future substantive affected growth. Engine engineer with UI developer: before further substantive attack-presentation growth, extract cohesive physical packet-to-receipt/completion delivery with explicit admitted receiver and BattleID inputs. Preserve primary/additional/spectator routing, both pre-state callbacks, retained battle owner, existing wait unlock/relock, spell per-recipient batching and restart/shutdown. Characterize lucky/unlucky/death-blow melee/ranged then retaliation and multi-recipient projectile/chain before growth.",
@@ -22838,39 +22899,43 @@
       "sha256": "9f196f3e1e3ba66c8a3a1ba93b30fda490b7d156c056cbce0638192ab74fe13d"
     },
     "client/windows/CreaturePurchaseCard.cpp::void CreaturePurchaseCard::initCompactView()#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 90,
       "owner": "ui_developer",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "53804f9a1995e72ebd733eb3216debfcfac5cdeb0f8dfe93b7b280b6dbcc1b35",
+      "rationale": "Existing90-line compact-card constructor remains90 lines; the only semantic delta passes its explicit saved recruitment context to the existing click area. No added widget/action rule or numerical capacity calculation. This closes incorrect loaded-rule popup fallback without combining a broad widget refactor.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "sha256": "b3165fa29a621a8b970ace271885865d56e2d913df081227cffb525fe6d3e27e",
       "completed_p_predecessor": {
         "kind": "legacy",
         "lines": 97,
         "sha256": "83d9c9bc1a20ae1842bda442defcb045bd28c165a6c13ea735e537d658356cf7",
         "review": "source-size-legacy-freeze-cf2e62f9-v1"
-      }
+      },
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "deferral": "Before further compact-card construction growth, extract portrait/click-area setup as one widget responsibility; preserve saved category context, positions, cycling, child ownership and slider callbacks. This exact90-line context argument renewal gives no future growth credit."
     },
     "client/windows/GUIClasses.cpp": {
-      "deferral": "UI developer owns extraction of CUniversityWindow/CUnivConfirmWindow and cohesive helpers into a focused UniversityWindow component before expansion. Preserve interfaces, original art/layout and command submission. Acceptance requires local compile, existing regression coverage and rendered offer/acquired rank, tuition/help, affordability/payment, cancellation and close checks; decrease this exact3066-line baseline. No unrelated GUI extraction is approved. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. UI developer: before further affected growth, extract coherent secondary-Skill slot refresh consuming owned descriptions and actual hero context; preserve saved/current text, original rank and event ownership with native and rendered parity. UI developer: before further substantive garrison-dialog growth, extract cohesive CGarrisonWindow construction/update/holdsGarrison into its focused owner; preserve CArmedInstance/hero inputs, original panels, CGarrisonInt ownership and validated transfer callbacks. Verify neutral blank marker, all valid player crests, town visiting hero portrait, split/transfer and normal close; retain all earlier deferrals and decreasing bounds. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
+      "deferral": "Preserve all inherited dialog extraction obligations; do not regrow this umbrella.",
       "kind": "legacy",
-      "lines": 2603,
+      "lines": 2228,
       "owner": "ui_developer",
       "preceding_review": "IR-SYLVAN-CAPTURED-ICONS-LINEAGE-EXACT-20261029",
-      "previous_review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
-      "rationale": "Recruitment presentation removes obsolete category/capacity help while one popup constructor now receives its actual saved callback context. File still shrinks from the preceding 2659-line owner to 2603; existing recruitment behavior and extraction obligations remain binding.",
-      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
-      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "b59c55b470f77fb4f07f0eb0f404146cce7ae1b7cab18e6eb0adc3da07876dcf",
+      "previous_review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "rationale": "2603 to2228: the complete recruitment implementation leaves this mixed owner for focused433-line CRecruitmentWindow.cpp, whose largest function is69 lines. Shared offer use and distinct layout/refresh stages stay in the moved responsibility, not in the umbrella. Existing unrelated dialog bodies remain byte-identical.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "ccb42875ced0286b87d60dc92a1bcc2223547b879ead349aa7b57d140de7bbb1",
       "completed_p_predecessor": {
         "kind": "exception",
         "lines": 2699,
         "sha256": "b1887dff7fe7245277f9fa936597e13ad57d391fcd68ecb26e9e913220eea2a9",
         "review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
         "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN"
-      }
+      },
+      "inherited_deferral": "\nUI developer owns extraction of CUniversityWindow/CUnivConfirmWindow and cohesive helpers into a focused UniversityWindow component before expansion. Preserve interfaces, original art/layout and command submission. Acceptance requires local compile, existing regression coverage and rendered offer/acquired rank, tuition/help, affordability/payment, cancellation and close checks; decrease this exact3066-line baseline. No unrelated GUI extraction is approved. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. UI developer: before further affected growth, extract coherent secondary-Skill slot refresh consuming owned descriptions and actual hero context; preserve saved/current text, original rank and event ownership with native and rendered parity. UI developer: before further substantive garrison-dialog growth, extract cohesive CGarrisonWindow construction/update/holdsGarrison into its focused owner; preserve CArmedInstance/hero inputs, original panels, CGarrisonInt ownership and validated transfer callbacks. Verify neutral blank marker, all valid player crests, town visiting hero portrait, split/transfer and normal close; retain all earlier deferrals and decreasing bounds. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit."
     },
     "client/windows/GUIClasses.cpp::CTavernWindow::CTavernWindow(const CGObjectInstance * TavernObj, const std::function<void()> & onWindowClosed) : CWindowObject(PLAYER_COLORED, ImagePath::builtin(\"TPTAVERN\")), onWindowClosed(onWindowClosed), tavernObj(TavernObj), heroToInvite(nullptr)#1": {
       "kind": "legacy",
@@ -22899,17 +22964,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "59f6d13445818910d659346d29458cdb0a8efd36670f5f0dd7fd442c4d8c61ff"
     },
-    "client/windows/GUIClasses.cpp::void CRecruitmentWindow::availableCreaturesChanged()#1": {
-      "kind": "legacy",
-      "lines": 107,
-      "owner": "ui_developer",
-      "rationale": "Recruitment presentation removes obsolete category headers; the existing function shrinks from 119 to 107 physical lines. Actual creature grouping, cards, selection and recruitment callbacks retain their owner. Exact reduction only; no future growth allowance.",
-      "review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
-      "review_scope": "Maintained parser span 495-601, 107 physical lines. No native or rendered acceptance.",
-      "sha256": "44f2c7c0b0d0a89d16cfabddd2a64b81576210f56d95fb734c9b1f3dc7416cd9",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_NATIVE_RENDERED_UNRUN"
-    },
     "client/windows/GUIClasses.cpp::void CUniversityWindow::CItem::update()#1": {
       "deferral": "Owner: ui_developer. Before further university item-presentation growth, extract immutable Skill name/help/rank row preparation using existing NewHorizonsPerkHelp and explicit owner-hero context. Keep widget updates and purchases in CItem; preserve cost/eligibility, tooltip/hover agreement, historical/current labels and callback lifetime. Require context-label and purchase/UI regression checks. Exact93-line existing-hotspot renewal below150, no future allowance.",
       "kind": "exception",
@@ -22923,16 +22977,16 @@
       "sha256": "9f19e56abb9649259d64beebbf89a9ba6f5d2f315560a0c1a778290719db62c7"
     },
     "client/windows/GUIClasses.h": {
-      "kind": "legacy",
-      "lines": 511,
+      "kind": "exception",
+      "lines": 513,
       "owner": "ui_developer",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
-      "review_scope": "Exact stable recruitment presentation reduction only; no growth allowance, native, rendered or publication acceptance. All existing extraction obligations remain binding.",
-      "sha256": "0ee5577512432dfae941b188c573d759b26928a733cac2501d5428683db0ee35",
-      "deferral": "Prior CLevelWindow declaration extraction requirement is discharged by exact102-line focused header, unchanged80-line declaration and all4directCPPconsumers. Shared header643\u2192567 decreases76 from actual pre-Learning; remaining dialog declarations stay coherent, complete zero-inline-body manual inventory retained. Continue extracting a touched dialog class before substantive shared-header growth; no future growth credit.",
-      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_NATIVE_RENDERED_UNRUN",
+      "rationale": "Declaration-only header511 to513: one const raw-stock-row field and one private layout declaration accompany the complete recruitment CPP extraction. No inline callable body, new UI policy or exposed simulation mutation. Exact bounded declaration renewal; complete manual inventory remains empty.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "sha256": "19a44aa9305adef5b0a9dd50e7f9c764eee9963e59f32fd567d80aa11fc778cf",
+      "deferral": "Before further CRecruitmentWindow declaration growth, move that entire class/nested-card declaration into its focused header and update all direct consumers, retaining callback signatures and the complete callable inventory. Other inherited header extraction obligations remain.",
+      "previous_review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "confirmation_predecessor_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "completed_p_predecessor": {
         "kind": "review",
@@ -22940,7 +22994,8 @@
         "sha256": "c2e560962255de695e2ddde9aba1b7c3ed2f0cb6c169b6d1680756bf22baefef",
         "review": "IR-LEARNING-PER-CARD-UI-FOCUSED-HEADER-20261103",
         "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN"
-      }
+      },
+      "inherited_deferral": "\nPrior CLevelWindow declaration extraction requirement is discharged by exact102-line focused header, unchanged80-line declaration and all4directCPPconsumers. Shared header643\u2192567 decreases76 from actual pre-Learning; remaining dialog declarations stay coherent, complete zero-inline-body manual inventory retained. Continue extracting a touched dialog class before substantive shared-header growth; no future growth credit."
     },
     "client/windows/HeroGrowthWindow.cpp": {
       "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits.",
@@ -23046,13 +23101,16 @@
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103"
     },
     "client/windows/QuickRecruitmentWindow.cpp::void QuickRecruitmentWindow::setCreaturePurchaseCards()#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 93,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 93 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5a34b03fbff5c3bea6d1e4dc518b19809a9e7592d26c2d489d3057edc77c2cde"
+      "rationale": "Existing93-line layout/card builder stays93 lines. The legacy branch uses the shared derived-choice adapter instead of raw row.second; its category partitioning, row count, positions and callbacks retain order. No stock count or budget is added per alternative.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "sha256": "7dd6780be248a2a2c1876d1e2955cbd3984eb8e945df54b5b64e71e5cb1f6945",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "deferral": "Before further layout growth, extract category/card layout preparation with explicit row and variants inputs; preserve category grouping, native geometry, one card per row and slider/cycling ownership. Exact93-line adapter change only; no future allowance."
     },
     "client/windows/settings/AdventureOptionsTab.cpp::AdventureOptionsTab::AdventureOptionsTab() : InterfaceObjectConfigurable()#1": {
       "kind": "legacy",
@@ -23879,16 +23937,17 @@
       "sha256": "3b7cc77e6b4e99cdfa0de4cd39868ff106419149fa14a6308444b93e63e474ea"
     },
     "lib/CCreatureHandler.cpp": {
-      "deferral": " Retain every existing extraction obligation. No general regrowth, large-serializer waiver or factory/injury permission: further codec decisions must use focused coherent value/validation owners, preserve native field order and ABI rebuild; no dynamic frame or hidden-policy import is established.",
+      "deferral": "Retain every inherited creature-loader extraction and codec invariant; future growth must remain in focused metadata owners.",
       "kind": "legacy",
-      "lines": 1374,
+      "lines": 1344,
       "owner": "engine_engineer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1380 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact E1/E1a: constructor and seven metadata/form/name readouts move to focused9/95-line owners; owned descriptor/key resolver77 is private value ownership. Native getter, generic identifier and whole-owner inverses retain payload behavior. CUnitState serializer173 lines unchanged, only two ID calls delegate to the coherent resolver owner; load adds one owned-only before-mutation form-key preflight. No new save field or native arithmetic.",
-      "review": "IR-OWNED-CREATURE-RESOLVER-E1-E1A-20261030",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "review_status": "INDEPENDENT_BOUNDED_PURE_SOURCE_REVIEWED_NATIVE_UNRUN",
-      "sha256": "b5d46492fc3b3eabb2524d2bb6a57bb5243cacaa162ee97565fb1bd4bdb9f7f1"
+      "previous_review": "IR-OWNED-CREATURE-RESOLVER-E1-E1A-20261030",
+      "rationale": "1374 to1344: static animation metadata parsing is extracted coherently into37-line CreatureAnimationConfig.cpp (32-line function), consolidating existing missile/ray inputs with optional phase/impact fields. No creature simulation, identifier callbacks, saved state or generic damage rule is moved or duplicated.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "eddcc842d274ebb752dde096eeecb188d1203915a4606b591cb0da822cf35faa",
+      "inherited_deferral": "\n Retain every existing extraction obligation. No general regrowth, large-serializer waiver or factory/injury permission: further codec decisions must use focused coherent value/validation owners, preserve native field order and ABI rebuild; no dynamic frame or hidden-policy import is established."
     },
     "lib/CCreatureHandler.cpp::std::shared_ptr<CCreature> CCreatureHandler::loadFromJson(const std::string & scope, const JsonNode & node, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -23918,12 +23977,12 @@
       "sha256": "494bb0fc04d3213e646385059a4eb13e6205c7d30ae3186d75e6001bd64baff8"
     },
     "lib/CMakeLists.txt": {
-      "lines": 1986,
-      "sha256": "55f8fece4f3946a4eb8044bd2178e12550399f97ed78982c9aef25681e7d6cd7",
+      "lines": 1989,
+      "sha256": "57cbd72a076ac528841079c66643103177d839486503d8516879d78a917c6907",
       "kind": "exception",
-      "review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1",
-      "review_status": "INDEPENDENT_SCOPED_EXACT_SOURCE_ORGANIZATION_REVIEWED",
-      "rationale": "Three mechanical registrations for two focused shared melee/Reach query sources and their maximum-distance API header; no compile flag or build-policy change.",
+      "review": "IR-SETH-SHARED-OFFERS-EXACT-SOURCE-20261114-V1",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "rationale": "1986 to1989: exactly one TownRecruitmentOffers.cpp, one TownRecruitmentOffers.h and one CreatureAnimationConfig.cpp registration. Duplicate temporary source/header entries were found and removed before this afterimage; readback confirms one occurrence per unit. No target conditional, linker, flags, PCH, generation or build-order policy changes. Existing mechanical registry exception and inherited build-helper obligations remain.",
       "deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
       "completed_p_predecessor": {
         "kind": "legacy",
@@ -23934,8 +23993,8 @@
       },
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "owner": "engine_engineer",
-      "review_scope": "Exact affected source organization only; no native/rendered/performance or publication approval; no future growth credit.",
-      "previous_review": "IR-LEADERSHIP-DAMAGE-INTEGER-20261113-UNITS"
+      "review_scope": "Exact final shared-offer and registry source only; no compile, Native, rendered, save-load or publication acceptance.",
+      "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -25794,14 +25853,14 @@
     },
     "lib/mapObjects/CGTownInstance.cpp": {
       "kind": "exception",
-      "lines": 1473,
+      "lines": 1456,
       "owner": "engine_engineer",
-      "previous_review": "IR-MATRIX-MAP-JSON-ROUNDTRIP-SOURCE-20261101",
-      "rationale": "Exact 1594\u21921473 physical lines. Focused Estates rule ownership/extraction; current income/actual buyer/effective town quote and mine delivery stay shared/authoritative; UI consumes shared getters without duplicate perk math.",
-      "review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
-      "review_scope": "Exact actual-current EstatesGP c5ce +UI160e projected source only; excludes AI pricing holds, final server CMake insertion, native/rendered/gameplay/platform/publication acceptance. No future growth permission.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "48b057bd709e98b194db177bd3260d3407964219aa337720b767ae64f5ed4b65",
+      "previous_review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
+      "rationale": "1473 to1456: the existing17-line ordinary fillUpgradeInfo responsibility leaves the oversized town owner and is retained in the focused86-line TownRecruitmentOffers component together with its narrow derived Mummy upgrade admission. No town roster, growth, ownership, persistence or other building rule is changed here. The moved-to component has maximum23-line functions. This exact shrinking integration preserves all earlier town serializer/extraction obligations.",
+      "review": "IR-SETH-SHARED-OFFERS-EXACT-SOURCE-20261114-V1",
+      "review_scope": "Exact final shared-offer and registry source only; no compile, Native, rendered, save-load or publication acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "c57042ce5f17137de5209208ad1b00648ef5a32dc4cedf88ad58dd418b5e3547",
       "deferral": "Owner: engine_engineer. After focused town JSON/default initialization characterization, extract the cohesive building LIC/default-marker serialization stage into a focused town JSON owner with explicit CGTownInstance and JsonSerializeFormat inputs. Preserve empty/default/fort/custom/forbidden layout bytes, decoder ordering and initial RNG/building policy; shrink the central file and106-line method baseline after extraction. This exact1594-file/116-method urgent correctness exception grants no future growth. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit."
     },
     "lib/mapObjects/CGTownInstance.cpp::void CGTownInstance::serializeJsonOptions(JsonSerializeFormat & handler)#1": {
@@ -29921,34 +29980,35 @@
       "review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization."
     },
     "client/windows/QuickRecruitmentWindow.cpp": {
-      "lines": 502,
-      "sha256": "6081160abf075194937725b5af1c9b851f8008b79daeff0ae72a6ea98194f3e8",
-      "kind": "legacy",
+      "lines": 524,
+      "sha256": "e88f0b26ba626916b6e75221171020444bffe5c153aba2508547c96710823391",
+      "kind": "exception",
       "owner": "ui_developer",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "previous_review": "none-new-review-trigger",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review_scope": "Exact actual-current EstatesGP c5ce +UI160e projected source only; excludes AI pricing holds, final server CMake insertion, native/rendered/gameplay/platform/publication acceptance. No future growth permission.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "deferral": " Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
+      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "rationale": "502 to524: current shared offer query supplies variants without duplicating stock, and a bounded batch preflight revalidates selected row membership/count before any request. Actual buyer pricing, one card per raw row and existing resource ledger remain. Additional saved-context getter only exposes the owning town callback. No independent pool or active mechanic is introduced.",
+      "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "deferral": "Before further substantive Quick Recruitment growth, extract its category/card layout preparation into a focused value/layout owner; retain source row identity, one-card budgeting, source visibility, saved context and asynchronous request/lifetime checks. Existing obligations remain.",
       "completed_p_predecessor": {
         "kind": "exception",
         "lines": 504,
         "sha256": "f5890c5b38fbe50c6580b7823bb6daa101e3e6ac613ee8e8b83b156fa8bfc62e",
         "review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
         "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN"
-      }
+      },
+      "inherited_deferral": "\n Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit."
     },
     "server/CreatureRecruitment.cpp::bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dstid, CreatureID crid, int32_t cram, int32_t fromLvl, PlayerColor player, ObjectInstanceID portalTownId)#1": {
-      "lines": 137,
-      "sha256": "f2527b4dba16436fe507dbc019024a9562e86126c8eee271417ec55b6db61991",
+      "lines": 120,
+      "sha256": "c5f3b6ae874718f5d8e3a160df30eeb614b179b7c266f744eaec44924ab9be51",
       "kind": "legacy",
       "owner": "gameplay_engineer",
-      "review": "IR-COMMAND-AUTHORITY-INTEGRATED-RECRUITMENT-EXTRACTIONS-20261109",
-      "previous_review": "none-new-review-trigger",
-      "rationale": "Independent behavior-preserving in-file extraction:17-line read-only placement preparation and13-line first-error war-machine preflight. recruitCreatures151->137, versus released138. Stock-capping/ownership/Portal prefix, buyer/affordability/slot guards and complete rearrangement/payment/statistics/stock-packet/delivery tail are byte-preserved. Artifact lookup and four condition/message priorities unchanged; caller still complains once and returns false before any recruit mutation.",
-      "review_scope": "Exact actual-current EstatesGP c5ce +UI160e projected source only; excludes AI pricing holds, final server CMake insertion, native/rendered/gameplay/platform/publication acceptance. No future growth permission.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
+      "review": "IR-SETH-SHARED-OFFERS-EXACT-SOURCE-20261114-V1",
+      "previous_review": "IR-COMMAND-AUTHORITY-INTEGRATED-RECRUITMENT-EXTRACTIONS-20261109",
+      "rationale": "137 to120: inline raw-membership enumeration becomes a14-line local recruitmentRow query adapter consuming the pure shared RowOffer policy. Source/destination/Portal ownership prefix, actual recipient buyer, placement and affordable-count guards remain before mutations. Rearrangement/payment/statistics, exactly one raw-row stock debit and selected-creature delivery retain their order. Nonpositive requests now fail before placement query; no new transaction/pool or duplicate pricing formula is introduced.",
+      "review_scope": "Exact final shared-offer and registry source only; no compile, Native, rendered, save-load or publication acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "review_category": "independently-reviewed-shrinking-extraction",
       "completed_p_predecessor": {
         "kind": "review",

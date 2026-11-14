@@ -249,6 +249,17 @@
 							"description" : "Path to projectile animation",
 							"format" : "animationFile"
 						},
+						"impact" : {
+							"type" : "string",
+							"description" : "Optional visual impact animation at the creature projectile destination",
+							"format" : "animationFile"
+						},
+						"framesPerAngle" : {
+							"type" : "integer",
+							"minimum" : 1,
+							"maximum" : 64,
+							"description" : "Consecutive temporal frames per missile angle, default 1"
+						},
 						"ray" : {
 							"type" : "array",
 							"description" : "Colors of ray projectile animation",

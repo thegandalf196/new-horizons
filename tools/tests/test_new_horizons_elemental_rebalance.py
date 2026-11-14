@@ -81,6 +81,9 @@ class ElementalRebalanceDataTest(unittest.TestCase):
     def test_storm_and_ice_attack_roles_and_energy_flight(self):
         storm = merged(self.original['stormElemental'], self.patch['core:stormElemental'])
         ice = merged(self.original['iceElemental'], self.patch['core:iceElemental'])
+        for name in ('waterElemental', 'iceElemental'):
+            self.assertFalse(self.original[name]['doubleWide'])
+            self.assertFalse(merged(self.original[name], self.patch['core:' + name])['doubleWide'])
         energy = merged(self.original['energyElemental'], self.patch['core:energyElemental'])
         storm_types = {ability['type'] for ability in storm['abilities'].values()}
         self.assertEqual(storm['shots'], 16)
@@ -106,7 +109,10 @@ class ElementalRebalanceDataTest(unittest.TestCase):
             self.assertFalse(excluded & {ability['type'] for ability in after.values()})
 
     def test_unrelated_conflux_roster_is_preserved(self):
-        self.assertEqual(set(self.patch), {'core:' + name for name in STATS} | {'core:pixie', 'wisp', 'wispUpgrade'})
+        self.assertEqual(set(self.patch), {'core:' + name for name in STATS} | {
+            'core:pixie', 'wisp', 'wispUpgrade', 'core:psychicElemental', 'core:magicElemental'})
+        for name in ('core:psychicElemental', 'core:magicElemental'):
+            self.assertEqual(self.patch[name], {'abilities': {'assimilation': {'type': 'ASSIMILATION'}}})
         self.assertEqual(self.patch['core:pixie'], {'upgrades': ['core:sprite']})
         for name, cost, health, growth in (('wisp', 160, 12, 8), ('wispUpgrade', 240, 16, 8)):
             self.assertEqual(self.patch[name]['cost'], {'gold': cost})

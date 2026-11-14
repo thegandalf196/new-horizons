@@ -52,9 +52,12 @@ void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bo
 	if(!supported)
 		throw std::runtime_error("Additional individual specialties require the new save format");
 	const auto & table = development["additionalSpecialties"];
-	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy", "ordinaryCreatureSpecialties", "preparedCreatureSpecialties"});
+	detail::fields(table, {"version", "fieldPhysician", "manaFurnace", "graveArchivist", "spiritTeacher", "manaLeeches", "serpentsEmbrace", "paralyzingGaze", "forestAmbush", "aerialSupremacy", "ordinaryCreatureSpecialties", "preparedCreatureSpecialties", "ancientOathsPolicyVersion"});
 	validateOrdinaryCreatureSpecialtiesSerialization(development, true);
 	detail::require(detail::integer(table["version"], 1, 1), "additional specialty version");
+	if(table.Struct().contains("ancientOathsPolicyVersion"))
+		detail::require(table["ancientOathsPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& table["ancientOathsPolicyVersion"].Integer() == 1, "Ancient Oaths policy version");
 	validateLearningSpecialtyRows(table);
 	if(table.Struct().contains("aerialSupremacy"))
 	{
@@ -101,6 +104,20 @@ void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bo
 	detail::require(detail::integer(row["healingMaximumPercent"], 0, 200), "physician maximum percentage");
 }
 
+bool ancientOathsEnabled(const JsonNode & development)
+{
+	if(!usesRules(development) || !development.isStruct())
+		return false;
+	const auto & version = development["additionalSpecialties"]["ancientOathsPolicyVersion"];
+	return version.getType() == JsonNode::JsonType::DATA_INTEGER && version.Integer() == 1;
+}
+
+bool hasAncientOaths(const CGHeroInstance * hero)
+{
+	return hero && hero->getHeroType() && hero->getHeroType()->getJsonKey() == "core:nimbus"
+		&& ancientOathsEnabled(hero->getPrimaryGrowthRules());
+}
+
 std::optional<FieldPhysicianRules> fieldPhysicianRules(const JsonNode & development)
 {
 	if(!usesRules(development) || !development.isStruct()
@@ -134,6 +151,16 @@ int64_t fieldPhysicianHealing(int64_t ordinary, const CGHeroInstance * hero)
 bool resolveAdditionalSpecialtyPresentation(const CHero & hero, const JsonNode & development,
 	const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
+	if(hero.getJsonKey() == "core:nimbus" && ancientOathsEnabled(development))
+	{
+		result.name = "Ancient Oaths";
+		result.summary = "Recruit Mummies from the shared Tomb of Souls stock while Seth resides in an owned Necropolis.";
+		result.description = "While Seth visits or garrisons an owned Necropolis with a Tomb of Souls, "
+			"Mummies share its Wight recruitment stock. An upgraded Tomb also offers Royal Mummies "
+			"and can upgrade Mummies. Ordinary Wights and Wraiths remain available; all recruitment choices "
+			"spend the same stock.";
+		return true;
+	}
 	if(resolveOrdinaryCreatureSpecialtyPresentation(hero, development, result)
 		|| resolveLearningSpecialtyPresentation(hero, development, magic, capturedHero, result))
 		return true;

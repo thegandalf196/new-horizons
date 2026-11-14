@@ -97,7 +97,7 @@ void advanceRound(IBattleState & battle, int32_t nextRound)
 	for(const auto * unit : battle.getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		std::vector<Bonus> expired;
-		const auto effects = unit->getBonuses(CSelector(isEffect));
+		const auto effects = unit->getUnstackedBonuses(CSelector(isEffect));
 		for(const auto & effect : *effects)
 			if(!isRetained(effect.get()) && effect->turnsRemain <= nextRound)
 				expired.push_back(*effect);

@@ -18,7 +18,7 @@ def require(text: str, needle: str, description: str) -> None:
 
 UI = (ROOT / "client/windows/NewHorizonsMusterUI.cpp").read_text(encoding="utf-8")
 UI_HEADER = (ROOT / "client/windows/NewHorizonsMusterUI.h").read_text(encoding="utf-8")
-RECRUITMENT = (ROOT / "client/windows/GUIClasses.cpp").read_text(encoding="utf-8")
+RECRUITMENT = (ROOT / "client/windows/CRecruitmentWindow.cpp").read_text(encoding="utf-8")
 QUICK = (ROOT / "client/windows/QuickRecruitmentWindow.cpp").read_text(encoding="utf-8")
 CMAKE = (ROOT / "client/CMakeLists.txt").read_text(encoding="utf-8")
 TEXTS = (ROOT / "config/newHorizonsMusterTexts.json").read_text(encoding="utf-8")

@@ -14,6 +14,10 @@ are **1159**. Older files are rejected before payload loading and remain unchang
 use their matching older build to continue them. Development source, published
 release assets and promoted playable snapshots are separate identities.
 
+- **Seth** replaces Nimbus's default identity. His **Ancient Oaths** specialty
+  adds Mummy and Royal Mummy alternatives to a locally attended owned Necropolis
+  Tomb's existing Wight/Wraith stock. Royal Mummies shoot and retain normal melee
+  damage; both preserve the ordinary Mummy combat profile and Curse.
 - Restores numerical **Leadership**, derived from each class's actual Attack and
   Defense growth, across all 18 classes.
 - Retires persistent army Command, slot-tier locks and repeating enhancements.
@@ -52,12 +56,16 @@ release assets and promoted playable snapshots are separate identities.
   including the exposed edge of doublewide targets.
 - Fits full creature animations in both Conflux Fort overview layouts, preserving
   wings and other artwork previously cropped by the portrait viewport.
+- Places Castle's Barracks before the Griffin Tower in construction, exchanges
+  their base and upgraded building costs, and gives Core infantry earlier access
+  while preserving unrelated buildings' existing Blacksmith requirements.
 - Adds visual feedback to Straker's Undying restoration and Kalt's Rising Tide
   additions, using the existing Hydra regeneration and First Aid Tent effects
   without changing either specialty.
 - Retains the independent Castle starting-package amendment, stock neutral counts,
   recruitment growth, Magic Arrow, Elemental Attunement and other faction rules.
 - Renames Energy Elemental to **Plasma Elemental** without changing its stable ID.
+- Makes Water and Ice Elementals occupy one battlefield hex and updates both Wisp portraits.
 
 These entries describe development rules. Compilation, native checks, rendered
 acceptance, measured performance and release publication are separate gates.

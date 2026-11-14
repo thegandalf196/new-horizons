@@ -85,9 +85,12 @@ else()
 endif()
 
 set(test_SRCS
+		client/DirectionalMissileFramesTest.cpp
 		hero/LeadershipEfficiencyRulesTest.cpp
 		server/battles/LeadershipEfficiencyBattleTest.cpp
 		server/battles/CreatureSupplementalStatsTest.cpp
+		server/battles/SethMummyCombatTest.cpp
+		server/NewHorizonsSethRecruitmentTest.cpp
 		../client/windows/CreatureSupplementalStats.cpp
 		../client/tests/LeadershipEfficiencyBadgeTest.cpp
 		../client/tests/CreaturePreviewFitTest.cpp
@@ -1315,6 +1318,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsProspectorAITest.cpp
 		nullkiller2/NewHorizonsGhostUpgradeAITest.cpp
 		nullkiller2/NewHorizonsRecruitmentGrowthAITest.cpp
+		nullkiller2/NewHorizonsSethRecruitmentAITest.cpp
 		nullkiller2/NewHorizonsAcademicStudyAITest.cpp
 		nullkiller2/NewHorizonsSageAITest.cpp
 		nullkiller2/NewHorizonsRecruitersContactsAITest.cpp

@@ -99,6 +99,8 @@ public:
 		, stepSize(stepSize)
 		, stepValue(stepValue)
 	{}
+	/// Amount per counted group; omitted by the legacy runtime Bonus wire.
+	int getStepValue() const noexcept { return stepValue; }
 
 	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;

@@ -77,6 +77,12 @@ protected:
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			useNewHorizonsMagicRules ? JsonNode(JsonPath::builtin("config/newHorizonsMagic")) : JsonNode());
+		if(!useNewHorizonsMagicRules)
+		{
+			JsonNode historicalHeroRules(JsonPath::builtin("config/newHorizonsHeroes"));
+			historicalHeroRules["startingSkills"].Struct().erase("startingBookReplacements");
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(historicalHeroRules));
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 	}
@@ -189,15 +195,14 @@ TEST_F(NewHorizonsPortalRecruitmentTest, ArmyCandidatesRespectFreeExternalStockC
 	ASSERT_NE(armyManager, nullptr);
 
 	const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(pikemanCapacity);
-	ASSERT_GT(pikemanCapacity->maximum, 0);
+	EXPECT_FALSE(pikemanCapacity) << "Leadership Efficiency does not impose a recruitment cap";
 	EXPECT_TRUE(pikeSource->getRecruitmentCost(pikeman).empty())
 		<< "external level-one Portal stock is free under the ordinary dwelling cost rule";
 	const auto freeCandidates = armyManager->getArmyAvailableToBuy(
 		hero, pikeSource, ResourceSet(), 0, hero);
 	ASSERT_EQ(freeCandidates.size(), 1u);
 	EXPECT_EQ(freeCandidates.front().creID, pikeman);
-	EXPECT_EQ(freeCandidates.front().count, std::min<int>(24, pikemanCapacity->maximum));
+	EXPECT_EQ(freeCandidates.front().count, 24);
 
 	// Seven full physical slots prevent the AI from inventing an eighth stack
 	// when the offered Pike stack is not valuable enough to replace any resident.
@@ -215,14 +220,13 @@ TEST_F(NewHorizonsPortalRecruitmentTest, ArmyCandidatesRespectFreeExternalStockC
 	EXPECT_EQ(pikeSource->creatures.front().first, 1u);
 
 	// Non-level-one creatures retain their normal source cost; the candidate is
-	// limited to what the supplied treasury can actually afford and the hero can command.
+	// limited to what the supplied treasury can actually afford.
 	hero->clearSlots();
 	swordsmanSource->creatures = {{10, {swordsman}}};
 	const ResourceSet swordsmanCost = swordsmanSource->getRecruitmentCost(swordsman);
 	ASSERT_FALSE(swordsmanCost.empty());
 	const auto swordsmanCapacity = hero->getLeadershipSlotCapacity(swordsman);
-	ASSERT_TRUE(swordsmanCapacity);
-	ASSERT_GE(swordsmanCapacity->maximum, 2);
+	EXPECT_FALSE(swordsmanCapacity);
 	const ResourceSet exactTwoSwordsmen = swordsmanCost * 2;
 	const auto costedCandidates = armyManager->getArmyAvailableToBuy(
 		hero, swordsmanSource, exactTwoSwordsmen, 0, hero);

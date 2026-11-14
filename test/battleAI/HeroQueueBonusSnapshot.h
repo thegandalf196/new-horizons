@@ -16,6 +16,8 @@ namespace heroQueueTest
 {
 // CURRENT runtime Bonus wire, followed by owners in ordered depth-first graph traversal.
 // Then full valid-cell membership for each UnitOnHexLimiter in the same traversal.
+// Finally TimesStackSizeUpdater step values in updater traversal order, because
+// runtime Bonus wire omits that field. This supplement is observation-only.
 // Throws before writing for unsupported dynamic types or unbounded/cyclic graphs.
 std::vector<std::byte> bonusSnapshotBytes(const Bonus & bonus);
 std::vector<std::string> bonusSnapshots(const BonusList & bonuses);

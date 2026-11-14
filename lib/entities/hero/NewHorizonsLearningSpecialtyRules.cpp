@@ -38,6 +38,8 @@ std::optional<LearningSpecialtyRules> learningSpecialtyRules(const JsonNode & de
 	if(!usesRules(development) || !development.isStruct() || !development.Struct().contains("additionalSpecialties"))
 		return std::nullopt;
 	validateAdditionalSpecialtiesSerialization(development, true);
+	if(kind == LearningSpecialtyKind::GRAVE_ARCHIVIST && ancientOathsEnabled(development))
+		return std::nullopt;
 	const auto & table = development["additionalSpecialties"];
 	if(!table.Struct().contains(rowName(kind)))
 		return std::nullopt;

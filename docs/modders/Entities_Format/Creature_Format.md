@@ -164,7 +164,15 @@ In order to make functional creature you also need:
 		"missile" :
 		{
 			// name of file for missile
-			"animation" : "", 
+			"projectile" : "",
+
+			// Optional visual impact at projectile arrival; no additional damage or spell cast.
+			"impact" : "",
+
+			// Optional consecutive temporal frames for EACH angle (default 1, maximum 64).
+			// Example: three angles with four phases use group 0 frames 0..3, 4..7, 8..11.
+			// Leave group 1 empty: the engine creates the mirrored frames.
+			"framesPerAngle" : 1,
 
 			// indicates that creature uses ray animation for ranged attacks instead of missile image (e.g. Evil Eye)
 			"ray" : 
@@ -176,8 +184,8 @@ In order to make functional creature you also need:
 				{}, // definition of second from top line in the ray, identical format
 				... // definitions of remaining lines, till desired width of the ray
 			],
-			// Frame at which shooter shoots his projectile (e.g. releases arrow)
-			"attackClimaxFrame" : 0,
+			// One-based frame at which the shooter releases its projectile.
+			"attackClimaxFrame" : 1,
 
 			// Position where projectile image appears during shooting in specific direction
 			"offset" :
@@ -189,11 +197,11 @@ In order to make functional creature you also need:
 				"lowerX" : 0,
 				"lowerY" : 0
 			},
-			// angles from which frames in .def file were rendered, -90...90 range
+			// Angles from which missile frames were rendered, +90 (up) to -90 (down).
 			// Example below will work for file that contains following frames:
 			// 1) facing top, 2) facing top-right, 3)facing right,
 			// 4) facing bottom-right 5) facing bottom.
-			"frameAngles" : [ -90, -45, 0, 45, 90]
+			"frameAngles" : [ 90, 45, 0, -45, -90]
 		}
 	},
 

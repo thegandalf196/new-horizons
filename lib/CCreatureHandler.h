@@ -98,6 +98,8 @@ public:
 		int attackClimaxFrame;
 
 		AnimationPath projectileImageName;
+		AnimationPath projectileImpactName;
+		int projectileFramesPerAngle = 1;
 		std::vector<RayColor> projectileRay;
 
 	} animation;

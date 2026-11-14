@@ -74,6 +74,8 @@ protected:
 		if(!specialtyHero.empty() || legacyMagic)
 		{
 			auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+			// This fixture characterizes captured Nimbus Learning profiles before Seth.
+			rules["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
 			rules.setOverrideFlag(true);
 			if(legacyMagic)
 				rules["startingSkills"].Struct().erase("startingBookReplacements");

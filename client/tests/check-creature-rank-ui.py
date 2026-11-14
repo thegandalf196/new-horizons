@@ -35,7 +35,7 @@ assert "categorySection" not in WINDOW
 
 # Recruitment previews retain the originating saved classification without
 # borrowing bonuses from the destination army or consulting a global profile.
-RECRUITMENT = (ROOT / "client/windows/GUIClasses.cpp").read_text(encoding="utf-8")
+RECRUITMENT = (ROOT / "client/windows/CRecruitmentWindow.cpp").read_text(encoding="utf-8")
 assert "parent->dst ? parent->dst->cb : (parent->dwelling ? parent->dwelling->cb : nullptr)" in RECRUITMENT
 assert "createAndPushWindow<CStackWindow>(creature, true, context)" in RECRUITMENT
 assert "info->categoryContext = categoryContext;" in WINDOW

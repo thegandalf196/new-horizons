@@ -38,6 +38,7 @@
 		}
 	},
 	"core:waterElemental": {
+		"doubleWide": false,
 		"abilities": {"assimilation": {"type": "ASSIMILATION"}},
 		"cost": {
 			"gold": 550
@@ -54,6 +55,7 @@
 		"growth": 4
 	},
 	"core:iceElemental": {
+		"doubleWide": false,
 		"cost": {
 			"gold": 750
 		},

@@ -194,6 +194,8 @@
 				},
 				"creatures": {
 					"new-horizons:livingArmor": "core",
+					"core:mummy": "core",
+					"new-horizons:royalMummy": "core",
 					"core:pikeman": "core",
 					"core:halberdier": "core",
 					"core:archer": "core",
@@ -3228,6 +3230,7 @@
 					}
 				},
 				"additionalSpecialties": {
+					"ancientOathsPolicyVersion": 1,
 					"ordinaryCreatureSpecialties": {
 						"version": 1,
 						"relentlessBarrageDamagePercent": 50,
@@ -6396,6 +6399,7 @@
 						"core:skeleton": 45,
 						"core:walkingDead": 80,
 						"core:wight": 130,
+						"core:mummy": 50,
 						"new-horizons:ghost": 130,
 						"core:vampire": 230,
 						"core:lich": 330,
@@ -11247,6 +11251,7 @@
 		"config/creatures/tower.json",
 		"config/creatures/livingArmor.json",
 		"config/creatures/ghost.json",
+		"config/creatures/mummies.json",
 		"config/creatures/conflux.json",
 		"config/creatures/experimentalValues.json"
 	],
@@ -11258,6 +11263,7 @@
 		"config/heroes/biographies.json",
 		"config/heroes/fafner.json",
 		"config/heroes/halon.json",
+		"config/heroes/seth.json",
 		"config/heroes/solmyr.json",
 		"config/heroes/classSwaps.json"
 	],
@@ -11273,6 +11279,7 @@
 		"config/factions/uniqueBuildings.json",
 		"config/factions/primaryRewards.json",
 		"config/factions/universalMageGuilds.json",
+		"config/factions/castleCreatureRanks.json",
 		"config/factions/towerCreatureRanks.json",
 		"config/factions/academyArt.json",
 		"config/factions/confluxCreatureRanks.json"

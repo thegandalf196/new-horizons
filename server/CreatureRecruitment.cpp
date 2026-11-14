@@ -12,6 +12,7 @@
 #include "../lib/mapObjects/CGTownInstance.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include "../lib/mapObjects/NewHorizonsEstates.h"
+#include "../lib/mapObjects/TownRecruitmentOffers.h"
 #include "../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../lib/CCreatureHandler.h"
 #include "../lib/entities/artifact/CArtifact.h"
@@ -29,6 +30,20 @@
 
 namespace
 {
+std::optional<size_t> recruitmentRow(const CGDwelling & dwelling, CreatureID creature,
+	int32_t requestedRow, PlayerColor player)
+{
+	for(size_t row = 0; row < dwelling.creatures.size(); ++row)
+	{
+		if(requestedRow != -1 && static_cast<int64_t>(row) != requestedRow)
+			continue;
+		const auto offer = townRecruitmentOffers::query(dwelling, row, player);
+		if(offer && vstd::contains(offer->choices, creature))
+			return row;
+	}
+	return std::nullopt;
+}
+
 std::optional<newHorizonsHeroes::CommandArmyPlan> prepareRecruitmentPlacement(
 	const CArmedInstance * army, const CGHeroInstance * hero, CreatureID crid, int32_t cram,
 	bool warMachine, SlotID & slot)
@@ -111,36 +126,19 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 		COMPLAIN_RET_FALSE_IF(!hero || hero->getOwner() != player, "Cannot recruit: can only recruit to owned hero!");
 	}
 
-	//verify
-	bool found = false;
-	int level = 0;
-
-	for (; level < dwelling->creatures.size(); level++) //iterate through all levels
-	{
-		if ((fromLvl != -1) && (level !=fromLvl))
-			continue;
-		const auto &cur = dwelling->creatures.at(level); //current level info <amount, list of cr. ids>
-		int i = 0;
-		for (; i < cur.second.size(); i++) //look for crid among available creatures list on current level
-			if (cur.second.at(i) == crid)
-				break;
-
-		if (i < cur.second.size())
-		{
-			found = true;
-			cram = std::min<int32_t>(cram, cur.first); //reduce recruited amount up to available amount
-			break;
-		}
-	}
+	// Re-evaluate the source's live legal choices before placement or payment.
+	const auto row = recruitmentRow(*dwelling, crid, fromLvl, player);
+	COMPLAIN_RET_FALSE_IF(!row, "Cannot recruit: no such creatures!");
+	const auto level = *row;
+	cram = static_cast<int32_t>(std::min<int64_t>(cram, dwelling->creatures[level].first));
+	COMPLAIN_RET_FALSE_IF(cram <= 0, "Cannot recruit: cram <= 0!");
 	SlotID slot;
 	auto commandPlan = prepareRecruitmentPlacement(army, hero, crid, cram, warMachine, slot);
 	const auto * buyer = newHorizonsEstates::recruitmentBuyer(army);
 	const auto & resources = gameInfo().getPlayerState(army->tempOwner)->resources;
 	const auto maxAffordableAmount = dwelling->getRecruitmentAmount(crid, resources, cram, buyer);
 
-	if((!found && complain("Cannot recruit: no such creatures!"))
-		|| (cram > maxAffordableAmount && complain("Cannot recruit: lack of resources!"))
-		|| (cram <= 0 && complain("Cannot recruit: cram <= 0!"))
+	if((cram > maxAffordableAmount && complain("Cannot recruit: lack of resources!"))
 		|| ((!slot.validSlot() || (hero && hero->getArmyCommand() && !commandPlan)) && !warMachine
 			&& complain("Cannot recruit: no legal arrangement in unlocked army slots!")))
 	{

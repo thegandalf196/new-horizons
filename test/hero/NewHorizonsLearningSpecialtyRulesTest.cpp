@@ -6,6 +6,7 @@
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsLearningSpecialties.h"
+#include "../../lib/entities/hero/NewHorizonsAdditionalSpecialties.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 using namespace newHorizonsHeroes;
 namespace
@@ -14,6 +15,8 @@ JsonNode learningRules()
 {
 	auto rules = testHeroRules();
 	auto & table = rules["additionalSpecialties"];
+	// These characterize the captured Nimbus/Oris profiles before Ancient Oaths.
+	table.Struct().erase("ancientOathsPolicyVersion");
 	table["version"].Integer() = 1;
 	for(const auto key : {"graveArchivist", "spiritTeacher"})
 	{
@@ -70,4 +73,25 @@ TEST(NewHorizonsLearningSpecialtyRules, SameUnpublishedCapabilityProtectsBothOpt
 	GameSettings loaded;
 	loaded.serialize(current.iser);
 	EXPECT_EQ(loaded.getValue(EGameSettings::HEROES_NEW_HORIZONS), rules);
+}
+TEST(NewHorizonsLearningSpecialtyRules, AncientOathsReplacesOnlyNimbusPersonalBonusAndPreservesCapturedAbsence)
+{
+	auto configured = learningRules();
+	configured["additionalSpecialties"]["ancientOathsPolicyVersion"].Integer() = 1;
+	const auto captured = resolveHeroRules(configured, HeroClassID(0));
+	EXPECT_TRUE(ancientOathsEnabled(captured));
+	EXPECT_FALSE(learningSpecialtyRules(captured, LearningSpecialtyKind::GRAVE_ARCHIVIST));
+	EXPECT_TRUE(learningSpecialtyRules(captured, LearningSpecialtyKind::SPIRIT_TEACHER));
+	auto historical = captured;
+	historical["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
+	EXPECT_FALSE(ancientOathsEnabled(historical));
+	EXPECT_TRUE(learningSpecialtyRules(historical, LearningSpecialtyKind::GRAVE_ARCHIVIST));
+	EXPECT_TRUE(ancientOathsEnabled(captured));
+	for(const auto bad : {JsonNode(), JsonNode(true), JsonNode(1.0), JsonNode(2.0), JsonNode("1")})
+	{
+		auto invalid = captured;
+		invalid["additionalSpecialties"]["ancientOathsPolicyVersion"] = bad;
+		EXPECT_THROW(validateResolvedHeroRules(invalid), std::runtime_error);
+		EXPECT_FALSE(ancientOathsEnabled(invalid));
+	}
 }

@@ -198,6 +198,68 @@ TEST_F(ArcaneInspirationBattleTest, CompletionRefreshDoesNotStackAndIncludesNewF
 	EXPECT_EQ(actor->getBonuses(CSelector(arcaneInspiration::isActive))->size(), 1u);
 	EXPECT_EQ(newcomer->getBonuses(CSelector(arcaneInspiration::isActive))->size(), 1u);
 }
+TEST_F(ArcaneInspirationBattleTest, ControlChangeRefreshPreservesBothOwnersAndExpiresAllActiveRiders)
+{
+	prepare();
+	const SecondarySkill skill(SecondarySkill::decode(arcaneInspiration::SKILL));
+	for(auto * hero : {attackerSideHero, defenderSideHero})
+	{
+		hero->setSecSkillLevel(skill, 2, ChangeValueMode::ABSOLUTE);
+		hero->applyPerkSelection({arcaneInspiration::SKILL, "new-horizons:warcasting.arcaneValor"});
+		hero->applyPerkSelection({arcaneInspiration::SKILL, "new-horizons:warcasting.lingeringInspiration"});
+		ASSERT_TRUE(hero->hasActivePerk(arcaneInspiration::SKILL, "new-horizons:warcasting.arcaneValor"));
+		ASSERT_TRUE(hero->hasActivePerk(arcaneInspiration::SKILL, "new-horizons:warcasting.lingeringInspiration"));
+	}
+	arcaneInspiration::publishCompletedSpell(*gameHandler->spellEnv, *battle(), BattleSide::ATTACKER, {});
+	ASSERT_EQ(arcaneInspiration::activeProfile(*actor, PlayerColor(0)).corePercent, 10);
+	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::HYPNOTIZED,
+		BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_EQ(battle()->battleGetOwner(actor), PlayerColor(1));
+	EXPECT_EQ(arcaneInspiration::activeProfile(*actor, PlayerColor(1)).corePercent, 0);
+	// Two accepted completion receipts refresh only the current owner's records,
+	// even after a warm generic cache has stacked the equal original-owner marker.
+	for(int refresh = 0; refresh < 2; ++refresh)
+	{
+		arcaneInspiration::publishCompletedSpell(*gameHandler->spellEnv, *battle(), BattleSide::DEFENDER, {});
+		EXPECT_EQ(actor->getUnstackedBonuses(CSelector(arcaneInspiration::isEffect))->size(), 6u);
+		for(const auto owner : {PlayerColor(0), PlayerColor(1)})
+		{
+			const auto active = arcaneInspiration::activeProfile(*actor, owner);
+			EXPECT_EQ(active.corePercent, 10);
+			EXPECT_EQ(active.riders, arcaneInspiration::VALOR | arcaneInspiration::LINGERING);
+			EXPECT_EQ(arcaneInspiration::retainedPercent(*actor, owner), 10);
+		}
+	}
+	advanceRound();
+	EXPECT_EQ(actor->getUnstackedBonuses(CSelector(arcaneInspiration::isActive))->size(), 0u);
+	EXPECT_EQ(actor->getUnstackedBonuses(CSelector(arcaneInspiration::isEffect))->size(), 2u);
+	for(const auto owner : {PlayerColor(0), PlayerColor(1)})
+	{
+		EXPECT_EQ(arcaneInspiration::activeProfile(*actor, owner).corePercent, 0);
+		EXPECT_EQ(arcaneInspiration::retainedPercent(*actor, owner), 10);
+	}
+}
+TEST_F(ArcaneInspirationBattleTest, SpellshockRefreshRemovesEveryPreviouslyOwnedRecord)
+{
+	prepare(1);
+	learnSpellshock();
+	SetStackEffect seed;
+	seed.battleID = BattleID(0);
+	seed.toAdd.emplace_back(victim->unitId(), std::vector<Bonus>{
+		arcaneInspiration::spellshockMarker(PlayerColor(0), battle()->getRound()),
+		arcaneInspiration::spellshockMarker(PlayerColor(1), battle()->getRound())});
+	gameHandler->sendAndApply(seed);
+	ASSERT_EQ(victim->getUnstackedBonuses(CSelector(arcaneInspiration::isSpellshock))->size(), 2u);
+	BattleStackAttacked hit;
+	hit.stackAttacked = victim->unitId();
+	hit.damageAmount = 20;
+	arcaneInspiration::publishSpellDamage(*gameHandler->spellEnv, *battle(), BattleSide::ATTACKER, std::span(&hit, 1));
+	const auto effects = victim->getUnstackedBonuses(CSelector(arcaneInspiration::isSpellshock));
+	ASSERT_EQ(effects->size(), 1u);
+	EXPECT_EQ(effects->front()->spellCasterOwner, PlayerColor(0));
+	advanceRound();
+	EXPECT_TRUE(victim->getUnstackedBonuses(CSelector(arcaneInspiration::isSpellshock))->empty());
+}
 TEST_F(ArcaneInspirationBattleTest, FocusIsAdditiveOnlyForRetaliationAndOtherRidersRequireActiveState)
 {
 	prepare();

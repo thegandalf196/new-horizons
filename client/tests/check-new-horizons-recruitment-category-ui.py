@@ -12,7 +12,7 @@ import re
 
 
 ROOT = Path(__file__).resolve().parents[2]
-GUI = (ROOT / "client/windows/GUIClasses.cpp").read_text(encoding="utf-8")
+GUI = (ROOT / "client/windows/CRecruitmentWindow.cpp").read_text(encoding="utf-8")
 GUI_HEADER = (ROOT / "client/windows/GUIClasses.h").read_text(encoding="utf-8")
 QUICK_CARD = (ROOT / "client/windows/CreaturePurchaseCard.cpp").read_text(encoding="utf-8")
 QUICK_CARD_HEADER = (ROOT / "client/windows/CreaturePurchaseCard.h").read_text(encoding="utf-8")
@@ -42,7 +42,7 @@ require(recruitment, 'recruitText.appendTextID("core.tcommand.21")', "standard t
 require(recruitment, "recruitText.replaceNamePlural(card->creature->getId())", "selected creature names the title")
 require(recruitment, "title->setText(recruitText.toString(&GAME->translator()))", "standard title has no repeated rank prefix")
 assert "newHorizonsCreatureCategoryUI::prefix" not in recruitment
-require(recruitment, "createAndPushWindow<CStackWindow>(creature, true)", "right-click creature information remains available")
+require(recruitment, "createAndPushWindow<CStackWindow>(creature, true, context)", "right-click creature information remains available")
 require(recruitment, "UIHelper::recruitmentPosition(dst, card->creature->getId(), maxAmount)", "removing destination text preserves position validation")
 require(recruitment, "if(!slot.validSlot() && !card->creature->warMachine.hasValue())", "no-slot recruitment remains blocked")
 require(GUI, "categoryCards", "standard recruitment groups cards by category")

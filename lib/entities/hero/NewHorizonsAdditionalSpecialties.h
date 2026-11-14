@@ -41,6 +41,9 @@ DLL_LINKAGE bool resolveManaFurnacePresentation(const CHero & hero, const JsonNo
 DLL_LINKAGE bool usesConvertedCreatureSpecialty(const CGHeroInstance * hero);
 DLL_LINKAGE bool replacesGenericCreatureSpecialty(const CGHeroInstance * hero);
 DLL_LINKAGE void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bool supported);
+/// Optional captured Seth policy; missing historical captures remain inactive.
+DLL_LINKAGE bool ancientOathsEnabled(const JsonNode & development);
+DLL_LINKAGE bool hasAncientOaths(const CGHeroInstance * hero);
 DLL_LINKAGE std::optional<FieldPhysicianRules> fieldPhysicianRules(const JsonNode & development);
 DLL_LINKAGE int fieldPhysicianHealingPercent(const CGHeroInstance * hero);
 DLL_LINKAGE int64_t fieldPhysicianHealing(int64_t ordinary, const CGHeroInstance * hero);

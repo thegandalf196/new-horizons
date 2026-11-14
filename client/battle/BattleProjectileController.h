@@ -50,6 +50,8 @@ struct ProjectileMissile : ProjectileBase
 	std::shared_ptr<CAnimation> animation;
 	int frameNum;  // frame to display from projectile animation
 	bool reverse;  // if true, projectile will be flipped by vertical axis
+	std::size_t framesPerAngle = 1;
+	double directionFrameProgress = 0;
 };
 
 /// Projectile for spell - render animation moving in straight line from origin to destination

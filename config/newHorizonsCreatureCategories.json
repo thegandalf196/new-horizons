@@ -18,6 +18,8 @@
 	},
 	"creatures": {
 		"new-horizons:livingArmor": "core",
+		"core:mummy": "core",
+		"new-horizons:royalMummy": "core",
 		"core:pikeman": "core",
 		"core:halberdier": "core",
 		"core:archer": "core",

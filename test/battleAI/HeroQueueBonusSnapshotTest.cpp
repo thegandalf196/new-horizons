@@ -204,22 +204,66 @@ TEST(HeroQueueBonusSnapshotTest, AllCurrentParameterAlternativesAndKnownGraphsAr
 	}
 }
 
-TEST(HeroQueueBonusSnapshotTest, MissingStepValueIsRefusedAtEveryUpdaterPosition)
+TEST(HeroQueueBonusSnapshotTest, StackSizeStepValuesRemainObservableAtEveryUpdaterPosition)
 {
-	for(const int step : {1, 2})
+	const auto make = [](int position, int step)
 	{
 		Bonus value;
 		value.updater = std::make_shared<TimesStackSizeUpdater>(0, 100, 1, step);
-		expectRefusal(value, "Unsupported snapshot updater graph");
-		auto composite = std::make_shared<CompositeUpdater>();
-		composite->updaters.push_back(value.updater);
-		value.updater = composite;
-		expectRefusal(value, "Unsupported snapshot updater graph");
-		value.propagationUpdater = value.updater;
-		value.updater.reset();
-		expectRefusal(value, "Unsupported snapshot updater graph");
-		expectRefusal(withNested(std::make_shared<Bonus>(value)), "Unsupported snapshot updater graph");
+		if(position == 1 || position == 3)
+		{
+			auto composite = std::make_shared<CompositeUpdater>();
+			composite->updaters.push_back(value.updater);
+			value.updater = composite;
+		}
+		if(position == 2 || position == 3)
+			value.propagationUpdater = std::exchange(value.updater, nullptr);
+		return position == 4 ? withNested(std::make_shared<Bonus>(value)) : value;
+	};
+	for(int position = 0; position < 5; ++position)
+	{
+		const auto first = make(position, 1);
+		const auto second = make(position, 2);
+		EXPECT_EQ(ordinaryBonusWire(first), ordinaryBonusWire(second));
+		EXPECT_NE(bonusSnapshotBytes(first), bonusSnapshotBytes(second));
+		CMemorySerializer memory(bonusSnapshotBytes(second));
+		Bonus restored;
+		std::vector<PlayerColor> owners;
+		std::vector<std::vector<uint8_t>> membership;
+		std::vector<int> steps;
+		memory.iser & restored;
+		memory.iser & owners;
+		memory.iser & membership;
+		memory.iser & steps;
+		EXPECT_EQ(steps, (std::vector<int>{2}));
 	}
+}
+
+TEST(HeroQueueBonusSnapshotTest, StackSizeStepSupplementRetainsNestedTraversalOrder)
+{
+	auto leaf = std::make_shared<Bonus>();
+	leaf->updater = std::make_shared<TimesStackSizeUpdater>(0, 100, 1, 4);
+	Bonus root = withNested(leaf);
+	auto composite = std::make_shared<CompositeUpdater>();
+	for(int step : {1, 2})
+		composite->updaters.push_back(std::make_shared<TimesStackSizeUpdater>(0, 100, 1, step));
+	root.updater = composite;
+	root.propagationUpdater = std::make_shared<TimesStackSizeUpdater>(0, 100, 1, 3);
+	const auto before = bonusSnapshotBytes(root);
+	const auto ordinary = ordinaryBonusWire(root);
+	CMemorySerializer memory(before);
+	Bonus restored;
+	std::vector<PlayerColor> owners;
+	std::vector<std::vector<uint8_t>> membership;
+	std::vector<int> steps;
+	memory.iser & restored;
+	memory.iser & owners;
+	memory.iser & membership;
+	memory.iser & steps;
+	EXPECT_EQ(steps, (std::vector<int>{1, 2, 3, 4}));
+	std::swap(composite->updaters[0], composite->updaters[1]);
+	EXPECT_EQ(ordinaryBonusWire(root), ordinary);
+	EXPECT_NE(bonusSnapshotBytes(root), before);
 }
 
 TEST(HeroQueueBonusSnapshotTest, CyclesDepthAndGraphSizeAreRefusedBeforeWriting)

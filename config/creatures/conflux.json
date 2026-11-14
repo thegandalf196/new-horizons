@@ -226,7 +226,7 @@
 		"level": 3,
 		"compatibilityIdentifiers": [ "waterElementals" ],
 		"faction": "conflux",
-		"doubleWide" : true,
+		"doubleWide" : false,
 		"abilities":
 		{
 			"nonLiving" :
@@ -311,7 +311,7 @@
 		"index": 123,
 		"level": 3,
 		"faction": "conflux",
-		"doubleWide" : true,
+		"doubleWide" : false,
 		"shots" : 24,
 		"abilities":
 		{

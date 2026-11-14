@@ -719,6 +719,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CGCreature.cpp
 	mapObjects/CGCreaturePopupText.cpp
 	mapObjects/CGDwelling.cpp
+	mapObjects/TownRecruitmentOffers.cpp
 	mapObjects/DwellingWeeklyGrowth.cpp
 	mapObjects/DwellingGuards.cpp
 	mapObjects/NewHorizonsNeutralCalibration.cpp
@@ -998,6 +999,7 @@ set(lib_MAIN_SRCS
 	CAndroidVMHelper.cpp
 	CBonusTypeHandler.cpp
 	CCreatureHandler.cpp
+	CreatureAnimationConfig.cpp
 		CreatureIdentity.cpp
 	ConditionalWait.cpp
 	CPlayerState.cpp
@@ -1577,6 +1579,7 @@ set(lib_MAIN_HEADERS
 
 	mapObjects/CGCreature.h
 	mapObjects/CGDwelling.h
+	mapObjects/TownRecruitmentOffers.h
 	mapObjects/NewHorizonsNeutralCalibration.h
 	mapObjects/NewHorizonsNeutralArmies.h
 	mapObjects/NewHorizonsRecruitmentGrowth.h

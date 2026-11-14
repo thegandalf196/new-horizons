@@ -13,6 +13,7 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/NewHorizonsEstates.h"
+#include "../../lib/mapObjects/TownRecruitmentOffers.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/entities/hero/NewHorizonsCommandArmy.h"
 #include "../CPlayerInterface.h"
@@ -66,7 +67,8 @@ std::vector<CreatureID> creatureVariantsAtLevel(const CGTownInstance * town, siz
 	if(!town)
 		return {};
 	if(level < town->creatures.size() && !town->creatures[level].second.empty())
-		return town->creatures[level].second;
+		if(const auto offer = townRecruitmentOffers::query(*town, level, GAME->interface()->playerID))
+			return offer->choices;
 	if(level < town->getTown()->creatures.size())
 		return town->getTown()->creatures[level];
 	return {};
@@ -203,7 +205,7 @@ void QuickRecruitmentWindow::setCreaturePurchaseCards()
 		&& std::ranges::any_of(categoryLevels, [](const auto & group){ return !group.empty(); });
 	auto createLegacyCard = [this, &position](int level)
 	{
-		cards.push_back(std::make_shared<CreaturePurchaseCard>(town->creatures[level].second, position,
+		cards.push_back(std::make_shared<CreaturePurchaseCard>(creatureVariantsAtLevel(town, level), position,
 			town->creatures[level].first, level, this));
 		position.x += 108;
 	};
@@ -320,6 +322,11 @@ int QuickRecruitmentWindow::recruitmentAmount(CreatureID creature, const TResour
 		newHorizonsEstates::recruitmentBuyer(town->getUpperArmy()));
 }
 
+IGameInfoCallback * QuickRecruitmentWindow::recruitmentContext() const
+{
+	return town ? town->cb : nullptr;
+}
+
 void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePurchaseCard> > cards)
 {
 	auto allAvailableResources = GAME->interface()->cb->getResourceAmount();
@@ -345,6 +352,21 @@ void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePur
 
 void QuickRecruitmentWindow::purchaseUnits()
 {
+	// Refresh admission before any request, so a stale alternative cannot cause
+	// the remaining valid rows of an obsolete plan to be purchased unexpectedly.
+	for(const auto & card : cards)
+	{
+		const int amount = card->slider->getValue();
+		if(amount <= 0)
+			continue;
+		const auto offer = townRecruitmentOffers::query(*town, card->recruitmentLevel, GAME->interface()->playerID);
+		if(!offer || !vstd::contains(offer->choices, card->creatureOnTheCard->getId())
+			|| static_cast<uint32_t>(amount) > offer->available)
+		{
+			close(); // Reopen using the authoritative row layout, as after stock updates.
+			return;
+		}
+	}
 	const auto * army = town->getUpperArmy();
 	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
 	const bool commandArmy = hero && hero->getArmyCommand().has_value();

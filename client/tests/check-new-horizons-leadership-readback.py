@@ -37,15 +37,16 @@ def main() -> None:
 
     ui = source("client/windows/GUIClasses.cpp")
     header = source("client/windows/GUIClasses.h")
+    recruitment_ui = source("client/windows/CRecruitmentWindow.cpp")
     # The simple purchase dialog intentionally omits the retired destination
     # row. Its selected creature still uses normal authoritative slot checks.
-    recruitment = ui.split("CRecruitmentWindow::CCreatureCard::CCreatureCard", 1)[1].split(
+    recruitment = recruitment_ui.split("CRecruitmentWindow::CCreatureCard::CCreatureCard", 1)[1].split(
         "CSplitWindow::CSplitWindow", 1
     )[0]
     recruitment_header = header.split("class CRecruitmentWindow", 1)[1].split("class CObjectListWindow", 1)[0]
     for removed in ("leadershipHelp", "leadershipLimit", "updateLeadershipProposalHelp"):
         assert removed not in recruitment and removed not in recruitment_header, removed
-    select = ui.split("void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)", 1)[1].split(
+    select = recruitment_ui.split("void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)", 1)[1].split(
         "void CRecruitmentWindow::close", 1
     )[0]
     require(select, "UIHelper::recruitmentPosition(dst, card->creature->getId(), maxAmount)",

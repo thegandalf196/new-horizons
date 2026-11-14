@@ -86,8 +86,14 @@ void RangedAttackAnimation::tick(uint32_t msPassed)
 	if (projectileEmitted)
 	{
 		if (!owner.projectilesController->hasActiveProjectile(attackingStack, false))
+		{
+			if(!projectileImpactEmitted)
+			{
+				projectileImpactEmitted = true;
+				playProjectileImpact();
+			}
 			owner.executeAnimationStage(EAnimationEvents::HIT);
-
+		}
 	}
 
 	bool stackHasProjectile = owner.projectilesController->hasActiveProjectile(stack, true);
@@ -165,6 +171,13 @@ void ShootingAnimation::initializeProjectile()
 void ShootingAnimation::createProjectile(const Point & from, const Point & dest) const
 {
 	owner.projectilesController->createProjectile(attackingStack, from, dest);
+}
+
+void ShootingAnimation::playProjectileImpact()
+{
+	const auto & impact = getCreature()->animation.projectileImpactName;
+	if(!impact.empty() && dest.isValid())
+		owner.stacksController->addNewAnim(new EffectAnimation(owner, impact, dest));
 }
 
 uint32_t ShootingAnimation::getAttackClimaxFrame() const

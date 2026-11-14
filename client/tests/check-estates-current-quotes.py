@@ -2,7 +2,7 @@
 """Guard shared current Estates quotes; native tests establish rounding/payment."""
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
-ordinary = (ROOT / "client/windows/GUIClasses.cpp").read_text()
+ordinary = (ROOT / "client/windows/CRecruitmentWindow.cpp").read_text()
 quick = (ROOT / "client/windows/QuickRecruitmentWindow.cpp").read_text()
 cards = (ROOT / "client/windows/CreaturePurchaseCard.cpp").read_text()
 town = (ROOT / "client/windows/CCastleInterface.cpp").read_text()

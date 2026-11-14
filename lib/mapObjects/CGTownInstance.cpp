@@ -1417,23 +1417,6 @@ void CGTownInstance::grantBallistaYardSiegeBonus(IGameEventCallback & gameEvents
 	gameEvents.giveHeroBonus(&grant);
 }
 
-void CGTownInstance::fillUpgradeInfo(UpgradeInfo & info, const CStackInstance &stack) const
-{
-	for(const CGTownInstance::TCreaturesSet::value_type & dwelling : creatures)
-	{
-		if (vstd::contains(dwelling.second, stack.getId())) //Dwelling with our creature
-		{
-			for(const auto & upgrID : dwelling.second)
-			{
-				if(vstd::contains(stack.getCreature()->upgrades, upgrID)) //possible upgrade
-				{
-					info.addUpgrade(upgrID, stack.getType());
-				}
-			}
-		}
-	}
-}
-
 void CGTownInstance::postDeserialize()
 {
 	// The independent Sprite dwelling changes Conflux's recruitment layout.

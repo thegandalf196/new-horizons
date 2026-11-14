@@ -17,6 +17,7 @@
 #include <optional>
 
 class CGTownInstance;
+class IGameInfoCallback;
 
 class CButton;
 class CreatureCostBox;
@@ -32,6 +33,7 @@ public:
 	void updateAllSliders();
 	TResources recruitmentCost(CreatureID creature, int amount) const;
 	int recruitmentAmount(CreatureID creature, const TResources & resources, int available) const;
+	IGameInfoCallback * recruitmentContext() const;
 	bool isForTown(const CGTownInstance * value) const { return town == value; }
 	QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition);
 

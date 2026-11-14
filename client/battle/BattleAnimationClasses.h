@@ -234,8 +234,10 @@ class RangedAttackAnimation : public AttackAnimation
 protected:
 	bool projectileEmitted;
 	bool presentationAborted = false;
+	bool projectileImpactEmitted = false;
 	void setAnimationGroup();
 	virtual void initializeProjectile();
+	virtual void playProjectileImpact() {}
 
 	virtual ECreatureAnimType getUpwardsGroup() const = 0;
 	virtual ECreatureAnimType getForwardGroup() const = 0;
@@ -260,6 +262,7 @@ class ShootingAnimation : public RangedAttackAnimation
 	ECreatureAnimType getDownwardsGroup() const override;
 
 	void initializeProjectile() override;
+	void playProjectileImpact() override;
 	void createProjectile(const Point & from, const Point & dest) const override;
 	uint32_t getAttackClimaxFrame() const override;
 

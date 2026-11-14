@@ -1,0 +1,113 @@
+{
+	"core:mummy": {
+		"cost": {
+			"gold": 200
+		},
+		"growth": 7,
+		"upgrades": [
+			"new-horizons:royalMummy"
+		],
+		"graphics": {
+			"animation": "NH_MUMMY",
+			"iconSmall": "newHorizons/creatures/MummySmall",
+			"iconLarge": "newHorizons/creatures/MummyLarge",
+			"map": "NH_MUMMY_MAP",
+			"mapMask": [
+				"VV",
+				"VA"
+			],
+			"mapAttackFromLeft": "newHorizons/creatures/MummyMapAttackLeft",
+			"mapAttackFromRight": "newHorizons/creatures/MummyMapAttackRight"
+		}
+	},
+	"royalMummy": {
+		"name": {
+			"singular": "Royal Mummy",
+			"plural": "Royal Mummies"
+		},
+		"faction": "core:neutral",
+		"level": 3,
+		"special": true,
+		"excludeFromRandomization": true,
+		"cost": {
+			"gold": 230
+		},
+		"speed": 5,
+		"hitPoints": 30,
+		"attack": 7,
+		"defense": 7,
+		"damage": {
+			"min": 3,
+			"max": 5
+		},
+		"fightValue": 270,
+		"aiValue": 270,
+		"growth": 7,
+		"horde": 0,
+		"shots": 12,
+		"abilities": {
+			"undead": {
+				"type": "UNDEAD"
+			},
+			"castCurse": {
+				"type": "SPELL_AFTER_ATTACK",
+				"subtype": "core:curse",
+				"val": 25
+			},
+			"shooter": {
+				"type": "SHOOTER"
+			},
+			"noMeleePenalty": {
+				"type": "NO_MELEE_PENALTY"
+			}
+		},
+		"sound": {
+			"attack": "MUMYATTK.wav",
+			"defend": "MUMYDFND.wav",
+			"killed": "MUMYKILL.wav",
+			"move": "MUMYMOVE.wav",
+			"wince": "MUMYWNCE.wav"
+		},
+		"graphics": {
+			"animation": "NH_ROYAL_MUMMY",
+			"iconSmall": "newHorizons/creatures/RoyalMummySmall:0:0",
+			"iconLarge": "newHorizons/creatures/RoyalMummyLarge:0:0",
+			"animationTime": {
+				"attack": 1,
+				"walk": 1,
+				"idle": 10
+			},
+			"timeBetweenFidgets": 1,
+			"missile": {
+				"projectile": "NH_ROYAL_MUMMY_PROJECTILE",
+				"impact": "NH_ROYAL_MUMMY_IMPACT",
+				"framesPerAngle": 4,
+				"frameAngles": [
+					45,
+					0,
+					-45
+				],
+				"attackClimaxFrame": 5,
+				"offset": {
+					"upperX": 31,
+					"upperY": -108,
+					"middleX": 58,
+					"middleY": -42,
+					"lowerX": 65,
+					"lowerY": -7
+				}
+			},
+			"map": "AVWmumy.DEF",
+			"mapMask": [
+				"VV",
+				"VA"
+			],
+			"mapAttackFromLeft": "AvWattak.def:0:283",
+			"mapAttackFromRight": "AvWattak.def:0:282"
+		},
+		"advMapAmount": {
+			"min": 12,
+			"max": 25
+		}
+	}
+}

@@ -154,9 +154,10 @@
 		"additionalSpecialties": {
 			"description": "Optional captured additional individual specialties. Absent rows preserve prior behavior; coefficients are provisional balance values.",
 			"type": "object", "additionalProperties": false, "not": {"type": "null"},
-			"minProperties": 1, "maxProperties": 12,
+			"minProperties": 1, "maxProperties": 13,
 			"required": ["version"],
 			"properties": {
+				"ancientOathsPolicyVersion": {"type": "integer", "enum": [1], "not": {"type": "null"}},
 				"version": {"type": "integer", "enum": [1], "not": {"type": "null"}},
 				"ordinaryCreatureSpecialties": {
  "type": "object", "additionalProperties": false,

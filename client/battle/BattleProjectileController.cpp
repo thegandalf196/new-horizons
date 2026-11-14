@@ -15,6 +15,7 @@
 #include "BattleStacksController.h"
 #include "CreatureAnimation.h"
 #include "ThunarRangedPresentation.h"
+#include "DirectionalMissileFrames.h"
 #include "../../lib/battle/NewHorizonsCreatureSpecialtyCapabilities.h"
 
 #include "render/CAnimation.h"
@@ -53,7 +54,8 @@ void ProjectileMissile::show(Canvas & canvas)
 	const bool trace = BattleAnimationTiming::reserve();
 	const auto started = trace ? BattleAnimationTiming::steadyMicroseconds() : 0;
 	size_t group = reverse ? 1 : 0;
-	auto image = animation->getImage(frameNum, group, true);
+	const auto frame = directionalMissileFrames::frame(frameNum, framesPerAngle, directionFrameProgress);
+	auto image = animation->getImage(frame, group, true);
 
 	if(image)
 	{
@@ -78,6 +80,9 @@ void ProjectileMissile::tick(uint32_t msPassed)
 {
 	float timePassed = msPassed / 1000.f;
 	progress += timePassed * speed;
+	if(framesPerAngle > 1)
+		directionFrameProgress = std::fmod(directionFrameProgress
+			+ AnimationControls::getSpellEffectSpeed() * timePassed, static_cast<double>(framesPerAngle));
 }
 
 void ProjectileAnimatedMissile::tick(uint32_t msPassed)
@@ -330,7 +335,9 @@ int BattleProjectileController::computeProjectileFrameID( Point from, Point dest
 	auto animation = getProjectileImage(stack);
 
 	// only frames below maxFrame are usable: anything  higher is either no present or we don't know when it should be used
-	size_t maxFrame = std::min<size_t>(angles.size(), animation->size(0));
+	const auto phases = directionalMissileFrames::phases(creature.animation.projectileFramesPerAngle,
+		angles.size(), animation->size(0));
+	size_t maxFrame = std::min<size_t>(angles.size(), animation->size(0) / phases);
 
 	assert(maxFrame > 0);
 	double projectileAngle = -atan2(dest.y - from.y, std::abs(dest.x - from.x));
@@ -395,6 +402,9 @@ void BattleProjectileController::createProjectile(const CStack * shooter, Point 
 		projectile.reset(missileProjectile);
 
 		missileProjectile->animation = getProjectileImage(shooter);
+		missileProjectile->framesPerAngle = directionalMissileFrames::phases(
+			shooterInfo.animation.projectileFramesPerAngle, shooterInfo.animation.missileFrameAngles.size(),
+			missileProjectile->animation->size(0));
 		missileProjectile->reverse   = !owner.stacksController->facingRight(shooter);
 		missileProjectile->frameNum  = computeProjectileFrameID(from, dest, shooter);
 		missileProjectile->speed     = computeProjectileFlightTime(from, dest, AnimationControls::getProjectileSpeed());

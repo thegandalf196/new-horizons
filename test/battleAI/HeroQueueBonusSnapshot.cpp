@@ -28,6 +28,7 @@ struct Graph
 	unsigned remaining = 256;
 	std::vector<PlayerColor> owners;
 	std::vector<std::vector<uint8_t>> hexMembership;
+	std::vector<int> stackSizeSteps;
 
 	void visit(unsigned depth)
 	{
@@ -49,12 +50,18 @@ void requireUpdater(const TUpdaterPtr & updater, Graph & graph, unsigned depth)
 			requireUpdater(nested, graph, depth + 1);
 		return;
 	}
+	if(kind == typeid(TimesStackSizeUpdater))
+	{
+		// Runtime Bonus wire omits this private value. Preserve it explicitly in
+		// the observation, just like owner and UnitOnHex membership metadata.
+		graph.stackSizeSteps.push_back(static_cast<const TimesStackSizeUpdater &>(*updater).getStepValue());
+		return;
+	}
 	if(kind == typeid(IUpdater) || kind == typeid(GrowsWithLevelUpdater)
 		|| kind == typeid(TimesHeroLevelUpdater) || kind == typeid(TimesArmySizeUpdater)
 		|| kind == typeid(TimesStackLevelUpdater) || kind == typeid(DivideStackLevelUpdater)
 		|| kind == typeid(TimesHeroLevelDivideStackLevelUpdater) || kind == typeid(OwnerUpdater))
 		return;
-	// TimesStackSizeUpdater's private stepValue is absent from its runtime serializer.
 	throw std::runtime_error("Unsupported snapshot updater graph");
 }
 
@@ -169,6 +176,7 @@ std::vector<std::byte> bonusSnapshotBytes(const Bonus & bonus)
 	memory.oser & bonus;
 	memory.oser & graph.owners;
 	memory.oser & graph.hexMembership;
+	memory.oser & graph.stackSizeSteps;
 	return memory.extractBuffer();
 }
 

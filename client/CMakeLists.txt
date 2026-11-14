@@ -264,6 +264,7 @@ set(vcmiclientcommon_SRCS
 	windows/NewHorizonsCreatureAbilityHelp.cpp
 	windows/CreatureBonusStatusPresentation.cpp
 	windows/GUIClasses.cpp
+	windows/CRecruitmentWindow.cpp
 	windows/CLevelWindow.cpp
 	windows/CLevelWindowChoices.cpp
 	windows/LevelUpChoiceCards.cpp
@@ -370,6 +371,7 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleOverlayLogVisualizer.h
 	battle/BattleProjectileController.h
 	battle/ProjectileFlightLifecycle.h
+	battle/DirectionalMissileFrames.h
 	battle/AnimationPhaseStart.h
 	battle/BattleRenderer.h
 	battle/BattleResultWindow.h

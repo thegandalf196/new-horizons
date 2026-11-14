@@ -189,6 +189,14 @@ TEST_F(CreatureSupplementalStatsTest, UnbrokenProtectionUsesCurrentBenefitOnceAf
 		BonusSubtypeID(BonusCustomSubtype::damageTypeAll), BonusLimitEffect::NO_LIMIT, 0);
 	EXPECT_EQ(readout().physicalReductionBasisPoints, 8000);
 	beginCombat();
+	// This fixture replaces the attacker's token with slower Skeletons. Select
+	// their ordinary turn explicitly instead of assuming they win initiative.
+	BattleSetActiveStack activation;
+	activation.battleID = BattleID(0);
+	activation.stack = subject->unitId();
+	activation.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activation);
+	ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
 	EXPECT_EQ(readout().physicalReductionBasisPoints, 8400);
 	auto spent = *battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE);
@@ -200,8 +208,9 @@ TEST_F(CreatureSupplementalStatsTest, UnbrokenProtectionUsesCurrentBenefitOnceAf
 TEST_F(CreatureSupplementalStatsTest, ArcaneBulwarkAndArmorerFollowCurrentController)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const SecondarySkill armorer(SecondarySkill::decode("core:armorer"));
+	const SecondarySkill armorer(SecondarySkill::decode(std::string(newHorizonsCombatSkills::ARMORER_SKILL_ID)));
 	attackerSideHero->setSecSkillLevel(armorer, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	ASSERT_EQ(newHorizonsCombatSkills::armorerRank(attackerSideHero), MasteryLevel::EXPERT);
 	const auto owner = battle()->battleGetOwner(subject);
 	const auto other = battle()->otherPlayer(owner);
 	subject->addNewBonus(std::make_shared<Bonus>(arcaneInspiration::activeMarker(

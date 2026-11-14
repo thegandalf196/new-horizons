@@ -47,6 +47,13 @@ TEST_F(NativePassiveSpecialtyProjectionTest, UnknownBoneFormationUsesProjectedCo
 	const auto * skeleton = addStack(BattleSide::ATTACKER, creatureByName("core:skeletonWarrior"), BattleHex(6, 3), 350);
 	ASSERT_NE(skeleton, nullptr);
 	ASSERT_NO_FATAL_FAILURE(branches(PlayerColor(1)));
+	// Materialize the untouched branches before comparing their full snapshots.
+	for(const auto & board : {parent, sibling})
+	{
+		const auto untouched = board->getForUpdate(skeleton->unitId());
+		ASSERT_EQ(untouched->getCount(), 350);
+		ASSERT_EQ(untouched->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 21);
+	}
 	const auto outside = observation();
 	const auto unit = child->getForUpdate(skeleton->unitId());
 	EXPECT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);

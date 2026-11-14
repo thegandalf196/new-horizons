@@ -126,6 +126,7 @@ def content_patch_files():
         'config/heroes/biographies.json',
         'config/heroes/fafner.json',
         'config/heroes/halon.json',
+        'config/heroes/seth.json',
         'config/heroes/solmyr.json',
         'config/heroes/classSwaps.json',
     ]
@@ -133,6 +134,7 @@ def content_patch_files():
         'config/factions/uniqueBuildings.json',
         'config/factions/primaryRewards.json',
         'config/factions/universalMageGuilds.json',
+        'config/factions/castleCreatureRanks.json',
         'config/factions/towerCreatureRanks.json',
         'config/factions/academyArt.json',
         'config/factions/confluxCreatureRanks.json',
@@ -143,6 +145,7 @@ def content_patch_files():
         'config/creatures/tower.json',
         'config/creatures/livingArmor.json',
         'config/creatures/ghost.json',
+        'config/creatures/mummies.json',
         'config/creatures/conflux.json',
         'config/creatures/experimentalValues.json',
     ]

@@ -23,8 +23,9 @@ class ConfluxGrowthDataTest(unittest.TestCase):
             'modify@6': ['new-horizons:wisp', 'new-horizons:wispUpgrade']})
         overrides = load('Mods/new-horizons/Content/config/creatures/conflux.json')
         self.assertEqual(overrides['core:pixie'], {'upgrades': ['core:sprite']})
-        self.assertNotIn('core:psychicElemental', overrides)
-        self.assertNotIn('core:magicElemental', overrides)
+        for name in ('core:psychicElemental', 'core:magicElemental'):
+            self.assertEqual(overrides[name], {'abilities': {'assimilation': {'type': 'ASSIMILATION'}}})
+            self.assertNotIn(name, self.town['creatures']['modify@6'])
         module = load('Mods/new-horizons/mod.json')
         self.assertIn('config/factions/confluxCreatureRanks.json', module['factions'])
         self.assertIn('config/creatures/conflux.json', module['creatures'])

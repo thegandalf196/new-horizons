@@ -44,7 +44,7 @@ void publishCompletedSpell(ServerCallback & server, const CBattleInfoCallback & 
 			|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit))
 			continue;
 		std::vector<Bonus> previous;
-		const auto previousEffects = unit->getBonuses(CSelector(isEffect));
+		const auto previousEffects = unit->getUnstackedBonuses(CSelector(isEffect));
 		for(const auto & effect : *previousEffects)
 			if(!isSpellshock(effect.get()) && effect->spellCasterOwner == owner)
 				previous.push_back(*effect);

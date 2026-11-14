@@ -34,7 +34,7 @@ void publishSpellDamage(ServerCallback & server, const CBattleInfoCallback & bat
 			|| unit->isInvincible() || battle.battleGetOwner(unit) == owner || !seen.insert(unit->unitId()).second)
 			continue;
 		std::vector<Bonus> previous;
-		const auto previousEffects = unit->getBonuses(CSelector(isSpellshock));
+		const auto previousEffects = unit->getUnstackedBonuses(CSelector(isSpellshock));
 		for(const auto & effect : *previousEffects) previous.push_back(*effect);
 		if(!previous.empty()) packet.toRemove.emplace_back(unit->unitId(), std::move(previous));
 		packet.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{spellshockMarker(owner, battle.battleGetRound())});

@@ -42,7 +42,7 @@ Profile profile(const CGHeroInstance * hero)
 Profile activeProfile(const battle::Unit & unit, PlayerColor owner)
 {
 	Profile result;
-	const auto effects = unit.getBonuses(CSelector(isActive));
+	const auto effects = unit.getUnstackedBonuses(CSelector(isActive));
 	for(const auto & effect : *effects)
 		if(effect->spellCasterOwner == owner)
 		{
@@ -54,7 +54,7 @@ Profile activeProfile(const battle::Unit & unit, PlayerColor owner)
 int32_t retainedPercent(const battle::Unit & unit, PlayerColor owner)
 {
 	int32_t result = 0;
-	const auto effects = unit.getBonuses(CSelector(isRetained));
+	const auto effects = unit.getUnstackedBonuses(CSelector(isRetained));
 	for(const auto & effect : *effects)
 		if(effect->spellCasterOwner == owner)
 			result = std::max(result, effect->val);

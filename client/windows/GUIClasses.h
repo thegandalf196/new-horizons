@@ -92,10 +92,11 @@ class CRecruitmentWindow : public CStatusbarWindow
 	public:
 		const CCreature * creature;
 		si32 amount;
+		const size_t row;
 
 		void select(bool on);
 
-		CCreatureCard(CRecruitmentWindow * window, const CCreature * crea, int totalAmount);
+		CCreatureCard(CRecruitmentWindow * window, const CCreature * crea, int totalAmount, size_t stockRow);
 
 		void clickPressed(const Point & cursorPosition) override;
 		void showPopupWindow(const Point & cursorPosition) override;
@@ -126,6 +127,7 @@ class CRecruitmentWindow : public CStatusbarWindow
 
 	void select(std::shared_ptr<CCreatureCard> card);
 	void buy();
+	void layoutCards();
 	void sliderMoved(int to);
 	static ImagePath getRecruitmentBackground(const CGDwelling * dwelling, int level);
 

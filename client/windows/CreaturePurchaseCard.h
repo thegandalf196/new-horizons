@@ -22,6 +22,7 @@ class CButton;
 class CreatureCostBox;
 class QuickRecruitmentWindow;
 class LRClickableAreaWText;
+class IGameInfoCallback;
 
 class CreaturePurchaseCard : public CIntObject
 {
@@ -68,9 +69,11 @@ private:
 	class CCreatureClickArea : public CIntObject
 	{
 	public:
-		CCreatureClickArea(const Point & pos, const std::shared_ptr<CIntObject> creaturePic, const CCreature * creatureOnTheCard);
+		CCreatureClickArea(const Point & pos, const std::shared_ptr<CIntObject> creaturePic,
+			const CCreature * creatureOnTheCard, IGameInfoCallback * categoryContext);
 		void showPopupWindow(const Point & cursorPosition) override;
 		const CCreature * creatureOnTheCard;
+		IGameInfoCallback * categoryContext;
 
 		// These are obtained by guessing and checking. I'm not sure how the other numbers
 		// used to set positions were obtained; commit messages don't document it

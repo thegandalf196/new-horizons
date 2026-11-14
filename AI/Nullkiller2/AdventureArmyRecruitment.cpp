@@ -3,6 +3,8 @@
 #include "AIGateway.h"
 #include "AIUtility.h"
 #include "Helpers/ArmyFormation.h"
+#include "Helpers/RecruitmentRowPlan.h"
+#include "../../lib/mapObjects/TownRecruitmentOffers.h"
 #include "Helpers/NewHorizonsMuster.h"
 #include "Engine/Nullkiller.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
@@ -26,8 +28,21 @@ void AIGateway::recruitCreatures(const CGDwelling * dwelling, const CArmedInstan
 	{
 		const auto & row = dwelling->creatures[i];
 		if(row.second.empty()) continue;
-		const auto creature = row.second.back();
-		const int available = static_cast<int>(std::min<uint64_t>(row.first, std::numeric_limits<int>::max()));
+		const auto offer = townRecruitmentOffers::query(*dwelling, i, nullkiller->playerID);
+		if(!offer || offer->choices.empty()) continue;
+		auto creature = row.second.back();
+		int available = static_cast<int>(std::min<uint64_t>(offer->available, std::numeric_limits<int>::max()));
+		if(offer->choices != row.second)
+		{
+			const RecruitmentProjection projection{newHorizonsHeroes::commandArmySlots(*recruiter), {}};
+			const auto plan = planRecruitmentRow(*recruiter, hero, *dwelling, *offer, available,
+				cc->getResourceAmount(), projection, false);
+			if(plan)
+			{
+				creature = plan->creature.creID;
+				available = plan->creature.count;
+			}
+		}
 		int count = dwelling->getRecruitmentAmount(creature, cc->getResourceAmount(), available, hero);
 		if(count <= 0) continue;
 		if(hero && hero->getArmyCommand())

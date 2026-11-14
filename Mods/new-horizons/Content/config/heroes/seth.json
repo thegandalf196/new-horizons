@@ -1,0 +1,18 @@
+{
+	"core:nimbus": {
+		"texts": {
+			"name": "Seth",
+			"specialty": {
+				"name": "Ancient Oaths",
+				"tooltip": "Ancient Oaths: Mummy recruitment",
+				"description": "While Seth visits or garrisons an owned Necropolis with a Tomb of Souls, Mummies share its Wight recruitment stock. An upgraded Tomb also offers Royal Mummies. Both retain their ordinary Curse ability; Royal Mummies can shoot without a melee damage penalty."
+			}
+		},
+		"images": {
+			"large": "newHorizons/heroes/SethLarge",
+			"small": "newHorizons/heroes/SethSmall",
+			"specialtyLarge": "SECSKILL:0:39",
+			"specialtySmall": "SECSK32:0:39"
+		}
+	}
+}

@@ -107,6 +107,7 @@
 		"mireHexer": {"percentPerLevel": 5, "maximumPercent": 100}
 	},
 	"additionalSpecialties": {
+		"ancientOathsPolicyVersion": 1,
 		"ordinaryCreatureSpecialties": {
 			"version": 1,
 			"relentlessBarrageDamagePercent": 50,

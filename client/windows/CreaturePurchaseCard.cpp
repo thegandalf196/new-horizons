@@ -76,7 +76,7 @@ void CreaturePurchaseCard::switchCreatureLevel()
 		compactName->setText(creatureOnTheCard->getNamePluralTranslated());
 		updateCompactStats();
 		removeChild(creatureClickArea.get());
-		creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 16), compactPortrait, creatureOnTheCard);
+		creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 16), compactPortrait, creatureOnTheCard, parent->recruitmentContext());
 		creatureClickArea->pos.w = 58;
 		creatureClickArea->pos.h = 64;
 		initCompactCostInfo();
@@ -86,7 +86,7 @@ void CreaturePurchaseCard::switchCreatureLevel()
 	}
 
 	picture = std::make_shared<CCreaturePic>(picture->pos.x - pos.x, picture->pos.y - pos.y, creatureOnTheCard);
-	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(picture->pos.x - pos.x, picture->pos.y - pos.y), picture, creatureOnTheCard);
+	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(picture->pos.x - pos.x, picture->pos.y - pos.y), picture, creatureOnTheCard, parent->recruitmentContext());
 	if(categoryLabel)
 		categoryLabel->setText(newHorizonsCreatureCategoryUI::name(currentCreatureCategory(creatureOnTheCard),
 			GAME ? &GAME->translator() : nullptr));
@@ -161,7 +161,7 @@ void CreaturePurchaseCard::initView()
 
 	picture = std::make_shared<CCreaturePic>(pos.x, pos.y, creatureOnTheCard);
 	background = std::make_shared<CPicture>(ImagePath::builtin("QuickRecruitmentWindow/CreaturePurchaseCard.png"), pos.x-4, pos.y-50);
-	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(pos.x, pos.y), picture, creatureOnTheCard);
+	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(pos.x, pos.y), picture, creatureOnTheCard, parent->recruitmentContext());
 	const auto category = currentCreatureCategory(creatureOnTheCard);
 	const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
 	if(!categoryName.empty())
@@ -192,7 +192,7 @@ void CreaturePurchaseCard::initCompactView()
 
 	compactPortrait = std::make_shared<CAnimImage>(AnimationPath::builtin("TWCRPORT"), creatureOnTheCard->getIconIndex(),
 		Rect(4, 16, 58, 64));
-	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 16), compactPortrait, creatureOnTheCard);
+	creatureClickArea = std::make_shared<CCreatureClickArea>(Point(4, 16), compactPortrait, creatureOnTheCard, parent->recruitmentContext());
 	creatureClickArea->pos.w = 58;
 	creatureClickArea->pos.h = 64;
 	availableAmount = std::make_shared<CLabel>(24, 81, FONT_TINY, ETextAlignment::TOPLEFT, Colors::YELLOW,
@@ -346,9 +346,10 @@ void CreaturePurchaseCard::updateCompactCostInfo(int amount)
 }
 
 CreaturePurchaseCard::CCreatureClickArea::CCreatureClickArea(const Point & position,
-	const std::shared_ptr<CIntObject> creaturePic, const CCreature * creatureOnTheCard)
+	const std::shared_ptr<CIntObject> creaturePic, const CCreature * creatureOnTheCard, IGameInfoCallback * categoryContext)
 	: CIntObject(SHOW_POPUP),
-	creatureOnTheCard(creatureOnTheCard)
+	creatureOnTheCard(creatureOnTheCard),
+	categoryContext(categoryContext)
 {
 	(void)creaturePic;
 	pos.x += position.x;
@@ -359,5 +360,5 @@ CreaturePurchaseCard::CCreatureClickArea::CCreatureClickArea(const Point & posit
 
 void CreaturePurchaseCard::CCreatureClickArea::showPopupWindow(const Point & cursorPosition)
 {
-	ENGINE->windows().createAndPushWindow<CStackWindow>(creatureOnTheCard, true);
+	ENGINE->windows().createAndPushWindow<CStackWindow>(creatureOnTheCard, true, categoryContext);
 }
