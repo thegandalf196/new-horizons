@@ -1,4 +1,4 @@
-"""Compile the actual level-snapshot declaration; never execute a PE or game."""
+"""Guard level-up source/layout contracts and snapshot ABI; no PE or game execution."""
 from pathlib import Path
 import re
 import shutil
@@ -11,12 +11,23 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class LevelSnapshotTest(unittest.TestCase):
     def test_skill_choice_labels_show_only_offered_rank(self):
-        source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
-        choices = source.split('void CLevelWindow::createSkillBox()', 1)[1]
-        self.assertIn('translate("core.skilllev", offeredRank - 1)', choices)
-        self.assertIn('comp->customSubtitle = offeredRankText + "\\n"', choices)
-        self.assertNotIn('new-horizons.levelUp.skill.unlearned', choices)
-        self.assertNotIn('new-horizons.levelUp.skill.rankTransition', choices)
+        choices = (ROOT / 'client/windows/CLevelWindowChoices.cpp').read_text()
+        skill = choices.split('CLevelWindow::skillComponent(size_t index) const', 1)[1].split(
+            'CLevelWindow::perkComponent(size_t index) const', 1)[0]
+        cards = (ROOT / 'client/windows/LevelUpChoiceCards.cpp').read_text()
+        card = cards.split('class CLevelUpSkillCardComponent', 1)[1].split(
+            'class CLevelUpPerkComponent', 1)[0]
+        self.assertIn('const int offeredRank = hero->getSecSkillLevel(skill) + 1', skill)
+        self.assertIn('translate("core.skilllev", offeredRank - 1)', skill)
+        self.assertIn('levelUpPresentation::skillCard(skill, offeredRank, skillName, rankText, rows)', skill)
+        self.assertIn('component->customSubtitle = rankText + "\\n" + skillName', skill)
+        self.assertIn('titleText = offeredRankText + " " + skillName', card)
+        self.assertIn('customSubtitle = offeredRankText + "\\n" + skillName', card)
+        self.assertIn('newHorizonsHeroes::perkRequiredRank(perk["requires"].String()) != offeredRank', skill)
+        self.assertIn('!hero->getPerkState().hasSelection(definition->first, id)', skill)
+        for source in (skill, card):
+            self.assertNotIn('new-horizons.levelUp.skill.unlearned', source)
+            self.assertNotIn('new-horizons.levelUp.skill.rankTransition', source)
 
     def test_native_panel_footer_has_separate_regions(self):
         source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
@@ -31,59 +42,138 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertIn('Point((640 - headerWidth) / 2, 18)', method)
         self.assertIn('Rect(18, 18, headerWidth, 166)', method)
         self.assertIn('CHeroArea>(297, 66', source)
-        self.assertIn('CLabel>(320, 516', source)
-        self.assertIn('CButton>(Point(288, 532)', source)
-        self.assertLess(516 + 6, 532)
-        self.assertLessEqual(532 + 32, 568)
-        self.assertLessEqual(300 + 96 + 84, 516 - 12)
-        # CWindowObject::showAll adds these native DIALGBOX border dimensions.
+        self.assertIn('CLabel>(320, 286', source)
+        self.assertIn('Point(24, 516)', source)
+        self.assertIn('Point(66, 516)', source)
+        button_x, button_y = map(int, re.search(
+            r'ok = std::make_shared<CButton>\(Point\((\d+), (\d+)\)', source).groups())
+        description = tuple(map(int, re.search(
+            r'perkDescription = std::make_shared<CTextBox>\("", Rect\((\d+), (\d+), (\d+), (\d+)\)',
+            source).groups()))
+        self.assertEqual((button_x, button_y), (288, 516))
+        self.assertEqual(description, (44, 454, 552, 52))
+        self.assertEqual(button_x + 32, 640 // 2)
+        self.assertLess(296 + 206, button_y)
+        self.assertLess(304 + 2 * 80 - 16, description[1])
+        self.assertLess(description[1] + description[3], button_y)
+        self.assertLessEqual(button_y + 32, 568)
+        # Native DIALGBOX borders must still fit the minimum logical viewport.
         self.assertLessEqual(640 + 28, 800)
         self.assertLessEqual(568 + 29, 600)
 
-    def test_perk_exposes_distinct_parent_icon_name_and_rank(self):
-        source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
-        component = source.split('class CLevelUpPerkComponent', 1)[1].split('CLevelWindow::CLevelWindow', 1)[0]
+    def test_perk_exposes_distinct_icon_name_and_parent_rank_header(self):
+        cards = (ROOT / 'client/windows/LevelUpChoiceCards.cpp').read_text()
+        component = cards.split('class CLevelUpPerkComponent', 1)[1].split(
+            'namespace levelUpPresentation', 1)[0]
+        choices = (ROOT / 'client/windows/CLevelWindowChoices.cpp').read_text()
+        perk = choices.split('CLevelWindow::perkComponent(size_t index) const', 1)[1].split(
+            'std::string CLevelWindow::perkHeaderText() const', 1)[0]
+        header = choices.split('std::string CLevelWindow::perkHeaderText() const', 1)[1].split(
+            'void CLevelWindow::refreshPerkDescription', 1)[0]
         self.assertIn('setCustomIcon(icon)', component)
-        self.assertIn('CComponent::small', component)
-        self.assertIn('parentSkill->customSubtitle = parentName', component)
-        self.assertIn('translate("core.skilllev", requiredRank - 1)', component)
-        self.assertIn('parentSkill->setHorizontalLayout(228, 34, true)', component)
-        self.assertIn('parentSkill->moveTo(pos.topLeft() + Point(8, 48))', component)
+        self.assertIn('hasSkill ? ComponentType::SEC_SKILL : ComponentType::NONE', component)
+        self.assertIn('hasSkill ? skill : SecondarySkill(0), name, CComponent::medium', component)
+        self.assertIn('Rect(62, 0, 166, 64)', component)
+        self.assertIn('levelUpPresentation::perkCard(', perk)
+        self.assertIn('newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)', perk)
+        self.assertIn('newHorizonsPerkHelp::tierName(perk.requiredRank)', perk)
+        self.assertIn('newHorizonsPerkHelp::tierName(first.requiredRank) + " "', header)
+        self.assertIn('newHorizonsPerkHelp::skillName(hero, first.selection.skillId)', header)
+        window = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
+        self.assertIn('Colors::YELLOW, perkHeaderText()', window)
+        self.assertIn('refreshPerkDescription(page * 4 + static_cast<size_t>(index))', window)
 
-    def test_compact_one_and_two_choice_extents_match_recesses(self):
+    def test_one_two_skill_and_one_to_four_perk_extents_fit_regions(self):
         source = (ROOT / 'client/windows/CLevelWindow.cpp').read_text()
-        choices = source.split('void CLevelWindow::createSkillBox()', 1)[1]
-        perk = source.split('class CLevelUpPerkComponent', 1)[1].split('CLevelWindow::CLevelWindow', 1)[0]
-        background = (ROOT / 'client/render/AssetGenerator.cpp').read_text().split(
-            'AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground()', 1
-        )[1].split('AssetGenerator::CanvasPtr', 1)[0]
-        skill_layout = 'comp->setHorizontalLayout(rerollAvailable ? 156 : 244, 84, true)'
-        self.assertIn(skill_layout, choices)
-        self.assertIn('setHorizontalLayout(244, 46, true)', perk)
-        self.assertIn('pos.h = 84', perk)
-        for left, category, width in ((44, 'skillComps', 'rerollAvailable ? 156 : 244'),
-                                      (352, 'perkComps', '244')):
-            self.assertIn(f'Rect({left}, 300, {width}, static_cast<int>({category}.size()) * 96 - 12)', choices)
-            self.assertIn(f'recessed(Rect({left}, 300 + row * 96, 244, 84))', background)
-            for rows in (1, 2):
-                box_height = rows * 96 - 12
-                for row in range(rows):
-                    self.assertLessEqual(row * 96 + 84, box_height)
-                self.assertLessEqual(300 + box_height, 516 - 12)
-        # Cards must fit before CComponentBox computes its rows; an oversized
-        # first card can create an empty row in the unchanged global algorithm.
-        self.assertNotIn('setHorizontalLayout(284', choices)
-        self.assertNotIn('setHorizontalLayout(284', perk)
-        self.assertLess(choices.index(skill_layout),
+        choices = source.split('void CLevelWindow::createSkillBox()', 1)[1].split(
+            'void CLevelWindow::setCloseOnSelection', 1)[0]
+        cards = (ROOT / 'client/windows/LevelUpChoiceCards.cpp').read_text()
+        skill = cards.split('class CLevelUpSkillCardComponent', 1)[1].split(
+            'class CLevelUpPerkComponent', 1)[0]
+        perk = cards.split('class CLevelUpPerkComponent', 1)[1].split(
+            'namespace levelUpPresentation', 1)[0]
+        for component, width, height in ((skill, 252, 206), (perk, 236, 64)):
+            self.assertIn(f'pos.w = {width}', component)
+            self.assertIn(f'pos.h = {height}', component)
+        self.assertIn('skillComponent(originalIndex)', choices)
+        self.assertIn('perkComponent(originalIndex - skills.size())', choices)
+        self.assertLess(choices.index('skillComponent(originalIndex)'),
                         choices.index('std::make_shared<CComponentBox>(skillComps'))
-        self.assertLessEqual(8 + 228, 244)
-        self.assertLessEqual(48 + 34, 84)
+        self.assertIn('skillComps.size() == 1 ? (640 - 252) / 2 : 44', choices)
+        self.assertIn('Rect(x, 296, skillComps.size() == 1 ? 252 : 552, 206)', choices)
+        self.assertIn('}, 48, 10, 12, 2, false)', choices)
+        self.assertIn('perkComps.size() == 1 ? (640 - 236) / 2 : 56', choices)
+        self.assertIn('const int rows = static_cast<int>((perkComps.size() + 1) / 2)', choices)
+        self.assertIn('Rect(x, 304, perkComps.size() == 1 ? 236 : 528, rows * 80 - 16)', choices)
+        self.assertIn('}, 56, 10, 16, 2, true)', choices)
+        self.assertIn('page * 4 + 4', choices)
+        self.assertIn('std::min<size_t>(perkRows.size(), 4)', skill)
+        # Fixed dimensions exist before the box computes rows; even the maximum
+        # image gap fits both columns, preventing an empty first row.
+        for count in (1, 2):
+            width = 252 if count == 1 else 552
+            self.assertLessEqual(count * 252 + (count - 1) * 48, width)
+            self.assertEqual(2 * (640 - width) // 2 + width, 640)
+            self.assertLessEqual(296 + 206, 516 - 12)
+        for count in (1, 2, 3, 4):
+            rows = (count + 1) // 2
+            width = 236 if count == 1 else 528
+            columns = min(count, 2)
+            self.assertLessEqual(columns * 236 + (columns - 1) * 56, width)
+            box_height = rows * 80 - 16
+            for row in range(rows):
+                self.assertLessEqual(row * 80 + 64, box_height)
+            self.assertLess(304 + box_height, 454)
+        self.assertLessEqual(60 + 184, 252)
+        self.assertLessEqual(58 + 3 * 36 + 5 + 26, 206)
+        self.assertLessEqual(62 + 166, 236)
+
+    def test_rerolls_follow_visible_cards_without_covering_choices_or_footer_controls(self):
+        # Rerolls remain skill-only, preserve authoritative offer indices, and
+        # cannot appear in the mandatory perk modal.
         reroll = (ROOT / 'client/windows/CLevelWindowReroll.cpp').read_text()
-        self.assertIn('CButton>(Point(208, 326 + static_cast<int>(row++) * 96)', reroll)
+        self.assertIn('available && queryID >= 0 && !skills.empty()', reroll)
+        self.assertIn('if(!rerollAvailable || !skillChoiceBox)', reroll)
+        self.assertIn('for(const auto * child : skillChoiceBox->children)', reroll)
+        self.assertIn('dynamic_cast<const CSelectableComponent *>(child)', reroll)
+        self.assertIn('skillCardBounds.push_back(child->pos)', reroll)
+        self.assertIn('for(const auto originalIndex : displayedChoiceOrder)', reroll)
+        self.assertIn('if(originalIndex >= skills.size())', reroll)
+        self.assertIn('const auto & card = skillCardBounds[cardIndex++]', reroll)
+        self.assertIn('requestReroll(originalIndex)', reroll)
+        self.assertIn('rerollButtons.emplace_back(originalIndex, std::move(button))', reroll)
         self.assertIn('AnimationPath::builtin("settingsWindow/button80")', reroll)
-        self.assertEqual(156 + 8 + 80, 244)
-        self.assertEqual(44 + 156 + 8, 208)
-        self.assertEqual(208 + 80, 44 + 244)
+        self.assertIn('skillCardBounds.size() == 1 ? card.x + 10 : card.x + (card.w - button->pos.w) / 2', reroll)
+        self.assertIn('button->moveTo(Point(buttonX, card.y + card.h + 14))', reroll)
+        request = reroll.split('void CLevelWindow::requestReroll(size_t skillIndex)', 1)[1].split(
+            'void CLevelWindow::rerollRequestApplied', 1)[0]
+        self.assertIn('rerollPending || selectionSubmitted || !rerollCallback', request)
+        self.assertLess(request.index('rerollPending = true'), request.index('rerollCallback(skillIndex)'))
+        component_box = (ROOT / 'client/widgets/CComponent.cpp').read_text()
+        self.assertIn('std::max(betweenSubtitlesMin, betweenImagesMin - subtitlesOffset)', component_box)
+        self.assertIn('int freeSpace = (pos.w - rows_row.width) / ((int)rows_row.comps * 2)', component_box)
+        # Source/geometry witnesses, not rendered glyph measurements. Native
+        # button80 is 80x32; paging is 32x32 and IOKAY is 64x32.
+        for count in (1, 2):
+            for icon_width in (32, 42, 44):
+                width = 252 if count == 1 else 552
+                left = (640 - width) // 2
+                distance = max(10, 48 - 2 * ((252 - icon_width) // 2))
+                row_width = count * 252 + (count - 1) * distance
+                free_space = (width - row_width) // (2 * count)
+                current_x = 0
+                for column in range(count):
+                    current_x += free_space + (distance if column else 0)
+                    card_x = left + current_x
+                    button_x = card_x + (10 if count == 1 else (252 - 80) // 2)
+                    button_y = 296 + 206 + 14
+                    self.assertGreaterEqual(button_x, card_x)
+                    self.assertLessEqual(button_x + 80, card_x + 252)
+                    self.assertGreater(button_y, 296 + 206)
+                    self.assertLessEqual(button_y + 32, 568)
+                    for control_x, control_width in ((24, 32), (66, 32), (288, 64)):
+                        self.assertTrue(button_x + 80 <= control_x or control_x + control_width <= button_x)
+                    current_x += 252 + free_space
 
     def test_centering_is_opt_in_and_moves_the_complete_horizontal_group(self):
         header = (ROOT / 'client/widgets/CComponent.h').read_text()

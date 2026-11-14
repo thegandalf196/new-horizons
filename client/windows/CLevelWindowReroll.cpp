@@ -81,17 +81,27 @@ void CLevelWindow::createRerollControls()
 {
 	OBJECT_CONSTRUCTION;
 	rerollButtons.clear();
-	if(!rerollAvailable)
+	if(!rerollAvailable || !skillChoiceBox)
 		return;
-	size_t row = 0;
+	std::vector<Rect> skillCardBounds;
+	for(const auto * child : skillChoiceBox->children)
+		if(dynamic_cast<const CSelectableComponent *>(child))
+			skillCardBounds.push_back(child->pos);
+	size_t cardIndex = 0;
 	for(const auto originalIndex : displayedChoiceOrder)
 	{
 		if(originalIndex >= skills.size())
 			continue;
-		auto button = std::make_shared<CButton>(Point(208, 326 + static_cast<int>(row++) * 96),
+		if(cardIndex >= skillCardBounds.size())
+			break;
+		const auto & card = skillCardBounds[cardIndex++];
+		auto button = std::make_shared<CButton>(Point(),
 			AnimationPath::builtin("settingsWindow/button80"),
-			CButton::tooltip("Reroll", "Reroll this skill once. The other skill and all perk choices remain unchanged."),
+			CButton::tooltip("Reroll", "Reroll this skill once. The other skill offer remains unchanged."),
 			[this, originalIndex] { requestReroll(originalIndex); });
+		// Keep every perk preview clear. A lone card leaves space for central OK.
+		const int buttonX = skillCardBounds.size() == 1 ? card.x + 10 : card.x + (card.w - button->pos.w) / 2;
+		button->moveTo(Point(buttonX, card.y + card.h + 14));
 		button->setTextOverlay("Reroll", FONT_SMALL, Colors::YELLOW);
 		rerollButtons.emplace_back(originalIndex, std::move(button));
 	}
