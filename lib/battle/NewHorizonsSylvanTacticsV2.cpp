@@ -64,7 +64,7 @@ int huntingPackBonus(const CBattleInfoCallback & battle, const battle::Unit * at
 		const auto * friendUnit = battle.battleGetUnitByPos(hex, true);
 		if(friendUnit && friendUnit->unitId() != attacker->unitId() && newHorizonsSylvanTactics::ordinary(friendUnit)
 			&& battle.battleGetOwner(friendUnit) == battle.battleGetOwner(attacker)
-			&& friendUnit->creatureId().toCreature()->faction == FactionID::RAMPART)
+			&& friendUnit->creatureId().toCreature()->getFactionID() == FactionID::RAMPART)
 			return perkValue(commandingHero(battle, attacker), "elvenPrecision", "attackDamagePercent");
 	}
 	return 0;

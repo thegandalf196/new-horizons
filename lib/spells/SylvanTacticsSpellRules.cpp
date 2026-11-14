@@ -19,7 +19,7 @@ namespace
 {
 bool rampart(const battle::Unit * unit)
 {
-	return unit && unit->creatureId().toCreature()->faction == FactionID::RAMPART;
+	return unit && unit->creatureId().toCreature()->getFactionID() == FactionID::RAMPART;
 }
 int dwarfCap(const spells::Mechanics & cast, const battle::Unit * recipient)
 {
