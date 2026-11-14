@@ -14,6 +14,7 @@
 #include "../widgets/MiscWidgets.h"
 #include "CWindowObject.h"
 #include "CreatureBonusStatusPresentation.h"
+#include "CreatureStatLayout.h"
 
 class CCreature;
 class CCommanderInstance;
@@ -21,6 +22,8 @@ class CStackInstance;
 class CStack;
 class UpgradeInfo;
 class CGHeroInstance;
+class AFactionMember;
+class IGameInfoCallback;
 
 class UnitView;
 class CTabbedInt;
@@ -145,32 +148,20 @@ class CStackWindow : public CWindowObject
 
 	class MainSection : public CWindowSection
 	{
-		enum class EStat : size_t
-		{
-			ATTACK,
-			DEFENCE,
-			SHOTS,
-			DAMAGE,
-			HEALTH,
-			HEALTH_LEFT,
-			SPEED,
-			INITIATIVE,
-			MANA,
-			LEADERSHIP,
-			RANK,
-			AFTER_LAST
-		};
+		using EStat = creatureStatLayout::Stat;
 
 		std::shared_ptr<CCreaturePic> animation;
 		std::shared_ptr<CPicture> deadCommanderOverlay;
 		std::shared_ptr<LRClickableArea> animationArea;
 		std::shared_ptr<CLabel> name;
-		std::array<std::shared_ptr<CIntObject>, 11> statIcons;
+		std::array<std::shared_ptr<CIntObject>, creatureStatLayout::STAT_COUNT> statIcons;
 		std::shared_ptr<CPicture> icons;
 		std::shared_ptr<MoraleLuckBox> morale;
 		std::shared_ptr<MoraleLuckBox> luck;
 		std::shared_ptr<LRClickableAreaWText> rankArea;
 		std::shared_ptr<LRClickableAreaWText> leadershipArea;
+		std::shared_ptr<LRClickableAreaWText> defenseArea;
+		std::array<std::shared_ptr<LRClickableAreaWText>, 3> supplementalAreas;
 		std::optional<int> leadershipEfficiencyPercent;
 
 		std::vector<std::shared_ptr<CLabel>> stats;
@@ -180,9 +171,14 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<CLabel> expLabel;
 		bool showNewHorizonsStats = false;
 
+		void initializeStatMetadata();
+		void initializeStatIcons(bool showLeadership, bool showRank);
+		void addUnitStats(const CCreature & creature, const CStackInstance & armyStack, const CStack * battleStack, int damageMultiplier);
+		void addSupplementalStats(const CStackInstance & armyStack, const CStack * battleStack, const CGHeroInstance * hero);
 		void addStatLabel(EStat index, int64_t value1, int64_t value2);
 		void addStatLabel(EStat index, int64_t value);
 		void addStatLabel(EStat index, const std::string & value);
+		void addDefenseReadout(const AFactionMember & creature, const AFactionMember & subject, bool ranged);
 		void addLeadershipReadout(int rowY, const CGHeroInstance * hero,
 			const CStack * stack, CreatureID creature, int64_t count);
 		void drawLeadershipBadge(Canvas & canvas);
@@ -190,8 +186,8 @@ class CStackWindow : public CWindowObject
 
 		static ImagePath getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank);
 
-		std::array<std::string, 11> statNames;
-		std::array<std::string, 11> statFormats;
+		std::array<std::string, creatureStatLayout::STAT_COUNT> statNames;
+		std::array<std::string, creatureStatLayout::STAT_COUNT> statFormats;
 	public:
 		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank);
 		void show(Canvas & canvas) override;
@@ -234,6 +230,7 @@ class CStackWindow : public CWindowObject
 
 	void resolveCategory();
 	void initSections();
+	void initBonusesSection();
 	void initBonusesList();
 	void appendInnateAbilityCards(const CStack * stack, const CStackInstance * strategic, const CCreature * creature);
 	void submitSelection();
@@ -249,7 +246,7 @@ public:
 	CStackWindow(const CStack * stack, bool popup);
 
 	// for non-existing stacks, e.g. recruit screen
-	CStackWindow(const CCreature * creature, bool popup);
+	CStackWindow(const CCreature * creature, bool popup, const IGameInfoCallback * categoryContext = nullptr);
 
 	// for normal stacks in armies
 	CStackWindow(const CStackInstance * stack, bool popup);

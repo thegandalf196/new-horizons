@@ -13,6 +13,20 @@ namespace battleRoundHealing
 {
 namespace
 {
+void publishRecoveryAnimation(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
+	const battle::Unit & unit)
+{
+	// Hydra regeneration and First Aid share this existing recovery visual.
+	BattleAnimationPlayed animation;
+	animation.battleID = battle.getBattle()->getBattleID();
+	animation.animation = AnimationPath::builtin("SP12_.DEF");
+	animation.sound = AudioPath::builtin("REGENER");
+	animation.transparency = 0.5f;
+	animation.targets.push_back({static_cast<int32_t>(unit.unitId()), unit.getPosition()});
+	animation.deferred = false;
+	gameHandler.sendAndApply(animation);
+}
+
 void publishRegeneration(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
 	const battle::Unit & unit, BattleTriggerEffect & effect)
 {
@@ -33,14 +47,7 @@ void publishRegeneration(CGameHandler & gameHandler, const CBattleInfoCallback &
 	update.healthDelta = receipt.healedHealthPoints;
 	changed.changedStacks.push_back(std::move(update));
 	gameHandler.sendAndApply(changed);
-	BattleAnimationPlayed animation;
-	animation.battleID = changed.battleID;
-	animation.animation = AnimationPath::builtin("SP12_.DEF");
-	animation.sound = AudioPath::builtin("REGENER");
-	animation.transparency = 0.5f;
-	animation.targets.push_back({static_cast<int32_t>(unit.unitId()), unit.getPosition()});
-	animation.deferred = false;
-	gameHandler.sendAndApply(animation);
+	publishRecoveryAnimation(gameHandler, battle, unit);
 	BattleLogMessage message;
 	message.battleID = changed.battleID;
 	MetaString line;
@@ -60,13 +67,16 @@ void afterRound(CGameHandler & gameHandler, const CBattleInfoCallback & battle)
 		auto state = unit->acquireState();
 		const auto before = state->getAvailableHealth();
 		if(!newHorizonsSpecialtyEvents::applyRound(battle, *state, battle.battleGetRound())) continue;
+		const auto recoveredHealth = state->getAvailableHealth() - before;
 		BattleUnitsChanged changed;
 		changed.battleID = battle.getBattle()->getBattleID();
 		UnitChanges update(unit->unitId(), UnitChanges::EOperation::UPDATE);
 		update.data = state->save();
-		update.healthDelta = state->getAvailableHealth() - before;
+		update.healthDelta = recoveredHealth;
 		changed.changedStacks.push_back(std::move(update));
 		gameHandler.sendAndApply(changed);
+		if(recoveredHealth > 0)
+			publishRecoveryAnimation(gameHandler, battle, *unit);
 	}
 }
 

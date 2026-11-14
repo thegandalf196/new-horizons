@@ -37,25 +37,21 @@ def main() -> None:
 
     ui = source("client/windows/GUIClasses.cpp")
     header = source("client/windows/GUIClasses.h")
-    recruitment = ui.split("void CRecruitmentWindow::updateLeadershipProposalHelp", 1)[1].split(
+    # The simple purchase dialog intentionally omits the retired destination
+    # row. Its selected creature still uses normal authoritative slot checks.
+    recruitment = ui.split("CRecruitmentWindow::CCreatureCard::CCreatureCard", 1)[1].split(
+        "CSplitWindow::CSplitWindow", 1
+    )[0]
+    recruitment_header = header.split("class CRecruitmentWindow", 1)[1].split("class CObjectListWindow", 1)[0]
+    for removed in ("leadershipHelp", "leadershipLimit", "updateLeadershipProposalHelp"):
+        assert removed not in recruitment and removed not in recruitment_header, removed
+    select = ui.split("void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)", 1)[1].split(
         "void CRecruitmentWindow::close", 1
     )[0]
-    require(header, "std::shared_ptr<LRClickableAreaWText> leadershipHelp", "existing recruitment-row help area")
-    require(ui, "Rect(63 + layoutOffsetX, 207, 360, 14)", "native recruitment Leadership row hitbox")
-    require(recruitment, "leadershipHelp->text.clear()", "stale recruitment help clearing")
-    require(recruitment, "leadershipHelp->hoverText.clear()", "stale recruitment hover clearing")
-    require(recruitment, "if(!selected || !hero)", "no-selection/no-hero gate")
-    require(recruitment, "if(!capacity)", "no-capacity gate")
-    require(recruitment, "leadershipHelp->disable()", "empty recruitment help is disabled")
-    require(recruitment, "leadershipHelp->enable()", "available recruitment help is enabled")
-    require(recruitment, "getNewHorizonsLeadershipProposalText(*capacity, existing, proposedCount)",
-            "requested recruitment proposal readback")
-    slider = ui.split("void CRecruitmentWindow::sliderMoved(int to)", 1)[1].split("CSplitWindow::CSplitWindow", 1)[0]
-    require(slider, "updateLeadershipProposalHelp(to)", "slider refresh")
-    select = ui.split("void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)", 1)[1].split(
-        "void CRecruitmentWindow::updateLeadershipProposalHelp", 1
-    )[0]
-    require(select, "updateLeadershipProposalHelp(0)", "deselection clears proposal help")
+    require(select, "UIHelper::recruitmentPosition(dst, card->creature->getId(), maxAmount)",
+            "ordinary recruitment position admission")
+    require(select, "if(!slot.validSlot() && !card->creature->warMachine.hasValue())",
+            "full-army admission remains guarded")
 
     split = ui.split("void CSplitWindow::updateLeadershipReadback()", 1)[1].split("void CSplitWindow::apply()", 1)[0]
     require(header, "initialLeftAmount", "split original left count")

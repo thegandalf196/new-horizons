@@ -3954,11 +3954,11 @@
     },
     "client/windows/GUIClasses.h": {
       "functions": [],
-      "rationale": "Complete 516-line header reviewed: window classes, nested classes, field initializers and declarations only, no bodies. CSplitWindow declarations moved to its separately inventoried header. Remaining recoveries are two vector/image default arguments in CObjectListWindow declarations.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-MANUAL",
-      "sha256": "1662f6e188a3efae4f9966bf78a72539e025f9624061b6970f3273c905cfb6b4",
-      "previous_review": "IR-QUICK-STUDY-SAME-ID-UI-CONFIRMATION-SOURCE-20261101",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_ENGINE_RUNTIME_NATIVE_RENDERED_UNRUN",
+      "rationale": "Complete 511-line header is the reviewed 516-line declaration-only header minus five obsolete recruitment presentation members/declarations. Classes, nested classes, field initializers and declarations contain no callable bodies. The same two vector/image default arguments in CObjectListWindow declarations cause parser recovery at lines 192-193; complete callable inventory remains empty.",
+      "review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
+      "sha256": "0ee5577512432dfae941b188c573d759b26928a733cac2501d5428683db0ee35",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-MANUAL",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_NATIVE_RENDERED_UNRUN",
       "review_scope": "Complete exact-file callable inventory only; no numeric-growth, C++ or runtime acceptance.",
       "confirmation_predecessor_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101"
     },
@@ -18147,12 +18147,12 @@
   "schema": 1,
   "units": {
     "client/windows/CCreatureWindow.cpp::CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank) : CWindowSection(owner, getBackgroundName(showExp, showArt, showNewHorizonsStats, showRank), yOffset), showNewHorizonsStats(showNewHorizonsStats)#1": {
-      "lines": 263,
-      "sha256": "7d3b8047f9762c94731fff6cfafb85132fba11d20417c7b2ff598313119c1658",
+      "lines": 146,
+      "sha256": "97681d3b30c3d47d1804b874d5d6dd955af4eb04c72fecd922ea2cc61c06a2ed",
       "kind": "exception",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
       "review_category": "legacy-signature-shrink",
-      "rationale": "1661 to1599 and MainSection325 to263 by extracting shared Leadership details/portrait rendering. initSections body is byte-identical; stale metadata repair adds no behavior.",
+      "rationale": "The MainSection constructor shrinks 263 to 146 physical lines through cohesive stat-row extraction; row and portrait ownership remain synchronous and explicit.",
       "deferral": "Before more MainSection stat construction, extract the next stat-row group with explicit owner/readout inputs. Preserve layout order, single efficiency calculation, callbacks and portrait lifetime; exact263 only. Prior stricter obligations remain in inherited_deferral, where present.",
       "legacy_shrink_provenance": {
         "base_revision": "f86a363b65005005fde9d6d53151ab97d7f03fa4",
@@ -18166,8 +18166,9 @@
       },
       "inherited_deferral": "Owner: ui_developer. Root-approved urgent correctness exception limited to this exact same-size predicate-routing edit; no size-ceiling increase or future-growth allowance. Before further substantive change to this constructor, extract the portrait Wiki interaction region into a focused WikiCreatureNavigation presentation owner taking the native rectangle, immutable creature identity and Commander-instance state; preserve the existing portrait rendering owner. Acceptance: Characterize ordinary/Ghost/Living Armor/war-machine and null/internal/Commander navigation, exact-key destination, raw-pointer ownership lifetime and unchanged right-click help. Verify native portrait geometry and left/right/F1 behavior. Shrinking signature successor: UI developer: extract only stat-row preparation/widget assembly into a typed creature-stat presentation helper on the next substantive extension, preserving original parent/insertion order. Keep the artifact-placement block in its documented construction frame; verify both native and NH panels, rank, commander and artifact layout. The248-line allowance is exact shrinking legacy identity, not a new oversized-unit waiver.",
       "owner": "ui_developer",
-      "review_scope": "Only exact source organization, measured bounds and stated responsibility. Native/rendered/performance/gameplay/publication acceptance not established.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN"
+      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS"
     },
     "client/windows/GUIClasses.cpp::CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_, int leftAmount_, int rightAmount_, CSplitWindowOwner leftOwnerInfo, CSplitWindowOwner rightOwnerInfo) : CWindowObject(0, splitDialogBackgroundImage()), callback(callback_), leftAmount(leftAmount_), rightAmount(rightAmount_), initialLeftAmount(leftAmount_), initialRightAmount(rightAmount_), splitCreature(creature), leftArmy(leftOwnerInfo.army), rightArmy(rightOwnerInfo.army), leftSlot(leftOwnerInfo.slot), rightSlot(rightOwnerInfo.slot), leftMin(leftMin_), rightMin(rightMin_)#1": {
       "lines": 101,
@@ -20728,14 +20729,14 @@
       "combined_predecessor_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
       "deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 730,
+      "lines": 736,
       "owner": "engine_engineer",
-      "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1",
-      "rationale": "Mechanical addition of the pure FortCompactCreatureLayout header to the existing client header list; one registration only, no target, compile, link or build-control changes. Prior source-list extraction deferral remains unchanged.",
-      "review": "IR-FORT-COMPACT-SIDE-LAYOUT-INDEPENDENT-20261113-V1",
-      "review_scope": "Exact affected source organization only; no native/rendered/performance or publication approval; no future growth credit.",
-      "review_status": "INDEPENDENT_SCOPED_EXACT_SOURCE_ORGANIZATION_REVIEWED",
-      "sha256": "ec34a4367217d9a62d48256b17a68274bd66f412fb04583230291eb101167984",
+      "previous_review": "IR-FORT-COMPACT-SIDE-LAYOUT-INDEPENDENT-20261113-V1",
+      "rationale": "Six mechanical source/header registrations for the extracted creature-stat presentation and panel generator; existing target flags, linkage and build control are unchanged.",
+      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "d5f95fa447c0e49ea1144a4bd81229aacb3fa52fc54f2fdfa44ffb7781ef9449",
       "previous_exact_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
@@ -22024,12 +22025,12 @@
     },
     "client/render/AssetGenerator.cpp": {
       "kind": "exception",
-      "lines": 2798,
+      "lines": 2594,
       "owner": "ui_developer",
-      "rationale": "HEAD2798 lines removes five obsolete fixed perk recesses from the level-up background. Affected createNewHorizonsLevelUpBackground is a complete27-line drawing function; its lambda is rendering only. No production changes in this migration.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
-      "review_scope": "Metadata-only repair of exact unchanged HEAD debt. Source-organization bound only; not native/rendered/gameplay/balance/publication approval.",
-      "sha256": "cf038d4a649ea397419ef8b1d2a72bda9e8eeaee02e05351bf5c63bc0c10c848",
+      "rationale": "Creature-panel, section, glyph generation and their ordered image registration family are cohesively extracted into AssetGeneratorCreaturePanel. Main owner shrinks 2798 to 2594 physical lines; initialize delegates that family once in the original registration position.",
+      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
+      "sha256": "c4647ade4b61a75d2cdc85f23eac95ac343429d8d0f4b7ec17f365359b68408b",
       "review_history": [
         {
           "kind": "legacy",
@@ -22039,7 +22040,7 @@
           "review_scope": "numeric-legacy-debt-freeze-only"
         }
       ],
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "deferral": "Before further affected artwork-generation growth, extract the next cohesive panel background generator. Preserve native geometry, external assets, texture origin and rendered comparison; exact current file freeze only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "next_bounded_extraction": {
         "owner": "ui_developer with artist reviewing asset geometry and engine_engineer reviewing resource ownership",
@@ -22060,7 +22061,8 @@
         ],
         "acceptance": "Compare admitted/refused portrait recipes, bounds/alpha/native pixel composition and resource lookup; later verify normal distribution rendering. Measure source and destination, preserving public resource/provenance obligations."
       },
-      "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy."
+      "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
+      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT"
     },
     "client/render/AssetGenerator.cpp::AssetGenerator::AnimationLayoutMap AssetGenerator::createAdventureOptionsButton(const ImagePath & overlay)#1": {
       "kind": "legacy",
@@ -22106,15 +22108,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "bc19bb5cdef3af70df8b0b4f1a7e6fdd9a36c5651b9017bfdde4e733761ac3e9"
-    },
-    "client/render/AssetGenerator.cpp::AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanelElement(CreatureInfoPanelElement element) const#1": {
-      "kind": "legacy",
-      "lines": 88,
-      "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 88 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c24adcd943df2293379d199045274654ab8b8bf92a563de4675577a4dca15915"
     },
     "client/render/AssetGenerator.cpp::AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() const#1": {
       "kind": "exception",
@@ -22201,12 +22194,12 @@
     },
     "client/render/AssetGenerator.cpp::void AssetGenerator::initialize()#1": {
       "kind": "legacy",
-      "lines": 247,
+      "lines": 228,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 244 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.\n\nComplete 247-line body and registration lambdas read. It clears generated cache/menu metadata, registers point-blank/menu/Academy/recipe portraits/map layers and multiple dialog/panel/icon/player-color families, builds animation layouts, then registers palette-shifted sprites. Much is mechanical registration, but reset, dependency ordering and family-specific factory construction are handwritten responsibilities. Freeze exact existing body; registry character does not grant unlimited ceiling growth.",
-      "review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "review_scope": "Complete independent reading of the exact listed source unit and its responsibility boundaries at f86a363b65005005fde9d6d53151ab97d7f03fa4; unchanged pre-existing bytes only, no future growth allowance.",
-      "sha256": "5c7124cac70909e18e17772f27f3b2c523990417021f23f862089355bb0d04af",
+      "rationale": "The coherent creature-panel image registration family is extracted into its actual generator owner, preserving exact deferred factory keys and original registration position. The initializer shrinks 247 to 228 physical lines; cache reset, remaining ordering and callbacks stay explicit. Existing further-extraction obligations remain binding; no new ceiling or future growth allowance.",
+      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
+      "sha256": "afdc696d35906d30185bf0142b4993302c3c793d39a62a8ff56fd824c8a61656",
       "review_history": [
         {
           "kind": "legacy",
@@ -22216,7 +22209,7 @@
           "review_scope": "numeric-legacy-debt-freeze-only"
         }
       ],
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "deferral": "Next bounded extraction (ui_developer, spans [[61, 153]]): Before Academy/portrait registration expansion, extract one cohesive family registration routine with its real generator owner; leave cache reset and ordered orchestration explicit. Interface: Narrow typed image/animation registration sinks and existing recipe inputs; preserve capture-by-value semantics for deferred factories and all resource keys. Invariants: Same complete key set and duplicate/override behavior; Deferred functors outlive local recipe variables safely; Cache reset occurs before registration; palette registration stays last; Ordinary builds need no private asset inputs. Acceptance: Compare complete generated-image/animation membership and recipe outputs/refusals before and after; measure initializer, family routine and destination. No meaningless forwarding or textual include fragments.",
       "next_bounded_extraction": {
         "owner": "ui_developer",
@@ -22235,7 +22228,8 @@
           "Ordinary builds need no private asset inputs"
         ],
         "acceptance": "Compare complete generated-image/animation membership and recipe outputs/refusals before and after; measure initializer, family routine and destination. No meaningless forwarding or textual include fragments."
-      }
+      },
+      "previous_review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110"
     },
     "client/render/CDefFile.cpp::void CDefFile::loadFrame(size_t frame, size_t group, IImageLoader &loader) const#1": {
       "kind": "legacy",
@@ -22551,14 +22545,14 @@
     "client/windows/CCreatureWindow.cpp": {
       "deferral": "Before more MainSection stat construction, extract the next stat-row group with explicit owner/readout inputs. Preserve layout order, single efficiency calculation, callbacks and portrait lifetime; exact263 only. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 1599,
+      "lines": 1457,
       "owner": "ui_developer",
-      "previous_review": "IR-GHOST-WIKI-VISIBILITY-URGENT-ROUTING-20261028-V1",
-      "rationale": "1661 to1599 and MainSection325 to263 by extracting shared Leadership details/portrait rendering. initSections body is byte-identical; stale metadata repair adds no behavior.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "review_scope": "Only exact source organization, measured bounds and stated responsibility. Native/rendered/performance/gameplay/publication acceptance not established.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "eeefdb87e3544ee1fe1062e59ef0702f8c3da37305d66626f3a71911b9782097",
+      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "rationale": "Creature stat row assembly moves into the focused CreatureStatPresentation owner, supplemental values into a pure shared readout, and native geometry into a value header. Optional bonus-list construction also moves to a cohesive private stage. Main owner shrinks 1599 to 1457 physical lines; query/context and widget lifetime remain explicit.",
+      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "71bfd4ee83cb74edadfd95cccf4f02fa09beddbb33fabf435523327e9246173f",
       "completed_p_predecessor": {
         "kind": "legacy",
         "lines": 1615,
@@ -22566,7 +22560,7 @@
         "review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
         "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY"
       },
-      "inherited_deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Current UI boundary: before further substantive bonus-list growth, ui_developer must move the next coherent remaining bonus-status row assembly into the existing CreatureBonusStatusPresentation value owner, consuming a synchronous read-only stack/status view and returning ordered text/icon rows without retaining callbacks or widgets. Preserve icon indexing, deduplication, row order, current/legacy status and native/rendered refresh parity; the current182-to146 method and1683-to1647 file reductions are ratchets, not regrowth credit. Before further substantive bonus-list growth, extract the next coherent remaining bonus-group/status selection into its existing focused owner, preserving effective source selection, grouping, sorting, deduplication, row/icon order, current/legacy policy and native/rendered refresh parity."
+      "inherited_deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Current UI boundary: before further substantive bonus-list growth, ui_developer must move the next coherent remaining bonus-status row assembly into the existing CreatureBonusStatusPresentation value owner, consuming a synchronous read-only stack/status view and returning ordered text/icon rows without retaining callbacks or widgets. Preserve icon indexing, deduplication, row order, current/legacy status and native/rendered refresh parity; the current182-to146 method and1683-to1647 file reductions are ratchets, not regrowth credit. Before further substantive bonus-list growth, extract the next coherent remaining bonus-group/status selection into its existing focused owner, preserving effective source selection, grouping, sorting, deduplication, row/icon order, current/legacy policy and native/rendered refresh parity.\n\nOwner: UI developer. Interface/acceptance: retain focused section composition and extracted read-only Order indicators; any later section-builder extraction must preserve unit lifetime, tooltip, native layout and rendered refresh behavior.\nBefore substantive initSections growth, extract one optional section-factory stage taking current read-only UnitView and callback availability and returning owned section/height. Preserve section order, commander versus battle branches, parent capture and bounds; characterize pregame, battle, commander and ordinary windows. This83-line whitespace-only exception grants no growth credit."
     },
     "client/windows/CCreatureWindow.cpp::CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset) : CWindowSection(owner, ImagePath::builtin(\"stackWindow/spell-effects\"), yOffset)#1": {
       "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement.",
@@ -22609,25 +22603,6 @@
       "review_scope": "Exact private047bb composition maintained function span 1299-1444 (146 physical lines, including any template declaration); bounded cohesion/existing-hotspot review only. No future growth, native, rendered or actual-Main gate claim. IR-GENIE-WISHES-PRESENTATION-SOURCE-20261101: exact shrinking Wishes panel source; no gameplay, native, rendered or playable acceptance claim. Independent bounded client source organization review versus public2488cb6bdc17eabddb04c664e9ada09faab9c1bb only. No rendered/native acceptance, global gate, future growth credit or unrelated waiver.",
       "review_status": "INDEPENDENT_BOUNDED_SOURCE_ORGANIZATION_ONLY",
       "sha256": "3579acc8fafeadc173c17f6a7ea1b12f12cc74363be4c636f4df45869cb179b2"
-    },
-    "client/windows/CCreatureWindow.cpp::void CStackWindow::initSections()#1": {
-      "kind": "exception",
-      "lines": 83,
-      "owner": "ui_developer",
-      "rationale": "Public81to83 is exactly two additional blank lines before commander section; executable token sequence is unchanged. Review permits only this exact existing presentation assembly body, no additional logic or growth. The rest of the Leadership readout is in its focused owner and source/file review remains separate.",
-      "review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
-      "review_scope": "Only these exact public ec360 to current growth records. No production changes, raised thresholds, unrelated record repair, native/rendered/performance acceptance or publication authority.",
-      "sha256": "f9c6859e27fb1763fa51f3e64fb0f8b100a83a867cf40ba5219fc1c2583266e5",
-      "completed_p_predecessor": {
-        "kind": "exception",
-        "lines": 84,
-        "sha256": "85499c4a6323eeddf003def2ca1fd1aef428301dfd4081c716a8b61bdb22b9ce",
-        "review": "IR-ROYAL-STANDARD-ENTITLEMENT-SOURCE-20261026"
-      },
-      "inherited_deferral": "Owner: UI developer. Interface/acceptance: retain focused section composition and extracted read-only Order indicators; any later section-builder extraction must preserve unit lifetime, tooltip, native layout and rendered refresh behavior.",
-      "review_status": "INDEPENDENT_EXACT_PUBLIC_BASE_DELTA_SOURCE_ORGANIZATION_REVIEWED",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "deferral": "Before substantive initSections growth, extract one optional section-factory stage taking current read-only UnitView and callback availability and returning owned section/height. Preserve section order, commander versus battle branches, parent capture and bounds; characterize pregame, battle, commander and ordinary windows. This83-line whitespace-only exception grants no growth credit."
     },
     "client/windows/CExchangeWindow.cpp::CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2, QueryID queryID) : CWindowObject(PLAYER_COLORED | BORDERED, ImagePath::builtin(isQuickExchangeLayoutAvailable() ? QUICK_EXCHANGE_BG : (ENGINE->isRoeData() ? \"TRADE\" : \"TRADE2\"))), controller(hero1, hero2)#1": {
       "deferral": "Before expanding this constructor, extract optional quick-exchange control construction into a narrow initialization method, preserving resource gating, positions, callback lifetimes, registration and owner states. Keep219 as the ceiling until that reduction; source-wiring tests do not establish rendered optional-resource or server-execution acceptance. Before any further constructor help expansion extract per-hero explanation binding to a coherent exchange-hero presentation method; preserve both hero identities, components, transfer handlers and quick/classic geometry. This exact +2 exception grants no continuing growth.",
@@ -22880,15 +22855,15 @@
     "client/windows/GUIClasses.cpp": {
       "deferral": "UI developer owns extraction of CUniversityWindow/CUnivConfirmWindow and cohesive helpers into a focused UniversityWindow component before expansion. Preserve interfaces, original art/layout and command submission. Acceptance requires local compile, existing regression coverage and rendered offer/acquired rank, tuition/help, affordability/payment, cancellation and close checks; decrease this exact3066-line baseline. No unrelated GUI extraction is approved. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. UI developer: before further affected growth, extract coherent secondary-Skill slot refresh consuming owned descriptions and actual hero context; preserve saved/current text, original rank and event ownership with native and rendered parity. UI developer: before further substantive garrison-dialog growth, extract cohesive CGarrisonWindow construction/update/holdsGarrison into its focused owner; preserve CArmedInstance/hero inputs, original panels, CGarrisonInt ownership and validated transfer callbacks. Verify neutral blank marker, all valid player crests, town visiting hero portrait, split/transfer and normal close; retain all earlier deferrals and decreasing bounds. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "legacy",
-      "lines": 2659,
+      "lines": 2603,
       "owner": "ui_developer",
       "preceding_review": "IR-SYLVAN-CAPTURED-ICONS-LINEAGE-EXACT-20261029",
-      "previous_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "Exact actual-current EstatesGP c5ce +UI160e projected source only; excludes AI pricing holds, final server CMake insertion, native/rendered/gameplay/platform/publication acceptance. No future growth permission.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "fe2d31c85828c2693cacbe84c250b7a2bea5b3528e777e57b833fae9beeccbd9",
+      "previous_review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
+      "rationale": "Recruitment presentation removes obsolete category/capacity help while one popup constructor now receives its actual saved callback context. File still shrinks from the preceding 2659-line owner to 2603; existing recruitment behavior and extraction obligations remain binding.",
+      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "review_scope": "Exact measured source organization only; native, rendered, performance and publication acceptance remain separate. Existing obligations and default thresholds are unchanged.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "b59c55b470f77fb4f07f0eb0f404146cce7ae1b7cab18e6eb0adc3da07876dcf",
       "completed_p_predecessor": {
         "kind": "exception",
         "lines": 2699,
@@ -22926,12 +22901,14 @@
     },
     "client/windows/GUIClasses.cpp::void CRecruitmentWindow::availableCreaturesChanged()#1": {
       "kind": "legacy",
-      "lines": 119,
+      "lines": 107,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 119 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "4313a0ac231d88517517755633e3a8ae056df0b34fc52c9c567bdf4ebe82d112"
+      "rationale": "Recruitment presentation removes obsolete category headers; the existing function shrinks from 119 to 107 physical lines. Actual creature grouping, cards, selection and recruitment callbacks retain their owner. Exact reduction only; no future growth allowance.",
+      "review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
+      "review_scope": "Maintained parser span 495-601, 107 physical lines. No native or rendered acceptance.",
+      "sha256": "44f2c7c0b0d0a89d16cfabddd2a64b81576210f56d95fb734c9b1f3dc7416cd9",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_NATIVE_RENDERED_UNRUN"
     },
     "client/windows/GUIClasses.cpp::void CUniversityWindow::CItem::update()#1": {
       "deferral": "Owner: ui_developer. Before further university item-presentation growth, extract immutable Skill name/help/rank row preparation using existing NewHorizonsPerkHelp and explicit owner-hero context. Keep widget updates and purchases in CItem; preserve cost/eligibility, tooltip/hover agreement, historical/current labels and callback lifetime. Require context-label and purchase/UI regression checks. Exact93-line existing-hotspot renewal below150, no future allowance.",
@@ -22947,15 +22924,15 @@
     },
     "client/windows/GUIClasses.h": {
       "kind": "legacy",
-      "lines": 516,
+      "lines": 511,
       "owner": "ui_developer",
       "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "Exact Learning86f +header70b982 composition against actual current Estates/Warcasting/Wisdom. No gameplay, native, rendered or publication proof and no future growth allowance.",
-      "sha256": "1662f6e188a3efae4f9966bf78a72539e025f9624061b6970f3273c905cfb6b4",
+      "review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
+      "review_scope": "Exact stable recruitment presentation reduction only; no growth allowance, native, rendered or publication acceptance. All existing extraction obligations remain binding.",
+      "sha256": "0ee5577512432dfae941b188c573d759b26928a733cac2501d5428683db0ee35",
       "deferral": "Prior CLevelWindow declaration extraction requirement is discharged by exact102-line focused header, unchanged80-line declaration and all4directCPPconsumers. Shared header643\u2192567 decreases76 from actual pre-Learning; remaining dialog declarations stay coherent, complete zero-inline-body manual inventory retained. Continue extracting a touched dialog class before substantive shared-header growth; no future growth credit.",
-      "previous_review": "IR-QUICK-STUDY-SAME-ID-UI-CONFIRMATION-SOURCE-20261101",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_NATIVE_RENDERED_UNRUN",
       "confirmation_predecessor_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "completed_p_predecessor": {
         "kind": "review",
@@ -30129,6 +30106,18 @@
       "rationale": "123-line stat construction remains a cohesive seven-stat presentation stage in a380-line module. Adds only Conflux compact-side rectangle selection, symbol fallback with complete hover names, and exact-font-height alignment. Shared pure15-line layout and bounded construction-time font/value measurements keep rendering and existing interaction handlers unchanged. Existing119-line stage grows4 lines; below150 ceiling; no authority or mechanics changes.",
       "review_scope": "Exact source cohesion/spans reviewed; no native/rendered acceptance or future growth credit.",
       "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1"
+    },
+    "client/render/AssetGeneratorCreaturePanel.cpp::AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanelElement(CreatureInfoPanelElement element) const#1": {
+      "kind": "review",
+      "lines": 88,
+      "owner": "ui_developer",
+      "rationale": "Existing fixed-section creature panel painter moves cohesively with the complete panel/glyph generation owner; its exact 88-line body remains below the 150-line ceiling. Shared row geometry replaces duplicated constants; no future growth permission.",
+      "review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "review_scope": "Exact moved coherent painter responsibility and 88-line bound only; no runtime acceptance.",
+      "sha256": "64fc379dbee7411b220e30e72dea2d43566233f5199cca15b0af5dfcdc1f53ef",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "moved_from": "client/render/AssetGenerator.cpp::AssetGenerator::CanvasPtr AssetGenerator::createCreatureInfoPanelElement(CreatureInfoPanelElement element) const#1"
     }
   }
 }

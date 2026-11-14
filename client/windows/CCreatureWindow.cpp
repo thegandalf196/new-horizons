@@ -96,6 +96,7 @@ public:
 	const CStackInstance * stackNode;
 	const CStack * stack;
 	const CGHeroInstance * owner;
+	const IGameInfoCallback * categoryContext;
 
 	// temporary objects which should be kept as copy if needed
 	std::optional<CommanderLevelInfo> levelupInfo;
@@ -113,6 +114,7 @@ public:
 		stackNode(nullptr),
 		stack(nullptr),
 		owner(nullptr),
+		categoryContext(nullptr),
 		creatureCount(0),
 		popupWindow(false)
 	{
@@ -503,7 +505,7 @@ CStackWindow::BonusesSection::BonusesSection(CStackWindow * owner, int yOffset, 
 	OBJECT_CONSTRUCTION;
 
 	// size of single image for an item
-	static const int itemHeight = 59;
+	static const int itemHeight = creatureStatLayout::BONUS_ROW_HEIGHT;
 
 	size_t totalSize = (owner->activeBonuses.size() + 1) / 2;
 	size_t visibleSize = preferredSize.value_or(std::min<size_t>(3, totalSize));
@@ -516,7 +518,7 @@ CStackWindow::BonusesSection::BonusesSection(CStackWindow * owner, int yOffset, 
 		return std::make_shared<BonusLineSection>(owner, index);
 	};
 
-	lines = std::make_shared<CListBox>(onCreate, Point(0, 0), Point(0, itemHeight), visibleSize, totalSize, 0, totalSize > 3 ? 1 : 0, Rect(pos.w - 15, 0, pos.h, pos.h));
+	lines = std::make_shared<CListBox>(onCreate, Point(0, 0), Point(0, itemHeight), visibleSize, totalSize, 0, totalSize > visibleSize ? 1 : 0, Rect(pos.w - 15, 0, pos.h, pos.h));
 	lines->onScroll = [owner](){ owner->redraw(); };
 }
 
@@ -743,39 +745,7 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 	  showNewHorizonsStats(showNewHorizonsStats)
 {
 	OBJECT_CONSTRUCTION;
-
-	statNames =
-	{
-		LIBRARY->generaltexth->translate("core.priskill.0"), //ATTACK
-		LIBRARY->generaltexth->translate("core.priskill.1"),//DEFENCE
-		LIBRARY->generaltexth->allTexts[198],//SHOTS
-		LIBRARY->generaltexth->allTexts[199],//DAMAGE
-
-		LIBRARY->generaltexth->allTexts[388],//HEALTH
-		LIBRARY->generaltexth->allTexts[200],//HEALTH_LEFT
-		LIBRARY->generaltexth->zelp[441].first,//SPEED
-		"Initiative",
-		LIBRARY->generaltexth->allTexts[399],//MANA
-		"Leadership Cost",
-		"Rank"
-	};
-
-	statFormats =
-	{
-		"%d (%d)",
-		"%d (%d)",
-		"%d (%d)",
-		"%d - %d",
-
-		"%d (%d)",
-		"%d (%d)",
-		"%d (%d)",
-		"%d (%d)",
-		"%d (%d)",
-		"%s",
-		"%s"
-	};
-
+	initializeStatMetadata();
 	animation = std::make_shared<CCreaturePic>(5, 41, parent->info->creature);
 	if(parent->info->commander && !parent->info->commander->alive)
 	{
@@ -802,14 +772,11 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 				CRClickPopup::createAndPush(description);
 		});
 	}
-
-
 	if(parent->info->stackNode != nullptr && parent->info->commander == nullptr)
 	{
 		//normal stack, not a commander and not non-existing stack (e.g. recruitment dialog)
 		animation->setAmount(parent->info->creatureCount);
 	}
-
 	name = std::make_shared<CLabel>(215, 13, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW,
 		parent->info->getName() + (parent->info->commander && !parent->info->commander->alive ? (" {red|(" + LIBRARY->generaltexth->translate("vcmi.battleWindow.killed") + ")}") : "")
 	);
@@ -827,101 +794,19 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		dmgMultiply += battleStack->valOfBonuses(bonusSelector);
 	}
 
-	static const std::array<std::string, 7> baseIconNames = {
-		"stackWindow/iconAttack", "stackWindow/iconDefense", "stackWindow/iconShots", "stackWindow/iconDamage",
-		"stackWindow/iconHealth", "stackWindow/iconHealthLeft", "stackWindow/iconSpeed"
-	};
-	static const std::array<int, 11> iconY = {
-		31, 49, 69, 88, 107, 126, 144, 164, 183, 202, 220
-	};
-	for(size_t i = 0; i < baseIconNames.size(); i++)
-		statIcons[i] = std::make_shared<CPicture>(ImagePath::builtin(baseIconNames[i]), 117, iconY[i]);
-
 	const bool showLeadership = showNewHorizonsStats
 		|| (parent->info->owner && parent->info->owner->getLeadershipSlotCapacity(parent->info->creature->getId()).has_value());
-
-	if(showNewHorizonsStats)
-	{
-		statIcons[static_cast<size_t>(EStat::INITIATIVE)] = std::make_shared<CPicture>(
-			ImagePath::builtin("stackWindow/iconInitiative"), 117, iconY[static_cast<size_t>(EStat::INITIATIVE)]);
-		statIcons[static_cast<size_t>(EStat::MANA)] = std::make_shared<CPicture>(
-			ImagePath::builtin("stackWindow/iconMana"), 117, iconY[static_cast<size_t>(EStat::MANA)]);
-	}
-	else
-	{
-		statIcons[static_cast<size_t>(EStat::MANA)] = std::make_shared<CPicture>(
-			ImagePath::builtin("stackWindow/iconMana"), 117, iconY[static_cast<size_t>(EStat::MANA) - 1]);
-	}
-
-	if(showLeadership)
-		statIcons[static_cast<size_t>(EStat::LEADERSHIP)] = std::make_shared<CAnimImage>(
-			AnimationPath::builtin("NH_creature_leadership_20"), 0,
-			Rect(116, iconY[statRow(EStat::LEADERSHIP)], 20, 20));
-
-	if(showRank)
-		statIcons[static_cast<size_t>(EStat::RANK)] = std::make_shared<CAnimImage>(
-			AnimationPath::builtin("NH_creature_rank_20"), 0,
-			Rect(116, iconY[statRow(EStat::RANK)], 20, 20));
+	initializeStatIcons(showLeadership, showRank);
 
 	morale = std::make_shared<MoraleLuckBox>(true, Rect(Point(321, 32), Point(42, 42) ));
 	luck = std::make_shared<MoraleLuckBox>(false,  Rect(Point(375, 32), Point(42, 42) ));
 
-	if(battleStack != nullptr) // in battle
-	{
-		addStatLabel(EStat::ATTACK, parent->info->creature->getAttack(battleStack->isShooter()), battleStack->getAttack(battleStack->isShooter()));
-		addStatLabel(EStat::DEFENCE, parent->info->creature->getDefense(battleStack->isShooter()), battleStack->getDefense(battleStack->isShooter()));
-		addStatLabel(EStat::DAMAGE, parent->info->stackNode->getMinDamage(battleStack->isShooter()) * dmgMultiply, battleStack->getMaxDamage(battleStack->isShooter()) * dmgMultiply);
-		addStatLabel(EStat::HEALTH, parent->info->creature->getMaxHealth(), battleStack->getMaxHealth());
-		addStatLabel(EStat::SPEED, parent->info->creature->getMovementRange(), battleStack->getMovementRange());
-		if(showNewHorizonsStats)
-			addStatLabel(EStat::INITIATIVE, parent->info->creature->getBaseInitiative(), battleStack->getInitiative());
-
-		if(battleStack->isShooter())
-			addStatLabel(EStat::SHOTS, battleStack->shots.total(), battleStack->shots.available());
-		if(battleStack->isCaster())
-			addStatLabel(EStat::MANA, battleStack->casts.total(), battleStack->casts.available());
-		addStatLabel(EStat::HEALTH_LEFT, battleStack->getFirstHPleft());
-
-		const auto * battleInfo = battleStack->getBattle();
-		auto battleCallback = battleInfo && GAME->interface() && GAME->interface()->cb
-			? GAME->interface()->cb->getBattle(battleInfo->getBattleID())
-			: nullptr;
-		if(battleCallback && battleCallback->getBattle()
-			&& newHorizonsMagic::rulesActive(battleCallback->getBattle()->getMagicRules()))
-		{
-			morale->set(battleStack, battleCallback.get());
-			luck->set(battleStack, battleCallback.get());
-		}
-		else
-		{
-			morale->set(battleStack);
-			luck->set(battleStack);
-		}
-	}
-	else
-	{
-		const bool shooter = parent->info->stackNode->hasBonusOfType(BonusType::SHOOTER) && parent->info->stackNode->valOfBonuses(BonusType::SHOTS);
-		const bool caster = parent->info->stackNode->valOfBonuses(BonusType::CASTS);
-
-		addStatLabel(EStat::ATTACK, parent->info->creature->getAttack(shooter), parent->info->stackNode->getAttack(shooter));
-		addStatLabel(EStat::DEFENCE, parent->info->creature->getDefense(shooter), parent->info->stackNode->getDefense(shooter));
-		addStatLabel(EStat::DAMAGE, parent->info->stackNode->getMinDamage(shooter), parent->info->stackNode->getMaxDamage(shooter));
-		addStatLabel(EStat::HEALTH, parent->info->creature->getMaxHealth(), parent->info->stackNode->getMaxHealth());
-		addStatLabel(EStat::SPEED, parent->info->creature->getMovementRange(), parent->info->stackNode->getMovementRange());
-		if(showNewHorizonsStats)
-			addStatLabel(EStat::INITIATIVE, parent->info->creature->getBaseInitiative(), parent->info->stackNode->getInitiative());
-
-		if(shooter)
-			addStatLabel(EStat::SHOTS, parent->info->stackNode->valOfBonuses(BonusType::SHOTS));
-		if(caster)
-			addStatLabel(EStat::MANA, parent->info->stackNode->valOfBonuses(BonusType::CASTS));
-
-		morale->set(parent->info->stackNode);
-		luck->set(parent->info->stackNode);
-	}
+	addUnitStats(*parent->info->creature, *parent->info->stackNode, battleStack, dmgMultiply);
+	if(showNewHorizonsStats)
+		addSupplementalStats(*parent->info->stackNode, battleStack, parent->info->owner);
 
 	if(showLeadership)
-		addLeadershipReadout(iconY[statRow(EStat::LEADERSHIP)], parent->info->owner,
+		addLeadershipReadout(creatureStatLayout::iconY(EStat::LEADERSHIP, showNewHorizonsStats), parent->info->owner,
 			parent->info->stack, parent->info->creature->getId(),
 			parent->info->stackNode ? parent->info->stackNode->getCount() : std::max(1u, parent->info->creatureCount));
 
@@ -932,7 +817,7 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 		const auto description = GAME->translator().translate(category.descriptionTextId);
 		addStatLabel(EStat::RANK, nameText);
 		rankArea = std::make_shared<LRClickableAreaWText>(
-			Rect(114, iconY[statRow(EStat::RANK)], 194, 20),
+			Rect(114, creatureStatLayout::iconY(EStat::RANK, showNewHorizonsStats), 194, 20),
 			"Rank: " + nameText,
 			"{" + nameText + "}\n\n" + description);
 	}
@@ -1015,48 +900,6 @@ ImagePath CStackWindow::MainSection::getBackgroundName(bool showExp, bool showAr
 		return ImagePath::builtin(rankPrefix + "0");
 }
 
-void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value1, int64_t value2)
-{
-	const auto title = statNames.at(static_cast<size_t>(index));
-	const auto row = statRow(index);
-	stats.push_back(std::make_shared<CLabel>(145, 32 + static_cast<int>(row) * 19, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE, title));
-
-	const bool useRange = value1 != value2;
-
-	MetaString value = MetaString::createFromRawString(useRange ? statFormats.at(static_cast<size_t>(index)) : "%d");
-	value.replaceNumber(value1);
-	if(useRange)
-		value.replaceNumber(value2);
-
-	stats.push_back(std::make_shared<CLabel>(307, 48 + static_cast<int>(row) * 19, FONT_SMALL, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, value.toString(&GAME->translator())));
-}
-
-void CStackWindow::MainSection::addStatLabel(EStat index, int64_t value)
-{
-	addStatLabel(index, value, value);
-}
-
-void CStackWindow::MainSection::addStatLabel(EStat index, const std::string & value)
-{
-	const auto title = statNames.at(static_cast<size_t>(index));
-	const auto row = statRow(index);
-	stats.push_back(std::make_shared<CLabel>(145, 32 + static_cast<int>(row) * 19, FONT_SMALL,
-		ETextAlignment::TOPLEFT, Colors::WHITE, title));
-	stats.push_back(std::make_shared<CLabel>(307, 48 + static_cast<int>(row) * 19, FONT_SMALL,
-		ETextAlignment::BOTTOMRIGHT, Colors::WHITE, value));
-}
-
-size_t CStackWindow::MainSection::statRow(EStat index) const
-{
-	const auto rawIndex = static_cast<size_t>(index);
-	// Initiative is an NH-only row inserted before Mana and Leadership. Keep
-	// the legacy eight-row layout compact when the saved game has no NH
-	// capability snapshot.
-	if(!showNewHorizonsStats && rawIndex >= static_cast<size_t>(EStat::INITIATIVE))
-		return rawIndex - 1;
-	return rawIndex;
-}
-
 CStackWindow::CStackWindow(const CStack * stack, bool popup)
 	: CWindowObject(BORDERED | (popup ? RCLICK_POPUP : 0)),
 	info(std::make_unique<UnitView>())
@@ -1072,12 +915,13 @@ CStackWindow::CStackWindow(const CStack * stack, bool popup)
 	init();
 }
 
-CStackWindow::CStackWindow(const CCreature * creature, bool popup)
+CStackWindow::CStackWindow(const CCreature * creature, bool popup, const IGameInfoCallback * categoryContext)
 	: CWindowObject(BORDERED | (popup ? RCLICK_POPUP : 0)),
 	info(std::make_unique<UnitView>())
 {
 	info->creature = creature;
 	info->popupWindow = popup;
+	info->categoryContext = categoryContext;
 	init();
 }
 
@@ -1242,7 +1086,9 @@ void CStackWindow::resolveCategory()
 		if(worldContext)
 			info->category = worldContext->getCreatureCategory(info->creature->getId());
 	}
-	// A bare creature / detached stack has no saved context and stays unlabelled.
+	else if(info->categoryContext)
+		info->category = info->categoryContext->getCreatureCategory(info->creature->getId());
+	// A bare creature / detached stack without an explicit saved context stays unlabelled.
 }
 
 void CStackWindow::init()
@@ -1464,11 +1310,7 @@ void CStackWindow::initSections()
 		pos.h += commanderMainSection->pos.h;
 	}
 
-	if(!info->commander && !activeBonuses.empty())
-	{
-		bonusesSection = std::make_shared<BonusesSection>(this, pos.h);
-		pos.h += bonusesSection->pos.h;
-	}
+	initBonusesSection();
 
 	if(!info->popupWindow)
 	{
@@ -1478,6 +1320,22 @@ void CStackWindow::initSections()
 	}
 	updateShadow();
 	pos = center(pos);
+}
+
+void CStackWindow::initBonusesSection()
+{
+	if(info->commander || activeBonuses.empty())
+		return;
+
+	OBJECT_CONSTRUCTION;
+	// Preserve native row/font dimensions and use the existing scroller when
+	// the taller stat panel and live status sections leave less viewport room.
+	const int footer = info->popupWindow ? 0 : creatureStatLayout::BUTTON_PANEL_HEIGHT;
+	const int available = ENGINE->screenDimensions().y - pos.h - footer - 30;
+	const auto rows = static_cast<size_t>(std::clamp(available / creatureStatLayout::BONUS_ROW_HEIGHT, 1, 3));
+	bonusesSection = std::make_shared<BonusesSection>(this, pos.h,
+		std::min(rows, (activeBonuses.size() + 1) / 2));
+	pos.h += bonusesSection->pos.h;
 }
 
 void CStackWindow::showStackExperienceDetailsWindow()

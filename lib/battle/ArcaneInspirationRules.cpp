@@ -60,6 +60,13 @@ int32_t retainedPercent(const battle::Unit & unit, PlayerColor owner)
 			result = std::max(result, effect->val);
 	return result;
 }
+int32_t physicalReductionPercent(const battle::Unit & unit, PlayerColor owner)
+{
+	if(!newHorizonsCombatSkills::isOrdinaryCreatureAttacker(&unit))
+		return 0;
+	const auto defender = activeProfile(unit, owner);
+	return defender.corePercent > 0 && (defender.riders & BULWARK) ? 10 : 0;
+}
 AttackPlan attackPlan(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	AttackPlan result;
@@ -83,12 +90,8 @@ AttackPlan attackPlan(const CBattleInfoCallback & battle, const BattleAttackInfo
 		if(attack.attacker->hasBonus(CSelector(isSpellshock)))
 			result.outputPenaltyPercent = 10;
 	}
-	if(attack.physicalDamage && newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.defender))
-	{
-		const auto defender = activeProfile(*attack.defender, battle.battleGetOwner(attack.defender));
-		if(defender.corePercent > 0 && (defender.riders & BULWARK))
-			result.physicalReductionPercent = 10;
-	}
+	if(attack.physicalDamage)
+		result.physicalReductionPercent = physicalReductionPercent(*attack.defender, battle.battleGetOwner(attack.defender));
 	return result;
 }
 int64_t reprisalRawDamage(int64_t inflictedDamage)

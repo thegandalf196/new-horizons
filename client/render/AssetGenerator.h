@@ -128,8 +128,11 @@ private:
 	CanvasPtr createChroniclesCampaignImages(int chronicle) const;
 	CanvasPtr createPaletteShiftedImage(const AnimationPath & source, const std::vector<PaletteAnimation> & animation, int frameIndex, int paletteShiftCounter) const;
 	CanvasPtr createAdventureMapButtonClear(const PlayerColor & player, bool small) const;
+	void registerCreaturePanelAssets();
 	CanvasPtr createCreatureInfoPanel(int boxesAmount, bool showNewHorizonsStats = false, bool showRank = false) const;
 	CanvasPtr createCreatureInitiativeIcon() const;
+	enum class CreatureStatGlyph { RETALIATIONS, PHYSICAL_RESISTANCE, MAGICAL_RESISTANCE };
+	CanvasPtr createCreatureStatIcon(CreatureStatGlyph glyph) const;
 	CanvasPtr createBackpackDialogBackground(const Point & size) const;
 	CanvasPtr createDialogBackground(const Point & size, bool withStatusBar = false) const;
 	CanvasPtr createSplitDialogBackground(PlayerColor color) const;

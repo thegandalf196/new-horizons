@@ -11,7 +11,6 @@
 #include <boost/algorithm/string/replace.hpp>
 #include "GUIClasses.h"
 #include "NewHorizonsPerkHelp.h"
-#include "NewHorizonsCreatureCategoryUI.h"
 #include "NewHorizonsMusterUI.h"
 
 #include "CCastleInterface.h"
@@ -54,6 +53,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/entities/building/CBuilding.h"
+#include "../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../lib/entities/faction/CTownHandler.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/CHeroClass.h"
@@ -277,15 +277,6 @@ CRecruitmentWindow::CCreatureCard::CCreatureCard(CRecruitmentWindow * window, co
 	// 1 + 1 px for borders
 	pos.w = animation->pos.w + 2;
 	pos.h = animation->pos.h + 2;
-
-	const auto category = currentCreatureCategory(creature);
-	const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
-	if(!categoryName.empty())
-	{
-		categoryLabel = std::make_shared<CLabel>(pos.w / 2, pos.h + 1, FONT_TINY,
-			ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, pos.w);
-		pos.h += 14;
-	}
 }
 
 void CRecruitmentWindow::CCreatureCard::select(bool on)
@@ -301,7 +292,8 @@ void CRecruitmentWindow::CCreatureCard::clickPressed(const Point & cursorPositio
 
 void CRecruitmentWindow::CCreatureCard::showPopupWindow(const Point & cursorPosition)
 {
-	ENGINE->windows().createAndPushWindow<CStackWindow>(creature, true);
+	const auto * context = parent->dst ? parent->dst->cb : (parent->dwelling ? parent->dwelling->cb : nullptr);
+	ENGINE->windows().createAndPushWindow<CStackWindow>(creature, true, context);
 }
 
 void CRecruitmentWindow::CCreatureCard::showAll(Canvas & to)
@@ -336,9 +328,6 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		const auto slot = UIHelper::recruitmentPosition(dst, card->creature->getId(), maxAmount);
 		if(!slot.validSlot() && !card->creature->warMachine.hasValue())
 			maxAmount = 0;
-		leadershipLimit->setText(card->creature->warMachine.hasValue() ? LIBRARY->generaltexth->translate("new-horizons.command.placement.equipment")
-			: slot.validSlot() ? boost::replace_all_copy(LIBRARY->generaltexth->translate("new-horizons.command.placement.destination"),
-				"%SLOT%", UIHelper::armyPositionName(dst, slot)) : LIBRARY->generaltexth->translate("new-horizons.command.placement.noPosition"));
 
 		slider->setAmount(maxAmount);
 
@@ -358,39 +347,11 @@ void CRecruitmentWindow::select(std::shared_ptr<CCreatureCard> card)
 		MetaString recruitText;
 		recruitText.appendTextID("core.tcommand.21");
 		recruitText.replaceNamePlural(card->creature->getId());
-		const auto category = currentCreatureCategory(card->creature);
-		title->setText(newHorizonsCreatureCategoryUI::prefix(category, GAME ? &GAME->translator() : nullptr,
-			recruitText.toString(&GAME->translator())));
+		title->setText(recruitText.toString(&GAME->translator()));
 
 		maxButton->block(maxAmount == 0);
 		slider->block(maxAmount == 0);
 	}
-	else
-	{
-		leadershipLimit->setText("");
-		updateLeadershipProposalHelp(0);
-	}
-}
-
-void CRecruitmentWindow::updateLeadershipProposalHelp(int proposedCount)
-{
-	if(!leadershipHelp)
-		return;
-
-	leadershipHelp->text.clear();
-	leadershipHelp->hoverText.clear();
-	if(!selected || !dst || selected->creature->warMachine.hasValue())
-	{
-		leadershipHelp->disable();
-		return;
-	}
-
-	const auto slot = UIHelper::recruitmentPosition(dst, selected->creature->getId(), proposedCount);
-	const auto text = UIHelper::armySlotPreview(dst, slot, selected->creature->getId());
-	leadershipHelp->text = text;
-	leadershipHelp->hoverText = text;
-	if(leadershipHelp->isDisabled())
-		leadershipHelp->enable();
 }
 
 void CRecruitmentWindow::close()
@@ -528,10 +489,6 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 
 	availableTitle = std::make_shared<CLabel>(204 + layoutOffsetX, 233, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[465]);
 	toRecruitTitle = std::make_shared<CLabel>(279 + layoutOffsetX, 233, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[16]);
-	leadershipLimit = std::make_shared<CLabel>(243 + layoutOffsetX, 214, FONT_SMALL,
-		ETextAlignment::CENTER, Colors::YELLOW, "", 360);
-	leadershipHelp = std::make_shared<LRClickableAreaWText>(Rect(63 + layoutOffsetX, 207, 360, 14));
-	leadershipHelp->disable();
 
 	availableCreaturesChanged();
 }
@@ -539,7 +496,6 @@ CRecruitmentWindow::CRecruitmentWindow(const CGDwelling * Dwelling, int Level, c
 void CRecruitmentWindow::availableCreaturesChanged()
 {
 	OBJECT_CONSTRUCTION;
-	categoryHeaders.fill(nullptr);
 	if(musterButton)
 	{
 		if(const auto offer = newHorizonsMusterUI::offerFor(dwelling, dynamic_cast<const CGHeroInstance *>(dst)))
@@ -614,21 +570,10 @@ void CRecruitmentWindow::availableCreaturesChanged()
 			if(group.empty())
 				continue;
 
-			const int groupStart = curx;
 			for(const auto & card : group)
 			{
 				card->moveBy(Point(curx, 64));
 				curx += totalCreatureWidth;
-			}
-
-			const int groupWidth = creatureWidth * static_cast<int>(group.size()) + spaceBetween * static_cast<int>(group.size() - 1);
-			const auto category = currentCreatureCategory(group.front()->creature);
-			if(category)
-			{
-				const auto categoryName = newHorizonsCreatureCategoryUI::name(category, GAME ? &GAME->translator() : nullptr);
-				if(!categoryName.empty())
-					categoryHeaders[index] = std::make_shared<CLabel>(groupStart + groupWidth / 2, 47, FONT_SMALL,
-						ETextAlignment::TOPCENTER, Colors::YELLOW, categoryName, groupWidth + 12);
 			}
 		}
 
@@ -668,7 +613,6 @@ void CRecruitmentWindow::sliderMoved(int to)
 	toRecruitValue->setText(std::to_string(to));
 
 	totalCostValue->set(recruitmentCost);
-	updateLeadershipProposalHelp(to);
 }
 
 CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_,

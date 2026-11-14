@@ -41,6 +41,8 @@ DLL_LINKAGE bool isRetained(const Bonus * bonus);
 DLL_LINKAGE bool isSpellshock(const Bonus * bonus);
 DLL_LINKAGE Profile activeProfile(const battle::Unit & unit, PlayerColor owner);
 DLL_LINKAGE int32_t retainedPercent(const battle::Unit & unit, PlayerColor owner);
+/// Current target-side physical protection from the active Bulwark rider.
+DLL_LINKAGE int32_t physicalReductionPercent(const battle::Unit & unit, PlayerColor owner);
 struct DLL_LINKAGE AttackPlan
 {
 	int32_t damageBonusPercent = 0;

@@ -143,6 +143,7 @@ set(vcmiclientcommon_SRCS
 	replay/ReplaySelectionWindow.cpp
 
 	render/AssetGenerator.cpp
+	render/AssetGeneratorCreaturePanel.cpp
 	render/PointBlankCursor.cpp
 	render/ReachCursorBody.cpp
 	render/ReachCursorCache.cpp
@@ -267,6 +268,8 @@ set(vcmiclientcommon_SRCS
 	windows/CLevelWindowChoices.cpp
 	windows/LevelUpChoiceCards.cpp
 	windows/CreatureLeadershipPresentation.cpp
+	windows/CreatureStatPresentation.cpp
+	windows/CreatureSupplementalStats.cpp
 	windows/CLevelWindowReroll.cpp
 	windows/NewHorizonsMusterUI.cpp
 	windows/InfoWindows.cpp
@@ -562,6 +565,9 @@ set(vcmiclientcommon_HEADERS
 	windows/NewHorizonsCurrentSkillPresentation.h
 	windows/SylvanFactionStatusPresentation.h
 	windows/CreatureBonusStatusPresentation.h
+	windows/CreatureDefensePresentation.h
+	windows/CreatureStatLayout.h
+	windows/CreatureSupplementalStats.h
 	windows/NewHorizonsPerkAvailability.h
 	windows/NewHorizonsBuildingVisitHelp.h
 	windows/NewHorizonsGuildSpellHelp.h

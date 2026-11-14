@@ -87,6 +87,8 @@ endif()
 set(test_SRCS
 		hero/LeadershipEfficiencyRulesTest.cpp
 		server/battles/LeadershipEfficiencyBattleTest.cpp
+		server/battles/CreatureSupplementalStatsTest.cpp
+		../client/windows/CreatureSupplementalStats.cpp
 		../client/tests/LeadershipEfficiencyBadgeTest.cpp
 		../client/tests/CreaturePreviewFitTest.cpp
 		../client/tests/ReachCursorTest.cpp

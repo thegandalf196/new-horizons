@@ -87,7 +87,6 @@ class CRecruitmentWindow : public CStatusbarWindow
 	{
 		CRecruitmentWindow * parent;
 		std::shared_ptr<CCreaturePic> animation;
-		std::shared_ptr<CLabel> categoryLabel;
 		bool selected;
 
 	public:
@@ -122,14 +121,10 @@ class CRecruitmentWindow : public CStatusbarWindow
 	std::shared_ptr<CLabel> toRecruitValue;
 	std::shared_ptr<CLabel> availableTitle;
 	std::shared_ptr<CLabel> toRecruitTitle;
-	std::shared_ptr<CLabel> leadershipLimit;
-	std::shared_ptr<LRClickableAreaWText> leadershipHelp;
-	std::array<std::shared_ptr<CLabel>, 3> categoryHeaders;
 	std::shared_ptr<CreatureCostBox> costPerTroopValue;
 	std::shared_ptr<CreatureCostBox> totalCostValue;
 
 	void select(std::shared_ptr<CCreatureCard> card);
-	void updateLeadershipProposalHelp(int proposedCount);
 	void buy();
 	void sliderMoved(int to);
 	static ImagePath getRecruitmentBackground(const CGDwelling * dwelling, int level);

@@ -35,16 +35,26 @@ release assets and promoted playable snapshots are separate identities.
 - Each acquired Skill rank immediately grants one mandatory choice from its
   complete corresponding perk tier. Starting Skills, external teachers,
   multi-rank rewards and AI heroes follow the same rule; pending choices persist.
+- Keeps each Connoisseur reroll button with its corresponding Skill offer.
 - Preserves the native Heroes III/VCMI XP curve and existing XP accelerators;
   this migration does not silently rebalance Learning, Prodigy or XP awards.
 - Uses compact red broken-sword efficiency indicators on portraits and below
   battlefield creature counters. The default-enabled display setting is visual
   only; right-click inspection always provides detailed efficiency information.
+- Adds **Retaliations**, **Physical Resistance** and **Magical Resistance** below
+  Initiative in creature information. Magical Resistance shows spell-rejection
+  chance, separately from magical damage reduction. Galthran's physical Defense
+  bonus is included in the Defense readout, with damage-type details in its tooltip.
+- Removes repeated rank labels and destination-slot text from recruitment dialogs;
+  creature rank remains available in right-click information.
 - Displays a lance cursor and the creature's current maximum attack distance for
   Reach. Wisps display Reach 6; approach selection follows a real clear corridor,
   including the exposed edge of doublewide targets.
 - Fits full creature animations in both Conflux Fort overview layouts, preserving
   wings and other artwork previously cropped by the portrait viewport.
+- Adds visual feedback to Straker's Undying restoration and Kalt's Rising Tide
+  additions, using the existing Hydra regeneration and First Aid Tent effects
+  without changing either specialty.
 - Retains the independent Castle starting-package amendment, stock neutral counts,
   recruitment growth, Magic Arrow, Elemental Attunement and other faction rules.
 - Renames Energy Elemental to **Plasma Elemental** without changing its stable ID.

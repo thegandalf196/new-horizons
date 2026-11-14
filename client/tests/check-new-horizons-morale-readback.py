@@ -117,7 +117,9 @@ for text_id in (
 ):
     assert f'"{text_id}"' in TEXTS, f"Missing localized config entry: {text_id}"
 
-detail = (ROOT / "client/windows/CCreatureWindow.cpp").read_text(encoding="utf-8")
+detail = (ROOT / "client/windows/CreatureStatPresentation.cpp").read_text(encoding="utf-8")
+client_cmake = (ROOT / "client/CMakeLists.txt").read_text(encoding="utf-8")
+assert "windows/CreatureStatPresentation.cpp" in client_cmake
 widgets = (ROOT / "client/widgets/BattleMoraleLuckBox.cpp").read_text(encoding="utf-8")
 assert "morale->set(battleStack, battleCallback.get())" in detail
 detail_readback = widgets.split("void MoraleLuckBox::set(const CStack * stack,", 1)[1].split(

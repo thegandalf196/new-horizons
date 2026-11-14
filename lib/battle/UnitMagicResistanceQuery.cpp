@@ -35,26 +35,31 @@ protected:
 };
 }
 
+int battle::combinedMagicResistance(int ordinary, int intrinsic, int aura, bool newHorizonsRules)
+{
+	const int base = std::clamp(ordinary, 0, 100);
+	const int resistance = static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(base) + intrinsic, 0, 100));
+	const int auraResistance = std::clamp(aura, 0, 100);
+	// Independent sources retain legacy integer flooring, not float rounding.
+	const int combinedResistance = (10000 - (100 - resistance) * (100 - auraResistance)) / 100;
+	const int maximumResistance = newHorizonsRules ? NEW_HORIZONS_MAGIC_RESISTANCE_CAP_PERCENT : 100;
+	return std::min(combinedResistance, maximumResistance);
+}
+
 int battle::UnitMagicResistanceQuery::query(const Unit * unit) const
 {
 	if(!unit)
 		return 0;
 	requireSubject(*unit);
-	int resistance = std::clamp(unit->valOfBonuses(BonusType::MAGIC_RESISTANCE), 0, 100);
-	resistance = std::clamp(resistance + unit->necromancyCombatPassives().magicResistancePercent, 0, 100);
+	const int resistance = unit->valOfBonuses(BonusType::MAGIC_RESISTANCE);
+	const int intrinsic = unit->necromancyCombatPassives().magicResistancePercent;
 	int auraResistance = 0;
 	for(const auto * adjacent : adjacentUnits(*unit))
 	{
 		if(adjacent->unitOwner() == unit->unitOwner())
 			auraResistance = std::max(auraResistance, adjacent->valOfBonuses(BonusType::SPELL_RESISTANCE_AURA));
 	}
-	auraResistance = std::clamp(auraResistance, 0, 100);
-
-	// Independent sources retain legacy integer flooring, not float rounding.
-	const int combinedResistance = (10000 - (100 - resistance) * (100 - auraResistance)) / 100;
-	const int maximumResistance = newHorizonsRulesActive()
-		? NEW_HORIZONS_MAGIC_RESISTANCE_CAP_PERCENT : 100;
-	return std::min(combinedResistance, maximumResistance);
+	return combinedMagicResistance(resistance, intrinsic, auraResistance, newHorizonsRulesActive());
 }
 
 int CBattleInfoCallback::battleGetMagicResistance(const battle::Unit * unit) const

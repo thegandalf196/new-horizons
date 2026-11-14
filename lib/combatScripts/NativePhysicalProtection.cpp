@@ -5,6 +5,7 @@
 #include "../battle/Unit.h"
 #include "../bonuses/BonusFilter.h"
 #include "../bonuses/BonusList.h"
+#include "../bonuses/IBonusBearer.h"
 #include <map>
 
 namespace nativeDamage
@@ -83,6 +84,21 @@ double defendRemaining(const DamageAttackInfo & info)
 bool hasPhysicalDamageReductionStage(const DamageAttackInfo & info)
 {
 	return info.physicalDamage && info.physicalDamageReductionCapPercent >= 0;
+}
+
+PhysicalProtectionFacts captureUniversalPhysicalProtection(const IBonusBearer & bearer)
+{
+	static const auto allDamage = Selector::typeSubtype(BonusType::GENERAL_DAMAGE_REDUCTION,
+		BonusSubtypeID(BonusCustomSubtype::damageTypeAll)).And(
+			Selector::effectRange()(BonusLimitEffect::NO_LIMIT));
+	static const auto physicalBasis = Selector::type()(BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS).And(
+		Selector::effectRange()(BonusLimitEffect::NO_LIMIT));
+	PhysicalProtectionFacts facts;
+	facts.allDamageSourceValues = sourceValues(*bearer.getBonuses(allDamage,
+		"universal_physical_protection_all_damage"), true);
+	facts.physicalBasisSourceValues = sourceValues(*bearer.getBonuses(physicalBasis,
+		"universal_physical_protection_basis_points"), false);
+	return facts;
 }
 
 PhysicalProtectionFacts capturePhysicalProtection(const DamageAttackInfo & info,

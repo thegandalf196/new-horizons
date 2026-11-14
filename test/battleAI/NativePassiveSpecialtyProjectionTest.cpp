@@ -7,6 +7,7 @@
 #include "../../lib/battle/NewHorizonsBulwark.h"
 #include "../../lib/bonuses/Updaters.h"
 #include "../../lib/bonuses/Limiters.h"
+#include "../../client/windows/CreatureDefensePresentation.h"
 using namespace heroQueueTest;
 class NativePassiveSpecialtyProjectionTest : public HeroQueueSelectorTest
 {
@@ -60,6 +61,16 @@ TEST_F(NativePassiveSpecialtyProjectionTest, UnknownBoneFormationUsesProjectedCo
 	DamageCache fresh;
 	EXPECT_EQ(changed, fresh.getDamage(child->battleGetUnitByID(enemy->unitId()), unit.get(), child));
 	EXPECT_GT(changed, oldDamage);
+	int64_t furtherLoss = 40 * unit->getMaxHealth();
+	unit->damage(furtherLoss);
+	ASSERT_EQ(unit->getCount(), 60);
+	EXPECT_EQ(unit->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+	const auto readout = creatureDefensePresentation::query(*unit, false);
+	EXPECT_EQ(readout.physical, readout.general + 6);
+	DamageCache freshSixty;
+	EXPECT_EQ(cache.getDamage(child->battleGetUnitByID(enemy->unitId()), unit.get(), child),
+		freshSixty.getDamage(child->battleGetUnitByID(enemy->unitId()), unit.get(), child));
+	loss += furtherLoss;
 	int64_t healing = loss;
 	unit->heal(healing, EHealLevel::RESURRECT, EHealPower::PERMANENT);
 	EXPECT_EQ(unit->getCount(), 350);

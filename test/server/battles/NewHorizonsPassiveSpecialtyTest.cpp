@@ -15,6 +15,7 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../client/windows/CreatureDefensePresentation.h"
 #include <array>
 #include <limits>
 namespace
@@ -104,7 +105,7 @@ TEST(PassiveSpecialtyScalars, CurrentCasualtiesAndCompleteCountBandsHaveExactBou
 	EXPECT_EQ(casualtyPercent(100, 150), 0);
 	EXPECT_EQ(casualtyPercent(100, -1), 100);
 	EXPECT_EQ(casualtyPercent(std::numeric_limits<int32_t>::max(), 1), 99);
-	for(const auto & row : {std::pair{0, 0}, {9, 0}, {10, 1}, {99, 9}, {100, 10},
+	for(const auto & row : {std::pair{0, 0}, {9, 0}, {10, 1}, {59, 5}, {60, 6}, {99, 9}, {100, 10},
 		{119, 10}, {120, 11}, {299, 19}, {300, 20}, {349, 20}, {350, 21}})
 		EXPECT_EQ(boneFormationDefense(row.first), row.second);
 }
@@ -224,7 +225,7 @@ TEST_F(PassiveSpecialtyTest, BoneFormationReevaluatesCurrentCompleteBandsAndOnly
 {
 	prepare("core:galthran", "core:skeletonWarrior", 1000);
 	EXPECT_TRUE(newHorizonsPassiveSpecialties::hasDynamicDamagePassive(*actor));
-	for(const int count : {1000, 350, 349, 300, 299, 120, 119, 100, 99, 10, 9, 1})
+	for(const int count : {1000, 350, 349, 300, 299, 120, 119, 100, 99, 60, 59, 10, 9, 1})
 	{
 		EXPECT_EQ(actor->valOfBonuses(BonusType::PHYSICAL_DEFENSE),
 			newHorizonsPassiveSpecialties::boneFormationDefense(actor->getCount()));
@@ -245,6 +246,65 @@ TEST_F(PassiveSpecialtyTest, BoneFormationReevaluatesCurrentCompleteBandsAndOnly
 	attackerSideHero->removeBonuses(Selector::type()(BonusType::PHYSICAL_DEFENSE));
 	EXPECT_GT(battle()->calculateDmgRange(physical).damage.min, protectedPhysical.damage.min);
 	EXPECT_EQ(battle()->calculateDmgRange(magical).damage.min, protectedMagical.damage.min);
+}
+TEST_F(PassiveSpecialtyTest, SixtySkeletonDefenseReadoutsFollowBothFormsCurrentCountAndArmy)
+{
+	prepare("core:galthran", "core:skeleton", 60);
+	const auto upgraded = creatureByName("core:skeletonWarrior");
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(1), upgraded, 60));
+	auto * warrior = addStack(BattleSide::ATTACKER, upgraded, BattleHex(3, 6), 60);
+	for(const auto * unit : {actor, warrior})
+	{
+		const auto * creature = unit->creatureId().toCreature();
+		const auto base = creatureDefensePresentation::query(*creature, false);
+		const auto current = creatureDefensePresentation::query(*unit, false);
+		EXPECT_EQ(base.general, unit == actor ? 4 : 6);
+		EXPECT_EQ(base.physical, base.general);
+		EXPECT_EQ(current.general, base.general);
+		EXPECT_EQ(current.physical, unit == actor ? 10 : 12);
+	}
+	for(const auto slot : {SlotID(0), SlotID(1)})
+	{
+		const auto * stack = attackerSideHero->getStackPtr(slot);
+		const auto view = creatureDefensePresentation::query(*stack, false);
+		EXPECT_EQ(view.physical - view.general, 6);
+	}
+
+	// Warm readouts must follow count changes in their own context.
+	injure(*actor, actor->getMaxHealth());
+	EXPECT_EQ(actor->getCount(), 59);
+	EXPECT_EQ(creatureDefensePresentation::query(*actor, false).physical, 9);
+	auto * armyStack = attackerSideHero->getStackPtr(SlotID(0));
+	EXPECT_EQ(creatureDefensePresentation::query(*armyStack, false).physical, 10);
+	attackerSideHero->setStackCount(SlotID(0), 59);
+	EXPECT_EQ(creatureDefensePresentation::query(*armyStack, false).physical, 9);
+	attackerSideHero->setStackCount(SlotID(0), 60);
+	EXPECT_EQ(creatureDefensePresentation::query(*armyStack, false).physical, 10);
+
+	// The specialty belongs to the commanding hero, not the stored creature.
+	defenderSideHero->putStack(SlotID(1), attackerSideHero->detachStack(SlotID(0)));
+	EXPECT_EQ(creatureDefensePresentation::query(*armyStack, false).physical, 4);
+	attackerSideHero->putStack(SlotID(0), defenderSideHero->detachStack(SlotID(1)));
+	EXPECT_EQ(creatureDefensePresentation::query(*armyStack, false).physical, 10);
+	const auto ordinary = creatureDefensePresentation::query(*victim, false);
+	EXPECT_EQ(ordinary.physical, ordinary.general);
+}
+TEST_F(PassiveSpecialtyTest, SixtySkeletonPhysicalDefenseMatchesResolvedIncomingAttack)
+{
+	prepare("core:galthran", "core:skeleton", 60);
+	forceMaximumDamage(victim);
+	blockRetaliation(victim);
+	beginCombat();
+	ASSERT_EQ(victim->luckVal(), 0);
+	ASSERT_EQ(actor->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+	ASSERT_EQ(creatureDefensePresentation::query(*actor, false).physical, 10);
+	const auto expected = battle()->calculateDmgRange(BattleAttackInfo(victim, actor, 0, false));
+	ASSERT_EQ(expected.damage.min, expected.damage.max);
+	const auto before = actor->getAvailableHealth();
+	ASSERT_TRUE(attack(victim, actor->getPosition()));
+	EXPECT_EQ(before - actor->getAvailableHealth(), expected.damage.min);
+	EXPECT_EQ(actor->valOfBonuses(BonusType::PHYSICAL_DEFENSE),
+		newHorizonsPassiveSpecialties::boneFormationDefense(actor->getCount()));
 }
 TEST_F(PassiveSpecialtyTest, TreantmootGatesDeliberateCreatureTargetsWithoutBlanketInvulnerability)
 {

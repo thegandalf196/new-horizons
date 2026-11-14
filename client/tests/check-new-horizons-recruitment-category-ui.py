@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Static guard for New Horizons Core/Elite/Champion recruitment presentation.
+"""Static guard for New Horizons creature-category presentation.
 
 The category view is optional and comes from the saved game callback.  This
-keeps the ordinary seven-tier UI byte-for-byte in legacy contexts while making
-the active New Horizons classification visible in town and recruitment views.
+preserves category ordering in recruitment while keeping the ordinary single-
+purchase dialog free of repeated rank and destination labels. Detailed creature
+information and the town/quick-recruitment overviews retain their rank context.
 """
 
 from pathlib import Path
@@ -33,12 +34,18 @@ def require(source: str, fragment: str, message: str) -> None:
 require(HELPER, "CreatureCategoryView", "category view helper")
 require(HELPER, "categoryName.empty()", "optional category keeps legacy text")
 require(GUI, "getCreatureCategory", "standard recruitment reads saved category")
-require(GUI, "categoryLabel", "standard recruit cards show category")
-require(GUI_HEADER, "std::shared_ptr<CLabel> categoryLabel", "standard card owns category label")
-require(GUI, "newHorizonsCreatureCategoryUI::prefix", "standard recruit title is category-aware")
-require(GUI_HEADER, "std::array<std::shared_ptr<CLabel>, 3> categoryHeaders", "standard recruitment has category group headers")
+recruitment = GUI.split("CRecruitmentWindow::CCreatureCard::CCreatureCard", 1)[1].split("CSplitWindow::CSplitWindow", 1)[0]
+recruitment_header = GUI_HEADER.split("class CRecruitmentWindow", 1)[1].split("class CObjectListWindow", 1)[0]
+for removed in ("categoryLabel", "categoryHeaders", "leadershipLimit", "leadershipHelp", "updateLeadershipProposalHelp"):
+    assert removed not in recruitment and removed not in recruitment_header, f"redundant standard-dialog presentation remains: {removed}"
+require(recruitment, 'recruitText.appendTextID("core.tcommand.21")', "standard translated Recruit title")
+require(recruitment, "recruitText.replaceNamePlural(card->creature->getId())", "selected creature names the title")
+require(recruitment, "title->setText(recruitText.toString(&GAME->translator()))", "standard title has no repeated rank prefix")
+assert "newHorizonsCreatureCategoryUI::prefix" not in recruitment
+require(recruitment, "createAndPushWindow<CStackWindow>(creature, true)", "right-click creature information remains available")
+require(recruitment, "UIHelper::recruitmentPosition(dst, card->creature->getId(), maxAmount)", "removing destination text preserves position validation")
+require(recruitment, "if(!slot.validSlot() && !card->creature->warMachine.hasValue())", "no-slot recruitment remains blocked")
 require(GUI, "categoryCards", "standard recruitment groups cards by category")
-require(GUI, "categoryHeaders[index]", "standard recruitment renders category headers")
 require(QUICK_CARD, "getCreatureCategory", "quick recruitment reads saved category")
 require(QUICK_CARD, "categoryLabel", "quick recruitment card shows category")
 require(QUICK_CARD_HEADER, "std::shared_ptr<CLabel> categoryLabel", "quick card owns category label")

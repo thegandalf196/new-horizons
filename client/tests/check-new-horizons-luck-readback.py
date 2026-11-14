@@ -111,8 +111,11 @@ assert PANEL_CPP.count("Rect(7, 141, 67, 14), luckTooltip, luckTooltip") == 1, (
 assert "currentStackInfoStatus(stack, battleCallback.get(), luckReadback)" in PANEL_CPP
 assert "currentStackInfoStatus(updatedInfo, battleCallback.get(), currentLuckReadback)" in PANEL_CPP
 
-detail = (ROOT / "client/windows/CCreatureWindow.cpp").read_text()
-widgets = (ROOT / "client/widgets/MiscWidgets.cpp").read_text()
+detail = (ROOT / "client/windows/CreatureStatPresentation.cpp").read_text()
+client_cmake = (ROOT / "client/CMakeLists.txt").read_text()
+assert "windows/CreatureStatPresentation.cpp" in client_cmake
+widgets = (ROOT / "client/widgets/BattleMoraleLuckBox.cpp").read_text()
+assert "widgets/BattleMoraleLuckBox.cpp" in client_cmake
 assert "luck->set(battleStack, battleCallback.get())" in detail
 detail_luck = widgets.split("void MoraleLuckBox::set(const CStack * stack,", 1)[1].split(
     "const auto readback = battleCallback->battleGetMoraleInfo(stack);", 1

@@ -10,6 +10,10 @@
 
 namespace battle
 {
+/// Shared spell-rejection arithmetic for live/projected units and adventure
+/// readouts. Aura is zero when no battlefield adjacency is defined.
+DLL_LINKAGE int combinedMagicResistance(int ordinary, int intrinsic, int aura, bool newHorizonsRules);
+
 /// One shared live/projected resistance formula. Derived contexts supply only
 /// adjacency and captured rules; no casts to a mutable/live battle unit.
 class DLL_LINKAGE UnitMagicResistanceQuery
