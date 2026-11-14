@@ -87,7 +87,10 @@ TEST(StartingPerkDefaults, EveryRegisteredAuthoredHeroHasCompleteFinalNormalized
 	for(const auto & [identity, authored] : profiles)
 	{
 		SCOPED_TRACE(identity);
-		const auto * hero = LIBRARY->heroh->getById(HeroTypeID(HeroTypeID::decode(identity)));
+		const auto index = HeroTypeID::decode(identity);
+		ASSERT_GE(index, 0);
+		ASSERT_LT(static_cast<size_t>(index), LIBRARY->heroh->objects.size());
+		const auto & hero = LIBRARY->heroh->objects.at(index);
 		ASSERT_NE(hero, nullptr);
 		const auto projection = newHorizonsHeroes::projectStartingHero(*hero, context);
 		std::map<std::string, int> ranks;
@@ -106,7 +109,9 @@ TEST(StartingPerkDefaults, EveryRegisteredAuthoredHeroHasCompleteFinalNormalized
 		for(const auto & entry : authored.Vector())
 			EXPECT_TRUE(perks.hasSelection(entry["skill"].String(), entry["perk"].String()));
 		if(identity == "core:nimbus")
+		{
 			EXPECT_TRUE(perks.hasSelection("new-horizons:necromancy", "new-horizons:necromancy.graveKnowledge"));
+		}
 	}
 }
 
