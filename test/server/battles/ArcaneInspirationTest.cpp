@@ -81,6 +81,7 @@ TEST(ArcaneInspiration, ReprisalUsesPreCasualtyInflictedDamageWithoutHealthClamp
 class ArcaneInspirationBattleTest : public HeroCommandFixture
 {
 protected:
+	ArcaneInspirationBattleTest() { useRevisedOrders = true; }
 	CStack * actor = nullptr;
 	CStack * victim = nullptr;
 	void mapLoaded(CMap * loaded) override

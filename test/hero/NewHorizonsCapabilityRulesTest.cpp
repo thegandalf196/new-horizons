@@ -145,7 +145,12 @@ TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndP
 			SCOPED_TRACE(base->getJsonKey() + " -> " + upgrade.toCreature()->getJsonKey());
 			const auto before = newHorizonsHeroes::capabilityLeadershipSlot(resolved, 20, base->getId());
 			const auto after = newHorizonsHeroes::capabilityLeadershipSlot(resolved, 20, upgrade);
-			ASSERT_TRUE(before);
+			if(!before)
+			{
+				// New creature lines must not acquire requirements in frozen rules.
+				EXPECT_FALSE(after);
+				continue;
+			}
 			ASSERT_TRUE(after);
 			EXPECT_GT(before->requirement, 0);
 			EXPECT_EQ(after->requirement, before->requirement);
@@ -156,6 +161,31 @@ TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndP
 		}
 	}
 	EXPECT_EQ(edges, 64u);
+}
+
+TEST(NewHorizonsCapabilityRules, MummyUpgradeUsesCurrentRequirementsWithoutReinterpretingHistoricalRules)
+{
+	const CreatureID mummy(CreatureID::decode("core:mummy"));
+	const CreatureID royal(CreatureID::decode("new-horizons:royalMummy"));
+	ASSERT_TRUE(mummy.hasValue());
+	ASSERT_TRUE(royal.hasValue());
+	const auto knight = HeroClassID(HeroClassID::decode("core:knight"));
+	const auto historical = newHorizonsHeroes::resolveCapabilityRules(historicalCapabilityRulesV4(), knight);
+	for(const auto creature : {mummy, royal})
+	{
+		EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(historical, creature), 0);
+		EXPECT_FALSE(newHorizonsHeroes::capabilityLeadershipSlot(historical, 20, creature));
+	}
+	const JsonNode current(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const auto captured = newHorizonsHeroes::resolveCapabilityRules(current, knight);
+	CMemorySerializer serializer;
+	serializer.oser & captured;
+	JsonNode restored;
+	serializer.iser & restored;
+	EXPECT_EQ(restored, captured);
+	EXPECT_NO_THROW(newHorizonsHeroes::validateResolvedCapabilityRules(restored));
+	for(const auto creature : {mummy, royal})
+		EXPECT_EQ(newHorizonsHeroes::capabilityCreatureLeadershipRequirement(restored, creature), 50);
 }
 
 TEST(NewHorizonsCapabilityRules, HistoricalUpgradeMultiplierAndExplicitOverridesSurviveRoundTrip)

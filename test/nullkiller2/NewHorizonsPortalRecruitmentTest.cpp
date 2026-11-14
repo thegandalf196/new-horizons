@@ -81,6 +81,7 @@ protected:
 		{
 			JsonNode historicalHeroRules(JsonPath::builtin("config/newHorizonsHeroes"));
 			historicalHeroRules["startingSkills"].Struct().erase("startingBookReplacements");
+			historicalHeroRules.setOverrideFlag(true); // Do not merge installed starting books back into this captured profile.
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(historicalHeroRules));
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
