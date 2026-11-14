@@ -67,7 +67,7 @@ release assets and promoted playable snapshots are separate identities.
 - Renames Energy Elemental to **Plasma Elemental** without changing its stable ID.
 - Makes Water and Ice Elementals occupy one battlefield hex and updates both Wisp portraits.
 
-These entries describe development rules. Compilation, native checks, rendered
+These entries describe the 0.91 rules. Compilation, native checks, rendered
 acceptance, measured performance and release publication are separate gates.
 
 ## 0.90 Early Access
@@ -75,7 +75,7 @@ acceptance, measured performance and release publication are separate gates.
 The published Command/Authority release requires format **1158** and a new game
 from 0.89.x. It introduced persistent army-slot progression and captured
 Command enhancements, universal Authority, passive Warfare and no finite Order
-payment. Those army-progression mechanics are superseded in current development
+payment. Those army-progression mechanics are superseded in 0.91
 by the Leadership migration above; existing files are not converted.
 
 In-battle auto-resolve uses Quick Combat AI. Fast remains the default for human
