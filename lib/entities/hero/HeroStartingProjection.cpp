@@ -390,8 +390,8 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 	};
 	if(usesPerkRules(selections.rules))
 	{
-		selectStartingHeroPerks(selections, profile ? profile->perks : std::vector<PerkSelection>{},
-			hero.startingPerks, rank);
+		initializeStartingHeroPerks(selections, development, hero.getId(),
+			profile ? profile->perks : std::vector<PerkSelection>{}, hero.startingPerks, rank);
 	}
 	result.perks = selections.selected;
 	result.spellBook = overrides.spellBook.value_or(hero.haveSpellBook);

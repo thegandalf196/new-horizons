@@ -7,6 +7,34 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.91.1 — Unreleased
+
+- Integrates the Conflux artwork handoffs omitted from 0.91: Pasis is now
+  displayed as **Veyra** and Monere as **Orun**, with their approved biographies
+  and portraits. Fiur, Lacus and Kalt receive their approved portraits.
+- Replaces Water and Ice Elemental battle animations, adventure sprites,
+  portraits and map attack artwork. Includes the approved Ice projectile art
+  and alignment metadata while retaining its current melee role and abilities.
+- Adds the aged, bloodied-linen Mummy artwork across battle animations, map
+  sprites and portraits. Royal Mummy artwork and both creatures' rules are unchanged.
+- Level-up offers place a weighted existing-Skill upgrade on the left and a
+  weighted new Skill on the right whenever those choices are available.
+- All standard heroes begin with fitting perks for their starting Skill ranks,
+  without an opening perk-selection prompt. Seth begins with Grave Knowledge
+  and Eagle Eye. Later Skill ranks still offer the complete eligible perk tier.
+- Heroes gain one additional daily Movement point per level after the first,
+  added after Logistics. Gaining a level does not refill remaining Movement.
+- Reworks Sylvan Tactics around the Rampart army: Hunting Pack, Dwarven Hardiness,
+  Disarming Shot, Briar Grip, Evergreen Blessings, Silver Wings, Sacred Grove,
+  Kindred Flame and Ancient Accord. Perfect Moment retains its existing effect.
+- Windows packages expose one launch executable at the root, with engine files
+  in `runtime/`. First-run setup on Windows and Linux lets players select their
+  original Heroes III assets and remembers the selection.
+
+Save format remains **1159**, compatible with 0.91. Authored map/save hero names
+and portraits retain their normal precedence over updated defaults. Existing
+games retain their captured progression, Movement and Sylvan rules.
+
 ## 0.91 Early Access
 
 **A new game is required, including from 0.90.** Current and minimum save format

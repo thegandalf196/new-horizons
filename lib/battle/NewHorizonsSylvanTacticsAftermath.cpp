@@ -25,7 +25,7 @@ StrikeSnapshot captureStrike(const CBattleInfoCallback & battle,
 	const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) return result;
 	const auto tactics = battle.getBattle()->getSylvanLuckState(side).tactics;
-	if(!tactics.enabled) return result;
+	if(!tactics.enabled || !(tactics.coveringFire || tactics.crossfire || tactics.disruptiveStrike || tactics.wildHunt)) return result;
 	result.valid = true;
 	result.shooting = shooting;
 	result.shooter = attacker->unitId();

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsTimedUtility.h"
 #include "CSpell.h"
 #include "ISpellMechanics.h"
@@ -102,6 +103,7 @@ std::optional<Bonus> prospectiveProtection(const spells::Mechanics & m, const ba
 	packet.toUpdate.emplace_back(unit.unitId(), std::vector<Bonus>{*value});
 	newHorizonsMetamagic::adjustAppliedBonuses(m.getMetamagicCastProfile(), *m.battle(),
 		m.getSpellId(), family->getId(), {unit.unitId()}, packet);
+	newHorizonsSylvanTacticsV2::adjustAppliedBonuses(m, packet);
 	return packet.toUpdate.front().second.front();
 }
 

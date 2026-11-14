@@ -249,8 +249,36 @@ if(NOT WIN32 AND NOT APPLE AND NOT ANDROID)
 		)
 	endforeach()
 
-	install(FILES icons/vcmiclient.desktop
+	set(NH_CLIENT_DESKTOP "${CMAKE_CURRENT_SOURCE_DIR}/icons/vcmiclient.desktop")
+	if(ENABLE_MONOLITHIC_INSTALL AND ENABLE_SDL3 AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		file(READ "${NH_CLIENT_DESKTOP}" NH_DESKTOP_CONTENT)
+		string(REPLACE "Exec=new-horizons\n" "Exec=new-horizons-setup\n" NH_DESKTOP_CONTENT "${NH_DESKTOP_CONTENT}")
+		set(NH_CLIENT_DESKTOP "${CMAKE_CURRENT_BINARY_DIR}/new-horizons.desktop")
+		file(WRITE "${NH_CLIENT_DESKTOP}" "${NH_DESKTOP_CONTENT}")
+	endif()
+	install(FILES "${NH_CLIENT_DESKTOP}"
 		DESTINATION share/applications
 		RENAME new-horizons.desktop
 	)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND ENABLE_SDL3)
+	# Folder selection must work before original-game resources are mounted.
+	add_executable(nhOriginalAssetsSetup LinuxAssetsPicker.cpp)
+	set_target_properties(nhOriginalAssetsSetup PROPERTIES OUTPUT_NAME "new-horizons-setup"
+		BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN" BUILD_WITH_INSTALL_RPATH TRUE
+		INSTALL_RPATH_USE_LINK_PATH FALSE)
+	target_link_libraries(nhOriginalAssetsSetup PRIVATE ${SDL3_CORE_TARGET})
+	vcmi_set_output_dir(nhOriginalAssetsSetup "")
+	install(TARGETS nhOriginalAssetsSetup DESTINATION ${BIN_DIR})
+	if(ENABLE_MONOLITHIC_INSTALL)
+		install(PROGRAMS "${CMAKE_SOURCE_DIR}/tools/Play-New-Horizons.sh"
+			"${CMAKE_SOURCE_DIR}/tools/new-horizons-launch.sh" DESTINATION ${BIN_DIR})
+		install(FILES "${CMAKE_SOURCE_DIR}/tools/linux_assets_setup.py" DESTINATION ${BIN_DIR})
+	endif()
+endif()
+
+if(WIN32)
+	# The standalone portable entry point cannot import the engine or SDL.
+	add_subdirectory("${CMAKE_SOURCE_DIR}/win/bootstrap" "${CMAKE_BINARY_DIR}/windows-bootstrap")
 endif()

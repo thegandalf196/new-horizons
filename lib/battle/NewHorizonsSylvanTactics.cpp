@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsSylvanTactics.h"
+#include "NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsCombatSkills.h"
 #include "CBattleInfoCallback.h"
 #include "BattleAttackInfo.h"
@@ -41,6 +42,11 @@ void configure(const CGHeroInstance & hero, SylvanLuckState & fortune)
 	{
 		return hero.hasActivePerk("new-horizons:sylvanLuck", std::string("new-horizons:sylvanLuck.") + id);
 	};
+	if(newHorizonsSylvanTacticsV2::enabled(&hero))
+	{
+		tactics.perfectMoment = perk("perfectMoment");
+		return;
+	}
 	tactics.fleetfoot = perk("elvenPrecision");
 	tactics.patientHunter = perk("forestSFavor");
 	tactics.dappledCover = perk("serendipity");
@@ -77,6 +83,7 @@ std::vector<std::shared_ptr<Bonus>> rankBonuses(const CGHeroInstance & hero,
 void finalizeDamage(const CBattleInfoCallback & battle, const BattleAttackInfo & info,
 	DamageAttackInfo & payload)
 {
+	newHorizonsSylvanTacticsV2::finalizeDamage(battle, info, payload);
 	if(!info.physicalDamage || !ordinary(info.attacker) || !info.defender) return;
 	const auto side = battle.playerToSide(battle.battleGetOwner(info.attacker));
 	const auto targetSide = battle.playerToSide(battle.battleGetOwner(info.defender));

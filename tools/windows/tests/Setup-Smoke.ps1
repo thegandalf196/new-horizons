@@ -102,6 +102,9 @@ try {
     $sourceHelper = Join-Path $sourceDir 'Start-New-Horizons.ps1'
     $ast = Get-ParsedScript $sourceHelper
     $null = Get-ParsedScript $PSCommandPath
+    $null = Get-ParsedScript (Join-Path $sourceDir 'Launch-Process.ps1')
+    $null = Get-ParsedScript (Join-Path $sourceDir 'Setup-Progress.ps1')
+    $null = Get-ParsedScript (Join-Path $PSScriptRoot 'Portable-Entry-Smoke.ps1')
     Assert-Check ($null -ne $ast) 'original helper and smoke test parse without errors'
 
     # Quoting/path coverage includes spaces, Unicode, &, %, !, [], (), apostrophe.
@@ -117,6 +120,8 @@ try {
     Write-FixtureFile (Join-Path $package 'new-horizons.exe') 'SYNTHETIC PLACEHOLDER, NOT AN EXECUTABLE'
     Write-FixtureFile (Join-Path $package 'VCMI_lib.dll') 'SYNTHETIC PLACEHOLDER, NOT A DLL'
     Write-FixtureFile (Join-Path $package 'config\filesystem.json') '{}'
+    [IO.File]::Copy((Join-Path $sourceDir 'Launch-Process.ps1'), (Join-Path $package 'Launch-Process.ps1'))
+    [IO.File]::Copy((Join-Path $sourceDir 'Setup-Progress.ps1'), (Join-Path $package 'Setup-Progress.ps1'))
     [IO.File]::Copy((Join-Path $sourceDir 'dirs.json'), (Join-Path $package 'config\dirs.json'))
 
     # TEMP COPY only: replace the picker, prohibit launch and insert two narrowly
@@ -134,6 +139,8 @@ function Select-CompleteFolder {
     throw 'SMOKE: folder picker is forbidden.'
 }
 function Start-Process { throw 'SMOKE: client launch is forbidden.' }
+function Invoke-NativeClient { throw 'SMOKE: native client launch is forbidden.' }
+function Show-AssetImportProgress { return $null }
 '@
     $guarded = $text.Substring(0, $extent.StartOffset) + $guard + $text.Substring($extent.EndOffset)
     $copyLine = '[IO.File]::Copy($from, $to, $false)'

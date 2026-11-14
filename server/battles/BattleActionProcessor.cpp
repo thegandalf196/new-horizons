@@ -4515,13 +4515,8 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 				defenderState->bulwarkDefendPhysicalDamage = std::numeric_limits<int64_t>::max();
 			defenderStateChanged = true;
 		}
-		if(bsa.damageAmount > 0 && !bat.spellLike()
-			&& newHorizonsArchery::isOrdinaryPhysicalShooter(attackerState.get()))
-		{
-			const auto shooterSide = battle.playerToSide(battle.battleGetOwner(attackerState.get()));
-			defenderState->archeryRecordCrossfireDamage(shooterSide, attackerState->unitId(), battle.battleGetRound());
-			defenderStateChanged = true;
-		}
+		defenderStateChanged = battleSylvanStrikeAftermath::recordDamageResources(battle, attackerState.get(),
+			def, *defenderState, bat.shot(), bat.spellLike(), bsa.damageAmount, postShieldBeforeCasualties) || defenderStateChanged;
 		if(defenderStateChanged)
 			bsa.newState.data = defenderState->save();
 	}

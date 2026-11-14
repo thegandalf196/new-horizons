@@ -93,7 +93,6 @@ class ElementalRebalanceDataTest(unittest.TestCase):
         self.assertNotIn('NO_MELEE_PENALTY', storm_types)
         self.assertEqual(ice['shots'], 0)
         self.assertNotIn('SHOOTER', {ability['type'] for ability in ice['abilities'].values()})
-        self.assertNotIn('missile', ice['graphics'])
         self.assertNotIn('shoot', ice['sound'])
         self.assertIn('FLYING', {ability['type'] for ability in energy['abilities'].values()})
         # No new immunity/school/proc is invented here; Frozen belongs to its runtime owner.
@@ -107,6 +106,21 @@ class ElementalRebalanceDataTest(unittest.TestCase):
             excluded = {'ADDITIONAL_RETALIATION', 'PHYSICAL_DAMAGE_REDUCTION',
                         'PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS', 'RANGED_DAMAGE_REDUCTION'}
             self.assertFalse(excluded & {ability['type'] for ability in after.values()})
+
+    def test_approved_ice_projectile_alignment_does_not_grant_shooting(self):
+        ice = merged(self.original['iceElemental'], self.patch['core:iceElemental'])
+        self.assertEqual(ice['graphics']['missile'], {
+            'projectile': 'PICEE.DEF',
+            'frameAngles': [90, 72, 45, 27, 0, -27, -45, -72, -90],
+            'attackClimaxFrame': 4,
+            'offset': {
+                'upperX': 34, 'upperY': -82,
+                'middleX': 43, 'middleY': -71,
+                'lowerX': 34, 'lowerY': -40,
+            },
+        })
+        self.assertEqual(ice['shots'], 0)
+        self.assertNotIn('SHOOTER', {ability['type'] for ability in ice['abilities'].values()})
 
     def test_unrelated_conflux_roster_is_preserved(self):
         self.assertEqual(set(self.patch), {'core:' + name for name in STATS} | {

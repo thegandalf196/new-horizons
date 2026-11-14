@@ -80,8 +80,8 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndWarcasting)
 	EXPECT_EQ(halon->getSecSkillLevel(warcasting), MasteryLevel::BASIC);
 	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:spellcraft")), MasteryLevel::NONE);
 	EXPECT_TRUE(halon->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.arcaneValor"));
-	ASSERT_EQ(halon->getPerkState().selected.size(), 1u);
-	EXPECT_EQ(halon->getPerkState().selected.front().perkId, "new-horizons:warcasting.arcaneValor");
+	ASSERT_EQ(halon->getPerkState().selected.size(), 2u);
+	EXPECT_TRUE(halon->getPerkState().hasPerkForTier("new-horizons:metamagic", 1));
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::MYSTICISM), MasteryLevel::NONE);
 
@@ -123,8 +123,8 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaUsesFocusMagicAndSoftLeade
 	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:sorceryMagic")), MasteryLevel::NONE);
 	ASSERT_EQ(brissa->secSkills.size(), 2u);
 	EXPECT_TRUE(brissa->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.rootcaller"));
-	ASSERT_EQ(brissa->getPerkState().selected.size(), 1u);
-	EXPECT_EQ(brissa->getPerkState().selected.front().perkId, "new-horizons:natureMagic.rootcaller");
+	ASSERT_EQ(brissa->getPerkState().selected.size(), 2u);
+	EXPECT_TRUE(brissa->getPerkState().hasPerkForTier("new-horizons:elementalRebirth", 1));
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::AIR_MAGIC), MasteryLevel::NONE);
 	ASSERT_EQ(brissa->getCapabilityRules()["rulesetVersion"].Integer(), 7);
@@ -174,9 +174,8 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAn
 		"new-horizons:havocMagic.stormcaller"));
 	EXPECT_EQ(solmyr->valOfBonuses(BonusType::SPECIAL_SPELL_SCALING,
 		BonusSubtypeID(masterChainLightning)), 0);
-	ASSERT_EQ(solmyr->getPerkState().selected.size(), 1u);
-	EXPECT_EQ(solmyr->getPerkState().selected.front().perkId,
-		"new-horizons:havocMagic.stormcaller");
+	ASSERT_EQ(solmyr->getPerkState().selected.size(), 2u);
+	EXPECT_TRUE(solmyr->getPerkState().hasPerkForTier("new-horizons:metamagic", 1));
 	EXPECT_EQ(solmyr->getHeroType()->getSpecialtyNameTranslated(), "Master Chain Lightning");
 	EXPECT_EQ(solmyr->getHeroType()->getSpecialtyTooltipTranslated(), "Master Chain Lightning");
 

@@ -258,5 +258,15 @@
 		"texts": {
 			"biography": "Once a sorceress in Enroth, Luna felt the call of the elemental Conflux and made her way to Erathia. There she was compelled to set aside her aquatic talents and turn her efforts toward developing fire magic."
 		}
+	},
+	"core:monere": {
+		"texts": {
+			"biography": "Orun spent ages beside a shattered elemental gateway, gathering Wisps scattered by its collapse. He taught them to hold formation and strike together rather than drift alone. When the Conflux called, he brought his silent host, determined that these wandering sparks would never again be left without a guardian."
+		}
+	},
+	"core:pasis": {
+		"texts": {
+			"biography": "For years, travelers crossing the borderlands followed a pale light that passed unhindered through fallen towers and sealed gates. That light was Veyra, a Wisp drawn to the stubborn courage of mortal explorers. She joined the Conflux after guiding a lost elemental host home, and now leads her kind along paths no living scout can follow."
+		}
 	}
 }

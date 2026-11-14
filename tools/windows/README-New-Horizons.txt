@@ -7,12 +7,18 @@ PLAY (no installer, administrator access or build tools)
    or Actions artifact. Choose the Windows package, not GitHub's source ZIP.
    Extract ALL files into an ordinary local folder you can access. Do not run
    inside the ZIP or merge this package into an existing Heroes III/VCMI install.
-2. Double-click Play-New-Horizons.cmd in the extracted folder.
+2. Double-click new-horizons.exe at the root of the extracted folder.
 3. On first use, select your legitimate, installed Heroes III Complete folder:
    the parent containing Data, Maps and Mp3. Setup copies only those three
    folders into a private New Horizons profile, then starts the game.
-4. Next time, use the same Play-New-Horizons.cmd. A completed import is checked
+4. Next time, use the same root new-horizons.exe. A completed import is checked
    and reused; the original installation need not remain at its previous path.
+
+The root contains only new-horizons.exe and the runtime folder. Keep them
+together. DLLs, configuration, setup scripts, licenses and build/source notices
+are inside runtime. The root program starts setup; runtime/new-horizons.exe is
+the engine and is not the normal player entry point. Do not move either EXE.
+runtime/SHA256SUMS.txt lists paths relative to the extracted package root.
 
 This is a Windows 10/11 preview. Match the package architecture in its release
 notes. Compilation/package checks do NOT establish successful native Windows
@@ -45,7 +51,9 @@ DISK SPACE, SAFETY AND PRIVATE FILES
 A first import needs free space for a full additional copy of Data, Maps and
 Mp3, plus room for saves/cache. Reselection needs another full copy while the
 existing content remains available. Large installations can require several
-GiB. Copying and SHA-256 verification can take several minutes.
+GiB. Copying and SHA-256 verification can take several minutes. Double-click
+setup keeps a progress window visible until the verified copy is activated.
+The folder picker can be cancelled; copying is allowed to finish safely.
 
 Original assets, settings, cache and logs remain isolated below:
   %LOCALAPPDATA%\HeroesIII-NewHorizons\
@@ -58,7 +66,7 @@ Paste that line into File Explorer's address bar to find:
 
 Before gameplay, New Horizons verifies NewHorizons.nhart and prepares its
 artwork in a versioned directory under the profile cache. This needs about
-27 MB plus filesystem overhead for the current pack. Later launches verify
+space comparable to the shipped artwork pack plus filesystem overhead. Later launches verify
 and reuse it; animations do not extract files while playing. Keep the shipped
 NHART package. If preparation fails, check free space and cache permissions;
 do not remove saves or original game files to repair the artwork cache.
@@ -69,14 +77,14 @@ New saves use a separate New Horizons directory:
 Earlier %LOCALAPPDATA%\HeroesIII-NewHorizons\Saves files are not moved or
 deleted.
 
-SAVE COMPATIBILITY - 0.90 Early Access
+SAVE COMPATIBILITY - 0.91.1 Early Access
 Start a new game, including when upgrading from 0.89 or 0.89.1. The current and
-minimum accepted save format is 1158. Earlier saves are rejected before payload
+minimum accepted save format is 1159. Earlier saves are rejected before payload
 loading, not converted, rewritten or deleted. Keep your old save files and backups;
 use the matching older version to continue those games. Copying an old save into
 the new directory does not make it compatible.
 
-The package's config\dirs.json supplies ALL five path overrides. Do not remove
+The package's runtime\config\dirs.json supplies ALL five path overrides. Do not remove
 it or point userDataPath at your original installation: the engine can write
 random maps into its data root. No shared Documents\My Games\vcmi profile is
 used by this configured package. No symlinks/junctions or related privileges
@@ -98,7 +106,7 @@ closed, preserve your previous content and restore it to content if activation
 was interrupted. Never merge a partial staging folder into active content.
 
 The helper holds a profile lock during import and play. Do not start a second
-session, or use the direct EXE while another helper/game is running. Separate
+session or bypass the root launcher while another helper/game is running. Separate
 extractions of this release intentionally share this NH profile, not upstream
 VCMI's profile. Moving the extracted program folder does not move your saves.
 
@@ -106,12 +114,12 @@ RESELECT ASSETS / SETUP WITHOUT PLAY
 ----------------------------------
 Close the game. Open Windows PowerShell in the extracted package folder
 (File Explorer: type powershell in its address bar). Run:
-  powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\Start-New-Horizons.ps1" -SelectAssets
+  powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\runtime\Start-New-Horizons.ps1" -SelectAssets
 
 For setup only, add -SetupOnly to that command. For a non-dialog import the
 script also accepts -AssetsPath with one literal folder argument; it never
-executes that selected path as a shell command. The normal CMD route needs no
-command typing and does not accept/forward shell arguments.
+executes that selected path as a shell command. The normal root EXE needs no command
+typing. It forwards game arguments as data, including paths containing spaces; --help and --version skip asset setup.
 
 ERRORS / RESTRICTIONS
 --------------------
@@ -141,11 +149,11 @@ ERRORS / RESTRICTIONS
 
 MANUAL FALLBACK (NO POWERSHELL)
 ------------------------------
-This uses File Explorer and the same shipped config\dirs.json. No script,
+This uses File Explorer and the same shipped runtime\config\dirs.json. No script,
 symlink, elevation, development environment or optional mod setup is needed.
 
 1. Close every New Horizons session. Extract the whole Windows package. Keep
-   its config\dirs.json unchanged at that exact location beside the EXE's
+   its runtime\config\dirs.json unchanged beside the inner engine's
    directory. Confirm it specifies the five private paths described above.
 2. In File Explorer, open %LOCALAPPDATA% and create HeroesIII-NewHorizons if it
    does not exist. Inside it create a NEW empty folder named content.new.
@@ -164,8 +172,8 @@ symlink, elevation, development environment or optional mod setup is needed.
    content.previous-... name (keep it as backup), then rename content.new to
    content. If that rename fails, restore the previous content name. Leave
    config, cache, logs and especially Saves alone.
-6. Double-click new-horizons.exe in the EXTRACTED NEW HORIZONS PACKAGE, not the
-   original game EXE. The client sets its own working directory to that folder.
+6. For this manual route only, double-click runtime\new-horizons.exe in the
+   EXTRACTED NEW HORIZONS PACKAGE, not the original game EXE. The client sets its own working directory to that folder.
    It finds the private assets via config\dirs.json and creates private writable
    directories as needed. Use that direct EXE for subsequent manual-route play.
 
@@ -175,7 +183,7 @@ legacy_client_source_commit/source_commit. Use the included helper; do not renam
 old executables or mix them with new client/library files.
 
 The manual route does not create the helper's verified import record. Using
-Play-New-Horizons.cmd afterwards will request a fresh verified import; this is
+the root new-horizons.exe afterwards will request a fresh verified import; this is
 intentional, not evidence that a manually copied directory was hash-verified.
 
 LICENSE / SOURCE / ORIGINAL ASSETS

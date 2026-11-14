@@ -13,6 +13,10 @@ $ErrorActionPreference = 'Stop'
 $profileRoot = $null
 $stage = $null
 $lock = $null
+$launchExitCode = 0
+. (Join-Path $PSScriptRoot 'Launch-Process.ps1')
+. (Join-Path $PSScriptRoot 'Setup-Progress.ps1')
+$importProgress = $null
 
 function Test-ReportableGameExit {
     param([int]$ExitCode, [bool]$ForwardedStop = $false)
@@ -172,6 +176,7 @@ function Select-CompleteFolder {
 }
 
 try {
+    $gameArguments = @(Read-BootstrapArguments)
     $packageRoot = [IO.Path]::GetFullPath($PSScriptRoot)
     $clientName = 'new-horizons.exe'
     $identityPath = Join-Path $packageRoot 'BUILD-IDENTITY.json'
@@ -190,8 +195,11 @@ try {
     $client = Join-Path $packageRoot $clientName
     foreach ($required in @($clientName, 'VCMI_lib.dll', 'config\dirs.json', 'config\filesystem.json')) {
         if (-not (Test-Path -LiteralPath (Join-Path $packageRoot $required) -PathType Leaf)) {
-            throw "Incomplete download/extraction: missing $required. Extract the entire New Horizons Windows ZIP, then use Play-New-Horizons.cmd inside it."
+            throw "Incomplete download/extraction: missing $required. Extract the entire New Horizons Windows ZIP, then open new-horizons.exe at its root."
         }
+    }
+    if ($gameArguments.Count -eq 1 -and $gameArguments[0] -in @('--help', '-h', '--version', '-v')) {
+        exit (Invoke-NativeClient $client $packageRoot $gameArguments)
     }
     $localData = [Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process')
     if ([string]::IsNullOrWhiteSpace($localData) -or -not [IO.Path]::IsPathRooted($localData)) {
@@ -280,11 +288,14 @@ try {
             $null = [IO.Directory]::CreateDirectory((Join-Path $stage $folder))
         }
         $completed = 0
+        $copiedBytes = 0L
+        $importProgress = Show-AssetImportProgress $inventory.Count $bytes
         foreach ($file in $inventory) {
             $from = Get-SafeChildPath $source $file.path
             $to = Get-SafeChildPath $stage $file.path
             Assert-PlainPath $from
             $null = [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($to))
+            Update-AssetImportProgress $importProgress $completed $copiedBytes ('Copying and verifying ' + $file.path)
             [IO.File]::Copy($from, $to, $false)
             if ((Get-Item -LiteralPath $from).Length -ne $file.length -or
                 (Get-Item -LiteralPath $to).Length -ne $file.length -or
@@ -292,9 +303,12 @@ try {
                 throw "Copy verification failed for $($file.path). Stop other programs modifying the source, check the disk, then retry."
             }
             $completed++
+            $copiedBytes += $file.length
+            Update-AssetImportProgress $importProgress $completed $copiedBytes 'Copying and verifying assets'
             Write-Progress -Activity 'Copying and verifying Complete assets' -Status "$completed / $($inventory.Count)" -PercentComplete (100 * $completed / $inventory.Count)
         }
         Write-Progress -Activity 'Copying and verifying Complete assets' -Completed
+        Update-AssetImportProgress $importProgress $completed $copiedBytes 'Validating and activating verified content'
         Assert-CompleteLayout $stage
         $manifest = [ordered]@{ format = 1; product = 'HeroesIII-NewHorizons'; complete = $true; files = $inventory }
         $json = $manifest | ConvertTo-Json -Depth 5
@@ -320,6 +334,8 @@ try {
             throw "Could not activate the verified copy: $activationError. Existing content was restored; close the game and retry."
         }
         if ($backup) { Write-Host "Previous content retained at: $backup" }
+        Close-AssetImportProgress $importProgress
+        $importProgress = $null
     }
     Assert-ReadyContent $content
     Set-ManagedPreset $packageRoot $profileRoot
@@ -337,8 +353,7 @@ try {
         } | Select-Object -First 1
         if ($retained) {
             try {
-                $reportArguments = '--nointro --report-bug pending'
-                $reporter = Start-Process -FilePath $client -ArgumentList $reportArguments -WorkingDirectory $packageRoot -PassThru -Wait
+                $null = Invoke-NativeClient $client $packageRoot @('--nointro', '--report-bug', 'pending')
             } catch {
                 [Console]::Error.WriteLine('A retained report could not open; evidence remains in the logs folder.')
             }
@@ -348,29 +363,32 @@ try {
     $previousCrashSession = $env:NH_CRASH_SESSION_DIR
     $env:NH_CRASH_SESSION_DIR = $crashSession
     try {
-        $game = Start-Process -FilePath $client -WorkingDirectory $packageRoot -PassThru -Wait
+        $launchExitCode = Invoke-NativeClient $client $packageRoot $gameArguments
     } finally {
         $env:NH_CRASH_SESSION_DIR = $previousCrashSession
     }
-    $game.Refresh()
-    if ((Test-ReportableGameExit -ExitCode $game.ExitCode) -and (Test-Path -LiteralPath (Join-Path $crashSession 'pending'))) {
+    if ((Test-ReportableGameExit -ExitCode $launchExitCode) -and (Test-Path -LiteralPath (Join-Path $crashSession 'pending'))) {
         try {
             # Keep the profile lock and matching package alive until form closes.
             # The session path is quoted as one argument; no shell evaluation.
-            $reportArguments = '--nointro --report-bug "' + $crashSession + '"'
-            $reporter = Start-Process -FilePath $client -ArgumentList $reportArguments -WorkingDirectory $packageRoot -PassThru -Wait
+            $null = Invoke-NativeClient $client $packageRoot @('--nointro', '--report-bug', $crashSession)
         } catch {
             [Console]::Error.WriteLine('The report form could not open; crash evidence remains in the logs folder.')
         }
     }
-    if ($game.ExitCode -ne 0) {
-        throw "$clientName exited with code $($game.ExitCode). Check $profileRoot\logs. If a DLL is missing, re-extract the full matching Windows package."
+    if ($launchExitCode -ne 0) {
+        [Console]::Error.WriteLine("$clientName exited with code $launchExitCode. Check $profileRoot\logs.")
     }
 } catch {
     [Console]::Error.WriteLine('New Horizons: ' + $_.Exception.Message)
     [Console]::Error.WriteLine('Setup failures prevent launch. Check free space/permissions and README-New-Horizons.txt. Do not use administrator mode.')
-    exit 1
+    if ($env:NH_WINDOWS_BOOTSTRAP_UI -eq '1') {
+        Add-Type -AssemblyName System.Windows.Forms
+        $null = [Windows.Forms.MessageBox]::Show($_.Exception.Message, 'New Horizons setup')
+    }
+    $launchExitCode = 1
 } finally {
+    Close-AssetImportProgress $importProgress
     if ($stage -and (Test-Path -LiteralPath $stage)) {
         # Only this invocation's unique, never-activated staging directory is eligible.
         try { Remove-Item -LiteralPath $stage -Recurse -Force }
@@ -378,3 +396,5 @@ try {
     }
     if ($lock) { $lock.Dispose() }
 }
+
+exit $launchExitCode

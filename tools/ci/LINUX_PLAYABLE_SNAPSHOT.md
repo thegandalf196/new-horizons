@@ -248,3 +248,20 @@ profile, and retain every snapshot they target along with the current and
 previous snapshots named in `current.json`. Remove only older
 `snapshot-<sha256>` directories in this helper's dedicated store after confirming
 they are not referenced. Leave unknown files and directories untouched.
+
+## Optional desktop setup payload
+
+`freeze --setup-client /build/bin/new-horizons-setup` includes that fixed-name
+ELF program and the three maintained setup/launch scripts. The executable must
+match the client ELF architecture; shared libraries cannot stand in for it.
+The immutable manifest binds every support file and its nonwritable mode.
+No arbitrary additional executable or script paths are admitted. Legacy
+snapshots without this payload still accept explicit or remembered original
+assets through the development launcher. A direct native setup launch requires
+the complete optional payload beside the client.
+
+The curated portable/monolithic layout supports first-run setup. The generic
+nonmonolithic VCMI installation layout keeps its existing desktop entry.
+Public staging additionally requires independent ELF/import and source evidence
+for the setup executable and its actual runtime providers; a successful freeze
+does not establish that evidence or native folder-dialog acceptance.

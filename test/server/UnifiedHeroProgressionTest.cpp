@@ -154,6 +154,9 @@ TEST_F(UnifiedHeroProgressionTest, OrdinarySkillThenPerkIsOneLevelAndStaleReplyC
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto oldLevel = hero->level;
+	const int oldMovementLimit = hero->movementPointsLimit();
+	const auto oldRemaining = hero->movementPointsRemaining();
+	const auto oldTreeVersion = hero->getTreeVersion();
 	handler->giveExperience(hero, LIBRARY->heroh->reqExp(oldLevel + 1) - hero->exp);
 	const auto skill = current();
 	ASSERT_TRUE(skill);
@@ -161,6 +164,9 @@ TEST_F(UnifiedHeroProgressionTest, OrdinarySkillThenPerkIsOneLevelAndStaleReplyC
 	EXPECT_FALSE(skill->hlu.perkOnly);
 	EXPECT_TRUE(skill->hlu.perks.empty());
 	EXPECT_EQ(hero->level, oldLevel + 1);
+	EXPECT_EQ(hero->movementPointsLimit(), oldMovementLimit + 1);
+	EXPECT_EQ(hero->movementPointsRemaining(), oldRemaining);
+	EXPECT_GT(hero->getTreeVersion(), oldTreeVersion);
 	EXPECT_TRUE(handler->pendingHeroLevelUps.at(hero->id).restoredOffer);
 	EXPECT_NO_THROW(handler->validatePendingHeroProgression());
 	ASSERT_NO_FATAL_FAILURE(reply());

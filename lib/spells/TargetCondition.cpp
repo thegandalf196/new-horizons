@@ -11,6 +11,7 @@
 #include "NewHorizonsMetamagicEffects.h"
 
 #include "TargetCondition.h"
+#include "../battle/NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsSpellAvailability.h"
 
 #include "../GameConstants.h"
@@ -189,26 +190,7 @@ protected:
 	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
-
-		if(!m->isMagicalEffect()) //Always pass on non-magical
-			return true;
-
-		if (m->getSpellLevel() <= 0)
-			return true;
-
-		bool hasAbsoluteImmunity = false;
-
-		const auto & levelImmunities = target->getBonusesOfType(BonusType::LEVEL_SPELL_IMMUNITY);
-		for (const auto & bonus : *levelImmunities)
-			if (bonus->parameters && bonus->parameters->toNumber() == 1)
-				hasAbsoluteImmunity = true;
-
-		if (!hasAbsoluteImmunity)
-			return true;
-
-		return levelImmunities->totalValue() < m->getSpellLevel();
-
-		return true;
+		return newHorizonsSylvanTacticsV2::levelImmunityAllows(*m, target, true);
 	}
 };
 
@@ -310,12 +292,7 @@ protected:
 	}
 	bool check(const Mechanics * m, const battle::Unit * target) const override
 	{
-		if(!m->isMagicalEffect()) //Always pass on non-magical
-			return true;
-		TConstBonusListPtr levelImmunities = target->getBonusesOfType(BonusType::LEVEL_SPELL_IMMUNITY);
-		return levelImmunities->size() == 0 ||
-		levelImmunities->totalValue() < m->getSpellLevel() ||
-		m->getSpellLevel() <= 0;
+		return newHorizonsSylvanTacticsV2::levelImmunityAllows(*m, target, false);
 	}
 };
 

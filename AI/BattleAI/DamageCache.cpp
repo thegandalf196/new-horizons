@@ -114,6 +114,7 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 	if(defender->intrinsicPhysicalDamageReductionPercent() > 0)
 		intrinsicPdrTargets.insert(defender->unitId());
 	rememberTemporaryCombatModifiers(attacker, defender, *hb);
+	tracksSylvanAlliance(attacker, defender, *hb);
 	if(newHorizonsReactiveDefense::ironHideConfiguredPercent(*hb, *defender) > 0)
 		temporaryCombatModifierUnits.insert(defender->unitId());
 	const auto attackerSide = hb->playerToSide(hb->battleGetOwner(attacker));
@@ -321,7 +322,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	// expiry or hidden hero policy cannot revive a stale ID-only pair entry.
 	// Boneward is controller/form-sensitive environment state, not a bonus-tree node.
 	// Remember its prior presence so removing it cannot revive a reduced pair entry.
-	if(sylvanTacticsAI::dynamicDamage(*hb, attacker, defender)
+	if(tracksSylvanAlliance(attacker, defender, *hb)
+		|| sylvanTacticsAI::dynamicDamage(*hb, attacker, defender)
 		|| admission.ordinaryCreatureDamageIsStateful()
 		|| tracksIntrinsicReduction(defender->unitId(), attack.physicalDamage)
 		|| admission.supportsFocusFire()
@@ -457,6 +459,20 @@ bool DamageCache::tracksIntrinsicReduction(uint32_t defenderId, bool physical) c
 {
 	for(const auto * cache = this; cache; cache = cache->parent)
 		if((physical ? cache->intrinsicPdrTargets : cache->intrinsicMdrTargets).contains(defenderId))
+			return true;
+	return false;
+}
+
+bool DamageCache::tracksSylvanAlliance(const battle::Unit * attacker, const battle::Unit * defender,
+	const CBattleInfoCallback & battle)
+{
+	const auto pair = std::pair{attacker->unitId(), defender->unitId()};
+	if(sylvanTacticsAI::allianceDamage(battle, attacker, defender))
+		sylvanAlliancePairs.insert(pair);
+	// A premium cached before an ally moves or Bind expires cannot reappear.
+	// Remember only affected directed pairs, including those in parent layers.
+	for(const auto * cache = this; cache; cache = cache->parent)
+		if(cache->sylvanAlliancePairs.contains(pair))
 			return true;
 	return false;
 }

@@ -81,5 +81,10 @@ DLL_LINKAGE void applyStartingLeadershipBonus(LeadershipSlotCapacity & capacity,
 DLL_LINKAGE void selectStartingHeroPerks(PerkState & state,
 	const std::vector<PerkSelection> & profile, const std::vector<PerkSelection> & prototype,
 	const std::function<int(const std::string &)> & rank);
+/// Creation only: explicit choices win, followed by captured hero defaults and
+/// deterministic completion for map-authored initial rank overrides.
+DLL_LINKAGE void initializeStartingHeroPerks(PerkState & state, const JsonNode & development, HeroTypeID hero,
+	const std::vector<PerkSelection> & profile, const std::vector<PerkSelection> & prototype,
+	const std::function<int(const std::string &)> & rank);
 }
 

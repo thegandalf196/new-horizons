@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsMetamagicMarks.h"
 #include "SpellBonusProvenance.h"
 #include "../battle/NewHorizonsSpecialtyProcs.h"
@@ -638,6 +639,7 @@ private:
 		stackEffectsTouched = true;
 		newHorizonsMetamagic::adjustAppliedBonuses(mechanics.getMetamagicCastProfile(), battle,
 			castSpellId, effectSpellId, preexistingRecipientIds, pack);
+		newHorizonsSylvanTacticsV2::adjustAppliedBonuses(mechanics, pack);
 		for(const auto & change : pack.toAdd)
 			recordResolvedSpellRecipient(change.first);
 		for(const auto & change : pack.toUpdate)

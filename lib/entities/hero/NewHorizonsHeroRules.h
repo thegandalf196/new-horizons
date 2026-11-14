@@ -174,6 +174,8 @@ DLL_LINKAGE bool usesRules(const JsonNode & rules);
 /// Whether a resolved hero snapshot carries the canonical per-class offer map.
 /// Old snapshots intentionally return false and retain legacy behaviour.
 DLL_LINKAGE bool usesSkillOfferWeights(const JsonNode & resolvedRules);
+/// Captured split layout: an upgrade on the left, a new Skill on the right.
+DLL_LINKAGE bool usesSplitSkillOffers(const JsonNode & resolvedRules);
 /// Returns the configured offer weight.  A present zero is meaningful (the
 /// skill is excluded); nullopt means that this is an old or incomplete
 /// snapshot and callers should use their legacy path.

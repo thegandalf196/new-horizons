@@ -561,6 +561,7 @@ set(vcmiclientcommon_HEADERS
 	windows/HeroTemporaryEffectsWindow.h
 	windows/NewHorizonsPerkBrowser.h
 	windows/NewHorizonsCapturedPerkIcons.h
+	windows/NewHorizonsSylvanAlliancePerkIcons.h
 	windows/NewHorizonsPerkIcons.h
 	windows/NewHorizonsPerkHelp.h
 	windows/NewHorizonsSkillPresentation.h

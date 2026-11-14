@@ -608,7 +608,7 @@ def main():
         raise RuntimeError("Output directory must not exist; refusing to modify prior artifacts")
     install = args.install_dir.resolve(strict=True)
     helpers = root / "tools" / "windows"
-    for filename in ("Play-New-Horizons.cmd", "Start-New-Horizons.ps1", "README-New-Horizons.txt", "dirs.json"):
+    for filename in ("Play-New-Horizons.cmd", "Start-New-Horizons.ps1", "Launch-Process.ps1", "Setup-Progress.ps1", "README-New-Horizons.txt", "dirs.json"):
         if not (helpers / filename).is_file():
             raise RuntimeError(f"Frontend tools/windows/{filename} is required")
     args.output_dir.mkdir(parents=True)
@@ -619,21 +619,8 @@ def main():
         # Explicit allowlist: never copy a user profile, Data, Maps, Saves, demo or optional mods.
         stage_windows_binaries(install, package)
         stage_engine_resources(install, package)
-        # Never ship synthetic smoke tests or future development files alongside the launcher.
-        for filename in ("Play-New-Horizons.cmd", "Start-New-Horizons.ps1", "README-New-Horizons.txt", "dirs.json"):
-            source = helpers / filename
-            destination = package / (Path("config/dirs.json") if filename == "dirs.json" else filename)
-            if destination.exists() and filename != "dirs.json":
-                raise RuntimeError(f"Frontend helper collides with package file: {destination.name}")
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, destination)
-        for filename in ("license.txt", "AUTHORS.h"):
-            shutil.copyfile(root / filename, package / filename)
-        embedded = package / "licenses" / "xBRZ"
-        embedded.mkdir(parents=True)
-        shutil.copyfile(root / "client/xBRZ/License.txt", embedded / "License.txt")
-        xbrz = (root / "client/xBRZ/xbrz.cpp").read_text(encoding="utf-8")
-        (embedded / "ATTRIBUTION.txt").write_text(xbrz.split('#include "xbrz.h"', 1)[0], encoding="utf-8")
+        from windows_portable_layout import stage_frontend
+        stage_frontend(root, helpers, package)
         runtime_roots, media_provenance = media_runtime_roots(args.conan_graph)
         write_json(package / "MEDIA-RUNTIME.json", {
             "policy": "Retain SDL image/mixer and FFmpeg host dependency DLL closure, including non-PE-imported codecs",
@@ -654,6 +641,8 @@ def main():
         write_json(package / "BUILD-IDENTITY.json", {
             "project": "Heroes III: New Horizons", "source_commit": revision,
             "client_executable": "new-horizons.exe",
+            "portable_layout": {"version": 2, "entry_point": "new-horizons.exe", "runtime_directory": "runtime",
+                                "checksum_paths_relative_to": "portable root"},
             "source_repository": "https://github.com/thegandalf196/new-horizons",
             "source_archive": source_name, "source_archive_sha256": sha256(args.output_dir / source_name),
             "source_exclusions": excluded,
@@ -688,8 +677,13 @@ def main():
         for path in package.rglob("*"):
             if path.is_file() and path.suffix.lower() in FORBIDDEN_ASSETS:
                 raise RuntimeError(f"Forbidden game asset/save in package: {path.relative_to(package)}")
+        from windows_portable_layout import assemble_portable_root
+        runtime = assemble_portable_root(package, install, run, SYSTEM_DLLS, write_json)
+        # Audit both PE domains recursively; the report belongs inside runtime/.
+        require_clean(package, verified_github_ci_provenance())
+        (package / "BINARY-PRIVACY.json").replace(runtime / "BINARY-PRIVACY.json")
         checksums = [f"{sha256(p)}  {p.relative_to(package).as_posix()}" for p in sorted(package.rglob("*")) if p.is_file()]
-        (package / "SHA256SUMS.txt").write_text("\n".join(checksums) + "\n", encoding="utf-8")
+        (runtime / "SHA256SUMS.txt").write_text("\n".join(checksums) + "\n", encoding="utf-8")
         with zipfile.ZipFile(args.output_dir / (package_name + ".zip"), "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
             for path in sorted(package.rglob("*")):
                 if path.is_file():

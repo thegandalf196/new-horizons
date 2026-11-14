@@ -1784,6 +1784,7 @@ class NewHorizonsContentTest(unittest.TestCase):
             'config/heroes/biographies.json',
             'config/heroes/fafner.json',
             'config/heroes/halon.json',
+            'config/heroes/seth.json',
             'config/heroes/solmyr.json',
             'config/heroes/classSwaps.json',
         ])

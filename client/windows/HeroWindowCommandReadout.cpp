@@ -189,6 +189,7 @@ void CHeroWindow::refreshMiddlePaneReadout()
 					movementArea->text += "\n" + std::string(label) + " maximum: " + std::to_string(breakdown.limit)
 						+ ". Inputs in order (including Logistics and other active bonuses): 200 base; base adjustment " + signedValue(breakdown.baseAdjustment)
 						+ "; " + signedValue(breakdown.percentageToBase) + "% to base; flat " + signedValue(breakdown.flat)
+						+ " (including " + signedValue(breakdown.levelGrowth) + " from hero levels)"
 						+ "; " + signedValue(breakdown.percentageToAll) + "% to all.";
 					if(breakdown.lowerBound)
 						movementArea->text += " Minimum bound: " + std::to_string(*breakdown.lowerBound) + ".";

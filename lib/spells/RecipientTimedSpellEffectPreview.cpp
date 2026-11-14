@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../battle/NewHorizonsSylvanTacticsV2.h"
 #include "RecipientTimedSpellEffectPreview.h"
 #include "NewHorizonsTimedStatusPlan.h"
 #include "NewHorizonsMetamagicEffects.h"
@@ -32,6 +33,7 @@ RecipientSpellEffectPreview transformedPreview(const spells::Mechanics & m, cons
 	packet.toAdd.emplace_back(recipient.unitId(), std::vector<Bonus>{incoming});
 	newHorizonsMetamagic::adjustAppliedBonuses(m.getMetamagicCastProfile(), *m.battle(),
 		m.getSpellId(), family, {recipient.unitId()}, packet);
+	newHorizonsSylvanTacticsV2::adjustAppliedBonuses(m, packet);
 	const auto & adjusted = packet.toAdd.front().second.front();
 	const auto duration = refreshedTimedStatusDuration(m, recipient, adjusted, adjusted.turnsRemain);
 	RecipientSpellEffectPreview result;

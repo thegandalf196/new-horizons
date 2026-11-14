@@ -6,7 +6,7 @@
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
 	"unifiedSkillProgressionVersion": 1,
-	"sylvanTacticsPolicy": 1,
+	"sylvanTacticsPolicy": 2,
 	"metamagicPolicy": {
 		"version": 3,
 		"adeptAdditionalPoints": 1
@@ -3476,7 +3476,7 @@
 			"name": "Sylvan Tactics",
 			"domain": "Faction",
 			"availability": "Rampart heroes only",
-			"description": "Friendly creatures gain Initiative and benefit from coordinated movement, Waiting and supporting fire.",
+			"description": "Friendly creatures gain Initiative; Rampart creature families gain distinctive passive benefits.",
 			"ranks": {
 				"basic": {
 					"description": "Friendly creatures gain +1 Initiative.",
@@ -3503,83 +3503,109 @@
 			"perks": [
 				{
 					"id": "new-horizons:sylvanLuck.elvenPrecision",
-					"name": "Fleetfoot",
+					"name": "Hunting Pack",
 					"requires": "basic",
-					"description": "Creatures gain +1 Speed on their first activation each combat.",
+					"description": "Centaurs and Centaur Captains deal +25% attack damage against targets adjacent to another friendly Rampart creature.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures gain +1 Speed on their first activation each combat."
-					}
+						"description": "Centaurs and Centaur Captains deal +25% attack damage against targets adjacent to another friendly Rampart creature.",
+						"parameters": {
+							"attackDamagePercent": 25
+						}
+					},
+					"details": "The attacker does not count as the adjacent supporting creature. The bonus applies to normal attacks and retaliations without granting another action."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.forestSFavor",
-					"name": "Patient Hunter",
+					"name": "Dwarven Hardiness",
 					"requires": "basic",
-					"description": "The first attack after Waiting deals +15% damage.",
+					"description": "Negative temporary spells on your Dwarves and Battle Dwarves last at most one combat round.",
 					"effect": {
 						"status": "active",
-						"description": "The first attack after Waiting deals +15% damage."
-					}
+						"description": "Negative temporary spells on your Dwarves and Battle Dwarves last at most one combat round.",
+						"parameters": {
+							"maximumNegativeSpellRounds": 1
+						}
+					},
+					"details": "This caps temporary spell duration in combat rounds, not until the next creature activation. It does not grant Poison, Disease or Bleeding immunity and does not shorten beneficial spells."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.serendipity",
-					"name": "Dappled Cover",
+					"name": "Disarming Shot",
 					"requires": "basic",
-					"description": "Waiting creatures take 20% less ranged damage.",
+					"description": "Damaging ranged hits by your Elves and Grand Elves consume one of the enemy target’s remaining finite retaliations.",
 					"effect": {
 						"status": "active",
-						"description": "Waiting creatures take 20% less ranged damage."
-					}
+						"description": "Damaging ranged hits by your Elves and Grand Elves consume one of the enemy target’s remaining finite retaliations.",
+						"parameters": {
+							"retaliationsConsumed": 1
+						}
+					},
+					"details": "Retaliations cannot fall below zero. Unlimited retaliations remain unlimited. This neither grants an action nor changes normal retaliation restrictions."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.luckyRecovery",
-					"name": "Measured Advance",
+					"name": "Briar Grip",
 					"requires": "basic",
-					"description": "Moving at least 1 hex, up to half Speed, before a melee attack grants +10% damage.",
+					"description": "Enemies bound by your Dendroids deal 20% less attack and retaliation damage while that binding remains active.",
 					"effect": {
 						"status": "active",
-						"description": "Moving at least 1 hex, up to half Speed, before a melee attack grants +10% damage."
-					}
+						"description": "Enemies bound by your Dendroids deal 20% less attack and retaliation damage while that binding remains active.",
+						"parameters": {
+							"attackDamageReductionPercent": 20
+						}
+					},
+					"details": "Applies only to victims of your Dendroid Guards’ or Dendroid Soldiers’ binding; ordinary Entangle alone does not qualify. The reduction ends when the binding ends."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.sharedFortune",
-					"name": "Covering Fire",
+					"name": "Evergreen Blessings",
 					"requires": "advanced",
-					"description": "Ranged hits grant adjacent allies 15% ranged damage reduction until their next activation.",
+					"description": "Your beneficial temporary hero spells last two additional combat rounds on friendly Rampart creatures.",
 					"effect": {
 						"status": "active",
-						"description": "Ranged hits grant adjacent allies 15% ranged damage reduction until their next activation."
-					}
+						"description": "Your beneficial temporary hero spells last two additional combat rounds on friendly Rampart creatures.",
+						"parameters": {
+							"beneficialDurationBonusRounds": 2
+						}
+					},
+					"details": "Only beneficial hero spell effects with a temporary combat-round duration qualify. Instantaneous, permanent and other duration types are unchanged."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.natureSProvidence",
-					"name": "Crossfire",
+					"name": "Silver Wings",
 					"requires": "advanced",
-					"description": "Ranged attacks deal +15% damage against enemies already hit by another friendly shooter this round.",
+					"description": "Your Pegasi and Silver Pegasi increase their enemy-hero spell-cost penalty by 2 Mana.",
 					"effect": {
 						"status": "active",
-						"description": "Ranged attacks deal +15% damage against enemies already hit by another friendly shooter this round."
-					}
+						"description": "Your Pegasi and Silver Pegasi increase their enemy-hero spell-cost penalty by 2 Mana.",
+						"parameters": {
+							"enemySpellCostBonus": 2
+						}
+					},
+					"details": "This enhances their native Magic Damper. Multiple qualifying stacks do not stack this additional Mana penalty."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.fortunateAim",
-					"name": "Disruptive Strike",
+					"name": "Sacred Grove",
 					"requires": "advanced",
-					"description": "Melee hits reduce the target's Initiative by 15% until its next activation.",
+					"description": "Your Unicorn aura protects beneficial spells on friendly creatures from enemy Dispel.",
 					"effect": {
 						"status": "active",
-						"description": "Melee hits reduce the target's Initiative by 15% until its next activation."
-					}
+						"description": "Your Unicorn aura protects beneficial spells on friendly creatures from enemy Dispel."
+					},
+					"details": "Unicorns and War Unicorns use their existing aura range. Protection does not prevent normal expiration, consumption or your own Dispel."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.wildChance",
-					"name": "Quick Redeployment",
+					"name": "Kindred Flame",
 					"requires": "advanced",
-					"description": "Defending grants +2 Speed on the next activation.",
+					"description": "Breath attacks by your Green and Gold Dragons do not damage friendly creatures.",
 					"effect": {
 						"status": "active",
-						"description": "Defending grants +2 Speed on the next activation."
-					}
+						"description": "Breath attacks by your Green and Gold Dragons do not damage friendly creatures."
+					},
+					"details": "The attack keeps its normal breath geometry and damage against enemies; it creates neither extra targets nor additional attacks."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.perfectMoment",
@@ -3593,16 +3619,18 @@
 				},
 				{
 					"id": "new-horizons:sylvanLuck.cascadingFortune",
-					"name": "Wild Hunt",
+					"name": "Ancient Accord",
 					"requires": "expert",
-					"description": "The first enemy destroyed by a friendly physical creature attack each round grants friendly creatures +2 Speed for the round.",
+					"description": "Your beneficial hero spells bypass the native spell-level immunity of friendly Rampart creatures.",
 					"effect": {
 						"status": "active",
-						"description": "The first enemy destroyed by a friendly physical creature attack each round grants friendly creatures +2 Speed for the round."
-					}
+						"description": "Your beneficial hero spells bypass the native spell-level immunity of friendly Rampart creatures."
+					},
+					"details": "Bypasses only the creature’s intrinsic spell-level immunity for your beneficial hero spells. Artifact immunities, blanket immunities and protection against hostile spells remain unchanged."
 				}
 			]
 		},
+
 		"new-horizons:metamagic": {
 			"id": "new-horizons:metamagic",
 			"name": "Metamagic",

@@ -62,7 +62,7 @@
 		"rulesetVersion": {"type": "integer", "enum": [1, 2]},
 		"offerWeightPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Captured weighting:1 full per-perk raw weights;2 normalized parent-first offers. Without an independent progression marker,2 retains historical same-tier selections."},
 		"perkProgressionPolicyVersion": {"type": "integer", "enum": [1], "not": {"type": "null"}, "description": "Captured1 requires weight policy2 and permits only the next missing perk tier, one perk per tier and one offered alternative per parent. Absence preserves historical progression."},
-		"sylvanTacticsPolicy": {"type": "integer", "enum": [1], "not": {"type": "null"}, "description": "Captured1 selects Sylvan Tactics rank/perk rules. Absence preserves historical Sylvan Luck definitions and effects; do not inject installed defaults into an old capture."},
+		"sylvanTacticsPolicy": {"type": "integer", "enum": [1, 2], "not": {"type": "null"}, "description": "Captured1 retains the movement/Waiting Sylvan Tactics pool;2 selects the Rampart creature-family pool. Absence preserves historical Sylvan Luck definitions and effects; never inject installed defaults into an old capture."},
 		"necromancyPolicy": {"$ref": "#/definitions/necromancyPolicy"},
 		"perkOfferNormalization": {
 			"type": "object", "not": {"type": "null"}, "additionalProperties": false,
@@ -466,6 +466,12 @@
 				"focusFireMeleeBonusPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
 				"feintReductionBonusPP": {"type": "integer", "minimum": 0, "maximum": 1000000},
 				"feintReductionCapPercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"attackDamagePercent": {"type": "integer", "minimum": 0, "maximum": 1000000},
+				"maximumNegativeSpellRounds": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"retaliationsConsumed": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"attackDamageReductionPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+				"beneficialDurationBonusRounds": {"type": "integer", "minimum": 0, "maximum": 1000},
+				"enemySpellCostBonus": {"type": "integer", "minimum": 0, "maximum": 1000000},
 				"requiresActiveOrder": {"enum": [true]},
 				"slotGrades": {"type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true, "items": {"enum": ["core", "elite", "champion"]}}
 			}

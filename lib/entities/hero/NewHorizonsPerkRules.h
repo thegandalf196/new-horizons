@@ -100,6 +100,7 @@ struct DLL_LINKAGE SkillDefinition
 };
 
 DLL_LINKAGE bool usesSylvanTactics(const JsonNode & rules);
+DLL_LINKAGE bool usesSylvanTacticsV2(const JsonNode & rules);
 DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
 
 DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../../battle/NewHorizonsSylvanTacticsV2.h"
 #include "Timed.h"
 #include "../../ISpellMechanics.h"
 #include "../../CSpell.h"
@@ -159,6 +160,7 @@ std::optional<std::vector<Bonus>> Timed::preparedRecipientBonuses(const Mechanic
 	numeric.toAdd.emplace_back(unit->unitId(), std::move(result));
 	newHorizonsMetamagic::adjustAppliedBonuses(mechanics->getMetamagicCastProfile(), *mechanics->battle(),
 		mechanics->getSpellId(), spell, {unit->unitId()}, numeric);
+	newHorizonsSylvanTacticsV2::adjustAppliedBonuses(*mechanics, numeric);
 	result = std::move(numeric.toAdd.front().second);
 	for(auto & bonus : result)
 		stampSpellBonusProvenance(bonus, mechanics->getSpellId(), spell,

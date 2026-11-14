@@ -22,6 +22,8 @@
 
 namespace newHorizonsHeroes::detail
 {
+void validateStartingSkills(const JsonNode & starts, bool requireMigrationTable);
+
 inline void require(bool valid, const std::string & detail)
 {
 	if(!valid)

@@ -19,7 +19,7 @@ import build_windows_client as build
 
 
 class WindowsBuildClientTest(unittest.TestCase):
-    def test_normal_workflow_routes_to_the_original_six_target_command(self):
+    def test_normal_workflow_builds_bootstrap_in_the_same_bounded_invocation(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
         step = next(step for job in workflow['jobs'].values() for step in job['steps']
                     if step.get('name') == 'Compile Windows x64 client')
@@ -30,7 +30,7 @@ class WindowsBuildClientTest(unittest.TestCase):
             self.assertEqual(build.main(invocation[2:]), 0)
         run.assert_called_once_with([
             'cmake', '--build', 'build/new-horizons-windows-x64', '--target',
-            'vcmiclient', 'nhSdl3GrayscaleMaskRuntimeTest', 'nhArtStartupRuntimeTest',
+            'vcmiclient', 'nhWindowsBootstrap', 'nhSdl3GrayscaleMaskRuntimeTest', 'nhArtStartupRuntimeTest',
             'nhImageOptimizerRuntimeTest', 'nhCreaturePreviewSurfaceRuntimeTest',
             'nhSdl3OutlineRuntimeTest', '--parallel', '4', '--', '-d', 'keeprsp',
         ], check=False)

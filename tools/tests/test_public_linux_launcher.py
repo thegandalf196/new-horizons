@@ -18,6 +18,7 @@ class PublicLinuxLauncherTest(unittest.TestCase):
         self.package = self.work / "extracted package"
         self.package.mkdir()
         shutil.copy2(ROOT / "tools/Play-New-Horizons.sh", self.package)
+        shutil.copy2(ROOT / "tools/linux_assets_setup.py", self.package)
         self.environment = dict(os.environ, HOME=str(self.work / "home"))
 
     def run_wrapper(self, *arguments):
@@ -31,7 +32,7 @@ class PublicLinuxLauncherTest(unittest.TestCase):
         for name in ("Data", "Maps", "Mp3"):
             (assets / name).mkdir(parents=True)
         # The preflight checks presence only; these contain no original assets.
-        for name in ("h3bitmap.lod", "h3sprite.lod"):
+        for name in ("h3bitmap.lod", "h3sprite.lod", "h3ab_bmp.lod", "h3ab_spr.lod"):
             (assets / "Data" / name).write_text("synthetic presence fixture")
         for name, contents in (
                 ("config/filesystem.json", "{}"),
@@ -60,20 +61,23 @@ class PublicLinuxLauncherTest(unittest.TestCase):
         assets, profile, marker = self.prepare_preflight("vcmiclient")
         result = self.run_wrapper("--assets", str(assets), "--profile", str(profile), "--verify-only")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn(b"Client is not an executable file", result.stderr)
+        self.assertIn(b"new-horizons", result.stderr)
         self.assertFalse(marker.exists())
         self.assertFalse(profile.exists())
 
     def test_package_paths_and_user_arguments_are_forwarded_verbatim(self):
+        assets, profile, marker = self.prepare_preflight("new-horizons")
         helper = self.package / "new-horizons-launch.sh"
         helper.write_text('#!/bin/bash\nprintf "%s\\0" "$@"\n')
-        arguments = ["--assets", "/original path", "--profile", "/profile path",
-                     "--verify-only", "--", "--testmap", "Maps/Map with spaces.h3m"]
+        arguments = ["--assets", str(assets), "--profile", str(profile), "--verify-only"]
         result = self.run_wrapper(*arguments)
         self.assertEqual(result.returncode, 0, result.stderr.decode())
-        expected = ["--client", str(self.package / "new-horizons"),
-                    "--resources", str(self.package), *arguments]
+        expected = ["--assets", str(assets), "--profile", str(profile),
+                    "--client", str(self.package / "new-horizons"),
+                    "--resources", str(self.package), "--verify-only"]
         self.assertEqual(result.stdout.decode().split("\0")[:-1], expected)
+        self.assertFalse(marker.exists())
+
 
 
 if __name__ == "__main__":

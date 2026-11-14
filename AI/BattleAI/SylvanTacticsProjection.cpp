@@ -9,6 +9,7 @@
 #include "HypotheticBattle.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/battle/NewHorizonsSylvanTacticsV2.h"
 
 namespace sylvanTacticsAI
 {
@@ -46,6 +47,20 @@ bool needsProjection(const CBattleInfoCallback & battle)
 		if(newHorizonsSylvanTactics::enabled(battle.getBattle()->getSideHero(side))
 			&& changesStrikes(battle.getBattle()->getSylvanLuckState(side).tactics)) return true;
 	return false;
+}
+
+bool needsProjection(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
+{
+	return needsProjection(battle)
+		|| newHorizonsSylvanTacticsV2::disarmingShotRetaliations(battle,
+			attack.attacker, attack.defender, attack.shooting, 1) > 0;
+}
+
+bool allianceDamage(const CBattleInfoCallback & battle,
+	const battle::Unit * attacker, const battle::Unit * defender)
+{
+	return newHorizonsSylvanTacticsV2::huntingPackBonus(battle, attacker, defender) > 0
+		|| newHorizonsSylvanTacticsV2::briarGripReduction(battle, attacker) > 0;
 }
 
 bool dynamicDamage(const CBattleInfoCallback & battle,
@@ -105,7 +120,16 @@ void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAtt
 		}
 	}
 	newHorizonsForestAmbush::receiveAttack(world, target);
-	target.damage(amount, false, provenance, postShieldDamage);
+	// Capture qualification before casualties/rebirth; only a damaging hit spends
+	// the isolated target counter. Neither previews nor selected replay touch live state.
+	const int disarmed = newHorizonsSylvanTacticsV2::disarmingShotRetaliations(
+		world, attack.attacker, &target, attack.shooting, 1);
+	int64_t localPostShieldDamage = 0;
+	auto * hitDamage = postShieldDamage ? postShieldDamage : &localPostShieldDamage;
+	target.damage(amount, false, provenance, hitDamage);
+	// Clone destruction zeroes casualty damage despite a positive resolved hit.
+	if(*hitDamage > 0 && disarmed > 0)
+		target.counterAttacks.use(disarmed);
 	if(!captured) return;
 	captured->hits.emplace_back(target.unitId(), amount);
 	if(!target.alive() && !mayRebirth) captured->destroyed.push_back(target.unitId());

@@ -77,7 +77,7 @@ class NewHorizonsHeroBiographyTest(unittest.TestCase):
         patch_path = ROOT / "Mods/new-horizons/Content/config/heroes/biographies.json"
         patch = json.loads(patch_path.read_text())
         self.assertEqual(patch, expected)
-        self.assertEqual(len(expected), 52)
+        self.assertEqual(len(expected), 54)
         for hero, definition in patch.items():
             self.assertEqual(set(definition), {"texts"}, hero)
             self.assertEqual(set(definition["texts"]), {"biography"}, hero)

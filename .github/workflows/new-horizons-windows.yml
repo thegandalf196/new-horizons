@@ -351,6 +351,14 @@ jobs:
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         run: python tools/ci/build_windows_client.py build --build-root build/new-horizons-windows-x64
 
+      - name: Portable entry argument and exit smoke (no game or GUI)
+        if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          powershell.exe -NoProfile -File tools/windows/tests/Portable-Entry-Smoke.ps1 -BootstrapPath build/new-horizons-windows-x64/bootstrap/new-horizons.exe
+          if ($LASTEXITCODE -ne 0) { throw "Portable entry smoke failed: $LASTEXITCODE" }
+
       - name: Record bounded Windows AI compiler flag evidence
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         shell: bash

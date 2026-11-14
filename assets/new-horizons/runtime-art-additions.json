@@ -15260,6 +15260,370 @@
           "approval": "Provisional; no Final approval; in-game rendered acceptance pending"
         }
       ]
+    },
+    {
+      "baselineArchiveSha256": "37028037a0086b1f6f1937af9c2f21a08e6513ab47c83293af6e0386c1549171",
+      "baselineManifestSha256": "45a7ba2154dc361eefa7e35190e54c883afcb39e95111820c701dfbdd0ed1317",
+      "baselineCount": 6208,
+      "entryCount": 6250,
+      "newArchiveSha256": "cfede2273119faf6b93c785cb18b26fc16092bc49eeb6df7cd69a2b22e92584b",
+      "resources": [
+        "SPRITES/NH_perk_sylvan_tactics_ancient_accord.json",
+        "SPRITES/NH_perk_sylvan_tactics_ancient_accord.png",
+        "SPRITES/NH_perk_sylvan_tactics_ancient_accord_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_ancient_accord_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_ancient_accord_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_ancient_accord_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_ancient_accord_pressed.png",
+        "SPRITES/NH_perk_sylvan_tactics_briar_grip.json",
+        "SPRITES/NH_perk_sylvan_tactics_briar_grip.png",
+        "SPRITES/NH_perk_sylvan_tactics_briar_grip_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_briar_grip_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_briar_grip_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_briar_grip_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_briar_grip_pressed.png",
+        "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness.json",
+        "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness.png",
+        "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_pressed.png",
+        "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings.json",
+        "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings.png",
+        "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_pressed.png",
+        "SPRITES/NH_perk_sylvan_tactics_kindred_flame.json",
+        "SPRITES/NH_perk_sylvan_tactics_kindred_flame.png",
+        "SPRITES/NH_perk_sylvan_tactics_kindred_flame_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_kindred_flame_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_kindred_flame_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_kindred_flame_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_kindred_flame_pressed.png",
+        "SPRITES/NH_perk_sylvan_tactics_silver_wings.json",
+        "SPRITES/NH_perk_sylvan_tactics_silver_wings.png",
+        "SPRITES/NH_perk_sylvan_tactics_silver_wings_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_silver_wings_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_silver_wings_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_silver_wings_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_silver_wings_pressed.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "perkPresentations": [
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.elvenPrecision",
+          "capturedName": "Hunting Pack",
+          "icon44": "NH_perk_sylvan_tactics_wild_hunt",
+          "historicalIcon44": "NH_perk_elven_precision",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_wild_hunt.png",
+            "SPRITES/NH_perk_sylvan_tactics_wild_hunt_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_wild_hunt.json",
+            "SPRITES/NH_perk_sylvan_tactics_wild_hunt_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_wild_hunt_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_wild_hunt_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_wild_hunt_highlighted.png"
+          ],
+          "native44Sha256": "94928dc0a23d3be70873748390699ba303f4dfb73414faed896750b3ea0d4853",
+          "native32Sha256": "e463b7b0c6b3bbcd5fc1632f5ee71bc942c0d097e5d6b9effea3fcf0b466c7f2",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "bc69b80672d0766de6a049df9daf938e8db79d8ed5930c5a16e8c9883f57dd83",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.forestSFavor",
+          "capturedName": "Dwarven Hardiness",
+          "icon44": "NH_perk_sylvan_tactics_dwarven_hardiness",
+          "historicalIcon44": "NH_perk_forests_favor",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness.png",
+            "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness.json",
+            "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_dwarven_hardiness_highlighted.png"
+          ],
+          "native44Sha256": "079ac4ec0f27dc70720dc6446ef8b6bad91ead19241e1e1f7521b40f88ddb9c8",
+          "native32Sha256": "38b93f344de737638acc5a32154e8791c6956136bdeb52404ff01cc3426b29c0",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "e80bf47eaf4b218fde3afa659acc52ba16c26b29d2c236f43314840ff45a118b",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.serendipity",
+          "capturedName": "Disarming Shot",
+          "icon44": "NH_perk_sylvan_tactics_covering_fire",
+          "historicalIcon44": "NH_perk_serendipity",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_covering_fire.png",
+            "SPRITES/NH_perk_sylvan_tactics_covering_fire_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_covering_fire.json",
+            "SPRITES/NH_perk_sylvan_tactics_covering_fire_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_covering_fire_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_covering_fire_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_covering_fire_highlighted.png"
+          ],
+          "native44Sha256": "9e5fcd6656488a52d26dc615fe7697abeceec21055c6da8c5d3aced862217a89",
+          "native32Sha256": "672f7d9b0d9c171c202928f018b395141d03785e46ad8e6fbd4a113c8616dab0",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "74866fde69c2d5812e7d21bc982c7febcf7e4caf7c1e907fe68a1e3bb3cdae46",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.luckyRecovery",
+          "capturedName": "Briar Grip",
+          "icon44": "NH_perk_sylvan_tactics_briar_grip",
+          "historicalIcon44": "NH_perk_lucky_recovery",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_briar_grip.png",
+            "SPRITES/NH_perk_sylvan_tactics_briar_grip_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_briar_grip.json",
+            "SPRITES/NH_perk_sylvan_tactics_briar_grip_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_briar_grip_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_briar_grip_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_briar_grip_highlighted.png"
+          ],
+          "native44Sha256": "c6c086c4fc4c5c488bb9faaaf0738b428ec49a69c41edf660ed26c6ef5986e89",
+          "native32Sha256": "d884a21329dc9ba87b9104b1fb577cd42090d04b1ad0d1af929c8bc03f067188",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "80411b56daf8e474c7d9e91d34deff108bfe27795412dd5acdb94196b15ae25e",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.sharedFortune",
+          "capturedName": "Evergreen Blessings",
+          "icon44": "NH_perk_sylvan_tactics_evergreen_blessings",
+          "historicalIcon44": "NH_perk_shared_fortune",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings.png",
+            "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings.json",
+            "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_evergreen_blessings_highlighted.png"
+          ],
+          "native44Sha256": "d28586ed6e82e1f36da6b1b046cfb77595577a2aa5a11275d135800c0914c848",
+          "native32Sha256": "b3cf0e1c0c8026d68e0f9a5363d6f6256008ad3f8e1088b097a9978e44353398",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "d6d964a1655a50e2504e932242646c0296e5c144c3c362000466834e7ca84308",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.natureSProvidence",
+          "capturedName": "Silver Wings",
+          "icon44": "NH_perk_sylvan_tactics_silver_wings",
+          "historicalIcon44": "NH_perk_natures_providence",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_silver_wings.png",
+            "SPRITES/NH_perk_sylvan_tactics_silver_wings_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_silver_wings.json",
+            "SPRITES/NH_perk_sylvan_tactics_silver_wings_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_silver_wings_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_silver_wings_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_silver_wings_highlighted.png"
+          ],
+          "native44Sha256": "4ecd5b8ddd951e69a44742187977cd560718a6683fedaed1dab8650a24304404",
+          "native32Sha256": "d7cf143b79d6604e425f327b10b7f58834e451b49d502aa0919d6102fb393636",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "747eb4ff9ddf32ef0a1e5c59cbd10062173afaecf0f9825dd273045be941b9e0",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.fortunateAim",
+          "capturedName": "Sacred Grove",
+          "icon44": "NH_perk_sylvan_tactics_dappled_cover",
+          "historicalIcon44": "NH_perk_fortunate_aim",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_dappled_cover.png",
+            "SPRITES/NH_perk_sylvan_tactics_dappled_cover_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_dappled_cover.json",
+            "SPRITES/NH_perk_sylvan_tactics_dappled_cover_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_dappled_cover_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_dappled_cover_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_dappled_cover_highlighted.png"
+          ],
+          "native44Sha256": "34aa95a2fb0c7f1826a7a5446e8d15069734e719c91f7acf7e69e8fa31c0a8e9",
+          "native32Sha256": "4eb6c33f1e2f4bc44dfc0d7edd355778a3143ba1d954039c73373784643f5081",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "5d5ef1a79580983a3a98401759eabf6cc9cb85cef533774ecaeb13592cdcf051",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.wildChance",
+          "capturedName": "Kindred Flame",
+          "icon44": "NH_perk_sylvan_tactics_kindred_flame",
+          "historicalIcon44": "NH_perk_wild_chance",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_kindred_flame.png",
+            "SPRITES/NH_perk_sylvan_tactics_kindred_flame_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_kindred_flame.json",
+            "SPRITES/NH_perk_sylvan_tactics_kindred_flame_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_kindred_flame_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_kindred_flame_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_kindred_flame_highlighted.png"
+          ],
+          "native44Sha256": "956374f6285d43f5d5b2ff37088f063cb734c4bee6e3d6d6e57e03613b476370",
+          "native32Sha256": "35ff8f666a29e37337a0b7bf400308b103a02196f9899c33d7aa1267003b438d",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "fc96c0f09998c542398c57f0e4102bf2053f9f835d2ca56a6fc42cc01eeb979a",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.perfectMoment",
+          "capturedName": "Perfect Moment",
+          "icon44": "NH_perk_sylvan_tactics_perfect_moment",
+          "historicalIcon44": "NH_perk_perfect_moment",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_perfect_moment.png",
+            "SPRITES/NH_perk_sylvan_tactics_perfect_moment_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_perfect_moment.json",
+            "SPRITES/NH_perk_sylvan_tactics_perfect_moment_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_perfect_moment_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_perfect_moment_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_perfect_moment_highlighted.png"
+          ],
+          "native44Sha256": "74f22b328b25cde308fb3330350d8cc851c0e2f735f57a1aa93ad35bf4d32fae",
+          "native32Sha256": "4d36259e8a8071a55b88913a1630475452ae0dfa980eb1074bc265b2cbf40125",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "36ed413e2b9b742bdcb2f2a4dd01e38db1b65c8bca7e83597fbb0a2eaff1acbb",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        },
+        {
+          "schemaVersion": 3,
+          "capturedPolicy": {
+            "sylvanTacticsPolicy": 2
+          },
+          "id": "new-horizons:sylvanLuck.cascadingFortune",
+          "capturedName": "Ancient Accord",
+          "icon44": "NH_perk_sylvan_tactics_ancient_accord",
+          "historicalIcon44": "NH_perk_cascading_fortune",
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_ancient_accord.png",
+            "SPRITES/NH_perk_sylvan_tactics_ancient_accord_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_ancient_accord.json",
+            "SPRITES/NH_perk_sylvan_tactics_ancient_accord_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_ancient_accord_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_ancient_accord_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_ancient_accord_highlighted.png"
+          ],
+          "native44Sha256": "f567361bf13973760eb0e2e8ef95c7d9818c0c9e7804d3bff6acb3e2ef6d8010",
+          "native32Sha256": "3a9545d200e2ca2612426a34016ea95e760babf046944bd26172567172711357",
+          "alphaMaximum44": 255,
+          "alphaMaximum32": 255,
+          "masterSha256": "813a38d28f18217470d127d3dda7f834898c30be16c4eba7dbc37bd6da69261e",
+          "exportManifestSha256": "036b70c2128062f01403c9eaad9879c69aab9018c192bfe7c15c67b1036fb35d",
+          "selectionEvidenceSha256": "9a6f73d57362537d730da54908cd2eed38997633e08ed5d48b5e54afc4a4061b",
+          "resolverSourceSha256": "ffbbbad39d6138a0c12dde4cbcf1320c60267dd74c9c652ec52fcd90e483371c",
+          "origin": "new-or-reused-own-perk-foreground-family",
+          "selection": "root-selected-provisional-sylvan-alliance-foreground-family-2026-11-14",
+          "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim"
+        }
+      ],
+      "approval": "Provisional; no user Final approval; rendered acceptance pending; no blanket license claim",
+      "baselineEntriesSha256": "17a55971ad4715c29b240f9603f00be7a56cdda2632117efb6e9dc5d240ec030",
+      "baselineHeaderSha256": "8d67c0ddcd521aeb37566c39d5ac8cb28dd7ebec8d280773c9eca01a7dadb8aa",
+      "configRevisions": {
+        "Mods/new-horizons/Content/config/spells/newHorizons.json": 6,
+        "Mods/new-horizons/Content/config/spells/massVariants.json": 1
+      },
+      "nonStatusConfigSha256": "ad09c8ac0215b80e3b4a7bee51c270f40d6f928dcc979f75ad9dbebdf5c064e9"
     }
   ]
 }

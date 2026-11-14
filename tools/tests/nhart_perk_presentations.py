@@ -92,7 +92,11 @@ def source_bound_icon(header, identity, captured_name):
     return icon if (identity, captured_name) == (stable_id, name) else bindings.get(identity, 'NH_perk_neutral')
 
 
-def validate_perk_presentation(row, header, captured_header=None):
+def validate_perk_presentation(row, header, captured_header=None, alliance_header=None):
+    if row.get('schemaVersion') == 3:
+        from .nhart_sylvan_alliance_presentations import validate_alliance_presentation
+        validate_alliance_presentation(row, header, captured_header, alliance_header)
+        return
     if row.get('schemaVersion') == 2:
         from .nhart_sylvan_perk_presentations import validate_sylvan_presentation
         validate_sylvan_presentation(row, header, captured_header)
@@ -147,7 +151,7 @@ def validate_perk_payload(row, read_resource):
         alpha = image.getchannel('A')
         if alpha.getextrema() != (0, row['alphaMaximum' + str(size)]):
             raise ValueError('Selected conditional perk alpha changed')
-        if row.get('schemaVersion') == 2:
+        if row.get('schemaVersion') in (2, 3):
             bounds = alpha.getbbox()
             if not bounds or min(bounds[0], bounds[1], size - bounds[2], size - bounds[3]) < 2:
                 raise ValueError('Sylvan foreground requires clear two-pixel perimeter')

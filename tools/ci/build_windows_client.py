@@ -8,6 +8,7 @@ import subprocess
 
 TARGETS = (
     'vcmiclient',
+    'nhWindowsBootstrap',
     'nhSdl3GrayscaleMaskRuntimeTest',
     'nhArtStartupRuntimeTest',
     'nhImageOptimizerRuntimeTest',
@@ -46,7 +47,7 @@ def main(argv=None):
     configure_parser = commands.add_parser('configure', help='Configure the existing CI preset')
     configure_parser.add_argument('--use-precompiled-headers', choices=('ON', 'OFF'), default='ON')
     configure_parser.set_defaults(operation=configure)
-    build_parser = commands.add_parser('build', help='Build the six client and regression targets')
+    build_parser = commands.add_parser('build', help='Build the client, portable entry point and regression targets')
     build_parser.add_argument('--build-root', required=True, help='Configured Windows Ninja build directory')
     build_parser.add_argument('--jobs', type=int, choices=range(1, 11), default=4,
                               help='Maximum concurrent build jobs (default: 4)')

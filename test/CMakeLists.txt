@@ -99,6 +99,9 @@ set(test_SRCS
 		../client/render/ReachCursorCache.cpp
 		../client/render/ReachCursorLayout.cpp
 		../client/render/ReachCursorHandoff.cpp
+		hero/SplitSkillOfferIntegrationTest.cpp
+		hero/SkillOfferLayoutTest.cpp
+		hero/StartingPerkDefaultsTest.cpp
 		hero/UnifiedSkillProgressionTest.cpp
 		server/UnifiedHeroProgressionTest.cpp
 		nativeDamage/NativeDamageBoundaryTest.cpp
@@ -390,6 +393,7 @@ set(test_SRCS
 		hero/NewHorizonsSkillPresentationTest.cpp
 		server/NewHorizonsSkeletonLeadershipTest.cpp
 		hero/NewHorizonsMovementRulesTest.cpp
+		hero/NewHorizonsMovementLevelGrowthTest.cpp
 		hero/NewHorizonsCapabilityRulesTest.cpp
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
@@ -428,6 +432,7 @@ set(test_SRCS
 		hero/NewHorizonsHeroRulesFixture.h
 		game/MovementCostTest.cpp
 		game/NewHorizonsLogisticsMovementPerksTest.cpp
+		game/NewHorizonsMovementLevelGrowthTest.cpp
 		game/NewHorizonsProtectedMobilityTest.cpp
 
 		json/JsonTests.cpp
@@ -914,6 +919,7 @@ set(test_SRCS
 		server/battles/NewHorizonsAmbusherTest.cpp
 		server/battles/NewHorizonsShadowAssaultTest.cpp
 		server/battles/NewHorizonsNightProwlerTest.cpp
+		server/battles/SylvanAllianceRulesTest.cpp
 		server/battles/NewHorizonsSylvanTacticsTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsHeroLuckTest.cpp
@@ -1291,6 +1297,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/HypotheticWallTest.cpp
 		battleAI/AttackPreviewRainTargetsTest.cpp
 		battleAI/NewHorizonsSylvanTacticsAITest.cpp
+		battleAI/NewHorizonsSylvanAllianceAITest.cpp
 		battleAI/NewHorizonsSylvanLuckAITest.cpp
 		battleAI/NewHorizonsNoQuarterAITest.cpp
 		battleAI/NewHorizonsRelentlessAssaultAITest.cpp

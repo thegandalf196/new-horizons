@@ -6,8 +6,8 @@
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
-Source metadata targets **0.91.0**. See the
-[0.91 changelog](docs/NEW_HORIZONS_CHANGELOG.md#091-early-access) for its scope.
+Source metadata targets **0.91.1**. See the
+[0.91.1 preparation changelog](docs/NEW_HORIZONS_CHANGELOG.md#0911--unreleased) for its scope.
 The latest published release is [0.91 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91).
 The Wiki describes published rules; source metadata does not establish publication.
 

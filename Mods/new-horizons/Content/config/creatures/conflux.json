@@ -74,9 +74,6 @@
 			"assimilation": {"type": "ASSIMILATION"},
 			"shooter": null
 		},
-		"graphics": {
-			"missile": null
-		},
 		"sound": {
 			"shoot": null
 		}

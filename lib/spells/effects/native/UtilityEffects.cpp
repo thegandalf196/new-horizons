@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../../battle/NewHorizonsSylvanTacticsV2.h"
 #include "UnitEffect.h"
 #include "StatusHelpers.h"
 #include "../../ISpellMechanics.h"
@@ -42,7 +43,8 @@ class Dispel final : public UnitEffect
 		{
 			if(bonus->source != BonusSource::SPELL_EFFECT || bonus->sid.toString() == key) continue;
 			const auto * spell = nativeEvents::spell(bonus->sid.toString());
-			if(!spell || spell->isPersistent() || spell->isAdventure()) continue;
+			if(!spell || spell->isPersistent() || spell->isAdventure()
+				|| newHorizonsSylvanTacticsV2::preservesBuffFromDispel(*mechanics, unit, *bonus)) continue;
 			if(mechanics->usesNewHorizonsTemporaryMagicDispel() && (!spell->isMagical() || !status::isTemporary(*bonus))) continue;
 			if(nullifyingShot && !newHorizonsSpecialtyProcs::isPositiveTemporaryMagic(*bonus)) continue;
 			if(selective)

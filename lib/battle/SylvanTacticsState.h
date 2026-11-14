@@ -58,7 +58,7 @@ struct SylvanTacticsState
 		disrupted.erase(id);
 		if(enabled && friendly)
 		{
-			if(activated.insert(id).second && fleetfoot) firstActivation = id;
+			if(fleetfoot && activated.insert(id).second) firstActivation = id;
 			if(quickRedeployment && redeploy) redeploymentActivation = id;
 		}
 	}

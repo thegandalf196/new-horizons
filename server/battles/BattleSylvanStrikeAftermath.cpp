@@ -7,12 +7,30 @@
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/NewHorizonsSylvanTactics.h"
+#include "../../lib/battle/NewHorizonsSylvanTacticsV2.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
+#include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/combatScripts/CombatEventPayload.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 namespace battleSylvanStrikeAftermath
 {
+bool recordDamageResources(const CBattleInfoCallback & battle, const battle::Unit * attacker,
+	const battle::Unit * victim, battle::CUnitState & preparedVictim, bool ranged, bool spellLike, int64_t recordedDamage, int64_t actualDamage)
+{
+	if(spellLike) return false;
+	bool changed = false;
+	if(recordedDamage > 0 && newHorizonsArchery::isOrdinaryPhysicalShooter(attacker))
+	{
+		const auto side = battle.playerToSide(battle.battleGetOwner(attacker));
+		preparedVictim.archeryRecordCrossfireDamage(side, attacker->unitId(), battle.battleGetRound());
+		changed = true;
+	}
+	const int consumed = newHorizonsSylvanTacticsV2::disarmingShotRetaliations(battle, attacker, victim, ranged, actualDamage);
+	if(consumed > 0) { preparedVictim.counterAttacks.use(consumed); changed = true; }
+	return changed;
+}
+
 void finish(CGameHandler & game, const CBattleInfoCallback & battle, const CStack * attacker,
 	const battle::Unit * defender, BattleAttack & bat, const CombatEventPayload & payload,
 	battle::CUnitState & attackerState, bool ranged)

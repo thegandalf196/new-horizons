@@ -815,7 +815,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	// repeated when loading a saved hero or when legacy rules are active.
 	if(creationInitialization && newHorizonsHeroes::usesPerkRules(perkState.rules))
 	{
-		newHorizonsHeroes::selectStartingHeroPerks(perkState,
+		newHorizonsHeroes::initializeStartingHeroPerks(perkState, primaryGrowthRules, getHeroTypeID(),
 			startingDevelopment ? startingDevelopment->perks : std::vector<newHorizonsHeroes::PerkSelection>{},
 			getHeroType()->startingPerks, [this](const std::string & skill){ return getPerkSkillRank(skill); });
 	}

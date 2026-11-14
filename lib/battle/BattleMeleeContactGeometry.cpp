@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "CBattleInfoCallback.h"
 #include "Unit.h"
+#include "NewHorizonsSylvanTacticsV2.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusParameters.h"
 
@@ -130,7 +131,8 @@ std::pair<battle::Units, bool> CBattleInfoCallback::getAerialAttackedBattleUnits
 	{
 		const auto * unit = battleGetUnitByPos(hex, true);
 		if(!unit || unit->unitId() == excursion.actor || unit->isGhost() || unit->isInvincible()
-			|| (hostileOnly && battleGetOwner(unit) == battleGetOwner(actor)))
+			|| (hostileOnly && battleGetOwner(unit) == battleGetOwner(actor))
+			|| (!hostileOnly && newHorizonsSylvanTacticsV2::spareFriendlyBreath(*this, actor, unit)))
 			return;
 		if(std::ranges::find(result.first, unit) == result.first.end())
 			result.first.push_back(unit);

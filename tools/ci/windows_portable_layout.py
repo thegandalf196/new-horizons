@@ -1,0 +1,91 @@
+"""Clean portable Windows layout and independent, system-only bootstrap audit."""
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+from pathlib import Path
+import re
+import shutil
+
+
+def audit_bootstrap(binary, run, system_dlls, tool):
+    """Audit normal/delay imports and export forwarders without loading the PE."""
+    headers = run(tool, '/nologo', '/headers', str(binary))
+    if not re.search(r'\b8664 machine\b', headers, re.IGNORECASE):
+        raise RuntimeError('Portable bootstrap must be an AMD64 PE')
+    dependents = run(tool, '/nologo', '/dependents', str(binary))
+    imports = set(re.findall(r'^\s+([\w.+-]+\.(?:dll|drv))\s*$', dependents,
+                             re.MULTILINE | re.IGNORECASE))
+    exports = run(tool, '/nologo', '/exports', str(binary))
+    imports.update(name + '.dll' for name in re.findall(
+        r'\(forwarded to ([\w-]+)\.', exports, re.IGNORECASE))
+    # VC redistributables, SDL, VCMI and bundled DLLs may NEVER satisfy this gate.
+    for name in imports:
+        lower = name.lower()
+        if lower not in system_dlls and not lower.startswith(('api-ms-win-', 'ext-ms-win-')):
+            raise RuntimeError('Bootstrap imports non-system DLL: ' + name)
+    return {name: 'Windows system/API contract' for name in sorted(imports)}
+
+
+def assemble_portable_root(package, install, run, system_dlls, write_json):
+    """Nest an already audited flat stage; do not change the installed engine."""
+    package, install = Path(package), Path(install)
+    bootstrap = install / 'bootstrap' / 'new-horizons.exe'
+    if bootstrap.is_symlink() or not bootstrap.is_file():
+        raise RuntimeError('Required installed portable bootstrap missing or linked')
+    tool = shutil.which('dumpbin')
+    if not tool:
+        raise RuntimeError('dumpbin is required for the portable bootstrap audit')
+    report = audit_bootstrap(bootstrap, run, system_dlls, tool)
+    children = list(package.iterdir())
+    if not children or any(path.name.lower() == 'runtime' for path in children):
+        raise RuntimeError('Invalid flat runtime staging tree')
+    if any(path.is_symlink() for path in package.rglob('*')):
+        raise RuntimeError('Linked files are not permitted in portable packages')
+    runtime = package / 'runtime'
+    runtime.mkdir()
+    for path in children:
+        path.rename(runtime / path.name)
+    shutil.copyfile(bootstrap, package / 'new-horizons.exe')
+    write_json(runtime / 'BOOTSTRAP-IMPORTS.json', report)
+    assert_portable_layout(package)
+    return runtime
+
+
+def assert_portable_layout(package):
+    package = Path(package)
+    if {path.name for path in package.iterdir()} != {'new-horizons.exe', 'runtime'}:
+        raise RuntimeError('Portable root must contain only new-horizons.exe and runtime/')
+    if (package / 'new-horizons.exe').is_symlink() or not (package / 'new-horizons.exe').is_file():
+        raise RuntimeError('Portable entry point must be a regular file')
+    runtime = package / 'runtime'
+    if runtime.is_symlink() or not runtime.is_dir():
+        raise RuntimeError('Portable runtime must be an ordinary directory')
+    if any(path.is_symlink() for path in runtime.rglob('*')):
+        raise RuntimeError('Linked runtime payload is unsupported')
+    native = [path for path in runtime.rglob('*') if path.suffix.lower() in {'.exe', '.dll'}]
+    if any(path.parent != runtime or not path.is_file() for path in native):
+        raise RuntimeError('Native runtime files must stay in the audited flat PE directory')
+    executables = [path.name for path in native if path.suffix.lower() == '.exe']
+    if executables != ['new-horizons.exe']:
+        raise RuntimeError('Unexpected executable in portable runtime')
+    for name in ('new-horizons.exe', 'VCMI_lib.dll', 'Start-New-Horizons.ps1', 'Launch-Process.ps1', 'Setup-Progress.ps1'):
+        if not (runtime / name).is_file():
+            raise RuntimeError('Incomplete portable runtime: ' + name)
+
+
+def stage_frontend(root, helpers, package):
+    """Stage only shipping setup helpers and project license notices."""
+    for filename in ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'Launch-Process.ps1',
+                     'Setup-Progress.ps1', 'README-New-Horizons.txt', 'dirs.json'):
+        source = helpers / filename
+        destination = package / (Path('config/dirs.json') if filename == 'dirs.json' else filename)
+        if destination.exists() and filename != 'dirs.json':
+            raise RuntimeError('Frontend helper collides with package file: ' + destination.name)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+    for filename in ('license.txt', 'AUTHORS.h'):
+        shutil.copyfile(root / filename, package / filename)
+    embedded = package / 'licenses' / 'xBRZ'
+    embedded.mkdir(parents=True)
+    shutil.copyfile(root / 'client/xBRZ/License.txt', embedded / 'License.txt')
+    xbrz = (root / 'client/xBRZ/xbrz.cpp').read_text(encoding='utf-8')
+    (embedded / 'ATTRIBUTION.txt').write_text(xbrz.split('#include "xbrz.h"', 1)[0], encoding='utf-8')

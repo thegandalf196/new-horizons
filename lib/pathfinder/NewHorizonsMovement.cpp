@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsMovement.h"
+#include "../entities/hero/NewHorizonsRuleValidation.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -17,6 +18,25 @@
 
 namespace newHorizonsMovement
 {
+void validateDailyMovementRules(const JsonNode & development)
+{
+	if(!development.isStruct() || !development.Struct().contains("dailyMovement"))
+		return;
+	using namespace newHorizonsHeroes::detail;
+	const auto & policy = development["dailyMovement"];
+	fields(policy, {"version", "pointsPerLevel"});
+	require(integer(policy["version"], 1, 1), "daily Movement version");
+	require(integer(policy["pointsPerLevel"], 0, 1000), "daily Movement points per level");
+}
+
+std::int64_t levelMovementBonus(const JsonNode & development, const std::uint32_t level)
+{
+	validateDailyMovementRules(development);
+	if(level <= 1 || !development.isStruct() || !development.Struct().contains("dailyMovement"))
+		return 0;
+	return static_cast<std::int64_t>(level - 1) * development["dailyMovement"]["pointsPerLevel"].Integer();
+}
+
 int rapidEmbarkationCost(int maximumDailyMovement)
 {
 	if(maximumDailyMovement <= 0)

@@ -21,6 +21,10 @@ void replaySecondary(HypotheticBattle & battle, const SecondaryHit & hit);
 
 /// Only perks that mutate strike history need the existing effect branch.
 bool needsProjection(const CBattleInfoCallback & battle);
+/// V2 needs a copied counter only for an eligible, finite-retaliation Elf shot.
+bool needsProjection(const CBattleInfoCallback & battle, const BattleAttackInfo & attack);
+bool allianceDamage(const CBattleInfoCallback & battle,
+	const battle::Unit * attacker, const battle::Unit * defender);
 bool dynamicDamage(const CBattleInfoCallback & battle,
 	const battle::Unit * attacker, const battle::Unit * defender);
 

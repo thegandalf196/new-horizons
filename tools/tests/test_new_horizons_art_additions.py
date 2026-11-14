@@ -14,6 +14,10 @@ from prepare_new_horizons_authority_art import binding_block as authority_bindin
 from .nhart_perk_presentations import (header_before_perk_presentation, validate_perk_presentation,
     validate_perk_payload, REWORKED_PERK_REBINDINGS, header_before_reworked_perks)
 from .nhart_sylvan_perk_presentations import validate_sylvan_family
+from .nhart_sylvan_alliance_presentations import (validate_alliance_family,
+    validate_alliance_resource_reuse)
+from .nhart_released_history import (authority_before_leadership_rework,
+    released_predecessor_entries, baseline_payload_proof)
 from .nhart_config_revisions import config_at_revision, wave_config_revision
 from .nhart_legacy_art_lineage import validate_art_roles
 from .nhart_hero_interface_buttons import validate_hero_interface_buttons
@@ -105,6 +109,9 @@ def perk_header_history_forms(header):
         return (header,) + perk_header_history_forms(previous)
     authority = authority_binding_block()
     if 'NH_perk_authority_' in header:
+        previous = authority_before_leadership_rework(header, authority)
+        if previous != header:
+            return (header,) + perk_header_history_forms(previous)
         if header.count(authority) != 1:
             raise ValueError('Unrecognized owner-supplied Authority binding block')
         return (header,) + perk_header_history_forms(header.replace(authority, '', 1))
@@ -265,7 +272,11 @@ class ArtAdditionsTest(unittest.TestCase):
         cls.header = (ROOT / importer.HEADER).read_text()
         adapter = ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h'
         cls.capturedHeader = adapter.read_text() if adapter.exists() else None
+        alliance = ROOT / 'client/windows/NewHorizonsSylvanAlliancePerkIcons.h'
+        cls.allianceHeader = alliance.read_text() if alliance.exists() else None
         cls.config = importer.spells.parse_jsonc((ROOT / importer.spells.CONFIG).read_text())
+        cls.legacyEntries, cls.bridgeIndex = released_predecessor_entries(
+            cls.manifest['entries'], cls.waves, importer.entries_digest)
 
     def test_public_atlas_recipes_keep_bounded_geometry_without_authoring_prompts(self):
         families = [('active-perks-v1', [6, 6, 6, 6], [1536, 1024]),
@@ -299,13 +310,15 @@ class ArtAdditionsTest(unittest.TestCase):
         self.assertTrue(self.waves)
         self.assertEqual(len(later_art_resources()), sum(len(wave['resources']) for wave in self.waves))
         for index, wave in enumerate(self.waves):
-            baseline = entries_before_wave(self.manifest['entries'], self.waves, index)
+            entries = self.legacyEntries if index < self.bridgeIndex else self.manifest['entries']
+            baseline = entries_before_wave(entries, self.waves, index)
             self.assertEqual(len(baseline), wave['baselineCount'])
             self.assertEqual(importer.entries_digest(baseline), wave['baselineEntriesSha256'])
             self.assertEqual(wave['entryCount'], wave['baselineCount'] + len(wave['resources']))
             for row in baseline:
-                self.assertEqual(hashlib.sha256(resource_before_wave(row['resource'], self.waves, index)).hexdigest(), row['sha256'])
-            if index:
+                proof = baseline_payload_proof(row, resource_before_wave(row['resource'], self.waves, index))
+                self.assertIn(proof, ('verified-matching-payload', 'verified-released-replacement'))
+            if index and index != self.bridgeIndex:
                 self.assertEqual(wave['baselineArchiveSha256'], self.waves[index - 1]['newArchiveSha256'])
         self.assertEqual(len(verified_index()), self.waves[-1]['entryCount'])
         self.assertEqual(importer.perks.digest(ROOT / importer.spells.ARCHIVE), self.waves[-1]['newArchiveSha256'])
@@ -318,7 +331,12 @@ class ArtAdditionsTest(unittest.TestCase):
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
             declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) for name in row['resources']}
-            self.assertEqual(declared, set(wave['resources']))
+            alliance = [row for row in wave.get('perkPresentations', []) if row.get('schemaVersion') == 3]
+            if alliance:
+                validate_alliance_resource_reuse(wave, declared, self.manifest['entries'],
+                                                self.waves, self.waves.index(wave), read_resource)
+            else:
+                self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 current_id = WAVE_CURRENT_IDS.get(row['id'], row['id'])
                 self.assertIn(current_id, current_ids)
@@ -362,8 +380,10 @@ class ArtAdditionsTest(unittest.TestCase):
     def test_optional_perk_presentations_preserve_named_condition_and_historical_shield(self):
         for wave in self.waves:
             validate_sylvan_family(wave.get('perkPresentations', []), self.header, self.capturedHeader)
+            validate_alliance_family(wave.get('perkPresentations', []), self.header,
+                                     self.capturedHeader, self.allianceHeader)
             for row in wave.get('perkPresentations', []):
-                validate_perk_presentation(row, self.header, self.capturedHeader)
+                validate_perk_presentation(row, self.header, self.capturedHeader, self.allianceHeader)
                 validate_perk_payload(row, read_resource)
                 for suffix in ('.json', '_normal.png', '_pressed.png', '_disabled.png', '_highlighted.png'):
                     self.assertIn('SPRITES/' + row['historicalIcon44'] + suffix, verified_index())
@@ -445,10 +465,11 @@ class ArtAdditionsTest(unittest.TestCase):
         for index, wave in enumerate(self.waves):
             # Interface-button wave was selected after the faction rebindings;
             # earlier wave anchors must still see their exact original IDs.
-            current_header = wave.get('orderEntryButtons') or wave.get('nativeEffectAliases') or wave.get('suppliedAuthority')
+            alliance = any(row.get('schemaVersion') == 3 for row in wave.get('perkPresentations', []))
+            current_header = alliance or wave.get('orderEntryButtons') or wave.get('nativeEffectAliases') or wave.get('suppliedAuthority')
             # Validate the complete current binding before reversing the wave
             # that originally introduced Seize Initiative's historical row.
-            header = header_before_decisive_orders_alias(self.header)
+            header = self.header if alliance else header_before_decisive_orders_alias(self.header)
             if not current_header:
                 header = header_before_reworked_perks(header)
             if not wave.get('heroInterfaceButtons') and not current_header:

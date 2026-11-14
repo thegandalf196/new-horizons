@@ -29,11 +29,11 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from verify_new_horizons_art_install import verify_install, read_jsonc, nhart, RUNTIME_ART_PACK
 from client_features import client_feature_files, sha256_file
+from linux_snapshot_binaries import RUNTIME_LIBRARY_RE, runtime_library_payload, setup_payload, setup_metadata
 
 
 FORMAT_VERSION = 1
 SNAPSHOT_RE = re.compile(r"snapshot-([0-9a-f]{64})\Z")
-RUNTIME_LIBRARY_RE = re.compile(r"lib[A-Za-z0-9_+-][A-Za-z0-9_.+-]*\.so(?:\.[0-9]+)*\Z")
 CLIENT_NAME = 'new-horizons'
 LEGACY_CLIENT_NAME = 'vcmiclient'
 PAYLOAD_ROOTS = (CLIENT_NAME, "libvcmi.so", "config",
@@ -91,7 +91,7 @@ def checked_tree_files(source, destination_root):
     return files
 
 
-def source_payload(client, resources, runtime_libraries=()):
+def source_payload(client, resources, runtime_libraries=(), setup_client=None):
     client = Path(client)
     resources = Path(resources)
     if client.is_symlink() or not client.is_file() or not os.access(client, os.X_OK):
@@ -105,23 +105,8 @@ def source_payload(client, resources, runtime_libraries=()):
         fail("Matching libvcmi.so must be a regular file beside the client")
     files = {CLIENT_NAME: client, "libvcmi.so": library}
     files.update(client_feature_files(client))
-    for value in runtime_libraries:
-        extra = Path(value)
-        if extra.is_symlink() or not extra.is_file():
-            fail("Runtime library must be a regular non-symlink file")
-        if not RUNTIME_LIBRARY_RE.fullmatch(extra.name):
-            fail("Runtime library requires a safe lib*.so[.version] basename")
-        if extra.name in files:
-            fail("Runtime library basename collision: " + extra.name)
-        with extra.open('rb') as stream:
-            header = stream.read(64)
-        if (len(header) < 52 or header[:4] != b'\x7fELF'
-                or header[4] not in (1, 2) or header[5] not in (1, 2)
-                or header[6] != 1 or (header[4] == 2 and len(header) < 64)
-                or int.from_bytes(header[16:18], 'little' if header[5] == 1 else 'big') != 3
-                or int.from_bytes(header[20:24], 'little' if header[5] == 1 else 'big') != 1):
-            fail("Runtime library must have a valid ELF shared-object header")
-        files[extra.name] = extra
+    files.update(runtime_library_payload(runtime_libraries, files))
+    files.update(setup_payload(setup_client, client, Path(__file__).resolve().parents[2]))
     for name in PAYLOAD_ROOTS[2:]:
         source = resources / name
         files.update(checked_tree_files(source, name))
@@ -213,6 +198,9 @@ def write_metadata(root, files):
     metadata = {"format": FORMAT_VERSION, "snapshot_sha256": digest,
                 "created_utc": datetime.now(timezone.utc).isoformat(),
                 "files": files}
+    setup = setup_metadata(root, files)
+    if setup is not None:
+        metadata['setup'] = setup
     (root / "SNAPSHOT.json").write_text(json.dumps(metadata, indent=2) + "\n")
     return digest
 
@@ -245,6 +233,8 @@ def verify_snapshot(root, expected_digest=None):
     if actual != files:
         fail("Snapshot inventory or checksum mismatch")
     client_feature_files(root / (CLIENT_NAME if CLIENT_NAME in files else LEGACY_CLIENT_NAME))
+    if metadata.get('setup') != setup_metadata(root, files, frozen=True):
+        fail('Snapshot setup executable or launch permissions differ from metadata')
     digest = payload_digest(files)
     if metadata.get("snapshot_sha256") != digest:
         fail("Snapshot identity mismatch")
@@ -392,7 +382,8 @@ def freeze(args):
         fail("Snapshot store cannot be a symlink")
     with store_lock(store, exclusive=True):
         runtime_libraries = tuple(getattr(args, "runtime_libraries", ()))
-        sources = source_payload(args.client, args.resources, runtime_libraries)
+        setup_client = getattr(args, 'setup_client', None)
+        sources = source_payload(args.client, args.resources, runtime_libraries, setup_client)
         baseline = getattr(args, "retain_resources_from", None)
         if baseline is not None:
             require_retained_resources(sources, baseline)
@@ -400,7 +391,7 @@ def freeze(args):
         temporary = Path(tempfile.mkdtemp(prefix=".snapshot-", dir=store))
         try:
             write_payload(sources, temporary)
-            after = inventory(source_payload(args.client, args.resources, runtime_libraries))
+            after = inventory(source_payload(args.client, args.resources, runtime_libraries, setup_client))
             if before != after:
                 fail("Build or source resources changed while the snapshot was being copied")
             copied = package_files(temporary)
@@ -645,6 +636,8 @@ def main():
     freeze_parser.add_argument("--runtime-library", dest="runtime_libraries", type=Path,
                                action="append", default=[],
                                help="explicit regular ELF shared library to freeze beside the client; repeat for each provider")
+    freeze_parser.add_argument('--setup-client', type=Path,
+                               help='optional new-horizons-setup ELF; includes its fixed, audited launch support files')
     freeze_parser.add_argument("--retain-resources-from", type=Path,
                                help="verified snapshot whose curated resource paths must all be present; updated bytes are allowed, nothing is auto-copied")
     freeze_parser.add_argument("--no-promote", dest="promote", action="store_false",

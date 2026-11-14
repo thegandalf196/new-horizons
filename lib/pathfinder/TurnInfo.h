@@ -71,6 +71,7 @@ private:
 	bool newHorizonsRapidEmbarkation;
 	bool newHorizonsRoadmaster;
 	bool newHorizonsWayfarer;
+	void initializeMovementLimits(TurnInfoCache * sharedCache, int turn, const CSelector & daySelector);
 
 public:
 	int hasWaterWalking() const;

@@ -132,6 +132,10 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		// This suite protects the preceding one-authored-perk capture.
+		// Complete current starts have dedicated StartingPerkDefaults coverage.
+		rules["startingSkills"].Struct().erase("startingPerksPolicyVersion");
+		rules["startingSkills"].Struct().erase("startingPerkProfiles");
 		if(absentDruidSpecialty || previousFormatContext)
 			rules.Struct().erase("druidSpecialties");
 		if(absent)
@@ -1306,6 +1310,8 @@ protected:
 		if(conflictingProfile)
 		{
 			JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+			rules["startingSkills"].Struct().erase("startingPerksPolicyVersion");
+			rules["startingSkills"].Struct().erase("startingPerkProfiles");
 			rules["startingSkills"]["startingDevelopmentProfiles"]["core:solmyr"]
 				["startingPerks"].Vector().front()["perk"].String() = "new-horizons:havocMagic.cryomancer";
 			rules.setOverrideFlag(true);

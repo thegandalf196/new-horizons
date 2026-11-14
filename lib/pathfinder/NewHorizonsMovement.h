@@ -15,6 +15,7 @@
 #include <optional>
 
 class CGHeroInstance;
+class JsonNode;
 
 namespace newHorizonsMovement
 {
@@ -31,6 +32,7 @@ struct DLL_LINKAGE DailyMovementBreakdown
 	std::int64_t percentageToBase = 0;
 	std::int64_t percentageToAll = 0;
 	std::int64_t flat = 0;
+	std::int64_t levelGrowth = 0;
 	std::optional<std::int64_t> lowerBound;
 	std::optional<std::int64_t> upperBound;
 	int limit = 0;
@@ -40,6 +42,11 @@ struct DLL_LINKAGE DailyMovementBreakdown
 /// Movement bonuses. Legacy Movement rules do not have this breakdown.
 DLL_LINKAGE std::optional<DailyMovementBreakdown> currentDailyMovementBreakdown(
 	const CGHeroInstance * hero, bool water);
+
+/// Optional captured dailyMovement policy. Absence keeps historical limits.
+DLL_LINKAGE void validateDailyMovementRules(const JsonNode & development);
+/// Flat capacity gained after level one, before existing percent-to-all bonuses.
+DLL_LINKAGE std::int64_t levelMovementBonus(const JsonNode & development, std::uint32_t level);
 
 /// Applies a percentage-to-base modifier and then a flat modifier to the
 /// canonical daily movement pool. The percentage operation is deliberately

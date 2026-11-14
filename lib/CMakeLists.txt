@@ -320,6 +320,9 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsDiscipline.cpp
 	battle/NewHorizonsSylvanTacticsAftermath.cpp
 	battle/NewHorizonsSylvanTacticsPresentation.cpp
+	battle/NewHorizonsSylvanTacticsV2.cpp
+	battle/BattleAttackVictims.cpp
+	spells/SylvanTacticsSpellRules.cpp
 	battle/NewHorizonsSylvanTactics.cpp
 	battle/NewHorizonsArchery.cpp
 	battle/NewHorizonsArmorer.cpp
@@ -565,6 +568,7 @@ set(lib_MAIN_SRCS
 	callback/CNonConstInfoCallback.cpp
 	callback/CPlayerSpecificInfoCallback.cpp
 	callback/GameRandomizer.cpp
+	callback/GameRandomizerSecondarySkills.cpp
 	callback/HeroPrimaryGrowth.cpp
 	callback/MapInfoCallback.cpp
 	callback/EditorCallback.cpp
@@ -600,6 +604,9 @@ set(lib_MAIN_SRCS
 	entities/creature/NewHorizonsCreatureCategories.cpp
 	entities/creature/NewHorizonsRecruitmentTraining.cpp
 	entities/hero/NewHorizonsHeroRules.cpp
+	entities/hero/NewHorizonsStartingSkillMigration.cpp
+	entities/hero/NewHorizonsStartingDevelopment.cpp
+	entities/hero/NewHorizonsStartingPerks.cpp
 	entities/hero/NewHorizonsSpecialtySerialization.cpp
 	entities/hero/NewHorizonsIndividualSpecialties.cpp
 	entities/hero/NewHorizonsChosenSpecialties.cpp
@@ -815,6 +822,7 @@ set(lib_MAIN_SRCS
 	pathfinder/PathfindingRules.cpp
 	pathfinder/TurnInfo.cpp
 	pathfinder/NewHorizonsMovement.cpp
+	pathfinder/NewHorizonsMovementBonuses.cpp
 	pathfinder/NewHorizonsProtectedMobility.cpp
 	pathfinder/NewHorizonsLighthouse.cpp
 
@@ -1191,6 +1199,7 @@ set(lib_MAIN_HEADERS
 	battle/FocusFireState.h
 	battle/FocusFireQueries.h
 	battle/SylvanTacticsState.h
+	battle/NewHorizonsSylvanTacticsV2.h
 	battle/NewHorizonsSylvanTactics.h
 	battle/SylvanLuckState.h
 	battle/LuckSerendipityState.h
@@ -1438,6 +1447,7 @@ set(lib_MAIN_HEADERS
 	callback/IGameInfoCallback.h
 	callback/IGameRandomizer.h
 	callback/GameRandomizer.h
+	callback/SkillOfferLayout.h
 	callback/MapInfoCallback.h
 	callback/EditorCallback.h
 	
@@ -1514,6 +1524,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsRuleValidation.h
 	entities/hero/NewHorizonsSkillSpecialtyRules.h
 	entities/hero/HeroStartingProjection.h
+	entities/hero/NewHorizonsStartingPerks.h
 	entities/hero/NewHorizonsLeadership.h
 	entities/hero/LeadershipComposition.h
 	entities/hero/NewHorizonsCapabilityRules.h
@@ -1684,6 +1695,7 @@ set(lib_MAIN_HEADERS
 	pathfinder/PathfindingRules.h
 	pathfinder/TurnInfo.h
 	pathfinder/NewHorizonsMovement.h
+	pathfinder/NewHorizonsMovementBonuses.h
 	pathfinder/NewHorizonsProtectedMobility.h
 	pathfinder/NewHorizonsLighthouse.h
 

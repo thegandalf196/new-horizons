@@ -16,13 +16,22 @@ bin="$repo/build/new-horizons-linux/bin"
 sourceTree="$repo/editable-resources"
 mkdir -p -- "$repo/tools/ci" "$repo/tools" "$bin" "$repo/build/linux-current-client1/stage/New-Horizons-Linux-x64" \
 	"$sourceTree/config" "$sourceTree/scripts/damage" "$sourceTree/Mods/vcmi" \
-	"$sourceTree/Mods/new-horizons/Images" "$temporary/Data" "$temporary/Maps" "$temporary/Mp3"
+	"$sourceTree/Mods/new-horizons/Images" "$temporary/original/Data" "$temporary/original/Maps" "$temporary/original/Mp3"
 cp -- "$repoRoot/play-new-horizons-linux.sh" "$repo/play-new-horizons-linux.sh"
 cp -- "$repoRoot/tools/ci/linux_playable_snapshot.py" "$repo/tools/ci/linux_playable_snapshot.py"
+cp -- "$repoRoot/tools/ci/linux_snapshot_binaries.py" "$repo/tools/ci/linux_snapshot_binaries.py"
+cp -- "$repoRoot/tools/ci/client_features.py" "$repo/tools/ci/client_features.py"
+cp -- "$repoRoot/tools/linux_assets_setup.py" "$repo/tools/linux_assets_setup.py"
+nh_python=${NH_PYTHON:-$(command -v python3)}
+export NH_PYTHON="$nh_python"
+for archive in h3bitmap.lod h3sprite.lod h3ab_bmp.lod h3ab_spr.lod; do
+ printf synthetic > "$temporary/original/Data/$archive"
+done
 cp -- "$repoRoot/tools/verify_new_horizons_art_install.py" "$repo/tools/verify_new_horizons_art_install.py"
 cp -- "$repoRoot/tools/nhart.py" "$repo/tools/nhart.py"
 cp -- "$repoRoot/tools/ci/package_new_horizons_windows.py" "$repo/tools/ci/package_new_horizons_windows.py"
 cp -- "$repoRoot/tools/ci/source_export_policy.py" "$repo/tools/ci/source_export_policy.py"
+cp -- "$repoRoot/tools/ci/retired_public_paths.json" "$repo/tools/ci/retired_public_paths.json"
 cp -- "$repoRoot/tools/new-horizons-launch.sh" "$repo/tools/new-horizons-launch.sh"
 
 cat > "$repo/tools/new-horizons-launch.sh" <<'STUB'
@@ -72,7 +81,7 @@ fi
 grep -q 'No frozen Linux playable snapshot is selected' "$expectedFailure"
 [[ ! -e $temporary/argv ]]
 
-candidate=$(python3 "$repo/tools/ci/linux_playable_snapshot.py" freeze --no-promote \
+candidate=$("$nh_python" "$repo/tools/ci/linux_playable_snapshot.py" freeze --no-promote \
 	--client "$bin/new-horizons" --resources "$bin" --store "$store")
 [[ -f $candidate/new-horizons && ! -e $candidate/vcmiclient && -f $candidate/libvcmi.so ]]
 [[ $(< "$candidate/config/filesystem.json") == '{"source":"editable"}' ]]
@@ -94,19 +103,27 @@ JSON
 
 # Synthetic acceptance uses the exact supplied candidate; no game is executed.
 # A successful gate selects it without a separate promotion command.
-python3 "$repo/tools/ci/linux_playable_snapshot.py" validate \
+"$nh_python" "$repo/tools/ci/linux_playable_snapshot.py" validate \
 	--snapshot "$candidate" --store "$store" --timeout 10 -- \
-	python3 -c 'import os, sys; from pathlib import Path; candidate = Path(os.environ["NH_VALIDATION_SNAPSHOT"]); assert candidate == Path(sys.argv[1]); assert candidate.name == "snapshot-" + os.environ["NH_VALIDATION_SNAPSHOT_SHA256"]; assert (candidate / "new-horizons").is_file()' \
+	"$nh_python" -c 'import os, sys; from pathlib import Path; candidate = Path(os.environ["NH_VALIDATION_SNAPSHOT"]); assert candidate == Path(sys.argv[1]); assert candidate.name == "snapshot-" + os.environ["NH_VALIDATION_SNAPSHOT_SHA256"]; assert (candidate / "new-horizons").is_file()' \
 	"$candidate" > /dev/null
+
+# Legacy validated candidates retain the exact previous no-argument launch
+# contract until a helper-bearing candidate is promoted; no setup is written.
+HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/legacy-default-argv" \
+    bash "$repo/play-new-horizons-linux.sh"
+mapfile -d '' -t legacy_default < "$temporary/legacy-default-argv"
+[[ ${legacy_default[0]} == --assets && ${legacy_default[1]} == "$temporary" ]]
+[[ ${legacy_default[5]} == "$candidate/new-horizons" ]]
+[[ ! -e $temporary/home/.local/share/new-horizons-play.setup ]]
 
 expectedMap='Maps/Map with spaces.h3m'
 HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/argv" \
-	bash "$repo/play-new-horizons-linux.sh" --verify-only -- \
+	bash "$repo/play-new-horizons-linux.sh" --noninteractive --assets "$temporary/original" --verify-only -- \
 	--testmap "$expectedMap" --disable-video
 mapfile -d '' -t actual < "$temporary/argv"
-expected=(--assets "$temporary" --profile "$temporary/home/.local/share/new-horizons-play" \
-	--client "$candidate/new-horizons" --resources "$candidate" --verify-only -- \
-	--testmap "$expectedMap" --disable-video)
+expected=(--assets "$temporary/original" --profile "$temporary/home/.local/share/new-horizons-play" \
+    --client "$candidate/new-horizons" --resources "$candidate" --verify-only)
 [[ ${#actual[@]} == ${#expected[@]} ]]
 for index in "${!expected[@]}"; do
 	[[ ${actual[$index]} == "${expected[$index]}" ]]
@@ -114,7 +131,7 @@ done
 
 # Model an immutable historical snapshot; selecting it must not rename its
 # executable or rewrite its manifest. This modifies only the synthetic fixture.
-legacy=$(python3 - "$repo/tools/ci" "$candidate" <<'PY'
+legacy=$("$nh_python" - "$repo/tools/ci" "$candidate" <<'PY'
 import sys
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
@@ -129,11 +146,11 @@ readonly_tree(legacy)
 print(legacy)
 PY
 )
-python3 "$repo/tools/ci/linux_playable_snapshot.py" promote \
+"$nh_python" "$repo/tools/ci/linux_playable_snapshot.py" promote \
 	--snapshot "$legacy" --store "$store" > /dev/null
 legacy_manifest=$(cksum < "$legacy/SNAPSHOT.json")
 HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/legacy-argv" \
-	bash "$repo/play-new-horizons-linux.sh" --verify-only
+	bash "$repo/play-new-horizons-linux.sh" --noninteractive --assets "$temporary/original" --verify-only
 mapfile -d '' -t legacy_args < "$temporary/legacy-argv"
 [[ ${legacy_args[5]} == "$legacy/vcmiclient" ]]
 [[ ${legacy_args[7]} == "$legacy" ]]
@@ -154,13 +171,26 @@ CUSTOM
 chmod +x -- "$custom/vcmiclient"
 HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/override-argv" \
 	bash "$repo/play-new-horizons-linux.sh" --client "$custom/vcmiclient" \
-	--resources "$custom" --verify-only
+	--resources "$custom" --assets "$temporary/original" --verify-only
 mapfile -d '' -t override < "$temporary/override-argv"
-expected_override=(--assets "$temporary" --profile "$temporary/home/.local/share/new-horizons-play" \
+expected_override=(--assets "$temporary/original" --profile "$temporary/home/.local/share/new-horizons-play" \
 	--client "$custom/vcmiclient" --resources "$custom" --verify-only)
 [[ ${#override[@]} == ${#expected_override[@]} ]]
 for index in "${!expected_override[@]}"; do
 	[[ ${override[$index]} == "${expected_override[$index]}" ]]
 done
+
+# A custom resources path still obtains its required client from the validated
+# selected snapshot. A custom client alone defaults resources to its directory.
+HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/resources-argv" \
+    bash "$repo/play-new-horizons-linux.sh" --noninteractive --assets "$temporary/original" \
+    --resources "$custom" --verify-only
+mapfile -d '' -t resources_args < "$temporary/resources-argv"
+[[ ${resources_args[5]} == "$legacy/vcmiclient" && ${resources_args[7]} == "$custom" ]]
+HOME="$temporary/home" SNAPSHOT_TEST_ARGV="$temporary/client-only-argv" \
+    bash "$repo/play-new-horizons-linux.sh" --assets "$temporary/original" \
+    --client="$custom/vcmiclient" --verify-only
+mapfile -d '' -t client_only_args < "$temporary/client-only-argv"
+[[ ${client_only_args[5]} == "$custom/vcmiclient" && ${client_only_args[7]} == "$custom" ]]
 
 printf '%s\n' 'PASS: successful validation automatically selects the frozen snapshot; runtime overrides, legacy rollback, profile and game args are preserved.'

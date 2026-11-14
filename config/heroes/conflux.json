@@ -2,6 +2,7 @@
 	"pasis":
 	{
 		"index": 128,
+		"texts": {"name": "Veyra"},
 		"class" : "planeswalker",
 		"female": true,
 		"skills":
@@ -134,6 +135,7 @@
 	"monere":
 	{
 		"index": 132,
+		"texts": {"name": "Orun"},
 		"class" : "planeswalker",
 		"female": false,
 		"skills":

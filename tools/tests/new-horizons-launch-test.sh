@@ -3,6 +3,7 @@
 # Uses synthetic empty assets and a shell stub only. NEVER invokes a game binary.
 set -euo pipefail
 launcher=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)/new-horizons-launch.sh
+export NH_PYTHON=${NH_PYTHON:-$(command -v python3)}
 tmp=$(mktemp -d)
 cleanup_release_files=()
 cleanup_done_files=()
@@ -54,6 +55,9 @@ mkdir -p -- "$engine/config" "$engine/scripts/damage" "$engine/Mods/vcmi" \
 touch -- "$engine/config/filesystem.json" "$engine/scripts/damage/damageCalculator.lua" \
 	"$engine/Mods/vcmi/mod.json" "$engine/libvcmi.so" \
 	"$assets/dAtA/H3BITMAP.LOD" "$assets/dAtA/h3sprite.lod"
+for archive in H3BITMAP.LOD h3sprite.lod h3ab_bmp.lod h3ab_spr.lod; do
+	printf synthetic > "$assets/dAtA/$archive"
+done
 cat > "$engine/new-horizons" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -158,6 +162,7 @@ chmod +x -- "$engine/new-horizons"
 # A packaged entry point must not inherit the developer launcher's build path.
 cp -- "$launcher" "$engine/new-horizons-launch.sh"
 cp -- "$(dirname -- "$launcher")/Play-New-Horizons.sh" "$engine/Play-New-Horizons.sh"
+cp -- "$(dirname -- "$launcher")/linux_assets_setup.py" "$engine/linux_assets_setup.py"
 bash "$engine/Play-New-Horizons.sh" --assets "$assets" --profile "$tmp/packaged-profile" --verify-only
 [[ ! -e "$tmp/packaged-profile" ]]
 export EXPECTED_ENGINE="$engine" EXPECTED_ASSETS="$assets" EXPECTED_PROFILE="$profile"

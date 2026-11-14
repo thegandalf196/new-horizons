@@ -210,6 +210,7 @@ private:
 	std::set<uint32_t> frozenTargets;
 	std::set<uint32_t> intrinsicMdrTargets;
 	std::set<uint32_t> intrinsicPdrTargets;
+	std::set<std::pair<uint32_t, uint32_t>> sylvanAlliancePairs;
 	const DamageCache * parent;
 
 	void cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender,
@@ -225,6 +226,8 @@ private:
 	bool tracksNightProwler(uint32_t attackerId) const;
 	bool tracksFrozen(uint32_t defenderId) const;
 	bool tracksIntrinsicReduction(uint32_t defenderId, bool physical) const;
+	bool tracksSylvanAlliance(const battle::Unit * attacker, const battle::Unit * defender,
+		const CBattleInfoCallback & battle);
 
 public:
 	/// Owning exact cache-chain identity for completed Regeneration baseline reuse only.

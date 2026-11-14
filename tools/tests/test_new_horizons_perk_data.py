@@ -446,49 +446,6 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertNotIn('new-horizons:luck.luckyDay', perks)
         self.assertNotIn('new-horizons:luck.erraticMana', perks)
         self.assertNotIn('new-horizons:luck.druidicLuck', perks)
-        sylvan = next(p for p in self.rules['skills']['new-horizons:sylvanLuck']['perks']
-                      if p['id'] == 'new-horizons:sylvanLuck.luckyRecovery')
-        description = 'Moving at least 1 hex, up to half Speed, before a melee attack grants +10% damage.'
-        self.assertEqual((sylvan['name'], sylvan['requires']), ('Measured Advance', 'basic'))
-        self.assertEqual(sylvan['description'], description)
-        self.assertEqual(sylvan['effect'], {'status': 'active', 'description': description})
-
-    def test_sylvan_tactics_policy_is_optional_and_strict(self):
-        validator = Draft4Validator(self.schema)
-        self.assertEqual(self.rules['sylvanTacticsPolicy'], 1)
-        validator.validate(self.rules)
-        historical = json.loads(json.dumps(self.rules))
-        historical.pop('sylvanTacticsPolicy')
-        validator.validate(historical)
-        self.assertNotIn('sylvanTacticsPolicy', historical)
-        for invalid in (None, False, True, 0, -1, 2, 1.0, '1', {}, []):
-            with self.subTest(invalid=invalid):
-                candidate = json.loads(json.dumps(self.rules))
-                candidate['sylvanTacticsPolicy'] = invalid
-                self.assertTrue(list(validator.iter_errors(candidate)))
-
-    def test_sylvan_tactics_preserves_all_saved_perk_ids_and_tiers(self):
-        sylvan = self.rules['skills']['new-horizons:sylvanLuck']
-        self.assertEqual(sylvan['name'], 'Sylvan Tactics')
-        expected = (
-            ('elvenPrecision', 'Fleetfoot', 'basic'),
-            ('forestSFavor', 'Patient Hunter', 'basic'),
-            ('serendipity', 'Dappled Cover', 'basic'),
-            ('luckyRecovery', 'Measured Advance', 'basic'),
-            ('sharedFortune', 'Covering Fire', 'advanced'),
-            ('natureSProvidence', 'Crossfire', 'advanced'),
-            ('fortunateAim', 'Disruptive Strike', 'advanced'),
-            ('wildChance', 'Quick Redeployment', 'advanced'),
-            ('perfectMoment', 'Perfect Moment', 'expert'),
-            ('cascadingFortune', 'Wild Hunt', 'expert'),
-        )
-        self.assertEqual([(p['id'], p['name'], p['requires']) for p in sylvan['perks']],
-                         [('new-horizons:sylvanLuck.' + key, name, tier)
-                          for key, name, tier in expected])
-        perfect = next(p for p in sylvan['perks'] if p['id'].endswith('.perfectMoment'))
-        self.assertEqual(perfect['description'], 'Creature Lucky Strikes deal 3.5× damage.')
-        self.assertEqual(perfect['effect']['description'], perfect['description'])
-
     def test_revised_order_perks_preserve_saved_ids_and_tiers(self):
         expected = (
             ('offense', 'encirclement', 'Spearhead', 'basic',

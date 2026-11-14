@@ -269,7 +269,7 @@ AttackPossibility AttackPossibility::evaluate(
 		};
 		BattleAttackInfo potentialRetaliation(defender, attacker, 0, false);
 		potentialRetaliation.retaliation = true;
-		const bool projectsSylvanTactics = sylvanTacticsAI::needsProjection(*state);
+		const bool projectsSylvanTactics = sylvanTacticsAI::needsProjection(*state, attackInfo);
 		const bool projectsFactionEffects = PhysicalStrikeProjection::needsExposureProjection(*state);
 		const bool projectsAttackControllers = attackControllerAI::needsPreview(*state, attackInfo, defHex);
 		const bool projectsGambler = AttackPreviewHitContext::hasGambler(*state);

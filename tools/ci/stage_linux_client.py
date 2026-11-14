@@ -13,6 +13,7 @@ import subprocess
 
 from binary_privacy import inspect_bytes, require_clean
 from client_features import client_feature_files
+from linux_snapshot_binaries import SETUP_NAME, setup_metadata, admit_setup_evidence
 from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_evidence, runtime_records
 
 
@@ -42,7 +43,12 @@ def verify_candidate(root):
     if (root / 'new-horizons').is_file():
         client_feature_files(root / 'new-horizons')
     require_clean(root)
-    return json.loads((root / 'BUILD-IDENTITY.json').read_text())
+    identity = json.loads((root / 'BUILD-IDENTITY.json').read_text())
+    if (root / SETUP_NAME).exists():
+        setup = setup_metadata(root, expected)
+        if 'setup' in identity and identity['setup'] != setup:
+            raise RuntimeError('Setup payload differs from its staged identity')
+    return identity
 
 
 def public_evidence(value, candidate):
@@ -95,6 +101,7 @@ def main():
     libraries = admit_runtime_libraries(args.runtime_library, args.candidate, identity,
                                        reports, sources[args.dependency_source.name]['sha256'])
     reports = relocate_runtime_evidence(reports, libraries)
+    admit_setup_evidence(args.candidate, identity, reports)
     report_text = {name: json.dumps(data, indent=2) + '\n' for name, data in reports.items()}
     if any(inspect_bytes(text.encode()) for text in report_text.values()):
         raise RuntimeError('Personal profile path in public evidence')
@@ -108,12 +115,19 @@ def main():
     for name, record in libraries.items():
         (package / name).write_bytes(record['payload'])  # Owned verified bytes; never modify the input provider.
     for source, name in (('tools/Play-New-Horizons.sh', 'Play-New-Horizons.sh'),
+                         ('tools/new-horizons-launch.sh', 'new-horizons-launch.sh'),
+                         ('tools/linux_assets_setup.py', 'linux_assets_setup.py'),
                          ('tools/linux/README-New-Horizons.txt', 'README-New-Horizons.txt'),
                          ('tools/linux/LEGAL-New-Horizons.txt', 'LEGAL-New-Horizons.txt'),
                          ('tools/linux/BUILDING-New-Horizons.txt', 'BUILDING-New-Horizons.txt')):
         data = subprocess.check_output(['git', '-C', str(root), 'show', args.packaging_revision + ':' + source])
+        if (package / name).exists():
+            (package / name).chmod(0o644)
         (package / name).write_bytes(data)
     (package / 'Play-New-Horizons.sh').chmod(0o755)
+    (package / 'new-horizons-launch.sh').chmod(0o755)
+    if (package / SETUP_NAME).exists():
+        identity['setup'] = setup_metadata(package, {p.name: sha256(p) for p in package.iterdir() if p.is_file()})
     copy_plain_tree(args.notices, package / 'licenses/system')
     terms = package / 'licenses/header-boundaries'
     terms.mkdir(parents=True)

@@ -18,13 +18,31 @@ Your installation must contain Data, Maps and Mp3 directories. Asset directories
 are mounted read-only by convention; saves/settings go in a separate managed
 profile. Do not select an existing ordinary VCMI profile.
 
-From this extracted directory:
-  ./Play-New-Horizons.sh --assets "/path/to/Heroes III Complete" --profile "$HOME/.local/share/new-horizons-play"
+Double-click new-horizons-setup to launch. On the first run, select your Heroes
+III Complete installation folder. This must contain Data, Maps, Mp3 and the four
+nonempty Complete LOD archives (h3bitmap, h3sprite, h3ab_bmp, h3ab_spr).
+Your desktop may require marking the extracted executable as executable or
+allowing its execution; a shell script may instead open in a text editor.
+The native entry calls the packaged launcher without initializing the game.
 
-Add --verify-only to check paths without creating a profile or executing the game.
-This preflight does not verify library compatibility, asset completeness or gameplay.
-Use Play-New-Horizons.sh: new-horizons-launch.sh is also a developer tool and its
-implicit client path is not the packaged default.
+Python 3 and a working desktop folder-dialog provider are required. If the
+chooser is unavailable, run from this extracted directory:
+  ./Play-New-Horizons.sh --assets "/path/to/Heroes III Complete"
+
+The selected location is remembered privately beside the managed profile in
+<profile>.setup/original-assets.json. Original files are referenced, never
+copied. The extracted installation may be read-only. --select-assets opens the
+chooser again; a missing or moved original installation also prompts again.
+Cancel exits without starting the game. --setup-only saves a valid selection
+without starting. --assets overrides the location for one launch; an invalid
+explicit path fails without opening a dialog.
+
+Add --verify-only to check paths without creating settings, a profile or a game
+process. --noninteractive (and --headless/--disable-video game arguments after
+--) never prompts: supply --assets or configure the location beforehand.
+Preflight checks paths and required archives, not library compatibility or
+complete archive contents. Use the public entry; new-horizons-launch.sh alone
+is a lower-level developer interface.
 
 Start a single-player scenario from the game's menu. The curated New Horizons
 rules and selected artwork are included; no separate mod download is required.
@@ -44,9 +62,9 @@ profiles outside both the extracted package and the original installation.
 Saves are stored in <profile>/data/new-horizons/Saves. Earlier releases used
 <profile>/data/vcmi/Saves; those files are not moved or deleted.
 
-SAVE COMPATIBILITY — 0.90 Early Access
-Start a new game, including when upgrading from 0.89 or 0.89.1. The current and
-minimum accepted save format is 1158. Earlier saves are rejected before payload
+SAVE COMPATIBILITY — 0.91.1 Early Access
+Start a new game, including when upgrading from 0.90 or earlier. The current and
+minimum accepted save format is 1159. Earlier saves are rejected before payload
 loading, not converted, rewritten or deleted. Keep your old save files and backups;
 use the matching older version to continue those games. Copying an old save into
 the new directory does not make it compatible.

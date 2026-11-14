@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsPassiveSpecialties.h"
 #include "NewHorizonsCommandResources.h"
 #include "NewHorizonsWarfare.h"
@@ -3090,106 +3091,6 @@ AttackableTiles CBattleInfoCallback::getPotentiallyShootableHexes(const battle::
 	return at;
 }
 
-battle::Units CBattleInfoCallback::getAttackedBattleUnits(
-	const battle::Unit * attacker,
-	const  battle::Unit * defender,
-	BattleHex destinationTile,
-	bool rangedAttack,
-	BattleHex attackerPos,
-	BattleHex defenderPos) const
-{
-	battle::Units units;
-	RETURN_IF_NOT_BATTLE(units);
-
-	if(attackerPos == BattleHex::INVALID)
-		attackerPos = attacker->getPosition();
-
-	if(defenderPos == BattleHex::INVALID)
-		defenderPos = defender->getPosition();
-
-	AttackableTiles at;
-
-	if (rangedAttack)
-		at = getPotentiallyShootableHexes(attacker, destinationTile, attackerPos);
-	else
-		at = getPotentiallyAttackableHexes(attacker, defender, destinationTile, attackerPos, defenderPos);
-
-	units = battleGetUnitsIf([this, at, attacker](const battle::Unit * unit)
-	{
-		if (unit->isGhost() || !unit->alive() || unit->isInvincible())
-			return false;
-
-		for (const BattleHex & hex : unit->getHexes())
-		{
-			// Match authoritative getAttackedCreatures: hostile-only splash must
-			// use current control, while friendly-fire tiles can hit either side.
-			if (at.hostileCreaturePositions.contains(hex) && battleGetOwner(attacker) != battleGetOwner(unit))
-				return true;
-			if (at.friendlyCreaturePositions.contains(hex))
-				return true;
-		}
-		return false;
-	});
-
-	return units;
-}
-
-std::pair<battle::Units, bool> CBattleInfoCallback::getAttackedCreatures(const CStack* attacker, const BattleHex & destinationTile, bool rangedAttack, BattleHex attackerPos) const
-{
-	std::pair<battle::Units, bool> attackedCres;
-	RETURN_IF_NOT_BATTLE(attackedCres);
-
-	AttackableTiles at;
-	
-	if(rangedAttack)
-		at = getPotentiallyShootableHexes(attacker, destinationTile, attackerPos);
-	else
-	{
-		try
-		{
-			at = getPotentiallyAttackableHexes(attacker, destinationTile, attackerPos);
-		}
-		catch(const std::runtime_error &)
-		{
-			return attackedCres;
-		}
-	}
-
-	// a double-wide unit is found through both of its hexes, so the same unit shows up twice
-	const auto & addOnce = [&attackedCres](const battle::Unit * unit)
-	{
-		if(!vstd::contains(attackedCres.first, unit))
-			attackedCres.first.push_back(unit);
-	};
-
-	for (const BattleHex & tile : at.hostileCreaturePositions) //all around & three-headed attack
-	{
-		const CStack * st = battleGetStackByPos(tile, true);
-		if(st && battleGetOwner(st) != battleGetOwner(attacker) && !st->isInvincible()) //only hostile stacks - does it work well with Berserk?
-			addOnce(st);
-	}
-	for (const BattleHex & tile : at.friendlyCreaturePositions)
-	{
-		const CStack * st = battleGetStackByPos(tile, true);
-		if(st && !st->isInvincible()) //friendly stacks can also be damaged by Dragon Breath
-			addOnce(st);
-	}
-
-	if (at.friendlyCreaturePositions.empty())
-	{
-		attackedCres.second = !attackedCres.first.empty();
-	}
-	else
-	{
-		for (const BattleHex & tile : at.friendlyCreaturePositions)
-			for (const auto & st : attackedCres.first)
-				if (st->coversPos(tile))
-					attackedCres.second = true;
-	}
-
-	return attackedCres;
-}
-
 static bool isHexInFront(const BattleHex & hex, const BattleHex & testHex, BattleSide side )
 {
 	static const std::set<BattleHex::EDir> rightDirs { BattleHex::BOTTOM_RIGHT, BattleHex::TOP_RIGHT, BattleHex::RIGHT };
@@ -3405,7 +3306,8 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 		}
 		if(unit->unitOwner() != caster->tempOwner && unit->hasBonusOfType(BonusType::CHANGES_SPELL_COST_FOR_ENEMY))
 		{
-			vstd::amax(manaIncrease, unit->valOfBonuses(BonusType::CHANGES_SPELL_COST_FOR_ENEMY));
+			vstd::amax(manaIncrease, unit->valOfBonuses(BonusType::CHANGES_SPELL_COST_FOR_ENEMY)
+				+ newHorizonsSylvanTacticsV2::extraDamper(*this, unit));
 		}
 	}
 

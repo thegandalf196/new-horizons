@@ -15,8 +15,9 @@ PROVIDER_PREFIX = 'public-provider/'
 
 def bind_reports(candidate, identity, reports, dependency_sha):
     engines = identity.get('binaries', {})
-    if set(engines) != ENGINE_ROOTS:
-        raise RuntimeError('Expected the two original engine identity roots')
+    roots = ENGINE_ROOTS | ({'new-horizons-setup'} if (candidate / 'new-horizons-setup').exists() else set())
+    if set(engines) != roots:
+        raise RuntimeError('Expected the two original engine identity roots and only the optional fixed setup root')
     for report in reports.values():
         if (report.get('source_commit') != identity['source_commit']
                 or report.get('binaries') != engines):
@@ -27,7 +28,7 @@ def bind_reports(candidate, identity, reports, dependency_sha):
     elf = reports['ELF-DEPENDENCIES.json']
     roots = {'bundled/' + name for name in engines}
     if {key for key in elf.get('graph', {}) if key.startswith('bundled/')} != roots:
-        raise RuntimeError('Raw evidence must contain exactly the two bundled engine roots')
+        raise RuntimeError('Raw evidence must contain exactly the identified bundled engine roots')
     checked = elf.get('shipped_strong_dynamic_imports_resolved', {})
     allowed = roots | {key for key in elf.get('graph', {}) if key.startswith(PROVIDER_PREFIX)}
     if (not roots <= set(checked) <= allowed
@@ -123,7 +124,7 @@ def relocate_runtime_evidence(reports, libraries):
         node['NEEDED'] = {name: labels.get(target, target) for name, target in node['NEEDED'].items()}
         graph[relocated] = node
     elf['graph'] = graph
-    elf['external_ELF_nodes'] = len(graph) - len(ENGINE_ROOTS) - len(libraries)
+    elf['external_ELF_nodes'] = len(graph) - len(elf['binaries']) - len(libraries)
     elf['bundled_runtime_provider_ELFs'] = len(libraries)
     for key in ('shipped_strong_dynamic_imports_resolved', 'unresolved_strong_imports'):
         elf[key] = {labels.get(label, label): value for label, value in elf[key].items()}
