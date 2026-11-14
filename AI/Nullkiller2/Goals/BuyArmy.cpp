@@ -9,6 +9,7 @@
 */
 #include "../StdInc.h"
 #include "BuyArmy.h"
+#include "../Helpers/LeadershipEvaluation.h"
 #include "../../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
@@ -128,7 +129,8 @@ void BuyArmy::accept(AIGateway * aiGw)
 				portalSourceSelectionSubmitted = true;
 			}
 			aiGw->cc->recruitCreatures(candidate.source, hero, ci.creID, ci.count, ci.level, candidate.portalTownId);
-			valueBought += ci.count * ci.creID.toCreature()->getAIValue();
+			valueBought = leadershipAI::addPower(valueBought,
+				static_cast<uint64_t>(ci.count) * ci.creID.toCreature()->getAIValue());
 			continue;
 		}
 		const auto capacity = hero ? hero->getLeadershipSlotCapacity(ci.creID) : std::nullopt;
@@ -196,7 +198,8 @@ void BuyArmy::accept(AIGateway * aiGw)
 				}
 				aiGw->cc->recruitCreatures(candidate.source, town->getUpperArmy(), ci.creID, ci.count, ci.level,
 					candidate.portalTownId);
-				valueBought += ci.count * ci.creID.toCreature()->getAIValue();
+				valueBought = leadershipAI::addPower(valueBought,
+					static_cast<uint64_t>(ci.count) * ci.creID.toCreature()->getAIValue());
 			}
 		}
 	}

@@ -12,12 +12,14 @@
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
 #include "AI/Nullkiller2/Helpers/ArmyFormation.h"
 #include "nullkiller2/NullkillerTest.h"
+#include "hero/HistoricalCapabilityRules.h"
 
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/entities/hero/NewHorizonsLeadership.h"
 #include "lib/networkPacks/PacksForClient.h"
 
 #include <chrono>
+#include <limits>
 #include <sstream>
 
 namespace
@@ -33,8 +35,11 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
-			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+			currentRules ? JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")) : historicalCapabilityRulesV4());
 	}
+	// Remaining V4 cases characterize captured numerical/query projections.
+	// CurrentV7 admission cases never infer permissions from historical ratings.
+	bool currentRules = false;
 
 	void startGame(std::vector<std::pair<CreatureID, uint16_t>> heroArmy)
 	{
@@ -95,29 +100,30 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, MergePreflightRejectsAnOversizedI
 	EXPECT_FALSE(NK2AI::armyFormation::canReceiveStack(destination, pikeman, capacity->maximum + 1));
 }
 
-TEST_F(NewHorizonsArmyFormationLeadershipTest, WholeArmyMergePreflightRejectsAnOversizedGarrisonSwap)
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7WholeArmyMergeAcceptsOversizedCountsButRejectsTechnicalOverflow)
 {
+	currentRules = true;
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	startGame({{pikeman, 1}});
-
 	auto * destination = findHeroAt(HERO_POS);
 	ASSERT_NE(destination, nullptr);
-	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 17);
-	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum));
-
+	EXPECT_FALSE(destination->getLeadershipSlotCapacity(pikeman));
+	destination->setStackCount(SlotID(0), 1000000);
 	CGHeroInstance source(nullptr);
-	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 1));
-
+	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 1000000));
+	EXPECT_TRUE(NK2AI::armyFormation::canMergeArmies(&source, destination));
+	EXPECT_EQ(destination->getStackCount(SlotID(0)), 1000000);
+	EXPECT_EQ(source.getStackCount(SlotID(0)), 1000000);
+	destination->setStackCount(SlotID(0), std::numeric_limits<TQuantity>::max());
 	EXPECT_FALSE(NK2AI::armyFormation::canMergeArmies(&source, destination));
-
+	EXPECT_EQ(destination->getStackCount(SlotID(0)), std::numeric_limits<TQuantity>::max());
 	source.clearSlots();
 	EXPECT_TRUE(NK2AI::armyFormation::canMergeArmies(&source, destination));
 }
 
-TEST_F(NewHorizonsArmyFormationLeadershipTest, GarrisonSwapPreflightChecksTheActualTownArmy)
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7GarrisonSwapPreflightUsesActualOversizedTownArmyWithoutMutation)
 {
+	currentRules = true;
 	const CreatureID gog(CreatureID::decode("core:gog"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder
@@ -133,9 +139,13 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, GarrisonSwapPreflightChecksTheAct
 	auto * visitingHero = findHeroByOwner(PLAYER);
 	ASSERT_NE(town, nullptr);
 	ASSERT_NE(visitingHero, nullptr);
+	// An empty TinyH3M hero garrison selects the standard starting army. Set
+	// this empty-garrison precondition explicitly after ordinary initialization.
+	visitingHero->clearSlots();
+	ASSERT_EQ(visitingHero->stacksCount(), 0);
 
 	// Reproduce the state used by GarrisonHeroSwap: the visiting hero is
-	// empty, while the town's army contains more than the hero can command.
+	// empty, while the town holds a stack far beyond its soft threshold.
 	ChangeObjPos moveHero;
 	moveHero.objid = visitingHero->id;
 	moveHero.nPos = town->visitablePos();
@@ -147,16 +157,19 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, GarrisonSwapPreflightChecksTheAct
 	setHeroes.garrison = ObjectInstanceID::NONE;
 	gameState()->apply(setHeroes);
 
-	const auto capacity = visitingHero->getLeadershipSlotCapacity(gog);
-	ASSERT_TRUE(capacity);
-	town->setStackCount(SlotID(0), capacity->maximum + 1);
-
-	EXPECT_FALSE(NK2AI::armyFormation::canSwapGarrisonHero(town));
-	EXPECT_FALSE(NK2AI::armyFormation::canMergeArmies(town, visitingHero));
+	EXPECT_FALSE(visitingHero->getLeadershipSlotCapacity(gog));
+	town->setStackCount(SlotID(0), 1000000);
+	const auto before = gameState()->saveToMemory();
+	EXPECT_TRUE(NK2AI::armyFormation::canSwapGarrisonHero(town));
+	EXPECT_TRUE(NK2AI::armyFormation::canMergeArmies(town, visitingHero));
+	EXPECT_EQ(town->getStackCount(SlotID(0)), 1000000);
+	EXPECT_EQ(visitingHero->stacksCount(), 0);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
 }
 
-TEST_F(NewHorizonsArmyFormationLeadershipTest, WizardMageGarrisonAdmissionPreservesSurplusUntilArranged)
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7WizardGarrisonAcceptsMageSurplusButNeedsRoomForDistinctLines)
 {
+	currentRules = true;
 	const CreatureID mage(CreatureID::decode("core:mage"));
 	const CreatureID gremlin(CreatureID::decode("core:gremlin"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -185,60 +198,44 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, WizardMageGarrisonAdmissionPreser
 	setHeroes.garrison = ObjectInstanceID::NONE;
 	gameState()->apply(setHeroes);
 
-	const auto capacity = hero->getLeadershipSlotCapacity(mage);
-	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 650);
-	ASSERT_EQ(capacity->requirement, 300);
-	ASSERT_EQ(capacity->maximum, 2);
-	EXPECT_TRUE(hero->canBeMergedWith(*town)); // Slots alone miss this overflow.
-	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
-	EXPECT_FALSE(NK2AI::armyFormation::canSwapGarrisonHero(town));
+	EXPECT_FALSE(hero->getLeadershipSlotCapacity(mage));
+	town->setStackCount(SlotID(0), 1000000);
+	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(town, hero));
+	EXPECT_TRUE(NK2AI::armyFormation::canSwapGarrisonHero(town));
 	EXPECT_EQ(town->getVisitingHero(), hero);
 	EXPECT_EQ(town->getGarrisonHero(), nullptr);
 	EXPECT_EQ(hero->getStackCount(SlotID(0)), 2);
-	EXPECT_EQ(town->getStackCount(SlotID(0)), 1);
-
-	// The transfer dialog can place the surplus in a separate hero slot.
-	town->clearSlots();
-	ASSERT_TRUE(hero->setCreature(SlotID(1), mage, 1));
-	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(town, hero));
-	EXPECT_TRUE(NK2AI::armyFormation::canSwapGarrisonHero(town));
-
-	// Full-slot admission uses moveArmy's duplicate consolidation, including
-	// the capacity of the merged pair before admitting a new creature type.
+	EXPECT_EQ(town->getStackCount(SlotID(0)), 1000000);
 	hero->clearSlots();
-	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-		ASSERT_TRUE(hero->setCreature(SlotID(i), mage, 1));
-	ASSERT_TRUE(town->setCreature(SlotID(1), gremlin, 1));
-	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(town, hero));
-	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
-		hero->setStackCount(SlotID(i), 2);
+	int slot = 0;
+	for(const auto * key : {"core:mage", "core:genie", "core:naga", "core:giant", "core:stoneGargoyle", "core:ironGolem", "core:angel"})
+		ASSERT_TRUE(hero->setCreature(SlotID(slot++), CreatureID(CreatureID::decode(key)), 100000));
+	town->clearSlots();
+	ASSERT_TRUE(town->setCreature(SlotID(0), gremlin, 1));
+	const auto before = gameState()->saveToMemory();
 	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
+	EXPECT_FALSE(NK2AI::armyFormation::canSwapGarrisonHero(town));
+	EXPECT_EQ(gameState()->saveToMemory(), before);
 }
 
-TEST_F(NewHorizonsArmyFormationLeadershipTest, SplitPreflightAllowsOnlyTheLegalFinalDestinationCount)
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7SplitPreflightUsesSourceCountsInvalidSlotsAndLastStackRules)
 {
+	currentRules = true;
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	startGame({{pikeman, 1}});
-
 	auto * destination = findHeroAt(HERO_POS);
 	ASSERT_NE(destination, nullptr);
-	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->maximum, 17);
-	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum - 1));
-
+	destination->setStackCount(SlotID(0), 100000);
 	CGHeroInstance source(nullptr);
-	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 4));
-	const auto destinationSlot = destination->getSlotFor(pikeman);
-	ASSERT_TRUE(destinationSlot.validSlot());
-
-	EXPECT_EQ(NK2AI::armyFormation::maxLegalTransferCount(
-		&source, destination, SlotID(0), destinationSlot), 1);
-	EXPECT_TRUE(NK2AI::armyFormation::canSplitStack(
-		&source, destination, SlotID(0), destinationSlot, capacity->maximum));
-	EXPECT_FALSE(NK2AI::armyFormation::canSplitStack(
-		&source, destination, SlotID(0), destinationSlot, capacity->maximum + 1));
+	ASSERT_TRUE(source.setCreature(SlotID(0), pikeman, 500000));
+	ASSERT_TRUE(source.setCreature(SlotID(1), CreatureID(CreatureID::decode("core:archer")), 1));
+	EXPECT_EQ(NK2AI::armyFormation::maxLegalTransferCount(&source, destination, SlotID(0), SlotID(0)), 500000);
+	EXPECT_TRUE(NK2AI::armyFormation::canSplitStack(&source, destination, SlotID(0), SlotID(0), 600000));
+	EXPECT_FALSE(NK2AI::armyFormation::canSplitStack(&source, destination, SlotID(0), SlotID(0), 600001));
+	EXPECT_FALSE(NK2AI::armyFormation::canSplitStack(&source, destination, SlotID(0), SlotID(7), 1));
+	EXPECT_FALSE(NK2AI::armyFormation::canSplitStack(&source, destination, SlotID(0), SlotID(0), -1));
+	EXPECT_EQ(source.getStackCount(SlotID(0)), 500000);
+	EXPECT_EQ(destination->getStackCount(SlotID(0)), 100000);
 }
 
 TEST_F(NewHorizonsArmyFormationLeadershipTest, LegacyHeroesRemainUnrestrictedByThePreflight)
@@ -617,78 +614,72 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, ExchangeProjectionLeavesLegacyArm
 	EXPECT_EQ(projectedCountAt(projection.sourceSlots, SlotID(0)), 1);
 }
 
-TEST_F(NewHorizonsArmyFormationLeadershipTest, ExchangeProjectionChecksSourceLeadershipOnDifferingCreatureSwap)
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7DifferingCreatureProjectionConservesBothFullArmiesWithoutHardCaps)
 {
+	currentRules = true;
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	const CreatureID angel(CreatureID::decode("core:angel"));
-	startExchangeGame({}, {{pikeman, 1}}, 1000000);
-
+	startExchangeGame({}, {{pikeman, 1}});
 	auto * receiver = findHeroAt(HERO_POS);
 	auto * source = findHeroAt(SOURCE_HERO_POS);
 	ASSERT_NE(receiver, nullptr);
 	ASSERT_NE(source, nullptr);
-	receiver->clearSlots();
-	source->clearSlots();
-	ASSERT_TRUE(source->setCreature(SlotID(0), pikeman, 1));
-	const auto receiverAngelCapacity = receiver->getLeadershipSlotCapacity(angel);
-	const auto sourceAngelCapacity = source->getLeadershipSlotCapacity(angel);
-	ASSERT_TRUE(receiverAngelCapacity);
-	ASSERT_TRUE(sourceAngelCapacity);
-	ASSERT_GE(receiverAngelCapacity->maximum, 2);
-	ASSERT_EQ(sourceAngelCapacity->maximum, 1);
-	ASSERT_TRUE(source->getLeadershipSlotCapacity(pikeman));
-	for(size_t i = 0; i < GameConstants::ARMY_SIZE; ++i)
-		ASSERT_TRUE(receiver->setCreature(SlotID(i), angel, 2));
-	for(size_t i = 1; i < GameConstants::ARMY_SIZE; ++i)
-		ASSERT_TRUE(source->setCreature(SlotID(i), pikeman, 1));
-	ASSERT_EQ(source->stacksCount(), GameConstants::ARMY_SIZE);
-
-	const std::vector<NK2AI::armyFormation::DesiredArmyStack> desired = {{pikeman, 1}};
-	const auto projection = NK2AI::armyFormation::projectArmyExchange(
-		receiver, source, receiver, source, desired);
-
-	EXPECT_TRUE(projection.transfers.empty());
-	EXPECT_EQ(projectedCountAt(projection.receiverSlots, SlotID(0)), 2);
-	EXPECT_EQ(projectedCountAt(projection.sourceSlots, SlotID(0)), 1);
+	ASSERT_EQ(receiver->level, 1);
+	receiver->clearSlots(); source->clearSlots();
+	for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
+	{
+		ASSERT_TRUE(receiver->setCreature(SlotID(slot), angel, 2000));
+		ASSERT_TRUE(source->setCreature(SlotID(slot), pikeman, 1000));
+	}
+	const auto before = gameState()->saveToMemory();
+	const auto plan = NK2AI::armyFormation::projectArmyExchange(receiver, source, receiver, source, {{pikeman, 1000}});
+	ASSERT_FALSE(plan.transfers.empty());
+	int64_t angels = 0, pikemen = 0, received = 0;
+	for(const auto * rows : {&plan.receiverSlots, &plan.sourceSlots})
+		for(const auto & row : *rows)
+		{
+			if(row.creature == angel) angels += row.count;
+			if(row.creature == pikeman) pikemen += row.count;
+			EXPECT_TRUE(row.slot.validSlot());
+		}
+	for(const auto & row : plan.receiverSlots) if(row.creature == pikeman) received += row.count;
+	EXPECT_EQ(angels, 14000);
+	EXPECT_EQ(pikemen, 7000);
+	EXPECT_GE(received, 1000);
+	EXPECT_LE(plan.receiverSlots.size(), 7u);
+	EXPECT_LE(plan.sourceSlots.size(), 7u);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
 }
 
-TEST_F(NewHorizonsArmyFormationLeadershipTest, SimulatedDonorRetainsItsCarriersSwapCapacity)
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7SimulatedDonorMatchesActualCarrierValuationWithoutLiveMutation)
 {
+	currentRules = true;
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	const CreatureID archangel(CreatureID::decode("core:archangel"));
-	startExchangeGame({}, {}, 1000);
+	startExchangeGame({}, {});
 	auto * receiver = findHeroAt(HERO_POS);
 	auto * source = findHeroAt(SOURCE_HERO_POS);
 	ASSERT_NE(receiver, nullptr);
 	ASSERT_NE(source, nullptr);
-	receiver->clearSlots();
-	source->clearSlots();
-	const auto sourceCapacity = source->getLeadershipSlotCapacity(pikeman);
-	const auto receiverCapacity = receiver->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(sourceCapacity);
-	ASSERT_TRUE(receiverCapacity);
-	const int count = sourceCapacity->maximum + 1;
-	ASSERT_LE(count, receiverCapacity->maximum);
-	const auto angelCapacity = receiver->getLeadershipSlotCapacity(archangel);
-	ASSERT_TRUE(angelCapacity);
-	ASSERT_EQ(angelCapacity->maximum, 1);
-	ASSERT_GT(archangel.toCreature()->getAIValue(), count * pikeman.toCreature()->getAIValue());
+	ASSERT_EQ(receiver->level, 1);
+	receiver->clearSlots(); source->clearSlots();
 	CCreatureSet simulatedSource;
-	for(int i = 0; i < GameConstants::ARMY_SIZE; ++i)
+	for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
 	{
-		ASSERT_TRUE(receiver->setCreature(SlotID(i), pikeman, count));
-		ASSERT_TRUE(source->setCreature(SlotID(i), archangel, 1));
-		ASSERT_TRUE(simulatedSource.setCreature(SlotID(i), archangel, 1));
+		ASSERT_TRUE(receiver->setCreature(SlotID(slot), pikeman, 18));
+		ASSERT_TRUE(source->setCreature(SlotID(slot), archangel, 1));
+		ASSERT_TRUE(simulatedSource.setCreature(SlotID(slot), archangel, 1));
 	}
-
 	const auto gateway = makeGateway(PLAYER);
 	const auto * manager = gateway->nullkiller->armyManager.get();
-	EXPECT_EQ(manager->howManyReinforcementsCanGet(receiver, source), 0);
-	EXPECT_EQ(manager->howManyReinforcementsCanGet(
-		receiver, receiver, &simulatedSource, TerrainId::NONE, source), 0);
-	// Omitting the carrier reproduces the optimistic simulated-swap estimate.
-	EXPECT_GT(manager->howManyReinforcementsCanGet(
-		receiver, receiver, &simulatedSource, TerrainId::NONE), 0);
+	const auto before = gameState()->saveToMemory();
+	const auto actual = manager->howManyReinforcementsCanGet(receiver, receiver, source, TerrainId::NONE, source);
+	const auto simulated = manager->howManyReinforcementsCanGet(receiver, receiver, &simulatedSource, TerrainId::NONE, source);
+	EXPECT_GT(actual, 0u);
+	EXPECT_EQ(simulated, actual);
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
+		EXPECT_EQ(simulatedSource.getStackCount(SlotID(slot)), 1);
 }
 
 TEST_F(NewHorizonsArmyFormationLeadershipTest, EmptyDonorPreservesExistingPhysicalStacks)
@@ -737,4 +728,52 @@ TEST_F(NewHorizonsArmyFormationLeadershipTest, SwapPreflightHandlesEmptySlotsAnd
 	ASSERT_TRUE(lastStackSource.setCreature(SlotID(0), pikeman, 1));
 	EXPECT_FALSE(NK2AI::armyFormation::canSwapStacks(
 		&lastStackSource, destination, SlotID(0), SlotID(1)));
+}
+
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7PreflightAllowsHugeMergeSplitAndChampionInSeventhSlot)
+{
+	currentRules = true;
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const CreatureID angel(CreatureID::decode("core:angel"));
+	startExchangeGame({{pikeman, 1}}, {{pikeman, 1}, {angel, 1}});
+	auto * receiver = findHeroAt(HERO_POS);
+	auto * source = findHeroAt(SOURCE_HERO_POS);
+	ASSERT_NE(receiver, nullptr);
+	ASSERT_NE(source, nullptr);
+	ASSERT_EQ(receiver->getCapabilityRules()["rulesetVersion"].Integer(), 7);
+	receiver->setStackCount(SlotID(0), 100000);
+	source->setStackCount(SlotID(0), 500000);
+	EXPECT_FALSE(receiver->getLeadershipSlotCapacity(pikeman));
+	EXPECT_TRUE(NK2AI::armyFormation::canReceiveStack(receiver, SlotID(0), pikeman, 600000));
+	EXPECT_TRUE(NK2AI::armyFormation::canMergeOrSwapStacks(source, receiver, SlotID(0), SlotID(0)));
+	EXPECT_TRUE(NK2AI::armyFormation::canSplitStack(source, receiver, SlotID(0), SlotID(0), 400000));
+	EXPECT_TRUE(NK2AI::armyFormation::canReceiveStack(receiver, SlotID(6), angel, 1000000));
+	EXPECT_TRUE(NK2AI::armyFormation::canMergeArmies(source, receiver));
+	EXPECT_EQ(receiver->getStackCount(SlotID(0)), 100000);
+	EXPECT_EQ(source->getStackCount(SlotID(0)), 500000);
+}
+
+TEST_F(NewHorizonsArmyFormationLeadershipTest, CurrentV7ProjectionValuesHugeLegalExchangeWithoutChangingLiveArmy)
+{
+	currentRules = true;
+	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
+	const CreatureID archer(CreatureID::decode("core:archer"));
+	startExchangeGame({{pikeman, 1}}, {{pikeman, 1}, {archer, 1}});
+	auto * receiver = findHeroAt(HERO_POS);
+	auto * source = findHeroAt(SOURCE_HERO_POS);
+	ASSERT_NE(receiver, nullptr);
+	ASSERT_NE(source, nullptr);
+	receiver->setStackCount(SlotID(0), 100);
+	source->setStackCount(SlotID(0), 500000);
+	for(int repeat = 0; repeat < 2; ++repeat)
+	{
+		const auto plan = NK2AI::armyFormation::projectArmyExchange(receiver, source, receiver, source,
+			{{pikeman, 500100}});
+		EXPECT_EQ(projectedCountAt(plan.receiverSlots, SlotID(0)), 500100);
+		EXPECT_EQ(projectedCountAt(plan.sourceSlots, SlotID(0)), 0);
+		EXPECT_EQ(projectedCountAt(plan.sourceSlots, SlotID(1)), 1);
+		EXPECT_EQ(receiver->getStackCount(SlotID(0)), 100);
+		EXPECT_EQ(source->getStackCount(SlotID(0)), 500000);
+		EXPECT_EQ(source->getStackCount(SlotID(1)), 1);
+	}
 }

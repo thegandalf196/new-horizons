@@ -18,7 +18,7 @@ namespace newHorizonsHeroes { struct LeadershipSlotCapacity; }
 namespace newHorizonsNecromancy
 {
 inline constexpr const char * POLICY_KEY = "necromancyPolicy";
-inline constexpr int POLICY_VERSION = 3;
+inline constexpr int POLICY_VERSION = 4;
 
 /// New-game coefficients are captured with the perk identities and tiers.
 /// Absence preserves historical conversion perks and undiscounted Leadership.
@@ -49,6 +49,7 @@ DLL_LINKAGE void validatePolicySerialization(const JsonNode & capturedPerkRules,
 /// Independent revision-3 capability gate, called by every Command/Authority envelope.
 /// The older two-capability check above retains its revision-1/2 responsibilities.
 DLL_LINKAGE void validateCommandPolicySerialization(const JsonNode & capturedPerkRules, bool supported);
+DLL_LINKAGE void validateLeadershipPolicySerialization(const JsonNode & capturedPerkRules, bool supported);
 DLL_LINKAGE bool isSkeletonFamily(CreatureID creature);
 /// Copied direct-upgrade membership, retaining native invalid/base-ID short circuits.
 DLL_LINKAGE bool isSkeletonFamily(CreatureID creature, const std::optional<std::set<CreatureID>> & upgrades);

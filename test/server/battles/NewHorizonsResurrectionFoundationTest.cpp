@@ -34,6 +34,7 @@
 #include "../../../server/battles/BattleProcessor.h"
 #ifdef ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/BattleEvaluator.h"
+#include "../../../AI/BattleAI/HeroActionSelection.h"
 #include "../../../AI/BattleAI/SpellTargetsEvaluator.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
@@ -42,6 +43,7 @@
 
 #include <array>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -71,6 +73,67 @@ public:
 	MiracleWorkerCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
 	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override { submitted.push_back(action); }
 };
+
+class MiracleWorkerSelectionObserver final : public heroActionSelection::Observer
+{
+	struct Record
+	{
+		bool present = false;
+		heroActionSelection::CandidateValue value{};
+		std::array<uint32_t, 2> targets{HeroOrderState::INVALID_UNIT_ID, HeroOrderState::INVALID_UNIT_ID};
+		size_t targetCount = 0;
+	};
+	std::array<Record, 128> records;
+	std::optional<heroActionSelection::SelectionValue> selection;
+public:
+	bool overflow = false;
+	void candidate(heroActionSelection::CandidateValue value) noexcept override
+	{
+		if(value.ordinal >= records.size())
+		{
+			overflow = true;
+			return;
+		}
+		records[value.ordinal].present = true;
+		records[value.ordinal].value = value;
+	}
+	bool observeIdentity() const noexcept override { return true; }
+	void candidateIdentity(size_t ordinal, heroActionSelection::CandidateIdentity identity) noexcept override
+	{
+		if(ordinal >= records.size())
+		{
+			overflow = true;
+			return;
+		}
+		auto & record = records[ordinal];
+		const auto & commandTargets = std::get<2>(identity.options);
+		record.targetCount = identity.targets.empty() ? commandTargets.size() : identity.targets.size();
+		for(size_t index = 0; index < std::min(record.targets.size(), record.targetCount); ++index)
+			record.targets[index] = identity.targets.empty() ? commandTargets[index]
+				: identity.targets[index].unitId.value_or(HeroOrderState::INVALID_UNIT_ID);
+		overflow |= record.targetCount > record.targets.size();
+	}
+	void selected(heroActionSelection::SelectionValue value) noexcept override { selection = value; }
+	std::string report() const
+	{
+		std::ostringstream output;
+		output << "Hero-action observation: overflow=" << overflow;
+		if(selection)
+			output << " selected=" << selection->ordinal << " baseline=" << selection->baseline
+				<< " disposition=" << static_cast<int>(selection->disposition);
+		for(const auto & record : records)
+			if(record.present)
+			{
+				const auto & value = record.value;
+				output << "\n#" << value.ordinal << " order=" << heroCommands::key(value.command)
+					<< " spell=" << value.spell.getNum() << " value=" << value.value
+					<< " targets=" << record.targetCount;
+				for(size_t index = 0; index < std::min(record.targets.size(), record.targetCount); ++index)
+					output << " " << record.targets[index];
+			}
+		return output.str();
+	}
+};
 #endif
 
 HeroTypeID heroType(std::string_view identifier)
@@ -85,6 +148,13 @@ CreatureID creature(std::string_view identifier)
 
 class NewHorizonsResurrectionFoundationTest : public HeroCommandFixture
 {
+public:
+	NewHorizonsResurrectionFoundationTest()
+	{
+		// Resurrection snapshots vary independently of the current competing Orders.
+		useRevisedOrders = true;
+	}
+
 protected:
 	bool useRestorationMarker = true;
 	CStack * friendly = nullptr;
@@ -103,6 +173,9 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		const auto & orders = loaded->getSettings().getValue(EGameSettings::COMBAT_HERO_COMMANDS);
+		ASSERT_EQ(orders["rulesetVersion"].Integer(), 4);
+		ASSERT_EQ(orders["warfarePolicyVersion"].Integer(), 1);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 		if(!useRestorationMarker)
 		{
@@ -729,7 +802,11 @@ TEST_F(NewHorizonsResurrectionFoundationTest, MiracleWorkerActualAIChoosesPaidRe
 	evaluator.selectStackAction(survivingAlly);
 	const auto before = friendly->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
-	ASSERT_TRUE(evaluator.attemptCastingSpell(survivingAlly));
+	MiracleWorkerSelectionObserver observed;
+	const bool selected = evaluator.attemptCastingSpell(survivingAlly, true, &observed);
+	SCOPED_TRACE(observed.report());
+	ASSERT_FALSE(observed.overflow);
+	ASSERT_TRUE(selected);
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	const auto & action = callback->submitted.front();
 	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL);

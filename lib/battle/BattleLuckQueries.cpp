@@ -5,6 +5,7 @@
 #include "CUnitState.h"
 #include "IBattleState.h"
 #include "DamageCalculationTiming.h"
+#include "DamageInteger.h"
 #include "../combatScripts/IDamageCalculatorScript.h"
 #include "../scripting/ScriptService.h"
 #include "NewHorizonsCombatSkills.h"
@@ -118,5 +119,5 @@ int64_t CBattleInfoCallback::battleExpectedLuckDamage(const BattleAttackInfo & a
 	rolled.unluckyStrike = luck < 0;
 	damageCalculationTiming::noteCalculation(luck > 0 ? damageCalculationTiming::Calculation::LUCKY_SECOND
 		: damageCalculationTiming::Calculation::UNLUCKY_SECOND);
-	return static_cast<int64_t>(normal * (1.0 - chance) + average(calculateDmgRange(rolled).damage) * chance);
+	return damageInteger::boundedNonnegative(normal * (1.0 - chance) + average(calculateDmgRange(rolled).damage) * chance);
 }

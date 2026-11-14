@@ -343,17 +343,6 @@ bool CGarrisonSlot::mustForceReselection() const
 
 void CGarrisonSlot::showPopupWindow(const Point & cursorPosition)
 {
-	const auto * source = owner->getSelection();
-	const bool borderHelp = !Rect(pos.x + 4, pos.y + 4, pos.w - 8, pos.h - 8).isInside(cursorPosition);
-	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(getObj()); hero && hero->getArmyCommand()
-		&& (!creature || borderHelp || (source && source != this)))
-	{
-		std::string help = commandPresentation::slotHelp(*hero, ID);
-		if(source && source->creature && source != this)
-			help = UIHelper::armySlotPreview(getObj(), ID, source->creature->getId());
-		GAME->interface()->showInfoDialog(help);
-		return;
-	}
 	if(creature)
 	{
 		ENGINE->windows().createAndPushWindow<CStackWindow>(myStack, true);
@@ -472,6 +461,7 @@ void CGarrisonSlot::gesture(bool on, const Point & initialPosition, const Point 
 
 void CGarrisonSlot::update()
 {
+	leadershipReadout.invalidate();
 	if(getObj() != nullptr)
 	{
 		addUsedEvents(LCLICK | SHOW_POPUP | GESTURE | HOVER);

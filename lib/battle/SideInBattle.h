@@ -41,6 +41,7 @@
 #include "LuckSerendipityState.h"
 #include "ArmorerDefiantState.h"
 #include "../callback/GameCallbackHolder.h"
+#include "../entities/hero/LeadershipComposition.h"
 
 class CGHeroInstance;
 class CGTownInstance;
@@ -265,6 +266,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	uint8_t passiveDivineMandateUses = 0;
 	MetamagicPointState metamagicPointState;
 	WisdomCombatState wisdomCombatState;
+	newHorizonsHeroes::LeadershipComposition leadershipComposition;
 	void validatePassiveFactionSerialization(bool supported) const;
 	void validateManaLeechesSerialization(bool supported) const;
 	void validateRecoverySpecialtySerialization(bool supported) const;
@@ -462,6 +464,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			leadershipComposition.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		heroActionAllowances.validateHeroicSpiritSerialization(h);
 		for(const auto & order : orderStates)
 			order.validateHeroLuckSerialization(h);
@@ -908,6 +912,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			validatePassiveFactionSerialization(true);
 		h & metamagicPointState;
 		h & wisdomCombatState;
+		h & leadershipComposition;
 	}
 
 	void clearMetamagicSequence()

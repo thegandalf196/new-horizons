@@ -10,6 +10,7 @@
 #pragma once
 
 #include "../gui/CIntObject.h"
+#include "LeadershipEfficiencyPresentation.h"
 
 class CArmedInstance;
 class CStackInstance;
@@ -40,9 +41,11 @@ class CGarrisonSlot : public CIntObject
 	std::shared_ptr<CAnimImage> artifactImage;
 	std::shared_ptr<CAnimImage> selectionImage; // image for selection, not always visible
 	std::shared_ptr<CLabel> stackCount;
-	ObjectInstanceID displayedArmy = ObjectInstanceID::NONE;
-	uint32_t displayedLevel = 0;
-	int displayedAuthorityRank = -1;
+	leadershipPresentation::ReadoutCache leadershipReadout;
+	int displayedLeadershipPercent = -1;
+
+	int leadershipPercent();
+	void drawLeadershipBadge(Canvas & canvas);
 
 public:
 	bool viewInfo();

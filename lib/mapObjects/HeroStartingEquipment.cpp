@@ -106,7 +106,8 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 
 		stack.creature = newHorizonsHeroes::defaultStartingArmyCreature(*getHeroType(),
 			getCapabilityRules(), stack.creature,
-			newHorizonsCreatures::isCommandSpecialistCreature(*this, stack.creature));
+			newHorizonsCreatures::isCommandSpecialistCreature(*getHeroType(), getPrimaryGrowthRules(),
+				getMagicRules(), getCreatureLineSpecialtyTarget(), stack.creature));
 		const CCreature * creature = stack.creature.toCreature();
 
 		if(creature->warMachine != ArtifactID::NONE) //war machine

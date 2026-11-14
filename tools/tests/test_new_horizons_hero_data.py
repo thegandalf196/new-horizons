@@ -329,19 +329,18 @@ class HeroDataTest(unittest.TestCase):
             self.assertEqual({key: value for key, value in effective.items() if key != 'class'},
                              {key: value for key, value in prototype.items() if key != 'class'})
 
-    def test_swapped_classes_use_existing_primary_and_command_profiles(self):
+    def test_swapped_classes_use_actual_primary_growth_and_leadership_profiles(self):
         capabilities = json.loads((ROOT / 'config/newHorizonsCapabilities.json').read_text())
         swaps = json.loads((ROOT / 'Mods/new-horizons/Content/config/heroes/classSwaps.json').read_text())
-        self.assertEqual(capabilities['rulesetVersion'], 5)
-        self.assertNotIn('classProfiles', capabilities)
-        self.assertNotIn('leadership', capabilities)
-        for hero, primary, interval in (
-                ('core:halon', [30, 20, 20, 30], 3),
-                ('core:thane', [5, 5, 45, 45], 4)):
+        self.assertEqual(capabilities['rulesetVersion'], 7)
+        self.assertNotIn('armyCommand', capabilities)
+        for hero, primary, leadership in (
+                ('core:halon', [30, 20, 20, 30], {'base': 1250, 'perLevel': 70}),
+                ('core:thane', [5, 5, 45, 45], {'base': 650, 'perLevel': 30})):
             with self.subTest(hero=hero):
                 class_id = swaps[hero]['class']
                 self.assertEqual(self.rules['classProfiles'][class_id]['starting'], primary)
-                self.assertEqual(capabilities['armyCommand']['classLevelIntervals'][class_id], interval)
+                self.assertEqual(capabilities['classProfiles'][class_id], leadership)
 
     def test_legacy_starting_skill_migration_table_is_canonical_and_honest(self):
         self.assertEqual(self.rules['startingSkills']['legacySkillMigrations'], {

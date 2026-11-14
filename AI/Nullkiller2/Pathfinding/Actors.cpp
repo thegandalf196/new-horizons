@@ -299,8 +299,8 @@ ExchangeResult HeroExchangeMap::tryExchangeNoLock(const ChainActor * other)
 
 		if(!newArmy) return result;
 
-		auto newArmyStrength = newArmy->getArmyStrength();
-		auto oldArmyStrength = actor->creatureSet->getArmyStrength();
+		auto newArmyStrength = getHeroArmyStrengthWithCommander(actor->hero, newArmy);
+		auto oldArmyStrength = getHeroArmyStrengthWithCommander(actor->hero, actor->creatureSet);
 
 		if(newArmyStrength <= oldArmyStrength)
 		{
@@ -387,7 +387,8 @@ HeroExchangeArmy * HeroExchangeMap::tryUpgrade(
 		}
 	}
 
-	if(target->getArmyStrength() <= army->getArmyStrength())
+	if(getHeroArmyStrengthWithCommander(actor->hero, target)
+		<= getHeroArmyStrengthWithCommander(actor->hero, army))
 	{
 		delete target;
 

@@ -19,44 +19,45 @@ void BattleInfo::validateCommandCaptureSerialization(bool revisedOrders, bool na
 	heroCommands::validateRules(heroCommandRules);
 }
 
-void CampaignState::validateCommandPools(const CampaignPoolType & scenarios, const GlobalPoolType & global, bool supported)
+void CampaignState::validateCommandPools(const CampaignPoolType & scenarios, const GlobalPoolType & global,
+	bool supported, bool leadershipSupported)
 {
 	for(const auto & [scenario, pool] : scenarios)
 		for(const auto & hero : pool)
-			newHorizonsHeroes::validateCommandCrossover(hero, supported);
+			newHorizonsHeroes::validateCommandCrossover(hero, supported, leadershipSupported);
 	for(const auto & [id, hero] : global)
-		newHorizonsHeroes::validateCommandCrossover(hero, supported);
+		newHorizonsHeroes::validateCommandCrossover(hero, supported, leadershipSupported);
 }
 
-void CampaignState::validateCommandSerialization(bool supported) const
+void CampaignState::validateCommandSerialization(bool supported, bool leadershipSupported) const
 {
-	validateCommandPools(scenarioHeroPool, globalHeroPool, supported);
+	validateCommandPools(scenarioHeroPool, globalHeroPool, supported, leadershipSupported);
 }
 
-void StartInfo::validateCommandSerialization(bool supported) const
+void StartInfo::validateCommandSerialization(bool supported, bool leadershipSupported) const
 {
 	if(campState)
-		campState->validateCommandSerialization(supported);
+		campState->validateCommandSerialization(supported, leadershipSupported);
 }
 
-void CMap::validateCommandSerialization(bool supported) const
+void CMap::validateCommandSerialization(bool supported, bool leadershipSupported) const
 {
-	gameSettings->validateCommandSerialization(supported);
+	gameSettings->validateCommandSerialization(supported, leadershipSupported);
 	for(const auto & hero : heroesPool)
 		if(hero)
-			hero->validateCommandSerialization(supported);
+			hero->validateCommandSerialization(supported, leadershipSupported);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			hero->validateCommandSerialization(supported);
+			hero->validateCommandSerialization(supported, leadershipSupported);
 }
 
-void CGameState::validateCommandSerialization(bool supported) const
+void CGameState::validateCommandSerialization(bool supported, bool leadershipSupported) const
 {
-	newHorizonsHeroes::validateCommandCaptures(heroCapabilityRules, heroPerkRules, heroCommandRules, supported);
+	newHorizonsHeroes::validateCommandCaptures(heroCapabilityRules, heroPerkRules, heroCommandRules, supported, leadershipSupported);
 	if(map)
-		map->validateCommandSerialization(supported);
+		map->validateCommandSerialization(supported, leadershipSupported);
 	if(scenarioOps)
-		scenarioOps->validateCommandSerialization(supported);
+		scenarioOps->validateCommandSerialization(supported, leadershipSupported);
 	if(initialOpts && initialOpts != scenarioOps)
-		initialOpts->validateCommandSerialization(supported);
+		initialOpts->validateCommandSerialization(supported, leadershipSupported);
 }

@@ -140,6 +140,7 @@ protected:
 
 	void prepare()
 	{
+		useRevisedOrders = true; // Match the current captured hero/perk profile.
 		startGame();
 		startBattle();
 		BattleUnitsChanged remove;
@@ -239,6 +240,90 @@ TEST_F(HeroActionUtilityTest, StormResistanceScalesHostileDamageOnlyAtExistingSt
 	ASSERT_TRUE(result);
 	EXPECT_EQ(bits(result->dpsReduce), bits(expected));
 	EXPECT_EQ(bits(immediate.toHostiles), bits(expected));
+}
+
+TEST_F(HeroActionUtilityTest, RestoredCreatureValueGrowsPastSurvivorHealthWithNonlinearLeadership)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto health = own->getMaxHealth();
+	int64_t loss = own->getAvailableHealth() - health;
+	own->damage(loss);
+	ASSERT_EQ(own->getCount(), 1);
+	resetModel();
+	const auto source = model;
+	const auto before = source->battleLeadershipReadout(source->battleGetUnitByID(own->unitId()));
+	ASSERT_TRUE(before.active);
+	ASSERT_EQ(before.capacity, 2);
+	const auto originalDamage = cache.getOriginalDamage(own, low, source);
+	ASSERT_GT(originalDamage, 0);
+	float previous = 0;
+	for(const int count : {5, 9})
+	{
+		const auto after = std::make_shared<HypotheticBattle>(environment.get(), source);
+		const auto healed = after->getForUpdate(own->unitId());
+		int64_t healing = static_cast<int64_t>(count - 1) * health;
+		healed->heal(healing, EHealLevel::RESURRECT, EHealPower::PERMANENT);
+		ASSERT_EQ(healed->getCount(), count);
+		const auto gained = healed->getAvailableHealth() - own->getAvailableHealth();
+		ASSERT_GT(gained, own->getAvailableHealth());
+		DamageCache inner(&cache);
+		const auto restoredDamage = inner.getOriginalDamage(healed.get(), low, after);
+		const double effective = count == 5 ? 3.897366596101028 : 5.299831645537222;
+		EXPECT_NEAR(static_cast<double>(restoredDamage) / originalDamage, effective,
+			1.0 / originalDamage + 1e-6);
+		heroActionUtility::ImmediateSignedUtility immediate{};
+		const auto result = heroActionUtility::accumulateHealthDelta(
+			{low, own, healed.get(), own->getAvailableHealth(), healed->getAvailableHealth(), false},
+			candidate, PlayerColor(0), inner, after, *evaluator, immediate);
+		ASSERT_TRUE(result);
+		// Full restored creatures contribute equal half-kill and half-HP bounty:
+		// (N-1)/N of the healed stack's frozen-modifier damage, not one survivor.
+		const float expected = static_cast<float>(static_cast<double>(restoredDamage) * (count - 1) / count);
+		EXPECT_NEAR(result->dpsReduce, expected, 1e-5);
+		EXPECT_GT(result->dpsReduce, 2 * originalDamage);
+		EXPECT_GT(result->dpsReduce, previous);
+		EXPECT_EQ(immediate.toHostiles, result->dpsReduce);
+		previous = result->dpsReduce;
+		EXPECT_EQ(own->getCount(), 1);
+		EXPECT_EQ(source->battleGetUnitByID(own->unitId())->getCount(), 1);
+	}
+}
+
+TEST_F(HeroActionUtilityTest, PartialWoundHealingUsesTheRecoveredHealthInterval)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto health = own->getMaxHealth();
+	ASSERT_EQ(health % 4, 0);
+	int64_t loss = own->getAvailableHealth() - health / 4;
+	own->damage(loss);
+	resetModel();
+	const auto healed = model->getForUpdate(own->unitId());
+	int64_t healing = health / 2;
+	healed->heal(healing, EHealLevel::HEAL, EHealPower::PERMANENT);
+	ASSERT_EQ(healed->getCount(), 1);
+	ASSERT_EQ(own->getFirstHPleft(), health / 4);
+	ASSERT_EQ(healed->getFirstHPleft(), 3 * health / 4);
+	const auto fullDamage = cache.getOriginalDamage(healed.get(), low, model);
+	heroActionUtility::ImmediateSignedUtility immediate{};
+	const auto result = value(own, immediate);
+	ASSERT_TRUE(result);
+	// Existing HP curve over [25%,75%]: no killed unit, half of a half-unit
+	// HP bounty. The old [0%,25%] interval is the wrong inverse operation.
+	EXPECT_NEAR(result->dpsReduce, fullDamage * 0.25f, 1e-4);
+	EXPECT_EQ(immediate.toHostiles, result->dpsReduce);
+	EXPECT_EQ(own->getFirstHPleft(), health / 4);
+}
+
+TEST_F(HeroActionUtilityTest, UnchangedHealthAddsNoPositiveOrCollateralValue)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	heroActionUtility::ImmediateSignedUtility immediate{7.0f, -3.0f, 0.5f};
+	const auto result = value(own, immediate);
+	ASSERT_TRUE(result);
+	EXPECT_EQ(result->dpsReduce, 0.0f);
+	EXPECT_EQ(immediate.toHostiles, 7.0f);
+	EXPECT_EQ(immediate.toFriendlies, -3.0f);
+	EXPECT_EQ(immediate.initiative, 0.5f);
 }
 
 TEST_F(HeroActionUtilityTest, MagicalFriendlyHealingPreservesEarlyContinueNotZeroDamageReceipt)

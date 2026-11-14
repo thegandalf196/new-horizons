@@ -84,6 +84,10 @@ BattleOptionsTab::BattleOptionsTab(BattleInterface * owner)
 	{
 		showHealthBarCallback(value, owner);
 	});
+	addCallback("showLeadershipEfficiencyChanged", [this, owner](bool value)
+	{
+		showLeadershipEfficiencyCallback(value, owner);
+	});
 	addCallback("quickCombatAIChanged", [](int value)
 	{
 		if(value != 0 && value != 1)
@@ -137,6 +141,9 @@ BattleOptionsTab::BattleOptionsTab(BattleInterface * owner)
 
 	std::shared_ptr<CToggleButton> showHealthBarCheckbox = widget<CToggleButton>("showHealthBarCheckbox");
 	showHealthBarCheckbox->setSelected(settings["battle"]["showHealthBar"].Bool());
+	widget<CToggleButton>("showLeadershipEfficiencyCheckbox")->setSelected(
+		!settings["battle"].Struct().contains("showLeadershipEfficiency")
+			|| settings["battle"]["showLeadershipEfficiency"].Bool());
 }
 
 int BattleOptionsTab::getAnimSpeed() const
@@ -315,6 +322,14 @@ void BattleOptionsTab::showHealthBarCallback(bool value, BattleInterface * paren
 {
 	Settings showHealthBar = settings.write["battle"]["showHealthBar"];
 	showHealthBar->Bool() = value;
+	if(parentBattleInterface)
+		parentBattleInterface->redrawBattlefield();
+}
+
+void BattleOptionsTab::showLeadershipEfficiencyCallback(bool value, BattleInterface * parentBattleInterface)
+{
+	Settings option = settings.write["battle"]["showLeadershipEfficiency"];
+	option->Bool() = value;
 	if(parentBattleInterface)
 		parentBattleInterface->redrawBattlefield();
 }

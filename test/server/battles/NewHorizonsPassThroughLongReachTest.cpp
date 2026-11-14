@@ -11,6 +11,7 @@
 #include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/battle/CObstacleInstance.h"
 #include "../../../lib/battle/BattleHex.h"
+#include "../../../lib/battle/BattleReach.h"
 #include "../../../lib/battle/ReachabilityInfo.h"
 #include "../../../lib/bonuses/Bonus.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
@@ -304,4 +305,164 @@ TEST_F(NewHorizonsPassThroughLongReachTest, LongReachDoesNotAttackThroughAnOccup
 		<< "The authoritative WALK_AND_ATTACK action rejects a blocked Long Reach corridor";
 	EXPECT_EQ(attacker->getPosition(), BattleHex(5, 4));
 	EXPECT_EQ(target->getCount(), targetCount);
+}
+
+TEST_F(NewHorizonsPassThroughLongReachTest, StationaryReachAdvertisesOnlyItsActualApproachAndExecutesFromThatSource)
+{
+	startControlledBattle();
+	const BattleHex start(5, 4);
+	const BattleHex targetHex(11, 4);
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("new-horizons:wisp"), start, 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), targetHex, 1000);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(target, nullptr);
+	grant(attacker, BonusType::STACKS_SPEED, -100);
+	beginCombat();
+	ASSERT_EQ(battleReach::maximumMeleeDistance(*attacker), 6);
+	const auto available = battle()->battleGetAvailableHexes(attacker, false);
+	ASSERT_TRUE(available.contains(start));
+	for(int value = BattleHex::TOP_LEFT; value <= BattleHex::BOTTOM; ++value)
+	{
+		const auto direction = static_cast<BattleHex::EDir>(value);
+		SCOPED_TRACE(value);
+		EXPECT_EQ(battle()->battleCanAttackHex(available, attacker, targetHex, direction), direction == BattleHex::LEFT);
+		EXPECT_EQ(battle()->fromWhichHexAttack(attacker, targetHex, direction).isValid(), direction == BattleHex::LEFT);
+	}
+	const auto selected = battle()->fromWhichHexAttack(attacker, targetHex, BattleHex::LEFT);
+	ASSERT_EQ(selected, start);
+	const auto countBefore = target->getCount();
+	activate(attacker);
+	const auto packetStart = server.startedActions.size();
+	ASSERT_TRUE(act(attacker, BattleAction::makeMeleeAttack(attacker, targetHex, selected, false)));
+	ASSERT_GT(server.startedActions.size(), packetStart);
+	const auto packetTarget = server.startedActions[packetStart].ba.getTarget(battle());
+	ASSERT_EQ(packetTarget.size(), 2);
+	EXPECT_EQ(packetTarget.front().hexValue, selected);
+	EXPECT_EQ(attacker->getPosition(), selected);
+	EXPECT_LT(target->getCount(), countBefore);
+}
+
+TEST_F(NewHorizonsPassThroughLongReachTest, RearReachRequiresAndUsesRealMovementToAClearRearApproach)
+{
+	startControlledBattle();
+	const BattleHex start(5, 5);
+	const BattleHex targetHex(8, 5);
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("new-horizons:wisp"), start, 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), targetHex, 1000);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(target, nullptr);
+	grant(attacker, BonusType::STACKS_SPEED, 20);
+	beginCombat();
+	const auto available = battle()->battleGetAvailableHexes(attacker, false);
+	ASSERT_TRUE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::RIGHT));
+	const auto selected = battle()->fromWhichHexAttack(attacker, targetHex, BattleHex::RIGHT);
+	ASSERT_TRUE(selected.isValid());
+	EXPECT_NE(selected, start);
+	EXPECT_GT(selected.getX(), targetHex.getX());
+	EXPECT_TRUE(available.contains(selected));
+	EXPECT_TRUE(battle()->getAccessibility().hasClearStraightHexRay(selected, targetHex,
+		BattleHexArray{selected, targetHex, start}, BattleHex::RIGHT));
+	activate(attacker);
+	const auto packetStart = server.startedActions.size();
+	ASSERT_TRUE(act(attacker, BattleAction::makeMeleeAttack(attacker, targetHex, selected, false)));
+	ASSERT_GT(server.startedActions.size(), packetStart);
+	const auto packetTarget = server.startedActions[packetStart].ba.getTarget(battle());
+	ASSERT_EQ(packetTarget.size(), 2);
+	EXPECT_EQ(packetTarget.front().hexValue, selected);
+	EXPECT_EQ(attacker->getPosition(), selected);
+}
+
+TEST_F(NewHorizonsPassThroughLongReachTest, TiedReachCorridorAvailabilityAndSourceAgreeOnTheUnblockedEdge)
+{
+	startControlledBattle();
+	const BattleHex start(5, 5);
+	const BattleHex targetHex(2, 3);
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("new-horizons:wisp"), start, 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), targetHex, 1000);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(target, nullptr);
+	ASSERT_NE(addStack(BattleSide::ATTACKER, creatureByName("core:peasant"), BattleHex(3, 3), 1), nullptr);
+	grant(attacker, BonusType::STACKS_SPEED, -100);
+	beginCombat();
+	const auto available = battle()->battleGetAvailableHexes(attacker, false);
+	EXPECT_TRUE(battle()->isMeleeAttackPossibleWithLongReach(attacker, target));
+	EXPECT_FALSE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::RIGHT));
+	EXPECT_FALSE(battle()->fromWhichHexAttack(attacker, targetHex, BattleHex::RIGHT).isValid());
+	EXPECT_TRUE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::BOTTOM_RIGHT));
+	EXPECT_EQ(battle()->fromWhichHexAttack(attacker, targetHex, BattleHex::BOTTOM_RIGHT), start);
+	activate(attacker);
+	ASSERT_TRUE(act(attacker, BattleAction::makeMeleeAttack(attacker, targetHex, start, false)));
+	EXPECT_EQ(attacker->getPosition(), start);
+}
+
+TEST_F(NewHorizonsPassThroughLongReachTest, DoublewideReachUsesNearestFootprintsForTheSameLegalSourceAndPacket)
+{
+	startControlledBattle();
+	const BattleHex start(11, 5);
+	const BattleHex targetHex(4, 5);
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:cavalier"), start, 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:cavalier"), targetHex, 1000);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(target, nullptr);
+	ASSERT_TRUE(attacker->doubleWide());
+	ASSERT_TRUE(target->doubleWide());
+	grant(attacker, BonusType::LONG_REACH, 4);
+	grant(attacker, BonusType::STACKS_SPEED, -100);
+	beginCombat();
+	ASSERT_EQ(BattleHex::getDistance(start, targetHex), 7);
+	ASSERT_EQ(battleReach::maximumMeleeDistance(*attacker), 5);
+	const auto available = battle()->battleGetAvailableHexes(attacker, false);
+	EXPECT_TRUE(battle()->isMeleeAttackPossibleWithLongReach(attacker, target));
+	EXPECT_TRUE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::RIGHT));
+	EXPECT_FALSE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::LEFT));
+	EXPECT_FALSE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::TOP));
+	EXPECT_FALSE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::BOTTOM));
+	const auto selected = battle()->fromWhichHexAttack(attacker, targetHex, BattleHex::RIGHT);
+	ASSERT_EQ(selected, start);
+	activate(attacker);
+	const auto packetStart = server.startedActions.size();
+	ASSERT_TRUE(act(attacker, BattleAction::makeMeleeAttack(attacker, targetHex, selected, false)));
+	ASSERT_GT(server.startedActions.size(), packetStart);
+	const auto packetTarget = server.startedActions[packetStart].ba.getTarget(battle());
+	ASSERT_EQ(packetTarget.size(), 2);
+	EXPECT_EQ(packetTarget.front().hexValue, selected);
+	EXPECT_EQ(attacker->getPosition(), selected);
+}
+
+TEST_F(NewHorizonsPassThroughLongReachTest, DoublewideReachRejectsInternalBodyDirectionAndUsesTheExposedEntrySource)
+{
+	startControlledBattle();
+	const BattleHex start(4, 2);
+	const BattleHex targetHex(8, 5);
+	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("new-horizons:wisp"), start, 10);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:cavalier"), targetHex, 1000);
+	ASSERT_NE(attacker, nullptr);
+	ASSERT_NE(target, nullptr);
+	ASSERT_TRUE(target->doubleWide());
+	ASSERT_EQ(target->occupiedHex(), BattleHex(9, 5));
+	grant(attacker, BonusType::STACKS_SPEED, -100);
+	beginCombat();
+	const auto available = battle()->battleGetAvailableHexes(attacker, false);
+	ASSERT_TRUE(battle()->isMeleeAttackPossibleWithLongReach(attacker, target));
+	EXPECT_FALSE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::LEFT));
+	EXPECT_FALSE(battle()->fromWhichHexAttack(attacker, targetHex, BattleHex::LEFT).isValid());
+	ASSERT_TRUE(battle()->battleCanAttackHex(available, attacker, targetHex, BattleHex::TOP_LEFT));
+	const auto selected = battle()->fromWhichHexAttack(attacker, targetHex, BattleHex::TOP_LEFT);
+	ASSERT_EQ(selected, start);
+	bool anyPhysicalSector = false;
+	for(const auto direction : BattleHex::hexagonalDirections())
+	{
+		const bool legal = battle()->battleCanAttackHex(available, attacker, targetHex, direction);
+		EXPECT_EQ(battle()->fromWhichHexAttack(attacker, targetHex, direction).isValid(), legal);
+		anyPhysicalSector |= legal;
+	}
+	EXPECT_TRUE(anyPhysicalSector);
+	activate(attacker);
+	const auto packetStart = server.startedActions.size();
+	ASSERT_TRUE(act(attacker, BattleAction::makeMeleeAttack(attacker, targetHex, selected, false)));
+	ASSERT_GT(server.startedActions.size(), packetStart);
+	const auto packetTarget = server.startedActions[packetStart].ba.getTarget(battle());
+	ASSERT_EQ(packetTarget.size(), 2);
+	EXPECT_EQ(packetTarget.front().hexValue, selected);
+	EXPECT_EQ(attacker->getPosition(), selected);
 }

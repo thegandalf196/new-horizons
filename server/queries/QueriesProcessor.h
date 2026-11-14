@@ -104,6 +104,9 @@ public:
 	void addQuery(QueryPtr query);
 	void popQuery(const CQuery &query);
 	void popQuery(QueryPtr query);
+	/// Lifecycle invalidation only: detach without result/exposure/listener callbacks.
+	/// The owner must acknowledge the old dialog and resume after its mutation.
+	void discardQuery(const QueryPtr & query);
 	void popIfTop(const CQuery &query); //removes this query if it is at the top (otherwise, do nothing)
 	void popIfTop(QueryPtr query); //removes this query if it is at the top (otherwise, do nothing)
 

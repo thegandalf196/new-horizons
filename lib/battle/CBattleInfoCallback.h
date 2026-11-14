@@ -30,6 +30,7 @@
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../spells/SpellCostBreakdown.h"
 #include "../bonuses/Bonus.h"
+#include "../entities/hero/NewHorizonsLeadership.h"
 
 class CGHeroInstance;
 class CStack;
@@ -132,6 +133,8 @@ enum class TargetRejection
 class DLL_LINKAGE CBattleInfoCallback : public virtual CBattleInfoEssentials
 {
 public:
+	/// Shared live/projected Leadership readout; original-army composition is frozen.
+	newHorizonsHeroes::LeadershipStackReadout battleLeadershipReadout(const battle::Unit * unit) const;
 
 	/// Empty for invalid, absent or hidden sides. Provider dispatch occurs only
 	/// after visibility admission; projected providers must not use native values.
@@ -520,6 +523,12 @@ public:
 	/// find free hex suitable to place new unit. If no initial position was provided, hex located on left size (attacker) or right side (defender) will be selected
 	BattleHex getAvailableHex(const Creature * creature, BattleSide side, BattleHex initialPos = {}) const override;
 private:
+	BattleHex ordinaryMeleeAttackSource(const battle::Unit * attacker, const BattleHex & target,
+		const BattleHex::EDir & direction, bool allowLongWeapon) const;
+	/// A supplied cache selects the cheapest legal source; a null cache performs
+	/// availability only without another solver pass.
+	BattleHex findReachAttackSource(const battle::Unit * attacker, const BattleHex & target,
+		BattleHex::EDir direction, const BattleHexArray & availableHexes, const ReachabilityInfo * cache) const;
 
 	void prepareAttackDamageContext(const BattleAttackInfo &, DamagePayloadPreparation &) const;
 	void preparePhysicalDamageModifiers(const BattleAttackInfo &, DamagePayloadPreparation &) const;

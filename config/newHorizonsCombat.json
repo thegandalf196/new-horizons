@@ -10,7 +10,7 @@
 			"schemaVersion": 1,
 			"rulesetVersion": 4,
 			"warfarePolicyVersion": 1,
-			"formationRating": {"version": 1, "attributeDivisor": 2, "commandMultiplier": 10},
+			"formationRating": {"version": 1, "attributeDivisor": 2, "commandMultiplier": 0},
 			"perkBonuses": { "spearheadDamagePercent": 5, "shieldMasterReductionPercent": 5, "combinedArmsFeintReductionPercent": 5 },
 			"commands": {
 				"charge": {

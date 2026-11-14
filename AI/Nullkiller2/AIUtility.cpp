@@ -13,6 +13,7 @@
 #include "AIGateway.h"
 #include "Goals/Goals.h"
 #include "Helpers/NewHorizonsMuster.h"
+#include "Helpers/LeadershipEvaluation.h"
 
 #include "../../lib/UnlockGuard.h"
 #include "../../lib/CConfigHandler.h"
@@ -144,7 +145,7 @@ bool HeroPtr::operator==(const HeroPtr & rhs) const
 
 bool isSafeToVisit(const CGHeroInstance * h, const CCreatureSet * heroArmy, uint64_t dangerStrength, float safeAttackRatio)
 {
-	const ui64 heroStrength = getNormalizedHeroStrength(h) * heroArmy->getArmyStrength();
+	const ui64 heroStrength = getNormalizedHeroStrength(h) * leadershipAI::armyStrength(h, heroArmy);
 
 	if(dangerStrength)
 	{
@@ -945,7 +946,7 @@ bool townHasFreeTavern(const CGTownInstance * town)
 
 uint64_t getHeroArmyStrengthWithCommander(const CGHeroInstance * hero, const CCreatureSet * heroArmy, int fortLevel)
 {
-	auto armyStrength = heroArmy->getArmyStrength(fortLevel);
+	auto armyStrength = leadershipAI::armyStrength(hero, heroArmy, fortLevel);
 
 	if(hero && hero->getCommander() && hero->getCommander()->alive)
 	{

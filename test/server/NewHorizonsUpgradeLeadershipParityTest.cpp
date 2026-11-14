@@ -8,6 +8,7 @@
 #include "StdInc.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyMapGameTest.h"
+#include "../hero/HistoricalCapabilityRules.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
@@ -61,7 +62,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+		auto rules = historicalCapabilityRulesV4();
 		if(GetParam())
 		{
 			rules["leadership"]["upgradeMultiplierPercent"].Integer() = 120;
@@ -137,7 +138,7 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, WorldAndHeroRetainCapturedUpgrade
 	}
 }
 
-TEST_P(NewHorizonsUpgradeLeadershipParityTest, AuthoritativeUpgradeUsesCapturedCapacityWithoutChangingStackCount)
+TEST_P(NewHorizonsUpgradeLeadershipParityTest, AuthoritativePaidUpgradePreservesCountWithoutEnforcingCapturedThreshold)
 {
 	ASSERT_NO_FATAL_FAILURE(startScenario());
 	const PlayerColor player(0);
@@ -164,6 +165,10 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, AuthoritativeUpgradeUsesCapturedC
 	UpgradeInfo info(base);
 	gameState()->fillUpgradeInfo(hero, SlotID(0), info);
 	ASSERT_TRUE(vstd::contains(info.getAvailableUpgrades(), upgrade));
+	const auto price = info.getUpgradeCostsFor(upgrade) * count;
+	ASSERT_FALSE(price.empty());
+	ASSERT_TRUE(resourcesBefore.canAfford(price));
+	const auto stock = town->creatures;
 	gameState()->actingPlayers.insert(player);
 	GameHandlerTestServer server(gameState(), player);
 	CGameHandler handler(server, gameState());
@@ -175,17 +180,16 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, AuthoritativeUpgradeUsesCapturedC
 	if(GetParam())
 	{
 		ASSERT_GT(count, after->maximum);
-		EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), base);
-		EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
 	}
 	else
 	{
 		EXPECT_EQ(after->maximum, before->maximum);
-		EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), upgrade);
 		EXPECT_EQ(int64_t(count) * before->requirement, int64_t(count) * after->requirement);
-		EXPECT_EQ(gameState()->getPlayerState(player)->resources,
-			resourcesBefore - info.getUpgradeCostsFor(upgrade) * count);
 	}
+	// Captured requirement arithmetic is retained, but admission has no hard cap.
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), upgrade);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore - price);
+	EXPECT_EQ(town->creatures, stock);
 }
 
 TEST_P(NewHorizonsUpgradeLeadershipParityTest, UnofferedUpgradeRequestsRejectAtomicallyBeforeCostLookup)
@@ -254,7 +258,7 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, UnofferedUpgradeRequestsRejectAto
 	EXPECT_EQ(server.resourcePacks, 1);
 }
 
-TEST_P(NewHorizonsUpgradeLeadershipParityTest, RestoredWorldUpgradeRequestUsesCapturedCapacityAndPreservesStock)
+TEST_P(NewHorizonsUpgradeLeadershipParityTest, RestoredWorldPaidUpgradeIgnoresCapturedThresholdAndPreservesStock)
 {
 	ASSERT_NO_FATAL_FAILURE(startScenario());
 	const PlayerColor player(0);
@@ -296,6 +300,9 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, RestoredWorldUpgradeRequestUsesCa
 	UpgradeInfo info(base);
 	restored->fillUpgradeInfo(hero, SlotID(0), info);
 	ASSERT_TRUE(vstd::contains(info.getAvailableUpgrades(), upgrade));
+	const auto price = info.getUpgradeCostsFor(upgrade) * count;
+	ASSERT_FALSE(price.empty());
+	ASSERT_TRUE(resources.canAfford(price));
 	UpgradeAdmissionServer server(restored);
 	CGameHandler handler(server, restored);
 	const auto spending = handler.statistics->getPlayerAccumulator(player).spentResourcesForArmy;
@@ -305,10 +312,10 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, RestoredWorldUpgradeRequestUsesCa
 	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_EQ(server.responses.back().requestID, request.requestID);
-	EXPECT_EQ(server.responses.back().result, !GetParam());
-	EXPECT_EQ(server.stackTypePacks, GetParam() ? 0 : 1);
-	EXPECT_EQ(server.resourcePacks, GetParam() ? 0 : 1);
-	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), GetParam() ? base : upgrade);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.stackTypePacks, 1);
+	EXPECT_EQ(server.resourcePacks, 1);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), upgrade);
 	EXPECT_EQ(hero->getStackCount(SlotID(0)), count);
 	ASSERT_NE(hero->getStackPtr(SlotID(0)), nullptr);
 	EXPECT_EQ(hero->getStackPtr(SlotID(0))->getArmy(), hero);
@@ -317,14 +324,13 @@ TEST_P(NewHorizonsUpgradeLeadershipParityTest, RestoredWorldUpgradeRequestUsesCa
 	EXPECT_EQ(hero->getVisitedTown(), town);
 	EXPECT_EQ(hero->getCapabilityRules(), originalHero->getCapabilityRules());
 	EXPECT_EQ(restored->getHeroCapabilityRules(), gameState()->getHeroCapabilityRules());
-	EXPECT_EQ(restored->getPlayerState(player)->resources,
-		GetParam() ? resources : resources - info.getUpgradeCostsFor(upgrade) * count);
+	EXPECT_EQ(restored->getPlayerState(player)->resources, resources - price);
 	EXPECT_EQ(handler.statistics->getPlayerAccumulator(player).spentResourcesForArmy,
-		GetParam() ? spending : spending + info.getUpgradeCostsFor(upgrade) * count);
+		spending + price);
 	EXPECT_EQ(originalHero->getCreature(SlotID(0))->getId(), base);
 	EXPECT_EQ(originalHero->getStackCount(SlotID(0)), count);
 	EXPECT_EQ(originalTown->creatures, stock);
 	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resources);
 }
 
-INSTANTIATE_TEST_SUITE_P(CurrentAndHistorical, NewHorizonsUpgradeLeadershipParityTest, ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(FrozenCapturedUpgradeProfiles, NewHorizonsUpgradeLeadershipParityTest, ::testing::Bool());

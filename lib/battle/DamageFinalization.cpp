@@ -97,9 +97,7 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	payload.doubleDamage = info.doubleDamage;
 	if(!info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))
 	{
-		const auto * hero = battleGetOwnerHero(info.attacker);
-		payload.leadershipEfficiency = newHorizonsHeroes::stackLeadershipEfficiency(
-			hero, info.attacker->creatureId(), info.attacker->getCount());
+		payload.leadershipEfficiency = battleLeadershipReadout(info.attacker).efficiency;
 	}
 	else
 	{

@@ -32,6 +32,10 @@ struct SlotInfo
 	uint64_t power;
 };
 
+/// Derived supply summary: count is a single-request view saturated to the
+/// physical count type, while power retains the complete inventory valuation.
+void accumulateArmySupply(SlotInfo & total, const CCreature * creature, int count);
+
 struct ArmyUpgradeInfo
 {
 	std::vector<SlotInfo> resultingArmy;
@@ -108,6 +112,11 @@ private:
 	CPlayerSpecificInfoCallback * cpsic; //this is enough, but we downcast from CCallback
 	const Nullkiller * aiNk;
 	std::map<CreatureID, SlotInfo> totalArmy;
+	std::vector<SlotInfo> getLeadershipSortedSlots(const CCreatureSet * target,
+		const CCreatureSet * source, const CGHeroInstance * hero) const;
+	uint64_t evaluateCompositionArmy(const CGHeroInstance * hero, const CCreatureSet & army,
+		std::vector<SlotInfo> & slots) const;
+	uint64_t leadershipArmyValue(std::vector<SlotInfo> & slots, const CGHeroInstance * hero) const;
 	std::vector<SlotInfo> projectArmyAdmission(const CCreatureSet * destination, const CCreatureSet * source,
 		const CGHeroInstance * receiver, const CGHeroInstance * sourceHero, const std::vector<SlotInfo> & desired,
 		armyFormation::ArmyExchangeProjection * plan) const;

@@ -6,6 +6,7 @@
 #include "lib/CPlayerState.h"
 #include "lib/GameConstants.h"
 #include "lib/GameLibrary.h"
+#include "lib/entities/hero/NewHorizonsLeadership.h"
 #include "lib/gameState/UpgradeInfo.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapping/CMap.h"
@@ -108,17 +109,24 @@ TEST_F(NewHorizonsGoldStandardAITest, ActualOffersAndFundsGateTheExistingChoiceW
 	const auto wrongFamily = offers();
 	EXPECT_FALSE(vstd::contains(wrongFamily.getAvailableUpgrades(), gold));
 }
-TEST_F(NewHorizonsGoldStandardAITest, CapturedRequirementUsesExistingLeadershipGateWhileProductionFallbackStaysUninvented)
+TEST_F(NewHorizonsGoldStandardAITest, CurrentV7CapturedRequirementChangesEfficiencyWithoutBlockingPaidUpgrade)
 {
 	capturedGoldRequirement = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto source = hero->getLeadershipSlotCapacity(iron);
-	const auto target = hero->getLeadershipSlotCapacity(gold);
-	ASSERT_TRUE(source); ASSERT_TRUE(target); ASSERT_GE(target->maximum, 1);
-	ASSERT_GE(source->maximum, target->maximum + 1);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), iron, target->maximum + 1));
+	ASSERT_EQ(hero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
+	EXPECT_FALSE(hero->getLeadershipSlotCapacity(gold));
+	const auto threshold = newHorizonsHeroes::stackFullEfficiencyCapacity(hero, gold);
+	ASSERT_GE(threshold, 1);
+	const int count = threshold + 1;
+	ASSERT_TRUE(hero->setCreature(SlotID(0), iron, count));
 	const auto available = gameState()->getPlayerState(PlayerColor(0))->resources;
-	EXPECT_FALSE(NK2AI::armyUpgrade::choose(*hero->getStackPtr(SlotID(0)), offers(), hero, available));
-	ASSERT_TRUE(hero->setCreature(SlotID(0), iron, target->maximum));
 	EXPECT_EQ(NK2AI::armyUpgrade::choose(*hero->getStackPtr(SlotID(0)), offers(), hero, available), gold);
+	const auto price = offers().getUpgradeCostsFor(gold) * count;
+	ASSERT_TRUE(available.canAfford(price));
+	GoldUpgradeClient client(gameState()); auto gateway = makeGateway(PlayerColor(0), &client);
+	ASSERT_TRUE(gateway->makePossibleUpgrades(hero));
+	EXPECT_EQ(hero->getStackPtr(SlotID(0))->getId(), gold);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), count);
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, available - price);
+	EXPECT_EQ(client.requests, 1);
 }

@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "ArmyManager.h"
 #include "../Helpers/ArmyFormation.h"
+#include "../Helpers/LeadershipEvaluation.h"
 #include "../Engine/Nullkiller.h"
 #include "../../../lib/mapObjects/MapObjects.h"
 #include "../../../lib/mapping/TerrainTile.h"
@@ -20,6 +21,7 @@
 #include "../../../lib/battle/NewHorizonsDiscipline.h"
 #include "../../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../../../lib/entities/hero/NewHorizonsLeadership.h"
+#include <limits>
 
 namespace NK2AI
 {
@@ -27,7 +29,9 @@ StackUpgradeInfo::StackUpgradeInfo(CreatureID initial, CreatureID upgraded, int 
 	:initialCreature(initial), upgradedCreature(upgraded), count(count)
 {
 	cost = (upgradedCreature.toCreature()->getFullRecruitCost() - initialCreature.toCreature()->getFullRecruitCost()) * count;
-	upgradeValue = (upgradedCreature.toCreature()->getAIValue() - initialCreature.toCreature()->getAIValue()) * count;
+	const auto delta = std::max<int64_t>(0, int64_t(upgradedCreature.toCreature()->getAIValue())
+		- initialCreature.toCreature()->getAIValue());
+	upgradeValue = static_cast<uint64_t>(delta) * std::max(0, count);
 }
 
 void ArmyUpgradeInfo::addArmyToBuy(std::vector<SlotInfo> army)
@@ -36,7 +40,8 @@ void ArmyUpgradeInfo::addArmyToBuy(std::vector<SlotInfo> army)
 	{
 		resultingArmy.push_back(slot);
 
-		upgradeValue += slot.power;
+		upgradeValue = static_cast<int64_t>(std::min<uint64_t>(std::numeric_limits<int64_t>::max(),
+			leadershipAI::addPower(static_cast<uint64_t>(std::max<int64_t>(0, upgradeValue)), slot.power)));
 		upgradeCost += slot.creature->getFullRecruitCost() * slot.count;
 	}
 }
@@ -47,7 +52,8 @@ void ArmyUpgradeInfo::addArmyToGet(std::vector<SlotInfo> army)
 	{
 		resultingArmy.push_back(slot);
 
-		upgradeValue += slot.power;
+		upgradeValue = static_cast<int64_t>(std::min<uint64_t>(std::numeric_limits<int64_t>::max(),
+			leadershipAI::addPower(static_cast<uint64_t>(std::max<int64_t>(0, upgradeValue)), slot.power)));
 	}
 }
 
@@ -74,44 +80,12 @@ uint64_t ArmyManager::howManyReinforcementsCanGet(const CGHeroInstance * hero, c
 	return howManyReinforcementsCanGet(hero, hero, source, aiNk->cc->getTile(hero->visitablePos())->getTerrainID());
 }
 
-std::vector<SlotInfo> ArmyManager::getSortedSlots(const CCreatureSet * target, const CCreatureSet * source) const
-{
-	const CCreatureSet * armies[] = { target, source };
-
-	//we calculate total strength for each creature type available in armies
-	std::map<const CCreature *, SlotInfo> creToPower;
-	std::vector<SlotInfo> resultingArmy;
-
-	for(auto armyPtr : armies)
-	{
-		for(auto & i : armyPtr->Slots())
-		{
-			auto cre = dynamic_cast<const CCreature*>(i.second->getType());
-			auto & slotInfp = creToPower[cre];
-
-			slotInfp.creature = cre;
-			slotInfp.power += i.second->getPower();
-			slotInfp.count += i.second->getCount();
-		}
-	}
-
-	for(auto & pair : creToPower)
-		resultingArmy.push_back(pair.second);
-
-	std::ranges::sort(resultingArmy, [](const SlotInfo & left, const SlotInfo & right) -> bool
-	{
-		return left.power > right.power;
-	});
-
-	return resultingArmy;
-}
-
 std::vector<SlotInfo>::iterator ArmyManager::getBestUnitForScout(std::vector<SlotInfo> & army, const TerrainId & armyTerrain) const
 {
 	uint64_t totalPower = 0;
 
 	for (const auto & unit : army)
-		totalPower += unit.power;
+		totalPower = leadershipAI::addPower(totalPower, unit.power);
 
 	int baseMovementCost = cpsic->getSettings().getInteger(EGameSettings::HEROES_MOVEMENT_COST_BASE);
 	bool terrainHasPenalty = armyTerrain.hasValue() && armyTerrain.toEntity(LIBRARY)->moveCost != baseMovementCost;
@@ -182,7 +156,7 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 	if(exchangePlan)
 		*exchangePlan = {};
 	const auto * receiverHero = dynamic_cast<const CGHeroInstance *>(armyCarrier);
-	auto sortedSlots = getSortedSlots(target, source);
+	auto sortedSlots = getLeadershipSortedSlots(target, source, receiverHero);
 	if(source->stacksCount() == 0)
 	{
 		if(armyFormation::hasLeadershipCapacityRules(receiverHero, target))
@@ -203,17 +177,14 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 
 	for(auto & slot : sortedSlots)
 	{
-		alignmentMap[slot.creature->getFactionID()] += slot.power;
+		auto & power = alignmentMap[slot.creature->getFactionID()];
+		power = leadershipAI::addPower(power, slot.power);
 	}
 
 	std::set<FactionID> allowedFactions;
 	std::vector<SlotInfo> resultingArmy;
 	uint64_t armyValue = 0;
 	TemporaryArmy newArmyInstance(receiverHero);
-
-	const auto & badMoraleChance = cpsic->getSettings().getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE);
-	const auto & highMoraleChance = cpsic->getSettings().getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE);
-	int moraleDiceSize = cpsic->getSettings().getInteger(EGameSettings::COMBAT_MORALE_DICE_SIZE);
 
 	while(allowedFactions.size() < alignmentMap.size())
 	{
@@ -225,14 +196,13 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 		allowedFactions.insert(strongestAlignment->first);
 
 		std::vector<SlotInfo> newArmy;
-		uint64_t newValue = 0;
 		newArmyInstance.clearSlots();
 
 		for(auto & slot : sortedSlots)
 		{
 			if(vstd::contains(allowedFactions, slot.creature->getFactionID()))
 			{
-				auto slotID = newArmyInstance.getSlotFor(slot.creature->getId());
+				auto slotID = newArmyInstance.getFreeSlot();
 
 				if(slotID.validSlot())
 				{
@@ -254,28 +224,7 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 
 		newArmyInstance.updateMoraleBonusFromArmy();
 
-		for(auto & slot : newArmyInstance.Slots())
-		{
-			const auto compositionAdjustment = newHorizonsDiscipline::espritDeCorpsMoraleAdjustment(
-				receiverHero, *slot.second);
-			auto morale = slot.second->moraleValWithBonus(compositionAdjustment + (receiverHero
-				&& receiverHero->hasActivePerk(newHorizonsTraining::DIPLOMACY, newHorizonsTraining::MERCENARY_CAPTAIN)
-				&& slot.second->getTrainingReceipt().recruitedBy(receiverHero->id, true) ? 1 : 0));
-			auto multiplier = 1.0f;
-
-			if(morale < 0 && !badMoraleChance.empty())
-			{
-				size_t chanceIndex = std::min<size_t>(badMoraleChance.size(), -morale) - 1;
-				multiplier -= 1.0 / moraleDiceSize * badMoraleChance.at(chanceIndex);
-			}
-			else if(morale > 0 && !highMoraleChance.empty())
-			{
-				size_t chanceIndex = std::min<size_t>(highMoraleChance.size(), morale) - 1;
-				multiplier += 1.0 / moraleDiceSize * highMoraleChance.at(chanceIndex);
-			}
-
-			newValue += multiplier * slot.second->getPower();
-		}
+		const auto newValue = evaluateCompositionArmy(receiverHero, newArmyInstance, newArmy);
 
 		if(armyValue >= newValue)
 		{
@@ -296,7 +245,7 @@ std::vector<SlotInfo> ArmyManager::getBestArmy(const IBonusBearer * armyCarrier,
 
 	if(resultingArmy.size() <= GameConstants::ARMY_SIZE
 		&& allowedFactions.size() == alignmentMap.size()
-		&& source->needsLastStack())
+		&& (sourceHero ? sourceHero->needsLastStack() : source->needsLastStack()))
 	{
 		auto weakest = getBestUnitForScout(resultingArmy, armyTerrain);
 		if(weakest->count == 1)
@@ -361,10 +310,28 @@ ui64 ArmyManager::howManyReinforcementsCanBuy(
 {
 	ui64 aivalue = 0;
 	auto army = getArmyAvailableToBuy(targetArmy, dwelling, availableResources);
+	const auto * hero = dynamic_cast<const CGHeroInstance *>(targetArmy);
+	if(hero && newHorizonsHeroes::usesLeadershipEfficiency(hero->getCapabilityRules()))
+	{
+		TemporaryArmy after(hero);
+		for(const auto & [slot, stack] : targetArmy->Slots())
+			after.setCreature(slot, stack->getCreatureID(), stack->getCount());
+		for(const auto & incoming : army)
+		{
+			const auto slot = after.getSlotFor(incoming.creID);
+			if(!slot.validSlot()) continue;
+			const int present = after.hasStackAtSlot(slot) ? after.getStackCount(slot) : 0;
+			const int count = std::min(incoming.count, std::numeric_limits<TQuantity>::max() - present);
+			if(count > 0) after.addToSlot(slot, incoming.creID, count);
+		}
+		const auto beforePower = leadershipAI::armyStrength(hero, targetArmy);
+		const auto afterPower = leadershipAI::armyStrength(hero, &after);
+		return afterPower > beforePower ? afterPower - beforePower : 0;
+	}
 
 	for(const creInfo & ci : army)
 	{
-		aivalue += ci.count * ci.creID.toCreature()->getAIValue();
+		aivalue = leadershipAI::addPower(aivalue, evaluateStackPower(ci.creID.toCreature(), ci.count));
 	}
 
 	return aivalue;
@@ -380,11 +347,11 @@ ui64 ArmyManager::howManyReinforcementsCanGet(const IBonusBearer * armyCarrier, 
 
 	auto bestArmy = getBestArmy(armyCarrier, target, source, armyTerrain, sourceCarrier);
 	uint64_t newArmy = 0;
-	uint64_t oldArmy = target->getArmyStrength();
+	uint64_t oldArmy = leadershipAI::armyStrength(dynamic_cast<const CGHeroInstance *>(armyCarrier), target);
 
 	for(auto & slot : bestArmy)
 	{
-		newArmy += slot.power;
+		newArmy = leadershipAI::addPower(newArmy, slot.power);
 	}
 
 	return newArmy > oldArmy ? newArmy - oldArmy : 0;
@@ -392,7 +359,9 @@ ui64 ArmyManager::howManyReinforcementsCanGet(const IBonusBearer * armyCarrier, 
 
 uint64_t ArmyManager::evaluateStackPower(const Creature * creature, int count) const
 {
-	return creature->getAIValue() * count;
+	if(!creature || count <= 0) return 0;
+	// Both source operands are int32; widen before multiplying, not afterwards.
+	return static_cast<uint64_t>(std::max<int64_t>(0, creature->getAIValue())) * static_cast<uint64_t>(count);
 }
 
 SlotInfo ArmyManager::getTotalCreaturesAvailable(CreatureID creatureID) const
@@ -419,15 +388,11 @@ void ArmyManager::update()
 	{
 		for(const auto & slot : army->Slots())
 		{
-			totalArmy[slot.second->getCreatureID()].count += slot.second->getCount();
+			accumulateArmySupply(totalArmy[slot.second->getCreatureID()],
+				slot.second->getCreature(), slot.second->getCount());
 		}
 	}
 
-	for(auto & army : totalArmy)
-	{
-		army.second.creature = army.first.toCreature();
-		army.second.power = evaluateStackPower(army.second.creature, army.second.count);
-	}
 }
 
 std::vector<SlotInfo> ArmyManager::convertToSlots(const CCreatureSet * army) const
@@ -517,10 +482,18 @@ ArmyUpgradeInfo ArmyManager::calculateCreaturesUpgrade(
 
 			resourcesLeft -= upgrade.cost;
 			result.upgradeCost += upgrade.cost;
-			result.upgradeValue += upgrade.upgradeValue;
+			result.upgradeValue = static_cast<int64_t>(std::min<uint64_t>(std::numeric_limits<int64_t>::max(),
+				leadershipAI::addPower(static_cast<uint64_t>(std::max<int64_t>(0, result.upgradeValue)), upgrade.upgradeValue)));
 
 			*slotToReplace = upgradedArmy;
 		}
+	}
+	if(carrier && newHorizonsHeroes::usesLeadershipEfficiency(carrier->getCapabilityRules()))
+	{
+		const auto before = leadershipAI::armyStrength(carrier, army);
+		const auto after = leadershipArmyValue(result.resultingArmy, carrier);
+		result.upgradeValue = static_cast<int64_t>(std::min<uint64_t>(std::numeric_limits<int64_t>::max(),
+			after > before ? after - before : 0));
 	}
 
 	return result;

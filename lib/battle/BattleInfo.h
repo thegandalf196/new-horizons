@@ -255,6 +255,7 @@ public:
 	const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override;
 	void setCommandResources(BattleSide side, const newHorizonsCommand::ResourceState & state) override;
 	uint8_t getElementalAttunementMask(BattleSide side) const override;
+	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override;
 	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override;
 	void setElementalAttunementMask(BattleSide side, uint8_t mask) override;
 	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
@@ -660,6 +661,10 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				getSide(side).leadershipComposition.validateSerialization(
+					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		if(h.saving)
 			validateMetamagicPointSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
 		if(h.saving)

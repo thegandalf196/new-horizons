@@ -23,7 +23,7 @@ Policy readPolicy(const JsonNode & row)
 {
 	Policy result{};
 	result.version = static_cast<int>(row["version"].Integer());
-	if(result.version < 3)
+	if(result.version != 3)
 	{
 		for(size_t rank = 0; rank < result.skeletonLeadershipReductionPercent.size(); ++rank)
 			result.skeletonLeadershipReductionPercent[rank] = static_cast<int>(row["skeletonLeadershipReductionPercent"].Vector()[rank].Integer());
@@ -51,7 +51,7 @@ Policy readPolicy(const JsonNode & row)
 void validateLeadershipFields(const JsonNode & row)
 {
 	using namespace newHorizonsHeroes::detail;
-	if(row["version"].Integer() >= 3)
+	if(row["version"].Integer() == 3)
 	{
 		require(!row.Struct().contains("skeletonLeadershipReductionPercent")
 			&& !row.Struct().contains("lordOfTheDeadLeadershipReductionPercent"), "Retired Necromancy Leadership fields");
@@ -133,6 +133,13 @@ void validateCommandPolicySerialization(const JsonNode & capturedPerkRules, bool
 		throw std::runtime_error("Necromancy policy3 requires the Command/Authority format");
 }
 
+void validateLeadershipPolicySerialization(const JsonNode & capturedPerkRules, bool supported)
+{
+	const auto captured = policy(capturedPerkRules);
+	if(captured && captured->version >= 4 && !supported)
+		throw std::runtime_error("Necromancy policy4 requires Leadership Efficiency format1159");
+}
+
 int discountedLeadershipRequirement(int baseRequirement, int reductionPercent)
 {
 	if(baseRequirement < 1 || reductionPercent < 0 || reductionPercent >= 100)
@@ -166,7 +173,7 @@ int leadershipReduction(const CGHeroInstance & hero, const Policy & captured)
 int skeletonLeadershipReductionPercent(const CGHeroInstance * hero, CreatureID creature)
 {
 	const auto captured = activePolicy(hero, creature);
-	if(!captured || captured->version >= 3)
+	if(!captured || captured->version == 3)
 		return 0;
 	return leadershipReduction(*hero, *captured);
 }
@@ -174,7 +181,7 @@ int skeletonLeadershipReductionPercent(const CGHeroInstance * hero, CreatureID c
 int lordOfTheDeadMaximumHealthPercent(const CGHeroInstance * hero, CreatureID creature)
 {
 	const auto captured = activePolicy(hero, creature);
-	return captured && captured->version >= 3 && hero->hasActivePerk(SKILL_ID, LORD_OF_THE_DEAD_ID)
+	return captured && captured->version == 3 && hero->hasActivePerk(SKILL_ID, LORD_OF_THE_DEAD_ID)
 		? captured->lordOfTheDeadMaximumHealthPercent : 0;
 }
 

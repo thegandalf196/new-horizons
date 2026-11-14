@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"rulesetVersion": 6,
+	"rulesetVersion": 7,
 	"skeletonTransformer": {
 		"aggregateHealthPercent": 50
 	},
@@ -155,6 +155,27 @@
 			"core:sharpshooter": 170,
 			"new-horizons:wisp": 140,
 			"new-horizons:wispUpgrade": 140
+		},
+		"efficiencyPolicy": {
+			"version": 1,
+			"authorityRankBonusPercent": [
+				0,
+				15,
+				30,
+				45
+			],
+			"authorityPerkBonusPercent": {
+				"massedRanks": 25,
+				"veteranCadre": 25,
+				"familiarStandards": 20,
+				"foreignLegion": 30,
+				"officerCorps": 25,
+				"missileCommand": 25,
+				"regimentalOrganization": 25,
+				"combinedArms": 35,
+				"grandMarshal": 25,
+				"masterOfLegions": 50
+			}
 		}
 	},
 	"siege": {
@@ -232,5 +253,6 @@
 	"glyphsOfFearAura": {
 		"radius": 8,
 		"morale": -1
-	}
+	},
+	"defaultStartingArmyVersion": 1
 }

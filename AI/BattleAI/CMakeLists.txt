@@ -34,6 +34,7 @@ set(battleAI_SRCS
 	DefiantDenialProjection.cpp
 		AttackPreviewArcheryAdmission.cpp
 		DamageCache.cpp
+		DamageCacheLeadership.cpp
 		DamageCacheSnapshot.cpp
 		RegenerationBaselineReuse.cpp
 		RegenerationForecast.cpp

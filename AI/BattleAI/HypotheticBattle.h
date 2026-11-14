@@ -39,6 +39,7 @@
 #include "../../lib/battle/OverwhelmingFormulaState.h"
 #include "../../lib/battle/PerfectFortuneState.h"
 #include "../../lib/entities/hero/SpellPointState.h"
+#include "../../lib/entities/hero/LeadershipComposition.h"
 #include "../../lib/battle/NewHorizonsManaLeeches.h"
 
 class CSpell;
@@ -138,6 +139,10 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 	int visibleHeroMorale(BattleSide side) const override;
 public:
+	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override
+	{
+		return leadershipCompositions.at(side);
+	}
 	const auto & getArcaneInspirationEffects() const { return arcaneInspirationEffects; }
 	void reverseArcaneInspirationEffects(std::span<const std::shared_ptr<const SetStackEffect>> receipts);
 	bool usesOwnedFrameQueries() const;
@@ -632,6 +637,7 @@ private:
 	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;
 	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
 	BattleSideArray<std::optional<newHorizonsCommand::ResourceState>> commandResources;
+	BattleSideArray<newHorizonsHeroes::LeadershipComposition> leadershipCompositions;
 	BattleSideArray<DoubleCommandState> doubleCommandStates;
 	BattleSideArray<PreCombatOrderState> preCombatOrderStates;
 	BattleSideArray<bool> heroSpellCastCompletedStates;

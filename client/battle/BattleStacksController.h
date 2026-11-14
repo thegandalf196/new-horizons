@@ -13,6 +13,7 @@
 #include "BattleStackColorPresentation.h"
 #include "StackInfoPanelHoverState.h"
 #include "FrozenApplicationFeedback.h"
+#include "../widgets/LeadershipEfficiencyPresentation.h"
 
 #include "../../lib/constants/EntityIdentifiers.h"
 
@@ -84,6 +85,7 @@ class BattleStacksController
 		std::shared_ptr<IImage> amountBox;
 	};
 	std::map<uint32_t, DisplayedStackSnapshot> displayedStackSnapshot;
+	std::map<uint32_t, leadershipPresentation::ReadoutCache> leadershipReadouts;
 	struct FrozenShatterFeedback
 	{
 		Rect bounds;
@@ -110,6 +112,8 @@ class BattleStacksController
 
 	bool stackNeedsAmountBox(const CStack * stack) const;
 	void showStackAmountBox(Canvas & canvas, const CStack * stack);
+	void showLeadershipEfficiency(Canvas & canvas, const CStack * stack,
+		const Point & boxPosition, int counterWidth, int counterHeight, int displayedCount);
 	BattleHex getStackCurrentPosition(const CStack * stack) const;
 
 	void lockStackAmountBox(const CStack * stack);

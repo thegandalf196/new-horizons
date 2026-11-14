@@ -130,10 +130,26 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 		|| Version::CURRENT == Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	else if(Version::CURRENT == Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN
-		|| Version::CURRENT == Version::NEW_HORIZONS_COMMAND_AUTHORITY)
+		|| Version::CURRENT == Version::NEW_HORIZONS_COMMAND_AUTHORITY
+		|| Version::CURRENT == Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
 	else
 		EXPECT_THROW(OwnedBonusCaptureCodec::current(), std::invalid_argument);
+}
+
+TEST(OwnedBonusCaptureCodecTest, LeadershipEfficiencyEpochRequiresItsCompleteNamedProfile)
+{
+	const auto epoch = Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
+	const auto current = capabilities(epoch);
+	EXPECT_TRUE(current.leadershipEfficiency);
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(epoch, current).version(), epoch);
+	const auto previous = capabilities(Version::NEW_HORIZONS_COMMAND_AUTHORITY);
+	EXPECT_FALSE(previous.leadershipEfficiency);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(epoch, previous), std::invalid_argument);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY, current), std::invalid_argument);
+	auto partial = current;
+	partial.commandAuthority = false;
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceCapabilities(partial), std::invalid_argument);
 }
 
 TEST(OwnedBonusCaptureCodecTest, WireEpochAndNamedBonusProfileMustBothMatch)
@@ -152,10 +168,10 @@ TEST(OwnedBonusCaptureCodecTest, WireEpochAndNamedBonusProfileMustBothMatch)
 
 TEST(OwnedBonusCaptureCodecTest, IdenticalBonusMaskDoesNotAuthorizeAnUnknownWireEpoch)
 {
-	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::NEW_HORIZONS_COMMAND_AUTHORITY) + 1);
+	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::CURRENT) + 1);
 	const auto mask = capabilities(unknown);
-	EXPECT_EQ(mask, capabilities(Version::NEW_HORIZONS_COMMAND_AUTHORITY));
-	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(mask).version(), Version::NEW_HORIZONS_COMMAND_AUTHORITY);
+	EXPECT_EQ(mask, capabilities(Version::CURRENT));
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(mask).version(), Version::CURRENT);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(unknown, mask), std::invalid_argument);
 }
 
@@ -247,7 +263,7 @@ TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDe
 	EXPECT_NE(ordinary.oser.version, codec.version());
 }
 
-TEST(OwnedBonusCaptureCodecTest, NativeRules1157AndCommandAuthority1158HaveExplicitDistinctProfiles)
+TEST(OwnedBonusCaptureCodecTest, Historical1157And1158ProfilesRemainSeparateFromCurrentPersistence)
 {
 	const auto native = capabilities(Version::NEW_HORIZONS_COMMAND_AUTHORITY);
 	ASSERT_NE(native, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
@@ -255,7 +271,8 @@ TEST(OwnedBonusCaptureCodecTest, NativeRules1157AndCommandAuthority1158HaveExpli
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN,
 		capabilities(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)).version(), Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_COMMAND_AUTHORITY);
-	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), codec.version());
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
+	EXPECT_NE(OwnedBonusCaptureCodec::current().version(), codec.version());
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY,
 		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);
 	auto partial = native;
@@ -281,5 +298,5 @@ TEST(OwnedBonusCaptureCodecTest, NativeRules1157AndCommandAuthority1158HaveExpli
 	CMemorySerializer persistence;
 	EXPECT_EQ(persistence.oser.version, Version::CURRENT);
 	EXPECT_EQ(persistence.iser.version, Version::CURRENT);
-	EXPECT_EQ(persistence.oser.version, codec.version());
+	EXPECT_NE(persistence.oser.version, codec.version());
 }

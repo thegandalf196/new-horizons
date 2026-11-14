@@ -32,7 +32,7 @@ int resolveCreature(const std::string & key)
 LeadershipCapacity capabilityLeadership(const JsonNode & rules, int level, int leadershipRank, uint64_t used)
 {
 	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
-	validateResolvedCapabilityRules(rules);
+	if(!usesLeadershipEfficiency(rules)) validateResolvedCapabilityRules(rules);
 	if(!usesLegacyLeadership(rules))
 		return {};
 	require(leadershipRank >= 0 && leadershipRank <= 3, "skill rank outside NONE..EXPERT");
@@ -46,7 +46,7 @@ int capabilityLeadershipRating(const JsonNode & rules, int level)
 {
 	if(!usesRules(rules))
 		return 0;
-	validateResolvedCapabilityRules(rules);
+	if(!usesLeadershipEfficiency(rules)) validateResolvedCapabilityRules(rules);
 	if(!usesLegacyLeadership(rules))
 		return 0;
 	require(rules["rulesetVersion"].Integer() >= 2, "per-slot Leadership requires ruleset v2+");
@@ -61,7 +61,7 @@ int capabilityLeadershipPerLevel(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return 0;
-	validateResolvedCapabilityRules(rules);
+	if(!usesLeadershipEfficiency(rules)) validateResolvedCapabilityRules(rules);
 	if(!usesLegacyLeadership(rules))
 		return 0;
 	require(rules["rulesetVersion"].Integer() >= 2, "per-slot Leadership requires ruleset v2+");
@@ -74,6 +74,13 @@ int capabilityCreatureLeadershipRequirement(const JsonNode & rules, CreatureID c
 {
 	if(!usesRules(rules))
 		return 0;
+	if(usesLeadershipEfficiency(rules) && rules.Struct().contains("profile"))
+	{
+		if(!creature.hasValue() || !creature.toCreature()) return 0;
+		const auto & table = rules["leadership"]["resolvedCreatureRequirements"].Struct();
+		const auto found = table.find(creature.toCreature()->getJsonKey());
+		return found == table.end() ? 0 : static_cast<int>(found->second.Integer());
+	}
 	if(isWorldCapabilityRules(rules))
 		validateCapabilityRules(rules, false);
 	else

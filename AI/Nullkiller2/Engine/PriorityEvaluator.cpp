@@ -14,6 +14,7 @@
 
 #include "Nullkiller.h"
 #include "../Helpers/DwellingGrowthValue.h"
+#include "../Helpers/LeadershipEvaluation.h"
 #include "../../../lib/entities/artifact/CArtifact.h"
 #include "../../../lib/entities/ResourceTypeHandler.h"
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
@@ -1327,9 +1328,14 @@ uint64_t RewardEvaluator::getUpgradeArmyReward(const CGTownInstance * town, cons
 		return 0;
 
 	auto creaturesToUpgrade = aiNk->armyManager->getTotalCreaturesAvailable(bi.baseCreatureID);
-	auto upgradedPower = aiNk->armyManager->evaluateStackPower(bi.creatureID.toCreature(), creaturesToUpgrade.count);
-
-	return upgradedPower - creaturesToUpgrade.power;
+	const int64_t before = bi.baseCreatureID.toCreature()->getAIValue();
+	const int64_t after = bi.creatureID.toCreature()->getAIValue();
+	if(before <= 0 || after <= before) return 0;
+	// The inventory can span several maximum-size stacks. Its per-request
+	// count is bounded, but its aggregate power must not be repriced from that
+	// bounded count or subtracted unsigned from a larger inventory value.
+	return leadershipAI::scalePowerRatio(creaturesToUpgrade.power,
+		static_cast<uint32_t>(after - before), static_cast<uint32_t>(before));
 }
 
 PriorityEvaluator::PriorityEvaluator(const Nullkiller * aiNk) : aiNk(aiNk)

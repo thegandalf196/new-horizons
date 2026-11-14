@@ -453,5 +453,14 @@
 	"new-horizons.spellbook.lifeDrainHealing": "Potential damage before target defenses, immunities and recipient-dependent effects. Optional cast settings use their unselected default; no random proc is assumed. Healing restores the shown percentage of actual damage dealt, rounded down and limited by the friendly recipient's wounds; it does not restore casualties. H denotes that healing percentage.",
 	"new-horizons.spellbook.lifeDrainFollowup": "Potential follow-up damage before target defenses and other target-dependent modifiers. Optional cast settings use their unselected default; no random proc is assumed. Healing restores the shown percentage of actual damage dealt, rounded down and limited by the friendly recipient's wounds; it does not restore casualties. H denotes that healing percentage.",
 	"new-horizons.combat.attunement.status": "Attuned",
-	"new-horizons.combat.attunement.description": "Attuned for the remainder of combat by an elemental hero spell."
+	"new-horizons.combat.attunement.description": "Attuned for the remainder of combat by an elemental hero spell.",
+	"new-horizons.leadership.showEfficiency.hover": "Show Leadership Efficiency in Battle",
+	"new-horizons.leadership.showEfficiency.help": "Show a small damage-efficiency badge below a creature count when Leadership Efficiency is below 100%. This display setting does not change damage. Right-click inspection always shows the details.",
+	"new-horizons.leadership.readout.detail": "{Leadership Efficiency: %EFFICIENCY%%}\n\nActual creatures: %COUNT%\nFull-efficiency capacity: %CAPACITY%\nHero Leadership: %BASE_LEADERSHIP%\nEffective Leadership: %EFFECTIVE_LEADERSHIP%\nCreature Leadership Requirement: %REQUIREMENT%\nEffective fighting strength: %EFFECTIVE_COUNT% creatures\n\nLeadership scales melee, ranged and retaliation damage, including magical creature attacks. It does not reduce health, Defense, Speed, Initiative, Morale, Luck or adventure Movement.",
+	"new-horizons.leadership.readout.uncommanded": "{Leadership Efficiency: 100%}\n\nActual creatures: %COUNT%\n\nThis army has no commanding hero. Its attacks suffer no Leadership penalty.",
+	"new-horizons.leadership.readout.label": "Leadership Requirement: %REQUIREMENT%",
+	"new-horizons.leadership.readout.costCapacity": "%REQUIREMENT% (%COUNT%/%CAPACITY%)",
+	"new-horizons.progression.perkTitle": "%HERO% — choose a perk",
+	"new-horizons.progression.perkInstruction": "Choose one perk to complete this Skill rank.",
+	"new-horizons.leadership.heroHelp": "{Leadership: %BASE%}\n\nLeadership determines how many creatures each stack commands at full attack efficiency.\n\nAuthority rank bonus: +%AUTHORITY%%\nWith Authority rank, before perks: %RANK_EFFECTIVE%\n\nAdditional Authority perk bonuses depend on the creature and the army composition. Each stack has its own capacity; there is no shared Leadership budget. Excess creatures still add damage with diminishing returns. Health and movement are unchanged."
 }

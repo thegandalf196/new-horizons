@@ -59,6 +59,13 @@ Display descriptions use `${val}` for the raw value or `${val.basisPoints}`
 for an exact percentage, including its percent sign: `7500` becomes `75%`,
 and `1250` becomes `12.5%`. Display metadata does not change damage rules.
 
+`LONG_REACH` descriptions use `${reach}` for the effective maximum occupied-hex
+distance, read through `battleReach::maximumMeleeDistance` from the complete bonus
+bearer. `${val}` remains the raw bonus and must not label the maximum distance.
+The melee lance cursor displays this same maximum as a small counter, independent
+of the hovered target's distance. A Reach attack still requires a clear straight
+corridor and retains ordinary melee damage and retaliation classification.
+
 Binary bonus types continue to serialize their existing enum values. The typed
 `NONE` encoder sentinel and invalid-index rejection are unchanged.
 

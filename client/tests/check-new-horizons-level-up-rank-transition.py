@@ -11,6 +11,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 LEVEL = (ROOT / "client/windows/CLevelWindow.cpp").read_text(encoding="utf-8")
+CHOICES = (ROOT / "client/windows/CLevelWindowChoices.cpp").read_text(encoding="utf-8")
+CARDS = (ROOT / "client/windows/LevelUpChoiceCards.cpp").read_text(encoding="utf-8")
 COMPONENT = (ROOT / "client/widgets/CComponent.cpp").read_text(encoding="utf-8")
 TEXTS = json.loads((ROOT / "config/newHorizonsCombatTexts.json").read_text(encoding="utf-8"))
 
@@ -36,46 +38,28 @@ def braced_block(source: str, marker: str) -> tuple[int, int, str]:
 
 
 def verify_rank_transition_wiring() -> None:
-    _, _, create_skill_box = braced_block(LEVEL, "void CLevelWindow::createSkillBox()")
-    skill_start, skill_end, skill_branch = braced_block(
-        create_skill_box, "if(originalIndex < skills.size())"
-    )
-    else_at = create_skill_box.index("else", skill_end)
-    _, _, perk_branch = braced_block(create_skill_box[else_at:], "else")
-    assert skill_start < skill_end < else_at
-
-    require(skill_branch, "const auto skill = skills[originalIndex];", "rank-choice Skill identity")
-    require(skill_branch, "const int currentRank = hero->getSecSkillLevel(skill);", "actual current Skill rank")
-    require(skill_branch, "const int offeredRank = currentRank + 1;", "next-rank offer")
-    require(
-        skill_branch,
-        "ComponentType::SEC_SKILL, skill,\n\t\t\t\t\tofferedRank, CComponent::medium",
-        "existing integer SEC_SKILL component with offered rank",
-    )
-
-    # Display only the offered Basic/Advanced/Expert rank, as requested.
-    # The actual current rank still determines the offer and component value.
-    assert "newHorizonsMagic::rulesActive" not in skill_branch, "Captured hero names apply in original-mode overrides too"
-    require(
-        skill_branch,
-        'translate("core.skilllev", offeredRank - 1)',
-        "offered-rank Basic/Advanced/Expert mapping",
-    )
-    assert 'skill.unlearned' not in skill_branch, "do not display the rejected Unlearned label"
-    assert 'skill.rankTransition' not in skill_branch, "do not restore the rejected transition subtitle"
-    require(skill_branch, 'newHorizonsPerkHelp::skillLabel(hero, skill)', "Skill name on second subtitle line")
-    require(skill_branch, 'comp->customSubtitle = offeredRankText + "\\n"', "offered rank above Skill name")
-
-    assert "newHorizonsMagic::rulesActive" not in perk_branch, "rank transition gate must not alter perk cards"
-    assert "rankTransition" not in perk_branch, "perk cards must keep their separate current presentation"
-    require(perk_branch, "perk.requiredRank, perk.name", "pass prerequisite rank and name to perk card")
-    require(perk_branch, "perk.name", "existing perk name subtitle")
-    require(perk_branch, "newHorizonsPerkHelp::format", "existing perk help")
-    require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)", "existing perk icon")
-    _, _, parent_card = braced_block(LEVEL, "class CLevelUpPerkComponent")
-    require(parent_card, 'parentSkill->customSubtitle = parentName + "\\n"', "visible canonical parent Skill name")
-    require(parent_card, 'translate("core.skilllev", requiredRank - 1)', "parent Skill's required rank")
-    require(parent_card, 'requiredRank, CComponent::small', "parent Skill icon rank")
+    _, _, skill_branch = braced_block(CHOICES, "CLevelWindow::skillComponent(")
+    _, _, perk_branch = braced_block(CHOICES, "CLevelWindow::perkComponent(")
+    _, _, skill_card = braced_block(CARDS, "class CLevelUpSkillCardComponent")
+    require(skill_branch, "const auto skill = skills.at(index);", "rank-choice Skill identity")
+    require(skill_branch, "const int offeredRank = hero->getSecSkillLevel(skill) + 1;", "actual next Skill rank")
+    require(skill_card, "CSelectableComponent(ComponentType::SEC_SKILL, skill, offeredRank, CComponent::medium)",
+            "native secondary Skill icon with offered rank")
+    require(skill_branch, 'translate("core.skilllev", offeredRank - 1)', "rank text")
+    require(skill_branch, 'newHorizonsPerkHelp::skillLabel(hero, skill)', "captured Skill name")
+    require(skill_branch, 'component->customSubtitle = rankText + "\\n" + skillName;', "rank above Skill name")
+    assert 'skill.unlearned' not in skill_branch and 'skill.rankTransition' not in skill_branch
+    require(perk_branch, "perk.name", "perk card name")
+    require(perk_branch, "newHorizonsPerkHelp::format", "captured mechanical perk help")
+    require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)", "perk icon")
+    _, _, heading = braced_block(CHOICES, "CLevelWindow::perkHeaderText()")
+    require(heading, "newHorizonsPerkHelp::tierName(first.requiredRank)", "visible required-rank heading")
+    require(heading, "newHorizonsPerkHelp::skillName(hero, first.selection.skillId)", "visible owning-Skill heading")
+    require(LEVEL, "perkHeaderText()", "perk heading consumer")
+    require(LEVEL, "Rect(44, 454, 552, 52)", "visible scrollable full mechanical description")
+    require(CHOICES, "perkDescription->setText(perks[index].description)", "selected description consumer")
+    require(LEVEL, "perks = skills.empty() ? availablePerks", "separate Skill and mandatory perk modes")
+    require(LEVEL, "if(!selectionSubmitted && !choiceOrder.empty())", "mandatory choice cannot be dismissed")
 
     component_subtitle = COMPONENT.split("std::string CComponent::getSubtitle() const", 1)[1]
     require(component_subtitle, "if (!customSubtitle.empty())", "custom subtitle readback")

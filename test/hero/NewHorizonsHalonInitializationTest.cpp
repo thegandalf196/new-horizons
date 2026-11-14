@@ -13,15 +13,19 @@
 #include "../mock/TinyMapGameTest.h"
 
 #include "../../lib/GameConstants.h"
+#include "../../lib/StartInfo.h"
 #include "../../lib/bonuses/BonusEnum.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/NewHorizonsMetamagicMarks.h"
+#include "../../lib/spells/NewHorizonsSpellAvailability.h"
 
 namespace
 {
@@ -39,6 +43,12 @@ protected:
 		TinyMapGameTest::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons module";
+	}
+
+	void configurePlayer(PlayerSettings & settings) const override
+	{
+		// Random starting artifacts can change the hero statistics under test.
+		settings.bonus = PlayerStartingBonus::GOLD;
 	}
 
 	void mapLoaded(CMap * loaded) override
@@ -69,23 +79,27 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndWarcasting)
 	EXPECT_EQ(halon->getSecSkillLevel(metamagic), MasteryLevel::BASIC);
 	EXPECT_EQ(halon->getSecSkillLevel(warcasting), MasteryLevel::BASIC);
 	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:spellcraft")), MasteryLevel::NONE);
-	EXPECT_TRUE(halon->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.battleMeditation"));
+	EXPECT_TRUE(halon->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.arcaneValor"));
 	ASSERT_EQ(halon->getPerkState().selected.size(), 1u);
-	EXPECT_EQ(halon->getPerkState().selected.front().perkId, "new-horizons:warcasting.battleMeditation");
+	EXPECT_EQ(halon->getPerkState().selected.front().perkId, "new-horizons:warcasting.arcaneValor");
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::MYSTICISM), MasteryLevel::NONE);
 
-	// Basic Metamagic supplies one use and Halon's converted specialty supplies
-	// the additional use described by the hero text. His unchanged one-point
-	// regeneration is the ordinary per-hero baseline, not learned Spellcraft.
-	EXPECT_EQ(halon->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT), 2);
+	// Basic Metamagic retains its one-point carrier. Halon's specialty grants
+	// points after manual spells rather than adding another optional action.
+	EXPECT_EQ(halon->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT), 1);
+	const auto metamagicProfile = newHorizonsMetamagic::profile(halon);
+	EXPECT_TRUE(metamagicProfile.pointPolicy);
+	EXPECT_EQ(metamagicProfile.adeptAdditionalPoints, 1);
+	EXPECT_EQ(newHorizonsMetamagic::pointsAfterResolvedSpell(metamagicProfile, 1, true, true), 2);
+	EXPECT_EQ(newHorizonsMetamagic::pointsAfterResolvedSpell(metamagicProfile, 12, true, true), 12);
 	EXPECT_EQ(halon->valOfBonuses(BonusType::MANA_REGENERATION), 1);
 	EXPECT_EQ(halon->getHeroType()->getSpecialtyNameTranslated(), "Metamagic Adept");
 	EXPECT_EQ(halon->getHeroType()->getSpecialtyDescriptionTranslated(),
-		"Halon can use Metamagic one additional time per combat.");
+		"Halon gains 1 additional Metamagic point after each spell he manually casts, up to 12 points.");
 }
 
-TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaKeepsHasteAndStartsWithinLeadershipLimits)
+TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaUsesFocusMagicAndSoftLeadershipWithoutSlotLocks)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0))
@@ -94,7 +108,16 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaKeepsHasteAndStartsWithinL
 
 	const auto * brissa = findHeroAt({5, 5, 0});
 	ASSERT_NE(brissa, nullptr);
-	EXPECT_TRUE(brissa->spellbookContainsSpell(SpellID(SpellID::HASTE)));
+	const SpellID focusMagic(SpellID::decode("new-horizons:focusMagic"));
+	ASSERT_TRUE(focusMagic.hasValue());
+	EXPECT_TRUE(brissa->spellbookContainsSpell(focusMagic));
+	EXPECT_FALSE(brissa->spellbookContainsSpell(SpellID(SpellID::HASTE)));
+	EXPECT_FALSE(newHorizonsMagic::spellAllowedByHeroRoster(brissa->getMagicRules(), SpellID(SpellID::HASTE)));
+	EXPECT_EQ(brissa->getNonDamageSpellSpecialtyBonusPercent(focusMagic), 20);
+	const auto specialty = brissa->getSpecialtyPresentation();
+	ASSERT_TRUE(specialty.spell);
+	EXPECT_EQ(*specialty.spell, focusMagic);
+	EXPECT_EQ(specialty.name, focusMagic.toSpell()->getNameTranslated());
 	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:elementalRebirth")), MasteryLevel::BASIC);
 	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:natureMagic")), MasteryLevel::BASIC);
 	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:sorceryMagic")), MasteryLevel::NONE);
@@ -104,13 +127,15 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaKeepsHasteAndStartsWithinL
 	EXPECT_EQ(brissa->getPerkState().selected.front().perkId, "new-horizons:natureMagic.rootcaller");
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::AIR_MAGIC), MasteryLevel::NONE);
+	ASSERT_EQ(brissa->getCapabilityRules()["rulesetVersion"].Integer(), 7);
 
 	for(const auto & [slot, stack] : brissa->Slots())
 	{
 		(void)slot;
-		const auto capacity = brissa->getLeadershipSlotCapacity(stack->getCreatureID());
-		ASSERT_TRUE(capacity) << stack->getType()->getJsonKey();
-		EXPECT_LE(stack->getCount(), capacity->maximum) << stack->getType()->getJsonKey();
+		EXPECT_FALSE(brissa->getLeadershipSlotCapacity(stack->getCreatureID()));
+		EXPECT_GT(newHorizonsHeroes::stackFullEfficiencyCapacity(brissa, stack->getCreatureID()), 0);
+		EXPECT_EQ(newHorizonsHeroes::commandArmySlotEligibility(brissa, SlotID(6), stack->getCreatureID()),
+			newHorizonsHeroes::CommandPlacementError::NONE);
 	}
 }
 

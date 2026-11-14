@@ -9,6 +9,7 @@
 #include "lib/CPlayerState.h"
 #include "lib/GameLibrary.h"
 #include "lib/GameConstants.h"
+#include "lib/entities/hero/NewHorizonsLeadership.h"
 #include "lib/gameState/UpgradeInfo.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/modding/CModHandler.h"
@@ -170,7 +171,8 @@ TEST_F(NewHorizonsGhostUpgradeAITest, UnaffordableHighestValueOfferRetainsExisti
 	auto offered = offer();
 	const CreatureID stronger(CreatureID::decode("core:boneDragon"));
 	ASSERT_GT(stronger.toCreature()->getAIValue(), ghost().toCreature()->getAIValue());
-	ASSERT_TRUE(hero->getLeadershipSlotCapacity(stronger)->accepts(1));
+	ASSERT_FALSE(hero->getLeadershipSlotCapacity(stronger));
+	ASSERT_TRUE(newHorizonsHeroes::armySlotAccepts(hero, SlotID(0), stronger, 1));
 	offered.addUpgrade(stronger, wraith().toCreature());
 	ASSERT_NE(offered.getUpgradeCostsFor(stronger), TResources());
 	EXPECT_FALSE(NK2AI::armyUpgrade::choose(*hero->getStackPtr(SlotID(0)), offered, hero, TResources()));

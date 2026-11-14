@@ -383,6 +383,9 @@ class CFortScreen : public CStatusbarWindow
 
 		const CCreature * getMyCreature();
 		const CBuilding * getMyBuilding();
+		void createBuildingPresentation();
+		void createCreaturePresentation();
+		void createStatPresentation(int creatureX, int statTop, int compactPortraitHeight);
 	public:
 		RecruitArea(int posX, int posY, const CGTownInstance *town, int level,
 			int width = 386, int height = 126, bool ranked = false, bool compactStats = false);

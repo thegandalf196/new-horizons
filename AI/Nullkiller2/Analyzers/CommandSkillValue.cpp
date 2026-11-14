@@ -2,8 +2,10 @@
 #include "../StdInc.h"
 #include "CommandSkillValue.h"
 #include "HeroManager.h"
+#include "../Helpers/LeadershipEvaluation.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../../lib/entities/hero/NewHorizonsLeadership.h"
 #include <algorithm>
 
 namespace NK2AI
@@ -22,13 +24,25 @@ float commandArmyUnlockValue(int64_t before, int64_t after)
 std::optional<float> commandClassSkillScore(const CGHeroInstance & hero, SecondarySkill skill, bool main)
 {
 	const auto rules = hero.getArmyCommandRules();
-	if(!rules) return {};
+	const bool leadership = newHorizonsHeroes::usesLeadershipEfficiency(hero.getCapabilityRules());
+	if(!rules && !leadership) return {};
 	const auto weight = newHorizonsHeroes::skillOfferWeight(hero.getPrimaryGrowthRules(), skill);
 	if(!weight) return {};
 	// Captured class affinity supplies a bounded generic prior for current IDs.
 	// Role-specific strategic overrides remain in HeroManager.
 	float score = std::clamp(*weight, 0, 10) * (main ? 0.2f : 0.1f);
-	if(SecondarySkill::encode(skill.getNum()) == "new-horizons:authority")
+	const auto id = SecondarySkill::encode(skill.getNum());
+	if(leadership && (id == "new-horizons:authority" || id == "new-horizons:necromancy"))
+	{
+		auto modifiers = newHorizonsHeroes::captureLeadershipModifiers(hero);
+		auto & rank = id == "new-horizons:authority" ? modifiers.authorityRank : modifiers.necromancyRank;
+		if(rank < 3)
+		{
+			++rank;
+			score += 2 * leadershipAI::modifierGain(hero, modifiers) * (main ? 1.0f : 0.5f);
+		}
+	}
+	else if(rules && id == "new-horizons:authority")
 	{
 		const int rank = std::clamp<int>(hero.getSecSkillLevel(skill), 0, 3);
 		if(rank == 3) return score; // Learned Expert still contributes to the hero profile; no fourth-rank reward.

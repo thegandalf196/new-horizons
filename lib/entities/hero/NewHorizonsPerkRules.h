@@ -103,6 +103,8 @@ DLL_LINKAGE bool usesSylvanTactics(const JsonNode & rules);
 DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
 
 DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);
+DLL_LINKAGE bool usesUnifiedSkillProgression(const JsonNode & rules);
+DLL_LINKAGE void validateUnifiedSkillProgressionSerialization(const JsonNode & rules, bool supported);
 /// Strict captured {version:1} marker; absence retains the historical 31-Skill roster.
 DLL_LINKAGE bool usesCommandAuthorityPolicy(const JsonNode & rules);
 DLL_LINKAGE size_t canonicalSkillCount(const JsonNode & rules);

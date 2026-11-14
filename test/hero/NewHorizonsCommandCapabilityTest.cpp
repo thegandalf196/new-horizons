@@ -5,10 +5,10 @@
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
-TEST(NewHorizonsCommandCapability, CurrentV5ResolvesAllClassesWithoutRetiredTables)
+TEST(NewHorizonsCommandCapability, HistoricalV5ResolvesAllClassesWithoutRetiredTables)
 {
 	using namespace newHorizonsHeroes;
-	const JsonNode world(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const JsonNode world = historicalCapabilityRulesV5();
 	ASSERT_EQ(world["rulesetVersion"].Integer(), 5);
 	ASSERT_NO_THROW(validateCapabilityRules(world, true));
 	EXPECT_TRUE(JsonUtils::validate(world, "vcmi:newHorizonsCapabilities", "Command V5"));
@@ -41,14 +41,14 @@ TEST(NewHorizonsCommandCapability, CurrentV5ResolvesAllClassesWithoutRetiredTabl
 	}
 }
 
-TEST(NewHorizonsCommandCapability, CurrentPolicyCannotLeakHistoricalNumericalRatings)
+TEST(NewHorizonsCommandCapability, HistoricalV5PolicyCannotLeakV4NumericalRatings)
 {
 	using namespace newHorizonsHeroes;
-	const JsonNode current(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const JsonNode historicalV5 = historicalCapabilityRulesV5();
 	auto historical = historicalCapabilityRulesV4();
 	const auto id = HeroClassID(HeroClassID::decode("core:knight"));
 	EXPECT_EQ(capabilityLeadershipRating(resolveCapabilityRules(historical, id), 2), 1080);
-	historical["armyCommand"] = current["armyCommand"];
+	historical["armyCommand"] = historicalV5["armyCommand"];
 	for(const int base : {1, 1000000})
 	{
 		historical["classProfiles"]["core:knight"]["base"].Integer() = base;
@@ -61,52 +61,52 @@ TEST(NewHorizonsCommandCapability, CurrentPolicyCannotLeakHistoricalNumericalRat
 	}
 }
 
-TEST(NewHorizonsCommandCapability, NativeSettingsSchemaRejectsUnknownAndInvalidClassIntervals)
+TEST(NewHorizonsCommandCapability, HistoricalV5SettingsSchemaRejectsUnknownAndInvalidClassIntervals)
 {
-	const JsonNode current(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const JsonNode historicalV5 = historicalCapabilityRulesV5();
 	JsonNode settings;
-	settings["heroes"]["newHorizonsCapabilities"] = current;
+	settings["heroes"]["newHorizonsCapabilities"] = historicalV5;
 	ASSERT_TRUE(JsonUtils::validate(settings, "vcmi:gameSettings", "Command settings wrapper"));
 	for(const double interval : {0.0, 3.5, 1000001.0})
 	{
-		auto invalid = current;
+		auto invalid = historicalV5;
 		invalid["armyCommand"]["classLevelIntervals"]["core:knight"].Float() = interval;
 		EXPECT_FALSE(JsonUtils::validate(invalid, "vcmi:newHorizonsCapabilities", "Invalid Command interval"));
 	}
-	auto unknown = current;
+	auto unknown = historicalV5;
 	unknown["armyCommand"]["classLevelIntervals"]["core:unknownClass"].Integer() = 3;
 	EXPECT_FALSE(JsonUtils::validate(unknown, "vcmi:newHorizonsCapabilities", "Unknown Command class"));
 }
 
-TEST(NewHorizonsCommandCapability, V5RejectsRetiredColumnsAndMissingOrMalformedCommand)
+TEST(NewHorizonsCommandCapability, HistoricalV5RejectsRetiredColumnsAndMissingOrMalformedCommand)
 {
 	using namespace newHorizonsHeroes;
-	const JsonNode current(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const JsonNode historicalV5 = historicalCapabilityRulesV5();
 	for(const auto * key : {"classProfiles", "leadership", "profile"})
 	{
-		auto invalid = current;
+		auto invalid = historicalV5;
 		invalid[key] = JsonNode(); // Presence, including null, is forbidden.
 		EXPECT_THROW(validateCapabilityRules(invalid, true), std::runtime_error);
 	}
-	auto missing = current;
+	auto missing = historicalV5;
 	missing.Struct().erase("armyCommand");
 	EXPECT_THROW(validateCapabilityRules(missing, true), std::runtime_error);
-	auto malformed = current;
+	auto malformed = historicalV5;
 	malformed["armyCommand"] = JsonNode();
 	EXPECT_THROW(validateCapabilityRules(malformed, true), std::runtime_error);
 	const auto id = HeroClassID(HeroClassID::decode("core:knight"));
-	auto resolved = resolveCapabilityRules(current, id);
+	auto resolved = resolveCapabilityRules(historicalV5, id);
 	resolved["profile"]["base"].Integer() = 1025;
 	EXPECT_THROW(validateResolvedCapabilityRules(resolved), std::runtime_error);
 }
 
-TEST(NewHorizonsCommandCapability, V5PreservesAllCapturedSiegeAndShopValues)
+TEST(NewHorizonsCommandCapability, HistoricalV5PreservesAllCapturedSiegeAndShopValues)
 {
 	using namespace newHorizonsHeroes;
-	const JsonNode current(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const JsonNode historicalV5 = historicalCapabilityRulesV5();
 	const auto historical = historicalCapabilityRulesV4();
 	const auto id = HeroClassID(HeroClassID::decode("core:knight"));
-	const auto now = resolveCapabilityRules(current, id);
+	const auto now = resolveCapabilityRules(historicalV5, id);
 	const auto old = resolveCapabilityRules(historical, id);
 	EXPECT_EQ(now["siege"], old["siege"]);
 	EXPECT_EQ(now["warMachineShop"], old["warMachineShop"]);

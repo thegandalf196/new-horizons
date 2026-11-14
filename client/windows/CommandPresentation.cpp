@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "CommandPresentation.h"
+#include "../widgets/LeadershipEfficiencyPresentation.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
@@ -77,6 +78,8 @@ std::string modifiers(const CommandModifiers & values)
 
 std::string commandHelp(const CGHeroInstance & hero)
 {
+	if(newHorizonsHeroes::usesLeadershipEfficiency(hero.getCapabilityRules()))
+		return leadershipPresentation::heroDetailText(hero);
 	if(const auto cap = hero.getLeadershipCapacity())
 	{
 		const auto & rules = hero.getCapabilityRules();

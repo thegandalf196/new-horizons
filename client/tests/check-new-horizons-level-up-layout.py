@@ -13,6 +13,8 @@ sys.path.insert(0, str(ROOT / "tools/tests"))
 from nhart_test_resources import ArtPath
 LEVEL = (ROOT / "client/windows/GUIClasses.cpp").read_text(encoding="utf-8")
 LEVEL += (ROOT / "client/windows/CLevelWindow.cpp").read_text(encoding="utf-8")
+LEVEL += (ROOT / "client/windows/CLevelWindowChoices.cpp").read_text(encoding="utf-8")
+LEVEL += (ROOT / "client/windows/LevelUpChoiceCards.cpp").read_text(encoding="utf-8")
 LEVEL_HEADER = (ROOT / "client/windows/CLevelWindow.h").read_text(encoding="utf-8")
 HERO = (ROOT / "client/windows/CHeroWindow.cpp").read_text(encoding="utf-8")
 HERO += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
@@ -32,19 +34,14 @@ def require(source: str, needle: str, label: str) -> None:
 
 
 def verify_paged_columns() -> None:
-    """Exercise the same two-per-category paging contract used by the UI."""
-    for skill_count, perk_count in ((2, 2), (3, 1), (1, 3), (5, 4)):
-        pages = max((skill_count + 1) // 2, (perk_count + 1) // 2)
-        seen_skills = set()
-        seen_perks = set()
-        for page in range(pages):
-            skills = list(range(page * 2, min(skill_count, page * 2 + 2)))
-            perks = list(range(page * 2, min(perk_count, page * 2 + 2)))
-            assert len(skills) <= 2 and len(perks) <= 2
-            seen_skills.update(skills)
-            seen_perks.update(perks)
-        assert seen_skills == set(range(skill_count))
-        assert seen_perks == set(range(perk_count))
+    """Both mandatory modal modes retain their complete pools across pages."""
+    for count, page_size in ((1, 2), (2, 2), (5, 2), (2, 4), (4, 4), (9, 4)):
+        seen = set()
+        for page in range((count + page_size - 1) // page_size):
+            choices = list(range(page * page_size, min(count, (page + 1) * page_size)))
+            assert len(choices) <= page_size
+            seen.update(choices)
+        assert seen == set(range(count))
 
 
 def main() -> None:
@@ -80,7 +77,7 @@ def main() -> None:
     require(LEVEL, "skillChoiceBox->selectFirst", "default skill selection")
     require(LEVEL, 'choiceHeaders.push_back', "skill/perk column headers")
     require(LEVEL, "displayedChoiceOrder", "category-aware choice ordering")
-    require(LEVEL, '"core:necromancy"', "classic Necromancy perk icon alias")
+    require(LEVEL, "SecondarySkill::NECROMANCY", "classic Necromancy perk icon alias")
     require(LEVEL, 'newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)', "shared perk icon lookup")
     require(LEVEL, 'newHorizonsPerkHelp::format(hero, perk.selection.skillId', "level-up perk owning-skill help")
     require(PERK_ICONS, '"new-horizons:necromancy.boneCollector"', "preserved Bone Collector icon key")

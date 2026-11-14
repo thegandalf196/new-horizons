@@ -276,6 +276,7 @@ InitialExportBattleSubject::InitialExportBattleSubject(Subject subject, std::uni
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		leadershipCompositions[side] = this->subject->getBattle()->getLeadershipComposition(side);
 		metamagicPointStates[side] = this->subject->getBattle()->getMetamagicPointState(side);
 		wisdomCombatStates[side] = this->subject->getBattle()->getWisdomCombatState(side);
 	}

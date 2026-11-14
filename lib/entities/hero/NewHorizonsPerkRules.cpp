@@ -308,7 +308,7 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
 		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "commandPolicyVersion", "elementalAttunementPolicy", "connoisseurPolicy",
-		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion"});
+		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion", "unifiedSkillProgressionVersion"});
 	validatePassiveFactionPolicies(rules);
 	newHorizonsWarfare::validatePolicy(rules);
 	quickStudyRerollInterval(rules);
@@ -317,7 +317,7 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 		require(!rules.Struct().contains("commandPolicyVersion"), "finite Command policy conflicts with Command/Authority");
 		require(!rules.Struct().contains("necromancyPolicy")
 			|| (rules["necromancyPolicy"].isStruct() && rules["necromancyPolicy"]["version"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& (rules["necromancyPolicy"]["version"].Integer() == 2 || rules["necromancyPolicy"]["version"].Integer() == 3)), "Command/Authority requires Necromancy policy2 or policy3");
+			&& (rules["necromancyPolicy"]["version"].Integer() >= 2 && rules["necromancyPolicy"]["version"].Integer() <= 4)), "Command/Authority requires a supported Necromancy policy");
 		require(rules["warfarePolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
 			&& rules["warfarePolicyVersion"].Integer() == 1, "warfarePolicyVersion");
 	}
@@ -355,6 +355,12 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 			&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION,
 			"perkProgressionPolicyVersion");
 		require(usesR2PerkOffers(rules), "strict perk progression requires captured weight policy2");
+	}
+	if(rules.Struct().contains("unifiedSkillProgressionVersion"))
+	{
+		require(rules["unifiedSkillProgressionVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& rules["unifiedSkillProgressionVersion"].Integer() == 1, "unifiedSkillProgressionVersion");
+		require(usesStrictPerkProgression(rules), "unified progression requires ordered one-per-tier perks");
 	}
 	require(rules["sourceDocument"].isString() && !rules["sourceDocument"].String().empty(), "sourceDocument");
 	require(rules["sourceSha256"].isString() && rules["sourceSha256"].String().size() == 64, "sourceSha256");

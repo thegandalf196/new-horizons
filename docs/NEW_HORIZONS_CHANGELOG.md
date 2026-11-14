@@ -7,90 +7,72 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.91 Early Access
+
+**A new game is required, including from 0.90.** Current and minimum save format
+are **1159**. Older files are rejected before payload loading and remain unchanged;
+use their matching older build to continue them. Development source, published
+release assets and promoted playable snapshots are separate identities.
+
+- Restores numerical **Leadership**, derived from each class's actual Attack and
+  Defense growth, across all 18 classes.
+- Retires persistent army Command, slot-tier locks and repeating enhancements.
+  Every hero has seven unrestricted slots and may command oversized stacks.
+- **Square-root efficiency** reduces the offensive contribution of creatures
+  above each stack's full-efficiency capacity. Additional creatures always add
+  damage and retain full HP. The multiplier applies to direct melee, ranged and
+  retaliation damage, including magical creature attacks; spells and war machines
+  remain separate.
+- **Authority** provides +15% / +30% / +45% effective Leadership, with ten passive
+  alternatives for creature category, intrinsic shooting, faction and composition.
+  Composition-sensitive perks use the permanent battle-start army and do not
+  switch when stacks die or temporary creatures arrive.
+- **Necromancy** restores 50% / 60% / 70% Skeleton-family Requirement discounts.
+  **Lord of the Dead** replaces that discount with 90% total and grants no HP bonus.
+- **Discipline** again names the +1 / +2 / +3 Morale Skill. **Warfare** retains
+  battlefield Orders and the shared Spell-or-Order Hero Action, with no finite
+  Command payment.
+- Each acquired Skill rank immediately grants one mandatory choice from its
+  complete corresponding perk tier. Starting Skills, external teachers,
+  multi-rank rewards and AI heroes follow the same rule; pending choices persist.
+- Preserves the native Heroes III/VCMI XP curve and existing XP accelerators;
+  this migration does not silently rebalance Learning, Prodigy or XP awards.
+- Uses compact red broken-sword efficiency indicators on portraits and below
+  battlefield creature counters. The default-enabled display setting is visual
+  only; right-click inspection always provides detailed efficiency information.
+- Displays a lance cursor and the creature's current maximum attack distance for
+  Reach. Wisps display Reach 6; approach selection follows a real clear corridor,
+  including the exposed edge of doublewide targets.
+- Fits full creature animations in both Conflux Fort overview layouts, preserving
+  wings and other artwork previously cropped by the portrait viewport.
+- Retains the independent Castle starting-package amendment, stock neutral counts,
+  recruitment growth, Magic Arrow, Elemental Attunement and other faction rules.
+- Renames Energy Elemental to **Plasma Elemental** without changing its stable ID.
+
+These entries describe development rules. Compilation, native checks, rendered
+acceptance, measured performance and release publication are separate gates.
+
 ## 0.90 Early Access
 
-**A new game is required, including when upgrading from 0.89 or 0.89.1.**
-Current and minimum save format are **1158**. Earlier saves are rejected before
-payload loading, not converted, rewritten or deleted. Keep backups and the
-matching older version to continue older playthroughs.
+The published Command/Authority release requires format **1158** and a new game
+from 0.89.x. It introduced persistent army-slot progression and captured
+Command enhancements, universal Authority, passive Warfare and no finite Order
+payment. Those army-progression mechanics are superseded in current development
+by the Leadership migration above; existing files are not converted.
 
-Special thanks to **Matrix4767**, whose extensive discussions on Discord helped
-shape and refine the mechanics, design, and direction of this release.
+In-battle auto-resolve uses Quick Combat AI. Fast remains the default for human
+Quick Combat and AI-only auto-resolved battles, with Full available in Battle
+settings. Reduced search may change decisions and casualties; no universal
+instant-combat timing is promised.
 
-### Leadership and Army Composition Rework
+Fresh neutrals use 100% stock counts without Leadership calibration, while
+recruitment growth remains independently 50%. The generated Castle starting
+package replaces Griffins with Swordsmen except for genuine Griffin specialists.
+Magic Arrow Overcharge and deterministic Elemental Attunement retain their
+existing profiles; retired Reborn-stack Conflux effects are not restored.
 
-- **Restored Leadership Secondary Attribute**: Leadership returns as a core Secondary
-  Attribute reflecting martial command capacity. Hero starting Leadership and growth
-  follow the class's actual Primary Attribute progression ($M = A_g + D_g$,
-  $L_{\text{start}} = 500 + 75M$, $L_{\text{growth}} = 20 + 5M$ per level) across all
-  18 hero classes.
-- **Seven Unrestricted Army Slots**: Every hero has all seven army slots unconditionally
-  available from level 1. Creatures are no longer restricted to specific slots by tier.
-- **Square-Root Leadership Efficiency**: When a hero commands a stack exceeding their
-  full-efficiency capacity ($C = \max(1, \lfloor L/R \rfloor)$), offensive direct creature
-  attacks scale with diminishing returns via square-root efficiency
-  ($N_{\text{effective}} = C + (N - C)\sqrt{C / N}$), ensuring stacks can be arbitrarily
-  large and additional units always increase net damage without hard prohibitions. Stack
-  hit points, retaliations, defense, speed, and adventure mobility remain unaffected.
-- **New Hero UI Layout**: Completely refreshed hero status panel with dedicated readouts
-  for Leadership, Mana, Mana Regeneration, Vision range, and Movement, alongside an
-  integrated hero Experience progression bar and custom icons.
-
-### Skills and perks
-
-- **Authority Redesign**: Universal secondary skill specializing Leadership effectiveness
-  (+15% Basic, +30% Advanced, +45% Expert). Features 10 redesigned perks tailored to army
-  composition: Massed Ranks (+25% Core), Veteran Cadre (+25% Elite/Champion), Familiar
-  Standards (+20% native faction), Foreign Legion (+30% non-native), Officer Corps (+25%
-  melee), Missile Command (+25% ranged), Regimental Organization (+25% for 3+ distinct
-  creature lines), Combined Arms (+35% for all three tiers present), Grand Marshal (+25%
-  all stacks), and Master of Legions (+50% Core).
-- **Discipline**: Restored original name for the Morale-boosting secondary skill (+1/+2/+3
-  Morale).
-- **Warfare**: Preserved Might-exclusive skill specializing battlefield Orders and tactical
-  Hero Actions.
-- **Necromancy & Skeleton Discounts**: Necromancy restores creature Leadership Requirement
-  reductions for Skeletons and Skeleton Warriors (50% Basic, 60% Advanced, 70% Expert).
-  The *Lord of the Dead* perk provides a 90% total Skeleton Leadership Requirement discount.
-- **Metamagic**: Spells scale dynamically with hero round points (starting at 1,
-  gaining 1 per round up to a maximum of 12; each point increases spell
-  effectiveness and Magic Penetration). Includes ten revised perks such as
-  **Arcane Wellspring** and Halon's **Metamagic Adept**.
-- **Town & School Perks**:
-  - **Dungeon**: **Shadow Hex** (+15% spell damage vs flanked enemies) and
-    **Exposed Weakness** (+20% spell damage following flanking melee hits).
-  - **Conflux**: **Elemental Conduit** (+15% spell damage per living Reborn stack)
-    and **Elemental Cataclysm** (20% of fallen Reborn stack HP dealt to adjacent
-    enemies).
-  - **Light / Divine**: **Divine Mandate** automatically triggers a beneficial Light
-    spell after an Order without Mana or Hero Action costs.
-- **Comprehensive 32-Skill Matrix**: Full 32-skill progression with 10 authored
-  perks per skill.
-
-### Combat and Quick Combat
-
-- **In-Battle Auto-Combat (`Q`)**: Pressing `Q` during manual tactical combat now
-  resolves with fast Quick Combat AI (`BattleAIQuick`), instantly finishing the
-  battle rather than running the deliberative, turn-by-turn tactical AI.
-- **Quick Combat AI Settings**: Choose between **Fast** (default for Quick Combat
-  and AI-vs-AI battles, drastically reducing auto-resolve duration) and **Full**
-  (the comprehensive reference search) in Settings → Battle.
-- **Magic Arrow Overcharge**: Selectable Overcharge tiers empower Magic Arrow with
-  substantially amplified damage in exchange for non-linear Mana costs, giving
-  the fundamental spell scaling utility into late-game engagements.
-- **Elemental Attunement**: Replaces Conflux Elemental Rebirth; casting elemental
-  spells directly empowers and augments matching elemental stacks on the field.
-
-### Map and balance adjustments
-
-- **Castle Starting Armies**: Default Castle starting setups replace Griffins with
-  Swordsmen (and Royal Griffins with Crusaders); Griffin specialists uniquely
-  retain their Griffin lineage.
-- **100% Stock Neutrals**: Restored authentic 100% stock neutral encounter sizes
-  without Leadership calibration. Map recruitment growth remains independently
-  configured at 50%.
-- **Pathfinding**: Fixed Water Walk landing rejection when a hero lands with
-  exactly zero remaining Movement Points.
+Special thanks to **Matrix4767** for extensive discussions that helped shape
+and refine the mechanics and direction of this release.
 
 ## 0.89.1 Early Access
 
@@ -317,7 +299,7 @@ Start a new scenario to use the revised rules; existing saves retain their captu
 rules. Detailed effects and formulas are in the
 [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## Current development baseline — 24 October 2026
+## Historical development baseline — 24 October 2026
 
 This comparison describes the current development version, including changes after
 the published Early Access releases. Older saved games may retain earlier rules. New Horizons remains in development;

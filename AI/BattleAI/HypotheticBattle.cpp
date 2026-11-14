@@ -87,6 +87,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	nextId = 0x00F00000;
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
+		leadershipCompositions.at(side) = realBattle->getBattle()->getLeadershipComposition(side);
 		captureHeroActionState(*realBattle, side);
 		captureSideCombatState(*realBattle, side);
 	}

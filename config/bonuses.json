@@ -539,7 +539,7 @@
 	},
 	"LONG_REACH":
 	{
-		"description": "Long Reach: physical melee attacks across intervening hexes, requiring a clear direct corridor."
+		"description": "Reach ${reach}: Can attack in melee up to ${reach} hexes away along a clear straight corridor."
 	},
 
 	"PRISM_HEX_ATTACK_BREATH":

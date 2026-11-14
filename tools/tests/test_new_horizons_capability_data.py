@@ -136,11 +136,51 @@ class CapabilityDataTest(unittest.TestCase):
 
     def test_current_ruleset_restores_leadership_and_retires_command(self):
         self.assertEqual(self.rules['schemaVersion'], 1)
-        self.assertEqual(self.rules['rulesetVersion'], 6)
+        self.assertEqual(self.rules['rulesetVersion'], 7)
         self.assertNotIn('armyCommand', self.rules)
         self.assertEqual(self.rules['classProfiles'], REWORK_CLASS_PROFILES)
         self.assertEqual(self.rules['leadership']['globalScalePercent'], 100)
         self.assertEqual(self.rules['leadership']['creatureRequirements'], CANONICAL_LEADERSHIP_REQUIREMENTS)
+
+    def test_efficiency_policy_is_complete_configurable_and_version_bound(self):
+        schema = json.loads((ROOT / 'config/schemas/newHorizonsCapabilities.json').read_text())
+        validator = Draft4Validator(schema)
+        policy = self.rules['leadership']['efficiencyPolicy']
+        self.assertEqual(policy['authorityRankBonusPercent'], [0, 15, 30, 45])
+        self.assertEqual(policy['authorityPerkBonusPercent'], {
+            'massedRanks': 25, 'veteranCadre': 25, 'familiarStandards': 20,
+            'foreignLegion': 30, 'officerCorps': 25, 'missileCommand': 25,
+            'regimentalOrganization': 25, 'combinedArms': 35,
+            'grandMarshal': 25, 'masterOfLegions': 50,
+        })
+        for key in policy:
+            candidate = copy.deepcopy(self.rules)
+            del candidate['leadership']['efficiencyPolicy'][key]
+            self.assertFalse(validator.is_valid(candidate), key)
+        for bad in (None, True, -1, '25'):
+            candidate = copy.deepcopy(self.rules)
+            candidate['leadership']['efficiencyPolicy']['authorityPerkBonusPercent']['massedRanks'] = bad
+            self.assertFalse(validator.is_valid(candidate), bad)
+        changed = copy.deepcopy(self.rules)
+        changed['leadership']['efficiencyPolicy']['authorityRankBonusPercent'][1] = 16
+        changed['leadership']['efficiencyPolicy']['authorityPerkBonusPercent']['massedRanks'] = 26
+        validator.validate(changed)
+        historical = copy.deepcopy(self.rules)
+        historical['rulesetVersion'] = 6
+        historical.pop('defaultStartingArmyVersion')
+        self.assertFalse(validator.is_valid(historical))
+        historical['leadership'].pop('efficiencyPolicy')
+        validator.validate(historical)
+
+    def test_castle_package_has_independent_captured_policy(self):
+        self.assertEqual(self.rules['defaultStartingArmyVersion'], 1)
+        validator = Draft4Validator(json.loads((ROOT / 'config/schemas/newHorizonsCapabilities.json').read_text()))
+        for bad in (None, True, 0, 2, '1'):
+            candidate = copy.deepcopy(self.rules)
+            candidate['defaultStartingArmyVersion'] = bad
+            self.assertFalse(validator.is_valid(candidate), bad)
+        self.assertEqual(self.rules['leadership']['upgradeMultiplierPercent'], 100)
+        self.assertEqual(self.rules['leadership']['upgradeRounding'], 1)
 
     def test_historical_v4_fixture_preserves_retired_tables(self):
         fixture = (ROOT / 'test/hero/HistoricalCapabilityRules.h').read_text()
@@ -152,7 +192,7 @@ class CapabilityDataTest(unittest.TestCase):
         self.assertEqual(captured['siege'], self.rules['siege'])
         self.assertEqual(captured['warMachineShop'], self.rules['warMachineShop'])
 
-    def test_v6_schema_validates_current_rules_and_excludes_command(self):
+    def test_v7_schema_validates_current_rules_and_excludes_command(self):
         schema = json.loads((ROOT / 'config/schemas/newHorizonsCapabilities.json').read_text())
         Draft4Validator.check_schema(schema)
         validator = Draft4Validator(schema)
@@ -181,7 +221,8 @@ class CapabilityDataTest(unittest.TestCase):
 
     def test_module_description_identifies_current_command_policy(self):
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
-        self.assertIn('Command/Authority', module['description'])
+        self.assertIn('Leadership', module['description'])
+        self.assertIn('1159', module['description'])
         self.assertIn('older saves are not converted', module['description'])
         self.assertNotIn('upgraded creatures require 120%', module['description'])
 

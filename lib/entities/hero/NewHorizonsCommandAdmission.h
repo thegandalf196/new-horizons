@@ -5,9 +5,9 @@
 
 namespace newHorizonsHeroes
 {
-DLL_LINKAGE void validateCommandPerkSerialization(const JsonNode & perks, bool supported);
+DLL_LINKAGE void validateCommandPerkSerialization(const JsonNode & perks, bool supported, bool leadershipSupported = false);
 DLL_LINKAGE void validateCommandCaptures(const JsonNode & capabilities, const JsonNode & perks,
-	const JsonNode & combat, bool supported);
-DLL_LINKAGE void validateCommandOverrides(const JsonNode & overrides, bool supported);
-DLL_LINKAGE void validateCommandCrossover(const JsonNode & hero, bool supported);
+	const JsonNode & combat, bool supported, bool leadershipSupported = false);
+DLL_LINKAGE void validateCommandOverrides(const JsonNode & overrides, bool supported, bool leadershipSupported = false);
+DLL_LINKAGE void validateCommandCrossover(const JsonNode & hero, bool supported, bool leadershipSupported = false);
 }

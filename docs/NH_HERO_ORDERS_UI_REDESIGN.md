@@ -10,9 +10,11 @@ work; a single-Hero restriction is not implied.
 
 Map actual saved data and available operations to overview/details or purposeful
 tabs. Preserve portrait, equipment/backpack, army interaction, navigation and help.
-Show total/base/growth, Command's natural/Authority breakdown, persistent slot
-permissions/enhancements and contextual rule-family-absent states accurately.
-Current creature views must omit retired Leadership costs/count budgets. Do not
+Show total/base/growth, Leadership and Authority-adjusted stack efficiency
+accurately. Persistent Command permissions and enhancements are retired. Creature
+information retains Leadership Requirement and capacity as efficiency information,
+not admission limits; the battlefield visibility setting never hides detailed
+right-click inspection. Do not
 paint labels into a generated screenshot or expose fictitious editable operations.
 
 ## Actual integration surfaces

@@ -921,71 +921,9 @@ CStackWindow::MainSection::MainSection(CStackWindow * owner, int yOffset, bool s
 	}
 
 	if(showLeadership)
-	{
-		const auto leadershipCount = parent->info->stack
-			? parent->info->creatureCount
-			: (parent->info->stackNode ? parent->info->stackNode->getCount() : 1);
-		int leadershipRequirement = 0;
-		std::optional<newHorizonsHeroes::LeadershipSlotCapacity> leadershipCapacity;
-		const auto * hero = parent->info->owner;
-		if(!hero && parent->info->stack && parent->info->stack->getBattle())
-			hero = parent->info->stack->getBattle()->battleGetOwnerHero(parent->info->stack);
-		if(hero)
-		{
-			leadershipCapacity = hero->getLeadershipSlotCapacity(parent->info->creature->getId());
-			if(leadershipCapacity)
-				leadershipRequirement = leadershipCapacity->requirement;
-		}
-		else
-		{
-			const auto & capabilityRules = GAME->interface()->cb->getHeroCapabilityRules();
-			if(newHorizonsHeroes::usesRules(capabilityRules) && capabilityRules["rulesetVersion"].Integer() >= 2)
-				leadershipRequirement = newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
-					capabilityRules, parent->info->creature->getId());
-		}
-
-		const auto costText = leadershipRequirement > 0 ? std::to_string(leadershipRequirement) : "--";
-		const auto capacityText = leadershipCapacity
-			? " (" + std::to_string(leadershipCount) + "/" + std::to_string(leadershipCapacity->maximum) + ")"
-			: "";
-		addStatLabel(EStat::LEADERSHIP, costText + capacityText);
-
-		std::string tooltip = "{Leadership Cost: " + costText + "}\n";
-		if(leadershipCapacity)
-		{
-			const int64_t L_base = leadershipCapacity->leadership;
-			const int64_t R_eff = leadershipCapacity->requirement;
-			const int64_t C = leadershipCapacity->maximum;
-			const double eff = newHorizonsHeroes::squareRootLeadershipEfficiency(leadershipCount, C);
-			const int effPct = std::clamp(static_cast<int>(std::round(eff * 100.0)), 1, 100);
-			tooltip += "Leadership Efficiency: " + std::to_string(effPct) + "%\n"
-				+ "Stack Size: " + std::to_string(leadershipCount) + "\n"
-				+ "Full-Efficiency Capacity: " + std::to_string(C) + " creatures\n"
-				+ "Hero Leadership: " + std::to_string(L_base) + "\n"
-				+ "Creature Leadership Requirement: " + std::to_string(R_eff) + "\n\n";
-			if(effPct < 100)
-			{
-				const int64_t effectiveCount = static_cast<int64_t>(std::round(leadershipCount * eff));
-				tooltip += "Offensive efficiency is reduced to " + std::to_string(effPct) + "% ("
-					+ std::to_string(effectiveCount) + " effective creatures contributing damage).\n"
-					+ "Defense, health, speed, and retaliations remain fully intact.";
-			}
-			else
-			{
-				tooltip += "This stack operates at 100% full offensive efficiency.";
-			}
-		}
-		else
-		{
-			tooltip += "\nEach creature of this type requires " + costText
-				+ " Leadership from the commanding hero for full combat efficiency.\n"
-				+ "Stacks exceeding the hero's Leadership capacity fight with smoothly scaled offensive efficiency via square root.";
-		}
-		leadershipArea = std::make_shared<LRClickableAreaWText>(
-			Rect(114, iconY[statRow(EStat::LEADERSHIP)], 194, 20),
-			"Leadership Cost: " + costText + capacityText,
-			tooltip);
-	}
+		addLeadershipReadout(iconY[statRow(EStat::LEADERSHIP)], parent->info->owner,
+			parent->info->stack, parent->info->creature->getId(),
+			parent->info->stackNode ? parent->info->stackNode->getCount() : std::max(1u, parent->info->creatureCount));
 
 	if(showRank)
 	{

@@ -5,6 +5,8 @@
 #include "StdInc.h"
 
 #include "../server/battles/HeroCommandFixture.h"
+#include "hero/HistoricalCapabilityRules.h"
+#include "HistoricalFactionPerkRules.h"
 #include "AI/BattleAI/BattleAI.h"
 #include "AI/Nullkiller2/AIGateway.h"
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
@@ -13,6 +15,7 @@
 #include "lib/callback/CCallback.h"
 #include "lib/callback/IClient.h"
 #include "lib/entities/hero/NewHorizonsLeadership.h"
+#include "lib/battle/NewHorizonsDemonicGating.h"
 #include "lib/mapObjects/CGTownInstance.h"
 #include "lib/networkPacks/PacksForServer.h"
 #include "lib/serializer/CMemorySerializer.h"
@@ -82,6 +85,11 @@ public:
 class NewHorizonsDemonicReserveAITest : public HeroCommandFixture
 {
 protected:
+	NewHorizonsDemonicReserveAITest()
+	{
+		// Historical reserve snapshots vary independently of competing Orders.
+		useRevisedOrders = true;
+	}
 	CGTownInstance * town = nullptr;
 	std::unique_ptr<ReserveLoopback> client;
 	std::shared_ptr<CCallback> callback;
@@ -98,9 +106,13 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		const auto & orders = loaded->getSettings().getValue(EGameSettings::COMBAT_HERO_COMMANDS);
+		ASSERT_EQ(orders["rulesetVersion"].Integer(), 4);
+		ASSERT_EQ(orders["warfarePolicyVersion"].Integer(), 1);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		auto capabilities = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
+		// This suite characterizes the retired reserve-era gating mechanics.
+		auto capabilities = historicalCapabilityRulesV4();
 		// Deterministic capacity boundary, not AI/balance tuning: each distinct
 		// ordinary Inferno row fits one creature, and surplus cannot merge into it.
 		capabilities["classProfiles"]["core:demoniac"]["base"] = JsonNode(1000);
@@ -110,7 +122,7 @@ protected:
 		capabilities["leadership"]["creatureRequirements"]["core:gog"] = JsonNode(1000);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capabilities);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			historicalFactionPerkRules());
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
 	}
@@ -141,6 +153,8 @@ protected:
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(GATING)),
 			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		ASSERT_TRUE(attackerSideHero->getDemonicReserve().empty());
+		ASSERT_EQ(attackerSideHero->getCapabilityRules()["rulesetVersion"].Integer(), 4);
+		ASSERT_FALSE(newHorizonsDemonicGating::usesTemporaryGating(attackerSideHero));
 		for(const auto & [slot, stack] : attackerSideHero->Slots())
 		{
 			const auto capacity = attackerSideHero->getLeadershipSlotCapacity(stack->getCreatureID());

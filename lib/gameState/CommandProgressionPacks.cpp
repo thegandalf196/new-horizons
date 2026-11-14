@@ -21,7 +21,8 @@ void GameStatePackVisitor::visitSetSecSkill(SetSecSkill & pack)
 void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const auto * hero = gs.getHero(pack.heroId);
-	if(hero && pack.skills.empty())
+	if(hero && (pack.perkOnly || pack.restoredOffer
+		|| (!newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules) && pack.skills.empty())))
 	{
 		newHorizonsHeroes::applyLevelUpOffer(gs.getHero(pack.heroId), pack);
 		return;

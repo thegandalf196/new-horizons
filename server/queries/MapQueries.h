@@ -122,6 +122,7 @@ public:
 	bool requestReroll(PlayerColor player, size_t skillIndex = 0);
 	std::set<SecondarySkill> rerollCandidates() const;
 	bool hasOptionalPolicy() const;
+	bool blocksPack(const CPackForServer * pack) const override;
 
 	void onRemoval(PlayerColor color) override;
 	bool isValidReply(std::optional<int32_t> reply) const override;

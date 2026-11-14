@@ -319,7 +319,7 @@ public:
 	void selectCommandEnhancement(int64_t milestone, newHorizonsHeroes::CommandEnhancement enhancement);
 	JsonNode commandProgressionToJson() const;
 	void restoreCommandProgression(const JsonNode & node);
-	void validateCommandSerialization(bool supported) const;
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const;
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
 	const nativeRules::PreparedPilotPerks * getPreparedPilotPerks() const { return preparedPilotPerks.get(); }
@@ -762,7 +762,8 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
-			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 			nativeRules::validatePilotPerks(perkState.rules, false);
 		if(h.saving)
@@ -1027,16 +1028,21 @@ public:
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CAPABILITIES))
 		{
-			h & capabilityRules;
-			if(!h.saving)
+			if(h.saving) h & capabilityRules;
+			else
 			{
-				newHorizonsHeroes::validateArmyCommandSerialization(capabilityRules,
+				JsonNode candidate;
+				h & candidate;
+				newHorizonsHeroes::validateLeadershipEfficiencySerialization(candidate,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				newHorizonsHeroes::validateArmyCommandSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
-				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(capabilityRules,
+				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
-				newHorizonsHeroes::validateGlyphsOfFearSerialization(capabilityRules,
+				newHorizonsHeroes::validateGlyphsOfFearSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
-				newHorizonsHeroes::validateResolvedCapabilityRules(capabilityRules);
+				newHorizonsHeroes::validateResolvedCapabilityRules(candidate);
+				capabilityRules = std::move(candidate);
 			}
 		}
 		else if(!h.saving)
@@ -1269,7 +1275,8 @@ public:
 		if(!h.saving)
 		{
 			commandLevelEventPending = false;
-			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		}
 	}
 };

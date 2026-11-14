@@ -151,6 +151,29 @@ void validateGlyphsOfFearAura(const JsonNode & node)
 	require(integer(node["morale"], -1000, -1), "Glyphs of Fear hostile Morale");
 }
 
+void validateSiege(const JsonNode & rules)
+{
+	if(rules["rulesetVersion"].Integer() < 3)
+	{
+		fields(rules["siege"], {"ballistaDamageMultiplier"});
+		rankValues(rules["siege"]["ballistaDamageMultiplier"], 1, 100, 1);
+	}
+	else
+	{
+		fields(rules["siege"], {"ballistaDamageMultiplier", "siegeRating", "outputs", "directControlChance"});
+		rankValues(rules["siege"]["ballistaDamageMultiplier"], 1, 100, 1);
+		rankValues(rules["siege"]["siegeRating"], 0, 10000, 0);
+		fields(rules["siege"]["outputs"], {"ballistaDamage", "catapultStructuralDamage", "firstAidHealing", "defensiveTowerDamage"});
+		for(const auto * output : {"ballistaDamage", "catapultStructuralDamage", "firstAidHealing", "defensiveTowerDamage"})
+		{
+			fields(rules["siege"]["outputs"][output], {"base", "siegeCoefficientHalf"});
+			require(integer(rules["siege"]["outputs"][output]["base"], 0, 1000000), std::string(output) + " base");
+			require(integer(rules["siege"]["outputs"][output]["siegeCoefficientHalf"], 0, 1000000), std::string(output) + " coefficient");
+		}
+		rankValues(rules["siege"]["directControlChance"], 0, 100, 0);
+	}
+}
+
 void common(const JsonNode & rules, bool resolved)
 {
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
@@ -173,7 +196,7 @@ void common(const JsonNode & rules, bool resolved)
 		require(!rules.Struct().contains("leadership") && !rules.Struct().contains("classProfiles")
 			&& !rules.Struct().contains("profile"), "v5 cannot contain retired Leadership tables");
 	}
-	else if(rules["rulesetVersion"].Integer() == 6)
+	else if(rules["rulesetVersion"].Integer() >= 6)
 	{
 		require(!rules.Struct().contains("armyCommand"), "v6 cannot contain retired armyCommand");
 	}
@@ -185,7 +208,8 @@ void common(const JsonNode & rules, bool resolved)
 	}
 	else if(rules["rulesetVersion"].Integer() != 5)
 	{
-		fields(rules["leadership"], {"globalScalePercent", "upgradeMultiplierPercent", "upgradeRounding", "creatureRequirements"});
+		fields(rules["leadership"], {"globalScalePercent", "upgradeMultiplierPercent", "upgradeRounding", "creatureRequirements",
+			"efficiencyPolicy", "resolvedCreatureRequirements", "resolvedCreatureLines"});
 		require(integer(rules["leadership"]["globalScalePercent"], 1, 10000), "globalScalePercent");
 		require(integer(rules["leadership"]["upgradeMultiplierPercent"], 1, 10000), "upgradeMultiplierPercent");
 		require(integer(rules["leadership"]["upgradeRounding"], 1, 1000), "upgradeRounding");
@@ -197,26 +221,15 @@ void common(const JsonNode & rules, bool resolved)
 			require(creatures.insert(resolveCreature(key)).second, "duplicate resolved creature");
 			require(integer(value, 1, 1000000), "creature Leadership Requirement");
 		}
+		if(rules["rulesetVersion"].Integer() >= 7)
+			validateLeadershipEfficiencyPolicy(rules["leadership"], resolved);
+		else
+			require(rules["leadership"]["efficiencyPolicy"].isNull(), "Legacy rules cannot enable Leadership Efficiency");
 	}
-	if(rules["rulesetVersion"].Integer() < 3)
-	{
-		fields(rules["siege"], {"ballistaDamageMultiplier"});
-		rankValues(rules["siege"]["ballistaDamageMultiplier"], 1, 100, 1);
-	}
-	else
-	{
-		fields(rules["siege"], {"ballistaDamageMultiplier", "siegeRating", "outputs", "directControlChance"});
-		rankValues(rules["siege"]["ballistaDamageMultiplier"], 1, 100, 1);
-		rankValues(rules["siege"]["siegeRating"], 0, 10000, 0);
-		fields(rules["siege"]["outputs"], {"ballistaDamage", "catapultStructuralDamage", "firstAidHealing", "defensiveTowerDamage"});
-		for(const auto * output : {"ballistaDamage", "catapultStructuralDamage", "firstAidHealing", "defensiveTowerDamage"})
-		{
-			fields(rules["siege"]["outputs"][output], {"base", "siegeCoefficientHalf"});
-			require(integer(rules["siege"]["outputs"][output]["base"], 0, 1000000), std::string(output) + " base");
-			require(integer(rules["siege"]["outputs"][output]["siegeCoefficientHalf"], 0, 1000000), std::string(output) + " coefficient");
-		}
-		rankValues(rules["siege"]["directControlChance"], 0, 100, 0);
-	}
+	if(rules.Struct().contains("defaultStartingArmyVersion"))
+		require(rules["rulesetVersion"].Integer() >= 7 && integer(rules["defaultStartingArmyVersion"], 1, 1),
+			"Invalid default starting-army policy");
+	validateSiege(rules);
 	if(rules["rulesetVersion"].Integer() < 4)
 		require(rules["warMachineShop"].isNull(), "legacy rules cannot contain warMachineShop");
 	else
@@ -230,10 +243,22 @@ void profile(const JsonNode & node)
 	require(integer(node["perLevel"], 0, 1000000), "class leadership perLevel");
 }
 
+void validateResolvedSiegeContext(const JsonNode & rules)
+{
+	// Current captured Leadership metadata was admitted at capture/load. A raw
+	// Siege read still checks its bounded arithmetic context before any rank.
+	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand", "defaultStartingArmyVersion"});
+	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
+	require(integer(rules["rulesetVersion"], 1, CAPABILITY_RULESET_VERSION), "rulesetVersion");
+	validateSiege(rules);
+	profile(rules["profile"]);
+}
+
 void resolvedRank(const JsonNode & rules, int rank)
 {
 	require(usesRules(rules), "resolved snapshot required for capability arithmetic");
-	validateResolvedCapabilityRules(rules);
+	if(usesLeadershipEfficiency(rules)) validateResolvedSiegeContext(rules);
+	else validateResolvedCapabilityRules(rules);
 	require(rank >= 0 && rank <= 3, "skill rank outside NONE..EXPERT");
 }
 }
@@ -254,7 +279,7 @@ void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "classProfiles", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand", "defaultStartingArmyVersion"});
 	common(rules, false);
 	std::set<int> seen;
 	if(rules["rulesetVersion"].Integer() != 5)
@@ -286,7 +311,7 @@ void validateResolvedCapabilityRules(const JsonNode & rules)
 {
 	if(!usesRules(rules))
 		return;
-	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand"});
+	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand", "defaultStartingArmyVersion"});
 	common(rules, true);
 	if(rules["rulesetVersion"].Integer() != 5)
 		profile(rules["profile"]);
@@ -302,6 +327,10 @@ JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass)
 		result[key] = rules[key];
 	if(rules["rulesetVersion"].Integer() != 5)
 		result["leadership"] = rules["leadership"];
+	if(rules["rulesetVersion"].Integer() >= 7)
+		result["leadership"] = resolveLeadershipEfficiencyMetadata(rules["leadership"]);
+	if(rules.Struct().contains("defaultStartingArmyVersion"))
+		result["defaultStartingArmyVersion"] = rules["defaultStartingArmyVersion"];
 	if(rules["rulesetVersion"].Integer() >= 4)
 		result["warMachineShop"] = rules["warMachineShop"];
 	if(!rules["skeletonTransformer"].isNull())
@@ -396,6 +425,7 @@ int capabilitySiegeRating(const JsonNode & rules, int warMachinesRank)
 int capabilitySiegeOutput(const JsonNode & rules, int siegeRating, const std::string & output)
 {
 	require(usesRules(rules) && rules["rulesetVersion"].Integer() >= 3, "Siege output requires capability ruleset v3");
+	if(usesLeadershipEfficiency(rules)) validateResolvedSiegeContext(rules);
 	require(siegeRating >= 0, "Siege rating must be nonnegative");
 	const auto & formula = rules["siege"]["outputs"][output];
 	require(!formula.isNull(), "unknown Siege output " + output);

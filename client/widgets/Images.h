@@ -20,6 +20,7 @@ class CAnimImage;
 class CLabel;
 class CAnimation;
 class IImage;
+class Canvas;
 enum class EImageBlitMode : uint8_t;
 
 // Image class
@@ -182,6 +183,12 @@ protected:
 	ui8 alpha;
 	ColorRGBA effectColor{0, 0, 0, 0};
 
+	// Opt-in preview containment; ordinary animations retain their legacy crop.
+	std::shared_ptr<Canvas> previewCanvas;
+	std::shared_ptr<Canvas> scaledPreviewCanvas;
+	Rect previewSource;
+	Rect previewDestination;
+
 public:
 	//called when next animation sequence is required
 	std::function<void()> callback;
@@ -232,6 +239,7 @@ public:
 	void addLast(ECreatureAnimType newType);
 
 	void startPreview(bool warMachine);
+	void fitPreview(const Point & viewport, bool warMachine);
 
 	//clear queue and set animation to this sequence
 	void clearAndSet(ECreatureAnimType type);

@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/battle/NewHorizonsWarfare.h"
+#include "../../../lib/battle/OrderFormation.h"
 #include "../../../lib/battle/NewHorizonsCommandResources.h"
 #include "../../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
@@ -306,45 +307,44 @@ protected:
 	void selectBasicAuthority()
 	{
 		constexpr auto authority = "new-horizons:authority";
-		constexpr auto conditioning = "new-horizons:authority.conditioning";
+		constexpr auto massedRanks = "new-horizons:authority.massedRanks";
 		const auto & rules = attackerSideHero->getPerkState().rules;
 		ASSERT_EQ(rules["commandAuthorityPolicy"]["version"].Integer(), 1);
+		ASSERT_EQ(rules["unifiedSkillProgressionVersion"].Integer(), 1);
 		ASSERT_EQ(rules["warfarePolicyVersion"].Integer(), 1);
 		ASSERT_EQ(rules["divineMandatePolicy"]["version"].Integer(), 2);
 		ASSERT_EQ(attackerSideHero->getPerkSkillRank(authority), 0);
 		// Use ordinary rank advancement and a real legal Basic-tier offer.
 		gameHandler->levelUpHero(attackerSideHero, SecondarySkill(SecondarySkill::decode(authority)), false);
 		ASSERT_EQ(attackerSideHero->getPerkSkillRank(authority), MasteryLevel::BASIC);
-		const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
-		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
+		const auto offers = attackerSideHero->getPerkState().candidatesForSkillTier(authority, 1);
+		ASSERT_EQ(offers.size(), 4u);
+		for(size_t choice = 0; choice < offers.size(); ++choice)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, offerSeed,
-				attackerSideHero->getPerkOfferWeightContext());
-			for(size_t choice = 0; choice < offers.size(); ++choice)
-				if(offers[choice].selection.skillId == authority && offers[choice].selection.perkId == conditioning)
-				{
-					gameHandler->levelUpHero(attackerSideHero, offers, choice, offerSeed, false);
-					ASSERT_TRUE(attackerSideHero->hasActivePerk(authority, conditioning));
-					return;
-				}
+			if(offers[choice].selection.perkId != massedRanks) continue;
+			gameHandler->levelUpHero(attackerSideHero, offers, choice, 0, false);
+			ASSERT_TRUE(attackerSideHero->hasActivePerk(authority, massedRanks));
+			return;
 		}
-		FAIL() << "No legal Basic Authority Conditioning offer";
+		FAIL() << "No legal Basic Authority Massed Ranks offer";
 	}
 
 	void prepare()
 	{
 		startGame();
-		ASSERT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY);
+		ASSERT_GE(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
+		ASSERT_EQ(attackerSideHero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
 		ASSERT_NO_FATAL_FAILURE(selectBasicAuthority());
 		ASSERT_FALSE(newHorizonsDivineMandate::hasCrownAndAltarPerk(attackerSideHero));
-		const auto command = attackerSideHero->getArmyCommand();
-		ASSERT_TRUE(command);
-		ASSERT_EQ(command->effective(), 2);
-		attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 80, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 80, ChangeValueMode::ABSOLUTE);
+		ASSERT_FALSE(attackerSideHero->getArmyCommand());
+		attackerSideHero->setPrimarySkill(PrimarySkill::ATTACK, 100, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::DEFENSE, 100, ChangeValueMode::ABSOLUTE);
 		ASSERT_EQ(heroCommands::leadershipEfficiencyPercent(*attackerSideHero, 0), 100);
-		ASSERT_EQ((attackerSideHero->getPrimSkillLevel(PrimarySkill::ATTACK)
-			+ attackerSideHero->getPrimSkillLevel(PrimarySkill::DEFENSE)) / 2 + 10 * command->effective(), 100);
+		const auto & rules = gameState()->getHeroCommandRules();
+		ASSERT_EQ(orderFormation::command(*attackerSideHero), 0);
+		ASSERT_EQ(orderFormation::rating(rules, attackerSideHero->getPrimSkillLevel(PrimarySkill::ATTACK),
+			attackerSideHero->getPrimSkillLevel(PrimarySkill::DEFENSE), 0), 100);
+		ASSERT_EQ(orderFormation::rating(rules, 100, 100, 123), 100); // No retired Command contribution.
 		startBattle();
 		ASSERT_TRUE(newHorizonsWarfare::usesRules(battle()->getHeroCommandRules()));
 		ASSERT_EQ(battle()->getHeroCommandRules()["commands"]["secondWind"]["effects"]
@@ -409,6 +409,9 @@ protected:
 TEST_F(NewHorizonsSecondWindFormationTest, AcceptedOrderUsesSixtyPercentInActualAttackCalculation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero), 60);
+	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero, 0, false), 60);
+	EXPECT_EQ(heroCommands::secondWindPercent(*attackerSideHero, 0, true), 62);
 	expectAttackDamage(*battle(), 1000);
 	ASSERT_NO_FATAL_FAILURE(grantSecondWind());
 	const auto order = *battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
@@ -470,8 +473,8 @@ TEST_F(NewHorizonsSecondWindFormationTest, CurrentFormatCopiedCrownEligibilitySu
 	auto outgoing = *battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);
 	outgoing.crownAndAltarRecipientUnitIds = {actor->unitId()};
 	CMemorySerializer wire;
-	wire.oser.version = ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY;
-	wire.iser.version = ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY;
+	wire.oser.version = ESerializationVersion::CURRENT;
+	wire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(wire.oser & outgoing);
 	HeroOrderState restored;
 	ASSERT_NO_THROW(wire.iser & restored);

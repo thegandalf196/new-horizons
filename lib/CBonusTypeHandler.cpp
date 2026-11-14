@@ -12,6 +12,7 @@
 #define INSTANTIATE_CBonusTypeHandler_HERE
 
 #include "CBonusTypeHandler.h"
+#include "battle/BattleReach.h"
 
 #include "filesystem/Filesystem.h"
 
@@ -70,7 +71,8 @@ std::string CBonusTypeHandler::bonusToString(const std::shared_ptr<Bonus> & bonu
 	if(!bearer)
 		throw std::runtime_error("CBonusTypeHandler::bonusToString: invalid bonus system node!"); 
 
-	return bonusToString(bonus, bearer->valOfBonuses(bonus->type, bonus->subtype));
+	return bonusToString(bonus, bonus->type == BonusType::LONG_REACH
+		? bearer->valOfBonuses(BonusType::LONG_REACH) : bearer->valOfBonuses(bonus->type, bonus->subtype));
 }
 
 std::string CBonusTypeHandler::bonusToString(const std::shared_ptr<Bonus> & bonus) const
@@ -156,6 +158,8 @@ std::string CBonusTypeHandler::bonusToString(const std::shared_ptr<Bonus> & bonu
 
 	if(text.find("${val.basisPoints}") != std::string::npos)
 		boost::algorithm::replace_all(text, "${val.basisPoints}", TextOperations::formatBasisPoints(bonusValue));
+	if(bonus->type == BonusType::LONG_REACH && text.find("${reach}") != std::string::npos)
+		boost::algorithm::replace_all(text, "${reach}", std::to_string(battleReach::maximumMeleeDistance(bonusValue)));
 
 	if (text.find("${val}") != std::string::npos)
 		boost::algorithm::replace_all(text, "${val}", std::to_string(bonusValue));

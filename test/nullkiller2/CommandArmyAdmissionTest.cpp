@@ -7,6 +7,7 @@
 #include "../../AI/Nullkiller2/Helpers/ArmyUpgradeSelection.h"
 #include "../../lib/entities/creature/NewHorizonsAssimilation.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
+#include "../../lib/entities/hero/NewHorizonsAerialSupremacy.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/bonuses/Bonus.h"
@@ -24,6 +25,12 @@ CreatureID creature(const char * key) { return CreatureID(CreatureID::decode(key
 class CommandArmyAdmissionTest : public BattleTestFixture
 {
 protected:
+	void mapLoaded(CMap * map) override
+	{
+		TinyMapGameTest::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+	}
 	void prepare(const char * firstHero = "core:orrin")
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -40,10 +47,10 @@ protected:
 		defenderSideHero = findHeroByOwner(PlayerColor(1));
 		ASSERT_NE(attackerSideHero, nullptr);
 		ASSERT_NE(defenderSideHero, nullptr);
-		ASSERT_TRUE(attackerSideHero->getArmyCommand());
-		ASSERT_EQ(attackerSideHero->getArmyCommand()->effective(), 1);
+		ASSERT_EQ(attackerSideHero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
+		ASSERT_FALSE(attackerSideHero->getArmyCommand());
 	}
-	void prepareDisplacement()
+	void prepareMixedArmy()
 	{
 		ASSERT_NO_FATAL_FAILURE(prepare());
 		auto * hero = attackerSideHero;
@@ -63,7 +70,7 @@ protected:
 };
 }
 
-TEST_F(CommandArmyAdmissionTest, IntrinsicElementalsIgnoreTierButNeverUnlockSlots)
+TEST_F(CommandArmyAdmissionTest, IntrinsicElementalsKeepClassificationWithoutAnyTierOrSlotRestriction)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	for(const auto * key : {"core:airElemental", "core:stormElemental", "core:waterElemental", "core:iceElemental",
@@ -73,7 +80,7 @@ TEST_F(CommandArmyAdmissionTest, IntrinsicElementalsIgnoreTierButNeverUnlockSlot
 		const auto id = creature(key);
 		EXPECT_TRUE(newHorizonsCreatures::hasIntrinsicAssimilation(id)) << key;
 		EXPECT_EQ(commandArmySlotEligibility(attackerSideHero, SlotID(2), id), CommandPlacementError::NONE) << key;
-		EXPECT_EQ(commandArmySlotEligibility(attackerSideHero, SlotID(3), id), CommandPlacementError::LOCKED_SLOT) << key;
+		EXPECT_EQ(commandArmySlotEligibility(attackerSideHero, SlotID(3), id), CommandPlacementError::NONE) << key;
 		EXPECT_EQ(attackerSideHero->getCommandCreatureTraits(id).category, newHorizonsCreatures::CreatureCategory::ELITE);
 	}
 	for(const auto * key : {"core:pixie", "core:sprite", "core:phoenix"})
@@ -81,24 +88,26 @@ TEST_F(CommandArmyAdmissionTest, IntrinsicElementalsIgnoreTierButNeverUnlockSlot
 	attackerSideHero->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::ASSIMILATION, BonusSource::OTHER, 1, BonusSourceID()));
 	EXPECT_EQ(commandArmySlotEligibility(attackerSideHero, SlotID(2), creature("core:griffin")),
-		CommandPlacementError::TIER_NOT_PERMITTED);
+		CommandPlacementError::NONE);
 }
 
-TEST_F(CommandArmyAdmissionTest, ResolvedSpecialistFamilyAndUpgradeGainCorePermissionOnly)
+TEST_F(CommandArmyAdmissionTest, AerialSpecialtyRemainsActiveWithoutRetiredPlacementPermissionOrTierLocks)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:edric"));
+	ASSERT_TRUE(newHorizonsHeroes::aerialSupremacyEnabled(attackerSideHero));
 	for(const auto * key : {"core:griffin", "core:royalGriffin"})
 	{
-		EXPECT_TRUE(newHorizonsCreatures::isCommandSpecialistCreature(*attackerSideHero, creature(key)));
+		EXPECT_FALSE(newHorizonsCreatures::isCommandSpecialistCreature(*attackerSideHero, creature(key)));
 		EXPECT_EQ(attackerSideHero->getCommandCreatureTraits(creature(key)).category, newHorizonsCreatures::CreatureCategory::ELITE);
 		EXPECT_EQ(commandArmySlotEligibility(attackerSideHero, SlotID(1), creature(key)), CommandPlacementError::NONE);
-		EXPECT_EQ(commandArmySlotEligibility(attackerSideHero, SlotID(3), creature(key)), CommandPlacementError::LOCKED_SLOT);
-		EXPECT_EQ(commandArmySlotEligibility(defenderSideHero, SlotID(1), creature(key)), CommandPlacementError::TIER_NOT_PERMITTED);
+		EXPECT_EQ(commandArmySlotEligibility(attackerSideHero, SlotID(3), creature(key)), CommandPlacementError::NONE);
+		EXPECT_EQ(commandArmySlotEligibility(defenderSideHero, SlotID(1), creature(key)), CommandPlacementError::NONE);
 	}
 	EXPECT_FALSE(newHorizonsCreatures::isCommandSpecialistCreature(*attackerSideHero, creature("core:monk")));
 	ASSERT_TRUE(gameHandler->insertNewStack({attackerSideHero->id, SlotID(1)}, creature("core:griffin").toCreature(), 4000));
 	EXPECT_TRUE(gameHandler->changeStackType({attackerSideHero->id, SlotID(1)}, creature("core:royalGriffin").toCreature()));
-	EXPECT_FALSE(gameHandler->changeStackType({attackerSideHero->id, SlotID(1)}, creature("core:angel").toCreature()));
+	EXPECT_TRUE(gameHandler->changeStackType({attackerSideHero->id, SlotID(1)}, creature("core:angel").toCreature()));
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(1))->getId(), creature("core:angel"));
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 4000);
 }
 
@@ -109,61 +118,66 @@ TEST_F(CommandArmyAdmissionTest, DirectInsertAndReinforcementHaveNoLeadershipCou
 	EXPECT_FALSE(attackerSideHero->getLeadershipSlotCapacity(pikeman));
 	EXPECT_TRUE(gameHandler->changeStackCount({attackerSideHero->id, SlotID(0)}, 1000000, ChangeValueMode::RELATIVE));
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 1000001);
-	EXPECT_FALSE(gameHandler->insertNewStack({attackerSideHero->id, SlotID(3)}, pikeman.toCreature(), 1));
-	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(3)));
+	EXPECT_TRUE(gameHandler->insertNewStack({attackerSideHero->id, SlotID(3)}, pikeman.toCreature(), 1));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(3)), 1);
+	EXPECT_FALSE(armySlotAccepts(attackerSideHero, SlotID(7), pikeman, 1));
+	EXPECT_FALSE(armySlotAccepts(attackerSideHero, SlotID(6), pikeman, int64_t(std::numeric_limits<TQuantity>::max()) + 1));
 	EXPECT_FALSE(gameHandler->changeStackCount({attackerSideHero->id, SlotID(0)},
 		std::numeric_limits<TQuantity>::max(), ChangeValueMode::RELATIVE));
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 1000001);
 }
 
-TEST_F(CommandArmyAdmissionTest, CompleteRewardMovesCoreOutOfOnlyEliteSlotWithoutLosingCounts)
+TEST_F(CommandArmyAdmissionTest, RewardUsesFreeSlotWithoutDisplacingExistingHugeStacks)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareDisplacement());
+	ASSERT_NO_FATAL_FAILURE(prepareMixedArmy());
 	CCreatureSet incoming;
 	ASSERT_TRUE(incoming.setCreature(SlotID(0), creature("core:griffin"), 5000));
-	const auto plan = planCommandArmyAddition(*attackerSideHero, *attackerSideHero, incoming);
-	ASSERT_TRUE(plan);
-	ASSERT_EQ(plan->moves.size(), 2u);
-	EXPECT_TRUE(plan->moves.front().withinDestination);
-	EXPECT_EQ(plan->moves.front().count, 1000000);
 	gameHandler->giveCreatures(attackerSideHero, incoming);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 1000000);
-	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0))->getId(), creature("core:pikeman"));
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(3)), 5000);
-	EXPECT_EQ(attackerSideHero->getCreature(SlotID(3))->getId(), creature("core:griffin"));
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0))->getId(), creature("core:griffin"));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 5000);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 2);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(2)), 3);
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(3))->getId(), creature("core:pikeman"));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(3)), 1000000);
 }
 
-TEST_F(CommandArmyAdmissionTest, ImpossibleRewardAndTwoSidedExchangeAreAtomic)
+TEST_F(CommandArmyAdmissionTest, CrossTierExchangeConservesBothArmiesAndEighthDistinctRewardRejects)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	attackerSideHero->level = 4;
 	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(3), creature("core:griffin"), 70));
-	// First recipient accepts Pikemen, but the return Griffin is illegal in Core.
-	const auto beforeA = commandArmySlots(*attackerSideHero), beforeB = commandArmySlots(*defenderSideHero);
-	EXPECT_FALSE(gameHandler->swapStacks({attackerSideHero->id, SlotID(3)}, {defenderSideHero->id, SlotID(0)}));
-	EXPECT_TRUE(sameRows(beforeA, commandArmySlots(*attackerSideHero)));
-	EXPECT_TRUE(sameRows(beforeB, commandArmySlots(*defenderSideHero)));
+	ASSERT_TRUE(gameHandler->swapStacks({attackerSideHero->id, SlotID(3)}, {defenderSideHero->id, SlotID(0)}));
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(3))->getId(), creature("core:pikeman"));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(3)), 1);
+	EXPECT_EQ(defenderSideHero->getCreature(SlotID(0))->getId(), creature("core:griffin"));
+	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(0)), 70);
+	attackerSideHero->clearSlots();
+	int slot = 0;
+	for(const auto * key : {"core:pikeman", "core:archer", "core:griffin", "core:swordsman", "core:monk", "core:cavalier", "core:hydra"})
+		ASSERT_TRUE(attackerSideHero->setCreature(SlotID(slot++), creature(key), 1000));
+	const auto before = commandArmySlots(*attackerSideHero);
 	CCreatureSet incoming;
 	ASSERT_TRUE(incoming.setCreature(SlotID(0), creature("core:angel"), 50));
 	gameHandler->giveCreatures(attackerSideHero, incoming);
-	EXPECT_TRUE(sameRows(beforeA, commandArmySlots(*attackerSideHero)));
+	EXPECT_TRUE(sameRows(before, commandArmySlots(*attackerSideHero)));
 	EXPECT_EQ(incoming.getStackCount(SlotID(0)), 50);
 }
 
-TEST_F(CommandArmyAdmissionTest, SplitRejectsLockedDestinationAndLastSourceCreatureStillCannotLeave)
+TEST_F(CommandArmyAdmissionTest, SplitUsesSeventhSlotButCannotRemoveLastCreatureOrExceedSourceCount)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	EXPECT_FALSE(gameHandler->moveStack({attackerSideHero->id, SlotID(0)}, {defenderSideHero->id, SlotID(1)}, 1));
 	ASSERT_TRUE(gameHandler->changeStackCount({attackerSideHero->id, SlotID(0)}, 9, ChangeValueMode::RELATIVE));
-	EXPECT_FALSE(gameHandler->moveStack({attackerSideHero->id, SlotID(0)}, {attackerSideHero->id, SlotID(3)}, 5));
-	EXPECT_TRUE(gameHandler->moveStack({attackerSideHero->id, SlotID(0)}, {attackerSideHero->id, SlotID(1)}, 5));
+	ASSERT_TRUE(gameHandler->moveStack({attackerSideHero->id, SlotID(0)}, {attackerSideHero->id, SlotID(6)}, 5));
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 5);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 5);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(6)), 5);
+	const auto before = commandArmySlots(*attackerSideHero);
+	EXPECT_FALSE(gameHandler->moveStack({attackerSideHero->id, SlotID(0)}, {attackerSideHero->id, SlotID(1)}, 6));
+	EXPECT_TRUE(sameRows(before, commandArmySlots(*attackerSideHero)));
 }
 
-TEST_F(CommandArmyAdmissionTest, AdventureProjectionUsesSameDisplacementAndPreservesSourceLastStack)
+TEST_F(CommandArmyAdmissionTest, AdventureProjectionPreservesHugeCountsAndSourceLastStackWithoutDisplacement)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareDisplacement());
+	ASSERT_NO_FATAL_FAILURE(prepareMixedArmy());
 	CGHeroInstance source(nullptr);
 	ASSERT_TRUE(source.setCreature(SlotID(0), creature("core:griffin"), 5000));
 	ASSERT_TRUE(source.setCreature(SlotID(1), creature("core:pixie"), 1));
@@ -185,31 +199,32 @@ TEST_F(CommandArmyAdmissionTest, RaisedArmyPlanningReusesSlotMatchingAndNonHeroC
 	const auto plan = newHorizonsNecromancy::planRaisedArmy(*attackerSideHero,
 		{{creature("core:skeleton"), 10000}});
 	ASSERT_TRUE(plan);
-	ASSERT_TRUE(plan->commandArrangement);
+	EXPECT_FALSE(plan->commandArrangement);
 	newHorizonsNecromancy::applyRaisedArmy(*gameHandler, *attackerSideHero, *plan);
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 10000);
 	CGTownInstance town(nullptr);
 	EXPECT_TRUE(armySlotAccepts(&town, SlotID(6), creature("core:angel"), 1000000));
-	EXPECT_FALSE(armySlotAccepts(attackerSideHero, SlotID(6), creature("core:angel"), 1));
+	EXPECT_TRUE(armySlotAccepts(attackerSideHero, SlotID(6), creature("core:angel"), 1000000));
+	EXPECT_FALSE(armySlotAccepts(attackerSideHero, SlotID(7), creature("core:angel"), 1));
 }
 
-TEST_F(CommandArmyAdmissionTest, NecessaryDuplicateConsolidationFreesLegalSlotWithoutCountFragmentation)
+TEST_F(CommandArmyAdmissionTest, AvailableSlotPreservesIndependentDuplicateStacksAndAllRewardCounts)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareDisplacement());
+	ASSERT_NO_FATAL_FAILURE(prepareMixedArmy());
 	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creature("core:pikeman"), 12));
 	CCreatureSet incoming;
 	ASSERT_TRUE(incoming.setCreature(SlotID(0), creature("core:griffin"), 5000));
-	const auto plan = planCommandArmyAddition(*attackerSideHero, *attackerSideHero, incoming);
-	ASSERT_TRUE(plan);
 	gameHandler->giveCreatures(attackerSideHero, incoming);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 1000012);
-	EXPECT_EQ(attackerSideHero->getCreature(SlotID(3))->getId(), creature("core:griffin"));
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(3)), 5000);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 12);
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(3))->getId(), creature("core:pikeman"));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(3)), 1000000);
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(4))->getId(), creature("core:griffin"));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(4)), 5000);
 }
 
-TEST_F(CommandArmyAdmissionTest, RecruitmentRearrangesBeforeDeliveryAndIllegalPurchaseSpendsNothing)
+TEST_F(CommandArmyAdmissionTest, RecruitmentPreservesExistingSlotsAndAllowsPaidChampionWithoutRearrangement)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareDisplacement());
+	ASSERT_NO_FATAL_FAILURE(prepareMixedArmy());
 	auto * hero = attackerSideHero;
 	auto * town = findFirst<CGTownInstance>();
 	ASSERT_NE(town, nullptr);
@@ -230,16 +245,96 @@ TEST_F(CommandArmyAdmissionTest, RecruitmentRearrangesBeforeDeliveryAndIllegalPu
 	const auto cost = town->getTotalRecruitmentCost(griffin, 50, hero);
 	ASSERT_TRUE(before.canAfford(cost));
 	ASSERT_TRUE(gameHandler->recruitCreatures(town->id, hero->id, griffin, 50, 0, hero->getOwner()));
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), 1000000);
-	EXPECT_EQ(hero->getCreature(SlotID(3))->getId(), griffin);
-	EXPECT_EQ(hero->getStackCount(SlotID(3)), 50);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 50);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), griffin);
+	EXPECT_EQ(hero->getStackCount(SlotID(3)), 1000000);
 	EXPECT_EQ(town->creatures.front().first, 50u);
 	EXPECT_EQ(gameState()->getPlayerState(hero->getOwner())->resources, before - cost);
 	town->creatures = {{100, {creature("core:angel")}}};
-	const auto beforeArmy = commandArmySlots(*hero);
-	const auto beforeRejection = gameState()->getPlayerState(hero->getOwner())->resources;
-	EXPECT_FALSE(gameHandler->recruitCreatures(town->id, hero->id, creature("core:angel"), 1, 0, hero->getOwner()));
-	EXPECT_EQ(gameState()->getPlayerState(hero->getOwner())->resources, beforeRejection);
-	EXPECT_EQ(town->creatures.front().first, 100u);
-	EXPECT_TRUE(sameRows(beforeArmy, commandArmySlots(*hero)));
+	const auto paid = gameState()->getPlayerState(hero->getOwner())->resources;
+	const auto angelPrice = town->getTotalRecruitmentCost(creature("core:angel"), 1, hero);
+	ASSERT_TRUE(paid.canAfford(angelPrice));
+	ASSERT_TRUE(gameHandler->recruitCreatures(town->id, hero->id, creature("core:angel"), 1, 0, hero->getOwner()));
+	EXPECT_EQ(hero->getCreature(SlotID(4))->getId(), creature("core:angel"));
+	EXPECT_EQ(hero->getStackCount(SlotID(4)), 1);
+	EXPECT_EQ(gameState()->getPlayerState(hero->getOwner())->resources, paid - angelPrice);
+	EXPECT_EQ(town->creatures.front().first, 99u);
+	EXPECT_EQ(hero->getStackCount(SlotID(3)), 1000000);
+}
+
+TEST_F(CommandArmyAdmissionTest, CurrentV7AllSevenSlotsAcceptHugeStacksOfEveryTier)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto * hero = attackerSideHero;
+	ASSERT_EQ(hero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
+	hero->clearSlots();
+	const std::array<const char *, 7> lines{"core:pikeman", "core:archer", "core:griffin", "core:angel",
+		"core:firebird", "core:redDragon", "core:hydra"};
+	for(size_t slot = 0; slot < lines.size(); ++slot)
+	{
+		const auto id = creature(lines[slot]);
+		EXPECT_EQ(commandArmySlotEligibility(hero, SlotID(slot), id), CommandPlacementError::NONE);
+		EXPECT_FALSE(hero->getLeadershipSlotCapacity(id));
+		ASSERT_TRUE(gameHandler->insertNewStack({hero->id, SlotID(slot)}, id.toCreature(), 1000000));
+		EXPECT_EQ(hero->getStackCount(SlotID(slot)), 1000000);
+	}
+	EXPECT_EQ(hero->stacksCount(), 7);
+}
+
+TEST_F(CommandArmyAdmissionTest, CurrentV7HugeChampionRecruitmentPaysOnceAndStillNeedsOneOfSevenSlots)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto * hero = attackerSideHero;
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	hero->clearSlots();
+	const std::array<const char *, 6> lines{"core:pikeman", "core:archer", "core:griffin", "core:swordsman",
+		"core:monk", "core:cavalier"};
+	for(size_t slot = 0; slot < lines.size(); ++slot)
+		ASSERT_TRUE(hero->setCreature(SlotID(slot), creature(lines[slot]), 100000));
+	ChangeObjPos position;
+	position.objid = hero->id;
+	position.nPos = town->visitablePos();
+	position.initiator = hero->getOwner();
+	gameState()->apply(position);
+	town->setVisitingHero(hero);
+	for(int resource = 0; resource < GameConstants::RESOURCE_QUANTITY; ++resource)
+		grantResources(hero->getOwner(), GameResID(resource), 100000000);
+	const auto angel = creature("core:angel");
+	town->creatures = {{1000, {angel}}};
+	const auto before = gameState()->getPlayerState(hero->getOwner())->resources;
+	const auto cost = town->getTotalRecruitmentCost(angel, 500, hero);
+	ASSERT_TRUE(before.canAfford(cost));
+	ASSERT_TRUE(gameHandler->recruitCreatures(town->id, hero->id, angel, 500, 0, hero->getOwner()));
+	EXPECT_EQ(hero->getStackCount(SlotID(6)), 500);
+	EXPECT_EQ(town->creatures.front().first, 500u);
+	EXPECT_EQ(gameState()->getPlayerState(hero->getOwner())->resources, before - cost);
+	town->creatures = {{1, {creature("core:hydra")}}};
+	const auto full = commandArmySlots(*hero);
+	const auto paid = gameState()->getPlayerState(hero->getOwner())->resources;
+	EXPECT_FALSE(gameHandler->recruitCreatures(town->id, hero->id, creature("core:hydra"), 1, 0, hero->getOwner()));
+	EXPECT_TRUE(sameRows(full, commandArmySlots(*hero)));
+	EXPECT_EQ(town->creatures.front().first, 1u);
+	EXPECT_EQ(gameState()->getPlayerState(hero->getOwner())->resources, paid);
+}
+
+TEST_F(CommandArmyAdmissionTest, CurrentV7AuthoritativeMergeAndSplitPreserveAllOversizedCreatures)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto * hero = attackerSideHero;
+	auto * town = findFirst<CGTownInstance>();
+	ASSERT_NE(town, nullptr);
+	hero->clearSlots();
+	town->clearSlots();
+	const auto pikeman = creature("core:pikeman");
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, 200000));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), creature("core:archer"), 1));
+	ASSERT_TRUE(town->setCreature(SlotID(0), pikeman, 400000));
+	ASSERT_TRUE(gameHandler->moveStack({town->id, SlotID(0)}, {hero->id, SlotID(0)}, -1));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 600000);
+	EXPECT_FALSE(town->hasStackAtSlot(SlotID(0)));
+	ASSERT_TRUE(gameHandler->moveStack({hero->id, SlotID(0)}, {hero->id, SlotID(6)}, 200000));
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 400000);
+	EXPECT_EQ(hero->getStackCount(SlotID(6)), 200000);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
 }

@@ -115,6 +115,7 @@ public:
 	bool getCounterspellArmed(BattleSide side) const override;
 	const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override;
 	uint8_t getElementalAttunementMask(BattleSide side) const override;
+	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override;
 	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override;
 	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
 	int32_t getMetamagicPendingCount(BattleSide side) const override;

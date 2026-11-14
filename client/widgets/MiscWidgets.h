@@ -169,7 +169,8 @@ private:
 
 	void show(Canvas & to) override;
 public:
-	CCreaturePic(int x, int y, const CCreature * cre, bool Big=true, bool Animated=true);
+	CCreaturePic(int x, int y, const CCreature * cre, bool Big=true, bool Animated=true,
+		Point previewViewport = Point());
 	void setAmount(int newAmount);
 };
 

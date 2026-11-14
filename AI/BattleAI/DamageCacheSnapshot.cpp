@@ -5,8 +5,8 @@
 
 namespace
 {
-bool sameDamageBits(const std::unordered_map<uint32_t, std::unordered_map<uint32_t, float>> & left,
-	const std::unordered_map<uint32_t, std::unordered_map<uint32_t, float>> & right)
+template<typename DamageTable>
+bool sameDamageBits(const DamageTable & left, const DamageTable & right)
 {
 	if(left.size() != right.size())
 		return false;
@@ -19,7 +19,10 @@ bool sameDamageBits(const std::unordered_map<uint32_t, std::unordered_map<uint32
 		{
 			const auto entry = other->second.find(target);
 			if(entry == other->second.end()
-				|| std::bit_cast<uint32_t>(value) != std::bit_cast<uint32_t>(entry->second))
+				|| std::bit_cast<uint32_t>(value.perCreature) != std::bit_cast<uint32_t>(entry->second.perCreature)
+				|| value.count != entry->second.count || value.total != entry->second.total
+				|| value.leadershipCapacity != entry->second.leadershipCapacity
+				|| value.creature != entry->second.creature)
 				return false;
 		}
 	}

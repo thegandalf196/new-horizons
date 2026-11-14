@@ -2,6 +2,8 @@ set(vcmiclientcommon_SRCS
 	CPlayerInterfaceProgressionDialogs.cpp
 	HeroProgressionNetPacks.cpp
 	widgets/CommandArmySlotPresentation.cpp
+	widgets/LeadershipEfficiencyPresentation.cpp
+	battle/BattleLeadershipPresentation.cpp
 	windows/CommandPresentation.cpp
 	windows/CommandEnhancementWindow.cpp
 	StdInc.cpp
@@ -74,6 +76,7 @@ set(vcmiclientcommon_SRCS
 
 	gui/CIntObject.cpp
 	gui/CursorHandler.cpp
+	gui/CursorHandlerReach.cpp
 	gui/EventDispatcher.cpp
 	gui/EventsReceiver.cpp
 	gui/InterfaceObjectConfigurable.cpp
@@ -141,6 +144,11 @@ set(vcmiclientcommon_SRCS
 
 	render/AssetGenerator.cpp
 	render/PointBlankCursor.cpp
+	render/ReachCursorBody.cpp
+	render/ReachCursorCache.cpp
+	render/ReachCursorHandoff.cpp
+	render/ReachCursorImage.cpp
+	render/ReachCursorLayout.cpp
 	render/CAnimation.cpp
 	render/CDefFile.cpp
 	render/ColorFilter.cpp
@@ -200,6 +208,8 @@ set(vcmiclientcommon_SRCS
 	widgets/markets/TradePanels.cpp
 
 	windows/CCastleInterface.cpp
+	windows/FortRecruitArea.cpp
+	windows/FortRecruitmentPresentation.cpp
 	windows/TownGrowthPresentation.cpp
 	windows/CCreatureWindow.cpp
 	windows/StackAbilityCards.cpp
@@ -254,6 +264,9 @@ set(vcmiclientcommon_SRCS
 	windows/CreatureBonusStatusPresentation.cpp
 	windows/GUIClasses.cpp
 	windows/CLevelWindow.cpp
+	windows/CLevelWindowChoices.cpp
+	windows/LevelUpChoiceCards.cpp
+	windows/CreatureLeadershipPresentation.cpp
 	windows/CLevelWindowReroll.cpp
 	windows/NewHorizonsMusterUI.cpp
 	windows/InfoWindows.cpp
@@ -464,6 +477,7 @@ set(vcmiclientcommon_HEADERS
 	render/ImageLocator.h
 	render/OutlineMask.h
 	render/IRenderHandler.h
+	render/ReachCursor.h
 	render/hdEdition/HdImageLoader.h
 	render/hdEdition/PakLoader.h
 	render/hdEdition/DdsFormat.h
@@ -485,12 +499,15 @@ set(vcmiclientcommon_HEADERS
 	widgets/CExchangeController.h
 	widgets/CGarrisonInt.h
 	widgets/NewHorizonsLeadershipReadback.h
+	widgets/LeadershipEfficiencyBadge.h
+	widgets/LeadershipEfficiencyPresentation.h
 	widgets/CreatureCostBox.h
 	widgets/ComboBox.h
 	widgets/ControllerActionButton.h
 	widgets/CTextInput.h
 	widgets/GraphicalPrimitiveCanvas.h
 	widgets/Images.h
+	widgets/CreaturePreviewFit.h
 	widgets/MiscWidgets.h
 	widgets/NewHorizonsMoraleLuckPresentation.h
 	widgets/CViewport.h
@@ -518,6 +535,8 @@ set(vcmiclientcommon_HEADERS
 	widgets/markets/TradePanels.h
 
 	windows/CCastleInterface.h
+	windows/FortRecruitmentPresentation.h
+	windows/FortCompactCreatureLayout.h
 	windows/TownGrowthPresentation.h
 	windows/CCreatureWindow.h
 	windows/CreatureUpgradeConfirmation.h
@@ -583,6 +602,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CreaturePurchaseCard.h
 	windows/GUIClasses.h
 	windows/CLevelWindow.h
+	windows/LevelUpChoiceCards.h
 	windows/NewHorizonsMusterUI.h
 	windows/InfoWindows.h
 	windows/QuickRecruitmentWindow.h

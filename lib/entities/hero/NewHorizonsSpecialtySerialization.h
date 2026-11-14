@@ -42,6 +42,7 @@ struct SpecialtySerializationContext
 	bool nativeRulesRedesign = false;
 	/// Bonus-only projection admission; does not activate a hero's army policy.
 	bool commandAuthority = false;
+	bool leadershipEfficiency = false;
 
 	bool operator==(const SpecialtySerializationContext &) const = default;
 
@@ -77,6 +78,7 @@ struct SpecialtySerializationContext
 		result.passiveFactionSkills = h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 		result.nativeRulesRedesign = h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
 		result.commandAuthority = h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY);
+		result.leadershipEfficiency = h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
 		return result;
 	}
 };

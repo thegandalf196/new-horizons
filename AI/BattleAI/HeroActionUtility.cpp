@@ -33,16 +33,19 @@ std::optional<HealthDeltaUtility> accumulateHealthDelta(const HealthDeltaSubject
 	auto & damageToFriendliesScore = immediate.toFriendlies;
 
 	auto damage = std::abs(oldHealth - newHealth);
-	auto originalDefender = original;
+	const bool goodEffect = newHealth > oldHealth;
+	// Healing is the inverse loss from the healed state. The smaller survivor
+	// cannot represent restored creatures or HP gained beyond its old health.
+	const auto * referenceVictim = goodEffect ? unit
+		: (original && original->alive() ? original : unit);
 
 	auto dpsReduce = AttackPossibility::calculateDamageReduce(
 		subject.measurementActor,
-		originalDefender && originalDefender->alive() ? originalDefender : unit,
+		referenceVictim,
 		damage,
 		innerCache,
 		state);
 	const bool ourUnit = state->battleGetOwner(unit) == playerID;
-	const bool goodEffect = newHealth > oldHealth;
 	const bool naturesWrath = ps.spell
 		&& ps.spell->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY;
 	const bool pandemonium = ps.spell

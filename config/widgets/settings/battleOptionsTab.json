@@ -154,6 +154,19 @@
 			],
 			"callback": "quickCombatAIChanged"
 		},
+		{
+			"name": "showLeadershipEfficiencyCheckbox",
+			"type": "checkbox",
+			"position": {"x": 10, "y": 484},
+			"help": "new-horizons.leadership.showEfficiency",
+			"callback": "showLeadershipEfficiencyChanged"
+		},
+		{
+			"type": "labelDescription",
+			"font": "small",
+			"position": {"x": 45, "y": 486},
+			"text": "new-horizons.leadership.showEfficiency.hover"
+		},
 /////////////////////////////////////// Left section - checkboxes
 		{
 			"name": "generalOptionsLabels",

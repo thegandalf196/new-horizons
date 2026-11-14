@@ -166,12 +166,29 @@ bool AccessibilityInfo::accessibleForMovementEndpoint(const BattleHex & tile, bo
 bool AccessibilityInfo::hasClearStraightHexRay(const BattleHex & from, const BattleHex & to,
 	const BattleHexArray & allowedOccupiedHexes) const
 {
+	return hasClearStraightHexRay(from, to, allowedOccupiedHexes, BattleHex::NONE);
+}
+
+bool AccessibilityInfo::hasClearStraightHexRay(const BattleHex & from, const BattleHex & to,
+	const BattleHexArray & allowedOccupiedHexes, BattleHex::EDir approach) const
+{
+	return hasClearStraightHexRay(from, to, allowedOccupiedHexes, approach, BattleHexArray{to});
+}
+
+bool AccessibilityInfo::hasClearStraightHexRay(const BattleHex & from, const BattleHex & to,
+	const BattleHexArray & allowedOccupiedHexes, BattleHex::EDir approach,
+	const BattleHexArray & targetFootprint) const
+{
 	if(!from.isAvailable() || !to.isAvailable())
+		return false;
+	if(approach != BattleHex::NONE && (approach < BattleHex::TOP_LEFT || approach > BattleHex::LEFT))
+		return false;
+	if(approach != BattleHex::NONE && (!targetFootprint.contains(to) || targetFootprint.contains(from)))
 		return false;
 
 	const auto distance = BattleHex::getDistance(from, to);
 	if(distance == 0)
-		return true;
+		return approach == BattleHex::NONE;
 
 	const auto start = toCubeCoordinates(from);
 	const auto finish = toCubeCoordinates(to);
@@ -209,6 +226,12 @@ bool AccessibilityInfo::hasClearStraightHexRay(const BattleHex & from, const Bat
 		for(const auto & candidate : rayLayers[layer + 1])
 		{
 			if(BattleHex::getDistance(current, candidate) != 1)
+				continue;
+			// A shortest ray cannot leave and reenter a convex one-/two-hex
+			// footprint. Classify its exposed entry, never the internal body edge;
+			// with NONE every original path remains eligible without this filter.
+			if(approach != BattleHex::NONE && !targetFootprint.contains(current)
+				&& targetFootprint.contains(candidate) && BattleHex::mutualPosition(candidate, current) != approach)
 				continue;
 			if(candidate != to && !intermediateCellClear(candidate))
 				continue;

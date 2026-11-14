@@ -21,11 +21,12 @@ Version 1.0 dependencies.
 1. **Primary attributes:** class-based deterministic development and coherent
    scaled formulas/readouts.
 2. **Secondary skills:** Basic/Advanced/Expert ranks with a ten-perk pool for each
-   Skill and exactly one selected perk at each tier. Ordinary progression is
-   Basic Skill → Basic perk → Advanced Skill → Advanced perk → Expert Skill →
-   Expert perk. Exceptional external rank advancement may bypass a rank step,
-   but missing perk tiers are still filled in order. A level-up may offer up
-   to two Skill choices and two perk choices, from which the hero selects one.
+   Skill and exactly one selected perk at each tier. Every acquired Basic,
+   Advanced or Expert rank immediately grants one mandatory choice from the
+   complete corresponding perk pool. Ordinary level-ups offer class-weighted
+   Skills first; perks follow in a separate modal rather than competing with
+   ranks. External multi-rank grants and starting Skills resolve missing tiers
+   in order, with authoritative pending state and AI/noninteractive completion.
    The full source roster and prerequisites replace the older three-ability and
    post-Expert mastery targets. Save migration remains explicit and versioned.
 3. **Magic schools:** Light, Nature, Sorcery/Arcane, Havoc, Shadow and Chaos, with

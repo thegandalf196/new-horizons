@@ -7,6 +7,7 @@
 #include "InitialExportWorld.h"
 #include "../../lib/battle/BattleProxy.h"
 #include "../../lib/battle/WisdomCombatState.h"
+#include "../../lib/entities/hero/LeadershipComposition.h"
 
 class HypotheticBattle;
 
@@ -18,6 +19,7 @@ class InitialExportBattleSubject final : public BattleProxy
 	std::unique_ptr<InitialExportWorld> owned;
 	BattleSideArray<MetamagicPointState> metamagicPointStates;
 	BattleSideArray<WisdomCombatState> wisdomCombatStates;
+	BattleSideArray<newHorizonsHeroes::LeadershipComposition> leadershipCompositions;
 	InitialExportBattleSubject(Subject subject, std::unique_ptr<InitialExportWorld> world);
 	void copyValuesTo(InitialExportWorld & destination, const HypotheticBattle & branch, const InitialExportBattleSubject & source) const;
 	void copyValuesFrom(const HypotheticBattle & branch, const InitialExportBattleSubject & source) const;
@@ -27,6 +29,10 @@ class InitialExportBattleSubject final : public BattleProxy
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 	int visibleHeroMorale(BattleSide side) const override;
 public:
+	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override
+	{
+		return leadershipCompositions.at(side);
+	}
 	static std::shared_ptr<InitialExportBattleSubject> capture(Subject subject, BattleInfo & native);
 	/// Explicit native handle, exact full-information source and complete roster.
 	/// Retains actual parent ownership; recipient overlays do not establish exports.

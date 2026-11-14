@@ -11,6 +11,10 @@
 
 #include "../../lib/Point.h"
 #include "../../lib/filesystem/ResourcePath.h"
+#include <optional>
+#include <utility>
+
+namespace reachCursor { class Cache; }
 
 class ICursor;
 class IImage;
@@ -127,9 +131,13 @@ class CursorHandler final
 	std::vector<CursorParameters> cursors;
 	std::map<AnimationPath, std::shared_ptr<CAnimation>> loadedAnimations;
 	std::map<ImagePath, std::shared_ptr<IImage>> loadedImages;
+	std::unique_ptr<reachCursor::Cache> reachCursorFrames;
 
 	std::shared_ptr<IImage> dndObject; //if set, overrides currentCursor
 	std::shared_ptr<IImage> cursorImage; //if set, overrides currentCursor
+	std::optional<std::pair<Cursor::Combat, int64_t>> currentReachCursor;
+	Point reachCursorPivot;
+	int reachCursorRasterScaling = 0;
 
 	/// Current cursor
 	std::string currentCursorID;
@@ -166,6 +174,8 @@ public:
 	void set(Cursor::Combat index);
 	void set(Cursor::Spellcast index);
 	void set(const std::string & index);
+	/// Uses one composed image and its lance-tip hotspot for either cursor backend.
+	bool setReach(Cursor::Combat direction, int64_t maximumReach);
 
 	std::shared_ptr<IImage> getCurrentImage();
 	Point getPivotOffset();

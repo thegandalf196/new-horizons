@@ -101,15 +101,6 @@ class CStackWindow : public CWindowObject
 		TrainingSection(CStackWindow * owner, int yOffset);
 	};
 
-	class LeadershipSection : public CWindowSection
-	{
-		std::vector<std::shared_ptr<CPicture>> backgrounds;
-		std::vector<std::shared_ptr<CMultiLineLabel>> labels;
-		std::vector<std::shared_ptr<LRClickableAreaWText>> clickableAreas;
-	public:
-		LeadershipSection(CStackWindow * owner, int yOffset, const CGHeroInstance * hero, CreatureID creatureId, int64_t count);
-	};
-
 	class BonusLineSection : public CWindowSection
 	{
 		std::array<std::shared_ptr<CPicture>, 2> icon;
@@ -180,6 +171,7 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<MoraleLuckBox> luck;
 		std::shared_ptr<LRClickableAreaWText> rankArea;
 		std::shared_ptr<LRClickableAreaWText> leadershipArea;
+		std::optional<int> leadershipEfficiencyPercent;
 
 		std::vector<std::shared_ptr<CLabel>> stats;
 
@@ -191,6 +183,9 @@ class CStackWindow : public CWindowObject
 		void addStatLabel(EStat index, int64_t value1, int64_t value2);
 		void addStatLabel(EStat index, int64_t value);
 		void addStatLabel(EStat index, const std::string & value);
+		void addLeadershipReadout(int rowY, const CGHeroInstance * hero,
+			const CStack * stack, CreatureID creature, int64_t count);
+		void drawLeadershipBadge(Canvas & canvas);
 		size_t statRow(EStat index) const;
 
 		static ImagePath getBackgroundName(bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank);
@@ -199,6 +194,8 @@ class CStackWindow : public CWindowObject
 		std::array<std::string, 11> statFormats;
 	public:
 		MainSection(CStackWindow * owner, int yOffset, bool showExp, bool showArt, bool showNewHorizonsStats, bool showRank);
+		void show(Canvas & canvas) override;
+		void showAll(Canvas & canvas) override;
 	};
 
 	class StackExperienceDetailsWindow;

@@ -5,6 +5,10 @@
 	"type": "object",
 	"additionalProperties": false,
 	"dependencies": {
+		"unifiedSkillProgressionVersion": {
+			"required": ["perkProgressionPolicyVersion", "offerWeightPolicyVersion", "necromancyPolicy"],
+			"properties": {"perkProgressionPolicyVersion": {"enum": [1]}, "offerWeightPolicyVersion": {"enum": [2]}, "necromancyPolicy": {"properties": {"version": {"enum": [4]}}}}
+		},
 		"perkProgressionPolicyVersion": {
 			"properties": {"offerWeightPolicyVersion": {"enum": [2]}},
 			"dependencies": {"perkProgressionPolicyVersion": ["offerWeightPolicyVersion", "perkOfferNormalization"]}
@@ -35,13 +39,14 @@
 			"not": {"required": ["commandPolicyVersion"]},
 			"properties": {
 				"skills": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"]},
-				"necromancyPolicy": {"properties": {"version": {"enum": [2, 3]}}}
+				"necromancyPolicy": {"properties": {"version": {"enum": [2, 3, 4]}}}
 			}
 		}
 	],
 	"properties": {
 		"commandAuthorityPolicy": {"$ref": "#/definitions/commandAuthorityPolicy"},
 		"warfarePolicyVersion": {"type": "integer", "enum": [1]},
+		"unifiedSkillProgressionVersion": {"type": "integer", "enum": [1], "description": "One full eligible tier choice immediately follows every acquired Skill rank. Historical random perk-offer limits do not truncate that pool."},
 		"elementalAttunementPolicy": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Current deterministic Conflux Attunement and revised perk meanings; a full active registry requires version 1."},
 		"commandPolicyVersion": {"type": "integer", "enum": [1], "description": "Current finite-Command perk meanings; a full active registry must carry version 1."},
 		"metamagicPolicy": {"$ref": "#/definitions/metamagicPolicyV3"},
@@ -471,7 +476,8 @@
 			"oneOf": [
 				{"$ref": "#/definitions/necromancyPolicyV1"},
 				{"$ref": "#/definitions/necromancyPolicyV2"},
-				{"$ref": "#/definitions/necromancyPolicyV3"}
+				{"$ref": "#/definitions/necromancyPolicyV3"},
+				{"$ref": "#/definitions/necromancyPolicyV4"}
 			]
 		},
 		"necromancyPolicyV1": {
@@ -528,6 +534,125 @@
 				"boneCollectorRaiseBonusPercent": {"type": "integer", "minimum": 0, "maximum": 100},
 				"soulHarvesterManaPerRaisedCreature": {"type": "integer", "minimum": 0, "maximum": 100},
 				"soulHarvesterManaCap": {"type": "integer", "minimum": 0, "maximum": 1000000}
+			}
+		},
+		"necromancyPolicyV4": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "Leadership-efficiency migration: Skeleton Requirement discounts replace the rank discount under Lord of the Dead; no maximum-HP bonus. Requires the new-game serialization boundary.",
+			"required": [
+				"version",
+				"skeletonLeadershipReductionPercent",
+				"lordOfTheDeadLeadershipReductionPercent",
+				"deathMarchSpeed",
+				"bonewardMagicalReductionPercent",
+				"tombGuardAdditionalRetaliations",
+				"graveplatePhysicalReductionPercent",
+				"graveKnowledgeRecoveryPercent",
+				"bonewardMagicResistancePercent",
+				"tombGuardDoubleStrike",
+				"deadMansLuckBonus",
+				"boneCollectorRaiseBonusPercent",
+				"soulHarvesterManaPerRaisedCreature",
+				"soulHarvesterManaCap"
+			],
+			"properties": {
+				"version": {
+					"type": "integer",
+					"enum": [
+						4
+					]
+				},
+				"skeletonLeadershipReductionPercent": {
+					"type": "array",
+					"minItems": 4,
+					"maxItems": 4,
+					"additionalItems": false,
+					"description": "Reduction by Skill rank: no Skill, Basic, Advanced, Expert.",
+					"items": [
+						{
+							"type": "integer",
+							"enum": [
+								0
+							]
+						},
+						{
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 99
+						},
+						{
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 99
+						},
+						{
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 99
+						}
+					]
+				},
+				"lordOfTheDeadLeadershipReductionPercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 99
+				},
+				"deathMarchSpeed": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"bonewardMagicalReductionPercent": {
+					"type": "integer",
+					"enum": [
+						0
+					]
+				},
+				"tombGuardAdditionalRetaliations": {
+					"type": "integer",
+					"enum": [
+						0
+					]
+				},
+				"graveplatePhysicalReductionPercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"graveKnowledgeRecoveryPercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"bonewardMagicResistancePercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"tombGuardDoubleStrike": {
+					"type": "boolean"
+				},
+				"deadMansLuckBonus": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 10
+				},
+				"boneCollectorRaiseBonusPercent": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"soulHarvesterManaPerRaisedCreature": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100
+				},
+				"soulHarvesterManaCap": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 1000000
+				}
 			}
 		},
 		"necromancyPolicyV3": {

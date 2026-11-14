@@ -279,7 +279,7 @@ public:
 	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const;
 	void validateNativePilotSerialization(bool supported) const;
-	void validateCommandSerialization(bool supported) const;
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
@@ -410,7 +410,8 @@ public:
 		if(h.saving)
 		{
 			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
-			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
@@ -573,16 +574,22 @@ public:
 
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CAPABILITIES))
 		{
-			h & heroCapabilityRules;
-			if(!h.saving)
+			if(h.saving)
+				h & heroCapabilityRules;
+			else
 			{
-				newHorizonsHeroes::validateArmyCommandSerialization(heroCapabilityRules,
+				JsonNode candidate;
+				h & candidate;
+				newHorizonsHeroes::validateArmyCommandSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
-				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(heroCapabilityRules,
+				newHorizonsHeroes::validateLeadershipEfficiencySerialization(candidate,
+					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
-				newHorizonsHeroes::validateGlyphsOfFearSerialization(heroCapabilityRules,
+				newHorizonsHeroes::validateGlyphsOfFearSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
-				newHorizonsHeroes::validateCapabilityRules(heroCapabilityRules, false);
+				newHorizonsHeroes::validateCapabilityRules(candidate, false);
+				heroCapabilityRules = std::move(candidate);
 			}
 		}
 		else if(!h.saving)
@@ -607,7 +614,8 @@ public:
 				h & candidate;
 				nativeRules::validatePilotPerks(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 				newHorizonsHeroes::validateCommandPerkSerialization(candidate,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 				heroPerkRules = std::move(candidate);
 			}
 			if(!h.saving) newHorizonsNecromancy::validatePolicySerialization(heroPerkRules,

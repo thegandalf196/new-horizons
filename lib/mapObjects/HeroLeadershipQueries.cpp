@@ -17,7 +17,11 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 {
 	const JsonNode * rules = &capabilityRules;
 	JsonNode resolvedFallback;
-	if((!newHorizonsHeroes::usesLegacyLeadership(*rules) || !rules->Struct().contains("profile")) && cb && getHeroClass())
+	if(newHorizonsHeroes::usesLeadershipEfficiency(*rules))
+		return newHorizonsHeroes::LeadershipCapacity{
+			newHorizonsHeroes::leadershipHeroReadout(*this).baseLeadership, 0, 100};
+	if(!capabilityRulesCaptured && (!newHorizonsHeroes::usesLegacyLeadership(*rules)
+		|| !rules->Struct().contains("profile")) && cb && getHeroClass())
 	{
 		resolvedFallback = newHorizonsHeroes::resolveCapabilityRules(cb->getHeroCapabilityRules(), getHeroClass()->getId());
 		rules = &resolvedFallback;

@@ -67,6 +67,7 @@ class CommandAuthorityContentTest(unittest.TestCase):
         historical["commandPolicyVersion"] = 1
         historical["skills"].pop(AUTHORITY)
         historical.pop("necromancyPolicy")
+        historical.pop("unifiedSkillProgressionVersion")
         self.perk_validator.validate(historical)
         historical["commandAuthorityPolicy"] = {"version": 1}
         self.assertFalse(self.perk_validator.is_valid(historical))
@@ -97,7 +98,7 @@ class CommandAuthorityContentTest(unittest.TestCase):
             with self.subTest(change=change):
                 self.assertFalse(self.hero_validator.is_valid(candidate))
 
-    def test_authority_values_are_slot_scoped_and_no_followup_choice_is_registered(self):
+    def test_authority_values_raise_leadership_without_slot_bonuses(self):
         skill = self.perks["skills"][AUTHORITY]
         self.assertEqual(skill["availability"], "All heroes")
         self.assertEqual([skill["ranks"][rank]["effect"]["parameters"] for rank in
@@ -119,6 +120,30 @@ class CommandAuthorityContentTest(unittest.TestCase):
                                   for key, tier, values in expected])
         self.assertTrue(all(row["effect"]["status"] == "active" for row in skill["perks"]))
         self.assertTrue(all(row["effect"]["status"] == "active" for row in skill["ranks"].values()))
+
+    def test_unified_progression_requires_its_distinct_captured_dependencies(self):
+        self.assertEqual(self.perks['unifiedSkillProgressionVersion'], 1)
+        self.assertEqual(self.perks['maxPerkChoices'], 2)  # Historical sampler only.
+        for bad in (None, True, 0, 2, '1'):
+            candidate = copy.deepcopy(self.perks)
+            candidate['unifiedSkillProgressionVersion'] = bad
+            self.assertFalse(self.perk_validator.is_valid(candidate), bad)
+        for key in ('perkProgressionPolicyVersion', 'offerWeightPolicyVersion', 'necromancyPolicy'):
+            candidate = copy.deepcopy(self.perks)
+            candidate.pop(key)
+            self.assertFalse(self.perk_validator.is_valid(candidate), key)
+        for skill in self.perks['skills'].values():
+            self.assertEqual([sum(row['requires'] == tier for row in skill['perks'])
+                              for tier in ('basic', 'advanced', 'expert')], [4, 4, 2])
+        capability = load('config/newHorizonsCapabilities.json')['leadership']['efficiencyPolicy']
+        authority = self.perks['skills'][AUTHORITY]
+        self.assertEqual([0] + [authority['ranks'][tier]['effect']['parameters']['leadershipPercent']
+                               for tier in ('basic', 'advanced', 'expert')],
+                         capability['authorityRankBonusPercent'])
+        for row in authority['perks']:
+            key = row['id'].split('.', 1)[1]
+            self.assertEqual(next(iter(row['effect']['parameters'].values())),
+                             capability['authorityPerkBonusPercent'][key])
 
     def test_authority_offers_follow_physical_growth_and_bind_all_twelve_packed_roles(self):
         self.assertEqual(self.skills["authority"]["gainChance"], {"might": 1, "magic": 1})
@@ -181,17 +206,17 @@ class CommandAuthorityContentTest(unittest.TestCase):
     def test_formation_policy_is_complete_strict_and_cannot_relabel_legacy_formulas(self):
         rules = load("config/newHorizonsCombat.json")["combat"]["heroCommands"]
         check = validator("newHorizonsCombatV4")
-        self.assertEqual(rules["formationRating"], {"version": 1, "attributeDivisor": 2, "commandMultiplier": 10})
+        self.assertEqual(rules["formationRating"], {"version": 1, "attributeDivisor": 2, "commandMultiplier": 0})
         self.assertEqual(rules["commands"]["secondWind"]["effects"]["additionalActivationDamagePercent"],
                          {"base": 50, "formationRating": .10, "cap": 100})
         self.assertEqual(rules["commands"]["feint"]["effects"]["retaliationDamageReductionPercent"],
                          {"base": 15, "formationRating": .10, "cap": 60})
         self.assertEqual(rules["commands"]["vanguard"]["duration"],
                          {"formationRatingPerRound": 150, "minimum": 1, "maximum": 3})
-        for invalid in (None, {}, {"version": True, "attributeDivisor": 2, "commandMultiplier": 10},
-                        {"version": 1, "attributeDivisor": 0, "commandMultiplier": 10},
+        for invalid in (None, {}, {"version": True, "attributeDivisor": 2, "commandMultiplier": 0},
+                        {"version": 1, "attributeDivisor": 0, "commandMultiplier": 0},
                         {"version": 1, "attributeDivisor": 2, "commandMultiplier": -1},
-                        {"version": 1, "attributeDivisor": 2, "commandMultiplier": 10, "unknown": 1}):
+                        {"version": 1, "attributeDivisor": 2, "commandMultiplier": 0, "unknown": 1}):
             candidate = copy.deepcopy(rules)
             candidate["formationRating"] = invalid
             self.assertFalse(check.is_valid(candidate), invalid)
@@ -218,12 +243,12 @@ class CommandAuthorityContentTest(unittest.TestCase):
             with self.subTest(order=order):
                 self.assertEqual(commands[order]["effects"], effects)
 
-    def test_approved_faction_replacements_leave_no_current_leadership_discount(self):
+    def test_necromancy_discount_and_independent_primordial_host_are_captured(self):
         necromancy = self.perks["skills"]["new-horizons:necromancy"]
         lord = necromancy["perks"][-1]
         self.assertEqual(lord["effect"]["parameters"], {"skeletonRequirementDiscountPercent": 90})
         policy = self.perks["necromancyPolicy"]
-        self.assertEqual(policy["version"], 2)
+        self.assertEqual(policy["version"], 4)
         self.assertEqual(policy["lordOfTheDeadLeadershipReductionPercent"], 90)
         self.assertEqual(policy["skeletonLeadershipReductionPercent"], [0, 50, 60, 70])
         primordial = next(row for row in self.perks["skills"]["new-horizons:elementalRebirth"]["perks"]

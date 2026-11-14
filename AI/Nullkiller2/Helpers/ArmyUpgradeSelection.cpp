@@ -4,6 +4,7 @@
  */
 #include "../StdInc.h"
 #include "ArmyUpgradeSelection.h"
+#include "LeadershipEvaluation.h"
 #include "../../../lib/entities/hero/NewHorizonsGhostSpecialty.h"
 #include "../../../lib/gameState/UpgradeInfo.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -42,15 +43,19 @@ std::optional<CreatureID> choose(const CStackInstance & stack, const UpgradeInfo
 	}
 	if(viable.empty())
 		return std::nullopt;
-	CreatureID selected = *vstd::maxElementByFun(viable, [](const CreatureID & id)
+	const auto strength = [&](CreatureID creature)
 	{
-		return id.toCreature()->getAIValue();
+		return leadershipAI::stackPower(carrier, creature, stack.getCount(), stack.getArmy());
+	};
+	CreatureID selected = *vstd::maxElementByFun(viable, [&](const CreatureID & id)
+	{
+		return strength(id);
 	});
-	const auto oldValue = stack.getCreature()->getAIValue();
-	const auto newValue = selected.toCreature()->getAIValue();
+	const auto oldValue = strength(stack.getCreatureID());
+	const auto newValue = strength(selected);
 	if(newValue == oldValue)
 		for(const auto candidate : viable)
-			if(candidate.toCreature()->getAIValue() == newValue
+			if(strength(candidate) == newValue
 				&& recognizedFreeBenefit(stack, offers, carrier, candidate))
 			{
 				selected = candidate;

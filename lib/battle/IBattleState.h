@@ -38,6 +38,7 @@
 #include "BattleEffectExchange.h"
 #include "NewHorizonsCrisisCommand.h"
 #include "../entities/creature/NewHorizonsCreatureCategoryRules.h"
+#include "../entities/hero/LeadershipComposition.h"
 
 class ObstacleChanges;
 class UnitChanges;
@@ -216,6 +217,11 @@ public:
 		return empty;
 	}
 	virtual uint8_t getElementalAttunementMask(BattleSide) const { return 0; }
+	virtual const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide) const
+	{
+		static const newHorizonsHeroes::LeadershipComposition empty;
+		return empty;
+	}
 	virtual const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide) const
 	{
 		static const newHorizonsElementalAttunement::Profile empty;

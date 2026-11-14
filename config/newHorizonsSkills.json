@@ -1689,7 +1689,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "After victory, raise Skeletons from 10% of eligible enemy casualties.",
+			"description": "After victory, raise Skeletons from 10% of eligible enemy casualties; Skeletons and Skeleton Warriors require 50% less Leadership.",
 			"images": {
 				"small": "SECSK32:0:39",
 				"medium": "SECSKILL:0:39",
@@ -1705,7 +1705,7 @@
 			}
 		},
 		"advanced": {
-			"description": "After victory, raise Skeletons from 20% of eligible enemy casualties.",
+			"description": "After victory, raise Skeletons from 20% of eligible enemy casualties; Skeletons and Skeleton Warriors require 60% less Leadership.",
 			"images": {
 				"small": "SECSK32:0:40",
 				"medium": "SECSKILL:0:40",
@@ -1721,7 +1721,7 @@
 			}
 		},
 		"expert": {
-			"description": "After victory, raise Skeletons from 30% of eligible enemy casualties.",
+			"description": "After victory, raise Skeletons from 30% of eligible enemy casualties; Skeletons and Skeleton Warriors require 70% less Leadership.",
 			"images": {
 				"small": "SECSK32:0:41",
 				"medium": "SECSKILL:0:41",

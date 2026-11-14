@@ -62,15 +62,15 @@ when installed defaults differ. A reduced capture requires
 settings/map/world/lobby prefixes, and readers reject unsupported reduced
 overrides before applying them. Identity captures remain old-format compatible.
 
-### Command capability boundary
+### Capability boundary
 
 Disabled calibration returns before reading any hero capability, recruitment
 supply, Gold budget or class-reference curve. Ordinary generated formations also
 skip calibration-value lookups. Fresh defaults therefore do not depend on the
-retired Leadership system, even outside a Command context.
+retired calibration system, including in current Leadership-efficiency worlds.
 
-Fresh worlds with an explicit `armyCommand` policy capture
-`neutralLeadershipCalibration` as disabled. They do not construct a replacement
+Current Leadership-efficiency worlds capture `neutralLeadershipCalibration` as
+disabled. Historical worlds with an explicit `armyCommand` policy do so too. They do not construct a replacement
 Command curve or apply hero slot/tier restrictions to neutral containers. The
 neutral size percentage, recruitment percentage and ordinary wandering growth
 settings keep their independent values and rounding.

@@ -85,6 +85,18 @@ else()
 endif()
 
 set(test_SRCS
+		hero/LeadershipEfficiencyRulesTest.cpp
+		server/battles/LeadershipEfficiencyBattleTest.cpp
+		../client/tests/LeadershipEfficiencyBadgeTest.cpp
+		../client/tests/CreaturePreviewFitTest.cpp
+		../client/tests/ReachCursorTest.cpp
+		../client/render/ReachCursorBody.cpp
+		../client/render/ReachCursorCache.cpp
+		../client/render/ReachCursorLayout.cpp
+		../client/render/ReachCursorHandoff.cpp
+		hero/UnifiedSkillProgressionTest.cpp
+		server/UnifiedHeroProgressionTest.cpp
+		nativeDamage/NativeDamageBoundaryTest.cpp
 		hero/NewHorizonsCommandRulesTest.cpp
 		hero/NewHorizonsCommandStateTest.cpp
 		hero/NewHorizonsCommandPlacementTest.cpp
@@ -1084,6 +1096,8 @@ if(ENABLE_BATTLE_AI)
 	list(FILTER BATTLE_AI_TEST_SRCS EXCLUDE REGEX ".*main\\.cpp$")
 
 	list(APPEND test_SRCS
+		battleAI/LeadershipProjectionTest.cpp
+		battleAI/LeadershipDamageCacheTest.cpp
 		${BATTLE_AI_TEST_SRCS}
 		battleAI/CommandAuthorityProjectionTest.cpp
 		battleAI/HeroicSpiritProjectionTest.cpp
@@ -1292,6 +1306,7 @@ endif()
 
 if(ENABLE_NULLKILLER2_AI)
 	list(APPEND test_SRCS
+		nullkiller2/LeadershipEvaluationTest.cpp
 		nullkiller2/CommandArmyAdmissionTest.cpp
 		nullkiller2/CommandEnhancementChoiceTest.cpp
 		server/NewHorizonsMerchantPrinceTest.cpp

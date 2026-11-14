@@ -40,7 +40,7 @@ void CPlayerInterface::heroGotLevelWithReroll(const CGHeroInstance *hero, Primar
 	auto showLevelUpDialog = [this, hero, pskill, availableSkills = std::move(availableSkills),
 		availablePerks = std::move(availablePerks), queryID, primaryGains, optionalRerollAvailable, replacesQueryID]() mutable
 	{
-		if(replacesQueryID < 0)
+		if(replacesQueryID < 0 && (availablePerks.empty() || !availableSkills.empty()))
 			ENGINE->sound().playSound(soundBase::heroNewLevel);
 		auto reroll = [this, queryID](size_t skillIndex)
 		{

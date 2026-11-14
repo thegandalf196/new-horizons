@@ -15,6 +15,7 @@
 #include "../lib/LoadProgress.h"
 #include "../lib/gameState/GameStatistics.h"
 #include "../lib/networkPacks/PacksForServer.h"
+#include "../lib/networkPacks/PacksForClient.h"
 #include "../lib/serializer/GameConnectionID.h"
 #include "queries/HeroLevelUpOffer.h"
 #include "../lib/serializer/PlayerConnectionID.h"
@@ -220,6 +221,12 @@ public:
 	bool offerHeroCommandEnhancement(const CGHeroInstance * hero);
 	bool heroCommandEnhancementReply(QueryID qid, ObjectInstanceID hero, int64_t milestone, int32_t choice, PlayerColor player);
 	void resumeMasteryQueries(PlayerColor player);
+	bool offerHeroRequiredPerk(const CGHeroInstance * hero);
+	bool restoreHeroProgressionOffer(const CGHeroInstance * hero);
+	void rememberHeroProgressionOffer(const HeroLevelUp & offer);
+	void validatePendingHeroProgression() const;
+	void detachHeroProgression(const CGHeroInstance * hero, bool removed);
+	void resumeTransferredHeroProgression(const CGHeroInstance * hero, PlayerColor previousOwner);
 	bool heroMasteryReply(QueryID qid, ObjectInstanceID hero, uint64_t sequence, int32_t choice, PlayerColor player);
 	/// Set continueProgression=false when the caller must acknowledge a query only after the choice pack.
 	void levelUpHero(const CGHeroInstance * hero, SecondarySkill skill,
@@ -297,6 +304,10 @@ public:
 	bool moveArmy(const CArmedInstance *src, const CArmedInstance *dst, bool allowMerging);
 
 	std::map<ObjectInstanceID, uint8_t> pendingProdigyLevels;
+	/// Persist offer values, never live query pointers. Rank/perk debt is also
+	/// recoverable from the hero's captured ranks and selected tiers.
+	std::map<ObjectInstanceID, HeroLevelUp> pendingHeroLevelUps;
+	std::set<ObjectInstanceID> deferredPerkPrompts;
 	void validatePendingProdigyLevels() const;
 
 	template <typename Handler> void serialize(Handler &h)
@@ -305,11 +316,22 @@ public:
 		{
 			newHorizonsLevelUp::validateNoPendingOptionalOffer(*this);
 			validatePendingProdigyLevels();
+			validatePendingHeroProgression();
+			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY) && !pendingHeroLevelUps.empty())
+				throw std::runtime_error("Cannot write pending unified progression to an older format");
 		}
 		h & QID;
 		h & pendingProdigyLevels;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY))
+			h & pendingHeroLevelUps;
+		else if(!h.saving)
+			pendingHeroLevelUps.clear();
 		if(!h.saving)
+		{
 			validatePendingProdigyLevels();
+			validatePendingHeroProgression();
+			deferredPerkPrompts.clear();
+		}
 		h & *randomizer;
 		h & *battles;
 		h & *heroPool;

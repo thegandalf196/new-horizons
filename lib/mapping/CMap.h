@@ -203,7 +203,7 @@ public:
 	/// Returns list of identities of heroes currently present in pool
 	std::vector<HeroTypeID> getHeroesInPool() const;
 	void validateNativePilotSerialization(bool supported) const;
-	void validateCommandSerialization(bool supported) const;
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const;
 	/// Validate all serialized hero receipts before an enclosing writer's prefix.
 	void validateNewHorizonsProspectorSerialization(bool supported) const;
 	const std::vector<int3> & getProtectedAdventureMobilityTiles() const;
@@ -373,7 +373,8 @@ public:
 		if(h.saving)
 			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 		if(h.saving)
-			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		if(h.saving)
 			newHorizonsNeutralArmies::validateSerialization(getSettings(), h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 		if(h.saving)

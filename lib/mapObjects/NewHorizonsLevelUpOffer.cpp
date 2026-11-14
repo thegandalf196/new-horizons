@@ -11,7 +11,32 @@ void newHorizonsHeroes::applyLevelUpOffer(CGHeroInstance * hero, const HeroLevel
 {
 	if(!hero)
 		throw std::runtime_error("Level-up offer for a missing hero");
-	if(pack.skills.empty())
+	const bool unified = usesUnifiedSkillProgression(hero->getPerkState().rules);
+	if(unified)
+	{
+		if(pack.heroId != hero->id || pack.player != hero->getOwner() || pack.perkOfferSeed != 0)
+			throw std::runtime_error("Invalid unified level-up offer identity");
+		if(pack.perkOnly)
+		{
+			const auto expected = hero->getPerkState().nextRequiredPerkOffer([hero](const std::string & skill)
+				{ return hero->getPerkSkillRank(skill); });
+			if(!pack.skills.empty() || expected.empty() || pack.perks != expected
+				|| pack.reachedLevel != hero->level || pack.optionalRerollAvailable)
+				throw std::runtime_error("Invalid mandatory perk follow-up");
+			return;
+		}
+		if(!pack.perks.empty() || pack.skills.size() > PERK_MAX_SKILL_CHOICES)
+			throw std::runtime_error("Unified level-up must offer only Skills");
+		if(pack.restoredOffer)
+		{
+			if(pack.reachedLevel != hero->level)
+				throw std::runtime_error("Saved level-up offer does not match the hero level");
+			return;
+		}
+	}
+	else if(pack.perkOnly || pack.restoredOffer)
+		throw std::runtime_error("Unified level-up flags without captured policy");
+	if(!unified && pack.skills.empty())
 	{
 		// Major System Rework Part VII: Dedicated follow-up perk offer for an acquired skill rank.
 		if(!pack.perks.empty())

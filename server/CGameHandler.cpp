@@ -573,6 +573,7 @@ void CGameHandler::init(StartInfo *si, Load::ProgressAccumulator & progressTrack
 
 void CGameHandler::onPlayerTurnStarted(PlayerColor which)
 {
+	resumeMasteryQueries(which);
 	turnTimerHandler->onPlayerGetTurn(which);
 	newTurnProcessor->onPlayerTurnStarted(which);
 }
@@ -799,12 +800,16 @@ bool CGameHandler::removeObject(const CGObjectInstance * obj, const PlayerColor 
 		return false;
 	}
 
+	const auto * removedHero = dynamic_cast<const CGHeroInstance *>(obj);
+	const auto previousOwner = obj->getOwner();
+	detachHeroProgression(removedHero, true);
 	RemoveObject ro;
 	ro.objectID = obj->id;
 	ro.initiator = initiator;
 	sendAndApply(ro);
 
 	checkVictoryLossConditionsForAll(); //e.g. if monster escaped (removing objs after battle is done directly by endBattle, not this function)
+	if(removedHero && previousOwner.isValidPlayer()) resumeMasteryQueries(previousOwner);
 	return true;
 }
 
@@ -1285,8 +1290,11 @@ bool CGameHandler::teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui
 void CGameHandler::setOwner(const CGObjectInstance * obj, const PlayerColor owner)
 {
 	PlayerColor oldOwner = gameState().getOwner(obj->id);
+	const auto * transferredHero = dynamic_cast<const CGHeroInstance *>(obj);
+	if(oldOwner != owner) detachHeroProgression(transferredHero, false);
 
 	setObjPropertyID(obj->id, ObjProperty::OWNER, owner);
+	if(oldOwner != owner) resumeTransferredHeroProgression(transferredHero, oldOwner);
 
 	std::set<PlayerColor> playerColors = {owner, oldOwner};
 	checkVictoryLossConditions(playerColors);

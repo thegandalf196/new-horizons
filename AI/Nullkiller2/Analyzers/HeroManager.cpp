@@ -159,11 +159,14 @@ void HeroManager::update()
 	uint64_t strongestHeroTotalStrength = 0;
 
 	for(auto & hero : myHeroes)
-		vstd::amax(strongestHeroTotalStrength, hero->getTotalStrength());
+		vstd::amax(strongestHeroTotalStrength, static_cast<uint64_t>(
+			getNormalizedHeroStrength(hero) * getHeroArmyStrengthWithCommander(hero, hero)));
 
 	for(auto & hero : myHeroes)
 	{
-		scores[hero] = evaluateMainHeroRoleScore(evaluateFightingStrength(hero), hero->getTotalStrength(), strongestHeroTotalStrength);
+		const auto strength = static_cast<uint64_t>(getNormalizedHeroStrength(hero)
+			* getHeroArmyStrengthWithCommander(hero, hero));
+		scores[hero] = evaluateMainHeroRoleScore(evaluateFightingStrength(hero), strength, strongestHeroTotalStrength);
 		knownFightingStrength[hero->id] = normalizeHeroStrength(hero->getHeroStrength());
 	}
 

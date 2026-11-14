@@ -71,6 +71,13 @@ void QueriesProcessor::popQuery(QueryPtr query)
 		popQuery(player, query);
 }
 
+void QueriesProcessor::discardQuery(const QueryPtr & query)
+{
+	if(!query) return;
+	for(auto & stack : queries)
+		std::erase(stack, query);
+}
+
 void QueriesProcessor::addQuery(QueryPtr query)
 {
 	for(auto player : query->players)

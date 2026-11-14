@@ -36,6 +36,8 @@ JsonNode capturedPolicy()
 JsonNode capturedPolicyV3()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	// The historical V3 policy predates mandatory rank-and-perk progression.
+	rules.Struct().erase("unifiedSkillProgressionVersion");
 	auto & row = rules[newHorizonsNecromancy::POLICY_KEY];
 	row["version"].Integer() = 3;
 	row.Struct().erase("skeletonLeadershipReductionPercent");
@@ -98,7 +100,7 @@ TEST(NewHorizonsNecromancyPolicy, RejectsMissingUnknownAndUnsupportedFields)
 	unknown[newHorizonsNecromancy::POLICY_KEY]["extra"].Integer() = 1;
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(unknown), std::runtime_error);
 	auto future = capturedPolicy();
-	future[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 4;
+	future[newHorizonsNecromancy::POLICY_KEY]["version"].Integer() = 5;
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(future), std::runtime_error);
 	JsonNode nullPolicy;
 	nullPolicy[newHorizonsNecromancy::POLICY_KEY] = JsonNode();
@@ -220,14 +222,14 @@ TEST(NewHorizonsNecromancyPolicy, VersionTwoFieldsAndSerializationRemainDistinct
 	EXPECT_THROW(newHorizonsNecromancy::validatePolicy(current), std::runtime_error);
 }
 
-TEST(NewHorizonsNecromancyPolicy, ActualShippedRegistryPassesNativeValidationAndPreparationWithPolicyTwo)
+TEST(NewHorizonsNecromancyPolicy, ActualShippedRegistryPassesNativeValidationAndPreparationWithPolicyFour)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
 	ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
 	EXPECT_NE(newHorizonsHeroes::preparePilotPerkRules(rules), nullptr);
 	const auto captured = newHorizonsNecromancy::policy(rules);
 	ASSERT_TRUE(captured);
-	EXPECT_EQ(captured->version, 2);
+	EXPECT_EQ(captured->version, 4);
 	EXPECT_EQ(captured->lordOfTheDeadMaximumHealthPercent, 0);
 	EXPECT_EQ(captured->skeletonLeadershipReductionPercent, (std::array<int, 4>{0, 50, 60, 70}));
 	EXPECT_EQ(captured->lordOfTheDeadLeadershipReductionPercent, 90);

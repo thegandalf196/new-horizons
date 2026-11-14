@@ -76,3 +76,144 @@ inline JsonNode historicalCapabilityRulesV4()
 	result.setOverrideFlag(true); // A whole capture must not merge installed V5 fields.
 	return result;
 }
+
+/// Frozen Command V5 capture from new-horizons commit 9b5fe8b47c.
+/// Keep independent of installed defaults; preserve the complete historical JSON.
+inline JsonNode historicalCapabilityRulesV5()
+{
+	const std::string text = R"HISTORICAL_V5({
+	"schemaVersion": 1,
+	"rulesetVersion": 5,
+	"armyCommand": {
+		"version": 1,
+		"defaultStartingArmyVersion": 1,
+		"classLevelIntervals": {
+			"core:knight": 3,
+			"core:cleric": 4,
+			"core:ranger": 3,
+			"core:druid": 4,
+			"core:alchemist": 3,
+			"core:wizard": 4,
+			"core:demoniac": 3,
+			"core:heretic": 4,
+			"core:deathknight": 3,
+			"core:necromancer": 4,
+			"core:overlord": 3,
+			"core:warlock": 4,
+			"core:barbarian": 3,
+			"core:battlemage": 4,
+			"core:beastmaster": 3,
+			"core:witch": 4,
+			"core:planeswalker": 3,
+			"core:elementalist": 4
+		},
+		"authorityRankBonuses": [0, 1, 2, 3],
+		"enhancements": {
+			"readiness": {"levelDivisor": 20, "multiplier": 1},
+			"mobility": {"levelDivisor": 20, "multiplier": 1},
+			"counterattack": {"levelDivisor": 20, "multiplier": 1},
+			"weaponDrill": {"levelDivisor": 10, "multiplier": 1},
+			"guardDrill": {"levelDivisor": 10, "multiplier": 1},
+			"fortune": {"levelDivisor": 10, "multiplier": 1},
+			"courage": {"levelDivisor": 10, "multiplier": 1},
+			"endurance": {"levelDivisor": 10, "multiplier": 5},
+			"warding": {"levelDivisor": 10, "multiplier": 5}
+		},
+		"authorityPerks": {
+			"offensiveDrills": 2,
+			"defensiveDrills": 2,
+			"conditioning": 10,
+			"battleReadiness": 1,
+			"officerCorps": 2,
+			"maneuverTraining": 1,
+			"counterattackTraining": 1,
+			"protectiveTraining": 10,
+			"veteranCorps": 15,
+			"grandMarshal": 10
+		}
+	},
+	"skeletonTransformer": {
+		"aggregateHealthPercent": 50
+	},
+	"siege": {
+		"ballistaDamageMultiplier": [
+			1,
+			2,
+			3,
+			4
+		],
+		"siegeRating": [
+			0,
+			20,
+			40,
+			60
+		],
+		"outputs": {
+			"ballistaDamage": {
+				"base": 50,
+				"siegeCoefficientHalf": 4
+			},
+			"catapultStructuralDamage": {
+				"base": 100,
+				"siegeCoefficientHalf": 6
+			},
+			"firstAidHealing": {
+				"base": 75,
+				"siegeCoefficientHalf": 6
+			},
+			"defensiveTowerDamage": {
+				"base": 60,
+				"siegeCoefficientHalf": 3
+			}
+		},
+		"directControlChance": [
+			0,
+			100,
+			100,
+			100
+		]
+	},
+	"warMachineShop": {
+		"inventory": [
+			"core:ballista",
+			"core:ammoCart",
+			"core:firstAidTent"
+		],
+		"discountPercent": 75,
+		"roundingGold": 50,
+		"favoredMachineByFaction": {
+			"core:castle": "core:ballista",
+			"core:dungeon": "core:ballista",
+			"core:conflux": "core:ballista",
+			"core:tower": "core:ammoCart",
+			"core:inferno": "core:ammoCart",
+			"core:stronghold": "core:ammoCart",
+			"core:rampart": "core:firstAidTent",
+			"core:necropolis": "core:firstAidTent",
+			"core:fortress": "core:firstAidTent"
+		}
+	},
+	"artifactManaRegeneration": {
+		"core:charmOfMana": {
+			"minimum": 5,
+			"percent": 5
+		},
+		"core:talismanOfMana": {
+			"minimum": 10,
+			"percent": 10
+		},
+		"core:mysticOrbOfMana": {
+			"minimum": 15,
+			"percent": 15
+		}
+	},
+	"glyphsOfFearAura": {
+		"radius": 8,
+		"morale": -1
+	}
+}
+)HISTORICAL_V5";
+	JsonNode result(text.data(), text.size(), "historical capability V5");
+	result.setOverrideFlag(true); // A whole capture must not merge installed current fields.
+	return result;
+}

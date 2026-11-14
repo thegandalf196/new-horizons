@@ -1374,25 +1374,6 @@ const IBonusBearer * BattleInfo::getBonusBearer() const
 	return this;
 }
 
-int64_t BattleInfo::getActualDamage(const DamageRange & damage, int32_t attackerCount, vstd::RNG & rng) const
-{
-	if(damage.min != damage.max)
-	{
-		int64_t sum = 0;
-
-		auto howManyToAv = std::min<int32_t>(10, attackerCount);
-
-		for(int32_t g = 0; g < howManyToAv; ++g)
-			sum += rng.nextInt64(damage.min, damage.max);
-
-		return sum / howManyToAv;
-	}
-	else
-	{
-		return damage.min;
-	}
-}
-
 int3 BattleInfo::getLocation() const
 {
 	return tile;

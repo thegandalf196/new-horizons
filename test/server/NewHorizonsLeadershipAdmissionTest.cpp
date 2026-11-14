@@ -34,6 +34,7 @@
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyH3MBuilder.h"
 #include "../mock/TinyMapGameTest.h"
+#include "../hero/HistoricalCapabilityRules.h"
 
 namespace
 {
@@ -194,7 +195,7 @@ protected:
         loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
         loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
             JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-        auto capabilities = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
+        auto capabilities = historicalCapabilityRulesV4(); // Retired hard-cap admission regressions.
         // The reported runtime snapshot assigned Halflings a 60-Leadership
         // requirement; keep that observed value local to this regression.
         capabilities["leadership"]["creatureRequirements"]["core:halfling"] = JsonNode(60);

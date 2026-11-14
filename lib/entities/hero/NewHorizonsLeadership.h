@@ -11,18 +11,62 @@
 
 #include "../../GameConstants.h"
 #include "NewHorizonsCommandArmy.h"
+#include "LeadershipComposition.h"
 #include "../../constants/EntityIdentifiers.h"
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string>
 
 class CArmedInstance;
 class CCreatureSet;
 class CGHeroInstance;
+class JsonNode;
 
 namespace newHorizonsHeroes
 {
 struct LeadershipSlotCapacity;
+
+/// Transient read-only modifier input for actual and hypothetical skill choices.
+/// Authority perk names are the short keys of the captured efficiency policy.
+struct DLL_LINKAGE LeadershipModifiers
+{
+	int authorityRank = 0;
+	int necromancyRank = 0;
+	bool lordOfTheDead = false;
+	std::array<std::string, 3> authorityPerks;
+	std::optional<int64_t> flatLeadership;
+};
+
+struct DLL_LINKAGE LeadershipHeroReadout
+{
+	int64_t baseLeadership = 0;
+	int64_t effectiveLeadership = 0;
+	int authorityBonusPercent = 0;
+};
+
+struct DLL_LINKAGE LeadershipStackReadout
+{
+	bool active = false;
+	int64_t count = 0;
+	int64_t baseLeadership = 0;
+	int64_t effectiveLeadership = 0;
+	int64_t requirement = 0;
+	int64_t capacity = 1;
+	double efficiency = 1.0;
+	double effectiveCount() const { return static_cast<double>(count) * efficiency; }
+};
+
+DLL_LINKAGE bool usesLeadershipEfficiency(const JsonNode & rules);
+DLL_LINKAGE LeadershipModifiers captureLeadershipModifiers(const CGHeroInstance & hero);
+DLL_LINKAGE LeadershipHeroReadout leadershipHeroReadout(const CGHeroInstance & hero);
+DLL_LINKAGE LeadershipComposition captureLeadershipComposition(const CGHeroInstance & hero,
+	const CCreatureSet * armyContext = nullptr);
+DLL_LINKAGE LeadershipStackReadout leadershipStackReadout(const CGHeroInstance * hero,
+	CreatureID creature, int64_t count, const LeadershipComposition * composition = nullptr,
+	const CCreatureSet * armyContext = nullptr, const LeadershipModifiers * projection = nullptr);
+DLL_LINKAGE int64_t leadershipWithBonusPercent(int64_t base, int bonusPercent);
 /// Capacity arithmetic and the read-only result for a saved-capability hero.
 /// The primitive never mutates an army or movement budget.  `movementPercent`
 /// is retained as an inspectable over-capacity diagnostic for saved views; it

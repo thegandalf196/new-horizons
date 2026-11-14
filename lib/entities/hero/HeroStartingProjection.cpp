@@ -26,10 +26,14 @@ CreatureID defaultStartingArmyCreature(const CHero & hero, const JsonNode & capa
 	CreatureID creature, bool commandSpecialist)
 {
 	const auto & policy = capabilities["armyCommand"];
-	if(!policy.isStruct() || !policy.Struct().contains("defaultStartingArmyVersion"))
-		return creature; // An older capture never inherits the installed default.
-	if(!capturedCommandRules(capabilities))
-		return creature;
+	const bool efficiencyDefault = usesLeadershipEfficiency(capabilities)
+		&& capabilities["defaultStartingArmyVersion"].Integer() == 1;
+	if(!efficiencyDefault)
+	{
+		if(!policy.isStruct() || !policy.Struct().contains("defaultStartingArmyVersion"))
+			return creature; // An older capture never inherits the installed default.
+		if(!capturedCommandRules(capabilities)) return creature;
+	}
 	if(!hero.heroClass || hero.heroClass->faction != FactionID::CASTLE || commandSpecialist)
 		return creature;
 	if(creature == CreatureID(CreatureID::decode("core:griffin")))

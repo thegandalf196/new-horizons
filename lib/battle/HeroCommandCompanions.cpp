@@ -62,10 +62,8 @@ int secondWindPercent(const CGHeroInstance & hero,
 {
 	if(newHorizonsWarfare::enabled(&hero))
 	{
-		const auto command = hero.getArmyCommand();
-		if(!command) throw std::runtime_error("Second Wind requires captured Command and combat rules");
 		return orderFormation::secondWindPercent(hero.getHeroOrderRules(),
-			hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE), command->effective(),
+			hero.getPrimSkillLevel(PrimarySkill::ATTACK), hero.getPrimSkillLevel(PrimarySkill::DEFENSE), orderFormation::command(hero),
 			leadershipEfficiencyPercent(hero, divineMandateEfficiencyBonusPercent), crownAndAltar);
 	}
 	int64_t leadership = 0;

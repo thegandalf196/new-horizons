@@ -141,6 +141,15 @@ The inventory distinguishes lexical declarations and CMake references from
 configured discovery and executed results; neither source presence nor a managed
 test's skip establishes acceptance.
 
+When updating a copied source tree used by an incremental build, changed inputs
+must receive fresh modification times. Preserving older timestamps can make
+Ninja reuse objects built from different content. Source checksums and a zero
+build exit code alone do not prove that those objects were rebuilt. If this has
+occurred, invalidate the complete affected object and precompiled-header
+dependency closure, including its consumers, or clean the affected target graphs
+before rebuilding. Preserve compiler-command evidence and compare expected test
+declarations with actual binary discovery before executing the acceptance suite.
+
 `new-horizons-linux-native-tests` builds `vcmitest` separately. Running native
 gameplay tests still requires their documented isolated TEST profile and original
 resources. Enabling test compilation does not authorize graphical launches,

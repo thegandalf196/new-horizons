@@ -9,7 +9,38 @@
 #include "../gui/CursorHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/BattleReach.h"
 #include "../../lib/battle/PossiblePlayerBattleAction.h"
+
+namespace
+{
+void setMeleeAttackCursor(const CStack * stack, BattleHex::EDir direction, bool longWeapon)
+{
+	static const std::map<BattleHex::EDir, Cursor::Combat> sectorCursor = {
+		{BattleHex::TOP_LEFT,     Cursor::Combat::HIT_SOUTHEAST},
+		{BattleHex::TOP_RIGHT,    Cursor::Combat::HIT_SOUTHWEST},
+		{BattleHex::RIGHT,        Cursor::Combat::HIT_WEST     },
+		{BattleHex::BOTTOM_RIGHT, Cursor::Combat::HIT_NORTHWEST},
+		{BattleHex::BOTTOM_LEFT,  Cursor::Combat::HIT_NORTHEAST},
+		{BattleHex::LEFT,         Cursor::Combat::HIT_EAST     },
+		{BattleHex::TOP,          Cursor::Combat::HIT_SOUTH    },
+		{BattleHex::BOTTOM,       Cursor::Combat::HIT_NORTH    }
+	};
+	const auto cursor = sectorCursor.find(direction);
+	if(cursor == sectorCursor.end())
+	{
+		ENGINE->cursor().set(Cursor::Combat::BLOCKED);
+		return;
+	}
+	if(stack && !longWeapon)
+	{
+		const auto maximumReach = battleReach::maximumMeleeDistance(*stack);
+		if(maximumReach > 1 && ENGINE->cursor().setReach(cursor->second, maximumReach))
+			return;
+	}
+	ENGINE->cursor().set(cursor->second);
+}
+}
 
 void BattleActionsController::actionSetCursor(PossiblePlayerBattleAction action, const BattleHex & targetHex)
 {
@@ -37,23 +68,9 @@ void BattleActionsController::actionSetCursor(PossiblePlayerBattleAction action,
 		case PossiblePlayerBattleAction::WALK_AND_ATTACK:
 		case PossiblePlayerBattleAction::ATTACK_AND_RETURN:
 		{
-			static const std::map<BattleHex::EDir, Cursor::Combat> sectorCursor = {
-				{BattleHex::TOP_LEFT,     Cursor::Combat::HIT_SOUTHEAST},
-				{BattleHex::TOP_RIGHT,    Cursor::Combat::HIT_SOUTHWEST},
-				{BattleHex::RIGHT,        Cursor::Combat::HIT_WEST     },
-				{BattleHex::BOTTOM_RIGHT, Cursor::Combat::HIT_NORTHWEST},
-				{BattleHex::BOTTOM_LEFT,  Cursor::Combat::HIT_NORTHEAST},
-				{BattleHex::LEFT,         Cursor::Combat::HIT_EAST     },
-				{BattleHex::TOP,          Cursor::Combat::HIT_SOUTH    },
-				{BattleHex::BOTTOM,       Cursor::Combat::HIT_NORTH    }
-			};
-
-			auto direction = owner.fieldController->selectAttackDirection(targetHex);
-
-			assert(sectorCursor.count(direction) > 0);
-			if (sectorCursor.count(direction))
-				ENGINE->cursor().set(sectorCursor.at(direction));
-
+			setMeleeAttackCursor(owner.stacksController->getActiveStack(),
+				owner.fieldController->selectAttackDirection(targetHex),
+				action.get() == PossiblePlayerBattleAction::LONG_WEAPON_ATTACK);
 			return;
 		}
 

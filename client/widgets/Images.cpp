@@ -463,7 +463,16 @@ void CShowableAnim::blitImage(size_t frame, size_t group, Canvas & to)
 			img->setEffectColor(effectColor);
 		if (getModeForFlags(flags) == EImageBlitMode::WITH_SHADOW_AND_SELECTION)
 			img->setOverlayColor(Colors::TRANSPARENCY);
-		to.draw(img, pos.topLeft(), src);
+		if(previewCanvas)
+		{
+			previewCanvas->drawColor(Rect(Point(), previewSource.dimensions()), Colors::TRANSPARENCY);
+			previewCanvas->draw(img, Point(), previewSource);
+			scaledPreviewCanvas->drawColor(Rect(Point(), previewDestination.dimensions()), Colors::TRANSPARENCY);
+			scaledPreviewCanvas->drawScaled(*previewCanvas, Point(), previewDestination.dimensions());
+			to.drawTransparent(*scaledPreviewCanvas, pos.topLeft() + previewDestination.topLeft(), 1.0);
+		}
+		else
+			to.draw(img, pos.topLeft(), src);
 	}
 }
 

@@ -1,14 +1,15 @@
 # New Horizons
 
-[Download the latest New Horizons Early Access for Windows and Linux](https://github.com/thegandalf196/new-horizons/releases/latest), with installation instructions. Requires Heroes III Complete; original game assets are not included.
+[Download the latest New Horizons Early Access](https://github.com/thegandalf196/new-horizons/releases/latest), with available platform packages and installation instructions. Requires Heroes III Complete; original game assets are not included.
 
 [What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
-Source metadata targets **0.90.0**. See the
-[changelog](docs/NEW_HORIZONS_CHANGELOG.md#090-early-access) for its scope.
-The Wiki describes published rules; its 0.90 revision follows release publication.
+Source metadata targets **0.91.0**. See the
+[0.91 preparation changelog](docs/NEW_HORIZONS_CHANGELOG.md#091--unreleased) for its scope.
+The latest published release remains [0.90 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.90).
+The Wiki describes published rules; source metadata does not establish publication.
 
 ## Before you begin
 
@@ -63,13 +64,13 @@ I’ve also changed how the attributes themselves work. Hero Attack and Defense 
 
 Class growth is predictable. A Knight develops Defense most strongly, followed by Attack. A Wizard develops Spell Power and Knowledge equally, with very little natural martial growth. Skills provide room for individual development while the class continues to have a recognizable direction.
 
-There’s room for heroes who work across the divide, too. Warcasting rewards alternating between Spells and Orders: a spell prepares a stronger subsequent order, and an order prepares a stronger subsequent spell. I wanted the “battle mage” classes to feel like actual hybrid classes, not merely half as good in might, and in magic. No, no, I wanted that double-proficiency to actually emerge from simple rules. To a certain extent, I believe that goal was fulfilled.
+There’s room for heroes who work across the divide, too. Warcasting grants Arcane Inspiration after a hero casts a combat spell, strengthening the army until the next round. Its perks develop that connection between spellcasting and creature combat, giving battle mages a recognizable hybrid role.
 
 ### And what’s the difference between 2 Knights?
 
 That question matters just as much.
 
-Skills retain the familiar Basic, Advanced, and Expert ranks. Each also has a pool of 10 perks, of which a hero can learn at most 3. Under normal advancement, ranks and perks alternate, so developing a discipline involves choosing how to specialize along the way.
+Skills retain the familiar Basic, Advanced, and Expert ranks. Each has ten perk alternatives, with one selected at each tier. Every acquired rank immediately grants a choice from its complete perk tier: Basic Skill with a Basic perk, Advanced with Advanced, and Expert with Expert. External teachers and starting Skills follow the same rule.
 
 An offensive commander might take Shock Assault, letting attacks under Charge! ignore part of the enemy’s Defense. Another might choose Spearhead to strengthen Charge! further. Those choices give the same Orders different tactical weight.
 
@@ -91,9 +92,9 @@ Playing Baldur’s Gate 3 helped me put a finger on that feeling. Small numbers 
 
 An angel should remain an extraordinary thing to have at your side.
 
-The 0.90 rules express that concern through Command, an unspent Secondary Attribute that develops the hero’s seven persistent army slots. Three Core slots are available at the start; further Command unlocks three Elite slots and a Champion slot, then grants repeating enhancement choices. One Core enhancement is shared by all three Core slots, and each award keeps the hero level at which it was acquired.
+Current development restores Leadership while leaving all seven army slots unrestricted. Heroes may recruit and command enormous stacks. Creatures within capacity deal full damage; additional creatures keep adding damage with square-root diminishing returns. Every creature retains its full HP, and Leadership does not reduce adventure Movement.
 
-Command limits which creatures can occupy a slot, rather than imposing a creature-count cap. Creature specialists can place their resolved specialty line in Core slots without changing its actual tier. Authority adds Command and passive slot training; the renamed Leadership Skill instead develops Morale. Leading stronger formations becomes another part of a hero’s development.
+Authority improves effective Leadership, Necromancy lowers Skeleton Requirements, Discipline governs Morale, and Warfare strengthens battlefield Orders. Persistent Command slot unlocks and repeating enhancements are retired.
 
 The early battles in Heroes already give me reasons to count carefully. I’d like to carry that attention further into the game, through armies whose size leaves room for their character.
 

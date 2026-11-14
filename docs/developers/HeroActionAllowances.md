@@ -1,4 +1,4 @@
-# Combat Hero Actions and army Command
+# Combat Hero Actions and Leadership
 
 ## Status and authority
 
@@ -12,10 +12,10 @@ earlier saves are rejected without conversion or deletion.
 Each hero receives the ordinary shared Hero Action for the round. A spell and an
 Order compete for that action. Creature activations remain separate.
 
-Command is the captured, unspent army-progression attribute. Orders consume the
-ordinary Hero Action or an independently admitted typed allowance, with no Command
-payment, exhaustion, refill or battle-start resource initialization. Slot unlocks
-and enhancement receipts belong to hero progression, not the combat action ledger.
+Orders consume the ordinary Hero Action or an independently admitted typed
+allowance, with no Command payment, exhaustion or refill. Persistent army Command,
+slot unlocks and enhancement receipts are retired in current rules. Leadership
+modifies stack attack efficiency; it is not an action allowance or troop budget.
 
 All heroes retain the ordinary Order roster; Warfare Skill availability does not
 gate access to Orders. Battle Plan, Unbroken Ranks, Master Commander,
@@ -56,8 +56,8 @@ to cast. An automatic secondary spell likewise does not imply an extra manual
 Hero Action or authorize an Order.
 
 The hero-action panel displays shared Hero Action availability. Disabled Orders
-explain actual action or target restrictions. Hero/army views display Command's
-natural/Authority breakdown separately. Cancel remains available; the UI must not
+explain actual action or target restrictions. Hero/army views display Leadership
+and its Authority-adjusted stack capacity separately. Cancel remains available; the UI must not
 force a retired follow-up chooser. Skill status uses the existing provider interface and selected
 leather, red and gold presentation.
 

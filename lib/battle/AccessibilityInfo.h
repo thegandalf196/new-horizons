@@ -52,6 +52,14 @@ struct DLL_LINKAGE AccessibilityInfo : TAccessibilityArray
 		/// Occupied endpoint-footprint cells may be listed in allowedOccupiedHexes.
 		bool hasClearStraightHexRay(const BattleHex & from, const BattleHex & to,
 			const BattleHexArray & allowedOccupiedHexes = {}) const;
+		/// Same ray solver, constrained to its actual final approach edge.
+		bool hasClearStraightHexRay(const BattleHex & from, const BattleHex & to,
+			const BattleHexArray & allowedOccupiedHexes, BattleHex::EDir approach) const;
+		/// Constrain the exposed entry edge into a projected one- or two-hex target
+		/// footprint. Internal footprint edges do not invent attack directions.
+		bool hasClearStraightHexRay(const BattleHex & from, const BattleHex & to,
+			const BattleHexArray & allowedOccupiedHexes, BattleHex::EDir approach,
+			const BattleHexArray & targetFootprint) const;
 		/// Magical relocation, not walking/pathfinding. Equal-distance anchors use
 		/// stable battlefield order; an entirely blocked field returns no position.
 		std::optional<BattleHex> nearestLegalPosition(const BattleHex & origin, bool doubleWide, BattleSide side) const;

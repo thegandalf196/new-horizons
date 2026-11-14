@@ -86,6 +86,7 @@ set(vcmiservercommon_SRCS
 		CreatureRewardTransfer.cpp
 		NeutralMonsterPopulation.cpp
 		HeroLevelProgression.cpp
+		HeroPerkProgression.cpp
 		NewHorizonsLearningMentor.cpp
 		NewHorizonsScholar.cpp
 		GlobalLobbyProcessor.cpp

@@ -19,6 +19,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/entities/hero/CHeroClass.h"
 #include "../../lib/entities/hero/CHeroHandler.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/pathfinder/NewHorizonsMovement.h"
 #include "../../lib/pathfinder/TurnInfo.h"
@@ -47,9 +48,14 @@ void CHeroWindow::refreshLegacyCommandReadout()
 
 void CHeroWindow::refreshCommandReadout()
 {
-	const auto capacity = curHero->getLeadershipCapacity();
 	commandArea->text = commandPresentation::commandHelp(*curHero);
 	commandArea->hoverText = commandArea->text;
+	if(newHorizonsHeroes::usesLeadershipEfficiency(curHero->getCapabilityRules()))
+	{
+		commandValue->setText(std::to_string(newHorizonsHeroes::leadershipHeroReadout(*curHero).baseLeadership));
+		return;
+	}
+	const auto capacity = curHero->getLeadershipCapacity();
 	if(capacity)
 		commandValue->setText(std::to_string(capacity->capacity));
 	else

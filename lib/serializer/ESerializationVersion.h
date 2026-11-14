@@ -322,17 +322,21 @@ enum class ESerializationVersion : int32_t
 
 	NEW_HORIZONS_NATIVE_RULES_REDESIGN = 1157, // finite Command, elemental Attunement and Magic Arrow profiles
 	NEW_HORIZONS_COMMAND_AUTHORITY = 1158, // army Command receipts, Authority and passive Warfare; new games only
+	NEW_HORIZONS_LEADERSHIP_EFFICIENCY = 1159, // unrestricted armies, captured Leadership efficiency and unified rank/perk progression
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
-	MINIMAL = NEW_HORIZONS_COMMAND_AUTHORITY,
-	CURRENT = NEW_HORIZONS_COMMAND_AUTHORITY,
+	MINIMAL = NEW_HORIZONS_LEADERSHIP_EFFICIENCY,
+	CURRENT = NEW_HORIZONS_LEADERSHIP_EFFICIENCY,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY > ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN,
 	"Command/Authority must follow all published and reserved features");
 static_assert(static_cast<int>(ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY) == 1158);
+static_assert(ESerializationVersion::NEW_HORIZONS_LEADERSHIP_EFFICIENCY > ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY,
+	"Leadership efficiency must not reinterpret Command/Authority saves");
+static_assert(static_cast<int>(ESerializationVersion::NEW_HORIZONS_LEADERSHIP_EFFICIENCY) == 1159);
 
 static_assert(ESerializationVersion::NEW_HORIZONS_NECROMANCY_POLICY_V2
 	> ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY, "Necromancy v2 must remain append-only");

@@ -64,6 +64,7 @@ set(lib_MAIN_SRCS
 	battle/UnitCombatStats.cpp
 	battle/StackUnitEnvironment.cpp
 	battle/OrderFormation.cpp
+	battle/LeadershipQueries.cpp
 	entities/creature/NewHorizonsAssimilation.cpp
 	entities/hero/NewHorizonsCommandRules.cpp
 	entities/hero/NewHorizonsCommandState.cpp
@@ -177,6 +178,7 @@ set(lib_MAIN_SRCS
 	battle/HeroCommandCoefficientMath.cpp
 	battle/HeroCommandCoefficientQueries.cpp
 	battle/BattleInfo.cpp
+	battle/BattleDamageSampling.cpp
 	battle/ArcaneInspirationRules.cpp
 	battle/ArcaneInspirationEffects.cpp
 	battle/ArcaneReprisal.cpp
@@ -329,6 +331,8 @@ set(lib_MAIN_SRCS
 	battle/BattleProxy.cpp
 	battle/BattleStateInfoForRetreat.cpp
 	battle/CBattleInfoCallback.cpp
+	battle/BattleMeleeApproachQueries.cpp
+	battle/BattleReachQueries.cpp
 	battle/BattleObstacleTriggers.cpp
 	battle/BattleSpellCastPermissions.cpp
 	battle/BattleMeleeContactGeometry.cpp
@@ -638,6 +642,10 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsSkillSpecialtyRules.cpp
 	entities/hero/HeroStartingProjection.cpp
 	entities/hero/NewHorizonsLeadership.cpp
+	entities/hero/LeadershipComposition.cpp
+	entities/hero/LeadershipEfficiency.cpp
+	entities/hero/LeadershipRules.cpp
+	entities/hero/NewHorizonsUnifiedProgression.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
 	entities/hero/HeroMachineCapabilities.cpp
 	entities/hero/SiegeCapabilityRead.cpp
@@ -1198,6 +1206,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsOverwhelmingFormula.h
 	spells/NewHorizonsOverwhelmingFormula.cpp
 	battle/BattleInfo.h
+	battle/DamageInteger.h
 	battle/ArcaneInspiration.h
 	battle/ArcaneReprisal.h
 	battle/HeroOrderRecipients.h
@@ -1282,6 +1291,7 @@ set(lib_MAIN_HEADERS
 	battle/BattleActivationPredicate.h
 	battle/CurrentFireBasis.h
 	battle/CBattleInfoCallback.h
+	battle/BattleReach.h
 	battle/DamageCalculationTiming.h
 	battle/DamagePayloadPreparation.h
 	battle/CBattleInfoEssentials.h
@@ -1503,6 +1513,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsSkillSpecialtyRules.h
 	entities/hero/HeroStartingProjection.h
 	entities/hero/NewHorizonsLeadership.h
+	entities/hero/LeadershipComposition.h
 	entities/hero/NewHorizonsCapabilityRules.h
 	entities/hero/SiegeCapabilityRead.h
 	entities/hero/NewHorizonsMasteryRules.h

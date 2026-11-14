@@ -28,6 +28,8 @@ set(Nullkiller2_SRCS
 		Pathfinding/ObjectGraphCalculator.cpp
 		AIUtility.cpp
 		Analyzers/ArmyManager.cpp
+		Analyzers/ArmyLeadershipEvaluation.cpp
+		Helpers/LeadershipEvaluation.cpp
 		Analyzers/ArmyRecruitmentForecast.cpp
 		Analyzers/HeroManager.cpp
 		Engine/Settings.cpp
@@ -122,6 +124,7 @@ set(Nullkiller2_HEADERS
 		Pathfinding/GraphPaths.h
 		Pathfinding/ObjectGraphCalculator.h
 		AIUtility.h
+		Helpers/LeadershipEvaluation.h
 		pforeach.h
 		Analyzers/ArmyManager.h
 		Analyzers/HeroManager.h

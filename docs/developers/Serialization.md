@@ -2,26 +2,29 @@
 
 ## Current save boundary
 
-The 0.90 Command/Authority redesign requires a new game, including
-when upgrading from 0.89 or 0.89.1. The current writer and minimum accepted format
-are both **1158**, `NEW_HORIZONS_COMMAND_AUTHORITY`.
+The development Leadership-efficiency migration requires a new game, including
+when upgrading from 0.90. The current writer and minimum accepted format
+are both **1159**, `NEW_HORIZONS_LEADERSHIP_EFFICIENCY`.
 `MINIMAL` and `CURRENT` in `ESerializationVersion` use that feature value.
 `CLoadFile` rejects earlier save formats before reading their payload; there is
 no save conversion or migration path in this revision. Existing files remain
 untouched. The file-loader minimum does not by itself validate connection-version
 negotiation.
 
-Format1158 adds captured army Command acquisition history, Authority and passive
-Warfare. Command is unspent progression, not the finite Order pool introduced in
-1157. Elemental Attunement, Magic Arrow, round-point Metamagic, revised Dungeon
-perks and optional detailed Skill/perk help retain their existing profiles.
+Format1159 separates the corrected Leadership profile and Authority meanings from
+1158's retired army Command history. Capability rules v7 and Necromancy policy4
+capture current efficiency and Requirement discounts. Unified progression retains
+mandatory pending tier choices; battle-side state retains permanent combat-start
+composition for Authority and detached copies. Old Command awards and incompatible
+perk definitions are rejected rather than reinterpreted. Elemental Attunement,
+Magic Arrow, Metamagic, Warfare and unrelated faction profiles remain distinct.
 Historical descriptions below
 explain prior layouts; they do not grant ordinary save-load admission.
 Explicit local bonus-clone profiles remain separate from on-disk save support
 and must retain their own exact validation. A format declaration alone does
 not establish successful save/reload, gameplay or platform acceptance.
 
-### Command/Authority capture
+### Historical Command/Authority capture
 
 Hero Command state stores a high-water receipt, last capture level and ordered
 awards. Each award retains milestone, recipient, acquisition level, optional
@@ -33,7 +36,7 @@ history is invalid, rather than reconstructed from its current level.
 The 1158 guards cover captured settings/map/world/start data, hero progression,
 campaign crossover and dedicated enhancement query/update packets. Unsupported
 writes must reject populated state before their enclosing prefixes; readers must
-not install partial history. Current captures require coherent Command/Authority
+not install partial history. Those historical captures require coherent Command/Authority
 and Warfare markers and reject the retired finite-payment policy. Retained
 historical readers and local descriptor profiles do not admit pre1158 save files,
 convert numerical Leadership, or reinterpret old perks under current labels.

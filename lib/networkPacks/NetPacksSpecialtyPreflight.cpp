@@ -20,9 +20,9 @@ void LobbyStartGame::validateNewHorizonsSpecialtySerialization(
 	// This preflight runs before either lobby payload. Include policy3 in the
 	// enclosing guard instead of waiting for a nested hero/world writer to fail.
 	if(initializedStartInfo)
-		initializedStartInfo->validateCommandSerialization(context.commandAuthority);
+		initializedStartInfo->validateCommandSerialization(context.commandAuthority, context.leadershipEfficiency);
 	if(initializedGameState)
-		initializedGameState->validateCommandSerialization(context.commandAuthority);
+		initializedGameState->validateCommandSerialization(context.commandAuthority, context.leadershipEfficiency);
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsSpecialtySerialization(context);
 }

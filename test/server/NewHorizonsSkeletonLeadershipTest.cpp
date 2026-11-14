@@ -4,6 +4,8 @@
  */
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
+#include "../hero/HistoricalCapabilityRules.h"
+#include "../hero/HistoricalHeroEpochFixture.h"
 #include "battles/HistoricalNecromancy087Fixture.h"
 #include "battles/HistoricalNecromancyFixture.h"
 #include "../../lib/GameLibrary.h"
@@ -11,6 +13,7 @@
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapping/CMap.h"
@@ -25,6 +28,9 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
+		// Both parameter values capture historical Necromancy policies, whose
+		// numerical admission checks belong to the same historical capability era.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalCapabilityRulesV4());
 		if(legacyHeroRules)
 		{
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
@@ -32,11 +38,32 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
 			return;
 		}
-		auto perks = GetParam() ? necromancy087Test::rules() : necromancyTest::historicalRules();
+		// Numerical Necromancy v1 predates Authority and unified progression.
+		// Keep its hero offer table in the same 31-Skill captured context.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+			historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK));
+		// Pair the complete 31-Skill registry with the hero capture from the same
+		// new-horizons commit 09bbf77b4da3326ef2434e41221b717347640049.
+		JsonNode perks(JsonPath::builtin("test/newHorizonsHistoricalHeroLuckPerks"));
+		const auto necromancy = GetParam() ? necromancy087Test::rules() : necromancyTest::historicalRules();
+		perks["skills"][newHorizonsNecromancy::SKILL_ID] = necromancy["skills"][newHorizonsNecromancy::SKILL_ID];
+		if(necromancy.Struct().contains("necromancyPolicy"))
+			perks["necromancyPolicy"] = necromancy["necromancyPolicy"];
+		else
+			perks.Struct().erase("necromancyPolicy");
+		// The current reader requires an explicit identity for legacy Order perks.
+		// This fixture adapter does not change the frozen registry or Order rules.
+		perks["commandPolicyVersion"].Integer() = 1;
+		ASSERT_EQ(perks["commandPolicyVersion"].Integer(), 1);
+		ASSERT_FALSE(perks.Struct().contains("warfarePolicyVersion"));
+		ASSERT_FALSE(newHorizonsHeroes::usesCommandAuthorityPolicy(perks));
+		ASSERT_FALSE(newHorizonsHeroes::usesUnifiedSkillProgression(perks));
+		ASSERT_EQ(perks["skills"].Struct().size(), newHorizonsHeroes::PERK_LEGACY_SKILL_COUNT);
 		const auto captured = newHorizonsNecromancy::policy(perks);
 		ASSERT_EQ(captured.has_value(), GetParam());
 		if(captured)
 			ASSERT_EQ(captured->version, 1);
+		ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(perks));
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}

@@ -1,6 +1,7 @@
 /* Hero level-up callbacks, part of VCMI / New Horizons; GPL v2.0 or later. */
 #include "StdInc.h"
 #include "AIGateway.h"
+#include "Helpers/LeadershipEvaluation.h"
 #include "Analyzers/HeroManager.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/CSkillHandler.h"
@@ -198,10 +199,10 @@ void AIGateway::heroGotLevelImpl(const CGHeroInstance * hero, PrimarySkill pskil
 						const auto & left = perks[leftIndex];
 						const auto & right = perks[rightIndex];
 						return std::tuple{
-							isFactionPerk(leftIndex), inspirationalLeaderScore(leftIndex),
+							isFactionPerk(leftIndex), leadershipAI::perkGain(*observedHero, left), inspirationalLeaderScore(leftIndex),
 							left.requiredRank, left.selection.perkId}
 							< std::tuple{
-								isFactionPerk(rightIndex), inspirationalLeaderScore(rightIndex),
+								isFactionPerk(rightIndex), leadershipAI::perkGain(*observedHero, right), inspirationalLeaderScore(rightIndex),
 								right.requiredRank, right.selection.perkId};
 					});
 				// Advanced/Expert perks are specialized enough to outrank another

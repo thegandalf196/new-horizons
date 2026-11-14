@@ -1907,15 +1907,32 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 	bool optionalRerollAvailable = false;
 	QueryID replacesQueryID = QueryID::NONE;
 	int reachedLevel = 0;
+	/// Mandatory perk follow-up; unlike an ordinary empty offer, grants no level.
+	bool perkOnly = false;
+	/// Re-expose a saved, already applied level offer without repeating growth.
+	bool restoredOffer = false;
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY)
+			&& (perkOnly || restoredOffer))
+			throw std::runtime_error("Cannot write unified hero progression to an older format");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY)
 			&& (optionalRerollAvailable || replacesQueryID != QueryID::NONE || reachedLevel != 0))
 			throw std::runtime_error("Cannot write optional Quick Study offer to an older format");
 		h & queryID;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY))
+		{
+			h & perkOnly;
+			h & restoredOffer;
+		}
+		else if(!h.saving)
+		{
+			perkOnly = false;
+			restoredOffer = false;
+		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY))
 		{
 			h & optionalRerollAvailable;

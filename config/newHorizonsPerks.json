@@ -5,6 +5,7 @@
 	"warfarePolicyVersion": 1,
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
+	"unifiedSkillProgressionVersion": 1,
 	"sylvanTacticsPolicy": 1,
 	"metamagicPolicy": {
 		"version": 3,
@@ -23,7 +24,7 @@
 		"version": 1
 	},
 	"necromancyPolicy": {
-		"version": 2,
+		"version": 4,
 		"skeletonLeadershipReductionPercent": [0, 50, 60, 70],
 		"lordOfTheDeadLeadershipReductionPercent": 90,
 		"deathMarchSpeed": 2,
@@ -43,7 +44,7 @@
 		"mathVersion": 1
 	},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "ac39785ce46e7eb3b80d8ffe0dfe91595ba5845984b28360804db0d1f8e7083a",
+	"sourceSha256": "c9c74e60ee4945515bb0a22dfcd2b8f139baf6b352c0327ddc9ef5d3a9f77d9e",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1048,7 +1049,7 @@
 			"name": "Warfare",
 			"domain": "Martial",
 			"availability": "Might-exclusive",
-			"description": "Strengthen battlefield Orders without increasing Command or granting additional actions.",
+			"description": "Strengthen battlefield Orders without granting additional actions.",
 			"ranks": {
 				"basic": {
 					"description": "Attribute-derived Order components operate at 110% Order Efficiency; fixed base components are unchanged.",
@@ -1201,7 +1202,7 @@
 			"domain": "Martial",
 			"availability": "All heroes",
 			"description": "Universal Martial Skill specializing effective Leadership.",
-			"details": "Available to Might and Magic heroes. Class offer weights follow physical attribute growth. Increases effective Leadership for stack capacity calculations.",
+			"details": "Available to Might and Magic heroes. Rank and applicable perk bonuses add before one final Leadership rounding. Authority raises the full-efficiency threshold; stacks already at 100% gain no independent damage bonus. Army-composition eligibility is captured at battle start and excludes temporary summons.",
 			"ranks": {
 				"basic": {
 					"description": "Increases effective Leadership by +15%.",
@@ -1265,10 +1266,10 @@
 					"id": "new-horizons:authority.officerCorps",
 					"name": "Officer Corps",
 					"requires": "advanced",
-					"description": "Increases effective Leadership by +25% when calculating capacity for melee creature stacks.",
+					"description": "Increases effective Leadership by +25% for creatures without an intrinsic ranged attack.",
 					"effect": {
 						"status": "active",
-						"description": "Increases effective Leadership by +25% when calculating capacity for melee creature stacks.",
+						"description": "Increases effective Leadership by +25% for creatures without an intrinsic ranged attack.",
 						"parameters": {"meleeLeadershipPercent": 25}
 					}
 				},
@@ -1276,10 +1277,10 @@
 					"id": "new-horizons:authority.missileCommand",
 					"name": "Missile Command",
 					"requires": "advanced",
-					"description": "Increases effective Leadership by +25% when calculating capacity for ranged creature stacks.",
+					"description": "Increases effective Leadership by +25% for creatures with an intrinsic ranged attack.",
 					"effect": {
 						"status": "active",
-						"description": "Increases effective Leadership by +25% when calculating capacity for ranged creature stacks.",
+						"description": "Increases effective Leadership by +25% for creatures with an intrinsic ranged attack.",
 						"parameters": {"rangedLeadershipPercent": 25}
 					}
 				},
@@ -1287,10 +1288,10 @@
 					"id": "new-horizons:authority.regimentalOrganization",
 					"name": "Regimental Organization",
 					"requires": "advanced",
-					"description": "Increases effective Leadership by +25% for all stacks in an army containing creatures from at least three distinct non-repeated creature lines.",
+					"description": "Increases effective Leadership by +25% for all stacks when the battle-start army has at least three distinct creature lines and no repeated lines. Upgrades belong to their base creature line.",
 					"effect": {
 						"status": "active",
-						"description": "Increases effective Leadership by +25% for all stacks in an army containing creatures from at least three distinct non-repeated creature lines.",
+						"description": "Increases effective Leadership by +25% for all stacks when the battle-start army has at least three distinct creature lines and no repeated lines. Upgrades belong to their base creature line.",
 						"parameters": {"regimentalLeadershipPercent": 25}
 					}
 				},
@@ -1298,10 +1299,10 @@
 					"id": "new-horizons:authority.combinedArms",
 					"name": "Combined Arms",
 					"requires": "advanced",
-					"description": "Increases effective Leadership by +35% for all stacks in an army containing at least one Core, one Elite, and one Champion creature.",
+					"description": "Increases effective Leadership by +35% for all stacks when the battle-start army includes Core, Elite and Champion creature lines. Temporary summons do not change eligibility.",
 					"effect": {
 						"status": "active",
-						"description": "Increases effective Leadership by +35% for all stacks in an army containing at least one Core, one Elite, and one Champion creature.",
+						"description": "Increases effective Leadership by +35% for all stacks when the battle-start army includes Core, Elite and Champion creature lines. Temporary summons do not change eligibility.",
 						"parameters": {"combinedArmsLeadershipPercent": 35}
 					}
 				},
@@ -4026,28 +4027,28 @@
 			"description": "After victory, raise permanent Skeletons from eligible enemy casualties; ordinary magical casualties qualify, but explicitly destroyed or invalid remains are excluded.",
 			"ranks": {
 				"basic": {
-					"description": "After victory, raise Skeletons from 10% of eligible enemy casualties.",
+					"description": "After victory, raise Skeletons from 10% of eligible enemy casualties; Skeletons and Skeleton Warriors require 50% less Leadership.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, raise Skeletons from 10% of eligible enemy casualties."
+						"description": "After victory, raise Skeletons from 10% of eligible enemy casualties; Skeletons and Skeleton Warriors require 50% less Leadership."
 					},
-					"details": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. Permanent army entry follows unlocked slot and tier eligibility; no creature-count budget applies."
+					"details": "After victory, raise Skeletons equal to 10% of eligible living enemy casualties, rounded down. All commanded Skeletons and Skeleton Warriors receive a 50% total Leadership Requirement reduction, rounded upward with a minimum of one; Lord of the Dead replaces this with 90%. Raising does not bypass the ordinary seven-slot limit."
 				},
 				"advanced": {
-					"description": "After victory, raise Skeletons from 20% of eligible enemy casualties.",
+					"description": "After victory, raise Skeletons from 20% of eligible enemy casualties; Skeletons and Skeleton Warriors require 60% less Leadership.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, raise Skeletons from 20% of eligible enemy casualties."
+						"description": "After victory, raise Skeletons from 20% of eligible enemy casualties; Skeletons and Skeleton Warriors require 60% less Leadership."
 					},
-					"details": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. Permanent army entry follows unlocked slot and tier eligibility; no creature-count budget applies."
+					"details": "After victory, raise Skeletons equal to 20% of eligible living enemy casualties, rounded down. All commanded Skeletons and Skeleton Warriors receive a 60% total Leadership Requirement reduction, rounded upward with a minimum of one; Lord of the Dead replaces this with 90%. Raising does not bypass the ordinary seven-slot limit."
 				},
 				"expert": {
-					"description": "After victory, raise Skeletons from 30% of eligible enemy casualties.",
+					"description": "After victory, raise Skeletons from 30% of eligible enemy casualties; Skeletons and Skeleton Warriors require 70% less Leadership.",
 					"effect": {
 						"status": "active",
-						"description": "After victory, raise Skeletons from 30% of eligible enemy casualties."
+						"description": "After victory, raise Skeletons from 30% of eligible enemy casualties; Skeletons and Skeleton Warriors require 70% less Leadership."
 					},
-					"details": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. Permanent army entry follows unlocked slot and tier eligibility; no creature-count budget applies."
+					"details": "After victory, raise Skeletons equal to 30% of eligible living enemy casualties, rounded down. All commanded Skeletons and Skeleton Warriors receive a 70% total Leadership Requirement reduction, rounded upward with a minimum of one; Lord of the Dead replaces this with 90%. Raising does not bypass the ordinary seven-slot limit."
 				}
 			},
 			"perks": [
@@ -4155,7 +4156,7 @@
 						"description": "Reduce Leadership Requirement of Skeletons and Skeleton Warriors by 90% total.",
 						"parameters": {"skeletonRequirementDiscountPercent": 90}
 					},
-					"details": "Reduces the effective Leadership Requirement of Skeletons and Skeleton Warriors commanded by this hero by 90%."
+					"details": "Replaces the Necromancy rank discount with a 90% total Leadership Requirement reduction for all commanded Skeletons and Skeleton Warriors. Round the resulting Requirement upward, with a minimum of one. Grants no maximum-HP bonus."
 				}
 			]
 		},
@@ -4554,7 +4555,7 @@
 						"description": "Your Elementals, Firebirds and Phoenixes deal +15% direct creature-attack and retaliation damage.",
 						"parameters": {"directAttackDamagePercent": 15}
 					},
-					"details": "A standing damage bonus independent of Elemental Attunement. Includes melee, ranged and retaliation attacks, including magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage; this does not grant Assimilation to Firebirds or Phoenixes."
+					"details": "A standing damage bonus independent of Elemental Attunement. Includes melee, ranged and retaliation attacks, including magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage; this does not create a slot permission or change creature tiers."
 				},
 				{
 					"id": "new-horizons:elementalRebirth.perfectConvergence",

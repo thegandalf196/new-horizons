@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "CEmptyAI.h"
 #include "../CommandEnhancementChoice.h"
+#include "../PerkChoice.h"
 #include "../../lib/networkPacks/Component.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryEffects.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -59,6 +60,12 @@ void CEmptyAI::heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhance
 void CEmptyAI::heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,
 	const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID)
 {
+	if(skills.empty() && !perks.empty())
+	{
+		const auto selected = hero ? heroPerkAI::firstEligible(*hero, perks) : std::nullopt;
+		cb->selectionMade(selected ? static_cast<int>(*selected) : -1, queryID);
+		return;
+	}
 	if(perks.empty() && !skills.empty())
 	{
 		cb->selectionMade(CRandomGenerator::getDefault().nextInt(static_cast<int>(skills.size()) - 1), queryID);

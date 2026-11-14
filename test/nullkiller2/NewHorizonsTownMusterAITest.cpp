@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "nullkiller2/NullkillerTest.h"
+#include "hero/HistoricalCapabilityRules.h"
 #include "AI/Nullkiller2/AIUtility.h"
 #include "AI/Nullkiller2/Behaviors/CaptureObjectsBehavior.h"
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
@@ -67,6 +68,7 @@ protected:
 	std::unique_ptr<CGameHandler> handler;
 	std::unique_ptr<TownMusterLoopback> client;
 	std::unique_ptr<NK2AI::AIGateway> gateway;
+	bool historicalCapacity = false;
 	void SetUp() override
 	{
 		NullkillerTest::SetUp();
@@ -76,7 +78,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+			historicalCapacity ? historicalCapabilityRulesV4() : JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES, JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
@@ -232,7 +235,7 @@ TEST_F(NewHorizonsTownMusterAITest, CanonicalRankAmountsAndChampionCallShareExis
 	EXPECT_EQ(NK2AI::townMusterArmyReward(ai, hero, town), 0u);
 }
 
-TEST_F(NewHorizonsTownMusterAITest, NoGoldNoLeadershipHeadroomAndForeignTownProduceNoMusterDestination)
+TEST_F(NewHorizonsTownMusterAITest, CurrentV7NoGoldOrFreeSlotBlocksMusterButOversizedMatchingStackCanReceiveIt)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto * ai = gateway->nullkiller.get();
@@ -241,22 +244,23 @@ TEST_F(NewHorizonsTownMusterAITest, NoGoldNoLeadershipHeadroomAndForeignTownProd
 	EXPECT_EQ(plan(), nullptr);
 	handler->giveResource(PLAYER, EGameResID::GOLD, 10000);
 	const auto unit = creature("core:pikeman");
-	const auto capacity = hero->getLeadershipSlotCapacity(unit);
-	ASSERT_TRUE(capacity);
+	ASSERT_FALSE(hero->getLeadershipSlotCapacity(unit));
 	hero->clearSlots();
-	for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
-		ASSERT_TRUE(hero->setCreature(SlotID(slot), unit, capacity->maximum));
+	int slot = 0;
+	for(const auto * key : {"core:archer", "core:griffin", "core:swordsman", "core:monk", "core:cavalier", "core:angel", "core:hydra"})
+		ASSERT_TRUE(hero->setCreature(SlotID(slot++), creature(key), 1000));
 	EXPECT_EQ(NK2AI::townMusterArmyReward(ai, hero, town), 0u);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), unit, capacity->maximum - 1));
-	EXPECT_EQ(NK2AI::townMusterArmyReward(ai, hero, town), uint64_t(unit.toCreature()->getAIValue()));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), unit, 1000));
+	EXPECT_EQ(NK2AI::townMusterArmyReward(ai, hero, town), uint64_t(2) * unit.toCreature()->getAIValue());
 	handler->setOwner(town, OTHER);
 	ASSERT_EQ(town->getOwner(), OTHER);
 	EXPECT_EQ(NK2AI::townMusterArmyReward(ai, hero, town), 0u);
 	EXPECT_TRUE(NK2AI::shouldVisit(ai, hero, town)); // ordinary enemy capture policy
 }
 
-TEST_F(NewHorizonsTownMusterAITest, BroadMusterGeneratedPathSubmitsExactSplitWithoutMultiplyingTheUse)
+TEST_F(NewHorizonsTownMusterAITest, HistoricalHardcapBroadMusterSubmitsExactSplitWithoutMultiplyingTheUse)
 {
+	historicalCapacity = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	rank(MasteryLevel::ADVANCED);
 	hero->applyPerkSelection({RECRUITMENT, "new-horizons:recruitment.broadMuster"});
@@ -285,6 +289,31 @@ TEST_F(NewHorizonsTownMusterAITest, BroadMusterGeneratedPathSubmitsExactSplitWit
 	EXPECT_GT(town->creatures[0].first, 0u);
 	EXPECT_GT(town->creatures[1].first, 0u);
 	EXPECT_EQ(town->creatures[0].first + town->creatures[1].first, 4u);
+	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(week()), 1);
+	EXPECT_EQ(town->getNewHorizonsMusterLastWeek(), week());
+}
+
+TEST_F(NewHorizonsTownMusterAITest, CurrentV7BroadMusterKeepsBestOrdinaryTargetAndOneFiniteUse)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_EQ(hero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
+	rank(MasteryLevel::ADVANCED);
+	hero->applyPerkSelection({RECRUITMENT, "new-horizons:recruitment.broadMuster"});
+	const auto first = creature("core:pikeman");
+	const auto second = creature("core:archer");
+	ASSERT_GT(second.toCreature()->getAIValue(), first.toCreature()->getAIValue());
+	town->creatures = {{0, {first}}, {0, {second}}};
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), first, 1000));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), second, 1000));
+	EXPECT_EQ(NK2AI::townMusterArmyReward(gateway->nullkiller.get(), hero, town),
+		uint64_t(4) * second.toCreature()->getAIValue());
+	auto goal = plan();
+	ASSERT_NE(goal, nullptr);
+	ASSERT_NO_THROW(execute(goal));
+	ASSERT_EQ(client->musterRequests.size(), 1u);
+	EXPECT_EQ(town->creatures[0].first, 0u);
+	EXPECT_EQ(town->creatures[1].first, 4u);
 	EXPECT_EQ(hero->getNewHorizonsMusterUsesThisWeek(week()), 1);
 	EXPECT_EQ(town->getNewHorizonsMusterLastWeek(), week());
 }

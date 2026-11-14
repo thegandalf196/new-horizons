@@ -121,6 +121,11 @@ public:
 		const OfferWeightContext & weightContext = {}) const;
 	/// Gathers all active, unselected perks for a given skill and specific rank tier.
 	std::vector<PerkOfferCandidate> candidatesForSkillTier(const std::string & skillId, int tier) const;
+	/// First unresolved mandatory tier, ordered by captured Skill identity then rank.
+	std::vector<PerkOfferCandidate> nextRequiredPerkOffer(const std::function<int(const std::string &)> & rankLookup) const;
+	bool hasPerkForTier(const std::string & skillId, int tier) const;
+	/// Initialization-only completion for genuinely non-interactive heroes.
+	void selectMissingPerksDeterministically(const std::function<int(const std::string &)> & rankLookup);
 	/// Exact decimal integer weights used by the R2 sampler, common2^32 scale.
 	/// Read-only numerical projection; never samples or examines eligibility.
 	std::map<std::string, std::string> quantizedParentWeights(const OfferWeightContext & context) const;
@@ -135,7 +140,10 @@ public:
 	{
 		if(h.saving)
 		{
-			validateCommandPerkSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+			validateUnifiedSkillProgressionSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+			newHorizonsNecromancy::validateLeadershipPolicySerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+			validateCommandPerkSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 				nativeRules::validatePilotPerks(rules, false);
 			newHorizonsCommand::validateRulesSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
@@ -163,7 +171,10 @@ public:
 		if(h.saving) h & rules;
 		else h & decodedRules;
 		const auto & incomingRules = h.saving ? rules : decodedRules;
-		validateCommandPerkSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+		validateUnifiedSkillProgressionSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+		newHorizonsNecromancy::validateLeadershipPolicySerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+		validateCommandPerkSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 			nativeRules::validatePilotPerks(incomingRules, false);
 		newHorizonsCommand::validateRulesSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));

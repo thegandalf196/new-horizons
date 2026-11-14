@@ -12,8 +12,8 @@ Horizons gameplay.
   shared Hero Action budget as spellcasting. No fixed default Order substitutes
   for legal comparative AI decisions.
 - Bookless or mana-empty heroes retain legal Orders. Spells and Orders have
-  separate controls; neither grants an extra action. Command is unspent army
-  progression, not an Order payment or exhaustion pool.
+  separate controls; neither grants an extra action. Persistent army Command
+  is retired; no finite Order payment or exhaustion pool is restored.
 - Rejected/cancelled commands preserve state and allowances atomically. Verify
   ownership, controller, phase, action-spent and legacy-rule contexts.
 - Different Orders coexist under their own recipient/lifetime rules; reissuing
@@ -33,6 +33,8 @@ Horizons gameplay.
   Attack/Defense formulas and Vanguard potency/Initiative, including their
   existing rounding, fixed bases, movement terms and caps. Live, preview and AI
   must consume the same captured policy and component-specific efficiency.
+  Fresh formation rating is floor((Attack + Defense) / 2); its retired Command
+  coefficient is zero. Historical captured coefficients keep their meaning.
 - Spearhead adds 5 percentage points to Charge damage; Shield Master adds 5
   percentage points to Hold the Line physical damage reduction. Combined Arms
   retains the half-strength Focus Fire melee benefit and adds 5 percentage

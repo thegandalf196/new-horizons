@@ -33,6 +33,13 @@ Generated user Maps must remain refreshable after initialization and resolve thr
 
 ## Gameplay and forecast integrity
 
+- Value health gains against the healed projected unit, including restored
+  creatures and their Leadership Efficiency. Health losses retain the original
+  victim's identity and damage basis. Capping restoration against a survivor's
+  pre-heal health can discard most of a revival's value. Keep the restoration,
+  partial-wound, no-change and damage controls in `HeroActionUtilityTest`, plus
+  `MiracleWorkerActualAIChoosesPaidRestorationWithOrdersCompeting` for the actual
+  paid spell route with Orders still available.
 - Detached death-source and Rebirth forecasts must use visibility-guarded Hero
   queries. Internal full-rule Hero access must not turn an opposing player's
   hidden policy into a known perk rank or a predicted spawn. Preserve own-side
@@ -47,14 +54,16 @@ Generated user Maps must remain refreshable after initialization and resolve thr
   `UnofferedUpgradeRequestsRejectAtomicallyBeforeCostLookup` under current and
   historical captured rules: rejected requests change neither army nor resources,
   stock or spending statistics, and a subsequent valid upgrade still succeeds.
-- Automatic town siege assembly must respect the defending Hero's captured
-  per-slot Leadership limits before requesting transfers. A blocked strongest
-  source must not be retried unchanged or starve legal lower-priority sources.
-  Use canonical admission for partial transfers, alternate slots and whole legal
-  swaps; conserve both armies during assembly and preserve uncapped historical
-  ordering. Keep `NewHorizonsTownSiegeLeadershipTest` with admission and upgrade
-  parity controls. Assembly conservation does not change the existing conquest
-  callback that clears the defeated town's remaining garrison.
+- Automatic town siege assembly in format 1159 uses all seven ordinary slots
+  without Leadership count caps or creature-tier placement restrictions. Use
+  canonical admission for transfers, alternate slots and whole legal swaps;
+  conserve creature counts across both armies. Numerical per-slot limits belong
+  only to explicitly historical captured profiles. Under those profiles, a
+  blocked strongest source must not be retried unchanged or starve legal
+  lower-priority sources. Keep `NewHorizonsTownSiegeLeadershipTest` with current
+  unrestricted admission, historical limits and upgrade parity controls.
+  Assembly conservation does not change the existing conquest callback that
+  clears the defeated town's remaining garrison.
 - A range-for over a dereferenced temporary shared BonusList owner can dangle. Retain the owning list through iteration. Keep distinct equal bonus identities, ordered/raw aliases, child ADD/removal/UPDATE and branch aging isolation controls.
 - Use authoritative action/activation/controller APIs and legally earned perk/Metamagic allowances in fixtures. Do not forge state to bypass admission. Damage must be meaningful and survivable where later assertions require a living stack.
 - Protect redirects the primary victim, not the original melee contact geometry.
@@ -119,6 +128,14 @@ Use [Windows acceptance](NH_WINDOWS_ACCEPTANCE.md) and [NHART delivery](NHART_DE
 Scan binary ASCII/UTF-16 strings as well as text; successful compilation and stripping debug sections do not establish privacy. Preserve compatible CRT/provider provenance. Supported shell and path/case semantics need real target-platform checks.
 
 ## Rendering diagnostics
+
+Leadership portrait badges must paint after animation children in both ordinary
+and full redraws. Opaque logical-pixel drawing alone does not prevent the next
+creature-picture background repaint from erasing an overlay. Verify a stable
+portrait after dismissing its tooltip, rather than only the full-redraw frame
+behind the popup. Keep `LeadershipEfficiencyBadgeTest` and rendered checks for
+crisp miniature badges, a battle badge smaller than and below its creature-count
+counter, and inspection details available with battlefield badges disabled.
 
 Pixel equivalence, CPU draw return, image availability, GPU present and visible acceptance are different observations. Keep strict masks and alpha validation; repair decoder semantics rather than assets/log suppression. First-phase deferral is finite and shares sprite effective elapsed time with movement; per-hex residual and no-render advancement must remain intact.
 

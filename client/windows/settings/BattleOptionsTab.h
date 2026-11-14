@@ -37,6 +37,7 @@ private:
 	void enableAutocombatSpellsChangedCallback(bool value);
 	void endWithAutocombatChangedCallback(bool value);
 	void showHealthBarCallback(bool value, BattleInterface * parentBattleInterface);
+	void showLeadershipEfficiencyCallback(bool value, BattleInterface * parentBattleInterface);
 public:
 	BattleOptionsTab(BattleInterface * owner = nullptr);
 };

@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
+#include "../hero/HistoricalCapabilityRules.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/CCreatureHandler.h"
@@ -52,8 +53,9 @@ protected:
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		auto capabilities = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
-		capabilities["classProfiles"]["core:knight"]["base"] = JsonNode(baseLeadership);
+		auto capabilities = currentRules ? JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"))
+			: historicalCapabilityRulesV4();
+		if(!currentRules) capabilities["classProfiles"]["core:knight"]["base"] = JsonNode(baseLeadership);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			legacy ? JsonNode() : capabilities);
 	}
@@ -110,6 +112,7 @@ protected:
 		}
 	}
 	bool legacy = false;
+	bool currentRules = false;
 	int baseLeadership = 650;
 	CGTownInstance * town = nullptr;
 	CGHeroInstance * hero = nullptr;
@@ -275,4 +278,56 @@ TEST_F(NewHorizonsTownSiegeLeadershipTest, ExistingDefeatPolicyClearsUntransferr
 	town->battleFinished(handler, attacker, result);
 	EXPECT_EQ(town->stacksCount(), 0);
 	EXPECT_EQ(town->getOwner(), PlayerColor(1));
+}
+
+TEST_F(NewHorizonsTownSiegeLeadershipTest, CurrentV7SiegeMergesEntireOversizedMatchingStack)
+{
+	currentRules = true;
+	ASSERT_TRUE(startScenario());
+	ASSERT_EQ(hero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
+	ASSERT_TRUE(hero->setCreature(SlotID(0), elf(), 100000));
+	ASSERT_TRUE(town->setCreature(SlotID(0), elf(), 500000));
+	GameHandlerTestServer server(gameState());
+	SiegeTransferHandler handler(server, gameState());
+	assemble(handler);
+	EXPECT_EQ(handler.rejected, 0);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 600000);
+	EXPECT_EQ(town->stacksCount(), 0);
+	EXPECT_FALSE(hero->getLeadershipSlotCapacity(elf()));
+}
+
+TEST_F(NewHorizonsTownSiegeLeadershipTest, CurrentV7SiegeReceivesOversizedChampionIntoSeventhSlot)
+{
+	currentRules = true;
+	ASSERT_TRUE(startScenario());
+	const CreatureID angel(CreatureID::decode("core:angel"));
+	for(int slot = 0; slot < 6; ++slot)
+		ASSERT_TRUE(hero->setCreature(SlotID(slot), pikeman(), 1));
+	ASSERT_TRUE(town->setCreature(SlotID(0), angel, 100000));
+	GameHandlerTestServer server(gameState());
+	SiegeTransferHandler handler(server, gameState());
+	assemble(handler);
+	EXPECT_EQ(hero->getCreature(SlotID(6))->getId(), angel);
+	EXPECT_EQ(hero->getStackCount(SlotID(6)), 100000);
+	EXPECT_EQ(town->stacksCount(), 0);
+	EXPECT_EQ(hero->stacksCount(), 7);
+}
+
+TEST_F(NewHorizonsTownSiegeLeadershipTest, CurrentV7SiegeStillPreservesSevenDistinctSlotsAndUntransferredWeakerArmy)
+{
+	currentRules = true;
+	ASSERT_TRUE(startScenario());
+	const std::array<const char *, 7> lines{"core:pikeman", "core:archer", "core:griffin", "core:swordsman",
+		"core:monk", "core:cavalier", "core:angel"};
+	for(size_t slot = 0; slot < lines.size(); ++slot)
+		ASSERT_TRUE(hero->setCreature(SlotID(slot), CreatureID(CreatureID::decode(lines[slot])), 100000));
+	const CreatureID hydra(CreatureID::decode("core:hydra"));
+	ASSERT_TRUE(town->setCreature(SlotID(0), hydra, 1));
+	GameHandlerTestServer server(gameState());
+	SiegeTransferHandler handler(server, gameState());
+	assemble(handler);
+	EXPECT_EQ(hero->stacksCount(), 7);
+	EXPECT_EQ(town->getStackCount(SlotID(0)), 1);
+	EXPECT_TRUE(handler.moves.empty());
+	EXPECT_TRUE(handler.swaps.empty());
 }

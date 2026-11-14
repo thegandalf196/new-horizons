@@ -5,7 +5,9 @@
  */
 #include "StdInc.h"
 #include "Images.h"
+#include "CreaturePreviewFit.h"
 #include "render/CAnimation.h"
+#include "render/Canvas.h"
 #include "../../lib/CRandomGenerator.h"
 
 CCreatureAnim::CCreatureAnim(int x, int y, const AnimationPath & name, ui8 flags, ECreatureAnimType type):
@@ -13,6 +15,32 @@ CCreatureAnim::CCreatureAnim(int x, int y, const AnimationPath & name, ui8 flags
 {
 	xOffset = 0;
 	yOffset = 0;
+}
+
+void CCreatureAnim::fitPreview(const Point & viewport, bool warMachine)
+{
+	// Include movement transitions as well as poses selected by loopPreview.
+	const std::vector<ECreatureAnimType> poses = warMachine
+		? std::vector<ECreatureAnimType>{ECreatureAnimType::HOLDING, ECreatureAnimType::MOVING,
+			ECreatureAnimType::MOVE_START, ECreatureAnimType::MOVE_END, ECreatureAnimType::SHOOT_UP,
+			ECreatureAnimType::SHOOT_FRONT, ECreatureAnimType::SHOOT_DOWN}
+		: std::vector<ECreatureAnimType>{ECreatureAnimType::HOLDING, ECreatureAnimType::MOVING,
+			ECreatureAnimType::MOVE_START, ECreatureAnimType::MOVE_END, ECreatureAnimType::HITTED,
+			ECreatureAnimType::DEFENCE, ECreatureAnimType::ATTACK_FRONT, ECreatureAnimType::SPECIAL_FRONT};
+	Rect bounds(0, 0, 0, 0);
+	for(const auto pose : poses)
+		for(size_t index = 0; index < anim->size(size_t(pose)); ++index)
+			if(const auto image = anim->getImage(index, size_t(pose)))
+				bounds = creaturePreviewFit::include(bounds, image->contentRect());
+	if(bounds.w <= 0 || bounds.h <= 0 || viewport.x <= 0 || viewport.y <= 0)
+		return;
+	// A small transparent inset protects filtering at silhouette edges.
+	previewSource = bounds.resize(2);
+	previewDestination = creaturePreviewFit::destination(previewSource, viewport);
+	previewCanvas = std::make_shared<Canvas>(previewSource.dimensions(), CanvasScalingPolicy::AUTO);
+	scaledPreviewCanvas = std::make_shared<Canvas>(previewDestination.dimensions(), CanvasScalingPolicy::AUTO);
+	pos.w = viewport.x;
+	pos.h = viewport.y;
 }
 
 void CCreatureAnim::loopPreview(bool warMachine)

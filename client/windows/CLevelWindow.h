@@ -20,6 +20,8 @@ class CButton;
 class CLabel;
 class CAnimImage;
 class CComponentBox;
+class CSelectableComponent;
+class CTextBox;
 
 /// Raised up level window where you can select one out of two skills
 class CLevelWindow : public CWindowObject
@@ -41,6 +43,7 @@ private:
 	std::shared_ptr<CLabel> mainTitle;
 	std::shared_ptr<CLabel> levelTitle;
 	std::shared_ptr<CLabel> choiceInstruction;
+	std::shared_ptr<CTextBox> perkDescription;
 	std::shared_ptr<CAnimImage> skillIcon;
 	std::shared_ptr<CLabel> skillValue;
 
@@ -67,6 +70,10 @@ private:
 		const std::function<void(ui32)> & callback, const std::optional<PrimaryGainSnapshot> & gains);
 	void createLevelUpControls(PrimarySkill pskill);
 	void createSkillBox();
+	std::shared_ptr<CSelectableComponent> skillComponent(size_t index) const;
+	std::shared_ptr<CSelectableComponent> perkComponent(size_t index) const;
+	std::string perkHeaderText() const;
+	void refreshPerkDescription(size_t index);
 	void submitSelection();
 
 public:

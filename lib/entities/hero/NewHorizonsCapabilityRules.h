@@ -16,7 +16,7 @@
 
 namespace newHorizonsHeroes
 {
-constexpr int CAPABILITY_RULESET_VERSION = 6;
+constexpr int CAPABILITY_RULESET_VERSION = 7;
 
 struct DLL_LINKAGE SiegeCapabilities
 {
@@ -56,6 +56,10 @@ DLL_LINKAGE void validateResolvedCapabilityRules(const JsonNode & rules);
 DLL_LINKAGE JsonNode resolveCapabilityRules(const JsonNode & rules, HeroClassID heroClass);
 /// V5 and any explicit armyCommand policy retire numerical Leadership entirely.
 DLL_LINKAGE bool usesLegacyLeadership(const JsonNode & rules);
+/// New efficiency policy is validated on capture/load, not on each attack.
+DLL_LINKAGE void validateLeadershipEfficiencyPolicy(const JsonNode & leadership, bool resolved);
+DLL_LINKAGE JsonNode resolveLeadershipEfficiencyMetadata(const JsonNode & leadership);
+DLL_LINKAGE void validateLeadershipEfficiencySerialization(const JsonNode & rules, bool supported);
 /// Distinguishes world tables from resolved hero captures, including V5 without classProfiles.
 DLL_LINKAGE bool isWorldCapabilityRules(const JsonNode & rules);
 

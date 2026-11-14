@@ -44,6 +44,13 @@ public:
 
 class NewHorizonsWispLongReachAITest : public HeroCommandFixture
 {
+public:
+	NewHorizonsWispLongReachAITest()
+	{
+		// Wisp targeting uses the current competing Hero Actions, not legacy Orders.
+		useRevisedOrders = true;
+	}
+
 protected:
 	CStack * wisp = nullptr;
 	CStack * target = nullptr;
@@ -55,6 +62,8 @@ protected:
 		const std::string & defender = "core:peasant", bool blocked = false)
 	{
 		startGame();
+		ASSERT_EQ(gameState()->getHeroCommandRules()["rulesetVersion"].Integer(), 4);
+		ASSERT_EQ(gameState()->getHeroCommandRules()["warfarePolicyVersion"].Integer(), 1);
 		startBattle();
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);

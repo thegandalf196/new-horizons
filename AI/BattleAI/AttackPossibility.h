@@ -188,7 +188,19 @@ struct DLL_LINKAGE DamageCacheProbeTiming
 class DamageCache
 {
 private:
-	std::unordered_map<uint32_t, std::unordered_map<uint32_t, float>> damageCache;
+	struct CachedDamage
+	{
+		float perCreature = 0;
+		int64_t count = 0;
+		int64_t total = 0;
+		int64_t leadershipCapacity = 0; // Zero means the ordinary linear profile.
+		CreatureID creature;
+
+		static CachedDamage capture(int64_t damage, const battle::Unit & actor, const CBattleInfoCallback & battle);
+		bool matchesLeadership(const battle::Unit & actor, const CBattleInfoCallback & battle) const;
+		int64_t atCount(int64_t requestedCount) const;
+	};
+	std::unordered_map<uint32_t, std::unordered_map<uint32_t, CachedDamage>> damageCache;
 	std::map<BattleHex, std::unordered_map<uint32_t, int64_t>> obstacleDamage;
 	std::set<uint32_t> rangedMarkTargets;
 	std::set<uint32_t> temporaryCombatModifierUnits;

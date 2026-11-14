@@ -231,19 +231,18 @@ TEST_F(NewHorizonsExternalMusterAITest, SettlementUsePendingAndForeignOwnershipN
 	EXPECT_TRUE(NK2AI::shouldVisit(ai, hero, dwelling));
 }
 
-TEST_F(NewHorizonsExternalMusterAITest, ExactLeadershipHeadroomAndFreeCoreCostDetermineGeneratedValue)
+TEST_F(NewHorizonsExternalMusterAITest, CurrentV7FreeCoreMusterNeedsRoomButCanExtendOversizedMatchingStack)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman());
-	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 1);
+	ASSERT_FALSE(hero->getLeadershipSlotCapacity(pikeman()));
 	hero->clearSlots();
-	for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
-		ASSERT_TRUE(hero->setCreature(SlotID(slot), pikeman(), capacity->maximum));
+	int slot = 0;
+	for(const auto * key : {"core:archer", "core:griffin", "core:swordsman", "core:monk", "core:cavalier", "core:angel", "core:hydra"})
+		ASSERT_TRUE(hero->setCreature(SlotID(slot++), CreatureID(CreatureID::decode(key)), 1000));
 	EXPECT_EQ(NK2AI::externalMusterArmyReward(gateway->nullkiller.get(), hero, dwelling), 0u);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman(), capacity->maximum - 1));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman(), 1000));
 	handler->giveResource(PLAYER, EGameResID::GOLD, -gateway->cc->getResourceAmount()[EGameResID::GOLD]);
-	EXPECT_EQ(NK2AI::externalMusterArmyReward(gateway->nullkiller.get(), hero, dwelling), uint64_t(pikeman().toCreature()->getAIValue()));
+	EXPECT_EQ(NK2AI::externalMusterArmyReward(gateway->nullkiller.get(), hero, dwelling), uint64_t(2) * pikeman().toCreature()->getAIValue());
 }
 
 TEST_F(NewHorizonsExternalMusterAITest, VisitedMultiRowDwellingNeedsCurrentOwnEligibleMusterHero)

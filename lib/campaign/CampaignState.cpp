@@ -364,7 +364,7 @@ void CampaignState::validateNativePilotSerialization(bool supported) const
 
 JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 {
-	hero->validateCommandSerialization(true);
+	hero->validateCommandSerialization(true, true);
 	nativeRules::validatePilotPerks(hero->getPerkState().rules);
 	nativeRules::validatePilotCreatures(hero->getPrimaryGrowthRules());
 	JsonNode node;
@@ -387,7 +387,7 @@ JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 
 std::shared_ptr<CGHeroInstance> CampaignState::crossoverDeserialize(const JsonNode & node, CMap * map) const
 {
-	newHorizonsHeroes::validateCommandCrossover(node, true);
+	newHorizonsHeroes::validateCommandCrossover(node, true, true);
 	JsonDeserializer handler(nullptr, const_cast<JsonNode&>(node));
 	auto hero = std::make_shared<CGHeroInstance>(map ? map->cb : nullptr);
 	hero->ID = Obj::HERO;

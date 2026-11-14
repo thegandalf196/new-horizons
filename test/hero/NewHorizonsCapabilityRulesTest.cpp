@@ -312,7 +312,7 @@ TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndE
 	invalid[2]["profile"]["perLevel"].Float() = 2.5;
 	invalid[3]["leadership"]["globalScalePercent"].Integer() = 0;
 	invalid[4]["leadership"]["upgradeMultiplierPercent"].Integer() = 0;
-	invalid[5].Struct().erase("armyCommand");
+	invalid[5]["leadership"].Struct().erase("efficiencyPolicy");
 	invalid[6]["siege"]["ballistaDamageMultiplier"].Vector()[3].Integer() = 101;
 	invalid[7]["warMachineShop"]["inventory"].Vector()[0].String() = "core:catapult";
 	invalid[8]["warMachineShop"]["favoredMachineByFaction"].Struct().erase("core:stronghold");
@@ -325,9 +325,9 @@ TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndE
 	}
 }
 
-TEST(NewHorizonsCapabilityRules, WorldCoverageAndResolvedSnapshotsDoNotFollowNewDefaults)
+TEST(NewHorizonsCapabilityRules, HistoricalV5WorldCoverageAndV4SnapshotsDoNotFollowNewDefaults)
 {
-	const JsonNode original(JsonPath::builtin("config/newHorizonsCapabilities"));
+	const JsonNode original = historicalCapabilityRulesV5();
 	auto missing = original;
 	missing["armyCommand"]["classLevelIntervals"].Struct().erase(missing["armyCommand"]["classLevelIntervals"].Struct().begin());
 	EXPECT_THROW(newHorizonsHeroes::validateCapabilityRules(missing, true), std::runtime_error);
@@ -477,4 +477,23 @@ TEST(NewHorizonsCapabilityRules, OperationSiegeReadRejectsMalformedContextBefore
 	}
 	EXPECT_THROW(newHorizonsHeroes::capabilitySiegeRating(bad, 0), std::runtime_error);
 	EXPECT_THROW(newHorizonsHeroes::capabilityDirectControlChance(bad, 0), std::runtime_error);
+	const auto valid = newHorizonsHeroes::resolveCapabilityRules(authored,
+		HeroClassID(HeroClassID::decode("core:knight")));
+	for(int malformed = 0; malformed < 4; ++malformed)
+	{
+		auto context = valid;
+		if(malformed == 0) context["siege"]["siegeRating"].Vector()[2].Integer() = -1;
+		if(malformed == 1) context["siege"]["directControlChance"].Vector().pop_back();
+		if(malformed == 2) context["siege"]["outputs"]["firstAidHealing"]["base"].Integer() = -1;
+		if(malformed == 3) context["profile"]["base"].Integer() = 0;
+		for(int rank : {-1, 0, 3, 4})
+		{
+			const auto original = failure([&] { newHorizonsHeroes::capabilityBallistaMultiplier(context, rank); });
+			ASSERT_FALSE(original.empty());
+			EXPECT_EQ(failure([&] { newHorizonsHeroes::SiegeCapabilityRead read(context, rank); }), original);
+			EXPECT_EQ(failure([&] { newHorizonsHeroes::capabilitySiegeRating(context, rank); }), original);
+			EXPECT_EQ(failure([&] { newHorizonsHeroes::capabilityDirectControlChance(context, rank); }), original);
+		}
+		EXPECT_THROW(newHorizonsHeroes::capabilitySiegeOutput(context, 0, "ballistaDamage"), std::runtime_error);
+	}
 }

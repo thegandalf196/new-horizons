@@ -215,7 +215,7 @@ void CGHeroInstance::selectCommandEnhancement(int64_t milestone, newHorizonsHero
 
 JsonNode CGHeroInstance::commandProgressionToJson() const
 {
-	validateCommandSerialization(true);
+	validateCommandSerialization(true, true);
 	return commandState.toJson(getArmyCommandRules());
 }
 
@@ -230,11 +230,14 @@ void CGHeroInstance::restoreCommandProgression(const JsonNode & node)
 	nodeHasChanged();
 }
 
-void CGHeroInstance::validateCommandSerialization(bool supported) const
+void CGHeroInstance::validateCommandSerialization(bool supported, bool leadershipSupported) const
 {
+	newHorizonsHeroes::validateLeadershipEfficiencySerialization(capabilityRules, leadershipSupported);
+	newHorizonsHeroes::validateUnifiedSkillProgressionSerialization(perkState.rules, leadershipSupported);
+	newHorizonsNecromancy::validateLeadershipPolicySerialization(perkState.rules, leadershipSupported);
 	if(commandLevelEventPending)
 		throw std::runtime_error("Cannot save an unfinished ordinary level choice");
-	newHorizonsHeroes::validateCommandPerkSerialization(perkState.rules, supported);
+	newHorizonsHeroes::validateCommandPerkSerialization(perkState.rules, supported, leadershipSupported);
 	newHorizonsHeroes::validateArmyCommandSerialization(capabilityRules, supported);
 	const auto rules = getArmyCommandRules();
 	commandState.validateSerialization(rules, supported);
@@ -244,6 +247,22 @@ void CGHeroInstance::validateCommandSerialization(bool supported) const
 
 void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 {
+	const bool unified = newHorizonsHeroes::usesUnifiedSkillProgression(perkState.rules);
+	// Owned heroes finish their initial ranks and any authored XP through the
+	// authoritative map-ready/turn-start transaction, including human choices.
+	if(unified && getOwner().isValidPlayer()) return;
+	const auto completePerks = [this, unified]()
+	{
+		if(!unified) return;
+		for(size_t count = 0; count < newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT * newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL; ++count)
+		{
+			const auto offer = perkState.nextRequiredPerkOffer([this](const std::string & skill) { return getPerkSkillRank(skill); });
+			if(offer.empty()) return;
+			applyPerkSelection(offer.front().selection);
+		}
+		throw std::runtime_error("Non-interactive hero perk completion exceeded the registry");
+	};
+	completePerks();
 	while(gainsLevel())
 	{
 		auto gains = gameRandomizer.rollPrimarySkillsForLevelup(this);
@@ -259,6 +278,7 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 		if(!proposedSecondarySkills.empty())
 			setSecSkillLevel(proposedSecondarySkills.front(), 1, ChangeValueMode::RELATIVE);
 		levelUp(gains);
+		completePerks();
 		captureCommandProgression();
 	}
 }

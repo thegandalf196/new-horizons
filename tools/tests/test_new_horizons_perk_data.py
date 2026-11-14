@@ -526,7 +526,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             ('deathLord', 'Graveplate', 'advanced', '20% less physical damage'),
             ('ossuary', "Dead Man's Luck", 'advanced', '+3 Luck'),
             ('soulHarvester', 'Tomb Guard', 'expert', 'strike twice'),
-            ('lordOfTheDead', 'Lord of the Dead', 'expert', 'Leadership Requirement of Skeletons and Skeleton Warriors'),
+            ('lordOfTheDead', 'Lord of the Dead', 'expert', '90% total Leadership Requirement reduction'),
         )
         self.assertEqual(len(perks), len(expected))
         for identity, name, tier, effect in expected:
@@ -554,14 +554,15 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         for rank, raising in zip(RANKS, (10, 20, 30)):
             description = skill['ranks'][rank].get('details', skill['ranks'][rank]['description'])
             self.assertIn(f'{raising}% of eligible living enemy casualties', description)
-            self.assertIn('slot and tier eligibility', description)
+            self.assertIn('Leadership Requirement reduction', description)
+            self.assertIn('ordinary seven-slot limit', description)
         self.assertIn('eligible enemy casualties', skill['description'])
         self.assertIn('explicitly destroyed or invalid remains are excluded', skill['description'])
 
     def test_necromancy_policy_is_optional_strict_and_configurable(self):
         policy = self.rules['necromancyPolicy']
         self.assertEqual(policy, {
-            'version': 2,
+            'version': 4,
             'skeletonLeadershipReductionPercent': [0, 50, 60, 70],
             'lordOfTheDeadLeadershipReductionPercent': 90,
             'deathMarchSpeed': 2,
@@ -582,6 +583,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertFalse(validator.is_valid(absent))
         absent.pop('commandAuthorityPolicy')
         absent.pop('warfarePolicyVersion')
+        absent.pop('unifiedSkillProgressionVersion')
         absent['commandPolicyVersion'] = 1
         absent['skills'].pop('new-horizons:authority')
         validator.validate(absent)
@@ -596,9 +598,11 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             'graveKnowledgeRecoveryPercent': 20,
         }
         validator.validate({**absent, 'necromancyPolicy': version1})
-        version2 = dict(policy)
+        version2 = {**policy, 'version': 2}
         validator.validate({**absent, 'necromancyPolicy': version2})
-        validator.validate({**self.rules, 'necromancyPolicy': version2})
+        legacy = {key: value for key, value in self.rules.items() if key != 'unifiedSkillProgressionVersion'}
+        validator.validate({**legacy, 'necromancyPolicy': version2})
+        self.assertFalse(validator.is_valid({**self.rules, 'necromancyPolicy': version2}))
         configurable = json.loads(json.dumps(self.rules))
         configurable['necromancyPolicy'].update({
             'lordOfTheDeadLeadershipReductionPercent': 50,
@@ -613,7 +617,7 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             'soulHarvesterManaCap': 1000000,
         })
         validator.validate(configurable)
-        invalid = [None, {}, {**policy, 'unknown': 1}, {**policy, 'version': 4},
+        invalid = [None, {}, {**policy, 'unknown': 1}, {**policy, 'version': 5},
                    {**version1, 'tombGuardDoubleStrike': True}]
         invalid.extend({k: v for k, v in policy.items() if k != omitted} for omitted in policy)
         invalid.extend({**policy, 'skeletonLeadershipReductionPercent': value} for value in (

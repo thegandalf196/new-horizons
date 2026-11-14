@@ -19,15 +19,16 @@ hand-editing generated metadata. Confirm actual tool options before invocation.
 Canonical source identity and regeneration consistency are content gates, not
 gameplay certification.
 
-### Army Command and generated metadata
+### Leadership efficiency and generated metadata
 
-Current `armyCommand` captures own slot permissions and enhancement formulas.
-The current catalogue has 32 Skills. Stable `new-horizons:discipline` is displayed
-as Leadership; stable `new-horizons:command` is Warfare; `new-horizons:authority`
-is the separate all-hero Command Skill. Do not rename historical IDs or infer
-their captured effects from a current label. The current save boundary is
-[new-game-only](Serialization.md#current-save-boundary); numerical Leadership
-values and finite Order points are not converted to Command.
+Capability rules v7 capture the Leadership profiles, creature Requirements and
+`leadership.efficiencyPolicy` Authority percentages. Fresh rules contain no
+`armyCommand`; `defaultStartingArmyVersion` independently preserves the accepted
+Castle default package. Stable `new-horizons:discipline` is Discipline,
+`new-horizons:command` is Warfare, and `new-horizons:authority` specializes
+Leadership. Do not rename historical IDs or reinterpret old captures. The
+[new-game-only boundary](Serialization.md#current-save-boundary) admits 1159;
+older Command awards are never converted into Leadership or creature bonuses.
 
 Edit authored registries and texts directly. No private design document is read
 by public builds or source tests. The existing module generator refreshes module
@@ -65,13 +66,14 @@ This is a quantized distribution, not a claim of exact real arithmetic or of
 unperformed cross-platform certification. Keep the transaction-local normalized
 row reusable when a pending query is reopened, but reevaluate eligibility live.
 
-Parent selection and uniform perk selection are separate. New games also capture
-`perkProgressionPolicyVersion: 1`: one selected perk per Basic/Advanced/Expert
-tier, in that order, with ordinary rank advancement alternating with perks.
-Exceptional rank grants do not grant or skip perk tiers. Two eligible parents
-produce distinct parents; a sole eligible parent supplies only one offer. Filter
-exhausted or rank-blocked parents before sampling. Reuse `canAcquirePerk` for
-authoritative offers, selection and consumer legality rather than UI/AI rules.
+Historical parent selection and uniform perk selection are separate. Current
+`unifiedSkillProgressionVersion: 1` additionally requires strict progression and
+weight policy2: each acquired Skill rank immediately queues its full eligible
+tier pool. `maxPerkChoices: 2` limits the historical random sampler, not that
+mandatory pool. Level-ups, external grants and starting heroes resolve missing
+tiers in order; the simulation preserves pending offers across interruption and
+save/load. Reuse shared acquisition validation in UI and AI consumers. Current
+progression never samples a separate perk parent or offers a perk-only level-up.
 
 The progression marker is separate from weighting policy2 and the mathematical
 ratio `R`. Marker absence preserves historical policy2 duplicate-tier selections,
@@ -170,14 +172,14 @@ compound interaction. Useful maintained entry points include:
 - `test/hero/NewHorizonsHeroRulesTest.cpp`,
   `NewHorizonsPrimaryGrowthTest.cpp`, `NewHorizonsPerkRulesTest.cpp` and
   `NewHorizonsCommandRulesTest.cpp`, `NewHorizonsCommandStateTest.cpp` and
-  `NewHorizonsCommandPlacementTest.cpp`: captured progression and slot admission.
+  `NewHorizonsCommandPlacementTest.cpp`: historical captures and unrestricted slot admission.
 - `test/server/battles/NewHorizonsCommandTest.cpp`,
   `NewHorizonsDemonicGatingTest.cpp`, `NewHorizonsPlagueTest.cpp` and
   `NewHorizonsSpellLockControlTest.cpp`: real validated battle transitions.
 - `test/battleAI/NewHorizonsGenieSupportAITest.cpp`: shared creature casts,
   target-pool legality, deterministic forecasting and actual AI requests.
 - `test/nullkiller2/` and `NH_AI_EXCHANGES.md`: adventure planning, physical
-  army conservation and Command-aware slot admission.
+  army conservation and unrestricted seven-slot admission.
 
 A detached forecast must not consume live RNG or mutate live/parent/sibling state.
 Exercise lifecycle before and after accepted actions, not only synthetic bonuses.

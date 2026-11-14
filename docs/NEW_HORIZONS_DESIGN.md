@@ -34,13 +34,16 @@ connection and authoritative simulation thread, not a new external server or
 loopback transport. UI submits requests; authoritative code validates and changes
 state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
-Orders and spells compete for the shared Hero Action. Current Command is an
-unspent army-progression attribute, not an Order payment or battle-local pool.
-It governs persistent slot permissions and captured enhancement awards. Human and
-AI decisions must use the same legal action, placement and target rules; see
-[Hero Action allowances](developers/HeroActionAllowances.md). The Command/Authority
-save boundary requires a new game; earlier saves are rejected without conversion
-or deletion, as described in [Serialization](developers/Serialization.md#current-save-boundary).
+Orders and spells compete for the shared Hero Action and cost no finite Command
+resource. Persistent army Command, slot-tier permissions and enhancement awards
+are retired. All seven slots accept ordinary legal stacks; Leadership applies
+square-root efficiency to direct creature attacks, including retaliation, rather
+than prohibiting large armies. Authority specializes Leadership; Discipline is the
+Morale Skill; Warfare specializes Orders. Human and AI use the same captured
+rules and damage calculations. See [Hero Action allowances](developers/HeroActionAllowances.md).
+The Leadership-efficiency save boundary requires a new game, including from 0.90;
+older files are rejected without conversion or deletion, as described in
+[Serialization](developers/Serialization.md#current-save-boundary).
 Expanded Hero Attack/Defense ratings feed the specified command/formula systems,
 not unchanged original creature damage arithmetic.
 

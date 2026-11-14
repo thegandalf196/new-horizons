@@ -144,7 +144,7 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 		return hb->battleExpectedLuckDamage(attack);
 	}();
 
-	damageCache[attacker->unitId()][defender->unitId()] = static_cast<float>(damage) / attacker->getCount();
+	damageCache[attacker->unitId()][defender->unitId()] = CachedDamage::capture(damage, *attacker, *hb);
 }
 
 void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)
@@ -371,7 +371,9 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		DamageCachePhaseScope dynamic(timing, &DamageCacheProbeTiming::dynamicDamage);
 		return hb->battleExpectedLuckDamage(attack);
 	}
-	bool wasComputedBefore = damageCache[attacker->unitId()].count(defender->unitId());
+	const auto & entries = damageCache[attacker->unitId()];
+	const auto cached = entries.find(defender->unitId());
+	const bool wasComputedBefore = cached != entries.end() && cached->second.matchesLeadership(*attacker, *hb);
 
 	if (!wasComputedBefore)
 	{
@@ -388,7 +390,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 			++timing->rootCacheHits;
 	}
 
-	return damageCache[attacker->unitId()][defender->unitId()] * attacker->getCount();
+	return damageCache[attacker->unitId()][defender->unitId()].atCount(attacker->getCount());
 }
 
 int64_t DamageCache::getObstacleDamage(const BattleHex & hex, const battle::Unit * defender) const
@@ -433,7 +435,9 @@ int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const batt
 			{
 				if(timing)
 					++timing->parentOriginalHits;
-				return static_cast<int64_t>(targetDamage->second * attacker->getCount());
+				// Original comparisons retain the parent's modifiers and capacity,
+				// but casualties/reinforcements still change effective fighting count.
+				return targetDamage->second.atCount(attacker->getCount());
 			}
 		}
 	}

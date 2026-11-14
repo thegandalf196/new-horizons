@@ -235,12 +235,12 @@ TEST_F(NewHorizonsProspectorAITest, HiddenAlliedAndForeignMineContextsCannotBorr
  EXPECT_EQ(NK2AI::ownedMineArmyReward(gateway->nullkiller.get(), foreign, common), 0u);
 }
 
-TEST_F(NewHorizonsProspectorAITest, FullLeadershipRosterRejectsMineGuardsWithoutMutatingEitherArmy)
+TEST_F(NewHorizonsProspectorAITest, CurrentV7SevenDistinctLinesRejectNewGuardsButMatchingOversizedLineRemainsLegal)
 {
  ASSERT_NO_FATAL_FAILURE(prepare());
  const CreatureID rogue(CreatureID::decode("core:rogue"));
- const auto capacity = hero->getLeadershipSlotCapacity(rogue); ASSERT_TRUE(capacity);
- hero->clearSlots(); ASSERT_TRUE(hero->setCreature(SlotID(0), rogue, capacity->maximum));
+ ASSERT_FALSE(hero->getLeadershipSlotCapacity(rogue));
+ hero->clearSlots(); ASSERT_TRUE(hero->setCreature(SlotID(0), CreatureID(CreatureID::decode("core:archDevil")), 100));
  int slot = 1;
  for(const auto * name : {"core:archangel", "core:titan", "core:goldDragon", "core:blackDragon", "core:ghostDragon", "core:ancientBehemoth"})
   ASSERT_TRUE(hero->setCreature(SlotID(slot++), CreatureID(CreatureID::decode(name)), 100));
@@ -249,6 +249,11 @@ TEST_F(NewHorizonsProspectorAITest, FullLeadershipRosterRejectsMineGuardsWithout
  EXPECT_EQ(NK2AI::ownedMineArmyReward(gateway->nullkiller.get(), hero, common), 0u);
  EXPECT_FALSE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, common));
  EXPECT_EQ(gameState()->saveToMemory(), before);
+ ASSERT_TRUE(hero->setCreature(SlotID(0), rogue, 1000));
+ const auto matching = gameState()->saveToMemory();
+ EXPECT_GT(NK2AI::ownedMineArmyReward(gateway->nullkiller.get(), hero, common), 0u);
+ EXPECT_TRUE(NK2AI::shouldVisit(gateway->nullkiller.get(), hero, common));
+ EXPECT_EQ(gameState()->saveToMemory(), matching);
 }
 
 TEST_F(NewHorizonsProspectorAITest, PendingCompanyDebtWithoutDeliveredGuardsHasNoArmyReward)

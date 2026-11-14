@@ -21,9 +21,10 @@ action = (ACTION.read_text(encoding="utf-8")
           + (ROOT / "client/battle/BattleHeroActionAvailability.cpp").read_text(encoding="utf-8")
           + (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8"))
 controller = CONTROLLER.read_text(encoding="utf-8")
-creature_window = CREATURE_WINDOW.read_text(encoding="utf-8") + (ROOT / "client/windows/NewHorizonsOrderIndicators.h").read_text(encoding="utf-8")
+creature_window = CREATURE_WINDOW.read_text(encoding="utf-8") + (ROOT / "client/windows/CreatureLeadershipPresentation.cpp").read_text(encoding="utf-8") + (ROOT / "client/windows/NewHorizonsOrderIndicators.h").read_text(encoding="utf-8")
 hero_window = HERO_WINDOW.read_text(encoding="utf-8")
 hero_window += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
+hero_window += (ROOT / "client/windows/HeroWindowCommandReadout.cpp").read_text(encoding="utf-8")
 development_window = DEVELOPMENT_WINDOW.read_text(encoding="utf-8")
 asset_generator = ASSET_GENERATOR.read_text(encoding="utf-8")
 
@@ -116,15 +117,14 @@ assert "battleGetHeroOrderState" in creature_window
 assert "cannot be dispelled" in creature_window
 assert 'LEADERSHIP,' in creature_window
 assert '"Leadership Cost"' in creature_window
-assert 'const auto capacityText = leadershipCapacity' in creature_window
-assert 'std::to_string(leadershipCount) + "/" + std::to_string(leadershipCapacity->maximum)' in creature_window
-assert 'addStatLabel(EStat::LEADERSHIP, costText + capacityText)' in creature_window
+assert 'battle->battleLeadershipReadout(stack)' in creature_window
+assert 'newHorizonsHeroes::leadershipStackReadout(hero, creature, count' in creature_window
+assert 'addStatLabel(EStat::LEADERSHIP, readout.active ? value' in creature_window
+assert 'leadershipPresentation::detailText(readout)' in creature_window
 assert 'class LeadershipSection' not in (ROOT / "client/windows/CCreatureWindow.h").read_text(encoding="utf-8")
-assert 'battle->battleGetOwnerHero(stack)' in creature_window
 assert 'std::to_string(siege->siegeRating)' in hero_window
-assert 'capabilityLeadershipPerLevel(curHero->getCapabilityRules())' in hero_window
-assert 'leadershipGrowthValue->setText(perSlotLeadership ? "+' in hero_window
-assert '" total, including artifacts and other modifiers.' in hero_window
+assert 'newHorizonsHeroes::leadershipHeroReadout(*curHero).baseLeadership' in hero_window
+assert 'commandArea->text = commandPresentation::commandHelp(*curHero)' in hero_window
 assert '"Siege rating available to this hero"' in hero_window
 assert '"Siege rating used by Ballista, Catapult, First Aid Tent and defensive tower formulas. It is not spent.' in hero_window
 assert '"Siege " + std::to_string(siege->siegeRating) + " (War Machines "' in hero_window
@@ -145,17 +145,17 @@ assert "getHeroCommandUsed" not in controller
 assert "battleGetActiveOrder" not in controller
 assert "setHeroCommand" not in action + controller
 
-# Finite Command is a separate requirement from the shared Hero Action. A zero
-# pool must skip target enumeration, but leave ordinary spellcasting available.
+# Warfare keeps the shared Hero Action; retired finite Command payment must not
+# reappear in current UI or become an additional spellcasting restriction.
 availability = (ROOT / "client/battle/BattleHeroActionAvailability.cpp").read_text()
-assert "newHorizonsCommand::available(*callback, side)" in availability
-assert "getCommandResources(side)" in availability
-assert '"Command " + std::to_string(resources.remaining)' in availability
+assert "battleHeroActionAllowanceCounts(side).heroActions == 0" in availability
+assert "getCommandResources(side)" not in availability
+assert "resources.remaining" not in availability
 assert "const bool targetReady = commonAvailable && supported && targeted" in availability
 assert "const bool hasTargets = commonAvailable && supported && targeted" in availability
 assert "spellButton->block(!canAct || !canSpell);" in availability
 for retired in ("battleHasPendingDoubleCommand", "battleHasPendingPreCombatOrder", "getCrisisCommandState", "presentPendingHeroOrderChoice"):
     assert retired not in action + controller + (ROOT / "client/battle/BattleInterface.cpp").read_text()
-assert "Costs 1 Command and the shared Hero Action" in action
+assert "Uses the shared Hero Action; no Mana or Command is spent." in action
 
 print("New Horizons Orders client surface: PASS")

@@ -3,6 +3,7 @@
 #include "NativeDamageCalculator.h"
 #include "NativeDamageFacts.h"
 #include "NativeDamageFactors.h"
+#include "../battle/DamageInteger.h"
 
 #include <cmath>
 
@@ -97,9 +98,9 @@ DamageEstimation calculate(const DamageAttackInfo & info, const Facts & facts)
 	const double beforeDefense = raising * heroOrder * preemptive * cleave * followUp * activation
 		* sylvan * specialty * finalLuck * inspiration;
 	return DamageEstimation{
-		{static_cast<int64_t>(low), static_cast<int64_t>(high)},
-		{static_cast<int64_t>(casualties(facts.defender, low)), static_cast<int64_t>(casualties(facts.defender, high))},
-		{static_cast<int64_t>(apply(baseMin, beforeDefense, cap)), static_cast<int64_t>(apply(baseMax, beforeDefense, cap))}
+		{damageInteger::boundedNonnegative(low), damageInteger::boundedNonnegative(high)},
+		{damageInteger::boundedNonnegative(casualties(facts.defender, low)), damageInteger::boundedNonnegative(casualties(facts.defender, high))},
+		{damageInteger::boundedNonnegative(apply(baseMin, beforeDefense, cap)), damageInteger::boundedNonnegative(apply(baseMax, beforeDefense, cap))}
 	};
 }
 }

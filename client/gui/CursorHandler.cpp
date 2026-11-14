@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "CursorHandler.h"
+#include "../render/ReachCursor.h"
 
 #include "GameEngine.h"
 #include "FramerateManager.h"
@@ -47,6 +48,7 @@ CursorHandler::CursorHandler()
 	, pos(0,0)
 	, dndObject(nullptr)
 {
+	reachCursorFrames = std::make_unique<reachCursor::Cache>();
 	showType = dynamic_cast<CursorSoftware *>(cursor.get()) ? Cursor::ShowType::SOFTWARE : Cursor::ShowType::HARDWARE;
 }
 
@@ -54,6 +56,10 @@ CursorHandler::~CursorHandler() = default;
 
 void CursorHandler::init()
 {
+	if(currentReachCursor)
+		currentCursorID.clear();
+	currentReachCursor.reset();
+	reachCursorFrames->clear();
 	JsonNode cursorConfig = JsonUtils::assembleFromFiles("config/cursors.json");
 	std::vector<AnimationPath> animations;
 
@@ -78,9 +84,10 @@ void CursorHandler::set(const std::string & index)
 {
 	assert(dndObject == nullptr);
 
-	if (index == currentCursorID)
+	if (index == currentCursorID && !currentReachCursor)
 		return;
 
+	currentReachCursor.reset();
 	currentCursorID = index;
 	currentCursorIndex = 0;
 	frameTime = 0;
@@ -209,6 +216,13 @@ void CursorHandler::set(Cursor::Spellcast index)
 void CursorHandler::dragAndDropCursor(std::shared_ptr<IImage> image)
 {
 	dndObject = image;
+	if(!dndObject && currentReachCursor
+		&& reachCursorRasterScaling != ENGINE->screenHandler().getScalingFactor())
+	{
+		const auto previous = *currentReachCursor;
+		setReach(previous.first, previous.second);
+		return;
+	}
 	applyCursorImage();
 }
 
@@ -230,6 +244,8 @@ Point CursorHandler::getPivotOffset()
 {
 	if (dndObject)
 		return dndObject->dimensions() / 2;
+	if(currentReachCursor)
+		return reachCursorPivot;
 
 	return cursors.at(currentCursorIndex).pivot;
 }
@@ -273,7 +289,10 @@ void CursorHandler::applyCursorImage()
 		return;
 	}
 
-	cursor->setImage(getCurrentImage(), getPivotOffset());
+	if(currentReachCursor && !dndObject)
+		reachCursor::Frame{cursorImage, {reachCursorPivot.x, reachCursorPivot.y}}.apply(*cursor, reachCursorRasterScaling);
+	else
+		cursor->setImage(getCurrentImage(), getPivotOffset());
 	cursorImageUpdatePending = false;
 }
 
@@ -289,8 +308,14 @@ void CursorHandler::update()
 {
 	if(!showing)
 		return;
+	if(currentReachCursor && !dndObject
+		&& reachCursorRasterScaling != ENGINE->screenHandler().getScalingFactor())
+	{
+		const auto previous = *currentReachCursor;
+		setReach(previous.first, previous.second);
+	}
 
-	if (cursors.at(currentCursorIndex).isAnimated)
+	if (!currentReachCursor && cursors.at(currentCursorIndex).isAnimated)
 		updateAnimatedCursor();
 
 	cursor->update();
@@ -357,5 +382,18 @@ void CursorHandler::changeCursor(Cursor::ShowType newShowType)
 
 void CursorHandler::onScreenResize()
 {
+	reachCursorFrames->clear();
+	if(currentReachCursor && !dndObject)
+	{
+		const auto previous = *currentReachCursor;
+		currentReachCursor.reset();
+		currentCursorID.clear();
+		if(!setReach(previous.first, previous.second))
+			set(previous.first);
+		return;
+	}
+	if(currentReachCursor)
+		// Defer a cleared/scaled image rebuild until the drag image is released.
+		reachCursorRasterScaling = 0;
 	applyCursorImage();
 }

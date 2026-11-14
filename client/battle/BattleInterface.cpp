@@ -1205,7 +1205,10 @@ void BattleInterface::battleStacksEffectsSet(const SetStackEffect & sse)
 	stacksController->refreshAllStackCreatureForms();
 	stacksController->stackEffectsSet(sse);
 	if(stacksController->getActiveStack() != nullptr)
+	{
 		fieldController->redrawBackgroundWithHexes();
+		ENGINE->fakeMouseMove();
+	}
 }
 
 void BattleInterface::setHeroAnimation(BattleSide side, EHeroAnimType phase)
