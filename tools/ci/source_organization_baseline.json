@@ -21645,15 +21645,15 @@
     },
     "client/battle/StackInfoBasicPanel.cpp": {
       "deferral": "Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Current UI boundary: before further substantive status growth, ui_developer must extract spell-status icon/badge/tooltip row composition through an immutable value-only row builder consuming visible marker IDs, durations and shared status snapshots. Preserve row priority/order, captured legacy/current labels, named Genie markers, hidden-provider restrictions, widget ownership and activation/dispel/control-change refresh parity; retain the initializeData512 extraction obligation. Before further substantive Soul Chain presentation growth, the UI owner must extract the cohesive incoming/secondary/primary status signature and tooltip value group into the existing spell-status presentation component. Inputs are actual current battle rules, visible markers and already admitted unit/status values; outputs are immutable ordered text/status values without callback or widget retention. Preserve historical/inactive registration, missing-required refusal, hidden-provider gating, cache equality and rendered refresh after inspect/activation/dispel/control change. This two-line urgent correction is not future growth credit.\n\nNext bounded extraction (ui_developer, spans [[418, 514]]): Fulfil the existing Soul Chain deferral by extracting the incoming/secondary/primary signature and tooltip value group into the focused spell-status presentation owner before that family grows. Interface: Synchronous admitted visible unit/link/rule/duration values return ordered owned link descriptions and equality signature; no callback/widget retained by the result. Invariants: Battle/current saved context rather than global defaults; Player-scoped hidden hero/provider restrictions; Signature covers incoming and secondary links with duration/order; Cache identity includes unit/tree-version/description callback; Refresh snapshots are updated before redraw-triggering widget setters. Acceptance: Compare inspect/activation/dispel/expiry/control-change signatures and text; preserve three-slot temporary-status priority/overflow and later rendered refresh evidence. Existing full spell-row builder obligation remains.",
-      "kind": "legacy",
-      "lines": 999,
+      "kind": "exception",
+      "lines": 1008,
       "owner": "ui_developer",
       "previous_review": "IR-RELEASE0882-CLIENT-STRUCTURE-20261103",
-      "rationale": "Exact 995\u2192997 lines. Read-only native marker presentation / removal of obsolete scalar-readiness or Sage Guild UI / indexed query-backed per-card controls. Authority and rule calculations stay shared/server. Learning query controls extracted to134-line owner; original CLevelWindow465\u2192397.\n\nComplete read: Frailty/readbacks and status snapshot 50-416, Soul Chain linkage/signature/text 418-514, construction/cache 520-591, mixed stat/status widget assembly 593-949, update/equality/hit testing 951-999. Being one line below 1000 does not remove mixed query/format/widget responsibilities. Shared StackTemporaryStatusPresenter and spell-status helpers are real boundaries, yet ordinary spell badge/tooltips and Soul Chain value assembly remain concentrated here. Current player-scoped hero queries and description-cache identity are essential visibility boundaries. Freeze only unchanged 999-line bytes.",
-      "review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "review_scope": "Complete independent reading of the exact listed source unit and its responsibility boundaries at f86a363b65005005fde9d6d53151ab97d7f03fa4; unchanged pre-existing bytes only, no future growth allowance.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
-      "sha256": "622d58781a983f28e9fc377aa0b62c23f4bbdeb2deb3e285c254f14b4c650672",
+      "rationale": "Urgent0.91 observable correctness: sidebar formerly displayed only general Defense while detailed card and native physical damage include physical-only Defense. Reuse existing CreatureDefensePresentation for base/current visible subject, keep Frailty general-defense basis unchanged, append conditional explanation in existing tooltip ownership. File999\u21921008 crosses1000 only for exact+9 correction; initializeData357\u2192365 grows8. Immediate generalized widget/presenter extraction would broaden existing cache/redraw/lifetime risk during release fix. No new mechanics, hidden hero query, coordinates, event ownership, or state. Next focused basic-stat value/help extraction is explicitly assigned below; original status/spell-row deferrals remain mandatory.",
+      "review": "IR-091-SIDEBAR-PHYSICAL-DEFENSE-URGENT-20261114",
+      "review_scope": "Only exact9-line file/8-line function urgent read-only Defense agreement correction; no general1008 ceiling, future growth credit, gameplay/native/rendered approval. All prior deferred status/spell-row obligations retained unchanged.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_RENDERED_UNRUN",
+      "sha256": "845ef2046bf9434d628fcba7d56f79ecf2615858593ed412fda983d9fb8ce002",
       "review_history": [
         {
           "kind": "review",
@@ -21682,6 +21682,16 @@
           "Refresh snapshots are updated before redraw-triggering widget setters"
         ],
         "acceptance": "Compare inspect/activation/dispel/expiry/control-change signatures and text; preserve three-slot temporary-status priority/overflow and later rendered refresh evidence. Existing full spell-row builder obligation remains."
+      },
+      "urgent_next_statrow_extraction": {
+        "owner": "ui_developer",
+        "trigger": "Next work on sidebar basic-stat/readout responsibility, before any further expansion of this component. This exception grants no later growth.",
+        "source_span": [
+          617,
+          659
+        ],
+        "interface": "Extract a small pure basic-stat value/help row formatter beside existing shared CreatureDefensePresentation. Inputs: already observed base/current Defense Values and existing visible attack/damage/health scalars; outputs: owned immutable text plus optional help. Window retains coordinates, widgets, statusTooltips and refresh cache/event ownership. No retained unit/hero/callback pointers or hidden-provider lookup.",
+        "acceptance": "Characterize general-only4(4), Galthran60Skeletons4(10), casualty-dependent physical Defense, Frenzy4(0), magical/general distinction and controlling-owner effects. Compare exact row/help outputs and later rendered sidebar inspect/activation/expiry/control-change updates; refresh clears old tooltips and redraws once from current snapshot. Lower both file/function bounds, measure destination, retain existing spell-status/SoulChain extraction obligations."
       }
     },
     "client/battle/StackInfoBasicPanel.cpp::newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus( const CStack * stack, const CPlayerBattleCallback * battleCallback, const newHorizonsBattleStatus::BattleLuckReadback & luckReadback)#1": {
@@ -21698,15 +21708,15 @@
     },
     "client/battle/StackInfoBasicPanel.cpp::void StackInfoBasicPanel::initializeData(const CStack * stack)#1": {
       "deferral": "Owner: UI developer. Interface/acceptance: Extract status description and badge composition from initializeData behind an immutable status snapshot; preserve status priority, layout, cache invalidation and rendered refresh transitions. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Extract spell-status icon/badge/tooltip row composition from initializeData into a focused value-only immutable row builder, reusing existing StackInfoActionStatus/faction presentation boundaries. Inputs: visible spell-marker IDs, durations and shared observed status snapshots; outputs: ordered icon/frame/text rows, no callback/window retention or widget ownership. Required characterization: Same row priority/order, hidden-provider boundary, captured legacy/current labels, Genie named marker mapping, refresh equality and before/after activation/dispel/control-change rendered status. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Exact bounded API/readback migration only: no new rule decisions in this hotspot. UI owner must extract the next touched ShadowGift chooser, temporary-status widget renderer, or hero-status assembly into a cohesive owner before further substantive growth, preserving callback lifetime, current query/ownership, cached-before-redraw ordering and guarded native rendering. Existing obligations remain binding.\n\nNext bounded extraction (ui_developer, spans [[730, 933]]): Extract ordinary spell icon/badge/tooltip value planning into the existing spell-status domain, decomposed by coherent status families rather than relocating this 204-line branch wholesale. Interface: Visible spell identity, durations, observed status snapshots and localized names yield immutable icon/frame/badge/help rows. The window retains widgets, coordinates and slot-plan application. Invariants: Three-slot plan and overflow/priority rules unchanged; Genie named marker mapping and current/legacy labels retained; Confusion inactive markers remain skipped; No hidden-provider queries introduced into painting; Tooltip/badge values derive from the same observed snapshot. Acceptance: Characterize empty, overflow, priority, each special badge and legacy fallback; compare ordered value rows and later rendered inspect/activation/Cure/dispel/expiry/control-change refresh. Lower both function and file bounds and inventory all destinations.",
-      "kind": "legacy",
-      "lines": 357,
+      "kind": "exception",
+      "lines": 365,
       "owner": "ui_developer",
       "previous_review": "IR-RELEASE0882-CLIENT-STRUCTURE-20261103",
-      "rationale": "Exact 355\u2192356 lines. Read-only native marker presentation / removal of obsolete scalar-readiness or Sage Guild UI / indexed query-backed per-card controls. Authority and rule calculations stay shared/server. Learning query controls extracted to134-line owner; original CLevelWindow465\u2192397.\n\nComplete 357-line body read: cache/summon/portrait and scalar stats 595-639, stat/readback widgets 640-704, slot planning/temporary presenter 705-729, large ordinary spell badge/help dispatch 730-933 and empty/overflow presentation 935-948. This function is structurally overconcentrated despite the existing priority presenter; no implication of function compliance follows from the file's 999 lines. Freeze current body only and retain all inherited extraction duties.",
-      "review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "review_scope": "Complete independent reading of the exact listed source unit and its responsibility boundaries at f86a363b65005005fde9d6d53151ab97d7f03fa4; unchanged pre-existing bytes only, no future growth allowance.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
-      "sha256": "f7189ac1f2772cbb943b11381ccb019c9a377f05273eb2b8378c0c20760953b5",
+      "rationale": "Urgent0.91 observable correctness: sidebar formerly displayed only general Defense while detailed card and native physical damage include physical-only Defense. Reuse existing CreatureDefensePresentation for base/current visible subject, keep Frailty general-defense basis unchanged, append conditional explanation in existing tooltip ownership. File999\u21921008 crosses1000 only for exact+9 correction; initializeData357\u2192365 grows8. Immediate generalized widget/presenter extraction would broaden existing cache/redraw/lifetime risk during release fix. No new mechanics, hidden hero query, coordinates, event ownership, or state. Next focused basic-stat value/help extraction is explicitly assigned below; original status/spell-row deferrals remain mandatory.",
+      "review": "IR-091-SIDEBAR-PHYSICAL-DEFENSE-URGENT-20261114",
+      "review_scope": "Only exact9-line file/8-line function urgent read-only Defense agreement correction; no general1008 ceiling, future growth credit, gameplay/native/rendered approval. All prior deferred status/spell-row obligations retained unchanged.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_RENDERED_UNRUN",
+      "sha256": "44d7a1ddb3d6a5c5e4054d0cf4d3a2800adf04026e1b8113e4128f77c8652a4f",
       "review_history": [
         {
           "kind": "exception",
@@ -21735,6 +21745,16 @@
           "Tooltip/badge values derive from the same observed snapshot"
         ],
         "acceptance": "Characterize empty, overflow, priority, each special badge and legacy fallback; compare ordered value rows and later rendered inspect/activation/Cure/dispel/expiry/control-change refresh. Lower both function and file bounds and inventory all destinations."
+      },
+      "urgent_next_statrow_extraction": {
+        "owner": "ui_developer",
+        "trigger": "Next work on sidebar basic-stat/readout responsibility, before any further expansion of this component. This exception grants no later growth.",
+        "source_span": [
+          617,
+          659
+        ],
+        "interface": "Extract a small pure basic-stat value/help row formatter beside existing shared CreatureDefensePresentation. Inputs: already observed base/current Defense Values and existing visible attack/damage/health scalars; outputs: owned immutable text plus optional help. Window retains coordinates, widgets, statusTooltips and refresh cache/event ownership. No retained unit/hero/callback pointers or hidden-provider lookup.",
+        "acceptance": "Characterize general-only4(4), Galthran60Skeletons4(10), casualty-dependent physical Defense, Frenzy4(0), magical/general distinction and controlling-owner effects. Compare exact row/help outputs and later rendered sidebar inspect/activation/expiry/control-change updates; refresh clears old tooltips and redraws once from current snapshot. Lower both file/function bounds, measure destination, retain existing spell-status/SoulChain extraction obligations."
       }
     },
     "client/globalLobby/GlobalLobbyClient.cpp": {
@@ -22999,15 +23019,15 @@
     },
     "client/windows/HeroGrowthWindow.cpp": {
       "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits.",
-      "kind": "legacy",
-      "lines": 510,
+      "kind": "exception",
+      "lines": 516,
       "owner": "ui_developer",
       "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "Exact reviewed source/hash/span only; existing ownership, ceilings and deferred extraction invariants retained. Compilation, native and rendered acceptance remain separate.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "334c596e74192216f4aeabbe7cc3cdf5bd8fc8d72966b51a9855693868e3bcb7",
+      "rationale": "Urgent current-profile UI correctness: Leadership was hidden behind retired Command optional. Add shared authoritative current-profile help/availability helper and keep historical slot paragraphs isolated. File510\u2192516 is exact bounded+6 exception; refresh391\u2192384 shrinks7 and focused helper11L owns Leadership text, no duplicated formula/state/new mechanic. Existing perk-skill-panel extraction deferral remains mandatory; no regrowth beyond exact516 bytes/size or restored predecessor allowance.",
+      "review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
+      "review_scope": "Only exact reviewed current Leadership read-only correction. Existing owner and perk-panel extraction deferral retained verbatim; no blanket ceiling increase or runtime/rendered approval.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "8f885fa0c83da67b634e57839354c036079cc3888b97795cc73131532ffc125e",
       "completed_p_predecessor": {
         "kind": "exception",
         "lines": 516,
@@ -23019,14 +23039,14 @@
     "client/windows/HeroGrowthWindow.cpp::void HeroGrowthWindow::refresh(const CGHeroInstance & hero)#1": {
       "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits. Extract the next touched secondary-Skill/growth presentation section into immutable context-owned value rows using existing NewHorizonsSkillPresentation/PerkHelp and starting/growth view contracts. Inputs: explicit hero/world captured registry and growth values; outputs: labels/help/slot values, leaving widgets/events in the window. Required characterization: Historical Sylvan versus current Tactics names/ranks, display-only Nighon rename, unchanged other captured descriptions, actual Sage gain readback, ordering and rendered refresh; no lost callbacks or implicit installed-default fallback. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch.",
       "kind": "legacy",
-      "lines": 391,
+      "lines": 384,
       "owner": "ui_developer",
       "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "Exact reviewed source/hash/span only; existing ownership, ceilings and deferred extraction invariants retained. Compilation, native and rendered acceptance remain separate.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "5530a1f5630fb4cd275d6ed6fa73862d9ea4964f1af9b1146f19377357e992b3",
+      "rationale": "Read-only Leadership section text/availability extracted to focused11L helper and shared authoritative formatter. refresh391\u2192384 shrinking ratchet; all other perk widgets/event ownership and existing exact deferrals retained. This does not approve remaining384L design or increase any allowance.",
+      "review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
+      "review_scope": "Only exact reviewed current Leadership read-only correction. Existing owner and perk-panel extraction deferral retained verbatim; no blanket ceiling increase or runtime/rendered approval.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "8e3be6e863051d5445d351eaefadf7288adc2c539bf4660bf046d7fae3414e4e",
       "completed_p_predecessor": {
         "kind": "exception",
         "lines": 398,

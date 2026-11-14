@@ -603,6 +603,9 @@ TEST_F(ArcaneInspirationBattleTest, AuthoritativeAttackPlanFeedsRealLuaDamageAnd
 	{
 		hero->setPrimarySkill(PrimarySkill::ATTACK, 0, ChangeValueMode::ABSOLUTE);
 		hero->setPrimarySkill(PrimarySkill::DEFENSE, 0, ChangeValueMode::ABSOLUTE);
+		// Isolate Arcane damage stages while retaining ordinary Leadership rules.
+		hero->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::LEADERSHIP,
+			BonusSource::OTHER, 1000000, BonusSourceID()));
 	}
 	battle()->terrainType = TerrainId(ETerrainId::SAND);
 	battle()->nodeHasChanged();
@@ -619,6 +622,8 @@ TEST_F(ArcaneInspirationBattleTest, AuthoritativeAttackPlanFeedsRealLuaDamageAnd
 	};
 	auto * coreActor = makeAngel(BattleSide::ATTACKER, BattleHex{6, 3}, 100);
 	auto * coreTarget = makeAngel(BattleSide::DEFENDER, BattleHex{7, 3}, 1000);
+	ASSERT_DOUBLE_EQ(battle()->battleLeadershipReadout(coreActor).efficiency, 1);
+	ASSERT_DOUBLE_EQ(battle()->battleLeadershipReadout(coreTarget).efficiency, 1);
 	ASSERT_EQ(coreActor->getAttack(false), 20);
 	ASSERT_EQ(coreTarget->getDefense(false), 20);
 	BattleAttackInfo coreAttack(coreActor, coreTarget, 0, false);

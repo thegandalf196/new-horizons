@@ -32,16 +32,24 @@ void CHeroWindow::refreshCommandPresentation()
 
 void CHeroWindow::refreshLegacyCommandReadout()
 {
+	const bool efficiency = newHorizonsHeroes::usesLeadershipEfficiency(curHero->getCapabilityRules());
 	const auto command = curHero->getArmyCommand();
-	legacyCommandArea->setEnabled(command.has_value());
-	legacyLeadershipLabel->setEnabled(command.has_value());
-	legacyLeadershipImage->setEnabled(command.has_value());
-	if(command)
+	const bool available = efficiency || command.has_value();
+	legacyCommandArea->setEnabled(available);
+	legacyLeadershipLabel->setEnabled(available);
+	legacyLeadershipImage->setEnabled(available);
+	if(available)
 	{
 		legacyCommandArea->text = commandPresentation::commandHelp(*curHero);
-		auto label = LIBRARY->generaltexth->translate("new-horizons.command.value");
-		boost::replace_all(label, "%COMMAND%", std::to_string(command->effective()));
-		legacyCommandArea->hoverText = label;
+		std::string label;
+		if(efficiency)
+			label = std::to_string(newHorizonsHeroes::leadershipHeroReadout(*curHero).baseLeadership);
+		else
+		{
+			label = LIBRARY->generaltexth->translate("new-horizons.command.value");
+			boost::replace_all(label, "%COMMAND%", std::to_string(command->effective()));
+		}
+		legacyCommandArea->hoverText = efficiency ? legacyCommandArea->text : label;
 		legacyLeadershipLabel->setText(label);
 	}
 }

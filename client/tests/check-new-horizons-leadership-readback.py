@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused wiring checks for requested per-slot Leadership readback."""
+"""Focused hero/creature readback and ordinary army-slot wiring checks."""
 
 import json
 from pathlib import Path
@@ -17,7 +17,46 @@ def require(text: str, needle: str, label: str) -> None:
         raise AssertionError(f"missing {label}: {needle}")
 
 
+def check_hero_windows() -> None:
+    readout = source("client/windows/HeroWindowCommandReadout.cpp")
+    compact = readout.split("void CHeroWindow::refreshLegacyCommandReadout()", 1)[1].split(
+        "void CHeroWindow::refreshCommandReadout()", 1
+    )[0]
+    require(compact, "usesLeadershipEfficiency(curHero->getCapabilityRules())", "compact current-profile eligibility")
+    require(compact, "efficiency || command.has_value()", "compact availability preserves both profiles")
+    for control in ("legacyCommandArea", "legacyLeadershipLabel", "legacyLeadershipImage"):
+        require(compact, f"{control}->setEnabled(available)", "compact help, value and icon availability")
+    require(compact, "leadershipHeroReadout(*curHero).baseLeadership", "compact authoritative numeric Leadership")
+    require(compact, "commandPresentation::commandHelp(*curHero)", "compact shared Leadership help")
+    require(compact, "std::to_string(command->effective())", "historical Command value remains available")
+
+    growth = source("client/windows/HeroGrowthWindow.cpp")
+    section = growth.split("std::optional<std::string> leadershipSection", 1)[1].split(
+        "void HeroGrowthWindow::selectPerkSkill", 1
+    )[0]
+    require(section, "usesLeadershipEfficiency(hero.getCapabilityRules())", "growth current-profile eligibility")
+    require(section, "if(!efficiency && !hero.getArmyCommand())", "growth unavailable-profile rejection")
+    require(section, "commandPresentation::commandHelp(hero)", "growth shared Leadership details")
+    require(section, "if(!efficiency)\n\t\tfor(int slot", "retired slot details stay historical-only")
+    require(growth, "const auto leadership = leadershipSection(hero)", "growth derives text and availability together")
+    require(growth, "navigation.refresh({growth.has_value(), leadership.has_value()", "growth Leadership tab availability")
+    require(growth, 'leadership.value_or("No saved Leadership profile for this hero.")', "growth displays resolved Leadership details")
+
+
+def check_battle_defense() -> None:
+    panel = source("client/battle/StackInfoBasicPanel.cpp")
+    stats = panel.split("void StackInfoBasicPanel::initializeData(const CStack * stack)", 1)[1]
+    require(stats, "currentDefense = creatureDefensePresentation::query(*stack, stack->isShooter())", "sidebar shared current Defense")
+    require(stats, "creatureDefensePresentation::query(*LIBRARY->creatures()->getByIndex", "sidebar shared base Defense")
+    require(stats, "std::to_string(currentDefense.physical)", "sidebar displays physical Defense")
+    require(stats, "currentDefense.physical != currentDefense.general", "conditional Defense explanation")
+    require(stats, "Defense against magical creature attacks:", "sidebar preserves general Defense distinction")
+    require(stats, "Physical-only Defense bonuses do not apply against magical creature attacks.", "sidebar explains physical-only bonuses")
+
+
 def main() -> None:
+    check_hero_windows()
+    check_battle_defense()
     helper = source("client/widgets/NewHorizonsLeadershipReadback.h")
     for field in (
         "leadership", "requirement", "maximumCount", "existingCount",
@@ -55,22 +94,19 @@ def main() -> None:
             "full-army admission remains guarded")
 
     split = ui.split("void CSplitWindow::updateLeadershipReadback()", 1)[1].split("void CSplitWindow::apply()", 1)[0]
-    require(header, "initialLeftAmount", "split original left count")
-    require(header, "initialRightAmount", "split original right count")
-    require(header, "leftArmy", "split left receiving hero context")
-    require(header, "rightArmy", "split right receiving hero context")
+    split_header = source("client/windows/CSplitWindow.h")
+    require(split_header, "initialLeftAmount", "split original left count")
+    require(split_header, "initialRightAmount", "split original right count")
+    require(split_header, "leftArmy", "split left receiving hero context")
+    require(split_header, "rightArmy", "split right receiving hero context")
     require(ui, "leftLeadershipHelp = std::make_shared<LRClickableAreaWText>(Rect(leftSideCenter - 29, ownerMarkerY, 58, 64))",
             "split owner-marker help surface")
     require(ui, "leftLeadershipHelp->disable()", "empty split help disabled")
     require(split, "help->disable()", "invalid split proposal disables help")
     require(split, "help->enable()", "available split proposal enables help")
-    require(split, "const auto * hero = dynamic_cast<const CGHeroInstance *>(army)", "split receiving-hero gate")
-    require(split, "if(!capacity)", "split no-capacity gate")
-    require(split, "std::min(normalizedInitial, normalizedCurrent)", "existing split-stack baseline")
-    require(split, "std::max<int64_t>(0, normalizedCurrent - normalizedInitial)",
-            "incoming split proposal")
-    require(split, "getNewHorizonsLeadershipProposalText(*capacity, existingCount, incomingCount)",
-            "split proposal readback")
+    require(split, "UIHelper::armySlotPreview(army, slot, splitCreature->getId())", "split shared army-slot help")
+    require(split, "UIHelper::armySlotProblem(army, slot, splitCreature->getId())", "split shared placement admission")
+    require(split, "ok->block(illegalSide(leftArmy, leftSlot, leftAmount)", "split confirmation uses placement admission")
     set_amount = ui.split("void CSplitWindow::setAmount(int value, bool left)", 1)[1].split(
         "void CSplitWindow::updateLeadershipReadback", 1
     )[0]
@@ -82,31 +118,16 @@ def main() -> None:
     hover = garrison.split("void CGarrisonSlot::hover (bool on)", 1)[1].split(
         "const CArmedInstance * CGarrisonSlot::getObj", 1
     )[0]
-    require(hover, "incoming--", "source-last-stack proposal adjustment")
-    require(hover, "creature == source->creature ? myStack->getCount() : 0", "merge vs empty/swap proposal baseline")
-    require(hover, "getNewHorizonsLeadershipProposalSummary(*capacity, existing, incoming)",
-            "transfer requested/legal/excess readback")
+    require(hover, "UIHelper::armySlotProblem(getObj(), ID, source->creature->getId())", "transfer shared placement readback")
 
-    ui_helper = source("client/UIHelper.cpp")
-    for token in (
-        '"%ADDED%"', '"%DEMAND%"', '"%CAPACITY%"', '"%MAX%"', '"%LEGAL%"',
-        '"%EXCESS%"', '"%RESULTING%"',
-    ):
-        require(ui_helper, f"replaceTokenNumber({token}", f"complete localized token {token}")
-
+    # Current Leadership is a damage-efficiency attribute, not a placement cap.
+    # Its shared help retains the authoritative base and Authority values.
+    presentation = source("client/widgets/LeadershipEfficiencyPresentation.cpp")
     texts = json.loads(source("config/newHorizonsCombatTexts.json"))
-    expected_text_tokens = {
-        "new-horizons.combat.leadership.proposal": ("%ADDED%", "%DEMAND%", "%CAPACITY%", "%MAX%", "%LEGAL%"),
-        "new-horizons.combat.leadership.proposalExcess": ("%EXCESS%",),
-        "new-horizons.combat.leadership.transfer": ("%RESULTING%", "%MAX%", "%ADDED%", "%LEGAL%"),
-        "new-horizons.combat.leadership.transferExcess": ("%EXCESS%",),
-    }
-    for key, tokens in expected_text_tokens.items():
-        if key not in texts:
-            raise AssertionError(f"missing localized Leadership text: {key}")
-        for token in tokens:
-            require(texts[key], token, f"localized placeholder {token} in {key}")
-    print("UP261 Leadership readback source guard passed")
+    for token in ("%BASE%", "%AUTHORITY%", "%RANK_EFFECTIVE%"):
+        require(texts["new-horizons.leadership.heroHelp"], token, f"localized hero Leadership token {token}")
+        require(presentation, f'boost::replace_all(text, "{token}"', f"shared hero Leadership formatting {token}")
+    print("Leadership readback source guard passed")
 
 
 if __name__ == "__main__":

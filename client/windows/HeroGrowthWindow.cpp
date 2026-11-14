@@ -23,6 +23,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "NewHorizonsPerkHelp.h"
@@ -53,6 +54,18 @@ size_t selectedPerksForSkill(const newHorizonsHeroes::PerkState & state, const s
 	{
 		return selection.skillId == skillId;
 	});
+}
+
+std::optional<std::string> leadershipSection(const CGHeroInstance & hero)
+{
+	const bool efficiency = newHorizonsHeroes::usesLeadershipEfficiency(hero.getCapabilityRules());
+	if(!efficiency && !hero.getArmyCommand())
+		return std::nullopt;
+	auto text = commandPresentation::commandHelp(hero);
+	if(!efficiency)
+		for(int slot = 0; slot < 7; ++slot)
+			text += "\n\n" + commandPresentation::slotHelp(hero, SlotID(slot));
+	return text;
 }
 }
 
@@ -137,7 +150,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	// These saved families are independent: primary growth does not opt an old
 	// hero into capacity rules, and capacity does not supply a growth profile.
 	const auto growth = hero.getPrimaryGrowthView();
-	const auto command = hero.getArmyCommand();
+	const auto leadership = leadershipSection(hero);
 	const auto siege = hero.getSiegeCapabilities();
 	const auto masteries = hero.getMasteryView();
 	const auto & perkState = hero.getPerkState();
@@ -155,7 +168,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 			return hero.getPerkSkillRank(left) > hero.getPerkSkillRank(right);
 		});
 	}
-	navigation.refresh({growth.has_value(), command.has_value(), siege.has_value(), masteries.has_value(), perks});
+	navigation.refresh({growth.has_value(), leadership.has_value(), siege.has_value(), masteries.has_value(), perks});
 	const bool showPerkPool = navigation.selected() == HeroDevelopmentSection::PERKS && !perkSkillIds.empty();
 	// The pool is deliberately compact: all ten entries remain visible in a
 	// two-column grid, while the learned-Skill selector pages independently.
@@ -224,13 +237,12 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	// below leadership/siege paragraphs in one long scroll region.
 	sectionTexts = {
 		"No saved primary growth profile for this hero.",
-		"No Command progression view for this hero.",
+		leadership.value_or("No saved Leadership profile for this hero."),
 		"No saved siege capability view for this hero.",
 		"No saved mastery rules for this hero.",
 		"This hero has no perks available."
 	};
 	auto & growthText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::GROWTH)];
-	auto & leadershipText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::LEADERSHIP)];
 	auto & siegeText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::SIEGE)];
 	auto & masteryText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::MASTERIES)];
 	auto & perkText = sectionTexts[static_cast<size_t>(HeroDevelopmentSection::PERKS)];
@@ -250,12 +262,6 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 		}
 		else
 			growthText += " This saved growth profile has no skill-based extra points.";
-	}
-	if(command)
-	{
-		leadershipText = commandPresentation::commandHelp(hero);
-		for(int slot = 0; slot < 7; ++slot)
-			leadershipText += "\n\n" + commandPresentation::slotHelp(hero, SlotID(slot));
 	}
 	if(siege)
 	{

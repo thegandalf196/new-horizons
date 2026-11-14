@@ -16,6 +16,7 @@
 #include "SummonLifetimePresentation.h"
 #include "FrozenStatusPresentation.h"
 #include "StackSpellStatusPresentation.h"
+#include "../windows/CreatureDefensePresentation.h"
 
 #include "../widgets/Images.h"
 #include "../widgets/MiscWidgets.h"
@@ -616,7 +617,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	}
 
 	auto attack = std::to_string(LIBRARY->creatures()->getByIndex(stack->creatureIndex())->getAttack(stack->isShooter())) + "(" + std::to_string(stack->getAttack(stack->isShooter())) + ")";
-	auto defense = std::to_string(LIBRARY->creatures()->getByIndex(stack->creatureIndex())->getDefense(stack->isShooter())) + "(" + std::to_string(stack->getDefense(stack->isShooter())) + ")";
+	const auto currentDefense = creatureDefensePresentation::query(*stack, stack->isShooter());
+	auto defense = std::to_string(creatureDefensePresentation::query(*LIBRARY->creatures()->getByIndex(stack->creatureIndex()), stack->isShooter()).physical) + "(" + std::to_string(currentDefense.physical) + ")";
 	auto damage = std::to_string(damageMultiplier * stack->getMinDamage(stack->isShooter())) + "-" + std::to_string(damageMultiplier * stack->getMaxDamage(stack->isShooter()));
 	auto health = stack->getMaxHealth();
 	const auto moraleReadback = currentBattleMoraleReadback(
@@ -645,6 +647,13 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 
 	labels.push_back(std::make_shared<CLabel>(69, 87, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, attack));
 	labels.push_back(std::make_shared<CLabel>(69, 99, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, defense));
+	if(currentDefense.physical != currentDefense.general)
+	{
+		const auto help = "Physical Defense: " + std::to_string(currentDefense.physical)
+			+ "\nDefense against magical creature attacks: " + std::to_string(currentDefense.general)
+			+ "\n\nPhysical-only Defense bonuses do not apply against magical creature attacks.";
+		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 87, 67, 12), help, help));
+	}
 	labels.push_back(std::make_shared<CLabel>(69, 111, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, damage));
 	labels.push_back(std::make_shared<CLabel>(69, 123, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(health)));
 
