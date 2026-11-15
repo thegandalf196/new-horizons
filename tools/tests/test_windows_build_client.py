@@ -35,6 +35,28 @@ class WindowsBuildClientTest(unittest.TestCase):
             'nhSdl3OutlineRuntimeTest', '--parallel', '4', '--', '-d', 'keeprsp',
         ], check=False)
 
+    def test_portable_entry_smoke_fails_before_expensive_client_compilation(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
+        steps = workflow['jobs']['build']['steps']
+        names = [step.get('name') for step in steps]
+        ordered = [names.index(name) for name in (
+            'Configure client and internal authority',
+            'Verify CMake-selected CRT bytes before compiling',
+            'Compile portable entry before the client',
+            'Portable entry argument and exit smoke (no game or GUI)',
+            'Compile Windows x64 client')]
+        self.assertEqual(ordered, sorted(ordered))
+        self.assertEqual(names.count('Portable entry argument and exit smoke (no game or GUI)'), 1)
+        early = steps[ordered[2]]
+        self.assertEqual(early['if'], steps[ordered[4]]['if'])
+        self.assertEqual(shlex.split(early['run']), [
+            'cmake', '--build', 'build/new-horizons-windows-x64', '--target',
+            'nhWindowsBootstrap', '--parallel', '4', '--', '-d', 'keeprsp'])
+        smoke = steps[ordered[3]]
+        self.assertEqual(smoke['shell'], 'powershell')
+        self.assertIn('powershell.exe -NoProfile -File tools/windows/tests/Portable-Entry-Smoke.ps1', smoke['run'])
+        self.assertIn('if ($LASTEXITCODE -ne 0)', smoke['run'])
+
     def test_pch_choice_keeps_default_and_only_controls_normal_configuration(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
         dispatch = workflow.get('on', workflow.get(True))['workflow_dispatch']

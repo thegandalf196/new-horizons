@@ -6,7 +6,6 @@
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "hero/HistoricalCapabilityRules.h"
-#include "HistoricalFactionPerkRules.h"
 #include "AI/BattleAI/BattleAI.h"
 #include "AI/Nullkiller2/AIGateway.h"
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
@@ -121,8 +120,14 @@ protected:
 		capabilities["leadership"]["creatureRequirements"]["core:familiar"] = JsonNode(1000);
 		capabilities["leadership"]["creatureRequirements"]["core:gog"] = JsonNode(1000);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capabilities);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			historicalFactionPerkRules());
+		// Only Demonic Gating belongs to this historical reserve snapshot.
+		// Keep current authored starting perks (including Christian's Shield of Faith).
+		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		const JsonNode historical(JsonPath::builtin("test/newHorizonsHistoricalFactionPerks"));
+		perks["skills"][GATING] = historical["skills"][GATING];
+		perks.Struct().erase("demonicGatingPolicy");
+		perks.setOverrideFlag(true); // Do not merge the installed temporary-Gating policy back in.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
 		loaded->overrideGameSetting(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCreatureCategories")));
 	}
@@ -149,6 +154,8 @@ protected:
 		ASSERT_NE(attackerSideHero, nullptr);
 		ASSERT_NE(town, nullptr);
 		ASSERT_NE(defenderSideHero, nullptr);
+		ASSERT_TRUE(defenderSideHero->hasActivePerk("new-horizons:divineMandate",
+			"new-horizons:divineMandate.shieldOfFaith"));
 		town->setVisitingHero(attackerSideHero);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(GATING)),
 			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);

@@ -347,9 +347,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Compile Windows x64 client
+      - name: Compile portable entry before the client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: python tools/ci/build_windows_client.py build --build-root build/new-horizons-windows-x64
+        run: cmake --build build/new-horizons-windows-x64 --target nhWindowsBootstrap --parallel 4 -- -d keeprsp
 
       - name: Portable entry argument and exit smoke (no game or GUI)
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
@@ -358,6 +358,10 @@ jobs:
           $ErrorActionPreference = 'Stop'
           powershell.exe -NoProfile -File tools/windows/tests/Portable-Entry-Smoke.ps1 -BootstrapPath build/new-horizons-windows-x64/bootstrap/new-horizons.exe
           if ($LASTEXITCODE -ne 0) { throw "Portable entry smoke failed: $LASTEXITCODE" }
+
+      - name: Compile Windows x64 client
+        if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
+        run: python tools/ci/build_windows_client.py build --build-root build/new-horizons-windows-x64
 
       - name: Record bounded Windows AI compiler flag evidence
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
