@@ -42,11 +42,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "rationale": "Inspected all function declarations and executable scriptblock callbacks; quoted receiver/guard heredoc data are not callables of the containing script. Top-level control flow does not fabricate function spans. Setup progress UI does not alter asset verification/activation; workflow smoke executes only synthetic receiver, no client/GUI. Runtime PowerShell parser/execution remains unrun.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "rationale": "Exact-file callable inventory rechecked after the bounded early-smoke fix. No local function declarations or executable callback bodies; receiver here-string is script data. Top-level control flow and external command invocations do not define functions. Bootstrap-only compilation and the single unchanged smoke gate precede full client compilation.",
+      "review": "IR-0911-PORTABLE-ENTRY-EARLY-SMOKE-SOURCE",
       "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "0946982958ff4d3540be7fc060f8675615ff927a5a601ed474fa37f2225d7b0f"
+      "sha256": "f84754377b9555a57ca0248de4847d7cc988aa7339416ea539a31fc7172eedea"
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -18389,11 +18389,11 @@
     },
     "tools/windows/tests/Portable-Entry-Smoke.ps1": {
       "functions": [],
-      "rationale": "Inspected all function declarations and executable scriptblock callbacks; quoted receiver/guard heredoc data are not callables of the containing script. Top-level control flow does not fabricate function spans. Setup progress UI does not alter asset verification/activation; workflow smoke executes only synthetic receiver, no client/GUI. Runtime PowerShell parser/execution remains unrun.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "rationale": "Exact-file callable inventory rechecked after the bounded early-smoke fix. No local function declarations or executable callback bodies; receiver here-string is script data. Top-level control flow and external command invocations do not define functions. Synthetic receiver now captures an object envelope and checks raw and real launcher-decoded arrays across zero, singleton and adversarial arguments; no game or GUI is launched.",
+      "review": "IR-0911-PORTABLE-ENTRY-EARLY-SMOKE-SOURCE",
       "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "a862d8e6cddc60d7fc3c39ac98b7ede73f8eb82666b929bc3d086946295f8cac"
+      "sha256": "c24cd2fda1562f11a62162607c92e05eb78e698bda113be9562ee6a980398a0e"
     },
     "tools/windows/tests/Setup-Smoke.ps1": {
       "functions": [
@@ -18507,15 +18507,15 @@
       "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
     },
     ".github/workflows/new-horizons-windows.yml": {
-      "deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted.",
+      "deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
       "kind": "exception",
-      "lines": 552,
+      "lines": 556,
       "owner": "engine_engineer",
-      "rationale": "Adds one bounded post-build Windows bootstrap argument/exit-status smoke step; existing workflow structure is unchanged.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "rationale": "Exact four-line build-order change compiles only the portable bootstrap and runs its single smoke before expensive client compilation. Independently reviewed mechanical orchestration change; no new packaging or gameplay responsibility.",
+      "review": "IR-0911-PORTABLE-ENTRY-EARLY-SMOKE-SOURCE",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "0946982958ff4d3540be7fc060f8675615ff927a5a601ed474fa37f2225d7b0f"
+      "sha256": "f84754377b9555a57ca0248de4847d7cc988aa7339416ea539a31fc7172eedea"
     },
     "AI/BattleAI/AttackDamageValue.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "deferral": "Extract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations.",
