@@ -79,7 +79,7 @@ TEST_F(SylvanAllianceRulesTest, DisarmingShotSpendsOnlyAvailableFiniteCountersOn
 	target->counterAttacks.use();
 	EXPECT_EQ(sylvan::disarmingShotRetaliations(*battle(), actor, target, true, 1), 0);
 	target->counterAttacks.reset();
-	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::UNLIMITED_RETALIATIONS, BonusSource::OTHER, 1));
+	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::UNLIMITED_RETALIATIONS, BonusSource::OTHER, 1, BonusSourceID()));
 	EXPECT_EQ(sylvan::disarmingShotRetaliations(*battle(), actor, target, true, 1), 0);
 }
 
@@ -220,7 +220,7 @@ TEST_F(SylvanAllianceRulesTest, AncientAccordBypassesOnlyNativeFriendlyLevelImmu
 	const auto negative = SpellID(SpellID::CURSE).toSpell()->battleMechanics(&curse);
 	EXPECT_TRUE(sylvan::levelImmunityAllows(*positive, dragon, false));
 	EXPECT_FALSE(sylvan::levelImmunityAllows(*negative, dragon, false));
-	auto artifact = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::LEVEL_SPELL_IMMUNITY, BonusSource::ARTIFACT, 5);
+	auto artifact = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::LEVEL_SPELL_IMMUNITY, BonusSource::ARTIFACT, 5, BonusSourceID(ArtifactID(0)));
 	dragon->addNewBonus(artifact);
 	EXPECT_FALSE(sylvan::ignoresNativeLevelImmunity(*positive, dragon, *artifact));
 	EXPECT_FALSE(sylvan::levelImmunityAllows(*positive, dragon, false));
