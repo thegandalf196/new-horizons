@@ -95,7 +95,8 @@ void validateEffectParameters(const JsonNode & parameters)
 		"maximumHealthPercent", "initiative", "battlefieldSpeed", "additionalRetaliations",
 		"magicalReductionPercent", "directAttackDamagePercent", "attackAndSpellReductionPercent",
 		"focusFireMeleeBonusPercent", "feintReductionBonusPP", "feintReductionCapPercent",
-		"slotGrades", "requiresActiveOrder"});
+		"slotGrades", "requiresActiveOrder", "attackDamagePercent", "maximumNegativeSpellRounds",
+		"retaliationsConsumed", "attackDamageReductionPercent", "beneficialDurationBonusRounds", "enemySpellCostBonus"});
 	require(!parameters.Struct().empty(), "nonempty effect parameters");
 	for(const auto & [key, value] : parameters.Struct())
 	{
@@ -113,8 +114,13 @@ void validateEffectParameters(const JsonNode & parameters)
 			}
 		}
 		else
-			require(value.getType() == JsonNode::JsonType::DATA_INTEGER && integer(value, 0, 1000000),
+		{
+			const int maximum = key == "attackDamageReductionPercent" ? 100
+				: (key == "maximumNegativeSpellRounds" || key == "retaliationsConsumed"
+					|| key == "beneficialDurationBonusRounds") ? 1000 : 1000000;
+			require(value.getType() == JsonNode::JsonType::DATA_INTEGER && integer(value, 0, maximum),
 				"nonnegative integer effect parameter " + key);
+		}
 	}
 }
 

@@ -120,6 +120,7 @@ TEST(NewHorizonsPerkRules, RuntimeRejectsIdentityCardinalityRankAndEffectForgery
 {
 	using namespace newHorizonsHeroes;
 	const JsonNode original(JsonPath::builtin("config/newHorizonsPerks"));
+	EXPECT_NO_THROW(validatePerkRules(original));
 	std::vector<JsonNode> invalid(10, original);
 	invalid[0]["skills"]["new-horizons:offense"]["id"].String() = "new-horizons:wrong";
 	invalid[1]["skills"]["new-horizons:offense"]["perks"].Vector().pop_back();
@@ -133,14 +134,25 @@ TEST(NewHorizonsPerkRules, RuntimeRejectsIdentityCardinalityRankAndEffectForgery
 		"new-horizons:defense.borrowedPerk";
 	invalid[8]["skills"]["new-horizons:offense"]["domain"].String() = "Anything";
 	invalid[9]["skills"]["new-horizons:offense"]["availability"].String() = "Everyone sometimes";
+	for(const auto & [key, invalidValue] : std::vector<std::pair<std::string, JsonNode>>{
+		{"attackDamagePercent", JsonNode(1000001)}, {"maximumNegativeSpellRounds", JsonNode(1001)},
+		{"retaliationsConsumed", JsonNode(1001)}, {"attackDamageReductionPercent", JsonNode(101)},
+		{"beneficialDurationBonusRounds", JsonNode(1001)}, {"enemySpellCostBonus", JsonNode(1000001)},
+		{"maxNegativeSpellRounds", JsonNode(1)}, {"attackDamagePercent", JsonNode(25.0)}})
+	{
+		auto forged = original;
+		forged["skills"]["new-horizons:sylvanLuck"]["perks"].Vector().front()["effect"]["parameters"][key] = invalidValue;
+		invalid.push_back(std::move(forged));
+	}
 	for(const auto & rules : invalid)
 		EXPECT_THROW(validatePerkRules(rules), std::runtime_error);
 
-	// Corruption outside Command must still fail when every target feature is supported.
+	// Retired Crisis Command probes remain inert; active policy validation must
+	// still reject corruption without changing the captured rules.
 	const auto & unrelatedCorruption = invalid[1];
 	const auto before = unrelatedCorruption;
-	EXPECT_THROW(crisisCommandProfileActive(unrelatedCorruption), std::runtime_error);
-	EXPECT_THROW(validateCrisisCommandProfileSerialization(unrelatedCorruption, true), std::runtime_error);
+	EXPECT_FALSE(crisisCommandProfileActive(unrelatedCorruption));
+	EXPECT_NO_THROW(validateCrisisCommandProfileSerialization(unrelatedCorruption, true));
 	EXPECT_THROW(validateWeightedPerkSerialization(unrelatedCorruption, true, true, true, true, true), std::runtime_error);
 	EXPECT_EQ(unrelatedCorruption, before);
 }

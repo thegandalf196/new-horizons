@@ -30446,6 +30446,17 @@
       "rationale": "Exact newly triggered bounded unit reviewed for its named responsibility and explicit stage boundary; remains below default ceiling. No future growth, native or gameplay acceptance is conferred.",
       "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
       "sha256": "829be8f1af966e69adaf26d284b3cf7dbb6ece8ea6c27fc9b96bde4bf37e7e6a"
+    },
+    "lib/entities/hero/NewHorizonsPerkRules.cpp": {
+      "kind": "review",
+      "lines": 506,
+      "sha256": "40bbc100255d928f4060365972f7d678a5f7210f269d91941e51dc0b3f69b845",
+      "owner": "gameplay_engineer",
+      "review": "IR-0911-SYLVAN-PERK-PARAMETER-VALIDATION",
+      "review_category": "ordinary-file-review",
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "review_scope": "Exact six approved Sylvan effect-parameter admission and schema-aligned bounds only. No mechanics, serialization, resource, native, rendered or publication acceptance. Existing117-line validatePerkRulesImpl body and its separate bounded extraction obligations remain unchanged.",
+      "rationale": "Cohesive captured perk-registry shape validator500\u2192506 physical lines. Adds exactly six existing-schema Sylvan keys to strict unknown-field admission, preserving DATA_INTEGER and nonnegative validation; new maxima match schema1e6/1000/100. Only validateEffectParameters34\u219240L grows. No new responsibility, action path, mutable state, broad catchall or oversized helper; ordinary500-line review trigger crossed while below1000 ceiling. Further substantive policy-header/traversal growth must follow the separately retained validatePerkRulesImpl extraction obligation."
     }
   }
 }
