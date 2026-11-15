@@ -335,13 +335,36 @@ TEST_F(UnifiedHeroProgressionTest, AIStartingSkillsUseRealCallbackQueryWithoutHu
 	const auto * aiHero = findHeroByOwner(AI_PLAYER);
 	ASSERT_NE(aiHero, nullptr);
 	ASSERT_FALSE(gameState()->getPlayerState(AI_PLAYER)->isHuman());
+	// Authored starting tiers are complete and must not prompt on game entry.
 	handler->resumeMasteryQueries(AI_PLAYER);
+	EXPECT_FALSE(current(AI_PLAYER));
+	EXPECT_TRUE(aiHero->getPerkState().nextRequiredPerkOffer([&](const std::string & skill)
+		{ return aiHero->getPerkSkillRank(skill); }).empty());
+	const auto startingPerks = aiHero->getPerkState().selected;
+	const std::string parent = "new-horizons:havocMagic";
+	ASSERT_EQ(aiHero->getPerkSkillRank(parent), MasteryLevel::BASIC);
+	// A legitimate advance of a starting Skill must still use the real AI
+	// callback/query path without waiting for human interface readiness.
+	handler->changeSecSkill(aiHero, SecondarySkill(SecondarySkill::decode(parent)),
+		MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	const auto query = current(AI_PLAYER);
 	ASSERT_TRUE(query);
 	EXPECT_TRUE(query->prompted);
 	EXPECT_TRUE(query->hlu.perkOnly);
+	ASSERT_EQ(query->hlu.perks.size(), newHorizonsHeroes::PERK_ADVANCED_POOL_SIZE);
+	for(const auto & candidate : query->hlu.perks)
+	{
+		EXPECT_EQ(candidate.selection.skillId, parent);
+		EXPECT_EQ(candidate.requiredRank, MasteryLevel::ADVANCED);
+	}
 	EXPECT_FALSE(handler->uiReadyForDialogs.contains(AI_PLAYER));
 	ASSERT_NO_FATAL_FAILURE(drain(AI_PLAYER));
+	EXPECT_EQ(aiHero->getPerkState().selected.size(), startingPerks.size() + 1);
+	EXPECT_TRUE(aiHero->getPerkState().hasPerkForTier(parent, MasteryLevel::ADVANCED));
+	for(const auto & choice : startingPerks)
+	{
+		EXPECT_TRUE(aiHero->getPerkState().hasSelection(choice.skillId, choice.perkId));
+	}
 	EXPECT_TRUE(aiHero->getPerkState().nextRequiredPerkOffer([&](const std::string & skill)
 		{ return aiHero->getPerkSkillRank(skill); }).empty());
 }

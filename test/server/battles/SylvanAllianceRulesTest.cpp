@@ -231,9 +231,12 @@ TEST_F(SylvanAllianceRulesTest, V2KeepsPerfectMomentAndDoesNotGenerateRetiredHis
 	const int luck = attackerSideHero->valOfBonuses(BonusType::LUCK);
 	perk("perfectMoment", 3);
 	startBattle();
-	auto * actor = stack("core:centaur", BattleSide::ATTACKER, BattleHex(leftHex));
+	// Eight Centaurs give integral ordinary damage after this fixture's defenses,
+	// so the 350% assertion does not multiply an already rounded-down reference.
+	auto * actor = stack("core:centaur", BattleSide::ATTACKER, BattleHex(leftHex), 8);
 	auto * target = stack("core:angel", BattleSide::DEFENDER, BattleHex(rightHex), 100);
 	const auto ordinary = damage(actor, target);
+	ASSERT_EQ(ordinary, 10);
 	EXPECT_EQ(damage(actor, target, false, true), ordinary * 350 / 100);
 	EXPECT_EQ(attackerSideHero->valOfBonuses(BonusType::LUCK), luck);
 	auto fortune = battle()->getSylvanLuckState(BattleSide::ATTACKER);

@@ -33,7 +33,11 @@ protected:
 		TinyMapGameTest::mapLoaded(loaded);
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(historical)
+		{
 			rules.Struct().erase("dailyMovement");
+			// Model a captured profile, not a patch merged with current defaults.
+			rules.setOverrideFlag(true);
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
@@ -123,11 +127,14 @@ TEST_F(NewHorizonsMovementLevelGrowthGame, HistoricalCapturedAbsenceRemainsUncha
 	historical = true;
 	startGame();
 	ASSERT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("dailyMovement"));
+	const auto captured = hero->getPrimaryGrowthRules();
 	CGameState restored;
 	restored.preInit(LIBRARY);
 	restored.loadFromMemory(gameState()->saveToMemory());
 	auto * restoredHero = restored.getHero(hero->id);
 	ASSERT_NE(restoredHero, nullptr);
+	EXPECT_EQ(restoredHero->getPrimaryGrowthRules(), captured);
+	EXPECT_FALSE(restoredHero->getPrimaryGrowthRules().Struct().contains("dailyMovement"));
 	restoredHero->level = 30;
 	restoredHero->nodeHasChanged();
 	EXPECT_EQ(restoredHero->movementPointsLimit(), 200);
