@@ -7,9 +7,9 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.91.1 — Unreleased
+## 0.91.1 Early Access
 
-- Integrates the Conflux artwork handoffs omitted from 0.91: Pasis is now
+- Integrates the Conflux artwork omitted from 0.91: Pasis is now
   displayed as **Veyra** and Monere as **Orun**, with their approved biographies
   and portraits. Fiur, Lacus and Kalt receive their approved portraits.
 - Replaces Water and Ice Elemental battle animations, adventure sprites,
@@ -33,7 +33,20 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 Save format remains **1159**, compatible with 0.91. Authored map/save hero names
 and portraits retain their normal precedence over updated defaults. Existing
-games retain their captured progression, Movement and Sylvan rules.
+games retain their captured progression, Movement and Sylvan rules. Start a new
+game to receive the revised defaults.
+
+Extract the entire Windows ZIP into a new folder, then run `new-horizons.exe`.
+An original Heroes III Complete installation is required; original game archives
+are not included. Corresponding fork and dependency sources and SHA256 checksums
+are available on the [release page](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91.1).
+
+Linux rendered checks cover the new artwork, representative Sylvan effects,
+progression and save/load. Native regression evidence combines 556 distinct
+passing cases across three reviewed runs; this is not a single all-green
+full-suite run. Windows compilation, launcher, resource-decoder and static
+package/source audits passed. Native Windows GUI and gameplay remain unverified.
+Reports of uneven adventure-map movement remain under investigation.
 
 ## 0.91 Early Access
 
