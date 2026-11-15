@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../network/InitializationProfile.h"
 #include "ReplayLog.h"
 
 #include "CGameState.h"
@@ -153,10 +154,19 @@ void ReplayLog::endTurn(const PlayerColor & player)
 
 void ReplayLog::recordPack(CPackForClient & pack, CGameState & gs)
 {
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::ReplayRecord);
 	// every game day opens a new chapter, anchored by the state that day started from.
 	// NewTurn is recorded before it is applied, so the new day is only known from the pack itself
 	const auto * newTurn = dynamic_cast<const NewTurn *>(&pack);
-	if(chapters.empty() || newTurn != nullptr)
+	// Initial setup packets share the first day, avoiding an immediate second snapshot.
+	const bool beforeFirstDay = !chapters.empty() && chapters.back().day == 0;
+	if(newTurn != nullptr && beforeFirstDay)
+	{
+		validateAppendState();
+		preparationStamp.reset();
+		chapters.back().day = newTurn->day;
+	}
+	else if(chapters.empty() || newTurn != nullptr)
 		beginDay(newTurn ? newTurn->day : gs.day, gs.saveReplaySnapshot());
 
 	if(const auto * turnStart = dynamic_cast<const PlayerStartsTurn *>(&pack))

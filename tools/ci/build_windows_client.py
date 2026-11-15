@@ -9,6 +9,7 @@ import subprocess
 TARGETS = (
     'vcmiclient',
     'nhWindowsBootstrap',
+    'nhWindowsSetup',
     'nhSdl3GrayscaleMaskRuntimeTest',
     'nhArtStartupRuntimeTest',
     'nhImageOptimizerRuntimeTest',

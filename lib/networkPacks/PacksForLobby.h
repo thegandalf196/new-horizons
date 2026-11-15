@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../network/InitializationProfile.h"
 
 #include "StartInfo.h"
 #include "../bonuses/BonusSerializationContext.h"
@@ -189,6 +190,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		nhLoadProfile::Phase phase(h.saving ? "authority-lobby-write" : "client-lobby-read");
+		nhLoadProfile::Scope measured(h.saving ? nhLoadProfile::Metric::LobbyWrite : nhLoadProfile::Metric::LobbyRead);
 		if(h.saving)
 			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving)

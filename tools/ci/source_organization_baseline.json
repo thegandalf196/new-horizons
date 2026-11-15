@@ -34,6 +34,12 @@
       "review": "IR-LOCAL-FIRST-REPOSITORY-CONTRACTS-20261021",
       "sha256": "7ffd7d68e5d008fdc8c53f220d0076ca68c12fb318f4dff49a67a72d870ce3fe"
     },
+    ".github/workflows/new-horizons-windows-manual-setup.yml": {
+      "functions": [],
+      "rationale": "Complete exact-file callable inventory: top-level workflow/PowerShell commands, assignments and control flow invoke external tools; no local named function, lambda or executable callback body. The synthetic receiver here-string is test data, not a callable defined by this file. Exact content only; no runtime or growth approval.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
+      "sha256": "0a54d661da715819d38501e8e887ec375c0b10a2d96b320f91d11b043b4b57c7"
+    },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "functions": [],
       "rationale": "Only embedded code is Python run block27\u201333: import, assignments, runpy loading external tracked module, calling collect_microsoft_notices, and for/if/print. No def/async def/lambda/class body in this file. External module callable is separately inventoried, not defined by its dictionary lookup invocation here.",
@@ -42,11 +48,9 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "rationale": "Exact-file callable inventory rechecked after the bounded early-smoke fix. No local function declarations or executable callback bodies; receiver here-string is script data. Top-level control flow and external command invocations do not define functions. Bootstrap-only compilation and the single unchanged smoke gate precede full client compilation.",
-      "review": "IR-0911-PORTABLE-ENTRY-EARLY-SMOKE-SOURCE",
-      "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "f84754377b9555a57ca0248de4847d7cc988aa7339416ea539a31fc7172eedea"
+      "rationale": "Complete exact-file callable inventory: top-level workflow/PowerShell commands, assignments and control flow invoke external tools; no local named function, lambda or executable callback body. The synthetic receiver here-string is test data, not a callable defined by this file. Exact content only; no runtime or growth approval.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
+      "sha256": "324230e39daf1585b2f32e6d34161c169a44e4e02422de7cbbf1070b93fc63f1"
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -8567,36 +8571,36 @@
     "lib/entities/hero/NewHorizonsPerkState.h": {
       "functions": [
         {
-          "end": 39,
-          "start": 35,
+          "end": 40,
+          "start": 36,
           "symbol": "newHorizonsHeroes::PerkSelection::void serialize(Handler & h)#1"
         },
         {
-          "end": 71,
-          "start": 65,
+          "end": 72,
+          "start": 66,
           "symbol": "newHorizonsHeroes::PerkOfferCandidate::void serialize(Handler & h)#1"
         },
         {
-          "end": 114,
-          "start": 114,
+          "end": 119,
+          "start": 119,
           "symbol": "newHorizonsHeroes::PerkState::OfferWeightContext::OfferWeightContext() : mode(OfferWeightMode::Unspecified)#1"
         },
         {
-          "end": 117,
-          "start": 115,
+          "end": 122,
+          "start": 120,
           "symbol": "newHorizonsHeroes::PerkState::OfferWeightContext::OfferWeightContext(OfferWeightMode mode, OfferWeightLookup lookup, std::map<std::string, int> referenceWeights = {}) : mode(mode), lookup(std::move(lookup)), referenceWeights(std::move(referenceWeights))#1"
         },
         {
-          "end": 210,
-          "start": 139,
+          "end": 216,
+          "start": 144,
           "symbol": "newHorizonsHeroes::PerkState::void serialize(Handler & h, std::shared_ptr<const nativeRules::PreparedPilotPerks> * prepared = nullptr)#1"
         }
       ],
       "rationale": "Complete five-body inventory includes both nested OfferWeightContext constructors and three serializers. Recoveries are braced defaults. Mandatory tier helpers are declarations; serializer validates candidate rules/selections before installation.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-MANUAL",
+      "review": "IR-SERIALIZED-PERK-ADMISSION-MAIN-137196E8-20261115",
       "review_scope": "Complete callable inventory only; no runtime/gameplay/rendered/publication acceptance.",
       "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
-      "sha256": "c5e2009e264d7cd390e81dc9d8245ce828451553de555955aaf2f2a34a8845ee"
+      "sha256": "e1030818278ae18065411a6971d7bdecdabbc8550fcb1862e6f86fe38aa5cbf7"
     },
     "lib/filesystem/CNhArtLoader.h": {
       "functions": [
@@ -18194,6 +18198,27 @@
       "review": "independent-source-manual-review-2026-10-15",
       "sha256": "0906153894c7ee1cb24abebff17d866cfe4bd7f840ce6f003f6f20822ba84b97"
     },
+    "tools/windows/Complete-Assets.ps1": {
+      "functions": [
+        {
+          "end": 13,
+          "lines": 11,
+          "sha256": "a0d84e3337fe8afc22ebf2934d59f5aa0ce8a98a407ae296daa059cc56602b31",
+          "start": 3,
+          "symbol": "function Test-CompleteAssetShape([string]$Root)#1"
+        },
+        {
+          "end": 27,
+          "lines": 13,
+          "sha256": "8bb5e4a6627f743889f348563992d48da7bf7a5f2725113f5237deef11063872",
+          "start": 15,
+          "symbol": "function Resolve-CompleteAssetRoot([string]$Selected)#1"
+        }
+      ],
+      "rationale": "Complete exact27-line PowerShell helper inventory: two named shape/resolution functions; foreach/if statements define no nested callable. Selected Data-only parent normalization still performs authoritative complete-layout/path validation. No callback or function-like body in comments.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
+      "sha256": "71b512ab2b8d2d951a55005689dfe338f0d7797f7cd503e135717ae3c67ce779"
+    },
     "tools/windows/Launch-Process.ps1": {
       "functions": [
         {
@@ -18277,59 +18302,59 @@
     "tools/windows/Start-New-Horizons.ps1": {
       "functions": [
         {
-          "end": 30,
+          "end": 31,
           "lines": 10,
           "sha256": "56004b508010ecf4c49206553c2ba7df401ce7d74f22f073b0550845d1078400",
-          "start": 21,
+          "start": 22,
           "symbol": "function Test-ReportableGameExit#1"
         },
         {
-          "end": 44,
+          "end": 45,
           "lines": 13,
           "sha256": "a72a731ef6ca8deda66786cc531bd894febbd88faafdd9aa33e1811431daea99",
-          "start": 32,
+          "start": 33,
           "symbol": "function Assert-PlainPath([string]$Path)#1"
         },
         {
-          "end": 61,
+          "end": 62,
           "lines": 16,
           "sha256": "523d09f06e5258cdcdfec8806276f9b4c71797024328aa4822dabdd727afbe4b",
-          "start": 46,
+          "start": 47,
           "symbol": "function Get-SafeChildPath([string]$Root, [string]$Relative)#1"
         },
         {
-          "end": 80,
+          "end": 81,
           "lines": 18,
-          "sha256": "33ca8e65b043b39664786382f895eb7a1986ed6cb72b25540682238d4444c02a",
-          "start": 63,
+          "sha256": "723d0ed32830fda8b22337009f29f0e2288511a546b9e6c6f284bf3486f02d9d",
+          "start": 64,
           "symbol": "function Assert-CompleteLayout([string]$Root)#1"
         },
         {
-          "end": 103,
+          "end": 104,
           "lines": 22,
           "sha256": "88d6f3fbaf0ff373154c25c51a1f7af2fcb9e75993ed833337c33512cf64c64c",
-          "start": 82,
+          "start": 83,
           "symbol": "function Get-AssetInventory([string]$Root)#1"
         },
         {
-          "end": 130,
+          "end": 131,
           "lines": 26,
           "sha256": "56c7aa955e1107ca3da2865bad6567697263fb4080b5db6104e08c2f99c84206",
-          "start": 105,
+          "start": 106,
           "symbol": "function Assert-ReadyContent([string]$Root)#1"
         },
         {
-          "end": 161,
+          "end": 162,
           "lines": 30,
           "sha256": "8540c89f617ad4ca110d96ce18ed5209068353369d575c064895348cf7044b57",
-          "start": 132,
+          "start": 133,
           "symbol": "function Set-ManagedPreset([string]$PackageRoot, [string]$ProfileRoot)#1"
         },
         {
-          "end": 176,
+          "end": 177,
           "lines": 14,
-          "sha256": "e6d7203f20c084fefba6fed052e5052ecbce50371e030bdc95d383d2ec9c4f66",
-          "start": 163,
+          "sha256": "03f885a549adbfc46f62ae53ab2e3cc36894f066c02ae7ac630f8785f6bb0435",
+          "start": 164,
           "symbol": "function Select-CompleteFolder#1"
         },
         {
@@ -18354,11 +18379,11 @@
           "symbol": "Where-Object::<scriptblock>(pending retained run directory)#1"
         }
       ],
-      "rationale": "Inspected all function declarations and executable scriptblock callbacks; quoted receiver/guard heredoc data are not callables of the containing script. Top-level control flow does not fabricate function spans. Setup progress UI does not alter asset verification/activation; workflow smoke executes only synthetic receiver, no client/GUI. Runtime PowerShell parser/execution remains unrun.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "rationale": "Complete exact-file callable inventory renewed for the reviewed manual Setup asset-root selection. Existing named functions and executable callback/scriptblock bodies retained; quoted receiver script data remains excluded. No native/runtime acceptance or future size allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "516d2cad2db5a20b398fe9c160693f3346482aa699dfe59ec64b3b79fab82295"
+      "sha256": "a565531f2c17312818751f52a22b86a55c21224aa2dcedcd54c488b1a8e8dd1d"
     },
     "tools/windows/tests/Managed-Preset-Smoke.ps1": {
       "functions": [
@@ -18386,6 +18411,12 @@
       "rationale": "All70 lines read; two named functions, AST Find callback19 and Assert-Failure callback64. Dynamically created external launcher functions21 are invocations of external source, not locally authored definitions; top-level if/foreach/try/finally blocks are control flow.",
       "review": "test-function-inventory-complete-32",
       "sha256": "f0a94655e8226fda90776f123e79c32dd4003c3742e38f930dc092e228cb1f3e"
+    },
+    "tools/windows/tests/Manual-Setup-Smoke.ps1": {
+      "functions": [],
+      "rationale": "Complete exact-file callable inventory: top-level workflow/PowerShell commands, assignments and control flow invoke external tools; no local named function, lambda or executable callback body. The synthetic receiver here-string is test data, not a callable defined by this file. Exact content only; no runtime or growth approval.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
+      "sha256": "46c74a05924c2613f1c6cd3828122ab5506c9bc5ed67f782a1674265f214f6ef"
     },
     "tools/windows/tests/Portable-Entry-Smoke.ps1": {
       "functions": [],
@@ -18468,18 +18499,18 @@
           "symbol": "Invoke-Setup::ForEach-Object::scriptblock#1"
         },
         {
-          "end": 132,
+          "end": 135,
           "lines": 3,
           "sha256": "140212328f91991a304b66fd32666fbf403f9a9b9141bd60f3e1ac23db1f7b74",
-          "start": 130,
+          "start": 133,
           "symbol": "AST.FindAll::scriptblock(param($node))#1"
         }
       ],
-      "rationale": "Inspected all function declarations and executable scriptblock callbacks; quoted receiver/guard heredoc data are not callables of the containing script. Top-level control flow does not fabricate function spans. Setup progress UI does not alter asset verification/activation; workflow smoke executes only synthetic receiver, no client/GUI. Runtime PowerShell parser/execution remains unrun.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "rationale": "Complete exact-file callable inventory renewed for the reviewed manual Setup asset-root selection. Existing named functions and executable callback/scriptblock bodies retained; quoted receiver script data remains excluded. No native/runtime acceptance or future size allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "1fbd23f2ea84459b8513190babd8791da7363aa77f0fe9db5673d040fd8a60d2"
+      "sha256": "4150d23b9f7718cddb51e7c9ab363870b658f11c47ad1d3b86224cf4ae9ca662"
     },
     "tools/windows/tests/Test-CrashReportExit.ps1": {
       "functions": [
@@ -18507,15 +18538,16 @@
       "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
     },
     ".github/workflows/new-horizons-windows.yml": {
-      "deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 556,
+      "lines": 558,
       "owner": "engine_engineer",
-      "rationale": "Exact four-line build-order change compiles only the portable bootstrap and runs its single smoke before expensive client compilation. Independently reviewed mechanical orchestration change; no new packaging or gameplay responsibility.",
-      "review": "IR-0911-PORTABLE-ENTRY-EARLY-SMOKE-SOURCE",
+      "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "f84754377b9555a57ca0248de4847d7cc988aa7339416ea539a31fc7172eedea"
+      "sha256": "324230e39daf1585b2f32e6d34161c169a44e4e02422de7cbbf1070b93fc63f1"
     },
     "AI/BattleAI/AttackDamageValue.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "deferral": "Extract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations.",
@@ -20986,20 +21018,21 @@
         "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
         "sha256": "9672d816b03bf86940dfd0f49c405ca769cff7ea0f32166e47eaaa3654894b28"
       },
-      "deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
+      "deferral": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it.",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 739,
-      "owner": "engine_engineer",
+      "lines": 740,
+      "owner": "ui_developer",
       "previous_exact_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "previous_review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
+      "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Routes captured Sylvan artwork or Movement presentation through focused shared helpers. Existing layout and constructor responsibilities do not expand.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "rationale": "Exact reviewed direct map-composition successor. Renderer presentation is extracted into the focused ScreenComposition unit with pure ownership/geometry helpers; map-cache drawing retains dirty-tile traversal and existing layer order. Nearest-neighbor and one-to-one integer-origin eligibility preserve resampled fallback, retained scene generation prevents late clearing, and shutdown checks preserve null-engine behavior. Registry changes only declare the new renderer unit/header and two standalone tests. No numerical, gameplay, resource or future growth waiver.",
+      "review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "8117f1946fa5e95e9c040c020b3e5324b119c9955e848355403829983b9cdee1"
+      "sha256": "0489cdbd70c4938f22e0ebd8b3d9a93d339cf82f68cc38f359148825b042e262"
     },
     "client/CPlayerInterface.cpp": {
       "completed_p_predecessor": {
@@ -22367,14 +22400,16 @@
       "sha256": "e3c8777a2fbca405db13be5874c19e893e8c38a0b687e9ae72bc84e122bf4781"
     },
     "client/mapView/MapViewController.cpp": {
-      "deferral": "ENGINE/UI exact697 bound only. Extract remaining teleport/map-presentation lifecycle before further controller growth. Preserve GUI GPU ownership, pre-apply capture, unlocked wait/post-relock cancellation, actual endNetwork-before-destruction and existing battle-restart coverage; pure helpers do not establish rendered acceptance.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 697,
-      "owner": "ui_developer",
-      "rationale": "Urgent correctness694 to697 only: route pre-teleport snapshot through focused GUI rendezvous and wire cancellation before existing animation termination. Substantive behavior isolated in74-line transition implementation; no unrelated controller methods, packet/state/restart semantics changed.",
-      "review": "IR-TELEPORT-GUI-SNAPSHOT-OWNERSHIP-V1",
+      "lines": 699,
+      "owner": "engine_engineer",
+      "prior_deferral": "ENGINE/UI exact697 bound only. Extract remaining teleport/map-presentation lifecycle before further controller growth. Preserve GUI GPU ownership, pre-apply capture, unlocked wait/post-relock cancellation, actual endNetwork-before-destruction and existing battle-restart coverage; pure helpers do not establish rendered acceptance.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "exact-four-records-and-cohesive-ownership-helpers-only-no-future-growth",
-      "sha256": "d9fe14e0914985d93fe706994b5edf37190255168d7e52c241608371cb5f5472"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "870b080dff055045a51722e129375f8ad5e56b9740b64e3c7e4174dffa14ccb8"
     },
     "client/render/AssetGenerator.cpp": {
       "deferral": "Before further affected artwork-generation growth, extract the next cohesive panel background generator. Preserve native geometry, external assets, texture origin and rendered comparison; exact current file freeze only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
@@ -24150,15 +24185,19 @@
       "sha256": "c17656372421378baecdea54a73ce0d05c33e4171bca39f8cc3f3b332398cc91"
     },
     "clientsdl3/render/ScreenHandler.cpp": {
-      "deferral": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1028 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Owner: engine_engineer. Before further screenshot/reporting growth, extract screenshot persistence and optional gameplay notification as focused ordered helpers; preserve image/path behavior, input ownership, null-game reporting and both SDL backend teardown contracts.",
-      "kind": "exception",
-      "lines": 1028,
-      "owner": "engine_engineer",
-      "rationale": "One screenshot chat-notification condition gains null-GAME protection for report-only startup. Image saving, paths, inputs and ordinary game behavior remain identical. Exact1028-line bounded correctness change; no ceiling or future-growth allowance.",
-      "review": "isolated-bug-report-bounded-capture-and-reviewed-attachment",
+      "deferral": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it.",
+      "kind": "review",
+      "lines": 974,
+      "owner": "ui_developer",
+      "prior_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
+      "prior_deferral_history": [
+        "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1028 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Owner: engine_engineer. Before further screenshot/reporting growth, extract screenshot persistence and optional gameplay notification as focused ordered helpers; preserve image/path behavior, input ownership, null-game reporting and both SDL backend teardown contracts."
+      ],
+      "rationale": "Exact reviewed direct map-composition successor. Renderer presentation is extracted into the focused ScreenComposition unit with pure ownership/geometry helpers; map-cache drawing retains dirty-tile traversal and existing layer order. Nearest-neighbor and one-to-one integer-origin eligibility preserve resampled fallback, retained scene generation prevents late clearing, and shutdown checks preserve null-engine behavior. Registry changes only declare the new renderer unit/header and two standalone tests. No numerical, gameplay, resource or future growth waiver.",
+      "review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "review_scope": "exact-isolated-reporting-source-no-runtime-or-future-growth-certification",
-      "review_status": "SOURCE_REVIEWED_RUNTIME_PENDING",
-      "sha256": "f4ee9b9b163670a1d01472b9012b4329a158dd6701da78a5558e0a5305244284"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "9efb2024684bb27f0254eecf1f24b1faa62f4e29753f0f0b25db8fd50d080138"
     },
     "cmake_modules/Findffmpeg.cmake::function(_ffmpeg_find component headername)#1": {
       "kind": "legacy",
@@ -24431,17 +24470,18 @@
         "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
         "sha256": "71cae56d01d8f6dc1027732e50d62b4364d673f8f6299b951476e8a4c01e859b"
       },
-      "deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2001,
+      "lines": 2006,
       "owner": "engine_engineer",
       "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1",
-      "rationale": "Mechanical source registration for extracted movement, starting-development, skill-offer and Sylvan rule owners; no executable bodies.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
+      "rationale": "Exact reviewed scoped catalogue admission/selection extraction, Basic starting-profile checks and source registration. Full raw boundary validation, ordered selected-prefix legality, RNG/offer ordering, atomic commit and saved fields remain unchanged; old obligations below are retained verbatim. State file shrinks702 to583; new operation217 and query99 line helpers own extracted responsibilities. No blanket future growth allowance.",
+      "review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "e8da9e4df3b25799b5d211107aeef6447bcce2add463d74bb9f55a9121c816fd"
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "44285198dc6f450daf1b944e14c5610db36aac3bcb33b1ebb32a47c711b7051c"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -25594,16 +25634,17 @@
         "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
         "sha256": "2f99961ef5b6c11ddc932c337bcb53cded2e3246d923ceec6489a69edcfe54ab"
       },
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured optional specialty clause dispatch with stable validation errors and historical absence; test resolved/unresolved rules, fresh initialization and old saves without installing defaults.",
-      "kind": "legacy",
-      "lines": 777,
-      "owner": "gameplay_engineer",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
+      "kind": "exception",
+      "lines": 779,
+      "owner": "engine_engineer",
       "previous_review": "IR-TAMIKA-FINAL-ORDERED-NATIVE-ACTIVATION-20261029",
-      "rationale": "Extracts starting-development validation, faction migration and initial-only authored perk selection into focused owners; captured policy absence preserves historical behavior.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "prior_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured optional specialty clause dispatch with stable validation errors and historical absence; test resolved/unresolved rules, fresh initialization and old saves without installing defaults.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "95102c66ac1bc3251509f31393a7bb67150dee22783183b453a09feea85e2ec9"
+      "sha256": "1352330b5da9beb0f13b36514a2de735aa1a2eef895cba15bdc390c5024a278a"
     },
     "lib/entities/hero/NewHorizonsLeadership.cpp::newHorizonsHeroes::bool canMergeArmies(const CCreatureSet * source, const CCreatureSet * destination, const CGHeroInstance * hero)#1": {
       "completed_p_predecessor": {
@@ -25661,37 +25702,39 @@
         "review_status": "INDEPENDENT_EXACT_UNCHANGED_LEGACY_DEBT_FREEZE",
         "sha256": "6242e9cd0e3eb5a2c2d9ecf5ddb2494caecf700c8cacb6a8c302e40cb9ac9c0d"
       },
-      "deferral": "Before further unified shape growth, extract a named policy validator. Preserve required/null/version controls and strict captured tier identity. Prior stricter obligations remain in inherited_deferral, where present.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Gameplay engineer: further policy-version growth should factor the captured policy-header/coherence stage into a pure validator before the unchanged skill iteration; preserve rejection before prepared-rule installation and strict historical readers. Current111-line schema traversal is a normal review-trigger unit.",
       "kind": "exception",
-      "lines": 117,
-      "owner": "gameplay_engineer",
-      "rationale": "Unified policy marker validation requires ordered one-per-tier capture; selection/RNG stays outside the schema owner.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "lines": 122,
+      "owner": "engine_engineer",
+      "prior_deferral": "Before further unified shape growth, extract a named policy validator. Preserve required/null/version controls and strict captured tier identity. Prior stricter obligations remain in inherited_deferral, where present.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_category": "ordinary-function-review",
       "review_scope": "Only exact source organization, measured bounds and stated responsibility. Native/rendered/performance/gameplay/publication acceptance not established.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "abae99bd85103a800b80005d02225a496ecd3290bf281060e467703ac77a2359"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "34daac026db44be90d26bd0211cff66f18435bd4e79c7a52a54105ebce3a5eca"
     },
     "lib/entities/hero/NewHorizonsPerkState.cpp": {
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "gameplay_engineer owns extracting cohesive offer/R2-weight generation from saved-state/codec responsibilities before any further substantive expansion; retain maximum 723 file lines and 31-line validate for this exception. Future extraction must preserve byte/refusal/offer order and RNG contracts with focused characterization.\n\nGameplay: extract R2 normalization and offer sampling into a focused deterministic offer owner taking validated rules, eligible candidates, seed and explicit captured weight context; return ordered candidates and quantized weights. Keep state mutation/JSON migration here. Characterize fixed-seed complete offers, zero/equal/extreme ratios, sole-parent/strict behavior, rejection consumption and stale-offer refusal. Preserve the earlier offer/R2 extraction obligation rather than granting a new723-line growth budget. Protected invariants: Full catalogue validation precedes borrowed definition lookup; active/rank/tier/prefix/cap rules and selected order; SplitMix unsigned arithmetic, rejection draws, complete captured class reference, common2^32 quantum and exact binary-double endpoint; Historical uniform versus V1 per-perk full-parent weight versus R2 parent-first semantics; strict sole-parent removal; Acceptance regenerates exact offer; narrow historical source identity gates migration; absence never fills from defaults.",
-      "kind": "review",
+      "kind": "exception",
       "legacy_freeze_predecessor_kind": "exception",
       "legacy_freeze_predecessor_lines": 723,
       "legacy_freeze_predecessor_rationale": "Exact two-expression selected-perk validation substitution uses the existing borrowed acquisitionDefinition only after unchanged fresh full catalog validation. File remains 723 lines and validate remains 31; no added responsibility, cache, API or codec change. Separating coupled offer/R2-weight generation in this patch would enlarge its acceptance risk. Independent source review approves this no-growth scope only; native and byte acceptance remain separate.",
       "legacy_freeze_predecessor_review": "perk-state-selected-validation-independent-source-review",
       "legacy_freeze_predecessor_review_scope": "exact-two-expression-no-growth-source-only",
       "legacy_freeze_predecessor_sha256": "21c23875f8238f67cee6258f7cadd3e5098712835b3aea77157fc60779da86f7",
-      "lines": 700,
+      "lines": 583,
       "next_bounded_extraction": "Gameplay: extract R2 normalization and offer sampling into a focused deterministic offer owner taking validated rules, eligible candidates, seed and explicit captured weight context; return ordered candidates and quantized weights. Keep state mutation/JSON migration here. Characterize fixed-seed complete offers, zero/equal/extreme ratios, sole-parent/strict behavior, rejection consumption and stale-offer refusal. Preserve the earlier offer/R2 extraction obligation rather than granting a new723-line growth budget.",
-      "owner": "gameplay_engineer",
+      "owner": "engine_engineer",
       "protected_invariants": [
         "Full catalogue validation precedes borrowed definition lookup; active/rank/tier/prefix/cap rules and selected order",
         "SplitMix unsigned arithmetic, rejection draws, complete captured class reference, common2^32 quantum and exact binary-double endpoint",
         "Historical uniform versus V1 per-perk full-parent weight versus R2 parent-first semantics; strict sole-parent removal",
         "Acceptance regenerates exact offer; narrow historical source identity gates migration; absence never fills from defaults"
       ],
-      "rationale": "769 to700 extracts mandatory tier reconciliation/acquisition into155-line NewHorizonsUnifiedProgression. Historical prepareOffer173 to175 gains only the early delegation; historical sampler retained.",
+      "rationale": "Exact reviewed scoped catalogue admission/selection extraction, Basic starting-profile checks and source registration. Full raw boundary validation, ordered selected-prefix legality, RNG/offer ordering, atomic commit and saved fields remain unchanged; old obligations below are retained verbatim. State file shrinks702 to583; new operation217 and query99 line helpers own extracted responsibilities. No blanket future growth allowance.",
       "responsibility_spans": [
         "33-79 acquisition legality",
         "81-101 legacy identity and JSON shape",
@@ -25701,10 +25744,10 @@
         "476-673 deterministic offer preparation, weight inspection and acceptance",
         "675-733 projection and validated JSON codec"
       ],
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
       "review_scope": "Only exact source organization, measured bounds and stated responsibility. Native/rendered/performance/gameplay/publication acceptance not established.",
       "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "152343334ad497c7e96986b39d58a1e051bc01d5ca3ef0f41f69acaf16679fdb"
+      "sha256": "06281895b3ce10acf58ec6683444701363405fda7e96fccd13a7014e14d9bb38"
     },
     "lib/entities/hero/NewHorizonsPerkState.cpp::newHorizonsHeroes::std::vector<PerkOfferCandidate> PerkState::prepareOffer( const std::function<int(const std::string &)> & rankLookup, uint64_t seed, const OfferWeightContext & weightContext) const#1": {
       "deferral": "Before any further prepareOffer edit, extract the historical weighted sampler cohesively. Preserve captured semantics, exact RNG draws/weights and current early delegation; exact175 method bound only. Prior stricter obligations remain in inherited_deferral, where present.",
@@ -25741,14 +25784,35 @@
       "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "sha256": "4c55233d81abaf04ba4a17547d62b231e68f52c10bb4297fc51efd857c130509"
     },
-    "lib/entities/hero/NewHorizonsStartingDevelopment.cpp::newHorizonsHeroes::void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMigrationTable)#1": {
+    "lib/entities/hero/NewHorizonsStartingDevelopment.cpp::newHorizonsHeroes::std::optional<StartingDevelopmentProfile> startingDevelopmentProfile( const JsonNode & rules, const PerkState & perkState, HeroTypeID hero, HeroClassID heroClass)#1": {
       "kind": "review",
-      "lines": 124,
-      "rationale": "Extracts starting-development validation, faction migration and initial-only authored perk selection into focused owners; captured policy absence preserves historical behavior.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "lines": 81,
+      "owner": "engine_engineer",
+      "rationale": "Bounded current two-Basic starting-profile admission and per-hero resolver; exact source-only review. Preserves historical policy/type/ownership checks and one validated catalogue view; no later growth allowance.",
+      "review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
+      "review_scope": "Exact81/82-line functions under150 ceiling; no runtime, performance or rendered acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "342dd8600b472fc73c2a09776c0a87d0028d23a36a1b80f51fbef746fae876c7"
+    },
+    "lib/entities/hero/NewHorizonsStartingDevelopment.cpp::newHorizonsHeroes::void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMigrationTable)#1": {
+      "deferral": "Before further starting-Skill policy growth, extract captured profile/table validation into a focused pure helper; preserve canonical unique identities, rank/type checks, historical absence/version/migration handling and two-Basic own-faction coverage. Exact126-line bound, no later growth allowance.",
+      "kind": "exception",
+      "lines": 126,
+      "rationale": "Exact reviewed scoped catalogue admission/selection extraction, Basic starting-profile checks and source registration. Full raw boundary validation, ordered selected-prefix legality, RNG/offer ordering, atomic commit and saved fields remain unchanged; old obligations below are retained verbatim. State file shrinks702 to583; new operation217 and query99 line helpers own extracted responsibilities. No blanket future growth allowance.",
+      "review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "648dfdd1962f44176f21416838ba8d00cf98b4dc5d9d73e8a204608a998569ac"
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "bb00beff386ea2caa76e324f27d2b70c75a4fec24d99b1b38fc8a63ec434cf0f"
+    },
+    "lib/entities/hero/NewHorizonsStartingPerks.cpp::newHorizonsHeroes::void validateStartingPerkProfiles(const JsonNode & starts)#1": {
+      "kind": "review",
+      "lines": 82,
+      "owner": "engine_engineer",
+      "rationale": "Bounded current two-Basic starting-profile admission and per-hero resolver; exact source-only review. Preserves historical policy/type/ownership checks and one validated catalogue view; no later growth allowance.",
+      "review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
+      "review_scope": "Exact81/82-line functions under150 ceiling; no runtime, performance or rendered acceptance.",
+      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "a0244c2f71f95dce9f89063dd1d704b05558f4be9133861056a0f2d81f6531cc"
     },
     "lib/entities/hero/NewHorizonsStartingSkillMigration.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
       "kind": "review",
@@ -25798,8 +25862,8 @@
       "sha256": "6c350c505782cc705ecef031e3cfcd7d00531b32749598d99b4ebc219617ced0"
     },
     "lib/gameState/CGameState.cpp": {
-      "deferral": "Before expanding another touched world-initialization or preflight responsibility, extract it behind explicit inputs and retain initialization, RNG and save-boundary tests. Current engine boundary: before further captured-policy preflight growth, engine_engineer must extract cohesive non-writing family compatibility validation with explicit world policy and map inputs, leaving lifecycle sequencing in CGameState. Preserve validation before direct/enclosing save prefixes, absent-policy historical behavior, initialization order and both RNGs; require world/map/lobby codec rejection and no-mutation characterization. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: retain all inherited domain extraction obligations; before substantive validation growth move the affected cohesive admission family into its nonwriting owner, with direct/enclosing compatibility and historical-absence coverage. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.\n\nEngine: extract one touched nonwriting captured-policy admission family from1905-2173 into the existing serialization/domain owner using explicit world/map/start inputs. Preserve prefixes and traversal order. Separately, when Guild initialization is next touched, extract the1015-1160 generation phase with explicit town, captured magic rules and RNG, retaining every draw/order. Require world/map/lobby/replay refusal and absence controls, fixed-seed complete initialization and retirement/restore characterization; no broad world-context object. Protected invariants: Native graph retirement spans native-member destruction; battles clear while CGameState remains valid; no thread ownership change; Script init before randomization/placement, captured rules before entity init, deterministic traversal and both randomizer paths; Replay records pre-pack state before visitor mutation; capacity reconciliation follows application and full bonus restoration; Fixed-school matching/mandatory priority, school draw and shuffle order, legacy weighted spell generation; Map/pooled/campaign compatibility traversal, null-map handling and no load-time army rescaling.",
-      "kind": "legacy",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
+      "kind": "exception",
       "legacy_freeze_predecessor_kind": "exception",
       "legacy_freeze_predecessor_lines": 2195,
       "legacy_freeze_predecessor_rationale": "Exact 2195 to 2195 physical lines. Same-size forwarding signature/calls propagate the passive-faction format-support bit; captured-rule validation stays in its existing domain owner. No new game-state algorithm.",
@@ -25807,10 +25871,11 @@
       "legacy_freeze_predecessor_review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "legacy_freeze_predecessor_sha256": "2ff6b1ae390ad5938f81791f770839e87bc16585786ceafbca16a75e5a9bf905",
-      "lines": 2197,
+      "lines": 2208,
       "next_bounded_extraction": "Engine: extract one touched nonwriting captured-policy admission family from1905-2173 into the existing serialization/domain owner using explicit world/map/start inputs. Preserve prefixes and traversal order. Separately, when Guild initialization is next touched, extract the1015-1160 generation phase with explicit town, captured magic rules and RNG, retaining every draw/order. Require world/map/lobby/replay refusal and absence controls, fixed-seed complete initialization and retirement/restore characterization; no broad world-context object.",
       "owner": "engine_engineer",
       "previous_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
+      "prior_deferral": "Before expanding another touched world-initialization or preflight responsibility, extract it behind explicit inputs and retain initialization, RNG and save-boundary tests. Current engine boundary: before further captured-policy preflight growth, engine_engineer must extract cohesive non-writing family compatibility validation with explicit world policy and map inputs, leaving lifecycle sequencing in CGameState. Preserve validation before direct/enclosing save prefixes, absent-policy historical behavior, initialization order and both RNGs; require world/map/lobby codec rejection and no-mutation characterization. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: retain all inherited domain extraction obligations; before substantive validation growth move the affected cohesive admission family into its nonwriting owner, with direct/enclosing compatibility and historical-absence coverage. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.\n\nEngine: extract one touched nonwriting captured-policy admission family from1905-2173 into the existing serialization/domain owner using explicit world/map/start inputs. Preserve prefixes and traversal order. Separately, when Guild initialization is next touched, extract the1015-1160 generation phase with explicit town, captured magic rules and RNG, retaining every draw/order. Require world/map/lobby/replay refusal and absence controls, fixed-seed complete initialization and retirement/restore characterization; no broad world-context object. Protected invariants: Native graph retirement spans native-member destruction; battles clear while CGameState remains valid; no thread ownership change; Script init before randomization/placement, captured rules before entity init, deterministic traversal and both randomizer paths; Replay records pre-pack state before visitor mutation; capacity reconciliation follows application and full bonus restoration; Fixed-school matching/mandatory priority, school draw and shuffle order, legacy weighted spell generation; Map/pooled/campaign compatibility traversal, null-map handling and no load-time army rescaling.",
       "protected_invariants": [
         "Native graph retirement spans native-member destruction; battles clear while CGameState remains valid; no thread ownership change",
         "Script init before randomization/placement, captured rules before entity init, deterministic traversal and both randomizer paths",
@@ -25818,7 +25883,7 @@
         "Fixed-school matching/mandatory priority, school draw and shuffle order, legacy weighted spell generation",
         "Map/pooled/campaign compatibility traversal, null-map handling and no load-time army rescaling"
       ],
-      "rationale": "Complete2197-line world implementation read. It combines environment/lifetime, random map/campaign setup, hero/object/town initialization, fixed-school spell matching/generation, visibility/path and victory/stat queries, bonus reconstruction, envelope validation and saving. Native legacy long bodies remain, notably initTowns923-1162, victory1449-1606 and stats1657-1784. The size is not a template-only registry exception; freeze unchanged debt and keep extraction ahead of future expansion.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
       "responsibility_spans": [
         "85-122 school-slot matching",
         "124-325 environment, hero allocation, destruction and world init",
@@ -25830,10 +25895,10 @@
         "1905-2173 nonwriting compatibility forwarding",
         "2175-2197 save/load and script context"
       ],
-      "review": "IR-F86-ENGINE-COMPLETE-LEGACY-FREEZE-20261110",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Complete independent responsibility review of exact unchanged comparison-source files/bodies; numeric legacy-debt freeze only.",
-      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "0be17bb7c439866445d32c2309ffd27ebfcba8c83309d9414f1f49c511ac75ab"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "52929cc1ee4f25694d3df88118e4b9930a1804ff0958cc7ce3732f89687a4033"
     },
     "lib/gameState/CGameState.cpp::bool CGameState::checkForVictory(const PlayerColor & player, const EventCondition & condition) const#1": {
       "kind": "legacy",
@@ -25845,8 +25910,8 @@
       "sha256": "d0ce54e01bca9e8a6d37e7f5b75ac319522d812f3fde83450eae1782dbd40cdd"
     },
     "lib/gameState/CGameState.cpp::void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRandomizer & gameRandomizer, Load::ProgressAccumulator & progressTracking, bool allowSavingRandomMap)#1": {
-      "deferral": "Before further substantive world-initialization growth, extract the next cohesive capture/setup phase with explicit map/start inputs, retaining ordering, RNG and old-save boundary tests. Require newgame authored-default/explicit endpoints, global immutability, save/reload no-rescale, and script/RMG integration acceptance. Preserve all existing world ownership and serialization obligations.\n\nEngine: extract the273-293 capture/validate stage as a class-owned helper with explicit effective settings/map and captured result installation; retain dispatcher creation and ordered entity calls here. Characterize full seeded new-game/campaign state and RNG, authored defaults/overrides, script visibility and save/reload no-rescale. Preserve inherited host/NEW_GAME option restrictions. Protected invariants: No caller StartInfo alias; neutral option before scripts and randomization; Validate captured candidate before installing hero-development/perk rules; weighted capture consistency; Campaign placement, randomization, hero/town initialization, bonus attachment and objective order; no extra RNG draws.",
-      "kind": "legacy",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
+      "kind": "exception",
       "legacy_freeze_predecessor_kind": "exception",
       "legacy_freeze_predecessor_lines": 84,
       "legacy_freeze_predecessor_rationale": "One fresh-map option-application call is inserted before script initialization, randomization and object initialization; all validation/application behavior resides in the focused NeutralArmyStartOption.cpp. Existing initialization stage order and RNG consumption remain unchanged outside the selected neutral count rule. The caller grows83to84 lines while its enclosing world implementation shrinks2218to2195 through the separate load-update extraction. This is an exact one-route exception, no future growth allowance.",
@@ -25854,25 +25919,26 @@
       "legacy_freeze_predecessor_review_scope": "Exact feature-owned neutral start-option routing and bounded load/visitor extraction for format1147; no native, rendered, first-writer, balance or delivery certification.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDER_PENDING",
       "legacy_freeze_predecessor_sha256": "ee567de7a353e8fe1608d5b442ebec5c31504aecf6fbadd3022622ddfcc2cf2c",
-      "lines": 86,
+      "lines": 88,
       "next_bounded_extraction": "Engine: extract the273-293 capture/validate stage as a class-owned helper with explicit effective settings/map and captured result installation; retain dispatcher creation and ordered entity calls here. Characterize full seeded new-game/campaign state and RNG, authored defaults/overrides, script visibility and save/reload no-rescale. Preserve inherited host/NEW_GAME option restrictions.",
       "owner": "engine_engineer",
       "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "prior_deferral": "Before further substantive world-initialization growth, extract the next cohesive capture/setup phase with explicit map/start inputs, retaining ordering, RNG and old-save boundary tests. Require newgame authored-default/explicit endpoints, global immutability, save/reload no-rescale, and script/RMG integration acceptance. Preserve all existing world ownership and serialization obligations.\n\nEngine: extract the273-293 capture/validate stage as a class-owned helper with explicit effective settings/map and captured result installation; retain dispatcher creation and ordered entity calls here. Characterize full seeded new-game/campaign state and RNG, authored defaults/overrides, script visibility and save/reload no-rescale. Preserve inherited host/NEW_GAME option restrictions. Protected invariants: No caller StartInfo alias; neutral option before scripts and randomization; Validate captured candidate before installing hero-development/perk rules; weighted capture consistency; Campaign placement, randomization, hero/town initialization, bonus attachment and objective order; no extra RNG draws.",
       "protected_invariants": [
         "No caller StartInfo alias; neutral option before scripts and randomization",
         "Validate captured candidate before installing hero-development/perk rules; weighted capture consistency",
         "Campaign placement, randomization, hero/town initialization, bonus attachment and objective order; no extra RNG draws"
       ],
-      "rationale": "Complete86-line orchestration read: copy both start descriptors, select map/campaign, apply fresh neutral option, seed scripts, capture/validate six rule families, then initialize entities and bonus topology in order. Its below150 size is cohesive sequencing, but273-293 is a concrete capture phase worth separating before further growth. No new-game execution is inferred from this source review.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
       "responsibility_spans": [
         "242-264 start copies, mode/map and fresh neutral option",
         "265-293 day/scripts and captured rules",
         "294-325 ordered entity/bonus/fog/objective initialization"
       ],
-      "review": "IR-F86-ENGINE-COMPLETE-LEGACY-FREEZE-20261110",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Complete independent responsibility review of exact unchanged comparison-source files/bodies; numeric legacy-debt freeze only.",
-      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "7c478e9a649b742b0cd72052e829b94b9feb5b548a76d7c14a58cd5f3904b583"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "269620aa492268a137688a23a9b6ff51013282d9e8e362da00cf914fa2f081b3"
     },
     "lib/gameState/CGameState.cpp::void CGameState::initTowns(vstd::RNG & randomGenerator)#1": {
       "kind": "legacy",
@@ -25900,18 +25966,19 @@
         "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
         "sha256": "db7a4259eff5143fbb1137254fc2e1ac474ea30edee69e81348380aae0fa9d22"
       },
-      "deferral": "Before another policy-family addition, extract the next typed nonwriting preflight group from this exact serializer. Preserve field/exception order, absence defaults, direct/enclosing zero-prefix downgrade refusal and rejected-read prior state. No future serializer growth allowance. Prior stricter obligations remain in inherited_deferral, where present.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance. Engine: extract feature-specific prefix admission groups from this template into named class-owned nonwriting helpers, keeping actual serialized ownership, version conditions, exception order and fields. Require supported historical/current hero/map/world controls and absence/reused-object semantics before lowering the exact baseline; no rule/state migration. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: before further substantive affected growth extract cohesive named nonwriting captured-policy preflight groups; preserve exact direct/enclosing refusal order, null-map handling, published1151 absence/resave behavior and supported1152 world/lobby/replay controls. Retain every inherited exception/extraction obligation; no future growth credit or template/context split. Engine: before further substantive affected growth, extract named nonwriting optional-policy prefix checks from the existing serializer owner while preserving field order, historical absence, reused-read clearing, direct and enclosing zero-prefix refusal, real1153 roundtrip,1151/1152 refusal and all saved-world/replay controls. No broad template/context split or future size credit. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment. Current exact Command/Authority scope: Engine: extract Command/captured-rule envelope preflight into CommandAuthorityAdmission with explicit immutable snapshot/feature inputs; preserve world/map/start preflight order and native prefix-refusal tests.",
       "kind": "exception",
-      "lines": 733,
+      "lines": 736,
       "neutral_predecessor_review": "IR-NEUTRAL-START-OPTION-1147-20261030",
       "owner": "engine_engineer",
       "previous_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
-      "rationale": "Independent1159 flags propagate through existing prefix admission; capability candidates validate before installation. Policy parsing/traversal stays in focused domain admission owners, with contiguous wire fields retained.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "prior_deferral": "Before another policy-family addition, extract the next typed nonwriting preflight group from this exact serializer. Preserve field/exception order, absence defaults, direct/enclosing zero-prefix downgrade refusal and rejected-read prior state. No future serializer growth allowance. Prior stricter obligations remain in inherited_deferral, where present.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Only exact source organization, measured bounds and stated responsibility. Native/rendered/performance/gameplay/publication acceptance not established.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "e1ebd5c206243d12d05fabcee7c9f681949cccb9582755031d49e7f60a36c7fa"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "1b05a837cf654231f47e87a5297a06dfd3ea64a6b421de0ba8f9d296679aea3a"
     },
     "lib/gameState/CGameState.h::CGameState::void serialize(Handler &h)#1": {
       "completed_p_predecessor": {
@@ -25921,18 +25988,19 @@
         "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
         "sha256": "5ef8ab48f8de00c24604805a4a5c85d420b05ac97fd10f10591db7916661b03c"
       },
-      "deferral": "Before another policy-family addition, extract the next typed nonwriting preflight group from this exact serializer. Preserve field/exception order, absence defaults, direct/enclosing zero-prefix downgrade refusal and rejected-read prior state. No future serializer growth allowance. Prior stricter obligations remain in inherited_deferral, where present.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance. Before next substantive growth, extract the next touched ordered non-writing captured-policy preflight traversal into an existing focused serialization/policy owner. Inputs: explicit supported feature set, captured development/Sylvan state and relevant map/world/hero/side references; output: success or rejection BEFORE existing field prefix. Keep field serialization order and version-gated defaults with current serializer. Required characterization: Direct and enclosing before-prefix downgrade rejection, old-policy absence/exact resave, malformed captures, newly populated state roundtrip and unchanged old field order. No generic context framework or Part-file splitting. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Engine: extract feature-specific prefix admission groups from this template into named class-owned nonwriting helpers, keeping actual serialized ownership, version conditions, exception order and fields. Require supported historical/current hero/map/world controls and absence/reused-object semantics before lowering the exact baseline; no rule/state migration. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: before further substantive affected growth extract cohesive named nonwriting captured-policy preflight groups; preserve exact direct/enclosing refusal order, null-map handling, published1151 absence/resave behavior and supported1152 world/lobby/replay controls. Retain every inherited exception/extraction obligation; no future growth credit or template/context split. Engine: before further substantive affected growth, extract named nonwriting optional-policy prefix checks from the existing serializer owner while preserving field order, historical absence, reused-read clearing, direct and enclosing zero-prefix refusal, real1153 roundtrip,1151/1152 refusal and all saved-world/replay controls. No broad template/context split or future size credit. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment. Current exact Command/Authority scope: Engine: extract Command/captured-rule envelope preflight into CommandAuthorityAdmission with explicit immutable snapshot/feature inputs; preserve world/map/start preflight order and native prefix-refusal tests.",
       "kind": "exception",
-      "lines": 366,
+      "lines": 368,
       "neutral_predecessor_review": "IR-NEUTRAL-START-OPTION-1147-20261030",
       "owner": "engine_engineer",
       "previous_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
-      "rationale": "Independent1159 flags propagate through existing prefix admission; capability candidates validate before installation. Policy parsing/traversal stays in focused domain admission owners, with contiguous wire fields retained.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "prior_deferral": "Before another policy-family addition, extract the next typed nonwriting preflight group from this exact serializer. Preserve field/exception order, absence defaults, direct/enclosing zero-prefix downgrade refusal and rejected-read prior state. No future serializer growth allowance. Prior stricter obligations remain in inherited_deferral, where present.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Only exact source organization, measured bounds and stated responsibility. Native/rendered/performance/gameplay/publication acceptance not established.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "da9b504e9464fcc29aa4e9a0b3d9abd8df1fffcb008b6cbc8c72633411741f07"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "eb29aa95b13ba4c6e2ec8ab9fcf4a0a7ddfc61dec5800dbc41abd06ebdbb6fac"
     },
     "lib/gameState/CGameStateCampaign.cpp": {
       "kind": "legacy",
@@ -27075,30 +27143,32 @@
       "sha256": "e69cd8aec56abf497dd36a8e7dec3a425f00704f652509891479616798f4727b"
     },
     "lib/networkPacks/PacksForLobby.h": {
-      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: before further substantive affected growth extract cohesive named nonwriting captured-policy preflight groups; preserve exact direct/enclosing refusal order, null-map handling, published1151 absence/resave behavior and supported1152 world/lobby/replay controls. Retain every inherited exception/extraction obligation; no future growth credit or template/context split. Engine: before further substantive affected growth, extract named nonwriting optional-policy prefix checks from the existing serializer owner while preserving field order, historical absence, reused-read clearing, direct and enclosing zero-prefix refusal, real1153 roundtrip,1151/1152 refusal and all saved-world/replay controls. No broad template/context split or future size credit. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 595,
+      "lines": 598,
       "neutral_predecessor_review": "IR-NEUTRAL-START-OPTION-1147-20261030",
       "owner": "engine_engineer",
       "previous_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
-      "rationale": "Exact 589 to 595 physical lines. Lobby envelope delegates owned-bonus and faction-rule preflight before fields. No rule implementation or transport behavior is introduced.",
-      "review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
+      "prior_deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: before further substantive affected growth extract cohesive named nonwriting captured-policy preflight groups; preserve exact direct/enclosing refusal order, null-map handling, published1151 absence/resave behavior and supported1152 world/lobby/replay controls. Retain every inherited exception/extraction obligation; no future growth credit or template/context split. Engine: before further substantive affected growth, extract named nonwriting optional-policy prefix checks from the existing serializer owner while preserving field order, historical absence, reused-read clearing, direct and enclosing zero-prefix refusal, real1153 roundtrip,1151/1152 refusal and all saved-world/replay controls. No broad template/context split or future size credit. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "664ca80f22e4a74e241207476360909b7a4c852ac6ac23fa36405e9020c46607"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "172379406a685ac20c36ed9ec2204e4a336d45782fd92374d1203c82bdb4d8fd"
     },
     "lib/networkPacks/PacksForLobby.h::LobbyStartGame::void serialize(Handler &h)#1": {
-      "deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: before further substantive affected growth extract cohesive named nonwriting captured-policy preflight groups; preserve exact direct/enclosing refusal order, null-map handling, published1151 absence/resave behavior and supported1152 world/lobby/replay controls. Retain every inherited exception/extraction obligation; no future growth credit or template/context split. Engine: before further substantive affected growth, extract named nonwriting optional-policy prefix checks from the existing serializer owner while preserving field order, historical absence, reused-read clearing, direct and enclosing zero-prefix refusal, real1153 roundtrip,1151/1152 refusal and all saved-world/replay controls. No broad template/context split or future size credit. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment.",
+      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 105,
+      "lines": 107,
       "neutral_predecessor_review": "IR-NEUTRAL-START-OPTION-1147-20261030",
       "owner": "engine_engineer",
       "previous_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
-      "rationale": "Exact 102 to 105 physical lines. Lobby envelope delegates owned-bonus and faction-rule preflight before fields. No rule implementation or transport behavior is introduced.",
-      "review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
+      "prior_deferral": "Engine engineer: extract the next touched coherent captured-policy preflight family before substantive growth; preserve null-map handling, historical absence, before-prefix rejection and exact field order with direct and enclosing serialization regressions. This exact-source review grants no future growth or runtime acceptance. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. Engine: before further substantive affected growth extract cohesive named nonwriting captured-policy preflight groups; preserve exact direct/enclosing refusal order, null-map handling, published1151 absence/resave behavior and supported1152 world/lobby/replay controls. Retain every inherited exception/extraction obligation; no future growth credit or template/context split. Engine: before further substantive affected growth, extract named nonwriting optional-policy prefix checks from the existing serializer owner while preserving field order, historical absence, reused-read clearing, direct and enclosing zero-prefix refusal, real1153 roundtrip,1151/1152 refusal and all saved-world/replay controls. No broad template/context split or future size credit. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment.",
+      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
+      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
       "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "60db88d58f5d9f9600680586c189130c76ec5e8779c4ac361389e65c8d84f330"
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "d0326f669af52e4f9a61098dcdc29ae8b4499652c8a96920aa6b108293d5a4b2"
     },
     "lib/networkPacks/PacksForServer.h": {
       "completed_p_predecessor": {
@@ -30446,17 +30516,6 @@
       "rationale": "Exact newly triggered bounded unit reviewed for its named responsibility and explicit stage boundary; remains below default ceiling. No future growth, native or gameplay acceptance is conferred.",
       "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
       "sha256": "829be8f1af966e69adaf26d284b3cf7dbb6ece8ea6c27fc9b96bde4bf37e7e6a"
-    },
-    "lib/entities/hero/NewHorizonsPerkRules.cpp": {
-      "kind": "review",
-      "lines": 506,
-      "sha256": "40bbc100255d928f4060365972f7d678a5f7210f269d91941e51dc0b3f69b845",
-      "owner": "gameplay_engineer",
-      "review": "IR-0911-SYLVAN-PERK-PARAMETER-VALIDATION",
-      "review_category": "ordinary-file-review",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "review_scope": "Exact six approved Sylvan effect-parameter admission and schema-aligned bounds only. No mechanics, serialization, resource, native, rendered or publication acceptance. Existing117-line validatePerkRulesImpl body and its separate bounded extraction obligations remain unchanged.",
-      "rationale": "Cohesive captured perk-registry shape validator500\u2192506 physical lines. Adds exactly six existing-schema Sylvan keys to strict unknown-field admission, preserving DATA_INTEGER and nonnegative validation; new maxima match schema1e6/1000/100. Only validateEffectParameters34\u219240L grows. No new responsibility, action path, mutable state, broad catchall or oversized helper; ordinary500-line review trigger crossed while below1000 ceiling. Further substantive policy-header/traversal growth must follow the separately retained validatePerkRulesImpl extraction obligation."
     }
   }
 }

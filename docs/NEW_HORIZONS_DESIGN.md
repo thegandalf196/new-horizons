@@ -34,6 +34,15 @@ connection and authoritative simulation thread, not a new external server or
 loopback transport. UI submits requests; authoritative code validates and changes
 state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
+Current source (unreleased) default hero development uses captured
+`startingPerksPolicyVersion: 2`.
+Every registered default has exactly two distinct Basic Skills, including its
+faction Skill, and one authored Basic perk for each. The source registry
+contains 163 explicit profiles. Historical version 1 retains its captured
+starting ranks and tier-completion behavior. Default profiles apply only during
+fresh initialization; saved development, later rank grants and explicitly
+authored scenario advancement retain their normal precedence.
+
 Orders and spells compete for the shared Hero Action and cost no finite Command
 resource. Persistent army Command, slot-tier permissions and enhancement awards
 are retired. All seven slots accept ordinary legal stacks; Leadership applies

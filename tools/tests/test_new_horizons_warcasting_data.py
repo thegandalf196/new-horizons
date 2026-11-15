@@ -140,7 +140,8 @@ class WarcastingDataTest(unittest.TestCase):
                     self.assertEqual(found[0]['requires'], 'basic')
         self.assertEqual(refs, {'core:halon': 'arcaneValor', 'core:straker': 'spellward',
                                'core:thorgrim': 'spellward', 'core:ufretin': 'spellward',
-                               'core:fafner': 'spellward', 'core:ajit': 'spellward'})
+                               'core:fafner': 'spellward', 'core:ajit': 'spellward',
+                               'core:portraitYoungYog': 'arcaneValor'})
 
     def test_shipped_registry_skills_and_hero_profiles_match(self):
         module = load('Mods/new-horizons/mod.json')

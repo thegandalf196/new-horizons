@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../../network/InitializationProfile.h"
 #include "NewHorizonsPerkState.h"
 
 #include <map>
@@ -28,56 +29,6 @@ struct R2WeightCache
 
 namespace
 {
-// Callers validate the registry first. Borrow nodes here rather than repeatedly
-// validating the full catalogue for each candidate in one offer transaction.
-const JsonNode * acquisitionDefinition(const JsonNode & rules, const std::string & skillId, const std::string & perkId)
-{
-	const auto & skills = rules["skills"].Struct();
-	const auto parent = skills.find(skillId);
-	if(parent == skills.end())
-		return nullptr;
-	const auto & perks = parent->second["perks"].Vector();
-	const auto found = std::find_if(perks.begin(), perks.end(), [&](const auto & row)
-	{
-		return row["id"].String() == perkId;
-	});
-	return found == perks.end() ? nullptr : &*found;
-}
-
-bool canAcquirePerkInState(const JsonNode & rules, const std::vector<PerkSelection> & selected,
-	const std::string & skillId, const std::string & perkId, int currentRank)
-{
-	if(!usesPerkRules(rules) || currentRank < 1 || currentRank > 3)
-		return false;
-	const auto * definition = acquisitionDefinition(rules, skillId, perkId);
-	if(!definition || (*definition)["effect"]["status"].String() != "active")
-		return false;
-	const int tier = perkRequiredRank((*definition)["requires"].String());
-	if(tier > currentRank)
-		return false;
-	std::array<bool, 4> occupied{};
-	size_t count = 0;
-	for(const auto & entry : selected)
-	{
-		if(entry.skillId != skillId)
-			continue;
-		if(entry.perkId == perkId)
-			return false;
-		++count;
-		const auto * existing = acquisitionDefinition(rules, skillId, entry.perkId);
-		if(!existing)
-			return false;
-		occupied.at(perkRequiredRank((*existing)["requires"].String())) = true;
-	}
-	if(count >= static_cast<size_t>(rules["maxPerksPerSkill"].Integer()))
-		return false;
-	for(int prerequisite = 1; prerequisite < tier; ++prerequisite)
-		if(!occupied[prerequisite])
-			return false;
-	const bool onePerTier = !usesR2PerkOffers(rules) || usesStrictPerkProgression(rules);
-	return !onePerTier || !occupied[tier];
-}
-
 constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
 constexpr std::string_view RETIRED_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
 constexpr std::string_view SPELL_ECHO = "new-horizons:metamagic.spellEcho";
@@ -358,46 +309,11 @@ void PerkState::normalizeLegacyTierConflicts()
 	});
 }
 
+
 void PerkState::validate() const
 {
 	validatePerkRules(rules);
 	validateSelections();
-}
-std::shared_ptr<const nativeRules::PreparedPilotPerks> PerkState::prepareNativeRules() const
-{
-	auto result = preparePilotPerkRules(rules);
-	validateSelections();
-	return result;
-}
-void PerkState::validateSelections() const
-{
-	if(!usesPerkRules(rules))
-	{
-		if(!selected.empty())
-			throw std::runtime_error("Perk selections without a saved rules identity");
-		return;
-	}
-	const auto cap = static_cast<size_t>(rules["maxPerksPerSkill"].Integer());
-	std::set<std::pair<std::string, std::string>> identities;
-	std::set<std::pair<std::string, int>> occupiedTiers;
-	std::map<std::string, size_t> perSkill;
-	std::vector<PerkSelection> strictPrefix;
-	for(const auto & entry : selected)
-	{
-		// Saved strict selections must be a legal ordered prefix. Rank is not
-		// stored here: validate tiers against Expert, then consumers use live rank.
-		if(usesStrictPerkProgression(rules))
-		{
-			if(!canAcquirePerkInState(rules, strictPrefix, entry.skillId, entry.perkId, 3))
-				throw std::runtime_error("Invalid saved strict New Horizons perk progression");
-			strictPrefix.push_back(entry);
-		}
-		const auto * definition = acquisitionDefinition(rules, entry.skillId, entry.perkId);
-		if(!definition || !identities.emplace(entry.skillId, entry.perkId).second
-			|| (!usesR2PerkOffers(rules) && !occupiedTiers.emplace(entry.skillId, perkRequiredRank((*definition)["requires"].String())).second)
-			|| ++perSkill[entry.skillId] > cap)
-			throw std::runtime_error("Invalid saved New Horizons perk selection");
-	}
 }
 
 bool PerkState::canAcquirePerk(const std::string & skillId, const std::string & perkId, int currentRank) const
@@ -406,51 +322,18 @@ bool PerkState::canAcquirePerk(const std::string & skillId, const std::string & 
 	return canAcquirePerkInState(rules, selected, skillId, perkId, currentRank);
 }
 
-void PerkState::select(const std::string & skillId, const std::string & perkId, int currentRank)
+std::shared_ptr<const nativeRules::PreparedPilotPerks> PerkState::prepareNativeRules() const
 {
-	validate();
-	if(usesStrictPerkProgression(rules))
-	{
-		if(!canAcquirePerkInState(rules, selected, skillId, perkId, currentRank))
-			throw std::runtime_error("Unavailable strict New Horizons perk selection");
-		selected.push_back({skillId, perkId});
-		validate();
-		return;
-	}
-	if(currentRank < 0 || currentRank > 3)
-		throw std::runtime_error("Invalid New Horizons skill rank");
-	const auto definition = perkDefinition(rules, skillId, perkId);
-	if(!definition || definition->effect["status"].String() != "active"
-		|| currentRank < perkRequiredRank(definition->requiredRank) || hasSelection(skillId, perkId))
-		throw std::runtime_error("Unavailable New Horizons perk selection");
-	const int selectedTier = perkRequiredRank(definition->requiredRank);
-	for(int prerequisiteTier = 1; prerequisiteTier < selectedTier; ++prerequisiteTier)
-	{
-		const bool prerequisiteSelected = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
-		{
-			const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
-			return entry.skillId == skillId && existing
-				&& perkRequiredRank(existing->requiredRank) == prerequisiteTier;
-		});
-		if(!prerequisiteSelected)
-			throw std::runtime_error("Earlier New Horizons perk tier is still required");
-	}
-	if(!usesR2PerkOffers(rules) && std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
-	{
-		const auto existing = perkDefinition(rules, entry.skillId, entry.perkId);
-		return entry.skillId == skillId && existing
-			&& perkRequiredRank(existing->requiredRank) == selectedTier;
-	}))
-		throw std::runtime_error("New Horizons perk tier already occupied for skill");
-	const auto count = std::count_if(selected.begin(), selected.end(), [&](const auto & entry)
-	{
-		return entry.skillId == skillId;
-	});
-	if(count >= rules["maxPerksPerSkill"].Integer())
-		throw std::runtime_error("New Horizons perk cap reached for skill");
-	selected.push_back({skillId, perkId});
-	validate();
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::NativePrepare);
+	auto result = preparePilotPerkRules(rules);
+	validateSelections();
+	return result;
 }
+
+
+
+
+
 
 std::vector<PerkOfferCandidate> PerkState::prepareOffer(
 	const std::function<int(const std::string &)> & rankLookup, uint64_t seed,

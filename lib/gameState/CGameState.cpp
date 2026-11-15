@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../network/InitializationProfile.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
 #include "../battle/NewHorizonsPlague.h"
@@ -239,6 +240,8 @@ void CGameState::preInit(Services * newServices)
 
 void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRandomizer & gameRandomizer, Load::ProgressAccumulator & progressTracking, bool allowSavingRandomMap)
 {
+	nhLoadProfile::Phase phase("authority-world-init");
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::WorldInit);
 	assert(services);
 	scenarioOps = CMemorySerializer::deepCopy(*si);
 	initialOpts = CMemorySerializer::deepCopy(*si);
@@ -725,6 +728,7 @@ void CGameState::adjustObjectsToMapBounds()
 
 void CGameState::initHeroes(IGameRandomizer & gameRandomizer)
 {
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::InitHeroes);
 	//heroes instances initialization
 	for (auto heroID : map->getHeroesOnMap())
 	{
@@ -734,7 +738,9 @@ void CGameState::initHeroes(IGameRandomizer & gameRandomizer)
 			logGlobal->warn("Hero with uninitialized owner!");
 			continue;
 		}
+		nhLoadProfile::count(nhLoadProfile::Metric::OnMapHeroes, 1);
 		hero->initHero(gameRandomizer);
+		nhLoadProfile::ranks(hero->secSkills);
 		hero->armyChanged();
 	}
 
@@ -788,7 +794,9 @@ void CGameState::initHeroes(IGameRandomizer & gameRandomizer)
 			heroInPool = newHeroPtr.get();
 		}
 		map->generateUniqueInstanceName(heroInPool);
+		nhLoadProfile::count(nhLoadProfile::Metric::PoolHeroes, 1);
 		heroInPool->initHero(gameRandomizer);
+		nhLoadProfile::ranks(heroInPool->secSkills);
 		heroesPool->addHeroToPool(htype);
 	}
 
@@ -1308,7 +1316,10 @@ void CGameState::apply(CPackForClient & pack)
 	NativeBonusGraphMutation nativeMutation;
 	// recorded first, so that a snapshot taken here holds the pre-pack state
 	if(replayLog.isRecordingPacks())
+	{
+		nhLoadProfile::Phase phase("authority-replay");
 		replayLog.recordPack(pack, *this);
+	}
 
 	GameStatePackVisitor visitor(*this);
 	pack.visit(visitor);

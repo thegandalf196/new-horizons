@@ -29,7 +29,7 @@ namespace
 JsonNode historicalOfferCodecRules()
 {
 	auto rules = historicalFactionPerkRules();
-	for(const auto key : {"quickStudyPolicy", "sylvanTacticsPolicy", "necromancyPolicy"})
+	for(const auto key : {"quickStudyPolicy", "connoisseurPolicy", "sylvanTacticsPolicy", "necromancyPolicy", "unifiedSkillProgressionVersion"})
 		rules.Struct().erase(key);
 	return rules;
 }
@@ -199,6 +199,10 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyIsExplicitAndAbsentCapturedRegistr
 	capturedLegacy.Struct().erase("perkOfferNormalization");
 	capturedLegacy.Struct().erase("perkProgressionPolicyVersion");
 	capturedLegacy.Struct().erase("quickStudyPolicy");
+	// Unified offers cannot be retained after removing their ordered-tier prerequisite.
+	EXPECT_THROW(validatePerkRules(capturedLegacy), std::runtime_error);
+	capturedLegacy.Struct().erase("unifiedSkillProgressionVersion");
+	capturedLegacy.Struct().erase("connoisseurPolicy");
 	const auto before = capturedLegacy;
 	EXPECT_NO_THROW(validatePerkRules(capturedLegacy));
 	EXPECT_FALSE(usesWeightedPerkOffers(capturedLegacy));
@@ -237,7 +241,7 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyRejectsMalformedAndUnknownVersions
 TEST(NewHorizonsPerkRules, CompatibilityRefusalsRetainMalformedStrictWeightedR2Order)
 {
 	using namespace newHorizonsHeroes;
-	auto rules = historicalFactionPerkRules();
+	auto rules = historicalOfferCodecRules();
 	// This control captures a pre-1153 policy; installed defaults cannot migrate it.
 	rules.Struct().erase("quickStudyPolicy");
 	ASSERT_TRUE(usesStrictPerkProgression(rules));
@@ -264,7 +268,7 @@ TEST(NewHorizonsPerkRules, CompatibilityRefusalsRetainMalformedStrictWeightedR2O
 	EXPECT_TRUE(rejection(false, false, false).starts_with("Invalid New Horizons perk rules: "));
 }
 
-TEST(NewHorizonsPerkRules, GlobalSettingsCodecGuardsWeightedPolicyBeforeInstallingOverridesWithoutHeroes)
+TEST(NewHorizonsPerkRules, GlobalSettingsRefusesPriorCodecAndCurrentCodecPreservesWeightedPolicyWithoutHeroes)
 {
 	auto current = historicalOfferCodecRules();
 	// Retain this exact historical policy1/1113 boundary control.
@@ -289,6 +293,9 @@ TEST(NewHorizonsPerkRules, GlobalSettingsCodecGuardsWeightedPolicyBeforeInstalli
 	CMemorySerializer currentWire;
 	currentWire.oser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
 	currentWire.iser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
+	EXPECT_THROW(source.serialize(currentWire.oser), std::runtime_error);
+	EXPECT_TRUE(currentWire.extractBuffer().empty());
+	currentWire.oser.version = currentWire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(source.serialize(currentWire.oser));
 	GameSettings decoded;
 	ASSERT_NO_THROW(decoded.serialize(currentWire.iser));
@@ -317,6 +324,9 @@ TEST(NewHorizonsPerkRules, GlobalSettingsCodecGuardsWeightedPolicyBeforeInstalli
 	CMemorySerializer legacyWire;
 	legacyWire.oser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
 	legacyWire.iser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
+	EXPECT_THROW(oldSource.serialize(legacyWire.oser), std::runtime_error);
+	EXPECT_TRUE(legacyWire.extractBuffer().empty());
+	legacyWire.oser.version = legacyWire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(oldSource.serialize(legacyWire.oser));
 	GameSettings oldDecoded;
 	ASSERT_NO_THROW(oldDecoded.serialize(legacyWire.iser));
@@ -324,7 +334,7 @@ TEST(NewHorizonsPerkRules, GlobalSettingsCodecGuardsWeightedPolicyBeforeInstalli
 	EXPECT_FALSE(oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS).Struct().contains("offerWeightPolicyVersion"));
 }
 
-TEST(NewHorizonsPerkRules, EmptyMapCodecDelegatesGlobalWeightedGuardWithoutAnyHeroOrDruidPolicy)
+TEST(NewHorizonsPerkRules, EmptyMapRefusesPriorCodecAndCurrentCodecPreservesGlobalWeightedPolicy)
 {
 	auto current = historicalOfferCodecRules();
 	// Retain this exact historical policy1/1113 boundary control.
@@ -355,10 +365,13 @@ TEST(NewHorizonsPerkRules, EmptyMapCodecDelegatesGlobalWeightedGuardWithoutAnyHe
 	CMemorySerializer currentWire;
 	currentWire.oser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
 	currentWire.iser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
+	EXPECT_THROW(source.serialize(currentWire.oser), std::runtime_error);
+	EXPECT_TRUE(currentWire.extractBuffer().empty());
+	currentWire.oser.version = currentWire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(source.serialize(currentWire.oser));
 	const auto bytes = currentWire.extractBuffer();
 	CMemorySerializer currentRead(bytes);
-	currentRead.iser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
+	currentRead.iser.version = ESerializationVersion::CURRENT;
 	CMap decoded(nullptr);
 	ASSERT_NO_THROW(decoded.serialize(currentRead.iser));
 	EXPECT_TRUE(decoded.objects.empty());
@@ -381,6 +394,9 @@ TEST(NewHorizonsPerkRules, EmptyMapCodecDelegatesGlobalWeightedGuardWithoutAnyHe
 	CMemorySerializer legacyWire;
 	legacyWire.oser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
 	legacyWire.iser.version = ESerializationVersion::NEW_HORIZONS_HERO_LUCK;
+	EXPECT_THROW(source.serialize(legacyWire.oser), std::runtime_error);
+	EXPECT_TRUE(legacyWire.extractBuffer().empty());
+	legacyWire.oser.version = legacyWire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(source.serialize(legacyWire.oser));
 	CMap oldDecoded(nullptr);
 	ASSERT_NO_THROW(oldDecoded.serialize(legacyWire.iser));
@@ -417,7 +433,7 @@ TEST(NewHorizonsPerkRules, R2NormalizationRequiresFiniteRatioAtLeastOneAndExactM
 	}
 }
 
-TEST(NewHorizonsPerkRules, R2GlobalOnlyCodecRejectsPreviousEpochBeforeWritingAndPreservesOldAbsence)
+TEST(NewHorizonsPerkRules, R2GlobalOnlyCodecRejectsPreviousEpochAndCurrentCodecPreservesOfferPolicyAbsence)
 {
 	auto current = historicalOfferCodecRules();
 	current.Struct().erase("perkProgressionPolicyVersion"); // Explicit historical R2 codec.
@@ -441,6 +457,9 @@ TEST(NewHorizonsPerkRules, R2GlobalOnlyCodecRejectsPreviousEpochBeforeWritingAnd
 	oldSettings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacy);
 	CMemorySerializer oldWire;
 	oldWire.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
+	EXPECT_THROW(oldSettings.serialize(oldWire.oser), std::runtime_error);
+	EXPECT_TRUE(oldWire.extractBuffer().empty());
+	oldWire.oser.version = oldWire.iser.version = ESerializationVersion::CURRENT;
 	EXPECT_NO_THROW(oldSettings.serialize(oldWire.oser));
 }
 
@@ -491,6 +510,9 @@ TEST(NewHorizonsPerkRules, R2RawPreviousSettingsReaderRejectsBeforeReplacingPoli
 	CMemorySerializer previous;
 	previous.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
 	previous.iser.version = previous.oser.version;
+	EXPECT_THROW(target.serialize(previous.oser), std::runtime_error);
+	EXPECT_TRUE(previous.extractBuffer().empty());
+	previous.oser.version = previous.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(target.serialize(previous.oser));
 	GameSettings restored;
 	ASSERT_NO_THROW(restored.serialize(previous.iser));
@@ -498,7 +520,7 @@ TEST(NewHorizonsPerkRules, R2RawPreviousSettingsReaderRejectsBeforeReplacingPoli
 	EXPECT_EQ(restored.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS), policyOne);
 }
 
-TEST(NewHorizonsPerkRules, R2EmptyMapCodecGuardsPreviousEpochWithoutHeroesAndRetainsPolicyOne)
+TEST(NewHorizonsPerkRules, R2EmptyMapCodecGuardsPreviousEpochAndCurrentCodecRetainsPolicyOne)
 {
 	auto current = historicalOfferCodecRules();
 	current.Struct().erase("perkProgressionPolicyVersion"); // Explicit historical R2 codec.
@@ -550,6 +572,9 @@ TEST(NewHorizonsPerkRules, R2EmptyMapCodecGuardsPreviousEpochWithoutHeroesAndRet
 	CMemorySerializer policyOneWire;
 	policyOneWire.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
 	policyOneWire.iser.version = policyOneWire.oser.version;
+	EXPECT_THROW(source.serialize(policyOneWire.oser), std::runtime_error);
+	EXPECT_TRUE(policyOneWire.extractBuffer().empty());
+	policyOneWire.oser.version = policyOneWire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(source.serialize(policyOneWire.oser));
 	CMap oldDecoded(nullptr);
 	ASSERT_NO_THROW(oldDecoded.serialize(policyOneWire.iser));
@@ -563,9 +588,8 @@ TEST(NewHorizonsPerkRules, StrictProgressionMarkerIsOrthogonalExactAndHistorical
 	ASSERT_EQ(current["perkProgressionPolicyVersion"].Integer(), 1);
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(current));
 	EXPECT_TRUE(newHorizonsHeroes::usesR2PerkOffers(current));
-	auto historical = historicalFactionPerkRules(current);
+	auto historical = historicalOfferCodecRules();
 	historical.Struct().erase("perkProgressionPolicyVersion");
-	historical.Struct().erase("quickStudyPolicy");
 	const auto before = historical;
 	EXPECT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(historical));
 	EXPECT_TRUE(newHorizonsHeroes::usesR2PerkOffers(historical));
@@ -615,6 +639,9 @@ TEST(NewHorizonsPerkRules, StrictSettings1117FenceRejectsBeforeWriteAndBeforeOve
 	EXPECT_EQ(bytes(target), before);
 	CMemorySerializer oldWire;
 	oldWire.oser.version = oldWire.iser.version = ESerializationVersion::NEW_HORIZONS_R2_PERK_OFFERS;
+	EXPECT_THROW(target.serialize(oldWire.oser), std::runtime_error);
+	EXPECT_TRUE(oldWire.extractBuffer().empty());
+	oldWire.oser.version = oldWire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(target.serialize(oldWire.oser));
 	GameSettings restored;
 	ASSERT_NO_THROW(restored.serialize(oldWire.iser));
@@ -649,19 +676,18 @@ TEST(NewHorizonsPerkRules, StrictEmptyMap1117WriterRefusesBeforeHeaderAndCurrent
 	EXPECT_TRUE(decoded.objects.empty());
 }
 
-TEST(NewHorizonsPerkRules, OptionalQuickStudyRequiresItsOwnCapabilityAndPreservesCapturedAbsence)
+TEST(NewHorizonsPerkRules, ConnoisseurRerollRequiresItsOwnCapabilityAndPreservesCapturedAbsence)
 {
 	using namespace newHorizonsHeroes;
-	auto current = historicalFactionPerkRules();
-	current["quickStudyPolicy"]["version"].Integer() = 1;
-	current["quickStudyPolicy"]["interval"].Integer() = 3;
+	auto current = historicalOfferCodecRules();
+	current["connoisseurPolicy"]["version"].Integer() = 1;
 	const auto before = current;
-	EXPECT_EQ(quickStudyRerollInterval(current), 3);
+	EXPECT_EQ(quickStudyRerollInterval(current), 1);
 	EXPECT_NO_THROW(validateWeightedPerkSerialization(current, true, true, true, true));
 	EXPECT_THROW(validateWeightedPerkSerialization(current, true, true, true, false), std::runtime_error);
 	EXPECT_EQ(current, before);
 	auto historical = current;
-	historical.Struct().erase("quickStudyPolicy");
+	historical.Struct().erase("connoisseurPolicy");
 	EXPECT_FALSE(quickStudyRerollInterval(historical));
 	EXPECT_NO_THROW(validateWeightedPerkSerialization(historical, true, true, true, false));
 
@@ -673,6 +699,9 @@ TEST(NewHorizonsPerkRules, OptionalQuickStudyRequiresItsOwnCapabilityAndPreserve
 	EXPECT_TRUE(unsupported.extractBuffer().empty());
 	CMemorySerializer supported;
 	supported.oser.version = supported.iser.version = ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY;
+	EXPECT_THROW(settings.serialize(supported.oser), std::runtime_error);
+	EXPECT_TRUE(supported.extractBuffer().empty());
+	supported.oser.version = supported.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(settings.serialize(supported.oser));
 	GameSettings restored;
 	ASSERT_NO_THROW(restored.serialize(supported.iser));

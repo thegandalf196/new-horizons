@@ -11,11 +11,19 @@
 #pragma once
 
 #include "lib/constants/Enumerations.h"
+#include "lib/Rect.h"
+#include <vector>
 
 class Point;
 class Rect;
 
 class Canvas;
+
+struct PresentedRegion
+{
+	Rect source;
+	Rect target;
+};
 
 /// GPU layers composited under the software screen. This backend has none, but client code
 /// is shared between backends and names them.
@@ -90,4 +98,9 @@ public:
 
 	/// No GPU drawing happens in this backend, so there is nothing queued to hand over
 	void flushRenderCommands() {}
+
+	/// SDL2 keeps the existing software composition path.
+	bool presentFromCanvas(GpuRenderLayer, const Canvas &, const std::vector<PresentedRegion> &,
+		const Rect &, const void *) { return false; }
+	void clearPresentedCanvas(GpuRenderLayer, const void *) {}
 };

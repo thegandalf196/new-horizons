@@ -135,6 +135,28 @@ DLL_LINKAGE void validateWeightedPerkCapture(const JsonNode & development, const
 DLL_LINKAGE bool crisisCommandProfileActive(const JsonNode & rules);
 DLL_LINKAGE void validateCrisisCommandProfileSerialization(const JsonNode & rules, bool supported);
 
+/// One-operation borrowed read view: construction ALWAYS validates the complete
+/// captured catalogue. Keep that exact rules object alive and unchanged until
+/// this view is destroyed; never retain it in hero state, a cache or a save.
+/// Results own their values, while lookups parse only the requested perk row.
+class DLL_LINKAGE ValidatedPerkRules
+{
+	const JsonNode & rules;
+	bool active = false;
+public:
+	explicit ValidatedPerkRules(const JsonNode & captured);
+	ValidatedPerkRules(JsonNode &&) = delete;
+	ValidatedPerkRules(const JsonNode &&) = delete;
+	ValidatedPerkRules(const ValidatedPerkRules &) = delete;
+	ValidatedPerkRules & operator=(const ValidatedPerkRules &) = delete;
+	ValidatedPerkRules(ValidatedPerkRules &&) = delete;
+	ValidatedPerkRules & operator=(ValidatedPerkRules &&) = delete;
+	std::optional<PerkDefinition> definition(std::string_view skillId, std::string_view perkId) const;
+	/// Codec compatibility only: this sealed view already admitted the unchanged catalogue.
+	void validateWeightedSerialization(bool supported, bool r2Supported = false,
+		bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const;
+};
+
 /// Parse one saved skill from a validated registry.  The returned value owns
 /// copies of all data and therefore remains stable if the source is changed.
 DLL_LINKAGE std::optional<SkillDefinition> perkSkill(const JsonNode & rules, std::string_view skillId);

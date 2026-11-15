@@ -16,6 +16,7 @@ from .nhart_perk_presentations import (header_before_perk_presentation, validate
 from .nhart_sylvan_perk_presentations import validate_sylvan_family
 from .nhart_sylvan_alliance_presentations import (validate_alliance_family,
     validate_alliance_resource_reuse)
+from .nhart_water_ice_restoration import restoration_wave
 from .nhart_released_history import (authority_before_leadership_rework,
     released_predecessor_entries, baseline_payload_proof)
 from .nhart_config_revisions import config_at_revision, wave_config_revision
@@ -267,6 +268,7 @@ class ArtAdditionsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.waves = later_art_waves()
+        cls.restoration = restoration_wave(cls.waves)
         cls.configProofs = json.loads((ROOT / 'assets/new-horizons/runtime-art-config-revisions.json').read_text())
         cls.manifest = json.loads((ROOT / importer.spells.MANIFEST).read_text())
         cls.header = (ROOT / importer.HEADER).read_text()
@@ -311,7 +313,9 @@ class ArtAdditionsTest(unittest.TestCase):
         self.assertEqual(len(later_art_resources()), sum(len(wave['resources']) for wave in self.waves))
         for index, wave in enumerate(self.waves):
             entries = self.legacyEntries if index < self.bridgeIndex else self.manifest['entries']
-            baseline = entries_before_wave(entries, self.waves, index)
+            # The released bridge omits Water/Ice entirely from its older projection.
+            history = [row for row in self.waves if row is not self.restoration] if index < self.bridgeIndex else self.waves
+            baseline = entries_before_wave(entries, history, index)
             self.assertEqual(len(baseline), wave['baselineCount'])
             self.assertEqual(importer.entries_digest(baseline), wave['baselineEntriesSha256'])
             self.assertEqual(wave['entryCount'], wave['baselineCount'] + len(wave['resources']))
@@ -330,7 +334,7 @@ class ArtAdditionsTest(unittest.TestCase):
         historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
             alliance = [row for row in wave.get('perkPresentations', []) if row.get('schemaVersion') == 3]
             if alliance:
                 validate_alliance_resource_reuse(wave, declared, self.manifest['entries'],
@@ -466,10 +470,10 @@ class ArtAdditionsTest(unittest.TestCase):
             # Interface-button wave was selected after the faction rebindings;
             # earlier wave anchors must still see their exact original IDs.
             alliance = any(row.get('schemaVersion') == 3 for row in wave.get('perkPresentations', []))
-            current_header = alliance or wave.get('orderEntryButtons') or wave.get('nativeEffectAliases') or wave.get('suppliedAuthority')
+            current_header = alliance or wave.get('orderEntryButtons') or wave.get('nativeEffectAliases') or wave.get('suppliedAuthority') or wave.get('waterIceRestoration')
             # Validate the complete current binding before reversing the wave
             # that originally introduced Seize Initiative's historical row.
-            header = self.header if alliance else header_before_decisive_orders_alias(self.header)
+            header = self.header if alliance or wave.get('waterIceRestoration') else header_before_decisive_orders_alias(self.header)
             if not current_header:
                 header = header_before_reworked_perks(header)
             if not wave.get('heroInterfaceButtons') and not current_header:

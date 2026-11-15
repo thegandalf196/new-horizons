@@ -31,6 +31,7 @@ set(lib_SRCS
 	logging/CLogger.cpp
 	logging/VisualLogger.cpp
 
+	network/InitializationProfile.cpp
 	network/NetworkConnection.cpp
 	network/InternalDelivery.cpp
 	network/NetworkPreparedWrites.cpp
@@ -661,6 +662,8 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsMasteryEffects.cpp
 	entities/hero/NewHorizonsSylvanTacticsPolicy.cpp
 	entities/hero/NewHorizonsPerkRules.cpp
+	entities/hero/NewHorizonsPerkQueries.cpp
+	entities/hero/NewHorizonsPerkOperation.cpp
 	entities/hero/NewHorizonsPerkState.cpp
 	entities/hero/NewHorizonsNecromancy.cpp
 	entities/hero/NewHorizonsNecromancyPolicy.cpp
@@ -1084,6 +1087,7 @@ set(lib_HEADERS
 	logging/CLogger.h
 	logging/VisualLogger.h
 
+	network/InitializationProfile.h
 	network/NetworkConnection.h
 	network/NetworkWriteAllocation.h
 	network/NetworkWriteFailureInfo.h
@@ -1534,6 +1538,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsMasteryEffects.h
 	entities/hero/NewHorizonsPerkRules.h
 	entities/hero/NewHorizonsPerkState.h
+	entities/hero/NewHorizonsPerkOperation.h
 	entities/hero/NewHorizonsNecromancy.h
 	entities/hero/NewHorizonsNecromancyPolicy.h
 	entities/hero/NewHorizonsReclaimer.h

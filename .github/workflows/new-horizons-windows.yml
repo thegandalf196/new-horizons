@@ -349,7 +349,7 @@ jobs:
 
       - name: Compile portable entry before the client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
-        run: cmake --build build/new-horizons-windows-x64 --target nhWindowsBootstrap --parallel 4 -- -d keeprsp
+        run: cmake --build build/new-horizons-windows-x64 --target nhWindowsBootstrap nhWindowsSetup --parallel 4 -- -d keeprsp
 
       - name: Portable entry argument and exit smoke (no game or GUI)
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
@@ -358,6 +358,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           powershell.exe -NoProfile -File tools/windows/tests/Portable-Entry-Smoke.ps1 -BootstrapPath build/new-horizons-windows-x64/bootstrap/new-horizons.exe
           if ($LASTEXITCODE -ne 0) { throw "Portable entry smoke failed: $LASTEXITCODE" }
+          powershell.exe -NoProfile -File tools/windows/tests/Manual-Setup-Smoke.ps1 -SetupPath build/new-horizons-windows-x64/bootstrap/Setup.exe
+          if ($LASTEXITCODE -ne 0) { throw "Manual Setup smoke failed: $LASTEXITCODE" }
 
       - name: Compile Windows x64 client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}

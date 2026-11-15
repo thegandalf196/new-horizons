@@ -101,5 +101,8 @@ def baseline_payload_proof(row, payload):
             raise ValueError('Released Wisp replacement payload changed')
         return 'verified-released-replacement'
     if (actual_hash, len(payload)) != (row['sha256'], row['size']):
+        from .nhart_water_ice_restoration import portrait_replacement_proof
+        if portrait_replacement_proof(row, payload):
+            return 'verified-released-replacement'
         raise ValueError('Historical baseline payload changed')
     return 'verified-matching-payload'

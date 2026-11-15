@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../network/InitializationProfile.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsPerkRules.h"
 #include "NewHorizonsLearningExchangeSpecialties.h"
@@ -393,6 +394,7 @@ void validateResolvedHeroRules(const JsonNode & rules)
 
 JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 {
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::HeroResolve);
 	if(!usesRules(rules))
 		return JsonNode();
 	JsonNode result;

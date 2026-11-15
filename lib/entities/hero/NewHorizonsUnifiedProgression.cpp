@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsPerkState.h"
+#include "NewHorizonsPerkOperation.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -32,22 +33,7 @@ std::vector<PerkOfferCandidate> PerkState::nextRequiredPerkOffer(
 	const std::function<int(const std::string &)> & rankLookup) const
 {
 	if(!usesUnifiedSkillProgression(rules)) return {};
-	validate();
-	for(const auto & [skillId, definition] : rules["skills"].Struct())
-	{
-		const int rank = rankLookup(skillId);
-		if(rank < 0 || rank > 3)
-			throw std::runtime_error("Invalid Skill rank during mandatory perk reconciliation");
-		for(int tier = 1; tier <= rank; ++tier)
-		{
-			if(hasPerkForTier(skillId, tier)) continue;
-			auto result = candidatesForSkillTier(skillId, tier);
-			if(result.empty())
-				throw std::runtime_error("Acquired Skill rank has no eligible mandatory perk");
-			return result;
-		}
-	}
-	return {};
+	return PerkSelectionOperation(*this).next(rankLookup);
 }
 
 void PerkState::selectMissingPerksDeterministically(const std::function<int(const std::string &)> & rankLookup)
@@ -97,39 +83,7 @@ std::vector<PerkOfferCandidate> PerkState::candidatesForSkillTier(const std::str
 {
 	if(!usesPerkRules(rules) || tier <= 0 || tier > 3)
 		return {};
-	validate();
-	if(usesUnifiedSkillProgression(rules) && hasPerkForTier(skillId, tier))
-		return {};
-	std::vector<PerkOfferCandidate> result;
-	if(!rules["skills"].isStruct())
-		return {};
-	const auto & skillsMap = rules["skills"].Struct();
-	const auto it = skillsMap.find(skillId);
-	if(it == skillsMap.end())
-		return {};
-	const auto & skillNode = it->second;
-	if(!skillNode["perks"].isVector())
-		return {};
-	for(const auto & perkNode : skillNode["perks"].Vector())
-	{
-		if(perkNode["effect"]["status"].String() != "active")
-			continue;
-		const auto & perkId = perkNode["id"].String();
-		if(hasSelection(skillId, perkId))
-			continue;
-		const int requiredRank = perkRequiredRank(perkNode["requires"].String());
-		if(requiredRank != tier)
-			continue;
-		if(usesUnifiedSkillProgression(rules) && !canAcquirePerk(skillId, perkId, tier))
-			continue;
-		result.push_back(PerkOfferCandidate{
-			{skillId, perkId},
-			perkNode["name"].String(),
-			perkNode["description"].String(),
-			requiredRank
-		});
-	}
-	return result;
+	return PerkSelectionOperation(*this).candidates(skillId, tier);
 }
 
 void PerkState::acceptOffer(const std::vector<PerkOfferCandidate> & offer, size_t choice,

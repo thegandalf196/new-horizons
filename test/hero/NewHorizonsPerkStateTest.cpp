@@ -23,6 +23,7 @@ newHorizonsHeroes::PerkState state()
 	result.rules.Struct().erase("offerWeightPolicyVersion");
 	result.rules.Struct().erase("perkOfferNormalization");
 	result.rules.Struct().erase("perkProgressionPolicyVersion");
+	result.rules.Struct().erase("unifiedSkillProgressionVersion");
 	result.rules.Struct().erase("sylvanTacticsPolicy");
 	result.rules.Struct().erase("necromancyPolicy");
 	result.rules.Struct().erase("quickStudyPolicy");
@@ -596,7 +597,9 @@ TEST(NewHorizonsPerkState, RetiredSelectionWithoutMatchingHistoricalDefinitionIs
 	newHorizonsHeroes::PerkState restoredBinary;
 	EXPECT_THROW(memory.iser & restoredBinary, std::runtime_error);
 	EXPECT_FALSE(restoredBinary.hasSelection(skill, currentPerk));
-	EXPECT_TRUE(restoredBinary.hasSelection(skill, retired));
+	EXPECT_FALSE(restoredBinary.hasSelection(skill, retired));
+	EXPECT_TRUE(restoredBinary.rules.isNull());
+	EXPECT_TRUE(restoredBinary.selected.empty());
 }
 
 TEST(NewHorizonsPerkState, CrossoverRejectsUnknownFieldsAndForgedSelections)
@@ -909,18 +912,29 @@ TEST(NewHorizonsPerkState, PartialMissingOrInvalidParentWeightsRefuse)
 TEST(NewHorizonsPerkState, WeightedAcceptanceRevalidatesWeightsRankAndTier)
 {
 	auto saved = weightedOfferState();
+	// The weighted sample must not also be a complete eligible tier pool.
+	savedPerk(saved.rules, "new-horizons:luck", "new-horizons:luck.luckyAim")["effect"]["status"].String() = "active";
+	ASSERT_GE(saved.candidatesForSkillTier("new-horizons:luck", 1).size(), 3u);
 	const auto offer = saved.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight));
 	ASSERT_EQ(offer.size(), 2u);
+	const auto tierPool = saved.candidatesForSkillTier(offer.front().selection.skillId, offer.front().requiredRank);
+	ASSERT_NE(offer, tierPool);
+	ASSERT_EQ(tierPool.size(), 1u); // This seed selects the sole Discipline candidate first.
+	const auto before = saved.toJson();
+	const auto offeredParent = offer.front().selection.skillId;
 	EXPECT_THROW(saved.acceptOffer(offer, 0, weightedOfferRank, 4,
-		capturedWeights([](const std::string & skill) -> std::optional<int>
+		capturedWeights([offeredParent](const std::string & skill) -> std::optional<int>
 		{
-			return skill == "new-horizons:luck" ? 0 : 60;
+			return skill == offeredParent ? std::optional<int>(0) : parentOfferWeight(skill);
 		})), std::runtime_error);
+	EXPECT_EQ(saved.toJson(), before);
 	EXPECT_THROW(saved.acceptOffer(offer, 0, [](const std::string &) { return 0; },
 		4, capturedWeights(parentOfferWeight)), std::runtime_error);
+	EXPECT_EQ(saved.toJson(), before);
 	auto forged = offer;
 	forged[0].description += " forged";
 	EXPECT_THROW(saved.acceptOffer(forged, 0, weightedOfferRank, 4, capturedWeights(parentOfferWeight)), std::runtime_error);
+	EXPECT_EQ(saved.toJson(), before);
 	saved.acceptOffer(offer, 0, weightedOfferRank, 4, capturedWeights(parentOfferWeight));
 	EXPECT_TRUE(saved.hasSelection(offer[0].selection.skillId, offer[0].selection.perkId));
 	const auto next = saved.prepareOffer(weightedOfferRank, 5, capturedWeights(parentOfferWeight));
@@ -968,7 +982,7 @@ TEST(NewHorizonsPerkState, WeightedCapturedPolicyRefusesOlderRawBinaryReader)
 	EXPECT_THROW(current.iser & restored, std::runtime_error);
 }
 
-TEST(NewHorizonsPerkState, AbsentWeightedPolicyRetainsOlderBinaryPendingOffer)
+TEST(NewHorizonsPerkState, AbsentWeightedPolicyRefusesPriorCodecAndCurrentCodecRetainsPendingOffer)
 {
 	auto legacy = weightedOfferState();
 	legacy.rules.Struct().erase("offerWeightPolicyVersion");
@@ -978,6 +992,11 @@ TEST(NewHorizonsPerkState, AbsentWeightedPolicyRetainsOlderBinaryPendingOffer)
 	CMemorySerializer older;
 	older.oser.version = oldVersion;
 	older.iser.version = oldVersion;
+	const auto before = legacy.toJson();
+	EXPECT_THROW(older.oser & legacy, std::runtime_error);
+	EXPECT_TRUE(older.extractBuffer().empty());
+	EXPECT_EQ(legacy.toJson(), before);
+	older.oser.version = older.iser.version = ESerializationVersion::CURRENT;
 	older.oser & legacy;
 	newHorizonsHeroes::PerkState restored;
 	older.iser & restored;
@@ -1001,6 +1020,10 @@ TEST(NewHorizonsPerkState, AbsentWeightedPolicyBinarySaveDoesNotMutateCapturedRu
 		{
 			memory.oser.version = priorEpoch;
 			memory.iser.version = priorEpoch;
+			EXPECT_THROW(memory.oser & saved, std::runtime_error);
+			EXPECT_TRUE(memory.extractBuffer().empty());
+			EXPECT_EQ(saved.rules, originalRules);
+			memory.oser.version = memory.iser.version = ESerializationVersion::CURRENT;
 		}
 		ASSERT_NO_THROW(memory.oser & saved);
 		EXPECT_EQ(saved.rules, originalRules);
@@ -1080,10 +1103,12 @@ TEST(NewHorizonsPerkState, R2DrawsDistinctParentsInsteadOfWeightingEachPerk)
 	}
 }
 
-TEST(NewHorizonsPerkState, StrictCurrentProgressionUsesSixAlternatingRankAndPerkSteps)
+TEST(NewHorizonsPerkState, HistoricalStrictProgressionUsesSixAlternatingRankAndPerkSteps)
 {
 	newHorizonsHeroes::PerkState saved;
 	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	// Capture the ordered-tier policy before unified four-card offers.
+	saved.rules.Struct().erase("unifiedSkillProgressionVersion");
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
 	const auto options = newHorizonsHeroes::perkOptions(saved.rules, SKILL);
 	int rank = 0;
@@ -1114,10 +1139,12 @@ TEST(NewHorizonsPerkState, StrictCurrentProgressionUsesSixAlternatingRankAndPerk
 	EXPECT_EQ(newHorizonsHeroes::PerkState::fromJson(saved.toJson()).selected, saved.selected);
 }
 
-TEST(NewHorizonsPerkState, StrictExceptionalExpertStillRequiresBasicThenAdvancedThenExpert)
+TEST(NewHorizonsPerkState, HistoricalStrictExceptionalExpertStillRequiresBasicThenAdvancedThenExpert)
 {
 	newHorizonsHeroes::PerkState saved;
 	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	// Capture the ordered-tier policy before unified four-card offers.
+	saved.rules.Struct().erase("unifiedSkillProgressionVersion");
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
 	const auto expert = [](const std::string & id) { return id == SKILL ? 3 : 0; };
 	const auto context = r2Weights(saved);
@@ -1156,10 +1183,12 @@ TEST(NewHorizonsPerkState, StrictCaptureRejectsHistoricalDuplicateOrGappedPrefix
 	EXPECT_THROW(strict.validate(), std::runtime_error); // Expert without Advanced.
 }
 
-TEST(NewHorizonsPerkState, StrictEligibilityDoesNotRebaseFullClassRelativeParentWeights)
+TEST(NewHorizonsPerkState, HistoricalStrictEligibilityDoesNotRebaseFullClassRelativeParentWeights)
 {
 	newHorizonsHeroes::PerkState saved;
 	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	// Capture the ordered-tier policy before unified four-card offers.
+	saved.rules.Struct().erase("unifiedSkillProgressionVersion");
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
 	const auto context = r2Weights(saved, 1, 10);
 	const auto before = saved.quantizedParentWeights(context);
@@ -1182,7 +1211,7 @@ TEST(NewHorizonsPerkState, StrictEligibilityDoesNotRebaseFullClassRelativeParent
 	EXPECT_EQ(saved.quantizedParentWeights(context), before);
 }
 
-TEST(NewHorizonsPerkState, Strict1117WriterRefusesBeforePrefixWhileHistoricalR2RoundTrips)
+TEST(NewHorizonsPerkState, StrictAndHistoricalR2Refuse1117BeforePrefixWhileCurrentCodecRoundTrips)
 {
 	newHorizonsHeroes::PerkState strict;
 	strict.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
@@ -1195,6 +1224,11 @@ TEST(NewHorizonsPerkState, Strict1117WriterRefusesBeforePrefixWhileHistoricalR2R
 	historical.select("new-horizons:luck", "new-horizons:luck.secondChance", 1);
 	CMemorySerializer wire;
 	wire.oser.version = wire.iser.version = ESerializationVersion::NEW_HORIZONS_R2_PERK_OFFERS;
+	const auto before = historical.toJson();
+	EXPECT_THROW(wire.oser & historical, std::runtime_error);
+	EXPECT_TRUE(wire.extractBuffer().empty());
+	EXPECT_EQ(historical.toJson(), before);
+	wire.oser.version = wire.iser.version = ESerializationVersion::CURRENT;
 	ASSERT_NO_THROW(wire.oser & historical);
 	newHorizonsHeroes::PerkState restored;
 	ASSERT_NO_THROW(wire.iser & restored);
@@ -1253,7 +1287,7 @@ TEST(NewHorizonsPerkState, R2AdditionalBasicChoicesSurviveJsonAndBinaryWithoutLe
 	EXPECT_FALSE(restored.canAdvanceSkillNormally("new-horizons:luck", 2));
 }
 
-TEST(NewHorizonsPerkState, R2RequiresItsCodecButPolicyOneRetainsPreviousWriter)
+TEST(NewHorizonsPerkState, R2AndPolicyOneRefusePriorWritersWhileCurrentCodecRetainsPolicyOne)
 {
 	auto saved = r2State();
 	CMemorySerializer old;
@@ -1263,7 +1297,15 @@ TEST(NewHorizonsPerkState, R2RequiresItsCodecButPolicyOneRetainsPreviousWriter)
 	auto prior = weightedOfferState();
 	CMemorySerializer policyOne;
 	policyOne.oser.version = ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES;
-	EXPECT_NO_THROW(policyOne.oser & prior);
+	const auto before = prior.toJson();
+	EXPECT_THROW(policyOne.oser & prior, std::runtime_error);
+	EXPECT_TRUE(policyOne.extractBuffer().empty());
+	EXPECT_EQ(prior.toJson(), before);
+	policyOne.oser.version = ESerializationVersion::CURRENT;
+	ASSERT_NO_THROW(policyOne.oser & prior);
+	newHorizonsHeroes::PerkState restored;
+	ASSERT_NO_THROW(policyOne.iser & restored);
+	EXPECT_EQ(restored.toJson(), before);
 }
 
 TEST(NewHorizonsPerkState, R2FirstAndEitherSlotStatisticsRespectConfiguredParentRatio)
@@ -1339,7 +1381,7 @@ TEST(NewHorizonsPerkState, R2WizardFourParentsUseFullClassBoundsRegardlessOfPerk
 	std::map<std::string, int> row;
 	for(const auto & [id, value] : development["skillOfferWeights"]["core:wizard"].Struct())
 		row[id] = static_cast<int>(value.Integer());
-	ASSERT_EQ(row.size(), 31u);
+	ASSERT_EQ(row.size(), newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT);
 	const std::array<std::string, 4> ids = {"new-horizons:sorceryMagic", "new-horizons:spellcraft",
 		"new-horizons:havocMagic", "new-horizons:offense"};
 	const std::array<int, 4> authoredWeights = {10, 9, 8, 1};

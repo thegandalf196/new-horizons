@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../network/InitializationProfile.h"
 #include "CGHeroInstance.h"
 #include "../GameLibrary.h"
 #include "../callback/IGameInfoCallback.h"
@@ -26,6 +27,7 @@ void validateCommandHeroHistory(const newHorizonsHeroes::CommandState & state,
 
 bool CGHeroInstance::captureInitialDevelopmentRules(bool isFake)
 {
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::HeroCapture);
 	const bool creationInitialization = !isFake && !primaryGrowthCaptured;
 	if(creationInitialization)
 		protectedAdventureFlightLayer = EPathfindingLayer::LAND;
@@ -41,6 +43,7 @@ bool CGHeroInstance::captureInitialDevelopmentRules(bool isFake)
 		candidate.rules = cb->getHeroPerkRules();
 		auto prepared = candidate.prepareNativeRules();
 		perkState = std::move(candidate);
+		nhLoadProfile::jsonBytes(nhLoadProfile::Metric::CapturedPerkBytes, perkState.rules);
 		preparedPilotPerks = std::move(prepared);
 		perkRulesCaptured = true;
 	}
@@ -56,6 +59,7 @@ bool CGHeroInstance::captureInitialDevelopmentRules(bool isFake)
 		auto candidate = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
 		auto prepared = nativeRules::preparePilotCreature(candidate, getHeroTypeID());
 		primaryGrowthRules = std::move(candidate);
+		nhLoadProfile::jsonBytes(nhLoadProfile::Metric::CapturedDevelopmentBytes, primaryGrowthRules);
 		preparedCreatureMechanics = std::move(prepared);
 		primaryGrowthCaptured = true;
 		nodeHasChanged();

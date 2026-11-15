@@ -231,6 +231,36 @@ diagnostic settings, before claiming a timing improvement.
 
 For guarded Wine diagnostics use only the typed full-game options and fixed admitted environment. Bootstrap/fixture arguments and C/Z mapping are held/checked by the maintained owner. A Wine proof is not native Windows performance or full runtime acceptance.
 
+### Map initialization breakdown
+
+With `ENABLE_NH_PERF_EXPERIMENTS=ON`, launch with
+`NH_MAPLOAD_PROFILE=1` to collect bounded `NH_LOAD_PROFILE` aggregates in the
+ordinary game log. This is independent of the client frame trace. The default
+build compiles these hooks out; an enabled build without the runtime opt-in
+does not sample their clocks. Use a fresh process for each measured load.
+
+Groups cover world initialization, lobby serialization/deserialization and
+replay snapshot work. Each group reports call counts, inclusive and exclusive
+elapsed nanoseconds, and bounded workload counters. Nested regions are subsets
+of their parent; overlapping authority/client groups must not be added as if
+they were sequential CPU time. These measurements are wall intervals, not
+isolated CPU or GPU execution time.
+
+The process admits at most 32 interesting groups. An overflow notice means
+later groups were omitted. Reject incomplete coverage, nonzero dropped counts,
+invalid nesting and saturated captures when making a whole-load comparison.
+Lobby metadata can be exchanged before a world exists: distinguish those
+groups from groups containing `world-write` or `world-read`. Derive replay
+snapshot expectations from the exercised packet sequence, including both
+authority and client recording, rather than assuming one snapshot per load.
+
+Use `NH_MAPLOAD_PROFILE_BYTES=1` only in a separate volume inspection pass. It
+serializes captured JSON to measure its size and changes the workload. Keep it
+off for timing comparisons. Preserve identical scenario, seed, content and
+diagnostic settings, and verify resulting hero/state agreement. The focused
+`nhInitializationProfileTest` target checks accumulator nesting and guards;
+those tests do not establish gameplay load time or complete runtime coverage.
+
 ## Combat restart guardrail
 
 Linux SDL3/OpenGL repaired transition was verified at `d21c7b5017fc`; failure was reproduced at `875b2c5591d1` following the `5229c808b15d` Windows report. Ordinary combat→Settings→Restart→Day1 and menu→new scenario no longer retained battle sprites/background/controls; normal Quit and immutable-file/process checks passed. The second game used the same fixture. Windows and quickload breadth remain unverified.

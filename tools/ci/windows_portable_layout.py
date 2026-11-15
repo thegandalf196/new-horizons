@@ -35,6 +35,12 @@ def assemble_portable_root(package, install, run, system_dlls, write_json):
     if not tool:
         raise RuntimeError('dumpbin is required for the portable bootstrap audit')
     report = audit_bootstrap(bootstrap, run, system_dlls, tool)
+    setup = install / 'bootstrap' / 'Setup.exe'
+    setup_report = None
+    if setup.exists() or setup.is_symlink():
+        if setup.is_symlink() or not setup.is_file():
+            raise RuntimeError('Installed Setup.exe must be an ordinary file')
+        setup_report = audit_bootstrap(setup, run, system_dlls, tool)
     children = list(package.iterdir())
     if not children or any(path.name.lower() == 'runtime' for path in children):
         raise RuntimeError('Invalid flat runtime staging tree')
@@ -46,14 +52,23 @@ def assemble_portable_root(package, install, run, system_dlls, write_json):
         path.rename(runtime / path.name)
     shutil.copyfile(bootstrap, package / 'new-horizons.exe')
     write_json(runtime / 'BOOTSTRAP-IMPORTS.json', report)
+    if setup_report is not None:
+        shutil.copyfile(setup, package / 'Setup.exe')
+        write_json(runtime / 'MANUAL-SETUP-IMPORTS.json', setup_report)
     assert_portable_layout(package)
     return runtime
 
 
-def assert_portable_layout(package):
+def assert_portable_layout(package, *, require_setup=False):
     package = Path(package)
-    if {path.name for path in package.iterdir()} != {'new-horizons.exe', 'runtime'}:
-        raise RuntimeError('Portable root must contain only new-horizons.exe and runtime/')
+    names = {path.name for path in package.iterdir()}
+    expected = {'new-horizons.exe', 'runtime'}
+    if require_setup or 'Setup.exe' in names:
+        expected.add('Setup.exe')
+    if names != expected:
+        raise RuntimeError('Portable root must contain only new-horizons.exe, optional Setup.exe and runtime/')
+    if 'Setup.exe' in names and ((package / 'Setup.exe').is_symlink() or not (package / 'Setup.exe').is_file()):
+        raise RuntimeError('Manual setup entry must be a regular file')
     if (package / 'new-horizons.exe').is_symlink() or not (package / 'new-horizons.exe').is_file():
         raise RuntimeError('Portable entry point must be a regular file')
     runtime = package / 'runtime'
@@ -75,7 +90,7 @@ def assert_portable_layout(package):
 def stage_frontend(root, helpers, package):
     """Stage only shipping setup helpers and project license notices."""
     for filename in ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'Launch-Process.ps1',
-                     'Setup-Progress.ps1', 'README-New-Horizons.txt', 'dirs.json'):
+                     'Setup-Progress.ps1', 'Complete-Assets.ps1', 'README-New-Horizons.txt', 'dirs.json'):
         source = helpers / filename
         destination = package / (Path('config/dirs.json') if filename == 'dirs.json' else filename)
         if destination.exists() and filename != 'dirs.json':

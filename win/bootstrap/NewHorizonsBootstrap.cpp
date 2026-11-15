@@ -81,15 +81,25 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 	for(int index = 1; index < count; ++index)
 		arguments.emplace_back(argv[index]);
 	LocalFree(argv);
+#ifdef NH_SETUP_ONLY
+	if(!arguments.empty())
+		return failure(L"Open Setup.exe without arguments to choose your original Heroes III assets.");
+	const std::wstring envelope;
+#else
 	const std::wstring envelope = newHorizonsBootstrap::argumentEnvelope(arguments);
+#endif
 	const std::wstring previous = previousArguments();
 	SetEnvironmentVariableW(L"NH_WINDOWS_BOOTSTRAP_UI", L"1");
-	if(envelope.size() >= 32767 || !SetEnvironmentVariableW(argumentVariable, envelope.c_str()))
+	if(envelope.size() >= 32767 || !SetEnvironmentVariableW(argumentVariable, envelope.empty() ? nullptr : envelope.c_str()))
 		return failure(L"The launch arguments exceed the supported Windows environment size.");
 
 	std::wstring command = newHorizonsBootstrap::quoteWindowsArgument(powershell)
 		+ L" -NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "
 		+ newHorizonsBootstrap::quoteWindowsArgument(script);
+#ifdef NH_SETUP_ONLY
+	// These belong to setup, never to the engine's argument envelope.
+	command += L" -SelectAssets -SetupOnly";
+#endif
 	const BOOL console = AttachConsole(ATTACH_PARENT_PROCESS);
 	STARTUPINFOW startup = {};
 	startup.cb = sizeof(startup);

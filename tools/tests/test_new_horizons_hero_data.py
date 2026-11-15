@@ -178,11 +178,11 @@ WORKBOOK_REMAINING_STARTS = {
 # These settled profiles intentionally take precedence over workbook differences.
 ACCEPTED_STARTS = {
     'core:sylvia': ('logistics.navigation', 1, 'divineMandate', 1),
-    'core:adelaide': ('havocMagic.cryomancer', 1, 'divineMandate', 2),
+    'core:adelaide': ('havocMagic.cryomancer', 1, 'divineMandate', 1),
     'core:ingham': ('wisdom.mysticism', 1, 'divineMandate', 1),
     'core:sanya': ('learning.eagleEye', 1, 'divineMandate', 1),
     'core:caitlin': ('wisdom.intelligence', 1, 'divineMandate', 1),
-    'core:thorgrim': ('warcasting.spellward', 2, 'sylvanLuck', 1),
+    'core:thorgrim': ('warcasting.spellward', 1, 'sylvanLuck', 1),
     'core:clancy': ('logistics.pathfinding', 1, 'sylvanLuck', 1),
     'core:coronius': ('spellcraft.concentration', 1, 'sylvanLuck', 1),
     'core:elleshar': ('wisdom.intelligence', 1, 'sylvanLuck', 1),
@@ -191,12 +191,12 @@ ACCEPTED_STARTS = {
     'core:piquedram': ('logistics.scouting', 1, 'metamagic', 1),
     'core:torosar': ('warMachines.masterGunner', 1, 'metamagic', 1),
     'core:iona': ('learning.scholar', 1, 'metamagic', 1),
-    'core:astral': ('spellcraft.concentration', 1, 'metamagic', 2),
+    'core:astral': ('spellcraft.concentration', 1, 'metamagic', 1),
     'core:serena': ('wisdom.intelligence', 1, 'metamagic', 1),
     'core:daremyth': ('luck.secondChance', 1, 'metamagic', 1),
     'core:aine': ('estates.taxCollector', 1, 'metamagic', 1),
-    'core:thane': ('learning.historian', 2, 'metamagic', 1),
-    'core:fiona': ('logistics.scouting', 2, 'demonicGating', 1),
+    'core:thane': ('learning.historian', 1, 'metamagic', 1),
+    'core:fiona': ('logistics.scouting', 1, 'demonicGating', 1),
     'core:ignatius': ('battlecraft.tactics', 1, 'demonicGating', 1),
     'core:ayden': ('wisdom.intelligence', 1, 'demonicGating', 1),
     'core:xyron': ('havocMagic.pyromancer', 1, 'demonicGating', 1),
@@ -204,27 +204,27 @@ ACCEPTED_STARTS = {
     'core:ash': ('chaosMagic.frenziedCurse', 1, 'demonicGating', 1),
     'core:straker': ('warcasting.spellward', 1, 'necromancy', 1),
     'core:charna': ('battlecraft.tactics', 1, 'necromancy', 1),
-    'core:isra': ('learning.historian', 1, 'necromancy', 2),
+    'core:isra': ('learning.historian', 1, 'necromancy', 1),
     'core:septienna': ('spellcraft.arcaneFocus', 1, 'necromancy', 1),
     'core:nimbus': ('learning.eagleEye', 1, 'necromancy', 1),
     'core:thant': ('wisdom.mysticism', 1, 'necromancy', 1),
-    'core:vidomina': ('learning.scholar', 1, 'necromancy', 2),
+    'core:vidomina': ('learning.scholar', 1, 'necromancy', 1),
     'core:nagash': ('estates.taxCollector', 1, 'necromancy', 1),
     'core:alamar': ('shadowMagic.bloodDrinker', 1, 'shroudOfMalassa', 1),
     'core:jaegar': ('wisdom.mysticism', 1, 'shroudOfMalassa', 1),
-    'core:jeddite': ('spellcraft.concentration', 1, 'shroudOfMalassa', 2),
+    'core:jeddite': ('spellcraft.concentration', 1, 'shroudOfMalassa', 1),
     'core:geon': ('learning.eagleEye', 1, 'shroudOfMalassa', 1),
-    'core:deemer': ('logistics.scouting', 2, 'shroudOfMalassa', 1),
+    'core:deemer': ('logistics.scouting', 1, 'shroudOfMalassa', 1),
     'core:sephinroth': ('estates.prosperity', 1, 'shroudOfMalassa', 1),
     'core:terek': ('battlecraft.tactics', 1, 'bloodrage', 1),
     'core:oris': ('learning.eagleEye', 1, 'bloodrage', 1),
     'core:saurug': ('estates.prosperity', 1, 'bloodrage', 1),
-    'core:mirlanda': ('shadowMagic.witheringTouch', 1, 'bulwarkOfTheMire', 2),
+    'core:mirlanda': ('shadowMagic.witheringTouch', 1, 'bulwarkOfTheMire', 1),
     'core:rosic': ('wisdom.mysticism', 1, 'bulwarkOfTheMire', 1),
     'core:voy': ('logistics.navigation', 1, 'bulwarkOfTheMire', 1),
     'core:andra': ('wisdom.intelligence', 1, 'bulwarkOfTheMire', 1),
     'core:tiva': ('learning.eagleEye', 1, 'bulwarkOfTheMire', 1),
-    'core:lacus': ('battlecraft.tactics', 2, 'elementalRebirth', 1),
+    'core:lacus': ('battlecraft.tactics', 1, 'elementalRebirth', 1),
 }
 
 class HeroDataTest(unittest.TestCase):
@@ -262,7 +262,8 @@ class HeroDataTest(unittest.TestCase):
         faction_skills = self.rules['startingSkills']['factionSkills']
         self.assertEqual(len(WORKBOOK_REMAINING_STARTS), 96)
         self.assertEqual(len(ACCEPTED_STARTS), 48)
-        self.assertEqual(set(profiles), set(WORKBOOK_REMAINING_STARTS) | set(ACCEPTED_STARTS))
+        self.assertEqual(len(profiles), 163)
+        self.assertTrue((set(WORKBOOK_REMAINING_STARTS) | set(ACCEPTED_STARTS)) <= set(profiles))
         for faction in ('castle', 'rampart', 'tower', 'inferno', 'necropolis',
                         'dungeon', 'stronghold', 'fortress', 'conflux'):
             roster = json.loads((ROOT / f'config/heroes/{faction}.json').read_text())
@@ -306,7 +307,7 @@ class HeroDataTest(unittest.TestCase):
         })
         self.assertEqual(self.rules['damageSpellSpecialties']['componentPercent'], 15)
 
-    def test_generated_module_captures_all_144_packages_exactly(self):
+    def test_generated_module_captures_all_163_packages_exactly(self):
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
         self.assertEqual(module['settings']['heroes']['newHorizons']['startingSkills'],
                          self.rules['startingSkills'])

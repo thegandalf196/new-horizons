@@ -25,14 +25,12 @@ bool eligible(const CGTownInstance & town, PlayerColor requester)
 {
 	return requester.isValidPlayer() && town.getOwner() == requester
 		&& town.getFactionID() == FactionID::NECROPOLIS
-		&& (town.hasBuilt(BuildingID::DWELL_LVL_3) || town.hasBuilt(BuildingID::DWELL_LVL_3_UP))
+		&& town.hasBuilt(BuildingID::DWELL_LVL_3_UP)
 		&& (residentSeth(town, town.getVisitingHero()) || residentSeth(town, town.getGarrisonHero()));
 }
 
 CreatureID alternative(CreatureID creature)
 {
-	if(creature == CreatureID(CreatureID::decode("core:wight")))
-		return CreatureID(CreatureID::decode("core:mummy"));
 	if(creature == CreatureID(CreatureID::decode("core:wraith")))
 		return CreatureID(CreatureID::decode("new-horizons:royalMummy"));
 	return CreatureID::NONE;

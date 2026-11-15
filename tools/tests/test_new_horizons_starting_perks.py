@@ -14,28 +14,6 @@ else:
 
 ROOT = Path(__file__).resolve().parents[2]
 TIERS = {'basic': 1, 'advanced': 2, 'expert': 3}
-# Campaign/portrait defaults after the authoritative legacy/faction normalization.
-SPECIAL_RANKS = {
-    'sirMullich': {'discipline': 2, 'divineMandate': 1},
-    'adrienne': {'bulwarkOfTheMire': 1, 'havocMagic': 3},
-    'catherine': {'discipline': 1, 'divineMandate': 1},
-    'dracon': {'metamagic': 2},
-    'gelu': {'archery': 1, 'sylvanLuck': 1},
-    'kilgor': {'offense': 2, 'bloodrage': 1},
-    'undeadHaart': {'necromancy': 2},
-    'mutare': {'estates': 1, 'shroudOfMalassa': 1},
-    'roland': {'discipline': 1, 'divineMandate': 1},
-    'mutareDrake': {'estates': 1, 'shroudOfMalassa': 1},
-    'boragus': {'offense': 1, 'bloodrage': 1},
-    'xeron': {'discipline': 1, 'demonicGating': 1},
-    'portraitGeneralKendal': {'divineMandate': 1},
-    'portraitYoungCristian': {'divineMandate': 1},
-    'portraitOrdwald': {'sylvanLuck': 1},
-    'portraitFinneas': {'necromancy': 1},
-    'portraitYoungGem': {'sylvanLuck': 1},
-    'portraitYoungSandro': {'necromancy': 1},
-    'portraitYoungYog': {'metamagic': 1},
-}
 
 
 class StartingPerkContentTest(unittest.TestCase):
@@ -55,22 +33,44 @@ class StartingPerkContentTest(unittest.TestCase):
                           if isinstance(row, dict) and 'class' in row)
         self.assertEqual(len(roster), 163)
         self.assertEqual(set(self.profiles), roster)
+        self.assertEqual(set(self.start['startingDevelopmentProfiles']), roster)
 
-    def test_each_owned_tier_has_one_valid_perk(self):
-        defaults = {h: {r['skill']: r['rank'] for r in p['skills']}
-                    for h, p in self.start['startingDevelopmentProfiles'].items()}
-        defaults.update({'core:' + h: {'new-horizons:' + s: n for s, n in ranks.items()}
-                         for h, ranks in SPECIAL_RANKS.items()})
-        self.assertEqual(set(defaults), set(self.profiles))
-        for hero, ranks in defaults.items():
+    def test_every_default_has_two_distinct_basic_skills_and_perks(self):
+        factions = set(self.start['factionSkills'].values())
+        for hero, profile in self.start['startingDevelopmentProfiles'].items():
             with self.subTest(hero=hero):
+                ranks = profile['skills']
+                self.assertEqual(len(ranks), 2)
+                owned = {row['skill'] for row in ranks}
+                self.assertEqual(len(owned), 2)
+                self.assertEqual({row['rank'] for row in ranks}, {1})
+                self.assertEqual(len(owned & factions), 1)
+                self.assertEqual(len(profile['startingPerks']), 1)
+                self.assertNotIn(profile['startingPerks'][0]['skill'], factions)
                 rows = self.profiles[hero]
-                actual = [self.perks[r['perk']] for r in rows]
-                self.assertTrue(all(self.perks[r['perk']][0] == r['skill'] for r in rows))
-                expected = {(skill, tier) for skill, rank in ranks.items()
-                            for tier in range(1, rank + 1)}
-                self.assertEqual(len(actual), len(set(actual)))
-                self.assertEqual(set(actual), expected)
+                self.assertEqual(len(rows), 2)
+                actual = [self.perks[row['perk']] for row in rows]
+                self.assertTrue(all(self.perks[row['perk']][0] == row['skill'] for row in rows))
+                self.assertEqual(set(actual), {(skill, 1) for skill in owned})
+        self.assertEqual(sum(map(len, self.profiles.values())), 326)
+
+    def test_defaults_match_class_faction_and_eligible_generic_skill(self):
+        classes = {}
+        for filename in load(ROOT / 'config/gameConfig.json')['heroClasses']:
+            classes.update({'core:' + key: row for key, row in load(ROOT / filename).items()
+                            if isinstance(row, dict) and 'faction' in row})
+        for filename in load(ROOT / 'config/gameConfig.json')['heroes']:
+            for hero, prototype in load(ROOT / filename).items():
+                if not isinstance(prototype, dict) or 'class' not in prototype:
+                    continue
+                hero_class = 'core:' + prototype['class']
+                faction = classes[hero_class]['faction']
+                faction = faction if ':' in faction else 'core:' + faction
+                expected = self.start['factionSkills'][faction]
+                profile = self.start['startingDevelopmentProfiles']['core:' + hero]
+                self.assertIn(expected, {row['skill'] for row in profile['skills']}, hero)
+                generic = profile['startingPerks'][0]['skill']
+                self.assertGreater(self.rules['skillOfferWeights'][hero_class][generic], 0, hero)
 
     def test_existing_profile_and_prototype_choices_are_preserved(self):
         for hero, profile in self.start['startingDevelopmentProfiles'].items():
@@ -82,20 +82,20 @@ class StartingPerkContentTest(unittest.TestCase):
                 for row in prototype.get('startingPerks', []):
                     self.assertIn(row, self.profiles[hero], hero)
 
-    def test_seth_and_advanced_defaults(self):
+    def test_seth_and_astral_defaults(self):
         self.assertEqual(self.profiles['core:nimbus'], [
             {'skill': 'new-horizons:learning', 'perk': 'new-horizons:learning.eagleEye'},
             {'skill': 'new-horizons:necromancy', 'perk': 'new-horizons:necromancy.graveKnowledge'},
         ])
-        self.assertEqual(len(self.profiles['core:adrienne']), 4)
-        self.assertIn({'skill': 'new-horizons:havocMagic',
-                       'perk': 'new-horizons:havocMagic.pyromancer'}, self.profiles['core:adrienne'])
-        self.assertEqual(len(self.profiles['core:thane']), 3)
-        self.assertEqual(len(self.profiles['core:astral']), 3)
+        self.assertEqual(self.profiles['core:astral'], [
+            {'skill': 'new-horizons:spellcraft', 'perk': 'new-horizons:spellcraft.concentration'},
+            {'skill': 'new-horizons:metamagic', 'perk': 'new-horizons:metamagic.lingeringMagic'},
+        ])
+
 
     def test_captured_markers_and_generated_rules_agree(self):
         self.assertEqual(self.rules['skillOfferLayoutVersion'], 1)
-        self.assertEqual(self.start['startingPerksPolicyVersion'], 1)
+        self.assertEqual(self.start['startingPerksPolicyVersion'], 2)
         generated = load(ROOT / 'Mods/new-horizons/mod.json')['settings']['heroes']['newHorizons']
         self.assertEqual(generated, self.rules)
 

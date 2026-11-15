@@ -144,13 +144,19 @@ void GameEngine::fakeMouseMove()
 void GameEngine::updateFrame()
 {
 	PerfTrace::emit("frame_lock_wait");
+	const bool tracePacing = PerfTrace::enabled();
+	const auto waitStarted = tracePacing ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
 	std::scoped_lock interfaceLock(ENGINE->interfaceMutex);
+	const auto waitNs = tracePacing ? std::chrono::duration_cast<std::chrono::nanoseconds>(
+		std::chrono::steady_clock::now() - waitStarted).count() : 0;
 	if(guiTaskFailureShutdown.exchange(false))
 	{
 		logGlobal->error("Stopping application after failed GUI task; no pending packet is accepted");
 		engineUser->onShutdownRequested(false);
 	}
 	PerfTrace::frameBegin();
+	if(tracePacing)
+		PerfTrace::emit("frame_lock_acquired_ns", -1, waitNs);
 
 	engineUser->onUpdate();
 

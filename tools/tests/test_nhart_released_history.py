@@ -67,7 +67,8 @@ class ReleasedArtHistoryTest(unittest.TestCase):
         with self.assertRaises(ValueError): baseline_payload_proof(ordinary, b'bad')
 
     def test_new_wave_has_exact_additions_and_existing_reuses(self):
-        wave = self.waves[-1]
+        wave = next(wave for wave in self.waves if wave['baselineArchiveSha256'] ==
+                    '37028037a0086b1f6f1937af9c2f21a08e6513ab47c83293af6e0386c1549171')
         declared = {name for row in wave['perkPresentations'] for name in row['resources']}
         validate_alliance_resource_reuse(wave, declared, self.entries, self.waves, 41, read_resource)
         with self.assertRaises(ValueError):

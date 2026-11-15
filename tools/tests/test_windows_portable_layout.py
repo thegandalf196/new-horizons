@@ -43,6 +43,51 @@ class PortableLayoutTest(unittest.TestCase):
         report = json.loads((runtime / 'BOOTSTRAP-IMPORTS.json').read_text())
         self.assertEqual(set(report), {'KERNEL32.dll', 'USER32.dll'})
 
+    def test_installed_setup_is_audited_independently_before_staging(self):
+        setup = self.install / 'bootstrap/Setup.exe'
+        setup.write_bytes(b'MANUAL ENTRY')
+        self.assemble()
+        self.assertEqual((self.stage / 'Setup.exe').read_bytes(), b'MANUAL ENTRY')
+        layout.assert_portable_layout(self.stage, require_setup=True)
+        self.assertTrue((self.stage / 'runtime/MANUAL-SETUP-IMPORTS.json').is_file())
+
+    def test_setup_app_dependency_cannot_borrow_game_dlls(self):
+        (self.install / 'bootstrap/Setup.exe').write_bytes(b'MANUAL ENTRY')
+        def dumpbin(*args):
+            if args[2] == '/dependents' and args[3].endswith('Setup.exe'):
+                return '    SDL3.dll'
+            return self.dumpbin(*args)
+        with patch.object(layout.shutil, 'which', return_value='dumpbin'):
+            with self.assertRaisesRegex(RuntimeError, 'non-system'):
+                layout.assemble_portable_root(self.stage, self.install, dumpbin,
+                                             package.SYSTEM_DLLS, package.write_json)
+        self.assertFalse((self.stage / 'runtime').exists())
+        self.assertEqual((self.stage / 'new-horizons.exe').read_bytes(), b'new-horizons.exe')
+
+    def test_manual_setup_is_the_only_permitted_root_sidecar(self):
+        self.assemble()
+        with self.assertRaises(RuntimeError):
+            layout.assert_portable_layout(self.stage, require_setup=True)
+        (self.stage / 'Setup.exe').write_bytes(b'INDEPENDENT SYSTEM-ONLY PE')
+        layout.assert_portable_layout(self.stage, require_setup=True)
+        (self.stage / 'arbitrary.exe').write_bytes(b'UNAPPROVED')
+        with self.assertRaises(RuntimeError):
+            layout.assert_portable_layout(self.stage, require_setup=True)
+
+    def test_manual_setup_cannot_be_a_directory_or_link(self):
+        self.assemble()
+        setup = self.stage / 'Setup.exe'
+        setup.mkdir()
+        with self.assertRaisesRegex(RuntimeError, 'regular file'):
+            layout.assert_portable_layout(self.stage)
+        setup.rmdir()
+        try:
+            setup.symlink_to(self.stage / 'new-horizons.exe')
+        except OSError:
+            self.skipTest('Host does not support ordinary user symlinks')
+        with self.assertRaisesRegex(RuntimeError, 'regular file'):
+            layout.assert_portable_layout(self.stage)
+
     def test_root_cannot_import_even_a_bundled_engine_or_crt_dll(self):
         for dependency in ('VCMI_lib.dll', 'SDL3.dll', 'VCRUNTIME140.dll', 'MSVCP140.dll'):
             def dumpbin(*args):

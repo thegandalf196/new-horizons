@@ -9,6 +9,7 @@ import re
 import unittest
 
 from jsonschema import Draft4Validator
+from referencing import Registry, Resource
 
 ROOT = Path(__file__).resolve().parents[2]
 PREFIX = 'new-horizons:learning.'
@@ -76,8 +77,13 @@ class LearningDataTest(unittest.TestCase):
             {**self.rules, 'quickStudyPolicy': {'version': 1, 'interval': 3}})))
 
     def test_specialty_xp_coefficients_remain_without_extra_spell_fields(self):
-        schema = load('config/schemas/newHorizonsHeroes.json')
-        validator = Draft4Validator(schema)
+        schema_path = ROOT / 'config/schemas/newHorizonsHeroes.json'
+        registry = Registry().with_resources((
+            (path.as_uri(), Resource.from_contents(load(path)))
+            for path in (ROOT / 'config/schemas').glob('newHorizons*.json')))
+        schema = load(schema_path)
+        schema['id'] = schema_path.as_uri()
+        validator = Draft4Validator(schema, registry=registry)
         validator.validate(self.heroes)
         for table, identity, retired in (
             ('additionalSpecialties', 'graveArchivist', 'additionalEagleEyeSpells'),
@@ -119,12 +125,12 @@ class LearningDataTest(unittest.TestCase):
             for phrase in phrases:
                 self.assertIn(phrase, self.perks[identity]['details'])
 
-    def test_all_twenty_eight_affected_starting_profiles_resolve(self):
+    def test_all_thirty_one_affected_starting_profiles_resolve(self):
         relevant = {'new-horizons:' + skill for skill in ('wisdom', 'warcasting', 'learning')}
         profiles = self.heroes['startingSkills']['startingDevelopmentProfiles']
         affected = {hero: profile for hero, profile in profiles.items()
                     if any(p['skill'] in relevant for p in profile.get('startingPerks', []))}
-        self.assertEqual(len(affected), 28)
+        self.assertEqual(len(affected), 31)
         for hero, profile in affected.items():
             for reference in profile['startingPerks']:
                 perk = next(p for p in self.rules['skills'][reference['skill']]['perks']

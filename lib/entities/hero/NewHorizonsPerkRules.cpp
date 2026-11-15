@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../network/InitializationProfile.h"
 #include "../../nativeRules/PreparedPilotRules.h"
 #include "NewHorizonsPerkRules.h"
 #include "../../battle/NewHorizonsElementalAttunement.h"
@@ -172,33 +173,7 @@ void validatePerk(const JsonNode & node, const std::string & skillId, const std:
 	validateEffect(node["effect"], context);
 }
 
-void parsePerk(const JsonNode & node, PerkDefinition & result)
-{
-	result.id = node["id"].String();
-	result.name = node["name"].String();
-	result.requiredRank = node["requires"].String();
-	result.description = node["description"].String();
-	result.details = node["details"].isString() ? node["details"].String() : std::string{};
-	result.effect = node["effect"];
-}
 
-void parseSkill(const JsonNode & node, SkillDefinition & result)
-{
-	result.id = node["id"].String();
-	result.name = node["name"].String();
-	result.domain = node["domain"].String();
-	result.availability = node["availability"].String();
-	result.description = node["description"].String();
-	result.details = node["details"].isString() ? node["details"].String() : std::string{};
-	result.ranks = node["ranks"];
-	result.perks.clear();
-	for(const auto & entry : node["perks"].Vector())
-	{
-		PerkDefinition perk;
-		parsePerk(entry, perk);
-		result.perks.push_back(std::move(perk));
-	}
-}
 }
 
 bool usesPerkRules(const JsonNode & rules)
@@ -309,6 +284,7 @@ std::shared_ptr<const nativeRules::PreparedPilotPerks> preparePilotPerkRules(con
 
 static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedPilotPerks * collector)
 {
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::PerkValidation);
 	if(!usesPerkRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
@@ -382,6 +358,8 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 		"Authority requires the Command/Authority policy");
 	std::set<std::string> skills;
 	std::set<std::string> identities;
+	if(nhLoadProfile::active())
+		nhLoadProfile::count(nhLoadProfile::Metric::SkillRows, rules["skills"].Struct().size());
 	for(const auto & [key, node] : rules["skills"].Struct())
 	{
 		fields(node, {"id", "name", "domain", "availability", "description", "details", "ranks", "perks"});
@@ -407,6 +385,8 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 		}
 		require(node["perks"].isVector() && node["perks"].Vector().size() == PERK_CANONICAL_POOL_SIZE,
 			key + " must have ten perks");
+		if(nhLoadProfile::active())
+			nhLoadProfile::count(nhLoadProfile::Metric::PerkRows, node["perks"].Vector().size());
 		std::array<size_t, 3> counts{};
 		for(size_t i = 0; i < node["perks"].Vector().size(); ++i)
 		{
@@ -444,9 +424,8 @@ bool usesStrictPerkProgression(const JsonNode & rules)
 		&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION;
 }
 
-void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported)
+void ValidatedPerkRules::validateWeightedSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported) const
 {
-	validatePerkRules(rules);
 	if(!passiveFactionSupported && rules.isStruct())
 		for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 			if(rules.Struct().contains(key))
@@ -461,6 +440,12 @@ void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, b
 		throw std::runtime_error("Cannot serialize R2 perk offers to an older format");
 }
 
+void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported)
+{
+	const ValidatedPerkRules admitted(rules);
+	admitted.validateWeightedSerialization(supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
+}
+
 void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & perks)
 {
 	if(!usesWeightedPerkOffers(perks))
@@ -472,35 +457,5 @@ void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & 
 		"hero and perk Command/Authority markers must agree");
 }
 
-std::optional<SkillDefinition> perkSkill(const JsonNode & rules, std::string_view skillId)
-{
-	validatePerkRules(rules);
-	if(!usesPerkRules(rules))
-		return std::nullopt;
-	const auto it = rules["skills"].Struct().find(std::string(skillId));
-	if(it == rules["skills"].Struct().end())
-		return std::nullopt;
-	SkillDefinition result;
-	parseSkill(it->second, result);
-	return result;
-}
 
-std::optional<PerkDefinition> perkDefinition(const JsonNode & rules, std::string_view skillId,
-	std::string_view perkId)
-{
-	const auto skill = perkSkill(rules, skillId);
-	if(!skill)
-		return std::nullopt;
-	const auto it = std::find_if(skill->perks.begin(), skill->perks.end(),
-		[perkId](const auto & perk) { return perk.id == perkId; });
-	if(it == skill->perks.end())
-		return std::nullopt;
-	return *it;
-}
-
-std::vector<PerkDefinition> perkOptions(const JsonNode & rules, std::string_view skillId)
-{
-	const auto skill = perkSkill(rules, skillId);
-	return skill ? skill->perks : std::vector<PerkDefinition>();
-}
 }

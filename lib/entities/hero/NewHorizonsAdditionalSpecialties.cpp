@@ -154,11 +154,11 @@ bool resolveAdditionalSpecialtyPresentation(const CHero & hero, const JsonNode &
 	if(hero.getJsonKey() == "core:nimbus" && ancientOathsEnabled(development))
 	{
 		result.name = "Ancient Oaths";
-		result.summary = "Recruit Mummies from the shared Tomb of Souls stock while Seth resides in an owned Necropolis.";
-		result.description = "While Seth visits or garrisons an owned Necropolis with a Tomb of Souls, "
-			"Mummies share its Wight recruitment stock. An upgraded Tomb also offers Royal Mummies "
-			"and can upgrade Mummies. Ordinary Wights and Wraiths remain available; all recruitment choices "
-			"spend the same stock.";
+		result.summary = "Recruit Royal Mummies from the upgraded Tomb of Souls stock while Seth resides in an owned Necropolis.";
+		result.description = "While Seth visits or garrisons an owned Necropolis with an upgraded Tomb of Souls, "
+			"Royal Mummies share its Wraith recruitment stock. Ordinary Wights and Wraiths remain available; "
+			"all recruitment choices spend the same stock. The upgraded Tomb can also upgrade existing Mummies "
+			"to Royal Mummies.";
 		return true;
 	}
 	if(resolveOrdinaryCreatureSpecialtyPresentation(hero, development, result)

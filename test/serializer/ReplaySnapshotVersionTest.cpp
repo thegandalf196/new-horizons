@@ -3,17 +3,42 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
-#include "../server/battles/HeroCommandFixture.h"
+#include "ReplayFixtureTextRegistration.h"
+#include "../server/battles/BattleTestFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
+#include "../../server/CGameHandler.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
+#include <algorithm>
 
-class ReplaySnapshotVersionTest : public HeroCommandFixture
+class ReplaySnapshotVersionTest : public BattleTestFixture
 {
 protected:
+	void startGame()
+	{
+		ASSERT_NO_FATAL_FAILURE(BattleTestFixture::startGame());
+		ASSERT_NO_FATAL_FAILURE(replayFixture::registerMapStrings(gameState()->getMap()));
+		// The battle fixture removes Knowledge after initializing Normal Spell Points.
+		// Snapshot a valid current-capacity state, as ordinary packet/load boundaries do.
+		const auto rngBefore = rngState();
+		for(auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			ASSERT_NE(hero, nullptr);
+			const auto normalBefore = hero->getNormalSpellPoints();
+			const auto bufferBefore = hero->getBufferSpellPoints();
+			const auto maximum = hero->manaLimit();
+			hero->clampSpellPointsToCapacity();
+			EXPECT_EQ(hero->getNormalSpellPoints(), std::min(normalBefore, maximum));
+			EXPECT_LE(hero->getNormalSpellPoints(), maximum);
+			EXPECT_EQ(hero->getBufferSpellPoints(), bufferBefore);
+		}
+		EXPECT_EQ(rngState(), rngBefore);
+	}
+
 	std::vector<std::byte> rngState()
 	{
 		CMemorySerializer wire;

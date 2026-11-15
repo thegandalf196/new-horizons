@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "MapViewCache.h"
+#include "CachedMapBands.h"
 
 #include "IMapRendererContext.h"
 #include "MapRenderer.h"
@@ -28,7 +29,13 @@
 
 #include "../../lib/int3.h"
 
-MapViewCache::~MapViewCache() = default;
+MapViewCache::~MapViewCache()
+{
+	// ENGINE.reset() clears the global before GameEngine destroys its UI owners.
+	// No frame can be composed then; Canvas queues its own late texture release.
+	if(ENGINE)
+		ENGINE->screenHandler().clearPresentedCanvas(GpuRenderLayer::MAP, this);
+}
 
 MapViewCache::MapViewCache(const std::shared_ptr<MapViewModel> & model, bool useGpuLayer)
 	: model(model)
@@ -79,6 +86,8 @@ void MapViewCache::ensureCanvases()
 
 	// Must run on the rendering thread: this object is constructed while handling a
 	// netpack, and creating a texture there would move the GL context off the GUI thread
+	ENGINE->screenHandler().clearPresentedCanvas(GpuRenderLayer::MAP, this);
+
 	canvasesOnGpu = useGpu;
 	cachedAtNativeSize = cacheAtNativeSize;
 	cachedCanvasDimensions = cacheDimensions;
@@ -254,63 +263,48 @@ bool MapViewCache::isUpdatedThisFrame() const
 		&& cachedLevel == model->getLevel();
 }
 
+void MapViewCache::forEachCachedBand(const std::function<void(const Rect &, Point, Point)> & visit) const
+{
+	const Rect tiles = model->getTilesTotalRect();
+	const Point origin = model->getTargetTileArea(int3(tiles.x, tiles.y, model->getLevel())).topLeft();
+	forEachCachedMapBand(tiles, model->getSingleTileSize(), model->getCacheTileSize(), origin, visit);
+}
+
 void MapViewCache::renderCachedTiles(Canvas & target)
 {
-	const Rect tilesRect = model->getTilesTotalRect();
-	const Point tileSize = model->getSingleTileSize();
-	const Point cacheTileSize = model->getCacheTileSize();
-	const int width = tilesRect.w;
-	const int height = tilesRect.h;
-
-	if(width <= 0 || height <= 0)
-		return;
-
-	// Screen position of the tile in the top left corner of the visible window, always within
-	// one tile of the origin since the view may be scrolled by a fraction of a tile.
-	const Point origin = model->getTargetTileArea(int3(tilesRect.x, tilesRect.y, model->getLevel())).topLeft();
-
-	// Position of that same tile inside the cache, which stores tiles wrapped around
-	// on both axes (tile x lives at slot x modulo width).
-	const int firstSlotX = ((tilesRect.x % width) + width) % width;
-	const int firstSlotY = ((tilesRect.y % height) + height) % height;
-
-	// Because of the wrapping the visible window is split into at most two bands per axis - so
-	// at most four rectangles, each contiguous both in the cache and on screen.
-	const std::array<std::pair<int, int>, 2> columns = {{ // {first slot, slot count}
-		{firstSlotX, width - firstSlotX},
-		{0, firstSlotX}
-	}};
-	const std::array<std::pair<int, int>, 2> rows = {{
-		{firstSlotY, height - firstSlotY},
-		{0, firstSlotY}
-	}};
-
-	int offsetX = 0;
-	for(const auto & column : columns)
+	forEachCachedBand([&](const Rect & area, Point position, Point size)
 	{
-		int offsetY = 0;
-		for(const auto & row : rows)
-		{
-			if(column.second > 0 && row.second > 0)
-			{
-				Rect cacheArea(
-					column.first * cacheTileSize.x,
-					row.first * cacheTileSize.y,
-					column.second * cacheTileSize.x,
-					row.second * cacheTileSize.y);
+		if(model->getCacheTileSize() == model->getSingleTileSize())
+			target.draw(Canvas(*terrain, area), position);
+		else
+			target.drawScaled(Canvas(*terrain, area), position, size);
+	});
+}
 
-				Point targetPosition = origin + Point(offsetX * tileSize.x, offsetY * tileSize.y);
-				Point targetSize(column.second * tileSize.x, row.second * tileSize.y);
+bool MapViewCache::present(const Rect & targetArea)
+{
+	ensureCanvases();
+	const int scaling = ENGINE->screenHandler().getScalingFactor();
+	std::vector<PresentedRegion> regions;
+	regions.reserve(4);
+	forEachCachedBand([&](const Rect & area, Point position, Point size)
+	{
+		const Canvas band(*terrain, area);
+		regions.push_back({band.getRenderArea(), Rect(targetArea.topLeft() + position * scaling, size * scaling)});
+	});
+	if(!ENGINE->screenHandler().presentFromCanvas(GpuRenderLayer::MAP, *terrain, regions, targetArea, this))
+		return false;
+	std::fill_n(tilesUpToDate.data(), tilesUpToDate.num_elements(), true);
+	cachedPosition = model->getMapViewCenter();
+	overlayWasVisible = false;
+	updatedThisFrame = false;
+	return true;
+}
 
-				if(cacheTileSize == tileSize)
-					target.draw(Canvas(*terrain, cacheArea), targetPosition);
-				else
-					target.drawScaled(Canvas(*terrain, cacheArea), targetPosition, targetSize);
-			}
-			offsetY += row.second;
-		}
-		offsetX += column.second;
-	}
+bool MapViewCache::needsOwnLayer(const std::shared_ptr<IMapRendererContext> & context) const
+{
+	return context->showImageOverlay() || context->showTextOverlay()
+		|| !vstd::isAlmostZero(context->viewTransitionProgress());
 }
 
 void MapViewCache::render(const std::shared_ptr<IMapRendererContext> & context, Canvas & target, bool fullRedraw)

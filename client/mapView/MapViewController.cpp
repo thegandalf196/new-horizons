@@ -260,6 +260,8 @@ void MapViewController::afterRender()
 		if(movementContext->progress >= 0.999)
 		{
 			logGlobal->debug("Ending movement animation");
+			if(PerfTrace::enabled())
+				PerfTrace::emit("hero_tile_animation_complete", hero->id.getNum());
 			setViewCenter(hero->getSightCenter());
 
 			removeObject(context->getObject(movementContext->target));

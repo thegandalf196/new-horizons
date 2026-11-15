@@ -1,0 +1,64 @@
+name: New Horizons manual asset Setup sidecar
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: new-horizons-windows-x64
+  cancel-in-progress: false
+
+jobs:
+  package:
+    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/main'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 20
+    env:
+      VSLANG: '1033'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+        with:
+          arch: x64
+      - name: Configure OS-only entries without engine or dependencies
+        shell: powershell
+        run: |
+          cmake -S win/bootstrap -B build/manual-setup -G Ninja -DCMAKE_BUILD_TYPE=Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build only manual asset Setup
+        shell: powershell
+        run: |
+          cmake --build build/manual-setup --config Release --target nhWindowsSetup --parallel 4
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Actual Setup entry and synthetic asset import smoke
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -File tools/windows/tests/Manual-Setup-Smoke.ps1 -SetupPath build/manual-setup/bootstrap/Setup.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -File tools/windows/tests/Setup-Smoke.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Download exact released game payload
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v0.91.1 --repo thegandalf196/new-horizons --pattern New-Horizons-Windows-x64-a37f93bb13d9.zip --dir input
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Add audited Setup without rebuilding the game
+        shell: powershell
+        run: |
+          python tools/ci/package_windows_manual_setup.py --payload input/New-Horizons-Windows-x64-a37f93bb13d9.zip --setup build/manual-setup/bootstrap/Setup.exe --source-root . --packaging-commit "${{ github.sha }}" --output dist/manual-setup
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: New-Horizons-Manual-Setup-${{ github.sha }}
+          path: dist/manual-setup/*
+          if-no-files-found: error

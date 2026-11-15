@@ -42,6 +42,7 @@ set(vcmisdl3_SRCS
 	render/SDLImageScaler.cpp
 	render/SDLRWwrapper.cpp
 	render/ScreenHandler.cpp
+	render/ScreenComposition.cpp
 	render/SDL_Extensions.cpp
 	render/TextTextureCache.cpp
 )
@@ -81,6 +82,7 @@ set(vcmisdl3_HEADERS
 	render/SDLImageScaler.h
 	render/SDLRWwrapper.h
 	render/ScreenHandler.h
+	render/PresentedCanvasState.h
 	render/SDL_Extensions.h
 	render/TextTextureCache.h
 	render/SDL_PixelAccess.h

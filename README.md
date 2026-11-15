@@ -2,6 +2,8 @@
 
 [Download the latest New Horizons Early Access](https://github.com/thegandalf196/new-horizons/releases/latest), with available platform packages and installation instructions. Requires Heroes III Complete; original game assets are not included.
 
+[Windows installation and first launch](docs/players/Installation_Windows.md).
+
 [What changes from Heroes III Complete? Read the gameplay and artwork changelog.](docs/NEW_HORIZONS_CHANGELOG.md)
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)

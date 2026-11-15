@@ -12,6 +12,8 @@
 
 #include "lib/Point.h"
 #include "IScreenHandler.h"
+#include "PresentedCanvasState.h"
+#include <mutex>
 
 struct SDL_Texture;
 struct SDL_Window;
@@ -53,6 +55,10 @@ class ScreenHandler final : public IScreenHandler
 
 	/// Render targets composited under screenTexture, in GpuRenderLayer order
 	std::array<SDL_Texture *, static_cast<size_t>(GpuRenderLayer::COUNT)> layerTextures = {};
+	std::array<PresentedCanvasState, static_cast<size_t>(GpuRenderLayer::COUNT)> presentedCanvases;
+	mutable std::mutex presentedMutex;
+	void clearAllPresentedCanvases();
+	void composeFrame() const;
 
 	/// Whether a layer currently holds content that should be composited
 	std::array<bool, static_cast<size_t>(GpuRenderLayer::COUNT)> layerActive = {};
@@ -72,6 +78,7 @@ class ScreenHandler final : public IScreenHandler
 	/// False when the driver rasterizes on the CPU, where routing draws through render
 	/// targets is slower than blitting surfaces
 	bool gpuRenderingSupported = false;
+	bool directMapPixels = false;
 
 	/// Dimensions of target surfaces/textures, this value is what game logic views as screen size
 	Point getPreferredLogicalResolution() const;
@@ -122,6 +129,9 @@ class ScreenHandler final : public IScreenHandler
 	void selectDownscalingFilter();
 	void selectUpscalingFilter();
 public:
+	bool presentFromCanvas(GpuRenderLayer layer, const Canvas & source,
+		const std::vector<PresentedRegion> & regions, const Rect & clip, const void * owner) final;
+	void clearPresentedCanvas(GpuRenderLayer layer, const void * owner) final;
 
 	/// Creates and initializes screen, window and SDL state
 	ScreenHandler();

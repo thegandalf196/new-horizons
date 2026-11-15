@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroMovementController.h"
+#include "PerfTrace.h"
 
 #include "CPlayerInterface.h"
 #include "PlayerLocalState.h"
@@ -31,6 +32,12 @@
 #include "../lib/networkPacks/PacksForClient.h"
 #include "../lib/RoadHandler.h"
 #include "../lib/TerrainHandler.h"
+
+static void traceHeroMovement(const char * stage, const CGHeroInstance * hero)
+{
+	if(PerfTrace::enabled())
+		PerfTrace::emit(stage, hero->id.getNum());
+}
 
 bool HeroMovementController::isHeroMovingThroughGarrison(const CGHeroInstance * hero, const CArmedInstance * garrison) const
 {
@@ -191,10 +198,13 @@ void HeroMovementController::onTryMoveHero(const CGHeroInstance * hero, const Tr
 
 	// We are in network thread
 	// Block netpack processing until movement animation is over
+	traceHeroMovement("hero_step_wait_enter", hero);
 	GAME->map().waitForOngoingAnimations();
+	traceHeroMovement("hero_step_wait_return", hero);
 
 	//move finished
 	adventureInt->onHeroChanged(hero);
+	traceHeroMovement("hero_step_sidebar_return", hero);
 
 	// Hero attacked creature, set direction to face it.
 	if(directlyAttackingCreature)
@@ -361,6 +371,7 @@ void HeroMovementController::requestMovementStart(const CGHeroInstance * h, cons
 void HeroMovementController::sendMovementRequest(const CGHeroInstance * h, const CGPath & path)
 {
 	assert(duringMovement == true);
+	traceHeroMovement("hero_step_next_schedule", h);
 
 	int heroMovementSpeed = settings["adventure"]["heroMoveTime"].Integer();
 	bool useMovementBatching = heroMovementSpeed == 0;

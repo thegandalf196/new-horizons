@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
+#include "../hero/HistoricalCapabilityRules.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CCreatureHandler.h"
@@ -12,6 +13,7 @@
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/CHeroClass.h"
+#include "../../lib/entities/creature/NewHorizonsAssimilation.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/HeroStartingProjection.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -136,6 +138,23 @@ protected:
 		// Complete current starts have dedicated StartingPerkDefaults coverage.
 		rules["startingSkills"].Struct().erase("startingPerksPolicyVersion");
 		rules["startingSkills"].Struct().erase("startingPerkProfiles");
+		// Reconstruct this suite's historical capture explicitly. Current
+		// installed defaults use Basic ranks; they must not redefine old rules.
+		const auto restore = [&](const auto & rows)
+		{
+			for(const auto & row : rows)
+				for(auto & skill : rules["startingSkills"]["startingDevelopmentProfiles"][row.hero]["skills"].Vector())
+					skill["rank"].Integer() = skill["skill"].String() == row.parent ? row.rank : row.factionRank;
+		};
+		restore(starts);
+		restore(fortressStarts);
+		restore(castleStarts);
+		restore(rampartStarts);
+		restore(towerStarts);
+		restore(infernoStarts);
+		restore(necropolisStarts);
+		restore(dungeonStarts);
+		restore(strongholdStarts);
 		if(absentDruidSpecialty || previousFormatContext)
 			rules.Struct().erase("druidSpecialties");
 		if(absent)
@@ -201,6 +220,7 @@ protected:
 			perks.Struct().erase("offerWeightPolicyVersion");
 			perks.Struct().erase("perkOfferNormalization");
 			perks.Struct().erase("perkProgressionPolicyVersion");
+			perks.Struct().erase("unifiedSkillProgressionVersion");
 			for(const auto * key : {"sylvanTacticsPolicy", "necromancyPolicy", "connoisseurPolicy",
 				"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 				perks.Struct().erase(key);
@@ -247,11 +267,11 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsStartingDevelopmentTest, All144ShippedProfilesInitializeExactActivePackages)
+TEST_F(NewHorizonsStartingDevelopmentTest, All163ProfilesInitializeExactHistoricalCapturePackages)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto & profiles = rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
-	ASSERT_EQ(profiles.size(), 144);
+	ASSERT_EQ(profiles.size(), 163);
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(72).playerActive(PlayerColor(0));
 	size_t index = 0;
@@ -269,7 +289,8 @@ TEST_F(NewHorizonsStartingDevelopmentTest, All144ShippedProfilesInitializeExactA
 		const auto * initialized = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(hero)));
 		ASSERT_NE(initialized, nullptr);
 		ASSERT_EQ(initialized->secSkills.size(), 2);
-		for(const auto & skill : profile["skills"].Vector())
+		const auto & captured = initialized->getPrimaryGrowthRules()["startingSkills"]["startingDevelopmentProfiles"][hero];
+		for(const auto & skill : captured["skills"].Vector())
 			EXPECT_EQ(initialized->getPerkSkillRank(skill["skill"].String()), skill["rank"].Integer());
 		const auto & perk = profile["startingPerks"].Vector().front();
 		EXPECT_EQ(initialized->getPerkState().selected,
@@ -858,15 +879,21 @@ TEST_F(NewHorizonsStartingDevelopmentTest, KeyPresenceAdmissionDistinguishesAbse
 	EXPECT_THROW(newHorizonsHeroes::validateHeroRules(rules, true), std::runtime_error);
 }
 
-TEST_F(NewHorizonsStartingDevelopmentTest, AbsentCollectionRemainsWritableInPreviousFormat)
+TEST_F(NewHorizonsStartingDevelopmentTest, AbsentCollectionStillRefusesPriorFormatAndRemainsWritableCurrently)
 {
 	absent = true;
 	previousFormatContext = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const JsonNode installed(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto & captured = actor()->getPrimaryGrowthRules();
-	for(const auto * key : {"schemaVersion", "rulesetVersion", "classProfiles"})
+	for(const auto * key : {"schemaVersion", "rulesetVersion"})
 		EXPECT_EQ(captured[key], installed[key]);
+	const auto & worldRules = gameState()->getHeroDevelopmentRules();
+	EXPECT_EQ(worldRules["classProfiles"], installed["classProfiles"]);
+	EXPECT_FALSE(worldRules["startingSkills"].Struct().contains("startingDevelopmentProfiles"));
+	EXPECT_FALSE(captured.Struct().contains("classProfiles"));
+	const auto classId = HeroClassID::encode(actor()->getHeroClassID().getNum());
+	EXPECT_EQ(captured["profile"], worldRules["classProfiles"][classId]);
 	EXPECT_FALSE(captured["startingSkills"].Struct().contains("startingDevelopmentProfiles"));
 	EXPECT_FALSE(captured.Struct().contains("recoverySpecialties"));
 	EXPECT_FALSE(captured.Struct().contains("additionalSpecialties"));
@@ -877,12 +904,17 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AbsentCollectionRemainsWritableInPrev
 	CMemorySerializer bytes;
 	bytes.oser.version = static_cast<ESerializationVersion>(
 		static_cast<int>(ESerializationVersion::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES) - 1);
+	const auto before = actor()->getPerkState().toJson();
+	EXPECT_THROW(actor()->serialize(bytes.oser), std::runtime_error);
+	EXPECT_TRUE(bytes.extractBuffer().empty());
+	EXPECT_EQ(actor()->getPerkState().toJson(), before);
+	bytes.oser.version = ESerializationVersion::CURRENT;
 	EXPECT_NO_THROW(actor()->serialize(bytes.oser));
 	EXPECT_FALSE(bytes.extractBuffer().empty());
 }
 
-// Provisional starting armies reuse the original sampled ranges and existing
-// per-slot clamp. No new army table, species alias or saved initialization rule.
+// Current starting armies retain authored sampled ranges. Leadership efficiency
+// is an offensive readout and never clamps an army during initialization.
 class NewHorizonsStartingArmyTest : public NewHorizonsStartingDevelopmentTest
 {
 protected:
@@ -912,7 +944,7 @@ protected:
 		NewHorizonsStartingArmyTest::mapLoaded(loaded);
 		if(oldSpecialRequirements)
 		{
-			JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
+			auto rules = historicalCapabilityRulesV4();
 			rules["leadership"]["creatureRequirements"].Struct().erase("core:enchanter");
 			rules["leadership"]["creatureRequirements"].Struct().erase("core:sharpshooter");
 			rules.setOverrideFlag(true);
@@ -935,7 +967,7 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsCampaignStartingArmyTest, DefaultSpeciesResolveLeadershipCapacity)
+TEST_F(NewHorizonsCampaignStartingArmyTest, DefaultSpeciesRetainUnrestrictedAuthoredSampledRanges)
 {
 	prepareCampaignHeroes();
 	for(const char * identity : {"core:dracon", "core:gelu"})
@@ -959,16 +991,16 @@ TEST_F(NewHorizonsCampaignStartingArmyTest, DefaultSpeciesResolveLeadershipCapac
 			const SlotID slot(ordinarySlot++);
 			EXPECT_EQ(hero->getCreature(slot)->getId(), row.creature);
 			const auto capacity = hero->getLeadershipSlotCapacity(row.creature);
-			ASSERT_TRUE(capacity);
-			ASSERT_GT(capacity->maximum, 0);
-			EXPECT_GE(hero->getStackCount(slot), std::min<int>(row.minAmount, capacity->maximum));
-			EXPECT_LE(hero->getStackCount(slot), std::min<int>(row.maxAmount, capacity->maximum));
+			EXPECT_FALSE(capacity); // Current efficiency is a readout, never army admission.
+			EXPECT_GE(hero->getStackCount(slot), row.minAmount);
+			EXPECT_LE(hero->getStackCount(slot), row.maxAmount);
 		}
 		EXPECT_EQ(hero->stacksCount(), ordinarySlot);
 		const auto capacity = hero->getLeadershipSlotCapacity(special);
-		ASSERT_TRUE(capacity);
-		// Explicit provisional costs, not inference from legacy numeric tiers.
-		EXPECT_EQ(capacity->requirement, special == CreatureID(CreatureID::decode("core:enchanter")) ? 380 : 170);
+		EXPECT_FALSE(capacity);
+		const auto readout = newHorizonsHeroes::leadershipStackReadout(hero, special, 123);
+		EXPECT_TRUE(readout.active);
+		EXPECT_EQ(readout.requirement, special == CreatureID(CreatureID::decode("core:enchanter")) ? 380 : 170);
 	}
 }
 
@@ -985,8 +1017,7 @@ TEST_F(NewHorizonsCampaignStartingArmyTest, ExplicitMapSpeciesAndCountsAreNotCla
 			? "core:enchanter" : "core:sharpshooter"));
 		ASSERT_EQ(species, authoredSpecies);
 		const auto capacity = hero->getLeadershipSlotCapacity(species);
-		ASSERT_TRUE(capacity);
-		ASSERT_LT(capacity->maximum, 123);
+		EXPECT_FALSE(capacity);
 		ASSERT_NO_THROW(hero->initHero(randomizer));
 		EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), species);
 		EXPECT_EQ(hero->getStackCount(SlotID(0)), 123);
@@ -1010,7 +1041,7 @@ TEST_F(NewHorizonsCampaignStartingArmyTest, CapturedTableWithoutOnlySpecialRowsS
 		ASSERT_NE(original, nullptr);
 		ASSERT_NE(loaded, nullptr);
 		const auto captured = original->getCapabilityRules();
-		JsonNode expected(JsonPath::builtin("config/newHorizonsCapabilities"));
+		auto expected = historicalCapabilityRulesV4();
 		expected["leadership"]["creatureRequirements"].Struct().erase("core:enchanter");
 		expected["leadership"]["creatureRequirements"].Struct().erase("core:sharpshooter");
 		EXPECT_EQ(captured["leadership"], expected["leadership"]);
@@ -1030,7 +1061,7 @@ TEST_F(NewHorizonsCampaignStartingArmyTest, CapturedTableWithoutOnlySpecialRowsS
 	}
 }
 
-TEST_F(NewHorizonsStartingArmyTest, All144DefaultArmiesRetainCompositionAndLeadershipSafeSampledRanges)
+TEST_F(NewHorizonsStartingArmyTest, All144DefaultArmiesRetainCompositionAndUnrestrictedSampledRanges)
 {
 	const std::array<const char *, 144> heroes{{
 		"core:orrin",
@@ -1207,14 +1238,16 @@ TEST_F(NewHorizonsStartingArmyTest, All144DefaultArmiesRetainCompositionAndLeade
 				EXPECT_EQ(initialized->getPrimSkillLevel(attributes[index]), expected[index]);
 			const auto leadership = initialized->getLeadershipCapacity();
 			ASSERT_TRUE(leadership);
-			EXPECT_EQ(leadership->capacity, halon ? 875 : 650);
+			const JsonNode capabilities(JsonPath::builtin("config/newHorizonsCapabilities"));
+			const auto classId = HeroClassID::encode(initialized->getHeroClassID().getNum());
+			EXPECT_EQ(leadership->capacity, capabilities["classProfiles"][classId]["base"].Integer());
 			const auto firstSlot = initialized->getLeadershipSlotCapacity(
 				CreatureID(CreatureID::decode("core:gremlin")));
-			ASSERT_TRUE(firstSlot);
-			EXPECT_EQ(firstSlot->maximum, halon ? 17 : 13);
+			EXPECT_FALSE(firstSlot);
 			EXPECT_EQ(initialized->getCreature(SlotID(0))->getId(),
 				CreatureID(CreatureID::decode("core:gremlin")));
-			EXPECT_EQ(initialized->getStackCount(SlotID(0)), firstSlot->maximum);
+			EXPECT_GE(initialized->getStackCount(SlotID(0)), initialized->getHeroType()->initialArmy.front().minAmount);
+			EXPECT_LE(initialized->getStackCount(SlotID(0)), initialized->getHeroType()->initialArmy.front().maxAmount);
 		}
 		int ordinarySlot = 0;
 		for(const auto & original : initialized->getHeroType()->initialArmy)
@@ -1226,16 +1259,32 @@ TEST_F(NewHorizonsStartingArmyTest, All144DefaultArmiesRetainCompositionAndLeade
 				EXPECT_TRUE(initialized->hasArt(creature->warMachine));
 				continue;
 			}
-			const auto capacity = initialized->getLeadershipSlotCapacity(original.creature);
-			ASSERT_TRUE(capacity);
-			ASSERT_GT(capacity->maximum, 0);
+			// The accepted Castle package changes generated forms, never prototype rows or count rolls.
+			auto expectedCreature = original.creature;
+			if(initialized->getHeroClass()->faction == FactionID::CASTLE)
+			{
+				ASSERT_EQ(initialized->getCapabilityRules()["defaultStartingArmyVersion"].Integer(), 1);
+				const bool specialist = newHorizonsCreatures::isCommandSpecialistCreature(
+					*initialized->getHeroType(), initialized->getPrimaryGrowthRules(), initialized->getMagicRules(),
+					initialized->getCreatureLineSpecialtyTarget(), original.creature);
+				if(std::string_view(hero) == "core:edric" && original.creature == CreatureID(CreatureID::decode("core:griffin")))
+					EXPECT_TRUE(specialist); // His resolved Griffin line preserves the authored starting form.
+				if(!specialist)
+				{
+					if(original.creature == CreatureID(CreatureID::decode("core:griffin")))
+						expectedCreature = CreatureID(CreatureID::decode("core:swordsman"));
+					if(original.creature == CreatureID(CreatureID::decode("core:royalGriffin")))
+						expectedCreature = CreatureID(CreatureID::decode("core:crusader"));
+				}
+			}
+			const auto capacity = initialized->getLeadershipSlotCapacity(expectedCreature);
+			EXPECT_FALSE(capacity);
 			const SlotID slot(ordinarySlot++);
-			EXPECT_EQ(initialized->getCreature(slot), creature);
+			EXPECT_EQ(initialized->getCreature(slot)->getId(), expectedCreature);
 			EXPECT_GE(initialized->getStackCount(slot),
-				std::min<int>(original.minAmount, capacity->maximum));
+				original.minAmount);
 			EXPECT_LE(initialized->getStackCount(slot),
-				std::min<int>(original.maxAmount, capacity->maximum));
-			EXPECT_LE(initialized->getStackCount(slot), capacity->maximum);
+				original.maxAmount);
 		}
 		EXPECT_EQ(initialized->stacksCount(), ordinarySlot);
 	}
@@ -1250,8 +1299,7 @@ TEST_F(NewHorizonsStartingArmyTest, ExplicitMapArmyAndReinitializationAreNotClam
 	startWithMap(std::move(builder));
 	ASSERT_NE(actor(), nullptr);
 	const auto capacity = actor()->getLeadershipSlotCapacity(CreatureID(CreatureID::decode("core:pikeman")));
-	ASSERT_TRUE(capacity);
-	ASSERT_LT(capacity->maximum, 123);
+	EXPECT_FALSE(capacity);
 	EXPECT_EQ(actor()->getStackCount(SlotID(0)), 123);
 	GameRandomizer randomizer(*gameState());
 	ASSERT_NO_THROW(actor()->initHero(randomizer));
@@ -1399,8 +1447,9 @@ TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionSerenaMatchesRealIn
 	EXPECT_EQ(view.spells, hero.getRawStartingSpellIds());
 	EXPECT_EQ(view.primary, (std::array<int, 4>{5, 5, 45, 45}));
 	EXPECT_EQ(view.army.front().creature, hero.getHeroType()->initialArmy.front().creature);
-	EXPECT_EQ(view.army.front().minAmount, 13);
-	EXPECT_EQ(view.army.front().maxAmount, 13);
+	EXPECT_EQ(view.army.front().minAmount, hero.getHeroType()->initialArmy.front().minAmount);
+	EXPECT_EQ(view.army.front().maxAmount, hero.getHeroType()->initialArmy.front().maxAmount);
+	EXPECT_FALSE(hero.getLeadershipSlotCapacity(view.army.front().creature));
 	for(const auto & [slot, stack] : hero.Slots())
 	{
 		const auto & row = view.army.at(slot.getNum());
@@ -1410,11 +1459,11 @@ TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionSerenaMatchesRealIn
 	}
 }
 
-TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionAll144MatchesActualRanksPerksAndBooks)
+TEST_F(NewHorizonsStartingDevelopmentTest, StartingProjectionAll163MatchesActualRanksPerksAndBooks)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto & profiles = rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
-	ASSERT_EQ(profiles.size(), 144);
+	ASSERT_EQ(profiles.size(), 163);
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(72).playerActive(PlayerColor(0));
 	size_t index = 0;
@@ -1575,4 +1624,97 @@ TEST_F(NewHorizonsStartingProjectionAuthoredTest, StartingProjectionExistingPhys
 	EXPECT_EQ(beforeInitialization->skills, actor()->secSkills);
 	EXPECT_EQ(beforeInitialization->perks, actor()->getPerkState().selected);
 	EXPECT_EQ(beforeInitialization->spells, actor()->getRawStartingSpellIds());
+}
+
+namespace
+{
+class BasicStartingDefaultsTest : public NewHorizonsStartingDevelopmentTest
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		// Use installed v2 rules, independently of the historical suite above.
+		TinyMapGameTest::mapLoaded(loaded);
+	}
+};
+}
+
+TEST_F(BasicStartingDefaultsTest, AstralStartsWithTwoBasicSkillsAndTwoBasicPerks)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[0]));
+	ASSERT_NE(actor(), nullptr);
+	ASSERT_EQ(actor()->secSkills.size(), 2u);
+	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:spellcraft"), MasteryLevel::BASIC);
+	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:metamagic"), MasteryLevel::BASIC);
+	const auto & perks = actor()->getPerkState();
+	ASSERT_EQ(perks.selected.size(), 2u);
+	EXPECT_TRUE(perks.hasSelection("new-horizons:spellcraft", "new-horizons:spellcraft.concentration"));
+	EXPECT_TRUE(perks.hasSelection("new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"));
+	EXPECT_FALSE(perks.hasSelection("new-horizons:metamagic", "new-horizons:metamagic.arcaneWellspring"));
+	const auto view = newHorizonsHeroes::projectStartingHero(*actor()->getHeroType(), capturedStartingContext(*actor()));
+	EXPECT_EQ(view.skills, actor()->secSkills);
+	EXPECT_EQ(view.perks, perks.selected);
+}
+
+TEST_F(BasicStartingDefaultsTest, All163DefaultRuntimeSkillsAndPerksMatchPreview)
+{
+	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	const auto & profiles = rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
+	ASSERT_EQ(profiles.size(), 163u);
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(108).playerActive(PlayerColor(0));
+	size_t index = 0;
+	for(const auto & [identity, profile] : profiles)
+	{
+		builder.hero({5 + static_cast<int>(index % 14) * 6, 5 + static_cast<int>(index / 14) * 6, 0},
+			HeroTypeID(HeroTypeID::decode(identity)), PlayerColor(0)).heroExperience(0);
+		++index;
+	}
+	startWithMap(std::move(builder));
+	for(const auto & [identity, profile] : profiles)
+	{
+		SCOPED_TRACE(identity);
+		const auto * hero = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(identity)));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_EQ(hero->secSkills.size(), 2u);
+		EXPECT_NE(hero->secSkills[0].first, hero->secSkills[1].first);
+		for(const auto & [skill, rank] : hero->secSkills)
+			EXPECT_EQ(rank, MasteryLevel::BASIC);
+		const auto & perks = hero->getPerkState();
+		ASSERT_EQ(perks.selected.size(), 2u);
+		for(const auto & [skill, rank] : hero->secSkills)
+			EXPECT_TRUE(perks.hasPerkForTier(SecondarySkill::encode(skill.getNum()), MasteryLevel::BASIC));
+		const auto view = newHorizonsHeroes::projectStartingHero(*hero->getHeroType(), capturedStartingContext(*hero));
+		EXPECT_EQ(view.skills, hero->secSkills);
+		EXPECT_EQ(view.perks, perks.selected);
+		EXPECT_EQ(view.spells, hero->getRawStartingSpellIds());
+	}
+}
+
+TEST_F(BasicStartingDefaultsTest, ExplicitAdvancedMapRanksAndPerksSurviveSaveAndReinitialization)
+{
+	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+	builder.size(36).playerActive(PlayerColor(0))
+		.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:astral")), PlayerColor(0)).heroExperience(0)
+		.heroSecondarySkills({
+			{SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft")), MasteryLevel::EXPERT},
+			{SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")), MasteryLevel::ADVANCED}});
+	startWithMap(std::move(builder));
+	ASSERT_NE(actor(), nullptr);
+	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:spellcraft"), MasteryLevel::EXPERT);
+	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:metamagic"), MasteryLevel::ADVANCED);
+	const auto skills = actor()->secSkills;
+	const auto perks = actor()->getPerkState().toJson();
+	ASSERT_EQ(actor()->getPerkState().selected.size(), 5u);
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(gameState()->saveToMemory());
+	auto * loaded = restored.getMap().getHero(actor()->getHeroTypeID());
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->secSkills, skills);
+	EXPECT_EQ(loaded->getPerkState().toJson(), perks);
+	GameRandomizer randomizer(restored);
+	ASSERT_NO_THROW(loaded->initHero(randomizer));
+	EXPECT_EQ(loaded->secSkills, skills);
+	EXPECT_EQ(loaded->getPerkState().toJson(), perks);
 }

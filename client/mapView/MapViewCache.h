@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include <functional>
 
 #include "../../lib/Point.h"
 #include "../../lib/Rect.h"
@@ -96,6 +97,7 @@ class MapViewCache
 
 	/// Copies the entire cached tile window onto the target in as few blits as possible. Used
 	/// when every tile has to be repainted anyway, above all while the view is scrolling.
+	void forEachCachedBand(const std::function<void(const Rect &, Point, Point)> & visit) const;
 	void renderCachedTiles(Canvas & target);
 
 	std::shared_ptr<IImage> getOverlayImageForTile(const std::shared_ptr<IMapRendererContext> & context, const int3 & coordinates);
@@ -118,6 +120,9 @@ public:
 
 	/// renders updated terrain cache onto provided canvas
 	void render(const std::shared_ptr<IMapRendererContext> & context, Canvas & target, bool fullRedraw);
+
+	bool present(const Rect & targetArea);
+	bool needsOwnLayer(const std::shared_ptr<IMapRendererContext> & context) const;
 
 	/// creates snapshot of current view and stores it into internal canvas
 	/// used for view transition, e.g. Dimension Door spell or teleporters (Subterra gates / Monolith)

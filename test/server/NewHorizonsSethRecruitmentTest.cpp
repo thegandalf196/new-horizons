@@ -79,21 +79,39 @@ protected:
 TEST_F(NewHorizonsSethRecruitmentTest, BaseUpgradeAndUpgradedOnlyBuildingsKeepOneUnchangedRow)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto wight = creature("core:wight"), mummy = creature("core:mummy");
+	const auto wight = creature("core:wight");
 	const auto wraith = creature("core:wraith"), royal = creature("new-horizons:royalMummy");
 	const auto raw = town->creatures;
-	EXPECT_EQ(choices(*town), (std::vector<CreatureID>{wight, mummy}));
+	EXPECT_EQ(choices(*town), (std::vector<CreatureID>{wight}));
 	EXPECT_EQ(town->creatures, raw);
 	EXPECT_EQ(townRecruitmentOffers::query(*town, TOMB, PLAYER)->available, 10u);
 	town->addBuilding(BuildingID::DWELL_LVL_3_UP);
 	town->creatures[TOMB].second.push_back(wraith);
-	EXPECT_EQ(choices(*town), (std::vector<CreatureID>{wight, mummy, wraith, royal}));
+	EXPECT_EQ(choices(*town), (std::vector<CreatureID>{wight, wraith, royal}));
 	town->removeBuilding(BuildingID::DWELL_LVL_3);
-	EXPECT_EQ(choices(*town), (std::vector<CreatureID>{wight, mummy, wraith, royal}));
+	EXPECT_EQ(choices(*town), (std::vector<CreatureID>{wight, wraith, royal}));
 	town->creatures[TOMB].first = 0;
 	EXPECT_EQ(townRecruitmentOffers::query(*town, TOMB, PLAYER)->available, 0u);
-	EXPECT_EQ(choices(*town).size(), 4u);
+	EXPECT_EQ(choices(*town).size(), 3u);
 	EXPECT_FALSE(townRecruitmentOffers::query(*town, town->creatures.size(), PLAYER));
+}
+
+TEST_F(NewHorizonsSethRecruitmentTest, BaseMummyAndRoyalBeforeUpgradeRejectWithoutChangingExistingMummies)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto mummy = creature("core:mummy"), royal = creature("new-horizons:royalMummy");
+	ASSERT_TRUE(first->setCreature(SlotID(1), mummy, 4));
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler handler(server, gameState());
+	setResources(handler, town->getTotalRecruitmentCost(royal, 100));
+	expectRejected(handler, mummy, first->id);
+	expectRejected(handler, royal, first->id);
+	// Stale or custom Wraith stock cannot substitute for the actual building.
+	town->creatures[TOMB].second.push_back(creature("core:wraith"));
+	expectRejected(handler, royal, first->id);
+	town->addBuilding(BuildingID::DWELL_LVL_3_UP);
+	expectRejected(handler, mummy, first->id);
+	EXPECT_EQ(count(*first, mummy), 4);
 }
 
 TEST_F(NewHorizonsSethRecruitmentTest, OnlyOwnedResidentCapturedSethUnlocksCanonicalTombRow)
@@ -112,7 +130,7 @@ TEST_F(NewHorizonsSethRecruitmentTest, OnlyOwnedResidentCapturedSethUnlocksCanon
 	EXPECT_EQ(choices(*town), ordinary);
 	town->setVisitingHero(nullptr);
 	town->setGarrisonedHero(first);
-	EXPECT_EQ(choices(*town).size(), 4u);
+	EXPECT_EQ(choices(*town).size(), 3u);
 	auto & captured = const_cast<JsonNode &>(first->getPrimaryGrowthRules());
 	captured["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
 	EXPECT_EQ(choices(*town), ordinary);
@@ -122,88 +140,106 @@ TEST_F(NewHorizonsSethRecruitmentTest, OnlyOwnedResidentCapturedSethUnlocksCanon
 	town->setGarrisonedHero(nullptr);
 	castle->creatures.resize(7);
 	castle->creatures[TOMB] = {10, ordinary};
-	castle->addBuilding(BuildingID::DWELL_LVL_3);
+	castle->addBuilding(BuildingID::DWELL_LVL_3_UP);
 	castle->setVisitingHero(first);
 	EXPECT_EQ(choices(*castle), ordinary);
 }
 
+TEST_F(NewHorizonsSethRecruitmentTest, SethInAnotherTownCannotAuthorizeRoyalRecruitment)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto royal = creature("new-horizons:royalMummy");
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler handler(server, gameState());
+	setResources(handler, town->getTotalRecruitmentCost(royal, 100));
+	auto * otherTown = expectAt<CGTownInstance>({30, 30, 0});
+	ASSERT_NE(otherTown, nullptr);
+	otherTown->tempOwner = PLAYER;
+	otherTown->addBuilding(BuildingID::DWELL_LVL_3_UP);
+	town->setVisitingHero(nullptr);
+	otherTown->setVisitingHero(first);
+	expectRejected(handler, royal, town->id);
+	EXPECT_EQ(choices(*town), town->creatures[TOMB].second);
+}
+
 TEST_F(NewHorizonsSethRecruitmentTest, MixedPurchasesDebitActualSpeciesPriceAndOneSharedStock)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto wight = creature("core:wight"), mummy = creature("core:mummy");
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto wight = creature("core:wight"), royal = creature("new-horizons:royalMummy");
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	const auto payment = town->getTotalRecruitmentCost(wight, 3, first)
-		+ town->getTotalRecruitmentCost(mummy, 2, first);
+		+ town->getTotalRecruitmentCost(royal, 2, first);
 	setResources(handler, payment);
 	ASSERT_TRUE(handler.recruitCreatures(town->id, first->id, wight, 3, TOMB, PLAYER));
-	ASSERT_TRUE(handler.recruitCreatures(town->id, first->id, mummy, 2, TOMB, PLAYER));
+	ASSERT_TRUE(handler.recruitCreatures(town->id, first->id, royal, 2, TOMB, PLAYER));
 	EXPECT_EQ(town->creatures[TOMB].first, 5u);
-	EXPECT_EQ(town->creatures[TOMB].second, (std::vector<CreatureID>{wight}));
+	EXPECT_EQ(town->creatures[TOMB].second, (std::vector<CreatureID>{wight, creature("core:wraith")}));
 	EXPECT_EQ(count(*first, wight), 4);
-	EXPECT_EQ(count(*first, mummy), 2);
+	EXPECT_EQ(count(*first, royal), 2);
 	EXPECT_TRUE(gameState()->getPlayerState(PLAYER)->resources.empty());
-	expectRejected(handler, mummy, first->id);
+	expectRejected(handler, royal, first->id);
 }
 
 TEST_F(NewHorizonsSethRecruitmentTest, ResidenceUnlockIsSeparateFromRecipientDiscounts)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	ASSERT_NO_FATAL_FAILURE(select(first, "taxCollector", "conscription"));
-	const auto mummy = creature("core:mummy");
+	const auto royal = creature("new-horizons:royalMummy");
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
-	const auto rawPrice = town->getTotalRecruitmentCost(mummy, 2);
-	const auto discounted = town->getTotalRecruitmentCost(mummy, 2, first);
+	const auto rawPrice = town->getTotalRecruitmentCost(royal, 2);
+	const auto discounted = town->getTotalRecruitmentCost(royal, 2, first);
 	ASSERT_NE(rawPrice, discounted);
 	setResources(handler, discounted);
-	expectRejected(handler, mummy, town->id, TOMB, 2);
+	expectRejected(handler, royal, town->id, TOMB, 2);
 	setResources(handler, rawPrice);
-	ASSERT_TRUE(handler.recruitCreatures(town->id, town->id, mummy, 2, TOMB, PLAYER));
+	ASSERT_TRUE(handler.recruitCreatures(town->id, town->id, royal, 2, TOMB, PLAYER));
 	EXPECT_TRUE(gameState()->getPlayerState(PLAYER)->resources.empty());
-	EXPECT_EQ(count(*town, mummy), 2);
+	EXPECT_EQ(count(*town, royal), 2);
 	town->setVisitingHero(nullptr);
 	town->setGarrisonedHero(first);
 	town->setVisitingHero(second);
-	setResources(handler, town->getTotalRecruitmentCost(mummy, 1, second));
-	ASSERT_TRUE(handler.recruitCreatures(town->id, second->id, mummy, 1, TOMB, PLAYER));
-	EXPECT_EQ(count(*second, mummy), 1);
+	setResources(handler, town->getTotalRecruitmentCost(royal, 1, second));
+	ASSERT_TRUE(handler.recruitCreatures(town->id, second->id, royal, 1, TOMB, PLAYER));
+	EXPECT_EQ(count(*second, royal), 1);
 	EXPECT_EQ(town->creatures[TOMB].first, 7u);
 }
 
 TEST_F(NewHorizonsSethRecruitmentTest, StaleDepartureCaptureBuildingAndWrongRowRejectAtomically)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
-	const auto mummy = creature("core:mummy");
+	const auto royal = creature("new-horizons:royalMummy");
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
-	setResources(handler, town->getTotalRecruitmentCost(mummy, 100));
+	setResources(handler, town->getTotalRecruitmentCost(royal, 100));
 	town->creatures[3] = town->creatures[TOMB];
-	expectRejected(handler, mummy, first->id, 3);
+	expectRejected(handler, royal, first->id, 3);
 	town->setVisitingHero(nullptr);
-	expectRejected(handler, mummy, town->id);
+	expectRejected(handler, royal, town->id);
 	town->setVisitingHero(first);
 	town->tempOwner = PlayerColor(1);
-	expectRejected(handler, mummy, first->id);
+	expectRejected(handler, royal, first->id);
 	town->tempOwner = PLAYER;
-	town->removeBuilding(BuildingID::DWELL_LVL_3);
 	town->removeBuilding(BuildingID::DWELL_LVL_3_UP);
-	expectRejected(handler, mummy, first->id);
-	town->addBuilding(BuildingID::DWELL_LVL_3);
+	expectRejected(handler, royal, first->id);
+	town->removeBuilding(BuildingID::DWELL_LVL_3);
+	expectRejected(handler, royal, first->id);
+	town->addBuilding(BuildingID::DWELL_LVL_3_UP);
 	town->creatures[TOMB].first = 0;
-	expectRejected(handler, mummy, first->id);
+	expectRejected(handler, royal, first->id);
 }
 
 TEST_F(NewHorizonsSethRecruitmentTest, FullArmyRejectionPreservesStockAndPayment)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto mummy = creature("core:mummy");
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto royal = creature("new-horizons:royalMummy");
 	for(int slot = 0; slot < GameConstants::ARMY_SIZE; ++slot)
 		ASSERT_TRUE(first->setCreature(SlotID(slot), creature("core:pikeman"), 1));
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
-	setResources(handler, town->getTotalRecruitmentCost(mummy, 1));
-	expectRejected(handler, mummy, first->id);
+	setResources(handler, town->getTotalRecruitmentCost(royal, 1));
+	expectRejected(handler, royal, first->id);
 }
 
 TEST_F(NewHorizonsSethRecruitmentTest, UpgradeConstructionPreservesSpentStockAndGrowthBasis)
@@ -219,7 +255,7 @@ TEST_F(NewHorizonsSethRecruitmentTest, UpgradeConstructionPreservesSpentStockAnd
 		(std::vector<CreatureID>{creature("core:wight"), creature("core:wraith")}));
 	EXPECT_EQ(town->getGrowthInfo(TOMB).totalGrowth(), before);
 	const auto raw = town->creatures;
-	EXPECT_EQ(choices(*town).size(), 4u);
+	EXPECT_EQ(choices(*town).size(), 3u);
 	EXPECT_EQ(town->creatures, raw);
 }
 
@@ -255,12 +291,13 @@ TEST_F(NewHorizonsSethRecruitmentTest, TownUpgradeNeedsCurrentLocalSethAndUpgrad
 
 TEST_F(NewHorizonsSethRecruitmentTest, CurrentWorldRoundtripPreservesSpentPoolAndCapturedEligibility)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto mummy = creature("core:mummy");
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto royal = creature("new-horizons:royalMummy");
+	ASSERT_TRUE(first->setCreature(SlotID(1), creature("core:mummy"), 4));
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
-	setResources(handler, town->getTotalRecruitmentCost(mummy, 3));
-	ASSERT_TRUE(handler.recruitCreatures(town->id, first->id, mummy, 2, TOMB, PLAYER));
+	setResources(handler, town->getTotalRecruitmentCost(royal, 3));
+	ASSERT_TRUE(handler.recruitCreatures(town->id, first->id, royal, 2, TOMB, PLAYER));
 	auto loaded = std::make_shared<CGameState>();
 	loaded->preInit(LIBRARY);
 	loaded->loadFromMemory(gameState()->saveToMemory());
@@ -269,11 +306,12 @@ TEST_F(NewHorizonsSethRecruitmentTest, CurrentWorldRoundtripPreservesSpentPoolAn
 	ASSERT_TRUE(restoredTown && restoredHero);
 	EXPECT_EQ(restoredTown->creatures, town->creatures);
 	EXPECT_EQ(townRecruitmentOffers::query(*restoredTown, TOMB, PLAYER)->available, 8u);
-	EXPECT_EQ(count(*restoredHero, mummy), 2);
+	EXPECT_EQ(count(*restoredHero, royal), 2);
+	EXPECT_EQ(count(*restoredHero, creature("core:mummy")), 4);
 	EXPECT_TRUE(newHorizonsHeroes::hasAncientOaths(restoredHero));
 	GameHandlerTestServer restoredServer(loaded, PLAYER);
 	CGameHandler restoredHandler(restoredServer, loaded);
-	ASSERT_TRUE(restoredHandler.recruitCreatures(restoredTown->id, restoredHero->id, mummy, 1, TOMB, PLAYER));
+	ASSERT_TRUE(restoredHandler.recruitCreatures(restoredTown->id, restoredHero->id, royal, 1, TOMB, PLAYER));
 	EXPECT_EQ(restoredTown->creatures[TOMB].first, 7u);
 	EXPECT_TRUE(loaded->getPlayerState(PLAYER)->resources.empty());
 }

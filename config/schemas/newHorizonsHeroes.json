@@ -903,7 +903,7 @@
 			"additionalProperties": false,
 			"required": ["factionSkills", "legacyAliases", "magic", "might"],
 			"properties": {
-				"startingPerksPolicyVersion": {"type": "integer", "enum": [1]},
+				"startingPerksPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Version 1 retains captured authored ranks. Version 2 requires all registered Core defaults to have two distinct Basic Skills and one active Basic perk per parent; runtime validates roster and faction membership."},
 				"startingPerkProfiles": {
 					"description": "Authored initial perks for final normalized default hero Skills; runtime validates ownership, tier uniqueness and eligibility. Existing valid profile/prototype choices take precedence. This table never grants later level-up perks.",
 					"type": "object", "minProperties": 1,

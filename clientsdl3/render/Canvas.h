@@ -100,6 +100,8 @@ public:
 
 	/// True when this canvas draws with the GPU rather than into a surface
 	bool isRenderTarget() const { return renderTarget != nullptr; }
+	SDL_Texture * getRenderTargetTexture() const { return renderTarget; }
+	uint32_t getRenderTargetGeneration() const { return renderTargetGeneration; }
 
 	~Canvas();
 

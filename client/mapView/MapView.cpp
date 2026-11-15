@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "MapView.h"
+#include "../PerfTrace.h"
 
 #include "MapViewActions.h"
 #include "MapViewCache.h"
@@ -87,14 +88,25 @@ void BasicMapView::render(Canvas & target, bool fullUpdate)
 
 void BasicMapView::renderGpu(bool fullUpdate)
 {
-	Canvas layer = ENGINE->screenHandler().getLayerCanvas(GpuRenderLayer::MAP);
-	Canvas targetClipped(layer, pos);
-
-	// tick() normally filled the cache; a scroll, zoom or level change since then invalidates it
 	if(!tilesCache->isUpdatedThisFrame())
 		tilesCache->update(controller->getContext());
-
-	tilesCache->render(controller->getContext(), targetClipped, fullUpdate);
+	if(!tilesCache->needsOwnLayer(controller->getContext())
+		&& tilesCache->present(pos * ENGINE->screenHandler().getScalingFactor()))
+	{
+		if(!directPresentation)
+			PerfTrace::emit("map_composition_direct");
+		directPresentation = true;
+		return;
+	}
+	// The cache was consumed directly, so its dirty flags no longer describe
+	// the old layer texture. Repaint it fully when overlays reclaim that layer.
+	const bool repaintLayer = fullUpdate || directPresentation;
+	if(directPresentation)
+		PerfTrace::emit("map_composition_layer");
+	directPresentation = false;
+	Canvas layer = ENGINE->screenHandler().getLayerCanvas(GpuRenderLayer::MAP);
+	Canvas targetClipped(layer, pos);
+	tilesCache->render(controller->getContext(), targetClipped, repaintLayer);
 }
 
 void BasicMapView::tick(uint32_t msPassed)

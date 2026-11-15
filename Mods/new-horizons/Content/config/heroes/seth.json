@@ -4,8 +4,8 @@
 			"name": "Seth",
 			"specialty": {
 				"name": "Ancient Oaths",
-				"tooltip": "Ancient Oaths: Mummy recruitment",
-				"description": "While Seth visits or garrisons an owned Necropolis with a Tomb of Souls, Mummies share its Wight recruitment stock. An upgraded Tomb also offers Royal Mummies. Both retain their ordinary Curse ability; Royal Mummies can shoot without a melee damage penalty."
+				"tooltip": "Ancient Oaths: Royal Mummy recruitment",
+				"description": "While Seth visits or garrisons an owned Necropolis with an upgraded Tomb of Souls, Royal Mummies share its Wraith recruitment stock. Ordinary Wights and Wraiths remain available; all recruitment choices spend the same stock. The upgraded Tomb can also upgrade existing Mummies to Royal Mummies."
 			}
 		},
 		"images": {

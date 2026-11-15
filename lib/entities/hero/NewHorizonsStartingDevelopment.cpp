@@ -109,6 +109,8 @@ void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMig
 				require(SecondarySkill::encode(skillID) == name && name.starts_with("new-horizons:")
 					&& skills.insert(skillID).second, "canonical unique New Horizons starting skill");
 				require(integer(skill["rank"], MasteryLevel::BASIC, MasteryLevel::EXPERT), "starting skill rank");
+				if(usesBasicStartingProfiles(startingSkills))
+					require(skill["rank"].Integer() == MasteryLevel::BASIC, "fresh default Basic starting skill");
 			}
 			require(profile["startingPerks"].isVector() && profile["startingPerks"].Vector().size() == 1,
 				"one explicit starting Basic perk");
@@ -280,7 +282,8 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 	const auto found = profiles.find(HeroTypeID::encode(hero.getNum()));
 	if(found == profiles.end())
 		return std::nullopt;
-	if((HeroTypeID::encode(hero.getNum()) == "core:sylvia" || HeroTypeID::encode(hero.getNum()) == "core:voy")
+	if(!usesBasicStartingProfiles(starts)
+		&& (HeroTypeID::encode(hero.getNum()) == "core:sylvia" || HeroTypeID::encode(hero.getNum()) == "core:voy")
 		&& !usesNavigationStartReplacement(rules))
 		return std::nullopt;
 	const auto * definition = heroClass.toHeroClass();
@@ -311,6 +314,23 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 		result.skills.emplace_back(skill, rank);
 	}
 	require(hasFaction, "own starting faction skill");
+	// The generic starting perk already requires catalog admission. Reuse that
+	// operation-local validation for both v2 parents rather than rescanning the
+	// complete captured registry for each definition.
+	const ValidatedPerkRules perkRules(perkState.rules);
+	if(usesBasicStartingProfiles(starts))
+	{
+		const auto & choices = starts["startingPerkProfiles"][found->first].Vector();
+		for(const auto & choice : choices)
+		{
+			const auto selected = perkRules.definition(choice["skill"].String(), choice["perk"].String());
+			require(selected && selected->requiredRank == "basic" && selected->effect["status"].String() == "active",
+				"active Basic perk for each fresh default parent");
+		}
+		const auto & generic = found->second["startingPerks"].Vector().front();
+		require(std::ranges::any_of(choices, [&](const JsonNode & choice)
+			{ return choice == generic; }), "consistent fresh default generic perk");
+	}
 	auto proposed = perkState;
 	for(const auto & entry : found->second["startingPerks"].Vector())
 	{
@@ -321,7 +341,7 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 		{
 			return skill.first == parentID;
 		});
-		const auto selected = perkDefinition(perkState.rules, parent, perk);
+		const auto selected = perkRules.definition(parent, perk);
 		require(installed != result.skills.end() && parentID != *ownFaction && selected
 			&& selected->requiredRank == "basic" && selected->effect["status"].String() == "active",
 			"active Basic starting perk of installed generic parent");

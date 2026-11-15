@@ -16,6 +16,7 @@ $lock = $null
 $launchExitCode = 0
 . (Join-Path $PSScriptRoot 'Launch-Process.ps1')
 . (Join-Path $PSScriptRoot 'Setup-Progress.ps1')
+. (Join-Path $PSScriptRoot 'Complete-Assets.ps1')
 $importProgress = $null
 
 function Test-ReportableGameExit {
@@ -66,7 +67,7 @@ function Assert-CompleteLayout([string]$Root) {
         $path = Get-SafeChildPath $Root $folder
         Assert-PlainPath $path
         if (-not (Test-Path -LiteralPath $path -PathType Container)) {
-            throw "Missing $folder folder in $Root. Select the installed Heroes III Complete folder, not its Data subfolder, a ZIP, or a GOG installer."
+            throw "Missing $folder folder in $Root. Select the installed Heroes III Complete folder, or its Data subfolder, not a ZIP or a GOG installer."
         }
     }
     # These are VCMI's SoD/base and Armageddon's Blade archive names.
@@ -163,7 +164,7 @@ function Set-ManagedPreset([string]$PackageRoot, [string]$ProfileRoot) {
 function Select-CompleteFolder {
     Add-Type -AssemblyName System.Windows.Forms
     $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-    $dialog.Description = 'Select your installed, legitimate Heroes III Complete folder (containing Data, Maps and Mp3). Files will be copied, not modified.'
+    $dialog.Description = 'Select your installed, legitimate Heroes III Complete folder (containing Data, Maps and Mp3), or its Data folder. Files will be copied, not modified.'
     $dialog.ShowNewFolderButton = $false
     try {
         if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
@@ -263,8 +264,7 @@ try {
             Write-Host 'Setup cancelled. Existing content and saves were not replaced. No game was started.'
             exit 0
         }
-        $source = (Get-Item -LiteralPath $source -Force).FullName
-        Assert-PlainPath $source
+        $source = Resolve-CompleteAssetRoot $source
         $sourcePrefix = $source.TrimEnd('\') + '\'
         $profilePrefix = $profileRoot.TrimEnd('\') + '\'
         if ($profilePrefix.StartsWith($sourcePrefix, [StringComparison]::OrdinalIgnoreCase) -or

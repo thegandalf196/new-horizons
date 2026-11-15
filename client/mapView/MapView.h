@@ -32,6 +32,7 @@ protected:
 
 	/// Only the adventure map owns a layer - the puzzle map draws into its window's target
 	const bool gpuLayerEligible;
+	bool directPresentation = false;
 
 	void render(Canvas & target, bool fullUpdate);
 

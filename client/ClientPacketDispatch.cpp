@@ -1,5 +1,6 @@
 /* Part of VCMI. Authors: see AUTHORS. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../lib/network/InitializationProfile.h"
 #include "CServerHandler.h"
 #include "Client.h"
 #include "GameEngine.h"
@@ -12,6 +13,8 @@
 
 void CServerHandler::visitForClient(CPackForClient & clientPack, ClientPacketReceiveSession * receive)
 {
+	nhLoadProfile::Phase phase("client-packet-visit");
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::ClientVisit);
 	if(gameplayReplayer && gameplayReplayer->isActive())
 	{
 		// a replay has taken the client over, so the live gamestate is not there to receive this pack.

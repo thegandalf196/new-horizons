@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../network/InitializationProfile.h"
 #include "CGameState.h"
 #include "CGameStateCampaign.h"
 #include "TavernHeroesPool.h"
@@ -33,6 +34,8 @@ std::vector<std::byte> CGameState::saveToMemory()
 
 ReplayPayload CGameState::saveReplaySnapshot()
 {
+	nhLoadProfile::Phase phase("unclassified-snapshot-write");
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::SnapshotWrite);
 	NativeBonusGraphAccess graphAccess;
 	// a snapshot is stored inside the replay log itself, so the log must not be part of it.
 	// Swapping keeps the serialized layout identical - an empty log is written instead.
@@ -43,7 +46,10 @@ ReplayPayload CGameState::saveReplaySnapshot()
 	CMemorySerializer serializer;
 	serializer.oser & *this;
 
-	return {serializer.extractBuffer(), serializer.oser.version};
+	auto buffer = serializer.extractBuffer();
+	if(nhLoadProfile::active())
+		nhLoadProfile::count(nhLoadProfile::Metric::SnapshotBytes, buffer.size());
+	return {std::move(buffer), serializer.oser.version};
 }
 
 void CGameState::loadFromMemory(std::vector<std::byte> data)
@@ -53,6 +59,10 @@ void CGameState::loadFromMemory(std::vector<std::byte> data)
 
 void CGameState::loadReplaySnapshot(ReplayPayload payload)
 {
+	nhLoadProfile::Phase phase("unclassified-snapshot-read");
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::SnapshotRead);
+	if(nhLoadProfile::active())
+		nhLoadProfile::count(nhLoadProfile::Metric::SnapshotBytes, payload.bytes.size());
 	replayPayload::requireKnownVersion(payload.version);
 	auto rootMutation = battleRootLifetime.mutate();
 	// battles are not part of serialize(), so leftovers of the discarded state have to go explicitly

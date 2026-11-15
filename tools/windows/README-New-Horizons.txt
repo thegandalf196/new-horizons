@@ -8,16 +8,24 @@ PLAY (no installer, administrator access or build tools)
    Extract ALL files into an ordinary local folder you can access. Do not run
    inside the ZIP or merge this package into an existing Heroes III/VCMI install.
 2. Double-click new-horizons.exe at the root of the extracted folder.
-3. On first use, select your legitimate, installed Heroes III Complete folder:
-   the parent containing Data, Maps and Mp3. Setup copies only those three
-   folders into a private New Horizons profile, then starts the game.
+3. On first use, select your legitimate, installed Heroes III Complete folder
+   containing Data, Maps and Mp3, or its Data subfolder. Selecting Data uses its
+   parent; Maps and Mp3 must still be present beside Data. Setup copies only
+   those three folders into a private New Horizons profile, then starts the game.
 4. Next time, use the same root new-horizons.exe. A completed import is checked
    and reused; the original installation need not remain at its previous path.
 
-The root contains only new-horizons.exe and the runtime folder. Keep them
+To select or reselect assets without starting the game, double-click Setup.exe
+beside new-horizons.exe. Setup always opens the same folder picker and returns
+when preparation finishes. It accepts Data or the Complete parent folder as
+above. Cancel leaves existing imported content and saves unchanged. Use
+new-horizons.exe afterwards when you want to play. Setup.exe does not install
+or uninstall the program, register it with Windows or create shortcuts.
+
+The root contains new-horizons.exe, Setup.exe and the runtime folder. Keep them
 together. DLLs, configuration, setup scripts, licenses and build/source notices
 are inside runtime. The root program starts setup; runtime/new-horizons.exe is
-the engine and is not the normal player entry point. Do not move either EXE.
+the engine and is not the normal player entry point. Keep the layout intact.
 runtime/SHA256SUMS.txt lists paths relative to the extracted package root.
 
 This is a Windows 10/11 preview. Match the package architecture in its release
@@ -31,7 +39,8 @@ installation, or import its root Mods, settings or saves. Use an intact,
 unmodified Complete installation; archive checks cannot certify authenticity
 or ownership. Heroes III HD Edition (the separate HD re-release) is unsupported.
 GOG .exe/.bin installers must already be installed; this helper does not extract
-installers. Do not select Data itself, an installer, or a compressed archive.
+installers. Do not select an installer or a compressed archive. Selecting Data
+still requires Maps and Mp3 in its parent folder.
 No Qt launcher, recommended mods, server/host/address setup or separate server
 process is needed for the normal New Horizons single-player route.
 
@@ -112,7 +121,9 @@ VCMI's profile. Moving the extracted program folder does not move your saves.
 
 RESELECT ASSETS / SETUP WITHOUT PLAY
 ----------------------------------
-Close the game. Open Windows PowerShell in the extracted package folder
+Close the game and double-click Setup.exe to select assets without play.
+
+For command-line setup, open Windows PowerShell in the extracted package folder
 (File Explorer: type powershell in its address bar). Run:
   powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\runtime\Start-New-Horizons.ps1" -SelectAssets
 
@@ -124,7 +135,8 @@ typing. It forwards game arguments as data, including paths containing spaces; -
 ERRORS / RESTRICTIONS
 --------------------
 - Cancel: no game starts and the previous content/saves remain. Run again later.
-- Wrong folder/missing Complete archives: select the Complete parent folder.
+- Wrong folder/missing Complete archives: select Data or the Complete parent
+  folder containing Data, Maps and Mp3.
   Data must contain nonempty H3bitmap.lod, H3sprite.lod, H3ab_bmp.lod and
   H3ab_spr.lod. Maps must contain .h3m maps and Mp3 must contain .mp3 music.
   These preliminary checks are not a complete engine/content validation.

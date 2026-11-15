@@ -135,25 +135,39 @@ protected:
 };
 }
 
-TEST_F(NewHorizonsSethRecruitmentAITest, MummyChoiceUsesOneStockAndExecutesThroughAuthority)
+TEST_F(NewHorizonsSethRecruitmentAITest, BaseTombAndExistingMummiesDoNotCreateSpecialtyCandidates)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto mummy = creature("core:mummy");
-	ASSERT_NO_FATAL_FAILURE(fillArmyExceptMatching(mummy));
+	ASSERT_NO_FATAL_FAILURE(fillArmyExceptMatching(creature("core:mummy")));
 	const auto offer = townRecruitmentOffers::query(*town, 2, PLAYER);
 	ASSERT_TRUE(offer);
-	ASSERT_TRUE(vstd::contains(offer->choices, mummy));
+	EXPECT_EQ(offer->choices, (std::vector<CreatureID>{creature("core:wight")}));
+	EXPECT_TRUE(forecast().empty());
+	town->addBuilding(BuildingID::DWELL_LVL_3_UP);
+	town->creatures[2].second.push_back(creature("core:wraith"));
+	EXPECT_TRUE(forecast().empty());
+	EXPECT_EQ(buyer->getStackCount(SlotID(0)), 1000);
+}
+
+TEST_F(NewHorizonsSethRecruitmentAITest, RoyalChoiceUsesOneStockAndExecutesThroughAuthority)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto royal = creature("new-horizons:royalMummy");
+	ASSERT_NO_FATAL_FAILURE(fillArmyExceptMatching(royal));
+	const auto offer = townRecruitmentOffers::query(*town, 2, PLAYER);
+	ASSERT_TRUE(offer);
+	ASSERT_TRUE(vstd::contains(offer->choices, royal));
 	ASSERT_TRUE(vstd::contains(offer->choices, creature("core:wight")));
 	const auto before = gameState()->saveToMemory();
 	const auto candidates = forecast();
 	ASSERT_EQ(candidates.size(), 1u);
 	const auto & selected = candidates.front();
-	EXPECT_EQ(selected.creID, mummy);
+	EXPECT_EQ(selected.creID, royal);
 	EXPECT_EQ(selected.count, 10);
 	EXPECT_EQ(selected.level, 2);
 	EXPECT_EQ(gameState()->saveToMemory(), before);
 	const auto resources = gameState()->getPlayerState(PLAYER)->resources;
-	const auto cost = town->getTotalRecruitmentCost(mummy, selected.count, buyer);
+	const auto cost = town->getTotalRecruitmentCost(royal, selected.count, buyer);
 	SethRecruitmentClient client(gameState());
 	const auto purchasing = makeGateway(PLAYER, &client);
 	purchasing->recruitCreatures(town, buyer);
@@ -177,7 +191,8 @@ TEST_F(NewHorizonsSethRecruitmentAITest, RoyalChoiceKeepsOrdinaryAlternativesAnd
 	ASSERT_NO_FATAL_FAILURE(fillArmyExceptMatching(royal));
 	const auto offer = townRecruitmentOffers::query(*town, 2, PLAYER);
 	ASSERT_TRUE(offer);
-	for(const auto id : {creature("core:wight"), creature("core:wraith"), creature("core:mummy"), royal})
+	EXPECT_FALSE(vstd::contains(offer->choices, creature("core:mummy")));
+	for(const auto id : {creature("core:wight"), creature("core:wraith"), royal})
 		ASSERT_TRUE(vstd::contains(offer->choices, id));
 	const auto before = gameState()->saveToMemory();
 	const auto candidates = forecast(7);
@@ -191,13 +206,13 @@ TEST_F(NewHorizonsSethRecruitmentAITest, RoyalChoiceKeepsOrdinaryAlternativesAnd
 
 TEST_F(NewHorizonsSethRecruitmentAITest, ReceiverDiscountAndOtherRowsShareTheActualResourceBudget)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto mummy = creature("core:mummy");
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto royal = creature("new-horizons:royalMummy");
 	ASSERT_NO_FATAL_FAILURE(conscription(seth));
-	const auto ordinaryCost = town->getTotalRecruitmentCost(mummy, 10, buyer);
-	EXPECT_NE(ordinaryCost, town->getTotalRecruitmentCost(mummy, 10, seth));
+	const auto ordinaryCost = town->getTotalRecruitmentCost(royal, 10, buyer);
+	EXPECT_NE(ordinaryCost, town->getTotalRecruitmentCost(royal, 10, seth));
 	ASSERT_NO_FATAL_FAILURE(conscription(buyer));
-	const auto discounted = town->getTotalRecruitmentCost(mummy, 10, buyer);
+	const auto discounted = town->getTotalRecruitmentCost(royal, 10, buyer);
 	ASSERT_LT(discounted[EGameResID::GOLD], ordinaryCost[EGameResID::GOLD]);
 	ResourceSet budget = discounted + town->getTotalRecruitmentCost(creature("core:skeleton"), 1, buyer);
 	gameState()->getPlayerState(PLAYER)->resources = budget;
@@ -223,7 +238,7 @@ TEST_F(NewHorizonsSethRecruitmentAITest, DepartureRestoresOrdinaryChoiceAndPrese
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
 	ASSERT_TRUE(handler.recruitCreatures(town->id, buyer->id, creature("core:wight"), 3, 2, PLAYER));
-	ASSERT_TRUE(handler.recruitCreatures(town->id, buyer->id, creature("core:mummy"), 2, 2, PLAYER));
+	ASSERT_TRUE(handler.recruitCreatures(town->id, buyer->id, creature("new-horizons:royalMummy"), 2, 2, PLAYER));
 	ASSERT_EQ(town->creatures[2].first, 5u);
 	town->setVisitingHero(nullptr);
 	const auto before = gameState()->saveToMemory();

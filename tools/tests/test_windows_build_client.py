@@ -30,7 +30,7 @@ class WindowsBuildClientTest(unittest.TestCase):
             self.assertEqual(build.main(invocation[2:]), 0)
         run.assert_called_once_with([
             'cmake', '--build', 'build/new-horizons-windows-x64', '--target',
-            'vcmiclient', 'nhWindowsBootstrap', 'nhSdl3GrayscaleMaskRuntimeTest', 'nhArtStartupRuntimeTest',
+            'vcmiclient', 'nhWindowsBootstrap', 'nhWindowsSetup', 'nhSdl3GrayscaleMaskRuntimeTest', 'nhArtStartupRuntimeTest',
             'nhImageOptimizerRuntimeTest', 'nhCreaturePreviewSurfaceRuntimeTest',
             'nhSdl3OutlineRuntimeTest', '--parallel', '4', '--', '-d', 'keeprsp',
         ], check=False)
@@ -51,11 +51,12 @@ class WindowsBuildClientTest(unittest.TestCase):
         self.assertEqual(early['if'], steps[ordered[4]]['if'])
         self.assertEqual(shlex.split(early['run']), [
             'cmake', '--build', 'build/new-horizons-windows-x64', '--target',
-            'nhWindowsBootstrap', '--parallel', '4', '--', '-d', 'keeprsp'])
+            'nhWindowsBootstrap', 'nhWindowsSetup', '--parallel', '4', '--', '-d', 'keeprsp'])
         smoke = steps[ordered[3]]
         self.assertEqual(smoke['shell'], 'powershell')
         self.assertIn('powershell.exe -NoProfile -File tools/windows/tests/Portable-Entry-Smoke.ps1', smoke['run'])
         self.assertIn('if ($LASTEXITCODE -ne 0)', smoke['run'])
+        self.assertIn('tools/windows/tests/Manual-Setup-Smoke.ps1 -SetupPath build/new-horizons-windows-x64/bootstrap/Setup.exe', smoke['run'])
 
     def test_pch_choice_keeps_default_and_only_controls_normal_configuration(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())

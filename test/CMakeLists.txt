@@ -20,6 +20,16 @@ if(ENABLE_LUA_ORACLE)
 	set_tests_properties(nhLuaDeclaredBonusTypesTest PROPERTIES TIMEOUT 60 LABELS "battle;damage;lua-oracle")
 endif()
 
+# Pure direct-composition ownership and cache-band geometry; no SDL/game launch.
+add_executable(nhPresentedCanvasStateTest ../client/tests/PresentedCanvasStateTest.cpp)
+target_link_libraries(nhPresentedCanvasStateTest PRIVATE vcmi)
+add_test(NAME nhPresentedCanvasStateTest COMMAND nhPresentedCanvasStateTest)
+set_tests_properties(nhPresentedCanvasStateTest PROPERTIES TIMEOUT 30 LABELS "client;render")
+add_executable(nhMapCacheBandsTest ../client/tests/MapCacheBandsTest.cpp)
+target_link_libraries(nhMapCacheBandsTest PRIVATE vcmi)
+add_test(NAME nhMapCacheBandsTest COMMAND nhMapCacheBandsTest)
+set_tests_properties(nhMapCacheBandsTest PROPERTIES TIMEOUT 30 LABELS "client;render")
+
 # Pure saved-view navigation state; no renderer or gameplay fixture implied.
 add_executable(nhHeroDevelopmentNavigationTest ../client/tests/HeroDevelopmentNavigationTest.cpp)
 add_test(NAME nhHeroDevelopmentNavigationTest COMMAND nhHeroDevelopmentNavigationTest)
@@ -232,6 +242,7 @@ set(test_SRCS
 		serializer/RemainingSpecialtyLobbySerializationTest.cpp
 		serializer/ReplayPayloadVersionTest.cpp
 		serializer/ReplaySnapshotVersionTest.cpp
+		serializer/ReplayDayZeroMergeTest.cpp
 		client/ReplayPlannerPayloadTest.cpp
 		../client/replay/ReplayPlanner.cpp
 		battle/CUnitStateMagicTest.cpp
@@ -398,9 +409,13 @@ set(test_SRCS
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
 		hero/NewHorizonsPerkRulesTest.cpp
+	hero/NewHorizonsValidatedPerkRulesTest.cpp
+	hero/NewHorizonsPerkOperationTest.cpp
+	hero/PerkInitializationReference.cpp
 		hero/NewHorizonsQuickStudyDefaultCaptureTest.cpp
 		hero/NewHorizonsNecromancyCaptureTest.cpp
 		hero/NewHorizonsPerkStateTest.cpp
+		hero/SerializedPerkAdmissionTest.cpp
 		hero/NewHorizonsPerkAvailabilityTest.cpp
 		hero/HeroGrowthPerkPresentationTest.cpp
 		hero/NewHorizonsPerkIconPresentationTest.cpp
@@ -1400,6 +1415,7 @@ endif()
 
 if(ENABLE_NH_PERF_EXPERIMENTS)
 	list(APPEND test_SRCS
+		network/InitializationProfileTest.cpp
 		network/InternalConnectionBenchmark.cpp
 		network/ExperimentalSetFormationTest.cpp
 	)
@@ -1453,6 +1469,15 @@ if(MOVE_ASSIGN)
 	add_compile_options(-Wno-error=virtual-move-assign) #GCC is too strict here
 endif()
 add_subdirectory_with_folder("3rdparty" "${googleTest_Dir}" "${CMAKE_CURRENT_BINARY_DIR}/googletest" EXCLUDE_FROM_ALL)
+
+# Pure profiling controls do not initialize a world or require original assets.
+if(ENABLE_NH_PERF_EXPERIMENTS)
+	add_executable(nhInitializationProfileTest network/InitializationProfileTest.cpp)
+	target_include_directories(nhInitializationProfileTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+	target_link_libraries(nhInitializationProfileTest PRIVATE gtest_main gmock vcmi ${SYSTEM_LIBS})
+	add_test(NAME nhInitializationProfileTest COMMAND nhInitializationProfileTest)
+	set_tests_properties(nhInitializationProfileTest PROPERTIES TIMEOUT 10 LABELS "performance;component")
+endif()
 
 add_executable(vcmitest ${test_SRCS} ${test_HEADERS} ${mock_HEADERS})
 add_executable(nhBattleEndDispatchTest ../client/tests/BattleEndDispatchTest.cpp)
@@ -1636,3 +1661,6 @@ if(ENABLE_NH_BUG_REPORT_REGRESSION)
 endif()
 
 include(NativeMigrationTests.cmake)
+include(StartingPerkTests.cmake)
+include(ReplayDayZeroTests.cmake)
+include(SethRoyalTests.cmake)

@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "../network/InitializationProfile.h"
 #include "../battle/NewHorizonsCommandResources.h"
 #include "../battle/NewHorizonsWarfare.h"
 #include "../battle/NewHorizonsElementalAttunement.h"
@@ -308,6 +309,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		nhLoadProfile::Phase phase(h.saving ? "unclassified-world-write" : "unclassified-world-read");
+		nhLoadProfile::Scope measured(h.saving ? nhLoadProfile::Metric::WorldWrite : nhLoadProfile::Metric::WorldRead);
 		if(h.saving)
 			validateNeutralArmyStartOptionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		if(h.saving)

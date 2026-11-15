@@ -11,11 +11,19 @@
 #pragma once
 
 #include "lib/constants/Enumerations.h"
+#include "lib/Rect.h"
+#include <vector>
 
 class Point;
 class Rect;
 
 class Canvas;
+
+struct PresentedRegion
+{
+	Rect source;
+	Rect target;
+};
 
 /// GPU layers composited under the software screen, in draw order. Each is screen sized;
 /// a layer is transparent wherever its owner has not drawn.
@@ -100,4 +108,9 @@ public:
 	/// Hands everything drawn so far to the GPU instead of leaving it queued. Lets drawing
 	/// that a later pass reads back start early, rather than stalling on the first read.
 	virtual void flushRenderCommands() = 0;
+
+	/// Borrow cached pixels until their owner clears them; no texture ownership transfer.
+	virtual bool presentFromCanvas(GpuRenderLayer layer, const Canvas & source,
+		const std::vector<PresentedRegion> & regions, const Rect & clip, const void * owner) = 0;
+	virtual void clearPresentedCanvas(GpuRenderLayer layer, const void * owner) = 0;
 };

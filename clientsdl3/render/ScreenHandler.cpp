@@ -43,8 +43,23 @@
 #endif
 
 #include <SDL3/SDL.h>
+#include <chrono>
 
 static constexpr Point heroes3Resolution = Point(800, 600);
+
+static void traceRendererSynchronization(SDL_Renderer * renderer, int requested, bool setSucceeded)
+{
+	if(!PerfTrace::enabled())
+		return;
+	const std::string setError = setSucceeded ? "" : SDL_GetError();
+	int accepted = 0;
+	const bool getSucceeded = SDL_GetRenderVSync(renderer, &accepted);
+	const std::string getError = getSucceeded ? "" : SDL_GetError();
+	const std::string acceptedText = getSucceeded ? std::to_string(accepted) : "unknown";
+	logGlobal->info("NH performance renderer: renderer=%s requestedVsync=%d setSucceeded=%d acceptedVsync=%s getSucceeded=%d setError=%s getError=%s",
+		SDL_GetRendererName(renderer), requested, setSucceeded, acceptedText, getSucceeded, setError, getError);
+	PerfTrace::emit("renderer_sync_metadata", requested, getSucceeded);
+}
 
 /// SDL3 identifies displays by opaque ID's while our settings store a plain index
 static SDL_DisplayID displayIndexToID(int displayIndex)
@@ -384,7 +399,10 @@ void ScreenHandler::initializeWindow()
 		handleFatalError(message, true);
 	}
 
-	SDL_SetRenderVSync(GpuResources::get().renderer(), settings["video"]["vsync"].Bool() ? 1 : SDL_RENDERER_VSYNC_DISABLED);
+	const int requestedVsync = settings["video"]["vsync"].Bool() ? 1 : SDL_RENDERER_VSYNC_DISABLED;
+	const bool vsyncSet = SDL_SetRenderVSync(GpuResources::get().renderer(), requestedVsync);
+	if(PerfTrace::enabled())
+		traceRendererSynchronization(GpuResources::get().renderer(), requestedVsync, vsyncSet);
 
 	selectUpscalingFilter();
 	selectDownscalingFilter();
@@ -457,7 +475,13 @@ void ScreenHandler::initializeScreenBuffers()
 	SDL_Renderer * renderer = GpuResources::get().renderer();
 
 	auto logicalSize = getPreferredLogicalResolution() * getScalingFactor();
-	SDL_SetRenderLogicalPresentation(renderer, logicalSize.x, logicalSize.y, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+	// Query the window presentation here, not a tile-cache render target during a frame.
+	SDL_SetRenderTarget(renderer, nullptr);
+	const bool logicalSet = SDL_SetRenderLogicalPresentation(renderer, logicalSize.x, logicalSize.y, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+	SDL_FRect presentation{};
+	const bool presentationKnown = logicalSet && SDL_GetRenderLogicalPresentationRect(renderer, &presentation);
+	directMapPixels = oneToOnePresentedPixels(logicalSize, presentationKnown,
+		presentation.x, presentation.y, presentation.w, presentation.h);
 
 	screen = SDL_CreateSurface(logicalSize.x, logicalSize.y, SDL_PIXELFORMAT_ARGB8888);
 	if(nullptr == screen)
@@ -671,6 +695,8 @@ std::string ScreenHandler::getPreferredRenderingDriver() const
 
 void ScreenHandler::destroyScreenBuffers()
 {
+	directMapPixels = false;
+	clearAllPresentedCanvases();
 	if(nullptr != screen)
 	{
 		SDL_DestroySurface(screen);
@@ -718,6 +744,7 @@ void ScreenHandler::clearLayer(size_t index)
 
 void ScreenHandler::initializeLayerTextures(const Point & logicalSize)
 {
+	clearAllPresentedCanvases();
 	SDL_Renderer * renderer = GpuResources::get().renderer();
 
 	// The software driver supports render targets too, but rasterizes them on the CPU -
@@ -772,6 +799,7 @@ void ScreenHandler::initializeLayerTextures(const Point & logicalSize)
 
 void ScreenHandler::destroyWindow()
 {
+	clearAllPresentedCanvases();
 	if(nullptr != GpuResources::get().renderer())
 	{
 		GpuResources::get().destroyRenderer();
@@ -815,42 +843,6 @@ bool ScreenHandler::isGpuRenderingEnabled() const
 {
 	// no GPU path with the software driver, nor with a colour scheme - that needs a shader
 	return gpuRenderingSupported && colorScheme == ColorScheme::NONE;
-}
-
-Canvas ScreenHandler::getLayerCanvas(GpuRenderLayer layer)
-{
-	const size_t index = static_cast<size_t>(layer);
-
-	layerActive.at(index) = true;
-	layerReleasedMask &= ~(1u << index);
-
-	return Canvas::createFromRenderTarget(layerTextures.at(index), getLogicalResolution(), CanvasScalingPolicy::AUTO);
-}
-
-void ScreenHandler::releaseLayer(GpuRenderLayer layer)
-{
-	layerReleasedMask |= 1u << static_cast<size_t>(layer);
-}
-
-void ScreenHandler::clearReleasedLayers()
-{
-	// Windows are deactivated when closed and when merely covered, so this runs before the
-	// redraw and getLayerCanvas() takes the request back if the owner draws again.
-	const uint32_t released = layerReleasedMask.exchange(0);
-
-	if(released == 0)
-		return;
-
-	for(size_t i = 0; i < layerTextures.size(); ++i)
-	{
-		if(!layerTextures[i] || (released & (1u << i)) == 0)
-			continue;
-
-		clearLayer(i);
-		layerActive[i] = false;
-	}
-
-	SDL_SetRenderTarget(GpuResources::get().renderer(), nullptr);
 }
 
 Canvas ScreenHandler::createOffscreenCanvas(const Point & size) const
@@ -929,38 +921,6 @@ void ScreenHandler::flushRenderCommands()
 	SDL_FlushRenderer(GpuResources::get().renderer());
 }
 
-void ScreenHandler::presentScreenTexture()
-{
-	// the memory cache gives assets up on whichever thread loaded one; freeing what they hold has
-	// to wait for this thread, where nothing is drawing from them
-	ENGINE->renderHandler().reclaimEvictedAssets();
-
-	SDL_Renderer * renderer = GpuResources::get().renderer();
-
-	// a layer may still be bound from rendering into it
-	SDL_SetRenderTarget(renderer, nullptr);
-
-	{
-		GpuResources::get().processPendingTextureDestruction();
-	}
-
-	// the draw color is left over from whatever was rendered last, and this clear also
-	// covers the letterbox bars around the reserved area
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderClear(renderer);
-
-	for(size_t i = 0; i < layerTextures.size(); ++i)
-		if(layerTextures[i] && layerActive[i])
-			SDL_RenderTexture(renderer, layerTextures[i], nullptr, nullptr);
-
-	SDL_RenderTexture(renderer, isGpuRenderingEnabled() ? screenTarget : screenTexture, nullptr, nullptr);
-	ENGINE->cursor().render();
-	if(SDL_RenderPresent(renderer))
-		PerfTrace::presented();
-	else
-		PerfTrace::emit("present_failed");
-}
-
 std::vector<Point> ScreenHandler::getSupportedResolutions() const
 {
 	int displayID = getPreferredDisplayIndex();
@@ -1011,18 +971,4 @@ void ScreenHandler::setColorScheme(ColorScheme scheme)
 		releaseLayer(static_cast<GpuRenderLayer>(i));
 
 	ENGINE->windows().totalRedraw();
-}
-
-void ScreenHandler::screenShot() const
-{
-	const boost::filesystem::path outPath = VCMIDirs::get().userExtractedPath() / "screenshots";
-	boost::filesystem::create_directories(outPath);
-	const boost::filesystem::path filePath = outPath / ("screenshot-" + vstd::getDateTimeISO8601Basic(std::time(nullptr)) + ".png");
-	auto img = std::make_shared<SDLImageShared>(screen);
-	img->exportBitmap(filePath, nullptr);
-	MetaString txt;
-	txt.appendTextID("vcmi.client.screenShot");
-	txt.replaceRawString(filePath.string());
-	if(GAME && GAME->interface())
-		GAME->server().getGameChat().sendMessageGameplay(txt.toString(&GAME->translator()));
 }

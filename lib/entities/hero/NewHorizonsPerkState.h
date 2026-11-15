@@ -25,6 +25,7 @@
 namespace newHorizonsHeroes
 {
 struct R2WeightCache;
+class PerkSelectionOperation;
 struct DLL_LINKAGE PerkSelection
 {
 	std::string skillId;
@@ -79,6 +80,10 @@ private:
 	void migrateRetiredPerks();
 	void normalizeLegacyTierConflicts();
 	void validateSelections() const;
+	void validateSelections(const std::vector<PerkSelection> & selections) const;
+	static bool canAcquirePerkInState(const JsonNode & rules, const std::vector<PerkSelection> & selections,
+		const std::string & skill, const std::string & perk, int rank);
+	friend class PerkSelectionOperation;
 
 public:
 	JsonNode rules;
@@ -153,16 +158,17 @@ public:
 			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 		const JsonNode & capturedRules = rules;
 		if(h.saving)
-			validate();
-		if(h.saving)
+		{
+			const ValidatedPerkRules admitted(capturedRules);
+			validateSelections();
 			validateCrisisCommandProfileSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
-		if(h.saving)
-			validateWeightedPerkSerialization(capturedRules,
+			admitted.validateWeightedSerialization(
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+		}
 		if(h.saving)
 			newHorizonsNecromancy::validatePolicySerialization(capturedRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),

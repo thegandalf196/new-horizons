@@ -441,6 +441,7 @@ set(vcmiclientcommon_HEADERS
 	mapView/MapView.h
 	mapView/MapViewActions.h
 	mapView/MapViewCache.h
+	mapView/CachedMapBands.h
 	mapView/MapViewController.h
 	mapView/MapTransitionSnapshotTask.h
 	mapView/MapViewModel.h

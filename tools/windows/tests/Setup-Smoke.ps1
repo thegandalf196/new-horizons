@@ -104,7 +104,9 @@ try {
     $null = Get-ParsedScript $PSCommandPath
     $null = Get-ParsedScript (Join-Path $sourceDir 'Launch-Process.ps1')
     $null = Get-ParsedScript (Join-Path $sourceDir 'Setup-Progress.ps1')
+    $null = Get-ParsedScript (Join-Path $sourceDir 'Complete-Assets.ps1')
     $null = Get-ParsedScript (Join-Path $PSScriptRoot 'Portable-Entry-Smoke.ps1')
+    $null = Get-ParsedScript (Join-Path $PSScriptRoot 'Manual-Setup-Smoke.ps1')
     Assert-Check ($null -ne $ast) 'original helper and smoke test parse without errors'
 
     # Quoting/path coverage includes spaces, Unicode, &, %, !, [], (), apostrophe.
@@ -122,6 +124,7 @@ try {
     Write-FixtureFile (Join-Path $package 'config\filesystem.json') '{}'
     [IO.File]::Copy((Join-Path $sourceDir 'Launch-Process.ps1'), (Join-Path $package 'Launch-Process.ps1'))
     [IO.File]::Copy((Join-Path $sourceDir 'Setup-Progress.ps1'), (Join-Path $package 'Setup-Progress.ps1'))
+    [IO.File]::Copy((Join-Path $sourceDir 'Complete-Assets.ps1'), (Join-Path $package 'Complete-Assets.ps1'))
     [IO.File]::Copy((Join-Path $sourceDir 'dirs.json'), (Join-Path $package 'config\dirs.json'))
 
     # TEMP COPY only: replace the picker, prohibit launch and insert two narrowly
@@ -165,7 +168,9 @@ function Show-AssetImportProgress { return $null }
     $content = Join-Path $profile 'content'
     $marker = Join-Path $content '.nh-assets.json'
 
-    $result = Invoke-Setup -Source $sourceA
+    # A harmless nested Data directory is not a second complete installation.
+    $null = [IO.Directory]::CreateDirectory((Join-Path $sourceA 'Data\Data'))
+    $result = Invoke-Setup -Source (Join-Path $sourceA 'Data')
     Assert-Check ($result.code -eq 0) "first synthetic import exits zero: $($result.output)"
     Assert-Check (Test-Path -LiteralPath $marker -PathType Leaf) 'completed import marker exists'
     foreach ($folder in @('config', 'cache', 'logs', 'content')) {
@@ -182,6 +187,27 @@ function Show-AssetImportProgress { return $null }
     $saveHash = (Get-FileHash -LiteralPath $save).Hash
     $settingsHash = (Get-FileHash -LiteralPath $settings).Hash
     $activeA = Get-TreeFingerprint $content
+    foreach ($bad in @($invalid, (Join-Path $sourceA 'Maps'))) {
+        $result = Invoke-Setup -Source $bad
+        Assert-Check ($result.code -ne 0) 'invalid or non-Data child cannot guess a Complete parent'
+        Assert-Check ((Get-TreeFingerprint $content) -ceq $activeA) 'invalid selection preserves the active import'
+    }
+    $incomplete = Join-Path $fixture 'Incomplete'
+    $null = [IO.Directory]::CreateDirectory((Join-Path $incomplete 'Data'))
+    $result = Invoke-Setup -Source (Join-Path $incomplete 'Data')
+    Assert-Check ($result.code -ne 0) 'Data without the complete sibling layout is rejected'
+    Assert-Check ((Get-TreeFingerprint $content) -ceq $activeA) 'incomplete Data preserves active import'
+    $plainSource = Join-Path $fixture 'plain-complete'
+    New-Assets $plainSource 'LINK REFUSAL'
+    $dataLink = Join-Path $fixture 'Data'
+    $null = New-Item -ItemType Junction -Path $dataLink -Target (Join-Path $plainSource 'Data')
+    try {
+        $result = Invoke-Setup -Source $dataLink
+        Assert-Check ($result.code -ne 0 -and $result.output.Contains('Linked folders/files')) 'selected Data junction is rejected'
+        Assert-Check ((Get-TreeFingerprint $content) -ceq $activeA) 'linked Data preserves active import'
+    } finally {
+        [IO.Directory]::Delete($dataLink)
+    }
     $markerTime = (Get-Item -LiteralPath $marker).LastWriteTimeUtc.Ticks
 
     # PowerShell 5.1 New-Item -Target expands wildcard characters. Keep the

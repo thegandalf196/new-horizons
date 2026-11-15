@@ -7,6 +7,30 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## Next update — Unreleased
+
+- Fresh default starts for all 163 registered heroes, including campaign and
+  portrait heroes, have two distinct Basic Skills and one Basic perk for each. Astral
+  starts with Spellcraft/Concentration and Metamagic/Lingering Magic; Seth
+  retains Grave Knowledge and Eagle Eye. Existing saves and authored scenario
+  advancement remain intact. Later ranks offer the complete eligible perk tier.
+
+- Seth's Ancient Oaths offers Royal Mummies only while he visits or garrisons
+  an owned Necropolis with an upgraded Tomb of Souls. Royal Mummies share its
+  Wraith stock; ordinary Wight/Wraith recruitment, costs and existing Mummies
+  remain unchanged. Existing Mummies can still upgrade to Royal Mummies there.
+
+- Hero initialization and saving reuse a validated perk catalogue within each operation,
+  avoiding repeated full-catalogue scans while preserving admission checks.
+- The first day retains setup packets in one replay chapter, avoiding a
+  redundant full-world snapshot on both the simulation and client sides.
+- Adventure maps use upstream VCMI's direct GPU composition where supported,
+  with the existing layered rendering available for other views.
+- Water and Ice Elementals use the corrected portrait backgrounds and indexed
+  battle animations, preserving their colors during selection highlighting.
+- Windows adds `Setup.exe` beside the game executable for manually selecting
+  the original Heroes III asset folder again.
+
 ## 0.91.1 Early Access
 
 - Integrates the Conflux artwork omitted from 0.91: Pasis is now
@@ -37,6 +61,7 @@ games retain their captured progression, Movement and Sylvan rules. Start a new
 game to receive the revised defaults.
 
 Extract the entire Windows ZIP into a new folder, then run `new-horizons.exe`.
+See the [Windows installation guide](players/Installation_Windows.md) for setup.
 An original Heroes III Complete installation is required; original game archives
 are not included. Corresponding fork and dependency sources and SHA256 checksums
 are available on the [release page](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91.1).

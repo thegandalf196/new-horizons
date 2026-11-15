@@ -55,6 +55,10 @@ def resource_before_wave(name, waves, index, reader=None):
                 continue
             if old['resource'] != name or len(payload) != current['size'] or hashlib.sha256(payload).hexdigest() != current['sha256']:
                 raise ValueError('Current replacement payload mismatch')
+            if 'waterIceRestoration' in wave:
+                from .nhart_water_ice_restoration import historical_payload
+                payload = historical_payload(wave, replacement, payload)
+                continue
             if not name.endswith('.json') or set(replacement) != {'previous', 'current', 'removeAppendedSequence'}:
                 raise ValueError('Unsupported reversible resource change')
             descriptor = json.loads(payload)

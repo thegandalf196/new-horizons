@@ -30,7 +30,7 @@
     "cabir-and-master": 218,
     "casting-glows": 864,
     "conflux-hero-portraits": 10,
-    "conflux-water-ice-runtime": 245,
+    "conflux-water-ice-runtime": 247,
     "ghost-creature-animation": 1,
     "ghost-creature-portraits": 2,
     "guild-room-composites-and-bindings": 10,
@@ -47028,13 +47028,13 @@
       "source": "Mods/new-horizons/Images/cabir-handoff/projectile/frame-08.png"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved owner-selected native indexed original-based Water/Ice DEF correction and explicit frame aliases; body colors, single-hex placement and reserved palette outlines retained; existing attribution and licensing remain applicable.",
       "resource": "SPRITES/cicee.json",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "d6bf8ab825a3d0a98c9dc3cad4a5d82132ac9cdf7606ebdd52cc970f27c24bc2",
-      "size": 7876,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "3f5ad7d1283a94371a61ee0b931cfbe1958ec80951d096d5931dec9370099b35",
+      "size": 26703,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/cicee.json"
     },
     {
@@ -47048,13 +47048,13 @@
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/cprsmall.json"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved owner-selected native indexed original-based Water/Ice DEF correction and explicit frame aliases; body colors, single-hex placement and reserved palette outlines retained; existing attribution and licensing remain applicable.",
       "resource": "SPRITES/cwelem.json",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "08802f2a20167d89230f251c7b675b70bb533a9151b92cd3d1276c9485a59225",
-      "size": 4923,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "148fcca1342b8d2356416704a1dcce0be9925dd52342c4cac3581370e73e1cc5",
+      "size": 16428,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/cwelem.json"
     },
     {
@@ -47068,23 +47068,33 @@
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/ice-projectile-phases.json"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "resource": "SPRITES/elementals/ice/NH_ice_singlehex_native.def",
+      "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/ice/NH_ice_singlehex_native.def",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "size": 1029204,
+      "sha256": "eb5d802c41349bfd0ddfff1f372768e0b970ad4f9144fba1c9c60c6ae91267ed",
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
+      "origin": "Preserved owner-selected native indexed original-based Water/Ice DEF correction and explicit frame aliases; body colors, single-hex placement and reserved palette outlines retained; existing attribution and licensing remain applicable."
+    },
+    {
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
+      "family": "conflux-water-ice-runtime",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/ice/icons/portrait-32x32.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "76c1751a98451a3d4c681288813897a2fcab03a0026f205ccba17f37e0a3b304",
-      "size": 1884,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "50f7798dd06ee74bf572012300e6e5d344d84e6f3842791c0d284cf27ff52278",
+      "size": 2207,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/ice/icons/portrait-32x32.png"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/ice/icons/portrait-58x64.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "6b7a3e25ec4ea48f9e5eb97e1ffd56e0870c714f1fd62199034d1b2abfe6d9d5",
-      "size": 5382,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "f1820df0d1760a88f03b59f5a57c89baf8b2688723ec2c4b6a45c90806f2b7ee",
+      "size": 9871,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/ice/icons/portrait-58x64.png"
     },
     {
@@ -48318,43 +48328,43 @@
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/shared/avwattak-247.png"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/shared/cprsmall-117.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "141814c871ae29126e67c1f38dcaeb93bba362e6ceac467bf8cfe3bb8d0880cd",
-      "size": 2099,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "8577eb45ffe9be0be57c4d653fcb59c7a0dd948dfeb429dd6c265a3bf62fb4d6",
+      "size": 2512,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/shared/cprsmall-117.png"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/shared/cprsmall-125.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "76c1751a98451a3d4c681288813897a2fcab03a0026f205ccba17f37e0a3b304",
-      "size": 1884,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "50f7798dd06ee74bf572012300e6e5d344d84e6f3842791c0d284cf27ff52278",
+      "size": 2207,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/shared/cprsmall-125.png"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/shared/twcrport-117.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "01c13c9829e7e437860b74c28998161ec01177655255b0f348fe5c961bf1d662",
-      "size": 5561,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "7649329f10871104201f0808393498ab02c9deb02162d4de01807933c830b786",
+      "size": 10015,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/shared/twcrport-117.png"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/shared/twcrport-125.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "6b7a3e25ec4ea48f9e5eb97e1ffd56e0870c714f1fd62199034d1b2abfe6d9d5",
-      "size": 5382,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "f1820df0d1760a88f03b59f5a57c89baf8b2688723ec2c4b6a45c90806f2b7ee",
+      "size": 9871,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/shared/twcrport-125.png"
     },
     {
@@ -48368,23 +48378,33 @@
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/water-projectile-phases.json"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "resource": "SPRITES/elementals/water/NH_water_singlehex_native.def",
+      "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/water/NH_water_singlehex_native.def",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "size": 728444,
+      "sha256": "1ef7dd7f7ce7e78a0631923b9aeae05f7cb20dae3a11d4e7a0a489af548d33d7",
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
+      "origin": "Preserved owner-selected native indexed original-based Water/Ice DEF correction and explicit frame aliases; body colors, single-hex placement and reserved palette outlines retained; existing attribution and licensing remain applicable."
+    },
+    {
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
+      "family": "conflux-water-ice-runtime",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/water/icons/portrait-32x32.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "141814c871ae29126e67c1f38dcaeb93bba362e6ceac467bf8cfe3bb8d0880cd",
-      "size": 2099,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "8577eb45ffe9be0be57c4d653fcb59c7a0dd948dfeb429dd6c265a3bf62fb4d6",
+      "size": 2512,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/water/icons/portrait-32x32.png"
     },
     {
-      "approval": "Owner-approved handoff artwork selected for corrective integration; actual runtime rendering is verified separately.",
+      "approval": "User-approved preserved correction for integration; Final approval and rendered acceptance remain separate; existing attribution and licensing apply.",
       "family": "conflux-water-ice-runtime",
-      "origin": "Owner-supplied selected generated Water and Ice Elemental artwork and original-resource graphical bindings; existing attribution and licensing remain applicable.",
+      "origin": "Preserved Gemini correction of selected generated faceless creature foreground and original Conflux portrait background; existing original-template attribution and licensing remain applicable.",
       "resource": "SPRITES/elementals/water/icons/portrait-58x64.png",
-      "selection": "Selected faceless Water and Ice Elemental battle, adventure, portrait and cosmetic projectile exports.",
-      "sha256": "01c13c9829e7e437860b74c28998161ec01177655255b0f348fe5c961bf1d662",
-      "size": 5561,
+      "selection": "user-selected-preserved-water-ice-correction-2026-11-15",
+      "sha256": "7649329f10871104201f0808393498ab02c9deb02162d4de01807933c830b786",
+      "size": 10015,
       "source": "Mods/new-horizons/Images/ConfluxElementals/SPRITES/elementals/water/icons/portrait-58x64.png"
     },
     {
