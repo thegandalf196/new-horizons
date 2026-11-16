@@ -1032,6 +1032,7 @@ set(test_SRCS
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsCastleGateTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
+		server/CurrentArmyArrangementTest.cpp
 		server/NewHorizonsTownSiegeLeadershipTest.cpp
 		server/NewHorizonsUpgradeLeadershipParityTest.cpp
 		server/NewHorizonsBattleFormResultTest.cpp

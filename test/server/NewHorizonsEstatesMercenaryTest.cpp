@@ -1,10 +1,22 @@
 /* Part of VCMI engine; GNU General Public License v2.0 or later; see license.txt */
 #include "StdInc.h"
 #include "NewHorizonsEstatesFixture.h"
+#include "../hero/HistoricalCapabilityRules.h"
 
 namespace
 {
-class NewHorizonsEstatesMercenaryTest : public estatesTest::Fixture {};
+class NewHorizonsEstatesMercenaryTest : public estatesTest::Fixture
+{
+protected:
+    bool historicalAdmission = false;
+    void mapLoaded(CMap * loaded) override
+    {
+        estatesTest::Fixture::mapLoaded(loaded);
+        if(historicalAdmission)
+            loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+                historicalCapabilityRulesV4());
+    }
+};
 using namespace estatesTest;
 }
 
@@ -90,6 +102,7 @@ TEST_F(NewHorizonsEstatesMercenaryTest, PendingCurrentSaveRoundtripAndOwnerDispo
 
 TEST_F(NewHorizonsEstatesMercenaryTest, CollectionUsesNativeLeadershipValidation)
 {
+    historicalAdmission = true; // This regression exercises retired hard-cap admission, not current efficiency.
     ASSERT_NO_FATAL_FAILURE(startGame());
     GameHandlerTestServer server(gameState(), PLAYER);
     CGameHandler handler(server, gameState());

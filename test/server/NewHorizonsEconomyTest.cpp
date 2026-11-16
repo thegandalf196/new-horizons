@@ -86,6 +86,7 @@ protected:
 			// Current starting-book replacements require the current magic roster.
 			// This legacy economy world must not inherit that hero profile.
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
 		}
 
 		if(overrideTaxCollectorPerkRules)
@@ -94,6 +95,20 @@ protected:
 			JsonNode perkRules = estatesTest::legacyEstatesPerks();
 			if(taxCollectorIsPlanned)
 			{
+				// The planned-perk fixture cannot author it as a mandatory starting
+				// perk for another hero in the tavern pool (for example Lord Haart).
+				auto heroes = estatesTest::legacyEstatesHeroes();
+				const auto replacePlannedStart = [](JsonNode & rows)
+				{
+					for(auto & row : rows.Vector())
+						if(row["perk"].String() == "new-horizons:estates.taxCollector")
+							row["perk"].String() = "new-horizons:estates.merchantPrince";
+				};
+				for(auto & [hero, rows] : heroes["startingSkills"]["startingPerkProfiles"].Struct())
+					replacePlannedStart(rows);
+				for(auto & [hero, profile] : heroes["startingSkills"]["startingDevelopmentProfiles"].Struct())
+					replacePlannedStart(profile["startingPerks"]);
+				loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
 				for(auto & perk : perkRules["skills"]["new-horizons:estates"]["perks"].Vector())
 					if(perk["id"].String() == "new-horizons:estates.taxCollector")
 						perk["effect"]["status"].String() = "planned";

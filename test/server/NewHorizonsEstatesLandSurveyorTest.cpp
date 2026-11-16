@@ -28,6 +28,7 @@
 #include "../../server/CGameHandler.h"
 #include "../../server/IGameServer.h"
 #include "../../server/queries/QueriesProcessor.h"
+#include "../../server/queries/MapQueries.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyMapGameTest.h"
 
@@ -140,6 +141,23 @@ protected:
 		handler.changeSecSkill(hero, estatesSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		if(hero->getSecSkillLevel(estatesSkill()) != MasteryLevel::BASIC)
 			return false;
+		// Historical unified progression creates an authoritative mandatory perk
+		// query with the rank grant. Complete it instead of leaving a stale query
+		// behind after applying the same perk through a second grant route.
+		if(const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(
+			handler.queries->topQuery(hero->getOwner())))
+		{
+			const auto & candidates = query->hlu.perks;
+			const auto chosen = std::ranges::find_if(candidates, [](const auto & candidate)
+			{
+				return candidate.selection.perkId == LAND_SURVEYOR;
+			});
+			if(query->hero != hero || chosen == candidates.end() || chosen->requiredRank != MasteryLevel::BASIC)
+				return false;
+			return handler.queryReply(query->queryID,
+				static_cast<int32_t>(std::distance(candidates.begin(), chosen)), hero->getOwner())
+				&& hero->hasActivePerk(ESTATES_SKILL, LAND_SURVEYOR);
+		}
 
 		const auto rankLookup = [hero](const std::string & skillId)
 		{
