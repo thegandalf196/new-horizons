@@ -75,7 +75,7 @@ class LevelSnapshotTest(unittest.TestCase):
         self.assertIn('hasSkill ? skill : SecondarySkill(0), name, CComponent::medium', component)
         self.assertIn('Rect(62, 0, 166, 64)', component)
         self.assertIn('levelUpPresentation::perkCard(', perk)
-        self.assertIn('newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)', perk)
+        self.assertIn('newHorizonsHybridCapturedPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)', perk)
         self.assertIn('newHorizonsPerkHelp::tierName(perk.requiredRank)', perk)
         self.assertIn('newHorizonsPerkHelp::tierName(first.requiredRank) + " "', header)
         self.assertIn('newHorizonsPerkHelp::skillName(hero, first.selection.skillId)', header)
