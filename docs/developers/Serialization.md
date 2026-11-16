@@ -3,18 +3,24 @@
 ## Current save boundary
 
 The development Leadership-efficiency migration requires a new game, including
-when upgrading from 0.90. The current writer and minimum accepted format
-are both **1159**, `NEW_HORIZONS_LEADERSHIP_EFFICIENCY`.
-`MINIMAL` and `CURRENT` in `ESerializationVersion` use that feature value.
+when upgrading from 0.90. The minimum accepted format remains **1159**,
+`NEW_HORIZONS_LEADERSHIP_EFFICIENCY`; the next-release source writer is **1161**,
+`NEW_HORIZONS_ESTATES`. `MINIMAL` retains 1159 and `CURRENT` uses 1161.
 `CLoadFile` rejects earlier save formats before reading their payload; there is
-no save conversion or migration path in this revision. Existing files remain
+no converter for those rejected files. Existing files remain
 untouched. The file-loader minimum does not by itself validate connection-version
 negotiation.
 
 Format1159 separates the corrected Leadership profile and Authority meanings from
 1158's retired army Command history. Capability rules v7 and Necromancy policy4
-capture current efficiency and Requirement discounts. Unified progression retains
-mandatory pending tier choices; battle-side state retains permanent combat-start
+capture current efficiency and Requirement discounts. Historical unified progression
+retains mandatory pending tier choices. Format1160,
+`NEW_HORIZONS_FOUR_OFFER_PROGRESSION`, adds the distinct four-offer policy and
+pending parent identities, with live perk eligibility checked when choosing.
+Format1161 adds revised Estates policy and transaction state. Older supported
+captures retain their rules and selected perk tiers on resave; the new markers
+are never attached as a silent migration. Unsupported writes reject new captures
+before enclosing prefixes. Battle-side state retains permanent combat-start
 composition for Authority and detached copies. Old Command awards and incompatible
 perk definitions are rejected rather than reinterpreted. Elemental Attunement,
 Magic Arrow, Metamagic, Warfare and unrelated faction profiles remain distinct.

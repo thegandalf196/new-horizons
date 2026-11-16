@@ -10,6 +10,7 @@
 #include "StdInc.h"
 
 #include "CPlayerState.h"
+#include "mapObjects/NewHorizonsEstatesPolicy.h"
 #include "GameLibrary.h"
 #include "callback/IGameInfoCallback.h"
 #include "mapObjects/CGHeroInstance.h"
@@ -161,6 +162,37 @@ void PlayerState::addOwnedObject(CGObjectInstance * object)
 void PlayerState::removeOwnedObject(CGObjectInstance * object)
 {
 	vstd::erase(ownedObjects, object->id);
+	// Ownership/removal packets apply this on both replicas. An old appointment
+	// cannot reactivate if its former steward or town is acquired again later.
+	std::erase_if(estates.stewards, [object](const auto & entry)
+	{
+		return entry.first == object->id || entry.second == object->id;
+	});
+}
+
+bool PlayerState::validStewardAssignments(const newHorizonsEstates::KingdomState & candidate) const
+{
+	const auto heroes = getHeroes();
+	const auto towns = getTowns();
+	for(const auto & [townID, heroID] : candidate.stewards)
+	{
+		const auto town = std::find_if(towns.begin(), towns.end(), [townID](const auto * value) { return value->id == townID; });
+		const auto hero = std::find_if(heroes.begin(), heroes.end(), [heroID](const auto * value) { return value->id == heroID; });
+		if(town == towns.end() || hero == heroes.end() || (*town)->getOwner() != color || (*hero)->getOwner() != color
+			|| !newHorizonsEstates::hasRevisedPerk(*hero, "new-horizons:estates.stewardship"))
+			return false;
+	}
+	return true;
+}
+
+void PlayerState::clearInvalidStewards()
+{
+	std::erase_if(estates.stewards, [this](const auto & entry)
+	{
+		newHorizonsEstates::KingdomState single;
+		single.stewards.insert(entry);
+		return !validStewardAssignments(single);
+	});
 }
 
 void PlayerState::markObjectControlled(ObjectInstanceID objectID)

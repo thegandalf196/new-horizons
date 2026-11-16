@@ -134,6 +134,7 @@ void CClient::loadGame(std::shared_ptr<CGameState> initializedGameState)
 
 void CClient::endNetwork()
 {
+	initialAutofight->requestStop();
 	cancelOwnedRecipientPreparation("client network teardown");
 	GAME->map().endNetwork();
 
@@ -148,18 +149,25 @@ void CClient::endNetwork()
 	}
 }
 
-void CClient::finishGameplay()
+bool CClient::finishGameplay()
 {
 	cancelOwnedRecipientPreparation("client gameplay teardown");
+	// Initial auto-fight is non-waiting and may finish its admitted submission.
+	// Drain before closing request storage; pushBack rejects terminated queues.
+	if(!drainInitialAutofight()) return false;
 	waitingRequest.requestTermination();
 
 	//suggest interfaces to finish their stuff (AI should interrupt any bg working threads)
-	for(auto & i : playerint)
+	const auto interfaces = playerint;
+	for(const auto & i : interfaces)
 		i.second->finish();
+	return true;
 }
 
-void CClient::endGame()
+bool CClient::endGame()
 {
+	initialAutofight->requestStop();
+	if(!drainInitialAutofight()) return false;
 	auto rootRetirement = BattleRootLifetime::retire(gamestate, BattleRootLifetime::RetirementMode::PERMANENT);
 	logNetwork->info("Ending current game!");
 
@@ -193,6 +201,7 @@ void CClient::endGame()
 
 	logNetwork->info("Deleted playerInts.");
 	logNetwork->info("Client stopped.");
+	return true;
 }
 
 void CClient::initMapHandler()
@@ -368,6 +377,7 @@ void CClient::applyPackSilently(CPackForClient & pack)
 
 ClientSession CClient::swapSession(ClientSession replacement)
 {
+	if(!drainInitialAutofight()) throw TerminationRequestedException();
 	return std::exchange(static_cast<ClientSession &>(*this), std::move(replacement));
 }
 
@@ -386,37 +396,6 @@ std::optional<BattleAction> CClient::makeSurrenderRetreatDecision(PlayerColor pl
 	return playerint[player]->makeSurrenderRetreatDecision(battleID, battleState);
 }
 
-int CClient::sendRequest(const CPackForServer & request, PlayerColor player, bool waitTillRealize)
-{
-	PerfTrace::Activity requestActivity("request_call_enter", "request_call_return");
-	if(observerMode)
-	{
-		logNetwork->trace("Dropped request \"%s\" - a replay is in progress", typeid(request).name());
-		return 0;
-	}
-
-	ui32 requestID = requestCounter++;
-	logNetwork->trace("Sending a request \"%s\". It'll have an ID=%d.", typeid(request).name(), requestID);
-
-	waitingRequest.pushBack(requestID);
-	request.requestID = requestID;
-	request.player = player;
-	PerfTrace::submitted(request);
-	PerfTrace::emit("transport_submit_enter");
-	GAME->server().sendGamePack(request);
-	PerfTrace::emit("transport_submit_return");
-	if(vstd::contains(playerint, player))
-		playerint[player]->requestSent(&request, requestID);
-
-	if(waitTillRealize)
-	{
-		logGlobal->trace("We'll wait till request %d is answered.\n", requestID);
-		auto gsUnlocker = vstd::makeUnlockSharedGuard(CGameState::mutex);
-		waitingRequest.waitWhileContains(requestID);
-	}
-
-	return requestID;
-}
 
 void CClient::battleStarted(const BattleID & battleID)
 {
@@ -571,6 +550,8 @@ void CClient::battleDeploymentPhaseChanged(const BattleID & battleID)
 		const auto distance = deployment.activeDistance();
 		if(distance > 0)
 		{
+			if(initialAutofight->deferInput(gamestate, color, battleID, std::nullopt, info->getActivationSerial()))
+				return; // Do not call tactics AI again while its failed handoff awaits ACK.
 			if(const auto active = battleints.find(color); active != battleints.end())
 				active->second->yourTacticPhase(battleID, distance);
 

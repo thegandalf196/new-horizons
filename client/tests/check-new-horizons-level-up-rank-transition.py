@@ -14,6 +14,8 @@ LEVEL = (ROOT / "client/windows/CLevelWindow.cpp").read_text(encoding="utf-8")
 CHOICES = (ROOT / "client/windows/CLevelWindowChoices.cpp").read_text(encoding="utf-8")
 CARDS = (ROOT / "client/windows/LevelUpChoiceCards.cpp").read_text(encoding="utf-8")
 COMPONENT = (ROOT / "client/widgets/CComponent.cpp").read_text(encoding="utf-8")
+FOUR_LEVEL = (ROOT / "client/windows/CFourOfferLevelWindow.cpp").read_text(encoding="utf-8")
+FOUR_CHOICES = (ROOT / "client/windows/CFourOfferLevelChoices.cpp").read_text(encoding="utf-8")
 TEXTS = json.loads((ROOT / "config/newHorizonsCombatTexts.json").read_text(encoding="utf-8"))
 
 
@@ -71,6 +73,14 @@ def verify_rank_transition_wiring() -> None:
     transition = TEXTS.get("new-horizons.levelUp.skill.rankTransition")
     assert unlearned and unlearned.strip(), "missing localized unlearned text"
     assert transition and transition.count("%s") == 2, "rank transition needs current and offered placeholders"
+
+    # A Basic parent upgraded externally to Expert can retain exactly its four
+    # Basic perk choices. Eligibility equality alone must not freeze its caption.
+    require(FOUR_LEVEL, "hero->getPerkSkillRank(offers.perkSkills[group])", "actual held parent rank readback")
+    require(FOUR_LEVEL, "const auto oldRanks = currentRanks;", "retained presentation rank signature")
+    require(FOUR_LEVEL, "&& currentRanks == oldRanks", "rank-only changes invalidate presentation")
+    require(FOUR_CHOICES, "const int rank = currentRanks[slot];", "perk parent caption uses the compared rank")
+    require(FOUR_CHOICES, "const int current = currentRanks[slot];", "Skill caption uses the compared rank")
 
     ranks = ("Basic", "Advanced", "Expert")
     assert [ranks[(current + 1) - 1] for current in range(3)] == list(ranks)

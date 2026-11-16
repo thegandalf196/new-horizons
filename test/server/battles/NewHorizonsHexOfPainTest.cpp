@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 
 #include "HeroCommandFixture.h"
 #include "../../SpellPointTestUtils.h"
@@ -131,9 +132,9 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), shadowMagicSkillKey, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offers.begin(), offers.end(), [](const auto & offer)
 			{
 				return offer.selection.skillId == shadowMagicSkillKey

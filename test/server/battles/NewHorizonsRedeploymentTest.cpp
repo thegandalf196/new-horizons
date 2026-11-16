@@ -7,6 +7,7 @@
  * Full text of the license available in license.txt file, in the main folder
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 
 #include "BattleTestFixture.h"
 #include "BattleStartSnapshotFixture.h"
@@ -117,9 +118,9 @@ protected:
 		{
 			return hero->getPerkSkillRank(skill);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), battlecraftSkill, rankLookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 			{
 				if(offers[choice].selection.skillId != battlecraftSkill

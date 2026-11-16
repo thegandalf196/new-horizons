@@ -84,20 +84,21 @@ for broken in (
     else:
         raise AssertionError("Quit source guard accepted missing ownership or teardown ordering")
 
-restart = body(server, "void CServerHandler::restartGameplay()")
-restart_steps = [
-    "client->endNetwork();",
-    "client->finishGameplay();",
-    "client->endGame();",
-    "client.reset();",
-]
-positions = [restart.find(step) for step in restart_steps]
+restart = body(server, "bool CServerHandler::restartGameplay()")
+retirement = (ROOT / "client/ClientGameplayRetirement.h").read_text(encoding="utf-8")
+restart_steps = ["owner->endNetwork();", "owner->finishGameplay()", "beforeDestruction()",
+                 "owner->endGame()", "owner.reset();"]
+# The function signature names beforeDestruction too; compare within its body.
+retire_body = retirement[retirement.index("const auto source") :]
+positions = [retire_body.find(step) for step in restart_steps]
 assert all(position >= 0 for position in positions), restart_steps
-assert positions == sorted(positions), "restart must terminate waiters before destroying client state"
+assert positions == sorted(positions), "retirement must stop/drain before destroying client state"
+assert "if(!retireClientGameplay(client, [] { return true; }))" in restart
+assert "return false;" in restart and "return true;" in restart
 
 
 def check_restart_text_lifecycle(restart_body: str) -> None:
-    teardown = restart_body.find("client.reset();")
+    teardown = restart_body.find("retireClientGameplay(client,")
     release = restart_body.find("gameplayTextOverlays.clear();")
     lobby = restart_body.find("logicConnection->enterLobbyConnectionMode();")
     assert teardown >= 0 and teardown < release < lobby, \
@@ -108,7 +109,7 @@ check_restart_text_lifecycle(restart)
 for broken in (
     restart.replace("gameplayTextOverlays.clear();", ""),
     restart.replace("gameplayTextOverlays.clear();", "").replace(
-        "client->finishGameplay();", "gameplayTextOverlays.clear();\nclient->finishGameplay();"),
+        "retireClientGameplay(client,", "gameplayTextOverlays.clear();\nretireClientGameplay(client,"),
 ):
     try:
         check_restart_text_lifecycle(broken)
@@ -126,7 +127,7 @@ assert re.search(r"for\(const auto & scenarioTexts : si->campState->getScenarioT
                  r"gameplayTextOverlays.emplace_back\(scenarioTexts.second\);", starting), \
     "transferred heroes must retain current-campaign prior-scenario text sources"
 
-ending = body(client, "void CClient::endGame()")
+ending = body(client, "bool CClient::endGame()")
 detach = "auto endingBattleInterface = std::move(CPlayerInterface::battleInt);"
 terminate = "endingBattleInterface->endNetwork();"
 clear_gui = "removeGUI();"
@@ -202,10 +203,12 @@ for broken_fallback in (fallback.replace("return;", ""),
 # network receive stack before deleting its client. This is a source invariant;
 # a runtime restart/cancellation check is still required for acceptance.
 assert body(client, "void CClient::endNetwork()").index("cancelOwnedRecipientPreparation(") < body(client, "void CClient::endNetwork()").index("GAME->map().endNetwork();")
-assert body(client, "void CClient::finishGameplay()").index("cancelOwnedRecipientPreparation(") < body(client, "void CClient::finishGameplay()").index("waitingRequest.requestTermination();")
-owned_end = body(server, "void CServerHandler::endGameplay()")
+assert body(client, "bool CClient::finishGameplay()").index("cancelOwnedRecipientPreparation(") < body(client, "bool CClient::finishGameplay()").index("waitingRequest.requestTermination();")
+owned_end = body(server, "bool CServerHandler::endGameplay()")
 assert owned_end.index("cancelOwnedRecipientPreparation(") < owned_end.index("gameplayReplayer->waitForFinish();")
-assert owned_end.index("sendClientDisconnecting();") < owned_end.index("waitForOwnedReceiveRetirement();") < owned_end.index("client->endGame();")
+assert owned_end.index("sendClientDisconnecting();") < owned_end.index("waitForOwnedReceiveRetirement();")
+assert "retireClientGameplay(client," in owned_end
+assert retirement.index("beforeDestruction() ||") < retirement.index("owner->endGame()")
 retirement = (ROOT / "client/ClientOwnedReceiveRetirement.cpp").read_text(encoding="utf-8")
 assert "running_in_this_thread()" in retirement and "!threadNetwork.joinable()" in retirement
 assert "boost::asio::post(context, [signal]() { signal->set_value(); });" in retirement

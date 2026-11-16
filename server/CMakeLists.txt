@@ -70,6 +70,7 @@ set(vcmiservercommon_SRCS
 		queries/MapEventQuery.cpp
 		queries/MapQueries.cpp
 		queries/HeroLevelUpOffer.cpp
+		queries/FourOfferProgressionChoice.cpp
 		queries/VisitQueries.cpp
 		queries/QueriesProcessor.cpp
 
@@ -86,6 +87,14 @@ set(vcmiservercommon_SRCS
 		CreatureRewardTransfer.cpp
 		NeutralMonsterPopulation.cpp
 		HeroLevelProgression.cpp
+		StackArrangement.cpp
+		ArtifactPurchases.cpp
+		HeroLevelUpPreparation.cpp
+		HeroSkillProgression.cpp
+		RecruitmentCommit.cpp
+		RecruitmentCommit.h
+		processors/NewTurnEconomy.cpp
+		EstatesAdministration.cpp
 		HeroPerkProgression.cpp
 		NewHorizonsLearningMentor.cpp
 		NewHorizonsScholar.cpp

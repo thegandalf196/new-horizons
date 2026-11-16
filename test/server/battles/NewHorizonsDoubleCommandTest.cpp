@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 
 #include "BattleStartSnapshotFixture.h"
@@ -83,9 +84,9 @@ protected:
 			return hero->getPerkSkillRank(skill);
 		};
 		const auto weightContext = hero->getPerkOfferWeightContext();
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, weightContext);
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), commandSkill, rankLookup, seed, weightContext);
 			for(const auto & offer : offers)
 				if(offer.selection.skillId == commandSkill && offer.selection.perkId == perkId)
 					return true;
@@ -100,9 +101,9 @@ protected:
 			return hero->getPerkSkillRank(skill);
 		};
 		const auto weightContext = hero->getPerkOfferWeightContext();
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, weightContext);
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), commandSkill, rankLookup, seed, weightContext);
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 			{
 				if(offers[choice].selection.skillId == commandSkill && offers[choice].selection.perkId == perkId)

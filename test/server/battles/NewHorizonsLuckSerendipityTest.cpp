@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../AI/BattleAI/AttackPossibility.h"
@@ -65,9 +66,9 @@ protected:
 	void acceptPerk(CGHeroInstance * hero, const char * id)
 	{
 		const auto rank = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rank, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), LUCK_SKILL, rank, seed, hero->getPerkOfferWeightContext());
 			const auto choice = std::ranges::find_if(offer, [id](const auto & item)
 			{
 				return item.selection.skillId == LUCK_SKILL && item.selection.perkId == id;

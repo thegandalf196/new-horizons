@@ -73,6 +73,9 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalProgression
 			? historicalCapabilityRulesV5() : JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
 		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		perks.Struct().erase("fourOfferProgressionVersion");
+		perks["unifiedSkillProgressionVersion"].Integer() = 1;
+		perks.setOverrideFlag(true);
 		if(historicalProgression)
 		{
 			perks.Struct().erase("unifiedSkillProgressionVersion");

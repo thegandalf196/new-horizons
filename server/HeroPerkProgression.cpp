@@ -2,9 +2,11 @@
 #include "StdInc.h"
 #include "CGameHandler.h"
 #include "queries/MapQueries.h"
+#include "queries/HeroLevelUpOffer.h"
 #include "queries/QueriesProcessor.h"
 #include "../lib/CPlayerState.h"
 #include "../lib/entities/hero/NewHorizonsPerkState.h"
+#include "../lib/entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../lib/gameState/CGameState.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include <algorithm>
@@ -23,11 +25,20 @@ bool hasProgressionQuery(const QueriesProcessor & queries, ObjectInstanceID hero
 
 void validateOffer(const CGHeroInstance & hero, const HeroLevelUp & offer)
 {
-	if(!newHorizonsHeroes::usesUnifiedSkillProgression(hero.getPerkState().rules)
+	if(!newHorizonsHeroes::usesPersistentHeroProgression(hero.getPerkState().rules)
 		|| offer.heroId != hero.id || offer.player != hero.getOwner()
 		|| !offer.player.isValidPlayer() || offer.perkOfferSeed != 0
 		|| offer.replacesQueryID != QueryID::NONE)
 		throw std::runtime_error("Invalid saved unified hero progression identity");
+	if(newHorizonsHeroes::usesFourOfferProgression(hero.getPerkState().rules))
+	{
+		if(offer.perkOnly || !offer.skills.empty() || !offer.perks.empty()
+			|| offer.reachedLevel != hero.level + (offer.restoredOffer ? 0 : 1) || !hero.cb)
+			throw std::runtime_error("Invalid saved four-offer progression envelope");
+		newHorizonsHeroes::validateFourOfferSnapshot(offer.fourOffers, hero.getPerkState());
+		return;
+	}
+	if(!offer.fourOffers.empty()) throw std::runtime_error("Four-offer payload without saved policy");
 	if(offer.perkOnly)
 	{
 		const auto expected = hero.getPerkState().nextRequiredPerkOffer([&](const std::string & skill)
@@ -46,7 +57,7 @@ void validateOffer(const CGHeroInstance & hero, const HeroLevelUp & offer)
 void CGameHandler::rememberHeroProgressionOffer(const HeroLevelUp & offer)
 {
 	const auto * hero = gameState().getHero(offer.heroId);
-	if(!hero || !newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules))
+	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
 		return;
 	auto saved = offer;
 	saved.replacesQueryID = QueryID::NONE;
@@ -62,6 +73,17 @@ void CGameHandler::validatePendingHeroProgression() const
 		if(!hero || offer.heroId != id)
 			throw std::runtime_error("Saved hero progression has no matching hero");
 		validateOffer(*hero, offer);
+	}
+}
+
+void CGameHandler::validatePendingHeroProgressionSerialization(bool fourOfferSupported) const
+{
+	if(fourOfferSupported) return;
+	for(const auto & [id, offer] : pendingHeroLevelUps)
+	{
+		const auto * hero = gameState().getHero(id);
+		if(!offer.fourOffers.empty() || (hero && newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules)))
+			throw std::runtime_error("Cannot discard a pending four-offer advancement");
 	}
 }
 
@@ -114,7 +136,7 @@ bool CGameHandler::offerHeroRequiredPerk(const CGHeroInstance * hero)
 
 void CGameHandler::detachHeroProgression(const CGHeroInstance * hero, bool removed)
 {
-	if(!hero || !newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules)) return;
+	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules)) return;
 	std::vector<QueryPtr> stale;
 	for(const auto & query : queries->allQueries())
 		if(const auto * level = dynamic_cast<const CHeroLevelUpDialogQuery *>(query.get());
@@ -138,7 +160,7 @@ void CGameHandler::detachHeroProgression(const CGHeroInstance * hero, bool remov
 
 void CGameHandler::resumeTransferredHeroProgression(const CGHeroInstance * hero, PlayerColor previousOwner)
 {
-	if(!hero || !newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules)) return;
+	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules)) return;
 	const auto saved = pendingHeroLevelUps.find(hero->id);
 	const bool hadSavedOffer = saved != pendingHeroLevelUps.end();
 	if(saved != pendingHeroLevelUps.end())
@@ -154,7 +176,9 @@ void CGameHandler::resumeTransferredHeroProgression(const CGHeroInstance * hero,
 			{
 				auto applied = offer;
 				sendAndApply(applied);
-				if(!offer.skills.empty()) levelUpHero(hero, offer.skills.front(), false);
+				if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+					newHorizonsLevelUp::applyFirstFourOfferChoice(*this, hero, offer.fourOffers);
+				else if(!offer.skills.empty()) levelUpHero(hero, offer.skills.front(), false);
 			}
 			heroLevelUpChoiceDone(hero);
 		}

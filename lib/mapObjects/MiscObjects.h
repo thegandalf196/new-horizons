@@ -168,6 +168,12 @@ private:
     int32_t mercenaryLastWeek = -1;
     int32_t pendingMercenaries = 0;
     PlayerColor pendingMercenaryOwner = PlayerColor::NEUTRAL;
+	int32_t companyDefenseLastWeek = -1;
+	PlayerColor companyDefenseOwner = PlayerColor::NEUTRAL;
+	SlotID companyDefenseSlot = SlotID(-1);
+public:
+	void validateCompanyDefenseSerialization(bool supported) const;
+private:
     void validateMercenaryState() const;
     void setPropertyDer(ObjProperty what, ObjPropertyID value) override;
 public:
@@ -175,8 +181,15 @@ public:
     int32_t getPendingMercenaries() const { return pendingMercenaries; }
     void grantWeeklyMercenaries(IGameEventCallback & events, int32_t week, int32_t amount) const;
     void deliverPendingMercenaries(IGameEventCallback & events) const;
+	bool isCompanySlot(SlotID slot) const;
+	bool hasCompanyDefenders() const;
+	PlayerColor getCompanyOwner() const { return companyDefenseOwner; }
+	int32_t getCompanyDefenseLastWeek() const { return companyDefenseLastWeek; }
+	void grantWeeklyCompanyDefenders(IGameEventCallback & events, int32_t week, int32_t level) const;
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateCompanyDefenseSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		h & static_cast<CArmedInstance&>(*this);
 		h & producedResource;
 		h & producedQuantity;
@@ -192,6 +205,19 @@ public:
         }
         else if(h.saving && (mercenaryLastWeek != -1 || pendingMercenaries != 0))
             throw std::runtime_error("Mercenary Company mine receipt requires current format");
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES))
+		{
+			h & companyDefenseLastWeek;
+			h & companyDefenseOwner;
+			h & companyDefenseSlot;
+		}
+		else if(!h.saving)
+		{
+			companyDefenseLastWeek = -1;
+			companyDefenseOwner = PlayerColor::NEUTRAL;
+			companyDefenseSlot = SlotID(-1);
+		}
+		validateCompanyDefenseSerialization(true);
 	}
 	ui32 defaultResProduction() const;
 	ui32 getProducedQuantity() const;

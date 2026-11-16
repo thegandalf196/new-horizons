@@ -19,6 +19,7 @@
 #include "gui/CIntObject.h"
 
 class Artifact;
+struct InitialAutofightCompletion;
 struct TryMoveHero;
 class CStack;
 class CCreature;
@@ -134,6 +135,9 @@ protected: // Call-ins from server, should not be called directly, but only via 
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID) override;
 	void heroGotLevelWithReroll(const CGHeroInstance * hero, PrimarySkill pskill, std::vector<SecondarySkill> & skills,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID,
+		bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) override;
+	void heroGotFourOfferLevel(const CGHeroInstance * hero, PrimarySkill primary,
+		const newHorizonsHeroes::FourOfferProgressionOffer & offers, QueryID queryID,
 		bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) override;
 	void heroGotMastery(const newHorizonsHeroes::MasteryOffer & offer, QueryID queryID) override;
 	void heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhancementOffer & offer, QueryID queryID) override;
@@ -259,6 +263,7 @@ public: // public interface for use by client via GAME->interface() access
 	void registerBattleInterface(std::shared_ptr<CBattleGameInterface> battleEvents);
 	void unregisterBattleInterface(std::shared_ptr<CBattleGameInterface> battleEvents);
 
+	bool completeInitialAutofight(const InitialAutofightCompletion & completion);
 	void prepareAutoFightingAI(const BattleID &bid, const CCreatureSet *army1, const CCreatureSet *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, BattleSide side, bool automatic = false);
 
 	CPlayerInterface(PlayerColor Player);
@@ -280,6 +285,10 @@ private:
 
 	void heroKilled(const CGHeroInstance* hero);
 	void closeActiveLevelUpDialog();
+	void levelUpRequestApplied(uint32_t requestID, bool success);
+	void levelUpQueryResolved(QueryID queryID);
+	bool drainFourOfferLevelDialogs();
+	void refreshFourOfferLevelDialogs(const CGHeroInstance * hero);
 	void createAndQueueDialog(PendingDialog::Type blocking, std::function<void()> showCallback, QueryID queryID = QueryID::NONE);
 	std::list<PendingDialog>::iterator findQueryBackedDialogInsertionPoint();
 	void tryShowNextPendingDialog();

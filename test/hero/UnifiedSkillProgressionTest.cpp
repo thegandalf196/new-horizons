@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../server/LegacyEstatesCapture.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <algorithm>
@@ -10,7 +11,7 @@ constexpr auto SKILL = "new-horizons:authority";
 newHorizonsHeroes::PerkState state()
 {
 	newHorizonsHeroes::PerkState result;
-	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	result.rules = estatesTest::legacyEstatesPerks();
 	return result;
 }
 int expert(const std::string & skill) { return skill == SKILL ? 3 : 0; }

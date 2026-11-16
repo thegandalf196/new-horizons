@@ -120,7 +120,7 @@ public:
 	static constexpr int32_t REROLL_REPLY = -2;
 	static constexpr int32_t rerollReply(size_t skillIndex) { return -2 - static_cast<int32_t>(skillIndex); }
 	bool requestReroll(PlayerColor player, size_t skillIndex = 0);
-	std::set<SecondarySkill> rerollCandidates() const;
+	std::set<SecondarySkill> rerollCandidates(size_t skillIndex = 0) const;
 	bool hasOptionalPolicy() const;
 	bool blocksPack(const CPackForServer * pack) const override;
 

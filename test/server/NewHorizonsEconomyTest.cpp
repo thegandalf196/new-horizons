@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "LegacyEstatesCapture.h"
 
 #include "../../lib/CPlayerState.h"
 #include "../../lib/CSkillHandler.h"
@@ -78,13 +79,19 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 		else
+		{
 			// The module enables New Horizons globally. An explicit null map
 			// override is the saved-world contract for exercising legacy behavior.
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			// Current starting-book replacements require the current magic roster.
+			// This legacy economy world must not inherit that hero profile.
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+		}
 
 		if(overrideTaxCollectorPerkRules)
 		{
-			JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+			estatesTest::applyLegacyEstatesHeroes(loaded);
+			JsonNode perkRules = estatesTest::legacyEstatesPerks();
 			if(taxCollectorIsPlanned)
 			{
 				for(auto & perk : perkRules["skills"]["new-horizons:estates"]["perks"].Vector())

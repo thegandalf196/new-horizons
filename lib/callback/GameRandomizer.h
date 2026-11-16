@@ -116,6 +116,7 @@ public:
 	std::array<int, GameConstants::PRIMARY_SKILLS> rollPrimarySkillsForLevelup(const CGHeroInstance * hero) override;
 	SecondarySkill rollSecondarySkillForLevelup(const CGHeroInstance * hero, const std::set<SecondarySkill> & candidates) override;
 	std::vector<SecondarySkill> rollSecondarySkills(const CGHeroInstance * hero) override;
+	newHorizonsHeroes::FourOfferProgressionOffer rollFourOfferProgression(const CGHeroInstance * hero) override;
 
 	bool rollGoodMorale(ObjectInstanceID actor, int moraleValue);
 	bool rollBadMorale(ObjectInstanceID actor, int moraleValue);

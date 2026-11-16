@@ -48,8 +48,18 @@ class NewHorizonsUiPerkInventoryTest(unittest.TestCase):
         current = {perk['id'] for perk in self.reworked}
         active = [identity for identity, _ in self.icon_rows
                   if identity.split(':')[1].split('.')[0] in REWORKED_SKILLS]
-        self.assertEqual(len(active), 40)
-        self.assertEqual(set(active), current)
+        historical_estates = {
+            'new-horizons:estates.landSurveyor': 'NH_perk_land_surveyor',
+            'new-horizons:estates.prosperity': 'NH_perk_prospector',
+            'new-horizons:estates.banking': 'NH_perk_financier',
+        }
+        # Current rows are exact; these three retired aliases remain only for
+        # captured historical saves. Unknown or duplicate bindings still fail.
+        self.assertEqual(len(active), 40 + len(historical_estates))
+        self.assertEqual(set(active), current | set(historical_estates))
+        self.assertEqual(len([identity for identity in active if identity in current]), 40)
+        for identity, icon in historical_estates.items():
+            self.assertEqual(self.icons[identity], icon)
         for perk in self.reworked:
             row = rows[perk['name'] + ' (' + perk['id'] + ')']
             validate_current_reworked_row(row, perk, self.icons[perk['id']])

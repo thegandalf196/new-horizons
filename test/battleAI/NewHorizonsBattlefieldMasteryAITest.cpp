@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "../server/battles/BattleTestFixture.h"
 
@@ -72,9 +73,9 @@ protected:
 			{
 				return hero->getPerkSkillRank(id);
 			};
-			for(uint64_t seed = 0; seed < 4096; ++seed)
+			for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 			{
-				const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+				const auto offers = perkTestSetup::forSkill(hero->getPerkState(), requestedSkill, rankLookup, seed, hero->getPerkOfferWeightContext());
 				for(size_t choice = 0; choice < offers.size(); ++choice)
 				{
 					if(offers[choice].selection.skillId != requestedSkill

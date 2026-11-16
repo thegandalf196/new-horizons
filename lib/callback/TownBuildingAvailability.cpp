@@ -10,6 +10,7 @@
 #include "../entities/faction/CTownHandler.h"
 #include "../gameState/CGameState.h"
 #include "../mapObjects/CGTownInstance.h"
+#include "../mapObjects/NewHorizonsEstatesPolicy.h"
 #include "../mapping/CMap.h"
 
 EBuildingState CGameInfoCallback::canBuildStructure( const CGTownInstance *t, BuildingID ID ) const
@@ -48,13 +49,11 @@ EBuildingState CGameInfoCallback::canBuildStructure( const CGTownInstance *t, Bu
 		const PlayerState *ps = getPlayerState(t->tempOwner, false);
 		if(ps)
 		{
-			for(const CGTownInstance *town : ps->getTowns())
-			{
-				if(town->hasBuilt(BuildingID::CAPITOL))
-				{
-					return EBuildingState::HAVE_CAPITAL; //no more than one capitol
-				}
-			}
+			const auto towns = ps->getTowns();
+			const auto count = std::count_if(towns.begin(), towns.end(),
+				[](const auto * town) { return town->hasBuilt(BuildingID::CAPITOL); });
+			if(static_cast<size_t>(count) >= newHorizonsEstates::capitolLimit(*ps))
+				return EBuildingState::HAVE_CAPITAL;
 		}
 	}
 	else if(ID == BuildingID::SHIPYARD)

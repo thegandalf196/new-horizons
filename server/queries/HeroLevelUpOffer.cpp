@@ -16,6 +16,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/entities/hero/SkillChoiceEligibility.h"
+#include "../../lib/entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../../lib/callback/IGameInfoCallback.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -31,7 +32,7 @@ CHeroLevelUpDialogQuery::CHeroLevelUpDialogQuery(CGameHandler * owner, const Her
 {
 	hlu = Hlu;
 	addPlayer(hero->tempOwner);
-	if(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules))
+	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
 	{
 		hlu.queryID = queryID;
 		gh->rememberHeroProgressionOffer(hlu);
@@ -41,13 +42,13 @@ CHeroLevelUpDialogQuery::CHeroLevelUpDialogQuery(CGameHandler * owner, const Her
 bool CHeroLevelUpDialogQuery::blocksPack(const CPackForServer * pack) const
 {
 	if(!hero) return false;
-	if(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules)
+	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules)
 		&& dynamic_cast<const SaveGame *>(pack) && gh->gameState().currentBattles.empty())
 	{
 		for(const auto & query : owner->allQueries())
 		{
 			const auto * progression = dynamic_cast<const CHeroLevelUpDialogQuery *>(query.get());
-			if(!progression || !newHorizonsHeroes::usesUnifiedSkillProgression(progression->hero->getPerkState().rules))
+			if(!progression || !newHorizonsHeroes::usesPersistentHeroProgression(progression->hero->getPerkState().rules))
 				return true;
 		}
 		return false;
@@ -66,15 +67,22 @@ bool CHeroLevelUpDialogQuery::canReroll() const
 	if(!hero) return false;
 	const auto interval = newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().rules);
 	return prompted && !answer && hlu.optionalRerollAvailable && interval
-		&& hlu.reachedLevel == hero->level && !hlu.skills.empty()
+		&& hlu.reachedLevel == hero->level && (!hlu.skills.empty() || !hlu.fourOffers.empty())
 		&& hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.connoisseur")
-		&& !rerollCandidates().empty();
+		&& (!rerollCandidates().empty()
+			|| (newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules) && !rerollCandidates(1).empty()));
 }
 
 bool CHeroLevelUpDialogQuery::hasValidOffer() const
 {
 	if(hlu.perkOfferSeed < 0)
 		return false;
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	{
+		if(!hlu.skills.empty() || !hlu.perks.empty() || hlu.perkOnly || hlu.perkOfferSeed != 0) return false;
+		newHorizonsHeroes::validateFourOfferSnapshot(hlu.fourOffers, hero->getPerkState());
+		return true;
+	}
 	for(auto skill : hlu.skills)
 		if(!newHorizonsHeroes::isValidLevelUpSkillChoice(gh->gameInfo(), hero, skill))
 			return false;
@@ -119,9 +127,17 @@ bool CHeroLevelUpDialogQuery::confirmCurrentOffer(PlayerColor player, QueryID re
 	return true;
 }
 
-std::set<SecondarySkill> CHeroLevelUpDialogQuery::rerollCandidates() const
+std::set<SecondarySkill> CHeroLevelUpDialogQuery::rerollCandidates(size_t skillIndex) const
 {
 	if(!hero) return {};
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	{
+		std::set<SecondarySkill> result;
+		for(const auto & candidate : newHorizonsHeroes::fourOfferRerollCandidates(hlu.fourOffers,
+			newHorizonsHeroes::fourOfferCandidates(gh->gameInfo(), *hero), skillIndex))
+			result.insert(candidate.skill);
+		return result;
+	}
 	return newHorizonsHeroes::connoisseurSkillCandidates(gh->gameInfo(), *hero, hlu.skills);
 }
 
@@ -136,14 +152,21 @@ bool CHeroLevelUpDialogQuery::requestReroll(PlayerColor player, size_t skillInde
 		confirmCurrentOffer(player, queryID);
 		return false;
 	}
-	if(skillIndex >= hlu.skills.size() || !hasValidOffer())
+	const bool four = newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules);
+	if(skillIndex >= (four ? hlu.fourOffers.skills.size() : hlu.skills.size()) || !hasValidOffer())
 		return false;
-	const auto candidates = rerollCandidates();
+	const auto candidates = rerollCandidates(skillIndex);
 	// Rejection, including no legal alternative, is mutation- and RNG-free.
 	if(candidates.empty())
 		return false;
 	auto replacement = hlu;
-	replacement.skills[skillIndex] = gh->randomizer->rollSecondarySkillForLevelup(hero, candidates);
+	const auto skill = gh->randomizer->rollSecondarySkillForLevelup(hero, candidates);
+	if(four)
+	{
+		replacement.fourOffers.skills[skillIndex] = skill;
+		replacement.fourOffers.targetRanks[skillIndex] = hero->getSecSkillLevel(skill) + 1;
+	}
+	else replacement.skills[skillIndex] = skill;
 	replacement.optionalRerollAvailable = false;
 	replacement.replacesQueryID = queryID;
 	replacement.queryID = ++gh->QID;
@@ -161,7 +184,7 @@ void newHorizonsLevelUp::validateNoPendingOptionalOffer(const CGameHandler & han
 	{
 		const auto * levelUp = dynamic_cast<const CHeroLevelUpDialogQuery *>(query.get());
 		const bool savedProgression = levelUp
-			&& newHorizonsHeroes::usesUnifiedSkillProgression(levelUp->hero->getPerkState().rules);
+			&& newHorizonsHeroes::usesPersistentHeroProgression(levelUp->hero->getPerkState().rules);
 		if(!handler.pendingHeroLevelUps.empty() && !savedProgression)
 			throw std::runtime_error("Cannot save pending progression while another transient query is active");
 		if(levelUp && levelUp->hasOptionalPolicy() && !savedProgression)
@@ -185,6 +208,13 @@ const newHorizonsHeroes::PerkState::OfferWeightContext & CHeroLevelUpDialogQuery
 
 void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
 {
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	{
+		if(!hasValidOffer()) throw std::runtime_error("Stale four-offer hero progression");
+		hlu.optionalRerollAvailable = hlu.optionalRerollAvailable
+			&& (!rerollCandidates(0).empty() || !rerollCandidates(1).empty());
+		return; // Keep the original four draws; inspection never rerolls a group.
+	}
 	std::erase_if(hlu.skills, [this](SecondarySkill skill)
 	{
 		return !newHorizonsHeroes::isValidLevelUpSkillChoice(gh->gameInfo(), hero, skill);
@@ -217,7 +247,7 @@ void CHeroLevelUpDialogQuery::refreshChoicesBeforePrompt()
 bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
 {
 	if(!hero) return false;
-	if(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules))
+	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
 	{
 		if(!prompted || !hero->getOwner().isValidPlayer() || hero->getOwner() != hlu.player
 			|| owner->topQuery(hero->getOwner()).get() != this || hlu.reachedLevel != hero->level)
@@ -229,6 +259,12 @@ bool CHeroLevelUpDialogQuery::isValidReply(std::optional<int32_t> reply) const
 		return false;
 	if(!reply || *reply < 0)
 		return false;
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	{
+		const auto legal = newHorizonsHeroes::legalFourOfferReplies(hlu.fourOffers, hero->getPerkState(),
+			newHorizonsHeroes::fourOfferCandidates(gh->gameInfo(), *hero));
+		return legal.empty() ? *reply == 0 : vstd::contains(legal, *reply);
+	}
 	const size_t choiceCount = hlu.skills.size() + hlu.perks.size();
 	if(choiceCount == 0)
 		return *reply == 0;
@@ -257,6 +293,13 @@ void CHeroLevelUpDialogQuery::onRemoval(PlayerColor color)
 	if(!hero) return;
 	assert(answer);
 	gh->pendingHeroLevelUps.erase(hero->id);
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	{
+		newHorizonsLevelUp::applyFourOfferChoice(*gh, hero, hlu.fourOffers, *answer);
+		gh->sendQueryResolved(queryID);
+		gh->heroLevelUpChoiceDone(hero);
+		return;
+	}
 	if(hlu.skills.empty() && hlu.perks.empty())
 	{
 		gh->sendQueryResolved(queryID);
@@ -319,7 +362,7 @@ void CHeroLevelUpDialogQuery::onAdded(PlayerColor color)
 	prompted = true;
 	hlu.queryID = queryID;
 	gh->sendAndApply(hlu);
-	if(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules))
+	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
 	{
 		hlu.restoredOffer = true;
 		gh->rememberHeroProgressionOffer(hlu);
@@ -351,7 +394,7 @@ void CHeroLevelUpDialogQuery::onExposure(QueryPtr topQuery)
 		prompted = true;
 		hlu.queryID = queryID;
 		gh->sendAndApply(hlu);
-		if(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules))
+		if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
 		{
 			hlu.restoredOffer = true;
 			gh->rememberHeroProgressionOffer(hlu);
@@ -369,6 +412,11 @@ void CHeroLevelUpDialogQuery::notifyObjectAboutRemoval(const CGObjectInstance * 
 
 void newHorizonsLevelUp::prepareChoices(CGameHandler & handler, const CGHeroInstance * hero, HeroLevelUp & hlu)
 {
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	{
+		hlu.fourOffers = handler.randomizer->rollFourOfferProgression(hero);
+		return;
+	}
 	hlu.skills = handler.randomizer->rollSecondarySkills(hero);
 	if(!newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
 		return;

@@ -20,6 +20,7 @@ UI = (ROOT / "client/windows/NewHorizonsMusterUI.cpp").read_text(encoding="utf-8
 UI_HEADER = (ROOT / "client/windows/NewHorizonsMusterUI.h").read_text(encoding="utf-8")
 RECRUITMENT = (ROOT / "client/windows/CRecruitmentWindow.cpp").read_text(encoding="utf-8")
 QUICK = (ROOT / "client/windows/QuickRecruitmentWindow.cpp").read_text(encoding="utf-8")
+QUICK += (ROOT / "client/windows/QuickRecruitmentPricing.cpp").read_text(encoding="utf-8")
 CMAKE = (ROOT / "client/CMakeLists.txt").read_text(encoding="utf-8")
 TEXTS = (ROOT / "config/newHorizonsMusterTexts.json").read_text(encoding="utf-8")
 
@@ -69,7 +70,7 @@ require(RECRUITMENT, 'newHorizonsMusterUI::open(Dwelling, destinationHero)',
         "standard recruitment flow opens Muster")
 require(UI, 'amountForExternalCategory', "external Core Muster uses the fixed shared amount")
 require(UI, 'EXTERNAL_RECRUITER_PERK', "external offer requires the active perk")
-require(RECRUITMENT, 'getRecruitmentCost', "price presentation uses authoritative dwelling costs")
+require(RECRUITMENT, 'getTotalRecruitmentCost', "price presentation uses the authoritative buyer-specific dwelling quote")
 require(QUICK, '#include "NewHorizonsMusterUI.h"',
         "quick recruitment flow includes Muster")
 require(QUICK, 'newHorizonsMusterUI::open(town)',

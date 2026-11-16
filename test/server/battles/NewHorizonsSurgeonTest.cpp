@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/spells/CurePhysicalAffliction.h"
 #include "../../../lib/battle/NewHorizonsGraveDust.h"
@@ -141,9 +142,9 @@ protected:
 			return hero->getPerkSkillRank(queriedSkillId);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), skillId, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&](const auto & candidate)
 			{
 				return candidate.selection.skillId == skillId && candidate.selection.perkId == perkId;

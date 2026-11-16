@@ -11,6 +11,7 @@
 #include "../../network/InitializationProfile.h"
 #include "../../nativeRules/PreparedPilotRules.h"
 #include "NewHorizonsPerkRules.h"
+#include "../../mapObjects/NewHorizonsEstatesPolicy.h"
 #include "../../battle/NewHorizonsElementalAttunement.h"
 #include "../../battle/NewHorizonsWarfare.h"
 #include "NewHorizonsNecromancyPolicy.h"
@@ -290,7 +291,8 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
 		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "commandPolicyVersion", "elementalAttunementPolicy", "connoisseurPolicy",
-		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion", "unifiedSkillProgressionVersion"});
+		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion", "unifiedSkillProgressionVersion", "fourOfferProgressionVersion", "estatesPolicyVersion"});
+	newHorizonsEstates::validateRevisedPolicy(rules);
 	validatePassiveFactionPolicies(rules);
 	newHorizonsWarfare::validatePolicy(rules);
 	quickStudyRerollInterval(rules);
@@ -338,12 +340,7 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 			"perkProgressionPolicyVersion");
 		require(usesR2PerkOffers(rules), "strict perk progression requires captured weight policy2");
 	}
-	if(rules.Struct().contains("unifiedSkillProgressionVersion"))
-	{
-		require(rules["unifiedSkillProgressionVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& rules["unifiedSkillProgressionVersion"].Integer() == 1, "unifiedSkillProgressionVersion");
-		require(usesStrictPerkProgression(rules), "unified progression requires ordered one-per-tier perks");
-	}
+	validateHeroProgressionPolicy(rules);
 	require(rules["sourceDocument"].isString() && !rules["sourceDocument"].String().empty(), "sourceDocument");
 	require(rules["sourceSha256"].isString() && rules["sourceSha256"].String().size() == 64, "sourceSha256");
 	for(const auto c : rules["sourceSha256"].String())

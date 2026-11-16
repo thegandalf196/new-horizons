@@ -8,6 +8,7 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 SERVER = (ROOT / "server/CGameHandler.cpp").read_text(encoding="utf-8")
 GARRISON = (ROOT / "client/widgets/CGarrisonInt.cpp").read_text(encoding="utf-8")
+GARRISON += (ROOT / "client/widgets/GarrisonBulkTransfer.cpp").read_text(encoding="utf-8")
 SPLIT_CPP = (ROOT / "client/windows/GUIClasses.cpp").read_text(encoding="utf-8")
 SPLIT_H = (ROOT / "client/windows/GUIClasses.h").read_text(encoding="utf-8")
 ASSET_GENERATOR = (ROOT / "client/render/AssetGenerator.cpp").read_text(encoding="utf-8")

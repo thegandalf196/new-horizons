@@ -1172,6 +1172,14 @@ void CGHeroInstance::setPropertyDer(ObjProperty what, ObjPropertyID identifier)
 		setStackCount(SlotID(0), identifier.getNum());
 	else if(what == ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK)
 		newHorizonsLandSurveyorLastWeek = std::max<int32_t>(-1, identifier.as<NumericID>().getNum());
+	else if(what == ObjProperty::NEW_HORIZONS_HOARDER_LAST_WEEK)
+	{
+		const auto week = identifier.as<NumericID>().getNum();
+		newHorizonsEstates::validateHoarderReceipt(week, true);
+		if(week < newHorizonsHoarderLastWeek)
+			throw std::runtime_error("Hoarder weekly receipt cannot move backward");
+		newHorizonsHoarderLastWeek = week;
+	}
 	else if(what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK)
 	{
 		if(identifier != ObjPropertyID(NumericID(identifier.getNum())))

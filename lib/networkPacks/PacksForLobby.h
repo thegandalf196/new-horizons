@@ -164,7 +164,7 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 	void validateNewHorizonsLighthouseSerialization(bool supported) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
-	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
+	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context, bool fourOfferSupported = false, bool estatesSupported = false) const;
 	void validateNewHorizonsIndividualSpecialtiesSerialization(bool supported, bool ridersSupported = false, bool schoolSupported = false, bool additionalSupported = false, bool recoverySupported = false) const;
 	void validateNewHorizonsBottomlessMindSerialization(bool supported) const;
 	void validateNewHorizonsMasterSpellwardSerialization(bool supported) const;
@@ -236,7 +236,8 @@ struct DLL_LINKAGE LobbyStartGame : public CLobbyPackToPropagate
 			validateNewHorizonsDruidSpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsSpecialtySerialization(
-				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
+				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		if(h.saving)
 			validateNewHorizonsBottomlessMindSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
 		if(h.saving)

@@ -9,6 +9,8 @@
 #include "CGTownInstance.h"
 #include "CGHeroInstance.h"
 #include "NewHorizonsEstates.h"
+#include "NewHorizonsEstatesPolicy.h"
+#include "EstatesStewardship.h"
 #include "../CPlayerState.h"
 #include "../GameLibrary.h"
 #include "../StartInfo.h"
@@ -21,10 +23,13 @@ int32_t CGTownInstance::getStewardGoldBeforeHandicap() const
 {
 	if(!getOwner().isValidPlayer())
 		return 0;
+	if(newHorizonsEstates::townSteward(*this))
+		return 1000;
 	constexpr int32_t goldPerHero = 250;
 	const auto qualifies = [this](const CGHeroInstance * hero)
 	{
 		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
+			&& !newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().rules)
 			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.stewardship");
 	};
 	const auto * visitor = getVisitingHero();
@@ -79,12 +84,13 @@ int CGTownInstance::getMarketEfficiency() const
 	const auto hasMerchantPrince = [this](const CGHeroInstance * hero)
 	{
 		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
+			&& !newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().rules)
 			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.merchantPrince");
 	};
 	// The town receives two virtual Marketplaces, not two per resident holder.
 	// Keep the ordinary Marketplace gate and every consuming offer's own cap.
-	if(hasMerchantPrince(getVisitingHero()) || hasMerchantPrince(getGarrisonHero()))
-		marketCount += 2;
+	const int legacyBonus = hasMerchantPrince(getVisitingHero()) || hasMerchantPrince(getGarrisonHero()) ? 2 : 0;
+	marketCount += std::max(legacyBonus, newHorizonsEstates::marketplaceBonus(*p));
 
 	return marketCount;
 }

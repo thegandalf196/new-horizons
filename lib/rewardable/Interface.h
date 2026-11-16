@@ -45,6 +45,9 @@ protected:
 	/// function that must be called if hero got level-up during grantReward call
 	void grantRewardAfterLevelup(IGameEventCallback & gameEvents, const Rewardable::VisitInfo & reward, const CArmedInstance * army, const CGHeroInstance * hero) const;
 
+	/// Resource commit and reveal stage, before secondary/primary advancement.
+	void grantVisitResourcesAndReveal(IGameEventCallback & gameEvents, const Reward & reward, const CGHeroInstance * hero) const;
+
 	/// grants reward to hero
 	void grantRewardBeforeLevelup(IGameEventCallback & gameEvents, const Rewardable::VisitInfo & reward, const CGHeroInstance * hero) const;
 	

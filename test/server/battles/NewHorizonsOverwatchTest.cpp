@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../AI/BattleAI/AttackPossibility.h"
@@ -163,9 +164,9 @@ protected:
 		{
 			const auto lookup = [this](const std::string & key) { return defenderSideHero->getPerkSkillRank(key); };
 			bool accepted = false;
-			for(uint64_t seed = 0; seed < 4096 && !accepted; ++seed)
+			for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(defenderSideHero->getPerkState(), 4096) && !accepted; ++seed)
 			{
-				const auto offers = defenderSideHero->getPerkState().prepareOffer(lookup, seed, defenderSideHero->getPerkOfferWeightContext());
+				const auto offers = perkTestSetup::forSkill(defenderSideHero->getPerkState(), skillKey, lookup, seed, defenderSideHero->getPerkOfferWeightContext());
 				for(size_t index = 0; index < offers.size(); ++index)
 					if(offers[index].selection.skillId == skillKey && offers[index].selection.perkId == perkKey)
 					{

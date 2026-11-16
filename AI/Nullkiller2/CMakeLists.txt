@@ -92,6 +92,14 @@ set(Nullkiller2_SRCS
 		Helpers/DwellingGrowthValue.cpp
 		AIGateway.cpp
 		AIGatewayLevelUp.cpp
+		WarMachinePurchasing.cpp
+		TownArtifactPurchasing.cpp
+		Engine/VisitResourceValue.cpp
+		EstatesAdministration.cpp
+		EstatesAdministration.h
+		EstatesArmyEvaluation.cpp
+		AIGatewayLevelUpChoice.cpp
+		AIGatewayFourOfferLevelUp.cpp
 		Analyzers/HeroLevelUpEvaluation.cpp
 		Analyzers/QuickStudyDecision.cpp
 		Helpers/LevelUpOfferState.cpp

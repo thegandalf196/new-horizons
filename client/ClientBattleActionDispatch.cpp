@@ -19,6 +19,15 @@ void CClient::startPlayerBattleAction(const BattleID & battleID, PlayerColor col
 	if (battleints.count(color) == 0)
 		return; // not our combat in MP
 
+	const bool deferredInitialInput = [&]
+	{
+		const auto * initialBattle = gameState().getBattle(battleID);
+		return initialBattle && initialAutofight->deferInput(gamestate, color, battleID,
+			static_cast<uint32_t>(initialBattle->activeStack), initialBattle->getActivationSerial());
+	}(); // Retire native borrows before any owned-recipient observation can wait.
+	if(deferredInitialInput)
+		return; // Real input retained as VALUES until the failed initial request is realized.
+
 	auto battleint = battleints.at(color);
 	std::shared_ptr<const battle::OwnedBattleFrameBatch> frames;
 	if(battleint->usesOwnedRecipientPreparation())

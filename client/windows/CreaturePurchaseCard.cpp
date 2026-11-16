@@ -91,7 +91,7 @@ void CreaturePurchaseCard::switchCreatureLevel()
 		categoryLabel->setText(newHorizonsCreatureCategoryUI::name(currentCreatureCategory(creatureOnTheCard),
 			GAME ? &GAME->translator() : nullptr));
 	parent->updateAllSliders();
-	cost->set(parent->recruitmentCost(creatureOnTheCard->getId(), slider->getValue()));
+	cost->set(parent->recruitmentCost(creatureOnTheCard->getId(), slider->getValue(), this));
 }
 
 void CreaturePurchaseCard::initAmountInfo()
@@ -118,7 +118,7 @@ void CreaturePurchaseCard::initSlider()
 void CreaturePurchaseCard::initCostBox()
 {
 	cost = std::make_shared<CreatureCostBox>(Rect(pos.x+2, pos.y + 194, 97, 74), "");
-	cost->createItems(parent->recruitmentCost(creatureOnTheCard->getId(), 1));
+	cost->createItems(parent->recruitmentCost(creatureOnTheCard->getId(), 1, this));
 }
 
 void CreaturePurchaseCard::sliderMoved(int to)
@@ -130,7 +130,7 @@ void CreaturePurchaseCard::sliderMoved(int to)
 		parent->updateAllSliders();
 		return;
 	}
-	cost->set(parent->recruitmentCost(creatureOnTheCard->getId(), to));
+	cost->set(parent->recruitmentCost(creatureOnTheCard->getId(), to, this));
 	parent->updateAllSliders();
 }
 
@@ -295,7 +295,7 @@ void CreaturePurchaseCard::initCompactCostInfo()
 	if(!creatureOnTheCard)
 		return;
 
-	const TResources unitCost = parent->recruitmentCost(creatureOnTheCard->getId(), 1);
+	const TResources unitCost = parent->recruitmentCost(creatureOnTheCard->getId(), 1, this);
 	TResources::nziterator iter(unitCost);
 	std::vector<GameResID> resources;
 	while(iter.valid())
@@ -334,7 +334,7 @@ void CreaturePurchaseCard::updateCompactCostInfo(int amount)
 {
 	if(!creatureOnTheCard)
 		return;
-	const TResources totalCost = parent->recruitmentCost(creatureOnTheCard->getId(), amount);
+	const TResources totalCost = parent->recruitmentCost(creatureOnTheCard->getId(), amount, this);
 	for(const auto & entry : compactCostEntries)
 	{
 		const auto total = std::to_string(totalCost[entry.resource]);
@@ -361,4 +361,12 @@ CreaturePurchaseCard::CCreatureClickArea::CCreatureClickArea(const Point & posit
 void CreaturePurchaseCard::CCreatureClickArea::showPopupWindow(const Point & cursorPosition)
 {
 	ENGINE->windows().createAndPushWindow<CStackWindow>(creatureOnTheCard, true, categoryContext);
+}
+
+void CreaturePurchaseCard::refreshCost()
+{
+	if(compactLayout)
+		updateCompactCostInfo(slider->getValue());
+	else if(cost)
+		cost->set(parent->recruitmentCost(creatureOnTheCard->getId(), slider->getValue(), this));
 }

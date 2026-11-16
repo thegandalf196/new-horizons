@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 #include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include <gtest/gtest.h>
 
@@ -150,9 +151,9 @@ protected:
 	void select(std::string_view perk, MasteryLevel::Type rank)
 	{
 		const auto lookup = [this](const std::string & skill) { return hero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 10000); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(lookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), newHorizonsDiplomacy::SKILL_ID, lookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t i = 0; i < offer.size(); ++i)
 				if(offer[i].selection.skillId == newHorizonsDiplomacy::SKILL_ID && offer[i].selection.perkId == perk)
 				{

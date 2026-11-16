@@ -470,7 +470,7 @@ void ApplyClientNetPackVisitor::visitPlayerEndsGame(PlayerEndsGame & pack)
 			GAME->server().showHighScoresAndEndGameplay(pack.player, pack.victoryLossCheckResult.victory(), pack.statistic);
 		else
 		{
-			GAME->server().endGameplay();
+			if(!GAME->server().endGameplay()) return;
 			GAME->mainmenu()->menu->switchToTab("main");
 		}
 	}
@@ -754,6 +754,12 @@ void ApplyClientNetPackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const CGHeroInstance * hero = cl.gameInfo().getHero(pack.heroId);
 	assert(hero);
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	{
+		callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotFourOfferLevel, hero, pack.primskill, pack.fourOffers,
+			pack.queryID, pack.optionalRerollAvailable, pack.replacesQueryID, pack.reachedLevel);
+		return;
+	}
 	callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotLevelWithReroll, hero, pack.primskill, pack.skills, pack.perks,
 		pack.queryID, pack.optionalRerollAvailable, pack.replacesQueryID, pack.reachedLevel);
 }
@@ -999,6 +1005,8 @@ void ApplyClientNetPackVisitor::visitPackageApplied(PackageApplied & pack)
 	callInterfaceIfPresent(cl, pack.player, &IGameEventsReceiver::requestRealized, &pack);
 	if(!cl.waitingRequest.tryRemovingElement(pack.requestID))
 		logNetwork->warn("Surprising server message! PackageApplied for unknown requestID!");
+	else
+		cl.initialAutofightRequestRealized(pack);
 }
 
 void ApplyClientNetPackVisitor::visitQueryResolved(QueryResolved & pack)

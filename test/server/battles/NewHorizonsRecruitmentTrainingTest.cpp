@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include <sstream>
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameConstants.h"
@@ -102,9 +103,9 @@ protected:
 		const SecondarySkill skill(SecondarySkill::decode(newHorizonsTraining::SKILL));
 		attackerSideHero->setSecSkillLevel(skill, rank, ChangeValueMode::ABSOLUTE);
 		const auto rankLookup = [this](const std::string & skillId) { return attackerSideHero->getPerkSkillRank(skillId); };
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 10000); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forPerk(attackerSideHero->getPerkState(), perk, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.perkId == perk)
 				{

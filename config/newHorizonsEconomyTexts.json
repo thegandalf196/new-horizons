@@ -1,4 +1,6 @@
 {
+	"new-horizons.economy.spellbook.purchase": "Would you like to purchase a Spellbook for %d Gold?",
+	"new-horizons.economy.taxCollector.bonus": "Tax Collector adds:",
 	"new-horizons.growth.recruitmentModifier": "Before recruitment modifier: %d\nRecruitment growth: %d% (rounded up)\nFinal weekly growth: %d",
 	"new-horizons.lighthouse.departure.help": "Embarking from this owned Castle's port costs no embarkation movement penalty. The departing hero gains +%PERCENT%% sea movement for that day only.",
 	"new-horizons.economy.stewardship.total": "Projected town income: %d Gold/day (after income handicap)",

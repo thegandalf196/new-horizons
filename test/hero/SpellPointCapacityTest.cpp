@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "../server/battles/BattleTestFixture.h"
 #include "../server/battles/BattleStartSnapshotFixture.h"
@@ -167,9 +168,9 @@ protected:
 			return hero->getPerkSkillRank(skillId);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forPerk(hero->getPerkState(), perkId, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & candidate)
 			{
 				return candidate.selection.perkId == perkId;
@@ -233,9 +234,9 @@ protected:
 			return hero->getPerkSkillRank(skillId);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forPerk(hero->getPerkState(), perkId, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & candidate)
 			{
 				return candidate.selection.perkId == perkId;
@@ -878,9 +879,10 @@ TEST_F(SpellPointCapacityPlannedSageTest, SavedPlannedSnapshotCannotOfferOrApply
 	{
 		return attackerSideHero->getPerkSkillRank(skillId);
 	};
-	for(uint64_t seed = 0; seed < 128; ++seed)
+	for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 128); ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+		const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), WISDOM_SKILL_ID, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+		ASSERT_FALSE(offer.empty());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == SAGE_PERK_ID;
@@ -901,9 +903,10 @@ TEST_F(SpellPointCapacityPlannedSageTest, SavedPlannedSnapshotCannotOfferOrApply
 	{
 		return restoredHero->getPerkSkillRank(skillId);
 	};
-	for(uint64_t seed = 0; seed < 128; ++seed)
+	for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(restoredHero->getPerkState(), 128); ++seed)
 	{
-		const auto offer = restoredHero->getPerkState().prepareOffer(restoredRankLookup, seed, restoredHero->getPerkOfferWeightContext());
+		const auto offer = perkTestSetup::forSkill(restoredHero->getPerkState(), WISDOM_SKILL_ID, restoredRankLookup, seed, restoredHero->getPerkOfferWeightContext());
+		ASSERT_FALSE(offer.empty());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == SAGE_PERK_ID;
@@ -999,10 +1002,11 @@ TEST_F(SpellPointCapacityPlannedMysticismTest, SavedPlannedSnapshotDoesNotOfferO
 	restored.loadFromMemory(saved);
 	const auto * restoredHero = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(restoredHero, nullptr);
-	const auto offer = restoredHero->getPerkState().prepareOffer([restoredHero](const std::string & skillId)
+	const auto offer = perkTestSetup::forSkill(restoredHero->getPerkState(), WISDOM_SKILL_ID, [restoredHero](const std::string & skillId)
 	{
 		return restoredHero->getPerkSkillRank(skillId);
 	}, 42, restoredHero->getPerkOfferWeightContext());
+	ASSERT_FALSE(offer.empty());
 	EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 	{
 		return candidate.selection.perkId == MYSTICISM_PERK_ID;

@@ -20,6 +20,7 @@
 #include "../../../lib/entities/creature/NewHorizonsCreatureCategoryRules.h"
 #include "../../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../../lib/mapObjects/CGMarket.h"
+#include "../../../lib/mapObjects/EstatesArtifactQuote.h"
 #include "../../../lib/mapObjects/CGCreature.h"
 #include "../../../lib/mapObjects/CGResource.h"
 #include "../../../lib/mapping/TerrainTile.h"
@@ -412,7 +413,8 @@ int RewardEvaluator::getGoldCost(const CGObjectInstance * target, const CGHeroIn
 		{
 			for(const auto & offer : m->availableItemsIds(EMarketMode::RESOURCE_SKILL))
 				if(const auto spell = offer.as<SpellID>(); spell.hasValue())
-					return newHorizonsHouseOfWisdom::price(spell)[EGameResID::GOLD];
+					return newHorizonsEstates::artifactPurchaseQuote(
+						newHorizonsHouseOfWisdom::price(spell), hero).cost[EGameResID::GOLD];
 			return 0;
 		}
 		if(m->allowsTrade(EMarketMode::RESOURCE_SKILL))
@@ -556,8 +558,7 @@ float RewardEvaluator::getStrategicalValue(const CGObjectInstance * target, cons
 	case Obj::RESOURCE:
 	{
 		auto resource = dynamic_cast<const CGResource *>(target);
-		TResources res;
-		res[resource->resourceID()] = resource->getAmount();
+		const auto res = resource->getVisitResources(hero);
 
 		return getCombinedResourceRequirementStrength(res);
 	}
@@ -601,21 +602,7 @@ float RewardEvaluator::getStrategicalValue(const CGObjectInstance * target, cons
 		break;
 	}
 
-	auto rewardable = dynamic_cast<const Rewardable::Interface *>(target);
-
-	if(rewardable && hero)
-	{
-		auto resourceReward = 0.0f;
-
-		for(int index : rewardable->getAvailableRewards(hero, Rewardable::EEventType::EVENT_FIRST_VISIT))
-		{
-			resourceReward += getCombinedResourceRequirementStrength(rewardable->configuration.info[index].reward.resources);
-		}
-
-		return resourceReward;
-	}
-
-	return 0;
+	return getVisitResourceValue(target, hero);
 }
 
 float RewardEvaluator::getConquestValue(const CGObjectInstance* target) const
@@ -748,7 +735,7 @@ int32_t RewardEvaluator::getGoldReward(const CGObjectInstance * target, const CG
 		{
 			auto & info = rewardable->configuration.info[index];
 
-			goldReward += getResourcesGoldReward(info.reward.resources);
+			goldReward += getResourcesGoldReward(info.reward.visitResources(hero, target->ID));
 		}
 
 		return goldReward;

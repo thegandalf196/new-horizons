@@ -26,6 +26,9 @@ public:
 	void heroGotCommandEnhancement(const newHorizonsHeroes::CommandEnhancementOffer & offer, QueryID queryID) override;
 	void heroGotLevel(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill> &skills,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID) override;
+	void heroGotFourOfferLevel(const CGHeroInstance * hero, PrimarySkill pskill,
+		const newHorizonsHeroes::FourOfferProgressionOffer & offers, QueryID queryID,
+		bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) override;
 	void commanderGotLevel (const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID) override;
 	void showBlockingDialog(const std::string &text, const std::vector<Component> &components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept) override;
 	void showTeleportDialog(const CGHeroInstance * hero, TeleportChannelID channel, TTeleportExitsList exits, bool impassable, QueryID askID) override;

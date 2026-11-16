@@ -58,7 +58,8 @@ bool PerkState::canAcquirePerkInState(const JsonNode & rules, const std::vector<
 	for(int prerequisite = 1; prerequisite < tier; ++prerequisite)
 		if(!occupied[prerequisite])
 			return false;
-	const bool onePerTier = !usesR2PerkOffers(rules) || usesStrictPerkProgression(rules);
+	const bool onePerTier = !usesR2PerkOffers(rules)
+		|| (usesStrictPerkProgression(rules) && !usesFourOfferProgression(rules));
 	return !onePerTier || !occupied[tier];
 }
 
@@ -141,10 +142,26 @@ std::vector<PerkOfferCandidate> PerkSelectionOperation::candidates(const std::st
 	return result;
 }
 
+std::vector<PerkOfferCandidate> PerkSelectionOperation::eligibleCandidates(const std::string & skill, int rank) const
+{
+	std::vector<PerkOfferCandidate> result;
+	const auto & skills = source.rules["skills"].Struct();
+	const auto parent = skills.find(skill);
+	if(parent == skills.end()) return result;
+	for(const auto & row : parent->second["perks"].Vector())
+	{
+		const auto & perk = row["id"].String();
+		if(canAcquire(skill, perk, rank))
+			result.push_back({{skill, perk}, row["name"].String(), row["description"].String(),
+				perkRequiredRank(row["requires"].String())});
+	}
+	return result;
+}
+
 std::vector<PerkOfferCandidate> PerkSelectionOperation::next(
 	const std::function<int(const std::string &)> & rankLookup) const
 {
-	if(!usesUnifiedSkillProgression(source.rules)) return {};
+	if(!usesPersistentHeroProgression(source.rules)) return {};
 	for(const auto & [skill, definition] : source.rules["skills"].Struct())
 	{
 		const int rank = rankLookup(skill);

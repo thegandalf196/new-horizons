@@ -48,8 +48,8 @@ void ApplyOnLobbyHandlerNetPackVisitor::visitLobbyQuickLoadGame(LobbyQuickLoadGa
 {
 	assert(handler.getState() == EClientState::GAMEPLAY);
 
-	handler.restartGameplay();
-	handler.sendStartGame();
+	if(handler.restartGameplay())
+		handler.sendStartGame();
 }
 
 void ApplyOnLobbyHandlerNetPackVisitor::visitLobbyClientConnected(LobbyClientConnected & pack)
@@ -166,8 +166,8 @@ void ApplyOnLobbyHandlerNetPackVisitor::visitLobbyRestartGame(LobbyRestartGame &
 {
 	assert(handler.getState() == EClientState::GAMEPLAY);
 
-	handler.restartGameplay();
-	handler.sendStartGame();
+	if(handler.restartGameplay())
+		handler.sendStartGame();
 }
 
 void ApplyOnLobbyHandlerNetPackVisitor::visitLobbyPrepareStartGame(LobbyPrepareStartGame & pack)

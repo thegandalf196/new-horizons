@@ -813,7 +813,7 @@ void CServerHandler::showHighScoresAndEndGameplay(PlayerColor player, bool victo
 		scenarioHighScores.parameters.push_back(param);
 		scenarioHighScores.isCampaign = false;
 
-		endGameplay();
+		if(!endGameplay()) return;
 		GAME->mainmenu()->menu->switchToTab("main");
 		if(!ENGINE->isDemoData())
 			ENGINE->windows().createAndPushWindow<CHighScoreInputScreen>(victory, scenarioHighScores, statistic);
@@ -868,22 +868,6 @@ void CServerHandler::quickLoadGame(const std::string & path)
 	sendLobbyPack(pack);
 }
 
-void CServerHandler::restartGameplay()
-{
-	// Restart and quickload do not pass through the ordinary BattleEnded path.
-	// Stop map/battle waiters before destroying interfaces, matching endGameplay
-	// so no old combat callback can outlive the state it references.
-	client->endNetwork();
-	client->finishGameplay();
-	client->endGame();
-	client.reset();
-	// Teardown may still translate old map widgets. Drop their overlays only
-	// after it finishes; startGameplay installs the new map and current campaign
-	// scenario texts, including the sources needed by transferred heroes.
-	gameplayTextOverlays.clear();
-
-	logicConnection->enterLobbyConnectionMode();
-}
 
 void CServerHandler::startCampaignScenario(HighScoreParameter param, std::shared_ptr<CampaignState> cs, const StatisticDataSet & statistic)
 {
@@ -898,7 +882,7 @@ void CServerHandler::startCampaignScenario(HighScoreParameter param, std::shared
 	campaignScoreCalculator->isCampaign = true;
 	campaignScoreCalculator->parameters = cs->highscoreParameters;
 
-	endGameplay();
+	if(!endGameplay()) return;
 
 	// the game just took its campaign texts down with it, but the epilogue still has to render
 	// them - this keeps them up until the transition hands over to the next lobby
@@ -1100,7 +1084,7 @@ void CServerHandler::onDisconnected(const std::shared_ptr<INetworkConnection> & 
 
 	if(client)
 	{
-		endGameplay();
+		if(!endGameplay()) return;
 		GAME->mainmenu()->menu->switchToTab("main");
 		showServerError(LIBRARY->generaltexth->translate("vcmi.server.errors.disconnected"));
 	}

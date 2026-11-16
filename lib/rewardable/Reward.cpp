@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "Reward.h"
+#include "../mapObjects/NewHorizonsEstatesPolicy.h"
 #include "PrimaryAndExperienceReward.h"
 
 #include "../mapObjects/CGHeroInstance.h"
@@ -103,6 +104,11 @@ si32 Rewardable::Reward::calculateMovePoints(const CGHeroInstance * hero) const
 	si32 moveOutput    = moveScaled + moveGranted + moveOverLimit;
 
 	return std::max(0, moveOutput);
+}
+
+ResourceSet Rewardable::Reward::visitResources(const CGHeroInstance * hero, std::optional<Obj> sourceObject) const
+{
+	return sourceObject ? newHorizonsEstates::visitReward(resources, hero) : resources;
 }
 
 Component Rewardable::Reward::getDisplayedComponent(const CGHeroInstance * h, std::optional<Obj> sourceObject) const
@@ -224,11 +230,7 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 	for(const auto & entry : creatures)
 		comps.emplace_back(ComponentType::CREATURE, entry.getId(), entry.getCount());
 
-	for (size_t i=0; i<resources.size(); i++)
-	{
-		if (resources[i] !=0)
-			comps.emplace_back(ComponentType::RESOURCE, GameResID(i), resources[i]);
-	}
+	loadResourceComponents(comps, h, sourceObject);
 }
 
 void Rewardable::Reward::serializeJson(JsonSerializeFormat & handler)

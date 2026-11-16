@@ -34,6 +34,7 @@ public:
 	float getEnemyHeroStrategicalValue(const CGHeroInstance * enemy) const;
 	float getNowResourceRequirementStrength(GameResID resType) const;
 	float getCombinedResourceRequirementStrength(const TResources & res) const;
+	float getVisitResourceValue(const CGObjectInstance * target, const CGHeroInstance * hero) const;
 	float getStrategicalValue(const CGObjectInstance * target, const CGHeroInstance * hero = nullptr) const;
 	float getConquestValue(const CGObjectInstance* target) const;
 	float getTotalResourceRequirementStrength(GameResID resType) const;

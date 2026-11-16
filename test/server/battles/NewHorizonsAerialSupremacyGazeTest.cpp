@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "NewHorizonsAerialSupremacyFixture.h"
 #include "../../../lib/battle/NewHorizonsParalyzingGaze.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
@@ -28,9 +29,9 @@ protected:
 	void accept(const char * perk)
 	{
 		const auto rank = [this](const std::string & id) { return defenderSideHero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(defenderSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = defenderSideHero->getPerkState().prepareOffer(rank, seed, defenderSideHero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(defenderSideHero->getPerkState(), "new-horizons:armorer", rank, seed, defenderSideHero->getPerkOfferWeightContext());
 			const auto choice = std::ranges::find_if(offer, [perk](const auto & entry)
 				{ return entry.selection.skillId == "new-horizons:armorer" && entry.selection.perkId == perk; });
 			if(choice == offer.end()) continue;

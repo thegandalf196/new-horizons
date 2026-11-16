@@ -7,6 +7,7 @@
  * Full text in license.txt file in main folder
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "BattleTestFixture.h"
 #include "../../SpellPointTestUtils.h"
 
@@ -167,9 +168,9 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), newHorizonsNecromancy::SKILL_ID, rankLookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offer.size(); ++choice)
 			{
 				if(offer[choice].selection.skillId != newHorizonsNecromancy::SKILL_ID

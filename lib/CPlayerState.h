@@ -22,6 +22,7 @@
 #include "mapObjects/CGObjectInstance.h"
 #include "mapping/MapTilesStorage.h"
 #include "gameState/ScenarioEventJournalEntry.h"
+#include "gameState/EstatesState.h"
 
 class CGObjectInstance;
 class CGHeroInstance;
@@ -61,6 +62,7 @@ public:
 	bool human = false; //true if human controlled player, false for AI
 	TeamID team;
 	TResources resources;
+	newHorizonsEstates::KingdomState estates;
 
 	/// list of objects that were "destroyed" by player, either via simple pick-up (e.g. resources) or defeated heroes or wandering monsters
 	std::set<ObjectInstanceID> destroyedObjects;
@@ -106,6 +108,8 @@ public:
 
 	void addOwnedObject(CGObjectInstance * object);
 	void removeOwnedObject(CGObjectInstance * object);
+	bool validStewardAssignments(const newHorizonsEstates::KingdomState & candidate) const;
+	void clearInvalidStewards();
 	void markObjectControlled(ObjectInstanceID objectID);
 	bool hasEverControlled(ObjectInstanceID objectID) const;
 
@@ -121,6 +125,8 @@ public:
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			estates.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		if(h.saving)
 			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & color;
@@ -148,6 +154,10 @@ public:
 		h & destroyedObjects;
 		if(h.hasFeature(Handler::Version::CONTROL_LOSS_TRACKING))
 			h & everControlledObjects;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES))
+			h & estates;
+		else if(!h.saving)
+			estates = {};
 	}
 
 	private:

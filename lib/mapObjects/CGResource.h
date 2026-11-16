@@ -10,6 +10,7 @@
 #pragma once
 
 #include "army/CArmedInstance.h"
+#include "../ResourceSet.h"
 
 class ResourceInstanceConstructor;
 
@@ -25,7 +26,7 @@ class DLL_LINKAGE CGResource : public CArmedInstance
 	uint32_t amount = RANDOM_AMOUNT; //0 if random
 
 	int getAmountMultiplier() const;
-	void collectRes(IGameEventCallback & gameEvents, const PlayerColor & player) const;
+	void collectRes(IGameEventCallback & gameEvents, const CGHeroInstance * hero) const;
 	void serializeJsonOptions(JsonSerializeFormat & handler) override;
 
 public:
@@ -42,6 +43,7 @@ public:
 
 	GameResID resourceID() const;
 	uint32_t getAmount() const;
+	ResourceSet getVisitResources(const CGHeroInstance * hero) const;
 	void setAmount(uint32_t value);
 	const MetaString & getMessage() const;
 	void setMessage(MetaString && value);

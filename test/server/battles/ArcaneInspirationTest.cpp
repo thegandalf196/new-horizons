@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/battle/ArcaneInspiration.h"
 #include "../../../lib/battle/ArcaneReprisal.h"
@@ -306,9 +307,9 @@ TEST_F(ArcaneInspirationBattleTest, SpellshockRequiresPositiveDirectEnemyHeroDam
 	// Supply a legal captured profile through the actual active-perk offer path.
 	const auto rankLookup = [this](const std::string & skill) { return attackerSideHero->getPerkSkillRank(skill); };
 	bool learned = false;
-	for(uint64_t seed = 0; seed < 4096 && !learned; ++seed)
+	for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096) && !learned; ++seed)
 	{
-		const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+		const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), "new-horizons:warcasting", rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		for(size_t i = 0; i < offers.size(); ++i)
 			if(offers[i].selection.perkId == "new-horizons:warcasting.spellshock")
 			{

@@ -4,6 +4,8 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
+#include "LegacyEstatesCapture.h"
 
 #include <algorithm>
 #include <optional>
@@ -88,9 +90,9 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
-		// Land Surveyor is still planned in the shared rules. Activate it only in
-		// this saved-world snapshot so the offer and accepted server path are testable.
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		// Preserve the pre-revision capture even after the installed fresh roster retires Land Surveyor.
+		estatesTest::applyLegacyEstatesHeroes(loaded);
+		JsonNode perkRules = estatesTest::legacyEstatesPerks();
 		for(auto & perk : perkRules["skills"][ESTATES_SKILL]["perks"].Vector())
 			if(perk["id"].String() == LAND_SURVEYOR)
 				perk["effect"]["status"].String() = "active";
@@ -143,9 +145,9 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t offerSeed = 0; offerSeed < 64; ++offerSeed)
+		for(uint64_t offerSeed = 0; offerSeed < perkTestSetup::seedLimit(hero->getPerkState(), 64); ++offerSeed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forPerk(hero->getPerkState(), LAND_SURVEYOR, rankLookup, offerSeed, hero->getPerkOfferWeightContext());
 			const auto selected = std::ranges::find_if(offer, [](const auto & candidate)
 			{
 				return candidate.selection.perkId == LAND_SURVEYOR;

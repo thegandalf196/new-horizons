@@ -10,6 +10,9 @@
 
 #include "StdInc.h"
 #include "CGResource.h"
+#include "CGHeroInstance.h"
+#include "NewHorizonsEstatesPolicy.h"
+#include <limits>
 
 #include "../callback/IGameInfoCallback.h"
 #include "../callback/IGameEventCallback.h"
@@ -104,12 +107,23 @@ void CGResource::onHeroVisit(IGameEventCallback & gameEvents, const CGHeroInstan
 		}
 	}
 	else
-		collectRes(gameEvents, h->getOwner());
+		collectRes(gameEvents, h);
 }
 
-void CGResource::collectRes(IGameEventCallback & gameEvents, const PlayerColor & player) const
+ResourceSet CGResource::getVisitResources(const CGHeroInstance * hero) const
 {
-	gameEvents.giveResource(player, resourceID(), amount);
+	if(amount > std::numeric_limits<TResource>::max())
+		throw std::overflow_error("Resource pickup amount exceeds resource range");
+	ResourceSet base;
+	base[resourceID()] = static_cast<TResource>(amount);
+	return newHorizonsEstates::visitReward(base, hero);
+}
+
+void CGResource::collectRes(IGameEventCallback & gameEvents, const CGHeroInstance * hero) const
+{
+	const auto player = hero->getOwner();
+	const auto reward = getVisitResources(hero);
+	gameEvents.giveResources(player, reward);
 	InfoWindow sii;
 	sii.player = player;
 	if(!message.empty())
@@ -123,7 +137,8 @@ void CGResource::collectRes(IGameEventCallback & gameEvents, const PlayerColor &
 		sii.text.appendTextID("core.advevent.113");
 		sii.text.replaceName(resourceID());
 	}
-	sii.components.emplace_back(ComponentType::RESOURCE, resourceID(), amount);
+	newHorizonsEstates::appendVisitRewardBonus(sii.text, getVisitResources(nullptr), reward);
+	sii.components.emplace_back(ComponentType::RESOURCE, resourceID(), reward[resourceID()]);
 	sii.soundID = soundBase::pickup01 + gameEvents.getRandomGenerator().nextInt(6);
 	gameEvents.showInfoDialog(&sii);
 	gameEvents.removeObject(this, player);
@@ -132,7 +147,7 @@ void CGResource::collectRes(IGameEventCallback & gameEvents, const PlayerColor &
 void CGResource::battleFinished(IGameEventCallback & gameEvents, const CGHeroInstance *hero, const BattleResult &result) const
 {
 	if(result.winner == BattleSide::ATTACKER) //attacker won
-		collectRes(gameEvents, hero->getOwner());
+		collectRes(gameEvents, hero);
 }
 
 void CGResource::blockingDialogAnswered(IGameEventCallback & gameEvents, const CGHeroInstance *hero, int32_t answer) const

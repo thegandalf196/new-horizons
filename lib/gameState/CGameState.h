@@ -280,7 +280,7 @@ public:
 	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const;
 	void validateNativePilotSerialization(bool supported) const;
-	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const;
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false, bool fourOfferSupported = false, bool estatesSupported = false) const;
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const;
 	void validateNewHorizonsSpecialtySerialization(const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
@@ -414,7 +414,8 @@ public:
 		{
 			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 			newHorizonsCommand::validateRulesSerialization(heroCommandRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			newHorizonsElementalAttunement::validateSpellMetadataSerialization(magicRules,
@@ -618,7 +619,8 @@ public:
 				nativeRules::validatePilotPerks(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 				newHorizonsHeroes::validateCommandPerkSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+					h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 				heroPerkRules = std::move(candidate);
 			}
 			if(!h.saving) newHorizonsNecromancy::validatePolicySerialization(heroPerkRules,

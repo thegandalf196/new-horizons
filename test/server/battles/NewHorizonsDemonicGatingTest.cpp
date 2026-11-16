@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "../../HistoricalFactionPerkRules.h"
 #include "../../SpellPointTestUtils.h"
 
@@ -391,9 +392,9 @@ protected:
 	void acceptGatingPerk(const std::string & perk, MasteryLevel::Type rank)
 	{
 		const auto ranks = [this](const std::string & skill) { return attackerSideHero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(
+			const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), "new-horizons:demonicGating",
 				ranks, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto found = std::ranges::find_if(offers, [&](const auto & offer)
 			{

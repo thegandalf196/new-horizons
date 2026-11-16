@@ -4,6 +4,7 @@
 #include "CGameState.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/NewHorizonsLevelUpOffer.h"
+#include "../CPlayerState.h"
 
 void GameStatePackVisitor::visitSetSecSkill(SetSecSkill & pack)
 {
@@ -12,6 +13,7 @@ void GameStatePackVisitor::visitSetSecSkill(SetSecSkill & pack)
 		throw std::runtime_error("Secondary Skill change for a missing hero");
 	const auto previousRank = hero->getSecSkillLevel(pack.which);
 	hero->setSecSkillLevel(pack.which, pack.val, pack.mode);
+	if(hero->getOwner().isValidPlayer()) gs.players.at(hero->getOwner()).clearInvalidStewards();
 	if(!hero->hasPendingCommandLevelEvent())
 		hero->captureCommandProgression();
 	if(hero->getSecSkillLevel(pack.which) < previousRank)

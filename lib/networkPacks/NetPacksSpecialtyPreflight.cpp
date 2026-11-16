@@ -15,14 +15,14 @@ void LobbyStartGame::validateNewHorizonsIndividualSpecialtiesSerialization(bool 
 }
 
 void LobbyStartGame::validateNewHorizonsSpecialtySerialization(
-	const newHorizonsHeroes::SpecialtySerializationContext & context) const
+	const newHorizonsHeroes::SpecialtySerializationContext & context, bool fourOfferSupported, bool estatesSupported) const
 {
 	// This preflight runs before either lobby payload. Include policy3 in the
 	// enclosing guard instead of waiting for a nested hero/world writer to fail.
 	if(initializedStartInfo)
-		initializedStartInfo->validateCommandSerialization(context.commandAuthority, context.leadershipEfficiency);
+		initializedStartInfo->validateCommandSerialization(context.commandAuthority, context.leadershipEfficiency, fourOfferSupported, estatesSupported);
 	if(initializedGameState)
-		initializedGameState->validateCommandSerialization(context.commandAuthority, context.leadershipEfficiency);
+		initializedGameState->validateCommandSerialization(context.commandAuthority, context.leadershipEfficiency, fourOfferSupported, estatesSupported);
 	if(initializedGameState)
 		initializedGameState->validateNewHorizonsSpecialtySerialization(context);
 }

@@ -1,4 +1,5 @@
 #include "StdInc.h"
+#include "../../hero/HistoricalLevelOfferFixture.h"
 
 #include <gtest/gtest.h>
 
@@ -215,8 +216,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+			historicalLevelOffer::heroes());
+		auto perks = historicalLevelOffer::perks();
 		if(historicalR2)
 		{
 			perks.Struct().erase("perkProgressionPolicyVersion");
@@ -422,7 +423,7 @@ protected:
 		ASSERT_EQ(hero->level, 1);
 		const auto & state = hero->getPerkState();
 		ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.rules));
-		auto expectedRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		auto expectedRules = historicalLevelOffer::perks();
 		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
 		expectedRules["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = ratio;
 		ASSERT_EQ(state.rules, expectedRules);
@@ -788,7 +789,7 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpValidatesAndAppliesOnlyTheStor
 	ASSERT_EQ(SecondarySkill::encode(skill.getNum()), skillId);
 	gh.changeSecSkill(hero, skill, 1, ChangeValueMode::ABSOLUTE);
 	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.rules = historicalLevelOffer::perks();
 	state.selected.clear();
 	state.validate();
 
@@ -843,7 +844,7 @@ TEST_F(NeutralDwellingBattleQueryTest, heroLevelUpReplicatesPerkChoiceBeforeReso
 	const SecondarySkill skill(decoded);
 	gh.changeSecSkill(hero, skill, 1, ChangeValueMode::ABSOLUTE);
 	auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.rules = historicalLevelOffer::perks();
 	state.selected.clear();
 	state.validate();
 
@@ -882,7 +883,7 @@ TEST_F(NewHorizonsPerkAITest, computerPlayerChoosesPerkThroughAuthoritativeLevel
 	ASSERT_GE(sorcery.getNum(), 0);
 	gh.changeSecSkill(hero, sorcery, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-	perkState.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	perkState.rules = historicalLevelOffer::perks();
 	perkState.selected.clear();
 	perkState.validate();
 	for(int index = 0; index < LIBRARY->skillh->size(); ++index)

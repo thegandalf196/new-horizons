@@ -16,6 +16,12 @@ void CClient::handleReceivedPack(CPackForClient & pack, ClientPacketReceiveSessi
 }
 void CClient::applyClientPacket(CPackForClient & pack, ClientPacketReceiveSession * receive)
 {
+	// First visitors call AI before state mutation: join BEFORE either visitor,
+	// not merely before taking the write lock. No source/root lease exists here.
+	// Retain independently: PlayerEndsGame may destroy CClient in afterVisitor.
+	auto task = initialAutofight;
+	auto pause = task->pauseAdmissions();
+	if(!drainInitialAutofight() || !pollInitialAutofight()) return;
 	PerfTrace::ApplyScope trace(pack);
 	ApplyClientNetPackVisitor afterVisitor(*this, gameState(), receive);
 	ApplyFirstClientNetPackVisitor beforeVisitor(*this, gameState());

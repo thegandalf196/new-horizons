@@ -27,4 +27,5 @@ DLL_LINKAGE int32_t affordableRecruitment(const ResourceSet & unitCost, const Re
 DLL_LINKAGE ResourceSet buildingCost(const ResourceSet & baseCost, bool architect);
 DLL_LINKAGE int32_t bankingWeeklyGold(const PlayerState & state);
 DLL_LINKAGE int32_t mercenaryWeeklyCount(const PlayerState & state);
+DLL_LINKAGE int32_t companyDefenseLevel(const PlayerState & state);
 }

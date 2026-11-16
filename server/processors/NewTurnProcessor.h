@@ -61,6 +61,7 @@ class NewTurnProcessor : boost::noncopyable
 
 	NewTurn generateNewTurnPack();
 	void grantNewHorizonsCastleStablesBonus();
+	void grantWeeklyMineDefenders(int32_t week);
 	void handleTimeEvents(PlayerColor player);
 	void handleTownEvents(const CGTownInstance *town);
 

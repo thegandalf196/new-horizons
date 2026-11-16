@@ -10,6 +10,7 @@
 #include "../modding/ModScope.h"
 #include "../entities/hero/NewHorizonsCommandArmy.h"
 #include "../entities/hero/NewHorizonsCommandAdmission.h"
+#include "../entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../entities/hero/CHeroClass.h"
 #include <stdexcept>
 
@@ -219,7 +220,7 @@ void CGHeroInstance::selectCommandEnhancement(int64_t milestone, newHorizonsHero
 
 JsonNode CGHeroInstance::commandProgressionToJson() const
 {
-	validateCommandSerialization(true, true);
+	validateCommandSerialization(true, true, true, true);
 	return commandState.toJson(getArmyCommandRules());
 }
 
@@ -234,14 +235,15 @@ void CGHeroInstance::restoreCommandProgression(const JsonNode & node)
 	nodeHasChanged();
 }
 
-void CGHeroInstance::validateCommandSerialization(bool supported, bool leadershipSupported) const
+void CGHeroInstance::validateCommandSerialization(bool supported, bool leadershipSupported, bool fourOfferSupported, bool estatesSupported) const
 {
+	newHorizonsEstates::validateHoarderReceipt(newHorizonsHoarderLastWeek, estatesSupported);
 	newHorizonsHeroes::validateLeadershipEfficiencySerialization(capabilityRules, leadershipSupported);
 	newHorizonsHeroes::validateUnifiedSkillProgressionSerialization(perkState.rules, leadershipSupported);
 	newHorizonsNecromancy::validateLeadershipPolicySerialization(perkState.rules, leadershipSupported);
 	if(commandLevelEventPending)
 		throw std::runtime_error("Cannot save an unfinished ordinary level choice");
-	newHorizonsHeroes::validateCommandPerkSerialization(perkState.rules, supported, leadershipSupported);
+	newHorizonsHeroes::validateCommandPerkSerialization(perkState.rules, supported, leadershipSupported, fourOfferSupported, estatesSupported);
 	newHorizonsHeroes::validateArmyCommandSerialization(capabilityRules, supported);
 	const auto rules = getArmyCommandRules();
 	commandState.validateSerialization(rules, supported);
@@ -254,7 +256,7 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 	const bool unified = newHorizonsHeroes::usesUnifiedSkillProgression(perkState.rules);
 	// Owned heroes finish their initial ranks and any authored XP through the
 	// authoritative map-ready/turn-start transaction, including human choices.
-	if(unified && getOwner().isValidPlayer()) return;
+	if(newHorizonsHeroes::usesPersistentHeroProgression(perkState.rules) && getOwner().isValidPlayer()) return;
 	const auto completePerks = [this, unified]()
 	{
 		if(!unified) return;
@@ -270,7 +272,9 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 	while(gainsLevel())
 	{
 		auto gains = gameRandomizer.rollPrimarySkillsForLevelup(this);
-		const auto proposedSecondarySkills = gameRandomizer.rollSecondarySkills(this);
+		const bool four = newHorizonsHeroes::usesFourOfferProgression(perkState.rules);
+		const auto fourOffers = four ? gameRandomizer.rollFourOfferProgression(this) : newHorizonsHeroes::FourOfferProgressionOffer{};
+		const auto proposedSecondarySkills = four ? std::vector<SecondarySkill>{} : gameRandomizer.rollSecondarySkills(this);
 		captureMasteryEligibility(level + 1);
 		for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
 		{
@@ -279,7 +283,17 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 				setPrimarySkill(PrimarySkill(i), gains[i], ChangeValueMode::RELATIVE);
 			gains[i] = getBasePrimarySkillValue(PrimarySkill(i)) - before;
 		}
-		if(!proposedSecondarySkills.empty())
+		if(four && !fourOffers.empty())
+		{
+			const auto legal = newHorizonsHeroes::legalFourOfferReplies(fourOffers, perkState,
+				newHorizonsHeroes::fourOfferCandidates(*cb, *this));
+			const auto choice = legal.empty() ? newHorizonsHeroes::FourOfferProgressionSelection{SecondarySkill::NONE, std::nullopt, true}
+				: *newHorizonsHeroes::fourOfferSelection(fourOffers, perkState, legal.front());
+			if(choice.skill != SecondarySkill::NONE)
+				setSecSkillLevel(choice.skill, 1, ChangeValueMode::RELATIVE);
+			else if(choice.perk) applyPerkSelection(choice.perk->selection);
+		}
+		else if(!proposedSecondarySkills.empty())
 			setSecSkillLevel(proposedSecondarySkills.front(), 1, ChangeValueMode::RELATIVE);
 		levelUp(gains);
 		completePerks();

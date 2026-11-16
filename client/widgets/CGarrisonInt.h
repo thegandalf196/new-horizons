@@ -77,6 +77,7 @@ public:
 	void showAll(Canvas & to) override;
 	void show(Canvas & to) override;
 	bool commandLocked() const;
+	bool mineDefenderLocked() const;
 
 	void update();
 	CGarrisonSlot(CGarrisonInt *Owner, int x, int y, SlotID IID, EGarrisonType Upg, const CStackInstance * creature_);

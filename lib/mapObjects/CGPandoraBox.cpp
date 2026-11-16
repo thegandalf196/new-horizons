@@ -67,13 +67,7 @@ void CGPandoraBox::grantRewardWithMessage(IGameEventCallback & gameEvents, const
 	
 	auto sendInfoWindow = [&](const MetaString & text, const Rewardable::Reward & reward)
 	{
-		InfoWindow iw;
-		iw.player = h->tempOwner;
-		iw.text = text;
-		reward.loadComponents(iw.components, h);
-		iw.type = EInfoWindowMode::MODAL;
-		if(!iw.components.empty())
-			gameEvents.showInfoDialog(&iw);
+		reward.showVisitMessage(gameEvents, h, ID, text);
 	};
 
 	Rewardable::Reward temp;

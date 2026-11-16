@@ -80,6 +80,18 @@ void CEmptyAI::commanderGotLevel(const CCommanderInstance * commander, std::vect
 	cb->selectionMade(CRandomGenerator::getDefault().nextInt((int)skills.size() - 1), queryID);
 }
 
+void CEmptyAI::heroGotFourOfferLevel(const CGHeroInstance * hero, PrimarySkill,
+	const newHorizonsHeroes::FourOfferProgressionOffer & offers, QueryID queryID,
+	bool, QueryID replacesQueryID, int)
+{
+	if(replacesQueryID >= 0) return;
+	if(!hero) return;
+	const auto legal = newHorizonsHeroes::legalFourOfferReplies(offers, hero->getPerkState(),
+		newHorizonsHeroes::fourOfferCandidates(*cb, *hero));
+	const int32_t reply = legal.empty() ? 0 : legal.front();
+	cb->selectionMade(reply, queryID);
+}
+
 void CEmptyAI::showBlockingDialog(const std::string &text, const std::vector<Component> &components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept)
 {
 	if(!selection && cancel)

@@ -8,6 +8,10 @@ import unittest
 
 from jsonschema import Draft4Validator, RefResolver
 if __package__:
+    from .nh_estates_captures import legacy_estates_perks
+else:
+    from nh_estates_captures import legacy_estates_perks
+if __package__:
     from .test_new_horizons_skill_entities import parse_jsonc
 else:
     from test_new_horizons_skill_entities import parse_jsonc
@@ -61,7 +65,7 @@ class CommandAuthorityContentTest(unittest.TestCase):
                     candidate = copy.deepcopy(document)
                     candidate["commandAuthorityPolicy"] = invalid
                     self.assertFalse(check.is_valid(candidate))
-        historical = copy.deepcopy(self.perks)
+        historical = legacy_estates_perks(self.perks)
         historical.pop("commandAuthorityPolicy")
         historical.pop("warfarePolicyVersion")
         historical["commandPolicyVersion"] = 1
@@ -121,15 +125,28 @@ class CommandAuthorityContentTest(unittest.TestCase):
         self.assertTrue(all(row["effect"]["status"] == "active" for row in skill["perks"]))
         self.assertTrue(all(row["effect"]["status"] == "active" for row in skill["ranks"].values()))
 
+    def test_current_four_offer_policy_is_strict_and_separate_from_legacy(self):
+        self.assertEqual(self.perks['fourOfferProgressionVersion'], 1)
+        self.assertNotIn('unifiedSkillProgressionVersion', self.perks)
+        for invalid in (None, True, False, 0, 2, '1'):
+            candidate = copy.deepcopy(self.perks)
+            candidate['fourOfferProgressionVersion'] = invalid
+            self.assertFalse(self.perk_validator.is_valid(candidate), invalid)
+        candidate = copy.deepcopy(self.perks)
+        candidate['unifiedSkillProgressionVersion'] = 1
+        self.assertFalse(self.perk_validator.is_valid(candidate))
+
     def test_unified_progression_requires_its_distinct_captured_dependencies(self):
-        self.assertEqual(self.perks['unifiedSkillProgressionVersion'], 1)
+        captured = legacy_estates_perks(self.perks)
+        self.assertEqual(captured['unifiedSkillProgressionVersion'], 1)
+        self.perk_validator.validate(captured)
         self.assertEqual(self.perks['maxPerkChoices'], 2)  # Historical sampler only.
         for bad in (None, True, 0, 2, '1'):
-            candidate = copy.deepcopy(self.perks)
+            candidate = copy.deepcopy(captured)
             candidate['unifiedSkillProgressionVersion'] = bad
             self.assertFalse(self.perk_validator.is_valid(candidate), bad)
         for key in ('perkProgressionPolicyVersion', 'offerWeightPolicyVersion', 'necromancyPolicy'):
-            candidate = copy.deepcopy(self.perks)
+            candidate = copy.deepcopy(captured)
             candidate.pop(key)
             self.assertFalse(self.perk_validator.is_valid(candidate), key)
         for skill in self.perks['skills'].values():

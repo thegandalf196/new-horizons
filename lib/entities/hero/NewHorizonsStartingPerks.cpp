@@ -165,7 +165,7 @@ void initializeStartingHeroPerks(PerkState & state, const JsonNode & development
 		return;
 	}
 	validateStartingPerkProfiles(development["startingSkills"]);
-	require(usesUnifiedSkillProgression(state.rules), "starting defaults require unified Skill progression");
+	require(usesPersistentHeroProgression(state.rules), "starting defaults require captured Skill progression");
 	auto proposed = state;
 	// End every borrowed rules view before moving the completed candidate.
 	[&]

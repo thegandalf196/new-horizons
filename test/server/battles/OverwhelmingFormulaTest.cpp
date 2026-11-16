@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -73,9 +74,9 @@ protected:
 		{
 			return attackerSideHero->getPerkSkillRank(skill);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), spellcraft, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto found = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
 			{
 				return offer.selection.skillId == spellcraft && offer.selection.perkId == perk;

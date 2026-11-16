@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "BattleTestFixture.h"
 #include "NewHorizonsBloodrageLegacyFixture.h"
 #include "../../../lib/GameSettings.h"
@@ -59,9 +60,9 @@ protected:
 		if(!hero)
 			hero = attackerSideHero;
 		const auto lookup = [hero](const std::string & key) { return hero->getPerkSkillRank(key); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(lookup, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), SKILL, lookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t i = 0; i < offers.size(); ++i)
 				if(offers[i].selection.skillId == SKILL && offers[i].selection.perkId == id)
 				{

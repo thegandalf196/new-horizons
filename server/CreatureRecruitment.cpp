@@ -8,10 +8,14 @@
 #include "StdInc.h"
 #include "CGameHandler.h"
 #include "CommandArmyAdmission.h"
+#include "RecruitmentCommit.h"
 #include "../lib/mapObjects/CGDwelling.h"
 #include "../lib/mapObjects/CGTownInstance.h"
 #include "../lib/mapObjects/CGHeroInstance.h"
 #include "../lib/mapObjects/NewHorizonsEstates.h"
+#include "../lib/mapObjects/EstatesRecruitmentQuote.h"
+#include "../lib/mapObjects/NewHorizonsEstatesPolicy.h"
+#include "../lib/networkPacks/EstatesPacks.h"
 #include "../lib/mapObjects/TownRecruitmentOffers.h"
 #include "../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../lib/CCreatureHandler.h"
@@ -132,6 +136,8 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	const auto level = *row;
 	cram = static_cast<int32_t>(std::min<int64_t>(cram, dwelling->creatures[level].first));
 	COMPLAIN_RET_FALSE_IF(cram <= 0, "Cannot recruit: cram <= 0!");
+	COMPLAIN_RET_FALSE_IF(warMachine && hero && newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().rules)
+		&& cram != 1, "Only one war machine artifact may be purchased per request");
 	SlotID slot;
 	auto commandPlan = prepareRecruitmentPlacement(army, hero, crid, cram, warMachine, slot);
 	const auto * buyer = newHorizonsEstates::recruitmentBuyer(army);
@@ -160,10 +166,11 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	}
 
 	//recruit
+	const auto payment = recruitmentCommit::prepare(*dwelling, *army, buyer, crid, cram);
 	if(commandPlan)
 		commandArmyAdmission::rearrange(*this, *army, *commandPlan);
-	TResources cost = dwelling->getTotalRecruitmentCost(crid, cram, buyer);
-	giveResources(army->tempOwner, -cost);
+	recruitmentCommit::pay(*this, payment);
+	const auto & cost = payment.cost;
 	statistics->getPlayerAccumulator(army->tempOwner).spentResourcesForArmy += cost;
 
 	SetAvailableCreatures sac;
@@ -172,24 +179,8 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	sac.creatures[level].first -= cram;
 	sendAndApply(sac);
 
-	if (warMachine)
-	{
-		ArtifactID artId = c->warMachine;
-		const CArtifact * art = artId.toArtifact();
-
-
-		bool hasFreeSlot = false;
-		for(auto possibleSlot : art->getPossibleSlots().at(ArtBearer::HERO))
-			if (hero->getArt(possibleSlot) == nullptr)
-				hasFreeSlot = true;
-
-		if (!hasFreeSlot)
-		{
-			auto possibleSlot = art->getPossibleSlots().at(ArtBearer::HERO).front();
-			removeArtifact(ArtifactLocation(hero->id, possibleSlot));
-		}
-		return giveHeroNewArtifact(hero, artId, ArtifactPosition::FIRST_AVAILABLE);
-	}
+	if(warMachine)
+		return recruitmentCommit::grantWarMachine(*this, hero, c->warMachine, payment);
 	else
 	{
 		if(!recruitToSlot(StackLocation(army->id, slot), c, cram))

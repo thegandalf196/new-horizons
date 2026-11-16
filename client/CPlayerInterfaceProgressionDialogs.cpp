@@ -104,6 +104,7 @@ void CPlayerInterface::commandProgressionChanged(ObjectInstanceID heroID)
 	const auto * hero = cb->getHero(heroID);
 	if(!hero)
 		return;
+	refreshFourOfferLevelDialogs(hero);
 	for(const auto & holder : ENGINE->windows().findWindows<IGarrisonHolder>())
 		if(holder->holdsGarrison(hero))
 			holder->updateGarrisons();

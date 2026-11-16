@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #pragma once
+#include "../../PerkTestSetup.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/battle/NewHorizonsParalyzingGaze.h"
@@ -75,9 +76,9 @@ protected:
 	void accept(CGHeroInstance * hero, const char * perk)
 	{
 		const auto rank = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rank, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), "new-horizons:armorer", rank, seed, hero->getPerkOfferWeightContext());
 			const auto choice = std::ranges::find_if(offer, [perk](const auto & entry)
 				{ return entry.selection.skillId == "new-horizons:armorer" && entry.selection.perkId == perk; });
 			if(choice == offer.end()) continue;

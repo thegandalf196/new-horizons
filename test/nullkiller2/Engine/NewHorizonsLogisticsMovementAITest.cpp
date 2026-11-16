@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
 #include "AI/Nullkiller2/Pathfinding/AIPathfinder.h"
@@ -148,9 +149,9 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forPerk(hero->getPerkState(), perkId, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), [perkId](const auto & entry)
 			{
 				return entry.selection.perkId == perkId;

@@ -323,12 +323,14 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_NATIVE_RULES_REDESIGN = 1157, // finite Command, elemental Attunement and Magic Arrow profiles
 	NEW_HORIZONS_COMMAND_AUTHORITY = 1158, // army Command receipts, Authority and passive Warfare; new games only
 	NEW_HORIZONS_LEADERSHIP_EFFICIENCY = 1159, // unrestricted armies, captured Leadership efficiency and unified rank/perk progression
+	NEW_HORIZONS_FOUR_OFFER_PROGRESSION = 1160, // fixed weighted Skill/perk groups, one advancement per level
+	NEW_HORIZONS_ESTATES = 1161, // kingdom recruitment ledger, steward assignments and defended mine provenance
 
 	RELEASE_170 = HOTA_MAP_STACK_COUNT,
 	RELEASE_174 = CUSTOM_GARRISON_TITLE,
 
 	MINIMAL = NEW_HORIZONS_LEADERSHIP_EFFICIENCY,
-	CURRENT = NEW_HORIZONS_LEADERSHIP_EFFICIENCY,
+	CURRENT = NEW_HORIZONS_ESTATES,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY > ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN,

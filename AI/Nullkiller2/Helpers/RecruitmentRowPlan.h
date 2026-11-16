@@ -2,6 +2,7 @@
 #pragma once
 #include "../AIUtility.h"
 #include "../../../lib/entities/hero/NewHorizonsCommandArmy.h"
+#include "../../../lib/gameState/EstatesState.h"
 #include <optional>
 #include <set>
 
@@ -16,6 +17,7 @@ struct RecruitmentProjection
 {
 	std::vector<newHorizonsHeroes::RecruitmentSlot> slots;
 	std::set<SlotID> disbanded;
+	std::optional<newHorizonsEstates::ConscriptionLedger> recruitmentLedger;
 };
 struct RecruitmentRowPlan
 {

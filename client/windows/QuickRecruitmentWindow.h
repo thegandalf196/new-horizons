@@ -11,6 +11,7 @@
 
 #include "CWindowObject.h"
 #include "../../lib/ResourceSet.h"
+#include "../../lib/mapObjects/EstatesRecruitmentQuote.h"
 #include "../../lib/constants/EntityIdentifiers.h"
 
 #include <array>
@@ -31,13 +32,22 @@ public:
 	int getAvailableCreatures();
 	int getWeeklyGrowth(int recruitmentLevel) const;
 	void updateAllSliders();
-	TResources recruitmentCost(CreatureID creature, int amount) const;
-	int recruitmentAmount(CreatureID creature, const TResources & resources, int available) const;
+	TResources recruitmentCost(CreatureID creature, int amount, const CreaturePurchaseCard * card = nullptr) const;
+	int recruitmentAmount(CreatureID creature, const TResources & resources, int available,
+		const newHorizonsEstates::ConscriptionLedger * ledger = nullptr) const;
 	IGameInfoCallback * recruitmentContext() const;
 	bool isForTown(const CGTownInstance * value) const { return town == value; }
 	QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition);
 
 private:
+	struct BasketQuote
+	{
+		TResources cost;
+		newHorizonsEstates::ConscriptionLedger ledger;
+	};
+	BasketQuote quoteBasket(const CreaturePurchaseCard * excluded = nullptr,
+		const CreaturePurchaseCard * stopBefore = nullptr) const;
+	bool updatingBasket = false;
 	void initWindow(Rect startupPosition);
 
 	void setButtons();

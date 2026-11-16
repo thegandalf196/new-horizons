@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/BattleEvaluator.h"
 #include "../../../lib/callback/CBattleCallback.h"
@@ -241,9 +242,9 @@ class NewHorizonsInstalledSkillGrowthTest : public HeroCommandFixture
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
+		for(uint64_t offerSeed = 0; offerSeed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++offerSeed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, offerSeed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::matching(hero->getPerkState(), matches, rankLookup, offerSeed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), matches);
 			if(candidate == offer.end())
 				continue;
@@ -414,7 +415,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ArcaneInsightUsesLegalWisdomRanksAnd
 	ASSERT_EQ(initialView->extraGrowth.size(), 5u);
 	EXPECT_EQ(growthChance(*initialView, wisdom), 10);
 	EXPECT_FALSE(hero->getPerkState().canAdvanceSkillNormally(WISDOM_SKILL_ID, MasteryLevel::BASIC));
-	const auto basicOffer = hero->getPerkState().prepareOffer(rankLookup, 0, hero->getPerkOfferWeightContext());
+	const auto basicOffer = perkTestSetup::forSkill(hero->getPerkState(), WISDOM_SKILL_ID, rankLookup, 0, hero->getPerkOfferWeightContext());
 	EXPECT_FALSE(std::any_of(basicOffer.begin(), basicOffer.end(), [](const auto & candidate)
 	{
 		return candidate.selection.perkId == ARCANE_INSIGHT_ID;

@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #if ENABLE_BATTLE_AI
 #include "../../../AI/BattleAI/HypotheticBattle.h"
@@ -195,9 +196,9 @@ protected:
 	void acquirePointBlank()
 	{
 		const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
-		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
+		for(uint64_t offerSeed = 0; offerSeed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++offerSeed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(
+			const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), newHorizonsArchery::SKILL,
 				lookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.skillId == newHorizonsArchery::SKILL

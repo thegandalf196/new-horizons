@@ -3,12 +3,18 @@
 
 #include "NewHorizonsPerkIcons.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
+#include "../../lib/mapObjects/NewHorizonsEstatesPolicy.h"
 
 /// Reused Sylvan identities select Tactics artwork only from the hero's saved
 /// policy and the supplied definition/offer name. Old captures retain Luck art.
 inline std::string newHorizonsPerkIcon(const std::string & perkId,
 	std::string_view capturedName, const JsonNode & capturedRules)
 {
+	// The revised Alchemist uses the resource painting; old captures retain
+	// their original estate illustration even though the stable ID survives.
+	if(perkId == "new-horizons:estates.alchemist"
+		&& !newHorizonsEstates::usesRevisedPolicy(capturedRules))
+		return "NH_perk_magnate";
 	if(perkId.starts_with("new-horizons:sylvanLuck.")
 		&& newHorizonsHeroes::usesSylvanTactics(capturedRules))
 	{

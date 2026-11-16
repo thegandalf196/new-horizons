@@ -18,8 +18,15 @@ newHorizonsHeroes::PerkState stateFor(bool historicalR2 = false)
 {
 	newHorizonsHeroes::PerkState state;
 	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.rules.Struct().erase("fourOfferProgressionVersion");
+	state.rules["unifiedSkillProgressionVersion"].Integer() = 1;
 	if(historicalR2)
+	{
 		state.rules.Struct().erase("perkProgressionPolicyVersion");
+		state.rules.Struct().erase("unifiedSkillProgressionVersion");
+		state.rules.Struct().erase("startingPerksPolicyVersion");
+		state.rules.Struct().erase("startingPerkProfiles");
+	}
 	return state;
 }
 
@@ -95,6 +102,7 @@ TEST(HeroGrowthPerkPresentation, StrictAndPolicyOneRetainOnePerTier)
 			state.rules["offerWeightPolicyVersion"].Integer() = 1;
 			state.rules.Struct().erase("perkOfferNormalization");
 			state.rules.Struct().erase("perkProgressionPolicyVersion");
+			state.rules.Struct().erase("unifiedSkillProgressionVersion");
 		}
 		state.select(SKILL, BASIC, 1);
 		const auto before = state.toJson();
@@ -220,4 +228,24 @@ TEST(HeroGrowthPerkPresentation, MissingCapturedCatalogueFailsClosedEvenWithStal
 		EXPECT_EQ(card.status, "Unavailable");
 		expectContains(card.reason, "no matching saved perk catalogue");
 	}
+}
+
+TEST(HeroGrowthPerkPresentation, FourOfferSummariesRetainRepeatedTierSelectionsAndExplainOneAdvancement)
+{
+	auto state = stateFor();
+	state.rules.Struct().erase("unifiedSkillProgressionVersion");
+	state.rules["fourOfferProgressionVersion"].Integer() = 1;
+	state.select(SKILL, BASIC, 3);
+	state.select(SKILL, OTHER_BASIC, 3);
+	const auto before = state.toJson();
+	const auto summary = summaryFor(state);
+	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.rules, SKILL, BASIC)->name);
+	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.rules, SKILL, OTHER_BASIC)->name);
+	expectContains(summary.text, "2/3 selected, 1 remaining");
+	EXPECT_EQ(cardFor(state, ADVANCED).status, "Available");
+	EXPECT_EQ(cardFor(state, EXPERT).status, "Locked");
+	const auto full = heroGrowthPerkPresentation::summary(state, [](const auto & id) { return id == SKILL ? 3 : 0; });
+	expectContains(full, "up to two Skills and two perk groups; choose one advancement");
+	EXPECT_EQ(full.find("a level-up offers at most"), std::string::npos);
+	EXPECT_EQ(state.toJson(), before);
 }

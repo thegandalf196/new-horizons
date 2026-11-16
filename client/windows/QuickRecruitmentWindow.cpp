@@ -14,6 +14,7 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/NewHorizonsEstates.h"
 #include "../../lib/mapObjects/TownRecruitmentOffers.h"
+#include "../../lib/mapObjects/RecruitmentBasketAdmission.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/entities/hero/NewHorizonsCommandArmy.h"
 #include "../CPlayerInterface.h"
@@ -102,15 +103,6 @@ bool hasCompleteCategoryContext(const CGTownInstance * town)
 
 	// At most five adaptive cards fit on the supported800px logical canvas.
 	return found && std::ranges::all_of(categoryCounts, [](size_t count){ return count <= 5; });
-}
-
-int legalRecruitmentAmount(const CGTownInstance * town, CreatureID creature, int requestedMaximum)
-{
-	if(!town)
-		return requestedMaximum;
-
-	return UIHelper::recruitmentPosition(town->getUpperArmy(), creature, requestedMaximum).validSlot()
-		? requestedMaximum : 0;
 }
 
 std::vector<CreatureID> displayVariantsAtLevel(const CGTownInstance * town, size_t level, bool built)
@@ -311,45 +303,6 @@ void QuickRecruitmentWindow::initWindow(Rect startupPosition)
 	costBackground = std::make_shared<CPicture>(ImagePath::builtin("QuickRecruitmentWindow/costBackground.png"), pos.w/2-113, 335);
 }
 
-TResources QuickRecruitmentWindow::recruitmentCost(CreatureID creature, int amount) const
-{
-	return town->getTotalRecruitmentCost(creature, amount, newHorizonsEstates::recruitmentBuyer(town->getUpperArmy()));
-}
-
-int QuickRecruitmentWindow::recruitmentAmount(CreatureID creature, const TResources & resources, int available) const
-{
-	return town->getRecruitmentAmount(creature, resources, available,
-		newHorizonsEstates::recruitmentBuyer(town->getUpperArmy()));
-}
-
-IGameInfoCallback * QuickRecruitmentWindow::recruitmentContext() const
-{
-	return town ? town->cb : nullptr;
-}
-
-void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePurchaseCard> > cards)
-{
-	auto allAvailableResources = GAME->interface()->cb->getResourceAmount();
-	for(auto i : std::views::reverse(cards))
-	{
-		si32 maxAmount = recruitmentAmount(i->creatureOnTheCard->getId(), allAvailableResources, i->maxAmount);
-		vstd::amin(maxAmount, i->maxAmount);
-		maxAmount = legalRecruitmentAmount(town, i->creatureOnTheCard->getId(), maxAmount);
-
-		i->slider->setAmount(maxAmount);
-
-		if(i->slider->getValue() != maxAmount)
-			i->slider->scrollTo(maxAmount);
-		else
-			i->sliderMoved(maxAmount);
-
-		i->slider->scrollToMax();
-		allAvailableResources -= recruitmentCost(i->creatureOnTheCard->getId(), maxAmount);
-	}
-	maxButton->block(allAvailableResources == GAME->interface()->cb->getResourceAmount());
-}
-
-
 void QuickRecruitmentWindow::purchaseUnits()
 {
 	// Refresh admission before any request, so a stale alternative cannot cause
@@ -367,42 +320,19 @@ void QuickRecruitmentWindow::purchaseUnits()
 			return;
 		}
 	}
-	const auto * army = town->getUpperArmy();
-	const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
-	const bool commandArmy = hero && hero->getArmyCommand().has_value();
-	std::vector<newHorizonsHeroes::RecruitmentSlot> incoming;
-	if(commandArmy)
-		for(const auto & card : std::views::reverse(cards))
-			if(card->slider->getValue() > 0)
-				incoming.push_back({SlotID(static_cast<int>(incoming.size())),
-					card->creatureOnTheCard->getId(), card->slider->getValue()});
-	if(!UIHelper::checkRecruitmentPlan(army, incoming))
-		return;
-	int freeSlotsLeft = army->getFreeSlots().size();
-
-	for(auto selected : std::views::reverse(cards))
+	std::vector<recruitmentBasket::Row> incoming;
+	for(const auto & card : std::views::reverse(cards))
+		if(card->slider->getValue() > 0)
+			incoming.push_back({card->creatureOnTheCard->getId(), card->slider->getValue()});
+	if(!recruitmentBasket::fits(*town->getUpperArmy(), incoming))
 	{
-		if(selected->slider->getValue() == 0)
-			continue;
-
-		const int level = selected->recruitmentLevel;
-
-		CreatureID crid = selected->creatureOnTheCard->getId();
-		SlotID dstslot = UIHelper::recruitmentPosition(
-			town->getUpperArmy(), crid, selected->slider->getValue());
-		if(!dstslot.validSlot())
-			continue;
-
-		if(!commandArmy && town->getUpperArmy()->slotEmpty(dstslot))
-		{
-			if(freeSlotsLeft == 0)
-				continue;
-			freeSlotsLeft -= 1;
-		}
-
-		if(dstslot.validSlot())
-			GAME->interface()->cb->recruitCreatures(town, town->getUpperArmy(), crid, selected->slider->getValue(), level);
+		GAME->interface()->showInfoDialog("The complete recruitment selection no longer fits in this army. Adjust the selection before purchasing.");
+		return;
 	}
+	for(const auto & card : std::views::reverse(cards))
+		if(card->slider->getValue() > 0)
+			GAME->interface()->cb->recruitCreatures(town, town->getUpperArmy(),
+				card->creatureOnTheCard->getId(), card->slider->getValue(), card->recruitmentLevel);
 	close();
 }
 
@@ -430,45 +360,6 @@ int QuickRecruitmentWindow::getWeeklyGrowth(int recruitmentLevel) const
 		|| town->creatures[recruitmentLevel].second.empty())
 		return 0;
 	return town->getGrowthInfo(recruitmentLevel).totalGrowth();
-}
-
-void QuickRecruitmentWindow::updateAllSliders()
-{
-	auto allAvailableResources = GAME->interface()->cb->getResourceAmount();
-	for(auto i : std::views::reverse(cards))
-		allAvailableResources -= recruitmentCost(i->creatureOnTheCard->getId(), i->slider->getValue());
-	for(auto i : cards)
-	{
-		const auto ownQuote = recruitmentCost(i->creatureOnTheCard->getId(), i->slider->getValue());
-		si32 maxAmount = recruitmentAmount(i->creatureOnTheCard->getId(), allAvailableResources + ownQuote, i->maxAmount);
-		vstd::amin(maxAmount, i->maxAmount);
-		const int maximumByPlacement = legalRecruitmentAmount(
-			town, i->creatureOnTheCard->getId(), i->maxAmount);
-		const int currentAmount = i->slider->getValue();
-		if(maxAmount < 0)
-			continue;
-
-		const int64_t affordableTotal = static_cast<int64_t>(maxAmount);
-		const int maximumTotal = static_cast<int>(std::max<int64_t>(0,
-			std::min<int64_t>({i->maxAmount, maximumByPlacement, affordableTotal})));
-		i->slider->setAmount(maximumTotal);
-		if(currentAmount > maximumTotal)
-		{
-			// Re-enter with the clamped selection so resource availability for the
-			// remaining cards is recomputed from the corrected purchase total.
-			i->slider->scrollTo(maximumTotal);
-			return;
-		}
-		i->slider->scrollTo(i->slider->getValue());
-	}
-	const TResources purchaseCost = GAME->interface()->cb->getResourceAmount() - allAvailableResources;
-	if(categorizedLayout)
-		updateCompactTotalCost(purchaseCost);
-	else
-	{
-		totalCost->createItems(purchaseCost);
-		totalCost->set(purchaseCost);
-	}
 }
 
 void QuickRecruitmentWindow::updateCompactTotalCost(const TResources & resources)

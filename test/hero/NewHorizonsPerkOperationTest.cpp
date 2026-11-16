@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../server/LegacyEstatesCapture.h"
 #include "PerkInitializationReference.h"
 #include "../../lib/entities/hero/NewHorizonsPerkOperation.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -15,10 +16,10 @@ constexpr auto AUTHORITY = "new-horizons:authority";
 PerkState fresh()
 {
 	PerkState state;
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	state.rules = estatesTest::legacyEstatesPerks();
 	return state;
 }
-JsonNode development() { return JsonNode(JsonPath::builtin("config/newHorizonsHeroes")); }
+JsonNode development() { return estatesTest::legacyEstatesHeroes(); }
 
 void compareInitialization(const JsonNode & rules, HeroTypeID hero, const std::map<std::string, int> & ranks,
 	const std::vector<PerkSelection> & explicitChoices)

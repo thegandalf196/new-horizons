@@ -144,10 +144,12 @@ inline std::string summary(const newHorizonsHeroes::PerkState & state,
 		unavailable += entry.unavailable;
 		details += entry.text;
 	}
+	const auto offerExplanation = newHorizonsHeroes::usesFourOfferProgression(state.rules)
+		? "A level-up offers up to two Skills and two perk groups; choose one advancement."
+		: "A level-up offers at most " + std::to_string(state.rules["maxPerkChoices"].Integer()) + " perks.";
 	return "Selected: " + std::to_string(state.selected.size()) + " / " + std::to_string(capacity)
 		+ " capacity for learned skills; " + std::to_string(eligible) + " eligible for future level-up offers; "
 		+ std::to_string(locked) + " locked; " + std::to_string(unavailable) + " unavailable.\nEach learned skill can hold up to "
-		+ std::to_string(cap) + " perks; a level-up offers at most "
-		+ std::to_string(state.rules["maxPerkChoices"].Integer()) + ".\n" + details;
+		+ std::to_string(cap) + " perks. " + offerExplanation + "\n" + details;
 }
 }

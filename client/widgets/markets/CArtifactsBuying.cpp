@@ -23,6 +23,9 @@
 #include "../../../lib/entities/artifact/CArtHandler.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/IMarket.h"
+#include "../../../lib/mapObjects/EstatesArtifactQuote.h"
+#include "../../../lib/mapObjects/NewHorizonsEstatesPolicy.h"
+#include "../../../lib/entities/creature/NewHorizonsMusterRules.h"
 #include "../../../lib/texts/CGeneralTextHandler.h"
 
 CArtifactsBuying::CArtifactsBuying(const IMarket * market, const CGHeroInstance * hero, const std::string & title)
@@ -34,6 +37,7 @@ CArtifactsBuying::CArtifactsBuying(const IMarket * market, const CGHeroInstance 
 	labels.emplace_back(std::make_shared<CLabel>(titlePos.x, titlePos.y, FONT_BIG, ETextAlignment::CENTER, Colors::YELLOW, title));
 	deal = std::make_shared<CButton>(dealButtonPos, AnimationPath::builtin("TPMRKB.DEF"),
 		LIBRARY->generaltexth->zelp[595], [this](){CArtifactsBuying::makeDeal();}, EShortcut::MARKET_DEAL);
+	hoarderIndicator = std::make_shared<CLabel>(299, 130, FONT_TINY, ETextAlignment::CENTER, Colors::YELLOW, "", 560);
 	labels.emplace_back(std::make_shared<CLabel>(445, 148, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, LIBRARY->generaltexth->allTexts[168]));
 
 	// Player's resources
@@ -47,7 +51,7 @@ CArtifactsBuying::CArtifactsBuying(const IMarket * market, const CGHeroInstance 
 			CArtifactsBuying::onSlotClickPressed(newSlot, offerTradePanel);
 		}, [this]()
 		{
-			CMarketBase::updateSubtitlesForBid(EMarketMode::RESOURCE_ARTIFACT, bidTradePanel->getHighlightedItemId());
+			CArtifactsBuying::updateSubtitlesForBid(EMarketMode::RESOURCE_ARTIFACT, bidTradePanel->getHighlightedItemId());
 		}, market->availableItemsIds(EMarketMode::RESOURCE_ARTIFACT));
 	offerTradePanel->deleteSlotsCheck = [this](const std::shared_ptr<CTradeableItem> & slot)
 	{
@@ -57,6 +61,7 @@ CArtifactsBuying::CArtifactsBuying(const IMarket * market, const CGHeroInstance 
 
 	CMarketBase::update();
 	CArtifactsBuying::deselect();
+	refreshHoarderIndicator();
 }
 
 void CArtifactsBuying::deselect()
@@ -97,6 +102,7 @@ void CArtifactsBuying::highlightingChanged()
 	if(bidTradePanel->isHighlighted() && offerTradePanel->isHighlighted())
 	{
 		market->getOffer(bidTradePanel->getHighlightedItemId(), offerTradePanel->getHighlightedItemId(), bidQty, offerQty, EMarketMode::RESOURCE_ARTIFACT);
+		bidQty = quotedPrice(bidTradePanel->getHighlightedItemId(), bidQty);
 		deal->block(GAME->interface()->cb->getResourceAmount(GameResID(bidTradePanel->getHighlightedItemId())) < bidQty || !GAME->interface()->makingTurn);
 	}
 	CMarketBase::highlightingChanged();
@@ -118,4 +124,51 @@ std::string CArtifactsBuying::getTraderText()
 	{
 		return madeTransaction ? LIBRARY->generaltexth->allTexts[162] : LIBRARY->generaltexth->allTexts[163];
 	}
+}
+
+int CArtifactsBuying::quotedPrice(int resource, int basePrice) const
+{
+	ResourceSet base;
+	base[GameResID(resource)] = basePrice;
+	return static_cast<int>(newHorizonsEstates::artifactPurchaseQuote(base, hero).cost[GameResID(resource)]);
+}
+
+void CArtifactsBuying::updateSubtitlesForBid(EMarketMode mode, int resource)
+{
+	if(mode != EMarketMode::RESOURCE_ARTIFACT || resource < 0)
+	{
+		CMarketBase::updateSubtitlesForBid(mode, resource);
+		return;
+	}
+	for(const auto & slot : offerTradePanel->slots)
+	{
+		int cost = 0;
+		int quantity = 0;
+		market->getOffer(resource, slot->id, cost, quantity, mode);
+		offerTradePanel->updateOffer(*slot, quotedPrice(resource, cost), quantity);
+	}
+}
+
+void CArtifactsBuying::refreshHoarderIndicator()
+{
+	std::string text;
+	if(newHorizonsEstates::hasRevisedPerk(hero, "new-horizons:estates.hoarder"))
+	{
+		const auto calendar = hero->cb->getCalendar();
+		const auto week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
+		text = hero->getNewHorizonsHoarderLastWeek() == week
+			? "Hoarder: this week's discount has been used."
+			: "Hoarder: first artifact purchase this week costs 50% less Gold.";
+	}
+	if(hoarderIndicator->getText() != text)
+		hoarderIndicator->setText(text);
+}
+
+void CArtifactsBuying::update()
+{
+	CMarketBase::update();
+	refreshHoarderIndicator();
+	if(bidTradePanel->isHighlighted())
+		updateSubtitlesForBid(EMarketMode::RESOURCE_ARTIFACT, bidTradePanel->getHighlightedItemId());
+	highlightingChanged();
 }

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/gameState/CGameState.h"
@@ -64,9 +65,9 @@ protected:
 	void select(const std::string & perk)
 	{
 		const auto lookup = [this](const std::string & skill) { return attackerSideHero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), newHorizonsDiscipline::SKILL, lookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t i = 0; i < offers.size(); ++i)
 				if(offers[i].selection.skillId == newHorizonsDiscipline::SKILL && offers[i].selection.perkId == perk)
 				{

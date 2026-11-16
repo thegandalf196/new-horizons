@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include <gtest/gtest.h>
 
@@ -132,9 +133,9 @@ protected:
 		{
 			return candidate->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(candidate->getPerkState(), 10000); ++seed)
 		{
-			const auto offer = candidate->getPerkState().prepareOffer(rankLookup, seed, candidate->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forPerk(candidate->getPerkState(), perkId, rankLookup, seed, candidate->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offer.size(); ++index)
 			{
 				if(offer[index].selection.perkId != perkId)

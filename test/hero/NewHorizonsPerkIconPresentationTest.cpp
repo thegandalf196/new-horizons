@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons; GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include <set>
 #include "../../client/windows/NewHorizonsSylvanHybridPerkIcons.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/networkPacks/PacksForClient.h"
@@ -233,4 +234,37 @@ TEST(NewHorizonsPerkIconPresentation, HybridWrapperPreservesHistoricalResolversA
 	EXPECT_EQ(newHorizonsHybridCapturedPerkIcon("new-horizons:sylvanLuck.forestSFavor", "Fleetfoot", JsonNode()),
 		newHorizonsPerkIcon("new-horizons:sylvanLuck.forestSFavor"));
 	EXPECT_EQ(newHorizonsHybridCapturedPerkIcon(stableId, "Arcane Ballistics", captured), newBallistics);
+}
+
+TEST(NewHorizonsPerkIconPresentation, RevisedEstatesUsesTenDistinctExistingPaintings)
+{
+	auto captured = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	captured["estatesPolicyVersion"].Integer() = 1;
+	constexpr std::pair<const char *, const char *> expected[] = {
+		{"taxCollector", "NH_perk_tax_collector"}, {"supervisor", "NH_perk_land_surveyor"},
+		{"mercenaryCompany", "NH_perk_estate_network"}, {"merchantPrince", "NH_perk_merchant_prince"},
+		{"stewardship", "NH_perk_steward"}, {"conscription", "NH_perk_investor"},
+		{"architect", "NH_perk_resource_broker"}, {"hoarder", "NH_perk_financier"},
+		{"decentralization", "NH_perk_magnate"}, {"alchemist", "NH_perk_prospector"}};
+	std::set<std::string> unique;
+	const auto before = captured;
+	for(const auto & [suffix, resource] : expected)
+	{
+		const auto id = std::string("new-horizons:estates.") + suffix;
+		const auto icon = newHorizonsHybridCapturedPerkIcon(id, "", captured);
+		EXPECT_EQ(icon, resource);
+		EXPECT_TRUE(unique.insert(icon).second);
+	}
+	EXPECT_EQ(unique.size(), 10);
+	EXPECT_EQ(captured, before);
+}
+
+TEST(NewHorizonsPerkIconPresentation, HistoricalEstatesArtworkSurvivesRetiredIdentifiers)
+{
+	auto captured = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	captured.Struct().erase("estatesPolicyVersion");
+	EXPECT_EQ(newHorizonsHybridCapturedPerkIcon("new-horizons:estates.alchemist", "Alchemist", captured), "NH_perk_magnate");
+	EXPECT_EQ(newHorizonsHybridCapturedPerkIcon("new-horizons:estates.landSurveyor", "Land Surveyor", captured), "NH_perk_land_surveyor");
+	EXPECT_EQ(newHorizonsHybridCapturedPerkIcon("new-horizons:estates.prosperity", "Prosperity", captured), "NH_perk_prospector");
+	EXPECT_EQ(newHorizonsHybridCapturedPerkIcon("new-horizons:estates.banking", "Banking", captured), "NH_perk_financier");
 }

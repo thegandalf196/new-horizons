@@ -130,22 +130,7 @@
 #define COMPLAIN_RET(txt) {complain(txt); return false;}
 #define COMPLAIN_RETF(txt, FORMAT) {complain(boost::str(boost::format(txt) % FORMAT)); return false;}
 
-namespace
-{
-void notifyCannotMoveLastCreature(CGameHandler & handler, PlayerColor player)
-{
-	if(!player.isValidPlayer())
-		return;
-	const auto * playerState = handler.gameInfo().getPlayerState(player, false);
-	if(!playerState || playerState->status != EPlayerStatus::INGAME)
-		return;
 
-	InfoWindow notification;
-	notification.player = player;
-	notification.text = MetaString::createFromTextID("core.tcommand.5");
-	handler.sendAndApply(notification);
-}
-}
 
 template <typename T>
 void callWith(std::vector<T> args, std::function<void(T)> fun, ui32 which)
@@ -2516,6 +2501,8 @@ bool CGameHandler::bulkSplitStack(SlotID slotSrc, ObjectInstanceID srcOwner, si3
 		return false;
 
 	const auto * army = dynamic_cast<const CArmedInstance*>(gameInfo().getObjInstance(srcOwner));
+	if(const auto * mine = dynamic_cast<const CGMine *>(army); mine && mine->isCompanySlot(slotSrc))
+		COMPLAIN_RET("Mercenary Company defenders cannot be split");
 	const CCreatureSet & creatureSet = *army;
 
 	if((!vstd::contains(creatureSet.stacks, slotSrc) && complain(complainNoCreatures))
@@ -2534,7 +2521,9 @@ bool CGameHandler::bulkSplitStack(SlotID slotSrc, ObjectInstanceID srcOwner, si3
 		return false;
 	std::erase_if(freeSlots, [&](SlotID slot)
 	{
-		return !newHorizonsHeroes::armySlotAccepts(army, slot, creatureSet.getCreature(slotSrc)->getId(), howMany);
+		const auto * mine = dynamic_cast<const CGMine *>(army);
+		return (mine && mine->isCompanySlot(slot))
+			|| !newHorizonsHeroes::armySlotAccepts(army, slot, creatureSet.getCreature(slotSrc)->getId(), howMany);
 	});
 	if(freeSlots.empty() && complain("No unlocked compatible slot for this split."))
 		return false;
@@ -2566,6 +2555,10 @@ bool CGameHandler::bulkMergeStacks(SlotID slotSrc, ObjectInstanceID srcOwner)
 		return false;
 
 	const auto * army = dynamic_cast<const CArmedInstance*>(gameInfo().getObjInstance(srcOwner));
+	if(const auto * mine = dynamic_cast<const CGMine *>(army); mine && (mine->isCompanySlot(slotSrc)
+		|| (mine->hasCompanyDefenders() && mine->hasStackAtSlot(slotSrc)
+			&& mine->getStack(slotSrc).getCreatureID() == CreatureID(CreatureID::decode("core:rogue")))))
+		COMPLAIN_RET("Company Rogue defenders cannot be included in a bulk merge or rebalance");
 	if(!army && complain("Cannot merge stacks in a non-existing army!"))
 		return false;
 	const CCreatureSet & creatureSet = *army;
@@ -2635,6 +2628,10 @@ bool CGameHandler::bulkMoveArmy(ObjectInstanceID srcArmy, ObjectInstanceID destA
 	const auto * armyDest = dynamic_cast<const CArmedInstance*>(gameInfo().getObjInstance(destArmy));
 	if(!armySrc || !armyDest || armySrc == armyDest)
 		COMPLAIN_RET("Invalid bulk army transfer.");
+	for(const auto * army : {armySrc, armyDest})
+		if(const auto * mine = dynamic_cast<const CGMine *>(army); mine && mine->getCompanyOwner() == mine->getOwner()
+			&& mine->getCompanyOwner().isValidPlayer())
+			COMPLAIN_RET("Company defenses cannot participate in a bulk army transfer");
 
 	if(!vstd::contains(armySrc->stacks, srcSlot) && complain(complainNoCreatures))
 		return false;
@@ -2729,6 +2726,10 @@ bool CGameHandler::bulkSplitAndRebalanceStack(SlotID slotSrc, ObjectInstanceID s
 		return false;
 
 	const auto * army = dynamic_cast<const CArmedInstance*>(gameInfo().getObjInstance(srcOwner));
+	if(const auto * mine = dynamic_cast<const CGMine *>(army); mine && (mine->isCompanySlot(slotSrc)
+		|| (mine->hasCompanyDefenders() && mine->hasStackAtSlot(slotSrc)
+			&& mine->getStack(slotSrc).getCreatureID() == CreatureID(CreatureID::decode("core:rogue")))))
+		COMPLAIN_RET("Company Rogue defenders cannot be included in a bulk merge or rebalance");
 	const CCreatureSet & creatureSet = *army;
 
 	if(!vstd::contains(creatureSet.stacks, slotSrc) && complain(complainNoCreatures))
@@ -2742,7 +2743,8 @@ bool CGameHandler::bulkSplitAndRebalanceStack(SlotID slotSrc, ObjectInstanceID s
 	const auto * currentCreature = creatureSet.getCreature(slotSrc);
 	auto freeSlot = SlotID();
 	for(const auto slot : creatureSet.getFreeSlots())
-		if(newHorizonsHeroes::armySlotAccepts(army, slot, currentCreature->getId(), 1))
+		if((!dynamic_cast<const CGMine *>(army) || !static_cast<const CGMine *>(army)->isCompanySlot(slot))
+			&& newHorizonsHeroes::armySlotAccepts(army, slot, currentCreature->getId(), 1))
 		{
 			freeSlot = slot;
 			break;
@@ -2823,202 +2825,7 @@ bool CGameHandler::bulkSplitAndRebalanceStack(SlotID slotSrc, ObjectInstanceID s
 	return true;
 }
 
-bool CGameHandler::arrangeStacks(ObjectInstanceID id1, ObjectInstanceID id2, ui8 what, SlotID p1, SlotID p2, si32 val, PlayerColor player)
-{
-	const auto * s1 = dynamic_cast<const CArmedInstance *>(gameInfo().getObj(id1));
-	const auto * s2 = dynamic_cast<const CArmedInstance *>(gameInfo().getObj(id2));
 
-	if (s1 == nullptr || s2 == nullptr)
-	{
-		complain("Cannot exchange stacks between non-existing objects!!\n");
-		return false;
-	}
-
-	const CCreatureSet & S1 = *s1;
-	const CCreatureSet & S2 = *s2;
-	StackLocation sl1(s1->id, p1);
-	StackLocation sl2(s2->id, p2);
-
-	if (!sl1.slot.validSlot()  ||  !sl2.slot.validSlot())
-	{
-		complain(complainInvalidSlot);
-		return false;
-	}
-
-	if (!isAllowedExchange(id1,id2))
-	{
-		complain("Cannot exchange stacks between these two objects!\n");
-		return false;
-	}
-
-	// We can always put stacks into locked garrison, but not take them out of it
-	auto notRemovable = [&](const CArmedInstance * army)
-	{
-		if (id1 != id2) // Stack arrangement inside locked garrison is allowed
-		{
-			const auto * g = dynamic_cast<const CGGarrison *>(army);
-			if (g && !g->removableUnits)
-			{
-				complain("Stacks in this garrison are not removable!\n");
-				return true;
-			}
-		}
-		return false;
-	};
-
-	if (what==1) //swap
-	{
-		if (((s1->tempOwner != player && s1->tempOwner != PlayerColor::UNFLAGGABLE) && s1->getStackCount(p1))
-		  || ((s2->tempOwner != player && s2->tempOwner != PlayerColor::UNFLAGGABLE) && s2->getStackCount(p2)))
-		{
-			complain("Can't take troops from another player!");
-			return false;
-		}
-
-		if (sl1.army == sl2.army && sl1.slot == sl2.slot)
-		{
-			complain("Cannot swap stacks - slots are the same!");
-			return false;
-		}
-
-		if (!s1->slotEmpty(p1) && !s2->slotEmpty(p2))
-		{
-			if (notRemovable(s1) || notRemovable(s2))
-				return false;
-		}
-		if (s1->slotEmpty(p1) && notRemovable(s2))
-			return false;
-		else if (s2->slotEmpty(p2) && notRemovable(s1))
-			return false;
-
-		return swapStacks(sl1, sl2);
-	}
-	else if (what==2)//merge
-	{
-		if (sl1.army == sl2.army && sl1.slot == sl2.slot)
-		{
-			complain("Cannot merge a stack with itself!");
-			return false;
-		}
-
-		if ((s1->getCreature(p1) != s2->getCreature(p2) && complain("Cannot merge different creatures stacks!"))
-		|| (((s1->tempOwner != player && s1->tempOwner != PlayerColor::UNFLAGGABLE) && s2->getStackCount(p2)) && complain("Can't take troops from another player!")))
-			return false;
-
-		if (s1->slotEmpty(p1) || s2->slotEmpty(p2))
-		{
-			complain("Cannot merge empty stack!");
-			return false;
-		}
-		else if (notRemovable(s1))
-			return false;
-
-		const TQuantity sourceCount = s1->getStackCount(p1);
-		const TQuantity destinationCount = s2->getStackCount(p2);
-		int64_t maximumCount = std::numeric_limits<TQuantity>::max();
-		const int64_t availableCapacity = std::max<int64_t>(0, maximumCount - destinationCount);
-		int64_t transferCount = std::min<int64_t>(sourceCount, availableCapacity);
-		const bool mustKeepLastSourceCreature = id1 != id2 && s1->needsLastStack() && s1->stacksCount() == 1;
-		if(mustKeepLastSourceCreature)
-			transferCount = std::min<int64_t>(transferCount, sourceCount - 1);
-
-		if(transferCount == 0)
-		{
-			// Keeping the last creature in a required source army takes precedence
-			// over a simultaneous zero-capacity destination.
-			if(mustKeepLastSourceCreature && sourceCount == 1)
-			{
-				if(player == s1->tempOwner)
-					notifyCannotMoveLastCreature(*this, player);
-				return false;
-			}
-			if(destinationCount == std::numeric_limits<TQuantity>::max())
-				complain("Cannot exceed the maximum stack size!");
-			else if(mustKeepLastSourceCreature)
-				complain("Cannot move away the last creature!");
-			else
-				complain("Cannot merge these stacks!");
-			return false;
-		}
-
-		return moveStack(sl1, sl2, static_cast<TQuantity>(transferCount));
-	}
-	else if (what==3) //split
-	{
-		if(!vstd::contains(S1.stacks, p1) && complain(complainNoCreatures))
-			return false;
-		if(val < 1 && complain(complainNoCreatures))
-			return false;
-
-		const int64_t sourceCount = s1->getStackCount(p1);
-		const int64_t destinationCount = s2->getStackCount(p2);
-		const int64_t countToMove = static_cast<int64_t>(val) - destinationCount;
-		if(vstd::contains(S2.stacks, p2) && countToMove < 0)
-		{
-			complain("Cannot reduce the destination stack with a split request!");
-			return false;
-		}
-		if(vstd::contains(S2.stacks, p2) && countToMove == 0)
-			return true;
-		if(countToMove < 0 || countToMove > sourceCount)
-		{
-			complain("Cannot split that stack, not enough creatures!");
-			return false;
-		}
-		const int64_t countLeftOnSrc = sourceCount - countToMove;
-
-		const auto * bank = dynamic_cast<const CRewardableObject *>(s1);
-		const bool takingBankLoot = bank && bank->hasPendingBankCreatureReward()
-			&& id1 != id2 && s2->tempOwner == player;
-		if (  (s1->tempOwner != player && !takingBankLoot && countLeftOnSrc < s1->getStackCount(p1))
-			|| (s2->tempOwner != player && val < s2->getStackCount(p2)))
-		{
-			complain("Can't move troops of another player!");
-			return false;
-		}
-
-		if (vstd::contains(S2.stacks,p2))	 //dest. slot not free - it must be "rebalancing"...
-		{
-			const int64_t total = sourceCount + destinationCount;
-			if ((total < val   &&   complain("Cannot split that stack, not enough creatures!"))
-				|| (s1->getCreature(p1) != s2->getCreature(p2) && complain("Cannot rebalance different creatures stacks!"))
-			)
-			{
-				return false;
-			}
-
-			if (notRemovable(s1))
-			{
-				if (s1->getStackCount(p1) > countLeftOnSrc)
-					return false;
-			}
-			else if (notRemovable(s2))
-			{
-				if (s2->getStackCount(p1) < countLeftOnSrc)
-					return false;
-			}
-
-			return moveStack(sl1, sl2, static_cast<TQuantity>(countToMove));
-			//S2.slots[p2]->count = val;
-			//S1.slots[p1]->count = total - val;
-		}
-		else //split one stack to the two
-		{
-			if (s1->getStackCount(p1) < val)//not enough creatures
-			{
-				complain(complainNotEnoughCreatures);
-				return false;
-			}
-
-			if (notRemovable(s1))
-				return false;
-
-			return moveStack(sl1, sl2, val);
-		}
-
-	}
-	return true;
-}
 
 bool CGameHandler::hasPlayerAt(PlayerColor player,  GameConnectionID connectionID) const
 {
@@ -3033,6 +2840,8 @@ bool CGameHandler::hasBothPlayersAtSameConnection(PlayerColor left, PlayerColor 
 bool CGameHandler::disbandCreature(ObjectInstanceID id, SlotID pos)
 {
 	const auto * s1 = dynamic_cast<const CArmedInstance *>(gameInfo().getObjInstance(id));
+	if(const auto * mine = dynamic_cast<const CGMine *>(s1); mine && mine->isCompanySlot(pos))
+		COMPLAIN_RET("Mercenary Company defenders cannot be dismissed");
 	if (!vstd::contains(s1->stacks,pos))
 	{
 		complain("Illegal call to disbandCreature - no such stack in army!");
@@ -4253,123 +4062,6 @@ bool CGameHandler::eraseArtifactByClient(const ArtifactLocation & al)
 	return true;
 }
 
-bool CGameHandler::buyArtifact(ObjectInstanceID hid, ArtifactID aid)
-{
-	const CGHeroInstance * hero = gameInfo().getHero(hid);
-	COMPLAIN_RET_FALSE_IF(nullptr == hero, "Invalid hero index");
-	const CGTownInstance * town = hero->getVisitedTown();
-	COMPLAIN_RET_FALSE_IF(nullptr == town, "Hero not in town");
-
-	if (aid==ArtifactID::SPELLBOOK)
-	{
-		if ((!town->hasBuilt(BuildingID::MAGES_GUILD_1) && complain("Cannot buy a spellbook, no mage guild in the town!"))
-			|| (gameInfo().getResource(hero->getOwner(), EGameResID::GOLD) < GameConstants::SPELLBOOK_GOLD_COST && complain("Cannot buy a spellbook, not enough gold!"))
-		    || (hero->getArt(ArtifactPosition::SPELLBOOK) && complain("Cannot buy a spellbook, hero already has a one!"))
-		   )
-			return false;
-
-		giveResource(hero->getOwner(),EGameResID::GOLD,-GameConstants::SPELLBOOK_GOLD_COST);
-		giveHeroNewArtifact(hero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-		assert(hero->getArt(ArtifactPosition::SPELLBOOK));
-		giveSpells(town, hero, hero == town->getVisitingHero());
-		return true;
-	}
-	else
-	{
-		const CArtifact * art = aid.toArtifact();
-		COMPLAIN_RET_FALSE_IF(nullptr == art, "Invalid artifact index to buy");
-		COMPLAIN_RET_FALSE_IF(art->getWarMachine() == CreatureID::NONE, "War machine artifact required");
-		COMPLAIN_RET_FALSE_IF(aid == ArtifactID::CATAPULT, "Catapult cannot be purchased as an ordinary war machine!");
-		COMPLAIN_RET_FALSE_IF(hero->hasArt(aid),"Hero already has this machine!");
-		const auto offers = town->getWarMachineShopOffers();
-		const auto offer = std::find_if(offers.begin(), offers.end(), [aid](const auto & entry)
-			{ return entry.artifact == aid; });
-		COMPLAIN_RET_FALSE_IF(offer == offers.end(), "This machine is unavailable here!");
-		const int price = offer->price;
-		COMPLAIN_RET_FALSE_IF(gameInfo().getPlayerState(hero->getOwner())->resources[EGameResID::GOLD] < price, "Not enough gold!");
-
-		bool hasFreeSlot = false;
-		for(auto slot : art->getPossibleSlots().at(ArtBearer::HERO))
-			if (hero->getArt(slot) == nullptr)
-				hasFreeSlot = true;
-
-		if (!hasFreeSlot)
-		{
-			auto slot = art->getPossibleSlots().at(ArtBearer::HERO).front();
-			removeArtifact(ArtifactLocation(hero->id, slot));
-		}
-
-		giveResource(hero->getOwner(),EGameResID::GOLD,-price);
-		return giveHeroNewArtifact(hero, aid, ArtifactPosition::FIRST_AVAILABLE);
-	}
-}
-
-bool CGameHandler::buyArtifact(const IMarket *m, const CGHeroInstance *h, GameResID rid, ArtifactID aid)
-{
-	if(!h)
-		COMPLAIN_RET("Only hero can buy artifacts!");
-
-	if (!vstd::contains(m->availableItemsIds(EMarketMode::RESOURCE_ARTIFACT), aid))
-		COMPLAIN_RET("That artifact is unavailable!");
-
-	int b1;
-	int b2;
-	m->getOffer(rid, aid, b1, b2, EMarketMode::RESOURCE_ARTIFACT);
-
-	if (gameInfo().getResource(h->tempOwner, rid) < b1)
-		COMPLAIN_RET("You can't afford to buy this artifact!");
-
-	giveResource(h->tempOwner, rid, -b1);
-
-	SetAvailableArtifacts saa;
-	if(dynamic_cast<const CGTownInstance *>(m))
-	{
-		saa.id = ObjectInstanceID::NONE;
-		saa.arts = gameState().getMap().townMerchantArtifacts;
-	}
-	else if(const auto *bm = dynamic_cast<const CGBlackMarket *>(m)) //black market
-	{
-		saa.id = bm->id;
-		saa.arts = bm->artifacts;
-	}
-	else
-		COMPLAIN_RET("Wrong marktet...");
-
-	bool found = false;
-	for (ArtifactID & art : saa.arts)
-	{
-		if (art == aid)
-		{
-			art = ArtifactID();
-			found = true;
-			break;
-		}
-	}
-
-	if (!found)
-		COMPLAIN_RET("Cannot find selected artifact on the list");
-
-	sendAndApply(saa);
-	giveHeroNewArtifact(h, aid, ArtifactPosition::FIRST_AVAILABLE);
-	return true;
-}
-
-bool CGameHandler::sellArtifact(const IMarket *m, const CGHeroInstance *h, ArtifactInstanceID aid, GameResID rid)
-{
-	COMPLAIN_RET_FALSE_IF((!h), "Only hero can sell artifacts!");
-	const CArtifactInstance *art = h->getArtByInstanceId(aid);
-	COMPLAIN_RET_FALSE_IF((!art), "There is no artifact to sell!");
-	COMPLAIN_RET_FALSE_IF((!art->getType()->isTradable()), "Cannot sell a war machine or spellbook!");
-
-	int resVal = 0;
-	int dump = 1;
-	m->getOffer(art->getType()->getId(), rid, dump, resVal, EMarketMode::ARTIFACT_RESOURCE);
-
-	removeArtifact(ArtifactLocation(h->id, h->getArtPos(art)));
-	giveResource(h->tempOwner, rid, resVal);
-	return true;
-}
-
 bool CGameHandler::buySecSkill(const IMarket *m, const CGHeroInstance *h, SecondarySkill skill)
 {
 	if (!h)
@@ -4399,45 +4091,6 @@ bool CGameHandler::buySecSkill(const IMarket *m, const CGHeroInstance *h, Second
 
 	changeSecSkill(h, skill, 1, ChangeValueMode::ABSOLUTE);
 	return true;
-}
-
-bool CGameHandler::buyHouseOfWisdomScroll(const IMarket *m, const CGHeroInstance *h, SpellID spell)
-{
-	COMPLAIN_RET_FALSE_IF(!h, "You need a hero to buy a spell scroll!");
-	COMPLAIN_RET_FALSE_IF(!newHorizonsHouseOfWisdom::active(m, gameInfo().getMagicRules()), "This market does not sell spell scrolls!");
-
-	const auto * town = dynamic_cast<const CGTownInstance *>(m);
-	COMPLAIN_RET_FALSE_IF(!town, "Wrong House of Wisdom market!");
-	COMPLAIN_RET_FALSE_IF(!vstd::contains(m->availableItemsIds(EMarketMode::RESOURCE_SKILL), spell), "That spell scroll is unavailable!");
-
-	const auto * definition = spell.toSpell();
-	COMPLAIN_RET_FALSE_IF(!definition || !definition->isCommonHeroSpell() || definition->isAdventure(), "That spell cannot be sold as a scroll!");
-	COMPLAIN_RET_FALSE_IF(!newHorizonsMagic::spellAvailableForOrdinaryAcquisition(gameInfo().getMagicRules(), spell),
-		"That spell is not available for ordinary acquisition!");
-
-	const auto price = newHorizonsHouseOfWisdom::price(spell);
-	const auto & resources = gameInfo().getPlayerState(h->tempOwner)->resources;
-	COMPLAIN_RET_FALSE_IF(!resources.canAfford(price), "You can't afford to buy this spell scroll!");
-
-	const auto * scroll = ArtifactID(ArtifactID::SPELL_SCROLL).toArtifact();
-	const auto scrollPosition = ArtifactUtils::getArtAnyPosition(h, scroll->getId());
-	COMPLAIN_RET_FALSE_IF(!scroll->canBePutAt(h, scrollPosition), "The hero has no room for this spell scroll!");
-
-	// Remove exactly the purchased offer from the authoritative town stock.
-	// The packet is applied on the server and replicated to clients, so a
-	// client cannot refill or otherwise alter the storefront locally.
-	auto remaining = town->getHouseOfWisdomScrolls();
-	std::vector<SpellID> updatedStock(remaining.begin(), remaining.end());
-	const auto it = std::find(updatedStock.begin(), updatedStock.end(), spell);
-	COMPLAIN_RET_FALSE_IF(it == updatedStock.end(), "That spell scroll is unavailable!");
-	updatedStock.erase(it);
-
-	SetHouseOfWisdomScrolls stock;
-	stock.townId = town->id;
-	stock.scrolls = std::move(updatedStock);
-	sendAndApply(stock);
-	giveResources(h->tempOwner, -price);
-	return giveHeroNewScroll(h, spell, ArtifactPosition::FIRST_AVAILABLE);
 }
 
 bool CGameHandler::tradeResources(const IMarket *market, ui32 amountToSell, PlayerColor player, GameResID toSell, GameResID toBuy)
@@ -5300,8 +4953,10 @@ bool CGameHandler::eraseStack(const StackLocation &sl, bool forceRemoval)
 	es.army = army->id;
 	es.slot = sl.slot;
 	sendAndApply(es);
-    if(const auto * mine = dynamic_cast<const CGMine *>(army))
-        mine->deliverPendingMercenaries(*this);
+	if(const auto * mine = dynamic_cast<const CGMine *>(army))
+	{
+		mine->deliverPendingMercenaries(*this);
+	}
 	return true;
 }
 
@@ -5462,6 +5117,10 @@ bool CGameHandler::moveStack(const StackLocation &src, const StackLocation &dst,
 	const auto * dstArmy = dynamic_cast<const CArmedInstance*>(gameInfo().getObj(dst.army));
 	if(!srcArmy || !dstArmy)
 		COMPLAIN_RET("Cannot move stacks between non-existing armies!");
+	const auto * sourceMine = dynamic_cast<const CGMine *>(srcArmy);
+	const auto * destinationMine = dynamic_cast<const CGMine *>(dstArmy);
+	if((sourceMine && sourceMine->isCompanySlot(src.slot)) || (destinationMine && destinationMine->isCompanySlot(dst.slot)))
+		COMPLAIN_RET("Mercenary Company defenders cannot be transferred");
 
 	if(src.army == dst.army && src.slot == dst.slot)
 		COMPLAIN_RET("Cannot move a stack to itself!");
@@ -5492,7 +5151,7 @@ bool CGameHandler::moveStack(const StackLocation &src, const StackLocation &dst,
 		&& srcArmy->stacksCount() == 1
 		&& srcArmy->needsLastStack())
 	{
-		notifyCannotMoveLastCreature(*this, srcArmy->tempOwner);
+		notifyCannotMoveLastCreature(srcArmy->tempOwner);
 		return false;
 	}
 	if((srcArmy != dstArmy || src.slot != dst.slot)
@@ -5511,11 +5170,17 @@ bool CGameHandler::moveStack(const StackLocation &src, const StackLocation &dst,
 	rs.dstSlot = dst.slot;
 	rs.count = count;
 	sendAndApply(rs);
-    if(const auto * mine = dynamic_cast<const CGMine *>(srcArmy))
-        mine->deliverPendingMercenaries(*this);
-    if(dstArmy != srcArmy)
-        if(const auto * mine = dynamic_cast<const CGMine *>(dstArmy))
-            mine->deliverPendingMercenaries(*this);
+	if(const auto * mine = dynamic_cast<const CGMine *>(srcArmy))
+	{
+		mine->deliverPendingMercenaries(*this);
+	}
+	if(dstArmy != srcArmy)
+	{
+		if(const auto * mine = dynamic_cast<const CGMine *>(dstArmy))
+		{
+			mine->deliverPendingMercenaries(*this);
+		}
+	}
 	return true;
 }
 
@@ -5551,12 +5216,12 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 		int64_t transferCount = sourceCount - (mustKeepLastSourceCreature ? 1 : 0);
 		if(transferCount <= 0 && mustKeepLastSourceCreature && sourceCount == 1)
 		{
-			notifyCannotMoveLastCreature(*this, source->tempOwner);
+			notifyCannotMoveLastCreature(source->tempOwner);
 			return false;
 		}
 		if(transferCount <= 0 && mustKeepLastSourceCreature && sourceCount > 0)
 		{
-			notifyCannotMoveLastCreature(*this, source->tempOwner);
+			notifyCannotMoveLastCreature(source->tempOwner);
 			return false;
 		}
 		return moveStack(sourceLocation, destinationLocation, static_cast<TQuantity>(transferCount));
@@ -5581,11 +5246,17 @@ bool CGameHandler::swapStacks(const StackLocation & sl1, const StackLocation & s
 		ss.srcSlot = sl1.slot;
 		ss.dstSlot = sl2.slot;
 		sendAndApply(ss);
-        if(const auto * mine = dynamic_cast<const CGMine *>(army1))
-            mine->deliverPendingMercenaries(*this);
-        if(army2 != army1)
-            if(const auto * mine = dynamic_cast<const CGMine *>(army2))
-                mine->deliverPendingMercenaries(*this);
+		if(const auto * mine = dynamic_cast<const CGMine *>(army1))
+		{
+			mine->deliverPendingMercenaries(*this);
+		}
+		if(army2 != army1)
+		{
+			if(const auto * mine = dynamic_cast<const CGMine *>(army2))
+			{
+				mine->deliverPendingMercenaries(*this);
+			}
+		}
 		return true;
 	}
 }

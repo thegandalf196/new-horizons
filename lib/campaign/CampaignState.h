@@ -275,9 +275,9 @@ public:
 	void validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
 	void validateNativePilotSerialization(bool supported) const;
-	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const;
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false, bool fourOfferSupported = false, bool estatesSupported = false) const;
 	static void validateCommandPools(const CampaignPoolType & scenarios, const GlobalPoolType & global,
-		bool supported, bool leadershipSupported = false);
+		bool supported, bool leadershipSupported = false, bool fourOfferSupported = false, bool estatesSupported = false);
 
 	/// Copies persist-flagged script variables of the given map into the campaign state.
 	void savePersistentVariables(const CMap & map);
@@ -361,7 +361,8 @@ public:
 	{
 		if(h.saving)
 			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		if(h.saving)
 			validateNativePilotSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 		if(h.saving)
@@ -385,7 +386,8 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 			validateCommandPools(incomingScenarios, incomingGlobal,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 			scenarioHeroPool = std::move(incomingScenarios);
 			globalHeroPool = std::move(incomingGlobal);
 		}

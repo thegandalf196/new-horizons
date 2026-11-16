@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyMapGameTest.h"
@@ -145,9 +146,9 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forPerk(hero->getPerkState(), perkId, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & entry)
 			{
 				return entry.selection.perkId == perkId;
@@ -328,7 +329,7 @@ TEST_F(NewHorizonsLogisticsMovementPerksTest, RoadmasterForecastMatchesOrthogona
 	setTile(offroad, ETerrainId::GRASS, RoadId::NO_ROAD);
 
 	advanceLogistics(); // Basic Logistics.
-	const auto basicOffer = hero->getPerkState().prepareOffer([this](const std::string & skillId)
+	const auto basicOffer = perkTestSetup::forSkill(hero->getPerkState(), LOGISTICS_SKILL, [this](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);
 	}, 7, hero->getPerkOfferWeightContext());
@@ -342,7 +343,7 @@ TEST_F(NewHorizonsLogisticsMovementPerksTest, RoadmasterForecastMatchesOrthogona
 	EXPECT_THROW(advanceLogistics(), std::runtime_error);
 	ASSERT_TRUE(chooseOfferedPerk(ROADMASTER_PERK));
 	ASSERT_TRUE(hero->hasActivePerk(LOGISTICS_SKILL, ROADMASTER_PERK));
-	const auto advancedOffer = hero->getPerkState().prepareOffer([this](const std::string & skillId)
+	const auto advancedOffer = perkTestSetup::forSkill(hero->getPerkState(), LOGISTICS_SKILL, [this](const std::string & skillId)
 	{
 		return hero->getPerkSkillRank(skillId);
 	}, 13, hero->getPerkOfferWeightContext());

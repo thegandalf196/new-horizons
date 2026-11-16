@@ -1003,6 +1003,16 @@ set(test_SRCS
 		server/queries/NewHorizonsGlyphsOfFearTest.cpp
 		server/NewHorizonsEconomyTest.cpp
 		server/NewHorizonsEstatesPricesTest.cpp
+		hero/HistoricalLevelOfferFixture.h
+		PerkTestSetup.h
+		hero/FourOfferProgressionTest.cpp
+		server/EstatesHoarderQuoteTest.cpp
+		server/EstatesTransactionsTest.cpp
+		server/FourOfferHeroProgressionTest.cpp
+		server/LegacyEstatesCapture.h
+		server/RevisedEstatesFixture.h
+		server/NewHorizonsEstatesPolicyTest.cpp
+		server/EstatesRecruitmentQuoteTest.cpp
 		server/NewHorizonsFourSkillUIFixtureExportTest.cpp
         server/NewHorizonsEstatesIncomeTest.cpp
         server/NewHorizonsEstatesMercenaryTest.cpp
@@ -1385,6 +1395,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsArcaneReservoirAITest.cpp
 		nullkiller2/NewHorizonsPeacemakerDangerAITest.cpp
 		nullkiller2/NewHorizonsEstatesIncomeAITest.cpp
+		nullkiller2/FourOfferProgressionAITest.cpp
 		nullkiller2/NewHorizonsMarketSelectionAITest.cpp
 		nullkiller2/NewHorizonsLearningMentorAITest.cpp
 		nullkiller2/NewHorizonsLearningMasterTeacherAITest.cpp
@@ -1481,6 +1492,28 @@ if(ENABLE_NH_PERF_EXPERIMENTS)
 endif()
 
 add_executable(vcmitest ${test_SRCS} ${test_HEADERS} ${mock_HEADERS})
+
+# The GUI-to-autofight owner is tested separately from the client application.
+# Link the shared facade, never a second copy of core or AI globals.
+add_executable(nhInitialAutofightTaskTest
+	main.cpp
+	CVcmiTestConfig.cpp
+	mock/mock_MapService.cpp
+	mock/mock_MapServiceTinyH3M.cpp
+	mock/TinyMapGameTest.cpp
+	mock/TinyH3MWriter.cpp
+	mock/TinyH3MBuilder.cpp
+	mock/GameHandlerTestServer.cpp
+	server/battles/BattleTestFixture.cpp
+	../client/InitialAutofightTask.cpp
+	client/InitialAutofightTaskTest.cpp
+	client/ClientGameplayRetirementTest.cpp
+)
+target_include_directories(nhInitialAutofightTaskTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}")
+target_compile_features(nhInitialAutofightTaskTest PRIVATE cxx_std_20)
+target_link_libraries(nhInitialAutofightTaskTest PRIVATE gtest gmock vcmi vcmiservercommon TBB::tbb Threads::Threads ${SYSTEM_LIBS})
+add_test(NAME nhInitialAutofightTaskTest COMMAND nhInitialAutofightTaskTest)
+set_tests_properties(nhInitialAutofightTaskTest PROPERTIES TIMEOUT 180 LABELS "battle;client;ownership")
 add_executable(nhBattleEndDispatchTest ../client/tests/BattleEndDispatchTest.cpp)
 add_test(NAME nhBattleEndDispatchTest COMMAND nhBattleEndDispatchTest)
 add_executable(nhProjectileFlightLifecycleTest ../client/tests/ProjectileFlightLifecycleTest.cpp)

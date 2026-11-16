@@ -8,6 +8,7 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 EXCHANGE = (ROOT / "client/widgets/CExchangeController.cpp").read_text()
 GARRISON = (ROOT / "client/widgets/CGarrisonInt.cpp").read_text()
+GARRISON += (ROOT / "client/widgets/GarrisonBulkTransfer.cpp").read_text(encoding="utf-8")
 UIHELPER_H = (ROOT / "client/UIHelper.h").read_text()
 UIHELPER_CPP = (ROOT / "client/UIHelper.cpp").read_text()
 WINDOW = (ROOT / "client/windows/CExchangeWindow.cpp").read_text()

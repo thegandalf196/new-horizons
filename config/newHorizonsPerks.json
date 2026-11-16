@@ -5,7 +5,8 @@
 	"warfarePolicyVersion": 1,
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 1,
-	"unifiedSkillProgressionVersion": 1,
+	"fourOfferProgressionVersion": 1,
+	"estatesPolicyVersion": 1,
 	"sylvanTacticsPolicy": 3,
 	"metamagicPolicy": {
 		"version": 3,
@@ -44,7 +45,7 @@
 		"mathVersion": 1
 	},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "cd6c5d7722ae44edff5b8342dc5d7379cfdf6ae287d7137107765787a2eea158",
+	"sourceSha256": "afe1aa621bc115b34d7c110217b98cfa106b659eb28357bb4542dec9629f18b1",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -2874,7 +2875,7 @@
 			"name": "Estates",
 			"domain": "Strategic",
 			"availability": "All heroes",
-			"description": "Increase income from Gold, mines, markets and towns.",
+			"description": "Develop your kingdom through income, resource rewards, mines, markets and town management.",
 			"ranks": {
 				"basic": {
 					"description": "The kingdom receives +125 Gold per day while the hero is active.",
@@ -2903,114 +2904,114 @@
 					"id": "new-horizons:estates.taxCollector",
 					"name": "Tax Collector",
 					"requires": "basic",
-					"description": "Gain 100 Gold daily per owned town, up to 500 Gold.",
+					"description": "Immediate location rewards granted to this visiting hero yield 50% more Gold and resources.",
 					"effect": {
 						"status": "active",
-						"description": "Gain 100 Gold daily per owned town, up to 500 Gold."
+						"description": "Immediate location rewards granted to this visiting hero yield 50% more Gold and resources."
 					},
-					"details": "Each active holder grants 100 Gold per day for each town owned by that hero’s player, capped at 500 Gold per holder per day. This is separate from the Estates core income."
+					"details": "This hero gains 50% more of each positive resource awarded immediately by a visited adventure-map location, rounded down separately. A reward of 3 becomes 4. On a Gold or Experience choice, only chosen Gold receives the bonus. Ongoing mine production, daily income, refunds, trades and other purchases are unchanged."
 				},
 				{
-					"id": "new-horizons:estates.landSurveyor",
-					"name": "Land Surveyor",
+					"id": "new-horizons:estates.supervisor",
+					"name": "Supervisor",
 					"requires": "basic",
-					"description": "The first mine captured by this hero each week immediately produces three days of normal output.",
+					"description": "Owned Sawmills and Ore Pits produce 3 Wood or Ore daily instead of 2.",
 					"effect": {
 						"status": "active",
-						"description": "The first mine captured by this hero each week immediately produces three days of normal output."
+						"description": "Owned Sawmills and Ore Pits produce 3 Wood or Ore daily instead of 2."
 					},
-					"details": "Once each week, the first mine captured by this hero immediately grants three times its normal daily resource output. Merely visiting an already owned mine does not qualify; use this hero’s capture receipt, not a kingdom-wide mine-visit count."
+					"details": "While any active owned hero has Supervisor, ordinary owned Sawmills and Ore Pits produce one extra Wood or Ore daily. Multiple holders do not stack. Other production bonuses and scenario modifiers still apply; other mine types are unchanged."
 				},
 				{
-					"id": "new-horizons:estates.prosperity",
-					"name": "Prosperity",
+					"id": "new-horizons:estates.mercenaryCompany",
+					"name": "Mercenary Company",
 					"requires": "basic",
-					"description": "While active, this hero grants 1 Wood and 1 Ore daily.",
+					"description": "Every owned mine gains Rogues weekly equal to your highest qualifying hero level, capped at three times that level.",
 					"effect": {
 						"status": "active",
-						"description": "While active, this hero grants 1 Wood and 1 Ore daily."
+						"description": "Every owned mine gains Rogues weekly equal to your highest qualifying hero level, capped at three times that level."
 					},
-					"details": "Each active owned hero with Prosperity independently grants 1 Wood and 1 Ore per day through ordinary hero resource income. Garrisoned owned heroes count as active; tavern, pool, dead and non-owned heroes do not."
+					"details": "At each normal weekly event, every owned mine gains Rogues equal to the highest active qualifying hero level, up to three times that level in Company defenders. Holders do not stack. These troops defend the mine in ordinary battles and cannot be collected, transferred or sold. They remain if qualification ends, but further growth stops. Capture removes the previous owner’s surviving Company troops. A full mine without room for a Company stack gains no Rogues that week."
 				},
 				{
 					"id": "new-horizons:estates.merchantPrince",
 					"name": "Merchant Prince",
 					"requires": "basic",
-					"description": "A town where this hero resides trades as though you owned two extra Marketplaces.",
+					"description": "Your kingdom trades as though it owned two additional Marketplaces.",
 					"effect": {
 						"status": "active",
-						"description": "A town where this hero resides trades as though you owned two extra Marketplaces."
+						"description": "Your kingdom trades as though it owned two additional Marketplaces."
 					},
-					"details": "While this hero visits or garrisons an owned town with a Marketplace, that town’s exchange rates count two additional Marketplaces. Apply this once per town even when both residents own the perk; preserve ordinary Marketplace caps and ownership rules."
+					"details": "While any active owned hero has Merchant Prince, your kingdom counts two additional Marketplaces in its normal exchange rates, regardless of that hero’s location. Multiple holders do not stack. Normal trade access, exchange caps and explicitly fixed market rates remain unchanged."
 				},
 				{
 					"id": "new-horizons:estates.stewardship",
 					"name": "Stewardship",
 					"requires": "advanced",
-					"description": "While stationed in an owned town, this hero grants 250 extra Gold daily.",
+					"description": "Remotely administer one owned town, granting it 1,000 additional Gold daily.",
 					"effect": {
 						"status": "active",
-						"description": "While stationed in an owned town, this hero grants 250 extra Gold daily."
+						"description": "Remotely administer one owned town, granting it 1,000 additional Gold daily."
 					},
-					"details": "Each qualifying visiting or garrison hero stationed in an owned town grants that town 250 additional Gold per day. Two distinct qualifying residents each contribute; this does not scale with Lord Haart’s Estates core specialty."
+					"details": "Appoint this hero remotely to one owned town for 1,000 additional Gold through normal daily production. One hero may administer one town, and each town may have one steward. The hero may continue adventuring. Reassignment grants no immediate income. Capture, hero loss or lost qualification ends the assignment."
 				},
 				{
 					"id": "new-horizons:estates.conscription",
 					"name": "Conscription",
 					"requires": "advanced",
-					"description": "Creatures recruited directly into this hero’s army cost 10% fewer resources.",
+					"description": "Recruiting directly into this hero’s army receives an exact cumulative 10% discount on every resource.",
 					"effect": {
 						"status": "active",
-						"description": "Creatures recruited directly into this hero’s army cost 10% fewer resources."
+						"description": "Recruiting directly into this hero’s army receives an exact cumulative 10% discount on every resource."
 					},
-					"details": "Apply the discount only when this hero is the actual recruitment recipient, including field dwelling and War Machine purchases. Recruitment into a town’s upper army uses its garrison hero; a town without a garrison hero receives no discount, even if a visiting hero owns Conscription. For each resource, charge ceil(undiscounted unit price × recruited count × 90 / 100), preserving zero costs. Ten units costing 1 Gold each therefore cost 9 Gold, rather than rounding each unit separately. Preserve normal recruitment availability, free sources, ownership and legal Command placement."
+					"details": "Only direct recruitment into this hero’s army qualifies. Apply ordinary recruitment prices first, then a 10% discount independently to each of the seven resources. Discount fractions are carried forward for the whole kingdom, so identical recruitment bought together or separately costs the same. With fresh accounting, 75-Gold creatures cost 68 then 67 Gold; ten cost 675. Previews, failed purchases and cancellations do not spend discount credit. Transfers, dwelling growth, free recruitment and unrelated purchases do not advance it."
 				},
 				{
 					"id": "new-horizons:estates.architect",
 					"name": "Architect",
 					"requires": "advanced",
-					"description": "Buildings in owned towns where this hero resides cost 20% less Gold, Wood and Ore.",
+					"description": "Buildings in an owned town with this hero physically present cost 20% less Gold, Wood and Ore.",
 					"effect": {
 						"status": "active",
-						"description": "Buildings in owned towns where this hero resides cost 20% less Gold, Wood and Ore."
+						"description": "Buildings in an owned town with this hero physically present cost 20% less Gold, Wood and Ore."
 					},
-					"details": "A qualifying visiting or garrison hero grants the owned town one 20% building discount. Charge ceil(ordinary cost × 80 / 100) separately for Gold, Wood and Ore; preserve zero costs and every precious-resource cost unchanged. Two holders do not double the discount. Keep ordinary ownership, building prerequisites and daily construction limits; displayed affordability and actual payment use the same price."
+					"details": "This hero must be physically visiting or garrisoned in the owned town when construction is purchased. Reduce its normal Gold, Wood and Ore costs by 20%, rounding each resulting component up. Precious resources and zero costs remain unchanged. Multiple holders do not stack. A remote Steward appointment alone grants no Architect discount. Ordinary prerequisites and daily construction limits still apply."
 				},
 				{
-					"id": "new-horizons:estates.mercenaryCompany",
-					"name": "Mercenary Company",
+					"id": "new-horizons:estates.hoarder",
+					"name": "Hoarder",
 					"requires": "advanced",
-					"description": "Each week, every owned mine gains Rogues equal to this hero’s current level.",
+					"description": "Your first eligible artifact purchase each week costs 50% less Gold.",
 					"effect": {
 						"status": "active",
-						"description": "Each week, every owned mine gains Rogues equal to this hero’s current level."
+						"description": "Your first eligible artifact purchase each week costs 50% less Gold."
 					},
-					"details": "At the start of each week, every owned mine gains Rogues equal to each active holder’s current hero level; add qualifying holders’ contributions. Merge with existing Rogues or use a free native garrison slot. If all seven slots are occupied without Rogues, preserve undelivered guards in a pending reserve rather than overwriting troops or losing units. Keep native mine-garrison transfers and legal Command placement when a hero collects guards; this grants no additional Hero Action."
+					"details": "The first successful eligible artifact purchase by this hero each normal week costs half its Gold price, rounded up. Other resource costs are unchanged. Later purchases and all sales use normal prices. Failed or canceled purchases do not consume the benefit, and a purchase with no Gold cost does not consume it."
 				},
 				{
-					"id": "new-horizons:estates.banking",
-					"name": "Banking",
+					"id": "new-horizons:estates.decentralization",
+					"name": "Decentralization",
 					"requires": "expert",
-					"description": "Each week, gain 1% of your Gold treasury, up to 1,000 Gold.",
+					"description": "Your kingdom may build a second Capitol while any active qualifying hero remains.",
 					"effect": {
 						"status": "active",
-						"description": "Each week, gain 1% of your Gold treasury, up to 1,000 Gold."
+						"description": "Your kingdom may build a second Capitol while any active qualifying hero remains."
 					},
-					"details": "At the start of each week, each active holder grants floor(current Gold treasury / 100), capped at 1,000 Gold per holder. All holders use the same pre-income treasury snapshot; do not compound interest from another holder’s award or income just granted."
+					"details": "While any active owned hero has Decentralization, your kingdom may construct up to two Capitols instead of one. Holders do not stack. All normal building prices, prerequisites, town restrictions and daily limits remain. Losing qualification does not destroy existing Capitols; it prevents further construction above the current allowance."
 				},
 				{
 					"id": "new-horizons:estates.alchemist",
 					"name": "Alchemist",
 					"requires": "expert",
-					"description": "While active, this hero grants 1 Mercury, Sulfur, Crystal and Gems daily.",
+					"description": "Once each normal week, your kingdom receives 3 Mercury, Sulfur, Crystal and Gems.",
 					"effect": {
 						"status": "active",
-						"description": "While active, this hero grants 1 Mercury, Sulfur, Crystal and Gems daily."
+						"description": "Once each normal week, your kingdom receives 3 Mercury, Sulfur, Crystal and Gems."
 					},
-					"details": "Each active owned holder independently grants 1 of each of the four precious resources daily: Mercury, Sulfur, Crystal and Gems. Garrisoned owned heroes qualify under ordinary hero income rules. Preserve independent resource specialties; this perk adds no Wood, Ore or Gold."
+					"details": "At each normal weekly production event, the kingdom receives 3 Mercury, 3 Sulfur, 3 Crystal and 3 Gems if any active owned hero qualifies. Multiple holders do not stack. There is no daily output or separate initial map-start grant. Independent resource specialties remain unchanged."
 				}
 			],
-			"details": "Estates is available to all heroes. Its active hero daily Gold income remains 125, 250 or 500 at Basic, Advanced or Expert rank. Lord Haart’s existing specialty scales only that core income. Perk income and retained hero resource specialties keep their independent rules."
+			"details": "Estates is available to all heroes. Its total daily Gold income is 125, 250 or 500 at Basic, Advanced or Expert rank. Lord Haart’s specialty scales only this core income. Active owned map heroes, including garrisoned heroes, qualify for kingdom effects; tavern, pool, dead and non-owned heroes do not. You may acquire at most three Estates perks."
 		},
 		"new-horizons:learning": {
 			"id": "new-horizons:learning",

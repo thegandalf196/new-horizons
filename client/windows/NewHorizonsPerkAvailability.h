@@ -49,6 +49,15 @@ struct TierSlot
 	std::optional<newHorizonsHeroes::PerkDefinition> selectedPerk;
 };
 
+/// Current four-offer and historical non-strict rules retain each actual
+/// acquisition, including several distinct perks from the same tier.
+inline bool usesSelectionSlots(const newHorizonsHeroes::PerkState & state)
+{
+	return newHorizonsHeroes::usesFourOfferProgression(state.rules)
+		|| (newHorizonsHeroes::usesR2PerkOffers(state.rules)
+			&& !newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+}
+
 namespace detail
 {
 inline bool tierSelected(const newHorizonsHeroes::PerkState & state, std::string_view skillId, int tier)
@@ -204,9 +213,7 @@ inline Evaluation evaluatePerk(const newHorizonsHeroes::PerkState & state,
 			result.reason = Reason::EARLIER_TIER_MISSING;
 			return result;
 		}
-	if((!newHorizonsHeroes::usesR2PerkOffers(state.rules)
-			|| newHorizonsHeroes::usesStrictPerkProgression(state.rules))
-		&& detail::tierSelected(state, skillId, result.requiredRank))
+	if(!usesSelectionSlots(state) && detail::tierSelected(state, skillId, result.requiredRank))
 	{
 		result.status = Status::LOCKED;
 		result.reason = Reason::TIER_OCCUPIED;
@@ -297,15 +304,13 @@ inline TierSlot evaluateTier(const newHorizonsHeroes::PerkState & state,
 	return result;
 }
 
-/// Historical non-strict policy2 cells represent selections, not authored tiers.
+/// Selection cells represent actual acquisitions, not authored tiers.
 /// Keep acquisition order and each selected perk's actual rank visible.
 inline TierSlot evaluateSelectionSlot(const newHorizonsHeroes::PerkState & state,
 	std::string_view skillId, int skillRank, size_t slotIndex)
 {
 	TierSlot result;
-	if(slotIndex >= newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL
-		|| !newHorizonsHeroes::usesR2PerkOffers(state.rules)
-		|| newHorizonsHeroes::usesStrictPerkProgression(state.rules))
+	if(slotIndex >= newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL || !usesSelectionSlots(state))
 		return result;
 	const auto skill = newHorizonsHeroes::perkSkill(state.rules, skillId);
 	if(!skill)

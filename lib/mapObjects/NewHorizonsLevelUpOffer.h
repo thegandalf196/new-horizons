@@ -9,4 +9,6 @@ struct HeroLevelUp;
 namespace newHorizonsHeroes
 {
 DLL_LINKAGE void applyLevelUpOffer(CGHeroInstance * hero, const HeroLevelUp & pack);
+DLL_LINKAGE void applyFourOfferLevelUp(CGHeroInstance & hero, const HeroLevelUp & pack);
+DLL_LINKAGE bool applyCapturedLevelUpOffer(CGHeroInstance & hero, const HeroLevelUp & pack);
 }

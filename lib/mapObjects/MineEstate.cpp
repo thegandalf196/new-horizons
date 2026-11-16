@@ -8,6 +8,7 @@
 #include "StdInc.h"
 #include "MiscObjects.h"
 #include "CGHeroInstance.h"
+#include "NewHorizonsEstatesPolicy.h"
 #include "../CPlayerState.h"
 #include "../CCreatureHandler.h"
 #include "../StartInfo.h"
@@ -123,7 +124,11 @@ ResourceSet CGMine::dailyIncome() const
 	for (GameResID k : LIBRARY->resourceTypeHandler->getAllObjects())
 		result[k] += valOfBonuses(BonusType::GENERATE_RESOURCE, BonusSubtypeID(k));
 
-	result[producedResource] += defaultResProduction();
+	const auto * owner = getOwner().isValidPlayer() ? cb->getPlayerState(getOwner()) : nullptr;
+	const bool supervisor = !isAbandoned() && (producedResource == GameResID::WOOD || producedResource == GameResID::ORE)
+		&& owner && newHorizonsEstates::anyRevisedHolder(*owner, "new-horizons:estates.supervisor");
+	result[producedResource] += supervisor
+		? newHorizonsEstates::mineBaseProduction(producedQuantity, producedResource, owner) : defaultResProduction();
 
 	const auto & playerSettings = cb->getPlayerSettings(getOwner());
 	result.applyHandicap(playerSettings->handicap.percentIncome);
@@ -183,6 +188,7 @@ void CGMine::flagMine(IGameEventCallback & gameEvents, const CGHeroInstance * ca
 	const auto calendar = cb->getCalendar();
 	const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 	const bool landSurveyorTriggered = capturingHero->hasActivePerk("new-horizons:estates", "new-horizons:estates.landSurveyor")
+		&& !newHorizonsEstates::usesRevisedPolicy(capturingHero->getPerkState().rules)
 		&& !capturingHero->hasUsedNewHorizonsLandSurveyor(week);
 	if(landSurveyorTriggered)
 	{
@@ -231,6 +237,10 @@ ui32 CGMine::defaultResProduction() const
 
 ui32 CGMine::getProducedQuantity() const
 {
+	const auto * owner = getOwner().isValidPlayer() ? cb->getPlayerState(getOwner()) : nullptr;
+	if(!isAbandoned() && (producedResource == GameResID::WOOD || producedResource == GameResID::ORE)
+		&& owner && newHorizonsEstates::anyRevisedHolder(*owner, "new-horizons:estates.supervisor"))
+		return dailyIncome()[producedResource];
 	auto * playerSettings = cb->getPlayerSettings(getOwner());
 	// always round up income - we don't want mines to always produce zero if handicap in use
 	return vstd::divideAndCeil(producedQuantity * playerSettings->handicap.percentIncome, 100);
@@ -283,9 +293,36 @@ void CGMine::setPropertyDer(ObjProperty what, ObjPropertyID value)
 {
 	if(what == ObjProperty::OWNER && value.as<PlayerColor>() != getOwner())
 	{
+		// Owner change is an authoritative replicated packet. The former
+		// owner's defensive troops never become a conquering player's army.
+		if(hasCompanyDefenders())
+			eraseStack(companyDefenseSlot);
+		companyDefenseOwner = PlayerColor::NEUTRAL;
+		companyDefenseSlot = SlotID(-1);
 		// Debt belongs to the former owner; preserve the mine/week receipt on recapture.
 		pendingMercenaries = 0;
 		pendingMercenaryOwner = PlayerColor::NEUTRAL;
+	}
+	else if(what == ObjProperty::NEW_HORIZONS_COMPANY_DEFENSE_WEEK)
+	{
+		const int week = value.as<NumericID>().getNum();
+		if(week < 0 || week < companyDefenseLastWeek)
+			throw std::runtime_error("Invalid defensive Company week");
+		companyDefenseLastWeek = week;
+	}
+	else if(what == ObjProperty::NEW_HORIZONS_COMPANY_DEFENSE_OWNER)
+	{
+		const auto owner = value.as<PlayerColor>();
+		if(!owner.isValidPlayer() || owner != getOwner())
+			throw std::runtime_error("Invalid defensive Company owner");
+		companyDefenseOwner = owner;
+	}
+	else if(what == ObjProperty::NEW_HORIZONS_COMPANY_DEFENSE_SLOT)
+	{
+		const SlotID slot(value.as<NumericID>().getNum());
+		if(!slot.validSlot() || !companyDefenseOwner.isValidPlayer())
+			throw std::runtime_error("Invalid defensive Company slot");
+		companyDefenseSlot = slot;
 	}
 	else if(what == ObjProperty::NEW_HORIZONS_MINE_MERCENARY_WEEK)
 	{
@@ -303,6 +340,7 @@ void CGMine::setPropertyDer(ObjProperty what, ObjPropertyID value)
 		pendingMercenaryOwner = count > 0 ? getOwner() : PlayerColor::NEUTRAL;
 	}
 	validateMercenaryState();
+	validateCompanyDefenseSerialization(true);
 }
 
 void CGMine::grantWeeklyMercenaries(IGameEventCallback & events, int32_t week, int32_t amount) const
@@ -328,7 +366,7 @@ void CGMine::deliverPendingMercenaries(IGameEventCallback & events) const
 	// Merge existing Rogue guards first, then fill a free native army slot. No replacement.
 	for(const auto & [slot, stack] : stacks)
 	{
-		if(stack->getCreatureID() != CreatureID(CreatureID::decode("core:rogue")))
+		if(isCompanySlot(slot) || stack->getCreatureID() != CreatureID(CreatureID::decode("core:rogue")))
 			continue;
 		const int64_t room = static_cast<int64_t>(std::numeric_limits<TQuantity>::max()) - stack->getCount();
 		const auto delivered = static_cast<TQuantity>(std::min<int64_t>(remaining, room));
@@ -340,7 +378,8 @@ void CGMine::deliverPendingMercenaries(IGameEventCallback & events) const
 	if(remaining > 0)
 	{
 		const auto slots = getFreeSlots();
-		if(!slots.empty() && events.insertNewStack(StackLocation(id, slots.front()), CreatureID(CreatureID(CreatureID::decode("core:rogue"))).toCreature(), remaining))
+		const auto ordinary = std::find_if(slots.begin(), slots.end(), [this](SlotID slot) { return !isCompanySlot(slot); });
+		if(ordinary != slots.end() && events.insertNewStack(StackLocation(id, *ordinary), CreatureID(CreatureID(CreatureID::decode("core:rogue"))).toCreature(), remaining))
 			remaining = 0;
 	}
 	if(remaining != pendingMercenaries)

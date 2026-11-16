@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../hero/HistoricalLevelOfferFixture.h"
 
 #include <chrono>
 #include <future>
@@ -173,9 +174,9 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+			historicalLevelOffer::heroes());
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+			historicalLevelOffer::perks());
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES, JsonNode());
 		// A legal scenario option with no secondary-skill offers isolates the
 		// generic AI fallback that chooses a server-authored perk offer.

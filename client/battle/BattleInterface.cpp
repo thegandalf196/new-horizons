@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "BattleHeroActionWindow.h"
 #include "BattleInterface.h"
+#include "../Client.h"
+#include "../CServerHandler.h"
 #include "CreatureContinuationUI.h"
 
 #include "BattleActionsController.h"
@@ -1554,47 +1556,24 @@ InfoAboutHero BattleInterface::enemyHero() const
 	return ret;
 }
 
-void BattleInterface::requestAutofightingAIToTakeAction()
+bool BattleInterface::requestAutofightingAIToTakeAction()
 {
 	assert(curInt->isAutoFightOn);
-
 	if(getBattle()->battleIsFinished())
+		return false;
+
+	std::optional<uint32_t> unit;
+	if(curInt->cb->getBattle(battleID)->battleGetTacticDist() == 0)
 	{
-		return; // battle finished with spellcast
+		const auto * active = stacksController->getActiveStack();
+		if(!active)
+			return true; // The opposing player owns the current activation.
+		unit = active->unitId();
 	}
-
-	auto tacticsDist = curInt->cb->getBattle(battleID)->battleGetTacticDist();
-
-	if (tacticsDist > 0)
-	{
-		stacksController->setActiveStack(nullptr);
-		std::thread aiThread([localBattleID = battleID, localCurInt = curInt, tacticsDist]()
-		{
-			setThreadName("autofightingAI");
-			localCurInt->autofightingAI->yourTacticPhase(localBattleID, tacticsDist);
-		});
-		aiThread.detach();
-	}
-	else
-	{
-		const CStack* activeStack = stacksController->getActiveStack();
-
-		// If enemy is moving, activeStack can be null
-		if (activeStack)
-		{
-			stacksController->setActiveStack(nullptr);
-
-			// FIXME: unsafe
-			// Run task in separate thread to avoid UI lock while AI is making turn (which might take some time)
-			// HOWEVER this thread won't atttempt to lock game state, potentially leading to races
-			std::thread aiThread([localBattleID = battleID, localCurInt = curInt, activeStack]()
-			{
-				setThreadName("autofightingAI");
-				localCurInt->autofightingAI->activeStack(localBattleID, activeStack);
-			});
-			aiThread.detach();
-		}
-	}
+	if(!GAME->server().client->startInitialAutofight(curInt->autofightingAI, curInt->cb, battleID, unit))
+		return false;
+	stacksController->setActiveStack(nullptr);
+	return true;
 }
 
 void BattleInterface::castThisSpell(SpellID spellID)

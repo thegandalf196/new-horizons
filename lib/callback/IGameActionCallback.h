@@ -44,6 +44,8 @@ public:
 		si32 level=-1, ObjectInstanceID portalTownId = ObjectInstanceID::NONE)=0;
 	/// Requests to link an owned external dwelling to an owned Portal town.
 	virtual int selectPortalDwelling(const CGTownInstance * town, ObjectInstanceID source) { return -1; }
+	/// Assign, replace, reassign or dismiss (hero == NONE) a remote town steward.
+	virtual int assignTownSteward(ObjectInstanceID town, ObjectInstanceID hero) { return -1; }
 	/// Requests one New Horizons Recruitment Muster operation at a town or
 	/// eligible external dwelling. The server derives amount/category eligibility
 	/// and validates target context and weekly use markers. Optional Broad Muster

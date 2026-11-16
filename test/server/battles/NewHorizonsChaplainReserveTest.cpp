@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 
 #include "HeroCommandFixture.h"
 
@@ -81,9 +82,9 @@ protected:
 			return hero->getPerkSkillRank(skillId);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), divineMandateSkill, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 			{
 				return candidate.selection.skillId == divineMandateSkill

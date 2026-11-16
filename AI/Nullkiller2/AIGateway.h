@@ -101,6 +101,7 @@ public:
 	si64 warMachinePurchaseBudgetRemaining = 0;
 	std::map<ObjectInstanceID, std::set<ArtifactID>> requestedWarMachineArtifacts;
 	std::map<ObjectInstanceID, std::set<ArtifactPosition>> reservedWarMachineSlots;
+	std::set<ObjectInstanceID> reservedHoarderPurchaseHeroes;
 
 	AIGateway();
 	~AIGateway();
@@ -121,6 +122,9 @@ public:
 	void heroGotLevelWithReroll(const CGHeroInstance * hero, PrimarySkill pskill,
 		std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks,
 		QueryID queryID, bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) override;
+	void heroGotFourOfferLevel(const CGHeroInstance * hero, PrimarySkill pskill,
+		const newHorizonsHeroes::FourOfferProgressionOffer & offers, QueryID queryID,
+		bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) override;
 	void commanderGotLevel(const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID) override; //TODO
 	void showBlockingDialog(const std::string & text, const std::vector<Component> & components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept) override; //Show a dialog, player must take decision. If selection then he has to choose between one of given components, if cancel he is allowed to not choose. After making choice, CCallback::selectionMade should be called with number of selected component (1 - n) or 0 for cancel (if allowed) and askID.
 	void showGarrisonDialog(const CArmedInstance * up, const CGHeroInstance * down, bool removableUnits, QueryID queryID, const MetaString & customTitle) override; //all stacks operations between these objects become allowed, interface has to call onEnd when done
@@ -226,6 +230,7 @@ public:
 		const CGTownInstance * onlyTown = nullptr,
 		const CGHeroInstance * onlyHero = nullptr,
 		std::optional<si64> availableGold = std::nullopt);
+	void purchaseTownArtifacts(const CGTownInstance * town, HeroPtr heroPtr, ResourceSet & availableResources);
 	void performObjectInteraction(const CGObjectInstance * obj, HeroPtr heroPtr);
 	bool makePossibleUpgrades(const CArmedInstance * obj);
 	/// Free intrinsic-benefit specialty conversion before ordinary turn planning.
@@ -256,6 +261,8 @@ public:
 	static void pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other = nullptr);
 private:
 	LevelUpOfferState levelUpOffers;
+	int chooseLevelUpAdvancement(const HeroPtr & hero, const std::vector<SecondarySkill> & skills,
+		const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks);
 	void heroGotLevelImpl(const CGHeroInstance * hero, PrimarySkill pskill,
 		std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks,
 		QueryID queryID, bool registerQuery);

@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../SpellPointTestUtils.h"
 
@@ -149,9 +150,9 @@ protected:
 		{
 			return hero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), WISDOM_SKILL, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto candidate = std::find_if(offer.begin(), offer.end(), [&](const auto & entry)
 			{
 				return entry.selection.skillId == WISDOM_SKILL && entry.selection.perkId == perkId;
@@ -490,9 +491,9 @@ TEST_F(NewHorizonsSpellFamiliarityTest, PlannedArchmageIsInactiveAndDoesNotDisco
 	{
 		return attackerSideHero->getPerkSkillRank(skillId);
 	};
-	for(uint64_t seed = 0; seed < 128; ++seed)
+	for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 128); ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+		const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), WISDOM_SKILL, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.skillId == WISDOM_SKILL && candidate.selection.perkId == ARCHMAGE;
@@ -724,9 +725,9 @@ TEST_F(NewHorizonsSpellFamiliarityTest, WizardSelectsSpellFamiliarityThroughTheN
 		return attackerSideHero->getPerkSkillRank(skillId);
 	};
 	bool selectedThroughOffer = false;
-	for(uint64_t seed = 0; seed < 4096 && !selectedThroughOffer; ++seed)
+	for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096) && !selectedThroughOffer; ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+		const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), WISDOM_SKILL, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		const auto prepared = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == SPELL_FAMILIARITY;
@@ -759,9 +760,9 @@ TEST_F(NewHorizonsSpellFamiliarityTest, CapturedPlannedSnapshotDoesNotOfferOrAct
 	{
 		return attackerSideHero->getPerkSkillRank(skillId);
 	};
-	for(uint64_t seed = 0; seed < 128; ++seed)
+	for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 128); ++seed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+		const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), WISDOM_SKILL, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 		EXPECT_TRUE(std::none_of(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == SPELL_FAMILIARITY;

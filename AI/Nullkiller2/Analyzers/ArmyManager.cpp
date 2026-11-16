@@ -270,38 +270,6 @@ ui64 ArmyManager::howManyReinforcementsCanBuy(const CCreatureSet * h, const CGDw
 	return howManyReinforcementsCanBuy(h, t, aiNk->getFreeResources());
 }
 
-std::shared_ptr<CCreatureSet> ArmyManager::getArmyAvailableToBuyAsCCreatureSet(
-	const CGDwelling * dwelling,
-	TResources availableRes,
-	const CGHeroInstance * buyer) const
-{
-	std::vector<creInfo> creaturesInDwellings;
-	auto army = std::make_shared<TemporaryArmy>();
-
-	for(int i = dwelling->creatures.size() - 1; i >= 0; i--)
-	{
-		auto ci = infoFromDC(dwelling->creatures[i]);
-
-		if(!ci.count || ci.creID == CreatureID::NONE)
-			continue;
-
-		ci.count = dwelling->getRecruitmentAmount(ci.creID, availableRes, ci.count, buyer);
-
-		if(!ci.count)
-			continue;
-
-		SlotID dst = army->getFreeSlot();
-
-		if(!dst.validSlot())
-			break;
-
-		army->setCreature(dst, ci.creID, ci.count);
-		availableRes -= dwelling->getTotalRecruitmentCost(ci.creID, ci.count, buyer);
-	}
-
-	return army;
-}
-
 ui64 ArmyManager::howManyReinforcementsCanBuy(
 	const CCreatureSet * targetArmy,
 	const CGDwelling * dwelling,

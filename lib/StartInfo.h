@@ -133,7 +133,7 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 	EStartMode mode;
 	void validateNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const;
 	void validateDefaultCreatureLineSerialization(bool supported) const;
-	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const;
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false, bool fourOfferSupported = false, bool estatesSupported = false) const;
 	ui8 difficulty; //0=easy; 4=impossible
 
 	using TPlayerInfos = std::map<PlayerColor, PlayerSettings>;
@@ -168,7 +168,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 	{
 		if(h.saving)
 			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		if(h.saving)
 			extraOptionsInfo.validateNeutralArmySizeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_START_OPTION));
 		if(h.saving)
@@ -189,7 +190,8 @@ struct DLL_LINKAGE StartInfo : public Serializeable
 		h & campState;
 		if(!h.saving)
 			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		if(!h.saving)
 			validateNecromancyPolicySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
@@ -246,7 +248,8 @@ struct DLL_LINKAGE LobbyState
 			si->validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		if(h.saving && si)
 			si->validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		h & si;
 		h & mi;
 		h & playerNames;

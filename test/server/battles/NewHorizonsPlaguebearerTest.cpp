@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
@@ -89,9 +90,9 @@ protected:
 		// Blood Drinker affects Life Drain only, not Plague's damage or propagation.
 		const std::string prerequisite = "new-horizons:shadowMagic.bloodDrinker";
 		const auto ranks = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 10000 && !hero->hasActivePerk(newHorizonsPlague::SKILL, prerequisite); ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 10000) && !hero->hasActivePerk(newHorizonsPlague::SKILL, prerequisite); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(ranks, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forPerk(hero->getPerkState(), prerequisite, ranks, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.perkId == prerequisite)
 				{
@@ -253,9 +254,9 @@ protected:
 			MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 		if(!selected) return;
 		const auto ranks = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 10000); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(ranks, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forPerk(attackerSideHero->getPerkState(), newHorizonsPlague::PLAGUEBEARER, ranks, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.perkId == newHorizonsPlague::PLAGUEBEARER)
 				{

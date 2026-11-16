@@ -34,6 +34,7 @@ public:
 	void visitSaveGame(SaveGame & pack) override;
 	void visitGamePause(GamePause & pack) override;
 	void visitEndTurn(EndTurn & pack) override;
+	void visitAssignTownSteward(AssignTownSteward & pack) override;
 	void visitDismissHero(DismissHero & pack) override;
 	void visitMoveHero(MoveHero & pack) override;
 	void visitCastleTeleportHero(CastleTeleportHero & pack) override;

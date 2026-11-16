@@ -54,9 +54,9 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 		const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 
 public:
-	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false, bool fourOfferSupported = false, bool estatesSupported = false) const
 	{
-		newHorizonsHeroes::validateCommandOverrides(getAllOverrides(), supported, leadershipSupported);
+		newHorizonsHeroes::validateCommandOverrides(getAllOverrides(), supported, leadershipSupported, fourOfferSupported, estatesSupported);
 	}
 	static void validateCombatScalarOverrides(const JsonNode & input, bool finalLuckSupported, bool moraleSupported);
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
@@ -250,7 +250,8 @@ public:
 			validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			JsonNode overrides = getAllOverrides();
 			newHorizonsHeroes::validateCommandOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
 			newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
 			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
@@ -325,7 +326,8 @@ public:
 			JsonNode overrides;
 			h & overrides;
 			newHorizonsHeroes::validateCommandOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 			validateCombatScalarOverrides(overrides,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));

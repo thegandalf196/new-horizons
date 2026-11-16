@@ -725,26 +725,6 @@ const IObjectInterface * CGTownInstance::getObject() const
 	return this;
 }
 
-void CGTownInstance::removeCapitols(IGameEventCallback & gameEvents, const PlayerColor & owner) const
-{
-	if (hasCapitol()) // search if there's an older capitol
-	{
-		const PlayerState* state = cb->getPlayerState(owner); //get all towns owned by player
-		for (const auto & otherTown : state->getTowns())
-		{
-			if (otherTown != this && otherTown->hasCapitol())
-			{
-				RazeStructures rs;
-				rs.tid = id;
-				rs.bid.insert(BuildingID::CAPITOL);
-				rs.destroyed = destroyed;
-				gameEvents.sendAndApply(rs);
-				return;
-			}
-		}
-	}
-}
-
 void CGTownInstance::clearArmy(IGameEventCallback & gameEvents) const
 {
 	while(!stacks.empty())

@@ -472,8 +472,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				if(!learnedSkill || !skillDefinition)
 					continue;
 
-				const bool selectionSlots = newHorizonsHeroes::usesR2PerkOffers(perkState.rules)
-					&& !newHorizonsHeroes::usesStrictPerkProgression(perkState.rules);
+				const bool selectionSlots = newHorizonsPerkAvailability::usesSelectionSlots(perkState);
 				const auto slot = selectionSlots
 					? newHorizonsPerkAvailability::evaluateSelectionSlot(perkState, skillId, skillRank, ability)
 					: newHorizonsPerkAvailability::evaluateTier(

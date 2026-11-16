@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
@@ -280,9 +281,9 @@ protected:
 	void choose(const std::string & skill, const std::string & perk)
 	{
 		const auto lookup = [this](const std::string & id) { return defenderSideHero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(defenderSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = defenderSideHero->getPerkState().prepareOffer(lookup, seed, defenderSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(defenderSideHero->getPerkState(), skill, lookup, seed, defenderSideHero->getPerkOfferWeightContext());
 			const auto found = std::find_if(offers.begin(), offers.end(), [&](const auto & entry)
 				{ return entry.selection.skillId == skill && entry.selection.perkId == perk; });
 			if(found == offers.end())

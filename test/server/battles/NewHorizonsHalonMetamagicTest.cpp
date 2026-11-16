@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -123,9 +124,9 @@ protected:
 	void select(const char * perk)
 	{
 		const auto rankLookup = [this](const std::string & skill) { return attackerSideHero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 10000); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forPerk(attackerSideHero->getPerkState(), perk, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.perkId == perk)
 				{

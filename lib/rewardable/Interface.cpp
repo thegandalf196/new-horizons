@@ -176,65 +176,11 @@ std::vector<ui32> Rewardable::Interface::getAvailableRewards(const CGHeroInstanc
 
 void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEvents, const Rewardable::VisitInfo & info, const CGHeroInstance * hero) const
 {
-	auto cb = getObject()->cb;
-
 	assert(hero);
 	assert(hero->tempOwner.isValidPlayer());
 	assert(info.reward.creatures.size() <= GameConstants::ARMY_SIZE);
 
-	gameEvents.giveResources(hero->tempOwner, info.reward.resources);
-
-	if (info.reward.revealTiles)
-	{
-		const auto & props = *info.reward.revealTiles;
-
-		const auto functor = [&props](const TerrainTile * tile)
-		{
-			int score = 0;
-			if (tile->getTerrain()->isSurface())
-				score += props.scoreSurface;
-
-			if (tile->getTerrain()->isUnderground())
-				score += props.scoreSubterra;
-
-			if (tile->getTerrain()->isWater())
-				score += props.scoreWater;
-
-			if (tile->getTerrain()->isRock())
-				score += props.scoreRock;
-
-			return score > 0;
-		};
-
-		FowTilesType tiles;
-		if (props.radius > 0)
-		{
-			cb->getTilesInRange(tiles, hero->getSightCenter(), props.radius, ETileVisibility::HIDDEN, hero->getOwner());
-			if (props.hide)
-				cb->getTilesInRange(tiles, hero->getSightCenter(), props.radius, ETileVisibility::REVEALED, hero->getOwner());
-
-			vstd::erase_if(tiles, [&](const int3 & coord){
-				return !functor(cb->getTile(coord));
-			});
-		}
-		else
-		{
-			cb->getAllTiles(tiles, hero->tempOwner, -1, functor);
-		}
-
-		if (props.hide)
-		{
-			for (auto & player : cb->gameState().players)
-			{
-				if (cb->getPlayerStatus(player.first) == EPlayerStatus::INGAME && cb->getPlayerRelations(player.first, hero->getOwner()) == PlayerRelations::ENEMIES)
-					gameEvents.changeFogOfWar(tiles, player.first, ETileVisibility::HIDDEN);
-			}
-		}
-		else
-		{
-			gameEvents.changeFogOfWar(tiles, hero->getOwner(), ETileVisibility::REVEALED);
-		}
-	}
+	grantVisitResourcesAndReveal(gameEvents, info.reward, hero);
 
 	for(const auto & entry : info.reward.secondary)
 	{
@@ -426,65 +372,6 @@ void Rewardable::Interface::grantRewardAfterLevelup(IGameEventCallback & gameEve
 void Rewardable::Interface::serializeJson(JsonSerializeFormat & handler)
 {
 	configuration.serializeJson(handler);
-}
-
-void Rewardable::Interface::grantRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * contextHero, int index, bool markAsVisit) const
-{
-	auto vi = configuration.info.at(index);
-	logGlobal->debug("Granting reward %d", index);
-
-	InfoWindow iw;
-	iw.player = contextHero->tempOwner;
-	iw.text = vi.message;
-	vi.reward.loadComponents(iw.components, contextHero, experienceRewardSource(getObject()));
-	iw.type = configuration.infoWindowType;
-	configureInfoWindow(iw, contextHero, index);
-	gameEvents.showInfoDialog(&iw);
-
-	// grant reward afterwards. Note that it may remove object
-	if(markAsVisit)
-		markAsVisited(gameEvents, contextHero);
-	grantReward(gameEvents, index, contextHero);
-}
-
-void Rewardable::Interface::configureInfoWindow(InfoWindow &, const CGHeroInstance *, int) const
-{
-}
-
-void Rewardable::Interface::selectRewardWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * contextHero, const std::vector<ui32> & rewardIndices, const MetaString & dialog) const
-{
-	pendingRewardIndices = rewardIndices;
-	const bool teachesSkill = std::any_of(rewardIndices.begin(), rewardIndices.end(), [this, contextHero](ui32 index)
-	{
-		return rewardTeachesSecondarySkill(configuration.info.at(index), contextHero);
-	});
-	BlockingDialog sd(configuration.canRefuse || teachesSkill, rewardIndices.size() > 1);
-	sd.player = contextHero->tempOwner;
-	sd.text = dialog;
-	sd.components = loadComponents(contextHero, rewardIndices);
-	gameEvents.showBlockingDialog(getObject(), &sd);
-}
-
-std::vector<Component> Rewardable::Interface::loadComponents(const CGHeroInstance * contextHero, const std::vector<ui32> & rewardIndices) const
-{
-	std::vector<Component> result;
-
-	if (rewardIndices.empty())
-		return result;
-
-	if (configuration.selectMode != Rewardable::SELECT_FIRST && rewardIndices.size() > 1)
-	{
-		for (auto index : rewardIndices)
-			result.push_back(configuration.info.at(index).reward.getDisplayedComponent(contextHero,
-				experienceRewardSource(getObject())));
-	}
-	else
-	{
-		configuration.info.at(rewardIndices.front()).reward.loadComponents(result, contextHero,
-			experienceRewardSource(getObject()));
-	}
-
-	return result;
 }
 
 void Rewardable::Interface::grantAllRewardsWithMessage(IGameEventCallback & gameEvents, const CGHeroInstance * contextHero, const std::vector<ui32> & rewardIndices, bool markAsVisit) const

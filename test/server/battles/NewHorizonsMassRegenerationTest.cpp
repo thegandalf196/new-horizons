@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../battleAI/PurifyRuleFixtures.h"
 
@@ -439,9 +440,9 @@ TEST_F(NewHorizonsMassRegenerationTest, AdvancedCommunionIsOfferedAndItsVirtualG
 		});
 	};
 	attackerSideHero->setSecSkillLevel(nature, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
-	for(int seed = 1; seed <= 4095 && !hasCommunionOffer(offers); ++seed)
-		offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+	auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), natureMagicSkill, rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
+	for(int seed = 1; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096) && !hasCommunionOffer(offers); ++seed)
+		offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), natureMagicSkill, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 	const auto communionOffer = std::ranges::find_if(offers, [](const auto & offer)
 	{
 		return offer.selection.perkId == verdantCommunionPerk

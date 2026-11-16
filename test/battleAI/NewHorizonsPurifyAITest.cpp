@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "PurifyRuleFixtures.h"
@@ -150,9 +151,9 @@ protected:
 			return attackerSideHero->getPerkSkillRank(id);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), divineMandateSkill, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&](const auto & candidate)
 			{
 				return candidate.selection.skillId == divineMandateSkill

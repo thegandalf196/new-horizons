@@ -20,15 +20,17 @@ Version 1.0 dependencies.
 
 1. **Primary attributes:** class-based deterministic development and coherent
    scaled formulas/readouts.
-2. **Secondary skills:** Basic/Advanced/Expert ranks with a ten-perk pool for each
-   Skill and exactly one selected perk at each tier. Every acquired Basic,
-   Advanced or Expert rank immediately grants one mandatory choice from the
-   complete corresponding perk pool. Ordinary level-ups offer class-weighted
-   Skills first; perks follow in a separate modal rather than competing with
-   ranks. External multi-rank grants and starting Skills resolve missing tiers
-   in order, with authoritative pending state and AI/noninteractive completion.
-   The full source roster and prerequisites replace the older three-ability and
-   post-Expert mastery targets. Save migration remains explicit and versioned.
+2. **Secondary skills:** Basic/Advanced/Expert ranks with ten perk alternatives
+   per Skill and at most three acquired perks. The next-release source profile
+   presents four fixed weighted groups at each ordinary level-up: two Skill
+   offers and two distinct perk-parent offers. Choose one advancement; a perk
+   offer opens that parent's complete currently eligible pool. Accessible
+   earlier-tier perks remain available, subject to rank and perk prerequisites
+   and the three-perk limit. Witch Huts, Scholars and other external Skill
+   teaching grant their normal ranks without automatically granting perks.
+   Fresh defaults retain two Basic Skills and one authored Basic perk for each.
+   Historical captures retain their original advancement transactions and tiers;
+   new source implementation is separate from release validation.
 3. **Magic schools:** Light, Nature, Sorcery/Arcane, Havoc, Shadow and Chaos, with
    coherent spell assignments, actual effects, AI support and school/spell UI art.
    School-family artwork alone does not complete the spell system.

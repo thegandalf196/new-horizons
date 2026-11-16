@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "AI/Nullkiller2/AIGateway.h"
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
@@ -106,9 +107,9 @@ protected:
 	bool selectPerk(const std::string & perk, MasteryLevel::Type rank)
 	{
 		const auto lookup = [this](const std::string & skill) { return hero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 10000); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(lookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), DIPLOMACY, lookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offer.size(); ++index)
 				if(offer[index].selection.skillId == DIPLOMACY && offer[index].selection.perkId == perk
 					&& offer[index].requiredRank == rank)

@@ -42,6 +42,8 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 	case Version::NEW_HORIZONS_COMMAND_AUTHORITY:
 		profile = Version::NEW_HORIZONS_COMMAND_AUTHORITY;
 		break;
+	case Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION: // No new Bonus-only representation.
+	case Version::NEW_HORIZONS_ESTATES:
 	case Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY:
 		profile = Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
 		break;

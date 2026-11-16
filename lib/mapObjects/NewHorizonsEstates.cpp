@@ -7,6 +7,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsEstates.h"
+#include "NewHorizonsEstatesPolicy.h"
 
 #include "CGHeroInstance.h"
 #include "CGTownInstance.h"
@@ -90,7 +91,8 @@ int32_t bankingWeeklyGold(const PlayerState & state)
 	const int64_t perHolder = std::min<int64_t>(1000, std::max<int64_t>(0, state.resources[EGameResID::GOLD]) / 100);
 	int64_t result = 0;
 	for(const auto * hero : state.getHeroes())
-		if(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.banking"))
+		if(!usesRevisedPolicy(hero->getPerkState().rules)
+			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.banking"))
 			result += perHolder;
 	if(result > std::numeric_limits<int32_t>::max())
 		throw std::overflow_error("Banking income overflow");
@@ -101,10 +103,20 @@ int32_t mercenaryWeeklyCount(const PlayerState & state)
 {
 	int64_t result = 0;
 	for(const auto * hero : state.getHeroes())
-		if(hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.mercenaryCompany"))
+		if(!usesRevisedPolicy(hero->getPerkState().rules)
+			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.mercenaryCompany"))
 			result += hero->level;
 	if(result > std::numeric_limits<int32_t>::max())
 		throw std::overflow_error("Mercenary Company grant overflow");
 	return static_cast<int32_t>(result);
+}
+
+int32_t companyDefenseLevel(const PlayerState & state)
+{
+	int32_t highest = 0;
+	for(const auto * hero : state.getHeroes())
+		if(hasRevisedPerk(hero, "new-horizons:estates.mercenaryCompany"))
+			highest = std::max<int32_t>(highest, hero->level);
+	return highest;
 }
 }

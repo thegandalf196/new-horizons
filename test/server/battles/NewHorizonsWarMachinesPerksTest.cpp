@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/battle/NewHorizonsWarMachines.h"
 #include "../../../lib/battle/PhysicalAffliction.h"
@@ -77,9 +78,9 @@ protected:
 	void choose(CGHeroInstance * hero, const char * perk)
 	{
 		const auto rank = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rank, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), SKILL, rank, seed, hero->getPerkOfferWeightContext());
 			const auto choice = std::ranges::find_if(offer, [perk](const auto & entry)
 			{
 				return entry.selection.skillId == SKILL && entry.selection.perkId == perk;

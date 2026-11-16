@@ -61,8 +61,17 @@ attributes are five times the class vector; base attributes follow
 `Attribute(L) = growth * (L + 4)`. Offense and Archery independently roll +1
 Attack, Armorer +1 Defense, Spellcraft +1 Spell Power, and Wisdom +1 Knowledge
 at 10/20/30% for Basic/Advanced/Expert. There is no level-ten transition.
-Knowledge supplies base Normal Spell Point capacity. Skills use ordered Basic,
-Advanced and Expert perk choices, not the retired post-Expert mastery proposal.
+Knowledge supplies base Normal Spell Point capacity. The next-release source
+profile uses four fixed weighted level-up offers and one accepted advancement,
+with full live perk pools for the offered parent Skills. Rank and perk prerequisites
+remain distinct; external Skill teaching does not automatically grant perks.
+Existing captured rank-plus-perk transactions retain their historical policy.
+
+Revised Estates has its own captured policy boundary. Its new catalogue and
+kingdom effects must not reinterpret historical acquired IDs or tiers, especially
+the Advanced-to-Basic Mercenary Company change. Fresh default replacements are
+authored separately. Source integration does not establish native, rendered or
+release acceptance.
 
 The six schools are Light, Nature, Sorcery, Havoc, Shadow and Chaos. Preferred
 schools are equal rather than Major/Minor weighted: Necropolis Shadow/Sorcery,

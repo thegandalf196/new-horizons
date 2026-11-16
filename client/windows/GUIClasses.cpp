@@ -61,6 +61,7 @@
 #include "../../lib/mapObjectConstructors/CObjectClassesHandler.h"
 #include "../../lib/mapObjectConstructors/CommonConstructors.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/EstatesArtifactQuote.h"
 #include "../../lib/mapObjects/army/CArmedInstance.h"
 #include "../../lib/mapObjects/CGMarket.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
@@ -1100,7 +1101,8 @@ CUniversityWindow::CItem::CItem(CUniversityWindow * _parent, SpellID _ID, int X,
 			const auto goods = parent->market->availableItemsIds(EMarketMode::RESOURCE_SKILL);
 			if(!vstd::contains(goods, TradeItemBuy(scrollID)))
 				return;
-			const auto cost = newHorizonsHouseOfWisdom::price(scrollID);
+			const auto cost = newHorizonsEstates::artifactPurchaseQuote(
+				newHorizonsHouseOfWisdom::price(scrollID), parent->hero).cost;
 			if(GAME->interface()->cb->getResourceAmount().canAfford(cost))
 				parent->makeDeal(scrollID);
 		});
@@ -1120,7 +1122,8 @@ void CUniversityWindow::CItem::update()
 	{
 		const auto goods = parent->market->availableItemsIds(EMarketMode::RESOURCE_SKILL);
 		const bool available = vstd::contains(goods, TradeItemBuy(scrollID));
-		const auto cost = newHorizonsHouseOfWisdom::price(scrollID);
+		const auto cost = newHorizonsEstates::artifactPurchaseQuote(
+			newHorizonsHouseOfWisdom::price(scrollID), parent->hero).cost;
 		const bool canAfford = available && GAME->interface()->cb->getResourceAmount().canAfford(cost);
 		const auto image = canAfford ? ImagePath::builtin("UNIVGREN") : ImagePath::builtin("UNIVRED");
 

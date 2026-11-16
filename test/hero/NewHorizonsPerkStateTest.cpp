@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../server/LegacyEstatesCapture.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
@@ -17,7 +18,7 @@ namespace
 newHorizonsHeroes::PerkState state()
 {
 	newHorizonsHeroes::PerkState result;
-	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	result.rules = estatesTest::legacyEstatesPerks();
 	// Historical pure-state tests exercise the captured legacy offer policy.
 	// Weighted-policy fixtures explicitly opt back into version1 below.
 	result.rules.Struct().erase("offerWeightPolicyVersion");
@@ -1106,7 +1107,7 @@ TEST(NewHorizonsPerkState, R2DrawsDistinctParentsInsteadOfWeightingEachPerk)
 TEST(NewHorizonsPerkState, HistoricalStrictProgressionUsesSixAlternatingRankAndPerkSteps)
 {
 	newHorizonsHeroes::PerkState saved;
-	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	saved.rules = estatesTest::legacyEstatesPerks();
 	// Capture the ordered-tier policy before unified four-card offers.
 	saved.rules.Struct().erase("unifiedSkillProgressionVersion");
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
@@ -1142,7 +1143,7 @@ TEST(NewHorizonsPerkState, HistoricalStrictProgressionUsesSixAlternatingRankAndP
 TEST(NewHorizonsPerkState, HistoricalStrictExceptionalExpertStillRequiresBasicThenAdvancedThenExpert)
 {
 	newHorizonsHeroes::PerkState saved;
-	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	saved.rules = estatesTest::legacyEstatesPerks();
 	// Capture the ordered-tier policy before unified four-card offers.
 	saved.rules.Struct().erase("unifiedSkillProgressionVersion");
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
@@ -1175,7 +1176,7 @@ TEST(NewHorizonsPerkState, StrictCaptureRejectsHistoricalDuplicateOrGappedPrefix
 	EXPECT_EQ(historical.toJson(), oldJson);
 
 	newHorizonsHeroes::PerkState strict;
-	strict.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	strict.rules = estatesTest::legacyEstatesPerks();
 	const auto options = newHorizonsHeroes::perkOptions(strict.rules, SKILL);
 	strict.selected.push_back({SKILL, options.at(4).id}); // Forged Advanced without Basic.
 	EXPECT_THROW(strict.validate(), std::runtime_error);
@@ -1186,7 +1187,7 @@ TEST(NewHorizonsPerkState, StrictCaptureRejectsHistoricalDuplicateOrGappedPrefix
 TEST(NewHorizonsPerkState, HistoricalStrictEligibilityDoesNotRebaseFullClassRelativeParentWeights)
 {
 	newHorizonsHeroes::PerkState saved;
-	saved.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	saved.rules = estatesTest::legacyEstatesPerks();
 	// Capture the ordered-tier policy before unified four-card offers.
 	saved.rules.Struct().erase("unifiedSkillProgressionVersion");
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(saved.rules));
@@ -1214,7 +1215,7 @@ TEST(NewHorizonsPerkState, HistoricalStrictEligibilityDoesNotRebaseFullClassRela
 TEST(NewHorizonsPerkState, StrictAndHistoricalR2Refuse1117BeforePrefixWhileCurrentCodecRoundTrips)
 {
 	newHorizonsHeroes::PerkState strict;
-	strict.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	strict.rules = estatesTest::legacyEstatesPerks();
 	CMemorySerializer refused;
 	refused.oser.version = ESerializationVersion::NEW_HORIZONS_R2_PERK_OFFERS;
 	EXPECT_THROW(refused.oser & strict, std::runtime_error);

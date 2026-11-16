@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt file in main folder
  */
 #include "../StdInc.h"
+#include "../PerkTestSetup.h"
 #include "battles/HeroCommandFixture.h"
 
 #include "../../lib/battle/BattleAttackInfo.h"
@@ -52,9 +53,9 @@ protected:
 	void acceptPerk(CGHeroInstance * hero, const char * perk)
 	{
 		const auto rank = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rank, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), WAR_MACHINES, rank, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::ranges::find_if(offer, [perk](const auto & value)
 			{
 				return value.selection.skillId == WAR_MACHINES && value.selection.perkId == perk;

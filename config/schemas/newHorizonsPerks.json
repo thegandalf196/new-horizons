@@ -5,6 +5,29 @@
 	"type": "object",
 	"additionalProperties": false,
 	"dependencies": {
+		"fourOfferProgressionVersion": {
+			"required": ["perkProgressionPolicyVersion", "offerWeightPolicyVersion"],
+			"not": {"required": ["unifiedSkillProgressionVersion"]},
+			"properties": {"perkProgressionPolicyVersion": {"enum": [1]}, "offerWeightPolicyVersion": {"enum": [2]}}
+		},
+		"estatesPolicyVersion": {
+			"properties": {
+				"skills": {"properties": {"new-horizons:estates": {"properties": {
+					"perks": {"items": {"oneOf": [
+						{"properties": {"id": {"enum": ["new-horizons:estates.taxCollector"]}, "requires": {"enum": ["basic"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.supervisor"]}, "requires": {"enum": ["basic"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.mercenaryCompany"]}, "requires": {"enum": ["basic"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.merchantPrince"]}, "requires": {"enum": ["basic"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.stewardship"]}, "requires": {"enum": ["advanced"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.conscription"]}, "requires": {"enum": ["advanced"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.architect"]}, "requires": {"enum": ["advanced"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.hoarder"]}, "requires": {"enum": ["advanced"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.decentralization"]}, "requires": {"enum": ["expert"]}}},
+						{"properties": {"id": {"enum": ["new-horizons:estates.alchemist"]}, "requires": {"enum": ["expert"]}}}
+					]}}
+				}}}}
+			}
+		},
 		"unifiedSkillProgressionVersion": {
 			"required": ["perkProgressionPolicyVersion", "offerWeightPolicyVersion", "necromancyPolicy"],
 			"properties": {"perkProgressionPolicyVersion": {"enum": [1]}, "offerWeightPolicyVersion": {"enum": [2]}, "necromancyPolicy": {"properties": {"version": {"enum": [4]}}}}
@@ -44,6 +67,8 @@
 		}
 	],
 	"properties": {
+		"fourOfferProgressionVersion": {"type": "integer", "enum": [1], "description": "Four fixed weighted groups offer a Skill or a perk. Use raw class weights, preserve ordered rank prerequisites, allow additional perks from an already selected tier, and retain at most three acquired perks per Skill."},
+		"estatesPolicyVersion": {"type": "integer", "enum": [1], "description": "Revised Estates catalogue and captured economy effects; absence retains the entire historical catalogue and effects."},
 		"commandAuthorityPolicy": {"$ref": "#/definitions/commandAuthorityPolicy"},
 		"warfarePolicyVersion": {"type": "integer", "enum": [1]},
 		"unifiedSkillProgressionVersion": {"type": "integer", "enum": [1], "description": "One full eligible tier choice immediately follows every acquired Skill rank. Historical random perk-offer limits do not truncate that pool."},

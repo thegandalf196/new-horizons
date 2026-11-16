@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/entities/hero/CHeroHandler.h"
@@ -76,9 +77,9 @@ protected:
 			}
 		ASSERT_TRUE(registered);
 		const auto rank = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rank, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), skill, rank, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.skillId == skill && offers[index].selection.perkId == perk)
 				{

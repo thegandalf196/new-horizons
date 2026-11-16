@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/CRandomGenerator.h"
@@ -69,9 +70,9 @@ protected:
 		const auto ranks = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
 		// This selects a legal offer, not a combat seed. GameRandomizer is
 		// never queried/reset and no action/proc is performed before saving.
-		for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
+		for(uint64_t offerSeed = 0; offerSeed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++offerSeed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(ranks, offerSeed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), skill, ranks, offerSeed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offer.size(); ++choice)
 				if(offer[choice].selection.skillId == skill && offer[choice].selection.perkId == perk)
 				{

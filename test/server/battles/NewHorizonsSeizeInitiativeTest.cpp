@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "BattleTestFixture.h"
 #include "BattleStartSnapshotFixture.h"
@@ -60,9 +61,9 @@ protected:
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:command")),
 			rank, ChangeValueMode::ABSOLUTE);
 		const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), "new-horizons:command", lookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 				if(offers[choice].selection.skillId == "new-horizons:command"
 					&& offers[choice].selection.perkId == perk)
@@ -96,9 +97,9 @@ protected:
 				attackerSideHero->setSecSkillLevel(skill, step.second, ChangeValueMode::ABSOLUTE);
 				const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
 				bool found = false;
-				for(uint64_t seed = 0; seed < 4096 && !found; ++seed)
+				for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096) && !found; ++seed)
 				{
-					const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed, attackerSideHero->getPerkOfferWeightContext());
+					const auto offers = perkTestSetup::forPerk(attackerSideHero->getPerkState(), step.first, lookup, seed, attackerSideHero->getPerkOfferWeightContext());
 					for(size_t choice = 0; choice < offers.size(); ++choice)
 						if(offers[choice].selection.perkId == step.first)
 						{

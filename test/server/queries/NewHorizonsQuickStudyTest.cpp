@@ -7,6 +7,8 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../hero/HistoricalLevelOfferFixture.h"
+#include "../../PerkTestSetup.h"
 
 #include <gtest/gtest.h>
 
@@ -126,8 +128,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		auto perkRules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+			historicalLevelOffer::heroes());
+		auto perkRules = historicalLevelOffer::perks();
 		// Historical controls capture absence even after installed defaults opt in.
 		perkRules.Struct().erase("connoisseurPolicy");
 		for(auto & perk : perkRules["skills"][LEARNING_SKILL]["perks"].Vector())
@@ -238,9 +240,9 @@ protected:
 		const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(hero->getOwner()));
 		if(!query)
 			return false;
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 10000); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer([this](const std::string & skill)
+			const auto offer = perkTestSetup::forPerk(hero->getPerkState(), "new-horizons:learning.prodigy", [this](const std::string & skill)
 				{ return hero->getPerkSkillRank(skill); }, seed, hero->getPerkOfferWeightContext());
 			for(size_t i = 0; i < offer.size(); ++i)
 				if(offer[i].selection.perkId == "new-horizons:learning.prodigy")

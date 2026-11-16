@@ -28,10 +28,34 @@ constexpr std::string_view ADVANCED = "new-horizons:discipline.standardBearer";
 constexpr std::string_view ADVANCED_ALTERNATIVE = "new-horizons:discipline.fearless";
 constexpr std::string_view EXPERT = "new-horizons:discipline.unbreakable";
 
-newHorizonsHeroes::PerkState makeState()
+newHorizonsHeroes::PerkState strictState()
 {
 	newHorizonsHeroes::PerkState result;
 	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	result.rules.Struct().erase("fourOfferProgressionVersion");
+	result.rules["unifiedSkillProgressionVersion"].Integer() = 1;
+	return result;
+}
+
+newHorizonsHeroes::PerkState fourOfferState()
+{
+	auto result = strictState();
+	result.rules.Struct().erase("unifiedSkillProgressionVersion");
+	result.rules["fourOfferProgressionVersion"].Integer() = 1;
+	return result;
+}
+
+void removeUnifiedDefaults(newHorizonsHeroes::PerkState & state)
+{
+	state.rules.Struct().erase("unifiedSkillProgressionVersion");
+	state.rules.Struct().erase("startingPerksPolicyVersion");
+	state.rules.Struct().erase("startingPerkProfiles");
+}
+
+newHorizonsHeroes::PerkState makeState()
+{
+	auto result = strictState();
+	removeUnifiedDefaults(result);
 	// Existing cases explicitly exercise captured policy1 semantics.
 	result.rules["offerWeightPolicyVersion"].Integer() = 1;
 	result.rules.Struct().erase("perkOfferNormalization");
@@ -41,8 +65,8 @@ newHorizonsHeroes::PerkState makeState()
 
 newHorizonsHeroes::PerkState makeR2State()
 {
-	newHorizonsHeroes::PerkState result;
-	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	auto result = strictState();
+	removeUnifiedDefaults(result);
 	result.rules.Struct().erase("perkProgressionPolicyVersion"); // Captured historical R2.
 	return result;
 }
@@ -236,8 +260,7 @@ TEST(NewHorizonsPerkAvailability, R2SameTierAlternativesRemainAvailableUntilCap)
 
 TEST(NewHorizonsPerkAvailability, StrictCurrentOccupiedTierMatchesAuthoritativeAcquisitionPredicate)
 {
-	newHorizonsHeroes::PerkState state;
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	auto state = strictState();
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
 	state.select(std::string(SKILL), std::string(BASIC), 1);
 	const auto before = state.toJson();
@@ -256,8 +279,7 @@ TEST(NewHorizonsPerkAvailability, StrictCurrentOccupiedTierMatchesAuthoritativeA
 
 TEST(NewHorizonsPerkAvailability, StrictExceptionalExpertSlotsFollowBasicAdvancedExpertWithoutRepeatedTier)
 {
-	newHorizonsHeroes::PerkState state;
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	auto state = strictState();
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
 	const std::array<std::string_view, 3> selected = {BASIC, ADVANCED, EXPERT};
 	for(size_t index = 0; index < selected.size(); ++index)
@@ -310,4 +332,69 @@ TEST(NewHorizonsPerkAvailability, R2EmptySlotReportsCapacityWithoutInventingTier
 		newHorizonsPerkAvailability::Status::ACQUIRED);
 	const auto unlearned = newHorizonsPerkAvailability::evaluateSelectionSlot(makeR2State(), SKILL, 0, 0);
 	EXPECT_EQ(unlearned.reason, newHorizonsPerkAvailability::Reason::SKILL_NOT_LEARNED);
+}
+
+TEST(NewHorizonsPerkAvailability, FourOfferExceptionalRanksRetainEarlierStagesAndAllowExtraBasic)
+{
+	auto state = fourOfferState();
+	ASSERT_NO_THROW(state.validate());
+	ASSERT_TRUE(newHorizonsPerkAvailability::usesSelectionSlots(state));
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, ADVANCED)).reason, newHorizonsPerkAvailability::Reason::EARLIER_TIER_MISSING);
+	state.select(std::string(SKILL), std::string(BASIC), 3);
+	const auto before = state.toJson();
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, BASIC_ALTERNATIVE)).status, newHorizonsPerkAvailability::Status::AVAILABLE);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, ADVANCED)).status, newHorizonsPerkAvailability::Status::AVAILABLE);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, EXPERT)).reason, newHorizonsPerkAvailability::Reason::EARLIER_TIER_MISSING);
+	EXPECT_EQ(state.toJson(), before);
+}
+
+TEST(NewHorizonsPerkAvailability, FourOfferCellsKeepEverySameTierAcquisitionAndActualTier)
+{
+	auto state = fourOfferState();
+	state.select(std::string(SKILL), std::string(BASIC), 3);
+	state.select(std::string(SKILL), std::string(BASIC_ALTERNATIVE), 3);
+	const auto before = state.toJson();
+	for(const auto & [index, id] : std::array<std::pair<size_t, std::string_view>, 2>{{{0, BASIC}, {1, BASIC_ALTERNATIVE}}})
+	{
+		const auto cell = newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 3, index);
+		ASSERT_TRUE(cell.selectedPerk);
+		EXPECT_EQ(cell.selectedPerk->id, id);
+		EXPECT_EQ(cell.requiredRank, 1);
+		EXPECT_EQ(cell.status, newHorizonsPerkAvailability::Status::ACQUIRED);
+	}
+	const auto remaining = newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 3, 2);
+	EXPECT_FALSE(remaining.selectedPerk);
+	EXPECT_EQ(remaining.status, newHorizonsPerkAvailability::Status::AVAILABLE);
+	EXPECT_EQ(remaining.requiredRank, 0);
+	EXPECT_EQ(state.toJson(), before);
+	state.select(std::string(SKILL), std::string(ADVANCED), 3);
+	const auto last = newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 3, 2);
+	ASSERT_TRUE(last.selectedPerk);
+	EXPECT_EQ(last.selectedPerk->id, ADVANCED);
+	EXPECT_EQ(last.requiredRank, 2);
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, EXPERT)).reason, newHorizonsPerkAvailability::Reason::PER_SKILL_CAP);
+}
+
+TEST(NewHorizonsPerkAvailability, FourOfferThreeBasicPerksFillDistinctCellsWithoutUnlockingLaterRanks)
+{
+	auto state = fourOfferState();
+	const std::array<std::string_view, 3> selected = {BASIC, BASIC_ALTERNATIVE, BASIC_PLANNED};
+	for(const auto id : selected)
+		state.select(std::string(SKILL), std::string(id), 1);
+	ASSERT_NO_THROW(state.validate());
+	for(size_t i = 0; i < selected.size(); ++i)
+	{
+		const auto cell = newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 1, i);
+		ASSERT_TRUE(cell.selectedPerk);
+		EXPECT_EQ(cell.selectedPerk->id, selected[i]);
+		EXPECT_EQ(cell.requiredRank, 1);
+	}
+	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 3,
+		definition(state, ADVANCED)).reason, newHorizonsPerkAvailability::Reason::PER_SKILL_CAP);
+	EXPECT_FALSE(state.canAdvanceSkillNormally(SKILL, 2));
 }

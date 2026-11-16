@@ -33,6 +33,7 @@ public:
 	const int recruitmentLevel;
 	int maxAmount;
 	void sliderMoved(int to);
+	void refreshCost();
 
 	CreaturePurchaseCard(const std::vector<CreatureID> & creaturesID, Point position, int creaturesMaxAmount,
 		int recruitmentLevel, QuickRecruitmentWindow * parents, bool compactLayout = false,

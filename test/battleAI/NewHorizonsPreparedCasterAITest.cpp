@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -114,9 +115,9 @@ protected:
 			return attackerSideHero->getPerkSkillRank(skillId);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forPerk(attackerSideHero->getPerkState(), perkId, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [&perkId](const auto & candidate)
 			{
 				return candidate.selection.perkId == perkId;

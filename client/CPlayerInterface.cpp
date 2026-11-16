@@ -1352,8 +1352,7 @@ void CPlayerInterface::requestRealized( PackageApplied *pa )
 	for(const auto & window : ENGINE->windows().findWindows<CommandEnhancementWindow>())
 		window->requestApplied(pa->requestID, pa->result);
 	if(pa->packType == CTypeList::getInstance().getTypeID<QueryReply>(nullptr))
-		for(const auto & window : ENGINE->windows().findWindows<CLevelWindow>())
-			window->rerollRequestApplied(pa->requestID, pa->result);
+		levelUpRequestApplied(pa->requestID, pa->result);
 
 	if(pa->packType == CTypeList::getInstance().getTypeID<HeroMasteryReply>(nullptr))
 		for(const auto & window : ENGINE->windows().findWindows<HeroMasteryWindow>())
@@ -1371,20 +1370,9 @@ void CPlayerInterface::requestRealized( PackageApplied *pa )
 	}
 }
 
-void CPlayerInterface::closeActiveLevelUpDialog()
-{
-	if(auto levelWindow = ENGINE->windows().topWindow<CLevelWindow>())
-		levelWindow->close();
-	else if(auto masteryWindow = ENGINE->windows().topWindow<HeroMasteryWindow>())
-		masteryWindow->close(); // Refuses dismissal until its matching query resolves.
-	else if(auto enhancementWindow = ENGINE->windows().topWindow<CommandEnhancementWindow>())
-		enhancementWindow->close();
-	else if(auto commanderWindow = ENGINE->windows().topWindow<CStackWindow>(); commanderWindow && commanderWindow->isCommanderLevelUpDialog())
-		commanderWindow->close();
-}
-
 void CPlayerInterface::queryResolved(QueryID queryID)
 {
+	levelUpQueryResolved(queryID);
 	// Deliver even while a right-click help popup covers the mandatory window.
 	// The window matches its own query and defers closure until it is topmost.
 	for(const auto & window : ENGINE->windows().findWindows<HeroMasteryWindow>())
@@ -1457,6 +1445,13 @@ void CPlayerInterface::beforeObjectPropertyChanged(const SetObjectProperty * sop
 void CPlayerInterface::objectPropertyChanged(const SetObjectProperty * sop)
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
+
+	if(sop->what == ObjProperty::NEW_HORIZONS_HOARDER_LAST_WEEK)
+	{
+		const auto * hero = cb->getHero(sop->id);
+		if(hero && hero->getOwner() == playerID)
+			receivedResource(); // Requote open economic views after the committed weekly receipt.
+	}
 
 	if (sop->what == ObjProperty::OWNER)
 	{
@@ -1651,6 +1646,8 @@ void CPlayerInterface::playerBlocked(int reason, bool start)
 
 void CPlayerInterface::update()
 {
+	if(!GAME->server().client || !GAME->server().client->pollInitialAutofight())
+		return;
 	tryShowNextPendingDialog();
 }
 
@@ -2005,6 +2002,8 @@ std::list<CPlayerInterface::PendingDialog>::iterator CPlayerInterface::findQuery
 
 void CPlayerInterface::tryShowNextPendingDialog()
 {
+	if(!drainFourOfferLevelDialogs())
+		return;
 	for(const auto & window : ENGINE->windows().findWindows<CommandEnhancementWindow>())
 	{
 		if(!ENGINE->windows().isTopWindow(window.get()))
@@ -2082,7 +2081,7 @@ void CPlayerInterface::proposeLoadingGame()
 		LIBRARY->generaltexth->allTexts[68],
 		[]()
 		{
-			GAME->server().endGameplay();
+			if(!GAME->server().endGameplay()) return;
 			GAME->mainmenu()->menu->switchToTab("load");
 		},
 		nullptr
@@ -2189,23 +2188,6 @@ bool CPlayerInterface::capturedAllEvents()
 	return false;
 }
 
-void CPlayerInterface::prepareAutoFightingAI(const BattleID &bid, const CCreatureSet *army1, const CCreatureSet *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, BattleSide side, bool automatic)
-{
-	std::optional<std::string_view> quickAI;
-	if(settings["ai"]["quickCombatAI"].getType() == JsonNode::JsonType::DATA_STRING)
-		quickAI = settings["ai"]["quickCombatAI"].String();
-	autofightingAI = AIFactory::createBattleAI(battleAISelection::factoryName(
-		automatic, settings["ai"]["combatAlliedAI"].String(), quickAI));
-
-	AutocombatPreferences autocombatPreferences = AutocombatPreferences();
-	autocombatPreferences.enableSpellsUsage = settings["battle"]["enableAutocombatSpells"].Bool();
-	autocombatPreferences.enableTacticsUsage = settings["battle"]["enableAutocombatTactics"].Bool();
-
-	autofightingAI->initBattleInterface(env, cb, autocombatPreferences);
-	autofightingAI->battleStart(bid, army1, army2, tile, hero1, hero2, side, false);
-	isAutoFightOn = true;
-	registerBattleInterface(autofightingAI);
-}
 
 void CPlayerInterface::showWorldViewEx(const std::vector<ObjectPosInfo>& objectPositions, bool showTerrain)
 {
@@ -2223,18 +2205,6 @@ std::optional<BattleAction> CPlayerInterface::makeSurrenderRetreatDecision(const
 	return std::nullopt;
 }
 
-void CPlayerInterface::registerBattleInterface(std::shared_ptr<CBattleGameInterface> battleEvents)
-{
-	autofightingAI = battleEvents;
-	GAME->server().client->registerBattleInterface(battleEvents, playerID);
-}
-
-void CPlayerInterface::unregisterBattleInterface(std::shared_ptr<CBattleGameInterface> battleEvents)
-{
-	assert(battleEvents == autofightingAI);
-	GAME->server().client->unregisterBattleInterface(autofightingAI, playerID);
-	autofightingAI.reset();
-}
 
 void CPlayerInterface::responseStatistic(StatisticDataSet & statistic)
 {

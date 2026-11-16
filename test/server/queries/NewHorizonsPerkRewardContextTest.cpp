@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../../hero/HistoricalLevelOfferFixture.h"
 
 #include "../../mock/GameHandlerTestServer.h"
 #include "../../mock/TinyMapGameTest.h"
@@ -26,8 +27,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+			historicalLevelOffer::heroes());
+		auto perks = historicalLevelOffer::perks();
 		if(legacyPolicy)
 		{
 			perks.Struct().erase("offerWeightPolicyVersion");

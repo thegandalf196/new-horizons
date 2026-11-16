@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later.
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "BattleTestFixture.h"
 #include "../../../AI/BattleAI/AttackPossibility.h"
 #include "../../../AI/BattleAI/BattleExchangeVariant.h"
@@ -58,9 +59,9 @@ protected:
 	{
 		const SecondarySkill id(SecondarySkill::decode(skill));
 		hero->setSecSkillLevel(id, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), skill,
 				[hero](const std::string & name) { return hero->getPerkSkillRank(name); }, seed, hero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offer.size(); ++index)
 				if(offer[index].selection.skillId == skill && offer[index].selection.perkId == perk)

@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt file in main folder
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "../../../lib/battle/ArcaneInspiration.h"
 #include "../../../lib/battle/MagicalCreatureAttackDamage.h"
 #include "HeroCommandFixture.h"
@@ -135,9 +136,9 @@ protected:
 			return hero->getPerkSkillRank(skillId);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), warcastingSkillId, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offers.begin(), offers.end(), [](const auto & offer)
 			{
 				return offer.selection.skillId == warcastingSkillId
@@ -329,9 +330,9 @@ TEST_F(NewHorizonsSpellwardTest, PlannedPerkCannotBeOfferedOrForceSelectedAndAdd
 	{
 		return defenderSideHero->getPerkSkillRank(skillId);
 	};
-	for(uint64_t seed = 0; seed < 512; ++seed)
+	for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(defenderSideHero->getPerkState(), 512); ++seed)
 	{
-		const auto offers = defenderSideHero->getPerkState().prepareOffer(rankLookup, seed, defenderSideHero->getPerkOfferWeightContext());
+		const auto offers = perkTestSetup::forSkill(defenderSideHero->getPerkState(), warcastingSkillId, rankLookup, seed, defenderSideHero->getPerkOfferWeightContext());
 		EXPECT_EQ(std::find_if(offers.begin(), offers.end(), [](const auto & offer)
 		{
 			return offer.selection.skillId == warcastingSkillId && offer.selection.perkId == spellwardPerkId;

@@ -22,6 +22,7 @@
 
 struct Bonus;
 struct Component;
+class IGameEventCallback;
 class CStackBasicDescriptor;
 class CGHeroInstance;
 
@@ -130,6 +131,14 @@ struct DLL_LINKAGE Reward final
 
 	/// if set to true, object will be removed after granting reward
 	bool removeObject;
+
+	/// Effective resources for an actual map-location visit; other contexts retain base resources.
+	ResourceSet visitResources(const CGHeroInstance * hero, std::optional<Obj> sourceObject) const;
+
+	void loadResourceComponents(std::vector<Component> & comps, const CGHeroInstance * hero,
+		std::optional<Obj> sourceObject) const;
+	void showVisitMessage(IGameEventCallback & gameEvents, const CGHeroInstance * hero,
+		std::optional<Obj> sourceObject, const MetaString & text) const;
 
 	/// Generates list of components that describes reward for a specific hero
 	/// If hero is nullptr, then rewards will be generated without accounting for hero

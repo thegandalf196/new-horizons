@@ -16,8 +16,21 @@
 #include "../mapping/CMap.h"
 #include "../networkPacks/PacksForServer.h"
 #include "../networkPacks/SaveLocalState.h"
+#include "../networkPacks/EstatesPacks.h"
 
 #define ASSERT_IF_CALLED_WITH_PLAYER if(!getPlayerID()) {logGlobal->error(BOOST_CURRENT_FUNCTION); assert(0);}
+
+int CCallback::assignTownSteward(ObjectInstanceID town, ObjectInstanceID hero)
+{
+	ASSERT_IF_CALLED_WITH_PLAYER
+	if(town.getNum() < 0 || (hero != ObjectInstanceID::NONE && hero.getNum() < 0))
+		return -1;
+	AssignTownSteward pack;
+	pack.player = *getPlayerID();
+	pack.town = town;
+	pack.hero = hero;
+	return sendRequest(pack);
+}
 
 bool CCallback::teleportHero(const CGHeroInstance *who, const CGTownInstance *where)
 {

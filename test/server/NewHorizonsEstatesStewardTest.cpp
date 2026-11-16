@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "LegacyEstatesCapture.h"
 #include "../mock/TinyMapGameTest.h"
 #include "battles/FullGameSnapshotTypes.h"
 #include "../../lib/CSkillHandler.h"
@@ -72,8 +73,8 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		estatesTest::applyLegacyEstatesHeroes(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, estatesTest::legacyEstatesPerks());
 	}
 	void startGame()
 	{

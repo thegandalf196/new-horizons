@@ -27,8 +27,10 @@ Capability rules v7 capture the Leadership profiles, creature Requirements and
 Castle default package. Stable `new-horizons:discipline` is Discipline,
 `new-horizons:command` is Warfare, and `new-horizons:authority` specializes
 Leadership. Do not rename historical IDs or reinterpret old captures. The
-[new-game-only boundary](Serialization.md#current-save-boundary) admits 1159;
-older Command awards are never converted into Leadership or creature bonuses.
+[new-game-only boundary](Serialization.md#current-save-boundary) retains 1159 as
+the oldest supported format; newer advancement and Estates captures require
+their own successor feature versions. Older Command awards are never converted
+into Leadership or creature bonuses.
 
 Edit authored registries and texts directly. No private design document is read
 by public builds or source tests. The existing module generator refreshes module
@@ -53,9 +55,36 @@ recruitment supply, use the [army generation runtime contract](NewHorizonsNeutra
 Regenerate module metadata after changing authored captures; a generated copy must
 agree with its registry rather than silently overriding it with stale settings.
 
-### Perk-offer policy2
+### Current advancement and Estates captures
 
-`offerWeightPolicyVersion: 2` selects the compressed parent-first lottery.
+`fourOfferProgressionVersion: 1` selects four fixed weighted groups and one
+advancement per ordinary level-up. Parent Skill identities are captured with the
+offer; perk alternatives come from the full live eligible pool for that parent.
+Draws use raw captured class weights. An externally learned zero-weight Skill
+uses weight1 only for perk-parent selection. Rank and perk prerequisites remain
+separate, accessible earlier tiers may supply additional distinct perks, and the
+maximum remains three perks per Skill. External Skill teaching grants no automatic
+perk. Fresh authored starts retain their separate initialization contract.
+
+Do not attach the new marker to an old pending transaction. Historical
+`unifiedSkillProgressionVersion: 1` retains rank-plus-perk completion; the two
+markers are mutually exclusive. `NEW_HORIZONS_FOUR_OFFER_PROGRESSION` (1160)
+protects the new captured choices and pending state. Unsupported writes reject
+them before enclosing prefixes. UI and AI use the same live acquisition checks.
+
+`estatesPolicyVersion: 1` selects the revised ten-perk Estates catalogue and its
+economy hooks. Marker absence retains the complete historical catalogue, selected
+IDs and runtime meanings, including Advanced Mercenary Company. Source defaults
+replace retired starting choices explicitly; saved selections are not renamed.
+`NEW_HORIZONS_ESTATES` (1161) protects the new policy and transaction state.
+Resource rewards, production, market counts, recruitment and construction use
+shared quotes or eligibility rules for previews and authoritative commits.
+
+### Historical perk-offer policy2
+
+For historical advancement, `offerWeightPolicyVersion: 2` selects the compressed
+parent-first lottery. The four-offer profile uses raw class weights instead,
+even though it retains this marker for the older captured policy infrastructure.
 `perkOfferNormalization.maximumPreferenceRatio` is a finite value at least1
 (default2); `mathVersion: 1` identifies its saved numerical policy. Reuse the
 complete captured class Skill row, including positive unlearned/capped Skills,
@@ -66,14 +95,15 @@ This is a quantized distribution, not a claim of exact real arithmetic or of
 unperformed cross-platform certification. Keep the transaction-local normalized
 row reusable when a pending query is reopened, but reevaluate eligibility live.
 
-Historical parent selection and uniform perk selection are separate. Current
+Historical parent selection and uniform perk selection are separate. Captured
 `unifiedSkillProgressionVersion: 1` additionally requires strict progression and
 weight policy2: each acquired Skill rank immediately queues its full eligible
 tier pool. `maxPerkChoices: 2` limits the historical random sampler, not that
 mandatory pool. Level-ups, external grants and starting heroes resolve missing
 tiers in order; the simulation preserves pending offers across interruption and
 save/load. Reuse shared acquisition validation in UI and AI consumers. Current
-progression never samples a separate perk parent or offers a perk-only level-up.
+rank-plus-perk progression never samples a separate perk parent or offers a
+perk-only level-up. These rules do not describe the new four-offer profile.
 
 The progression marker is separate from weighting policy2 and the mathematical
 ratio `R`. Marker absence preserves historical policy2 duplicate-tier selections,

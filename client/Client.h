@@ -16,9 +16,11 @@
 #include "../lib/callback/CGameInfoCallback.h"
 #include "../lib/ConditionalWait.h"
 #include "../lib/ResourceSet.h"
+#include "InitialAutofightTask.h"
 
 
 struct CPackForClient;
+struct PackageApplied;
 struct CPackForServer;
 class IBattleEventsReceiver;
 class CBattleGameInterface;
@@ -145,10 +147,26 @@ public:
 	void newGame(std::shared_ptr<CGameState> gameState);
 	void loadGame(std::shared_ptr<CGameState> gameState);
 
+	struct GameplaySource
+	{
+		const CClient * client;
+		std::shared_ptr<CGameState> world;
+		std::shared_ptr<InitialAutofightTask> task;
+	};
+	GameplaySource retainGameplaySource() const;
+	bool matchesGameplaySource(const GameplaySource & source) const;
+	bool matchesRetiredGameplaySource(const GameplaySource & source) const;
+	bool pollInitialAutofight();
+	void initialAutofightRequestRealized(const PackageApplied & receipt);
+	bool canStartInitialAutofight() const;
+	bool startInitialAutofight(const std::shared_ptr<CBattleGameInterface> & controller,
+		const std::shared_ptr<CBattleCallback> & callback, BattleID battle, std::optional<uint32_t> unit);
+	/// Called with interfaceMutex owned; releases it for the actual worker join.
+	bool drainInitialAutofight();
 	void endNetwork();
-	void finishGameplay();
+	bool finishGameplay();
 	bool cancelOwnedRecipientPreparation(const std::string & reason);
-	void endGame();
+	bool endGame();
 
 	void initMapHandler();
 	void initPlayerEnvironments();
@@ -196,6 +214,7 @@ public:
 	void removeGUI() const;
 
 private:
+	std::shared_ptr<InitialAutofightTask> initialAutofight = std::make_shared<InitialAutofightTask>();
 	void applyClientPacket(CPackForClient & pack, ClientPacketReceiveSession * receive);
 	std::optional<PlayerColor> findPlayerColorForSpectatorInterface() const;
 };

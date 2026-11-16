@@ -266,6 +266,9 @@ set(vcmiclientcommon_SRCS
 	windows/GUIClasses.cpp
 	windows/CRecruitmentWindow.cpp
 	windows/CLevelWindow.cpp
+	windows/CFourOfferLevelWindow.cpp
+	windows/CFourOfferLevelChoices.cpp
+	windows/CFourOfferLevelActions.cpp
 	windows/CLevelWindowChoices.cpp
 	windows/LevelUpChoiceCards.cpp
 	windows/CreatureLeadershipPresentation.cpp
@@ -277,6 +280,7 @@ set(vcmiclientcommon_SRCS
 	windows/InfoWindowDetails.cpp
 	windows/KingdomHeroHelp.cpp
 	windows/QuickRecruitmentWindow.cpp
+	windows/QuickRecruitmentPricing.cpp
 	windows/CHeroBackpackWindow.cpp
 	windows/CWindowWithArtifacts.cpp
 	windows/settings/GeneralOptionsTab.cpp
@@ -293,7 +297,19 @@ set(vcmiclientcommon_SRCS
 	GameInstance.cpp
 	Translator.cpp
 	CPlayerInterface.cpp
+	CPlayerInterfaceAutofight.cpp
+	ClientInitialAutofight.cpp
+	ClientRequestSubmission.cpp
+	InitialAutofightTask.cpp
+	battle/BattleWindowAutofight.cpp
 	CPlayerInterfaceLevelUp.cpp
+	EstatesNetPacks.cpp
+	widgets/GarrisonBulkTransfer.cpp
+	windows/CBlacksmithDialog.cpp
+	windows/TownEstateUI.cpp
+	windows/TownEstateUI.h
+	CPlayerInterfaceFourOfferLevel.cpp
+	CPlayerInterfaceLevelDialogs.cpp
 	PlayerLocalState.cpp
 	CServerHandler.cpp
 	Client.cpp
@@ -613,6 +629,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CreaturePurchaseCard.h
 	windows/GUIClasses.h
 	windows/CLevelWindow.h
+	windows/CFourOfferLevelWindow.h
 	windows/LevelUpChoiceCards.h
 	windows/NewHorizonsMusterUI.h
 	windows/InfoWindows.h
@@ -639,6 +656,8 @@ set(vcmiclientcommon_HEADERS
 	PlayerLocalState.h
 	CServerHandler.h
 	Client.h
+	InitialAutofightTask.h
+	ClientGameplayRetirement.h
 	PerfTrace.h
 	ClientCommandManager.h
 	ClientNetPackVisitors.h

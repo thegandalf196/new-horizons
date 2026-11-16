@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 #include "HeroQueueSelectorFixture.h"
 #include "HeroQueueBonusSnapshot.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
@@ -52,9 +53,9 @@ void HeroQueueSelectorTest::selectPerk(CGHeroInstance * hero, const std::string 
 	ASSERT_TRUE(hero->getPerkState().canAcquirePerk(skill, perk, hero->getPerkSkillRank(skill)))
 		<< "Requested perk is not eligible under the captured current rules: " << perk;
 	const auto lookup = [hero](const std::string & name) { return hero->getPerkSkillRank(name); };
-	for(uint64_t offerSeed = 0; offerSeed < 4096; ++offerSeed)
+	for(uint64_t offerSeed = 0; offerSeed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++offerSeed)
 	{
-		const auto offers = hero->getPerkState().prepareOffer(lookup, offerSeed, hero->getPerkOfferWeightContext());
+		const auto offers = perkTestSetup::forSkill(hero->getPerkState(), skill, lookup, offerSeed, hero->getPerkOfferWeightContext());
 		for(size_t index = 0; index < offers.size(); ++index)
 			if(offers[index].selection.skillId == skill && offers[index].selection.perkId == perk)
 			{

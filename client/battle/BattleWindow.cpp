@@ -1024,33 +1024,6 @@ void BattleWindow::setPossibleActions(const std::vector<PossiblePlayerBattleActi
 	unitActionWindow->setPossibleActions(actions);
 }
 
-void BattleWindow::bAutofightf()
-{
-	if (owner.actionsController->heroSpellcastingModeActive())
-		return;
-
-	if(settings["battle"]["endWithAutocombat"].Bool() && onlyOnePlayerHuman)
-	{
-		endWithAutocombat();
-		return;
-	}
-
-	//Stop auto-fight mode
-	if(owner.curInt->isAutoFightOn)
-	{
-		assert(owner.curInt->autofightingAI);
-		owner.curInt->isAutoFightOn = false;
-		logGlobal->trace("Stopping the autofight...");
-	}
-	else if(!owner.curInt->autofightingAI)
-	{
-		owner.curInt->isAutoFightOn = true;
-		blockUI(true);
-
-		owner.curInt->prepareAutoFightingAI(owner.getBattleID(), owner.army1, owner.army2, int3(0,0,0), owner.attackingHeroInstance, owner.defendingHeroInstance, owner.getBattle()->battleGetMySide());
-		owner.requestAutofightingAIToTakeAction();
-	}
-}
 
 void BattleWindow::bSpellf()
 {
@@ -1306,27 +1279,6 @@ std::optional<uint32_t> BattleWindow::getQueueHoveredUnitId()
 	return queue->getHoveredUnitIdIfAny();
 }
 
-void BattleWindow::endWithAutocombat() 
-{
-	if(!owner.makingTurn())
-		return;
-
-	GAME->interface()->showYesNoDialog(
-		LIBRARY->generaltexth->translate("vcmi.battleWindow.endWithAutocombat"),
-		[this]()
-		{
-			owner.curInt->isAutoFightEndBattle = true;
-			owner.curInt->prepareAutoFightingAI(owner.getBattleID(), owner.army1, owner.army2, int3(0,0,0), owner.attackingHeroInstance, owner.defendingHeroInstance, owner.getBattle()->battleGetMySide(), true);
-
-			owner.requestAutofightingAIToTakeAction();
-
-			close();
-
-			owner.curInt->battleInt.reset();
-		},
-		nullptr
-	);
-}
 
 void BattleWindow::showAll(Canvas & to)
 {

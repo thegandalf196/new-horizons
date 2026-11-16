@@ -38,6 +38,7 @@ public:
 	bool teleportHero(const CGHeroInstance *who, const CGTownInstance *where);
 	int chooseHeroMastery(ObjectInstanceID hero, QueryID queryID, uint64_t sequence, int choice) override;
 	int chooseCommandEnhancement(ObjectInstanceID hero, QueryID queryID, int64_t milestone, int choice) override;
+	int assignTownSteward(ObjectInstanceID town, ObjectInstanceID hero) override;
 	int selectionMade(int selection, QueryID queryID) override;
 	int sendQueryReply(std::optional<int32_t> reply, QueryID queryID) override;
 	int swapCreatures(const CArmedInstance *s1, const CArmedInstance *s2, SlotID p1, SlotID p2) override;

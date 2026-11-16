@@ -2025,6 +2025,10 @@ void GameStatePackVisitor::visitSetObjectProperty(SetObjectProperty & pack)
 	// A weekly use marker does not alter the bonus graph or Mana capacity.
 	if(pack.what != ObjProperty::NEW_HORIZONS_LAND_SURVEYOR_LAST_WEEK
 		&& pack.what != ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
+        && pack.what != ObjProperty::NEW_HORIZONS_HOARDER_LAST_WEEK
+        && pack.what != ObjProperty::NEW_HORIZONS_COMPANY_DEFENSE_WEEK
+        && pack.what != ObjProperty::NEW_HORIZONS_COMPANY_DEFENSE_OWNER
+        && pack.what != ObjProperty::NEW_HORIZONS_COMPANY_DEFENSE_SLOT
         && pack.what != ObjProperty::NEW_HORIZONS_MINE_MERCENARY_WEEK
         && pack.what != ObjProperty::NEW_HORIZONS_MINE_MERCENARY_PENDING)
 		spellPointBonusGraphChanged = true;

@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -278,9 +279,9 @@ TEST_F(NewHorizonsMassBlessTest, AdvancedLitanyOfferGrantsAndRankDowngradeRevoke
 			return offer.selection.perkId == benedictionPerk && offer.requiredRank == MasteryLevel::BASIC;
 		});
 	};
-	auto basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
-	for(int seed = 1; seed < 4096 && !hasBenediction(basicOffer); ++seed)
-		basicOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+	auto basicOffer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), lightMagicSkill, rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
+	for(int seed = 1; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096) && !hasBenediction(basicOffer); ++seed)
+		basicOffer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), lightMagicSkill, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 	ASSERT_TRUE(hasBenediction(basicOffer))
 		<< "A deterministic bounded seed search finds the Basic Benediction offer in the full active pool";
 	attackerSideHero->applyPerkSelection({lightMagicSkill, benedictionPerk});
@@ -292,9 +293,9 @@ TEST_F(NewHorizonsMassBlessTest, AdvancedLitanyOfferGrantsAndRankDowngradeRevoke
 			return offer.selection.perkId == litanyPerk && offer.requiredRank == MasteryLevel::ADVANCED;
 		});
 	};
-	auto advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
-	for(int seed = 1; seed < 4096 && !hasLitany(advancedOffer); ++seed)
-		advancedOffer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+	auto advancedOffer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), lightMagicSkill, rankLookup, 0, attackerSideHero->getPerkOfferWeightContext());
+	for(int seed = 1; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096) && !hasLitany(advancedOffer); ++seed)
+		advancedOffer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), lightMagicSkill, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 	const auto litanyOffer = std::ranges::find_if(advancedOffer, [](const auto & offer)
 	{
 		return offer.selection.perkId == litanyPerk && offer.requiredRank == MasteryLevel::ADVANCED;

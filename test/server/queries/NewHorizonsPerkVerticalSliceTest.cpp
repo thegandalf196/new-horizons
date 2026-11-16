@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../../hero/HistoricalLevelOfferFixture.h"
 
 #include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/CSkillHandler.h"
@@ -88,8 +89,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS,
 			combat["combat"]["heroCommands"]);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+			historicalLevelOffer::heroes());
+		auto perkRules = historicalLevelOffer::perks();
 		if(activateControlledBlastOfferFixture)
 		{
 			bool found = false;

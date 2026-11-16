@@ -9,6 +9,10 @@ from pathlib import Path
 import unittest
 
 from jsonschema import Draft4Validator
+if __package__:
+    from .nh_estates_captures import legacy_estates_perks
+else:
+    from nh_estates_captures import legacy_estates_perks
 
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
@@ -92,7 +96,7 @@ ACTIVE_PERKS = {
     "new-horizons:discipline.veteranCohesion",
     "new-horizons:estates.stewardship",
     "new-horizons:elementalRebirth.swiftRebirth",
-    "new-horizons:estates.prosperity",
+    "new-horizons:estates.supervisor",
     "new-horizons:estates.merchantPrince",
     "new-horizons:bloodrage.firstBlood",
     "new-horizons:bloodrage.slayer",
@@ -164,8 +168,8 @@ ACTIVE_PERKS = {
     "new-horizons:estates.conscription",
     "new-horizons:estates.architect",
     "new-horizons:estates.mercenaryCompany",
-    "new-horizons:estates.banking",
-    "new-horizons:estates.landSurveyor",
+    "new-horizons:estates.decentralization",
+    "new-horizons:estates.hoarder",
     "new-horizons:learning.mentor",
     "new-horizons:learning.philosopher",
     "new-horizons:learning.connoisseur",
@@ -535,7 +539,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             'soulHarvesterManaCap': 30,
         })
         validator = Draft4Validator(self.schema)
-        absent = json.loads(json.dumps(self.rules))
+        strict_legacy = legacy_estates_perks(self.rules)
+        absent = json.loads(json.dumps(strict_legacy))
         del absent['necromancyPolicy']
         self.assertFalse(validator.is_valid(absent))
         absent.pop('commandAuthorityPolicy')
@@ -557,9 +562,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         validator.validate({**absent, 'necromancyPolicy': version1})
         version2 = {**policy, 'version': 2}
         validator.validate({**absent, 'necromancyPolicy': version2})
-        legacy = {key: value for key, value in self.rules.items() if key != 'unifiedSkillProgressionVersion'}
+        legacy = {key: value for key, value in strict_legacy.items() if key != 'unifiedSkillProgressionVersion'}
         validator.validate({**legacy, 'necromancyPolicy': version2})
-        self.assertFalse(validator.is_valid({**self.rules, 'necromancyPolicy': version2}))
+        self.assertFalse(validator.is_valid({**strict_legacy, 'necromancyPolicy': version2}))
         configurable = json.loads(json.dumps(self.rules))
         configurable['necromancyPolicy'].update({
             'lordOfTheDeadLeadershipReductionPercent': 50,

@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include "../gameState/EstatesState.h"
+
 #include "IOwnableObject.h"
 
 #include "army/CArmedInstance.h"
@@ -53,9 +55,11 @@ public:
 	/// creature generators provide recruits for free; all other sources use the
 	/// creature's normal cost.
 	TResources getRecruitmentCost(CreatureID creature) const;
-    TResources getTotalRecruitmentCost(CreatureID creature, int32_t amount, const CGHeroInstance * buyer = nullptr) const;
+    TResources getTotalRecruitmentCost(CreatureID creature, int32_t amount, const CGHeroInstance * buyer = nullptr,
+        const newHorizonsEstates::ConscriptionLedger * projectedLedger = nullptr) const;
     int32_t getRecruitmentAmount(CreatureID creature, const ResourceSet & resources,
-        int32_t available, const CGHeroInstance * buyer = nullptr) const;
+        int32_t available, const CGHeroInstance * buyer = nullptr,
+        const newHorizonsEstates::ConscriptionLedger * projectedLedger = nullptr) const;
 	/// Same creature/base-growth/modifier calculation used by ordinary newTurn.
 	int64_t normalWeeklyGrowth(size_t row) const;
 	int32_t getNewHorizonsMusterLastWeek() const { return newHorizonsMusterLastWeek; }

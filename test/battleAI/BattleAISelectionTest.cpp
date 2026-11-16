@@ -57,6 +57,8 @@ public:
 	std::string getBattleAIName() const override { ++ordinaryReads; return "EmptyAI"; }
 	void heroGotLevel(const CGHeroInstance *, PrimarySkill, std::vector<SecondarySkill> &,
 		const std::vector<newHorizonsHeroes::PerkOfferCandidate> &, QueryID) override {}
+	void heroGotFourOfferLevel(const CGHeroInstance *, PrimarySkill,
+		const newHorizonsHeroes::FourOfferProgressionOffer &, QueryID, bool, QueryID, int) override {}
 	void commanderGotLevel(const CCommanderInstance *, std::vector<ui32>, QueryID) override {}
 	void showBlockingDialog(const std::string &, const std::vector<Component> &, QueryID,
 		int, bool, bool, bool) override {}

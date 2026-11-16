@@ -34,7 +34,7 @@ void AIGateway::recruitCreatures(const CGDwelling * dwelling, const CArmedInstan
 		int available = static_cast<int>(std::min<uint64_t>(offer->available, std::numeric_limits<int>::max()));
 		if(offer->choices != row.second)
 		{
-			const RecruitmentProjection projection{newHorizonsHeroes::commandArmySlots(*recruiter), {}};
+			const RecruitmentProjection projection{newHorizonsHeroes::commandArmySlots(*recruiter), {}, std::nullopt};
 			const auto plan = planRecruitmentRow(*recruiter, hero, *dwelling, *offer, available,
 				cc->getResourceAmount(), projection, false);
 			if(plan)

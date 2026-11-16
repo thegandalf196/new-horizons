@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -40,9 +41,9 @@ protected:
 	void select(std::string_view skill, std::string_view perk)
 	{
 		const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed,
+			const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), skill, lookup, seed,
 				attackerSideHero->getPerkOfferWeightContext());
 			for(size_t i = 0; i < offers.size(); ++i)
 				if(offers[i].selection.skillId == skill && offers[i].selection.perkId == perk)

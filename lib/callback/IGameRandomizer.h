@@ -12,6 +12,7 @@
 #include "../constants/EntityIdentifiers.h"
 
 class CGHeroInstance;
+namespace newHorizonsHeroes { struct FourOfferProgressionOffer; }
 
 enum class EArtifactClass;
 
@@ -40,6 +41,7 @@ public:
 	virtual std::array<int, GameConstants::PRIMARY_SKILLS> rollPrimarySkillsForLevelup(const CGHeroInstance * hero) = 0;
 	virtual SecondarySkill rollSecondarySkillForLevelup(const CGHeroInstance * hero, const std::set<SecondarySkill> & candidates) = 0;
 	virtual std::vector<SecondarySkill> rollSecondarySkills(const CGHeroInstance * hero) = 0;
+	virtual newHorizonsHeroes::FourOfferProgressionOffer rollFourOfferProgression(const CGHeroInstance * hero);
 
 	virtual vstd::RNG & getDefault() = 0;
 };

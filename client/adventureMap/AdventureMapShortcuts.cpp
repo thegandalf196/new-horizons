@@ -360,7 +360,7 @@ void AdventureMapShortcuts::toMainMenu()
 		LIBRARY->generaltexth->allTexts[578],
 		[]()
 		{
-			GAME->server().endGameplay();
+			if(!GAME->server().endGameplay()) return;
 			GAME->mainmenu()->menu->switchToTab("main");
 		},
 		0
@@ -373,7 +373,7 @@ void AdventureMapShortcuts::newGame()
 		LIBRARY->generaltexth->allTexts[578],
 		[]()
 		{
-			GAME->server().endGameplay();
+			if(!GAME->server().endGameplay()) return;
 			GAME->mainmenu()->menu->switchToTab("new");
 		},
 		nullptr

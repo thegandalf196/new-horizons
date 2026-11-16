@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 
 #include "BattleTestFixture.h"
 
@@ -102,9 +103,9 @@ protected:
 		{
 			return attackerSideHero->getPerkSkillRank(skillId);
 		};
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), logisticsSkillId, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto found = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 			{
 				return candidate.selection.skillId == logisticsSkillId

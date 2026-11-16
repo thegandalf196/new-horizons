@@ -4,6 +4,8 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
+#include "LegacyEstatesCapture.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -84,8 +86,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		estatesTest::applyLegacyEstatesHeroes(loaded);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, estatesTest::legacyEstatesPerks());
 	}
 
 	void startGame()
@@ -131,7 +133,7 @@ protected:
 			ESTATES_SKILL, std::string(perkId), rankLookup(ESTATES_SKILL));
 		const uint64_t seedLimit = eligible ? 2048 : 1;
 		for(uint64_t seed = 0; seed < seedLimit; ++seed)
-			if(offerContains(hero->getPerkState().prepareOffer(rankLookup, seed, weightContext), perkId))
+			if(offerContains(perkTestSetup::forPerk(hero->getPerkState(), perkId, rankLookup, seed, weightContext), perkId))
 				return true;
 		return false;
 	}
@@ -144,9 +146,9 @@ protected:
 			return hero->getPerkSkillRank(skillId);
 		};
 		const auto weightContext = hero->getPerkOfferWeightContext();
-		for(uint64_t seed = 0; seed < 10000; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 10000); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, weightContext);
+			const auto offer = perkTestSetup::forPerk(hero->getPerkState(), perkId, rankLookup, seed, weightContext);
 			for(size_t index = 0; index < offer.size(); ++index)
 			{
 				if(offer[index].selection.perkId != perkId)

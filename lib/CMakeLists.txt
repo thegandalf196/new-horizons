@@ -570,6 +570,7 @@ set(lib_MAIN_SRCS
 	callback/CPlayerSpecificInfoCallback.cpp
 	callback/GameRandomizer.cpp
 	callback/GameRandomizerSecondarySkills.cpp
+	callback/GameRandomizerFourOffers.cpp
 	callback/HeroPrimaryGrowth.cpp
 	callback/MapInfoCallback.cpp
 	callback/EditorCallback.cpp
@@ -654,6 +655,12 @@ set(lib_MAIN_SRCS
 	entities/hero/LeadershipEfficiency.cpp
 	entities/hero/LeadershipRules.cpp
 	entities/hero/NewHorizonsUnifiedProgression.cpp
+	entities/hero/NewHorizonsLegacyPerkOffers.cpp
+	entities/hero/NewHorizonsLegacyPerkOffers.h
+	mapObjects/RecruitmentBasketAdmission.cpp
+	mapObjects/RecruitmentBasketAdmission.h
+	entities/hero/NewHorizonsFourOfferProgression.cpp
+	entities/hero/NewHorizonsFourOfferCandidates.cpp
 	entities/hero/NewHorizonsCapabilityRules.cpp
 	entities/hero/HeroMachineCapabilities.cpp
 	entities/hero/SiegeCapabilityRead.cpp
@@ -744,6 +751,17 @@ set(lib_MAIN_SRCS
 	mapObjects/TownEstateEconomy.cpp
 	mapObjects/DwellingRecruitmentCost.cpp
 	mapObjects/NewHorizonsEstates.cpp
+	mapObjects/MineCompanyDefense.cpp
+	rewardable/VisitRewardEffects.cpp
+	mapObjects/NewHorizonsEstatesPolicy.cpp
+	mapObjects/EstatesRecruitmentQuote.cpp
+	mapObjects/EstatesStewardship.cpp
+	mapObjects/EstatesArtifactQuote.cpp
+	networkPacks/EstatesPacks.cpp
+	gameState/EstatesPacks.cpp
+	mapObjects/TownCapitol.cpp
+	mapObjects/NewHorizonsFourOfferLevelUp.cpp
+	gameState/EstatesState.cpp
 	mapObjects/NewHorizonsLevelUpOffer.cpp
 	mapObjects/NewHorizonsHeroUpgrade.cpp
 	mapObjects/HeroManaRegeneration.cpp
@@ -834,6 +852,7 @@ set(lib_MAIN_SRCS
 	rewardable/Interface.cpp
 	rewardable/Limiter.cpp
 	rewardable/Reward.cpp
+	rewardable/VisitRewardPresentation.cpp
 	rewardable/RewardExperience.cpp
 	rewardable/PrimaryAndExperienceReward.cpp
 	rewardable/PrimaryAndExperienceRewardComponents.cpp
@@ -1613,6 +1632,13 @@ set(lib_MAIN_HEADERS
 	mapObjects/NewHorizonsAcademicStudy.h
 	mapObjects/NewHorizonsMagnateIncome.h
 	mapObjects/NewHorizonsEstates.h
+	mapObjects/NewHorizonsEstatesPolicy.h
+	mapObjects/EstatesRecruitmentQuote.h
+	mapObjects/EstatesStewardship.h
+	mapObjects/EstatesArtifactQuote.h
+	networkPacks/EstatesPacks.h
+	gameState/EstatesState.h
+	entities/hero/NewHorizonsFourOfferProgression.h
 	mapObjects/Quest.h
 	mapObjects/CRewardableObject.h
 	mapObjects/FlaggableMapObject.h

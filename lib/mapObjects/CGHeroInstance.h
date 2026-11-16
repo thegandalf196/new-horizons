@@ -18,6 +18,7 @@
 #include "../entities/hero/NewHorizonsCommandPlacement.h"
 #include "../entities/hero/NewHorizonsMasteryState.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "EstatesArtifactQuote.h"
 #include "../nativeRules/PreparedPilotRules.h"
 #include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../entities/hero/SpellPointState.h"
@@ -319,7 +320,7 @@ public:
 	void selectCommandEnhancement(int64_t milestone, newHorizonsHeroes::CommandEnhancement enhancement);
 	JsonNode commandProgressionToJson() const;
 	void restoreCommandProgression(const JsonNode & node);
-	void validateCommandSerialization(bool supported, bool leadershipSupported = false) const;
+	void validateCommandSerialization(bool supported, bool leadershipSupported = false, bool fourOfferSupported = false, bool estatesSupported = false) const;
 	const newHorizonsHeroes::MasteryState & getMasteryState() const { return masteryState; }
 	const newHorizonsHeroes::PerkState & getPerkState() const { return perkState; }
 	const nativeRules::PreparedPilotPerks * getPreparedPilotPerks() const { return preparedPilotPerks.get(); }
@@ -453,6 +454,7 @@ public:
 	bool hasNewHorizonsLearningMentorUseFor(ObjectInstanceID recipientId, int32_t week) const;
 	TExpType getNewHorizonsLearningMentorExperiencePerLevel() const;
 	int32_t getNewHorizonsLandSurveyorLastWeek() const { return newHorizonsLandSurveyorLastWeek; }
+	int32_t getNewHorizonsHoarderLastWeek() const { return newHorizonsHoarderLastWeek; }
 	bool hasUsedNewHorizonsLandSurveyor(int32_t week) const { return newHorizonsLandSurveyorLastWeek == week; }
 	int32_t getNewHorizonsProspectorLastWeek() const { return newHorizonsProspectorLastWeek; }
 	bool hasUsedNewHorizonsProspector(int32_t week) const { return newHorizonsProspectorLastWeek == week; }
@@ -728,6 +730,7 @@ private:
 	std::set<ObjectInstanceID> newHorizonsSageGuildVisits;
 	LearningMentorRecipients newHorizonsLearningMentorRecipients{ObjectInstanceID::NONE, ObjectInstanceID::NONE};
 	int32_t newHorizonsLandSurveyorLastWeek = -1;
+	int32_t newHorizonsHoarderLastWeek = -1;
 	int32_t newHorizonsProspectorLastWeek = -1;
 	ObjectInstanceID newHorizonsMagnateLastTown = ObjectInstanceID::NONE;
 	int32_t newHorizonsMagnateVisitWeek = -1;
@@ -762,8 +765,12 @@ public:
 	template <typename Handler> void serialize(Handler &h)
 	{
 		if(h.saving)
+			newHorizonsEstates::validateHoarderReceipt(newHorizonsHoarderLastWeek,
+				h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
+		if(h.saving)
 			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 			nativeRules::validatePilotPerks(perkState.rules, false);
 		if(h.saving)
@@ -1272,11 +1279,17 @@ public:
 		if(!h.saving)
 			validateRecoverySpecialtyStateSerialization(true);
 		commandState.serialize(h, getArmyCommandRules());
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES))
+			h & newHorizonsHoarderLastWeek;
+		else if(!h.saving)
+			newHorizonsHoarderLastWeek = -1;
+		newHorizonsEstates::validateHoarderReceipt(newHorizonsHoarderLastWeek, true);
 		if(!h.saving)
 		{
 			commandLevelEventPending = false;
 			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		}
 	}
 };

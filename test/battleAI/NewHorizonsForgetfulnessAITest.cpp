@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
@@ -109,9 +110,9 @@ protected:
 		};
 		const auto choose = [&](const std::string_view wantedPerk, const int requiredRank)
 		{
-			for(uint64_t seed = 0; seed < 4096; ++seed)
+			for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 			{
-				const auto offers = attackerSideHero->getPerkState().prepareOffer(rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
+				const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), CHAOS_MAGIC_SKILL, rankLookup, seed, attackerSideHero->getPerkOfferWeightContext());
 				const auto selected = std::find_if(offers.begin(), offers.end(), [&](const auto & offer)
 				{
 					return offer.selection.skillId == CHAOS_MAGIC_SKILL

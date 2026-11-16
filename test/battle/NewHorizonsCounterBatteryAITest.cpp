@@ -5,6 +5,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt in main folder
  */
 #include "../StdInc.h"
+#include "../PerkTestSetup.h"
 #include "../server/battles/BattleTestFixture.h"
 
 #include "../../AI/BattleAI/PotentialTargets.h"
@@ -84,7 +85,7 @@ protected:
 		const auto rank = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
 		for(uint64_t seedValue = 0; seedValue < 4096; ++seedValue)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rank, seedValue, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), skillId, rank, seedValue, hero->getPerkOfferWeightContext());
 			const auto choice = std::ranges::find_if(offer, [id](const auto & candidate)
 			{
 				return candidate.selection.skillId == skillId && candidate.selection.perkId == id;

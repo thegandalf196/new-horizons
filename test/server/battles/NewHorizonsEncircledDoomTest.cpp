@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "BattleTestFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
 #include "../../../lib/CSkillHandler.h"
@@ -55,9 +56,9 @@ protected:
 	{
 		hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skillId)), rank, ChangeValueMode::ABSOLUTE);
 		const auto lookup = [hero](const std::string & id) { return hero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(lookup, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), skillId, lookup, seed, hero->getPerkOfferWeightContext());
 			for(size_t choice = 0; choice < offers.size(); ++choice)
 				if(offers[choice].selection.skillId == skillId && offers[choice].selection.perkId == perkId)
 				{

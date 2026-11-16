@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
@@ -124,9 +125,9 @@ protected:
 	void select(CGameHandler & handler, const char * id)
 	{
 		const auto rankLookup = [this](const std::string & skill) { return teacher->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(teacher->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = teacher->getPerkState().prepareOffer(rankLookup, seed, teacher->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(teacher->getPerkState(), learningId, rankLookup, seed, teacher->getPerkOfferWeightContext());
 			const auto found = std::find_if(offers.begin(), offers.end(), [id](const auto & offer)
 			{
 				return offer.selection.skillId == learningId && offer.selection.perkId == id;

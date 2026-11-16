@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "../StdInc.h"
+#include "../PerkTestSetup.h"
 #include "battles/HeroCommandFixture.h"
 #include "../SpellPointTestUtils.h"
 
@@ -93,9 +94,9 @@ protected:
 	void acceptPerk(const char * id)
 	{
 		const auto ranks = [this](const std::string & skill) { return attackerSideHero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = attackerSideHero->getPerkState().prepareOffer(ranks, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), skillId, ranks, seed, attackerSideHero->getPerkOfferWeightContext());
 			const auto choice = std::ranges::find_if(offer, [id](const auto & value)
 			{
 				return value.selection.skillId == skillId && value.selection.perkId == id;

@@ -15,6 +15,7 @@
 #include "../entities/hero/NewHorizonsCommandOffer.h"
 #include "../entities/hero/NewHorizonsLegendaryReputation.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "../entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../entities/creature/NewHorizonsRecruitmentTraining.h"
 
 #include "ArtifactLocation.h"
@@ -1778,6 +1779,8 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving)
+			validateEstatesProperty(h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
         validateMercenaryProperty(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
         if(h.saving && what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
 			&& (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR)
@@ -1789,6 +1792,7 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 		h & id;
 		h & what;
 		h & identifier;
+		validateEstatesProperty(h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
         validateMercenaryProperty(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
 		if(what == ObjProperty::NEW_HORIZONS_PROSPECTOR_LAST_WEEK
 			&& (!h.hasFeature(Handler::Version::NEW_HORIZONS_PROSPECTOR)
@@ -1799,6 +1803,7 @@ struct DLL_LINKAGE SetObjectProperty : public CPackForClient
 			throw std::runtime_error("New Horizons Land Surveyor property requires the new wire format");
 	}
 private:
+	void validateEstatesProperty(bool supported) const;
     void validateMercenaryProperty(bool supported) const
     {
         if(what != ObjProperty::NEW_HORIZONS_MINE_MERCENARY_WEEK
@@ -1902,6 +1907,7 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 	std::vector<SecondarySkill> skills;
 	std::vector<newHorizonsHeroes::PerkOfferCandidate> perks;
 	int64_t perkOfferSeed = 0;
+	newHorizonsHeroes::FourOfferProgressionOffer fourOffers;
 	bool artilleryExpertBeforeGain = false;
 	bool logisticsExpertBeforeGain = false;
 	bool optionalRerollAvailable = false;
@@ -1916,6 +1922,8 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION) && !fourOffers.empty())
+			throw std::runtime_error("Cannot write four-offer hero progression to an older format");
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY)
 			&& (perkOnly || restoredOffer))
 			throw std::runtime_error("Cannot write unified hero progression to an older format");
@@ -1923,6 +1931,9 @@ struct DLL_LINKAGE HeroLevelUp : public Query
 			&& (optionalRerollAvailable || replacesQueryID != QueryID::NONE || reachedLevel != 0))
 			throw std::runtime_error("Cannot write optional Quick Study offer to an older format");
 		h & queryID;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION))
+			h & fourOffers;
+		else if(!h.saving) fourOffers = {};
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY))
 		{
 			h & perkOnly;

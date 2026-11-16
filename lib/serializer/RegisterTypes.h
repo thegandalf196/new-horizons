@@ -43,6 +43,7 @@
 #include "../networkPacks/SetRewardableConfiguration.h"
 #include "../networkPacks/SetScriptVariable.h"
 #include "../networkPacks/SetStackEffect.h"
+#include "../networkPacks/EstatesPacks.h"
 
 /// This method defines all types that are part of Serializeable hieararchy and can be serialized as their base type
 /// Each class is registered with a unique index that is used to determine correct type on deserialization
@@ -354,4 +355,6 @@ void registerTypes(Serializer &s)
 	s.template registerType<HeroCommandEnhancementDialog>(311);
 	s.template registerType<HeroCommandEnhancementChosen>(312);
 	s.template registerType<HeroCommandEnhancementReply>(313);
+	s.template registerType<EstatesKingdomChanged>(314);
+	s.template registerType<AssignTownSteward>(315);
 }

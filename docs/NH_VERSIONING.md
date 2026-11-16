@@ -2,12 +2,15 @@
 
 The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json). Menu and generated module read it; development versions may be ahead of the published releases. The version alone does not establish release publication or playable acceptance.
 
-Current source metadata is **0.91.2**; the latest published release is
+Current development source metadata is **0.92.0**, pending release validation;
+the latest published release remains
 [0.91.2 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91.2).
 The Leadership-efficiency
-migration requires a new game even from 0.90: writer and minimum accepted save
-format are both **1159**. Earlier saves are rejected without conversion or
-modification. Product metadata alone does not identify the published package.
+migration requires a new game even from 0.90. The source writer is **1161**;
+the minimum accepted save format remains **1159**. Four-offer progression and
+revised Estates have distinct successor capture guards. Supported older captures
+retain their original meanings; earlier files are rejected without conversion or
+modification. Product metadata alone does not identify a published package.
 See the [save boundary](developers/Serialization.md#current-save-boundary) and
 [0.91.2 changelog](NEW_HORIZONS_CHANGELOG.md#0912-early-access).
 

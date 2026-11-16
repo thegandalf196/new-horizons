@@ -11,6 +11,7 @@
 #include "../entities/hero/NewHorizonsMasteryRules.h"
 #include "../entities/hero/NewHorizonsCommandOffer.h"
 #include "../entities/hero/NewHorizonsPerkState.h"
+#include "../entities/hero/NewHorizonsFourOfferProgression.h"
 
 #include "CBattleGameInterface.h"
 #include "IGameEventsReceiver.h"
@@ -48,6 +49,9 @@ public:
 		if(replacesQueryID < 0)
 			heroGotLevel(hero, pskill, skills, perks, queryID);
 	}
+	virtual void heroGotFourOfferLevel(const CGHeroInstance * hero, PrimarySkill pskill,
+		const newHorizonsHeroes::FourOfferProgressionOffer & offers, QueryID queryID,
+		bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel) = 0;
 	virtual void commanderGotLevel (const CCommanderInstance * commander, std::vector<ui32> skills, QueryID queryID)=0;
 
 	// Show a dialog, player must take decision. If selection then he has to choose between one of given components,

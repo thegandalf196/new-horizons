@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsPerkState.h"
 #include "NewHorizonsPerkOperation.h"
+#include "NewHorizonsFourOfferProgression.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -94,6 +95,14 @@ void PerkState::acceptOffer(const std::vector<PerkOfferCandidate> & offer, size_
 	if(offer.empty() || choice >= offer.size())
 		throw std::runtime_error("Invalid New Horizons perk offer selection");
 	const auto & selectedCandidate = offer[choice];
+	if(usesFourOfferProgression(rules))
+	{
+		const auto rank = rankLookup(selectedCandidate.selection.skillId);
+		if(offer != PerkSelectionOperation(*this).eligibleCandidates(selectedCandidate.selection.skillId, rank))
+			throw std::runtime_error("Stale or forged four-offer perk pool");
+		select(selectedCandidate.selection.skillId, selectedCandidate.selection.perkId, rank);
+		return;
+	}
 	const auto tierPool = candidatesForSkillTier(selectedCandidate.selection.skillId, selectedCandidate.requiredRank);
 	if(usesUnifiedSkillProgression(rules))
 	{

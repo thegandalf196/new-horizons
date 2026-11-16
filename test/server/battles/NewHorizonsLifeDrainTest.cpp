@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "../../../AI/BattleAI/HypotheticBattle.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/CUnitState.h"
@@ -573,9 +574,9 @@ protected:
 			return hero->getPerkSkillRank(skillId);
 		};
 
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offer = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offer = perkTestSetup::forSkill(hero->getPerkState(), shadowMagicSkillId, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto selected = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 			{
 				return candidate.selection.skillId == shadowMagicSkillId

@@ -7,6 +7,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = (ROOT / "client/windows/CCastleInterface.cpp").read_text(encoding="utf-8")
+SOURCE += (ROOT / "client/windows/CBlacksmithDialog.cpp").read_text(encoding="utf-8")
 HEADER = (ROOT / "client/windows/CCastleInterface.h").read_text(encoding="utf-8")
 
 
@@ -74,8 +75,10 @@ def check(source: str, header: str) -> None:
 	require("const int visibleOfferCount = static_cast<int>(offers.size());" in body,
 		"the panel does not iterate every town offer")
 	require("getPrice()" not in body, "the New Horizons panel substitutes base artifact prices")
-	require("std::to_string(offer.price)" in body, "the effective town price is not displayed")
-	require("currentGold >= offer.price" in body, "affordability ignores the effective town price")
+	require("baseCost[EGameResID::GOLD] = offer.price;" in body, "the quote ignores the effective town offer")
+	require("newHorizonsEstates::artifactPurchaseQuote(baseCost, hero)" in body, "the preview bypasses the authoritative Hoarder quote")
+	require("std::to_string(price)" in body, "the quoted town price is not displayed")
+	require("currentGold >= price" in body, "affordability ignores the quoted town price")
 	require('"Already equipped"' in body and '"Not enough Gold"' in body,
 		"the panel does not explain purchase availability")
 	require("buyButton->block(true)" in body, "unavailable purchases leave their buy controls active")

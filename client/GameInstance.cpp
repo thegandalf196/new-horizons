@@ -146,8 +146,8 @@ void GameInstance::onShutdownRequested(bool ask)
 {
 	if(!ENGINE)
 	{
-		if(server().client)
-			server().endGameplay();
+		if(server().client && !server().endGameplay())
+			return;
 		server().stopNetwork();
 		return;
 	}

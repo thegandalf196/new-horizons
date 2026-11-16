@@ -9,9 +9,20 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 ## Unreleased
 
+- Next-release source work, pending native and rendered validation: four fixed
+  weighted offers grant one Skill or perk advancement per level. External Skill
+  teaching grants no automatic perk; historical saved progression is retained.
+- Next-release source work, pending native and rendered validation: revises the
+  ten Estates perks around location rewards, kingdom production, defended mines,
+  remote stewards and shared purchase quotes. Rank income remains 125/250/500 Gold.
+
 - Mixes Sylvan Tactics activation and Waiting perks with Hunting Pack, Evergreen
   Blessings, Kindred Flame and Ancient Accord. Perfect Moment and the rank
   Initiative bonuses remain. Existing games retain their captured perk effects.
+
+- Hardens AI turn recovery, exhausted level-up handling and battle strength
+  calculations for large stacks. Initial autofight work is owned and drained
+  during battle changes, replay and shutdown rather than left detached.
 
 - Corrects count-dependent creature bonuses at battle initialization. Galthran's
   Bone Formation now uses the completed stack count before the first action;

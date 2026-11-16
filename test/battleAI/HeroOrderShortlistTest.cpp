@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 #include "ProjectedTargetHitFixture.h"
 #include "HeroActionSelectionState.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
@@ -329,9 +330,9 @@ protected:
 	{
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)), rank, ChangeValueMode::ABSOLUTE);
 		const auto lookup = [this](const std::string & id) { return attackerSideHero->getPerkSkillRank(id); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = attackerSideHero->getPerkState().prepareOffer(lookup, seed, attackerSideHero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(attackerSideHero->getPerkState(), skill, lookup, seed, attackerSideHero->getPerkOfferWeightContext());
 			for(size_t index = 0; index < offers.size(); ++index)
 				if(offers[index].selection.skillId == skill && offers[index].selection.perkId == perk)
 				{

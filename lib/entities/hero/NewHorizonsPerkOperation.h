@@ -25,6 +25,7 @@ public:
 	bool hasTier(const std::string & skill, int tier) const;
 	bool canAcquire(const std::string & skill, const std::string & perk, int rank) const;
 	std::vector<PerkOfferCandidate> candidates(const std::string & skill, int tier) const;
+	std::vector<PerkOfferCandidate> eligibleCandidates(const std::string & skill, int rank) const;
 	std::vector<PerkOfferCandidate> next(const std::function<int(const std::string &)> & rank) const;
 	void select(const std::string & skill, const std::string & perk, int rank);
 	void commit(PerkState & destination);

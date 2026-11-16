@@ -224,6 +224,12 @@ class CapabilityDataTest(unittest.TestCase):
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
         self.assertIn('Leadership', module['description'])
         self.assertIn('1159', module['description'])
+        self.assertIn('current save format is 1161', module['description'])
+        self.assertIn('four fixed weighted offers', module['description'])
+        self.assertIn('one Skill or perk advancement', module['description'])
+        self.assertIn('supported historical captures retain', module['description'])
+        self.assertIn('Revised Estates', module['description'])
+        self.assertNotIn('Every acquired Skill rank immediately grants', module['description'])
         self.assertIn('older saves are not converted', module['description'])
         self.assertNotIn('upgraded creatures require 120%', module['description'])
 

@@ -145,10 +145,12 @@ public:
 	{
 		if(h.saving)
 		{
+			validateFourOfferProgressionSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION));
 			validateUnifiedSkillProgressionSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 			newHorizonsNecromancy::validateLeadershipPolicySerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 			validateCommandPerkSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 				nativeRules::validatePilotPerks(rules, false);
 			newHorizonsCommand::validateRulesSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
@@ -177,10 +179,12 @@ public:
 		if(h.saving) h & rules;
 		else h & decodedRules;
 		const auto & incomingRules = h.saving ? rules : decodedRules;
+		validateFourOfferProgressionSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION));
 		validateUnifiedSkillProgressionSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		newHorizonsNecromancy::validateLeadershipPolicySerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		validateCommandPerkSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-			h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+			h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 			nativeRules::validatePilotPerks(incomingRules, false);
 		newHorizonsCommand::validateRulesSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));

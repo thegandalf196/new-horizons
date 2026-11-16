@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include "AI/Nullkiller2/Analyzers/ArmyManager.h"
 #include "AI/Nullkiller2/Engine/Nullkiller.h"
@@ -73,9 +74,9 @@ protected:
 	{
 		ASSERT_EQ(hero->getPerkSkillRank(newHorizonsDiscipline::SKILL), MasteryLevel::BASIC);
 		const auto rankLookup = [hero](const std::string & skill) { return hero->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(hero->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = hero->getPerkState().prepareOffer(rankLookup, seed, hero->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(hero->getPerkState(), newHorizonsDiscipline::SKILL, rankLookup, seed, hero->getPerkOfferWeightContext());
 			const auto entry = std::ranges::find_if(offers, [](const auto & offer)
 			{
 				return offer.selection.skillId == newHorizonsDiscipline::SKILL

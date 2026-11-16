@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../../lib/GameLibrary.h"
@@ -1284,9 +1285,9 @@ TEST_F(NewHorizonsMagicStateTest, WizardCanChooseSpellFamiliarityFromTheBasicWis
 		return attackerSideHero->getPerkSkillRank(skillId);
 	};
 	bool selectedThroughOffer = false;
-	for(uint64_t offerSeed = 0; offerSeed < 4096 && !selectedThroughOffer; ++offerSeed)
+	for(uint64_t offerSeed = 0; offerSeed < perkTestSetup::seedLimit(attackerSideHero->getPerkState(), 4096) && !selectedThroughOffer; ++offerSeed)
 	{
-		const auto offer = attackerSideHero->getPerkState().prepareOffer(rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
+		const auto offer = perkTestSetup::forSkill(attackerSideHero->getPerkState(), WISDOM_SKILL, rankLookup, offerSeed, attackerSideHero->getPerkOfferWeightContext());
 		const auto spellFamiliarity = std::find_if(offer.begin(), offer.end(), [](const auto & candidate)
 		{
 			return candidate.selection.perkId == SPELL_FAMILIARITY;

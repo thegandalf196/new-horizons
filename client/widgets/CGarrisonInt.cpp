@@ -38,13 +38,30 @@
 #include "../../lib/entities/artifact/CArtifact.h"
 #include "../../lib/IGameSettings.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/mapObjects/MiscObjects.h"
 #include "../../lib/networkPacks/ArtifactLocation.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/gameState/UpgradeInfo.h"
 
+namespace
+{
+bool mineDefenderSlot(const CArmedInstance * army, SlotID slot)
+{
+	const auto * mine = dynamic_cast<const CGMine *>(army);
+	return mine && mine->isCompanySlot(slot);
+}
+}
+
+bool CGarrisonSlot::mineDefenderLocked() const
+{
+	return mineDefenderSlot(getObj(), ID);
+}
+
 bool CGarrisonInt::checkCommandSwap(const CArmedInstance * leftArmy, const CArmedInstance * rightArmy,
 	SlotID leftSlot, SlotID rightSlot) const
 {
+	if(mineDefenderSlot(leftArmy, leftSlot) || mineDefenderSlot(rightArmy, rightSlot))
+		return false;
 	const auto * leftCreature = leftArmy ? leftArmy->getCreature(leftSlot) : nullptr;
 	const auto * rightCreature = rightArmy ? rightArmy->getCreature(rightSlot) : nullptr;
 	return (!leftCreature || UIHelper::checkArmySlot(rightArmy, rightSlot, leftCreature->getId()))
@@ -64,6 +81,11 @@ void CGarrisonSlot::hover (bool on)
 	////Hoverable::hover(on);
 	if(on)
 	{
+		if(mineDefenderLocked())
+		{
+			ENGINE->statusbar()->write("Mercenary Company: these Rogues defend this mine and cannot be moved or dismissed.");
+			return;
+		}
 		if(commandLocked())
 		{
 			MetaString text = MetaString::createFromTextID("new-horizons.command.slot.lockedStatus");
@@ -175,7 +197,7 @@ bool CGarrisonSlot::ally() const
 
 std::function<void()> CGarrisonSlot::getDismiss() const
 {
-	const bool canDismiss = !commandLocked() && getObj()->tempOwner == GAME->interface()->playerID
+	const bool canDismiss = !commandLocked() && !mineDefenderLocked() && getObj()->tempOwner == GAME->interface()->playerID
 		&& (getObj()->stacksCount() > 1 ||
 			!getObj()->needsLastStack());
 
@@ -189,10 +211,19 @@ std::function<void()> CGarrisonSlot::getDismiss() const
 /// @return Whether the view should be refreshed
 bool CGarrisonSlot::viewInfo()
 {
+	if(mineDefenderLocked())
+	{
+		owner->selectSlot(nullptr);
+		owner->setSplittingMode(false);
+		for(const auto & button : owner->splitButtons)
+			button->block(true);
+		ENGINE->windows().createAndPushWindow<CStackWindow>(myStack, false);
+		return true;
+	}
 	UpgradeInfo pom(ID.getNum());
 	GAME->interface()->cb->fillUpgradeInfo(getObj(), ID, pom);
 
-	bool canUpgrade = getObj()->tempOwner == GAME->interface()->playerID && pom.canUpgrade(); //upgrade is possible
+	bool canUpgrade = !mineDefenderLocked() && getObj()->tempOwner == GAME->interface()->playerID && pom.canUpgrade(); //upgrade is possible
 	std::function<void(CreatureID)> upgr = nullptr;
 	auto dism = getDismiss();
 	if(canUpgrade) upgr = [this](CreatureID newID)
@@ -351,6 +382,12 @@ void CGarrisonSlot::showPopupWindow(const Point & cursorPosition)
 
 void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 {
+		if(mineDefenderLocked())
+		{
+			if(myStack)
+				viewInfo();
+			return;
+		}
 		if(commandLocked())
 			return;
 		bool refr = false;
@@ -426,7 +463,7 @@ void CGarrisonSlot::gesture(bool on, const Point & initialPosition, const Point 
 {
 	if(!on)
 		return;
-	if(commandLocked())
+	if(commandLocked() || mineDefenderLocked())
 		return;
 
 	if(!myStack)
@@ -576,7 +613,7 @@ void CGarrisonSlot::splitIntoParts(EGarrisonType type, int amount)
 
 bool CGarrisonSlot::handleSplittingShortcuts()
 {
-	if(commandLocked())
+	if(commandLocked() || mineDefenderLocked())
 		return true;
 	const bool isAlt = ENGINE->isKeyboardAltDown();
 	const bool isLShift = ENGINE->isKeyboardShiftDown();
@@ -697,7 +734,8 @@ void CGarrisonInt::splitStacks(const CGarrisonSlot * from, const CArmedInstance 
 	const TQuantity transferAmount = amount - armyDest->getStackCount(slotDest);
 	if(transferAmount <= 0)
 		return;
-	if(from->commandLocked() || !UIHelper::checkArmySlot(armyDest, slotDest, from->creature->getId()))
+	if(from->commandLocked() || mineDefenderSlot(armyDest, slotDest)
+		|| !UIHelper::checkArmySlot(armyDest, slotDest, from->creature->getId()))
 		return;
 
 	GAME->interface()->cb->splitStack(armedObjs[from->upg], armyDest, from->ID, slotDest, amount);
@@ -705,13 +743,14 @@ void CGarrisonInt::splitStacks(const CGarrisonSlot * from, const CArmedInstance 
 
 bool CGarrisonInt::checkSelected(const CGarrisonSlot * selected, TQuantity min) const
 {
-	return selected && !selected->commandLocked() && selected->myStack
+	return selected && !selected->commandLocked() && !selected->mineDefenderLocked() && selected->myStack
 		&& selected->myStack->getCount() > min && selected->creature;
 }
 
 bool CGarrisonInt::isStackTransferLocked(const CGarrisonSlot * selected) const
 {
-	return selected && !removableUnits && selected->upg == EGarrisonType::UPPER;
+	return selected && (selected->mineDefenderLocked()
+		|| (!removableUnits && selected->upg == EGarrisonType::UPPER));
 }
 
 bool CGarrisonInt::showStackTransferError(const CGarrisonSlot * selected) const
@@ -750,6 +789,18 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 	}
 
 	auto destSlot = newHorizonsHeroes::recruitmentSlot(destArmy, selected->creature->getId());
+	if(mineDefenderSlot(destArmy, destSlot))
+	{
+		destSlot = SlotID();
+		for(const auto & [slot, stack] : destArmy->Slots())
+			if(stack->getCreatureID() == selected->creature->getId() && !mineDefenderSlot(destArmy, slot))
+			{
+				destSlot = slot;
+				break;
+			}
+		if(destSlot == SlotID())
+			destSlot = getEmptySlot(destArmyType, selected->creature->getId());
+	}
 
 	if(destSlot == SlotID())
 		return;
@@ -774,69 +825,6 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 	{
 		GAME->interface()->cb->swapCreatures(srcArmy, destArmy, srcSlot, destSlot);
 	}
-}
-
-void CGarrisonInt::bulkMoveArmy(const CGarrisonSlot * selected)
-{
-	if(!checkSelected(selected))
-		return;
-
-	const auto srcArmyType = selected->upg;
-	const auto destArmyType = (srcArmyType == EGarrisonType::UPPER)
-		? EGarrisonType::LOWER
-		: EGarrisonType::UPPER;
-
-	if(showStackTransferError(selected))
-		return;
-
-	auto srcArmy = armedObjs[srcArmyType];
-	auto destArmy = armedObjs[destArmyType];
-
-	if(!destArmy)
-		return;
-
-	const auto srcSlot = selected->ID;
-	GAME->interface()->cb->bulkMoveArmy(srcArmy->id, destArmy->id, srcSlot);
-}
-
-void CGarrisonInt::bulkMergeStacks(const CGarrisonSlot * selected)
-{
-	if(!checkSelected(selected))
-		return;
-
-	const auto type = selected->upg;
-
-	if(!armedObjs[type]->hasCreatureSlots(selected->creature, selected->ID))
-		return;
-
-	GAME->interface()->cb->bulkMergeStacks(armedObjs[type]->id, selected->ID);
-}
-
-void CGarrisonInt::bulkSplitStack(const CGarrisonSlot * selected)
-{
-	if(!checkSelected(selected, 1)) // check if > 1
-		return;
-
-	const auto type = selected->upg;
-
-	if(getEmptySlot(type, selected->creature->getId()) == SlotID())
-		return;
-
-	GAME->interface()->cb->bulkSplitStack(armedObjs[type]->id, selected->ID);
-}
-
-void CGarrisonInt::bulkSplitAndRebalanceStack(const CGarrisonSlot * selected)
-{
-	if(!checkSelected(selected, 1))
-		return;
-
-	const auto type = selected->upg;
-
-	// Do not disturb the server if the creature is already balanced
-	if(getEmptySlot(type, selected->creature->getId()) == SlotID() && armedObjs[type]->isCreatureBalanced(selected->creature))
-		return;
-
-	GAME->interface()->cb->bulkSplitAndRebalanceStack(armedObjs[type]->id, selected->ID);
 }
 
 CGarrisonInt::CGarrisonInt(const Point & position, int inx, const Point & garsOffset, const CArmedInstance * s1, const CArmedInstance * s2, bool _removableUnits, bool smallImgs, ESlotsLayout _layout)
@@ -887,7 +875,7 @@ void CGarrisonInt::setSplittingMode(bool on)
 		for(auto slot : availableSlots)
 		{
 			if(slot.get() != getSelection())
-				slot->setHighlight(on && !slot->commandLocked() && (slot->our() || slot->ally())
+				slot->setHighlight(on && !slot->commandLocked() && !slot->mineDefenderLocked() && (slot->our() || slot->ally())
 					&& (slot->creature == nullptr || slot->creature == getSelection()->creature)
 					&& UIHelper::armySlotProblem(slot->getObj(), slot->ID, getSelection()->creature->getId()).empty());
 		}
@@ -906,7 +894,7 @@ SlotID CGarrisonInt::getEmptySlot(EGarrisonType type, CreatureID creature) const
 	if(!army(type))
 		return SlotID();
 	for(const auto & slot : availableSlots)
-		if(slot->upg == type && !slot->creature && !slot->commandLocked()
+		if(slot->upg == type && !slot->creature && !slot->commandLocked() && !slot->mineDefenderLocked()
 			&& (creature == CreatureID::NONE || UIHelper::armySlotProblem(army(type), slot->ID, creature).empty()))
 			return slot->ID;
 	return SlotID();

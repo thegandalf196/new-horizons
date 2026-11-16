@@ -276,6 +276,7 @@ public:
 	bool arrangeDemonicReserve(ObjectInstanceID heroId, SlotID activeSlot, CreatureID creatureId,
 		TQuantity amount, bool toReserve, PlayerColor player);
 	bool buildStructure(ObjectInstanceID tid, BuildingID bid, bool force=false);//force - for events: no cost, no checkings
+	bool assignTownSteward(ObjectInstanceID town, ObjectInstanceID hero, PlayerColor player);
 	bool visitTownBuilding(ObjectInstanceID tid, BuildingID bid);
 	bool razeStructure(ObjectInstanceID tid, BuildingID bid);
 	bool spellResearch(ObjectInstanceID tid, SpellID spellAtSlot, bool accepted);
@@ -309,6 +310,7 @@ public:
 	std::map<ObjectInstanceID, HeroLevelUp> pendingHeroLevelUps;
 	std::set<ObjectInstanceID> deferredPerkPrompts;
 	void validatePendingProdigyLevels() const;
+	void validatePendingHeroProgressionSerialization(bool fourOfferSupported) const;
 
 	template <typename Handler> void serialize(Handler &h)
 	{
@@ -317,6 +319,7 @@ public:
 			newHorizonsLevelUp::validateNoPendingOptionalOffer(*this);
 			validatePendingProdigyLevels();
 			validatePendingHeroProgression();
+			validatePendingHeroProgressionSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION));
 			if(!h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY) && !pendingHeroLevelUps.empty())
 				throw std::runtime_error("Cannot write pending unified progression to an older format");
 		}
@@ -379,6 +382,8 @@ public:
 
 	friend class CVCMIServer;
 private:
+	class StackArrangement;
+	void notifyCannotMoveLastCreature(PlayerColor player);
 	void initializeRecruitmentForBuilding(const CGTownInstance * town, BuildingID buildingID);
 	void stampPhysicalAfflictionEffects(SetStackEffect & effects);
 

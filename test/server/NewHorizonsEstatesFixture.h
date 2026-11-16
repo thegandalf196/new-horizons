@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #pragma once
+#include "LegacyEstatesCapture.h"
 
 #include "../mock/TinyMapGameTest.h"
 #include "../mock/GameHandlerTestServer.h"
@@ -62,9 +63,9 @@ protected:
         days.Integer() = 7;
         loaded->overrideGameSetting(EGameSettings::GENERAL_DAYS_PER_WEEK, days);
         loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
-        loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
+        applyLegacyEstatesHeroes(loaded);
         loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
-        JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+        JsonNode perks = legacyEstatesPerks();
         for(auto & perk : perks["skills"][ESTATES]["perks"].Vector())
             if(perk["id"].String() == planned)
                 perk["effect"]["status"].String() = "planned";

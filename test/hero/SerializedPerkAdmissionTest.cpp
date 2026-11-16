@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "PerkStateWriteReference.h"
+#include "../server/LegacyEstatesCapture.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <stdexcept>
@@ -11,7 +12,9 @@ using namespace newHorizonsHeroes;
 PerkState canonicalState()
 {
 	PerkState state;
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	// The frozen reference represents the released unified-policy admission,
+	// not the successor four-offer/Estates rules installed for fresh games.
+	state.rules = estatesTest::legacyEstatesPerks();
 	return state;
 }
 
@@ -51,7 +54,7 @@ std::vector<std::byte> rngBytes()
 }
 }
 
-TEST(SerializedPerkAdmissionTest, CurrentWriterMatchesOriginalBytesForEverySelectedTierPrefix)
+TEST(SerializedPerkAdmissionTest, CurrentWriterMatchesOriginalBytesForHistoricalCapturedTierPrefixes)
 {
 	auto state = canonicalState();
 	const auto prefix = activePrefix(state.rules);

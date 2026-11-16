@@ -17,6 +17,7 @@
 #include "SetRewardableConfiguration.h"
 #include "SetScriptVariable.h"
 #include "SetStackEffect.h"
+#include "EstatesPacks.h"
 
 class ICPackVisitor
 {
@@ -39,6 +40,8 @@ public:
 	virtual void visitEntitiesChanged(EntitiesChanged & pack) {}
 	virtual void visitSetRewardableConfiguration(SetRewardableConfiguration & pack) {}
 	virtual void visitSetResources(SetResources & pack) {}
+	virtual void visitEstatesKingdomChanged(EstatesKingdomChanged & pack) {}
+	virtual void visitAssignTownSteward(AssignTownSteward & pack) {}
 	virtual void visitSetPrimarySkill(SetPrimarySkill & pack) {}
 	virtual void visitSetHeroExperience(SetHeroExperience & pack) {}
 	virtual void visitGiveStackExperience(GiveStackExperience & pack) {}

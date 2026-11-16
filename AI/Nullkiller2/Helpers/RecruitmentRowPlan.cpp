@@ -6,21 +6,33 @@
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/mapObjects/CGTownInstance.h"
 #include "../../../lib/mapObjects/TownRecruitmentOffers.h"
+#include "../../../lib/mapObjects/EstatesRecruitmentQuote.h"
 #include <limits>
 
 namespace NK2AI
 {
 namespace
 {
+void pricePlan(RecruitmentRowPlan & result, RecruitmentProjection & projection,
+	const CGDwelling & source, const CGHeroInstance * buyer, CreatureID creature, int count)
+{
+	result.cost = source.getTotalRecruitmentCost(creature, count, buyer, &*projection.recruitmentLedger);
+	if(newHorizonsEstates::usesConscriptionLedger(buyer, creature))
+		projection.recruitmentLedger = newHorizonsEstates::quoteRecruitment(source.getRecruitmentCost(creature), count,
+			*projection.recruitmentLedger, true).after;
+	result.projection = std::move(projection);
+}
 std::optional<RecruitmentRowPlan> planChoice(const CCreatureSet & army,
 	const CGHeroInstance * carrier, const CGDwelling & source, CreatureID creature,
 	int available, const TResources & resources, RecruitmentProjection projection,
 	bool allowDisband)
 {
+	if(!projection.recruitmentLedger)
+		projection.recruitmentLedger = newHorizonsEstates::recruitmentLedger(carrier);
 	RecruitmentRowPlan result;
 	auto & ci = result.creature;
 	ci.creID = creature;
-	ci.count = source.getRecruitmentAmount(creature, resources, available, carrier);
+	ci.count = source.getRecruitmentAmount(creature, resources, available, carrier, &*projection.recruitmentLedger);
 	if(ci.count <= 0)
 		return std::nullopt;
 	if(carrier && carrier->getArmyCommand())
@@ -29,8 +41,7 @@ std::optional<RecruitmentRowPlan> planChoice(const CCreatureSet & army,
 		if(!plan)
 			return std::nullopt;
 		projection.slots = plan->slots;
-		result.projection = std::move(projection);
-		result.cost = source.getTotalRecruitmentCost(creature, ci.count, carrier);
+		pricePlan(result, projection, source, carrier, creature, ci.count);
 		return result;
 	}
 	const auto capacity = carrier ? carrier->getLeadershipSlotCapacity(creature) : std::nullopt;
@@ -81,8 +92,7 @@ std::optional<RecruitmentRowPlan> planChoice(const CCreatureSet & army,
 		*destination = {dst, creature, ci.count};
 	else
 		destination->count += ci.count;
-	result.projection = std::move(projection);
-	result.cost = source.getTotalRecruitmentCost(creature, ci.count, carrier);
+	pricePlan(result, projection, source, carrier, creature, ci.count);
 	return result;
 }
 }

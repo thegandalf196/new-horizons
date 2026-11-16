@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkTestSetup.h"
 
 #include <chrono>
 #include <future>
@@ -248,9 +249,9 @@ protected:
 	void acceptLowerPerk(CGameHandler & handler, const std::string & id)
 	{
 		const auto rankLookup = [this](const std::string & skill) { return mentor->getPerkSkillRank(skill); };
-		for(uint64_t seed = 0; seed < 4096; ++seed)
+		for(uint64_t seed = 0; seed < perkTestSetup::seedLimit(mentor->getPerkState(), 4096); ++seed)
 		{
-			const auto offers = mentor->getPerkState().prepareOffer(rankLookup, seed, mentor->getPerkOfferWeightContext());
+			const auto offers = perkTestSetup::forSkill(mentor->getPerkState(), LEARNING_SKILL, rankLookup, seed, mentor->getPerkOfferWeightContext());
 			const auto found = std::find_if(offers.begin(), offers.end(), [&id](const auto & offer)
 			{
 				return offer.selection.skillId == LEARNING_SKILL && offer.selection.perkId == id;

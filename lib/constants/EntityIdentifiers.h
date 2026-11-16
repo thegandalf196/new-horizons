@@ -91,7 +91,7 @@ public:
 	///json serialization helpers
 	DLL_LINKAGE static si32 decode(const std::string & identifier);
 	DLL_LINKAGE static std::string encode(const si32 index);
-	static std::string entityType();
+	DLL_LINKAGE static std::string entityType();
 
 	const CHeroClass * toHeroClass() const;
 	const HeroClass * toEntity(const Services * services) const;
