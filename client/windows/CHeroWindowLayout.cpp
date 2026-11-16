@@ -141,15 +141,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 	move(manaRegenValue, Point(381, 154));
 
 	// Row 3: Movement, Vision
-	movementDynamicImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_movement_44"), 0, Rect(20, 178, 34, 34));
-	move(movementDynamicImage, Point(20, 178));
-	capabilityIcons.push_back(movementDynamicImage);
-	movementArea = std::make_shared<LRClickableAreaWText>(Rect(12, 174, 210, 38), "Movement points");
-	move(movementArea, Point(12, 174));
-	movementDynamicLabel = std::make_shared<CLabel>(138, 178, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Movement", 110);
-	move(movementDynamicLabel, Point(138, 178));
-	movementValue = std::make_shared<CLabel>(138, 194, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 110);
-	move(movementValue, Point(138, 194));
+	initializeMovementReadout();
 
 	visionImage = std::make_shared<CPicture>(ImagePath::builtin("heroWindow/visionTelescope"), 230, 180);
 	move(visionImage, Point(230, 180));
@@ -356,16 +348,11 @@ void CHeroWindow::restoreLegacyLayout()
 		visionValue->disable();
 	if(visionArea)
 		visionArea->disable();
-	if(movementDynamicImage)
-		movementDynamicImage->disable();
-	if(movementDynamicLabel)
-		movementDynamicLabel->disable();
+	hideMovementReadout();
 	if(xpProgressBar)
 		xpProgressBar->disable();
 	if(legacySiegeArea)
 		legacySiegeArea->disable();
-	if(movementValue)
-		movementValue->disable();
 	if(legacySiegeValue)
 		legacySiegeValue->disable();
 	primSkillImages[3]->enable();
@@ -393,4 +380,35 @@ void CHeroWindow::restoreLegacyLayout()
 			Point(right ? 212 : 68, y + 24), right && secSkillSlider ? 71 : 87, false);
 		secSkillValues[i]->setMaxWidth(right && secSkillSlider ? 71 : 87);
 	}
+}
+
+void CHeroWindow::initializeMovementReadout()
+{
+	const auto move = [this](const auto & widget, Point point)
+	{
+		widget->moveTo(pos.topLeft() + point);
+	};
+	movementDynamicImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_movement_44"), 0, Rect(20, 178, 34, 34));
+	move(movementDynamicImage, Point(20, 178));
+	capabilityIcons.push_back(movementDynamicImage);
+	movementArea = std::make_shared<LRClickableAreaWText>(Rect(12, 174, 210, 38), "Movement points");
+	move(movementArea, Point(12, 174));
+	movementDynamicLabel = std::make_shared<CLabel>(138, 178, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Movement", 110);
+	move(movementDynamicLabel, Point(138, 178));
+	movementValue = std::make_shared<CLabel>(138, 194, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 110);
+	move(movementValue, Point(138, 194));
+	movementGrowthValue = std::make_shared<CLabel>(138, 194, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::GREEN, "", 32);
+	move(movementGrowthValue, Point(138, 194));
+}
+
+void CHeroWindow::hideMovementReadout()
+{
+	if(movementDynamicImage)
+		movementDynamicImage->disable();
+	if(movementDynamicLabel)
+		movementDynamicLabel->disable();
+	if(movementValue)
+		movementValue->disable();
+	if(movementGrowthValue)
+		movementGrowthValue->disable();
 }

@@ -161,7 +161,7 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<LRClickableAreaWText> rankArea;
 		std::shared_ptr<LRClickableAreaWText> leadershipArea;
 		std::shared_ptr<LRClickableAreaWText> defenseArea;
-		std::array<std::shared_ptr<LRClickableAreaWText>, 3> supplementalAreas;
+		std::array<std::shared_ptr<LRClickableAreaWText>, 4> supplementalAreas;
 		std::optional<int> leadershipEfficiencyPercent;
 
 		std::vector<std::shared_ptr<CLabel>> stats;

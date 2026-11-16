@@ -86,9 +86,10 @@ void CStackWindow::MainSection::initializeStatMetadata()
 		LIBRARY->generaltexth->allTexts[200],//HEALTH_LEFT
 		LIBRARY->generaltexth->zelp[441].first,//SPEED
 		"Initiative",
-		"Retaliations",
-		"Physical Resistance",
-		"Magical Resistance",
+		LIBRARY->generaltexth->translate("new-horizons.creature.stat.retaliations.name"),
+		LIBRARY->generaltexth->translate("new-horizons.creature.stat.physicalProtection.name"),
+		LIBRARY->generaltexth->translate("new-horizons.creature.stat.magicalProtection.name"),
+		LIBRARY->generaltexth->translate("new-horizons.creature.stat.magicalResistance.name"),
 		LIBRARY->generaltexth->allTexts[399],//MANA
 		"Leadership Cost",
 		"Rank"
@@ -105,6 +106,7 @@ void CStackWindow::MainSection::initializeStatMetadata()
 		"%d (%d)",
 		"%d (%d)",
 		"%d (%d)",
+		"%s",
 		"%s",
 		"%s",
 		"%s",
@@ -126,10 +128,11 @@ void CStackWindow::MainSection::initializeStatIcons(bool showLeadership, bool sh
 
 	if(showNewHorizonsStats)
 	{
-		const std::array<std::pair<EStat, const char *>, 4> additionalIcons{{
+		const std::array<std::pair<EStat, const char *>, 5> additionalIcons{{
 			{EStat::INITIATIVE, "stackWindow/iconInitiative"},
 			{EStat::RETALIATIONS, "stackWindow/iconRetaliations"},
-			{EStat::PHYSICAL_RESISTANCE, "stackWindow/iconPhysicalResistance"},
+			{EStat::PHYSICAL_PROTECTION, "stackWindow/iconPhysicalResistance"},
+			{EStat::MAGICAL_PROTECTION, "stackWindow/iconMagicalResistance"},
 			{EStat::MAGICAL_RESISTANCE, "stackWindow/iconMagicalResistance"}
 		}};
 		for(const auto & [stat, path] : additionalIcons)
@@ -217,19 +220,24 @@ void CStackWindow::MainSection::addSupplementalStats(const CStackInstance & army
 	const auto & rules = battleStack && battleStack->getBattle() ? battleStack->getBattle()->getMagicRules()
 		: (hero ? hero->getMagicRules() : (callback ? callback->getMagicRules() : noRules));
 	const auto readout = creatureSupplementalStats::query(armyStack, battleStack, hero, rules);
-	addStatLabel(EStat::RETALIATIONS, creatureSupplementalStats::retaliationText(readout.retaliations));
-	addStatLabel(EStat::PHYSICAL_RESISTANCE, readout.physicalReductionBasisPoints
+	addStatLabel(EStat::RETALIATIONS, readout.retaliations.unlimited
+		? LIBRARY->generaltexth->translate("new-horizons.creature.stat.retaliations.unlimited")
+		: creatureSupplementalStats::retaliationText(readout.retaliations));
+	addStatLabel(EStat::PHYSICAL_PROTECTION, readout.physicalReductionBasisPoints
 		? creatureSupplementalStats::percentageText(*readout.physicalReductionBasisPoints) : "--");
+	addStatLabel(EStat::MAGICAL_PROTECTION, readout.magicalReductionBasisPoints
+		? creatureSupplementalStats::percentageText(*readout.magicalReductionBasisPoints) : "--");
 	addStatLabel(EStat::MAGICAL_RESISTANCE,
 		creatureSupplementalStats::percentageText(readout.magicResistancePercent * 100));
 
-	const std::array<std::pair<EStat, const char *>, 3> help{{
-		{EStat::RETALIATIONS, "Available retaliations / round allowance. Unlimited retaliations are shown as ∞. Attack-specific restrictions can still prevent retaliation."},
-		{EStat::PHYSICAL_RESISTANCE, "Baseline damage reduction against ordinary physical creature attacks. Range-, position- and attacker-specific effects and penetration can change the result. Physical Defense is separate."},
-		{EStat::MAGICAL_RESISTANCE, "Chance to reject an eligible hostile spell. Battle auras are included during combat; no battlefield adjacency is assumed outside combat. Caster-specific effects may change the chance. Immunity and magical damage reduction are separate."}
+	const std::array<std::pair<EStat, const char *>, 4> help{{
+		{EStat::RETALIATIONS, "new-horizons.creature.stat.retaliations.help"},
+		{EStat::PHYSICAL_PROTECTION, "new-horizons.creature.stat.physicalProtection.help"},
+		{EStat::MAGICAL_PROTECTION, "new-horizons.creature.stat.magicalProtection.help"},
+		{EStat::MAGICAL_RESISTANCE, "new-horizons.creature.stat.magicalResistance.help"}
 	}};
 	for(size_t i = 0; i < help.size(); ++i)
 		supplementalAreas[i] = std::make_shared<LRClickableAreaWText>(
 			Rect(114, 30 + static_cast<int>(statRow(help[i].first)) * creatureStatLayout::ROW_HEIGHT, 194, 20),
-			statNames[static_cast<size_t>(help[i].first)], help[i].second);
+			statNames[static_cast<size_t>(help[i].first)], LIBRARY->generaltexth->translate(help[i].second));
 }

@@ -23153,17 +23153,19 @@
         "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
         "sha256": "8c67eee689a8ea33946714644cb73d2054a07322aa277dca8f7f8e80b728b9ab"
       },
-      "deferral": "Before further layout-body growth, extract one cohesive secondary-skill/perk grid construction group with existing explicit coordinates. Preserve legacy resize restoration, child lifetimes, selection panels and native rendered fit; exact193 only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
+      "deferral": "UI owner: before further layout-body growth, extract one cohesive secondary-skill/perk grid construction or restoration group with explicit coordinates; preserve legacy resize, child lifetimes, selection panels and rendered fit. Exact185-line shrinking boundary only; no growth allowance. Earlier obligations remain in prior_deferral/inherited_deferral.",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for hero window UI alignment and layout anchoring.",
       "kind": "exception",
-      "lines": 193,
+      "lines": 185,
       "owner": "ui_developer",
+      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
+      "prior_deferral": "Before further layout-body growth, extract one cohesive secondary-skill/perk grid construction group with existing explicit coordinates. Preserve legacy resize restoration, child lifetimes, selection panels and native rendered fit; exact193 only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "proposal_predecessor_review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261111",
-      "rationale": "Complete193-line configureNewHorizonsLayout inspected; HEAD changes only three perk icon coordinate/scale lines from32 to28 pixels. Header/layout decomposition and restoration remain unchanged; no production changes in this migration.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
-      "review_scope": "Metadata-only repair of exact unchanged HEAD debt. Source-organization bound only; not native/rendered/gameplay/balance/publication approval.",
-      "review_status": "independently_approved_exact_source",
-      "sha256": "37950261a26280fba2f7a39fe50523d9539498196adb436e7e961bf02a529480"
+      "rationale": "193 to185 lines: existing Movement construction/hide sequence extracted to focused18/11-line methods, with one captured-growth label. Existing secondary-skill/perk grids and legacy lifecycle remain in their current owner. Previous deferrals/history retained verbatim.",
+      "review": "IR-NEXT-RELEASE-PROTECTION-MOVEMENT-SOURCE",
+      "review_scope": "Exact shrinking layout-method ratchet only; no future growth, native/rendered/balance or release acceptance.",
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "6d54b7d21be3019417cb06a261917661fb4719161d00d03dc5c5c0cc1eff2f19"
     },
     "client/windows/CHeroWindowLayout.cpp::void CHeroWindow::restoreLegacyLayout()#1": {
       "completed_p_predecessor": {
@@ -23173,16 +23175,18 @@
         "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
         "sha256": "ce601f8e900baf1a2dce83bef107bbe8823c256adf8f73514c7b2ac8c61ae011"
       },
-      "deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for hero window UI alignment and layout anchoring.",
+      "deferral": "UI owner: before further layout-body growth, extract one cohesive secondary-skill/perk grid construction or restoration group with explicit coordinates; preserve legacy resize, child lifetimes, selection panels and rendered fit. Exact169-line shrinking boundary only; no growth allowance. Earlier obligations remain in prior_deferral/inherited_deferral.",
       "kind": "exception",
-      "lines": 174,
+      "lines": 169,
       "owner": "ui_developer",
+      "previous_review": "IR-HERO-WINDOW-ALIGNMENT-FIX-20261112",
+      "prior_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for hero window UI alignment and layout anchoring.",
       "proposal_predecessor_review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261111",
-      "rationale": "Hero window UI layout alignment fix: anchor and align experience bar, specialty, middle stats, siege, and perk table widgets.",
-      "review": "IR-HERO-WINDOW-ALIGNMENT-FIX-20261112",
-      "review_scope": "Exact current225 source hash/line bound and complete manual callable coverage only; no gameplay/render/save acceptance, no future growth allowance.",
-      "review_status": "independently_approved_exact_source",
-      "sha256": "cc4639bd1a0552c6c1599ab1f2731e3f96c9ea95928a58f94623960569c1ad53"
+      "rationale": "174 to169 lines: existing Movement construction/hide sequence extracted to focused18/11-line methods, with one captured-growth label. Existing secondary-skill/perk grids and legacy lifecycle remain in their current owner. Previous deferrals/history retained verbatim.",
+      "review": "IR-NEXT-RELEASE-PROTECTION-MOVEMENT-SOURCE",
+      "review_scope": "Exact shrinking layout-method ratchet only; no future growth, native/rendered/balance or release acceptance.",
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "518cc51b59738871a64bffe8eab047d7c559d3e9cb55028f9ddb2d785b7146e3"
     },
     "client/windows/CKingdomInterface.cpp": {
       "deferral": "UI owner: before further substantive Kingdom help growth, extract InfoBoxHeroData presentation/help construction into a focused hero-info owner, preserving unchanged town/custom implementations, native components, empty slots and captured hero rules. Characterize info click vs popup before moving ownership.",
@@ -23509,17 +23513,6 @@
       "review_scope": "Exact private047bb composition maintained function span 32-132 (101 physical lines, including any template declaration); bounded cohesion/existing-hotspot review only. No future growth, native, rendered or actual-Main gate claim.",
       "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
       "sha256": "80248f47002f2404bc0b5491d34dae0a51ce626692ad67b3c2b674476f7f2fe7"
-    },
-    "client/windows/HeroWindowCommandReadout.cpp::void CHeroWindow::refreshMiddlePaneReadout()#1": {
-      "deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
-      "kind": "exception",
-      "lines": 126,
-      "owner": "ui_developer",
-      "rationale": "Routes captured Sylvan artwork or Movement presentation through focused shared helpers. Existing layout and constructor responsibilities do not expand.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "3f791543de2224b63af7580042ba55eca8711e563d1c2acf33ae34f9727a65a7"
     },
     "client/windows/InfoWindows.cpp": {
       "deferral": "Before further generic dialog growth extract existing adventure-object popup builders from this mixed file while preserving CInfoWindow close/pending-dialog ownership. Independently verify nested information close leaves parent modal busy and OK shortcut unchanged.",
@@ -24501,6 +24494,16 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "b510e3c2aec7a67625dbc8a06b7b94eca8c790f2bdb63511e118500f47b94f90"
     },
+    "lib/CStack.cpp": {
+      "kind": "review",
+      "lines": 501,
+      "owner": "gameplay_engineer",
+      "rationale": "498 to501 lines crosses the file review trigger through two explanatory comments and one existing nodeHasChanged call after all stack initialization/receipt restoration. Native count-dependent bonus caches must see the completed health/count; no formula, serialization, packet, RNG, owner or unrelated method changes. localInit34 to37 lines remains below function trigger. The file remains a cohesive CStack lifecycle/packet owner; this one-statement urgent correctness repair does not justify coupling a broader extraction. Existing prepareAttacked obligation remains independently recorded.",
+      "review": "IR-NEXT-RELEASE-GALTHRAN-COMPLETED-INITIAL-COUNT",
+      "review_scope": "Exact501-line file review only; no future growth allowance, native/rendered, save compatibility, balance, performance or release approval.",
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "38f756882da8f2d521cc9fe802288489c06f45afb2fd15e7eb925e29dfbc4ccd"
+    },
     "lib/CStack.cpp::void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains, const bool bypassTemporaryHitPoints, battle::DamageProvenance provenance, int64_t * postShieldBeforeCasualties)#1": {
       "deferral": "Before further substantive growth, extract native attacked-state reporting as an explicit CUnitState&, hit&, RNG&, provenance and optional receipt stage; preserve native shield order, LastStand, clone/casualty/rebirth, no double absorption and zero/full absorption behavior. Do not couple a broad lifecycle rewrite to this minimal receipt hook.",
       "kind": "review",
@@ -24934,15 +24937,15 @@
       },
       "deferral": "Before further substantive damage growth, extract an ordered prepared-damage result stage using CUnitState&, amount&, destroyRemains/bypass/provenance and optional receipt. Preserve TimeStop/invincible/zero gates, native shield ordering, clone/rebirth/GuardianSpirit, lethal pre-casualty receipt and actual HP/cap output; characterize existing native pipeline first.",
       "kind": "legacy",
-      "lines": 2510,
+      "lines": 2504,
       "owner": "engine_engineer",
-      "previous_review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
       "prior_group_d_review": "IR-ORDINARY-RANGED-1148-COMBINED-20261030",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "1029ab958bb17d97b179002543d2c5f4808fd475334b8ac1459741b745509d07"
+      "rationale": "2510 to2504 lines: remove only the six-line derived assignment definition to its existing CUnitStateDetachedBonuses owner; complete base health, damage and176-line serializer bodies remain byte-identical. Moved-to owner255 to366 lines, maximum76-line function; no transferred oversized helper. Existing damage-stage extraction and historical obligations remain binding.",
+      "review": "IR-DETACHED-NATIVE-COUNT-CONTEXT-SOURCE",
+      "review_scope": "Exact count-context correction source organization only; no future growth or native/rendered/performance/save/publication acceptance.",
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "831a9b4270d925e1bdb1338dc0c30150384fb030b523ff2bdd0d97c3461c6b0b"
     },
     "lib/battle/CUnitState.cpp::battle::HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power, const bool trackCasualtyProvenance)#1": {
       "kind": "legacy",
@@ -24984,19 +24987,20 @@
         "review_status": "INDEPENDENT_COMPLETE_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
         "sha256": "58a86a86c94e619e77ee0b2ce62bf43230c38426ecf94358768395ea5ca63c49"
       },
-      "deferral": "Keep ephemeral reporting within existing native damage authority; future damage interface expansion requires cohesive result context plus shield/casualty/rebirth/current save regression. Expanded exact review: Engine engineer: keep additional combat-stat dispatch/binding bodies in UnitCombatStats, not CUnitState.h; retain explicit bindStateEnvironment and value-only copy/exchange inventory. Require detached/owned state rebind and branch-isolation checks before future dispatch expansion.",
+      "deferral": "Keep ephemeral reporting within existing native damage authority; future damage interface expansion requires cohesive result context plus shield/casualty/rebirth/current save regression. Expanded exact review: Engine engineer: keep additional combat-stat dispatch/binding bodies in UnitCombatStats, not CUnitState.h; retain explicit bindStateEnvironment and value-only copy/exchange inventory. Require detached/owned state rebind and branch-isolation checks before future dispatch expansion. Before further detached-query interface or cache-field growth, extract its opaque derived cache/key storage behind the existing detached bonus-query owner; preserve count/source/form invalidation, independent acquire/assignment lifetime, native unchanged-count fast path and strict branch-isolation tests. Exact676-line bound only; no future growth allowance.",
       "kind": "exception",
-      "lines": 659,
+      "lines": 676,
       "owner": "engine_engineer",
       "prefix_predecessor_review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "previous_review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
+      "previous_review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109",
+      "prior_deferral": "Keep ephemeral reporting within existing native damage authority; future damage interface expansion requires cohesive result context plus shield/casualty/rebirth/current save regression. Expanded exact review: Engine engineer: keep additional combat-stat dispatch/binding bodies in UnitCombatStats, not CUnitState.h; retain explicit bindStateEnvironment and value-only copy/exchange inventory. Require detached/owned state rebind and branch-isolation checks before future dispatch expansion.",
       "proposed_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "rationale": "655->659, below1000: callback forward declaration, transient warfareContext identity and a private stat-query declaration accompany the focused47-line UnitCombatStats extraction. CUnitState.cpp2544->2510 shrinks34. Protected invariant: warfareContext is rebound with env, excluded from UnitStateValueFields copy/exchange and serialized game state; branch adapters deliberately avoid the native callback fast path. Existing health/activation values remain unchanged.",
-      "review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109",
+      "rationale": "659 to676 lines, below1000: one forward declaration and same-type assignment declaration plus private ephemeral key/list/revision storage for the corrected detached native count query. Executable cache/traversal bodies remain in366-line focused detached owner. Paired base implementation shrinks2510 to2504; longest affected query76 lines. Derived state is not serialized or copied to another branch; dependency-closed layout rebuild required. Existing base damage, value-copy/exchange and serializer responsibilities unchanged.",
+      "review": "IR-DETACHED-NATIVE-COUNT-CONTEXT-SOURCE",
       "review_category": "component-interface-review",
-      "review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "d9bb0fd95eb02a9f740105c94713a981c1e0ac5a7c34fc304cc7d3e583fa476a"
+      "review_scope": "Exact count-context correction source organization only; no future growth or native/rendered/performance/save/publication acceptance.",
+      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
+      "sha256": "a1e75acc35ce87d5ff54f8da9c3a810e1d4e007e4ccfe38b27889d79df32c65d"
     },
     "lib/battle/CUnitStateLifecycle.cpp::battle::void CUnitState::reset()#1": {
       "deferral": "Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",

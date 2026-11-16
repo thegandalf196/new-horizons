@@ -7,6 +7,18 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## Unreleased
+
+- Corrects count-dependent creature bonuses at battle initialization. Galthran's
+  Bone Formation now uses the completed stack count before the first action;
+  its physical Defense bonus remains separate from percentage protection.
+- Creature inspection distinguishes Physical Protection, Magical Protection
+  and Magical Resistance. Magical Protection shows the common reduction for
+  spells and ordinary magical creature attacks; conditional spell protection
+  remains separate from this baseline and from resistance chance.
+- The hero screen shows the captured per-level Movement gain beside current
+  and maximum Movement, using the same green growth display as attributes.
+
 ## 0.91.2 Early Access
 
 - Fresh default starts for all 163 registered heroes, including campaign and

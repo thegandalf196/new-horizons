@@ -37,6 +37,10 @@ def main() -> None:
     require(HERO, 'Rect(12, 136, 140, 38)', "Leadership tooltip area dimensions")
     require(HERO, 'Rect(12, 174, 210, 38)', "Movement tooltip area dimensions")
     require(HERO, '"Movement points remaining / current limit: "', "Movement tooltip readout")
+    # Read the captured policy rather than assuming every historical hero gains Movement.
+    require(HERO, "levelMovementBonus(curHero->getPrimaryGrowthRules(), 2)", "captured per-level Movement growth")
+    require(HERO, "centerGroup(movementValue, movementGrowthValue, 138, 194)", "centered Movement value and growth")
+    require(HERO, "movementGrowthValue->disable()", "legacy Movement growth visibility")
     require(HERO, "currentDailyMovementBreakdown(curHero, false)", "shared land Movement breakdown")
     require(HERO, "currentDailyMovementBreakdown(curHero, true)", "shared sea Movement breakdown")
     for text in ("200 base", "percentageToBase", "percentageToAll", "breakdown.flat",

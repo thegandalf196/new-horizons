@@ -17,7 +17,8 @@ enum class Stat : size_t
 	SPEED,
 	INITIATIVE,
 	RETALIATIONS,
-	PHYSICAL_RESISTANCE,
+	PHYSICAL_PROTECTION,
+	MAGICAL_PROTECTION,
 	MAGICAL_RESISTANCE,
 	MANA,
 	LEADERSHIP,
@@ -33,7 +34,7 @@ inline constexpr int BUTTON_PANEL_HEIGHT = 43;
 constexpr size_t row(Stat stat, bool newHorizons)
 {
 	const auto index = static_cast<size_t>(stat);
-	return !newHorizons && index >= static_cast<size_t>(Stat::MANA) ? index - 4 : index;
+	return !newHorizons && index >= static_cast<size_t>(Stat::MANA) ? index - 5 : index;
 }
 
 constexpr int iconY(Stat stat, bool newHorizons)
@@ -46,7 +47,7 @@ constexpr int iconY(Stat stat, bool newHorizons)
 
 constexpr int panelRows(bool newHorizons, bool rank)
 {
-	return (newHorizons ? 13 : 9) + (rank ? 1 : 0);
+	return (newHorizons ? 14 : 9) + (rank ? 1 : 0);
 }
 
 constexpr int panelHeight(bool newHorizons, bool rank)

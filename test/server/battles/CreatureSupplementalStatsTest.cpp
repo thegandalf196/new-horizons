@@ -6,9 +6,18 @@
 #include "../../../client/windows/CreatureSupplementalStats.h"
 #include "../../../lib/battle/UnitMagicResistanceQuery.h"
 #include "../../../lib/battle/ArcaneInspiration.h"
+#include "../../../lib/battle/CommandArmyBonuses.h"
 #include "../../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../../../lib/combatScripts/NativePhysicalProtection.h"
+#include "../../../lib/battle/MagicalCreatureAttackDamage.h"
+#include "../../../lib/battle/BattleAttackInfo.h"
+#include "../../../lib/battle/CurrentFireBasis.h"
+#include "../../../lib/battle/NewHorizonsCommandResources.h"
+#include "../../../lib/spells/MagicalDamageReduction.h"
+#include "../../../lib/spells/CSpell.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/serializer/CMemorySerializer.h"
 #include <limits>
 
 namespace
@@ -64,13 +73,14 @@ TEST(CreatureStatLayout, SupplementalRowsFollowInitiativeWithoutChangingLegacyRo
 	using namespace creatureStatLayout;
 	EXPECT_EQ(row(Stat::INITIATIVE, true), 7u);
 	EXPECT_EQ(row(Stat::RETALIATIONS, true), 8u);
-	EXPECT_EQ(row(Stat::PHYSICAL_RESISTANCE, true), 9u);
-	EXPECT_EQ(row(Stat::MAGICAL_RESISTANCE, true), 10u);
+	EXPECT_EQ(row(Stat::PHYSICAL_PROTECTION, true), 9u);
+	EXPECT_EQ(row(Stat::MAGICAL_PROTECTION, true), 10u);
+	EXPECT_EQ(row(Stat::MAGICAL_RESISTANCE, true), 11u);
 	EXPECT_EQ(row(Stat::MANA, false), 7u);
 	EXPECT_EQ(row(Stat::LEADERSHIP, false), 8u);
 	EXPECT_EQ(row(Stat::RANK, false), 9u);
-	EXPECT_EQ(panelHeight(true, true) - panelHeight(false, true), 4 * ROW_HEIGHT);
-	EXPECT_EQ(panelHeight(true, true), 301);
+	EXPECT_EQ(panelHeight(true, true) - panelHeight(false, true), 5 * ROW_HEIGHT);
+	EXPECT_EQ(panelHeight(true, true), 320);
 	EXPECT_LT(iconY(Stat::RANK, true) + 20, panelHeight(true, true));
 }
 
@@ -227,4 +237,131 @@ TEST_F(CreatureSupplementalStatsTest, ArcaneBulwarkAndArmorerFollowCurrentContro
 	subject->addNewBonus(std::make_shared<Bonus>(arcaneInspiration::activeMarker(
 		{10, arcaneInspiration::BULWARK, false}, other, battle()->getRound())));
 	EXPECT_EQ(readout().physicalReductionBasisPoints, 1000);
+}
+
+TEST_F(CreatureSupplementalStatsTest, CommonMagicalProtectionExcludesSpellOnlySourcesAndResistanceChance)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto randomizerState = [this]()
+	{
+		CMemorySerializer bytes;
+		bytes.oser & *gameHandler->randomizer;
+		return bytes.extractBuffer();
+	};
+	const auto randomBefore = randomizerState();
+	const auto attackerAllowance = battle()->getSide(BattleSide::ATTACKER).heroActionAllowances;
+	const auto defenderAllowance = battle()->getSide(BattleSide::DEFENDER).heroActionAllowances;
+	const auto before = subject->save();
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 0);
+	EXPECT_EQ(readout(false).magicalReductionBasisPoints, 0);
+	EXPECT_EQ(readout().magicResistancePercent, 50);
+	// The first allowance query latches the ordinary one-retaliation cap for
+	// this round. Only this serialized cache field may change; used charges,
+	// health and all other unit state must remain identical.
+	auto expectedFirst = before;
+	expectedFirst["state"]["counterAttacks"]["totalCache"].Integer() = 1;
+	const auto afterFirst = subject->save();
+	EXPECT_EQ(afterFirst, expectedFirst)
+		<< "Before: " << before.toString() << "\nAfter: " << afterFirst.toString();
+	const auto warmState = subject->save();
+	static_cast<void>(readout());
+	EXPECT_EQ(subject->save(), warmState);
+	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).heroActionAllowances, attackerAllowance);
+	EXPECT_EQ(battle()->getSide(BattleSide::DEFENDER).heroActionAllowances, defenderAllowance);
+	EXPECT_EQ(randomizerState(), randomBefore);
+	for(const auto school : {SpellSchool::ANY, SpellSchool::FIRE})
+		subject->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+			BonusType::SPELL_DAMAGE_REDUCTION, BonusSource::OTHER, 50, BonusSourceID(), BonusSubtypeID(school)));
+	subject->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS, BonusSource::OTHER, 5000,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 0);
+	const auto * spell = SpellID(SpellID::FIREBALL).toSpell();
+	ASSERT_NE(spell, nullptr);
+	EXPECT_FALSE(spells::collectMagicalDamageReductionSources(*spell, subject, 0, 0, true).empty());
+	const auto afterAddingSources = subject->save();
+	static_cast<void>(readout());
+	EXPECT_EQ(subject->save(), afterAddingSources);
+	EXPECT_FALSE(spells::commonMagicalProtectionBasisPoints(
+		*attackerSideHero->getStackPtr(SlotID(0)), attackerSideHero, JsonNode()));
+}
+
+TEST_F(CreatureSupplementalStatsTest, CommonMagicalProtectionMatchesNativeAttackCapAndTargetPenetration)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto imitation = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::SPELL_DAMAGE_REDUCTION,
+		BonusSource::OTHER, 100, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY));
+	imitation->stacking = "new-horizons:commandArmy.warding";
+	subject->addNewBonus(imitation);
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 0) << "A matching key alone is not an admitted battle projection";
+	// Do not let the stronger, same-key imitation suppress the real projection
+	// in BonusList stacking before its duration is checked by the collector.
+	subject->removeBonus(imitation);
+	for(const auto * key : {"new-horizons:commandArmy.warding", "new-horizons:commandArmy.protectiveTraining"})
+	{
+		auto bonus = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::SPELL_DAMAGE_REDUCTION,
+			BonusSource::OTHER, 90, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY));
+		bonus->stacking = key;
+		subject->addNewBonus(bonus);
+	}
+	ASSERT_EQ(commandArmyBonuses::magicalReductionBasisPoints(*subject), (std::vector<int>{9000, 9000}));
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 9500);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(10, 5), 10);
+	ASSERT_NE(enemy, nullptr);
+	BattleAttackInfo attack(enemy, subject, 0, false);
+	attack.physicalDamage = false;
+	DamageEstimation damage;
+	damage.damage.min = damage.damage.max = 10000;
+	battle::applyMagicalAttackReduction(*battle(), attack, damage);
+	EXPECT_EQ(damage.damage.min, 500);
+	EXPECT_EQ(10000 - damage.damage.min, *readout().magicalReductionBasisPoints);
+	subject->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION, BonusSource::OTHER, 20, BonusSourceID()));
+	damage.damage.min = damage.damage.max = 10000;
+	battle::applyMagicalAttackReduction(*battle(), attack, damage);
+	EXPECT_EQ(damage.damage.min, 2400);
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 7600);
+}
+
+TEST_F(CreatureSupplementalStatsTest, CommonSpellwardProtectionMatchesArmyAndFollowsCurrentController)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const SecondarySkill warcasting(SecondarySkill::decode("new-horizons:warcasting"));
+	attackerSideHero->setSecSkillLevel(warcasting, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:warcasting", "new-horizons:warcasting.spellward"});
+	const int spellward = newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(attackerSideHero);
+	ASSERT_GT(spellward, 0);
+	EXPECT_EQ(readout(false).magicalReductionBasisPoints, spellward);
+	EXPECT_EQ(readout().magicalReductionBasisPoints, spellward);
+	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
+	ASSERT_NE(spell, nullptr);
+	const auto sources = spells::collectMagicalDamageReductionSources(*spell, subject, 0,
+		battle()->battleGetPerkMagicalReductionBasisPoints(subject), true);
+	EXPECT_EQ(spells::calculateMagicalDamageReductionBasisPoints(10000, sources, 0).damageWithPenetration,
+		10000 - spellward);
+	subject->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::HYPNOTIZED, BonusSource::OTHER, 1, BonusSourceID()));
+	ASSERT_EQ(battle()->battleGetOwnerHero(subject), defenderSideHero);
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 0);
+	EXPECT_EQ(readout(false).magicalReductionBasisPoints, spellward);
+}
+
+TEST_F(CreatureSupplementalStatsTest, CommonMagicalOrderProtectionIsAppliedOnceAndExpiresWithBenefit)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, true));
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 0);
+	beginCombat();
+	BattleSetActiveStack activation;
+	activation.battleID = BattleID(0);
+	activation.stack = subject->unitId();
+	activation.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activation);
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_TRUE(newHorizonsCommand::unbrokenRanks(*battle(), subject));
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 2000);
+	EXPECT_EQ(readout(false).magicalReductionBasisPoints, 0);
+	auto spent = *battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::CHARGE);
+	spent.consumedUnitIds = {subject->unitId()};
+	battle()->setHeroOrderState(BattleSide::ATTACKER, spent);
+	EXPECT_EQ(readout().magicalReductionBasisPoints, 0);
 }

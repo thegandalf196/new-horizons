@@ -12,6 +12,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/spells/HydrasVitalityIdentity.h"
 #include "../../lib/callback/CCallback.h"
+#include <boost/algorithm/string/replace.hpp>
 #include <algorithm>
 
 namespace creatureBonusStatusPresentation
@@ -36,6 +37,13 @@ std::vector<Row> visibleRows(const IBonusBearer & bonusSource, const CStackInsta
 		row.description = describe(bonus);
 		row.imagePath = stackNode.bonusToGraphics(bonus);
 		row.bonusSource = bonus->source;
+		if(bonus->type == BonusType::PHYSICAL_DEFENSE && bonus->description.empty())
+		{
+			row.tooltip = row.description;
+			row.description = LIBRARY->generaltexth->translate("new-horizons.creature.physicalDefense.compact");
+			const auto value = bonusSource.valOfBonuses(bonus->type, bonus->subtype);
+			boost::replace_all(row.description, "%value%", (value > 0 ? "+" : "") + std::to_string(value));
+		}
 		if(bonus->type == BonusType::RANDOM_SPELLCASTER && randomSpellcaster && !randomSpellcaster->hidden)
 		{
 			const std::string prefix = hostileWishes

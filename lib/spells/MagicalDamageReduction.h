@@ -19,6 +19,9 @@ class IBattleInfo;
 
 class CSpell;
 class IBonusBearer;
+class CStackInstance;
+class CGHeroInstance;
+class CBattleInfoCallback;
 namespace battle { class Unit; }
 namespace spells
 {
@@ -68,6 +71,19 @@ DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReduction(
 DLL_LINKAGE MagicalDamageReductionResult calculateMagicalDamageReductionBasisPoints(
 	int64_t rawDamage, const std::vector<int> & independentReductionsBasisPoints,
 	const std::vector<int> & independentPenetrationsPercent);
+/// Informational common baseline for spells AND ordinary magical creature
+/// attacks. Triggered abilities retain their own context-specific final stages.
+/// Includes intrinsic protection, current-controller Spellward and
+/// recognized battle army projections; the live overload also applies qualified
+/// common incoming Order mitigation once. Uses the existing MDR cap/product,
+/// target-side penetration and nearest displayed basis point. No attacker/cast.
+/// Spell/ability-only ANY-school bonuses, school/element/spell-specific effects,
+/// Water Veil, immunity and Magic Resistance chance are intentionally excluded.
+/// Unsupported historical magic profiles have no current baseline.
+DLL_LINKAGE std::optional<int> commonMagicalProtectionBasisPoints(const CStackInstance & armyStack,
+	const CGHeroInstance * controllerHero, const JsonNode & magicRules);
+DLL_LINKAGE std::optional<int> commonMagicalProtectionBasisPoints(const CBattleInfoCallback & battle,
+	const battle::Unit & target);
 /// Pure extraction of the prior spell-school source collection; query order is preserved.
 DLL_LINKAGE std::vector<int> collectMagicalDamageReductionSources(const CSpell & spell, const battle::Unit * target,
 	int magicalDamageReductionBasisPoints, int perkMagicalDamageReductionBasisPoints, bool fractional);

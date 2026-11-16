@@ -10,12 +10,96 @@
 #include "NewHorizonsDiscipline.h"
 #include "../CStack.h"
 #include "../bonuses/ProjectedBonusView.h"
+#include "../bonuses/BonusGraphQuery.h"
+#include "../bonuses/BonusLimitation.h"
+#include "../bonuses/NativeBonusGraphAccess.h"
+#include <limits>
 #include "../mapObjects/army/CArmedInstance.h"
 #include <stdexcept>
 #include <set>
 
+namespace
+{
+class CountOnlyNativeGraph final : public BonusGraphQuery
+{
+	const CStack & root;
+	int count;
+	const BonusGraphQuery & native = liveBonusGraph();
+public:
+	CountOnlyNativeGraph(const CStack & root, int count) : root(root), count(count) {}
+	const BonusList & local(const CBonusSystemNode & node) const override { return native.local(node); }
+	const TCNodesVector & parents(const CBonusSystemNode & node) const override { return native.parents(node); }
+	const TNodesVector & propagatingParents(const CBonusSystemNode & node) const override { return native.propagatingParents(node); }
+	const TNodesVector & children(const CBonusSystemNode & node) const override { return native.children(node); }
+	BonusEvaluationContext evaluation(const CBonusSystemNode & node) const override
+	{
+		return &node == &root ? BonusEvaluationContext(root, count) : native.evaluation(node);
+	}
+};
+}
+
 namespace battle
 {
+struct CUnitStateDetached::NativeCountLists
+{
+	BonusList accepted, stacked;
+};
+
+CUnitStateDetached & CUnitStateDetached::operator=(const CUnitState & other)
+{
+	NativeBonusGraphAccess graphAccess;
+	CUnitState::operator=(other);
+	resetNativeCountQuery();
+	return *this;
+}
+
+CUnitStateDetached & CUnitStateDetached::operator=(const CUnitStateDetached & other)
+{
+	if(this == &other) return *this;
+	NativeBonusGraphAccess graphAccess;
+	CUnitState::operator=(other);
+	unit = other.unit;
+	bonus = other.bonus;
+	bonusDispatchType = other.bonusDispatchType;
+	bonusDispatchProjected = other.bonusDispatchProjected;
+	bonusDispatchUnit = other.bonusDispatchUnit;
+	resetNativeCountQuery();
+	return *this;
+}
+
+const CStack * CUnitStateDetached::plainNativeCountRoot() const
+{
+	if(projectedBonusProvider() || hasBattleFormState()) return nullptr;
+	const auto * source = unitBonusProvider();
+	if(!source || unit != static_cast<const IUnitInfo *>(source)) return nullptr;
+	if(const auto * stack = dynamic_cast<const CStack *>(source))
+		return typeid(*stack) == typeid(CStack) ? stack : nullptr;
+	if(const auto * parent = dynamic_cast<const CUnitStateDetached *>(source))
+		return parent->plainNativeCountRoot();
+	return nullptr;
+}
+
+TConstBonusListPtr CUnitStateDetached::nativeCountBonuses(const CStack & root,
+	const CSelector & selector, bool unstacked) const
+{
+	NativeBonusGraphAccess graphAccess;
+	getTreeVersion(); // Observe the exact key before consulting any retained lists.
+	if(!nativeCountLists)
+	{
+		auto prepared = std::make_shared<NativeCountLists>();
+		const CountOnlyNativeGraph graph(root, getCount());
+		BonusList collected;
+		collectBonusGraph(graph, root, collected);
+		limitBonuses(collected, prepared->accepted, graph.evaluation(root));
+		prepared->stacked = prepared->accepted;
+		prepared->stacked.stackBonuses(); // Same cached native order: stack before selecting.
+		nativeCountLists = std::move(prepared); // Publish only a complete successful collection.
+	}
+	auto result = std::make_shared<BonusList>();
+	(unstacked ? nativeCountLists->accepted : nativeCountLists->stacked).getBonuses(*result, selector);
+	return result;
+}
+
 CUnitStateDetached::CUnitStateDetached(const IUnitInfo * unit_, const IBonusBearer * bonus_):
 	unit(unit_),
 	bonus(bonus_)
@@ -135,7 +219,20 @@ TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppressio
 
 	const bool formState = hasBattleFormState();
 	if(!formState && !unitCreatureResolver())
-		return sourceBonuses(); // Legacy provider keeps the original no-form return.
+	{
+		if(const auto * root = plainNativeCountRoot())
+		{
+			NativeBonusGraphAccess graphAccess;
+			getTreeVersion(); // Fast and rebuilt raw queries observe the same exact key.
+			// A restored child may match the native count but differ from its parent
+			// wrapper. Bypass that parent's other-count list, not the native cache.
+			const auto values = getCount() == root->getCount()
+				? root->getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, unstacked)
+				: nativeCountBonuses(*root, selector, unstacked);
+			return newHorizonsDiscipline::veteranCohesionBonuses(values, selector, veteranCohesionEarned);
+		}
+		return sourceBonuses(); // Custom/unknown providers retain their existing dispatch.
+	}
 
 	const auto * ownedSource = completeOwnedFormSource();
 	if(!formState && !ownedSource)
@@ -179,7 +276,21 @@ TConstBonusListPtr CUnitStateDetached::getBonusesBeforeCreatureAbilitySuppressio
 
 int32_t CUnitStateDetached::getTreeVersion() const
 {
-	return bonus->getTreeVersion() + getBattleFormViewRevision() + (veteranCohesionEarned ? 1 : 0);
+	NativeBonusGraphAccess graphAccess;
+	if(projectedBonusProvider())
+		return bonus->getTreeVersion() + getBattleFormViewRevision() + (veteranCohesionEarned ? 1 : 0);
+	const auto * root = plainNativeCountRoot();
+	const NativeCountKey key{bonus, root, bonus->getTreeVersion(), root ? root->getTreeVersion() : 0,
+		getCount(), getBattleFormViewRevision(), hasBattleFormState(), veteranCohesionEarned};
+	if(!nativeCountKey || *nativeCountKey != key)
+	{
+		if(nativeCountRevision == std::numeric_limits<int32_t>::max())
+			throw std::overflow_error("Detached bonus query revision exhausted");
+		++nativeCountRevision; // One namespace across native fast, rebuilt and legacy-form branches.
+		nativeCountKey = key;
+		nativeCountLists.reset();
+	}
+	return nativeCountRevision;
 }
 
 bool CUnitStateDetached::isBonusCacheable() const

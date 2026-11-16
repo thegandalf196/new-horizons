@@ -2464,12 +2464,6 @@ void CUnitState::clearCapacityHealthReference()
 	normalizeCapacityHealth();
 }
 
-CUnitStateDetached & CUnitStateDetached::operator=(const CUnitState & other)
-{
-	CUnitState::operator=(other);
-	return *this;
-}
-
 uint32_t CUnitStateDetached::unitId() const
 {
 	return unit->unitId();

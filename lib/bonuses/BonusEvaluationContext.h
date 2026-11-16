@@ -58,10 +58,13 @@ private:
 	const battle::Unit * projected = nullptr;
 	const ProjectedBonusRoster * roster = nullptr;
 	std::optional<NativeContext> native;
+	std::optional<int> currentNativeStackCount;
 
 public:
 	/// Implicit adapter preserves existing live calls using a bonus node.
 	BonusEvaluationContext(const CBonusSystemNode & node) noexcept;
+	/// Query-local count override only; native identity, acceptance and roster domains stay native.
+	BonusEvaluationContext(const CStack & node, int currentStackCount);
 	/// Pure owned context; enclosing storage owns both shell and copied facts.
 	BonusEvaluationContext(const CBonusSystemNode & shell, const OwnedBonusEvaluationFacts & facts);
 	/// Query-scoped owned current unit; no native ownership/admission is established.

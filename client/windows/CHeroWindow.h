@@ -103,6 +103,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	std::vector<std::shared_ptr<CLabel>> growthValues;
 	std::vector<std::shared_ptr<CIntObject>> capabilityIcons;
 	std::shared_ptr<CLabel> movementValue;
+	std::shared_ptr<CLabel> movementGrowthValue;
 	std::shared_ptr<CLabel> commandValue;
 	std::shared_ptr<LRClickableAreaWText> commandArea;
 	std::shared_ptr<CLabel> leadershipLabel;
@@ -132,6 +133,9 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	void addCommandIcon();
 	void refreshCommandReadout();
 	void refreshMiddlePaneReadout();
+	void refreshMovementReadout();
+	void initializeMovementReadout();
+	void hideMovementReadout();
 	void refreshLegacyCommandReadout();
 	void alignAttributeReadouts();
 	void configureNewHorizonsLayout();

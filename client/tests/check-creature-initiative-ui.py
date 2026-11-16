@@ -52,7 +52,7 @@ assert "Physical-only Defense bonuses do not apply against magical creature atta
 # further row only for saved contexts with an explicit category.
 assert '"stackWindow/info-panel-nh-0.png"' in PANEL
 assert 'createCreatureInfoPanel(2, true)' in PANEL
-assert "(newHorizons ? 13 : 9) + (rank ? 1 : 0)" in LAYOUT
+assert "(newHorizons ? 14 : 9) + (rank ? 1 : 0)" in LAYOUT
 assert "creatureStatLayout::panelHeight(showNewHorizonsStats, showRank)" in PANEL
 assert "creatureStatLayout::panelRows(showNewHorizonsStats, showRank)" in PANEL
 assert "registerCreaturePanelAssets();" in ASSET
@@ -62,13 +62,18 @@ assert "createCreatureInitiativeIcon" in PANEL
 
 
 # Supplemental fields use the same ordered layout, readout and native glyphs.
-assert "INITIATIVE,\n\tRETALIATIONS,\n\tPHYSICAL_RESISTANCE,\n\tMAGICAL_RESISTANCE," in LAYOUT
-for field in ("RETALIATIONS", "PHYSICAL_RESISTANCE", "MAGICAL_RESISTANCE"):
+assert "INITIATIVE,\n\tRETALIATIONS,\n\tPHYSICAL_PROTECTION,\n\tMAGICAL_PROTECTION,\n\tMAGICAL_RESISTANCE," in LAYOUT
+for field in ("RETALIATIONS", "PHYSICAL_PROTECTION", "MAGICAL_PROTECTION", "MAGICAL_RESISTANCE"):
     assert f"addStatLabel(EStat::{field}," in PRESENTATION
 for icon in ("Retaliations", "PhysicalResistance", "MagicalResistance"):
     assert f"stackWindow/icon{icon}" in PRESENTATION
     assert f"stackWindow/icon{icon}" in PANEL
 assert "creatureSupplementalStats::query(armyStack, battleStack, hero, rules)" in PRESENTATION
+SUPPLEMENTAL = (ROOT / "client/windows/CreatureSupplementalStats.cpp").read_text(encoding="utf-8")
+# Both inspectors consume the shared target-side fold, without inventing a spell
+# or attacker whose conditions could silently change the displayed baseline.
+assert "spells::commonMagicalProtectionBasisPoints(*battleStack->getBattle(), *battleStack)" in SUPPLEMENTAL
+assert "spells::commonMagicalProtectionBasisPoints(armyStack, hero, magicRules)" in SUPPLEMENTAL
 assert "hasBonusOfType(BonusType::IN_FRENZY)" in DEFENSE
 
 print("New Horizons creature statistics UI: PASS (source guard)")

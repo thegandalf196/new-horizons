@@ -18,6 +18,13 @@ BonusEvaluationContext::BonusEvaluationContext(const CBonusSystemNode & node) no
 {
 }
 
+BonusEvaluationContext::BonusEvaluationContext(const CStack & node, int currentStackCount)
+	: original(node), currentNativeStackCount(currentStackCount)
+{
+	if(currentStackCount < 0)
+		throw std::invalid_argument("Native query stack count cannot be negative");
+}
+
 BonusEvaluationContext::BonusEvaluationContext(const CStack & node, const battle::Unit & unit)
 	: original(node), projected(&unit)
 {
@@ -42,6 +49,7 @@ PlayerColor BonusEvaluationContext::getOwner() const
 
 std::optional<int> BonusEvaluationContext::stackCount() const
 {
+	if(currentNativeStackCount) return currentNativeStackCount;
 	if(getNodeType() == BonusNodeType::STACK_INSTANCE || getNodeType() == BonusNodeType::COMMANDER)
 		return owned ? owned->stackCount : std::optional<int>(dynamic_cast<const CStackInstance &>(original).getCount());
 	if(getNodeType() == BonusNodeType::STACK_BATTLE)

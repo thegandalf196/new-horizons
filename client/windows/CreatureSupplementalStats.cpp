@@ -13,6 +13,7 @@
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
+#include "../../lib/spells/MagicalDamageReduction.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -75,6 +76,9 @@ Readout query(const CStackInstance & armyStack, const CStack * battleStack,
 	Readout result;
 	result.retaliations = retaliationAllowance(armyStack, battleStack, hero);
 	result.physicalReductionBasisPoints = physicalReduction(armyStack, battleStack, hero, magicRules);
+	result.magicalReductionBasisPoints = battleStack && battleStack->getBattle()
+		? spells::commonMagicalProtectionBasisPoints(*battleStack->getBattle(), *battleStack)
+		: spells::commonMagicalProtectionBasisPoints(armyStack, hero, magicRules);
 	result.magicResistancePercent = battleStack ? battleStack->magicResistance()
 		: battle::combinedMagicResistance(armyStack.valOfBonuses(BonusType::MAGIC_RESISTANCE),
 			newHorizonsNecromancy::bonewardMagicResistancePercent(hero, armyStack.getCreatureID()), 0,

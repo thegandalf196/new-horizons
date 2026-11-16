@@ -243,4 +243,155 @@ TEST_F(BonusEvaluationContextTest, MismatchedProjectionIdentityRefusesBeforeEval
 	EXPECT_EQ(original.unitId(), 17u);
 	EXPECT_EQ(original.getCount(), 8);
 }
+
+TEST_F(BonusEvaluationContextTest, NativeCountOnlyContextPreservesIdentityAndRejectsNegativeCounts)
+{
+	const BonusEvaluationContext native(original), counted(original, 3);
+	EXPECT_EQ(counted.stackCount(), 3);
+	EXPECT_EQ(native.stackCount(), 8);
+	EXPECT_EQ(counted.getOwner(), native.getOwner());
+	EXPECT_EQ(counted.battleUnit(), native.battleUnit());
+	EXPECT_EQ(counted.stackInstance(), native.stackInstance());
+	EXPECT_EQ(counted.creature(), native.creature());
+	EXPECT_EQ(original.getCount(), 8);
+	EXPECT_THROW((BonusEvaluationContext(original, -1)), std::invalid_argument);
+}
+
+namespace
+{
+class CountQueryProbe final : public IUpdater
+{
+	std::shared_ptr<int> calls;
+public:
+	explicit CountQueryProbe(std::shared_ptr<int> calls) : calls(std::move(calls)) {}
+	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & bonus,
+		const BonusEvaluationContext & context) const override
+	{
+		++*calls;
+		return TimesStackSizeUpdater().createUpdatedBonus(bonus, context);
+	}
+};
+std::shared_ptr<Bonus> countedDefense(const std::shared_ptr<int> & calls)
+{
+	auto result = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::PHYSICAL_DEFENSE,
+		BonusSource::OTHER, 999, BonusSourceID());
+	result->updater = std::make_shared<CountQueryProbe>(calls);
+	return result;
+}
+void loseOne(battle::CUnitState & state)
+{
+	int64_t damage = state.getMaxHealth();
+	state.damage(damage);
+}
+}
+
+TEST_F(BonusEvaluationContextTest, DetachedCountQueryCachesOneCollectionPerKeyWithoutLiveWrites)
+{
+	const auto calls = std::make_shared<int>(0);
+	original.addNewBonus(countedDefense(calls));
+	ASSERT_EQ(original.valOfBonuses(BonusType::PHYSICAL_DEFENSE), 8);
+	const auto nativeState = original.save();
+	const auto nativeVersion = original.getTreeVersion();
+	auto parent = original.acquireState();
+	const int nativeCalls = *calls;
+	EXPECT_EQ(parent->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 8);
+	EXPECT_EQ(*calls, nativeCalls) << "Unchanged count uses the warmed native cache";
+	loseOne(*parent);
+	ASSERT_EQ(parent->getCount(), 7);
+	EXPECT_EQ(parent->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	const int firstCollection = *calls;
+	ASSERT_EQ(firstCollection, nativeCalls + 1) << "One changed-count key performs one canonical collection";
+	EXPECT_EQ(parent->getBonusBearer()->getUnstackedBonuses(Selector::type()(BonusType::PHYSICAL_DEFENSE))->totalValue(), 7);
+	EXPECT_EQ(parent->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_EQ(*calls, firstCollection) << "Selector/stacked variants reuse the same complete collection";
+	auto child = parent->acquireState();
+	loseOne(*child);
+	ASSERT_EQ(child->getCount(), 6);
+	EXPECT_EQ(child->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+	EXPECT_EQ(parent->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_EQ(original.valOfBonuses(BonusType::PHYSICAL_DEFENSE), 8);
+	EXPECT_EQ(original.save(), nativeState);
+	EXPECT_EQ(original.getTreeVersion(), nativeVersion);
+	*child = static_cast<const battle::CUnitState &>(original);
+	EXPECT_EQ(child->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 8)
+		<< "Restored child must bypass its still-injured parent's count";
+	EXPECT_EQ(parent->getCount(), 7);
+}
+
+TEST_F(BonusEvaluationContextTest, DetachedAssignmentAndSourceVersionInvalidateOnlyOwnedDerivedLists)
+{
+	const auto calls = std::make_shared<int>(0);
+	original.addNewBonus(countedDefense(calls));
+	auto first = original.acquireState();
+	loseOne(*first);
+	ASSERT_EQ(first->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	const int firstCalls = *calls;
+	auto second = original.acquireState();
+	loseOne(*second); // Damage may itself query and warm this clone's new-count list.
+	EXPECT_EQ(second->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_GT(*calls, firstCalls) << "Fresh clones cannot share mutable derived caches";
+	const int secondCalls = *calls;
+	EXPECT_EQ(second->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_EQ(*calls, secondCalls) << "Subsequent queries reuse the second clone's own list";
+	auto & destination = dynamic_cast<battle::CUnitStateDetached &>(*second);
+	destination = dynamic_cast<const battle::CUnitStateDetached &>(*first);
+	const int beforeAssignmentQuery = *calls;
+	EXPECT_EQ(second->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_GT(*calls, beforeAssignmentQuery);
+	const int beforeSourceChange = *calls;
+	original.nodeHasChanged();
+	EXPECT_EQ(second->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_GT(*calls, beforeSourceChange);
+	const int afterSourceChange = *calls;
+	EXPECT_EQ(second->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_EQ(*calls, afterSourceChange);
+	original.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::PHYSICAL_DEFENSE,
+		BonusSource::OTHER, 2, BonusSourceID()));
+	EXPECT_EQ(second->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 9);
+	EXPECT_EQ(original.valOfBonuses(BonusType::PHYSICAL_DEFENSE), 10);
+	EXPECT_EQ(original.getCount(), 8);
+}
+
+TEST_F(BonusEvaluationContextTest, CountAndSourceVersionCannotAliasScalarCacheEpochs)
+{
+	auto defense = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::PRIMARY_SKILL,
+		BonusSource::OTHER, 999, BonusSourceID(), BonusSubtypeID(PrimarySkill::DEFENSE));
+	defense->updater = std::make_shared<TimesStackSizeUpdater>();
+	original.addNewBonus(defense);
+	auto state = original.acquireState();
+	ASSERT_EQ(state->getDefense(false), 8);
+	const int oldRevision = state->getTreeVersion();
+	const int oldSourceVersion = original.getTreeVersion();
+	original.nodeHasChanged();
+	ASSERT_EQ(original.getTreeVersion(), oldSourceVersion + 1);
+	loseOne(*state);
+	ASSERT_EQ(state->getCount(), 7);
+	EXPECT_NE(state->getTreeVersion(), oldRevision) << "count+sourceVersion sums would collide here";
+	EXPECT_EQ(state->getDefense(false), 7);
+	*state = static_cast<const battle::CUnitState &>(original);
+	EXPECT_EQ(state->getDefense(false), 8);
+	EXPECT_EQ(original.getDefense(false), 8);
+}
+
+TEST_F(BonusEvaluationContextTest, DetachedCountListsStackBeforeSelectionAndRetainUnstackedQuery)
+{
+	auto counted = countedDefense(std::make_shared<int>(0));
+	counted->stacking = "test:count-context-order";
+	original.addNewBonus(counted);
+	auto constant = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::PHYSICAL_DEFENSE,
+		BonusSource::CREATURE_ABILITY, 7, BonusSourceID());
+	constant->stacking = counted->stacking;
+	original.addNewBonus(constant);
+	ASSERT_EQ(original.valOfBonuses(BonusType::PHYSICAL_DEFENSE), 8);
+	auto state = original.acquireState();
+	loseOne(*state);
+	loseOne(*state);
+	ASSERT_EQ(state->getCount(), 6);
+	const auto selected = Selector::type()(BonusType::PHYSICAL_DEFENSE).And(Selector::sourceType()(BonusSource::OTHER));
+	EXPECT_TRUE(state->getBonuses(selected)->empty());
+	EXPECT_EQ(state->getUnstackedBonuses(selected)->totalValue(), 6);
+	EXPECT_EQ(state->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 7);
+	EXPECT_EQ(original.valOfBonuses(BonusType::PHYSICAL_DEFENSE), 8);
+}
+
 }

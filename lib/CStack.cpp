@@ -67,6 +67,9 @@ void CStack::localInit(BattleInfo * battleInfo)
 	}
 	commandArmyBonuses::initialize(*this);
 	receipts.initialize(*this, this, initialPosition);
+	// Health initialization can warm count-dependent bonuses before the final
+	// creature receives its HP. Publish the completed stack state to its caches.
+	nodeHasChanged();
 }
 
 void CStack::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)

@@ -15,6 +15,8 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/callback/GameRandomizer.h"
+#include "../../../lib/CRandomGenerator.h"
 #include "../../../client/windows/CreatureDefensePresentation.h"
 #include <array>
 #include <limits>
@@ -47,6 +49,56 @@ protected:
 		gameHandler->sendAndApply(remove);
 		actor = addStack(BattleSide::ATTACKER, creatureByName(family), BattleHex(3, 5), count);
 		victim = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(4, 5), 100);
+	}
+	using InitialArmy = std::vector<std::pair<CreatureID, uint16_t>>;
+	void ordinaryGalthranWorld(InitialArmy army = InitialArmy())
+	{
+		if(army.empty())
+			army = {{creatureByName("core:skeleton"), 60}, {creatureByName("core:skeletonWarrior"), 60}};
+		useRevisedOrders = true;
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36, false).playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:galthran")), PlayerColor(0)).heroExperience(0)
+			.heroGarrison(std::move(army))
+			.hero({7, 7, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PlayerColor(1)).heroExperience(0)
+			.heroGarrison({{creatureByName("core:pikeman"), 100}});
+		startWithMap(std::move(builder));
+		server.gameState = gameState();
+		gameHandler = std::make_shared<CGameHandler>(server, gameState());
+		attackerSideHero = findHeroByOwner(PlayerColor(0));
+		defenderSideHero = findHeroByOwner(PlayerColor(1));
+	}
+	void initialBoneFormationBoundaries(const char * family)
+	{
+		const std::array<uint16_t, 7> counts{9, 10, 11, 59, 60, 100, 350};
+		InitialArmy army;
+		for(const auto count : counts) army.emplace_back(creatureByName(family), count);
+		ASSERT_NO_FATAL_FAILURE(ordinaryGalthranWorld(std::move(army)));
+		ASSERT_NO_FATAL_FAILURE(startBattle());
+		const auto beforeRng = rngState();
+		for(size_t i = 0; i < counts.size(); ++i)
+		{
+			SCOPED_TRACE(counts[i]);
+			const auto * source = attackerSideHero->getStackPtr(SlotID(static_cast<int>(i)));
+			ASSERT_NE(source, nullptr);
+			const auto found = std::ranges::find_if(battle()->stacks, [source](const auto & unit) { return unit->base == source; });
+			ASSERT_NE(found, battle()->stacks.end());
+			const auto & unit = **found;
+			ASSERT_EQ(unit.getCount(), counts[i]);
+			EXPECT_EQ(unit.creatureId(), creatureByName(family));
+			const int expected = newHorizonsPassiveSpecialties::boneFormationDefense(counts[i]);
+			EXPECT_EQ(unit.valOfBonuses(BonusType::PHYSICAL_DEFENSE), expected);
+			const auto view = creatureDefensePresentation::query(unit, false);
+			EXPECT_EQ(view.physical, view.general + expected);
+		}
+		EXPECT_EQ(rngState(), beforeRng);
+	}
+	std::vector<std::byte> rngState()
+	{
+		CMemorySerializer wire;
+		gameHandler->randomizer->serialize(wire.oser);
+		dynamic_cast<CRandomGenerator &>(*getRNG()).serialize(wire.oser);
+		return wire.extractBuffer();
 	}
 	void publish(CStack & unit, battle::CUnitState & state, int64_t previousHealth)
 	{
@@ -305,6 +357,89 @@ TEST_F(PassiveSpecialtyTest, SixtySkeletonPhysicalDefenseMatchesResolvedIncoming
 	EXPECT_EQ(before - actor->getAvailableHealth(), expected.damage.min);
 	EXPECT_EQ(actor->valOfBonuses(BonusType::PHYSICAL_DEFENSE),
 		newHorizonsPassiveSpecialties::boneFormationDefense(actor->getCount()));
+}
+TEST_F(PassiveSpecialtyTest, OrdinaryGalthranWorldLoadPreservesSkeletonDefenseAndArmyOwnership)
+{
+	ASSERT_NO_FATAL_FAILURE(ordinaryGalthranWorld());
+	ASSERT_EQ(attackerSideHero->getHeroTypeID(), HeroTypeID(HeroTypeID::decode("core:galthran")));
+	ASSERT_EQ(attackerSideHero->getPrimaryGrowthRules()["additionalSpecialties"]
+		["ordinaryCreatureSpecialties"]["boneFormationFirstBandSize"].Integer(), 10);
+	const auto beforeRng = rngState();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	restored.loadFromMemory(gameState()->saveToMemory()); // Adventure boundary: no active battle.
+	for(auto * world : {gameState().get(), &restored})
+	{
+		auto * hero = world->getMap().getHero(HeroTypeID(HeroTypeID::decode("core:galthran")));
+		auto * other = world->getMap().getHero(HeroTypeID(HeroTypeID::decode("core:orrin")));
+		ASSERT_NE(hero, nullptr);
+		ASSERT_NE(other, nullptr);
+		EXPECT_EQ(hero->getPrimaryGrowthRules(), attackerSideHero->getPrimaryGrowthRules());
+		EXPECT_EQ(std::ranges::count_if(hero->getExportedBonusList(), [](const auto & bonus)
+			{ return bonus->type == BonusType::PHYSICAL_DEFENSE; }), 4);
+		for(const auto slot : {SlotID(0), SlotID(1)})
+		{
+			const auto * stack = hero->getStackPtr(slot);
+			ASSERT_NE(stack, nullptr);
+			EXPECT_EQ(stack->getCount(), 60);
+			EXPECT_EQ(stack->getCreatureID(), creatureByName(slot == SlotID(0) ? "core:skeleton" : "core:skeletonWarrior"));
+			const auto initial = creatureDefensePresentation::query(*stack, false);
+			EXPECT_EQ(initial.general, slot == SlotID(0) ? 4 : 6);
+			EXPECT_EQ(initial.physical, initial.general + 6);
+			hero->setStackCount(slot, 59);
+			EXPECT_EQ(stack->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 5);
+			hero->setStackCount(slot, 60);
+			EXPECT_EQ(stack->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+			other->putStack(SlotID(1), hero->detachStack(slot));
+			EXPECT_EQ(stack->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 0);
+			hero->putStack(slot, other->detachStack(SlotID(1)));
+			EXPECT_EQ(stack->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+		}
+	}
+	EXPECT_EQ(rngState(), beforeRng);
+}
+TEST_F(PassiveSpecialtyTest, OrdinaryGalthranBattleRosterRetainsCurrentCountDefenseInNativeAndDetachedState)
+{
+	ASSERT_NO_FATAL_FAILURE(ordinaryGalthranWorld());
+	ASSERT_NO_FATAL_FAILURE(startBattle()); // Retain the ordinary native roster and its army roots.
+	const auto beforeRng = rngState();
+	for(const auto slot : {SlotID(0), SlotID(1)})
+	{
+		const auto * army = attackerSideHero->getStackPtr(slot);
+		ASSERT_NE(army, nullptr);
+		const auto found = std::ranges::find_if(battle()->stacks, [army](const auto & unit) { return unit->base == army; });
+		ASSERT_NE(found, battle()->stacks.end());
+		auto * unit = found->get();
+		ASSERT_EQ(unit->getCount(), 60);
+		EXPECT_EQ(battle()->battleGetOwnerHero(unit), attackerSideHero);
+		EXPECT_EQ(unit->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+		const auto view = creatureDefensePresentation::query(*unit, false);
+		EXPECT_EQ(view.physical, view.general + 6);
+		auto detached = unit->acquireState();
+		int64_t damage = detached->getMaxHealth();
+		detached->damage(damage);
+		EXPECT_EQ(detached->getCount(), 59);
+		EXPECT_EQ(detached->getBonusBearer()->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 5);
+		EXPECT_EQ(unit->getCount(), 60);
+		EXPECT_EQ(unit->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+		injure(*unit, unit->getMaxHealth());
+		EXPECT_EQ(unit->getCount(), 59);
+		EXPECT_EQ(unit->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 5);
+		EXPECT_EQ(army->getCount(), 60);
+		restore(*unit, unit->getMaxHealth());
+		EXPECT_EQ(unit->getCount(), 60);
+		EXPECT_EQ(unit->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+		EXPECT_EQ(army->valOfBonuses(BonusType::PHYSICAL_DEFENSE), 6);
+	}
+	EXPECT_EQ(rngState(), beforeRng);
+}
+TEST_F(PassiveSpecialtyTest, OrdinarySkeletonRosterDefenseUsesCompletedInitialCountAtBandBoundaries)
+{
+	ASSERT_NO_FATAL_FAILURE(initialBoneFormationBoundaries("core:skeleton"));
+}
+TEST_F(PassiveSpecialtyTest, OrdinarySkeletonWarriorRosterDefenseUsesCompletedInitialCountAtBandBoundaries)
+{
+	ASSERT_NO_FATAL_FAILURE(initialBoneFormationBoundaries("core:skeletonWarrior"));
 }
 TEST_F(PassiveSpecialtyTest, TreantmootGatesDeliberateCreatureTargetsWithoutBlanketInvulnerability)
 {

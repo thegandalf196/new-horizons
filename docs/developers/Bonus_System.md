@@ -127,6 +127,20 @@ Propagation is used when bonuses need to be shared in a different direction than
 - Inheritance is done on-the-fly when needed, by traversing the black DAG. Results are cached to improve performance.
 - Whenever a node changes (e.g. bonus added), a global counter gets increased which is used to check whether cached results are still current.
 
+Live stack initialization must invalidate count-dependent bonuses after health
+and initialization receipts are complete. Reading maximum HP during health
+initialization can cache the full bonus list against a partially initialized
+creature count. `CStack::localInit` publishes the completed state; detached
+projections must not invalidate the live graph. The ordinary-roster cases in
+`NewHorizonsPassiveSpecialtyTest.cpp` protect this boundary.
+
+Detached units evaluate count-sensitive bonuses against their own creature
+count without invalidating the live graph. Changed-count results retain the
+canonical limiter, stacking and selector order and are cached per exact source
+and state key. Count, source-version and assignment changes invalidate local
+scalar queries as well as the complete-list cache. Unchanged-count units retain
+the native cached query path.
+
 Re-exporting a nonpropagated bonus already accepted by the same node is
 idempotent by pointer identity. This matters when an in-process battle is
 initialized after setup has already exported its bonuses. Decoded nodes still

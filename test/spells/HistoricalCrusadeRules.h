@@ -46,7 +46,8 @@ inline JsonNode historicalCrusadeRules(JsonNode rules, int version = 3)
 			const bool laterVariant = row.Struct().contains("variant");
 			for(const auto * key : {"heroAccess", "restoration", "propagationLimit", "implosion",
 				"ignoreInterveningBarriers", "temporaryMagicalEffectsOnly", "schoolRankDurations", "burnGroundedFlyers",
-				"selectedPlacement", "rawSpellPowerPerPatch", "earthquake", "structures", "variant"})
+				"selectedPlacement", "rawSpellPowerPerPatch", "earthquake", "structures", "variant",
+				"magicArrow", "elementalTag", "elementalAreaDamage"})
 				row.Struct().erase(key);
 			if(laterVariant)
 				row["active"].Bool() = false;

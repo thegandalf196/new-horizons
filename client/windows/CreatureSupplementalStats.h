@@ -23,11 +23,14 @@ struct Readout
 {
 	Retaliations retaliations;
 	std::optional<int> physicalReductionBasisPoints;
+	std::optional<int> magicalReductionBasisPoints;
 	int magicResistancePercent = 0;
 };
 
 /// Informational target-side baseline, not a hypothetical attack. Range- and
 /// attacker-specific protection is excluded from the physical percentage.
+/// Magical protection includes only reductions shared by ordinary magical
+/// attacks and spells; school- and spell-specific effects are excluded.
 Readout query(const CStackInstance & armyStack, const CStack * battleStack,
 	const CGHeroInstance * hero, const JsonNode & magicRules);
 std::string retaliationText(const Retaliations & value);

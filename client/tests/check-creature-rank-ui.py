@@ -46,7 +46,7 @@ for nh, argument in (("", "false"), ("nh-", "true")):
     for suffix in range(3):
         assert f'"stackWindow/info-panel-{nh}rank-{suffix}.png"' in PANEL
         assert f"createCreatureInfoPanel({suffix + 2}, {argument}, true)" in PANEL
-assert "(newHorizons ? 13 : 9) + (rank ? 1 : 0)" in LAYOUT
+assert "(newHorizons ? 14 : 9) + (rank ? 1 : 0)" in LAYOUT
 assert "creatureStatLayout::panelRows(showNewHorizonsStats, showRank)" in PANEL
 
 # Icons and the hover area use statRow so category-only legacy contexts retain

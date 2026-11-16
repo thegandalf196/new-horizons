@@ -22,7 +22,7 @@ struct PhysicalProtectionFacts
 	double magicShieldReduction = 0;
 };
 
-PhysicalProtectionFacts capturePhysicalProtection(const DamageAttackInfo & info,
+DLL_LINKAGE PhysicalProtectionFacts capturePhysicalProtection(const DamageAttackInfo & info,
 	bool hasGeneralReduction, bool hasPhysicalBasis);
 
 /// Range-independent target protection for an informational baseline. Uses the

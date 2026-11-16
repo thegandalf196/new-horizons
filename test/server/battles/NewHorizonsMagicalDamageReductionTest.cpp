@@ -7,7 +7,9 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "../../../lib/GameConstants.h"
+#include "../../../lib/IGameSettings.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
@@ -32,6 +34,7 @@ protected:
 
 	void SetUp() override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::SetUp();
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";
@@ -43,22 +46,15 @@ protected:
 		JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 		if(rulesetVersion != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 		{
-			rules["rulesetVersion"].Integer() = rulesetVersion;
-			rules.Struct().erase("schoolRankPowerCoefficientPercent");
-			rules.Struct().erase("spellcraftEfficiencyPercent");
-			for(auto & [name, spell] : rules["spells"].Struct())
+			rules = historicalCrusadeRules(std::move(rules), rulesetVersion);
+			// Pair the older magic roster with absence of current-roster book remaps.
+			JsonNode heroes = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS);
+			if(heroes.isStruct() && heroes["startingSkills"].isStruct()
+				&& heroes["startingSkills"].Struct().contains("startingBookReplacements"))
 			{
-				(void)name;
-				spell.Struct().erase("selectedPlacement");
-				spell.Struct().erase("rawSpellPowerPerPatch");
-				spell.Struct().erase("earthquake");
-				spell.Struct().erase("structures");
-				spell.Struct().erase("heroAccess");
-				if(spell.Struct().contains("variant"))
-				{
-					spell.Struct().erase("variant");
-					spell["active"].Bool() = false;
-				}
+				heroes["startingSkills"].Struct().erase("startingBookReplacements");
+				heroes.setOverrideFlag(true);
+				loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroes));
 			}
 		}
 		if(!includeHolyArmorRosterRow)

@@ -102,6 +102,8 @@ void CHeroWindow::alignAttributeReadouts()
 	};
 	for(size_t i = 0; i < primSkillValues.size(); ++i)
 		centerGroup(primSkillValues[i], growthValues[i], 277 + static_cast<int>(i) * 82, 80);
+	if(movementValue && movementGrowthValue)
+		centerGroup(movementValue, movementGrowthValue, 138, 194);
 }
 
 void CHeroWindow::refreshMiddlePaneReadout()
@@ -157,9 +159,27 @@ void CHeroWindow::refreshMiddlePaneReadout()
 		}
 	}
 
-	// Row 3: Movement
+	refreshMovementReadout();
+
+	// Row 3: Vision
+	if(visionValue)
+	{
+		const auto sight = curHero->getSightRadius();
+		visionValue->setText(std::to_string(sight));
+		if(visionArea)
+		{
+			visionArea->text = "Vision radius: " + std::to_string(sight) + " tiles.\nScouting distance for clearing fog of war and discovering adventure map objects.";
+			visionArea->hoverText = visionArea->text;
+		}
+	}
+}
+
+void CHeroWindow::refreshMovementReadout()
+{
 	if(movementValue)
 	{
+		const auto growth = newHorizonsMovement::levelMovementBonus(curHero->getPrimaryGrowthRules(), 2);
+		movementGrowthValue->setText(growth > 0 ? "+" + std::to_string(growth) : "");
 		const bool embarked = curHero->inBoat();
 		if(movementDynamicImage)
 		{
@@ -215,18 +235,6 @@ void CHeroWindow::refreshMiddlePaneReadout()
 				movementArea->text += "\nSpecial travel: Water Walk/Fly steps use x1.50. Creature Speed is not a Movement modifier.";
 			}
 			movementArea->hoverText = movementArea->text;
-		}
-	}
-
-	// Row 3: Vision
-	if(visionValue)
-	{
-		const auto sight = curHero->getSightRadius();
-		visionValue->setText(std::to_string(sight));
-		if(visionArea)
-		{
-			visionArea->text = "Vision radius: " + std::to_string(sight) + " tiles.\nScouting distance for clearing fog of war and discovering adventure map objects.";
-			visionArea->hoverText = visionArea->text;
 		}
 	}
 }

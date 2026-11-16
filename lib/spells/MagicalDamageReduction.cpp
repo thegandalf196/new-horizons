@@ -13,6 +13,12 @@
 #include "../battle/Unit.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/Bonus.h"
+#include "../battle/CBattleInfoCallback.h"
+#include "../battle/CommandArmyBonuses.h"
+#include "../battle/CurrentFireBasis.h"
+#include "../battle/NewHorizonsCommandResources.h"
+#include "../entities/hero/NewHorizonsNecromancyPolicy.h"
+#include "../mapObjects/army/CStackInstance.h"
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cmath>
@@ -272,6 +278,60 @@ std::vector<int> targetMdrPenetrations(const battle::Unit & target)
 			result.push_back(std::clamp(bonus->val, 0, 100));
 	return result;
 }
+
+namespace
+{
+// The existing exact damage fold owns multiplication, the 95% cap and relative
+// penetration. Fine precision permits rounding the informational value to one
+// basis point without adding a second mitigation formula or a hypothetical hit.
+constexpr int64_t PROTECTION_DISPLAY_PRECISION = 100'000'000;
+
+int protectionBasisPoints(int64_t remaining)
+{
+	return static_cast<int>((PROTECTION_DISPLAY_PRECISION - remaining + 5000) / 10000);
+}
+
+void appendCommonProtection(std::vector<int> & sources, int intrinsicPercent, int spellwardBasisPoints)
+{
+	if(intrinsicPercent > 0)
+		sources.push_back(std::clamp(intrinsicPercent, 0, 100) * 100);
+	if(spellwardBasisPoints > 0)
+		sources.push_back(std::clamp(spellwardBasisPoints, 0, 10000));
+}
+}
+
+std::optional<int> commonMagicalProtectionBasisPoints(const CStackInstance & armyStack,
+	const CGHeroInstance * controllerHero, const JsonNode & magicRules)
+{
+	if(!newHorizonsMagicalAbilityDamage::usesMultiplicativeMDR(magicRules))
+		return std::nullopt;
+	std::vector<int> sources;
+	appendCommonProtection(sources, newHorizonsNecromancy::bonewardMagicalReductionPercent(
+		controllerHero, armyStack.getCreatureID()),
+		newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(controllerHero));
+	std::vector<int> penetrations;
+	for(const auto & bonus : *armyStack.getBonusesOfType(BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION))
+		if(bonus->val > 0)
+			penetrations.push_back(std::clamp(bonus->val, 0, 100));
+	return protectionBasisPoints(calculateMagicalDamageReductionBasisPoints(
+		PROTECTION_DISPLAY_PRECISION, sources, penetrations).damageWithPenetration);
+}
+
+std::optional<int> commonMagicalProtectionBasisPoints(const CBattleInfoCallback & battle,
+	const battle::Unit & target)
+{
+	if(!battle.battleUsesNewHorizonsMultiplicativeMDR())
+		return std::nullopt;
+	// Same sources and order as ordinary magical attacks. Arbitrary ANY-school
+	// bonuses cannot be promoted to that channel by an informational query.
+	auto sources = commandArmyBonuses::magicalReductionBasisPoints(target);
+	appendCommonProtection(sources, target.intrinsicMagicalDamageReductionPercent(),
+		newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(battle.battleGetOwnerHero(&target)));
+	const auto remaining = calculateMagicalDamageReductionBasisPoints(PROTECTION_DISPLAY_PRECISION,
+		sources, targetMdrPenetrations(target)).damageWithPenetration;
+	return protectionBasisPoints(newHorizonsCommand::mitigateIncomingDamage(battle, &target, remaining));
+}
+
 int64_t applyTargetMdrPenetration(const battle::Unit & target, int64_t raw, int64_t mitigated)
 {
 	const auto penetrations = targetMdrPenetrations(target);

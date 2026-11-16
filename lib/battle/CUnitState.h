@@ -23,6 +23,7 @@
 
 #include <vector>
 
+class CStack;
 class JsonSerializeFormat;
 class JsonNode;
 class UnitChanges;
@@ -604,6 +605,7 @@ public:
 	explicit CUnitStateDetached(const IUnitInfo * unit_, const IBonusBearer * bonus_);
 
 	CUnitStateDetached & operator= (const CUnitState & other);
+	CUnitStateDetached & operator= (const CUnitStateDetached & other);
 	void onBattleFormChanged() override;
 	bool usesBonusProvider(const IBonusBearer & expected) const noexcept;
 	bool usesUnitInfo(const IUnitInfo & expected) const noexcept;
@@ -648,6 +650,21 @@ private:
 	const Unit * unitBonusProvider() const;
 	bool hasCurrentBonusProviderDispatch() const;
 	const Unit * completeOwnedFormSource() const;
+	const CStack * plainNativeCountRoot() const;
+	TConstBonusListPtr nativeCountBonuses(const CStack & root, const CSelector & selector, bool unstacked) const;
+	void resetNativeCountQuery() const { nativeCountKey.reset(); nativeCountLists.reset(); }
+	struct NativeCountKey
+	{
+		const IBonusBearer * provider;
+		const CStack * root;
+		int32_t sourceVersion, rootVersion, count, formRevision;
+		bool form, cohesion;
+		bool operator==(const NativeCountKey &) const = default;
+	};
+	struct NativeCountLists;
+	mutable std::optional<NativeCountKey> nativeCountKey;
+	mutable std::shared_ptr<NativeCountLists> nativeCountLists;
+	mutable int32_t nativeCountRevision = 0; // Target-local; never copied or serialized.
 
 	const IUnitInfo * unit;
 	const IBonusBearer * bonus;
