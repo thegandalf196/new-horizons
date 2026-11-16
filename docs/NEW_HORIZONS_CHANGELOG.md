@@ -7,7 +7,7 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## Next update — Unreleased
+## 0.91.2 Early Access
 
 - Fresh default starts for all 163 registered heroes, including campaign and
   portrait heroes, have two distinct Basic Skills and one Basic perk for each. Astral
@@ -30,6 +30,11 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   battle animations, preserving their colors during selection highlighting.
 - Windows adds `Setup.exe` beside the game executable for manually selecting
   the original Heroes III asset folder again.
+
+Extract the entire Windows ZIP into a new folder. Run `new-horizons.exe`, or use
+`Setup.exe` to select the original Heroes III assets manually. See the
+[Windows installation guide](players/Installation_Windows.md) and the
+[0.91.2 downloads, checksums and corresponding sources](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91.2).
 
 ## 0.91.1 Early Access
 

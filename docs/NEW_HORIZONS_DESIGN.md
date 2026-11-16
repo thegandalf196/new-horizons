@@ -34,7 +34,7 @@ connection and authoritative simulation thread, not a new external server or
 loopback transport. UI submits requests; authoritative code validates and changes
 state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
-Current source (unreleased) default hero development uses captured
+Current default hero development uses captured
 `startingPerksPolicyVersion: 2`.
 Every registered default has exactly two distinct Basic Skills, including its
 faction Skill, and one authored Basic perk for each. The source registry
