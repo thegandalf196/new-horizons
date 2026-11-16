@@ -32,7 +32,7 @@ TEST(SylvanTacticsStateTest, MissingPolicyRetainsLegacyAndPresentInvalidTypesFai
 {
 	JsonNode rules;
 	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTactics(rules));
-	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(3), JsonNode(1.0), JsonNode("1")})
+	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(4), JsonNode(1.0), JsonNode("1")})
 	{
 		rules["sylvanTacticsPolicy"] = invalid;
 		EXPECT_THROW(newHorizonsHeroes::usesSylvanTactics(rules), std::runtime_error);
@@ -43,6 +43,12 @@ TEST(SylvanTacticsStateTest, MissingPolicyRetainsLegacyAndPresentInvalidTypesFai
 	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV2(rules));
 	rules["sylvanTacticsPolicy"] = JsonNode(2);
 	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTacticsV2(rules));
+	EXPECT_THROW(newHorizonsHeroes::validateSylvanTacticsSerialization(rules, false), std::runtime_error);
+	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV3(rules));
+	rules["sylvanTacticsPolicy"] = JsonNode(3);
+	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTactics(rules));
+	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTacticsV3(rules));
+	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV2(rules));
 	EXPECT_THROW(newHorizonsHeroes::validateSylvanTacticsSerialization(rules, false), std::runtime_error);
 }
 TEST(SylvanTacticsStateTest, FleetfootIsConsumedByFirstRealActivationIncludingWait)

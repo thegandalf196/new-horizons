@@ -7,7 +7,7 @@
 
 #include "InfoWindows.h"
 #include "NewHorizonsPerkHelp.h"
-#include "NewHorizonsSylvanAlliancePerkIcons.h"
+#include "NewHorizonsSylvanHybridPerkIcons.h"
 #include "NewHorizonsPerkAvailability.h"
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
@@ -208,7 +208,7 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 						: evaluation.status == newHorizonsPerkAvailability::Status::LOCKED ? unlearnedBorder
 						: ColorRGBA(117, 96, 64, 255)));
 
-				auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsCapturedPerkIcon(perk.id, perk.name, perkState.rules)), 0,
+				auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.rules)), 0,
 					Rect(cardLeft + 4, top + 3, 24, 24));
 				elements.push_back(icon);
 				elements.push_back(std::make_shared<CMultiLineLabel>(Rect(cardLeft + 34, top + 2, cardWidth - 40, 26),

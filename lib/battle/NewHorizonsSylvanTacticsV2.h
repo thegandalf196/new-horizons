@@ -18,6 +18,8 @@ DLL_LINKAGE bool enabled(const CGHeroInstance * hero);
 DLL_LINKAGE bool family(const battle::Unit * unit, Family line);
 DLL_LINKAGE const CGHeroInstance * commandingHero(const CBattleInfoCallback & battle, const battle::Unit * unit);
 DLL_LINKAGE int perkValue(const CGHeroInstance * hero, std::string_view perk, std::string_view field);
+/// Policy 2 accepts its whole roster; policy 3 accepts only the four retained
+/// family/spell effects. Other policy-3 slots are captured in SylvanTacticsState.
 DLL_LINKAGE bool hasPerk(const CGHeroInstance * hero, std::string_view perk);
 DLL_LINKAGE bool huntingPackConfigured(const CBattleInfoCallback &, const battle::Unit * attacker);
 DLL_LINKAGE int huntingPackBonus(const CBattleInfoCallback &, const battle::Unit * attacker, const battle::Unit * target, BattleHex targetPosition = BattleHex::INVALID);

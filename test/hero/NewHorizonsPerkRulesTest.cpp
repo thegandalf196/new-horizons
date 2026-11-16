@@ -59,6 +59,45 @@ TEST(NewHorizonsPerkRules, CanonicalRegistryValidatesAndLookupOwnsItsData)
 	EXPECT_EQ(perk->id, skill->perks.front().id);
 }
 
+TEST(NewHorizonsPerkRules, MixedSylvanCatalogKeepsTenStableTierSlotsAndExplicitPolicy)
+{
+	using namespace newHorizonsHeroes;
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	EXPECT_EQ(rules["sylvanTacticsPolicy"].Integer(), 3);
+	const auto skill = perkSkill(rules, "new-horizons:sylvanLuck");
+	ASSERT_TRUE(skill);
+	EXPECT_EQ(skill->name, "Sylvan Tactics");
+	ASSERT_EQ(skill->perks.size(), 10);
+	const std::array<std::pair<const char *, const char *>, 10> expected = {{
+		{"elvenPrecision", "Hunting Pack"}, {"forestSFavor", "Fleetfoot"},
+		{"serendipity", "Patient Hunter"}, {"luckyRecovery", "Dappled Cover"},
+		{"sharedFortune", "Evergreen Blessings"}, {"natureSProvidence", "Quick Redeployment"},
+		{"fortunateAim", "Disruptive Strike"}, {"wildChance", "Kindred Flame"},
+		{"perfectMoment", "Perfect Moment"}, {"cascadingFortune", "Ancient Accord"}
+	}};
+	for(size_t index = 0; index < expected.size(); ++index)
+	{
+		const auto & perk = skill->perks[index];
+		EXPECT_EQ(perk.id, std::string("new-horizons:sylvanLuck.") + expected[index].first);
+		EXPECT_EQ(perk.name, expected[index].second);
+		EXPECT_EQ(perk.requiredRank, index < 4 ? "basic" : index < 8 ? "advanced" : "expert");
+	}
+	for(const int policy : {1, 2, 3})
+	{
+		rules["sylvanTacticsPolicy"] = JsonNode(policy);
+		EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "supported Sylvan policy"));
+		EXPECT_NO_THROW(validatePerkRules(rules));
+	}
+	for(const int policy : {0, 4})
+	{
+		rules["sylvanTacticsPolicy"] = JsonNode(policy);
+		EXPECT_FALSE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "unknown Sylvan policy"));
+		EXPECT_THROW(validatePerkRules(rules), std::runtime_error);
+	}
+	rules.Struct().erase("sylvanTacticsPolicy");
+	EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "historical absent Sylvan policy"));
+}
+
 TEST(NewHorizonsPerkRules, OptionalDetailsOwnCapturedTextAndSurviveCurrentRoundtrip)
 {
 	using namespace newHorizonsHeroes;

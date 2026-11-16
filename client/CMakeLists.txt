@@ -563,6 +563,7 @@ set(vcmiclientcommon_HEADERS
 	windows/NewHorizonsPerkBrowser.h
 	windows/NewHorizonsCapturedPerkIcons.h
 	windows/NewHorizonsSylvanAlliancePerkIcons.h
+	windows/NewHorizonsSylvanHybridPerkIcons.h
 	windows/NewHorizonsPerkIcons.h
 	windows/NewHorizonsPerkHelp.h
 	windows/NewHorizonsSkillPresentation.h

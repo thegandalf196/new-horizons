@@ -9,6 +9,10 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 ## Unreleased
 
+- Mixes Sylvan Tactics activation and Waiting perks with Hunting Pack, Evergreen
+  Blessings, Kindred Flame and Ancient Accord. Perfect Moment and the rank
+  Initiative bonuses remain. Existing games retain their captured perk effects.
+
 - Corrects count-dependent creature bonuses at battle initialization. Galthran's
   Bone Formation now uses the completed stack count before the first action;
   its physical Defense bonus remains separate from percentage protection.

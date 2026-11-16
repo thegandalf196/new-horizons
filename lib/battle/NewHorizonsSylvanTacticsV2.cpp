@@ -38,7 +38,14 @@ const CGHeroInstance * commandingHero(const CBattleInfoCallback & battle, const 
 }
 bool hasPerk(const CGHeroInstance * hero, std::string_view perk)
 {
-	return enabled(hero) && hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck." + std::string(perk));
+	if(!hero) return false;
+	// Only these four family/spell effects survive in the hybrid policy.
+	// Other slots now own activation/Waiting effects: allowing them through
+	// this adapter would also reactivate retired spell or creature effects.
+	const bool retained = perk == "elvenPrecision" || perk == "sharedFortune"
+		|| perk == "wildChance" || perk == "cascadingFortune";
+	if(!enabled(hero) && !(retained && newHorizonsHeroes::usesSylvanTacticsV3(hero->getPerkState().rules))) return false;
+	return hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck." + std::string(perk));
 }
 int perkValue(const CGHeroInstance * hero, std::string_view perk, std::string_view field)
 {
@@ -80,7 +87,8 @@ int briarGripReduction(const CBattleInfoCallback & battle, const battle::Unit * 
 		if(battle.battleGetOwner(source) == battle.battleGetOwner(attacker)) continue;
 		const auto adjacent = battle.battleAdjacentUnits(attacker);
 		if(std::ranges::find(adjacent, source) == adjacent.end()) continue;
-		const int reduction = perkValue(commandingHero(battle, source), "luckyRecovery", "attackDamageReductionPercent");
+		const auto * hero = commandingHero(battle, source);
+		const int reduction = enabled(hero) ? perkValue(hero, "luckyRecovery", "attackDamageReductionPercent") : 0;
 		if(reduction > 0) return reduction;
 	}
 	return 0;
@@ -92,8 +100,9 @@ int disarmingShotRetaliations(const CBattleInfoCallback & battle, const battle::
 		|| !family(attacker, Family::Elf) || !victim || battle.battleGetOwner(attacker) == battle.battleGetOwner(victim)) return 0;
 	const auto * state = dynamic_cast<const battle::CUnitState *>(victim);
 	if(!state || !state->counterAttacks.isLimited()) return 0;
-	return std::min(state->counterAttacks.available(),
-		perkValue(commandingHero(battle, attacker), "serendipity", "retaliationsConsumed"));
+	const auto * hero = commandingHero(battle, attacker);
+	return enabled(hero) ? std::min(state->counterAttacks.available(),
+		perkValue(hero, "serendipity", "retaliationsConsumed")) : 0;
 }
 bool spareFriendlyBreath(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * victim)
 {
@@ -103,8 +112,9 @@ bool spareFriendlyBreath(const CBattleInfoCallback & battle, const battle::Unit 
 }
 int extraDamper(const CBattleInfoCallback & battle, const battle::Unit * provider)
 {
-	return family(provider, Family::Pegasus) && provider->hasBonusOfType(BonusType::CHANGES_SPELL_COST_FOR_ENEMY)
-		? perkValue(commandingHero(battle, provider), "natureSProvidence", "enemySpellCostBonus") : 0;
+	const auto * hero = commandingHero(battle, provider);
+	return enabled(hero) && family(provider, Family::Pegasus) && provider->hasBonusOfType(BonusType::CHANGES_SPELL_COST_FOR_ENEMY)
+		? perkValue(hero, "natureSProvidence", "enemySpellCostBonus") : 0;
 }
 void finalizeDamage(const CBattleInfoCallback & battle, const BattleAttackInfo & info, DamageAttackInfo & payload)
 {

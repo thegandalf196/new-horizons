@@ -22,6 +22,13 @@ protected:
 	CStack * source = nullptr;
 	CStack * target = nullptr;
 	CStack * ally = nullptr;
+	void SetUp() override
+	{
+		// Sylvan's historical marker is independent of the installed Warfare
+		// issuance policy. Keep current Orders paired with current perk rules.
+		useRevisedOrders = true;
+		HeroCommandFixture::SetUp();
+	}
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
@@ -232,12 +239,17 @@ TEST_P(NewHorizonsSylvanTacticsAITest, RainSecondaryReceiptPreservesNewTacticsAn
 	ASSERT_NO_FATAL_FAILURE(startGame());
 	const auto skill = SecondarySkill(SecondarySkill::decode(std::string(newHorizonsArchery::SKILL)));
 	ASSERT_TRUE(skill.hasValue());
-	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	// Preserve Orrin's authored Basic choice and fill the required Advanced slot.
-	// Archery Crossfire is inert here: the fixture has only one friendly shooter.
+	// makeNeutral removes authored perks. Train a legal one-per-tier prefix;
+	// Target Caller is inert without Focus Fire and Crossfire has no second shooter.
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	ASSERT_TRUE(attackerSideHero->getPerkState().canAcquirePerk(std::string(newHorizonsArchery::SKILL),
-		std::string(newHorizonsArchery::CROSSFIRE), MasteryLevel::EXPERT));
+		std::string(newHorizonsArchery::TARGET_CALLER), MasteryLevel::BASIC));
+	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL), std::string(newHorizonsArchery::TARGET_CALLER)});
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	ASSERT_TRUE(attackerSideHero->getPerkState().canAcquirePerk(std::string(newHorizonsArchery::SKILL),
+		std::string(newHorizonsArchery::CROSSFIRE), MasteryLevel::ADVANCED));
 	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL), std::string(newHorizonsArchery::CROSSFIRE)});
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	ASSERT_TRUE(attackerSideHero->getPerkState().canAcquirePerk(std::string(newHorizonsArchery::SKILL),
 		std::string(newHorizonsArchery::RAIN_OF_ARROWS), MasteryLevel::EXPERT));
 	attackerSideHero->applyPerkSelection({std::string(newHorizonsArchery::SKILL), std::string(newHorizonsArchery::RAIN_OF_ARROWS)});

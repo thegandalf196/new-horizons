@@ -8566,7 +8566,7 @@
 				"offerWeightPolicyVersion": 2,
 				"perkProgressionPolicyVersion": 1,
 				"unifiedSkillProgressionVersion": 1,
-				"sylvanTacticsPolicy": 2,
+				"sylvanTacticsPolicy": 3,
 				"metamagicPolicy": {
 					"version": 3,
 					"adeptAdditionalPoints": 1
@@ -8609,7 +8609,7 @@
 					"mathVersion": 1
 				},
 				"sourceDocument": "new-horizons-docs:canon/game-design.md",
-				"sourceSha256": "c9c74e60ee4945515bb0a22dfcd2b8f139baf6b352c0327ddc9ef5d3a9f77d9e",
+				"sourceSha256": "cd6c5d7722ae44edff5b8342dc5d7379cfdf6ae287d7137107765787a2eea158",
 				"maxSkillChoices": 2,
 				"maxPerkChoices": 2,
 				"maxPerksPerSkill": 3,
@@ -12113,7 +12113,7 @@
 						"name": "Sylvan Tactics",
 						"domain": "Faction",
 						"availability": "Rampart heroes only",
-						"description": "Friendly creatures gain Initiative; Rampart creature families gain distinctive passive benefits.",
+						"description": "Friendly creatures gain Initiative and passive benefits from patient, coordinated tactics.",
 						"ranks": {
 							"basic": {
 								"description": "Friendly creatures gain +1 Initiative.",
@@ -12154,45 +12154,36 @@
 							},
 							{
 								"id": "new-horizons:sylvanLuck.forestSFavor",
-								"name": "Dwarven Hardiness",
+								"name": "Fleetfoot",
 								"requires": "basic",
-								"description": "Negative temporary spells on your Dwarves and Battle Dwarves last at most one combat round.",
+								"description": "Friendly creatures gain +1 Speed during their first activation of combat.",
 								"effect": {
 									"status": "active",
-									"description": "Negative temporary spells on your Dwarves and Battle Dwarves last at most one combat round.",
-									"parameters": {
-										"maximumNegativeSpellRounds": 1
-									}
+									"description": "Friendly creatures gain +1 Speed during their first activation of combat."
 								},
-								"details": "This caps temporary spell duration in combat rounds, not until the next creature activation. It does not grant Poison, Disease or Bleeding immunity and does not shorten beneficial spells."
+								"details": "Only the first creature activation receives this Speed bonus. Waiting, Defending and subsequent activations do not renew it."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.serendipity",
-								"name": "Disarming Shot",
+								"name": "Patient Hunter",
 								"requires": "basic",
-								"description": "Damaging ranged hits by your Elves and Grand Elves consume one of the enemy target’s remaining finite retaliations.",
+								"description": "The first attack after Waiting deals +15% damage.",
 								"effect": {
 									"status": "active",
-									"description": "Damaging ranged hits by your Elves and Grand Elves consume one of the enemy target’s remaining finite retaliations.",
-									"parameters": {
-										"retaliationsConsumed": 1
-									}
+									"description": "The first attack after Waiting deals +15% damage."
 								},
-								"details": "Retaliations cannot fall below zero. Unlimited retaliations remain unlimited. This neither grants an action nor changes normal retaliation restrictions."
+								"details": "Waiting prepares one attack bonus, consumed by the first qualifying attack. It grants no extra attack or activation."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.luckyRecovery",
-								"name": "Briar Grip",
+								"name": "Dappled Cover",
 								"requires": "basic",
-								"description": "Enemies bound by your Dendroids deal 20% less attack and retaliation damage while that binding remains active.",
+								"description": "Waiting creatures take 20% less ranged attack damage.",
 								"effect": {
 									"status": "active",
-									"description": "Enemies bound by your Dendroids deal 20% less attack and retaliation damage while that binding remains active.",
-									"parameters": {
-										"attackDamageReductionPercent": 20
-									}
+									"description": "Waiting creatures take 20% less ranged attack damage."
 								},
-								"details": "Applies only to victims of your Dendroid Guards’ or Dendroid Soldiers’ binding; ordinary Entangle alone does not qualify. The reduction ends when the binding ends."
+								"details": "The protection applies while the creature is Waiting and ends when it leaves that state. It does not reduce melee attacks or spell damage."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.sharedFortune",
@@ -12210,28 +12201,25 @@
 							},
 							{
 								"id": "new-horizons:sylvanLuck.natureSProvidence",
-								"name": "Silver Wings",
+								"name": "Quick Redeployment",
 								"requires": "advanced",
-								"description": "Your Pegasi and Silver Pegasi increase their enemy-hero spell-cost penalty by 2 Mana.",
+								"description": "Defending grants +2 Speed during the creature’s next activation.",
 								"effect": {
 									"status": "active",
-									"description": "Your Pegasi and Silver Pegasi increase their enemy-hero spell-cost penalty by 2 Mana.",
-									"parameters": {
-										"enemySpellCostBonus": 2
-									}
+									"description": "Defending grants +2 Speed during the creature’s next activation."
 								},
-								"details": "This enhances their native Magic Damper. Multiple qualifying stacks do not stack this additional Mana penalty."
+								"details": "The bonus is consumed by the next creature activation. Repeated Defending does not stack the Speed bonus."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.fortunateAim",
-								"name": "Sacred Grove",
+								"name": "Disruptive Strike",
 								"requires": "advanced",
-								"description": "Your Unicorn aura protects beneficial spells on friendly creatures from enemy Dispel.",
+								"description": "Melee hits reduce the target’s Initiative by 15% until its next activation.",
 								"effect": {
 									"status": "active",
-									"description": "Your Unicorn aura protects beneficial spells on friendly creatures from enemy Dispel."
+									"description": "Melee hits reduce the target’s Initiative by 15% until its next activation."
 								},
-								"details": "Unicorns and War Unicorns use their existing aura range. Protection does not prevent normal expiration, consumption or your own Dispel."
+								"details": "Damaging direct melee attacks and retaliations qualify. Repeated hits refresh the effect without stacking; it ends at the target’s next activation."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.wildChance",

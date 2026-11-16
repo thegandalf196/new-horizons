@@ -246,6 +246,11 @@ separate. Unknown fields, identities, policy types/values, provenance or resourc
 sets fail validation. The allowed origin and selection remain explicit; neither
 this schema nor provisional selection grants a license or Final approval.
 
+The mixed Sylvan roster uses a separate policy-3 presentation adapter with exact
+captured ID/name bindings to these already selected resources. It does not change
+the pack, historical resolver hashes or artwork provenance records. Policies 1/2
+and missing-policy artwork retain their existing adapters.
+
 Each row declares exactly seven resources: native44 alias, native32 companion,
 descriptor and four44 states ordered normal0, pressed1, disabled2, highlighted3.
 Common checks verify clean RGBA, exact dimensions/native hashes, descriptor,

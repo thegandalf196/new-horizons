@@ -2,7 +2,7 @@
 #include "StdInc.h"
 #include "CLevelWindow.h"
 #include "LevelUpChoiceCards.h"
-#include "NewHorizonsCapturedPerkIcons.h"
+#include "NewHorizonsSylvanHybridPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
 #include "../GameInstance.h"
 #include "../widgets/CComponent.h"
@@ -38,7 +38,7 @@ std::shared_ptr<CSelectableComponent> CLevelWindow::skillComponent(size_t index)
 				const auto & id = perk["id"].String();
 				const auto & name = perk["name"].String();
 				if(!hero->getPerkState().hasSelection(definition->first, id))
-					rows.push_back({id, name, newHorizonsPerkIcon(id, name, hero->getPerkState().rules)});
+					rows.push_back({id, name, newHorizonsHybridCapturedPerkIcon(id, name, hero->getPerkState().rules)});
 			}
 	}
 	auto component = levelUpPresentation::skillCard(skill, offeredRank, skillName, rankText, rows);
@@ -54,7 +54,7 @@ std::shared_ptr<CSelectableComponent> CLevelWindow::perkComponent(size_t index) 
 	if(!skill && perk.selection.skillId == "new-horizons:necromancy")
 		skill = SecondarySkill(SecondarySkill::NECROMANCY);
 	auto component = levelUpPresentation::perkCard(skill.value_or(SecondarySkill(SecondarySkill::NONE)), skill.has_value(),
-		perk.name, AnimationPath::builtin(newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)));
+		perk.name, AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)));
 	component->customDescription = newHorizonsPerkHelp::format(hero, perk.selection.skillId,
 		perk.name, newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description);
 	return component;

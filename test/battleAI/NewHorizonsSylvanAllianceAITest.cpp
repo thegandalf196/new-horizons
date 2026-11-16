@@ -13,14 +13,38 @@ protected:
 	CStack * source = nullptr;
 	CStack * victim = nullptr;
 	CStack * neighbor = nullptr;
-	void prepareAlliance(const std::string & creature, const std::string & perk)
+	virtual int policy() const { return 2; }
+	void mapLoaded(CMap * loaded) override
+	{
+		ProjectedTargetHitFixture::mapLoaded(loaded);
+		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+		rules["sylvanTacticsPolicy"].Integer() = policy();
+		if(policy() == 2)
+			for(auto & row : rules["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())
+			{
+				const auto parameter = [&](const char * field, int value)
+				{
+					row["effect"]["parameters"] = JsonNode();
+					row["effect"]["parameters"][field] = JsonNode(value);
+				};
+				const auto & id = row["id"].String();
+				if(id.ends_with(".forestSFavor")) parameter("maximumNegativeSpellRounds", 1);
+				if(id.ends_with(".serendipity")) parameter("retaliationsConsumed", 1);
+				if(id.ends_with(".luckyRecovery")) parameter("attackDamageReductionPercent", 20);
+				if(id.ends_with(".natureSProvidence")) parameter("enemySpellCostBonus", 2);
+			}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, rules);
+	}
+	void prepareAlliance(const std::string & creature, const std::string & perk, int rank = 1)
 	{
 		startGame();
 		const SecondarySkill skill(SecondarySkill::decode("new-horizons:sylvanLuck"));
-		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setSecSkillLevel(skill, rank, ChangeValueMode::ABSOLUTE);
+		if(rank > 1)
+			attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck.forestSFavor"});
 		attackerSideHero->applyPerkSelection({"new-horizons:sylvanLuck", "new-horizons:sylvanLuck." + perk});
 		ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck." + perk));
-		ASSERT_TRUE(newHorizonsSylvanTacticsV2::enabled(attackerSideHero));
+		ASSERT_EQ(newHorizonsSylvanTacticsV2::enabled(attackerSideHero), policy() == 2);
 		startBattle();
 		source = addStack(BattleSide::ATTACKER, creatureByName(creature), BattleHex(3, 5), 10);
 		victim = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(10, 5), 100);
@@ -165,4 +189,140 @@ TEST_F(NewHorizonsSylvanAllianceAITest, HuntingPackCacheTracksOnlyAffectedDirect
 	EXPECT_LT(continuation.getDamage(actor.get(), target.get(), child), enhanced);
 	EXPECT_TRUE(root.matchesSnapshot(protectedSnapshot));
 	EXPECT_EQ(neighbor->getPosition(), BattleHex(9, 5));
+}
+
+class NewHorizonsSylvanHybridAITest : public NewHorizonsSylvanAllianceAITest
+{
+protected:
+	int policy() const override { return 3; }
+};
+
+TEST_F(NewHorizonsSylvanHybridAITest, PatientHunterUsesWaitWindowWithoutRetiredElfCounterProjection)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:woodElf", "serendipity"));
+	auto actor = child->getForUpdate(source->unitId());
+	auto target = child->getForUpdate(victim->unitId());
+	const BattleAttackInfo shot(actor.get(), target.get(), 0, true);
+	EXPECT_FALSE(sylvanTacticsAI::needsProjection(*child, shot));
+	EXPECT_TRUE(sylvanTacticsAI::dynamicDamage(*child, actor.get(), target.get()));
+	const auto ordinary = child->battleExpectedLuckDamage(shot);
+	child->nextTurn(actor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	child->makeWait(actor.get());
+	EXPECT_GT(child->battleExpectedLuckDamage(shot), ordinary);
+	EXPECT_EQ(source->battlecraftWaitBonusAvailable(), false);
+	EXPECT_GT(projectedHit(true, 10), 0);
+	EXPECT_EQ(target->counterAttacks.available(), 1);
+}
+
+TEST_F(NewHorizonsSylvanHybridAITest, DefendRedeploymentAndFleetfootRemainIsolatedWithoutStrikeBranches)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:centaur", "natureSProvidence", 2));
+	auto actor = child->getForUpdate(source->unitId());
+	const auto before = child->getSylvanLuckState(BattleSide::ATTACKER);
+	const auto liveState = battle()->getSylvanLuckState(BattleSide::ATTACKER);
+	const auto fullSpeed = actor->getMovementRange();
+	EXPECT_FALSE(sylvanTacticsAI::needsProjection(*child));
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
+	auto branchActor = sibling->getForUpdate(source->unitId());
+	sibling->nextTurn(branchActor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	sibling->completeNormalActivation(branchActor->unitId());
+	branchActor->defending = true;
+	sibling->nextTurn(branchActor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(branchActor->getMovementRange(), fullSpeed + 1); // +2 redeployment, spent +1 Fleetfoot.
+	EXPECT_EQ(branchActor->getMovementRange(1), fullSpeed - 1);
+	EXPECT_EQ(child->getSylvanLuckState(BattleSide::ATTACKER), before);
+	EXPECT_EQ(battle()->getSylvanLuckState(BattleSide::ATTACKER), liveState);
+}
+
+TEST_F(NewHorizonsSylvanHybridAITest, DappledCoverRefreshesCachedRangedDamageAfterWaitingEnds)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:centaur", "luckyRecovery"));
+	auto * liveShooter = addStack(BattleSide::DEFENDER, creatureByName("core:woodElf"), BattleHex(10, 7), 10);
+	resetChild();
+	auto actor = child->getForUpdate(source->unitId());
+	auto shooter = child->getForUpdate(liveShooter->unitId());
+	child->nextTurn(actor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	child->makeWait(actor.get());
+	ASSERT_TRUE(sylvanTacticsAI::dynamicDamage(*child, shooter.get(), actor.get()));
+	DamageCache root;
+	root.cacheDamage(shooter.get(), actor.get(), child);
+	const auto protectedDamage = root.getDamage(shooter.get(), actor.get(), child);
+	const auto snapshot = root.captureSnapshot();
+	child->nextTurn(actor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	DamageCache continuation(&root);
+	EXPECT_GT(continuation.getDamage(shooter.get(), actor.get(), child), protectedDamage);
+	EXPECT_TRUE(root.matchesSnapshot(snapshot));
+	EXPECT_FALSE(source->waited());
+}
+
+TEST_F(NewHorizonsSylvanHybridAITest, HuntingPackCacheTracksOnlyAffectedPairsAndSupportMovement)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:centaurCaptain", "elvenPrecision"));
+	auto actor = child->getForUpdate(source->unitId());
+	auto target = child->getForUpdate(victim->unitId());
+	ASSERT_TRUE(sylvanTacticsAI::allianceDamage(*child, actor.get(), target.get()));
+	EXPECT_FALSE(sylvanTacticsAI::allianceDamage(*child, target.get(), actor.get()));
+	EXPECT_FALSE(sylvanTacticsAI::dynamicDamage(*child, target.get(), actor.get()));
+	EXPECT_FALSE(sylvanTacticsAI::needsProjection(*child));
+	DamageCache root;
+	root.cacheDamage(actor.get(), target.get(), child);
+	const auto snapshot = root.captureSnapshot();
+	const auto enhanced = root.getDamage(actor.get(), target.get(), child);
+	child->moveUnit(neighbor->unitId(), BattleHex(3, 7));
+	DamageCache continuation(&root);
+	EXPECT_LT(continuation.getDamage(actor.get(), target.get(), child), enhanced);
+	EXPECT_EQ(continuation.getDamage(actor.get(), target.get(), child),
+		child->battleExpectedLuckDamage(BattleAttackInfo(actor.get(), target.get(), 0, false)));
+	EXPECT_TRUE(root.matchesSnapshot(snapshot));
+	EXPECT_EQ(neighbor->getPosition(), BattleHex(9, 5));
+}
+
+TEST_F(NewHorizonsSylvanHybridAITest, DisruptivePreviewAndSelectedReplayPreserveLiveAndSiblingHistories)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:angel", "fortunateAim", 2));
+	auto actor = child->getForUpdate(source->unitId());
+	auto target = child->getForUpdate(victim->unitId());
+	child->moveUnit(neighbor->unitId(), BattleHex(3, 7));
+	child->moveUnit(actor->unitId(), BattleHex(9, 5));
+	const auto liveState = battle()->getSylvanLuckState(BattleSide::ATTACKER);
+	const auto before = child->getSylvanLuckState(BattleSide::ATTACKER);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
+	DamageCache cache;
+	const auto preview = AttackPossibility::evaluate(BattleAttackInfo(actor.get(), target.get(), 0, false),
+		actor->getPosition(), cache, child);
+	ASSERT_TRUE(preview.effectPreview);
+	EXPECT_TRUE(preview.effectPreview->getSylvanLuckState(BattleSide::ATTACKER).tactics.disrupted.contains(target->unitId()));
+	EXPECT_EQ(child->getSylvanLuckState(BattleSide::ATTACKER), before);
+	BattleExchangeVariant exchange;
+	exchange.trackAttack(preview, child, cache);
+	EXPECT_EQ(child->battleSylvanTacticsInitiativePercent(target.get()), -15);
+	EXPECT_EQ(sibling->getSylvanLuckState(BattleSide::ATTACKER), before);
+	EXPECT_EQ(battle()->getSylvanLuckState(BattleSide::ATTACKER), liveState);
+	child->nextTurn(target->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(child->battleSylvanTacticsInitiativePercent(target.get()), 0);
+}
+
+TEST_F(NewHorizonsSylvanHybridAITest, RetaliationDisruptsButSpellLikeAndCollateralDamageDoNot)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:angel", "fortunateAim", 2));
+	auto actor = child->getForUpdate(source->unitId());
+	auto target = child->getForUpdate(victim->unitId());
+	const auto before = child->getSylvanLuckState(BattleSide::ATTACKER);
+	for(int context = 0; context < 3; ++context)
+	{
+		auto branch = std::make_shared<HypotheticBattle>(environment.get(), child);
+		auto branchActor = branch->getForUpdate(actor->unitId());
+		auto branchTarget = branch->getForUpdate(target->unitId());
+		BattleAttackInfo hit(branchActor.get(), branchTarget.get(), 0, false);
+		hit.retaliation = context == 0;
+		hit.secondaryAttack = context == 1;
+		hit.physicalDamage = context != 2;
+		sylvanTacticsAI::StrikeProjection projection(branch.get());
+		int64_t amount = 10;
+		projection.damage(*branch, hit, *branchTarget, amount, context == 2
+			? battle::DamageProvenance::SPELL : battle::DamageProvenance::PHYSICAL_CREATURE);
+		projection.finish(branchActor->unitId());
+		EXPECT_EQ(branch->getSylvanLuckState(BattleSide::ATTACKER).tactics.disrupted.contains(target->unitId()), context == 0);
+	}
+	EXPECT_EQ(child->getSylvanLuckState(BattleSide::ATTACKER), before);
 }

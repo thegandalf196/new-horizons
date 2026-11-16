@@ -21019,20 +21019,21 @@
         "sha256": "9672d816b03bf86940dfd0f49c405ca769cff7ea0f32166e47eaaa3654894b28"
       },
       "deferral": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it.",
+      "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 740,
+      "lines": 741,
       "owner": "ui_developer",
       "previous_exact_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "previous_review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact reviewed direct map-composition successor. Renderer presentation is extracted into the focused ScreenComposition unit with pure ownership/geometry helpers; map-cache drawing retains dirty-tile traversal and existing layer order. Nearest-neighbor and one-to-one integer-origin eligibility preserve resampled fallback, retained scene generation prevents late clearing, and shutdown checks preserve null-engine behavior. Registry changes only declare the new renderer unit/header and two standalone tests. No numerical, gameplay, resource or future growth waiver.",
-      "review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
+      "rationale": "Exact reviewed direct map-composition successor. Renderer presentation is extracted into the focused ScreenComposition unit with pure ownership/geometry helpers; map-cache drawing retains dirty-tile traversal and existing layer order. Nearest-neighbor and one-to-one integer-origin eligibility preserve resampled fallback, retained scene generation prevents late clearing, and shutdown checks preserve null-engine behavior. Registry changes only declare the new renderer unit/header and two standalone tests. No numerical, gameplay, resource or future growth waiver. Exact policy3 extension registers one 38-line icon header; no conditional build logic or target changes. Existing exception renewed at741, not a shrinking ratchet or future growth credit.",
+      "review": "IR-SYLVAN-HYBRID-POLICY3-BOUNDED-SOURCE-20261116",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "0489cdbd70c4938f22e0ebd8b3d9a93d339cf82f68cc38f359148825b042e262"
+      "sha256": "56c1646d03159ec71e031a4558f78fcacb963f3f3a907f545262bed22fe0765f"
     },
     "client/CPlayerInterface.cpp": {
       "completed_p_predecessor": {
@@ -23092,17 +23093,18 @@
         "sha256": "54d5c61f1d884b9d24d89d03a6215c251732645c6326f262cffab4019ac5e0df"
       },
       "deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\n\nBefore further hero-perk presentation growth, extract the per-tier text/visibility plan into a typed pure presentation helper receiving selected perk name/status, returning three lines and visibility. Keep widget ownership/hover binding in hero window and preserve selection, empty tiers and long names; verify ordinary/NH layouts and refresh. Preserve prior attribute/skill rendering extraction obligations.",
+      "hybrid_predecessor_review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
       "lines": 744,
       "owner": "ui_developer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Public742to744 removes old tier-reason switch and reformats selected perk names into existing three labels, with small Skill icons in NH layout. Net+2filelines; no rule ownership or command submission. Existing refresh remains read-only saved-perk presentation; unrelated hero-window behaviors are unchanged.",
-      "review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
+      "rationale": "Public742to744 removes old tier-reason switch and reformats selected perk names into existing three labels, with small Skill icons in NH layout. Net+2filelines; no rule ownership or command submission. Existing refresh remains read-only saved-perk presentation; unrelated hero-window behaviors are unchanged. Exact same-size policy3 icon resolver include/call substitution only. Captured labels, card geometry, lifetime, gameplay and all inherited extraction deferrals remain; no future growth credit.",
+      "review": "IR-SYLVAN-HYBRID-ALL-ICON-CONSUMERS-20261116",
       "review_scope": "Only these exact public ec360 to current growth records. No production changes, raised thresholds, unrelated record repair, native/rendered/performance acceptance or publication authority.",
       "review_status": "INDEPENDENT_EXACT_PUBLIC_BASE_DELTA_SOURCE_ORGANIZATION_REVIEWED",
-      "sha256": "68ac31434bef8ac8c7fc031bd4ffcd7e4ec3bdfce23a9a8e2cd2e37a8c7cec5d"
+      "sha256": "7b09cd869aa0c1b32dad7c4f6b374e4651e39c124177eb562594b0f25dd88b74"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
       "completed_p_predecessor": {
@@ -23133,17 +23135,18 @@
         "sha256": "d537af21c46595f79d1bbb9e615f90cbfa26efda22339f89e58cd9b5cc8c3c9d"
       },
       "deferral": "Before further perk-grid readback growth, extract the complete saved-skill/perk row refresh into a focused presentation owner. Preserve inactive resize/artifact ownership, hover/details, learned/locked states and refresh/teardown tests. Exact355-line pre-existing method only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
+      "hybrid_predecessor_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
       "lines": 355,
       "owner": "ui_developer",
       "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "HEAD744 lines drops obsolete shortTierReason; full355-line refreshHero readback inspected, including selected/unselected labels, tooltip/icon updates and final callbacks. Four added label lines replace prior text behavior; no production changes in this migration.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
+      "rationale": "HEAD744 lines drops obsolete shortTierReason; full355-line refreshHero readback inspected, including selected/unselected labels, tooltip/icon updates and final callbacks. Four added label lines replace prior text behavior; no production changes in this migration. Exact same-size policy3 icon resolver include/call substitution only. Captured labels, card geometry, lifetime, gameplay and all inherited extraction deferrals remain; no future growth credit.",
+      "review": "IR-SYLVAN-HYBRID-ALL-ICON-CONSUMERS-20261116",
       "review_scope": "Metadata-only repair of exact unchanged HEAD debt. Source-organization bound only; not native/rendered/gameplay/balance/publication approval.",
       "review_status": "independently_approved_exact_source",
-      "sha256": "701acbc5287c5aca6ffa773b30a7b5a8b65ba21105ccc49444fbd7a3bd1a9649"
+      "sha256": "679013fca52425fec00fd5ab4632a8ae9392a6ee8d44700f11e19032ce255010"
     },
     "client/windows/CHeroWindowLayout.cpp::void CHeroWindow::configureNewHorizonsLayout()#1": {
       "completed_p_predecessor": {
@@ -23461,15 +23464,16 @@
         "sha256": "51634906746b315a2a7e892a08cc42087affd76d75abe6daa760b06ff4dcfdfe"
       },
       "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits.",
+      "hybrid_predecessor_review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
       "kind": "exception",
       "lines": 516,
       "owner": "ui_developer",
       "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Urgent current-profile UI correctness: Leadership was hidden behind retired Command optional. Add shared authoritative current-profile help/availability helper and keep historical slot paragraphs isolated. File510\u2192516 is exact bounded+6 exception; refresh391\u2192384 shrinks7 and focused helper11L owns Leadership text, no duplicated formula/state/new mechanic. Existing perk-skill-panel extraction deferral remains mandatory; no regrowth beyond exact516 bytes/size or restored predecessor allowance.",
-      "review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
+      "rationale": "Urgent current-profile UI correctness: Leadership was hidden behind retired Command optional. Add shared authoritative current-profile help/availability helper and keep historical slot paragraphs isolated. File510\u2192516 is exact bounded+6 exception; refresh391\u2192384 shrinks7 and focused helper11L owns Leadership text, no duplicated formula/state/new mechanic. Existing perk-skill-panel extraction deferral remains mandatory; no regrowth beyond exact516 bytes/size or restored predecessor allowance. Exact same-size policy3 icon resolver include/call substitution only. Captured labels, card geometry, lifetime, gameplay and all inherited extraction deferrals remain; no future growth credit.",
+      "review": "IR-SYLVAN-HYBRID-ALL-ICON-CONSUMERS-20261116",
       "review_scope": "Only exact reviewed current Leadership read-only correction. Existing owner and perk-panel extraction deferral retained verbatim; no blanket ceiling increase or runtime/rendered approval.",
       "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "8f885fa0c83da67b634e57839354c036079cc3888b97795cc73131532ffc125e"
+      "sha256": "e1c01d1cfeaecec9cd651c654ffd2db147b0c66242403b4e3f2d9ab0d678b68a"
     },
     "client/windows/HeroGrowthWindow.cpp::void HeroGrowthWindow::refresh(const CGHeroInstance & hero)#1": {
       "completed_p_predecessor": {
@@ -23480,15 +23484,17 @@
         "sha256": "6d53fd765df357d6b1628d2b8ce61a6675ef1eb52be22df80d509416ff344606"
       },
       "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits. Extract the next touched secondary-Skill/growth presentation section into immutable context-owned value rows using existing NewHorizonsSkillPresentation/PerkHelp and starting/growth view contracts. Inputs: explicit hero/world captured registry and growth values; outputs: labels/help/slot values, leaving widgets/events in the window. Required characterization: Historical Sylvan versus current Tactics names/ranks, display-only Nighon rename, unchanged other captured descriptions, actual Sage gain readback, ordering and rendered refresh; no lost callbacks or implicit installed-default fallback. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch.",
-      "kind": "legacy",
+      "hybrid_predecessor_kind": "legacy",
+      "hybrid_predecessor_review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
+      "kind": "exception",
       "lines": 384,
       "owner": "ui_developer",
       "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Read-only Leadership section text/availability extracted to focused11L helper and shared authoritative formatter. refresh391\u2192384 shrinking ratchet; all other perk widgets/event ownership and existing exact deferrals retained. This does not approve remaining384L design or increase any allowance.",
-      "review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
-      "review_scope": "Only exact reviewed current Leadership read-only correction. Existing owner and perk-panel extraction deferral retained verbatim; no blanket ceiling increase or runtime/rendered approval.",
+      "rationale": "Read-only Leadership section text/availability extracted to focused11L helper and shared authoritative formatter. refresh391\u2192384 shrinking ratchet; all other perk widgets/event ownership and existing exact deferrals retained. This does not approve remaining384L design or increase any allowance. Exact same-size policy3 icon resolver include/call substitution only. Captured labels, card geometry, lifetime, gameplay and all inherited extraction deferrals remain; no future growth credit.",
+      "review": "IR-SYLVAN-HYBRID-ALL-ICON-CONSUMERS-20261116",
+      "review_scope": "Only exact reviewed current Leadership read-only correction. Existing owner and perk-panel extraction deferral retained verbatim; no blanket ceiling increase or runtime/rendered approval. Exact policy3 icon lookup delegation only, independently reviewed at unchanged384 lines; this is a bounded technical exception with the same existing extraction obligations, not a shrinking ratchet or later growth allowance.",
       "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "8e3be6e863051d5445d351eaefadf7288adc2c539bf4660bf046d7fae3414e4e"
+      "sha256": "b5bbe052395d7b0de907225489251f6e4d587885175fd1711b7e0d99ddb3019e"
     },
     "client/windows/HeroSkillOddsWindow.cpp::HeroSkillOddsWindow::HeroSkillOddsWindow(const CGHeroInstance & hero) : CWindowObject(BORDERED)#1": {
       "deferral": "Owner: ui_developer. Before further odds-window layout/label expansion, extract cohesive captured Skill display rows through existing shared presentation, with explicit hero and existing measured weights as input and immutable label/help rows as output. Preserve filtering, stable sorting, probability arithmetic and fallback text; require old/current captured-label and unchanged-weight comparisons. Exact103-line existing-hotspot renewal below150, not ceiling permission.",
@@ -23544,16 +23550,17 @@
     },
     "client/windows/NewHorizonsPerkBrowser.cpp::NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, const std::string & skillId) : CWindowObject(BORDERED, ImagePath::builtin(\"newHorizonsOrdersBackground.png\"))#1": {
       "deferral": "UI developer owns extraction of read-only perk rank-column/card construction into a focused PerkBrowserCards presentation owner before substantive affected-area growth. Accept the saved SkillDefinition/PerkState read model, current Skill rank and explicit native geometry; return parent-owned widgets and popup-only help values without retaining borrowed temporary definitions or mutating gameplay. Preserve three rank columns, ten-perk catalogue and tier/eligibility captions, current/historical captured label/icon identity, exact card positions/font/colors, learned state, lazy popup creation, child ownership, Close/Escape and shadow behavior. Require maintained browser guards, native saved-catalogue/current-historical icon checks and isolated rendered open/right-click/close/reopen/legacy-absence parity. Exact115-line no-growth allowance covers only the single captured-name icon argument; no future growth or general structural clearance. Next substantive browser construction growth should extract rank-column assembly with saved-rule identity, locked/acquired states and native card hitbox parity; no150 ceiling increase.",
+      "hybrid_predecessor_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
       "kind": "exception",
       "lines": 117,
       "owner": "ui_developer",
       "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Routes captured Sylvan artwork or Movement presentation through focused shared helpers. Existing layout and constructor responsibilities do not expand.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "rationale": "Routes captured Sylvan artwork or Movement presentation through focused shared helpers. Existing layout and constructor responsibilities do not expand. Exact117-line no-growth helper-call substitution delegates captured policy3 icon identity to a focused38-line owner. No card/widget/lifetime expansion; all previous extraction obligations remain.",
+      "review": "IR-SYLVAN-HYBRID-POLICY3-BOUNDED-SOURCE-20261116",
       "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
       "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "1a3aa249b0cb347dde046e6f007338c4ebfc0541f7e8bb2641fc569944760a12"
+      "sha256": "a2ebe50fda2955d0ec172d471e8727402ab9147fd8f0ffc8cb21641e16a1e57d"
     },
     "client/windows/QuickRecruitmentWindow.cpp": {
       "completed_p_predecessor": {

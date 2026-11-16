@@ -42,6 +42,18 @@ void configure(const CGHeroInstance & hero, SylvanLuckState & fortune)
 	{
 		return hero.hasActivePerk("new-horizons:sylvanLuck", std::string("new-horizons:sylvanLuck.") + id);
 	};
+	if(newHorizonsHeroes::usesSylvanTacticsV3(hero.getPerkState().rules))
+	{
+		// Policy 3 reuses the existing activation/Waiting histories, but only
+		// enables the selected hybrid roster. Older captures keep their slots.
+		tactics.fleetfoot = perk("forestSFavor");
+		tactics.patientHunter = perk("serendipity");
+		tactics.dappledCover = perk("luckyRecovery");
+		tactics.disruptiveStrike = perk("fortunateAim");
+		tactics.quickRedeployment = perk("natureSProvidence");
+		tactics.perfectMoment = perk("perfectMoment");
+		return;
+	}
 	if(newHorizonsSylvanTacticsV2::enabled(&hero))
 	{
 		tactics.perfectMoment = perk("perfectMoment");

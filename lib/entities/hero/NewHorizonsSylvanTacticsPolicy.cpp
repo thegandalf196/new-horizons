@@ -8,13 +8,17 @@ bool usesSylvanTactics(const JsonNode & rules)
 {
 	if(!rules.isStruct() || !rules.Struct().contains("sylvanTacticsPolicy")) return false;
 	const auto & policy = rules["sylvanTacticsPolicy"];
-	if(policy.getType() != JsonNode::JsonType::DATA_INTEGER || (policy.Integer() != 1 && policy.Integer() != 2))
+	if(policy.getType() != JsonNode::JsonType::DATA_INTEGER || policy.Integer() < 1 || policy.Integer() > 3)
 		throw std::runtime_error("Invalid Sylvan Tactics policy");
 	return true;
 }
 bool usesSylvanTacticsV2(const JsonNode & rules)
 {
 	return usesSylvanTactics(rules) && rules["sylvanTacticsPolicy"].Integer() == 2;
+}
+bool usesSylvanTacticsV3(const JsonNode & rules)
+{
+	return usesSylvanTactics(rules) && rules["sylvanTacticsPolicy"].Integer() == 3;
 }
 void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported)
 {

@@ -98,10 +98,26 @@ class NewHorizonsUiPerkInventoryTest(unittest.TestCase):
         # image at the icon stem. This guards the read-only Development pool;
         # it is not a rendered assertion about the level-up offer dialog.
         self.assertRegex(source, re.compile(
-            r"std::make_shared<CAnimImage>\(\s*AnimationPath::builtin\(newHorizonsPerkIcon\(perk.id,\s*perk.name,\s*perkState.rules\)\),"
+            r"std::make_shared<CAnimImage>\(\s*AnimationPath::builtin\(newHorizonsHybridCapturedPerkIcon\(perk.id,\s*perk.name,\s*perkState.rules\)\),"
             r"\s*0\s*,"))
         self.assertNotRegex(source, re.compile(
-            r"std::make_shared<CPicture>\(ImagePath::builtin\(newHorizonsPerkIcon\("))
+            r"std::make_shared<CPicture>\(ImagePath::builtin\(newHorizonsHybridCapturedPerkIcon\("))
+
+    def test_all_perk_consumers_route_through_current_captured_policy(self):
+        # Source routing guard only: native resolver tests verify identities,
+        # and actual rendered windows remain a separate acceptance gate.
+        consumers = {
+            "CLevelWindowChoices.cpp": 2,
+            "HeroGrowthWindow.cpp": 1,
+            "CHeroWindow.cpp": 1,
+            "NewHorizonsPerkBrowser.cpp": 1,
+        }
+        for filename, calls in consumers.items():
+            with self.subTest(consumer=filename):
+                source = (ROOT / "client/windows" / filename).read_text(encoding="utf-8")
+                self.assertIn('#include "NewHorizonsSylvanHybridPerkIcons.h"', source)
+                self.assertEqual(source.count('newHorizonsHybridCapturedPerkIcon('), calls)
+                self.assertNotRegex(source, r'\bnewHorizons(?:Captured)?PerkIcon\(')
 
     def test_active_neutral_fallbacks_are_not_mistaken_for_finished_art(self):
         for row in self.rows:

@@ -51,7 +51,7 @@ def verify_rank_transition_wiring() -> None:
     assert 'skill.unlearned' not in skill_branch and 'skill.rankTransition' not in skill_branch
     require(perk_branch, "perk.name", "perk card name")
     require(perk_branch, "newHorizonsPerkHelp::format", "captured mechanical perk help")
-    require(perk_branch, "newHorizonsPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)", "perk icon")
+    require(perk_branch, "newHorizonsHybridCapturedPerkIcon(perk.selection.perkId, perk.name, hero->getPerkState().rules)", "perk icon")
     _, _, heading = braced_block(CHOICES, "CLevelWindow::perkHeaderText()")
     require(heading, "newHorizonsPerkHelp::tierName(first.requiredRank)", "visible required-rank heading")
     require(heading, "newHorizonsPerkHelp::skillName(hero, first.selection.skillId)", "visible owning-Skill heading")

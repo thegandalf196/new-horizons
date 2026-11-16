@@ -190,6 +190,10 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
 		// The old battle format also predates an active Crisis Command profile.
 		auto legacyPerks = loaded->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
+		// This historical writer also predates unified rank-and-perk grants.
+		// The legacy offer helper removes strict progression; retaining its
+		// dependent unified marker would describe an invalid modern capture.
+		legacyPerks.Struct().erase("unifiedSkillProgressionVersion");
 		for(auto & perk : legacyPerks["skills"]["new-horizons:command"]["perks"].Vector())
 			if(perk["id"].String() == "new-horizons:command.crisisCommand")
 				perk["effect"]["status"].String() = "planned";
@@ -848,13 +852,18 @@ TEST_F(NewHorizonsSylvanLuckTest, WildChanceScopesSylvanLuckToNatureSummons)
 TEST_F(NewHorizonsSylvanLuckLegacySaveTest, LegacySaveIsInertAndCannotDiscardLiveHistory)
 {
 	startBattle();
-	// setupBattle captures later Army Value metadata even for an otherwise inert
-	// fixture. This synthetic pre-Sylvan source must model its historical absence.
+	// setupBattle captures later Army Value and Leadership-composition metadata
+	// even for this otherwise inert fixture. Model their historical absence.
 	ASSERT_TRUE(battle()->hasInitialArmyValueState());
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		battle()->getSide(side).initialArmyValue.reset();
-		battle()->getSide(side).initialArmyIsWandering = false;
+		auto & state = battle()->getSide(side);
+		ASSERT_TRUE(state.leadershipComposition.captured);
+		EXPECT_THROW(state.leadershipComposition.validateSerialization(false), std::runtime_error);
+		state.leadershipComposition = {};
+		EXPECT_FALSE(state.leadershipComposition.captured);
+		state.initialArmyValue.reset();
+		state.initialArmyIsWandering = false;
 	}
 	ASSERT_FALSE(battle()->hasInitialArmyValueState());
 	CMemorySerializer old;
@@ -863,8 +872,10 @@ TEST_F(NewHorizonsSylvanLuckLegacySaveTest, LegacySaveIsInertAndCannotDiscardLiv
 	old.oser & *battle();
 	BattleInfo restored(gameState().get());
 	restored.getSide(BattleSide::ATTACKER).sylvanLuck.serendipity = true;
+	restored.getSide(BattleSide::ATTACKER).leadershipComposition = {true, true, true};
 	old.iser & restored;
 	EXPECT_EQ(restored.getSylvanLuckState(BattleSide::ATTACKER), SylvanLuckState{});
+	EXPECT_EQ(restored.getSide(BattleSide::ATTACKER).leadershipComposition, newHorizonsHeroes::LeadershipComposition{});
 	EXPECT_EQ(restored.getLuckRollRules().diceSize, 0);
 	battle()->getSide(BattleSide::ATTACKER).sylvanLuck.serendipity = true;
 	CMemorySerializer rejected;
