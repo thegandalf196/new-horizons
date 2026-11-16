@@ -138,6 +138,7 @@ protected:
 
 	bool acceptLandSurveyor(CGameHandler & handler, CGHeroInstance * hero)
 	{
+		handler.onAdvInterfaceReady(hero->getOwner());
 		handler.changeSecSkill(hero, estatesSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		if(hero->getSecSkillLevel(estatesSkill()) != MasteryLevel::BASIC)
 			return false;

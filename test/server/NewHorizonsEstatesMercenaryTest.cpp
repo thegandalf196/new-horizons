@@ -1,22 +1,11 @@
 /* Part of VCMI engine; GNU General Public License v2.0 or later; see license.txt */
 #include "StdInc.h"
 #include "NewHorizonsEstatesFixture.h"
-#include "../hero/HistoricalCapabilityRules.h"
+#include "../../lib/entities/hero/NewHorizonsLeadership.h"
 
 namespace
 {
-class NewHorizonsEstatesMercenaryTest : public estatesTest::Fixture
-{
-protected:
-    bool historicalAdmission = false;
-    void mapLoaded(CMap * loaded) override
-    {
-        estatesTest::Fixture::mapLoaded(loaded);
-        if(historicalAdmission)
-            loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
-                historicalCapabilityRulesV4());
-    }
-};
+class NewHorizonsEstatesMercenaryTest : public estatesTest::Fixture {};
 using namespace estatesTest;
 }
 
@@ -100,25 +89,27 @@ TEST_F(NewHorizonsEstatesMercenaryTest, PendingCurrentSaveRoundtripAndOwnerDispo
     EXPECT_EQ(mine->getPendingMercenaries(), 8);
 }
 
-TEST_F(NewHorizonsEstatesMercenaryTest, CollectionUsesNativeLeadershipValidation)
+TEST_F(NewHorizonsEstatesMercenaryTest, CollectionAboveLeadershipCapacityRemainsLegalAndUsesEfficiency)
 {
-    historicalAdmission = true; // This regression exercises retired hard-cap admission, not current efficiency.
     ASSERT_NO_FATAL_FAILURE(startGame());
     GameHandlerTestServer server(gameState(), PLAYER);
     CGameHandler handler(server, gameState());
     const auto rogue = creature("core:rogue");
-    const auto capacity = first->getLeadershipSlotCapacity(rogue);
-    ASSERT_TRUE(capacity);
-    ASSERT_GT(capacity->maximum, 0);
-    ASSERT_TRUE(first->setCreature(SlotID(1), rogue, capacity->maximum));
+    const auto readout = newHorizonsHeroes::leadershipStackReadout(first, rogue, 1);
+    ASSERT_TRUE(readout.active);
+    ASSERT_GT(readout.capacity, 0);
+    EXPECT_FALSE(first->getLeadershipSlotCapacity(rogue));
+    const auto oversized = readout.capacity + 10;
+    ASSERT_TRUE(first->setCreature(SlotID(1), rogue, oversized));
     mine->grantWeeklyMercenaries(handler, 0, 5);
-    EXPECT_FALSE(handler.moveStack(StackLocation(mine->id, SlotID(0)), StackLocation(first->id, SlotID(1)), 1));
-    EXPECT_EQ(rogues(mine), 5);
-    EXPECT_EQ(first->getStackCount(SlotID(1)), capacity->maximum);
-    ASSERT_TRUE(first->setCreature(SlotID(1), rogue, capacity->maximum - 1));
-    ASSERT_TRUE(handler.moveStack(StackLocation(mine->id, SlotID(0)), StackLocation(first->id, SlotID(1)), 1));
-    EXPECT_EQ(rogues(mine), 4);
-    EXPECT_EQ(first->getStackCount(SlotID(1)), capacity->maximum);
+    ASSERT_EQ(rogues(mine), 5);
+    ASSERT_TRUE(handler.moveStack(StackLocation(mine->id, SlotID(0)), StackLocation(first->id, SlotID(1)), 5));
+    EXPECT_EQ(rogues(mine), 0);
+    EXPECT_EQ(first->getStackCount(SlotID(1)), oversized + 5);
+    const auto after = newHorizonsHeroes::leadershipStackReadout(first, rogue, oversized + 5);
+    EXPECT_EQ(after.capacity, readout.capacity);
+    EXPECT_LT(after.efficiency, 1.0);
+    EXPECT_GT(after.efficiency, 0.0);
 }
 
 TEST_F(NewHorizonsEstatesMercenaryTest, WrongTypedAndNegativeReplicatedDebtReject)
