@@ -2,9 +2,8 @@
 
 The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json). Menu and generated module read it; development versions may be ahead of the published releases. The version alone does not establish release publication or playable acceptance.
 
-Current development source metadata is **0.92.0**, pending release validation;
-the latest published release remains
-[0.91.2 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91.2).
+Current source metadata and the latest published release are **0.92.0**:
+[0.92.0 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.92.0).
 The Leadership-efficiency
 migration requires a new game even from 0.90. The source writer is **1161**;
 the minimum accepted save format remains **1159**. Four-offer progression and
@@ -12,7 +11,7 @@ revised Estates have distinct successor capture guards. Supported older captures
 retain their original meanings; earlier files are rejected without conversion or
 modification. Product metadata alone does not identify a published package.
 See the [save boundary](developers/Serialization.md#current-save-boundary) and
-[0.91.2 changelog](NEW_HORIZONS_CHANGELOG.md#0912-early-access).
+[0.92.0 changelog](NEW_HORIZONS_CHANGELOG.md#0920-early-access).
 
 Product version, VCMI engine revision, save-schema version and Git commit are separate identities. Save epochs change only for actual compatibility boundaries. Source-matched Windows/Linux packages must record the same full source revision; selected playable promotion is a separate validated operation.
 

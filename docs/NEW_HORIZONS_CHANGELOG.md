@@ -7,14 +7,16 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## Unreleased
+## 0.92.0 Early Access
 
-- Next-release source work, pending native and rendered validation: four fixed
-  weighted offers grant one Skill or perk advancement per level. External Skill
-  teaching grants no automatic perk; historical saved progression is retained.
-- Next-release source work, pending native and rendered validation: revises the
-  ten Estates perks around location rewards, kingdom production, defended mines,
-  remote stewards and shared purchase quotes. Rank income remains 125/250/500 Gold.
+- Four fixed weighted offers grant one Skill or perk advancement per level.
+  A perk offer opens its Skill’s complete currently eligible pool; each Skill
+  holds at most three perks, with accessible earlier tiers remaining available
+  under their rank and perk prerequisites. External Skill teaching grants no
+  automatic perk; fresh default heroes retain their authored starting perks.
+- Revises the ten Estates perks around location rewards, kingdom production,
+  defended mines, remote stewards and shared purchase quotes. Rank income
+  remains 125/250/500 Gold.
 
 - Mixes Sylvan Tactics activation and Waiting perks with Hunting Pack, Evergreen
   Blessings, Kindred Flame and Ancient Accord. Perfect Moment and the rank
@@ -33,6 +35,13 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   remains separate from this baseline and from resistance chance.
 - The hero screen shows the captured per-level Movement gain beside current
   and maximum Movement, using the same green growth display as attributes.
+
+Save format is **1161**, with minimum supported format **1159**. Supported
+historical saves retain their captured progression, pending choices and Estates
+rules. A new game is still required when upgrading from 0.90 or earlier; older
+files are rejected without conversion or modification.
+
+[0.92.0 downloads, checksums and corresponding sources](https://github.com/thegandalf196/new-horizons/releases/tag/v0.92.0).
 
 ## 0.91.2 Early Access
 

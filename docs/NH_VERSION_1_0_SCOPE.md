@@ -21,7 +21,7 @@ Version 1.0 dependencies.
 1. **Primary attributes:** class-based deterministic development and coherent
    scaled formulas/readouts.
 2. **Secondary skills:** Basic/Advanced/Expert ranks with ten perk alternatives
-   per Skill and at most three acquired perks. The next-release source profile
+   per Skill and at most three acquired perks. The 0.92.0 progression profile
    presents four fixed weighted groups at each ordinary level-up: two Skill
    offers and two distinct perk-parent offers. Choose one advancement; a perk
    offer opens that parent's complete currently eligible pool. Accessible

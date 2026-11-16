@@ -8,9 +8,9 @@
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
-Source metadata targets **0.91.1**. The latest published release is
-[0.91.1 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91.1).
-See the [0.91.1 changelog](docs/NEW_HORIZONS_CHANGELOG.md#0911-early-access) for its scope.
+Source metadata targets **0.92.0**. The latest published release is
+[0.92.0 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.92.0).
+See the [0.92.0 changelog](docs/NEW_HORIZONS_CHANGELOG.md#0920-early-access) for its scope.
 The Wiki describes published rules; source metadata does not establish publication.
 
 ## Before you begin
@@ -49,6 +49,7 @@ Quick Combat and AI-versus-AI auto-resolved battles use **Fast** search by defau
 In the in-game Battle options, choose **Quick combat AI → Full** for the
 reference search. Fast can change decisions and casualties; Full can take longer.
 Visible auto-fight and manually played battles retain their ordinary combat AI.
+Choosing to finish a battle with auto-combat uses the Quick combat AI setting.
 
 ### Orders
 
@@ -58,7 +59,7 @@ Charge! rewards troops that advance far enough before making a melee attack. Foc
 
 And every ordinary Order competes with your spellcasting for that round. Sometimes saving Mana is sensible. Sometimes the spell is worth far more than the command you’d otherwise issue. That does not mean Might Heroes only use orders while Magic Heroes only use spells. No, the Knight keeps his spellbook, and the Wizard can give orders (I wrote this, and immediately thought to myself ‘this reads too much like AI’, but I liked the contrast, and the imagery it provoked in me, so I kept it).
 
-Their specializations make the choice different. Might heroes can develop Warfare, which increases the contribution their attributes make to Orders. Magic heroes can develop Wisdom, which reduces ordinary spell costs and supports their magical endurance. Both can learn Authority to develop their army slots.
+Their specializations make the choice different. Might heroes can develop Warfare, which increases the contribution their attributes make to Orders. Magic heroes can develop Wisdom, which reduces ordinary spell costs and supports their magical endurance. Both can learn Authority to improve their army’s effective Leadership.
 
 ### Primary skills -> Attributes
 
@@ -72,7 +73,7 @@ There’s room for heroes who work across the divide, too. Warcasting grants Arc
 
 That question matters just as much.
 
-Skills retain the familiar Basic, Advanced, and Expert ranks. Each has ten perk alternatives, with one selected at each tier. Every acquired rank immediately grants a choice from its complete perk tier: Basic Skill with a Basic perk, Advanced with Advanced, and Expert with Expert. External teachers and starting Skills follow the same rule.
+Skills retain the familiar Basic, Advanced, and Expert ranks. Each has ten perk alternatives and room for at most three selected perks, including choices from accessible earlier tiers when their rank and perk prerequisites are met. At each ordinary level-up, up to four fixed offers let you choose one advancement: a Skill rank or a perk. A perk offer opens that Skill’s complete eligible pool. External teachers grant their normal Skill ranks without an automatic perk; fresh default heroes still begin with two Basic Skills and one authored Basic perk for each.
 
 An offensive commander might take Shock Assault, letting attacks under Charge! ignore part of the enemy’s Defense. Another might choose Spearhead to strengthen Charge! further. Those choices give the same Orders different tactical weight.
 

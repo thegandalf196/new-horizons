@@ -61,7 +61,7 @@ attributes are five times the class vector; base attributes follow
 `Attribute(L) = growth * (L + 4)`. Offense and Archery independently roll +1
 Attack, Armorer +1 Defense, Spellcraft +1 Spell Power, and Wisdom +1 Knowledge
 at 10/20/30% for Basic/Advanced/Expert. There is no level-ten transition.
-Knowledge supplies base Normal Spell Point capacity. The next-release source
+Knowledge supplies base Normal Spell Point capacity. The 0.92.0 progression
 profile uses four fixed weighted level-up offers and one accepted advancement,
 with full live perk pools for the offered parent Skills. Rank and perk prerequisites
 remain distinct; external Skill teaching does not automatically grant perks.
