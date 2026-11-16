@@ -36,7 +36,7 @@ void newHorizonsHeroes::applyLevelUpOffer(CGHeroInstance * hero, const HeroLevel
 	}
 	else if(pack.perkOnly || pack.restoredOffer)
 		throw std::runtime_error("Unified level-up flags without captured policy");
-	if(!unified && pack.skills.empty())
+	if(!unified && pack.skills.empty() && !pack.perks.empty())
 	{
 		// Major System Rework Part VII: Dedicated follow-up perk offer for an acquired skill rank.
 		if(!pack.perks.empty())

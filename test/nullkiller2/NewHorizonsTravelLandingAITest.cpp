@@ -8,6 +8,7 @@
 #include "../SpellPointTestUtils.h"
 #include "AI/Nullkiller2/AIGateway.h"
 #include "lib/GameSettings.h"
+#include "lib/UnlockGuard.h"
 #include "lib/bonuses/Bonus.h"
 #include "lib/callback/CCallback.h"
 #include "lib/callback/GameRandomizer.h"
@@ -30,6 +31,7 @@
 #include <functional>
 #include <shared_mutex>
 #include <stdexcept>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -37,6 +39,46 @@ namespace
 {
 constexpr PlayerColor PLAYER(0);
 constexpr PlayerColor OPPONENT(1);
+
+// Probe from another thread: trying exclusive ownership on the calling thread
+// would violate shared_mutex's precondition while its read lease is held.
+bool writerCanAcquireGameState()
+{
+	bool acquired = false;
+	std::thread writer([&]()
+	{
+		std::unique_lock lock(CGameState::mutex, std::try_to_lock);
+		acquired = lock.owns_lock();
+	});
+	writer.join();
+	return acquired;
+}
+
+void expectSynchronousRequestLease()
+{
+	const bool unleased = writerCanAcquireGameState();
+	EXPECT_FALSE(unleased);
+	// A failing regression must not itself call unlock_shared without ownership.
+	if(unleased)
+		return;
+	{
+		auto unlock = vstd::makeUnlockSharedGuard(CGameState::mutex);
+		EXPECT_TRUE(writerCanAcquireGameState());
+	}
+	EXPECT_FALSE(writerCanAcquireGameState());
+}
+
+class FailingTurnPlanner final : public NK2AI::Nullkiller
+{
+public:
+	int calls = 0;
+	std::function<void()> failure = [] { throw std::runtime_error("Injected turn failure"); };
+	void makeTurn() override
+	{
+		++calls;
+		failure();
+	}
+};
 
 class LandingServer final : public GameHandlerTestServer
 {
@@ -190,6 +232,31 @@ protected:
 		std::shared_lock lock(CGameState::mutex);
 		gateway->endTurn();
 	}
+	FailingTurnPlanner & installFailingPlanner()
+	{
+		auto planner = std::make_unique<FailingTurnPlanner>();
+		planner->init(callback, gateway.get());
+		auto & result = *planner;
+		gateway->nullkiller = std::move(planner);
+		return result;
+	}
+	void expectRecoveryFailure(const std::function<void()> & failure)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepare());
+		auto & planner = installFailingPlanner();
+		client->beforeEndTurn = [&]()
+		{
+			expectSynchronousRequestLease();
+			failure();
+		};
+		EXPECT_NO_THROW(gateway->makeTurn());
+		EXPECT_EQ(planner.calls, 1);
+		EXPECT_EQ(client->endTurns, 1);
+		EXPECT_TRUE(server->acknowledgements.empty());
+		EXPECT_TRUE(gateway->status.haveTurn());
+		EXPECT_TRUE(handler->turnOrder->isPlayerMakingTurn(PLAYER));
+		EXPECT_TRUE(writerCanAcquireGameState());
+	}
 	void acquireForcedMarch()
 	{
 		const std::string parent = "new-horizons:logistics";
@@ -222,6 +289,76 @@ protected:
 		}
 	}
 };
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, TurnExceptionRecoveryOwnsSynchronousRequestLease)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto & planner = installFailingPlanner();
+	client->beforeEndTurn = [] { expectSynchronousRequestLease(); };
+	EXPECT_NO_THROW(gateway->makeTurn());
+	EXPECT_EQ(planner.calls, 1);
+	EXPECT_EQ(client->endTurns, 1);
+	EXPECT_EQ(server->acknowledgements, std::vector<bool>{true});
+	EXPECT_FALSE(gateway->status.haveTurn());
+	EXPECT_FALSE(handler->turnOrder->isPlayerMakingTurn(PLAYER));
+	EXPECT_TRUE(writerCanAcquireGameState());
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, TurnExceptionRecoveryOwnsLeaseDuringLandingRequests)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(interruptOverWater(hero, EPathfindingLayer::AIR));
+	auto & planner = installFailingPlanner();
+	client->beforeMove = [](const MoveHero &) { expectSynchronousRequestLease(); };
+	client->beforeEndTurn = [] { expectSynchronousRequestLease(); };
+	EXPECT_NO_THROW(gateway->makeTurn());
+	EXPECT_EQ(planner.calls, 1);
+	EXPECT_FALSE(client->moves.empty());
+	EXPECT_EQ(client->endTurns, 1);
+	EXPECT_FALSE(gateway->status.haveTurn());
+	EXPECT_TRUE(std::all_of(server->acknowledgements.begin(), server->acknowledgements.end(),
+		[](bool accepted) { return accepted; }));
+	EXPECT_TRUE(writerCanAcquireGameState());
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, InterruptedTurnDoesNotEnterExceptionRecovery)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto & planner = installFailingPlanner();
+	planner.failure = [] { throw InterruptionRequestedException(); };
+	EXPECT_NO_THROW(gateway->makeTurn());
+	EXPECT_EQ(planner.calls, 1);
+	EXPECT_EQ(client->endTurns, 0);
+	EXPECT_TRUE(gateway->status.haveTurn());
+	EXPECT_TRUE(writerCanAcquireGameState());
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, TerminatedTurnDoesNotEnterExceptionRecovery)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto & planner = installFailingPlanner();
+	planner.failure = [] { throw TerminationRequestedException(); };
+	EXPECT_NO_THROW(gateway->makeTurn());
+	EXPECT_EQ(planner.calls, 1);
+	EXPECT_EQ(client->endTurns, 0);
+	EXPECT_TRUE(gateway->status.haveTurn());
+	EXPECT_TRUE(writerCanAcquireGameState());
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, InterruptedExceptionRecoveryRetainsTurnWithoutRetry)
+{
+	ASSERT_NO_FATAL_FAILURE(expectRecoveryFailure([] { throw InterruptionRequestedException(); }));
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, TerminatedExceptionRecoveryRetainsTurnWithoutRetry)
+{
+	ASSERT_NO_FATAL_FAILURE(expectRecoveryFailure([] { throw TerminationRequestedException(); }));
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, FailedExceptionRecoveryRetainsTurnWithoutRetry)
+{
+	ASSERT_NO_FATAL_FAILURE(expectRecoveryFailure([] { throw std::runtime_error("Injected recovery failure"); }));
 }
 
 TEST_F(NewHorizonsTravelLandingAITest, InterruptedRoutesLandEveryOwnedTravelerBeforeAuthoritativeEndTurn)

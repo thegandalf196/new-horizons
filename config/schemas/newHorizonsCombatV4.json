@@ -42,8 +42,8 @@
 			"description": "Provisional R=floor((max(0,A)+max(0,D))/attributeDivisor)+commandMultiplier*max(0,Command). Efficiency scales only rating-derived terms; attack/defense coefficient labels retain Warfare specialization ownership.",
 			"properties": {
 				"version": {"type": "integer", "enum": [1]},
-				"attributeDivisor": {"type": "integer", "minimum": 1, "maximum": 1000000},
-				"commandMultiplier": {"type": "integer", "minimum": 0, "maximum": 1000000}
+				"attributeDivisor": {"type": "integer", "minimum": 1, "maximum": 1000},
+				"commandMultiplier": {"type": "integer", "minimum": 0, "maximum": 1000}
 			}
 		},
 		"warfarePolicyVersion": {"type": "integer", "enum": [1], "description": "Orders spend the ordinary Hero Action without a consumable Command pool."},
@@ -135,7 +135,7 @@
 			"additionalProperties": false,
 			"properties": {
 				"base": {"type": "number", "minimum": 0, "maximum": 100},
-				"formationRating": {"type": "number", "minimum": 0, "maximum": 1000000},
+				"formationRating": {"type": "number", "minimum": 0, "maximum": 1000},
 				"cap": {"type": "integer", "minimum": 0, "maximum": 100}
 			}
 		},
@@ -429,7 +429,7 @@
 							],
 							"additionalProperties": false,
 							"properties": {
-								"formationRating": {"type": "number", "minimum": 0, "maximum": 1000000},
+								"formationRating": {"type": "number", "minimum": 0, "maximum": 1000},
 								"base": {
 									"type": "number",
 									"minimum": 0,
@@ -483,7 +483,7 @@
 					],
 					"additionalProperties": false,
 					"properties": {
-						"formationRatingPerRound": {"type": "number", "minimum": 0, "exclusiveMinimum": true, "maximum": 1000000},
+						"formationRatingPerRound": {"type": "number", "minimum": 0, "exclusiveMinimum": true, "maximum": 1000},
 						"leadershipPerRound": {
 							"type": "number",
 							"minimum": 0,

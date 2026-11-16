@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleAI.h"
 #include "BattleEvaluator.h"
+#include "BattleStrengthRatio.h"
 #include "HeroDecisionPressure.h"
 #include "BattleAIDiagnosticAdmission.h"
 #include "../../lib/CCreatureHandler.h"
@@ -20,11 +21,11 @@
 #include "../../lib/callback/IGameInfoCallback.h"
 #include <memory>
 
-static float getStrengthRatio(std::shared_ptr<CBattleInfoCallback> cb, BattleSide side)
+float battleAI::strengthRatio(const CBattleInfoCallback & battle, BattleSide side)
 {
-	auto stacks = cb->battleGetAllStacks();
-	auto our = 0;
-	auto enemy = 0;
+	auto stacks = battle.battleGetAllStacks();
+	long double our = 0;
+	long double enemy = 0;
 
 	for(auto stack : stacks)
 	{
@@ -33,13 +34,17 @@ static float getStrengthRatio(std::shared_ptr<CBattleInfoCallback> cb, BattleSid
 		if(!creature)
 			continue;
 
+		// Both an individual product and the roster sum can exceed signed
+		// integer ranges. Widen before multiplying, then retain the original
+		// float numerator/denominator rounding at the final division boundary.
+		const auto strength = static_cast<long double>(stack->getCount()) * creature->getAIValue();
 		if(stack->unitSide() == side)
-			our += stack->getCount() * creature->getAIValue();
+			our += strength;
 		else
-			enemy += stack->getCount() * creature->getAIValue();
+			enemy += strength;
 	}
 
-	return enemy == 0 ? 1.0f : static_cast<float>(our) / enemy;
+	return enemy == 0 ? 1.0f : static_cast<float>(our) / static_cast<float>(enemy);
 }
 
 int getSimulationTurnsCount(const StartInfo * startInfo)
@@ -50,7 +55,7 @@ int getSimulationTurnsCount(const StartInfo * startInfo)
 BattleEvaluator CBattleAI::makeEvaluator(const BattleID & battleID, const CStack * stack)
 {
 	return BattleEvaluator(env, cb, stack, playerID, battleID, side,
-		getStrengthRatio(cb->getBattle(battleID), side), getSimulationTurnsCount(env->game()->getStartInfo()));
+		battleAI::strengthRatio(*cb->getBattle(battleID), side), getSimulationTurnsCount(env->game()->getStartInfo()));
 }
 
 bool CBattleAI::attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack)

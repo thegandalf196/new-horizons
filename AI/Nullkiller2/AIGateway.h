@@ -59,10 +59,10 @@ public:
 	void addQuery(QueryID ID, std::string description);
 	void removeQuery(QueryID ID);
 	int getQueriesCount();
-	void startedTurn();
+	DLL_LINKAGE void startedTurn();
 	void madeTurn();
 	void waitTillFree();
-	bool haveTurn();
+	DLL_LINKAGE bool haveTurn();
 	void attemptedAnsweringQuery(QueryID queryID, int answerRequestID);
 	void receivedAnswerConfirmation(int answerRequestID, int result);
 	void heroVisit(const CGObjectInstance * obj, bool started);
@@ -70,7 +70,7 @@ public:
 
 // The gateway is responsible for AI events handling. Copied from VCAI.h and refined a bit
 // Probably we can use concept of hooks to handle event in their related goals
-class DLL_EXPORT AIGateway : public CAdventureAI
+class DLL_LINKAGE AIGateway : public CAdventureAI
 {
 public:
 	ObjectInstanceID destinationTeleport;

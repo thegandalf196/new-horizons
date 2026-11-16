@@ -84,7 +84,7 @@ TaskFailureAction chooseTaskFailureAction(bool hasAnySuccess, bool hasRemainingT
 bool reserveUnavailableRouteReplan(
 	const TaskExecutionResult & execution, std::set<ObjectInstanceID> & replannedRouteHeroes);
 
-class Nullkiller
+class DLL_LINKAGE Nullkiller
 {
 private:
 	const CGHeroInstance * activeHero;

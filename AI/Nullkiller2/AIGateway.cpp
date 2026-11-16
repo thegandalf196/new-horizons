@@ -1082,7 +1082,25 @@ void AIGateway::makeTurn()
 	catch (const std::exception & e)
 	{
 		logAi->error("Exception in NK2 makeTurn: %s. Ending turn gracefully.", e.what());
-		endTurn();
+		try
+		{
+			// The turn's read lease unwound before this handler. Recovery reads
+			// state and its synchronous requests temporarily release the lease.
+			std::shared_lock gsLock(CGameState::mutex);
+			endTurn();
+		}
+		catch (const InterruptionRequestedException &)
+		{
+			logAi->debug("Making turn recovery has been interrupted. Retaining turn.");
+		}
+		catch (const TerminationRequestedException &)
+		{
+			logAi->debug("Making turn recovery has been terminated. Retaining turn.");
+		}
+		catch (const std::exception & recoveryError)
+		{
+			logAi->error("Exception in NK2 turn recovery: %s. Retaining turn without retry.", recoveryError.what());
+		}
 	}
 }
 

@@ -6,15 +6,25 @@ import re
 import unittest
 
 from jsonschema import Draft4Validator
+from referencing import Registry, Resource
 
-from test_new_horizons_content import ROOT, load
+if __package__:
+    from .test_new_horizons_content import ROOT, load
+else:
+    from test_new_horizons_content import ROOT, load
 
 
 class CreatureCapabilityDataTest(unittest.TestCase):
     def setUp(self):
         self.rules = load("config/newHorizonsHeroes.json")
         self.policy = self.rules["additionalSpecialties"]["ordinaryCreatureSpecialties"]
-        self.validator = Draft4Validator(load("config/schemas/newHorizonsHeroes.json"))
+        schema_path = ROOT / "config/schemas/newHorizonsHeroes.json"
+        registry = Registry().with_resources(
+            (path.as_uri(), Resource.from_contents(load(path)))
+            for path in (ROOT / "config/schemas").glob("newHorizons*.json"))
+        schema = load(schema_path)
+        schema["id"] = schema_path.as_uri()
+        self.validator = Draft4Validator(schema, registry=registry)
 
     def test_current_fields_have_exact_values_and_superseded_fields_are_rejected(self):
         self.validator.validate(self.rules)

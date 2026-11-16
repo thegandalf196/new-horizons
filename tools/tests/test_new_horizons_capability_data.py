@@ -140,7 +140,8 @@ class CapabilityDataTest(unittest.TestCase):
         self.assertNotIn('armyCommand', self.rules)
         self.assertEqual(self.rules['classProfiles'], REWORK_CLASS_PROFILES)
         self.assertEqual(self.rules['leadership']['globalScalePercent'], 100)
-        self.assertEqual(self.rules['leadership']['creatureRequirements'], CANONICAL_LEADERSHIP_REQUIREMENTS)
+        self.assertEqual(self.rules['leadership']['creatureRequirements'],
+                         CANONICAL_LEADERSHIP_REQUIREMENTS | {'core:mummy': 50})
 
     def test_efficiency_policy_is_complete_configurable_and_version_bound(self):
         schema = json.loads((ROOT / 'config/schemas/newHorizonsCapabilities.json').read_text())

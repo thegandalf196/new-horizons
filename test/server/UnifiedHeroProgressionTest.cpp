@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../mock/GameHandlerTestServer.h"
+#include "../hero/HistoricalCapabilityRules.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/entities/hero/CHeroHandler.h"
@@ -19,6 +20,7 @@
 #include "../../server/queries/MapQueries.h"
 #include "../../server/queries/QueriesProcessor.h"
 #include <algorithm>
+#include <numeric>
 #include <boost/filesystem/operations.hpp>
 
 namespace
@@ -41,6 +43,8 @@ struct PendingProgressionSave
 class UnifiedHeroProgressionTest : public TinyMapGameTest
 {
 protected:
+	bool noPerkRules = false;
+	bool historicalProgression = false;
 	Services * gameServices() override { return LIBRARY; }
 	void configurePlayer(PlayerSettings & player) const override
 	{
@@ -49,9 +53,32 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		if(noPerkRules)
+		{
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
+			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+			return;
+		}
+		auto development = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(historicalProgression)
+		{
+			// This capture predates authored starting defaults and unified tiers.
+			development["startingSkills"].Struct().erase("startingPerksPolicyVersion");
+			development["startingSkills"].Struct().erase("startingPerkProfiles");
+			development.setOverrideFlag(true);
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, historicalProgression
+			? historicalCapabilityRulesV5() : JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		if(historicalProgression)
+		{
+			perks.Struct().erase("unifiedSkillProgressionVersion");
+			perks.setOverrideFlag(true);
+		}
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
 	void prepare(bool secondHumanHero = false, uint32_t startingExperience = 0)
 	{
@@ -67,7 +94,8 @@ protected:
 		startWithMap(std::move(map));
 		hero = findHeroByOwner(HUMAN);
 		ASSERT_NE(hero, nullptr);
-		ASSERT_TRUE(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules));
+		ASSERT_EQ(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules),
+			!noPerkRules && !historicalProgression);
 		server = std::make_unique<GameHandlerTestServer>(gameState());
 		handler = std::make_unique<CGameHandler>(*server, gameState());
 		handler->randomizer->setSeed(1337);
@@ -105,6 +133,23 @@ protected:
 		FAIL() << "Progression did not reach an ordinary action boundary";
 	}
 	SecondarySkill authority() const { return SecondarySkill(SecondarySkill::decode(AUTHORITY)); }
+	std::array<int, GameConstants::PRIMARY_SKILLS> primaryValues() const
+	{
+		std::array<int, GameConstants::PRIMARY_SKILLS> result{};
+		for(size_t index = 0; index < result.size(); ++index)
+			result[index] = hero->getBasePrimarySkillValue(PrimarySkill(index));
+		return result;
+	}
+	void fillExpertSkills()
+	{
+		hero->secSkills.clear();
+		for(const auto skill : {SecondarySkill::PATHFINDING, SecondarySkill::ARCHERY,
+			SecondarySkill::LOGISTICS, SecondarySkill::SCOUTING, SecondarySkill::LEADERSHIP,
+			SecondarySkill::LUCK, SecondarySkill::OFFENCE, SecondarySkill::ARMORER})
+			hero->setSecSkillLevel(SecondarySkill(skill), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+		ASSERT_FALSE(hero->canLearnSkill());
+		ASSERT_TRUE(handler->randomizer->rollSecondarySkills(hero).empty());
+	}
 	std::unique_ptr<GameHandlerTestServer> server;
 	std::unique_ptr<CGameHandler> handler;
 	CGHeroInstance * hero = nullptr;
@@ -389,6 +434,127 @@ TEST_F(UnifiedHeroProgressionTest, EmptyOrdinaryOfferStillPublishesExactlyOneLev
 	EXPECT_EQ(hero->level, level + 1);
 	EXPECT_THROW(handler->sendAndApply(offer), std::runtime_error);
 	EXPECT_EQ(hero->level, level + 1);
+}
+
+TEST_F(UnifiedHeroProgressionTest, NullPerkRulesEmptyOrdinaryPacketAdvancesExactlyOnce)
+{
+	noPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_FALSE(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules));
+	const auto level = hero->level;
+	const auto primary = primaryValues();
+	HeroLevelUp offer;
+	offer.heroId = hero->id;
+	offer.player = HUMAN;
+	offer.reachedLevel = level + 1;
+	handler->sendAndApply(offer);
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_EQ(primaryValues(), primary); // Primary growth has its own authoritative packs.
+	EXPECT_THROW(handler->sendAndApply(offer), std::runtime_error);
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_EQ(primaryValues(), primary);
+}
+
+TEST_F(UnifiedHeroProgressionTest, NullPerkRulesFullExpertOwnerlessExperienceTerminates)
+{
+	noPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(fillExpertSkills());
+	handler->setOwner(hero, PlayerColor::NEUTRAL);
+	const auto level = hero->level;
+	const auto primary = primaryValues();
+	const auto experience = LIBRARY->heroh->reqExp(level + 1);
+	handler->giveExperience(hero, experience - hero->exp);
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_EQ(hero->exp, experience);
+	EXPECT_FALSE(hero->gainsLevel());
+	const auto remainingQueries = handler->queries->allQueries();
+	EXPECT_TRUE(remainingQueries.begin() == remainingQueries.end());
+	const auto grown = primaryValues();
+	EXPECT_EQ(std::accumulate(grown.begin(), grown.end(), 0)
+		- std::accumulate(primary.begin(), primary.end(), 0), 1);
+	handler->expGiven(hero);
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_EQ(primaryValues(), grown);
+}
+
+TEST_F(UnifiedHeroProgressionTest, NullPerkRulesFullExpertInteractiveEmptyChoiceCompletes)
+{
+	noPerkRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(fillExpertSkills());
+	const auto level = hero->level;
+	const auto primary = primaryValues();
+	const auto experience = LIBRARY->heroh->reqExp(level + 1);
+	handler->giveExperience(hero, experience - hero->exp);
+	const auto query = current();
+	ASSERT_TRUE(query);
+	EXPECT_TRUE(query->hlu.skills.empty());
+	EXPECT_TRUE(query->hlu.perks.empty());
+	EXPECT_EQ(hero->level, level + 1);
+	const auto grown = primaryValues();
+	EXPECT_EQ(std::accumulate(grown.begin(), grown.end(), 0)
+		- std::accumulate(primary.begin(), primary.end(), 0), 1);
+	ASSERT_NO_FATAL_FAILURE(reply());
+	EXPECT_FALSE(current());
+	EXPECT_FALSE(hero->gainsLevel());
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_EQ(primaryValues(), grown);
+	EXPECT_EQ(hero->exp, experience);
+	EXPECT_FALSE(handler->queryReply(query->queryID, 0, HUMAN));
+	EXPECT_EQ(primaryValues(), grown);
+}
+
+TEST_F(UnifiedHeroProgressionTest, HistoricalDedicatedPerkOfferDoesNotAdvanceLevel)
+{
+	historicalProgression = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules));
+	ASSERT_EQ(hero->getSecSkillLevel(authority()), MasteryLevel::NONE);
+	hero->setSecSkillLevel(authority(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	const auto pool = hero->getPerkState().candidatesForSkillTier(AUTHORITY, 1);
+	ASSERT_FALSE(pool.empty());
+	const auto level = hero->level;
+	const auto primary = primaryValues();
+	const auto selected = hero->getPerkState().selected;
+	HeroLevelUp offer;
+	offer.heroId = hero->id;
+	offer.player = HUMAN;
+	offer.perks = pool;
+	offer.reachedLevel = level;
+	handler->sendAndApply(offer);
+	EXPECT_EQ(hero->level, level);
+	EXPECT_EQ(primaryValues(), primary);
+	EXPECT_EQ(hero->getPerkState().selected, selected);
+	handler->levelUpHero(hero, pool, 0, 0, false);
+	EXPECT_EQ(hero->getPerkState().selected.size(), selected.size() + 1);
+	EXPECT_TRUE(hero->getPerkState().hasSelection(AUTHORITY, pool.front().selection.perkId));
+	EXPECT_EQ(hero->level, level);
+	EXPECT_EQ(primaryValues(), primary);
+	EXPECT_FALSE(hero->hasPendingCommandLevelEvent());
+}
+
+TEST_F(UnifiedHeroProgressionTest, HistoricalEmptyOrdinaryOfferRetainsPendingEventValidation)
+{
+	historicalProgression = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(hero->getArmyCommandRules());
+	ASSERT_FALSE(hero->hasPendingCommandLevelEvent());
+	const auto level = hero->level;
+	const auto primary = primaryValues();
+	HeroLevelUp offer;
+	offer.heroId = hero->id;
+	offer.player = HUMAN;
+	offer.reachedLevel = level + 1;
+	handler->sendAndApply(offer);
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_TRUE(hero->hasPendingCommandLevelEvent());
+	EXPECT_EQ(primaryValues(), primary);
+	offer.reachedLevel = level + 2;
+	EXPECT_THROW(handler->sendAndApply(offer), std::runtime_error);
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_EQ(primaryValues(), primary);
+	EXPECT_TRUE(hero->hasPendingCommandLevelEvent());
 }
 
 TEST_F(UnifiedHeroProgressionTest, ProdigyCounterAndPendingChoiceRoundtripCompleteThreeLevelsOnce)

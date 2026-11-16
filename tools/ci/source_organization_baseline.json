@@ -1516,436 +1516,436 @@
           "symbol": "NK2AI::AIGateway::showMapObjectSelectDialog(QueryID askID, const Component & icon, const MetaString & title, const MetaString & description, const std::vector<ObjectInstanceID> & objects)::[this, askID]()#1"
         },
         {
-          "end": 1087,
+          "end": 1105,
           "start": 1039,
           "symbol": "NK2AI::void AIGateway::makeTurn()#1"
         },
         {
-          "end": 1178,
-          "start": 1089,
+          "end": 1196,
+          "start": 1107,
           "symbol": "NK2AI::void AIGateway::purchaseUsefulWarMachines( const CGTownInstance * onlyTown, const CGHeroInstance * onlyHero, std::optional<si64> availableGold)#1"
         },
         {
-          "end": 1142,
-          "start": 1137,
+          "end": 1160,
+          "start": 1155,
           "symbol": "NK2AI::AIGateway::purchaseUsefulWarMachines( const CGTownInstance * onlyTown, const CGHeroInstance * onlyHero, std::optional<si64> availableGold)::[](const WarMachineShopCandidate & left, const WarMachineShopCandidate & right)#1"
         },
         {
-          "end": 1333,
-          "start": 1180,
+          "end": 1351,
+          "start": 1198,
           "symbol": "NK2AI::void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr heroPtr)#1"
         },
         {
-          "end": 1342,
-          "start": 1335,
+          "end": 1360,
+          "start": 1353,
           "symbol": "NK2AI::void AIGateway::moveCreaturesToHero(const CGTownInstance * t)#1"
         },
         {
-          "end": 1527,
-          "start": 1344,
+          "end": 1545,
+          "start": 1362,
           "symbol": "NK2AI::void AIGateway::prepareDemonicReserve(const CGTownInstance * town)#1"
         },
         {
-          "end": 1357,
-          "start": 1354,
+          "end": 1375,
+          "start": 1372,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[](CreatureID creature)#1"
         },
         {
-          "end": 1362,
-          "start": 1358,
+          "end": 1380,
+          "start": 1376,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](CreatureID creature)#1"
         },
         {
-          "end": 1365,
-          "start": 1364,
+          "end": 1383,
+          "start": 1382,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](const auto & slot)#1"
         },
         {
-          "end": 1367,
-          "start": 1366,
+          "end": 1385,
+          "start": 1384,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](const auto & entry)#1"
         },
         {
-          "end": 1377,
-          "start": 1371,
+          "end": 1395,
+          "start": 1389,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[](const CArmedInstance * army)#1"
         },
         {
-          "end": 1386,
-          "start": 1378,
+          "end": 1404,
+          "start": 1396,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](CreatureID creature, TQuantity count) -> std::optional<uint64_t>#1"
         },
         {
-          "end": 1462,
-          "start": 1461,
+          "end": 1480,
+          "start": 1479,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&](const auto & other)#1"
         },
         {
-          "end": 1480,
-          "start": 1480,
+          "end": 1498,
+          "start": 1498,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&]()#1"
         },
         {
-          "end": 1492,
-          "start": 1484,
+          "end": 1510,
+          "start": 1502,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&]()#2"
         },
         {
-          "end": 1507,
-          "start": 1493,
+          "end": 1525,
+          "start": 1511,
           "symbol": "NK2AI::AIGateway::prepareDemonicReserve(const CGTownInstance * town)::[&]()#3"
         },
         {
-          "end": 1555,
-          "start": 1529,
+          "end": 1573,
+          "start": 1547,
           "symbol": "NK2AI::bool AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const#1"
         },
         {
-          "end": 1549,
-          "start": 1546,
+          "end": 1567,
+          "start": 1564,
           "symbol": "NK2AI::AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const::[currentWeek](const PendingMuster & pending)#1"
         },
         {
-          "end": 1554,
-          "start": 1551,
+          "end": 1572,
+          "start": 1569,
           "symbol": "NK2AI::AIGateway::hasPendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling) const::[&](const PendingMuster & pending)#1"
         },
         {
-          "end": 1570,
-          "start": 1557,
+          "end": 1588,
+          "start": 1575,
           "symbol": "NK2AI::bool AIGateway::hasPendingMuster(const CGDwelling * dwelling) const#1"
         },
         {
-          "end": 1569,
-          "start": 1566,
+          "end": 1587,
+          "start": 1584,
           "symbol": "NK2AI::AIGateway::hasPendingMuster(const CGDwelling * dwelling) const::[&](const PendingMuster & pending)#1"
         },
         {
-          "end": 1592,
-          "start": 1572,
+          "end": 1610,
+          "start": 1590,
           "symbol": "NK2AI::bool AIGateway::reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week, const int usedThisWeek, const int maximumUses)#1"
         },
         {
-          "end": 1582,
-          "start": 1579,
+          "end": 1600,
+          "start": 1597,
           "symbol": "NK2AI::AIGateway::reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week, const int usedThisWeek, const int maximumUses)::[&](const PendingMuster & pending)#1"
         },
         {
-          "end": 1586,
-          "start": 1583,
+          "end": 1604,
+          "start": 1601,
           "symbol": "NK2AI::AIGateway::reserveMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week, const int usedThisWeek, const int maximumUses)::[&](const PendingMuster & pending)#2"
         },
         {
-          "end": 1604,
-          "start": 1594,
+          "end": 1622,
+          "start": 1612,
           "symbol": "NK2AI::void AIGateway::releasePendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week)#1"
         },
         {
-          "end": 1603,
-          "start": 1600,
+          "end": 1621,
+          "start": 1618,
           "symbol": "NK2AI::AIGateway::releasePendingMuster(const CGHeroInstance * hero, const CGDwelling * dwelling, const int week)::[&](const PendingMuster & pending)#1"
         },
         {
-          "end": 1621,
-          "start": 1606,
+          "end": 1639,
+          "start": 1624,
           "symbol": "NK2AI::void AIGateway::clearReplicatedMusters()#1"
         },
         {
-          "end": 1620,
-          "start": 1611,
+          "end": 1638,
+          "start": 1629,
           "symbol": "NK2AI::AIGateway::clearReplicatedMusters()::[&](const PendingMuster & pending)#1"
         },
         {
-          "end": 1685,
-          "start": 1623,
+          "end": 1703,
+          "start": 1641,
           "symbol": "NK2AI::void AIGateway::tryMusterCreatures(const CGHeroInstance * hero, const CGTownInstance * town)#1"
         },
         {
-          "end": 1732,
-          "start": 1687,
+          "end": 1750,
+          "start": 1705,
           "symbol": "NK2AI::void AIGateway::tryExternalMusterCreatures(const CGHeroInstance * hero, const CGDwelling * dwelling)#1"
         },
         {
-          "end": 1739,
-          "start": 1734,
+          "end": 1757,
+          "start": 1752,
           "symbol": "NK2AI::void AIGateway::swapGarrisonHero(const CGTownInstance * town)#1"
         },
         {
-          "end": 1848,
-          "start": 1741,
+          "end": 1866,
+          "start": 1759,
           "symbol": "NK2AI::void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const CArmedInstance * source)#1"
         },
         {
-          "end": 1794,
-          "start": 1763,
+          "end": 1812,
+          "start": 1781,
           "symbol": "NK2AI::AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const CArmedInstance * source)::[this](const CArmedInstance * sourceArmy, const CArmedInstance * destinationArmy, SlotID sourceSlot, SlotID destinationSlot)#1"
         },
         {
-          "end": 1916,
-          "start": 1850,
+          "end": 1934,
+          "start": 1868,
           "symbol": "NK2AI::const CGDwelling * AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const#1"
         },
         {
-          "end": 1876,
-          "start": 1866,
+          "end": 1894,
+          "start": 1884,
           "symbol": "NK2AI::* AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const::[&](const CGDwelling * dwelling)#1"
         },
         {
-          "end": 1875,
-          "start": 1872,
+          "end": 1893,
+          "start": 1890,
           "symbol": "NK2AI::* AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const::(const CGDwelling * dwelling)::[](const auto & row)#1"
         },
         {
-          "end": 1893,
-          "start": 1878,
+          "end": 1911,
+          "start": 1896,
           "symbol": "NK2AI::* AIGateway::getBestPortalRecruitmentDwelling( const CGTownInstance * town, const CCreatureSet * destination) const::[&](const CGDwelling * dwelling) -> ui64#1"
         },
         {
-          "end": 1933,
-          "start": 1918,
+          "end": 1951,
+          "start": 1936,
           "symbol": "NK2AI::void AIGateway::selectPortalRecruitmentDwelling(const CGTownInstance * town, const CGDwelling * source)#1"
         },
         {
-          "end": 1946,
-          "start": 1935,
+          "end": 1964,
+          "start": 1953,
           "symbol": "NK2AI::void AIGateway::recruitPortalCreatures(const CGTownInstance * town, const CArmedInstance * recruiter)#1"
         },
         {
-          "end": 1955,
-          "start": 1948,
+          "end": 1973,
+          "start": 1966,
           "symbol": "NK2AI::void AIGateway::battleStart(const BattleID & battleID, const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, BattleSide side, bool replayAllowed)#1"
         },
         {
-          "end": 1977,
-          "start": 1957,
+          "end": 1995,
+          "start": 1975,
           "symbol": "NK2AI::void AIGateway::battleEnd(const BattleID & battleID, const BattleResult * br, QueryID queryID)#1"
         },
         {
-          "end": 1975,
-          "start": 1972,
+          "end": 1993,
+          "start": 1990,
           "symbol": "NK2AI::AIGateway::battleEnd(const BattleID & battleID, const BattleResult * br, QueryID queryID)::[this, queryID]()#1"
         },
         {
-          "end": 1983,
-          "start": 1979,
+          "end": 2001,
+          "start": 1997,
           "symbol": "NK2AI::void AIGateway::waitTillFree()#1"
         },
         {
-          "end": 1995,
-          "start": 1985,
+          "end": 2013,
+          "start": 2003,
           "symbol": "NK2AI::std::vector<const CGObjectInstance *> AIGateway::getFlaggedObjects() const#1"
         },
         {
-          "end": 2000,
-          "start": 1997,
+          "end": 2018,
+          "start": 2015,
           "symbol": "NK2AI::bool AIGateway::moveHeroToTile(const int3 dst, const HeroPtr & heroPtr)#1"
         },
         {
-          "end": 2007,
-          "start": 2002,
+          "end": 2025,
+          "start": 2020,
           "symbol": "NK2AI::void AIGateway::buildStructure(const CGTownInstance * t, BuildingID building)#1"
         },
         {
-          "end": 2020,
-          "start": 2009,
+          "end": 2038,
+          "start": 2027,
           "symbol": "NK2AI::void AIGateway::tryRealize(Goals::DigAtTile & g)#1"
         },
         {
-          "end": 2065,
-          "start": 2022,
+          "end": 2083,
+          "start": 2040,
           "symbol": "NK2AI::void AIGateway::tryRealize(Goals::Trade & g) //trade#1"
         },
         {
-          "end": 2088,
-          "start": 2067,
+          "end": 2106,
+          "start": 2085,
           "symbol": "NK2AI::void AIGateway::endTurn()#1"
         },
         {
-          "end": 2100,
-          "start": 2090,
+          "end": 2118,
+          "start": 2108,
           "symbol": "NK2AI::void AIGateway::buildArmyIn(const CGTownInstance * t)#1"
         },
         {
-          "end": 2111,
-          "start": 2102,
+          "end": 2129,
+          "start": 2120,
           "symbol": "NK2AI::void AIGateway::finish()#1"
         },
         {
-          "end": 2131,
-          "start": 2113,
+          "end": 2149,
+          "start": 2131,
           "symbol": "NK2AI::void AIGateway::executeActionAsync(const std::string & description, const std::function<void()> & whatToDo)#1"
         },
         {
-          "end": 2130,
-          "start": 2118,
+          "end": 2148,
+          "start": 2136,
           "symbol": "NK2AI::AIGateway::executeActionAsync(const std::string & description, const std::function<void()> & whatToDo)::[description, whatToDo]() noexcept#1"
         },
         {
-          "end": 2137,
-          "start": 2133,
+          "end": 2155,
+          "start": 2151,
           "symbol": "NK2AI::void AIGateway::lostHero(const HeroPtr & heroPtr) const#1"
         },
         {
-          "end": 2151,
-          "start": 2139,
+          "end": 2169,
+          "start": 2157,
           "symbol": "NK2AI::void AIGateway::answerQuery(const QueryID queryID, const int selection) const#1"
         },
         {
-          "end": 2163,
-          "start": 2153,
+          "end": 2181,
+          "start": 2171,
           "symbol": "NK2AI::void AIGateway::requestSent(const CPackForServer * pack, int requestID)#1"
         },
         {
-          "end": 2171,
-          "start": 2165,
+          "end": 2189,
+          "start": 2183,
           "symbol": "NK2AI::std::string AIGateway::getBattleAIName() const#1"
         },
         {
-          "end": 2176,
-          "start": 2173,
+          "end": 2194,
+          "start": 2191,
           "symbol": "NK2AI::void AIGateway::validateObject(const CGObjectInstance * obj)#1"
         },
         {
-          "end": 2184,
-          "start": 2178,
+          "end": 2202,
+          "start": 2196,
           "symbol": "NK2AI::void AIGateway::validateObject(ObjectIdRef obj)#1"
         },
         {
-          "end": 2193,
-          "start": 2186,
+          "end": 2211,
+          "start": 2204,
           "symbol": "NK2AI::AIStatus::AIStatus(AIGateway * aiGw) : aiGw(aiGw)#1"
         },
         {
-          "end": 2198,
-          "start": 2195,
+          "end": 2216,
+          "start": 2213,
           "symbol": "NK2AI::AIStatus::~AIStatus()#1"
         },
         {
-          "end": 2206,
-          "start": 2200,
+          "end": 2224,
+          "start": 2218,
           "symbol": "NK2AI::void AIStatus::setBattle(BattleState BS)#1"
         },
         {
-          "end": 2212,
-          "start": 2208,
+          "end": 2230,
+          "start": 2226,
           "symbol": "NK2AI::BattleState AIStatus::getBattle()#1"
         },
         {
-          "end": 2231,
-          "start": 2214,
+          "end": 2249,
+          "start": 2232,
           "symbol": "NK2AI::void AIStatus::addQuery(QueryID ID, std::string description)#1"
         },
         {
-          "end": 2242,
-          "start": 2233,
+          "end": 2260,
+          "start": 2251,
           "symbol": "NK2AI::void AIStatus::removeQuery(QueryID ID)#1"
         },
         {
-          "end": 2248,
-          "start": 2244,
+          "end": 2266,
+          "start": 2262,
           "symbol": "NK2AI::int AIStatus::getQueriesCount()#1"
         },
         {
-          "end": 2255,
-          "start": 2250,
+          "end": 2273,
+          "start": 2268,
           "symbol": "NK2AI::void AIStatus::startedTurn()#1"
         },
         {
-          "end": 2262,
-          "start": 2257,
+          "end": 2280,
+          "start": 2275,
           "symbol": "NK2AI::void AIStatus::madeTurn()#1"
         },
         {
-          "end": 2272,
-          "start": 2264,
+          "end": 2290,
+          "start": 2282,
           "symbol": "NK2AI::void AIStatus::waitTillFree()#1"
         },
         {
-          "end": 2278,
-          "start": 2274,
+          "end": 2296,
+          "start": 2292,
           "symbol": "NK2AI::bool AIStatus::haveTurn()#1"
         },
         {
-          "end": 2287,
-          "start": 2280,
+          "end": 2305,
+          "start": 2298,
           "symbol": "NK2AI::void AIStatus::attemptedAnsweringQuery(QueryID queryID, int answerRequestID)#1"
         },
         {
-          "end": 2306,
-          "start": 2289,
+          "end": 2324,
+          "start": 2307,
           "symbol": "NK2AI::void AIStatus::receivedAnswerConfirmation(int answerRequestID, int result)#1"
         },
         {
-          "end": 2324,
-          "start": 2308,
+          "end": 2342,
+          "start": 2326,
           "symbol": "NK2AI::void AIStatus::heroVisit(const CGObjectInstance * obj, bool started)#1"
         },
         {
-          "end": 2331,
-          "start": 2326,
+          "end": 2349,
+          "start": 2344,
           "symbol": "NK2AI::void AIStatus::setMove(bool ongoing)#1"
         },
         {
-          "end": 2338,
-          "start": 2333,
+          "end": 2356,
+          "start": 2351,
           "symbol": "NK2AI::void AIStatus::setChannelProbing(bool ongoing)#1"
         },
         {
-          "end": 2343,
-          "start": 2340,
+          "end": 2361,
+          "start": 2358,
           "symbol": "NK2AI::bool AIStatus::channelProbing()#1"
         },
         {
-          "end": 2351,
-          "start": 2345,
+          "end": 2369,
+          "start": 2363,
           "symbol": "NK2AI::void AIGateway::invalidatePaths()#1"
         },
         {
-          "end": 2392,
-          "start": 2353,
+          "end": 2410,
+          "start": 2371,
           "symbol": "NK2AI::std::string AIGateway::heroRoleDebugText(const CGHeroInstance * hero) const#1"
         },
         {
-          "end": 2409,
-          "start": 2400,
+          "end": 2427,
+          "start": 2418,
           "symbol": "NK2AI::void AIGateway::cheatMapReveal(const std::unique_ptr<Nullkiller> & nullkiller)#1"
         },
         {
-          "end": 2424,
-          "start": 2411,
+          "end": 2442,
+          "start": 2429,
           "symbol": "NK2AI::void AIGateway::memorizeVisitableObjs(const std::unique_ptr<AIMemory> & memory, const std::unique_ptr<DangerHitMapAnalyzer> & dangerHitMap, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)#1"
         },
         {
-          "end": 2423,
-          "start": 2416,
+          "end": 2441,
+          "start": 2434,
           "symbol": "NK2AI::AIGateway::memorizeVisitableObjs(const std::unique_ptr<AIMemory> & memory, const std::unique_ptr<DangerHitMapAnalyzer> & dangerHitMap, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)::[&](const int3 & pos)#1"
         },
         {
-          "end": 2441,
-          "start": 2426,
+          "end": 2459,
+          "start": 2444,
           "symbol": "NK2AI::void AIGateway::memorizeVisitableObj(const CGObjectInstance * obj, const std::unique_ptr<AIMemory> & memory, const std::unique_ptr<DangerHitMapAnalyzer> & dangerHitMap, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)#1"
         },
         {
-          "end": 2454,
-          "start": 2443,
+          "end": 2472,
+          "start": 2461,
           "symbol": "NK2AI::void AIGateway::memorizeRevisitableObjs(const std::unique_ptr<AIMemory> & memory, const PlayerColor & playerID, const std::shared_ptr<CCallback> & cc)#1"
         },
         {
-          "end": 2591,
-          "start": 2456,
+          "end": 2609,
+          "start": 2474,
           "symbol": "NK2AI::void AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)#1"
         },
         {
-          "end": 2585,
-          "start": 2458,
+          "end": 2603,
+          "start": 2476,
           "symbol": "NK2AI::AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)::[cc](const CGHeroInstance * h, const CGHeroInstance * otherh, bool giveStuffToFirstHero) -> void#1"
         }
       ],
-      "rationale": "Complete162-body inventory matches the previously reviewed callable symbol set; all non-body text was inspected and current parser has no recovery. HEAD added a five-line makeTurn catch below80 lines. This repairs existing stale metadata, not approval of earlier turn recovery.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-MANUAL",
-      "review_scope": "Complete callable inventory only; no runtime/gameplay/rendered/publication acceptance.",
-      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
-      "sha256": "e623a1f1cb9f00ea2540270a0743c5049b604d27b2474b184a6f4a11e1d05810"
+      "rationale": "Renewed exact callable spans after the bounded recovery lease fix. Source parser review reports no recovery; complete existing symbol set retained, no new callable body or classification exclusion.",
+      "review": "IR-NH-AI-RECOVERY-SHARED-LEASE-CALLABLES-20261116",
+      "review_scope": "Complete162-body inventory; only makeTurn changes49 to67 lines, all other body bytes identical and following spans shift18. No native or rendered acceptance.",
+      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED_NATIVE_PENDING",
+      "sha256": "6051f6ebfc42be7a902a259b7deb5e5b37ddcc310c9ddb1a5b160443bb915da7"
     },
     "AI/Nullkiller2/Helpers/NewHorizonsMuster.h": {
       "functions": [
@@ -20206,13 +20206,13 @@
         "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
         "sha256": "c02cdef07e12d878485a3ef2b3d633d744009bdf53f4672e7bbe8466e7f1f8bd"
       },
-      "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Preserve shared-lock release before completion, no endTurn on cancellation/termination, original authoritative command order and at-most-once endTurn; characterize normal, thrown-error and shutdown routes. Retain all prior purchase/interaction extraction obligations.",
+      "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Retain the shared read lease during state reads and turn completion/recovery. Release and reacquire it only through the synchronous request wait guard. Preserve no endTurn on planner cancellation/termination, original authoritative command order and at-most-once fallback; characterize normal, thrown-error and shutdown routes before extraction. Retain all prior purchase/interaction extraction obligations.",
       "kind": "exception",
-      "lines": 2593,
+      "lines": 2611,
       "owner": "ai_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-HEAD-REPAIR",
-      "rationale": "Public ec3602588to2593 adds exactly the existing five-line std::exception turn-boundary handler. Interruption and termination catches remain earlier and keep their no-endTurn behavior; no new map query, planner or rule is added. Complete changed makeTurn function remains below80. This is a bounded pre-existing graceful-error routing exception, not acceptance of the2593-line gateway or its broad error semantics.",
-      "review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
+      "previous_review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
+      "rationale": "Urgent correctness fix: a thrown planner error destroys the try-local read lease before its recovery handler. Synchronous requests temporarily unlock that lease, so recovery must reacquire ownership first. Local recovery cancellation/failure handling preserves at-most-once fallback without retry. makeTurn grows49 to67 lines; other161 callable bodies remain byte-identical. Coupling this fix to gateway extraction would increase lifecycle risk; the2611-line file is not generally accepted for growth.",
+      "review": "IR-NH-AI-RECOVERY-SHARED-LEASE-20261116",
       "review_history": [
         {
           "deferral": "AI engineer owns extraction of current-node special-action dispatch/current-day execution boundary into a focused executor before any further affected-area growth. Preserve parent dependencies, composite and DimensionDoor stale recovery, current-day approaches, exact request/wait/ack ordering, exceptions and captured historical behavior; characterize them with focused native tests. Gateway file remains capped at2861 until shrinking extraction.",
@@ -20225,11 +20225,45 @@
           "review_status": "INDEPENDENT_SOURCE_REVIEWED_RUNTIME_PENDING",
           "sha256": "7f9280119acb388e5a5d96a848158ae89403de976deb6ace692d3d76af6e8639",
           "unit": "AI/Nullkiller2/AIGateway.cpp"
+        },
+        {
+          "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Preserve shared-lock release before completion, no endTurn on cancellation/termination, original authoritative command order and at-most-once endTurn; characterize normal, thrown-error and shutdown routes. Retain all prior purchase/interaction extraction obligations.",
+          "kind": "exception",
+          "lines": 2593,
+          "owner": "ai_engineer",
+          "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-HEAD-REPAIR",
+          "rationale": "Public ec3602588to2593 adds exactly the existing five-line std::exception turn-boundary handler. Interruption and termination catches remain earlier and keep their no-endTurn behavior; no new map query, planner or rule is added. Complete changed makeTurn function remains below80. This is a bounded pre-existing graceful-error routing exception, not acceptance of the2593-line gateway or its broad error semantics.",
+          "review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
+          "review_scope": "Only these exact public ec360 to current growth records. No production changes, raised thresholds, unrelated record repair, native/rendered/performance acceptance or publication authority.",
+          "review_status": "INDEPENDENT_EXACT_PUBLIC_BASE_DELTA_SOURCE_ORGANIZATION_REVIEWED",
+          "sha256": "e623a1f1cb9f00ea2540270a0743c5049b604d27b2474b184a6f4a11e1d05810",
+          "unit": "AI/Nullkiller2/AIGateway.cpp"
+        },
+        {
+          "completed_p_predecessor": {
+            "kind": "exception",
+            "lines": 2664,
+            "review": "IR-FINAL-LEARNING-ESTATES-AI-PRICE-COMPANY-20261104",
+            "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
+            "sha256": "c02cdef07e12d878485a3ef2b3d633d744009bdf53f4672e7bbe8466e7f1f8bd"
+          },
+          "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Preserve shared-lock release before completion, no endTurn on cancellation/termination, original authoritative command order and at-most-once endTurn; characterize normal, thrown-error and shutdown routes. Retain all prior purchase/interaction extraction obligations.",
+          "kind": "exception",
+          "lines": 2593,
+          "owner": "ai_engineer",
+          "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-HEAD-REPAIR",
+          "rationale": "Public ec3602588to2593 adds exactly the existing five-line std::exception turn-boundary handler. Interruption and termination catches remain earlier and keep their no-endTurn behavior; no new map query, planner or rule is added. Complete changed makeTurn function remains below80. This is a bounded pre-existing graceful-error routing exception, not acceptance of the2593-line gateway or its broad error semantics.",
+          "review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
+          "review_scope": "Only these exact public ec360 to current growth records. No production changes, raised thresholds, unrelated record repair, native/rendered/performance acceptance or publication authority.",
+          "review_status": "HISTORICAL_SUPERSEDED_SHARED_LEASE_INVARIANT_CORRECTED",
+          "sha256": "e623a1f1cb9f00ea2540270a0743c5049b604d27b2474b184a6f4a11e1d05810",
+          "superseded_reason": "The old shared-lock-release wording describes the unsafe recovery boundary; current invariant retains the lease and releases it only through the synchronous wait guard.",
+          "unit": "AI/Nullkiller2/AIGateway.cpp"
         }
       ],
-      "review_scope": "Only these exact public ec360 to current growth records. No production changes, raised thresholds, unrelated record repair, native/rendered/performance acceptance or publication authority.",
-      "review_status": "INDEPENDENT_EXACT_PUBLIC_BASE_DELTA_SOURCE_ORGANIZATION_REVIEWED",
-      "sha256": "e623a1f1cb9f00ea2540270a0743c5049b604d27b2474b184a6f4a11e1d05810"
+      "review_scope": "Exact eighteen-line exception-recovery ownership correction only; no unrelated expansion or future growth credit.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
+      "sha256": "6051f6ebfc42be7a902a259b7deb5e5b37ddcc310c9ddb1a5b160443bb915da7"
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)::[cc](const CGHeroInstance * h, const CGHeroInstance * otherh, bool giveStuffToFirstHero) -> void#1": {
       "kind": "legacy",

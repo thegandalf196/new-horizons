@@ -227,6 +227,26 @@ class CommandAuthorityContentTest(unittest.TestCase):
         candidate["commands"]["vanguard"]["duration"]["leadershipPerRound"] = 750
         self.assertFalse(check.is_valid(candidate))
 
+    def test_formation_rating_bounds_match_native_validation(self):
+        rules = load("config/newHorizonsCombat.json")["combat"]["heroCommands"]
+        check = validator("newHorizonsCombatV4")
+        paths = (
+            ("formationRating", "attributeDivisor"),
+            ("formationRating", "commandMultiplier"),
+            ("commands", "feint", "effects", "retaliationDamageReductionPercent", "formationRating"),
+            ("commands", "secondWind", "effects", "additionalActivationDamagePercent", "formationRating"),
+            ("commands", "vanguard", "duration", "formationRatingPerRound"),
+        )
+        for path in paths:
+            for value, accepted in ((1000, True), (1001, False)):
+                with self.subTest(path=path, value=value):
+                    candidate = copy.deepcopy(rules)
+                    parent = candidate
+                    for field in path[:-1]:
+                        parent = parent[field]
+                    parent[path[-1]] = value
+                    self.assertEqual(check.is_valid(candidate), accepted)
+
     def test_formation_replacement_preserves_other_attribute_components(self):
         commands = load("config/newHorizonsCombat.json")["combat"]["heroCommands"]["commands"]
         expected = {

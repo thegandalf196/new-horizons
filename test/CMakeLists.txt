@@ -1194,6 +1194,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/MovementCandidateScreeningTest.cpp
 		battleAI/BattleSearchPolicyTest.cpp
 		battleAI/BattleAISelectionTest.cpp
+		battleAI/BattleStrengthRatioTest.cpp
 		battleAI/BattleAIDiagnosticAdmissionTest.cpp
 		battleAI/OrdinaryStrikeEvaluatorIntegrationTest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
@@ -1526,6 +1527,10 @@ add_test(NAME nhReleaseUpdateTransportCancelled COMMAND nhReleaseUpdateTransport
 if(ENABLE_NULLKILLER2_AI)
 	# Nullkiller tests use internal AI symbols, so embed AI objects in vcmitest
 	# instead of linking the facade and loading a second copy of lib globals.
+	if(WIN32)
+		# This executable owns the embedded definitions rather than importing a DLL.
+		target_compile_definitions(vcmitest PRIVATE VCMI_DLL_STATIC=1)
+	endif()
 	target_sources(vcmitest PRIVATE $<TARGET_OBJECTS:Nullkiller2>)
 	if(TARGET vcmiLua)
 		# These fixtures exercise internal Lua descriptors and field serialization.

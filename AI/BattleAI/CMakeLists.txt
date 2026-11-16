@@ -321,6 +321,7 @@ set(battleAI_HEADERS
 		SelectedProbeDamage.h
 		CreatureCandidateScreening.h
 		BattleSearchPolicy.h
+		BattleStrengthRatio.h
 		MovementCandidateScreening.h
 		ExchangeInitiativeQueue.h
 		BattleExchangeAftermath.h
