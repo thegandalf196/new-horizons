@@ -78,7 +78,6 @@ Prepared prepare(const CBattleInfoCallback & battle, const CGHeroInstance * hero
 bool targetAdmitted(const PossibleSpellcast & ps, spells::BattleCast & cast,
 	std::unique_ptr<spells::Mechanics> & mechanics)
 {
-	if(!mechanics->getMetamagicCastProfile()) return true;
 	auto purify = ps.spellPurifyChoices;
 	for(const auto id : ps.spellPurifyPhysicalTargets)
 		purify.emplace_back(id, newHorizonsPurify::physicalPoisonChoiceID());

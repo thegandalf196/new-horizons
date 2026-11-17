@@ -2,14 +2,43 @@
 
 ## Current save boundary
 
-The development Leadership-efficiency migration requires a new game, including
-when upgrading from 0.90. The minimum accepted format remains **1159**,
-`NEW_HORIZONS_LEADERSHIP_EFFICIENCY`; the next-release source writer is **1161**,
-`NEW_HORIZONS_ESTATES`. `MINIMAL` retains 1159 and `CURRENT` uses 1161.
-`CLoadFile` rejects earlier save formats before reading their payload; there is
-no converter for those rejected files. Existing files remain
-untouched. The file-loader minimum does not by itself validate connection-version
-negotiation.
+The Sorcery and Metamagic redesign requires a new game. Both the minimum accepted
+format and the current writer are **1163**,
+`NEW_HORIZONS_SHARED_CAPTURED_RULES`. The unpublished 1162 feature layout is
+also rejected; it has no shared captured-rule table. `CLoadFile` rejects earlier formats before
+reading their payload. Retired spell and Metamagic state is not converted or
+reinterpreted; existing save files remain untouched.
+
+Immutable captured mastery, perk, class-capability, hero-development and world
+magic documents are interned in a game-owned table emitted before map or hero decoding. Hero
+RuleSet identities retain independent component captures; loading never substitutes
+installed defaults. Equality includes nested identifier scopes and override flags.
+Typed perk, mastery, development, capability and Metamagic projections are compiled
+at admission, while mutable selected perks, ranks and progression receipts keep
+their own validation. Battles share the exact captured world magic owner;
+standalone references retain an explicit envelope rather than an installed default.
+
+Recognized obsolete perk presentation is normalized once at immutable catalogue
+admission, for both authored captures and imports. Only exact known legacy strings
+change; gameplay numbers, custom text, source provenance, identifier scopes and
+override flags remain captured. Binary inline, pooled and JSON imports share this
+contract. Legacy acquired-tier normalization remains per hero; strict current
+progression still rejects conflicting selections. A raw 1163 table containing two
+rows that become the same document after presentation normalization is rejected
+atomically as a duplicate, rather than remapping its component identities.
+
+Standalone binary hero snapshots carry their own table envelope. Standalone perk
+or mastery components carry an explicit inline envelope when no table scope exists.
+Format 1163 also retains the new-game replay capture policy; see
+[Replay persistence](ReplayPersistence.md) for rolling and full-game recording.
+Serializer scopes restore their previous context on exceptions; decoded immutable
+components own their lifetimes independently of a live world. Native prepared
+pointers and dense runtime perk handles are reconstructed, never persisted.
+
+Connection admission independently validates the fixed protocol header before
+packet interpretation, including the first packet. See
+[Networking](Networking.md#gameplay-communication). A save-format minimum alone
+does not protect this boundary.
 
 Format1159 separates the corrected Leadership profile and Authority meanings from
 1158's retired army Command history. Capability rules v7 and Necromancy policy4
@@ -17,10 +46,9 @@ capture current efficiency and Requirement discounts. Historical unified progres
 retains mandatory pending tier choices. Format1160,
 `NEW_HORIZONS_FOUR_OFFER_PROGRESSION`, adds the distinct four-offer policy and
 pending parent identities, with live perk eligibility checked when choosing.
-Format1161 adds revised Estates policy and transaction state. Older supported
-captures retain their rules and selected perk tiers on resave; the new markers
-are never attached as a silent migration. Unsupported writes reject new captures
-before enclosing prefixes. Battle-side state retains permanent combat-start
+Format1161 added revised Estates policy and transaction state. These historical
+layouts do not admit pre1163 saves or silently migrate their selected perk tiers.
+Unsupported writes reject new captures before enclosing prefixes. Battle-side state retains permanent combat-start
 composition for Authority and detached copies. Old Command awards and incompatible
 perk definitions are rejected rather than reinterpreted. Elemental Attunement,
 Magic Arrow, Metamagic, Warfare and unrelated faction profiles remain distinct.

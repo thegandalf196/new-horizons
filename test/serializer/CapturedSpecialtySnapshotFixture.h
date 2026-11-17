@@ -2,6 +2,8 @@
 #pragma once
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/json/JsonNode.h"
+#include "../../lib/nativeRules/CapturedRulePool.h"
+#include <type_traits>
 #include <gtest/gtest.h>
 namespace capturedSpecialtySnapshotTest
 {
@@ -23,18 +25,22 @@ class RuleSnapshotWriter
 	const JsonNode & replacement;
 public:
 	using Version = ESerializationVersion;
+	nativeRules::CapturedRuleWireContext & capturedRules;
 	static constexpr bool saving = true;
 	bool loadingGamestate = false;
 	int substitutions = 0;
 	RuleSnapshotWriter(BinarySerializer & writer, const JsonNode * target, const JsonNode & rules)
-		: base(writer), identity(target), replacement(rules) {}
+		: base(writer), identity(target), replacement(rules), capturedRules(writer.capturedRules) {}
 	bool hasFeature(Version epoch) const { return base.hasFeature(epoch); }
 	template<class T> RuleSnapshotWriter & operator&(T & value)
 	{
-		base & value;
+		if constexpr(std::is_same_v<std::remove_cv_t<T>, nativeRules::CapturedRulePool>)
+			value.serialize(*this);
+		else base & value;
 		return *this;
 	}
-	RuleSnapshotWriter & operator&(JsonNode & value)
+	RuleSnapshotWriter & operator&(JsonNode & value) { return *this & static_cast<const JsonNode &>(value); }
+	RuleSnapshotWriter & operator&(const JsonNode & value)
 	{
 		if(&value == identity)
 		{

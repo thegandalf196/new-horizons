@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include <memory>
 
 #include "../constants/EntityIdentifiers.h"
 #include "../constants/Enumerations.h"
@@ -35,6 +36,7 @@ class JsonNode;
 class PlayerState;
 class UpgradeInfo;
 class CMapHeader;
+namespace nativeRules { class CapturedRulePool; class CompiledCapabilityRules; class CapturedRuleDocument; }
 class CGameState;
 class PathfinderConfig;
 class CArtifactSet;
@@ -102,10 +104,15 @@ public:
 	/// Saved ruleset snapshot, not the currently loaded mod defaults. Empty means legacy.
 	virtual const JsonNode & getHeroCommandRules() const;
 	virtual const JsonNode & getMagicRules() const;
+	virtual std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const { return {}; }
 	virtual const JsonNode & getHeroDevelopmentRules() const;
 	virtual const JsonNode & getHeroCapabilityRules() const;
 	virtual const JsonNode & getHeroMasteryRules() const;
 	virtual const JsonNode & getHeroPerkRules() const;
+	/// Authoritative initialization/import admission only. Queries use immutable
+	/// captured components; no frontend command or gameplay mutation is exposed.
+	virtual nativeRules::CapturedRulePool * getCapturedRulePoolForAdmission() const;
+	virtual const nativeRules::CompiledCapabilityRules * getCompiledHeroCapabilityRules() const;
 	virtual const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const;
 	/// Weekly base growth from the saved New Horizons creature rules, or the
 	/// installed creature definition for legacy/unmapped worlds.

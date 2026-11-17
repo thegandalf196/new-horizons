@@ -134,7 +134,7 @@ TEST_F(NewHorizonsRevisedEstatesTest, ResourcePickupCommitsTheSameHeroAwareQuote
 TEST_F(NewHorizonsRevisedEstatesTest, RevisedCatalogueCannotRelabelLegacyTiersOrRetiredIds)
 {
 	ASSERT_NO_FATAL_FAILURE(startGame());
-	const auto rules = first->getPerkState().rules;
+	const auto rules = first->getPerkState().getRules();
 	EXPECT_NO_THROW(newHorizonsEstates::validateRevisedPolicy(rules));
 	for(const auto * invalidId : {"landSurveyor", "prosperity", "banking", "unknown"})
 	{
@@ -157,7 +157,7 @@ TEST_F(NewHorizonsRevisedEstatesTest, SupervisorUsesActualMineIncomeAndPreviewTh
 	ASSERT_NO_FATAL_FAILURE(select(first, "supervisor"));
 	EXPECT_EQ(mine->dailyIncome()[GameResID::WOOD], before + 1);
 	EXPECT_EQ(mine->getProducedQuantity(), mine->dailyIncome()[GameResID::WOOD]);
-	const_cast<newHorizonsHeroes::PerkState &>(first->getPerkState()).selected.clear();
+	const_cast<newHorizonsHeroes::PerkState &>(first->getPerkState()).replaceSelected({});
 	EXPECT_EQ(mine->dailyIncome()[GameResID::WOOD], before);
 }
 

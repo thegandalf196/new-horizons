@@ -144,8 +144,7 @@ bool resourceIndependent(const HypotheticBattle & state)
 		return false;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		// FULL never issues new Orders: with none present, Divine Fury cannot run.
-		if(state.getCounterspellArmed(side) || state.getMetamagicCountersequenceArmed(side)
-			|| !state.getHeroOrderStates(side).empty() || state.getActiveOrder(side) != HeroCommand::NONE)
+		if(!state.getHeroOrderStates(side).empty() || state.getActiveOrder(side) != HeroCommand::NONE)
 			return false;
 	for(const auto * unit : state.battleGetAllUnits(false))
 		if(unit->creatureId() == CreatureID::IMP || unit->creatureId() == CreatureID::FAMILIAR

@@ -70,7 +70,7 @@ TEST_F(NewHorizonsPerkRewardContextTest, ExperienceRewardAppliesCapturedWeighted
 	startGame();
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
-	ASSERT_TRUE(newHorizonsHeroes::usesWeightedPerkOffers(hero->getPerkState().rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesWeightedPerkOffers(hero->getPerkState().getRules()));
 	ASSERT_EQ(hero->getPerkOfferWeightContext().mode,
 		newHorizonsHeroes::PerkState::OfferWeightMode::CapturedTable);
 	GameHandlerTestServer server(gameState(), hero->getOwner());
@@ -118,7 +118,7 @@ TEST_F(NewHorizonsPerkRewardContextTest, CapturedLegacyPolicyRetainsMatchingUnif
 	startGame();
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
-	ASSERT_FALSE(newHorizonsHeroes::usesWeightedPerkOffers(hero->getPerkState().rules));
+	ASSERT_FALSE(newHorizonsHeroes::usesWeightedPerkOffers(hero->getPerkState().getRules()));
 	auto packet = matchingPacket(hero);
 	ASSERT_FALSE(packet.perks.empty());
 	EXPECT_EQ(packet.perks, hero->getPerkState().prepareOffer([hero](const std::string & skill)

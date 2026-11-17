@@ -115,13 +115,9 @@ TEST_F(PrismaticVanguardAITest, WaitConsumesActiveOnlyAndDeferredWaitEntryCannot
 	parent->nextRound(); parent->nextTurn(actor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	EXPECT_TRUE(markers(*current)->empty());
 }
-TEST_F(PrismaticVanguardAITest, TimeStopSyntheticSlotPreservesPendingWhileFrozenUsesGenuineForfeitureClock)
+TEST_F(PrismaticVanguardAITest, FrozenUsesGenuineForfeitureClock)
 {
 	prepare(); projection(); auto stopped = parent->getForUpdate(actor->unitId());
-	stopped->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID())});
-	parent->nextTurn(actor->unitId(), BattleUnitTurnReason::AUTOMATIC_ACTION);
-	ASSERT_EQ(markers(*stopped)->size(), 1u); EXPECT_EQ(markers(*stopped)->front()->duration, BonusDuration::ONE_BATTLE);
-	stopped->removeUnitBonus(Selector::type()(BonusType::TIME_STOP));
 	parent->nextRound();
 	stopped->addUnitBonus({newHorizonsFrozen::marker(BonusSourceID(), parent->getRound())});
 	ASSERT_TRUE(parent->battleBeginsActivation(stopped.get(), BattleUnitTurnReason::TURN_QUEUE));

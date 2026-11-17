@@ -218,10 +218,9 @@ public:
 	///internal interface (for callbacks)
 
 	///Checks general but spell-specific problems. Use only during battle.
-	bool canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster,
-		bool metamagicGrand = false) const;
+	bool canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster) const;
 	bool canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb, spells::Mode mode,
-		const spells::Caster * caster, bool metamagicGrand = false) const;
+		const spells::Caster * caster) const;
 
 public:
 	///Server logic. Has write access to GameState via packets.

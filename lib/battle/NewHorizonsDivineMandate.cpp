@@ -94,7 +94,7 @@ std::vector<uint32_t> sharedPurposeFriendlyRecipients(const CBattleInfoCallback 
 	for(const auto id : recipients)
 	{
 		const auto * unit = battle.battleGetUnitByID(id);
-		if(unit && (includeDead || unit->alive()) && !unit->isGhost() && !unit->isTimeStopped()
+		if(unit && (includeDead || unit->alive()) && !unit->isGhost()
 			&& battle.battleGetOwner(unit) == battle.sideToPlayer(side))
 			result.push_back(id);
 	}
@@ -146,15 +146,14 @@ namespace
 {
 bool hasActiveDivineMandate(const CGHeroInstance * hero)
 {
-	if(!hero || newHorizonsPassiveDivineMandate::enabled(hero->getPerkState().rules)
+	if(!hero || newHorizonsPassiveDivineMandate::enabled(hero->getPerkState().getRules())
 		|| hero->getFactionID() != FactionID::CASTLE
 		|| !hero->usesPrimaryGrowth()
-		|| !newHorizonsHeroes::usesRules(hero->getPrimaryGrowthRules())
+		|| !hero->compiledDevelopment()->active()
 		|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
 		return false;
 
-	const auto factionSkill = newHorizonsHeroes::factionSkill(
-		hero->getPrimaryGrowthRules(), FactionID::CASTLE);
+	const auto factionSkill = hero->compiledDevelopment()->factionSkill(FactionID::CASTLE);
 	const auto divineMandateId = SecondarySkill::decode("new-horizons:divineMandate");
 	return factionSkill && divineMandateId >= 0 && *factionSkill == SecondarySkill(divineMandateId)
 		&& hero->getSecSkillLevel(*factionSkill) != 0;

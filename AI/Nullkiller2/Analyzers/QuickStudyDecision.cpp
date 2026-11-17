@@ -19,7 +19,7 @@ std::optional<size_t> HeroManager::connoisseurSkillCard(const HeroPtr & heroPtr,
 		return std::nullopt;
 	try
 	{
-		if(!newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().rules)
+		if(!newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().getRules())
 			|| !hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.connoisseur"))
 			return std::nullopt;
 		size_t weakest = 0;

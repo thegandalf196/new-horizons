@@ -16,7 +16,7 @@
 #include "NewHorizonsRecoverySpecialties.h"
 #include "NewHorizonsSchoolSpellcraft.h"
 #include "NewHorizonsPrimaryGrowth.h"
-#include "NewHorizonsPerkState.h"
+#include "NewHorizonsPerkTypes.h"
 #include <functional>
 #include <optional>
 #include <string>
@@ -28,6 +28,7 @@ class CGHeroInstance;
 
 namespace newHorizonsHeroes
 {
+class PerkState;
 /// Explicit-context read-only presentation; optional targets identify existing
 /// registered resources. An absent conversion retains the prototype identity.
 struct DLL_LINKAGE SpecialtyPresentation

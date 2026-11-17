@@ -34,18 +34,8 @@ class FormHealthBonusBearer final : public BonusBearerMock
 {
 public:
 	const CUnitState * state = nullptr;
-	bool timeStopped = false;
 	int32_t incomingReduction = 0;
 	int32_t treeVersion = 1;
-
-	void setTimeStopped(bool value)
-	{
-		if(timeStopped != value)
-		{
-			timeStopped = value;
-			++treeVersion;
-		}
-	}
 
 	int32_t getTreeVersion() const override { return treeVersion; }
 
@@ -73,13 +63,6 @@ public:
 		addInitiativeBonus(SMALL_FORM, 9);
 		addInitiativeBonus(LARGE_FORM, 9);
 
-		if(timeStopped)
-		{
-			auto timeStopBonus = std::make_shared<Bonus>(BonusDuration::PERMANENT,
-				BonusType::TIME_STOP, BonusSource::SPELL_EFFECT, 1, BonusSourceID());
-			if(selector && selector(timeStopBonus.get()))
-				result->push_back(std::move(timeStopBonus));
-		}
 		if(incomingReduction > 0)
 		{
 			auto reduction = std::make_shared<Bonus>(BonusDuration::STACK_ACTIVATION,
@@ -417,37 +400,7 @@ TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)
 	EXPECT_EQ(state->save(), before);
 }
 
-TEST(NewHorizonsBattleFormHealthTest, TimeStopPausesBattleFormExpiryUntilStasisEnds)
-{
-	UnitEnvironmentMock environment;
-	UnitInfoMock info;
-	FormHealthBonusBearer bonuses;
-	FormTestUnitState state(&info, &bonuses);
-	configureUnitInfo(info, SOURCE_CREATURE.toCreature());
-	bonuses.state = &state;
-	state.localInit(&environment);
-	state.beginBattleForm(SMALL_FORM, 2);
-	ASSERT_TRUE(state.hasBattleForm());
-	EXPECT_EQ(state.getInitiative(), 17);
 
-	bonuses.setTimeStopped(true);
-	ASSERT_TRUE(state.isTimeStopped());
-	state.afterNewRound();
-	EXPECT_TRUE(state.hasBattleForm());
-	EXPECT_EQ(state.save()["state"]["battleFormRoundsRemaining"].Integer(), 2);
-	EXPECT_EQ(state.getInitiative(), 9);
-
-	bonuses.setTimeStopped(false);
-	ASSERT_FALSE(state.isTimeStopped());
-	state.afterNewRound();
-	EXPECT_TRUE(state.hasBattleForm());
-	EXPECT_EQ(state.save()["state"]["battleFormRoundsRemaining"].Integer(), 1);
-	EXPECT_EQ(state.getInitiative(), 9);
-	state.afterNewRound();
-	EXPECT_FALSE(state.hasBattleForm());
-	EXPECT_EQ(state.getInitiative(), 17);
-	EXPECT_EQ(state.health.getCreatureHealthAvailable(), static_cast<int64_t>(STACK_SIZE) * 100);
-}
 
 TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenanceBeforeGhosting)
 {

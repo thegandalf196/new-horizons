@@ -228,7 +228,7 @@ TEST_F(ExchangeInitiativeQueueTest, WingbeatOnSpentActorCannotGrantAnotherActiva
 	EXPECT_EQ(watched.next(), nullptr);
 }
 
-TEST_F(ExchangeInitiativeQueueTest, HeroQueueCounterspellBoundaryMovesAfterWingbeat)
+TEST_F(ExchangeInitiativeQueueTest, HeroQueueBoundaryMovesAfterWingbeat)
 {
 	prepare();
 	auto branch = simulation();

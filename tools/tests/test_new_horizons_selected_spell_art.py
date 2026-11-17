@@ -14,6 +14,9 @@ from .nhart_test_resources import (open_image, read_resource, verified_index,
                                   later_art_resources, later_art_waves,
                                   entries_before_wave, resource_before_wave)
 from .nhart_config_revisions import config_at_revision
+from .nhart_sorcery_config_transition import before_sorcery
+from .nhart_released_history import initial_selection_history, baseline_payload_proof
+from import_new_horizons_art_wave import entries_digest
 
 
 class SelectedSpellArtTest(unittest.TestCase):
@@ -21,7 +24,7 @@ class SelectedSpellArtTest(unittest.TestCase):
     def setUpClass(cls):
         cls.selection = json.loads((ROOT / 'assets/new-horizons/spell-art-selections.json').read_text())
         cls.manifest = json.loads((ROOT / importer.MANIFEST).read_text())
-        cls.config = importer.parse_jsonc((ROOT / importer.CONFIG).read_text())
+        cls.config = before_sorcery(importer.parse_jsonc((ROOT / importer.CONFIG).read_text()))
         cls.configProofs = json.loads((ROOT / 'assets/new-horizons/runtime-art-config-revisions.json').read_text())
 
     def test_exact_semantic_roster_and_five_native_roles(self):
@@ -50,15 +53,17 @@ class SelectedSpellArtTest(unittest.TestCase):
         later = later_art_resources()
         self.assertFalse(later & new)
         waves = later_art_waves()
-        historical = entries_before_wave(self.manifest['entries'], waves, 0)
+        historical, legacy, legacy_later = initial_selection_history(
+            self.manifest['entries'], waves, entries_digest)
         baseline = sorted((row for row in historical if row['resource'] not in new | later),
                           key=lambda row: row['resource'].encode())
         self.assertEqual(len(baseline), 3795)
-        self.assertEqual(len(verified_index()), self.selection['entryCount'] + len(later))
+        self.assertEqual(len(legacy), self.selection['entryCount'] + len(legacy_later))
         digest = hashlib.sha256(json.dumps(baseline, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
         self.assertEqual(digest, self.selection['baselineEntriesSha256'])
         for row in baseline:
-            self.assertEqual(hashlib.sha256(resource_before_wave(row['resource'], waves, 0)).hexdigest(), row['sha256'])
+            self.assertIn(baseline_payload_proof(row, resource_before_wave(row['resource'], waves, 0)),
+                          ('verified-matching-payload', 'verified-released-replacement'))
         if waves:
             self.assertEqual(waves[0]['baselineArchiveSha256'], self.selection['newArchiveSha256'])
         else:

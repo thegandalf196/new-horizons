@@ -44,7 +44,6 @@ int coefficient(const CBattleInfoCallback & battle, const BattleAttackInfo & att
 		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent > 0
 		|| attack.cleaveDamagePercent > 0 || !attack.attacker->alive() || !attack.defender->alive()
 		|| attack.attacker->isGhost() || attack.defender->isGhost()
-		|| attack.attacker->isTimeStopped() || attack.defender->isTimeStopped()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender)
 		|| newHorizonsMagicalAbilityDamage::fireImmune(*attack.defender))

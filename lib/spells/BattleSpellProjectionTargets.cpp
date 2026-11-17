@@ -20,6 +20,7 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
 #include "../battle/Unit.h"
+#include "../networkPacks/PacksForClientBattle.h"
 #include "../ScopeGuard.h"
 
 #include <set>
@@ -37,6 +38,10 @@ bool BattleSpellMechanics::delegateConcentratedProjection(ServerCallback * serve
 	concentrated->castEval(server, target);
 	vinesProjectionReceipt = concentrated->vengefulVinesProjectionReceipt();
 	lifeDrainReceipt = concentrated->lifeDrainProjectionReceipt();
+	evaluatedHeroRecipients.assign(concentrated->getResolvedHeroRecipients().begin(),
+		concentrated->getResolvedHeroRecipients().end());
+	evaluatedHeroInjuries.assign(concentrated->getResolvedHeroInjuries().begin(),
+		concentrated->getResolvedHeroInjuries().end());
 	return true;
 }
 
@@ -47,9 +52,8 @@ BattleSpellMechanics::PreparedProjectionReceipts BattleSpellMechanics::preparePr
 		capturePandemoniumDebuffs();
 	const auto spellTarget = transformSpellTarget(target);
 	effectsToApply = effects->prepare(this, target, spellTarget);
-	filterSpellLockedEffects(target);
 	PreparedProjectionReceipts result;
-	if(!completedHeroProjection || isCounterspellNegated())
+	if(!completedHeroProjection)
 		return result;
 	if(newHorizonsVengefulVines::enabled(battle()->getBattle()->getMagicRules(), getSpellId())
 		&& newHorizonsVengefulVines::footprint(target).size() == 3)
@@ -77,7 +81,7 @@ battle::Units BattleSpellMechanics::transformedRecipients(const Target & target,
 		{
 			const auto * unit = destination.unitValue;
 			if(unit && (!massRegeneration || newHorizonsRegenerationEffects::eligible(unit)) && !unit->isInvincible()
-				&& (!isMagicalEffect() || !isSpellLocked(unit)))
+				)
 				result.push_back(unit);
 		}
 	});
@@ -107,8 +111,7 @@ int32_t Mechanics::getTargetAwareManaCost(const Target &) const
 	if(!isGenuineHeroCast() || !hero || !callback
 		|| getAutomaticHeroCast().kind != AutomaticHeroCastKind::NONE)
 		return 0;
-	int32_t result = callback->battleGetSpellCost(getSpellId().toSpell(), hero, isMassSlow() ? 3 : 1,
-		isMetamagicFollowup());
+	int32_t result = callback->battleGetSpellCost(getSpellId().toSpell(), hero, isMassSlow() ? 3 : 1);
 	if(newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), getSpellId()))
 		result = newHorizonsMagic::magicArrowManaCost(callback->getBattle()->getMagicRules(), getSpellId(),
 			result, getOvercharge()).value_or(std::numeric_limits<int32_t>::max());
@@ -122,58 +125,7 @@ Target Mechanics::getHandOfFateCollateralPool(const battle::Unit * primary) cons
 
 int32_t BattleSpellMechanics::getTargetAwareManaCost(const Target & target) const
 {
-	const int32_t ordinary = Mechanics::getTargetAwareManaCost(target);
-	const auto * cast = getMetamagicCastProfile();
-	if(!cast || ordinary == 0)
-		return ordinary;
-	if(cast->perks.pointPolicy)
-		return newHorizonsMetamagic::singularityManaCost(ordinary, cast->perks, cast->singularityReached);
-	if(!cast->perks.manaAttunement)
-		return ordinary;
-	if(newHorizonsPurify::enabled(battle()->getBattle()->getMagicRules(), getSpellId()) && !target.empty())
-	{
-		const auto recipients = newHorizonsPurify::prospectiveRecipients(*battle(), casterSide,
-			target.front().hexValue, getHeroCaster()->getPrimSkillLevel(PrimarySkill::SPELL_POWER),
-			newHorizonsPurify::hasPurifierPerk(getHeroCaster()), getPurifyChoices());
-		return newHorizonsMetamagic::manaCostForRecipients(ordinary, cast, *battle(), recipients);
-	}
-	std::vector<uint32_t> ids;
-	for(const auto * unit : transformedRecipients(target, true))
-		ids.push_back(unit->unitId());
-	const auto counts = newHorizonsMetamagic::manaTargetCounts(cast, *battle(), ids);
-	if(owner->getJsonKey() != "new-horizons:handOfFate" || counts.affected != 1)
-		return newHorizonsMetamagic::adjustedManaCost(ordinary, cast->perks, counts.qualifying, counts.affected);
-
-	const auto * primary = battle()->battleGetUnitByID(ids.front());
-	const auto pool = getHandOfFateCollateralPool(primary);
-	if(pool.empty())
-		return newHorizonsMetamagic::adjustedManaCost(ordinary, cast->perks, counts.qualifying, 1);
-	const bool fateDealer = usesNewHorizonsMagicV3()
-		&& getHeroCaster()->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.fateDealer");
-	uint32_t hostile = 0;
-	for(const auto & destination : pool)
-		if(battle()->battleGetOwner(destination.unitValue) != getCasterColor())
-			++hostile;
-	const auto size = static_cast<uint32_t>(pool.size());
-	const uint64_t denominator = newHorizonsHandOfFate::selectionDenominator(size, fateDealer);
-	uint64_t legalWeight = 0;
-	uint64_t qualifiedLegalWeight = 0;
-	for(const auto & destination : pool)
-	{
-		const auto * unit = destination.unitValue;
-		if(unit && unit->isValidTarget(false) && !unit->isInvincible() && isReceptive(unit)
-			&& (!isMagicalEffect() || !isSpellLocked(unit)))
-		{
-			const auto weight = newHorizonsHandOfFate::selectionWeight(size, hostile,
-				battle()->battleGetOwner(unit) != getCasterColor(), fateDealer);
-			legalWeight += weight;
-			if(unit->metamagicMarks(cast->heroSide) >= newHorizonsMetamagic::QUALIFYING_MARKS)
-				qualifiedLegalWeight += weight;
-		}
-	}
-	const auto [qualifying, affected] = newHorizonsHandOfFate::expectedManaFraction(
-		counts.qualifying != 0, denominator, legalWeight, qualifiedLegalWeight);
-	return newHorizonsMetamagic::adjustedManaCost(ordinary, cast->perks, qualifying, affected);
+	return Mechanics::getTargetAwareManaCost(target);
 }
 
 size_t BattleSpellMechanics::getTargetedStackCount(const Target & target) const

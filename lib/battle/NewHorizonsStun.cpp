@@ -39,7 +39,7 @@ bool isMarker(const Bonus * bonus)
 bool isStunned(const battle::Unit & unit) { return unit.hasBonus(CSelector(isMarker)); }
 bool forfeitsActivation(const CBattleInfoCallback & battle, const battle::Unit & unit, BattleUnitTurnReason reason)
 {
-	return unit.alive() && !unit.isGhost() && !unit.isTimeStopped() && isStunned(unit)
+	return unit.alive() && !unit.isGhost() && isStunned(unit)
 		&& battle.battleBeginsActivation(&unit, reason);
 }
 Bonus marker()

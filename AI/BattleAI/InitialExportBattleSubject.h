@@ -17,7 +17,6 @@ class HypotheticBattle;
 class InitialExportBattleSubject final : public BattleProxy
 {
 	std::unique_ptr<InitialExportWorld> owned;
-	BattleSideArray<MetamagicPointState> metamagicPointStates;
 	BattleSideArray<WisdomCombatState> wisdomCombatStates;
 	BattleSideArray<newHorizonsHeroes::LeadershipComposition> leadershipCompositions;
 	InitialExportBattleSubject(Subject subject, std::unique_ptr<InitialExportWorld> world);
@@ -33,7 +32,7 @@ public:
 	{
 		return leadershipCompositions.at(side);
 	}
-	static std::shared_ptr<InitialExportBattleSubject> capture(Subject subject, BattleInfo & native);
+	static DLL_LINKAGE std::shared_ptr<InitialExportBattleSubject> capture(Subject subject, BattleInfo & native);
 	/// Explicit native handle, exact full-information source and complete roster.
 	/// Retains actual parent ownership; recipient overlays do not establish exports.
 	static std::shared_ptr<InitialExportBattleSubject> captureLegacyMovement(Subject subject, BattleInfo & native);
@@ -88,8 +87,6 @@ public:
 	void setOverwhelmingFormulaState(BattleSide, const OverwhelmingFormulaState &) override;
 	void setPerfectFortuneState(BattleSide, const PerfectFortuneState &) override;
 	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override;
-	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
-	void setMetamagicPointState(BattleSide, const MetamagicPointState &) override;
 	void setLuckSerendipityState(BattleSide, const LuckSerendipityState &) override;
 	void setArmorerDefiantState(BattleSide, const ArmorerDefiantState &) override;
 	void awardBattlecraftMastery(BattleSide, uint32_t, int32_t, BattlecraftMasteryAction) override;

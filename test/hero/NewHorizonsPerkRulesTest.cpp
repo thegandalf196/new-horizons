@@ -29,8 +29,12 @@ namespace
 JsonNode historicalOfferCodecRules()
 {
 	auto rules = historicalFactionPerkRules();
-	for(const auto key : {"quickStudyPolicy", "connoisseurPolicy", "sylvanTacticsPolicy", "necromancyPolicy", "unifiedSkillProgressionVersion"})
+	// This fixture captures the original ordered R2 policy, before fixed
+	// four-offer progression and revised Estates serialization requirements.
+	for(const auto key : {"quickStudyPolicy", "connoisseurPolicy", "sylvanTacticsPolicy", "necromancyPolicy",
+		"unifiedSkillProgressionVersion", "fourOfferProgressionVersion", "estatesPolicyVersion"})
 		rules.Struct().erase(key);
+	rules["perkProgressionPolicyVersion"].Integer() = 1;
 	return rules;
 }
 
@@ -238,8 +242,10 @@ TEST(NewHorizonsPerkRules, WeightedOfferPolicyIsExplicitAndAbsentCapturedRegistr
 	capturedLegacy.Struct().erase("perkOfferNormalization");
 	capturedLegacy.Struct().erase("perkProgressionPolicyVersion");
 	capturedLegacy.Struct().erase("quickStudyPolicy");
-	// Unified offers cannot be retained after removing their ordered-tier prerequisite.
+	// The current fixed four-offer profile requires its ordered-tier prerequisite.
+	ASSERT_TRUE(usesFourOfferProgression(capturedLegacy));
 	EXPECT_THROW(validatePerkRules(capturedLegacy), std::runtime_error);
+	capturedLegacy.Struct().erase("fourOfferProgressionVersion");
 	capturedLegacy.Struct().erase("unifiedSkillProgressionVersion");
 	capturedLegacy.Struct().erase("connoisseurPolicy");
 	const auto before = capturedLegacy;
@@ -624,17 +630,23 @@ TEST(NewHorizonsPerkRules, StrictProgressionMarkerIsOrthogonalExactAndHistorical
 {
 	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
 	ASSERT_EQ(current["offerWeightPolicyVersion"].Integer(), 2);
-	ASSERT_EQ(current["perkProgressionPolicyVersion"].Integer(), 1);
+	ASSERT_EQ(current["perkProgressionPolicyVersion"].Integer(), 2);
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(current));
 	EXPECT_TRUE(newHorizonsHeroes::usesR2PerkOffers(current));
+	ASSERT_TRUE(newHorizonsHeroes::usesFourOfferProgression(current));
+	auto missingCurrentPrerequisite = current;
+	missingCurrentPrerequisite.Struct().erase("perkProgressionPolicyVersion");
+	EXPECT_THROW(newHorizonsHeroes::validatePerkRules(missingCurrentPrerequisite), std::runtime_error);
 	auto historical = historicalOfferCodecRules();
+	ASSERT_FALSE(newHorizonsHeroes::usesFourOfferProgression(historical));
+	ASSERT_EQ(historical["perkProgressionPolicyVersion"].Integer(), 1);
 	historical.Struct().erase("perkProgressionPolicyVersion");
 	const auto before = historical;
 	EXPECT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(historical));
 	EXPECT_TRUE(newHorizonsHeroes::usesR2PerkOffers(historical));
 	EXPECT_NO_THROW(newHorizonsHeroes::validateWeightedPerkSerialization(historical, true, true));
 	EXPECT_EQ(historical, before);
-	for(const auto & marker : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(2), JsonNode(1.0), JsonNode(1.5), JsonNode("1")})
+	for(const auto & marker : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(3), JsonNode(1.0), JsonNode(1.5), JsonNode("1")})
 	{
 		auto invalid = current;
 		invalid["perkProgressionPolicyVersion"] = marker;

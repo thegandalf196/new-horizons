@@ -44,7 +44,7 @@ void validateRevisedPolicy(const JsonNode & rules)
 bool hasRevisedPerk(const CGHeroInstance * hero, const char * perk)
 {
 	return hero && hero->getOwner().isValidPlayer()
-		&& usesRevisedPolicy(hero->getPerkState().rules)
+		&& usesRevisedPolicy(hero->getPerkState().getRules())
 		&& hero->hasActivePerk("new-horizons:estates", perk);
 }
 

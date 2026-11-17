@@ -56,6 +56,29 @@ set(lib_SRCS
 )
 
 set(lib_MAIN_SRCS
+	mapObjects/TownMachineCapabilities.cpp
+	battle/MechanicsPresence.cpp
+	battle/UnitMechanicsQueries.cpp
+	entities/hero/CapturedPerkSerialization.cpp
+	entities/hero/CompiledPerkCatalogue.cpp
+	entities/hero/NewHorizonsPerkProjection.cpp
+	gameState/CapturedGameRules.cpp
+	mapObjects/HeroCapturedRuleSerialization.cpp
+	mapObjects/HeroCapturedRules.cpp
+	mapping/CapturedMapRulesSerialization.cpp
+	nativeRules/CapturedPerkRules.cpp
+	nativeRules/CapturedRuleCapture.cpp
+	nativeRules/CapturedRulePool.cpp
+	nativeRules/CapturedRuleExecutionAudit.cpp
+	nativeRules/CompiledDevelopmentCombatPolicies.cpp
+	nativeRules/CompiledDevelopmentRules.cpp
+	nativeRules/CompiledDevelopmentSkills.cpp
+	nativeRules/CompiledDevelopmentSpecialties.cpp
+	nativeRules/CompiledLeadershipRules.cpp
+	nativeRules/CompiledMasteryRules.cpp
+	nativeRules/CompiledMetamagicRules.cpp
+	nativeRules/CapturedRuleSet.cpp
+	nativeRules/CompiledCapabilityRules.cpp
 	battle/NewHorizonsWarfare.cpp
 	battle/NewHorizonsWarfareQueries.cpp
 	battle/HeroCommandFocusFire.cpp
@@ -90,7 +113,6 @@ set(lib_MAIN_SRCS
 	combatScripts/nativeEvents/NativeRecoveryEvents.cpp
 	combatScripts/nativeEvents/NativeReflectEvents.cpp
 	combatScripts/nativeEvents/NativeSetupEvents.cpp
-	combatScripts/nativeEvents/NativeFocusMagic.cpp
 	scripting/NativeModule.cpp
 	scripting/NativeScriptFactory.cpp
 	scripting/NativeMapEventDispatcher.cpp
@@ -204,15 +226,11 @@ set(lib_MAIN_SRCS
 	battle/PassiveDivineMandateSpellPool.cpp
 	battle/PassiveDivineMandateVanguard.cpp
 	spells/AutomaticHeroCast.cpp
-	spells/LegacyMetamagicSpellActions.cpp
 	spells/NewHorizonsHandOfFateTargeting.cpp
 	spells/NewHorizonsMetamagicEffects.cpp
-	spells/NewHorizonsMetamagicEntry.cpp
-	spells/NewHorizonsMetamagicPoints.cpp
 	spells/SpellDelayedOutput.cpp
 	spells/SpellMdrPenetration.cpp
 	spells/NewHorizonsWisdom.cpp
-	spells/NewHorizonsMetamagicMarks.cpp
 	spells/NewHorizonsMetamagicRefresh.cpp
 	spells/NewHorizonsMetamagicTimedStatus.cpp
 	spells/NewHorizonsTimedStatusPlan.cpp
@@ -284,7 +302,6 @@ set(lib_MAIN_SRCS
 	battle/BattleInfoUnitUpdate.cpp
 	battle/PhysicalAffliction.cpp
 	battle/NewHorizonsFrozen.cpp
-	battle/TimeStopState.cpp
 	battle/NewHorizonsBloodrage.cpp
 	battle/NewHorizonsDivineMandate.cpp
 	battle/NewHorizonsRapidResponse.cpp
@@ -307,12 +324,9 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsConfusionResolution.cpp
 	battle/NewHorizonsConfusionControl.cpp
 	battle/NewHorizonsConfusionState.cpp
-	battle/ArcaneMarkState.cpp
 	battle/PhysicalPoisonSpellOrigin.cpp
 	battle/UnitStateEffectReceipts.cpp
 	battle/PassiveFactionStateSerialization.cpp
-	battle/MetamagicPointState.cpp
-	battle/CUnitStateArcaneShield.cpp
 	battle/NewHorizonsDemonicGating.cpp
 	battle/NewHorizonsPlague.cpp
 	battle/NewHorizonsPuppetMaster.cpp
@@ -347,6 +361,8 @@ set(lib_MAIN_SRCS
 	battle/BattleHeroPolicyQueries.cpp
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
+	battle/CHealthValueContext.cpp
+	battle/SpellPointBattleTransitions.cpp
 	battle/CUnitState.cpp
 	battle/UnitStateHealing.cpp
 	battle/CapacityHealingReceipt.cpp
@@ -441,6 +457,7 @@ set(lib_MAIN_SRCS
 	battle/ProjectedBattleWorldArenaForecast.cpp
 	battle/ProjectedBattleWorldArenaRecipientOverlay.cpp
 	battle/RoundBonusDuration.cpp
+	battle/TimedEffectValueTransitions.cpp
 	battle/StackEffectRemoval.cpp
 	battle/StackEffectRefresh.cpp
 	battle/StackEffectRecordRules.cpp
@@ -504,11 +521,8 @@ set(lib_MAIN_SRCS
 	battle/OwnedFrameRelationCapture.h
 	battle/OwnedFrameTopology.cpp
 	battle/OwnedFrameTopology.h
-	battle/OwnedLegacyTimeStopCapture.cpp
-	battle/OwnedLegacyTimeStopCapture.h
 	battle/OwnedUnitEnvironmentPolicy.cpp
 	battle/OwnedUnitEnvironmentPolicy.h
-	battle/UnitTimeStopQuery.cpp
 	bonuses/OwnedSourceRelationReplay.cpp
 	bonuses/OwnedSourceRelationReplay.h
 		battle/StackFormSourceIdentity.h
@@ -671,6 +685,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsPerkRules.cpp
 	entities/hero/NewHorizonsPerkQueries.cpp
 	entities/hero/NewHorizonsPerkOperation.cpp
+	entities/hero/LegacyPerkPresentation.cpp
 	entities/hero/NewHorizonsPerkState.cpp
 	entities/hero/NewHorizonsNecromancy.cpp
 	entities/hero/NewHorizonsNecromancyPolicy.cpp
@@ -983,6 +998,23 @@ set(lib_MAIN_SRCS
 	spells/OrientedSpellPattern.cpp
 	spells/MagicalDamageReduction.cpp
 	spells/NewHorizonsSorceryRevision.cpp
+	spells/NewHorizonsMetamagicResolution.cpp
+	spells/NewHorizonsMetamagicCompletion.cpp
+	spells/NewHorizonsMagicalMemory.cpp
+	spells/NewHorizonsSorcerySpells.cpp
+	spells/SorcerySpellPresentation.cpp
+	spells/NewHorizonsMetamagicArea.cpp
+	spells/SpellEffectScalingProfile.cpp
+	spells/SpellCastDuration.cpp
+	battle/BattleRecallAnchors.cpp
+	battle/FocusMagicValueState.cpp
+	battle/NewHorizonsFocusMagic.cpp
+	battle/UnitShots.cpp
+	battle/UnitGuardianSpiritDamage.cpp
+	entities/hero/NewHorizonsPassiveFactionPolicies.cpp
+	spells/effects/native/NativeFocusEnchantment.cpp
+	spells/effects/native/NativeForcedRecall.cpp
+	spells/effects/native/NativeForceLance.cpp
 	spells/NewHorizonsSorcery.cpp
 	spells/HydrasVitalityIdentity.cpp
 	spells/NewHorizonsSpellAvailability.cpp
@@ -1128,6 +1160,21 @@ set(lib_HEADERS
 )
 
 set(lib_MAIN_HEADERS
+	battle/MechanicsPresence.h
+	entities/hero/CompiledPerkCatalogue.h
+	nativeRules/CapturedPerkRules.h
+	nativeRules/CapturedRuleEnvelope.h
+	nativeRules/CapturedRulePool.h
+	nativeRules/CapturedRuleExecutionAudit.h
+	nativeRules/CompiledDevelopmentRules.h
+	nativeRules/CompiledLeadershipRules.h
+	nativeRules/CompiledMasteryRules.h
+	nativeRules/CompiledMetamagicRules.h
+	nativeRules/CapturedRuleRef.h
+	nativeRules/CapturedRuleSet.h
+	nativeRules/CapturedRuleTargets.h
+	nativeRules/CapturedRuleWireContext.h
+	nativeRules/CompiledCapabilityRules.h
 	battle/NewHorizonsWarfare.h
 	battle/CommandArmyBonuses.h
 	battle/OrderFormation.h
@@ -1234,7 +1281,6 @@ set(lib_MAIN_HEADERS
 	battle/HeroActionAllowanceState.h
 	battle/RelentlessAssaultState.h
 	battle/SpellResponseState.h
-	battle/TimeStopState.h
 	battle/NewHorizonsWarMachines.h
 	battle/OverwhelmingFormulaState.h
 	spells/NewHorizonsOverwhelmingFormula.h
@@ -1288,7 +1334,6 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsConfusionResolution.h
 	battle/NewHorizonsConfusionControl.h
 	battle/NewHorizonsConfusionState.h
-	battle/ArcaneMarkState.h
 	battle/PassiveDivineMandate.h
 	battle/PassiveDivineMandateInspiration.h
 	battle/PassiveDivineMandateSpellPool.h
@@ -1296,9 +1341,6 @@ set(lib_MAIN_HEADERS
 	spells/AutomaticHeroCast.h
 	spells/NewHorizonsHandOfFateTargeting.h
 	spells/NewHorizonsMetamagicEffects.h
-	spells/NewHorizonsMetamagicEntry.h
-	spells/NewHorizonsMetamagicPoints.h
-	spells/NewHorizonsMetamagicMarks.h
 	spells/NewHorizonsMetamagicRefresh.h
 	spells/NewHorizonsMetamagicTimedStatus.h
 	spells/NewHorizonsTimedStatusPlan.h
@@ -1332,6 +1374,9 @@ set(lib_MAIN_HEADERS
 	battle/VisibleHeroPolicy.h
 	battle/CObstacleInstance.h
 	battle/CPlayerBattleCallback.h
+	battle/CHealth.h
+	battle/CHealthValueContext.h
+	battle/SpellPointBattleTransitions.h
 	battle/CUnitAmmo.h
 	battle/CUnitState.h
 	battle/HealingReceipt.h
@@ -1368,8 +1413,6 @@ set(lib_MAIN_HEADERS
 	networkPacks/SetElementalAttunementState.h
 	battle/NewHorizonsElementalAttunement.h
 	battle/NewHorizonsCommandResources.h
-	battle/MetamagicPointState.h
-	networkPacks/SetMetamagicPointState.h
 	battle/SiegeInfo.h
 	battle/Unit.h
 	battle/UnitAdjacency.h
@@ -1397,6 +1440,7 @@ set(lib_MAIN_HEADERS
 	battle/ProjectedBattleWorldArenaState.h
 	battle/OrdinaryMeleeRetaliation.h
 	battle/RoundBonusDuration.h
+	battle/TimedEffectValueTransitions.h
 	battle/StackEffectRemoval.h
 	battle/StackEffectRefresh.h
 	battle/StackEffectRecordRules.h
@@ -1556,6 +1600,8 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsMasteryState.h
 	entities/hero/NewHorizonsMasteryEffects.h
 	entities/hero/NewHorizonsPerkRules.h
+	entities/hero/LegacyPerkPresentation.h
+	entities/hero/NewHorizonsPerkTypes.h
 	entities/hero/NewHorizonsPerkState.h
 	entities/hero/NewHorizonsPerkOperation.h
 	entities/hero/NewHorizonsNecromancy.h
@@ -1860,6 +1906,16 @@ set(lib_MAIN_HEADERS
 	spells/MagicalDamageReduction.h
 	spells/IncomingMagicalDamage.h
 	spells/NewHorizonsSorceryRevision.h
+	spells/NewHorizonsMetamagicResolution.h
+	spells/NewHorizonsMetamagicCompletion.h
+	spells/NewHorizonsMagicalMemory.h
+	spells/NewHorizonsSorcerySpells.h
+	spells/NewHorizonsMetamagicArea.h
+	spells/SpellEffectScalingProfile.h
+	battle/BattleRecallAnchors.h
+	battle/FocusMagicValueState.h
+	battle/NewHorizonsFocusMagic.h
+	serializer/GameConnectionProtocol.h
 	spells/NewHorizonsSorcery.h
 	spells/HydrasVitalityIdentity.h
 	spells/NewHorizonsSpellAvailability.h

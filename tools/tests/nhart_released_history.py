@@ -7,6 +7,7 @@ import copy
 import hashlib
 
 from .nhart_test_resources import entries_before_wave
+from .nhart_force_lance import force_lance_wave
 
 AUTHORITY_CURRENT = (
     ('massedRanks', 'offensive_drills'), ('veteranCadre', 'defensive_drills'),
@@ -71,6 +72,9 @@ def _reverse_bridge_records(entries):
 
 def released_predecessor_entries(entries, waves, digest):
     """Verify exact 143/255 additions and two replacements before reversing them."""
+    # The new finite cohort is removed by ordinary wave reversal, never folded
+    # into the released bridge's existing fingerprints or approval records.
+    force_lance_wave(waves)
     matches = [i for i, wave in enumerate(waves) if wave['baselineArchiveSha256'] == BRIDGE_NEXT_ARCHIVE]
     if len(matches) != 1 or matches[0] == 0:
         raise ValueError('Missing exact released-art bridge boundary')
@@ -106,3 +110,13 @@ def baseline_payload_proof(row, payload):
             return 'verified-released-replacement'
         raise ValueError('Historical baseline payload changed')
     return 'verified-matching-payload'
+
+
+def initial_selection_history(entries, waves, digest):
+    """Project initial selections through the exact released bridge and waves."""
+    from .nhart_water_ice_restoration import restoration_wave
+    legacy, _ = released_predecessor_entries(entries, waves, digest)
+    restoration = restoration_wave(waves)
+    history = [wave for wave in waves if wave is not restoration]
+    return entries_before_wave(legacy, history, 0), legacy, {
+        name for wave in history for name in wave['resources']}

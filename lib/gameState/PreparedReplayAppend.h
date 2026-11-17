@@ -37,6 +37,7 @@ private:
 	Records encoded;
 	std::vector<ReplayChapter> firstChapters;
 	bool configured = false;
+	bool captureEnabled = true;
 	bool recording = false;
 	bool opensChapter = false;
 	bool consumed = false;

@@ -395,6 +395,19 @@ JsonNode GameSettings::getFullConfig() const
 	return result;
 }
 
+JsonNode GameSettings::perkSerializationContext(const JsonNode & overrides) const
+{
+	const auto & fragment = overrides["heroes"]["newHorizonsPerks"];
+	if(fragment.isNull())
+		return JsonNode();
+	// Settings persist an override fragment, not a complete hero capture. Resolve
+	// it against this settings owner's admitted base only for validation. A whole
+	// captured context retains its override flag and therefore replaces the base.
+	JsonNode result = baseSettings[static_cast<size_t>(EGameSettings::HEROES_NEW_HORIZONS_PERKS)];
+	JsonUtils::mergeCopy(result, fragment);
+	return result;
+}
+
 JsonNode GameSettings::getAllOverrides() const
 {
 	JsonNode result;

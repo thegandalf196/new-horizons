@@ -75,21 +75,7 @@ TEST_F(NewHorizonsNaturesWrathTest, ResistantEnemyConductsWithoutDamageOrRerouti
 	EXPECT_LT(third->getAvailableHealth(), later);
 }
 
-TEST_F(NewHorizonsNaturesWrathTest, LockedInitialTargetRejectsWithoutManaButLockedIntermediateContinues)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	lock(friendly);
-	const auto mana = attackerSideHero->getManaAvailable();
-	EXPECT_FALSE(cast(friendly));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	damage(friendly, 9);
-	const auto health = friendly->getAvailableHealth();
-	const auto later = third->getAvailableHealth();
-	ASSERT_TRUE(cast(first));
-	EXPECT_EQ(friendly->getAvailableHealth(), health);
-	EXPECT_LT(third->getAvailableHealth(), later);
-	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
-}
+
 
 TEST_F(NewHorizonsNaturesWrathTest, DeadStackCannotConductOrResurrect)
 {
@@ -114,17 +100,7 @@ TEST_F(NewHorizonsNaturesWrathTest, NoManaRejectsWithoutHealthMutation)
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
 }
 
-TEST_F(NewHorizonsNaturesWrathTest, TimeStoppedStackCannotConduct)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID()));
-	ASSERT_TRUE(friendly->isTimeStopped());
-	EXPECT_FALSE(newHorizonsNaturesWrath::validConductor(friendly));
-	const auto route = newHorizonsNaturesWrath::route(*battle(), first, 17);
-	for(const auto & destination : route)
-		EXPECT_NE(destination.unitValue, friendly);
-}
+
 
 TEST_F(NewHorizonsNaturesWrathTest, StableUnitIdBreaksNearestTie)
 {

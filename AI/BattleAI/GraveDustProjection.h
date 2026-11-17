@@ -7,5 +7,4 @@ namespace graveDustAI
 {
 /// Native protected removal applies equally to ordinary and explicit owned subjects.
 void validateSelectorRemoval(const IBattleInfo & battle, const battle::Unit & unit, const CSelector & requested);
-CSelector protectedRemovalSelector(const battle::Unit & unit, const CSelector & requested);
 }

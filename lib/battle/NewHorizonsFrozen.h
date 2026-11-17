@@ -20,6 +20,8 @@ namespace newHorizonsFrozen
 DLL_LINKAGE bool enabled(const JsonNode & rules);
 DLL_LINKAGE int chancePercent(const JsonNode & rules);
 DLL_LINKAGE int shatterBonusPercent(const JsonNode & rules);
+/// Static creature/policy/body role; independent of current life/Frozen state.
+DLL_LINKAGE bool hasFreezingTouchRole(const battle::Unit & unit, const JsonNode & rules);
 DLL_LINKAGE bool isFreezingTouchAttacker(const battle::Unit & unit, const JsonNode & rules);
 DLL_LINKAGE bool qualifiesForShatter(const BattleAttackInfo & attack, const JsonNode & rules);
 DLL_LINKAGE Bonus marker(BonusSourceID sourceID, int32_t applicationRound);

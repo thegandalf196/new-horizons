@@ -385,7 +385,6 @@ TEST_F(HeroLuckOrderTest, PaidNondamagingHasteWithOnlyDruidicConsumesActionAndMa
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), heroAction(0)));
 	const auto casts = server.castsOf(SpellID::HASTE);
 	ASSERT_EQ(casts.size(), 1u);
-	EXPECT_FALSE(casts.front().announcement.counterspellNegated);
 	EXPECT_FALSE(casts.front().announcement.heroLuck);
 	EXPECT_EQ(casts.front().announcement.paidHeroManaCost, cost);
 	EXPECT_EQ(casts.front().damage, 0);
@@ -423,7 +422,6 @@ TEST_F(HeroLuckOrderTest, PaidNondamagingHasteWithOnlyErraticUsesOneLuckDrawAndR
 	ASSERT_TRUE(casts.front().announcement.heroLuck);
 	EXPECT_EQ(*casts.front().announcement.heroLuck, *receipt);
 	EXPECT_FALSE(casts.front().announcement.heroLuck->has(Proc::DruidicLuck));
-	EXPECT_FALSE(casts.front().announcement.counterspellNegated);
 	EXPECT_EQ(casts.front().announcement.paidHeroManaCost, cost);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost + refund);
 	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).heroSpellCastCompleted);

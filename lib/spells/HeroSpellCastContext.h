@@ -23,12 +23,9 @@ struct DLL_LINKAGE HeroSpellCastContext
 	int32_t componentBonusPercent() const;
 };
 DLL_LINKAGE HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero,
-	const CSpell & spell, const CBattleInfoCallback & callback, bool followup, bool concentrated = false,
+	const CSpell & spell, const CBattleInfoCallback & callback, bool concentrated = false,
 	bool automaticHeroCast = false);
 DLL_LINKAGE bool heroCastExtendAvailable(const CGHeroInstance & hero, const CSpell & spell,
 	const CBattleInfoCallback & callback, int32_t effectLevel);
 DLL_LINKAGE int32_t brimstoneSpellPowerBonus(const CGHeroInstance & hero, const CBattleInfoCallback & callback);
-/// Missing selected target omits Split Focus, never guesses a recipient.
-DLL_LINKAGE int32_t metamagicPowerBonus(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback & callback, std::optional<uint32_t> selectedTarget = std::nullopt);
 }

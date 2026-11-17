@@ -66,7 +66,7 @@ int CBattleInfoCallback::battleGetAttackLuck(const battle::Unit * attacker, cons
 	const auto controllerSide = playerToSide(battleGetActionController(attacker));
 	if((controllerSide == BattleSide::ATTACKER || controllerSide == BattleSide::DEFENDER)
 		&& getBattle()->getLuckSerendipityState(controllerSide).availableAt(battleGetRound())
-		&& !battleTacticDist() && attacker->alive() && !attacker->isTimeStopped()
+		&& !battleTacticDist() && attacker->alive()
 		&& newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
 			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK))))
 		luck += 2;

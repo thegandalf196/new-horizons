@@ -538,7 +538,7 @@ TEST_F(NewHorizonsFrailtySpecialtyTest, CurrentOptOutPreservesProducerAndPreviou
 	previousFormatContext = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_THROW(newHorizonsMagic::validateCanonicalSpellClausesSerialization(attackerSideHero->getMagicRules(), false));
-	ASSERT_FALSE(newHorizonsHeroes::crisisCommandProfileActive(attackerSideHero->getPerkState().rules));
+	ASSERT_FALSE(newHorizonsHeroes::crisisCommandProfileActive(attackerSideHero->getPerkState().getRules()));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(SpellID::WEAKNESS));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(frailty()));
 	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(frailty()), 0);

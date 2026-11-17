@@ -97,7 +97,6 @@ public:
 	virtual bool isGhost() const = 0;
 	virtual bool isFrozen() const = 0;
 	/// Original hero-side marks and original-stack Gate use survive control changes.
-	virtual int32_t metamagicMarks(BattleSide) const { return 0; }
 	virtual bool hasOpenedDemonicGate() const { return false; }
 	/// Stable hero side only for natively applied spell Poison; legacy/creature Poison is NONE.
 	virtual BattleSide physicalPoisonSpellOrigin() const { return BattleSide::NONE; }
@@ -112,13 +111,6 @@ public:
 
 	virtual bool isHypnotized() const = 0;
 	virtual bool isInvincible() const = 0;
-	/// True while the unit carries the authoritative New Horizons Time Stop
-	/// stasis marker.  This is intentionally exposed on the shared unit view so
-	/// battle rules, spell targeting, Lua and BattleAI all observe one state.
-	virtual bool isTimeStopped() const { return false; }
-	/// Static captured spell identity only; NOT current stasis, visibility or
-	/// source authority. nullopt preserves the ordinary native lookup domain.
-	virtual std::optional<bool> legacyTimeStopSpellMatch(SpellID) const { return std::nullopt; }
 
 	virtual bool isClone() const = 0;
 	virtual bool hasClone() const = 0;
@@ -209,7 +201,6 @@ public:
 	virtual bool moved(int turn = 0) const = 0; //if stack was already moved this turn
 	/// True after the synthetic queue activation used to advance a stopped unit.
 	/// This is scheduling state, not permission to move or act.
-	virtual bool timeStopTurnConsumed() const { return false; }
 	virtual bool willMove(int turn = 0) const = 0; //if stack has remaining move this turn
 	virtual bool waited(int turn = 0) const = 0;
 	/// True while a stack's one-shot Battlecraft bonus from Waiting is armed.

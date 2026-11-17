@@ -15,11 +15,11 @@
 bool newHorizonsLevelUp::admitExternalSkillRank(const CGHeroInstance & hero, SecondarySkill skill, int targetRank)
 {
 	const auto & state = hero.getPerkState();
-	if(newHorizonsHeroes::usesFourOfferProgression(state.rules))
+	if(newHorizonsHeroes::usesFourOfferProgression(state.getRules()))
 	{
-		const auto & rules = hero.getPrimaryGrowthRules();
-		if(targetRank > hero.getSecSkillLevel(skill) && newHorizonsHeroes::isFactionSkill(rules, skill)
-			&& !newHorizonsHeroes::isFactionSkillForFaction(rules, hero.getFactionID(), skill))
+		const auto * rules = hero.compiledDevelopment();
+		if(targetRank > hero.getSecSkillLevel(skill) && rules->isFactionSkill(skill)
+			&& !rules->isFactionSkillForFaction(hero.getFactionID(), skill))
 		{
 			logGlobal->warn("Ignoring secondary Skill grant: the Skill belongs to another faction");
 			return false;
@@ -28,7 +28,7 @@ bool newHorizonsLevelUp::admitExternalSkillRank(const CGHeroInstance & hero, Sec
 		if(!freeSlot) logGlobal->warn("Ignoring secondary Skill grant: the hero has no free Skill slot");
 		return freeSlot;
 	}
-	if(newHorizonsHeroes::usesUnifiedSkillProgression(state.rules))
+	if(newHorizonsHeroes::usesUnifiedSkillProgression(state.getRules()))
 	{
 		auto proposed = state;
 		// Legacy admission proves all required future choices exist before
@@ -44,9 +44,9 @@ bool newHorizonsLevelUp::admitExternalSkillRank(const CGHeroInstance & hero, Sec
 void newHorizonsLevelUp::completeSkillRank(CGameHandler & handler, const CGHeroInstance * hero, SecondarySkill skill)
 {
 	const auto & state = hero->getPerkState();
-	if(!newHorizonsHeroes::usesPerkRules(state.rules) || newHorizonsHeroes::usesFourOfferProgression(state.rules))
+	if(!newHorizonsHeroes::usesPerkRules(state.getRules()) || newHorizonsHeroes::usesFourOfferProgression(state.getRules()))
 		return; // Revised progression spends one advancement, never backfills perks.
-	if(newHorizonsHeroes::usesUnifiedSkillProgression(state.rules))
+	if(newHorizonsHeroes::usesUnifiedSkillProgression(state.getRules()))
 	{
 		handler.offerHeroRequiredPerk(hero);
 		return;

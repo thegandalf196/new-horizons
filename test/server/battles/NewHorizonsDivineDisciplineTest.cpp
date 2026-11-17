@@ -227,7 +227,7 @@ TEST_F(NewHorizonsDivineDisciplineTest, DetachedForfeitCompletesCarryAndIsolates
 	parent->nextRound();
 	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
 	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID());
 	child->addUnitBonus(friendly->unitId(), {stopped});
 	child->nextTurn(friendly->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	EXPECT_FALSE(child->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::RIPOSTE)

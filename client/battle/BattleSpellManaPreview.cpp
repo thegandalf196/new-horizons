@@ -10,8 +10,8 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
-#include "../../lib/spells/NewHorizonsMetamagicMarks.h"
 #include "../../lib/spells/RecipientSpellEffectPreview.h"
+#include "../../lib/spells/NewHorizonsSorcerySpells.h"
 #include "../windows/SpellbookEntryPresentation.h"
 #include "../GameInstance.h"
 
@@ -37,8 +37,7 @@ std::string BattleActionsController::spellTargetManaStatus(PossiblePlayerBattleA
 {
 	const auto * hero = owner.currentHero();
 	const auto battle = owner.getBattle();
-	if(!heroSpellToCast || !hero || !battle
-		|| !newHorizonsMetamagic::usesArcaneMarks(hero->getPerkState().rules))
+	if(!heroSpellToCast || !hero || !battle)
 		return {};
 	switch(action.get())
 	{
@@ -72,13 +71,28 @@ std::string BattleActionsController::spellTargetManaStatus(PossiblePlayerBattleA
 	cast.setPurifyChoices(preview.spellPurifyChoices);
 	cast.setMassSlow(preview.spellMassSlow);
 	cast.setShadowGiftSacrificePercent(preview.spellShadowGiftSacrificePercent);
-	cast.setMetamagicFollowup(preview.metamagicFollowup);
-	cast.setMetamagicGrand(preview.metamagicGrand);
-	cast.setMetamagicManaRefund(preview.metamagicManaRefund);
 	const auto mechanics = cast.mechanicsForTarget(target);
 	if(!mechanics)
 		return {};
 	mechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(preview.target.size()));
 	return " | Mana: " + std::to_string(mechanics->getTargetAwareManaCost(target))
 		+ recipientEffectStatus(*mechanics, getStackForHex(targetHex));
+}
+
+bool BattleActionsController::isForcedRecallSpell(const CSpell * spell)
+{
+	return spell && spell->getJsonKey() == newHorizonsSorcerySpells::FORCED_RECALL;
+}
+
+BattleHexArray BattleActionsController::getForcedRecallTargetHexes(const CSpell * spell, const BattleHex & targetHex)
+{
+	const auto battle = owner.getBattle();
+	if(!isForcedRecallSpell(spell) || !battle || !heroSpellcastingModeActive()
+		|| !targetHex.isValid() || !isCastingPossibleHere(spell, nullptr, targetHex))
+		return {};
+	const auto * target = getStackForHex(targetHex);
+	if(!target)
+		return {};
+	const auto destination = newHorizonsSorcerySpells::forcedRecallDestination(*battle, *target);
+	return destination ? target->getHexes(*destination) : BattleHexArray{};
 }

@@ -25,15 +25,16 @@ bool PerkState::hasPerkForTier(const std::string & skillId, int tier) const
 	return std::any_of(selected.begin(), selected.end(), [&](const PerkSelection & choice)
 	{
 		if(choice.skillId != skillId) return false;
-		const auto definition = perkDefinition(rules, skillId, choice.perkId);
-		return definition && perkRequiredRank(definition->requiredRank) == tier;
+		const auto * catalog = compiledCatalogue();
+		const auto * definition = catalog ? catalog->definition(catalog->find(skillId, choice.perkId)) : nullptr;
+		return definition && definition->requiredRank == tier;
 	});
 }
 
 std::vector<PerkOfferCandidate> PerkState::nextRequiredPerkOffer(
 	const std::function<int(const std::string &)> & rankLookup) const
 {
-	if(!usesUnifiedSkillProgression(rules)) return {};
+	if(!usesUnifiedSkillProgression(getRules())) return {};
 	return PerkSelectionOperation(*this).next(rankLookup);
 }
 
@@ -60,6 +61,7 @@ void PerkState::selectMissingPerksDeterministically(const std::function<int(cons
 
 bool PerkState::canAdvanceSkillNormally(std::string_view skillId, int currentRank) const
 {
+	const auto & rules = getRules();
 	if(currentRank < 0 || currentRank > 2)
 		return false;
 	if(!usesPerkRules(rules))
@@ -67,12 +69,7 @@ bool PerkState::canAdvanceSkillNormally(std::string_view skillId, int currentRan
 	validate();
 	for(int requiredTier = 1; requiredTier <= currentRank; ++requiredTier)
 	{
-		const bool tierSelected = std::any_of(selected.begin(), selected.end(), [&](const auto & entry)
-		{
-			const auto definition = perkDefinition(rules, entry.skillId, entry.perkId);
-			return entry.skillId == skillId && definition
-				&& perkRequiredRank(definition->requiredRank) == requiredTier;
-		});
+		const bool tierSelected = hasPerkForTier(std::string(skillId), requiredTier);
 		if(!tierSelected)
 			return false;
 	}
@@ -82,6 +79,7 @@ bool PerkState::canAdvanceSkillNormally(std::string_view skillId, int currentRan
 
 std::vector<PerkOfferCandidate> PerkState::candidatesForSkillTier(const std::string & skillId, int tier) const
 {
+	const auto & rules = getRules();
 	if(!usesPerkRules(rules) || tier <= 0 || tier > 3)
 		return {};
 	return PerkSelectionOperation(*this).candidates(skillId, tier);
@@ -91,6 +89,7 @@ void PerkState::acceptOffer(const std::vector<PerkOfferCandidate> & offer, size_
 	const std::function<int(const std::string &)> & rankLookup, uint64_t seed,
 	const OfferWeightContext & weightContext)
 {
+	const auto & rules = getRules();
 	validate();
 	if(offer.empty() || choice >= offer.size())
 		throw std::runtime_error("Invalid New Horizons perk offer selection");

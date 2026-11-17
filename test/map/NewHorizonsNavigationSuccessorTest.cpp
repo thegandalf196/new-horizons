@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
@@ -129,7 +130,7 @@ TEST_P(BothNavigationSuccessors, FreshDefaultInstallsExactParentOwnFactionAndBas
 	EXPECT_EQ(actor()->getPerkSkillRank(parent), MasteryLevel::BASIC);
 	EXPECT_EQ(actor()->getPerkSkillRank(std::string(GetParam()) == "core:sylvia"
 		? "new-horizons:divineMandate" : "new-horizons:bulwarkOfTheMire"), MasteryLevel::BASIC);
-	EXPECT_EQ(actor()->getPerkState().selected, (std::vector<newHorizonsHeroes::PerkSelection>{{parent, navigation}}));
+	EXPECT_EQ(actor()->getPerkState().getSelected(), (std::vector<newHorizonsHeroes::PerkSelection>{{parent, navigation}}));
 	EXPECT_TRUE(actor()->hasActivePerk(parent, navigation));
 	EXPECT_EQ(actor()->getHeroClass(), actor()->getHeroType()->heroClass);
 	EXPECT_EQ(actor()->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)), 20);
@@ -141,7 +142,7 @@ TEST_P(BothNavigationSuccessors, PresetDevelopmentAndBookStayExplicitButFreshSpe
 	preset = true; ASSERT_NO_FATAL_FAILURE(prepare(GetParam()));
 	EXPECT_EQ(actor()->getPerkSkillRank(parent), 0);
 	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:offense"), MasteryLevel::ADVANCED);
-	EXPECT_TRUE(actor()->getPerkState().selected.empty());
+	EXPECT_TRUE(actor()->getPerkState().getSelected().empty());
 	EXPECT_TRUE(actor()->spellbookContainsSpell(SpellID::MAGIC_ARROW));
 	expectProducer(*actor(), true);
 	const auto turn = actor()->getTurnInfo(0);
@@ -151,11 +152,11 @@ TEST_P(BothNavigationSuccessors, PresetDevelopmentAndBookStayExplicitButFreshSpe
 TEST_P(BothNavigationSuccessors, AbsentCapturedOptInKeepsExistingStartsAndNativeProducerWithoutRetroactiveReinit)
 {
 	absent = true; ASSERT_NO_FATAL_FAILURE(prepare(GetParam()));
-	EXPECT_EQ(actor()->getPerkSkillRank(parent), 0); EXPECT_TRUE(actor()->getPerkState().selected.empty());
+	EXPECT_EQ(actor()->getPerkSkillRank(parent), 0); EXPECT_TRUE(actor()->getPerkState().getSelected().empty());
 	EXPECT_EQ(actor()->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)), 0);
 	expectProducer(*actor(), false);
 	GameRandomizer randomizer(*gameState()); actor()->initHero(randomizer);
-	EXPECT_EQ(markerCount(*actor()), 0); EXPECT_TRUE(actor()->getPerkState().selected.empty());
+	EXPECT_EQ(markerCount(*actor()), 0); EXPECT_TRUE(actor()->getPerkState().getSelected().empty());
 }
 
 TEST_P(BothNavigationSuccessors, AllLogisticsRanksScaleOnlyCoreLandAndSeaWhileNavigationStaysTwentyFivePercent)
@@ -187,7 +188,7 @@ TEST_F(NewHorizonsNavigationSuccessorTest, LegacyWorldRetainsAuthoredNavigationA
 {
 	legacy = true; ASSERT_NO_FATAL_FAILURE(prepare("core:voy"));
 	EXPECT_EQ(actor()->secSkills, actor()->getHeroType()->secSkillsInit);
-	EXPECT_TRUE(actor()->getPerkState().selected.empty()); expectProducer(*actor(), false);
+	EXPECT_TRUE(actor()->getPerkState().getSelected().empty()); expectProducer(*actor(), false);
 }
 
 TEST_F(NewHorizonsNavigationSuccessorTest, SavedWorldAndRepeatedInitializationRetainOneMarkerOneInertCloneAndNoRepeatedPerk)
@@ -198,7 +199,7 @@ TEST_F(NewHorizonsNavigationSuccessorTest, SavedWorldAndRepeatedInitializationRe
 	expectProducer(*loaded, true);
 	GameRandomizer randomizer(restored); loaded->initHero(randomizer); loaded->initHero(randomizer);
 	expectProducer(*loaded, true);
-	EXPECT_EQ(loaded->getPerkState().selected, (std::vector<newHorizonsHeroes::PerkSelection>{{parent, navigation}}));
+	EXPECT_EQ(loaded->getPerkState().getSelected(), (std::vector<newHorizonsHeroes::PerkSelection>{{parent, navigation}}));
 }
 
 TEST_F(NewHorizonsNavigationSuccessorTest, ActualLandEmbarkAndSeaMovementMatchSharedPathForecastWithoutReducingNavigationCostAgain)
@@ -250,7 +251,7 @@ TEST_F(NewHorizonsNavigationSuccessorTest, LegalForcedMarchKeepsItsTenPercentRec
 {
 	presetLogistics = true; ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_EQ(actor()->getPerkSkillRank(parent), MasteryLevel::BASIC);
-	ASSERT_TRUE(actor()->getPerkState().selected.empty());
+	ASSERT_TRUE(actor()->getPerkState().getSelected().empty());
 	actor()->applyPerkSelection({parent, "new-horizons:logistics.forcedMarch"});
 	ASSERT_TRUE(actor()->hasActivePerk(parent, "new-horizons:logistics.forcedMarch"));
 	GameHandlerTestServer server(gameState()); CGameHandler handler(server, gameState());
@@ -270,13 +271,13 @@ TEST_F(NewHorizonsNavigationSuccessorTest, AdventureAIArmyProjectionUsesSharedSp
 	ASSERT_NO_FATAL_FAILURE(prepare("core:voy"));
 	const auto position = actor()->visitablePos();
 	const auto movement = actor()->movementPointsRemaining();
-	const auto selected = actor()->getPerkState().selected;
+	const auto selected = actor()->getPerkState().getSelected();
 	NK2AI::ChainActor projected;
 	projected.hero = actor(); projected.creatureSet = actor();
 	EXPECT_EQ(projected.maxMovePoints(EPathfindingLayer::LAND), 224);
 	EXPECT_EQ(projected.maxMovePoints(EPathfindingLayer::SAIL), 274);
 	EXPECT_EQ(actor()->visitablePos(), position); EXPECT_EQ(actor()->movementPointsRemaining(), movement);
-	EXPECT_EQ(actor()->getPerkState().selected, selected); expectProducer(*actor(), true);
+	EXPECT_EQ(actor()->getPerkState().getSelected(), selected); expectProducer(*actor(), true);
 }
 #endif
 
@@ -296,18 +297,21 @@ TEST_F(NewHorizonsNavigationSuccessorTest, PresenceAndStrictBooleanGuardsDisting
 TEST_F(NewHorizonsNavigationSuccessorTest, InvalidOrInactiveProfileRejectsBeforeChangingAnyCapturedSelection)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto selected = actor()->getPerkState().selected;
+	const auto selected = actor()->getPerkState().getSelected();
 	auto rules = actor()->getPrimaryGrowthRules();
 	rules["startingSkills"]["startingDevelopmentProfiles"]["core:sylvia"]["startingPerks"].Vector().front()["perk"].String()
 		= "new-horizons:logistics.roadmaster";
 	EXPECT_THROW(newHorizonsHeroes::startingDevelopmentProfile(rules, actor()->getPerkState(),
 		actor()->getHeroTypeID(), actor()->getHeroClass()->getId()), std::runtime_error);
-	auto inactive = actor()->getPerkState(); inactive.selected.clear();
-	for(auto & perk : inactive.rules["skills"][parent]["perks"].Vector())
-		if(perk["id"].String() == navigation) perk["effect"]["status"].String() = "planned";
+	auto inactive = actor()->getPerkState(); inactive.replaceSelected({});
+	perkStateFixture::editRules(inactive, [&](JsonNode & rules)
+	{
+		for(auto & perk : rules["skills"][parent]["perks"].Vector())
+			if(perk["id"].String() == navigation) perk["effect"]["status"].String() = "planned";
+	});
 	EXPECT_THROW(newHorizonsHeroes::startingDevelopmentProfile(actor()->getPrimaryGrowthRules(), inactive,
 		actor()->getHeroTypeID(), actor()->getHeroClass()->getId()), std::runtime_error);
-	EXPECT_EQ(actor()->getPerkState().selected, selected);
+	EXPECT_EQ(actor()->getPerkState().getSelected(), selected);
 }
 
 TEST_F(NewHorizonsNavigationSuccessorTest, ActiveAndFalseKeyRejectSettingsHeroMapWorldLobbyBeforeOldPrefixAndRawReaderRejects)

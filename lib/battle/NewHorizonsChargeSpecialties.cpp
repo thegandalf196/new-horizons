@@ -28,7 +28,6 @@ bool firstPrimary(const CBattleInfoCallback & battle, const BattleAttackInfo & a
 {
 	return attack.attacker && attack.defender && attack.attacker->alive() && attack.defender->alive()
 		&& !attack.attacker->isGhost() && !attack.defender->isGhost()
-		&& !attack.attacker->isTimeStopped() && !attack.defender->isTimeStopped()
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		&& attack.physicalDamage && !attack.shooting && !attack.retaliation && !attack.secondaryAttack
 		&& !attack.bracePreemptive && attack.preemptiveDamagePercent == 0 && attack.cleaveDamagePercent == 0
@@ -46,10 +45,10 @@ int companion(const CBattleInfoCallback & battle, const battle::Unit & actor, co
 	const auto * hero = newHorizonsHeroes::ordinaryCreatureVisibleOwnerHero(battle, actor);
 	if(!hero)
 		throw std::runtime_error("Missing visible captured charge-specialty owner");
-	const auto & value = hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"][key];
-	if(value.getType() != JsonNode::JsonType::DATA_INTEGER || value.Integer() < 1 || value.Integer() > maximum)
+	const int value = hero->compiledDevelopment()->ordinaryValue(key);
+	if(value < 1 || value > maximum)
 		throw std::runtime_error("Invalid captured charge-specialty companion coefficient");
-	return static_cast<int>(value.Integer());
+	return value;
 }
 }
 bool requiresChargeMovementPreview(const CBattleInfoCallback & battle,

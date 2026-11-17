@@ -64,7 +64,7 @@ int leadershipMovement(int unscaledMovement, int movementPercent)
 int64_t stackEffectiveLeadership(const CGHeroInstance & hero, CreatureID creature,
 	const CCreatureSet * armyContext)
 {
-	if(usesLeadershipEfficiency(hero.getCapabilityRules()))
+	if(hero.compiledLeadership() && hero.compiledLeadership()->usesEfficiency())
 		return leadershipStackReadout(&hero, creature, 0, nullptr, armyContext).effectiveLeadership;
 	const auto legacy = hero.getLeadershipCapacity();
 	return legacy ? legacy->capacity : 0;
@@ -73,9 +73,9 @@ int64_t stackEffectiveLeadership(const CGHeroInstance & hero, CreatureID creatur
 int64_t stackEffectiveRequirement(const CGHeroInstance * hero, CreatureID creature)
 {
 	if(!hero || !creature.hasValue() || !creature.toCreature()) return 1;
-	if(usesLeadershipEfficiency(hero->getCapabilityRules()))
+	if(hero->compiledLeadership() && hero->compiledLeadership()->usesEfficiency())
 		return leadershipStackReadout(hero, creature, 0).requirement;
-	const int base = capabilityCreatureLeadershipRequirement(hero->getCapabilityRules(), creature);
+	const int base = hero->compiledLeadership() ? hero->compiledLeadership()->requirement(creature) : 0;
 	if(base <= 0) return 1;
 	return newHorizonsNecromancy::discountedLeadershipRequirement(base,
 		newHorizonsNecromancy::skeletonLeadershipReductionPercent(hero, creature));
@@ -92,7 +92,7 @@ int64_t stackFullEfficiencyCapacity(const CGHeroInstance * hero, CreatureID crea
 	const CCreatureSet * armyContext)
 {
 	if(!hero) return std::numeric_limits<int64_t>::max();
-	if(usesLeadershipEfficiency(hero->getCapabilityRules()))
+	if(hero->compiledLeadership() && hero->compiledLeadership()->usesEfficiency())
 		return leadershipStackReadout(hero, creature, 0, nullptr, armyContext).capacity;
 	const auto legacy = heroLeadershipSlotCapacity(*hero, creature);
 	return legacy ? legacy->maximum : std::numeric_limits<int64_t>::max();
@@ -116,7 +116,7 @@ double stackLeadershipEfficiency(const CGHeroInstance * hero, CreatureID creatur
 	int64_t count, const CCreatureSet * armyContext)
 {
 	if(!hero || count <= 0) return 1.0;
-	if(usesLeadershipEfficiency(hero->getCapabilityRules()))
+	if(hero->compiledLeadership() && hero->compiledLeadership()->usesEfficiency())
 		return leadershipStackReadout(hero, creature, count, nullptr, armyContext).efficiency;
 	return 1.0;
 }
@@ -124,11 +124,14 @@ double stackLeadershipEfficiency(const CGHeroInstance * hero, CreatureID creatur
 std::optional<LeadershipSlotCapacity> heroLeadershipSlotCapacity(
 	const CGHeroInstance & hero, CreatureID creature)
 {
-	const auto & rules = hero.getCapabilityRules();
+	const auto * rules = hero.compiledLeadership();
 	// This API is historical army ADMISSION. Current full-efficiency capacity
 	// is an offensive readout and must never become a recruitment/transfer cap.
-	if(usesLeadershipEfficiency(rules) || !usesRules(rules)) return std::nullopt;
-	auto result = capabilityLeadershipSlot(rules, hero.level, creature);
+	if(!rules || rules->usesEfficiency() || !rules->usesLegacy()) return std::nullopt;
+	const int requirement = rules->requirement(creature);
+	if(requirement <= 0) return std::nullopt;
+	const int leadership = rules->rating(hero.level);
+	auto result = std::optional<LeadershipSlotCapacity>{LeadershipSlotCapacity{leadership, requirement, leadership / requirement}};
 	if(result)
 	{
 		const int64_t base = static_cast<int64_t>(result->leadership)

@@ -34,6 +34,6 @@ void BattleInfo::validatePassiveFactionStateSerialization(bool supported) const
 		if(stack) battle::validatePhysicalPoisonSerialization(*stack, supported);
 	if(!supported)
 		for(const auto & stack : stacks)
-			if(stack && (stack->arcaneMarks.hasState() || stack->demonicGateOpened))
+			if(stack && stack->demonicGateOpened)
 				throw std::runtime_error("Cannot discard passive faction unit state from a battle");
 }

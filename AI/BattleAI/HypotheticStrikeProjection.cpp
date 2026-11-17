@@ -247,49 +247,6 @@ bool HypotheticBattle::hasReadyNativeRebirth(const battle::Unit * unit) const
 
 
 
-void HypotheticBattle::projectRangedMarkStrike(const BattleAttackInfo & attack,
-	const std::vector<std::pair<uint32_t, int64_t>> & hits)
-{
-	if(!attack.shooting || !attack.attacker || !attack.defender || hits.empty()
-		|| !newHorizonsMagic::rulesActive(getMagicRules()))
-		return;
-
-	const auto attacker = getForUpdate(attack.attacker->unitId());
-	CombatEventPayload payload;
-	payload.ranged = true;
-	payload.isCounter = attack.retaliation;
-	for(const auto & [unitId, damage] : hits)
-	{
-		if(damage <= 0)
-			continue;
-		const auto * target = battleGetUnitByID(unitId);
-		if(!target)
-			continue;
-		AttackedTarget hit;
-		hit.unit = target;
-		hit.damage = damage;
-		payload.targets.push_back(hit);
-	}
-	if(payload.targets.empty())
-		return;
-
-	const auto triggers = attacker->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
-	for(const auto & bonus : *triggers)
-	{
-		if(bonus->source != BonusSource::SPELL_EFFECT || !bonus->parameters
-			|| bonus->sid.toString() != newHorizonsSorcery::FOCUS_MAGIC_SPELL)
-			continue;
-		const auto scriptId = bonus->subtype.as<ScriptID>();
-		const auto & script = LIBRARY->scriptTypes()->getById(scriptId);
-		if(script.scriptId != newHorizonsSorcery::FOCUS_MAGIC_TRIGGER || !script.combatEventScript)
-			continue;
-		JsonNode parameters = bonus->parameters->toCustom<JsonNode>();
-		parameters["val"].Integer() = bonus->val;
-		script.combatEventScript->run(getServerCallback(), *this, CombatEventType::AFTER_ATTACK,
-			attacker.get(), battleGetUnitByID(attack.defender->unitId()), parameters, payload);
-	}
-}
-
 int64_t HypotheticBattle::projectHexOfPainStrike(const BattleAttackInfo & attack,
 	const std::vector<std::pair<uint32_t, int64_t>> & hits, int32_t attackIndex)
 {

@@ -27,7 +27,7 @@ int movementAllowance(const CBattleInfoCallback & battle, const battle::Unit * u
 {
 	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
 	if(!state || !state->luckyOwnAttackSequence || !hasPerk(battle, unit)
-		|| !unit->alive() || unit->isGhost() || !unit->canMove() || unit->isTimeStopped()
+		|| !unit->alive() || unit->isGhost() || !unit->canMove()
 		|| newHorizonsFrozen::isFrozen(*unit) || state->armorerLastStandEndedActivation)
 		return 0;
 	return std::min(MAX_MOVEMENT, std::max(0, remainingMovement));

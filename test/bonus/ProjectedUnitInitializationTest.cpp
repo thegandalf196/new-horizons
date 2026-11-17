@@ -92,7 +92,6 @@ protected:
 		one.pursuitMovementRemaining = 4;
 		one.luckyOwnAttackSequence = true;
 		one.restoreFrozenApplicationRound(5);
-		one.timeStopTurnConsumedFlag = true;
 		one.veteranPhysicalDamageSinceActivation = 11;
 		one.noQuarterMoraleActivationsRemaining = 2;
 	}
@@ -232,7 +231,6 @@ TEST_F(ProjectedUnitInitializationTest, SharedInitializerRestoresEveryLegacyRece
 	EXPECT_EQ(one.pursuitMovementRemaining, 4);
 	EXPECT_TRUE(one.luckyOwnAttackSequence);
 	EXPECT_EQ(one.frozenLastAppliedRound(), 5);
-	EXPECT_TRUE(one.timeStopTurnConsumedFlag);
 	EXPECT_EQ(one.veteranPhysicalDamageSinceActivation, 11);
 	EXPECT_EQ(one.noQuarterMoraleActivationsRemaining, 2);
 	EXPECT_EQ(one.getPosition(), BattleHex(5, 5));

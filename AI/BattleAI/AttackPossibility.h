@@ -54,7 +54,7 @@ struct BattleAIDamageProjection
 inline BattleAIDamageProjection battleAIProjectDamage(const battle::Unit * target,
 	int64_t incomingDamage, battle::DamageProvenance provenance)
 {
-	if(!target || incomingDamage <= 0 || target->isTimeStopped())
+	if(!target || incomingDamage <= 0)
 		return {};
 
 	if(provenance == battle::DamageProvenance::PHYSICAL_CREATURE
@@ -185,7 +185,7 @@ struct DLL_LINKAGE DamageCacheProbeTiming
 	}
 };
 
-class DamageCache
+class DLL_LINKAGE DamageCache
 {
 private:
 	struct CachedDamage
@@ -202,7 +202,6 @@ private:
 	};
 	std::unordered_map<uint32_t, std::unordered_map<uint32_t, CachedDamage>> damageCache;
 	std::map<BattleHex, std::unordered_map<uint32_t, int64_t>> obstacleDamage;
-	std::set<uint32_t> rangedMarkTargets;
 	std::set<uint32_t> temporaryCombatModifierUnits;
 	std::set<uint32_t> ambusherAttackers;
 	std::set<std::pair<uint32_t, BattleSide>> shadowAssaultTargetSides;
@@ -217,7 +216,6 @@ private:
 		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
 	void buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	void buildUnitDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side, bool terminalPressure);
-	bool tracksRangedMarks(uint32_t defenderId) const;
 	bool tracksTemporaryCombatModifier(uint32_t defenderId) const;
 	void rememberTemporaryCombatModifiers(const battle::Unit * attacker, const battle::Unit * defender,
 		const CBattleInfoCallback & battle);
@@ -263,7 +261,7 @@ public:
 /// </summary>
 class VisibleCandidateWorld;
 
-class AttackPossibility
+class DLL_LINKAGE AttackPossibility
 {
 public:
 	BattleHex from; //tile from which we attack
@@ -324,6 +322,7 @@ public:
 	/// count (the server separately adds the fighting hero's creature-specific grant).
 	static int getAttackCount(const battle::Unit & attacker, bool shooting, const CBattleInfoCallback & state);
 
+	/// Direct visible callbacks with Focus pass their actual Environment for isolated stateful forecasting.
 	static AttackPossibility evaluate(
 		const BattleAttackInfo & attackInfo,
 		BattleHex hex,
@@ -331,7 +330,7 @@ public:
 		std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment = false,
 		std::optional<newHorizonsAerialSupremacy::Excursion> aerial = std::nullopt,
 		const dreadCavalryAI::Action * acceptedDreadAction = nullptr, bool validatedVoluntaryApproach = false,
-		BattleHex validatedApproachOrigin = BattleHex::INVALID);
+		BattleHex validatedApproachOrigin = BattleHex::INVALID, const Environment * directEnvironment = nullptr);
 
 	static float calculateDamageReduce(
 		const battle::Unit * attacker,

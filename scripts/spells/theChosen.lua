@@ -10,21 +10,9 @@ local function sourceBonuses(unit)
 	end)
 end
 
--- Stasis freezes spell effects, including their removal. Test this during target
--- validation (before spending the Hero Action/mana), and again in apply below.
-local function canReplace(mechanics, unit)
-	if unit:isTimeStopped() then return false end
-	local blocked = mechanics:getBattle():getUnitsIf(function(previous)
-		return previous:getSide() == unit:getSide() and previous:isTimeStopped()
-			and sourceBonuses(previous):size() > 0
-	end)
-	return #blocked == 0
-end
-
 function Script:isValidTarget(mechanics, unit)
 	return unit ~= nil and unit:isValidTarget(false) and unit:isLiving()
 		and not unit:hasBonuses({type = "MECHANICAL"}) and mechanics:ownerMatches(unit)
-		and canReplace(mechanics, unit)
 end
 
 function Script:apply(mechanics, server, target)

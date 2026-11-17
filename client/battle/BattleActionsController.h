@@ -168,9 +168,6 @@ class BattleActionsController
 		BattleSide side = BattleSide::NONE;
 		int32_t round = -1;
 		int32_t mode = 0;
-		bool metamagicFollowup = false;
-		bool metamagicGrand = false;
-		int32_t metamagicManaRefund = 0;
 		int32_t spellOvercharge = 0;
 		bool spellSelectiveDispel = false;
 		SpellID spellCureAffliction = SpellID::NONE;
@@ -521,6 +518,8 @@ public:
 	/// Phantom Army targets an eligible friendly stack but creates its copy on
 	/// the nearest legal footprint returned by the shared battle placement query.
 	static bool isPhantomArmySpell(const CSpell * spell);
+	static bool isForcedRecallSpell(const CSpell * spell);
+	BattleHexArray getForcedRecallTargetHexes(const CSpell * spell, const BattleHex & targetHex);
 	std::optional<PhantomArmyPlacementPreview> getPhantomArmyPlacementPreview(const CStack * source) const;
 	BattleHexArray getPhantomArmyTargetHexes(const CSpell * spell, const BattleHex & targetHex);
 

@@ -100,19 +100,7 @@ public:
 	int32_t battleCastSpells(BattleSide side) const; //how many spells has given side cast
 	HeroActionAllowanceState::Counts battleHeroActionAllowanceCounts(BattleSide side) const;
 	bool battleWasTemporalFieldUsed(BattleSide side) const;
-	bool battleWasCounterspellArmed(BattleSide side) const;
-	int32_t battleMetamagicPendingCount(BattleSide side) const;
-	int32_t battleMetamagicUsesConsumed(BattleSide side) const;
-	bool battleMetamagicGrandUsed(BattleSide side) const;
-	bool battleMetamagicFormulaReserveUsed(BattleSide side) const;
-	bool battleMetamagicCountersequenceArmed(BattleSide side) const;
-	SpellID battleMetamagicFirstSpell(BattleSide side) const;
-	uint32_t battleMetamagicFirstTargetUnitId(BattleSide side) const;
-	const std::vector<SpellID> & battleMetamagicSequenceSpells(BattleSide side) const;
-	bool battleMetamagicFirstCounterspellNegated(BattleSide side) const;
-	bool battleCanUseMetamagicFollowup(BattleSide side) const;
 	/// Candidate-aware view; a Divine Mandate SPELL grant only admits Light spells.
-	bool battleCanUseMetamagicFollowup(BattleSide side, SpellID spell) const;
 	/// Selected spell-paying grant for this candidate, honoring payload restrictions.
 	std::optional<HeroActionAllowanceState::Selection> battleGetSpellActionAllowance(
 		BattleSide side, SpellID spell) const;
@@ -123,7 +111,6 @@ public:
 	/// Returns whether a spell is legal in the current Metamagic window.  The
 	/// Grand sequence may not repeat any earlier spell; ordinary one-extra
 	/// sequences retain the normal spellbook legality rules.
-	bool battleCanUseMetamagicSpell(BattleSide side, SpellID spell, bool grand) const;
 	const CGHeroInstance * battleGetFightingHero(BattleSide side) const; //deprecated for players callback, easy to get wrong
 	/// Hidden is unknown, never proof that an opponent has no hero or policy.
 	virtual VisibleHeroPolicy battleGetVisibleHeroPolicy(BattleSide side) const;

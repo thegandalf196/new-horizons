@@ -262,14 +262,11 @@ TEST_F(RegenerationBaselineReuseTest, UnknownOrThrowingCalculatorCapabilityRetai
 	}
 }
 
-TEST_F(RegenerationBaselineReuseTest, ExistingBaselineMarksAndDeniedActivationKeepExactSubtraction)
+TEST_F(RegenerationBaselineReuseTest, ExistingBaselineMarksKeepExactSubtraction)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto original = marked(first);
 	before = original;
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 0, BonusSourceID(regeneration));
-	original->addUnitBonus(first, {stopped});
 	base = std::make_shared<HypotheticBattle>(environment.get(), before);
 	damage = DamageCache();
 	damage.buildDamageCache(base, BattleSide::ATTACKER);

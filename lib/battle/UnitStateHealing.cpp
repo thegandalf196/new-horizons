@@ -32,7 +32,7 @@ int64_t CUnitState::rawHealingCapacity(int64_t requested, const EHealLevel level
 
 int64_t CUnitState::healingCapacity(const int64_t requested, const EHealLevel level, const EHealPower power) const
 {
-	if(requested <= 0 || isTimeStopped() || phantomInitialIntegrity > 0 || cloned
+	if(requested <= 0 || phantomInitialIntegrity > 0 || cloned
 		|| (level == EHealLevel::HEAL && power == EHealPower::ONE_BATTLE))
 		return 0;
 	return rawHealingCapacity(requested, level, power);
@@ -50,12 +50,6 @@ HealInfo CUnitState::recreateAfterNativeRebirth(int64_t & amount)
 
 HealInfo CUnitState::applyHealing(int64_t & amount, EHealLevel level, EHealPower power, bool receivedBenefit)
 {
-	if(isTimeStopped())
-	{
-		amount = 0;
-		return {};
-	}
-
 	if(phantomInitialIntegrity > 0)
 	{
 		amount = 0;

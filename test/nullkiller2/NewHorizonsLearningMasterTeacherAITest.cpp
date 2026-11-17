@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../PerkTestSetup.h"
 
 #include <chrono>
@@ -228,21 +229,24 @@ protected:
 	void isolateLearningOffers(CGHeroInstance * hero)
 	{
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-		for(auto & skillEntry : state.rules["skills"].Struct())
+		perkStateFixture::editRules(state, [&](JsonNode & rules)
 		{
-			for(auto & perk : skillEntry.second["perks"].Vector())
+			for(auto & skillEntry : rules["skills"].Struct())
 			{
-				const auto & id = perk["id"].String();
-				if(id == PHILOSOPHER_PERK || id == SEASONED_PERK || id == BASIC_MENTOR_PERK
-					|| std::ranges::any_of(state.selected, [&](const auto & selected)
-					{ return selected.perkId == id; }))
+				for(auto & perk : skillEntry.second["perks"].Vector())
 				{
-					ASSERT_EQ(perk["effect"]["status"].String(), "active");
-					continue; // Keep the production current-tier definitions active.
+					const auto & id = perk["id"].String();
+					if(id == PHILOSOPHER_PERK || id == SEASONED_PERK || id == BASIC_MENTOR_PERK
+						|| std::ranges::any_of(state.getSelected(), [&](const auto & selected)
+						{ return selected.perkId == id; }))
+					{
+						ASSERT_EQ(perk["effect"]["status"].String(), "active");
+						continue; // Keep the production current-tier definitions active.
+					}
+					perk["effect"]["status"].String() = "planned";
 				}
-				perk["effect"]["status"].String() = "planned";
 			}
-		}
+		});
 		state.validate();
 	}
 

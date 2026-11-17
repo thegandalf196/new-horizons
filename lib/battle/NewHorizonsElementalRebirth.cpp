@@ -217,8 +217,7 @@ std::optional<DeathSnapshot> captureDeathSource(const battle::Unit & unit, const
 
 	auto snapshot = withElementalMemory(DeathSnapshot{unit.unitId(), unit.unitSide(), unit.getPosition(), basis, *profile}, unit);
 	const auto category = categoryRules ? categoryRules->lookup(unit.unitType()->getJsonKey()) : std::nullopt;
-	snapshot.phoenixSpark = profile->phoenixSpark && !phoenixSparkUsed && !unit.isHypnotized()
-		&& !unit.isTimeStopped() && category
+	snapshot.phoenixSpark = profile->phoenixSpark && !phoenixSparkUsed && !unit.isHypnotized() && category
 		&& category->category == newHorizonsCreatures::CreatureCategory::CHAMPION;
 	return snapshot;
 }

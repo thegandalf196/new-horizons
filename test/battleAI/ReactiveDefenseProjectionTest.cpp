@@ -241,26 +241,6 @@ TEST_F(ReactiveDefenseProjectionTest, KilledSummonAndCloneProduceReceiptsButGene
 	ASSERT_NO_FATAL_FAILURE(setup(true)); projected->removeUnit(ally->unitId());
 	EXPECT_FALSE(protectedDemon(*projected));
 }
-TEST_F(ReactiveDefenseProjectionTest, TimeStopPausedMarkerDoesNotSpendNewRound)
-{
-	setup(false);
-	auto source = projected->getForUpdate(enemy->unitId());
-	auto target = projected->getForUpdate(subject->unitId());
-	BattleAttackInfo hit(source.get(), target.get(), 0, false);
-	const auto marker = newHorizonsReactiveDefense::ironHideSpending(*projected, hit);
-	ASSERT_TRUE(marker); target->addUnitBonus({*marker});
-	// Model an expired Time Stop: round cleanup has already happened while
-	// the stopped unit kept its old marker. Retain the exact old marker after
-	// advancing; no timing assumptions about cleanup enter eligibility.
-	projected->nextRound();
-	target->removeUnitBonus(CSelector(newHorizonsReactiveDefense::isIronHideSpent));
-	target->addUnitBonus({*marker});
-	EXPECT_EQ(newHorizonsReactiveDefense::ironHidePercent(*projected, hit), 30);
-	PhysicalStrikeProjection packet(projected.get()); int64_t zero = 0;
-	packet.damage(*projected, hit, *target, zero, battle::DamageProvenance::PHYSICAL_CREATURE);
-	const auto spent = target->getUnstackedBonuses(CSelector(newHorizonsReactiveDefense::isIronHideSpent));
-	ASSERT_EQ(spent->size(), 1u); EXPECT_EQ(spent->front()->val, projected->battleGetRound());
-}
 TEST_F(ReactiveDefenseProjectionTest, FutureDirectStrikeSpendsAndExposesSameReductionAsSharedCallback)
 {
 	setup(false);

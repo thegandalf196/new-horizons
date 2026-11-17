@@ -9,7 +9,7 @@ Script.__index = Script
 -- detached AI and route previews on one immutable ordered chain.
 local function validConductor(unit)
 	return unit ~= nil and unit:isAlive() and not unit:isGhost()
-		and not unit:isTurret() and not unit:isTimeStopped()
+		and not unit:isTurret()
 		and unit:getPosition():isAvailable()
 end
 

@@ -38,7 +38,7 @@ void BattleActionProcessor::finishMeleeMovement(const CBattleInfoCallback & batt
 		finalizeOpportunistSequence(battle, resolvedAttacker, remainingMovement, allowPursuitContinuation);
 	if(allowPursuitContinuation && movementAllowance > 0
 		&& resolvedAttacker && resolvedAttacker->alive()
-		&& resolvedAttacker->canMove() && !resolvedAttacker->isTimeStopped()
+		&& resolvedAttacker->canMove()
 		&& !resolvedAttacker->armorerLastStandEndedActivation
 		&& !newHorizonsFrozen::isFrozen(*resolvedAttacker))
 	{

@@ -105,7 +105,7 @@ def main() -> None:
     require(WINDOW, "if(!values.legal || !values.affordable)", "preview-independent confirmation callback")
     if "!values.previewAvailable ||" in WINDOW:
         raise AssertionError("missing forecast must not disable an otherwise legal cast")
-    preview_selection = INTERFACE.split("const auto baseChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, 0);", 1)[1].split("MagicArrowOverchargeContext context;", 1)[0]
+    preview_selection = INTERFACE.split("const auto baseChange = previewArrowChange(*callback, *hero, *spell, *target, 0);", 1)[1].split("MagicArrowOverchargeContext context;", 1)[0]
     if "values.legal = false" in preview_selection:
         raise AssertionError("missing effect forecast must not make a legal target uncastable")
     battle_window = (ROOT / "client/battle/BattleWindow.cpp").read_text()
@@ -114,7 +114,7 @@ def main() -> None:
         for manual_grand_control in ("metamagicGrand", "Grand ON", "Grand OFF", "toggleMetamagicGrandFollowup"):
             if manual_grand_control in source:
                 raise AssertionError(f"client must not expose manual Grand choice: {manual_grand_control}")
-    require(INTERFACE, "setMetamagicFollowup(metamagicFollowup)", "follow-up spell legality preview")
+    assert "setMetamagicFollowup" not in INTERFACE
     if "setMetamagicGrand" in INTERFACE:
         raise AssertionError("spell previews must not model a player-selected Grand mode")
     if "NEW_HORIZONS_MAGIC_MISSILE" in CONTROLLER + INTERFACE + WINDOW:

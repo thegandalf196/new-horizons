@@ -8,10 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "ActivationForfeit.h"
 #include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
 #include "../../lib/battle/NewHorizonsSpecialtyRoundEffects.h"
-#include "../../lib/spells/NewHorizonsMetamagicPoints.h"
 #include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/ArcaneInspirationCompletion.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
@@ -70,7 +70,6 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	const bool firstRound = projectedRound == 0;
 	++projectedRound;
 	forfeitedActivations.clear();
-	advanceMetamagicPoints();
 	arcaneInspiration::advanceRound(*this, projectedRound);
 	seizeInitiative.nextRound(projectedRound);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -80,12 +79,6 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 			spellResponse = {};
 		if(heroActionAllowances[side].currentRound >= 0)
 			heroActionAllowances[side].resetForRound(projectedRound);
-		auto & meta = metamagicStates[side];
-		meta.pending = 0;
-		meta.firstSpell = SpellID();
-		meta.firstTarget = std::numeric_limits<uint32_t>::max();
-		meta.firstCountered = false;
-		meta.sequence.clear();
 	}
 	std::vector<uint32_t> pendingRemoval;
 	std::vector<uint32_t> pendingFormRestoration;
@@ -94,13 +87,12 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
 	{
 		auto forUpdate = getForUpdate(unit->unitId());
-		// Capture pauses before timed bonuses age, matching the live round hook.
-		const bool formPaused = forUpdate->hasBattleForm() && battle::battleFormDurationPaused(*forUpdate);
-		if(!firstRound && !formPaused && forUpdate->hasBattleForm()
+		// Ordinary forms age on the round clock; opening round keeps full duration.
+		if(!firstRound && forUpdate->hasBattleForm()
 			&& forUpdate->getBattleFormRoundsRemaining() <= 1)
 			pendingFormRestoration.push_back(unit->unitId());
 		forUpdate->clearNoQuarterRoundBlocker();
-		if(!firstRound && !forUpdate->isTimeStopped())
+		if(!firstRound)
 		{
 			LifecycleTimingScope measurement(timing ? &timing->roundTimedUpdates : nullptr);
 			if(owned)
@@ -108,7 +100,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 			else
 				forUpdate->advanceTimedRound(timing ? &timing->roundTimedWork : nullptr);
 		}
-		forUpdate->afterNewRound(firstRound, true, formPaused);
+		forUpdate->afterNewRound(firstRound, true);
 		if(forUpdate->ghostPending)
 			pendingRemoval.push_back(unit->unitId());
 	}
@@ -127,7 +119,6 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		if(battle::endBattleFormAtNearestLegalPosition(*unit, getAccessibility(unit.get())))
 			unit->removeUnitBonus(CSelector(battle::isPolymorphMarker));
 	}
-	newHorizonsMetamagic::publishRoundEffects(*getServerCallback(), *this);
 	// Match the authoritative post-BattleNextRound health phase: timed expiry,
 	// pending ghosts and form restoration are already resolved; no activation occurs.
 	for(const auto * unit : getUnitsIf([](const battle::Unit *) { return true; }))
@@ -248,7 +239,7 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	// Match the authoritative BattleFlowProcessor activation-start order:
 	// Regeneration consumes only marks already recorded for this survivor,
 	// before poison or any other start-of-activation damage can occur.
-	if(unit->alive() && !unit->isTimeStopped() && unit->regenerationPendingMicroHealth > 0)
+	if(unit->alive() && unit->regenerationPendingMicroHealth > 0)
 	{
 		auto healing = unit->consumeRegenerationMarks();
 		if(healing > 0)
@@ -256,8 +247,7 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	}
 	const auto hydrasVitalityMarker = newHorizonsMagic::hydrasVitalitySource(getMagicRules())
 		.And(Selector::type()(BonusType::HP_REGENERATION));
-	if(unit->alive() && !unit->isTimeStopped()
-		&& unit->getCapacityHealthReferenceMax() > 0
+	if(unit->alive() && unit->getCapacityHealthReferenceMax() > 0
 		&& unit->health.isCapacityHealthTracking()
 		&& unit->hasBonus(hydrasVitalityMarker))
 		unit->consumeCapacityRegeneration();
@@ -266,7 +256,7 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	if(maintenanceHealing > 0)
 		unit->heal(maintenanceHealing, EHealLevel::HEAL, EHealPower::PERMANENT);
 
-	if(!unit->isTimeStopped() && !unit->waiting && unit->hasBonusOfType(BonusType::POISON))
+	if(!unit->waiting && unit->hasBonusOfType(BonusType::POISON))
 	{
 		const auto health = unit->getBonus(Selector::source(BonusSource::SPELL_EFFECT,
 			BonusSourceID(SpellID(SpellID::POISON))).And(Selector::type()(BonusType::STACK_HEALTH)));
@@ -339,8 +329,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 		forfeitedActivations.erase(unitId);
 		if(forfeits) forfeitedActivations.emplace(unitId, ForfeitedActivation{projectedRound, reason});
 	}
-	if(forfeits || (unit->isTimeStopped()
-		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::AUTOMATIC_ACTION)))
+	if(forfeits)
 	{
 		newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId, forfeits);
 	}
@@ -400,11 +389,11 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 			relentlessAssaultStates.at(side).beginActivation();
 	}
 
-	if(!unit->isTimeStopped() && reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
-		unit->removeUnitBonus(CSelector([](const Bonus * bonus)
+	if(reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
+		unit->removeUnitBonus(CSelector([reason](const Bonus * bonus)
 		{
-			return Bonus::UntilGetsTurn(bonus)
-				&& !newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+			return battle::timedEffects::activationExpires(*bonus, reason, false,
+				newHorizonsCombatSkills::isGamblerLuckPenalty(bonus));
 		}));
 
 	if(battleBeginsActivation(unit.get(), reason))

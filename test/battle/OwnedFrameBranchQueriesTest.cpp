@@ -120,18 +120,18 @@ TEST(OwnedFrameBranchQueriesTest, CurrentScalarTransactionKeepsStableAddressAndI
 	EXPECT_THROW(Bridge::synchronize(*current, {{current, nullptr}, {current, nullptr}}), std::invalid_argument);
 	EXPECT_EQ(current->save(), before);
 }
-TEST(OwnedFrameBranchQueriesTest, SourceRoleAndPendingClockRemainSeparateFromQueryRole)
+TEST(OwnedFrameBranchQueriesTest, SourceRoleAndPendingBonusRemainSeparateFromQueryRole)
 {
 	auto root = frame();
 	WithoutLibrary absent;
 	EXPECT_TRUE(Bridge::sourceExports(*root).empty()); // Fixture query health is NOT an explicit source export.
-	Bonus clock(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	Bridge::append(*root, Bridge::prepareRecords({clock}), 0);
+	Bonus pending(BonusDuration::ONE_BATTLE, BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID());
+	Bridge::append(*root, Bridge::prepareRecords({pending}), 0);
 	auto child = root->fork(); auto retained = Bridge::acquireState(root);
-	EXPECT_TRUE(root->unit().isTimeStopped()); EXPECT_TRUE(child->unit().isTimeStopped());
-	Bridge::removeMatching(*child, Selector::type()(BonusType::TIME_STOP));
-	EXPECT_FALSE(child->unit().isTimeStopped()); EXPECT_TRUE(root->unit().isTimeStopped());
-	root.reset(); EXPECT_TRUE(retained->isTimeStopped());
+	EXPECT_TRUE(root->unit().hasBonusOfType(BonusType::LUCK)); EXPECT_TRUE(child->unit().hasBonusOfType(BonusType::LUCK));
+	Bridge::removeMatching(*child, Selector::type()(BonusType::LUCK));
+	EXPECT_FALSE(child->unit().hasBonusOfType(BonusType::LUCK)); EXPECT_TRUE(root->unit().hasBonusOfType(BonusType::LUCK));
+	root.reset(); EXPECT_TRUE(retained->hasBonusOfType(BonusType::LUCK));
 }
 
 TEST(OwnedFrameBranchQueriesTest, RefreshPreservesExportOrderAndForkRetainsNestedMetadataOwner)
@@ -142,7 +142,7 @@ TEST(OwnedFrameBranchQueriesTest, RefreshPreservesExportOrderAndForkRetainsNeste
 	first.turnsRemain = 2;
 	first.limiter = std::make_shared<AllOfLimiter>(std::vector<TLimiterPtr>{
 		std::make_shared<HasAnotherBonusLimiter>(BonusType::STACK_HEALTH)});
-	Bonus second(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+	Bonus second(BonusDuration::ONE_BATTLE, BonusType::MORALE, BonusSource::OTHER, 1, BonusSourceID());
 	second.limiter = first.limiter;
 	const auto prepared = Bridge::prepareRecords({first, second});
 	Bridge::append(*root, prepared, 0); Bridge::append(*root, prepared, 1);
@@ -150,7 +150,7 @@ TEST(OwnedFrameBranchQueriesTest, RefreshPreservesExportOrderAndForkRetainsNeste
 	const auto exports = Bridge::sourceExports(*root);
 	ASSERT_EQ(exports.size(), 2u); EXPECT_EQ(exports[0]->type, BonusType::LUCK);
 	EXPECT_EQ(exports[0]->limiter, exports[1]->limiter);
-	EXPECT_EQ(exports[0]->turnsRemain, 4); EXPECT_EQ(exports[1]->type, BonusType::TIME_STOP);
+	EXPECT_EQ(exports[0]->turnsRemain, 4); EXPECT_EQ(exports[1]->type, BonusType::MORALE);
 	auto child = root->fork(); root.reset();
 	const auto retained = Bridge::sourceExports(*child);
 	ASSERT_EQ(retained.size(), 2u);

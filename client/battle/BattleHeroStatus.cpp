@@ -22,12 +22,6 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 		return;
 
 	std::vector<CombatStatusEntry> entries;
-	const bool counterspellArmed = battleCallback->battleWasCounterspellArmed(side);
-	if(counterspellArmed)
-	{
-		entries.push_back({{}, "Ward", "ARMED",
-			CInfoWindow::genText("Counterspell Ward", "The Counterspell ward is armed for this side.")});
-	}
 
 	const auto * visibleHero = battleCallback->battleGetFightingHero(side);
 
@@ -49,16 +43,6 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 			bool replaceProviderDescription = false;
 			switch(skill->getCombatStatusProvider())
 			{
-				case CSkill::CombatStatusProvider::METAMAGIC_USES:
-				{
-					const auto readout = passiveFactionSkillPresentation::metamagic(*hero, *battleCallback, side);
-					if(!readout)
-						continue;
-					value = readout->value;
-					providerDetails = readout->details;
-					replaceProviderDescription = readout->replacesProviderDescription;
-					break;
-				}
 				case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:
 				{
 					const int cap = battle->getBloodrageCapPercent(side);
@@ -80,6 +64,7 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 					replaceProviderDescription = readout->replacesProviderDescription;
 					break;
 				}
+				case CSkill::CombatStatusProvider::RESERVED_METAMAGIC_USES:
 				case CSkill::CombatStatusProvider::NONE:
 					continue;
 			}

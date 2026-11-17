@@ -34,7 +34,7 @@ bool needsPreview(const CBattleInfoCallback & board, const BattleAttackInfo & at
 void applyCripple(HypotheticBattle & board, const newHorizonsAttackControllers::Strike & receipt)
 {
 	if(!receipt.cripple.add.empty())
-		if(const auto * unit = board.battleGetUnitByID(receipt.cripple.target); unit && unit->alive() && !unit->isTimeStopped())
+		if(const auto * unit = board.battleGetUnitByID(receipt.cripple.target); unit && unit->alive())
 		{
 			board.removeUnitBonus(receipt.cripple.target, receipt.cripple.remove);
 			board.addUnitBonus(receipt.cripple.target, receipt.cripple.add);
@@ -44,7 +44,7 @@ std::vector<Injury> apply(HypotheticBattle & board, const newHorizonsAttackContr
 {
 	if(!receipt.fireball) return {};
 	const auto * source = board.battleGetUnitByID(receipt.source);
-	if(!source || !source->alive() || source->isGhost() || source->isTimeStopped()) return {};
+	if(!source || !source->alive() || source->isGhost()) return {};
 	const auto policy = board.battleGetVisibleHeroPolicy(board.playerToSide(board.battleGetOwner(source)));
 	if(policy.kind() != VisibleHeroPolicy::Knowledge::VISIBLE_HERO) return {};
 	newHorizonsAttackControllers::BallistaCaster caster(*source, *policy.legacyHero());

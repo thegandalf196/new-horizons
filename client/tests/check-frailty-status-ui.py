@@ -23,7 +23,7 @@ class FrailtyStatusUiSourceTest(unittest.TestCase):
 
     def test_frailty_shows_percent_badge_and_battle_long_hover_without_countdown(self):
         badge = PANEL[PANEL.index("if(settings[\"general\"][\"enableUiEnhancements\"]"):
-                            PANEL.index("if(timeStop)", PANEL.index("if(settings[\"general\"][\"enableUiEnhancements\"]"))]
+                            PANEL.index("if(wheelSpell.hasValue())", PANEL.index("if(settings[\"general\"][\"enableUiEnhancements\"]"))]
         tooltip = PANEL[PANEL.index("std::string frailtyTooltip("):PANEL.index("newHorizonsBattleStatus::DefendStatus currentDefendStatus(")]
         self.assertIn("formatBasisPoints(frailty->accumulatedBasisPoints)", badge)
         self.assertLess(badge.index("frailty ?"), badge.index("std::to_string(duration)"))
@@ -34,7 +34,7 @@ class FrailtyStatusUiSourceTest(unittest.TestCase):
         self.assertIn("Current Creature Defense penalty:", tooltip)
 
     def test_frailty_reuses_the_existing_spell_slot_and_hover_area(self):
-        self.assertIn('AnimationPath::builtin("SpellInt"), effect.getNum() + 1', PANEL)
+        self.assertIn('AnimationPath::builtin("SpellInt"), (wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1', PANEL)
         self.assertIn("const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);", PANEL)
         self.assertIn("Rect(slotX, slotY, 48, 36), tooltip, tooltip", PANEL)
         self.assertIn("std::to_string(duration)", PANEL)

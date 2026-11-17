@@ -830,7 +830,7 @@ protected:
 	void assertSpecialPerkRegistryRow(const std::string & perkId, const std::string & expectedName,
 		const std::string & propertyPrefix)
 	{
-		const auto & perks = attackerSideHero->getPerkState().rules
+		const auto & perks = attackerSideHero->getPerkState().getRules()
 			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
 		const auto row = std::find_if(perks.begin(), perks.end(), [&](const auto & perk)
 		{
@@ -1086,7 +1086,7 @@ class NewHorizonsNecromancySoulHarvesterAdmissionAITest
 protected:
 	void assertSoulHarvesterRegistryRow()
 	{
-		const auto & perks = attackerSideHero->getPerkState().rules
+		const auto & perks = attackerSideHero->getPerkState().getRules()
 			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
 		const auto soulHarvester = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
 		{
@@ -1195,7 +1195,7 @@ class NewHorizonsNecromancyMasterOfBonesAdmissionAITest
 protected:
 	void assertMasterOfBonesRegistryRow()
 	{
-		const auto & perks = attackerSideHero->getPerkState().rules
+		const auto & perks = attackerSideHero->getPerkState().getRules()
 			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
 		const auto masterOfBones = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
 		{
@@ -1335,7 +1335,7 @@ protected:
 
 	void assertOssuaryRegistryRow()
 	{
-		const auto & perks = attackerSideHero->getPerkState().rules
+		const auto & perks = attackerSideHero->getPerkState().getRules()
 			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
 		const auto ossuary = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
 		{
@@ -1465,7 +1465,7 @@ public:
 protected:
 	void assertLordOfTheDeadRegistryRow()
 	{
-		const auto & perks = attackerSideHero->getPerkState().rules
+		const auto & perks = attackerSideHero->getPerkState().getRules()
 			["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
 		const auto lordOfTheDead = std::find_if(perks.begin(), perks.end(), [](const auto & perk)
 		{
@@ -2148,7 +2148,7 @@ TEST_F(NewHorizonsNecromancyAdmissionAITest, EliteCasualtiesStaySkeletonsWithout
 		newHorizonsNecromancy::CORPSE_PRESERVATION_ID, MasteryLevel::BASIC));
 	gameHandler->levelUpHero(attackerSideHero, necromancy, false);
 	ASSERT_EQ(attackerSideHero->getSecSkillLevel(necromancy), MasteryLevel::ADVANCED);
-	const auto & registeredPerks = attackerSideHero->getPerkState().rules
+	const auto & registeredPerks = attackerSideHero->getPerkState().getRules()
 		["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
 	const auto soulHarvester = std::find_if(registeredPerks.begin(), registeredPerks.end(), [](const auto & perk)
 	{

@@ -445,26 +445,7 @@ TEST_F(PacketUpdatePublicationTest, OrdinaryRoutePreservesRepeatedIdEntryOrderAn
 	EXPECT_EQ(authorityWorld.callbackRandomBytes(), callbackRandom);
 }
 
-TEST_F(PacketUpdatePublicationTest, OrdinaryRouteStillIgnoresStoppedMalformedEntryBeforePayloadParsing)
-{
-	onAuthority([this]
-	{
-		authorityWorld.second->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-			BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	});
-	receiverWorld.second->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	auto packet = pair();
-	packet.changedStacks[1].data["state"]["guardianSpiritHitPoints"].Integer() = -1;
-	const auto stopped = authorityWorld.second->save();
-	ASSERT_EQ(publish(packet), "");
-	ASSERT_EQ(receipts.size(), 1u);
-	EXPECT_TRUE(receipts.front().error.empty());
-	EXPECT_TRUE(authorityWorld.first->defended());
-	EXPECT_TRUE(receiverWorld.first->defended());
-	EXPECT_EQ(authorityWorld.second->save(), stopped);
-	EXPECT_EQ(receiverWorld.second->save(), stopped);
-}
+
 
 TEST_F(PacketUpdatePublicationTest, OrdinaryRouteAddsThenRemovesThroughTheIndependentReceiver)
 {

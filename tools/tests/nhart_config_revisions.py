@@ -5,6 +5,7 @@ No Git, network, installed defaults or permissive future-change filtering.
 import copy
 import hashlib
 import json
+from .nhart_sorcery_config_transition import before_sorcery
 
 # Exact reviewed records; extending accepted history requires a reviewed update.
 APPROVED_CONFIG_PROOFS = {
@@ -54,7 +55,7 @@ def config_at_revision(config, path, proofs, revision):
     revisions = record['revisions']
     if type(revision) is not int or not 0 <= revision <= len(revisions):
         raise ValueError('Unrecorded config revision')
-    historical = copy.deepcopy(config)
+    historical = before_sorcery(config, path)
     excluded = record['excludedGraphics']
     if _projection(historical, excluded) != record['currentProjectionSha256']:
         raise ValueError('Current nongraphics config projection changed')

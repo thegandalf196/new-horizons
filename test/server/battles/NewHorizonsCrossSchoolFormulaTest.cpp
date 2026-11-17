@@ -169,12 +169,10 @@ TEST_F(NewHorizonsCrossSchoolFormulaTest, RejectedAndNonHeroCastsDoNotRecordOrBo
 	EXPECT_EQ(battle()->getCrossSchoolFormulaState(BattleSide::ATTACKER), history);
 }
 
-TEST_F(NewHorizonsCrossSchoolFormulaTest, AcceptedCounteredAndResistedPacketsRefreshButStaleReceiptIsAtomic)
+TEST_F(NewHorizonsCrossSchoolFormulaTest, AcceptedResistedPacketsRefreshButStaleReceiptIsAtomic)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto first = accepted(spell("core:bless"));
-	first.counterspellSide = BattleSide::DEFENDER;
-	first.counterspellNegated = true;
 	first.resistedCres.insert(enemy->unitId());
 	ASSERT_TRUE(first.crossSchoolFormula.has_value());
 	gameHandler->sendAndApply(first);

@@ -34,12 +34,11 @@ class EntangleStatusUiSourceTest(unittest.TestCase):
 		self.assertIn("StackStatusIconKind::ENTANGLE", PRESENTATION)
 		self.assertIn("StackStatusIconKind::ENTANGLE: return 1", PRESENTATION)
 		self.assertIn("std::to_string(displayedStatus.entangle.remainingRounds)", PANEL)
-		self.assertIn('AnimationPath::builtin("SpellInt"), effect.getNum() + 1', PANEL)
+		self.assertIn('AnimationPath::builtin("SpellInt"), (wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1', PANEL)
 
-	def test_help_distinguishes_entangle_from_time_stop_and_states_allowed_actions(self):
+	def test_help_states_rooted_stack_allowed_actions(self):
 		helper = STATUS[STATUS.index("inline std::string entangleTooltip("):STATUS.index("inline bool isGuardianSpirit(")]
 		for term in (
-			"Unlike Time Stop",
 			"Initiative and activation timing are unchanged",
 			"attack adjacent enemies, retaliate, shoot, Wait, Defend",
 			"do not require movement",

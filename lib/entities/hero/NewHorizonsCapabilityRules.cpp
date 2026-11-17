@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../nativeRules/CapturedRuleExecutionAudit.h"
 #include "NewHorizonsCapabilityRules.h"
 #include "NewHorizonsHeroRules.h"
 #include "CHeroClass.h"
@@ -309,6 +310,7 @@ void validateCapabilityRules(const JsonNode & rules, bool requireAllClasses)
 
 void validateResolvedCapabilityRules(const JsonNode & rules)
 {
+	NH_CAPTURE_RULE_WORK(CapabilityAdmission);
 	if(!usesRules(rules))
 		return;
 	fields(rules, {"schemaVersion", "rulesetVersion", "profile", "leadership", "siege", "warMachineShop", "skeletonTransformer", "artifactManaRegeneration", "glyphsOfFearAura", "armyCommand", "defaultStartingArmyVersion"});

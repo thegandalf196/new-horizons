@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../PerkTestSetup.h"
 #include "LegacyEstatesCapture.h"
 
@@ -230,9 +231,12 @@ protected:
 void setBankingPlannedInSavedRules(CGHeroInstance * hero)
 {
 	auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-	for(auto & perk : savedPerks.rules["skills"][ESTATES_SKILL]["perks"].Vector())
-		if(perk["id"].String() == BANKING)
-			perk["effect"]["status"].String() = "planned";
+	perkStateFixture::editRules(savedPerks, [&](JsonNode & rules)
+	{
+		for(auto & perk : rules["skills"][ESTATES_SKILL]["perks"].Vector())
+			if(perk["id"].String() == BANKING)
+				perk["effect"]["status"].String() = "planned";
+	});
 	savedPerks.validate();
 }
 

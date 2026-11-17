@@ -44,11 +44,12 @@ class EntrypointCategoryWriter
 	JsonNode category;
 public:
 	using Version = ESerializationVersion;
+	nativeRules::CapturedRuleWireContext & capturedRules;
 	static constexpr bool saving = true;
 	static constexpr bool loadingGamestate = false;
 	int replacements = 0;
 	EntrypointCategoryWriter(BinarySerializer & writer, JsonNode category)
-		: writer(writer), category(std::move(category)) {}
+		: writer(writer), category(std::move(category)), capturedRules(writer.capturedRules) {}
 	bool hasFeature(Version version) const { return writer.hasFeature(version); }
 	template<typename T> EntrypointCategoryWriter & operator&(T & value)
 	{

@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "FocusMagicProjection.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "PassiveDivineFuryValue.h"
 #include "AttackPreviewDiagnostics.h"
 #include "PhysicalPoisonValue.h"
@@ -53,7 +55,7 @@
 #include "../../lib/CStack.h" // TODO: remove
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
-                              // Eventually only IBattleInfoCallback and battle::Unit should be used, 
+                              // Eventually only IBattleInfoCallback and battle::Unit should be used,
                               // CUnitState should be private and CStack should be removed completely
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
@@ -85,7 +87,6 @@ using attackCount::hasPendingRangedFollowUp;
 
 namespace
 {
-using damageCacheDetail::hasRangedMarkEffect;
 using damageCacheDetail::hasNightProwlerBonus;
 
 int bulwarkPreemptivePercent(const battle::Unit * defender, const CBattleInfoCallback & state)
@@ -127,8 +128,12 @@ AttackPossibility AttackPossibility::evaluate(
 	DamageCache & damageCache,
 	std::shared_ptr<CBattleInfoCallback> state, bool perfectMoment,
 	std::optional<newHorizonsAerialSupremacy::Excursion> aerial,
-	const dreadCavalryAI::Action * acceptedDreadAction, bool validatedVoluntaryApproach, BattleHex validatedApproachOrigin)
+	const dreadCavalryAI::Action * acceptedDreadAction, bool validatedVoluntaryApproach, BattleHex validatedApproachOrigin,
+	const Environment * directEnvironment)
 {
+	if(auto direct = focusMagicAI::evaluateDirect(directEnvironment, inputAttack, hex, damageCache,
+		state, perfectMoment, aerial, acceptedDreadAction, validatedVoluntaryApproach, validatedApproachOrigin))
+		return std::move(*direct);
 	// Retained for source compatibility with cached evaluations. Perfect Moment
 	// is now automatic and cannot be opted out of or forced by this hint.
 	(void)perfectMoment;
@@ -143,6 +148,7 @@ AttackPossibility AttackPossibility::evaluate(
 		dreadAction, validatedVoluntaryApproach, approachOrigin))
 		return std::move(*movement);
 	const bool rangedFollowUp = attackInfo.shooting && hasPendingRangedFollowUp(attacker);
+	const bool projectsFocus = focusMagicAI::requiresProjection(*state);
 	const auto * requestedDefender = attackInfo.defender;
 	const auto * redirectedDefender = state->battleResolveHeroOrderTarget(attacker, requestedDefender,
 		attackInfo.shooting);
@@ -218,7 +224,7 @@ AttackPossibility AttackPossibility::evaluate(
 		const bool elementalPrimaryCounterfire = attackInfo.shooting
 			&& !attackInfo.secondaryAttack && !attackInfo.bracePreemptive
 			&& attackInfo.preemptiveDamagePercent <= 0
-			&& attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+			&& attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK) && !newHorizonsFocusMagic::converted(*attacker)
 			&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker)
 			&& newHorizonsMagic::rulesActive(frozenRules)
 			&& frozenRules["rulesetVersion"].Integer() >= 3;
@@ -250,7 +256,7 @@ AttackPossibility AttackPossibility::evaluate(
 			&& !attacker->isGhost() && !attacker->isTurret()
 			&& !attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
 			&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-			&& !attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
+			&& (!attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK) || newHorizonsFocusMagic::converted(*attacker))
 			&& !raPrimaryTarget->isGhost() && !raPrimaryTarget->isTurret()
 			&& !raPrimaryTarget->hasBonusOfType(BonusType::SIEGE_WEAPON)
 			&& raPrimaryTarget->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
@@ -303,8 +309,6 @@ AttackPossibility AttackPossibility::evaluate(
 	const auto [projectsManaLeeches, projectsSerpentBinding, projectsSoulHarvest, projectsGaze]
 		= AttackPreviewHitContext::primaryStatusAdmission(*state, attackInfo);
 	bool manaLeechSequenceSpent = false;
-	const bool projectsMarks = attackInfo.shooting
-		&& hasRangedMarkEffect(attacker, newHorizonsSorcery::FOCUS_MAGIC_SPELL);
 	const bool projectsHexOfPain = newHorizonsHexOfPainAI::hasEffect(attacker)
 		|| (!attackInfo.shooting && newHorizonsHexOfPainAI::hasEffect(defender));
 		const bool projectsProtect = !attackInfo.shooting
@@ -332,7 +336,7 @@ AttackPossibility AttackPossibility::evaluate(
 			attacker, attackInfo.physicalDamage);
 		const bool eligibleForLastStandMainAttack = newHorizonsArmorer::isEligiblePhysicalAttack(
 			attacker, attackInfo.physicalDamage,
-			attackInfo.shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+			attackInfo.shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK) && !newHorizonsFocusMagic::converted(*attacker));
 		const bool projectsBastionOnAttack = physicalCreatureAttack
 			&& (hasBastionTarget(defenderUnits)
 				|| (projectsProtect && hasBastionTarget(requestedDefenderUnits)));
@@ -340,7 +344,7 @@ AttackPossibility AttackPossibility::evaluate(
 			defender, potentialRetaliation.physicalDamage);
 		const bool eligibleForLastStandRetaliation = newHorizonsArmorer::isEligiblePhysicalAttack(
 			defender, potentialRetaliation.physicalDamage,
-			potentialRetaliation.shooting && defender->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+			potentialRetaliation.shooting && defender->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK) && !newHorizonsFocusMagic::converted(*defender));
 		const bool projectsBastionOnRetaliation = physicalCreatureRetaliation
 			&& hasBastionTarget(retaliatedUnits);
 		const bool projectsBastionOnCounterfire = attackInfo.shooting
@@ -409,14 +413,14 @@ AttackPossibility AttackPossibility::evaluate(
 			&& state->getBattle()->getHeroOrderState(state->playerToSide(state->battleGetOwner(defender)), HeroCommand::BRACE).has_value();
 		const bool projectsOpportunist = ap.attack.physicalDamage && !ap.attack.retaliation
 			&& newHorizonsOpportunist::hasPerk(*state, attacker);
-		if(projectsAttackControllers || projectsInspiration || projectsSting || projectsSylvanTactics || projectsFactionEffects || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+		if(projectsFocus || projectsAttackControllers || projectsInspiration || projectsSting || projectsSylvanTactics || projectsFactionEffects || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || ap.perfectMoment || projectsOpportunist || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 				|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 				|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 				|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
 				|| projectsNightProwler || projectsBloodragePain || projectsLastStand || projectsDefiant || projectsLuckSerendipity || projectsFrozen || projectsLuckyRecovery || projectsBrace)
 			if(const auto model = std::dynamic_pointer_cast<HypotheticBattle>(state))
 				fortunePreview = std::make_shared<HypotheticBattle>(model->env, state);
-	if(projectsAttackControllers || projectsInspiration || projectsSting || projectsSylvanTactics || projectsFactionEffects || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsMarks || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
+	if(projectsFocus || projectsAttackControllers || projectsInspiration || projectsSting || projectsSylvanTactics || projectsFactionEffects || dreadAction.enabled || projectsAerial || newHorizonsForestAmbush::hasBattlePolicy(*state) || projectsManaLeeches || projectsSerpentBinding || projectsSoulHarvest || projectsGaze || projectsHexOfPain || projectsCleave || projectsProtect || projectsSkirmisher
 			|| ordinaryRelentlessAssaultAttack || projectsNoQuarter || projectsArcheryState
 			|| projectsBulwarkEffects || projectsBastion || projectsSecondChance || projectsGambler || projectsChainOfFortune || projectsPerfectFortune
 			|| projectsNoEscape || projectsVanish || projectsEvasiveShroud || projectsAmbusher || projectsShadowAssault
@@ -815,7 +819,6 @@ AttackPossibility AttackPossibility::evaluate(
 				const bool appliesNoQuarter = fortunePreview
 					&& projectedDamage.appliedDamage > 0
 					&& state->battleCanTriggerNoQuarter(victimAttack)
-					&& !u->isTimeStopped()
 					&& state->battleMatchOwner(ap.attackerState.get(), u)
 					&& retaliatorState->alive()
 					&& newHorizonsOffense::belowNoQuarterThreshold(
@@ -921,7 +924,7 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliation->eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
 						retaliationAttack.attacker, retaliationAttack.physicalDamage,
 						retaliationAttack.shooting
-							&& retaliationAttack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+							&& retaliationAttack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK) && !newHorizonsFocusMagic::converted(*retaliationAttack.attacker));
 					retaliation->damageProvenance = battleAIDamageProvenance(
 						retaliatorState.get(), retaliationAttack.physicalDamage);
 					retaliation->attackIndex = 0;
@@ -1071,7 +1074,7 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.attackerState->archeryRainOfArrowsActivationSerial = currentActivationSerial;
 			// The trigger runs after the attacker commits this blow's updated
 			// resource state, before responses and follow-up attacks.
-			ap.attackerState->afterAttack(attackInfo.shooting, aerial.has_value(), attackInfo.physicalDamage);
+			focusMagicAI::afterAttack(*ap.attackerState, attackInfo.shooting, aerial.has_value(), attackInfo.physicalDamage);
 			int64_t actualStrikeDamage = 0;
 			for(const auto & hit : strike.resolvedHits)
 				actualStrikeDamage += std::max<int64_t>(0, hit.second);
@@ -1160,7 +1163,7 @@ AttackPossibility AttackPossibility::evaluate(
 						counterfireStrike.eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
 							counterfire.attacker, counterfire.physicalDamage,
 							counterfire.shooting
-								&& counterfire.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+								&& counterfire.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK) && !newHorizonsFocusMagic::converted(*counterfire.attacker));
 						counterfireStrike.hits.emplace_back(ap.attackerState->unitId(), requestedCounterfireDamage);
 						counterfireStrike.resolvedHits.emplace_back(ap.attackerState->unitId(), counterfireDamage);
 						tactics.finish(counterShooter->unitId());
@@ -1178,7 +1181,7 @@ AttackPossibility AttackPossibility::evaluate(
 							counterShooter->unitId(), currentRound);
 					}
 					specialtyOpportunities.observe(fortunePreview, counterfire);
-					counterShooter->afterAttack(true, false, true);
+					focusMagicAI::afterAttack(*counterShooter, true, false, true);
 					if(fortunePreview && hasNightProwlerBonus(counterShooter.get()))
 						if(auto projectedStriker = fortunePreview->getForUpdate(counterShooter->unitId()))
 							projectedStriker->removeUnitBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
@@ -1309,7 +1312,7 @@ AttackPossibility AttackPossibility::evaluate(
 					cleave->eligibleForLastStand = newHorizonsArmorer::isEligiblePhysicalAttack(
 						cleaveAttack.attacker, cleaveAttack.physicalDamage,
 						cleaveAttack.shooting
-							&& cleaveAttack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
+							&& cleaveAttack.attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK) && !newHorizonsFocusMagic::converted(*cleaveAttack.attacker));
 					cleave->damageProvenance = cleaveProvenance;
 					cleave->attackIndex = 0;
 					cleave->cleaveDamagePercent = newHorizonsOffense::CLEAVE_DAMAGE_PERCENT;
@@ -1343,8 +1346,7 @@ AttackPossibility AttackPossibility::evaluate(
 					tactics.finish(ap.attackerState->unitId());
 					hitContext.captureAndProjectFortuneStrike(cleaveAttack, cleave->hits,
 						ap.attackerState.get(), *cleave);
-					if(cleaveDamage > 0 && state->battleCanTriggerNoQuarter(cleaveAttack) && !targetState->isTimeStopped()
-						&& state->battleMatchOwner(ap.attackerState.get(), targetState.get())
+					if(cleaveDamage > 0 && state->battleCanTriggerNoQuarter(cleaveAttack) && state->battleMatchOwner(ap.attackerState.get(), targetState.get())
 						&& targetState->alive()
 						&& newHorizonsOffense::belowNoQuarterThreshold(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
@@ -1355,7 +1357,7 @@ AttackPossibility AttackPossibility::evaluate(
 					}
 					if(targetState->unitId() == defender->unitId())
 						ap.defenderDead = !targetState->alive();
-					ap.attackerState->afterAttack(false, false, true);
+					focusMagicAI::afterAttack(*ap.attackerState, false, false, true);
 					projectVampirismHealing(ap.attackerState.get(), cleaveDamage,
 						ap.vampirismHealingByUnit);
 					if(projectsHexOfPain && fortunePreview)
@@ -1466,12 +1468,6 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliatorState.get(), *retaliation);
 			}
 
-			if(ap.effectPreview)
-			{
-				BattleAttackInfo projectedAttack(ap.attackerState.get(),
-					defenderStates.at(defender->unitId()).get(), 0, true);
-				ap.effectPreview->projectRangedMarkStrike(projectedAttack, strike.resolvedHits);
-			}
 			const auto counterAdmission = retaliation && fortunePreview
 				? AttackPreviewHitContext::captureCounterAdmission(*fortunePreview,
 					defenderStates.at(retaliation->attackerId).get(),
@@ -1569,8 +1565,7 @@ AttackPossibility AttackPossibility::evaluate(
 					AttackPreviewHitContext::prepareRetaliationVictim(retaliationAttack, ap.attack);
 					AttackPreviewHitContext::applyOrdinaryStrike(*fortunePreview, retaliationAttack, actualDamage,
 						newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, temporaryHealthBefore));
-					if(state->battleCanTriggerNoQuarter(retaliationAttack) && !targetState->isTimeStopped()
-						&& state->battleMatchOwner(retaliatorState.get(), targetState.get())
+					if(state->battleCanTriggerNoQuarter(retaliationAttack) && state->battleMatchOwner(retaliatorState.get(), targetState.get())
 						&& newHorizonsOffense::belowNoQuarterThreshold(
 							targetState->getAvailableHealth(), battle::getMaximumHealth(*targetState)))
 					{
@@ -1603,7 +1598,7 @@ AttackPossibility AttackPossibility::evaluate(
 			if(retaliation && !retaliation->hits.empty())
 			{
 				auto retaliatorState = defenderStates.at(retaliation->attackerId);
-				retaliatorState->afterAttack(attackInfo.shooting, true, attackInfo.physicalDamage);
+				focusMagicAI::afterAttack(*retaliatorState, attackInfo.shooting, true, attackInfo.physicalDamage);
 				int64_t actualRetaliationDamage = 0;
 				for(const auto & hit : retaliationActualHits)
 					actualRetaliationDamage += std::max<int64_t>(0, hit.second);
@@ -1724,7 +1719,7 @@ AttackPossibility AttackPossibility::evaluate(
 				ap.attackerState->luckyOwnAttackSequence = false;
 		}
 		if(vanishKill && ap.attackerState->alive() && ap.attackerState->canMove()
-			&& !ap.attackerState->isTimeStopped() && !newHorizonsFrozen::isFrozen(*ap.attackerState)
+			&& !newHorizonsFrozen::isFrozen(*ap.attackerState)
 			&& !endedActiveActivationByLastStand)
 		{
 			ap.attackerState->pursuitMovementRemaining = std::max(ap.attackerState->pursuitMovementRemaining,

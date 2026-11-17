@@ -4,7 +4,6 @@
 #include "../../../lib/spells/effects/native/Timed.h"
 #include "../../../lib/modding/IdentifierStorage.h"
 #include "../../../lib/modding/ModScope.h"
-#include "../../../lib/networkPacks/SetMetamagicPointState.h"
 #include "../../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../../lib/entities/hero/CHeroClass.h"
 #include <limits>
@@ -12,7 +11,7 @@
 class NewHorizonsTimedNumericPlanTest : public NewHorizonsRunicReflectionCombatTest
 {
 protected:
-	enum class Scaling { Ordinary, Wisdom, Points, Conduit };
+	enum class Scaling { Ordinary, Wisdom, PassiveMetamagic, Conduit };
 	static std::vector<std::byte> numericWire(Bonus bonus)
 	{
 		// Compare serialized numeric and gameplay ownership fields. Display
@@ -33,13 +32,10 @@ protected:
 			attackerSideHero->setSecSkillLevel(skill, 2, ChangeValueMode::ABSOLUTE);
 			attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.arcaneInsight"});
 		}
-		if(scaling == Scaling::Points)
+		if(scaling == Scaling::PassiveMetamagic)
 		{
 			attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:aine")));
 			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")), 3, ChangeValueMode::ABSOLUTE);
-			SetMetamagicPointState points; points.battleID = BattleID(0); points.side = BattleSide::ATTACKER;
-			points.round = battle()->getRound(); points.state.points = 5;
-			gameHandler->sendAndApply(points);
 		}
 	}
 	void assertScaling(const spells::Mechanics & reflected, const std::vector<Bonus> & expected, SpellID spell, Scaling scaling)
@@ -47,17 +43,17 @@ protected:
 		const auto * captured = reflected.getMetamagicCastProfile();
 		ASSERT_NE(captured, nullptr);
 		if(scaling == Scaling::Wisdom) EXPECT_EQ(captured->perks.wisdomEffectivenessBonus, 25);
-		if(scaling == Scaling::Points)
+		if(scaling == Scaling::PassiveMetamagic)
 		{
-			EXPECT_TRUE(captured->perks.pointPolicy); EXPECT_EQ(captured->points, 5);
-			EXPECT_EQ(newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(captured), 15);
+			// Current passive Metamagic grants no numerical cast coefficient.
+			EXPECT_EQ(newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(captured), 0);
 		}
 		if(scaling == Scaling::Conduit)
 		{
 			EXPECT_EQ(captured->factionSpellDamageBonus, 15);
 			EXPECT_EQ(newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(captured), 0);
 		}
-		if(scaling == Scaling::Wisdom || scaling == Scaling::Points)
+		if(scaling == Scaling::Wisdom)
 		{
 			SetStackEffect twice;
 			twice.toAdd.emplace_back(casterArmy->unitId(), expected);
@@ -132,9 +128,9 @@ TEST_F(NewHorizonsTimedNumericPlanTest, ReflectedSlowWisdomEffectivenessMatchesO
 {
 	ASSERT_NO_FATAL_FAILURE(reflectedParity(SpellID::SLOW, "new-horizons:sorceryMagic", Scaling::Wisdom));
 }
-TEST_F(NewHorizonsTimedNumericPlanTest, ReflectedSorrowHeroPointsMatchOneNativeMagnitudeAndDurationAdjustment)
+TEST_F(NewHorizonsTimedNumericPlanTest, ReflectedSorrowPassiveMetamagicDoesNotInventMagnitudeOrDurationScaling)
 {
-	ASSERT_NO_FATAL_FAILURE(reflectedParity(SpellID::SORROW, "new-horizons:shadowMagic", Scaling::Points));
+	ASSERT_NO_FATAL_FAILURE(reflectedParity(SpellID::SORROW, "new-horizons:shadowMagic", Scaling::PassiveMetamagic));
 }
 TEST_F(NewHorizonsTimedNumericPlanTest, ReflectedMisfortuneWisdomEffectivenessMatchesItsNativeChanceFactorAndDuration)
 {

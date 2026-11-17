@@ -123,11 +123,8 @@ std::vector<std::shared_ptr<Bonus>> passiveCreatureSpecialtyBonuses(const CGHero
 {
 	if(!hero.getHeroType())
 		return {};
-	const auto & root = hero.getPrimaryGrowthRules();
-	const auto & policy = root["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	if(!policy.isStruct())
-		return {};
-	const auto has = [&](const char * key) { return policy.Struct().contains(key); };
+	const auto * policy = hero.compiledDevelopment();
+	const auto has = [policy](const char * key) { return policy->hasOrdinaryField(key); };
 	const std::string_view identity = hero.getHeroType()->getJsonKey();
 	if(identity == "core:vokial" && has("bloodScentMaximumDamagePercent"))
 	{

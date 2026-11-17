@@ -3,6 +3,7 @@ import copy
 import hashlib
 from pathlib import Path
 import unittest
+from .nhart_source_transitions import read_historical_source
 from .nhart_perk_presentations import (CONDITION, OVERLOAD_SUFFIX,
     header_before_perk_presentation, source_bound_icon, validate_perk_presentation,
     WISDOM_REBINDINGS, header_before_wisdom_rebindings,
@@ -14,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class PerkPresentationTest(unittest.TestCase):
     def setUp(self):
-        self.header = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()
+        self.header = read_historical_source('client/windows/NewHorizonsPerkIcons.h')
         stem = CONDITION[2]
         self.row = dict(id=CONDITION[0], capturedName=CONDITION[1], icon44=stem,
             historicalIcon44=CONDITION[3], alphaMaximum44=254, alphaMaximum32=253,

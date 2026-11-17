@@ -44,7 +44,7 @@ TEST_F(PurifyRuleFixturesTest, SavedV2RecipeValidatesAndPreservesCanonicalPurify
 	EXPECT_TRUE(current.Struct().contains("heroMorale"));
 	EXPECT_EQ(historical, historicalCrusadeRules(current, newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION));
 	// Existing consumers require these two spell rows to retain their own policies.
-	for(const auto * identity : {"new-horizons:spellLock", "new-horizons:regeneration"})
+	for(const auto * identity : {"new-horizons:regeneration"})
 		EXPECT_EQ(historical["spells"][identity], current["spells"][identity]);
 }
 

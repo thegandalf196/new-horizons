@@ -182,7 +182,7 @@ TEST_P(NewHorizonsResourceSpecialtyArtTest, RetainedHistoricalResourceMechanicNe
 	const auto * hero = findHeroAt({5, 5, 0});
 	ASSERT_NE(hero, nullptr);
 	EXPECT_TRUE(hero->getPrimaryGrowthRules().isNull());
-	EXPECT_TRUE(hero->getPerkState().rules.isNull());
+	EXPECT_TRUE(hero->getPerkState().getRules().isNull());
 	const auto & row = resourceArtCases.at(GetParam());
 	const auto beforeBonuses = hero->getExportedBonusList().toJsonNode();
 	const auto beforeIncome = hero->dailyIncome();

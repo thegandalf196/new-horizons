@@ -5,12 +5,6 @@
 			{ "skill": "new-horizons:metamagic", "level": "basic" },
 			{ "skill": "new-horizons:havocMagic", "level": "basic" }
 		],
-		"startingPerks": [
-			{
-				"skill": "new-horizons:havocMagic",
-				"perk": "new-horizons:havocMagic.stormcaller"
-			}
-		],
 		"excludedSpells": [ "core:chainLightning" ],
 		"texts": {
 			"specialty": {

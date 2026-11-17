@@ -271,7 +271,7 @@ TEST(BonusNestedCapabilitySerialization, NodeAndStoredListPropagateActualTargetP
 	list.push_back(outer);
 	CBonusSystemNode node(BonusNodeType::ARMY);
 	node.addNewBonus(outer);
-	for(const auto version : {ESerializationVersion::MINIMAL, static_cast<ESerializationVersion>(899),
+	for(const auto version : {static_cast<ESerializationVersion>(893), static_cast<ESerializationVersion>(899),
 		static_cast<ESerializationVersion>(900)})
 	{
 		CMemorySerializer listWire, nodeWire;

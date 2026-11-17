@@ -311,7 +311,7 @@ inline RevisedOrderPreview revisedOrderPreview(const CPlayerBattleCallback & cal
 			+ std::to_string(remaining) + " rounds (incl. now)";
 	return {label, std::string(preview ? "\n\nPreview without a Lucky Day proc: " : "\n\nActive effect: ")
 		+ revisedSnapshotText(*prepared, callback.battleGetRound())
-		+ (command == HeroCommand::VANGUARD ? ". Stack badges show remaining duration, including Time Stop pauses." : ".")};
+		+ (command == HeroCommand::VANGUARD ? ". Stack badges show remaining duration, in rounds." : ".")};
 }
 
 inline std::string commandEffects(const JsonNode & rules, HeroCommand command, const CGHeroInstance & hero,

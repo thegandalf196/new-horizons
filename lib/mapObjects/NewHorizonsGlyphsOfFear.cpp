@@ -19,7 +19,9 @@ TConstBonusListPtr moraleBonuses(const CGHeroInstance * hero, std::optional<int3
 	auto result = std::make_shared<BonusList>();
 	if(!hero || !hero->cb || !hero->tempOwner.isValidPlayer())
 		return result;
-	const auto aura = newHorizonsHeroes::capabilityGlyphsOfFearAura(hero->getCapabilityRules());
+	const auto * compiled = hero->compiledCapabilities();
+	const auto aura = compiled ? compiled->glyphsOfFearAura()
+		: newHorizonsHeroes::capabilityGlyphsOfFearAura(hero->getCapabilityRules());
 	if(!aura)
 		return result;
 	const auto at = location.value_or(hero->visitablePos());

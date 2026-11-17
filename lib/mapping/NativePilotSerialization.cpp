@@ -5,11 +5,14 @@
 #include "../nativeRules/PreparedPilotRules.h"
 void CMap::validateNativePilotSerialization(bool supported) const
 {
+	// Both document owners admit native rows on capture/import. Unsupported
+	// targets still reject populated rows before enclosing map bytes.
+	if(supported) return;
 	const auto validate = [&](const CGHeroInstance & hero)
 	{
 		// Current perk rows are admitted by the existing weighted-rule preflight.
 		if(!supported)
-			nativeRules::validatePilotPerks(hero.getPerkState().rules, false);
+			nativeRules::validatePilotPerks(hero.getPerkState().getRules(), false);
 		nativeRules::validatePilotCreatures(hero.getPrimaryGrowthRules(), supported);
 	};
 	for(const auto & hero : heroesPool)

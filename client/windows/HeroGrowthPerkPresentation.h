@@ -88,11 +88,11 @@ inline SkillSummary skillSummary(const newHorizonsHeroes::PerkState & state,
 			++blocked[presentation.reason];
 		}
 	}
-	const size_t selected = std::count_if(state.selected.begin(), state.selected.end(), [&](const auto & selection)
+	const size_t selected = std::count_if(state.getSelected().begin(), state.getSelected().end(), [&](const auto & selection)
 	{
 		return selection.skillId == skill.id;
 	});
-	const auto cap = static_cast<size_t>(state.rules["maxPerksPerSkill"].Integer());
+	const auto cap = static_cast<size_t>(state.getRules()["maxPerksPerSkill"].Integer());
 	result.eligible = eligible.size();
 	result.text = "\n" + skill.name + (rank > 0
 		? " (" + newHorizonsPerkAvailability::tierName(rank) + ") - "
@@ -111,28 +111,28 @@ inline SkillSummary skillSummary(const newHorizonsHeroes::PerkState & state,
 inline std::string summary(const newHorizonsHeroes::PerkState & state,
 	const std::function<int(const std::string &)> & rankFor)
 {
-	const int cap = state.rules["maxPerksPerSkill"].Integer();
+	const int cap = state.getRules()["maxPerksPerSkill"].Integer();
 	const auto projected = state.project(rankFor);
 	size_t capacity = 0;
 	size_t eligible = 0;
 	size_t locked = 0;
 	size_t unavailable = 0;
 	std::vector<std::string> skillIds;
-	for(const auto & entry : state.rules["skills"].Struct())
+	for(const auto & entry : state.getRules()["skills"].Struct())
 		skillIds.push_back(entry.first);
 	std::stable_sort(skillIds.begin(), skillIds.end(), [&](const auto & left, const auto & right)
 	{
 		const auto learned = [&](const auto & id)
 		{
-			return rankFor(id) > 0 || std::any_of(state.selected.begin(), state.selected.end(),
+			return rankFor(id) > 0 || std::any_of(state.getSelected().begin(), state.getSelected().end(),
 				[&](const auto & selection) { return selection.skillId == id; });
 		};
 		return learned(left) > learned(right);
 	});
-	std::string details = "Perks\nSelected: " + std::to_string(state.selected.size());
+	std::string details = "Perks\nSelected: " + std::to_string(state.getSelected().size());
 	for(const auto & skillId : skillIds)
 	{
-		const auto skill = newHorizonsHeroes::perkSkill(state.rules, skillId);
+		const auto skill = newHorizonsHeroes::perkSkill(state.getRules(), skillId);
 		if(!skill)
 			continue;
 		const int rank = rankFor(skillId);
@@ -144,10 +144,10 @@ inline std::string summary(const newHorizonsHeroes::PerkState & state,
 		unavailable += entry.unavailable;
 		details += entry.text;
 	}
-	const auto offerExplanation = newHorizonsHeroes::usesFourOfferProgression(state.rules)
+	const auto offerExplanation = newHorizonsHeroes::usesFourOfferProgression(state.getRules())
 		? "A level-up offers up to two Skills and two perk groups; choose one advancement."
-		: "A level-up offers at most " + std::to_string(state.rules["maxPerkChoices"].Integer()) + " perks.";
-	return "Selected: " + std::to_string(state.selected.size()) + " / " + std::to_string(capacity)
+		: "A level-up offers at most " + std::to_string(state.getRules()["maxPerkChoices"].Integer()) + " perks.";
+	return "Selected: " + std::to_string(state.getSelected().size()) + " / " + std::to_string(capacity)
 		+ " capacity for learned skills; " + std::to_string(eligible) + " eligible for future level-up offers; "
 		+ std::to_string(locked) + " locked; " + std::to_string(unavailable) + " unavailable.\nEach learned skill can hold up to "
 		+ std::to_string(cap) + " perks. " + offerExplanation + "\n" + details;

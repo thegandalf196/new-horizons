@@ -12,7 +12,7 @@ newHorizonsOrdinaryStrike::EffectPlan prepareApplication(const battle::Unit & re
 {
 	newHorizonsOrdinaryStrike::EffectPlan result;
 	auto next = records(reductionBasisPoints, sourcePlayer); // Validates domain; zero creates no records.
-	if(next.empty() || !recipient.alive() || recipient.isGhost() || recipient.isTimeStopped()) return result;
+	if(next.empty() || !recipient.alive() || recipient.isGhost()) return result;
 	const auto existing = recipient.getUnstackedBonuses(CSelector([](const Bonus * bonus)
 	{
 		return bonus && isReservedSource(*bonus);

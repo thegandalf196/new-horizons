@@ -22,7 +22,8 @@ SpellEffectPreview buffSpellEffectPreview(const CGHeroInstance & hero, const CSp
 	{
 		value = -newHorizonsSorceryRevision::slowBaseReduction(power, coefficient, empower);
 		value = casterEnchantValue(&hero, family, value);
-		value = newHorizonsSorceryRevision::scaleSlowVariantValue(value, spellVariantPowerPercent(rules, spell.getId()));
+		value = newHorizonsSorceryRevision::finalSlowValue(value, spellVariantPowerPercent(rules, spell.getId()),
+			newHorizonsSorceryRevision::hasChronomancer(&hero));
 		label = newHorizonsSorceryRevision::slowAffectsSpeed(rules) ? "slowDual" : "slow";
 	}
 	else

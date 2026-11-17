@@ -68,9 +68,9 @@ protected:
 		startWithMap(std::move(map));
 		hero = findHeroByOwner(OWNER);
 		ASSERT_NE(hero, nullptr);
-		ASSERT_TRUE(usesFourOfferProgression(hero->getPerkState().rules));
+		ASSERT_TRUE(usesFourOfferProgression(hero->getPerkState().getRules()));
 		auto & state = const_cast<PerkState &>(hero->getPerkState());
-		state.selected.clear();
+		state.replaceSelected({});
 		const auto learned = hero->secSkills;
 		for(const auto & [skill, rank] : learned)
 			hero->setSecSkillLevel(skill, 0, ChangeValueMode::ABSOLUTE);
@@ -128,7 +128,7 @@ TEST_F(FourOfferProgressionAITest, AlternativePerkKeepsCatalogueReplyAfterPrimar
 	const auto after = fourOfferPerkGroups(offer, fourOfferCandidates(*gameState(), *hero));
 	ASSERT_GT(after[0].size(), before[0].size());
 	EXPECT_EQ(after[1], before[1]);
-	const auto selectedBefore = hero->getPerkState().selected;
+	const auto selectedBefore = hero->getPerkState().getSelected();
 	const int reply = answer(offer);
 	const auto choice = fourOfferSelection(offer, hero->getPerkState(), reply);
 	ASSERT_TRUE(choice);
@@ -136,7 +136,7 @@ TEST_F(FourOfferProgressionAITest, AlternativePerkKeepsCatalogueReplyAfterPrimar
 	EXPECT_EQ(choice->perk->selection.skillId, factionId);
 	EXPECT_EQ(reply, fourOfferPerkReply(offer, hero->getPerkState(), 1, choice->perk->selection.perkId));
 	EXPECT_GE(reply, 12);
-	EXPECT_EQ(hero->getPerkState().selected, selectedBefore);
+	EXPECT_EQ(hero->getPerkState().getSelected(), selectedBefore);
 }
 
 TEST_F(FourOfferProgressionAITest, AllStaleChoicesCompleteWithoutWaitingForAnotherOffer)
@@ -149,5 +149,5 @@ TEST_F(FourOfferProgressionAITest, AllStaleChoicesCompleteWithoutWaitingForAnoth
 	hero->setSecSkillLevel(authority, 3, ChangeValueMode::ABSOLUTE);
 	EXPECT_TRUE(legalFourOfferReplies(offer, hero->getPerkState(), fourOfferCandidates(*gameState(), *hero)).empty());
 	EXPECT_EQ(answer(offer), 0);
-	EXPECT_TRUE(hero->getPerkState().selected.empty());
+	EXPECT_TRUE(hero->getPerkState().getSelected().empty());
 }

@@ -95,9 +95,6 @@ constexpr std::array PRODUCER_COMPONENTS{
 	ProducerComponent{"new-horizons:doom", BonusType::STACKS_SPEED},
 	ProducerComponent{"new-horizons:doom", BonusType::STACKS_INITIATIVE},
 	ProducerComponent{"new-horizons:doom", BonusType::MORALE},
-	ProducerComponent{"new-horizons:timeStop", BonusType::NOT_ACTIVE},
-	ProducerComponent{"new-horizons:timeStop", BonusType::INVINCIBLE},
-	ProducerComponent{"new-horizons:timeStop", BonusType::TIME_STOP},
 	ProducerComponent{"new-horizons:puppetMaster", BonusType::PUPPET_MASTER_CONTROL},
 	ProducerComponent{"core:forgetfulness", BonusType::CREATURE_ABILITY_SUPPRESSION},
 	ProducerComponent{"core:misfortune", BonusType::FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS},
@@ -126,23 +123,6 @@ std::string runtimeIdentity(const Bonus & bonus, const CSpell * spell)
 	return {};
 }
 
-bool legacyHostileLock(const Bonus & bonus, const CSpell * spell, const battle::Unit & unit)
-{
-	if(!spell || bonus.source != BonusSource::SPELL_EFFECT
-		|| (bonus.type != BonusType::NONE && bonus.type != BonusType::MAGIC_RESISTANCE))
-		return false;
-	const auto * registered = LIBRARY->spells()->getByName("new-horizons:spellLock");
-	if(!registered || registered->getId() != spell->getId())
-		return false;
-	const auto markers = unit.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, bonus.sid)
-		.And(Selector::type()(BonusType::NONE)));
-	// This is the exact authored polarity encoding of Spell Lock's typed marker,
-	// not a general negative-stat heuristic. Positive means protective/friendly.
-	return markers && std::ranges::any_of(*markers, [](const auto & marker)
-	{
-		return marker && marker->val < 0;
-	});
-}
 }
 
 void applyProducerMetadata(Bonus & bonus)
@@ -185,8 +165,6 @@ StatusSnapshot snapshot(const battle::Unit & unit)
 			const auto runtime = runtimeIdentity(*bonus, spell);
 			if(!runtime.empty())
 				authored.insert(runtime);
-			if(legacyHostileLock(*bonus, spell, unit))
-				authored.insert(spell->getJsonKey());
 			if(spell)
 				for(int rank = 0; rank < GameConstants::SPELL_SCHOOL_LEVELS; ++rank)
 				{

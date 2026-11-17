@@ -107,36 +107,40 @@ protected:
 		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC,
 			ChangeValueMode::ABSOLUTE);
 		auto & perks = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(perks.rules));
-		const auto capturedRules = perks.rules;
+		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(perks.getRules()));
+		const auto capturedRules = perks.getRules();
 		const auto capturedWeights = hero->getPerkOfferWeightContext().referenceWeights;
 		const auto rank = hero->getPerkSkillRank(skill);
 		ASSERT_EQ(rank, MasteryLevel::BASIC);
-		const auto definition = newHorizonsHeroes::perkDefinition(perks.rules, skill, desired);
+		const auto definition = newHorizonsHeroes::perkDefinition(perks.getRules(), skill, desired);
 		ASSERT_TRUE(definition);
 		ASSERT_EQ(definition->requiredRank, "basic");
 		const newHorizonsHeroes::PerkSelection authored{skill, std::string(authoredId)};
-		const auto authoredDefinition = newHorizonsHeroes::perkDefinition(perks.rules, skill, authored.perkId);
+		const auto authoredDefinition = newHorizonsHeroes::perkDefinition(perks.getRules(), skill, authored.perkId);
 		ASSERT_TRUE(authoredDefinition);
 		ASSERT_EQ(authoredDefinition->requiredRank, "basic");
-		ASSERT_EQ(std::ranges::count_if(perks.selected, [&skill](const auto & entry) { return entry.skillId == skill; }), 1);
-		const auto starting = std::ranges::find(perks.selected, authored);
-		ASSERT_NE(starting, perks.selected.end());
+		// Current creation supplies zero perks. Author this fixture's occupied
+		// Basic slot explicitly before exercising replacement/admission behavior.
+		if(std::ranges::none_of(perks.getSelected(), [&skill](const auto & entry) { return entry.skillId == skill; }))
+			hero->applyPerkSelection(authored);
+		ASSERT_EQ(std::ranges::count_if(perks.getSelected(), [&skill](const auto & entry) { return entry.skillId == skill; }), 1);
+		const auto starting = std::ranges::find(perks.getSelected(), authored);
+		ASSERT_NE(starting, perks.getSelected().end());
 		ASSERT_FALSE(perks.canAcquirePerk(skill, desired, rank)); // Occupied Basic slot stays rejected.
 		// Test construction, not a gameplay respec: neutral skill ranks do not
 		// erase authored choices. Replace that one fixture selection only.
-		auto expected = perks.selected;
-		expected.erase(expected.begin() + std::distance(perks.selected.begin(), starting));
-		perks.selected.erase(starting);
+		auto expected = perks.getSelected();
+		expected.erase(expected.begin() + std::distance(perks.getSelected().begin(), starting));
+		perks.replaceSelected(expected);
 		perks.validate();
-		ASSERT_EQ(perks.selected, expected);
-		ASSERT_TRUE(std::ranges::none_of(perks.selected, [&skill](const auto & entry) { return entry.skillId == skill; }));
+		ASSERT_EQ(perks.getSelected(), expected);
+		ASSERT_TRUE(std::ranges::none_of(perks.getSelected(), [&skill](const auto & entry) { return entry.skillId == skill; }));
 		ASSERT_TRUE(perks.canAcquirePerk(skill, desired, rank));
 		hero->applyPerkSelection({skill, desired});
 		ASSERT_TRUE(hero->hasActivePerk(skill, desired));
 		expected.push_back({skill, desired});
-		ASSERT_EQ(perks.selected, expected);
-		ASSERT_EQ(perks.rules, capturedRules);
+		ASSERT_EQ(perks.getSelected(), expected);
+		ASSERT_EQ(perks.getRules(), capturedRules);
 		ASSERT_EQ(hero->getPerkOfferWeightContext().referenceWeights, capturedWeights);
 		ASSERT_EQ(hero->getPerkSkillRank(skill), rank);
 		ASSERT_FALSE(perks.canAcquirePerk(skill, authored.perkId, rank));
@@ -157,7 +161,7 @@ protected:
 		attackerSideHero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::EXPERT,
 			ChangeValueMode::ABSOLUTE);
 		const auto & perks = attackerSideHero->getPerkState();
-		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(perks.rules));
+		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(perks.getRules()));
 		ASSERT_TRUE(attackerSideHero->hasActivePerk(skill, std::string(newHorizonsArchery::TARGET_CALLER)));
 		// Preserve Orrin's Basic choice and legally fill the missing Advanced tier.
 		// Crossfire is inert here: these fixtures have only one friendly shooter.

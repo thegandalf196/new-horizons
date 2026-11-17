@@ -38,8 +38,6 @@ struct Admission
 	std::optional<HypotheticBattle::ProjectedSpellAllowance> spellAllowance;
 	std::optional<HypotheticBattle::ProjectedOrderAllowance> orderAllowance;
 	std::optional<heroCommands::PreparedOrderEffects> orderEffects;
-	HypotheticBattle::ProjectedCounterspellOutcome counterspell;
-	bool counterspellNegated = false;
 };
 
 /// For an already generated candidate, prepare and begin its private action before

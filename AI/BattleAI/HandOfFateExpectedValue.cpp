@@ -39,8 +39,9 @@ float resolvedFateOutcome(const heroSpellProjection::OutcomeValue & value, const
 		const auto thaw = newHorizonsFrozen::removalPlan(*target);
 		if(!thaw.empty()) board->removeUnitBonus(hit.stackAttacked, thaw);
 	}
-	value(board, injuries, false, true);
-	return heroSpellProjection::localReceiptMarginal(board, kernel);
+	std::vector<uint32_t> resolved;
+	for(const auto & hit : injuries) resolved.push_back(hit.stackAttacked);
+	return heroSpellProjection::evaluateLocalOutcome(value, board, injuries, false, {resolved}, kernel);
 }
 }
 std::optional<SpellTargetEvaluator::HandOfFateExpectedDamageValue>
@@ -96,7 +97,7 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 		return value;
 	};
 	auto coreBoard = outcomeValue ? std::make_shared<HypotheticBattle>(environment, battleState) : nullptr;
-	const float coreOnly = outcomeValue ? outcomeValue(coreBoard, {}, false, false) : 0.0f;
+	const float coreOnly = outcomeValue ? outcomeValue(coreBoard, {}, false, false, {}).value : 0.0f;
 	const auto localCore = outcomeValue ? heroSpellProjection::localReceiptMarginal(coreBoard, kernel) : 0.0f;
 	const auto primaryHit = injury(*spellMechanics, primary->unitId(), actualPrimaryDamage);
 	const float primaryOnly = outcomeValue && primaryApplicationChance > 0 ? resolvedFateOutcome(outcomeValue, environment, battleState,
@@ -110,7 +111,6 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 
 	// Every living, on-field, non-turret stack remains in the draw pool,
 	// including stacks that will reject the secondary packet (for example, a
-	// Time Stopped or immune stack).  Rejection contributes zero value but never
 	// changes the probability of another recipient being chosen.
 	std::vector<const battle::Unit *> collateralPool;
 	for(const auto * unit : battle->battleGetAllUnits(false))

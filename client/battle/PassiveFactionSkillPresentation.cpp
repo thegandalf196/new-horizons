@@ -9,42 +9,9 @@
 #include <bit>
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
-#include "../../lib/spells/NewHorizonsMetamagicMarks.h"
 
 namespace passiveFactionSkillPresentation
 {
-std::optional<SkillStatusText> metamagic(const CGHeroInstance & hero,
-	const CBattleInfoCallback & battle, BattleSide side)
-{
-	if(newHorizonsMetamagic::usesPoints(hero.getPerkState().rules))
-	{
-		const auto facts = newHorizonsMetamagic::profile(&hero);
-		if(facts.rank <= 0 || !battle.getBattle())
-			return std::nullopt;
-		const auto & state = battle.getBattle()->getMetamagicPointState(side);
-		return metamagicPoints(facts, state);
-	}
-	if(newHorizonsMetamagic::usesArcaneMarks(hero.getPerkState().rules))
-	{
-		const auto facts = newHorizonsMetamagic::profile(&hero);
-		if(facts.rank <= 0)
-			return std::nullopt;
-		return SkillStatusText{"Marks",
-			"Repeated spells on the same stack strengthen this hero's later spells."
-			"\n\nEach stack can carry up to 5 of this hero's Arcane Marks."
-			" Each mark currently adds +" + std::to_string(newHorizonsMetamagic::effectivenessBonusPercent(facts, 1))
-			+ "% spell effectiveness; at 5 marks the total bonus is +"
-			+ std::to_string(newHorizonsMetamagic::effectivenessBonusPercent(facts, 5))
-			+ "%. Marks apply after resolution, last for combat and cannot be dispelled."
-			" Inspect a stack to see its marks. Metamagic grants no additional spell action.", true};
-	}
-	const int total = newHorizonsMagic::metamagicCapacity(&hero);
-	if(total <= 0)
-		return std::nullopt;
-	const int consumed = std::clamp(battle.battleMetamagicUsesConsumed(side), 0, total);
-	return SkillStatusText{std::to_string(total - consumed) + " / " + std::to_string(total), {}, false};
-}
-
 std::optional<SkillStatusText> elementalAttunement(const CGHeroInstance & hero,
 	const CBattleInfoCallback & battle, BattleSide side)
 {
@@ -75,7 +42,7 @@ std::optional<SkillStatusText> elementalAttunement(const CGHeroInstance & hero,
 std::optional<SkillStatusText> divineMandate(const CGHeroInstance & hero,
 	const CBattleInfoCallback & battle, BattleSide side)
 {
-	if(newHorizonsPassiveDivineMandate::enabled(hero.getPerkState().rules))
+	if(newHorizonsPassiveDivineMandate::enabled(hero.getPerkState().getRules()))
 	{
 		const auto policy = newHorizonsPassiveDivineMandate::capturePolicy(&hero);
 		const auto total = newHorizonsPassiveDivineMandate::activationLimit(policy);

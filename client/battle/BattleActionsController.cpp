@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "BattleActionsController.h"
 #include "BattleMovementPreview.h"
 #include "BattlePointBlankPresentation.h"
@@ -125,17 +126,6 @@ std::optional<FriendlyFirePreview> buildFriendlyFirePreview(BattleInterface & ow
 	cast.setCurePhysicalAffliction(action.spellCurePhysicalAffliction);
 	cast.setMassSlow(action.spellMassSlow);
 	cast.setShadowGiftSacrificePercent(action.spellShadowGiftSacrificePercent);
-	cast.setMetamagicFollowup(action.metamagicFollowup);
-	cast.setMetamagicGrand(action.metamagicGrand);
-	cast.setMetamagicManaRefund(action.metamagicManaRefund);
-	for(const auto & destination : target)
-	{
-		if(destination.unitValue)
-		{
-			cast.setMetamagicTargetUnitId(destination.unitValue->unitId());
-			break;
-		}
-	}
 
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics || !mechanics->usesNewHorizonsMagicV3())
@@ -1100,7 +1090,6 @@ int BattleActionsController::repeatedPlacementRequiredHexes() const
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	const auto hero = owner.currentHero();
 	spells::BattleCast cast(owner.getBattle().get(), hero, spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return 0;
@@ -1214,7 +1203,6 @@ bool BattleActionsController::stormOfDaggersTargetsAreLegal(const std::vector<ui
 	}
 
 	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics || !mechanics->isNewHorizonsStormOfDaggers()
 		|| !mechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(unitIds.size())))
@@ -1295,7 +1283,6 @@ StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelecti
 	{
 		const int32_t targetCount = static_cast<int32_t>(selectedUnits.size());
 		spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
-		cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 		auto mechanics = spell->battleMechanics(&cast);
 		if(mechanics && mechanics->isNewHorizonsStormOfDaggers()
 			&& mechanics->setStormOfDaggersTargetCount(targetCount))
@@ -1526,7 +1513,6 @@ bool BattleActionsController::soulChainTargetsAreLegal(const std::vector<uint32_
 		return false;
 
 	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -1744,7 +1730,6 @@ bool BattleActionsController::realityWarpTargetsAreLegal(const std::vector<uint3
 		return false;
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	spells::BattleCast cast(battle.get(), owner.currentHero(), spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	const auto mechanics = spell->battleMechanics(&cast);
 	spells::Target pair;
 	pair.emplace_back(first, first->getPosition());
@@ -1922,7 +1907,6 @@ bool BattleActionsController::lifeDrainTargetsAreLegal(const std::vector<uint32_
 		return false;
 
 	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -2113,7 +2097,6 @@ bool BattleActionsController::fireWallPlacementLineIsLegal(const BattleHex & sta
 
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	spells::BattleCast cast(owner.getBattle().get(), owner.currentHero(), spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -2329,7 +2312,6 @@ int32_t BattleActionsController::vengefulVinesEnemyTargetCount(const BattleHexAr
 		return 0;
 
 	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	const auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return 0;
@@ -2370,7 +2352,6 @@ bool BattleActionsController::vengefulVinesTargetsAreLegal(const std::vector<Bat
 		return false;
 
 	spells::BattleCast cast(battle.get(), hero, spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -2585,7 +2566,6 @@ bool BattleActionsController::repeatedPlacementTargetsValid() const
 
 	const auto * spell = heroSpellToCast->spell.toSpell();
 	spells::BattleCast cast(owner.getBattle().get(), owner.currentHero(), spells::Mode::HERO, spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return false;
@@ -2740,7 +2720,6 @@ std::optional<newHorizonsBlink::Preview> BattleActionsController::getBlinkDestin
 		return std::nullopt;
 
 	spells::BattleCast cast(battle.get(), caster, getCurrentCastMode(), spell);
-	cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
 	const auto mechanics = spell->battleMechanics(&cast);
 	if(!mechanics)
 		return std::nullopt;
@@ -2821,9 +2800,6 @@ BattleHexArray BattleActionsController::getVerdantPrisonTargetHexes(const CSpell
 	spells::BattleCast cast(owner.getBattle().get(), getCurrentSpellcaster(), getCurrentCastMode(), spell);
 	const auto * battle = owner.getBattle().get();
 	const auto side = battle->battleGetMySide();
-	const bool followup = side != BattleSide::NONE
-		&& battle->battleCanUseMetamagicFollowup(side, spell->getId());
-	cast.setMetamagicFollowup(followup);
 
 	const auto mechanics = spell->battleMechanics(&cast);
 	return mechanics ? mechanics->rangeInHexes(targetHex) : BattleHexArray{};
@@ -3144,8 +3120,6 @@ void BattleActionsController::castThisSpell(SpellID spellID)
 	heroSpellToCast->spell = spellID;
 	heroSpellToCast->stackNumber = -1;
 	heroSpellToCast->side = battle->battleGetMySide();
-	heroSpellToCast->metamagicFollowup = heroSpellToCast->side != BattleSide::NONE
-		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side, spellID);
 	vengefulVinesSelectedHexes.clear();
 	vengefulVinesBattleID = BattleID();
 	vengefulVinesPlayer.reset();
@@ -3339,8 +3313,6 @@ bool BattleActionsController::continueOrdinarySpellcast()
 	if(!battle)
 		return false;
 	heroSpellToCast->side = battle->battleGetMySide();
-	heroSpellToCast->metamagicFollowup = heroSpellToCast->side != BattleSide::NONE
-		&& battle->battleCanUseMetamagicFollowup(heroSpellToCast->side, spell->getId());
 
 	const auto spellSelMode = owner.getBattle()->getCasterAction(spell, castingHero, spells::Mode::HERO);
 	if(spellSelMode.get() == PossiblePlayerBattleAction::INVALID)
@@ -3540,9 +3512,6 @@ void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAc
 	cacheKey.mode = static_cast<int32_t>(mode);
 	if(heroSpellToCast)
 	{
-		cacheKey.metamagicFollowup = heroSpellToCast->metamagicFollowup;
-		cacheKey.metamagicGrand = heroSpellToCast->metamagicGrand;
-		cacheKey.metamagicManaRefund = heroSpellToCast->metamagicManaRefund;
 		cacheKey.spellOvercharge = heroSpellToCast->spellOvercharge;
 		cacheKey.spellSelectiveDispel = heroSpellToCast->spellSelectiveDispel;
 		cacheKey.spellCureAffliction = heroSpellToCast->spellCureAffliction;
@@ -3568,10 +3537,6 @@ void BattleActionsController::updateChainLightningPreview(PossiblePlayerBattleAc
 		cast.setCurePhysicalAffliction(heroSpellToCast->spellCurePhysicalAffliction);
 		cast.setMassSlow(heroSpellToCast->spellMassSlow);
 		cast.setShadowGiftSacrificePercent(heroSpellToCast->spellShadowGiftSacrificePercent);
-		cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup);
-		cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);
-		cast.setMetamagicManaRefund(heroSpellToCast->metamagicManaRefund);
-		cast.setMetamagicTargetUnitId(targetUnit->unitId());
 	}
 
 	auto mechanics = spell->battleMechanics(&cast);
@@ -3818,7 +3783,8 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			DamageEstimation estimation = owner.getBattle()->battleEstimateDamage(attackInfo, &retaliation);
 			estimation.kills.max = std::min<int64_t>(estimation.kills.max, targetStack->getCount());
 			estimation.kills.min = std::min<int64_t>(estimation.kills.min, targetStack->getCount());
-			auto result = formatRangedAttack(estimation, targetStack->getName(), shooter->shots.available());
+			auto result = formatRangedAttack(estimation, targetStack->getName(),
+				newHorizonsFocusMagic::active(*shooter) ? newHorizonsFocusMagic::charges(*shooter) : shooter->shots.available());
 			const auto & battle = *owner.getBattle();
 			result += pointBlankPresentation::status(battle, *shooter, targetHex);
 			if(battle.battleHasPendingRangedFollowUp(shooter))
@@ -3834,18 +3800,7 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 					&& !shooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
 					&& newHorizonsCombatSkills::paviseReductionPercent(battle.battleGetOwnerHero(targetStack)) > 0)
 					result += "\nPavise: 25% independent ranged physical reduction (included above; combined cap applies).";
-				const auto side = static_cast<int32_t>(battle.playerToSide(battle.battleGetOwner(shooter)));
-				const auto penetration = battle.battleGetRangedAttackPenetration(attackInfo);
-				if(penetration.creatureDefenseIgnoreBasisPoints > 0)
-					result += "\nArcane Breach: " + newHorizonsBattleStatus::formatBasisPoints(penetration.creatureDefenseIgnoreBasisPoints)
-						+ " Creature Defense ignored (included above).";
-				if(penetration.physicalDamageReductionIgnorePercent > 0)
-					result += "\nArcane Ballistics: " + std::to_string(penetration.physicalDamageReductionIgnorePercent)
-						+ "% of combined Physical Damage Reduction ignored (included above).";
-				const auto focus = newHorizonsBattleStatus::focusMagicStatus(
-					*shooter->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER));
-				if(focus && focus->beneficiarySide == side)
-					result += "\nFocus Magic: a damaging hit adds or refreshes a mark if the target survives.";
+
 			}
 			return result;
 		}
@@ -3856,6 +3811,11 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 			const auto & chainPreview = getChainLightningPreview();
 			if(chainPreview.active && chainPreview.aimedHex == targetHex && chainPreview.spell == action.spell())
 				return chainPreview.consoleText;
+
+			if(isForcedRecallSpell(spell))
+				return spell->getNameTranslated() + ": " + targetStack->getName()
+					+ (getForcedRecallTargetHexes(spell, targetHex).empty()
+						? ". No legal return destination." : ". Highlighted hexes show the return destination.");
 
 			if(isBlinkSpell(spell))
 			{
@@ -3889,9 +3849,6 @@ std::string BattleActionsController::actionGetStatusMessage(PossiblePlayerBattle
 				spells::BattleCast cast(owner.getBattle().get(), getCurrentSpellcaster(), getCurrentCastMode(), spell);
 				const auto * battle = owner.getBattle().get();
 				const auto side = battle->battleGetMySide();
-				const bool followup = side != BattleSide::NONE
-					&& battle->battleCanUseMetamagicFollowup(side, spell->getId());
-				cast.setMetamagicFollowup(followup);
 				const auto mechanics = spell->battleMechanics(&cast);
 				const auto capacityIncreasePercentMillionths = mechanics ? mechanics->getEffectValue() : 0;
 				return prepareHydrasVitalityText(spell,
@@ -4948,13 +4905,6 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 	target.emplace_back(targetHex);
 
 	spells::BattleCast cast(owner.getBattle().get(), caster, mode, currentSpell);
-	if(mode == spells::Mode::HERO)
-	{
-		const auto side = owner.getBattle()->battleGetMySide();
-		const bool followup = side != BattleSide::NONE
-			&& owner.getBattle()->battleCanUseMetamagicFollowup(side, currentSpell->getId());
-		cast.setMetamagicFollowup(followup);
-	}
 
 	auto m = currentSpell->battleMechanics(&cast);
 	spells::detail::ProblemImpl problem; //todo: display problem in status bar
@@ -4998,13 +4948,6 @@ bool BattleActionsController::isCastingPossibleHere(const CSpell * currentSpell,
 		return false;
 
 	spells::BattleCast selectiveCast(owner.getBattle().get(), caster, mode, currentSpell);
-	if(mode == spells::Mode::HERO)
-	{
-		const auto side = owner.getBattle()->battleGetMySide();
-		const bool followup = side != BattleSide::NONE
-			&& owner.getBattle()->battleCanUseMetamagicFollowup(side, currentSpell->getId());
-		selectiveCast.setMetamagicFollowup(followup);
-	}
 	selectiveCast.setSelectiveDispel(true);
 	auto selectiveMechanics = currentSpell->battleMechanics(&selectiveCast);
 	spells::detail::ProblemImpl selectiveProblem;

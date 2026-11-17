@@ -117,7 +117,7 @@ std::string incomeHelp(const CGTownInstance & town)
 	const auto * player = town.cb->getPlayerState(town.getOwner());
 	const auto heroes = player ? player->getHeroes() : std::vector<const CGHeroInstance *>{};
 	const bool revised = std::any_of(heroes.begin(), heroes.end(), [](const auto * hero) {
-		return newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().rules);
+		return newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().getRules());
 	});
 	std::string help;
 	if(!revised)

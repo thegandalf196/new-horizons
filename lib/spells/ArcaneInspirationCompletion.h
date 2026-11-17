@@ -22,6 +22,6 @@ DLL_LINKAGE void publishCompletedSpell(ServerCallback & server, const CBattleInf
 /// Publish once after successful originating combat HERO cast resolution. Automatic
 /// hero casts qualify; mirrored injuries, Echo and creature abilities are not casts.
 DLL_LINKAGE void publishCompletedSpell(ServerCallback & server, const CBattleInfoCallback & battle,
-	const spells::Mechanics & mechanics, bool negated, std::span<const BattleStackAttacked> originalInjuries,
+	const spells::Mechanics & mechanics, std::span<const BattleStackAttacked> originalInjuries,
 	std::optional<BattleSide> originalHeroSide = std::nullopt);
 }

@@ -18,8 +18,8 @@ ownedPreparationIntegration::Scenario selectedCase()
 {
 	const auto * value = std::getenv("NH_OWNED_PREPARATION_CASE");
 	if(value && std::string_view(value) == "ordered-removal") return ownedPreparationIntegration::Scenario::ORDERED_REMOVAL;
-	if(value && std::string_view(value) == "incoming-clock") return ownedPreparationIntegration::Scenario::INCOMING_CLOCK;
-	throw std::runtime_error("Explicit ordered-removal or incoming-clock case required");
+	if(value && std::string_view(value) == "incoming-bonuses") return ownedPreparationIntegration::Scenario::INCOMING_BONUSES;
+	throw std::runtime_error("Explicit ordered-removal or incoming-bonuses case required");
 }
 }
 struct OwnedPreparationIntegrationDriver::State

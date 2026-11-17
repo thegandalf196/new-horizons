@@ -44,7 +44,7 @@ bool usesRules(const JsonNode & rules) { return usesFiniteResources(rules) || ne
 bool usesPerkRules(const JsonNode & rules) { return marker(rules, "commandPolicyVersion") || newHorizonsWarfare::enabled(rules); }
 bool usesPerkRules(const CGHeroInstance * hero)
 {
-	return hero && usesPerkRules(hero->getPerkState().rules);
+	return hero && usesPerkRules(hero->getPerkState().getRules());
 }
 void validateRulesSerialization(const JsonNode & rules, bool supported)
 {

@@ -22,7 +22,7 @@ using detail::resolve;
 
 int selectedTier(const PerkState & state, const PerkSelection & choice)
 {
-	const auto definition = perkDefinition(state.rules, choice.skillId, choice.perkId);
+	const auto definition = perkDefinition(state.getRules(), choice.skillId, choice.perkId);
 	require(definition && definition->effect["status"].String() == "active",
 		"active authored starting perk " + choice.perkId);
 	const int tier = perkRequiredRank(definition->requiredRank);
@@ -61,15 +61,15 @@ namespace
 {
 std::vector<PerkOfferCandidate> referenceCandidates(const PerkState & state, const std::string & skillId, int tier)
 {
-	if(!usesPerkRules(state.rules) || tier <= 0 || tier > 3)
+	if(!usesPerkRules(state.getRules()) || tier <= 0 || tier > 3)
 		return {};
 	state.validate();
-	if(usesUnifiedSkillProgression(state.rules) && state.hasPerkForTier(skillId, tier))
+	if(usesUnifiedSkillProgression(state.getRules()) && state.hasPerkForTier(skillId, tier))
 		return {};
 	std::vector<PerkOfferCandidate> result;
-	if(!state.rules["skills"].isStruct())
+	if(!state.getRules()["skills"].isStruct())
 		return {};
-	const auto & skillsMap = state.rules["skills"].Struct();
+	const auto & skillsMap = state.getRules()["skills"].Struct();
 	const auto it = skillsMap.find(skillId);
 	if(it == skillsMap.end())
 		return {};
@@ -86,7 +86,7 @@ std::vector<PerkOfferCandidate> referenceCandidates(const PerkState & state, con
 		const int requiredRank = perkRequiredRank(perkNode["requires"].String());
 		if(requiredRank != tier)
 			continue;
-		if(usesUnifiedSkillProgression(state.rules) && !state.canAcquirePerk(skillId, perkId, tier))
+		if(usesUnifiedSkillProgression(state.getRules()) && !state.canAcquirePerk(skillId, perkId, tier))
 			continue;
 		result.push_back(PerkOfferCandidate{
 			{skillId, perkId},
@@ -100,9 +100,9 @@ std::vector<PerkOfferCandidate> referenceCandidates(const PerkState & state, con
 std::vector<PerkOfferCandidate> referenceNext(const PerkState & state,
 	const std::function<int(const std::string &)> & rankLookup)
 {
-	if(!usesUnifiedSkillProgression(state.rules)) return {};
+	if(!usesUnifiedSkillProgression(state.getRules())) return {};
 	state.validate();
-	for(const auto & [skillId, definition] : state.rules["skills"].Struct())
+	for(const auto & [skillId, definition] : state.getRules()["skills"].Struct())
 	{
 		const int rank = rankLookup(skillId);
 		if(rank < 0 || rank > 3)
@@ -129,10 +129,10 @@ void initialize(PerkState & state, const JsonNode & development, HeroTypeID hero
 		return;
 	}
 	validateStartingPerkProfiles(development["startingSkills"]);
-	require(usesUnifiedSkillProgression(state.rules), "starting defaults require unified Skill progression");
+	require(usesUnifiedSkillProgression(state.getRules()), "starting defaults require unified Skill progression");
 	auto proposed = state;
 	proposed.validate();
-	for(const auto & choice : proposed.selected)
+	for(const auto & choice : proposed.getSelected())
 		require(rank(choice.skillId) >= selectedTier(proposed, choice), "owned authored starting perk rank");
 	Preferences preferred;
 	appendPreferences(preferred, proposed, prototype);

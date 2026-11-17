@@ -8,7 +8,7 @@
 void projectedInjuryLifecycle::before(HypotheticBattle & battle, std::span<const BattleStackAttacked> hits)
 {
 	for(const auto & hit : hits)
-		if(const auto unit = battle.getForUpdate(hit.stackAttacked); unit && !unit->isTimeStopped())
+		if(const auto unit = battle.getForUpdate(hit.stackAttacked); unit)
 			unit->removeUnitBonus(Bonus::UntilTakingIndirectDamage);
 }
 void projectedInjuryLifecycle::after(HypotheticBattle & battle, std::span<const BattleStackAttacked> hits)
@@ -26,6 +26,6 @@ void projectedInjuryLifecycle::after(HypotheticBattle & battle, std::span<const 
 			unit->guardianSpiritHitPoints = 0;
 			unit->guardianSpiritRoundsRemaining = 0;
 		}
-		else if(!unit->isTimeStopped()) unit->removeUnitBonus(remove);
+		else unit->removeUnitBonus(remove);
 	}
 }

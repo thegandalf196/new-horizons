@@ -340,7 +340,7 @@ TEST_F(NewHorizonsSpellwardTest, PlannedPerkCannotBeOfferedOrForceSelectedAndAdd
 	}
 	EXPECT_THROW(defenderSideHero->applyPerkSelection({std::string(warcastingSkillId), std::string(spellwardPerkId)}),
 		std::runtime_error);
-	EXPECT_TRUE(defenderSideHero->getPerkState().selected.empty());
+	EXPECT_TRUE(defenderSideHero->getPerkState().getSelected().empty());
 
 	const auto raw = rawDamage(attackerSideHero);
 	EXPECT_EQ(forecastDamage(attackerSideHero, battle(), protectedStack), raw);
@@ -359,7 +359,7 @@ TEST_F(NewHorizonsSpellwardTest, RankLossReacquisitionAndHypnotizeUseCurrentCont
 
 	EXPECT_THROW(defenderSideHero->applyPerkSelection(
 		{std::string(warcastingSkillId), std::string(spellwardPerkId)}), std::runtime_error);
-	ASSERT_EQ(defenderSideHero->getPerkState().selected.size(), 1u);
+	ASSERT_EQ(defenderSideHero->getPerkState().getSelected().size(), 1u);
 
 	defenderSideHero->setSecSkillLevel(warcasting(), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	EXPECT_FALSE(defenderSideHero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
@@ -369,7 +369,7 @@ TEST_F(NewHorizonsSpellwardTest, RankLossReacquisitionAndHypnotizeUseCurrentCont
 	defenderSideHero->setSecSkillLevel(warcasting(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	EXPECT_TRUE(defenderSideHero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
 	EXPECT_EQ(forecastDamage(attackerSideHero, battle(), protectedStack), raw * 90 / 100);
-	ASSERT_EQ(defenderSideHero->getPerkState().selected.size(), 1u)
+	ASSERT_EQ(defenderSideHero->getPerkState().getSelected().size(), 1u)
 		<< "Rank reacquisition reuses the saved selection instead of adding a duplicate";
 
 	protectedStack->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
@@ -654,7 +654,7 @@ TEST_F(MasterSpellwardTest, R2CapturedPolicyRejectsPreviousEnclosingWritersAndCu
 	historicalR2Progression = true;
 	ASSERT_NO_FATAL_FAILURE(prepareMaster(false));
 	const auto globalPerks = gameState()->getHeroPerkRules();
-	const auto heroPerks = defenderSideHero->getPerkState().rules;
+	const auto heroPerks = defenderSideHero->getPerkState().getRules();
 	ASSERT_TRUE(globalPerks["perkProgressionPolicyVersion"].isNull());
 	ASSERT_EQ(globalPerks["offerWeightPolicyVersion"].Integer(), 2);
 	ASSERT_EQ(heroPerks["offerWeightPolicyVersion"].Integer(), 2);
@@ -662,7 +662,7 @@ TEST_F(MasterSpellwardTest, R2CapturedPolicyRejectsPreviousEnclosingWritersAndCu
 	ASSERT_TRUE(globalPerks["perkOfferNormalization"].isStruct());
 	ASSERT_EQ(gameState()->getMap().getSettings().getValue(
 		EGameSettings::HEROES_NEW_HORIZONS_PERKS), globalPerks);
-	const auto selected = defenderSideHero->getPerkState().selected;
+	const auto selected = defenderSideHero->getPerkState().getSelected();
 	const auto capturedClass = defenderSideHero->getPrimaryGrowthRules();
 
 	const auto rejectPrevious = [](auto & value)
@@ -695,8 +695,8 @@ TEST_F(MasterSpellwardTest, R2CapturedPolicyRejectsPreviousEnclosingWritersAndCu
 		EGameSettings::HEROES_NEW_HORIZONS_PERKS), globalPerks);
 	const auto * hero = restored.getHero(defenderSideHero->id);
 	ASSERT_NE(hero, nullptr);
-	EXPECT_EQ(hero->getPerkState().rules, heroPerks);
-	EXPECT_EQ(hero->getPerkState().selected, selected);
+	EXPECT_EQ(hero->getPerkState().getRules(), heroPerks);
+	EXPECT_EQ(hero->getPerkState().getSelected(), selected);
 	EXPECT_EQ(hero->getPrimaryGrowthRules(), capturedClass);
 	EXPECT_TRUE(hero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
 }
@@ -705,13 +705,13 @@ TEST_F(MasterSpellwardTest, StrictCapturedPolicyRejects1117EnclosingWritersAndCu
 {
 	ASSERT_NO_FATAL_FAILURE(prepareMaster(false));
 	const auto globalPerks = gameState()->getHeroPerkRules();
-	const auto heroPerks = defenderSideHero->getPerkState().rules;
+	const auto heroPerks = defenderSideHero->getPerkState().getRules();
 	ASSERT_EQ(globalPerks["offerWeightPolicyVersion"].Integer(), 2);
-	ASSERT_EQ(globalPerks["perkProgressionPolicyVersion"].Integer(), 1);
+	ASSERT_EQ(globalPerks["perkProgressionPolicyVersion"].Integer(), 2);
 	ASSERT_EQ(heroPerks, globalPerks);
 	ASSERT_EQ(gameState()->getMap().getSettings().getValue(
 		EGameSettings::HEROES_NEW_HORIZONS_PERKS), globalPerks);
-	const auto selected = defenderSideHero->getPerkState().selected;
+	const auto selected = defenderSideHero->getPerkState().getSelected();
 	const auto capturedClass = defenderSideHero->getPrimaryGrowthRules();
 
 	const auto rejectPrevious = [](auto & value)
@@ -742,8 +742,8 @@ TEST_F(MasterSpellwardTest, StrictCapturedPolicyRejects1117EnclosingWritersAndCu
 		EGameSettings::HEROES_NEW_HORIZONS_PERKS), globalPerks);
 	const auto * hero = restored.getHero(defenderSideHero->id);
 	ASSERT_NE(hero, nullptr);
-	EXPECT_EQ(hero->getPerkState().rules, heroPerks);
-	EXPECT_EQ(hero->getPerkState().selected, selected);
+	EXPECT_EQ(hero->getPerkState().getRules(), heroPerks);
+	EXPECT_EQ(hero->getPerkState().getSelected(), selected);
 	EXPECT_EQ(hero->getPrimaryGrowthRules(), capturedClass);
 	EXPECT_TRUE(hero->hasActivePerk(std::string(warcastingSkillId), std::string(spellwardPerkId)));
 }

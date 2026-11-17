@@ -453,13 +453,7 @@ TEST_F(NewHorizonsManaLeechesTest, HistoricalProjectedManaReadRetainsVisibleHero
 	auto model = std::make_shared<HypotheticBattle>(&environment, callback);
 	EXPECT_EQ(model->getProjectedManaAvailable(BattleSide::ATTACKER), attackerSideHero->getManaAvailable());
 	EXPECT_EQ(model->getProjectedManaAvailable(BattleSide::DEFENDER), defenderSideHero->getManaAvailable());
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	auto armed = std::make_shared<HypotheticBattle>(&environment, callback);
-	const auto ward = armed->resolveProjectedCounterspell(BattleSide::ATTACKER,
-		SpellID(SpellID::MAGIC_ARROW).toSpell());
-	ASSERT_TRUE(ward.resolutionKnown);
-	ASSERT_TRUE(ward.manaCost.has_value());
-	EXPECT_EQ(ward.negated, defenderSideHero->getManaAvailable() >= *ward.manaCost);
+
 }
 TEST_F(NewHorizonsManaLeechesTest, HiddenOpponentPoolsRemainUnknown)
 {

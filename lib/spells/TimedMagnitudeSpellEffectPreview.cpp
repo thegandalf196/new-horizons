@@ -20,7 +20,7 @@ SpellEffectPreview quantity(const std::string & label, int64_t amount, int32_t s
 }
 }
 std::optional<SpellEffectPreview> timedMagnitudeSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback * callback, const JsonNode & rules, int32_t power, int32_t coefficient, int32_t empower, bool followup)
+	const CBattleInfoCallback * callback, const JsonNode & rules, int32_t power, int32_t coefficient, int32_t empower)
 {
 	if(!rulesActive(rules) || rules["rulesetVersion"].Integer() != SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
 		return std::nullopt;
@@ -46,17 +46,17 @@ std::optional<SpellEffectPreview> timedMagnitudeSpellEffectPreview(const CGHeroI
 		return result;
 	}
 	const bool extend = callback && heroCastExtendAvailable(hero, spell, *callback, std::clamp(hero.getEffectLevel(&spell), 0, 3));
-	const bool echoed = followup && hasMetamagicPerk(&hero, METAMAGIC_ECHOED_DURATION);
+
 	if(spell.getJsonKey() == "new-horizons:entangle")
 		return quantity("entangle", durationWithCastExtensions(entangleBaseDuration(power, coefficient, empower,
-			hero.hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.rootcaller")), extend, echoed));
+			hero.hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.rootcaller")), extend, false));
 	if(spell.getId() == SpellID::MISFORTUNE)
 	{
 		const auto chance = misfortuneChanceMultiplier(power, coefficient, empower,
 			hero.hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.misfortuneWeaver"));
 		auto result = quantity("misfortune", static_cast<int64_t>(casterEnchantValue(&hero, spell.getId(), chance)), 100);
 		result.secondary = SpellEffectPreview::Quantity{durationWithCastExtensions(
-			misfortuneBaseDuration(power, coefficient, empower), extend, echoed), 1, "new-horizons.spellbook.unit.number"};
+			misfortuneBaseDuration(power, coefficient, empower), extend, false), 1, "new-horizons.spellbook.unit.number"};
 		result.qualificationKey = "new-horizons.spellbook.misfortuneChance";
 		return result;
 	}

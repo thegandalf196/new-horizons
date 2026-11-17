@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../server/LegacyEstatesCapture.h"
 #include "PerkInitializationReference.h"
 #include "../../lib/entities/hero/NewHorizonsPerkOperation.h"
@@ -16,7 +17,8 @@ constexpr auto AUTHORITY = "new-horizons:authority";
 PerkState fresh()
 {
 	PerkState state;
-	state.rules = estatesTest::legacyEstatesPerks();
+	auto rules = estatesTest::legacyEstatesPerks();
+	state.replaceRules(std::move(rules));
 	return state;
 }
 JsonNode development() { return estatesTest::legacyEstatesHeroes(); }
@@ -40,8 +42,8 @@ void compareInitialization(const JsonNode & rules, HeroTypeID hero, const std::m
 		[&](const auto & skill) { return lookup(optimizedCalls, optimizedRng, skill); });
 	EXPECT_EQ(referenceCalls, optimizedCalls);
 	EXPECT_EQ(referenceRng, optimizedRng);
-	EXPECT_EQ(reference.selected, optimized.selected);
-	EXPECT_EQ(reference.rules, optimized.rules);
+	EXPECT_EQ(reference.getSelected(), optimized.getSelected());
+	EXPECT_EQ(reference.getRules(), optimized.getRules());
 	EXPECT_EQ(reference.toJson(), optimized.toJson());
 	CMemorySerializer referenceBytes, optimizedBytes;
 	referenceBytes.oser & reference;
@@ -79,16 +81,16 @@ TEST(NewHorizonsPerkOperation, ExpertAndExplicitPreferencesPreserveCallbacksChoi
 TEST(NewHorizonsPerkOperation, CommitIsExplicitAndCannotTargetAnotherState)
 {
 	auto state = fresh();
-	const auto original = state.selected;
+	const auto original = state.getSelected();
 	PerkSelectionOperation operation(state);
 	const auto choice = operation.candidates(AUTHORITY, 1).front().selection;
 	operation.select(choice.skillId, choice.perkId, 1);
-	EXPECT_EQ(state.selected, original);
+	EXPECT_EQ(state.getSelected(), original);
 	auto other = state;
 	EXPECT_THROW(operation.commit(other), std::logic_error);
-	EXPECT_EQ(other.selected, original);
+	EXPECT_EQ(other.getSelected(), original);
 	operation.commit(state);
-	EXPECT_EQ(state.selected, (std::vector<PerkSelection>{choice}));
+	EXPECT_EQ(state.getSelected(), (std::vector<PerkSelection>{choice}));
 	EXPECT_THROW(operation.commit(state), std::logic_error);
 	EXPECT_THROW(operation.select(choice.skillId, choice.perkId, 1), std::logic_error);
 }
@@ -102,29 +104,31 @@ TEST(NewHorizonsPerkOperation, FailedLaterSelectionPreservesWorkingAndPublishedC
 	const auto working = operation.selections();
 	EXPECT_THROW(operation.select(choice.skillId, choice.perkId, 1), std::runtime_error);
 	EXPECT_EQ(operation.selections(), working);
-	EXPECT_TRUE(state.selected.empty());
+	EXPECT_TRUE(state.getSelected().empty());
 	operation.commit(state);
-	EXPECT_EQ(state.selected, working);
+	EXPECT_EQ(state.getSelected(), working);
 }
 
 TEST(NewHorizonsPerkOperation, InvalidUnrequestedCatalogueRowStillRejectsEveryRawBoundary)
 {
 	auto state = fresh();
-	state.rules["skills"].Struct().rbegin()->second["perks"].Vector().back()["requires"].String() = "invalid";
-	const auto saved = state.rules;
-	EXPECT_THROW((PerkSelectionOperation(state)), std::runtime_error);
-	EXPECT_THROW(state.validate(), std::runtime_error);
-	EXPECT_THROW(state.canAcquirePerk(AUTHORITY, "new-horizons:authority.massedRanks", 1), std::runtime_error);
-	EXPECT_THROW(state.select(AUTHORITY, "new-horizons:authority.massedRanks", 1), std::runtime_error);
-	EXPECT_EQ(state.rules, saved);
-	EXPECT_TRUE(state.selected.empty());
+	const auto before = state.toJson();
+	auto malformed = state.getRules();
+	malformed["skills"].Struct().rbegin()->second["perks"].Vector().back()["requires"].String() = "invalid";
+	EXPECT_THROW(state.replaceRules(malformed), std::runtime_error);
+	EXPECT_THROW((ValidatedPerkRules(malformed)), std::runtime_error);
+	auto payload = before;
+	payload["rules"] = malformed;
+	EXPECT_THROW(PerkState::fromJson(payload), std::runtime_error);
+	EXPECT_EQ(state.toJson(), before);
+	EXPECT_NO_THROW((PerkSelectionOperation(state)));
 }
 
 TEST(NewHorizonsPerkOperation, InvalidLateRankLeavesOriginalInitializerStateUntouched)
 {
 	auto state = fresh();
 	const auto original = state.toJson();
-	const auto lastSkill = state.rules["skills"].Struct().rbegin()->first;
+	const auto lastSkill = state.getRules()["skills"].Struct().rbegin()->first;
 	EXPECT_THROW(initializeStartingHeroPerks(state, development(), HeroTypeID::NONE, {}, {},
 		[&](const std::string & skill) { return skill == AUTHORITY ? 3 : (skill == lastSkill ? 4 : 0); }), std::runtime_error);
 	EXPECT_EQ(state.toJson(), original);

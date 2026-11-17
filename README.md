@@ -8,9 +8,9 @@
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
-Source metadata targets **0.92.0**. The latest published release is
-[0.92.0 Early Access](https://github.com/thegandalf196/new-horizons/releases/tag/v0.92.0).
-See the [0.92.0 changelog](docs/NEW_HORIZONS_CHANGELOG.md#0920-early-access) for its scope.
+Source metadata targets **0.92.0**. The initial 0.92.0 package was withdrawn
+because its perk progression did not match the intended rules. Its replacement
+is under implementation and validation.
 The Wiki describes published rules; source metadata does not establish publication.
 
 ## Before you begin
@@ -73,7 +73,7 @@ There’s room for heroes who work across the divide, too. Warcasting grants Arc
 
 That question matters just as much.
 
-Skills retain the familiar Basic, Advanced, and Expert ranks. Each has ten perk alternatives and room for at most three selected perks, including choices from accessible earlier tiers when their rank and perk prerequisites are met. At each ordinary level-up, up to four fixed offers let you choose one advancement: a Skill rank or a perk. A perk offer opens that Skill’s complete eligible pool. External teachers grant their normal Skill ranks without an automatic perk; fresh default heroes still begin with two Basic Skills and one authored Basic perk for each.
+Skills retain the familiar Basic, Advanced, and Expert ranks. Each has ten perk alternatives and permits exactly one selected perk from each tier. At each ordinary level-up, up to four fixed offers let you choose one advancement: a Skill rank or a perk. A perk offer opens that Skill’s complete eligible pool for its next unfilled tier. External teachers grant their normal Skill ranks without an automatic perk; fresh default heroes begin with two Basic Skills and no perks.
 
 An offensive commander might take Shock Assault, letting attacks under Charge! ignore part of the enemy’s Defense. Another might choose Spearhead to strengthen Charge! further. Those choices give the same Orders different tactical weight.
 

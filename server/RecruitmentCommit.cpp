@@ -22,7 +22,7 @@ Payment prepare(const CGDwelling & source, const CArmedInstance & destination,
 	result.owner = destination.getOwner();
 	const auto * definition = creature.toCreature();
 	if(buyer && definition && definition->warMachine != ArtifactID::NONE
-		&& newHorizonsEstates::usesRevisedPolicy(buyer->getPerkState().rules))
+		&& newHorizonsEstates::usesRevisedPolicy(buyer->getPerkState().getRules()))
 	{
 		result.artifact = newHorizonsEstates::artifactPurchaseQuote(
 			newHorizonsEstates::recruitmentCost(source.getRecruitmentCost(creature), count, false), buyer);

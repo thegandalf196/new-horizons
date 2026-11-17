@@ -232,38 +232,7 @@ TEST_F(NewHorizonsTheChosenTest, IneligibleOrImmuneDestinationPreservesOldRecipi
 	EXPECT_TRUE(chosenBonuses(second)->empty());
 }
 
-TEST_F(NewHorizonsTheChosenTest, TimeStoppedOldOrNewRecipientRejectsWithoutSpendingActionOrMana)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_TRUE(cast(first));
-	advanceRound();
-	const auto mana = attackerSideHero->getManaAvailable();
-	auto stasis = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	stasis->parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(BattleSide::DEFENDER));
-	first->addNewBonus(stasis);
-	ASSERT_TRUE(first->isTimeStopped());
-	const auto oldBonuses = chosenBonuses(first);
-	ASSERT_EQ(oldBonuses->size(), 4u);
-	const int oldTurns = oldBonuses->front()->turnsRemain;
-	EXPECT_FALSE(cast(second));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	EXPECT_EQ(chosenBonuses(first)->size(), 4u);
-	EXPECT_TRUE(chosenBonuses(second)->empty());
-	for(const auto & bonus : *chosenBonuses(first))
-		EXPECT_EQ(bonus->turnsRemain, oldTurns);
 
-	first->removeBonuses(Selector::type()(BonusType::TIME_STOP));
-	second->addNewBonus(stasis);
-	EXPECT_FALSE(cast(second));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	EXPECT_EQ(chosenBonuses(first)->size(), 4u);
-	EXPECT_TRUE(chosenBonuses(second)->empty());
-	second->removeBonuses(Selector::type()(BonusType::TIME_STOP));
-	ASSERT_TRUE(cast(second)) << "Rejected casts must preserve the available Hero Action";
-	EXPECT_TRUE(chosenBonuses(first)->empty());
-	EXPECT_EQ(chosenBonuses(second)->size(), 4u);
-}
 
 TEST(NewHorizonsTheChosenRulesTest, RawPowerAndSchoolOnlyDurationUsesCapturedKnobs)
 {

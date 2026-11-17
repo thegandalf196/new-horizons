@@ -11,6 +11,7 @@
 #pragma once
 
 #include <limits>
+#include <span>
 #include <map>
 #include <utility>
 
@@ -26,10 +27,11 @@
 #include "../bonuses/Bonus.h"
 #include "NewHorizonsVengefulVines.h"
 #include "NewHorizonsLifeDrainProjection.h"
-#include "NewHorizonsMetamagicMarks.h"
+#include "SpellEffectScalingProfile.h"
 #include "../entities/hero/NewHorizonsSchoolSpellcraft.h"
 
 struct Query;
+struct BattleStackAttacked;
 class IBattleState;
 class CreatureService;
 class CMap;
@@ -155,22 +157,10 @@ public:
 	virtual bool getSelectiveDispel() const { return false; }
 	virtual bool getMassSlow() const { return false; }
 	virtual int32_t getShadowGiftSacrificePercent() const { return 0; }
-	/// An immediate additional cast granted by Tower Metamagic.  This is an
-	/// authoritative action flag, not a client-side effect hint.
 	virtual AutomaticHeroCastReceipt getAutomaticHeroCast() const { return {}; }
-	virtual bool isMetamagicFollowup() const { return false; }
-	virtual bool isMetamagicGrand() const { return false; }
-	virtual uint32_t getMetamagicTargetUnitId() const { return std::numeric_limits<uint32_t>::max(); }
-	virtual int32_t getMetamagicManaRefund() const { return 0; }
 	virtual std::optional<newHorizonsHeroLuck::Receipt> getHeroLuck() const { return std::nullopt; }
 
 	virtual OptionalValue64 getEffectValue() const = 0;
-	/// Ward side is set by the authoritative battle action processor when this
-	/// hero spell consumes or collapses an armed Counterspell.
-	virtual BattleSide getCounterspellSide() const { return BattleSide::NONE; }
-	virtual bool isCounterspellNegated() const { return false; }
-	/// Exact Mana paid by the armed opposing ward for this accepted cast.
-	virtual int32_t getCounterspellManaSpent() const { return 0; }
 
 	virtual bool isForceMassive() const = 0;
 };
@@ -212,16 +202,9 @@ public:
 	bool getMassSlow() const override;
 	int32_t getShadowGiftSacrificePercent() const override;
 	AutomaticHeroCastReceipt getAutomaticHeroCast() const override;
-	bool isMetamagicFollowup() const override;
-	bool isMetamagicGrand() const override;
-	uint32_t getMetamagicTargetUnitId() const override;
-	int32_t getMetamagicManaRefund() const override;
 	std::optional<newHorizonsHeroLuck::Receipt> getHeroLuck() const override;
 
 	OptionalValue64 getEffectValue() const override;
-	BattleSide getCounterspellSide() const override;
-	bool isCounterspellNegated() const override;
-	int32_t getCounterspellManaSpent() const override;
 
 	bool isForceMassive() const override;
 
@@ -238,14 +221,9 @@ public:
 	void setMassSlow(bool value);
 	void setShadowGiftSacrificePercent(int32_t value);
 	void setAutomaticHeroCast(AutomaticHeroCastReceipt value);
-	void setMetamagicFollowup(bool value);
-	void setMetamagicGrand(bool value);
-	void setMetamagicTargetUnitId(uint32_t value);
-	void setMetamagicManaRefund(int32_t value);
 	void setHeroLuck(const newHorizonsHeroLuck::Receipt & value);
 
 	void setEffectValue(Value64 value);
-	void setCounterspell(BattleSide wardSide, bool negated, int32_t manaSpent = 0);
 
 	///only apply effects to specified targets
 	void applyEffects(ServerCallback * server, const Target & target, bool indirect = false, bool ignoreImmunity = false) const;
@@ -287,14 +265,7 @@ private:
 	bool massSlow = false;
 	int32_t shadowGiftSacrificePercent = 0;
 	AutomaticHeroCastReceipt automaticHeroCast;
-	bool metamagicFollowup = false;
-	bool metamagicGrand = false;
-	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
-	int32_t metamagicManaRefund = 0;
 	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
-	BattleSide counterspellSide = BattleSide::NONE;
-	bool counterspellNegated = false;
-	int32_t counterspellManaSpent = 0;
 
 	Mode mode;
 	const CSpell * spell;
@@ -488,11 +459,9 @@ public:
 	/// Shared raw pool projections, before per-target resistance or mitigation.
 	virtual int64_t getStormOfDaggersDamagePerTarget(int32_t) const { return 0; }
 	virtual int64_t getStormOfDaggersTotalDamage(int32_t) const { return 0; }
-	/// True when this cast consumes an additional Metamagic Spell Action.
-	/// Exposed on the common Mechanics facade so Lua spell effects can preserve
-	/// authoritative cast provenance without depending on BaseMechanics.
 	virtual AutomaticHeroCastReceipt getAutomaticHeroCast() const { return {}; }
-	virtual bool isMetamagicFollowup() const { return false; }
+	virtual std::span<const uint32_t> getResolvedHeroRecipients() const { return {}; }
+	virtual std::span<const BattleStackAttacked> getResolvedHeroInjuries() const { return {}; }
 	virtual bool usesNewHorizonsMagic() const { return false; }
 	/// True only for a saved New Horizons magic-rules v3 battle.
 	virtual bool usesNewHorizonsMagicV3() const { return false; }
@@ -583,9 +552,6 @@ public:
 	newHorizonsMagic::FrailtyAccumulation getRecipientFrailtyPlan(const battle::Unit * recipient) const;
 	int64_t getRecipientHexOfPainDamageSharePercent(const battle::Unit * recipient) const;
 	int32_t getRecipientSoulChainEchoBasisPoints(const battle::Unit * recipient) const;
-	int32_t getArcaneBreachMarkBasisPoints() const;
-	int32_t getRecipientArcaneBreachMarkBasisPoints(const battle::Unit * recipient) const;
-	int32_t getRecipientSpellLockDuration(const battle::Unit * recipient) const;
 	int64_t getPlagueTickDamage() const;
 	int64_t getPhantomArmyIntegrity(const battle::Unit * source) const;
 	/// Guardian Spirit pool after SP-only modifiers, Healer and whole-pool Guardian.
@@ -657,9 +623,6 @@ public:
 	SpellID getCureAffliction() const override;
 	std::string getCurePhysicalAffliction() const override;
 	std::vector<std::pair<int32_t, SpellID>> getPurifyChoices() const override;
-	BattleSide getCounterspellSide() const;
-	bool isCounterspellNegated() const;
-	int32_t getCounterspellManaSpent() const;
 	bool isSelectiveDispel() const override;
 	bool isNewHorizonsCure() const override;
 	bool isNewHorizonsResurrection() const override;
@@ -670,12 +633,8 @@ public:
 	int64_t getStormOfDaggersDamagePerTarget(int32_t selectedTargetCount) const override;
 	int64_t getStormOfDaggersTotalDamage(int32_t selectedTargetCount) const override;
 	AutomaticHeroCastReceipt getAutomaticHeroCast() const override;
-	bool isMetamagicFollowup() const override;
-	bool isMetamagicGrand() const;
 	JsonNode getCapturedMdrPenetration() const override;
 	int32_t getPlaguePropagationLimit() const override;
-	uint32_t getMetamagicTargetUnitId() const;
-	int32_t getMetamagicManaRefund() const;
 	bool usesNewHorizonsMagic() const override;
 	bool usesNewHorizonsMagicV3() const override;
 	bool usesNewHorizonsTemporaryMagicDispel() const override;
@@ -736,6 +695,7 @@ protected:
 	BaseMechanics(const IBattleCast * event);
 
 private:
+	void initializeEffectDuration(const IBattleCast * event);
 	newHorizonsHeroes::SpellcraftCastContext spellcraftContext;
 	int32_t herbalSurgeonRegenerationPercent = 0;
 	void captureOriginalSpellSpecialties(const IBattleCast * event);
@@ -769,21 +729,12 @@ private:
 	SpellID cureAffliction = SpellID::NONE;
 	std::string curePhysicalAffliction;
 	std::vector<std::pair<int32_t, SpellID>> purifyChoices;
-	BattleSide counterspellSide = BattleSide::NONE;
-	bool counterspellNegated = false;
-	int32_t counterspellManaSpent = 0;
 	bool selectiveDispel = false;
 	bool massSlow = false;
 	int32_t shadowGiftSacrificePercent = 0;
 	AutomaticHeroCastReceipt automaticHeroCast;
-	bool metamagicFollowup = false;
-	bool metamagicGrand = false;
-	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
-	uint32_t metamagicFirstTargetUnitId = std::numeric_limits<uint32_t>::max();
-	bool metamagicFocusedPairingEligible = false;
 	bool overwhelmingFormulaEligible = false;
 	uint64_t overwhelmingFormulaToken = 0;
-	int32_t metamagicManaRefund = 0;
 
 	bool forceMassive = false;
 

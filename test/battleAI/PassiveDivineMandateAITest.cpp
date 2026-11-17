@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/PassiveDivineMandateProjection.h"
 #include "../../AI/BattleAI/FixedActionValue.h"
@@ -50,8 +51,8 @@ protected:
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:divineMandate")),
 			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		auto & perks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		perks.rules["divineMandatePolicy"]["version"].Integer() = 2;
-		perks.selected.clear();
+		perkStateFixture::editRules(perks, [&](JsonNode & rules) { rules["divineMandatePolicy"]["version"].Integer() = 2; });
+		perks.replaceSelected({});
 		setTestSpellPointTotal(attackerSideHero, 0);
 		startBattle();
 		beginCombat();
@@ -111,7 +112,7 @@ protected:
 	void completePaidCure(HypotheticBattle & state)
 	{
 		const auto side = BattleSide::ATTACKER;
-		const auto allowance = state.prepareHeroSpellAllowance(side, SpellID::CURE, false, false);
+		const auto allowance = state.prepareHeroSpellAllowance(side, SpellID::CURE);
 		ASSERT_TRUE(allowance);
 		const spells::Target aim{spells::Destination(state.battleGetUnitByID(recipient))};
 		spells::BattleCast cast(&state, attackerSideHero, spells::Mode::HERO, SpellID(SpellID::CURE).toSpell());
@@ -119,8 +120,7 @@ protected:
 		ASSERT_TRUE(mechanics->canBeCastAt(aim));
 		ASSERT_TRUE(state.beginProjectedHeroAction(side, *allowance));
 		mechanics->castEval(state.getServerCallback(), aim);
-		ASSERT_TRUE(state.projectAcceptedHeroSpell(side, SpellID::CURE, recipient,
-			false, false, false, false, *allowance));
+		ASSERT_TRUE(state.projectAcceptedHeroSpell(side, SpellID::CURE, recipient, *allowance));
 	}
 	void prepareSingleProtectionThreat(bool gale)
 	{
@@ -201,11 +201,6 @@ protected:
 		const auto nativeCasts = battle()->getCastSpells(side);
 		auto outcome = std::make_shared<HypotheticBattle>(environment.get(), postOrder);
 		const auto * definition = pool.front().spell.toSpell();
-		const auto ward = outcome->resolveProjectedCounterspell(side, definition);
-		ASSERT_TRUE(ward.resolutionKnown);
-		ASSERT_TRUE(ward.negated);
-		ASSERT_FALSE(*ward.negated);
-		ASSERT_TRUE(outcome->projectAutomaticCounterspell(ward));
 		const auto action = newHorizonsPassiveDivineMandate::automaticSpellAction(*outcome,
 			side, pool.front().spell, target.aimUnitId);
 		spells::BattleCast cast(outcome.get(), attackerSideHero, spells::Mode::HERO, definition);
@@ -347,11 +342,6 @@ TEST_F(PassiveDivineMandateAITest, AutomaticCastAfterChildRoundResetKeepsPerComb
 	receipt.issuingRound = effects->order.issuedRound;
 	const auto * spell = SpellID(SpellID::CURE).toSpell();
 	ASSERT_TRUE(spells::automaticHeroCastAllowed(child, attackerSideHero, spell, receipt));
-	const auto ward = child.resolveProjectedCounterspell(side, spell);
-	ASSERT_TRUE(ward.resolutionKnown);
-	ASSERT_TRUE(ward.negated);
-	ASSERT_FALSE(*ward.negated);
-	ASSERT_TRUE(child.projectAutomaticCounterspell(ward));
 	const auto mana = child.getProjectedManaAvailable(side);
 	const spells::Target aim{spells::Destination(child.battleGetUnitByID(recipient))};
 	spells::BattleCast cast(&child, attackerSideHero, spells::Mode::HERO, spell);
@@ -406,8 +396,8 @@ TEST_F(PassiveDivineMandateAITest, UnresolvedRoundTransitionDoesNotResetComplete
 TEST_F(PassiveDivineMandateAITest, AbsentPassivePolicyRetainsHistoricalCastCounterFallback)
 {
 	auto & perks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	perks.rules.Struct().erase("divineMandatePolicy");
-	ASSERT_FALSE(newHorizonsPassiveDivineMandate::enabled(perks.rules));
+	perkStateFixture::editRules(perks, [&](JsonNode & rules) { rules.Struct().erase("divineMandatePolicy"); });
+	ASSERT_FALSE(newHorizonsPassiveDivineMandate::enabled(perks.getRules()));
 	setTestSpellPointTotal(attackerSideHero, 100);
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -476,7 +466,7 @@ TEST_F(PassiveDivineMandateAITest, AutomaticFreeHeroCastInspiresWithoutAnotherMa
 	mechanics->castEval(child->getServerCallback(), target);
 	EXPECT_EQ(child->getProjectedManaAvailable(side), mana);
 	EXPECT_EQ(arcaneInspiration::activeProfile(*child->battleGetUnitByID(recipient), PlayerColor(0)).corePercent, 5);
-	EXPECT_FALSE(child->prepareHeroSpellAllowance(side, spell->getId(), false, false));
+	EXPECT_FALSE(child->prepareHeroSpellAllowance(side, spell->getId()));
 	EXPECT_FALSE(child->prepareHeroOrderAllowance(side));
 	EXPECT_EQ(randomState(), random);
 	EXPECT_FALSE(battle()->battleGetUnitByID(recipient)->hasBonus(CSelector(arcaneInspiration::isActive)));

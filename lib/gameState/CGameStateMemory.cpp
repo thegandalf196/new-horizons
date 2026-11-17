@@ -39,7 +39,7 @@ ReplayPayload CGameState::saveReplaySnapshot()
 	NativeBonusGraphAccess graphAccess;
 	// a snapshot is stored inside the replay log itself, so the log must not be part of it.
 	// Swapping keeps the serialized layout identical - an empty log is written instead.
-	ReplayLog logBackup;
+	ReplayLog logBackup = replayLog.snapshotPlaceholder();
 	std::swap(logBackup, replayLog);
 	const auto restoreLog = vstd::makeScopeGuard([this, &logBackup]() { std::swap(logBackup, replayLog); });
 

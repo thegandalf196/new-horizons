@@ -10,7 +10,7 @@
 
 ReplayPayload capturePreparedReplaySnapshot(CGameState & state, bool recording)
 {
-	if(!recording || !state.replayLog.empty())
+	if(!recording || !state.replayLog.isCaptureEnabled() || !state.replayLog.empty())
 		return {};
 	// Complete the legacy log swap before acquiring the batch reservation.
 	// Older plans remain invalidated by that real swap, including on failure.

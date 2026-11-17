@@ -24,7 +24,7 @@ void GameStatePackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const auto * hero = gs.getHero(pack.heroId);
 	if(hero && (pack.perkOnly || pack.restoredOffer
-		|| (!newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules)
+		|| (!newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().getRules())
 			&& pack.skills.empty() && !pack.perks.empty())))
 	{
 		newHorizonsHeroes::applyLevelUpOffer(gs.getHero(pack.heroId), pack);

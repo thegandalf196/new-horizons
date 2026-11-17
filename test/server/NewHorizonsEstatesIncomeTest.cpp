@@ -1,5 +1,6 @@
 /* Part of VCMI engine; GNU General Public License v2.0 or later; see license.txt */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "NewHorizonsEstatesFixture.h"
 
 namespace
@@ -63,9 +64,12 @@ TEST_F(NewHorizonsEstatesIncomeTest, PlannedResourcePerkCannotBeSelectedAndOrdin
     // this hero alone retains a saved snapshot where Prosperity is planned.
     const std::string plannedPerk = "new-horizons:estates.prosperity";
     auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(first->getPerkState());
-    for(auto & perk : savedPerks.rules["skills"][ESTATES]["perks"].Vector())
-        if(perk["id"].String() == plannedPerk)
-            perk["effect"]["status"].String() = "planned";
+    perkStateFixture::editRules(savedPerks, [&](JsonNode & rules)
+    {
+	    for(auto & perk : rules["skills"][ESTATES]["perks"].Vector())
+	        if(perk["id"].String() == plannedPerk)
+	            perk["effect"]["status"].String() = "planned";
+    });
     ASSERT_NO_THROW(savedPerks.validate());
     const auto skill = SecondarySkill(SecondarySkill::decode(ESTATES));
     first->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);

@@ -17,7 +17,7 @@ PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
 	int32_t initialMana, const CGHeroInstance & hero, const PlayerState * ownerState)
 {
-	const auto capturedPolicy = policy(hero.getPerkState().rules);
+	const auto capturedPolicy = policy(hero.getPerkState().getRules());
 	const auto losingSide = CBattleInfoEssentials::otherSide(result.winner);
 	const auto & eligible = result.necromancyEligibilityCaptured
 		? result.necromancyEligibleCasualties[losingSide]

@@ -163,10 +163,8 @@ enum class StackStatusIconKind
 {
 	BATTLE_FORM,
 	FROZEN,
-	TIME_STOP,
 	CONFUSION,
 	ENTANGLE,
-	SPELL_LOCK,
 	DOOM,
 	DIVINE_RETRIBUTION_JUDGED,
 	TEMPORARY_CREATURES,
@@ -180,7 +178,7 @@ enum class StackStatusIconKind
 	REGENERATION,
 	SHADOW_GIFT_BUFF,
 	SHADOW_GIFT_CAP,
-	FOCUS_OR_ARCANE,
+	FOCUS_MAGIC,
 	ELEMENTAL_ATTUNEMENT,
 	ORDINARY
 };
@@ -198,10 +196,8 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 	{
 		case StackStatusIconKind::BATTLE_FORM: return -1;
 		case StackStatusIconKind::FROZEN: return 0;
-		case StackStatusIconKind::TIME_STOP: return 0;
 		case StackStatusIconKind::CONFUSION: return 0;
 		case StackStatusIconKind::ENTANGLE: return 1;
-		case StackStatusIconKind::SPELL_LOCK: return 1;
 		case StackStatusIconKind::DOOM: return 0;
 		case StackStatusIconKind::DIVINE_RETRIBUTION_JUDGED: return 1;
 		case StackStatusIconKind::VAMPIRISM: return 2;
@@ -215,7 +211,7 @@ inline int stackStatusPriority(StackStatusIconKind kind)
 		case StackStatusIconKind::REGENERATION: return 5;
 		case StackStatusIconKind::SHADOW_GIFT_BUFF: return 5;
 		case StackStatusIconKind::SHADOW_GIFT_CAP: return 6;
-		case StackStatusIconKind::FOCUS_OR_ARCANE: return 7;
+		case StackStatusIconKind::FOCUS_MAGIC: return 7;
 		case StackStatusIconKind::ELEMENTAL_ATTUNEMENT: return 6;
 		case StackStatusIconKind::ORDINARY: return 8;
 	}
@@ -238,9 +234,6 @@ inline StackStatusDisplayPlan stackStatusDisplayPlan(const std::vector<StackStat
 			return leftPriority < rightPriority;
 		if(visibleEntryKinds[left] == visibleEntryKinds[right])
 			return false;
-		if(visibleEntryKinds[left] == StackStatusIconKind::TIME_STOP
-			|| visibleEntryKinds[right] == StackStatusIconKind::TIME_STOP)
-			return visibleEntryKinds[left] == StackStatusIconKind::TIME_STOP;
 		if(visibleEntryKinds[left] == StackStatusIconKind::FROZEN
 			|| visibleEntryKinds[right] == StackStatusIconKind::FROZEN)
 			return visibleEntryKinds[left] == StackStatusIconKind::FROZEN;

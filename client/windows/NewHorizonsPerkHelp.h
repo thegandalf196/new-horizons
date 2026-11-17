@@ -29,7 +29,7 @@ inline std::optional<newHorizonsHeroes::SkillDefinition> skillDefinition(const C
 
 	try
 	{
-		return newHorizonsHeroes::perkSkill(hero->getPerkState().rules, skillId);
+		return newHorizonsHeroes::perkSkill(hero->getPerkState().getRules(), skillId);
 	}
 	catch(const std::exception &)
 	{
@@ -47,7 +47,7 @@ inline std::optional<newHorizonsHeroes::PerkDefinition> perkDefinition(const CGH
 
 	try
 	{
-		return newHorizonsHeroes::perkDefinition(hero->getPerkState().rules, skillId, perkId);
+		return newHorizonsHeroes::perkDefinition(hero->getPerkState().getRules(), skillId, perkId);
 	}
 	catch(const std::exception &)
 	{
@@ -77,7 +77,7 @@ inline std::optional<SecondarySkill> skillEntity(std::string_view skillId)
 inline std::string skillName(const CGHeroInstance * hero, std::string_view skillId)
 {
 	if(hero && skillId == "new-horizons:sylvanLuck")
-		return newHorizonsSylvanTactics::capturedSkillName(hero->getPerkState().rules);
+		return newHorizonsSylvanTactics::capturedSkillName(hero->getPerkState().getRules());
 	const auto definition = skillDefinition(hero, skillId);
 	const auto capturedName = definition ? definition->name : std::string();
 
@@ -108,7 +108,7 @@ inline std::string skillLabel(const CGHeroInstance * hero, SecondarySkill skill)
 {
 	const auto * definition = skill.toSkill();
 	const auto fallback = definition->getNameTranslated();
-	return hero ? newHorizonsSkillPresentation::skillName(hero->getPerkState().rules,
+	return hero ? newHorizonsSkillPresentation::skillName(hero->getPerkState().getRules(),
 		definition->getJsonKey(), fallback) : fallback;
 }
 
@@ -120,7 +120,7 @@ inline std::string skillDescription(const CGHeroInstance * hero, SecondarySkill 
 		return fallback;
 	const auto id = definition->getJsonKey() == "core:necromancy" && hero->usesNewHorizonsNecromancy()
 		? "new-horizons:necromancy" : definition->getJsonKey();
-	return newHorizonsSkillPresentation::rankDescription(hero->getPerkState().rules, id, rank, fallback);
+	return newHorizonsSkillPresentation::rankDescription(hero->getPerkState().getRules(), id, rank, fallback);
 }
 
 inline std::string skillDetails(const CGHeroInstance * hero, SecondarySkill skill, int rank)

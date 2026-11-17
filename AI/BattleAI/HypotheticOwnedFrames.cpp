@@ -67,7 +67,6 @@ void HypotheticBattle::inheritOwnedFrames(const HypotheticBattle & parent)
 	for(const auto & [id, unit] : parent.stackStates)
 		if(unit->ownedQuerySource) { unit->ownedQuerySource->current(); break; }
 	ownedFrameBatch = parent.ownedFrameBatch;
-	pendingTimeStopHeroActionSides = parent.pendingTimeStopHeroActionSides;
 	for(const auto & occurrence : ownedFrameBatch->occurrences())
 	{
 		const auto frame = parent.ownedFrameFor(occurrence.identity.id);

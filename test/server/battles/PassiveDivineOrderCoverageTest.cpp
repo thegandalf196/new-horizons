@@ -138,33 +138,13 @@ TEST_F(PassiveDivineOrderCoverageTest, HypotheticFallbackUsesCurrentBranchCovera
 	EXPECT_EQ(friendly->counterAttacks.total(), baseline + 1);
 }
 
-TEST_F(PassiveDivineOrderCoverageTest, PausedVanguardRetainsCapturedRiderAfterSideSnapshotExpires)
-{
-	prepare();
-	const auto baseline = friendly->counterAttacks.total();
-	vanguard(friendly, 1);
-	EXPECT_EQ(friendly->counterAttacks.total(), baseline + 1);
-	auto stasis = std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	friendly->addNewBonus(stasis);
-	advanceRound();
-	ASSERT_FALSE(battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::VANGUARD));
-	ASSERT_TRUE(heroCommands::activeVanguardBonuses(friendly));
-	EXPECT_EQ(friendly->counterAttacks.total(), baseline + 1);
-	friendly->removeBonus(stasis);
-	advanceRound();
-	EXPECT_FALSE(heroCommands::activeVanguardBonuses(friendly));
-	EXPECT_EQ(friendly->counterAttacks.total(), baseline);
-}
 
-TEST_F(PassiveDivineOrderCoverageTest, PausedVanguardKeepsOriginalRiderAcrossReplacementElsewhere)
+
+TEST_F(PassiveDivineOrderCoverageTest, VanguardKeepsOriginalRiderAcrossReplacementElsewhere)
 {
 	prepare();
 	const auto baseline = friendly->counterAttacks.total();
 	vanguard(friendly, 3);
-	auto stasis = std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	friendly->addNewBonus(stasis);
 	auto refresh = vanguard(other, 1, false);
 	refresh.passiveDivineMandate->perks = static_cast<uint16_t>(newHorizonsPassiveDivineMandate::Perk::SACRED_COMMAND);
 	install(refresh);

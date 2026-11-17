@@ -480,7 +480,7 @@ TEST_F(NewHorizonsSpellFamiliarityTest, PlannedArchmageIsInactiveAndDoesNotDisco
 	ASSERT_TRUE(selectPerkThroughNormalOffer(attackerSideHero, MANA_CONSERVATION));
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 
-	const auto & savedPerks = attackerSideHero->getPerkState().rules["skills"][WISDOM_SKILL]["perks"].Vector();
+	const auto & savedPerks = attackerSideHero->getPerkState().getRules()["skills"][WISDOM_SKILL]["perks"].Vector();
 	const auto capturedArchmage = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
 	{
 		return perk["id"].String() == ARCHMAGE;
@@ -748,7 +748,7 @@ TEST_F(NewHorizonsSpellFamiliarityTest, CapturedPlannedSnapshotDoesNotOfferOrAct
 	captureSpellFamiliarityAsPlanned = true;
 	startGameWithWizard();
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	const auto & savedPerks = attackerSideHero->getPerkState().rules["skills"][WISDOM_SKILL]["perks"].Vector();
+	const auto & savedPerks = attackerSideHero->getPerkState().getRules()["skills"][WISDOM_SKILL]["perks"].Vector();
 	const auto capturedSpellFamiliarity = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
 	{
 		return perk["id"].String() == SPELL_FAMILIARITY;

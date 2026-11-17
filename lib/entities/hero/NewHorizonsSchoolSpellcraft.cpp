@@ -79,8 +79,8 @@ SpellcraftCastContext captureSpellcraftContext(const JsonNode & magic, const CGH
 		return result;
 	std::optional<WarlocksFormulaRules> rule;
 	if(index)
-		rule = schoolSpellcraftRules(hero->getPrimaryGrowthRules(), static_cast<SchoolSpellcraftKind>(*index));
-	else if(const auto policy = individualSpecialtyRules(hero->getPrimaryGrowthRules()))
+		rule = hero->compiledDevelopment()->schoolSpellcraft.at(*index);
+	else if(const auto policy = hero->compiledDevelopment()->individual)
 		rule = policy->warlocksFormula;
 	if(!rule || !newHorizonsMagic::rulesActive(magic)
 		|| magic["rulesetVersion"].Integer() != newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION

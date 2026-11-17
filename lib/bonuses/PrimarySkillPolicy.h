@@ -6,6 +6,7 @@
 #pragma once
 #include "../constants/EntityIdentifiers.h"
 #include <array>
+#include <optional>
 
 class BonusList;
 class JsonNode;
@@ -23,4 +24,5 @@ DLL_LINKAGE LegacyBounds legacyBounds();
 DLL_LINKAGE int growthValue(int rawValue, const JsonNode & rules);
 /// Explicit PRIMARY_SKILL list; no native hero values or cache are consulted.
 DLL_LINKAGE int projectedValue(PrimarySkill skill, const BonusList & primaryBonuses, const JsonNode * growthRules);
+DLL_LINKAGE int projectedValue(PrimarySkill skill, const BonusList & primaryBonuses, std::optional<int> capturedMaximum);
 }

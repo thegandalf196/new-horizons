@@ -334,7 +334,7 @@ TEST_F(NewHorizonsMandateOfHeavenTest, InactiveSavedPerkRuleRetainsThreePairCap)
 	// Simulate loading the same selected identity against a saved profile where the mechanic is inactive.
 	auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
 	ASSERT_TRUE(savedPerks.hasSelection(divineMandateSkill, mandateOfHeavenPerk));
-	ASSERT_TRUE(setPerkStatus(savedPerks.rules, mandateOfHeavenPerk, "planned"));
+	ASSERT_TRUE(setPerkStatus(savedPerks.getRules(), mandateOfHeavenPerk, "planned"));
 	EXPECT_TRUE(savedPerks.hasSelection(divineMandateSkill, mandateOfHeavenPerk));
 	EXPECT_FALSE(attackerSideHero->hasActivePerk(divineMandateSkill, mandateOfHeavenPerk));
 	const auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);

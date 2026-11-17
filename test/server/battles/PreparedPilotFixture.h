@@ -68,7 +68,7 @@ protected:
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:wisdom")), 3, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)), 3, ChangeValueMode::ABSOLUTE);
-		const auto & rows = attackerSideHero->getPerkState().rules["skills"][skill]["perks"].Vector();
+		const auto & rows = attackerSideHero->getPerkState().getRules()["skills"][skill]["perks"].Vector();
 		const auto target = std::find_if(rows.begin(), rows.end(), [&](const auto & row) { return row["id"].String() == perk; });
 		ASSERT_NE(target, rows.end());
 		const int required = newHorizonsHeroes::perkRequiredRank((*target)["requires"].String());

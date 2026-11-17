@@ -33,23 +33,12 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
-#include "../../lib/spells/NewHorizonsSorcery.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include <vcmi/spells/Service.h>
 #include <vcmi/spells/Spell.h>
 
 namespace damageCacheDetail
 {
-bool hasRangedMarkEffect(const battle::Unit * unit, const char * source)
-{
-	if(!unit)
-		return false;
-	const auto triggers = unit->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
-	for(const auto & bonus : *triggers)
-		if(bonus->source == BonusSource::SPELL_EFFECT && bonus->sid.toString() == source)
-			return true;
-	return false;
-}
-
 bool hasNightProwlerBonus(const battle::Unit * unit)
 {
 	return unit && unit->hasBonus(CSelector(newHorizonsShroud::isNightProwlerBonus));
@@ -60,7 +49,7 @@ namespace
 {
 bool hasTemporaryCombatModifier(const battle::Unit * unit)
 {
-	return unit && (newHorizonsCoordinatedMarks::hasMark(*unit) || unit->hasBonus(CSelector([](const Bonus * bonus)
+	return unit && (newHorizonsFocusMagic::active(*unit) || newHorizonsCoordinatedMarks::hasMark(*unit) || unit->hasBonus(CSelector([](const Bonus * bonus)
 	{
 		return newHorizonsSpecialtyEvents::isReceipt(bonus)
 			|| arcaneInspiration::isEffect(bonus)
@@ -83,7 +72,6 @@ bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attacking
 }
 using damageCacheDiagnostics::DamageCacheOperationScope;
 using damageCacheDiagnostics::DamageCachePhaseScope;
-using damageCacheDetail::hasRangedMarkEffect;
 using damageCacheDetail::hasNightProwlerBonus;
 using attackCount::hasPendingRangedFollowUp;
 
@@ -135,8 +123,6 @@ void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battl
 	if(hasPendingRangedFollowUp(attacker) || dreadCavalryAI::hasActivationState(attacker))
 		return;
 
-	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
-		rangedMarkTargets.insert(defender->unitId());
 	const BattleAttackInfo attack(attacker, defender, 0, hb->battleCanShoot(attacker, defender->getPosition()));
 	preflight.finish();
 	const auto damage = [&]()
@@ -205,14 +191,6 @@ void DamageCache::buildObstacleDamageCache(std::shared_ptr<HypotheticBattle> hb,
 	}
 }
 
-bool DamageCache::tracksRangedMarks(uint32_t defenderId) const
-{
-	for(const auto * cache = this; cache; cache = cache->parent)
-		if(cache->rangedMarkTargets.contains(defenderId))
-			return true;
-	return false;
-}
-
 bool DamageCache::tracksTemporaryCombatModifier(uint32_t defenderId) const
 {
 	for(const auto * cache = this; cache; cache = cache->parent)
@@ -274,8 +252,6 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		intrinsicMdrTargets.insert(defender->unitId());
 	if(defender->intrinsicPhysicalDamageReductionPercent() > 0)
 		intrinsicPdrTargets.insert(defender->unitId());
-	if(hasRangedMarkEffect(defender, newHorizonsSorcery::ARCANE_BREACH_EFFECT))
-		rangedMarkTargets.insert(defender->unitId());
 	rememberTemporaryCombatModifiers(attacker, defender, *hb);
 	if(newHorizonsReactiveDefense::ironHideConfiguredPercent(*hb, *defender) > 0)
 		temporaryCombatModifierUnits.insert(defender->unitId());
@@ -349,7 +325,6 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| tracksAmbusher(attacker->unitId())
 		|| tracksTemporaryCombatModifier(attacker->unitId())
 		|| tracksTemporaryCombatModifier(defender->unitId())
-		|| tracksRangedMarks(defender->unitId())
 		|| newHorizonsFrozen::isFrozen(*attacker)
 		|| tracksFrozen(defender->unitId()))
 	{

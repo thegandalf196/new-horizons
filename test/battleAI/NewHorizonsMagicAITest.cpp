@@ -81,10 +81,7 @@ std::string describeMagicAIState(const MagicCallback & callback, const JsonNode 
 			<< ", command=" << heroCommands::key(action.command) << '(' << static_cast<int>(action.command) << ')'
 			<< ", spell=" << action.spell.getNum()
 			<< ", cureAffliction=" << action.spellCureAffliction.getNum()
-			<< ", targetCount=" << action.target.size()
-			<< ", metamagicFollowup=" << action.metamagicFollowup
-			<< ", metamagicGrand=" << action.metamagicGrand
-			<< ", metamagicDecline=" << action.metamagicDecline << '}';
+			<< ", targetCount=" << action.target.size() << '}';
 	}
 	const auto rulesetVersion = [](const JsonNode & rules)
 	{
@@ -360,7 +357,6 @@ protected:
 	bool useSavedV3Formula = false;
 	bool useControlledBlast = false;
 	bool useFocusMagic = false;
-	bool historicalCounterspell = false;
 	bool historicalSacrifice = false;
 	int savedMagicRulesVersion = 0;
 	std::vector<std::string> fixtureActivePerkIds;
@@ -379,8 +375,6 @@ protected:
 			JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 			if(useLegacyTemporalField)
 				rules["spells"].Struct().erase("new-horizons:massSlow");
-			if(historicalCounterspell)
-				rules["spells"]["new-horizons:counterspell"].Struct().erase("active");
 			if(historicalSacrifice)
 			{
 				// Older captured-v3 rules omitted heroAccess. Only this historical
@@ -707,284 +701,6 @@ TEST_F(NewHorizonsMagicAITest, HeroSpellCreditsDamageToValuableEnemySummonWithou
 	}
 }
 
-TEST_F(NewHorizonsMagicAITest, SpellLockCastEvaluationMatchesRealMechanicsAcrossTargetShapes)
-{
-	useCurrentMagicRules = true;
-	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
-	for(const auto spell : {SpellID::HASTE, SpellID::SLOW, SpellID::DISPEL, SpellID::MAGIC_ARROW,
-		SpellID::FIREBALL, SpellID::TELEPORT})
-		attackerSideHero->addSpellToSpellbook(spell);
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 20, ChangeValueMode::ABSOLUTE);
-	setTestSpellPointTotal(attackerSideHero, 1000);
-
-	auto * lockedAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
-	auto * openAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(4, 5), 10);
-	auto * lockedEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 10);
-	auto * openEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(13, 5), 10);
-	ASSERT_NE(lockedAlly, nullptr);
-	ASSERT_NE(openAlly, nullptr);
-	ASSERT_NE(lockedEnemy, nullptr);
-	ASSERT_NE(openEnemy, nullptr);
-	BattleUnitsChanged remove;
-	remove.battleID = BattleID(0);
-	for(const auto * unit : battle()->battleGetAllUnits(false))
-		if(unit != lockedAlly && unit != openAlly && unit != lockedEnemy && unit != openEnemy)
-			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
-	gameHandler->sendAndApply(remove);
-
-	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	ASSERT_NE(spellLock, SpellID::NONE);
-	const auto applyLock = [&](CStack * unit)
-	{
-		auto lock = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
-			BonusSource::SPELL_EFFECT, 100, BonusSourceID(spellLock));
-		lock->turnsRemain = 3;
-		unit->addNewBonus(lock);
-	};
-	const auto addSpellEffect = [](CStack * unit, SpellID source, int32_t value)
-	{
-		auto effect = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
-			BonusSource::SPELL_EFFECT, value, BonusSourceID(source));
-		effect->turnsRemain = 3;
-		unit->addNewBonus(effect);
-	};
-	applyLock(lockedAlly);
-	applyLock(lockedEnemy);
-	addSpellEffect(lockedAlly, SpellID(SpellID::HASTE), 3);
-	addSpellEffect(openAlly, SpellID(SpellID::HASTE), 3);
-	addSpellEffect(lockedEnemy, SpellID(SpellID::SLOW), -3);
-	addSpellEffect(openEnemy, SpellID(SpellID::SLOW), -3);
-
-	auto environment = std::make_shared<MagicEnvironment>(gameState());
-	auto callback = std::make_shared<MagicCallback>();
-	callback->onBattleStarted(battle());
-	const std::array<const CStack *, 4> units{lockedAlly, openAlly, lockedEnemy, openEnemy};
-	const auto statusSnapshot = [](const battle::Unit * unit, SpellID source)
-	{
-		std::vector<std::pair<int32_t, int32_t>> result;
-		const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(source)));
-		if(bonuses)
-			for(const auto & bonus : *bonuses)
-				if(bonus && Bonus::NTurns(bonus.get()))
-					result.emplace_back(bonus->val, bonus->turnsRemain);
-		return result;
-	};
-	const auto runParity = [&](SpellID spellId, const spells::Target & liveAim, bool castable)
-	{
-		const auto * spell = spellId.toSpell();
-		ASSERT_NE(spell, nullptr);
-		HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
-		spells::Target projectedAim;
-		for(const auto & destination : liveAim)
-		{
-			if(destination.unitValue)
-			{
-				const auto * projected = model.battleGetUnitByID(destination.unitValue->unitId());
-				ASSERT_NE(projected, nullptr);
-				projectedAim.emplace_back(projected, destination.hexValue);
-			}
-			else
-				projectedAim.emplace_back(destination.hexValue);
-		}
-		spells::BattleCast simulated(&model, attackerSideHero, spells::Mode::HERO, spell);
-		simulated.setSpellLevel(3);
-		EXPECT_EQ(spell->battleMechanics(&simulated)->canBeCastAt(projectedAim), castable)
-			<< spellId.getNum();
-		simulated.castEval(model.getServerCallback(), projectedAim);
-
-		spells::BattleCast authoritative(battle(), attackerSideHero, spells::Mode::HERO, spell);
-		authoritative.setSpellLevel(3);
-		authoritative.cast(gameHandler->spellcastEnvironment(), liveAim);
-		for(const auto * liveUnit : units)
-		{
-			const auto * projected = model.battleGetUnitByID(liveUnit->unitId());
-			ASSERT_NE(projected, nullptr);
-			EXPECT_EQ(projected->getAvailableHealth(), liveUnit->getAvailableHealth()) << spellId.getNum();
-			EXPECT_EQ(projected->getCount(), liveUnit->getCount()) << spellId.getNum();
-			EXPECT_EQ(projected->getPosition(), liveUnit->getPosition()) << spellId.getNum();
-			for(const auto status : {SpellID(SpellID::HASTE), SpellID(SpellID::SLOW)})
-				EXPECT_EQ(statusSnapshot(projected, status), statusSnapshot(liveUnit, status)) << spellId.getNum();
-		}
-	};
-
-	const spells::Target lockedAllyAim{spells::Destination(lockedAlly)};
-	const spells::Target openAllyAim{spells::Destination(openAlly)};
-	const spells::Target lockedEnemyAim{spells::Destination(lockedEnemy)};
-	const spells::Target openEnemyAim{spells::Destination(openEnemy)};
-	runParity(SpellID::HASTE, lockedAllyAim, false);
-	EXPECT_EQ(statusSnapshot(lockedAlly, SpellID(SpellID::HASTE)).size(), 1u);
-	runParity(SpellID::HASTE, openAllyAim, true);
-	runParity(SpellID::SLOW, lockedEnemyAim, false);
-	EXPECT_EQ(statusSnapshot(lockedEnemy, SpellID(SpellID::SLOW)).size(), 1u);
-	runParity(SpellID::SLOW, openEnemyAim, true);
-	runParity(SpellID::MAGIC_ARROW, lockedEnemyAim, false);
-	runParity(SpellID::MAGIC_ARROW, openEnemyAim, true);
-	EXPECT_LT(openEnemy->getAvailableHealth(), lockedEnemy->getAvailableHealth());
-	runParity(SpellID::DISPEL, lockedAllyAim, false);
-	EXPECT_EQ(statusSnapshot(lockedAlly, SpellID(SpellID::HASTE)).size(), 1u);
-	runParity(SpellID::DISPEL, openAllyAim, true);
-	EXPECT_TRUE(statusSnapshot(openAlly, SpellID(SpellID::HASTE)).empty());
-
-	const auto accessibility = battle()->getAccessibility(openAlly);
-	BattleHex teleportDestination = BattleHex::INVALID;
-	for(si16 offset = 1; offset < GameConstants::BFIELD_SIZE; ++offset)
-	{
-		const BattleHex candidate(static_cast<si16>(openAlly->getPosition().toInt() + offset));
-		if(candidate.isAvailable() && accessibility.accessible(candidate, openAlly))
-		{
-			teleportDestination = candidate;
-			break;
-		}
-	}
-	ASSERT_TRUE(teleportDestination.isAvailable());
-	const auto lockedAllyPosition = lockedAlly->getPosition();
-	const spells::Target lockedTeleportAim{spells::Destination(lockedAlly),
-		spells::Destination(teleportDestination)};
-	runParity(SpellID::TELEPORT, lockedTeleportAim, false);
-	EXPECT_EQ(lockedAlly->getPosition(), lockedAllyPosition);
-	const spells::Target openTeleportAim{spells::Destination(openAlly),
-		spells::Destination(teleportDestination)};
-	runParity(SpellID::TELEPORT, openTeleportAim, true);
-	EXPECT_EQ(openAlly->getPosition(), teleportDestination);
-
-	// Fireball's location target covers both neighboring enemy stacks: the
-	// locked one remains protected while the unmarked one takes damage.
-	const auto lockedEnemyHealth = lockedEnemy->getAvailableHealth();
-	const auto openEnemyHealth = openEnemy->getAvailableHealth();
-	runParity(SpellID::FIREBALL,
-		{spells::Destination(lockedEnemy->getPosition())}, true);
-	EXPECT_EQ(lockedEnemy->getAvailableHealth(), lockedEnemyHealth);
-	EXPECT_LT(openEnemy->getAvailableHealth(), openEnemyHealth);
-}
-
-TEST_F(NewHorizonsMagicAITest, SpellLockAIUsesSavedRankSpellbinderAndCurrentLingeringMagic)
-{
-	useCurrentMagicRules = true;
-	useSavedPerkRules = true;
-	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
-	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:neela")));
-	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	ASSERT_NE(spellLock, SpellID::NONE);
-	attackerSideHero->addSpellToSpellbook(spellLock);
-	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 10);
-	ASSERT_NE(target, nullptr);
-	auto haste = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
-		BonusSource::SPELL_EFFECT, 3, BonusSourceID(SpellID(SpellID::HASTE)));
-	haste->turnsRemain = 3;
-	target->addNewBonus(haste);
-
-	const auto score = [&]()
-	{
-		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spellLock.toSpell());
-		event.setSpellLevel(3);
-		const auto mechanics = spellLock.toSpell()->battleMechanics(&event);
-		return SpellTargetEvaluator::spellLockPlacementValue(
-			mechanics.get(), spells::Target{spells::Destination(target)});
-	};
-
-	const auto sorcery = SecondarySkill::decode(newHorizonsSorcery::SORCERY_MAGIC_SKILL);
-	ASSERT_GE(sorcery, 0);
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 70, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::NONE,
-		ChangeValueMode::ABSOLUTE);
-	const float noRankValue = score();
-	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::BASIC,
-		ChangeValueMode::ABSOLUTE);
-	const float basicRankValue = score();
-	EXPECT_GT(basicRankValue, noRankValue)
-		<< "The saved Basic coefficient moves Spell Power 70 across the first duration threshold";
-
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 160, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->setSecSkillLevel(SecondarySkill(sorcery), MasteryLevel::EXPERT,
-		ChangeValueMode::ABSOLUTE);
-	// Fill the current Basic and Advanced prerequisite tiers with perks
-	// that do not alter Spell Lock before selecting Expert Spellbinder.
-	attackerSideHero->applyPerkSelection({newHorizonsSorcery::SORCERY_MAGIC_SKILL,
-		"new-horizons:sorceryMagic.overcharger"});
-	attackerSideHero->applyPerkSelection({newHorizonsSorcery::SORCERY_MAGIC_SKILL,
-		"new-horizons:sorceryMagic.illusionist"});
-	attackerSideHero->applyPerkSelection({newHorizonsSorcery::SORCERY_MAGIC_SKILL,
-		newHorizonsSorcery::SPELLBINDER_PERK});
-	ASSERT_TRUE(attackerSideHero->hasActivePerk(
-		newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK));
-	const float spellbinderValue = score();
-
-	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
-	ASSERT_GE(metamagic, 0);
-	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), MasteryLevel::ADVANCED,
-		ChangeValueMode::ABSOLUTE);
-	// Lingering Magic occupies the Basic perk tier in the current catalog.
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic",
-		"new-horizons:metamagic.lingeringMagic"});
-	ASSERT_TRUE(attackerSideHero->hasActivePerk(
-		"new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"));
-	SetMetamagicPointState points;
-	points.battleID = BattleID(0);
-	points.side = BattleSide::ATTACKER;
-	points.round = battle()->getRound();
-	points.state.points = 6;
-	gameHandler->sendAndApply(points);
-	const float lingeringValue = score();
-
-	EXPECT_GT(spellbinderValue, basicRankValue);
-	EXPECT_GT(lingeringValue, spellbinderValue)
-		<< "Current point-based Lingering Magic is applied after the Spellbinder 4-round cap";
-}
-
-TEST_F(NewHorizonsMagicAITest, SpellLockDoesNotBlockNonmagicalCreatureAbilityInRealOrForecast)
-{
-	useCurrentMagicRules = true;
-	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
-	const auto * ability = SpellID(SpellID::decode("core:fireballAbility")).toSpell();
-	ASSERT_NE(ability, nullptr);
-	ASSERT_TRUE(ability->isCreatureAbility());
-	ASSERT_FALSE(ability->isMagical());
-
-	auto * caster = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 2), 10);
-	auto * lockedEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 100);
-	auto * openEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(13, 5), 100);
-	ASSERT_NE(caster, nullptr);
-	ASSERT_NE(lockedEnemy, nullptr);
-	ASSERT_NE(openEnemy, nullptr);
-	Bonus creaturePower;
-	creaturePower.type = BonusType::CREATURE_SPELL_POWER;
-	creaturePower.val = 100;
-	caster->addNewBonus(std::make_shared<Bonus>(creaturePower));
-
-	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	auto lock = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
-		BonusSource::SPELL_EFFECT, 100, BonusSourceID(spellLock));
-	lock->turnsRemain = 3;
-	lockedEnemy->addNewBonus(lock);
-
-	const spells::Target aim{spells::Destination(lockedEnemy->getPosition())};
-	auto environment = std::make_shared<MagicEnvironment>(gameState());
-	auto callback = std::make_shared<MagicCallback>();
-	callback->onBattleStarted(battle());
-	HypotheticBattle model(environment.get(), callback->getBattle(BattleID(0)));
-	spells::BattleCast forecast(&model, caster, spells::Mode::CREATURE_ACTIVE, ability);
-	const auto forecastMechanics = ability->battleMechanics(&forecast);
-	ASSERT_TRUE(forecastMechanics->canBeCastAt(aim));
-	const auto * forecastLocked = model.battleGetUnitByID(lockedEnemy->unitId());
-	const auto * forecastOpen = model.battleGetUnitByID(openEnemy->unitId());
-	ASSERT_NE(forecastLocked, nullptr);
-	ASSERT_NE(forecastOpen, nullptr);
-	const auto lockedHealth = lockedEnemy->getAvailableHealth();
-	const auto openHealth = openEnemy->getAvailableHealth();
-	forecastMechanics->castEval(model.getServerCallback(), aim);
-	EXPECT_LT(forecastLocked->getAvailableHealth(), lockedHealth);
-	EXPECT_LT(forecastOpen->getAvailableHealth(), openHealth);
-
-	spells::BattleCast authoritative(battle(), caster, spells::Mode::CREATURE_ACTIVE, ability);
-	const auto authoritativeMechanics = ability->battleMechanics(&authoritative);
-	ASSERT_TRUE(authoritativeMechanics->canBeCastAt(aim));
-	authoritativeMechanics->cast(gameHandler->spellcastEnvironment(), aim);
-	EXPECT_EQ(forecastLocked->getAvailableHealth(), lockedEnemy->getAvailableHealth());
-	EXPECT_EQ(forecastOpen->getAvailableHealth(), openEnemy->getAvailableHealth());
-	EXPECT_LT(lockedEnemy->getAvailableHealth(), lockedHealth);
-	EXPECT_LT(openEnemy->getAvailableHealth(), openHealth);
-}
-
 TEST_F(NewHorizonsMagicAITest, RepeatedMovementEvaluationWithSavedPerksIsStableAndReadOnly)
 {
 	neutralizeCommandEffects = true;
@@ -1193,9 +909,7 @@ TEST_P(NewHorizonsDenseMagicAITest, DenseBattleEvaluationWithSavedPerksIsStableA
 			static_cast<int32_t>(action.side), action.stackNumber, static_cast<int32_t>(action.actionType),
 			action.spell.getNum(), action.spellOvercharge, action.spellSelectiveDispel,
 			action.spellCureAffliction.getNum(), action.spellMassSlow, action.perfectMoment,
-			static_cast<int32_t>(action.spellFireWallDirection), action.metamagicFollowup,
-			action.metamagicGrand, action.metamagicDecline, action.timeStopHeroActionPass,
-			action.metamagicManaRefund,
+			static_cast<int32_t>(action.spellFireWallDirection),
 			static_cast<int32_t>(action.command), action.gatingCreature.getNum(), std::move(targetIdentity)};
 	};
 	auto evaluateFormation = [&](const std::string & propertyPrefix)
@@ -1356,190 +1070,6 @@ TEST_F(NewHorizonsMagicAITest, PhantomArmyValuesTemporaryCombatPowerAndChoosesTh
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 1000 - battle()->battleGetSpellCost(spell, attackerSideHero));
 }
 
-TEST_F(NewHorizonsMagicAITest, CounterspellAIArmsAThreatWardAndSkipsAnAlreadyArmedWard)
-{
-	historicalCounterspell = true;
-	useCommands = false;
-	useCurrentMagicRules = true;
-	ASSERT_NO_FATAL_FAILURE(startGame());
-	const auto counterspell = SpellID(SpellID::decode("new-horizons:counterspell"));
-	ASSERT_TRUE(counterspell.hasValue());
-	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	const auto attackerSpells = attackerSideHero->getSpellsInSpellbook();
-	for(const auto spell : attackerSpells)
-		attackerSideHero->removeSpellFromSpellbook(spell);
-	const auto defenderSpells = defenderSideHero->getSpellsInSpellbook();
-	for(const auto spell : defenderSpells)
-		defenderSideHero->removeSpellFromSpellbook(spell);
-	attackerSideHero->addSpellToSpellbook(counterspell);
-	defenderSideHero->addSpellToSpellbook(SpellID::IMPLOSION);
-	setTestSpellPointTotal(attackerSideHero, 100);
-	setTestSpellPointTotal(defenderSideHero, 100);
-	ASSERT_NO_FATAL_FAILURE(startBattle());
-	ASSERT_NO_FATAL_FAILURE(beginCombat());
-
-	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
-	addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1);
-	BattleUnitsChanged remove;
-	remove.battleID = BattleID(0);
-	for(const auto * unit : battle()->battleGetAllUnits(false))
-		if(unit != active && unit->unitSide() == BattleSide::ATTACKER)
-			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
-	gameHandler->sendAndApply(remove);
-
-	Bonus immobilized;
-	immobilized.type = BonusType::STACKS_SPEED;
-	immobilized.duration = BonusDuration::ONE_BATTLE;
-	immobilized.val = -active->getMovementRange();
-	active->addNewBonus(std::make_shared<Bonus>(immobilized));
-	BattleSetActiveStack activate;
-	activate.battleID = BattleID(0);
-	activate.stack = active->unitId();
-	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
-	gameHandler->sendAndApply(activate);
-
-	auto environment = std::make_shared<MagicEnvironment>(gameState());
-	auto callback = std::make_shared<MagicCallback>();
-	callback->onBattleStarted(battle());
-	ASSERT_TRUE(newHorizonsMagic::spellAllowedByBattleRoster(
-		*callback->getBattle(BattleID(0)), counterspell));
-	ASSERT_TRUE(attackerSideHero->canCastThisSpell(counterspell.toSpell()));
-	ASSERT_EQ(callback->getBattle(BattleID(0))->battleCanCastSpell(
-		attackerSideHero, spells::Mode::HERO), ESpellCastProblem::OK);
-	ASSERT_TRUE(counterspell.toSpell()->canBeCast(
-		callback->getBattle(BattleID(0)).get(), spells::Mode::HERO, attackerSideHero));
-	ASSERT_TRUE(defenderSideHero->canCastThisSpell(SpellID(SpellID::IMPLOSION).toSpell()));
-	const auto implosionLevel = battle()->battleGetSpellLevel(SpellID::IMPLOSION);
-	ASSERT_GT(implosionLevel, 0);
-	auto blockImplosion = std::make_shared<Bonus>();
-	blockImplosion->duration = BonusDuration::ONE_BATTLE;
-	blockImplosion->type = BonusType::BLOCK_MAGIC_ABOVE;
-	blockImplosion->val = implosionLevel - 1;
-	defenderSideHero->addNewBonus(blockImplosion);
-	BattleEvaluator blockedEvaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
-	blockedEvaluator.selectStackAction(active);
-	EXPECT_FALSE(blockedEvaluator.attemptCastingSpell(active));
-	EXPECT_TRUE(callback->submitted.empty());
-	defenderSideHero->removeBonus(blockImplosion);
-
-	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
-	evaluator.selectStackAction(active);
-	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_EQ(callback->submitted.front().spell, counterspell);
-	ASSERT_EQ(callback->submitted.front().target.size(), 1u);
-	EXPECT_FALSE(callback->submitted.front().target.front().hexValue.isValid());
-	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
-
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->submitted.front()));
-	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
-
-	// The first cast consumed this turn's hero-spell budget. Reset only that
-	// budget in the fixture, preserving the authoritative armed ward, so this
-	// assertion exercises the redundant-ward guard rather than the turn limit.
-	auto & attackerState = battle()->getSide(BattleSide::ATTACKER);
-	attackerState.castSpellsCount = 0;
-	attackerState.heroCommandUsed = false;
-	ASSERT_TRUE(attackerState.counterspellArmed);
-
-	callback->submitted.clear();
-	BattleEvaluator armedEvaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
-	armedEvaluator.selectStackAction(active);
-	EXPECT_FALSE(armedEvaluator.attemptCastingSpell(active));
-	EXPECT_TRUE(callback->submitted.empty());
-}
-
-TEST_F(NewHorizonsMagicAITest, CounterspellAIRecognizesEnemyHatOnlyLevelFiveSpellThreat)
-{
-	historicalCounterspell = true;
-	useCommands = false;
-	useCurrentMagicRules = true;
-	ASSERT_NO_FATAL_FAILURE(startGame());
-	const auto counterspell = SpellID(SpellID::decode("new-horizons:counterspell"));
-	const auto armageddon = SpellID(SpellID::decode("core:armageddon"));
-	const ArtifactID spellbindersHat(ArtifactID::decode("core:spellbindersHat"));
-	ASSERT_TRUE(counterspell.hasValue());
-	ASSERT_TRUE(armageddon.hasValue());
-	ASSERT_TRUE(spellbindersHat.hasValue());
-	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	attackerSideHero->removeAllSpells();
-	defenderSideHero->removeAllSpells();
-	attackerSideHero->addSpellToSpellbook(counterspell);
-	ASSERT_TRUE(defenderSideHero->getSpellsInSpellbook().empty());
-	ASSERT_EQ(defenderSideHero->getSpellLevel(armageddon.toSpell()), 5);
-	giveArtifact(defenderSideHero, spellbindersHat, ArtifactPosition::HEAD);
-	ASSERT_NE(defenderSideHero->getArt(ArtifactPosition::HEAD), nullptr);
-	ASSERT_EQ(defenderSideHero->getArt(ArtifactPosition::HEAD)->getTypeId(), spellbindersHat);
-	ASSERT_FALSE(defenderSideHero->spellbookContainsSpell(armageddon));
-	ASSERT_TRUE(vstd::contains(defenderSideHero->getInscribedSpellsForCasting(), armageddon));
-	setTestSpellPointTotal(attackerSideHero, 100);
-	setTestSpellPointTotal(defenderSideHero, 100);
-	ASSERT_NO_FATAL_FAILURE(startBattle());
-	ASSERT_NO_FATAL_FAILURE(beginCombat());
-
-	auto * active = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 1);
-	addStack(BattleSide::DEFENDER, creatureByName("core:peasant"), BattleHex(12, 5), 1);
-	BattleUnitsChanged remove;
-	remove.battleID = BattleID(0);
-	for(const auto * unit : battle()->battleGetAllUnits(false))
-		if(unit != active && unit->unitSide() == BattleSide::ATTACKER)
-			remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
-	gameHandler->sendAndApply(remove);
-
-	Bonus immobilized;
-	immobilized.type = BonusType::STACKS_SPEED;
-	immobilized.duration = BonusDuration::ONE_BATTLE;
-	immobilized.val = -active->getMovementRange();
-	active->addNewBonus(std::make_shared<Bonus>(immobilized));
-	BattleSetActiveStack activate;
-	activate.battleID = BattleID(0);
-	activate.stack = active->unitId();
-	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
-	gameHandler->sendAndApply(activate);
-
-	auto environment = std::make_shared<MagicEnvironment>(gameState());
-	auto callback = std::make_shared<MagicCallback>();
-	callback->onBattleStarted(battle());
-	ASSERT_TRUE(defenderSideHero->hasSpellbook());
-	ASSERT_TRUE(defenderSideHero->canCastThisSpell(armageddon.toSpell()));
-	ASSERT_GE(defenderSideHero->getManaAvailable(),
-		battle()->battleGetSpellCost(armageddon.toSpell(), defenderSideHero));
-	const auto counterspellCost = battle()->battleGetSpellCost(counterspell.toSpell(), attackerSideHero);
-	const auto armageddonWardCost = newHorizonsMagic::counterspellCost(
-		defenderSideHero->getListedSpellCost(armageddon.toSpell()), false);
-	ASSERT_GE(attackerSideHero->getManaAvailable() - counterspellCost, armageddonWardCost);
-
-	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0),
-		BattleSide::ATTACKER, 1.0f, 2);
-	evaluator.selectStackAction(active);
-	ASSERT_TRUE(evaluator.attemptCastingSpell(active));
-	ASSERT_EQ(callback->submitted.size(), 1u);
-	EXPECT_EQ(callback->submitted.front().spell, counterspell);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), callback->submitted.front()));
-	EXPECT_TRUE(battle()->getSide(BattleSide::ATTACKER).counterspellArmed);
-
-	ASSERT_TRUE(gameHandler->moveArtifact(PlayerColor(1),
-		ArtifactLocation(defenderSideHero->id, ArtifactPosition::HEAD),
-		ArtifactLocation(defenderSideHero->id, ArtifactPosition::BACKPACK_START)));
-	EXPECT_FALSE(defenderSideHero->isSpellInscribedForCasting(armageddon));
-	EXPECT_FALSE(vstd::contains(defenderSideHero->getInscribedSpellsForCasting(), armageddon));
-
-	// Clear only the state produced by the accepted cast so the next evaluation
-	// isolates the removed artifact's threat contribution.
-	auto & attackerState = battle()->getSide(BattleSide::ATTACKER);
-	attackerState.counterspellArmed = false;
-	attackerState.castSpellsCount = 0;
-	attackerState.heroCommandUsed = false;
-	callback->submitted.clear();
-	BattleEvaluator noHatEvaluator(environment, callback, active, PlayerColor(0), BattleID(0),
-		BattleSide::ATTACKER, 1.0f, 2);
-	noHatEvaluator.selectStackAction(active);
-	EXPECT_FALSE(noHatEvaluator.attemptCastingSpell(active));
-	EXPECT_TRUE(callback->submitted.empty());
-}
-
 TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIRetainsRoundAllowanceInsteadOfHarmfulDispel)
 {
 	neutralizeCommandEffects = true;
@@ -1583,17 +1113,10 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIRetainsRoundAllowanceInsteadOfH
 	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
 	gameHandler->sendAndApply(activate);
 
-	auto & side = battle()->getSide(BattleSide::ATTACKER);
 	const auto earned = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::DISPEL);
 	ASSERT_TRUE(earned.has_value());
 	ASSERT_EQ(earned->source, HeroActionAllowanceState::GrantSource::ROUND);
-	ASSERT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER, SpellID::DISPEL));
-	const auto pendingBeforeEvaluation = side.metamagicPendingCount;
-	ASSERT_EQ(pendingBeforeEvaluation, 0);
-	ASSERT_EQ(side.metamagicUsesConsumed, 0);
-	ASSERT_FALSE(side.metamagicGrandUsed);
 	const auto allowancesBeforeEvaluation = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
-	const auto pointsBeforeEvaluation = battle()->getMetamagicPointState(BattleSide::ATTACKER);
 	const auto rngBeforeEvaluation = randomizerBytes();
 	const auto manaBeforeEvaluation = attackerSideHero->getManaAvailable();
 	const auto activeBeforeEvaluation = active->acquireState()->save();
@@ -1601,8 +1124,6 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIRetainsRoundAllowanceInsteadOfH
 
 	const auto * dispel = SpellID(SpellID::DISPEL).toSpell();
 	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, dispel);
-	legal.setMetamagicFollowup(false);
-	legal.setMetamagicTargetUnitId(active->unitId());
 	ASSERT_TRUE(dispel->battleMechanics(&legal)->canBeCastAt({spells::Destination(active)}));
 
 	auto environment = std::make_shared<MagicEnvironment>(gameState());
@@ -1614,12 +1135,8 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIRetainsRoundAllowanceInsteadOfH
 	EXPECT_FALSE(evaluator.attemptCastingSpell(active))
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	EXPECT_TRUE(callback->submitted.empty());
-	EXPECT_EQ(side.metamagicPendingCount, 0);
-	EXPECT_EQ(side.metamagicUsesConsumed, 0);
-	EXPECT_EQ(side.metamagicPendingCount, pendingBeforeEvaluation);
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBeforeEvaluation);
 	EXPECT_EQ(randomizerBytes(), rngBeforeEvaluation);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), pointsBeforeEvaluation);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeEvaluation);
 	EXPECT_EQ(active->acquireState()->save(), activeBeforeEvaluation);
 	EXPECT_EQ(enemy->acquireState()->save(), enemyBeforeEvaluation);
@@ -1636,10 +1153,7 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIFirstCastUsesOnlyOrdinaryRoundA
 	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
 	ASSERT_GE(metamagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
-	// Current Basic/Advanced/Expert prerequisites; point growth grants no actions.
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst"});
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneFeedback"});
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneSingularity"});
+	// Externally acquired Expert rank grants no extra Hero Action.
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -1685,18 +1199,10 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIFirstCastUsesOnlyOrdinaryRoundA
 	ASSERT_EQ(ordinary->source, HeroActionAllowanceState::GrantSource::ROUND);
 	spells::BattleCast legalTrigger(battle(), attackerSideHero, spells::Mode::HERO, spell);
 	ASSERT_TRUE(spell->battleMechanics(&legalTrigger)->canBeCastAt({spells::Destination(enemy)}));
-	auto & side = battle()->getSide(BattleSide::ATTACKER);
-	auto & metamagicState = side;
 	const auto earned = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION);
 	ASSERT_TRUE(earned.has_value());
 	ASSERT_EQ(earned->source, HeroActionAllowanceState::GrantSource::ROUND);
-	ASSERT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER, SpellID::IMPLOSION));
-	const auto pendingBeforeEvaluation = side.metamagicPendingCount;
-	ASSERT_EQ(pendingBeforeEvaluation, 0);
-	ASSERT_EQ(side.metamagicUsesConsumed, 0);
-	ASSERT_FALSE(side.metamagicGrandUsed);
 	const auto allowancesBeforeEvaluation = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
-	const auto pointsBeforeEvaluation = battle()->getMetamagicPointState(BattleSide::ATTACKER);
 	const auto rngBeforeEvaluation = randomizerBytes();
 	const auto manaBeforeEvaluation = attackerSideHero->getManaAvailable();
 	const auto activeBeforeEvaluation = active->acquireState()->save();
@@ -1713,13 +1219,8 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIFirstCastUsesOnlyOrdinaryRoundA
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
-	EXPECT_FALSE(callback->submitted.front().metamagicFollowup);
-	EXPECT_FALSE(callback->submitted.front().metamagicGrand);
-	EXPECT_EQ(metamagicState.metamagicPendingCount, pendingBeforeEvaluation);
-	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBeforeEvaluation);
 	EXPECT_EQ(randomizerBytes(), rngBeforeEvaluation);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), pointsBeforeEvaluation);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeEvaluation);
 	EXPECT_EQ(active->acquireState()->save(), activeBeforeEvaluation);
 	EXPECT_EQ(enemy->acquireState()->save(), enemyBeforeEvaluation);
@@ -1727,12 +1228,10 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicAIFirstCastUsesOnlyOrdinaryRoundA
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBeforeEvaluation - battle()->battleGetSpellCost(spell, attackerSideHero));
 	EXPECT_LT(enemy->getAvailableHealth(), healthBeforeCast);
-	EXPECT_EQ(side.metamagicPendingCount, 0);
-	EXPECT_EQ(side.metamagicUsesConsumed, 0);
-	EXPECT_FALSE(side.metamagicGrandUsed);
+	EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION));
 }
 
-TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroActions)
+TEST_F(NewHorizonsMagicAITest, PassiveMetamagicNeverInventsExtraHeroActions)
 {
 	useCommands = true;
 	useCurrentMagicRules = true;
@@ -1743,10 +1242,7 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 	const auto metamagic = SecondarySkill::decode("new-horizons:metamagic");
 	ASSERT_GE(metamagic, 0);
 	attackerSideHero->setSecSkillLevel(SecondarySkill(metamagic), 3, ChangeValueMode::ABSOLUTE);
-	// Current point-policy prerequisites, without historical follow-up grants.
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst"});
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneFeedback"});
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.arcaneSingularity"});
+	// Passive Metamagic uses the ordinary round allowance at every rank.
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 10, ChangeValueMode::ABSOLUTE);
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	const auto knownSpells = attackerSideHero->getSpellsInSpellbook();
@@ -1775,7 +1271,7 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 	gameHandler->sendAndApply(activate);
 
 	// Use one accepted ordinary spell per round. Controlled round packets
-	// characterize point growth without inventing a follow-up grant.
+	// characterize the ordinary round allowance without granting extra actions.
 	const auto acceptPaid = [&](SpellID spellId, const CStack * target)
 	{
 		const auto allowance = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, spellId);
@@ -1786,8 +1282,6 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 		EXPECT_EQ(allowance->source, HeroActionAllowanceState::GrantSource::ROUND);
 		const auto * spell = spellId.toSpell();
 		spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, spell);
-		legal.setMetamagicFollowup(false);
-		legal.setMetamagicTargetUnitId(target->unitId());
 		const bool legalTarget = spell->battleMechanics(&legal)->canBeCastAt({spells::Destination(target)});
 		EXPECT_TRUE(legalTarget);
 		if(!legalTarget)
@@ -1796,7 +1290,6 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
 		action.spell = spellId;
-		action.metamagicFollowup = false;
 		action.aimToUnit(target);
 		const auto cost = battle()->battleGetSpellCost(spell, attackerSideHero);
 		const auto manaBefore = attackerSideHero->getManaAvailable();
@@ -1808,32 +1301,24 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 		}
 		return accepted;
 	};
-	auto & metamagicState = battle()->getSide(BattleSide::ATTACKER);
 	for(int used = 0; used < 2; ++used)
 	{
 		if(used != 0) { advanceRound(); gameHandler->sendAndApply(activate); }
 		ASSERT_TRUE(acceptPaid(SpellID::BLESS, active));
 		EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::SLOW));
-		EXPECT_EQ(metamagicState.metamagicPendingCount, 0);
-		EXPECT_EQ(metamagicState.metamagicUsesConsumed, 0);
 	}
 	advanceRound(); gameHandler->sendAndApply(activate);
-	const auto pointsBefore = battle()->getMetamagicPointState(BattleSide::ATTACKER);
 	const auto earned = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION);
 	ASSERT_TRUE(earned.has_value());
 	ASSERT_EQ(earned->source, HeroActionAllowanceState::GrantSource::ROUND);
-	ASSERT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER, SpellID::IMPLOSION));
 	// Isolate the metadata decision, not competition between different spells.
 	for(const auto spellId : {SpellID::BLESS, SpellID::SLOW, SpellID::FIREBALL})
 		attackerSideHero->removeSpellFromSpellbook(SpellID(spellId));
 	ASSERT_EQ(attackerSideHero->getSpellsInSpellbook(), std::set<SpellID>{SpellID::IMPLOSION});
 	const auto * implosion = SpellID(SpellID::IMPLOSION).toSpell();
 	spells::BattleCast legal(battle(), attackerSideHero, spells::Mode::HERO, implosion);
-	legal.setMetamagicFollowup(false);
-	legal.setMetamagicTargetUnitId(enemy->unitId());
 	ASSERT_TRUE(implosion->battleMechanics(&legal)->canBeCastAt({spells::Destination(enemy)}));
 	const auto allowancesBefore = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
-	const auto currentPointsBefore = battle()->getMetamagicPointState(BattleSide::ATTACKER);
 	const auto rngBefore = randomizerBytes();
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto healthBefore = enemy->getAvailableHealth();
@@ -1850,15 +1335,10 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 		<< describeMagicAIState(*callback, battle()->getMagicRules(), battle()->getHeroCommandRules());
 	ASSERT_EQ(callback->submitted.size(), 1u);
 	EXPECT_EQ(callback->submitted.front().spell, SpellID::IMPLOSION);
-	EXPECT_FALSE(callback->submitted.front().metamagicFollowup);
-	EXPECT_FALSE(callback->submitted.front().metamagicGrand);
 	// The callback only records the request. AI evaluation must not spend the
-	// real allowance or mark Grand used before the server accepts the cast.
-	EXPECT_EQ(metamagicState.metamagicUsesConsumed, 0);
-	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
+	// real allowance before the server accepts the cast.
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowancesBefore);
 	EXPECT_EQ(randomizerBytes(), rngBefore);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), currentPointsBefore);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(active->acquireState()->save(), activeBefore);
 	EXPECT_EQ(enemy->acquireState()->save(), enemyBefore);
@@ -1867,11 +1347,7 @@ TEST_F(NewHorizonsMagicAITest, CurrentMetamagicGrowthNeverInventsExtraHeroAction
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - cost);
 	EXPECT_LT(enemy->getAvailableHealth(), healthBefore);
-	EXPECT_EQ(metamagicState.metamagicUsesConsumed, 0);
-	EXPECT_FALSE(metamagicState.metamagicGrandUsed);
-	EXPECT_EQ(metamagicState.metamagicPendingCount, 0);
 	EXPECT_FALSE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION));
-	EXPECT_GE(battle()->getMetamagicPointState(BattleSide::ATTACKER).points, pointsBefore.points);
 }
 
 TEST_F(NewHorizonsMagicAITest, ResurrectionCanonicalTargetReacquiresProjectedStateFromLiveAimIdentity)
@@ -4093,17 +3569,6 @@ TEST_F(NewHorizonsMagicAITest, RegenerationForecastConsumesMarksOnceAndSkipsDeni
 	EXPECT_EQ(forecastStack->getAvailableHealth(), initialForecastHealth + 40)
 		<< "consumed marks must not be valued or applied again on later projected activations";
 
-	auto stoppedForecast = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
-	Bonus timeStop(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 0, BonusSourceID(regeneration));
-	stoppedForecast->addUnitBonus(wounded->unitId(), {timeStop});
-	auto stoppedStack = stoppedForecast->getForUpdate(wounded->unitId());
-	ASSERT_TRUE(stoppedStack->isTimeStopped());
-	EXPECT_FALSE(stoppedForecast->battleBeginsActivation(stoppedStack.get(), BattleUnitTurnReason::TURN_QUEUE));
-	stoppedForecast->nextTurn(wounded->unitId(), BattleUnitTurnReason::TURN_QUEUE);
-	EXPECT_EQ(stoppedStack->getAvailableHealth(), liveHealth);
-	EXPECT_EQ(stoppedStack->regenerationPendingMicroHealth, livePending);
-
 	EXPECT_EQ(wounded->getAvailableHealth(), liveHealth);
 	EXPECT_EQ(wounded->regenerationPendingMicroHealth, livePending)
 		<< "projected activation processing must not mutate authoritative battle state";
@@ -4751,12 +4216,6 @@ TEST_F(NewHorizonsMagicAITest, ShadowGiftAIEnumeratesSacrificeTiersAndValuesThre
 	EXPECT_EQ(SpellTargetEvaluator::shadowGiftTradeValue(
 		invalidTargetMechanics.get(), recipientTarget, 30), 0.0f);
 	recipient->cloned = false;
-	auto timeStop = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 0, BonusSourceID());
-	recipient->addNewBonus(timeStop);
-	EXPECT_EQ(SpellTargetEvaluator::shadowGiftTradeValue(
-		invalidTargetMechanics.get(), recipientTarget, 30), 0.0f);
-		recipient->removeBonus(timeStop);
 
 	auto callback = std::make_shared<MagicCallback>();
 	callback->onBattleStarted(battle());

@@ -14,7 +14,7 @@ bool beginsActivation(const ActivationContext & context, const Unit * unit, Batt
 {
 	if(reason == BattleUnitTurnReason::CRISIS_ORDER || reason == BattleUnitTurnReason::CRISIS_RESUME)
 		return false;
-	if(!unit || unit->isTimeStopped() || reason == BattleUnitTurnReason::ACTION_REJECTED
+	if(!unit || reason == BattleUnitTurnReason::ACTION_REJECTED
 		|| reason == BattleUnitTurnReason::MASTER_GATE_CONTINUATION
 		|| reason == BattleUnitTurnReason::PURSUIT_CONTINUATION
 		|| reason == BattleUnitTurnReason::DREAD_CAVALRY_CONTINUATION

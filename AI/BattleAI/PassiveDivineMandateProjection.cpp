@@ -55,16 +55,10 @@ std::optional<float> projectedValue(const Environment * environment,
 	{
 		auto state = std::make_shared<HypotheticBattle>(environment, postOrder);
 		const auto * definition = spell.spell.toSpell();
-		const auto ward = state->resolveProjectedCounterspell(side, definition);
-		if(!ward.resolutionKnown || !ward.negated)
-		{ uncertain = true; return std::nullopt; }
-		if(!state->projectAutomaticCounterspell(ward)) return std::nullopt;
 		const auto action = newHorizonsPassiveDivineMandate::automaticSpellAction(*state,
 			side, spell.spell, target.aimUnitId);
 		spells::BattleCast cast(state.get(), hero, spells::Mode::HERO, definition);
 		cast.setAutomaticHeroCast(receipt);
-		if(ward.wardActive) cast.setCounterspell(ward.wardSide, *ward.negated,
-			*ward.negated ? ward.manaCost.value() : 0);
 		cast.setCureAffliction(action.spellCureAffliction);
 		cast.setCurePhysicalAffliction(action.spellCurePhysicalAffliction);
 		cast.setPurifyChoices(action.spellPurifyChoices);
@@ -72,13 +66,10 @@ std::optional<float> projectedValue(const Environment * environment,
 		const auto mechanics = cast.mechanicsForTarget(aim);
 		if(!mechanics->canBeCastAt(aim)) return std::nullopt;
 		mechanics->castEval(state->getServerCallback(), aim);
-		if(!*ward.negated && spell.spell == newHorizonsPurify::spellID())
+		if(spell.spell == newHorizonsPurify::spellID())
 		{
 			const auto resolved = heroSpellProjection::projectAutomaticPurifyEffects(*state, action, hero);
 			if(!resolved) return std::nullopt;
-			const auto marks = newHorizonsMetamagic::captureHeroCastProfile(hero, state.get(), true);
-			newHorizonsMetamagic::publishResolvedMarks(*state->getServerCallback(),
-				marks.perks.rank > 0 ? &marks : nullptr, *state, *resolved);
 			auto inspiration = newHorizonsPassiveDivineMandate::inspiringSpeedEffects(*state,
 				side, receipt, *resolved);
 			if(!inspiration.toAdd.empty()) state->getServerCallback()->apply(inspiration);

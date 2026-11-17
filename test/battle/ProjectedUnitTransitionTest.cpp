@@ -242,16 +242,7 @@ TEST_F(ProjectedUnitTransitionTest, MalformedLaterStateDiscardsPrivatePrefixWith
 	EXPECT_EQ(subject->save(), before);
 }
 
-TEST_F(ProjectedUnitTransitionTest, TimeStopIgnoresMalformedAndMinimumDeltaBeforeParsingOrPrivateGuard)
-{
-	subject->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	capture();
-	const JsonNode malformed("not a state object");
-	EXPECT_EQ(arena->updateUnit(subject->unitId(), malformed, std::numeric_limits<int64_t>::min()), Arena::UpdateDecision::IGNORE_TIME_STOP);
-	EXPECT_EQ(arena->updateUnit(subject->unitId(), malformed, 0), Arena::UpdateDecision::IGNORE_TIME_STOP);
-	EXPECT_EQ(arena->size(), battle()->stacks.size());
-}
+
 
 TEST_F(ProjectedUnitTransitionTest, UnignoredMinimumDeltaRefusesBeforeUndefinedNegationOrLoad)
 {

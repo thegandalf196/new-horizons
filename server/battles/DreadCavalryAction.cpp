@@ -78,7 +78,7 @@ void complete(CGameHandler & handler, const CBattleInfoCallback & battle, const 
 	if(context.before.pending)
 	{
 		state->dreadCavalryState.retirePending();
-		state->pursuitMovementRemaining = source->alive() && source->canMove() && !source->isTimeStopped()
+		state->pursuitMovementRemaining = source->alive() && source->canMove()
 			&& !newHorizonsFrozen::isFrozen(*source) && !source->armorerLastStandEndedActivation
 			? std::max(context.before.legacyTailAfterMovement(context.movementSpent), context.newAllowance) : 0;
 		publish(handler, battle, source, state);

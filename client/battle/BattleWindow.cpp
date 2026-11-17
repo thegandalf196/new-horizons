@@ -674,7 +674,7 @@ void BattleWindow::updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero
 }
 
 
-void BattleWindow::updateCounterspellStatus()
+void BattleWindow::updateHeroBattleStatus()
 {
 	refreshHeroBattleStatus(BattleSide::ATTACKER);
 	refreshHeroBattleStatus(BattleSide::DEFENDER);

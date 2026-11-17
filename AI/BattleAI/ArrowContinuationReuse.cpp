@@ -32,9 +32,7 @@ std::optional<heroActionUtility::AbsoluteContinuationUtility> Reuse::find(
 {
 	admitted = false;
 	if((control && !control->enabled) || !full || !isArrow(candidate) || !outcome
-		|| !admission.admitted || !admission.spellAllowance || admission.counterspellNegated
-		|| admission.counterspell.wardActive || !admission.counterspell.resolutionKnown
-		|| !admission.counterspell.negated || *admission.counterspell.negated
+		|| !admission.admitted || !admission.spellAllowance
 		|| !sourcesSupported(state, outcome->target) || !resourceIndependent(state)
 		|| !scoringSupported(state))
 	{
@@ -47,7 +45,6 @@ std::optional<heroActionUtility::AbsoluteContinuationUtility> Reuse::find(
 	options.spellOvercharge = 0;
 	for(const auto & entry : entries)
 		if(entry.allowance == *admission.spellAllowance
-			&& heroCandidateValueContext::sameCounterspell(entry.counterspell, admission.counterspell)
 			&& entry.recipients == recipients
 			&& entry.outcome == *outcome && heroCandidateValueContext::sameOptions(entry.options, options))
 		{
@@ -70,6 +67,6 @@ void Reuse::remember(const PossibleSpellcast & candidate, const heroActionProjec
 	}
 	auto options = candidate;
 	options.spellOvercharge = 0;
-	entries.push_back({std::move(options), *admission.spellAllowance, admission.counterspell, recipients, *outcome, value});
+	entries.push_back({std::move(options), *admission.spellAllowance, recipients, *outcome, value});
 }
 }

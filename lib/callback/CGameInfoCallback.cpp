@@ -41,6 +41,11 @@ const JsonNode & CGameInfoCallback::getMagicRules() const
 	return gameState().getMagicRules();
 }
 
+std::shared_ptr<const nativeRules::CapturedRuleDocument> CGameInfoCallback::getCapturedMagicRules() const
+{
+	return gameState().getCapturedMagicRules();
+}
+
 const JsonNode & CGameInfoCallback::getHeroDevelopmentRules() const
 {
 	return gameState().getHeroDevelopmentRules();
@@ -81,6 +86,11 @@ std::vector<const CGObjectInstance *> IGameInfoCallback::getGuardingCreatures(in
 		return guardian->passableFor(hero);
 	});
 	return guardians;
+}
+
+const nativeRules::CompiledCapabilityRules * CGameInfoCallback::getCompiledHeroCapabilityRules() const
+{
+	return gameState().getCompiledHeroCapabilityRules();
 }
 
 const JsonNode & CGameInfoCallback::getHeroPerkRules() const
@@ -256,14 +266,14 @@ int32_t CGameInfoCallback::getSpellCost(const spells::Spell * sp, const CGHeroIn
 }
 
 SpellCostBreakdown CGameInfoCallback::getSpellCostBreakdown(const spells::Spell * sp,
-	const CGHeroInstance * caster, bool metamagicFollowup) const
+	const CGHeroInstance * caster) const
 {
 	SpellCostBreakdown denied;
 	denied.finalCost = -1;
 	ERROR_RET_VAL_IF(!canGetFullInfo(caster), "Cannot get info about caster!", denied);
 
 	if(auto casterBattle = gameState().getBattle(caster->getOwner()))
-		return casterBattle->battleGetSpellCostBreakdown(sp, caster, 1, metamagicFollowup);
+		return casterBattle->battleGetSpellCostBreakdown(sp, caster, 1);
 
 	SpellCostBreakdown result;
 	result.listedCost = caster->getListedSpellCost(sp);

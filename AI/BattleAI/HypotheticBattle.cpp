@@ -80,8 +80,6 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	seizeInitiative = realBattle->getBattle()->getSeizeInitiativeState();
 	deploymentState = realBattle->getBattle()->getDeploymentState();
 	fortuneRollRules = realBattle->getBattle()->getLuckRollRules();
-	if(const auto * concreteBattle = dynamic_cast<const BattleInfo *>(realBattle->getBattle()))
-		pendingTimeStopHeroActionSides = concreteBattle->getPendingTimeStopHeroActionSides();
 	captureFortificationState(*realBattle);
 
 	nextId = 0x00F00000;
@@ -266,10 +264,10 @@ void HypotheticBattle::setRapidResponseState(BattleSide side, const RapidRespons
 	rapidResponseStates.at(side) = state;
 }
 
-void HypotheticBattle::completeRapidResponseActivation(uint32_t unitId, bool syntheticStoppedSlot)
+void HypotheticBattle::completeRapidResponseActivation(uint32_t unitId)
 {
 	const auto * unit = battleGetUnitByID(unitId);
-	if(!unit || syntheticStoppedSlot)
+	if(!unit)
 		return;
 	const auto side = playerToSide(battleGetOwner(unit));
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)

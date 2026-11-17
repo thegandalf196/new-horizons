@@ -305,7 +305,7 @@ TEST_F(NewHorizonsCrisisCommandTest, CurrentRulesRejectBeforeOlderSettingsHeroMa
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	CrisisOldPrefix settings, hero, map, world, lobby;
 	GameSettings captured;
-	captured.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, defenderSideHero->getPerkState().rules);
+	captured.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, defenderSideHero->getPerkState().getRules());
 	EXPECT_THROW(captured.serialize(settings), std::runtime_error); EXPECT_EQ(settings.fields, 0);
 	EXPECT_THROW(defenderSideHero->serialize(hero), std::runtime_error); EXPECT_EQ(hero.fields, 0);
 	EXPECT_THROW(gameState()->getMap().serialize(map), std::runtime_error); EXPECT_EQ(map.fields, 0);

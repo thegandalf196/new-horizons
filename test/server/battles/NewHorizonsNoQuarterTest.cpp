@@ -78,13 +78,6 @@ protected:
 		startBattle();
 	}
 
-	void addTimeStopMarker(CStack * stack)
-	{
-		const Bonus marker(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-			BonusSource::OTHER, 1, BonusSourceID());
-		battle()->addOrUpdateUnitBonus(stack, marker, true);
-	}
-
 	void setActiveStack(const CStack * stack, BattleUnitTurnReason reason)
 	{
 		BattleSetActiveStack activation;
@@ -660,50 +653,7 @@ TEST_F(NewHorizonsNoQuarterTest, PhysicalMeleeCollateralCanTriggerNoQuarter)
 	EXPECT_TRUE(hasNoQuarterMorale(collateral));
 }
 
-TEST_F(NewHorizonsNoQuarterTest, TimeStoppedCollateralDoesNotReceiveNoQuarterAndRoundCleanupStillRuns)
-{
-	startBattleWithNoQuarter(BattleSide::ATTACKER);
-	auto * hydra = addStack(BattleSide::ATTACKER, creatureByName("core:hydra"), BattleHex(leftHex), 10);
-	auto * primary = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(rightHex), 100);
-	auto * stopped = addStack(BattleSide::DEFENDER, creatureByName("core:angel"), BattleHex(leftHex - 17), 100);
-	forceMaximumDamage(hydra);
-	blockRetaliation(hydra);
-	BattleAttackInfo collateralAttack(hydra, stopped, 0, false);
-	collateralAttack.secondaryAttack = true;
-	const int64_t hitDamage = battle()->calculateDmgRange(collateralAttack).damage.max;
-	ASSERT_GT(hitDamage, 0);
-	setAvailableHealth(stopped, stopped->getTotalHealth() / 4 + hitDamage - 1);
-	addTimeStopMarker(stopped);
-	ASSERT_TRUE(stopped->isTimeStopped());
-	beginCombat();
 
-	server.attacks.clear();
-	ASSERT_TRUE(attack(hydra, primary->getPosition()));
-	ASSERT_FALSE(server.attacks.empty());
-	const auto stoppedHit = std::ranges::find(server.attacks.front().bsa,
-		stopped->unitId(), &BattleStackAttacked::stackAttacked);
-	ASSERT_NE(stoppedHit, server.attacks.front().bsa.end());
-	EXPECT_TRUE(stoppedHit->flags & BattleStackAttacked::SECONDARY);
-	EXPECT_TRUE(stopped->alive());
-	EXPECT_FALSE(hasNoQuarterRetaliationBlock(stopped));
-	EXPECT_FALSE(hasNoQuarterMorale(stopped));
-	EXPECT_EQ(stopped->noQuarterMoraleActivationsRemaining, 0);
-
-	SetStackEffect staleEffect;
-	staleEffect.battleID = BattleID(0);
-	staleEffect.toAdd.emplace_back(stopped->unitId(), std::vector<Bonus>{
-		newHorizonsOffense::noQuarterRetaliationBonus()});
-	gameHandler->sendAndApply(staleEffect);
-	EXPECT_FALSE(hasNoQuarterRetaliationBlock(stopped));
-
-	// Simulate stale tagged battle state from an old save. Unlike N_TURNS, the
-	// No Quarter round blocker is always cleared at the round seam, even in stasis.
-	stopped->addNewBonus(std::make_shared<Bonus>(newHorizonsOffense::noQuarterRetaliationBonus()));
-	ASSERT_TRUE(hasNoQuarterRetaliationBlock(stopped));
-	battle()->nextRound();
-	EXPECT_FALSE(hasNoQuarterRetaliationBlock(stopped));
-	EXPECT_TRUE(stopped->isTimeStopped());
-}
 
 TEST_F(NewHorizonsNoQuarterTest, PhantomIntegrityDefinesTheMaximumHealthThreshold)
 {

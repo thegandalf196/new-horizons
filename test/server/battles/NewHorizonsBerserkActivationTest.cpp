@@ -163,17 +163,9 @@ protected:
 
 	void markSavedFrenziedCurseInactive(CGHeroInstance * hero)
 	{
-		auto savedState = hero->getPerkState();
-		ASSERT_TRUE(savedState.hasSelection(CHAOS_MAGIC_SKILL, FRENZIED_CURSE_PERK));
-		auto & perks = savedState.rules["skills"][CHAOS_MAGIC_SKILL]["perks"].Vector();
-		const auto selected = std::find_if(perks.begin(), perks.end(), [](const JsonNode & perk)
-		{
-			return perk["id"].String() == FRENZIED_CURSE_PERK;
-		});
-		ASSERT_NE(selected, perks.end());
-		(*selected)["effect"]["status"].String() = "planned";
-		savedState.validate();
-		const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()) = std::move(savedState);
+		ASSERT_TRUE(hero->getPerkState().hasSelection(CHAOS_MAGIC_SKILL, FRENZIED_CURSE_PERK));
+		// Keep the admitted selection while disabling its live rank requirement.
+		hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(CHAOS_MAGIC_SKILL)), 0, ChangeValueMode::ABSOLUTE);
 		EXPECT_TRUE(hero->getPerkState().hasSelection(CHAOS_MAGIC_SKILL, FRENZIED_CURSE_PERK));
 		EXPECT_FALSE(hero->hasActivePerk(CHAOS_MAGIC_SKILL, FRENZIED_CURSE_PERK));
 	}

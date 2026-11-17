@@ -472,7 +472,7 @@ TEST_F(NewHorizonsCombatSkillsTest, CounterfireAnswersPhysicalRangedDamageOncePe
 	EXPECT_EQ(counterShooter->counterAttacks.available(), std::max(0, retaliationAvailableBefore - 1));
 }
 
-TEST_F(NewHorizonsCombatSkillsTest, CounterfireRefusesTimeStoppedIncapacitatedAndFrozenShootersAndRoundTripsStamp)
+TEST_F(NewHorizonsCombatSkillsTest, CounterfireRefusesIncapacitatedAndFrozenShootersAndRoundTripsStamp)
 {
 	startGame();
 	setArcheryPerk(defenderSideHero, newHorizonsArchery::COUNTERFIRE);
@@ -516,7 +516,6 @@ TEST_F(NewHorizonsCombatSkillsTest, CounterfireRefusesTimeStoppedIncapacitatedAn
 		gameHandler->sendAndApply(removed);
 		ASSERT_TRUE(newHorizonsArchery::canUseCounterfire(defenderSideHero, counterShooter));
 	};
-	expectNoCounterfire(BonusType::TIME_STOP, BonusSource::SPELL_EFFECT);
 	expectNoCounterfire(BonusType::NOT_ACTIVE, BonusSource::SPELL_EFFECT);
 	expectNoCounterfire(BonusType::NOT_ACTIVE, BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::STONE_GAZE)));
 	EXPECT_TRUE(shooter->alive());

@@ -15,6 +15,7 @@
 #include "../../lib/filesystem/ResourcePath.h"
 #include "BattleConstants.h"
 #include "HeroPositiveProcPresentation.h"
+#include "ForceLancePresentation.h"
 #include <optional>
 
 class BattleAction;
@@ -57,6 +58,7 @@ struct BattleEffect
 class BattleEffectsController
 {
 	BattleInterface & owner;
+	ForceLancePresentation forceLance;
 
 	/// list of current effects that are being displayed on screen (spells & creature abilities)
 	std::vector<BattleEffect> battleEffects;
@@ -82,6 +84,7 @@ public:
 	void battleAnimationPlayed(const BattleAnimationPlayed & pack);
 
 	void collectRenderableObjects(BattleRenderer & renderer);
+	void tick(uint32_t elapsed);
 
 	friend class EffectAnimation;
 };

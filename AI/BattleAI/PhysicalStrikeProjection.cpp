@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "PhysicalStrikeProjection.h"
+#include "NewHorizonsHexOfPain.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
 #include "../../lib/battle/NewHorizonsAttackControllers.h"
@@ -22,6 +23,10 @@ std::optional<PhysicalStrikeProjection::Destruction> configuredCasualty(
 	if(!solidarity) return std::nullopt;
 	return PhysicalStrikeProjection::Destruction{unit.unitId(), solidarity};
 }
+}
+bool PhysicalStrikeProjection::needsPostAttackState(const CBattleInfoCallback & battle, const battle::Unit & unit, bool shooting)
+{
+	return newHorizonsHexOfPainAI::hasEffect(&unit) || (!shooting && battle.battleCanTriggerCleave(&unit));
 }
 std::optional<PhysicalStrikeProjection::Destruction> PhysicalStrikeProjection::captureForecastDamage(
 	const HypotheticBattle & battle, const battle::Unit & unit)

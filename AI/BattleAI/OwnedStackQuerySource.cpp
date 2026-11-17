@@ -122,12 +122,6 @@ std::optional<std::pair<int32_t, int32_t>> OwnedStackQuerySource::unitLuckLimits
 	return battle::OwnedFrameBranchQueries::environment(basis).unitLuckLimits(&basis.unit());
 }
 
-std::optional<bool> OwnedStackQuerySource::unitLegacyTimeStopSpellMatch(const battle::Unit * unit, SpellID spell) const
-{
-	const auto & basis = current(unit);
-	return battle::OwnedFrameBranchQueries::environment(basis).unitLegacyTimeStopSpellMatch(&basis.unit(), spell);
-}
-
 newHorizonsElementalAttunement::UnitPassives OwnedStackQuerySource::unitElementalAttunement(const battle::Unit * unit) const
 {
 	const auto & basis = current(unit);

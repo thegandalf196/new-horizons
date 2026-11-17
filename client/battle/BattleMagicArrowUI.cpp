@@ -21,11 +21,9 @@ namespace
 {
 std::optional<spells::effects::SpellEffectValue> previewArrowChange(
 	const CBattleInfoCallback & battle, const CGHeroInstance & hero, const CSpell & spell,
-	const battle::Unit & target, bool followup, int selectedOvercharge)
+	const battle::Unit & target, int selectedOvercharge)
 {
 	spells::BattleCast preview(&battle, &hero, spells::Mode::HERO, &spell);
-	preview.setMetamagicFollowup(followup);
-	preview.setMetamagicTargetUnitId(target.unitId());
 	preview.setOvercharge(selectedOvercharge);
 	auto mechanics = spell.battleMechanics(&preview);
 	if(!mechanics)
@@ -54,7 +52,6 @@ struct ArrowSelection
 	ObjectInstanceID heroId;
 	uint32_t targetUnitId;
 	SpellID spellId;
-	bool metamagicFollowup;
 	uint64_t castingSession;
 
 	struct Current
@@ -112,8 +109,6 @@ struct ArrowSelection
 		}
 
 		spells::BattleCast legality(callback.get(), hero, spells::Mode::HERO, spell);
-		legality.setMetamagicFollowup(metamagicFollowup);
-		legality.setMetamagicTargetUnitId(targetUnitId);
 		legality.setOvercharge(overcharge);
 		const auto mechanics = spell->battleMechanics(&legality);
 		battle::Target targetCheck;
@@ -130,8 +125,8 @@ struct ArrowSelection
 		values.unavailableReason = !values.affordable ? "Not enough Mana."
 			: !values.legal ? "Casting is no longer available. Cancel and choose again." : "";
 
-		const auto baseChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, 0);
-		const auto selectedChange = previewArrowChange(*callback, *hero, *spell, *target, metamagicFollowup, overcharge);
+		const auto baseChange = previewArrowChange(*callback, *hero, *spell, *target, 0);
+		const auto selectedChange = previewArrowChange(*callback, *hero, *spell, *target, overcharge);
 		if(!baseChange || !selectedChange)
 			return values;
 		values.previewAvailable = true;
@@ -172,7 +167,7 @@ void BattleInterface::installMagicArrowOverchargeUI()
 			if(!hero || !initialTarget || !curInt || !curInt->cb)
 				return std::nullopt;
 			const ArrowSelection selection{CPlayerInterface::battleInt, getBattleID(), hero->id,
-				initialTarget->unitId(), pending.spell, pending.metamagicFollowup, actionsController->getCastingSession()};
+				initialTarget->unitId(), pending.spell, actionsController->getCastingSession()};
 			if(!selection.current())
 				return std::nullopt;
 			MagicArrowOverchargeContext context;

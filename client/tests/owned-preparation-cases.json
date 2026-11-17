@@ -6,8 +6,8 @@
   "fixtureResource": "Maps/owned-preparation-angel2.vmap",
   "resourceBindings": ["NH_OWNED_PREPARATION_MAP_SHA256", "NH_OWNED_PREPARATION_MAP_BYTES"],
   "cases": [
-    {"selector": "ordered-removal", "originalOracle": "GraveDustSnapshotTest.MixedTimeStopRemovalPreflightsOrderedVectorBeforeOverlayMutation"},
-    {"selector": "incoming-clock", "originalOracle": "GraveDustSnapshotTest.OrdinaryIncomingClockBeforeCompleteDustIsCanonicalProtectedNoOp"}
+    {"selector": "ordered-removal", "originalOracle": "GraveDustSnapshotTest.CompleteVectorInEitherOrderPreservesControlCleanupAndRejectedPrefix"},
+    {"selector": "incoming-bonuses", "originalOracle": "GraveDustSnapshotTest.OrdinaryIncomingBonusesPublishCompleteDustAndIsolateSibling"}
   ],
   "nativeControlsRemainRequired": ["GraveDustMutationTest.*", "OwnedSourceRelationRecipeTest.*", "OwnedSourceExportRoleTest.*"],
   "isolation": "Guarded background Xvfb; disposable profile/save; actual SDL_AUDIODRIVER and SDL_AUDIO_DRIVER dummy; bounded owner and full wait/reap/postchecks",

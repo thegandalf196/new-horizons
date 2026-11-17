@@ -604,19 +604,3 @@ TEST_F(RevisedArmyOrderValueTest, VanguardCannotBeIssuedForAnAllMechanicalArmy)
 	ASSERT_TRUE(active->hasBonusOfType(BonusType::MECHANICAL));
 	ASSERT_NO_FATAL_FAILURE(expectVanguardUnavailableWithoutMutation());
 }
-
-TEST_F(RevisedArmyOrderValueTest, VanguardCannotTargetStoppedLivingUnitsWhileAnUndeadAllyIsActive)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto * control = addStack(side, creatureByName("core:skeleton"), BattleHex(6, 5), 1);
-	ASSERT_NE(control, nullptr);
-	ASSERT_NO_FATAL_FAILURE(activate(control));
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	stopped.parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(side));
-	battle()->addOrUpdateUnitBonus(active, stopped, true);
-	ASSERT_TRUE(active->isTimeStopped());
-	ASSERT_FALSE(control->isTimeStopped());
-	ASSERT_FALSE(heroCommands::isVanguardCreature(active));
-	ASSERT_FALSE(heroCommands::isVanguardCreature(control));
-	ASSERT_NO_FATAL_FAILURE(expectVanguardUnavailableWithoutMutation());
-}

@@ -221,11 +221,14 @@ TEST_F(NewHorizonsAttackControllerTest, OgreBloodlustIncludesSelfAndOnlyCurrentL
 	EXPECT_FALSE(casts.front().announcement.activeCast);
 	int affected = 0;
 	for(auto * unit : {actor, friendly})
-		for(const auto & bonus : *unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLOODLUST)))))
+	{
+		const auto bonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLOODLUST))));
+		for(const auto & bonus : *bonuses)
 		{
 			++affected; EXPECT_EQ(bonus->val, 6); EXPECT_EQ(bonus->turnsRemain, 3);
 			EXPECT_EQ(bonus->effectRange, BonusLimitEffect::ONLY_MELEE_FIGHT);
 		}
+	}
 	EXPECT_EQ(affected, 1);
 	hit.secondaryAttack = true;
 	EXPECT_FALSE(newHorizonsAttackControllers::captureStrike(*battle(), hit, 1).bloodlust);

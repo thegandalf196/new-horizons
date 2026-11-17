@@ -271,16 +271,12 @@ TEST_F(NewHorizonsManaFurnaceTest, InvalidSecondSideSnapshotOrPolicyRejectsBefor
 	pools(attacker, 5, 2);
 	EXPECT_EQ(attacker->battle, nullptr);
 	EXPECT_EQ(defender->battle, nullptr);
-	// Deliberately corrupt the in-process second hero's captured policy; no decoder validates this packet.
-	auto & rules = const_cast<JsonNode &>(defender->getPrimaryGrowthRules());
+	// Invalid captured policy cannot be published on the second hero.
+	auto rules = defender->getPrimaryGrowthRules();
 	const auto originalRules = rules;
 	rules["additionalSpecialties"]["manaFurnace"]["maximumRestorePoints"].Integer() = -1;
-	BattleStart badPolicy;
-	badPolicy.battleID = BattleID(0);
-	badPolicy.info = battleStartFixture::snapshot(*battle(), &replica);
-	badPolicy.info->getSide(BattleSide::ATTACKER).manaFurnaceRecoveredNormal = 0;
-	EXPECT_THROW(replica.apply(badPolicy), std::runtime_error);
-	rules = originalRules;
+	EXPECT_THROW(defender->replaceCapturedPrimaryGrowthRules(rules), std::runtime_error);
+	EXPECT_EQ(defender->getPrimaryGrowthRules(), originalRules);
 	pools(attacker, 5, 2);
 	EXPECT_EQ(defender->getNormalSpellPoints(), defenderNormal);
 	EXPECT_EQ(defender->getBufferSpellPoints(), defenderBuffer);

@@ -30,7 +30,7 @@ protected:
    .town({12, 12, 0}, FactionID::CASTLE, OWNER);
   startWithMap(std::move(builder)); hero = findHeroAt({5, 5, 0}); ASSERT_NE(hero, nullptr);
   hero->secSkills.clear();
-  const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
+  const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).replaceSelected({});
   const auto learning = SecondarySkill(SecondarySkill::decode(LEARNING));
   hero->setSecSkillLevel(learning, 1, ChangeValueMode::ABSOLUTE);
   hero->applyPerkSelection({LEARNING, "new-horizons:learning.scholar"});
@@ -56,10 +56,11 @@ protected:
  { return gateway->nullkiller->heroManager->connoisseurSkillCard(NK2AI::HeroPtr(hero, gateway->cc.get()), cards, level); }
  void restrictAlternatives()
  {
-  auto & rules = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+  auto rules = hero->getPrimaryGrowthRules();
   for(auto & [key, weight] : rules["skillOfferWeights"].Struct()) weight.Integer() = 0;
   rules["skillOfferWeights"][SecondarySkill::encode(best.getNum())].Integer() = 100;
   rules["skillOfferWeights"][SecondarySkill::encode(weak.getNum())].Integer() = 100;
+  hero->replaceCapturedPrimaryGrowthRules(rules);
  }
 };
 }
@@ -90,7 +91,7 @@ TEST_F(QuickStudyDecisionTest, ChoosesOnlyWeakerCardAndPreservesBetterCard)
   ASSERT_TRUE(newHorizonsHeroes::isValidLevelUpSkillChoice(*gateway->cc, hero, card));
   ASSERT_FALSE(newHorizonsHeroes::isExcludedSkill(hero->getPrimaryGrowthRules(), card));
   ASSERT_GT(newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), card).value_or(0), 0);
-  ASSERT_EQ(hero->getPerkState().rules["skills"][key]["ranks"]["basic"]["effect"]["status"].String(), "active");
+  ASSERT_EQ(hero->getPerkState().getRules()["skills"][key]["ranks"]["basic"]["effect"]["status"].String(), "active");
  }
  ASSERT_EQ(manager->getHeroRoleOrDefault(heroPtr), NK2AI::MAIN);
  ASSERT_TRUE(hero->getSpellsInSpellbook().empty());
@@ -122,8 +123,9 @@ TEST_F(QuickStudyDecisionTest, ChoosesOnlyWeakerCardAndPreservesBetterCard)
 TEST_F(QuickStudyDecisionTest, ZeroWeightAlternativeIsNotAConnoisseurCandidate)
 {
  restrictAlternatives();
- auto & rules = const_cast<JsonNode &>(hero->getPrimaryGrowthRules());
+ auto rules = hero->getPrimaryGrowthRules();
  rules["skillOfferWeights"][SecondarySkill::encode(best.getNum())].Integer() = 0;
+ hero->replaceCapturedPrimaryGrowthRules(rules);
  EXPECT_FALSE(decide({weak}));
 }
 TEST_F(QuickStudyDecisionTest, ExpertAlternativeStillRequiresCurrentRankEligibility)
@@ -135,7 +137,7 @@ TEST_F(QuickStudyDecisionTest, ExpertAlternativeStillRequiresCurrentRankEligibil
 TEST_F(QuickStudyDecisionTest, WrongReachedLevelOrUnselectedPerkNeverRerolls)
 {
  EXPECT_FALSE(decide({weak}, 5));
- const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
+ const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).replaceSelected({});
  EXPECT_FALSE(decide({weak}));
 }
 TEST_F(QuickStudyDecisionTest, EmptyOrMalformedSkillOfferIsKept)

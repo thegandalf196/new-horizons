@@ -39,10 +39,10 @@ std::shared_ptr<ICombatEventScript> event(Handler handler, std::initializer_list
 
 std::shared_ptr<ICombatEventScript> create(const std::string & sourcePath)
 {
-	for(const auto factory : {attackEvent, recoveryEvent, reflectEvent, setupEvent, focusMagicEvent})
+	for(const auto factory : {attackEvent, recoveryEvent, reflectEvent, setupEvent})
 		if(auto script = factory(sourcePath))
 			return script;
-	if(sourcePath == "combat/arcaneBreach" || sourcePath == "combat/plagueStatus"
+	if(sourcePath == "combat/plagueStatus"
 		|| sourcePath == "combat/soulChainStatus" || sourcePath == "combat/combatScript")
 		return event(nullptr, {}); // Inert status identities, never dispatched.
 	return nullptr;

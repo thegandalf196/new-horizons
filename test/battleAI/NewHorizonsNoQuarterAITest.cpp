@@ -204,37 +204,3 @@ TEST_F(NewHorizonsNoQuarterAITest, EvaluateOnlyPreservesMoraleLifetimeAndCommitt
 	EXPECT_EQ(attacker->noQuarterMoraleActivationsRemaining, 0);
 	EXPECT_FALSE(hasNoQuarterMorale(attacker));
 }
-
-TEST_F(NewHorizonsNoQuarterAITest, TimeStoppedProjectedTargetDoesNotReceiveNoQuarter)
-{
-	startBattleWithNoQuarter();
-	auto * attacker = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(92), 1);
-	auto * stopped = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(93), 1000);
-	forceMaximumDamage(attacker);
-	beginCombat();
-	BattleAttackInfo attackInfo(attacker, stopped, 0, false);
-	const int64_t hitDamage = battle()->calculateDmgRange(attackInfo).damage.max;
-	ASSERT_GT(hitDamage, 0);
-	setAvailableHealth(stopped, stopped->getTotalHealth() / 4 + hitDamage - 1);
-	const Bonus timeStop(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	battle()->addOrUpdateUnitBonus(stopped, timeStop, true);
-	ASSERT_TRUE(stopped->isTimeStopped());
-	battle()->activeStack = attacker->unitId();
-
-	NoQuarterEnvironment environment(gameState());
-	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
-	auto model = std::make_shared<HypotheticBattle>(&environment, callback);
-	DamageCache cache;
-	const auto prediction = AttackPossibility::evaluate(BattleAttackInfo(
-		model->getForUpdate(attacker->unitId()).get(), model->getForUpdate(stopped->unitId()).get(), 0, false),
-		attacker->getPosition(), cache, model);
-	ASSERT_NE(prediction.effectPreview, nullptr);
-	const auto projectedTarget = prediction.effectPreview->getForUpdate(stopped->unitId());
-	EXPECT_TRUE(projectedTarget->isTimeStopped());
-	EXPECT_EQ(projectedTarget->noQuarterMoraleActivationsRemaining, 0);
-	EXPECT_FALSE(projectedTarget->hasBonusOfType(BonusType::NO_RETALIATION));
-	EXPECT_FALSE(hasNoQuarterMorale(projectedTarget.get()));
-	EXPECT_EQ(stopped->noQuarterMoraleActivationsRemaining, 0);
-	EXPECT_FALSE(stopped->hasBonusOfType(BonusType::NO_RETALIATION));
-}

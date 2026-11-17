@@ -280,8 +280,8 @@ TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, IsraCurrentAndActorlessHelpOm
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:isra", 10));
 	setRank("new-horizons:necromancy", MasteryLevel::BASIC);
-	ASSERT_TRUE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().rules));
-	const auto rulesBefore = attackerSideHero->getPerkState().rules;
+	ASSERT_TRUE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().getRules()));
+	const auto rulesBefore = attackerSideHero->getPerkState().getRules();
 	const auto preview = newHorizonsHeroes::resolveSpecialtyPresentation(*attackerSideHero->getHeroType(),
 		attackerSideHero->getPrimaryGrowthRules(), attackerSideHero->getMagicRules(), std::nullopt);
 	const auto live = attackerSideHero->getSpecialtyPresentation();
@@ -293,7 +293,7 @@ TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, IsraCurrentAndActorlessHelpOm
 	EXPECT_EQ(live.name, "Grave Reaper");
 	EXPECT_EQ(live.artwork, std::optional<std::string>("newHorizons/heroSpecialties/IsraGraveReaper"));
 	EXPECT_EQ(newHorizonsHeroes::graveReaperPercentagePoints(attackerSideHero), 10);
-	EXPECT_EQ(attackerSideHero->getPerkState().rules, rulesBefore);
+	EXPECT_EQ(attackerSideHero->getPerkState().getRules(), rulesBefore);
 }
 
 TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, IsraHistoricalNecromancyHelpSurvivesWorldRoundtrip)
@@ -301,7 +301,7 @@ TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, IsraHistoricalNecromancyHelpS
 	historicalNecromancy = true;
 	ASSERT_NO_FATAL_FAILURE(prepare("core:isra", 10));
 	setRank("new-horizons:necromancy", MasteryLevel::BASIC);
-	ASSERT_FALSE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().rules));
+	ASSERT_FALSE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().getRules()));
 	const auto before = attackerSideHero->getSpecialtyPresentation();
 	const std::string expected = "With Necromancy learned, its base raising rate gains +1 percentage points per hero level, "
 		"up to +20 points. Bone Collector and Amplifiers add separately; the total still caps at 100%. "
@@ -314,7 +314,7 @@ TEST_F(NewHorizonsIndividualSpecialtyConsumerTest, IsraHistoricalNecromancyHelpS
 	restored.loadFromMemory(gameState()->saveToMemory());
 	const auto * loaded = restored.getHero(heroID);
 	ASSERT_NE(loaded, nullptr);
-	EXPECT_FALSE(newHorizonsNecromancy::policy(loaded->getPerkState().rules));
-	EXPECT_EQ(loaded->getPerkState().rules, attackerSideHero->getPerkState().rules);
+	EXPECT_FALSE(newHorizonsNecromancy::policy(loaded->getPerkState().getRules()));
+	EXPECT_EQ(loaded->getPerkState().getRules(), attackerSideHero->getPerkState().getRules());
 	EXPECT_EQ(loaded->getSpecialtyPresentation().description, expected);
 }

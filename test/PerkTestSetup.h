@@ -15,7 +15,7 @@ inline std::vector<newHorizonsHeroes::PerkOfferCandidate> forSkill(
 	const std::function<int(const std::string &)> & rankLookup, uint64_t seed,
 	const newHorizonsHeroes::PerkState::OfferWeightContext & weights = newHorizonsHeroes::PerkState::OfferWeightContext())
 {
-	if(!newHorizonsHeroes::usesFourOfferProgression(state.rules))
+	if(!newHorizonsHeroes::usesFourOfferProgression(state.getRules()))
 		return state.prepareOffer(rankLookup, seed, weights);
 	const std::string identity(skill);
 	return newHorizonsHeroes::PerkSelectionOperation(state).eligibleCandidates(identity, rankLookup(identity));
@@ -27,7 +27,7 @@ inline std::vector<newHorizonsHeroes::PerkOfferCandidate> forPerk(
 	const newHorizonsHeroes::PerkState::OfferWeightContext & weights = newHorizonsHeroes::PerkState::OfferWeightContext())
 {
 	const auto delimiter = perk.find('.');
-	if(newHorizonsHeroes::usesFourOfferProgression(state.rules) && delimiter == std::string_view::npos)
+	if(newHorizonsHeroes::usesFourOfferProgression(state.getRules()) && delimiter == std::string_view::npos)
 		throw std::runtime_error("Effect fixture requires a scoped perk identity");
 	return forSkill(state, perk.substr(0, delimiter), rankLookup, seed, weights);
 }
@@ -38,10 +38,10 @@ std::vector<newHorizonsHeroes::PerkOfferCandidate> matching(
 	const std::function<int(const std::string &)> & rankLookup, uint64_t seed,
 	const newHorizonsHeroes::PerkState::OfferWeightContext & weights = newHorizonsHeroes::PerkState::OfferWeightContext())
 {
-	if(!newHorizonsHeroes::usesFourOfferProgression(state.rules))
+	if(!newHorizonsHeroes::usesFourOfferProgression(state.getRules()))
 		return state.prepareOffer(rankLookup, seed, weights);
 	newHorizonsHeroes::PerkSelectionOperation operation(state);
-	for(const auto & [skill, definition] : state.rules["skills"].Struct())
+	for(const auto & [skill, definition] : state.getRules()["skills"].Struct())
 	{
 		auto candidates = operation.eligibleCandidates(skill, rankLookup(skill));
 		if(std::any_of(candidates.begin(), candidates.end(), predicate)) return candidates;
@@ -51,6 +51,6 @@ std::vector<newHorizonsHeroes::PerkOfferCandidate> matching(
 
 inline uint64_t seedLimit(const newHorizonsHeroes::PerkState & state, uint64_t historicalLimit)
 {
-	return newHorizonsHeroes::usesFourOfferProgression(state.rules) ? 1 : historicalLimit;
+	return newHorizonsHeroes::usesFourOfferProgression(state.getRules()) ? 1 : historicalLimit;
 }
 }

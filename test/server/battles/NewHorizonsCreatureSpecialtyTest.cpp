@@ -1313,7 +1313,7 @@ TEST_F(NewHorizonsWispSpecialtyTest, RawOldReaderRejectsPresenceAndAbsentPreviou
 	expectedPerks = previousWispPerkRules();
 	for(const char * key : {"offerWeightPolicyVersion", "perkOfferNormalization", "perkProgressionPolicyVersion"})
 		expectedPerks.Struct().erase(key);
-	EXPECT_EQ(pasis()->getPerkState().rules, expectedPerks);
+	EXPECT_EQ(pasis()->getPerkState().getRules(), expectedPerks);
 	EXPECT_EQ(pasis()->getCreatureLineSpecialtyTarget(), creature("core:psychicElemental"));
 	CMemorySerializer old;
 	old.oser.version = previous;

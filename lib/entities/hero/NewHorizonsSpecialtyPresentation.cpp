@@ -33,6 +33,8 @@
 #include "../../texts/MetaString.h"
 #include "../../spells/CSpell.h"
 #include "../../spells/NewHorizonsMagic.h"
+#include "../../spells/NewHorizonsSorceryRevision.h"
+#include "../../bonuses/Bonus.h"
 #include "../../GameLibrary.h"
 
 namespace newHorizonsHeroes
@@ -42,7 +44,7 @@ namespace
 std::string nonDamageSpecialtySummary(SpellID source, SpellID target, const std::string & name)
 {
 	return name + (target.toSpell()->getJsonKey() == "new-horizons:focusMagic"
-		? " marks let friendly shooters ignore more enemy Defense."
+		? " strengthens native shooters' ranged damage while its three charges remain."
 		: target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL
 		? " removes more enemy Defense through its Spell Power contribution."
 		: source == SpellID::BLESS || source == SpellID::HASTE
@@ -54,6 +56,28 @@ std::string nonDamageSpecialtySummary(SpellID source, SpellID target, const std:
 		: target.toSpell()->getJsonKey() == "new-horizons:crusade"
 		? " grants stronger combat bonuses through its Spell Power contribution."
 		: " gains stronger healing from Spell Power.");
+}
+
+bool resolveFocusPresentation(const CHero & hero, const JsonNode & magic,
+	const CGHeroInstance * captured, SpecialtyPresentation & result)
+{
+	if(!newHorizonsSorceryRevision::usesFocusEnchantment(magic)) return false;
+	const SpellID focus(SpellID::decode("new-horizons:focusMagic"));
+	int premium = 0;
+	for(const auto & bonus : hero.specialty)
+		if(bonus->type == BonusType::SPECIAL_SPELL_LEV && bonus->subtype == BonusSubtypeID(focus))
+			premium += bonus->val;
+	if(premium <= 0) return false;
+	if(captured) premium = captured->valOfBonuses(BonusType::SPECIAL_SPELL_LEV, BonusSubtypeID(focus));
+	result.spell = focus;
+	result.artwork = detail::resolvedSpecialtyArtwork(hero.getJsonKey(),
+		detail::SpecialtyArtworkFamily::Spell, focus.toSpell()->getJsonKey());
+	result.name = focus.toSpell()->getNameTranslated();
+	result.description = "Focus Magic grants native shooters +" + std::to_string(premium)
+		+ " additional percentage points of ranged damage while its three hard charges remain. "
+		"Converted nonshooters gain the same additional ranged damage; all stacks keep three charges.";
+	result.summary = result.name + " strengthens native shooters' ranged damage; its three charges are unchanged.";
+	return true;
 }
 
 bool resolveDruidPresentation(const CHero & hero, const JsonNode & development, SpecialtyPresentation & result)
@@ -309,6 +333,7 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 		return result;
 	if(resolveAerialSupremacyPresentation(hero, development, result)
 		|| resolveChosenSpecialtyPresentation(hero, development, magic, result)
+		|| resolveFocusPresentation(hero, magic, capturedHero, result)
 		|| resolveIndividualPresentation(hero, development, magic, capturedHero, result))
 		return result;
 	if(resolveCreatureLinePresentation(hero, development, target, capturedHero, result))
@@ -378,8 +403,6 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 				description.appendNumber(rules->componentPercent);
 				if(producer.spell == SpellID::BLESS)
 					description.appendRawString("% to its Spell Power-derived duration component before its normal duration cap.");
-				else if(target.toSpell()->getJsonKey() == "new-horizons:focusMagic")
-					description.appendRawString("% to its Spell Power-derived Creature Defense penetration per Arcane Breach mark. Its fixed term, cap and duration are unchanged.");
 				else if(producer.spell == SpellID::HASTE)
 					description.appendRawString("% to its Spell Power-derived duration component. Its Speed bonus is unchanged.");
 				else if(target.toSpell()->getJsonKey() == newHorizonsMagic::SHADOW_FRAILTY_SPELL)

@@ -386,25 +386,7 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, SixSchoolRanksGateLearningButNotInscr
 	EXPECT_TRUE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, armageddon));
 }
 
-TEST_F(NewHorizonsSpellRosterConsumerTest, SpellLockIsNormallyLearnableAndInscribedCastingIgnoresSchoolRank)
-{
-	prepareHero();
-	const auto spellLock = spellNamed("new-horizons:spellLock");
-	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
-	ASSERT_TRUE(spellLock.toSpell()->isCommonHeroSpell());
-	ASSERT_EQ(newHorizonsMagic::requiredSchoolRank(gameState()->getMagicRules(), spellLock), MasteryLevel::EXPERT);
 
-	removeNewHorizonsSchoolRanks();
-	EXPECT_FALSE(attackerSideHero->canLearnSpell(spellLock.toSpell(), true));
-	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	EXPECT_TRUE(attackerSideHero->canLearnSpell(spellLock.toSpell(), true));
-
-	attackerSideHero->addSpellToSpellbook(spellLock);
-	ASSERT_TRUE(attackerSideHero->spellbookContainsSpell(spellLock));
-	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
-	EXPECT_FALSE(newHorizonsMagic::hasSchoolProficiency(attackerSideHero, spellLock));
-	EXPECT_TRUE(attackerSideHero->canCastThisSpell(spellLock.toSpell()));
-}
 
 TEST_F(NewHorizonsSpellRosterConsumerTest, CanLearnSpellAcceptsEachRequiredSchoolRank)
 {
@@ -420,7 +402,7 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, CanLearnSpellAcceptsEachRequiredSchoo
 		SchoolCase{spellNamed("new-horizons:plague"), SecondarySkill(SecondarySkill::decode("new-horizons:shadowMagic")), MasteryLevel::BASIC},
 		SchoolCase{spellNamed("new-horizons:phantomArmy"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::ADVANCED},
 		SchoolCase{spellNamed("core:armageddon"), SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")), MasteryLevel::EXPERT},
-		SchoolCase{spellNamed("new-horizons:spellLock"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::EXPERT},
+		SchoolCase{spellNamed("new-horizons:forceLance"), SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), MasteryLevel::EXPERT},
 	};
 
 	for(const auto & test : cases)
@@ -481,14 +463,14 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, OrdinaryAcquisitionPolicyRejectsFresh
 	attackerSideHero->removeAllSpells();
 	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 	const auto masterChainLightning = spellNamed("new-horizons:masterChainLightning");
-	const auto counterspell = spellNamed("new-horizons:counterspell");
+	EXPECT_FALSE(SpellID(SpellID::decode("new-horizons:counterspell")).hasValue());
 	const auto & rules = gameState()->getMagicRules();
 	const SecondarySkill havoc(SecondarySkill::decode("new-horizons:havocMagic"));
 	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
 	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->setSecSkillLevel(sorcery, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 
-	for(const auto spell : {masterChainLightning, counterspell})
+	for(const auto spell : {masterChainLightning})
 	{
 		ASSERT_FALSE(newHorizonsMagic::spellAvailableForOrdinaryAcquisition(rules, spell));
 		EXPECT_FALSE(attackerSideHero->canLearnSpell(spell.toSpell(), true))
@@ -504,14 +486,12 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, OrdinaryAcquisitionPolicyRejectsFresh
 	ASSERT_NE(town, nullptr);
 	town->addBuilding(BuildingID::MAGES_GUILD_5);
 	town->spells.assign(GameConstants::SPELL_LEVELS, {});
-	town->spells[2] = {counterspell};
 	town->spells[3] = {masterChainLightning};
 
 	// Even a fully qualified hero cannot learn ordinary offers disabled by the
 	// saved eligibility profile. Explicit known spells are handled separately.
 	gameHandler->giveSpells(town, attackerSideHero);
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(masterChainLightning));
-	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(counterspell));
 }
 
 TEST_F(NewHorizonsSpellRosterConsumerTest, AdventureSpellsRejectMapTeachersAndRequireOwnedUnlockedVisitingGuild)

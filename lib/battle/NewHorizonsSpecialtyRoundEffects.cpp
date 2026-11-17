@@ -35,7 +35,7 @@ bool applyRound(const CBattleInfoCallback & battle, battle::CUnitState & unit, i
 	unit.ordinarySpecialtyLastRound = round;
 	// A completed round boundary is consumed even while this native stack is
 	// dead, held in Stasis, or represented by a borrowed body. No later backpay.
-	if(!unit.alive() || unit.isGhost() || unit.isTimeStopped() || unit.hasBattleForm()) return true;
+	if(!unit.alive() || unit.isGhost() || unit.hasBattleForm()) return true;
 	using namespace detail;
 	const int growth = family(unit, Family::Water)
 		? coefficient(battle, unit, "core:kalt", "risingTideCreaturesPerRound", true) : 0;

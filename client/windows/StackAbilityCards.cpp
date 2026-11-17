@@ -4,7 +4,6 @@
 #include "NewHorizonsCreatureAbilityHelp.h"
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
-#include "../battle/ArcaneMarkPresentation.h"
 #include "../../lib/CStack.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
 #include "../../lib/battle/BattleInfo.h"
@@ -44,17 +43,5 @@ void CStackWindow::appendInnateAbilityCards(const CStack * stack,
 		activeBonuses.push_back(std::move(ability));
 	}
 
-	if(stack)
-	{
-		for(const auto & marks : arcaneMarkPresentation::forStack(*stack))
-		{
-			BonusInfo ability;
-			ability.description = marks.compact;
-			ability.tooltip = marks.details;
-			ability.imagePath = ImagePath::builtin(arcaneMarkPresentation::MEDIUM_ICON);
-			ability.bonusSource = BonusSource::SECONDARY_SKILL;
-			activeBonuses.push_back(std::move(ability));
-		}
-	}
 
 }

@@ -777,7 +777,10 @@ TEST_F(StackWithBonusesQueryTest, DetachedPosthitAndNestedLoansKeepExactLocalSpe
 	unknown = static_cast<const battle::CUnitState &>(*source);
 	EXPECT_THROW(unknown.sourceLocalEffectProvider(), std::runtime_error);
 	EXPECT_THROW(missing.sourceLocalEffectProvider(), std::runtime_error);
-	EXPECT_THROW(StackWithBonuses(child.get(), &unknown), std::runtime_error);
+	// Construction retains the lazy provider; exact source-local reads must
+	// still reject foreign provenance at their actual guarded boundary.
+	StackWithBonuses foreignWrapped(child.get(), &unknown);
+	EXPECT_THROW(foreignWrapped.localSpellEffects(), std::runtime_error);
 	EXPECT_EQ(source->save(), sourceState); EXPECT_EQ(incoming->save(), nativeState);
 	EXPECT_EQ(posthit->save(), posthitState); EXPECT_EQ(nested->save(), nestedState);
 	EXPECT_EQ(incoming->getExportedBonusList().toJsonNode(), nativeExports);
@@ -872,15 +875,12 @@ TEST(VisibleHeroPolicyValueTest, ProxyForwardsInformationOnlyPolicyWithoutResurr
 TEST_F(StackWithBonusesQueryTest, ColdForeignProviderStillConstructsWithoutExportAdmission)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_FALSE(braced->isTimeStopped());
 	const auto before = braced->save();
 	ForcedCopyView view(*child, *braced);
-	EXPECT_FALSE(view.projected->isTimeStopped());
 	EXPECT_EQ(view.projected->save(), before);
 	EXPECT_THROW(view.source.sourceLocalEffectProvider(), std::runtime_error);
 	EXPECT_THROW(view.projected->localSpellEffects(), std::runtime_error);
 	StackWithBonuses nested(child.get(), view.projected.get());
-	EXPECT_FALSE(nested.isTimeStopped()); // Actual parent delta capture still grants no foreign provenance.
 	EXPECT_THROW(nested.localSpellEffects(), std::runtime_error);
 	EXPECT_EQ(braced->save(), before);
 }

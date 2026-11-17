@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../nativeRules/CapturedRuleExecutionAudit.h"
 #include "IdentifierStorage.h"
 
 #include "CModHandler.h"
@@ -243,6 +244,7 @@ std::optional<si32> CIdentifierStorage::getIdentifierCaseInsensitive(const std::
 
 std::optional<si32> CIdentifierStorage::getIdentifierImpl(const ObjectCallback & options, bool silent) const
 {
+	NH_CAPTURE_RULE_WORK(IdentifierResolution);
 	auto idList = getPossibleIdentifiers(options);
 
 	if (idList.size() == 1)

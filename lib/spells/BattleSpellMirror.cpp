@@ -30,6 +30,7 @@ namespace spells
 
 bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 {
+	if(getSpell()->getJsonKey() == "new-horizons:forceLance") return false;
 	if(!unit)
 		return false;
 
@@ -79,11 +80,6 @@ bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 	return finalResult;
 }
 
-bool BattleSpellMechanics::isSpellLocked(const battle::Unit * unit)
-{
-	return unit && newHorizonsSorcery::isSpellLocked(*unit);
-}
-
 void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target & target,
 	const Target & spellTarget, bool naturesWrath, bool realityWarp, const battle::Units & wrathConductors)
 {
@@ -104,16 +100,10 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 					return destination.unitValue == unit;
 				})))
 				continue;
-			if(isMagicalEffect() && isSpellLocked(unit))
-			{
-				resistantUnitIds.insert(unit->unitId());
-				continue;
-			}
 			if(naturesWrath && (ownerMatches(unit, true) || unit->isInvincible() || !isReceptive(unit)))
 				continue;
 			// Life Drain has a hostile damage target and a friendly healing target.
-			// The latter is not resisting a hostile effect; Spell Lock above still
-			// blocks either half of the paired spell.
+			// The latter is not resisting a hostile effect.
 			if(owner->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
 				&& newHorizonsMagic::spellAllowedBySavedRoster(battle()->getBattle()->getMagicRules(), owner->getId())
 				&& battle()->battleGetOwner(unit) == getCasterColor())
@@ -122,8 +112,7 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 			// an ally is not resisting a hostile magical effect.
 			if(owner->getJsonKey() == newHorizonsBlink::SPELL_ID && unit->unitSide() == casterSide)
 				continue;
-			const int prob = newHorizonsMetamagic::resistanceChance(std::min(unit->magicResistance(), 100),
-				getMetamagicCastProfile(), *battle(), *unit); // probability of resistance in %
+			const int prob = std::min(unit->magicResistance(), 100); // probability of resistance in %
 			const int sample = rng.nextInt(0, 99);
 			const bool didResist = sample < prob;
 			resistanceRolls.push_back({unit->unitId(), prob, didResist, false, sample});
@@ -140,6 +129,7 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 
 bool BattleSpellMechanics::usesCompoundMirror() const
 {
+	if(getSpell()->getJsonKey() == "new-horizons:forceLance") return false;
 	return isNewHorizonsStormOfDaggers()
 		|| (owner && owner->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL
 			&& newHorizonsMagic::spellAllowedBySavedRoster(battle()->getBattle()->getMagicRules(), owner->getId()));
@@ -188,51 +178,8 @@ bool BattleSpellMechanics::prepareCompoundMirror(ServerCallback * server, Battle
 		if(!original)
 			continue;
 		Target aim = storm ? Target{Destination(original)} : target;
-		if(!isSpellLocked(original) && isReflected(server, original, rng))
-		{
-			// Compound effects provisionally redirect once per original share.
-			// Generic spells retain their existing recursive Mirror path.
-			const auto * redirected = getRandomUnitForOwner(rng, getCasterColor());
-			sc.reflectedCres.insert(original->unitId());
-			if(!redirected)
-				continue;
-			if(sc.reflectedCres.size() == 1)
-				sc.tile = redirected->getPosition();
-			mode = Mode::MAGIC_MIRROR;
-			aim = storm ? Target{Destination(redirected)}
-				: Target{Destination(redirected), Destination(original)};
-
-			// Only the actual redirected damage leg rolls hostile resistance.
-			// Do not reuse its unrelated original-cast eager roll or roll healing.
-			resistanceRolls.clear();
-			resistantUnitIds.clear();
-			if(!isSpellLocked(redirected))
-			{
-				const int probability = std::min(redirected->magicResistance(), 100);
-				const int sample = rng.nextInt(0, 99);
-				const bool resisted = sample < probability;
-				resistanceRolls.push_back({redirected->unitId(), probability, resisted, false, sample});
-				if(resisted)
-					resistantUnitIds.insert(redirected->unitId());
-			}
-		}
-
 		const auto * damageTarget = aim.front().unitValue;
-		if(!damageTarget || isSpellLocked(damageTarget) || !isReceptive(damageTarget)
-			|| wouldResist(damageTarget))
-		{
-			if(damageTarget)
-			{
-				sc.resistedCres.insert(damageTarget->unitId());
-				if(isRunicReflection(damageTarget))
-					recordResistanceShares(effects->prepare(this, aim, transformSpellTarget(aim)));
-			}
-			continue;
-		}
 		effectsToApply = effects->prepare(this, aim, transformSpellTarget(aim));
-		const auto locked = filterSpellLockedEffects(aim);
-		for(const auto * unit : locked)
-			sc.resistedCres.insert(unit->unitId());
 		const auto recipients = collectTargets();
 		for(const auto * unit : recipients)
 			if(!vstd::contains(affectedUnits, unit))
@@ -245,6 +192,7 @@ bool BattleSpellMechanics::prepareCompoundMirror(ServerCallback * server, Battle
 
 bool BattleSpellMechanics::isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng)
 {
+	if(getSpell()->getJsonKey() == "new-horizons:forceLance") return false;
 	if (unit == nullptr)
 		return false;
 	const std::vector<int> directSpellRange = { 0 };

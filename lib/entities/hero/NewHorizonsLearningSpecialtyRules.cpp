@@ -56,9 +56,9 @@ std::optional<LearningSpecialtyRules> learningSpecialtyRules(const CGHeroInstanc
 	if(!hero || !hero->getHeroTypeID().hasValue())
 		return std::nullopt;
 	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:nimbus")))
-		return learningSpecialtyRules(hero->getPrimaryGrowthRules(), LearningSpecialtyKind::GRAVE_ARCHIVIST);
+		return hero->compiledDevelopment()->learning.at(static_cast<size_t>(LearningSpecialtyKind::GRAVE_ARCHIVIST));
 	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:oris")))
-		return learningSpecialtyRules(hero->getPrimaryGrowthRules(), LearningSpecialtyKind::SPIRIT_TEACHER);
+		return hero->compiledDevelopment()->learning.at(static_cast<size_t>(LearningSpecialtyKind::SPIRIT_TEACHER));
 	return std::nullopt;
 }
 int64_t mentorSpecialtyAward(const CGHeroInstance * mentor, int64_t ordinaryAward)

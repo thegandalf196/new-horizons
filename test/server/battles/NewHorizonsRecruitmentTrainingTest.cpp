@@ -322,9 +322,7 @@ TEST_F(NewHorizonsRecruitmentTrainingTest, ReinforcementLowestOriginalSlotInclud
 		out << boundary << " round=" << battle()->getRound()
 			<< " initiative=" << unit->getInitiative()
 			<< " strategic=" << first->getInitiative()
-			<< " timeStopped=" << unit->isTimeStopped();
-		const SpellID spellLock(SpellID::decode("new-horizons:spellLock"));
-		out << " spellLock=" << unit->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock)));
+			;
 		const auto append = [&](const char * kind, const BonusList & bonuses)
 		{
 			out << ' ' << kind << '[';

@@ -36,6 +36,8 @@ public:
 
 void expectHeroCasterByDefault(EffectFixture & fixture)
 {
+	// Native target/scale helpers may query identity more than once per operation.
+	EXPECT_CALL(fixture.mechanicsMock, getSpellId()).WillRepeatedly(Return(SpellID(SpellID::SACRIFICE)));
 	EXPECT_CALL(fixture.mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 }
 

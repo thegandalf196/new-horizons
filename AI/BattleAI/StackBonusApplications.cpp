@@ -15,7 +15,6 @@
 #include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include "../../lib/battle/PhysicalAffliction.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
-#include "../../lib/battle/StackEffectRecordRules.h"
 #include "../../lib/battle/StackEffectVectorRules.h"
 
 namespace hypotheticBonusApplication
@@ -29,10 +28,6 @@ bool isGuardianSpiritBonus(const Bonus * bonus)
 using hypotheticBonusApplication::isGuardianSpiritBonus;
 namespace
 {
-bool protectedOrdinaryIncoming(const StackWithBonuses & unit, const Bonus & bonus)
-{
-	return stackEffectRecordRules::incomingProtected(unit, bonus);
-}
 void applyGuardianSpiritBonus(StackWithBonuses & unit, const Bonus & bonus)
 {
 	if(!isGuardianSpiritBonus(&bonus))
@@ -97,8 +92,6 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 	bool acceptedFrozen = false;
 	for(const auto & stamped : stampedBonuses)
 	{
-		// Confusion and physical metadata were validated before Time Stop admission.
-		if(protectedOrdinaryIncoming(*this, stamped)) continue;
 		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
 		acceptedFrozen |= frozenApplication && newHorizonsFrozen::markerApplicationRound(stamped).has_value();
@@ -150,8 +143,6 @@ void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 	bool acceptedFrozen = false;
 	for(const auto & stamped : stampedBonuses)
 	{
-		// Confusion and physical metadata were validated before Time Stop admission.
-		if(protectedOrdinaryIncoming(*this, stamped)) continue;
 		if(stamped.type == BonusType::PHYSICAL_AFFLICTION)
 			capturedPhysicalAfflictionGroups.emplace(stamped.source, stamped.sid);
 		acceptedFrozen |= frozenApplication && newHorizonsFrozen::markerApplicationRound(stamped).has_value();

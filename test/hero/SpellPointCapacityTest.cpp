@@ -814,7 +814,7 @@ TEST_F(HighLoreAbsentCapacityTest, CurrentCapturedAbsenceKeepsOrdinaryCapacityTh
 	const auto * hero = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(hero, nullptr);
 	EXPECT_TRUE(hero->getPrimaryGrowthRules()["druidSpecialties"].isNull());
-	EXPECT_FALSE(hero->getPerkState().rules.Struct().contains("offerWeightPolicyVersion"));
+	EXPECT_FALSE(hero->getPerkState().getRules().Struct().contains("offerWeightPolicyVersion"));
 	for(const char * key : {"fortuneChildSpecialty", "arcanePreparationSpecialty"})
 	{
 		EXPECT_FALSE(restored.getHeroDevelopmentRules().Struct().contains(key));
@@ -1493,7 +1493,7 @@ TEST_F(SpellPointCapacityTest, LegacyHeroSerializationDoesNotManufactureBuffer)
 	legacyHero->setHeroType(attackerSideHero->getHeroTypeID());
 	legacyHero->pushPrimSkill(PrimarySkill::KNOWLEDGE, 100);
 	ASSERT_TRUE(legacyHero->getMagicRules().isNull());
-	ASSERT_TRUE(legacyHero->getPerkState().rules.isNull());
+	ASSERT_TRUE(legacyHero->getPerkState().getRules().isNull());
 	ASSERT_TRUE(legacyHero->getPrimaryGrowthRules().isNull());
 	legacyHero->initializeSpellPoints(80, 0);
 	CMemorySerializer memory;
@@ -1514,7 +1514,7 @@ TEST_F(SpellPointCapacityTest, LegacyHeroSerializationRejectsLossOfBuffer)
 	legacyHero->setHeroType(attackerSideHero->getHeroTypeID());
 	legacyHero->pushPrimSkill(PrimarySkill::KNOWLEDGE, 100);
 	ASSERT_TRUE(legacyHero->getMagicRules().isNull());
-	ASSERT_TRUE(legacyHero->getPerkState().rules.isNull());
+	ASSERT_TRUE(legacyHero->getPerkState().getRules().isNull());
 	ASSERT_TRUE(legacyHero->getPrimaryGrowthRules().isNull());
 	legacyHero->initializeSpellPoints(30, 50);
 	CMemorySerializer memory;

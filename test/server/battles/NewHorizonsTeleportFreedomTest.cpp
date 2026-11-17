@@ -183,25 +183,9 @@ TEST_F(NewHorizonsTeleportFreedomTest, OccupiedDestinationStillRejectsWithoutCha
 	expectRejected(destination);
 }
 
-TEST_F(NewHorizonsTeleportFreedomTest, TimeStoppedSourceStillRejectsWithoutCharge)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	traveler->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID()));
-	expectRejected(destination);
-}
 
-TEST_F(NewHorizonsTeleportFreedomTest, SpellLockedSourceStillRejectsWithoutCharge)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const SpellID lock(SpellID::decode("new-horizons:spellLock"));
-	ASSERT_TRUE(lock.hasValue());
-	auto marker = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
-		BonusSource::SPELL_EFFECT, 100, BonusSourceID(lock));
-	marker->turnsRemain = 2;
-	traveler->addNewBonus(marker);
-	expectRejected(destination);
-}
+
+
 
 TEST_F(NewHorizonsTeleportFreedomTest, PolicyRequiresBooleanTeleportV3AndPresenceNeedsNewFormat)
 {

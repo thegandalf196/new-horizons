@@ -35,11 +35,11 @@ loopback transport. UI submits requests; authoritative code validates and change
 state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
 Current default hero development uses captured
-`startingPerksPolicyVersion: 2`.
+`startingPerksPolicyVersion: 3`.
 Every registered default has exactly two distinct Basic Skills, including its
-faction Skill, and one authored Basic perk for each. The source registry
-contains 163 explicit profiles. Historical version 1 retains its captured
-starting ranks and tier-completion behavior. Default profiles apply only during
+faction Skill, and no automatically acquired perks. The source registry
+contains 163 explicit profiles. A Skill permits one Basic, one Advanced and one
+Expert perk, acquired through separate advancement choices. Default profiles apply only during
 fresh initialization; saved development, later rank grants and explicitly
 authored scenario advancement retain their normal precedence.
 

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkStateFixture.h"
 #include "HistoricalNecromancy087Fixture.h"
 #include "../../mock/TinyMapGameTest.h"
 #include "../../mock/GameHandlerTestServer.h"
@@ -49,8 +50,8 @@ protected:
 		ASSERT_NE(town, nullptr);
 		ASSERT_EQ(town->getOwner(), PlayerColor(0));
 		ASSERT_EQ(town->getFactionID(), FactionID::NECROPOLIS);
-		ASSERT_TRUE(newHorizonsNecromancy::policy(hero->getPerkState().rules));
-		ASSERT_EQ(newHorizonsNecromancy::policy(hero->getPerkState().rules)->version, GetParam() ? 2 : 1);
+		ASSERT_TRUE(newHorizonsNecromancy::policy(hero->getPerkState().getRules()));
+		ASSERT_EQ(newHorizonsNecromancy::policy(hero->getPerkState().getRules())->version, GetParam() ? 2 : 1);
 		hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID)),
 			MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		hero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
@@ -96,7 +97,7 @@ TEST_P(NewHorizonsNecromancyV2DeliveryTest, AcceptedFreshOutputAndFullArmyFallba
 	EXPECT_EQ(initial.ossuary, !GetParam());
 	if(GetParam())
 	{
-		const auto captured = newHorizonsNecromancy::policy(hero->getPerkState().rules);
+		const auto captured = newHorizonsNecromancy::policy(hero->getPerkState().getRules());
 		ASSERT_TRUE(captured);
 		EXPECT_EQ(captured->boneCollectorRaiseBonusPercent, 25);
 		EXPECT_EQ(captured->soulHarvesterManaCap, 30);
@@ -123,10 +124,13 @@ TEST_P(NewHorizonsNecromancyV2DeliveryTest, AcceptedFreshOutputAndFullArmyFallba
 	if(GetParam())
 	{
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-		std::erase_if(state.selected, [](const auto & selection)
+		perkStateFixture::editSelected(state, [&](auto & selected)
 		{
-			return selection.skillId == newHorizonsNecromancy::SKILL_ID
-				&& selection.perkId == newHorizonsNecromancy::BONE_COLLECTOR_ID;
+			std::erase_if(selected, [](const auto & selection)
+			{
+				return selection.skillId == newHorizonsNecromancy::SKILL_ID
+					&& selection.perkId == newHorizonsNecromancy::BONE_COLLECTOR_ID;
+			});
 		});
 		hero->applyPerkSelection({newHorizonsNecromancy::SKILL_ID, newHorizonsNecromancy::OSSUARY_ID});
 		ASSERT_TRUE(hero->hasActivePerk(newHorizonsNecromancy::SKILL_ID, newHorizonsNecromancy::OSSUARY_ID));

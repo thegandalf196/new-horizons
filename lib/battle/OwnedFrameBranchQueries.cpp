@@ -116,6 +116,9 @@ void OwnedFrameBranchQueries::append(OwnedUnitBonusFrame & recipient, const Prep
 	if(record->type == BonusType::PHYSICAL_AFFLICTION) next.capturedGroups.emplace(record->source, record->sid);
 	auto owners = recipient.data->pendingPayloads;
 	owners.push_back(records.owner);
+	// Publish capability with its branch effect. Removal/expiry retain safe
+	// positives; no shared mutable mask or revision bookkeeping is introduced.
+	recipient.data->presence.include(*record);
 	recipient.data->pendingPayloads.swap(owners);
 	recipient.data->ledger = std::move(next);
 }

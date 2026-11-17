@@ -151,8 +151,8 @@ void ProjectileRay::show(Canvas & canvas)
 	if (path.empty())
 	{
 		Point curr {
-			vstd::lerp(from.x, dest.x, progress),
-			vstd::lerp(from.y, dest.y, progress),
+			vstd::lerp(from.x, dest.x, std::min(progress, 1.f)),
+			vstd::lerp(from.y, dest.y, std::min(progress, 1.f)),
 		};
 		drawRaySegment(canvas, from, curr, rayConfig);
 		return;
@@ -377,22 +377,35 @@ void BattleProjectileController::createCatapultProjectile(const CStack * shooter
 	projectiles.push_back(std::shared_ptr<ProjectileBase>(catapultProjectile));
 }
 
-void BattleProjectileController::createProjectile(const CStack * shooter, Point from, Point dest)
+void BattleProjectileController::createProjectile(const CStack * shooter, Point from, Point dest, bool focusMagicRanged)
 {
-	const CCreature & shooterInfo = getShooter(shooter);
+	const CCreature & shooterInfo = focusMagicRanged ? *shooter->unitType() : getShooter(shooter);
 
 	std::shared_ptr<ProjectileBase> projectile;
-	if (stackUsesRayProjectile(shooter) && stackUsesMissileProjectile(shooter))
+	if (!focusMagicRanged && stackUsesRayProjectile(shooter) && stackUsesMissileProjectile(shooter))
 	{
 		logAnim->error("Mod error: Creature '%s' has both missile and ray projectiles configured. Mod should be fixed. Using ray projectile configuration...", shooterInfo.getNameSingularTranslated());
 	}
 
-	if (stackUsesRayProjectile(shooter))
+	if (focusMagicRanged || stackUsesRayProjectile(shooter))
 	{
 		auto rayProjectile = new ProjectileRay();
 		projectile.reset(rayProjectile);
 
-		rayProjectile->rayConfig = shooterInfo.animation.projectileRay;
+		if(focusMagicRanged)
+		{
+			// A separate stack-scoped energy ray; creature assets and ordinary shots stay intact.
+			rayProjectile->visibility.protectFirstRender();
+			rayProjectile->rayConfig = {
+				{ColorRGBA(40, 95, 180), ColorRGBA(70, 135, 220)},
+				{ColorRGBA(100, 185, 245), ColorRGBA(155, 215, 255)},
+				{ColorRGBA(215, 240, 255), ColorRGBA(235, 250, 255)},
+				{ColorRGBA(100, 185, 245), ColorRGBA(155, 215, 255)},
+				{ColorRGBA(40, 95, 180), ColorRGBA(70, 135, 220)}};
+			rayProjectile->linger = 0.08f;
+		}
+		else
+			rayProjectile->rayConfig = shooterInfo.animation.projectileRay;
 		rayProjectile->speed     = computeProjectileFlightTime(from, dest, AnimationControls::getRayProjectileSpeed());
 	}
 	else if (stackUsesMissileProjectile(shooter))

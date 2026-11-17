@@ -10,8 +10,9 @@ class PreparedPilotParityTest : public PreparedPilotFixture, public ::testing::W
 int rankMorale(const CGHeroInstance & hero, SecondarySkill skill)
 {
 	int result = 0;
-	for(const auto & bonus : *hero.getBonuses(Selector::source(BonusSource::SECONDARY_SKILL, BonusSourceID(skill))
-		.And(Selector::type()(BonusType::MORALE)))) result += bonus->val;
+	const auto bonuses = hero.getBonuses(Selector::source(BonusSource::SECONDARY_SKILL, BonusSourceID(skill))
+		.And(Selector::type()(BonusType::MORALE)));
+	for(const auto & bonus : *bonuses) result += bonus->val;
 	return result;
 }
 struct RestoreValue
@@ -70,7 +71,8 @@ TEST_P(PreparedPilotParityTest, AcceptedSanctuaryCastRetainsParentSourceAndAutho
 	EXPECT_EQ(parent->type, BonusType::SANCTIFIED);
 	EXPECT_EQ(parent->sid, BonusSourceID(spell));
 	std::vector<Bonus> statuses;
-	for(const auto & bonus : *unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)).And(Selector::type()(BonusType::SANCTIFIED))))
+	const auto sanctifiedBonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)).And(Selector::type()(BonusType::SANCTIFIED)));
+	for(const auto & bonus : *sanctifiedBonuses)
 		statuses.push_back(*bonus);
 	ASSERT_FALSE(statuses.empty());
 	SetStackEffect remove;
@@ -114,10 +116,15 @@ TEST_P(PreparedPilotFamilyTest, NativeAuraOwnerUsesExactPreparedFamilyAndRecipie
 	const auto value = std::get<4>(GetParam());
 	ASSERT_NO_FATAL_FAILURE(prepareWorld());
 	EXPECT_EQ(attackerSideHero->getPreparedCreatureMechanics() != nullptr, authored);
+	// SOD cannot encode the runtime ID of mod Wisps. Arrange the requested
+	// native family after map loading instead of sampling an empty default army.
+	attackerSideHero->clearSlots();
+	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), creatureByName(creatureName), 10));
 	startBattle();
 	beginCombat();
 	const auto * source = mainUnit(BattleSide::ATTACKER);
 	ASSERT_NE(source, nullptr);
+	ASSERT_EQ(source->creatureId(), creatureByName(creatureName));
 	const battle::Unit * recipient = source;
 	if(type == BonusType::SPELL_DAMAGE_REDUCTION)
 	{
@@ -128,6 +135,9 @@ TEST_P(PreparedPilotFamilyTest, NativeAuraOwnerUsesExactPreparedFamilyAndRecipie
 				break;
 			}
 		ASSERT_NE(recipient, source);
+		ASSERT_EQ(recipient->unitOwner(), source->unitOwner());
+		const auto adjacent = battle()->battleAdjacentUnits(recipient);
+		ASSERT_NE(std::find(adjacent.begin(), adjacent.end(), source), adjacent.end());
 	}
 	const auto bonuses = recipient->getBonuses(Selector::source(BonusSource::HERO_SPECIAL, BonusSourceID(attackerSideHero->getHeroTypeID()))
 		.And(Selector::type()(type)));
@@ -156,7 +166,7 @@ TEST_F(PreparedPilotFixture, SavedAndCampaignRowsRebuildWithoutInstalledRankDefa
 	loaded.loadFromMemory(gameState()->saveToMemory());
 	auto * savedHero = loaded.getMap().getHero(attackerSideHero->getHeroTypeID());
 	ASSERT_NE(savedHero, nullptr);
-	EXPECT_EQ(savedHero->getPerkState().rules, attackerSideHero->getPerkState().rules);
+	EXPECT_EQ(savedHero->getPerkState().getRules(), attackerSideHero->getPerkState().getRules());
 	savedHero->setSecSkillLevel(skill, 3, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(rankMorale(*savedHero, skill), 13);
 	ASSERT_NE(savedHero->getPreparedCreatureMechanics(), nullptr);

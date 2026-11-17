@@ -39,7 +39,6 @@ battle::ProjectedUnitEnvironmentState battle::ProjectedUnitEnvironmentState::cap
 		inputs.bloodragePain = source.getBloodragePainIncrement(side);
 		auto & state = result.states.at(side);
 		state.fortune = source.getSylvanLuckState(side);
-		state.metamagicPoints = source.getMetamagicPointState(side);
 		state.bloodrageDamagePercent = source.getBloodrageDamagePercent(side);
 		state.elementalAttunementMask = source.getElementalAttunementMask(side);
 	}

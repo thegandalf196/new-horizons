@@ -6,7 +6,7 @@ class StackWithBonuses;
 
 /// Exact SWB-to-owned-subject environment mapping. Queries retain their Frame;
 /// detached state loans use the bridge's fixed Scratch instead of borrowing HB.
-class OwnedStackQuerySource final : public battle::IUnitEnvironment
+class DLL_LINKAGE OwnedStackQuerySource final : public battle::IUnitEnvironment
 {
 	const HypotheticBattle & owner;
 	const StackWithBonuses & subject;
@@ -22,7 +22,6 @@ public:
 	const battle::OwnedUnitBonusFrame & current() const;
 	std::shared_ptr<battle::CUnitState> acquireState() const;
 	std::vector<Bonus> localSpellEffects() const;
-	std::optional<bool> unitLegacyTimeStopSpellMatch(const battle::Unit * unit, SpellID spell) const override;
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;
 	std::optional<int> unitMagicResistance(const battle::Unit * unit) const override;

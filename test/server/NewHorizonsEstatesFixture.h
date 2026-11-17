@@ -93,7 +93,7 @@ protected:
     void select(CGHeroInstance * hero, const char * basic = "prosperity", const char * advanced = nullptr, const char * expert = nullptr)
     {
         const auto skill = SecondarySkill(SecondarySkill::decode(ESTATES));
-        const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
+        const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).replaceSelected({});
         hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
         hero->applyPerkSelection({ESTATES, ESTATES + "." + basic});
         if(advanced)

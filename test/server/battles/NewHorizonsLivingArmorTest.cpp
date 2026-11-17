@@ -235,18 +235,12 @@ TEST(LivingArmorSerialization, AllMagicalVulnerabilityRejectsOldBonusAndEffectPr
 	EXPECT_TRUE(outer.extractBuffer().empty());
 }
 
-TEST_F(NewHorizonsLivingArmorTest, TimeStopPausesCountdownAndPhysicalReductionUsesOrdinaryDamageLayer)
+TEST_F(NewHorizonsLivingArmorTest, CountdownAndPhysicalReductionUseOrdinaryLayers)
 {
 	prepare();
 	ASSERT_TRUE(cast(destination));
 	auto * target = summoned();
 	ASSERT_NE(target, nullptr);
-	auto stasis = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	target->addNewBonus(stasis);
-	target->afterNewRound();
-	EXPECT_EQ(target->summonRoundsRemaining, 3);
-	target->removeBonus(stasis);
 	target->afterNewRound();
 	EXPECT_EQ(target->summonRoundsRemaining, 2);
 	auto * attacker = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(10, 5), 200);

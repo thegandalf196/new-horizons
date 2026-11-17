@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../PerkStateFixture.h"
 #include "BattleTestFixture.h"
 #include "../../../server/CGameHandler.h"
 #include "../../../server/battles/BattleProcessor.h"
@@ -35,8 +36,8 @@ protected:
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating")),
 			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		auto & perks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		perks.rules["demonicGatingPolicy"]["version"].Integer() = 2;
-		perks.selected.clear();
+		perkStateFixture::editRules(perks, [&](JsonNode & rules) { rules["demonicGatingPolicy"]["version"].Integer() = 2; });
+		perks.replaceSelected({});
 		attackerSideHero->setDemonicReserve({});
 		startBattle();
 		beginCombat();
@@ -82,11 +83,11 @@ protected:
 	{
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
 		const JsonNode historical(JsonPath::builtin("test/newHorizonsHistoricalFactionPerks"));
-		state.rules["skills"]["new-horizons:demonicGating"] = historical["skills"]["new-horizons:demonicGating"];
+		perkStateFixture::editRules(state, [&](JsonNode & rules) { rules["skills"]["new-horizons:demonicGating"] = historical["skills"]["new-horizons:demonicGating"]; });
 		if(!temporary)
-			state.rules.Struct().erase("demonicGatingPolicy");
-		ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(state.rules));
-		state.selected.clear();
+			perkStateFixture::editRules(state, [&](JsonNode & rules) { rules.Struct().erase("demonicGatingPolicy"); });
+		ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(state.getRules()));
+		state.replaceSelected({});
 		ASSERT_NO_FATAL_FAILURE(selectPerk("mobileGate"));
 		if(!temporary)
 			battle()->getSide(BattleSide::ATTACKER).demonicReserve[battle()->battleActiveUnit()->creatureId()] = 3;

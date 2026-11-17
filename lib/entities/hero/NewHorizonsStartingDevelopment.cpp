@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsPerkState.h"
 #include "NewHorizonsRuleValidation.h"
 #include "NewHorizonsStartingPerks.h"
 #include "CHeroClass.h"
@@ -96,7 +97,8 @@ void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMig
 		{
 			const auto id = resolve(HeroTypeID::entityType(), hero);
 			require(HeroTypeID::encode(id) == hero && heroes.insert(id).second, "canonical unique starting hero");
-			fields(profile, {"skills", "startingPerks"});
+			if(usesSkillsOnlyStartingProfiles(startingSkills)) fields(profile, {"skills"});
+			else fields(profile, {"skills", "startingPerks"});
 			require(profile["skills"].isVector() && profile["skills"].Vector().size() == 2,
 				"exactly two explicit starting skills");
 			std::set<int> skills;
@@ -112,6 +114,7 @@ void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMig
 				if(usesBasicStartingProfiles(startingSkills))
 					require(skill["rank"].Integer() == MasteryLevel::BASIC, "fresh default Basic starting skill");
 			}
+			if(usesSkillsOnlyStartingProfiles(startingSkills)) continue;
 			require(profile["startingPerks"].isVector() && profile["startingPerks"].Vector().size() == 1,
 				"one explicit starting Basic perk");
 			const auto & perk = profile["startingPerks"].Vector().front();
@@ -314,10 +317,11 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 		result.skills.emplace_back(skill, rank);
 	}
 	require(hasFaction, "own starting faction skill");
+	if(usesSkillsOnlyStartingProfiles(starts)) return result;
 	// The generic starting perk already requires catalog admission. Reuse that
 	// operation-local validation for both v2 parents rather than rescanning the
 	// complete captured registry for each definition.
-	const ValidatedPerkRules perkRules(perkState.rules);
+	const ValidatedPerkRules perkRules(perkState.getRules());
 	if(usesBasicStartingProfiles(starts))
 	{
 		const auto & choices = starts["startingPerkProfiles"][found->first].Vector();

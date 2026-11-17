@@ -26,7 +26,7 @@ std::optional<float> commandClassSkillScore(const CGHeroInstance & hero, Seconda
 	const auto rules = hero.getArmyCommandRules();
 	const bool leadership = newHorizonsHeroes::usesLeadershipEfficiency(hero.getCapabilityRules());
 	if(!rules && !leadership) return {};
-	const auto weight = newHorizonsHeroes::skillOfferWeight(hero.getPrimaryGrowthRules(), skill);
+	const auto weight = hero.compiledDevelopment()->skillOfferWeight(skill);
 	if(!weight) return {};
 	// Captured class affinity supplies a bounded generic prior for current IDs.
 	// Role-specific strategic overrides remain in HeroManager.

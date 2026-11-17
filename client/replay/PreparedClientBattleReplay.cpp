@@ -24,9 +24,12 @@ PreparedClientBattleReplay::PreparedClientBattleReplay(std::shared_ptr<CGameStat
 {
 	if(!this->world)
 		throw std::invalid_argument("Client replay requires its real retained world");
-	// This happens BEFORE outer writer/lag encoding, even when configured false.
-	snapshot = capturePreparedReplaySnapshot(*this->world, true);
-	outerRecord = ReplayPackSerializer::write(writerProjection);
+	// Enabled clients retain the existing pre-writer snapshot order, even when
+	// authority-style packet recording is unconfigured. A saved opt-out skips
+	// replay storage work without changing world/lag transaction validation.
+	snapshot = capturePreparedReplaySnapshot(*this->world, this->world->replayLog.isCaptureEnabled());
+	if(this->world->replayLog.isCaptureEnabled())
+		outerRecord = ReplayPackSerializer::write(writerProjection);
 }
 
 void PreparedClientBattleReplay::finish(const NetworkLagReplyState * predictions)
@@ -34,7 +37,8 @@ void PreparedClientBattleReplay::finish(const NetworkLagReplyState * predictions
 	if(predictions)
 		inspection = predictions->inspectBattleReply(writerProjection);
 	PreparedReplayAppend::Records records;
-	records.push_back(std::move(outerRecord)); // unconditional outer client record
+	if(world->replayLog.isCaptureEnabled())
+		records.push_back(std::move(outerRecord)); // enabled outer client record
 	if(world->replayLog.isRecordingPacks())
 	{
 		if(inspection)

@@ -72,8 +72,8 @@ protected:
 	void disablePerkOffers()
 	{
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		state.rules = JsonNode();
-		state.selected.clear();
+		state.replaceSelected({});
+		state.replaceRules(JsonNode());
 	}
 
 	HeroLevelUp makeLevelUpOffer(std::vector<SecondarySkill> skills = {}) const
@@ -323,8 +323,8 @@ TEST_F(NewHorizonsMasteryTest, DeferredPerkOfferRebuildsFromCurrentTierOccupancy
 	gameHandler->changeSecSkill(attackerSideHero, warcasting, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 
 	auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-	state.selected.clear();
+	state.replaceSelected({});
+	state.replaceRules(JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	state.validate();
 	constexpr uint64_t offerSeed = 42;
 	const auto rankLookup = [this](const std::string & skillId)
@@ -381,10 +381,10 @@ TEST_F(NewHorizonsMasteryTest, DeferredEmptyPerkOfferCanBecomeEligibleBeforeProm
 	const SecondarySkill warcasting(decodedWarcasting);
 
 	auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-	state.selected.clear();
+	state.replaceSelected({});
+	state.replaceRules(JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 	state.validate();
-	for(const auto & skillEntry : state.rules["skills"].Struct())
+	for(const auto & skillEntry : state.getRules()["skills"].Struct())
 	{
 		const auto & skillId = skillEntry.first;
 		const int decodedSkill = SecondarySkill::decode(skillId);

@@ -59,23 +59,23 @@ int main()
 	using newHorizonsBattleStatus::StackStatusIconKind;
 	const std::vector<StackStatusIconKind> poisonedStatuses = {
 		StackStatusIconKind::ORDINARY,
-		StackStatusIconKind::FOCUS_OR_ARCANE,
+		StackStatusIconKind::FOCUS_MAGIC,
 		StackStatusIconKind::PHYSICAL_POISON,
-		StackStatusIconKind::SPELL_LOCK,
-		StackStatusIconKind::TIME_STOP
+		StackStatusIconKind::ENTANGLE,
+		StackStatusIconKind::FROZEN
 	};
 	const auto poisonedPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(poisonedStatuses, 5);
 	require(poisonedPlan.overflow && !poisonedPlan.ellipsisUsesSlot,
 		"Poisoned overflow reserves the status slots instead of replacing Poison with an ellipsis");
 	require(poisonedPlan.visibleEntryIndices.size() == 3,
 		"Poisoned overflow does not keep three priority statuses visible");
-	require(poisonedStatuses[poisonedPlan.visibleEntryIndices[0]] == StackStatusIconKind::TIME_STOP
-		&& poisonedStatuses[poisonedPlan.visibleEntryIndices[1]] == StackStatusIconKind::SPELL_LOCK
+	require(poisonedStatuses[poisonedPlan.visibleEntryIndices[0]] == StackStatusIconKind::FROZEN
+		&& poisonedStatuses[poisonedPlan.visibleEntryIndices[1]] == StackStatusIconKind::ENTANGLE
 		&& poisonedStatuses[poisonedPlan.visibleEntryIndices[2]] == StackStatusIconKind::PHYSICAL_POISON,
-		"Time Stop, Spell Lock, and physical Poison lost their compact-panel priority");
+		"Frozen, Entangle, and physical Poison lost their compact-panel priority");
 	const std::vector<StackStatusIconKind> ordinaryStatuses = {
 		StackStatusIconKind::ORDINARY,
-		StackStatusIconKind::FOCUS_OR_ARCANE,
+		StackStatusIconKind::FOCUS_MAGIC,
 		StackStatusIconKind::ORDINARY,
 		StackStatusIconKind::ORDINARY
 	};

@@ -129,16 +129,10 @@ TEST_F(NewHorizonsRisingTideTransitionTest, GrowthPreservesWoundsAndPermanentCas
 	EXPECT_EQ(elemental->getSurvivingMissingHealth(), 15);
 	EXPECT_EQ(elemental->health.getResurrected(), 2);
 }
-TEST_F(NewHorizonsRisingTideTransitionTest, TimeStopAndDestroyedStacksDoNotGrow)
+TEST_F(NewHorizonsRisingTideTransitionTest, DestroyedStacksDoNotGrow)
 {
 	prepare();
 	injure(15);
-	elemental->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID()));
-	const auto wounded = elemental->getAvailableHealth();
-	roundPhase();
-	EXPECT_EQ(elemental->getAvailableHealth(), wounded);
-	elemental->removeBonuses(Selector::type()(BonusType::TIME_STOP));
 	injure(elemental->getAvailableHealth());
 	ASSERT_FALSE(elemental->alive());
 	battleRoundHealing::afterRound(*gameHandler, *battle());

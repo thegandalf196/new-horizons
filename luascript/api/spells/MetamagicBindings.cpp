@@ -51,18 +51,12 @@ void registerMetamagicMethods(MethodRegistrar & R)
 	R.method<&Mechanics::getRecipientDivineRetributionCap>("getRecipientDivineRetributionCap",
 		{{"recipient", "Protected recipient whose existing Arcane Marks apply."}}, {},
 		"Returns the actual snapshotted judgment cap before Retributionist payout.");
-	R.method<&Mechanics::getRecipientArcaneBreachMarkBasisPoints>("getRecipientArcaneBreachMarkBasisPoints",
-		{{"target", "Friendly shooter whose existing Arcane Marks apply."}}, {},
-		"Returns Focus Magic's actual cast-time mark potency, preserving the independent Arcane Breach cap.");
 	R.method<&Mechanics::getRecipientHexOfPainDamageSharePercent>("getRecipientHexOfPainDamageSharePercent",
 		{{"target", "Recipient whose existing Arcane Marks apply."}}, {},
 		"Returns the final cast-time Hex damage-share snapshot, respecting its native percentage cap.");
 	R.method<&Mechanics::getRecipientSoulChainEchoBasisPoints>("getRecipientSoulChainEchoBasisPoints",
 		{{"target", "Secondary recipient whose existing Arcane Marks apply."}}, {},
 		"Returns the cast-time Soul Chain echo snapshot, capped at its native supported maximum.");
-	R.method<&Mechanics::getRecipientSpellLockDuration>("getRecipientSpellLockDuration",
-		{{"target", "Recipient whose existing Arcane Marks apply."}}, {},
-		"Returns Spell Lock's actual target-aware duration, including established extensions.");
 	R.method<&Mechanics::getGuardianSpiritHitPoints>("getGuardianSpiritHitPoints",
 		{{"target", "Recipient whose captured Crown and Altar component applies."}}, {},
 		"Returns the native protective pool, followed by this recipient's existing Arcane Marks once.");

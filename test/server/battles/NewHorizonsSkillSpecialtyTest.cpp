@@ -244,7 +244,7 @@ TEST_F(NewHorizonsSkillSpecialtyTest, NavigationAddsItsFullSeaBonusBesideSpecial
 	syntheticNavigationStart = true;
 	startGame();
 	setRank(kyrre, MasteryLevel::BASIC);
-	const auto & selected = kyrre->getPerkState().selected;
+	const auto & selected = kyrre->getPerkState().getSelected();
 	ASSERT_EQ(kyrre->getPerkSkillRank(LOGISTICS_SKILL), MasteryLevel::BASIC);
 	ASSERT_EQ(std::count_if(selected.begin(), selected.end(), [](const auto & selection)
 	{

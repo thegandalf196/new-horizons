@@ -171,7 +171,7 @@ void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayA
 	HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
 	if(ownedQuerySource) throw std::logic_error("Owned selector mutation needs its canonical raw selector transaction");
-	const auto protectedRemoval = graveDustAI::protectedRemovalSelector(*this, selector);
+	const auto protectedRemoval = selector;
 	if(const auto subject = owner->initialExportSubject())
 	{
 		subject->remove(*owner, id, protectedRemoval);
@@ -179,12 +179,7 @@ void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayA
 		return;
 	}
 	captureLocalSpellEffects();
-	const bool timeStopped = mayAffectControlState && isTimeStopped();
-	const CSelector effectiveSelector([&protectedRemoval, timeStopped](const Bonus * bonus)
-	{
-		return protectedRemoval(bonus) && !(timeStopped && bonus
-			&& (bonus->type == BonusType::CONFUSION_PENDING || battle::isPolymorphMarker(bonus)));
-	});
+	const auto & effectiveSelector = protectedRemoval;
 	bool removesConfusion = false;
 	bool removesGuardianSpirit = false;
 	if(mayAffectControlState)
@@ -206,7 +201,6 @@ void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayA
 	{
 		LifecycleTimingScope measurement(timing ? &timing->selectiveRemovalQuery : nullptr);
 		toRemove = origBearer->getBonuses(effectiveSelector);
-		toRemove = clockRemovalRecords(std::move(toRemove), effectiveSelector);
 	}
 	LifecycleTimingScope mutation(timing ? &timing->removalMutation : nullptr);
 
@@ -426,25 +420,12 @@ void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTi
 	if(ownedQuerySource) throw std::logic_error("Owned aging requires its canonical raw duration transaction");
 	captureLocalSpellEffects();
 	captureEffects(timing);
-	if(isTimeStopped())
-	{
-		// Time Stop takes the projected unit outside the round clock.  Keep the
-		// captured effect identities (so later hypothetical removals still see
-		// them), but do not age or expire any N_TURNS effect.
-		++treeVersionLocal;
-		return;
-	}
 	LifecycleTimingScope aging(timing ? &timing->roundAging : nullptr);
-	// Read the seal and polarity before its own final round expires. These
-	// immutable values apply equally to stacked, source-local and raw aliases.
-	const auto preservedPolarity = newHorizonsSorcery::spellLockPreservesBeneficial(*this);
-	const bool sealed = preservedPolarity.has_value() && newHorizonsSorcery::isSpellLocked(*this);
 	const auto plagueMarker = newHorizonsPlague::markerSelector(owner->getMagicRules());
-	const auto roundTimed = [this, sealed, preservedPolarity, &plagueMarker](const Bonus * bonus)
+	const auto roundTimed = [this, &plagueMarker](const Bonus * bonus)
 	{
 		return timedProjectionEffect(bonus, capturedPhysicalAfflictionGroups)
-			&& !(bonus && plagueMarker(bonus))
-			&& !(sealed && newHorizonsSorcery::isPreservedSpellLockEffect(bonus, *preservedPolarity));
+			&& !(bonus && plagueMarker(bonus));
 	};
 	const auto age = [&roundTimed](std::vector<Bonus> & bonuses)
 	{

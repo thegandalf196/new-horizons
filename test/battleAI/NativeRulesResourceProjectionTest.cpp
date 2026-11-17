@@ -73,7 +73,7 @@ TEST_F(NativeRulesResourceProjectionTest, ExhaustedPoolBlocksOrderButKeepsSpellA
 	PossibleSpellcast order;
 	order.command = HeroCommand::CHARGE;
 	EXPECT_FALSE(heroActionProjection::admitCandidate(*child, side, order).admitted);
-	EXPECT_TRUE(child->prepareHeroSpellAllowance(side, SpellID::CURE, false, false));
+	EXPECT_TRUE(child->prepareHeroSpellAllowance(side, SpellID::CURE));
 	EXPECT_EQ(child->battleActiveUnit()->unitId(), active->unitId());
 	EXPECT_GT(parent->getCommandResources(side).remaining, 0);
 }
@@ -237,38 +237,16 @@ TEST_F(NativeRulesResourceProjectionTest, TerminalElementalCastCreditsFirstFamil
 	const auto outside = observation();
 	DamageCache original;
 	original.buildDamageCache(parent, side);
-	const auto allowance = child->prepareHeroSpellAllowance(side, SpellID::FIRE_WALL, false, false);
+	const auto allowance = child->prepareHeroSpellAllowance(side, SpellID::FIRE_WALL);
 	ASSERT_TRUE(allowance);
 	ASSERT_TRUE(child->beginProjectedHeroAction(side, *allowance));
 	ASSERT_TRUE(child->projectAcceptedHeroSpell(side, SpellID::FIRE_WALL,
-		std::numeric_limits<uint32_t>::max(), false, false, false, false, *allowance));
+		std::numeric_limits<uint32_t>::max(), *allowance));
 	ASSERT_EQ(child->getElementalAttunementMask(side), 2);
 	EXPECT_GT(elementalAttunementAI::terminalMarginal(child, side, 0, original), 0.0f);
 	EXPECT_EQ(elementalAttunementAI::terminalMarginal(child, side, 2, original), 0.0f);
 	EXPECT_EQ(parent->getElementalAttunementMask(side), 0);
 	EXPECT_EQ(observation(), outside);
-}
-
-TEST_F(NativeRulesResourceProjectionTest, CounteredElementalCastGrantsNoTerminalAttunementValue)
-{
-	ASSERT_NO_FATAL_FAILURE(world());
-	const auto brissa = HeroTypeID::decode("core:brissa");
-	ASSERT_GE(brissa, 0);
-	attackerSideHero->setHeroType(HeroTypeID(brissa));
-	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::FIRE_WALL, "new-horizons:havocMagic"));
-	const auto skill = SecondarySkill(SecondarySkill::decode("new-horizons:elementalRebirth"));
-	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	ASSERT_NO_FATAL_FAILURE(arena());
-	ASSERT_NE(addStack(side, creatureByName("core:fireElemental"), BattleHex(6, 5), 10), nullptr);
-	ASSERT_NO_FATAL_FAILURE(branches());
-	const auto allowance = child->prepareHeroSpellAllowance(side, SpellID::FIRE_WALL, false, false);
-	ASSERT_TRUE(allowance);
-	ASSERT_TRUE(child->beginProjectedHeroAction(side, *allowance));
-	ASSERT_TRUE(child->projectAcceptedHeroSpell(side, SpellID::FIRE_WALL,
-		std::numeric_limits<uint32_t>::max(), false, false, true, true, *allowance));
-	EXPECT_EQ(child->getElementalAttunementMask(side), 0);
-	DamageCache original;
-	EXPECT_EQ(elementalAttunementAI::terminalMarginal(child, side, 0, original), 0.0f);
 }
 
 TEST_F(NativeRulesResourceProjectionTest, UnknownEnemyKeepsPublicHealthRetaliationsAndDamageAcrossBranches)

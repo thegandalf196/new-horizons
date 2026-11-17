@@ -47,8 +47,8 @@ bool roundTemporary(const CSpell & spell, int32_t effectLevel)
 				if(bonus["duration"].String() == "N_TURNS")
 					return true;
 		}
-		if(type == "core:timedSummon" || type == "core:battleForm" || type == "core:phantomArmy" || type == "core:spellLock"
-			|| type == "core:focusMagicEnchantment" || type == "core:hexOfPainEffect"
+		if(type == "core:timedSummon" || type == "core:battleForm" || type == "core:phantomArmy"
+			|| type == "core:hexOfPainEffect"
 			|| type == "core:plagueEffect" || type == "core:soulChainEffect"
 			|| type == "core:doomEffect" || type == "core:shadowGiftEffect"
 			|| type == "core:vampirismEffect" || type == "core:hydrasVitality"
@@ -61,7 +61,7 @@ bool roundTemporary(const CSpell & spell, int32_t effectLevel)
 			return true;
 	}
 	// Fire Wall and Earthquake have saved round lifetimes; permanent traps,
-	// action-bound Time Stop/control, and combat-long summons do not.
+	// action-bound control, charge enchantments and combat-long summons do not.
 	return newHorizonsMagic::isFireWall(spell.getId()) || spell.getId() == SpellID::EARTHQUAKE;
 }
 

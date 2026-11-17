@@ -86,15 +86,6 @@ public:
 		if(!facts.states.at(side)) throw std::logic_error("Owned side state facts are unknown");
 		return *facts.states.at(side);
 	}
-	bool legacyTimeStopMatch(const Unit & unit, SpellID spell) const
-	{
-		requireSubject(unit);
-		if(!facts.legacyTimeStop) throw std::logic_error("Owned legacy Time Stop identity domain is unbound");
-		const auto found = facts.legacyTimeStop->classified.find(spell);
-		if(found == facts.legacyTimeStop->classified.end())
-			throw std::invalid_argument("Spell identity is outside the captured owned clock domain");
-		return found->second;
-	}
 	std::pair<int32_t, int32_t> legacyMoraleLimits() const
 	{
 		if(!facts.legacyMoraleLimits) throw std::logic_error("Owned legacy morale limits are unknown");
@@ -212,11 +203,6 @@ std::unique_ptr<OwnedUnitEnvironment> OwnedUnitEnvironment::forDerivedSubject(
 Units OwnedUnitEnvironment::adjacentGeometry(const Unit & geometry) const { return adjacentInRoster(data->roster, geometry); }
 OwnedUnitEnvironment::~OwnedUnitEnvironment() = default;
 ProjectedUnitEnvironmentState::SideState & OwnedUnitEnvironment::state(BattleSide side) { return data->state(side); }
-std::optional<bool> OwnedUnitEnvironment::unitLegacyTimeStopSpellMatch(const Unit * unit, SpellID spell) const
-{
-	if(!unit) throw std::invalid_argument("Owned legacy clock classifier requires its actual subject");
-	return data->legacyTimeStopMatch(*unit, spell);
-}
 bool OwnedUnitEnvironment::unitHasAmmoCart(const Unit * unit) const { return data->queries.unitHasAmmoCart(unit); }
 PlayerColor OwnedUnitEnvironment::unitEffectiveOwner(const Unit * unit) const { return data->queries.unitEffectiveOwner(unit); }
 std::optional<int> OwnedUnitEnvironment::unitMagicResistance(const Unit * unit) const { return data->queries.unitMagicResistance(unit); }

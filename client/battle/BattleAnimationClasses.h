@@ -257,6 +257,8 @@ public:
 /// Shooting attack
 class ShootingAnimation : public RangedAttackAnimation
 {
+	const bool focusMagicRanged;
+	const bool focusMagicConverted;
 	ECreatureAnimType getUpwardsGroup() const override;
 	ECreatureAnimType getForwardGroup() const override;
 	ECreatureAnimType getDownwardsGroup() const override;
@@ -267,7 +269,8 @@ class ShootingAnimation : public RangedAttackAnimation
 	uint32_t getAttackClimaxFrame() const override;
 
 public:
-	ShootingAnimation(BattleInterface & owner, const CStack * attacker, BattleHex dest, const CStack * defender);
+	ShootingAnimation(BattleInterface & owner, const CStack * attacker, BattleHex dest, const CStack * defender,
+		bool focusMagicRanged = false, bool focusMagicConverted = false);
 	bool init() override;
 
 };

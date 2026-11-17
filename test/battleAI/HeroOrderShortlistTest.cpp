@@ -800,7 +800,7 @@ TEST_F(HeroOrderShortlistConsumerTest, HiddenCruelVolleyPolicyCannotChangeThePos
 	const auto source = callback->getBattle(BattleID(0));
 	ASSERT_EQ(source->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
 	const BattleAttackInfo attack(enemies.front(), active, 0, true);
-	auto & rules = const_cast<JsonNode &>(defenderSideHero->getPrimaryGrowthRules());
+	auto rules = defenderSideHero->getPrimaryGrowthRules();
 	auto & coefficient = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"]["cruelVolleyDamagePercent"];
 	const auto visibleStats = [this]
 	{
@@ -815,6 +815,7 @@ TEST_F(HeroOrderShortlistConsumerTest, HiddenCruelVolleyPolicyCannotChangeThePos
 	for(const int percent : {0, 60})
 	{
 		coefficient.Integer() = percent;
+		defenderSideHero->replaceCapturedPrimaryGrowthRules(rules);
 		EXPECT_EQ(visibleStats(), visibleBefore);
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), attack), 100 + percent);
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*source, attack), 100);

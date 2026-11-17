@@ -194,21 +194,7 @@ TEST_F(NewHorizonsRealityWarpTest, RealityBreakerAllowsDistinctFriendlyPairAndSt
 	ASSERT_NO_FATAL_FAILURE(expectCommitted(*planned.exchange, friendly, other));
 }
 
-TEST_F(NewHorizonsRealityWarpTest, LockedAndTimeStoppedEndpointsRejectWithoutCharge)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto mana = attackerSideHero->getManaAvailable();
-	const SpellID lock(SpellID::decode("new-horizons:spellLock"));
-	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE,
-		BonusSource::SPELL_EFFECT, 100, BonusSourceID(lock)));
-	EXPECT_FALSE(cast(friendly, enemy));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	enemy->removeBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(lock)));
-	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_FALSE(cast(friendly, enemy));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-}
+
 
 TEST_F(NewHorizonsRealityWarpTest, PaidGuardianPoolsExchangeWithoutSwappingHealth)
 {
@@ -337,9 +323,6 @@ TEST_F(NewHorizonsRealityWarpTest, ChosenBundleStaysAtOriginWhenRecipientArmyAlr
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	addChosen(friendly, PlayerColor(0));
 	addChosen(enemy, PlayerColor(1));
-	// A stopped third stack still owns its paused Chosen bundle.
-	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
 	EXPECT_FALSE(newHorizonsTheChosen::canTransferTo(*battle(), enemy->unitId(), *other));
 	const auto planned = newHorizonsRealityWarp::prepareExchange(*battle(), other->unitId(), enemy->unitId());
 	ASSERT_TRUE(planned.exchange);

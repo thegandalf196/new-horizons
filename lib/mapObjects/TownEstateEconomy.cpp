@@ -29,7 +29,7 @@ int32_t CGTownInstance::getStewardGoldBeforeHandicap() const
 	const auto qualifies = [this](const CGHeroInstance * hero)
 	{
 		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
-			&& !newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().rules)
+			&& !newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().getRules())
 			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.stewardship");
 	};
 	const auto * visitor = getVisitingHero();
@@ -84,7 +84,7 @@ int CGTownInstance::getMarketEfficiency() const
 	const auto hasMerchantPrince = [this](const CGHeroInstance * hero)
 	{
 		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
-			&& !newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().rules)
+			&& !newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().getRules())
 			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.merchantPrince");
 	};
 	// The town receives two virtual Marketplaces, not two per resident holder.

@@ -62,7 +62,7 @@ class CGameStateCampaign : public Serializeable
 	void giveCampaignBonusToHero(CGHeroInstance * hero);
 
 public:
-	CGameStateCampaign();
+	DLL_LINKAGE CGameStateCampaign();
 	CGameStateCampaign(CGameState * owner);
 	void setGamestate(CGameState * owner);
 

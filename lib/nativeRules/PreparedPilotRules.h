@@ -34,5 +34,7 @@ DLL_LINKAGE void validatePilotOverrides(const JsonNode & overrides, bool support
 /// Resolves identifiers once after content load, exclusively from captured rows.
 DLL_LINKAGE std::shared_ptr<const PreparedPilotPerks> preparePilotPerks(const JsonNode & rules);
 DLL_LINKAGE std::shared_ptr<const PreparedPilotCreature> preparePilotCreature(const JsonNode & development, HeroTypeID hero);
+/// Trusted immutable-owner compiler; caller has admitted pilot structure.
+DLL_LINKAGE std::shared_ptr<const PreparedPilotCreature> prepareAdmittedPilotCreature(const JsonNode & development, HeroTypeID hero);
 DLL_LINKAGE bool hasPreparedCreatureRow(const JsonNode & development, std::string_view hero);
 }

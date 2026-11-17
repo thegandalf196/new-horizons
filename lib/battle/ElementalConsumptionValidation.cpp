@@ -26,7 +26,7 @@ void validatePhoenixSparkConsumption(ElementalConsumptionContext & battle, const
 		? battle.getCreatureCategoryRules().lookup(source->unitType()->getJsonKey()) : std::nullopt;
 	const DeathSnapshot snapshot{source->unitId(), consumption.side, source->getPosition(),
 		source->getBattleStartMaximumAggregateHP(), *profile};
-	if(source->isHypnotized() || source->isTimeStopped()
+	if(source->isHypnotized()
 		|| !category || category->category != newHorizonsCreatures::CreatureCategory::CHAMPION
 		|| !stillEligibleDeath(source, snapshot, true, false, false))
 		throw std::runtime_error("Invalid Phoenix Spark original Champion death");

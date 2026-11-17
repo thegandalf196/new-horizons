@@ -335,50 +335,7 @@ TEST_F(NewHorizonsHavocStructuresTest, MeteorShowerRemovesOnlyPartiallyImpactedO
 	EXPECT_TRUE(containsObstacle(battle()->obstacles, magic->uniqueID));
 }
 
-TEST_F(NewHorizonsHavocStructuresTest, SpellLockDoesNotSuppressMeteorObstacleEffectsOrExtendThemFromDoubleWideFootprint)
-{
-	prepare(meteorShowerKey);
-	const BattleHex center(12, 5);
-	auto ordinaryInBlast = addPhysicalObstacle(205, BattleHex(13, 5));
-	auto ordinaryOutside = addPhysicalObstacle(206, BattleHex(9, 4));
-	auto * friendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(5, 5), 1000);
-	auto * lockedDoubleWide = addStack(BattleSide::DEFENDER, creatureByName("core:archangel"), BattleHex(10, 5), 1000);
-	auto * hostile = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 4), 1000);
-	ASSERT_NE(ordinaryInBlast, nullptr);
-	ASSERT_NE(ordinaryOutside, nullptr);
-	ASSERT_NE(friendly, nullptr);
-	ASSERT_NE(lockedDoubleWide, nullptr);
-	ASSERT_NE(hostile, nullptr);
-	ASSERT_TRUE(lockedDoubleWide->doubleWide());
-	ASSERT_TRUE(lockedDoubleWide->getHexes().contains(BattleHex(10, 5)));
-	ASSERT_TRUE(lockedDoubleWide->getHexes().contains(BattleHex(11, 5)));
-	ASSERT_GT(BattleHex::getDistance(center, BattleHex(10, 5)), 1)
-		<< "The double-wide stack's primary hex is outside Meteor Shower's area";
-	ASSERT_LE(BattleHex::getDistance(center, BattleHex(11, 5)), 1)
-		<< "Only its rear hex is inside Meteor Shower's area";
-	for(const auto hex : ordinaryInBlast->getAffectedTiles())
-		EXPECT_FALSE(lockedDoubleWide->getHexes().contains(hex));
-	for(const auto hex : ordinaryOutside->getAffectedTiles())
-		EXPECT_FALSE(lockedDoubleWide->getHexes().contains(hex));
 
-	const SpellID spellLock(SpellID::decode("new-horizons:spellLock"));
-	auto lock = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
-		BonusSource::SPELL_EFFECT, 100, BonusSourceID(spellLock));
-	lock->turnsRemain = 3;
-	lockedDoubleWide->addNewBonus(std::move(lock));
-	ASSERT_GT(BattleHex::getDistance(center, friendly->getPosition()), 1);
-	beginScenario();
-	const auto lockedHealth = lockedDoubleWide->getAvailableHealth();
-	const auto hostileHealth = hostile->getAvailableHealth();
-
-	ASSERT_TRUE(castAtHex(center));
-	EXPECT_EQ(lockedDoubleWide->getAvailableHealth(), lockedHealth)
-		<< "The Spell-Locked stack is stripped from creature damage recipients";
-	EXPECT_EQ(hostileHealth - hostile->getAvailableHealth(), meteorUnitDamageAtZeroPower);
-	EXPECT_FALSE(containsObstacle(battle()->obstacles, ordinaryInBlast->uniqueID));
-	EXPECT_TRUE(containsObstacle(battle()->obstacles, ordinaryOutside->uniqueID))
-		<< "The double-wide stack's primary hex and rear hex must not widen the structural blast area";
-}
 
 TEST_F(NewHorizonsHavocStructuresTest, MeteorShowerDealsConfiguredHalfDamageToSiegeSectionsWithoutChangingUnitDamage)
 {

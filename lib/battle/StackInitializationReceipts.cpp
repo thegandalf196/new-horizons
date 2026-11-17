@@ -14,8 +14,6 @@ battle::StackInitializationReceipts::StackInitializationReceipts(const CUnitStat
 		state.defending, state.hadMorale, state.battlecraftWaitBonusUsed, state.battlecraftWaitMasteryDoubled);
 	restoredVeteranCohesion = state.veteranCohesionEarned;
 	restoredConfusionState = state.confusionState;
-	restoredArcaneMarks = state.arcaneMarks;
-	restoredArcaneShieldHitPoints = state.arcaneShieldHitPoints;
 	restoredDemonicGateOpened = state.demonicGateOpened;
 	restoredPhysicalPoison = std::make_tuple(state.physicalPoisonBaseDamage, state.physicalPoisonActivationsRemaining,
 		state.physicalPoisonSourceStackId, state.physicalPoisonSpellSide);
@@ -31,7 +29,6 @@ battle::StackInitializationReceipts::StackInitializationReceipts(const CUnitStat
 	restoredPostAttackMovement = state.pursuitMovementRemaining;
 	restoredLuckyOwnAttackSequence = state.luckyOwnAttackSequence;
 	restoredFrozenAppliedRound = state.frozenLastAppliedRound();
-	restoredTimeStopTurnConsumed = state.timeStopTurnConsumedFlag;
 	restoredVeteranDamageHistory = state.veteranPhysicalDamageSinceActivation;
 	restoredNoQuarterLifetime = state.noQuarterMoraleActivationsRemaining;
 
@@ -50,8 +47,6 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 	// Binary stack descriptors carry pending Confusion and target history too;
 	// rebinding the stack to the battle must not consume either value.
 	state.confusionState = restoredConfusionState;
-	state.arcaneMarks = restoredArcaneMarks;
-	state.arcaneShieldHitPoints = restoredArcaneShieldHitPoints;
 	state.demonicGateOpened = restoredDemonicGateOpened;
 	std::tie(state.physicalPoisonBaseDamage, state.physicalPoisonActivationsRemaining,
 		state.physicalPoisonSourceStackId, state.physicalPoisonSpellSide) = restoredPhysicalPoison;
@@ -65,7 +60,6 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 	state.heroicSpiritRetaliation = restoredHeroicSpirit;
 	state.heroicSpiritMoralePending = restoredHeroicSpiritPending;
 	state.restoreFrozenApplicationRound(restoredFrozenAppliedRound);
-	state.timeStopTurnConsumedFlag = restoredTimeStopTurnConsumed;
 	state.veteranPhysicalDamageSinceActivation = restoredVeteranDamageHistory;
 	state.noQuarterMoraleActivationsRemaining = restoredNoQuarterLifetime;
 	state.luckyOwnAttackSequence = restoredLuckyOwnAttackSequence;

@@ -1,5 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "FocusMagicProjection.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "ToxicStingValue.h"
 #include "AttackPossibility.h"
 #include "AttackAbilityPrefix.h"
@@ -160,7 +162,7 @@ float Opportunities::preparedValue(const std::shared_ptr<HypotheticBattle> & bat
 		*target = *attack.defender->acquireState();
 	}
 	queryBattle->stackStates[plan->source] = source;
-	source->afterAttack(attack.shooting, attack.retaliation, attack.physicalDamage);
+	focusMagicAI::afterAttack(*source, attack.shooting, attack.retaliation, attack.physicalDamage);
 	source->removeUnitBonus(Bonus::UntilAttack);
 	if(!attack.retaliation)
 		source->removeUnitBonus(Bonus::UntilOwnAttack);

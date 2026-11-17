@@ -10,7 +10,7 @@ HeroLevelUp newHorizonsLevelUp::prepareLevelUp(CGameHandler & handler, const CGH
 {
 	const bool artilleryExpertBeforeGain = hero->getSecSkillLevel(SecondarySkill::ARTILLERY) == MasteryLevel::EXPERT;
 	const bool logisticsExpertBeforeGain = hero->getSecSkillLevel(SecondarySkill::LOGISTICS) == MasteryLevel::EXPERT
-		&& newHorizonsHeroes::masteryOptions(hero->getMasteryState().rules, SecondarySkill::LOGISTICS).has_value();
+		&& hero->getMasteryState().rules.masteryOptions(SecondarySkill::LOGISTICS).has_value();
 	// give primary skill
 	logGlobal->trace("%s got level %d", hero->getNameTextID(), hero->level);
 	auto gains = handler.randomizer->rollPrimarySkillsForLevelup(hero);
@@ -40,9 +40,9 @@ HeroLevelUp newHorizonsLevelUp::prepareLevelUp(CGameHandler & handler, const CGH
 	prepareChoices(handler, hero, hlu);
 
 	const int reachedLevel = hero->level + 1;
-	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
+	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules()))
 		hlu.reachedLevel = reachedLevel;
-	if(newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().rules))
+	if(newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().getRules()))
 	{
 		hlu.reachedLevel = reachedLevel;
 		hlu.optionalRerollAvailable = hero->hasActivePerk("new-horizons:learning", "new-horizons:learning.connoisseur")

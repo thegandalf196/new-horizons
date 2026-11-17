@@ -43,6 +43,14 @@ ValidatedPerkRules::ValidatedPerkRules(const JsonNode & captured) : rules(captur
 	active = usesPerkRules(rules);
 }
 
+ValidatedPerkRules::ValidatedPerkRules(const JsonNode & captured,
+	std::shared_ptr<const nativeRules::PreparedPilotPerks> & prepared) : rules(captured)
+{
+	auto candidate = preparePilotPerkRules(rules);
+	active = usesPerkRules(rules);
+	prepared = std::move(candidate);
+}
+
 std::optional<PerkDefinition> ValidatedPerkRules::definition(std::string_view skillId,
 	std::string_view perkId) const
 {

@@ -88,7 +88,7 @@ public:
 	AccessibilityInfo accessibility() const;
 	/// Complete scalar ADD initialization, not packet-level Crisis/Bloodrage.
 	const CUnitStateDetached & addUnit(uint32_t id, const JsonNode & data);
-	enum class UpdateDecision { APPLY, IGNORE_TIME_STOP, IGNORE_OCCUPIED_RESURRECTION };
+	enum class UpdateDecision { APPLY, IGNORE_OCCUPIED_RESURRECTION };
 	/// Missing UPDATE throws BEFORE bonus/placement/JSON reads. No load occurs.
 	UpdateDecision classifyUpdate(uint32_t id, int64_t healthDelta);
 	/// Ordered scalar UPDATE, not packet-level Crisis/Bloodrage/replay/publication.

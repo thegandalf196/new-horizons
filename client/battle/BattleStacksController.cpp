@@ -898,7 +898,7 @@ void BattleStacksController::stackAttacking( const StackAttackInfo & info )
 	{
 		if (info.indirectAttack)
 		{
-			addNewAnim(new ShootingAnimation(owner, attacker, tile, defender));
+			addNewAnim(new ShootingAnimation(owner, attacker, tile, defender, info.focusMagicRanged, info.focusMagicConverted));
 		}
 		else
 		{

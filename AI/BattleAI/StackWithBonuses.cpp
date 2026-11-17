@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "StackWithBonuses.h"
 #include "OwnedStackQuerySource.h"
 #include "../../lib/battle/UnitCreatureResolver.h"
@@ -41,19 +42,14 @@ namespace hypotheticEffectSnapshotRules
 bool timedProjectionEffect(const Bonus * bonus,
 	const std::set<std::pair<BonusSource, BonusSourceID>> & groupHistory)
 {
-	return Bonus::NTurns(bonus) && isCapturedProjectionEffect(bonus, groupHistory);
+	return bonus && battle::timedEffects::roundClock(*bonus, false)
+		&& isCapturedProjectionEffect(bonus, groupHistory);
 }
 
 bool hasTimedMagicalSpellEffects(const IBonusBearer & bearer)
 {
 	return bearer.hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
-		BonusSourceID(SpellID(SpellID::POISON))).And(Selector::type()(BonusType::POISON)))
-		|| newHorizonsSorcery::isSpellLocked(bearer) || bearer.hasBonus(CSelector([](const Bonus * bonus)
-	{
-		return bonus && bonus->turnsRemain > 0
-			&& (newHorizonsSorcery::isPreservedSpellLockEffect(bonus, true)
-				|| newHorizonsSorcery::isPreservedSpellLockEffect(bonus, false));
-	}));
+		BonusSourceID(SpellID(SpellID::POISON))).And(Selector::type()(BonusType::POISON)));
 }
 
 bool hasSnapshotHeroSpecialEffects(const IBonusBearer & bearer)
@@ -112,7 +108,6 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	battle::CUnitState::operator=(*Stack);
 	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
-	captureParentClockRecipe();
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
 		captureLocalSpellEffects();
@@ -146,7 +141,6 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
 	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
-	captureParentClockRecipe();
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
 		captureLocalSpellEffects();

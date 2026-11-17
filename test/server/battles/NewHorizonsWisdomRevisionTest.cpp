@@ -64,18 +64,16 @@ TEST(NewHorizonsWisdomState, CurrentWireRoundtripPreservesHistoryAndBranchCopies
 	EXPECT_EQ(loaded.momentumBonusPercent(3), 10);
 	EXPECT_EQ(branch.momentumBonusPercent(3), 15);
 }
-TEST(NewHorizonsWisdomState, EffectivenessAddsToMetamagicBeforeOneFloorAndCap)
+TEST(NewHorizonsWisdomState, EffectivenessAddsToFactionBeforeOneFloorAndCap)
 {
 	newHorizonsMetamagic::Profile profile;
-	profile.pointPolicy = true;
-	profile.rank = 3;
 	profile.wisdomEffectivenessBonus = 45;
-	EXPECT_EQ(newHorizonsMetamagic::scaleMagnitude(4, profile, 4), 6); // floor4*1.57; two separately floored stages would yield5.
-	EXPECT_EQ(newHorizonsMetamagic::scaleSignedBonus(-4, profile, 4), -6);
-	EXPECT_EQ(newHorizonsMetamagic::scaleDuration(4, profile, 4), 6);
-	EXPECT_EQ(newHorizonsMetamagic::spellDamageOutput(100, profile, 4, 0, 120), 120);
-	profile.rank = 0;
-	EXPECT_EQ(newHorizonsMetamagic::scaleMagnitude(100, profile, 0), 145);
+	EXPECT_EQ(newHorizonsMetamagic::scaleMagnitude(4, profile), 5);
+	EXPECT_EQ(newHorizonsMetamagic::scaleSignedBonus(-4, profile), -5);
+	EXPECT_EQ(newHorizonsMetamagic::scaleDuration(4, profile), 5);
+	EXPECT_EQ(newHorizonsMetamagic::spellDamageOutput(100, profile, 120), 120);
+	EXPECT_EQ(newHorizonsMetamagic::scaleMagnitude(100, profile), 145);
+	EXPECT_EQ(newHorizonsMetamagic::spellDamageOutput(4, profile, 0, 15), 6); // Add before one integer floor.
 }
 namespace
 {
@@ -168,11 +166,7 @@ TEST_F(NewHorizonsWisdomRevisionTest, InsightAndArchmageWorkWithoutMetamagicAndS
 	const auto penetration = mechanics->getCapturedMdrPenetration();
 	const auto * capturedProfile = mechanics->getMetamagicCastProfile();
 	ASSERT_NE(capturedProfile, nullptr);
-	EXPECT_TRUE(capturedProfile->perks.pointPolicy);
-	EXPECT_EQ(capturedProfile->perks.rank, 0);
 	EXPECT_EQ(capturedProfile->perks.wisdomEffectivenessBonus, 45);
-	EXPECT_EQ(newHorizonsMetamagic::effectivenessBonusPercent(capturedProfile->perks, capturedProfile->points)
-		- capturedProfile->perks.wisdomEffectivenessBonus, 0);
 	// Ignore identity factors; only Archmage may contribute effective penetration here.
 	const auto contributors = spells::capturedMdrPenetrations(penetration, actor->unitId(), battle());
 	auto effectiveContributors = contributors;

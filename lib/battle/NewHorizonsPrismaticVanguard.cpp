@@ -53,8 +53,7 @@ std::optional<Bonus> entryBonus(const CGHeroInstance * hero, CreatureID creature
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != "core:monere"
 		|| !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero))
 		return std::nullopt;
-	const auto & policy = hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	const int amount = static_cast<int>(policy["prismaticVanguardPhysicalDamagePercent"].Integer());
+	const int amount = hero->compiledDevelopment()->ordinaryValue("prismaticVanguardPhysicalDamagePercent");
 	if(amount <= 0 || !wisp(creature))
 		return std::nullopt;
 	Bonus result(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::HERO_SPECIAL,

@@ -41,8 +41,7 @@ int solidarityCapturedPercent(const CGHeroInstance * hero)
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != "core:marius"
 		|| !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero))
 		return 0;
-	return static_cast<int>(hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"]
-		["demonicSolidarityReductionPercent"].Integer());
+	return hero->compiledDevelopment()->ordinaryValue("demonicSolidarityReductionPercent");
 }
 int solidarityConfiguredPercent(const CBattleInfoCallback & battle, BattleSide side)
 {
@@ -87,7 +86,7 @@ std::optional<Destruction> captureDestruction(const battle::Unit & unit)
 newHorizonsOrdinaryStrike::EffectPlan solidarityProtection(const battle::Unit & unit, int percent)
 {
 	newHorizonsOrdinaryStrike::EffectPlan effect;
-	if(percent <= 0 || !unit.alive() || unit.isGhost() || unit.isTimeStopped()
+	if(percent <= 0 || !unit.alive() || unit.isGhost()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(&unit) || !family(unit, "core:demon"))
 		return effect;
 	effect.target = unit.unitId();
@@ -121,7 +120,7 @@ std::vector<newHorizonsOrdinaryStrike::EffectPlan> solidarityAftermath(
 	if(coefficients[BattleSide::ATTACKER] <= 0 && coefficients[BattleSide::DEFENDER] <= 0)
 		return result;
 	for(const auto * unit : battle.battleGetUnitsIf([](const battle::Unit * candidate)
-		{ return candidate && candidate->alive() && !candidate->isGhost() && !candidate->isTimeStopped(); }))
+		{ return candidate && candidate->alive() && !candidate->isGhost(); }))
 	{
 		const auto side = unit->unitSide();
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -146,8 +145,7 @@ int ironHidePercent(const CBattleInfoCallback & battle, const BattleAttackInfo &
 	if(!attack.attacker || !attack.defender || !attack.physicalDamage || attack.shooting
 		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent != 0
 		|| attack.cleaveDamagePercent != 0 || !attack.attacker->alive() || !attack.defender->alive()
-		|| attack.attacker->isGhost() || attack.defender->isGhost()
-		|| attack.attacker->isTimeStopped() || attack.defender->isTimeStopped())
+		|| attack.attacker->isGhost() || attack.defender->isGhost())
 		return 0;
 	const int percent = ironHideConfiguredPercent(battle, *attack.defender);
 	if(percent <= 0 || !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)

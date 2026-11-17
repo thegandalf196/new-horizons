@@ -59,7 +59,7 @@ bool supportedHero(const CGHeroInstance & hero)
 	for(const auto & [skill, rank] : hero.secSkills)
 		if(rank != 0 && skill.getNum() != armorer)
 			return false;
-	for(const auto & selected : hero.getPerkState().selected)
+	for(const auto & selected : hero.getPerkState().getSelected())
 	{
 		if(!hero.hasActivePerk(selected.skillId, selected.perkId))
 			continue;
@@ -80,7 +80,7 @@ bool supportedUnit(const battle::Unit & unit, const HypotheticBattle & battle)
 	if(!state || !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(&unit)
 		|| unit.isShooter() // Native melee hits also stamp shooter Crossfire history.
 		|| unit.unitSlot() == SlotID::WAR_MACHINES_SLOT
-		|| unit.isClone() || state->cloneID >= 0 || state->summoned || state->natureSummoned || unit.isTimeStopped()
+		|| unit.isClone() || state->cloneID >= 0 || state->summoned || state->natureSummoned
 		|| unit.getPhantomInitialIntegrity() > 0 || unit.getGuardianSpiritHitPoints() > 0
 		|| newHorizonsFrozen::isFrozen(unit)
 		|| newHorizonsFrozen::isFreezingTouchAttacker(unit, battle.getMagicRules()))

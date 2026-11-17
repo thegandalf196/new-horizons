@@ -22,7 +22,7 @@ float armyPressure(const std::shared_ptr<CBattleInfoCallback> & board, PlayerCol
 	float result = 0;
 	for(const auto * unit : board->battleGetAllUnits(false))
 	{
-		if(!unit || !unit->alive() || unit->isGhost() || unit->isTimeStopped()
+		if(!unit || !unit->alive() || unit->isGhost()
 			|| newHorizonsFrozen::isFrozen(*unit) || newHorizonsStun::isStunned(*unit)) continue;
 		const auto pressure = creatureActivationValue::expectedTargetActivationValue(unit, cache, board, true);
 		result += board->battleGetOwner(unit) == reference ? pressure : -pressure;
@@ -147,7 +147,7 @@ void Opportunities::observeBloodlust(const std::shared_ptr<HypotheticBattle> & b
 {
 	if(!board || !receipt.bloodlust) return;
 	const auto * source = board->battleGetUnitByID(receipt.source);
-	if(!source || !source->alive() || source->isGhost() || source->isTimeStopped()) return;
+	if(!source || !source->alive() || source->isGhost()) return;
 	const auto pool = newHorizonsAttackControllers::bloodlustRecipients(*board, *source);
 	if(pool.empty()) return;
 	for(const auto id : pool)

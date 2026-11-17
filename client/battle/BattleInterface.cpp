@@ -158,8 +158,7 @@ void BattleInterface::installShadowGiftUI()
 				return std::nullopt;
 
 			const uint32_t targetUnitID = initialTarget->unitId();
-			const bool metamagicFollowup = pending.metamagicFollowup;
-			const auto evaluate = [this, localBattleID, targetUnitID, spell, metamagicFollowup](int sacrificePercent)
+			const auto evaluate = [this, localBattleID, targetUnitID, spell](int sacrificePercent)
 				-> ShadowGiftValues
 			{
 				ShadowGiftValues values;
@@ -173,7 +172,7 @@ void BattleInterface::installShadowGiftUI()
 					return values;
 
 				const auto * target = callback->battleGetUnitByID(targetUnitID);
-				if(!target || !target->alive() || target->isClone() || target->isTimeStopped()
+				if(!target || !target->alive() || target->isClone()
 					|| target->unitSide() != callback->battleGetMySide())
 					return values;
 
@@ -183,7 +182,6 @@ void BattleInterface::installShadowGiftUI()
 				values.maximumHealth = target->getShadowGiftMaximumHealth();
 
 				spells::BattleCast cast(callback.get(), hero, spells::Mode::HERO, spell);
-				cast.setMetamagicFollowup(metamagicFollowup);
 				cast.setShadowGiftSacrificePercent(sacrificePercent);
 				auto mechanics = spell->battleMechanics(&cast);
 				if(!mechanics)
@@ -228,7 +226,7 @@ void BattleInterface::installShadowGiftUI()
 					return false;
 
 				const auto * target = callback->battleGetUnitByID(targetUnitID);
-				if(!target || !target->alive() || target->isClone() || target->isTimeStopped()
+				if(!target || !target->alive() || target->isClone()
 					|| target->unitSide() != callback->battleGetMySide())
 					return false;
 
@@ -289,7 +287,6 @@ void BattleInterface::installSelectiveDispelUI()
 					return false;
 
 				spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
-				preview.setMetamagicFollowup(pending.metamagicFollowup);
 				preview.setSelectiveDispel(selective);
 				auto mechanics = spell->battleMechanics(&preview);
 				spells::detail::ProblemImpl problem;
@@ -439,7 +436,6 @@ void BattleInterface::installPurifyUI()
 				return false;
 
 			spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
-			preview.setMetamagicFollowup(pending.metamagicFollowup);
 			auto mechanics = spell->battleMechanics(&preview);
 			spells::detail::ProblemImpl problem;
 			battle::Target targetCheck;
@@ -492,8 +488,7 @@ void BattleInterface::installTemporalFieldUI()
 			if(casterSide == BattleSide::NONE)
 				return std::nullopt;
 
-			auto evaluate = [this, localBattleID, spell,
-				metamagicFollowup = pending.metamagicFollowup]() -> TemporalFieldValues
+			auto evaluate = [this, localBattleID, spell]() -> TemporalFieldValues
 			{
 				TemporalFieldValues values;
 				if(!curInt || !curInt->cb)
@@ -511,7 +506,6 @@ void BattleInterface::installTemporalFieldUI()
 				values.remaining = side != BattleSide::NONE && !callback->battleWasTemporalFieldUsed(side);
 
 				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
-				massCast.setMetamagicFollowup(metamagicFollowup);
 				massCast.setMassSlow(true);
 				auto mechanics = spell->battleMechanics(&massCast);
 				spells::Target noTarget;
@@ -563,7 +557,6 @@ void BattleInterface::installTemporalFieldUI()
 					return false;
 
 				spells::BattleCast massCast(callback.get(), hero, spells::Mode::HERO, spell);
-				massCast.setMetamagicFollowup(pending.metamagicFollowup);
 				massCast.setMassSlow(true);
 				auto mechanics = spell->battleMechanics(&massCast);
 				if(!mechanics)
@@ -802,7 +795,7 @@ void BattleInterface::activeStackReasonChanged(uint32_t stackID, BattleUnitTurnR
 
 	const auto * activeUnit = battle->battleGetUnitByID(stackID);
 	if(activeUnit && reason == BattleUnitTurnReason::AUTOMATIC_ACTION
-		&& !activeUnit->isTimeStopped() && newHorizonsFrozen::isFrozen(*activeUnit))
+		&& newHorizonsFrozen::isFrozen(*activeUnit))
 	{
 		auto message = LIBRARY->generaltexth->translate("new-horizons.combat.frozen.forfeit");
 		const auto position = message.find("%creature%");
@@ -911,7 +904,7 @@ void BattleInterface::newRound()
 			windowObject->heroManaPointsChanged(attackingHeroInstance);
 		if(defendingHeroInstance)
 			windowObject->heroManaPointsChanged(defendingHeroInstance);
-		windowObject->updateCounterspellStatus();
+		windowObject->updateHeroBattleStatus();
 	}
 }
 
@@ -1075,7 +1068,7 @@ void BattleInterface::spellCast(const BattleSpellCast * sc)
 {
 	waitForAnimations();
 	if(windowObject)
-		windowObject->updateCounterspellStatus();
+		windowObject->updateHeroBattleStatus();
 
 	// Do not deactivate anything in tactics mode
 	// This is battlefield setup spells
@@ -1322,10 +1315,10 @@ void BattleInterface::endAction(const BattleAction &action)
 	markWait(4);
 	windowObject->updateQueue();
 	// StartAction is delivered before its authoritative state packet is applied.
-	// Refresh after EndAction instead, so HERO_COMMAND can no longer leave a stale
-	// armed-ward indicator behind after the server clears the ward.
+	// Refresh faction indicators and the shared Hero Action after EndAction,
+	// when the authoritative state has been applied.
 	if(windowObject)
-		windowObject->updateCounterspellStatus();
+		windowObject->updateHeroBattleStatus();
 
 	//stack ended movement in tactics phase -> select the next one
 	if (isInTacticsMode())
@@ -1427,7 +1420,7 @@ void BattleInterface::startAction(const BattleAction & action)
 	// transition. Capture the selected receipt, including typed follow-ups.
 	pendingHeroOrderPresentation.reset();
 	pendingHeroOrderGrantIds.clear();
-	if(action.actionType == EActionType::HERO_COMMAND && !action.metamagicDecline
+	if(action.actionType == EActionType::HERO_COMMAND
 		&& (action.side == BattleSide::ATTACKER || action.side == BattleSide::DEFENDER))
 	{
 		const bool usesLedger = heroCommands::supportedByRules(

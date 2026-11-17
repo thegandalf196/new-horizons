@@ -206,7 +206,7 @@ function Script:getDefenseIgnored(info, reducer, present, defense, targetDefense
 		ignored = ignored + math.floor((info.luckyRangedDefenseIgnorePercent or 0) * defense / 100)
 	end
 
-	-- Arcane Breach marks contribute only to the target-side Creature Defense of a
+	-- Attack-local ranged penetration contributes only to the target-side Creature Defense of a
 	-- physical shot. The callback supplies the captured, bounded total for the
 	-- attacker's current controlling side; Frenzy's own-defense trade never uses it.
 	if targetDefense and info.shooting and info.physicalDamage then

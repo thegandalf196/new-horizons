@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "BattleProcessor.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "../../lib/entities/creature/NewHorizonsMusterRules.h"
@@ -555,13 +556,6 @@ void BattleProcessor::expireStackActivationBonuses(const BattleID & battleID, co
 	const auto * actedStack = currentBattle ? currentBattle->battleGetStackByID(action.stackNumber, false) : nullptr;
 	if(!actedStack)
 		return;
-	if(actedStack && actedStack->isTimeStopped())
-	{
-		// The automatic no-op used to advance a stopped stack is outside the
-		// unit's activation clock.  In particular, do not expire effects whose
-		// lifetime is tied to activation completion.
-		return;
-	}
 	if(action.actionType != EActionType::WAIT)
 	{
 		const auto controlMarkers = actedStack->getBonuses(Selector::type()(BonusType::PUPPET_MASTER_CONTROL));
@@ -588,7 +582,7 @@ void BattleProcessor::expireStackActivationBonuses(const BattleID & battleID, co
 	std::vector<Bonus> bonuses;
 	if(expiring)
 		for(const auto & bonus : *expiring)
-			if(!newHorizonsOffense::isNoQuarterMoralePenalty(bonus.get()))
+			if(battle::timedEffects::activationEndExpires(*bonus, newHorizonsOffense::isNoQuarterMoralePenalty(bonus.get())))
 				bonuses.push_back(*bonus);
 	if(!bonuses.empty())
 	{

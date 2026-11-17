@@ -175,29 +175,7 @@ TEST_P(NewHorizonsReactiveDefenseTest, PreparedZeroDamagePrimaryCommitStillSpend
 	EXPECT_EQ(newHorizonsReactiveDefense::ironHidePercent(*battle(), hit), 0);
 	EXPECT_EQ(subject->getUnstackedBonuses(CSelector(newHorizonsReactiveDefense::isIronHideSpent))->size(), enabled() ? 1u : 0u);
 }
-TEST_P(NewHorizonsReactiveDefenseTest, NativeTimeStoppedRoundKeepsOldMarkerWithoutConsumingTheNewRound)
-{
-	prepare(false, GetParam());
-	battle()->nextRound();
-	BattleAttackInfo hit(enemy, subject, 0, false);
-	const auto marker = newHorizonsReactiveDefense::ironHideSpending(*battle(), hit);
-	ASSERT_EQ(marker.has_value(), enabled());
-	if(marker) markSpent(*marker);
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	SetStackEffect freeze; freeze.battleID = BattleID(0);
-	freeze.toAdd.emplace_back(subject->unitId(), std::vector<Bonus>{stopped});
-	gameHandler->sendAndApply(freeze); ASSERT_TRUE(subject->isTimeStopped());
-	const auto oldRound = battle()->battleGetRound();
-	battle()->nextRound(); ASSERT_GT(battle()->battleGetRound(), oldRound);
-	const auto spent = subject->getUnstackedBonuses(CSelector(newHorizonsReactiveDefense::isIronHideSpent));
-	ASSERT_EQ(spent->size(), enabled() ? 1u : 0u);
-	if(enabled()) { EXPECT_EQ(spent->front()->val, oldRound); EXPECT_EQ(spent->front()->turnsRemain, 1); }
-	EXPECT_EQ(newHorizonsReactiveDefense::ironHidePercent(*battle(), hit), 0);
-	SetStackEffect thaw; thaw.battleID = BattleID(0);
-	thaw.toRemove.emplace_back(subject->unitId(), std::vector<Bonus>{stopped});
-	gameHandler->sendAndApply(thaw); ASSERT_FALSE(subject->isTimeStopped());
-	EXPECT_EQ(newHorizonsReactiveDefense::ironHidePercent(*battle(), hit), enabled() ? 30 : 0);
-}
+
 
 TEST_P(NewHorizonsReactiveDefenseTest, ActualOrdinaryCounterPublishesOneSpentReceipt)
 {

@@ -17,7 +17,6 @@ DLL_LINKAGE Bonus polymorphMarker(SpellID spell, PlayerColor caster);
 DLL_LINKAGE bool isPolymorphMarker(const Bonus * bonus);
 /// Capture before round-timed bonuses age, so a final Spell Lock round still
 /// protects the form's lifetime at this boundary.
-DLL_LINKAGE bool battleFormDurationPaused(const Unit & unit);
 
 /// Restore the original footprint by magical relocation. Accessibility must
 /// release this unit's current footprint. If none fits, preserve form/HP/location

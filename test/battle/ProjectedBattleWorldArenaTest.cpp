@@ -213,18 +213,7 @@ TEST_F(ProjectedBattleWorldArenaTest, MissingRemoveIsEarlyReturnButMissingUpdate
 	EXPECT_THROW(arena->size(), std::logic_error);
 }
 
-TEST_F(ProjectedBattleWorldArenaTest, TimeStopSkipsHealthAndZeroDeltaStateBeforeAnyPayloadAdmission)
-{
-	auto * stopped = battle()->stacks.front().get();
-	stopped->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	capture();
-	EXPECT_EQ(arena->classifyUpdate(stopped->unitId(), -1), Arena::UpdateDecision::IGNORE_TIME_STOP);
-	EXPECT_EQ(arena->classifyUpdate(stopped->unitId(), 0), Arena::UpdateDecision::IGNORE_TIME_STOP);
-	// Deliberately no JSON argument: ignored payloads never reach the ADD decoder
-	// or invalid-creature guard; this is the shared PREPARSE decision only.
-	EXPECT_EQ(arena->size(), battle()->stacks.size());
-}
+
 
 TEST_F(ProjectedBattleWorldArenaTest, OccupiedCorpseIgnoreUsesSequentialPlacementBeforePayloadParse)
 {

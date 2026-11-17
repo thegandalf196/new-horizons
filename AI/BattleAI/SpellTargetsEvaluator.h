@@ -102,16 +102,12 @@ public:
 	static float fireWallPlacementValue(const spells::Mechanics * spellMechanics,
 		const spells::Target & target,
 		std::shared_ptr<CBattleInfoCallback> battleState = {});
-	/// Returns the tactical value of a canonical Time Stop area.  Enemy units
 	/// are rewarded for losing their next action; healthy friendly units are
 	/// penalized because they lose their action too, while a threatened/injured
 	/// ally can make a defensive cast worthwhile.
-	static float timeStopPlacementValue(const spells::Mechanics * spellMechanics,
-		const spells::Target & target);
-	/// Scores cleansing and anti-magic value for a canonical Spell Lock cast.
+
 	/// Zero means the stack is already locked, unreceptive, or not worth sealing.
-	static float spellLockPlacementValue(const spells::Mechanics * spellMechanics,
-		const spells::Target & target);
+
 	/// Estimates the marginal value of a canonical Nature Poison application by
 	/// projecting its three real-activation ticks against the target's current
 	/// physical Poison state. The projection uses detached unit states only.
@@ -176,8 +172,6 @@ private:
 	static std::vector<spells::Target> canonicalLandMineTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalQuicksandTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalFireWallTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> canonicalTimeStopTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> canonicalSpellLockTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalNaturePoisonTargets(const spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> canonicalSoulChainTargets(spells::Mechanics * spellMechanics);
 	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit);

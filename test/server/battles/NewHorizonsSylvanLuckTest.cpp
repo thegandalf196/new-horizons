@@ -631,11 +631,6 @@ TEST_F(NewHorizonsSylvanLuckTest, GenuineActivationAndHypotheticalCopiesConsumeO
 	battle()->nextTurn(source->unitId(), BattleUnitTurnReason::MORALE);
 	EXPECT_EQ(fortune, model->getSylvanLuckState(BattleSide::ATTACKER));
 	fortune.finishPositiveStrike({}, true);
-	auto stopped = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	source->addNewBonus(stopped);
-	battle()->nextTurn(source->unitId(), BattleUnitTurnReason::AUTOMATIC_ACTION);
-	EXPECT_TRUE(fortune.cascadingPending);
-	source->removeBonus(stopped);
 	HeroOrderState order;
 	order.command = HeroCommand::SECOND_WIND;
 	order.issuedRound = battle()->battleGetRound();

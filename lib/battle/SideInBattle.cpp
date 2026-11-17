@@ -122,9 +122,7 @@ void SideInBattle::restoreHeroActionAllowancesAfterLoad(int32_t round, bool uses
 		return;
 	}
 	const bool noPreRoundActionHistory = !heroCommandUsed && castSpellsCount == 0
-		&& metamagicPendingCount == 0 && metamagicUsesConsumed == 0
-		&& activeOrder == HeroCommand::NONE && orderStates.empty() && !focusFire
-		&& metamagicSequenceSpells.empty();
+		&& activeOrder == HeroCommand::NONE && orderStates.empty() && !focusFire;
 	const bool cleanUninitializedLedger = allowances == HeroActionAllowanceState{};
 
 	if(typedAllowancesSupported)
@@ -151,9 +149,6 @@ void SideInBattle::restoreHeroActionAllowancesAfterLoad(int32_t round, bool uses
 	}
 	else
 	{
-		// Old saves represented both a consumed Hero Action and an available
-		// Metamagic continuation with independent counters. Reconstruct the
-		// typed grants once from that authoritative legacy snapshot.
 		allowances.resetForRound(round);
 		if(heroCommandUsed || castSpellsCount > 0)
 		{
@@ -164,32 +159,6 @@ void SideInBattle::restoreHeroActionAllowancesAfterLoad(int32_t round, bool uses
 					HeroActionAllowanceState::ActionKind::SPELL, round))
 				throw std::runtime_error("Could not migrate spent legacy Hero Action");
 		}
-		if(metamagicPendingCount > 1)
-			throw std::runtime_error("Unsupported legacy pending Metamagic allowance count");
-		if(metamagicPendingCount == 1)
-		{
-			if(castSpellsCount == 0 && !heroCommandUsed)
-				throw std::runtime_error("Legacy Metamagic grant has no consumed Hero Action");
-			const bool grandContinuation = metamagicGrandUsed && metamagicSequenceSpells.size() == 2;
-			allowances.grantAllowance(HeroActionAllowanceState::AllowanceKind::SPELL,
-				grandContinuation ? HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND
-					: HeroActionAllowanceState::GrantSource::METAMAGIC,
-				round);
-		}
 	}
 
-	uint32_t metamagicGrantCount = 0;
-	uint32_t grandGrantCount = 0;
-	for(const auto & grant : allowances.grants)
-	{
-		if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC)
-			++metamagicGrantCount;
-		else if(grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND)
-			++grandGrantCount;
-	}
-	if(metamagicGrantCount + grandGrantCount != metamagicPendingCount
-		|| metamagicGrantCount > 1 || grandGrantCount > 1
-		|| (metamagicGrantCount != 0 && metamagicSequenceSpells.size() != 1)
-		|| (grandGrantCount != 0 && (!metamagicGrandUsed || metamagicSequenceSpells.size() != 2)))
-		throw std::runtime_error("Metamagic metadata does not match typed Spell grants");
 }

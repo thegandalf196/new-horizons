@@ -14,11 +14,6 @@
 #include "../../../lib/spells/NewHorizonsSorceryRevision.h"
 namespace scripting::api
 {
-int32_t MechanicsProxy::getArcaneBreachMarkBasisPoints(const spells::Mechanics & m)
-{
-	return m.getArcaneBreachMarkBasisPoints();
-}
-
 int64_t MechanicsProxy::getLivingArmorParameter(const spells::Mechanics & m, const std::string & name)
 {
 	const auto * state = m.battle() ? m.battle()->getBattle() : nullptr;
@@ -45,8 +40,6 @@ void registerSorceryUtilityMethods(MethodRegistrar & R)
 	R.function<&MechanicsProxy::getLivingArmorParameter>("getLivingArmorParameter",
 		{{"name", "Captured summon parameter name."}}, {},
 		"Returns a captured Living Armor parameter, or zero when absent.");
-	R.function<&MechanicsProxy::getArcaneBreachMarkBasisPoints>("getArcaneBreachMarkBasisPoints", {},
-		"Returns one Arcane Breach mark's penetration in basis points, including the cast's composed Spell Power component before the cap.");
 	R.function<&currentLivingArmorHitPoints>("getLivingArmorHitPoints", {},
 		"Returns the saved Living Armor HP pool using its loaded fixed base and the captured power-component multipliers. No targets or RNG.");
 }

@@ -331,7 +331,7 @@ TEST_F(NewHorizonsHoldFastTest, HeroAndCreatureSpellContinuationsAndRoundBoundar
 		<< "The activation lifetime is not a round countdown";
 }
 
-TEST_F(NewHorizonsHoldFastTest, QueueAndMoraleStartsExpireFloorButTimeStopQueueDoesNot)
+TEST_F(NewHorizonsHoldFastTest, QueueAndMoraleStartsExpireFloor)
 {
 	startGame();
 	startBattle();
@@ -352,18 +352,7 @@ TEST_F(NewHorizonsHoldFastTest, QueueAndMoraleStartsExpireFloorButTimeStopQueueD
 	activate(morale, BattleUnitTurnReason::MORALE);
 	EXPECT_EQ(holdFastFloorCount(morale), 0u);
 
-	addHoldFastFloor(stopped);
-	auto timeStop = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	battle()->addOrUpdateUnitBonus(stopped, *timeStop, true);
-	ASSERT_TRUE(stopped->isTimeStopped());
-	activate(stopped, BattleUnitTurnReason::TURN_QUEUE);
-	EXPECT_EQ(holdFastFloorCount(stopped), 1u)
-		<< "A synthetic queue slot while stopped is not a genuine Creature Activation";
 
-	stopped->removeBonusesRecursive(Selector::type()(BonusType::TIME_STOP));
-	activate(stopped, BattleUnitTurnReason::TURN_QUEUE);
-	EXPECT_EQ(holdFastFloorCount(stopped), 0u);
 }
 
 TEST_F(NewHorizonsHoldFastTest, AcceptedSecondWindIsAGenuineActivationAndExpiresTheFloor)

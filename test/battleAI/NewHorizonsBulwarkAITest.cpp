@@ -59,7 +59,7 @@ protected:
 		const int decoded = SecondarySkill::decode(skillId);
 		ASSERT_GE(decoded, 0);
 		hero->setSecSkillLevel(SecondarySkill(decoded), rank, ChangeValueMode::ABSOLUTE);
-		const auto & perks = hero->getPerkState().rules["skills"][skillId]["perks"].Vector();
+		const auto & perks = hero->getPerkState().getRules()["skills"][skillId]["perks"].Vector();
 		const auto tierOf = [](const JsonNode & perk)
 		{
 			const auto requirement = perk["requires"].String();
@@ -85,8 +85,8 @@ protected:
 
 			for(int requiredTier = 1; requiredTier < tierOf(*target); ++requiredTier)
 			{
-				const bool alreadySelected = std::any_of(hero->getPerkState().selected.begin(),
-					hero->getPerkState().selected.end(), [&](const auto & selection)
+				const bool alreadySelected = std::any_of(hero->getPerkState().getSelected().begin(),
+					hero->getPerkState().getSelected().end(), [&](const auto & selection)
 				{
 					if(selection.skillId != skillId)
 						return false;

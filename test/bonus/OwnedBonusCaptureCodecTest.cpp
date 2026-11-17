@@ -133,6 +133,11 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 		|| Version::CURRENT == Version::NEW_HORIZONS_COMMAND_AUTHORITY
 		|| Version::CURRENT == Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
+	else if(Version::CURRENT == Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION
+		|| Version::CURRENT == Version::NEW_HORIZONS_ESTATES
+		|| Version::CURRENT == Version::NEW_HORIZONS_SORCERY_RETIREMENT
+		|| Version::CURRENT == Version::NEW_HORIZONS_SHARED_CAPTURED_RULES)
+		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
 	else
 		EXPECT_THROW(OwnedBonusCaptureCodec::current(), std::invalid_argument);
 }
@@ -239,7 +244,7 @@ TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDe
 	ASSERT_EQ(revised, passive);
 	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS, revised);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
-	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
 		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
@@ -271,7 +276,7 @@ TEST(OwnedBonusCaptureCodecTest, Historical1157And1158ProfilesRemainSeparateFrom
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN,
 		capabilities(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)).version(), Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_COMMAND_AUTHORITY);
-	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
 	EXPECT_NE(OwnedBonusCaptureCodec::current().version(), codec.version());
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY,
 		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);

@@ -1321,35 +1321,7 @@ TEST_F(NewHorizonsCureTest, FullHealthSurvivorIsNotHealableForItsCasualties)
 	EXPECT_EQ(casualtyStack->getFirstHPleft(), casualtyStack->getMaxHealth());
 }
 
-TEST_F(NewHorizonsCureTest, SpellLockedPhysicalPoisonTargetIsRejectedWithoutSpendingMana)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(0, "core:pikeman", 1));
-	addPhysicalPoison();
-	auto * injuredAlly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(4, 5), 1);
-	ASSERT_NE(injuredAlly, nullptr);
-	ASSERT_NO_FATAL_FAILURE(injure(2, injuredAlly));
 
-	const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	ASSERT_NE(spellLock, SpellID::NONE);
-	target->addNewBonus(spellEffect(spellLock, BonusType::MAGIC_RESISTANCE, 100));
-	const auto afflictions = newHorizonsMagic::cureAfflictions(
-		attackerSideHero->getMagicRules(), target);
-	ASSERT_TRUE(vstd::contains(afflictions, SpellID::POISON));
-
-	const auto * cure = SpellID(SpellID::CURE).toSpell();
-	ASSERT_NE(cure, nullptr);
-	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, cure);
-	const auto mechanics = cure->battleMechanics(&cast);
-	spells::detail::ProblemImpl problem;
-	ASSERT_TRUE(mechanics->canBeCast(problem));
-	const auto mana = attackerSideHero->getManaAvailable();
-
-	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		cureAction(target, SpellID::POISON)));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	EXPECT_EQ(battle()->battleCastSpells(BattleSide::ATTACKER), 0);
-	EXPECT_EQ(target->physicalPoisonActivationsRemaining, 3);
-}
 
 TEST_F(NewHorizonsCureTest, OrdinaryDispelDoesNotRemovePhysicalPoison)
 {

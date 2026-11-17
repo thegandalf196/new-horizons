@@ -270,7 +270,7 @@ protected:
 	void SetUp() override
 	{
 		NewHorizonsReclaimerFixture::SetUp();
-		const auto & rules = attackerSideHero->getPerkState().rules;
+		const auto & rules = attackerSideHero->getPerkState().getRules();
 		const auto captured = newHorizonsNecromancy::policy(rules);
 		ASSERT_TRUE(captured);
 		ASSERT_EQ(captured->version, 1);

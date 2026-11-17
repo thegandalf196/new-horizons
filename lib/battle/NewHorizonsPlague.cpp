@@ -220,7 +220,7 @@ int64_t rawTickDamage(const int32_t rawSpellPower, const int32_t coefficientBasi
 void completeActivation(const CBattleInfoCallback & battle, ServerCallback & server, uint32_t unitId)
 {
 	const auto * stack = battle.battleGetUnitByID(unitId);
-	if(!stack || stack->isTimeStopped())
+	if(!stack)
 		return;
 	const auto bonuses = stack->getBonuses(markerSelector(battle.getBattle()->getMagicRules()));
 	const auto marker = bonuses->empty() ? std::shared_ptr<const Bonus>{} : bonuses->front();
@@ -363,11 +363,10 @@ void completeActivation(const CBattleInfoCallback & battle, ServerCallback & ser
 	}
 	SetStackEffect statusUpdate;
 	statusUpdate.battleID = battle.getBattle()->getBattleID();
-	const bool durationPaused = newHorizonsSorcery::durationPausedBySpellLock(*stack, *marker);
-	if(stack->alive() && (marker->turnsRemain > 1 || (durationPaused && marker->turnsRemain > 0)))
+	if(stack->alive() && marker->turnsRemain > 1)
 	{
 		Bonus nextStatus(*marker);
-		nextStatus.turnsRemain = marker->turnsRemain - (durationPaused ? 0 : 1);
+		nextStatus.turnsRemain = marker->turnsRemain - 1;
 		JsonNode nextParameters;
 		if(marker->parameters)
 		{

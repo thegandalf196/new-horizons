@@ -839,7 +839,7 @@ void CTransformerWindow::makeDeal()
 	if(callback && army)
 	{
 		const auto preview = newHorizonsSkeletonTransformer::plan(
-			*army, selectedSlots, callback->getHeroCapabilityRules());
+			*army, selectedSlots, *callback);
 		if(preview.status != newHorizonsSkeletonTransformer::PlanStatus::LEGACY_RULES)
 		{
 			if(!preview.isReady())
@@ -954,7 +954,7 @@ void CTransformerWindow::updateConversionPreview()
 
 	const auto selectedSlots = selectedSourceSlots();
 	const auto preview = newHorizonsSkeletonTransformer::plan(
-		*army, selectedSlots, GAME->interface()->cb->getHeroCapabilityRules());
+		*army, selectedSlots, *GAME->interface()->cb);
 	if(preview.status == newHorizonsSkeletonTransformer::PlanStatus::LEGACY_RULES)
 	{
 		helpRight->setText(LIBRARY->generaltexth->allTexts[488]);

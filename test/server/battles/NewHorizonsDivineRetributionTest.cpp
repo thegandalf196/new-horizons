@@ -425,33 +425,7 @@ class NewHorizonsMarkedDivineRetributionTest : public NewHorizonsDivineRetributi
 	}
 };
 
-TEST_F(NewHorizonsMarkedDivineRetributionTest, PaidMarkedCastSnapshotsRatioThroughJudgmentAndActualPayout)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(4));
-	const auto meta = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
-	attackerSideHero->setSecSkillLevel(meta, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	auto state = protectedStack->acquireState();
-	state->arcaneMarks.set(BattleSide::ATTACKER, 5);
-	BattleUnitsChanged update;
-	update.battleID = BattleID(0);
-	update.changedStacks.emplace_back(protectedStack->unitId(), UnitChanges::EOperation::UPDATE);
-	update.changedStacks.back().data = state->save();
-	gameHandler->sendAndApply(update);
-	ASSERT_TRUE(castRetribution());
-	const auto protection = protectionBonuses();
-	ASSERT_EQ(protection->size(), 1u);
-	EXPECT_EQ(protection->front()->val, 262); // Native150 cap *175%, snapshot at cast.
-	EXPECT_EQ(protection->front()->parameters->toCustom<JsonNode>()["payoutRatioBasisPoints"].Integer(), 5250);
-	const auto hp = protectedStack->getAvailableHealth();
-	ASSERT_TRUE(attack(enemyAttacker, protectedStack->getPosition()));
-	ASSERT_EQ(hp - protectedStack->getAvailableHealth(), 200);
-	const auto judgments = judgmentBonuses();
-	ASSERT_EQ(judgments->size(), 1u);
-	EXPECT_EQ(judgments->front()->parameters->toCustom<JsonNode>()["payoutRatioBasisPoints"].Integer(), 5250);
-	const auto beforePayout = enemyAttacker->getAvailableHealth();
-	endRound();
-	EXPECT_EQ(beforePayout - enemyAttacker->getAvailableHealth(), 105); //200 *52.5%, below cap262.
-}
+
 
 TEST_F(NewHorizonsMarkedDivineRetributionTest, ScriptPayoutProducerCanonicalizesExactBoundsWithoutSourceMutation)
 {

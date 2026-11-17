@@ -8,5 +8,5 @@ std::optional<int64_t> directSpellRawPotential(const CGHeroInstance & hero, cons
 	const JsonNode & rules, int32_t power, int32_t directCoefficient, int32_t empower);
 SpellEffectPreview directSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
 	const JsonNode & rules, int32_t power, int32_t directCoefficient,
-	int32_t empower, bool followup, int32_t numericalCoefficient, const CBattleInfoCallback * callback);
+	int32_t empower, int32_t numericalCoefficient, const CBattleInfoCallback * callback);
 }

@@ -24,16 +24,16 @@ ACTIVE_PERKS = {
         "massedRanks", "veteranCadre", "familiarStandards", "foreignLegion",
         "officerCorps", "missileCommand", "regimentalOrganization", "combinedArms",
         "grandMarshal", "masterOfLegions")},
-    "new-horizons:metamagic.arcaneCatalyst",
-    "new-horizons:metamagic.arcaneShield",
-    "new-horizons:metamagic.manaConduit",
-    "new-horizons:metamagic.lingeringMagic",
-    "new-horizons:metamagic.arcaneFeedback",
-    "new-horizons:metamagic.spellFracture",
-    "new-horizons:metamagic.arcaneWellspring",
-    "new-horizons:metamagic.arcaneAttunement",
-    "new-horizons:metamagic.arcaneEcho",
-    "new-horizons:metamagic.arcaneSingularity",
+    "new-horizons:metamagic.conservedFormula",
+    "new-horizons:metamagic.manaRecycling",
+    "new-horizons:metamagic.disruptiveCasting",
+    "new-horizons:metamagic.purgingFormula",
+    "new-horizons:metamagic.spellSculpting",
+    "new-horizons:metamagic.hexWeaving",
+    "new-horizons:metamagic.widenSpell",
+    "new-horizons:metamagic.matterbreaker",
+    "new-horizons:metamagic.magicalMemory",
+    "new-horizons:metamagic.arcaneRupture",
     "new-horizons:divineMandate.sacredCommand",
     "new-horizons:divineMandate.knightlyValor",
     "new-horizons:divineMandate.chaplainSReserve",
@@ -822,7 +822,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_current_faction_policies_are_strict(self):
         validator = Draft4Validator(self.schema)
         for key, expected in (
-            ('metamagicPolicy', {'version': 3, 'adeptAdditionalPoints': 1}),
+            ('metamagicPolicy', {'version': 4, 'removalChancePercent': [0, 20, 30, 40],
+                                 'damagePerMana': 10, 'restorationPerMana': 15,
+                                 'halonRemovalChanceBonusPercent': 5}),
             ('divineMandatePolicy', {'version': 2}),
             ('demonicGatingPolicy', {'version': 2}),
         ):
@@ -839,29 +841,6 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                         {'version': 3, 'adeptAdditionalPoints': True},
                         {'version': 3, 'adeptAdditionalPoints': 1.5}):
             self.assertTrue(list(validator.iter_errors({**self.rules, 'metamagicPolicy': invalid})))
-
-    def test_current_metamagic_uses_round_points_and_complete_tier_pool(self):
-        skill = self.rules['skills']['new-horizons:metamagic']
-        self.assertIn('12 points', skill['description'])
-        self.assertNotIn('Arcane Mark', json.dumps(skill))
-        for rank, amount in zip(RANKS, (1, 2, 3)):
-            description = skill['ranks'][rank]['description']
-            self.assertIn('Start combat with 1 Metamagic point', description)
-            self.assertIn('gain 1 each later round, up to 12', description)
-            self.assertIn(f'+{amount}% spell effectiveness and Magic Penetration', description)
-        perks = {p['id'].split('.')[-1]: p for p in skill['perks']}
-        self.assertEqual(tuple(perks), (
-            'arcaneCatalyst', 'arcaneShield', 'manaConduit', 'lingeringMagic',
-            'arcaneFeedback', 'spellFracture', 'arcaneWellspring',
-            'arcaneAttunement', 'arcaneEcho', 'arcaneSingularity'))
-        self.assertIn('3 Metamagic points instead of 1', perks['arcaneWellspring']['description'])
-        self.assertIn('25% damage', perks['arcaneEcho']['description'])
-        self.assertIn('10 Metamagic points', perks['arcaneSingularity']['description'])
-        self.assertIn('25% less Mana', perks['arcaneSingularity']['description'])
-        names = [p['name'] for s in self.rules['skills'].values() for p in s['perks']]
-        for perk in perks.values():
-            self.assertEqual(names.count(perk['name']), 1)
-            self.assertLessEqual(len(perk['description'].split()), 25)
 
     def test_current_dungeon_and_conflux_replacements_keep_other_perks(self):
         expected = {

@@ -308,7 +308,7 @@ protected:
 	{
 		constexpr auto authority = "new-horizons:authority";
 		constexpr auto massedRanks = "new-horizons:authority.massedRanks";
-		const auto & rules = attackerSideHero->getPerkState().rules;
+		const auto & rules = attackerSideHero->getPerkState().getRules();
 		ASSERT_EQ(rules["commandAuthorityPolicy"]["version"].Integer(), 1);
 		ASSERT_EQ(rules["unifiedSkillProgressionVersion"].Integer(), 1);
 		ASSERT_EQ(rules["warfarePolicyVersion"].Integer(), 1);

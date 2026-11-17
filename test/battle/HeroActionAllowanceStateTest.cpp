@@ -120,7 +120,7 @@ TEST(HeroActionAllowanceState, HeroicSpiritRejectsMalformedReceiptsAndDirectManu
 	ASSERT_TRUE(receipt);
 	const auto before = ledger;
 	for(const auto source : {Source::DOUBLE_COMMAND, Source::BATTLE_PLAN, Source::CRISIS_COMMAND,
-		Source::METAMAGIC, Source::DIVINE_MANDATE, Source::HEROIC_SPIRIT})
+		Source::ARTIFACT, Source::DIVINE_MANDATE, Source::HEROIC_SPIRIT})
 	{
 		auto malformed = *receipt;
 		malformed.source = source;
@@ -226,7 +226,7 @@ TEST(HeroActionAllowanceState, SpecializedGrantWinsBeforeFlexibleHeroAllowance)
 	ledger.resetForRound(1);
 	const auto hero = ledger.eligibleAllowance(Action::SPELL, 1);
 	ASSERT_TRUE(hero);
-	const auto laterSpell = ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 3);
+	const auto laterSpell = ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 3);
 	const auto earlierSpell = ledger.grantAllowance(Allowance::SPELL, Source::PERK, 2);
 
 	const auto selected = ledger.eligibleAllowance(Action::SPELL, 1);
@@ -248,7 +248,7 @@ TEST(HeroActionAllowanceState, EarliestExpiryThenStableIdBreaksSpecializedTies)
 {
 	Ledger ledger;
 	ledger.resetForRound(4);
-	const auto first = ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 6);
+	const auto first = ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 6);
 	const auto second = ledger.grantAllowance(Allowance::SPELL, Source::PERK, 6);
 	const auto earlierExpiry = ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 5);
 
@@ -267,7 +267,7 @@ TEST(HeroActionAllowanceState, WrongKindAndRejectedConsumptionLeaveStateUnchange
 {
 	Ledger ledger;
 	ledger.resetForRound(2);
-	const auto spell = ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 2);
+	const auto spell = ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 2);
 	const auto order = ledger.grantAllowance(Allowance::ORDER, Source::PERK, 2);
 	const auto before = ledger;
 
@@ -312,7 +312,7 @@ TEST(HeroActionAllowanceState, CountsAreSeparateAndIgnoreExpiredGrants)
 {
 	Ledger ledger;
 	ledger.resetForRound(1);
-	ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 1);
+	ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 1);
 	ledger.grantAllowance(Allowance::ORDER, Source::PERK, 2);
 
 	EXPECT_EQ(ledger.remainingCounts(1), (Ledger::Counts{1, 1, 1}));
@@ -349,7 +349,7 @@ TEST(HeroActionAllowanceState, ExpiresInclusivelyOnlyAfterExpiryRound)
 {
 	Ledger ledger;
 	ledger.resetForRound(5);
-	const auto spell = ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 6);
+	const auto spell = ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 6);
 
 	ASSERT_TRUE(ledger.eligibleAllowance(Action::SPELL, 6));
 	EXPECT_EQ(ledger.remainingCounts(6).spellActions, 1);
@@ -364,11 +364,11 @@ TEST(HeroActionAllowanceState, ExpiresInclusivelyOnlyAfterExpiryRound)
 TEST(HeroActionAllowanceState, RejectsInvalidGrantSourcesKindsRoundsAndOverflow)
 {
 	Ledger ledger;
-	EXPECT_THROW(ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 0), std::invalid_argument);
+	EXPECT_THROW(ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 0), std::invalid_argument);
 	EXPECT_THROW(ledger.resetForRound(-1), std::invalid_argument);
 	ledger.resetForRound(1);
 
-	EXPECT_THROW(ledger.grantAllowance(Allowance::ORDER, Source::METAMAGIC, 1), std::invalid_argument);
+	EXPECT_THROW(ledger.grantAllowance(Allowance::ORDER, Source::RESERVED_METAMAGIC, 1), std::invalid_argument);
 	EXPECT_THROW(ledger.grantAllowance(Allowance::HERO, Source::ROUND, 1), std::invalid_argument);
 	EXPECT_THROW(ledger.grantAllowance(Allowance::SPELL, Source::OTHER, 0), std::invalid_argument);
 	EXPECT_THROW(ledger.eligibleAllowance(static_cast<Action>(99), 1), std::invalid_argument);
@@ -387,7 +387,7 @@ TEST(HeroActionAllowanceState, ValidatesMalformedSerializedShape)
 {
 	Ledger ledger;
 	ledger.resetForRound(1);
-	ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 1);
+	ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 1);
 	EXPECT_NO_THROW(ledger.validateShape());
 
 	auto malformed = ledger;
@@ -415,7 +415,7 @@ TEST(HeroActionAllowanceState, SerializationRoundTripsAndRejectsMalformedState)
 {
 	Ledger original;
 	original.resetForRound(2);
-	original.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 2);
+	original.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 2);
 	original.grantAllowance(Allowance::ORDER, Source::PERK, 3);
 
 	CMemorySerializer serializer;
@@ -433,4 +433,37 @@ TEST(HeroActionAllowanceState, SerializationRoundTripsAndRejectsMalformedState)
 	invalid.oser.version = ESerializationVersion::CURRENT;
 	EXPECT_THROW(invalid.oser & malformed, std::runtime_error);
 	EXPECT_TRUE(invalid.extractBuffer().empty());
+}
+
+TEST(HeroActionAllowanceStateRetirement, AnOrderAllowanceCannotPayForASpell)
+{
+	HeroActionAllowanceState ledger;
+	using Action = HeroActionAllowanceState::ActionKind;
+	using Allowance = HeroActionAllowanceState::AllowanceKind;
+	using Source = HeroActionAllowanceState::GrantSource;
+	ledger.resetForRound(5);
+	const auto base = ledger.eligibleAllowance(Action::SPELL, 5);
+	ASSERT_TRUE(base);
+	ASSERT_TRUE(ledger.consumeAllowance(base->grantId, Action::SPELL, 5));
+	const auto order = ledger.grantAllowance(Allowance::ORDER, Source::PERK, 5);
+	const auto before = ledger;
+	EXPECT_FALSE(ledger.consumeAllowance(order, Action::SPELL, 5));
+	EXPECT_EQ(ledger, before);
+}
+
+TEST(HeroActionAllowanceStateRetirement, OrdinaryArtifactSpellGrantPreservesTheHeroAction)
+{
+	HeroActionAllowanceState ledger;
+	using Action = HeroActionAllowanceState::ActionKind;
+	using Allowance = HeroActionAllowanceState::AllowanceKind;
+	using Source = HeroActionAllowanceState::GrantSource;
+	ledger.resetForRound(2);
+	const auto artifact = ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 2);
+	const auto receipt = ledger.consumeAllowance(artifact, Action::SPELL, 2);
+	ASSERT_TRUE(receipt);
+	EXPECT_EQ(receipt->source, Source::ARTIFACT);
+	EXPECT_EQ(ledger.remainingCounts(2), (HeroActionAllowanceState::Counts{1, 0, 0}));
+	const auto before = ledger;
+	EXPECT_THROW(ledger.grantAllowance(Allowance::SPELL, Source::RESERVED_METAMAGIC, 2), std::invalid_argument);
+	EXPECT_EQ(ledger, before);
 }

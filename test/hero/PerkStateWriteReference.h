@@ -8,7 +8,7 @@ namespace perkWriteReference
 template<typename Handler> void write(Handler & h, newHorizonsHeroes::PerkState & state)
 {
 	using namespace newHorizonsHeroes;
-	auto & rules = state.rules;
+	const auto & rules = state.getRules();
 	if(h.saving)
 	{
 		validateUnifiedSkillProgressionSerialization(rules, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
@@ -49,6 +49,6 @@ template<typename Handler> void write(Handler & h, newHorizonsHeroes::PerkState 
 	newHorizonsCommand::validateRulesSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 	newHorizonsElementalAttunement::validatePolicySerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 	validateSylvanTacticsSerialization(incomingRules, h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
-	h & state.selected;
+	h & state.getSelected();
  }
 }

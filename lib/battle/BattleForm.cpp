@@ -33,26 +33,6 @@ bool isPolymorphMarker(const Bonus * bonus)
 			|| bonus->statusTags == std::vector<BonusStatusTag>{BonusStatusTag::NON_TRANSFERABLE, BonusStatusTag::DEBUFF});
 }
 
-bool battleFormDurationPaused(const Unit & unit)
-{
-	if(unit.isTimeStopped())
-		return true;
-	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	const auto lock = unit.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock)));
-	if(!lock)
-		return false;
-	bool activeLock = false;
-	bool preservesHostile = false;
-	for(const auto & bonus : *lock)
-	{
-		if(!bonus || !Bonus::NTurns(bonus.get()) || bonus->turnsRemain <= 0)
-			continue;
-		activeLock |= bonus->type == BonusType::MAGIC_RESISTANCE;
-		preservesHostile |= bonus->type == BonusType::NONE && bonus->val < 0;
-	}
-	return activeLock && preservesHostile;
-}
-
 bool endBattleFormAtNearestLegalPosition(CUnitState & state, const AccessibilityInfo & accessibility)
 {
 	if(!state.hasBattleForm())

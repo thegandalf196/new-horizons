@@ -35,7 +35,7 @@ bool hasHeroLevelQuery(const QueriesProcessor & queries, ObjectInstanceID hero)
 
 void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill, bool continueProgression)
 {
-	if(hero && newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+	if(hero && newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules()))
 	{
 		const auto * definition = LIBRARY->skillh->getById(skill);
 		if(!definition || !hero->getPerkState().canAdvanceSkillNormally(definition->getJsonKey(),
@@ -43,7 +43,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill
 			throw std::runtime_error("New Horizons skill advancement requires its preceding perk tier");
 	}
 	{
-		const bool defer = hero && newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules)
+		const bool defer = hero && newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().getRules())
 			&& deferredPerkPrompts.insert(hero->id).second;
 		const auto restore = vstd::makeScopeGuard([&]() { if(defer) deferredPerkPrompts.erase(hero->id); });
 		changeSecSkill(hero, skill, 1, ChangeValueMode::RELATIVE);
@@ -60,7 +60,7 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 		return;
 	}
 	const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), which);
-	const auto skill = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+	const auto skill = hero->compiledDevelopment()->normalizeRewardSkill(replaced);
 	if(!skill)
 	{
 		logGlobal->warn("Ignoring retired or unavailable secondary skill %s for hero %s",
@@ -74,7 +74,7 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 	SetSecSkill change;
 	change.id = hero->id;
 	change.which = *skill;
-	const bool four = newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules);
+	const bool four = newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().getRules());
 	change.val = four ? targetRank : val;
 	change.mode = four ? ChangeValueMode::ABSOLUTE : mode;
 	sendAndApply(change);
@@ -117,7 +117,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero,
 
 void CGameHandler::heroLevelUpChoiceDone(const CGHeroInstance * hero)
 {
-	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
+	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules()))
 	{
 		if(offerHeroRequiredPerk(hero)) return;
 		if(!offerHeroMastery(hero)) expGiven(hero);
@@ -173,7 +173,7 @@ void CGameHandler::resumeMasteryQueries(PlayerColor player)
 		if(restoreHeroProgressionOffer(hero) || offerHeroRequiredPerk(hero)
 			|| offerHeroCommandEnhancement(hero) || offerHeroMastery(hero))
 			return;
-		if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules) && hero->gainsLevel())
+		if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules()) && hero->gainsLevel())
 		{
 			expGiven(hero);
 			if(queries->topQuery(player)) return;
@@ -185,7 +185,7 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 {
 	if(hasHeroLevelQuery(*queries, hero->id))
 		return;
-	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules)
+	if(newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules())
 		&& hero->getOwner().isValidPlayer() && queries->topQuery(hero->getOwner()))
 		return; // XP remains pending until the object/battle continuation finishes.
 	if(restoreHeroProgressionOffer(hero) || offerHeroRequiredPerk(hero))
@@ -204,12 +204,12 @@ void CGameHandler::levelUpHero(const CGHeroInstance * hero)
 
 	auto hlu = newHorizonsLevelUp::prepareLevelUp(*this, hero);
 	const auto * player = gameInfo().getPlayerState(hero->getOwner());
-	const bool unifiedNonInteractive = newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules)
+	const bool unifiedNonInteractive = newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules())
 		&& !player;
 	if (!hero->getOwner().isValidPlayer() || unifiedNonInteractive)
 	{
 		sendAndApply(hlu);
-		if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+		if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().getRules()))
 		{
 			newHorizonsLevelUp::applyFirstFourOfferChoice(*this, hero, hlu.fourOffers);
 			heroLevelUpChoiceDone(hero);

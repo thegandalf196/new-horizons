@@ -13,8 +13,10 @@
 #include "ISpellMechanics.h"
 
 #include "effects/Effects.h"
+#include <span>
 
 struct BattleSpellCast;
+struct BattleStackAttacked;
 
 namespace battle
 {
@@ -46,6 +48,8 @@ public:
 	void cast(ServerCallback * server, const Target & target) override final;
 	// TODO: ??? (what's the difference compared to cast?)
 	void castEval(ServerCallback * server, const Target & target) override final;
+	std::span<const uint32_t> getResolvedHeroRecipients() const override;
+	std::span<const BattleStackAttacked> getResolvedHeroInjuries() const override;
 	std::optional<newHorizonsVengefulVines::ProjectionReceipt> vengefulVinesProjectionReceipt() const override
 	{
 		return vinesProjectionReceipt;
@@ -96,6 +100,8 @@ public:
 	bool counteringSelector(const Bonus * bonus) const;
 
 private:
+	std::vector<uint32_t> evaluatedHeroRecipients;
+	std::vector<BattleStackAttacked> evaluatedHeroInjuries;
 	struct RunicCasterLifetime
 	{
 		BattleSpellMechanics & mechanics;
@@ -176,11 +182,9 @@ private:
 	BattleSide effectiveCasterSide() const;
 	void prepareResistanceRolls(vstd::RNG & rng, const Target & target, const Target & spellTarget,
 		bool naturesWrath, bool realityWarp, const battle::Units & wrathConductors);
-	static bool isSpellLocked(const battle::Unit * unit);
 	void beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target);
 	void beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target,
 		std::vector<CompoundMirrorEffect> * compoundMirrorEffects);
-	battle::Units filterSpellLockedEffects(const Target & aimPoint);
 	bool isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng);
 	void reflect(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit);
 	const battle::Unit * getRandomUnit(vstd::RNG & rng, const BattleSide & side);

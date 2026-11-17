@@ -144,8 +144,9 @@ TEST(NewHorizonsLogisticsMasteryState, OldFormatVersionInspectionPreservesIntegr
 TEST(NewHorizonsLogisticsMasteryState, CrossoverPreservesFloatRulesAndLegacyEmptyEnvelopes)
 {
 	MasteryState source;
-	source.rules = JsonNode(JsonPath::builtin("config/newHorizonsMasteries"));
-	source.rules["rulesetVersion"].Float() = 1.0;
+	auto captured = JsonNode(JsonPath::builtin("config/newHorizonsMasteries"));
+	captured["rulesetVersion"].Float() = 1.0;
+	source.rules = std::move(captured);
 	const auto envelope = source.toJson();
 	const auto loaded = MasteryState::fromJson(envelope);
 	EXPECT_EQ(loaded.rules["rulesetVersion"].getType(), JsonNode::JsonType::DATA_FLOAT);

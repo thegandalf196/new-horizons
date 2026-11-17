@@ -63,7 +63,7 @@ def main():
         pass
     else:
         raise AssertionError("Deleting the Feint switch case escaped the guard")
-    for token in ("!action.metamagicDecline", "!getBattle()->getBattle()->getHeroCommandUsed(action.side)",
+    for token in ("!getBattle()->getBattle()->getHeroCommandUsed(action.side)",
                   "pendingHeroOrderRound = getBattle()->battleGetRound()"):
         assert token in start, token
     for token in ("std::move(pendingHeroOrderPresentation)", "pending->side != action.side",
@@ -96,8 +96,8 @@ def main():
     assert "heroOrderGesture.reset()" in destructor
     assert "std::unique_ptr<BattleAnimation> heroOrderGesture" in (ROOT / "client/battle/BattleInterface.h").read_text()
     assert "CAST_SPELL" not in presentation
-    assert "state->revision->contains(unit->unitId()) && !unit->isTimeStopped()" in presentation
-    assert "!stack->isTimeStopped() && !stack->isFrozen() && !newHorizonsFrozen::isFrozen(*stack)" in presentation
+    assert "state->revision->contains(unit->unitId())" in presentation
+    assert "!stack->isFrozen() && !newHorizonsFrozen::isFrozen(*stack)" in presentation
     assert "BattleOrderPresentation.cpp" in (ROOT / "client/CMakeLists.txt").read_text()
     for forbidden in ("makingTurn()", "battleGetMySide()", "castThisSpell", "SpellID::", "battleMakeSpellAction"):
         assert forbidden not in presentation, forbidden

@@ -97,8 +97,8 @@ protected:
 		std::vector<newHorizonsHeroes::PerkSelection> selected;
 		for(const auto & perk : profile["startingPerks"].Vector())
 			selected.push_back({perk["skill"].String(), perk["perk"].String()});
-		ASSERT_EQ(hero->getPerkState().selected, selected);
-		ASSERT_EQ(hero->getPerkState().rules, perks);
+		ASSERT_EQ(hero->getPerkState().getSelected(), selected);
+		ASSERT_EQ(hero->getPerkState().getRules(), perks);
 		ASSERT_EQ(hero->getMagicRules(), magic);
 		auto expectedGrowth = newHorizonsHeroes::resolveHeroRules(development, hero->getHeroClassID());
 		if(const auto target = newHorizonsHeroes::defaultCreatureLineTarget(expectedGrowth, hero->getHeroTypeID()))

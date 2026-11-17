@@ -63,7 +63,7 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 	// Consume before playback: both-side/hotseat callbacks and duplicate
 	// EndAction delivery must not replay the same presentation.
 	const auto pending = std::move(pendingHeroOrderPresentation);
-	if(!pending || action.actionType != EActionType::HERO_COMMAND || action.metamagicDecline
+	if(!pending || action.actionType != EActionType::HERO_COMMAND
 		|| pending->side != action.side || pending->command != action.command
 		|| pendingHeroOrderRound != getBattle()->battleGetRound()
 		|| !getBattle()->getBattle()->getHeroCommandUsed(action.side)
@@ -129,7 +129,7 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 	if(action.command == HeroCommand::VANGUARD && state && state->revision)
 	{
 		for(const auto * unit : getBattle()->battleAliveUnits())
-			if(state->revision->contains(unit->unitId()) && !unit->isTimeStopped())
+			if(state->revision->contains(unit->unitId()))
 				addTarget(unit->unitId());
 	}
 	else if(action.command == HeroCommand::FEINT)
@@ -139,7 +139,7 @@ void BattleInterface::presentAcceptedHeroOrder(const BattleAction & action)
 				&& getBattle()->battleGetOwner(stack) == getBattle()->sideToPlayer(action.side)
 				&& !stack->isTurret() && !stack->hasBonusOfType(BonusType::SIEGE_WEAPON)
 				&& stack->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
-				&& !stack->isTimeStopped() && !stack->isFrozen() && !newHorizonsFrozen::isFrozen(*stack))
+				&& !stack->isFrozen() && !newHorizonsFrozen::isFrozen(*stack))
 				stacksController->addNewAnim(new DefenceAnimation(*this, stack));
 	}
 	else if(state && state->primaryTargetUnitId != HeroOrderState::INVALID_UNIT_ID)

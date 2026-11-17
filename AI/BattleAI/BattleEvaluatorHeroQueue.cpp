@@ -117,7 +117,6 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 	battle::Units & remainingQueue, size_t queueIndex)
 {
 	const bool frozenForfeits = activationForfeit::pending(*state, *unit, BattleUnitTurnReason::TURN_QUEUE);
-	const bool syntheticStoppedSlot = unit->isTimeStopped();
 	if(frozenForfeits)
 		state->nextTurnPreservingFrozenForfeit(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	else
@@ -192,15 +191,14 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 	if(potentialTargets.berserk)
 		expireCompletedProjectedBerserkActivation(*state,
 			state->battleGetUnitByID(unit->unitId()));
-	if(!syntheticStoppedSlot)
 		state->getForUpdate(unit->unitId())->removeUnitBonus(CSelector([](const Bonus * bonus)
 		{
 			return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
 		}));
 	// No-target movement is not a modeled completed action here.
 	const auto completed = state->getForUpdate(unit->unitId());
-	if(!potentialTargets.possibleAttacks.empty() && !syntheticStoppedSlot
-		&& !completed->isTimeStopped() && completed->pursuitMovementRemaining == 0 && !completed->dreadCavalryState.pending
+	if(!potentialTargets.possibleAttacks.empty()
+		&& completed->pursuitMovementRemaining == 0 && !completed->dreadCavalryState.pending
 		&& !state->battleHasPendingRangedFollowUp(completed.get()))
 		newHorizonsPlague::completeActivation(*state, *state->getServerCallback(), unit->unitId());
 	state->completeNormalActivation(unit->unitId());
@@ -221,7 +219,7 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 		completed->movedThisRound = true;
 		completed->waiting = false;
 		state->resetActiveUnit();
-		state->completeRapidResponseActivation(unit->unitId(), syntheticStoppedSlot);
+		state->completeRapidResponseActivation(unit->unitId());
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
 			const auto * pending = newHorizonsRapidResponse::pendingWaiter(*state, side);

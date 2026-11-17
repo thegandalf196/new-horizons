@@ -14,6 +14,7 @@
 #include "../battle/NewHorizonsElementalAttunement.h"
 #include "../spells/NewHorizonsMagicArrow.h"
 #include "../nativeRules/PreparedPilotRules.h"
+#include "../nativeRules/CapturedRuleRef.h"
 
 #include "../bonuses/BonusSerializationContext.h"
 
@@ -189,10 +190,18 @@ public:
 	const IGameSettings & getSettings() const override;
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
+	std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const override { return magicRules.owner(); }
 	const JsonNode & getHeroDevelopmentRules() const override { return heroDevelopmentRules; }
 	const JsonNode & getHeroCapabilityRules() const override { return heroCapabilityRules; }
 	const JsonNode & getHeroMasteryRules() const override { return heroMasteryRules; }
 	const JsonNode & getHeroPerkRules() const override { return heroPerkRules; }
+	nativeRules::CapturedRulePool * getCapturedRulePoolForAdmission() const override { return &capturedRulePool; }
+	const nativeRules::CompiledCapabilityRules * getCompiledHeroCapabilityRules() const override
+	{
+		return heroCapabilityRules.owner() ? heroCapabilityRules.owner()->capabilities().get() : nullptr;
+	}
+	/// Replace the world default capture without reinterpreting existing heroes.
+	void replaceCapturedPerkRules(JsonNode rules);
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return creatureCategoryRules; }
 	const std::set<ArtifactID> & getRandomArtifactPoolExclusions() const override { return randomArtifactPoolExclusions; }
 
@@ -302,7 +311,6 @@ public:
 	void validateNeutralLeadershipCalibrationSerialization(bool supported) const;
 	void validateNeutralArmyStartOptionSerialization(bool supported) const;
 	void validateRecruitmentGrowthSerialization(bool supported) const;
-	void validateTimeStopSerialization(bool supported) const;
 	void validateNewHorizonsCoroniusHolyWrathSerialization(bool supported) const;
 	void validateSylvanTacticsSerialization(bool supported) const;
 	void validateCrisisCommandSerialization(bool supported) const;
@@ -320,9 +328,8 @@ public:
 		if(h.saving)
 			validateRecruitmentGrowthSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
 		if(h.saving)
-			replayLog.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS));
-		if(h.saving)
-			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
+			replayLog.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES));
 		if(h.saving)
 			validateCombatScalarSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
@@ -430,6 +437,13 @@ public:
 		if(h.saving)
 			validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		h & scenarioOps;
+		std::optional<nativeRules::CapturedRuleWireScope<Handler>> rulesScope;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES))
+		{
+			if(h.saving) prepareCapturedRulePool();
+			h & capturedRulePool;
+			rulesScope.emplace(h, capturedRulePool);
+		}
 		h & initialOpts;
 		h & actingPlayers;
 		h & day;
@@ -521,7 +535,7 @@ public:
 				h & heroDevelopmentRules;
 			else
 			{
-				JsonNode candidate;
+				nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::WorldDevelopment> candidate;
 				h & candidate;
 				nativeRules::validatePilotCreatures(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 				heroDevelopmentRules = std::move(candidate);
@@ -582,7 +596,7 @@ public:
 				h & heroCapabilityRules;
 			else
 			{
-				JsonNode candidate;
+				nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::WorldCapability> candidate;
 				h & candidate;
 				newHorizonsHeroes::validateArmyCommandSerialization(candidate,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
@@ -614,7 +628,7 @@ public:
 				h & heroPerkRules;
 			else
 			{
-				JsonNode candidate;
+				nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::Perks> candidate;
 				h & candidate;
 				nativeRules::validatePilotPerks(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 				newHorizonsHeroes::validateCommandPerkSerialization(candidate,
@@ -679,12 +693,16 @@ public:
 	}
 
 private:
+	// Mutable only at authoritative capture/load admission, never by rule queries.
+	mutable nativeRules::CapturedRulePool capturedRulePool;
+	void admitWorldRuleDocuments();
+	void prepareCapturedRulePool();
 	JsonNode heroCommandRules;
-	JsonNode magicRules;
-	JsonNode heroDevelopmentRules;
-	JsonNode heroCapabilityRules;
-	JsonNode heroMasteryRules;
-	JsonNode heroPerkRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::WorldMagic> magicRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::WorldDevelopment> heroDevelopmentRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::WorldCapability> heroCapabilityRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::Mastery> heroMasteryRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::Perks> heroPerkRules;
 	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
 	std::set<ArtifactID> randomArtifactPoolExclusions;
 	// ----- initialization -----

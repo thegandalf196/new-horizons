@@ -122,8 +122,7 @@ bool supportedOrdinaryState(const battle::Unit * actor, const HypotheticBattle &
 				[](const HeroOrderState & order) { return order.secondWindActive; })
 			|| state.battleHasPendingDoubleCommand(side) || state.battleHasPendingPreCombatOrder(side)
 			|| state.getBattle()->getDoubleCommandState(side).secondWindReady()
-			|| state.getBattle()->getDoubleCommandState(side).deferredSecondWindTargetUnitId != DoubleCommandState::INVALID_UNIT_ID
-			|| state.battleMetamagicPendingCount(side) != 0)
+			|| state.getBattle()->getDoubleCommandState(side).deferredSecondWindTargetUnitId != DoubleCommandState::INVALID_UNIT_ID)
 			return false;
 	for(const auto * unit : state.battleAliveUnits())
 	{

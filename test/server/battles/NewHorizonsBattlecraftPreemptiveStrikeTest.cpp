@@ -251,7 +251,7 @@ TEST_F(NewHorizonsBattlecraftPreemptiveStrikeTest, ActivePerkIgnoresMeleeAgainst
 	EXPECT_EQ(defender->battlecraftPreemptiveStrikeRound, -1);
 }
 
-TEST_F(NewHorizonsBattlecraftPreemptiveStrikeTest, OrdinaryMeleeMagogCanTriggerAndTimeStoppedDefenderCannot)
+TEST_F(NewHorizonsBattlecraftPreemptiveStrikeTest, OrdinaryMeleeMagogCanTriggerAndDisabledDefenderCannot)
 {
 	startGame();
 	ASSERT_NO_FATAL_FAILURE(selectPreemptiveStrike(defenderSideHero));
@@ -276,17 +276,6 @@ TEST_F(NewHorizonsBattlecraftPreemptiveStrikeTest, OrdinaryMeleeMagogCanTriggerA
 	ASSERT_TRUE(attack(magog, defender->getPosition()));
 	EXPECT_EQ(countAttacks(server, defender->unitId(), false), 1u)
 		<< "A Magog's melee blow is physical and still receives the reaction";
-
-	ASSERT_TRUE(defend(timeStoppedDefender));
-	ASSERT_EQ(newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
-		battle()->battleGetOwnerHero(timeStoppedDefender), timeStoppedDefender, battle()->getRound()), 50);
-	auto timeStop = Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	battle()->addOrUpdateUnitBonus(timeStoppedDefender, timeStop, true);
-	ASSERT_TRUE(timeStoppedDefender->isTimeStopped());
-	EXPECT_EQ(newHorizonsBattlecraft::preemptiveStrikeDamagePercent(
-		battle()->battleGetOwnerHero(timeStoppedDefender), timeStoppedDefender, battle()->getRound()), 0)
-		<< "Time Stopped creatures cannot receive a defensive reaction";
 
 	ASSERT_TRUE(defend(disabledDefender));
 	ASSERT_EQ(newHorizonsBattlecraft::preemptiveStrikeDamagePercent(

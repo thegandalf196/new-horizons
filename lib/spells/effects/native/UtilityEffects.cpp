@@ -107,52 +107,6 @@ public:
 	}
 };
 
-class SpellLock final : public UnitEffect
-{
-	bool isValidTarget(const Mechanics *, const battle::Unit * unit) const override { return unit && unit->isValidTarget(false); }
-public:
-	void apply(ServerCallback * server, const Mechanics * mechanics, const Target & target) const override
-	{
-		const auto * hero = mechanics->getHeroCaster();
-		const int turns = mechanics->adjustEffectDuration(newHorizonsSorcery::spellLockDurationBasisPoints(mechanics->getEffectPower(),
-			hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.spellbinder"),
-			mechanics->getSpellPowerCoefficientBasisPoints(), mechanics->getEmpowerSpellBonusPercent()));
-		const std::string key = "new-horizons:spellLock";
-		const nativeEvents::Context context{*server, *mechanics->battle(), nullptr, nullptr, parameters, {}};
-		for(const auto & destination : target)
-		{
-			const auto * unit = destination.unitValue;
-			if(!unit || !unit->alive()) continue;
-			const bool friendly = context.battle.battleGetOwner(unit) == mechanics->getCasterColor();
-			const auto bonuses = unit->getBonuses(Selector::all, "all");
-			BonusList removable;
-			for(const auto & bonus : *bonuses)
-			{
-				if(bonus->source != BonusSource::SPELL_EFFECT || bonus->sid.toString() == key) continue;
-				const auto * source = nativeEvents::spell(bonus->sid.toString());
-				if(source && !source->isAdventure() && source->isMagical()
-					&& (friendly ? source->isNegative() : source->isPositive())) removable.push_back(bonus);
-			}
-			if(!removable.empty()) nativeEvents::removeBonuses(context, *unit, removable);
-			status::add(context, *unit, status::bonus("MAGIC_RESISTANCE", 100, key, turns, {}, !friendly));
-			auto marker = status::bonus("NONE", friendly ? turns : -turns, key, turns, {}, !friendly);
-			marker.Struct().erase("stacking");
-			marker["hidden"].Bool() = true;
-			marker["description"].String() = friendly ? "Spell Lock: preserve beneficial magic and freeze its duration"
-				: "Spell Lock: preserve hostile magic and freeze its duration";
-			status::add(context, *unit, std::move(marker));
-			if(server->describeChanges())
-			{
-				MetaString message;
-				message.appendTextID(friendly ? "new-horizons.combat.spellLock.preserveBeneficial" : "new-horizons.combat.spellLock.preserveHostile");
-				message.replaceTextID(nativeEvents::creatureName(unit, unit->getCount()));
-				message.replaceNumber(mechanics->getRecipientSpellLockDuration(unit));
-				nativeEvents::log(context, message);
-			}
-		}
-	}
-};
-
 BonusList chosenBonuses(const battle::Unit & unit)
 {
 	const auto all = unit.getBonusesFrom(BonusSource::SPELL_EFFECT);
@@ -166,11 +120,8 @@ class TheChosen final : public UnitEffect
 	bool isValidTarget(const Mechanics * mechanics, const battle::Unit * unit) const override
 	{
 		if(!unit || !unit->isValidTarget(false) || !unit->isLiving() || unit->hasBonusOfType(BonusType::MECHANICAL)
-			|| !mechanics->ownerMatches(unit) || unit->isTimeStopped()) return false;
-		return mechanics->battle()->battleGetUnitsIf([&](const battle::Unit * previous)
-		{
-			return previous->unitSide() == unit->unitSide() && previous->isTimeStopped() && !chosenBonuses(*previous).empty();
-		}).empty();
+			|| !mechanics->ownerMatches(unit)) return false;
+		return true;
 	}
 public:
 	void apply(ServerCallback * server, const Mechanics * mechanics, const Target & target) const override
@@ -204,7 +155,6 @@ std::shared_ptr<spells::effects::Effect> createUtilityEffect(const ScriptTypeDes
 {
 	using namespace spells::effects::native;
 	if(description.sourcePath == "spells/dispel") return std::make_shared<Dispel>();
-	if(description.sourcePath == "spells/spellLock") return std::make_shared<SpellLock>();
 	if(description.sourcePath == "spells/theChosen") return std::make_shared<TheChosen>();
 	return {};
 }

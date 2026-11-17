@@ -418,11 +418,11 @@ bool CGHeroInstance::canLearnSkill(const SecondarySkill & which) const
 	// unknown skill must not fall through to legacy class probabilities once a
 	// canonical table is active.  This also keeps retired skills such as
 	// Mysticism from becoming ordinary level-up choices.
-	if(newHorizonsHeroes::isExcludedSkill(primaryGrowthRules, which))
+	if(compiledDevelopment() && compiledDevelopment()->isExcludedSkill(which))
 		return false;
-	if(newHorizonsHeroes::usesSkillOfferWeights(primaryGrowthRules))
+	if(compiledDevelopment()->usesSkillOfferWeights())
 	{
-		const auto weight = newHorizonsHeroes::skillOfferWeight(primaryGrowthRules, which);
+		const auto weight = compiledDevelopment()->skillOfferWeight(which);
 		return weight.has_value() && *weight > 0;
 	}
 
@@ -554,7 +554,7 @@ std::string CGHeroInstance::getSpecialtyDescriptionTranslated() const
 
 int CGHeroInstance::getDamageSpellSpecialtyBonusPercent(SpellID spell) const
 {
-	const auto rules = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->damageSpell;
 	const CHero * heroType = getHeroType();
 	if(!rules || !heroType)
 		return 0;
@@ -570,7 +570,7 @@ int CGHeroInstance::getDamageSpellSpecialtyBonusPercent(SpellID spell) const
 
 int CGHeroInstance::getNonDamageSpellSpecialtyBonusPercent(SpellID spell) const
 {
-	const auto rules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->nonDamageSpell;
 	const CHero * heroType = getHeroType();
 	if(!rules || !heroType || std::ranges::find(rules->spells, spell) == rules->spells.end())
 		return 0;
@@ -600,11 +600,11 @@ int CGHeroInstance::getSkillSpecialtyCoreBonusPercent(SecondarySkill skill) cons
 	}))
 		return 0;
 
-	const int percent = newHorizonsHeroes::skillSpecialtyCoreBonusPercent(primaryGrowthRules, skill);
+	const int percent = compiledDevelopment()->skillSpecialtyCoreBonusPercent(skill);
 	if(percent == 0)
 		return 0;
 	if(heroType->navigationSpecialtyProducer
-		&& !newHorizonsHeroes::usesNavigationStartReplacement(primaryGrowthRules))
+		&& !compiledDevelopment()->usesNavigationStartReplacement())
 		return 0;
 	return percent;
 }
@@ -733,7 +733,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	if(!hasBonusFrom(BonusSource::HERO_BASE_SKILL))
 	{
 		const auto primaryProfile = usesPrimaryGrowth()
-			? std::optional<newHorizonsHeroes::PrimaryProfile>(newHorizonsHeroes::parsePrimaryProfile(primaryGrowthRules["profile"]))
+			? std::optional<newHorizonsHeroes::PrimaryProfile>(*compiledDevelopment()->profile())
 			: std::nullopt;
 		for(int g=0; g<GameConstants::PRIMARY_SKILLS; ++g)
 		{
@@ -746,8 +746,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	const bool defaultSecondarySkills = secSkills.size() == 1
 		&& secSkills[0] == std::pair<SecondarySkill,ui8>(SecondarySkill::NONE, -1);
 	if(creationInitialization && defaultSecondarySkills)
-		if(const auto target = newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID()))
-			primaryGrowthRules["creatureLineSpecialtyTarget"].String() = CreatureID::encode(target->getNum());
+		captureDefaultCreatureLineTarget();
 	const auto startingDevelopment = creationInitialization && defaultSecondarySkills
 		? newHorizonsHeroes::startingDevelopmentProfile(primaryGrowthRules, perkState,
 			getHeroTypeID(), getHeroClass()->getId())
@@ -760,16 +759,16 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	// module defaults when initHero is called again.
 	// A validated explicit profile already contains its class-legal parents and
 	// own faction rank. Legacy replacement must not erase its authored Wisdom.
-	if(creationInitialization && !startingDevelopment && newHorizonsHeroes::usesRules(primaryGrowthRules))
+	if(creationInitialization && !startingDevelopment && compiledDevelopment()->active())
 	{
 		secSkills = newHorizonsHeroes::migrateStartingSkills(primaryGrowthRules, getFactionID(), secSkills);
 		secSkills = newHorizonsHeroes::applyStartingFactionSkill(primaryGrowthRules,
 			getHeroClass()->isMagicHero(), getFactionID(), secSkills);
 	}
 	const CHero * heroType = getHeroType();
-	const auto skillSpecialties = newHorizonsHeroes::skillSpecialtyRules(primaryGrowthRules);
+	const auto skillSpecialties = compiledDevelopment()->skillSpecialty;
 	const bool hasNavigationSpecialty = skillSpecialties && heroType->navigationSpecialtyProducer
-		&& newHorizonsHeroes::usesNavigationStartReplacement(primaryGrowthRules)
+		&& compiledDevelopment()->usesNavigationStartReplacement()
 		&& std::ranges::find(skillSpecialties->skills, SecondarySkill(SecondarySkill::LOGISTICS)) != skillSpecialties->skills.end();
 	if(creationInitialization && hasNavigationSpecialty)
 	{
@@ -813,7 +812,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	// Authored New Horizons hero prototypes may select active perks at
 	// creation. The selection is stored in the hero state, so it is not
 	// repeated when loading a saved hero or when legacy rules are active.
-	if(creationInitialization && newHorizonsHeroes::usesPerkRules(perkState.rules))
+	if(creationInitialization && newHorizonsHeroes::usesPerkRules(perkState.getRules()))
 	{
 		newHorizonsHeroes::initializeStartingHeroPerks(perkState, primaryGrowthRules, getHeroTypeID(),
 			startingDevelopment ? startingDevelopment->perks : std::vector<newHorizonsHeroes::PerkSelection>{},
@@ -883,8 +882,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	//copy active (probably growing) bonuses from hero prototype to hero object
 	const bool convertsCreatureLineSpecialty = newHorizonsHeroes::usesConvertedCreatureSpecialty(this)
 		&& heroType->creatureLineSpecialtyAlias.has_value();
-	const bool convertsDamageSpellSpecialty = newHorizonsHeroes::damageSpellSpecialtyRules(primaryGrowthRules).has_value();
-	const auto nonDamageSpellSpecialtyRules = newHorizonsHeroes::nonDamageSpellSpecialtyRules(primaryGrowthRules);
+	const bool convertsDamageSpellSpecialty = compiledDevelopment()->damageSpell.has_value();
+	const auto nonDamageSpellSpecialtyRules = compiledDevelopment()->nonDamageSpell;
 	const bool convertsNonDamageSpellSpecialty = nonDamageSpellSpecialtyRules.has_value();
 	const bool convertsSkillSpecialty = hasSupportedSkillSpecialty
 		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0;
@@ -911,7 +910,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		const auto successor = std::ranges::find_if(heroType->spellSpecialtySuccessorProducers,
 			[&b](const auto & producer) { return producer.bonus == b; });
 		if(heroType->getJsonKey() == "core:daremyth"
-			&& newHorizonsHeroes::fortuneChildSpecialtyRules(primaryGrowthRules)
+			&& compiledDevelopment()->fortuneChild
 			&& successor != heroType->spellSpecialtySuccessorProducers.end()
 			&& successor->source == SpellID::FORTUNE)
 		{
@@ -1193,7 +1192,7 @@ void CGHeroInstance::setPropertyDer(ObjProperty what, ObjPropertyID identifier)
 
 bool CGHeroInstance::usesPrimaryGrowth() const
 {
-	return newHorizonsHeroes::usesRules(primaryGrowthRules);
+	return compiledDevelopment()->active();
 }
 
 std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGrowthView() const
@@ -1201,14 +1200,14 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 	if(!usesPrimaryGrowth())
 		return std::nullopt;
 	newHorizonsHeroes::PrimaryGrowthView result;
-	result.profile = newHorizonsHeroes::parsePrimaryProfile(primaryGrowthRules["profile"]);
+	result.profile = *compiledDevelopment()->profile();
 	result.fixedSpecialtyGrowth = newHorizonsHeroes::sageGrowth(*this);
 	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
 	{
 		result.base[i] = getBasePrimarySkillValue(PrimarySkill(i));
 		result.modified[i] = getPrimSkillLevel(PrimarySkill(i));
 	}
-	result.extraGrowth = newHorizonsHeroes::skillGrowthChances(primaryGrowthRules,
+	result.extraGrowth = compiledDevelopment()->skillGrowthChances(
 		[this](SecondarySkill skill) { return getSecSkillLevel(skill); });
 	static const int newHorizonsArmorerSkill = SecondarySkill::decode("new-horizons:armorer");
 	const int armorerSpecialtyPercent = getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARMORER));
@@ -1235,8 +1234,8 @@ std::optional<newHorizonsHeroes::PrimaryGrowthView> CGHeroInstance::getPrimaryGr
 				opportunity.chancePercent = std::min(100,
 					opportunity.chancePercent * (100 + archerySpecialtyPercent) / 100);
 	result.lastGains = lastPrimaryGains;
-	result.powerDivisor = primaryGrowthRules["powerDivisor"].Integer();
-	result.maximumPrimary = primaryGrowthRules["maxPrimary"].Integer();
+	result.powerDivisor = compiledDevelopment()->powerDivisor();
+	result.maximumPrimary = compiledDevelopment()->maximumPrimary();
 	return result;
 }
 
@@ -1455,7 +1454,7 @@ int32_t CGHeroInstance::getEffectPower(const spells::Spell * spell) const
 
 int32_t CGHeroInstance::getEffectPowerDivisor(const spells::Spell * spell) const
 {
-	return usesPrimaryGrowth() ? primaryGrowthRules["powerDivisor"].Integer() : 1;
+	return usesPrimaryGrowth() ? compiledDevelopment()->powerDivisor() : 1;
 }
 
 int32_t CGHeroInstance::getEnchantPower(const spells::Spell * spell) const
@@ -1892,7 +1891,7 @@ int32_t CGHeroInstance::getSpellCost(const spells::Spell * sp) const
 	const int cost = rank == MasteryLevel::NONE ? listedCost
 		: newHorizonsMagic::wisdomAdjustedCost(listedCost, 1, rank);
 	return newHorizonsHeroes::chosenSpecialtyAdjustedCost(cost,
-		newHorizonsHeroes::chosenSpecialtyManaDiscount(primaryGrowthRules, getHeroType()->getJsonKey(), sp->getId()));
+		compiledDevelopment()->chosenManaDiscount(getHeroTypeID(), sp->getId()));
 }
 
 void CGHeroInstance::pushPrimSkill( PrimarySkill which, int val )
@@ -1922,7 +1921,7 @@ std::string CGHeroInstance::nodeName() const
 std::optional<newHorizonsHeroes::DruidSpecialtyRules> CGHeroInstance::getDruidSpecialtyRules(
 	newHorizonsHeroes::DruidSpecialtyKind specialty) const
 {
-	const auto rules = newHorizonsHeroes::druidSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->druid;
 	if(!rules)
 		return std::nullopt;
 	const auto * heroType = getHeroType();
@@ -1956,7 +1955,7 @@ int64_t CGHeroInstance::getHighLoreManaBonus() const
 
 int CGHeroInstance::getArcanePreparationPercent() const
 {
-	const auto rules = newHorizonsHeroes::arcanePreparationSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->arcanePreparation;
 	const auto * heroType = getHeroType();
 	if(!rules || !heroType || heroType->getJsonKey() != "core:serena"
 		|| !newHorizonsMagic::spellPointRulesActive(getMagicRules()))
@@ -1967,7 +1966,7 @@ int CGHeroInstance::getArcanePreparationPercent() const
 
 int32_t CGHeroInstance::getArcanePreparationBufferBonus() const
 {
-	if(!newHorizonsHeroes::arcanePreparationSpecialtyRules(primaryGrowthRules)
+	if(!compiledDevelopment()->arcanePreparation
 		|| !getHeroType() || getHeroType()->getJsonKey() != "core:serena"
 		|| !newHorizonsMagic::spellPointRulesActive(getMagicRules())
 		|| !hasActivePerk("new-horizons:wisdom", "new-horizons:wisdom.intelligence"))
@@ -1983,7 +1982,7 @@ int32_t CGHeroInstance::getArcanePreparationBufferBonus() const
 
 int64_t CGHeroInstance::getBottomlessMindManaBonus() const
 {
-	const auto rules = newHorizonsHeroes::bottomlessMindSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->bottomlessMind;
 	if(!rules)
 		return 0;
 	const auto * heroType = getHeroType();
@@ -2000,7 +1999,7 @@ int64_t CGHeroInstance::getBottomlessMindManaBonus() const
 
 int CGHeroInstance::getMasterSpellwardExtraBasisPoints(int ordinaryBasisPoints) const
 {
-	const auto rules = newHorizonsHeroes::masterSpellwardSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->masterSpellward;
 	if(!rules)
 		return 0;
 	const auto * heroType = getHeroType();
@@ -2555,33 +2554,15 @@ bool CGHeroInstance::gainsLevel() const
 
 newHorizonsHeroes::PerkState::OfferWeightContext CGHeroInstance::getPerkOfferWeightContext() const
 {
-	// The hero-owned captured snapshot, never a live/default class table.
-	const auto captured = getPrimaryGrowthRules();
-	newHorizonsHeroes::validateResolvedHeroRules(captured);
 	using Mode = newHorizonsHeroes::PerkState::OfferWeightMode;
-	if(!newHorizonsHeroes::usesSkillOfferWeights(captured))
+	const auto owner = primaryGrowthRules.owner();
+	const auto * compiled = owner ? owner->development().get() : nullptr;
+	if(!compiled || !compiled->usesSkillOfferWeights())
 		return {Mode::IntentionalLegacyNoCapturedTable, {}};
-
-	// Decode against the initialized skill service on each context construction.
-	// Reject unscoped aliases even though legacy decode accepts suffix fallback.
-	for(const auto & [skillId, weight] : captured["skillOfferWeights"].Struct())
+	return {Mode::CapturedTable, [owner](const std::string & skill) -> std::optional<int>
 	{
-		const auto decoded = LIBRARY->identifiers()->getIdentifier(
-			ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
-		if(!decoded || *decoded < 0 || SecondarySkill::encode(*decoded) != skillId)
-			throw std::runtime_error("Captured perk offer weights require exact scoped skill identities");
-	}
-	std::map<std::string, int> referenceWeights;
-	for(const auto & [skillId, weight] : captured["skillOfferWeights"].Struct())
-		referenceWeights.emplace(skillId, static_cast<int>(weight.Integer()));
-	return {Mode::CapturedTable, [captured](const std::string & skillId) -> std::optional<int>
-	{
-		const auto decoded = LIBRARY->identifiers()->getIdentifier(
-			ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
-		if(!decoded || *decoded < 0 || SecondarySkill::encode(*decoded) != skillId)
-			throw std::runtime_error("Perk parent skill identity does not match its captured weight table");
-		return newHorizonsHeroes::skillOfferWeight(captured, SecondarySkill(*decoded));
-	}, std::move(referenceWeights)};
+		return owner->development()->skillOfferWeight(skill);
+	}, compiled->offerWeights()};
 }
 
 bool CGHeroInstance::usesNewHorizonsNecromancy() const
@@ -2592,9 +2573,9 @@ bool CGHeroInstance::usesNewHorizonsNecromancy() const
 int CGHeroInstance::getNewHorizonsNecromancyRank() const
 {
 	const auto skill = SecondarySkill::decode("new-horizons:necromancy");
-	if(skill < 0 || !newHorizonsHeroes::usesRules(primaryGrowthRules))
+	if(skill < 0 || !compiledDevelopment()->active())
 		return 0;
-	if(!newHorizonsHeroes::isFactionSkillForFaction(primaryGrowthRules, getFactionID(), SecondarySkill(skill)))
+	if(!compiledDevelopment()->isFactionSkillForFaction(getFactionID(), SecondarySkill(skill)))
 		return 0;
 	return std::clamp<int>(getSecSkillLevel(SecondarySkill(skill)), 0, 3);
 }
@@ -2643,7 +2624,7 @@ std::optional<newHorizonsHeroes::MasteryView> CGHeroInstance::getMasteryView() c
 		view.choices.push_back({selection, getSecSkillLevel(selection.skill) == MasteryLevel::EXPERT});
 	for(const SecondarySkill skill : {SecondarySkill(SecondarySkill::ARTILLERY), SecondarySkill(SecondarySkill::LOGISTICS)})
 	{
-		if(!newHorizonsHeroes::masteryOptions(masteryState.rules, skill)
+		if(!masteryState.rules.masteryOptions(skill)
 			|| masteryState.hasChoice(skill) || getSecSkillLevel(skill) != MasteryLevel::EXPERT)
 			continue;
 		const bool eligible = skill == SecondarySkill::ARTILLERY ? masteryState.artilleryEligible : masteryState.logisticsEligible;
@@ -2712,7 +2693,7 @@ void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS
 
 int CGHeroInstance::getFortuneChildLuckBonus() const
 {
-	const auto rules = newHorizonsHeroes::fortuneChildSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->fortuneChild;
 	const auto * heroType = getHeroType();
 	if(!rules || !heroType || heroType->getJsonKey() != "core:daremyth")
 		return 0;
@@ -2728,7 +2709,7 @@ void CGHeroInstance::refreshFortuneChildSpecialtyBonus()
 {
 	const auto * heroType = getHeroType();
 	if(!heroType || heroType->getJsonKey() != "core:daremyth"
-		|| !newHorizonsHeroes::fortuneChildSpecialtyRules(primaryGrowthRules))
+		|| !compiledDevelopment()->fortuneChild)
 		return;
 	const std::string marker = "new-horizons:fortune-child:" + std::to_string(heroType->getId().getNum());
 	const int luck = getFortuneChildLuckBonus();
@@ -3077,7 +3058,7 @@ int CGHeroInstance::getBasePrimarySkillValue(PrimarySkill which) const
 {
 	const auto rawValue = getRawBasePrimarySkillValue(which);
 	if(usesPrimaryGrowth())
-		return std::clamp(rawValue, 0, static_cast<int>(primaryGrowthRules["maxPrimary"].Integer()));
+		return std::clamp(rawValue, 0, static_cast<int>(compiledDevelopment()->maximumPrimary()));
 	auto minSkillValue = LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MINIMAL_PRIMARY_SKILLS, which.getNum());
 	auto maxSkillValue = LIBRARY->engineSettings()->getVectorValue(EGameSettings::HEROES_MAXIMAL_PRIMARY_SKILLS, which.getNum());
 	return std::clamp(rawValue, minSkillValue, std::max(minSkillValue, maxSkillValue));

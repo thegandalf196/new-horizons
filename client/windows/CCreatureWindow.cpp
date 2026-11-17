@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "NewHorizonsOrderIndicators.h"
 #include "CCreatureWindow.h"
 #include "CreatureUpgradeConfirmation.h"
@@ -266,17 +267,11 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 	const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end(), [](const SpellID effect)
 	{
 		const auto spellKey = effect.toSpell()->getJsonKey();
-		return newHorizonsBattleStatus::isTimeStop(spellKey)
-			|| newHorizonsBattleStatus::isConfusion(spellKey)
+		return newHorizonsBattleStatus::isConfusion(spellKey)
 			|| newHorizonsBattleStatus::isDoom(spellKey)
-			|| newHorizonsBattleStatus::isFocusMagic(spellKey)
-			|| newHorizonsBattleStatus::isArcaneBreach(spellKey);
+			|| newHorizonsBattleStatus::isFocusMagic(spellKey);
 	});
-	const auto timeStopEnd = std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
-	{
-		return newHorizonsBattleStatus::isTimeStop(effect.toSpell()->getJsonKey());
-	});
-	std::stable_partition(timeStopEnd, prioritizedEnd, [](const SpellID effect)
+	std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
 	{
 		return newHorizonsBattleStatus::isDoom(effect.toSpell()->getJsonKey());
 	});
@@ -302,21 +297,16 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 				: newHorizonsBattleStatus::ConfusionStatus{};
 			if(confusion && !confusionStatus.active())
 				continue;
-			const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
 			const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
-			const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
 			const bool doom = newHorizonsBattleStatus::isDoom(spellKey);
 			const auto doomEffect = doom ? newHorizonsBattleStatus::doomStatus(*spellBonuses)
 				: newHorizonsBattleStatus::DoomStatus{};
-			const auto arcaneStatus = arcaneBreach
-				? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
-				: newHorizonsBattleStatus::ArcaneBreachStatus{};
 			std::string preferredLanguage = LIBRARY->generaltexth->getPreferredLanguage();
 
 			MetaString spellText;
 			spellText.appendTextID(spell->getDescriptionTextID(0)); // TODO: select correct mastery level?
 			spellText.appendRawString("\n");
-			if(!timeStop && !confusion)
+			if(!confusion)
 			{
 				spellText.appendTextID(Languages::getPluralFormTextID( preferredLanguage, duration, "vcmi.battleResultsWindow.spellDurationRemaining"));
 				spellText.replaceNumber(duration);
@@ -324,21 +314,12 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 			std::string spellDescription = spellText.toString(&GAME->translator());
 			if(confusion)
 				spellDescription = newHorizonsBattleStatus::confusionTooltip(spell->getDescriptionTranslated(0), confusionStatus);
-			else if(timeStop)
-				spellDescription = newHorizonsBattleStatus::timeStopTooltip(spellDescription);
 			else if(focusMagic)
-			{
-				const auto tooltipStatus = newHorizonsBattleStatus::focusMagicStatus(*spellBonuses);
-				if(tooltipStatus)
-					spellDescription = newHorizonsBattleStatus::focusMagicTooltip(spell->getDescriptionTranslated(0), *tooltipStatus);
-			}
-			else if(arcaneBreach)
-				spellDescription = newHorizonsBattleStatus::arcaneBreachTooltip(arcaneStatus);
+				spellDescription = spell->getDescriptionTranslated(0)
+					+ "\n\nEnergy shots remaining: " + std::to_string(newHorizonsFocusMagic::charges(*battleStack)) + ".";
 
 			spellIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : timeStop
-				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
-				: arcaneBreach ? std::to_string(arcaneStatus.markCount())
+			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : focusMagic ? std::to_string(newHorizonsFocusMagic::charges(*battleStack))
 				: doom && doomEffect.active()
 					? newHorizonsBattleStatus::formatBasisPoints(
 						static_cast<int64_t>(doomEffect.damagePenaltyPercent) * 100)
@@ -346,7 +327,7 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 			if(doom && doomEffect.active())
 				spellDescription = newHorizonsBattleStatus::doomTooltip(
 					spell->getDescriptionTranslated(0), doomEffect);
-			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
+			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, badge));
 			clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(firstPos + offset * printed, Point(50, 38)), spellDescription, spellDescription));
 			if(++printed >= 8) // interface limit reached
 				break;

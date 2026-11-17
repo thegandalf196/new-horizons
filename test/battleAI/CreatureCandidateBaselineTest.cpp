@@ -155,7 +155,7 @@ protected:
 		for(const auto id : ids)
 		{
 			const auto * hero = gameState()->getHero(id);
-			captures.emplace(id, std::make_pair(hero->getPrimaryGrowthRules(), hero->getPerkState().rules));
+			captures.emplace(id, std::make_pair(hero->getPrimaryGrowthRules(), hero->getPerkState().getRules()));
 		}
 		const auto commands = gameState()->getHeroCommandRules();
 		// Use the established full-world loader, then resave/load. Battle creation
@@ -169,7 +169,7 @@ protected:
 				const auto * hero = gameState()->getHero(id);
 				ASSERT_NE(hero, nullptr);
 				EXPECT_EQ(hero->getPrimaryGrowthRules(), capture.first);
-				EXPECT_EQ(hero->getPerkState().rules, capture.second);
+				EXPECT_EQ(hero->getPerkState().getRules(), capture.second);
 			}
 		}
 	}
@@ -227,7 +227,7 @@ protected:
 		{
 			for(int i = 0; i < LIBRARY->skillh->size(); ++i)
 				ASSERT_EQ(hero->getSecSkillLevel(SecondarySkill(i)), 0);
-			for(const auto & selection : hero->getPerkState().selected)
+			for(const auto & selection : hero->getPerkState().getSelected())
 				ASSERT_FALSE(hero->hasActivePerk(selection.skillId, selection.perkId));
 			EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::ATTACK), 0);
 			EXPECT_EQ(hero->getPrimSkillLevel(PrimarySkill::DEFENSE), 0);
@@ -1166,9 +1166,9 @@ TEST_F(CreatureCandidateBaselineTest, HistoricalNativeCaptureAbsenceRoundTripMat
 	ASSERT_NO_FATAL_FAILURE(prepareNativeProfile("core:clavius", "core:skeleton", true));
 	for(const auto * hero : {attackerSideHero, defenderSideHero})
 	{
-		EXPECT_FALSE(hero->getPerkState().rules.Struct().contains("quickStudyPolicy"));
+		EXPECT_FALSE(hero->getPerkState().getRules().Struct().contains("quickStudyPolicy"));
 		EXPECT_FALSE(hero->getPrimaryGrowthRules().Struct().contains("additionalSpecialties"));
-		EXPECT_NE(hero->getPerkState().rules,
+		EXPECT_NE(hero->getPerkState().getRules(),
 			LIBRARY->engineSettings()->getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS));
 	}
 	RecordProperty("HistoricalCaptureQualification", "authored predecessor absence; native init/full-world load/resave; not an earned Day115 fixture");

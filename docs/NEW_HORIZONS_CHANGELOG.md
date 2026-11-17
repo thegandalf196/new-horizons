@@ -7,7 +7,21 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## Replacement 0.92 — in development
+
+- Corrects perk progression to one Basic, one Advanced and one Expert perk per
+  Skill. Fresh default heroes have two Basic Skills and no perks. Skill ranks
+  and perks remain separate level-up advancements.
+- Simplifies the four-offer level-up display and confirms a perk with one click.
+- Revises Sorcery and Academy Metamagic, including Focus Magic, Forced Recall
+  and Force Lance. Retires Counterspell and the previous time-stasis mechanics.
+- Reworks captured-rule storage, perk lookups and combat AI evaluation. Native,
+  rendered and performance acceptance are pending; no speedup is claimed here.
+
 ## 0.92.0 Early Access
+
+This initial package was withdrawn because its perk progression did not match
+the intended rules. The following records that package's scope.
 
 - Four fixed weighted offers grant one Skill or perk advancement per level.
   A perk offer opens its Skill’s complete currently eligible pool; each Skill
@@ -41,7 +55,7 @@ historical saves retain their captured progression, pending choices and Estates
 rules. A new game is still required when upgrading from 0.90 or earlier; older
 files are rejected without conversion or modification.
 
-[0.92.0 downloads, checksums and corresponding sources](https://github.com/thegandalf196/new-horizons/releases/tag/v0.92.0).
+The withdrawn package is unavailable for download.
 
 ## 0.91.2 Early Access
 

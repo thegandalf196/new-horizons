@@ -161,41 +161,6 @@
 		},
 		"description" : ""
 	},
-	"focusMagic" : {
-		"implements" : "combatEvent",
-		"script" : "combat/focusMagic",
-		"patches" : [ ],
-		"priority" : 0,
-		"schema" : {
-			"required" : ["beneficiarySide"],
-			"properties" : {
-				"beneficiarySide" : {
-					"anyOf" : [ { "type" : "integer", "enum" : [0, 1] }, { "type" : "number", "enum" : [0.0, 1.0] } ],
-					"description" : "captured beneficiary battle side (0=attacker, 1=defender); exact integer or Lua floating representation"
-				},
-				"arcaneAcquisition" : { "type" : "boolean", "description" : "whether the creating Focus Magic cast carried eligible Arcane Acquisition provenance" }
-			},
-			"additionalProperties" : false
-		},
-		"description" : ""
-	},
-	"arcaneBreach" : {
-		"implements" : "combatEvent",
-		"script" : "combat/arcaneBreach",
-		"patches" : [ ],
-		"priority" : 0,
-		"schema" : {
-			"required" : ["beneficiarySide"],
-			"properties" : {
-				"beneficiarySide" : {
-					"anyOf" : [ { "type" : "integer", "enum" : [0, 1] }, { "type" : "number", "enum" : [0.0, 1.0] } ],
-					"description" : "captured beneficiary battle side (0=attacker, 1=defender); exact integer or Lua floating representation"
-				}
-			},
-			"additionalProperties" : false
-		},
-		"description" : ""
-	},
 	"plagueStatus" : {
 		"implements" : "combatEvent",
 		"script" : "combat/plagueStatus",

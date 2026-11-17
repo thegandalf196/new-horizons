@@ -179,6 +179,20 @@ void CUnitStateDetached::onBattleFormChanged()
 		projected->onBattleFormChanged(*this);
 }
 
+bool CUnitStateDetached::mayHaveBonusType(BonusType type) const
+{
+	// This wrapper can synthesize Veteran Cohesion without a source record.
+	if(type == BonusType::MORALE && veteranCohesionEarned) return true;
+	if(const auto * projected = projectedBonusProvider())
+	{
+		if(projected->evaluatedUnit() != this)
+			throw std::logic_error("Mechanics presence view belongs to another detached unit");
+		return projected->mayHaveBonusType(type);
+	}
+	if(hasBattleFormState() || unitCreatureResolver()) return true;
+	return bonus->mayHaveBonusType(type);
+}
+
 TConstBonusListPtr CUnitStateDetached::getAllBonuses(const CSelector & selector, const std::string & cachingStr) const
 {
 	const int32_t level = newHorizonsCreatureAbilitySuppression::suppressionLevel(*this);

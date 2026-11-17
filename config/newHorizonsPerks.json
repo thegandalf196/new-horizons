@@ -4,13 +4,21 @@
 	"commandAuthorityPolicy": {"version": 1},
 	"warfarePolicyVersion": 1,
 	"offerWeightPolicyVersion": 2,
-	"perkProgressionPolicyVersion": 1,
+	"perkProgressionPolicyVersion": 2,
 	"fourOfferProgressionVersion": 1,
 	"estatesPolicyVersion": 1,
 	"sylvanTacticsPolicy": 3,
 	"metamagicPolicy": {
-		"version": 3,
-		"adeptAdditionalPoints": 1
+		"version": 4,
+		"removalChancePercent": [
+			0,
+			20,
+			30,
+			40
+		],
+		"damagePerMana": 10,
+		"restorationPerMana": 15,
+		"halonRemovalChanceBonusPercent": 5
 	},
 	"divineMandatePolicy": {
 		"version": 2
@@ -45,7 +53,7 @@
 		"mathVersion": 1
 	},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "afe1aa621bc115b34d7c110217b98cfa106b659eb28357bb4542dec9629f18b1",
+	"sourceSha256": "8191cfda875b7fa443fa2254238d443c87907419e8c976df86a0a35096e5245e",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -1971,12 +1979,11 @@
 					"id": "new-horizons:sorceryMagic.countermage",
 					"name": "Arcane Ballistics",
 					"requires": "advanced",
-					"description": "Friendly ranged attacks ignore 25% Physical Damage Reduction against enemies with three Focus Magic Arcane Breach marks.",
+					"description": "Focus Magic grants an additional 20 percentage points of ranged damage: +40% for native shooters and +20% for converted nonshooters.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly ranged attacks ignore 25% Physical Damage Reduction against enemies with three Focus Magic Arcane Breach marks."
-					},
-					"details": "When an enemy stack has 3 Arcane Breach marks from Focus Magic, friendly ranged creature attacks against it also ignore 25% of its Physical Damage Reduction."
+						"description": "Focus Magic grants an additional 20 percentage points of ranged damage: +40% for native shooters and +20% for converted nonshooters."
+					}
 				},
 				{
 					"id": "new-horizons:sorceryMagic.illusionist",
@@ -2002,22 +2009,21 @@
 					"id": "new-horizons:sorceryMagic.chronomancer",
 					"name": "Chronomancer",
 					"requires": "expert",
-					"description": "Time Stop's maximum radius increases by 1.",
+					"description": "Slow and Mass Slow reduce Speed and Initiative 20% more strongly, up to a 60% reduction.",
 					"effect": {
 						"status": "active",
-						"description": "Time Stop's maximum radius increases by 1."
+						"description": "Slow and Mass Slow reduce Speed and Initiative 20% more strongly, up to a 60% reduction."
 					}
 				},
 				{
 					"id": "new-horizons:sorceryMagic.spellbinder",
 					"name": "Spellbinder",
 					"requires": "expert",
-					"description": "Spell Lock lasts 1 extra round before other duration modifiers.",
+					"description": "Temporary Sorcery enchantments last 2 additional rounds. Focus Magic and Force Lance's fixed one-round pin are unchanged.",
 					"effect": {
 						"status": "active",
-						"description": "Spell Lock lasts 1 extra round before other duration modifiers."
-					},
-					"details": "Spellbinder adds one round to Spell Lock before other duration modifiers. The ordinary base duration is capped at three rounds, or four with Spellbinder; apply other current duration modifiers separately."
+						"description": "Temporary Sorcery enchantments last 2 additional rounds. Focus Magic and Force Lance's fixed one-round pin are unchanged."
+					}
 				}
 			]
 		},
@@ -3625,141 +3631,143 @@
 			"name": "Metamagic",
 			"domain": "Faction",
 			"availability": "Tower heroes only",
-			"description": "Gain Metamagic points each round to strengthen spells and improve Magic Penetration, up to 12 points.",
+			"description": "Damaging spells unravel enemy enchantments; successful buffs cleanse enemy curses from allies. Removed magic becomes damage or restoration.",
 			"ranks": {
 				"basic": {
-					"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +1% spell effectiveness and Magic Penetration.",
+					"description": "20% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
 					"effect": {
 						"status": "active",
-						"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +1% spell effectiveness and Magic Penetration."
+						"description": "20% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP."
 					},
-					"details": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +1% spell effectiveness and Magic Penetration. Points belong to the hero, persist for combat and never exceed 12. Magic Penetration affects magical damage reduction, not resistance chance."
+					"details": "Each actual recipient and logical effect is checked once per original hero cast. Only successful removal yields energy; mass spells use their ordinary family Mana cost. Restoration cannot exceed battle-start strength or use destroyed remains. Self-authored curses yield no restoration energy."
 				},
 				"advanced": {
-					"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +2% spell effectiveness and Magic Penetration.",
+					"description": "30% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
 					"effect": {
 						"status": "active",
-						"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +2% spell effectiveness and Magic Penetration."
+						"description": "30% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP."
 					},
-					"details": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +2% spell effectiveness and Magic Penetration. Points belong to the hero, persist for combat and never exceed 12. Magic Penetration affects magical damage reduction, not resistance chance."
+					"details": "Each actual recipient and logical effect is checked once per original hero cast. Only successful removal yields energy; mass spells use their ordinary family Mana cost. Restoration cannot exceed battle-start strength or use destroyed remains. Self-authored curses yield no restoration energy."
 				},
 				"expert": {
-					"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +3% spell effectiveness and Magic Penetration.",
+					"description": "40% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
 					"effect": {
 						"status": "active",
-						"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +3% spell effectiveness and Magic Penetration."
+						"description": "40% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP."
 					},
-					"details": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +3% spell effectiveness and Magic Penetration. Points belong to the hero, persist for combat and never exceed 12. Magic Penetration affects magical damage reduction, not resistance chance."
+					"details": "Each actual recipient and logical effect is checked once per original hero cast. Only successful removal yields energy; mass spells use their ordinary family Mana cost. Restoration cannot exceed battle-start strength or use destroyed remains. Self-authored curses yield no restoration energy."
 				}
 			},
 			"perks": [
 				{
-					"id": "new-horizons:metamagic.arcaneCatalyst",
-					"name": "Arcane Catalyst",
+					"id": "new-horizons:metamagic.conservedFormula",
+					"name": "Conserved Formula",
 					"requires": "basic",
-					"description": "Gain 1 Metamagic point after each spell you manually cast.",
+					"description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent.",
 					"effect": {
 						"status": "active",
-						"description": "Gain 1 Metamagic point after each spell you manually cast."
+						"description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent."
 					},
-					"details": "After a manually cast own-hero spell resolves, gain one point, capped at 12. Automatic and secondary spell effects grant no points."
+					"details": "No refund for cancellation, invalid targets, partial effects, absorption or damage reduced to zero. Combined refunds never exceed actual payment."
 				},
 				{
-					"id": "new-horizons:metamagic.arcaneShield",
-					"name": "Arcane Shield",
+					"id": "new-horizons:metamagic.manaRecycling",
+					"name": "Mana Recycling",
 					"requires": "basic",
-					"description": "Each round, shield friendly stacks for 1% of their maximum total HP per Metamagic point; shields expire at round end.",
+					"description": "Recover Mana from magical effects actually removed during your cast.",
 					"effect": {
 						"status": "active",
-						"description": "Each round, shield friendly stacks for 1% of their maximum total HP per Metamagic point; shields expire at round end."
+						"description": "Recover Mana from magical effects actually removed during your cast."
 					},
-					"details": "At round start, each friendly stack gains a shield equal to floor(its maximum aggregate HP × current points / 100). Shields do not self-stack, expire at round end and do not refill when points increase mid-round."
+					"details": "Once per original cast, refund min(floor(total normalized removed Mana / 4), floor(actual Mana paid / 2)), respecting Mana capacity and the combined payment cap. Free casts refund zero."
 				},
 				{
-					"id": "new-horizons:metamagic.manaConduit",
-					"name": "Mana Conduit",
+					"id": "new-horizons:metamagic.disruptiveCasting",
+					"name": "Disruptive Casting",
 					"requires": "basic",
-					"description": "Restore 1 Mana per 3 Metamagic points at the start of each round.",
+					"description": "Actual spell damage removes the target's ordinary Defend bonus after the hit.",
 					"effect": {
 						"status": "active",
-						"description": "Restore 1 Mana per 3 Metamagic points at the start of each round."
+						"description": "Actual spell damage removes the target's ordinary Defend bonus after the hit."
 					},
-					"details": "Restore floor(current Metamagic points / 3) Mana at round start, respecting the normal Mana cap."
+					"details": "Retaliation, spent actions, Wait and unrelated Orders remain unchanged."
 				},
 				{
-					"id": "new-horizons:metamagic.lingeringMagic",
-					"name": "Lingering Magic",
+					"id": "new-horizons:metamagic.purgingFormula",
+					"name": "Purging Formula",
 					"requires": "basic",
-					"description": "Your enchantments last 1 extra round per 3 Metamagic points.",
+					"description": "A successful buff also removes one physical affliction from each actual friendly recipient.",
 					"effect": {
 						"status": "active",
-						"description": "Your enchantments last 1 extra round per 3 Metamagic points."
+						"description": "A successful buff also removes one physical affliction from each actual friendly recipient."
 					},
-					"details": "Add floor(current Metamagic points / 3) rounds to eligible enchantments when created."
+					"details": "Physical removal releases no Metamagic energy. No additional target or selector is introduced."
 				},
 				{
-					"id": "new-horizons:metamagic.arcaneFeedback",
-					"name": "Arcane Feedback",
+					"id": "new-horizons:metamagic.spellSculpting",
+					"name": "Spell Sculpting",
 					"requires": "advanced",
-					"description": "Gain 1 Metamagic point after each spell the enemy hero manually casts.",
+					"description": "Your damaging hero spells deal no damage to friendly creatures.",
 					"effect": {
 						"status": "active",
-						"description": "Gain 1 Metamagic point after each spell the enemy hero manually casts."
+						"description": "Your damaging hero spells deal no damage to friendly creatures."
 					},
-					"details": "After a manually cast enemy-hero spell resolves, gain one point, capped at 12. Automatic and secondary spell effects grant no points."
+					"details": "Includes area, chain and global damage and your owned spell-created hazards; unrelated terrain, enemy spells and ordinary attacks are unchanged."
 				},
 				{
-					"id": "new-horizons:metamagic.spellFracture",
-					"name": "Spell Fracture",
+					"id": "new-horizons:metamagic.hexWeaving",
+					"name": "Hex Weaving",
 					"requires": "advanced",
-					"description": "Your damaging spells shorten beneficial magical effects on affected enemies by 1 round.",
+					"description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments.",
 					"effect": {
 						"status": "active",
-						"description": "Your damaging spells shorten beneficial magical effects on affected enemies by 1 round."
-					}
-				},
-				{
-					"id": "new-horizons:metamagic.arcaneWellspring",
-					"name": "Arcane Wellspring",
-					"requires": "advanced",
-					"description": "Start combat with 3 Metamagic points instead of 1.",
-					"effect": {
-						"status": "active",
-						"description": "Start combat with 3 Metamagic points instead of 1."
-					}
-				},
-				{
-					"id": "new-horizons:metamagic.arcaneAttunement",
-					"name": "Arcane Attunement",
-					"requires": "advanced",
-					"description": "Friendly stacks gain +1 Initiative per 4 Metamagic points.",
-					"effect": {
-						"status": "active",
-						"description": "Friendly stacks gain +1 Initiative per 4 Metamagic points."
+						"description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments."
 					},
-					"details": "Friendly stacks gain floor(current Metamagic points / 4) Initiative dynamically."
+					"details": "Uses the same rank-based chance, one attempt per logical effect and separate 10 damage per removed Mana discharge. It cannot recurse."
 				},
 				{
-					"id": "new-horizons:metamagic.arcaneEcho",
-					"name": "Arcane Echo",
+					"id": "new-horizons:metamagic.widenSpell",
+					"name": "Widen Spell",
+					"requires": "advanced",
+					"description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost.",
+					"effect": {
+						"status": "active",
+						"description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost."
+					},
+					"details": "Excludes single-target spells, lines, cones, chains, global or mass spells, and persistent battlefield fields. Force Lance remains single-target."
+				},
+				{
+					"id": "new-horizons:metamagic.matterbreaker",
+					"name": "Matterbreaker",
+					"requires": "advanced",
+					"description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area.",
+					"effect": {
+						"status": "active",
+						"description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area."
+					},
+					"details": "Adds no radius, fortification damage, magical-object removal, explosion or permission to target illegal empty hexes."
+				},
+				{
+					"id": "new-horizons:metamagic.magicalMemory",
+					"name": "Magical Memory",
 					"requires": "expert",
-					"description": "Your first damaging spell each round immediately repeats 25% damage against the same targets, free of Mana and Hero Actions.",
+					"description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat.",
 					"effect": {
 						"status": "active",
-						"description": "Your first damaging spell each round immediately repeats 25% damage against the same targets, free of Mana and Hero Actions."
+						"description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat."
 					},
-					"details": "Once each round, after the first damaging hero spell, immediately repeat one quarter of actual damage against its actual targets without Mana, Hero Action, targeting, new RNG, point generation or recursion."
+					"details": "Applies to cleansed allied curses and stripped enemy enchantments, including their single and mass variants, regardless of later caster. Does not block unrelated damage or extend durations."
 				},
 				{
-					"id": "new-horizons:metamagic.arcaneSingularity",
-					"name": "Arcane Singularity",
+					"id": "new-horizons:metamagic.arcaneRupture",
+					"name": "Arcane Rupture",
 					"requires": "expert",
-					"description": "After reaching 10 Metamagic points, your spells cost 25% less Mana for the rest of combat.",
+					"description": "Metamagic's separate discharge bypasses magical protection and damage reduction.",
 					"effect": {
 						"status": "active",
-						"description": "After reaching 10 Metamagic points, your spells cost 25% less Mana for the rest of combat."
+						"description": "Metamagic's separate discharge bypasses magical protection and damage reduction."
 					},
-					"details": "Reaching ten points permanently activates the 25% Mana discount for this combat; apply ordinary final Mana-cost rounding."
+					"details": "The discharge remains 10 damage per removed Mana. Original spell admission, resistance and damage remain unchanged; a fully resisted spell cannot earn a discharge."
 				}
 			]
 		},

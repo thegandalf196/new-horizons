@@ -52,38 +52,6 @@ TEST_F(OwnedExportLifecycleTest, ActivationClockPlagueIsNotAgedByNativeOrOwnedRo
 	compareFrame(frozen);
 }
 
-TEST_F(OwnedExportLifecycleTest, SpellLockPolarityIsCapturedBeforeItsOwnLastRoundExpires)
-{
-	ASSERT_NO_FATAL_FAILURE(prepareSequence(false, false));
-	const auto lock = SpellID(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	for(const auto type : {BonusType::NONE, BonusType::MAGIC_RESISTANCE})
-	{
-		auto seal = std::make_shared<Bonus>(BonusDuration::N_TURNS,
-			type, BonusSource::SPELL_EFFECT, 1, BonusSourceID(lock));
-		seal->turnsRemain = 1;
-		incoming->addNewBonus(seal);
-	}
-	auto blessing = std::make_shared<Bonus>(BonusDuration::N_TURNS,
-		BonusType::ALWAYS_MAXIMUM_DAMAGE, BonusSource::SPELL_EFFECT, 1, BonusSourceID(SpellID(SpellID::BLESS)));
-	blessing->turnsRemain = 2;
-	incoming->addNewBonus(blessing);
-	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*incoming));
-	ASSERT_TRUE(newHorizonsSorcery::isPreservedSpellLockEffect(blessing.get(), true));
-	captureOwned();
-	startOwned();
-	known->nextRound();
-	const auto frozen = freezeFrame();
-	const auto projected = known->battleGetUnitByID(incoming->unitId())->getBonuses(
-		Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS))));
-	ASSERT_EQ(projected->size(), 1);
-	const auto duration = projected->front()->turnsRemain;
-	retireFrame();
-	roundPacket();
-	EXPECT_EQ(blessing->turnsRemain, duration);
-	EXPECT_EQ(duration, 2);
-	compareFrame(frozen);
-}
-
 TEST_F(OwnedExportLifecycleTest, PropagationUpdaterCopyKeepsNativeMaterializedTimerUntilSourceRemoval)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSequence(false, false));
@@ -111,30 +79,6 @@ TEST_F(OwnedExportLifecycleTest, PropagationUpdaterCopyKeepsNativeMaterializedTi
 	EXPECT_EQ(actual->front()->turnsRemain, 2);
 	roundPacket();
 	compareFrame(expected);
-}
-
-TEST_F(OwnedExportLifecycleTest, TimeStopPausesExportedRoundRecordsButStillRunsNativeRoundScalars)
-{
-	ASSERT_NO_FATAL_FAILURE(prepareSequence(false, false));
-	auto stopped = std::make_shared<Bonus>(BonusDuration::N_TURNS,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	stopped->turnsRemain = 2;
-	incoming->addNewBonus(stopped);
-	auto speed = std::make_shared<Bonus>(BonusDuration::N_TURNS,
-		BonusType::STACKS_SPEED, BonusSource::OTHER, -2, BonusSourceID());
-	speed->turnsRemain = 2;
-	incoming->addNewBonus(speed);
-	ASSERT_TRUE(incoming->isTimeStopped());
-	captureOwned();
-	startOwned();
-	known->nextRound();
-	ASSERT_TRUE(known->getForUpdate(incoming->unitId())->isTimeStopped());
-	const auto frozen = freezeFrame();
-	retireFrame();
-	roundPacket();
-	EXPECT_EQ(stopped->turnsRemain, 2);
-	EXPECT_EQ(speed->turnsRemain, 2);
-	compareFrame(frozen);
 }
 
 TEST_F(OwnedExportLifecycleTest, CanonicalSourceSpellProvenanceExcludesInheritanceAndKeepsRemovalForkLocal)

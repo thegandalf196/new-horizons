@@ -16,10 +16,10 @@
 namespace arcaneInspiration
 {
 void publishCompletedSpell(ServerCallback & server, const CBattleInfoCallback & battle,
-	const spells::Mechanics & mechanics, bool negated, std::span<const BattleStackAttacked> originalInjuries,
+	const spells::Mechanics & mechanics, std::span<const BattleStackAttacked> originalInjuries,
 	std::optional<BattleSide> originalHeroSide)
 {
-	if(negated || !battle.getBattle() || (!originalHeroSide && !mechanics.isGenuineHeroCast())
+	if(!battle.getBattle() || (!originalHeroSide && !mechanics.isGenuineHeroCast())
 		|| !newHorizonsMagic::rulesActive(battle.getBattle()->getMagicRules()))
 		return;
 	publishCompletedSpell(server, battle, originalHeroSide.value_or(mechanics.getCasterSide()), originalInjuries);

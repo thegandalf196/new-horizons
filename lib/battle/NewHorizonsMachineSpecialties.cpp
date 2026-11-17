@@ -19,7 +19,7 @@ int coefficient(const CGHeroInstance * hero, std::string_view identity, const ch
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != identity
 		|| !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero))
 		return 0;
-	return static_cast<int>(hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"][key].Integer());
+	return hero->compiledDevelopment()->ordinaryValue(key);
 }
 }
 int masterGunnerFollowUpDamagePercent(const CGHeroInstance *, int ordinaryPercent)
@@ -32,7 +32,9 @@ int masterGunnerFollowUpDamagePercent(const CGHeroInstance *, int ordinaryPercen
 }
 int siegeOutput(const CGHeroInstance & hero, const JsonNode & rules, int siegeRating, const std::string & output)
 {
-	const int ordinary = newHorizonsHeroes::capabilitySiegeOutput(rules, siegeRating, output);
+	const int ordinary = &rules == &hero.getCapabilityRules()
+		? hero.getCapturedSiegeOutput(siegeRating, output)
+		: newHorizonsHeroes::capabilitySiegeOutput(rules, siegeRating, output);
 	if(output != "ballistaDamage" && output != "catapultStructuralDamage")
 		return ordinary;
 	const int bonus = coefficient(&hero, "core:gurnisson", "heavyBatterySiegeTermBonusPercent");
@@ -49,7 +51,7 @@ int catapultStructuralOutput(const CGHeroInstance & hero, const battle::Unit & a
 		|| (actor.unitType() && actor.isCatapult()))
 		return resolvedOutput;
 	// The old callback also serves Cyclops and identityless legacy adapters.
-	return newHorizonsHeroes::capabilitySiegeOutput(hero.getCapabilityRules(), siegeRating, "catapultStructuralDamage");
+	return hero.getCapturedSiegeOutput(siegeRating, "catapultStructuralDamage");
 }
 
 }

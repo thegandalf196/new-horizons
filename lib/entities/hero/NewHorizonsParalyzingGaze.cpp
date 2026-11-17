@@ -33,11 +33,11 @@ bool hasParalyzingGaze(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:ajit"))
-		&& paralyzingGazePolicy(hero->getPrimaryGrowthRules()).has_value();
+		&& hero->compiledDevelopment()->paralyzingGaze.has_value();
 }
 bool paralyzingGazeEnabled(const CGHeroInstance * hero)
 {
-	return hasParalyzingGaze(hero) && paralyzingGazePolicy(hero->getPrimaryGrowthRules()).value();
+	return hasParalyzingGaze(hero) && hero->compiledDevelopment()->paralyzingGaze.value();
 }
 bool resolveParalyzingGazePresentation(const CHero & hero, const JsonNode & development,
 	SpecialtyPresentation & result)

@@ -144,8 +144,8 @@ public:
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
 	void updateHeroInfoWindow(uint8_t side, const InfoAboutHero & hero);
 
-	/// Refresh read-only Counterspell and faction indicators from authoritative battle state.
-	void updateCounterspellStatus();
+	/// Refresh read-only faction indicators from authoritative battle state.
+	void updateHeroBattleStatus();
 
 	/// Refresh sticky variant of hero info window after spellcast, side same as in BattleSpellCast::side
 	void updateStackInfoWindow(const CStack * stack);

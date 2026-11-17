@@ -28,12 +28,12 @@ bool usesGenieSage(const JsonNode & rules)
 bool hasSageOfTheAges(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:thane"))
-		&& usesGenieSage(hero->getPrimaryGrowthRules());
+		&& hero->compiledDevelopment()->genieSage;
 }
 bool hasWheelOfFortune(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:iona"))
-		&& usesGenieSage(hero->getPrimaryGrowthRules());
+		&& hero->compiledDevelopment()->genieSage;
 }
 std::array<int, GameConstants::PRIMARY_SKILLS> sageGrowth(const CGHeroInstance & hero)
 {

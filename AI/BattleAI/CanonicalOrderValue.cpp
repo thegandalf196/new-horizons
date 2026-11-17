@@ -190,7 +190,6 @@ float CanonicalOrderValue::riposte(float riposteReduction, float riposteDamage) 
 				&& isEligibleOrderUnit(battle, side, own)
 				&& own->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
 				&& !own->hasBonusOfType(BonusType::UNLIMITED_RETALIATIONS)
-				&& !own->isTimeStopped()
 				&& !own->hasBonusOfType(BonusType::NO_RETALIATION)
 				&& !enemy->hasBonusOfType(BonusType::BLOCKS_RETALIATION)
 				&& !enemy->isInvincible()

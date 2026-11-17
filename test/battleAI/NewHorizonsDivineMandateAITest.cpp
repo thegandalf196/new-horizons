@@ -74,13 +74,9 @@ void applyAcceptedSpell(Ledger & ledger, uint32_t grantId, int32_t round, bool i
 	{
 		return grant.id == grantId && Ledger::grantAllowedForSpell(grant, isLight);
 	};
-	uint8_t metamagicUses = 0;
-	uint8_t metamagicPending = 0;
-	bool grandUsed = false;
-	const auto result = HeroSpellAllowanceTransition::commitAcceptedCast(ledger, grantId, round,
-		false, false, 0, false, metamagicUses, metamagicPending, grandUsed, 0, filter);
+	const auto result = ledger.consumeAllowance(grantId, ActionKind::SPELL, round, filter);
 	ASSERT_TRUE(result);
-	DivineMandateTransition::applyAcceptedAction(ledger, result->receipt, round, isLight, maximumPairs);
+	DivineMandateTransition::applyAcceptedAction(ledger, *result, round, isLight, maximumPairs);
 }
 
 void applyAcceptedOrder(Ledger & ledger, uint32_t grantId, int32_t round, uint8_t maximumPairs)
@@ -505,16 +501,11 @@ TEST(NewHorizonsDivineMandateLedgerTest, NonLightSelectionSkipsMandateButKeepsOt
 	EXPECT_EQ(nonLight->grantId, ordinarySpell);
 	EXPECT_NE(nonLight->grantId, mandateSpell);
 
-	uint8_t metamagicUses = 0;
-	uint8_t metamagicPending = 0;
-	bool grandUsed = false;
-	const auto rejected = HeroSpellAllowanceTransition::commitAcceptedCast(ledger, mandateSpell, 1,
-		false, false, 0, false, metamagicUses, metamagicPending, grandUsed, 0, nonLightFilter);
+	const auto rejected = ledger.consumeAllowance(mandateSpell, ActionKind::SPELL, 1, nonLightFilter);
 	EXPECT_FALSE(rejected);
-	const auto acceptedOther = HeroSpellAllowanceTransition::commitAcceptedCast(ledger, nonLight->grantId, 1,
-		false, false, 0, false, metamagicUses, metamagicPending, grandUsed, 0, nonLightFilter);
+	const auto acceptedOther = ledger.consumeAllowance(nonLight->grantId, ActionKind::SPELL, 1, nonLightFilter);
 	ASSERT_TRUE(acceptedOther);
-	EXPECT_EQ(acceptedOther->receipt.source, GrantSource::PERK);
+	EXPECT_EQ(acceptedOther->source, GrantSource::PERK);
 
 	const auto lightFilter = [](const Ledger::Grant & grant)
 	{

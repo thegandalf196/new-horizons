@@ -265,8 +265,14 @@ void BattleEffectsController::startAction(const BattleAction & action)
 	owner.waitForAnimations();
 }
 
+void BattleEffectsController::tick(uint32_t elapsed)
+{
+	forceLance.tick(elapsed);
+}
+
 void BattleEffectsController::collectRenderableObjects(BattleRenderer & renderer)
 {
+	forceLance.collect(owner, renderer);
 	for (auto & elem : battleEffects)
 	{
 		renderer.insert( EBattleFieldLayer::EFFECTS, elem.tile, [&elem](BattleRenderer::RendererRef canvas)

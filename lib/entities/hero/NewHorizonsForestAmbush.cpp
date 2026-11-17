@@ -55,10 +55,10 @@ bool hasForestAmbush(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:ivor"))
-		&& forestAmbushPolicy(hero->getPrimaryGrowthRules()).has_value();
+		&& hero->compiledDevelopment()->forestAmbush.has_value();
 }
 bool forestAmbushEnabled(const CGHeroInstance * hero)
 {
-	return hasForestAmbush(hero) && forestAmbushPolicy(hero->getPrimaryGrowthRules()).value();
+	return hasForestAmbush(hero) && hero->compiledDevelopment()->forestAmbush.value();
 }
 }

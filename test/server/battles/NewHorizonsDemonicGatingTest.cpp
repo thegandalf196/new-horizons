@@ -171,7 +171,7 @@ protected:
 			SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating")),
 			rank, ChangeValueMode::ABSOLUTE);
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		state.selected.clear();
+		state.replaceSelected({});
 		if(rank >= MasteryLevel::ADVANCED)
 			state.select("new-horizons:demonicGating", "new-horizons:demonicGating.reinforcedGate", rank);
 		state.select("new-horizons:demonicGating", perkId, rank);
@@ -183,7 +183,7 @@ protected:
 		const auto skill = SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating"));
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		state.selected.clear();
+		state.replaceSelected({});
 		state.select("new-horizons:demonicGating", "new-horizons:demonicGating.reinforcedGate", MasteryLevel::EXPERT);
 		if(mobile)
 			state.select("new-horizons:demonicGating", "new-horizons:demonicGating.mobileGate", MasteryLevel::ADVANCED);
@@ -202,7 +202,7 @@ protected:
 		const SecondarySkill skill(SecondarySkill::decode(skillId));
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		state.selected.clear();
+		state.replaceSelected({});
 		attackerSideHero->applyPerkSelection({skillId, "new-horizons:demonicGating.wideGate"});
 		ASSERT_TRUE(attackerSideHero->hasActivePerk(skillId, "new-horizons:demonicGating.wideGate"));
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);

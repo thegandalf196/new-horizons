@@ -51,10 +51,10 @@ void validateFourOfferProgressionSerialization(const JsonNode & rules, bool supp
 
 void validateFourOfferSnapshot(const FourOfferProgressionOffer & offer, const PerkState & state)
 {
-	if(!usesFourOfferProgression(state.rules))
+	if(!usesFourOfferProgression(state.getRules()))
 		throw std::runtime_error("Four-offer snapshot without captured policy");
 	state.validate();
-	const auto & catalogue = state.rules["skills"].Struct();
+	const auto & catalogue = state.getRules()["skills"].Struct();
 	const auto canonicalParent = [&](const std::string & identity)
 	{
 		const auto decoded = SecondarySkill::decode(identity);
@@ -89,7 +89,7 @@ void validateFourOfferSnapshot(const FourOfferProgressionOffer & offer, const Pe
 
 std::vector<FourOfferSkillCandidate> fourOfferCandidates(const IGameInfoCallback & info, const CGHeroInstance & hero)
 {
-	if(!usesFourOfferProgression(hero.getPerkState().rules))
+	if(!usesFourOfferProgression(hero.getPerkState().getRules()))
 		throw std::runtime_error("Four-offer candidates without captured policy");
 	const auto & state = hero.getPerkState();
 	PerkSelectionOperation operation(state);
@@ -100,15 +100,15 @@ std::vector<FourOfferSkillCandidate> fourOfferCandidates(const IGameInfoCallback
 		if(!definition) continue;
 		const auto skill = definition->getId();
 		const auto & skillId = definition->getJsonKey();
-		const auto & development = hero.getPrimaryGrowthRules();
-		if(isExcludedSkill(development, skill)
-			|| (isFactionSkill(development, skill) && !isFactionSkillForFaction(development, hero.getFactionID(), skill)))
+		const auto * development = hero.compiledDevelopment();
+		if(development->isExcludedSkill(skill)
+			|| (development->isFactionSkill(skill) && !development->isFactionSkillForFaction(hero.getFactionID(), skill)))
 			continue;
 		const int rank = hero.getSecSkillLevel(skill);
 		const auto weight = weightContext.lookup ? weightContext.lookup(skillId) : std::nullopt;
 		FourOfferSkillCandidate candidate{skill, rank, weight.value_or(0), false, {}};
 		candidate.skillEligible = candidate.weight > 0
-			&& !isExcludedSkill(hero.getPrimaryGrowthRules(), skill)
+			&& !hero.compiledDevelopment()->isExcludedSkill(skill)
 			&& isValidLevelUpSkillChoice(info, &hero, skill);
 		if(rank > 0) candidate.perks = operation.eligibleCandidates(skillId, rank);
 		if(candidate.skillEligible || !candidate.perks.empty()) result.push_back(std::move(candidate));

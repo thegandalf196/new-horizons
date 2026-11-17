@@ -40,7 +40,6 @@ bool qualifiesAttack(const CBattleInfoCallback & battle, const battle::Unit * so
 {
 	if(!source || !primary || ranged || !physical || secondary || !naga(source->creatureId())
 		|| !source->alive() || !primary->alive() || source->isGhost() || primary->isGhost()
-		|| source->isTimeStopped() || primary->isTimeStopped()
 		|| battle.battleGetOwner(source) == battle.battleGetOwner(primary)
 		|| !battle.battleMatchActionController(source, primary))
 		return false;

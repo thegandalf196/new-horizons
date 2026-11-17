@@ -330,15 +330,12 @@ TEST_F(NewHorizonsStingHarriersTest, LatestBegunActivationHistorySurvivesRoundsA
 	battle()->nextTurn(victim->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	EXPECT_FALSE(victim->hasBonus(CSelector(harriers::isMovementHistory)));
 }
-TEST_F(NewHorizonsStingHarriersTest, ForcedMovementAndTimeStopDoNotCreateOrEraseCommittedVoluntaryHistory)
+TEST_F(NewHorizonsStingHarriersTest, ForcedMovementDoesNotCreateOrEraseCommittedVoluntaryHistory)
 {
 	prepare(true); commitHistory(false); EXPECT_FALSE(victim->hasBonus(CSelector(harriers::isMovementHistory)));
 	commitHistory(); ASSERT_TRUE(victim->hasBonus(CSelector(harriers::isMovementHistory)));
 	commitHistory(false); EXPECT_TRUE(victim->hasBonus(CSelector(harriers::isMovementHistory)));
-	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_FALSE(battle()->battleBeginsActivation(victim, BattleUnitTurnReason::AUTOMATIC_ACTION));
-	battle()->nextTurn(victim->unitId(), BattleUnitTurnReason::AUTOMATIC_ACTION);
-	EXPECT_TRUE(victim->hasBonus(CSelector(harriers::isMovementHistory)));
+
 }
 TEST_F(NewHorizonsStingHarriersTest, MoraleReducedExtraAndGenuineIncapacitatedActivationReplacePriorMovementHistory)
 {
@@ -488,7 +485,7 @@ TEST_F(NewHorizonsStingHarriersTest, DrakonForcedAndTeleportMoveUnitDoNotCreateH
 	EXPECT_TRUE(branch->battleGetUnitByID(victim->unitId())->hasBonus(CSelector(harriers::isMovementHistory)));
 	EXPECT_FALSE(victim->hasBonus(CSelector(harriers::isMovementHistory)));
 }
-TEST_F(NewHorizonsStingHarriersTest, DrakonProjectedClockMatchesRoundWaitHeroContinuationAndTimeStopBoundaries)
+TEST_F(NewHorizonsStingHarriersTest, DrakonProjectedClockMatchesRoundWaitAndHeroContinuationBoundaries)
 {
 	prepare(true); victim->setPosition(BattleHex(6, 5)); HarriersEnvironment env(gameState());
 	auto known = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
@@ -505,10 +502,7 @@ TEST_F(NewHorizonsStingHarriersTest, DrakonProjectedClockMatchesRoundWaitHeroCon
 	child->nextTurn(copied->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	EXPECT_FALSE(copied->hasBonus(CSelector(harriers::isMovementHistory)));
 	EXPECT_TRUE(untouched->hasBonus(CSelector(harriers::isMovementHistory)));
-	untouched->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID())});
-	ASSERT_FALSE(sibling->battleBeginsActivation(untouched.get(), BattleUnitTurnReason::AUTOMATIC_ACTION));
-	sibling->nextTurn(untouched->unitId(), BattleUnitTurnReason::AUTOMATIC_ACTION);
-	EXPECT_TRUE(untouched->hasBonus(CSelector(harriers::isMovementHistory)));
+
 }
 TEST_F(NewHorizonsStingHarriersTest, DrakonGenericBestActionAndHeroSnapshotReplayRetainExactMovementMarker)
 {

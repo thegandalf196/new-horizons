@@ -16,11 +16,9 @@
 #include "../../lib/battle/ProjectedUnitEnvironmentState.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/modding/CModHandler.h"
-#include "../../lib/networkPacks/SetMetamagicPointState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
-#include "../../lib/spells/NewHorizonsMetamagicPoints.h"
 #include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 
 namespace
@@ -73,7 +71,9 @@ protected:
 		const char * hero = skill == "new-horizons:metamagic" ? "core:neela"
 			: skill == "new-horizons:shroudOfMalassa" ? "core:lorelei" : "core:brissa";
 		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode(hero)));
-		ASSERT_NO_FATAL_FAILURE(select(skill, basic, MasteryLevel::BASIC));
+		if(basic) { ASSERT_NO_FATAL_FAILURE(select(skill, basic, MasteryLevel::BASIC)); }
+		else attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(std::string(skill))),
+			MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 		if(advanced) { ASSERT_NO_FATAL_FAILURE(select(skill, advanced, MasteryLevel::ADVANCED)); }
 		if(expert) { ASSERT_NO_FATAL_FAILURE(select(skill, expert, MasteryLevel::EXPERT)); }
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
@@ -127,74 +127,68 @@ protected:
 };
 }
 
-TEST_F(FactionRevisionProjectionTest, PointPacketStateIsCapturedAndIsolatedAcrossBranches)
+TEST_F(FactionRevisionProjectionTest, PassiveMetamagicInjuryPacketsStayPrivateAcrossBranchGenerations)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst"));
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", nullptr));
 	auto parent = branch();
 	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
-	const auto original = parent->getMetamagicPointState(BattleSide::ATTACKER);
+	const auto health = actor->getAvailableHealth();
 	const auto random = rng();
-	SetMetamagicPointState packet;
-	packet.battleID = parent->getBattleID();
-	packet.side = BattleSide::ATTACKER;
-	packet.round = parent->getRound();
-	packet.state = {10, true, true};
+	auto packet = injury(*child->battleGetUnitByID(actor->unitId()), 10, *child);
 	child->getServerCallback()->apply(packet);
-	EXPECT_EQ(child->getMetamagicPointState(packet.side), packet.state);
-	EXPECT_EQ(parent->getMetamagicPointState(packet.side), original);
-	EXPECT_EQ(sibling->getMetamagicPointState(packet.side), original);
-	EXPECT_EQ(battle()->getMetamagicPointState(packet.side), original);
+	EXPECT_EQ(child->battleGetUnitByID(actor->unitId())->getAvailableHealth(), health - 10);
+	EXPECT_EQ(parent->battleGetUnitByID(actor->unitId())->getAvailableHealth(), health);
+	EXPECT_EQ(sibling->battleGetUnitByID(actor->unitId())->getAvailableHealth(), health);
+	EXPECT_EQ(actor->getAvailableHealth(), health);
 	auto grandchild = std::make_shared<HypotheticBattle>(environment.get(), child);
-	packet.state.points = 11;
+	packet = injury(*child->battleGetUnitByID(actor->unitId()), 10, *child);
 	child->getServerCallback()->apply(packet);
-	EXPECT_EQ(grandchild->getMetamagicPointState(packet.side).points, 10);
-	packet.state.points = 9;
-	packet.state.singularityReached = false;
-	EXPECT_THROW(child->getServerCallback()->apply(packet), std::runtime_error);
+	EXPECT_EQ(grandchild->battleGetUnitByID(actor->unitId())->getAvailableHealth(), health - 10);
+	EXPECT_EQ(child->battleGetUnitByID(actor->unitId())->getAvailableHealth(), health - 20);
 	EXPECT_EQ(rng(), random);
 }
 
-TEST_F(FactionRevisionProjectionTest, ExportSubjectCapturesPointsAndRejectsMutation)
+TEST_F(FactionRevisionProjectionTest, ExportSubjectCapturesUnitsAndRejectsMutationUnderPassiveMetamagic)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst"));
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", nullptr));
 	auto omniscient = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
 	auto exported = InitialExportBattleSubject::capture(omniscient, *battle());
-	const auto before = exported->getMetamagicPointState(BattleSide::ATTACKER);
+	const auto before = exported->battleGetUnitByID(actor->unitId())->getPosition();
 	auto projected = std::make_shared<HypotheticBattle>(environment.get(), exported);
-	projected->setMetamagicPointState(BattleSide::ATTACKER, {10, true, true});
-	EXPECT_EQ(exported->getMetamagicPointState(BattleSide::ATTACKER), before);
-	EXPECT_THROW(exported->setMetamagicPointState(BattleSide::ATTACKER, {}), std::logic_error);
+	projected->moveUnit(actor->unitId(), BattleHex(82));
+	EXPECT_EQ(exported->battleGetUnitByID(actor->unitId())->getPosition(), before);
+	EXPECT_EQ(actor->getPosition(), before);
+	EXPECT_THROW(exported->moveUnit(actor->unitId(), BattleHex(82)), std::logic_error);
 }
 
-TEST_F(FactionRevisionProjectionTest, RoundEffectsMatchLivePointsShieldAndManaWithoutParentMutation)
+TEST_F(FactionRevisionProjectionTest, PassiveMetamagicRoundTransitionMatchesLiveWithoutCreatingResources)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", "new-horizons:metamagic.arcaneShield",
-		"new-horizons:metamagic.arcaneWellspring"));
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", nullptr));
 	auto projected = branch();
 	auto sibling = branch();
-	const auto oldPoints = battle()->getMetamagicPointState(BattleSide::ATTACKER);
-	const auto oldShield = actor->acquireState()->arcaneShieldHitPoints;
+	const auto oldRound = battle()->getRound();
+	const auto oldGuardian = actor->acquireState()->guardianSpiritHitPoints;
+	const auto mana = attackerSideHero->getManaAvailable();
 	const auto random = rng();
 	projected->nextRound();
-	EXPECT_EQ(sibling->getMetamagicPointState(BattleSide::ATTACKER), oldPoints);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), oldPoints);
-	EXPECT_EQ(actor->acquireState()->arcaneShieldHitPoints, oldShield);
+	EXPECT_EQ(sibling->getRound(), oldRound);
+	EXPECT_EQ(battle()->getRound(), oldRound);
+	EXPECT_EQ(actor->acquireState()->guardianSpiritHitPoints, oldGuardian);
 	BattleNextRound next;
 	next.battleID = battle()->getBattleID();
 	gameHandler->sendAndApply(next);
-	newHorizonsMetamagic::publishRoundEffects(*gameHandler->spellcastEnvironment(), *battle());
-	EXPECT_EQ(projected->getMetamagicPointState(BattleSide::ATTACKER),
-		battle()->getMetamagicPointState(BattleSide::ATTACKER));
-	EXPECT_EQ(projected->getForUpdate(actor->unitId())->arcaneShieldHitPoints, actor->acquireState()->arcaneShieldHitPoints);
-	EXPECT_EQ(projected->getProjectedManaAvailable(BattleSide::ATTACKER), attackerSideHero->getManaAvailable());
+	EXPECT_EQ(projected->getRound(), battle()->getRound());
+	EXPECT_EQ(projected->getForUpdate(actor->unitId())->guardianSpiritHitPoints, oldGuardian);
+	EXPECT_EQ(actor->acquireState()->guardianSpiritHitPoints, oldGuardian);
+	EXPECT_EQ(projected->getProjectedManaAvailable(BattleSide::ATTACKER), mana);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(rng(), random);
 }
 
-TEST_F(FactionRevisionProjectionTest, CastEvaluationMatchesResolvedEchoDamageAndPostEffectPointGain)
+TEST_F(FactionRevisionProjectionTest, PassiveMetamagicCastEvaluationMatchesSingleResolvedHitWithoutSourceMutation)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst",
-		"new-horizons:metamagic.arcaneAttunement", "new-horizons:metamagic.arcaneEcho"));
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", nullptr));
 	auto projected = branch();
 	auto sibling = branch();
 	const auto random = rng();
@@ -202,16 +196,19 @@ TEST_F(FactionRevisionProjectionTest, CastEvaluationMatchesResolvedEchoDamageAnd
 	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO,
 		SpellID(SpellID::MAGIC_ARROW).toSpell());
 	const battle::Target target{battle::Destination(projected->battleGetUnitByID(victim->unitId()))};
-	ASSERT_TRUE(cast.getSpell()->battleMechanics(&cast)->canBeCastAt(target));
+	auto mechanics = cast.getSpell()->battleMechanics(&cast);
+	ASSERT_TRUE(mechanics->canBeCastAt(target));
+	const auto damage = mechanics->adjustEffectValue(target.front().unitValue);
 	cast.castEval(projected->getServerCallback(), target);
 	EXPECT_EQ(victim->getAvailableHealth(), health);
 	EXPECT_EQ(sibling->battleGetUnitByID(victim->unitId())->getAvailableHealth(), health);
+	EXPECT_EQ(projected->battleGetUnitByID(victim->unitId())->getAvailableHealth(), health - damage);
 	EXPECT_EQ(rng(), random);
 	ASSERT_TRUE(castOn(attackerSideHero, SpellID::MAGIC_ARROW, victim));
 	EXPECT_EQ(projected->battleGetUnitByID(victim->unitId())->getAvailableHealth(), victim->getAvailableHealth());
-	EXPECT_EQ(projected->getMetamagicPointState(BattleSide::ATTACKER),
-		battle()->getMetamagicPointState(BattleSide::ATTACKER));
-	EXPECT_TRUE(projected->getMetamagicPointState(BattleSide::ATTACKER).echoUsedThisRound);
+	EXPECT_TRUE(projected->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
+	EXPECT_TRUE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
+	EXPECT_FALSE(sibling->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 }
 
 TEST_F(FactionRevisionProjectionTest, ExposureUsesFlankingHeroProvenanceAndExpiresAtVictimActivation)
@@ -253,16 +250,18 @@ TEST_F(FactionRevisionProjectionTest, ConduitAndAreaBonusAreCapturedWithoutRebor
 	EXPECT_EQ(rng(), random);
 }
 
-TEST_F(FactionRevisionProjectionTest, ManaConduitRestoresOnlyPrivateNormalPoolAtRoundStart)
+TEST_F(FactionRevisionProjectionTest, PassiveMetamagicProjectionConsumesOnlyItsPrivateOrdinaryAllowance)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", "new-horizons:metamagic.manaConduit",
-		"new-horizons:metamagic.arcaneWellspring"));
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", nullptr));
 	auto projected = branch();
+	auto sibling = branch();
 	const auto mana = attackerSideHero->getManaAvailable();
 	const auto random = rng();
-	projected->nextRound();
+	ASSERT_TRUE(projected->projectHeroSpellAllowance(BattleSide::ATTACKER, SpellID::MAGIC_ARROW, victim->unitId()));
+	EXPECT_FALSE(projected->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::MAGIC_ARROW));
+	EXPECT_TRUE(sibling->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::MAGIC_ARROW));
+	EXPECT_TRUE(battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::MAGIC_ARROW));
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	EXPECT_EQ(projected->getProjectedManaAvailable(BattleSide::ATTACKER), mana + 1);
 	EXPECT_EQ(rng(), random);
 }
 
@@ -286,26 +285,18 @@ TEST_F(FactionRevisionProjectionTest, ConfluxDeathChangesNeitherConduitStrengthN
 	EXPECT_EQ(rng(), random);
 }
 
-TEST_F(FactionRevisionProjectionTest, GrowthBeforeEntryUsesCurrentBranchPointsInBothCreationPaths)
+TEST_F(FactionRevisionProjectionTest, PassiveMetamagicEntryKeepsBothCreationPathsEquivalentWithoutInitiativeGrowth)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", "new-horizons:metamagic.arcaneCatalyst",
-		"new-horizons:metamagic.arcaneAttunement"));
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", nullptr));
 	auto projected = branch();
 	auto sibling = branch();
 	battle::ProjectedBattleWorldArena arena(*battle());
-	const auto original = battle()->getMetamagicPointState(BattleSide::ATTACKER);
-	SetMetamagicPointState three;
-	three.battleID = projected->getBattleID();
-	three.side = BattleSide::ATTACKER;
-	three.round = projected->getRound();
-	three.state.points = 3;
-	projected->getServerCallback()->apply(three);
+	const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
 	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO,
 		SpellID(SpellID::MAGIC_ARROW).toSpell());
 	const battle::Target target{battle::Destination(projected->battleGetUnitByID(victim->unitId()))};
 	ASSERT_TRUE(cast.getSpell()->battleMechanics(&cast)->canBeCastAt(target));
 	cast.castEval(projected->getServerCallback(), target);
-	ASSERT_EQ(projected->getMetamagicPointState(BattleSide::ATTACKER).points, 4);
 	arena.copyEnvironmentValues(battle::ProjectedUnitEnvironmentState::capture(*projected));
 	battle::UnitInfo info;
 	info.id = arena.nextUnitId();
@@ -320,17 +311,10 @@ TEST_F(FactionRevisionProjectionTest, GrowthBeforeEntryUsesCurrentBranchPointsIn
 	projected->addUnit(info.id, data);
 	const auto * branchUnit = projected->battleGetUnitByID(info.id);
 	ASSERT_NE(branchUnit, nullptr);
-	const auto attunement = [](const battle::Unit & unit)
-	{
-		const auto effects = unit.getBonuses(Selector::type()(BonusType::STACKS_INITIATIVE_FLAT));
-		int amount = 0;
-		for(const auto & bonus : *effects)
-			if(bonus->stacking == "new-horizons:metamagic.arcaneAttunement") amount += bonus->val;
-		return amount;
-	};
-	EXPECT_EQ(attunement(*branchUnit), 1);
-	EXPECT_EQ(attunement(arenaUnit), 1);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), original);
-	EXPECT_EQ(sibling->getMetamagicPointState(BattleSide::ATTACKER), original);
+	EXPECT_EQ(branchUnit->getInitiative(), arenaUnit.getInitiative());
+	EXPECT_EQ(branchUnit->getMaxHealth(), arenaUnit.getMaxHealth());
+	EXPECT_EQ(branchUnit->getAvailableHealth(), arenaUnit.getAvailableHealth());
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
+	EXPECT_EQ(sibling->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
 	EXPECT_EQ(sibling->battleGetUnitByID(info.id), nullptr);
 }

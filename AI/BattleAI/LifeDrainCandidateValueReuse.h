@@ -26,7 +26,6 @@ private:
 	{
 		PossibleSpellcast candidate;
 		HypotheticBattle::ProjectedSpellAllowance allowance;
-		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 		newHorizonsLifeDrain::ProjectionReceipt receipt;
 	};
 	bool supported(const PossibleSpellcast & candidate, const heroActionProjection::Admission & admission,

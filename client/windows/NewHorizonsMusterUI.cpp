@@ -156,7 +156,7 @@ std::optional<Offer> offerFor(const CGDwelling * dwelling, const CGHeroInstance 
 
 	const auto * town = dynamic_cast<const CGTownInstance *>(dwelling);
 	const auto * hero = town ? townHero(town) : destinationHero;
-	if(!hero || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+	if(!hero || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules()))
 		return std::nullopt;
 
 	const int rank = hero->getPerkSkillRank(std::string(::newHorizonsMuster::RECRUITMENT_SKILL));

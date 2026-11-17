@@ -6,6 +6,11 @@ import json
 from pathlib import Path
 import re
 import unittest
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from import_new_horizons_art_wave import entries_digest
+from tools.tests.nhart_released_history import initial_selection_history
 
 if __package__:
     from .nhart_perk_presentations import REWORKED_PERK_REBINDINGS
@@ -66,13 +71,14 @@ class SelectedPerkArtTest(unittest.TestCase):
             self.assertFalse(later & added)
         later.update(later_art_resources())
         self.assertFalse(later & added)
-        historical = entries_before_wave(self.manifest['entries'], later_art_waves(), 0)
+        historical, legacy, legacy_later = initial_selection_history(
+            self.manifest['entries'], later_art_waves(), entries_digest)
         baseline = sorted((row for row in historical if row['resource'] not in added | later),
                           key=lambda row: row['resource'].encode())
         self.assertEqual(len(baseline), 3137)
         self.assertEqual(hashlib.sha256(json.dumps(baseline, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
                          self.selection['baselineEntriesSha256'])
-        self.assertEqual(len(self.manifest['entries']), 3795 + len(later))
+        self.assertEqual(len(legacy), 3795 + len(legacy_later) + 51)
 
     def test_public_provenance_has_no_private_paths_or_loose_runtime_images(self):
         text = json.dumps(self.selection)

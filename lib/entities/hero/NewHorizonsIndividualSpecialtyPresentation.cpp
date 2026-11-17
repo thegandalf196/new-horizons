@@ -41,7 +41,7 @@ bool resolveIndividualRiderPresentation(const CHero & hero, const JsonNode & dev
 			+ std::to_string(rule.percentagePointsPerLevel) + " percentage points per hero level, up to +"
 			+ std::to_string(rule.maximumPercentagePoints) + " points. Bone Collector and Amplifiers add separately; "
 			"the total still caps at 100%. ";
-		if(capturedHero && !newHorizonsNecromancy::policy(capturedHero->getPerkState().rules))
+		if(capturedHero && !newHorizonsNecromancy::policy(capturedHero->getPerkState().getRules()))
 			result.description += "Death Lord follows the enhanced rate; Grave Knowledge remains 20%. ";
 		result.description += "This does not grant Necromancy or bypass army capacity.";
 		if(capturedHero)

@@ -91,7 +91,6 @@ public:
 	void visitBattleStart(BattleStart & pack) override;
 	void visitBattleDeploymentPhaseChanged(BattleDeploymentPhaseChanged & pack) override;
 	void visitBattleNextRound(BattleNextRound & pack) override;
-	void visitSetMetamagicPointState(SetMetamagicPointState & pack) override;
 	void visitBattleSetActiveStack(BattleSetActiveStack & pack) override;
 	void visitBattleLogMessage(BattleLogMessage & pack) override;
 	void visitBattleTriggerEffect(BattleTriggerEffect & pack) override;

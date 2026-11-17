@@ -18,7 +18,7 @@ std::optional<Reprisal> captureReprisal(const CBattleInfoCallback & battle,
 	const BattleAttackInfo & attack, int64_t inflictedDamage)
 {
 	if(!attack.attacker || !attack.defender || inflictedDamage <= 0
-		|| attack.defender->isInvincible() || attack.defender->isTimeStopped()
+		|| attack.defender->isInvincible()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.defender)
 		|| battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender))

@@ -37,8 +37,7 @@ std::optional<SwampSeerRules> swampSeerRules(const CGHeroInstance * hero)
 {
 	if(!hero)
 		return std::nullopt;
-	validateSwampSeerSerialization(hero->getPrimaryGrowthRules(), true);
 	return hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:tiva"))
-		? swampSeerRules(hero->getPrimaryGrowthRules()) : std::nullopt;
+		? hero->compiledDevelopment()->swampSeer : std::nullopt;
 }
 }

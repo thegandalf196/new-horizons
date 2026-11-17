@@ -27,10 +27,12 @@ public:
 	using IGameInfoCallback::getGuardingCreatures;
 
 	const JsonNode & getMagicRules() const override;
+	std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const override;
 	const JsonNode & getHeroDevelopmentRules() const override;
 	const JsonNode & getHeroCapabilityRules() const override;
 	const JsonNode & getHeroMasteryRules() const override;
 	const JsonNode & getHeroPerkRules() const override;
+	const nativeRules::CompiledCapabilityRules * getCompiledHeroCapabilityRules() const override;
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override;
 	const std::set<ArtifactID> & getRandomArtifactPoolExclusions() const override;
 	//various
@@ -71,9 +73,8 @@ public:
 	std::vector<const CGHeroInstance*> getHeroes(PlayerColor player) const;
 	bool getHeroInfo(const CGObjectInstance * hero, InfoAboutHero & dest, const CGObjectInstance * selectedObject = nullptr) const;
 	int32_t getSpellCost(const spells::Spell * sp, const CGHeroInstance * caster) const;
-	/// Read-only cost detail; follow-up discounts are included only when explicitly requested.
-	SpellCostBreakdown getSpellCostBreakdown(const spells::Spell * sp, const CGHeroInstance * caster,
-		bool metamagicFollowup = false) const;
+	/// Read-only cost detail in the saved rules and visible battle context.
+	SpellCostBreakdown getSpellCostBreakdown(const spells::Spell * sp, const CGHeroInstance * caster) const;
 	int64_t estimateSpellDamage(const CSpell * sp, const CGHeroInstance * hero) const;
 	const CArtifactSet * getArtSet(const ArtifactLocation & loc) const;
 

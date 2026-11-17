@@ -42,8 +42,14 @@ int growthValue(int rawValue, const JsonNode & rules)
 
 int projectedValue(PrimarySkill skill, const BonusList & primaryBonuses, const JsonNode * growthRules)
 {
-	if(growthRules)
-		return growthValue(primaryBonuses.valOfBonuses(Selector::subtype()(skill)), *growthRules);
+	return projectedValue(skill, primaryBonuses, growthRules
+		? std::optional<int>(static_cast<int>((*growthRules)["maxPrimary"].Integer())) : std::nullopt);
+}
+
+int projectedValue(PrimarySkill skill, const BonusList & primaryBonuses, std::optional<int> capturedMaximum)
+{
+	if(capturedMaximum)
+		return std::clamp(primaryBonuses.valOfBonuses(Selector::subtype()(skill)), 0, *capturedMaximum);
 	const auto bounds = legacyBounds();
 	return bounds.value(skill, primaryBonuses.valOfBonuses(Selector::subtype()(skill)));
 }

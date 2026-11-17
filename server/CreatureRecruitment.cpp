@@ -136,7 +136,7 @@ bool CGameHandler::recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst
 	const auto level = *row;
 	cram = static_cast<int32_t>(std::min<int64_t>(cram, dwelling->creatures[level].first));
 	COMPLAIN_RET_FALSE_IF(cram <= 0, "Cannot recruit: cram <= 0!");
-	COMPLAIN_RET_FALSE_IF(warMachine && hero && newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().rules)
+	COMPLAIN_RET_FALSE_IF(warMachine && hero && newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().getRules())
 		&& cram != 1, "Only one war machine artifact may be purchased per request");
 	SlotID slot;
 	auto commandPlan = prepareRecruitmentPlacement(army, hero, crid, cram, warMachine, slot);

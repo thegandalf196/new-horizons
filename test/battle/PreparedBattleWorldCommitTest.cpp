@@ -247,23 +247,7 @@ TEST_F(PreparedBattleWorldCommitTest, DisabledRecordingStillCommitsStateWithoutI
 	EXPECT_EQ(replayBytes(), logBefore);
 }
 
-TEST_F(PreparedBattleWorldCommitTest, DisabledReplayTimeStopIgnoresMalformedMinimumDeltaBeforeLoad)
-{
-	gameHandler->gs->replayLog = ReplayLog();
-	first->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	const auto before = first->save();
-	BattleUnitsChanged packet;
-	packet.battleID = battle()->getBattleID();
-	UnitChanges change(first->unitId(), BattleChanges::EOperation::UPDATE);
-	change.healthDelta = std::numeric_limits<int64_t>::min();
-	change.data = JsonNode("not a state object");
-	packet.changedStacks.push_back(change);
-	auto owner = capture(packet);
-	prepare(*owner);
-	ASSERT_TRUE(owner->commitSimulation());
-	EXPECT_EQ(first->save(), before);
-}
+
 
 TEST_F(PreparedBattleWorldCommitTest, DisabledReplayOccupiedResurrectionIgnoresMalformedPayloadBeforeLoad)
 {

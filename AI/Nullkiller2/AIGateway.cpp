@@ -70,7 +70,7 @@ namespace
 	std::optional<std::vector<SlotID>> chooseSkeletonTransformerSelection(
 		const CArmedInstance & army,
 		const IArmyManager & armyManager,
-		const JsonNode & savedRules)
+		const IGameInfoCallback & savedWorld)
 	{
 		std::vector<SlotID> availableSlots;
 		availableSlots.reserve(GameConstants::ARMY_SIZE);
@@ -141,7 +141,7 @@ namespace
 			if(!includesNonSkeleton)
 				continue;
 
-			const auto projection = newHorizonsSkeletonTransformer::plan(army, selectedSlots, savedRules);
+			const auto projection = newHorizonsSkeletonTransformer::plan(army, selectedSlots, savedWorld);
 			if(!projection.isReady() || projection.skeletonCount <= 0)
 				continue;
 
@@ -1145,7 +1145,7 @@ void AIGateway::performObjectInteraction(const CGObjectInstance * obj, HeroPtr h
 				if(transformerMarket && transformerMarket->allowsTrade(EMarketMode::CREATURE_UNDEAD))
 				{
 					const auto selectedSlots = chooseSkeletonTransformerSelection(
-						*heroPtr.get(), *nullkiller->armyManager, cc->getHeroCapabilityRules());
+						*heroPtr.get(), *nullkiller->armyManager, *cc);
 					if(selectedSlots)
 					{
 						std::vector<TradeItemSell> selectedItems;

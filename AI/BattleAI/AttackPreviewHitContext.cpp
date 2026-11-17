@@ -334,7 +334,7 @@ void AttackPreviewHitContext::applyLanceFormation(HypotheticBattle & branch,
 		return;
 	const auto * recipient = branch.battleGetUnitByID(lanceFormation.target);
 	if(recipient && recipient->alive()
-		&& !recipient->isGhost() && !recipient->isTimeStopped())
+		&& !recipient->isGhost())
 	{
 		auto source = branch.getForUpdate(lanceFormation.target);
 		source->removeUnitBonus(lanceFormation.remove);

@@ -92,24 +92,7 @@ TEST_F(NewHorizonsPandemoniumTest, RawNegativeAndInnateCreatureStatisticsDoNotCo
 	EXPECT_EQ(enemy->getAvailableHealth(), before);
 }
 
-TEST_F(NewHorizonsPandemoniumTest, SpellLockResistanceAndImmunityRemainNormalPerRecipient)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	for(auto * unit : {enemy, friendly, clean})
-		unit->addNewBonus(status("slow"));
-	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE,
-		BonusSource::OTHER, 100, BonusSourceID()));
-	const SpellID lock(SpellID::decode("new-horizons:spellLock"));
-	friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE,
-		BonusSource::SPELL_EFFECT, 100, BonusSourceID(lock)));
-	clean->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::SPELL_IMMUNITY,
-		BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(spell())));
-	const std::array<int64_t, 3> before{enemy->getAvailableHealth(), friendly->getAvailableHealth(), clean->getAvailableHealth()};
-	ASSERT_TRUE(cast());
-	EXPECT_EQ(enemy->getAvailableHealth(), before[0]);
-	EXPECT_EQ(friendly->getAvailableHealth(), before[1]);
-	EXPECT_EQ(clean->getAvailableHealth(), before[2]);
-}
+
 
 TEST_F(NewHorizonsPandemoniumTest, MagicalReductionAppliesOnceAfterDebuffPower)
 {
@@ -245,25 +228,4 @@ TEST_F(NewHorizonsPandemoniumTest, ConvertedLegacySlowInitiativeRetainsStatusIde
 	enemy->addNewBonus(std::make_shared<Bonus>(legacy));
 	EXPECT_EQ(newHorizonsDebuffStatuses::snapshot(*enemy).identities,
 		(std::vector<std::string>{"core:slow"}));
-}
-
-TEST_F(NewHorizonsPandemoniumTest, LegacyLockPolarityCountsHostileButNotProtectivePair)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const SpellID spellLock(SpellID::decode("new-horizons:spellLock"));
-	ASSERT_TRUE(spellLock.hasValue());
-	Bonus resistance(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE, BonusSource::SPELL_EFFECT,
-		100, BonusSourceID(spellLock));
-	resistance.turnsRemain = 3;
-	Bonus polarity(BonusDuration::N_TURNS, BonusType::NONE, BonusSource::SPELL_EFFECT,
-		-3, BonusSourceID(spellLock));
-	polarity.turnsRemain = 3;
-	enemy->addNewBonus(std::make_shared<Bonus>(resistance));
-	enemy->addNewBonus(std::make_shared<Bonus>(polarity));
-	friendly->addNewBonus(std::make_shared<Bonus>(resistance));
-	polarity.val = 3;
-	friendly->addNewBonus(std::make_shared<Bonus>(polarity));
-	EXPECT_EQ(newHorizonsDebuffStatuses::snapshot(*enemy).identities,
-		(std::vector<std::string>{"new-horizons:spellLock"}));
-	EXPECT_EQ(newHorizonsDebuffStatuses::snapshot(*friendly).count(), 0u);
 }

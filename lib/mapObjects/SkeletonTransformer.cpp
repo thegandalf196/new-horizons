@@ -14,6 +14,8 @@
 #include "CGHeroInstance.h"
 #include "army/CArmedInstance.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
+#include "../nativeRules/CompiledCapabilityRules.h"
+#include "../callback/IGameInfoCallback.h"
 
 #include <algorithm>
 #include <array>
@@ -21,8 +23,10 @@
 
 namespace newHorizonsSkeletonTransformer
 {
-Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
-	const JsonNode & savedCapabilityRules)
+namespace
+{
+Plan planWithPercent(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
+	std::optional<int> percent)
 {
 	Plan result;
 	for(const auto & [slot, stack] : army.Slots())
@@ -30,7 +34,6 @@ Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
 		if(stack)
 			result.projectedArmy.push_back({slot, stack->getCreatureID(), stack->getCount()});
 	}
-	const auto percent = newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(savedCapabilityRules);
 	if(!percent)
 	{
 		result.status = PlanStatus::LEGACY_RULES;
@@ -162,4 +165,19 @@ Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
 	result.status = PlanStatus::READY;
 	return result;
 }
+}
+
+Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots, const JsonNode & rules)
+{
+	return planWithPercent(army, selectedSlots, newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(rules));
+}
+
+Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots, const IGameInfoCallback & world)
+{
+	const auto * compiled = world.getCompiledHeroCapabilityRules();
+	const auto percent = compiled ? compiled->skeletonTransformerHealthPercent()
+		: newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(world.getHeroCapabilityRules());
+	return planWithPercent(army, selectedSlots, percent);
+}
+
 }

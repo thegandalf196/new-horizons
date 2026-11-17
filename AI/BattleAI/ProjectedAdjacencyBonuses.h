@@ -25,6 +25,10 @@ public:
 	/// Null retains the exact ordinary/frozen/foreign-provider query route.
 	static TConstBonusListPtr query(const StackWithBonuses & unit, const CSelector & selector,
 		const std::string & cachingStr, bool unstacked);
+	/// Only the raw-native-record reevaluation lane is type-preserving. Opaque
+	/// numeric operations, rebound sources and owned exports retain full queries.
+	/// Partial adjacency proof only; the caller must prove recipient/raw ancestry.
+	static DLL_LINKAGE bool canProveTypeAbsence(const StackWithBonuses & unit);
 private:
 	static const CStack * nativeSource(const StackWithBonuses & unit);
 	static std::shared_ptr<const ProjectedAdjacencySources> sourcesFor(const HypotheticBattle & owner);

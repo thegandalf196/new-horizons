@@ -20,6 +20,7 @@
 #include "../entities/hero/NewHorizonsPerkState.h"
 #include "EstatesArtifactQuote.h"
 #include "../nativeRules/PreparedPilotRules.h"
+#include "../nativeRules/CapturedRuleEnvelope.h"
 #include "../entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../entities/hero/SpellPointState.h"
 #include "../spells/NewHorizonsMagic.h"
@@ -290,6 +291,9 @@ public:
 	bool usesPrimaryGrowth() const;
 	std::optional<newHorizonsHeroes::PrimaryGrowthView> getPrimaryGrowthView() const;
 	const JsonNode & getPrimaryGrowthRules() const { return primaryGrowthRules; }
+	/// Validated capture/import replacement; publishes immutable rules and native
+	/// projections together. Existing acquired ranks/perks are preserved.
+	void replaceCapturedPrimaryGrowthRules(JsonNode rules);
 	std::optional<newHorizonsHeroes::DruidSpecialtyRules> getDruidSpecialtyRules(
 		newHorizonsHeroes::DruidSpecialtyKind specialty) const;
 	int64_t getHighLoreManaBonus() const;
@@ -300,6 +304,22 @@ public:
 	int getArcanePreparationPercent() const;
 	int32_t getArcanePreparationBufferBonus() const;
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
+	const nativeRules::CompiledCapabilityRules * compiledCapabilities() const
+	{
+		return capabilityRules.owner() ? capabilityRules.owner()->capabilities().get() : nullptr;
+	}
+	const nativeRules::CompiledDevelopmentRules * compiledDevelopment() const
+	{
+		const auto * rules = primaryGrowthRules.development();
+		return rules ? rules : &nativeRules::CompiledDevelopmentRules::absent();
+	}
+	const nativeRules::CompiledMasteryRules * compiledMastery() const { return masteryState.rules.mastery(); }
+	const nativeRules::CompiledLeadershipRules * compiledLeadership() const
+	{
+		const auto * capabilities = compiledCapabilities();
+		return capabilities ? capabilities->leadership() : nullptr;
+	}
+	int getCapturedSiegeOutput(int rating, const std::string & output) const;
 	/// Read-only owning-world Order policy; battle projections use their callback snapshot.
 	const JsonNode & getHeroOrderRules() const;
 	std::optional<newHorizonsHeroes::CommandRules> getArmyCommandRules() const;
@@ -506,6 +526,9 @@ public:
 	}
 	int getPerkSkillRank(const std::string & skillId) const;
 	bool hasActivePerk(const std::string & skillId, const std::string & perkId) const;
+	newHorizonsHeroes::PerkId getPerkId(std::string_view skill, std::string_view perk) const;
+	bool hasActivePerk(const newHorizonsHeroes::PerkId & perk) const;
+	bool hasActivePerk(newHorizonsHeroes::BuiltinCombatPerk perk) const;
 	/// New Horizons Necromancy is a separate saved-rules path.  Legacy heroes
 	/// retaining core:necromancy continue through calculateNecromancy().
 	bool usesNewHorizonsNecromancy() const;
@@ -691,9 +714,18 @@ protected:
 	void serializeJsonOptions(JsonSerializeFormat & handler) override;
 
 private:
+	friend class CGameState;
+	template<typename Handler, typename Owner> friend class nativeRules::CapturedRuleOwnerEnvelope;
+	nativeRules::CapturedRuleSetId capturedRuleSetId = 0;
+	void admitCapturedRuleSet(nativeRules::CapturedRulePool & pool);
+	void captureDefaultCreatureLineTarget();
+	nativeRules::CapturedRuleSetId findCapturedRuleSet(const nativeRules::CapturedRulePool & pool) const;
+	void restoreCapturedRuleSet(const nativeRules::CapturedRulePool & pool, nativeRules::CapturedRuleSetId id);
+	void validateCapturedRuleTarget(const std::function<bool(ESerializationVersion)> & supported,
+		const newHorizonsHeroes::SpecialtySerializationContext & specialties) const;
 	bool capabilityRulesCaptured = false;
 	bool captureInitialDevelopmentRules(bool isFake);
-	JsonNode capabilityRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::ResolvedCapability> capabilityRules;
 	newHorizonsHeroes::CommandState commandState;
 	// An ordinary level must finish its Skill/perk choice before earning Command.
 	// Such queries cannot be saved; enhancement entitlements, once captured, can.
@@ -712,7 +744,7 @@ private:
 	void initializeDefaultStartingEquipment(bool creationInitialization);
 	void initializeBasicStartingEquipment(bool isFake);
 	bool primaryGrowthCaptured = false;
-	JsonNode primaryGrowthRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::ResolvedDevelopment> primaryGrowthRules;
 	newHorizonsMagic::AdventureSpellState newHorizonsAdventureSpellState;
 	int32_t newHorizonsCastleGateLastUseDay = -1;
 	int32_t newHorizonsPursuitMarchLastUseDay = -1;
@@ -771,31 +803,19 @@ public:
 			validateCommandSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
-			nativeRules::validatePilotPerks(perkState.rules, false);
+		if(h.saving && !nativeRules::supportsCapturedRuleTargets(h))
+			validateCapturedRuleTarget([&h](auto version) { return h.hasFeature(version); },
+				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
 		if(h.saving)
-			nativeRules::validatePilotCreatures(primaryGrowthRules, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
+			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		if(h.saving)
 			validateHeroBonusSerialization(BonusSerializationContext::fromHandler(h));
-		if(h.saving) newHorizonsHeroes::validateSylvanTacticsSerialization(perkState.rules,
-			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
-		if(h.saving)
-			newHorizonsNecromancy::validatePolicySerialization(perkState.rules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
 		if(h.saving)
 			validateRecoverySpecialtyStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
 		if(h.saving)
 			newHorizonsMagic::validateCanonicalSpellClausesSerialization(getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
-		if(h.saving)
-			newHorizonsHeroes::validateWeightedPerkSerialization(perkState.rules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(h.saving)
 			newHorizonsMagic::validateTravelDayEndSerialization(getMagicRules(),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
@@ -804,68 +824,6 @@ public:
 			validateProtectedAdventureMobilitySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
 		if(h.saving)
 			validateRecruitmentTrainingSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_TRAINING), h.hasFeature(Handler::Version::NEW_HORIZONS_DIPLOMACY_COHORTS));
-		if(h.saving)
-			newHorizonsHeroes::validateFrailtySpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
-		if(h.saving)
-			newHorizonsHeroes::validateCrisisCommandProfileSerialization(perkState.rules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
-		if(h.saving)
-			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
-		if(h.saving)
-			newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
-		if(h.saving)
-			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
-		if(h.saving)
-			newHorizonsHeroes::validateNavigationStartSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
-		if(h.saving)
-			validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
-		if(h.saving)
-			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
-		if(h.saving)
-			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(capabilityRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
-		if(h.saving)
-			newHorizonsHeroes::validateGlyphsOfFearSerialization(capabilityRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
-		if(h.saving)
-			newHorizonsLighthouse::validateRulesSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
-		if(h.saving)
-			newHorizonsHeroes::validateDruidSpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
-		if(h.saving)
-			newHorizonsHeroes::validateCapturedSpecialtiesSerialization(primaryGrowthRules,
-				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
-		if(h.saving)
-			newHorizonsHeroes::validateBottomlessMindSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
-		if(h.saving)
-			newHorizonsHeroes::validateMasterSpellwardSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
-		if(h.saving)
-			newHorizonsHeroes::validateStartingDevelopmentSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
-		if(h.saving)
-			newHorizonsHeroes::validateRemainingStartSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
-		if(h.saving)
-			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
-		if(h.saving)
-			newHorizonsHeroes::validateStartingBookSerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
-		if(h.saving)
-			newHorizonsHeroes::validateReanimateSpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
-		if(h.saving)
-			newHorizonsHeroes::validateHasteSpecialtySerialization(primaryGrowthRules,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
 		if(h.saving)
 			validateNewHorizonsMagnateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGNATE));
 		if(h.saving && (newHorizonsProspectorLastWeek < -1
@@ -915,6 +873,9 @@ public:
 			setNewHorizonsInvestorDailyGold(newHorizonsInvestorDailyGold);
 		if(!h.saving)
 			spellPointCapacityRevision.reset();
+		std::optional<nativeRules::CapturedRuleOwnerEnvelope<Handler, CGHeroInstance>> rulesEnvelope;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES))
+			rulesEnvelope.emplace(h, *this);
 		h & static_cast<CArmedInstance&>(*this);
 		h & static_cast<CArtifactSet&>(*this);
 		h & exp;
@@ -978,7 +939,7 @@ public:
 				h & primaryGrowthRules;
 			else
 			{
-				JsonNode candidate;
+				nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::ResolvedDevelopment> candidate;
 				h & candidate;
 				nativeRules::validatePilotCreatures(candidate, h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN));
 				auto prepared = nativeRules::preparePilotCreature(candidate, getHeroTypeID());
@@ -986,7 +947,9 @@ public:
 				preparedCreatureMechanics = std::move(prepared);
 			}
 			h & lastPrimaryGains;
-			if(!h.saving)
+			if(!h.saving && h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES))
+				validateDefaultCreatureLineSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+			if(!h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES))
 			{
 				newHorizonsHeroes::validateNavigationStartSerialization(primaryGrowthRules,
 					h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
@@ -1038,17 +1001,20 @@ public:
 			if(h.saving) h & capabilityRules;
 			else
 			{
-				JsonNode candidate;
+				nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::ResolvedCapability> candidate;
 				h & candidate;
-				newHorizonsHeroes::validateLeadershipEfficiencySerialization(candidate,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
-				newHorizonsHeroes::validateArmyCommandSerialization(candidate,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
-				newHorizonsHeroes::validateArtifactManaRegenerationSerialization(candidate,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
-				newHorizonsHeroes::validateGlyphsOfFearSerialization(candidate,
-					h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
-				newHorizonsHeroes::validateResolvedCapabilityRules(candidate);
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES))
+				{
+					newHorizonsHeroes::validateLeadershipEfficiencySerialization(candidate,
+						h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
+					newHorizonsHeroes::validateArmyCommandSerialization(candidate,
+						h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY));
+					newHorizonsHeroes::validateArtifactManaRegenerationSerialization(candidate,
+						h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+					newHorizonsHeroes::validateGlyphsOfFearSerialization(candidate,
+						h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
+					newHorizonsHeroes::validateResolvedCapabilityRules(candidate);
+				}
 				capabilityRules = std::move(candidate);
 			}
 		}
@@ -1169,7 +1135,7 @@ public:
 		}
 		else
 		{
-			if(h.saving && (newHorizonsHeroes::usesPerkRules(perkState.rules) || !perkState.selected.empty()))
+			if(h.saving && (newHorizonsHeroes::usesPerkRules(perkState.getRules()) || !perkState.getSelected().empty()))
 				throw std::runtime_error("New Horizons perk state requires the new save format");
 			if(!h.saving)
 			{
@@ -1291,5 +1257,9 @@ public:
 				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
 		}
+		if(!h.saving && !nativeRules::supportsCapturedRuleTargets(h))
+			validateCapturedRuleTarget([&h](auto version) { return h.hasFeature(version); },
+				newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
+		if(rulesEnvelope) rulesEnvelope->verify(*this);
 	}
 };

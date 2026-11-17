@@ -104,7 +104,6 @@ void BattleInterface::installCureAfflictionUI()
 
 				const auto * spell = pending.spell.toSpell();
 				spells::BattleCast preview(callback.get(), hero, spells::Mode::HERO, spell);
-				preview.setMetamagicFollowup(pending.metamagicFollowup);
 				const bool removePhysical = static_cast<std::size_t>(selected) >= choices.size();
 				const std::string physicalKind = removePhysical ? physicalChoices[selected - choices.size()] : "";
 				preview.setCureAffliction(removePhysical ? SpellID(SpellID::NONE) : choices[selected]);

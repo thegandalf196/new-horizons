@@ -33,6 +33,8 @@ private:
 	std::vector<std::pair<uint32_t, newHorizonsOrdinaryStrike::EffectPlan>> specialtyEvents;
 public:
 	explicit PhysicalStrikeProjection(HypotheticBattle * value) : branch(value), sylvan(value), inspiration(value) {}
+	/// Probe consumers which read the actor after committing its strike resources.
+	static bool needsPostAttackState(const CBattleInfoCallback &, const battle::Unit &, bool shooting);
 	static bool needsExposureProjection(const CBattleInfoCallback &);
 	static bool needsProjection(const CBattleInfoCallback &, const battle::Unit *, const battle::Unit *);
 	/// Explicit damage only. Generic removal, value restoration and spawn wounds are not events.

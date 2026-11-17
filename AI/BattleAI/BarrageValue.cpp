@@ -33,7 +33,7 @@ std::optional<Prepared> prepare(const AttackPossibility & action, int shots,
 	const bool guardian = battleAIDamageProvenance(source, attack.physicalDamage) == battle::DamageProvenance::PHYSICAL_CREATURE
 		&& target->getGuardianSpiritRoundsRemaining() > 0;
 	const barrageProbability::TargetWindow window{target->getFirstHPleft(), target->getAvailableHealth(),
-		target->health.getTemporaryHitPoints(), target->arcaneShieldHitPoints,
+		target->health.getTemporaryHitPoints(),
 		guardian ? target->getGuardianSpiritHitPoints() : 0};
 	return Prepared{barrageProbability::primaryCasualtyAndSurvival(damage, source->getCount(), shots, window), shots, percent};
 }

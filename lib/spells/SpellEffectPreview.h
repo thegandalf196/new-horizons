@@ -36,6 +36,5 @@ struct DLL_LINKAGE SpellEffectPreview
 
 /// No battle construction, target enumeration, RNG, resource spending or mutation.
 DLL_LINKAGE SpellEffectPreview spellEffectPreview(const CGHeroInstance & hero,
-	const CSpell & spell, const CBattleInfoCallback * battle = nullptr,
-	bool metamagicFollowup = false);
+	const CSpell & spell, const CBattleInfoCallback * battle = nullptr);
 }

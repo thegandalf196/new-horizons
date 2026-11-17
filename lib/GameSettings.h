@@ -50,13 +50,16 @@ class DLL_LINKAGE GameSettings final : public IGameSettings, boost::noncopyable
 	// converts all existing overrides into a single json node for serialization
 	JsonNode getAllOverrides() const;
 	void loadSavedOverrides(const JsonNode & input);
+	JsonNode perkSerializationContext(const JsonNode & overrides) const;
 	void validateSpecialtyOverrideSerialization(const JsonNode & overrides,
 		const newHorizonsHeroes::SpecialtySerializationContext & context) const;
 
 public:
 	void validateCommandSerialization(bool supported, bool leadershipSupported = false, bool fourOfferSupported = false, bool estatesSupported = false) const
 	{
-		newHorizonsHeroes::validateCommandOverrides(getAllOverrides(), supported, leadershipSupported, fourOfferSupported, estatesSupported);
+		auto overrides = getAllOverrides();
+		overrides["heroes"]["newHorizonsPerks"] = perkSerializationContext(overrides);
+		newHorizonsHeroes::validateCommandOverrides(overrides, supported, leadershipSupported, fourOfferSupported, estatesSupported);
 	}
 	static void validateCombatScalarOverrides(const JsonNode & input, bool finalLuckSupported, bool moraleSupported);
 	void validateCombatScalarSerialization(bool finalLuckSupported, bool moraleSupported) const;
@@ -142,13 +145,13 @@ public:
 	void validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, bool supportsV2) const
 	{
 		newHorizonsNecromancy::validatePolicySerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supportsV1, supportsV2);
+			perkSerializationContext(getAllOverrides()), supportsV1, supportsV2);
 	}
 
 	void validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported = false, bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false) const
 	{
 		newHorizonsHeroes::validateWeightedPerkSerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
+			perkSerializationContext(getAllOverrides()), supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
 	}
 
 	void validateNewHorizonsDruidSpecialtySerialization(bool supported) const
@@ -227,13 +230,13 @@ public:
 	void validateSylvanTacticsSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateSylvanTacticsSerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supported);
+			perkSerializationContext(getAllOverrides()), supported);
 	}
 
 	void validateCrisisCommandSerialization(bool supported) const
 	{
 		newHorizonsHeroes::validateCrisisCommandProfileSerialization(
-			getAllOverrides()["heroes"]["newHorizonsPerks"], supported);
+			perkSerializationContext(getAllOverrides()), supported);
 	}
 
 	void validateNewHorizonsStartingBookSerialization(bool supported) const
@@ -242,159 +245,187 @@ public:
 			getAllOverrides()["heroes"]["newHorizons"], supported);
 	}
 
+
+private:
+	// Validate the complete effective policy before writing the raw override
+	// fragment. The reader keeps its separate normalization/publication path.
+	template<typename Handler>
+	void validateWrite(const Handler & h, const JsonNode & overrides) const
+	{
+		validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
+		const auto perkContext = perkSerializationContext(overrides);
+		auto commandContext = overrides;
+		commandContext["heroes"]["newHorizonsPerks"] = perkContext;
+		newHorizonsHeroes::validateCommandOverrides(commandContext, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
+		newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+		newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
+		newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
+		validateCombatScalarOverrides(overrides,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
+		newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
+		newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+		newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+		newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+		newHorizonsMagic::validateTravelDayEndSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
+		newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+		newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
+		newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
+		newHorizonsHeroes::validateSylvanTacticsSerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
+		newHorizonsHeroes::validateCrisisCommandProfileSerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+		newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+		newHorizonsHeroes::validateStartingBookSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
+		newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
+		newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
+		newHorizonsHeroes::validateFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
+		newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+		newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+		newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
+		newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+		newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
+		newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+		newHorizonsNecromancy::validatePolicySerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
+		newHorizonsHeroes::validateWeightedPerkSerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+		newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+		validateSpecialtyOverrideSerialization(overrides, newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
+		newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
+		newHorizonsHeroes::validateMasterSpellwardSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
+		newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
+	}
+
+public:
+
+private:
+	// Decoded absence is significant. Read-only validation must not turn a
+	// missing magic or command context into an explicit null override.
+	template<typename Handler>
+	void validateRead(const Handler & h, const JsonNode & overrides) const
+	{
+		const auto perkContext = perkSerializationContext(overrides);
+		auto commandContext = overrides;
+		commandContext["heroes"]["newHorizonsPerks"] = perkContext;
+		newHorizonsHeroes::validateCommandOverrides(commandContext, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
+		validateCombatScalarOverrides(overrides,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
+		newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
+		newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
+		newHorizonsHeroes::validateSylvanTacticsSerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
+		newHorizonsHeroes::validateCrisisCommandProfileSerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
+		newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
+		newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
+		newHorizonsMagic::validateTravelDayEndSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
+		newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
+		newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
+		newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
+		newHorizonsHeroes::validateStartingBookSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
+		newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
+		newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
+		newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
+		newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
+		newHorizonsHeroes::validateFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
+		newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
+		newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
+		newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
+		newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
+		newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
+		newHorizonsNecromancy::validatePolicySerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
+		newHorizonsHeroes::validateWeightedPerkSerialization(perkContext,
+			h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
+			h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
+		newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
+		validateSpecialtyOverrideSerialization(overrides, newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
+		newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
+		newHorizonsHeroes::validateMasterSpellwardSerialization(overrides["heroes"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
+		newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
+			h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
+		newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
+		newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
+		newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
+	}
+
+public:
 	template<typename Handler>
 	void serialize(Handler & h)
 	{
 		if (h.saving)
 		{
-			validateSylvanTacticsSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
 			JsonNode overrides = getAllOverrides();
-			newHorizonsHeroes::validateCommandOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
-			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
-			newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
-			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
-			validateCombatScalarOverrides(overrides,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
-			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
-			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
-			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
-			newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
-			newHorizonsMagic::validateTravelDayEndSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
-			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
-			newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
-			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
-			newHorizonsHeroes::validateSylvanTacticsSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
-			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
-			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
-			newHorizonsHeroes::validateStartingBookSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
-			newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
-			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
-			newHorizonsHeroes::validateFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
-			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
-			newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
-			newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
-			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
-			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
-			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
-			newHorizonsNecromancy::validatePolicySerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
-			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
-			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
-			validateSpecialtyOverrideSerialization(overrides, newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
-			newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
-			newHorizonsHeroes::validateMasterSpellwardSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
-			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
+			validateWrite(h, overrides);
 			h & overrides;
 		}
 		else
 		{
 			JsonNode overrides;
 			h & overrides;
-			newHorizonsHeroes::validateCommandOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_COMMAND_AUTHORITY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION), h.hasFeature(Handler::Version::NEW_HORIZONS_ESTATES));
-			validateCombatScalarOverrides(overrides,
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_MORALE_EXTRA_DAMAGE));
-			newHorizonsMagic::validateCanonicalSpellClausesSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_IMPLOSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_REVISION));
-			newHorizonsHeroes::validateDefaultCreatureLineSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
-			newHorizonsHeroes::validateSylvanTacticsSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
-			newHorizonsHeroes::validateCrisisCommandProfileSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
-			newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NAVIGATION_START_REPLACEMENTS));
-			newHorizonsProtectedMobility::validateRulesSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_PROTECTED_ADVENTURE_BARRIERS));
-			newHorizonsMagic::validateTravelDayEndSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
-			newHorizonsHeroes::validateArtifactManaRegenerationSerialization(overrides["heroes"]["newHorizonsCapabilities"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_ARTIFACT_MANA_REGENERATION));
-			newHorizonsHeroes::validateGlyphsOfFearSerialization(overrides["heroes"]["newHorizonsCapabilities"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_GLYPHS_OF_FEAR_AURA));
-			newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_DEVELOPMENT_PROFILES));
-			newHorizonsHeroes::validateStartingBookSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STARTING_BOOK_REPLACEMENTS));
-			newHorizonsHeroes::validateRemainingStartSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_START_REPLACEMENTS));
-			newHorizonsHeroes::validateCoroniusHolyWrathSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_CORONIUS_HOLY_WRATH));
-			newHorizonsHeroes::validateHasteSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_HASTE_SPECIALTIES));
-			newHorizonsHeroes::validateReanimateSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_THANT_REANIMATE));
-			newHorizonsHeroes::validateFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_FRAILTY_SPECIALTIES));
-			newHorizonsHeroes::validateAenainFrailtySpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_AENAIN_FRAILTY_SPECIALTY));
-			newHorizonsHeroes::validateDefensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_DEFENSIVE_START_SPECIALTIES));
-			newHorizonsHeroes::validateOffensiveStartSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OFFENSIVE_START_SPECIALTIES));
-			newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPELL_SPECIALTIES));
-			newHorizonsLighthouse::validateRulesSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_LIGHTHOUSE_DEPARTURE));
-			newHorizonsNecromancy::validatePolicySerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_SKELETON_NECROMANCY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_NECROMANCY_POLICY_V2));
-			newHorizonsHeroes::validateWeightedPerkSerialization(overrides["heroes"]["newHorizonsPerks"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES), h.hasFeature(Handler::Version::NEW_HORIZONS_R2_PERK_OFFERS),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_STRICT_PERK_PROGRESSION),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY),
-				h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
-			newHorizonsHeroes::validateDruidSpecialtySerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES));
-			validateSpecialtyOverrideSerialization(overrides, newHorizonsHeroes::SpecialtySerializationContext::fromHandler(h));
-			newHorizonsHeroes::validateBottomlessMindSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_BOTTOMLESS_MIND));
-			newHorizonsHeroes::validateMasterSpellwardSerialization(overrides["heroes"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_MASTER_SPELLWARD));
-			newHorizonsPlague::validateRuleSerialization(overrides["magic"]["newHorizons"],
-				h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
-			newHorizonsNeutralArmies::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_NEUTRAL_ARMY_SIZE));
-			newHorizonsNeutralArmies::calibration::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION));
-			newHorizonsRecruitmentGrowth::validateOverrides(overrides, h.hasFeature(Handler::Version::NEW_HORIZONS_RECRUITMENT_GROWTH));
+			validateRead(h, overrides);
 			loadSavedOverrides(overrides);
 		}
 	}

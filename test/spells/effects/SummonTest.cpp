@@ -78,6 +78,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		EXPECT_CALL(mechanicsMock, getSpellId()).WillRepeatedly(Return(SpellID(SpellID::SUMMON_AIR_ELEMENTAL)));
 		EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 
 		otherSummoned = ::testing::get<0>(GetParam());
@@ -259,7 +260,8 @@ public:
 
 	const uint32_t unitId = 42;
 	const int32_t unitAmount = 123;
-	const int32_t unitHealth = 479;
+	// Native summon resolves this type through the installed creature provider.
+	const int32_t unitHealth = toSummon.toCreature()->getMaxHealth();
 	const int64_t unitTotalHealth = unitAmount * unitHealth;
 
 	const BattleHex unitPosition = BattleHex(5,5);
@@ -312,6 +314,7 @@ protected:
 	void SetUp() override
 	{
 		EffectFixture::setUp();
+		EXPECT_CALL(mechanicsMock, getSpellId()).WillRepeatedly(Return(SpellID(SpellID::SUMMON_AIR_ELEMENTAL)));
 		EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(nullptr));
 
 		permanent = ::testing::get<0>(GetParam());
@@ -338,8 +341,6 @@ TEST_P(SummonApplyTest, SpawnsNewUnit)
 {
 	auto & caster = unitsFake.add(BattleSide::ATTACKER);
 	EXPECT_CALL(mechanicsMock, getUnitCaster()).Times(AnyNumber()).WillRepeatedly(Return(&caster));
-	if(!permanent)
-		EXPECT_CALL(mechanicsMock, getSpellId()).WillOnce(Return(SpellID(SpellID::SUMMON_AIR_ELEMENTAL)));
 
 	setDefaultExpectations();
 

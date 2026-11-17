@@ -5,17 +5,19 @@
 #include "StdInc.h"
 #include "../../lib/spells/NewHorizonsSorceryRevision.h"
 
-TEST(NewHorizonsSorceryPreviewPowerTest, FocusSharesCapturedProfileAndOnePowerFloor)
+TEST(NewHorizonsSorceryPreviewPowerTest, ChronomancerStrengthensOnceBeforeMassNormalizationAndCapsAtSixty)
 {
-	using newHorizonsSorceryRevision::focusMarkBasisPoints;
-	const newHorizonsSorceryRevision::FocusRules revised{500, 3, 1200};
-	const newHorizonsSorceryRevision::FocusRules legacy{1000, 5, 2000};
-	EXPECT_EQ(focusMarkBasisPoints(revised, 0, 12650, 25, 20), 500);
-	EXPECT_EQ(focusMarkBasisPoints(revised, 100, 10000, 0, 0), 800);
-	EXPECT_EQ(focusMarkBasisPoints(revised, 100, 12650, 25, 20), 1069);
-	EXPECT_EQ(focusMarkBasisPoints(revised, 200, 12650, 25, 20), 1200);
-	EXPECT_EQ(focusMarkBasisPoints(legacy, 100, 10000, 0, 0), 1500);
-	EXPECT_THROW(focusMarkBasisPoints(revised, -1, 10000, 0, 0), std::invalid_argument);
+	using newHorizonsSorceryRevision::finalSlowValue;
+	EXPECT_DOUBLE_EQ(finalSlowValue(-20, 100, true), -24);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-31, 100, true), -37.2);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-50, 100, true), -60);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-75, 100, true), -60);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-20, 60, true), -14);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-31, 60, true), -22);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-50, 60, true), -36);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-75, 60, true), -36);
+	EXPECT_DOUBLE_EQ(finalSlowValue(-50, 60, false), -30);
+	EXPECT_DOUBLE_EQ(finalSlowValue(7, 60, true), 7);
 }
 
 TEST(NewHorizonsSorceryPreviewPowerTest, LivingArmorKeepsLoadedBaseOutsideThePowerFloor)

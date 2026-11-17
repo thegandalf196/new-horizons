@@ -37,7 +37,7 @@ int reclaimerConversionPercent(const CGHeroInstance & hero, const PlayerState * 
 		|| hero.getHeroTypeID() != HeroTypeID(HeroTypeID::decode("core:vidomina"))
 		|| !hero.usesNewHorizonsNecromancy())
 		return 0;
-	const auto rules = reclamationSpecialtyRules(hero.getPrimaryGrowthRules());
+	const auto rules = hero.compiledDevelopment()->reclamation;
 	if(!rules || !ownsZombieDwelling(ownerState, hero))
 		return 0;
 	return cappedSpecialtyContribution(hero.level, rules->conversionPercentPerLevel, rules->conversionMaximumPercent);

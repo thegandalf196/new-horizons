@@ -262,13 +262,8 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		if(h.saving && std::find(statusTags.begin(), statusTags.end(), BonusStatusTag::NON_TRANSFERABLE) != statusTags.end()
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_REALITY_WARP_EXCHANGE))
 			throw std::runtime_error("Cannot write non-transferable status tag in an older bonus format");
-		// TIME_STOP is a new serialized bonus type.  Never emit it through an
-		// older handler: doing so would shift/interpret the enum differently in a
-		// legacy reader.  A battle without this marker remains fully loadable by
-		// older saves because no extra field is introduced in the containing node.
-		if(h.saving && type == BonusType::TIME_STOP
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP))
-			throw std::runtime_error("Cannot discard New Horizons Time Stop state");
+		if((type == BonusType::RESERVED_TIME_STOP || type == BonusType::RESERVED_METAMAGIC_USES_PER_COMBAT))
+			throw std::runtime_error("Retired bonus type is unsupported");
 		if(h.saving && type == BonusType::SIEGE_RATING
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SIEGE_RATING))
 			throw std::runtime_error("Cannot discard New Horizons Siege rating state");
@@ -312,6 +307,8 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 		validateWriteSerialization(h);
 		h & duration;
 		h & type;
+		if((type == BonusType::RESERVED_TIME_STOP || type == BonusType::RESERVED_METAMAGIC_USES_PER_COMBAT))
+			throw std::runtime_error("Retired bonus type is unsupported");
 		h & subtype;
 		h & source;
 		h & val;

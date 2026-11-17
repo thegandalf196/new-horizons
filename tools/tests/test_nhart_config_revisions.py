@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 import unittest
 from .nhart_config_revisions import config_at_revision, wave_config_revision
+from .nhart_sorcery_config_transition import before_sorcery
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = 'Mods/new-horizons/Content/config/spells/newHorizons.json'
@@ -28,7 +29,8 @@ class ArtConfigRevisionTest(unittest.TestCase):
         previous = config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, 5)
         self.assertIn('Teleport one friendly or enemy stack to a random legal position',
                       previous['blink']['levels']['base']['description'])
-        self.assertEqual(config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, 6), self.configs[CONFIG])
+        self.assertEqual(config_at_revision(self.configs[CONFIG], CONFIG, self.proofs, 6),
+                         before_sorcery(self.configs[CONFIG]))
         mass = config_at_revision(self.configs[MASS], MASS, self.proofs, 0)
         self.assertEqual(mass['massSlow']['level'], 1)
         self.assertEqual(mass['massSlow']['levels']['basic']['cost'], 12)
@@ -49,13 +51,14 @@ class ArtConfigRevisionTest(unittest.TestCase):
 
     def test_only_exact_graphics_pointers_are_left_to_existing_art_checks(self):
         changed = copy.deepcopy(self.configs[CONFIG])
-        changed['arcaneBreach']['graphics']['iconEffect'] = 'different-art.png'
+        changed['lucidity']['graphics']['iconEffect'] = 'different-art.png'
         old = config_at_revision(changed, CONFIG, self.proofs, 0)
-        self.assertEqual(old['arcaneBreach']['graphics']['iconEffect'], 'different-art.png')
-        changed['arcaneBreach']['graphics']['unreviewedRole'] = 'unreviewed.png'
+        self.assertEqual(old['lucidity']['graphics']['iconEffect'], 'different-art.png')
+        self.assertEqual(old['arcaneBreach']['graphics']['iconEffect'], 'NH_status_arcane_breach-30.png')
+        changed['lucidity']['graphics']['unreviewedRole'] = 'unreviewed.png'
         with self.assertRaises(ValueError): config_at_revision(changed, CONFIG, self.proofs, 0)
         changed = copy.deepcopy(self.configs[CONFIG])
-        del changed['arcaneBreach']['graphics']['iconEffect']
+        del changed['lucidity']['graphics']['iconEffect']
         with self.assertRaises(ValueError): config_at_revision(changed, CONFIG, self.proofs, 0)
 
     def test_revision_metadata_unknown_fields_paths_commits_and_hashes_cannot_be_renewed_silently(self):

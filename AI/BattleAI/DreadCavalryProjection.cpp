@@ -99,7 +99,7 @@ void finish(AttackPossibility & preview, const Action & action, bool vanishKill)
 			&& strike.resolvedLuck == ProjectedLuckOutcome::POSITIVE; });
 	const int opportunist = newHorizonsOpportunist::movementAllowance(*world, luckySource.get(), remaining);
 	const int vanish = vanishKill && source.alive() && source.canMove()
-		&& !source.isTimeStopped() && !newHorizonsFrozen::isFrozen(source) && !source.armorerLastStandEndedActivation
+		&& !newHorizonsFrozen::isFrozen(source) && !source.armorerLastStandEndedActivation
 		? newHorizonsShroud::vanishMovementAllowance(source.getMovementRange(0)) : 0;
 	if(action.before.pending)
 	{

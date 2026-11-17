@@ -82,19 +82,13 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 	if(missingProjectedTarget)
 		return {};
 	spells::BattleCast cast(&state, hero, spells::Mode::HERO, candidate.spell);
-	cast.setMetamagicFollowup(candidate.metamagicFollowup);
-	cast.setMetamagicGrand(candidate.metamagicGrand);
-	if(targetId != std::numeric_limits<uint32_t>::max())
-		cast.setMetamagicTargetUnitId(targetId);
 	cast.setOvercharge(candidate.spellOvercharge);
 	cast.setSelectiveDispel(candidate.spellSelectiveDispel);
 	cast.setCureAffliction(candidate.spellCureAffliction);
 	cast.setCurePhysicalAffliction(candidate.spellCurePhysicalAffliction);
 	cast.setMassSlow(candidate.spellMassSlow);
 	cast.setShadowGiftSacrificePercent(candidate.spellShadowGiftSacrificePercent);
-	if(admission.counterspell.wardActive)
-		cast.setCounterspell(admission.counterspell.wardSide, admission.counterspellNegated);
-	const bool observing = !admission.counterspellNegated && candidate.spell->getJsonKey() == newHorizonsLifeDrain::SPELL_KEY
+	const bool observing = candidate.spell->getJsonKey() == newHorizonsLifeDrain::SPELL_KEY
 		&& candidateTarget.size() == 2 && candidateTarget[1].unitValue
 		&& state.beginLifeDrainFriendlyObservation(candidateTarget[1].unitValue->unitId());
 	bool observationFinished = false;
@@ -105,9 +99,9 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 	});
 	SpellProjection result;
 	std::optional<newHorizonsLifeDrain::ProjectionReceipt> preparedLifeDrain;
-	if(!admission.counterspellNegated)
 	{
 		auto mechanics = candidate.spell->battleMechanics(&cast);
+		result.metamagic = metamagicAI::observeBefore(state, *mechanics);
 		if(isCanonicalVerdantPrison(candidate.spell))
 		{
 			const auto * liveTarget = live.battleGetUnitByID(targetId);
@@ -130,12 +124,11 @@ SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback
 			// Mirror the authoritative fixed-point regeneration rate on the clone.
 			projectRegenerationRateSnapshot(state, *mechanics, candidate.spell, candidateTarget);
 		}
+		metamagicAI::observeAfter(result.metamagic, *mechanics);
 		result.vines = mechanics->vengefulVinesProjectionReceipt();
 		preparedLifeDrain = mechanics->lifeDrainProjectionReceipt();
 	}
-	result.accepted = state.projectAcceptedHeroSpell(side, candidate.spell->getId(), targetId,
-		candidate.metamagicFollowup, candidate.metamagicGrand, admission.counterspell.wardActive,
-		admission.counterspellNegated, *admission.spellAllowance, sharedPurposeRecipients);
+	result.accepted = state.projectAcceptedHeroSpell(side, candidate.spell->getId(), targetId, *admission.spellAllowance, sharedPurposeRecipients);
 	if(observing)
 	{
 		const bool noOp = state.finishLifeDrainFriendlyObservation();

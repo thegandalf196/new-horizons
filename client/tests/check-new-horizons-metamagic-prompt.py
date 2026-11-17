@@ -26,8 +26,8 @@ skill_schema = json.loads((ROOT / "config/schemas/skill.json").read_text(encodin
 new_horizons_skills = json.loads((ROOT / "config/newHorizonsSkills.json").read_text(encoding="utf-8"))
 
 combat_status_providers = skill_schema["properties"]["combatStatus"]["properties"]["provider"]["enum"]
-assert combat_status_providers == ["metamagicUses", "bloodrageDamage", "divineMandateUses"]
-assert new_horizons_skills["metamagic"]["combatStatus"]["provider"] == "metamagicUses"
+assert combat_status_providers == ["bloodrageDamage", "divineMandateUses"]
+assert "combatStatus" not in new_horizons_skills["metamagic"]
 assert new_horizons_skills["bloodrage"]["combatStatus"]["provider"] == "bloodrageDamage"
 
 # A pending authoritative follow-up is available to the player; it is not an
@@ -56,7 +56,7 @@ assert "openSpellbook" not in activate
 end_action = interface.split("void BattleInterface::endAction", 1)[1].split(
     "void BattleInterface::presentHeroPositiveProcs", 1
 )[0]
-assert "windowObject->updateCounterspellStatus();" in end_action
+assert "windowObject->updateHeroBattleStatus();" in end_action
 
 open_book = window.split("void BattleWindow::openSpellbook()", 1)[1].split(
     "void BattleWindow::bWaitf()", 1
@@ -78,52 +78,13 @@ wait = window.split("void BattleWindow::bWaitf()", 1)[1].split(
 assert "owner.giveCommand(EActionType::WAIT);" in wait
 assert "Metamagic" not in wait
 
-cast = actions.split("void BattleActionsController::castThisSpell", 1)[1].split(
-    "bool BattleActionsController::continueOrdinarySpellcast", 1
-)[0]
-assert "battleCanUseMetamagicFollowup(heroSpellToCast->side, spellID)" in cast
-assert "heroSpellToCast->metamagicFollowup" in cast
-assert "metamagicGrand" not in cast
-
-# Grand extension is selected from authoritative consumed-use state by the
-# runtime, never from a client-side mode or BattleAction request bit. All
-# spell previews may copy an already-authored action value, but cannot expose a
-# player-selected Grand mode. Keep this exact preview exception narrow.
-grand_preview_passthrough = "cast.setMetamagicGrand(action.metamagicGrand);"
-assert actions.count(grand_preview_passthrough) == 1
-preview = actions.split("std::optional<FriendlyFirePreview> buildFriendlyFirePreview", 1)[1].split(
-    "FriendlyFirePreview result;", 1
-)[0]
-assert grand_preview_passthrough in preview
-# Inventory every Grand metadata reference, including existing read-only caches.
-# A new request assignment, user control or unreviewed preview reference fails.
-expected_grand = (
-    (interface_h, []), (interface, []), (window_h, []), (window, []),
-    (actions_h, ["bool metamagicGrand = false;"]),
-    (actions, [grand_preview_passthrough,
-               "cacheKey.metamagicGrand = heroSpellToCast->metamagicGrand;",
-               "cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);"]),
-    (spellbook, []), ((ROOT / "client/windows/CSpellWindow.h").read_text(encoding="utf-8"), []),
-    (arrow, []), (mana_preview, ["cast.setMetamagicGrand(preview.metamagicGrand);"]),
-)
-for source, expected in expected_grand:
-    actual = [line.strip() for line in source.splitlines() if "metamagicGrand" in line]
-    assert actual == expected, "Grand metadata escaped the exact copied-preview/cache paths"
-    for term in ("toggleMetamagicGrandFollowup", "metamagicGrandModeActive"):
-        assert term not in source, f"manual Grand control remains: {term}"
-chain_preview = actions.split("void BattleActionsController::updateChainLightningPreview(", 1)[1].split(
-    "void BattleActionsController::", 1)[0]
-assert "cacheKey.metamagicGrand = heroSpellToCast->metamagicGrand;" in chain_preview
-assert "cast.setMetamagicGrand(heroSpellToCast->metamagicGrand);" in chain_preview
-assert "bool metamagicGrand = false;" in actions_h.split("struct ChainLightningPreviewCacheKey", 1)[1].split("};", 1)[0]
+# Retired extra-cast metadata must never be submitted or used for previews.
+for source in (interface_h, interface, actions_h, actions, spellbook, arrow, mana_preview):
+    for token in ("metamagicFollowup", "metamagicGrand", "metamagicManaRefund", "setMetamagicTargetUnitId"):
+        assert token not in source, f"retired Metamagic metadata remains: {token}"
 assert "BattleAction preview = *heroSpellToCast;" in mana_preview
-assert "setMetamagicFollowup(followup)" in actions + arrow
-followup = spellbook.split("bool CSpellWindow::hasMetamagicFollowupForSpell(SpellID spell) const", 1)[1].split(
-    "bool CSpellWindow::", 1)[0]
-assert "battle->battleCanUseMetamagicFollowup(side, spell)" in followup
-assert "owner->hasMetamagicFollowupForSpell(mySpell->id)" in spellbook
 book_readout = (ROOT / "client/windows/SpellbookReadout.cpp").read_text(encoding="utf-8")
-assert "newHorizonsMagic::spellEffectPreview(*owner->myHero, *mySpell, battle.get(), metamagicFollowup)" in book_readout
+assert "newHorizonsMagic::spellEffectPreview(*owner->myHero, *mySpell, battle.get())" in book_readout
 assert "recipientSpellEffectPreview" not in book_readout + spellbook
 assert "getActiveStack" not in mana_preview
 assert "const auto target = preview.getTarget(battle.get());" in mana_preview
@@ -143,7 +104,6 @@ assert "passiveFactionSkillPresentation::divineMandate(*hero, *battleCallback, s
 assert "newHorizonsPassiveDivineMandate::enabled(hero.getPerkState().rules)" in mandate_status
 assert "getPassiveDivineMandateUses(side)" in mandate_status
 assert "remainingActivations(policy, used)" in mandate_status
-assert "METAMAGIC_ARCANE_ECONOMY" in spellbook
 assert "owner->myHero);" in spellbook.split("const bool canCast", 1)[1].split("if(canCast)", 1)[0]
 
 book_exit = spellbook.split("void CSpellWindow::fexitb()", 1)[1].split(
@@ -160,7 +120,7 @@ assert "closeSpellbook(bool" not in (ROOT / "client/windows/CSpellWindow.h").rea
 # The compact sidebar consumes the authoritative normal Hero Action state and
 # provider statuses; typed extra Spell/Order allowances stay in their controls.
 refresh = window.split("void BattleWindow::refreshHeroBattleStatus", 1)[1].split(
-    "void BattleWindow::updateCounterspellStatus", 1
+    "void BattleWindow::updateHeroBattleStatus", 1
 )[0]
 assert "battleCallback->battleUsesHeroCommands()" in refresh
 assert "battle->getSideHero(side) != nullptr" in refresh
@@ -174,15 +134,9 @@ assert "!skill ||" in refresh
 assert "hero->getPerkSkillRank(skill->getJsonKey())" in refresh
 assert "if(skillRank <= 0)" in refresh
 assert "switch(skill->getCombatStatusProvider())" in refresh
-assert "case CSkill::CombatStatusProvider::METAMAGIC_USES:" in refresh
+assert "case CSkill::CombatStatusProvider::METAMAGIC_USES:" not in refresh
 assert "case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:" in refresh
-assert "passiveFactionSkillPresentation::metamagic(*hero, *battleCallback, side)" in refresh
-assert "newHorizonsMetamagic::usesArcaneMarks(hero.getPerkState().rules)" in passive
-assert "newHorizonsMagic::metamagicCapacity(&hero)" in passive
-assert "if(total <= 0)" in passive
-assert "battle.battleMetamagicUsesConsumed(side)" in passive
-assert "std::clamp(battle.battleMetamagicUsesConsumed(side), 0, total)" in passive
-assert 'std::to_string(total - consumed) + " / " + std::to_string(total)' in passive
+assert "passiveFactionSkillPresentation::metamagic" not in refresh
 assert "battle->getBloodrageCapPercent(side)" in refresh
 assert "battle->getBloodrageDamagePercent(side)" in refresh
 assert '"/" + std::to_string(cap) + "%"' in refresh
@@ -202,12 +156,10 @@ assert "Additional Spell-only and Order-only opportunities are shown with their 
 for obsolete in ("actionCounts.orderActions", "actionCounts.spellActions", "Hero / Order / Spell Actions:", "addCount("):
     assert obsolete not in hero_panel, f"independent action counter presentation remains: {obsolete}"
 
-# A pending Metamagic grant is identified at the ordinary spell control using
+# A pending typed grant is identified at the ordinary spell control using
 # the selected typed allowance, including its source and inclusive expiry.
 assert "battleCallback->battleGetSpellActionAllowance(side, spell)" in spellbook
 assert "spellActionOpportunityText(mySpell->id)" in spellbook
-assert "GrantSource::METAMAGIC: return \"Metamagic\";" in spellbook
-assert "GrantSource::METAMAGIC_GRAND: return \"Grand Metamagic\";" in spellbook
 assert 'return source + opportunity + " available through the end of round "' in spellbook
 assert '" Light Spell follow-up"' in spellbook
 assert "selection->expiryRound" in spellbook
@@ -253,7 +205,7 @@ assert "effectAreaMaxStatusRows" not in hero_panel_h
 assert "outsideStackPanelOffsetY" not in hero_panel_h
 
 # State-driven refreshes also recompute placement when rows appear or disappear.
-update_status = window.split("void BattleWindow::updateCounterspellStatus()", 1)[1].split(
+update_status = window.split("void BattleWindow::updateHeroBattleStatus()", 1)[1].split(
     "void BattleWindow::updateStackInfoWindow", 1
 )[0]
 assert "refreshHeroBattleStatus(BattleSide::ATTACKER);" in update_status
@@ -276,14 +228,11 @@ assert "windowObject->heroManaPointsChanged(defendingHeroInstance);" in new_roun
 assert "visibleSide == BattleSide::ALL_KNOWING || visibleSide == otherSide" in mechanics
 assert "battle()->battleHasHero(otherSide)" in mechanics
 
-# Focus Magic's Lua effect consumes authoritative Metamagic provenance through
-# the common Mechanics facade. Keep the interface and binding in lockstep.
-mechanics_facade = mechanics_h.split("class DLL_LINKAGE Mechanics", 1)[1].split(
-    "class DLL_LINKAGE BaseMechanics", 1
-)[0]
-base_mechanics = mechanics_h.split("class DLL_LINKAGE BaseMechanics", 1)[1]
-assert "virtual bool isMetamagicFollowup() const" in mechanics_facade
-assert "bool isMetamagicFollowup() const override;" in base_mechanics
-assert 'R.method<&Mechanics::isMetamagicFollowup>("isMetamagicFollowup"' in lua_mechanics
+# Passive Metamagic shows a chance, with no point or extra-action counter.
+assert "metamagicPoints" not in passive
+for retired in ("Metamagic Points", "Arcane Marks", "metamagicCapacity", "battleMetamagicUsesConsumed"):
+    assert retired not in passive
+assert "elementalAttunement(*hero, *battleCallback, side)" in refresh
+assert "newHorizonsPassiveDivineMandate::remainingActivations(policy, used)" in mandate_status
 
 print("PASS: typed opportunities remain contextual, the normal Hero Action is singular, and sidebar geometry falls back safely")

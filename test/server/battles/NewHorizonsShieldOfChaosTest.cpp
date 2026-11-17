@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt file in main folder
  */
 #include "StdInc.h"
+#include "../../PerkStateFixture.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/bonuses/Bonus.h"
@@ -170,14 +171,16 @@ protected:
 		ASSERT_TRUE(chaos.hasValue());
 		attackerSideHero->setSecSkillLevel(chaos, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 
-		// Seed the saved Expert selection directly: this test isolates the perk's
-		// combat effect from the independently tested tier-offer/progression path.
+		// Seed a legal Basic/Advanced/Expert prefix for the isolated combat effect.
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		std::erase_if(state.selected, [&](const auto & selection)
+		perkStateFixture::editSelected(state, [&](auto & selected)
 		{
-			return selection.skillId == chaosMagicSkill;
+			std::erase_if(selected, [&](const auto & selection)
+			{
+				return selection.skillId == chaosMagicSkill;
+			});
 		});
-		state.selected.push_back({chaosMagicSkill, paradoxShieldPerk});
+		perkStateFixture::selectWithPrerequisites(state, chaosMagicSkill, paradoxShieldPerk);
 		state.validate();
 		ASSERT_TRUE(attackerSideHero->hasActivePerk(chaosMagicSkill, paradoxShieldPerk));
 	}

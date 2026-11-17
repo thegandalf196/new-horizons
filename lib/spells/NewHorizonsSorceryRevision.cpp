@@ -7,7 +7,11 @@
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSorcery.h"
 #include "ISpellMechanics.h"
+#include "NewHorizonsSpellAvailability.h"
+#include "CSpell.h"
+#include "../mapObjects/CGHeroInstance.h"
 #include <cmath>
+#include <algorithm>
 
 namespace newHorizonsSorceryRevision
 {
@@ -60,13 +64,39 @@ double scaleSlowVariantValue(double value, int32_t powerPercent)
 	return std::ceil(value * powerPercent / 100.0);
 }
 
-int32_t focusMarkBasisPoints(const FocusRules & profile, int32_t power, int32_t coefficient, int32_t empower, int32_t specialty)
+double finalSlowValue(double value, int32_t powerPercent, bool chronomancer)
 {
-	// Preserve the original proxy's validation domain before profile scaling.
-	newHorizonsSorcery::arcaneBreachMarkBasisPoints(power);
-	const auto component = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		static_cast<int64_t>(power) * profile.powerBasisPoints, 1, coefficient, empower, specialty);
-	return static_cast<int32_t>(std::min<int64_t>(profile.capBasisPoints, profile.baseBasisPoints + component));
+	if(chronomancer && value < 0) value = std::max(-60.0, value * 120 / 100.0);
+	return scaleSlowVariantValue(value, powerPercent);
+}
+
+bool hasChronomancer(const CGHeroInstance * hero)
+{
+	return hero && usesFocusEnchantment(hero->getMagicRules())
+		&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.chronomancer");
+}
+
+int32_t spellbinderBonus(const CGHeroInstance * hero, SpellID spell)
+{
+	if(!hero || spell == SpellID::NONE || !usesFocusEnchantment(hero->getMagicRules())
+		|| !hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.spellbinder")) return 0;
+	const auto key = spell.toSpell()->getJsonKey();
+	// Focus has charges rather than a round timer; Lance's exact one-round pin
+	// is fixed. Instantaneous spells never receive a duration from this helper.
+	if(key == "new-horizons:focusMagic" || key == "new-horizons:forceLance") return 0;
+	const auto family = newHorizonsMagic::spellVariantBase(hero->getMagicRules(), spell);
+	const auto schools = newHorizonsMagic::spellSchoolSkills(hero->getMagicRules(), spell);
+	const SecondarySkill sorcery(SecondarySkill::decode("new-horizons:sorceryMagic"));
+	return std::ranges::find(schools, sorcery) != schools.end()
+		&& (family == SpellID::SLOW || key == "new-horizons:phantomArmy"
+			|| key == "new-horizons:summonLivingArmor" || key == "new-horizons:transfigureMatter") ? 2 : 0;
+}
+
+int32_t focusAdditionalRangedPercent(const CGHeroInstance * hero, SpellID spell)
+{
+	if(!hero) return 0;
+	const int perk = hero->hasActivePerk(newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::ARCANE_BALLISTICS_PERK) ? 20 : 0;
+	return perk + hero->valOfBonuses(BonusType::SPECIAL_SPELL_LEV, BonusSubtypeID(spell));
 }
 
 int64_t livingArmorHitPoints(int64_t baseHitPoints, int64_t powerCoefficient, int32_t power,
@@ -78,17 +108,14 @@ int64_t livingArmorHitPoints(int64_t baseHitPoints, int64_t powerCoefficient, in
 		powerCoefficient * std::max(0, power), divisor, coefficient, empower);
 }
 
-std::optional<FocusRules> focusRules(const JsonNode & rules)
+bool usesFocusEnchantment(const JsonNode & rules)
 {
 	const auto * value = profile(rules, newHorizonsSorcery::FOCUS_MAGIC_SPELL, "focusMagic");
 	if(!value)
-		return std::nullopt;
-	version(*value, 4);
-	FocusRules result{integer((*value)["baseBasisPoints"], 0, 10000),
-		integer((*value)["powerBasisPoints"], 0, 10000), integer((*value)["capBasisPoints"], 0, 10000)};
-	if(result.baseBasisPoints > result.capBasisPoints)
-		throw std::runtime_error("Focus Magic base exceeds its cap");
-	return result;
+		return false;
+	if(value->Struct().size() != 1 || integer((*value)["version"], 2, 2) != 2)
+		throw std::runtime_error("Focus Magic requires the charge enchantment profile");
+	return true;
 }
 bool slowAffectsSpeed(const JsonNode & rules)
 {
@@ -106,7 +133,7 @@ void validateSpellRow(const JsonNode & rules, std::string_view identity, const J
 		std::pair{"slow", "core:slow"}, std::pair{"livingArmor", "new-horizons:summonLivingArmor"}})
 		if(row.Struct().contains(key) && identity != owner)
 			throw std::runtime_error("Sorcery revision clause requires its canonical spell row");
-	if(identity == newHorizonsSorcery::FOCUS_MAGIC_SPELL) (void)focusRules(rules);
+	if(identity == newHorizonsSorcery::FOCUS_MAGIC_SPELL) (void)usesFocusEnchantment(rules);
 	if(identity == "core:slow") (void)slowAffectsSpeed(rules);
 	if(identity == "new-horizons:summonLivingArmor") validateArmor(rules);
 }

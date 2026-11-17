@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsFocusMagic.h"
 #include "CUnitState.h"
 
 // Exact existing initialization, action/round boundaries and retirement hooks.
@@ -27,8 +28,6 @@ void CUnitState::reset()
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
 	confusionState = {};
-	arcaneMarks = {};
-	arcaneShieldHitPoints = 0;
 	demonicGateOpened = false;
 	dreadCavalryState = {};
 	frozenAppliedRound = -1;
@@ -48,7 +47,6 @@ void CUnitState::reset()
 	ghost = false;
 	ghostPending = false;
 	movedThisRound = false;
-	timeStopTurnConsumedFlag = false;
 	rangedFollowUpDamagePercent = 0;
 	luckyOwnAttackSequence = false;
 	regenerationRateMillionths = 0;
@@ -122,7 +120,7 @@ void CUnitState::afterAttack(bool ranged, bool counter, bool physical)
 	if(counter)
 		counterAttacks.use();
 
-	if(ranged)
+	if(ranged && !newHorizonsFocusMagic::converted(*this))
 		shots.use();
 
 	if(physical && waitedThisTurn)
@@ -147,9 +145,8 @@ void CUnitState::afterWait()
 	waitedThisTurn = true;
 }
 
-void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
+void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration)
 {
-	arcaneShieldHitPoints = 0;
 	forestAmbush = {};
 	moraleExtraActivation = false;
 	battlecraftOverwatchReadyRound = -1;
@@ -157,26 +154,23 @@ void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoratio
 	if(!isFirstRound && hasBattleForm())
 	{
 		// The preserved initiative only represents the remainder of the round
-		// in which the form was cast. Stasis pauses form lifetime, not the round.
+		// in which the form was cast.
 		battleFormInitiativeSnapshotActive = false;
-		if(!isTimeStopped() && !pauseBattleForm)
+		if(battleFormRoundsRemaining <= 1)
 		{
-			if(battleFormRoundsRemaining <= 1)
-			{
-				if(!deferBattleFormRestoration)
-					endBattleForm();
-			}
-			else
-				--battleFormRoundsRemaining;
+			if(!deferBattleFormRestoration)
+				endBattleForm();
 		}
+		else
+			--battleFormRoundsRemaining;
 	}
 
-	if(!isFirstRound && summonRoundsRemaining > 0 && !isTimeStopped()
+	if(!isFirstRound && summonRoundsRemaining > 0
 		&& --summonRoundsRemaining == 0)
 		makeGhost();
 
 	if(!isFirstRound && phantomInitialIntegrity > 0 && phantomIntegrity > 0
-		&& phantomRoundsRemaining > 0 && !isTimeStopped())
+		&& phantomRoundsRemaining > 0)
 	{
 		if(--phantomRoundsRemaining == 0)
 			makeGhost();
@@ -192,7 +186,6 @@ void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoratio
 	waitedThisTurn = false;
 	battlecraftWaitBonusUsed = false;
 	battlecraftWaitMasteryDoubled = false;
-	timeStopTurnConsumedFlag = false;
 	movedThisRound = false;
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;

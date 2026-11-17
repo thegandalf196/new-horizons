@@ -209,7 +209,6 @@ static TBonusParametersPtr loadBonusAddInfo(BonusType type, const JsonNode & val
 		case BonusType::OPENING_BATTLE_SPELL:
 		case BonusType::NOT_ACTIVE:
 		case BonusType::INVINCIBLE:
-		case BonusType::TIME_STOP:
 			// 1 number
 			var = static_cast<int32_t>(getFirstValue(value).Integer());
 			break;

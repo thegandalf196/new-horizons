@@ -63,6 +63,7 @@ public:
 
 	const JsonNode & getHeroCommandRules() const override { return subject->getBattle()->getHeroCommandRules(); }
 	const JsonNode & getMagicRules() const override { return subject->getBattle()->getMagicRules(); }
+	std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const override { return subject->getBattle()->getCapturedMagicRules(); }
 	const SeizeInitiativeState & getSeizeInitiativeState() const override { return subject->getBattle()->getSeizeInitiativeState(); }
 	const newHorizonsCrisisCommand::State & getCrisisCommandState() const override
 	{
@@ -112,21 +113,10 @@ public:
 	int32_t getCastSpells(BattleSide side) const override;
 	int32_t getEnchanterCounter(BattleSide side) const override;
 	bool getTemporalFieldUsed(BattleSide side) const override;
-	bool getCounterspellArmed(BattleSide side) const override;
 	const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override;
 	uint8_t getElementalAttunementMask(BattleSide side) const override;
 	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override;
 	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override;
-	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
-	int32_t getMetamagicPendingCount(BattleSide side) const override;
-	int32_t getMetamagicUsesConsumed(BattleSide side) const override;
-	bool getMetamagicGrandUsed(BattleSide side) const override;
-	bool getMetamagicFormulaReserveUsed(BattleSide side) const override;
-	bool getMetamagicCountersequenceArmed(BattleSide side) const override;
-	SpellID getMetamagicFirstSpell(BattleSide side) const override;
-	uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override;
-	const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override;
-	bool getMetamagicFirstCounterspellNegated(BattleSide side) const override;
 	int32_t getBloodrageDamagePercent(BattleSide side) const override
 	{
 		return subject->getBattle()->getBloodrageDamagePercent(side);

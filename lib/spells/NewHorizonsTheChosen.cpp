@@ -94,8 +94,7 @@ void validateSerialization(const JsonNode & savedRules, bool supported)
 
 int32_t finishDuration(const Rules & rules, const CGHeroInstance * hero, SpellID spell, int32_t adjustedNominal)
 {
-	const int specialty = hero ? newHorizonsHeroes::chosenSpecialtyDurationBonus(
-		hero->getPrimaryGrowthRules(), hero->getHeroType()->getJsonKey(), spell) : 0;
+	const int specialty = hero ? hero->compiledDevelopment()->chosenDurationBonus(hero->getHeroTypeID(), spell) : 0;
 	const int64_t turns = static_cast<int64_t>(adjustedNominal)
 		+ exaltedChampionDurationBonus(rules, hero) + specialty;
 	return static_cast<int32_t>(std::clamp<int64_t>(turns, 0, std::numeric_limits<int32_t>::max()));

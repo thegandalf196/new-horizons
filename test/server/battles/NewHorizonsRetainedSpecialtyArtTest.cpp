@@ -114,56 +114,30 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonCapturedAndDetachedKeepActualBonusTextAndState)
+TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonCapturedAndDetachedKeepIdentityArtworkTextAndState)
 {
 	prepare();
 	const auto * hero = findHeroAt({5, 5, 0});
 	ASSERT_NE(hero, nullptr);
 	const auto before = hero->getExportedBonusList().toJsonNode();
-	const auto capacity = newHorizonsMagic::metamagicCapacity(hero);
 	expectRetainedArt(*hero->getHeroType(), hero->getSpecialtyPresentation(), "HalonMetamagicAdept");
 	expectRetainedArt(*hero->getHeroType(), newHorizonsHeroes::resolveSpecialtyPresentation(
 		*hero->getHeroType(), hero->getPrimaryGrowthRules(), hero->getMagicRules(), std::nullopt), "HalonMetamagicAdept");
 	EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), before);
-	EXPECT_EQ(newHorizonsMagic::metamagicCapacity(hero), capacity);
 }
 
-TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonAbsentOrWrongCapturedBonusCannotUseInstalledPrototype)
+TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonIdentityArtworkDoesNotRequireANumericalCarrier)
 {
 	prepare();
 	auto * hero = findHeroAt({5, 5, 0});
 	ASSERT_NE(hero, nullptr);
-	std::vector<std::shared_ptr<Bonus>> originals;
-	for(const auto & bonus : hero->getExportedBonusList())
-		if(bonus && bonus->type == BonusType::METAMAGIC_USES_PER_COMBAT && bonus->source == BonusSource::HERO_SPECIAL)
-			originals.push_back(bonus);
-	ASSERT_EQ(originals.size(), 1u);
-	const auto original = originals.front();
-	hero->removeBonus(original);
-	expectRetainedFallback(*hero->getHeroType(), hero->getSpecialtyPresentation());
-	for(int mismatch = 0; mismatch < 5; ++mismatch)
-	{
-		SCOPED_TRACE(mismatch);
-		auto changed = std::make_shared<Bonus>(*original);
-		switch(mismatch)
-		{
-			case 0: changed->type = BonusType::LUCK; break;
-			case 1: changed->source = BonusSource::SECONDARY_SKILL; break;
-			case 2: changed->sid = BonusSourceID(HeroTypeID(HeroTypeID::decode("core:solmyr"))); break;
-			case 3: changed->val = 2; break;
-			case 4: changed->valType = BonusValueType::ADDITIVE_VALUE; break;
-		}
-		hero->addNewBonus(changed);
-		expectRetainedFallback(*hero->getHeroType(), hero->getSpecialtyPresentation());
-		hero->removeBonus(changed);
-	}
-	expectRetainedArt(*hero->getHeroType(), newHorizonsHeroes::resolveSpecialtyPresentation(
-		*hero->getHeroType(), hero->getPrimaryGrowthRules(), hero->getMagicRules(), std::nullopt), "HalonMetamagicAdept");
-	hero->addNewBonus(original);
+	EXPECT_TRUE(hero->getHeroType()->specialty.empty());
+	const auto before = hero->getExportedBonusList().toJsonNode();
 	expectRetainedArt(*hero->getHeroType(), hero->getSpecialtyPresentation(), "HalonMetamagicAdept");
+	EXPECT_EQ(hero->getExportedBonusList().toJsonNode(), before);
 }
 
-TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonHistoricalRetainedBonusNeedsNoHeroOrPerkPolicy)
+TEST_F(NewHorizonsRetainedSpecialtyArtTest, RawIdentityArtworkDoesNotInventMissingPolicies)
 {
 	historicalDevelopment = true;
 	magicMode = 1;
@@ -171,12 +145,12 @@ TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonHistoricalRetainedBonusNeedsNoH
 	const auto * hero = findHeroAt({5, 5, 0});
 	ASSERT_NE(hero, nullptr);
 	EXPECT_TRUE(hero->getPrimaryGrowthRules().isNull());
-	EXPECT_TRUE(hero->getPerkState().rules.isNull());
+	EXPECT_TRUE(hero->getPerkState().getRules().isNull());
 	EXPECT_TRUE(hero->getMagicRules().isNull());
 	expectRetainedArt(*hero->getHeroType(), hero->getSpecialtyPresentation(), "HalonMetamagicAdept");
 }
 
-TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonDetachedArtRequiresItsOwnActualTypedBonus)
+TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonDetachedArtRequiresItsOwnIdentity)
 {
 	const auto & source = prototype("core:halon");
 	const auto before = source.specialty.toJsonNode();
@@ -187,7 +161,7 @@ TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonDetachedArtRequiresItsOwnActual
 	expectRetainedFallback(hero, newHorizonsHeroes::resolveSpecialtyPresentation(hero, development, magic, std::nullopt));
 	hero.identity = source.getJsonKey();
 	hero.specialty.clear();
-	expectRetainedFallback(hero, newHorizonsHeroes::resolveSpecialtyPresentation(hero, development, magic, std::nullopt));
+	expectRetainedArt(hero, newHorizonsHeroes::resolveSpecialtyPresentation(hero, development, magic, std::nullopt), "HalonMetamagicAdept");
 	EXPECT_EQ(source.specialty.toJsonNode(), before);
 }
 
@@ -240,7 +214,7 @@ TEST_P(SolmyrSavedSpecialtyArtTest, AbsentHistoricalDisabledOrDeniedRosterKeepsA
 	if(magicMode == 1)
 	{
 		EXPECT_TRUE(hero->getPrimaryGrowthRules().isNull());
-		EXPECT_TRUE(hero->getPerkState().rules.isNull());
+		EXPECT_TRUE(hero->getPerkState().getRules().isNull());
 		EXPECT_TRUE(hero->getMagicRules().isNull());
 	}
 	expectRetainedFallback(*hero->getHeroType(), hero->getSpecialtyPresentation());
@@ -297,11 +271,10 @@ TEST_F(NewHorizonsRetainedSpecialtyArtTest, RetainedProvidersPreserveMatchingCap
 TEST_F(NewHorizonsRetainedSpecialtyArtTest, RetainedLookupRequiresExactHeroFamilyAndCurrentTarget)
 {
 	using namespace newHorizonsHeroes::detail;
-	const BonusTypeID bonus(BonusType::METAMAGIC_USES_PER_COMBAT);
-	EXPECT_EQ(BonusTypeID::decode("METAMAGIC_USES_PER_COMBAT"), bonus.getNum());
-	EXPECT_EQ(resolvedSpecialtyArtwork("core:halon", bonus.toEnum()),
+	EXPECT_EQ(resolvedSpecialtyArtwork("core:halon", SpecialtyArtworkFamily::Identity, "core:halon"),
 		"newHorizons/heroSpecialties/HalonMetamagicAdept");
-	EXPECT_FALSE(resolvedSpecialtyArtwork("core:solmyr", bonus.toEnum()));
+	EXPECT_FALSE(resolvedSpecialtyArtwork("core:solmyr", SpecialtyArtworkFamily::Identity, "core:halon"));
+	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", SpecialtyArtworkFamily::Identity, "core:solmyr"));
 	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", SpecialtyArtworkFamily::Skill, "new-horizons:metamagic"));
 	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", BonusType::MANA_REGENERATION));
 	EXPECT_FALSE(resolvedSpecialtyArtwork("core:halon", BonusType::NONE));

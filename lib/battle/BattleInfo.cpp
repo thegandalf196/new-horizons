@@ -8,8 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "TimedEffectValueTransitions.h"
+#include "BattleRecallAnchors.h"
 #include "NewHorizonsCommandResources.h"
-#include "../spells/NewHorizonsMetamagicEntry.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "../bonuses/NativeBonusGraphAccess.h"
 #include "../bonuses/NativeBonusGraphAdmission.h"
@@ -41,7 +42,6 @@
 #include "NewHorizonsOffense.h"
 #include "PhysicalAffliction.h"
 #include "NewHorizonsPlague.h"
-#include "TimeStopState.h"
 
 #include "BattleLayout.h"
 #include "CObstacleInstance.h"
@@ -146,6 +146,14 @@ void BattleInfo::setCrossSchoolFormulaState(BattleSide side, const newHorizonsCr
 		throw std::runtime_error("Invalid Cross-School Formula side");
 	newHorizonsCrossSchoolFormula::validateState(*this, state);
 	sides.at(side).crossSchoolFormula = state;
+}
+
+const SpellResponseState & BattleInfo::getSpellResponseState(BattleSide side) const
+{
+	static const SpellResponseState empty;
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return empty;
+	return sides.at(side).spellResponseState;
 }
 
 void BattleInfo::setSpellResponseState(BattleSide side, const SpellResponseState & state)
@@ -1154,7 +1162,7 @@ BattleInfo::BattleInfo(IGameInfoCallback *cb)
 	if(cb)
 	{
 		heroCommandRules = cb->getHeroCommandRules();
-		magicRules = cb->getMagicRules();
+		magicRules.bind(nativeRules::captureMagicRules(cb->getCapturedMagicRules(), cb->getMagicRules()));
 		creatureCategoryRules = cb->getCreatureCategoryRules();
 	}
 }
@@ -1265,10 +1273,14 @@ BattleSide BattleInfo::getTacticsSide() const
 void BattleInfo::setDeploymentState(const BattleDeploymentState & state)
 {
 	state.validateTransitionFrom(deploymentState);
+	const bool completed = deploymentState.activeSide() != BattleSide::NONE
+		&& state.activeSide() == BattleSide::NONE;
 	deploymentState = state;
 	const auto activeSide = deploymentState.activeSide();
 	tacticsSide = activeSide;
 	tacticDistance = deploymentState.activeDistance();
+	if(completed)
+		captureBattleRecallAnchors(*this);
 }
 
 int32_t BattleInfo::getRound() const
@@ -1324,51 +1336,6 @@ bool BattleInfo::getTemporalFieldUsed(BattleSide side) const
 	return getSide(side).temporalFieldUsed;
 }
 
-bool BattleInfo::getCounterspellArmed(BattleSide side) const
-{
-	return getSide(side).counterspellArmed;
-}
-
-int32_t BattleInfo::getMetamagicUsesConsumed(BattleSide side) const
-{
-	return getSide(side).metamagicUsesConsumed;
-}
-
-bool BattleInfo::getMetamagicGrandUsed(BattleSide side) const
-{
-	return getSide(side).metamagicGrandUsed;
-}
-
-bool BattleInfo::getMetamagicFormulaReserveUsed(BattleSide side) const
-{
-	return getSide(side).metamagicFormulaReserveUsed;
-}
-
-bool BattleInfo::getMetamagicCountersequenceArmed(BattleSide side) const
-{
-	return getSide(side).metamagicCountersequenceArmed;
-}
-
-SpellID BattleInfo::getMetamagicFirstSpell(BattleSide side) const
-{
-	return getSide(side).metamagicFirstSpell;
-}
-
-uint32_t BattleInfo::getMetamagicFirstTargetUnitId(BattleSide side) const
-{
-	return getSide(side).metamagicFirstTargetUnitId;
-}
-
-const std::vector<SpellID> & BattleInfo::getMetamagicSequenceSpells(BattleSide side) const
-{
-	return getSide(side).metamagicSequenceSpells;
-}
-
-bool BattleInfo::getMetamagicFirstCounterspellNegated(BattleSide side) const
-{
-	return getSide(side).metamagicFirstCounterspellNegated;
-}
-
 const IBonusBearer * BattleInfo::getBonusBearer() const
 {
 	return this;
@@ -1414,7 +1381,6 @@ void BattleInfo::nextRound()
 			sides.at(i).focusFire.reset();
 		// Unspent round-long Metamagic Spell grants expire below; the per-combat
 		// Metamagic and Grand/Formula budgets remain.
-		sides.at(i).clearMetamagicSequence();
 		vstd::amax(--sides.at(i).enchanterCounter, 0);
 	}
 	// first round starts right after pre-battle effects (built-in enchants, OPENING_BATTLE_SPELL)
@@ -1422,7 +1388,6 @@ void BattleInfo::nextRound()
 	bool isFirstRound = round == 0;
 	round += 1;
 	arcaneInspiration::advanceRound(*this, round);
-	newHorizonsMetamagic::advanceRound(*this);
 	seizeInitiative.nextRound(round);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
@@ -1437,17 +1402,16 @@ void BattleInfo::nextRound()
 	std::vector<uint32_t> expiringBattleForms;
 	for(auto & s : stacks)
 	{
-		const bool formPaused = s->hasBattleForm() && battle::battleFormDurationPaused(*s);
-		if(!isFirstRound && s->hasBattleForm() && s->getBattleFormRoundsRemaining() <= 1 && !formPaused)
+		if(!isFirstRound && s->hasBattleForm() && s->getBattleFormRoundsRemaining() <= 1)
 			expiringBattleForms.push_back(s->unitId());
 		// new turn effects
-		if(!isFirstRound && !s->isTimeStopped())
+		if(!isFirstRound)
 		{
-			s->reduceBonusDurations(battle::roundTimedBonusesFor(*s, roundTimedEffects));
+			s->reduceBonusDurations(roundTimedEffects);
 		}
 
 		const bool serpentSourceWasAlive = s->alive();
-		s->afterNewRound(isFirstRound, true, formPaused);
+		s->afterNewRound(isFirstRound, true);
 		if(serpentSourceWasAlive && !s->alive())
 			newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *s);
 	}
@@ -1471,7 +1435,7 @@ void BattleInfo::validateCrisisCommandProfiles(bool supported) const
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		if(const auto * hero = getSideHero(side))
-			newHorizonsCrisisCommand::validateProfileSerialization(hero->getPerkState().rules, supported);
+			newHorizonsCrisisCommand::validateProfileSerialization(hero->getPerkState().getRules(), supported);
 }
 
 bool BattleInfo::hasPursuitState() const
@@ -1661,11 +1625,6 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 		logGlobal->error("Cannot find stack %d", id);
 		return;
 	}
-	if(sta->isTimeStopped())
-	{
-		logNetwork->warn("Ignoring movement of Time Stop unit %d", id);
-		return;
-	}
 	if(sta->getPosition() != destination)
 	{
 		// Entangle is a position effect: an accepted forced move or teleport
@@ -1674,8 +1633,8 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 		if(sta->hasBonusOfType(BonusType::BIND_EFFECT))
 		{
 			if(const auto entangleSpell = entangleSpellId())
-				sta->removeBonusesRecursive(Selector::type()(BonusType::BIND_EFFECT)
-					.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(*entangleSpell))));
+				sta->removeBonusesRecursive(CSelector([entangleSpell](const Bonus * bonus)
+				{ return battle::timedEffects::targetMoveBreaks(*bonus, true, entangleSpell); }));
 		}
 
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
@@ -1772,87 +1731,6 @@ void BattleInfo::exchangeBattleEffects(const battle::BattleEffectExchange & exch
 	}
 }
 
-void BattleInfo::expireTimeStops(BattleSide casterSide)
-{
-	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
-		return;
-
-	for(auto & stack : stacks)
-	{
-		if(!stack)
-			continue;
-
-		stack->removeBonusesRecursive(CSelector([casterSide](const Bonus * bonus)
-		{
-			return bonus && timeStopState::isStateBonus(*bonus)
-				&& timeStopState::belongsToSide(*bonus, casterSide);
-		}));
-	}
-
-	clearPendingTimeStopHeroAction(casterSide);
-}
-
-namespace
-{
-ui8 timeStopSideBit(BattleSide side)
-{
-	if(side == BattleSide::ATTACKER)
-		return 1u;
-	if(side == BattleSide::DEFENDER)
-		return 2u;
-	return 0u;
-}
-}
-
-ui8 BattleInfo::getPendingTimeStopHeroActionSides() const
-{
-	ui8 result = pendingTimeStopHeroActionSides;
-	// Saves written with the first Time Stop format only have the scalar field.
-	// Treat that field as a one-origin mask until the battle reaches a new
-	// serialization boundary and can persist the complete set.
-	if(result == 0)
-		result = timeStopSideBit(pendingTimeStopHeroActionSide);
-	return result;
-}
-
-BattleSide BattleInfo::getPendingTimeStopHeroActionSide() const
-{
-	const auto pending = getPendingTimeStopHeroActionSides();
-	if(pending & timeStopSideBit(BattleSide::ATTACKER))
-		return BattleSide::ATTACKER;
-	if(pending & timeStopSideBit(BattleSide::DEFENDER))
-		return BattleSide::DEFENDER;
-	return BattleSide::NONE;
-}
-
-bool BattleInfo::hasPendingTimeStopHeroAction(BattleSide side) const
-{
-	return (getPendingTimeStopHeroActionSides() & timeStopSideBit(side)) != 0;
-}
-
-void BattleInfo::notePendingTimeStopHeroAction(BattleSide side)
-{
-	const auto bit = timeStopSideBit(side);
-	if(!bit)
-		return;
-
-	pendingTimeStopHeroActionSides = getPendingTimeStopHeroActionSides() | bit;
-	if(pendingTimeStopHeroActionSide == BattleSide::NONE)
-		pendingTimeStopHeroActionSide = side;
-}
-
-void BattleInfo::clearPendingTimeStopHeroAction(BattleSide side)
-{
-	const auto bit = timeStopSideBit(side);
-	if(!bit)
-		return;
-
-	pendingTimeStopHeroActionSides = getPendingTimeStopHeroActionSides() & static_cast<ui8>(~bit);
-	if(pendingTimeStopHeroActionSides == 0)
-		pendingTimeStopHeroActionSide = BattleSide::NONE;
-	else if(pendingTimeStopHeroActionSide == side)
-		pendingTimeStopHeroActionSide = getPendingTimeStopHeroActionSide();
-}
 
 uint32_t BattleInfo::nextUnitId() const
 {

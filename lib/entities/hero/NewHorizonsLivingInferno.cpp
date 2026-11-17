@@ -35,7 +35,7 @@ bool hasLivingInferno(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:fiur"))
-		&& livingInfernoRules(hero->getPrimaryGrowthRules()).has_value();
+		&& hero->compiledDevelopment()->livingInferno.has_value();
 }
 bool resolveLivingInfernoPresentation(const CHero & hero,
 	const JsonNode & rules, SpecialtyPresentation & result)

@@ -28,9 +28,9 @@ constexpr auto GRAND_FORMULA_PERK = "new-horizons:spellcraft.grandFormula";
 constexpr auto HAVOC_MAGIC_SKILL = "new-horizons:havocMagic";
 constexpr auto SORCERY_MAGIC_SKILL = "new-horizons:sorceryMagic";
 
-SpellID timeStopSpell()
+SpellID forceLanceSpell()
 {
-	return SpellID(SpellID::decode(std::string(newHorizonsSorcery::TIME_STOP_SPELL)));
+	return SpellID(SpellID::decode("new-horizons:forceLance"));
 }
 
 class NewHorizonsGrandFormulaTest : public HeroCommandFixture
@@ -88,20 +88,8 @@ protected:
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::MAGIC_ARROW));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::CHAIN_LIGHTNING));
 		attackerSideHero->addSpellToSpellbook(SpellID(SpellID::ARMAGEDDON));
-		attackerSideHero->addSpellToSpellbook(timeStopSpell());
+		attackerSideHero->addSpellToSpellbook(forceLanceSpell());
 		setTestSpellPointTotal(attackerSideHero, 1000);
-	}
-
-	void prepareDefenderCounterspellWard()
-	{
-		// The accepted cast records the level even when a real opposing ward
-		// negates it. Counterspell only suppresses an enemy spell while its
-		// defending hero can pay the resolved counter-cost.
-		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-		defenderSideHero->addSpellToSpellbook(SpellID(SpellID::HASTE));
-		defenderSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
-		setTestSpellPointTotal(defenderSideHero, 1000);
-		ASSERT_GE(defenderSideHero->getManaAvailable(), 100);
 	}
 
 	void startFormulaBattle(bool withCreatureCaster = false)
@@ -158,17 +146,6 @@ protected:
 			battle()->sideToPlayer(BattleSide::ATTACKER), action);
 	}
 
-	bool issueTimeStop(const BattleHex & center)
-	{
-		BattleAction action;
-		action.actionType = EActionType::HERO_SPELL;
-		action.side = BattleSide::ATTACKER;
-		action.spell = timeStopSpell();
-		action.aimToHex(center);
-		return gameHandler->battles->makePlayerBattleAction(BattleID(0),
-			battle()->sideToPlayer(BattleSide::ATTACKER), action);
-	}
-
 	void addCreatureMagicArrowCaster(CStack * caster)
 	{
 		ASSERT_NE(caster, nullptr);
@@ -188,7 +165,6 @@ TEST_F(NewHorizonsGrandFormulaTest, FirstLevelFourFormulaStacksWithArcaneFocusAn
 	prepareSpellcraft();
 	attackerSideHero->applyPerkSelection({SPELLCRAFT_SKILL, GRAND_FORMULA_PERK});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(SPELLCRAFT_SKILL, GRAND_FORMULA_PERK));
-	prepareDefenderCounterspellWard();
 	startFormulaBattle(true);
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 
@@ -254,21 +230,19 @@ TEST_F(NewHorizonsGrandFormulaTest, FirstLevelFourFormulaStacksWithArcaneFocusAn
 	activateStack(friendly);
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto castCost = battle()->battleGetSpellCost(chainLightning, attackerSideHero);
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 	ASSERT_TRUE(issueHeroSpell(SpellID(SpellID::CHAIN_LIGHTNING), enemy));
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore - castCost);
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 4));
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5));
 	const auto casts = server.castsOf(SpellID(SpellID::CHAIN_LIGHTNING));
 	ASSERT_EQ(casts.size(), 1u);
-	EXPECT_TRUE(casts.front().announcement.counterspellNegated);
 
-	auto afterHighCast = mechanics(timeStopSpell());
+	auto afterHighCast = mechanics(forceLanceSpell());
 	ASSERT_NE(afterHighCast, nullptr);
 	EXPECT_EQ(afterHighCast->getCastSpellPowerComponentBonusPercent(), 0)
-		<< "An accepted, counterspelled Level 4 cast consumes the shared Level 4/5 gate";
+		<< "An accepted Level 4 cast consumes the shared Level 4/5 gate";
 	endRound();
-	afterHighCast = mechanics(timeStopSpell());
+	afterHighCast = mechanics(forceLanceSpell());
 	ASSERT_NE(afterHighCast, nullptr);
 	EXPECT_EQ(afterHighCast->getCastSpellPowerComponentBonusPercent(), 0)
 		<< "Round rollover does not renew Grand Formula";
@@ -278,8 +252,8 @@ TEST_F(NewHorizonsGrandFormulaTest, FirstLevelFourFormulaStacksWithArcaneFocusAn
 	EXPECT_TRUE(restored->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 4));
 	EXPECT_FALSE(restored->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5));
 	spells::BattleCast restoredCast(restored.get(), attackerSideHero, spells::Mode::HERO,
-		timeStopSpell().toSpell());
-	const auto restoredMechanics = timeStopSpell().toSpell()->battleMechanics(&restoredCast);
+		forceLanceSpell().toSpell());
+	const auto restoredMechanics = forceLanceSpell().toSpell()->battleMechanics(&restoredCast);
 	ASSERT_NE(restoredMechanics, nullptr);
 	EXPECT_EQ(restoredMechanics->getCastSpellPowerComponentBonusPercent(), 0)
 		<< "A restored battle reuses the serialized completed-level mask; no separate Formula counter is needed";
@@ -289,10 +263,9 @@ TEST_F(NewHorizonsGrandFormulaTest, FirstLevelFiveFormulaConsumesTheSameLevelFou
 {
 	prepareSpellcraft();
 	attackerSideHero->applyPerkSelection({SPELLCRAFT_SKILL, GRAND_FORMULA_PERK});
-	prepareDefenderCounterspellWard();
 	startFormulaBattle();
 
-	const auto levelFive = timeStopSpell();
+	const auto levelFive = forceLanceSpell();
 	const auto * spell = levelFive.toSpell();
 	ASSERT_NE(spell, nullptr);
 	ASSERT_EQ(battle()->battleGetSpellLevel(spell->getId()), 5);
@@ -300,13 +273,11 @@ TEST_F(NewHorizonsGrandFormulaTest, FirstLevelFiveFormulaConsumesTheSameLevelFou
 	ASSERT_NE(beforeCast, nullptr);
 	EXPECT_EQ(beforeCast->getCastSpellPowerComponentBonusPercent(), 80);
 
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	ASSERT_TRUE(issueTimeStop(BattleHex(8, 5)));
+	ASSERT_TRUE(issueHeroSpell(forceLanceSpell(), enemy));
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 5));
 	EXPECT_FALSE(battle()->hasCompletedHeroSpellLevel(BattleSide::ATTACKER, 4));
 	const auto casts = server.castsOf(levelFive);
 	ASSERT_EQ(casts.size(), 1u);
-	EXPECT_TRUE(casts.front().announcement.counterspellNegated);
 
 	auto laterLevelFour = mechanics(SpellID(SpellID::CHAIN_LIGHTNING));
 	ASSERT_NE(laterLevelFour, nullptr);
@@ -355,63 +326,4 @@ TEST_F(NewHorizonsGrandFormulaTest, PlannedFormulaCannotBeSelectedOrAffectMechan
 	ASSERT_NE(planned, nullptr);
 	EXPECT_EQ(planned->getCastSpellPowerComponentBonusPercent(), 20)
 		<< "A planned configuration row cannot enable the production multiplier";
-}
-
-TEST_F(NewHorizonsGrandFormulaTest, TimeStopUsesTheComposedPowerTermButKeepsItsFixedAreaAndLifetime)
-{
-	prepareSpellcraft(0);
-	attackerSideHero->applyPerkSelection({SPELLCRAFT_SKILL, GRAND_FORMULA_PERK});
-	startBattle();
-	BattleUnitsChanged removed;
-	removed.battleID = BattleID(0);
-	for(const auto * unit : battle()->battleGetAllUnits(false))
-		removed.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
-	if(!removed.changedStacks.empty())
-		gameHandler->sendAndApply(removed);
-	const BattleHex center(8, 5);
-	const auto innerHex = center.copyToEast();
-	const auto outerHex = innerHex.copyToEast();
-	const auto beyondHex = outerHex.copyToEast();
-	auto * centerStack = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), center, 10);
-	auto * innerStack = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), innerHex, 10);
-	auto * outerStack = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), outerHex, 10);
-	auto * beyondStack = addStack(BattleSide::ATTACKER, creatureByName("core:archer"), beyondHex, 10);
-	ASSERT_NE(centerStack, nullptr);
-	ASSERT_NE(innerStack, nullptr);
-	ASSERT_NE(outerStack, nullptr);
-	ASSERT_NE(beyondStack, nullptr);
-	beginCombat();
-	activateStack(innerStack);
-
-	const auto timeStop = timeStopSpell();
-	const auto * spell = timeStop.toSpell();
-	ASSERT_NE(spell, nullptr);
-	const spells::Target aim{spells::Destination(center)};
-	auto mechanics = this->mechanics(timeStop);
-	ASSERT_NE(mechanics, nullptr);
-	EXPECT_EQ(mechanics->getSpellPowerCoefficientBasisPoints(), 33'930);
-	auto affected = mechanics->getAffectedStacks(aim);
-	EXPECT_TRUE(vstd::contains(affected, innerStack));
-	EXPECT_FALSE(vstd::contains(affected, outerStack))
-		<< "Grand Formula scales only Time Stop's Spell Power-derived radius term";
-
-	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 30, ChangeValueMode::ABSOLUTE);
-	mechanics = this->mechanics(timeStop);
-	ASSERT_NE(mechanics, nullptr);
-	affected = mechanics->getAffectedStacks(aim);
-	EXPECT_TRUE(vstd::contains(affected, centerStack));
-	EXPECT_TRUE(vstd::contains(affected, innerStack));
-	EXPECT_TRUE(vstd::contains(affected, outerStack));
-	EXPECT_FALSE(vstd::contains(affected, beyondStack))
-		<< "The canonical radius cap remains two hexes despite the composed multiplier";
-
-	ASSERT_TRUE(issueTimeStop(center));
-	EXPECT_TRUE(outerStack->isTimeStopped());
-	const auto outerTimeStopBonuses = outerStack->getAllBonuses(Selector::type()(BonusType::TIME_STOP));
-	ASSERT_FALSE(outerTimeStopBonuses->empty());
-	const auto * marker = outerTimeStopBonuses->front().get();
-	ASSERT_NE(marker, nullptr);
-	EXPECT_EQ(marker->val, 2);
-	EXPECT_EQ(marker->duration, BonusDuration::ONE_BATTLE)
-		<< "The multiplied radius does not convert Time Stop's battle-long lifetime";
 }

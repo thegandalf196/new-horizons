@@ -401,16 +401,7 @@ TEST_F(NewHorizonsVinesProjectionIntegration, ActualControlledRecipientsKeepCano
 	EXPECT_EQ(hypnotized->battleGetOwner(hypnotized->battleGetUnitByID(first->unitId())), PlayerColor(0));
 }
 
-TEST_F(NewHorizonsVinesProjectionIntegration, NegatedCastNeverPublishesReusableReceipt)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto state = branch();
-	spells::BattleCast cast(state.get(), attackerSideHero, spells::Mode::HERO, vines().toSpell());
-	cast.setCounterspell(BattleSide::DEFENDER, true);
-	auto mechanics = vines().toSpell()->battleMechanics(&cast);
-	mechanics->castEval(state->getServerCallback(), target({firstHex, secondHex, BattleHex(10, 5)}));
-	EXPECT_FALSE(mechanics->vengefulVinesProjectionReceipt());
-}
+
 
 TEST_F(NewHorizonsVinesProjectionIntegration, CompletionExceptionClearsPriorReceiptAndSuccessfulRetryRecertifies)
 {

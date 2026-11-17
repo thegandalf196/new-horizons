@@ -45,12 +45,13 @@ class CategoryWireWriter
 	JsonNode replacement;
 public:
 	using Version = ESerializationVersion;
+	nativeRules::CapturedRuleWireContext & capturedRules;
 	static constexpr bool saving = true;
 	static constexpr bool loadingGamestate = false;
 	int replacements = 0;
 
 	CategoryWireWriter(BinarySerializer & writer, JsonNode replacement)
-		: writer(writer), replacement(std::move(replacement)) {}
+		: writer(writer), replacement(std::move(replacement)), capturedRules(writer.capturedRules) {}
 	bool hasFeature(Version version) const { return writer.hasFeature(version); }
 
 	template<typename T> CategoryWireWriter & operator&(T & value)

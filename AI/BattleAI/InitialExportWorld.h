@@ -42,7 +42,7 @@ public:
 	~InitialExportWorld();
 	InitialExportWorld(const InitialExportWorld &) = delete;
 	InitialExportWorld & operator=(const InitialExportWorld &) = delete;
-	size_t size() const;
+	DLL_LINKAGE size_t size() const;
 	Source sourceAt(size_t occurrence) const;
 	/// Already prepared originating EXPORT metadata, not an effect specification
 	/// needing refresh/stamping. Copy preserves every Bonus field; configuration

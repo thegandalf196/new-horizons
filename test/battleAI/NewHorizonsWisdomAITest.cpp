@@ -116,25 +116,25 @@ TEST_F(NewHorizonsWisdomAITest, SharedCastEvalRecordsExactlyOneCastWithoutChangi
 TEST_F(NewHorizonsWisdomAITest, BegunManualEpochRecordsSkippedEffectsOnceAndSeparatesSameSpellAutomaticCast)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareWisdom());
-	const auto prepared = child->prepareHeroSpellAllowance(SIDE, SPELL, false, false);
+	const auto prepared = child->prepareHeroSpellAllowance(SIDE, SPELL);
 	ASSERT_TRUE(prepared);
 	ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
 	// An automatic cast of the same spell must not satisfy the manual receipt.
 	child->getServerCallback()->recordCompletedWisdomSpellCast(SIDE, SPELL, child->getRound(), true);
-	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, false, false, true, true, *prepared));
+	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, *prepared));
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(SPELL), 2u);
-	EXPECT_FALSE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, false, false, true, true, *prepared));
+	EXPECT_FALSE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, *prepared));
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(SPELL), 2u);
 }
 
 TEST_F(NewHorizonsWisdomAITest, NormalCallbackAndAcceptedActionDoNotRecordTheSameCastTwice)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareWisdom());
-	const auto prepared = child->prepareHeroSpellAllowance(SIDE, SPELL, false, false);
+	const auto prepared = child->prepareHeroSpellAllowance(SIDE, SPELL);
 	ASSERT_TRUE(prepared);
 	ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
 	child->getServerCallback()->recordCompletedWisdomSpellCast(SIDE, SPELL, child->getRound(), false);
-	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, false, false, false, false, *prepared));
+	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, *prepared));
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(SPELL), 1u);
 }
 
@@ -208,7 +208,7 @@ TEST_F(NewHorizonsWisdomAITest, ArrowObservationForwardsHistoryAndIncludesItInTh
 TEST_F(NewHorizonsWisdomAITest, DuplicateManualCallbackCannotMutateHistoryAndNextEpochAcceptsTheSameSpell)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareWisdom());
-	const auto prepared = child->prepareHeroSpellAllowance(SIDE, SPELL, false, false);
+	const auto prepared = child->prepareHeroSpellAllowance(SIDE, SPELL);
 	ASSERT_TRUE(prepared);
 	ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
 	auto * server = child->getServerCallback();
@@ -218,15 +218,15 @@ TEST_F(NewHorizonsWisdomAITest, DuplicateManualCallbackCannotMutateHistoryAndNex
 	EXPECT_EQ(projectedHitTest::serialized(child->getWisdomCombatState(SIDE)), once);
 	server->recordCompletedWisdomSpellCast(SIDE, SPELL, child->getRound(), true);
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(SPELL), 2u);
-	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, false, false, false, false, *prepared));
+	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, *prepared));
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(SPELL), 2u);
 	child->nextRound();
-	const auto next = child->prepareHeroSpellAllowance(SIDE, SPELL, false, false);
+	const auto next = child->prepareHeroSpellAllowance(SIDE, SPELL);
 	ASSERT_TRUE(next);
 	ASSERT_NE(next->action.epoch, prepared->action.epoch);
 	ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *next));
 	server->recordCompletedWisdomSpellCast(SIDE, SPELL, child->getRound(), false);
-	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, false, false, false, false, *next));
+	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, SPELL, 0, *next));
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(SPELL), 3u);
 	EXPECT_EQ(battle()->getWisdomCombatState(SIDE).priorCasts(SPELL), 0u);
 }

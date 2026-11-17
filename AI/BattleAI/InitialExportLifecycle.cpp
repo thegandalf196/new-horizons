@@ -13,7 +13,6 @@ void InitialExportBattleSubject::advanceTimedRound(const HypotheticBattle & bran
 {
 	captureBranchValues(branch);
 	const auto index = occurrence(id);
-	// Same pre-expiry subject/polarity query order as the native per-stack hook.
-	const auto selected = battle::roundTimedBonusesFor(owned->unitAt(index), roundSelector);
-	owned->reduceDurations(owned->sourceAt(index), selected);
+	// The caller supplies the ordinary round clock, including Plague's exclusion.
+	owned->reduceDurations(owned->sourceAt(index), roundSelector);
 }

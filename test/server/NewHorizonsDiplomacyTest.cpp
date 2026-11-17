@@ -1263,7 +1263,7 @@ TEST_F(NewHorizonsDiplomacyTest, WeeklyPeacemakerAndTributeStateIsVersionedAndVa
 	historicalHero.setNewHorizonsDiplomacyState(4, neutralId, 4);
 	ASSERT_TRUE(historicalHero.getMagicRules().isNull());
 	ASSERT_TRUE(historicalHero.getPrimaryGrowthRules().isNull());
-	ASSERT_TRUE(historicalHero.getPerkState().rules.isNull());
+	ASSERT_TRUE(historicalHero.getPerkState().getRules().isNull());
 
 	CMemorySerializer oldHeroWriter;
 	oldHeroWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_ELIGIBILITY;
@@ -1380,7 +1380,7 @@ TEST_F(NewHorizonsDiplomacyTest, RecruitmentPactStateRoundTripsAndDefaultsInTheP
 	historicalHero.setNewHorizonsDiplomacyState(4, neutralId, 4, pactExpiryDay);
 	ASSERT_TRUE(historicalHero.getMagicRules().isNull());
 	ASSERT_TRUE(historicalHero.getPrimaryGrowthRules().isNull());
-	ASSERT_TRUE(historicalHero.getPerkState().rules.isNull());
+	ASSERT_TRUE(historicalHero.getPerkState().getRules().isNull());
 
 	CMemorySerializer oldWeeklyHeroWriter;
 	oldWeeklyHeroWriter.oser.version = ESerializationVersion::NEW_HORIZONS_DIPLOMACY_WEEKLY_STATE;

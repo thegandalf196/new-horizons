@@ -113,7 +113,7 @@ TEST_P(NewHorizonsBoneAndSteelTest, BasicPerkRequiresAnActuallyOwnedBuiltUpgrade
 {
 	const auto skill = SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID));
 	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	const auto & rules = attackerSideHero->getPerkState().rules;
+	const auto & rules = attackerSideHero->getPerkState().getRules();
 	ASSERT_TRUE(newHorizonsNecromancy::policy(rules).has_value());
 	const auto & perks = rules["skills"][newHorizonsNecromancy::SKILL_ID]["perks"].Vector();
 	const auto row = std::ranges::find_if(perks, [](const auto & perk)

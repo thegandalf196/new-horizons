@@ -50,8 +50,7 @@ bool barrageRepeatAllowed(const CBattleInfoCallback & battle, const battle::Unit
 	const battle::Unit * target, uint32_t capturedTargetId, BattleHex impact)
 {
 	if(!source || !target || target->unitId() != capturedTargetId || !impact.isValid()
-		|| !source->alive() || !target->alive() || source->isGhost() || target->isGhost()
-		|| source->isTimeStopped() || target->isTimeStopped() || !source->canMove() || !source->canShoot()
+		|| !source->alive() || !target->alive() || source->isGhost() || target->isGhost() || !source->canMove() || !source->canShoot()
 		|| !target->coversPos(impact) || battle.battleGetOwner(source) == battle.battleGetOwner(target))
 		return false;
 	const auto * state = dynamic_cast<const battle::CUnitState *>(source);
@@ -108,7 +107,7 @@ Strike captureStrike(const CBattleInfoCallback & battle, const BattleAttackInfo 
 	Strike result;
 	if(!attack.attacker || !attack.defender || attack.secondaryAttack || attack.bracePreemptive
 		|| attack.preemptiveDamagePercent > 0 || attack.cleaveDamagePercent > 0
-		|| !attack.attacker->alive() || attack.attacker->isGhost() || attack.attacker->isTimeStopped()) return result;
+		|| !attack.attacker->alive() || attack.attacker->isGhost()) return result;
 	const auto & source = *attack.attacker;
 	result.source = source.unitId(); result.target = attack.defender->unitId(); result.impact = attack.defenderPos;
 	if(attack.shooting && attack.physicalDamage && !attack.retaliation && source.isBallista())
@@ -154,7 +153,7 @@ std::vector<uint32_t> bloodlustRecipients(const CBattleInfoCallback & battle, co
 	std::vector<uint32_t> result;
 	for(const auto * unit : battle.battleGetAllUnits())
 	{
-		if(!unit->alive() || unit->isGhost() || unit->isTimeStopped()
+		if(!unit->alive() || unit->isGhost()
 			|| battle.battleGetOwner(unit) != battle.battleGetOwner(&source)) continue;
 		spells::Target target{spells::Destination(unit)};
 		if(cast.mechanicsForTarget(target)->canBeCastAt(target)) result.push_back(unit->unitId());

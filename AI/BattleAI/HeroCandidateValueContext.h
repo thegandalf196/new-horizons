@@ -9,6 +9,4 @@ namespace heroCandidateValueContext
 {
 /// Every cast option except original destination and finalized value; no FP tolerance.
 bool sameOptions(const PossibleSpellcast & a, const PossibleSpellcast & b);
-bool sameCounterspell(const HypotheticBattle::ProjectedCounterspellOutcome & a,
-	const HypotheticBattle::ProjectedCounterspellOutcome & b);
 }

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../nativeRules/CapturedRuleExecutionAudit.h"
 #include "NewHorizonsMasteryRules.h"
 #include "NewHorizonsHeroRules.h"
 #include "../../GameLibrary.h"
@@ -175,15 +176,17 @@ std::array<MasteryOption, 3> parseOptions(const JsonNode & family)
 }
 }
 
-void validateMasteryRules(const JsonNode & rules)
+std::map<SecondarySkill, std::array<MasteryOption, 3>> compileMasteryFamilies(const JsonNode & rules)
 {
+	NH_CAPTURE_RULE_WORK(MasteryAdmission);
 	if(!usesRules(rules))
-		return;
+		return {};
 	fields(rules, {"schemaVersion", "rulesetVersion", "skills"});
 	require(integer(rules["schemaVersion"], 1, 1), "schemaVersion");
 	require(integer(rules["rulesetVersion"], 1, 2), "rulesetVersion");
 	const bool logistics = rules["rulesetVersion"].Integer() == 2;
 	require(rules["skills"].isStruct() && rules["skills"].Struct().size() == (logistics ? 2 : 1), "exact mastery family coverage required");
+	std::map<SecondarySkill, std::array<MasteryOption, 3>> result;
 	std::set<SecondarySkill> skills;
 	std::set<std::string> identities;
 	for(const auto & [key, value] : rules["skills"].Struct())
@@ -192,21 +195,24 @@ void validateMasteryRules(const JsonNode & rules)
 		require(logistics || skill == SecondarySkill::ARTILLERY, "version1 Artillery only");
 		require(skills.insert(skill).second, "duplicate parent skill");
 		const auto options = parseOptions(value);
+		result.emplace(skill, options);
 		require(masteryParentSkill(options.front().effect) == skill, "effect does not belong to parent skill");
 		for(const auto & option : options)
 			require(identities.insert(option.id.value).second, "duplicate mastery identity across families");
 	}
+	return result;
+}
+
+void validateMasteryRules(const JsonNode & rules)
+{
+	(void)compileMasteryFamilies(rules);
 }
 
 std::optional<std::array<MasteryOption, 3>> masteryOptions(const JsonNode & rules, SecondarySkill skill)
 {
-	validateMasteryRules(rules);
-	if(!usesRules(rules))
-		return std::nullopt;
-	for(const auto & [key, value] : rules["skills"].Struct())
-		if(parentSkill(key) == skill)
-			return parseOptions(value);
-	return std::nullopt;
+	const auto families = compileMasteryFamilies(rules);
+	const auto found = families.find(skill);
+	return found == families.end() ? std::nullopt : std::optional(found->second);
 }
 
 void validateMasteryOffer(const MasteryOffer & offer)

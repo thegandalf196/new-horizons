@@ -78,9 +78,9 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	{
 		if(const auto * hero = battleGetOwnerHero(info.attacker))
 		{
-			if(!newHorizonsSylvanTactics::enabled(hero) && hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck.elvenPrecision"))
+			if(!newHorizonsSylvanTactics::enabled(hero) && hero->hasActivePerk(newHorizonsHeroes::BuiltinCombatPerk::ElvenPrecision))
 				payload.luckyRangedDefenseIgnorePercent += ELVEN_PRECISION_DEFENSE_IGNORE_PERCENT;
-			if(hero->hasActivePerk("new-horizons:luck", "new-horizons:luck.luckyAim"))
+			if(hero->hasActivePerk(newHorizonsHeroes::BuiltinCombatPerk::LuckyAim))
 				payload.luckyRangedDefenseIgnorePercent += LUCKY_AIM_DEFENSE_IGNORE_PERCENT;
 		}
 	}
@@ -125,8 +125,7 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 								static_cast<int64_t>(std::numeric_limits<int>::max()));
 							towerSiegeRating = static_cast<int>(clampedRating);
 						}
-						payload.machineBaseDamage = newHorizonsHeroes::capabilitySiegeOutput(
-							capabilityRules, towerSiegeRating, "defensiveTowerDamage");
+						payload.machineBaseDamage = hero->getCapturedSiegeOutput(towerSiegeRating, "defensiveTowerDamage");
 					}
 				}
 				else

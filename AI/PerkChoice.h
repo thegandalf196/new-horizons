@@ -16,7 +16,7 @@ inline std::optional<size_t> firstEligible(const CGHeroInstance & hero,
 	for(size_t index = 0; index < offered.size(); ++index)
 	{
 		const auto & candidate = offered[index];
-		const auto definition = newHorizonsHeroes::perkDefinition(hero.getPerkState().rules,
+		const auto definition = newHorizonsHeroes::perkDefinition(hero.getPerkState().getRules(),
 			candidate.selection.skillId, candidate.selection.perkId);
 		if(definition && definition->effect["status"].String() == "active"
 			&& candidate.requiredRank == newHorizonsHeroes::perkRequiredRank(definition->requiredRank)

@@ -201,7 +201,10 @@ GeneralOptionsTab::GeneralOptionsTab()
 		setBoolSetting("gameTweaks", "compactTownCreatureInfo", value);
 	});
 
+	addCallback("rollingReplayChanged", std::bind(setBoolSetting, "server", "rollingReplayEnabled", std::placeholders::_1));
 	build(config);
+	const auto & rollingReplay = settings["server"]["rollingReplayEnabled"];
+	widget<CToggleButton>("rollingReplayCheckbox")->setSelected(rollingReplay.isNull() || rollingReplay.Bool());
 
 	std::shared_ptr<CLabel> scalingLabel = widget<CLabel>("scalingLabel");
 	scalingLabel->setText(scalingToLabelString(ENGINE->screenHandler().getInterfaceScalingPercentage()));

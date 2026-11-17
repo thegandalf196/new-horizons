@@ -32,10 +32,10 @@ bool hasSerpentsEmbrace(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:fafner"))
-		&& serpentsEmbracePolicy(hero->getPrimaryGrowthRules()).has_value();
+		&& hero->compiledDevelopment()->serpentsEmbrace.has_value();
 }
 bool serpentsEmbraceEnabled(const CGHeroInstance * hero)
 {
-	return hasSerpentsEmbrace(hero) && serpentsEmbracePolicy(hero->getPrimaryGrowthRules()).value();
+	return hasSerpentsEmbrace(hero) && hero->compiledDevelopment()->serpentsEmbrace.value();
 }
 }

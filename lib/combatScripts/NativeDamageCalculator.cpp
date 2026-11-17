@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NativeDamageCalculator.h"
+#include "../battle/CBattleInfoCallback.h"
 #include "NativeDamageFacts.h"
 #include "NativeDamageFactors.h"
 #include "../battle/DamageInteger.h"
@@ -107,5 +108,9 @@ DamageEstimation calculate(const DamageAttackInfo & info, const Facts & facts)
 
 DamageEstimation NativeDamageCalculator::calculate(const CBattleInfoCallback & battle, DamageAttackInfo & info) const
 {
-	return nativeDamage::calculate(info, nativeDamage::capture(battle, info));
+	const auto * attacker = battle.preparedUnitDamageFacts(*info.attacker, info.shooting);
+	const auto * defender = battle.preparedUnitDamageFacts(*info.defender, info.shooting);
+	return nativeDamage::calculate(info, attacker && defender
+		? nativeDamage::capturePrepared(battle, info, *attacker, *defender)
+		: nativeDamage::capture(battle, info));
 }

@@ -45,7 +45,7 @@ TEST_F(NewHorizonsPassiveFactionCaptureTest, FreshWorldAndHeroesCaptureAllThreeP
 	{
 		const auto * hero = findHeroByOwner(owner);
 		ASSERT_NE(hero, nullptr);
-		EXPECT_EQ(hero->getPerkState().rules, authored);
+		EXPECT_EQ(hero->getPerkState().getRules(), authored);
 		EXPECT_NO_THROW(hero->getPerkState().validate());
 	}
 }

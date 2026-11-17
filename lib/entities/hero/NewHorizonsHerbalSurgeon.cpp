@@ -51,7 +51,7 @@ int herbalSurgeonRegenerationPercent(const CGHeroInstance * hero)
 {
 	if(!isVerdish(hero))
 		return 0;
-	const auto rule = herbalSurgeonRules(hero->getPrimaryGrowthRules());
+	const auto rule = hero->compiledDevelopment()->herbalSurgeon;
 	return rule ? scaledPercent(hero->level, rule->regenerationPercentPerLevel, rule->regenerationMaximumPercent) : 0;
 }
 int64_t tentCreatureHealingBudget(int64_t ordinary, const CGHeroInstance * hero)
@@ -60,7 +60,7 @@ int64_t tentCreatureHealingBudget(int64_t ordinary, const CGHeroInstance * hero)
 		throw std::invalid_argument("Negative Tent creature-healing budget");
 	if(!isVerdish(hero))
 		return fieldPhysicianHealing(ordinary, hero);
-	const auto rule = herbalSurgeonRules(hero->getPrimaryGrowthRules());
+	const auto rule = hero->compiledDevelopment()->herbalSurgeon;
 	if(!rule)
 		return ordinary;
 	const auto extra = druidSpecialtyExtra(ordinary, scaledPercent(hero->level, rule->tentPercentPerLevel, rule->tentMaximumPercent));

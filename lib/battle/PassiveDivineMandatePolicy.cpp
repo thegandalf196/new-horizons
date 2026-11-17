@@ -22,7 +22,7 @@ Policy capturePolicy(const CGHeroInstance * hero)
 {
 	Policy result;
 	if(!hero || hero->getFactionID() != FactionID::CASTLE
-		|| !enabled(hero->getPerkState().rules))
+		|| !enabled(hero->getPerkState().getRules()))
 		return result;
 	result.rank = static_cast<uint8_t>(std::clamp(hero->getPerkSkillRank(SKILL), 0, 3));
 	if(result.rank == 0)

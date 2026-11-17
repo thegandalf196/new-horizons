@@ -33,11 +33,11 @@ bool hasAerialSupremacy(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:edric"))
-		&& aerialSupremacyPolicy(hero->getPrimaryGrowthRules()).has_value();
+		&& hero->compiledDevelopment()->aerialSupremacy.has_value();
 }
 bool aerialSupremacyEnabled(const CGHeroInstance * hero)
 {
-	return hasAerialSupremacy(hero) && aerialSupremacyPolicy(hero->getPrimaryGrowthRules()).value();
+	return hasAerialSupremacy(hero) && hero->compiledDevelopment()->aerialSupremacy.value();
 }
 bool resolveAerialSupremacyPresentation(const CHero & hero, const JsonNode & rules,
 	SpecialtyPresentation & result)

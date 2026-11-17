@@ -50,14 +50,14 @@ std::vector<const battle::Unit *> legalRecipients(const spells::Mechanics & refl
 	{
 		if(!unit->isValidTarget(false) || unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
 			|| callback->battleGetOwner(unit) != reflected.getCasterColor()
-			|| !reflected.isReceptive(unit) || newHorizonsSorcery::isSpellLocked(*unit)) continue;
+			|| !reflected.isReceptive(unit)) continue;
 		const spells::Target destination{spells::Destination(unit)};
 		if(std::ranges::all_of(effects, [&](const auto * effect)
 		{
 			spells::Target aim = destination;
 			if(effect->resistanceShareKind() == spells::effects::ResistanceShareKind::LifeDrain)
 			{
-				if(!reflector || !reflector->isValidTarget(false) || newHorizonsSorcery::isSpellLocked(*reflector)) return false;
+				if(!reflector || !reflector->isValidTarget(false)) return false;
 				aim.emplace_back(reflector);
 			}
 			spells::detail::ProblemImpl problem;
@@ -74,11 +74,8 @@ std::vector<std::shared_ptr<Bonus>> preparedBonuses(const CGHeroInstance & hero)
 	if(!hero.getHeroType() || hero.getHeroType()->getJsonKey() != "core:ufretin"
 		|| !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(&hero))
 		return {};
-	const auto & policy = hero.getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	if(policy[POLICY_KEY].isNull())
+	if(!hero.compiledDevelopment()->hasOrdinaryField(POLICY_KEY))
 		return {};
-	if(policy[POLICY_KEY].getType() != JsonNode::JsonType::DATA_INTEGER || policy[POLICY_KEY].Integer() != 1)
-		throw std::runtime_error("Invalid captured native resistance reflection policy");
 	std::vector<std::shared_ptr<Bonus>> result;
 	for(const auto & [key, percent] : {std::pair{"core:dwarf", 20}, std::pair{"core:battleDwarf", 40}})
 	{

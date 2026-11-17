@@ -8,7 +8,7 @@
 		"fourOfferProgressionVersion": {
 			"required": ["perkProgressionPolicyVersion", "offerWeightPolicyVersion"],
 			"not": {"required": ["unifiedSkillProgressionVersion"]},
-			"properties": {"perkProgressionPolicyVersion": {"enum": [1]}, "offerWeightPolicyVersion": {"enum": [2]}}
+			"properties": {"perkProgressionPolicyVersion": {"enum": [1, 2]}, "offerWeightPolicyVersion": {"enum": [2]}}
 		},
 		"estatesPolicyVersion": {
 			"properties": {
@@ -30,7 +30,7 @@
 		},
 		"unifiedSkillProgressionVersion": {
 			"required": ["perkProgressionPolicyVersion", "offerWeightPolicyVersion", "necromancyPolicy"],
-			"properties": {"perkProgressionPolicyVersion": {"enum": [1]}, "offerWeightPolicyVersion": {"enum": [2]}, "necromancyPolicy": {"properties": {"version": {"enum": [4]}}}}
+			"properties": {"perkProgressionPolicyVersion": {"enum": [1, 2]}, "offerWeightPolicyVersion": {"enum": [2]}, "necromancyPolicy": {"properties": {"version": {"enum": [4]}}}}
 		},
 		"perkProgressionPolicyVersion": {
 			"properties": {"offerWeightPolicyVersion": {"enum": [2]}},
@@ -67,14 +67,67 @@
 		}
 	],
 	"properties": {
-		"fourOfferProgressionVersion": {"type": "integer", "enum": [1], "description": "Four fixed weighted groups offer a Skill or a perk. Use raw class weights, preserve ordered rank prerequisites, allow additional perks from an already selected tier, and retain at most three acquired perks per Skill."},
+		"fourOfferProgressionVersion": {"type": "integer", "enum": [1], "description": "Four fixed weighted groups offer a Skill or a perk using raw class weights. Perk progression policy 2 requires one Basic, one Advanced and one Expert perk in order. Historical policy 1 retains its original tier eligibility."},
 		"estatesPolicyVersion": {"type": "integer", "enum": [1], "description": "Revised Estates catalogue and captured economy effects; absence retains the entire historical catalogue and effects."},
 		"commandAuthorityPolicy": {"$ref": "#/definitions/commandAuthorityPolicy"},
 		"warfarePolicyVersion": {"type": "integer", "enum": [1]},
 		"unifiedSkillProgressionVersion": {"type": "integer", "enum": [1], "description": "One full eligible tier choice immediately follows every acquired Skill rank. Historical random perk-offer limits do not truncate that pool."},
 		"elementalAttunementPolicy": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Current deterministic Conflux Attunement and revised perk meanings; a full active registry requires version 1."},
 		"commandPolicyVersion": {"type": "integer", "enum": [1], "description": "Current finite-Command perk meanings; a full active registry must carry version 1."},
-		"metamagicPolicy": {"$ref": "#/definitions/metamagicPolicyV3"},
+		"metamagicPolicy": {
+			"oneOf": [
+				{
+					"$ref": "#/definitions/metamagicPolicyV3"
+				},
+				{
+					"type": "object",
+					"additionalProperties": false,
+					"required": [
+						"version",
+						"removalChancePercent",
+						"damagePerMana",
+						"restorationPerMana",
+						"halonRemovalChanceBonusPercent"
+					],
+					"properties": {
+						"version": {
+							"type": "integer",
+							"enum": [
+								4
+							]
+						},
+						"removalChancePercent": {
+							"type": "array",
+							"minItems": 4,
+							"maxItems": 4,
+							"items": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 100
+							}
+						},
+						"damagePerMana": {
+							"type": "integer",
+							"enum": [
+								10
+							]
+						},
+						"restorationPerMana": {
+							"type": "integer",
+							"enum": [
+								15
+							]
+						},
+						"halonRemovalChanceBonusPercent": {
+							"type": "integer",
+							"enum": [
+								5
+							]
+						}
+					}
+				}
+			]
+		},
 		"divineMandatePolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
 		"demonicGatingPolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
 		"bloodragePolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
@@ -86,7 +139,7 @@
 		"schemaVersion": {"type": "integer", "enum": [1]},
 		"rulesetVersion": {"type": "integer", "enum": [1, 2]},
 		"offerWeightPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Captured weighting:1 full per-perk raw weights;2 normalized parent-first offers. Without an independent progression marker,2 retains historical same-tier selections."},
-		"perkProgressionPolicyVersion": {"type": "integer", "enum": [1], "not": {"type": "null"}, "description": "Captured1 requires weight policy2 and permits only the next missing perk tier, one perk per tier and one offered alternative per parent. Absence preserves historical progression."},
+		"perkProgressionPolicyVersion": {"type": "integer", "enum": [1, 2], "not": {"type": "null"}, "description": "Captured1 preserves historical four-offer eligibility. Captured2 requires exactly one Basic, Advanced and Expert perk in order, including four-offer choices. Both require weight policy2 and one offered alternative per parent. Absence preserves historical progression."},
 		"sylvanTacticsPolicy": {"type": "integer", "enum": [1, 2, 3], "not": {"type": "null"}, "description": "Captured1 retains the movement/Waiting Sylvan Tactics pool;2 selects the Rampart creature-family pool;3 selects the mixed tactical pool. Absence preserves historical Sylvan Luck definitions and effects; never inject installed defaults into an old capture."},
 		"necromancyPolicy": {"$ref": "#/definitions/necromancyPolicy"},
 		"perkOfferNormalization": {

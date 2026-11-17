@@ -72,12 +72,8 @@ inline newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effec
 	const auto spellKey = effect.toSpell()->getJsonKey();
 	if(newHorizonsBattleStatus::isConfusion(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::CONFUSION;
-	if(newHorizonsBattleStatus::isTimeStop(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::TIME_STOP;
 	if(newHorizonsBattleStatus::isEntangle(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::ENTANGLE;
-	if(newHorizonsBattleStatus::isSpellLock(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::SPELL_LOCK;
 	if(newHorizonsBattleStatus::isDoom(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::DOOM;
 	if(newHorizonsBattleStatus::isDivineRetribution(spellKey))
@@ -96,8 +92,8 @@ inline newHorizonsBattleStatus::StackStatusIconKind statusIconKind(SpellID effec
 		return newHorizonsBattleStatus::StackStatusIconKind::SHADOW_GIFT_BUFF;
 	if(newHorizonsBattleStatus::isVampirism(spellKey))
 		return newHorizonsBattleStatus::StackStatusIconKind::VAMPIRISM;
-	if(newHorizonsBattleStatus::isFocusMagic(spellKey) || newHorizonsBattleStatus::isArcaneBreach(spellKey))
-		return newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE;
+	if(newHorizonsBattleStatus::isFocusMagic(spellKey))
+		return newHorizonsBattleStatus::StackStatusIconKind::FOCUS_MAGIC;
 	return newHorizonsBattleStatus::StackStatusIconKind::ORDINARY;
 }
 

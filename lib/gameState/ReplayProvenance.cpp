@@ -37,11 +37,15 @@ ReplayPayload ReplayChapter::packPayload(size_t index) const
 }
 void ReplayLog::validateStorage() const
 {
+	if(!captureEnabled && (recordEntireGame || !chapters.empty()))
+		throw std::runtime_error("Disabled replay capture cannot contain recorded history");
 	for(const auto & chapter : chapters)
 		chapter.validateStorage();
 }
-void ReplayLog::validateSerialization(bool provenanceSupported) const
+void ReplayLog::validateSerialization(bool provenanceSupported, bool capturePolicySupported) const
 {
+	if(!captureEnabled && (!capturePolicySupported || recordEntireGame || !chapters.empty()))
+		throw std::runtime_error("Invalid or unsupported disabled replay capture policy");
 	for(const auto & chapter : chapters)
 		chapter.validateSerialization(provenanceSupported);
 }

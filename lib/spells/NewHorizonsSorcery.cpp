@@ -10,83 +10,12 @@
 #include "StdInc.h"
 #include "NewHorizonsSorcery.h"
 #include "ISpellMechanics.h"
-#include "../bonuses/IBonusBearer.h"
-#include "../bonuses/Bonus.h"
-#include "../bonuses/BonusList.h"
-#include "../bonuses/BonusSelector.h"
-#include "CSpell.h"
-#include "CSpellHandler.h"
-#include "../GameLibrary.h"
 
 #include <algorithm>
-#include <array>
 #include <stdexcept>
 
 namespace newHorizonsSorcery
 {
-namespace
-{
-const CSpell * effectSourceSpell(const Bonus * bonus)
-{
-	if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || !LIBRARY || !LIBRARY->spellh)
-		return nullptr;
-	const auto id = bonus->sid.as<SpellID>().getNum();
-	if(id < 0 || static_cast<size_t>(id) >= LIBRARY->spellh->objects.size())
-		return nullptr;
-	return LIBRARY->spellh->objects.at(id).get();
-}
-
-bool isSpellLockSource(const Bonus * bonus)
-{
-	const auto * source = effectSourceSpell(bonus);
-	return source && source->getJsonKey() == SPELL_LOCK_SPELL;
-}
-}
-bool isSpellLocked(const IBonusBearer & stack)
-{
-	const auto bonuses = stack.getBonuses(Selector::type()(BonusType::MAGIC_RESISTANCE)
-		.And(CSelector(isSpellLockSource)));
-	return bonuses && vstd::contains_if(*bonuses, [](const std::shared_ptr<Bonus> & bonus)
-	{
-		return bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
-	});
-}
-
-std::optional<bool> spellLockPreservesBeneficial(const IBonusBearer & stack)
-{
-	const auto bonuses = stack.getBonuses(Selector::type()(BonusType::NONE)
-		.And(CSelector(isSpellLockSource)));
-	if(!bonuses)
-		return std::nullopt;
-
-	for(const auto & bonus : *bonuses)
-		if(bonus && Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0)
-			return bonus->val > 0;
-	return std::nullopt;
-}
-
-bool isPreservedSpellLockEffect(const Bonus * bonus, bool preserveBeneficial)
-{
-	if(!bonus || bonus->source != BonusSource::SPELL_EFFECT || !Bonus::NTurns(bonus))
-		return false;
-
-	const auto * sourceSpell = effectSourceSpell(bonus);
-	if(!sourceSpell || sourceSpell->getJsonKey() == SPELL_LOCK_SPELL
-		|| sourceSpell->isAdventure() || !sourceSpell->isMagical())
-		return false;
-
-	// Spell Lock removes only the opposing polarity. Neutral magical effects
-	// survive either alignment and their timers are frozen as well.
-	return preserveBeneficial ? !sourceSpell->isNegative() : !sourceSpell->isPositive();
-}
-
-bool durationPausedBySpellLock(const IBonusBearer & bearer, const Bonus & bonus)
-{
-	const auto beneficial = spellLockPreservesBeneficial(bearer);
-	return isSpellLocked(bearer) && beneficial.has_value()
-		&& isPreservedSpellLockEffect(&bonus, *beneficial);
-}
-
 namespace
 {
 void validateSpellPower(int32_t spellPower)
@@ -94,14 +23,6 @@ void validateSpellPower(int32_t spellPower)
 	if(spellPower < 0)
 		throw std::invalid_argument("Sorcery spell power cannot be negative");
 }
-}
-
-int32_t arcaneBreachMarkBasisPoints(int32_t spellPower)
-{
-	validateSpellPower(spellPower);
-	const int64_t uncapped = ARCANE_BREACH_BASE_BASIS_POINTS
-		+ static_cast<int64_t>(spellPower) * ARCANE_BREACH_POWER_BASIS_POINTS;
-	return static_cast<int32_t>(std::min<int64_t>(ARCANE_BREACH_CAP_BASIS_POINTS, uncapped));
 }
 
 int32_t phantomArmyIntegrityBasisPoints(int32_t spellPower, bool illusionist)
@@ -174,104 +95,4 @@ int phantomArmyDamageTakenPercent(bool magical)
 	return magical ? PHANTOM_ARMY_MAGICAL_DAMAGE_TAKEN_PERCENT : PHANTOM_ARMY_PHYSICAL_DAMAGE_TAKEN_PERCENT;
 }
 
-int timeStopRadius(int32_t spellPower, bool chronomancer)
-{
-	return timeStopRadius(spellPower, chronomancer, 100);
-}
-
-int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPercent)
-{
-	return timeStopRadius(spellPower, chronomancer, coefficientPercent, 0);
-}
-
-int timeStopRadius(int32_t spellPower, bool chronomancer, int32_t coefficientPercent,
-	int32_t empowerSpellBonusPercent)
-{
-	validateSpellPower(spellPower);
-	if(coefficientPercent < 0 || coefficientPercent > 1000
-		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
-		throw std::invalid_argument("Invalid Time Stop Spell Power coefficient");
-	const int maximumRadius = TIME_STOP_BASE_MAX_RADIUS
-		+ (chronomancer ? TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
-	const int64_t scaledPowerTerm = static_cast<int64_t>(spellPower) * coefficientPercent
-		* (100 + empowerSpellBonusPercent) / (TIME_STOP_POWER_PER_EXTRA_RADIUS * 100 * 100);
-	return std::min(maximumRadius, TIME_STOP_BASE_RADIUS + static_cast<int>(scaledPowerTerm));
-}
-
-int32_t timeStopRadius(const int32_t rawSpellPower, const int32_t coefficientBasisPoints, const int32_t empowerSpellBonusPercent, const bool chronomancer)
-{
-	const int64_t scaledPowerTerm = spells::scaleSpellPowerComponentWithCoefficientBasisPoints(
-		rawSpellPower, TIME_STOP_POWER_PER_EXTRA_RADIUS, coefficientBasisPoints, empowerSpellBonusPercent);
-	const int32_t maximumRadius = TIME_STOP_BASE_MAX_RADIUS
-		+ (chronomancer ? TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
-	return static_cast<int32_t>(std::min<int64_t>(maximumRadius, TIME_STOP_BASE_RADIUS + scaledPowerTerm));
-}
-
-int spellLockDuration(int32_t spellPower, bool spellbinder, int32_t coefficientPercent)
-{
-	if(coefficientPercent < 0 || coefficientPercent > 1000)
-		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
-	return spellLockDurationBasisPoints(spellPower, spellbinder,
-		coefficientPercent * 100);
-}
-
-int spellLockDurationBasisPoints(int32_t spellPower, bool spellbinder,
-	int32_t coefficientBasisPoints, int32_t empowerSpellBonusPercent)
-{
-	validateSpellPower(spellPower);
-	if(coefficientBasisPoints < 0 || coefficientBasisPoints > 100000
-		|| empowerSpellBonusPercent < 0 || empowerSpellBonusPercent > 1000)
-		throw std::invalid_argument("Invalid Spell Lock Spell Power coefficient inputs");
-
-	// Only 0, 1, and 2 Spell Power units can affect the capped duration. Clamp
-	// the exact numerator at the threshold for 2 before applying
-	// the accepted Empower percentage, preserving the nonnegative
-	// int32 range without overflowing an intermediate.
-	constexpr int64_t denominator = static_cast<int64_t>(SPELL_LOCK_POWER_PER_EXTRA_ROUND)
-		* 10000 * 100;
-	constexpr int64_t saturationThreshold = 2 * denominator;
-	int64_t scaledNumerator = spellPower;
-	const std::array<int64_t, 2> factors{
-		coefficientBasisPoints, 100LL + empowerSpellBonusPercent};
-	for(const int64_t factor : factors)
-	{
-		if(factor == 0)
-		{
-			scaledNumerator = 0;
-			break;
-		}
-		if(scaledNumerator > (saturationThreshold - 1) / factor)
-		{
-			scaledNumerator = saturationThreshold;
-			break;
-		}
-		scaledNumerator *= factor;
-	}
-	const int64_t scaledSpellPower = std::min<int64_t>(2, scaledNumerator / denominator);
-	const int baseDuration = static_cast<int>(std::min<int64_t>(
-		SPELL_LOCK_BASE_DURATION_CAP,
-		1 + scaledSpellPower));
-	if(!spellbinder)
-		return baseDuration;
-
-	return std::min(
-		SPELL_LOCK_SPELLBINDER_DURATION_CAP,
-		baseDuration + SPELL_LOCK_SPELLBINDER_DURATION_BONUS);
-}
-
-SpellLockPolicy spellLockPolicy(bool friendlyTarget)
-{
-	SpellLockPolicy policy;
-	if(friendlyTarget)
-	{
-		policy.removeHostile = true;
-		policy.preserveBeneficial = true;
-	}
-	else
-	{
-		policy.removeBeneficial = true;
-		policy.preserveHostile = true;
-	}
-	return policy;
-}
 }

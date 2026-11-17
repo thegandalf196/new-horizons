@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsFocusMagic.h"
 #include "NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsPassiveSpecialties.h"
 #include "NewHorizonsCommandResources.h"
@@ -215,7 +216,7 @@ int32_t CBattleInfoCallback::battleGetDirectActivationOutputPercent(const Battle
 bool CBattleInfoCallback::battleHasWarMachinesPerk(
 	const battle::Unit * machine, const std::string & perk) const
 {
-	if(!getBattle() || !machine || !machine->alive() || machine->isTimeStopped() || machine->isFrozen())
+	if(!getBattle() || !machine || !machine->alive() || machine->isFrozen())
 		return false;
 	const auto * hero = battleGetOwnerHero(machine);
 	return hero && hero->getCapabilityRules()["rulesetVersion"].Integer() >= 3
@@ -269,8 +270,7 @@ BreachmakerPreview CBattleInfoCallback::battleGetBreachmakerPreview(
 
 bool CBattleInfoCallback::battleCanTakeRangedFollowUp(const battle::Unit * unit) const
 {
-	if(!battleHasPendingRangedFollowUp(unit) || !unit->alive() || unit->isGhost()
-		|| unit->isTimeStopped() || !unit->canMove() || !battleCanShoot(unit))
+	if(!battleHasPendingRangedFollowUp(unit) || !unit->alive() || unit->isGhost() || !unit->canMove() || !battleCanShoot(unit))
 		return false;
 
 	for(const auto * target : battleAliveUnits())
@@ -565,8 +565,7 @@ std::vector<uint32_t> CBattleInfoCallback::battleFortuneAdjacentFriends(const ba
 bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacker,
 	const battle::Unit * target, bool shooting) const
 {
-	if(!attacker || !getBattle() || battleTacticDist() || !attacker->alive() || attacker->isGhost()
-		|| attacker->isTimeStopped() || attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+	if(!attacker || !getBattle() || battleTacticDist() || !attacker->alive() || attacker->isGhost() || attacker->isTurret() || attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
 		|| attacker->hasBonusOfType(BonusType::NO_LUCK) || attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 		|| (attacker->hasBonusOfType(BonusType::MAXIMUM_LUCK)
 			&& attacker->valOfBonuses(BonusType::MAXIMUM_LUCK) <= 0)
@@ -582,8 +581,7 @@ bool CBattleInfoCallback::battleCanUsePerfectMoment(const battle::Unit * attacke
 
 bool CBattleInfoCallback::battleCanUseCounterBattery(const battle::Unit * attacker) const
 {
-	if(!getBattle() || !attacker || !attacker->alive() || attacker->isGhost()
-		|| attacker->isTimeStopped() || !(attacker->isBallista() || attacker->isTurret()))
+	if(!getBattle() || !attacker || !attacker->alive() || attacker->isGhost() || !(attacker->isBallista() || attacker->isTurret()))
 		return false;
 	const auto side = playerToSide(battleGetActionController(attacker));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
@@ -634,7 +632,6 @@ bool CBattleInfoCallback::battleCanUsePerfectFortune(const battle::Unit * attack
 {
 	(void)target;
 	if(!getBattle() || battleTacticDist() || !attacker || !attacker->alive() || attacker->isGhost()
-		|| attacker->isTimeStopped()
 		|| !newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(attacker,
 			!(shooting && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)))
 		|| attacker->hasBonusOfType(BonusType::NO_LUCK)
@@ -1016,7 +1013,7 @@ bool CBattleInfoCallback::battleCanUseDefiant(
 	const auto * target = attack.defender;
 	if(!current || !attacker || !target || !attack.physicalDamage || attack.shooting
 		|| !heroCommands::isCanonicalRules(current->getHeroCommandRules())
-		|| !attacker->alive() || !target->alive() || target->isTimeStopped()
+		|| !attacker->alive() || !target->alive()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(target)
 		|| !target->ableToRetaliate())
 		return false;
@@ -1163,7 +1160,7 @@ bool CBattleInfoCallback::battleCanForciblyDisplace(const battle::Unit * unit,
 	const BattleHex & destination, BattleDisplacementCause cause) const
 {
 	if(!getBattle() || !validBattleDisplacementCause(cause) || cause == BattleDisplacementCause::NONE
-		|| !unit || !unit->alive() || unit->isGhost() || unit->isTimeStopped()
+		|| !unit || !unit->alive() || unit->isGhost()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit)
 		|| !destination.isValid() || destination == unit->getPosition()
 		|| battleGetUnitByID(unit->unitId()) != unit || battleIsForcedDisplacementImmune(unit, cause))
@@ -1794,18 +1791,9 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	std::array<battle::Units, BattlePhases::NUMBER_OF_PHASES> phases; // Access using BattlePhases enum
 
 	const battle::Unit * activeUnit = battleActiveUnit();
-	// Time Stop removes a unit from every ordinary action path, but it must
-	// still consume one queue slot so that a battle containing only stopped
-	// units can advance to the next hero-action window.  BattleInfo marks that
-	// synthetic activation as moved for this round; this is scheduling state,
-	// not permission to move or perform an action.
-	const auto stoppedTurnReady = [](const battle::Unit * unit)
-	{
-		return unit && unit->alive() && unit->isTimeStopped() && !unit->timeStopTurnConsumed();
-	};
 	const auto frozenTurnReady = [](const battle::Unit * unit, int futureTurn)
 	{
-		return unit && unit->alive() && !unit->isTimeStopped()
+		return unit && unit->alive()
 			&& newHorizonsFrozen::isFrozen(*unit) && !unit->moved(futureTurn)
 			&& !unit->defended(futureTurn);
 	};
@@ -1814,7 +1802,7 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	{
 		//its first turn and active unit hasn't taken any action yet - must be placed at the beginning of queue, no matter what
 		if(turn == 0
-			&& (activeUnit->willMove() || stoppedTurnReady(activeUnit)
+			&& (activeUnit->willMove()
 			|| frozenTurnReady(activeUnit, 0)))
 		{
 			turns.back().push_back(activeUnit);
@@ -1834,9 +1822,9 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 	});
 
 	// If no unit will be EVER! able to move, battle is over.
-	if(!vstd::contains_if(allUnits, [&stoppedTurnReady, &frozenTurnReady](const battle::Unit * unit)
+	if(!vstd::contains_if(allUnits, [&frozenTurnReady](const battle::Unit * unit)
 	{
-		return unit->willMove(100000) || stoppedTurnReady(unit) || frozenTurnReady(unit, 100000);
+		return unit->willMove(100000) || frozenTurnReady(unit, 100000);
 	})) //little evil, but 100000 should be enough for all effects to disappear
 	{
 		turns.clear();
@@ -1845,7 +1833,7 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & turns,
 
 	for(const auto * unit : allUnits)
 	{
-		if((actualTurn == 0 && !unit->willMove() && !stoppedTurnReady(unit) && !frozenTurnReady(unit, 0)) //we are considering current round and unit won't move
+		if((actualTurn == 0 && !unit->willMove() && !frozenTurnReady(unit, 0)) //we are considering current round and unit won't move
 		|| (actualTurn > 0 && !unit->canMove(turn) && !frozenTurnReady(unit, turn)) //unit won't be able to move in later rounds
 		|| (actualTurn == 0 && unit == activeUnit && !turns.at(0).empty() && unit == turns.front().front())) //it's active unit already added at the beginning of queue
 		{
@@ -2177,6 +2165,8 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker) const
 bool CBattleInfoCallback::battleCanTargetEmptyHex(const battle::Unit * attacker) const
 {
 	RETURN_IF_NOT_BATTLE(false);
+	if(attacker && newHorizonsFocusMagic::converted(*attacker))
+		return false;
 
 	if(!LIBRARY->engineSettings()->getBoolean(EGameSettings::COMBAT_AREA_SHOT_CAN_TARGET_EMPTY_HEX))
 		return false;
@@ -2407,84 +2397,6 @@ bool CBattleInfoCallback::battleCanShootActionWithoutCounterBatteryRestriction(
 		}
 	}
 	return false;
-}
-
-RangedAttackPenetration CBattleInfoCallback::battleGetRangedAttackPenetration(
-	const BattleAttackInfo & attack) const
-{
-	RangedAttackPenetration result;
-	const auto * currentBattle = getBattle();
-	if(!currentBattle || !attack.physicalDamage || !attack.shooting || !attack.attacker || !attack.defender
-		|| !attack.defender->alive() || attack.defender->isGhost()
-		|| !newHorizonsMagic::rulesActive(currentBattle->getMagicRules()))
-		return result;
-
-	const auto attackerSide = playerToSide(battleGetOwner(attack.attacker));
-	const auto defenderSide = playerToSide(battleGetOwner(attack.defender));
-	if(attackerSide == BattleSide::NONE || defenderSide == BattleSide::NONE || attackerSide == defenderSide)
-		return result;
-
-	int validMarks = 0;
-	const auto triggers = attack.defender->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER);
-	for(const auto & bonus : *triggers)
-	{
-		if(bonus->source != BonusSource::SPELL_EFFECT || !bonus->parameters
-			|| (Bonus::NTurns(bonus.get()) && bonus->turnsRemain <= 0))
-			continue;
-		try
-		{
-			// Check source spell identity first; only those candidates need the
-			// script subtype's resolved name.
-			if(bonus->sid.toString() != newHorizonsSorcery::ARCANE_BREACH_EFFECT
-				|| bonus->subtype.toString() != newHorizonsSorcery::ARCANE_BREACH_TRIGGER)
-				continue;
-		}
-		catch(const std::exception &)
-		{
-			continue;
-		}
-
-		const JsonNode * markParameters = nullptr;
-		try
-		{
-			markParameters = &bonus->parameters->toCustom<JsonNode>();
-		}
-		catch(const std::exception &)
-		{
-			continue;
-		}
-		if(!markParameters->isStruct())
-			continue;
-
-		const auto sideParameter = markParameters->Struct().find("beneficiarySide");
-		// Lua numbers round-trip as JSON floats. Compare the exact enum value
-		// rather than rejecting valid 0.0/1.0 or truncating fractional inputs.
-		if(sideParameter == markParameters->Struct().end()
-			|| !sideParameter->second.isNumber()
-			|| sideParameter->second.Float() != static_cast<int32_t>(attackerSide)
-			|| bonus->val <= 0)
-			continue;
-
-		const int perMarkBasisPoints = std::min(bonus->val,
-			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
-		result.creatureDefenseIgnoreBasisPoints = std::min(
-			result.creatureDefenseIgnoreBasisPoints + perMarkBasisPoints,
-			newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS * newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS);
-		if(++validMarks >= newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS)
-			break;
-	}
-
-	if(validMarks < newHorizonsSorcery::ARCANE_BREACH_MAX_MARKS
-		|| !newHorizonsCombatSkills::isPhysicalCreatureAttack(attack.attacker, attack.physicalDamage)
-		|| newHorizonsMagic::physicalDamageReductionCapPercent(currentBattle->getMagicRules()) < 0)
-		return result;
-
-	const auto * attackerHero = battleGetOwnerHero(attack.attacker);
-	if(attackerHero && attackerHero->hasActivePerk(newHorizonsSorcery::SORCERY_MAGIC_SKILL,
-		newHorizonsSorcery::ARCANE_BALLISTICS_PERK))
-		result.physicalDamageReductionIgnorePercent = newHorizonsSorcery::ARCANE_BALLISTICS_PDR_IGNORE_PERCENT;
-
-	return result;
 }
 
 DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const
@@ -3081,6 +2993,8 @@ AttackableTiles CBattleInfoCallback::getPotentiallyShootableHexes(const battle::
 	//does not return hex attacked directly
 	AttackableTiles at;
 	RETURN_IF_NOT_BATTLE(at);
+	if(newHorizonsFocusMagic::converted(*attacker))
+		return at;
 
 	if(attacker->hasBonusOfType(BonusType::SHOOTS_ALL_ADJACENT) && !attackerPos.getNeighbouringTiles().contains(destinationTile))
 	{
@@ -3207,7 +3121,7 @@ BattleHexArray CBattleInfoCallback::getAttackableWallParts() const
 }
 
 SpellCostBreakdown CBattleInfoCallback::battleGetSpellCostBreakdown(const spells::Spell * sp,
-	const CGHeroInstance * caster, int32_t listedCostMultiplier, bool metamagicFollowup) const
+	const CGHeroInstance * caster, int32_t listedCostMultiplier) const
 {
 	SpellCostBreakdown breakdown;
 	if(!duringBattle())
@@ -3216,19 +3130,19 @@ SpellCostBreakdown CBattleInfoCallback::battleGetSpellCostBreakdown(const spells
 		breakdown.finalCost = -1;
 		return breakdown;
 	}
-	calculateBattleSpellCost(sp, caster, listedCostMultiplier, metamagicFollowup, &breakdown);
+	calculateBattleSpellCost(sp, caster, listedCostMultiplier, &breakdown);
 	return breakdown;
 }
 
 int32_t CBattleInfoCallback::battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
-	int32_t listedCostMultiplier, bool metamagicFollowup) const
+	int32_t listedCostMultiplier) const
 {
 	RETURN_IF_NOT_BATTLE(-1);
-	return calculateBattleSpellCost(sp, caster, listedCostMultiplier, metamagicFollowup, nullptr);
+	return calculateBattleSpellCost(sp, caster, listedCostMultiplier, nullptr);
 }
 
 int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
-	int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const
+	int32_t listedCostMultiplier, SpellCostBreakdown * breakdown) const
 {
 	if(breakdown)
 	{
@@ -3269,8 +3183,7 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 		ret = newHorizonsWisdom::familiarityCost(ret, getBattle()->getWisdomCombatState(wisdomSide).priorCasts(sp->getId()));
 		recordStage(SpellCostStage::Kind::SPELL_FAMILIARITY, before, ret);
 	}
-	const int specialtyDiscount = newHorizonsHeroes::chosenSpecialtyManaDiscount(
-		caster->getPrimaryGrowthRules(), caster->getHeroType()->getJsonKey(), sp->getId());
+	const int specialtyDiscount = caster->compiledDevelopment()->chosenManaDiscount(caster->getHeroTypeID(), sp->getId());
 	if(specialtyDiscount > 0)
 	{
 		const int32_t before = ret;
@@ -3322,15 +3235,6 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 	if(finalCost != beforeMinimum)
 		recordStage(SpellCostStage::Kind::MINIMUM_COST, beforeMinimum, finalCost);
 
-	const bool metamagicArcaneEconomy = metamagicFollowup && newHorizonsOrdinarySpell
-		&& !newHorizonsMagic::isAdventureSpell(caster->getMagicRules(), sp->getId())
-		&& newHorizonsMagic::hasMetamagicPerk(caster, newHorizonsMagic::METAMAGIC_ARCANE_ECONOMY);
-	if(metamagicArcaneEconomy)
-	{
-		const int32_t before = finalCost;
-		finalCost = std::max(1, finalCost - 2);
-		recordStage(SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY, before, finalCost);
-	}
 	if(breakdown)
 		breakdown->finalCost = finalCost;
 	return finalCost;

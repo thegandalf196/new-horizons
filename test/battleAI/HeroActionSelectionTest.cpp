@@ -91,31 +91,23 @@ TEST(HeroActionSelectionTest, MaximumUsesStrictComparisonNotApproximateTie)
 	EXPECT_EQ(bits(candidates[selected->ordinal].value), bits(larger));
 }
 
-TEST(HeroActionSelectionTest, OrdinaryMandatoryAndBothTypedFollowupsKeepAdmission)
+TEST(HeroActionSelectionTest, OrdinaryMandatoryAndDivineFollowupKeepAdmission)
 {
-	struct Case { float score; bool mandatory; bool meta; bool divine; bool grand; Disposition expected; };
+	struct Case { float score; bool mandatory; bool divine; Disposition expected; };
 	const std::array cases{
-		Case{9, false, false, false, false, Disposition::USELESS},
-		Case{10, false, false, false, false, Disposition::USELESS},
-		Case{11, false, false, false, false, Disposition::PERFORM},
-		Case{9, false, true, false, false, Disposition::RETAIN_FOLLOWUP},
-		Case{10, false, true, false, false, Disposition::RETAIN_FOLLOWUP},
-		Case{11, false, true, false, false, Disposition::PERFORM},
-		Case{9, false, false, true, false, Disposition::RETAIN_FOLLOWUP},
-		Case{10, false, false, true, false, Disposition::RETAIN_FOLLOWUP},
-		Case{11, false, false, true, false, Disposition::PERFORM},
-		Case{-2, true, false, false, false, Disposition::PERFORM},
-		Case{-2, true, true, false, false, Disposition::PERFORM},
-		Case{-2, true, false, true, false, Disposition::PERFORM},
-		Case{9, false, true, true, false, Disposition::RETAIN_FOLLOWUP},
-		Case{9, false, false, false, true, Disposition::USELESS}};
+		Case{9, false, false, Disposition::USELESS},
+		Case{10, false, false, Disposition::USELESS},
+		Case{11, false, false, Disposition::PERFORM},
+		Case{9, false, true, Disposition::RETAIN_FOLLOWUP},
+		Case{10, false, true, Disposition::RETAIN_FOLLOWUP},
+		Case{11, false, true, Disposition::PERFORM},
+		Case{-2, true, false, Disposition::PERFORM},
+		Case{-2, true, true, Disposition::PERFORM}};
 	for(const auto & c : cases)
 	{
-		SCOPED_TRACE(::testing::Message() << c.score << '/' << c.mandatory << '/' << c.meta << '/' << c.divine);
+		SCOPED_TRACE(::testing::Message() << c.score << '/' << c.mandatory << '/' << c.divine);
 		auto candidate = value(c.score);
-		candidate.metamagicFollowup = c.meta;
 		candidate.divineMandateFollowup = c.divine;
-		candidate.metamagicGrand = c.grand;
 		const std::array candidates{candidate};
 		heroSelectionTest::Observer observer;
 		const auto selected = heroActionSelection::choose(candidates, 10.0f, c.mandatory, &observer);
@@ -139,7 +131,7 @@ TEST(HeroActionSelectionTest, NearBaselineToleranceAppliesToAdmissionOnly)
 	for(const bool followup : {false, true})
 	{
 		auto candidate = value(near);
-		candidate.metamagicFollowup = followup;
+		candidate.divineMandateFollowup = followup;
 		const std::array candidates{candidate};
 		const auto selected = heroActionSelection::choose(candidates, 10.0f, false);
 		ASSERT_TRUE(selected);
@@ -251,7 +243,7 @@ TEST(HeroActionSelectionTest, OptInIdentityCopiesOrderedTargetsAndAllOptionValue
 	a.spellCurePhysicalAffliction = "frozen";
 	a.spellPurifyChoices = {{10, SpellID::SLOW}};
 	a.spellHandOfFateExpectedValue = -0.0f;
-	a.metamagicFollowup = true;
+	a.divineMandateFollowup = true;
 	auto b = a;
 	b.dest[1] = spells::Destination(&second, BattleHex(4, 7));
 	b.commandTargets = {10, 20};

@@ -173,21 +173,20 @@ protected:
 		beginCombat();
 	}
 
-	BattleAction crusadeAction(bool followup = false) const
+	BattleAction crusadeAction() const
 	{
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
 		action.spell = crusadeSpell();
-		action.metamagicFollowup = followup;
 		action.aimToHex(BattleHex::INVALID);
 		return action;
 	}
 
-	bool castCrusade(bool followup = false)
+	bool castCrusade()
 	{
 		return gameHandler->battles->makePlayerBattleAction(
-			BattleID(0), PlayerColor(0), crusadeAction(followup));
+			BattleID(0), PlayerColor(0), crusadeAction());
 	}
 
 	bool castHaste()
@@ -198,18 +197,6 @@ protected:
 		action.spell = SpellID::HASTE;
 		action.aimToUnit(friendly);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
-	}
-
-	void selectEchoedDuration()
-	{
-		const auto decoded = SecondarySkill::decode(metamagicSkill);
-		ASSERT_GE(decoded, 0);
-		const SecondarySkill skill(decoded);
-		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({metamagicSkill, arcaneAcquisitionPerk});
-		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({metamagicSkill, echoedDurationPerk});
-		ASSERT_TRUE(attackerSideHero->hasActivePerk(metamagicSkill, echoedDurationPerk));
 	}
 
 	void selectLightCrusader()
@@ -364,31 +351,9 @@ TEST_F(NewHorizonsCrusadeTest, CrusaderExtendsEveryAppliedBonusToFourRounds)
 	}
 }
 
-TEST_F(NewHorizonsCrusadeTest, EchoedDurationAddsOneRoundToAllCrusadeBonuses)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	selectEchoedDuration();
-	ASSERT_TRUE(castHaste());
-	ASSERT_TRUE(castCrusade(true));
-	const auto applied = crusadeBonuses(friendly);
-	ASSERT_EQ(applied->size(), 5u);
-	for(const auto & bonus : *applied)
-		EXPECT_EQ(bonus->turnsRemain, 4) << "Echoed Duration adjusts the fixed 3-round base exactly once";
-}
 
-TEST_F(NewHorizonsCrusadeTest, EchoedDurationAndCrusaderEachAddOneRoundToAllCrusadeBonuses)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	selectEchoedDuration();
-	selectLightCrusader();
-	ASSERT_TRUE(castHaste());
-	ASSERT_TRUE(castCrusade(true));
-	const auto applied = crusadeBonuses(friendly);
-	ASSERT_EQ(applied->size(), 5u);
-	for(const auto & bonus : *applied)
-		EXPECT_EQ(bonus->turnsRemain, 5)
-			<< "Echoed Duration adjusts the literal 3-round base once, then Crusader adds its own round";
-}
+
+
 
 TEST_F(NewHorizonsCrusadeTest, RecastRefreshesTheSameSourceAndTheNormalDurationExpires)
 {

@@ -8,7 +8,6 @@
 	*
 	*/
 #include "StdInc.h"
-#include "../../lib/networkPacks/SetMetamagicPointState.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/spells/AutomaticHeroCast.h"
 #include "../../lib/ScopeGuard.h"
@@ -143,8 +142,7 @@ void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 		return;
 	}
 	if(dynamic_cast<SetSpellResponseState *>(&pack)
-		|| dynamic_cast<SetOverwhelmingFormulaState *>(&pack)
-		|| dynamic_cast<SetMetamagicPointState *>(&pack))
+		|| dynamic_cast<SetOverwhelmingFormulaState *>(&pack))
 	{
 		BattleStatePackVisitor visitor(*owner);
 		pack.visit(visitor);

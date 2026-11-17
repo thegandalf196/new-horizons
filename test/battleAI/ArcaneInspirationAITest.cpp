@@ -89,16 +89,16 @@ TEST_F(ArcaneInspirationAITest, SuccessfulSharedSpellProjectsCoreAndSpellshockWi
 	const auto world = gameState()->saveToMemory();
 	const auto random = projectedHitTest::serialized(*gameHandler->randomizer);
 	const auto spell = SpellID(SpellID::MAGIC_ARROW);
-	const auto prepared = child->prepareHeroSpellAllowance(SIDE, spell, false, false);
+	const auto prepared = child->prepareHeroSpellAllowance(SIDE, spell);
 	ASSERT_TRUE(prepared); ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
 	spells::BattleCast cast(child.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
 	auto mechanics = spell.toSpell()->battleMechanics(&cast);
 	mechanics->castEval(child->getServerCallback(), {spells::Destination(child->battleGetUnitByID(victim))});
-	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, spell, victim, false, false, false, false, *prepared));
+	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, spell, victim, *prepared));
 	EXPECT_EQ(arcaneInspiration::activeProfile(*child->battleGetUnitByID(actor), PlayerColor(0)).corePercent, 5);
 	EXPECT_TRUE(child->battleGetUnitByID(victim)->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
 	EXPECT_EQ(child->getArcaneInspirationEffects().size(), 2u);
-	EXPECT_FALSE(child->prepareHeroSpellAllowance(SIDE, spell, false, false));
+	EXPECT_FALSE(child->prepareHeroSpellAllowance(SIDE, spell));
 	EXPECT_FALSE(child->prepareHeroOrderAllowance(SIDE));
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(spell), 1u);
 	EXPECT_EQ(gameState()->saveToMemory(), world);
@@ -109,22 +109,15 @@ TEST_F(ArcaneInspirationAITest, SkippedEffectCompletionPublishesOneReversibleAur
 {
 	ASSERT_NO_FATAL_FAILURE(prepareInspiration("arcaneValor"));
 	const auto spell = SpellID(SpellID::MAGIC_ARROW);
-	const auto prepared = child->prepareHeroSpellAllowance(SIDE, spell, false, false);
+	const auto prepared = child->prepareHeroSpellAllowance(SIDE, spell);
 	ASSERT_TRUE(prepared); ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
-	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, spell, victim, false, false, false, false, *prepared));
+	ASSERT_TRUE(child->projectAcceptedHeroSpell(SIDE, spell, victim, *prepared));
 	ASSERT_EQ(child->getArcaneInspirationEffects().size(), 1u);
 	EXPECT_TRUE(child->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isActive)));
 	EXPECT_FALSE(child->battleGetUnitByID(victim)->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
 	const auto count = child->battleGetUnitByID(actor)->getBonuses(CSelector(arcaneInspiration::isActive))->size();
-	EXPECT_FALSE(child->projectAcceptedHeroSpell(SIDE, spell, victim, false, false, false, false, *prepared));
+	EXPECT_FALSE(child->projectAcceptedHeroSpell(SIDE, spell, victim, *prepared));
 	EXPECT_EQ(child->battleGetUnitByID(actor)->getBonuses(CSelector(arcaneInspiration::isActive))->size(), count);
-	auto negated = std::make_shared<HypotheticBattle>(environment.get(), live);
-	const auto denied = negated->prepareHeroSpellAllowance(SIDE, spell, false, false);
-	ASSERT_TRUE(denied); ASSERT_TRUE(negated->beginProjectedHeroAction(SIDE, *denied));
-	ASSERT_TRUE(negated->projectAcceptedHeroSpell(SIDE, spell, victim, false, false, true, true, *denied));
-	EXPECT_TRUE(negated->getArcaneInspirationEffects().empty());
-	EXPECT_FALSE(negated->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isActive)));
-	EXPECT_EQ(negated->getWisdomCombatState(SIDE).priorCasts(spell), 1u);
 }
 
 TEST_F(ArcaneInspirationAITest, CoreIsMultiplicativeAndRetaliationFocusAddsFifteenPoints)
@@ -184,7 +177,7 @@ TEST_F(ArcaneInspirationAITest, ParentAndSiblingKeepIndependentStatusAndChargeLi
 	EXPECT_FALSE(battle()->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isEffect)));
 }
 
-TEST_F(ArcaneInspirationAITest, ReprisalUsesPostShieldDamageBeforeLethalHealthClampAndNeverRecurses)
+TEST_F(ArcaneInspirationAITest, ReprisalUsesPostGuardianDamageBeforeLethalHealthClampAndNeverRecurses)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareInspiration());
 	install(*child, actor, 15, arcaneInspiration::REPRISAL);
@@ -192,7 +185,8 @@ TEST_F(ArcaneInspirationAITest, ReprisalUsesPostShieldDamageBeforeLethalHealthCl
 	auto a = child->getForUpdate(actor), b = child->getForUpdate(victim);
 	int64_t trim = b->getAvailableHealth() - 1;
 	b->damage(trim, false, battle::DamageProvenance::OTHER); // Fixture leaves one HP before the shield is installed.
-	b->arcaneShieldHitPoints = 400;
+	b->guardianSpiritHitPoints = 400;
+	b->guardianSpiritRoundsRemaining = 1;
 	const auto before = a->getAvailableHealth();
 	strike(*child, actor, victim, 1000);
 	EXPECT_FALSE(b->alive());
@@ -206,7 +200,8 @@ TEST_F(ArcaneInspirationAITest, FullyAbsorbedAttackReflectsNothingButSpendsTheAc
 	install(*child, actor, 15, arcaneInspiration::LINGERING);
 	install(*child, victim, 15, arcaneInspiration::REPRISAL);
 	auto a = child->getForUpdate(actor), b = child->getForUpdate(victim);
-	b->arcaneShieldHitPoints = 1000;
+	b->guardianSpiritHitPoints = 1000;
+	b->guardianSpiritRoundsRemaining = 1;
 	const auto beforeA = a->getAvailableHealth(), beforeB = b->getAvailableHealth();
 	strike(*child, actor, victim, 1000);
 	EXPECT_EQ(a->getAvailableHealth(), beforeA);
@@ -319,7 +314,6 @@ TEST_F(ArcaneInspirationAITest, LastHeroPoisonTickAppliesOnlySpellshockWithIsola
  auto sibling = std::make_shared<HypotheticBattle>(environment.get(), child);
  const auto history = projectedHitTest::serialized(child->getWisdomCombatState(SIDE));
  const auto allowance = child->getHeroActionAllowances(SIDE);
- const auto points = child->getMetamagicPointState(SIDE);
  const auto world = gameState()->saveToMemory();
  const auto random = projectedHitTest::serialized(*gameHandler->randomizer);
  const auto hp = target->getAvailableHealth();
@@ -330,7 +324,6 @@ TEST_F(ArcaneInspirationAITest, LastHeroPoisonTickAppliesOnlySpellshockWithIsola
  EXPECT_FALSE(child->battleGetUnitByID(actor)->hasBonus(CSelector(arcaneInspiration::isActive)));
  EXPECT_EQ(projectedHitTest::serialized(child->getWisdomCombatState(SIDE)), history);
  EXPECT_EQ(child->getHeroActionAllowances(SIDE), allowance);
- EXPECT_EQ(child->getMetamagicPointState(SIDE), points);
  EXPECT_FALSE(sibling->battleGetUnitByID(victim)->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
  EXPECT_EQ(sibling->battleGetUnitByID(victim)->getAvailableHealth(), hp);
  EXPECT_EQ(sibling->battleGetUnitByID(victim)->physicalPoisonSpellOrigin(), SIDE);
@@ -426,26 +419,25 @@ TEST_F(ArcaneInspirationAITest, TerminalShadowGiftMaterializesSelectedSacrificeO
 	resetChild();
 	const auto world = gameState()->saveToMemory();
 	const auto random = projectedHitTest::serialized(*gameHandler->randomizer);
-	const auto prepared = child->prepareHeroSpellAllowance(SIDE, spell, false, false);
+	const auto prepared = child->prepareHeroSpellAllowance(SIDE, spell);
 	ASSERT_TRUE(prepared); ASSERT_TRUE(child->beginProjectedHeroAction(SIDE, *prepared));
 	PossibleSpellcast candidate;
 	candidate.spell = spell.toSpell(); candidate.dest = {spells::Destination(child->battleGetUnitByID(actor))};
 	candidate.spellShadowGiftSacrificePercent = 10;
 	uint32_t targetId = actor;
 	const auto hp = child->battleGetUnitByID(actor)->getAvailableHealth();
-	HypotheticBattle::ProjectedCounterspellOutcome ward;
-	ASSERT_TRUE(heroSpellProjection::acceptTerminalEffects(*child, SIDE, candidate, targetId, ward, false, *prepared, {}));
+	ASSERT_TRUE(heroSpellProjection::acceptTerminalEffects(*child, SIDE, candidate, targetId, *prepared, {}));
 	const auto afterHp = child->battleGetUnitByID(actor)->getAvailableHealth();
 	EXPECT_LT(afterHp, hp);
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(spell), 1u);
-	EXPECT_FALSE(child->prepareHeroSpellAllowance(SIDE, spell, false, false));
+	EXPECT_FALSE(child->prepareHeroSpellAllowance(SIDE, spell));
 	ASSERT_FALSE(child->getArcaneInspirationEffects().empty());
 	auto without = std::make_shared<HypotheticBattle>(environment.get(), child);
 	without->reverseArcaneInspirationEffects(child->getArcaneInspirationEffects());
 	EXPECT_EQ(without->battleGetUnitByID(actor)->getAvailableHealth(), afterHp);
 	EXPECT_TRUE(without->battleGetUnitByID(actor)->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell))));
 	EXPECT_GT(damage(*child), damage(*without));
-	EXPECT_FALSE(heroSpellProjection::acceptTerminalEffects(*child, SIDE, candidate, targetId, ward, false, *prepared, {}));
+	EXPECT_FALSE(heroSpellProjection::acceptTerminalEffects(*child, SIDE, candidate, targetId, *prepared, {}));
 	EXPECT_EQ(child->battleGetUnitByID(actor)->getAvailableHealth(), afterHp);
 	EXPECT_EQ(child->getWisdomCombatState(SIDE).priorCasts(spell), 1u);
 	EXPECT_EQ(gameState()->saveToMemory(), world);
@@ -479,7 +471,7 @@ TEST_F(ArcaneInspirationAITest, ExistingFateOutcomeLoopPassesActualFriendlyCasua
    }
   return result;
  };
- const heroSpellProjection::OutcomeValue value = [&](const auto & board, auto injuries, bool completed, bool localOnly)
+ const heroSpellProjection::OutcomeValue value = [&](const auto & board, auto injuries, bool completed, bool localOnly, auto)
  {
   EXPECT_FALSE(completed);
   if(injuries.size() == 2)

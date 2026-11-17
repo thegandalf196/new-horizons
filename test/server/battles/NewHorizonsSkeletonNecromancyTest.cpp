@@ -111,7 +111,7 @@ protected:
 	{
 		BattleTestFixture::SetUp();
 		startGame();
-		ASSERT_EQ(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().rules).has_value(), GetParam());
+		ASSERT_EQ(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().getRules()).has_value(), GetParam());
 		gameHandler->onAdvInterfaceReady(PlayerColor(0));
 		gameHandler->onAdvInterfaceReady(PlayerColor(1));
 		attackerSideHero->setHeroType(HeroTypeID(72)); // Existing Septienna fixture identity, Necropolis.

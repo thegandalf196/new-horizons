@@ -1,0 +1,94 @@
+"""Current consumers remain explicit while approved historical bytes stay pinned."""
+import copy
+import csv
+import hashlib
+import json
+from pathlib import Path
+import re
+import sys
+import unittest
+from unittest import mock
+
+from .nhart_source_transitions import source_records, historical_source, read_historical_source
+from .nhart_sorcery_config_transition import CONFIG, before_sorcery, transition_record
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+class ArtSourceTransitionTest(unittest.TestCase):
+    def test_exact_sources_reverse_without_discarding_unrelated_bytes(self):
+        for path, record in source_records().items():
+            source = (ROOT / path).read_text()
+            old = read_historical_source(path)
+            self.assertEqual(hashlib.sha256(old.encode()).hexdigest(), record['historicalSha256'])
+            self.assertEqual(historical_source(path, source + '\n// unrelated witness\n'),
+                             old + '\n// unrelated witness\n')
+            for change in record['changes']:
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    historical_source(path, source.replace(change['after'], '', 1))
+                with self.assertRaises(ValueError):
+                    historical_source(path, source + change['after'])
+
+    def test_current_neutral_metamagic_and_estates_bindings_are_separate_from_old_art(self):
+        text = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()
+        bindings = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', text))
+        roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
+        ids = {row['id'] for row in roster['skills']['new-horizons:metamagic']['perks']}
+        self.assertEqual(len(ids), 10)
+        self.assertEqual({identity for identity in bindings if identity.startswith('new-horizons:metamagic.')}, ids)
+        self.assertEqual({bindings[identity] for identity in ids}, {'NH_perk_neutral'})
+        with (ROOT / 'docs/NH_UI_ASSET_INVENTORY.csv').open() as stream:
+            inventory = list(csv.DictReader(stream))
+        for identity in ids:
+            rows = [row for row in inventory if row['Item / ID'].endswith('(' + identity + ')')]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]['Art'], 'Not done')
+        for identity, icon in (('alchemist', 'prospector'), ('hoarder', 'financier'),
+                               ('decentralization', 'magnate'), ('supervisor', 'land_surveyor')):
+            self.assertEqual(bindings['new-horizons:estates.' + identity], 'NH_perk_' + icon)
+        halon = (ROOT / 'lib/entities/hero/NewHorizonsSpecialtyArtwork.h').read_text()
+        self.assertIn('{"core:halon", SpecialtyArtworkFamily::Identity, "core:halon", "HalonMetamagicAdept"}', halon)
+        captured = (ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h').read_text()
+        self.assertIn('!newHorizonsEstates::usesRevisedPolicy(capturedRules)', captured)
+
+    def test_transition_records_cannot_silently_change(self):
+        with mock.patch.object(Path, 'read_bytes', return_value=b'{"unreviewed":true}'):
+            with self.assertRaises(ValueError):
+                source_records()
+            with self.assertRaises(ValueError):
+                transition_record()
+
+
+class SorceryArtConfigTransitionTest(unittest.TestCase):
+    def setUp(self):
+        sys.path.insert(0, str(ROOT / 'tools'))
+        from import_new_horizons_spell_art import parse_jsonc
+        self.config = parse_jsonc((ROOT / CONFIG).read_text())
+
+    def test_restores_only_recorded_history_and_preserves_selected_status_graphics(self):
+        original = copy.deepcopy(self.config)
+        old = before_sorcery(self.config)
+        self.assertNotIn('arcaneBreach', self.config)
+        self.assertIn('arcaneBreach', old)
+        self.assertNotIn('forceLance', old)
+        for row in transition_record()['changes']:
+            if 'before' in row:
+                self.assertEqual(old[row['key']], row['before'])
+        self.assertEqual(self.config, original)
+        self.assertEqual(before_sorcery(old), old)
+
+    def test_unrecorded_spell_removal_value_or_graphics_role_is_rejected(self):
+        for mutation in ('unknown', 'removed', 'cost', 'role', 'retired'):
+            changed = copy.deepcopy(self.config)
+            if mutation == 'unknown':
+                changed['unknownSpell'] = {}
+            elif mutation == 'removed':
+                del changed['forceLance']
+            elif mutation == 'cost':
+                changed['focusMagic']['levels']['basic']['cost'] += 1
+            elif mutation == 'role':
+                changed['lucidity']['graphics']['unknownRole'] = 'unknown.png'
+            else:
+                changed['arcaneBreach'] = before_sorcery(self.config)['arcaneBreach']
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                before_sorcery(changed)

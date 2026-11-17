@@ -16,7 +16,7 @@ namespace newHorizonsSylvanTacticsV2
 {
 bool enabled(const CGHeroInstance * hero)
 {
-	return hero && newHorizonsHeroes::usesSylvanTacticsV2(hero->getPerkState().rules);
+	return hero && newHorizonsHeroes::usesSylvanTacticsV2(hero->getPerkState().getRules());
 }
 bool family(const battle::Unit * unit, Family line)
 {
@@ -44,7 +44,7 @@ bool hasPerk(const CGHeroInstance * hero, std::string_view perk)
 	// this adapter would also reactivate retired spell or creature effects.
 	const bool retained = perk == "elvenPrecision" || perk == "sharedFortune"
 		|| perk == "wildChance" || perk == "cascadingFortune";
-	if(!enabled(hero) && !(retained && newHorizonsHeroes::usesSylvanTacticsV3(hero->getPerkState().rules))) return false;
+	if(!enabled(hero) && !(retained && newHorizonsHeroes::usesSylvanTacticsV3(hero->getPerkState().getRules()))) return false;
 	return hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck." + std::string(perk));
 }
 int perkValue(const CGHeroInstance * hero, std::string_view perk, std::string_view field)
@@ -53,7 +53,7 @@ int perkValue(const CGHeroInstance * hero, std::string_view perk, std::string_vi
 	// Captured rows were validated at acquisition/load. Do not parse or validate
 	// the entire perk registry during damage, immunity or AI queries.
 	const auto id = "new-horizons:sylvanLuck." + std::string(perk);
-	for(const auto & row : hero->getPerkState().rules["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())
+	for(const auto & row : hero->getPerkState().getRules()["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())
 		if(row["id"].String() == id) return static_cast<int>(row["effect"]["parameters"][std::string(field)].Integer());
 	return 0;
 }

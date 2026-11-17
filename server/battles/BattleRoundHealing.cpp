@@ -84,7 +84,7 @@ void beforeTurn(CGameHandler & gameHandler, const CBattleInfoCallback & battle, 
 {
 	// regeneration takes place before everything else but only during first turn attempt in each round
 	// also works under blind and similar effects
-	if(stack && stack->alive() && !stack->waiting && !stack->isTimeStopped())
+	if(stack && stack->alive() && !stack->waiting)
 	{
 		BattleTriggerEffect bte;
 		bte.battleID = battle.getBattle()->getBattleID();

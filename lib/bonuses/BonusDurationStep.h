@@ -6,6 +6,7 @@
 #pragma once
 #include "BonusList.h"
 #include "CBonusSystemNode.h"
+#include "../battle/TimedEffectValueTransitions.h"
 
 namespace bonusDuration
 {
@@ -30,7 +31,7 @@ struct NativeStorage
 	CBonusSystemNode & node;
 	std::shared_ptr<Bonus> decrement(const std::shared_ptr<Bonus> & record)
 	{
-		record->turnsRemain--;
+		record->turnsRemain = static_cast<decltype(record->turnsRemain)>(battle::timedEffects::nextTurns(record->turnsRemain));
 		return record;
 	}
 	void remove(const std::shared_ptr<Bonus> & record) { node.removeBonus(record); }

@@ -23,10 +23,10 @@ bool selected(const CGHeroInstance & hero, const char * suffix)
 int rank(const CGHeroInstance * hero)
 {
 	if(!usesRules(hero) || hero->getFactionID() != FactionID::CONFLUX
-		|| !newHorizonsHeroes::usesRules(hero->getPrimaryGrowthRules()))
+		|| !hero->compiledDevelopment()->active())
 		return 0;
 	static const SecondarySkill skill(SecondarySkill::decode(SKILL_ID));
-	const auto factionSkill = newHorizonsHeroes::factionSkill(hero->getPrimaryGrowthRules(), FactionID::CONFLUX);
+	const auto factionSkill = hero->compiledDevelopment()->factionSkill(FactionID::CONFLUX);
 	return skill.hasValue() && factionSkill && *factionSkill == skill
 		? std::clamp<int>(hero->getSecSkillLevel(skill), 0, 3) : 0;
 }

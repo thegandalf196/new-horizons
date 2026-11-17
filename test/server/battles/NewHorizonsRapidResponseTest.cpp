@@ -460,20 +460,19 @@ TEST_F(NewHorizonsRapidResponseTest, ExtraAndContinuationForecastsRetainPendingD
 	EXPECT_EQ(battle()->getRapidResponseState(BattleSide::ATTACKER), receipt);
 }
 
-TEST_F(NewHorizonsRapidResponseTest, GenuineCompletedActorStoppedByEffectsStillTriggersButSyntheticSlotDoesNot)
+TEST_F(NewHorizonsRapidResponseTest, CompletedIncapacitatedActorTriggersOnlyItsOwnProjection)
 {
 	prepare();
 	waitBoth();
 	RapidEnvironment environment(gameState());
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	HypotheticBattle genuine(&environment, callback), synthetic(&environment, callback);
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::NOT_ACTIVE, BonusSource::OTHER, 1, BonusSourceID());
 	stopped.parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(BattleSide::ATTACKER));
 	genuine.addUnitBonus(enemy->unitId(), {stopped});
 	synthetic.addUnitBonus(enemy->unitId(), {stopped});
-	ASSERT_TRUE(genuine.battleGetUnitByID(enemy->unitId())->isTimeStopped());
+	ASSERT_TRUE(genuine.battleGetUnitByID(enemy->unitId())->hasBonusOfType(BonusType::NOT_ACTIVE));
 	genuine.completeRapidResponseActivation(enemy->unitId());
-	synthetic.completeRapidResponseActivation(enemy->unitId(), true);
 	EXPECT_TRUE(genuine.getRapidResponseState(BattleSide::ATTACKER).pending());
 	EXPECT_FALSE(synthetic.getRapidResponseState(BattleSide::ATTACKER).pending());
 	EXPECT_FALSE(battle()->getRapidResponseState(BattleSide::ATTACKER).pending());

@@ -32,7 +32,7 @@ class CStack;
 class InitialExportBattleSubject;
 struct MeleeBonusSource;
 
-class StackWithBonuses : public battle::CUnitState, public virtual IBonusBearer,
+class DLL_LINKAGE StackWithBonuses : public battle::CUnitState, public virtual IBonusBearer,
 	public std::enable_shared_from_this<StackWithBonuses>
 {
 	friend class InitialExportBattleSubject;
@@ -83,6 +83,7 @@ public:
 
 	int32_t getTreeVersion() const override;
 	bool isBonusCacheable() const override;
+	bool mayHaveBonusType(BonusType type) const override;
 	/// Conservative raw-source proof for movement forecasts, not a re-evaluation
 	/// of limited bonuses. Caller retains the original immutable world/graph.
 	bool hasMovementInvariantBonusSources() const;
@@ -137,15 +138,6 @@ private:
 
 	// Value snapshots survive nested models whose bonus queries create fresh pointers.
 	// Include spell/command effects and captured affliction groups; only N_TURNS are aged.
-	std::shared_ptr<const recipientBonusOverlay::ParentClockRecipe> parentClockRecipe;
-	const IBonusBearer * parentClockTerminal = nullptr; // Existing retained ordinary source chain only.
-	std::vector<std::pair<const StackWithBonuses *, int32_t>> parentClockVersions;
-	void captureParentClockRecipe();
-	bool parentClockSourceChanged() const;
-	bool clockRecipeImportNeutral() const;
-	TConstBonusListPtr clockRemovalRecords(TConstBonusListPtr original, const CSelector & selector) const;
-	TConstBonusListPtr frozenInheritedClockQuery(TConstBonusListPtr inherited, const CSelector & selector,
-		bool unstacked, const ProjectedAdjacencyQuery * adjacency) const;
 	std::optional<std::vector<Bonus>> projectedEffects;
 	// Preserve the historical stacked snapshot above while retaining every
 	// source bonus and its shared identity for source-sensitive mechanics in

@@ -361,61 +361,6 @@
 		},
 		"targetCondition" : {}
 	},
-	"counterspell" : {
-		"name" : "Counterspell",
-		"type" : "combat",
-		"school" : {
-			"new-horizons:sorcery" : true
-		},
-		"level" : 3,
-		"power" : 0,
-		"defaultGainChance" : 0,
-		"gainChance" : {},
-		"targetType" : "NO_TARGET",
-		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "SPELLINT.def:0:16",
-			"iconImmune" : "SPELLINT.def:0:16",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
-		},
-		"animation" : {
-			"hit" : ["C18SPW0"]
-		},
-		"sounds" : {
-			"cast" : "DISPEL"
-		},
-		"levels" : {
-			"none" : {
-				"range" : "0",
-				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
-				"cost" : 11,
-				"power" : 0
-			},
-			"basic" : {
-				"range" : "0",
-				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
-				"cost" : 11,
-				"power" : 0
-			},
-			"advanced" : {
-				"range" : "0",
-				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
-				"cost" : 11,
-				"power" : 0
-			},
-			"expert" : {
-				"range" : "0",
-				"description" : "Arm a ward until the beginning of your next Hero Action or the next enemy hero spell. The ward pays twice the enemy spell's listed Mana cost to negate it, or collapses if you cannot pay.",
-				"cost" : 11,
-				"power" : 0
-			}
-		},
-		"flags" : {
-			"indifferent" : true
-		},
-		"targetCondition" : {}
-	},
 	"shieldOfChaos": {
 		"name": "Shield of Chaos",
 		"type": "combat",
@@ -2317,81 +2262,6 @@
 		},
 		"targetCondition" : {}
 	},
-	"timeStop" : {
-		"name" : "Time Stop",
-		"type" : "combat",
-		"school" : {
-			"new-horizons:sorcery" : true
-		},
-		"level" : 5,
-		"power" : 0,
-		"defaultGainChance" : 0,
-		"gainChance" : {},
-		"targetType" : "LOCATION",
-		"graphics" : {
-			"iconBook" : "NH_spell_time_stop-44.png",
-			"iconScroll" : "NH_spell_time_stop-32.png",
-			"iconEffect" : "NH_spell_time_stop-30.png",
-			"iconImmune" : "NH_spell_time_stop-30.png",
-			"iconScenarioBonus" : "NH_spell_time_stop-32.png"
-		},
-		"animation" : {
-			"hit" : ["C18SPW0"]
-		},
-		"sounds" : {
-			"cast" : "DISPEL"
-		},
-		"levels" : {
-			"none" : {
-				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
-				"cost" : 23,
-				"power" : 0,
-				"battleEffects" : {
-					"timeStop" : {
-						"type" : "core:timeStop"
-					}
-				}
-			},
-			"basic" : {
-				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
-				"cost" : 23,
-				"power" : 0,
-				"battleEffects" : {
-					"timeStop" : {
-						"type" : "core:timeStop"
-					}
-				}
-			},
-			"advanced" : {
-				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
-				"cost" : 23,
-				"power" : 0,
-				"battleEffects" : {
-					"timeStop" : {
-						"type" : "core:timeStop"
-					}
-				}
-			},
-			"expert" : {
-				"range" : "0",
-				"description" : "Place the selected area outside time until the beginning of the caster's next Hero Action. Ordinary radius is min(2, 1 + floor(Spell Power / 100)); Chronomancer raises the cap to 3 without adding a free radius step. Under saved v3 rules, Sorcery rank scales only the Spell Power term by 100% with no rank, 115% at Basic, 130% at Advanced, and 145% at Expert. Without Warcasting, the first radius increase occurs at Spell Power 100 / 87 / 77 / 69, respectively; Chronomancer's second increase occurs at 200 / 174 / 154 / 138. Eligible Warcasting also scales only this Spell Power term. Saved v1/v2 rules use 100% at every rank. Effect mastery adds no separate radius or duration bonus. Creatures in stasis cannot act, receive damage or healing, teleport, receive new effects, or lose duration from existing effects.",
-				"cost" : 23,
-				"power" : 0,
-				"battleEffects" : {
-					"timeStop" : {
-						"type" : "core:timeStop"
-					}
-				}
-			}
-		},
-		"flags" : {
-			"indifferent" : true
-		},
-		"targetCondition" : {}
-	},
 	"masterChainLightning" : {
 		"name" : "Master Chain Lightning",
 		"type" : "combat",
@@ -2496,155 +2366,87 @@
 			"negative" : true
 		}
 	},
-	"spellLock" : {
-		"name" : "Spell Lock",
-		"type" : "combat",
-		"school" : {
-			"new-horizons:sorcery" : true
-		},
-		"level" : 5,
-		"power" : 0,
-		"defaultGainChance" : 0,
-		"gainChance" : {},
-		"targetType" : "CREATURE",
-		"graphics" : {
-			"iconBook" : "NH_spell_spell_lock-44.png",
-			"iconScroll" : "NH_spell_spell_lock-32.png",
-			"iconEffect" : "NH_spell_spell_lock-30.png",
-			"iconImmune" : "NH_spell_spell_lock-30.png",
-			"iconScenarioBonus" : "NH_spell_spell_lock-32.png"
-		},
-		"animation" : {
-			"hit" : ["C18SPW0"]
-		},
-		"sounds" : {
-			"cast" : "DISPEL"
-		},
-		"levels" : {
-			"none" : {
-				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
-				"cost" : 22,
-				"power" : 0,
-				"battleEffects" : {
-					"spellLock" : {
-						"type" : "core:spellLock"
-					}
-				}
-			},
-			"basic" : {
-				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
-				"cost" : 22,
-				"power" : 0,
-				"battleEffects" : {
-					"spellLock" : {
-						"type" : "core:spellLock"
-					}
-				}
-			},
-			"advanced" : {
-				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
-				"cost" : 22,
-				"power" : 0,
-				"battleEffects" : {
-					"spellLock" : {
-						"type" : "core:spellLock"
-					}
-				}
-			},
-			"expert" : {
-				"range" : "0",
-				"description" : "Seal one stack against all magic. On a friendly target, remove hostile magical effects and preserve beneficial effects; on an enemy target, remove beneficial effects and preserve hostile effects. Duration is min(3, 1 + floor(Spell Power / 80)) rounds; Sorcery rank strengthens only the Spell Power term. Existing timed effects continue functioning while their timers are frozen; Orders are unaffected.",
-				"cost" : 22,
-				"power" : 0,
-				"battleEffects" : {
-					"spellLock" : {
-						"type" : "core:spellLock"
-					}
-				}
-			}
-		},
-		"flags" : {
-			"indifferent" : true
-		},
-		"targetCondition" : {}
-	},
 	"focusMagic" : {
-		"name" : "Focus Magic",
-		"type" : "combat",
-		"school" : {
-			"new-horizons:sorcery" : true
+		"name": "Focus Magic",
+		"type": "combat",
+		"school": {
+			"new-horizons:sorcery": true
 		},
-		"level" : 1,
-		"power" : 0,
-		"defaultGainChance" : 0,
-		"gainChance" : {},
-		"targetType" : "CREATURE",
-		// Purpose-made Focus Magic symbols are selected provisionally for all icon roles.
-		"graphics" : {
-			"iconBook" : "NH_spell_focus_magic-44.png",
-			"iconScroll" : "NH_spell_focus_magic-32.png",
-			"iconEffect" : "NH_spell_focus_magic-30.png",
-			"iconImmune" : "NH_spell_focus_magic-30.png",
-			"iconScenarioBonus" : "NH_spell_focus_magic-32.png"
+		"level": 1,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "NH_spell_focus_magic-44.png",
+			"iconScroll": "NH_spell_focus_magic-32.png",
+			"iconEffect": "NH_spell_focus_magic-30.png",
+			"iconImmune": "NH_spell_focus_magic-30.png",
+			"iconScenarioBonus": "NH_spell_focus_magic-32.png"
 		},
-		"levels" : {
-			"none" : {
-				"range" : "0",
-				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
-				"cost" : 4,
-				"power" : 0,
-				"battleEffects" : {
-					"focusMagic" : {
-						"type" : "core:focusMagicEnchantment"
+		"levels": {
+			"none": {
+				"range": "0",
+				"description": "Enchant one friendly stack for the rest of combat. Nonshooters gain ranged attacks with 3 hard charges; native shooters deal +20% ranged damage. These are physical attacks with normal ranged penalties. Each projectile consumes a charge; Ammo Cart does not replenish charges. Recasting resets charges to 3. Melee attacks are unchanged.",
+				"cost": 6,
+				"power": 0,
+				"battleEffects": {
+					"focusMagic": {
+						"type": "core:focusMagicEnchantment"
 					}
 				},
-				"targetModifier" : {"smart" : true}
+				"targetModifier": {
+					"smart": true
+				}
 			},
-			"basic" : {
-				"range" : "0",
-				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
-				"cost" : 4,
-				"power" : 0,
-				"battleEffects" : {
-					"focusMagic" : {
-						"type" : "core:focusMagicEnchantment"
+			"basic": {
+				"range": "0",
+				"description": "Enchant one friendly stack for the rest of combat. Nonshooters gain ranged attacks with 3 hard charges; native shooters deal +20% ranged damage. These are physical attacks with normal ranged penalties. Each projectile consumes a charge; Ammo Cart does not replenish charges. Recasting resets charges to 3. Melee attacks are unchanged.",
+				"cost": 6,
+				"power": 0,
+				"battleEffects": {
+					"focusMagic": {
+						"type": "core:focusMagicEnchantment"
 					}
 				},
-				"targetModifier" : {"smart" : true}
+				"targetModifier": {
+					"smart": true
+				}
 			},
-			"advanced" : {
-				"range" : "0",
-				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
-				"cost" : 4,
-				"power" : 0,
-				"battleEffects" : {
-					"focusMagic" : {
-						"type" : "core:focusMagicEnchantment"
+			"advanced": {
+				"range": "0",
+				"description": "Enchant one friendly stack for the rest of combat. Nonshooters gain ranged attacks with 3 hard charges; native shooters deal +20% ranged damage. These are physical attacks with normal ranged penalties. Each projectile consumes a charge; Ammo Cart does not replenish charges. Recasting resets charges to 3. Melee attacks are unchanged.",
+				"cost": 6,
+				"power": 0,
+				"battleEffects": {
+					"focusMagic": {
+						"type": "core:focusMagicEnchantment"
 					}
 				},
-				"targetModifier" : {"smart" : true}
+				"targetModifier": {
+					"smart": true
+				}
 			},
-			"expert" : {
-				"range" : "0",
-				"description" : "Enchant a friendly shooter for 3 rounds. Its damaging shots mark enemies, helping all friendly shooters ignore part of their Creature Defense. Marks stack up to 3, adding their effects together. They last 2 rounds; another damaging shot from the enchanted shooter refreshes them. A new mark helps subsequent shots, not the hit that applies it. Melee attacks are unaffected.",
-				"cost" : 4,
-				"power" : 0,
-				"battleEffects" : {
-					"focusMagic" : {
-						"type" : "core:focusMagicEnchantment"
+			"expert": {
+				"range": "0",
+				"description": "Enchant one friendly stack for the rest of combat. Nonshooters gain ranged attacks with 3 hard charges; native shooters deal +20% ranged damage. These are physical attacks with normal ranged penalties. Each projectile consumes a charge; Ammo Cart does not replenish charges. Recasting resets charges to 3. Melee attacks are unchanged.",
+				"cost": 6,
+				"power": 0,
+				"battleEffects": {
+					"focusMagic": {
+						"type": "core:focusMagicEnchantment"
 					}
 				},
-				"targetModifier" : {"smart" : true}
+				"targetModifier": {
+					"smart": true
+				}
 			}
 		},
-		"flags" : {
-			"positive" : true,
-			"special" : false
+		"flags": {
+			"positive": true,
+			"special": false
 		},
-		"targetCondition" : {}
+		"targetCondition": {}
 	},
 	"hexOfPain" : {
 		"name" : "Hex of Pain",
@@ -3296,55 +3098,176 @@
 		},
 		"targetCondition" : {}
 	},
-	"arcaneBreach" : {
-		"name" : "Arcane Breach",
-		"type" : "combat",
-		"school" : {
-			"new-horizons:sorcery" : true
+	"forcedRecall" : {
+		"name": "Forced Recall",
+		"type": "combat",
+		"school": {
+			"new-horizons:sorcery": true
 		},
-		"level" : 0,
-		"power" : 0,
-		"defaultGainChance" : 0,
-		"gainChance" : {},
-		"targetType" : "CREATURE",
-		// Purpose-made internal Arcane Breach status art is selected provisionally; castable spell aliases are unchanged.
-		"graphics" : {
-			"iconBook" : "SPELLS.def:0:15",
-			"iconScroll" : "SPELLSCR.def:0:15",
-			"iconEffect" : "NH_status_arcane_breach-30.png",
-			"iconImmune" : "NH_status_arcane_breach-30.png",
-			"iconScenarioBonus" : "SPELLBON.def:0:15"
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:61",
+			"iconScroll": "SPELLSCR.def:0:61",
+			"iconEffect": "SPELLINT.def:0:62",
+			"iconImmune": "SPELLINT.def:0:62",
+			"iconScenarioBonus": "SPELLBON.def:0:61"
 		},
-		"levels" : {
-			"none" : {
-				"range" : "0",
-				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
-				"cost" : 0,
-				"power" : 0
+		"levels": {
+			"none": {
+				"range": "0",
+				"description": "Return one enemy stack to its battle-start position, or the nearest legal position if its footprint is occupied. Health, effects, allegiance and action state remain unchanged.",
+				"cost": 25,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forcedRecall": {
+						"type": "core:forcedRecall"
+					}
+				}
 			},
-			"basic" : {
-				"range" : "0",
-				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
-				"cost" : 0,
-				"power" : 0
+			"basic": {
+				"range": "0",
+				"description": "Return one enemy stack to its battle-start position, or the nearest legal position if its footprint is occupied. Health, effects, allegiance and action state remain unchanged.",
+				"cost": 25,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forcedRecall": {
+						"type": "core:forcedRecall"
+					}
+				}
 			},
-			"advanced" : {
-				"range" : "0",
-				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
-				"cost" : 0,
-				"power" : 0
+			"advanced": {
+				"range": "0",
+				"description": "Return one enemy stack to its battle-start position, or the nearest legal position if its footprint is occupied. Health, effects, allegiance and action state remain unchanged.",
+				"cost": 25,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forcedRecall": {
+						"type": "core:forcedRecall"
+					}
+				}
 			},
-			"expert" : {
-				"range" : "0",
-				"description" : "Internal negative status identity for Arcane Breach marks. Not castable.",
-				"cost" : 0,
-				"power" : 0
+			"expert": {
+				"range": "0",
+				"description": "Return one enemy stack to its battle-start position, or the nearest legal position if its footprint is occupied. Health, effects, allegiance and action state remain unchanged.",
+				"cost": 25,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forcedRecall": {
+						"type": "core:forcedRecall"
+					}
+				}
 			}
 		},
-		"flags" : {
-			"negative" : true,
-			"persistent" : false,
-			"special" : true
+		"flags": {
+			"negative": true
+		},
+		"targetCondition": {
+			"noneOf": {
+				"bonus.SIEGE_WEAPON": "absolute"
+			}
+		}
+	},
+	"forceLance" : {
+		"name": "Force Lance",
+		"type": "combat",
+		"school": {
+			"new-horizons:sorcery": true
+		},
+		"level": 5,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"graphics": {
+			"iconBook": "SPELLS.def:0:50",
+			"iconScroll": "SPELLSCR.def:0:50",
+			"iconEffect": "SPELLINT.def:0:51",
+			"iconImmune": "SPELLINT.def:0:51",
+			"iconScenarioBonus": "SPELLBON.def:0:50"
+		},
+		"levels": {
+			"none": {
+				"range": "0",
+				"description": "Deal 100 + 20 x scaled Spell Power magical damage to one enemy stack, bypassing magical protection, resistance, immunity and absorption. Pin its movement for exactly 1 round. Attacks, shooting and retaliation remain available. Normal casualties leave normal remains.",
+				"cost": 30,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forceLance": {
+						"type": "core:forceLance"
+					}
+				}
+			},
+			"basic": {
+				"range": "0",
+				"description": "Deal 100 + 20 x scaled Spell Power magical damage to one enemy stack, bypassing magical protection, resistance, immunity and absorption. Pin its movement for exactly 1 round. Attacks, shooting and retaliation remain available. Normal casualties leave normal remains.",
+				"cost": 30,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forceLance": {
+						"type": "core:forceLance"
+					}
+				}
+			},
+			"advanced": {
+				"range": "0",
+				"description": "Deal 100 + 20 x scaled Spell Power magical damage to one enemy stack, bypassing magical protection, resistance, immunity and absorption. Pin its movement for exactly 1 round. Attacks, shooting and retaliation remain available. Normal casualties leave normal remains.",
+				"cost": 30,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forceLance": {
+						"type": "core:forceLance"
+					}
+				}
+			},
+			"expert": {
+				"range": "0",
+				"description": "Deal 100 + 20 x scaled Spell Power magical damage to one enemy stack, bypassing magical protection, resistance, immunity and absorption. Pin its movement for exactly 1 round. Attacks, shooting and retaliation remain available. Normal casualties leave normal remains.",
+				"cost": 30,
+				"power": 0,
+				"targetModifier": {
+					"smart": true
+				},
+				"battleEffects": {
+					"forceLance": {
+						"type": "core:forceLance"
+					}
+				}
+			}
+		},
+		"flags": {
+			"negative": true,
+			"offensive": true,
+			"damage": true
+		},
+		"targetCondition": {
+			"noneOf": {
+				"bonus.SIEGE_WEAPON": "absolute"
+			}
 		}
 	}
 }

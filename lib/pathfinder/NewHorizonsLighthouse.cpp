@@ -36,12 +36,7 @@ void validateRulesSerialization(const JsonNode & rules, bool supported)
 
 int departurePercent(const CGHeroInstance & hero)
 {
-	const auto & rules = hero.getPrimaryGrowthRules();
-	validateRulesSerialization(rules, true);
-	if(!hero.usesNewHorizonsMovement() || !rules.isStruct() || !rules.Struct().contains("lighthouseDeparture")
-		|| !rules["lighthouseDeparture"]["enabled"].Bool())
-		return 0;
-	return rules["lighthouseDeparture"]["seaMovementPercent"].Integer();
+	return hero.usesNewHorizonsMovement() ? hero.compiledDevelopment()->lighthouseDeparturePercent() : 0;
 }
 
 void DepartureReceipt::validate() const

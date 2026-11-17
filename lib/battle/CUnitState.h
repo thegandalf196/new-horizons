@@ -15,8 +15,8 @@
 
 #include "BattleUnitTurnReason.h"
 #include "CUnitAmmo.h"
+#include "CHealth.h"
 #include "NewHorizonsConfusionState.h"
-#include "ArcaneMarkState.h"
 #include "DreadCavalryState.h"
 #include "Unit.h"
 #include "../bonuses/BonusCache.h"
@@ -46,132 +46,6 @@ DLL_LINKAGE bool hasVeteranCohesionState(const JsonNode & unitSnapshot);
 /// Validates before mutation; missing legacy/partial JSON retains the supplied receipt.
 DLL_LINKAGE int32_t petrifyingBloodRoundFromJson(const JsonNode & unitSnapshot, int32_t absent = -1);
 
-class DLL_LINKAGE CHealth final
-{
-public:
-	/// Compact group of surviving creatures with the same current hit points.
-	/// Used only when a changing per-creature capacity makes the legacy
-	/// first-creature-plus-full-rear-units representation lossy.
-	struct DLL_LINKAGE CapacityHealthCohort
-	{
-		int32_t hitPoints = 0;
-		int32_t count = 0;
-
-		void serializeJson(JsonSerializeFormat & handler);
-	};
-	/// A run of usable casualties with the same death provenance, ordered from
-	/// oldest to newest. Temporary one-battle Resurrection keeps the original
-	/// run and marks which members are currently restored.
-	struct DLL_LINKAGE CasualtyProvenanceCohort
-	{
-		int32_t count = 0;
-		DamageProvenance provenance = DamageProvenance::OTHER;
-		int32_t temporarilyRestored = 0;
-
-		void serializeJson(JsonSerializeFormat & handler);
-	};
-
-	explicit CHealth(const battle::Unit * Owner);
-	CHealth(const CHealth & other) = default;
-
-	CHealth & operator=(const CHealth & other);
-	/// Exchanges prestaged ledger contents, never their owning Unit pointers.
-	void swapPreparedContents(CHealth & prepared) noexcept;
-
-	void init();
-	void reset(bool clearUnusableRemains = true);
-
-	void damage(int64_t & amount);
-	/// Deal damage while marking the creatures killed by this hit as leaving no
-	/// usable remains. The default provenance is OTHER for legacy, nonmagical
-	/// damage callers.
-	void damage(int64_t & amount, bool destroyRemains);
-	/// Shadow Gift sacrifices creature HP directly and cannot be absorbed by
-	/// temporary hit points. Other damage paths retain their normal semantics.
-	void damage(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
-		DamageProvenance provenance = DamageProvenance::OTHER, bool trackCasualtyProvenance = true);
-	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power, bool trackCasualtyProvenance = true);
-
-	int32_t getCount() const;
-	int32_t getFirstHPleft() const;
-	int32_t getResurrected() const;
-	/// Number of casualties whose remains cannot be restored or harvested.
-	int32_t getUnusableRemains() const;
-	int32_t getCasualtyCount(DamageProvenance provenance) const;
-	bool hasCasualtyProvenanceState() const;
-	/// Battle-only hit points consumed before the stack's creature health.
-	int64_t getTemporaryHitPoints() const;
-	void addTemporaryHitPoints(int64_t amount);
-	/// Append full battle-only members without healing existing wounded cohorts.
-	bool appendTemporaryCreatures(int32_t count);
-	int64_t getCreatureHealthAvailable() const;
-	int64_t getTotalHealthOverride() const;
-	int64_t getShadowGiftMaximumHealthLost() const;
-	void addShadowGiftMaximumHealthLoss(int64_t amount);
-	/// Repartition surviving creature HP to a new battle-form capacity without
-	/// changing the separate temporary hit-point pool or total HP.
-	void repartitionForBattleForm(int32_t newMaximum, int64_t originalTotalHealth, int64_t remainingHealth);
-	/// Freeze this ledger at the source creature capacity for casualty, one-battle
-	/// resurrection, and unusable-remains provenance.
-	void preserveBattleFormProvenance(int32_t sourceMaximum);
-	/// Resume ordinary capacity tracking after restoring the source health ledger.
-	void releaseBattleFormProvenance(bool preserveCapacityTracking);
-	void setTemporaryHitPoints(int64_t amount);
-	bool isBattleFormProvenance() const;
-
-	/// returns total remaining health
-	int64_t available() const;
-
-	/// returns total initial health
-	int64_t total() const;
-
-	void takeResurrected();
-
-	void preserveCapacityHealth();
-	void normalizeCapacityHealth(bool preserveCapacityTracking);
-	int64_t capacityRegenerationProjectedHeal(int32_t perCreatureHeal) const;
-	int64_t consumeCapacityRegeneration(int32_t perCreatureHeal);
-	/// Spend only within each survivor's existing regeneration allowance.
-	int64_t consumeCapacityRegeneration(int32_t perCreatureHeal, int64_t receivedHealth);
-	bool isCapacityHealthTracking() const;
-
-	void serializeJson(JsonSerializeFormat & handler);
-private:
-	void addResurrected(int32_t amount);
-	void addUnusableRemains(int32_t amount);
-	void ensureCasualtyProvenanceLedger();
-	int32_t removeNewestUsableCasualties(int32_t amount, bool temporary, bool allowNonCasualtySurplus);
-	void replaceNewestTemporaryCasualties(int32_t amount, DamageProvenance provenance, bool destroyRemains);
-	int32_t casualtyLedgerCount() const;
-	int32_t temporarilyRestoredCasualtyCount() const;
-	int32_t usableCasualtyDebt() const;
-	void validateCasualtyProvenanceLedger() const;
-	int64_t creatureHealthAvailable() const;
-	void setFromTotal(const int64_t totalHealth);
-	void damageCapacityHealth(int64_t amount);
-	void addCapacityHealth(int32_t hitPoints, int32_t count);
-	void normalizeCapacityHealthCohorts();
-	void promoteCapacityHealthFront();
-	void healCapacityHealth(int64_t & amount, EHealLevel level);
-	void addCapacityHealthHealing(int32_t perCreatureHeal);
-	int32_t maximumPerCreature() const;
-	const battle::Unit * owner;
-
-	int32_t firstHPleft;
-	int32_t fullUnits;
-	int32_t resurrected;
-	int32_t unusableRemains;
-	int64_t temporaryHitPoints;
-	int64_t shadowGiftMaximumHealthLost = 0;
-	bool capacityHealthTracking = false;
-	int32_t capacityHealthMax = 0;
-	bool capacityHealthMaxFixed = false;
-	int64_t totalHealthOverride = 0;
-	std::vector<CapacityHealthCohort> capacityHealthCohorts;
-	std::vector<CasualtyProvenanceCohort> casualtyProvenance;
-	bool casualtyProvenanceInitialized = false;
-};
-
 class DLL_LINKAGE CUnitState : public Unit
 {
 	friend class UnitStateValueFields;
@@ -193,10 +67,7 @@ public:
 	/// Pending forced activation and battle-long Confusion result history.
 	/// Ordinary round/activation boundaries do not clear this value implicitly.
 	ConfusionState confusionState;
-	ArcaneMarkState arcaneMarks;
-	int64_t arcaneShieldHitPoints = 0;
 	bool demonicGateOpened = false;
-	int32_t metamagicMarks(BattleSide side) const override { return arcaneMarks.get(side); }
 	bool hasOpenedDemonicGate() const override { return demonicGateOpened; }
 	DreadCavalryState dreadCavalryState;
 	/// Movement still available during a Pursuit/Vanish movement-only continuation.
@@ -246,7 +117,6 @@ public:
 	int32_t ordinarySpecialtyLastRound = -1;
 	/// Tenths of a hit point per creature carried between capacity-regeneration activations.
 	int32_t capacityRegenerationRemainderTenths = 0;
-	bool timeStopTurnConsumedFlag;
 	/// Cast-time Regeneration mark rate in millionths; 1,000,000 is 100%.
 	int32_t regenerationRateMillionths;
 	/// Fixed-point HP marked for Regeneration, preserving fractions across hits.
@@ -375,8 +245,6 @@ public:
 
 	bool isHypnotized() const override;
 	bool isInvincible() const override;
-	bool isTimeStopped() const override;
-	std::optional<bool> legacyTimeStopSpellMatch(SpellID spell) const override;
 
 	bool isClone() const override;
 	bool hasClone() const override;
@@ -449,7 +317,6 @@ public:
 	bool canMove(int turn = 0) const override;
 	bool defended(int turn = 0) const override;
 	bool moved(int turn = 0) const override;
-	bool timeStopTurnConsumed() const override;
 	bool willMove(int turn = 0) const override;
 	bool waited(int turn = 0) const override;
 	bool battlecraftWaitBonusAvailable() const override;
@@ -502,7 +369,7 @@ public:
 	/// Record the authoritative Wait action and arm Battlecraft's one-shot bonus.
 	void afterWait();
 
-	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false, bool pauseBattleForm = false);
+	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false);
 
 	void afterGetsTurn(BattleUnitTurnReason reason);
 
@@ -540,7 +407,7 @@ private:
 	void clearDeadUnitTransientState();
 	int64_t rawHealingCapacity(int64_t requested, EHealLevel level, EHealPower power) const;
 	HealInfo applyHealing(int64_t & amount, EHealLevel level, EHealPower power, bool receivedBenefit);
-	void absorbDamageShields(int64_t & amount, DamageProvenance provenance, bool bypassShields);
+	void absorbGuardianSpiritDamage(int64_t & amount, DamageProvenance provenance, bool bypassTemporaryHitPoints);
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
 		DamageProvenance provenance = DamageProvenance::OTHER, int64_t * postShieldBeforeCasualties = nullptr);
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
@@ -608,6 +475,7 @@ public:
 	CUnitStateDetached & operator= (const CUnitStateDetached & other);
 	void onBattleFormChanged() override;
 	bool usesBonusProvider(const IBonusBearer & expected) const noexcept;
+	bool mayHaveBonusType(BonusType type) const override;
 	bool usesUnitInfo(const IUnitInfo & expected) const noexcept;
 	/// Identity check only; caller must retain the actual source/loan owners.
 	bool hasUnitInfoAncestor(const IUnitInfo & expected) const;

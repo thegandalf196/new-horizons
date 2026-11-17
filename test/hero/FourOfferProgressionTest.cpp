@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../../lib/entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../../lib/entities/hero/NewHorizonsPerkOperation.h"
 #include "../../lib/networkPacks/PacksForClient.h"
@@ -34,11 +35,14 @@ size_t ticket(const std::vector<int> & weights, int value)
 PerkState perkState(bool historicalUnified = false)
 {
 	PerkState result;
-	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-	result.rules.Struct().erase("unifiedSkillProgressionVersion");
-	result.rules.Struct().erase("fourOfferProgressionVersion");
-	if(historicalUnified) result.rules["unifiedSkillProgressionVersion"].Integer() = 1;
-	else result.rules["fourOfferProgressionVersion"].Integer() = 1;
+	auto rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	rules.Struct().erase("unifiedSkillProgressionVersion");
+	rules.Struct().erase("fourOfferProgressionVersion");
+	// These cases characterize the released policy-1 Four Offer choices.
+	rules["perkProgressionPolicyVersion"].Integer() = 1;
+	if(historicalUnified) rules["unifiedSkillProgressionVersion"].Integer() = 1;
+	else rules["fourOfferProgressionVersion"].Integer() = 1;
+	result.replaceRules(std::move(rules));
 	return result;
 }
 
@@ -149,7 +153,7 @@ TEST(FourOfferProgression, RepliesPreserveFixedPositionsAndCapturedCatalogueIndi
 	for(size_t group = 0; group < 2; ++group)
 		for(size_t index = 0; index < 10; ++index)
 		{
-			const auto & row = state.rules["skills"][offers.perkSkills[group]]["perks"].Vector()[index];
+			const auto & row = state.getRules()["skills"][offers.perkSkills[group]]["perks"].Vector()[index];
 			const auto reply = fourOfferPerkReply(offers, state, group, row["id"].String());
 			EXPECT_EQ(reply, 2 + group * 10 + index);
 			const auto selected = fourOfferSelection(offers, state, reply);
@@ -253,15 +257,15 @@ TEST(FourOfferProgression, ExtraEarlierTierPerkIsLegalAndWarnsWithoutMutatingThe
 	EXPECT_FALSE(perkChoiceBlocksTierCompletion(state, first, 1));
 	state.select(first.selection.skillId, first.selection.perkId, 1);
 	const auto second = eligible(state, 1).front();
-	const auto before = state.selected;
+	const auto before = state.getSelected();
 	EXPECT_TRUE(state.canAcquirePerk(second.selection.skillId, second.selection.perkId, 1));
 	EXPECT_TRUE(perkChoiceBlocksTierCompletion(state, second, 1));
-	EXPECT_EQ(state.selected, before);
+	EXPECT_EQ(state.getSelected(), before);
 	state.select(second.selection.skillId, second.selection.perkId, 1);
 	const auto third = eligible(state, 1).front();
 	state.select(third.selection.skillId, third.selection.perkId, 1);
 	EXPECT_TRUE(eligible(state, 3).empty());
-	EXPECT_EQ(state.selected.size(), 3);
+	EXPECT_EQ(state.getSelected().size(), 3);
 	EXPECT_FALSE(state.canAdvanceSkillNormally("new-horizons:offense", 2));
 }
 
@@ -275,7 +279,7 @@ TEST(FourOfferProgression, HistoricalUnifiedPolicyRetainsItsOnePerTierAndMandato
 		{ return skill == "new-horizons:offense" ? 2 : 0; });
 	ASSERT_EQ(missing.size(), 4);
 	EXPECT_EQ(missing.front().requiredRank, 2);
-	EXPECT_FALSE(usesFourOfferProgression(state.rules));
+	EXPECT_FALSE(usesFourOfferProgression(state.getRules()));
 }
 
 TEST(FourOfferProgression, CapturedPolicyRejectsOlderStateWriterBeforeItsPrefix)
@@ -300,15 +304,15 @@ TEST(FourOfferProgression, ProductionWriterRoundTripsNewPolicyAndMultipleEarlier
 	memory.oser & state;
 	PerkState restored;
 	memory.iser & restored;
-	EXPECT_EQ(restored.rules, state.rules);
-	EXPECT_EQ(restored.selected, state.selected);
-	EXPECT_TRUE(usesFourOfferProgression(restored.rules));
+	EXPECT_EQ(restored.getRules(), state.getRules());
+	EXPECT_EQ(restored.getSelected(), state.getSelected());
+	EXPECT_TRUE(usesFourOfferProgression(restored.getRules()));
 }
 
 TEST(FourOfferProgression, Released1159DevelopedStateRemainsReadableWithoutChangingItsPolicy)
 {
 	PerkState state;
-	state.rules = estatesTest::legacyEstatesPerks();
+	state.replaceRules(estatesTest::legacyEstatesPerks());
 	for(int tier = 1; tier <= 3; ++tier)
 	{
 		const auto candidates = state.candidatesForSkillTier("new-horizons:offense", tier);
@@ -321,8 +325,8 @@ TEST(FourOfferProgression, Released1159DevelopedStateRemainsReadableWithoutChang
 	memory.oser & state;
 	PerkState restored;
 	memory.iser & restored;
-	EXPECT_EQ(restored.rules, state.rules);
-	EXPECT_EQ(restored.selected, state.selected);
-	EXPECT_TRUE(usesUnifiedSkillProgression(restored.rules));
-	EXPECT_FALSE(usesFourOfferProgression(restored.rules));
+	EXPECT_EQ(restored.getRules(), state.getRules());
+	EXPECT_EQ(restored.getSelected(), state.getSelected());
+	EXPECT_TRUE(usesUnifiedSkillProgression(restored.getRules()));
+	EXPECT_FALSE(usesFourOfferProgression(restored.getRules()));
 }

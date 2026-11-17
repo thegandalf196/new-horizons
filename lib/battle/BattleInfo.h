@@ -16,6 +16,7 @@
 
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
+#include "../nativeRules/CapturedRuleRef.h"
 #include "SideInBattle.h"
 #include "SiegeInfo.h"
 #include "NewHorizonsOffense.h"
@@ -52,7 +53,7 @@ class DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallba
 	int32_t moraleExtraDamagePercent = 100;
 	SeizeInitiativeState seizeInitiative;
 	JsonNode heroCommandRules;
-	JsonNode magicRules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::WorldMagic> magicRules;
 	newHorizonsCrisisCommand::State crisisCommand;
 	newHorizonsCreatures::CreatureCategoryRules creatureCategoryRules;
 
@@ -88,6 +89,7 @@ public:
 	}
 	const JsonNode & getHeroCommandRules() const override { return heroCommandRules; }
 	const JsonNode & getMagicRules() const override { return magicRules; }
+	std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const override { return magicRules.owner(); }
 	const newHorizonsCrisisCommand::State & getCrisisCommandState() const override { return crisisCommand; }
 	void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override
 	{
@@ -258,9 +260,6 @@ public:
 	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override;
 	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override;
 	void setElementalAttunementMask(BattleSide side, uint8_t mask) override;
-	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
-	void setMetamagicPointState(BattleSide side, const MetamagicPointState & state) override;
-	void validateMetamagicPointSerialization(bool supported) const;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override
 	{
@@ -490,11 +489,9 @@ public:
 	// a round boundary (and a save/load in the middle of that boundary) cannot
 	// accidentally hand control to the side whose marker merely happens to be
 	// encountered last in the queue.
-	BattleSide pendingTimeStopHeroActionSide = BattleSide::NONE;
 	// A second side may cast Time Stop before the first origin reaches its next
 	// Hero Action. Keep both origins pending instead of collapsing them into the
 	// scalar compatibility field above.
-	ui8 pendingTimeStopHeroActionSides = 0;
 
 	BattleSide tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
@@ -581,13 +578,6 @@ public:
 			if(stack)
 				stack->validateFrozenSerialization(h);
 	}
-	void validateTimeStopSerialization(bool supported) const
-	{
-		for(const auto & stack : stacks)
-			if(stack)
-				stack->validateTimeStopSerialization(supported);
-	}
-
 	template <typename Handler> void validateHeroicSpiritSerialization(Handler & h) const
 	{
 		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_HERO_LUCK)
@@ -635,20 +625,6 @@ public:
 		}
 	}
 
-	template <typename Handler> void validateMetamagicCapacitySerialization(Handler & h) const
-	{
-		for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		{
-			const auto & side = sides.at(sideID);
-			side.validateMetamagicCapacitySerialization(h);
-			const int capacity = newHorizonsMagic::metamagicCapacity(getSideHero(sideID));
-			if(side.metamagicUsesConsumed > capacity
-				|| (side.metamagicPendingCount != 0 && side.metamagicSequenceSpells.size() == 1
-					&& side.metamagicUsesConsumed >= capacity))
-				throw std::runtime_error("Saved Metamagic consumption/reservation exceeds actual hero capacity");
-		}
-	}
-
 	void validateOwnedBonusSerialization(BonusSerializationContext context) const;
 
 	template <typename Handler> void validateSylvanTacticsSerialization(Handler & h)
@@ -666,7 +642,6 @@ public:
 				getSide(side).leadershipComposition.validateSerialization(
 					h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		if(h.saving)
-			validateMetamagicPointSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
 		if(h.saving)
 			validatePassiveFactionStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(h.saving)
@@ -690,8 +665,6 @@ public:
 			validateNoQuarterLifetimeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
 		if(h.saving)
 			validateVeteranDamageHistorySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
-		if(h.saving)
-			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving && luckRollRules.finalDirectPhysicalMultiplier
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
 			throw std::runtime_error("Cannot discard captured final physical Luck policy");
@@ -713,8 +686,6 @@ public:
 			newHorizonsMagic::validateTravelDayEndSerialization(magicRules,
 				h.hasFeature(Handler::Version::NEW_HORIZONS_WATER_WALK_DAY_END),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_FLY_DAY_END));
-		if(h.saving)
-			validateMetamagicCapacitySerialization(h);
 		validateRoyalStandardSerialization(h);
 
 		validateSharedPurposeSerialization(h);
@@ -1024,20 +995,6 @@ public:
 		h & terrainType;
 		h & tacticsSide;
 		h & tacticDistance;
-		if(h.saving && (pendingTimeStopHeroActionSide != BattleSide::NONE || pendingTimeStopHeroActionSides != 0)
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP))
-			throw std::runtime_error("Cannot discard pending Time Stop Hero Action state");
-		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_ORIGINS)
-			&& (pendingTimeStopHeroActionSides & 3u) == 3u)
-			throw std::runtime_error("Cannot discard simultaneous Time Stop origin state");
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP))
-			h & pendingTimeStopHeroActionSide;
-		else if(!h.saving)
-			pendingTimeStopHeroActionSide = BattleSide::NONE;
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_ORIGINS))
-			h & pendingTimeStopHeroActionSides;
-		else if(!h.saving)
-			pendingTimeStopHeroActionSides = 0;
 		h & static_cast<CBonusSystemNode&>(*this);
 		h & replayAllowed;
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
@@ -1092,7 +1049,6 @@ public:
 
 		if(!h.saving)
 		{
-			validateMetamagicCapacitySerialization(h);
 			const bool usesSharedActionBudget = heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE);
 			for(const auto sideId : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				sides.at(sideId).restoreHeroActionAllowancesAfterLoad(round, usesSharedActionBudget,
@@ -1371,16 +1327,6 @@ public:
 	int32_t getCastSpells(BattleSide side) const override;
 	int32_t getEnchanterCounter(BattleSide side) const override;
 	bool getTemporalFieldUsed(BattleSide side) const override;
-	bool getCounterspellArmed(BattleSide side) const override;
-	int32_t getMetamagicPendingCount(BattleSide side) const override;
-	int32_t getMetamagicUsesConsumed(BattleSide side) const override;
-	bool getMetamagicGrandUsed(BattleSide side) const override;
-	bool getMetamagicFormulaReserveUsed(BattleSide side) const override;
-	bool getMetamagicCountersequenceArmed(BattleSide side) const override;
-	SpellID getMetamagicFirstSpell(BattleSide side) const override;
-	uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override;
-	const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override;
-	bool getMetamagicFirstCounterspellNegated(BattleSide side) const override;
 
 	const IBonusBearer * getBonusBearer() const override;
 
@@ -1400,12 +1346,6 @@ public:
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) override;
 	/// Remove Time Stop state created by the given hero side.  This is called at
 	/// the beginning of that side's next Hero Action, not at a round boundary.
-	void expireTimeStops(BattleSide casterSide);
-	BattleSide getPendingTimeStopHeroActionSide() const;
-	ui8 getPendingTimeStopHeroActionSides() const;
-	bool hasPendingTimeStopHeroAction(BattleSide side) const;
-	void notePendingTimeStopHeroAction(BattleSide side);
-	void clearPendingTimeStopHeroAction(BattleSide side);
 
 	void addUnit(uint32_t id, const JsonNode & data) override;
 	void moveUnit(uint32_t id, const BattleHex & destination) override;

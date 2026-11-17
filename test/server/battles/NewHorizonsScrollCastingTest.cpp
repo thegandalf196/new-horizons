@@ -189,7 +189,7 @@ TEST_F(NewHorizonsScrollCastingTest, OnlyMatchingUnlockedEquippedScrollSourcesBy
 TEST_F(NewHorizonsScrollCastingTest, ScrollsDoNotGrantUnavailablePerkVariantsOrRetiredSpells)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	for(const auto * identity : {"new-horizons:massBless", "new-horizons:counterspell"})
+	for(const auto * identity : {"new-horizons:massBless"})
 	{
 		const SpellID unavailable(SpellID::decode(identity));
 		ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, unavailable, ArtifactPosition::MISC1));
@@ -246,26 +246,7 @@ TEST_F(NewHorizonsScrollCastingTest, ScrollAccessDoesNotBypassHostileTargetLegal
 	ASSERT_TRUE(cast());
 }
 
-TEST_F(NewHorizonsScrollCastingTest, ScrollAccessDoesNotBypassSpellLock)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_TRUE(gameHandler->giveHeroNewScroll(attackerSideHero, spell, ArtifactPosition::MISC1));
-	ASSERT_NO_FATAL_FAILURE(begin());
-	const SpellID lock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	defenderSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	if(!defenderSideHero->hasSpellbook())
-		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
-	defenderSideHero->addSpellToSpellbook(lock);
-	setTestSpellPointTotal(defenderSideHero, 1000);
-	ASSERT_TRUE(castOn(defenderSideHero, lock, target));
-	ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*target));
-	const auto health = target->getAvailableHealth();
-	const auto mana = attackerSideHero->getManaAvailable();
-	EXPECT_FALSE(cast());
-	EXPECT_EQ(target->getAvailableHealth(), health);
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	EXPECT_TRUE(attackerSideHero->hasScroll(spell, true));
-}
+
 
 TEST_F(NewHorizonsScrollCastingTest, DirectHouseOfWisdomPurchaseGrantsCastableScrollWithoutItsSchool)
 {

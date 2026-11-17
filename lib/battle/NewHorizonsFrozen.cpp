@@ -6,6 +6,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsFrozen.h"
+#include "TimedEffectValueTransitions.h"
 #include "CUnitState.h"
 #include "PhysicalAffliction.h"
 #include "NewHorizonsCombatSkills.h"
@@ -66,13 +67,17 @@ int shatterBonusPercent(const JsonNode & rules)
 	return data ? static_cast<int>((*data)["shatterBonusPercent"].Integer()) : 0;
 }
 
-bool isFreezingTouchAttacker(const battle::Unit & unit, const JsonNode & rules)
+bool hasFreezingTouchRole(const battle::Unit & unit, const JsonNode & rules)
 {
 	const auto * creature = unit.creatureId().toCreature();
 	return chancePercent(rules) > 0 && creature && creature->getJsonKey() == "core:iceElemental"
-		&& unit.alive() && !unit.isGhost() && !unit.isTimeStopped() && !isFrozen(unit)
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(&unit)
 		&& unit.unitSlot() != SlotID::WAR_MACHINES_SLOT;
+}
+
+bool isFreezingTouchAttacker(const battle::Unit & unit, const JsonNode & rules)
+{
+	return hasFreezingTouchRole(unit, rules) && unit.alive() && !unit.isGhost() && !isFrozen(unit);
 }
 
 bool qualifiesForShatter(const BattleAttackInfo & attack, const JsonNode & rules)
@@ -140,12 +145,12 @@ std::optional<int32_t> markerApplicationRound(const Bonus & bonus)
 
 bool isFrozen(const battle::Unit & unit)
 {
-	return unit.hasBonus(CSelector(isMarker));
+	return unit.mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION) && unit.hasBonus(CSelector(isMarker));
 }
 
 bool canApply(const battle::CUnitState & unit, int32_t round)
 {
-	return round >= 0 && unit.alive() && !unit.isGhost() && !unit.isTimeStopped()
+	return round >= 0 && unit.alive() && !unit.isGhost()
 		&& unit.getPosition().isAvailable() && !unit.isInvincible() && !unit.isTurret() && !isFrozen(unit)
 		&& unit.frozenLastAppliedRound() < round;
 }
@@ -161,7 +166,7 @@ std::vector<Bonus> removalPlan(const battle::Unit & unit)
 
 bool forfeitsNormalActivation(const battle::Unit & unit, BattleUnitTurnReason reason)
 {
-	return reason == BattleUnitTurnReason::TURN_QUEUE && unit.alive()
-		&& !unit.isTimeStopped() && isFrozen(unit);
+	if(reason != BattleUnitTurnReason::TURN_QUEUE || !unit.alive()) return false;
+	return battle::timedEffects::frozenForfeits(reason, true, isFrozen(unit));
 }
 }

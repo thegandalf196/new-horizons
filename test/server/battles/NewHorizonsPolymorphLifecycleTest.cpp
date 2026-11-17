@@ -207,22 +207,7 @@ TEST_F(NewHorizonsPolymorphLifecycleTest, DispelWithoutSpaceRetainsMarkerFormAnd
 	EXPECT_EQ(newHorizonsDebuffStatuses::snapshot(*target).count(), 1u);
 }
 
-TEST_F(NewHorizonsPolymorphLifecycleTest, TimeStopPausesFormAndMarkerLifetimeTogether)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(true));
-	ASSERT_NO_FATAL_FAILURE(installSmallForm());
-	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID()));
-	advanceRound();
-	advanceRound();
-	EXPECT_EQ(target->getBattleFormRoundsRemaining(), 2);
-	EXPECT_EQ(newHorizonsDebuffStatuses::snapshot(*target).count(), 1u);
-	target->removeBonuses(Selector::type()(BonusType::TIME_STOP));
-	advanceRound();
-	EXPECT_EQ(target->getBattleFormRoundsRemaining(), 1);
-	advanceRound();
-	EXPECT_FALSE(target->hasBattleForm());
-}
+
 
 TEST_F(NewHorizonsPolymorphLifecycleTest, PhantomUsesOffensiveBodyHPNotIntegrityAndExpiresWithoutHealing)
 {

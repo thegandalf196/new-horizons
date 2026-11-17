@@ -82,8 +82,6 @@ protected:
 		first.archeryCrossfireRound = 3;
 		first.archeryCrossfireAttackers = {11, 13};
 		first.archeryCrossfireDefenders = {17};
-		first.arcaneMarks.set(BattleSide::ATTACKER, 3);
-		first.arcaneMarks.set(BattleSide::DEFENDER, 1);
 		first.demonicGateOpened = true;
 		first.physicalPoisonBaseDamage = 10;
 		first.physicalPoisonActivationsRemaining = 2;
@@ -223,20 +221,16 @@ TEST_F(UnitStateValueExchangeTest, CopyStillInvokesLegacyChangedFormHook)
 TEST_F(UnitStateValueExchangeTest, PassiveFactionReceiptsSurviveNativeRebindingAndStrictLoad)
 {
 	seedFirst();
-	const auto marks = first.arcaneMarks;
 	const battle::StackInitializationReceipts receipts(first);
 	receipts.initialize(first, &firstEnvironment, first.position);
-	EXPECT_EQ(first.arcaneMarks, marks);
 	EXPECT_TRUE(first.hasOpenedDemonicGate());
 	EXPECT_EQ(first.physicalPoisonSpellOrigin(), BattleSide::ATTACKER);
 	EXPECT_EQ(first.physicalPoisonBaseDamage, 10);
 	EXPECT_EQ(first.physicalPoisonActivationsRemaining, 2);
 	const auto saved = first.save();
 	second.load(saved);
-	EXPECT_EQ(second.arcaneMarks, marks);
 	EXPECT_TRUE(second.hasOpenedDemonicGate());
 	auto invalid = saved;
-	invalid["state"]["arcaneMarks"].Vector()[0].Integer() = 6;
 	const auto before = second.save();
 	EXPECT_THROW(second.load(invalid), std::runtime_error);
 	EXPECT_EQ(second.save(), before);
@@ -305,7 +299,6 @@ TEST_F(UnitStateValueExchangeTest, UnsupportedPassiveUnitReadersRejectBeforeGame
 	{
 		UnitChanges incoming(2, UnitChanges::EOperation::UPDATE);
 		incoming.data = before;
-		if(receipt == 0) incoming.data["state"]["arcaneMarks"].Vector()[0].Integer() = 1;
 		if(receipt == 1) incoming.data["state"]["demonicGateOpened"].Bool() = true;
 		if(receipt == 2)
 		{
@@ -359,7 +352,6 @@ TEST_F(UnitStateValueExchangeTest, HistoricalEmptyPassiveUnitReceiptRemainsReada
 	ASSERT_NO_THROW(bytes.iser & decoded);
 	EXPECT_EQ(decoded.data, incoming.data);
 	EXPECT_NO_THROW(second.load(decoded.data));
-	EXPECT_EQ(second.metamagicMarks(BattleSide::ATTACKER), 0);
 	EXPECT_FALSE(second.hasOpenedDemonicGate());
 	EXPECT_EQ(second.physicalPoisonSpellOrigin(), BattleSide::NONE);
 }

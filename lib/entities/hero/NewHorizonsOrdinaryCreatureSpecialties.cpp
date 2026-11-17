@@ -60,8 +60,8 @@ int valueForIdentity(const CGHeroInstance * hero, std::string_view expectedIdent
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != expectedIdentity)
 		return 0;
 	if(const auto * prepared = hero->getPreparedCreatureMechanics()) return prepared->bonus().val;
-	const auto * row = ordinaryIdentity(expectedIdentity, hero->getPrimaryGrowthRules());
-	return row ? static_cast<int>((*ordinaryPolicy(hero->getPrimaryGrowthRules()))[row->coefficient].Integer()) : 0;
+	const auto * row = hero->compiledDevelopment()->ordinary(hero->getHeroTypeID());
+	return row ? hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID()) : 0;
 }
 }
 void validateOrdinaryCreatureSpecialtiesSerialization(const JsonNode & development, bool supported)
@@ -225,7 +225,7 @@ const CGHeroInstance * ordinaryCreatureVisibleOwnerHero(const CBattleInfoCallbac
 bool hasOrdinaryCreatureSpecialty(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroType()
-		&& (hero->getPreparedCreatureMechanics() || ordinaryIdentity(hero->getHeroType()->getJsonKey(), hero->getPrimaryGrowthRules()));
+		&& (hero->getPreparedCreatureMechanics() || hero->compiledDevelopment()->ordinary(hero->getHeroTypeID()));
 }
 
 int ordinaryCreatureSpecialtyValue(const CBattleInfoCallback & battle, const battle::Unit & actor,
@@ -238,14 +238,14 @@ std::shared_ptr<Bonus> ordinaryCreatureSpecialtyBonus(const CGHeroInstance & her
 	if(const auto * prepared = hero.getPreparedCreatureMechanics()) return prepared->attach();
 	if(!hero.getHeroType())
 		return nullptr;
-	const auto * row = ordinaryIdentity(hero.getHeroType()->getJsonKey(), hero.getPrimaryGrowthRules());
+	const auto * row = hero.compiledDevelopment()->ordinary(hero.getHeroTypeID());
 	if(!row || row->type == BonusType::NONE)
 		return nullptr;
-	const auto creature = CreatureID(CreatureID::decode(row->creature));
+	const auto creature = hero.compiledDevelopment()->ordinaryCreature(hero.getHeroTypeID()).value_or(CreatureID::NONE);
 	if(!creature.hasValue() || !creature.toCreature())
 		throw std::runtime_error("Ordinary creature specialty family is not registered");
 	auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT, row->type, BonusSource::HERO_SPECIAL,
-		static_cast<int>((*ordinaryPolicy(hero.getPrimaryGrowthRules()))[row->coefficient].Integer()),
+		hero.compiledDevelopment()->ordinaryValue(hero.getHeroTypeID()),
 		BonusSourceID(hero.getHeroTypeID()));
 	bonus->valType = row->valueType;
 	bonus->stacking = std::string(ordinaryPrefix) + row->hero;
@@ -277,7 +277,7 @@ int ordinaryCreatureRetaliationPercent(const CGHeroInstance * hero, const Battle
 	const auto creature = attack.attacker->creatureId();
 	if(creature != family && !family.toCreature()->isMyDirectOrIndirectUpgrade(creature.toCreature()))
 		return 0;
-	return static_cast<int>((*ordinaryPolicy(hero->getPrimaryGrowthRules()))["retaliationDamagePercent"].Integer());
+	return hero->compiledDevelopment()->ordinaryValue("retaliationDamagePercent");
 }
 
 int ordinaryCreatureAttackPercent(const CGHeroInstance * hero, const BattleAttackInfo & attack)
@@ -286,12 +286,12 @@ int ordinaryCreatureAttackPercent(const CGHeroInstance * hero, const BattleAttac
 		|| !attack.attacker || !attack.defender || !attack.physicalDamage || attack.shooting
 		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent > 0)
 		return 0;
-	const auto * identity = ordinaryIdentity("core:shakti", hero->getPrimaryGrowthRules());
+	const auto * identity = hero->compiledDevelopment()->ordinary(hero->getHeroTypeID());
 	const auto family = CreatureID(CreatureID::decode("core:troglodyte"));
 	const auto creature = attack.attacker->creatureId();
 	return identity && (creature == family || family.toCreature()->isMyDirectOrIndirectUpgrade(creature.toCreature()))
 		&& attack.attacker->getCount() > attack.defender->getCount()
-		? static_cast<int>((*ordinaryPolicy(hero->getPrimaryGrowthRules()))[identity->coefficient].Integer()) : 0;
+		? hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID()) : 0;
 }
 
 int ordinaryCreatureDamageMultiplier(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
@@ -308,7 +308,7 @@ int ordinaryCreatureDamageMultiplier(const CBattleInfoCallback & battle, const B
 	if(!hero || !hero->getHeroType())
 		return 100;
 	const auto key = hero->getHeroType()->getJsonKey();
-	const auto * identity = ordinaryIdentity(key, hero->getPrimaryGrowthRules());
+	const auto * identity = hero->compiledDevelopment()->ordinary(hero->getHeroTypeID());
 	if(identity && key == "core:tyraxor")
 	{
 		const auto family = CreatureID(CreatureID::decode(identity->creature));
@@ -317,7 +317,7 @@ int ordinaryCreatureDamageMultiplier(const CBattleInfoCallback & battle, const B
 			return 100;
 		const auto * victimState = dynamic_cast<const battle::CUnitState *>(attack.defender);
 		const bool qualifies = attack.cleaveDamagePercent == 0 && victimState && !victimState->counterAttacks.canUse();
-		return 100 + (qualifies ? static_cast<int>((*ordinaryPolicy(hero->getPrimaryGrowthRules()))[identity->coefficient].Integer()) : 0);
+		return 100 + (qualifies ? hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID()) : 0);
 	}
 	return 100 + ordinaryCreatureRetaliationPercent(hero, attack)
 		+ ordinaryCreatureAttackPercent(hero, attack);
@@ -332,11 +332,11 @@ int ordinaryCreatureProtectionPercent(const CBattleInfoCallback & battle, const 
 	const auto * hero = battle.battleGetFightingHero(attack.defender->unitSide());
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != "core:piquedram")
 		return 0;
-	const auto * identity = ordinaryIdentity(hero->getHeroType()->getJsonKey(), hero->getPrimaryGrowthRules());
+	const auto * identity = hero->compiledDevelopment()->ordinary(hero->getHeroTypeID());
 	const auto family = CreatureID(CreatureID::decode("core:stoneGargoyle"));
 	const auto creature = attack.defender->creatureId();
 	return identity && (creature == family || family.toCreature()->isMyDirectOrIndirectUpgrade(creature.toCreature()))
-		? static_cast<int>((*ordinaryPolicy(hero->getPrimaryGrowthRules()))[identity->coefficient].Integer()) : 0;
+		? hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID()) : 0;
 }
 
 std::shared_ptr<Bonus> ordinaryCreatureStrikeBonus(const CGHeroInstance *, const BattleAttackInfo &)
@@ -370,8 +370,8 @@ bool ordinaryCreatureDamageIsStateful(const CBattleInfoCallback & battle)
 			&& hero->getHeroType()->getJsonKey() != "core:drakon"
 			&& hero->getHeroType()->getJsonKey() != "core:synca"))
 			continue;
-		const auto * row = ordinaryIdentity(hero->getHeroType()->getJsonKey(), hero->getPrimaryGrowthRules());
-		if(row && (*ordinaryPolicy(hero->getPrimaryGrowthRules()))[row->coefficient].Integer() > 0)
+		const auto * row = hero->compiledDevelopment()->ordinary(hero->getHeroTypeID());
+		if(row && hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID()) > 0)
 			return true;
 	}
 	return false;

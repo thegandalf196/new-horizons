@@ -275,7 +275,6 @@ TEST(OwnedRecipientBonusGraphTest, LayerPublicationSwapPreservesStorageIdentityA
 	Groups groups{{BonusSource::OTHER, BonusSourceID()}};
 	const bool earned = true;
 	Layer prepared(View{added, updated, removed, stacked, unstacked, groups, earned});
-	prepared.clockParents = std::make_shared<ParentClockRecipe>(prepared);
 	Records emptyRecords;
 	std::set<std::shared_ptr<Bonus>> emptyRemoved;
 	std::optional<Values> noStacked;
@@ -288,7 +287,6 @@ TEST(OwnedRecipientBonusGraphTest, LayerPublicationSwapPreservesStorageIdentityA
 	const auto * unstackedBuffer = prepared.unstackedSnapshot->data();
 	const auto * removalNode = &*prepared.removed.begin();
 	const auto * groupNode = &*prepared.capturedGroups.begin();
-	const auto parent = prepared.clockParents;
 	using std::swap;
 	swap(actual, prepared);
 	EXPECT_EQ(actual.added.data(), addedBuffer);
@@ -299,7 +297,6 @@ TEST(OwnedRecipientBonusGraphTest, LayerPublicationSwapPreservesStorageIdentityA
 	EXPECT_EQ(&*actual.removed.begin(), removalNode);
 	EXPECT_EQ(&*actual.capturedGroups.begin(), groupNode);
 	EXPECT_TRUE(actual.veteranCohesionEarned);
-	EXPECT_EQ(actual.clockParents, parent);
 	EXPECT_FALSE(prepared.hasEdits());
 	EXPECT_FALSE(prepared.stackedSnapshot);
 	EXPECT_FALSE(prepared.unstackedSnapshot);
@@ -309,8 +306,6 @@ TEST(OwnedRecipientBonusGraphTest, LayerPublicationSwapPreservesStorageIdentityA
 	EXPECT_FALSE(actual.hasEdits());
 	EXPECT_EQ(prepared.added.data(), addedBuffer);
 	EXPECT_EQ(prepared.stackedSnapshot->data(), stackedBuffer);
-	EXPECT_EQ(prepared.clockParents, parent);
 	prepared.swap(prepared);
 	EXPECT_EQ(prepared.added.data(), addedBuffer);
-	EXPECT_EQ(prepared.clockParents, parent);
 }

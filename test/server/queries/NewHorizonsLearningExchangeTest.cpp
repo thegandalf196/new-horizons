@@ -335,11 +335,13 @@ TEST_F(NewHorizonsLearningExchangeTest, BoundedQueriesRejectMalformedEitherSideB
 	const auto random = rng();
 	const auto sanyaBook = sanya->getSpellsInSpellbook();
 	const auto partnerBook = scholar->getSpellsInSpellbook();
-	// Represent corrupted captured data on a non-specialist partner: strict
-	// present-table validation still precedes the caller's first state mutation.
-	auto & corrupt = const_cast<JsonNode &>(scholar->getPrimaryGrowthRules());
+	// A non-specialist partner also rejects an invalid replacement before
+	// either participant or the exchange receipt can change.
+	auto corrupt = scholar->getPrimaryGrowthRules();
 	corrupt["learningExchangeSpecialties"]["occultScholar"]["learningMaximumPercent"].Integer() = -1;
-	EXPECT_THROW(newHorizonsHeroes::prepareScholarExchange(*sanya, *scholar, 0), std::runtime_error);
+	const auto admitted = scholar->getPrimaryGrowthRules();
+	EXPECT_THROW(scholar->replaceCapturedPrimaryGrowthRules(corrupt), std::runtime_error);
+	EXPECT_EQ(scholar->getPrimaryGrowthRules(), admitted);
 	EXPECT_EQ(sanya->getNewHorizonsScholarWeek(), -1);
 	EXPECT_EQ(scholar->getNewHorizonsScholarWeek(), -1);
 	EXPECT_EQ(sanya->getSpellsInSpellbook(), sanyaBook);

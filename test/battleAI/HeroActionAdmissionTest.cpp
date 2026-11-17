@@ -21,16 +21,11 @@ heroActionProjection::Admission originalAdmission(HypotheticBattle & state,
 	heroActionProjection::Admission result;
 	if(ps.command == HeroCommand::NONE)
 	{
-		result.spellAllowance = state.prepareHeroSpellAllowance(side, ps.spell->getId(),
-			ps.metamagicFollowup, ps.metamagicGrand);
+		result.spellAllowance = state.prepareHeroSpellAllowance(side, ps.spell->getId());
 		if(!result.spellAllowance)
 			return result;
 		if(!state.beginProjectedHeroAction(side, *result.spellAllowance))
 			return result;
-		result.counterspell = state.resolveProjectedCounterspell(side, ps.spell);
-		if(!result.counterspell.resolutionKnown || !result.counterspell.negated.has_value())
-			return result;
-		result.counterspellNegated = *result.counterspell.negated;
 	}
 	else
 	{
@@ -78,26 +73,8 @@ protected:
 		EXPECT_EQ(result.admitted, oldResult.admitted);
 		EXPECT_EQ(result.spellAllowance, oldResult.spellAllowance);
 		EXPECT_EQ(result.orderAllowance, oldResult.orderAllowance);
-		EXPECT_EQ(result.counterspell.wardSide, oldResult.counterspell.wardSide);
-		EXPECT_EQ(result.counterspell.wardActive, oldResult.counterspell.wardActive);
-		EXPECT_EQ(result.counterspell.resolutionKnown, oldResult.counterspell.resolutionKnown);
-		EXPECT_EQ(result.counterspell.negated, oldResult.counterspell.negated);
-		EXPECT_EQ(result.counterspell.manaCost, oldResult.counterspell.manaCost);
-		EXPECT_EQ(result.counterspellNegated, oldResult.counterspellNegated);
-		if(!order && !blocked && !exhausted)
-		{
-			EXPECT_EQ(result.counterspell.resolutionKnown, expectedAdmission);
-			EXPECT_EQ(result.counterspell.wardActive,
-				battle()->getSide(BattleSide::DEFENDER).counterspellArmed);
-			if(expectedAdmission && result.counterspell.wardActive)
-				EXPECT_EQ(result.counterspellNegated, defenderSideHero->getManaAvailable() > 0);
-		}
 		EXPECT_EQ(candidate.value, 123.0f); // Scoring remains exclusively in the caller.
 		EXPECT_EQ(state(*after), state(*before));
-		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-			EXPECT_EQ(after->getCounterspellArmed(side), before->getCounterspellArmed(side));
-		if(!blocked && !exhausted)
-			EXPECT_FALSE(after->getCounterspellArmed(BattleSide::ATTACKER));
 		// Observe the otherwise private begun-action latch through its real API.
 		if(result.spellAllowance)
 		{
@@ -116,32 +93,22 @@ protected:
 	}
 };
 
-TEST_F(HeroActionAdmissionTest, SpellBeginsBeforeWardResolutionWithoutScoring)
+TEST_F(HeroActionAdmissionTest, SpellBeginsWithoutScoring)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(compare(false, true));
 }
 
-TEST_F(HeroActionAdmissionTest, OrderBeginsWithoutDereferencingSpellOrResolvingWard)
+TEST_F(HeroActionAdmissionTest, OrderBeginsWithoutDereferencingSpell)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 	ASSERT_NO_FATAL_FAILURE(compare(true, true));
 }
 
-TEST_F(HeroActionAdmissionTest, AlreadyBegunActionRefusesSpellBeforeWardResolution)
+TEST_F(HeroActionAdmissionTest, AlreadyBegunActionRefusesSpell)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
 	ASSERT_NO_FATAL_FAILURE(compare(false, false, true));
-}
-
-TEST_F(HeroActionAdmissionTest, BeginningSpellAndOrderExpiresOwnArmedWard)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	battle()->getSide(BattleSide::ATTACKER).counterspellArmed = true;
-	ASSERT_NO_FATAL_FAILURE(compare(false, true));
-	ASSERT_NO_FATAL_FAILURE(compare(true, true));
 }
 
 TEST_F(HeroActionAdmissionTest, AlreadyBegunActionRefusesOrder)
@@ -162,30 +129,4 @@ TEST_F(HeroActionAdmissionTest, ExhaustedAllowanceRefusesOrder)
 	ASSERT_NO_FATAL_FAILURE(compare(true, false, false, true));
 }
 
-TEST_F(HeroActionAdmissionTest, ArmedWardWithSufficientManaRetainsKnownNegation)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	setTestSpellPointTotal(defenderSideHero, 100000);
-	ASSERT_NO_FATAL_FAILURE(compare(false, true));
-}
-
-TEST_F(HeroActionAdmissionTest, ArmedWardWithoutManaRetainsKnownFailure)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	setTestSpellPointTotal(defenderSideHero, 0);
-	ASSERT_NO_FATAL_FAILURE(compare(false, true));
-}
-
-TEST_F(HeroActionAdmissionTest, MissingWardingHeroRefusesUnknownResultAfterBeginning)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	// Exercise the real missing-information branch, not a stubbed counterspell.
-	// This deliberately inconsistent ward snapshot is not proof that ordinary
-	// player visibility hides either hero in the current runtime implementation.
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	battle()->getSide(BattleSide::DEFENDER).heroID = ObjectInstanceID::NONE;
-	ASSERT_NO_FATAL_FAILURE(compare(false, false));
-}
 }

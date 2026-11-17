@@ -42,7 +42,7 @@ struct CachedAttack
 	bool waited = false;
 };
 
-class DLL_EXPORT BattleEvaluator
+class DLL_LINKAGE BattleEvaluator
 {
 	std::shared_ptr<MovementQueryCache> movementMemo;
 	std::shared_ptr<HypotheticBattle> createHypotheticBattle(const HypotheticBattle::Subject & source) const;
@@ -71,13 +71,11 @@ class DLL_EXPORT BattleEvaluator
 	struct SpellOption
 	{
 		const CSpell * spell = nullptr;
-		bool metamagicFollowup = false;
 		bool divineMandateFollowup = false;
-		bool metamagicGrand = false;
 	};
 	std::vector<SpellOption> collectCastableHeroSpellOptions(
 		const std::shared_ptr<CPlayerBattleCallback> & battleView, const CGHeroInstance * hero,
-		bool allowSpells, bool mandatoryOrder, bool legacyMetamagicFollowup,
+		bool allowSpells, bool mandatoryOrder,
 		const DivineMandateStatus & divineMandateStatus,
 		const battleAIDiagnostic::Admission * admission) const;
 	bool evaluateHeroActionQueue(PossibleSpellcast::ValueMap & values,

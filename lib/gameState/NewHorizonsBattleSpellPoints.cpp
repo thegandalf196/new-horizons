@@ -16,7 +16,7 @@ namespace newHorizonsHeroes
 {
 void applyManaLeechRecovery(CGHeroInstance & hero, SideInBattle * side, int32_t amount)
 {
-	const auto policy = hasManaLeeches(&hero) ? manaLeechesAmount(hero.getPrimaryGrowthRules()).value_or(0) : 0;
+	const auto policy = hasManaLeeches(&hero) ? hero.compiledDevelopment()->manaLeeches.value_or(0) : 0;
 	if(!side || side->heroID != hero.id || policy <= 0 || amount < 0 || amount > policy)
 		throw std::runtime_error("Mana Leeches recovery requires an entitled active battle hero");
 	side->validateManaLeechesSerialization(true);
@@ -73,7 +73,7 @@ BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, co
 			throw std::runtime_error("Accepted combat receipt is ahead of the world day");
 		result.deepTrance[sideID] = hasCapturedDeepTrance(*hero)
 			&& hero->getNewHorizonsLastAcceptedCombatDay() != result.acceptedDay;
-		result.manaFurnace[sideID] = manaFurnaceRules(hero->getPrimaryGrowthRules());
+		result.manaFurnace[sideID] = hero->compiledDevelopment()->manaFurnace;
 	}
 	return result;
 }

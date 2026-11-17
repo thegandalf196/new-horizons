@@ -154,12 +154,8 @@ std::optional<Policy> activePolicy(const CGHeroInstance * hero, CreatureID creat
 {
 	if(!hero || !isSkeletonFamily(creature) || hero->getNewHorizonsNecromancyRank() == 0)
 		return std::nullopt;
-	const auto & rules = hero->getPerkState().rules;
-	if(!rules.isStruct() || !rules.Struct().contains(POLICY_KEY))
-		return std::nullopt;
-	// Captured perk rules validate on initialization, selection and load. Combat
-	// queries borrow that invariant instead of revalidating the registry per hit.
-	return readPolicy(rules[POLICY_KEY]);
+	const auto owner = hero->getPerkState().capturedOwner();
+	return owner ? owner->leadershipDiscounts().necromancyPolicy() : std::nullopt;
 }
 
 int leadershipReduction(const CGHeroInstance & hero, const Policy & captured)
@@ -249,14 +245,8 @@ void applyLeadershipPolicy(newHorizonsHeroes::LeadershipSlotCapacity & capacity,
 		return;
 	// Both forms use the captured base-family price, even if a map authored an
 	// explicit upgrade row. Historical snapshots without this policy are untouched.
-	const auto & requirements = hero.getCapabilityRules()["leadership"]["creatureRequirements"];
-	const auto canonical = requirements.Struct().find("core:skeleton");
-	// The ordinary slot resolver already validated this captured table. Avoid a
-	// second full-table validation for its canonical base row on every AI query.
-	const int base = canonical != requirements.Struct().end()
-		? static_cast<int>(canonical->second.Integer())
-		: newHorizonsHeroes::capabilityCreatureLeadershipRequirement(
-			hero.getCapabilityRules(), CreatureID(CreatureID::SKELETON));
+	const auto * leadership = hero.compiledLeadership();
+	const int base = leadership ? leadership->requirement(CreatureID(CreatureID::SKELETON)) : 0;
 	if(base <= 0)
 		return;
 	capacity.requirement = discountedLeadershipRequirement(base,

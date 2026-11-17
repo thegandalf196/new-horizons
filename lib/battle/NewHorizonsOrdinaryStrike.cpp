@@ -70,7 +70,6 @@ EffectPlan plan(const CBattleInfoCallback & battle, const BattleAttackInfo & att
 	}
 	if(!attack.attacker || !attack.defender || !attack.attacker->alive()
 		|| !attack.defender->alive() || attack.attacker->isGhost() || attack.defender->isGhost()
-		|| attack.attacker->isTimeStopped() || attack.defender->isTimeStopped()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender))
 		return result;

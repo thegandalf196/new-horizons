@@ -33,7 +33,6 @@ std::shared_ptr<ICombatEventScript> attackEvent(const std::string & path);
 std::shared_ptr<ICombatEventScript> recoveryEvent(const std::string & path);
 std::shared_ptr<ICombatEventScript> reflectEvent(const std::string & path);
 std::shared_ptr<ICombatEventScript> setupEvent(const std::string & path);
-std::shared_ptr<ICombatEventScript> focusMagicEvent(const std::string & path);
 
 double number(const JsonNode & parameters, const std::string & key, double fallback = 0);
 bool truthy(const JsonNode & value);

@@ -64,11 +64,11 @@ Timed::RecipientPlan Timed::prepareRecipient(const Mechanics * mechanics, const 
 		const auto * state = mechanics->battle() ? mechanics->battle()->getBattle() : nullptr;
 		const int percent = mechanics->isMassSlow() ? 60 : state
 			? newHorizonsMagic::spellVariantPowerPercent(state->getMagicRules(), mechanics->getSpellId()) : 100;
-		if(percent < 100)
-			for(auto & [name, bonus] : result.buffer)
-				if((bonus["type"].String() == "STACKS_INITIATIVE" || (slowSpeed(*mechanics) && bonus["type"].String() == "STACKS_SPEED"))
-					&& bonus["val"].Float() < 0)
-					bonus["val"].Float() = newHorizonsSorceryRevision::scaleSlowVariantValue(bonus["val"].Float(), percent);
+		for(auto & [name, bonus] : result.buffer)
+			if((bonus["type"].String() == "STACKS_INITIATIVE" || (slowSpeed(*mechanics) && bonus["type"].String() == "STACKS_SPEED"))
+				&& bonus["val"].Float() < 0)
+				bonus["val"].Float() = newHorizonsSorceryRevision::finalSlowValue(bonus["val"].Float(), percent,
+					newHorizonsSorceryRevision::hasChronomancer(mechanics->getHeroCaster()));
 	}
 	return result;
 }

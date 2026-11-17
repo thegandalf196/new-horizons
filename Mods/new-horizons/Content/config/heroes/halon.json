@@ -1,8 +1,14 @@
 {
 	"core:halon": {
 		"skills": [
-			{ "skill": "new-horizons:metamagic", "level": "basic" },
-			{ "skill": "new-horizons:spellcraft", "level": "basic" }
+			{
+				"skill": "new-horizons:metamagic",
+				"level": "basic"
+			},
+			{
+				"skill": "new-horizons:spellcraft",
+				"level": "basic"
+			}
 		],
 		"images": {
 			"large": "HPL041WZ.bmp",
@@ -12,9 +18,9 @@
 		},
 		"texts": {
 			"specialty": {
-				"name": "Metamagic Adept",
-				"tooltip": "Manual spells grant +1 Metamagic point",
-				"description": "Halon gains 1 additional Metamagic point after each spell he manually casts, up to 12 points."
+				"name": "Unraveler",
+				"tooltip": "+5 percentage points to Metamagic removal chance",
+				"description": "Halon has +5 percentage points to Metamagic removal chance: 25% at Basic, 35% at Advanced and 45% at Expert."
 			}
 		},
 		"specialty": {
@@ -56,9 +62,22 @@
 		"specialty": {"secondary": null}
 	},
 	"core:serena": {
-		"images": {"large": "HPL042WZ.bmp", "small": "HPS042WZ.bmp", "specialtyLarge": "NH_metamagic_prism_basic_medium.png", "specialtySmall": "NH_metamagic_prism_basic_small.png"},
-		"texts": {"specialty": {"name": "Metamagic", "tooltip": "Faction skill: Metamagic", "description": "Gain Metamagic points each round, up to 12, to strengthen spells and improve Magic Penetration."}},
-		"specialty": {"secondary": null}
+		"images": {
+			"large": "HPL042WZ.bmp",
+			"small": "HPS042WZ.bmp",
+			"specialtyLarge": "NH_metamagic_prism_basic_medium.png",
+			"specialtySmall": "NH_metamagic_prism_basic_small.png"
+		},
+		"texts": {
+			"specialty": {
+				"name": "Metamagic",
+				"tooltip": "Faction skill: Metamagic",
+				"description": "Damaging spells may unravel enemy enchantments; successful buffs may cleanse enemy curses from allies. Removed magic becomes damage or healing and resurrection."
+			}
+		},
+		"specialty": {
+			"secondary": null
+		}
 	},
 	"core:rion": {
 		"images": {"large": "HPL008CL.bmp", "small": "HPS008CL.bmp", "specialtyLarge": "NH_divineMandate_basic_medium.png", "specialtySmall": "NH_divineMandate_basic_small.png"},
@@ -153,5 +172,74 @@
 		"images": {"large": "HPL104BM.bmp", "small": "HPS104BM.bmp", "specialtyLarge": "NH_bloodrage_basic_medium.png", "specialtySmall": "NH_bloodrage_basic_small.png"},
 		"texts": {"specialty": {"name": "Bloodrage", "tooltip": "Faction skill: Bloodrage", "description": "Stronghold heroes begin with Bloodrage. Each non-summoned stack destroyed increases the damage dealt by surviving friendly stacks."}},
 		"specialty": {"secondary": null}
+	},
+	"core:cyra": {
+		"spellbook": [
+			"new-horizons:focusMagic"
+		],
+		"texts": {
+			"specialty": {
+				"name": "Focus Magic",
+				"tooltip": "Focus Magic grants +10 percentage points of ranged damage",
+				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Ballistics."
+			}
+		},
+		"specialty": {
+			"spellFixedAdditive": null,
+			"bonuses": {
+				"focusMagic": {
+					"type": "SPECIAL_SPELL_LEV",
+					"subtype": "new-horizons:focusMagic",
+					"val": 10,
+					"valueType": "BASE_NUMBER"
+				}
+			}
+		}
+	},
+	"core:brissa": {
+		"spellbook": [
+			"new-horizons:focusMagic"
+		],
+		"texts": {
+			"specialty": {
+				"name": "Focus Magic",
+				"tooltip": "Focus Magic grants +10 percentage points of ranged damage",
+				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Ballistics."
+			}
+		},
+		"specialty": {
+			"spellFixedAdditive": null,
+			"bonuses": {
+				"focusMagic": {
+					"type": "SPECIAL_SPELL_LEV",
+					"subtype": "new-horizons:focusMagic",
+					"val": 10,
+					"valueType": "BASE_NUMBER"
+				}
+			}
+		}
+	},
+	"core:terek": {
+		"spellbook": [
+			"new-horizons:focusMagic"
+		],
+		"texts": {
+			"specialty": {
+				"name": "Focus Magic",
+				"tooltip": "Focus Magic grants +10 percentage points of ranged damage",
+				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Ballistics."
+			}
+		},
+		"specialty": {
+			"spellFixedAdditive": null,
+			"bonuses": {
+				"focusMagic": {
+					"type": "SPECIAL_SPELL_LEV",
+					"subtype": "new-horizons:focusMagic",
+					"val": 10,
+					"valueType": "BASE_NUMBER"
+				}
+			}
+		}
 	}
 }

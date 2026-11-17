@@ -605,9 +605,9 @@ TEST_F(SylvanHybridRulesTest, CapturedPolicyAndPerkSurviveRoundtripWithoutInstal
 	storage.oser & attackerSideHero->getPerkState();
 	newHorizonsHeroes::PerkState restored;
 	storage.iser & restored;
-	EXPECT_EQ(restored.rules, attackerSideHero->getPerkState().rules);
-	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTacticsV3(restored.rules));
-	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV2(restored.rules));
+	EXPECT_EQ(restored.getRules(), attackerSideHero->getPerkState().getRules());
+	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTacticsV3(restored.getRules()));
+	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV2(restored.getRules()));
 	EXPECT_TRUE(restored.hasPerkForTier("new-horizons:sylvanLuck", 1));
 	startBattle();
 	auto fortune = battle()->getSylvanLuckState(BattleSide::ATTACKER);

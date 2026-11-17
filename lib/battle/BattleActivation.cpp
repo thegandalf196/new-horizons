@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
 #include "BattleInfo.h"
+#include "TimedEffectValueTransitions.h"
 #include "NewHorizonsPrismaticVanguard.h"
 #include "NewHorizonsHeroicSpirit.h"
 #include "NewHorizonsSerpentsEmbrace.h"
@@ -45,15 +46,6 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			sides.at(side).sylvanLuck.beginActivation(unitId, side == owner, sylvanRedeploy, st->waited());
 	}
-	if(st->isTimeStopped() && reason == BattleUnitTurnReason::AUTOMATIC_ACTION)
-	{
-		// A stopped unit receives a synthetic queue activation solely so the
-		// authoritative flow can reach a Hero Action window. Mark that queue
-		// slot consumed without changing movement/action permission; the flag is
-		// reset by afterNewRound and is used only by turn ordering.
-		st->timeStopTurnConsumedFlag = true;
-	}
-
 	// A hero/creature spell that does not consume the active unit's turn is a
 	// continuation of the same activation.  Keep the Fire Wall activation token
 	// stable across those transitions, otherwise a repeated movement callback
@@ -87,11 +79,10 @@ void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 	if (reason != BattleUnitTurnReason::UNIT_SPELLCAST && reason != BattleUnitTurnReason::HERO_COMMAND)
 	{
 		//remove bonuses that last until when stack gets new turn
-		if(!st->isTimeStopped())
-			st->removeBonusesRecursive(CSelector([](const Bonus * bonus)
+			st->removeBonusesRecursive(CSelector([reason](const Bonus * bonus)
 			{
-				return Bonus::UntilGetsTurn(bonus)
-					&& !newHorizonsCombatSkills::isGamblerLuckPenalty(bonus);
+				return battle::timedEffects::activationExpires(*bonus, reason, false,
+					newHorizonsCombatSkills::isGamblerLuckPenalty(bonus));
 			}));
 	}
 

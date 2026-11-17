@@ -50,7 +50,7 @@ bool Rewardable::Interface::rewardTeachesSecondarySkill(const Rewardable::VisitI
 			continue;
 
 		const auto replaced = newHorizonsMagic::replacementSkill(contextHero->getMagicRules(), authoredSkill);
-		if(newHorizonsHeroes::normalizeRewardSkill(contextHero->getPrimaryGrowthRules(), replaced))
+		if(contextHero->compiledDevelopment()->normalizeRewardSkill(replaced))
 			return true;
 	}
 	return false;
@@ -93,15 +93,15 @@ bool isRewardedSkillEligibleForHero(const CGHeroInstance * hero, SecondarySkill 
 	// level-ups. Faction skills are likewise exclusive to their own faction.
 	// Keep legacy reward behaviour unchanged, where skill probabilities are not
 	// an acquisition allowlist for direct rewards.
-	if(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()))
+	if(hero->compiledDevelopment()->usesSkillOfferWeights())
 	{
-		const auto & rules = hero->getPrimaryGrowthRules();
+		const auto * rules = hero->compiledDevelopment();
 		if(!hero->cb->isAllowed(skill)
-			|| newHorizonsHeroes::isExcludedSkill(rules, skill)
-			|| newHorizonsHeroes::skillOfferWeight(rules, skill).value_or(0) <= 0)
+			|| rules->isExcludedSkill(skill)
+			|| rules->skillOfferWeight(skill).value_or(0) <= 0)
 			return false;
-		if(newHorizonsHeroes::isFactionSkill(rules, skill)
-			&& !newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill))
+		if(rules->isFactionSkill(skill)
+			&& !rules->isFactionSkillForFaction(hero->getFactionID(), skill))
 			return false;
 	}
 
@@ -118,7 +118,7 @@ bool canReceivePositiveRewardedSkill(const CGHeroInstance * hero, SecondarySkill
 	if(hero->getSecSkillLevel(skill) != MasteryLevel::NONE)
 		return true;
 
-	if(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()))
+	if(hero->compiledDevelopment()->usesSkillOfferWeights())
 		return hero->canLearnSkill(skill);
 
 	return hero->canLearnSkill();
@@ -132,7 +132,7 @@ bool isPureSkillTeacherReward(const Rewardable::VisitInfo & info)
 
 bool canReceiveAnyRewardedSkill(const Rewardable::VisitInfo & info, const CGHeroInstance * hero)
 {
-	if(!hero || !newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()))
+	if(!hero || !hero->compiledDevelopment()->usesSkillOfferWeights())
 		return true;
 
 	for(const auto & [authoredSkill, levels] : info.reward.secondary)
@@ -146,7 +146,7 @@ bool canReceiveAnyRewardedSkill(const Rewardable::VisitInfo & info, const CGHero
 			continue;
 
 		const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), authoredSkill);
-		const auto skill = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+		const auto skill = hero->compiledDevelopment()->normalizeRewardSkill(replaced);
 		if(!skill)
 			continue;
 
@@ -167,7 +167,7 @@ std::vector<ui32> Rewardable::Interface::getAvailableRewards(const CGHeroInstanc
 		const Rewardable::VisitInfo & visit = configuration.info[i];
 
 		if(event == visit.visitType && (!hero || visit.limiter.heroAllowed(hero))
-			&& (!hero || !newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules())
+			&& (!hero || !hero->compiledDevelopment()->usesSkillOfferWeights()
 				|| !isPureSkillTeacherReward(visit) || canReceiveAnyRewardedSkill(visit, hero)))
 			ret.push_back(static_cast<ui32>(i));
 	}
@@ -185,7 +185,7 @@ void Rewardable::Interface::grantRewardBeforeLevelup(IGameEventCallback & gameEv
 	for(const auto & entry : info.reward.secondary)
 	{
 		const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), entry.first);
-		const auto skill = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+		const auto skill = hero->compiledDevelopment()->normalizeRewardSkill(replaced);
 		if(!skill)
 		{
 			logMod->warn("Skipping retired or unavailable secondary skill reward");

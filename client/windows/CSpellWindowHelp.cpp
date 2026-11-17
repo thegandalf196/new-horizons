@@ -5,14 +5,12 @@
 #include "InfoWindows.h"
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
-#include "../battle/ArcaneMarkPresentation.h"
 #include "../battle/BattleInterface.h"
 #include "../widgets/CComponent.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
-#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/SpellCostBreakdown.h"
@@ -76,14 +74,8 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 		const auto battle = owner->myInt->battleInt ? owner->myInt->battleInt->getBattle() : nullptr;
 		const auto army = spellbookPresentation::heavenlyGaleArmyPreview(*owner->myHero, *mySpell, battle.get());
 		const auto currentEffect = army ? spellbookPresentation::armyEffectDetail(*army, GAME->translator())
-			: spellbookPresentation::effectDetail(effectPreview, GAME->translator())
-				+ arcaneMarkPresentation::targetIndependentEffectNote(*owner->myHero);
-		const bool targetDiscount = !army && newHorizonsMetamagic::minimumSelectionCost(*owner->myHero,
-			*mySpell, battle.get(), breakdown.finalCost) < breakdown.finalCost;
-		const auto currentCost = army ? "Mana: " + std::to_string(army->manaCost) : targetDiscount
-			? arcaneMarkPresentation::manaUpperBoundText(breakdown.finalCost)
-				+ "\nMarked targets reduce the Mana cost. Select a target to see its exact cost."
-			: spellbookPresentation::costLine(breakdown, GAME->translator(),
+			: spellbookPresentation::effectDetail(effectPreview, GAME->translator());
+		const auto currentCost = army ? "Mana: " + std::to_string(army->manaCost) : spellbookPresentation::costLine(breakdown, GAME->translator(),
 				[](const std::string &) { return 0; });
 
 		std::string requirements;

@@ -64,7 +64,7 @@ bool useNewHorizonsHeroLayout(const CGHeroInstance * hero)
 	const auto viewport = ENGINE->screenDimensions();
 	const bool hasNewHorizonsView = hero && (hero->getPrimaryGrowthView().has_value()
 		|| hero->getArmyCommand().has_value() || hero->getSiegeCapabilities().has_value()
-		|| newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules));
+		|| newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules()));
 	return hasNewHorizonsView && !ENGINE->isRoeData()
 		&& settings["general"]["enableUiEnhancements"].Bool()
 		&& !hero->getCommander() && hero->secSkills.size() <= 8
@@ -124,7 +124,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	const bool showsGrowth = hero->getPrimaryGrowthView().has_value();
 	const bool showsCapabilities = hero->getArmyCommand().has_value() || hero->getSiegeCapabilities().has_value();
 	const bool showsMasteries = hero->getMasteryView().has_value();
-	const bool showsPerks = newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules);
+	const bool showsPerks = newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules());
 	const bool showsDevelopment = showsGrowth || showsCapabilities || showsMasteries || showsPerks;
 	title = std::make_shared<CLabel>(showsDevelopment ? 175 : 190, 65, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "", showsDevelopment ? 180 : 0);
 	if(showsDevelopment)
@@ -511,7 +511,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 				if(slot.selectedPerk)
 				{
 					const auto & perk = *slot.selectedPerk;
-					const auto iconKey = newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.rules);
+					const auto iconKey = newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.getRules());
 					provisionalAbilityIcons[g][ability]->setAnimationPath(AnimationPath::builtin(iconKey), 0);
 					provisionalAbilityIcons[g][ability]->enable();
 					const auto details = newHorizonsPerkHelp::format(curHero, skillId,
@@ -590,12 +590,12 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 		else
 		{
 			const auto & perkState = curHero->getPerkState();
-			const bool hasPerkRules = newHorizonsHeroes::usesPerkRules(perkState.rules);
+			const bool hasPerkRules = newHorizonsHeroes::usesPerkRules(perkState.getRules());
 			std::string summary;
 			bool hasBoneCollector = false;
 			if(hasPerkRules)
 			{
-				for(const auto & selection : perkState.selected)
+				for(const auto & selection : perkState.getSelected())
 				{
 					const auto skill = newHorizonsPerkHelp::skillDefinition(curHero, selection.skillId);
 					const auto perk = newHorizonsPerkHelp::perkDefinition(curHero, selection.skillId, selection.perkId);

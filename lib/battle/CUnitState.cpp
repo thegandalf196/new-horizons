@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsFocusMagic.h"
 #include "NewHorizonsSpecialtyRoundEffects.h"
 #include "NewHorizonsAerialSupremacy.h"
 
@@ -108,13 +109,7 @@ void addCapacityCount(int32_t & current, const int32_t amount)
 	current += amount;
 }
 
-int32_t checkedHealthCapacity(const battle::Unit * unit)
-{
-	const uint32_t maximum = unit->getMaxHealth();
-	if(maximum == 0 || maximum > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
-		throw std::runtime_error("Creature health capacity is outside the supported range");
-	return static_cast<int32_t>(maximum);
-}
+
 }
 
 bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot)
@@ -272,38 +267,6 @@ void CAmmo::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("used", used, 0);
 }
 
-///CShots
-CShots::CShots(const battle::Unit * Owner)
-	: CAmmo(Owner, Selector::type()(BonusType::SHOTS)),
-	shooter(Owner, Selector::type()(BonusType::SHOOTER))
-{
-}
-
-CShots & CShots::operator=(const CShots & other)
-{
-	// A state copy transfers usage, not its source unit's cache target or environment.
-	CAmmo::operator=(other);
-	return *this;
-}
-
-bool CShots::isLimited() const
-{
-	return !shooter.hasBonus() || !env->unitHasAmmoCart(owner);
-}
-
-void CShots::setEnv(const IUnitEnvironment * env_) noexcept
-{
-	env = env_;
-}
-
-int32_t CShots::total() const
-{
-	if(shooter.hasBonus())
-		return CAmmo::total();
-	else
-		return 0;
-}
-
 ///CCasts
 CCasts::CCasts(const battle::Unit * Owner):
 	CAmmo(Owner, Selector::type()(BonusType::CASTS))
@@ -363,8 +326,8 @@ void CUnitState::commitPreparedCapacityHealth(CUnitState & prepared) noexcept
 void CHealth::init()
 {
 	reset();
-	fullUnits = owner->unitBaseAmount() > 1 ? owner->unitBaseAmount() - 1 : 0;
-	firstHPleft = owner->unitBaseAmount() > 0 ? owner->getMaxHealth() : 0;
+	fullUnits = baseAmount() > 1 ? baseAmount() - 1 : 0;
+	firstHPleft = baseAmount() > 0 ? currentMaximumHealth() : 0;
 }
 
 void CHealth::addResurrected(int32_t amount)
@@ -379,7 +342,7 @@ void CHealth::addUnusableRemains(int32_t amount)
 		return;
 
 	unusableRemains += amount;
-	vstd::abetween(unusableRemains, 0, owner->unitBaseAmount());
+	vstd::abetween(unusableRemains, 0, baseAmount());
 }
 
 int32_t CHealth::casualtyLedgerCount() const
@@ -404,7 +367,7 @@ int32_t CHealth::temporarilyRestoredCasualtyCount() const
 
 int32_t CHealth::usableCasualtyDebt() const
 {
-	const int64_t casualties = static_cast<int64_t>(owner->unitBaseAmount()) - getCount() + resurrected;
+	const int64_t casualties = static_cast<int64_t>(baseAmount()) - getCount() + resurrected;
 	const int64_t usable = std::max<int64_t>(0, casualties - unusableRemains);
 	if(usable > std::numeric_limits<int32_t>::max())
 		throw std::runtime_error("Usable casualty count overflow");
@@ -518,7 +481,7 @@ int64_t CHealth::available() const
 
 int64_t CHealth::creatureHealthAvailable() const
 {
-	const auto unitHealth = capacityHealthMaxFixed ? capacityHealthMax : owner->getMaxHealth();
+	const auto unitHealth = capacityHealthMaxFixed ? capacityHealthMax : currentMaximumHealth();
 	int64_t result = static_cast<int64_t>(firstHPleft)
 		+ static_cast<int64_t>(unitHealth) * fullUnits;
 	for(const auto & cohort : capacityHealthCohorts)
@@ -530,7 +493,7 @@ int64_t CHealth::total() const
 {
 	if(totalHealthOverride > 0)
 		return std::max<int64_t>(0, totalHealthOverride - shadowGiftMaximumHealthLost);
-	const int64_t originalMaximum = static_cast<int64_t>(maximumPerCreature()) * owner->unitBaseAmount();
+	const int64_t originalMaximum = static_cast<int64_t>(maximumPerCreature()) * baseAmount();
 	return std::max<int64_t>(0, originalMaximum - shadowGiftMaximumHealthLost);
 }
 
@@ -538,7 +501,7 @@ int32_t CHealth::maximumPerCreature() const
 {
 	if(capacityHealthMaxFixed)
 		return capacityHealthMax;
-	return checkedHealthCapacity(owner);
+	return checkedMaximumHealth();
 }
 
 void CHealth::damage(int64_t & amount)
@@ -704,7 +667,7 @@ HealInfo CHealth::heal(int64_t & amount, EHealLevel level, EHealPower power,
 
 void CHealth::setFromTotal(const int64_t totalHealth)
 {
-	const int32_t unitHealth = owner->getMaxHealth();
+	const int32_t unitHealth = currentMaximumHealth();
 	firstHPleft = totalHealth % unitHealth;
 	fullUnits = static_cast<int32_t>(totalHealth / unitHealth);
 
@@ -816,7 +779,7 @@ void CHealth::addShadowGiftMaximumHealthLoss(const int64_t amount)
 		throw std::invalid_argument("Negative Shadow Gift maximum-health loss");
 	const int64_t originalMaximum = totalHealthOverride > 0
 		? totalHealthOverride + shadowGiftMaximumHealthLost
-		: static_cast<int64_t>(maximumPerCreature()) * owner->unitBaseAmount();
+		: static_cast<int64_t>(maximumPerCreature()) * baseAmount();
 	shadowGiftMaximumHealthLost += std::min(amount, std::max<int64_t>(0, originalMaximum - shadowGiftMaximumHealthLost));
 }
 
@@ -920,7 +883,7 @@ void CHealth::takeResurrected()
 		else
 		{
 			int64_t totalHealth = creatureHealthAvailable();
-			totalHealth -= static_cast<int64_t>(resurrected) * owner->getMaxHealth();
+			totalHealth -= static_cast<int64_t>(resurrected) * currentMaximumHealth();
 			vstd::amax(totalHealth, 0);
 			setFromTotal(totalHealth);
 		}
@@ -970,7 +933,7 @@ void CHealth::promoteCapacityHealthFront()
 		return;
 	if(fullUnits > 0)
 	{
-		addCapacityHealth(capacityHealthMaxFixed ? capacityHealthMax : owner->getMaxHealth(), fullUnits);
+		addCapacityHealth(capacityHealthMaxFixed ? capacityHealthMax : currentMaximumHealth(), fullUnits);
 		fullUnits = 0;
 	}
 	normalizeCapacityHealthCohorts();
@@ -1037,7 +1000,7 @@ void CHealth::preserveCapacityHealth()
 {
 	if(!capacityHealthTracking)
 	{
-		capacityHealthMax = checkedHealthCapacity(owner);
+		capacityHealthMax = checkedMaximumHealth();
 		capacityHealthTracking = true;
 	}
 	if(capacityHealthMax <= 0)
@@ -1052,7 +1015,7 @@ void CHealth::normalizeCapacityHealth(const bool preserveCapacityTracking)
 {
 	if(!capacityHealthTracking || capacityHealthMaxFixed)
 		return;
-	const int32_t newMaximum = checkedHealthCapacity(owner);
+	const int32_t newMaximum = checkedMaximumHealth();
 	if(newMaximum <= 0 || capacityHealthMax <= 0)
 		throw std::runtime_error("Invalid tracked creature health capacity");
 	if(capacityHealthMax != newMaximum)
@@ -1094,7 +1057,7 @@ int64_t CHealth::capacityRegenerationProjectedHeal(const int32_t perCreatureHeal
 {
 	if(!capacityHealthTracking || capacityHealthMaxFixed || perCreatureHeal <= 0)
 		return 0;
-	const int32_t maximum = checkedHealthCapacity(owner);
+	const int32_t maximum = checkedMaximumHealth();
 	int64_t result = 0;
 	if(firstHPleft > 0)
 		result += std::min(perCreatureHeal, maximum - firstHPleft);
@@ -1218,40 +1181,7 @@ void CHealth::serializeJson(JsonSerializeFormat & handler)
 	handler.enterArray("capacityHealthCohorts").serializeStruct(capacityHealthCohorts);
 	handler.serializeBool("casualtyProvenanceInitialized", casualtyProvenanceInitialized, false);
 	handler.enterArray("casualtyProvenance").serializeStruct(casualtyProvenance);
-	const int64_t originalMaximum = totalHealthOverride > 0
-		? totalHealthOverride + shadowGiftMaximumHealthLost
-		: static_cast<int64_t>(maximumPerCreature()) * owner->unitBaseAmount();
-	if(shadowGiftMaximumHealthLost < 0 || shadowGiftMaximumHealthLost > originalMaximum)
-		throw std::runtime_error("Invalid Shadow Gift maximum-health loss");
-	if(!capacityHealthTracking && (capacityHealthMax != 0 || !capacityHealthCohorts.empty()))
-		throw std::runtime_error("Invalid inactive capacity health ledger");
-	if(capacityHealthTracking && capacityHealthMax <= 0)
-		throw std::runtime_error("Invalid capacity health maximum");
-	if(capacityHealthMaxFixed && !capacityHealthTracking)
-		throw std::runtime_error("Invalid fixed battle-form provenance capacity");
-	if(totalHealthOverride < 0 || (totalHealthOverride > 0 && capacityHealthMaxFixed))
-		throw std::runtime_error("Invalid battle-form health total override");
-	int64_t cohortCount = 0;
-	int32_t previousHitPoints = 0;
-	for(const auto & cohort : capacityHealthCohorts)
-	{
-		if(cohort.hitPoints <= 0 || cohort.count <= 0 || cohort.hitPoints > capacityHealthMax
-			|| cohort.hitPoints <= previousHitPoints)
-			throw std::runtime_error("Invalid capacity health cohort");
-		previousHitPoints = cohort.hitPoints;
-		cohortCount += cohort.count;
-		if(cohortCount > std::numeric_limits<int32_t>::max())
-			throw std::runtime_error("Capacity health cohort count overflow");
-	}
-	const int64_t expectedCount = static_cast<int64_t>(fullUnits)
-		+ (firstHPleft > 0 ? 1 : 0) + cohortCount;
-	if(firstHPleft < 0 || fullUnits < 0 || resurrected < 0 || unusableRemains < 0
-		|| unusableRemains > owner->unitBaseAmount()
-		|| (capacityHealthTracking && firstHPleft > capacityHealthMax)
-		|| (capacityHealthTracking && firstHPleft == 0 && expectedCount > 0)
-		|| expectedCount > std::numeric_limits<int32_t>::max())
-		throw std::runtime_error("Invalid capacity health count state");
-	validateCasualtyProvenanceLedger();
+	validateState();
 }
 
 void CHealth::CasualtyProvenanceCohort::serializeJson(JsonSerializeFormat & handler)
@@ -1282,7 +1212,6 @@ CUnitState::CUnitState():
 	pursuitMovementRemaining(0),
 	cleaveUsedThisActivation(false),
 	noQuarterMoraleActivationsRemaining(0),
-	timeStopTurnConsumedFlag(false),
 	regenerationRateMillionths(0),
 	regenerationPendingMicroHealth(0),
 	summoned(false),
@@ -1429,7 +1358,6 @@ int32_t CUnitState::manaLimit() const
 bool CUnitState::ableToRetaliate() const
 {
 	return alive()
-		&& !isTimeStopped()
 		&& !isNewHorizonsFrozen()
 		&& counterAttacks.canUse();
 }
@@ -1480,8 +1408,7 @@ void CUnitState::commitPreparedFrozenApplication(const CUnitState & prepared) no
 
 bool CUnitState::isValidTarget(bool allowDead) const
 {
-	return !isTimeStopped()
-		&& (alive() || (allowDead && isDead())) && getPosition().isValid() && !isTurret();
+	return (alive() || (allowDead && isDead())) && getPosition().isValid() && !isTurret();
 }
 
 bool CUnitState::isClone() const
@@ -1788,7 +1715,7 @@ int32_t CUnitState::getInitiative(int turn) const
 
 ui32 CUnitState::getMovementRange(int turn) const
 {
-	if(isTimeStopped() || isFrozen())
+	if(isFrozen())
 		return 0;
 
 	if (immobilizedPerTurn.getValue(0) != 0)
@@ -1822,22 +1749,6 @@ ui32 CUnitState::getMovementRange() const
 	return getMovementRange(0);
 }
 
-bool CUnitState::canMove(int turn) const
-{
-	if (!alive())
-		return false;
-	if(isTimeStopped())
-		return false;
-	if(isNewHorizonsFrozen())
-		return false;
-
-	if (turn == 0)
-		return !hasBonusOfType(BonusType::NOT_ACTIVE);
-
-	std::string cachingStr = "type_NOT_ACTIVE_turns_" + std::to_string(turn);
-	return !hasBonus(Selector::type()(BonusType::NOT_ACTIVE).And(Selector::turns(turn)), cachingStr); //eg. Ammo Cart or blinded creature
-}
-
 bool CUnitState::defended(int turn) const
 {
 	return !turn && (defending || hasBonusOfType(BonusType::UNIT_DEFENDING));
@@ -1849,11 +1760,6 @@ bool CUnitState::moved(int turn) const
 		return movedThisRound;
 	else
 		return false;
-}
-
-bool CUnitState::timeStopTurnConsumed() const
-{
-	return timeStopTurnConsumedFlag;
 }
 
 bool CUnitState::willMove(int turn) const
@@ -1895,19 +1801,10 @@ BattlePhases::Type CUnitState::battleQueuePhase(int turn) const
 	}
 }
 
-bool CUnitState::isHypnotized() const
-{
-	return bonusCache.hasBonus(UnitBonusValuesProxy::HYPNOTIZED);
-}
-
-bool CUnitState::isInvincible() const
-{
-	return bonusCache.hasBonus(UnitBonusValuesProxy::INVINCIBLE);
-}
-
-
 int CUnitState::getTotalAttacks(bool ranged) const
 {
+	if(ranged && newHorizonsFocusMagic::converted(*this))
+		return 1;
 	const int attacks = 1 + (ranged ?
 		bonusCache.getBonusValue(UnitBonusValuesProxy::TOTAL_ATTACKS_RANGED):
 		bonusCache.getBonusValue(UnitBonusValuesProxy::TOTAL_ATTACKS_MELEE));
@@ -1970,7 +1867,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeRaw("confusion", confusion, std::nullopt);
 	if(!handler.saving)
 		confusionState = ConfusionState::fromJson(confusion);
-	serializePassiveFactionUnitState(handler, arcaneMarks, demonicGateOpened, physicalPoisonSpellSide, arcaneShieldHitPoints);
+	serializePassiveFactionUnitState(handler, demonicGateOpened, physicalPoisonSpellSide);
 	handler.serializeBool("cloned", cloned);
 	handler.serializeBool("defending", defending);
 	handler.serializeBool("drainedMana", drainedMana);
@@ -2011,7 +1908,6 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeInt("capacityRegenerationRemainderTenths", capacityRegenerationRemainderTenths, 0);
 	if(capacityRegenerationRemainderTenths < 0 || capacityRegenerationRemainderTenths > 9)
 		throw std::runtime_error("Invalid capacity regeneration remainder");
-	handler.serializeBool("timeStopTurnConsumed", timeStopTurnConsumedFlag);
 	handler.serializeInt("regenerationRateMillionths", regenerationRateMillionths, 0);
 	handler.serializeInt("regenerationPendingMicroHealth", regenerationPendingMicroHealth, 0);
 	if(regenerationRateMillionths < 0
@@ -2217,8 +2113,6 @@ void CUnitState::load(const JsonNode & data)
 	ordinarySpecialtyLastRound = incomingSpecialtyRound;
 	veteranCohesionEarned = retainedVeteranCohesion;
 	confusionState = incomingActivation.confusion;
-	arcaneMarks = incomingActivation.arcaneMarks;
-	arcaneShieldHitPoints = incomingActivation.arcaneShieldHitPoints;
 	demonicGateOpened = incomingActivation.demonicGateOpened;
 	physicalPoisonSpellSide = incomingActivation.physicalPoisonSpellSide;
 	dreadCavalryState = incomingActivation.dreadCavalry;
@@ -2266,11 +2160,6 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 {
 	if(postShieldBeforeCasualties)
 		*postShieldBeforeCasualties = 0;
-	if(isTimeStopped())
-	{
-		amount = 0;
-		return;
-	}
 	const int64_t maximumHealthBefore = battle::getMaximumHealth(*this);
 	const int64_t availableHealthBefore = getAvailableHealth();
 	const auto cohesionBasis = getBattleStartMaximumAggregateHP();
@@ -2291,7 +2180,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	const int32_t firstHPleftBefore = health.getFirstHPleft();
 	const int32_t countBefore = health.getCount();
 	const int32_t maximumCreatureHealth = getMaxHealth();
-	absorbDamageShields(amount, provenance, bypassTemporaryHitPoints);
+	absorbGuardianSpiritDamage(amount, provenance, bypassTemporaryHitPoints);
 	if(postShieldBeforeCasualties)
 		*postShieldBeforeCasualties = amount;
 

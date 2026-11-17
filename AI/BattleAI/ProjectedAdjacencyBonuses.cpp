@@ -224,6 +224,22 @@ const CStack * ProjectedAdjacencyBonuses::nativeSource(const StackWithBonuses & 
 	return native && typeid(*native) == typeid(CStack) && native->unitId() == unit.unitId() ? native : nullptr;
 }
 
+bool ProjectedAdjacencyBonuses::canProveTypeAbsence(const StackWithBonuses & unit)
+{
+	if(!unit.owner || unit.owner->initialExportSubject()) return false;
+	const auto * branch = unit.owner;
+	for(size_t depth = 0; branch && depth < 512; ++depth)
+	{
+		if(branch->committedBonusOperations || !branch->subject
+			|| !branch->sourceBinding.isCurrentSource(branch->subject)) return false;
+		branch = dynamic_cast<const HypotheticBattle *>(branch->subject.get());
+	}
+	// The adjacency lane only reruns AuthorizedGraph's native raw records.
+	// Their possible types (including inactive limiters) are in the native mask;
+	// custom type-changing updaters make that mask unknown instead of absent.
+	return !branch;
+}
+
 TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & unit,
 	const CSelector & selector, const std::string & cachingStr, bool unstacked)
 {
@@ -295,39 +311,6 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 	return mergeBonusesImpl(selector, cachingStr, unstacked, nullptr);
 }
 
-TConstBonusListPtr StackWithBonuses::frozenInheritedClockQuery(TConstBonusListPtr inherited,
-	const CSelector & selector, bool unstacked, const ProjectedAdjacencyQuery * adjacency) const
-{
-	if(!parentClockRecipe) return inherited;
-	if(!parentClockSourceChanged())
-	{
-		if(!parentClockRecipe->hasAliases) return inherited;
-		TBonusListPtr normalized;
-		for(size_t index = 0; index < inherited->size(); ++index)
-		{
-			const auto record = recipientBonusOverlay::capturedClockAlias(*parentClockRecipe, (*inherited)[index]);
-			if(record != (*inherited)[index])
-			{
-				if(!normalized) normalized = std::make_shared<BonusList>(*inherited);
-				(*normalized)[index] = record;
-			}
-		}
-		if(!normalized) normalized = std::make_shared<BonusList>(*inherited);
-		normalized->remove_if([&](const Bonus * record) { return !selector(record); });
-		return normalized;
-	}
-	// Parent delta changes are isolated; the terminal native/foreign context stays current.
-	const auto base = adjacency && dynamic_cast<const CStack *>(parentClockTerminal)
-		? adjacency->nativeBonuses(Selector::all, unstacked)
-		: unstacked ? parentClockTerminal->getUnstackedBonuses(Selector::all)
-		: parentClockTerminal->getAllBonuses(Selector::all, "hypothetic.parentClockTerminal");
-	auto replaced = std::make_shared<BonusList>(*inherited);
-	recipientBonusOverlay::replaceInheritedClocks(*replaced, *base, *parentClockRecipe,
-		*this, selector, unstacked);
-	replaced->remove_if([&](const Bonus * record) { return !selector(record); });
-	return replaced;
-}
-
 TConstBonusListPtr StackWithBonuses::mergeBonusesImpl(const CSelector & selector,
 	const std::string & cachingStr, bool unstacked, const ProjectedAdjacencyQuery * adjacency) const
 {
@@ -355,7 +338,7 @@ TConstBonusListPtr StackWithBonuses::mergeBonusesImpl(const CSelector & selector
 	// Refresh changes duration, not value. Filtering before merging can hide the
 	// existing identity and incorrectly turn a refresh into a new effect.
 	const auto & mergeSelector = bonusesToUpdate.empty() ? selector : Selector::all;
-	const auto & sourceSelector = parentClockRecipe && parentClockRecipe->hasAliases ? Selector::all : mergeSelector;
+	const auto & sourceSelector = mergeSelector;
 	const auto originalCachingStr = bonusesToUpdate.empty() && &sourceSelector == &mergeSelector ? cachingStr : std::string();
 	TConstBonusListPtr originalList;
 	if(adjacency && dynamic_cast<const CStack *>(origBearer))
@@ -370,7 +353,6 @@ TConstBonusListPtr StackWithBonuses::mergeBonusesImpl(const CSelector & selector
 		originalList = unstacked
 			? origBearer->getUnstackedBonuses(sourceSelector)
 			: origBearer->getAllBonuses(sourceSelector, originalCachingStr);
-	originalList = frozenInheritedClockQuery(std::move(originalList), mergeSelector, unstacked, adjacency);
 	const auto overlay = recipientOverlayView();
 	if(!replaceNativeCreatureBonuses && overlay.updated.empty()
 		&& !overlay.veteranCohesionEarned && hasStableInheritedBonusList())

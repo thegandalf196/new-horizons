@@ -9,7 +9,6 @@
 #include "../../../lib/spells/Problem.h"
 #include "../../../lib/spells/ProxyCaster.h"
 #include "../../../lib/bonuses/Bonus.h"
-#include "../../../lib/networkPacks/SetMetamagicPointState.h"
 #include "../../../lib/spells/DirectSpellEffectPreview.h"
 #include "../../../lib/GameLibrary.h"
 #include <limits>
@@ -253,35 +252,7 @@ TEST_F(NewHorizonsMagicArrowChargeMechanics, EmpowerDoesNotTreatChargePaymentAsO
 	EXPECT_EQ(spell->battleMechanics(&cast)->getTargetAwareManaCost({spells::Destination(target)}), 105);
 }
 
-TEST_F(NewHorizonsMagicArrowChargeMechanics, ExistingSingularityDiscountAppliesAfterTheFullChargePrice)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:neela")));
-	const auto metamagic = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
-	const std::array<const char *, 3> perks{"new-horizons:metamagic.lingeringMagic",
-		"new-horizons:metamagic.spellFracture", "new-horizons:metamagic.arcaneSingularity"};
-	for(size_t tier = 0; tier < perks.size(); ++tier)
-	{
-		attackerSideHero->setSecSkillLevel(metamagic, static_cast<int>(tier) + 1, ChangeValueMode::ABSOLUTE);
-		attackerSideHero->applyPerkSelection({"new-horizons:metamagic", perks[tier]});
-	}
-	SetMetamagicPointState update;
-	update.battleID = BattleID(0);
-	update.side = BattleSide::ATTACKER;
-	update.round = battle()->getRound();
-	update.state = {12, true, false};
-	gameHandler->sendAndApply(update);
-	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
-	cast.setOvercharge(2);
-	// The listed q2 payment is thirty, then Singularity applies its existing
-	// whole-spell 25 percent discount and rounds up once: ceil(30*.75)=23.
-	EXPECT_EQ(spell->battleMechanics(&cast)->getTargetAwareManaCost({spells::Destination(target)}), 23);
-	setTestSpellPointTotal(attackerSideHero, 22);
-	rejectWithoutSpending(action(2));
-	setTestSpellPointTotal(attackerSideHero, 23);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action(2)));
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
-}
+
 
 TEST_F(NewHorizonsMagicArrowChargeMechanics, UnchargedDefaultAndSchoolSpellcraftPreviewShareOnePowerTerm)
 {

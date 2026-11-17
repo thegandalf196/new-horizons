@@ -232,7 +232,7 @@ TEST_F(LegacyHeroCoefficientInputsTest, ExplicitLegacyRatingsMatchTheActualNativ
 	ASSERT_NO_FATAL_FAILURE(prepareSequence(false, false));
 	releaseKnown();
 	ASSERT_FALSE(attackerSideHero->usesPrimaryGrowth());
-	const auto & perks = attackerSideHero->getPerkState().rules;
+	const auto & perks = attackerSideHero->getPerkState().getRules();
 	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
 	ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(perks));
 	ASSERT_FALSE(newHorizonsHeroes::usesWeightedPerkOffers(perks));

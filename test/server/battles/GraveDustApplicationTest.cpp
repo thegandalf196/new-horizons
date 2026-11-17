@@ -86,18 +86,5 @@ TEST_F(GraveDustApplicationTest, MalformedExistingGroupCannotBeHiddenByAWeakerAp
 	EXPECT_THROW(newHorizonsGraveDust::prepareApplication(*target, 1, PlayerColor(0)), std::invalid_argument);
 	EXPECT_EQ(target->getExportedBonusList().size(), localCount + 1);
 }
-TEST_F(GraveDustApplicationTest, DeadOrTimeStoppedRecipientsGetNoApplicationPlan)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	target->addNewBonus(std::make_shared<Bonus>(stopped));
-	ASSERT_TRUE(target->isTimeStopped());
-	EXPECT_TRUE(newHorizonsGraveDust::prepareApplication(*target, 5000, PlayerColor(0)).add.empty());
-	battle()->removeUnitBonus(target->unitId(), std::vector<Bonus>{stopped});
-	ASSERT_FALSE(target->isTimeStopped());
-	int64_t lethal = target->getAvailableHealth();
-	target->damage(lethal);
-	ASSERT_FALSE(target->alive());
-	EXPECT_TRUE(newHorizonsGraveDust::prepareApplication(*target, 5000, PlayerColor(0)).add.empty());
-}
+
 }

@@ -196,6 +196,10 @@ StayReason recipientReason(const CBattleInfoCallback & callback, const JsonNode 
 		return StayReason::ILLEGAL_RECIPIENT;
 	const auto family = newHorizonsMagic::spellVariantBase(rules, group.bundle.spell);
 	const auto familyKey = family.toSpell()->getJsonKey();
+	// Capability conversion is bound to its recipient; moving the raw bonus bundle
+	// would mistake a converted melee stack for a native shooter (or vice versa).
+	if(familyKey == "new-horizons:focusMagic")
+		return StayReason::UNSUPPORTED_CONDITION;
 	if(familyKey == newHorizonsTheChosen::SPELL_KEY
 		&& !newHorizonsTheChosen::canTransferTo(callback, originalSourceUnitId, recipient))
 		return StayReason::ILLEGAL_RECIPIENT;
@@ -255,16 +259,7 @@ StayReason recipientReason(const CBattleInfoCallback & callback, const JsonNode 
 			if(!primary || !primary->alive() || !primary->isValidTarget(false) || primary->unitId() == recipient.unitId())
 				return StayReason::INVALID_LINK;
 		}
-		if(familyKey == "new-horizons:focusMagic" || familyKey == "new-horizons:arcaneBreach")
-		{
-			const auto captured = parameters(bonus);
-			if(!captured || !(*captured)["beneficiarySide"].isNumber()
-				|| ((*captured)["beneficiarySide"].Float() != static_cast<int>(BattleSide::ATTACKER)
-					&& (*captured)["beneficiarySide"].Float() != static_cast<int>(BattleSide::DEFENDER)))
-				return StayReason::MISSING_CAPTURE;
-			if(familyKey == "new-horizons:focusMagic" && !recipient.isShooter())
-				return StayReason::ILLEGAL_RECIPIENT;
-		}
+
 	}
 	const spells::RecipientConditionContext context{source, family, newHorizonsMagic::spellLevel(rules, group.bundle.spell),
 		rules["rulesetVersion"].Integer() == newHorizonsMagic::CURRENT_RULESET_VERSION, opposition, maximumHealth};
@@ -317,24 +312,12 @@ PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t 
 			result.rejection = EndpointRejection::INVALID_ENDPOINT;
 			return result;
 		}
-		if(units[side]->isTimeStopped())
-		{
-			result.rejection = EndpointRejection::TIME_STOPPED;
-			return result;
-		}
-		// Generic target validity excludes Time Stop too. Preserve its explicit
-		// endpoint rejection instead of masking it as an invalid battlefield unit.
 		if(!units[side]->isValidTarget(false))
 		{
 			result.rejection = EndpointRejection::INVALID_ENDPOINT;
 			return result;
 		}
-		const SpellID lock(SpellID::decode("new-horizons:spellLock"));
-		if(units[side]->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(lock))))
-		{
-			result.rejection = EndpointRejection::SPELL_LOCKED;
-			return result;
-		}
+
 	}
 	const auto * state = dynamic_cast<const IBattleState *>(callback.getBattle());
 	if(!state)
@@ -417,16 +400,7 @@ PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t 
 					const auto owner = callback.battleGetOwner(units[side]);
 					if(bonus.spellCasterOwner != PlayerColor::CANNOT_DETERMINE && owner != PlayerColor::CANNOT_DETERMINE)
 						bonus.appliedByEnemy = bonus.spellCasterOwner != owner;
-					const auto key = group.bundle.spell.toSpell()->getJsonKey();
-					if(key == "new-horizons:focusMagic" || key == "new-horizons:arcaneBreach")
-					{
-						auto captured = *parameters(bonus);
-						auto controller = callback.playerToSide(callback.battleGetOwner(units[side]));
-						if(key == "new-horizons:arcaneBreach")
-							controller = callback.otherSide(controller);
-						captured["beneficiarySide"].Integer() = static_cast<int>(controller);
-						bonus.parameters = std::make_shared<BonusParameters>(captured);
-					}
+
 					replacement.effects.push_back(std::move(bonus));
 				}
 				break;

@@ -13,7 +13,7 @@ namespace
 void require(bool value, const char * message) { if(!value) throw std::runtime_error(message); }
 SourceObservations observation(const ownedPreparationAudit::Observation & value)
 {
-	return {value.battle, value.target, value.scalar, value.stopped, value.healingReduction, value.simulationRng};
+	return {value.battle, value.target, value.scalar, value.healingReduction, value.simulationRng};
 }
 }
 Controller::Controller(Scenario scenario, std::shared_ptr<ownedPreparationAudit::Context> audit)

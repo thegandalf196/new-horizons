@@ -202,7 +202,7 @@ TEST_F(NewHorizonsNecromancyCampaignCaptureTest, BothPoolsGuardDirectAndStartLob
 TEST_F(NewHorizonsNecromancyCampaignCaptureTest, WorldPreflightSeesBothMetadataCapturesWithPolicyAbsentFromMapHeroes)
 {
 	ASSERT_FALSE(newHorizonsNecromancy::policy(gameState()->getHeroPerkRules()));
-	ASSERT_FALSE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().rules));
+	ASSERT_FALSE(newHorizonsNecromancy::policy(attackerSideHero->getPerkState().getRules()));
 	ASSERT_NE(gameState()->getInitialStartInfo(), gameState()->getStartInfo());
 	for(const bool global : {false, true})
 		for(const bool initial : {false, true})
@@ -222,7 +222,7 @@ TEST_F(NewHorizonsNecromancyCampaignCaptureTest, LobbyPacketChecksCurrentWorldWi
 	ASSERT_FALSE(newHorizonsNecromancy::policy(gameState()->getHeroPerkRules()));
 	JsonNode installed(JsonPath::builtin("config/newHorizonsPerks"));
 	ASSERT_TRUE(newHorizonsNecromancy::policy(installed));
-	const_cast<JsonNode &>(gameState()->getHeroPerkRules()) = installed;
+	gameState()->replaceCapturedPerkRules(installed);
 	LobbyStartGame packet;
 	packet.initializedGameState = gameState();
 	ASSERT_EQ(packet.initializedStartInfo, nullptr);

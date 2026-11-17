@@ -12,6 +12,7 @@
 #include "CSerializer.h"
 #include "ESerializationVersion.h"
 #include "SerializerReflection.h"
+#include "../nativeRules/CapturedRuleWireContext.h"
 #include "../bonuses/BonusEnum.h"
 
 /// Main class for deserialization of classes from binary form
@@ -25,6 +26,7 @@ public:
 	IGameInfoCallback * cb = nullptr;
 	Version version = Version::NONE;
 	bool loadingGamestate = false;
+	nativeRules::CapturedRuleWireContext capturedRules;
 	bool reverseEndianness = false; //if source has different endianness than us, we reverse bytes
 
 	BinaryDeserializer(IBinaryReader * r)

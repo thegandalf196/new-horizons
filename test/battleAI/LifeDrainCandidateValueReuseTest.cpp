@@ -33,8 +33,6 @@ protected:
 		admission.admitted = true;
 		admission.spellAllowance.emplace();
 		admission.spellAllowance->spell = cast.spell->getId();
-		admission.counterspell.resolutionKnown = true;
-		admission.counterspell.negated = false;
 		// Container-only synthetic proof. Integration tests use actual casts.
 		receipt.primaryTarget = 10;
 		receipt.primaryPosition = BattleHex(12, 5);
@@ -58,7 +56,7 @@ TEST_F(LifeDrainCandidateValueReuseTest, OnlyCertifiedSecondaryDiffersWithoutRep
 	EXPECT_FALSE(nextInvocation.find(cast, admission, {}, receipt));
 }
 
-TEST_F(LifeDrainCandidateValueReuseTest, EnemyEffectFullOptionsAllowanceAndCounterspellMustMatch)
+TEST_F(LifeDrainCandidateValueReuseTest, EnemyEffectFullOptionsAndAllowanceMustMatch)
 {
 	LifeDrainCandidateValueReuse values;
 	values.remember(cast, admission, {}, receipt);
@@ -70,7 +68,7 @@ TEST_F(LifeDrainCandidateValueReuseTest, EnemyEffectFullOptionsAllowanceAndCount
 	EXPECT_FALSE(values.find(cast, admission, {}, changedReceipt));
 	values.remember(cast, admission, {}, receipt);
 	for(const auto & change : std::vector<std::function<void(PossibleSpellcast &)>>{
-		[](auto & c) { c.metamagicGrand = true; }, [](auto & c) { ++c.spellOvercharge; },
+		[](auto & c) { c.divineMandateFollowup = true; }, [](auto & c) { ++c.spellOvercharge; },
 		[](auto & c) { c.spellSelectiveDispel = true; },
 		[](auto & c) { c.spellHandOfFateExpectedValue = 0.0f; },
 		[](auto & c) { c.spellNaturePoisonValue = -0.0f; },
@@ -82,10 +80,6 @@ TEST_F(LifeDrainCandidateValueReuseTest, EnemyEffectFullOptionsAllowanceAndCount
 	}
 	auto changedAdmission = admission;
 	++changedAdmission.spellAllowance->action.epoch;
-	EXPECT_FALSE(values.find(cast, changedAdmission, {}, receipt));
-	changedAdmission = admission;
-	changedAdmission.counterspell.manaCost = 0;
-	ASSERT_NE(changedAdmission.counterspell.manaCost, admission.counterspell.manaCost);
 	EXPECT_FALSE(values.find(cast, changedAdmission, {}, receipt));
 }
 
@@ -107,9 +101,7 @@ TEST_F(LifeDrainCandidateValueReuseTest, MissingProofUnsupportedWorkOrContextCle
 	values.remember(cast, admission, {}, receipt);
 	EXPECT_FALSE(values.find(cast, admission, {}, receipt));
 	admission.admitted = true;
-	admission.counterspellNegated = true;
-	values.remember(cast, admission, {}, receipt);
-	EXPECT_FALSE(values.find(cast, admission, {}, receipt));
+
 }
 
 TEST_F(LifeDrainCandidateValueReuseTest, DisabledAndNonfinalValuesCannotBecomeEntries)

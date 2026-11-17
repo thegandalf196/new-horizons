@@ -358,17 +358,7 @@ TEST_F(NewHorizonsSharedPurposeTest, ActualMassLightCapturesAllEligibleRecipient
 	EXPECT_FALSE(hasPurpose(enemy));
 }
 
-TEST_F(NewHorizonsSharedPurposeTest, CounterspelledLightCompletesPairButEarnsNoMorale)
-{
-	prepare();
-	defenderSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
-	defenderSideHero->initializeSpellPoints(defenderSideHero->manaLimit(), 0);
-	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	battle()->getSide(BattleSide::DEFENDER).counterspellArmed = true;
-	ASSERT_TRUE(cast(SpellID(SpellID::BLESS), friendly));
-	EXPECT_FALSE(hasPurpose(friendly));
-	EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs, 1);
-}
+
 
 TEST_F(NewHorizonsSharedPurposeTest, PurifyThenOrderUsesActuallyRemovedSelectedGroupsNotWholeArea)
 {

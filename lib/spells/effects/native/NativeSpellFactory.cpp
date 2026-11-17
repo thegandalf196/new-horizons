@@ -9,6 +9,7 @@
 #include "SummoningAndRelocation.h"
 #include "StructureCommon.h"
 #include "../../../scripting/ScriptTypeDescription.h"
+#include "../../NewHorizonsSorcerySpells.h"
 
 namespace nativeSpells
 {
@@ -28,6 +29,9 @@ std::shared_ptr<spells::effects::Effect> create(const ScriptTypeDescription & de
 	if(description.sourcePath == "spells/lifeDrain") return std::make_shared<LifeDrain>();
 	if(description.sourcePath == "spells/unitEffect") return std::make_shared<UnitEffect>();
 	if(description.sourcePath == "spells/spellEffect") return std::make_shared<SpellEffect>();
+	if(auto effect = createFocusEnchantmentEffect(description.sourcePath)) return effect;
+	if(auto effect = createForcedRecallEffect(description.sourcePath)) return effect;
+	if(auto effect = createForceLanceEffect(description.sourcePath)) return effect;
 	if(auto effect = createStatusEffect(description)) return effect;
 	if(auto effect = createSingleTargetStatusEffect(description)) return effect;
 	if(auto effect = createUtilityEffect(description)) return effect;

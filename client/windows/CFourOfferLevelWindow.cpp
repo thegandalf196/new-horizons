@@ -163,7 +163,6 @@ bool CFourOfferLevelWindow::refreshEligibility()
 					}
 		}
 	}
-	warningShown = false;
 	createChoices();
 	return true;
 }
@@ -178,7 +177,6 @@ void CFourOfferLevelWindow::updateOffer(const newHorizonsHeroes::FourOfferProgre
 	request.reset();
 	waiting = false;
 	resolved = false;
-	warningShown = false;
 	openGroup.reset();
 	selectedPerk.reset();
 	calculateEligibility(available);
@@ -201,7 +199,6 @@ void CFourOfferLevelWindow::requestApplied(uint32_t requestID, bool success)
 		return;
 	request.reset();
 	waiting = false;
-	warningShown = false;
 	instruction->setText("The choice was not accepted. Choose again.");
 	refreshControls();
 }

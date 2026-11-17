@@ -34,18 +34,12 @@ std::optional<std::string> resolveResourceSpecialtyArtwork(const CHero & hero,
 	return std::nullopt;
 }
 
-std::optional<std::string> resolveMetamagicSpecialtyArtwork(const CHero & hero,
-	const CGHeroInstance * capturedHero)
+std::optional<std::string> resolveIdentitySpecialtyArtwork(const CHero & hero)
 {
-	if(hero.getJsonKey() != "core:halon")
-		return std::nullopt;
-	const auto & bonuses = capturedHero ? capturedHero->getExportedBonusList() : hero.specialty;
-	for(const auto & bonus : bonuses)
-		if(bonus && bonus->type == BonusType::METAMAGIC_USES_PER_COMBAT
-			&& bonus->source == BonusSource::HERO_SPECIAL && bonus->sid == BonusSourceID(hero.getId())
-			&& bonus->valType == BonusValueType::BASE_NUMBER && bonus->val == 1)
-			return detail::resolvedSpecialtyArtwork(hero.getJsonKey(), bonus->type);
-	return std::nullopt;
+	// Raw identity specialties have no numerical bonus carrier. The caller has
+	// already validated that a captured hero belongs to this exact prototype.
+	return detail::resolvedSpecialtyArtwork(hero.getJsonKey(),
+		detail::SpecialtyArtworkFamily::Identity, hero.getJsonKey());
 }
 
 std::optional<std::string> resolveAuthoredMasterChainArtwork(const CHero & hero,
@@ -71,7 +65,7 @@ namespace detail
 std::optional<std::string> resolveRetainedSpecialtyArtwork(const CHero & hero,
 	const JsonNode & magic, const CGHeroInstance * capturedHero)
 {
-	if(const auto artwork = resolveMetamagicSpecialtyArtwork(hero, capturedHero))
+	if(const auto artwork = resolveIdentitySpecialtyArtwork(hero))
 		return artwork;
 	if(const auto artwork = resolveAuthoredMasterChainArtwork(hero, magic, capturedHero))
 		return artwork;

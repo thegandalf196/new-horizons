@@ -8,7 +8,9 @@
  *
  */
 #include "StdInc.h"
-#include "../../lib/spells/NewHorizonsMetamagicEntry.h"
+#include "../../lib/battle/TimedEffectValueTransitions.h"
+#include "FocusMagicProjection.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "PrismaticVanguardProjection.h"
 #include "GnollHarriersProjection.h"
 #include "PhysicalStrikeProjection.h"
@@ -50,11 +52,7 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 	battle::UnitInfo info;
 	info.load(id, data);
 	auto newUnit = std::make_shared<StackWithBonuses>(this, info);
-	newHorizonsMetamagic::seedSummonedMarks(*newUnit,
-		{battleGetFightingHero(BattleSide::ATTACKER), battleGetFightingHero(BattleSide::DEFENDER)});
 	stackStates[newUnit->unitId()] = newUnit;
-	if(const auto initiative = newHorizonsMetamagic::entryAttunement(*this, *newUnit))
-		addUnitBonus(id, {*initiative});
 	prismaticVanguardAI::entry(*this, *newUnit);
 	const auto bindings = newUnit->getBonuses(Selector::type()(BonusType::BIND_EFFECT));
 	for(const auto & bonus : *bindings)
@@ -77,8 +75,8 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 	if(moved && changed->hasBonusOfType(BonusType::BIND_EFFECT))
 	{
 		if(const auto entangleSpell = entangleSpellId())
-			changed->removeUnitBonus(Selector::type()(BonusType::BIND_EFFECT)
-				.And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(*entangleSpell))));
+			changed->removeUnitBonus(CSelector([entangleSpell](const Bonus * bonus)
+				{ return battle::timedEffects::targetMoveBreaks(*bonus, true, entangleSpell); }));
 	}
 	changed->position = destination;
 	if(!moved)
@@ -161,7 +159,7 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 			int64_t damage = battleExpectedLuckDamage(attack);
 			shooter->battlecraftOverwatchReadyRound = -1;
 			shooter->battlecraftOverwatchUsedRound = getRound();
-			shooter->afterAttack(true, false, true);
+			focusMagicAI::afterAttack(*shooter, true, false, true);
 			shooter->removeUnitBonus(Bonus::UntilAttack);
 			shooter->removeUnitBonus(Bonus::UntilOwnAttack);
 			const auto healthBefore = mover->getAvailableHealth();
@@ -390,8 +388,7 @@ void HypotheticBattle::removeUnitBonus(uint32_t id, const std::vector<Bonus> & b
 		});
 	});
 	if(removesForm && unit->hasBattleForm()
-		&& (unit->isTimeStopped()
-			|| !battle::endBattleFormAtNearestLegalPosition(*unit, getAccessibility(unit.get()))))
+		&& !battle::endBattleFormAtNearestLegalPosition(*unit, getAccessibility(unit.get())))
 	{
 		auto removable = bonus;
 		vstd::erase_if(removable, [](const Bonus & entry) { return battle::isPolymorphMarker(&entry); });

@@ -18,9 +18,9 @@
 
 void heroSpellProjection::projectTargetHeuristic(PossibleSpellcast & ps,
 	const float & forecast, HypotheticBattle & state, BattleSide side,
-	const float & baseline, const HypotheticBattle::ProjectedCounterspellOutcome & counterspell,
-	bool counterspellNegated, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
-	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t & targetId)
+	const float & baseline, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
+	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t & targetId,
+	battleEvaluatorProjection::SpellProjection * completion)
 {
 	if(ps.dest.size() != 1 || !ps.dest.front().unitValue)
 	{
@@ -28,13 +28,10 @@ void heroSpellProjection::projectTargetHeuristic(PossibleSpellcast & ps,
 		return;
 	}
 	targetId = ps.dest.front().unitValue->unitId();
-	if(counterspellNegated
-		|| !(ps.spell->getJsonKey() == newHorizonsBlink::SPELL_ID
-			? state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-				ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-				counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients)
-			: acceptTerminalEffects(state, side, ps, targetId, counterspell, counterspellNegated,
-				*spellAllowance, sharedPurposeSpellRecipients)))
+	if(!(ps.spell->getJsonKey() == newHorizonsBlink::SPELL_ID
+			? state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId, *spellAllowance, sharedPurposeSpellRecipients)
+			: acceptTerminalEffects(state, side, ps, targetId,
+				*spellAllowance, sharedPurposeSpellRecipients, completion)))
 		ps.value = std::numeric_limits<float>::lowest();
 	else
 		ps.value = baseline + forecast;

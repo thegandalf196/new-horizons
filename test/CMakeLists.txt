@@ -131,7 +131,6 @@ set(test_SRCS
 		server/battles/NewHorizonsWarfareTest.cpp
 		bonus/DivinePayoutSerializationTest.cpp
 		bonus/PreparedNativeBonusRuleTest.cpp
-		battle/ArcaneMarksActionGuardTest.cpp
 		battle/AutomaticHeroCastReceiptTest.cpp
 		battle/PassiveDivineMandatePolicyTest.cpp
 		game/HistoricalFactionPerkRulesTest.cpp
@@ -148,7 +147,6 @@ set(test_SRCS
 		spells/NewHorizonsTimedUtilityTest.cpp
 		spells/NewHorizonsTimedMagnitudesTest.cpp
 		spells/NewHorizonsPlacementPowerTest.cpp
-		spells/NewHorizonsTimeStopRadiusTest.cpp
 		spells/NewHorizonsSorceryPreviewPowerTest.cpp
 		spells/NewHorizonsShadowMagnitudesTest.cpp
 		spells/NewHorizonsTimedBuffMagnitudeTest.cpp
@@ -196,7 +194,6 @@ set(test_SRCS
 		battle/CasualtyProvenanceTest.cpp
 		battle/HeroActionAllowanceStateTest.cpp
 		battle/HeroOrderRecipientsTest.cpp
-		battle/HeroSpellAllowanceTransitionTest.cpp
 		battle/OrderTransitionCharacterizationTest.cpp
 		battle/BattleHexTest.cpp
 		battle/BattleResultReplyTest.cpp
@@ -208,8 +205,12 @@ set(test_SRCS
 		battle/NewHorizonsBattleFormHealthTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
  		battle/CHealthTest.cpp
+		battle/CHealthValueContextTest.cpp
+		battle/FocusMagicValueStateTest.cpp
+		battleAI/ForecastEffectStateTest.cpp
+		battleAI/ForecastEffectNativeTest.cpp
+		battleAI/SearchBudgetTest.cpp
 		battle/CUnitStateTest.cpp
-		battle/UnitTimeStopQueryTest.cpp
 		battle/HealingReceiptTest.cpp
 		battle/IncomingHealingTest.cpp
 		battle/GraveDustIdentityTest.cpp
@@ -297,8 +298,6 @@ set(test_SRCS
 	bonus/PeerBonusDependencyClosureTest.cpp
 		bonus/OwnedRecipientRootQueryTest.cpp
 		battle/OwnedUnitBonusFrameTest.cpp
-	battle/OwnedLegacyTimeStopCaptureTest.cpp
-	battle/OwnedTimeStopRecordClassifierTest.cpp
 	battle/OwnedFrameBranchQueriesTest.cpp
 	battleAI/OwnedStackQuerySourceTest.cpp
 	bonus/OwnedSourceExportRoleTest.cpp
@@ -552,7 +551,42 @@ set(test_SRCS
 		spells/NewHorizonsSpellAvailabilityTest.cpp
 		spells/NewHorizonsModCompatibilityTest.cpp
 		spells/NewHorizonsSorceryTest.cpp
-		spells/NewHorizonsSpellLockIdentityTest.cpp
+		battleAI/MetamagicStochasticProjectionTest.cpp
+		server/battles/NewHorizonsFocusAndRecallIntegrationTest.cpp
+		spells/SpellEffectScalingProfileTest.cpp
+		server/battles/NewHorizonsForceLanceAdmissionTest.cpp
+		battleAI/FocusMagicProjectionTest.cpp
+		spells/NewHorizonsMetamagicResolutionTest.cpp
+		server/battles/NewHorizonsMetamagicCompletionTest.cpp
+		spells/effects/NewHorizonsSorceryEffectsTest.cpp
+		PerkStateFixture.h
+		battle/MechanicsPresenceTest.cpp
+		battleAI/FlatDamageInputsTest.cpp
+		battleAI/MechanicsPresenceAITest.cpp
+		battleAI/HeroRefinementBudgetTest.cpp
+		battleAI/NativeRosterDecisionProfileTest.cpp
+		hero/CompiledPerkCatalogueTest.cpp
+		hero/CompiledPerkLookupBenchmark.cpp
+		nativeRules/CapturedRulePoolTest.cpp
+		nativeRules/CapturedMagicRulesTest.cpp
+		nativeRules/CompiledDevelopmentPolicyTest.cpp
+		nativeRules/CompiledDevelopmentRulesTest.cpp
+		nativeRules/CompiledLeadershipRulesTest.cpp
+		nativeRules/CompiledMasteryRulesTest.cpp
+		nativeRules/CompiledMetamagicRulesTest.cpp
+		nativeRules/CompiledRuleExecutionAuditTest.cpp
+		server/battles/CompiledCreatureSpecialtyBindingTest.cpp
+		server/battles/CapturedRulePersistenceTest.cpp
+		battleAI/HeroSpellRefinementTest.cpp
+		benchmark/NativeBenchmarkEvidence.h
+		benchmark/NativeEncounterBenchmarkSupport.h
+		benchmark/NativeEncounterBenchmarkTest.cpp
+		benchmark/NativeWorldBenchmarkTest.cpp
+		serializer/RollingReplayPolicyTest.cpp
+		hero/ExclusivePerkProgressionTest.cpp
+		network/NewHorizonsSorceryRetirementBoundaryTest.cpp
+		battleAI/MetamagicExpectedValueTest.cpp
+		battleAI/OrdinaryEffectLifetimeAITest.cpp
 		spells/NewHorizonsRegenerationTest.cpp
 		spells/NewHorizonsRealityWarpPlannerTest.cpp
 		spells/NewHorizonsRealityWarpCollectionTest.cpp
@@ -619,14 +653,10 @@ set(test_SRCS
 		server/battles/DestructionTest.cpp
 		server/battles/EnchantedTest.cpp
 		server/battles/FireShieldTest.cpp
-		server/battles/FocusMagicSpellTest.cpp
-		spells/NewHorizonsFocusParameterSchemaTest.cpp
 		server/battles/NewHorizonsHexOfPainTest.cpp
 		server/battles/NativeTimedSiblingOrderTest.cpp
 		server/battles/NewHorizonsShadowGiftTest.cpp
 		server/battles/NewHorizonsPlagueTest.cpp
-		server/battles/NewHorizonsPlagueControlSpellLockTest.cpp
-		server/battles/NewHorizonsSpellLockControlTest.cpp
 		server/battles/NewHorizonsPuppetMasterTest.cpp
 		server/battles/NewHorizonsForcedMarchTest.cpp
 		server/battles/NewHorizonsForgetfulnessTest.cpp
@@ -690,7 +720,6 @@ set(test_SRCS
 		server/battles/TeleporterPerkLifecycleTest.cpp
 		server/battles/SelectiveDispelPerkTest.cpp
 		server/battles/TemporalFieldPerkTest.cpp
-		server/battles/CounterspellPerkTest.cpp
 		server/battles/TransfigureMatterPerkTest.cpp
 		server/battles/NewHorizonsWisdomRevisionTest.cpp
 		server/battles/NewHorizonsMagicStateTest.cpp
@@ -702,11 +731,7 @@ set(test_SRCS
 		server/battles/NewHorizonsRemainingStartTest.cpp
 		server/battles/NewHorizonsCoroniusHolyWrathTest.cpp
 		server/battles/NewHorizonsMagicFixtureExportTest.cpp
-		server/battles/NewHorizonsMetamagicUIFixtureExportTest.cpp
 		server/battles/NewHorizonsBloodrageUIFixtureExportTest.cpp
-		server/battles/NewHorizonsMetamagicTest.cpp
-		server/battles/NewHorizonsMetamagicPointsBattleTest.cpp
-		server/battles/NewHorizonsArcaneMarksBattleTest.cpp
 		server/battles/NewHorizonsSkillRewardTest.cpp
 		server/battles/NewHorizonsRewardSkillFilterTest.cpp
 		server/battles/NewHorizonsSkillFeedbackTest.cpp
@@ -758,7 +783,6 @@ set(test_SRCS
 		server/battles/NewHorizonsForestAmbushTest.cpp
 		battle/DreadCavalryStateTest.cpp
 		server/battles/NewHorizonsConfusionApplicationTest.cpp
-		battle/NewHorizonsCounterspellActionTest.cpp
 		server/battles/NewHorizonsSpellRosterContextTest.cpp
 		server/battles/NewHorizonsSpellRosterConsumerTest.cpp
 		server/battles/NewHorizonsSpellArraySafetyTest.cpp
@@ -863,7 +887,6 @@ set(test_SRCS
 		server/battles/NewHorizonsHandOfFateTest.cpp
 		server/battles/NewHorizonsMisfortuneTest.cpp
 		server/battles/NewHorizonsShieldOfChaosTest.cpp
-		server/battles/NewHorizonsArcaneBallisticsTest.cpp
 		server/battles/NewHorizonsArcaneFocusTest.cpp
 		server/battles/NewHorizonsGrandFormulaTest.cpp
 		server/battles/NewHorizonsHolyArmorTest.cpp
@@ -972,7 +995,6 @@ set(test_SRCS
 		server/battles/NewHorizonsMineLayerTest.cpp
 		server/battles/NewHorizonsQuicksandTest.cpp
 		server/battles/NewHorizonsFireWallTest.cpp
-		server/battles/NewHorizonsTimeStopTest.cpp
 		server/battles/NewHorizonsFrozenTest.cpp
 		server/battles/FrozenAttackCommitCharacterizationTest.cpp
 		server/battles/FrozenAttackResolutionTest.cpp
@@ -1161,7 +1183,6 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsHeroicSpiritTest.cpp
 		server/battles/NewHorizonsMercenaryCombatTest.cpp
 		server/battles/NewHorizonsOpportunistTest.cpp
-		server/battles/NewHorizonsHalonMetamagicTest.cpp
 		battleAI/HeroCommandAITest.cpp
 		battleAI/FutureAttackReactionTest.cpp
 		battleAI/CanonicalOrderValueTest.cpp
@@ -1300,8 +1321,6 @@ if(ENABLE_BATTLE_AI)
 		battleAI/NewHorizonsHeroGrowthAITest.cpp
 		battleAI/NewHorizonsMasteryAttackCountTest.cpp
 		battleAI/NewHorizonsLevelGrantAITest.cpp
-		battleAI/NewHorizonsTimeStopAITest.cpp
-		battleAI/NewHorizonsSpellLockAITest.cpp
 		battleAI/NewHorizonsPlagueCompletionAITest.cpp
 		battleAI/NewHorizonsPlagueActionCompletionAITest.cpp
 		battleAI/NewHorizonsPlagueMovementCompletionAITest.cpp
@@ -1704,3 +1723,4 @@ include(StartingPerkTests.cmake)
 include(ReplayDayZeroTests.cmake)
 include(SethRoyalTests.cmake)
 include(CreatureProtectionTests.cmake)
+include(NativeAcceptanceBenchmarks.cmake)

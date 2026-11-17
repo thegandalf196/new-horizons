@@ -60,3 +60,12 @@ float heroSpellProjection::localReceiptMarginal(const std::shared_ptr<Hypothetic
 	without->reverseArcaneInspirationEffects(board->getArcaneInspirationEffects());
 	return kernel(board) - kernel(without);
 }
+
+float heroSpellProjection::evaluateLocalOutcome(const OutcomeValue & value,
+	const std::shared_ptr<HypotheticBattle> & board, std::span<const BattleStackAttacked> injuries,
+	bool completed, OutcomeReceipt receipt, const OutcomeKernel & kernel)
+{
+	receipt.kernel = &kernel;
+	const auto result = value(board, injuries, completed, true, receipt);
+	return result.completeLocal ? result.value : result.value + localReceiptMarginal(board, kernel);
+}

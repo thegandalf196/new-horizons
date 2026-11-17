@@ -154,7 +154,6 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
-	void visitSetMetamagicPointState(SetMetamagicPointState & pack) override;
 	void visitSetElementalAttunementState(SetElementalAttunementState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;
@@ -193,7 +192,6 @@ public:
 	void visitBattleMoraleSuppressionStateChanged(BattleMoraleSuppressionStateChanged & pack) override;
 	void visitBattleRapidResponseStateChanged(BattleRapidResponseStateChanged & pack) override;
 	void visitBattleReducedExtraActivationStateChanged(BattleReducedExtraActivationStateChanged & pack) override;
-	void visitSetMetamagicPointState(SetMetamagicPointState & pack) override;
 	void visitSetElementalAttunementState(SetElementalAttunementState & pack) override;
 	void visitSetSpellResponseState(SetSpellResponseState & pack) override;
 	void visitSetArmorerDefiantState(SetArmorerDefiantState & pack) override;

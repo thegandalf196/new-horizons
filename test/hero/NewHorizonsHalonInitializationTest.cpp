@@ -24,7 +24,7 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
-#include "../../lib/spells/NewHorizonsMetamagicMarks.h"
+#include "../../lib/spells/NewHorizonsMetamagicResolution.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 
 namespace
@@ -58,12 +58,14 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
 			JsonNode(JsonPath::builtin("config/newHorizonsCapabilities")));
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
+			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 };
 
-TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndWarcasting)
+TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesUnravelerWithTwoBasicSkillsAndNoStartingPerks)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0))
@@ -74,29 +76,28 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesMetamagicAndWarcasting)
 	ASSERT_NE(halon, nullptr);
 
 	const auto metamagic = scopedSkill("new-horizons:metamagic");
-	const auto warcasting = scopedSkill("new-horizons:warcasting");
+	const auto spellcraft = scopedSkill("new-horizons:spellcraft");
 	ASSERT_EQ(halon->secSkills.size(), 2u);
 	EXPECT_EQ(halon->getSecSkillLevel(metamagic), MasteryLevel::BASIC);
-	EXPECT_EQ(halon->getSecSkillLevel(warcasting), MasteryLevel::BASIC);
-	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:spellcraft")), MasteryLevel::NONE);
-	EXPECT_TRUE(halon->hasActivePerk("new-horizons:warcasting", "new-horizons:warcasting.arcaneValor"));
-	ASSERT_EQ(halon->getPerkState().selected.size(), 2u);
-	EXPECT_TRUE(halon->getPerkState().hasPerkForTier("new-horizons:metamagic", 1));
+	EXPECT_EQ(halon->getSecSkillLevel(spellcraft), MasteryLevel::BASIC);
+	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:warcasting")), MasteryLevel::NONE);
+	EXPECT_TRUE(halon->getPerkState().getSelected().empty());
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::MYSTICISM), MasteryLevel::NONE);
 
-	// Basic Metamagic retains its one-point carrier. Halon's specialty grants
-	// points after manual spells rather than adding another optional action.
-	EXPECT_EQ(halon->valOfBonuses(BonusType::METAMAGIC_USES_PER_COMBAT), 1);
-	const auto metamagicProfile = newHorizonsMetamagic::profile(halon);
-	EXPECT_TRUE(metamagicProfile.pointPolicy);
-	EXPECT_EQ(metamagicProfile.adeptAdditionalPoints, 1);
-	EXPECT_EQ(newHorizonsMetamagic::pointsAfterResolvedSpell(metamagicProfile, 1, true, true), 2);
-	EXPECT_EQ(newHorizonsMetamagic::pointsAfterResolvedSpell(metamagicProfile, 12, true, true), 12);
-	EXPECT_EQ(halon->valOfBonuses(BonusType::MANA_REGENERATION), 1);
-	EXPECT_EQ(halon->getHeroType()->getSpecialtyNameTranslated(), "Metamagic Adept");
+	// Unraveler is selected by original Hero identity, not a resource or action bonus.
+	EXPECT_TRUE(halon->getHeroType()->specialty.empty());
+	for(const auto & bonus : halon->getExportedBonusList())
+		EXPECT_NE(bonus->source, BonusSource::HERO_SPECIAL);
+	const auto policy = newHorizonsMetamagic::resolutionPolicy(halon->getPerkState().getRules());
+	ASSERT_TRUE(policy);
+	EXPECT_EQ(policy->halonChanceBonus, 5);
+	EXPECT_EQ(newHorizonsMetamagic::removalChancePercent(*policy,
+		halon->getSecSkillLevel(metamagic), halon->getHeroType()->getJsonKey() == "core:halon"), 25);
+	EXPECT_EQ(newHorizonsMetamagic::removalChancePercent(*policy, MasteryLevel::BASIC, false), 20);
+	EXPECT_EQ(halon->getHeroType()->getSpecialtyNameTranslated(), "Unraveler");
 	EXPECT_EQ(halon->getHeroType()->getSpecialtyDescriptionTranslated(),
-		"Halon gains 1 additional Metamagic point after each spell he manually casts, up to 12 points.");
+		"Halon has +5 percentage points to Metamagic removal chance: 25% at Basic, 35% at Advanced and 45% at Expert.");
 }
 
 TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaUsesFocusMagicAndSoftLeadershipWithoutSlotLocks)
@@ -122,9 +123,9 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaUsesFocusMagicAndSoftLeade
 	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:natureMagic")), MasteryLevel::BASIC);
 	EXPECT_EQ(brissa->getSecSkillLevel(scopedSkill("new-horizons:sorceryMagic")), MasteryLevel::NONE);
 	ASSERT_EQ(brissa->secSkills.size(), 2u);
-	EXPECT_TRUE(brissa->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.rootcaller"));
-	ASSERT_EQ(brissa->getPerkState().selected.size(), 2u);
-	EXPECT_TRUE(brissa->getPerkState().hasPerkForTier("new-horizons:elementalRebirth", 1));
+	EXPECT_FALSE(brissa->hasActivePerk("new-horizons:natureMagic", "new-horizons:natureMagic.rootcaller"));
+	EXPECT_TRUE(brissa->getPerkState().getSelected().empty());
+	EXPECT_FALSE(brissa->getPerkState().hasPerkForTier("new-horizons:elementalRebirth", 1));
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(brissa->getSecSkillLevel(SecondarySkill::AIR_MAGIC), MasteryLevel::NONE);
 	ASSERT_EQ(brissa->getCapabilityRules()["rulesetVersion"].Integer(), 7);
@@ -139,7 +140,7 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaUsesFocusMagicAndSoftLeade
 	}
 }
 
-TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAndStormcaller)
+TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningWithoutStartingPerks)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0))
@@ -170,12 +171,12 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshSolmyrUsesMasterChainLightningAn
 	EXPECT_TRUE(solmyr->getSourcesForSpell(regularChainLightning).empty());
 	EXPECT_FALSE(solmyr->canLearnSpell(regularChainLightning.toSpell(), true));
 
-	EXPECT_TRUE(solmyr->hasActivePerk("new-horizons:havocMagic",
+	EXPECT_FALSE(solmyr->hasActivePerk("new-horizons:havocMagic",
 		"new-horizons:havocMagic.stormcaller"));
 	EXPECT_EQ(solmyr->valOfBonuses(BonusType::SPECIAL_SPELL_SCALING,
 		BonusSubtypeID(masterChainLightning)), 0);
-	ASSERT_EQ(solmyr->getPerkState().selected.size(), 2u);
-	EXPECT_TRUE(solmyr->getPerkState().hasPerkForTier("new-horizons:metamagic", 1));
+	EXPECT_TRUE(solmyr->getPerkState().getSelected().empty());
+	EXPECT_FALSE(solmyr->getPerkState().hasPerkForTier("new-horizons:metamagic", 1));
 	EXPECT_EQ(solmyr->getHeroType()->getSpecialtyNameTranslated(), "Master Chain Lightning");
 	EXPECT_EQ(solmyr->getHeroType()->getSpecialtyTooltipTranslated(), "Master Chain Lightning");
 

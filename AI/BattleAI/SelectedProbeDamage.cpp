@@ -3,6 +3,8 @@
 #include "SelectedProbeDamage.h"
 #include "BattleExchangeVariant.h"
 #include "DamageCacheAdmission.h"
+#include "FlatDamageInputs.h"
+#include "BattleSearchPolicy.h"
 #include "HeroActionAdmission.h"
 #include "VinesCandidateValueReuse.h"
 #include "../../lib/GameLibrary.h"
@@ -111,8 +113,12 @@ int64_t SelectedProbeDamage::Evaluation::damage()
 		if(damageUses) ++*damageUses;
 	}
 	else
+	{
+		FlatDamageInputs::Scope prepared(*battle, evaluateOnly && !protectIntercepted && admission
+			? admission->flatInputs : nullptr);
 		rawDamage = cache.getDamage(attacker.get(), defender.get(), battle,
 			evaluateOnly && timing ? timing->damageCache : nullptr, evaluateOnly ? admission : nullptr);
+	}
 	return rawDamage;
 }
 
@@ -165,6 +171,16 @@ const battle::Unit * BattleExchangeVariant::selectExchangeTarget(const battle::U
 		return best;
 	std::optional<bool> readyOverwatch;
 	DamageCacheAdmission admission(*attacker, *battle);
+	FlatDamageInputs flat(*battle, shooting);
+	if(battleSearch::forecastBeamOne())
+	{
+		// Materialize the same native participants once before the immutable
+		// selector batch. Reference/unsupported sources keep ordinary capture.
+		battle::Units preparedTargets;
+		for(const auto * target : candidates)
+			preparedTargets.push_back(battle->getForUpdate(target->unitId()).get());
+		if(flat.prepare(*attacker, {preparedTargets.data(), preparedTargets.size()})) admission.flatInputs = &flat;
+	}
 	const auto estimate = [&](const battle::Unit * unit, SelectedProbeDamage & receipt)
 	{
 		auto defender = battle->getForUpdate(unit->unitId());
@@ -194,7 +210,9 @@ const battle::Unit * BattleExchangeVariant::selectExchangeTarget(const battle::U
 		}
 	}
 	selected.calculator = admitted;
-	selected.reuseScore = reuseScore && selected.admitScore();
+	// The numeric frame already proved the same immutable roster/getter sources.
+	// Unknown preparation retains the original selected-probe admission.
+	selected.reuseScore = reuseScore && (admission.flatInputs || selected.admitScore());
 	if(offers && selected.value && admitted)
 		++*offers;
 	return best;

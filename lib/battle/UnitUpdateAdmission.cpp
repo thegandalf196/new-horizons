@@ -10,10 +10,6 @@
 
 battle::UnitUpdateGate battle::classifyUnitUpdateGate(const Unit & unit, int64_t healthDelta)
 {
-	if(unit.isTimeStopped() && healthDelta != 0)
-		return UnitUpdateGate::IGNORE_HEALTH_STOP;
-	if(unit.isTimeStopped())
-		return UnitUpdateGate::IGNORE_STATE_STOP;
 	if(!unit.alive() && healthDelta > 0)
 		return UnitUpdateGate::CHECK_RESURRECTION_SPACE;
 	return UnitUpdateGate::APPLY;

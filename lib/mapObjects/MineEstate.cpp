@@ -188,7 +188,7 @@ void CGMine::flagMine(IGameEventCallback & gameEvents, const CGHeroInstance * ca
 	const auto calendar = cb->getCalendar();
 	const int week = newHorizonsMuster::absoluteWeek(calendar.getCurrentDay(), calendar.getDaysInWeek());
 	const bool landSurveyorTriggered = capturingHero->hasActivePerk("new-horizons:estates", "new-horizons:estates.landSurveyor")
-		&& !newHorizonsEstates::usesRevisedPolicy(capturingHero->getPerkState().rules)
+		&& !newHorizonsEstates::usesRevisedPolicy(capturingHero->getPerkState().getRules())
 		&& !capturingHero->hasUsedNewHorizonsLandSurveyor(week);
 	if(landSurveyorTriggered)
 	{

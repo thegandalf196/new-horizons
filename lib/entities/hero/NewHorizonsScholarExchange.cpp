@@ -10,8 +10,6 @@ namespace newHorizonsHeroes
 {
 int scholarExchangeSpellBudget(const CGHeroInstance & teacher, const CGHeroInstance & recipient)
 {
-	validateLearningExchangeSpecialtiesSerialization(teacher.getPrimaryGrowthRules(), true);
-	validateLearningExchangeSpecialtiesSerialization(recipient.getPrimaryGrowthRules(), true);
 	return std::numeric_limits<int>::max(); // All eligible unknown spells, never a specialty count.
 }
 std::optional<ScholarExchange> prepareScholarExchange(

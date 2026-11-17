@@ -437,7 +437,7 @@ TEST_F(NewHorizonsFireWallRuntimeTest, SecondWindLethalWallTriggerAdvancesBattle
 	EXPECT_NE(battle()->battleActiveUnit()->unitId(), target->unitId());
 }
 
-TEST_F(NewHorizonsFireWallRuntimeTest, InsightAndCurrentPointsSnapshotOutputAndDurationBeforeCompletion)
+TEST_F(NewHorizonsFireWallRuntimeTest, InsightSnapshotsOutputAndDurationBeforeCompletion)
 {
 	prepareFireWall();
 	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:solmyr")));
@@ -448,16 +448,14 @@ TEST_F(NewHorizonsFireWallRuntimeTest, InsightAndCurrentPointsSnapshotOutputAndD
 	attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.arcaneInsight"});
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
 		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	battle()->getSide(BattleSide::ATTACKER).metamagicPointState.points = 4;
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		fireWallAction(BattleHex(70), BattleHex::RIGHT)));
 	const auto * wall = dynamic_cast<const SpellCreatedObstacle *>(battle()->obstacles.front().get());
 	ASSERT_NE(wall, nullptr);
 	EXPECT_EQ(wall->minimalDamage, 83); // Raw damage still precedes target MDR.
-	EXPECT_EQ(wall->capturedMdrPenetration["effectivenessBonusPercent"].Integer(), 37);
-	EXPECT_EQ(wall->turnsRemaining, 4); // floor3*(1+25%+12%), first Momentum cast still0.
+	EXPECT_EQ(wall->capturedMdrPenetration["effectivenessBonusPercent"].Integer(), 25);
+	EXPECT_EQ(wall->turnsRemaining, 3); // floor(3 * 1.25), first Momentum cast still zero.
 	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::FIRE_WALL), 1);
-	battle()->getSide(BattleSide::ATTACKER).metamagicPointState.points = 12;
 	attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	CMemorySerializer wire;
 	wire.oser & *wall;
@@ -468,9 +466,9 @@ TEST_F(NewHorizonsFireWallRuntimeTest, InsightAndCurrentPointsSnapshotOutputAndD
 	const SpellID trigger(SpellID::decode("core:fireWallTrigger"));
 	spells::BattleCast cast(battle(), &proxy, spells::Mode::PASSIVE, trigger.toSpell());
 	const auto mechanics = trigger.toSpell()->battleMechanics(&cast);
-	EXPECT_EQ(mechanics->adjustEffectValue(victim), 113); // floor83*1.37, never current1.36 or freshInsight.
-	EXPECT_EQ(mechanics->adjustEffectValue(victim), 113);
-	EXPECT_EQ(restored.turnsRemaining, 4);
+	EXPECT_EQ(mechanics->adjustEffectValue(victim), 103); // floor(83 * 1.25), preserving the captured Insight after removal.
+	EXPECT_EQ(mechanics->adjustEffectValue(victim), 103);
+	EXPECT_EQ(restored.turnsRemaining, 3);
 }
 
 TEST_F(NewHorizonsFireWallRuntimeTest, DelayedEffectivenessFollowsRecipientMdrThenOneFloorAndNativeCap)

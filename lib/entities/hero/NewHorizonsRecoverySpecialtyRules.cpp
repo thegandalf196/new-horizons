@@ -83,14 +83,13 @@ std::optional<RecoverySpecialtyRules> recoverySpecialtyRules(const CGHeroInstanc
 	for(const auto & [name, kind] : {std::pair{"core:axsis", RecoverySpecialtyKind::INFERNAL_WELLSPRING},
 		std::pair{"core:jaegar", RecoverySpecialtyKind::RITUAL_RESERVE}, std::pair{"core:rosic", RecoverySpecialtyKind::DEEP_TRANCE}})
 		if(hero.getHeroTypeID() == HeroTypeID(HeroTypeID::decode(name)))
-			return recoverySpecialtyRules(hero.getPrimaryGrowthRules(), kind);
+			return hero.compiledDevelopment()->recovery.at(static_cast<size_t>(kind));
 	return std::nullopt;
 }
 bool hasCapturedDeepTrance(const CGHeroInstance & hero)
 {
-	validateRecoverySpecialtiesSerialization(hero.getPrimaryGrowthRules(), true);
 	return hero.getHeroTypeID().hasValue()
 		&& hero.getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:rosic"))
-		&& recoverySpecialtyRules(hero.getPrimaryGrowthRules(), RecoverySpecialtyKind::DEEP_TRANCE).has_value();
+		&& hero.compiledDevelopment()->recovery.at(static_cast<size_t>(RecoverySpecialtyKind::DEEP_TRANCE)).has_value();
 }
 }

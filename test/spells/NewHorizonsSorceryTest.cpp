@@ -18,18 +18,17 @@
 
 #include <limits>
 
-TEST(NewHorizonsSorceryTest, ArcaneBreachPreservesFractionalPenetrationAndCapsEachMark)
+TEST(NewHorizonsSorceryTest, CurrentFocusRejectsRetiredMarkProfiles)
 {
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(0), 1000);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(1), 1005);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(20), 1100);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(50), 1250);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(100), 1500);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(150), 1750);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(199), 1995);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(200), 2000);
-	EXPECT_EQ(newHorizonsSorcery::arcaneBreachMarkBasisPoints(std::numeric_limits<int32_t>::max()), 2000);
-	EXPECT_THROW(newHorizonsSorcery::arcaneBreachMarkBasisPoints(-1), std::invalid_argument);
+	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
+	EXPECT_TRUE(newHorizonsSorceryRevision::usesFocusEnchantment(rules));
+	auto & profile = rules["spells"]["new-horizons:focusMagic"]["focusMagic"];
+	profile["version"].Integer() = 1;
+	profile["baseBasisPoints"].Integer() = 500;
+	profile["powerBasisPoints"].Integer() = 3;
+	profile["capBasisPoints"].Integer() = 1200;
+	EXPECT_THROW(newHorizonsSorceryRevision::usesFocusEnchantment(rules), std::runtime_error);
+	EXPECT_THROW(newHorizonsMagic::validateRules(rules), std::runtime_error);
 }
 
 TEST(NewHorizonsSorceryTest, PhantomIntegrityUsesTheCanonicalCapAndPerkMultiplier)
@@ -55,110 +54,13 @@ TEST(NewHorizonsSorceryTest, PhantomDamageSplitIsNotACloneApproximation)
 	EXPECT_EQ(newHorizonsSorcery::phantomArmyDamageTakenPercent(true), 200);
 }
 
-TEST(NewHorizonsSorceryTest, TimeStopRadiusUsesPowerThresholdAndChronomancerBonus)
-{
-	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(0), 1);
-	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(99), 1);
-	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(100), 2);
-	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(999), 2);
-	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(0, true), 1);
-	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(100, true), 2);
-	EXPECT_EQ(newHorizonsSorcery::timeStopRadius(200, true), 3);
-	EXPECT_THROW(newHorizonsSorcery::timeStopRadius(-1), std::invalid_argument);
-	EXPECT_THROW(newHorizonsSorcery::timeStopRadius(1, false, 1001), std::invalid_argument);
-}
-
-TEST(NewHorizonsSorceryTest, TimeStopSchoolCoefficientsMoveBothRadiusThresholdsWithoutChangingCaps)
-{
-	const std::array<std::pair<int, int>, 4> rankThresholds{{
-		{100, 100}, {115, 87}, {130, 77}, {145, 69}}};
-	for(const auto & [coefficientPercent, firstThreshold] : rankThresholds)
-	{
-		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(firstThreshold - 1, false, coefficientPercent), 1);
-		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(firstThreshold, false, coefficientPercent), 2);
-
-		const int secondThreshold = (2 * newHorizonsSorcery::TIME_STOP_POWER_PER_EXTRA_RADIUS * 100
-			+ coefficientPercent - 1)
-			/ coefficientPercent;
-		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(secondThreshold - 1, true, coefficientPercent), 2);
-		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(secondThreshold, true, coefficientPercent), 3);
-		EXPECT_EQ(newHorizonsSorcery::timeStopRadius(10000, true, coefficientPercent), 3);
-	}
-}
-
-TEST(NewHorizonsSorceryTest, SpellLockDurationAndPolicyRespectTargetAlignment)
-{
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(0), 1);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(79), 1);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(80), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(159), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(160), 3);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(1000), 3);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(0, true), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(160, true), 4);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(1000, true), 4);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(-1), std::invalid_argument);
-
-	const auto friendly = newHorizonsSorcery::spellLockPolicy(true);
-	EXPECT_FALSE(friendly.removeBeneficial);
-	EXPECT_TRUE(friendly.removeHostile);
-	EXPECT_TRUE(friendly.preserveBeneficial);
-	EXPECT_FALSE(friendly.preserveHostile);
-	EXPECT_TRUE(friendly.freezeTimedEffects);
-	EXPECT_TRUE(friendly.blockFurtherMagic);
-	EXPECT_FALSE(friendly.affectsOrders);
-
-	const auto enemy = newHorizonsSorcery::spellLockPolicy(false);
-	EXPECT_TRUE(enemy.removeBeneficial);
-	EXPECT_FALSE(enemy.removeHostile);
-	EXPECT_FALSE(enemy.preserveBeneficial);
-	EXPECT_TRUE(enemy.preserveHostile);
-	EXPECT_TRUE(enemy.freezeTimedEffects);
-	EXPECT_TRUE(enemy.blockFurtherMagic);
-	EXPECT_FALSE(enemy.affectsOrders);
-}
-
-TEST(NewHorizonsSorceryTest, SpellLockSchoolCoefficientScalesPowerBeforeFloorAndCapsSafely)
-{
-	// Check values immediately around each rank's first and second threshold.
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(69, false, 115), 1);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(70, false, 115), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(61, false, 130), 1);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(62, false, 130), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(55, false, 145), 1);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(56, false, 145), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(139, false, 115), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(140, false, 115), 3);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(123, false, 130), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(124, false, 130), 3);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(110, false, 145), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(111, false, 145), 3);
-
-	// Empower remains an independent percentage before the single floor.
-	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(69, false, 11500, 10), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(160, true, 145), 4);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDuration(std::numeric_limits<int32_t>::max(), true,
-		1000), 4);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(std::numeric_limits<int32_t>::max(), true,
-		100'000, 1000), 4);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, -1), std::invalid_argument);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDuration(1, false, 1001), std::invalid_argument);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 10000, -1), std::invalid_argument);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(63, false, 12650), 1);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(64, false, 12650), 2);
-	EXPECT_EQ(newHorizonsSorcery::spellLockDurationBasisPoints(43, false, 18850), 2);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 100001), std::invalid_argument);
-	EXPECT_THROW(newHorizonsSorcery::spellLockDurationBasisPoints(1, false, 10000, 1001),
-		std::invalid_argument);
-}
-
 TEST(NewHorizonsSorceryRevisionTest, CapturedProfilesPassRealSchemaAndRoundTripWithoutInstalledFallback)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsMagicV3", "Sorcery revision schema"));
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
-	ASSERT_TRUE(newHorizonsSorceryRevision::focusRules(rules));
-	EXPECT_EQ(newHorizonsSorceryRevision::focusRules(rules)->baseBasisPoints, 500);
+	ASSERT_TRUE(newHorizonsSorceryRevision::usesFocusEnchantment(rules));
+	EXPECT_EQ(rules["spells"]["new-horizons:focusMagic"]["focusMagic"]["version"].Integer(), 2);
 	EXPECT_TRUE(newHorizonsSorceryRevision::slowAffectsSpeed(rules));
 	EXPECT_THROW(newHorizonsSorceryRevision::validateSerialization(rules, false), std::runtime_error);
 	EXPECT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(rules, true));
@@ -167,7 +69,7 @@ TEST(NewHorizonsSorceryRevisionTest, CapturedProfilesPassRealSchemaAndRoundTripW
 	JsonNode restored;
 	memory.iser & restored;
 	EXPECT_EQ(restored, rules);
-	EXPECT_EQ(newHorizonsSorceryRevision::focusRules(restored)->capBasisPoints, 1200);
+	EXPECT_TRUE(newHorizonsSorceryRevision::usesFocusEnchantment(restored));
 	// A pre-revision v3 capture stays absent through the same JSON serialization.
 	rules["spells"]["new-horizons:focusMagic"].Struct().erase("focusMagic");
 	rules["spells"]["core:slow"].Struct().erase("slow");
@@ -175,7 +77,7 @@ TEST(NewHorizonsSorceryRevisionTest, CapturedProfilesPassRealSchemaAndRoundTripW
 	CMemorySerializer historical;
 	historical.oser & rules;
 	historical.iser & restored;
-	EXPECT_FALSE(newHorizonsSorceryRevision::focusRules(restored));
+	EXPECT_FALSE(newHorizonsSorceryRevision::usesFocusEnchantment(restored));
 	EXPECT_FALSE(newHorizonsSorceryRevision::slowAffectsSpeed(restored));
 	EXPECT_NO_THROW(newHorizonsSorceryRevision::validateSerialization(restored, false));
 }
@@ -201,7 +103,7 @@ TEST(NewHorizonsSorceryRevisionTest, RejectsMalformedMisplacedAndUnsupportedRevi
 			EXPECT_THROW(newHorizonsMagic::validateRules(malformed), std::runtime_error);
 		}
 		auto unsupported = rules;
-		unsupported["spells"][identity][clause]["version"].Integer() = 2;
+		unsupported["spells"][identity][clause]["version"].Integer() = 3;
 		EXPECT_THROW(newHorizonsMagic::validateRules(unsupported), std::runtime_error);
 	}
 	auto inverted = rules;
@@ -218,7 +120,7 @@ TEST(NewHorizonsSorceryRevisionTest, HistoricalCrusadeFixtureRestoresPreSorceryR
 		ASSERT_NO_THROW(newHorizonsMagic::validateRules(historical));
 		EXPECT_FALSE(historical["spells"].Struct().contains("new-horizons:theChosen"));
 		EXPECT_FALSE(historical["spells"].Struct().contains("new-horizons:summonLivingArmor"));
-		EXPECT_FALSE(newHorizonsSorceryRevision::focusRules(historical));
+		EXPECT_FALSE(newHorizonsSorceryRevision::usesFocusEnchantment(historical));
 		EXPECT_FALSE(newHorizonsSorceryRevision::slowAffectsSpeed(historical));
 		EXPECT_FALSE(historical["spells"]["core:haste"].Struct().contains("ordinaryAcquisition"));
 		EXPECT_EQ(historical["spells"]["new-horizons:focusMagic"]["level"].Integer(), 3);
@@ -228,7 +130,7 @@ TEST(NewHorizonsSorceryRevisionTest, HistoricalCrusadeFixtureRestoresPreSorceryR
 		EXPECT_EQ(historical["spells"]["new-horizons:massSlow"]["level"].Integer(), 1);
 		EXPECT_EQ(historical["spells"]["new-horizons:massSlow"]["costs"].Vector()[3].Integer(), 9);
 	}
-	EXPECT_TRUE(newHorizonsSorceryRevision::focusRules(current));
+	EXPECT_TRUE(newHorizonsSorceryRevision::usesFocusEnchantment(current));
 	EXPECT_TRUE(newHorizonsSorceryRevision::slowAffectsSpeed(current));
 	EXPECT_TRUE(current["spells"].Struct().contains("new-horizons:summonLivingArmor"));
 }

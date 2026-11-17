@@ -47,7 +47,7 @@ void BattleFlowProcessor::completeStunnedActivation(const CBattleInfoCallback & 
 		}
 		return;
 	}
-	if(!unit || !unit->alive() || unit->isTimeStopped())
+	if(!unit || !unit->alive())
 	{
 		if(original)
 		{

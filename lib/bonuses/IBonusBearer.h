@@ -44,5 +44,9 @@ public:
 
 	/// Explicit projected views bypass versioned caches; live default unchanged.
 	virtual bool isBonusCacheable() const { return true; }
+	/// False proves the complete raw source domain cannot supply this type,
+	/// including currently rejected limiters and alternate supported forms.
+	/// Unknown/custom providers must keep true; never use effective-list absence.
+	virtual bool mayHaveBonusType(BonusType type) const { return true; }
 	virtual int32_t getTreeVersion() const = 0;
 };

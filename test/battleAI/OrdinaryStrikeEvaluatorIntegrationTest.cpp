@@ -20,7 +20,6 @@
 #include "../../AI/BattleAI/VinesCandidateValueReuse.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include <vcmi/ServerCallback.h>
-#include "../../lib/networkPacks/SetMetamagicPointState.h"
 
 namespace
 {
@@ -38,18 +37,17 @@ protected:
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 	}
 
-	void prepare(bool volley = false, int mdr = 50, bool pointArrow = false, bool catalyst = false)
+	void prepare(bool volley = false, int mdr = 50, bool passiveArrow = false)
 	{
 		ASSERT_NO_FATAL_FAILURE(world());
-		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode(pointArrow ? "core:neela"
+		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode(passiveArrow ? "core:neela"
 			: (volley ? "core:theodorus" : "core:aeris"))));
 		ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::MAGIC_ARROW, "new-horizons:sorceryMagic"));
-		if(pointArrow)
+		if(passiveArrow)
 		{
 			ASSERT_EQ(attackerSideHero->getFactionID(), FactionID::TOWER);
-			ASSERT_NO_FATAL_FAILURE(selectPerk(attackerSideHero, "new-horizons:metamagic",
-				catalyst ? "new-horizons:metamagic.arcaneCatalyst" : "new-horizons:metamagic.manaConduit",
-				MasteryLevel::BASIC));
+			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
+				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		}
 		ASSERT_NO_FATAL_FAILURE(startBattle());
 		BattleUnitsChanged remove;
@@ -78,8 +76,6 @@ protected:
 				BonusSource::OTHER, mdr, BonusSourceID(), BonusSubtypeID(SpellSchool::ANY)));
 		ASSERT_NO_FATAL_FAILURE(beginCombat());
 		ASSERT_EQ(battle()->battleActiveUnit(), active);
-		if(pointArrow)
-			ASSERT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER).points, 1);
 		ASSERT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
 		ASSERT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::DEFENDER));
 		callback = std::make_shared<heroQueueTest::QueueCallback>();
@@ -248,7 +244,6 @@ class ArrowInjuryRecorder final : public ServerCallback
 public:
 	std::vector<StacksInjured> injuries;
 	std::vector<BattleUnitsChanged> unitUpdates;
-	std::vector<SetMetamagicPointState> pointUpdates;
 	uint64_t otherStatePackets = 0, completed = 0;
 	explicit ArrowInjuryRecorder(ServerCallback & delegate) : delegate(delegate) {}
 	void complain(const std::string & text) override { delegate.complain(text); }
@@ -263,10 +258,7 @@ public:
 	{ return delegate.resolveAdverseCombatRoll(b, s, stochastic, adverse, draw); }
 	void apply(CPackForClient & p) override
 	{
-		if(const auto * points = dynamic_cast<const SetMetamagicPointState *>(&p))
-			pointUpdates.push_back(*points);
-		else
-			++otherStatePackets;
+		++otherStatePackets;
 		delegate.apply(p);
 	}
 	void apply(BattleLogMessage & p) override { delegate.apply(p); }
@@ -326,17 +318,11 @@ class MagicArrowContinuationEquivalenceTest : public OrdinaryStrikeEvaluatorInte
 			result += heroQueueTest::wire(*receipt);
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
-			result += heroQueueTest::wire(view.getMetamagicPointState(side));
 			result += heroQueueTest::wire(view.getWisdomCombatState(side));
 			result += heroQueueTest::wire(view.getCrossSchoolFormulaState(side));
 			result += heroQueueTest::wire(view.getSpellResponseState(side));
 			result += heroQueueTest::wire(view.getOverwhelmingFormulaState(side));
-			result += heroQueueTest::wire(view.getMetamagicSequenceSpells(side));
-			result += heroQueueTest::wire(std::vector<int64_t>{view.getExtendSpellLastRound(side),
-				view.getMetamagicPendingCount(side), view.getMetamagicUsesConsumed(side),
-				view.getMetamagicGrandUsed(side), view.getMetamagicFirstSpell(side).getNum(),
-				view.getMetamagicFirstTargetUnitId(side), view.getMetamagicFirstCounterspellNegated(side),
-				view.getMetamagicCountersequenceArmed(side), view.getCounterspellArmed(side)});
+			result += heroQueueTest::wire(view.getExtendSpellLastRound(side));
 			result += heroQueueTest::wire(view.getProjectedMana(side));
 		}
 		return result;
@@ -413,7 +399,7 @@ protected:
 	{
 		wingbeatPercent = 0;
 		useRevisedOrders = true;
-		ASSERT_NO_FATAL_FAILURE(prepare(false, 50, true, true));
+		ASSERT_NO_FATAL_FAILURE(prepare(false, 50, true));
 		ASSERT_NO_FATAL_FAILURE(injure(enemy, 1));
 		// Killing the Arrow victim must leave a meaningful ordinary FULL search.
 		const auto * reserve = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(7, 5), 1000);
@@ -427,8 +413,6 @@ protected:
 		ASSERT_TRUE(VinesCandidateValueReuse::scoringScriptsSupported(*parent));
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
-			ASSERT_FALSE(parent->getCounterspellArmed(side));
-			ASSERT_FALSE(parent->getMetamagicCountersequenceArmed(side));
 			ASSERT_TRUE(parent->getHeroOrderStates(side).empty()); // No active Order Divine Fury.
 		}
 		for(const auto * unit : parent->battleGetAllUnits(false))
@@ -443,7 +427,7 @@ protected:
 		DamageCache original;
 		original.buildDamageCache(parent, BattleSide::ATTACKER);
 		const auto originalBefore = original.captureSnapshot();
-		std::string expectedInjury, expectedPost, expectedPoints, expectedNativeInjuries;
+		std::string expectedInjury, expectedPost, expectedNativeInjuries;
 		uint32_t expectedContinuation = 0;
 		int costs[2]{};
 		int64_t raw[2]{};
@@ -456,10 +440,8 @@ protected:
 			auto projected = std::make_shared<HypotheticBattle>(environment.get(), parent);
 			const auto admission = heroActionProjection::admitCandidate(*projected, BattleSide::ATTACKER, candidate);
 			ASSERT_TRUE(admission.admitted);
-			ASSERT_FALSE(admission.counterspell.wardActive);
 			spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, arrow);
 			cast.setOvercharge(charge);
-			cast.setMetamagicTargetUnitId(enemy->unitId());
 			auto mechanics = arrow->battleMechanics(&cast);
 			const spells::Target target{spells::Destination(projected->battleGetUnitByID(enemy->unitId()))};
 			ASSERT_TRUE(mechanics->canBeCastAt(target));
@@ -474,25 +456,15 @@ protected:
 			ASSERT_EQ(recorder.injuries.front().stacks.size(), 1u);
 			ASSERT_EQ(recorder.otherStatePackets, 0u); // This finite fixture admits no other state pack.
 			EXPECT_EQ(recorder.completed, 1u);
-			EXPECT_TRUE(recorder.unitUpdates.empty()); // Current points never mark a target.
-			ASSERT_EQ(recorder.pointUpdates.size(), 1u);
-			const auto & points = recorder.pointUpdates.front();
-			EXPECT_EQ(points.battleID, BattleID(0));
-			EXPECT_EQ(points.side, BattleSide::ATTACKER);
-			EXPECT_EQ(points.round, parent->getRound());
-			EXPECT_EQ(points.state.points, 2); // Round-one point plus this manual Catalyst cast.
-			EXPECT_FALSE(points.state.singularityReached);
-			EXPECT_FALSE(points.state.echoUsedThisRound);
-			EXPECT_EQ(projected->getMetamagicPointState(BattleSide::ATTACKER), points.state);
-			EXPECT_EQ(projected->battleGetUnitByID(enemy->unitId())->metamagicMarks(BattleSide::ATTACKER), 0);
+			EXPECT_TRUE(recorder.unitUpdates.empty()); // Passive rank grants no recipient state for this ordinary hit.
 			const auto & injury = recorder.injuries.front().stacks.front();
 			EXPECT_EQ(injury.stackAttacked, enemy->unitId());
 			EXPECT_EQ(injury.damageAmount, 1);
 			EXPECT_TRUE(injury.killed());
 			ASSERT_TRUE(projected->projectAcceptedHeroSpell(BattleSide::ATTACKER, arrow->getId(),
-				enemy->unitId(), false, false, false, false, *admission.spellAllowance, {}));
+				enemy->unitId(), *admission.spellAllowance, {}));
 			// Cross-check the real projectSpell owner; the recorder does not replace
-			// its accepted/point/completed-cast path or provide a cache certificate.
+			// its accepted/completed-cast path or provide a cache certificate.
 			auto direct = std::make_shared<HypotheticBattle>(environment.get(), parent);
 			const auto directAdmission = heroActionProjection::admitCandidate(*direct, BattleSide::ATTACKER, candidate);
 			ASSERT_TRUE(directAdmission.admitted);
@@ -528,7 +500,6 @@ protected:
 			if(charge == 0)
 			{
 				expectedInjury = injuryBytes; expectedPost = post; expectedContinuation = bits;
-				expectedPoints = heroQueueTest::wire(recorder.pointUpdates);
 				// Native cast() additionally sends an empty animation-completion event.
 				auto nativePackets = recorder.injuries;
 				StacksInjured completion;
@@ -540,7 +511,6 @@ protected:
 			{
 				EXPECT_EQ(injuryBytes, expectedInjury); // ALL serialized injury fields, not HP alone.
 				EXPECT_EQ(post, expectedPost); // This witness also keeps forecast Mana equal.
-				EXPECT_EQ(heroQueueTest::wire(recorder.pointUpdates), expectedPoints);
 				EXPECT_EQ(bits, expectedContinuation);
 			}
 			RecordProperty("Charge" + std::to_string(charge) + "ContinuationBits", std::to_string(bits));
@@ -565,7 +535,6 @@ protected:
 		server.injuries.clear();
 		const auto actionsBefore = server.startedActions.size();
 		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-		EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), (MetamagicPointState{2, false, false}));
 		EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), costs[nativeCharge]);
 		RecordProperty("AuthoritativeInjuryPackets", heroQueueTest::wire(server.injuries));
 		std::string hitCounts;
@@ -595,7 +564,7 @@ TEST_F(MagicArrowContinuationEquivalenceTest, SaturatedOrdinaryArrowChargesKeepF
 	ASSERT_NO_FATAL_FAILURE(characterize(1));
 }
 
-TEST_F(OrdinaryStrikeEvaluatorIntegrationTest, AerisRealHeroQueueFinishesBeforeCounterspellBoundary)
+TEST_F(OrdinaryStrikeEvaluatorIntegrationTest, AerisRealHeroQueueFinishesBeforeNextHeroAction)
 {
 	ASSERT_NO_FATAL_FAILURE(characterizePublicQueue(true));
 }

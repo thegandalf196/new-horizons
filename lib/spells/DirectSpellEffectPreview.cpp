@@ -57,7 +57,7 @@ std::optional<int64_t> directSpellRawPotential(const CGHeroInstance & hero, cons
 }
 SpellEffectPreview directSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
 	const JsonNode & rules, int32_t power, int32_t directCoefficient,
-	int32_t empower, bool followup, int32_t numericalCoefficient, const CBattleInfoCallback * callback)
+	int32_t empower, int32_t numericalCoefficient, const CBattleInfoCallback * callback)
 {
 	if(const auto conditional = conditionalSpellEffectPreview(hero, spell, rules, power,
 		directCoefficient, numericalCoefficient, empower, callback))
@@ -72,16 +72,13 @@ SpellEffectPreview directSpellEffectPreview(const CGHeroInstance & hero, const C
 		SpellEffectPreview::Quantity{spell.adjustRawDamage(&hero, nullptr, *raw),
 			1, "new-horizons.spellbook.unit.number"}, {}, {}};
 	result.qualificationKey = "new-horizons.spellbook.beforeDefenses";
-	if(followup)
-		result.qualificationKey = "new-horizons.spellbook.followupBeforeTarget";
 	if(spell.getJsonKey() == SHADOW_LIFE_DRAIN_SPELL)
 	{
 		result.labelKey = "new-horizons.spellbook.effect.lifeDrain";
 		result.compactLabelKey = "new-horizons.spellbook.effect.lifeDrain.short";
 		result.secondary = SpellEffectPreview::Quantity{lifeDrainHealingPercent(&hero),
 			1, "new-horizons.spellbook.unit.number"};
-		result.qualificationKey = followup ? "new-horizons.spellbook.lifeDrainFollowup"
-			: "new-horizons.spellbook.lifeDrainHealing";
+		result.qualificationKey = "new-horizons.spellbook.lifeDrainHealing";
 	}
 	return result;
 }

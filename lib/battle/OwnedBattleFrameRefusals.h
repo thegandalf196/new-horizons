@@ -57,18 +57,8 @@ public:
 	int32_t getCastSpells(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getCastSpells"); }
 	int32_t getEnchanterCounter(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getEnchanterCounter"); }
 	bool getTemporalFieldUsed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getTemporalFieldUsed"); }
-	bool getCounterspellArmed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getCounterspellArmed"); }
-	int32_t getMetamagicPendingCount(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicPendingCount"); }
-	int32_t getMetamagicUsesConsumed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicUsesConsumed"); }
-	bool getMetamagicGrandUsed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicGrandUsed"); }
 	bool getRebirthChainUsed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getRebirthChainUsed"); }
 	bool getPhoenixSparkUsed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getPhoenixSparkUsed"); }
-	bool getMetamagicFormulaReserveUsed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicFormulaReserveUsed"); }
-	bool getMetamagicCountersequenceArmed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicCountersequenceArmed"); }
-	SpellID getMetamagicFirstSpell(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicFirstSpell"); }
-	uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicFirstTargetUnitId"); }
-	const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicSequenceSpells"); }
-	bool getMetamagicFirstCounterspellNegated(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicFirstCounterspellNegated"); }
 	int32_t getBloodrageDamagePercent(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getBloodrageDamagePercent"); }
 	int32_t getBloodrageRank(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getBloodrageRank"); }
 	int32_t getBloodrageCapPercent(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getBloodrageCapPercent"); }

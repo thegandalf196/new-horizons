@@ -79,7 +79,7 @@ protected:
 		ASSERT_NE(hero.getLocalBonus(Selector::typeSubtype(BonusType::PRIMARY_SKILL,
 			BonusSubtypeID(PrimarySkill::SPELL_POWER)).And(Selector::sourceType()(BonusSource::HERO_BASE_SKILL))), nullptr);
 		ASSERT_EQ(hero.getPrimSkillLevel(PrimarySkill::SPELL_POWER), 1);
-		ASSERT_TRUE(hero.getPerkState().selected.empty());
+		ASSERT_TRUE(hero.getPerkState().getSelected().empty());
 	}
 
 	void rank(const CSpell * spell, int value, int spellcraft = 0)
@@ -203,7 +203,7 @@ TEST_F(NewHorizonsMagicDescriptionTest, SlowAndMassSlowRankReadoutsKeepCapsRound
 				+ " (School factor " + coefficients.at(level) + "%, combined School and Spellcraft factor " + coefficients.at(level)
 				+ "%). Speed and Initiative reduction = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
 				"current reduction before target-specific specialties at Spell Power 50: " + (isMass ? mass.at(level) : ordinary.at(level))
-				+ "%. This estimate excludes battle-only Warcasting and the Inferno defender's Brimstone Stormclouds "
+				+ "%. This estimate excludes the Inferno defender's Brimstone Stormclouds "
 				"+20 Spell Power bonus, which can further affect the battle cast.";
 			if(isMass)
 				expected += " Mass Slow applies 60% of the final ordinary Slow reduction after its cap and target-specific "
@@ -224,19 +224,22 @@ TEST_F(NewHorizonsMagicDescriptionTest, ImplosionKeepsSixDecimalFormattingAndSch
 		"displacement causes no retaliation.\n\nNo School Rank: 100% of normal damage from Spell Power.");
 }
 
-TEST_F(NewHorizonsMagicDescriptionTest, FocusCurrentAndHistoricalProfilesKeepExactValuesInPlainReadout)
+TEST_F(NewHorizonsMagicDescriptionTest, FocusReadoutDescribesHardChargesAndNativeRangedEnhancementWithoutPowerScaling)
 {
 	const auto * focus = descriptionSpell("new-horizons:focusMagic");
-	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 17, ChangeValueMode::ABSOLUTE);
-	rank(focus, 1, 1);
-	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0)
-		+ "\n\nYour hero: each mark lets friendly ranged attacks ignore 5.64% Creature Defense; "
-		"3 such marks: 16.92%. Battle bonuses may increase this.");
-	ASSERT_NO_THROW(callback.rules = historicalDescriptionRules(2));
-	rank(focus, 3);
-	EXPECT_EQ(describe(focus), focus->getDescriptionTranslated(0)
-		+ "\n\nYour hero: each mark lets friendly ranged attacks ignore 10.85% Creature Defense; "
-		"3 such marks: 32.55%. Battle bonuses may increase this.");
+	std::string first;
+	for(const int power : {0, 17, 1000})
+	{
+		hero.setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
+		rank(focus, 1, 1);
+		const auto readout = describe(focus);
+		EXPECT_NE(readout.find("3 hard ranged-strike charges"), std::string::npos);
+		EXPECT_NE(readout.find("native shooters gain +20% ranged damage"), std::string::npos);
+		EXPECT_NE(readout.find("Ammo Cart cannot replenish"), std::string::npos);
+		EXPECT_EQ(readout.find("each mark"), std::string::npos);
+		if(first.empty()) first = readout;
+		else EXPECT_EQ(readout, first);
+	}
 }
 
 TEST_F(NewHorizonsMagicDescriptionTest, MasterChainRetentionTracksLevelAndCapWithSchoolSuffixLast)
@@ -250,17 +253,7 @@ TEST_F(NewHorizonsMagicDescriptionTest, MasterChainRetentionTracksLevelAndCapWit
 	}
 }
 
-TEST_F(NewHorizonsMagicDescriptionTest, TimeStopIndependentReplacementKeepsCompleteCurrentReadout)
-{
-	EXPECT_EQ(describe(descriptionSpell("new-horizons:timeStop")),
-		"Stop time in the selected area until the beginning of your next Hero Action. Creatures in stasis cannot move, "
-		"act, retaliate, take damage, receive healing, teleport, or receive new effects. Their existing effect timers "
-		"are paused, and they still block their occupied hexes.\n\n"
-		"Radius before battle-only Warcasting (hexes): 1 at Spell Power 1. Sorcery and Spellcraft strengthen only the Spell Power part "
-		"(100% of normal strength). Maximum radius: 2 hexes. Chronomancer raises the maximum to 3 without adding "
-		"a free radius step. Battle-only Warcasting may increase the radius through Spell Power. It does not extend "
-		"the duration or change which targets can be affected.");
-}
+
 
 class NewHorizonsMagicPerkDescriptionTest : public HeroCommandFixture
 {
@@ -317,7 +310,7 @@ TEST_F(NewHorizonsMagicDescriptionTest, LivingArmorUsesCapturedPoolAndLifetimeAn
 	ASSERT_EQ(hero.getEffectPower(spell), 80);
 	ASSERT_EQ(hero.getEffectPowerDivisor(spell), 1);
 	ASSERT_EQ(newHorizonsMagic::spellPowerCoefficientBasisPoints(callback.rules, &hero, spell->getId()), 12650);
-	EXPECT_NE(describe(spell).find("Current pool: 141 HP before battle-only Warcasting. Lifetime: 3 rounds"), std::string::npos);
+	EXPECT_NE(describe(spell).find("Current pool: 141 HP. Lifetime: 3 rounds"), std::string::npos);
 	auto & profile = callback.rules["spells"]["new-horizons:summonLivingArmor"]["livingArmor"];
 	profile["baseHitPoints"].Integer() = 7;
 	profile["spellPowerCoefficient"].Integer() = 2;
@@ -326,9 +319,9 @@ TEST_F(NewHorizonsMagicDescriptionTest, LivingArmorUsesCapturedPoolAndLifetimeAn
 	{
 		const auto actualReadout = describe(spell);
 		SCOPED_TRACE(actualReadout);
-		EXPECT_NE(actualReadout.find("Current pool: 209 HP before battle-only Warcasting. Lifetime: 5 rounds"), std::string::npos);
+		EXPECT_NE(actualReadout.find("Current pool: 209 HP. Lifetime: 5 rounds"), std::string::npos);
 	}
-	EXPECT_NE(describe(spell).find("Extend Spell and Echoed Duration each add one round"), std::string::npos);
+	EXPECT_NE(describe(spell).find("Extend Spell, Spellbinder and Wisdom duration modifiers"), std::string::npos);
 	profile["spellPowerCoefficient"].Integer() = 0;
 	EXPECT_NE(describe(spell).find("Current pool: 7 HP"), std::string::npos);
 	callback.rules["spells"]["new-horizons:summonLivingArmor"].Struct().erase("livingArmor");

@@ -56,7 +56,7 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertIn("return ranged || !vengefulMire", AUTHORITATIVE_BULWARK)
         self.assertIn("std::min(7500, basisPoints + 25 * BASIS_POINTS_PER_PERCENT)", AUTHORITATIVE_BULWARK)
         self.assertIn("newHorizonsBulwark::hasVengefulMire(bulwarkHero)", AUTHORITATIVE_ATTACK)
-        tooltip = STATUS[STATUS.index("inline std::string defendStatusTooltip"):STATUS.index("inline std::string beneficiarySideName")]
+        tooltip = STATUS[STATUS.index("inline std::string defendStatusTooltip"):len(STATUS)]
         self.assertIn("if(bulwark.vengefulMireBonusBasisPoints > 0)", tooltip)
         self.assertIn("to melee reflection only, up to 75%", tooltip)
         self.assertIn("vengefulMireBonusBasisPoints = effectiveMeleeReflection - baseMeleeReflection", STATUS)
@@ -75,7 +75,7 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
         self.assertNotIn("stack->getMyHero()", status_source)
 
     def test_help_shows_only_applicable_current_values(self):
-        tooltip = STATUS[STATUS.index("inline std::string defendStatusTooltip"):STATUS.index("inline std::string beneficiarySideName")]
+        tooltip = STATUS[STATUS.index("inline std::string defendStatusTooltip"):len(STATUS)]
         self.assertIn('displayedStatus.defend.bulwark ? "BULWARK" : "DEFEND"', ACTION)
         self.assertIn("Physical creature damage reduction:", tooltip)
         self.assertIn("Pre-emptive strike:", tooltip)
@@ -123,8 +123,8 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
     def test_physical_poison_slot_priority_and_overflow_policy(self):
         self.assertIn("stackStatusDisplayPlan(statusKinds, totalEffectCount)", TEMPORARY)
         self.assertIn("result.ellipsisUsesSlot = result.overflow && !hasPhysicalPoison", PRESENTATION)
-        self.assertIn("StackStatusIconKind::TIME_STOP: return 0", PRESENTATION)
-        self.assertIn("StackStatusIconKind::SPELL_LOCK: return 1", PRESENTATION)
+        self.assertIn("StackStatusIconKind::FROZEN: return 0", PRESENTATION)
+        self.assertIn("StackStatusIconKind::ENTANGLE: return 1", PRESENTATION)
         self.assertIn("StackStatusIconKind::PHYSICAL_POISON: return 3", PRESENTATION)
         self.assertIn("newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount)", TEMPORARY)
         self.assertIn("displayPlan.ellipsisUsesSlot", PANEL)
@@ -133,7 +133,7 @@ class BulwarkDefendStatusUiTest(unittest.TestCase):
 
     def test_defend_duration_matches_next_normal_activation(self):
         status = STATUS_HEADER.read_text(encoding="utf-8")
-        tooltip = status[status.index("inline std::string defendStatusTooltip"):status.index("inline std::string beneficiarySideName")]
+        tooltip = status[status.index("inline std::string defendStatusTooltip"):len(status)]
         self.assertIn("until its next normal Creature Activation", tooltip)
         self.assertIn("until this stack's next normal Creature Activation", tooltip)
         self.assertNotIn("through the end of the current battle round", tooltip)

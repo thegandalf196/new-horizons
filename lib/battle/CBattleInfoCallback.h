@@ -43,6 +43,7 @@ struct CObstacleInstance;
 class IBonusBearer;
 class PossiblePlayerBattleAction;
 struct DamageAttackInfo;
+namespace nativeDamage { struct PreparedUnit; }
 struct DamagePayloadPreparation;
 
 namespace battle { struct MeleeContactFootprint; }
@@ -71,13 +72,6 @@ struct DLL_LINKAGE AttackableTiles
 	BattleHexArray friendlyCreaturePositions;
 	/// for animation purposes, if any of targets are on specified positions, unit should play alternative animation
 	BattleHexArray overrideAnimationPositions;
-};
-
-/// Attack-local penetrations supplied by current Arcane Breach marks and Sorcery perks.
-struct DLL_LINKAGE RangedAttackPenetration
-{
-	int32_t creatureDefenseIgnoreBasisPoints = 0;
-	int32_t physicalDamageReductionIgnorePercent = 0;
 };
 
 /// Read-only Morale snapshot separating its calculated value from any active combat floor.
@@ -174,8 +168,6 @@ public:
 	bool battleCanTakeRangedFollowUp(const battle::Unit * unit) const;
 	/// Saved final damage multiplier for a pending Ballista shot, or 100 when none applies.
 	int battleGetRangedFollowUpDamagePercent(const battle::Unit * unit) const;
-	/// Validated current Arcane Breach penetration for this attack, including Arcane Ballistics.
-	RangedAttackPenetration battleGetRangedAttackPenetration(const BattleAttackInfo & attack) const;
 	std::vector<SpellSchool> battleGetActiveSpellSchools() const;
 	std::vector<SpellSchool> battleGetSpellSchools(SpellID spell) const;
 	int battleGetSpellLevel(SpellID spell) const;
@@ -414,6 +406,12 @@ public:
 	battle::Units battleAdjacentUnits(const battle::Unit * unit) const;
 
 	virtual DamageEstimation calculateDmgRange(const BattleAttackInfo & info) const;
+	/// Optional immutable AI probe inputs. The default/native world has none;
+	/// caller must discard preparation before any branch mutation.
+	virtual const nativeDamage::PreparedUnit * preparedUnitDamageFacts(const battle::Unit &, bool shooting) const
+	{
+		return nullptr;
+	}
 	/// Internal immutable getter-chain proof, never authority or policy knowledge.
 	virtual bool hasCanonicalDamageQuerySources(size_t remaining = 512, const BattleInfo * expected = nullptr) const;
 
@@ -450,11 +448,11 @@ public:
 	/// Returns battle-adjusted mana cost. listedCostMultiplier is applied to the
 	/// spell's listed cost before stack-based reductions/increases.
 	int32_t battleGetSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
-		int32_t listedCostMultiplier = 1, bool metamagicFollowup = false) const;
+		int32_t listedCostMultiplier = 1) const;
 	/// Read-only ordered breakdown of the same cost. The follow-up flag is explicit so
 	/// ordinary card costs are not confused with an eligible Metamagic follow-up.
 	SpellCostBreakdown battleGetSpellCostBreakdown(const spells::Spell * sp, const CGHeroInstance * caster,
-		int32_t listedCostMultiplier = 1, bool metamagicFollowup = false) const;
+		int32_t listedCostMultiplier = 1) const;
 	ESpellCastProblem battleCanCastSpell(const spells::Caster * caster, spells::Mode mode) const; //returns true if there are no general issues preventing from casting a spell
 	/// Explicit spell identity admits only its exact callback-visible environmental trigger.
 	ESpellCastProblem battleCanCastSpell(const spells::Caster * caster, spells::Mode mode, SpellID requestedSpell) const;
@@ -571,7 +569,7 @@ protected:
 	std::optional<HeroOrderState> battlePrepareHeroOrderStateImpl(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const;
 	int32_t calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster,
-		int32_t listedCostMultiplier, bool metamagicFollowup, SpellCostBreakdown * breakdown) const;
+		int32_t listedCostMultiplier, SpellCostBreakdown * breakdown) const;
 	bool battleHeroCommandCommonAvailable(BattleSide side, HeroCommand command) const;
 	ReachabilityInfo getFlyingReachability(const ReachabilityInfo::Parameters & params) const;
 	ReachabilityInfo makeBFS(const AccessibilityInfo & accessibility, const ReachabilityInfo::Parameters & params) const;

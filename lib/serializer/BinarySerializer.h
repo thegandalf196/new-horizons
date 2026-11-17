@@ -13,6 +13,7 @@
 #include "CTypeList.h"
 #include "ESerializationVersion.h"
 #include "SerializerReflection.h"
+#include "../nativeRules/CapturedRuleWireContext.h"
 
 /// Main class for serialization of classes into binary form
 /// Behaviour for various classes is following:
@@ -30,6 +31,7 @@ public:
 
 	Version version = Version::CURRENT;
 	bool loadingGamestate = false;
+	nativeRules::CapturedRuleWireContext capturedRules;
 
 	BinarySerializer(IBinaryWriter * w)
 		: writer(w)

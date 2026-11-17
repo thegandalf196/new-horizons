@@ -7,8 +7,6 @@ namespace battle { class Unit; class CUnitState; }
 namespace stackEffectRecordRules
 {
 /// Incoming lifecycle records are handled before this ordinary admission gate.
-DLL_LINKAGE bool incomingProtected(const battle::Unit & unit, const Bonus & value);
-DLL_LINKAGE bool removalProtected(const battle::Unit & unit, const Bonus & value);
 DLL_LINKAGE std::shared_ptr<Bonus> previousSwiftLifecycle(const battle::Unit & unit,
 	const Bonus & value, bool forceAdd, const BonusList & localExports);
 struct PhysicalMarkerReplacement { Bonus marker; bool replaceExisting; };

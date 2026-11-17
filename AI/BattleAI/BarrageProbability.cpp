@@ -47,9 +47,9 @@ long double primaryCasualtyAndSurvival(const DamageRange & range, int32_t count,
 {
 	if(count <= 0 || shots <= 0 || target.totalHealth == 0 || target.firstCreatureHP == 0) return 0;
 	if(range.min < 0 || range.max < range.min || target.firstCreatureHP < 0 || target.totalHealth < 0
-		|| target.temporaryHitPoints < 0 || target.arcaneShield < 0 || target.guardianSpirit < 0)
+		|| target.temporaryHitPoints < 0 || target.guardianSpirit < 0)
 		throw std::invalid_argument("Invalid nominal barrage damage or health interval");
-	const Integer absorption = Integer(target.arcaneShield) + target.guardianSpirit;
+	const Integer absorption = Integer(target.guardianSpirit);
 	const Integer first = Integer(target.firstCreatureHP) + target.temporaryHitPoints + absorption;
 	const Integer total = Integer(target.totalHealth) + absorption;
 	if(first >= total) return 0; // A casualty would destroy the only remaining creature.

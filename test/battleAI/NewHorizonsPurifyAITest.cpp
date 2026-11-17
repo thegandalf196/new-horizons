@@ -257,7 +257,7 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsPurifyAITest, SelectedProjectionAcceptsBeforeNegatedScoreRejection)
+TEST_F(NewHorizonsPurifyAITest, SelectedProjectionAcceptsAndKeepsLiveSourceIsolated)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareCaster(false, false, true));
 	CStack * active = nullptr;
@@ -265,10 +265,10 @@ TEST_F(NewHorizonsPurifyAITest, SelectedProjectionAcceptsBeforeNegatedScoreRejec
 	ASSERT_NO_FATAL_FAILURE(addPurifyAiStacks(active, afflicted, true));
 	auto callback = makeCallback();
 	auto environment = std::make_shared<PurifyEnvironment>(gameState());
-	for(const bool negated : {false, true})
+
 	{
 		auto detached = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
-		const auto allowance = detached->prepareHeroSpellAllowance(BattleSide::ATTACKER, purifySpell(), false, false);
+		const auto allowance = detached->prepareHeroSpellAllowance(BattleSide::ATTACKER, purifySpell());
 		ASSERT_TRUE(allowance);
 		ASSERT_TRUE(allowance->action.typedLedger);
 		ASSERT_TRUE(detached->beginProjectedHeroAction(BattleSide::ATTACKER, *allowance));
@@ -278,12 +278,11 @@ TEST_F(NewHorizonsPurifyAITest, SelectedProjectionAcceptsBeforeNegatedScoreRejec
 		candidate.spellPurifyChoices = {{static_cast<int32_t>(afflicted->unitId()), SpellID::SLOW}};
 		candidate.spellPurifyHeuristicValue = 7.0f;
 		const float baseline = 31.0f;
-		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 		heroSpellProjection::projectPurifySelection(candidate, *detached, attackerSideHero,
-			BattleSide::ATTACKER, baseline, counterspell, negated, allowance, {},
+			BattleSide::ATTACKER, baseline, allowance, {},
 			std::numeric_limits<uint32_t>::max());
 		EXPECT_NE(detached->getHeroActionAllowances(BattleSide::ATTACKER), before);
-		EXPECT_EQ(candidate.value, negated ? std::numeric_limits<float>::lowest() : 38.0f);
+		EXPECT_EQ(candidate.value, 38.0f);
 		EXPECT_FALSE(hasSpellEffect(detached->battleGetUnitByID(afflicted->unitId()), SpellID::SLOW));
 		EXPECT_TRUE(hasSpellEffect(afflicted, SpellID::SLOW));
 	}
@@ -316,11 +315,10 @@ TEST_F(NewHorizonsPurifyAITest, InvalidSelectedProjectionRetainsOnlyEarlierDetac
 			candidate.spellPurifyChoices = {{-1, SpellID::SLOW},
 				{static_cast<int32_t>(afflicted->unitId()), SpellID::SLOW}};
 		}
-		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 		const float baseline = 31.0f;
 		// No allowance is intentionally provided: invalid selections must short circuit before its use.
 		heroSpellProjection::projectPurifySelection(candidate, *detached, attackerSideHero,
-			BattleSide::ATTACKER, baseline, counterspell, false, std::nullopt, {},
+			BattleSide::ATTACKER, baseline, std::nullopt, {},
 			std::numeric_limits<uint32_t>::max());
 		EXPECT_EQ(candidate.value, std::numeric_limits<float>::lowest());
 		EXPECT_EQ(detached->getHeroActionAllowances(BattleSide::ATTACKER), before);
@@ -352,10 +350,9 @@ TEST_F(NewHorizonsPurifyAITest, MissingSelectedUnitRefusesWithoutLosingEarlierPr
 		candidate.spellPurifyChoices = {{-1, SpellID::SLOW}};
 		if(validPrefix)
 			candidate.spellPurifyChoices.emplace_back(static_cast<int32_t>(afflicted->unitId()), SpellID::SLOW);
-		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 		const float baseline = 31.0f;
 		heroSpellProjection::projectPurifySelection(candidate, *child, attackerSideHero,
-			BattleSide::ATTACKER, baseline, counterspell, false, std::nullopt, {}, std::numeric_limits<uint32_t>::max());
+			BattleSide::ATTACKER, baseline, std::nullopt, {}, std::numeric_limits<uint32_t>::max());
 		EXPECT_EQ(candidate.value, std::numeric_limits<float>::lowest());
 		EXPECT_EQ(hasSpellEffect(child->battleGetUnitByID(afflicted->unitId()), SpellID::SLOW), !validPrefix);
 		EXPECT_EQ(child->battleGetUnitByID(std::numeric_limits<uint32_t>::max()), nullptr);

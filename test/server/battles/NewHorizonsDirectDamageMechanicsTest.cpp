@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../PerkStateFixture.h"
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -2195,14 +2196,17 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, PlannedTemporalistInAnOlderSnapshot
 	constexpr auto skillId = "new-horizons:sorceryMagic";
 	constexpr auto perkId = "new-horizons:sorceryMagic.temporalist";
 	bool foundTemporalist = false;
-	for(auto & perk : saved.rules["skills"]["new-horizons:sorceryMagic"]["perks"].Vector())
+	perkStateFixture::editRules(saved, [&](JsonNode & rules)
 	{
-		if(perk["id"].String() == perkId)
+		for(auto & perk : rules["skills"]["new-horizons:sorceryMagic"]["perks"].Vector())
 		{
-			perk["effect"]["status"].String() = "planned";
-			foundTemporalist = true;
+			if(perk["id"].String() == perkId)
+			{
+				perk["effect"]["status"].String() = "planned";
+				foundTemporalist = true;
+			}
 		}
-	}
+	});
 	ASSERT_TRUE(foundTemporalist);
 	EXPECT_THROW(saved.select(skillId, perkId, 1), std::runtime_error);
 
@@ -2568,7 +2572,6 @@ protected:
 		for(const auto * unit : units)
 		{
 			ASSERT_EQ(unit->magicResistance(), 0);
-			ASSERT_FALSE(newHorizonsSorcery::isSpellLocked(*unit));
 			ASSERT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero,
 				spell->getId(), *unit, target->getPosition(), BattleSide::ATTACKER, true));
 			// Ordinary negative spells eagerly draw once per battlefield unit,

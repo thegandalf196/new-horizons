@@ -30,7 +30,7 @@ bool CBattleInfoCallback::handleObstacleTriggersForUnitAtPositions(SpellCastEnvi
 bool CBattleInfoCallback::handleObstacleTriggersForUnitWithObstacles(ServerCallback & server, SpellCastEnvironment * nativeEnvironment,
 	const battle::Unit & unit, const std::vector<std::shared_ptr<const CObstacleInstance>> & obstacles, bool airborneTransit) const
 {
-	if(!unit.alive() || unit.isTimeStopped())
+	if(!unit.alive())
 		return false;
 	bool movementStopped = false;
 	for(const auto & obstacle : obstacles)

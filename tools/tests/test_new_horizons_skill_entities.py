@@ -136,29 +136,7 @@ ACTIVE_RANK_EFFECTS = {
             },
         },
     },
-    "metamagic": {
-        "basic": {
-            "metamagicUses": {
-                "type": "METAMAGIC_USES_PER_COMBAT",
-                "valueType": "BASE_NUMBER",
-                "val": 1,
-            },
-        },
-        "advanced": {
-            "metamagicUses": {
-                "type": "METAMAGIC_USES_PER_COMBAT",
-                "valueType": "BASE_NUMBER",
-                "val": 2,
-            },
-        },
-        "expert": {
-            "metamagicUses": {
-                "type": "METAMAGIC_USES_PER_COMBAT",
-                "valueType": "BASE_NUMBER",
-                "val": 3,
-            },
-        },
-    },
+    "metamagic": {"basic": {}, "advanced": {}, "expert": {}},
 }
 
 # These ranks are implemented by authoritative engine state rather than a
@@ -291,19 +269,38 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         r"(?i)(?:school rank|this rank).{0,50}(?:locks|requires).{0,30}(?:cast|casting)",
                     )
 
-    def test_metamagic_rank_uses_are_bound_to_metamagic_skill(self):
-        """Guard the rank bonus against being copied onto another skill."""
-        expected = {"basic": 1, "advanced": 2, "expert": 3}
-        for rank, uses in expected.items():
-            with self.subTest(rank=rank):
-                metamagic_effect = self.skills["metamagic"][rank]["effects"]["metamagicUses"]
-                self.assertEqual(metamagic_effect["type"], "METAMAGIC_USES_PER_COMBAT")
-                self.assertEqual(metamagic_effect["valueType"], "BASE_NUMBER")
-                self.assertEqual(metamagic_effect["val"], uses)
-                self.assertNotIn(
-                    "METAMAGIC_USES_PER_COMBAT",
-                    json.dumps(self.skills["armorer"][rank]["effects"]),
-                )
+    def test_metamagic_uses_actual_rank_without_retired_bonus_or_provider(self):
+        skill = self.skills["metamagic"]
+        self.assertNotIn("combatStatus", skill)
+        for rank, chance in zip(RANKS, (20, 30, 40)):
+            self.assertEqual(skill[rank]["effects"], {})
+            self.assertIn(f"{chance}% chance per temporary magical effect", skill[rank]["description"])
+            self.assertEqual(skill[rank]["description"], self.perks["skills"]
+                             ["new-horizons:metamagic"]["ranks"][rank]["description"])
+        providers = load("config/schemas/skill.json")["properties"]["combatStatus"]
+        self.assertNotIn("metamagicUses", providers["properties"]["provider"]["enum"])
+
+    def test_generated_runtime_definitions_contain_no_retired_metamagic_carrier(self):
+        module = load("Mods/new-horizons/mod.json")
+        self.assertEqual(module["skills"]["metamagic"], self.skills["metamagic"])
+        definitions = [("module", module)]
+        for category in ("heroes", "spells", "creatures", "artifacts", "heroClasses"):
+            definitions.extend((name, load("Mods/new-horizons/Content/" + name))
+                               for name in module[category])
+
+        def check(value, path):
+            if isinstance(value, list):
+                for index, child in enumerate(value):
+                    check(child, f"{path}[{index}]")
+            elif isinstance(value, dict):
+                self.assertNotIn(value.get("type"),
+                                 {"METAMAGIC_USES_PER_COMBAT", "RESERVED_METAMAGIC_USES_PER_COMBAT"}, path)
+                self.assertNotEqual(value.get("provider"), "metamagicUses", path)
+                for key, child in value.items():
+                    check(child, path + "." + key)
+
+        for name, definition in definitions:
+            check(definition, name)
 
     def test_gain_chances_expose_only_general_active_skills(self):
         for key, skill in self.skills.items():

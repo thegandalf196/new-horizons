@@ -63,7 +63,6 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 	spellcast.spellPurifyChoices = castToPerform.spellPurifyChoices;
 	spellcast.spellMassSlow = castToPerform.spellMassSlow;
 	spellcast.spellShadowGiftSacrificePercent = castToPerform.spellShadowGiftSacrificePercent;
-	spellcast.metamagicFollowup = castToPerform.metamagicFollowup;
 	if(isCanonicalFireWall(*cb->getBattle(battleID), castToPerform.spell)
 		&& castToPerform.spellFireWallDirection != BattleHex::NONE
 		&& !castToPerform.dest.empty())

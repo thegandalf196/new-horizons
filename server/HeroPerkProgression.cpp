@@ -25,12 +25,12 @@ bool hasProgressionQuery(const QueriesProcessor & queries, ObjectInstanceID hero
 
 void validateOffer(const CGHeroInstance & hero, const HeroLevelUp & offer)
 {
-	if(!newHorizonsHeroes::usesPersistentHeroProgression(hero.getPerkState().rules)
+	if(!newHorizonsHeroes::usesPersistentHeroProgression(hero.getPerkState().getRules())
 		|| offer.heroId != hero.id || offer.player != hero.getOwner()
 		|| !offer.player.isValidPlayer() || offer.perkOfferSeed != 0
 		|| offer.replacesQueryID != QueryID::NONE)
 		throw std::runtime_error("Invalid saved unified hero progression identity");
-	if(newHorizonsHeroes::usesFourOfferProgression(hero.getPerkState().rules))
+	if(newHorizonsHeroes::usesFourOfferProgression(hero.getPerkState().getRules()))
 	{
 		if(offer.perkOnly || !offer.skills.empty() || !offer.perks.empty()
 			|| offer.reachedLevel != hero.level + (offer.restoredOffer ? 0 : 1) || !hero.cb)
@@ -57,7 +57,7 @@ void validateOffer(const CGHeroInstance & hero, const HeroLevelUp & offer)
 void CGameHandler::rememberHeroProgressionOffer(const HeroLevelUp & offer)
 {
 	const auto * hero = gameState().getHero(offer.heroId);
-	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules))
+	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules()))
 		return;
 	auto saved = offer;
 	saved.replacesQueryID = QueryID::NONE;
@@ -82,7 +82,7 @@ void CGameHandler::validatePendingHeroProgressionSerialization(bool fourOfferSup
 	for(const auto & [id, offer] : pendingHeroLevelUps)
 	{
 		const auto * hero = gameState().getHero(id);
-		if(!offer.fourOffers.empty() || (hero && newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules)))
+		if(!offer.fourOffers.empty() || (hero && newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().getRules())))
 			throw std::runtime_error("Cannot discard a pending four-offer advancement");
 	}
 }
@@ -101,7 +101,7 @@ bool CGameHandler::restoreHeroProgressionOffer(const CGHeroInstance * hero)
 
 bool CGameHandler::offerHeroRequiredPerk(const CGHeroInstance * hero)
 {
-	if(!hero || !newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules))
+	if(!hero || !newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().getRules()))
 		return false;
 	if(deferredPerkPrompts.contains(hero->id) || hasProgressionQuery(*queries, hero->id))
 		return true;
@@ -136,7 +136,7 @@ bool CGameHandler::offerHeroRequiredPerk(const CGHeroInstance * hero)
 
 void CGameHandler::detachHeroProgression(const CGHeroInstance * hero, bool removed)
 {
-	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules)) return;
+	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules())) return;
 	std::vector<QueryPtr> stale;
 	for(const auto & query : queries->allQueries())
 		if(const auto * level = dynamic_cast<const CHeroLevelUpDialogQuery *>(query.get());
@@ -160,7 +160,7 @@ void CGameHandler::detachHeroProgression(const CGHeroInstance * hero, bool remov
 
 void CGameHandler::resumeTransferredHeroProgression(const CGHeroInstance * hero, PlayerColor previousOwner)
 {
-	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().rules)) return;
+	if(!hero || !newHorizonsHeroes::usesPersistentHeroProgression(hero->getPerkState().getRules())) return;
 	const auto saved = pendingHeroLevelUps.find(hero->id);
 	const bool hadSavedOffer = saved != pendingHeroLevelUps.end();
 	if(saved != pendingHeroLevelUps.end())
@@ -176,7 +176,7 @@ void CGameHandler::resumeTransferredHeroProgression(const CGHeroInstance * hero,
 			{
 				auto applied = offer;
 				sendAndApply(applied);
-				if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+				if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().getRules()))
 					newHorizonsLevelUp::applyFirstFourOfferChoice(*this, hero, offer.fourOffers);
 				else if(!offer.skills.empty()) levelUpHero(hero, offer.skills.front(), false);
 			}

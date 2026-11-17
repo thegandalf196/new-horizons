@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "../../lib/battle/OwnedUnitBonusFrame.h"
+#include "../../lib/battle/OwnedFrameBranchQueries.h"
+#include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/OwnedUnitBonusFrameBatch.h"
 #include "../../lib/bonuses/OwnedBonusCaptureCodec.h"
 #include "../../lib/bonuses/ProjectedBonusView.h"
@@ -12,8 +14,6 @@
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/GameLibrary.h"
-#include "../../lib/battle/OwnedLegacyTimeStopCapture.h"
-#include "../../lib/spells/NewHorizonsSorcery.h"
 #include <stdexcept>
 namespace
 {
@@ -597,64 +597,41 @@ TEST(OwnedUnitBonusFrameTest, OpaquePeerCaptureForkQueryAndRetirementKeepNativeG
 
 namespace
 {
-Bonus legacyClock(SpellID id)
+Frame::Inputs inheritedLimitedSpeedInputs()
 {
-	return Bonus(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::SPELL_EFFECT, 0, BonusSourceID(id));
-}
-Frame::Inputs legacyClockInputs(SpellID id, bool inherited)
-{
-	auto result = inputs(); auto record = std::make_shared<Bonus>(legacyClock(id));
-	if(inherited)
-	{
-		record->limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::LUCK);
-		result.nodes[1].local.push_back(record);
-		result.sourceLocalSpells = {7}; // One extra inherited record shifts the existing explicit spell export.
-	}
-	else
-	{
-		result.nodes[0].local.push_back(record); result.sourceLocalSpells = {7};
-		for(auto & [form, query] : result.forms) query.full.records.push_back(4);
-	}
-	result.environment.legacyTimeStop = battle::ownedFrameCapture::captureLegacyTimeStopIdentities({record});
+	auto result = inputs();
+	auto record = value(BonusType::STACKS_SPEED, 2);
+	record->limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::LUCK);
+	result.nodes[1].local.push_back(record);
+	result.sourceLocalSpells = {7}; // The inherited record shifts the explicit local spell export.
 	return result;
 }
 }
-TEST(OwnedUnitBonusFrameTest, CapturedLegacyClockIdentityKeepsInheritedLimitedClockDynamicWithoutLibrary)
+TEST(OwnedUnitBonusFrameTest, InheritedLimitedSpeedReevaluatesCurrentLedgerWithoutLibrary)
 {
-	const SpellID timeStop(SpellID::decode(newHorizonsSorcery::TIME_STOP_SPELL)); ASSERT_TRUE(timeStop.hasValue());
-	auto frame = Frame::fromOwnedInputs(legacyClockInputs(timeStop, true)); auto sibling = frame->fork();
+	auto frame = Frame::fromOwnedInputs(inheritedLimitedSpeedInputs()); auto sibling = frame->fork();
 	WithoutLibrary absent;
-	EXPECT_TRUE(frame->unit().isTimeStopped()); EXPECT_TRUE(sibling->unit().isTimeStopped());
-	frame->removeRecords({0}); // Canonical current LUCK limiter becomes false; no frozen stasis bool.
-	EXPECT_FALSE(frame->unit().isTimeStopped()); EXPECT_TRUE(sibling->unit().isTimeStopped());
+	EXPECT_EQ(frame->unit().valOfBonuses(BonusType::STACKS_SPEED), 7);
+	EXPECT_EQ(sibling->unit().valOfBonuses(BonusType::STACKS_SPEED), 7);
+	frame->removeRecords({0}); // Removing local LUCK disables the inherited limiter only in this branch.
+	EXPECT_EQ(frame->unit().valOfBonuses(BonusType::STACKS_SPEED), 5);
+	EXPECT_EQ(sibling->unit().valOfBonuses(BonusType::STACKS_SPEED), 7);
 	auto scratch = sibling->scratch(); auto nested = scratch.nested();
-	EXPECT_TRUE(nested.unit().isTimeStopped());
+	EXPECT_EQ(nested.unit().valOfBonuses(BonusType::STACKS_SPEED), 7);
 }
-TEST(OwnedUnitBonusFrameTest, OwnedLegacyClockRejectsUnboundAndUncapturedIdentityInsteadOfNativeFallback)
+TEST(OwnedUnitBonusFrameTest, InheritedLimitedSpeedKeepsSourceSpellProvenanceAndNestedLifetime)
 {
-	const SpellID timeStop(SpellID::decode(newHorizonsSorcery::TIME_STOP_SPELL)); ASSERT_TRUE(timeStop.hasValue());
-	auto unbound = legacyClockInputs(timeStop, false); unbound.environment.legacyTimeStop.reset();
-	auto outside = legacyClockInputs(timeStop, false); outside.environment.legacyTimeStop->classified.clear();
-	auto first = Frame::fromOwnedInputs(std::move(unbound)), second = Frame::fromOwnedInputs(std::move(outside));
+	auto frame = Frame::fromOwnedInputs(inheritedLimitedSpeedInputs());
 	WithoutLibrary absent;
-	EXPECT_THROW(first->unit().isTimeStopped(), std::logic_error);
-	EXPECT_THROW(second->unit().isTimeStopped(), std::invalid_argument);
-}
-TEST(OwnedUnitBonusFrameTest, CapturedClockIdentityRejectsNullAndForeignOwnedSubjectOccurrences)
-{
-	auto values = legacyClockInputs(SpellID(SpellID::FORTUNE), false);
-	battle::OwnedUnitEnvironment outside({}, values.environment);
-	auto frame = Frame::fromOwnedInputs(std::move(values));
-	WithoutLibrary absent;
-	EXPECT_THROW(outside.unitLegacyTimeStopSpellMatch(nullptr, SpellID(SpellID::FORTUNE)), std::invalid_argument);
-	EXPECT_THROW(outside.unitLegacyTimeStopSpellMatch(&frame->unit(), SpellID(SpellID::FORTUNE)), std::invalid_argument);
-}
-TEST(OwnedUnitBonusFrameTest, KnownAbsentCanonicalClockStillClassifiesOnlyExplicitlyAdmittedOtherIds)
-{
-	auto values = legacyClockInputs(SpellID(SpellID::FORTUNE), false);
-	values.environment.legacyTimeStop->canonical.reset(); // Pure explicit absent-definition value domain, not actual factory proof.
-	auto frame = Frame::fromOwnedInputs(std::move(values));
-	WithoutLibrary absent; EXPECT_FALSE(frame->unit().isTimeStopped());
+	const auto * source = dynamic_cast<const ProjectedBonusView *>(frame->unit().getBonusBearer());
+	ASSERT_NE(source, nullptr);
+	const auto spells = source->sourceLocalSpellEffects();
+	ASSERT_EQ(spells.size(), 1u);
+	EXPECT_EQ(spells.front().sid, BonusSourceID(SpellID(SpellID::FORTUNE)));
+	auto child = frame->fork(); auto scratch = child->scratch(); auto nested = scratch.nested();
+	frame->removeRecords({0}); frame.reset(); child.reset();
+	EXPECT_EQ(nested.unit().valOfBonuses(BonusType::STACKS_SPEED), 7);
+	EXPECT_EQ(spells.front().sid, BonusSourceID(SpellID(SpellID::FORTUNE)));
 }
 
 namespace
@@ -835,4 +812,46 @@ TEST(OwnedUnitBonusFrameTest, SourceRecipeBatchDerivesAdjacentTraitsAfterCloneAn
 	const auto * view = dynamic_cast<const ProjectedBonusView *>(frame->unit().getBonusBearer()); ASSERT_NE(view, nullptr);
 	const auto spells = view->sourceLocalSpellEffects(); ASSERT_EQ(spells.size(), 1u);
 	EXPECT_EQ(spells.front().sid, BonusSourceID(SpellID(SpellID::FORTUNE)));
+}
+
+TEST(OwnedUnitBonusFrameTest, MechanicsPresenceAdmissionAndAppendKeepBranchesIndependent)
+{
+	using Branch = battle::OwnedFrameBranchQueries;
+	auto frame = Frame::fromOwnedInputs(inputs());
+	auto sibling = frame->fork(); auto before = frame->scratch();
+	EXPECT_FALSE(frame->unit().mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION));
+	EXPECT_FALSE(frame->unit().mayHaveBonusType(BonusType::CREATURE_ABILITY_SUPPRESSION));
+	EXPECT_FALSE(frame->unit().mayHaveBonusType(BonusType::HYPNOTIZED));
+	const auto marker = newHorizonsFrozen::marker(BonusSourceID(CreatureID(1)), 0);
+	const auto prepared = Branch::prepareRecords({marker});
+	Branch::append(*frame, prepared, 0);
+	EXPECT_TRUE(frame->unit().mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION));
+	EXPECT_TRUE(frame->unit().isNewHorizonsFrozen());
+	EXPECT_FALSE(sibling->unit().isNewHorizonsFrozen());
+	EXPECT_FALSE(before.unit().isNewHorizonsFrozen());
+	auto retained = frame->fork();
+	Branch::removeMatching(*frame, Selector::type()(BonusType::PHYSICAL_AFFLICTION));
+	EXPECT_FALSE(frame->unit().isNewHorizonsFrozen());
+	EXPECT_TRUE(frame->unit().mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION)); // Safe conservative removal.
+	EXPECT_TRUE(retained->unit().isNewHorizonsFrozen());
+	EXPECT_FALSE(sibling->unit().mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION));
+}
+
+TEST(OwnedUnitBonusFrameTest, MechanicsPresenceIncludesAlternateFormAndInheritedLimitedRecords)
+{
+	auto values = inputs();
+	auto marker = value(BonusType::HYPNOTIZED, 1);
+	marker->limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::LUCK);
+	values.nodes.at(2).local.push_back(marker);
+	values.sourceLocalSpells = {7}; // One extra alternate-form raw record precedes the spell export.
+	auto frame = Frame::fromOwnedInputs(std::move(values));
+	EXPECT_TRUE(frame->unit().mayHaveBonusType(BonusType::HYPNOTIZED));
+	EXPECT_FALSE(frame->unit().isHypnotized());
+	auto changed = frame->scratch(); changed.unit().beginBattleForm(CreatureID(2), 2);
+	frame->load(changed.unit().save());
+	EXPECT_TRUE(frame->unit().mayHaveBonusType(BonusType::HYPNOTIZED));
+	EXPECT_TRUE(frame->unit().isHypnotized());
+	frame->removeRecords({0}); // The conditional inherited marker becomes inactive.
+	EXPECT_FALSE(frame->unit().isHypnotized());
+	EXPECT_TRUE(frame->unit().mayHaveBonusType(BonusType::HYPNOTIZED));
 }

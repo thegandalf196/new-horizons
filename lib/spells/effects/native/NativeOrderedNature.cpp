@@ -73,7 +73,7 @@ public:
 class NaturesWrath final : public Damage
 {
 	static bool valid(const battle::Unit * unit)
-	{ return unit && unit->alive() && !unit->isGhost() && !unit->isTurret() && !unit->isTimeStopped() && unit->getPosition().isAvailable(); }
+	{ return unit && unit->alive() && !unit->isGhost() && !unit->isTurret() && unit->getPosition().isAvailable(); }
 	const battle::Unit * first(const Mechanics * mechanics, const Target & target) const
 	{
 		if(target.size() != 1) return nullptr;

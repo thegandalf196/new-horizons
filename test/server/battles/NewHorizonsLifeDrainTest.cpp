@@ -193,7 +193,6 @@ protected:
 		std::map<uint32_t, bool> result;
 		for(const auto * unit : battle()->battleGetAllUnits(false))
 		{
-			EXPECT_FALSE(newHorizonsSorcery::isSpellLocked(*unit));
 			if(battle()->battleGetOwner(unit) == PlayerColor(0))
 				continue;
 			result.emplace(unit->unitId(), randomizer.getDefault().nextInt(0, 99) < unit->magicResistance());
@@ -536,7 +535,6 @@ protected:
 		EXPECT_TRUE(receipt.activeCast);
 		EXPECT_EQ(receipt.heroLuck, expected.heroLuck);
 		EXPECT_EQ(receipt.paidHeroManaCost, 5);
-		EXPECT_EQ(receipt.paidCounterspellManaCost, 0);
 		EXPECT_EQ(receipt.reflectedCres, expected.reflected);
 		EXPECT_EQ(receipt.affectedCres, expected.affected);
 		EXPECT_EQ(receipt.resistedCres, expected.resisted);

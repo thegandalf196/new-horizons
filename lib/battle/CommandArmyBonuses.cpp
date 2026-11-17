@@ -33,7 +33,7 @@ void append(std::vector<Bonus> & result, BonusType type, int64_t value, const ch
 int parameter(const CGHeroInstance & hero, const char * skill, const char * id, const char * key)
 {
 	if(!hero.hasActivePerk(skill, id)) return 0;
-	for(const auto & perk : hero.getPerkState().rules["skills"][skill]["perks"].Vector())
+	for(const auto & perk : hero.getPerkState().getRules()["skills"][skill]["perks"].Vector())
 		if(perk["id"].String() == id)
 		{
 			const auto & value = perk["effect"]["parameters"][key];
@@ -128,24 +128,26 @@ int directAttackPercent(const battle::Unit & unit)
 std::vector<int> directAttackMultipliers(const battle::Unit & unit)
 {
 	std::vector<int> result;
-	for(const auto & bonus : *unit.getBonuses(CSelector([](const Bonus * bonus)
+	const auto bonuses = unit.getBonuses(CSelector([](const Bonus * bonus)
 	{
 		return ours(bonus) && bonus->type == BonusType::NONE
 			&& (bonus->stacking == DIRECT || bonus->stacking == "new-horizons:commandArmy.primordialHost");
-	}))) result.push_back(100 + bonus->val);
+	}));
+	for(const auto & bonus : *bonuses) result.push_back(100 + bonus->val);
 	return result;
 }
 
 std::vector<int> magicalReductionBasisPoints(const battle::Unit & unit)
 {
 	std::vector<int> result;
-	for(const auto & bonus : *unit.getBonuses(CSelector([](const Bonus * bonus)
+	const auto bonuses = unit.getBonuses(CSelector([](const Bonus * bonus)
 	{
 		return ours(bonus) && bonus->type == BonusType::SPELL_DAMAGE_REDUCTION
 			&& bonus->subtype == BonusSubtypeID(SpellSchool::ANY)
 			&& (bonus->stacking == "new-horizons:commandArmy.warding"
 				|| bonus->stacking == "new-horizons:commandArmy.protectiveTraining");
-	}))) result.push_back(std::clamp(bonus->val, 0, 100) * 100);
+	}));
+	for(const auto & bonus : *bonuses) result.push_back(std::clamp(bonus->val, 0, 100) * 100);
 	return result;
 }
 

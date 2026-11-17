@@ -12,11 +12,11 @@ struct DLL_LINKAGE AcceptedHeroSpellAllowanceResult
 	bool automaticHeroCast;
 	bool sharedActionBudget;
 	bool spendsHeroAllowance;
-	std::optional<HeroSpellAllowanceTransition::Result> transition;
+	std::optional<HeroActionAllowanceState::Receipt> transition;
 };
 
 /// Accepted hero cast stage, after caller validation of battle and paid Mana context.
-/// Plans allowance changes locally before committing the ledger and legacy counters.
-/// Cast counts, wards, sequence metadata, Warcasting and Mana remain caller-owned.
+/// Plans allowance changes locally before committing the ledger.
+/// Cast counts, Warcasting and Mana remain caller-owned.
 DLL_LINKAGE AcceptedHeroSpellAllowanceResult prepareAndCommitAcceptedHeroSpellAllowance(
 	BattleInfo & battle, const CGHeroInstance * hero, const BattleSpellCast & pack);

@@ -56,25 +56,6 @@ TEST_F(NativeStunProjectionTest, ActualActivationForfeitsOnceAndLeavesParentSibl
 	EXPECT_TRUE(newHorizonsStun::isStunned(*sibling->getForUpdate(actor->unitId())));
 	EXPECT_EQ(observation(), outside);
 }
-TEST_F(NativeStunProjectionTest, WaitContinuationsAndTimeStopCannotConsumePendingStun)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	effect(actor, newHorizonsStun::marker());
-	ASSERT_NO_FATAL_FAILURE(branches());
-	const auto outside = observation();
-	const auto unit = child->getForUpdate(actor->unitId());
-	child->makeWait(unit.get());
-	EXPECT_TRUE(newHorizonsStun::isStunned(*unit));
-	child->nextTurn(unit->unitId(), BattleUnitTurnReason::PURSUIT_CONTINUATION);
-	EXPECT_TRUE(newHorizonsStun::isStunned(*unit));
-	EXPECT_FALSE(child->wasCurrentActivationForfeited(unit->unitId()));
-	child->addUnitBonus(unit->unitId(), {Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID())});
-	child->nextTurn(unit->unitId(), BattleUnitTurnReason::TURN_QUEUE);
-	EXPECT_TRUE(newHorizonsStun::isStunned(*unit));
-	EXPECT_FALSE(child->wasCurrentActivationForfeited(unit->unitId()));
-	EXPECT_EQ(observation(), outside);
-}
 TEST_F(NativeStunProjectionTest, MoraleAndReducedExtrasSpendOnlyTheirActualForfeiture)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -430,5 +411,19 @@ TEST_F(NativeStunProjectionTest, QuickNoActionNextRoundAnchorConsumesTheSecondFu
 	EXPECT_GE(quick.activationEnd.calls, 2u);
 	EXPECT_GE(quick.appliedAttacks.calls, 2u); // Both accepted bodies include their whole native hit/reaction path.
 	EXPECT_EQ(state(*child), before);
+	EXPECT_EQ(observation(), outside);
+}
+TEST_F(NativeStunProjectionTest, WaitContinuationsCannotConsumePendingStun)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	effect(actor, newHorizonsStun::marker());
+	ASSERT_NO_FATAL_FAILURE(branches());
+	const auto outside = observation();
+	const auto unit = child->getForUpdate(actor->unitId());
+	child->makeWait(unit.get());
+	EXPECT_TRUE(newHorizonsStun::isStunned(*unit));
+	child->nextTurn(unit->unitId(), BattleUnitTurnReason::PURSUIT_CONTINUATION);
+	EXPECT_TRUE(newHorizonsStun::isStunned(*unit));
+	EXPECT_FALSE(child->wasCurrentActivationForfeited(unit->unitId()));
 	EXPECT_EQ(observation(), outside);
 }

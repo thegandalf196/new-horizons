@@ -9,7 +9,7 @@ namespace newHorizonsForestAmbush
 {
 bool entitled(const CBattleInfoCallback & battle, const battle::Unit * unit)
 {
-	if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret() || unit->isTimeStopped())
+	if(!unit || !unit->alive() || unit->isGhost() || unit->isTurret())
 		return false;
 	const auto * creature = unit->creatureId().toCreature();
 	if(!creature || (creature->getJsonKey() != "core:woodElf" && creature->getJsonKey() != "core:grandElf"))

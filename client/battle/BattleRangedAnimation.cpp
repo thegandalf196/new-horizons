@@ -9,6 +9,20 @@
 #include "../../lib/CStack.h"
 #include "../../lib/battle/NewHorizonsCreatureSpecialtyCapabilities.h"
 
+namespace
+{
+ECreatureAnimType shootingGroup(const CStack & stack, const CreatureAnimation & animation, ECreatureAnimType requested, bool focusConverted)
+{
+	if(focusConverted && animation.framesInGroup(requested) == 0)
+	{
+		const auto attack = requested == ECreatureAnimType::SHOOT_UP ? ECreatureAnimType::ATTACK_UP
+			: requested == ECreatureAnimType::SHOOT_DOWN ? ECreatureAnimType::ATTACK_DOWN : ECreatureAnimType::ATTACK_FRONT;
+		return animation.framesInGroup(attack) != 0 ? attack : ECreatureAnimType::ATTACK_FRONT;
+	}
+	return thunarRangedPresentation::shootingGroup(stack, animation, requested);
+}
+}
+
 RangedAttackAnimation::RangedAttackAnimation(BattleInterface & owner_, const CStack * attacker, BattleHex dest_, const CStack * defender)
 	: AttackAnimation(owner_, attacker, dest_, defender),
 	  projectileEmitted(false)
@@ -132,20 +146,25 @@ RangedAttackAnimation::~RangedAttackAnimation()
 	}
 }
 
-ShootingAnimation::ShootingAnimation(BattleInterface & owner, const CStack * attacker, BattleHex _dest, const CStack * _attacked)
-	: RangedAttackAnimation(owner, attacker, _dest, _attacked)
+ShootingAnimation::ShootingAnimation(BattleInterface & owner, const CStack * attacker, BattleHex _dest, const CStack * _attacked,
+	bool focusRanged, bool focusConverted)
+	: RangedAttackAnimation(owner, attacker, _dest, _attacked),
+	  focusMagicRanged(focusRanged), focusMagicConverted(focusConverted)
 {
 	logAnim->debug("Created ShootingAnimation for %s", stack->getName());
+	if(focusMagicRanged)
+		setSound(AudioPath::builtin("ZELTSHOT.wav"));
 }
 
 bool ShootingAnimation::init()
 {
-	if(newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*attackingStack))
+	if(focusMagicConverted
+		|| newHorizonsCreatureSpecialtyCapabilities::stonecallerRanged(*attackingStack))
 	{
 		setAnimationGroup();
 		if(stackAnimation(attackingStack)->framesInGroup(getGroup()) == 0)
 		{
-			logGlobal->error("Stonecaller ranged presentation has neither a native shooting group nor a matching attack pose");
+			logGlobal->error("Temporary ranged presentation has neither a native shooting group nor an attack pose");
 			presentationAborted = true;
 			BattleInterface & completionOwner = owner;
 			delete this;
@@ -158,6 +177,12 @@ bool ShootingAnimation::init()
 
 void ShootingAnimation::initializeProjectile()
 {
+	if(focusMagicConverted)
+	{
+		const auto target = owner.stacksController->getStackPositionAtHex(dest, defendingStack) + Point(225, 225);
+		createProjectile(stackAnimation(attackingStack)->pos.topLeft() + Point(222, 225), target);
+		return;
+	}
 	if(const auto origin = thunarRangedPresentation::originForShot(*attackingStack,
 		*stackAnimation(attackingStack), getGroup(), stackFacingRight(attackingStack)))
 	{
@@ -170,11 +195,13 @@ void ShootingAnimation::initializeProjectile()
 
 void ShootingAnimation::createProjectile(const Point & from, const Point & dest) const
 {
-	owner.projectilesController->createProjectile(attackingStack, from, dest);
+	owner.projectilesController->createProjectile(attackingStack, from, dest, focusMagicRanged);
 }
 
 void ShootingAnimation::playProjectileImpact()
 {
+	if(focusMagicRanged)
+		return;
 	const auto & impact = getCreature()->animation.projectileImpactName;
 	if(!impact.empty() && dest.isValid())
 		owner.stacksController->addNewAnim(new EffectAnimation(owner, impact, dest));
@@ -199,18 +226,18 @@ uint32_t ShootingAnimation::getAttackClimaxFrame() const
 
 ECreatureAnimType ShootingAnimation::getUpwardsGroup() const
 {
-	return thunarRangedPresentation::shootingGroup(*attackingStack,
-		*stackAnimation(attackingStack), ECreatureAnimType::SHOOT_UP);
+	return shootingGroup(*attackingStack,
+		*stackAnimation(attackingStack), ECreatureAnimType::SHOOT_UP, focusMagicConverted);
 }
 
 ECreatureAnimType ShootingAnimation::getForwardGroup() const
 {
-	return thunarRangedPresentation::shootingGroup(*attackingStack,
-		*stackAnimation(attackingStack), ECreatureAnimType::SHOOT_FRONT);
+	return shootingGroup(*attackingStack,
+		*stackAnimation(attackingStack), ECreatureAnimType::SHOOT_FRONT, focusMagicConverted);
 }
 
 ECreatureAnimType ShootingAnimation::getDownwardsGroup() const
 {
-	return thunarRangedPresentation::shootingGroup(*attackingStack,
-		*stackAnimation(attackingStack), ECreatureAnimType::SHOOT_DOWN);
+	return shootingGroup(*attackingStack,
+		*stackAnimation(attackingStack), ECreatureAnimType::SHOOT_DOWN, focusMagicConverted);
 }

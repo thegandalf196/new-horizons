@@ -336,6 +336,7 @@ void registerTypes(Serializer &s)
 	s.template registerType<SetPortalDwellingSource>(292);
 	s.template registerType<SetNewHorizonsDiplomacyState>(293);
 	s.template registerType<SetNewHorizonsForcedMarchState>(294);
+	// Packet ordinal 308 is reserved for retired Metamagic point updates.
 	s.template registerType<SetSpellResponseState>(295);
 	s.template registerType<SetBattlecraftMasteryAward>(296);
 	s.template registerType<SetOverwhelmingFormulaState>(297);
@@ -349,7 +350,6 @@ void registerTypes(Serializer &s)
 	s.template registerType<BattleRapidResponseStateChanged>(305);
 	s.template registerType<BattleNormalActivationCompleted>(306);
 	s.template registerType<BattleCrisisCommandChanged>(307);
-	s.template registerType<SetMetamagicPointState>(308);
 	s.template registerType<SetElementalAttunementState>(309);
 	s.template registerType<HeroCommandProgression>(310);
 	s.template registerType<HeroCommandEnhancementDialog>(311);

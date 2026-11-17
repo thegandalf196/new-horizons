@@ -26,7 +26,6 @@ struct Observation
 	uint32_t target = 0;
 	int32_t activationSerial = 0;
 	JsonNode scalar;
-	bool stopped = false;
 	int healingReduction = 0;
 	std::vector<std::byte> simulationRng;
 };
@@ -36,7 +35,6 @@ struct ClientUnitObservation
 {
 	uint32_t id = 0;
 	JsonNode scalar;
-	bool stopped = false;
 	int healingReduction = 0, treeVersion = 0;
 	std::weak_ptr<const void> cachedOwner; // Null-alias control block only, no native object/callable.
 };

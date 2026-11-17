@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "FocusMagicProjection.h"
 #include "AttackControllerProjection.h"
 #include "ActivationForfeit.h"
 #include "PhysicalStrikeProjection.h"
@@ -450,7 +451,6 @@ float BattleExchangeVariant::trackAttack(
 				strike.luckSerendipitySide, strike.luckSerendipityOrdinaryAttack);
 			for(const auto & injury : attackControllerAI::apply(*hb, strike.attackController))
 				if(injury.before->unitId() == attacker->unitId()) projectedAttackerDamage += injury.healthLoss;
-			hb->projectRangedMarkStrike(projectedAttack, actualHits);
 			const auto aerialReflectionLoss = aerialRetaliationAI::replaySourceAftermath(*hb, strike);
 			if(projectedAttacker->unitId() == attacker->unitId()) projectedAttackerDamage += aerialReflectionLoss;
 			const auto healthBeforeHexOfPain = projectedAttacker->getAvailableHealth();
@@ -674,8 +674,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	// Only Hex and Cleave consume the probe's post-attack attacker state.
 	// Ordinary applied attacks must still spend shots/Wait bonuses as before.
 	const bool needsProbeState = evaluateOnly
-		&& (newHorizonsHexOfPainAI::hasEffect(attacker.get())
-			|| (!shooting && hb->battleCanTriggerCleave(attacker.get())));
+		&& PhysicalStrikeProjection::needsPostAttackState(*hb, *attacker, shooting);
 	auto projectedAttacker = !evaluateOnly
 		? std::static_pointer_cast<battle::CUnitState>(attacker)
 		: needsProbeState ? attacker->acquireState() : nullptr;
@@ -732,12 +731,11 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			defenderWasAlive && !defender->alive() && hb->battleMatchOwner(attacker.get(), defender.get()),
 			primaryFortune->resolvedLuck, true, primaryFortune->perfectFortune,
 			primaryFortune->controllerSide, primaryFortune->controllerSide, primaryFortune->ordinaryLuckAttack);
-		hb->projectRangedMarkStrike(projectedAttack, {{defender->unitId(), actualDamage}});
 		if(relentlessAssaultTargetUnitId)
 			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
 	if(projectedAttacker)
-		projectedAttacker->afterAttack(shooting, false, projectedAttack.physicalDamage);
+		focusMagicAI::afterAttack(*projectedAttacker, shooting, false, projectedAttack.physicalDamage, !evaluateOnly);
 	if(actionResult && !evaluateOnly && hostilePrimaryMelee)
 		actionResult->primaryMeleePerformed = true;
 	if(!evaluateOnly && shooting && projectedAttack.physicalDamage
@@ -863,9 +861,8 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 					targetWasAlive && !target->alive() && hb->battleMatchOwner(attacker.get(), target.get()),
 					cleaveResolvedLuck, true, cleavePerfectFortune, cleavePerfectFortuneSide,
 					cleavePerfectFortuneSide, cleaveSerendipityOrdinaryAttack);
-				hb->projectRangedMarkStrike(cleaveAttack, {{target->unitId(), cleaveDamage}});
 			}
-				projectedAttacker->afterAttack(false, false, cleaveAttack.physicalDamage);
+				focusMagicAI::afterAttack(*projectedAttacker, false, false, cleaveAttack.physicalDamage);
 				if(newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
 				{
 					const auto cleaveHexScoringActor = projectedAttacker->acquireState();
@@ -972,7 +969,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()),
 			retaliationResolvedLuck, true, retaliationPerfectFortune, retaliationPerfectFortuneSide,
 			retaliationPerfectFortuneSide, retaliationSerendipityOrdinaryAttack);
-		defender->afterAttack(false, true, retaliationAttack.physicalDamage);
+		focusMagicAI::afterAttack(*defender, false, true, retaliationAttack.physicalDamage);
 		if(newHorizonsHexOfPainAI::hasEffect(defender.get()))
 		{
 			const auto retaliationHexScoringActor = defender->acquireState();
@@ -1054,7 +1051,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 		float penaltyMultiplier = 1.0f; // Default multiplier, no penalty
 		float closestAllyDistance = std::numeric_limits<float>::max();
 
-		for (const battle::Unit* ally : hb->battleAliveUnits()) 
+		for (const battle::Unit* ally : hb->battleAliveUnits())
 		{
 			if (ally == activeStack || !controlledBySamePlayer(*hb, activeStack, ally))
 				continue;
@@ -1067,7 +1064,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 		}
 
 		// If an ally is closer to the enemy, compute the penaltyMultiplier
-		if (closestAllyDistance < distance) 
+		if (closestAllyDistance < distance)
 		{
 			penaltyMultiplier = closestAllyDistance / distance; // Ratio of distances
 		}
@@ -1132,7 +1129,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 							auto defenderToBypass = hb->battleGetUnitByPos(enemyHex);
 							assert(defenderToBypass != nullptr);
 							auto attackHex = dists.predecessors[enemyHex.toInt()];
-							
+
 							if(defenderToBypass && dists.isReachable(attackHex) &&
 							   defenderToBypass != enemy &&
 							   vstd::contains(defenderToBypass->getAttackableHexes(activeStack), attackHex))
@@ -1140,7 +1137,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 #if BATTLE_TRACE_LEVEL >= 1
 								logAi->trace("Found target to bypass at %d", enemyHex.toInt());
 #endif
-								
+
 								auto baiBypass = BattleAttackInfo(activeStack, defenderToBypass, 0, cb->battleCanShoot(activeStack));
 								auto attackBypass = AttackPossibility::evaluate(baiBypass, attackHex, damageCache, hb);
 
@@ -1483,7 +1480,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				blockedShooters.insert(defender->unitId());
 			// Only the applied attack is a completed action; speculative
 			// movement/no-target exits above must not run affliction ticks.
-			if(!attacker->isTimeStopped() && attacker->pursuitMovementRemaining == 0
+			if(attacker->pursuitMovementRemaining == 0
 				&& !exchangeBattle->battleHasPendingRangedFollowUp(attacker.get()))
 			{
 				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));

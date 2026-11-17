@@ -116,7 +116,7 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 				if(orderDamagePercent > 0)
 					recordAttackerCause(HeroCommand::CHARGE);
 				if(info.physicalDamage && p.readAttackerOwner(*this, info) != p.readDefenderOwner(*this, info)
-					&& attack->hasActivePerk("new-horizons:offense", "new-horizons:offense.shockAssault"))
+					&& attack->hasActivePerk(newHorizonsHeroes::BuiltinCombatPerk::ShockAssault))
 					p.payload.chargeDefenseIgnorePercent = SHOCK_ASSAULT_DEFENSE_IGNORE_PERCENT;
 			}
 			break;

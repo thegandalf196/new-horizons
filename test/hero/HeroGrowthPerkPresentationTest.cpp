@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 
 #include "../../client/windows/HeroGrowthPerkPresentation.h"
 
@@ -17,22 +18,23 @@ const std::string EXPERT = SKILL + ".unbreakable";
 newHorizonsHeroes::PerkState stateFor(bool historicalR2 = false)
 {
 	newHorizonsHeroes::PerkState state;
-	state.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-	state.rules.Struct().erase("fourOfferProgressionVersion");
-	state.rules["unifiedSkillProgressionVersion"].Integer() = 1;
+	auto rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	rules.Struct().erase("fourOfferProgressionVersion");
+	rules["unifiedSkillProgressionVersion"].Integer() = 1;
 	if(historicalR2)
 	{
-		state.rules.Struct().erase("perkProgressionPolicyVersion");
-		state.rules.Struct().erase("unifiedSkillProgressionVersion");
-		state.rules.Struct().erase("startingPerksPolicyVersion");
-		state.rules.Struct().erase("startingPerkProfiles");
+		rules.Struct().erase("perkProgressionPolicyVersion");
+		rules.Struct().erase("unifiedSkillProgressionVersion");
+		rules.Struct().erase("startingPerksPolicyVersion");
+		rules.Struct().erase("startingPerkProfiles");
 	}
+	state.replaceRules(std::move(rules));
 	return state;
 }
 
 newHorizonsHeroes::SkillDefinition skillFor(const newHorizonsHeroes::PerkState & state)
 {
-	const auto skill = newHorizonsHeroes::perkSkill(state.rules, SKILL);
+	const auto skill = newHorizonsHeroes::perkSkill(state.getRules(), SKILL);
 	if(!skill)
 		throw std::runtime_error("Missing discipline fixture");
 	return *skill;
@@ -42,7 +44,7 @@ heroGrowthPerkPresentation::Card cardFor(const newHorizonsHeroes::PerkState & st
 	const std::string & id, int rank = 3)
 {
 	const auto skill = skillFor(state);
-	const auto perk = newHorizonsHeroes::perkDefinition(state.rules, SKILL, id);
+	const auto perk = newHorizonsHeroes::perkDefinition(state.getRules(), SKILL, id);
 	if(!perk)
 		throw std::runtime_error("Missing fixture perk");
 	return heroGrowthPerkPresentation::card(state, skill, rank, *perk);
@@ -61,17 +63,20 @@ void expectContains(const std::string & text, const std::string & part)
 
 void markPlanned(newHorizonsHeroes::PerkState & state, const std::string & id)
 {
-	for(auto & perk : state.rules["skills"][SKILL]["perks"].Vector())
-		if(perk["id"].String() == id)
-			perk["effect"]["status"].String() = "planned";
+	perkStateFixture::editRules(state, [&](JsonNode & rules)
+	{
+		for(auto & perk : rules["skills"][SKILL]["perks"].Vector())
+			if(perk["id"].String() == id)
+				perk["effect"]["status"].String() = "planned";
+	});
 }
 }
 
 TEST(HeroGrowthPerkPresentation, HistoricalSameTierAppearsInBothConsumersUntilCap)
 {
 	auto state = stateFor(true);
-	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.rules));
-	ASSERT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.getRules()));
+	ASSERT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
 	state.select(SKILL, BASIC, 1);
 	const auto before = state.toJson();
 	const auto card = cardFor(state, OTHER_BASIC, 1);
@@ -82,7 +87,7 @@ TEST(HeroGrowthPerkPresentation, HistoricalSameTierAppearsInBothConsumersUntilCa
 	EXPECT_EQ(summary.locked, 6);
 	EXPECT_EQ(summary.unavailable, 0);
 	expectContains(summary.text, "Eligible for future level-up offers:");
-	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.rules, SKILL, OTHER_BASIC)->name);
+	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.getRules(), SKILL, OTHER_BASIC)->name);
 	EXPECT_TRUE(state.canAcquirePerk(SKILL, OTHER_BASIC, 1));
 	EXPECT_EQ(state.toJson(), before);
 	state.select(SKILL, OTHER_BASIC, 1);
@@ -99,10 +104,13 @@ TEST(HeroGrowthPerkPresentation, StrictAndPolicyOneRetainOnePerTier)
 		auto state = stateFor();
 		if(policy == 1)
 		{
-			state.rules["offerWeightPolicyVersion"].Integer() = 1;
-			state.rules.Struct().erase("perkOfferNormalization");
-			state.rules.Struct().erase("perkProgressionPolicyVersion");
-			state.rules.Struct().erase("unifiedSkillProgressionVersion");
+			perkStateFixture::editRules(state, [&](JsonNode & rules)
+			{
+				rules["offerWeightPolicyVersion"].Integer() = 1;
+				rules.Struct().erase("perkOfferNormalization");
+				rules.Struct().erase("perkProgressionPolicyVersion");
+				rules.Struct().erase("unifiedSkillProgressionVersion");
+			});
 		}
 		state.select(SKILL, BASIC, 1);
 		const auto before = state.toJson();
@@ -158,8 +166,8 @@ TEST(HeroGrowthPerkPresentation, PlannedAndSavedInactiveRemainVisibleWithoutAvai
 	// Strict validation rejects it; never manufacture a strict saved history.
 	state = stateFor(true);
 	markPlanned(state, BASIC);
-	state.selected.push_back({SKILL, BASIC});
-	ASSERT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	perkStateFixture::editSelected(state, [&](auto & selected) { selected.push_back({SKILL, BASIC}); });
+	ASSERT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
 	ASSERT_NO_THROW(state.validate());
 	const auto selectedBefore = state.toJson();
 	ASSERT_NO_THROW(state = newHorizonsHeroes::PerkState::fromJson(selectedBefore));
@@ -230,20 +238,31 @@ TEST(HeroGrowthPerkPresentation, MissingCapturedCatalogueFailsClosedEvenWithStal
 	}
 }
 
-TEST(HeroGrowthPerkPresentation, FourOfferSummariesRetainRepeatedTierSelectionsAndExplainOneAdvancement)
+TEST(HeroGrowthPerkPresentation, FourOfferSummariesStartEmptyRetainOnePerTierAndRoundTrip)
 {
 	auto state = stateFor();
-	state.rules.Struct().erase("unifiedSkillProgressionVersion");
-	state.rules["fourOfferProgressionVersion"].Integer() = 1;
+	perkStateFixture::editRules(state, [&](JsonNode & rules)
+	{
+		rules.Struct().erase("unifiedSkillProgressionVersion");
+		rules["fourOfferProgressionVersion"].Integer() = 1;
+	});
+	EXPECT_TRUE(state.getSelected().empty());
+	expectContains(summaryFor(state).text, "0/3 selected, 3 remaining");
 	state.select(SKILL, BASIC, 3);
-	state.select(SKILL, OTHER_BASIC, 3);
+	const auto oneTier = state.toJson();
+	EXPECT_THROW(state.select(SKILL, OTHER_BASIC, 3), std::runtime_error);
+	EXPECT_EQ(state.toJson(), oneTier);
+	state.select(SKILL, ADVANCED, 3);
+	const auto restored = newHorizonsHeroes::PerkState::fromJson(state.toJson());
+	EXPECT_EQ(restored.toJson(), state.toJson());
+	EXPECT_EQ(summaryFor(restored).text, summaryFor(state).text);
 	const auto before = state.toJson();
 	const auto summary = summaryFor(state);
-	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.rules, SKILL, BASIC)->name);
-	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.rules, SKILL, OTHER_BASIC)->name);
+	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.getRules(), SKILL, BASIC)->name);
+	expectContains(summary.text, newHorizonsHeroes::perkDefinition(state.getRules(), SKILL, ADVANCED)->name);
 	expectContains(summary.text, "2/3 selected, 1 remaining");
-	EXPECT_EQ(cardFor(state, ADVANCED).status, "Available");
-	EXPECT_EQ(cardFor(state, EXPERT).status, "Locked");
+	EXPECT_EQ(cardFor(state, ADVANCED).status, "Acquired");
+	EXPECT_EQ(cardFor(state, EXPERT).status, "Available");
 	const auto full = heroGrowthPerkPresentation::summary(state, [](const auto & id) { return id == SKILL ? 3 : 0; });
 	expectContains(full, "up to two Skills and two perk groups; choose one advancement");
 	EXPECT_EQ(full.find("a level-up offers at most"), std::string::npos);

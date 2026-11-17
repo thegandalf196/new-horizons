@@ -10,6 +10,7 @@
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
 #include "../../lib/spells/ISpellMechanics.h"
+#include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsRunicReflection.h"
 #include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -33,8 +34,7 @@ struct Share { const spells::effects::Effect * effect; size_t index; int64_t raw
 using Groups = std::map<uint32_t, std::vector<Share>>;
 double resistance(const spells::Mechanics & mechanics, const battle::Unit & unit)
 {
-	return std::clamp(newHorizonsMetamagic::resistanceChance(unit.magicResistance(),
-		mechanics.getMetamagicCastProfile(), *mechanics.battle(), unit), 0, 100) / 100.0;
+	return std::clamp(unit.magicResistance(), 0, 100) / 100.0;
 }
 bool reroll(const spells::Mechanics & mechanics, const battle::Unit & unit)
 {
@@ -201,7 +201,8 @@ Estimate expectedGroups(const spells::Mechanics & original, const Groups & affec
 Estimate expectedValue(const spells::Mechanics & original, const spells::Target & aim,
 	PlayerColor reference, const std::shared_ptr<HypotheticBattle> & board, Weights weights)
 {
-	if(!board || original.isMagicMirror() || !original.isMagicalEffect()) return {};
+	if(!board || original.isMagicMirror() || !original.isMagicalEffect()
+		|| original.getSpellId().toSpell()->getJsonKey() == "new-horizons:forceLance") return {};
 	if(std::ranges::none_of(board->battleGetAllUnits(false), [](const auto * unit)
 		{ return unit && newHorizonsRunicReflection::nativeChance(*unit) > 0; })) return {};
 	if(!original.isNegativeSpell())
@@ -224,6 +225,7 @@ float expectedRawDamageShare(const spells::Mechanics & original, const spells::e
 	const std::shared_ptr<HypotheticBattle> & board, Weights weights)
 {
 	if(!board || raw < 0 || original.isMagicMirror() || !original.isMagicalEffect() || !original.isNegativeSpell()
+		|| original.getSpellId().toSpell()->getJsonKey() == "new-horizons:forceLance"
 		|| effect.resistanceShareKind() != Kind::Damage || !reflector.isValidTarget(false)
 		|| !original.isReceptive(&reflector) || newHorizonsRunicReflection::nativeChance(reflector) == 0
 		|| original.battle()->battleGetOwner(&reflector) == original.getCasterColor()) return 0;

@@ -45,13 +45,11 @@ class DoomStatusUiSourceTest(unittest.TestCase):
                       (ROOT / "client/battle/StackSpellStatusPresentation.h").read_text(encoding="utf-8"))
 
         priority_partition = STACK_WINDOW.index("const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end()")
-        time_stop_partition = STACK_WINDOW.index("const auto timeStopEnd = std::stable_partition", priority_partition)
-        doom_partition = STACK_WINDOW.index("std::stable_partition(timeStopEnd, prioritizedEnd", time_stop_partition)
+        doom_partition = STACK_WINDOW.index("std::stable_partition(spells.begin(), prioritizedEnd", priority_partition)
         spell_loop = STACK_WINDOW.index("for(SpellID effect : spells)", doom_partition)
-        self.assertLess(priority_partition, time_stop_partition)
-        self.assertLess(time_stop_partition, doom_partition)
+        self.assertLess(priority_partition, doom_partition)
         self.assertLess(doom_partition, spell_loop)
-        self.assertIn("isDoom(spellKey)", STACK_WINDOW[priority_partition:time_stop_partition])
+        self.assertIn("isDoom(spellKey)", STACK_WINDOW[priority_partition:doom_partition])
         self.assertIn("isDoom(effect.toSpell()->getJsonKey())", STACK_WINDOW[doom_partition:spell_loop])
 
 

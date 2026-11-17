@@ -150,7 +150,7 @@ bool Rewardable::Limiter::heroAllowed(const CGHeroInstance * hero) const
 	for(const auto & skill : secondary)
 	{
 		const auto replaced = newHorizonsMagic::replacementSkill(hero->getMagicRules(), skill.first);
-		const auto effective = newHorizonsHeroes::normalizeRewardSkill(hero->getPrimaryGrowthRules(), replaced);
+		const auto effective = hero->compiledDevelopment()->normalizeRewardSkill(replaced);
 		if(!effective)
 			return false;
 		if (skill.second > hero->getSecSkillLevel(*effective))
@@ -305,7 +305,7 @@ void Rewardable::Limiter::loadComponents(std::vector<Component> & comps,
 	{
 		const auto replaced = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
 		const auto skill = h
-			? newHorizonsHeroes::normalizeRewardSkill(h->getPrimaryGrowthRules(), replaced)
+			? h->compiledDevelopment()->normalizeRewardSkill(replaced)
 			: std::optional<SecondarySkill>(replaced);
 		if(skill)
 			comps.emplace_back(ComponentType::SEC_SKILL, *skill, entry.second);

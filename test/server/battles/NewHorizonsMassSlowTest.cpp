@@ -21,6 +21,11 @@
 #include "../../../lib/spells/NewHorizonsMagic.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 #include "../../../lib/spells/NewHorizonsSpellAvailability.h"
+#include "../../../lib/spells/NewHorizonsSorceryRevision.h"
+#include "../../../lib/spells/SpellEffectPreview.h"
+#include "../../../lib/spells/NewHorizonsTimedStatusPlan.h"
+#include "../../../lib/spells/NewHorizonsSpellcraft.h"
+#include "../../../lib/battle/NewHorizonsFocusMagic.h"
 #include <vcmi/Environment.h>
 
 #include <memory>
@@ -32,7 +37,6 @@
 namespace
 {
 constexpr auto massSlowKey = "new-horizons:massSlow";
-constexpr auto spellLockKey = "new-horizons:spellLock";
 constexpr auto sorcerySkillKey = "new-horizons:sorceryMagic";
 constexpr auto temporalistPerkKey = "new-horizons:sorceryMagic.temporalist";
 constexpr auto temporalFieldPerkKey = "new-horizons:sorceryMagic.temporalField";
@@ -40,11 +44,6 @@ constexpr auto temporalFieldPerkKey = "new-horizons:sorceryMagic.temporalField";
 SpellID massSlowSpell()
 {
 	return SpellID(SpellID::decode(massSlowKey));
-}
-
-SpellID spellLockSpell()
-{
-	return SpellID(SpellID::decode(spellLockKey));
 }
 
 JsonNode olderV3MagicSnapshotWithoutMassSlow()
@@ -82,7 +81,7 @@ protected:
 	CStack * secondEnemy = nullptr;
 	CStack * baseImmuneEnemy = nullptr;
 	CStack * variantImmuneEnemy = nullptr;
-	CStack * spellLockedEnemy = nullptr;
+	CStack * resistantEnemy = nullptr;
 
 	void SetUp() override
 	{
@@ -160,16 +159,16 @@ protected:
 		secondEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:archer"), BattleHex(12, 5), 10);
 		baseImmuneEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:griffin"), BattleHex(14, 5), 10);
 		variantImmuneEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(14, 7), 10);
-		spellLockedEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(16, 5), 10);
+		resistantEnemy = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(16, 5), 10);
 		ASSERT_NE(friendly, nullptr);
 		ASSERT_NE(firstEnemy, nullptr);
 		ASSERT_NE(secondEnemy, nullptr);
 		ASSERT_NE(baseImmuneEnemy, nullptr);
 		ASSERT_NE(variantImmuneEnemy, nullptr);
-		ASSERT_NE(spellLockedEnemy, nullptr);
+		ASSERT_NE(resistantEnemy, nullptr);
 		addSpellImmunity(baseImmuneEnemy, SpellID(SpellID::SLOW));
 		addSpellImmunity(variantImmuneEnemy, massSlowSpell());
-		addSpellLock(spellLockedEnemy);
+		addResistance(resistantEnemy);
 		beginCombat();
 		activateAttackerStack();
 		ASSERT_NE(battle()->battleActiveUnit(), nullptr);
@@ -204,10 +203,10 @@ protected:
 			BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(spell)));
 	}
 
-	void addSpellLock(CStack * unit)
+	void addResistance(CStack * unit)
 	{
 		auto lock = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
-			BonusSource::SPELL_EFFECT, 100, BonusSourceID(spellLockSpell()));
+			BonusSource::OTHER, 100, BonusSourceID());
 		lock->turnsRemain = 1;
 		unit->addNewBonus(std::move(lock));
 	}
@@ -454,7 +453,7 @@ TEST_F(NewHorizonsMassSlowTest, MassSlowScalesTheFinalCappedSpecializedSlowAndMa
 	const auto * projectedFriendly = projected.battleGetUnitByID(friendly->unitId());
 	const auto * projectedBaseImmune = projected.battleGetUnitByID(baseImmuneEnemy->unitId());
 	const auto * projectedVariantImmune = projected.battleGetUnitByID(variantImmuneEnemy->unitId());
-	const auto * projectedSpellLocked = projected.battleGetUnitByID(spellLockedEnemy->unitId());
+	const auto * projectedResistant = projected.battleGetUnitByID(resistantEnemy->unitId());
 	ASSERT_NE(slowEffect(projectedFirst), nullptr);
 	ASSERT_NE(slowEffect(projectedSecond), nullptr);
 	ASSERT_EQ(slowEffectCount(projectedFirst), 1u)
@@ -468,7 +467,7 @@ TEST_F(NewHorizonsMassSlowTest, MassSlowScalesTheFinalCappedSpecializedSlowAndMa
 	EXPECT_EQ(slowEffect(projectedFriendly), nullptr);
 	EXPECT_EQ(slowEffect(projectedBaseImmune), nullptr);
 	EXPECT_EQ(slowEffect(projectedVariantImmune), nullptr);
-	EXPECT_EQ(slowEffect(projectedSpellLocked), nullptr);
+	EXPECT_EQ(slowEffect(projectedResistant), nullptr);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), realManaBefore)
 		<< "Detached prediction does not spend the authoritative hero's Mana";
 
@@ -486,8 +485,8 @@ TEST_F(NewHorizonsMassSlowTest, MassSlowScalesTheFinalCappedSpecializedSlowAndMa
 	EXPECT_EQ(slowEffect(friendly), nullptr);
 	EXPECT_EQ(slowEffect(baseImmuneEnemy), nullptr);
 	EXPECT_EQ(slowEffect(variantImmuneEnemy), nullptr);
-	EXPECT_EQ(slowEffect(spellLockedEnemy), nullptr)
-		<< "Spell Lock is excluded by the ordinary magical-effect target policy";
+	EXPECT_EQ(slowEffect(resistantEnemy), nullptr)
+		<< "Ordinary magic resistance excludes the target";
 	EXPECT_FALSE(battle()->getSide(BattleSide::ATTACKER).temporalFieldUsed)
 		<< "The distinct spell does not consume the legacy Temporal Field toggle budget";
 }
@@ -648,4 +647,77 @@ TEST_F(NewHorizonsMassSlowTest, RevisedSlowKeepsInscribedAccessAndBothStatsExpir
 	EXPECT_EQ(slowSpeedCount(firstEnemy, 0), 0u);
 	EXPECT_EQ(firstEnemy->getMovementRange(), movementBefore);
 	EXPECT_EQ(firstEnemy->getInitiative(), initiativeBefore);
+}
+
+TEST_F(NewHorizonsMassSlowTest, ChronomancerMatchesPreviewAndLiveCapsForSpeedAndInitiative)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareHero(true, MasteryLevel::EXPERT, 1000));
+	attackerSideHero->applyPerkSelection({sorcerySkillKey, "new-horizons:sorceryMagic.chronomancer"});
+	ASSERT_NO_FATAL_FAILURE(prepareBattle());
+	const auto preview = newHorizonsMagic::spellEffectPreview(*attackerSideHero, *massSlowSpell().toSpell());
+	ASSERT_TRUE(preview.primary);
+	EXPECT_EQ(preview.primary->value, -36);
+	ASSERT_TRUE(castSpell(massSlowSpell()));
+	ASSERT_NE(slowEffect(firstEnemy), nullptr);
+	EXPECT_EQ(slowEffect(firstEnemy)->val, -36);
+	EXPECT_EQ(slowSpeedCount(firstEnemy, -36), 1);
+	ASSERT_NE(slowEffect(secondEnemy), nullptr);
+	EXPECT_EQ(slowEffect(secondEnemy)->val, -36);
+	EXPECT_EQ(slowSpeedCount(secondEnemy, -36), 1);
+	ASSERT_NO_FATAL_FAILURE(advanceRoundForAttackerAction());
+	const auto ordinary = newHorizonsMagic::spellEffectPreview(*attackerSideHero, *SpellID(SpellID::SLOW).toSpell());
+	ASSERT_TRUE(ordinary.primary);
+	EXPECT_EQ(ordinary.primary->value, -60);
+	ASSERT_TRUE(castSpell(SpellID::SLOW, firstEnemy));
+	EXPECT_EQ(slowEffect(firstEnemy)->val, -60);
+	EXPECT_EQ(slowSpeedCount(firstEnemy, -60), 1);
+}
+
+TEST_F(NewHorizonsMassSlowTest, SpellbinderExtendsFallbackAndLiteralRoundTimersExactlyOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareHero(true, MasteryLevel::EXPERT, 100));
+	attackerSideHero->applyPerkSelection({sorcerySkillKey, "new-horizons:sorceryMagic.spellbinder"});
+	ASSERT_NO_FATAL_FAILURE(prepareBattle());
+	const auto * definition = massSlowSpell().toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, definition);
+	const auto mechanics = definition->battleMechanics(&cast);
+	EXPECT_EQ(mechanics->getEffectDuration(), 5); // Slow2 + Temporalist1 + Spellbinder2.
+	spells::BattleCast explicitCast(battle(), attackerSideHero, spells::Mode::HERO, definition);
+	explicitCast.setEffectDuration(2);
+	EXPECT_EQ(definition->battleMechanics(&explicitCast)->getEffectDuration(), 4);
+	EXPECT_EQ(mechanics->adjustEffectDuration(2), 4); // Fixed native temporary-enchantment base.
+	EXPECT_EQ(newHorizonsMagic::configuredTimedDurationForCast(*mechanics, 0, mechanics->getEffectDuration(), true), 5);
+	EXPECT_EQ(newHorizonsMagic::configuredTimedDurationForCast(*mechanics, 2, mechanics->getEffectDuration(), true), 4);
+	EXPECT_EQ(newHorizonsMagic::configuredTimedDurationForCast(*mechanics, 2, mechanics->getEffectDuration(), false), 2);
+	EXPECT_EQ(newHorizonsSorceryRevision::spellbinderBonus(attackerSideHero,
+		SpellID(SpellID::decode("new-horizons:focusMagic"))), 0);
+	EXPECT_EQ(newHorizonsSorceryRevision::spellbinderBonus(attackerSideHero,
+		SpellID(SpellID::decode("new-horizons:forceLance"))), 0);
+	ASSERT_TRUE(castSpell(massSlowSpell()));
+	ASSERT_NE(slowEffect(firstEnemy), nullptr);
+	EXPECT_EQ(slowEffect(firstEnemy)->turnsRemain, 5);
+	EXPECT_EQ(slowEffect(secondEnemy)->turnsRemain, 5);
+	EXPECT_EQ(slowSpeedCount(firstEnemy, slowEffect(firstEnemy)->val), 1);
+}
+
+TEST_F(NewHorizonsMassSlowTest, FocusChargesAreExcludedFromRoundExtensionsAndDoNotConsumeExtend)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareHero(true, MasteryLevel::EXPERT, 100));
+	attackerSideHero->applyPerkSelection({sorcerySkillKey, "new-horizons:sorceryMagic.spellbinder"});
+	const SecondarySkill spellcraft(SecondarySkill::decode("new-horizons:spellcraft"));
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:spellcraft", "new-horizons:spellcraft.concentration"});
+	attackerSideHero->setSecSkillLevel(spellcraft, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:spellcraft", "new-horizons:spellcraft.extendSpell"});
+	const SpellID focus(SpellID::decode("new-horizons:focusMagic"));
+	attackerSideHero->addSpellToSpellbook(focus);
+	ASSERT_NO_FATAL_FAILURE(prepareBattle());
+	EXPECT_FALSE(newHorizonsSpellcraft::roundTemporary(*focus.toSpell(), attackerSideHero->getEffectLevel(focus.toSpell())));
+	const auto before = battle()->getExtendSpellLastRound(BattleSide::ATTACKER);
+	ASSERT_TRUE(castSpell(focus, friendly));
+	EXPECT_EQ(battle()->getExtendSpellLastRound(BattleSide::ATTACKER), before);
+	EXPECT_EQ(newHorizonsFocusMagic::charges(*friendly), 3);
+	const auto applied = friendly->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(focus)));
+	ASSERT_EQ(applied->size(), 2);
+	for(const auto & bonus : *applied) EXPECT_EQ(bonus->duration, BonusDuration::ONE_BATTLE);
 }

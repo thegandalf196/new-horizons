@@ -9,6 +9,7 @@
  */
 
 #pragma once
+#include <memory>
 #include <algorithm>
 #include <cstdint>
 #include <limits>
@@ -24,7 +25,6 @@
 #include "HeroActionAllowanceState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
-#include "MetamagicPointState.h"
 #include "NewHorizonsCommandResources.h"
 #include "NewHorizonsElementalAttunement.h"
 #include "WisdomCombatState.h"
@@ -46,6 +46,7 @@ struct Bonus;
 struct BattleLayout;
 class JsonNode;
 class JsonSerializeFormat;
+namespace nativeRules { class CapturedRuleDocument; }
 class BattleField;
 class int3;
 enum class BattlecraftMasteryAction : uint8_t;
@@ -123,6 +124,7 @@ public:
 
 	virtual const JsonNode & getHeroCommandRules() const;
 	virtual const JsonNode & getMagicRules() const;
+	virtual std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const { return {}; }
 	virtual const newHorizonsCrisisCommand::State & getCrisisCommandState() const
 	{
 		static const newHorizonsCrisisCommand::State empty;
@@ -210,7 +212,6 @@ public:
 	virtual int32_t getCastSpells(BattleSide side) const = 0;
 	virtual int32_t getEnchanterCounter(BattleSide side) const = 0;
 	virtual bool getTemporalFieldUsed(BattleSide side) const { return false; }
-	virtual bool getCounterspellArmed(BattleSide side) const { return false; }
 	virtual const newHorizonsCommand::ResourceState & getCommandResources(BattleSide) const
 	{
 		static const newHorizonsCommand::ResourceState empty;
@@ -227,26 +228,8 @@ public:
 		static const newHorizonsElementalAttunement::Profile empty;
 		return empty;
 	}
-	virtual const MetamagicPointState & getMetamagicPointState(BattleSide) const
-	{
-		static const MetamagicPointState empty;
-		return empty;
-	}
-	virtual int32_t getMetamagicPendingCount(BattleSide side) const { return 0; }
-	virtual int32_t getMetamagicUsesConsumed(BattleSide side) const { return 0; }
-	virtual bool getMetamagicGrandUsed(BattleSide side) const { return false; }
 	virtual bool getRebirthChainUsed(BattleSide side) const { (void)side; return false; }
 	virtual bool getPhoenixSparkUsed(BattleSide side) const { (void)side; return false; }
-	virtual bool getMetamagicFormulaReserveUsed(BattleSide side) const { return false; }
-	virtual bool getMetamagicCountersequenceArmed(BattleSide side) const { return false; }
-	virtual SpellID getMetamagicFirstSpell(BattleSide side) const { return SpellID(); }
-	virtual uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const { return std::numeric_limits<uint32_t>::max(); }
-	virtual const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const
-	{
-		static const std::vector<SpellID> empty;
-		return empty;
-	}
-	virtual bool getMetamagicFirstCounterspellNegated(BattleSide side) const { return false; }
 	virtual int32_t getBloodrageDamagePercent(BattleSide side) const { return 0; }
 	virtual int32_t getBloodrageRank(BattleSide side) const { return 0; }
 	virtual int32_t getBloodrageCapPercent(BattleSide side) const { return 0; }
@@ -418,10 +401,6 @@ public:
 	{ throw std::runtime_error("Battle does not support finite Command resources"); }
 	virtual void setElementalAttunementMask(BattleSide, uint8_t)
 	{ throw std::runtime_error("Battle does not support elemental Attunement"); }
-	virtual void setMetamagicPointState(BattleSide, const MetamagicPointState &)
-	{
-		throw std::logic_error("Battle state cannot record Metamagic points");
-	}
 	virtual void setSpellResponseState(BattleSide, const SpellResponseState &) {}
 	virtual void setPassiveDivineMandateUses(BattleSide, uint8_t)
 	{

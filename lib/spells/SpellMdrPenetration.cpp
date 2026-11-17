@@ -1,13 +1,14 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../nativeRules/CompiledMetamagicRules.h"
 #include "ISpellMechanics.h"
 #include "CSpell.h"
 #include "ObstacleCasterProxy.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsWisdom.h"
 #include "NewHorizonsNaturesWrath.h"
-#include "NewHorizonsMetamagicMarks.h"
 #include "NewHorizonsMetamagicEffects.h"
+#include "NewHorizonsMetamagicResolution.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
@@ -24,6 +25,8 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 	if(mode != Mode::HERO || !hero || !newHorizonsMagic::rulesActive(hero->getMagicRules()))
 		return result;
 	result["sourceHeroCasterId"].Integer() = hero->id.getNum();
+	if(nativeRules::hasMetamagicPerk(hero, nativeRules::MetamagicPerk::SpellSculpting))
+		result["spellSculpting"].Bool() = true;
 	// Capture offensive faction output for delayed statuses as well as obstacles.
 	// Absence remains the identity value and leaves unrelated spell packets intact.
 	if(metamagic && metamagic->factionSpellDamageBonus > 0)
@@ -33,14 +36,12 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 	if(metamagic && (newHorizonsMagic::isLandMine(owner->getId()) || newHorizonsMagic::isFireWall(owner->getId())))
 		result["effectivenessBonusPercent"].Integer() = newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(metamagic);
 	if(!isNegativeSpell() && !overwhelmingFormulaEligible
-		&& !newHorizonsNaturesWrath::enabled(*this) && !(metamagic && metamagic->perks.pointPolicy))
+		&& !newHorizonsNaturesWrath::enabled(*this))
 		return result;
 	const auto add = [&result](int percent)
 	{
 		result["penetrations"].Vector().emplace_back(percent);
 	};
-	if(const auto * meta = getMetamagicCastProfile(); meta && meta->perks.pointPolicy)
-		add(newHorizonsMetamagic::effectivenessBonusPercent(meta->perks, meta->points) - meta->perks.wisdomEffectivenessBonus);
 	if(const int wisdom = newHorizonsWisdom::archmagePenetrationPercent(hero, hero->getMagicRules(), owner->getId()))
 		add(wisdom);
 	if(hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
@@ -62,12 +63,6 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 		// Unaccepted UI prediction is read-only. Execution registers above before
 		// preparing effects, so this temporary contribution is never saved on one.
 		add(50);
-	}
-	if(metamagicFollowup && metamagicFocusedPairingEligible
-		&& metamagicFirstTargetUnitId != std::numeric_limits<uint32_t>::max())
-	{
-		result["focusedTargetUnitId"].Integer() = metamagicFirstTargetUnitId;
-		result["focusedPenetrationPercent"].Integer() = 20;
 	}
 	return result;
 }

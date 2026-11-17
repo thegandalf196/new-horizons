@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "HeroActionSelectionState.h"
 #include "HeroActionTimingCapture.h"
 #include "../../AI/BattleAI/BattleEvaluator.h"
@@ -47,8 +48,6 @@ heroActionProjection::Admission admission()
 	result.admitted = true;
 	result.spellAllowance.emplace();
 	result.spellAllowance->spell = vinesId();
-	result.counterspell.resolutionKnown = true;
-	result.counterspell.negated = false;
 	return result;
 }
 
@@ -120,15 +119,6 @@ void appendSpellReceipts(std::vector<std::byte> & bytes, const CBattleInfoCallba
 		append(state->getCrossSchoolFormulaState(side));
 		append(state->getSpellResponseState(side));
 		append(state->getOverwhelmingFormulaState(side));
-		append(state->getMetamagicPendingCount(side));
-		append(state->getMetamagicUsesConsumed(side));
-		append(state->getMetamagicGrandUsed(side));
-		append(state->getMetamagicFormulaReserveUsed(side));
-		append(state->getMetamagicCountersequenceArmed(side));
-		append(state->getMetamagicFirstSpell(side));
-		append(state->getMetamagicFirstTargetUnitId(side));
-		append(state->getMetamagicSequenceSpells(side));
-		append(state->getMetamagicFirstCounterspellNegated(side));
 	}
 }
 }
@@ -155,9 +145,9 @@ TEST(VinesCandidateValueReuseTest, ExactOrderedReceiptAndFullOptionsOnlyWithinOn
 	++prepared.spellAllowance->action.epoch;
 	EXPECT_FALSE(values.find(cast, prepared, {}, proof));
 	prepared = admission();
-	cast.metamagicGrand = true;
+	cast.divineMandateFollowup = true;
 	EXPECT_FALSE(values.find(cast, prepared, {}, proof));
-	cast.metamagicGrand = false;
+	cast.divineMandateFollowup = false;
 	EXPECT_FALSE(values.find(cast, prepared, {10}, proof));
 	VinesCandidateValueReuse nextInvocation;
 	EXPECT_FALSE(nextInvocation.find(cast, prepared, {}, proof));
@@ -167,7 +157,7 @@ TEST(VinesCandidateValueReuseTest, ExactOrderedReceiptAndFullOptionsOnlyWithinOn
 	EXPECT_FALSE(values.find(cast, prepared, {}, proof));
 }
 
-TEST(VinesCandidateValueReuseTest, MissingProofDisabledNegatedAndInvalidValuesFailClosed)
+TEST(VinesCandidateValueReuseTest, MissingProofDisabledAndInvalidValuesFailClosed)
 {
 	auto cast = candidate();
 	ASSERT_NE(cast.spell, nullptr);
@@ -186,12 +176,6 @@ TEST(VinesCandidateValueReuseTest, MissingProofDisabledNegatedAndInvalidValuesFa
 	values.remember(cast, prepared, {}, proof);
 	EXPECT_FALSE(values.find(cast, prepared, {}, std::nullopt));
 	EXPECT_FALSE(values.find(cast, prepared, {}, proof)); // Missing proof clears prior entries.
-	prepared.counterspellNegated = true;
-	values.remember(cast, prepared, {}, proof);
-	EXPECT_FALSE(values.find(cast, prepared, {}, proof));
-	VinesCandidateValueReuse::TestControl control{false};
-	VinesCandidateValueReuse disabled(&control);
-	prepared = admission();
 	disabled.remember(cast, prepared, {}, proof);
 	EXPECT_FALSE(disabled.find(cast, prepared, {}, proof));
 	EXPECT_EQ(control.hits, 0u);
@@ -273,78 +257,6 @@ protected:
 		for(const auto * unit : battle()->battleGetAllStacks(false))
 			(void)unit->counterAttacks.total();
 	}
-	void prepareCurrentMarkedRecipients()
-	{
-		ASSERT_TRUE(newHorizonsMetamagic::usesArcaneMarks(attackerSideHero->getPerkState().rules));
-		const auto skill = "new-horizons:metamagic";
-		const int id = SecondarySkill::decode(skill);
-		ASSERT_GE(id, 0);
-		attackerSideHero->setSecSkillLevel(SecondarySkill(id), MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-		for(const auto * perk : {"new-horizons:metamagic.lingeringMagic",
-			"new-horizons:metamagic.arcaneSaturation", "new-horizons:metamagic.arcanePerfection"})
-		{
-			attackerSideHero->applyPerkSelection({skill, perk});
-			ASSERT_TRUE(attackerSideHero->hasActivePerk(skill, perk));
-		}
-		const auto profile = newHorizonsMetamagic::profile(attackerSideHero);
-		ASSERT_EQ(profile.rank, 3);
-		ASSERT_TRUE(profile.lingeringMagic);
-		const auto recipients = battle()->battleAliveUnits(BattleSide::DEFENDER);
-		ASSERT_EQ(recipients.size(), 2u);
-		BattleUnitsChanged packet;
-		packet.battleID = BattleID(0);
-		for(size_t index = 0; index < recipients.size(); ++index)
-		{
-			auto state = recipients[index]->acquireState();
-			state->arcaneMarks.set(BattleSide::ATTACKER, static_cast<int32_t>(index * 5));
-			state->arcaneMarks.set(BattleSide::DEFENDER, static_cast<int32_t>((1 - index) * 5));
-			packet.changedStacks.emplace_back(recipients[index]->unitId(), UnitChanges::EOperation::UPDATE);
-			packet.changedStacks.back().data = state->save();
-		}
-		gameHandler->sendAndApply(packet);
-	}
-	void checkCurrentMarkedProjection()
-	{
-		const auto recipients = battle()->battleAliveUnits(BattleSide::DEFENDER);
-		ASSERT_EQ(recipients.size(), 2u);
-		const auto before = decisionSnapshot();
-		auto state = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
-		auto cast = candidate();
-		cast.dest.clear();
-		const auto & triples = newHorizonsVengefulVines::connectedTriples();
-		const auto found = std::find_if(triples.begin(), triples.end(), [&](const auto & hexes)
-		{
-			return hexes.contains(recipients[0]->getPosition()) && hexes.contains(recipients[1]->getPosition());
-		});
-		ASSERT_NE(found, triples.end());
-		for(const auto hex : *found) cast.dest.emplace_back(hex);
-		const auto admission = heroActionProjection::admitCandidate(*state, BattleSide::ATTACKER, cast);
-		ASSERT_TRUE(admission.admitted);
-		uint32_t targetId = std::numeric_limits<uint32_t>::max();
-		const auto projected = battleEvaluatorProjection::projectSpell(*state, *callback->getBattle(BattleID(0)),
-			attackerSideHero, BattleSide::ATTACKER, cast, admission, targetId, {});
-		ASSERT_TRUE(projected.accepted);
-		ASSERT_TRUE(projected.vines);
-		const auto * low = state->battleGetUnitByID(recipients[0]->unitId());
-		const auto * high = state->battleGetUnitByID(recipients[1]->unitId());
-		ASSERT_NE(low, nullptr);
-		ASSERT_NE(high, nullptr);
-		EXPECT_GT(recipients[1]->getAvailableHealth() - high->getAvailableHealth(),
-			recipients[0]->getAvailableHealth() - low->getAvailableHealth());
-		const auto selector = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(vinesId()))
-			.And(Selector::type()(BonusType::STACKS_MOVEMENT_RANGE));
-		const auto lowBonuses = low->getAllBonuses(selector);
-		const auto highBonuses = high->getAllBonuses(selector);
-		ASSERT_EQ(lowBonuses->size(), 1u);
-		ASSERT_EQ(highBonuses->size(), 1u);
-		EXPECT_LT((*highBonuses)[0]->val, (*lowBonuses)[0]->val);
-		EXPECT_GT((*lowBonuses)[0]->turnsRemain, 2); // Existing Extend Spell applies to the fixed base.
-		EXPECT_GT((*highBonuses)[0]->turnsRemain, (*lowBonuses)[0]->turnsRemain);
-		const auto profile = newHorizonsMetamagic::profile(attackerSideHero);
-		EXPECT_EQ(low->metamagicMarks(BattleSide::ATTACKER), newHorizonsMetamagic::marksAfterResolvedSpell(profile, 0));
-		EXPECT_EQ(high->metamagicMarks(BattleSide::ATTACKER), newHorizonsMetamagic::marksAfterResolvedSpell(profile, 5));
-		EXPECT_EQ(decisionSnapshot(), before); // Cast effects and mark updates stayed on the detached branch.
-	}
 	void prepareEventStatuses()
 	{
 		// The same canonical trigger payloads as the existing physical-projection
@@ -358,14 +270,15 @@ protected:
 			bonus->parameters = std::make_shared<BonusParameters>(parameters);
 			active->addNewBonus(bonus);
 		};
-		JsonNode focus;
-		focus["beneficiarySide"].Integer() = static_cast<int>(BattleSide::ATTACKER);
-		attach(newHorizonsSorcery::FOCUS_MAGIC_SPELL, newHorizonsSorcery::FOCUS_MAGIC_TRIGGER, 2000, focus);
+		const auto focus = SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL));
+		for(const auto & bonus : newHorizonsFocusMagic::enchantment(*active, focus))
+			active->addNewBonus(std::make_shared<Bonus>(bonus));
 		JsonNode pain;
 		pain["casterSide"].Integer() = static_cast<int>(BattleSide::DEFENDER);
 		pain["damageSharePercent"].Integer() = 10;
 		attach("new-horizons:hexOfPain", "core:hexOfPain", 20, pain);
-		ASSERT_EQ(active->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER)->size(), 2u);
+		ASSERT_EQ(active->getBonusesOfType(BonusType::COMBAT_EVENT_TRIGGER)->size(), 1u);
+		ASSERT_EQ(newHorizonsFocusMagic::charges(*active), 3);
 	}
 	std::vector<std::byte> decisionSnapshot()
 	{
@@ -408,8 +321,6 @@ protected:
 		EXPECT_EQ(arrowOvercharges, (std::array<size_t, 3>{2, 2, 2}));
 		for(const auto & action : callback->submitted)
 		{
-			EXPECT_FALSE(action.metamagicFollowup);
-			EXPECT_FALSE(action.metamagicGrand);
 		}
 	}
 	void compare()
@@ -507,15 +418,7 @@ TEST_F(VinesCandidateValueReuseAITest, PerksMovementFocusMagicAndHexOfPainStillR
 	ASSERT_NO_FATAL_FAILURE(compare());
 }
 
-TEST_F(VinesCandidateValueReuseAITest, CurrentRecipientMarksExtendAndLingeringKeepEveryScoreAndReuse)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare(true));
-	ASSERT_NO_FATAL_FAILURE(prepareCurrentMarkedRecipients());
-	ASSERT_NO_FATAL_FAILURE(checkCurrentMarkedProjection());
-	ASSERT_NO_FATAL_FAILURE(compare()); // Same ordered ledger, score bits, choices, state/RNG and positive hits.
-}
-
-TEST_F(VinesCandidateValueReuseAITest, CurrentOrdersMarksExtendAndLingeringKeepEveryScoreAndReuse)
+TEST_F(VinesCandidateValueReuseAITest, CurrentOrdersKeepEveryScoreAndReuse)
 {
 	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
@@ -523,22 +426,14 @@ TEST_F(VinesCandidateValueReuseAITest, CurrentOrdersMarksExtendAndLingeringKeepE
 	ASSERT_TRUE(heroCommands::isRevisedRules(battle()->getHeroCommandRules()));
 	EXPECT_FALSE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::FLANK));
 	EXPECT_FALSE(heroCommands::supportedByRules(battle()->getHeroCommandRules(), HeroCommand::PROTECT));
-	ASSERT_EQ(attackerSideHero->getPerkState().rules["metamagicPolicy"]["version"].Integer(), 2);
 	ASSERT_EQ(battle()->getMagicRules()["rulesetVersion"].Integer(), 3);
-	ASSERT_NO_FATAL_FAILURE(prepareCurrentMarkedRecipients());
-	EXPECT_EQ(newHorizonsMagic::metamagicRank(attackerSideHero), 0);
-	EXPECT_EQ(newHorizonsMagic::metamagicCapacity(attackerSideHero), 0);
-	EXPECT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER));
 	const auto counts = battle()->battleHeroActionAllowanceCounts(BattleSide::ATTACKER);
 	EXPECT_EQ(counts.heroActions, 1u);
 	EXPECT_EQ(counts.spellActions, 0u);
 	EXPECT_EQ(counts.orderActions, 0u);
 	ASSERT_TRUE(newHorizonsMagic::magicArrowOverchargeEnabled(battle()->getMagicRules(), SpellID::MAGIC_ARROW));
-	ASSERT_NO_FATAL_FAILURE(checkCurrentMarkedProjection());
 	// Same observer, every ordered candidate/float bit, action, full state/BOTH RNG and positive reuse oracle.
 	ASSERT_NO_FATAL_FAILURE(compare());
-	RecordProperty("PolicyVersions", "Orders4/Metamagic2/Magic3");
-	RecordProperty("FixtureScope", "Authored current-rules mechanism; direct Expert Metamagic, not fresh hero acquisition");
 }
 
 TEST_F(VinesCandidateValueReuseAITest, ShippingConsumerWallSamplesKeepDecisionStateAndRng)

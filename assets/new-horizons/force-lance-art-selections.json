@@ -1,0 +1,123 @@
+{
+  "format": 1,
+  "status": "selected provisional runtime; not Final; rendered acceptance pending",
+  "origin": "owner-supplied provisional four-pose Force Lance artwork",
+  "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+  "baselineArchiveSha256": "8e9a5bf68359a797bffd096e35df3864f7b86e6199b13c40763fc5f41f349989",
+  "newArchiveSha256": "3f245c02a3dd07f01a2832d324d6a8eeb426959441eb6adc9016ee4020d46bc3",
+  "baselineSelectedCount": 6252,
+  "selectedCount": 6259,
+  "unchangedBaselinePayloads": 6252,
+  "nativeCanvas": [
+    160,
+    160
+  ],
+  "nativeTipAnchor": [
+    110,
+    138
+  ],
+  "mirroredTipAnchor": [
+    49,
+    138
+  ],
+  "descriptors": {
+    "newHorizons/forceLance/strikeImpact": {
+      "group": 0,
+      "frames": [
+        "strike",
+        "strike",
+        "impact",
+        "impact"
+      ],
+      "timing": "ordinary spell-effect playback speed; four key-state frames, not smooth finished animation"
+    },
+    "newHorizons/forceLance/hold": {
+      "group": 0,
+      "frames": [
+        "hold"
+      ],
+      "lifecycle": "state-derived nonblocking presentation; no turn-long EffectAnimation wait"
+    },
+    "newHorizons/forceLance/release": {
+      "group": 0,
+      "frames": [
+        "release"
+      ],
+      "lifecycle": "transient removal cue; no gameplay duration encoded"
+    }
+  },
+  "entries": [
+    {
+      "resource": "SPRITES/newHorizons/forceLance/strike.png",
+      "source": "Mods/new-horizons/Images/newHorizons/forceLance/strike.png",
+      "size": 6570,
+      "sha256": "8f41a9bf3b5f98f1e02e749bb2f90104bf26248a696e99c9b972fb73daa2566c",
+      "family": "force-lance-provisional-effects",
+      "origin": "owner-supplied provisional Force Lance artwork",
+      "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+      "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    },
+    {
+      "resource": "SPRITES/newHorizons/forceLance/impact.png",
+      "source": "Mods/new-horizons/Images/newHorizons/forceLance/impact.png",
+      "size": 7298,
+      "sha256": "f3daa8e1a5b9e84ac73567a43bb349adb875cd29aa1a89e6a9cba896e9581cc0",
+      "family": "force-lance-provisional-effects",
+      "origin": "owner-supplied provisional Force Lance artwork",
+      "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+      "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    },
+    {
+      "resource": "SPRITES/newHorizons/forceLance/hold.png",
+      "source": "Mods/new-horizons/Images/newHorizons/forceLance/hold.png",
+      "size": 6433,
+      "sha256": "4cb9e1126af15d77f91476cfbe701601d3300fcb4b6209af7fcd0e675cecd233",
+      "family": "force-lance-provisional-effects",
+      "origin": "owner-supplied provisional Force Lance artwork",
+      "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+      "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    },
+    {
+      "resource": "SPRITES/newHorizons/forceLance/release.png",
+      "source": "Mods/new-horizons/Images/newHorizons/forceLance/release.png",
+      "size": 4262,
+      "sha256": "a54147e63343caea44b933081976b6191b06033e952b8dc23104aa130f73dcde",
+      "family": "force-lance-provisional-effects",
+      "origin": "owner-supplied provisional Force Lance artwork",
+      "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+      "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    },
+    {
+      "resource": "SPRITES/newHorizons/forceLance/strikeImpact.json",
+      "source": "Mods/new-horizons/Images/newHorizons/forceLance/strikeImpact.json",
+      "size": 417,
+      "sha256": "8aa3fe80d64a28151eb3721c74d284ffc7c40a3594049e76eccdb5990ae02a60",
+      "family": "force-lance-provisional-effects",
+      "origin": "owner-supplied provisional Force Lance artwork; authored runtime descriptor",
+      "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+      "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    },
+    {
+      "resource": "SPRITES/newHorizons/forceLance/hold.json",
+      "source": "Mods/new-horizons/Images/newHorizons/forceLance/hold.json",
+      "size": 118,
+      "sha256": "d3d3249fbc75494c7a716510ab4dd8e97f4a0990af6e3fe30b3a68ff1e2f447c",
+      "family": "force-lance-provisional-effects",
+      "origin": "owner-supplied provisional Force Lance artwork; authored runtime descriptor",
+      "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+      "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    },
+    {
+      "resource": "SPRITES/newHorizons/forceLance/release.json",
+      "source": "Mods/new-horizons/Images/newHorizons/forceLance/release.json",
+      "size": 121,
+      "sha256": "22e39f6b1260f1fe0e8ba099c8e34a56e6cbe90abff05945c0ae113eccbdd17d",
+      "family": "force-lance-provisional-effects",
+      "origin": "owner-supplied provisional Force Lance artwork; authored runtime descriptor",
+      "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
+      "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    }
+  ],
+  "approval": "Provisional; not Final; rendered acceptance and playable delivery pending",
+  "rights": "Selection does not grant additional third-party rights or waive existing attribution and license obligations."
+}

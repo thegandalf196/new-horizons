@@ -22,19 +22,19 @@ struct SkillOfferPools
 SkillOfferPools eligibleSkillOffers(const CGHeroInstance * hero, bool canonical, const IGameInfoCallback & gameInfo)
 {
 	SkillOfferPools result;
-	const auto & rules = hero->getPrimaryGrowthRules();
-	const auto ownFaction = newHorizonsHeroes::factionSkill(rules, hero->getFactionID());
+	const auto * rules = hero->compiledDevelopment();
+	const auto ownFaction = rules->factionSkill(hero->getFactionID());
 	const auto ownEntry = ownFaction ? std::ranges::find_if(hero->secSkills, [&](const auto & entry)
 	{
-		return newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), entry.first);
+		return rules->isFactionSkillForFaction(hero->getFactionID(), entry.first);
 	}) : hero->secSkills.end();
 	const auto eligible = [&](SecondarySkill skill)
 	{
-		if(canonical && (newHorizonsHeroes::isExcludedSkill(rules, skill)
-			|| newHorizonsHeroes::skillOfferWeight(rules, skill).value_or(0) <= 0)) return false;
-		if(newHorizonsHeroes::isFactionSkill(rules, skill)
-			&& (!ownFaction || !newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill))) return false;
-		if(!newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules)) return true;
+		if(canonical && (rules->isExcludedSkill(skill)
+			|| rules->skillOfferWeight(skill).value_or(0) <= 0)) return false;
+		if(rules->isFactionSkill(skill)
+			&& (!ownFaction || !rules->isFactionSkillForFaction(hero->getFactionID(), skill))) return false;
+		if(!newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules())) return true;
 		const auto * definition = LIBRARY->skillh->getById(skill);
 		return definition && hero->getPerkState().canAdvanceSkillNormally(
 			definition->getJsonKey(), hero->getSecSkillLevel(skill));
@@ -48,7 +48,7 @@ SkillOfferPools eligibleSkillOffers(const CGHeroInstance * hero, bool canonical,
 	for(const auto & [skill, rank] : hero->secSkills)
 	{
 		const bool duplicateFaction = ownEntry != hero->secSkills.end()
-			&& newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill)
+			&& rules->isFactionSkillForFaction(hero->getFactionID(), skill)
 			&& skill != ownEntry->first;
 		if(rank < MasteryLevel::EXPERT && eligible(skill) && !duplicateFaction) result.upgrades.insert(skill);
 		result.newSkills.erase(skill);
@@ -93,7 +93,7 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 
 	auto & heroRng = heroSkillSeed.at(hero->getHeroTypeID());
 
-	const bool canonicalSkillOffers = newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules());
+	const bool canonicalSkillOffers = hero->compiledDevelopment()->usesSkillOfferWeights();
 	const SecondarySkill canonicalWisdom(SecondarySkill::decode("new-horizons:wisdom"));
 	auto getObligatorySkills = [&options, canonicalWisdom](bool magicSchools)
 	{
@@ -120,8 +120,8 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 		// skill (or a zero-weight table entry) through a hand-built option set.
 		vstd::erase_if(actualCandidates, [hero](SecondarySkill skill)
 		{
-			return newHorizonsHeroes::isExcludedSkill(hero->getPrimaryGrowthRules(), skill)
-				|| newHorizonsHeroes::skillOfferWeight(hero->getPrimaryGrowthRules(), skill).value_or(0) <= 0;
+			return hero->compiledDevelopment()->isExcludedSkill(skill)
+				|| hero->compiledDevelopment()->skillOfferWeight(skill).value_or(0) <= 0;
 		});
 	}
 	else
@@ -152,8 +152,7 @@ SecondarySkill GameRandomizer::rollSecondarySkillForLevelup(const CGHeroInstance
 		{
 			// Canonical tables are authoritative. A missing entry remains zero
 			// instead of reviving a retired skill through legacy probabilities.
-			weights.push_back(newHorizonsHeroes::skillOfferWeight(
-				hero->getPrimaryGrowthRules(), possible).value_or(0));
+			weights.push_back(hero->compiledDevelopment()->skillOfferWeight(possible).value_or(0));
 		}
 		else if(hero->getHeroClass()->secSkillProbability.count(possible) != 0)
 		{
@@ -182,7 +181,7 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 	if(!heroSkillSeed.count(hero->getHeroTypeID()))
 		heroSkillSeed.try_emplace(hero->getHeroTypeID(), getDefault().nextInt());
 	auto & heroRng = heroSkillSeed.at(hero->getHeroTypeID());
-	const bool canonical = newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules());
+	const bool canonical = hero->compiledDevelopment()->usesSkillOfferWeights();
 	if(!canonical)
 	{
 		++heroRng.magicSchoolCounter;
@@ -190,7 +189,7 @@ std::vector<SecondarySkill> GameRandomizer::rollSecondarySkills(const CGHeroInst
 	}
 	auto pools = eligibleSkillOffers(hero, canonical, gameInfo);
 	const int maximum = hero->cb->getSettings().getInteger(EGameSettings::LEVEL_UP_TOTAL_SKILLS_AMOUNT);
-	if(newHorizonsHeroes::usesSplitSkillOffers(hero->getPrimaryGrowthRules()))
+	if(hero->compiledDevelopment()->usesSplitSkillOffers())
 		return newHorizonsHeroes::splitSkillOffers(std::move(pools.upgrades), std::move(pools.newSkills), maximum,
 			[this, hero](const auto & options) { return rollSecondarySkillForLevelup(hero, options); });
 	std::vector<SecondarySkill> result;

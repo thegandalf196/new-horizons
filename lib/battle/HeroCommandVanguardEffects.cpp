@@ -36,7 +36,7 @@ void appendVanguardGrants(IssuedOrderGrants & result, const CBattleInfoCallback 
 		IssuedOrderGrants::Batch additions;
 		for(const auto * unit : battle.battleGetAllUnits(false))
 		{
-			if(!unit || unit->isTimeStopped() || battle.battleGetOwner(unit) != battle.sideToPlayer(side))
+			if(!unit || battle.battleGetOwner(unit) != battle.sideToPlayer(side))
 				continue;
 			std::vector<Bonus> obsolete;
 			const auto oldBonuses = unit->getBonuses(CSelector(isVanguardBonus));

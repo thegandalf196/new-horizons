@@ -138,25 +138,6 @@ public:
 
 	}
 
-	void showAll(Canvas & to) override
-	{
-		to.drawColor(pos, ColorRGBA(28, 20, 15, 255));
-		if(selected)
-		{
-			to.drawBorder(pos, Colors::BRIGHT_YELLOW);
-			to.drawBorder(Rect(pos.x + 1, pos.y + 1, pos.w - 2, pos.h - 2), ColorRGBA(255, 215, 0, 255));
-		}
-		else
-		{
-			to.drawBorder(pos, ColorRGBA(140, 105, 45, 255));
-		}
-		if(image)
-		{
-			to.drawBorder(Rect(image->pos.x - 1, image->pos.y - 1, image->pos.w + 2, image->pos.h + 2),
-				ColorRGBA(180, 140, 50, 255));
-		}
-		CIntObject::showAll(to);
-	}
 };
 }
 

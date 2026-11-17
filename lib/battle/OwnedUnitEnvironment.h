@@ -33,19 +33,12 @@ public:
 		/// Opaque engine-only canonical unit-query dependency owner. Its presence
 		/// grants no Hero metadata or source/capture authority; no public getters.
 		std::shared_ptr<const OwnedUnitEnvironmentPolicy> enginePolicy;
-		struct LegacyTimeStopIdentity
-		{
-			std::optional<SpellID> canonical; // Engaged domain + absent identity means canonical definition is known absent.
-			std::map<SpellID, bool> classified; // Exact admitted IDs only; never a boolean snapshot of current stasis.
-		};
-		std::optional<LegacyTimeStopIdentity> legacyTimeStop; // Disengaged is UNBOUND, never absent/false.
 	};
 	/// References must point to independently owned units, never alias live nodes.
 	/// This pure constructor is not proof of capture authority or source independence.
 	OwnedUnitEnvironment(std::vector<std::shared_ptr<const Unit>> units, Facts facts);
 	~OwnedUnitEnvironment();
 	ProjectedUnitEnvironmentState::SideState & state(BattleSide side);
-	std::optional<bool> unitLegacyTimeStopSpellMatch(const Unit * unit, SpellID spell) const override;
 	bool unitHasAmmoCart(const Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const Unit * unit) const override;
 	std::optional<int> unitMagicResistance(const Unit * unit) const override;

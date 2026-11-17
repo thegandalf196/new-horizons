@@ -20,7 +20,7 @@ constexpr std::array<const char *, 10> PERKS = {"massedRanks", "veteranCadre", "
 
 int64_t baseLeadership(const CGHeroInstance & hero, int64_t flat)
 {
-	const int64_t natural = std::max(0, capabilityLeadershipRating(hero.getCapabilityRules(), hero.level));
+	const int64_t natural = std::max(0, hero.compiledLeadership()->rating(hero.level));
 	if(flat > std::numeric_limits<int64_t>::max() - natural) return std::numeric_limits<int64_t>::max();
 	return std::max<int64_t>(0, natural + flat);
 }
@@ -28,9 +28,8 @@ int64_t baseLeadership(const CGHeroInstance & hero, int64_t flat)
 int authorityPercent(const CGHeroInstance & hero, CreatureID creature,
 	const LeadershipModifiers & modifiers, const LeadershipComposition & composition)
 {
-	const auto & policy = hero.getCapabilityRules()["leadership"]["efficiencyPolicy"];
-	int result = static_cast<int>(policy["authorityRankBonusPercent"].Vector().at(
-		std::clamp(modifiers.authorityRank, 0, 3)).Integer());
+	const auto & policy = *hero.compiledLeadership();
+	int result = policy.authorityRankBonus(modifiers.authorityRank);
 	if(std::all_of(modifiers.authorityPerks.begin(), modifiers.authorityPerks.end(),
 		[](const auto & perk) { return perk.empty(); })) return result;
 	const auto * definition = creature.toCreature();
@@ -47,23 +46,20 @@ int authorityPercent(const CGHeroInstance & hero, CreatureID creature,
 	{
 		const size_t tier = index < 4 ? 0 : (index < 8 ? 1 : 2);
 		if(eligible[index] && modifiers.authorityPerks[tier] == PERKS[index])
-			result += static_cast<int>(policy["authorityPerkBonusPercent"][PERKS[index]].Integer());
+			result += policy.authorityPerkBonus(PERKS[index]);
 	}
 	return result;
 }
 
 int64_t requirement(const CGHeroInstance & hero, CreatureID creature, const LeadershipModifiers & modifiers)
 {
-	const int base = capabilityCreatureLeadershipRequirement(hero.getCapabilityRules(), creature);
+	const int base = hero.compiledLeadership()->requirement(creature);
 	if(base <= 0) throw std::runtime_error("Missing captured creature Leadership Requirement");
 	if(modifiers.necromancyRank <= 0 && !modifiers.lordOfTheDead) return base;
 	if(!newHorizonsNecromancy::isSkeletonFamily(creature)) return base;
-	// Captured policy was validated at initialization/load; damage queries read
-	// only the relevant scalar instead of parsing every unrelated passive again.
-	const auto & policy = hero.getPerkState().rules[newHorizonsNecromancy::POLICY_KEY];
-	if(policy["version"].Integer() < 4) return base;
-	const int discount = static_cast<int>(modifiers.lordOfTheDead ? policy["lordOfTheDeadLeadershipReductionPercent"].Integer()
-		: policy["skeletonLeadershipReductionPercent"].Vector().at(std::clamp(modifiers.necromancyRank, 0, 3)).Integer());
+	const auto owner = hero.getPerkState().capturedOwner();
+	const int discount = owner ? owner->leadershipDiscounts().discountPercent(
+		modifiers.necromancyRank, modifiers.lordOfTheDead) : 0;
 	return newHorizonsNecromancy::discountedLeadershipRequirement(base, discount);
 }
 }
@@ -82,7 +78,7 @@ LeadershipModifiers captureLeadershipModifiers(const CGHeroInstance & hero)
 	result.authorityRank = hero.getPerkSkillRank(AUTHORITY);
 	result.necromancyRank = hero.getPerkSkillRank("new-horizons:necromancy");
 	result.lordOfTheDead = hero.hasActivePerk("new-horizons:necromancy", "new-horizons:necromancy.lordOfTheDead");
-	for(const auto & selection : hero.getPerkState().selected)
+	for(const auto & selection : hero.getPerkState().getSelected())
 	{
 		if(selection.skillId != AUTHORITY || !hero.hasActivePerk(selection.skillId, selection.perkId)) continue;
 		const std::string_view full = selection.perkId;
@@ -98,11 +94,10 @@ LeadershipModifiers captureLeadershipModifiers(const CGHeroInstance & hero)
 LeadershipHeroReadout leadershipHeroReadout(const CGHeroInstance & hero)
 {
 	LeadershipHeroReadout result;
-	const auto & rules = hero.getCapabilityRules();
-	if(!usesLeadershipEfficiency(rules)) return result;
+	const auto * rules = hero.compiledLeadership();
+	if(!rules || !rules->usesEfficiency()) return result;
 	result.baseLeadership = baseLeadership(hero, hero.valOfBonuses(BonusType::LEADERSHIP));
-	result.authorityBonusPercent = static_cast<int>(rules["leadership"]["efficiencyPolicy"]
-		["authorityRankBonusPercent"].Vector().at(std::clamp(hero.getPerkSkillRank(AUTHORITY), 0, 3)).Integer());
+	result.authorityBonusPercent = rules->authorityRankBonus(hero.getPerkSkillRank(AUTHORITY));
 	result.effectiveLeadership = leadershipWithBonusPercent(result.baseLeadership, result.authorityBonusPercent);
 	return result;
 }
@@ -128,7 +123,7 @@ LeadershipStackReadout leadershipStackReadout(const CGHeroInstance * hero, Creat
 	result.count = std::max<int64_t>(0, count);
 	result.capacity = std::numeric_limits<int64_t>::max();
 	if(!hero || !creature.hasValue() || !creature.toCreature()
-		|| !usesLeadershipEfficiency(hero->getCapabilityRules())) return result;
+		|| (!hero->compiledLeadership() || !hero->compiledLeadership()->usesEfficiency())) return result;
 	if(creature == CreatureID(CreatureID::ARROW_TOWERS)
 		|| creature.toCreature()->hasBonusOfType(BonusType::SIEGE_WEAPON)) return result;
 	result.active = true;

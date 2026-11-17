@@ -21,7 +21,7 @@ ResourceSet CGHeroInstance::dailyIncome() const
 	for (GameResID k : LIBRARY->resourceTypeHandler->getAllObjects())
 		income[k] += valOfBonuses(BonusType::GENERATE_RESOURCE, BonusSubtypeID(k));
 
-	if(!newHorizonsEstates::usesRevisedPolicy(getPerkState().rules)
+	if(!newHorizonsEstates::usesRevisedPolicy(getPerkState().getRules())
 		&& hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"))
 	{
 		static constexpr int goldPerTown = 100;
@@ -34,13 +34,13 @@ ResourceSet CGHeroInstance::dailyIncome() const
 			income[EGameResID::GOLD] += static_cast<int>(townsForThisPerk) * goldPerTown;
 		}
 	}
-	if(!newHorizonsEstates::usesRevisedPolicy(getPerkState().rules)
+	if(!newHorizonsEstates::usesRevisedPolicy(getPerkState().getRules())
 		&& hasActivePerk("new-horizons:estates", "new-horizons:estates.prosperity"))
 	{
 		++income[EGameResID::WOOD];
 		++income[EGameResID::ORE];
 	}
-	if(!newHorizonsEstates::usesRevisedPolicy(getPerkState().rules)
+	if(!newHorizonsEstates::usesRevisedPolicy(getPerkState().getRules())
 		&& hasActivePerk("new-horizons:estates", "new-horizons:estates.alchemist"))
 		for(const auto resource : {EGameResID::MERCURY, EGameResID::SULFUR, EGameResID::CRYSTAL, EGameResID::GEMS})
 			++income[resource];

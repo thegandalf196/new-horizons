@@ -15,7 +15,7 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 
 std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadershipCapacity(const CCreatureSet & army) const
 {
-	const JsonNode * rules = &capabilityRules;
+	const JsonNode * rules = &capabilityRules.document();
 	JsonNode resolvedFallback;
 	if(newHorizonsHeroes::usesLeadershipEfficiency(*rules))
 		return newHorizonsHeroes::LeadershipCapacity{
@@ -32,7 +32,8 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 	if((*rules)["rulesetVersion"].Integer() >= 2)
 		return newHorizonsHeroes::LeadershipCapacity{
 			newHorizonsCommand::effectiveLeadership(*this,
-				static_cast<int64_t>(newHorizonsHeroes::capabilityLeadershipRating(*rules, level)) + trainedLeadership), 0, 100};
+				static_cast<int64_t>((rules == &capabilityRules.document() && compiledLeadership()
+					? compiledLeadership()->rating(level) : newHorizonsHeroes::capabilityLeadershipRating(*rules, level))) + trainedLeadership), 0, 100};
 	uint64_t used = 0;
 	// Version 1 counts adventure army creatures, including undead, one per unit.
 	// Commanders and artifact machines are not roster slots; battle-only arrivals
@@ -43,8 +44,9 @@ std::optional<newHorizonsHeroes::LeadershipCapacity> CGHeroInstance::getLeadersh
 			throw std::runtime_error("Leadership requires resolved adventure army counts");
 		used += static_cast<uint64_t>(stack->getCount());
 	}
-	auto result = newHorizonsHeroes::capabilityLeadership(*rules, level,
-		getSecSkillLevel(SecondarySkill::LEADERSHIP), used);
+	auto result = rules == &capabilityRules.document() && compiledLeadership()
+		? compiledLeadership()->aggregate(level, getSecSkillLevel(SecondarySkill::LEADERSHIP), used)
+		: newHorizonsHeroes::capabilityLeadership(*rules, level, getSecSkillLevel(SecondarySkill::LEADERSHIP), used);
 	result.capacity = newHorizonsCommand::effectiveLeadership(*this, result.capacity + trainedLeadership);
 	return result;
 }

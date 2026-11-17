@@ -30,7 +30,6 @@ std::optional<std::vector<uint32_t>> projectAutomaticPurifyEffects(HypotheticBat
 /// The caller retains canonical-spell/positive-value admission and terminal routing.
 void projectPurifySelection(PossibleSpellcast & ps, HypotheticBattle & state,
 	const CGHeroInstance * hero, BattleSide side, const float & baseline,
-	const HypotheticBattle::ProjectedCounterspellOutcome & counterspell, bool counterspellNegated,
 	const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
 	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t targetId);
 }

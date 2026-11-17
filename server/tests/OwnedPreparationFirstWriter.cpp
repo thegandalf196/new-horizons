@@ -96,7 +96,7 @@ Observation capture(GameConnection & connection, const std::shared_ptr<CGameStat
 		require(hero != nullptr, "First-writer observation found an unresolved map hero");
 		heroes[std::to_string(id.getNum())] = coefficients(hero->getPrimaryGrowthRules(), bonusProfile);
 		if(epoch == ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY)
-			result.values["quickStudy"]["heroes"][std::to_string(id.getNum())] = hero->getPerkState().rules["quickStudyPolicy"];
+			result.values["quickStudy"]["heroes"][std::to_string(id.getNum())] = hero->getPerkState().getRules()["quickStudyPolicy"];
 	}
 	require(!heroes.empty(), "First-writer observation requires independently initialized heroes");
 	return result;

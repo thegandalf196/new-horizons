@@ -86,8 +86,36 @@ def verify_rank_transition_wiring() -> None:
     assert [ranks[(current + 1) - 1] for current in range(3)] == list(ranks)
 
 
+def verify_four_offer_presentation() -> None:
+    require(FOUR_CHOICES, "const int x = slot % 2 == 0 ? 44 : 344;", "original offer columns")
+    require(FOUR_CHOICES, "const int y = slot < 2 ? 286 : 384;", "Skills above perks")
+    require(FOUR_CHOICES, 'currentName + " -> " + nextName', "font-safe rank transition")
+    assert "→" not in FOUR_CHOICES
+    assert "TransparentFilledRectangle" not in FOUR_CHOICES
+    assert "canvas.drawColor" not in FOUR_CHOICES and "canvas.drawBorder" not in FOUR_CHOICES
+    # The common component retains native icon-only selection feedback.
+    require(COMPONENT, "Rect::createAround(image->pos, 1), Colors::BRIGHT_YELLOW", "icon selection border")
+    assets = (ROOT / "client/render/AssetGenerator.cpp").read_text(encoding="utf-8")
+    _, _, background = braced_block(assets, "AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground()")
+    assert "recessed(" not in background
+    assert "drawBorder" not in background
+
+
+def verify_single_perk_confirmation() -> None:
+    actions = (ROOT / "client/windows/CFourOfferLevelActions.cpp").read_text(encoding="utf-8")
+    _, _, confirm = braced_block(actions, "void CFourOfferLevelWindow::confirmSelection()")
+    require(confirm, "if(waiting || resolved)", "pending request guard")
+    require(confirm, "if(!selectedPerk)", "explicit perk selection")
+    require(confirm, "submitReply(perkReply(*openGroup, *selectedPerk));", "one-checkmark final submission")
+    assert "perkChoiceBlocksTierCompletion" not in confirm and "Confirm again" not in confirm
+    _, _, submit = braced_block(actions, "void CFourOfferLevelWindow::submitReply(int reply)")
+    assert submit.index("waiting = true;") < submit.index("submit(reply)")
+
+
 def main() -> None:
     verify_rank_transition_wiring()
+    verify_four_offer_presentation()
+    verify_single_perk_confirmation()
     print("New Horizons offered-rank and parent-Skill source wiring passed (not rendered acceptance)")
 
 

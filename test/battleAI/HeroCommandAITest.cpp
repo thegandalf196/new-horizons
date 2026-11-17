@@ -175,10 +175,6 @@ protected:
 			callback->submitted.clear();
 		}
 		active->pursuitMovementRemaining = 2;
-		if(stopped)
-			active->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-				BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-		ASSERT_EQ(active->isTimeStopped(), stopped);
 		for(const auto * unit : battle()->battleGetAllStacks(false))
 			(void)unit->counterAttacks.available();
 		const auto world = gameState()->saveToMemory();
@@ -787,8 +783,8 @@ TEST_F(CanonicalOrderAITest, CounterchargeImprovesBraceWhileChargeHasHigherExcha
 	// RecordingCommandCallback only records the proposed action: neither trial
 	// submits to simulation authority until executeChosen below.
 	const auto before = legacyOrderTest::snapshot(context, *view);
-	const auto capturedRules = attackerSideHero->getPerkState().rules;
-	const auto selectedBefore = attackerSideHero->getPerkState().selected.size();
+	const auto capturedRules = attackerSideHero->getPerkState().getRules();
+	const auto selectedBefore = attackerSideHero->getPerkState().getSelected().size();
 	ASSERT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(50, attackerSideHero), 50);
 	ASSERT_TRUE(evaluate(withoutCountercharge));
 	ASSERT_NE(withoutCountercharge.charge, std::numeric_limits<float>::lowest());
@@ -800,8 +796,8 @@ TEST_F(CanonicalOrderAITest, CounterchargeImprovesBraceWhileChargeHasHigherExcha
 	callback->submitted.clear();
 	attackerSideHero->applyPerkSelection({"new-horizons:armorer", "new-horizons:armorer.countercharge"});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:armorer", "new-horizons:armorer.countercharge"));
-	EXPECT_EQ(attackerSideHero->getPerkState().rules, capturedRules);
-	EXPECT_EQ(attackerSideHero->getPerkState().selected.size(), selectedBefore + 1);
+	EXPECT_EQ(attackerSideHero->getPerkState().getRules(), capturedRules);
+	EXPECT_EQ(attackerSideHero->getPerkState().getSelected().size(), selectedBefore + 1);
 	ASSERT_EQ(newHorizonsCombatSkills::bracePreemptivePercent(50, attackerSideHero), 75);
 	const bool chosen = evaluate(values);
 	ASSERT_NE(values.charge, std::numeric_limits<float>::lowest());
@@ -1153,19 +1149,9 @@ TEST_F(HeroCommandAITest, ConstrainedPursuitRetainsMovementOnlyFallbackWithoutHe
 	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(false));
 }
 
-TEST_F(HeroCommandAITest, ConstrainedTimeStopPrecedesExistingPursuitAndRetainsPhysicalSidePass)
-{
-	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(true));
-}
-
 TEST_F(HeroCommandAITest, ConstrainedPursuitChecksSpentHeroAllowanceBeforeMovementFallback)
 {
 	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(false, true));
-}
-
-TEST_F(HeroCommandAITest, ConstrainedTimeStopChecksSpentHeroAllowanceBeforePassing)
-{
-	ASSERT_NO_FATAL_FAILURE(characterizeConstrainedFallback(true, true));
 }
 
 // Exercise the actual optional-Hero gate in CBattleAI, rather than calling the evaluator directly.
@@ -1216,10 +1202,6 @@ protected:
 		ASSERT_EQ(attackerSideHero->getEffectPowerDivisor(spell), divisor);
 		ASSERT_EQ(attackerSideHero->getEffectPower(spell) / divisor, 99);
 
-		if(stopped)
-			active->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-				BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-		else
 		{
 			// Earn the movement tail through the authoritative kill path; never assign its allowance.
 			CStack * bait = nullptr;
@@ -1238,7 +1220,6 @@ protected:
 			ASSERT_TRUE(!survivor || !survivor->alive());
 			ASSERT_GT(active->pursuitMovementRemaining, 0);
 		}
-		ASSERT_EQ(active->isTimeStopped(), stopped);
 		ASSERT_EQ(battle()->battleActiveUnit()->unitId(), active->unitId());
 		ASSERT_EQ(active->getCount(), 100);
 		ASSERT_EQ(enemy->getCount(), 100);
@@ -1296,11 +1277,6 @@ protected:
 		}
 	}
 };
-
-TEST_F(ConstrainedHeroActionAITest, TimeStopSubmitsBeneficialSpellBeforePhysicalPass)
-{
-	ASSERT_NO_FATAL_FAILURE(characterizePositiveHeroAction(true));
-}
 
 TEST_F(ConstrainedHeroActionAITest, EarnedPursuitSubmitsBeneficialSpellBeforeMovement)
 {
@@ -1687,7 +1663,6 @@ TEST_F(CurrentOrderCallbackAITest, DISABLED_CurrentRangedWholeCallbackWall)
 	ASSERT_FALSE(battle()->battleHasPendingPreCombatOrder(BattleSide::ATTACKER));
 	ASSERT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
 	ASSERT_FALSE(battle()->getCrisisCommandState().choice());
-	ASSERT_FALSE(active->isTimeStopped());
 	ASSERT_EQ(active->pursuitMovementRemaining, 0);
 	const auto before = unchangedState();
 	const auto startedActions = server.startedActions.size();

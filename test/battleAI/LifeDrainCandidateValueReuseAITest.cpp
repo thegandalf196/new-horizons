@@ -13,7 +13,6 @@
 #include "../../lib/GameSettings.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/ArcaneInspiration.h"
-#include "../../lib/networkPacks/SetMetamagicPointState.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -21,7 +20,6 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsShadowMagnitudes.h"
-#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/NewHorizonsSpellcraft.h"
 #include "../../lib/battle/NewHorizonsElementalAttunement.h"
 #include <bit>
@@ -93,7 +91,7 @@ class LifeDrainCandidateValueReuseAITest : public HeroCommandFixture
 protected:
 	bool addLightSchool = false;
 	bool completedLedgers = false;
-	bool currentPointFixture = false;
+	bool passiveMetamagicFixture = false;
 	CStack * active = nullptr;
 	CStack * fullFriend = nullptr;
 	CStack * woundedFriend = nullptr;
@@ -123,7 +121,7 @@ protected:
 	void prepare(bool withPerkAndFrozen)
 	{
 		startGame();
-		if(currentPointFixture)
+		if(passiveMetamagicFixture)
 		{
 			attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:aine")));
 			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
@@ -191,43 +189,6 @@ protected:
 			ASSERT_TRUE(newHorizonsFrozen::isFrozen(*enemy));
 		}
 		finishSetup();
-	}
-	void setMarks(CStack * stack, int own, int opposing)
-	{
-		auto state = stack->acquireState();
-		state->arcaneMarks.set(BattleSide::ATTACKER, own);
-		state->arcaneMarks.set(BattleSide::DEFENDER, opposing);
-		UnitChanges change(stack->unitId(), UnitChanges::EOperation::UPDATE);
-		change.data = state->save();
-		BattleUnitsChanged packet;
-		packet.battleID = BattleID(0);
-		packet.changedStacks.push_back(std::move(change));
-		gameHandler->sendAndApply(packet);
-	}
-	void enableCurrentPoints(int points, int first, int second)
-	{
-		const auto profile = newHorizonsMetamagic::profile(attackerSideHero);
-		ASSERT_TRUE(newHorizonsMetamagic::usesPoints(attackerSideHero->getPerkState().rules));
-		ASSERT_FALSE(newHorizonsMetamagic::usesArcaneMarks(attackerSideHero->getPerkState().rules));
-		ASSERT_TRUE(profile.pointPolicy);
-		ASSERT_EQ(profile.rank, 3);
-		ASSERT_FALSE(profile.arcaneCatalyst);
-		ASSERT_FALSE(profile.arcaneAttunement);
-		ASSERT_FALSE(profile.arcaneShield);
-		ASSERT_EQ(profile.adeptAdditionalPoints, 0);
-		SetMetamagicPointState update;
-		update.battleID = BattleID(0); update.side = BattleSide::ATTACKER;
-		update.round = battle()->getRound();
-		update.state = battle()->getMetamagicPointState(BattleSide::ATTACKER);
-		ASSERT_LE(update.state.points, points);
-		update.state.points = points;
-		gameHandler->sendAndApply(update);
-		ASSERT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER).points, points);
-		// Serialized unit counters are inert under the current hero-point policy.
-		ASSERT_NO_FATAL_FAILURE(setMarks(active, first, 4));
-		ASSERT_NO_FATAL_FAILURE(setMarks(fullFriend, second, 0));
-		ASSERT_NO_FATAL_FAILURE(setMarks(woundedFriend, 5, 3));
-		ASSERT_NO_FATAL_FAILURE(setMarks(enemy, 0, 5));
 	}
 	void finishSetup()
 	{
@@ -598,7 +559,8 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CompletedFormulaResponseAndInspiratio
 	const auto inspirationWire = [](const battle::Unit & unit)
 	{
 		std::vector<Bonus> records;
-		for(const auto & bonus : *unit.getBonuses(CSelector(arcaneInspiration::isEffect))) records.push_back(*bonus);
+		const auto bonuses = unit.getBonuses(CSelector(arcaneInspiration::isEffect));
+		for(const auto & bonus : *bonuses) records.push_back(*bonus);
 		return projectedHitTest::serialized(records);
 	};
 	for(const auto * source : {active, fullFriend})
@@ -632,11 +594,10 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CompletedFormulaResponseAndInspiratio
 	ASSERT_NO_FATAL_FAILURE(compare(false)); // Every full friendly endpoint receives completion effects.
 }
 
-TEST_F(LifeDrainCandidateValueReuseAITest, CurrentHeroPointsPreserveFullFriendReceiptsDespiteDormantUnitMarks)
+TEST_F(LifeDrainCandidateValueReuseAITest, PassiveMetamagicPreservesFullFriendReceiptsAndSourceIsolation)
 {
-	currentPointFixture = true;
+	passiveMetamagicFixture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(false));
-	ASSERT_NO_FATAL_FAILURE(enableCurrentPoints(4, 0, 4));
 	const auto before = snapshot();
 	for(const auto * friendly : {active, fullFriend})
 	{
@@ -647,20 +608,16 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CurrentHeroPointsPreserveFullFriendRe
 		const auto * after = child.battleGetUnitByID(friendly->unitId());
 		ASSERT_NE(after, nullptr);
 		EXPECT_EQ(after->getAvailableHealth(), friendly->getAvailableHealth());
-		EXPECT_EQ(after->metamagicMarks(BattleSide::ATTACKER), friendly->metamagicMarks(BattleSide::ATTACKER));
-		EXPECT_EQ(after->metamagicMarks(BattleSide::DEFENDER), friendly->metamagicMarks(BattleSide::DEFENDER));
 		EXPECT_EQ(after->acquireState()->save(), friendly->acquireState()->save());
-		EXPECT_EQ(child.getMetamagicPointState(BattleSide::ATTACKER).points, 4);
 	}
 	EXPECT_EQ(snapshot(), before);
 	ASSERT_NO_FATAL_FAILURE(compare()); // Full recipients remain equivalent; wounded recipient still heals.
 }
 
-TEST_F(LifeDrainCandidateValueReuseAITest, CurrentMaximumHeroPointsKeepFullStateAndPositiveHitParity)
+TEST_F(LifeDrainCandidateValueReuseAITest, PassiveMetamagicKeepsFrozenPositiveHitAndReuseParity)
 {
-	currentPointFixture = true;
+	passiveMetamagicFixture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
-	ASSERT_NO_FATAL_FAILURE(enableCurrentPoints(12, 5, 5));
 	const auto before = snapshot();
 	for(const auto * friendly : {active, fullFriend})
 	{
@@ -671,17 +628,14 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CurrentMaximumHeroPointsKeepFullState
 		const auto * after = child.battleGetUnitByID(friendly->unitId());
 		ASSERT_NE(after, nullptr);
 		EXPECT_EQ(after->acquireState()->save(), friendly->acquireState()->save());
-		EXPECT_EQ(after->metamagicMarks(BattleSide::ATTACKER), 5);
-		EXPECT_EQ(child.getMetamagicPointState(BattleSide::ATTACKER).points, 12);
-		EXPECT_EQ(after->metamagicMarks(BattleSide::DEFENDER), friendly->metamagicMarks(BattleSide::DEFENDER));
 	}
 	EXPECT_EQ(snapshot(), before);
 	ASSERT_NO_FATAL_FAILURE(compare()); // Every score bit, original pair, action, state and both RNGs; positive hits.
 }
 
-TEST_F(LifeDrainCandidateValueReuseAITest, CurrentMaximumHeroPointsScaleActualHealingWithoutActivatingDormantMarks)
+TEST_F(LifeDrainCandidateValueReuseAITest, PassiveMetamagicLeavesLifeDrainHealingAtItsOrdinaryMagnitude)
 {
-	currentPointFixture = true;
+	passiveMetamagicFixture = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(false));
 	BattleUnitsChanged removed;
 	removed.battleID = BattleID(0);
@@ -689,7 +643,6 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CurrentMaximumHeroPointsScaleActualHe
 	gameHandler->sendAndApply(removed);
 	woundedFriend = addStack(BattleSide::ATTACKER, creatureByName("core:azureDragon"), BattleHex(4, 7), 1);
 	ASSERT_NE(woundedFriend, nullptr);
-	ASSERT_NO_FATAL_FAILURE(enableCurrentPoints(12, 5, 5));
 	int64_t wound = 800;
 	auto injured = woundedFriend->acquireState();
 	injured->damage(wound);
@@ -709,14 +662,10 @@ TEST_F(LifeDrainCandidateValueReuseAITest, CurrentMaximumHeroPointsScaleActualHe
 	ASSERT_NE(target, nullptr);
 	const auto damage = enemy->getAvailableHealth() - child.battleGetUnitByID(enemy->unitId())->getAvailableHealth();
 	const auto ordinary = damage * newHorizonsMagic::lifeDrainHealingPercent(attackerSideHero) / 100;
-	const auto expected = ordinary * 136 / 100; // Expert:3% per hero point,12points; recipient marks are inert.
 	ASSERT_GT(ordinary, 0);
-	ASSERT_GT(expected, ordinary);
-	ASSERT_LT(expected, 800); // No capacity clamp can conceal the recipient multiplier.
-	EXPECT_EQ(target->getAvailableHealth() - woundedFriend->getAvailableHealth(), expected);
-	EXPECT_EQ(target->metamagicMarks(BattleSide::ATTACKER), 5);
-	EXPECT_EQ(target->metamagicMarks(BattleSide::DEFENDER), 3);
-	EXPECT_EQ(child.getMetamagicPointState(BattleSide::ATTACKER).points, 12);
+	ASSERT_LT(ordinary, 800); // Capacity cannot conceal an accidental healing multiplier.
+	// Passive removal mechanics grant no unconditional healing multiplier.
+	EXPECT_EQ(target->getAvailableHealth() - woundedFriend->getAvailableHealth(), ordinary);
 	EXPECT_EQ(snapshot(), before);
 	ASSERT_NO_FATAL_FAILURE(compare());
 }

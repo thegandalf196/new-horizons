@@ -36,7 +36,6 @@ private:
 	{
 		PossibleSpellcast candidate;
 		HypotheticBattle::ProjectedSpellAllowance allowance;
-		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 		std::vector<uint32_t> sharedPurposeRecipients;
 		newHorizonsVengefulVines::ProjectionReceipt receipt;
 	};

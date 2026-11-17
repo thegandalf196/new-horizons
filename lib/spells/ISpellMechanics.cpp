@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "NewHorizonsWisdom.h"
+#include "NewHorizonsSorceryRevision.h"
 #include "ISpellMechanics.h"
 #include "HeroSpellCastContext.h"
 #include "NewHorizonsTimedUtility.h"
@@ -555,26 +556,6 @@ AutomaticHeroCastReceipt BattleCast::getAutomaticHeroCast() const
 	return automaticHeroCast;
 }
 
-bool BattleCast::isMetamagicFollowup() const
-{
-	return metamagicFollowup;
-}
-
-bool BattleCast::isMetamagicGrand() const
-{
-	return metamagicGrand;
-}
-
-uint32_t BattleCast::getMetamagicTargetUnitId() const
-{
-	return metamagicTargetUnitId;
-}
-
-int32_t BattleCast::getMetamagicManaRefund() const
-{
-	return metamagicManaRefund;
-}
-
 std::optional<newHorizonsHeroLuck::Receipt> BattleCast::getHeroLuck() const
 {
 	return heroLuck;
@@ -583,21 +564,6 @@ std::optional<newHorizonsHeroLuck::Receipt> BattleCast::getHeroLuck() const
 BattleCast::OptionalValue64 BattleCast::getEffectValue() const
 {
 	return effectValue;
-}
-
-BattleSide BattleCast::getCounterspellSide() const
-{
-	return counterspellSide;
-}
-
-bool BattleCast::isCounterspellNegated() const
-{
-	return counterspellNegated;
-}
-
-int32_t BattleCast::getCounterspellManaSpent() const
-{
-	return counterspellManaSpent;
 }
 
 bool BattleCast::isForceMassive() const
@@ -668,26 +634,6 @@ void BattleCast::setAutomaticHeroCast(AutomaticHeroCastReceipt value)
 	automaticHeroCast = value;
 }
 
-void BattleCast::setMetamagicFollowup(bool value)
-{
-	metamagicFollowup = value;
-}
-
-void BattleCast::setMetamagicGrand(bool value)
-{
-	metamagicGrand = value;
-}
-
-void BattleCast::setMetamagicTargetUnitId(uint32_t value)
-{
-	metamagicTargetUnitId = value;
-}
-
-void BattleCast::setMetamagicManaRefund(int32_t value)
-{
-	metamagicManaRefund = value;
-}
-
 void BattleCast::setHeroLuck(const newHorizonsHeroLuck::Receipt & value)
 {
 	value.validate();
@@ -697,13 +643,6 @@ void BattleCast::setHeroLuck(const newHorizonsHeroLuck::Receipt & value)
 void BattleCast::setEffectValue(BattleCast::Value64 value)
 {
 	effectValue = std::make_optional(value);
-}
-
-void BattleCast::setCounterspell(BattleSide wardSide, bool negated, int32_t manaSpent)
-{
-	counterspellSide = wardSide;
-	counterspellNegated = negated;
-	counterspellManaSpent = manaSpent;
 }
 
 void BattleCast::applyEffects(ServerCallback * server, const Target & target, bool indirect, bool ignoreImmunity) const
@@ -866,7 +805,6 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	heroLuck = event->getHeroLuck();
 	automaticHeroCast = event->getAutomaticHeroCast();
 	automaticHeroCast.validateShape();
-	metamagicFollowup = event->isMetamagicFollowup();
 	massSlow = event->getMassSlow();
 	shadowGiftSacrificePercent = event->getShadowGiftSacrificePercent();
 
@@ -881,16 +819,14 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		const auto * battleInfo = cb->getBattle();
 		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
 		const auto scalarContext = newHorizonsMagic::heroSpellCastContext(*hero, *owner, *cb,
-			metamagicFollowup, event->isConcentrated(), automaticHeroCast.automatic());
+			event->isConcentrated(), automaticHeroCast.automatic());
 		consecratedCastingBonusPercent = scalarContext.consecrated;
 		arcaneFocusBonusPercent = scalarContext.arcaneFocus;
 		counterpressureBonusPercent = scalarContext.counterpressure;
 		crossSchoolFormulaBonusPercent = scalarContext.crossSchool;
 		grandFormulaMultiplierPercent = scalarContext.grandFormula;
 		concentrationBonusPercent = scalarContext.concentration;
-		const auto spellAllowance = !metamagicFollowup
-			? cb->battleGetSpellActionAllowance(casterSide, owner->getId())
-			: std::optional<HeroActionAllowanceState::Selection>{};
+		const auto spellAllowance = cb->battleGetSpellActionAllowance(casterSide, owner->getId());
 		if(battleInfo && hero && spellAllowance
 			&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
 			&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
@@ -940,121 +876,13 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	extendSpellEligible = mode == Mode::HERO && extendingHero && cb
 		&& newHorizonsMagic::heroCastExtendAvailable(*extendingHero, *owner, *cb, effectLevel);
 
-	{
-		auto value = event->getEffectDuration();
-		effectDuration = value.value_or(caster->getEnchantPower(owner));
-		vstd::amax(effectDuration, 0); //???
-		if(value.has_value() && extendSpellEligible && effectDuration < std::numeric_limits<decltype(effectDuration)>::max())
-			++effectDuration;
-		if(!value.has_value())
-		{
-			const auto * heroCaster = caster->getHeroCaster();
-			const auto * defendedTown = cb->battleGetDefendedTown();
-			const auto * battleState = cb->getBattle();
-			const SpellID familyID = battleState
-				? newHorizonsMagic::spellVariantBase(battleState->getMagicRules(), owner->getId())
-				: owner->getId();
-			const bool v3Slow = mode == Mode::HERO && heroCaster && battleState
-				&& familyID == SpellID::SLOW
-				&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
-				&& battleState->getMagicRules()["rulesetVersion"].Integer()
-					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
-			if(!v3Slow && mode == Mode::HERO && heroCaster && battleState
-				&& newHorizonsMagic::rulesActive(battleState->getMagicRules())
-				&& battleState->getMagicRules()["rulesetVersion"].Integer()
-					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-				&& battleState->getMagicRules().Struct().contains("spellcraftEfficiencyPercent"))
-			{
-				// Hero timed effects use Spell Power as their ordinary duration
-				// term. Scale that term alone; the caster's common and spell-specific
-				// SPELL_DURATION bonuses remain additive and are applied after it.
-				const int32_t divisor = std::max<int32_t>(1, caster->getEffectPowerDivisor(owner));
-				const int64_t rawSpellPower = std::max<int32_t>(0, caster->getEffectPower(owner));
-				const int64_t originalPowerTerm = std::max<int64_t>(1, rawSpellPower / divisor);
-				const int64_t flatDuration = static_cast<int64_t>(effectDuration) - originalPowerTerm;
-				const int specialtyPercent = familyID == SpellID::HASTE
-					? heroCaster->getNonDamageSpellSpecialtyBonusPercent(familyID) : 0;
-				const int64_t scaledPowerTerm = std::max<int64_t>(1,
-					scaleDamageSpellPowerComponentWithCoefficientBasisPoints(rawSpellPower, divisor,
-						getSpellPowerCoefficientBasisPoints(), specialtyPercent));
-				const int64_t duration = scaledPowerTerm + flatDuration;
-				effectDuration = static_cast<decltype(effectDuration)>(std::clamp<int64_t>(duration, 0,
-					std::numeric_limits<decltype(effectDuration)>::max()));
-			}
-			const bool v3Bless = mode == Mode::HERO && heroCaster && familyID == SpellID::BLESS
-				&& cb->getBattle() && newHorizonsMagic::rulesActive(cb->getBattle()->getMagicRules())
-				&& cb->getBattle()->getMagicRules()["rulesetVersion"].Integer()
-					== newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
-			const bool infernoDurationBonus = heroCaster
-				&& newHorizonsMagic::rulesActive(heroCaster->getMagicRules()) && defendedTown
-				&& defendedTown->getFactionID() == FactionID::INFERNO
-				&& defendedTown->hasBuilt(BuildingID::SPECIAL_2)
-				&& cb->battleGetFightingHero(BattleSide::DEFENDER) == heroCaster;
-
-			const int bonus = newHorizonsMagic::spellDurationBonus(
-				dynamic_cast<const CGHeroInstance *>(caster), familyID);
-			if(v3Slow)
-			{
-				int64_t duration = newHorizonsMagic::SLOW_BASE_DURATION_ROUNDS;
-				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION, BonusSubtypeID());
-				duration += heroCaster->valOfBonuses(BonusType::SPELL_DURATION,
-					BonusSubtypeID(SpellID(SpellID::SLOW)));
-				duration += bonus;
-				if(infernoDurationBonus)
-					duration += 20;
-				effectDuration = static_cast<decltype(effectDuration)>(std::clamp<int64_t>(duration, 0,
-					std::numeric_limits<decltype(effectDuration)>::max()));
-			}
-			else if(v3Bless)
-			{
-				const auto ordinary = newHorizonsMagic::blessOrdinaryDuration(effectPower,
-					getSpellPowerCoefficientBasisPoints(), getEmpowerSpellBonusPercent(),
-					heroCaster->getNonDamageSpellSpecialtyBonusPercent(familyID));
-				effectDuration = newHorizonsMagic::blessCasterDuration(*heroCaster, ordinary, infernoDurationBonus);
-			}
-			else
-			{
-				if(infernoDurationBonus && effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - 20)
-					effectDuration += 20;
-				if(effectDuration <= std::numeric_limits<decltype(effectDuration)>::max() - bonus)
-					effectDuration += bonus;
-			}
-
-			// Echoed Duration applies only to an additional cast and only when
-			// the spell did not provide an explicit duration override.
-			effectDuration = adjustEffectDuration(effectDuration);
-		}
-	}
+	initializeEffectDuration(event);
 	overcharge = event->getOvercharge().value_or(0);
 	cureAffliction = event->getCureAffliction();
 	curePhysicalAffliction = event->getCurePhysicalAffliction();
-	counterspellSide = event->getCounterspellSide();
-	counterspellNegated = event->isCounterspellNegated();
-	counterspellManaSpent = event->getCounterspellManaSpent();
 	selectiveDispel = event->getSelectiveDispel();
-	metamagicGrand = event->isMetamagicGrand();
-	metamagicTargetUnitId = event->getMetamagicTargetUnitId();
-	metamagicManaRefund = event->getMetamagicManaRefund();
 	purifyChoices = event->getPurifyChoices();
 	forceNonSmartTargeting = event->getForceNonSmartTargeting();
-	if(metamagicFollowup && mode == Mode::HERO)
-	{
-		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
-		// BattleSpellCast is applied before the spell effects.  Applying the
-		// follow-up packet consumes the last pending leg and clears the live
-		// sequence, so retain the first target and Focused Pairing eligibility
-		// while the authoritative pre-cast state is still available.
-		metamagicFirstTargetUnitId = cb->getBattle()->getMetamagicFirstTargetUnitId(casterSide);
-		metamagicFocusedPairingEligible = newHorizonsMagic::hasMetamagicPerk(
-			hero, newHorizonsMagic::METAMAGIC_FOCUSED_PAIRING)
-			&& metamagicTargetUnitId != newHorizonsMagic::INVALID_METAMAGIC_TARGET
-			&& metamagicFirstTargetUnitId != newHorizonsMagic::INVALID_METAMAGIC_TARGET
-			&& metamagicTargetUnitId == metamagicFirstTargetUnitId;
-		const int powerBonus = hero ? newHorizonsMagic::metamagicPowerBonus(*hero, *owner, *cb,
-			event->getMetamagicTargetUnitId()) : 0;
-		if(powerBonus > 0)
-			effectPower = effectPower * (100 + powerBonus) / 100;
-	}
 	// Saved pre-v3 casts retain their historical raw-power conversion. The
 	// v3 damage-component path composes Stormcaller before the final floor.
 	if(!usesNewHorizonsMagicV3()
@@ -1370,7 +1198,7 @@ JsonNode Mechanics::getCapturedMdrPenetration() const
 
 void BaseMechanics::registerOverwhelmingFormulaCast(ServerCallback * server)
 {
-	if(!server || mode != Mode::HERO || !overwhelmingFormulaEligible || isCounterspellNegated()
+	if(!server || mode != Mode::HERO || !overwhelmingFormulaEligible
 		|| overwhelmingFormulaToken != 0 || !cb || !cb->getBattle())
 		return;
 	auto state = cb->getBattle()->getOverwhelmingFormulaState(casterSide);
@@ -1460,7 +1288,7 @@ int32_t BaseMechanics::getDirectCreatureActivationDamagePercent() const
 
 int32_t BaseMechanics::getCrownAndAltarBonusPercent(const battle::Unit * target) const
 {
-	return target && !target->isGhost() && !target->isTimeStopped()
+	return target && !target->isGhost()
 		&& cb->battleGetOwner(target) == getCasterColor()
 		&& std::binary_search(crownAndAltarRecipientUnitIds.begin(), crownAndAltarRecipientUnitIds.end(), target->unitId())
 		? 20 : 0;
@@ -1599,9 +1427,10 @@ IBattleCast::Value BaseMechanics::getEffectDuration() const
 
 IBattleCast::Value BaseMechanics::adjustEffectDuration(IBattleCast::Value baseDuration) const
 {
-	return newHorizonsMagic::durationWithCastExtensions(baseDuration, extendSpellEligible,
-		isMetamagicFollowup() && newHorizonsMagic::hasMetamagicPerk(dynamic_cast<const CGHeroInstance *>(caster),
-			newHorizonsMagic::METAMAGIC_ECHOED_DURATION));
+	if(baseDuration > 0 && mode == Mode::HERO)
+		baseDuration = static_cast<int32_t>(std::min<int64_t>(std::numeric_limits<int32_t>::max(),
+			static_cast<int64_t>(baseDuration) + newHorizonsSorceryRevision::spellbinderBonus(getHeroCaster(), getSpellId())));
+	return newHorizonsMagic::durationWithCastExtensions(baseDuration, extendSpellEligible, false);
 }
 
 IBattleCast::Value64 BaseMechanics::getEffectValue() const
@@ -1619,21 +1448,6 @@ IBattleCast::Value64 BaseMechanics::getEffectValue() const
 IBattleCast::Value BaseMechanics::getOvercharge() const
 {
 	return overcharge;
-}
-
-BattleSide BaseMechanics::getCounterspellSide() const
-{
-	return counterspellSide;
-}
-
-bool BaseMechanics::isCounterspellNegated() const
-{
-	return counterspellNegated;
-}
-
-int32_t BaseMechanics::getCounterspellManaSpent() const
-{
-	return counterspellManaSpent;
 }
 
 bool BaseMechanics::isSelectiveDispel() const
@@ -1722,26 +1536,6 @@ bool BaseMechanics::setStormOfDaggersTargetCount(int32_t selectedTargetCount)
 AutomaticHeroCastReceipt BaseMechanics::getAutomaticHeroCast() const
 {
 	return automaticHeroCast;
-}
-
-bool BaseMechanics::isMetamagicFollowup() const
-{
-	return metamagicFollowup;
-}
-
-bool BaseMechanics::isMetamagicGrand() const
-{
-	return metamagicGrand;
-}
-
-uint32_t BaseMechanics::getMetamagicTargetUnitId() const
-{
-	return metamagicTargetUnitId;
-}
-
-int32_t BaseMechanics::getMetamagicManaRefund() const
-{
-	return metamagicManaRefund;
 }
 
 bool BaseMechanics::usesNewHorizonsMagic() const

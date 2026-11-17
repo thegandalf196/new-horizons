@@ -1308,7 +1308,7 @@ TEST_F(NewHorizonsMagicStateTest, ShippedSpellFamiliarityRegistryIsActiveAndSave
 	startGameWithWizard();
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 
-	const auto & savedPerks = attackerSideHero->getPerkState().rules["skills"][WISDOM_SKILL]["perks"].Vector();
+	const auto & savedPerks = attackerSideHero->getPerkState().getRules()["skills"][WISDOM_SKILL]["perks"].Vector();
 	const auto spellFamiliarity = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)
 	{
 		return perk["id"].String() == SPELL_FAMILIARITY;

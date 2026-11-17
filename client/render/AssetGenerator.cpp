@@ -2303,18 +2303,6 @@ AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsLevelUpBackground() c
 	// region inside that bevel, preserving native caption/portrait coordinates.
 	const int headerWidth = original->width() - 36;
 	canvas.draw(original, Point((640 - headerWidth) / 2, 18), Rect(18, 18, headerWidth, 166));
-	const auto recessed = [&canvas](const Rect & rect)
-	{
-		const ColorRGBA shadow(45, 31, 20);
-		canvas.drawColorBlended(rect, ColorRGBA(0, 0, 0, 36));
-		canvas.drawBorder(rect, ColorRGBA(128, 100, 75));
-		canvas.drawLine(Point(rect.x + 1, rect.y + 1),
-			Point(rect.x + rect.w - 2, rect.y + 1), shadow, shadow);
-		canvas.drawLine(Point(rect.x + 1, rect.y + 1),
-			Point(rect.x + 1, rect.y + rect.h - 2), shadow, shadow);
-	};
-	for(int i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
-		recessed(Rect(24 + i * 148, 190, 140, 72));
 	return image;
 }
 

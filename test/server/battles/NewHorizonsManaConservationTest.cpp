@@ -25,18 +25,11 @@ namespace
 constexpr auto wisdomSkill = "new-horizons:wisdom";
 constexpr auto mysticismPerk = "new-horizons:wisdom.mysticism";
 constexpr auto manaConservationPerk = "new-horizons:wisdom.manaConservation";
-constexpr auto counterspellKey = "new-horizons:counterspell";
-
-SpellID counterspell()
-{
-	return SpellID(SpellID::decode(counterspellKey));
-}
 
 class NewHorizonsManaConservationTest : public HeroCommandFixture
 {
 protected:
 	bool plannedManaConservation = false;
-	bool enableHistoricalCounterspell = false;
 
 	void SetUp() override
 	{
@@ -49,8 +42,6 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode magicRules(JsonPath::builtin("config/newHorizonsMagic"));
-		if(enableHistoricalCounterspell)
-			magicRules["spells"][counterspellKey].Struct().erase("active");
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
@@ -61,9 +52,8 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 	}
 
-	void prepare(int wisdomRank = 2, bool selectConservation = true, bool includeCounterspell = false)
+	void prepare(int wisdomRank = 2, bool selectConservation = true)
 	{
-		enableHistoricalCounterspell = includeCounterspell;
 		startGame();
 		const int wisdom = SecondarySkill::decode(wisdomSkill);
 		ASSERT_GE(wisdom, 0);
@@ -80,8 +70,6 @@ protected:
 		giveArtifact(defenderSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 		defenderSideHero->addSpellToSpellbook(SpellID::HASTE);
-		if(includeCounterspell)
-			attackerSideHero->addSpellToSpellbook(counterspell());
 		setTestSpellPointTotal(attackerSideHero, 1000);
 		setTestSpellPointTotal(defenderSideHero, 1000);
 
@@ -194,29 +182,9 @@ TEST_F(NewHorizonsManaConservationTest, AcceptedHeroCostsAreCountedButRejectedAn
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).acceptedHeroManaSpent, recordedSpend);
 }
 
-TEST_F(NewHorizonsManaConservationTest, AcceptedCounterspellWardPaymentIsAddedToTheWardingSideLedger)
-{
-	prepare(2, true, true);
-	ASSERT_TRUE(cast(counterspell(), BattleSide::ATTACKER, nullptr));
-	const auto counterspellCost = server.casts.back().announcement.paidHeroManaCost;
-	EXPECT_GT(counterspellCost, 0);
-	activate(enemy);
-	ASSERT_TRUE(cast(SpellID::HASTE, BattleSide::DEFENDER, enemy));
 
-	const auto & announcement = server.casts.back().announcement;
-	EXPECT_TRUE(announcement.counterspellNegated);
-	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::DEFENDER).priorCasts(SpellID::HASTE), 1);
-	EXPECT_EQ(announcement.counterspellSide, BattleSide::ATTACKER);
-	EXPECT_EQ(announcement.paidCounterspellManaCost,
-		newHorizonsMagic::counterspellCost(defenderSideHero->getListedSpellCost(SpellID(SpellID::HASTE).toSpell()),
-			false));
-	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).acceptedHeroManaSpent,
-		counterspellCost + announcement.paidCounterspellManaCost);
-	EXPECT_EQ(battle()->getSide(BattleSide::DEFENDER).acceptedHeroManaSpent,
-		announcement.paidHeroManaCost);
-}
 
-TEST_F(NewHorizonsManaConservationTest, MalformedWardPaymentDoesNotMutateEitherSideLedger)
+TEST_F(NewHorizonsManaConservationTest, MalformedHeroPaymentDoesNotMutateEitherSideLedger)
 {
 	prepare();
 	BattleSpellCast forged;
@@ -225,10 +193,7 @@ TEST_F(NewHorizonsManaConservationTest, MalformedWardPaymentDoesNotMutateEitherS
 	forged.spellID = SpellID::HASTE;
 	forged.castByHero = true;
 	forged.activeCast = true;
-	forged.counterspellNegated = true;
-	forged.counterspellSide = BattleSide::ATTACKER;
-	forged.paidHeroManaCost = 7;
-	forged.paidCounterspellManaCost = 4;
+	forged.paidHeroManaCost = -1;
 
 	EXPECT_THROW(gameHandler->sendAndApply(forged), std::runtime_error);
 	EXPECT_EQ(battle()->getSide(BattleSide::ATTACKER).acceptedHeroManaSpent, 0);

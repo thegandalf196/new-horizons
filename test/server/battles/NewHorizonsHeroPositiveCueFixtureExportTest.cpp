@@ -182,15 +182,15 @@ protected:
 		for(const auto & skill : profile["skills"].Vector())
 			ASSERT_EQ(hero.getPerkSkillRank(skill["skill"].String()), skill["rank"].Integer());
 		ASSERT_EQ(profile["startingPerks"].Vector().size(), 1u);
-		ASSERT_EQ(hero.getPerkState().selected.size(), 1u);
+		ASSERT_EQ(hero.getPerkState().getSelected().size(), 1u);
 		const auto & expected = profile["startingPerks"].Vector().front();
-		ASSERT_EQ(hero.getPerkState().selected.front(), (newHorizonsHeroes::PerkSelection{
+		ASSERT_EQ(hero.getPerkState().getSelected().front(), (newHorizonsHeroes::PerkSelection{
 			expected["skill"].String(), expected["perk"].String()}));
 		ASSERT_TRUE(hero.hasActivePerk(expected["skill"].String(), expected["perk"].String()));
 		ASSERT_FALSE(hero.hasActivePerk("new-horizons:luck", "new-horizons:luck.luckyRecovery"));
 		ASSERT_FALSE(hero.hasActivePerk("new-horizons:discipline", "new-horizons:discipline.heroicSpirit"));
 		ASSERT_NO_THROW(hero.getPerkState().validate());
-		ASSERT_EQ(hero.getPerkState().rules, installedPerks);
+		ASSERT_EQ(hero.getPerkState().getRules(), installedPerks);
 		ASSERT_EQ(hero.getPrimaryGrowthRules(), newHorizonsHeroes::resolveHeroRules(installedHeroes, hero.getHeroClassID()));
 		ASSERT_FALSE(hero.getMasteryState().pending);
 		ASSERT_FALSE(hero.Slots().empty());

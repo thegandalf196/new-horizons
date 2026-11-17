@@ -83,13 +83,9 @@ public:
 			throw std::runtime_error("Cannot discard existing delayed-activation queue flags");
 	}
 	void localInit(BattleInfo * battleInfo);
-	void validateTimeStopSerialization(bool supported) const
-	{
-		if(timeStopTurnConsumed() && !supported)
-			throw std::runtime_error("Cannot discard consumed Time Stop queue slot in an older format");
-	}
-	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false, bool pauseBattleForm = false);
+	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false);
 	bool acceptsBonus(const Bonus & bonus) const override;
+	bool mayHaveBonusType(BonusType type) const override;
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 	TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(
@@ -301,8 +297,6 @@ public:
 		if(h.saving) validatePetrifyingBloodSerialization(h);
 		if(h.saving)
 			validateVeteranDamageHistorySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT));
-		if(h.saving)
-			validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving) validateMoraleActivationSerialization(h);
 		validateHeroicSpiritSerialization(h);
 		if(h.saving)
@@ -333,7 +327,6 @@ public:
 			confusionState.validateSerialization(h);
 		if(h.saving)
 		{
-			arcaneMarks.validateSerialization(h);
 			battle::validatePhysicalPoisonSerialization(*this, h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 			if(demonicGateOpened && !h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
 				throw std::runtime_error("Cannot discard Demonic Gate use in an older stack descriptor");
@@ -466,10 +459,6 @@ public:
 			heroicSpiritRetaliation = false;
 			heroicSpiritMoralePending = false;
 		}
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT))
-			h & timeStopTurnConsumedFlag;
-		else if(!h.saving)
-			timeStopTurnConsumedFlag = false;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_COMBAT_ACTIVATION_SNAPSHOT))
 			h & veteranPhysicalDamageSinceActivation;
 		else if(!h.saving)
@@ -482,11 +471,6 @@ public:
 			petrifyingBloodRound = -1;
 		if(petrifyingBloodRound < -1)
 			throw std::runtime_error("Invalid saved Petrifying Blood round receipt");
-		arcaneMarks.serialize(h);
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS))
-			h & arcaneShieldHitPoints;
-		if(arcaneShieldHitPoints < 0)
-			throw std::runtime_error("Invalid Arcane Shield hit points");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS))
 			h & demonicGateOpened;
 		else if(!h.saving)

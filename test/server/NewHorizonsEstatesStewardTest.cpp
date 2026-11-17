@@ -227,8 +227,8 @@ TEST_F(NewHorizonsEstatesStewardTest, MissingSavedRegistryDoesNotUseInstalledSte
 	// absence also requires no saved selections, rather than dangling perk IDs.
 	auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(first->getPerkState());
 	savedPerks = newHorizonsHeroes::PerkState{};
-	ASSERT_TRUE(savedPerks.rules.isNull());
-	ASSERT_TRUE(savedPerks.selected.empty());
+	ASSERT_TRUE(savedPerks.getRules().isNull());
+	ASSERT_TRUE(savedPerks.getSelected().empty());
 	ASSERT_NO_THROW(savedPerks.validate());
 	const auto ordinary = ordinaryGold();
 	ASSERT_FALSE(first->hasActivePerk(ESTATES, STEWARD));

@@ -86,8 +86,8 @@ const FourOfferSkillCandidate * find(const Pool & pool, SecondarySkill skill)
 std::optional<std::vector<PerkOfferCandidate>> progressionSpecificPerkOffer(
 	const PerkState & state, const std::function<int(const std::string &)> & rankLookup)
 {
-	if(usesFourOfferProgression(state.rules)) return std::vector<PerkOfferCandidate>{};
-	if(usesUnifiedSkillProgression(state.rules)) return state.nextRequiredPerkOffer(rankLookup);
+	if(usesFourOfferProgression(state.getRules())) return std::vector<PerkOfferCandidate>{};
+	if(usesUnifiedSkillProgression(state.getRules())) return state.nextRequiredPerkOffer(rankLookup);
 	return std::nullopt;
 }
 
@@ -164,7 +164,7 @@ int32_t fourOfferPerkReply(const FourOfferProgressionOffer & offer, const PerkSt
 {
 	if(group >= offer.perkSkills.size() || offer.perkSkills[group].empty())
 		throw std::runtime_error("Invalid four-offer perk group");
-	const auto & catalogue = state.rules["skills"][offer.perkSkills[group]]["perks"].Vector();
+	const auto & catalogue = state.getRules()["skills"][offer.perkSkills[group]]["perks"].Vector();
 	for(size_t index = 0; index < catalogue.size() && index < PERK_CANONICAL_POOL_SIZE; ++index)
 		if(catalogue[index]["id"].String() == perkId)
 			return static_cast<int32_t>(2 + group * PERK_CANONICAL_POOL_SIZE + index);
@@ -200,8 +200,8 @@ std::optional<FourOfferProgressionSelection> fourOfferSelection(const FourOfferP
 	const size_t index = static_cast<size_t>(reply - 2);
 	const size_t group = index / PERK_CANONICAL_POOL_SIZE;
 	if(group >= offer.perkSkills.size() || offer.perkSkills[group].empty()) return std::nullopt;
-	const auto parent = state.rules["skills"].Struct().find(offer.perkSkills[group]);
-	if(parent == state.rules["skills"].Struct().end()) return std::nullopt;
+	const auto parent = state.getRules()["skills"].Struct().find(offer.perkSkills[group]);
+	if(parent == state.getRules()["skills"].Struct().end()) return std::nullopt;
 	const auto & catalogue = parent->second["perks"].Vector();
 	const size_t perkIndex = index % PERK_CANONICAL_POOL_SIZE;
 	if(perkIndex >= catalogue.size()) return std::nullopt;
@@ -226,7 +226,7 @@ bool perkChoiceBlocksTierCompletion(const PerkState & state, const PerkOfferCand
 	const auto blockedSlots = [&](const PerkState & value)
 	{
 		int count = 0;
-		for(const auto & selection : value.selected)
+		for(const auto & selection : value.getSelected())
 			if(selection.skillId == candidate.selection.skillId) ++count;
 		for(int tier = 1; tier <= 3; ++tier)
 			if(!value.hasPerkForTier(candidate.selection.skillId, tier)) ++count;

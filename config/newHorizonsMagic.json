@@ -272,7 +272,9 @@
 				12,
 				10,
 				10
-			]
+			],
+			"ordinaryAcquisition": false,
+			"heroAccess": false
 		},
 		"new-horizons:frailty": {
 			"schools": ["new-horizons:shadow"],
@@ -299,16 +301,18 @@
 			}
 		},
 		"new-horizons:focusMagic": {
-			"focusMagic": {"version": 1, "baseBasisPoints": 500, "powerBasisPoints": 3, "capBasisPoints": 1200},
+			"focusMagic": {
+				"version": 2
+			},
 			"schools": [
 				"new-horizons:sorcery"
 			],
 			"level": 1,
 			"costs": [
-				4,
-				4,
-				4,
-				4
+				6,
+				6,
+				6,
+				6
 			]
 		},
 		"new-horizons:hexOfPain": {
@@ -509,19 +513,6 @@
 				"base": 45,
 				"powerCoefficient": 15
 			}
-		},
-		"new-horizons:counterspell": {
-			"active": false,
-			"schools": [
-				"new-horizons:sorcery"
-			],
-			"level": 3,
-			"costs": [
-				11,
-				11,
-				11,
-				11
-			]
 		},
 		"new-horizons:phantomArmy": {
 			"schools": [
@@ -1223,30 +1214,33 @@
 			],
 			"ignoreInterveningBarriers": true
 		},
-		"new-horizons:spellLock": {
+		"new-horizons:forcedRecall": {
 			"schools": [
 				"new-horizons:sorcery"
 			],
-			"active": true,
 			"level": 5,
 			"costs": [
-				22,
-				22,
-				22,
-				22
+				25,
+				25,
+				25,
+				25
 			]
 		},
-		"new-horizons:timeStop": {
+		"new-horizons:forceLance": {
 			"schools": [
 				"new-horizons:sorcery"
 			],
 			"level": 5,
 			"costs": [
-				23,
-				23,
-				23,
-				23
-			]
+				30,
+				30,
+				30,
+				30
+			],
+			"directDamage": {
+				"base": 100,
+				"powerCoefficient": 20
+			}
 		},
 		"core:viewAir": {
 			"ordinaryAcquisition": false,

@@ -103,7 +103,7 @@ HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selected
 		// level, learned book or mutated army presented as a starting package.
 		context.development = capturedHero->getPrimaryGrowthRules();
 		context.capabilities = capturedHero->getCapabilityRules();
-		context.perks = capturedHero->getPerkState().rules;
+		context.perks = capturedHero->getPerkState().getRules();
 		context.magic = capturedHero->getMagicRules();
 		context.resolved = true;
 	}

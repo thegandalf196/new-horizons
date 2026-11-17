@@ -8,9 +8,11 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/SpellPointBattleTransitions.h"
+#include "../battle/NewHorizonsFocusMagic.h"
+#include "../battle/BattleRecallAnchors.h"
 #include "../battle/NewHorizonsCommandResources.h"
 #include "../battle/NewHorizonsElementalAttunement.h"
-#include "../spells/NewHorizonsMetamagicMarks.h"
 #include "../spells/AutomaticHeroCast.h"
 #include "../battle/PassiveDivineMandate.h"
 #include "../mapObjects/NewHorizonsLevelUpOffer.h"
@@ -274,7 +276,15 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 		}
 	}
 
-	const int32_t bufferBefore = hero.getBufferSpellPoints();
+	const auto captureBattlePools = [&](const SideInBattle & side)
+	{
+		battle::spellPoints::State state;
+		state.twoPools = newHorizonsMagic::spellPointRulesActive(hero.getMagicRules());
+		state.normalCapacity = hero.manaLimit();
+		state.pools.restoreSnapshot(hero.getNormalSpellPoints(), hero.getBufferSpellPoints(), std::numeric_limits<int32_t>::max());
+		state.temporaryBufferRemaining = side.temporaryBufferRemaining;
+		return state;
+	};
 	switch(operation)
 	{
 		case Operation::SET_NORMAL:
@@ -288,7 +298,14 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 				throw std::runtime_error("Invalid Normal Spell Point restoration");
 			break;
 		case Operation::SPEND:
-			if(!hero.spendSpellPoints(amount))
+			if(auto * side = findBattleSide(gs, hero.id))
+			{
+				auto staged = captureBattlePools(*side);
+				if(!battle::spellPoints::spend(staged, amount) || !hero.spendSpellPoints(amount))
+					throw std::runtime_error("Insufficient Spell Points for authoritative spend");
+				side->temporaryBufferRemaining = staged.temporaryBufferRemaining;
+			}
+			else if(!hero.spendSpellPoints(amount))
 				throw std::runtime_error("Insufficient Spell Points for authoritative spend");
 			break;
 		case Operation::GRANT_BUFFER:
@@ -305,76 +322,22 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 			auto * side = findBattleSide(gs, hero.id);
 			if(!side)
 				throw std::runtime_error("Hero Luck refund requires an active battle");
-			const bool twoPools = newHorizonsMagic::spellPointRulesActive(hero.getMagicRules());
-			const int64_t maximumNormal = twoPools ? hero.manaLimit() : std::numeric_limits<int32_t>::max();
-			const int64_t restoredBuffer = static_cast<int64_t>(pack.bufferAmount) + pack.temporaryBufferAmount;
-			const int64_t nextBuffer = static_cast<int64_t>(hero.getBufferSpellPoints()) + restoredBuffer;
-			const int64_t nextTemporary = static_cast<int64_t>(side->temporaryBufferRemaining) + pack.temporaryBufferAmount;
-			// Validate all three pools before touching any of them. This operation
-			// restores an actual charge, not a capacity-capped grant or conversion.
-			if(static_cast<int64_t>(hero.getNormalSpellPoints()) + amount > maximumNormal
-				|| nextBuffer > std::numeric_limits<int32_t>::max()
-				|| nextTemporary > nextBuffer || nextTemporary > std::numeric_limits<int32_t>::max()
-				|| side->temporaryBufferRemaining < 0 || side->temporaryBufferRemaining > hero.getBufferSpellPoints()
-				|| (!twoPools && restoredBuffer != 0))
+			auto staged = captureBattlePools(*side);
+			const battle::spellPoints::Payment refund{static_cast<int32_t>(amount), pack.bufferAmount, pack.temporaryBufferAmount};
+			if(!battle::spellPoints::refund(staged, refund))
 				throw std::runtime_error("Hero Luck refund exceeds available pool headroom or provenance");
+			const int64_t restoredBuffer = static_cast<int64_t>(pack.bufferAmount) + pack.temporaryBufferAmount;
 			if(!hero.restoreNormalSpellPoints(static_cast<int32_t>(amount)))
 				throw std::runtime_error("Invalid Hero Luck Normal refund");
 			if(restoredBuffer != 0 && !hero.grantBufferSpellPoints(static_cast<int32_t>(restoredBuffer)))
 				throw std::runtime_error("Invalid Hero Luck Buffer refund");
-			side->temporaryBufferRemaining = static_cast<int32_t>(nextTemporary);
+			side->temporaryBufferRemaining = staged.temporaryBufferRemaining;
 			break;
 		}
 		case Operation::LEGACY:
 			throw std::runtime_error("Unresolved legacy Spell Point mutation");
 	}
 
-	if(operation == Operation::SPEND)
-	{
-		if(auto * side = findBattleSide(gs, hero.id))
-		{
-			const int32_t spentFromBuffer = bufferBefore - hero.getBufferSpellPoints();
-			side->temporaryBufferRemaining = std::max<int32_t>(0,
-				side->temporaryBufferRemaining - std::min(side->temporaryBufferRemaining, spentFromBuffer));
-		}
-	}
-}
-
-void applyFormulaReserveClosureReward(BattleInfo & battle, BattleSide sideID)
-{
-	auto & side = battle.getSide(sideID);
-	if(side.metamagicPendingCount == 0 || side.metamagicSequenceSpells.size() <= 1)
-		return;
-
-	auto * hero = battle.battleGetFightingHero(sideID);
-	if(!hero || !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
-		|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
-		return;
-
-	if(!hero->restoreNormalSpellPoints(newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS))
-		throw std::runtime_error("Invalid Formula Reserve Normal Spell Point restoration");
-	side.metamagicFormulaReserveUsed = true;
-}
-
-void applySpellBufferRoundExpiryReward(BattleInfo & battle, BattleSide sideID)
-{
-	auto & side = battle.getSide(sideID);
-	// Both the initial Metamagic offer and Grand Metamagic's further action are
-	// Spell Actions granted by Metamagic. Either qualifies when it expires unused
-	// at the round boundary; the once-per-combat flag prevents a second reward.
-	if(side.metamagicPendingCount == 0 || side.metamagicSequenceSpells.empty()
-		|| side.metamagicSpellBufferUsed)
-		return;
-
-	auto * hero = battle.battleGetFightingHero(sideID);
-	if(!hero || !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
-		|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_SPELL_BUFFER))
-		return;
-
-	if(!hero->grantBufferSpellPoints(newHorizonsMagic::METAMAGIC_SPELL_BUFFER_POINTS))
-		throw std::runtime_error("Invalid Spell Buffer grant");
-	// The combat reward is permanent even if the pool was already capped.
-	side.metamagicSpellBufferUsed = true;
 }
 
 using battleDestructionAftermath::bloodrageDeathCandidates;
@@ -2181,8 +2144,6 @@ void GameStatePackVisitor::visitBattleNextRound(BattleNextRound & pack)
 		throw std::runtime_error("BattleNextRound references a missing battle");
 	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		applyFormulaReserveClosureReward(*battle, sideID);
-		applySpellBufferRoundExpiryReward(*battle, sideID);
 	}
 	battle->nextRound();
 }
@@ -2317,9 +2278,14 @@ void GameStatePackVisitor::visitBattleStackMoved(BattleStackMoved & pack)
 
 void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 {
+	pack.validateFocusMagicMarker();
 	auto * battle = gs.getBattle(pack.battleID);
 	if(!battle)
 		throw std::runtime_error("BattleAttack references a missing battle");
+	const auto * focusAttacker = battle->getStack(pack.stackAttacking, false);
+	if(pack.focusMagicRanged != (pack.shot() && focusAttacker && newHorizonsFocusMagic::active(*focusAttacker))
+		|| pack.focusMagicConverted != (pack.focusMagicRanged && newHorizonsFocusMagic::converted(*focusAttacker)))
+		throw std::runtime_error("Focus Magic presentation does not match the accepted attacker");
 	pack.validateAerialExcursionMarker();
 	if(pack.aerialExcursion)
 		newHorizonsAerialSupremacy::validate(*battle, *pack.aerialExcursion);
@@ -2458,10 +2424,9 @@ void GameStatePackVisitor::visitBattleAttack(BattleAttack & pack)
 	if(pack.chainGateTriggered)
 		battle->armChainGate(battle->gatedDemonicStackSide(pack.stackAttacking));
 
-	if(!attacker->isTimeStopped())
-		attacker->removeBonusesRecursive(Bonus::UntilAttack);
+	attacker->removeBonusesRecursive(Bonus::UntilAttack);
 
-	if(!pack.counter() && !attacker->isTimeStopped())
+	if(!pack.counter())
 		attacker->removeBonusesRecursive(Bonus::UntilOwnAttack);
 }
 
@@ -2472,8 +2437,6 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	const auto * battleContext = gs.getBattle(pack.battleID);
 	if(!battleContext)
 		throw std::runtime_error(targeted ? "Missing targeted StartAction battle context" : "Missing StartAction battle context");
-	if(pack.ba.metamagicDecline)
-		throw std::runtime_error("Retired Metamagic decline StartAction");
 	if(pack.preCombatOrderState
 		&& pack.ba.side != BattleSide::ATTACKER && pack.ba.side != BattleSide::DEFENDER)
 		throw std::runtime_error("Battle Plan StartAction has an invalid side");
@@ -2657,37 +2620,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
 	{
 		auto * battle = gs.getBattle(pack.battleID);
-		if(pack.ba.metamagicFollowup
-			&& !battleContext->battleCanUseMetamagicFollowup(pack.ba.side, pack.ba.spell))
-			throw std::runtime_error("Metamagic follow-up StartAction without a selected Metamagic grant");
-		if(pack.ba.timeStopHeroActionPass)
-		{
-			const auto * active = battle->battleActiveUnit();
-			if(pack.ba.actionType != EActionType::NO_ACTION || !active || !active->isTimeStopped()
-				|| active->unitId() != pack.ba.stackNumber
-				|| battle->playerToSide(battle->battleGetOwner(active)) != pack.ba.side)
-				throw std::runtime_error("Invalid Time Stop Hero Action pass StartAction");
-			battle->expireTimeStops(pack.ba.side);
-		}
-		// A spell action is not necessarily a Hero Action: inspect the selected
-		// allowance rather than inferring provenance from Metamagic packet flags.
-		// This runs at StartAction so Time Stop ends before the Hero-paid spell
-		// resolves. The cast visitor later consumes the same deterministic grant.
-		if(pack.ba.actionType == EActionType::HERO_SPELL)
-		{
-			const bool sharedActionBudget = heroCommands::supportedByRules(
-				battle->getHeroCommandRules(), HeroCommand::CHARGE);
-			bool spendsHeroAction = !pack.ba.metamagicFollowup;
-			if(sharedActionBudget)
-			{
-				const auto selected = battleContext->battleGetSpellActionAllowance(pack.ba.side, pack.ba.spell);
-				if(!selected)
-					throw std::runtime_error("Hero spell StartAction has no eligible payload-aware allowance");
-				spendsHeroAction = selected->allowance == HeroActionAllowanceState::AllowanceKind::HERO;
-			}
-			if(spendsHeroAction)
-				battle->expireTimeStops(pack.ba.side);
-		}
+
 	}
 	if(pack.ba.actionType == EActionType::HERO_COMMAND)
 	{
@@ -2774,12 +2707,6 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		const bool spendsHeroAction = sharedActionBudget
 			? orderReceipt && orderReceipt->allowance == HeroActionAllowanceState::AllowanceKind::HERO
 			: true;
-		if(spendsHeroAction)
-		{
-			commandBattle->expireTimeStops(pack.ba.side);
-			side.counterspellArmed = false;
-			side.metamagicCountersequenceArmed = false;
-		}
 		// Preserve the legacy action-history marker for save validators and
 		// presentation. Shared-budget availability is derived only from the
 		// receipt-backed ledger above.
@@ -2813,7 +2740,11 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	{
 		auto * battle = gs.getBattle(pack.battleID);
 		if(!battle->getDeploymentState().independent)
+		{
+			if(battle->tacticDistance > 0)
+				captureBattleRecallAnchors(*battle);
 			battle->tacticDistance = 0;
+		}
 		return;
 	}
 
@@ -2859,28 +2790,6 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 			case EActionType::HERO_SPELL: //no change in current stack state
 				break;
 			case EActionType::NO_ACTION:
-				// Automatic no-op is how the turn queue advances a stopped stack.
-				// It must not count as movement/action state while the stack is
-				// outside time (ordinary NO_ACTION keeps the legacy bookkeeping).
-				// If the controlling side has no fighting hero, there is no future
-				// Hero Action boundary that could release its origin. Treat this
-				// authenticated pass as the safe terminal boundary instead of
-				// scheduling the same stopped anchor forever.
-				if(pack.ba.timeStopHeroActionPass)
-					break;
-				if(st->isTimeStopped())
-				{
-					auto * battleState = gs.getBattle(pack.battleID);
-					const auto controlSide = battleState->playerToSide(battleState->battleGetOwner(st));
-					if(!battleState->battleGetFightingHero(controlSide))
-						battleState->expireTimeStops(controlSide);
-				}
-				if(!st->isTimeStopped())
-				{
-					st->waiting = false;
-					st->movedThisRound = true;
-				}
-				break;
 			default: //any active stack action - attack, catapult, heal, spell...
 				st->waiting = false;
 				st->movedThisRound = true;
@@ -3119,7 +3028,7 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				&& static_cast<int64_t>(pack.paidHeroManaCost) * newHorizonsHeroLuck::manaRefundPercent(rules) / 100 > 0
 				&& luck.triggered(newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::ErraticMana)))
 				flags |= static_cast<uint8_t>(newHorizonsHeroLuck::Proc::ErraticMana);
-			if(!pack.counterspellNegated && newHorizonsHeroLuck::hasDruidicLuck(hero)
+			if(newHorizonsHeroLuck::hasDruidicLuck(hero)
 				&& spells::heroLuckDamageEligible(*spell, rules)
 				&& luck.triggered(newHorizonsHeroLuck::chanceScalePercent(rules, newHorizonsHeroLuck::Proc::DruidicLuck)))
 				flags |= static_cast<uint8_t>(newHorizonsHeroLuck::Proc::DruidicLuck);
@@ -3149,14 +3058,9 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		if(!battle || pack.crossSchoolFormula != newHorizonsCrossSchoolFormula::acceptedReceipt(*battle, pack.side, pack.spellID))
 			throw std::runtime_error("Stale or forged Cross-School Formula cast receipt");
 	}
-	if(pack.paidHeroManaCost < 0 || pack.paidCounterspellManaCost < 0
+	if(pack.paidHeroManaCost < 0
 		|| (pack.paidHeroManaCost > 0 && (!pack.castByHero || !pack.activeCast
-			|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)))
-		|| (pack.paidCounterspellManaCost > 0
-			&& (!pack.castByHero || !pack.activeCast || !pack.counterspellNegated
-				|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER)
-				|| (pack.counterspellSide != BattleSide::ATTACKER && pack.counterspellSide != BattleSide::DEFENDER)
-				|| pack.counterspellSide == pack.side)))
+			|| (pack.side != BattleSide::ATTACKER && pack.side != BattleSide::DEFENDER))))
 		throw std::runtime_error("Invalid accepted hero Mana expenditure metadata");
 
 	if(pack.castByHero && pack.side != BattleSide::NONE)
@@ -3168,111 +3072,17 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		const auto * hero = battle->battleGetFightingHero(pack.side);
 		if(pack.paidHeroManaCost > 0 && !hero)
 			throw std::runtime_error("Accepted hero Mana expenditure has no fighting hero");
-		if(pack.paidCounterspellManaCost > 0 && !battle->battleGetFightingHero(pack.counterspellSide))
-			throw std::runtime_error("Accepted Counterspell Mana expenditure has no fighting hero");
 		const auto [automaticHeroCast, sharedActionBudget, spendsHeroAllowance, spellTransition] =
 			prepareAndCommitAcceptedHeroSpellAllowance(*battle, hero, pack);
 
-		if(!pack.metamagicFollowup)
-			casterSide.castSpellsCount++;
-		// The accepted cast packet is the own-ward boundary. Invalid or rejected
-		// requests never reach this visitor. An enemy hero spell still clears the
-		// opposing ward below, independent of its allowance.
-		if(spendsHeroAllowance)
-		{
-			casterSide.counterspellArmed = false;
-			casterSide.metamagicCountersequenceArmed = false;
-		}
+		casterSide.castSpellsCount++;
 		if(pack.temporalFieldCast)
 			casterSide.temporalFieldUsed = true;
 		if(pack.extendedSpell)
 			battle->consumeExtendSpell(pack.side);
-		if(pack.counterspellSide == BattleSide::ATTACKER || pack.counterspellSide == BattleSide::DEFENDER)
-		{
-			battle->getSide(pack.counterspellSide).counterspellArmed = false;
-			battle->getSide(pack.counterspellSide).metamagicCountersequenceArmed = false;
-		}
-		if(!pack.counterspellNegated && newHorizonsMagic::isCounterspell(pack.spellID.toSpell()))
-		{
-			casterSide.counterspellArmed = true;
-			casterSide.metamagicCountersequenceArmed = pack.metamagicFollowup
-				&& newHorizonsMagic::hasMetamagicPerk(
-					battle->battleGetFightingHero(pack.side), newHorizonsMagic::METAMAGIC_COUNTERSEQUENCE);
-		}
 
-		if(pack.metamagicManaRefund > 0)
-			casterSide.metamagicFormulaReserveUsed = true;
-		if(sharedActionBudget)
-		{
-			const auto & receipt = spellTransition->receipt;
-			if(receipt.allowance == HeroActionAllowanceState::AllowanceKind::HERO)
-			{
-				casterSide.heroCommandUsed = true;
-				if(spellTransition->pendingMetamagicGrants != 0)
-				{
-					casterSide.metamagicFirstSpell = pack.spellID;
-					casterSide.metamagicFirstTargetUnitId = pack.metamagicTargetUnitId;
-					casterSide.metamagicSequenceSpells = {pack.spellID};
-					casterSide.metamagicFirstCounterspellNegated = pack.counterspellNegated;
-				}
-			}
-			else if(receipt.source == HeroActionAllowanceState::GrantSource::METAMAGIC
-				|| receipt.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND)
-			{
-				casterSide.metamagicSequenceSpells.push_back(pack.spellID);
-				if(spellTransition->pendingMetamagicGrants == 0)
-					casterSide.clearMetamagicSequence();
-			}
-		}
-		else if(pack.metamagicFollowup)
-		{
-			const int rank = hero ? newHorizonsMagic::metamagicRank(hero) : 0;
-			const bool grandActivation = HeroSpellAllowanceTransition::activatesGrand(
-				pack.metamagicFollowup,
-				casterSide.metamagicPendingCount,
-				casterSide.metamagicSequenceSpells.size(),
-				casterSide.metamagicUsesConsumed,
-				static_cast<uint8_t>(rank),
-				hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-				casterSide.metamagicGrandUsed);
-			if(pack.metamagicGrand != grandActivation)
-				throw std::runtime_error("Battle spell cast has forged Grand Metamagic outcome");
-
-			if(pack.metamagicGrand)
-			{
-				if(!hero || casterSide.metamagicPendingCount != 1 || casterSide.metamagicSequenceSpells.size() != 1
-					|| casterSide.metamagicGrandUsed || rank < 3 || casterSide.metamagicUsesConsumed != 2
-					|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND))
-					throw std::runtime_error("Invalid server-derived Grand Metamagic outcome");
-				++casterSide.metamagicUsesConsumed;
-				casterSide.metamagicGrandUsed = true;
-				casterSide.metamagicPendingCount = 2;
-			}
-			else if(casterSide.metamagicSequenceSpells.size() == 1)
-			{
-				const int capacity = newHorizonsMagic::metamagicCapacity(hero);
-				if(!hero || capacity <= casterSide.metamagicUsesConsumed)
-					throw std::runtime_error("Metamagic use was not available when follow-up was accepted");
-				++casterSide.metamagicUsesConsumed;
-			}
-			--casterSide.metamagicPendingCount;
-			casterSide.metamagicSequenceSpells.push_back(pack.spellID);
-			if(casterSide.metamagicPendingCount == 0)
-				casterSide.clearMetamagicSequence();
-		}
-		else if(hero && !automaticHeroCast)
-		{
-			const int capacity = newHorizonsMagic::metamagicCapacity(hero);
-			if(capacity > casterSide.metamagicUsesConsumed && capacity > 0)
-			{
-				casterSide.metamagicPendingCount = 1;
-				casterSide.metamagicFirstSpell = pack.spellID;
-				casterSide.metamagicFirstTargetUnitId = pack.metamagicTargetUnitId;
-				casterSide.metamagicSequenceSpells = {pack.spellID};
-				casterSide.metamagicFirstCounterspellNegated = pack.counterspellNegated;
-			}
-		}
-
+		if(spendsHeroAllowance)
+			casterSide.heroCommandUsed = true;
 
 		const auto addManaSpent = [](SideInBattle & side, int32_t amount)
 		{
@@ -3284,8 +3094,6 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 				side.acceptedHeroManaSpent += amount;
 		};
 		addManaSpent(casterSide, pack.paidHeroManaCost);
-		if(pack.paidCounterspellManaCost > 0)
-			addManaSpent(battle->getSide(pack.counterspellSide), pack.paidCounterspellManaCost);
 		if(pack.crossSchoolFormula)
 			battle->setCrossSchoolFormulaState(pack.side, pack.crossSchoolFormula->after);
 		// This marker is set only after every accepted-cast validation above has
@@ -3318,7 +3126,7 @@ void GameStatePackVisitor::visitStacksInjured(StacksInjured & pack)
 	for (auto attackInfo : pack.stacks)
 	{
 		auto injuredStack = battle->getStack(attackInfo.stackAttacked);
-		if(injuredStack && !injuredStack->isTimeStopped())
+		if(injuredStack)
 			injuredStack->removeBonusesRecursive(Bonus::UntilTakingIndirectDamage);
 	}
 	pack.visitTyped(battleVisitor);
@@ -3445,8 +3253,6 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 		throw std::runtime_error("Invalid Field Instructor completion transaction");
 	for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		applyFormulaReserveClosureReward(*battle, sideID);
-		battle->getSide(sideID).clearMetamagicSequence();
 	}
 
 	spellPointBonusGraphChanged = true;
@@ -3550,13 +3356,6 @@ void GameStatePackVisitor::visitBattleStructureRepaired(BattleStructureRepaired 
 void GameStatePackVisitor::visitBattleSetStackProperty(BattleSetStackProperty & pack)
 {
 	CStack * stack = gs.getBattle(pack.battleID)->getStack(pack.stackID, false);
-	if(stack && stack->isTimeStopped())
-	{
-		// Resource/state packets are activation mutations too.  Time Stop keeps
-		// the unit present and blocking, but rejects forged or stale property
-		// changes until the authoritative expiry hook releases it.
-		return;
-	}
 	switch(pack.which)
 	{
 		case BattleSetStackProperty::CASTS:

@@ -1503,61 +1503,39 @@
 		"tags": {
 			"special": true
 		},
-		"combatStatus": {
-			"provider": "metamagicUses",
-			"description": "Remaining Metamagic uses for this combat. A use is consumed only when the extra spell is actually cast. If you do not use the optional action before the round ends, it expires without spending a use. Metamagic uses are not Spell Actions."
-		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +1% spell effectiveness and Magic Penetration.",
+			"description": "20% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
 			"images": {
 				"small": "NH_metamagic_prism_basic_small.png",
 				"medium": "NH_metamagic_prism_basic_medium.png",
 				"large": "NH_metamagic_prism_basic_large.png",
 				"scenarioBonus": "NH_metamagic_prism_basic_scenarioBonus.png"
 			},
-			"effects": {
-				"metamagicUses": {
-					"type": "METAMAGIC_USES_PER_COMBAT",
-					"valueType": "BASE_NUMBER",
-					"val": 1
-				}
-			}
+			"effects": {}
 		},
 		"advanced": {
-			"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +2% spell effectiveness and Magic Penetration.",
+			"description": "30% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
 			"images": {
 				"small": "NH_metamagic_prism_advanced_small.png",
 				"medium": "NH_metamagic_prism_advanced_medium.png",
 				"large": "NH_metamagic_prism_advanced_large.png",
 				"scenarioBonus": "NH_metamagic_prism_advanced_scenarioBonus.png"
 			},
-			"effects": {
-				"metamagicUses": {
-					"type": "METAMAGIC_USES_PER_COMBAT",
-					"valueType": "BASE_NUMBER",
-					"val": 2
-				}
-			}
+			"effects": {}
 		},
 		"expert": {
-			"description": "Start combat with 1 Metamagic point; gain 1 each later round, up to 12; each point grants +3% spell effectiveness and Magic Penetration.",
+			"description": "40% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
 			"images": {
 				"small": "NH_metamagic_prism_expert_small.png",
 				"medium": "NH_metamagic_prism_expert_medium.png",
 				"large": "NH_metamagic_prism_expert_large.png",
 				"scenarioBonus": "NH_metamagic_prism_expert_scenarioBonus.png"
 			},
-			"effects": {
-				"metamagicUses": {
-					"type": "METAMAGIC_USES_PER_COMBAT",
-					"valueType": "BASE_NUMBER",
-					"val": 3
-				}
-			}
+			"effects": {}
 		}
 	},
 	"shroudOfMalassa": {

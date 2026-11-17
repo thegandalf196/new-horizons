@@ -202,7 +202,7 @@ void BattleTestFixture::makeNeutral(CGHeroInstance * hero)
 
 	// Starting ranks now carry mandatory perks. Clear those identities before
 	// rank removal rebuilds skill bonuses, so scenarios can train a fresh tier.
-	const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
+	const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).replaceSelected({});
 	for(int i = 0; i < LIBRARY->skillh->size(); ++i)
 		hero->setSecSkillLevel(SecondarySkill(i), 0, ChangeValueMode::ABSOLUTE);
 

@@ -22,7 +22,7 @@ bool eligible(const CBattleInfoCallback & battle, BattleSide side, const battle:
 	const auto * hero = battle.getBattle()->getSideHero(side);
 	return hero && hero->hasActivePerk("new-horizons:battlecraft", std::string(PERK_KEY))
 		&& unit && unit->alive() && !unit->isGhost() && unit->waited()
-		&& unit->willMove() && !unit->isTimeStopped() && !newHorizonsFrozen::isFrozen(*unit)
+		&& unit->willMove() && !newHorizonsFrozen::isFrozen(*unit)
 		&& !newHorizonsSwiftRebirth::normalActivationCompleted(*unit, battle.battleGetRound())
 		&& battle.battleGetOwner(unit) == battle.getBattle()->getSidePlayer(side);
 }

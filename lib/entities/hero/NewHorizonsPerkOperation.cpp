@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsPerkOperation.h"
+#include "../../nativeRules/CapturedPerkRules.h"
 #include <algorithm>
 #include <array>
 #include <set>
@@ -59,13 +60,15 @@ bool PerkState::canAcquirePerkInState(const JsonNode & rules, const std::vector<
 		if(!occupied[prerequisite])
 			return false;
 	const bool onePerTier = !usesR2PerkOffers(rules)
-		|| (usesStrictPerkProgression(rules) && !usesFourOfferProgression(rules));
+		|| (usesStrictPerkProgression(rules) && !usesFourOfferProgression(rules))
+		|| usesExclusivePerkTiers(rules);
 	return !onePerTier || !occupied[tier];
 }
 
 void PerkState::validateSelections() const { validateSelections(selected); }
 void PerkState::validateSelections(const std::vector<PerkSelection> & selections) const
 {
+	const auto & rules = getRules();
 	if(!usesPerkRules(rules))
 	{
 		if(!selections.empty())
@@ -96,18 +99,28 @@ void PerkState::validateSelections(const std::vector<PerkSelection> & selections
 }
 
 PerkSelectionOperation::PerkSelectionOperation(const PerkState & value)
-	: source(value), catalog(value.rules), working(value.selected)
+	: source(value), capturedSnapshot(value.capturedOwner()),
+	  catalog(capturedSnapshot ? capturedSnapshot->admitted() : uncapturedCatalog.emplace(value.getRules())),
+	  publishedSelections(value.selected), working(publishedSelections)
 {
 	source.validateSelections(working);
 }
 
+void PerkSelectionOperation::requireCurrentCapture() const
+{
+	if(source.capturedOwner() != capturedSnapshot || source.getSelected() != publishedSelections)
+		throw std::logic_error("Perk operation source was replaced");
+}
+
 bool PerkSelectionOperation::canAcquire(const std::string & skill, const std::string & perk, int rank) const
 {
-	return source.canAcquirePerkInState(source.rules, working, skill, perk, rank);
+	requireCurrentCapture();
+	return source.canAcquirePerkInState(source.getRules(), working, skill, perk, rank);
 }
 
 bool PerkSelectionOperation::hasTier(const std::string & skill, int tier) const
 {
+	requireCurrentCapture();
 	return std::any_of(working.begin(), working.end(), [&](const auto & choice)
 	{
 		if(choice.skillId != skill) return false;
@@ -118,10 +131,12 @@ bool PerkSelectionOperation::hasTier(const std::string & skill, int tier) const
 
 std::vector<PerkOfferCandidate> PerkSelectionOperation::candidates(const std::string & skillId, int tier) const
 {
-	const auto & rules = source.rules;
+	requireCurrentCapture();
+	const auto & rules = source.getRules();
 	if(!usesPerkRules(rules) || tier <= 0 || tier > 3)
 		return {};
-	if(usesUnifiedSkillProgression(rules) && hasTier(skillId, tier))
+	const bool orderedTiers = usesUnifiedSkillProgression(rules) || usesExclusivePerkTiers(rules);
+	if(orderedTiers && hasTier(skillId, tier))
 		return {};
 	const auto & skills = rules["skills"].Struct();
 	const auto parent = skills.find(skillId);
@@ -135,7 +150,7 @@ std::vector<PerkOfferCandidate> PerkSelectionOperation::candidates(const std::st
 				{ return choice.skillId == skillId && choice.perkId == id; }))
 			continue;
 		const auto rank = perkRequiredRank(row["requires"].String());
-		if(rank != tier || (usesUnifiedSkillProgression(rules) && !canAcquire(skillId, id, tier)))
+		if(rank != tier || (orderedTiers && !canAcquire(skillId, id, tier)))
 			continue;
 		result.push_back({{skillId, id}, row["name"].String(), row["description"].String(), rank});
 	}
@@ -144,8 +159,9 @@ std::vector<PerkOfferCandidate> PerkSelectionOperation::candidates(const std::st
 
 std::vector<PerkOfferCandidate> PerkSelectionOperation::eligibleCandidates(const std::string & skill, int rank) const
 {
+	requireCurrentCapture();
 	std::vector<PerkOfferCandidate> result;
-	const auto & skills = source.rules["skills"].Struct();
+	const auto & skills = source.getRules()["skills"].Struct();
 	const auto parent = skills.find(skill);
 	if(parent == skills.end()) return result;
 	for(const auto & row : parent->second["perks"].Vector())
@@ -161,8 +177,9 @@ std::vector<PerkOfferCandidate> PerkSelectionOperation::eligibleCandidates(const
 std::vector<PerkOfferCandidate> PerkSelectionOperation::next(
 	const std::function<int(const std::string &)> & rankLookup) const
 {
-	if(!usesPersistentHeroProgression(source.rules)) return {};
-	for(const auto & [skill, definition] : source.rules["skills"].Struct())
+	requireCurrentCapture();
+	if(!usesPersistentHeroProgression(source.getRules())) return {};
+	for(const auto & [skill, definition] : source.getRules()["skills"].Struct())
 	{
 		const int rank = rankLookup(skill);
 		if(rank < 0 || rank > 3)
@@ -181,9 +198,10 @@ std::vector<PerkOfferCandidate> PerkSelectionOperation::next(
 
 void PerkSelectionOperation::select(const std::string & skill, const std::string & perk, int rank)
 {
+	requireCurrentCapture();
 	if(committed)
 		throw std::logic_error("Perk operation already committed");
-	const auto & rules = source.rules;
+	const auto & rules = source.getRules();
 	if(usesStrictPerkProgression(rules))
 	{
 		if(!canAcquire(skill, perk, rank))
@@ -218,10 +236,11 @@ void PerkSelectionOperation::select(const std::string & skill, const std::string
 
 void PerkSelectionOperation::commit(PerkState & destination)
 {
+	requireCurrentCapture();
 	if(committed || &destination != &source)
 		throw std::logic_error("Perk operation cannot commit into another captured state");
 	source.validateSelections(working);
-	destination.selected = std::move(working);
+	destination.replaceSelected(std::move(working));
 	committed = true;
 }
 

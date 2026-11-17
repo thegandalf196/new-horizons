@@ -140,7 +140,7 @@ TEST_F(IncomingHealingTest, CapacityQueryKeepsIneligibleRecipientsAndInvalidHeal
 	ASSERT_EQ(state.getPhantomInitialIntegrity(), 150);
 	EXPECT_EQ(state.healingCapacity(100, EHealLevel::HEAL, EHealPower::PERMANENT), 0);
 }
-TEST_F(IncomingHealingTest, TimeStopAndMalformedReductionDoNotMutateHealth)
+TEST_F(IncomingHealingTest, MalformedReductionDoesNotMutateHealth)
 {
 	int64_t loss = 10;
 	state.damage(loss);
@@ -149,11 +149,7 @@ TEST_F(IncomingHealingTest, TimeStopAndMalformedReductionDoNotMutateHealth)
 	int64_t request = 1000;
 	EXPECT_THROW(state.heal(request, EHealLevel::HEAL, EHealPower::PERMANENT), std::invalid_argument);
 	EXPECT_EQ(state.save(), before);
-	bonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_EQ(state.healingCapacity(1000, EHealLevel::HEAL, EHealPower::PERMANENT), 0);
-	EXPECT_EQ(state.heal(request, EHealLevel::HEAL, EHealPower::PERMANENT).healedHealthPoints, 0);
-	EXPECT_EQ(request, 0);
+
 }
 TEST_F(IncomingHealingTest, HydraScalesAggregateOnceWithoutGivingOneBodyMoreThanItsAllowance)
 {

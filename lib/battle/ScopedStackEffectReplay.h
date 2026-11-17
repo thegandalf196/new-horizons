@@ -30,7 +30,6 @@ template<typename Queries>
 void removeRecord(Queries & queries, uint32_t id, const Bonus & value)
 {
 	const auto & unit = queries.current(id);
-	if(stackEffectRecordRules::removalProtected(unit, value)) return;
 	auto & state = queries.state(id);
 	if(stackEffectRecordRules::selectsCurrentFormMarker(state, value)
 		&& !endBattleFormAtNearestLegalPosition(state, queries.accessibility(id))) return;
@@ -57,7 +56,6 @@ bool incomingRecord(Queries & queries, uint32_t id, const Bonus & value, bool fo
 	}
 	if(value.type == BonusType::CONFUSION_PENDING) newHorizonsConfusionControl::validateMarker(value);
 	if(value.type == BonusType::PHYSICAL_AFFLICTION) physicalAfflictions::markerMetadata(value);
-	if(stackEffectRecordRules::incomingProtected(unit, value)) return false;
 	auto & state = queries.state(id);
 	if(value.type == BonusType::CONFUSION_PENDING)
 	{

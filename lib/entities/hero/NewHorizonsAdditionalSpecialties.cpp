@@ -34,7 +34,7 @@ namespace newHorizonsHeroes
 {
 bool usesConvertedCreatureSpecialty(const CGHeroInstance * hero)
 {
-	return hero && (creatureLineSpecialtyRules(hero->getPrimaryGrowthRules()).has_value()
+	return hero && (hero->compiledDevelopment()->creatureLine.has_value()
 		|| replacesGenericCreatureSpecialty(hero));
 }
 
@@ -115,7 +115,7 @@ bool ancientOathsEnabled(const JsonNode & development)
 bool hasAncientOaths(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroType() && hero->getHeroType()->getJsonKey() == "core:nimbus"
-		&& ancientOathsEnabled(hero->getPrimaryGrowthRules());
+		&& hero->compiledDevelopment()->usesAncientOaths();
 }
 
 std::optional<FieldPhysicianRules> fieldPhysicianRules(const JsonNode & development)
@@ -137,7 +137,7 @@ int fieldPhysicianHealingPercent(const CGHeroInstance * hero)
 	if(!hero || !hero->getHeroTypeID().hasValue()
 		|| hero->getHeroTypeID() != HeroTypeID(HeroTypeID::decode("core:rion")))
 		return 0;
-	const auto rule = fieldPhysicianRules(hero->getPrimaryGrowthRules());
+	const auto rule = hero->compiledDevelopment()->fieldPhysician;
 	return rule ? cappedSpecialtyContribution(hero->level, rule->healingPercentPerLevel, rule->healingMaximumPercent) : 0;
 }
 

@@ -24,13 +24,12 @@
 
 std::vector<BattleEvaluator::SpellOption> BattleEvaluator::collectCastableHeroSpellOptions(
 	const std::shared_ptr<CPlayerBattleCallback> & battleView, const CGHeroInstance * hero,
-	bool allowSpells, bool mandatoryOrder, bool legacyMetamagicFollowup,
+	bool allowSpells, bool mandatoryOrder,
 	const DivineMandateStatus & divineMandateStatus,
 	const battleAIDiagnostic::Admission * admission) const
 {
 	std::vector<SpellOption> possibleSpells;
-	if(admission) admission->requireSupportedContext(mandatoryOrder, legacyMetamagicFollowup
-		|| divineMandateStatus.pendingFollowup.has_value());
+	if(admission) admission->requireSupportedContext(mandatoryOrder, divineMandateStatus.pendingFollowup.has_value());
 
 	for(auto const & s : LIBRARY->spellh->objects)
 	{
@@ -38,28 +37,16 @@ std::vector<BattleEvaluator::SpellOption> BattleEvaluator::collectCastableHeroSp
 			continue;
 		if(admission && !admission->permits(s->getId())) continue;
 
-		bool candidateMetamagicFollowup = legacyMetamagicFollowup;
 		bool divineMandateFollowup = false;
 		if(divineMandateStatus.active)
 		{
 			const auto selection = battleView->battleGetSpellActionAllowance(side, s->getId());
-			if(!selection)
-				continue;
-			candidateMetamagicFollowup = battleView->battleCanUseMetamagicFollowup(side, s->getId());
+			if(!selection) continue;
 			divineMandateFollowup = divineMandateStatus.pendingFollowup
 				&& selection->grantId == divineMandateStatus.pendingFollowup->id;
 		}
-
-		const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(candidateMetamagicFollowup,
-			cb->getBattle(battleID)->battleMetamagicPendingCount(side),
-			cb->getBattle(battleID)->battleMetamagicSequenceSpells(side).size(),
-			cb->getBattle(battleID)->battleMetamagicUsesConsumed(side),
-			newHorizonsMagic::metamagicRank(hero),
-			newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-			cb->getBattle(battleID)->battleMetamagicGrandUsed(side));
-		if(s->canBeCast(battleView.get(), spells::Mode::HERO, hero, activatesGrand))
-			possibleSpells.push_back({s.get(), candidateMetamagicFollowup,
-				divineMandateFollowup, activatesGrand});
+		if(s->canBeCast(battleView.get(), spells::Mode::HERO, hero))
+			possibleSpells.push_back({s.get(), divineMandateFollowup});
 	}
 	return possibleSpells;
 }
@@ -75,17 +62,8 @@ bool BattleEvaluator::canCastSpell()
 			for(const auto & spell : LIBRARY->spellh->objects)
 			{
 				const auto selection = battleView->battleGetSpellActionAllowance(side, spell->getId());
-				const bool metamagicFollowup = selection
-					&& battleView->battleCanUseMetamagicFollowup(side, spell->getId());
-				const bool grand = HeroSpellAllowanceTransition::activatesGrand(metamagicFollowup,
-					battleView->battleMetamagicPendingCount(side),
-					battleView->battleMetamagicSequenceSpells(side).size(),
-					battleView->battleMetamagicUsesConsumed(side),
-					newHorizonsMagic::metamagicRank(hero),
-					newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-					battleView->battleMetamagicGrandUsed(side));
-				if(selection && (battleSpellCandidates::isBattleSpell(spell.get()) || newHorizonsMagic::isCounterspell(spell.get()))
-					&& spell->canBeCast(battleView.get(), spells::Mode::HERO, hero, grand))
+				if(selection && battleSpellCandidates::isBattleSpell(spell.get())
+					&& spell->canBeCast(battleView.get(), spells::Mode::HERO, hero))
 					return true;
 			}
 	}

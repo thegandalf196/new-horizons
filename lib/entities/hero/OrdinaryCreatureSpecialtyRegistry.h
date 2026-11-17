@@ -19,5 +19,5 @@ struct OrdinaryCreatureSpecialty
 	const char * summary = "";
 };
 /// Internal finite authored rows; capture validation and contextual dispatch stay with their owner.
-std::span<const OrdinaryCreatureSpecialty> ordinaryCreatureSpecialtyRegistry();
+DLL_LINKAGE std::span<const OrdinaryCreatureSpecialty> ordinaryCreatureSpecialtyRegistry();
 }

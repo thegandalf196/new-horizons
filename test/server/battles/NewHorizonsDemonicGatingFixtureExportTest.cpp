@@ -231,7 +231,7 @@ TEST_F(NewHorizonsDemonicGatingFixtureExportTest, OrdinaryMariusBattleAdvertises
 	ASSERT_EQ(human->getStackPtr(SlotID(0))->getCount(), 20);
 	EXPECT_TRUE(human->getDemonicReserve().empty());
 	EXPECT_TRUE(newHorizonsDemonicGating::usesTemporaryGating(human))
-		<< human->getPerkState().rules["demonicGatingPolicy"].toCompactString();
+		<< human->getPerkState().getRules()["demonicGatingPolicy"].toCompactString();
 	EXPECT_EQ(human->getPerkSkillRank("new-horizons:demonicGating"), MasteryLevel::BASIC);
 	const auto worldCategory = gameState()->getCreatureCategory(imp);
 	EXPECT_TRUE(worldCategory.has_value()) << gameState()->getCreatureCategoryRules().getRules().toCompactString();
@@ -263,7 +263,6 @@ TEST_F(NewHorizonsDemonicGatingFixtureExportTest, OrdinaryMariusBattleAdvertises
 	EXPECT_TRUE(source->unitSlot().validSlot());
 	EXPECT_FALSE(source->hasOpenedDemonicGate());
 	EXPECT_EQ(visible.battleGetOwner(source), visible.sideToPlayer(side));
-	EXPECT_FALSE(source->isTimeStopped());
 	EXPECT_FALSE(source->isFrozen());
 	EXPECT_FALSE(source->hasBonusOfType(BonusType::NOT_ACTIVE));
 	EXPECT_EQ(source->creatureId().toCreature()->getFactionID(), FactionID::INFERNO);

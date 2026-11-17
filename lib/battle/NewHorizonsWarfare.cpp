@@ -78,7 +78,7 @@ bool enabled(const JsonNode & rules)
 
 bool enabled(const CGHeroInstance * hero)
 {
-	return hero && enabled(hero->getPerkState().rules);
+	return hero && enabled(hero->getPerkState().getRules());
 }
 
 void validatePolicy(const JsonNode & rules)
@@ -97,12 +97,12 @@ void validateRulesSerialization(const JsonNode & rules, bool supported)
 std::optional<Policy> policy(const CGHeroInstance * hero)
 {
 	if(!enabled(hero)) return {};
-	return readPolicy(hero->getPerkState().rules);
+	return readPolicy(hero->getPerkState().getRules());
 }
 
 int perkValue(const CGHeroInstance & hero, const char * perkId, const char * parameter)
 {
-	return value(parameters(hero.getPerkState().rules, perkId), parameter);
+	return value(parameters(hero.getPerkState().getRules(), perkId), parameter);
 }
 
 int battlePlanBonus(const CBattleInfoCallback & battle, BattleSide side)
@@ -135,7 +135,7 @@ int incomingReduction(const CBattleInfoCallback & battle, const battle::Unit * u
 {
 	constexpr auto perk = "new-horizons:command.crisisCommand";
 	const auto * hero = benefitingHero(battle, unit, perk);
-	return hero ? value(parameters(hero->getPerkState().rules, perk), "attackAndSpellReductionPercent", 100) : 0;
+	return hero ? value(parameters(hero->getPerkState().getRules(), perk), "attackAndSpellReductionPercent", 100) : 0;
 }
 
 int64_t reduceDamage(int64_t damage, int reductionPercent)

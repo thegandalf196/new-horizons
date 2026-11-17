@@ -69,7 +69,7 @@ TEST_F(NewHorizonsSerpentsEmbraceBattleTest, EachSourceExpiresIndependentlyAtIts
 	EXPECT_FALSE(heldBy(second));
 	EXPECT_GT(target->getMovementRange(), 0);
 }
-TEST_F(NewHorizonsSerpentsEmbraceBattleTest, ContinuationsAndStoppedSyntheticQueueDoNotExpireSourceHold)
+TEST_F(NewHorizonsSerpentsEmbraceBattleTest, ContinuationsDoNotExpireSourceHold)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	install(source, target);
@@ -80,24 +80,19 @@ TEST_F(NewHorizonsSerpentsEmbraceBattleTest, ContinuationsAndStoppedSyntheticQue
 		activate(source, reason);
 		EXPECT_TRUE(heldBy(source));
 	}
-	auto stopped = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	stopped->parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(BattleSide::ATTACKER));
-	source->addNewBonus(stopped);
-	activate(source, BattleUnitTurnReason::AUTOMATIC_ACTION);
-	EXPECT_TRUE(heldBy(source));
+
 }
-TEST_F(NewHorizonsSerpentsEmbraceBattleTest, SourceExpiryRemovesOnlyItsHoldOnStoppedTarget)
+TEST_F(NewHorizonsSerpentsEmbraceBattleTest, SourceExpiryRemovesOnlyItsHoldOnInvincibleTarget)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	install(source, target);
 	auto stopped = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+		BonusType::INVINCIBLE, BonusSource::OTHER, 1, BonusSourceID());
 	stopped->parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(BattleSide::DEFENDER));
 	target->addNewBonus(stopped);
 	activate(source, BattleUnitTurnReason::TURN_QUEUE);
 	EXPECT_FALSE(heldBy(source));
-	EXPECT_TRUE(target->isTimeStopped());
+	EXPECT_TRUE(target->hasBonusOfType(BonusType::INVINCIBLE));
 }
 TEST_F(NewHorizonsSerpentsEmbraceBattleTest, ForcedDisplacementRetainsSourceDurationHold)
 {

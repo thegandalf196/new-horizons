@@ -253,22 +253,7 @@ TEST_F(NewHorizonsIronWillTest, SecondWindIsNotAnEndRoundCarry)
 	EXPECT_THROW(order.validateShape(), std::runtime_error);
 }
 
-TEST_F(NewHorizonsIronWillTest, ActualTimeStopPassWithoutActivationPreservesCarry)
-{
-	prepare();
-	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
-	advanceRound();
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	SetStackEffect effect;
-	effect.battleID = BattleID(0);
-	effect.toAdd.emplace_back(friendly->unitId(), std::vector<Bonus>{stopped});
-	gameHandler->sendAndApply(effect);
-	activateFriendly();
-	ASSERT_TRUE(friendly->isTimeStopped());
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
-		BattleAction::makeNoAction(friendly)));
-	EXPECT_TRUE(current(HeroCommand::RIPOSTE).scheduledFor(friendly->unitId(), battle()->battleGetRound()));
-}
+
 
 TEST_F(NewHorizonsIronWillTest, ActualFrozenForfeitureCompletesCarryAndThaws)
 {
@@ -288,7 +273,7 @@ TEST_F(NewHorizonsIronWillTest, ActualFrozenForfeitureCompletesCarryAndThaws)
 	EXPECT_FALSE(current(HeroCommand::RIPOSTE).scheduledFor(friendly->unitId(), battle()->battleGetRound()));
 }
 
-TEST_F(NewHorizonsIronWillTest, DetachedStasisPassAndGenuineCompletionIsolateParentSiblingAndLive)
+TEST_F(NewHorizonsIronWillTest, DetachedTurnAndGenuineCompletionIsolateParentSiblingAndLive)
 {
 	prepare();
 	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
@@ -298,13 +283,13 @@ TEST_F(NewHorizonsIronWillTest, DetachedStasisPassAndGenuineCompletionIsolatePar
 	parent->nextRound();
 	auto child = std::make_shared<HypotheticBattle>(&environment, parent);
 	auto sibling = std::make_shared<HypotheticBattle>(&environment, parent);
-	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+	Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID());
 	child->addUnitBonus(friendly->unitId(), {stopped});
 	child->nextTurn(friendly->unitId(), BattleUnitTurnReason::TURN_QUEUE);
 	EXPECT_TRUE(child->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::RIPOSTE)
 		->scheduledFor(friendly->unitId(), child->getRound()));
 	child->removeUnitBonus(friendly->unitId(), {stopped});
-	EXPECT_FALSE(child->battleGetUnitByID(friendly->unitId())->isTimeStopped());
+	EXPECT_FALSE(child->battleGetUnitByID(friendly->unitId())->hasBonusOfType(BonusType::LUCK));
 	child->completeNormalActivation(friendly->unitId());
 	EXPECT_FALSE(child->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::RIPOSTE)
 		->scheduledFor(friendly->unitId(), child->getRound()));

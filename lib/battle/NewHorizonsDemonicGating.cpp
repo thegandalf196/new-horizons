@@ -49,7 +49,7 @@ bool usesTemporaryGating(const JsonNode & rules)
 
 bool usesTemporaryGating(const CGHeroInstance * hero)
 {
-	return hero && usesTemporaryGating(hero->getPerkState().rules);
+	return hero && usesTemporaryGating(hero->getPerkState().getRules());
 }
 
 bool usesMobileGate(const CGHeroInstance * hero)
@@ -68,8 +68,7 @@ bool eligibleOriginalStack(const CBattleInfoCallback & battle, const battle::Uni
 	const auto * hero = battle.battleGetFightingHero(side);
 	if(!usesTemporaryGating(hero) || !source.alive() || source.isGhost() || source.isClone()
 		|| source.isSummoned() || !source.unitSlot().validSlot() || source.hasOpenedDemonicGate()
-		|| source.unitSide() != side || battle.battleGetOwner(&source) != battle.sideToPlayer(side)
-		|| source.isTimeStopped() || source.isFrozen() || source.hasBonusOfType(BonusType::NOT_ACTIVE)
+		|| source.unitSide() != side || battle.battleGetOwner(&source) != battle.sideToPlayer(side) || source.isFrozen() || source.hasBonusOfType(BonusType::NOT_ACTIVE)
 		|| source.creatureId().toCreature()->getFactionID() != FactionID::INFERNO)
 		return false;
 	const int rank = hero->getPerkSkillRank(SKILL);

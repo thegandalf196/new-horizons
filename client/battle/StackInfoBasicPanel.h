@@ -42,12 +42,12 @@ private:
 	std::vector<std::shared_ptr<LRClickableAreaWText>> statusTooltips;
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;
+	int displayedFocusCharges = 0;
 	newHorizonsBattleStatus::BattleMoraleReadback displayedMoraleReadback;
 	newHorizonsBattleStatus::BattleLuckReadback displayedLuckReadback;
 	std::string displayedSoulChainSignature;
 	arcaneInspirationPresentation::Readout displayedInspiration;
 	elementalAttunementPresentation::Readout displayedAttunement;
-	std::array<uint8_t, 2> displayedArcaneMarks{};
 	int displayedMorale = 0;
 	int32_t displayedSummonRounds = 0;
 	std::optional<newHorizonsBattleStatus::BattleBonusDescriptionCacheKey> bonusDescriptionCacheKey;

@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "NewHorizonsFocusMagic.h"
 #include "NewHorizonsCombatSkills.h"
 
 #include "../mapObjects/CGHeroInstance.h"
@@ -98,6 +99,8 @@ bool isOrdinaryCreatureAttacker(const battle::Unit * attacker)
 
 bool isPhysicalAttackDamage(const battle::Unit * attacker, bool shooting, bool spellLike)
 {
+	if(shooting && attacker && newHorizonsFocusMagic::converted(*attacker))
+		return true;
 	return !spellLike && !(shooting && attacker && attacker->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK));
 }
 
@@ -127,7 +130,7 @@ std::int64_t applyVeteran(battle::CUnitState * state, const CGHeroInstance * her
 	state->veteranPhysicalDamageSinceActivation = 0;
 	if(damageSinceActivation <= 0 || !hero
 		|| !hero->hasActivePerk(std::string(ARMORER_SKILL_ID), std::string(VETERAN_PERK_ID))
-		|| !state->alive() || state->isTimeStopped() || state->isClone()
+		|| !state->alive() || state->isClone()
 		|| state->getPhantomInitialIntegrity() > 0)
 		return 0;
 

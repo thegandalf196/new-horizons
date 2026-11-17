@@ -52,7 +52,7 @@ ClientSourceObservation observeClient(const CBattleInfoCallback & source, uint32
 		const auto held = stack->getAllBonuses(Selector::all, "owned-preparation-client-source-audit");
 		ClientUnitObservation value;
 		value.id = stack->unitId(); value.scalar = const_cast<CStack *>(stack)->save();
-		value.stopped = stack->isTimeStopped(); value.healingReduction = battle::healingReceivedReduction(*stack);
+		value.healingReduction = battle::healingReceivedReduction(*stack);
 		value.treeVersion = stack->getTreeVersion(); value.cachedOwner = std::shared_ptr<const void>(held, nullptr);
 		result.units.push_back(std::move(value));
 		const auto & local = stack->getExportedBonusList();
@@ -87,7 +87,7 @@ bool sameClient(const ClientSourceObservation & before, const ClientSourceObserv
 	for(size_t i = 0; i < before.units.size(); ++i)
 	{
 		const auto & first = before.units[i]; const auto & last = after.units[i];
-		if(first.id != last.id || first.scalar != last.scalar || first.stopped != last.stopped
+		if(first.id != last.id || first.scalar != last.scalar
 			|| first.healingReduction != last.healingReduction || first.treeVersion != last.treeVersion
 			|| first.cachedOwner.owner_before(last.cachedOwner) || last.cachedOwner.owner_before(first.cachedOwner)) return false;
 	}
@@ -101,7 +101,7 @@ Observation observe(CGameHandler & handler, const CBattleInfoCallback & battle, 
 	if(!source || !random) throw std::runtime_error("Audit requires actual native stack and simulation random stream");
 	Observation value; value.battle = battle.getBattle()->getBattleID(); value.target = id; value.activationSerial = battle.getBattle()->getActivationSerial();
 	value.scalar = const_cast<CStack *>(source)->save();
-	value.stopped = source->isTimeStopped(); value.healingReduction = battle::healingReceivedReduction(*source);
+	value.healingReduction = battle::healingReceivedReduction(*source);
 	CMemorySerializer wire; wire.oser & *random; value.simulationRng = wire.extractBuffer();
 	return value;
 }
@@ -143,7 +143,7 @@ void beforeClientCapture(const CBattleInfoCallback & source, uint32_t active, in
 		throw std::logic_error("Client source baseline is outside the actual quiescent observation");
 	const auto target = std::find_if(captured.units.begin(), captured.units.end(), [active](const auto & unit) { return unit.id == active; });
 	if(target == captured.units.end() || target->scalar != owner->initial->scalar
-		|| target->stopped != owner->initial->stopped || target->healingReduction != owner->initial->healingReduction)
+		|| target->healingReduction != owner->initial->healingReduction)
 		throw std::logic_error("Actual decoded client target differs from quiescent simulation target");
 	owner->clientBefore = std::move(captured);
 }

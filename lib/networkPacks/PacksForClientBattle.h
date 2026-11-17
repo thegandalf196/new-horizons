@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "NetPacksBase.h"
-#include "SetMetamagicPointState.h"
 #include "SetElementalAttunementState.h"
 #include "BattleChanges.h"
 #include "BattleUnitStateCompatibility.h"
@@ -64,13 +63,9 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 			info->validateOwnedBonusSerialization(BonusSerializationContext::fromHandler(h));
 		if(h.saving && info) info->validateSylvanTacticsSerialization(h);
 		if(h.saving && info)
-			info->validateMetamagicPointSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS));
-		if(h.saving && info)
 			info->validatePassiveFactionStateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 		if(h.saving && info)
 			info->validateCapturedSideSpecialtiesSerialization(h);
-		if(h.saving && info)
-			info->validateTimeStopSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_CONSUMED_SLOT));
 		if(h.saving && info && info->getLuckRollRules().finalDirectPhysicalMultiplier
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FINAL_LUCK))
 			throw std::runtime_error("Cannot discard captured final physical Luck policy from BattleStart");
@@ -94,8 +89,6 @@ struct DLL_LINKAGE BattleStart : public CPackForClient
 		if(h.saving && info)
 			info->validateTrainingSerialization(h);
 		if(h.saving && info) info->validatePlagueSerialization(h);
-		if(h.saving && info)
-			info->validateMetamagicCapacitySerialization(h);
 		if(h.saving && info)
 			info->validateSharedPurposeSerialization(h);
 		if(h.saving && info)
@@ -1231,6 +1224,9 @@ struct BattleStackAttacked
 
 struct DLL_LINKAGE BattleAttack : public CPackForClient
 {
+	/// Accepted-strike presentation facts survive consumption of the last charge.
+	bool focusMagicRanged = false;
+	bool focusMagicConverted = false;
 	std::optional<newHorizonsAerialSupremacy::Excursion> aerialExcursion;
 	BattleUnitsChanged attackerChanges;
 	/// Server-authored post-roll snapshot, shared by every target of the strike.
@@ -1336,11 +1332,24 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 		if(lastStandRetaliation() != endedActiveActivation)
 			throw std::runtime_error("Last Stand retaliation marker does not match its activation-ending hit");
 	}
+	void validateFocusMagicMarker() const
+	{
+		if((focusMagicConverted && !focusMagicRanged)
+			|| (focusMagicRanged && (!shot() || bsa.empty())))
+			throw std::runtime_error("Invalid Focus Magic attack presentation");
+	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
 	template <typename Handler> void validateSerializationPrefix(Handler & h)
 	{
+		if(h.saving)
+		{
+			validateFocusMagicMarker();
+			if((focusMagicRanged || focusMagicConverted)
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_RETIREMENT))
+				throw std::runtime_error("Cannot discard Focus Magic attack presentation");
+		}
 		if(h.saving && aerialExcursion)
 		{
 			validateAerialExcursionMarker();
@@ -1441,6 +1450,16 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 		h & bsa;
 		h & stackAttacking;
 		h & flags;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SORCERY_RETIREMENT))
+		{
+			h & focusMagicRanged;
+			h & focusMagicConverted;
+		}
+		else if(!h.saving)
+		{
+			focusMagicRanged = false;
+			focusMagicConverted = false;
+		}
 		h & tile;
 		h & spellID;
 		h & attackerChanges;
@@ -1502,6 +1521,7 @@ struct DLL_LINKAGE BattleAttack : public CPackForClient
 		}
 		if(!h.saving)
 		{
+			validateFocusMagicMarker();
 			validateLastStandMarker();
 			validateLuckSerendipityMarker();
 			validatePerfectFortuneMarker();
@@ -1833,8 +1853,7 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	void validateAutomaticHeroCast() const
 	{
 		automaticHeroCast.validateEnvelope(castByHero, activeCast, casterStack, side, paidHeroManaCost);
-		if(automaticHeroCast.automatic() && (metamagicFollowup || metamagicGrand || metamagicManaRefund != 0
-			|| metamagicTargetUnitId != std::numeric_limits<uint32_t>::max() || temporalFieldCast))
+		if(automaticHeroCast.automatic() && temporalFieldCast)
 			throw std::runtime_error("Automatic hero spell cannot carry additional-action metadata");
 	}
 	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
@@ -1861,15 +1880,8 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 	bool castByHero = true; //if true - spell has been cast by hero, otherwise by a creature
 	bool temporalFieldCast = false; // consumes the saved once-per-combat Sorcery Mass Slow budget
 	bool extendedSpell = false;
-	BattleSide counterspellSide = BattleSide::NONE; // ward side consumed or collapsed while this hero spell was attempted
-	bool counterspellNegated = false; // the ward had enough mana and suppressed this spell's effects
-	bool metamagicFollowup = false; // this spell spends a Metamagic Spell Action without recursively granting another
-	bool metamagicGrand = false; // authoritative automatic Grand activation on this accepted follow-up
-	uint32_t metamagicTargetUnitId = std::numeric_limits<uint32_t>::max(); // primary target used by sequence perks
-	int32_t metamagicManaRefund = 0; // Formula Reserve refund published with the final additional cast
 	std::optional<newHorizonsCrossSchoolFormula::Receipt> crossSchoolFormula;
 	int32_t paidHeroManaCost = 0; // gross cost paid by the hero for this accepted cast
-	int32_t paidCounterspellManaCost = 0; // ward cost paid by counterspellSide for this accepted cast
 
 	void visitTyped(ICPackVisitor & visitor) override;
 
@@ -1905,13 +1917,7 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		}
 		if(h.saving && temporalFieldCast && !h.hasFeature(Handler::Version::NEW_HORIZONS_TEMPORAL_FIELD))
 			throw std::runtime_error("Cannot serialize Temporal Field cast to an older protocol");
-		if(h.saving && (counterspellSide != BattleSide::NONE || counterspellNegated)
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_COUNTERSPELL))
-			throw std::runtime_error("Cannot serialize Counterspell cast result to an older protocol");
-		if(h.saving && (metamagicFollowup || metamagicGrand || metamagicTargetUnitId != std::numeric_limits<uint32_t>::max()
-			|| metamagicManaRefund != 0) && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-			throw std::runtime_error("Cannot serialize Metamagic cast metadata to an older protocol");
-		if(h.saving && (paidHeroManaCost != 0 || paidCounterspellManaCost != 0)
+		if(h.saving && paidHeroManaCost != 0
 			&& !h.hasFeature(Handler::Version::BATTLE_HERO_MANA_EXPENDITURE))
 			throw std::runtime_error("Cannot serialize hero Mana expenditure to an older protocol");
 		h & battleID;
@@ -1933,48 +1939,17 @@ struct DLL_LINKAGE BattleSpellCast : public CPackForClient
 		{
 			temporalFieldCast = false;
 		}
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_COUNTERSPELL))
-		{
-			h & counterspellSide;
-			h & counterspellNegated;
-		}
-		else if(!h.saving)
-		{
-			counterspellSide = BattleSide::NONE;
-			counterspellNegated = false;
-		}
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-		{
-			h & metamagicFollowup;
-			h & metamagicGrand;
-			h & metamagicTargetUnitId;
-			h & metamagicManaRefund;
-		}
-		else if(!h.saving)
-		{
-			metamagicFollowup = false;
-			metamagicGrand = false;
-			metamagicTargetUnitId = std::numeric_limits<uint32_t>::max();
-			metamagicManaRefund = 0;
-		}
 		if(h.hasFeature(Handler::Version::BATTLE_HERO_MANA_EXPENDITURE))
 		{
 			h & paidHeroManaCost;
-		h & paidCounterspellManaCost;
-			if(!h.saving && (paidHeroManaCost < 0 || paidCounterspellManaCost < 0
+			if(!h.saving && (paidHeroManaCost < 0
 				|| (paidHeroManaCost > 0 && (!castByHero || !activeCast
-					|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)))
-				|| (paidCounterspellManaCost > 0
-					&& (!castByHero || !activeCast || !counterspellNegated
-						|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-						|| (counterspellSide != BattleSide::ATTACKER && counterspellSide != BattleSide::DEFENDER)
-						|| counterspellSide == side))))
+					|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)))))
 				throw std::runtime_error("Invalid accepted hero Mana expenditure metadata");
 		}
 		else if(!h.saving)
 		{
 			paidHeroManaCost = 0;
-			paidCounterspellManaCost = 0;
 		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SPELLCRAFT_TARGET_DURATION))
 			h & extendedSpell;

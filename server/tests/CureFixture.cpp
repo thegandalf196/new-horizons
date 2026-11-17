@@ -70,8 +70,7 @@ void validateWorld(const CGameState & game, const CBattleInfoCallback & battle)
 
 bool untouched(const CStack & stack, int count)
 {
-	return stack.alive() && !stack.isGhost() && !stack.isClone() && !stack.summoned
-		&& !stack.isTimeStopped() && !stack.moved() && !stack.defended()
+	return stack.alive() && !stack.isGhost() && !stack.isClone() && !stack.summoned && !stack.moved() && !stack.defended()
 		&& stack.getCount() == count && stack.getKilled() == 0
 		&& stack.getFirstHPleft() == stack.getMaxHealth()
 		&& stack.getAvailableHealth() == static_cast<int64_t>(count) * stack.getMaxHealth()

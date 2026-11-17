@@ -11,7 +11,6 @@
 #include "NewHorizonsMagicPresentation.h"
 #include "NewHorizonsMagicInternal.h"
 #include "NewHorizonsMagic.h"
-#include "NewHorizonsSorceryRevision.h"
 #include "NewHorizonsTimedBuffMagnitude.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsSpellAvailability.h"
@@ -84,75 +83,6 @@ bool describeEarthquake(std::string & result, const CGHeroInstance * hero, const
 			+ " rounds before eligible duration extensions; each entered hex costs one extra movement point. "
 			"Flying travel ignores this cost. No Initiative, Attack, Defense or retaliation penalty. "
 			"School rank, Spellcraft and Empower scale only Spell Power terms, not fixed bases or caps.";
-		return true;
-	}
-	return false;
-}
-
-bool describeLivingArmor(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
-{
-	if(!hero || spell->getJsonKey() != "new-horizons:summonLivingArmor"
-		|| !spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
-		return false;
-	const auto & rules = hero->getMagicRules();
-	const auto & profile = rules["spells"][spell->getJsonKey()]["livingArmor"];
-	if(!profile.isStruct())
-		return false;
-	const auto power = static_cast<int64_t>(std::max<int32_t>(0, hero->getEffectPower(spell)));
-	const int64_t pool = newHorizonsSorceryRevision::livingArmorHitPoints(
-		profile["baseHitPoints"].Integer(), profile["spellPowerCoefficient"].Integer(), static_cast<int32_t>(power),
-		std::max<int32_t>(1, hero->getEffectPowerDivisor(spell)),
-		spellPowerCoefficientBasisPoints(rules, hero, spell->getId()),
-		empowerSpellBonusPercent(rules, hero, spell->getId()));
-	result = "Summon Living Armor on an empty hex. Current pool: " + std::to_string(pool)
-		+ " HP. Lifetime: " + std::to_string(profile["duration"].Integer())
-		+ " rounds, including this round. Eligible Extend Spell and Echoed Duration each add one round. "
-		"75% physical damage reduction; takes double magical damage. Time Stop pauses its lifetime. "
-		"Disappears after combat.";
-	return true;
-}
-
-bool describeSlow(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
-{
-	if(hero && spellVariantBase(hero->getMagicRules(), spell->getId()) == SpellID::SLOW
-		&& rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() == SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spellAllowedBySavedRoster(hero->getMagicRules(), spell->getId()))
-	{
-		const auto & rules = hero->getMagicRules();
-		int schoolRank = MasteryLevel::NONE;
-		for(const auto skill : spellSchoolSkills(rules, spell->getId()))
-			schoolRank = std::max(schoolRank, static_cast<int>(hero->getSecSkillLevel(skill)));
-		const int schoolCoefficientPercent = spellPowerCoefficientPercent(rules, hero, spell->getId());
-		const int combinedCoefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const int initiativeReduction = newHorizonsSorceryRevision::slowBaseReduction(static_cast<int32_t>(spellPower),
-			combinedCoefficientBasisPoints, empowerSpellBonusPercent(rules, hero, spell->getId()));
-		const int variantPower = spellVariantPowerPercent(rules, spell->getId());
-		const auto displayedReduction = static_cast<int64_t>(-newHorizonsSorceryRevision::scaleSlowVariantValue(
-			casterEnchantValue(hero, SpellID::SLOW, -initiativeReduction), variantPower));
-		constexpr std::array<std::string_view, 4> rankNames{"No rank", "Basic", "Advanced", "Expert"};
-		const auto rankName = rankNames.at(static_cast<size_t>(std::clamp(schoolRank,
-			static_cast<int>(MasteryLevel::NONE), static_cast<int>(MasteryLevel::EXPERT))));
-
-		result = std::string(variantPower == 60 ? "Affects every eligible enemy stack. " : "Target one enemy stack. ")
-			+ (newHorizonsSorceryRevision::slowAffectsSpeed(rules)
-				? "Reduces Speed and Initiative equally. Fixed base duration: "
-				: "Reduces Initiative only, not Speed or movement. Fixed base duration: ")
-			+ std::to_string(SLOW_BASE_DURATION_ROUNDS) + " rounds before Temporalist, other Spell Duration bonuses, "
-			"and eligible cast-specific extensions. Current Sorcery rank: "
-			+ std::string(rankName) + " (School factor " + std::to_string(schoolCoefficientPercent)
-			+ "%, combined School and Spellcraft factor " + percentFromBasisPoints(combinedCoefficientBasisPoints)
-			+ "). " + (newHorizonsSorceryRevision::slowAffectsSpeed(rules) ? "Speed and Initiative reduction" : "Initiative reduction")
-			+ " = min(50%, 20% + floor(Spell Power x combined coefficient / 5)); "
-			"current reduction before target-specific specialties at Spell Power "
-			+ std::to_string(spellPower) + ": " + std::to_string(displayedReduction)
-			+ "%. This estimate excludes the Inferno defender's Brimstone Stormclouds "
-			"+20 Spell Power bonus, which can further affect the battle cast.";
-		if(variantPower == 60)
-			result += " Mass Slow applies 60% of the final ordinary Slow reduction after its cap and target-specific "
-				"specialties, rounded toward zero; duration is unchanged. Temporal Field grants this distinct spell, "
-				"without a once-per-combat limit. Its listed Mana cost is three times Slow before Wisdom.";
 		return true;
 	}
 	return false;
@@ -371,9 +301,7 @@ void applyBaseDescription(std::string & result, const CGHeroInstance * hero, con
 		return;
 	if(describeEarthquake(result, hero, spell))
 		return;
-	if(describeLivingArmor(result, hero, spell))
-		return;
-	if(describeSlow(result, hero, spell))
+	if(describeSorcerySpell(result, hero, spell))
 		return;
 	if(describeMisfortune(result, hero, spell))
 		return;
@@ -415,7 +343,7 @@ constexpr std::pair<std::string_view, std::string_view> spellSummaries[] = {
 	{"new-horizons:masterChainLightning", "Strike up to four stacks with lightning that jumps between nearby creatures, including allies, weakening with each jump."},
 	{"new-horizons:frailty", "Reduce one enemy stack's Creature Defense for the rest of battle; repeated casts strengthen the reduction."},
 	{"new-horizons:summonLivingArmor", "Summon temporary Living Armor that resists physical damage but takes extra magical damage."},
-	{"new-horizons:focusMagic", "Enchant a friendly shooter so its damaging shots mark enemies, helping all friendly shooters ignore part of their Defense."},
+	{"new-horizons:focusMagic", "Enchant one friendly stack with 3 hard ranged-strike charges. Nonshooters gain physical ranged attacks; native shooters gain enhanced ranged damage. Recasting resets charges; Ammo Cart cannot replenish them."},
 	{"new-horizons:hexOfPain", "Curse one enemy stack to suffer Shadow damage after each attack or retaliation it makes."},
 	{"new-horizons:plague", "Afflict one stack with recurring magical damage that spreads to adjacent creatures, including allies."},
 	{"new-horizons:soulChain", "Link enemy stacks so damage to the secondary targets also harms the primary target."},
@@ -479,8 +407,6 @@ constexpr std::pair<std::string_view, std::string_view> spellSummaries[] = {
 	{"new-horizons:massSlow", "Temporarily reduce every eligible enemy stack's Speed and Initiative with a weaker version of Slow."},
 	{"core:sorrow", "Temporarily reduce one enemy stack's Morale."},
 	{"core:teleport", "Move one friendly stack to a selected legal hex, ignoring intervening barriers without granting another activation."},
-	{"new-horizons:spellLock", "Seal one stack against magic; remove allied debuffs or enemy buffs, and pause remaining magical effects' timers."},
-	{"new-horizons:timeStop", "Freeze an area until your next Hero Action; affected creatures cannot act or receive damage, healing or new effects, and their timers pause."},
 	{"core:summonBoat", "Bring an available boat to an adjacent legal water tile; uses your one Adventure Spell for the day."},
 	{"core:waterWalk", "Walk across water at increased movement cost until day end; finish on land and cast no other Adventure Spell that day."},
 	{"core:townPortal", "Teleport to your nearest controlled town and end today's movement; uses your one Adventure Spell for the day."},

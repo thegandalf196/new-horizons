@@ -51,14 +51,14 @@ inline std::vector<OrderIndicator> activeOrderIndicators(const CStack * stack)
 	if(!ordinaryOrderStack(stack) || !stack->getBattle())
 		return result;
 
-	// Timers on the unit can outlive the latest side snapshot while Time Stop
-	// pauses an older grant. Show the native bonus, including after snapshot expiry.
+	// Show the unit's surviving Order bonuses independently of the latest
+	// side snapshot.
 	if(const auto vanguard = heroCommands::activeVanguardBonuses(stack))
 	{
 		const std::string detail = "Vanguard\nCreature Attack/Defense/Morale +" + std::to_string(vanguard->statBonus)
 			+ "; Initiative +" + std::to_string(vanguard->initiativePercent) + "%"
 			+ "\n" + std::to_string(vanguard->roundsRemaining) + " rounds remaining on this stack."
-			+ "\nDuration pauses during Time Stop. Morale immunity still applies."
+			+ "\nMorale immunity still applies."
 			+ "\nTactical Order: not a spell and cannot be dispelled.";
 		result.push_back({HeroCommand::VANGUARD, "Vanguard", detail});
 	}

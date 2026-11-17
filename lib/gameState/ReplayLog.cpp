@@ -21,7 +21,7 @@
 #include <utility>
 
 ReplayLog::ReplayLog(const ReplayLog & other)
-	: chapters(other.chapters), recordEntireGame(other.recordEntireGame),
+	: chapters(other.chapters), recordEntireGame(other.recordEntireGame), captureEnabled(other.captureEnabled),
 	  roundsKept(other.roundsKept), recordingPacks(other.recordingPacks)
 {
 }
@@ -33,6 +33,7 @@ ReplayLog & ReplayLog::operator=(const ReplayLog & other)
 		preparationStamp.reset();
 		chapters = other.chapters;
 		recordEntireGame = other.recordEntireGame;
+		captureEnabled = other.captureEnabled;
 		roundsKept = other.roundsKept;
 		recordingPacks = other.recordingPacks;
 	}
@@ -40,7 +41,7 @@ ReplayLog & ReplayLog::operator=(const ReplayLog & other)
 }
 
 ReplayLog::ReplayLog(ReplayLog && other) noexcept
-	: chapters(std::move(other.chapters)), recordEntireGame(other.recordEntireGame),
+	: chapters(std::move(other.chapters)), recordEntireGame(other.recordEntireGame), captureEnabled(other.captureEnabled),
 	  roundsKept(other.roundsKept), recordingPacks(other.recordingPacks)
 {
 	static_assert(std::is_nothrow_move_constructible_v<decltype(chapters)>);
@@ -56,29 +57,35 @@ ReplayLog & ReplayLog::operator=(ReplayLog && other) noexcept
 		other.preparationStamp.reset();
 		chapters = std::move(other.chapters);
 		recordEntireGame = other.recordEntireGame;
+		captureEnabled = other.captureEnabled;
 		roundsKept = other.roundsKept;
 		recordingPacks = other.recordingPacks;
 	}
 	return *this;
 }
 
-void ReplayLog::configure(bool recordEntireGameValue, uint32_t roundsKeptValue)
+void ReplayLog::configure(bool recordEntireGameValue, uint32_t roundsKeptValue, bool rollingReplayEnabled)
 {
+	const bool enabled = recordEntireGameValue || rollingReplayEnabled;
+	if(!enabled && !chapters.empty())
+		throw std::runtime_error("Replay capture can be disabled only for a new empty log");
 	preparationStamp.reset();
 	recordEntireGame = recordEntireGameValue;
+	captureEnabled = enabled;
 	roundsKept = roundsKeptValue;
-	recordingPacks = true;
+	recordingPacks = captureEnabled;
 }
 
 void ReplayLog::reconfigureOnLoad(uint32_t roundsKeptValue)
 {
 	preparationStamp.reset();
 	roundsKept = roundsKeptValue;
-	recordingPacks = true;
+	recordingPacks = captureEnabled;
 }
 
 void ReplayLog::beginDay(uint32_t day, ReplayPayload snapshot)
 {
+	if(!captureEnabled) throw std::runtime_error("Cannot append a chapter to disabled replay capture");
 	validateAppendState();
 	replayPayload::validateStoredVersion(snapshot.version);
 	preparationStamp.reset();
@@ -154,6 +161,9 @@ void ReplayLog::endTurn(const PlayerColor & player)
 
 void ReplayLog::recordPack(CPackForClient & pack, CGameState & gs)
 {
+	// Clients intentionally call this without isRecordingPacks(), so the saved
+	// capture policy gates the actual snapshot/encoding boundary here as well.
+	if(!captureEnabled) return;
 	nhLoadProfile::Scope measured(nhLoadProfile::Metric::ReplayRecord);
 	// every game day opens a new chapter, anchored by the state that day started from.
 	// NewTurn is recorded before it is applied, so the new day is only known from the pack itself
@@ -201,9 +211,16 @@ void ReplayLog::addPack(ReplayPayload payload)
 	chapter.packVersions.push_back(payload.version);
 }
 
+ReplayLog ReplayLog::snapshotPlaceholder() const
+{
+	ReplayLog empty;
+	empty.captureEnabled = captureEnabled;
+	return empty;
+}
+
 bool ReplayLog::isRecordingPacks() const
 {
-	return recordingPacks;
+	return captureEnabled && recordingPacks;
 }
 
 bool ReplayLog::empty() const

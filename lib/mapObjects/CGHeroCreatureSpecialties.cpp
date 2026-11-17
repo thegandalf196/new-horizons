@@ -30,10 +30,11 @@ std::string creatureLineSpecialtyMarker(HeroTypeID heroType, CreatureID creature
 
 void CGHeroInstance::validateDefaultCreatureLineSerialization(bool supported) const
 {
-	newHorizonsHeroes::validateDefaultCreatureLineSerialization(primaryGrowthRules, supported);
-	if(primaryGrowthRules.isStruct() && primaryGrowthRules.Struct().contains("creatureLineSpecialtyTarget"))
+	if(!supported && (compiledDevelopment()->hasDefaultCreatureTable() || compiledDevelopment()->hasCapturedCreatureTarget()))
+		throw std::runtime_error("Default creature-line successor requires the new save format");
+	if(compiledDevelopment()->hasCapturedCreatureTarget())
 	{
-		const auto target = newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID());
+		const auto target = compiledDevelopment()->defaultCreature(getHeroTypeID());
 		if(!target || !getHeroType()->creatureLineSpecialtyAlias
 			|| getHeroType()->creatureLineSpecialtyAlias->creature != CreatureID(CreatureID::PSYCHIC_ELEMENTAL))
 			throw std::runtime_error("Captured Wisp specialty belongs only to the exact native Psychic producer");
@@ -55,8 +56,8 @@ void CGHeroInstance::validateDefaultCreatureLineSerialization(bool supported) co
 CreatureID CGHeroInstance::getCreatureLineSpecialtyTarget() const
 {
 	validateDefaultCreatureLineSerialization(true);
-	if(primaryGrowthRules.isStruct() && primaryGrowthRules.Struct().contains("creatureLineSpecialtyTarget"))
-		return *newHorizonsHeroes::defaultCreatureLineTarget(primaryGrowthRules, getHeroTypeID());
+	if(compiledDevelopment()->hasCapturedCreatureTarget())
+		return *compiledDevelopment()->defaultCreature(getHeroTypeID());
 	const auto * hero = getHeroType();
 	return hero && hero->creatureLineSpecialtyAlias ? hero->creatureLineSpecialtyAlias->creature : CreatureID();
 }
@@ -88,7 +89,7 @@ void CGHeroInstance::refreshCreatureLineSpecialtyBonuses(bool createIfMissing)
 			addNewBonus(bonus);
 		}
 
-	const auto rules = newHorizonsHeroes::creatureLineSpecialtyRules(primaryGrowthRules);
+	const auto rules = compiledDevelopment()->creatureLine;
 	const CHero * heroType = getHeroType();
 	if(!rules || !heroType || !heroType->creatureLineSpecialtyAlias)
 		return;

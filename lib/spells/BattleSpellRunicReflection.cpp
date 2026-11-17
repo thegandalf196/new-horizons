@@ -171,8 +171,7 @@ void BattleSpellMechanics::prepareRunicReflections(BattleSpellCast & cast, vstd:
 			MetaString text; text.appendTextID("new-horizons.combat.runicEndurance.reflected");
 			feedback.lines.push_back(std::move(text)); activeResistanceServer->apply(feedback);
 		}
-		const int probability = newHorizonsMetamagic::resistanceChance(std::min(recipient->magicResistance(), 100),
-			getMetamagicCastProfile(), *battle(), *recipient);
+		const int probability = std::min(recipient->magicResistance(), 100);
 		const auto draw = [&] { return rng.nextInt(0, 99) < probability; };
 		const bool resisted = probability > 0 && probability < 100
 			? activeResistanceServer->resolveAdverseCombatRoll(battle()->getBattle()->getBattleID(),
@@ -207,14 +206,14 @@ void BattleSpellMechanics::applyRunicReflections(ServerCallback * server)
 		// Original effects may destroy or remove a prospective recipient. Retain
 		// IDs in the plan and reacquire; do not keep a borrowed unit across effects.
 		const auto * recipient = battle()->battleGetUnitByID(share.unitId);
-		if(!recipient || !recipient->isValidTarget(false) || !isReceptive(recipient) || isSpellLocked(recipient)
+		if(!recipient || !recipient->isValidTarget(false) || !isReceptive(recipient)
 			|| battle()->battleGetOwner(recipient) != battle()->sideToPlayer(casterSide)) continue;
 		const auto kind = share.effect->resistanceShareKind();
 		Target currentTarget{Destination(recipient)};
 		if(kind == effects::ResistanceShareKind::LifeDrain)
 		{
 			const auto * source = battle()->battleGetUnitByID(share.reflectorId);
-			if(!source || isSpellLocked(source)) continue;
+			if(!source) continue;
 			currentTarget.emplace_back(source);
 		}
 		detail::ProblemImpl problem;

@@ -62,7 +62,7 @@ void replay(HypotheticBattle & battle, const Consumption & receipt)
 {
 	const auto * opponent = battle.battleGetUnitByID(receipt.opponent);
 	const auto * retaliator = battle.battleGetUnitByID(receipt.retaliator);
-	if(!opponent || !opponent->alive() || opponent->isGhost() || opponent->isTimeStopped()
+	if(!opponent || !opponent->alive() || opponent->isGhost()
 		|| !retaliator || !newHorizonsParalyzingGaze::canConsume(*retaliator)
 		|| battle.battleCanUseGazeDefiant(opponent, retaliator, receipt.shooting, receipt.aerial ? &*receipt.aerial : nullptr) != receipt.ignoredByDefiant)
 		throw std::runtime_error("Stale Paralyzing Gaze ordinary-counter receipt");

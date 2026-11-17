@@ -6,6 +6,7 @@
 #include "ISpellMechanics.h"
 #include "NewHorizonsTimedBuffMagnitude.h"
 #include "NewHorizonsSpellAvailability.h"
+#include "NewHorizonsSorceryRevision.h"
 #include "CSpell.h"
 #include "../battle/Unit.h"
 #include "../battle/CBattleInfoCallback.h"
@@ -158,7 +159,10 @@ int32_t configuredTimedDuration(int32_t configuredTurns, int32_t fallbackTurns,
 int32_t configuredTimedDurationForCast(const spells::Mechanics & mechanics, int32_t configuredTurns,
 	int32_t fallbackTurns, bool roundTimer)
 {
-	return configuredTimedDuration(configuredTurns, fallbackTurns, roundTimer, mechanics.getExtendSpellBonusRounds());
+	const int spellbinder = roundTimer && configuredTurns > 0
+		? newHorizonsSorceryRevision::spellbinderBonus(mechanics.getHeroCaster(), mechanics.getSpellId()) : 0;
+	return configuredTimedDuration(configuredTurns, fallbackTurns, roundTimer,
+		mechanics.getExtendSpellBonusRounds() + spellbinder);
 }
 double misfortuneValueForRecipient(const spells::Mechanics & mechanics, const battle::Unit & unit, double value)
 {

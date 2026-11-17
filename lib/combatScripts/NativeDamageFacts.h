@@ -7,6 +7,8 @@
 #include <array>
 #include <bitset>
 #include <string>
+#include <optional>
+namespace battle { class Unit; }
 
 class CBattleInfoCallback;
 struct DamageAttackInfo;
@@ -17,7 +19,8 @@ namespace nativeDamage
 constexpr size_t bonusTypeCount = static_cast<size_t>(BonusType::BUILTIN_BONUSES_COUNT);
 
 /// Owned numeric observations for one calculation. These contain no Unit,
-/// callback, bonus-list or borrowed-state references and are never cached.
+/// callback, bonus-list or borrowed-state references. Prepared forecasts may
+/// retain them only inside their explicitly immutable input-frame lifetime.
 struct UnitFacts
 {
 	std::bitset<bonusTypeCount> bonuses;
@@ -30,6 +33,18 @@ struct UnitFacts
 	std::string creatureKey;
 	bool has(BonusType type) const { return bonuses[static_cast<size_t>(type)]; }
 	double value(BonusType type) const { return values[static_cast<size_t>(type)]; }
+};
+
+/// A finite ordinary-creature projection for one immutable forecast batch.
+/// Unknown/pair-specific source families are rejected by prepareUnit; the
+/// caller must bind these facts to the exact unit and discard before mutation.
+struct PreparedUnit
+{
+	UnitFacts unit;
+	double physicalDefense = 0;
+	double enemyDefenseReduction = 0, enemyAttackReduction = 0, attackReduction = 0;
+	double damageBoost = 0, petrification = 0;
+	bool shooting = false;
 };
 
 struct Facts
@@ -48,6 +63,9 @@ struct Facts
 
 /// Capture fresh engine observations. The calculator below does not access
 /// DamageAttackInfo's unit pointers or bonus maps; it reads only its modifiers.
+DLL_LINKAGE std::optional<PreparedUnit> prepareUnit(const battle::Unit & unit, bool shooting);
+DLL_LINKAGE Facts capturePrepared(const CBattleInfoCallback & battle, const DamageAttackInfo & info,
+	const PreparedUnit & attacker, const PreparedUnit & defender);
 DLL_LINKAGE Facts capture(const CBattleInfoCallback & battle, const DamageAttackInfo & info);
 DLL_LINKAGE DamageEstimation calculate(const DamageAttackInfo & info, const Facts & facts);
 }

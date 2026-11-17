@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #pragma once
+#include "../../Global.h"
 #include "../../lib/battle/BattleSide.h"
 #include "../../lib/battle/HeroCommand.h"
 #include <cstdint>
@@ -34,12 +35,16 @@ struct Ranked
 };
 /// At most two near-tied positive known estimates, in original ordinal order.
 /// Unsupported candidates are NOT ranked here; caller retains its exact fallback.
-std::vector<size_t> ambiguousRefinements(const std::vector<Ranked> & ranked);
+DLL_LINKAGE std::vector<size_t> ambiguousRefinements(const std::vector<Ranked> & ranked);
 /// Ranking only; final alternatives MUST use the existing full scorer.
-std::vector<size_t> promisingRefinements(const std::vector<Ranked> & ranked);
-struct Experiment
+DLL_LINKAGE std::vector<size_t> promisingRefinements(const std::vector<Ranked> & ranked);
+/// Fixed work budget; unknown estimates are excluded by caller and keep Full.
+DLL_LINKAGE std::vector<size_t> boundedRefinements(const std::vector<Ranked> & ranked, unsigned limit);
+struct DLL_LINKAGE Experiment
 {
 	bool enableShortlist = true;
+	/// Zero preserves the existing diagnostic near-tie policy. Fast uses three.
+	unsigned refinementLimit = 0;
 	std::vector<Ranked> cheapScores;
 	std::vector<size_t> refinedOrdinals;
 	std::vector<bool> declined;
@@ -51,8 +56,9 @@ struct Experiment
 	void noteContinuation(size_t ordinal);
 };
 /// Optional call-local experiment, not a serialized/default policy switch.
-/// Only fixed-opportunity current Focus Fire/Riposte enter the shortlist.
-void prepareShortlist(Experiment & result, const Environment * environment,
+/// Fast admits finite native damage/numeric spells and fixed-opportunity
+/// Focus Fire/Riposte/Hold the Line; unknown contexts keep Full.
+DLL_LINKAGE void prepareShortlist(Experiment & result, const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 	const std::vector<PossibleSpellcast> & candidates, const DamageCache & originalDamage,
 	const BattleExchangeEvaluator & utility);
@@ -62,7 +68,7 @@ void prepareShortlist(Experiment & result, const Environment * environment,
 /// RNG draw, movement search, action submission or serialized policy state.
 /// The optional original cache borrows the SAME decision's established original-
 /// damage role and must outlive this object; no current-damage result is reused.
-class Baseline
+class DLL_LINKAGE Baseline
 {
 public:
 	static std::unique_ptr<Baseline> create(const Environment * environment,
@@ -74,6 +80,8 @@ public:
 	/// Caller MUST have completed normal HeroAction admission AND accepted native
 	/// projection. Marginal damage-reduction utility, never raw HP or absolute
 	/// continuation. Absence retains the existing full evaluator.
+	/// Numeric timed spells only; unchanged geometry, readiness and roster.
+	std::optional<float> spellUtility(const std::shared_ptr<HypotheticBattle> & accepted);
 	std::optional<float> orderUtility(const std::shared_ptr<HypotheticBattle> & accepted,
 		HeroCommand command);
 private:
@@ -91,7 +99,7 @@ private:
 	bool prepare(const std::vector<Approach> & existingApproaches, bool directOnly, bool buildOriginal);
 	float pairValue(const CBattleInfoCallback & view, const Pair & pair,
 		bool grantedActivation = false);
-	float pressure(const CBattleInfoCallback & view);
+	float pressure(HypotheticBattle & view);
 	std::optional<float> extraActivationUtility(const HypotheticBattle & accepted);
 	float damageValue(uint32_t attacker, uint32_t victim, int64_t damage);
 	std::shared_ptr<CBattleInfoCallback> source;

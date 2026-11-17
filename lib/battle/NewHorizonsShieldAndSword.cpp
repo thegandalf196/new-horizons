@@ -49,7 +49,7 @@ newHorizonsOrdinaryStrike::EffectPlan completion(const CBattleInfoCallback & bat
 	const battle::Unit & actor, bool completedPrimaryMelee)
 {
 	newHorizonsOrdinaryStrike::EffectPlan result;
-	if(!completedPrimaryMelee || !actor.alive() || actor.isGhost() || actor.isTimeStopped())
+	if(!completedPrimaryMelee || !actor.alive() || actor.isGhost())
 		return result;
 	int percent = reduction(battle, actor);
 	if(percent <= 0)

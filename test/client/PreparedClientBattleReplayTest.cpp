@@ -169,7 +169,7 @@ TEST(PreparedClientBattleReplayTest, InspectorRetirementDoesNotLeaveAnOriginalQu
 	EXPECT_FALSE(inspection.stillCurrent());
 }
 
-TEST(PreparedClientBattleReplayTest, CallerWriterProjectionStaysPrivateUntilWholeReplayAcceptance)
+TEST(PreparedClientBattleReplayTest, ReadOnlyWriterPreservesCallerThroughWholeReplayAcceptance)
 {
 	auto state = world(true);
 	auto caller = packet();
@@ -180,8 +180,17 @@ TEST(PreparedClientBattleReplayTest, CallerWriterProjectionStaysPrivateUntilWhol
 	auto expected = state->replayLog;
 	expected.recordPack(expectedCaller, *state);
 	expected.recordPack(expectedCaller, *state);
-	ASSERT_NE(expectedCaller.changedStacks.back().data, input);
+	// Current UnitChanges writers validate through const readers. Retired
+	// clock normalization must not be reintroduced merely to mutate this packet.
+	ASSERT_EQ(expectedCaller.changedStacks.back().data, input);
 	const auto before = replayBytes(state->replayLog);
+	{
+		auto abandoned = prepareClientBattleReplayEntry(state, caller, nullptr);
+		EXPECT_EQ(caller.changedStacks.back().data, input);
+		EXPECT_EQ(replayBytes(state->replayLog), before);
+	}
+	EXPECT_EQ(caller.changedStacks.back().data, input);
+	EXPECT_EQ(replayBytes(state->replayLog), before);
 	auto entry = prepareClientBattleReplayEntry(state, caller, nullptr);
 	EXPECT_EQ(caller.changedStacks.back().data, input);
 	EXPECT_EQ(replayBytes(state->replayLog), before);
@@ -217,4 +226,35 @@ TEST(PreparedClientBattleReplayTest, EveryCurrentRollbackProducerHasAnIndependen
 	visit.hid = ObjectInstanceID(99);
 	EXPECT_EQ(static_cast<HeroVisitCastle &>(*copy).hid, ObjectInstanceID(1));
 	EXPECT_THROW(copyCurrentPredictionRollback(packet()), std::logic_error);
+}
+
+TEST(PreparedClientBattleReplayTest, SavedOptOutSkipsActualOuterSnapshotAndEncodingButKeepsEntryValidation)
+{
+	auto state = std::make_shared<CGameState>();
+	state->replayLog.configure(false, 1, false);
+	auto caller = packet();
+	const auto before = replayBytes(state->replayLog);
+	auto entry = prepareClientBattleReplayEntry(state, caller, nullptr);
+	ASSERT_TRUE(entry);
+	EXPECT_EQ(entry->replyAction(), BattleReplyInspection::Result::APPLY);
+	ASSERT_TRUE(entry->commitReplayOnly());
+	EXPECT_EQ(replayBytes(state->replayLog), before);
+	EXPECT_TRUE(state->replayLog.empty());
+	EXPECT_FALSE(entry->commitReplayOnly());
+}
+
+TEST(PreparedClientBattleReplayTest, SavedOptOutStillInspectsMatchingLagPrediction)
+{
+	auto state = std::make_shared<CGameState>();
+	state->replayLog.configure(false, 1, false);
+	auto caller = packet();
+	NetworkLagReplyState predictions;
+	openPrediction(predictions);
+	predictions.appendPrediction(predicted(caller));
+	auto entry = prepareClientBattleReplayEntry(state, caller, &predictions);
+	ASSERT_TRUE(entry);
+	EXPECT_EQ(entry->replyAction(), BattleReplyInspection::Result::CONSUMED);
+	EXPECT_EQ(entry->rollbackCount(), 0);
+	ASSERT_TRUE(entry->commitReplayOnly());
+	EXPECT_TRUE(state->replayLog.empty());
 }

@@ -411,7 +411,8 @@ TEST_F(ArcaneInspirationBattleTest, NativeReceiptExcludesFullAndPartialShieldsBu
 		std::tuple<int64_t, int64_t, int64_t>{150, 200, 0}, {150, 50, 100}, {100000, 50, 99950}})
 	{
 		auto state = actor->acquireState();
-		state->arcaneShieldHitPoints = shield;
+		state->guardianSpiritHitPoints = shield;
+		state->guardianSpiritRoundsRemaining = 2;
 		int64_t damage = incoming;
 		int64_t receipt = -1;
 		state->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE, &receipt);
@@ -424,13 +425,12 @@ TEST_F(ArcaneInspirationBattleTest, NativeReceiptExcludesFullAndPartialShieldsBu
 		}
 	}
 	auto layered = actor->acquireState();
-	layered->arcaneShieldHitPoints = 50;
 	layered->guardianSpiritHitPoints = 70;
 	layered->guardianSpiritRoundsRemaining = 2;
 	int64_t damage = 200;
 	int64_t receipt = -1;
 	layered->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE, &receipt);
-	EXPECT_EQ(receipt, 80);
+	EXPECT_EQ(receipt, 130);
 }
 TEST_F(ArcaneInspirationBattleTest, InvincibleTargetsNeitherTriggerNorReceiveReprisal)
 {
@@ -459,7 +459,6 @@ TEST_F(ArcaneInspirationBattleTest, NativeDelayedHeroWallShocksWithoutCoreHistor
 	EXPECT_EQ(restored.capturedMdrPenetration, obstacle.capturedMdrPenetration);
 	obstacle = restored;
 	const auto history = battle()->getWisdomCombatState(BattleSide::ATTACKER);
-	const auto points = battle()->getMetamagicPointState(BattleSide::ATTACKER);
 	const auto actions = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
 	const auto health = victim->getAvailableHealth();
 	const auto stateBefore = victim->acquireState()->save();
@@ -484,7 +483,6 @@ TEST_F(ArcaneInspirationBattleTest, NativeDelayedHeroWallShocksWithoutCoreHistor
 	EXPECT_FALSE(actor->hasBonus(CSelector(arcaneInspiration::isActive)));
 	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).completedCasts, history.completedCasts);
 	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).lastCastRound, history.lastCastRound);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), points);
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), actions);
 	ASSERT_EQ(server.casts.size(), casts + 1);
 	EXPECT_FALSE(server.casts.back().announcement.castByHero);
@@ -566,25 +564,7 @@ TEST_F(ArcaneInspirationBattleTest, NativeSpellPoisonTicksShockButCreaturePoison
 		advanceRound();
 	}
 }
-TEST_F(ArcaneInspirationBattleTest, NativeShieldedDelayedHeroWallDoesNotShockWithoutHpDamage)
-{
-	prepare(1);
-	learnSpellshock();
-	auto obstacle = delayedWall(true);
-	auto state = victim->acquireState();
-	state->arcaneShieldHitPoints = 10000;
-	UnitChanges change(victim->unitId(), UnitChanges::EOperation::UPDATE);
-	change.data = state->save();
-	BattleUnitsChanged update;
-	update.battleID = BattleID(0);
-	update.changedStacks.push_back(std::move(change));
-	gameHandler->sendAndApply(update);
-	const auto health = victim->getAvailableHealth();
-	triggerWall(obstacle, victim);
-	EXPECT_EQ(victim->getAvailableHealth(), health);
-	EXPECT_FALSE(victim->hasBonus(CSelector(arcaneInspiration::isSpellshock)));
-	EXPECT_FALSE(actor->hasBonus(CSelector(arcaneInspiration::isActive)));
-}
+
 TEST_F(ArcaneInspirationBattleTest, NativeFriendlyDelayedHeroWallCanDamageButNeverSpellshockItsOwnArmy)
 {
 	prepare(1);

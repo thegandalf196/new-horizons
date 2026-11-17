@@ -326,7 +326,7 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 	const auto capabilities = context.resolved ? context.capabilities
 		: resolveCapabilityRules(context.capabilities, hero.heroClass->getId());
 	PerkState selections;
-	selections.rules = context.perks;
+	selections.replaceRules(context.perks);
 	selections.validate();
 	const auto profile = overrides.skills ? std::nullopt
 		: startingDevelopmentProfile(development, selections, hero.getId(), hero.heroClass->getId());
@@ -388,12 +388,12 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 		const auto row = std::ranges::find_if(result.skills, [id](const auto & value){ return value.first == id; });
 		return row == result.skills.end() ? 0 : static_cast<int>(row->second);
 	};
-	if(usesPerkRules(selections.rules))
+	if(usesPerkRules(selections.getRules()))
 	{
 		initializeStartingHeroPerks(selections, development, hero.getId(),
 			profile ? profile->perks : std::vector<PerkSelection>{}, hero.startingPerks, rank);
 	}
-	result.perks = selections.selected;
+	result.perks = selections.getSelected();
 	result.spellBook = overrides.spellBook.value_or(hero.haveSpellBook);
 	if(overrides.spells)
 		result.spells = *overrides.spells;

@@ -37,28 +37,7 @@ protected:
 	}
 };
 
-TEST_F(NativeUtilitySpellLuaParity, TimeStopPreservesAreaRecipientsAndThreeStasisMarkersPerUnit)
-{
-	currentRules();
-	const SpellID id(SpellID::decode("new-horizons:timeStop"));
-	ASSERT_NE(id, SpellID::NONE);
-	spell(id);
-	unit(42, BattleHex(77));
-	unit(43, BattleHex(78));
-	unit(44, BattleHex(160));
-	prepare("timeStop", JsonNode());
-	const Target center{::battle::Destination(BattleHex(77))};
-	const auto expected = oracle->transformTarget(&mechanicsMock, center, center);
-	const auto actual = subject->transformTarget(&mechanicsMock, center, center);
-	EXPECT_EQ(actual, expected);
-	ASSERT_FALSE(actual.empty());
-	BattleHexArray expectedArea, actualArea;
-	oracle->adjustAffectedHexes(expectedArea, &mechanicsMock, center);
-	subject->adjustAffectedHexes(actualArea, &mechanicsMock, center);
-	EXPECT_EQ(actualArea, expectedArea);
-	expectApplyParity(actual);
-	EXPECT_EQ(trace.packets.size(), actual.size() * 3);
-}
+
 
 TEST_F(NativeUtilitySpellLuaParity, TheChosenRemovesPreviousLivingAndCorpseRecipientsBeforeAddingAbilities)
 {
@@ -106,22 +85,18 @@ TEST_F(NativeUtilitySpellLuaParity, ShadowGiftPreservesAcceptedSacrificeProfileA
 	EXPECT_FALSE(actual.packets.empty());
 }
 
-TEST_F(NativeUtilitySpellLuaParity, FocusMagicPreservesShooterControllerAndRefreshCapture)
+TEST_F(NativeUtilitySpellLuaParity, CurrentFocusUsesNativeEnchantmentAndRejectsTheRetiredMarkEffectPath)
 {
-	currentRules();
-	const SpellID id(SpellID::decode("new-horizons:focusMagic"));
-	ASSERT_NE(id, SpellID::NONE);
-	spell(id);
-	EXPECT_CALL(*battleFake, getSidePlayer(_)).Times(AnyNumber()).WillRepeatedly(Invoke([](BattleSide side)
-		{ return PlayerColor(side == BattleSide::ATTACKER ? 0 : 1); }));
-	auto & recipient = unit(42);
-	EXPECT_CALL(recipient, unitOwner()).Times(AnyNumber()).WillRepeatedly(Return(PlayerColor(0)));
-	EXPECT_CALL(recipient, isShooter()).Times(AnyNumber()).WillRepeatedly(Return(true));
-	recipient.addNewBonus(std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::COMBAT_EVENT_TRIGGER,
-		BonusSource::SPELL_EFFECT, 1000, BonusSourceID(id), BonusSubtypeID(ScriptID(ScriptID::decode("core:focusMagic")))));
-	prepare("focusMagic", JsonNode());
-	expectApplyParity({::battle::Destination(&recipient)});
-	EXPECT_EQ(trace.packets.size(), 2u);
+	ScriptTypeDescription description;
+	description.kind = ScriptKind::SPELL_EFFECT;
+	description.modScope = "core";
+	description.identifier = "focusMagicEnchantment";
+	description.scriptId = "core:focusMagicEnchantment";
+	description.sourcePath = "spells/focusMagicEnchantment";
+	const auto current = nativeSpells::create(description);
+	ASSERT_NE(current, nullptr);
+	description.sourcePath = "spells/focusMagic";
+	EXPECT_EQ(nativeSpells::create(description), nullptr);
 }
 
 TEST_F(NativeUtilitySpellLuaParity, HydrasVitalityPreservesCapacityHealthBeforeApplyingMaximumAndRegeneration)

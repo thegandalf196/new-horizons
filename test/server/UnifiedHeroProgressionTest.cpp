@@ -97,7 +97,7 @@ protected:
 		startWithMap(std::move(map));
 		hero = findHeroByOwner(HUMAN);
 		ASSERT_NE(hero, nullptr);
-		ASSERT_EQ(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().rules),
+		ASSERT_EQ(newHorizonsHeroes::usesUnifiedSkillProgression(hero->getPerkState().getRules()),
 			!noPerkRules && !historicalProgression);
 		server = std::make_unique<GameHandlerTestServer>(gameState());
 		handler = std::make_unique<CGameHandler>(*server, gameState());
@@ -178,9 +178,9 @@ TEST_F(UnifiedHeroProgressionTest, ExternalMultiRankGrantOffersOneCompleteTierAt
 	}
 	EXPECT_FALSE(current());
 	EXPECT_TRUE(handler->pendingHeroLevelUps.empty());
-	const auto choices = hero->getPerkState().selected;
+	const auto choices = hero->getPerkState().getSelected();
 	handler->changeSecSkill(hero, authority(), 3, ChangeValueMode::ABSOLUTE);
-	EXPECT_EQ(hero->getPerkState().selected, choices);
+	EXPECT_EQ(hero->getPerkState().getSelected(), choices);
 	EXPECT_FALSE(current());
 }
 
@@ -222,12 +222,12 @@ TEST_F(UnifiedHeroProgressionTest, OrdinarySkillThenPerkIsOneLevelAndStaleReplyC
 	ASSERT_TRUE(perk);
 	EXPECT_TRUE(perk->hlu.perkOnly);
 	EXPECT_EQ(hero->level, oldLevel + 1);
-	const auto before = hero->getPerkState().selected;
+	const auto before = hero->getPerkState().getSelected();
 	EXPECT_FALSE(handler->queryReply(skill->queryID, 0, HUMAN));
-	EXPECT_EQ(hero->getPerkState().selected, before);
+	EXPECT_EQ(hero->getPerkState().getSelected(), before);
 	ASSERT_NO_FATAL_FAILURE(reply());
 	EXPECT_EQ(hero->level, oldLevel + 1);
-	EXPECT_EQ(hero->getPerkState().selected.size(), before.size() + 1);
+	EXPECT_EQ(hero->getPerkState().getSelected().size(), before.size() + 1);
 }
 
 TEST_F(UnifiedHeroProgressionTest, PendingOrdinaryOfferRoundtripResumesWithoutRepeatingLevelGrowth)
@@ -295,7 +295,7 @@ TEST_F(UnifiedHeroProgressionTest, FullNativeSaveLoadsPendingPerkIntoNewWorldAnd
 	ASSERT_TRUE(pending->hlu.perkOnly);
 	ASSERT_EQ(pending->hlu.perks.front().requiredRank, 2);
 	const auto offer = pending->hlu;
-	const auto selected = hero->getPerkState().selected;
+	const auto selected = hero->getPerkState().getSelected();
 	const auto level = hero->level;
 	std::array<int, GameConstants::PRIMARY_SKILLS> primary{};
 	for(size_t index = 0; index < primary.size(); ++index)
@@ -330,9 +330,9 @@ TEST_F(UnifiedHeroProgressionTest, FullNativeSaveLoadsPendingPerkIntoNewWorldAnd
 	ASSERT_NE(loadedWorld.get(), gameState().get());
 	ASSERT_NE(loadedHero, hero);
 	ASSERT_NE(loadedHandler.get(), handler.get());
-	EXPECT_EQ(loadedHero->getPerkState().selected, selected);
+	EXPECT_EQ(loadedHero->getPerkState().getSelected(), selected);
 	EXPECT_EQ(loadedHero->getCapabilityRules(), hero->getCapabilityRules());
-	EXPECT_EQ(loadedHero->getPerkState().rules, hero->getPerkState().rules);
+	EXPECT_EQ(loadedHero->getPerkState().getRules(), hero->getPerkState().getRules());
 	ASSERT_EQ(loadedHandler->pendingHeroLevelUps.at(hero->id).perks, offer.perks);
 	EXPECT_FALSE(loadedHandler->queries->topQuery(HUMAN));
 	loadedHandler->onAdvInterfaceReady(HUMAN);
@@ -343,19 +343,19 @@ TEST_F(UnifiedHeroProgressionTest, FullNativeSaveLoadsPendingPerkIntoNewWorldAnd
 	EXPECT_NE(restored->queryID, offer.queryID);
 	EXPECT_EQ(loadedHero->level, level);
 	EXPECT_FALSE(loadedHandler->queryReply(offer.queryID, 0, HUMAN));
-	EXPECT_EQ(loadedHero->getPerkState().selected, selected);
+	EXPECT_EQ(loadedHero->getPerkState().getSelected(), selected);
 	ASSERT_TRUE(loadedHandler->queryReply(restored->queryID, 0, HUMAN));
 	EXPECT_TRUE(loadedHero->getPerkState().hasSelection(AUTHORITY, offer.perks.front().selection.perkId));
-	EXPECT_EQ(loadedHero->getPerkState().selected.size(), selected.size() + 1);
+	EXPECT_EQ(loadedHero->getPerkState().getSelected().size(), selected.size() + 1);
 	EXPECT_TRUE(loadedHandler->pendingHeroLevelUps.empty());
 	EXPECT_FALSE(loadedHandler->queries->topQuery(HUMAN));
 	EXPECT_FALSE(loadedHandler->queryReply(restored->queryID, 0, HUMAN));
 	loadedHandler->resumeMasteryQueries(HUMAN);
-	EXPECT_EQ(loadedHero->getPerkState().selected.size(), selected.size() + 1);
+	EXPECT_EQ(loadedHero->getPerkState().getSelected().size(), selected.size() + 1);
 	EXPECT_EQ(loadedHero->level, level);
 	for(size_t index = 0; index < primary.size(); ++index)
 		EXPECT_EQ(loadedHero->getBasePrimarySkillValue(PrimarySkill(index)), primary[index]);
-	EXPECT_EQ(hero->getPerkState().selected, selected); // Original world is isolated.
+	EXPECT_EQ(hero->getPerkState().getSelected(), selected); // Original world is isolated.
 	EXPECT_EQ(handler->pendingHeroLevelUps.at(hero->id).perks, offer.perks);
 }
 
@@ -388,7 +388,7 @@ TEST_F(UnifiedHeroProgressionTest, AIStartingSkillsUseRealCallbackQueryWithoutHu
 	EXPECT_FALSE(current(AI_PLAYER));
 	EXPECT_TRUE(aiHero->getPerkState().nextRequiredPerkOffer([&](const std::string & skill)
 		{ return aiHero->getPerkSkillRank(skill); }).empty());
-	const auto startingPerks = aiHero->getPerkState().selected;
+	const auto startingPerks = aiHero->getPerkState().getSelected();
 	const std::string parent = "new-horizons:havocMagic";
 	ASSERT_EQ(aiHero->getPerkSkillRank(parent), MasteryLevel::BASIC);
 	// A legitimate advance of a starting Skill must still use the real AI
@@ -407,7 +407,7 @@ TEST_F(UnifiedHeroProgressionTest, AIStartingSkillsUseRealCallbackQueryWithoutHu
 	}
 	EXPECT_FALSE(handler->uiReadyForDialogs.contains(AI_PLAYER));
 	ASSERT_NO_FATAL_FAILURE(drain(AI_PLAYER));
-	EXPECT_EQ(aiHero->getPerkState().selected.size(), startingPerks.size() + 1);
+	EXPECT_EQ(aiHero->getPerkState().getSelected().size(), startingPerks.size() + 1);
 	EXPECT_TRUE(aiHero->getPerkState().hasPerkForTier(parent, MasteryLevel::ADVANCED));
 	for(const auto & choice : startingPerks)
 	{
@@ -443,7 +443,7 @@ TEST_F(UnifiedHeroProgressionTest, NullPerkRulesEmptyOrdinaryPacketAdvancesExact
 {
 	noPerkRules = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_FALSE(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules));
+	ASSERT_FALSE(newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules()));
 	const auto level = hero->level;
 	const auto primary = primaryValues();
 	HeroLevelUp offer;
@@ -512,14 +512,14 @@ TEST_F(UnifiedHeroProgressionTest, HistoricalDedicatedPerkOfferDoesNotAdvanceLev
 {
 	historicalProgression = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules()));
 	ASSERT_EQ(hero->getSecSkillLevel(authority()), MasteryLevel::NONE);
 	hero->setSecSkillLevel(authority(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	const auto pool = hero->getPerkState().candidatesForSkillTier(AUTHORITY, 1);
 	ASSERT_FALSE(pool.empty());
 	const auto level = hero->level;
 	const auto primary = primaryValues();
-	const auto selected = hero->getPerkState().selected;
+	const auto selected = hero->getPerkState().getSelected();
 	HeroLevelUp offer;
 	offer.heroId = hero->id;
 	offer.player = HUMAN;
@@ -528,9 +528,9 @@ TEST_F(UnifiedHeroProgressionTest, HistoricalDedicatedPerkOfferDoesNotAdvanceLev
 	handler->sendAndApply(offer);
 	EXPECT_EQ(hero->level, level);
 	EXPECT_EQ(primaryValues(), primary);
-	EXPECT_EQ(hero->getPerkState().selected, selected);
+	EXPECT_EQ(hero->getPerkState().getSelected(), selected);
 	handler->levelUpHero(hero, pool, 0, 0, false);
-	EXPECT_EQ(hero->getPerkState().selected.size(), selected.size() + 1);
+	EXPECT_EQ(hero->getPerkState().getSelected().size(), selected.size() + 1);
 	EXPECT_TRUE(hero->getPerkState().hasSelection(AUTHORITY, pool.front().selection.perkId));
 	EXPECT_EQ(hero->level, level);
 	EXPECT_EQ(primaryValues(), primary);

@@ -29,7 +29,7 @@ constexpr int PERK_MIN_RULESET_VERSION = 1;
 constexpr int PERK_RULESET_VERSION = 2;
 constexpr int PERK_SCHEMA_VERSION = 1;
 constexpr int PERK_OFFER_WEIGHT_POLICY_VERSION = 2;
-constexpr int PERK_PROGRESSION_POLICY_VERSION = 1;
+constexpr int PERK_PROGRESSION_POLICY_VERSION = 2;
 constexpr double PERK_DEFAULT_MAXIMUM_PREFERENCE_RATIO = 2.0;
 constexpr int PERK_OFFER_NORMALIZATION_MATH_VERSION = 1;
 constexpr unsigned PERK_OFFER_WEIGHT_FRACTION_BITS = 32;
@@ -132,6 +132,8 @@ DLL_LINKAGE bool usesWeightedPerkOffers(const JsonNode & rules);
 DLL_LINKAGE bool usesR2PerkOffers(const JsonNode & rules);
 /// Absence preserves historical progression, including policy2 same-tier choices.
 DLL_LINKAGE bool usesStrictPerkProgression(const JsonNode & rules);
+/// Captured correction: Four Offer progression also permits exactly one perk per tier.
+DLL_LINKAGE bool usesExclusivePerkTiers(const JsonNode & rules);
 DLL_LINKAGE void validateWeightedPerkSerialization(const JsonNode & rules, bool supported, bool r2Supported = false,
 	bool strictSupported = false, bool optionalRerollSupported = false, bool passiveFactionSupported = false);
 /// Fresh-world paired admission only; historical resolved snapshots are not
@@ -146,10 +148,12 @@ DLL_LINKAGE void validateCrisisCommandProfileSerialization(const JsonNode & rule
 /// Results own their values, while lookups parse only the requested perk row.
 class DLL_LINKAGE ValidatedPerkRules
 {
+	friend class CompiledPerkCatalogue;
 	const JsonNode & rules;
 	bool active = false;
 public:
 	explicit ValidatedPerkRules(const JsonNode & captured);
+	ValidatedPerkRules(const JsonNode & captured, std::shared_ptr<const nativeRules::PreparedPilotPerks> & prepared);
 	ValidatedPerkRules(JsonNode &&) = delete;
 	ValidatedPerkRules(const JsonNode &&) = delete;
 	ValidatedPerkRules(const ValidatedPerkRules &) = delete;

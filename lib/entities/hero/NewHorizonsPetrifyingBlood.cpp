@@ -30,7 +30,7 @@ bool hasPetrifyingBlood(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:bron"))
-		&& captured(hero->getPrimaryGrowthRules());
+		&& hero->compiledDevelopment()->petrifyingBlood;
 }
 bool resolvePetrifyingBloodPresentation(const CHero & hero, const JsonNode & rules,
 	SpecialtyPresentation & result)

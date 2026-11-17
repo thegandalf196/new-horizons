@@ -8,7 +8,6 @@
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/spells/ISpellMechanics.h"
-#include "../../lib/spells/NewHorizonsMetamagicMarks.h"
 #include "../../lib/spells/Problem.h"
 #include "SpellbookEntryPresentation.h"
 #include "../../lib/texts/ITranslator.h"
@@ -115,17 +114,15 @@ std::string effectText(const newHorizonsMagic::SpellEffectPreview & preview, con
 std::optional<GaleArmyPreview> heavenlyGaleArmyPreview(const CGHeroInstance & hero,
 	const CSpell & spell, const CBattleInfoCallback * battle)
 {
-	if(spell.getJsonKey() != "new-horizons:heavenlyGale" || !battle || !battle->getBattle()
-		|| !newHorizonsMetamagic::usesArcaneMarks(hero.getPerkState().rules))
+	if(spell.getJsonKey() != "new-horizons:heavenlyGale" || !battle || !battle->getBattle())
 		return std::nullopt;
 	const auto side = battle->playerToSide(hero.getCasterOwner());
 	if(side == BattleSide::NONE || battle->battleGetFightingHero(side) != &hero)
 		return std::nullopt;
 
 	// Gale has no pre-cast choices. Mirror its ordinary NO_LOCATION action;
-	// native construction owns Warcasting, spell specialties and Arcane Marks.
+	// native construction owns Warcasting, spell specialties.
 	spells::BattleCast cast(battle, &hero, spells::Mode::HERO, &spell);
-	cast.setMetamagicFollowup(battle->battleCanUseMetamagicFollowup(side, spell.getId()));
 	const spells::Target target{spells::Destination(BattleHex::INVALID)};
 	const auto mechanics = cast.mechanicsForTarget(target);
 	if(!mechanics || !mechanics->usesNewHorizonsMagicV3() || !mechanics->isMassive())
@@ -137,7 +134,7 @@ std::optional<GaleArmyPreview> heavenlyGaleArmyPreview(const CGHeroInstance & he
 	result.canCast = mechanics->canBeCastAt(target, problem);
 	problem.getAll(result.problems);
 	// Current Gale's timed/unitEffect transform already filters validity,
-	// immunity, Spell Lock and smart ownership. Do not extend to other effects.
+	// immunity and smart ownership. Do not extend to other effects.
 	for(const auto * stack : mechanics->getAffectedStacks(target))
 		if(stack)
 			if(const auto effect = newHorizonsMagic::recipientSpellEffectPreview(*mechanics, stack))

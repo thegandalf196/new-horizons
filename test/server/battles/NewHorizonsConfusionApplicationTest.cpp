@@ -511,22 +511,7 @@ TEST_F(NewHorizonsConfusionApplicationTest, DetachedExpectationAndActualAIChoose
 	EXPECT_TRUE(aim.front().unitValue->hasBonusOfType(BonusType::CONFUSION_PENDING));
 }
 
-TEST_F(NewHorizonsConfusionApplicationTest, TimeStopNoActionDoesNotConsumePendingConfusionOrRollBadMorale)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	history(battle::ConfusionBehavior::DEFEND);
-	ASSERT_TRUE(cast(confusion(), target));
-	negativeMorale();
-	Bonus stop(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	stop.parameters = std::make_shared<BonusParameters>(static_cast<int>(BattleSide::DEFENDER));
-	battle()->addOrUpdateUnitBonus(target, stop, true);
-	ASSERT_TRUE(target->isTimeStopped());
-	ASSERT_NO_FATAL_FAILURE(advanceUntil([this]() { return sawAction(EActionType::NO_ACTION); }));
-	EXPECT_FALSE(sawAction(EActionType::BAD_MORALE));
-	EXPECT_TRUE(pending(target));
-	EXPECT_TRUE(target->confusionState.pending);
-	EXPECT_EQ(target->confusionState.previousResolved, battle::ConfusionBehavior::DEFEND);
-}
+
 
 TEST_F(NewHorizonsConfusionApplicationTest, ActualDispelRemovesPendingMarkerAndRetainsResolvedHistory)
 {

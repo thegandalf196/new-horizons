@@ -14,6 +14,7 @@
 
 #include "../json/JsonNode.h"
 #include "../battle/CUnitState.h"
+#include "../battle/UnitStateEffectReceipts.h"
 #include "../battle/SummonLifetime.h"
 #include "../battle/NewHorizonsPlague.h"
 #include <limits>

@@ -57,7 +57,7 @@ TEST_F(LeadershipArmyValueTest, AuthorityChoiceValuesEligibleCreaturesWithoutCha
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:authority")),
 		1, ChangeValueMode::ABSOLUTE);
 	const auto rank = attackerSideHero->getPerkSkillRank("new-horizons:authority");
-	const auto selections = attackerSideHero->getPerkState().selected;
+	const auto selections = attackerSideHero->getPerkState().getSelected();
 	newHorizonsHeroes::PerkOfferCandidate core{{"new-horizons:authority", "new-horizons:authority.massedRanks"}, {}, {}, 1};
 	auto elite = core;
 	elite.selection.perkId = "new-horizons:authority.veteranCadre";
@@ -66,7 +66,7 @@ TEST_F(LeadershipArmyValueTest, AuthorityChoiceValuesEligibleCreaturesWithoutCha
 	EXPECT_LT(NK2AI::leadershipAI::armyStrength(attackerSideHero, attackerSideHero), attackerSideHero->getArmyStrength());
 	EXPECT_EQ(NK2AI::leadershipAI::armyStrength(nullptr, attackerSideHero), attackerSideHero->getArmyStrength());
 	EXPECT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:authority"), rank);
-	EXPECT_EQ(attackerSideHero->getPerkState().selected, selections);
+	EXPECT_EQ(attackerSideHero->getPerkState().getSelected(), selections);
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 10000);
 }
 

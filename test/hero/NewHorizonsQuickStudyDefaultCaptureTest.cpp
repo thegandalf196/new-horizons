@@ -104,7 +104,7 @@ TEST_F(NewHorizonsQuickStudyDefaultCaptureTest, FreshWorldAndEveryMapHeroCapture
 		const auto * hero = gameState()->getHero(id);
 		ASSERT_NE(hero, nullptr);
 		ASSERT_NO_FATAL_FAILURE(expectOrdinarySpecialtiesAbsent(hero->getPrimaryGrowthRules()));
-		ASSERT_NO_FATAL_FAILURE(expectOptionalQuickStudy(hero->getPerkState().rules));
+		ASSERT_NO_FATAL_FAILURE(expectOptionalQuickStudy(hero->getPerkState().getRules()));
 	}
 }
 
@@ -122,7 +122,7 @@ TEST_F(NewHorizonsQuickStudyDefaultCaptureTest, FreshWorldAndEveryMapHeroCapture
 		const auto * hero = gameState()->getHero(id);
 		ASSERT_NE(hero, nullptr);
 		ASSERT_NO_FATAL_FAILURE(expectActivatedOrdinarySpecialties(hero->getPrimaryGrowthRules()));
-		ASSERT_NO_FATAL_FAILURE(expectOptionalQuickStudy(hero->getPerkState().rules));
+		ASSERT_NO_FATAL_FAILURE(expectOptionalQuickStudy(hero->getPerkState().getRules()));
 	}
 }
 

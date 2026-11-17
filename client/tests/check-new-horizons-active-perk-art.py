@@ -280,7 +280,10 @@ def main() -> None:
                     assert digest(output) == item["sha256"], (output, "export hash")
                     assert list(image_size(output)) == item["dimensions"], (output, "export dimensions")
 
-            assert mapping.get(perk_id) == key, (perk_id, mapping.get(perk_id), key)
+            if perk_id.startswith("new-horizons:metamagic."):
+                assert perk_id not in mapping, (perk_id, "retired Metamagic art binding")
+            else:
+                assert mapping.get(perk_id) == key, (perk_id, mapping.get(perk_id), key)
             descriptor = json.loads((IMAGES / f"{key}.json").read_text(encoding="utf-8"))
             frames = descriptor["images"]
             assert [frame["frame"] for frame in frames] == [0, 1, 2, 3]
@@ -458,16 +461,6 @@ def main() -> None:
         "new-horizons:demonicGating.chainGate",
     }
     current_aliases = {
-        'new-horizons:metamagic.arcaneCatalyst': 'NH_perk_arcane_acquisition',
-        'new-horizons:metamagic.arcaneShield': 'NH_perk_echoed_duration',
-        'new-horizons:metamagic.manaConduit': 'NH_perk_arcane_economy',
-        'new-horizons:metamagic.lingeringMagic': 'NH_perk_spell_sequencing',
-        'new-horizons:metamagic.arcaneFeedback': 'NH_perk_focused_pairing',
-        'new-horizons:metamagic.spellFracture': 'NH_perk_perfect_sequence',
-        'new-horizons:metamagic.arcaneWellspring': 'NH_perk_countersequence',
-        'new-horizons:metamagic.arcaneAttunement': 'NH_perk_spell_buffer_v2',
-        'new-horizons:metamagic.arcaneEcho': 'NH_perk_formula_reserve',
-        'new-horizons:metamagic.arcaneSingularity': 'NH_perk_grand_metamagic',
         'new-horizons:divineMandate.knightlyValor': 'NH_perk_knightly_sequence',
         'new-horizons:divineMandate.shieldOfFaith': 'NH_perk_shared_purpose',
         'new-horizons:divineMandate.righteousDiscipline': 'NH_perk_crown_and_altar',
@@ -479,6 +472,13 @@ def main() -> None:
         'new-horizons:demonicGating.infernalOnslaught': 'NH_perk_mobile_gate',
         'new-horizons:demonicGating.hellstride': 'NH_perk_chain_gate',
     }
+    new_metamagic = {"new-horizons:metamagic." + suffix for suffix in (
+        "conservedFormula", "manaRecycling", "disruptiveCasting", "purgingFormula",
+        "spellSculpting", "hexWeaving", "widenSpell", "matterbreaker", "magicalMemory", "arcaneRupture")}
+    assert new_metamagic <= active
+    assert {key for key in mapping if key.startswith("new-horizons:metamagic.")} == new_metamagic
+    for perk_id in new_metamagic:
+        assert mapping[perk_id] == "NH_perk_neutral", (perk_id, "unpainted provisional Metamagic slot")
     assert (set(EXPECTED) - retired_perks) <= active
     assert not (retired_perks & active)
     assert set(current_aliases) <= active
@@ -493,10 +493,11 @@ def main() -> None:
         normal = IMAGES / descriptor["images"][0]["file"]
         assert image_size(normal) == (44, 44)
         value = digest(normal)
-        assert value not in normal_hashes, f"duplicate active normal art: {perk_id}"
-        normal_hashes.add(value)
+        if perk_id not in new_metamagic:
+            assert value not in normal_hashes, f"duplicate active normal art: {perk_id}"
+            normal_hashes.add(value)
 
-    print(f"PASS: active-perk provenance/export metadata, packaged runtime hashes/states, bindings, and {len(active)}-icon uniqueness"
+    print(f"PASS: active-perk provenance/export metadata, packaged runtime hashes/states, bindings, and {len(active) - len(new_metamagic)} painted-icon uniqueness; ten explicit neutral Metamagic placeholders"
           + ("; private source bytes verified" if args.source_root else ""))
 
 

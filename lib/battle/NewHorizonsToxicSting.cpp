@@ -14,14 +14,14 @@ namespace newHorizonsToxicSting
 {
 bool livingTarget(const battle::Unit & target)
 {
-	return target.isValidTarget(false) && target.alive() && !target.isGhost() && !target.isTimeStopped()
+	return target.isValidTarget(false) && target.alive() && !target.isGhost()
 		&& !target.hasBonusOfType(BonusType::UNDEAD) && !target.hasBonusOfType(BonusType::NON_LIVING)
 		&& !target.hasBonusOfType(BonusType::MECHANICAL) && !target.hasBonusOfType(BonusType::SIEGE_WEAPON);
 }
 int chancePercent(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	if(!attack.attacker || !attack.defender
-		|| !attack.attacker->alive() || attack.attacker->isGhost() || attack.attacker->isTimeStopped()
+		|| !attack.attacker->alive() || attack.attacker->isGhost()
 		|| !livingTarget(*attack.defender) || !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| attack.shooting || !attack.physicalDamage || attack.secondaryAttack || attack.bracePreemptive
 		|| attack.preemptiveDamagePercent > 0 || attack.cleaveDamagePercent > 0

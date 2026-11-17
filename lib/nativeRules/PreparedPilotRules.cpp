@@ -215,6 +215,10 @@ bool hasPreparedCreatureRow(const JsonNode & development, std::string_view hero)
 std::shared_ptr<const PreparedPilotCreature> preparePilotCreature(const JsonNode & development, HeroTypeID hero)
 {
 	validatePilotCreatures(development);
+	return prepareAdmittedPilotCreature(development, hero);
+}
+std::shared_ptr<const PreparedPilotCreature> prepareAdmittedPilotCreature(const JsonNode & development, HeroTypeID hero)
+{
 	if(!hero.hasValue()) return {};
 	const auto key = HeroTypeID::encode(hero.getNum());
 	if(!hasPreparedCreatureRow(development, key)) return {};

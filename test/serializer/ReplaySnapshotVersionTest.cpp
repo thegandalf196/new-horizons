@@ -92,6 +92,13 @@ TEST_F(ReplaySnapshotVersionTest, CurrentSnapshotRecaptureKeepsLocalRewindVersio
 	restored.loadReplaySnapshot(original);
 	EXPECT_EQ(restored.nextBattleID, BattleID(9));
 	const auto local = restored.saveReplaySnapshot();
+	if(local.bytes != original.bytes)
+	{
+		const auto differing = std::mismatch(local.bytes.begin(), local.bytes.end(), original.bytes.begin(), original.bytes.end());
+		RecordProperty("originalSnapshotBytes", std::to_string(original.bytes.size()));
+		RecordProperty("recapturedSnapshotBytes", std::to_string(local.bytes.size()));
+		RecordProperty("firstSnapshotDifference", std::to_string(differing.first - local.bytes.begin()));
+	}
 	EXPECT_EQ(local, original);
 	restored.loadReplaySnapshot(local);
 	EXPECT_EQ(restored.saveReplaySnapshot(), local);

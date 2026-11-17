@@ -30,33 +30,33 @@ void orderedRemoval(const std::shared_ptr<HypotheticBattle> & parent, uint32_t t
 	const auto unit = parent->getForUpdate(target);
 	require(unit != nullptr, "Missing materialized assertion parent");
 	const auto dust = newHorizonsGraveDust::records(5000, PlayerColor(0));
-	const Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	unit->addUnitBonus(dust); unit->addUnitBonus({stopped});
+	const Bonus ordinary(BonusDuration::ONE_BATTLE, BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID());
+	unit->addUnitBonus(dust); unit->addUnitBonus({ordinary});
 	auto sibling = std::make_shared<HypotheticBattle>(parent->env, parent);
 	const auto other = sibling->getForUpdate(target);
 	require(other != nullptr, "Missing materialized assertion sibling");
 	const auto before = unit->save(), siblingBefore = other->save();
 	for(const auto & partial : dust)
 	{
-		rejected([&] { unit->removeUnitBonus(std::vector<Bonus>{stopped, partial}); });
-		require(unit->isTimeStopped() && unit->save() == before
+		rejected([&] { unit->removeUnitBonus(std::vector<Bonus>{ordinary, partial}); });
+		require(unit->hasBonusOfType(BonusType::LUCK) && unit->save() == before
 			&& battle::healingReceivedReduction(*unit) == 5000,
-			"Partial clock-first removal changed state/clock/Dust before rejecting");
+			"Partial removal changed ordinary bonus/state/Dust before rejecting");
 	}
 	SetStackEffect packet; packet.battleID = parent->getBattleID();
-	packet.toRemove.emplace_back(target, std::vector<Bonus>{stopped});
+	packet.toRemove.emplace_back(target, std::vector<Bonus>{ordinary});
 	packet.toRemove.emplace_back(target, std::vector<Bonus>{dust.front()});
 	rejected([&] { parent->getServerCallback()->apply(packet); });
-	require(unit->isTimeStopped() && unit->save() == before
+	require(unit->hasBonusOfType(BonusType::LUCK) && unit->save() == before
 		&& battle::healingReceivedReduction(*unit) == 5000, "Multi-vector packet changed state before rejecting");
-	unit->removeUnitBonus(std::vector<Bonus>{dust.front(), stopped});
-	require(!unit->isTimeStopped() && battle::healingReceivedReduction(*unit) == 5000,
-		"Dust-first removal lost its canonical protected no-op ordering");
-	require(other->isTimeStopped() && battle::healingReceivedReduction(*other) == 5000
+	unit->removeUnitBonus(std::vector<Bonus>{dust.front(), ordinary, dust.back()});
+	require(!unit->hasBonusOfType(BonusType::LUCK) && battle::healingReceivedReduction(*unit) == 0,
+		"Complete mixed removal did not remove ordinary bonus and Dust");
+	require(other->hasBonusOfType(BonusType::LUCK) && battle::healingReceivedReduction(*other) == 5000
 		&& other->save() == siblingBefore,
 		"Ordered removal mutated the materialized sibling");
 }
-void incomingClock(const std::shared_ptr<HypotheticBattle> & parent, uint32_t target)
+void incomingBonuses(const std::shared_ptr<HypotheticBattle> & parent, uint32_t target)
 {
 	const auto unit = parent->getForUpdate(target);
 	require(unit != nullptr, "Missing materialized assertion parent");
@@ -65,27 +65,27 @@ void incomingClock(const std::shared_ptr<HypotheticBattle> & parent, uint32_t ta
 	require(other != nullptr, "Missing materialized assertion sibling");
 	const auto siblingBefore = other->save();
 	const auto dust = newHorizonsGraveDust::records(5000, PlayerColor(0));
-	const Bonus stopped(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+	const Bonus ordinary(BonusDuration::ONE_BATTLE, BonusType::LUCK, BonusSource::OTHER, 1, BonusSourceID());
 	SetStackEffect incoming; incoming.battleID = parent->getBattleID();
-	incoming.toAdd.emplace_back(target, std::vector<Bonus>{stopped, dust.front(), dust.back()});
+	incoming.toAdd.emplace_back(target, std::vector<Bonus>{ordinary, dust.front(), dust.back()});
 	parent->getServerCallback()->apply(incoming); // Any exception fails; no expected-failure/skip route.
-	require(unit->isTimeStopped() && battle::healingReceivedReduction(*unit) == 0,
-		"Incoming clock did not protect the following complete Dust pair");
+	require(unit->hasBonusOfType(BonusType::LUCK) && battle::healingReceivedReduction(*unit) == 5000,
+		"Incoming packet did not publish ordinary bonus and complete Dust pair");
 	const auto current = unit->getUnstackedBonuses(CSelector(newHorizonsGraveDust::isEffect));
-	require(current->empty(), "Protected incoming Dust was published");
-	require(!other->isTimeStopped() && other->save() == siblingBefore,
-		"Incoming packet mutated the materialized sibling");
+	require(current->size() == dust.size(), "Incoming complete Dust pair was not published exactly once");
+	require(!other->hasBonusOfType(BonusType::LUCK) && battle::healingReceivedReduction(*other) == 0
+		&& other->save() == siblingBefore, "Incoming packet mutated the materialized sibling");
 }
 }
 Assertions::Assertions(Scenario selected, uint32_t id) : scenario(selected), target(id)
 {
-	require(scenario == Scenario::ORDERED_REMOVAL || scenario == Scenario::INCOMING_CLOCK, "Unknown assertion scenario");
+	require(scenario == Scenario::ORDERED_REMOVAL || scenario == Scenario::INCOMING_BONUSES, "Unknown assertion scenario");
 	observed.target = target;
 	observed.coverageNotes.emplace_back("Fixture-only testRandomGenerator oracle remains required in native regressions; no client counterpart exists");
 	observed.coverageNotes.emplace_back("Prediction RNGStub has no mutable state; canonical fixed-function source proof, not fixture RNG bytes");
 	observed.originalCase = scenario == Scenario::ORDERED_REMOVAL
-		? "GraveDustSnapshotTest.MixedTimeStopRemovalPreflightsOrderedVectorBeforeOverlayMutation"
-		: "GraveDustSnapshotTest.OrdinaryIncomingClockBeforeCompleteDustIsCanonicalProtectedNoOp";
+		? "GraveDustSnapshotTest.CompleteVectorInEitherOrderPreservesControlCleanupAndRejectedPrefix"
+		: "GraveDustSnapshotTest.OrdinaryIncomingBonusesPublishCompleteDustAndIsolateSibling";
 }
 void Assertions::onOwnedRoot(const std::shared_ptr<HypotheticBattle> & current,
 	const std::shared_ptr<const battle::OwnedBattleFrameBatch> & source)
@@ -115,15 +115,15 @@ void Assertions::onOwnedRoot(const std::shared_ptr<HypotheticBattle> & current,
 		const auto root = current->getForUpdate(target);
 		require(root != nullptr, "Missing materialized assertion root");
 		const auto rootBefore = root->save();
-		require(!root->isTimeStopped() && battle::healingReceivedReduction(*root) == 0,
-			"Fixture root must begin without TimeStop or Dust");
+		require(!root->hasBonusOfType(BonusType::LUCK) && battle::healingReceivedReduction(*root) == 0,
+			"Fixture root must begin without ordinary LUCK or Dust");
 		auto parent = std::make_shared<HypotheticBattle>(current->env, current);
 		require(parent->usesOwnedFrameQueries() && parent->retainsOwnedFrameBatch(source)
 			&& !parent->initialExportSubject(), "Assertion child lost owned P0 source binding");
 		if(scenario == Scenario::ORDERED_REMOVAL) orderedRemoval(parent, target);
-		else incomingClock(parent, target);
+		else incomingBonuses(parent, target);
 		require(root->save() == rootBefore
-			&& !root->isTimeStopped() && battle::healingReceivedReduction(*root) == 0
+			&& !root->hasBonusOfType(BonusType::LUCK) && battle::healingReceivedReduction(*root) == 0
 			&& captured->save() == *observed.capturedState, "Assertion branch changed its root or immutable Batch");
 		observed.status = Status::PROJECTION_VERIFIED;
 	}
@@ -166,8 +166,6 @@ AssertionEvidence Assertions::finish(const SourceObservations & before, const So
 	if(!before.nativeState || !after.nativeState) incomplete("Missing genuine native scalar snapshots");
 	else if(*before.nativeState != *after.nativeState || *before.nativeState != *result.capturedState)
 		mismatch("Native scalar state changed or does not match the captured fixture occurrence");
-	if(!before.nativeTimeStopped || !after.nativeTimeStopped) incomplete("Missing genuine native TimeStop observations");
-	else if(*before.nativeTimeStopped || *after.nativeTimeStopped) mismatch("Projection changed native TimeStop");
 	if(!before.nativeHealingReduction || !after.nativeHealingReduction) incomplete("Missing genuine native healing observations");
 	else if(*before.nativeHealingReduction != 0 || *after.nativeHealingReduction != 0) mismatch("Projection changed native Dust");
 	if(scenario == Scenario::ORDERED_REMOVAL)

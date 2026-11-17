@@ -18,8 +18,8 @@ std::pair<int, float> HeroManager::bestLevelUpSkill(const HeroPtr & heroPtr, con
 	const auto * hero = heroPtr.getUnverified();
 	if(!hero)
 		return {0, 0.0f};
-	const auto & rules = hero->getPrimaryGrowthRules();
-	const auto ownFactionSkill = newHorizonsHeroes::factionSkill(rules, hero->getFactionID());
+	const auto * rules = hero->compiledDevelopment();
+	const auto ownFactionSkill = rules->factionSkill(hero->getFactionID());
 	int result = 0;
 	float resultScore = -100;
 
@@ -31,10 +31,9 @@ std::pair<int, float> HeroManager::bestLevelUpSkill(const HeroPtr & heroPtr, con
 		// evaluator has no legacy probability entry for these skills and would
 		// otherwise routinely prefer an unrelated skill. The authoritative query
 		// still validates the final choice; this is only the AI's preference.
-		if(ownFactionSkill && newHorizonsHeroes::isFactionSkillForFaction(
-			rules, hero->getFactionID(), skills[i]))
+		if(ownFactionSkill && rules->isFactionSkillForFaction(hero->getFactionID(), skills[i]))
 			score += 1000.0f;
-		else if(newHorizonsHeroes::isFactionSkill(rules, skills[i]))
+		else if(rules->isFactionSkill(skills[i]))
 			score -= 1000.0f;
 		if(score > resultScore)
 		{

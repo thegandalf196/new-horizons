@@ -5,7 +5,6 @@
 #include "OwnedFrameBatchBuilder.h"
 #include "OwnedFrameCaptureEnvironment.h"
 #include "OwnedUnitEnvironmentPolicy.h"
-#include "OwnedLegacyTimeStopCapture.h"
 #include "BattleInfo.h"
 #include "CBattleInfoCallback.h"
 #include "../CStack.h"
@@ -45,15 +44,6 @@ std::shared_ptr<const OwnedBattleFrameBatch> OwnedBattleFrameCapture::capture(
 	auto environment = ownedFrameCapture::environmentFacts(observer);
 	environment.enginePolicy = OwnedUnitEnvironmentPolicy::capture(observer);
 	for(size_t i = 0; i < visible.size(); ++i) builder.recipient(*visible[i], visible, environment, i);
-	std::vector<std::shared_ptr<const Bonus>> clockRecords;
-	for(const auto & graph : builder.graphs)
-	{
-		for(const auto & node : graph.nodes) clockRecords.insert(clockRecords.end(), node.local.begin(), node.local.end());
-		for(const auto * records : {&graph.extraRecords, &graph.sourceExports, &graph.retainedRecords})
-			clockRecords.insert(clockRecords.end(), records->begin(), records->end());
-	}
-	const auto clockIdentities = ownedFrameCapture::captureLegacyTimeStopIdentities(clockRecords);
-	for(auto & recipe : builder.recipes) recipe.inputs.environment.legacyTimeStop = clockIdentities;
 	auto frames = OwnedUnitBonusFrameBatch::fromOwnedSourceRecipes(std::move(builder.graphs),
 		std::move(builder.recipes), std::move(builder.relations), codec);
 	auto result = std::shared_ptr<OwnedBattleFrameBatch>(new OwnedBattleFrameBatch);

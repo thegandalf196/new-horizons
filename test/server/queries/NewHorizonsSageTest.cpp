@@ -306,7 +306,7 @@ TEST_F(NewHorizonsSageTest, CurrentWorldRoundtripPreservesFiveOrdinarySlotsAndVi
 	EXPECT_TRUE(hero->visitedObjects.contains(town->id));
 	EXPECT_TRUE(savedHero->visitedObjects.contains(savedTown->id));
 	EXPECT_EQ(savedHero->getVisitedTown(), savedTown);
-	EXPECT_EQ(savedHero->getPerkState().rules, hero->getPerkState().rules);
+	EXPECT_EQ(savedHero->getPerkState().getRules(), hero->getPerkState().getRules());
 	EXPECT_EQ(savedHero->getMagicRules(), hero->getMagicRules());
 }
 

@@ -71,7 +71,7 @@ bool VinesCandidateValueReuse::supported(const PossibleSpellcast & candidate,
 	const std::optional<newHorizonsVengefulVines::ProjectionReceipt> & receipt) const
 {
 	return (!control || control->enabled) && receipt && admission.admitted
-		&& admission.spellAllowance && !admission.counterspellNegated
+		&& admission.spellAllowance
 		&& candidate.command == HeroCommand::NONE && candidate.spell
 		&& candidate.spell->getJsonKey() == newHorizonsVengefulVines::SPELL_KEY
 		&& newHorizonsVengefulVines::footprint(candidate.dest).size() == 3;
@@ -89,7 +89,6 @@ std::optional<float> VinesCandidateValueReuse::find(const PossibleSpellcast & ca
 	}
 	for(const auto & entry : entries)
 		if(entry.allowance == *admission.spellAllowance
-			&& heroCandidateValueContext::sameCounterspell(entry.counterspell, admission.counterspell)
 			&& entry.sharedPurposeRecipients == sharedPurposeRecipients
 			&& entry.receipt == *receipt && heroCandidateValueContext::sameOptions(entry.candidate, candidate))
 		{
@@ -109,6 +108,6 @@ void VinesCandidateValueReuse::remember(const PossibleSpellcast & candidate,
 		|| candidate.value == std::numeric_limits<float>::lowest()
 		|| candidate.value == static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE))
 		return;
-	entries.push_back({candidate, *admission.spellAllowance, admission.counterspell,
+	entries.push_back({candidate, *admission.spellAllowance,
 		sharedPurposeRecipients, *receipt});
 }

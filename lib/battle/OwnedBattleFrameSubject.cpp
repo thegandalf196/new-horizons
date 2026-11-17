@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "OwnedBattleFrameSubject.h"
+#include "../nativeRules/CapturedRuleSet.h"
 #include "OwnedBattleFrameBatch.h"
 #include "OwnedBattleFrameRefusals.h"
 #include "CBattleInfoCallback.h"
@@ -24,7 +25,8 @@ class CapturedBattleInfo final : public ownedFrameCapture::RefusingBattleInfo
 	BattleField field;
 	TerrainId terrain;
 	BattleSideArray<PlayerColor> players;
-	JsonNode heroRules, magicRules;
+	JsonNode heroRules;
+	std::shared_ptr<const nativeRules::CapturedRuleDocument> magicOwner;
 	newHorizonsCreatures::CreatureCategoryRules categories;
 	BattleSideArray<std::optional<newHorizonsCommand::ResourceState>> commandResources;
 	BattleSideArray<newHorizonsElementalAttunement::Profile> elementalProfiles;
@@ -35,9 +37,10 @@ public:
 		: battleId(batch.battle()), active(batch.activeUnitId()), serial(batch.activationSerial()),
 		round(source.battleGetRound()), tactics(source.battleTacticDist()), tacticSide(source.battleGetTacticsSide()),
 		field(source.battleGetBattlefieldType()), terrain(source.battleTerrainType()),
-		heroRules(source.getBattle()->getHeroCommandRules()), magicRules(source.getBattle()->getMagicRules()),
+		heroRules(source.getBattle()->getHeroCommandRules()),
 		categories(source.getBattle()->getCreatureCategoryRules())
 	{
+		magicOwner = nativeRules::captureMagicRules(source.getBattle()->getCapturedMagicRules(), source.getBattle()->getMagicRules());
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		{
 			players.at(side) = source.getBattle()->getSidePlayer(side);
@@ -62,7 +65,8 @@ public:
 	TerrainId getTerrainType() const override { return terrain; }
 	PlayerColor getSidePlayer(BattleSide side) const override { return players.at(side); }
 	const JsonNode & getHeroCommandRules() const override { return heroRules; }
-	const JsonNode & getMagicRules() const override { return magicRules; }
+	const JsonNode & getMagicRules() const override { return magicOwner->document(); }
+	std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const override { return magicOwner; }
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { return categories; }
 	const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override
 	{

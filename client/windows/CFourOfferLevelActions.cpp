@@ -11,7 +11,6 @@ void CFourOfferLevelWindow::selectSlot(size_t slot)
 	if(waiting || resolved || !slotAvailable(slot))
 		return;
 	selectedSlot = slot;
-	warningShown = false;
 	for(size_t i = 0; i < slotBoxes.size(); ++i)
 		if(i != slot && slotBoxes[i])
 			slotBoxes[i]->clearSelection();
@@ -30,7 +29,6 @@ void CFourOfferLevelWindow::selectPerk(size_t index)
 	if(waiting || resolved)
 		return;
 	selectedPerk = index;
-	warningShown = false;
 	const auto & perk = perkGroups[*openGroup].at(index);
 	description->setText(newHorizonsPerkHelp::tierName(perk.requiredRank) + " — " + perk.description);
 	instruction->setText("Choose one perk, or return to the offers.");
@@ -43,7 +41,6 @@ void CFourOfferLevelWindow::showOffers()
 		return;
 	openGroup.reset();
 	selectedPerk.reset();
-	warningShown = false;
 	createChoices();
 }
 
@@ -54,7 +51,6 @@ void CFourOfferLevelWindow::changePage(int direction)
 	const size_t pages = (perkGroups[*openGroup].size() + 3) / 4;
 	page = direction > 0 ? (page + 1) % pages : (page + pages - 1) % pages;
 	selectedPerk.reset();
-	warningShown = false;
 	createChoices();
 }
 
@@ -88,16 +84,6 @@ void CFourOfferLevelWindow::confirmSelection()
 	}
 	if(!selectedPerk)
 		return;
-	const auto & perk = perkGroups[*openGroup].at(*selectedPerk);
-	const int rank = hero->getPerkSkillRank(perk.selection.skillId);
-	if(!warningShown && newHorizonsHeroes::perkChoiceBlocksTierCompletion(hero->getPerkState(), perk, rank))
-	{
-		warningShown = true;
-		instruction->setText("This choice permanently limits this Skill. Confirm again to continue.");
-		description->setText("Using another perk slot before completing all tiers leaves too few slots to finish this Skill's progression. "
-			"Choose a different perk or return to the offers, or confirm this choice again.");
-		return;
-	}
 	submitReply(perkReply(*openGroup, *selectedPerk));
 }
 
@@ -112,7 +98,6 @@ void CFourOfferLevelWindow::submitReply(int reply)
 	else
 	{
 		waiting = false;
-		warningShown = false;
 		instruction->setText("The choice could not be sent. Please try again.");
 		refreshControls();
 	}

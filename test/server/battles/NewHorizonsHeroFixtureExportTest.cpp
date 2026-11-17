@@ -54,14 +54,14 @@ protected:
 	}
 	void chooseOffer(CGHeroInstance * hero, const char * skill, const char * perk, bool prerequisite)
 	{
-		const auto wanted = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules, skill, perk);
+		const auto wanted = newHorizonsHeroes::perkDefinition(hero->getPerkState().getRules(), skill, perk);
 		ASSERT_TRUE(wanted);
 		const int tier = newHorizonsHeroes::perkRequiredRank(wanted->requiredRank);
-		for(const auto & selected : hero->getPerkState().selected)
+		for(const auto & selected : hero->getPerkState().getSelected())
 		{
 			if(selected.skillId != skill)
 				continue;
-			const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules, skill, selected.perkId);
+			const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().getRules(), skill, selected.perkId);
 			if(!definition || newHorizonsHeroes::perkRequiredRank(definition->requiredRank) != tier)
 				continue;
 			ASSERT_TRUE(prerequisite || selected.perkId == perk) << "An occupied tier cannot be cleared for this fixture";
@@ -166,8 +166,8 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, ExportLegalOfferOrderProcAdventureS
 	ASSERT_TRUE(handler->turnOrder->isPlayerMakingTurn(family == "attacker" ? PlayerColor(0) : PlayerColor(1)));
 	ASSERT_TRUE(gameState()->currentBattles.empty());
 	const std::array<std::vector<newHorizonsHeroes::PerkSelection>, 2> selectedBeforeSave{
-		findHeroByOwner(PlayerColor(0))->getPerkState().selected,
-		findHeroByOwner(PlayerColor(1))->getPerkState().selected};
+		findHeroByOwner(PlayerColor(0))->getPerkState().getSelected(),
+		findHeroByOwner(PlayerColor(1))->getPerkState().getSelected()};
 	const auto filename = "Saves/hero-proc-" + family;
 	handler->save(filename, PlayerColor::NEUTRAL);
 	ASSERT_TRUE(std::filesystem::is_regular_file(output));
@@ -194,7 +194,7 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, ExportLegalOfferOrderProcAdventureS
 		ASSERT_EQ(heroes.size(), 1u);
 		const auto * hero = heroes.front();
 		ASSERT_NE(hero, nullptr);
-		EXPECT_EQ(hero->getPerkState().selected, selectedBeforeSave[color]);
+		EXPECT_EQ(hero->getPerkState().getSelected(), selectedBeforeSave[color]);
 		EXPECT_EQ(hero->getSecSkillLevel(luck), 3);
 		EXPECT_EQ(hero->getSecSkillLevel(discipline), 3);
 		EXPECT_EQ(hero->getSecSkillLevel(divineMandate), 1);
@@ -344,8 +344,8 @@ TEST_F(NewHorizonsHeroProcFixtureExportTest, PermanentHeroProcStateSurvivesWorld
 		{
 			const auto * hero = handler->gameState().getHero(saved.id);
 			ASSERT_NE(hero, nullptr);
-			EXPECT_EQ(hero->getPerkState().rules, saved.perks.rules);
-			EXPECT_EQ(hero->getPerkState().selected, saved.perks.selected);
+			EXPECT_EQ(hero->getPerkState().getRules(), saved.perks.getRules());
+			EXPECT_EQ(hero->getPerkState().getSelected(), saved.perks.getSelected());
 			EXPECT_EQ(hero->getPerkSkillRank("new-horizons:luck"), 3);
 			EXPECT_EQ(hero->getPerkSkillRank("new-horizons:discipline"), 3);
 			EXPECT_TRUE(hero->areSpellPointsInitialized());
@@ -609,10 +609,10 @@ TEST_F(NewHorizonsHeroFixtureExportTest, ExportOrdinaryFactionBrowsersWithNearby
 		}
 		ASSERT_EQ(hero->getPerkSkillRank(factionSkill), MasteryLevel::BASIC);
 		const auto & perk = profile["startingPerks"].Vector().front();
-		ASSERT_EQ(hero->getPerkState().selected,
+		ASSERT_EQ(hero->getPerkState().getSelected(),
 			(std::vector<newHorizonsHeroes::PerkSelection>{{perk["skill"].String(), perk["perk"].String()}}));
-		ASSERT_EQ(hero->getPerkState().rules, canonicalPerks);
-		ASSERT_EQ(hero->getPerkState().rules["offerWeightPolicyVersion"].Integer(), 2);
+		ASSERT_EQ(hero->getPerkState().getRules(), canonicalPerks);
+		ASSERT_EQ(hero->getPerkState().getRules()["offerWeightPolicyVersion"].Integer(), 2);
 		ASSERT_TRUE(newHorizonsHeroes::usesSkillOfferWeights(hero->getPrimaryGrowthRules()));
 		const auto & reference = canonical["skillOfferWeights"][HeroClassID::encode(hero->getHeroClassID().getNum())];
 		ASSERT_EQ(hero->getPrimaryGrowthRules()["skillOfferWeights"], reference);
@@ -830,7 +830,7 @@ protected:
 		const auto primary = hero.getPrimaryGrowthView()->base;
 		const auto mana = hero.getManaAvailable();
 		const auto rng = randomState();
-		ASSERT_EQ(hero.getPerkState().selected.size(), 1u);
+		ASSERT_EQ(hero.getPerkState().getSelected().size(), 1u);
 		const std::string skill = luck ? "new-horizons:luck" : "new-horizons:discipline";
 		ASSERT_TRUE(hero.hasActivePerk(skill, skill + (luck ? ".secondChance" : ".inspirationalLeader")));
 		// Explicit authored initial loadout BEFORE start(false), never a runtime
@@ -842,8 +842,8 @@ protected:
 		if(!luck) hero.applyPerkSelection({skill, "new-horizons:discipline.fearless"});
 		hero.applyPerkSelection({skill, skill + (luck ? ".gambler" : ".heroicSpirit")});
 		ASSERT_NO_THROW(hero.getPerkState().validate());
-		ASSERT_EQ(hero.getPerkState().rules, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
-		ASSERT_EQ(hero.getPerkState().selected.size(), luck ? 2u : 3u);
+		ASSERT_EQ(hero.getPerkState().getRules(), JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		ASSERT_EQ(hero.getPerkState().getSelected().size(), luck ? 2u : 3u);
 		ASSERT_NO_FATAL_FAILURE(fitAuthoredArmy(hero, luck));
 		EXPECT_EQ(hero.getPrimaryGrowthView()->base, primary);
 		EXPECT_EQ(hero.getManaAvailable(), mana);
@@ -917,7 +917,7 @@ TEST_F(NewHorizonsAuthoredHeroCueFixtureExportTest, ExportAuthoredEligibleAdvent
 	for(const auto * hero : heroes)
 	{
 		identities.push_back(hero->getHeroTypeID());
-		before.push_back(hero->getPerkState().selected);
+		before.push_back(hero->getPerkState().getSelected());
 		armyCounts.emplace_back();
 		for(const auto & [slot, stack] : hero->Slots())
 			armyCounts.back().push_back(stack->getCount());
@@ -938,7 +938,7 @@ TEST_F(NewHorizonsAuthoredHeroCueFixtureExportTest, ExportAuthoredEligibleAdvent
 	{
 		const auto * hero = restored[i];
 		EXPECT_EQ(hero->getHeroTypeID(), identities[i]);
-		EXPECT_EQ(hero->getPerkState().selected, before[i]);
+		EXPECT_EQ(hero->getPerkState().getSelected(), before[i]);
 		std::vector<int> restoredCounts;
 		for(const auto & [slot, stack] : hero->Slots())
 			restoredCounts.push_back(stack->getCount());

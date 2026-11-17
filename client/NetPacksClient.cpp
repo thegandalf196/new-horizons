@@ -754,7 +754,7 @@ void ApplyClientNetPackVisitor::visitHeroLevelUp(HeroLevelUp & pack)
 {
 	const CGHeroInstance * hero = cl.gameInfo().getHero(pack.heroId);
 	assert(hero);
-	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().rules))
+	if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().getRules()))
 	{
 		callOnlyThatInterface(cl, pack.player, &CGameInterface::heroGotFourOfferLevel, hero, pack.primskill, pack.fourOffers,
 			pack.queryID, pack.optionalRerollAvailable, pack.replacesQueryID, pack.reachedLevel);

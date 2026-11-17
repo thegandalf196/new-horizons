@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../nativeRules/CapturedRuleExecutionAudit.h"
 #include "../../network/InitializationProfile.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsPerkRules.h"
@@ -367,6 +368,7 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 
 void validateResolvedHeroRules(const JsonNode & rules)
 {
+	NH_CAPTURE_RULE_WORK(DevelopmentAdmission);
 	if(!usesRules(rules))
 		return;
 	usesCommandAuthorityPolicy(rules);

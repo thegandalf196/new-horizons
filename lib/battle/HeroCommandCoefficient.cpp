@@ -44,7 +44,7 @@ int CoefficientInputs::primary(PrimarySkill skill) const
 	if(!projectedPrimary)
 		return hero.getPrimSkillLevel(skill); // Native adapter only; no owned error fallback.
 	return primarySkillPolicy::projectedValue(skill, *projectedPrimary,
-		hero.usesPrimaryGrowth() ? &hero.getPrimaryGrowthRules() : nullptr);
+		hero.usesPrimaryGrowth() ? std::optional<int>(hero.compiledDevelopment()->maximumPrimary()) : std::nullopt);
 }
 
 int attributeEfficiencyPercent(const CGHeroInstance & hero, PrimarySkill attribute, int divineMandateEfficiencyBonusPercent, bool includeCommanderPerks)

@@ -365,7 +365,7 @@ void CampaignState::validateNativePilotSerialization(bool supported) const
 JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 {
 	hero->validateCommandSerialization(true, true, true, true);
-	nativeRules::validatePilotPerks(hero->getPerkState().rules);
+	nativeRules::validatePilotPerks(hero->getPerkState().getRules());
 	nativeRules::validatePilotCreatures(hero->getPrimaryGrowthRules());
 	JsonNode node;
 	JsonSerializer handler(nullptr, node);
@@ -378,7 +378,7 @@ JsonNode CampaignState::crossoverSerialize(CGHeroInstance * hero) const
 		node["commandProgression"] = hero->commandProgressionToJson();
 	if(newHorizonsHeroes::usesRules(hero->masteryState.rules))
 		node["masteryState"] = hero->masteryState.toJson();
-	if(newHorizonsHeroes::usesPerkRules(hero->perkState.rules))
+	if(newHorizonsHeroes::usesPerkRules(hero->perkState.getRules()))
 		node["perkState"] = hero->perkState.toJson();
 	node.setModScope(ModScope::scopeGame());
 	logGlobal->info(node.toString());

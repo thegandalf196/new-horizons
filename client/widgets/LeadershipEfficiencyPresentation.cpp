@@ -140,7 +140,7 @@ bool ReadoutCache::matches(const CGHeroInstance * owner, CreatureID type, int64_
 	return valid && hero == owner && context == capture && creature == type && count == amount
 		&& policyVersion == capturedPolicy(owner)
 		&& (!owner || (bonusVersion == owner->getTreeVersion() && level == owner->level
-			&& skills == owner->secSkills && perks == owner->getPerkState().selected))
+			&& skills == owner->secSkills && perks == owner->getPerkState().getSelected()))
 		&& composition == armyComposition(army);
 }
 
@@ -157,7 +157,7 @@ void ReadoutCache::capture(const CGHeroInstance * owner, CreatureID type, int64_
 	if(owner)
 	{
 		skills = owner->secSkills;
-		perks = owner->getPerkState().selected;
+		perks = owner->getPerkState().getSelected();
 	}
 	else
 	{

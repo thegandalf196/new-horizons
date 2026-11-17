@@ -112,6 +112,7 @@ bool isMindbreakerSuppressedType(const BonusType type)
 
 int32_t suppressionLevel(const battle::Unit & unit)
 {
+	if(!unit.mayHaveBonusType(BonusType::CREATURE_ABILITY_SUPPRESSION)) return 0;
 	static const CSelector markerSelector = Selector::type()(BonusType::CREATURE_ABILITY_SUPPRESSION);
 	static const std::string markerCacheKey = "newHorizonsCreatureAbilitySuppression.marker";
 	const auto markers = unit.getBonusesBeforeCreatureAbilitySuppression(markerSelector, markerCacheKey, false);

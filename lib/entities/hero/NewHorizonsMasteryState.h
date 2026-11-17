@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "NewHorizonsMasteryRules.h"
+#include "../../nativeRules/CapturedRuleRef.h"
 #include "../../serializer/ESerializationVersion.h"
 #include <vector>
 
@@ -50,7 +51,7 @@ struct DLL_LINKAGE MasteryView
 class DLL_LINKAGE MasteryState
 {
 public:
-	JsonNode rules;
+	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::Mastery> rules;
 	uint64_t lastSequence = 0;
 	uint32_t eligibilityLevel = 0;
 	bool artilleryEligible = false;

@@ -2170,7 +2170,7 @@ void CGameHandler::sendAndApply(CGarrisonOperationPack & pack)
 				|| admitted >= visit->acceptedNeutralRemaining)
 				return;
 			const auto * hero = gameState().getHero(destinationID);
-			if(!hero || !newHorizonsDiplomacy::usesNewHorizonsRules(hero->getPerkState().rules))
+			if(!hero || !newHorizonsDiplomacy::usesNewHorizonsRules(hero->getPerkState().getRules()))
 				return;
 			origin = hero->id;
 			admitted += std::min<TQuantity>(count, visit->acceptedNeutralRemaining - admitted);
@@ -2490,7 +2490,11 @@ void CGameHandler::configureReplayLog(bool gameIsNew)
 
 	// a loaded game keeps the recording mode it was started with
 	if(gameIsNew)
-		gs->replayLog.configure(gs->getStartInfo()->extraOptionsInfo.recordGame, roundsKept);
+	{
+		const auto & rolling = settings["server"]["rollingReplayEnabled"];
+		const bool enabled = rolling.isNull() || rolling.Bool();
+		gs->replayLog.configure(gs->getStartInfo()->extraOptionsInfo.recordGame, roundsKept, enabled);
+	}
 	else
 		gs->replayLog.reconfigureOnLoad(roundsKept);
 }
@@ -4190,8 +4194,10 @@ bool CGameHandler::transformInUndead(const IMarket * market, const CGHeroInstanc
 	if(!army || !market)
 		COMPLAIN_RET("Incorrect call to transform in undead!");
 
-	const auto & savedRules = gameInfo().getHeroCapabilityRules();
-	if(!newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(savedRules))
+	const auto * compiled = gameInfo().getCompiledHeroCapabilityRules();
+	const auto percent = compiled ? compiled->skeletonTransformerHealthPercent()
+		: newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(gameInfo().getHeroCapabilityRules());
+	if(!percent)
 	{
 		bool success = true;
 		for(const auto slot : slots)
@@ -4200,7 +4206,7 @@ bool CGameHandler::transformInUndead(const IMarket * market, const CGHeroInstanc
 	}
 	if(!market->allowsTrade(EMarketMode::CREATURE_UNDEAD))
 		COMPLAIN_RET("Skeleton Transformer is not available at this market!");
-	const auto projection = newHorizonsSkeletonTransformer::plan(*army, slots, savedRules);
+	const auto projection = newHorizonsSkeletonTransformer::plan(*army, slots, gameInfo());
 	if(!projection.isReady())
 		COMPLAIN_RET("Skeleton Transformer selection cannot be converted!");
 	if(projection.projectedArmy.empty() && army->needsLastStack())
@@ -5052,7 +5058,7 @@ void CGameHandler::tryJoiningArmy(const CArmedInstance *src, const CArmedInstanc
 		}
 	}
 	if(removeObjWhenFinished && dynamic_cast<const CGCreature *>(src) && recruitingHero
-		&& newHorizonsDiplomacy::usesNewHorizonsRules(recruitingHero->getPerkState().rules))
+		&& newHorizonsDiplomacy::usesNewHorizonsRules(recruitingHero->getPerkState().getRules()))
 	{
 		for(const auto & query : queries->allQueries())
 		{

@@ -41,15 +41,15 @@ TEST(BuiltinBonusIdentityTest, AllBuiltinTokensKeepExactCanonicalIdentityWithOrW
 	}
 }
 
-TEST(BuiltinBonusIdentityTest, MissingDisplayMetadataCannotAliasJsonTypesAndBothParseBack)
+TEST(BuiltinBonusIdentityTest, DisplayMetadataCannotAliasDistinctJsonTypesAndBothParseBack)
 {
-	// These builtin types have no optional rows in the current bonuses.json.
-	const auto first = input(BonusType::METAMAGIC_USES_PER_COMBAT);
-	const auto second = input(BonusType::TIME_STOP);
+	// Canonical identities remain distinct independently of optional display metadata.
+	const auto first = input(BonusType::LUCK);
+	const auto second = input(BonusType::MORALE);
 	const auto firstJson = first.toJsonNode();
 	const auto secondJson = second.toJsonNode();
-	EXPECT_EQ(firstJson["type"].String(), "METAMAGIC_USES_PER_COMBAT");
-	EXPECT_EQ(secondJson["type"].String(), "TIME_STOP");
+	EXPECT_EQ(firstJson["type"].String(), "LUCK");
+	EXPECT_EQ(secondJson["type"].String(), "MORALE");
 	EXPECT_NE(firstJson, secondJson);
 	// Apart from actual type, these are exactly the same semantic bonus shape.
 	auto sameShape = secondJson;
@@ -69,8 +69,8 @@ TEST(BuiltinBonusIdentityTest, LimiterJsonKeepsDistinctCanonicalDependencyAndRou
 {
 	auto first = input(BonusType::STACKS_SPEED);
 	auto second = first;
-	first.limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::METAMAGIC_USES_PER_COMBAT);
-	second.limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::TIME_STOP);
+	first.limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::LUCK);
+	second.limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::MORALE);
 	EXPECT_NE(first.toJsonNode(), second.toJsonNode());
 	for(const auto * original : {&first, &second})
 	{
@@ -85,7 +85,7 @@ TEST(BuiltinBonusIdentityTest, LimiterJsonKeepsDistinctCanonicalDependencyAndRou
 
 TEST(BuiltinBonusIdentityTest, BinaryEnumStateRetainsEachIdentityWithoutJsonConversion)
 {
-	for(const auto type : {BonusType::METAMAGIC_USES_PER_COMBAT, BonusType::TIME_STOP, BonusType::MORALE})
+	for(const auto type : {BonusType::LUCK, BonusType::MORALE, BonusType::STACKS_SPEED})
 	{
 		auto original = input(type);
 		CMemorySerializer writer;

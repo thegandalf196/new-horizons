@@ -75,7 +75,7 @@ bool revisedPerks(const CGHeroInstance * hero)
 {
 	if(!hero)
 		return false;
-	const auto & rules = hero->getPerkState().rules;
+	const auto & rules = hero->getPerkState().getRules();
 	return rules.isStruct() && rules.Struct().contains("bloodragePolicy")
 		&& rules["bloodragePolicy"]["version"].Integer() == 2;
 }

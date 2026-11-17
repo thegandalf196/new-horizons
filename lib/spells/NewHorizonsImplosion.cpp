@@ -65,19 +65,6 @@ int clockwiseIndex(BattleHex origin, BattleHex hex)
 	throw std::logic_error("Implosion hex ring mismatch");
 }
 
-bool isSpellLocked(const battle::Unit & unit)
-{
-	// Exact compatibility predicate used by BattleSpellMechanics, whose helper
-	// is TU-local. Do not infer a magic seal from generic resistance or duration.
-	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	const auto markers = unit.getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock)));
-	return markers && std::any_of(markers->begin(), markers->end(), [](const auto & marker)
-	{
-		return marker && marker->type == BonusType::MAGIC_RESISTANCE
-			&& Bonus::NTurns(marker.get()) && marker->turnsRemain > 0;
-	});
-}
-
 std::pair<int, int> footprintKey(const battle::Unit & unit, BattleHex origin, BattleHex head)
 {
 	std::pair<int, int> result{std::numeric_limits<int>::max(), std::numeric_limits<int>::max()};
@@ -155,7 +142,7 @@ std::vector<uint32_t> pullOrder(const CBattleInfoCallback & battle,
 	for(const auto * unit : battle.battleGetUnitsIf([](const battle::Unit * unit)
 		{ return unit && unit->alive() && !unit->isGhost(); }))
 	{
-		if(unit->unitId() == primaryID || !unit->getPosition().isAvailable() || isSpellLocked(*unit))
+		if(unit->unitId() == primaryID || !unit->getPosition().isAvailable())
 			continue;
 		const auto [distance, angle] = footprintKey(*unit, origin, unit->getPosition());
 		if(distance <= radius)
@@ -171,8 +158,6 @@ std::vector<uint32_t> pullOrder(const CBattleInfoCallback & battle,
 std::optional<BattleHex> pullDestination(const CBattleInfoCallback & battle,
 	const battle::Unit & unit, BattleHex origin)
 {
-	if(isSpellLocked(unit))
-		return std::nullopt;
 	const int oldDistance = footprintKey(unit, origin, unit.getPosition()).first;
 	int bestDistance = oldDistance;
 	std::optional<BattleHex> result;

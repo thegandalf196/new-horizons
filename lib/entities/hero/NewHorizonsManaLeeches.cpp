@@ -34,6 +34,6 @@ bool hasManaLeeches(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:ignatius"))
-		&& manaLeechesAmount(hero->getPrimaryGrowthRules()).has_value();
+		&& hero->compiledDevelopment()->manaLeeches.has_value();
 }
 }

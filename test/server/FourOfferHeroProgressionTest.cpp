@@ -28,6 +28,7 @@
 #include "../../server/queries/MapQueries.h"
 #include "../../server/queries/QueriesProcessor.h"
 #include <algorithm>
+#include <map>
 #include <string_view>
 #include <boost/filesystem/operations.hpp>
 
@@ -59,19 +60,32 @@ protected:
 		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		perks.Struct().erase("unifiedSkillProgressionVersion");
 		perks["fourOfferProgressionVersion"].Integer() = 1;
+		perks["perkProgressionPolicyVersion"].Integer() = 2;
 		perks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}
-	void prepare()
+	void prepare(bool earnedBaseline = true, const char * identity = "core:orrin")
 	{
 		TinyH3M::TinyH3MBuilder map(EMapFormat::SOD);
 		map.size(36, false).playerActive(HUMAN)
-			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), HUMAN)
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(identity)), HUMAN)
 			.heroGarrison({{CreatureID(0), 1}});
 		startWithMap(std::move(map));
 		hero = findHeroByOwner(HUMAN);
 		ASSERT_NE(hero, nullptr);
-		ASSERT_TRUE(usesFourOfferProgression(hero->getPerkState().rules));
+		ASSERT_TRUE(usesFourOfferProgression(hero->getPerkState().getRules()));
+		ASSERT_TRUE(hero->getPerkState().getSelected().empty());
+		if(earnedBaseline)
+		{
+			// The existing transaction cases start from an explicitly earned Basic
+			// perk in each known Skill. Fresh creation itself grants none.
+			for(const auto & [parent, rank] : hero->secSkills)
+			{
+				const auto pool = hero->getPerkState().candidatesForSkillTier(SecondarySkill::encode(parent.getNum()), 1);
+				ASSERT_FALSE(pool.empty());
+				hero->applyPerkSelection(pool.front().selection);
+			}
+		}
 		server = std::make_unique<GameHandlerTestServer>(gameState());
 		handler = std::make_unique<CGameHandler>(*server, gameState());
 		handler->randomizer->setSeed(1337);
@@ -122,10 +136,75 @@ protected:
 };
 }
 
+TEST_F(FourOfferHeroProgressionTest, FreshEllesharLevelTwoOffersKeepSkillAndPerkSlotsAndTenToEightWeights)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, "core:elleshar"));
+	ASSERT_EQ(hero->secSkills.size(), 2);
+	const auto sylvan = skill("new-horizons:sylvanLuck");
+	const auto wisdom = skill("new-horizons:wisdom");
+	EXPECT_EQ(hero->getSecSkillLevel(sylvan), 1);
+	EXPECT_EQ(hero->getSecSkillLevel(wisdom), 1);
+	EXPECT_TRUE(hero->getPerkState().getSelected().empty());
+	EXPECT_FALSE(current());
+	const auto candidates = fourOfferCandidates(*gameState(), *hero);
+	for(const auto & candidate : candidates)
+		if(candidate.rank > 0)
+		{
+			EXPECT_FALSE(candidate.skillEligible);
+			EXPECT_EQ(candidate.perks.size(), 4);
+			EXPECT_EQ(candidate.weight, candidate.skill == sylvan ? 10 : 8);
+		}
+	std::map<std::string, int> selected;
+	for(int ticket = 0; ticket < 18; ++ticket)
+	{
+		int draw = 0;
+		const auto offer = prepareFourOfferProgression(candidates, [&](const std::vector<int> & weights)
+		{
+			if(draw++ != 1) return size_t{0};
+			EXPECT_EQ(weights.size(), 2);
+			int remaining = ticket;
+			for(size_t index = 0; index < weights.size(); ++index)
+			{
+				if(remaining < weights[index]) return index;
+				remaining -= weights[index];
+			}
+			throw std::runtime_error("Fresh Elleshar perk ticket outside weight domain");
+		});
+		EXPECT_EQ(draw, 3); // New Skill, primary perk parent, remaining perk parent.
+		EXPECT_EQ(offer.skills[0], SecondarySkill::NONE);
+		EXPECT_EQ(offer.targetRanks[0], 0);
+		ASSERT_NE(offer.skills[1], SecondarySkill::NONE);
+		EXPECT_EQ(hero->getSecSkillLevel(offer.skills[1]), 0);
+		EXPECT_EQ(offer.targetRanks[1], 1);
+		EXPECT_NE(offer.perkSkills[0], offer.perkSkills[1]);
+		const auto pools = fourOfferPerkGroups(offer, candidates);
+		EXPECT_EQ(pools[0].size(), 4);
+		EXPECT_EQ(pools[1].size(), 4);
+		++selected[offer.perkSkills[0]];
+	}
+	EXPECT_EQ(selected["new-horizons:sylvanLuck"], 10);
+	EXPECT_EQ(selected["new-horizons:wisdom"], 8);
+	ASSERT_NO_FATAL_FAILURE(gainLevel());
+	const auto query = current();
+	EXPECT_EQ(query->hlu.fourOffers.skills[0], SecondarySkill::NONE);
+	EXPECT_FALSE(query->isValidReply(0));
+	EXPECT_TRUE(query->isValidReply(1));
+	const auto pool = groups(query->hlu.fourOffers);
+	ASSERT_EQ(pool[0].size(), 4);
+	ASSERT_EQ(pool[1].size(), 4);
+	const auto ranks = hero->secSkills;
+	const auto reply = fourOfferPerkReply(query->hlu.fourOffers, hero->getPerkState(), 0, pool[0].front().selection.perkId);
+	ASSERT_TRUE(handler->queryReply(query->queryID, reply, HUMAN));
+	EXPECT_EQ(hero->secSkills, ranks);
+	EXPECT_EQ(hero->getPerkState().getSelected().size(), 1);
+	EXPECT_EQ(hero->level, 2);
+	EXPECT_FALSE(current());
+}
+
 TEST_F(FourOfferHeroProgressionTest, SkillChoiceConsumesTheLevelWithoutGrantingAPerk)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto acquired = hero->getPerkState().selected;
+	const auto acquired = hero->getPerkState().getSelected();
 	ASSERT_NO_FATAL_FAILURE(gainLevel());
 	const auto query = current();
 	const auto offered = query->hlu.fourOffers.skills[0];
@@ -136,7 +215,7 @@ TEST_F(FourOfferHeroProgressionTest, SkillChoiceConsumesTheLevelWithoutGrantingA
 	EXPECT_FALSE(query->isValidReply(-1));
 	ASSERT_TRUE(handler->queryReply(query->queryID, 0, HUMAN));
 	EXPECT_EQ(hero->getSecSkillLevel(offered), oldRank + 1);
-	EXPECT_EQ(hero->getPerkState().selected, acquired);
+	EXPECT_EQ(hero->getPerkState().getSelected(), acquired);
 	EXPECT_EQ(primary(), afterGrowth);
 	EXPECT_FALSE(current());
 	EXPECT_TRUE(handler->pendingHeroLevelUps.empty());
@@ -146,8 +225,10 @@ TEST_F(FourOfferHeroProgressionTest, SkillChoiceConsumesTheLevelWithoutGrantingA
 TEST_F(FourOfferHeroProgressionTest, PerkChoiceConsumesTheLevelWithoutGrantingASkillRank)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	// A completed Basic tier has no further perk group until the Skill advances.
+	handler->changeSecSkill(hero, skill("new-horizons:authority"), 1, ChangeValueMode::ABSOLUTE);
 	const auto ranks = hero->secSkills;
-	const auto acquired = hero->getPerkState().selected.size();
+	const auto acquired = hero->getPerkState().getSelected().size();
 	ASSERT_NO_FATAL_FAILURE(gainLevel());
 	const auto query = current();
 	const auto pool = groups(query->hlu.fourOffers);
@@ -156,7 +237,7 @@ TEST_F(FourOfferHeroProgressionTest, PerkChoiceConsumesTheLevelWithoutGrantingAS
 	const auto reply = fourOfferPerkReply(query->hlu.fourOffers, hero->getPerkState(), 0, selected.selection.perkId);
 	ASSERT_TRUE(handler->queryReply(query->queryID, reply, HUMAN));
 	EXPECT_EQ(hero->secSkills, ranks);
-	EXPECT_EQ(hero->getPerkState().selected.size(), acquired + 1);
+	EXPECT_EQ(hero->getPerkState().getSelected().size(), acquired + 1);
 	EXPECT_TRUE(hero->getPerkState().hasSelection(selected.selection.skillId, selected.selection.perkId));
 	EXPECT_FALSE(current());
 }
@@ -166,12 +247,12 @@ TEST_F(FourOfferHeroProgressionTest, ExplicitExternalRanksBypassPrerequisitesAnd
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto authority = skill("new-horizons:authority");
 	ASSERT_EQ(hero->getSecSkillLevel(authority), 0);
-	const auto selected = hero->getPerkState().selected;
+	const auto selected = hero->getPerkState().getSelected();
 	handler->changeSecSkill(hero, authority, 1, ChangeValueMode::ABSOLUTE);
 	EXPECT_THROW(handler->levelUpHero(hero, authority, false), std::runtime_error);
 	handler->changeSecSkill(hero, authority, 3, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(hero->getSecSkillLevel(authority), 3);
-	EXPECT_EQ(hero->getPerkState().selected, selected);
+	EXPECT_EQ(hero->getPerkState().getSelected(), selected);
 	EXPECT_FALSE(current());
 	EXPECT_TRUE(handler->pendingHeroLevelUps.empty());
 	const auto offered = handler->randomizer->rollFourOfferProgression(hero);
@@ -184,11 +265,54 @@ TEST_F(FourOfferHeroProgressionTest, ExplicitExternalRanksBypassPrerequisitesAnd
 	}
 }
 
+TEST_F(FourOfferHeroProgressionTest, CompletedBasicHasNoPerkGroupAndForgedDuplicateTierSpendsNothing)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(onlyAuthorityWithBasicPerk());
+	const auto completeBasic = handler->randomizer->rollFourOfferProgression(hero);
+	EXPECT_TRUE(completeBasic.perkSkills[0].empty());
+	EXPECT_TRUE(completeBasic.perkSkills[1].empty());
+	handler->changeSecSkill(hero, skill("new-horizons:authority"), 2, ChangeValueMode::ABSOLUTE);
+	ASSERT_NO_FATAL_FAILURE(gainLevel());
+	const auto query = current();
+	const auto pool = groups(query->hlu.fourOffers);
+	ASSERT_EQ(pool[0].size(), 4);
+	for(const auto & candidate : pool[0]) EXPECT_EQ(candidate.requiredRank, 2);
+	const auto & rows = hero->getPerkState().getRules()["skills"]["new-horizons:authority"]["perks"].Vector();
+	const auto duplicateTier = std::find_if(rows.begin(), rows.end(), [&](const auto & row)
+	{
+		return row["requires"].String() == "basic"
+			&& !hero->getPerkState().hasSelection("new-horizons:authority", row["id"].String());
+	});
+	ASSERT_NE(duplicateTier, rows.end());
+	const auto reply = fourOfferPerkReply(query->hlu.fourOffers, hero->getPerkState(), 0, (*duplicateTier)["id"].String());
+	const auto ranks = hero->secSkills;
+	const auto selected = hero->getPerkState().getSelected();
+	const auto resources = gameState()->getPlayerState(HUMAN)->resources;
+	const auto experience = hero->exp;
+	const auto level = hero->level;
+	const auto attributes = primary();
+	CMemorySerializer rngBefore, rngAfter;
+	rngBefore.oser & *handler->randomizer;
+	EXPECT_FALSE(query->isValidReply(reply));
+	EXPECT_FALSE(handler->queryReply(query->queryID, reply, HUMAN));
+	rngAfter.oser & *handler->randomizer;
+	EXPECT_EQ(rngBefore.extractBuffer(), rngAfter.extractBuffer());
+	EXPECT_EQ(current(), query);
+	EXPECT_EQ(hero->secSkills, ranks);
+	EXPECT_EQ(hero->getPerkState().getSelected(), selected);
+	EXPECT_EQ(gameState()->getPlayerState(HUMAN)->resources, resources);
+	EXPECT_EQ(hero->exp, experience);
+	EXPECT_EQ(hero->level, level);
+	EXPECT_EQ(primary(), attributes);
+	EXPECT_TRUE(handler->pendingHeroLevelUps.contains(hero->id));
+}
+
 TEST_F(FourOfferHeroProgressionTest, TeacherRewardGrantsBasicOrExplicitUpgradeWithoutAPerkPrompt)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto authority = skill("new-horizons:authority");
-	const auto acquired = hero->getPerkState().selected;
+	const auto acquired = hero->getPerkState().getSelected();
 	SkillTeachingObject teacher(gameState().get());
 	teacher.ID = MapObjectID::WITCH_HUT;
 	Rewardable::VisitInfo reward;
@@ -196,13 +320,13 @@ TEST_F(FourOfferHeroProgressionTest, TeacherRewardGrantsBasicOrExplicitUpgradeWi
 	teacher.grantRewardBeforeLevelup(*handler, reward, hero);
 	EXPECT_EQ(hero->getSecSkillLevel(authority), 1);
 	EXPECT_FALSE(current());
-	EXPECT_EQ(hero->getPerkState().selected, acquired);
+	EXPECT_EQ(hero->getPerkState().getSelected(), acquired);
 	// The generic teacher's explicit +1 reward may improve a known Skill.
 	// No new "visit a known Skill" upgrade behavior is introduced here.
 	teacher.grantRewardBeforeLevelup(*handler, reward, hero);
 	EXPECT_EQ(hero->getSecSkillLevel(authority), 2);
 	EXPECT_FALSE(current());
-	EXPECT_EQ(hero->getPerkState().selected, acquired);
+	EXPECT_EQ(hero->getPerkState().getSelected(), acquired);
 	EXPECT_EQ(hero->level, 1);
 }
 
@@ -212,14 +336,14 @@ TEST_F(FourOfferHeroProgressionTest, UniversityPurchaseChargesItsExistingPriceAn
 	const auto authority = skill("new-horizons:authority");
 	CGUniversity university(gameState().get());
 	university.skills.emplace_back(authority);
-	const auto acquired = hero->getPerkState().selected;
+	const auto acquired = hero->getPerkState().getSelected();
 	const auto price = newHorizonsUniversity::tuition(&university, gameState()->getMagicRules(), gameState()->getSettings());
 	handler->giveResources(HUMAN, price * 2);
 	const auto before = gameState()->getPlayerState(HUMAN)->resources;
 	ASSERT_TRUE(handler->buySecSkill(&university, hero, authority));
 	EXPECT_EQ(hero->getSecSkillLevel(authority), 1);
 	EXPECT_EQ(gameState()->getPlayerState(HUMAN)->resources, before - price);
-	EXPECT_EQ(hero->getPerkState().selected, acquired);
+	EXPECT_EQ(hero->getPerkState().getSelected(), acquired);
 	EXPECT_FALSE(current());
 	EXPECT_EQ(hero->level, 1);
 	EXPECT_FALSE(handler->buySecSkill(&university, hero, authority));
@@ -262,11 +386,11 @@ TEST_F(FourOfferHeroProgressionTest, UniversityCanTeachDistinctSchoolsUntilCapac
 	const auto price = newHorizonsUniversity::tuition(&university, gameState()->getMagicRules(), gameState()->getSettings());
 	handler->giveResources(HUMAN, price * 6);
 	const auto before = gameState()->getPlayerState(HUMAN)->resources;
-	const auto perks = hero->getPerkState().selected;
+	const auto perks = hero->getPerkState().getSelected();
 	ASSERT_TRUE(handler->buySecSkill(&university, hero, light));
 	ASSERT_TRUE(handler->buySecSkill(&university, hero, nature));
 	EXPECT_EQ(gameState()->getPlayerState(HUMAN)->resources, before - price * 2);
-	EXPECT_EQ(hero->getPerkState().selected, perks);
+	EXPECT_EQ(hero->getPerkState().getSelected(), perks);
 	EXPECT_FALSE(current());
 	for(const auto * identity : {"new-horizons:authority", "new-horizons:armorer", "new-horizons:offense", "new-horizons:luck"})
 		handler->changeSecSkill(hero, skill(identity), 1, ChangeValueMode::ABSOLUTE);
@@ -274,7 +398,7 @@ TEST_F(FourOfferHeroProgressionTest, UniversityCanTeachDistinctSchoolsUntilCapac
 	EXPECT_FALSE(handler->buySecSkill(&university, hero, havoc));
 	EXPECT_EQ(hero->getSecSkillLevel(havoc), 0);
 	EXPECT_EQ(gameState()->getPlayerState(HUMAN)->resources, before - price * 2);
-	EXPECT_EQ(hero->getPerkState().selected, perks);
+	EXPECT_EQ(hero->getPerkState().getSelected(), perks);
 }
 
 TEST_F(FourOfferHeroProgressionTest, ForeignFactionSkillCannotLeakIntoAnyOffer)
@@ -336,7 +460,7 @@ TEST_F(FourOfferHeroProgressionTest, ExhaustedDevelopmentStillAdvancesPrimaryAtt
 	}
 	ASSERT_FALSE(hero->canLearnSkill());
 	const auto ranks = hero->secSkills;
-	const auto perks = hero->getPerkState().selected;
+	const auto perks = hero->getPerkState().getSelected();
 	ASSERT_NO_FATAL_FAILURE(gainLevel());
 	const auto query = current();
 	EXPECT_TRUE(query->hlu.fourOffers.empty());
@@ -347,7 +471,7 @@ TEST_F(FourOfferHeroProgressionTest, ExhaustedDevelopmentStillAdvancesPrimaryAtt
 	EXPECT_FALSE(current());
 	EXPECT_EQ(hero->level, 2);
 	EXPECT_EQ(hero->secSkills, ranks);
-	EXPECT_EQ(hero->getPerkState().selected, perks);
+	EXPECT_EQ(hero->getPerkState().getSelected(), perks);
 	EXPECT_EQ(primary(), growth);
 }
 
@@ -355,21 +479,23 @@ TEST_F(FourOfferHeroProgressionTest, ExternalRankAfterExperiencePreservesGroupsA
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(onlyAuthorityWithBasicPerk());
+	handler->changeSecSkill(hero, skill("new-horizons:authority"), 2, ChangeValueMode::ABSOLUTE);
 	ASSERT_NO_FATAL_FAILURE(gainLevel());
 	const auto query = current();
 	const auto issued = query->hlu.fourOffers;
 	ASSERT_EQ(issued.skills[0], skill("new-horizons:authority"));
-	ASSERT_EQ(issued.targetRanks[0], 2);
-	ASSERT_EQ(groups(issued)[0].size(), 3);
+	ASSERT_EQ(issued.targetRanks[0], 3);
+	ASSERT_EQ(groups(issued)[0].size(), 4);
 	CMemorySerializer before;
 	before.oser & *handler->randomizer;
 	// Native scripted/reward continuations can grant a Skill after an XP
 	// action exposed the query; received-input blocking does not stop them.
-	handler->changeSecSkill(hero, issued.skills[0], 2, ChangeValueMode::ABSOLUTE);
-	EXPECT_FALSE(query->isValidReply(0)); // It must not silently become Expert.
+	handler->changeSecSkill(hero, issued.skills[0], 3, ChangeValueMode::ABSOLUTE);
+	EXPECT_FALSE(query->isValidReply(0)); // The captured rank offer is already satisfied.
 	EXPECT_EQ(query->hlu.fourOffers, issued);
 	const auto live = groups(issued);
-	ASSERT_EQ(live[0].size(), 7);
+	ASSERT_EQ(live[0].size(), 4);
+	for(const auto & perk : live[0]) EXPECT_EQ(perk.requiredRank, 2);
 	const auto advanced = std::find_if(live[0].begin(), live[0].end(), [](const auto & perk) { return perk.requiredRank == 2; });
 	ASSERT_NE(advanced, live[0].end());
 	const auto reply = fourOfferPerkReply(issued, hero->getPerkState(), 0, advanced->selection.perkId);
@@ -377,10 +503,10 @@ TEST_F(FourOfferHeroProgressionTest, ExternalRankAfterExperiencePreservesGroupsA
 	CMemorySerializer after;
 	after.oser & *handler->randomizer;
 	EXPECT_EQ(before.extractBuffer(), after.extractBuffer());
-	const auto acquired = hero->getPerkState().selected.size();
+	const auto acquired = hero->getPerkState().getSelected().size();
 	ASSERT_TRUE(handler->queryReply(query->queryID, reply, HUMAN));
-	EXPECT_EQ(hero->getSecSkillLevel(issued.skills[0]), 2);
-	EXPECT_EQ(hero->getPerkState().selected.size(), acquired + 1);
+	EXPECT_EQ(hero->getSecSkillLevel(issued.skills[0]), 3);
+	EXPECT_EQ(hero->getPerkState().getSelected().size(), acquired + 1);
 }
 
 TEST_F(FourOfferHeroProgressionTest, AllHeldChoicesBecomingUnavailableHaveOneSafeCompletion)
@@ -404,10 +530,10 @@ TEST_F(FourOfferHeroProgressionTest, AllHeldChoicesBecomingUnavailableHaveOneSaf
 	EXPECT_TRUE(query->isValidReply(0));
 	EXPECT_FALSE(query->isValidReply(1));
 	const auto ranks = hero->secSkills;
-	const auto acquired = hero->getPerkState().selected;
+	const auto acquired = hero->getPerkState().getSelected();
 	ASSERT_TRUE(handler->queryReply(query->queryID, 0, HUMAN));
 	EXPECT_EQ(hero->secSkills, ranks);
-	EXPECT_EQ(hero->getPerkState().selected, acquired);
+	EXPECT_EQ(hero->getPerkState().getSelected(), acquired);
 	EXPECT_EQ(hero->level, 2);
 	EXPECT_FALSE(current());
 }
@@ -417,8 +543,9 @@ TEST_F(FourOfferHeroProgressionTest, PendingGroupsAndRandomStreamSurviveNativeSa
 	NativeBonusGraphAccess graphAccess;
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(onlyAuthorityWithBasicPerk());
-	ASSERT_NO_FATAL_FAILURE(gainLevel());
 	handler->changeSecSkill(hero, skill("new-horizons:authority"), 2, ChangeValueMode::ABSOLUTE);
+	ASSERT_NO_FATAL_FAILURE(gainLevel());
+	handler->changeSecSkill(hero, skill("new-horizons:authority"), 3, ChangeValueMode::ABSOLUTE);
 	const auto original = current()->hlu;
 	const auto originalPools = groups(original.fourOffers);
 	ASSERT_FALSE(originalPools[0].empty());
@@ -426,7 +553,7 @@ TEST_F(FourOfferHeroProgressionTest, PendingGroupsAndRandomStreamSurviveNativeSa
 	ASSERT_NE(advanced, originalPools[0].end());
 	const auto reply = fourOfferPerkReply(original.fourOffers, hero->getPerkState(), 0, advanced->selection.perkId);
 	const auto ranks = hero->secSkills;
-	const auto selected = hero->getPerkState().selected;
+	const auto selected = hero->getPerkState().getSelected();
 	const auto attributes = primary();
 	map()->registerMapStrings();
 	const auto directory = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path("nh-four-offer-%%%%%%%%");
@@ -454,7 +581,7 @@ TEST_F(FourOfferHeroProgressionTest, PendingGroupsAndRandomStreamSurviveNativeSa
 	restoredWorld->updateOnLoad(resumedOptions);
 	auto * restoredHero = restoredWorld->getHero(hero->id);
 	ASSERT_NE(restoredHero, nullptr);
-	EXPECT_EQ(restoredHero->getPerkState().selected, selected);
+	EXPECT_EQ(restoredHero->getPerkState().getSelected(), selected);
 	EXPECT_EQ(restoredHero->secSkills, ranks);
 	CMemorySerializer sourceRng, restoredRng;
 	sourceRng.oser & *handler->randomizer;
@@ -468,7 +595,7 @@ TEST_F(FourOfferHeroProgressionTest, PendingGroupsAndRandomStreamSurviveNativeSa
 	EXPECT_EQ(restoredHero->level, 2);
 	EXPECT_FALSE(restoredHandler.queryReply(original.queryID, reply, HUMAN));
 	ASSERT_TRUE(restoredHandler.queryReply(restored->queryID, reply, HUMAN));
-	EXPECT_EQ(restoredHero->getPerkState().selected.size(), selected.size() + 1);
+	EXPECT_EQ(restoredHero->getPerkState().getSelected().size(), selected.size() + 1);
 	EXPECT_EQ(restoredHero->secSkills, ranks);
 	EXPECT_EQ(restoredHero->level, 2);
 	EXPECT_TRUE(restoredHandler.pendingHeroLevelUps.empty());
@@ -504,7 +631,7 @@ TEST_F(FourOfferHeroProgressionTest, ConnoisseurRerollPreservesOtherThreeFixedOf
 	ASSERT_TRUE(query->hlu.optionalRerollAvailable);
 	const auto held = query->hlu.fourOffers;
 	const auto attributes = primary();
-	const auto acquired = hero->getPerkState().selected;
+	const auto acquired = hero->getPerkState().getSelected();
 	ASSERT_TRUE(query->requestReroll(HUMAN, 0));
 	const auto replacement = query->hlu.fourOffers;
 	EXPECT_NE(replacement.skills[0], held.skills[0]);
@@ -512,7 +639,7 @@ TEST_F(FourOfferHeroProgressionTest, ConnoisseurRerollPreservesOtherThreeFixedOf
 	EXPECT_EQ(replacement.skills[1], held.skills[1]);
 	EXPECT_EQ(replacement.targetRanks[1], held.targetRanks[1]);
 	EXPECT_EQ(replacement.perkSkills, held.perkSkills);
-	EXPECT_EQ(hero->getPerkState().selected, acquired);
+	EXPECT_EQ(hero->getPerkState().getSelected(), acquired);
 	EXPECT_EQ(primary(), attributes);
 	CMemorySerializer before, after;
 	before.oser & *handler->randomizer;

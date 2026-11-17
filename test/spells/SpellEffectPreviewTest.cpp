@@ -74,14 +74,14 @@ TEST_F(SpellEffectPreviewTest, CurrentHeroPowerChangesTheResolvedDamageWithoutSp
 	const auto & bolt = spell("core:iceBolt");
 	const auto mana = hero.getManaAvailable();
 	const auto known = hero.getSpellsInSpellbook();
-	const auto perks = hero.getPerkState().selected;
+	const auto perks = hero.getPerkState().getSelected();
 	const auto first = newHorizonsMagic::spellEffectPreview(hero, bolt);
 	ASSERT_TRUE(first.primary);
 	EXPECT_EQ(first.primary->value, bolt.calculateDamage(&hero));
 	EXPECT_EQ(first, newHorizonsMagic::spellEffectPreview(hero, bolt));
 	EXPECT_EQ(hero.getManaAvailable(), mana);
 	EXPECT_EQ(hero.getSpellsInSpellbook(), known);
-	EXPECT_EQ(hero.getPerkState().selected, perks);
+	EXPECT_EQ(hero.getPerkState().getSelected(), perks);
 	hero.setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 	const auto second = newHorizonsMagic::spellEffectPreview(hero, bolt);
 	ASSERT_TRUE(second.primary);
@@ -198,26 +198,15 @@ TEST_F(SpellEffectPreviewTest, KnownUtilityFamiliesExposeTheirActualSharedCaster
 		hero.getNonDamageSpellSpecialtyBonusPercent(phantom.getId())));
 }
 
-TEST_F(SpellEffectPreviewTest, TimeStopBookRadiusUsesTheCapturedCoefficientOverload)
-{
-	const auto & stop = spell("new-horizons:timeStop");
-	for(const int power : {1, 100, 250})
-	{
-		hero.setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
-		const auto preview = newHorizonsMagic::spellEffectPreview(hero, stop);
-		ASSERT_TRUE(preview.primary);
-		EXPECT_EQ(preview.primary->value, newHorizonsSorcery::timeStopRadius(hero.getEffectPower(&stop),
-			newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules, &hero, stop.getId()), 0, false));
-	}
-}
+
 
 TEST_F(SpellEffectPreviewTest, FocusAndLivingArmorUseSharedAuthorityAndDetailFormulaOwners)
 {
 	const auto & focus = spell("new-horizons:focusMagic");
 	const auto & armor = spell("new-horizons:summonLivingArmor");
 	PreviewTranslator translator;
-	translator.texts.emplace("new-horizons.spellbook.effect.focus", "Defense penetration %s%");
-	const auto profile = newHorizonsSorceryRevision::focusRules(callback.rules);
+	translator.texts.emplace("new-horizons.spellbook.effect.focus", "Shots %s; native ranged +%s%");
+	const auto profile = newHorizonsSorceryRevision::usesFocusEnchantment(callback.rules);
 	ASSERT_TRUE(profile);
 	const auto & savedArmor = callback.rules["spells"][armor.getJsonKey()]["livingArmor"];
 	for(const int power : {1, 100, 250})
@@ -225,13 +214,10 @@ TEST_F(SpellEffectPreviewTest, FocusAndLivingArmorUseSharedAuthorityAndDetailFor
 		hero.setPrimarySkill(PrimarySkill::SPELL_POWER, power, ChangeValueMode::ABSOLUTE);
 		const auto penetration = newHorizonsMagic::spellEffectPreview(hero, focus);
 		ASSERT_TRUE(penetration.primary);
-		EXPECT_TRUE(penetration.qualificationKey.empty());
-		EXPECT_EQ(spellbookPresentation::effectDetail(penetration, translator),
-			"Current effect: " + spellbookPresentation::effectLine(penetration, translator,
-				[](const std::string &) { return 0; }));
-		EXPECT_EQ(penetration.primary->value, newHorizonsSorceryRevision::focusMarkBasisPoints(*profile,
-			hero.getEffectPower(&focus), newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(callback.rules,
-				&hero, focus.getId()), 0, hero.getNonDamageSpellSpecialtyBonusPercent(focus.getId())));
+		EXPECT_EQ(penetration.qualificationKey, "new-horizons.spellbook.focusRecipient");
+		EXPECT_EQ(penetration.primary->value, 3);
+		ASSERT_TRUE(penetration.secondary);
+		EXPECT_EQ(penetration.secondary->value, 20 + newHorizonsSorceryRevision::focusAdditionalRangedPercent(&hero, focus.getId()));
 		const auto pool = newHorizonsMagic::spellEffectPreview(hero, armor);
 		ASSERT_TRUE(pool.primary);
 		EXPECT_EQ(pool.primary->value, newHorizonsSorceryRevision::livingArmorHitPoints(
@@ -485,7 +471,7 @@ TEST_F(SpellEffectPreviewTest, HolyWrathRangeUsesTheSameSavedRecipientMultiplier
 TEST_F(SpellEffectPreviewTest, UtilityActionsExposeLoadedDurationsOrAccurateCategoricalEffects)
 {
 	for(const auto * id : {"core:berserk", "new-horizons:realityWarp", "new-horizons:confusion",
-		"new-horizons:puppetMaster", "core:teleport", "new-horizons:polymorph", "new-horizons:spellLock",
+		"new-horizons:puppetMaster", "core:teleport", "new-horizons:polymorph",
 		"new-horizons:theChosen", "new-horizons:purify"})
 	{
 		const auto row = newHorizonsMagic::spellEffectPreview(hero, spell(id));

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "ActivationForfeit.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
 #include "../../lib/battle/NewHorizonsPlague.h"
@@ -34,14 +35,15 @@ void HypotheticBattle::completeForfeitedActivation(uint32_t unitId)
 	const auto stun = newHorizonsStun::removalPlan(*unit);
 	unit->removeUnitBonus(CSelector([](const Bonus * bonus)
 	{
-		return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
+		return battle::timedEffects::activationEndExpires(*bonus, newHorizonsOffense::isNoQuarterMoralePenalty(bonus));
 	}));
 	unit->consumeNoQuarterActivation();
 	newHorizonsPlague::completeActivation(*this, *getServerCallback(), unitId);
 	unit = getForUpdate(unitId);
-	if(!unit->isTimeStopped())
+
 	{
-		if(unit->alive() && !unit->isGhost()) unit->removeUnitBonus(statuses);
+		if(battle::timedEffects::frozenThaws(forfeitedActivations.at(unitId).reason, true,
+			forfeitedActivations.at(unitId).completed, unit->alive(), unit->isGhost())) unit->removeUnitBonus(statuses);
 		unit->removeUnitBonus(stun); // An actually consumed slot cannot survive death as pending Stun.
 	}
 	const auto side = playerToSide(battleGetOwner(unit.get()));

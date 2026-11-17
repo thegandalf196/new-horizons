@@ -172,28 +172,5 @@ TEST_F(NativeSpellLuaParity, SoulChainPreservesExplicitPrimaryAndEchoRecipientOr
 	EXPECT_EQ(trace.packets.size(), 2u) << "Primary is provenance; only the two echo recipients gain markers";
 }
 
-TEST_F(NativeSpellLuaParity, SpellLockPreservesFriendlyAndHostilePolarityFiltering)
-{
-	const SpellID id(SpellID::decode("new-horizons:spellLock"));
-	ASSERT_NE(id, SpellID::NONE);
-	spell(id);
-	EXPECT_CALL(mechanicsMock, getCasterColor()).Times(AnyNumber()).WillRepeatedly(Return(PlayerColor(0)));
-	EXPECT_CALL(*battleFake, getSidePlayer(_)).Times(AnyNumber()).WillRepeatedly(Invoke([](BattleSide side)
-		{ return PlayerColor(side == BattleSide::ATTACKER ? 0 : 1); }));
-	for(const bool friendly : {false, true})
-	{
-		SCOPED_TRACE(friendly);
-		auto & recipient = unit(friendly ? 43 : 42);
-		EXPECT_CALL(recipient, unitOwner()).Times(AnyNumber()).WillRepeatedly(Return(PlayerColor(friendly ? 0 : 1)));
-		EXPECT_CALL(recipient, unitSide()).Times(AnyNumber()).WillRepeatedly(Return(friendly ? BattleSide::ATTACKER : BattleSide::DEFENDER));
-		EXPECT_CALL(recipient, isHypnotized()).Times(AnyNumber()).WillRepeatedly(Return(false));
-		ASSERT_EQ(battleFake->battleGetOwner(&recipient), PlayerColor(friendly ? 0 : 1));
-		for(const auto source : {SpellID::HASTE, SpellID::SLOW})
-			recipient.addNewBonus(std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
-				BonusSource::SPELL_EFFECT, 3, BonusSourceID(SpellID(source))));
-		prepare("spellLock", JsonNode());
-		expectApplyParity({::battle::Destination(&recipient)});
-		EXPECT_EQ(trace.packets.size(), 3u) << "Remove only opposing polarity, then add resistance and polarity marker";
-	}
-}
+
 }

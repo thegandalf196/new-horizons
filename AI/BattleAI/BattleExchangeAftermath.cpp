@@ -90,7 +90,7 @@ namespace battleExchangeAftermath
 bool projectNoQuarterAfterHit(HypotheticBattle & battle, const BattleAttackInfo & attack,
 	StackWithBonuses & target)
 {
-	if(!battle.battleCanTriggerNoQuarter(attack) || !target.alive() || target.isTimeStopped()
+	if(!battle.battleCanTriggerNoQuarter(attack) || !target.alive()
 		|| !battle.battleMatchOwner(attack.attacker, &target)
 		|| !newHorizonsOffense::belowNoQuarterThreshold(
 			target.getAvailableHealth(), battle::getMaximumHealth(target)))

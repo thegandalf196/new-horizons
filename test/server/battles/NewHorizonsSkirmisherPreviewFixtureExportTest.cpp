@@ -192,11 +192,11 @@ protected:
 		const std::string perk = color == 0 ? "new-horizons:archery.skirmisher" : "new-horizons:battlecraft.overwatch";
 		ASSERT_EQ(hero.getPerkSkillRank("new-horizons:divineMandate"), MasteryLevel::BASIC);
 		ASSERT_EQ(hero.getPerkSkillRank(parent), MasteryLevel::BASIC);
-		ASSERT_EQ(hero.getPerkState().selected.size(), 1u);
-		ASSERT_EQ(hero.getPerkState().selected.front(), (newHorizonsHeroes::PerkSelection{parent, perk}));
+		ASSERT_EQ(hero.getPerkState().getSelected().size(), 1u);
+		ASSERT_EQ(hero.getPerkState().getSelected().front(), (newHorizonsHeroes::PerkSelection{parent, perk}));
 		ASSERT_TRUE(hero.hasActivePerk(parent, perk));
 		ASSERT_NO_THROW(hero.getPerkState().validate());
-		ASSERT_EQ(hero.getPerkState().rules, installedPerks);
+		ASSERT_EQ(hero.getPerkState().getRules(), installedPerks);
 		const auto resolved = newHorizonsHeroes::resolveHeroRules(authoredHeroes, hero.getHeroClassID());
 		ASSERT_EQ(hero.getPrimaryGrowthRules(), resolved);
 		const auto defaults = newHorizonsHeroes::resolveHeroRules(installedHeroes, hero.getHeroClassID());

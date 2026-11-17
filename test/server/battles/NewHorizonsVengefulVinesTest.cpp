@@ -215,12 +215,11 @@ protected:
 		return target;
 	}
 
-	bool castVines(const bool followup = false)
+	bool castVines()
 	{
 		if(!activateHeroActionSide(BattleSide::ATTACKER))
 			return false;
 		auto action = vinesAction(selectedHexes.toVector());
-		action.metamagicFollowup = followup;
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
 
@@ -464,25 +463,7 @@ TEST_F(NewHorizonsVengefulVinesTest, ResistanceAndSpellImmunityExcludeOnlyTheirO
 	EXPECT_FALSE(vinesMovementBonuses(thirdEnemy)->empty());
 }
 
-TEST_F(NewHorizonsVengefulVinesTest, MetamagicEchoedDurationAddsOneToTheFixedTwoRoundPenalty)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	constexpr auto metamagicSkill = "new-horizons:metamagic";
-	constexpr auto arcaneAcquisitionPerk = "new-horizons:metamagic.arcaneAcquisition";
-	constexpr auto echoedDurationPerk = "new-horizons:metamagic.echoedDuration";
-	const auto metamagic = SecondarySkill(SecondarySkill::decode(metamagicSkill));
-	ASSERT_TRUE(metamagic.hasValue());
-	attackerSideHero->setSecSkillLevel(metamagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({metamagicSkill, arcaneAcquisitionPerk});
-	attackerSideHero->setSecSkillLevel(metamagic, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({metamagicSkill, echoedDurationPerk});
-	ASSERT_TRUE(attackerSideHero->hasActivePerk(metamagicSkill, echoedDurationPerk));
 
-	ASSERT_TRUE(castHaste());
-	ASSERT_TRUE(castVines(true));
-	ASSERT_EQ(vinesMovementBonuses(enemy)->size(), 1u);
-	EXPECT_EQ(vinesMovementBonuses(enemy)->front()->turnsRemain, 3);
-}
 
 TEST_F(NewHorizonsVengefulVinesTest, SavedV2RosterCannotUseTheV3EffectAndDoesNotConsumeTheHeroAction)
 {

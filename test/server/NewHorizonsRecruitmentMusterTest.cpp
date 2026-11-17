@@ -123,7 +123,7 @@ protected:
 
 	void clearPerks()
 	{
-		const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).selected.clear();
+		const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).replaceSelected({});
 	}
 
 	static bool selectOfferedPerk(CGameHandler & handler, CGHeroInstance * candidate,

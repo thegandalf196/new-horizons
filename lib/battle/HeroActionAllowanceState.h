@@ -48,8 +48,8 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	enum class GrantSource : uint8_t
 	{
 		ROUND,
-		METAMAGIC,
-		METAMAGIC_GRAND,
+		RESERVED_METAMAGIC,
+		RESERVED_METAMAGIC_GRAND,
 		PERK,
 		ARTIFACT,
 		OTHER,
@@ -124,8 +124,6 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				|| grantedRound < 0 || expiryRound < grantedRound
 				|| (source == GrantSource::ROUND
 					&& (allowance != AllowanceKind::HERO || expiryRound != grantedRound))
-				|| ((source == GrantSource::METAMAGIC || source == GrantSource::METAMAGIC_GRAND)
-					&& allowance != AllowanceKind::SPELL)
 				|| (source == GrantSource::DOUBLE_COMMAND
 					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
 				|| (source == GrantSource::CRISIS_COMMAND
@@ -194,9 +192,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 	{
 		validateShape();
 		if(currentRound < 0 || !isValid(allowance) || !isValid(source)
-			|| source == GrantSource::ROUND || source == GrantSource::HEROIC_SPIRIT || expiryRound < currentRound
-			|| ((source == GrantSource::METAMAGIC || source == GrantSource::METAMAGIC_GRAND)
-				&& allowance != AllowanceKind::SPELL))
+			|| source == GrantSource::ROUND || source == GrantSource::HEROIC_SPIRIT || expiryRound < currentRound)
 			throw std::invalid_argument("Invalid Hero Action allowance grant");
 
 		auto next = *this;
@@ -472,8 +468,7 @@ private:
 
 	static bool isValid(GrantSource value)
 	{
-		return value == GrantSource::ROUND || value == GrantSource::METAMAGIC
-			|| value == GrantSource::METAMAGIC_GRAND || value == GrantSource::PERK
+		return value == GrantSource::ROUND || value == GrantSource::PERK
 			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER
 			|| value == GrantSource::DOUBLE_COMMAND || value == GrantSource::BATTLE_PLAN
 			|| value == GrantSource::DIVINE_MANDATE || value == GrantSource::CRISIS_COMMAND
@@ -868,207 +863,5 @@ struct DLL_LINKAGE PreCombatOrderState
 		}
 		else if(!h.saving)
 			*this = {};
-	}
-};
-
-/// Shared value-only accepted Hero spell transition used by authoritative
-/// execution and hypothetical battle projections. Spell identities and target
-/// sequence metadata remain caller-owned; this commits allowance provenance
-/// and Metamagic source counters together.
-struct DLL_LINKAGE HeroSpellAllowanceTransition
-{
-	struct DLL_LINKAGE Result
-	{
-		HeroActionAllowanceState::Receipt receipt;
-		bool chargedMetamagicUse = false;
-		bool activatedGrand = false;
-		std::vector<uint32_t> grantedGrantIds;
-		uint8_t pendingMetamagicGrants = 0;
-	};
-
-	/// Reports the automatic Grand outcome for a candidate extra spell. Grand
-	/// is available only for the first extra spell of the third Metamagic use.
-	static bool activatesGrand(
-		bool metamagicFollowup,
-		uint8_t metamagicPendingCount,
-		size_t sequenceSpellCount,
-		uint8_t metamagicUsesConsumed,
-		uint8_t metamagicRank,
-		bool grandPerkEnabled,
-		bool metamagicGrandUsed)
-	{
-		return metamagicFollowup
-			&& metamagicPendingCount == 1
-			&& sequenceSpellCount == 1
-			&& metamagicUsesConsumed == 2
-			&& metamagicRank >= 3
-			&& grandPerkEnabled
-			&& !metamagicGrandUsed;
-	}
-
-	/// Commits an already accepted HERO-mode spell. `selectionGrantId` must be
-	/// the currently preferred spell-paying grant; validation/preflight remains
-	/// the caller's responsibility. The protocol follow-up flag is meaningful
-	/// only for Metamagic grants, not every future typed spell source. `grand`
-	/// is the expected server-derived outcome. Failure is atomic and leaves
-	/// every argument unchanged.
-	static std::optional<Result> commitAcceptedCast(
-		HeroActionAllowanceState & ledger,
-		uint32_t selectionGrantId,
-		int32_t round,
-		bool metamagicFollowup,
-		bool grand,
-		uint8_t metamagicRank,
-		bool grandPerkEnabled,
-		uint8_t & metamagicUsesConsumed,
-		uint8_t & metamagicPendingCount,
-		bool & metamagicGrandUsed,
-		size_t sequenceSpellCount,
-		uint8_t metamagicCapacity = 0)
-	{
-		return commitAcceptedCast(ledger, selectionGrantId, round, metamagicFollowup, grand,
-			metamagicRank, grandPerkEnabled, metamagicUsesConsumed, metamagicPendingCount,
-			metamagicGrandUsed, sequenceSpellCount, [](const HeroActionAllowanceState::Grant &) { return true; }, metamagicCapacity);
-	}
-
-	template <typename GrantPredicate>
-		requires std::is_invocable_r_v<bool, GrantPredicate, const HeroActionAllowanceState::Grant &>
-	static std::optional<Result> commitAcceptedCast(
-		HeroActionAllowanceState & ledger,
-		uint32_t selectionGrantId,
-		int32_t round,
-		bool metamagicFollowup,
-		bool grand,
-		uint8_t metamagicRank,
-		bool grandPerkEnabled,
-		uint8_t & metamagicUsesConsumed,
-		uint8_t & metamagicPendingCount,
-		bool & metamagicGrandUsed,
-		size_t sequenceSpellCount,
-		const GrantPredicate & grantPredicate,
-		uint8_t metamagicCapacity = 0)
-	{
-		using Ledger = HeroActionAllowanceState;
-		using Allowance = Ledger::AllowanceKind;
-		using Source = Ledger::GrantSource;
-		using Action = Ledger::ActionKind;
-
-		// Existing ordinary callers retain rank-as-capacity. New callers pass the
-		// independent capacity; Grand continues to inspect actual mastery only.
-		const uint8_t capacity = metamagicCapacity == 0 ? metamagicRank : metamagicCapacity;
-		if(round < 0 || round != ledger.currentRound || metamagicRank > 3 || capacity > 4
-			|| capacity < metamagicRank || (metamagicRank == 0 && capacity != 0)
-			|| metamagicUsesConsumed > capacity || metamagicPendingCount > 1)
-			return {};
-
-		const auto outstandingMetaGrants = countPendingMetamagicGrants(ledger, round);
-		if(outstandingMetaGrants != metamagicPendingCount)
-			return {};
-
-		const auto selection = ledger.eligibleAllowance(Action::SPELL, round, grantPredicate);
-		if(!selection || selection->grantId != selectionGrantId)
-			return {};
-
-		const bool metaSource = selection->source == Source::METAMAGIC;
-		const bool grandSource = selection->source == Source::METAMAGIC_GRAND;
-		if((metaSource || grandSource) != metamagicFollowup
-			|| (grand && (!metaSource || !metamagicFollowup)))
-			return {};
-
-		const bool activatesGrand = HeroSpellAllowanceTransition::activatesGrand(
-			metamagicFollowup, metamagicPendingCount, sequenceSpellCount,
-			metamagicUsesConsumed, metamagicRank, grandPerkEnabled, metamagicGrandUsed);
-		if(grand != activatesGrand)
-			return {};
-
-		if(selection->allowance == Allowance::HERO)
-		{
-			if(metamagicFollowup || grand || metamagicPendingCount != 0 || sequenceSpellCount != 0)
-				return {};
-		}
-		else if(selection->allowance == Allowance::SPELL)
-		{
-			if(metaSource)
-			{
-				if(metamagicPendingCount != 1 || sequenceSpellCount != 1 || metamagicUsesConsumed >= capacity)
-					return {};
-			}
-			else if(grandSource)
-			{
-				if(grand || !metamagicGrandUsed || metamagicPendingCount != 1 || sequenceSpellCount != 2)
-					return {};
-			}
-			else if(metamagicFollowup || grand)
-				return {};
-		}
-		else
-			return {};
-
-		auto nextLedger = ledger;
-		const auto receipt = nextLedger.consumeAllowance(selectionGrantId, Action::SPELL, round, grantPredicate);
-		if(!receipt)
-			return {};
-
-		Result result;
-		result.receipt = *receipt;
-		uint8_t nextUsesConsumed = metamagicUsesConsumed;
-		uint8_t nextPendingCount = metamagicPendingCount;
-		bool nextGrandUsed = metamagicGrandUsed;
-
-		if(receipt->allowance == Allowance::HERO)
-		{
-			// A base-Hero-paid cast reserves (but does not charge) one use until its
-			// optional Spell Action is accepted. An outstanding token cannot recurse.
-			if(capacity > nextUsesConsumed)
-			{
-				result.grantedGrantIds.push_back(nextLedger.grantAllowance(
-					Allowance::SPELL, Source::METAMAGIC, round));
-				nextPendingCount = 1;
-			}
-		}
-		else if(metaSource)
-		{
-			++nextUsesConsumed; // charged only when the first Metamagic extra cast is accepted
-			nextPendingCount = 0;
-			if(activatesGrand)
-			{
-				result.grantedGrantIds.push_back(nextLedger.grantAllowance(
-					Allowance::SPELL, Source::METAMAGIC_GRAND, round));
-				nextPendingCount = 1;
-				nextGrandUsed = true;
-				result.activatedGrand = true;
-			}
-			result.chargedMetamagicUse = true;
-		}
-		else if(grandSource)
-		{
-			nextPendingCount = 0;
-		}
-
-		if(countPendingMetamagicGrants(nextLedger, round) != nextPendingCount)
-			return {};
-
-		nextLedger.validateShape();
-		ledger = std::move(nextLedger);
-		metamagicUsesConsumed = nextUsesConsumed;
-		metamagicPendingCount = nextPendingCount;
-		metamagicGrandUsed = nextGrandUsed;
-		result.pendingMetamagicGrants = nextPendingCount;
-		return result;
-	}
-
-private:
-	static uint8_t countPendingMetamagicGrants(const HeroActionAllowanceState & ledger, int32_t round)
-	{
-		uint32_t count = 0;
-		for(const auto & grant : ledger.grants)
-			if(grant.allowance == HeroActionAllowanceState::AllowanceKind::SPELL
-				&& (grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC
-					|| grant.source == HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND)
-				&& grant.expiryRound >= round)
-				++count;
-		if(count > std::numeric_limits<uint8_t>::max())
-			throw std::runtime_error("Metamagic allowance count overflow");
-		return static_cast<uint8_t>(count);
 	}
 };

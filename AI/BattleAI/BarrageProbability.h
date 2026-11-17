@@ -9,7 +9,6 @@ struct TargetWindow
 	int64_t firstCreatureHP = 0;
 	int64_t totalHealth = 0; // Includes ordinary temporary hit points.
 	int64_t temporaryHitPoints = 0;
-	int64_t arcaneShield = 0;
 	int64_t guardianSpirit = 0;
 };
 /// Conservative nominal chance of a primary casualty AND surviving recipient.

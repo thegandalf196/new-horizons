@@ -33,7 +33,6 @@ set(lualib_SRCS
 		api/spells/Mechanics.cpp
 		api/spells/MetamagicBindings.cpp
 		api/spells/TimedUtility.cpp
-		api/spells/TimeStopRadius.cpp
 		api/spells/SorceryUtility.cpp
 		api/spells/ShadowMagnitudes.cpp
 		api/spells/TimedBuffs.cpp
@@ -118,7 +117,6 @@ set(lualib_HDRS
 
 		api/spells/Mechanics.h
 		api/spells/MetamagicBindings.h
-		api/spells/TimeStopRadius.h
 		api/spells/SorceryUtility.h
 		api/spells/ShadowMagnitudes.h
 		api/spells/TimedBuffs.h

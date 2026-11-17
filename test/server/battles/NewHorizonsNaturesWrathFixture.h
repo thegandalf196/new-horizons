@@ -83,11 +83,4 @@ protected:
 		gameHandler->sendAndApply(update);
 	}
 
-	void lock(CStack * unit)
-	{
-		Bonus bonus(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE, BonusSource::SPELL_EFFECT,
-			100, BonusSourceID(SpellID(SpellID::decode("new-horizons:spellLock"))));
-		bonus.turnsRemain = 2;
-		unit->addNewBonus(std::make_shared<Bonus>(bonus));
-	}
 };

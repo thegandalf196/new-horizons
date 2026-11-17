@@ -20,7 +20,7 @@ bool apply(CGameHandler & game, const CBattleInfoCallback & battle, const newHor
 	const auto * owner = game.gameState().getBattle(battleId);
 	if(!owner) return false;
 	const auto * source = battle.battleGetUnitByID(strike.source);
-	if(!source || !source->alive() || source->isGhost() || source->isTimeStopped()) return true;
+	if(!source || !source->alive() || source->isGhost()) return true;
 	if(strike.fireball)
 	{
 		const auto * hero = battle.battleGetOwnerHero(source);

@@ -10,7 +10,6 @@
 #include "StdInc.h"
 
 #include "Mechanics.h"
-#include "TimeStopRadius.h"
 #include "SorceryUtility.h"
 #include "ShadowMagnitudes.h"
 #include "TimedBuffs.h"
@@ -201,7 +200,6 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 {
 	registerTimedUtilityMethods(R);
 	registerMetamagicMethods(R);
-	registerTimeStopRadiusMethods(R);
 	registerSorceryUtilityMethods(R);
 	registerShadowMagnitudeMethods(R);
 	registerTimedBuffMethods(R);
@@ -283,8 +281,6 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 
 	R.method<&Mechanics::isSelectiveDispel>("isSelectiveDispel", {},
 		"True when this authoritative cast selected the Sorcery Selective Dispel mode.");
-	R.method<&Mechanics::isMetamagicFollowup>("isMetamagicFollowup", {},
-		"True when this hero spell is being cast through an additional Metamagic Spell Action.");
 	R.method<&Mechanics::isNewHorizonsCure>("isNewHorizonsCure", {},
 		"True when this cast uses the explicitly saved New Horizons Cure behavior.");
 	R.method<&Mechanics::isNewHorizonsResurrection>("isNewHorizonsResurrection", {},

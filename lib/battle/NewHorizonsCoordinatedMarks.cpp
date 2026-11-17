@@ -153,7 +153,6 @@ newHorizonsOrdinaryStrike::EffectPlan prepareReturn(const CBattleInfoCallback & 
 {
 	newHorizonsOrdinaryStrike::EffectPlan result;
 	if(!actor.alive() || !victim.alive() || actor.isGhost() || victim.isGhost()
-		|| actor.isTimeStopped() || victim.isTimeStopped()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(&actor) || !family(actor, "core:harpy")
 		|| battle.battleGetOwner(&actor) == battle.battleGetOwner(&victim))
 		return result;

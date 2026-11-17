@@ -15,7 +15,7 @@ namespace
 {
 bool hasLegalHostileBallistaShot(const CBattleInfoCallback & battle, const battle::Unit * shooter)
 {
-	if(!shooter || !shooter->alive() || shooter->isGhost() || shooter->isTimeStopped() || !shooter->canMove()
+	if(!shooter || !shooter->alive() || shooter->isGhost() || !shooter->canMove()
 		|| !shooter->isBallista() || shooter->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
 		|| !battle.battleCanShoot(shooter))
 		return false;

@@ -92,13 +92,10 @@ TEST_P(NewHorizonsMaintenanceSpecialtyTest, GoldStandardForcedDefendDoesNotHeal)
 	EXPECT_EQ(actor->getAvailableHealth(), before);
 	EXPECT_TRUE(actor->defended());
 }
-TEST_P(NewHorizonsMaintenanceSpecialtyTest, RepairPublisherRejectsInvoluntaryDeadGhostAndStoppedRecipients)
+TEST_P(NewHorizonsMaintenanceSpecialtyTest, RepairPublisherRejectsInvoluntaryDeadAndGhostRecipients)
 {
 	prepare("core:josephine"); injure(*actor, 5);
 	const auto before = actor->getAvailableHealth();
-	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_EQ(maintenance::woundHealing(*battle(), *actor, maintenance::Trigger::VOLUNTARY_DEFEND), 0);
-	actor->removeBonuses(Selector::type()(BonusType::TIME_STOP));
 	battleMaintenanceRecovery::onDefend(*gameHandler, *battle(), *actor, false);
 	EXPECT_EQ(actor->getAvailableHealth(), before);
 	auto detached = actor->acquireState(); detached->makeGhost();

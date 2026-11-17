@@ -9,7 +9,6 @@
  */
 #pragma once
 #include "../../lib/battle/PassiveDivineMandate.h"
-#include "../../lib/battle/MetamagicPointState.h"
 #include "../../lib/battle/WisdomCombatState.h"
 #include "../../lib/battle/NewHorizonsFactionSpellDamage.h"
 #include "../../lib/battle/NewHorizonsCommandResources.h"
@@ -48,16 +47,19 @@ class InitialExportBattleSubject;
 class OwnedStackQuerySource;
 class OwnedFrameEffectQueries;
 class MovementQueryCache;
+class FlatDamageInputs;
 namespace specialtyProcAI { class Opportunities; }
 class ProjectedBonusRoster;
 class BonusList;
 class CStack;
 namespace battle { class OwnedBattleFrameBatch; class OwnedUnitBonusFrame; class CommittedElementalEffects; class CommittedBonusOperations; }
 
-class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment,
+class DLL_LINKAGE HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironment,
 	public newHorizonsGraveDust::OrderedEffectChangePreflight
 {
 	friend class InitialExportBattleSubject;
+	friend class FlatDamageInputs;
+	const FlatDamageInputs * flatDamageInputs = nullptr;
 	friend class ProjectedAdjacencyBonuses;
 	friend class specialtyProcAI::Opportunities;
 	friend class OwnedStackQuerySource;
@@ -139,6 +141,7 @@ class HypotheticBattle final : public BattleProxy, public battle::IUnitEnvironme
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 	int visibleHeroMorale(BattleSide side) const override;
 public:
+	const nativeDamage::PreparedUnit * preparedUnitDamageFacts(const battle::Unit & unit, bool shooting) const override;
 	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override
 	{
 		return leadershipCompositions.at(side);
@@ -257,7 +260,7 @@ public:
 	const RapidResponseState & getRapidResponseState(BattleSide side) const override;
 	void setRapidResponseState(BattleSide side, const RapidResponseState & state) override;
 	/// Forecast a real completion, not Wait/continuations. Caller retains earned extras ahead of queue.
-	void completeRapidResponseActivation(uint32_t unitId, bool syntheticStoppedSlot = false);
+	void completeRapidResponseActivation(uint32_t unitId);
 	const ReducedExtraActivationState & getReducedExtraActivationState(BattleSide side) const override;
 	void setReducedExtraActivationState(BattleSide side, const ReducedExtraActivationState & state) override;
 	const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override
@@ -325,52 +328,14 @@ public:
 	bool getMasterGateUsed(BattleSide side) const override { return masterGateUsedStates.at(side); }
 	uint8_t getPassiveDivineMandateUses(BattleSide side) const override { return passiveDivineMandateUses.at(side); }
 	void setPassiveDivineMandateUses(BattleSide side, uint8_t uses) override;
-	bool getCounterspellArmed(BattleSide side) const override { return counterspellArmedStates.at(side); }
 	const WisdomCombatState & getWisdomCombatState(BattleSide side) const override;
-	const MetamagicPointState & getMetamagicPointState(BattleSide side) const override;
-	void setMetamagicPointState(BattleSide side, const MetamagicPointState & state) override;
-	int32_t getMetamagicPendingCount(BattleSide side) const override { return metamagicStates.at(side).pending; }
-	int32_t getMetamagicUsesConsumed(BattleSide side) const override { return metamagicStates.at(side).uses; }
-	bool getMetamagicGrandUsed(BattleSide side) const override { return metamagicStates.at(side).grandUsed; }
-	SpellID getMetamagicFirstSpell(BattleSide side) const override { return metamagicStates.at(side).firstSpell; }
-	uint32_t getMetamagicFirstTargetUnitId(BattleSide side) const override { return metamagicStates.at(side).firstTarget; }
-	const std::vector<SpellID> & getMetamagicSequenceSpells(BattleSide side) const override
-	{
-		return metamagicStates.at(side).sequence;
-	}
-	bool getMetamagicFirstCounterspellNegated(BattleSide side) const override
-	{
-		return metamagicStates.at(side).firstCountered;
-	}
-	bool getMetamagicCountersequenceArmed(BattleSide side) const override
-	{
-		return countersequenceArmedStates.at(side);
-	}
 	using ProjectedActionReceipt = HypotheticProjectedActionReceipt;
-	struct ProjectedMetamagicSnapshot
-	{
-		uint8_t uses = 0;
-		uint8_t pending = 0;
-		bool grandUsed = false;
-		SpellID firstSpell;
-		uint32_t firstTarget = std::numeric_limits<uint32_t>::max();
-		bool firstCountered = false;
-		std::vector<SpellID> sequence;
-
-		bool operator==(const ProjectedMetamagicSnapshot &) const = default;
-	};
 	struct ProjectedSpellAllowance
 	{
 		ProjectedActionReceipt action;
 		HeroActionAllowanceState allowancesBefore;
 		HeroActionAllowanceState allowancesAfter;
-		ProjectedMetamagicSnapshot metamagicBefore;
 		SpellID spell;
-		bool metamagicFollowup = false;
-		bool grand = false;
-		uint8_t usesAfter = 0;
-		uint8_t pendingAfter = 0;
-		bool grandUsedAfter = false;
 
 		bool operator==(const ProjectedSpellAllowance &) const = default;
 	};
@@ -379,21 +344,11 @@ public:
 		ProjectedActionReceipt action;
 		HeroActionAllowanceState allowancesBefore;
 		HeroActionAllowanceState allowancesAfter;
-		ProjectedMetamagicSnapshot metamagicBefore;
 		newHorizonsCommand::ResourceState commandResourcesBefore;
 
 		bool operator==(const ProjectedOrderAllowance &) const = default;
 	};
-	struct ProjectedCounterspellOutcome
-	{
-		BattleSide wardSide = BattleSide::NONE;
-		bool wardActive = false;
-		bool resolutionKnown = false;
-		std::optional<bool> negated;
-		std::optional<int> manaCost;
-	};
-	std::optional<ProjectedSpellAllowance> prepareHeroSpellAllowance(BattleSide side, SpellID spell,
-		bool metamagicFollowup, bool grand) const;
+	std::optional<ProjectedSpellAllowance> prepareHeroSpellAllowance(BattleSide side, SpellID spell) const;
 	std::optional<ProjectedOrderAllowance> prepareHeroOrderAllowance(BattleSide side) const;
 	bool beginProjectedHeroAction(BattleSide side, const ProjectedSpellAllowance & prepared);
 	bool beginProjectedHeroAction(BattleSide side, const ProjectedOrderAllowance & prepared);
@@ -404,7 +359,6 @@ public:
 	bool beginProjectedLegacyHeroOrder(BattleSide side, HeroCommand command,
 		const std::vector<uint32_t> & targets, const ProjectedOrderAllowance & prepared);
 	bool projectAcceptedHeroSpell(BattleSide side, SpellID spell, uint32_t target,
-		bool metamagicFollowup, bool grand, bool counterspellWardActive, bool counterspellNegated,
 		const ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & affectedRecipients = {});
 	bool projectAcceptedHeroOrder(BattleSide side, const ProjectedOrderAllowance & prepared);
 	bool projectAcceptedHeroOrder(BattleSide side, HeroCommand command,
@@ -426,14 +380,8 @@ public:
 	/// Call once after accepted Order effects, before evaluating the continuation.
 	ProjectedOrderContinuation projectOrderContinuation(BattleSide side,
 		const ProjectedOrderAllowance & prepared, const heroCommands::PreparedOrderEffects & effects);
-	ProjectedCounterspellOutcome resolveProjectedCounterspell(BattleSide casterSide, const CSpell * spell) const;
-	/// Known automatic-cast ward payment/expiry only; no caster action ledger.
-	bool projectAutomaticCounterspell(const ProjectedCounterspellOutcome & resolved);
-	bool projectHeroSpellAllowance(BattleSide side, SpellID spell, uint32_t target,
-		bool metamagicFollowup, bool grand);
+	bool projectHeroSpellAllowance(BattleSide side, SpellID spell, uint32_t target);
 	bool projectHeroOrderAllowance(BattleSide side);
-	void expireProjectedTimeStops(BattleSide casterSide);
-	ui8 getProjectedPendingTimeStopHeroActionSides() const { return pendingTimeStopHeroActionSides; }
 	void setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states) override;
 	void setHeroOrderState(BattleSide side, const std::optional<HeroOrderState> & state) override;
 	std::optional<FocusFireState> getFocusFireState(BattleSide side) const override;
@@ -600,10 +548,6 @@ public:
 		activeUnitId = -1;
 	}
 
-	/// Apply only the deterministic ranged-mark reaction after projected hit
-	/// damage. This does not dispatch unrelated combat scripts or real packets.
-	void projectRangedMarkStrike(const BattleAttackInfo & attack,
-		const std::vector<std::pair<uint32_t, int64_t>> & hits);
 
 	ServerCallback * getServerCallback();
 	const scripting::Pool & getScriptContextPool() const override;
@@ -651,14 +595,7 @@ private:
 	BattleSideArray<bool> chainGateArmedStates;
 	BattleSideArray<bool> masterGateUsedStates;
 	BattleSideArray<uint8_t> passiveDivineMandateUses;
-	BattleSideArray<bool> counterspellArmedStates;
-	BattleSideArray<bool> countersequenceArmedStates;
-	ui8 pendingTimeStopHeroActionSides = 0;
-	using ProjectedMetamagic = ProjectedMetamagicSnapshot;
-	BattleSideArray<ProjectedMetamagic> metamagicStates;
-	BattleSideArray<MetamagicPointState> metamagicPointStates;
 	BattleSideArray<WisdomCombatState> wisdomCombatStates;
-	void advanceMetamagicPoints();
 	void restoreProjectedNormalMana(const SetMana & packet);
 	BattleSideArray<uint64_t> projectedActionEpochs{};
 	BattleSideArray<std::optional<ProjectedSpellAllowance>> begunProjectedSpellAllowances{};

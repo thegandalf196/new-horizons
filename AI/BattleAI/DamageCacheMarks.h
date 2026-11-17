@@ -11,6 +11,5 @@
 namespace battle { class Unit; }
 namespace damageCacheDetail
 {
-bool hasRangedMarkEffect(const battle::Unit * unit, const char * source);
 bool hasNightProwlerBonus(const battle::Unit * unit);
 }

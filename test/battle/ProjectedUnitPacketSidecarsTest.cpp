@@ -266,13 +266,11 @@ TEST_F(ProjectedUnitPacketSidecarsTest, CloneRemoveDoesNotGrantBloodrage)
 	EXPECT_FALSE(arena->firstBloodUsed());
 }
 
-TEST_F(ProjectedUnitPacketSidecarsTest, IgnoredLivingUpdateStillClearsExistingDeathReceipt)
+TEST_F(ProjectedUnitPacketSidecarsTest, LivingUpdateClearsOnlyItsPrivateDeathReceipt)
 {
 	battle()->bloodrageDestroyedUnits.insert(first->unitId());
-	first->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
 	capture();
-	arena->applyUnitChanges({update(*first, JsonNode("ignored malformed state"), -1)});
+	arena->applyUnitChanges({update(*first, first->save(), 0)});
 	EXPECT_FALSE(arena->bloodrageDeaths().contains(first->unitId()));
 	EXPECT_TRUE(battle()->bloodrageDestroyedUnits.contains(first->unitId()));
 }

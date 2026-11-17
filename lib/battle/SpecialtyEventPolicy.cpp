@@ -43,11 +43,6 @@ int coefficient(const CBattleInfoCallback & battle, const battle::Unit & unit,
 	const auto * hero = visible.kind() == VisibleHeroPolicy::Knowledge::VISIBLE_HERO ? visible.legacyHero() : nullptr;
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != heroIdentity)
 		return 0;
-	const auto & policy = hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	const auto & value = policy[key];
-	if(value.isNull()) return 0;
-	if(value.getType() != JsonNode::JsonType::DATA_INTEGER || value.Integer() < 0 || value.Integer() > 100)
-		throw std::runtime_error("Invalid captured event specialty coefficient");
-	return static_cast<int>(value.Integer());
+	return hero->compiledDevelopment()->ordinaryValue(key);
 }
 }

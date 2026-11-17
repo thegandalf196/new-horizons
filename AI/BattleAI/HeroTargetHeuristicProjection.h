@@ -16,6 +16,7 @@
 #include <vector>
 
 class PossibleSpellcast;
+namespace battleEvaluatorProjection { struct SpellProjection; }
 
 namespace heroSpellProjection
 {
@@ -23,7 +24,7 @@ namespace heroSpellProjection
 /// Borrow the value after the caller's canonical-spell and positive-value gates; read it after acceptance.
 void projectTargetHeuristic(PossibleSpellcast & ps, const float & forecast,
 	HypotheticBattle & state, BattleSide side, const float & baseline,
-	const HypotheticBattle::ProjectedCounterspellOutcome & counterspell, bool counterspellNegated,
 	const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
-	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t & targetId);
+	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t & targetId,
+	battleEvaluatorProjection::SpellProjection * completion = nullptr);
 }

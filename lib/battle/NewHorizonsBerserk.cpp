@@ -92,7 +92,7 @@ std::vector<Bonus> completedForcedActivationBonuses(const CBattleInfoCallback & 
 	const battle::Unit * unit)
 {
 	std::vector<Bonus> result;
-	if(!unit || !battle.getBattle() || unit->isTimeStopped()
+	if(!unit || !battle.getBattle()
 		|| newHorizonsPuppetMaster::hasValidControlMarker(battle, unit))
 		return result;
 

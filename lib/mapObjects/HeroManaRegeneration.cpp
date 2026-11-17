@@ -18,10 +18,12 @@ si32 CGHeroInstance::manaRegain() const
 	BonusList otherRecovery;
 	int64_t artifactRecovery = 0;
 	const auto recoveryBonuses = getAllBonuses(Selector::type()(BonusType::MANA_REGENERATION));
+	const auto * compiled = compiledCapabilities();
 	for(const auto & bonus : *recoveryBonuses)
 	{
 		const auto replacement = bonus->source == BonusSource::ARTIFACT && bonus->valType == BonusValueType::BASE_NUMBER
-			? newHorizonsHeroes::capabilityArtifactManaRegeneration(capabilityRules, bonus->sid.as<ArtifactID>(), manaLimit())
+			? (compiled ? compiled->artifactManaRegeneration(bonus->sid.as<ArtifactID>(), manaLimit())
+				: newHorizonsHeroes::capabilityArtifactManaRegeneration(capabilityRules, bonus->sid.as<ArtifactID>(), manaLimit()))
 			: std::nullopt;
 		if(replacement)
 			artifactRecovery += *replacement;

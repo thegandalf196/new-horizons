@@ -302,44 +302,7 @@ TEST_F(NewHorizonsFrozenServerTest, AutomaticNormalForfeitureThawsOnceAndNextRou
 	EXPECT_EQ(target->frozenLastAppliedRound(), round);
 }
 
-TEST_F(NewHorizonsFrozenServerTest, AutomaticTimeStopPassDoesNotThawAnUnspentFrozenMarker)
-{
-	startGame();
-	startBattle();
-	auto * leader = unit(BattleSide::ATTACKER, "core:angel", leftHex, 20);
-	auto * target = unit(BattleSide::DEFENDER, "core:stoneGolem", rightHex, 500);
-	beginCombat();
-	ASSERT_EQ(battle()->battleActiveUnit(), leader);
-	const auto round = battle()->getRound();
-	freeze(target);
-	SetStackEffect stopped;
-	stopped.battleID = BattleID(0);
-	stopped.toAdd.emplace_back(target->unitId(), std::vector<Bonus>{
-		Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID())});
-	gameHandler->sendAndApply(stopped);
-	ASSERT_TRUE(target->isTimeStopped());
-	const auto passes = [this, target]()
-	{
-		return std::ranges::count_if(server.startedActions, [target](const auto & started)
-		{
-			return started.ba.stackNumber == target->unitId()
-				&& started.ba.actionType == EActionType::NO_ACTION;
-		});
-	};
-	for(int actions = 0; actions < 32 && passes() == 0; ++actions)
-	{
-		const auto * active = battle()->battleActiveUnit();
-		ASSERT_NE(active, nullptr);
-		ASSERT_NE(active, target);
-		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0),
-			battle()->sideToPlayer(active->unitSide()), BattleAction::makeDefend(active)));
-	}
-	EXPECT_TRUE(newHorizonsFrozen::isFrozen(*target));
-	EXPECT_EQ(target->frozenLastAppliedRound(), round);
-	EXPECT_EQ(passes(), 1);
-	EXPECT_GE(battle()->getRound(), round);
-	EXPECT_LE(battle()->getRound(), round + 1);
-}
+
 
 TEST_F(NewHorizonsFrozenServerTest, AutomaticFrozenForfeitureTicksPlagueOnceBeforeThaw)
 {

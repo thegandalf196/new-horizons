@@ -197,7 +197,6 @@ protected:
 		beginCombat();
 		for(auto * unit : {first, second})
 		{
-			ASSERT_FALSE(unit->isTimeStopped());
 			ASSERT_FALSE(unit->hasBattleForm());
 			ASSERT_FALSE(unit->defended());
 			ASSERT_EQ(unit->guardianSpiritHitPoints, 0);

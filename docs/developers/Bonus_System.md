@@ -123,6 +123,14 @@ Propagation is used when bonuses need to be shared in a different direction than
 
 ### Technical Details
 
+Bonus queries return shared owners of their result containers. Retain that owner
+while iterating, particularly for uncached and unstacked queries. In C++20, a
+range such as `*unit.getUnstackedBonuses(selector)` can outlive its temporary
+`shared_ptr` and access a freed list. Store the query result in a local variable,
+then iterate through it. Do not assume that a live unit or a cached parent owns
+the returned container. The authoritative Force Lance casting regression covers
+this lifetime in spell packet recording.
+
 - Propagation is done by copying bonuses to the target nodes. This happens when bonuses are added.
 - Inheritance is done on-the-fly when needed, by traversing the black DAG. Results are cached to improve performance.
 - Whenever a node changes (e.g. bonus added), a global counter gets increased which is used to check whether cached results are still current.

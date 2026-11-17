@@ -59,7 +59,7 @@ bool validateApplicationRecord(const Bonus & bonus)
 void validateApplicationTargets(const IBattleInfo & battle, const battle::Units & units)
 {
 	if(!captured(battle) || units.size() != 1 || !units.front()->alive()
-		|| units.front()->isGhost() || units.front()->isTimeStopped())
+		|| units.front()->isGhost())
 		throw std::runtime_error("Gaze application requires supported captured battle and available recipient");
 }
 void validateApplication(const IBattleInfo & battle, uint32_t target, const Bonus & bonus)
@@ -103,7 +103,6 @@ bool qualifiesAttack(const CBattleInfoCallback & battle, const battle::Unit * so
 	const auto key = source->unitType()->getJsonKey();
 	if((key != "core:beholder" && key != "core:evilEye")
 		|| !source->alive() || !primary->alive() || source->isGhost() || primary->isGhost()
-		|| source->isTimeStopped() || primary->isTimeStopped()
 		|| battle.battleGetOwner(source) == battle.battleGetOwner(primary)
 		|| !battle.battleMatchActionController(source, primary))
 		return false;
@@ -113,7 +112,7 @@ bool qualifiesAttack(const CBattleInfoCallback & battle, const battle::Unit * so
 }
 bool canConsume(const battle::Unit & retaliator)
 {
-	return retaliator.alive() && !retaliator.isGhost() && !retaliator.isTimeStopped()
+	return retaliator.alive() && !retaliator.isGhost()
 		&& pending(retaliator).has_value() && retaliator.ableToRetaliate();
 }
 }

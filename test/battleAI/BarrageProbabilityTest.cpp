@@ -22,7 +22,7 @@ long double enumerate(const DamageRange & damage, int count, int shots,
 		if(remaining == 0)
 		{
 			++outcomes;
-			const auto shield = target.arcaneShield + target.guardianSpirit;
+			const auto shield = target.guardianSpirit;
 			accepted += total >= target.firstCreatureHP + target.temporaryHitPoints + shield
 				&& total < target.totalHealth + shield;
 			return;
@@ -63,7 +63,7 @@ TEST(BarrageProbabilityTest, TinyNativeAveragesNeverExceedExactCasualtyAndSurviv
 TEST(BarrageProbabilityTest, FirstBodyTemporaryHealthAndPhysicalAbsorptionUseKillThreshold)
 {
 	const DamageRange range{0, 3};
-	const barrageProbability::TargetWindow target{1, 10, 2, 1, 2};
+	const barrageProbability::TargetWindow target{1, 10, 2, 3};
 	EXPECT_NEAR(barrageProbability::primaryCasualtyAndSurvival(range, 1, 2, target),
 		enumerate(range, 1, 2, target), 1e-15L);
 	// Two native shots can only reach the first body at the joint maximum6.
@@ -92,7 +92,7 @@ TEST(BarrageProbabilityTest, ExtremeRangesAndShieldsStayFiniteWithoutInt64Interm
 	EXPECT_GT(broad, 0);
 	EXPECT_LT(broad, 1);
 	const auto shielded = barrageProbability::primaryCasualtyAndSurvival({maximum - 1, maximum},
-		10, 2, {1, maximum, 0, maximum, maximum});
+		10, 2, {maximum, maximum, 0, maximum});
 	EXPECT_EQ(shielded, 0);
 	EXPECT_EQ(barrageProbability::primaryCasualtyAndSurvival({maximum, maximum},
 		10, std::numeric_limits<int>::max(), {1, maximum}), 0);

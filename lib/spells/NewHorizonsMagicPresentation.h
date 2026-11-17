@@ -18,6 +18,7 @@ namespace spells { class Spell; }
 // Internal presentation stages; consumers retain NewHorizonsMagic.h's API.
 namespace newHorizonsMagic::presentation
 {
+bool describeSorcerySpell(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell);
 void applyBaseDescription(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell);
 void applyContextualOverrides(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell);
 std::string percentFromBasisPoints(int basisPoints);

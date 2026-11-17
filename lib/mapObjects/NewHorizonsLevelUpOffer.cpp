@@ -14,10 +14,10 @@ void newHorizonsHeroes::applyLevelUpOffer(CGHeroInstance * hero, const HeroLevel
 	if(applyCapturedLevelUpOffer(*hero, pack)) return;
 	if(!pack.perks.empty() || pack.perkOfferSeed != 0)
 	{
-		if(pack.perkOfferSeed < 0 || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().rules))
+		if(pack.perkOfferSeed < 0 || !newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules()))
 			throw std::runtime_error("Invalid New Horizons perk offer envelope");
-		const size_t maxSkills = static_cast<size_t>(hero->getPerkState().rules["maxSkillChoices"].Integer());
-		const size_t maxPerks = static_cast<size_t>(hero->getPerkState().rules["maxPerkChoices"].Integer());
+		const size_t maxSkills = static_cast<size_t>(hero->getPerkState().getRules()["maxSkillChoices"].Integer());
+		const size_t maxPerks = static_cast<size_t>(hero->getPerkState().getRules()["maxPerkChoices"].Integer());
 		if(pack.skills.size() > maxSkills || pack.perks.size() > maxPerks)
 			throw std::runtime_error("Oversized New Horizons level-up offer");
 		const auto expected = hero->getPerkState().prepareOffer([hero](const std::string & skillId)
@@ -30,7 +30,7 @@ void newHorizonsHeroes::applyLevelUpOffer(CGHeroInstance * hero, const HeroLevel
 	if(pack.replacesQueryID != QueryID::NONE)
 	{
 		const bool confirmation = pack.queryID == pack.replacesQueryID;
-		if(!newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().rules)
+		if(!newHorizonsHeroes::quickStudyRerollInterval(hero->getPerkState().getRules())
 			|| pack.heroId != hero->id || pack.player != hero->getOwner() || pack.queryID < 0
 			|| pack.reachedLevel != hero->level || (!confirmation && pack.optionalRerollAvailable))
 			throw std::runtime_error("Invalid optional Quick Study replacement");

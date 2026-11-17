@@ -84,7 +84,7 @@ void Trail::traverse(BattleHex from, const BattleHexArray & committed, bool flyi
 Trail capture(const CBattleInfoCallback & battle, const battle::Unit * source, bool voluntary)
 {
 	Trail result;
-	if(!voluntary || !source || !source->alive() || source->isGhost() || source->isTimeStopped())
+	if(!voluntary || !source || !source->alive() || source->isGhost())
 		return result;
 	const auto * creature = source->creatureId().toCreature();
 	if(!creature || (creature->getJsonKey() != "core:fireElemental" && creature->getJsonKey() != "core:energyElemental"))
@@ -92,7 +92,7 @@ Trail capture(const CBattleInfoCallback & battle, const battle::Unit * source, b
 	const auto * hero = battle.battleGetOwnerHero(source);
 	if(!newHorizonsHeroes::hasLivingInferno(hero))
 		return result;
-	const auto policy = newHorizonsHeroes::livingInfernoRules(hero->getPrimaryGrowthRules());
+	const auto policy = hero->compiledDevelopment()->livingInferno;
 	result.damage = static_cast<int>(std::min<int64_t>(std::numeric_limits<int>::max(),
 		static_cast<int64_t>(source->getCount()) * policy->damagePerCreature));
 	result.rounds = policy->durationRounds;

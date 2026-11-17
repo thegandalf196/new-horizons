@@ -600,7 +600,7 @@
 			"type" : "object",
 			"additionalProperties" : false,
 			"default" : {},
-			"required" : [ "localHostname", "localPort", "remoteHostname", "remotePort", "seed", "replayRoundsKept"],
+			"required" : [ "localHostname", "localPort", "remoteHostname", "remotePort", "seed", "replayRoundsKept", "rollingReplayEnabled"],
 			"properties" : {
 				"localHostname" : {
 					"type" : "string",
@@ -621,6 +621,11 @@
 				"seed" : {
 					"type" : "number",
 					"default" : 0
+				},
+				// New games only. Full Record Game always enables capture; loaded games keep their saved policy.
+				"rollingReplayEnabled" : {
+					"type" : "boolean",
+					"default" : true
 				},
 				// number of past game days that stay replayable on top of the current one
 				"replayRoundsKept" : {

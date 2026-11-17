@@ -13,6 +13,7 @@
 namespace battle { class Unit; }
 class CBattleInfoCallback;
 class CGHeroInstance;
+class FlatDamageInputs;
 
 /// Lazy actor and callback-only admission facts for ONE immutable main-target probe batch.
 /// Not a damage cache or mutation-aware cache. End before any applied action,
@@ -37,6 +38,8 @@ public:
 	bool hasBloodragePain();
 	bool supportsFocusFire();
 	bool ordinaryCreatureDamageIsStateful();
+	/// Borrowed only by this immutable selector batch; never an applied hit.
+	const FlatDamageInputs * flatInputs = nullptr;
 
 private:
 	enum Fact : std::size_t { AMBUSHER, SHADOW, NIGHT, NIGHT_EFFECT, RELENTLESS, GAMBLER,

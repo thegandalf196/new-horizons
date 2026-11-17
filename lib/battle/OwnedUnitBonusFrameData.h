@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
 #include "OwnedUnitBonusFrame.h"
+#include "MechanicsPresence.h"
 #include "../bonuses/ProjectedBonusView.h"
 #include "../bonuses/RecipientBonusOverlay.h"
 namespace battle
@@ -12,6 +13,7 @@ public:
 	Identity identity;
 	bool hasCurrentRoster = false;
 	std::shared_ptr<const OwnedRecipientBonusGraph> graph;
+	MechanicsPresence presence; // Immutable source capability plus branch-local additions.
 	std::map<CreatureID, FormSources> forms;
 	// Retain finite owned metadata pools through all current-ledger borrows.
 	std::vector<std::shared_ptr<const ownedBonusPayloads::Captured>> pendingPayloads;
@@ -51,6 +53,7 @@ public:
 		TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 		TConstBonusListPtr ownedNativeFormBonuses(const CUnitState & form, const CSelector & selector, bool unstacked) const override;
 		std::vector<Bonus> sourceLocalSpellEffects() const override;
+		bool mayHaveBonusType(BonusType type) const override { return data.presence.mayHave(type); }
 		int32_t getTreeVersion() const override { return 0; } // Noncacheable explicit query, never native generation.
 	} view;
 	std::shared_ptr<CUnitStateDetached> subject;

@@ -46,7 +46,7 @@ CGHeroInstance & validateOffer(CGameState & state, const LegendaryAdmission & re
 	// Recheck the ORIGINAL accepted cohort, not unrelated troops returned to
 	// another neutral slot while its ordinary garrison dialog remains open.
 	ForecastInput input;
-	input.usesNewHorizonsRules = usesNewHorizonsRules(hero->getPerkState().rules);
+	input.usesNewHorizonsRules = usesNewHorizonsRules(hero->getPerkState().getRules());
 	input.encounterEligible = true;
 	input.skillRank = hero->getPerkSkillRank(SKILL_ID);
 	input.negotiator = hero->hasActivePerk(SKILL_ID, NEGOTIATOR_ID);
@@ -140,7 +140,7 @@ public:
 		if(!source || !destination || destination->id != origin || sourceID == destinationID
 			|| !destinationSlot.validSlot() || count <= 0
 			|| (source->tempOwner != PlayerColor::NEUTRAL && source->tempOwner != PlayerColor::UNFLAGGABLE)
-			|| !usesNewHorizonsRules(destination->getPerkState().rules))
+			|| !usesNewHorizonsRules(destination->getPerkState().getRules()))
 			throw std::runtime_error("Invalid accepted Diplomacy admission");
 	}
 

@@ -58,7 +58,7 @@ TEST_F(NewHorizonsStunActivationTest, PendingStunPreservesOrdinaryRetaliation)
 	EXPECT_EQ(std::ranges::count_if(server.attacks, [this](const auto & attack)
 	{ return attack.counter() && attack.stackAttacking == enemy->unitId(); }), 1);
 }
-TEST_F(NewHorizonsStunActivationTest, TypedActualActivationPredicateIncludesExtrasAndPausesTimeStopAndContinuations)
+TEST_F(NewHorizonsStunActivationTest, TypedActualActivationPredicateIncludesExtrasAndExcludesContinuations)
 {
 	prepare("core:yog", "core:cyclop");
 	status(*actor, newHorizonsStun::marker());
@@ -72,10 +72,7 @@ TEST_F(NewHorizonsStunActivationTest, TypedActualActivationPredicateIncludesExtr
 		EXPECT_FALSE(newHorizonsStun::forfeitsActivation(*battle(), *actor, reason));
 	actor->afterWait();
 	EXPECT_TRUE(newHorizonsStun::isStunned(*actor));
-	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_FALSE(newHorizonsStun::forfeitsActivation(*battle(), *actor, BattleUnitTurnReason::TURN_QUEUE));
-	EXPECT_FALSE(newHorizonsStun::forfeitsActivation(*battle(), *actor, BattleUnitTurnReason::MORALE));
-	EXPECT_TRUE(newHorizonsStun::isStunned(*actor));
+
 }
 TEST_F(NewHorizonsStunActivationTest, CurrentAttackCompletesAndEarnedMoraleConsumesStunInsteadOfLeavingItForNextRound)
 {

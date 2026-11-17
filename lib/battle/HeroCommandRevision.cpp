@@ -292,7 +292,7 @@ std::optional<ActiveVanguardBonuses> activeVanguardBonuses(const battle::Unit * 
 
 bool isVanguardCreature(const battle::Unit * unit)
 {
-	return unit && unit->alive() && !unit->isGhost() && !unit->isTimeStopped()
+	return unit && unit->alive() && !unit->isGhost()
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit)
 		&& unit->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
 		&& !unit->hasBonusOfType(BonusType::UNDEAD)

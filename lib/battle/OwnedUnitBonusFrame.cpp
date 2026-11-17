@@ -28,6 +28,21 @@ OwnedUnitBonusFrame::Data::Data(Identity id, std::shared_ptr<const OwnedUnitCrea
 	 info(identity, creatures), view(*this)
 {
 	validate();
+	if(inheritedPeers) presence = inheritedPeers->presence;
+	else
+	{
+		// Include all admitted source variants before limiting/updating. Movement,
+		// control, death and form changes may activate any of these raw records.
+		std::set<const OwnedRecipientBonusGraph *> inspected;
+		const auto include = [&](const OwnedRecipientBonusGraph & owner)
+		{
+			if(!inspected.insert(&owner).second) return;
+			for(size_t i = 0; i < owner.payloadCount(); ++i) presence.include(*owner.payload(i));
+		};
+		include(*graph);
+		for(const auto & [id, source] : forms)
+			for(const bool native : {false, true}) include(sourceGraph(source, native));
+	}
 	subject = std::make_shared<CUnitStateDetached>(&info, &view);
 	if(peerSources && inheritedPeers) throw std::invalid_argument("Peer construction cannot mix native inputs and an owned fork");
 	auto roster = peerSources ? buildPeers(*peerSources)

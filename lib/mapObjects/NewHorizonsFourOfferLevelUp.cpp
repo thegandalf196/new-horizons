@@ -8,7 +8,7 @@
 
 void newHorizonsHeroes::applyFourOfferLevelUp(CGHeroInstance & hero, const HeroLevelUp & pack)
 {
-	if(!usesFourOfferProgression(hero.getPerkState().rules) || !hero.cb
+	if(!usesFourOfferProgression(hero.getPerkState().getRules()) || !hero.cb
 		|| pack.heroId != hero.id || pack.player != hero.getOwner()
 		|| !pack.skills.empty() || !pack.perks.empty() || pack.perkOfferSeed != 0 || pack.perkOnly)
 		throw std::runtime_error("Invalid four-offer level-up envelope");
@@ -16,7 +16,7 @@ void newHorizonsHeroes::applyFourOfferLevelUp(CGHeroInstance & hero, const HeroL
 	if(pack.replacesQueryID != QueryID::NONE)
 	{
 		const bool confirmation = pack.queryID == pack.replacesQueryID;
-		if(!quickStudyRerollInterval(hero.getPerkState().rules) || pack.queryID < 0
+		if(!quickStudyRerollInterval(hero.getPerkState().getRules()) || pack.queryID < 0
 			|| pack.reachedLevel != hero.level || (!confirmation && pack.optionalRerollAvailable))
 			throw std::runtime_error("Invalid four-offer Connoisseur replacement");
 		return;
@@ -36,14 +36,14 @@ void newHorizonsHeroes::applyFourOfferLevelUp(CGHeroInstance & hero, const HeroL
 // True means a captured follow-up/restoration already handled the packet.
 bool newHorizonsHeroes::applyCapturedLevelUpOffer(CGHeroInstance & hero, const HeroLevelUp & pack)
 {
-	if(usesFourOfferProgression(hero.getPerkState().rules))
+	if(usesFourOfferProgression(hero.getPerkState().getRules()))
 	{
 		applyFourOfferLevelUp(hero, pack);
 		return true;
 	}
 	if(!pack.fourOffers.empty())
 		throw std::runtime_error("Four-offer payload without captured policy");
-	const bool unified = usesUnifiedSkillProgression(hero.getPerkState().rules);
+	const bool unified = usesUnifiedSkillProgression(hero.getPerkState().getRules());
 	if(unified)
 	{
 		if(pack.heroId != hero.id || pack.player != hero.getOwner() || pack.perkOfferSeed != 0)
@@ -73,7 +73,7 @@ bool newHorizonsHeroes::applyCapturedLevelUpOffer(CGHeroInstance & hero, const H
 		// Major System Rework Part VII: Dedicated follow-up perk offer for an acquired skill rank.
 		if(!pack.perks.empty())
 		{
-			if(pack.perkOfferSeed < 0 || !newHorizonsHeroes::usesPerkRules(hero.getPerkState().rules))
+			if(pack.perkOfferSeed < 0 || !newHorizonsHeroes::usesPerkRules(hero.getPerkState().getRules()))
 				throw std::runtime_error("Invalid New Horizons perk offer envelope");
 			for(const auto & candidate : pack.perks)
 			{

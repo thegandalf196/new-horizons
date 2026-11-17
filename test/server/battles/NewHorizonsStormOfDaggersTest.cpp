@@ -160,8 +160,6 @@ protected:
 		std::map<uint32_t, bool> result;
 		for(const auto * unit : battle()->battleGetAllUnits(false))
 		{
-			if(newHorizonsSorcery::isSpellLocked(*unit))
-				continue;
 			result.emplace(unit->unitId(), randomizer.getDefault().nextInt(0, 99) < unit->magicResistance());
 		}
 		return result;
@@ -277,7 +275,6 @@ protected:
 		std::optional<bool> originalResistance = std::nullopt;
 		bool nativeProducer = false;
 		std::optional<bool> redirectedResistance = std::nullopt;
-		bool lockedRedirect = false;
 		bool mirrorOnRedirect = false;
 		bool puppetReflector = false;
 		bool triggeredHeroLuck = false;
@@ -320,21 +317,6 @@ protected:
 		if(scenario.redirectedResistance)
 			friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 				BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 75, BonusSourceID()));
-		if(scenario.lockedRedirect)
-		{
-			const SpellID lock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-			auto seal = std::make_shared<Bonus>(BonusDuration::N_TURNS,
-				BonusType::MAGIC_RESISTANCE, BonusSource::SPELL_EFFECT, 100, BonusSourceID(lock));
-			seal->turnsRemain = 2;
-			friendly->addNewBonus(seal);
-			const auto marker = friendly->getBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(lock))
-				.And(Selector::type()(BonusType::MAGIC_RESISTANCE)));
-			ASSERT_EQ(marker, seal);
-			ASSERT_EQ(marker->val, 100);
-			ASSERT_TRUE(Bonus::NTurns(marker.get()));
-			ASSERT_EQ(marker->turnsRemain, 2);
-			ASSERT_TRUE(newHorizonsSorcery::isSpellLocked(*friendly));
-		}
 		if(scenario.mirrorOnRedirect)
 			friendly->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 				BonusType::MAGIC_MIRROR, BonusSource::OTHER, 100, BonusSourceID()));
@@ -362,7 +344,7 @@ protected:
 		ASSERT_EQ(enemies[0]->magicResistance(), scenario.originalResistance ? 75 : 0);
 		ASSERT_EQ(enemies[1]->magicResistance(), 0);
 		// Absolute Spell Lock is recognized by its marker; ordinary chance is still capped.
-		ASSERT_EQ(friendly->magicResistance(), scenario.lockedRedirect || scenario.redirectedResistance ? 75 : 0);
+		ASSERT_EQ(friendly->magicResistance(), scenario.redirectedResistance ? 75 : 0);
 		if(scenario.redirectedResistance)
 		{
 			ASSERT_EQ(scenario.mirrorIndex, 0);
@@ -424,9 +406,7 @@ protected:
 				expected.reflected.insert(recipient->unitId());
 				expected.tile = friendly->getPosition();
 				recipient = friendly;
-				resisted = scenario.lockedRedirect;
-				if(!scenario.lockedRedirect)
-					resisted = random->getDefault().nextInt(0, 99) < friendly->magicResistance();
+				resisted = random->getDefault().nextInt(0, 99) < friendly->magicResistance();
 				if(scenario.redirectedResistance)
 				{
 					ASSERT_EQ(resisted, *scenario.redirectedResistance);
@@ -537,7 +517,6 @@ protected:
 		EXPECT_TRUE(receipt.activeCast);
 		EXPECT_EQ(receipt.heroLuck, expected.heroLuck);
 		EXPECT_EQ(receipt.paidHeroManaCost, 8);
-		EXPECT_EQ(receipt.paidCounterspellManaCost, 0);
 		EXPECT_EQ(receipt.reflectedCres, expected.reflected);
 		EXPECT_EQ(receipt.affectedCres, expected.affected);
 		EXPECT_EQ(receipt.resistedCres, expected.resisted);
@@ -773,10 +752,7 @@ TEST_F(NewHorizonsStormOfDaggersTest, MirrorResolutionRedirectedSeventyFivePerce
 	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirrorIndex = 0, .redirectedResistance = false}));
 }
 
-TEST_F(NewHorizonsStormOfDaggersTest, MirrorResolutionRedirectedSpellLockRejectsOnlyItsShare)
-{
-	ASSERT_NO_FATAL_FAILURE(verifyDesiredMirrorCase({.mirrorIndex = 0, .lockedRedirect = true}));
-}
+
 
 TEST_F(NewHorizonsStormOfDaggersTest, MirrorResolutionOneBounceEvenWhenBothArmiesHaveMirror)
 {

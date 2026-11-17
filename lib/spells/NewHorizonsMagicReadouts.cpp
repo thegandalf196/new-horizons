@@ -78,45 +78,6 @@ void describeQuicksand(std::string & result, const CGHeroInstance * hero, const 
 	}
 }
 
-void describeTimeStop(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
-{
-	if(hero && rulesActive(hero->getMagicRules())
-		&& spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL)
-	{
-		const auto & rules = hero->getMagicRules();
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		const int32_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-		const bool chronomancer = hero->hasActivePerk(
-			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
-		const int radiusCap = newHorizonsSorcery::TIME_STOP_BASE_MAX_RADIUS
-			+ (chronomancer ? newHorizonsSorcery::TIME_STOP_CHRONOMANCER_RADIUS_BONUS : 0);
-		const int radius = newHorizonsSorcery::timeStopRadius(spellPower,
-			coefficientBasisPoints, empowerBonusPercent, chronomancer);
-		const bool schoolRankRules = rules["rulesetVersion"].Integer()
-			>= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
-
-		result = "Stop time in the selected area until the beginning of your next Hero Action. Creatures in stasis cannot move, "
-			"act, retaliate, take damage, receive healing, teleport, or receive new effects. Their existing effect timers "
-			"are paused, and they still block their occupied hexes.";
-		if(schoolRankRules)
-		{
-			result += "\n\nRadius (hexes): " + std::to_string(radius) + " at Spell Power "
-				+ std::to_string(spellPower) + ". Sorcery and Spellcraft strengthen only the Spell Power part ("
-				+ percentFromBasisPoints(coefficientBasisPoints) + " of normal strength).";
-		}
-		else
-		{
-			result += "\n\nRadius (hexes): " + std::to_string(radius) + " at Spell Power "
-				+ std::to_string(spellPower) + ". School rank does not increase this radius.";
-		}
-		result += " Maximum radius: " + std::to_string(radiusCap)
-			+ " hexes. Chronomancer raises the maximum to 3 without adding a free radius step. "
-			"Additional radius does not extend the duration "
-			"or change which targets can be affected.";
-	}
-}
-
 void describeCure(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
 {
 	if(hero && cureEnabled(hero->getMagicRules(), spell->getId()))
@@ -186,27 +147,6 @@ void describeChainRetention(std::string & result, const CGHeroInstance * hero, c
 	}
 }
 
-void describeSpellLock(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
-{
-	if(hero && rulesActive(hero->getMagicRules())
-		&& hero->getMagicRules()["rulesetVersion"].Integer() >= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
-		&& spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL)
-	{
-		const auto & rules = hero->getMagicRules();
-		const int coefficientBasisPoints = spellPowerCoefficientBasisPoints(rules, hero, spell->getId());
-		const int empowerBonusPercent = empowerSpellBonusPercent(rules, hero, spell->getId());
-		const bool spellbinder = hero->hasActivePerk(
-			newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::SPELLBINDER_PERK);
-		const int duration = newHorizonsSorcery::spellLockDurationBasisPoints(
-			hero->getEffectPower(spell), spellbinder, coefficientBasisPoints, empowerBonusPercent);
-		result += "\n\nCurrent combined Spell Power coefficient: "
-			+ percentFromBasisPoints(coefficientBasisPoints)
-			+ (empowerBonusPercent > 0 ? " with Empower Spell +25%; ordinary duration at current Spell Power: "
-				: "; ordinary duration at current Spell Power: ") + std::to_string(duration)
-			+ (duration == 1 ? " round." : " rounds.");
-	}
-}
-
 void describeSpellcraft(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
 {
 	if(hero && rulesActive(hero->getMagicRules())
@@ -263,21 +203,16 @@ void appendCapturedReadouts(std::string & result, const CGHeroInstance * hero, c
 			"the fixed term and subsequent damage-share/spread snapshot are unchanged.";
 }
 
-void appendFocusReadout(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell,
-	bool hasSavedSchoolRankCoefficient, int coefficientBasisPoints)
+void appendFocusReadout(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
 {
-	const int64_t spellPower = std::max<int32_t>(0, hero->getEffectPower(spell));
-	const auto profile = newHorizonsSorceryRevision::focusRules(hero->getMagicRules()).value_or(
-		newHorizonsSorceryRevision::FocusRules{newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS,
-			newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS, newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS});
-	const int specialty = hasSavedSchoolRankCoefficient
-		? hero->getNonDamageSpellSpecialtyBonusPercent(spell->getId()) : 0;
-	const int penetrationBasisPoints = newHorizonsSorceryRevision::focusMarkBasisPoints(
-		profile, static_cast<int32_t>(spellPower), coefficientBasisPoints,
-		empowerSpellBonusPercent(hero->getMagicRules(), hero, spell->getId()), specialty);
-	result += "\n\nYour hero: each mark lets friendly ranged attacks ignore "
-		+ percentFromBasisPoints(penetrationBasisPoints) + " Creature Defense; 3 such marks: "
-		+ percentFromBasisPoints(3 * penetrationBasisPoints) + ". Battle bonuses may increase this.";
+	const int enhancement = 20 + newHorizonsSorceryRevision::focusAdditionalRangedPercent(hero, spell->getId());
+	result += "\n\nGrants exactly 3 hard ranged-strike charges. Nonshooters gain physical ranged attacks; "
+		"native shooters gain +" + std::to_string(enhancement)
+		+ "% ranged damage while charges remain. Ordinary ranged penalties apply. "
+		"Recasting resets the charges to 3; Ammo Cart cannot replenish them.";
+	const int additional = newHorizonsSorceryRevision::focusAdditionalRangedPercent(hero, spell->getId());
+	if(additional > 0)
+		result += " Converted nonshooters also gain +" + std::to_string(additional) + "% ranged damage.";
 }
 
 void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * hero, const spells::Spell * spell)
@@ -309,8 +244,7 @@ void appendPowerCoefficientReadout(std::string & result, const CGHeroInstance * 
 		"No School Rank", "Basic School", "Advanced School", "Expert School"};
 	if(focusMagicCoefficient)
 	{
-		appendFocusReadout(result, hero, spell, hasSavedSchoolRankCoefficient,
-			coefficientBasisPoints);
+		appendFocusReadout(result, hero, spell);
 		return;
 	}
 
@@ -337,24 +271,21 @@ void applyContextualOverrides(std::string & result, const CGHeroInstance * hero,
 			const int nominal = newHorizonsTheChosen::nominalDuration(*rules,
 				hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), schoolPercent);
 			const int exalted = newHorizonsTheChosen::exaltedChampionDurationBonus(*rules, hero);
-			const int specialty = newHorizonsHeroes::chosenSpecialtyDurationBonus(
-				hero->getPrimaryGrowthRules(), hero->getHeroType()->getJsonKey(), spell->getId());
+			const int specialty = hero->compiledDevelopment()->chosenDurationBonus(hero->getHeroTypeID(), spell->getId());
 			const int duration = nominal + exalted + specialty;
 			result += "\n\nCurrent duration: " + std::to_string(duration)
 				+ " rounds (capped ordinary duration " + std::to_string(nominal)
 				+ "; Exalted Champion +" + std::to_string(exalted) + "; Inteus +" + std::to_string(specialty)
-				+ "). Battle-only Extend Spell and Echoed Duration may add rounds after the ordinary cap. "
+				+ "). Battle-only Extend Spell may add a round after the ordinary cap. "
 				"Only one stack per army; a successful recast replaces the previous recipient.";
 		}
 		return;
 	}
 	describeResurrection(result, hero, spell);
 	describeQuicksand(result, hero, spell);
-	describeTimeStop(result, hero, spell);
 	describeCure(result, hero, spell);
 	describeBlessDuration(result, hero, spell);
 	describeChainRetention(result, hero, spell);
-	describeSpellLock(result, hero, spell);
 	describeSpellcraft(result, hero, spell);
 	appendPowerCoefficientReadout(result, hero, spell);
 }

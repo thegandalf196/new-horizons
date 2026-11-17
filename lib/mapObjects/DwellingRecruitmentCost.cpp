@@ -31,7 +31,7 @@ TResources CGDwelling::getTotalRecruitmentCost(CreatureID creature, int32_t amou
 {
 	const auto * definition = creature.toCreature();
 	if(buyer && definition && definition->warMachine != ArtifactID::NONE
-		&& newHorizonsEstates::usesRevisedPolicy(buyer->getPerkState().rules))
+		&& newHorizonsEstates::usesRevisedPolicy(buyer->getPerkState().getRules()))
 	{
 		if(amount > 1)
 			throw std::runtime_error("Only one machine artifact may be purchased at a time");
@@ -52,7 +52,7 @@ int32_t CGDwelling::getRecruitmentAmount(CreatureID creature, const ResourceSet 
 {
 	const auto * definition = creature.toCreature();
 	if(buyer && definition && definition->warMachine != ArtifactID::NONE
-		&& newHorizonsEstates::usesRevisedPolicy(buyer->getPerkState().rules))
+		&& newHorizonsEstates::usesRevisedPolicy(buyer->getPerkState().getRules()))
 		return available > 0 && !buyer->hasArt(definition->warMachine)
 			&& resources.canAfford(getTotalRecruitmentCost(creature, 1, buyer)) ? 1 : 0;
 	if(newHorizonsEstates::usesConscriptionLedger(buyer, creature))

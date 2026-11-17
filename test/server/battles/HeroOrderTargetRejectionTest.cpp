@@ -168,19 +168,18 @@ TEST_F(HeroOrderTargetRejectionTest, FocusFireDistinguishesLivingUnavailableFrom
 	addStack(BattleSide::ATTACKER, creatureByName("core:marksman"), BattleHex(120), 10);
 	expectReason(HeroCommand::FOCUS_FIRE, {enemy->unitId()}, Reason::NONE);
 	const Bonus stopped(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
+		BonusType::INVINCIBLE, BonusSource::OTHER, 1, BonusSourceID());
 	enemy->addNewBonus(std::make_shared<Bonus>(stopped));
 	ASSERT_TRUE(enemy->alive());
 	ASSERT_FALSE(enemy->isValidTarget());
 	expectReason(HeroCommand::FOCUS_FIRE, {enemy->unitId()}, Reason::TARGET_UNAVAILABLE);
 	EXPECT_FALSE(battle()->battleCanConfirmHeroCommand(BattleSide::ATTACKER, HeroCommand::FOCUS_FIRE, enemy->unitId()));
-	// Time Stop correctly ignores damage. Remove the fixture marker through the
+	// Remove the invincibility fixture through the
 	// normal effect-removal packet before constructing the separate dead target.
 	SetStackEffect unstopped;
 	unstopped.battleID = BattleID(0);
 	unstopped.toRemove.emplace_back(enemy->unitId(), std::vector<Bonus>{stopped});
 	gameHandler->sendAndApply(unstopped);
-	ASSERT_FALSE(enemy->isTimeStopped());
 	ASSERT_TRUE(enemy->isValidTarget());
 	auto dead = enemy->acquireState();
 	int64_t damage = dead->getAvailableHealth();

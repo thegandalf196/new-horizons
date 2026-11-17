@@ -77,7 +77,7 @@ protected:
 		startWithMap(std::move(builder));
 		hero = findHeroByOwner(PlayerColor(0));
 		ASSERT_TRUE(hero);
-		ASSERT_EQ(newHorizonsNecromancy::policy(hero->getPerkState().rules).has_value(), GetParam() && !legacyHeroRules);
+		ASSERT_EQ(newHorizonsNecromancy::policy(hero->getPerkState().getRules()).has_value(), GetParam() && !legacyHeroRules);
 	}
 	void rank(int value)
 	{
@@ -241,14 +241,14 @@ TEST_P(NewHorizonsSkeletonLeadershipTest, SaveLoadRetainsCapturedPolicyAndEffect
 {
 	ASSERT_NO_FATAL_FAILURE(startScenario());
 	ASSERT_NO_FATAL_FAILURE(preparePerks(newHorizonsNecromancy::LORD_OF_THE_DEAD_ID));
-	const auto captured = hero->getPerkState().rules;
+	const auto captured = hero->getPerkState().getRules();
 	CGameState restored;
 	restored.preInit(LIBRARY);
 	restored.loadFromMemory(gameState()->saveToMemory());
 	const auto * loaded = restored.getMap().getHero(hero->getHeroTypeID());
 	ASSERT_TRUE(loaded);
-	EXPECT_EQ(loaded->getPerkState().rules, captured);
-	EXPECT_EQ(newHorizonsNecromancy::policy(loaded->getPerkState().rules).has_value(), GetParam());
+	EXPECT_EQ(loaded->getPerkState().getRules(), captured);
+	EXPECT_EQ(newHorizonsNecromancy::policy(loaded->getPerkState().getRules()).has_value(), GetParam());
 	for(const auto creature : skeletons())
 	{
 		const auto slot = loaded->getLeadershipSlotCapacity(creature);

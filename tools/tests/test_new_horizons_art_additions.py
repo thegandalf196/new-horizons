@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import sys
 import unittest
+from .nhart_source_transitions import read_historical_source
+from .nhart_sorcery_config_transition import before_sorcery
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 import import_new_horizons_art_wave as importer
@@ -17,6 +19,7 @@ from .nhart_sylvan_perk_presentations import validate_sylvan_family
 from .nhart_sylvan_alliance_presentations import (validate_alliance_family,
     validate_alliance_resource_reuse)
 from .nhart_water_ice_restoration import restoration_wave
+from .nhart_force_lance import validate_force_lance
 from .nhart_released_history import (authority_before_leadership_rework,
     released_predecessor_entries, baseline_payload_proof)
 from .nhart_config_revisions import config_at_revision, wave_config_revision
@@ -60,6 +63,8 @@ WAVE_CURRENT_IDS = {
     'new-horizons:command.seizeInitiative': 'new-horizons:command.decisiveOrders',
     **{old: current for old, (current, _) in REWORKED_PERK_REBINDINGS.items()},
     **{old: current for old, (current, _) in FACTION_RENAMES.items()},
+    'new-horizons:estates.financier': 'new-horizons:estates.hoarder',
+    'new-horizons:estates.magnate': 'new-horizons:estates.decentralization',
     'new-horizons:divineMandate.sharedPurpose': 'new-horizons:divineMandate.shieldOfFaith',
     'new-horizons:divineMandate.consecratedCasting': 'new-horizons:divineMandate.divineFury',
     'new-horizons:divineMandate.royalStandard': 'new-horizons:divineMandate.unwaveringStandard',
@@ -271,12 +276,12 @@ class ArtAdditionsTest(unittest.TestCase):
         cls.restoration = restoration_wave(cls.waves)
         cls.configProofs = json.loads((ROOT / 'assets/new-horizons/runtime-art-config-revisions.json').read_text())
         cls.manifest = json.loads((ROOT / importer.spells.MANIFEST).read_text())
-        cls.header = (ROOT / importer.HEADER).read_text()
+        cls.header = read_historical_source(importer.HEADER)
         adapter = ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h'
-        cls.capturedHeader = adapter.read_text() if adapter.exists() else None
+        cls.capturedHeader = read_historical_source('client/windows/NewHorizonsCapturedPerkIcons.h') if adapter.exists() else None
         alliance = ROOT / 'client/windows/NewHorizonsSylvanAlliancePerkIcons.h'
         cls.allianceHeader = alliance.read_text() if alliance.exists() else None
-        cls.config = importer.spells.parse_jsonc((ROOT / importer.spells.CONFIG).read_text())
+        cls.config = before_sorcery(importer.spells.parse_jsonc((ROOT / importer.spells.CONFIG).read_text()))
         cls.legacyEntries, cls.bridgeIndex = released_predecessor_entries(
             cls.manifest['entries'], cls.waves, importer.entries_digest)
 
@@ -328,13 +333,14 @@ class ArtAdditionsTest(unittest.TestCase):
         self.assertEqual(importer.perks.digest(ROOT / importer.spells.ARCHIVE), self.waves[-1]['newArchiveSha256'])
 
     def test_exact_perk_bindings_and_native_families(self):
-        lookup = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', self.header))
+        lookup = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
+                                 (ROOT / importer.HEADER).read_text()))
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         current_ids = {row['id'] for skill in roster['skills'].values() for row in skill['perks']}
         historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + wave.get('forceLanceEffects', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
             alliance = [row for row in wave.get('perkPresentations', []) if row.get('schemaVersion') == 3]
             if alliance:
                 validate_alliance_resource_reuse(wave, declared, self.manifest['entries'],
@@ -372,7 +378,11 @@ class ArtAdditionsTest(unittest.TestCase):
         current = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         ids = {perk['id'] for skill in current['skills'].values() for perk in skill['perks']}
         self.assertEqual(len(bindings), 20)
-        self.assertTrue(bindings.keys() <= ids)
+        retired = {'new-horizons:metamagic.' + identity for identity in (
+            'arcaneCatalyst', 'arcaneShield', 'manaConduit', 'lingeringMagic',
+            'arcaneFeedback', 'spellFracture', 'arcaneWellspring', 'arcaneAttunement',
+            'arcaneEcho', 'arcaneSingularity')}
+        self.assertEqual(bindings.keys() - ids, retired)
         for changed in (self.header.replace('NH_perk_arcane_acquisition', 'NH_changed', 1),
                         self.header.replace('NH_perk_ambusher', 'NH_changed', 1),
                         self.header.replace(FACTION_BINDINGS, FACTION_BINDINGS * 2)):
@@ -467,6 +477,10 @@ class ArtAdditionsTest(unittest.TestCase):
 
     def test_header_baseline_and_status_only_graphics(self):
         for index, wave in enumerate(self.waves):
+            if 'forceLanceEffects' in wave:
+                validate_force_lance(wave, self.manifest['entries'], read_resource,
+                    (ROOT / 'assets/new-horizons/force-lance-art-selections.json').read_bytes())
+                continue  # This exact finite wave changes no header or spell configuration.
             # Interface-button wave was selected after the faction rebindings;
             # earlier wave anchors must still see their exact original IDs.
             alliance = any(row.get('schemaVersion') == 3 for row in wave.get('perkPresentations', []))

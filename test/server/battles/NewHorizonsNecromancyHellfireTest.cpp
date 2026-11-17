@@ -89,7 +89,7 @@ protected:
 TEST_P(NewHorizonsNecromancyHellfireTest, AcceptedArrivalAppliesBonewardToRawHundredDamage)
 {
 	ASSERT_NO_FATAL_FAILURE(startScenario());
-	ASSERT_EQ(newHorizonsNecromancy::policy(defenderSideHero->getPerkState().rules).has_value(), GetParam() != 2);
+	ASSERT_EQ(newHorizonsNecromancy::policy(defenderSideHero->getPerkState().getRules()).has_value(), GetParam() != 2);
 	const auto imp = creatureByName("core:imp");
 	attackerSideHero->clearSlots();
 	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), imp, 1));

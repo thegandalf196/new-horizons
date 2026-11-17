@@ -44,7 +44,6 @@ namespace scripting::api
 		static bool isSelectedCurePhysicalAfflictionTarget(const ::spells::Mechanics & m, const battle::Unit & unit);
 		static bool slowAffectsSpeed(const ::spells::Mechanics & m);
 		static int64_t getLivingArmorParameter(const ::spells::Mechanics & m, const std::string & name);
-		static int32_t getArcaneBreachMarkBasisPoints(const ::spells::Mechanics & m);
 		static int32_t getBattleRound(const ::spells::Mechanics & m);
 		static int getVariantPowerPercent(const ::spells::Mechanics & m);
 		static int getBlinkPreview(lua_State * L);

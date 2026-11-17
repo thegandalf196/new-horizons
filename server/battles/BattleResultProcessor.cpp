@@ -829,24 +829,6 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	// Capture this specific reward before the result pack also removes temporary
 	// Buffer and applies other recovery effects. A total pool delta would conflate
 	// Formula Reserve with those unrelated effects.
-	BattleLogMessage metamagicRewards;
-	metamagicRewards.battleID = battleID;
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const auto * hero = (*battle)->battleGetFightingHero(side);
-		const auto & state = (*battle)->getSide(side);
-		if(!hero || state.metamagicPendingCount == 0 || state.metamagicSequenceSpells.size() <= 1
-			|| !newHorizonsMagic::spellPointRulesActive(hero->getMagicRules())
-			|| !newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
-			continue;
-		const int restored = std::min(newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS,
-			std::max(0, hero->manaLimit() - hero->getNormalSpellPoints()));
-		MetaString line = MetaString::createFromTextID(hero->getNameTextID());
-		line.appendRawString(": Formula Reserve restores ");
-		line.appendNumber(restored);
-		line.appendRawString(" Normal Spell Points as the Metamagic sequence ends with combat.");
-		metamagicRewards.lines.push_back(std::move(line));
-	}
 	std::set<ObjectInstanceID> retainedTrainingHeroes;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
@@ -864,8 +846,6 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	gameHandler->sendAndApply(resultsApplied);
 	for(auto & learning : retainedHeroLearning)
 		gameHandler->sendAndApply(learning);
-	if(!metamagicRewards.lines.empty())
-		gameHandler->sendAndApply(metamagicRewards);
 	// Mana Conservation is ordinary Normal-pool recovery. Apply it only after
 	// BattleResultsApplied has finished its Buffer cleanup and result restorations,
 	// then before any surviving hero is removed into the hero pool.
@@ -989,7 +969,7 @@ void BattleResultProcessor::setBattleResult(const CBattleInfoCallback & battle, 
 	const auto * winnerHero = victoriusSide == BattleSide::NONE
 		? nullptr : battle.battleGetFightingHero(victoriusSide);
 	const bool skeletonPolicy = winnerHero
-		&& newHorizonsNecromancy::policy(winnerHero->getPerkState().rules).has_value();
+		&& newHorizonsNecromancy::policy(winnerHero->getPerkState().getRules()).has_value();
 	const bool excludeMagicalCasualties = !skeletonPolicy && winnerHero && winnerHero->usesNewHorizonsNecromancy()
 		&& !winnerHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 			newHorizonsNecromancy::CORPSE_PRESERVATION_ID);

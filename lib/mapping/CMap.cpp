@@ -1325,24 +1325,11 @@ void CMap::validateNewHorizonsNecromancyPolicySerialization(bool supportsV1, boo
 		gameSettings->validateNewHorizonsNecromancyPolicySerialization(supportsV1, supportsV2);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().rules, supportsV1, supportsV2);
+			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().getRules(), supportsV1, supportsV2);
 	for(const auto & hero : heroesPool)
 		if(hero)
-			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().rules, supportsV1, supportsV2);
+			newHorizonsNecromancy::validatePolicySerialization(hero->getPerkState().getRules(), supportsV1, supportsV2);
 }
-
-void CMap::validateNewHorizonsWeightedPerkSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported) const
-{
-	if(gameSettings)
-		gameSettings->validateNewHorizonsWeightedPerkSerialization(supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
-	for(const auto & object : objects)
-		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
-	for(const auto & hero : heroesPool)
-		if(hero)
-			newHorizonsHeroes::validateWeightedPerkSerialization(hero->getPerkState().rules, supported, r2Supported, strictSupported, optionalRerollSupported, passiveFactionSupported);
-}
-
 
 void CMap::validateNewHorizonsBottomlessMindSerialization(bool supported) const
 {
@@ -1447,9 +1434,9 @@ void CMap::validateSylvanTacticsSerialization(bool supported) const
 	if(gameSettings) gameSettings->validateSylvanTacticsSerialization(supported);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsHeroes::validateSylvanTacticsSerialization(hero->getPerkState().rules, supported);
+			newHorizonsHeroes::validateSylvanTacticsSerialization(hero->getPerkState().getRules(), supported);
 	for(const auto & hero : heroesPool)
-		if(hero) newHorizonsHeroes::validateSylvanTacticsSerialization(hero->getPerkState().rules, supported);
+		if(hero) newHorizonsHeroes::validateSylvanTacticsSerialization(hero->getPerkState().getRules(), supported);
 }
 
 void CMap::validateCrisisCommandSerialization(bool supported) const
@@ -1457,9 +1444,9 @@ void CMap::validateCrisisCommandSerialization(bool supported) const
 	if(gameSettings) gameSettings->validateCrisisCommandSerialization(supported);
 	for(const auto & object : objects)
 		if(const auto * hero = dynamic_cast<const CGHeroInstance *>(object.get()))
-			newHorizonsHeroes::validateCrisisCommandProfileSerialization(hero->getPerkState().rules, supported);
+			newHorizonsHeroes::validateCrisisCommandProfileSerialization(hero->getPerkState().getRules(), supported);
 	for(const auto & hero : heroesPool)
-		if(hero) newHorizonsHeroes::validateCrisisCommandProfileSerialization(hero->getPerkState().rules, supported);
+		if(hero) newHorizonsHeroes::validateCrisisCommandProfileSerialization(hero->getPerkState().getRules(), supported);
 }
 
 void CMap::validateNewHorizonsStartingBookSerialization(bool supported) const

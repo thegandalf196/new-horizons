@@ -55,7 +55,7 @@ void StrikeProjection::finish(uint32_t actor)
 {
 	if(!branch) return;
 	const auto * striker = branch->battleGetUnitByID(actor);
-	if(struckActors.erase(actor) > 0 && striker && !striker->isTimeStopped())
+	if(struckActors.erase(actor) > 0 && striker)
 		branch->getForUpdate(actor)->removeUnitBonus(CSelector(arcaneInspiration::isRetained));
 	for(const auto & candidate : pending)
 	{

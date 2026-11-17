@@ -97,7 +97,8 @@ TEST_F(CommandArmyBonusesTest, WardingIsOneSummedEnhancementSourceAndSeparateAut
 	project(modifiers);
 	unit.localInit(&environment);
 	std::vector<int> reductions;
-	for(const auto & bonus : *unit.getBonuses(Selector::type()(BonusType::SPELL_DAMAGE_REDUCTION))) reductions.push_back(bonus->val);
+	const auto reductionBonuses = unit.getBonuses(Selector::type()(BonusType::SPELL_DAMAGE_REDUCTION));
+	for(const auto & bonus : *reductionBonuses) reductions.push_back(bonus->val);
 	ASSERT_EQ(reductions.size(), 2u);
 	EXPECT_EQ(spells::calculateMagicalDamageReduction(1000, reductions, 0).damageWithPenetration, 630);
 	modifiers.enhancements.magicalReductionPercent = 10000;

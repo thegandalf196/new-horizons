@@ -11,6 +11,7 @@
 #include "../../../server/battles/BattleProcessor.h"
 
 #include "../../../lib/GameConstants.h"
+#include "../../../lib/CCreatureHandler.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/battle/Unit.h"
@@ -81,14 +82,6 @@ JsonNode magicRulesForVersion(int version)
 	return rules;
 }
 
-std::shared_ptr<Bonus> timeStopMarker(BattleSide side)
-{
-	auto marker = std::make_shared<Bonus>(
-		BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	marker->parameters = std::make_shared<BonusParameters>(static_cast<int32_t>(side));
-	return marker;
-}
-
 int64_t sourceDamageToLeaveHealth(int32_t sourceCount, int64_t availableHealth)
 {
 	const auto maxHealth = BattleTestFixture::creatureByName("core:pikeman").toCreature()->getMaxHealth();
@@ -99,20 +92,20 @@ class NewHorizonsPhantomArmyTest : public BattleTestFixture
 {
 protected:
 	bool useIllusionistPerkRules = false;
-	bool useEchoedDurationPerkRules = false;
+	bool useExtendSpellPerkRules = false;
 	bool startCombatBeforeCast = false;
 	int magicRulesVersion = 0;
 
 	void mapLoaded(CMap * loaded) override
 	{
 		BattleTestFixture::mapLoaded(loaded);
-		if(useIllusionistPerkRules || useEchoedDurationPerkRules)
+		if(useIllusionistPerkRules || useExtendSpellPerkRules)
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
 				JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 		if(magicRulesVersion > 0)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				magicRulesForVersion(magicRulesVersion));
-		else if(useEchoedDurationPerkRules)
+		else if(useExtendSpellPerkRules)
 			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 				JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
@@ -126,7 +119,7 @@ protected:
 
 	bool startPhantomBattle(CStack *& source, CStack *& phantom, int32_t sourceCount = 1000,
 		bool sourceHasExtraHealth = false, bool selectIllusionist = false,
-		int32_t spellPower = 100, int64_t sourceDamageBeforeCast = 0, bool selectEchoedDuration = false,
+		int32_t spellPower = 100, int64_t sourceDamageBeforeCast = 0, bool selectExtendSpell = false,
 		int sorceryRank = MasteryLevel::NONE, std::string_view sourceCreatureName = "core:pikeman",
 		bool castImmediately = true)
 	{
@@ -135,7 +128,7 @@ protected:
 			return false;
 
 		useIllusionistPerkRules = selectIllusionist;
-		useEchoedDurationPerkRules = selectEchoedDuration;
+		useExtendSpellPerkRules = selectExtendSpell;
 		startGame();
 		const auto sorcery = SecondarySkill::decode("new-horizons:sorceryMagic");
 		if(sorcery < 0)
@@ -153,27 +146,17 @@ protected:
 				"new-horizons:sorceryMagic", "new-horizons:sorceryMagic.illusionist"))
 				return false;
 		}
-		if(selectEchoedDuration)
+		if(selectExtendSpell)
 		{
-			const auto metamagicSkill = SecondarySkill::decode(
-				std::string(newHorizonsMagic::METAMAGIC_SKILL));
-			if(metamagicSkill < 0)
-				return false;
-			attackerSideHero->setSecSkillLevel(SecondarySkill(metamagicSkill), MasteryLevel::ADVANCED,
-				ChangeValueMode::ABSOLUTE);
-			const auto skillId = std::string(newHorizonsMagic::METAMAGIC_SKILL);
-			const auto perkId = std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION);
-			// Focused Pairing changes only hostile same-target casts; Haste and
-			// Phantom Army are friendly casts, so this Basic prefix is inert here.
-			attackerSideHero->applyPerkSelection({skillId, "new-horizons:metamagic.focusedPairing"});
-			attackerSideHero->applyPerkSelection({skillId, perkId});
-			if(!attackerSideHero->hasActivePerk(skillId, perkId))
+			const std::string skill = "new-horizons:spellcraft";
+			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)),
+				MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+			attackerSideHero->applyPerkSelection({skill, "new-horizons:spellcraft.extendSpell"});
+			if(!attackerSideHero->hasActivePerk(skill, "new-horizons:spellcraft.extendSpell"))
 				return false;
 		}
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(spell);
-		if(selectEchoedDuration)
-			attackerSideHero->addSpellToSpellbook(SpellID::HASTE);
 		setTestSpellPointTotal(attackerSideHero, 9999);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, spellPower, ChangeValueMode::ABSOLUTE);
 		startBattle();
@@ -193,18 +176,17 @@ protected:
 		}
 		// Hero Actions are granted when the first playable round begins, not
 		// during the round-zero battle construction phase.
-		if(startCombatBeforeCast || selectEchoedDuration)
+		if(startCombatBeforeCast || selectExtendSpell)
 		{
 			beginCombat();
-			if(selectEchoedDuration)
+			if(selectExtendSpell)
 				activateStack(source);
 		}
 		else
 			battle()->nextRound();
-		if(selectEchoedDuration)
+		if(selectExtendSpell)
 		{
-			if(!submitHeroSpellAction(SpellID::HASTE, source, false)
-				|| !submitHeroSpellAction(spell, source, true))
+			if(!submitHeroSpellAction(spell, source))
 				return false;
 		}
 		else if(castImmediately && !castOn(attackerSideHero, spell, source))
@@ -298,13 +280,12 @@ protected:
 		gameHandler->sendAndApply(activate);
 	}
 
-	bool submitHeroSpellAction(SpellID spell, const CStack * target, bool metamagicFollowup)
+	bool submitHeroSpellAction(SpellID spell, const CStack * target)
 	{
 		BattleAction action;
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = BattleSide::ATTACKER;
 		action.spell = spell;
-		action.metamagicFollowup = metamagicFollowup;
 		action.aimToUnit(target);
 		return gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action);
 	}
@@ -543,7 +524,7 @@ TEST_F(NewHorizonsPhantomArmyTest, SourceHealthIntegrityMayExceedNominalHealthAn
 	EXPECT_EQ(battle()->getStack(invalid.id), nullptr);
 
 	int32_t index = 0;
-	for(const auto duration : {newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS - 1,
+	for(const auto duration : {-1, 0,
 		newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS + 1})
 	{
 		battle::UnitInfo invalidDuration;
@@ -564,7 +545,7 @@ TEST_F(NewHorizonsPhantomArmyTest, SourceHealthIntegrityMayExceedNominalHealthAn
 	}
 }
 
-TEST_F(NewHorizonsPhantomArmyTest, EchoedDurationExtendsARealMetamagicFollowupAndSavedLifetime)
+TEST_F(NewHorizonsPhantomArmyTest, ExtendSpellPreservesAppliedPhantomLifetimeThroughStateAndExpiry)
 {
 	startCombatBeforeCast = true;
 	CStack * source = nullptr;
@@ -573,12 +554,10 @@ TEST_F(NewHorizonsPhantomArmyTest, EchoedDurationExtendsARealMetamagicFollowupAn
 	ASSERT_NE(source, nullptr);
 	ASSERT_NE(phantom, nullptr);
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(
-		std::string(newHorizonsMagic::METAMAGIC_SKILL),
-		std::string(newHorizonsMagic::METAMAGIC_ECHOED_DURATION)));
+		"new-horizons:spellcraft", "new-horizons:spellcraft.extendSpell"));
 	ASSERT_EQ(battle()->getRound(), 1);
 
-	// This caster has Echoed Duration, not Extend Spell: base two rounds plus
-	// one. The serialization maximum also permits the separate two-perk case.
+	// Extend Spell adds one round to the ordinary two-round Phantom lifetime.
 	constexpr int expectedDuration = newHorizonsSorcery::PHANTOM_ARMY_DURATION_ROUNDS + 1;
 	static_assert(expectedDuration <= newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS);
 	const auto initialState = phantom->acquireState()->save();
@@ -648,35 +627,7 @@ TEST_F(NewHorizonsPhantomArmyTest, IllusionistIntegrityUsesOneExactFloorForNonRo
 	EXPECT_EQ(phantom->getPhantomIntegrity(), expectedIntegrity);
 }
 
-TEST_F(NewHorizonsPhantomArmyTest, TimeStopPausesPhantomRemainingDuration)
-{
-	CStack * source = nullptr;
-	CStack * phantom = nullptr;
-	ASSERT_TRUE(startPhantomBattle(source, phantom));
-	const auto integrity = phantom->getPhantomIntegrity();
 
-	// Cast in the first playable round; Time Stop holds the full two-round
-	// duration across later transitions.
-	ASSERT_EQ(battle()->getRound(), 1);
-	battle()->addOrUpdateUnitBonus(phantom, *timeStopMarker(BattleSide::DEFENDER), true);
-	ASSERT_TRUE(phantom->isTimeStopped());
-	for(int transition = 0; transition < 3; ++transition)
-	{
-		battle()->nextRound();
-		EXPECT_TRUE(phantom->alive());
-		EXPECT_EQ(phantom->getPhantomIntegrity(), integrity);
-	}
-
-	battle()->expireTimeStops(BattleSide::DEFENDER);
-	EXPECT_FALSE(phantom->isTimeStopped());
-	battle()->nextRound();
-	EXPECT_TRUE(phantom->alive());
-	EXPECT_EQ(phantom->getPhantomIntegrity(), integrity);
-	battle()->nextRound();
-	EXPECT_FALSE(phantom->alive());
-	EXPECT_TRUE(phantom->ghostPending);
-	EXPECT_EQ(phantom->getPhantomIntegrity(), 0);
-}
 
 TEST_F(NewHorizonsPhantomArmyTest, AttackPreviewAndAppliedHitUseThePhysicalDamageSplitOnce)
 {
@@ -808,4 +759,34 @@ TEST_F(NewHorizonsPhantomArmyTest, ExpiryRemovesPhantomAfterTwoFullBattleRounds)
 	EXPECT_TRUE(battle()->getStack(expiringId)->alive());
 	endRound();
 	EXPECT_EQ(battle()->getStack(expiringId), nullptr);
+}
+
+TEST_F(NewHorizonsPhantomArmyTest, ExtendedPositiveTimersAreAdmittedAndRoundTripWithoutTheRetiredFourRoundCap)
+{
+	CStack * source = nullptr;
+	CStack * phantom = nullptr;
+	ASSERT_TRUE(startPhantomBattle(source, phantom, 1000));
+	for(const int duration : {1, 5, 7, 1000})
+	{
+		battle::UnitInfo info;
+		info.id = battle()->nextUnitId();
+		info.type = source->creatureId();
+		info.count = 10;
+		info.side = BattleSide::ATTACKER;
+		info.position = battle()->getAvailableHex(source->unitType(), info.side);
+		ASSERT_TRUE(info.position.isValid());
+		info.summoned = true;
+		info.phantomIntegrity = 1;
+		info.phantomDuration = duration;
+		JsonNode data;
+		info.save(data);
+		ASSERT_NO_THROW(battle()->addUnit(info.id, data));
+		const auto * created = battle()->getStack(info.id, false);
+		ASSERT_NE(created, nullptr);
+		const auto saved = created->acquireState()->save();
+		EXPECT_EQ(saved["state"]["phantomRoundsRemaining"].Integer(), duration);
+		auto restored = created->acquireState();
+		EXPECT_NO_THROW(restored->load(saved));
+		EXPECT_EQ(restored->save()["state"]["phantomRoundsRemaining"].Integer(), duration);
+	}
 }

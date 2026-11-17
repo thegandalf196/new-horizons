@@ -47,7 +47,6 @@ private:
 	{
 		PossibleSpellcast options;
 		HypotheticBattle::ProjectedSpellAllowance allowance;
-		HypotheticBattle::ProjectedCounterspellOutcome counterspell;
 		std::vector<uint32_t> recipients;
 		Outcome outcome;
 		heroActionUtility::AbsoluteContinuationUtility value;

@@ -22,6 +22,7 @@ set(vcmiservercommon_SRCS
 		battles/BattlePetrifyingBlood.cpp
 		battles/BattleSylvanStrikeAftermath.cpp
 		battles/BattleCreatureKillRewards.cpp
+		battles/BattleFocusMagic.cpp
 		battles/BattleWaitState.cpp
 		battles/DreadCavalryAction.cpp
 		battles/MeleeMovementContinuation.cpp
@@ -121,6 +122,7 @@ set(vcmiservercommon_HEADERS
 		battles/BattlePetrifyingBlood.h
 		battles/BattleSylvanStrikeAftermath.h
 		battles/BattleCreatureKillRewards.h
+		battles/BattleFocusMagic.h
 		battles/BattleWaitState.h
 		battles/DreadCavalryAction.h
 		battles/HeroOrderLog.h

@@ -60,12 +60,10 @@ std::optional<LearningExchangeSpecialtyRules> learningExchangeSpecialtyRules(con
 {
 	if(!hero)
 		return std::nullopt;
-	const auto & development = hero->getPrimaryGrowthRules();
-	validateLearningExchangeSpecialtiesSerialization(development, true);
 	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:sanya")))
-		return learningExchangeSpecialtyRules(development, LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR);
+		return hero->compiledDevelopment()->learningExchange.at(static_cast<size_t>(LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR));
 	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:geon")))
-		return learningExchangeSpecialtyRules(development, LearningExchangeSpecialtyKind::OCCULT_SCHOLAR);
+		return hero->compiledDevelopment()->learningExchange.at(static_cast<size_t>(LearningExchangeSpecialtyKind::OCCULT_SCHOLAR));
 	return std::nullopt;
 }
 }

@@ -63,7 +63,7 @@ int initialSpellPower(const CGHeroInstance & hero, const CSpell & spell, const C
 
 
 void adjustTargetFreePreview(SpellEffectPreview & result, const CGHeroInstance & hero,
-	const CSpell & spell, const CBattleInfoCallback * callback, bool followup)
+	const CSpell & spell, const CBattleInfoCallback * callback)
 {
 	const auto * battle = callback ? callback->getBattle() : nullptr;
 	auto cast = newHorizonsMetamagic::captureHeroCastProfile(&hero, battle, true, spell.getId());
@@ -83,7 +83,7 @@ void adjustTargetFreePreview(SpellEffectPreview & result, const CGHeroInstance &
 		const auto & rules = battle ? battle->getMagicRules() : hero.getMagicRules();
 		const auto ordinary = durationWithCastExtensions(rules["spells"][key]["livingArmor"]["duration"].Integer(),
 			callback && heroCastExtendAvailable(hero, spell, *callback, std::clamp(hero.getEffectLevel(&spell), 0, 3)),
-			followup && hasMetamagicPerk(&hero, METAMAGIC_ECHOED_DURATION));
+			false);
 		result.secondary = SpellEffectPreview::Quantity{
 			newHorizonsMetamagic::outgoingDuration(ordinary, &cast, nullptr), 1, UNIT};
 	}
@@ -101,17 +101,15 @@ void adjustTargetFreePreview(SpellEffectPreview & result, const CGHeroInstance &
 }
 
 static SpellEffectPreview resolveSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback * callback, bool followup)
+	const CBattleInfoCallback * callback)
 {
 	const auto * battle = callback ? callback->getBattle() : nullptr;
 	const auto & rules = battle ? battle->getMagicRules() : hero.getMagicRules();
 	if(rulesActive(rules) && !spellAllowedBySavedRoster(rules, spell.getId()))
 		return {};
-	const auto context = callback ? heroSpellCastContext(hero, spell, *callback, followup) : HeroSpellCastContext{};
+	const auto context = callback ? heroSpellCastContext(hero, spell, *callback) : HeroSpellCastContext{};
 	const int durationPower = initialSpellPower(hero, spell, callback);
 	int power = durationPower;
-	if(followup && callback)
-		power = power * (100 + metamagicPowerBonus(hero, spell, *callback)) / 100;
 	const bool v3 = rulesActive(rules) && rules["rulesetVersion"].Integer() >= SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION;
 	if(!v3 && hasStormcallerPerk(&hero, &spell))
 		power = power * 115 / 100;
@@ -125,7 +123,7 @@ static SpellEffectPreview resolveSpellEffectPreview(const CGHeroInstance & hero,
 	const int numerical = coefficient(newHorizonsHeroes::SpellcraftComponent::NUMERICAL);
 	const int empower = empowerSpellBonusPercent(rules, &hero, spell.getId());
 	if(v3 && hasTimedSpellEffectPreview(spell, rules))
-		return timedSpellEffectPreview(hero, spell, callback, followup,
+		return timedSpellEffectPreview(hero, spell, callback,
 			spellVariantBase(rules, spell.getId()) == SpellID::BLESS ? durationPower : power,
 			numerical, empower);
 	if(v3 && (spell.getJsonKey() == "new-horizons:hexOfPain" || spell.getJsonKey() == "new-horizons:plague"))
@@ -137,7 +135,7 @@ static SpellEffectPreview resolveSpellEffectPreview(const CGHeroInstance & hero,
 	if(v3 && isLandMine(spell.getId()))
 	{
 		auto result = directSpellEffectPreview(hero, spell, rules, power,
-			coefficient(newHorizonsHeroes::SpellcraftComponent::DIRECT_DAMAGE), empower, followup, numerical, callback);
+			coefficient(newHorizonsHeroes::SpellcraftComponent::DIRECT_DAMAGE), empower, numerical, callback);
 		result.secondary = SpellEffectPreview::Quantity{landMineCountForHero(power, numerical, &hero), 1, UNIT};
 		result.labelKey = "new-horizons.spellbook.effect.mines";
 		result.compactLabelKey = "new-horizons.spellbook.effect.mines.short";
@@ -174,16 +172,16 @@ static SpellEffectPreview resolveSpellEffectPreview(const CGHeroInstance & hero,
 		return {"new-horizons.spellbook.effect.sanctuary", {}, {}, {}, {}};
 	if(spell.getId() == SpellID::DISPEL)
 		return {"new-horizons.spellbook.effect.dispel", {}, {}, {}, {}};
-	if(const auto utility = utilityActionSpellEffectPreview(hero, spell, callback, rules, power, numerical, empower, followup))
+	if(const auto utility = utilityActionSpellEffectPreview(hero, spell, callback, rules, power, numerical, empower))
 		return *utility;
 	return directSpellEffectPreview(hero, spell, rules, power,
-		coefficient(newHorizonsHeroes::SpellcraftComponent::DIRECT_DAMAGE), empower, followup, numerical, callback);
+		coefficient(newHorizonsHeroes::SpellcraftComponent::DIRECT_DAMAGE), empower, numerical, callback);
 }
 SpellEffectPreview spellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback * callback, bool followup)
+	const CBattleInfoCallback * callback)
 {
-	auto result = resolveSpellEffectPreview(hero, spell, callback, followup);
-	adjustTargetFreePreview(result, hero, spell, callback, followup);
+	auto result = resolveSpellEffectPreview(hero, spell, callback);
+	adjustTargetFreePreview(result, hero, spell, callback);
 	adjustFactionDamagePreview(result, hero, spell, callback && callback->getBattle() ? callback->getBattle()->getMagicRules() : hero.getMagicRules());
 	if(!result.compactLabelKey.empty())
 		result.narrowLabelKey = result.compactLabelKey + ".narrow";

@@ -25,8 +25,7 @@ auto options(const PossibleSpellcast & c)
 		c.spellSelectiveDispel, c.spellCureAffliction, c.spellCurePhysicalAffliction,
 		c.spellPurifyChoices, c.spellPurifyPhysicalTargets,
 		std::bit_cast<uint32_t>(c.spellPurifyHeuristicValue), c.spellMassSlow,
-		c.spellShadowGiftSacrificePercent, c.spellStormOfDaggers, c.metamagicFollowup,
-		c.metamagicGrand, c.divineMandateFollowup,
+		c.spellShadowGiftSacrificePercent, c.spellStormOfDaggers, c.divineMandateFollowup,
 		std::bit_cast<uint32_t>(c.spellPlacementHeuristicValue),
 		bits(c.spellHandOfFateExpectedValue), bits(c.spellBattleFormExpectedValue),
 		bits(c.spellPuppetMasterExpectedValue), bits(c.spellConfusionExpectedValue),
@@ -41,11 +40,4 @@ bool sameOptions(const PossibleSpellcast & a, const PossibleSpellcast & b)
 {
 	return options(a) == options(b);
 }
-bool sameCounterspell(const HypotheticBattle::ProjectedCounterspellOutcome & a,
-	const HypotheticBattle::ProjectedCounterspellOutcome & b)
-{
-	return std::tie(a.wardSide, a.wardActive, a.resolutionKnown, a.negated, a.manaCost)
-		== std::tie(b.wardSide, b.wardActive, b.resolutionKnown, b.negated, b.manaCost);
-}
-
 }

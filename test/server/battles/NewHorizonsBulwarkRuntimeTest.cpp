@@ -52,7 +52,7 @@ bool selectBulwarkPerkIfActive(CGHeroInstance * hero, std::string_view perkId)
 	const std::string perkIdentifier(perkId);
 	if(hero->hasActivePerk(skillId, perkIdentifier))
 		return true;
-	const auto & perks = hero->getPerkState().rules["skills"][skillId]["perks"].Vector();
+	const auto & perks = hero->getPerkState().getRules()["skills"][skillId]["perks"].Vector();
 	const auto tierOf = [](const JsonNode & perk)
 	{
 		const auto required = perk["requires"].String();
@@ -73,8 +73,8 @@ bool selectBulwarkPerkIfActive(CGHeroInstance * hero, std::string_view perkId)
 
 	for(int requiredTier = 1; requiredTier < tierOf(*definition); ++requiredTier)
 	{
-		const bool tierAlreadySelected = std::any_of(hero->getPerkState().selected.begin(),
-			hero->getPerkState().selected.end(), [&](const auto & selection)
+		const bool tierAlreadySelected = std::any_of(hero->getPerkState().getSelected().begin(),
+			hero->getPerkState().getSelected().end(), [&](const auto & selection)
 		{
 			if(selection.skillId != skillId)
 				return false;

@@ -13,7 +13,7 @@
 #include <vector>
 namespace ownedPreparationIntegration
 {
-enum class Scenario { ORDERED_REMOVAL, INCOMING_CLOCK };
+enum class Scenario { ORDERED_REMOVAL, INCOMING_BONUSES };
 /// COMPLETE is scoped to this component; it never retires separate native or lifecycle requirements.
 enum class Status { NOT_OBSERVED, PROJECTION_VERIFIED, INCOMPLETE, FAILED, COMPLETE };
 /// Values captured by the genuine owner in its stable source interval, NOT a
@@ -24,7 +24,6 @@ struct SourceObservations
 	BattleID battle = BattleID::NONE;
 	uint32_t target = 0;
 	std::optional<JsonNode> nativeState;
-	std::optional<bool> nativeTimeStopped;
 	std::optional<int> nativeHealingReduction;
 	std::optional<std::vector<std::byte>> authoritativeSimulationRng;
 };

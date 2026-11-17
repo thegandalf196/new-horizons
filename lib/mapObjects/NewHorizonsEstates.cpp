@@ -91,7 +91,7 @@ int32_t bankingWeeklyGold(const PlayerState & state)
 	const int64_t perHolder = std::min<int64_t>(1000, std::max<int64_t>(0, state.resources[EGameResID::GOLD]) / 100);
 	int64_t result = 0;
 	for(const auto * hero : state.getHeroes())
-		if(!usesRevisedPolicy(hero->getPerkState().rules)
+		if(!usesRevisedPolicy(hero->getPerkState().getRules())
 			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.banking"))
 			result += perHolder;
 	if(result > std::numeric_limits<int32_t>::max())
@@ -103,7 +103,7 @@ int32_t mercenaryWeeklyCount(const PlayerState & state)
 {
 	int64_t result = 0;
 	for(const auto * hero : state.getHeroes())
-		if(!usesRevisedPolicy(hero->getPerkState().rules)
+		if(!usesRevisedPolicy(hero->getPerkState().getRules())
 			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.mercenaryCompany"))
 			result += hero->level;
 	if(result > std::numeric_limits<int32_t>::max())

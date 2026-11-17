@@ -84,9 +84,6 @@ void CBattleInfoCallback::prepareAttackDamageContext(const BattleAttackInfo & in
 	p.currentBattle = getBattle();
 	if(p.currentBattle)
 		p.payload.physicalDamageReductionCapPercent = newHorizonsMagic::physicalDamageReductionCapPercent(p.currentBattle->getMagicRules());
-	const auto rangedPenetration = battleGetRangedAttackPenetration(info);
-	p.payload.rangedDefenseIgnoreBasisPoints = rangedPenetration.creatureDefenseIgnoreBasisPoints;
-	p.payload.physicalDamageReductionIgnorePercent = rangedPenetration.physicalDamageReductionIgnorePercent;
 	if(p.currentBattle && info.physicalDamage && info.shooting && info.defender
 		&& newHorizonsMagic::rulesActive(p.currentBattle->getMagicRules()))
 	{
@@ -187,16 +184,16 @@ void CBattleInfoCallback::preparePhysicalDamageModifiers(const BattleAttackInfo 
 	{
 		if(const auto * hero = p.readAttackerHero(*this, info))
 		{
-			const auto hasOffensePerk = [hero](const char * perk)
+			const auto hasOffensePerk = [hero](newHorizonsHeroes::BuiltinCombatPerk perk)
 			{
-				return hero->hasActivePerk("new-horizons:offense", perk);
+				return hero->hasActivePerk(perk);
 			};
-			if(hasOffensePerk("new-horizons:offense.executioner")
+			if(hasOffensePerk(newHorizonsHeroes::BuiltinCombatPerk::Executioner)
 				&& info.defender->getAvailableHealth() * 100 < info.defender->getTotalHealth() * 40)
 				p.payload.executionerDamagePercent = EXECUTIONER_DAMAGE_PERCENT;
-			if(hasOffensePerk("new-horizons:offense.armorPiercer"))
+			if(hasOffensePerk(newHorizonsHeroes::BuiltinCombatPerk::ArmorPiercer))
 				p.payload.meleeDefenseIgnorePercent = ARMOR_PIERCER_DEFENSE_IGNORE_PERCENT;
-			if(hasOffensePerk("new-horizons:offense.breakthrough") && p.defenderDefended(info))
+			if(hasOffensePerk(newHorizonsHeroes::BuiltinCombatPerk::Breakthrough) && p.defenderDefended(info))
 			{
 				p.payload.defensiveStanceDamageReductionIgnorePercent = BREAKTHROUGH_DAMAGE_REDUCTION_IGNORE_PERCENT;
 				p.payload.defensiveStanceDefenseBonus = std::max(0, info.defender->getDefense(false)

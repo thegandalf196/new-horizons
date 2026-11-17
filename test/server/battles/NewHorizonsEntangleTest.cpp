@@ -169,7 +169,7 @@ protected:
 		return false;
 	}
 
-	bool cast(const BattleSide side, const SpellID spell, const CStack * target, const bool followup = false)
+	bool cast(const BattleSide side, const SpellID spell, const CStack * target)
 	{
 		if(!activateHeroActionSide(side))
 			return false;
@@ -177,7 +177,6 @@ protected:
 		action.actionType = EActionType::HERO_SPELL;
 		action.side = side;
 		action.spell = spell;
-		action.metamagicFollowup = followup;
 		action.aimToUnit(target);
 		if(spell == SpellID::TELEPORT)
 			action.aimToHex(BattleHex(10, 5));
@@ -185,9 +184,9 @@ protected:
 			battle()->sideToPlayer(side), action);
 	}
 
-	bool castEntangle(const CStack * target = nullptr, const bool followup = false)
+	bool castEntangle(const CStack * target = nullptr)
 	{
-		return cast(BattleSide::ATTACKER, entangleSpell(), target ? target : rooted, followup);
+		return cast(BattleSide::ATTACKER, entangleSpell(), target ? target : rooted);
 	}
 
 	bool submit(const CStack * stack, const BattleAction & action)
@@ -240,6 +239,7 @@ TEST_F(NewHorizonsEntangleTest, AuthoritativeCastCostsFourAndOnlyRootsAnEnemyGro
 	const auto healthBefore = rooted->getAvailableHealth();
 	ASSERT_TRUE(castEntangle());
 	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), 4);
+	ASSERT_TRUE(castEntangle(rooted));
 	ASSERT_EQ(entangleBonuses(rooted)->size(), 1u);
 	EXPECT_EQ(entangleBonuses(rooted)->front()->turnsRemain, 1);
 	EXPECT_EQ(rooted->getMovementRange(), 0);
@@ -260,7 +260,7 @@ TEST_F(NewHorizonsEntangleTest, SchoolRankScalesOnlyTheCappedSpellPowerTerm)
 		<< "Expert Nature's 145% coefficient raises only the 75 / 100 Spell Power term across its floor";
 }
 
-TEST_F(NewHorizonsEntangleTest, RootcallerAddsOneAfterBaseCapAndEchoedDurationAddsOneMore)
+TEST_F(NewHorizonsEntangleTest, RootcallerAddsOneAfterTheBaseCap)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(100));
 	const auto nature = SecondarySkill(SecondarySkill::decode(natureMagicSkill));
@@ -269,21 +269,9 @@ TEST_F(NewHorizonsEntangleTest, RootcallerAddsOneAfterBaseCapAndEchoedDurationAd
 	attackerSideHero->applyPerkSelection({natureMagicSkill, rootcallerPerk});
 	ASSERT_TRUE(attackerSideHero->hasActivePerk(natureMagicSkill, rootcallerPerk));
 
-	const auto metamagic = SecondarySkill(SecondarySkill::decode(metamagicSkill));
-	ASSERT_TRUE(metamagic.hasValue());
-	attackerSideHero->setSecSkillLevel(metamagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({metamagicSkill, arcaneAcquisitionPerk});
-	attackerSideHero->setSecSkillLevel(metamagic, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({metamagicSkill, echoedDurationPerk});
-	ASSERT_TRUE(attackerSideHero->hasActivePerk(metamagicSkill, echoedDurationPerk));
-
-	// Echoed Duration is a Metamagic follow-up, not an automatic modifier on an
-	// ordinary first cast. Arcane Acquisition grants it after a qualifying cast.
-	ASSERT_TRUE(cast(BattleSide::ATTACKER, SpellID::HASTE, friendly));
-	ASSERT_TRUE(castEntangle(rooted, true));
 	ASSERT_EQ(entangleBonuses(rooted)->size(), 1u);
-	EXPECT_EQ(entangleBonuses(rooted)->front()->turnsRemain, 4)
-		<< "The ordinary base cap remains 2, Rootcaller raises it to 3, then Echoed Duration raises it to 4";
+	EXPECT_EQ(entangleBonuses(rooted)->front()->turnsRemain, 3)
+		<< "The ordinary base cap remains 2 and Rootcaller raises it to 3";
 }
 
 TEST_F(NewHorizonsEntangleTest, BoundStackStillShootsCanRetaliateAndCanUseNonmovementAbility)

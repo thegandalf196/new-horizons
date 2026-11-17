@@ -1,13 +1,14 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "BattleEvaluator.h"
+#include "MetamagicCompletionValue.h"
+#include "../../lib/spells/NewHorizonsMetamagicCompletion.h"
 #include "RunicReflectionValue.h"
 #include "HeroActionAdmission.h"
 #include "SpellTargetsEvaluator.h"
 #include "BlinkPositionValue.h"
 #include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/spells/ArcaneInspirationCompletion.h"
-#include "../../lib/spells/NewHorizonsMetamagicPoints.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
@@ -23,16 +24,11 @@ float BattleEvaluator::inspirationOutcome(const PossibleSpellcast & candidate, c
 	if(!completed)
 	{
 		const auto admission = heroActionProjection::admitCandidate(*board, side, candidate);
-		if(!admission.admitted || admission.counterspellNegated) return 0.0f;
+		if(!admission.admitted) return 0.0f;
 		uint32_t primary = candidate.dest.empty() || !candidate.dest.front().unitValue
 			? std::numeric_limits<uint32_t>::max() : candidate.dest.front().unitValue->unitId();
-		if(!board->projectAcceptedHeroSpell(side, candidate.spell->getId(), primary,
-			candidate.metamagicFollowup, candidate.metamagicGrand, admission.counterspell.wardActive,
-			false, *admission.spellAllowance)) return 0.0f;
+		if(!board->projectAcceptedHeroSpell(side, candidate.spell->getId(), primary, *admission.spellAllowance)) return 0.0f;
 		arcaneInspiration::publishSpellDamage(*board->getServerCallback(), *board, side, injuries);
-		std::vector<uint32_t> resolved;
-		for(const auto & hit : injuries) resolved.push_back(hit.stackAttacked);
-		newHorizonsMetamagic::publishPointCompletion(*board->getServerCallback(), *board, mechanics, resolved, injuries, side);
 	}
 	// Only the candidate-wide core baseline uses the existing continuation.
 	return localOnly ? 0.0f : conditionalInspirationUtility(board, actorId, false);
@@ -41,19 +37,38 @@ float BattleEvaluator::inspirationOutcome(const PossibleSpellcast & candidate, c
 heroSpellProjection::OutcomeValue BattleEvaluator::inspirationOutcomeEvaluator(
 	const PossibleSpellcast & candidate, const spells::Mechanics & mechanics, uint32_t actorId)
 {
-	if(arcaneInspiration::profile(mechanics.getHeroCaster()).corePercent == 0) return {};
-	return [this, &candidate, &mechanics, actorId](const auto & board, auto injuries, bool completed, bool localOnly)
+	const bool inspiration = arcaneInspiration::profile(mechanics.getHeroCaster()).corePercent > 0;
+	const auto observation = metamagicAI::observeBefore(*hb, mechanics);
+	if(!inspiration && observation.before.empty()) return {};
+	return [this, &candidate, &mechanics, actorId, observation](const auto & board, auto injuries,
+		bool completed, bool localOnly, heroSpellProjection::OutcomeReceipt receipt) -> heroSpellProjection::OutcomeResult
 	{
-		// The active identity is immutable for this already generated candidate batch.
 		if(!board->battleGetUnitByID(actorId)) return 0.0f;
-		return inspirationOutcome(candidate, mechanics, board, injuries, completed, localOnly, actorId);
+		const float before = localOnly && receipt.kernel && !completed ? (*receipt.kernel)(board) : 0;
+		const auto core = inspirationOutcome(candidate, mechanics, board, injuries, completed, localOnly, actorId);
+		if(!localOnly || observation.before.empty()) return core;
+		if(!receipt.kernel) return {std::numeric_limits<float>::quiet_NaN(), true};
+		if(!completed)
+			newHorizonsMetamagic::applyGuaranteedCompletion(*board->getServerCallback(), *board,
+				mechanics, receipt.resolved, injuries);
+		auto conditional = observation;
+		conditional.resolved.assign(receipt.resolved.begin(), receipt.resolved.end());
+		conditional.injuries.assign(injuries.begin(), injuries.end());
+		if(receipt.originalChanceWeighted)
+			for(auto & [id, chance] : conditional.applicationChance) chance = 1;
+		const auto metamagic = metamagicAI::completionValue(env.get(), board, mechanics.getHeroCaster(), candidate.spell,
+			conditional, damageCache, scoreEvaluator.getPositiveEffectMultiplier(), scoreEvaluator.getNegativeEffectMultiplier());
+		if(!metamagic) return {std::numeric_limits<float>::quiet_NaN(), true};
+		const auto local = completed ? heroSpellProjection::localReceiptMarginal(board, *receipt.kernel)
+			: (*receipt.kernel)(board) - before;
+		return {local + *metamagic, true};
 	};
 }
 
 namespace
 {
 float expectedPuppetMasterActivationSwing(const CSpell * spell, const spells::Target & target,
-	const CGHeroInstance * caster, bool metamagicFollowup, bool metamagicGrand, int overcharge,
+	const CGHeroInstance * caster, int overcharge,
 	const std::shared_ptr<HypotheticBattle> & currentBattle, DamageCache & damageCache,
 	const Environment * environment, PlayerColor valuedPlayer, BattleSide valuedSide, float * inspirationValue,
 	const heroSpellProjection::OutcomeValue & outcomeValue)
@@ -77,20 +92,17 @@ float expectedPuppetMasterActivationSwing(const CSpell * spell, const spells::Ta
 
 	spells::Target projectedAim{spells::Destination(projectedTarget)};
 	spells::BattleCast projectedCast(projectedBattle.get(), caster, spells::Mode::HERO, spell);
-	projectedCast.setMetamagicFollowup(metamagicFollowup);
-	projectedCast.setMetamagicGrand(metamagicGrand);
 	projectedCast.setOvercharge(overcharge);
-	projectedCast.setMetamagicTargetUnitId(targetId);
 	auto projectedMechanics = spell->battleMechanics(&projectedCast);
 	spells::detail::ProblemImpl problem;
 	if(!projectedMechanics->canBeCastAt(projectedAim, problem))
 		return 0.0f;
 	const auto castSide = projectedMechanics->getCasterSide();
-	const auto prepared = outcomeValue ? projectedBattle->prepareHeroSpellAllowance(castSide, spell->getId(), metamagicFollowup, metamagicGrand) : std::nullopt;
+	const auto prepared = outcomeValue ? projectedBattle->prepareHeroSpellAllowance(castSide, spell->getId()) : std::nullopt;
 	if(outcomeValue && (!prepared || !projectedBattle->beginProjectedHeroAction(castSide, *prepared))) return 0.0f;
 	projectedMechanics->castEval(projectedBattle->getServerCallback(), projectedAim);
 	if(prepared && !projectedBattle->projectAcceptedHeroSpell(castSide, spell->getId(), targetId,
-		metamagicFollowup, metamagicGrand, false, false, *prepared)) return 0.0f;
+		*prepared)) return 0.0f;
 	auto without = projectedBattle;
 	if(outcomeValue)
 	{
@@ -112,7 +124,7 @@ float expectedPuppetMasterActivationSwing(const CSpell * spell, const spells::Ta
 	if(outcomeValue && inspirationValue)
 	{
 		auto coreBoard = std::make_shared<HypotheticBattle>(environment, currentBattle);
-		const auto core = outcomeValue(coreBoard, {}, false, false);
+		const auto core = outcomeValue(coreBoard, {}, false, false, {}).value;
 		const auto kernel = [&](const std::shared_ptr<HypotheticBattle> & board)
 		{
 			const auto * unit = board->battleGetUnitByID(targetId);
@@ -123,8 +135,9 @@ float expectedPuppetMasterActivationSwing(const CSpell * spell, const spells::Ta
 			return board->battleGetActionController(unit) == valuedPlayer ? value : -value;
 		};
 		const auto localCore = heroSpellProjection::localReceiptMarginal(coreBoard, kernel);
-		outcomeValue(projectedBattle, {}, true, true);
-		*inspirationValue = core + applicationChance * (heroSpellProjection::localReceiptMarginal(projectedBattle, kernel) - localCore);
+		const auto local = heroSpellProjection::evaluateLocalOutcome(outcomeValue, projectedBattle, {}, true,
+			{projectedMechanics->getResolvedHeroRecipients()}, kernel);
+		*inspirationValue = core + applicationChance * (local - localCore);
 	}
 	// The target's ordinary activation would benefit its true owner; Puppet
 	// Master replaces that value with a real action selected by its controller.
@@ -169,10 +182,14 @@ bool BattleEvaluator::prepareExpectedOutcomes(PossibleSpellcast & candidate, spe
 	if(spell->getJsonKey() == "new-horizons:puppetMaster")
 	{
 		float marginal = 0;
-		const auto value = expectedPuppetMasterActivationSwing(spell, ps.dest, mechanics.getHeroCaster(),
-			ps.metamagicFollowup, ps.metamagicGrand, ps.spellOvercharge, hb, damageCache, env.get(), playerID, side, &marginal, outcome);
+		const auto value = expectedPuppetMasterActivationSwing(spell, ps.dest, mechanics.getHeroCaster(), ps.spellOvercharge, hb, damageCache, env.get(), playerID, side, &marginal, outcome);
 		ps.spellPuppetMasterExpectedValue = value * scoreEvaluator.getPositiveEffectMultiplier(); store(marginal);
 		if(*ps.spellPuppetMasterExpectedValue + ps.spellInspirationExpectedValue.value_or(0) <= 0) return false;
+	}
+	if(ps.spellInspirationExpectedValue && !std::isfinite(*ps.spellInspirationExpectedValue))
+	{
+		ps.spellRunicEstimatePartial = true; // Unsupported projection, not native illegality.
+		return false;
 	}
 	const auto runic = runicReflectionAI::expectedValue(mechanics, ps.dest, playerID, hb,
 		{scoreEvaluator.getPositiveEffectMultiplier(), scoreEvaluator.getNegativeEffectMultiplier(), 4, false});
@@ -192,5 +209,6 @@ bool BattleEvaluator::prepareBlinkOutcome(PossibleSpellcast & ps, spells::Mechan
 	ps.spellPlacementHeuristicValue = blinkPositionValue::expected(ps.dest.front().unitValue, *preview, playerID,
   *view, view, damageCache, env.get(), &marginal, outcome) * scoreEvaluator.getPositiveEffectMultiplier();
 	if(outcome) ps.spellInspirationExpectedValue = marginal;
+	if(outcome && !std::isfinite(marginal)) { ps.spellRunicEstimatePartial = true; return false; }
 	return ps.spellPlacementHeuristicValue + ps.spellInspirationExpectedValue.value_or(0) > 0;
 }

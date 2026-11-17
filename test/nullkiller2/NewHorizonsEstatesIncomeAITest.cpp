@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../server/LegacyEstatesCapture.h"
 
 #include <algorithm>
@@ -96,12 +97,15 @@ void selectBankingForFixture(CGHeroInstance * hero)
 void restrictFixturePerkOffersToConscription(CGHeroInstance * hero)
 {
  auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
- for(auto & skill : state.rules["skills"].Struct())
-  for(auto & perk : skill.second["perks"].Vector())
-   if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != CONSCRIPTION
-    && !std::ranges::any_of(state.selected, [&](const auto & selected)
-    { return selected.perkId == perk["id"].String(); }))
-    perk["effect"]["status"].String() = "planned";
+ perkStateFixture::editRules(state, [&](JsonNode & rules)
+ {
+	 for(auto & skill : rules["skills"].Struct())
+	  for(auto & perk : skill.second["perks"].Vector())
+	   if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != CONSCRIPTION
+	    && !std::ranges::any_of(state.getSelected(), [&](const auto & selected)
+	    { return selected.perkId == perk["id"].String(); }))
+	    perk["effect"]["status"].String() = "planned";
+ });
  state.validate();
 }
 
@@ -179,14 +183,17 @@ TEST_F(NewHorizonsEstatesIncomeAITest, NullkillerSelectsTheOfferedAdvancedArchit
 	// Isolate legal selection of this new perk, not comparative valuation
 	// against unrelated faction/morale perks. Retain the selected prerequisite.
 	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(firstHero->getPerkState());
-	for(auto & skill : perkState.rules["skills"].Struct())
+	perkStateFixture::editRules(perkState, [&](JsonNode & rules)
 	{
-		for(auto & perk : skill.second["perks"].Vector())
-			if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != ARCHITECT
-				&& !std::ranges::any_of(perkState.selected, [&](const auto & selected)
-				{ return selected.perkId == perk["id"].String(); }))
-				perk["effect"]["status"].String() = "planned";
-	}
+		for(auto & skill : rules["skills"].Struct())
+		{
+			for(auto & perk : skill.second["perks"].Vector())
+				if(perk["id"].String() != TAX_COLLECTOR && perk["id"].String() != ARCHITECT
+					&& !std::ranges::any_of(perkState.getSelected(), [&](const auto & selected)
+					{ return selected.perkId == perk["id"].String(); }))
+					perk["effect"]["status"].String() = "planned";
+		}
+	});
 	perkState.validate();
 
 	const auto rankLookup = [this](const std::string & skillId)

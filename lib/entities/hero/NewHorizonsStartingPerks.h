@@ -6,7 +6,9 @@ namespace newHorizonsHeroes
 {
 /// Optional captured creation policy; absence retains historical initial choices.
 DLL_LINKAGE bool usesAuthoredStartingPerks(const JsonNode & development);
-/// Version two constrains fresh defaults only; historical captures keep their ranks.
+/// Versions two and three constrain fresh defaults to two Basic Skills.
 DLL_LINKAGE bool usesBasicStartingProfiles(const JsonNode & startingSkills);
+/// Version three grants no starting perks, including prototype/default fallbacks.
+DLL_LINKAGE bool usesSkillsOnlyStartingProfiles(const JsonNode & startingSkills);
 DLL_LINKAGE void validateStartingPerkProfiles(const JsonNode & startingSkills);
 }

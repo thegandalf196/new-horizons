@@ -24,6 +24,7 @@ enum class SpecialtyArtworkFamily
 	Spell,
 	Skill,
 	Resource,
+	Identity,
 	Bonus
 };
 
@@ -140,7 +141,7 @@ inline constexpr std::array<SpecialtyArtworkBinding, 118> specialtyArtworkBindin
 	{"core:torosar", SpecialtyArtworkFamily::Creature, "core:ballista", "TorosarBallistaLine"},
 	{"core:fafner", SpecialtyArtworkFamily::Creature, "core:naga", "FafnerNagaLine"},
 	{"core:iona", SpecialtyArtworkFamily::Creature, "core:genie", "IonaGenieLine"},
-	{"core:halon", SpecialtyArtworkFamily::Bonus, "METAMAGIC_USES_PER_COMBAT", "HalonMetamagicAdept"},
+	{"core:halon", SpecialtyArtworkFamily::Identity, "core:halon", "HalonMetamagicAdept"},
 	{"core:theodorus", SpecialtyArtworkFamily::Creature, "core:mage", "TheodorusMageLine"},
 	{"core:solmyr", SpecialtyArtworkFamily::Spell, "new-horizons:masterChainLightning", "SolmyrChainLightning"},
 	{"core:lorelei", SpecialtyArtworkFamily::Creature, "core:harpy", "LoreleiHarpyLine"},

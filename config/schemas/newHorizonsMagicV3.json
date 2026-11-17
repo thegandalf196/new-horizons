@@ -208,7 +208,64 @@
 					"items": {"type": "integer", "not": {"type": "null"}, "minimum": 0, "maximum": 1000000}
 				},
 				"active": {"type": "boolean", "not": {"type": "null"}},
-				"focusMagic": {"type": "object", "not": {"type": "null"}, "required": ["version", "baseBasisPoints", "powerBasisPoints", "capBasisPoints"], "additionalProperties": false, "properties": {"version": {"type": "integer", "enum": [1]}, "baseBasisPoints": {"type": "integer", "minimum": 0, "maximum": 10000}, "powerBasisPoints": {"type": "integer", "minimum": 0, "maximum": 10000}, "capBasisPoints": {"type": "integer", "minimum": 0, "maximum": 10000}}},
+				"focusMagic": {
+					"oneOf": [
+						{
+							"type": "object",
+							"not": {
+								"type": "null"
+							},
+							"required": [
+								"version",
+								"baseBasisPoints",
+								"powerBasisPoints",
+								"capBasisPoints"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"version": {
+									"type": "integer",
+									"enum": [
+										1
+									]
+								},
+								"baseBasisPoints": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 10000
+								},
+								"powerBasisPoints": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 10000
+								},
+								"capBasisPoints": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 10000
+								}
+							}
+						},
+						{
+							"type": "object",
+							"not": {
+								"type": "null"
+							},
+							"required": [
+								"version"
+							],
+							"additionalProperties": false,
+							"properties": {
+								"version": {
+									"type": "integer",
+									"enum": [
+										2
+									]
+								}
+							}
+						}
+					]
+				},
 				"slow": {"type": "object", "not": {"type": "null"}, "required": ["version", "affectsSpeed"], "additionalProperties": false, "properties": {"version": {"type": "integer", "enum": [1]}, "affectsSpeed": {"type": "boolean", "enum": [true]}}},
 				"livingArmor": {"type": "object", "not": {"type": "null"}, "required": ["version", "baseHitPoints", "spellPowerCoefficient", "duration"], "additionalProperties": false, "properties": {"version": {"type": "integer", "enum": [1]}, "baseHitPoints": {"type": "integer", "minimum": 1, "maximum": 1000000}, "spellPowerCoefficient": {"type": "integer", "minimum": 0, "maximum": 10000}, "duration": {"type": "integer", "minimum": 1, "maximum": 1000}}},
 				"theChosen": {"$ref": "vcmi:newHorizonsMagic#/definitions/theChosen"},

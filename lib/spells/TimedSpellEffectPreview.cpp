@@ -22,15 +22,15 @@ bool hasTimedSpellEffectPreview(const CSpell & spell, const JsonNode & rules)
 {
 	static const std::set<std::string> families{"new-horizons:frailty", "new-horizons:hydrasVitality",
 		"new-horizons:shieldOfChaos", "new-horizons:divineRetribution", "new-horizons:entangle",
-		"new-horizons:holyArmor", "new-horizons:heavenlyGale", "new-horizons:timeStop"};
+		"new-horizons:holyArmor", "new-horizons:heavenlyGale"};
 	return families.contains(spell.getJsonKey()) || spell.getId() == SpellID::MISFORTUNE
 		|| spell.getId() == SpellID::FORGETFULNESS || spellVariantBase(rules, spell.getId()) == SpellID::BLESS;
 }
 SpellEffectPreview timedSpellEffectPreview(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback * callback, bool followup, int32_t power, int32_t coefficient, int32_t empower)
+	const CBattleInfoCallback * callback, int32_t power, int32_t coefficient, int32_t empower)
 {
 	const auto & rules = callback && callback->getBattle() ? callback->getBattle()->getMagicRules() : hero.getMagicRules();
-	if(const auto magnitude = timedMagnitudeSpellEffectPreview(hero, spell, callback, rules, power, coefficient, empower, followup))
+	if(const auto magnitude = timedMagnitudeSpellEffectPreview(hero, spell, callback, rules, power, coefficient, empower))
 		return *magnitude;
 	if(spellVariantBase(rules, spell.getId()) == SpellID::BLESS)
 	{
@@ -39,7 +39,7 @@ SpellEffectPreview timedSpellEffectPreview(const CGHeroInstance & hero, const CS
 		const auto duration = durationWithCastExtensions(blessCasterDuration(hero, ordinary,
 			callback && brimstoneSpellPowerBonus(hero, *callback) != 0),
 			callback && heroCastExtendAvailable(hero, spell, *callback, std::clamp(hero.getEffectLevel(&spell), 0, 3)),
-			followup && hasMetamagicPerk(&hero, METAMAGIC_ECHOED_DURATION));
+			false);
 		return {"new-horizons.spellbook.effect.bless", "new-horizons.spellbook.effect.bless.short",
 			SpellEffectPreview::Quantity{duration, 1, "new-horizons.spellbook.unit.number"}, {}, {}};
 	}
@@ -60,18 +60,11 @@ SpellEffectPreview timedSpellEffectPreview(const CGHeroInstance & hero, const CS
 			SpellEffectPreview::Quantity{holyArmorReduction(*base, power, coefficient, empower, aegis),
 				1, "new-horizons.spellbook.unit.number"}, {}, "new-horizons.spellbook.holyArmorRecipient"};
 	}
-	if(spell.getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL)
-	{
-		const bool chronomancer = hero.hasActivePerk(newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::CHRONOMANCER_PERK);
-		return {"new-horizons.spellbook.effect.timeStop", "new-horizons.spellbook.effect.timeStop.short",
-			SpellEffectPreview::Quantity{newHorizonsSorcery::timeStopRadius(power, coefficient, empower, chronomancer),
-				1, "new-horizons.spellbook.unit.number"}, {}, {}};
-	}
 	if(spell.getId() == SpellID::FORGETFULNESS)
 	{
-		const bool echoed = followup && hasMetamagicPerk(&hero, METAMAGIC_ECHOED_DURATION);
+
 		const auto duration = durationWithCastExtensions(forgetfulnessBaseDuration(power, coefficient, empower),
-			(callback && heroCastExtendAvailable(hero, spell, *callback, std::clamp(hero.getEffectLevel(&spell), 0, 3))), echoed);
+			(callback && heroCastExtendAvailable(hero, spell, *callback, std::clamp(hero.getEffectLevel(&spell), 0, 3))), false);
 		return {"new-horizons.spellbook.effect.forgetfulness", "new-horizons.spellbook.effect.forgetfulness.short",
 			SpellEffectPreview::Quantity{duration, 1, "new-horizons.spellbook.unit.number"}, {}, {}};
 	}

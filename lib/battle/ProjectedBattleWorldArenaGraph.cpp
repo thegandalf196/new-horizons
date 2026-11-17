@@ -26,8 +26,6 @@ battle::ProjectedBattleWorldArena::UpdateDecision battle::ProjectedBattleWorldAr
 		if(!slot)
 			throw std::runtime_error("Invalid unit id in BattleInfo update");
 		const auto gate = classifyUnitUpdateGate(*slot->state, delta);
-		if(gate == UnitUpdateGate::IGNORE_HEALTH_STOP || gate == UnitUpdateGate::IGNORE_STATE_STOP)
-			return UpdateDecision::IGNORE_TIME_STOP;
 		if(gate == UnitUpdateGate::CHECK_RESURRECTION_SPACE
 			&& !accessibility().accessible(slot->state->getPosition(), slot->state.get()))
 			return UpdateDecision::IGNORE_OCCUPIED_RESURRECTION;

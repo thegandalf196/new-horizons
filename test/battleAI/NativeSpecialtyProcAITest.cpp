@@ -95,12 +95,6 @@ TEST_F(NativeSpecialtyProcAITest, ProjectedNextTurnRampsPoisonOncePerHealthRecor
 	sibling->nextTurn(id, BattleUnitTurnReason::TURN_QUEUE);
 	expectHealth(sibling, -20); // A leftover health record without its Poison cap cannot ramp.
 
-	auto stopped = std::make_shared<HypotheticBattle>(environment.get(), parent);
-	stopped->getForUpdate(id)->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID())});
-	ASSERT_TRUE(stopped->battleGetUnitByID(id)->isTimeStopped());
-	stopped->nextTurn(id, BattleUnitTurnReason::TURN_QUEUE);
-	expectHealth(stopped, -20);
 	expectHealth(parent, -20);
 	EXPECT_EQ(parent->battleGetUnitByID(id)->valOfBonuses(BonusType::POISON), 60);
 	EXPECT_EQ(liveHealth->val, -20);

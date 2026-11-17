@@ -198,8 +198,8 @@ TEST(OrderTransitionCharacterizationTest, SourcePaymentMatrixKeepsCrisisOnlyAndM
 		std::pair{Allowance::ORDER, Source::ARTIFACT}, std::pair{Allowance::ORDER, Source::OTHER},
 		std::pair{Allowance::ORDER, Source::DOUBLE_COMMAND}, std::pair{Allowance::ORDER, Source::BATTLE_PLAN},
 		std::pair{Allowance::ORDER, Source::DIVINE_MANDATE}, std::pair{Allowance::ORDER, Source::CRISIS_COMMAND},
-		std::pair{Allowance::ORDER, Source::HEROIC_SPIRIT}, std::pair{Allowance::SPELL, Source::METAMAGIC},
-		std::pair{Allowance::SPELL, Source::METAMAGIC_GRAND}, std::pair{Allowance::SPELL, Source::PERK},
+		std::pair{Allowance::ORDER, Source::HEROIC_SPIRIT},
+		std::pair{Allowance::SPELL, Source::PERK},
 		std::pair{Allowance::SPELL, Source::ARTIFACT}, std::pair{Allowance::SPELL, Source::OTHER},
 		std::pair{Allowance::SPELL, Source::DIVINE_MANDATE}};
 	JsonNode rows;
@@ -255,7 +255,7 @@ TEST(OrderTransitionCharacterizationTest, PriorityExpiryAndStaleIdsPreserveFullL
 	ledger.grantAllowance(Allowance::ORDER, Source::ARTIFACT, 2);
 	ledger.grantAllowance(Allowance::ORDER, Source::DOUBLE_COMMAND, 1);
 	ledger.grantAllowance(Allowance::ORDER, Source::BATTLE_PLAN, 1);
-	ledger.grantAllowance(Allowance::SPELL, Source::METAMAGIC, 1);
+	ledger.grantAllowance(Allowance::SPELL, Source::ARTIFACT, 1);
 	JsonNode rows;
 	for(const uint32_t expected : {6u, 7u, 4u, 5u, 3u, 1u, 2u})
 	{

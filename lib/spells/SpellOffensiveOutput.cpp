@@ -15,15 +15,7 @@ int64_t outgoingDamageMagnitude(int64_t ordinary, const CastProfile * cast,
 	const battle::Unit * recipient)
 {
 	if(!cast) return ordinary;
-	Profile values = cast->perks;
-	int32_t counter = recipient ? castCounter(*cast, recipient->metamagicMarks(cast->heroSide))
-		: cast->perks.pointPolicy ? cast->points : 0;
-	if(!recipient && !cast->perks.pointPolicy)
-	{
-		values = {};
-		values.wisdomEffectivenessBonus = targetFreeEffectivenessBonusPercent(cast);
-	}
-	return spellDamageOutput(ordinary, values, counter, 0, 0, cast->factionSpellDamageBonus);
+	return spellDamageOutput(ordinary, cast->perks, 0, cast->factionSpellDamageBonus);
 }
 
 CastProfile capturedOffensiveProfile(const JsonNode * captured)

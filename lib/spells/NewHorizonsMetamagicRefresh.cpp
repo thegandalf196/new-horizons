@@ -38,7 +38,7 @@ void replaceRecalculatedSpellBonuses(const CastProfile * cast, const CBattleInfo
 {
 	// A genuine Hero context also exists without either effectiveness system.
 	// Such casts keep ordinary native refresh instead of replacing magnitude.
-	if(!cast || (cast->perks.rank == 0 && cast->perks.wisdomEffectivenessBonus == 0)
+	if(!cast || cast->perks.wisdomEffectivenessBonus == 0
 		|| packet.exchange || packet.toUpdate.empty())
 		return;
 	std::map<uint32_t, LocalReplacements> local;

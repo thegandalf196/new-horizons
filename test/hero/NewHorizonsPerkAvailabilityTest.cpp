@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 
 #include "../../client/windows/NewHorizonsPerkAvailability.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
@@ -31,35 +32,43 @@ constexpr std::string_view EXPERT = "new-horizons:discipline.unbreakable";
 newHorizonsHeroes::PerkState strictState()
 {
 	newHorizonsHeroes::PerkState result;
-	result.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
-	result.rules.Struct().erase("fourOfferProgressionVersion");
-	result.rules["unifiedSkillProgressionVersion"].Integer() = 1;
+	auto rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	rules.Struct().erase("fourOfferProgressionVersion");
+	rules["unifiedSkillProgressionVersion"].Integer() = 1;
+	result.replaceRules(std::move(rules));
 	return result;
 }
 
 newHorizonsHeroes::PerkState fourOfferState()
 {
 	auto result = strictState();
-	result.rules.Struct().erase("unifiedSkillProgressionVersion");
-	result.rules["fourOfferProgressionVersion"].Integer() = 1;
+	auto rules = result.getRules();
+	rules.Struct().erase("unifiedSkillProgressionVersion");
+	rules["fourOfferProgressionVersion"].Integer() = 1;
+	result.replaceRules(std::move(rules));
 	return result;
 }
 
 void removeUnifiedDefaults(newHorizonsHeroes::PerkState & state)
 {
-	state.rules.Struct().erase("unifiedSkillProgressionVersion");
-	state.rules.Struct().erase("startingPerksPolicyVersion");
-	state.rules.Struct().erase("startingPerkProfiles");
+	perkStateFixture::editRules(state, [&](JsonNode & rules)
+	{
+		rules.Struct().erase("unifiedSkillProgressionVersion");
+		rules.Struct().erase("startingPerksPolicyVersion");
+		rules.Struct().erase("startingPerkProfiles");
+	});
 }
 
 newHorizonsHeroes::PerkState makeState()
 {
 	auto result = strictState();
 	removeUnifiedDefaults(result);
+	auto rules = result.getRules();
 	// Existing cases explicitly exercise captured policy1 semantics.
-	result.rules["offerWeightPolicyVersion"].Integer() = 1;
-	result.rules.Struct().erase("perkOfferNormalization");
-	result.rules.Struct().erase("perkProgressionPolicyVersion");
+	rules["offerWeightPolicyVersion"].Integer() = 1;
+	rules.Struct().erase("perkOfferNormalization");
+	rules.Struct().erase("perkProgressionPolicyVersion");
+	result.replaceRules(std::move(rules));
 	return result;
 }
 
@@ -67,13 +76,15 @@ newHorizonsHeroes::PerkState makeR2State()
 {
 	auto result = strictState();
 	removeUnifiedDefaults(result);
-	result.rules.Struct().erase("perkProgressionPolicyVersion"); // Captured historical R2.
+	auto rules = result.getRules();
+	rules.Struct().erase("perkProgressionPolicyVersion"); // Captured historical R2.
+	result.replaceRules(std::move(rules));
 	return result;
 }
 
 newHorizonsHeroes::PerkDefinition definition(const newHorizonsHeroes::PerkState & state, std::string_view perkId)
 {
-	const auto perk = newHorizonsHeroes::perkDefinition(state.rules, SKILL, perkId);
+	const auto perk = newHorizonsHeroes::perkDefinition(state.getRules(), SKILL, perkId);
 	if(!perk)
 		throw std::runtime_error("Missing fixture perk definition");
 	return *perk;
@@ -180,9 +191,12 @@ TEST(NewHorizonsPerkAvailability, PlannedAndMissingCataloguesFailClosed)
 	auto state = makeState();
 	// Exercise a captured planned entry without depending on which current
 	// production effects have since been implemented.
-	for(auto & perk : state.rules["skills"][std::string(SKILL)]["perks"].Vector())
-		if(perk["id"].String() == BASIC_PLANNED)
-			perk["effect"]["status"].String() = "planned";
+	perkStateFixture::editRules(state, [&](JsonNode & rules)
+	{
+		for(auto & perk : rules["skills"][std::string(SKILL)]["perks"].Vector())
+			if(perk["id"].String() == BASIC_PLANNED)
+				perk["effect"]["status"].String() = "planned";
+	});
 	const auto planned = newHorizonsPerkAvailability::evaluatePerk(
 		state, SKILL, 3, definition(state, BASIC_PLANNED));
 	EXPECT_EQ(planned.status, newHorizonsPerkAvailability::Status::UNAVAILABLE);
@@ -201,10 +215,10 @@ TEST(NewHorizonsPerkAvailability, PlannedAndMissingCataloguesFailClosed)
 TEST(NewHorizonsPerkAvailability, TierSlotUsesRegistryTierRegardlessOfSavedSelectionOrder)
 {
 	auto state = makeState();
-	state.selected = {
+	state.replaceSelected({
 		{std::string(SKILL), std::string(EXPERT)},
 		{std::string(SKILL), std::string(BASIC)},
-		{std::string(SKILL), std::string(ADVANCED)}};
+		{std::string(SKILL), std::string(ADVANCED)}});
 	ASSERT_NO_THROW(state.validate());
 
 	const auto checkSelectedTiers = [&state]()
@@ -220,7 +234,7 @@ TEST(NewHorizonsPerkAvailability, TierSlotUsesRegistryTierRegardlessOfSavedSelec
 	};
 
 	checkSelectedTiers();
-	std::reverse(state.selected.begin(), state.selected.end());
+	std::reverse(state.getSelected().begin(), state.getSelected().end());
 	checkSelectedTiers();
 }
 
@@ -228,21 +242,21 @@ TEST(NewHorizonsPerkAvailability, ReadOnlyEvaluationsDoNotMutateSavedState)
 {
 	auto state = makeState();
 	state.select(std::string(SKILL), std::string(BASIC), 1);
-	const auto rulesBefore = state.rules;
-	const auto selectedBefore = state.selected;
+	const auto rulesBefore = state.getRules();
+	const auto selectedBefore = state.getSelected();
 
 	static_cast<void>(newHorizonsPerkAvailability::evaluatePerk(
 		state, SKILL, 3, definition(state, ADVANCED)));
 	static_cast<void>(newHorizonsPerkAvailability::evaluateTier(state, SKILL, 3, 2));
 
-	EXPECT_EQ(state.rules, rulesBefore);
-	EXPECT_EQ(state.selected, selectedBefore);
+	EXPECT_EQ(state.getRules(), rulesBefore);
+	EXPECT_EQ(state.getSelected(), selectedBefore);
 }
 
 TEST(NewHorizonsPerkAvailability, R2SameTierAlternativesRemainAvailableUntilCap)
 {
 	auto state = makeR2State();
-	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.getRules()));
 	state.select(std::string(SKILL), std::string(BASIC), 1);
 	EXPECT_EQ(newHorizonsPerkAvailability::evaluatePerk(
 		state, SKILL, 1, definition(state, BASIC_ALTERNATIVE)).status,
@@ -261,7 +275,7 @@ TEST(NewHorizonsPerkAvailability, R2SameTierAlternativesRemainAvailableUntilCap)
 TEST(NewHorizonsPerkAvailability, StrictCurrentOccupiedTierMatchesAuthoritativeAcquisitionPredicate)
 {
 	auto state = strictState();
-	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
 	state.select(std::string(SKILL), std::string(BASIC), 1);
 	const auto before = state.toJson();
 	EXPECT_FALSE(state.canAcquirePerk(std::string(SKILL), std::string(BASIC_ALTERNATIVE), 3));
@@ -280,7 +294,7 @@ TEST(NewHorizonsPerkAvailability, StrictCurrentOccupiedTierMatchesAuthoritativeA
 TEST(NewHorizonsPerkAvailability, StrictExceptionalExpertSlotsFollowBasicAdvancedExpertWithoutRepeatedTier)
 {
 	auto state = strictState();
-	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
 	const std::array<std::string_view, 3> selected = {BASIC, ADVANCED, EXPERT};
 	for(size_t index = 0; index < selected.size(); ++index)
 	{

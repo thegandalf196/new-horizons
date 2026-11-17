@@ -7,7 +7,6 @@ set(vcmiclientcommon_SRCS
 	windows/CommandPresentation.cpp
 	windows/CommandEnhancementWindow.cpp
 	StdInc.cpp
-	MetamagicPointUI.cpp
 
 	adventureMap/AdventureMapInterface.cpp
 	adventureMap/AdventureMapShortcuts.cpp
@@ -32,6 +31,8 @@ set(vcmiclientcommon_SRCS
 	battle/BattleAnimationClasses.cpp
 	battle/BattleConsole.cpp
 	battle/BattleEffectsController.cpp
+	battle/ForceLancePresentation.cpp
+	battle/ForceLancePresentation.h
 	battle/BattleFieldController.cpp
 	battle/BattleHero.cpp
 	battle/BattleHeroActionWindow.cpp
@@ -68,7 +69,6 @@ set(vcmiclientcommon_SRCS
 	battle/FrozenStatusPresentation.cpp
 	battle/StackInfoBasicPanel.cpp
 	battle/StackTemporaryStatusPresenter.cpp
-	battle/ArcaneMarkPresentation.cpp
 	battle/StackInfoActionStatus.cpp
 	battle/StackSpellStatusPresentation.cpp
 	battle/StackQueue.cpp
@@ -407,7 +407,6 @@ set(vcmiclientcommon_HEADERS
 	battle/QuickSpellPanel.h
 	battle/StackInfoBasicPanel.h
 	battle/StackTemporaryStatusPresenter.h
-	battle/ArcaneMarkPresentation.h
 	battle/ArcaneInspirationPresentation.h
 	battle/StackQueue.h
 	battle/UnitActionPanel.h

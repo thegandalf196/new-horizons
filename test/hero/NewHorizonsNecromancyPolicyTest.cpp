@@ -236,14 +236,14 @@ TEST(NewHorizonsNecromancyPolicy, ActualShippedRegistryPassesNativeValidationAnd
 	EXPECT_TRUE(rules["necromancyPolicy"].Struct().contains("skeletonLeadershipReductionPercent"));
 	EXPECT_TRUE(rules["necromancyPolicy"].Struct().contains("lordOfTheDeadLeadershipReductionPercent"));
 	newHorizonsHeroes::PerkState state;
-	state.rules = rules;
+	state.replaceRules(rules);
 	ASSERT_NO_THROW(state.validate());
 	CMemorySerializer memory;
 	memory.oser & state;
 	newHorizonsHeroes::PerkState restored;
 	memory.iser & restored;
-	EXPECT_EQ(restored.rules, rules);
-	EXPECT_EQ(newHorizonsNecromancy::policy(restored.rules), captured);
+	EXPECT_EQ(restored.getRules(), rules);
+	EXPECT_EQ(newHorizonsNecromancy::policy(restored.getRules()), captured);
 }
 
 TEST(NewHorizonsNecromancyPolicy, VersionThreeRejectsRetiredFieldsAndMalformedHealthWithoutChangingHistory)
@@ -289,7 +289,7 @@ TEST(NewHorizonsNecromancyPolicy, VersionThreeRequiresItsEpochEvenWithoutTheComm
 	EXPECT_NO_THROW(newHorizonsHeroes::validateCommandPerkSerialization(capturedPolicy(), false));
 	const auto previous = ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN;
 	newHorizonsHeroes::PerkState state;
-	state.rules = v3Rules;
+	state.replaceRules(v3Rules);
 	ASSERT_NO_THROW(state.validate());
 	CMemorySerializer writer;
 	writer.oser.version = previous;

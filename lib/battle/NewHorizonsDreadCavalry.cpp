@@ -67,13 +67,12 @@ bool family(const battle::Unit * source)
 std::optional<int> entitlement(const CBattleInfoCallback & battle, const battle::Unit * source)
 {
 	const auto * state = dynamic_cast<const battle::CUnitState *>(source);
-	if(!state || !family(source) || !source->alive() || source->isGhost() || !source->canMove()
-		|| source->isTimeStopped() || newHorizonsFrozen::isFrozen(*source)
+	if(!state || !family(source) || !source->alive() || source->isGhost() || !source->canMove() || newHorizonsFrozen::isFrozen(*source)
 		|| state->armorerLastStandEndedActivation)
 		return std::nullopt;
 	const auto * hero = battle.battleGetOwnerHero(source);
 	return newHorizonsHeroes::hasDreadCavalry(hero)
-		? newHorizonsHeroes::dreadCavalryDamagePercent(hero->getPrimaryGrowthRules()) : std::nullopt;
+		? hero->compiledDevelopment()->dreadCavalry : std::nullopt;
 }
 bool hasRawPending(const battle::Unit * source)
 {

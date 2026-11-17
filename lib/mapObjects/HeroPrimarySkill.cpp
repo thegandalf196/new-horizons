@@ -18,7 +18,7 @@ newHorizonsHeroes::PrimarySkillChange CGHeroInstance::projectPrimarySkillChange(
 	const auto before = skill->val;
 	if(usesPrimaryGrowth())
 	{
-		const int64_t maximum = getPrimaryGrowthRules()["maxPrimary"].Integer();
+		const int64_t maximum = compiledDevelopment()->maximumPrimary();
 		const auto next = mode == ChangeValueMode::ABSOLUTE ? value
 			: before + std::clamp<int64_t>(value, -maximum, maximum);
 		return {before, static_cast<int32_t>(std::clamp<int64_t>(next, 0, maximum))};

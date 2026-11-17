@@ -112,16 +112,7 @@ TEST_F(ProjectedBattleAccessibilityTest, DeathAndGhostRetainExactValidTargetPred
 	EXPECT_EQ(callback.getAccessibility()[BattleHex(6, 5).toInt()], EAccessibility::ALIVE_STACK);
 }
 
-TEST_F(ProjectedBattleAccessibilityTest, ProjectedTimeStopRetainsExistingValidTargetExclusionFromOccupancy)
-{
-	const auto state = capture();
-	graph.addExported(supporter, environmentFixture::bonus(BonusType::TIME_STOP, 1));
-	ASSERT_TRUE(units[3]->alive());
-	ASSERT_TRUE(units[3]->isTimeStopped());
-	EXPECT_FALSE(units[3]->isValidTarget(false));
-	EXPECT_EQ(query(state)[BattleHex(6, 5).toInt()], EAccessibility::ACCESSIBLE);
-	EXPECT_EQ(callback.getAccessibility()[BattleHex(6, 5).toInt()], EAccessibility::ALIVE_STACK);
-}
+
 
 TEST_F(ProjectedBattleAccessibilityTest, SynchronousProjectedFormChangesCurrentFootprintThenRestoresIt)
 {

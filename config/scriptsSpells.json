@@ -583,19 +583,6 @@
 			"additionalProperties" : false
 		}
 	},
-	"timeStop" : {
-		"implements" : "spellEffect",
-		"script" : "spells/timeStop",
-		"patches" : [ ],
-		"schema" : {
-			"properties" : {
-				"type" : {},
-				"indirect" : {},
-				"optional" : {}
-			},
-			"additionalProperties" : false
-		}
-	},
 	"purify" : {
 		"implements" : "spellEffect",
 		"script" : "spells/purify",
@@ -609,9 +596,9 @@
 			"additionalProperties" : false
 		}
 	},
-	"spellLock" : {
+	"focusMagicEnchantment" : {
 		"implements" : "spellEffect",
-		"script" : "spells/spellLock",
+		"script" : "spells/focusMagicEnchantment",
 		"patches" : [ ],
 		"schema" : {
 			"properties" : {
@@ -622,17 +609,30 @@
 			"additionalProperties" : false
 		}
 	},
-	"focusMagicEnchantment" : {
-		"implements" : "spellEffect",
-		"script" : "spells/focusMagic",
-		"patches" : [ ],
-		"schema" : {
-			"properties" : {
-				"type" : {},
-				"indirect" : {},
-				"optional" : {}
+	"forcedRecall" : {
+		"implements": "spellEffect",
+		"script": "spells/forcedRecall",
+		"patches": [],
+		"schema": {
+			"properties": {
+				"type": {},
+				"indirect": {},
+				"optional": {}
 			},
-			"additionalProperties" : false
+			"additionalProperties": false
+		}
+	},
+	"forceLance" : {
+		"implements": "spellEffect",
+		"script": "spells/forceLance",
+		"patches": [],
+		"schema": {
+			"properties": {
+				"type": {},
+				"indirect": {},
+				"optional": {}
+			},
+			"additionalProperties": false
 		}
 	}
 }

@@ -95,7 +95,7 @@ protected:
 	void prepare(int32_t spellPower = 0, bool purifier = false, bool purifyingMandate = false)
 	{
 		startGame();
-		ASSERT_TRUE(attackerSideHero->getPerkState().rules["divineMandatePolicy"].isNull());
+		ASSERT_TRUE(attackerSideHero->getPerkState().getRules()["divineMandatePolicy"].isNull());
 		const int lightMagic = SecondarySkill::decode(lightMagicSkill);
 		ASSERT_GE(lightMagic, 0);
 		if(purifier)

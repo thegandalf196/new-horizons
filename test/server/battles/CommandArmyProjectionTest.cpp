@@ -101,7 +101,7 @@ TEST_F(CommandArmyProjectionTest, LordOfTheDeadChangesOnlySkeletonFamilyMaximumH
 	startGame();
 	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:vidomina")));
 	ASSERT_NO_FATAL_FAILURE(select("new-horizons:necromancy", {"graveKnowledge", "boneCollector", "lordOfTheDead"}));
-	const auto captured = newHorizonsNecromancy::policy(attackerSideHero->getPerkState().rules);
+	const auto captured = newHorizonsNecromancy::policy(attackerSideHero->getPerkState().getRules());
 	ASSERT_TRUE(captured);
 	ASSERT_EQ(captured->version, 3);
 	ASSERT_EQ(captured->lordOfTheDeadMaximumHealthPercent, 25);

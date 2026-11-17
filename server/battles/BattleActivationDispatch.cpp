@@ -77,7 +77,7 @@ bool BattleFlowProcessor::setActiveStack(const CBattleInfoCallback & battle, con
 				&& state->primaryTargetUnitId == stack->unitId();
 		}
 	}
-	if(stack->alive() && !stack->isTimeStopped()
+	if(stack->alive()
 		&& (reason == BattleUnitTurnReason::TURN_QUEUE || reason == BattleUnitTurnReason::MORALE
 			|| reason == BattleUnitTurnReason::REDUCED_EXTRA_ACTIVATION || secondWindActivation)
 		&& activationFireWallCoversUnit(battle, *stack))

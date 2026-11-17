@@ -25,7 +25,7 @@ bool carriesEffect(const battle::Unit * unit, SpellID spell)
 std::optional<bool> contactMode(const CBattleInfoCallback & battle,
 	const battle::Unit * attacker, const battle::Unit * target)
 {
-	if(attacker->isTimeStopped() || attacker->isFrozen() || target->isInvincible()
+	if(attacker->isFrozen() || target->isInvincible()
 		|| !battle.battleMatchActionController(attacker, target))
 		return {};
 	for(const auto & hex : target->getHexes())
@@ -40,10 +40,10 @@ std::optional<bool> contactMode(const CBattleInfoCallback & battle,
 }
 
 float exchangeValue(const std::shared_ptr<CBattleInfoCallback> & battle,
-	const battle::Unit * attacker, const battle::Unit * target, bool shooting, DamageCache & cache)
+	const battle::Unit * attacker, const battle::Unit * target, bool shooting, DamageCache & cache, const Environment * environment)
 {
 	return AttackPossibility::evaluate(BattleAttackInfo(attacker, target, 0, shooting),
-		attacker->getPosition(), cache, battle).attackValue();
+		attacker->getPosition(), cache, battle, false, std::nullopt, nullptr, false, BattleHex::INVALID, environment).attackValue();
 }
 }
 
@@ -90,8 +90,8 @@ float marginalValue(BattleSide side, uint32_t activeUnitId,
 			const auto mode = contactMode(*before, attacker, target);
 			if(!mode)
 				continue;
-			bestBefore = std::max(bestBefore, exchangeValue(before, attacker, target, *mode, beforeCache));
-			bestAfter = std::max(bestAfter, exchangeValue(after, projectedAttacker, projectedTarget, *mode, afterCache));
+			bestBefore = std::max(bestBefore, exchangeValue(before, attacker, target, *mode, beforeCache, after->env));
+			bestAfter = std::max(bestAfter, exchangeValue(after, projectedAttacker, projectedTarget, *mode, afterCache, after->env));
 		}
 		const auto delta = bestAfter - bestBefore;
 		const auto signedDelta = before->battleGetOwner(attacker) == before->sideToPlayer(side) ? delta : -delta;

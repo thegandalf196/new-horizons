@@ -237,39 +237,6 @@ std::optional<int> quickStudyRerollInterval(const JsonNode & rules)
 	return 1;
 }
 
-void validatePassiveFactionPolicies(const JsonNode & rules)
-{
-	if(!rules.isStruct())
-		return;
-	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
-	{
-		const auto found = rules.Struct().find(key);
-		if(found == rules.Struct().end())
-			continue;
-		const auto & policy = found->second;
-		const bool metamagic = std::string_view(key) == "metamagicPolicy";
-		if(metamagic && policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& policy["version"].Integer() == 2)
-			fields(policy, {"version", "adeptAdditionalMarks"});
-		else if(metamagic)
-			fields(policy, {"version", "adeptAdditionalPoints"});
-		else
-			fields(policy, {"version"});
-		require(policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& (policy["version"].Integer() == 2 || (metamagic && policy["version"].Integer() == 3)),
-			std::string(key) + " has an unsupported version");
-		if(metamagic && policy.Struct().contains("adeptAdditionalPoints"))
-			require(integer(policy["adeptAdditionalPoints"], 0, 12),
-				"Metamagic adeptAdditionalPoints must be an integer in 0..12");
-		if(metamagic && policy.Struct().contains("adeptAdditionalMarks"))
-		{
-			const auto & marks = policy["adeptAdditionalMarks"];
-			require(marks.getType() == JsonNode::JsonType::DATA_INTEGER
-				&& marks.Integer() >= 0 && marks.Integer() <= 5,
-				"Metamagic adeptAdditionalMarks must be an integer in 0..5");
-		}
-	}
-}
 
 static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedPilotPerks * collector);
 void validatePerkRules(const JsonNode & rules)
@@ -336,7 +303,8 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	if(rules.Struct().contains("perkProgressionPolicyVersion"))
 	{
 		require(rules["perkProgressionPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION,
+			&& rules["perkProgressionPolicyVersion"].Integer() >= 1
+			&& rules["perkProgressionPolicyVersion"].Integer() <= PERK_PROGRESSION_POLICY_VERSION,
 			"perkProgressionPolicyVersion");
 		require(usesR2PerkOffers(rules), "strict perk progression requires captured weight policy2");
 	}
@@ -418,7 +386,14 @@ bool usesStrictPerkProgression(const JsonNode & rules)
 {
 	return usesPerkRules(rules)
 		&& rules["perkProgressionPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& rules["perkProgressionPolicyVersion"].Integer() == PERK_PROGRESSION_POLICY_VERSION;
+		&& rules["perkProgressionPolicyVersion"].Integer() >= 1
+		&& rules["perkProgressionPolicyVersion"].Integer() <= PERK_PROGRESSION_POLICY_VERSION;
+}
+
+bool usesExclusivePerkTiers(const JsonNode & rules)
+{
+	return usesStrictPerkProgression(rules)
+		&& rules["perkProgressionPolicyVersion"].Integer() >= 2;
 }
 
 void ValidatedPerkRules::validateWeightedSerialization(bool supported, bool r2Supported, bool strictSupported, bool optionalRerollSupported, bool passiveFactionSupported) const

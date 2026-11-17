@@ -9,14 +9,14 @@
 void CGHeroInstance::rebuildPreparedNativeRules()
 {
 	auto perks = perkState.prepareNativeRules();
-	auto creatures = nativeRules::preparePilotCreature(primaryGrowthRules, getHeroTypeID());
+	auto creatures = compiledDevelopment()->preparedCreature(getHeroTypeID());
 	preparedPilotPerks = std::move(perks);
 	preparedCreatureMechanics = std::move(creatures);
 }
 void CGHeroInstance::recreateSecondarySkillsBonuses()
 {
 	perkState.validate();
-	if(perkRulesCaptured && newHorizonsHeroes::usesPerkRules(perkState.rules) && !preparedPilotPerks)
+	if(perkRulesCaptured && newHorizonsHeroes::usesPerkRules(perkState.getRules()) && !preparedPilotPerks)
 		throw std::runtime_error("Captured hero rank definitions were not prepared");
 	auto secondarySkillsBonuses = getBonusesFrom(BonusSource::SECONDARY_SKILL);
 	for(const auto & bonus : *secondarySkillsBonuses)
@@ -29,7 +29,7 @@ void CGHeroInstance::recreateSecondarySkillsBonuses()
 
 void CGHeroInstance::updateSkillBonus(const SecondarySkill & which, int val)
 {
-	if(perkRulesCaptured && newHorizonsHeroes::usesPerkRules(perkState.rules) && !preparedPilotPerks)
+	if(perkRulesCaptured && newHorizonsHeroes::usesPerkRules(perkState.getRules()) && !preparedPilotPerks)
 		throw std::runtime_error("Captured hero rank definitions were not prepared");
 	std::vector<std::shared_ptr<Bonus>> incoming;
 

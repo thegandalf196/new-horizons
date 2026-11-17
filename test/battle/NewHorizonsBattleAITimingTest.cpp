@@ -1968,7 +1968,7 @@ protected:
 		}
 	}
 
-	void expectGamblerRemovalParity(bool withPenalty, bool timeStopped)
+	void expectGamblerRemovalParity(bool withPenalty)
 	{
 		ASSERT_NO_FATAL_FAILURE(prepare());
 		const auto shared = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::STACKS_SPEED,
@@ -2008,14 +2008,6 @@ protected:
 		guardian.turnsRemain = 2;
 		effects.push_back(guardian);
 		original->addUnitBonus(effects);
-		if(timeStopped)
-		{
-			const SpellID stop(SpellID::decode("new-horizons:timeStop"));
-			ASSERT_GE(stop.getNum(), 0);
-			original->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-				BonusSource::SPELL_EFFECT, 0, BonusSourceID(stop))});
-		}
-		ASSERT_EQ(original->isTimeStopped(), timeStopped);
 		ASSERT_EQ(original->guardianSpiritHitPoints, 17);
 		ASSERT_EQ(original->guardianSpiritRoundsRemaining, 2);
 		ASSERT_TRUE(original->hasBonusOfType(BonusType::CONFUSION_PENDING));
@@ -2085,7 +2077,6 @@ protected:
 			EXPECT_EQ(unit->guardianSpiritHitPoints, 17);
 			EXPECT_EQ(unit->guardianSpiritRoundsRemaining, 2);
 			EXPECT_TRUE(unit->hasBonusOfType(BonusType::CONFUSION_PENDING));
-			EXPECT_EQ(unit->isTimeStopped(), timeStopped);
 			const auto aliases = unit->getUnstackedBonuses(CSelector([](const Bonus * bonus)
 			{
 				return bonus->source == BonusSource::SPELL_EFFECT && bonus->type == BonusType::STACKS_SPEED
@@ -2158,13 +2149,10 @@ protected:
 
 TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerRemovalMatchesGenericWithControlStateAndRawAliases)
 {
-	ASSERT_NO_FATAL_FAILURE(expectGamblerRemovalParity(true, false));
+	ASSERT_NO_FATAL_FAILURE(expectGamblerRemovalParity(true));
 }
 
-TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, DedicatedGamblerNoMatchMatchesGenericWhileTimeStopped)
-{
-	ASSERT_NO_FATAL_FAILURE(expectGamblerRemovalParity(false, true));
-}
+
 
 TEST_F(NewHorizonsDetachedBonusRemovalTimingTest, NoMatchAndRealRemovalKeepOrderedBonusesStateAndBranchOwnership)
 {

@@ -17,6 +17,7 @@
 
 class CArmedInstance;
 class JsonNode;
+class IGameInfoCallback;
 
 namespace newHorizonsSkeletonTransformer
 {
@@ -69,4 +70,7 @@ struct DLL_LINKAGE Plan
 /// original per-slot type-substitution behavior for historical saves.
 DLL_LINKAGE Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
 	const JsonNode & savedCapabilityRules);
+/// Trusted owning-world projection; custom/raw callbacks retain validated JSON fallback.
+DLL_LINKAGE Plan plan(const CArmedInstance & army, std::span<const SlotID> selectedSlots,
+	const IGameInfoCallback & world);
 }

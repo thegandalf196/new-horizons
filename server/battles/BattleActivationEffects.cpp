@@ -55,7 +55,7 @@ void applyExistingRecovery(CGameHandler * gameHandler, const CBattleInfoCallback
 			}
 		}
 	}
-	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
+	if(creatureStack->alive() && state
 		&& state->regenerationPendingMicroHealth > 0)
 	{
 		int64_t healing = state->consumeRegenerationMarks();
@@ -85,7 +85,7 @@ void applyExistingRecovery(CGameHandler * gameHandler, const CBattleInfoCallback
 	}
 	const auto hydrasVitalityMarker = newHorizonsMagic::hydrasVitalitySource(battle.getBattle()->getMagicRules())
 		.And(Selector::type()(BonusType::HP_REGENERATION));
-	if(creatureStack->alive() && !creatureStack->isTimeStopped() && state
+	if(creatureStack->alive() && state
 		&& state->health.isCapacityHealthTracking()
 		&& creatureStack->hasBonus(hydrasVitalityMarker))
 	{

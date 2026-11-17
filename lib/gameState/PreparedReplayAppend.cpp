@@ -17,7 +17,7 @@
 
 PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log,
 	const BattleUnitsChanged & pack, uint32_t day, const SnapshotProvider & snapshot)
-	: owner(log), configured(log.recordingPacks), recording(configured), opensChapter(log.chapters.empty())
+	: owner(log), configured(log.recordingPacks), captureEnabled(log.captureEnabled), recording(configured && captureEnabled), opensChapter(log.chapters.empty())
 {
 	owner.validateAppendState();
 	if(!recording)
@@ -45,7 +45,7 @@ PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log,
 
 bool PreparedReplayAppend::readyToCommit() const noexcept
 {
-	if(consumed || configured != owner.recordingPacks)
+	if(consumed || configured != owner.recordingPacks || captureEnabled != owner.captureEnabled)
 		return false;
 	return !recording || (stamp && stamp == owner.preparationStamp);
 }

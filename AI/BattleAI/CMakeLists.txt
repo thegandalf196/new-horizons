@@ -1,4 +1,12 @@
 set(battleAI_SRCS
+	HeroSpellRefinement.cpp
+	FlatDamageInputs.cpp
+	ForecastSideState.cpp
+	ForecastSideTransitions.cpp
+	ForecastEffectState.cpp
+	ForecastEffectTransitions.cpp
+	SearchBudget.cpp
+	StackMechanicsPresence.cpp
 		CanonicalOrderCoefficient.cpp
 		HypotheticWarfare.cpp
 		HypotheticUnitSnapshots.cpp
@@ -167,7 +175,13 @@ set(battleAI_SRCS
 		HypotheticOrderActions.cpp
 		HypotheticLegacyOrders.cpp
 		HypotheticOrderContinuation.cpp
-		HypotheticMetamagicPoints.cpp
+		HypotheticMana.cpp
+		MetamagicExpectedValue.cpp
+		MetamagicExpectedValue.h
+		MetamagicCompletionValue.cpp
+		MetamagicCompletionValue.h
+		FocusMagicProjection.cpp
+		FocusMagicProjection.h
 		HypotheticWisdom.cpp
 		HypotheticArcaneInspiration.cpp
 		SyntheticInspirationUtility.cpp
@@ -198,6 +212,13 @@ set(battleAI_SRCS
 )
 
 set(battleAI_HEADERS
+	HeroSpellRefinement.h
+	FlatDamageInputs.h
+	ForecastSideState.h
+	ForecastSideTransitions.h
+	ForecastEffectState.h
+	ForecastEffectTransitions.h
+	SearchBudget.h
 		BattleEvaluatorSpellCandidates.h
 		BattleAIDiagnosticAdmission.h
 		DiagnosticBattleAIFactory.h

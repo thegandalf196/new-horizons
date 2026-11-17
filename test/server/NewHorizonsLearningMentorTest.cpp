@@ -370,12 +370,12 @@ TEST_F(NewHorizonsLearningMentorTest, OnlyActiveBasicMentorAndStrictlyHigherAlli
 		if(perk["id"].String() == MENTOR_PERK)
 			perk["effect"]["status"].String() = "planned";
 	}
-	perkState.rules = std::move(plannedRules);
+	perkState.replaceRules(std::move(plannedRules));
 	EXPECT_FALSE(mentor->hasActivePerk(LEARNING_SKILL, MENTOR_PERK));
 	gameHandler.heroExchange(mentor->id, recipient->id);
 	EXPECT_EQ(recipient->exp, recipientStart);
 	EXPECT_EQ(mentor->getNewHorizonsLearningMentorLastWeek(), -1);
-	perkState.rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	perkState.replaceRules(JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
 
 	gameHandler.heroExchange(mentor->id, mentor->id);
 	gameHandler.heroExchange(mentor->id, enemyHero->id);

@@ -29,7 +29,7 @@ bool usesRules(const JsonNode & rules)
 
 bool usesRules(const CGHeroInstance * hero)
 {
-	return hero && usesRules(hero->getPerkState().rules);
+	return hero && usesRules(hero->getPerkState().getRules());
 }
 
 void validatePolicy(const JsonNode & rules)

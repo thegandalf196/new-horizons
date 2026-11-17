@@ -714,42 +714,6 @@ TEST_F(NewHorizonsBattleFormAITest, RegisteredPolymorphActualPaidAICompetesWithU
 	EXPECT_TRUE(target->hasBonus(CSelector(battle::isPolymorphMarker)));
 }
 
-TEST_F(NewHorizonsBattleFormAITest, DetachedRoundClockPausesForTimeStopAndFinalSpellLockRound)
-{
-	auto * stack = prepareBattleStack();
-	ASSERT_NE(stack, nullptr);
-	const auto liveState = stack->save();
-	auto branch = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
-	const auto unit = branch->getForUpdate(stack->unitId());
-	unit->beginBattleForm(creatureByName("core:ogreMage"), 2);
-	const SpellID polymorph(SpellID::decode("new-horizons:polymorph"));
-	const auto marker = battle::polymorphMarker(polymorph, PlayerColor(0));
-	branch->addUnitBonus(unit->unitId(), {marker});
-	Bonus stop(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	branch->addUnitBonus(unit->unitId(), {stop});
-	branch->nextRound();
-	EXPECT_EQ(unit->getBattleFormRoundsRemaining(), 2);
-	branch->removeUnitBonus(unit->unitId(), {marker});
-	EXPECT_TRUE(unit->hasBattleForm());
-	EXPECT_TRUE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
-	branch->removeUnitBonus(unit->unitId(), {stop});
-	const SpellID lock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	Bonus resistance(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE, BonusSource::SPELL_EFFECT, 100, BonusSourceID(lock));
-	resistance.turnsRemain = 1;
-	Bonus preserve(BonusDuration::N_TURNS, BonusType::NONE, BonusSource::SPELL_EFFECT, -1, BonusSourceID(lock));
-	preserve.turnsRemain = 1;
-	branch->addUnitBonus(unit->unitId(), {resistance, preserve});
-	branch->nextRound();
-	EXPECT_EQ(unit->getBattleFormRoundsRemaining(), 2) << "Capture Spell Lock before aging its last round";
-	branch->nextRound();
-	EXPECT_EQ(unit->getBattleFormRoundsRemaining(), 1);
-	branch->nextRound();
-	EXPECT_FALSE(unit->hasBattleForm());
-	EXPECT_FALSE(unit->hasBonus(CSelector(battle::isPolymorphMarker)));
-	EXPECT_EQ(unit->unitType()->getId(), stack->unitType()->getId());
-	EXPECT_EQ(stack->save(), liveState);
-}
-
 TEST_F(NewHorizonsBattleFormAITest, DetachedNoSpaceExpiryAndDispelKeepMarkerUntilLegalReturn)
 {
 	auto * stack = prepareBattleStack("core:boneDragon");

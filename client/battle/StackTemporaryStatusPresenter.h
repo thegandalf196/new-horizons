@@ -30,7 +30,6 @@ public:
 	{
 		newHorizonsBattleStatus::StackStatusIconKind kind;
 		std::optional<SpellID> spell;
-		bool arcaneMarks = false;
 		bool inspiration = false;
 	};
 	struct Widgets

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "GameConnection.h"
+#include "GameConnectionProtocol.h"
 
 #include "BinaryDeserializer.h"
 #include "BinarySerializer.h"
@@ -77,6 +78,7 @@ void GameConnection::sendPack(const CPack & pack)
 		throw std::runtime_error("Attempt to send packet on a closed connection!");
 
 	packWriter->buffer.clear();
+	gameConnectionProtocol::appendHeader(packWriter->buffer, serializer->version);
 	*serializer & &pack;
 
 	logNetwork->trace("Sending a pack of type %s", typeid(pack).name());
@@ -98,10 +100,11 @@ ExperimentalSetFormationResult GameConnection::trySendExperimentalSetFormation(c
 
 std::unique_ptr<CPack> GameConnection::retrievePack(const std::vector<std::byte> & data)
 {
+	gameConnectionProtocol::validateHeader(data, deserializer->version);
 	std::unique_ptr<CPack> result;
 
 	packReader->buffer = &data;
-	packReader->position = 0;
+	packReader->position = gameConnectionProtocol::HEADER_SIZE;
 
 	*deserializer & result;
 
@@ -141,6 +144,8 @@ void GameConnection::setCallback(IGameInfoCallback & cb)
 
 void GameConnection::setSerializationVersion(ESerializationVersion version)
 {
+	if(version < ESerializationVersion::MINIMAL || version > ESerializationVersion::CURRENT)
+		throw std::runtime_error("Incompatible New Horizons protocol version");
 	std::scoped_lock lock(writeMutex);
 	deserializer->version = version;
 	serializer->version = version;

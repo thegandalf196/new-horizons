@@ -153,28 +153,7 @@ TEST_F(NewHorizonsRealityWarpCollectionTest, ReciprocalGuardianPoolsTravelWithou
 	EXPECT_EQ(second->guardianSpiritHitPoints, 29);
 }
 
-TEST_F(NewHorizonsRealityWarpCollectionTest, SpellLockAndTimeStopRejectEndpointsRatherThanDropEffects)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	const SpellID lock(SpellID::decode("new-horizons:spellLock"));
-	first->addNewBonus(std::make_shared<Bonus>(effect(lock, BonusType::NONE, 1, PlayerColor(0))));
-	auto result = preview();
-	EXPECT_FALSE(result.exchange);
-	EXPECT_EQ(result.rejection, newHorizonsRealityWarp::EndpointRejection::SPELL_LOCKED);
-	first->removeBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(lock)));
-	first->addNewBonus(std::make_shared<Bonus>(effect(SpellID::HASTE, BonusType::TIME_STOP, 1, PlayerColor(0))));
-	ASSERT_TRUE(first->isTimeStopped());
-	ASSERT_FALSE(first->isValidTarget(false));
-	const auto firstHealth = first->getAvailableHealth();
-	const auto secondHealth = second->getAvailableHealth();
-	result = preview();
-	EXPECT_FALSE(result.exchange);
-	EXPECT_EQ(result.rejection, newHorizonsRealityWarp::EndpointRejection::TIME_STOPPED);
-	EXPECT_TRUE(first->hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::HASTE)))));
-	EXPECT_TRUE(first->isTimeStopped());
-	EXPECT_EQ(first->getAvailableHealth(), firstHealth);
-	EXPECT_EQ(second->getAvailableHealth(), secondHealth);
-}
+
 
 TEST_F(NewHorizonsRealityWarpCollectionTest, FocusMagicRebindsLuaNumericBeneficiaryWithoutRecastingStrength)
 {

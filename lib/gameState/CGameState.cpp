@@ -288,9 +288,9 @@ void CGameState::init(const IMapService * mapService, StartInfo * si, IGameRando
 	heroMasteryRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_MASTERIES);
 	newHorizonsHeroes::validateMasteryRules(heroMasteryRules);
 	auto capturedHeroPerkRules = getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS);
-	newHorizonsHeroes::validatePerkRules(capturedHeroPerkRules);
 	heroPerkRules = std::move(capturedHeroPerkRules);
 	newHorizonsHeroes::validateWeightedPerkCapture(heroDevelopmentRules, heroPerkRules);
+	admitWorldRuleDocuments();
 	creatureCategoryRules = newHorizonsCreatures::captureCreatureCategoryRules(getSettings().getValue(EGameSettings::CREATURES_NEW_HORIZONS_CATEGORIES));
 	if(newHorizonsHeroes::usesRules(heroDevelopmentRules) && !newHorizonsHeroes::usesRules(heroCommandRules))
 		throw std::runtime_error("New Horizons hero ratings require enabled hero commands");
@@ -1920,13 +1920,6 @@ void CGameState::validateOpportunistSerialization(bool supported) const
 			battle->validateOpportunistSerialization(supported);
 }
 
-void CGameState::validateTimeStopSerialization(bool supported) const
-{
-	for(const auto & battle : currentBattles)
-		if(battle)
-			battle->validateTimeStopSerialization(supported);
-}
-
 void CGameState::validateCrossSchoolFormulaSerialization(bool supported) const
 {
 	for(const auto & battle : currentBattles)
@@ -1988,7 +1981,7 @@ void CGameState::validateProtectedAdventureMobilitySerialization(bool supported)
 {
 	newHorizonsProtectedMobility::validateRulesSerialization(magicRules, supported);
 	if(map)
-		map->validateProtectedAdventureMobilitySerialization(supported, &magicRules);
+		map->validateProtectedAdventureMobilitySerialization(supported, &magicRules.document());
 }
 
 void CGameState::validateNewHorizonsThantReanimateSerialization(bool supported) const

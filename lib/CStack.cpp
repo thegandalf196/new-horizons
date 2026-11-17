@@ -72,9 +72,9 @@ void CStack::localInit(BattleInfo * battleInfo)
 	nodeHasChanged();
 }
 
-void CStack::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration, bool pauseBattleForm)
+void CStack::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration)
 {
-	battle::CUnitState::afterNewRound(isFirstRound, deferBattleFormRestoration, pauseBattleForm);
+	battle::CUnitState::afterNewRound(isFirstRound, deferBattleFormRestoration);
 	const auto guardianSpiritBonuses = getBonuses(Selector::type()(BonusType::GUARDIAN_SPIRIT));
 	if(!guardianSpiritBonuses || guardianSpiritBonuses->empty())
 	{

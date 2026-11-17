@@ -103,6 +103,9 @@ class DLL_LINKAGE ReplayLog
 
 	/// if set, no chapter is ever dropped and the whole game stays replayable
 	bool recordEntireGame = false;
+	/// Saved new-game policy. False skips both client and authority recording;
+	/// whole-game recording always captures, regardless of the rolling option.
+	bool captureEnabled = true;
 
 	/// number of past days that stay fully replayable on top of the current one
 	uint32_t roundsKept = 1;
@@ -120,7 +123,7 @@ public:
 	ReplayLog(ReplayLog && other) noexcept;
 	ReplayLog & operator=(ReplayLog && other) noexcept;
 
-	void configure(bool recordEntireGame, uint32_t roundsKept);
+	void configure(bool recordEntireGame, uint32_t roundsKept, bool rollingReplayEnabled = true);
 
 	/// Resumes a log restored from a savegame, keeping the recording mode it was started with
 	void reconfigureOnLoad(uint32_t roundsKept);
@@ -138,6 +141,9 @@ public:
 
 	/// True if packs passing through CGameState::apply() are recorded
 	bool isRecordingPacks() const;
+	bool isCaptureEnabled() const { return captureEnabled; }
+	/// Empty legacy snapshot header, retaining the saved capture opt-out.
+	ReplayLog snapshotPlaceholder() const;
 
 	bool empty() const;
 	bool isRecordingEntireGame() const;
@@ -147,16 +153,28 @@ public:
 
 	const std::vector<ReplayChapter> & getChapters() const;
 	void validateStorage() const;
-	void validateSerialization(bool provenanceSupported) const;
+	void validateSerialization(bool provenanceSupported, bool capturePolicySupported = true) const;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
 		if(h.saving)
-			validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS));
-		if(!h.saving)
-			preparationStamp.reset();
-		h & chapters;
-		h & recordEntireGame;
-		h & roundsKept;
+		{
+			validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS),
+				h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES));
+			h & chapters;
+			h & recordEntireGame;
+			h & roundsKept;
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES)) h & captureEnabled;
+		}
+		else
+		{
+			ReplayLog candidate;
+			h & candidate.chapters;
+			h & candidate.recordEntireGame;
+			h & candidate.roundsKept;
+			if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_CAPTURED_RULES)) h & candidate.captureEnabled;
+			candidate.validateStorage();
+			*this = std::move(candidate);
+		}
 	}
 };

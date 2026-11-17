@@ -16,16 +16,16 @@ bool isValidLevelUpSkillChoice(const IGameInfoCallback & info, const CGHeroInsta
 	if(!hero || skill == SecondarySkill::NONE)
 		return false;
 
-	const auto & rules = hero->getPrimaryGrowthRules();
-	const auto ownFactionSkill = newHorizonsHeroes::factionSkill(rules, hero->getFactionID());
-	if(newHorizonsHeroes::isFactionSkill(rules, skill)
-		&& (!ownFactionSkill || !newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill)))
+	const auto * rules = hero->compiledDevelopment();
+	const auto ownFactionSkill = rules->factionSkill(hero->getFactionID());
+	if(rules->isFactionSkill(skill)
+		&& (!ownFactionSkill || !rules->isFactionSkillForFaction(hero->getFactionID(), skill)))
 		return false;
-	if(ownFactionSkill && newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), skill))
+	if(ownFactionSkill && rules->isFactionSkillForFaction(hero->getFactionID(), skill))
 	{
 		const auto representative = std::find_if(hero->secSkills.begin(), hero->secSkills.end(), [&rules, hero](const auto & entry)
 		{
-			return newHorizonsHeroes::isFactionSkillForFaction(rules, hero->getFactionID(), entry.first);
+			return rules->isFactionSkillForFaction(hero->getFactionID(), entry.first);
 		});
 		if(representative != hero->secSkills.end() && representative->first != skill)
 			return false;
@@ -60,8 +60,8 @@ std::set<SecondarySkill> connoisseurSkillCandidates(const IGameInfoCallback & in
 			continue;
 		const auto skill = definition->getId();
 		if(vstd::contains(offeredSkills, skill) || !isValidLevelUpSkillChoice(info, &hero, skill)
-			|| newHorizonsHeroes::isExcludedSkill(hero.getPrimaryGrowthRules(), skill)
-			|| newHorizonsHeroes::skillOfferWeight(hero.getPrimaryGrowthRules(), skill).value_or(0) <= 0)
+			|| hero.compiledDevelopment()->isExcludedSkill(skill)
+			|| hero.compiledDevelopment()->skillOfferWeight(skill).value_or(0) <= 0)
 			continue;
 		candidates.insert(skill);
 	}

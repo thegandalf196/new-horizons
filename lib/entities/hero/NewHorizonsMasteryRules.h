@@ -12,6 +12,7 @@
 #include "../../constants/EntityIdentifiers.h"
 #include "../../json/JsonNode.h"
 #include <optional>
+#include <map>
 #include <limits>
 #include <stdexcept>
 #include <array>
@@ -115,6 +116,8 @@ enum class MasteryReplyError : uint8_t
 /// adds Logistics. These are explicit choices, never a generic rank4.
 DLL_LINKAGE SecondarySkill masteryParentSkill(MasteryEffect effect);
 DLL_LINKAGE void validateMasteryRules(const JsonNode & rules);
+/// Admission parser shared by raw readers and immutable typed captures.
+DLL_LINKAGE std::map<SecondarySkill, std::array<MasteryOption, 3>> compileMasteryFamilies(const JsonNode & rules);
 DLL_LINKAGE std::optional<std::array<MasteryOption, 3>> masteryOptions(
 	const JsonNode & rules, SecondarySkill skill);
 DLL_LINKAGE void validateMasteryOption(const MasteryOption & option);

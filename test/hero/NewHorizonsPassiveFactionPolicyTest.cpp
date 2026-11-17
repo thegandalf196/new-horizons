@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
@@ -63,7 +64,7 @@ TEST(NewHorizonsPassiveFactionPolicy, PresentMalformedPoliciesRejectWithoutMutat
 			auto rules = passiveRules(); rules[key] = malformed;
 			const auto before = rules;
 			EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error) << key;
-			newHorizonsHeroes::PerkState state; state.rules = rules;
+			newHorizonsHeroes::PerkState state; state.replaceRules(rules);
 			EXPECT_THROW(state.validate(), std::runtime_error) << key;
 			EXPECT_EQ(rules, before);
 		}
@@ -121,19 +122,19 @@ TEST(NewHorizonsPassiveFactionPolicy, SettingsAdmissionRejectsBeforeChangingOthe
 
 TEST(NewHorizonsPassiveFactionPolicy, OldWritersRefuseBeforePrefixAnd1155RoundTrips)
 {
-	newHorizonsHeroes::PerkState state; state.rules = passiveRules();
+	newHorizonsHeroes::PerkState state; state.replaceRules(passiveRules());
 	GameSettings settings;
-	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, state.rules);
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, state.getRules());
 	rejectsOldPrefix(state); rejectsOldPrefix(settings);
 	CMemorySerializer bytes;
 	bytes.oser.version = bytes.iser.version = ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
 	ASSERT_NO_THROW(state.serialize(bytes.oser));
 	newHorizonsHeroes::PerkState restored;
 	ASSERT_NO_THROW(restored.serialize(bytes.iser));
-	EXPECT_EQ(restored.rules, state.rules);
+	EXPECT_EQ(restored.getRules(), state.getRules());
 	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
-		state.rules.Struct().erase(key);
-	EXPECT_NO_THROW(newHorizonsHeroes::validateWeightedPerkSerialization(state.rules, true, true, true, true, false));
+		perkStateFixture::editRules(state, [&](JsonNode & rules) { rules.Struct().erase(key); });
+	EXPECT_NO_THROW(newHorizonsHeroes::validateWeightedPerkSerialization(state.getRules(), true, true, true, true, false));
 }
 
 TEST(NewHorizonsPassiveFactionPolicy, ForgedOldReaderPreservesExistingSettingsAndPerkState)
@@ -144,11 +145,11 @@ TEST(NewHorizonsPassiveFactionPolicy, ForgedOldReaderPreservesExistingSettingsAn
 	for(const auto epoch : {ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES,
 		ESerializationVersion::NEW_HORIZONS_OPTIONAL_QUICK_STUDY})
 	{
-		newHorizonsHeroes::PerkState state; state.rules = historical;
+		newHorizonsHeroes::PerkState state; state.replaceRules(historical);
 		CMemorySerializer forgedState; forgedState.iser.version = epoch;
 		auto rules = passiveRules(); forgedState.oser & rules;
 		EXPECT_THROW(state.serialize(forgedState.iser), std::runtime_error);
-		EXPECT_EQ(state.rules, historical);
+		EXPECT_EQ(state.getRules(), historical);
 		GameSettings settings; settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, historical);
 		const auto before = settingsBytes(settings);
 		JsonNode raw; raw["heroes"]["newHorizonsPerks"] = passiveRules();

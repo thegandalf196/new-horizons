@@ -39,24 +39,7 @@ TEST_F(PrismaticVanguardProducerTest, NativeContinuationRoutingPreservesPendingA
 		}
 	}
 }
-TEST_F(PrismaticVanguardProducerTest, NativeTimeStopSyntheticSlotAndRoundPreservePendingUntilGenuineStart)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID()));
-	ASSERT_TRUE(actor->isTimeStopped());
-	ASSERT_FALSE(battle()->battleBeginsActivation(actor, BattleUnitTurnReason::AUTOMATIC_ACTION));
-	battle()->nextTurn(actor->unitId(), BattleUnitTurnReason::AUTOMATIC_ACTION);
-	ASSERT_EQ(markers(*actor)->size(), 1u);
-	EXPECT_EQ(markers(*actor)->front()->duration, BonusDuration::ONE_BATTLE);
-	actor->removeBonusesRecursive(Selector::type()(BonusType::TIME_STOP));
-	advanceRound();
-	ASSERT_EQ(markers(*actor)->size(), 1u);
-	EXPECT_EQ(markers(*actor)->front()->duration, BonusDuration::ONE_BATTLE);
-	battle()->nextTurn(actor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
-	ASSERT_EQ(markers(*actor)->size(), 1u);
-	EXPECT_EQ(markers(*actor)->front()->duration, BonusDuration::STACK_ACTIVATION);
-}
+
 TEST_F(PrismaticVanguardProducerTest, NativePreparedSameIdRebirthRetainsExistingPendingAndNeverRearmsSpentBody)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());

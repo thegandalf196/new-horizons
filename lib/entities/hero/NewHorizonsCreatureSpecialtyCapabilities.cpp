@@ -84,15 +84,13 @@ std::vector<std::shared_ptr<Bonus>> creatureSpecialtyCapabilityBonuses(const CGH
 {
 	if(!hero.getHeroType())
 		return {};
-	const auto & policy = hero.getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"];
-	if(!policy.isStruct())
-		return {};
+	const auto * policy = hero.compiledDevelopment();
 	const std::string_view identity = hero.getHeroType()->getJsonKey();
-	if(identity == "core:thunar" && policy.Struct().contains("stonecallerAmmunition"))
+	if(identity == "core:thunar" && policy->hasOrdinaryField("stonecallerAmmunition"))
 		return stonecaller(hero);
-	if(identity == "core:vey" && policy.Struct().contains("archshamanSpellMastery"))
+	if(identity == "core:vey" && policy->hasOrdinaryField("archshamanSpellMastery"))
 		return archshaman(hero);
-	if(identity == "core:josephine" && policy.Struct().contains("goldStandardUpgrade"))
+	if(identity == "core:josephine" && policy->hasOrdinaryField("goldStandardUpgrade"))
 		return goldStandard(hero);
 	return {};
 }

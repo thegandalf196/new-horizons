@@ -159,7 +159,7 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 	{
 		const auto replaced = h ? newHorizonsMagic::replacementSkill(h->getMagicRules(), entry.first) : entry.first;
 		const auto skillID = h
-			? newHorizonsHeroes::normalizeRewardSkill(h->getPrimaryGrowthRules(), replaced)
+			? h->compiledDevelopment()->normalizeRewardSkill(replaced)
 			: std::optional<SecondarySkill>(replaced);
 		if(!skillID)
 			continue;

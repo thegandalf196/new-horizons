@@ -55,8 +55,7 @@ bool hasWorldroot(const CGHeroInstance * hero)
 
 bool validConductor(const battle::Unit * unit)
 {
-	return unit && unit->alive() && !unit->isGhost() && !unit->isTurret()
-		&& !unit->isTimeStopped() && unit->getPosition().isAvailable();
+	return unit && unit->alive() && !unit->isGhost() && !unit->isTurret() && unit->getPosition().isAvailable();
 }
 
 spells::Target route(const CBattleInfoCallback & battle, const battle::Unit * first, int maximumRecipients)

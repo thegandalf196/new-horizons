@@ -24,7 +24,7 @@ public:
 	enum class CombatStatusProvider : ui8
 	{
 		NONE,
-		METAMAGIC_USES,
+		RESERVED_METAMAGIC_USES, // retired provider ordinal
 		BLOODRAGE_DAMAGE,
 		DIVINE_MANDATE_USES,
 	};

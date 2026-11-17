@@ -44,6 +44,8 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 		break;
 	case Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION: // No new Bonus-only representation.
 	case Version::NEW_HORIZONS_ESTATES:
+	case Version::NEW_HORIZONS_SORCERY_RETIREMENT: // Removed mechanics add no Bonus representation.
+	case Version::NEW_HORIZONS_SHARED_CAPTURED_RULES: // Rule ownership adds no Bonus representation.
 	case Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY:
 		profile = Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
 		break;

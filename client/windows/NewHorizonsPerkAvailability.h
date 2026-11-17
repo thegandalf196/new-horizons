@@ -53,9 +53,9 @@ struct TierSlot
 /// acquisition, including several distinct perks from the same tier.
 inline bool usesSelectionSlots(const newHorizonsHeroes::PerkState & state)
 {
-	return newHorizonsHeroes::usesFourOfferProgression(state.rules)
-		|| (newHorizonsHeroes::usesR2PerkOffers(state.rules)
-			&& !newHorizonsHeroes::usesStrictPerkProgression(state.rules));
+	return newHorizonsHeroes::usesFourOfferProgression(state.getRules())
+		|| (newHorizonsHeroes::usesR2PerkOffers(state.getRules())
+			&& !newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
 }
 
 namespace detail
@@ -63,13 +63,13 @@ namespace detail
 inline bool tierSelected(const newHorizonsHeroes::PerkState & state, std::string_view skillId, int tier)
 {
 	const std::string skillIdString(skillId);
-	for(const auto & selection : state.selected)
+	for(const auto & selection : state.getSelected())
 	{
 		if(selection.skillId != skillIdString)
 			continue;
 		try
 		{
-			const auto selected = newHorizonsHeroes::perkDefinition(state.rules, skillIdString, selection.perkId);
+			const auto selected = newHorizonsHeroes::perkDefinition(state.getRules(), skillIdString, selection.perkId);
 			if(selected && newHorizonsHeroes::perkRequiredRank(selected->requiredRank) == tier)
 				return true;
 		}
@@ -154,14 +154,14 @@ inline Evaluation evaluatePerk(const newHorizonsHeroes::PerkState & state,
 	std::string_view skillId, int skillRank, const newHorizonsHeroes::PerkDefinition & requested)
 {
 	Evaluation result;
-	if(!newHorizonsHeroes::usesPerkRules(state.rules))
+	if(!newHorizonsHeroes::usesPerkRules(state.getRules()))
 		return result;
 	const std::string skillIdString(skillId);
 
 	std::optional<newHorizonsHeroes::PerkDefinition> perk;
 	try
 	{
-		perk = newHorizonsHeroes::perkDefinition(state.rules, skillIdString, requested.id);
+		perk = newHorizonsHeroes::perkDefinition(state.getRules(), skillIdString, requested.id);
 	}
 	catch(const std::exception &)
 	{
@@ -196,11 +196,11 @@ inline Evaluation evaluatePerk(const newHorizonsHeroes::PerkState & state,
 		return result;
 	}
 
-	const auto selectedForSkill = std::count_if(state.selected.begin(), state.selected.end(), [&skillIdString](const auto & selection)
+	const auto selectedForSkill = std::count_if(state.getSelected().begin(), state.getSelected().end(), [&skillIdString](const auto & selection)
 	{
 		return selection.skillId == skillIdString;
 	});
-	if(selectedForSkill >= state.rules["maxPerksPerSkill"].Integer())
+	if(selectedForSkill >= state.getRules()["maxPerksPerSkill"].Integer())
 	{
 		result.status = Status::LOCKED;
 		result.reason = Reason::PER_SKILL_CAP;
@@ -241,14 +241,14 @@ inline TierSlot evaluateTier(const newHorizonsHeroes::PerkState & state,
 {
 	TierSlot result;
 	result.requiredRank = tier;
-	if(tier < 1 || tier > 3 || !newHorizonsHeroes::usesPerkRules(state.rules))
+	if(tier < 1 || tier > 3 || !newHorizonsHeroes::usesPerkRules(state.getRules()))
 		return result;
 	const std::string skillIdString(skillId);
 
 	std::optional<newHorizonsHeroes::SkillDefinition> skill;
 	try
 	{
-		skill = newHorizonsHeroes::perkSkill(state.rules, skillIdString);
+		skill = newHorizonsHeroes::perkSkill(state.getRules(), skillIdString);
 	}
 	catch(const std::exception &)
 	{
@@ -312,17 +312,17 @@ inline TierSlot evaluateSelectionSlot(const newHorizonsHeroes::PerkState & state
 	TierSlot result;
 	if(slotIndex >= newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL || !usesSelectionSlots(state))
 		return result;
-	const auto skill = newHorizonsHeroes::perkSkill(state.rules, skillId);
+	const auto skill = newHorizonsHeroes::perkSkill(state.getRules(), skillId);
 	if(!skill)
 		return result;
 	size_t selectedIndex = 0;
-	for(const auto & selection : state.selected)
+	for(const auto & selection : state.getSelected())
 	{
 		if(selection.skillId != skillId)
 			continue;
 		if(selectedIndex++ != slotIndex)
 			continue;
-		const auto perk = newHorizonsHeroes::perkDefinition(state.rules, selection.skillId, selection.perkId);
+		const auto perk = newHorizonsHeroes::perkDefinition(state.getRules(), selection.skillId, selection.perkId);
 		if(!perk)
 			return result;
 		const auto evaluation = evaluatePerk(state, skillId, skillRank, *perk);

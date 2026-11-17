@@ -25,10 +25,10 @@ Version 1.0 dependencies.
    presents four fixed weighted groups at each ordinary level-up: two Skill
    offers and two distinct perk-parent offers. Choose one advancement; a perk
    offer opens that parent's complete currently eligible pool. Accessible
-   earlier-tier perks remain available, subject to rank and perk prerequisites
-   and the three-perk limit. Witch Huts, Scholars and other external Skill
+   perk tiers must be completed in order, with exactly one perk per tier.
+   Witch Huts, Scholars and other external Skill
    teaching grant their normal ranks without automatically granting perks.
-   Fresh defaults retain two Basic Skills and one authored Basic perk for each.
+   Fresh defaults have two Basic Skills and no automatically acquired perks.
    Historical captures retain their original advancement transactions and tiers;
    new source implementation is separate from release validation.
 3. **Magic schools:** Light, Nature, Sorcery/Arcane, Havoc, Shadow and Chaos, with

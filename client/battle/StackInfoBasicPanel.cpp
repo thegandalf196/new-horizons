@@ -8,10 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "../windows/SylvanFactionStatusPresentation.h"
 #include "StackInfoBasicPanel.h"
-#include "ArcaneMarkPresentation.h"
 #include "StackTemporaryStatusPresenter.h"
 #include "SummonLifetimePresentation.h"
 #include "FrozenStatusPresentation.h"
@@ -674,6 +674,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 129, 67, 12), tooltip, tooltip));
 	}
 	displayedStatus = currentStackInfoStatus(stack, battleCallback.get(), luckReadback);
+	displayedFocusCharges = newHorizonsFocusMagic::charges(*stack);
 	auto luckTooltip = battleLuckReadbackTooltip(displayedLuckReadback);
 	if(displayedStatus.sylvanLuck.active())
 	{
@@ -718,7 +719,6 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 	for(int i = 0; i < 3; i++)
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), 78, 0, firstPos.x + offset.x * i, firstPos.y + offset.y * i));
 
-	displayedArcaneMarks = arcaneMarkPresentation::counts(*stack);
 	displayedInspiration = arcaneInspirationPresentation::forStack(*stack, battleCallback.get());
 	displayedAttunement = elementalAttunementPresentation::forUnit(*stack);
 	StackTemporaryStatusPresenter temporaryStatuses(stack, displayedStatus, battleCallback.get());
@@ -748,11 +748,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const bool confusion = newHorizonsBattleStatus::isConfusion(spellKey);
 		if(confusion && !displayedStatus.confusion.active())
 			continue;
-		const bool timeStop = newHorizonsBattleStatus::isTimeStop(spellKey);
 		const bool entangle = newHorizonsBattleStatus::isEntangle(spellKey);
-		const bool spellLock = newHorizonsBattleStatus::isSpellLock(spellKey);
 		const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
-		const bool arcaneBreach = newHorizonsBattleStatus::isArcaneBreach(spellKey);
 		const bool plague = spellKey == PLAGUE_SPELL_KEY;
 		const bool soulChain = spellKey == newHorizonsSoulChain::SPELL_ID;
 		const bool shadowGift = newHorizonsBattleStatus::isShadowGift(spellKey);
@@ -775,24 +772,15 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		const auto doomEffect = doom ? newHorizonsBattleStatus::doomStatus(*spellBonuses)
 			: newHorizonsBattleStatus::DoomStatus{};
 		const auto frailty = currentFrailtyStatus(stack, spellKey, spellBonuses);
-		const auto lockStatus = spellLock
-			? newHorizonsBattleStatus::spellLockStatus(*spellBonuses)
-			: std::optional<newHorizonsBattleStatus::SpellLockStatus>{};
-		const auto arcaneStatus = arcaneBreach
-			? newHorizonsBattleStatus::arcaneBreachStatus(*spellBonuses)
-			: newHorizonsBattleStatus::ArcaneBreachStatus{};
 
 		icons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), (wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1, 0, slotX, slotY));
-		if(settings["general"]["enableUiEnhancements"].Bool() || confusion || timeStop || (entangle && displayedStatus.entangle.active()) || spellLock || arcaneBreach || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade || chosen || wheelSpell.hasValue())
+		if(settings["general"]["enableUiEnhancements"].Bool() || confusion || focusMagic || (entangle && displayedStatus.entangle.active()) || frailty || plague || soulChain || shadowGift || divineRetribution || vampirism || doom || guardianSpirit || heavenlyGale || crusade || chosen || wheelSpell.hasValue())
 		{
-			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : timeStop
-				? std::string(newHorizonsBattleStatus::TIME_STOP_BADGE)
+			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : focusMagic ? std::to_string(newHorizonsFocusMagic::charges(*stack))
 				: entangle && displayedStatus.entangle.active()
 					? std::to_string(displayedStatus.entangle.remainingRounds)
-				: spellLock ? std::string(newHorizonsBattleStatus::SPELL_LOCK_BADGE)
 				: divineRetribution && displayedStatus.divineRetribution.active()
 					? std::to_string(displayedStatus.divineRetribution.remainingRounds)
-				: arcaneBreach ? std::to_string(arcaneStatus.markCount())
 				: frailty ? (frailty->hasAccumulatedBasisPoints
 					? newHorizonsBattleStatus::formatBasisPoints(frailty->accumulatedBasisPoints)
 					: "-" + std::to_string(frailty->defenseLoss))
@@ -809,7 +797,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				: vampirism && displayedStatus.vampirism.active()
 					? newHorizonsBattleStatus::formatBasisPoints(displayedStatus.vampirism.lifestealBasisPoints)
 				: std::to_string(duration);
-			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, timeStop ? Colors::YELLOW : Colors::WHITE, badge));
+			labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, badge));
 		}
 
 		if(wheelSpell.hasValue())
@@ -824,22 +812,10 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.confusion);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
-		else if(timeStop)
-		{
-			const std::string tooltip = newHorizonsBattleStatus::timeStopTooltip(effect.toSpell()->getDescriptionTranslated(0));
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-		}
 		else if(entangle && displayedStatus.entangle.active())
 		{
 			const auto tooltip = newHorizonsBattleStatus::entangleTooltip(
 				effect.toSpell()->getDescriptionTranslated(0), displayedStatus.entangle);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-		}
-		else if(spellLock)
-		{
-			const std::string tooltip = lockStatus
-				? newHorizonsBattleStatus::spellLockTooltip(effect.toSpell()->getDescriptionTranslated(0), *lockStatus)
-				: effect.toSpell()->getDescriptionTranslated(0);
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(divineRetribution)
@@ -887,15 +863,8 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		}
 		else if(focusMagic)
 		{
-			const auto tooltipStatus = newHorizonsBattleStatus::focusMagicStatus(*spellBonuses);
-			const std::string tooltip = tooltipStatus
-				? newHorizonsBattleStatus::focusMagicTooltip(effect.toSpell()->getDescriptionTranslated(0), *tooltipStatus)
-				: effect.toSpell()->getDescriptionTranslated(0);
-			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
-		}
-		else if(arcaneBreach)
-		{
-			const std::string tooltip = newHorizonsBattleStatus::arcaneBreachTooltip(arcaneStatus);
+			const auto tooltip = effect.toSpell()->getDescriptionTranslated(0)
+				+ "\n\nEnergy shots remaining: " + std::to_string(newHorizonsFocusMagic::charges(*stack)) + ".";
 			statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		}
 		else if(spellKey == FRAILTY_SPELL_KEY)
@@ -990,11 +959,11 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 	else
 		currentMorale = updatedInfo->moraleVal();
 	if(current == displayedStatus && currentLuckReadback == displayedLuckReadback
+		&& newHorizonsFocusMagic::charges(*updatedInfo) == displayedFocusCharges
 		&& displayedSummonRounds == (updatedInfo->alive() ? updatedInfo->summonRoundsRemaining : 0)
 		&& soulChainSignature == displayedSoulChainSignature
 		&& arcaneInspirationPresentation::forStack(*updatedInfo, battleCallback.get()) == displayedInspiration
 		&& elementalAttunementPresentation::forUnit(*updatedInfo) == displayedAttunement
-		&& arcaneMarkPresentation::counts(*updatedInfo) == displayedArcaneMarks
 		&& currentMorale == displayedMorale && currentMoraleReadback == displayedMoraleReadback)
 		return;
 

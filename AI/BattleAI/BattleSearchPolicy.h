@@ -11,6 +11,8 @@ enum class Profile { Full, BeamOne, BeamOneTwoActors };
 DLL_LINKAGE std::optional<Profile> profileForAIName(std::string_view name);
 DLL_LINKAGE bool forecastBeamOne();
 DLL_LINKAGE unsigned forecastFutureActors();
+/// Admitted Hero candidates only. Zero retains Full; no wall-clock cutoff.
+DLL_LINKAGE unsigned heroRefinementLimit();
 
 /// One synchronous decision on its executing thread. Nested reference scopes win
 /// and restore the preceding policy, including on exceptions. Workers must enter

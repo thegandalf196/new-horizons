@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../hero/HistoricalLevelOfferFixture.h"
 
 #include <chrono>
@@ -233,47 +234,53 @@ protected:
 	void makeMentorTheOnlyActivePerk(CGHeroInstance * hero)
 	{
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-		ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(state.rules));
-		const auto mentor = newHorizonsHeroes::perkDefinition(state.rules, LEARNING_SKILL, MENTOR_PERK);
+		ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(state.getRules()));
+		const auto mentor = newHorizonsHeroes::perkDefinition(state.getRules(), LEARNING_SKILL, MENTOR_PERK);
 		ASSERT_TRUE(mentor.has_value());
 		ASSERT_EQ(mentor->effect["status"].String(), "active");
 
 		// Keep the saved registry structurally canonical while making this real
 		// level-up offer unambiguous across unrelated active perk families.
-		for(auto & skillEntry : state.rules["skills"].Struct())
+		perkStateFixture::editRules(state, [&](JsonNode & rules)
 		{
-			auto & skill = skillEntry.second;
-			for(auto & perk : skill["perks"].Vector())
+			for(auto & skillEntry : rules["skills"].Struct())
 			{
-				if(perk["id"].String() != MENTOR_PERK)
-					perk["effect"]["status"].String() = "planned";
+				auto & skill = skillEntry.second;
+				for(auto & perk : skill["perks"].Vector())
+				{
+					if(perk["id"].String() != MENTOR_PERK)
+						perk["effect"]["status"].String() = "planned";
+				}
 			}
-		}
+		});
 		state.validate();
 	}
 
 	void makeFieldStudyTheOnlyAdvancedOffer(CGHeroInstance * hero)
 	{
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-		ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(state.rules));
-		ASSERT_TRUE(newHorizonsHeroes::perkDefinition(state.rules, LEARNING_SKILL, MENTOR_PERK).has_value());
-		ASSERT_TRUE(newHorizonsHeroes::perkDefinition(state.rules, LEARNING_SKILL, FIELD_STUDY_PERK).has_value());
+		ASSERT_TRUE(newHorizonsHeroes::usesPerkRules(state.getRules()));
+		ASSERT_TRUE(newHorizonsHeroes::perkDefinition(state.getRules(), LEARNING_SKILL, MENTOR_PERK).has_value());
+		ASSERT_TRUE(newHorizonsHeroes::perkDefinition(state.getRules(), LEARNING_SKILL, FIELD_STUDY_PERK).has_value());
 
 		// The production registry intentionally keeps Field Study planned until
 		// its principal native gate passes. Activate only this saved catalog row
 		// to exercise the real legal Advanced offer and Nullkiller query path.
-		for(auto & skillEntry : state.rules["skills"].Struct())
+		perkStateFixture::editRules(state, [&](JsonNode & rules)
 		{
-			auto & skill = skillEntry.second;
-			for(auto & perk : skill["perks"].Vector())
+			for(auto & skillEntry : rules["skills"].Struct())
 			{
-				const auto & id = perk["id"].String();
-				if(id == MENTOR_PERK || id == FIELD_STUDY_PERK)
-					perk["effect"]["status"].String() = "active";
-				else
-					perk["effect"]["status"].String() = "planned";
+				auto & skill = skillEntry.second;
+				for(auto & perk : skill["perks"].Vector())
+				{
+					const auto & id = perk["id"].String();
+					if(id == MENTOR_PERK || id == FIELD_STUDY_PERK)
+						perk["effect"]["status"].String() = "active";
+					else
+						perk["effect"]["status"].String() = "planned";
+				}
 			}
-		}
+		});
 		state.validate();
 	}
 
@@ -313,8 +320,8 @@ TEST_F(NewHorizonsLearningMentorAITest, NullkillerSelectsMentorAndTheAuthoritati
 	ASSERT_TRUE(outcome.result.accepted) << outcome.result.error;
 	EXPECT_EQ(outcome.result.choice, 0);
 	EXPECT_EQ(mentor->level, initialMentorLevel + 1);
-	ASSERT_EQ(mentor->getPerkState().selected.size(), 1u);
-	EXPECT_EQ(mentor->getPerkState().selected.front(), (newHorizonsHeroes::PerkSelection{LEARNING_SKILL, MENTOR_PERK}));
+	ASSERT_EQ(mentor->getPerkState().getSelected().size(), 1u);
+	EXPECT_EQ(mentor->getPerkState().getSelected().front(), (newHorizonsHeroes::PerkSelection{LEARNING_SKILL, MENTOR_PERK}));
 	ASSERT_TRUE(mentor->hasActivePerk(LEARNING_SKILL, MENTOR_PERK));
 
 	ASSERT_GT(mentor->level, recipient->level);
@@ -375,8 +382,8 @@ TEST_F(NewHorizonsLearningMentorAITest, NullkillerSelectsTheLegallyOfferedAdvanc
 	ASSERT_TRUE(outcome.result.accepted) << outcome.result.error;
 	EXPECT_EQ(outcome.result.choice, 0);
 	EXPECT_EQ(mentor->level, initialMentorLevel + 1);
-	ASSERT_EQ(mentor->getPerkState().selected.size(), 2u);
-	EXPECT_EQ(mentor->getPerkState().selected.back(),
+	ASSERT_EQ(mentor->getPerkState().getSelected().size(), 2u);
+	EXPECT_EQ(mentor->getPerkState().getSelected().back(),
 		(newHorizonsHeroes::PerkSelection{LEARNING_SKILL, FIELD_STUDY_PERK}));
 	EXPECT_TRUE(mentor->hasActivePerk(LEARNING_SKILL, FIELD_STUDY_PERK));
 }

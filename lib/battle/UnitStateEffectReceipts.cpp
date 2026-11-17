@@ -7,6 +7,23 @@
 #include "../serializer/JsonSerializeFormat.h"
 namespace battle
 {
+bool demonicGateOpenedFromUnitJson(const JsonNode & unit)
+{
+	const auto & state = unit["state"];
+	if(!state.isStruct()) return false;
+	const auto found = state.Struct().find("demonicGateOpened");
+	if(found == state.Struct().end()) return false;
+	if(!found->second.isBool())
+		throw std::runtime_error("Demonic Gate use must be a boolean");
+	return found->second.Bool();
+}
+bool hasPassiveFactionUnitState(const JsonNode & unit)
+{
+	const bool gate = demonicGateOpenedFromUnitJson(unit);
+	const auto poisonSide = physicalPoisonSpellOriginFromJson(unit);
+	return gate || poisonSide != BattleSide::NONE;
+}
+
 UnitStateEffectReceipts parseUnitStateEffectReceipts(const JsonNode & data)
 {
 	const auto confusion = confusionStateFromUnitJson(data);
@@ -21,24 +38,11 @@ UnitStateEffectReceipts parseUnitStateEffectReceipts(const JsonNode & data)
 			|| !newHorizonsBloodrage::isValidPersonalIncrement(static_cast<int>(rawIncrement)))
 			throw std::runtime_error("Invalid personal Bloodrage increment");
 	}
-	const auto & shield = data["state"]["arcaneShieldHitPoints"];
-	if(!shield.isNull() && (shield.getType() != JsonNode::JsonType::DATA_INTEGER || shield.Integer() < 0))
-		throw std::runtime_error("Invalid Arcane Shield hit points");
-	return {confusion, dreadCavalry, arcaneMarksFromUnitJson(data), shield.isNull() ? 0 : shield.Integer(),
-		demonicGateOpenedFromUnitJson(data), physicalPoisonSpellOriginFromJson(data)};
+	return {confusion, dreadCavalry, demonicGateOpenedFromUnitJson(data), physicalPoisonSpellOriginFromJson(data)};
 }
 void serializePassiveFactionUnitState(JsonSerializeFormat & handler,
-	ArcaneMarkState & marks, bool & demonicGateOpened, BattleSide & poisonSpellSide, int64_t & arcaneShieldHitPoints)
+	bool & demonicGateOpened, BattleSide & poisonSpellSide)
 {
-	handler.serializeInt("arcaneShieldHitPoints", arcaneShieldHitPoints, 0);
-	if(arcaneShieldHitPoints < 0)
-		throw std::runtime_error("Invalid Arcane Shield hit points");
-	JsonNode encoded;
-	if(handler.saving)
-		encoded = marks.toJson();
-	handler.serializeRaw("arcaneMarks", encoded, std::nullopt);
-	if(!handler.saving)
-		marks = encoded.isNull() ? ArcaneMarkState{} : ArcaneMarkState::fromJson(encoded);
 	handler.serializeBool("demonicGateOpened", demonicGateOpened);
 	int32_t side = static_cast<int32_t>(poisonSpellSide);
 	handler.serializeInt("physicalPoisonSpellSide", side, -1);

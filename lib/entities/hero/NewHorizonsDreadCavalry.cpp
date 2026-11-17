@@ -32,7 +32,7 @@ bool hasDreadCavalry(const CGHeroInstance * hero)
 {
 	return hero && hero->getHeroTypeID().hasValue()
 		&& hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:tamika"))
-		&& dreadCavalryDamagePercent(hero->getPrimaryGrowthRules()).has_value();
+		&& hero->compiledDevelopment()->dreadCavalry.has_value();
 }
 bool resolveDreadCavalryPresentation(const CHero & hero,
 	const JsonNode & rules, SpecialtyPresentation & result)

@@ -110,20 +110,20 @@ void applyOrdinaryEffect(CGameHandler & game, const CBattleInfoCallback & battle
 	const auto * recipient = battle.battleGetUnitByID(effectPlan.target);
 	if(!recipient || (effectPlan.add.empty() && effectPlan.remove.empty()))
 		return;
-	const bool available = recipient->alive() && !recipient->isGhost() && !recipient->isTimeStopped();
+	const bool available = recipient->alive() && !recipient->isGhost();
 	SetStackEffect effect;
 	effect.battleID = battle.getBattle()->getBattleID();
 	std::vector<Bonus> remove;
 	for(const auto & bonus : effectPlan.remove)
 		if(available || newHorizonsSpecialtyEvents::isReceipt(&bonus) || newHorizonsCoordinatedMarks::isMark(&bonus)
-			|| (!recipient->isTimeStopped() && newHorizonsReactiveDefense::isIronHideSpent(&bonus)))
+			|| (newHorizonsReactiveDefense::isIronHideSpent(&bonus)))
 			remove.push_back(bonus);
 	if(!remove.empty())
 		effect.toRemove.emplace_back(effectPlan.target, std::move(remove));
 	std::vector<Bonus> add;
 	for(const auto & bonus : effectPlan.add)
 		if(available || newHorizonsSpecialtyEvents::isReceipt(&bonus)
-			|| (!recipient->isTimeStopped() && newHorizonsReactiveDefense::isIronHideSpent(&bonus)))
+			|| (newHorizonsReactiveDefense::isIronHideSpent(&bonus)))
 			add.push_back(bonus);
 	if(!add.empty())
 		effect.toAdd.emplace_back(effectPlan.target, std::move(add));

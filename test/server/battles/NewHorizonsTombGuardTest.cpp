@@ -99,7 +99,7 @@ protected:
 		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:isra")));
 		const auto skill = SecondarySkill(SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID));
 		attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-		const auto & rules = attackerSideHero->getPerkState().rules;
+		const auto & rules = attackerSideHero->getPerkState().getRules();
 		const auto captured = newHorizonsNecromancy::policy(rules);
 		ASSERT_EQ(captured.has_value(), captureVersion() != 0);
 		if(captured)
@@ -131,7 +131,7 @@ protected:
 		restored.loadFromMemory(gameState()->saveToMemory());
 		const auto * loaded = restored.getHero(attackerSideHero->id);
 		ASSERT_NE(loaded, nullptr);
-		EXPECT_EQ(loaded->getPerkState().rules, rules);
+		EXPECT_EQ(loaded->getPerkState().getRules(), rules);
 		EXPECT_EQ(newHorizonsNecromancy::tombGuardDoubleStrike(loaded, CreatureID(CreatureID::SKELETON)),
 			captureVersion() == 2);
 		EXPECT_EQ(newHorizonsNecromancy::tombGuardAdditionalRetaliations(loaded, CreatureID(CreatureID::SKELETON)),

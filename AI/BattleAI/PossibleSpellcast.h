@@ -24,7 +24,7 @@
 
 class CSpell;
 
-class PossibleSpellcast
+class DLL_LINKAGE PossibleSpellcast
 {
 public:
 	using ValueMap = std::map<uint32_t, int64_t>;
@@ -60,9 +60,6 @@ public:
 	/// Marks the canonical multi-target damage spell so its probabilistic magic
 	/// resistance is valued as expected damage after the shared cast forecast.
 	bool spellStormOfDaggers = false;
-	/// The cast is an immediate, non-chaining Tower Metamagic follow-up.
-	bool metamagicFollowup = false;
-	bool metamagicGrand = false; // projected automatic outcome, never a player request
 	/// The cast consumes the current Divine Mandate Light-Spell follow-up.
 	bool divineMandateFollowup = false;
 	/// Delayed placement value for canonical New Horizons Land Mine.  Mines do

@@ -131,7 +131,7 @@ public:
 	void emitStackProjectile(const CStack * stack);
 
 	/// creates (but not emits!) projectile and initializes it based on parameters
-	void createProjectile(const CStack * shooter, Point from, Point dest);
+	void createProjectile(const CStack * shooter, Point from, Point dest, bool focusMagicRanged = false);
 	void createSpellProjectile(const CStack * shooter, Point from, Point dest, const CSpell * spell);
 	void createCatapultProjectile(const CStack * shooter, Point from, Point dest);
 

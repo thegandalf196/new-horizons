@@ -347,14 +347,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	auto start = std::chrono::high_resolution_clock::now();
 
-	// Time Stop deliberately keeps a physical stack in the queue while making
-	// every creature action illegal.  An AI still receives the same
-	// non-automatic activation packet as a human, so it must use that window for
-	// a legal Hero Action when one is available, or submit the authoritative
-	// no-op pass.  Falling through to the ordinary stack evaluator would submit
-	// DEFEND/WAIT and leave the battle waiting forever on a stopped stack.
-	const bool timeStopped = stack->isTimeStopped();
-	if(timeStopped || stack->pursuitMovementRemaining > 0)
+	if(stack->pursuitMovementRemaining > 0)
 	{
 		const auto battleCallback = cb->getBattle(battleID);
 		if(battleCallback->battleGetMyHero()
@@ -371,16 +364,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 				return;
 		}
 
-		if(timeStopped)
-		{
-			BattleAction pass = BattleAction::makeNoAction(stack);
-			// The AI callback is dispatched for the action controller, while every
-			// creature-action packet continues to identify the stack's physical side.
-			pass.side = stack->unitSide();
-			timing.submitUnitAction(cb, battleID, pass);
-		}
-		else
-			timing.submitUnitAction(cb, battleID, choosePursuitMovement(battleCallback, stack));
+		timing.submitUnitAction(cb, battleID, choosePursuitMovement(battleCallback, stack));
 		return;
 	}
 

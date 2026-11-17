@@ -3,7 +3,6 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
-#include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -18,6 +17,8 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsSorceryRevision.h"
+#include "../../../lib/battle/NewHorizonsFocusMagic.h"
 
 namespace
 {
@@ -33,19 +34,9 @@ const Bonus * hastePrototype(const CGHeroInstance * hero)
 	return nullptr;
 }
 
-// This one old-format fixture exercises Haste admission, not later specialty families.
-void removePostVeteranSpecialties(JsonNode & rules)
-{
-	for(const auto key : {"druidSpecialties", "fortuneChildSpecialty", "arcanePreparationSpecialty",
-		"bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties",
-		"additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty"})
-		rules.Struct().erase(key);
-}
-
 class NewHorizonsHasteSpecialtyTest : public HeroCommandFixture
 {
 protected:
-	bool historicalList = false;
 	bool currentRoster = false;
 	CGHeroInstance * ordinary = nullptr;
 	CStack * target = nullptr;
@@ -59,6 +50,9 @@ protected:
 	}
 	void mapLoaded(CMap * loaded) override
 	{
+		// Haste effect controls use the admitted current issuance policy. An old
+		// supported-spell list cannot restore retired hero specialty prototypes.
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 		// Existing Haste cases are captures from before its hero-roster retirement.
@@ -72,47 +66,26 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 			return;
 		}
-		rules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
-		rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
-		rules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
-		rules["startingSkills"].Struct().erase("startingBookReplacements");
-		rules.Struct().erase("remainingSpellSpecialtyReplacements");
-		rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
-		rules.Struct().erase("defaultCreatureLineReplacements");
-		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
-			[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
-		rules.Struct().erase("lighthouseDeparture");
-		rules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
-		rules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
-		rules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
-		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
-		{
-			return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
-				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
-		});
-		// Isolate this feature's admission from the separately authored Thant
-		// replacement introduced by a subsequent supported-list boundary.
-		std::erase_if(rules["nonDamageSpellSpecialties"]["spells"].Vector(),
-			[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"
-				|| spell.String() == "new-horizons:frailty"; });
 		rules.setOverrideFlag(true);
-		if(historicalList)
-		{
-			removePostVeteranSpecialties(rules);
-			// No perk or canonical-magic behavior is needed by this old Haste codec control.
-			JsonNode absentPerks;
-			absentPerks.Struct();
-			absentPerks.setOverrideFlag(true);
-			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, absentPerks);
-			loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
-			loaded->overrideGameSetting(EGameSettings::COMBAT_NEW_HORIZONS_FINAL_LUCK, JsonNode(false));
-			loaded->overrideGameSetting(EGameSettings::COMBAT_MORALE_EXTRA_DAMAGE_PERCENT, JsonNode(100));
-			auto & spells = rules["nonDamageSpellSpecialties"]["spells"].Vector();
-			std::erase_if(spells, [](const JsonNode & spell) { return spell.String() == "core:haste"; });
-			rules.setOverrideFlag(true);
-		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
-		isolateHistoricalAdventurePolicies(*loaded);
+	}
+	void expectMalformedHasteAbsenceRejected()
+	{
+		auto malformed = gameState()->getHeroDevelopmentRules();
+		auto & spells = malformed["nonDamageSpellSpecialties"]["spells"].Vector();
+		std::erase_if(spells, [](const JsonNode & spell) { return spell.String() == "core:haste"; });
+		ASSERT_FALSE(newHorizonsHeroes::hasHasteSpecialtyRules(malformed));
+		EXPECT_THROW(newHorizonsHeroes::validateRemainingSpellSpecialtySerialization(malformed, true), std::runtime_error);
+		JsonNode incoming;
+		incoming["heroes"]["newHorizons"] = malformed;
+		CMemorySerializer raw;
+		raw.oser & incoming;
+		GameSettings decoded;
+		ASSERT_NO_THROW(decoded.loadBase(LIBRARY->settingsHandler->getFullConfig()));
+		const auto before = decoded.getFullConfig();
+		EXPECT_THROW(decoded.serialize(raw.iser), std::runtime_error);
+		EXPECT_EQ(decoded.getFullConfig(), before);
+		EXPECT_TRUE(newHorizonsHeroes::hasHasteSpecialtyRules(gameState()->getHeroDevelopmentRules()));
 	}
 	void prepare(const std::string & specialist = "core:cyra", int rawSpellPower = 67)
 	{
@@ -216,18 +189,19 @@ class CurrentHasteSuccessorTest : public NewHorizonsHasteSpecialtyTest,
 TEST_P(CurrentHasteSuccessorTest, DefaultsPreviewSpecialtyAndPaidFocusCastAgree)
 {
 	currentRoster = true;
+	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(GetParam(), 100));
 	const SpellID focus(SpellID::decode("new-horizons:focusMagic"));
 	const bool specialist = std::string_view(GetParam()) != "core:fafner";
 	const auto * type = attackerSideHero->getHeroType();
-	ASSERT_TRUE(type->spells.contains(SpellID::HASTE));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(SpellID::HASTE));
 	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(focus));
 	const auto context = newHorizonsHeroes::startingHeroContext(gameState()->getSettings());
 	const auto projected = newHorizonsHeroes::projectStartingHero(*type, context);
 	EXPECT_FALSE(projected.spells.contains(SpellID::HASTE));
 	EXPECT_TRUE(projected.spells.contains(focus));
-	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(focus), specialist ? 20 : 0);
+	EXPECT_EQ(newHorizonsSorceryRevision::focusAdditionalRangedPercent(attackerSideHero, focus), specialist ? 10 : 0);
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(focus), 0);
 	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
 	if(specialist)
 	{
@@ -238,22 +212,10 @@ TEST_P(CurrentHasteSuccessorTest, DefaultsPreviewSpecialtyAndPaidFocusCastAgree)
 		EXPECT_EQ(captured.spell, focus);
 		EXPECT_EQ(selected.name, focus.toSpell()->getNameTranslated());
 		EXPECT_EQ(captured.name, selected.name);
-		EXPECT_NE(captured.description.find("Creature Defense penetration per Arcane Breach mark"), std::string::npos);
-		EXPECT_EQ(captured.description.find("Speed bonus"), std::string::npos);
-		EXPECT_EQ(hastePrototype(attackerSideHero)->parameters, nullptr);
+		EXPECT_NE(captured.description.find("+10 additional percentage points of ranged damage"), std::string::npos);
+		EXPECT_EQ(captured.description.find("Arcane Breach"), std::string::npos);
+		EXPECT_EQ(hastePrototype(attackerSideHero), nullptr);
 	}
-	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, focus.toSpell());
-	const auto mechanics = focus.toSpell()->battleMechanics(&cast);
-	const int base = mechanics->getArcaneBreachMarkBasisPoints();
-	// No school, Spellcraft or Warcasting: the specialty scales only the SP component.
-	EXPECT_EQ(base, specialist ? 860 : 800);
-	const bool startsWithMetamagic = std::string_view(GetParam()) == "core:fafner"
-		|| std::string_view(GetParam()) == "core:cyra";
-	EXPECT_EQ(attackerSideHero->getPerkSkillRank("new-horizons:metamagic"), startsWithMetamagic ? 1 : 0);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER).points, startsWithMetamagic ? 1 : 0);
-	// Current round-one Basic Metamagic adds 1% to the recipient's outgoing magnitude.
-	const int predicted = mechanics->getRecipientArcaneBreachMarkBasisPoints(target);
-	EXPECT_EQ(predicted, startsWithMetamagic ? (specialist ? 868 : 808) : (specialist ? 860 : 800));
 	const auto mana = attackerSideHero->getManaAvailable();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
@@ -262,10 +224,21 @@ TEST_P(CurrentHasteSuccessorTest, DefaultsPreviewSpecialtyAndPaidFocusCastAgree)
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(newHorizonsFocusMagic::charges(*target), 3);
 	const auto effects = target->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(focus)));
-	ASSERT_EQ(effects->size(), 1u);
-	EXPECT_EQ(effects->front()->type, BonusType::COMBAT_EVENT_TRIGGER);
-	EXPECT_EQ(effects->front()->val, predicted);
+	ASSERT_EQ(effects->size(), 2);
+	bool enhanced = false;
+	for(const auto & effect : *effects)
+	{
+		EXPECT_NE(effect->type, BonusType::COMBAT_EVENT_TRIGGER);
+		if(effect->type == BonusType::PERCENTAGE_DAMAGE_BOOST)
+		{
+			enhanced = true;
+			EXPECT_EQ(effect->subtype, BonusSubtypeID(BonusCustomSubtype::damageTypeRanged));
+			EXPECT_EQ(effect->val, specialist ? 30 : 20);
+		}
+	}
+	EXPECT_TRUE(enhanced);
 	CMemorySerializer memory;
 	memory.oser & *gameState();
 	CGameState copied;
@@ -277,52 +250,51 @@ TEST_P(CurrentHasteSuccessorTest, DefaultsPreviewSpecialtyAndPaidFocusCastAgree)
 	ASSERT_NE(restored, nullptr);
 	EXPECT_TRUE(restored->spellbookContainsSpell(focus));
 	EXPECT_FALSE(restored->spellbookContainsSpell(SpellID::HASTE));
-	EXPECT_EQ(restored->getNonDamageSpellSpecialtyBonusPercent(focus), specialist ? 20 : 0);
-	if(specialist)
-		EXPECT_EQ(restored->getSpecialtyPresentation().spell, focus);
+	EXPECT_EQ(newHorizonsSorceryRevision::focusAdditionalRangedPercent(restored, focus), specialist ? 10 : 0);
+	if(specialist) EXPECT_EQ(restored->getSpecialtyPresentation().spell, focus);
 }
+
 INSTANTIATE_TEST_SUITE_P(CurrentRetiredHaste, CurrentHasteSuccessorTest,
 	testing::Values("core:fafner", "core:cyra", "core:brissa", "core:terek"));
 
-TEST_F(NewHorizonsHasteSpecialtyTest, CyraPaidCastScalesDurationOnlyAndKeepsPrototype)
+TEST_F(NewHorizonsHasteSpecialtyTest, CyraOrdinaryHasteHasNoRetiredSpecialtyAndKeepsPrototypeAbsent)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto * prototype = hastePrototype(attackerSideHero);
-	ASSERT_NE(prototype, nullptr);
-	EXPECT_EQ(prototype->parameters, nullptr);
-	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 20);
+	EXPECT_EQ(prototype, nullptr);
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
 	EXPECT_EQ(ordinary->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
-	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 20));
-	EXPECT_GT(duration(attackerSideHero), duration(ordinary));
-	EXPECT_NE(attackerSideHero->getSpecialtyDescriptionTranslated().find("Speed bonus is unchanged"), std::string::npos);
+	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 0));
+	EXPECT_EQ(duration(attackerSideHero), duration(ordinary));
+	EXPECT_EQ(hastePrototype(attackerSideHero), nullptr);
 	ASSERT_NO_FATAL_FAILURE(expectPaidCast(3));
-	EXPECT_EQ(prototype->parameters, nullptr);
+	EXPECT_EQ(hastePrototype(attackerSideHero), nullptr);
 }
 
-TEST_F(NewHorizonsHasteSpecialtyTest, BrissaPaidCastUsesTheSameConvertedDuration)
+TEST_F(NewHorizonsHasteSpecialtyTest, BrissaOrdinaryHasteDoesNotInheritRetiredDurationBonus)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:brissa"));
-	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 20);
-	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 20));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
+	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 0));
 	ASSERT_NO_FATAL_FAILURE(expectPaidCast(3));
 }
 
-TEST_F(NewHorizonsHasteSpecialtyTest, TerekPaidCastUsesTheSameConvertedDurationWithoutChangingStart)
+TEST_F(NewHorizonsHasteSpecialtyTest, TerekOrdinaryHasteDoesNotInheritRetiredDurationBonus)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:terek"));
 	EXPECT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:terek");
-	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 20);
-	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 20));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
+	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 0));
 	ASSERT_NO_FATAL_FAILURE(expectPaidCast(3));
 }
 
-TEST_F(NewHorizonsHasteSpecialtyTest, TerekHistoricalListRetainsTheLegacySpeedRider)
+TEST_F(NewHorizonsHasteSpecialtyTest, TerekMalformedHasteAbsenceCannotRecreateRetiredSpeedRider)
 {
-	historicalList = true;
 	ASSERT_NO_FATAL_FAILURE(prepare("core:terek"));
+	ASSERT_NO_FATAL_FAILURE(expectMalformedHasteAbsenceRejected());
 	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
 	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 0));
-	ASSERT_NO_FATAL_FAILURE(expectPaidCast(6));
+	ASSERT_NO_FATAL_FAILURE(expectPaidCast(3));
 }
 
 TEST_F(NewHorizonsHasteSpecialtyTest, SchoolCoefficientSharesFinalFloorButFlatBonusesDoNotScale)
@@ -334,34 +306,38 @@ TEST_F(NewHorizonsHasteSpecialtyTest, SchoolCoefficientSharesFinalFloorButFlatBo
 	{
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(SORCERY)),
 			rank, ChangeValueMode::ABSOLUTE);
-		EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 20)) << rank;
+		EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 0)) << rank;
 	}
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 0, ChangeValueMode::ABSOLUTE);
 	EXPECT_EQ(duration(attackerSideHero), 3) << "One-round minimum plus two unscaled flat rounds";
 }
 
-TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalSupportedListPreservesLegacySpeedRider)
+TEST_F(NewHorizonsHasteSpecialtyTest, MalformedHasteAbsenceKeepsAdmittedGenericHasteWithoutRetiredRider)
 {
-	historicalList = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(expectMalformedHasteAbsenceRejected());
 	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
 	EXPECT_EQ(duration(attackerSideHero), expectedDuration(attackerSideHero, 0));
 	const auto * prototype = hastePrototype(attackerSideHero);
-	ASSERT_NE(prototype, nullptr);
-	EXPECT_EQ(prototype->parameters, nullptr);
-	ASSERT_NO_FATAL_FAILURE(expectPaidCast(6));
+	EXPECT_EQ(prototype, nullptr);
+	ASSERT_NO_FATAL_FAILURE(expectPaidCast(3));
 }
 
-TEST_F(NewHorizonsHasteSpecialtyTest, CurrentWorldRoundtripRetainsMarkerAndZeroParameterOnlyOnLocalClone)
+TEST_F(NewHorizonsHasteSpecialtyTest, CurrentWorldRoundtripRetainsUnrelatedPeculiarEnchantWithoutRetiredPrototype)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto heroID = attackerSideHero->id;
+	auto unrelated = std::make_shared<Bonus>(BonusDuration::PERMANENT,
+		BonusType::SPECIAL_PECULIAR_ENCHANT, BonusSource::OTHER, 0, BonusSourceID(),
+		BonusSubtypeID(SpellID(SpellID::HASTE)));
+	unrelated->parameters = std::make_shared<BonusParameters>(std::vector<int32_t>{4});
+	ordinary->addNewBonus(unrelated);
+	const auto heroID = ordinary->id;
 	CGameState restored;
 	restored.preInit(LIBRARY);
 	restored.loadFromMemory(gameState()->saveToMemory());
 	const auto * loaded = restored.getHero(heroID);
 	ASSERT_NE(loaded, nullptr);
-	EXPECT_EQ(loaded->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 20);
+	EXPECT_EQ(loaded->getNonDamageSpellSpecialtyBonusPercent(SpellID::HASTE), 0);
 	bool found = false;
 	for(const auto & bonus : loaded->getExportedBonusList())
 		if(bonus->type == BonusType::SPECIAL_PECULIAR_ENCHANT
@@ -369,13 +345,12 @@ TEST_F(NewHorizonsHasteSpecialtyTest, CurrentWorldRoundtripRetainsMarkerAndZeroP
 		{
 			found = true;
 			ASSERT_NE(bonus->parameters, nullptr);
-			EXPECT_EQ(bonus->parameters->toVector(), std::vector<int32_t>{0});
-			EXPECT_EQ(bonus->source, BonusSource::HERO_SPECIAL);
-			EXPECT_EQ(bonus->sid, BonusSourceID(loaded->getHeroTypeID()));
+			EXPECT_EQ(bonus->parameters->toVector(), std::vector<int32_t>{4});
+			EXPECT_EQ(bonus->source, BonusSource::OTHER);
 		}
 	EXPECT_TRUE(found);
-	ASSERT_NE(hastePrototype(loaded), nullptr);
-	EXPECT_EQ(hastePrototype(loaded)->parameters, nullptr);
+	EXPECT_EQ(hastePrototype(loaded), nullptr);
+	EXPECT_EQ(unrelated->parameters->toVector(), std::vector<int32_t>{4});
 }
 
 TEST_F(NewHorizonsHasteSpecialtyTest, ExplicitDurationOverrideAndUnrelatedProducerRemainUnchanged)
@@ -438,25 +413,7 @@ TEST_F(NewHorizonsHasteSpecialtyTest, PreviousVeteranWriterRejectsBeforeHeroMapW
 	lobby.initializedGameState = gameState();
 	reject(lobby);
 	GameSettings settings;
-	JsonNode authoredRules(JsonPath::builtin("config/newHorizonsHeroes"));
-	authoredRules["startingSkills"].Struct().erase("startingDevelopmentProfiles");
-	authoredRules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
-	authoredRules["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
-	authoredRules["startingSkills"].Struct().erase("startingBookReplacements");
-	authoredRules.Struct().erase("remainingSpellSpecialtyReplacements");
-	authoredRules["skillSpecialties"].Struct().erase("navigationStartReplacements");
-	authoredRules.Struct().erase("defaultCreatureLineReplacements");
-	std::erase_if(authoredRules["nonDamageSpellSpecialties"]["spells"].Vector(),
-		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
-	authoredRules.Struct().erase("lighthouseDeparture");
-	authoredRules["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
-	authoredRules["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
-	authoredRules["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
-	std::erase_if(authoredRules["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
-	{
-		return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
-				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
-	});
+	const auto authoredRules = gameState()->getHeroDevelopmentRules();
 	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS,
 		authoredRules);
 	reject(settings);
@@ -487,74 +444,46 @@ TEST_F(NewHorizonsHasteSpecialtyTest, MapPreflightIncludesNonIndexedObjectsAndOf
 	EXPECT_THROW(isolated.validateNewHorizonsHasteSpecialtySerialization(false), std::runtime_error);
 }
 
-TEST_F(NewHorizonsHasteSpecialtyTest, HistoricalListsRemainOldWritableAndRawReadCannotInventHasteAdmission)
+TEST_F(NewHorizonsHasteSpecialtyTest, MalformedHasteAbsenceRejectsCurrentReadAndKeepsOldWriterGuard)
 {
-	historicalList = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	EXPECT_FALSE(newHorizonsMagic::rulesActive(gameState()->getMagicRules()));
-	EXPECT_FALSE(newHorizonsHeroes::usesPerkRules(gameState()->getHeroPerkRules()));
-	EXPECT_TRUE(gameState()->getHeroDevelopmentRules()["recoverySpecialties"].isNull());
-	EXPECT_TRUE(gameState()->getHeroDevelopmentRules()["reclamationSpecialty"].isNull());
-	const auto ordinaryOldWriter = [](auto & value)
+	EXPECT_TRUE(newHorizonsMagic::rulesActive(gameState()->getMagicRules()));
+	EXPECT_TRUE(newHorizonsHeroes::usesPerkRules(gameState()->getHeroPerkRules()));
+	ASSERT_NO_FATAL_FAILURE(expectMalformedHasteAbsenceRejected());
+	EXPECT_TRUE(newHorizonsHeroes::hasHasteSpecialtyRules(gameState()->getHeroDevelopmentRules()));
+	EXPECT_EQ(hastePrototype(attackerSideHero), nullptr);
+	const auto rejectOldWriter = [](auto & value)
 	{
 		CMemorySerializer memory;
 		memory.oser.version = ESerializationVersion::NEW_HORIZONS_VETERAN_COHESION;
-		EXPECT_NO_THROW(value.serialize(memory.oser));
-		EXPECT_FALSE(memory.extractBuffer().empty());
+		EXPECT_THROW(value.serialize(memory.oser), std::runtime_error);
+		EXPECT_TRUE(memory.extractBuffer().empty());
 	};
-	ordinaryOldWriter(*attackerSideHero);
-	ordinaryOldWriter(gameState()->getMap());
-	ordinaryOldWriter(*gameState());
+	rejectOldWriter(*attackerSideHero);
+	rejectOldWriter(gameState()->getMap());
+	rejectOldWriter(*gameState());
 	LobbyStartGame lobby;
 	lobby.initializedStartInfo = std::make_shared<StartInfo>(*gameState()->getStartInfo());
 	lobby.initializedGameState = gameState();
-	ordinaryOldWriter(lobby);
+	rejectOldWriter(lobby);
 	JsonNode captured;
-	captured["heroes"]["newHorizons"] = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
-	removePostVeteranSpecialties(captured["heroes"]["newHorizons"]);
-	captured["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingDevelopmentProfiles");
-	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
-	captured["heroes"]["newHorizons"]["damageSpellSpecialties"].Struct().erase("coroniusHolyWrathReplacement");
-	captured["heroes"]["newHorizons"]["startingSkills"].Struct().erase("startingBookReplacements");
-	captured["heroes"]["newHorizons"].Struct().erase("remainingSpellSpecialtyReplacements");
-	captured["heroes"]["newHorizons"]["skillSpecialties"].Struct().erase("navigationStartReplacements");
-	captured["heroes"]["newHorizons"].Struct().erase("defaultCreatureLineReplacements");
-	std::erase_if(captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
-		[](const JsonNode & value) { return value.String() == "new-horizons:phantomArmy"; });
-	captured["heroes"]["newHorizons"].Struct().erase("lighthouseDeparture");
-	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("aenainFrailtyReplacement");
-	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("defensiveStartReplacements");
-	captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"].Struct().erase("offensiveStartReplacements");
-	std::erase_if(captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(), [](const JsonNode & spell)
-	{
-		return spell.String() == "new-horizons:hydrasVitality" || spell.String() == "new-horizons:guardianSpirit"
-				|| spell.String() == "new-horizons:crusade" || spell.String() == "new-horizons:focusMagic";
-	});
-	std::erase_if(captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
-		[](const JsonNode & spell) { return spell.String() == "new-horizons:reanimate"
-			|| spell.String() == "new-horizons:frailty"; });
+	captured["heroes"]["newHorizons"] = gameState()->getHeroDevelopmentRules();
+	ASSERT_TRUE(newHorizonsHeroes::hasHasteSpecialtyRules(captured["heroes"]["newHorizons"]));
+	const auto & withHaste = captured;
+	EXPECT_THROW(newHorizonsHeroes::validateHasteSpecialtySerialization(withHaste["heroes"]["newHorizons"], false), std::runtime_error);
 	CMemorySerializer raw;
-	raw.oser & captured; // Simulate old framing carrying a newly supported raw list.
+	raw.oser & withHaste;
 	raw.iser.version = ESerializationVersion::NEW_HORIZONS_VETERAN_COHESION;
 	GameSettings decoded;
-	try
-	{
-		decoded.serialize(raw.iser);
-		FAIL() << "Old framing must reject a captured Haste list after decoding";
-	}
-	catch(const std::runtime_error & error)
-	{
-		EXPECT_NE(std::string(error.what()).find("Haste specialty rules"), std::string::npos);
-	}
-	std::erase_if(captured["heroes"]["newHorizons"]["nonDamageSpellSpecialties"]["spells"].Vector(),
-		[](const JsonNode & spell) { return spell.String() == "core:haste"; });
-	CMemorySerializer oldRaw;
-	oldRaw.oser & captured;
-	oldRaw.iser.version = ESerializationVersion::NEW_HORIZONS_VETERAN_COHESION;
-	GameSettings oldDecoded;
-	EXPECT_NO_THROW(oldDecoded.serialize(oldRaw.iser));
-	EXPECT_FALSE(newHorizonsHeroes::hasHasteSpecialtyRules(
-		oldDecoded.getValue(EGameSettings::HEROES_NEW_HORIZONS)));
+	ASSERT_NO_THROW(decoded.loadBase(LIBRARY->settingsHandler->getFullConfig()));
+	const auto before = decoded.getFullConfig();
+	EXPECT_THROW(decoded.serialize(raw.iser), std::runtime_error);
+	EXPECT_EQ(decoded.getFullConfig(), before);
+	CMemorySerializer current;
+	current.oser & captured;
+	ASSERT_NO_THROW(decoded.serialize(current.iser));
+	EXPECT_TRUE(newHorizonsHeroes::hasHasteSpecialtyRules(
+		decoded.getValue(EGameSettings::HEROES_NEW_HORIZONS)));
 }
 
 

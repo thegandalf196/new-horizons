@@ -247,13 +247,10 @@ TEST_P(NewHorizonsCoordinatedMarkTest, FeatheredFeintRequiresDifferentAttackerAn
 	battlePrimaryStrikeAftermath::applyOrdinaryEffect(*gameHandler, *battle(), newHorizonsOrdinaryStrike::plan(*battle(), next, 1));
 	EXPECT_FALSE(marks::hasMark(*victim));
 }
-TEST_P(NewHorizonsCoordinatedMarkTest, IncompleteReturnDeadOrStoppedActorCannotMark)
+TEST_P(NewHorizonsCoordinatedMarkTest, IncompleteReturnOrDeadActorCannotMark)
 {
 	prepare("core:lorelei");
 	EXPECT_TRUE(marks::completedReturn(*battle(), *actor, *victim, false).add.empty());
-	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_TRUE(marks::completedReturn(*battle(), *actor, *victim, true).add.empty());
-	actor->removeBonuses(Selector::type()(BonusType::TIME_STOP));
 	int64_t lethal = actor->getAvailableHealth(); actor->damage(lethal);
 	EXPECT_TRUE(marks::completedReturn(*battle(), *actor, *victim, true).add.empty());
 }

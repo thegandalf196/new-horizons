@@ -285,7 +285,7 @@ DailyMovementLimits dailyMovementLimits(const CGHeroInstance & hero,
 	if(hero.hasActivePerk("new-horizons:logistics", "new-horizons:logistics.navigation"))
 		waterModifiers.percentageToBase = saturatingAdd(waterModifiers.percentageToBase, 25);
 
-	const auto growth = levelMovementBonus(hero.getPrimaryGrowthRules(), hero.level);
+	const auto growth = hero.compiledDevelopment()->levelMovementBonus(hero.level);
 	DailyMovementLimits result;
 	result.land = evaluateModifiers(landModifiers, growth);
 	result.sea = evaluateModifiers(waterModifiers, growth);

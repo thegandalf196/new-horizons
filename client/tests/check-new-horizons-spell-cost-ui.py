@@ -20,7 +20,7 @@ for token in ("struct DLL_LINKAGE SpellCostStage", "struct DLL_LINKAGE SpellCost
     assert token in types, f"cost result must be safe across library boundary: {token}"
 assert "spellCost - 2" not in book, "frontend must not duplicate Arcane Economy arithmetic"
 assert "metamagicBaseCost" not in overcharge, "Overcharge must use the shared follow-up cost"
-assert "battleGetSpellCostBreakdown(spell, hero, 1, metamagicFollowup)" in overcharge
+assert "getTargetAwareManaCost(targetCheck)" in overcharge
 assert "battleGetSpellCostBreakdown(owner" not in mechanics, "cast legality must use the trace-free cost path"
 
 for suffix in (
@@ -38,7 +38,7 @@ for suffix in (
 assert "SpellCostStage::Kind::SPELL_FAMILIARITY" in help_text
 for obsolete in ("PREPARED_CASTER", "ARCHMAGE"):
     assert "SpellCostStage::Kind::" + obsolete not in help_text
-assert "getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup)" in readout
-assert "spellEffectPreview(*owner->myHero, *mySpell, battle.get(), metamagicFollowup)" in readout
+assert "getSpellCostBreakdown(mySpell, owner->myHero)" in readout
+assert "spellEffectPreview(*owner->myHero, *mySpell, battle.get())" in readout
 
 print("New Horizons spell-cost UI bindings: PASS (not rendered acceptance)")

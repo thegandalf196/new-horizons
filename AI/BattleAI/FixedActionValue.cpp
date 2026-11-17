@@ -34,7 +34,7 @@ Reference::Reference(std::shared_ptr<HypotheticBattle> state, PlayerColor player
 	DamageCache cache(originalDamage);
 	for(const auto * unit : parent->battleGetAllUnits(false))
 	{
-		if(!unit || !unit->alive() || !unit->willMove() || unit->isTimeStopped()) continue;
+		if(!unit || !unit->alive() || !unit->willMove()) continue;
 		PotentialTargets targets(unit, cache, parent);
 		if(targets.possibleAttacks.empty()) continue;
 		const auto & best = targets.bestAction();
@@ -100,8 +100,7 @@ std::optional<float> Reference::marginal(const std::shared_ptr<HypotheticBattle>
 const bool forced = attacker && attacker->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 			&& !newHorizonsPuppetMaster::hasValidControlMarker(*outcome, attacker);
 		if(attacker && defender && attacker->alive() && defender->alive()
-			&& attacker->willMove() && !attacker->isTimeStopped()
-			&& (forced || !outcome->battleMatchActionController(attacker, defender, true)))
+			&& attacker->willMove() && (forced || !outcome->battleMatchActionController(attacker, defender, true)))
 		{
 			auto attack = fixed.attack;
 			attack.attacker = attacker;

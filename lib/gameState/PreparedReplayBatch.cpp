@@ -27,8 +27,8 @@ void PreparedReplayAppend::reservePacks(size_t count)
 
 PreparedReplayAppend::PreparedReplayAppend(ReplayLog & log, Records records, uint32_t day,
 	const SnapshotProvider & snapshot, RecordingMode mode)
-	: owner(log), encoded(std::move(records)), configured(log.recordingPacks),
-	  recording((mode == RecordingMode::UNCONDITIONAL || configured) && !encoded.empty()),
+	: owner(log), encoded(std::move(records)), configured(log.recordingPacks), captureEnabled(log.captureEnabled),
+	  recording(captureEnabled && ((mode == RecordingMode::UNCONDITIONAL || configured) && !encoded.empty())),
 	  opensChapter(log.chapters.empty())
 {
 	owner.validateAppendState();

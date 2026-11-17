@@ -24,5 +24,6 @@ Scope::Scope(Profile profile) : previous(current)
 }
 Scope::~Scope() { current = previous; }
 bool forecastBeamOne() { return current != Profile::Full; }
+unsigned heroRefinementLimit() { return current == Profile::BeamOneTwoActors ? 3 : 0; }
 unsigned forecastFutureActors() { return current == Profile::BeamOneTwoActors ? 2 : 0; }
 }

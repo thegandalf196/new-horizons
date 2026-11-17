@@ -143,8 +143,7 @@ protected:
 		if(m->isPositiveSpell()) //Always pass on positive
 			return true;
 
-		return newHorizonsMetamagic::resistanceChance(target->magicResistance(),
-			m->getMetamagicCastProfile(), *m->battle(), *target) < 100;
+		return target->magicResistance() < 100;
 	}
 };
 

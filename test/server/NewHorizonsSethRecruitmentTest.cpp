@@ -131,12 +131,14 @@ TEST_F(NewHorizonsSethRecruitmentTest, OnlyOwnedResidentCapturedSethUnlocksCanon
 	town->setVisitingHero(nullptr);
 	town->setGarrisonedHero(first);
 	EXPECT_EQ(choices(*town).size(), 3u);
-	auto & captured = const_cast<JsonNode &>(first->getPrimaryGrowthRules());
+	auto captured = first->getPrimaryGrowthRules();
 	captured["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
+	first->replaceCapturedPrimaryGrowthRules(captured);
 	EXPECT_EQ(choices(*town), ordinary);
 	auto * castle = expectAt<CGTownInstance>({7, 30, 0});
 	ASSERT_NE(castle, nullptr);
 	captured["additionalSpecialties"]["ancientOathsPolicyVersion"].Integer() = 1;
+	first->replaceCapturedPrimaryGrowthRules(captured);
 	town->setGarrisonedHero(nullptr);
 	castle->creatures.resize(7);
 	castle->creatures[TOMB] = {10, ordinary};
@@ -325,8 +327,9 @@ TEST_F(NewHorizonsSethRecruitmentTest, AncientOathsReplacesPersonalExperienceBut
 	EXPECT_EQ(first->calculateXp(1000), 1100);
 	EXPECT_FALSE(newHorizonsHeroes::learningSpecialtyRules(first));
 	EXPECT_EQ(first->getSpecialtyPresentation().name, "Ancient Oaths");
-	auto & capture = const_cast<JsonNode &>(first->getPrimaryGrowthRules());
+	auto capture = first->getPrimaryGrowthRules();
 	capture["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
+	first->replaceCapturedPrimaryGrowthRules(capture);
 	EXPECT_EQ(first->calculateXp(1000), 1150);
 	EXPECT_TRUE(newHorizonsHeroes::learningSpecialtyRules(first));
 	EXPECT_EQ(first->getSpecialtyPresentation().name, "Grave Archivist");

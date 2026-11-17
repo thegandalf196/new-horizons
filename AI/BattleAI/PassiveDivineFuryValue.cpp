@@ -36,13 +36,6 @@ float expectedValue(const std::shared_ptr<CBattleInfoCallback> & state, const ba
 	const battle::Target target{battle::Destination(&victim)};
 	const auto mechanics = cast.mechanicsForTarget(target);
 	if(!mechanics->canBeCastAt(target)) return 0;
-	if(const auto * projected = dynamic_cast<const HypotheticBattle *>(state.get()))
-	{
-		const auto ward = projected->resolveProjectedCounterspell(side, spell);
-		// An unresolved hidden ward grants no speculative damage credit. This is
-		// a lower-bound proc heuristic, independent of native strike legality.
-		if(!ward.resolutionKnown || !ward.negated || *ward.negated) return 0;
-	}
 	const auto damage = std::clamp<int64_t>(mechanics->adjustEffectValue(&victim),
 		0, victim.getAvailableHealth());
 	const auto success = SpellTargetEvaluator::applicationChance(mechanics.get(), &victim);

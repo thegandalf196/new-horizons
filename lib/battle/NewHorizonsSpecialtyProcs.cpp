@@ -149,7 +149,7 @@ bool isNullifyingShotCast(const spells::Mechanics & mechanics)
 int stunChance(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
 {
 	if(!attack.attacker || !attack.defender || !attack.attacker->alive() || !attack.defender->alive()
-		|| attack.attacker->isGhost() || attack.defender->isGhost() || attack.defender->isTimeStopped()
+		|| attack.attacker->isGhost() || attack.defender->isGhost()
 		|| attack.defender->isInvincible() || attack.defender->isTurret() || newHorizonsStun::isStunned(*attack.defender)
 		|| attack.secondaryAttack || attack.bracePreemptive || attack.preemptiveDamagePercent > 0
 		|| attack.cleaveDamagePercent > 0 || battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender)) return 0;

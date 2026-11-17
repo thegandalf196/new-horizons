@@ -9,7 +9,6 @@
  */
 #include "StdInc.h"
 #include "StackTemporaryStatusPresenter.h"
-#include "ArcaneMarkPresentation.h"
 #include "FrozenStatusPresentation.h"
 #include "StackSpellStatusPresentation.h"
 #include "../widgets/Images.h"
@@ -58,7 +57,6 @@ StackTemporaryStatusPresenter::StackTemporaryStatusPresenter(const CStack * stac
 {
 	const auto spells = stack->activeSpells();
 
-	const auto arcaneMarks = arcaneMarkPresentation::forStack(*stack);
 
 	std::vector<newHorizonsBattleStatus::StackStatusIconKind> statusKinds;
 	std::size_t hiddenReanimateSpellEffects = 0;
@@ -136,16 +134,9 @@ StackTemporaryStatusPresenter::StackTemporaryStatusPresenter(const CStack * stac
 		entries.insert(entries.begin(), battleFormEntry);
 		statusKinds.insert(statusKinds.begin(), newHorizonsBattleStatus::StackStatusIconKind::BATTLE_FORM);
 	}
-	if(!arcaneMarks.empty())
-	{
-		// A display priority category only: these counters remain independent
-		// of Focus Magic's separate Arcane Breach state and three-mark cap.
-		entries.push_back({newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE, std::nullopt, true});
-		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::FOCUS_OR_ARCANE);
-	}
 	if(inspiration.active())
 	{
-		entries.push_back({newHorizonsBattleStatus::StackStatusIconKind::ORDINARY, std::nullopt, false, true});
+		entries.push_back({newHorizonsBattleStatus::StackStatusIconKind::ORDINARY, std::nullopt, true});
 		statusKinds.push_back(newHorizonsBattleStatus::StackStatusIconKind::ORDINARY);
 	}
 	if(attunement.attuned)
@@ -159,15 +150,14 @@ StackTemporaryStatusPresenter::StackTemporaryStatusPresenter(const CStack * stac
 		+ (status.frozen ? 1 : 0)
 		+ (status.shadowGift.hasMaximumHealthLoss() ? 1 : 0)
 		+ (retributionJudged.active() ? 1 : 0) + (battleForm.active() ? 1 : 0)
-		+ (!arcaneMarks.empty() ? 1 : 0) + (inspiration.active() ? 1 : 0) + (attunement.attuned ? 1 : 0);
+		+ (inspiration.active() ? 1 : 0) + (attunement.attuned ? 1 : 0);
 	displayPlan = newHorizonsBattleStatus::stackStatusDisplayPlan(statusKinds, totalEffectCount);
 	empty = totalEffectCount == 0;
 }
 
 bool StackTemporaryStatusPresenter::hasPriorityStatus() const
 {
-	return status.physicalPoison.active() || status.frozen
-		|| !arcaneMarkPresentation::forStack(*stack).empty();
+	return status.physicalPoison.active() || status.frozen;
 }
 
 bool StackTemporaryStatusPresenter::append(std::size_t index, const Point & position, Widgets widgets) const
@@ -200,15 +190,6 @@ bool StackTemporaryStatusPresenter::append(std::size_t index, const Point & posi
 			ETextAlignment::BOTTOMRIGHT, Colors::YELLOW, inspiration.compact));
 		widgets.statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(
 			Rect(slotX, slotY, 48, 36), inspiration.details, inspiration.details));
-		return true;
-	}
-	if(entry.arcaneMarks)
-	{
-		widgets.physicalStatusIcons.push_back(std::make_shared<CPicture>(ImagePath::builtin(arcaneMarkPresentation::SMALL_ICON), slotX + 8, slotY + 2));
-		widgets.labels.push_back(std::make_shared<CLabel>(slotX + 46, slotY + 36, EFonts::FONT_TINY,
-			ETextAlignment::BOTTOMRIGHT, Colors::YELLOW, arcaneMarkPresentation::compactCounts(arcaneMarkPresentation::counts(*stack))));
-		const auto tooltip = arcaneMarkPresentation::combinedTooltip(arcaneMarkPresentation::forStack(*stack));
-		widgets.statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(slotX, slotY, 48, 36), tooltip, tooltip));
 		return true;
 	}
 	if(entry.kind == newHorizonsBattleStatus::StackStatusIconKind::FROZEN)

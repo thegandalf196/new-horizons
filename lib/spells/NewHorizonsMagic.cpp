@@ -1902,20 +1902,6 @@ int landMineHexCount(const int32_t spellPower, const int coefficientBasisPoints)
 	return 4;
 }
 
-bool isCounterspell(const spells::Spell * spell)
-{
-	return spell && spell->getJsonKey() == GameConstants::NEW_HORIZONS_COUNTERSPELL;
-}
-
-int counterspellCost(int listedCost, bool countermage, bool countersequence)
-{
-	if(listedCost < 0)
-		throw std::invalid_argument("Counterspell requires a non-negative listed spell cost");
-	if(!countermage && !countersequence)
-		return listedCost * 2;
-	return (listedCost * 7 + 3) / 4;
-}
-
 int spellPowerDamagePerkBonusPercent(const JsonNode & rules, const CGHeroInstance * hero,
 	const spells::Spell * spell)
 {

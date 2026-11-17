@@ -57,7 +57,7 @@ struct CurrentOffensivePotential
 };
 */ // These lines may be useful but they are't used in the code.
 
-class CBattleAI : public CBattleGameInterface
+class DLL_LINKAGE CBattleAI : public CBattleGameInterface
 {
 	struct TimingState;
 	class TimingScope;

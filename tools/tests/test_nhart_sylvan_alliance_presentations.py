@@ -5,6 +5,7 @@ import json
 from io import BytesIO
 from pathlib import Path
 import unittest
+from .nhart_source_transitions import read_historical_source
 from PIL import Image, ImageEnhance
 
 from .nhart_perk_presentations import validate_perk_presentation, validate_perk_payload
@@ -18,8 +19,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class SylvanAlliancePresentationTest(unittest.TestCase):
     def setUp(self):
-        self.header = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()
-        self.old = (ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h').read_text()
+        self.header = read_historical_source('client/windows/NewHorizonsPerkIcons.h')
+        self.old = read_historical_source('client/windows/NewHorizonsCapturedPerkIcons.h')
         self.wrapper = (ROOT / 'client/windows/NewHorizonsSylvanAlliancePerkIcons.h').read_text()
 
     def row(self, condition):

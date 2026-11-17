@@ -518,7 +518,6 @@ TEST_F(NewHorizonsVerdantPrisonTest, MagicMirrorRedirectsTheAnchorToTheCasterSid
 		<< "; resisted=" << ::testing::PrintToString(announcement.resistedCres)
 		<< "; affected=" << ::testing::PrintToString(announcement.affectedCres)
 		<< "; summon packet rounds=" << ::testing::PrintToString(server.unitAdditionRounds));
-	ASSERT_FALSE(announcement.counterspellNegated);
 	ASSERT_TRUE(announcement.reflectedCres.contains(enemy->unitId()));
 	const auto * redirected = battle()->battleGetUnitByPos(announcement.tile, true);
 	ASSERT_NE(redirected, nullptr);

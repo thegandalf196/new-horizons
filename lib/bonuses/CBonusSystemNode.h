@@ -13,6 +13,7 @@
 
 #include "BonusList.h"
 #include "IBonusBearer.h"
+#include "../battle/MechanicsPresence.h"
 
 #include "../serializer/Serializeable.h"
 
@@ -67,6 +68,8 @@ private:
 	bool isHypotheticNode;
 
 	mutable BonusList cachedBonuses;
+	mutable battle::MechanicsPresence cachedMechanics;
+	mutable bool cachedMechanicsReady = false;
 	mutable int32_t cachedLast;
 	std::atomic<int32_t> nodeChanged;
 
@@ -165,6 +168,9 @@ public:
 	void commitLocalBonusReplacement(const PreparedLocalBonusReplacement & prepared) noexcept;
 
 	int32_t getTreeVersion() const override;
+	/// Reuses existing cache publication. Stale/unprepared is unknown, without
+	/// triggering a bonus-tree query. Specialized query providers opt in explicitly.
+	bool cachedMayHaveBonusType(BonusType type) const;
 
 	virtual PlayerColor getOwner() const
 	{

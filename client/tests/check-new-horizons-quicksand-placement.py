@@ -24,7 +24,7 @@ mode = between(CONTROLLER, "bool BattleActionsController::quicksandPlacementMode
 assert "quicksandSelectedPlacementEnabled" in mode
 required = between(CONTROLLER, "int BattleActionsController::repeatedPlacementRequiredHexes", "bool BattleActionsController::repeatedPlacementReady")
 assert "getNewHorizonsQuicksandPatchCount" in required
-assert "setMetamagicFollowup(heroSpellToCast->metamagicFollowup)" in required
+assert "setMetamagicFollowup" not in required
 assert "bool quicksandPlacementModeActive() const" in CONTROLLER_H
 
 # Saved-marker casts stop in a dedicated selector before ordinary NO_TARGET

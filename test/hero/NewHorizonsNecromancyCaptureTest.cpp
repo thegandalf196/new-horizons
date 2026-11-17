@@ -79,30 +79,30 @@ TEST(NewHorizonsNecromancyCapture, RegistryRejectsMalformedPresentPolicyAndRetai
 TEST(NewHorizonsNecromancyCapture, PerkStateRefusesLossyWriterAndRoundTripsBothPolicyEpochs)
 {
 	newHorizonsHeroes::PerkState current;
-	current.rules = capturedNecromancy();
+	current.replaceRules(capturedNecromancy());
 	rejectsBeforePrefix(current);
 	CMemorySerializer wire;
 	ASSERT_NO_THROW(current.serialize(wire.oser));
 	newHorizonsHeroes::PerkState restored;
 	ASSERT_NO_THROW(restored.serialize(wire.iser));
-	EXPECT_EQ(restored.rules, current.rules);
+	EXPECT_EQ(restored.getRules(), current.getRules());
 
 	newHorizonsHeroes::PerkState historical;
-	historical.rules = capturedNecromancy(false);
+	historical.replaceRules(capturedNecromancy(false));
 	CMemorySerializer old;
 	old.oser.version = old.iser.version = ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS;
 	ASSERT_NO_THROW(historical.serialize(old.oser));
 	// Reusing an object must erase its previously present policy.
 	ASSERT_NO_THROW(restored.serialize(old.iser));
-	EXPECT_EQ(restored.rules, historical.rules);
-	EXPECT_FALSE(newHorizonsNecromancy::policy(restored.rules));
+	EXPECT_EQ(restored.getRules(), historical.getRules());
+	EXPECT_FALSE(newHorizonsNecromancy::policy(restored.getRules()));
 
 	for(const auto version : {ESerializationVersion::NEW_HORIZONS_REVISED_ORDERS,
 		ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY})
 	{
 		CMemorySerializer forged;
 		forged.iser.version = version;
-		forged.oser & current.rules;
+		forged.oser & current.getRules();
 		try
 		{
 			restored.serialize(forged.iser);
@@ -161,7 +161,7 @@ TEST(NewHorizonsNecromancyCapture, HeroAndEnclosingMapWritersRefuseBeforeTheirPr
 	auto hero = std::make_shared<CGHeroInstance>(nullptr);
 	hero->setHeroType(HeroTypeID(0));
 	// Explicit fixture capture; production continues to capture through its world.
-	const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).rules = capturedNecromancy();
+	const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState()).replaceRules(capturedNecromancy());
 	rejectsBeforePrefix(*hero);
 	CMap map(nullptr);
 	// A detached map has installed definitions, not initialized world captures.
@@ -191,7 +191,7 @@ TEST(NewHorizonsNecromancyCapture, HeroAndEnclosingMapWritersRefuseBeforeTheirPr
 TEST(NewHorizonsNecromancyCapture, WorldCaptureRejectsLossyWriterBeforePrefix)
 {
 	CGameState world;
-	const_cast<JsonNode &>(world.getHeroPerkRules()) = capturedNecromancy();
+	world.replaceCapturedPerkRules(capturedNecromancy());
 	rejectsBeforePrefix(world);
 }
 
@@ -205,13 +205,13 @@ TEST(NewHorizonsNecromancyCapture, PublishedV1RulesRoundTripUnderTheirOriginalFo
 	ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(published));
 	EXPECT_NO_THROW(newHorizonsNecromancy::validatePolicySerialization(published, true, false));
 	newHorizonsHeroes::PerkState state;
-	state.rules = published;
+	state.replaceRules(published);
 	CMemorySerializer wire;
 	wire.oser.version = wire.iser.version = ESerializationVersion::NEW_HORIZONS_SKELETON_NECROMANCY;
 	ASSERT_NO_THROW(state.serialize(wire.oser));
 	newHorizonsHeroes::PerkState restored;
 	ASSERT_NO_THROW(restored.serialize(wire.iser));
-	EXPECT_EQ(restored.rules, published);
+	EXPECT_EQ(restored.getRules(), published);
 
 	GameSettings settings;
 	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, published);

@@ -24,7 +24,7 @@ bool MasteryState::hasChoice(SecondarySkill skill) const
 
 void MasteryState::validate() const
 {
-	validateMasteryRules(rules);
+	// Immutable captured rules were admitted at replacement or load.
 	if(!usesRules(rules))
 	{
 		if(lastSequence || eligibilityLevel || artilleryEligible || logisticsEligible || pending || !selected.empty())
@@ -37,7 +37,7 @@ void MasteryState::validate() const
 		|| (artilleryEligible && hasChoice(SecondarySkill::ARTILLERY)))
 		throw std::runtime_error("Invalid mastery eligibility level or duplicate eligibility");
 	if(logisticsEligible && (eligibilityLevel == 0 || hasChoice(SecondarySkill::LOGISTICS)
-		|| !masteryOptions(rules, SecondarySkill::LOGISTICS)))
+		|| !rules.masteryOptions(SecondarySkill::LOGISTICS)))
 		throw std::runtime_error("Invalid Logistics mastery eligibility");
 	if(!pending && lastSequence != (selected.empty() ? 0 : selected.back().sequence))
 		throw std::runtime_error("Mastery sequence without a pending or completed choice");
@@ -45,7 +45,7 @@ void MasteryState::validate() const
 	uint64_t previousSequence = 0;
 	for(const auto & entry : selected)
 	{
-		const auto options = masteryOptions(rules, entry.skill);
+		const auto options = rules.masteryOptions(entry.skill);
 		if(!options || !seen.insert(entry.skill).second || entry.level < 2
 			|| entry.sequence <= previousSequence || entry.sequence > lastSequence
 			|| std::find(options->begin(), options->end(), entry.option) == options->end())
@@ -55,7 +55,7 @@ void MasteryState::validate() const
 	if(pending)
 	{
 		validateMasteryOffer(*pending);
-		const auto options = masteryOptions(rules, pending->skill);
+		const auto options = rules.masteryOptions(pending->skill);
 		if(!options || pending->options != *options || pending->sequence != lastSequence
 			|| pending->sequence <= previousSequence
 			|| pending->level != eligibilityLevel
@@ -131,7 +131,6 @@ MasteryState MasteryState::fromJson(const JsonNode & node)
 	else
 		savedFields(node, {"stateVersion", "rules", "lastSequence", "eligibilityLevel", "artilleryEligible", "logisticsEligible", "selected", "pending"});
 	result.rules = node["rules"];
-	validateMasteryRules(result.rules);
 	const JsonNode & savedRules = result.rules;
 	if((usesRules(savedRules) && savedRules["rulesetVersion"].Integer() != version)
 		|| (!usesRules(savedRules) && version != 1))
@@ -152,7 +151,7 @@ MasteryState MasteryState::fromJson(const JsonNode & node)
 		savedFields(entry, {"skill", "id", "level", "sequence"});
 		MasterySelection selection;
 		selection.skill = SecondarySkill(static_cast<int>(savedInteger(entry["skill"], 0, std::numeric_limits<int32_t>::max())));
-		const auto options = masteryOptions(result.rules, selection.skill);
+		const auto options = result.rules.masteryOptions(selection.skill);
 		if(!options || !entry["id"].isString())
 			throw std::runtime_error("Mastery crossover choice without saved options");
 		const auto found = std::find_if(options->begin(), options->end(), [&](const auto & option) { return option.id.value == entry["id"].String(); });
@@ -173,7 +172,7 @@ MasteryState MasteryState::fromJson(const JsonNode & node)
 		offer.skill = SecondarySkill(static_cast<int>(savedInteger(entry["skill"], 0, std::numeric_limits<int32_t>::max())));
 		offer.level = static_cast<uint32_t>(savedInteger(entry["level"], 2, std::numeric_limits<uint32_t>::max()));
 		offer.sequence = savedInteger(entry["sequence"], 1, std::numeric_limits<int64_t>::max());
-		const auto options = masteryOptions(result.rules, offer.skill);
+		const auto options = result.rules.masteryOptions(offer.skill);
 		if(!options)
 			throw std::runtime_error("Pending mastery crossover without saved rules");
 		offer.options = *options;
@@ -193,7 +192,7 @@ void MasteryState::captureBeforeLevel(uint32_t nextLevel, int artilleryRank, int
 	eligibilityLevel = nextLevel;
 	artilleryEligible = artilleryRank == MasteryLevel::EXPERT && !hasChoice(SecondarySkill::ARTILLERY);
 	logisticsEligible = logisticsRank == MasteryLevel::EXPERT && !hasChoice(SecondarySkill::LOGISTICS)
-		&& masteryOptions(rules, SecondarySkill::LOGISTICS).has_value();
+		&& rules.masteryOptions(SecondarySkill::LOGISTICS).has_value();
 }
 
 std::optional<MasteryOffer> MasteryState::prepareOffer(ObjectInstanceID hero, PlayerColor player, uint32_t level) const
@@ -213,7 +212,7 @@ std::optional<MasteryOffer> MasteryState::prepareOffer(ObjectInstanceID hero, Pl
 	result.skill = pending ? pending->skill : SecondarySkill(artilleryEligible ? SecondarySkill::ARTILLERY : SecondarySkill::LOGISTICS);
 	result.level = level;
 	result.sequence = lastSequence + 1;
-	result.options = *masteryOptions(rules, result.skill);
+	result.options = *rules.masteryOptions(result.skill);
 	validateMasteryOffer(result);
 	return result;
 }

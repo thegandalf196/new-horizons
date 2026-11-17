@@ -8,29 +8,29 @@ TEST(ProjectedEffectRefreshTest, RefreshPreservesSharedRawIdentityWithoutChangin
 {
 	CBonusSystemNode root(BonusNodeType::STACK_INSTANCE), inherited(BonusNodeType::ARMY);
 	root.attachTo(inherited);
-	auto clock = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::TIME_STOP,
+	auto record = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::LUCK,
 		BonusSource::OTHER, 1, BonusSourceID());
-	clock->turnsRemain = 1; clock->statusIdentity = "refresh-clock";
-	clock->statusTags = {BonusStatusTag::DEBUFF};
-	root.addNewBonus(clock); inherited.addNewBonus(clock);
+	record->turnsRemain = 1; record->statusIdentity = "refresh-ordinary";
+	record->statusTags = {BonusStatusTag::DEBUFF};
+	root.addNewBonus(record); inherited.addNewBonus(record);
 	const auto generation = PreparedBonusGraphStorage::currentGeneration(), version = root.getTreeVersion();
 	ProjectedBonusGraph graph; graph.capture(root);
-	EXPECT_EQ(graph.values(root).exported.front(), clock); // No private replacement before an actual edit.
-	Bonus incoming(*clock); incoming.turnsRemain = 4;
+	EXPECT_EQ(graph.values(root).exported.front(), record); // No private replacement before an actual edit.
+	Bonus incoming(*record); incoming.turnsRemain = 4;
 	incoming.statusTags.push_back(BonusStatusTag::NON_TRANSFERABLE);
 	graph.refreshExported(root, incoming);
 	const auto current = graph.values(root).exported.front();
-	EXPECT_NE(current, clock);
+	EXPECT_NE(current, record);
 	EXPECT_EQ(current, graph.values(inherited).exported.front());
 	EXPECT_EQ(current->turnsRemain, 4);
 	EXPECT_EQ(current->val, 1);
 	EXPECT_EQ(current->statusTags, incoming.statusTags);
-	EXPECT_EQ(clock->turnsRemain, 1);
-	EXPECT_EQ(clock->statusTags, std::vector<BonusStatusTag>{BonusStatusTag::DEBUFF});
-	graph.removeExported(root, clock); // An original exact handle resolves its ordered replacement.
+	EXPECT_EQ(record->turnsRemain, 1);
+	EXPECT_EQ(record->statusTags, std::vector<BonusStatusTag>{BonusStatusTag::DEBUFF});
+	graph.removeExported(root, record); // An original exact handle resolves its ordered replacement.
 	EXPECT_TRUE(graph.values(root).exported.empty());
 	EXPECT_EQ(graph.values(inherited).exported.front(), current);
-	EXPECT_EQ(graph.query(root, Selector::type()(BonusType::TIME_STOP), false)->size(), 1u);
+	EXPECT_EQ(graph.query(root, Selector::type()(BonusType::LUCK), false)->size(), 1u);
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 	EXPECT_EQ(root.getTreeVersion(), version);
 }
@@ -38,9 +38,9 @@ TEST(ProjectedEffectRefreshTest, RefreshPreservesSharedRawIdentityWithoutChangin
 TEST(ProjectedEffectRefreshTest, LaterCapturedAliasUsesCurrentPrivateValueAndEmptyRefreshStillRecordsOneEvent)
 {
 	CBonusSystemNode root(BonusNodeType::STACK_INSTANCE), later(BonusNodeType::STACK_INSTANCE);
-	auto record = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::TIME_STOP,
+	auto record = std::make_shared<Bonus>(BonusDuration::N_TURNS, BonusType::LUCK,
 		BonusSource::OTHER, 1, BonusSourceID());
-	record->turnsRemain = 1; record->statusIdentity = "shared-disconnected-clock";
+	record->turnsRemain = 1; record->statusIdentity = "shared-disconnected-ordinary";
 	root.addNewBonus(record); later.addNewBonus(record);
 	ProjectedBonusGraph graph; graph.capture(root);
 	Bonus incoming(*record); incoming.turnsRemain = 5;

@@ -115,7 +115,7 @@ protected:
 	{
 		useRevisedOrders = true;
 		startGame();
-		ASSERT_TRUE(newHorizonsPassiveDivineMandate::enabled(attackerSideHero->getPerkState().rules));
+		ASSERT_TRUE(newHorizonsPassiveDivineMandate::enabled(attackerSideHero->getPerkState().getRules()));
 		const auto mandate = SecondarySkill::decode("new-horizons:divineMandate");
 		const auto light = SecondarySkill::decode("new-horizons:lightMagic");
 		ASSERT_GE(mandate, 0);
@@ -449,59 +449,10 @@ TEST_F(PassiveDivineActionBudgetTest, ShortFixedTimerRefreshRetainsNativeOrdinar
 	EXPECT_EQ(after->front()->val, value); // Native ordinary refresh keeps the old stronger amount.
 }
 
-TEST_F(PassiveDivineActionBudgetTest, HistoricalMarkedRecipientUsesConfiguredDurationAndPrecastPotency)
-{
-	historicalMetamagic = true;
-	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 0));
-	const auto & captured = attackerSideHero->getPerkState().rules["metamagicPolicy"];
-	ASSERT_EQ(captured["version"].Integer(), 2);
-	ASSERT_TRUE(captured["adeptAdditionalPoints"].isNull());
-	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	ASSERT_EQ(server.casts.size(), 1);
-	const auto spell = server.casts.front().announcement.spellID;
-	const auto * target = battle()->battleActiveUnit();
-	const auto initial = target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
-	ASSERT_EQ(initial->size(), 1);
-	ASSERT_EQ(initial->front()->val, 30);
-	ASSERT_EQ(initial->front()->turnsRemain, 2);
-	const auto meta = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
-	attackerSideHero->setSecSkillLevel(meta, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"});
-	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"));
-	auto state = target->acquireState();
-	state->arcaneMarks.set(BattleSide::ATTACKER, 3);
-	BattleUnitsChanged marks;
-	marks.battleID = BattleID(0);
-	auto & changed = marks.changedStacks.emplace_back(target->unitId(), UnitChanges::EOperation::UPDATE);
-	changed.data = state->save();
-	gameHandler->sendAndApply(marks);
-	auto receipt = server.casts.front().announcement.automaticHeroCast;
-	++receipt.mandateUseOrdinal;
-	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
-	cast.setAutomaticHeroCast(receipt);
-	const auto mechanics = cast.mechanicsForTarget({battle::Destination(target)});
-	const auto preview = newHorizonsMagic::recipientSpellEffectPreview(*mechanics, target);
-	ASSERT_TRUE(preview);
-	ASSERT_TRUE(preview->effect.primary);
-	ASSERT_TRUE(preview->durationRounds);
-	EXPECT_EQ(preview->effect.primary->value, 43);
-	EXPECT_EQ(*preview->durationRounds, 4);
-	const auto choices = newHorizonsPassiveDivineMandate::buildSpellPool(*battle(), *attackerSideHero,
-		receipt, {target->unitId()});
-	EXPECT_EQ(choices.size(), 1);
-	EXPECT_EQ(target->metamagicMarks(BattleSide::ATTACKER), 3);
-	ASSERT_TRUE(issue(HeroCommand::RIPOSTE));
-	EXPECT_EQ(server.casts.size(), 2);
-	EXPECT_EQ(battle()->getPassiveDivineMandateUses(BattleSide::ATTACKER), 2);
-	const auto after = target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
-	ASSERT_EQ(after->size(), 1);
-	EXPECT_EQ(after->front()->val, preview->effect.primary->value);
-	EXPECT_EQ(after->front()->turnsRemain, *preview->durationRounds);
-	EXPECT_EQ(target->metamagicMarks(BattleSide::ATTACKER), 4); // This fresh mark did not strengthen its own cast.
-}
 
 
-TEST_F(PassiveDivineActionBudgetTest, RecalculatedRefreshRequiresMetamagicOrWisdomEffectiveness)
+
+TEST_F(PassiveDivineActionBudgetTest, RecalculatedRefreshRequiresWisdomEffectiveness)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 100));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
@@ -511,22 +462,20 @@ TEST_F(PassiveDivineActionBudgetTest, RecalculatedRefreshRequiresMetamagicOrWisd
 	const auto initial = target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)));
 	ASSERT_EQ(initial->size(), 1);
 	ASSERT_GT(initial->front()->val, 30);
-	for(int policy = 0; policy < 5; ++policy)
+	for(int policy = 0; policy < 2; ++policy)
 	{
 		SCOPED_TRACE(policy);
 		newHorizonsMetamagic::CastProfile profile;
 		profile.hero = attackerSideHero;
 		profile.heroSide = BattleSide::ATTACKER;
-		profile.perks.pointPolicy = policy == 1 || policy == 3;
-		profile.perks.rank = policy == 2 || policy == 3 ? 3 : 0;
-		profile.perks.wisdomEffectivenessBonus = policy == 4 ? 5 : 0;
+		profile.perks.wisdomEffectivenessBonus = policy == 1 ? 5 : 0;
 		Bonus incoming = *initial->front();
 		incoming.val = 30;
 		SetStackEffect packet;
 		packet.toUpdate.emplace_back(target->unitId(), std::vector<Bonus>{incoming});
 		newHorizonsMetamagic::replaceRecalculatedSpellBonuses(&profile, *battle(),
 			spell, spell, {target->unitId()}, packet);
-		if(policy < 2)
+		if(policy == 0)
 		{
 			EXPECT_TRUE(packet.toAdd.empty());
 			EXPECT_TRUE(packet.toRemove.empty());
@@ -544,42 +493,4 @@ TEST_F(PassiveDivineActionBudgetTest, RecalculatedRefreshRequiresMetamagicOrWisd
 	}
 	EXPECT_EQ(target->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spell)))->front()->val,
 		initial->front()->val);
-}
-
-TEST_F(PassiveDivineActionBudgetTest, CurrentNonTowerMarksDoNotScaleAutomaticLight)
-{
-	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 0));
-	ASSERT_TRUE(issue(HeroCommand::CHARGE));
-	ASSERT_EQ(server.casts.size(), 1);
-	const auto spell = server.casts.front().announcement.spellID;
-	const auto * target = battle()->battleActiveUnit();
-	const auto meta = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
-	attackerSideHero->setSecSkillLevel(meta, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
-	attackerSideHero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"});
-	ASSERT_TRUE(attackerSideHero->hasActivePerk("new-horizons:metamagic", "new-horizons:metamagic.lingeringMagic"));
-	auto state = target->acquireState();
-	state->arcaneMarks.set(BattleSide::ATTACKER, 3);
-	BattleUnitsChanged marks;
-	marks.battleID = BattleID(0);
-	auto & changed = marks.changedStacks.emplace_back(target->unitId(), UnitChanges::EOperation::UPDATE);
-	changed.data = state->save();
-	gameHandler->sendAndApply(marks);
-	auto receipt = server.casts.front().announcement.automaticHeroCast;
-	++receipt.mandateUseOrdinal;
-	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
-	cast.setAutomaticHeroCast(receipt);
-	const auto mechanics = cast.mechanicsForTarget({battle::Destination(target)});
-	ASSERT_NE(mechanics->getMetamagicCastProfile(), nullptr);
-	EXPECT_EQ(mechanics->getMetamagicCastProfile()->perks.rank, 0);
-	const auto preview = newHorizonsMagic::recipientSpellEffectPreview(*mechanics, target);
-	ASSERT_TRUE(preview);
-	ASSERT_TRUE(preview->effect.primary);
-	EXPECT_EQ(preview->effect.primary->value, 30);
-	ASSERT_TRUE(preview->durationRounds);
-	EXPECT_EQ(*preview->durationRounds, 2);
-	const auto rng = utilityRngState();
-	EXPECT_TRUE(newHorizonsPassiveDivineMandate::buildSpellPool(*battle(), *attackerSideHero,
-		receipt, {target->unitId()}).empty());
-	EXPECT_EQ(utilityRngState(), rng);
-	EXPECT_EQ(target->metamagicMarks(BattleSide::ATTACKER), 3);
 }

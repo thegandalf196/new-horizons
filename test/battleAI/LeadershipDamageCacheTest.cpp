@@ -84,7 +84,7 @@ protected:
 	{
 		startGame();
 		ASSERT_TRUE(attackerSideHero->getPrimaryGrowthRules().isNull());
-		ASSERT_TRUE(attackerSideHero->getPerkState().rules.isNull());
+		ASSERT_TRUE(attackerSideHero->getPerkState().getRules().isNull());
 		if(leadershipEnabled)
 			ASSERT_EQ(attackerSideHero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
 		const auto pikeman = CreatureID(CreatureID::decode("core:pikeman"));

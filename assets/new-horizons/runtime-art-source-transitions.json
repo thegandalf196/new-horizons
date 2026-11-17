@@ -1,0 +1,56 @@
+{
+  "format": 1,
+  "purpose": "Exact reversible source-consumer changes; selected artwork bytes, original hashes and approval records remain unchanged. Current Metamagic uses neutral placeholders, not newly selected artwork.",
+  "files": {
+    "client/windows/NewHorizonsPerkIcons.h": {
+      "historicalSha256": "8d67c0ddcd521aeb37566c39d5ac8cb28dd7ebec8d280773c9eca01a7dadb8aa",
+      "currentSha256": "cade17c0a9d47e48abca4abad7cd4770057b0c1073092f03c01be3e40498c593",
+      "changes": [
+        {
+          "before": "\t\t{\"new-horizons:authority.veteranCorps\", \"NH_perk_authority_veteran_corps\"},\n\t\t{\"new-horizons:metamagic.arcaneCatalyst\", \"NH_perk_arcane_acquisition\"},\n\t\t{\"new-horizons:metamagic.arcaneShield\", \"NH_perk_echoed_duration\"},\n\t\t{\"new-horizons:metamagic.manaConduit\", \"NH_perk_arcane_economy\"},\n\t\t{\"new-horizons:metamagic.lingeringMagic\", \"NH_perk_spell_sequencing\"},\n\t\t{\"new-horizons:metamagic.arcaneFeedback\", \"NH_perk_focused_pairing\"},\n\t\t{\"new-horizons:metamagic.spellFracture\", \"NH_perk_perfect_sequence\"},\n\t\t{\"new-horizons:metamagic.arcaneWellspring\", \"NH_perk_countersequence\"},\n\t\t{\"new-horizons:metamagic.arcaneAttunement\", \"NH_perk_spell_buffer_v2\"},\n\t\t{\"new-horizons:metamagic.arcaneEcho\", \"NH_perk_formula_reserve\"},\n\t\t{\"new-horizons:metamagic.arcaneSingularity\", \"NH_perk_grand_metamagic\"},\n\t\t{\"new-horizons:divineMandate.knightlyValor\", \"NH_perk_knightly_sequence\"},\n",
+          "after": "\t\t{\"new-horizons:authority.veteranCorps\", \"NH_perk_authority_veteran_corps\"},\n\t\t// New Metamagic paintings remain provisional; use the existing neutral icon.\n\t\t{\"new-horizons:metamagic.conservedFormula\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.manaRecycling\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.disruptiveCasting\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.purgingFormula\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.spellSculpting\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.hexWeaving\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.widenSpell\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.matterbreaker\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.magicalMemory\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.arcaneRupture\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:divineMandate.knightlyValor\", \"NH_perk_knightly_sequence\"},\n"
+        },
+        {
+          "before": "\t\t{\"new-horizons:divineMandate.mandateOfHeaven\", \"NH_perk_mandate_of_heaven\"},\n\t\t{\"new-horizons:estates.alchemist\", \"NH_perk_magnate\"},\n\t\t{\"new-horizons:warcasting.arcaneBulwark\", \"NH_perk_combat_casting\"},\n",
+          "after": "\t\t{\"new-horizons:divineMandate.mandateOfHeaven\", \"NH_perk_mandate_of_heaven\"},\n\t\t{\"new-horizons:estates.alchemist\", \"NH_perk_prospector\"},\n\t\t{\"new-horizons:warcasting.arcaneBulwark\", \"NH_perk_combat_casting\"},\n"
+        },
+        {
+          "before": "\t\t{\"new-horizons:estates.landSurveyor\", \"NH_perk_land_surveyor\"},\n\t\t{\"new-horizons:estates.merchantPrince\", \"NH_perk_merchant_prince\"},\n",
+          "after": "\t\t{\"new-horizons:estates.landSurveyor\", \"NH_perk_land_surveyor\"},\n\t\t{\"new-horizons:estates.supervisor\", \"NH_perk_land_surveyor\"},\n\t\t{\"new-horizons:estates.hoarder\", \"NH_perk_financier\"},\n\t\t{\"new-horizons:estates.decentralization\", \"NH_perk_magnate\"},\n\t\t{\"new-horizons:estates.merchantPrince\", \"NH_perk_merchant_prince\"},\n"
+        },
+        {
+          "before": "\t\t{\"new-horizons:sylvanLuck.cascadingFortune\", \"NH_perk_cascading_fortune\"},\n\t\t{\"new-horizons:metamagic.spellSequencing\", \"NH_perk_spell_sequencing\"},\n\t\t{\"new-horizons:metamagic.arcaneEconomy\", \"NH_perk_arcane_economy\"},\n\t\t{\"new-horizons:metamagic.focusedPairing\", \"NH_perk_focused_pairing\"},\n\t\t{\"new-horizons:metamagic.countersequence\", \"NH_perk_countersequence\"},\n\t\t{\"new-horizons:metamagic.echoedDuration\", \"NH_perk_echoed_duration\"},\n\t\t{\"new-horizons:metamagic.splitFocus\", \"NH_perk_split_focus\"},\n\t\t{\"new-horizons:metamagic.formulaReserve\", \"NH_perk_formula_reserve\"},\n\t\t{\"new-horizons:metamagic.arcaneAcquisition\", \"NH_perk_arcane_acquisition\"},\n\t\t// Spell Echo has no dedicated painting yet; use the neutral placeholder\n\t\t// rather than exposing the retired Spell Buffer artwork for a new rule.\n\t\t{\"new-horizons:metamagic.spellEcho\", \"NH_perk_neutral\"},\n\t\t{\"new-horizons:metamagic.spellBuffer\", \"NH_perk_spell_buffer_v2\"},\n\t\t{\"new-horizons:metamagic.grandMetamagic\", \"NH_perk_grand_metamagic\"},\n\t\t{\"new-horizons:metamagic.perfectSequence\", \"NH_perk_perfect_sequence\"},\n\t\t{\"new-horizons:necromancy.darkConversion\", \"NH_perk_dark_conversion\"},\n",
+          "after": "\t\t{\"new-horizons:sylvanLuck.cascadingFortune\", \"NH_perk_cascading_fortune\"},\n\t\t{\"new-horizons:necromancy.darkConversion\", \"NH_perk_dark_conversion\"},\n"
+        }
+      ]
+    },
+    "client/windows/NewHorizonsCapturedPerkIcons.h": {
+      "historicalSha256": "62964719ee80add20b2cb00b40da6bbeac9339d496f7707ed6f3db8934449d3f",
+      "currentSha256": "338a2aa8938ab445fd2ffdbd2c817e7b9545428992ffac4bc8d2e63dc9688220",
+      "changes": [
+        {
+          "before": "#include \"../../lib/entities/hero/NewHorizonsPerkRules.h\"\n\n",
+          "after": "#include \"../../lib/entities/hero/NewHorizonsPerkRules.h\"\n#include \"../../lib/mapObjects/NewHorizonsEstatesPolicy.h\"\n\n"
+        },
+        {
+          "before": "{\n\tif(perkId.starts_with(\"new-horizons:sylvanLuck.\")\n",
+          "after": "{\n\t// The revised Alchemist uses the resource painting; old captures retain\n\t// their original estate illustration even though the stable ID survives.\n\tif(perkId == \"new-horizons:estates.alchemist\"\n\t\t&& !newHorizonsEstates::usesRevisedPolicy(capturedRules))\n\t\treturn \"NH_perk_magnate\";\n\tif(perkId.starts_with(\"new-horizons:sylvanLuck.\")\n"
+        }
+      ]
+    },
+    "lib/entities/hero/NewHorizonsSpecialtyArtwork.h": {
+      "historicalSha256": "de875b21c364bc7abe20309019fdcd6da481c0eef4d4bc2363dcd3d2bccbb1b2",
+      "currentSha256": "b34cae58fddbee42ff29bbc04a6b39820921b165142970917f6c35f0a93149d4",
+      "changes": [
+        {
+          "before": "\tResource,\n\tBonus\n",
+          "after": "\tResource,\n\tIdentity,\n\tBonus\n"
+        },
+        {
+          "before": "\t{\"core:iona\", SpecialtyArtworkFamily::Creature, \"core:genie\", \"IonaGenieLine\"},\n\t{\"core:halon\", SpecialtyArtworkFamily::Bonus, \"METAMAGIC_USES_PER_COMBAT\", \"HalonMetamagicAdept\"},\n\t{\"core:theodorus\", SpecialtyArtworkFamily::Creature, \"core:mage\", \"TheodorusMageLine\"},\n",
+          "after": "\t{\"core:iona\", SpecialtyArtworkFamily::Creature, \"core:genie\", \"IonaGenieLine\"},\n\t{\"core:halon\", SpecialtyArtworkFamily::Identity, \"core:halon\", \"HalonMetamagicAdept\"},\n\t{\"core:theodorus\", SpecialtyArtworkFamily::Creature, \"core:mage\", \"TheodorusMageLine\"},\n"
+        }
+      ]
+    }
+  }
+}

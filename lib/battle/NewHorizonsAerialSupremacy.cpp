@@ -44,7 +44,7 @@ std::optional<Excursion> prepare(const CBattleInfoCallback & battle,
 	const battle::Unit * actor, const battle::Unit * opponent)
 {
 	if(!battle.getBattle() || !actor || !opponent || !actor->alive() || !opponent->alive()
-		|| actor->isGhost() || opponent->isGhost() || actor->isTimeStopped() || opponent->isTimeStopped()
+		|| actor->isGhost() || opponent->isGhost()
 		|| !actor->getPosition().isAvailable() || !opponent->getPosition().isAvailable()
 		|| !actor->ableToRetaliate() || opponent->isInvincible()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(actor)

@@ -29,7 +29,7 @@ void apply(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
 			if(!checkedTargets.insert(hit.stackAttacked).second)
 				continue;
 			const auto * target = battle.battleGetUnitByID(hit.stackAttacked);
-			if(!target || !target->alive() || target->isTimeStopped()
+			if(!target || !target->alive()
 				|| !battle.battleMatchOwner(attacker, target)
 				|| !newHorizonsOffense::belowNoQuarterThreshold(
 					target->getAvailableHealth(), battle::getMaximumHealth(*target)))

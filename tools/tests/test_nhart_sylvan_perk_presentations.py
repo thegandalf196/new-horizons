@@ -4,6 +4,7 @@ import hashlib
 from io import BytesIO
 from pathlib import Path
 import unittest
+from .nhart_source_transitions import read_historical_source
 from PIL import Image, ImageEnhance
 from .nhart_perk_presentations import validate_perk_presentation, validate_perk_payload
 from .nhart_sylvan_perk_presentations import (SYLVAN_CONDITIONS, SYLVAN_ADAPTER_SHA256,
@@ -14,8 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class SylvanPerkPresentationTest(unittest.TestCase):
     def setUp(self):
-        self.header = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()
-        self.adapter = (ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h').read_text()
+        self.header = read_historical_source('client/windows/NewHorizonsPerkIcons.h')
+        self.adapter = read_historical_source('client/windows/NewHorizonsCapturedPerkIcons.h')
 
     def row(self, condition):
         stable, name, stem, old = condition

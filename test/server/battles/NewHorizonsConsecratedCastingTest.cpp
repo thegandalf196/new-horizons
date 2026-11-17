@@ -347,13 +347,6 @@ TEST_F(NewHorizonsConsecratedCastingTest, NonLightMetamagicAndCreatureModesDoNot
 	EXPECT_TRUE(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).pendingFollowup)
 		<< "A rejected non-Light cast leaves the real Light continuation available";
 
-	spells::BattleCast metamagicCast(battle(), attackerSideHero, spells::Mode::HERO, bless);
-	metamagicCast.setMetamagicFollowup(true);
-	const auto metamagicMechanics = bless->battleMechanics(&metamagicCast);
-	ASSERT_NE(metamagicMechanics, nullptr);
-	EXPECT_EQ(metamagicMechanics->getCastSpellPowerComponentBonusPercent(), 0)
-		<< "A Metamagic payload does not borrow a simultaneously pending Divine Mandate spell grant";
-
 	spells::BattleCast creatureCast(battle(), creatureCaster, spells::Mode::CREATURE_ACTIVE, bless);
 	const auto creatureMechanics = bless->battleMechanics(&creatureCast);
 	ASSERT_NE(creatureMechanics, nullptr);

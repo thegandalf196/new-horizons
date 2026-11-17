@@ -30,6 +30,19 @@ Following connections can be established during game lifetime:
 
 For gameplay, VCMI serializes data into a binary stream. See [Serialization](Serialization.md) for more information.
 
+Each `GameConnection` message payload starts with an eight-byte fixed header:
+`N H P 01` followed by a four-byte little-endian serialization epoch. The current
+and minimum epoch are 1163. This header is inside the TCP size frame above;
+the internal connection uses the same payload contract without requiring TCP.
+Ordinary sends and prepared packet batches both write it.
+
+The receiver validates the complete header and exact expected epoch before
+polymorphic packet decoding, including the first match-lobby packet. Missing,
+malformed, older, future or mismatched headers reject the message before its
+packet type is interpreted. Changing the connection serialization version also
+rejects unsupported epochs before changing codec state. Global-lobby JSON
+messages use their separate contract below.
+
 ### Headless client presentation
 
 `CClient::handlePack` applies shared game state before dispatching its

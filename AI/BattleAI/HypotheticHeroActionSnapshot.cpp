@@ -6,7 +6,6 @@
 #include "../../lib/constants/NumericConstants.h"
 void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source, BattleSide side)
 {
-	metamagicPointStates[side] = source.getBattle()->getMetamagicPointState(side);
 	wisdomCombatStates[side] = source.getBattle()->getWisdomCombatState(side);
 	rapidResponseStates[side] = source.getBattle()->getRapidResponseState(side);
 	reducedExtraActivationStates[side] = source.getBattle()->getReducedExtraActivationState(side);
@@ -37,21 +36,11 @@ void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source
 		if(source.getBattle()->hasCompletedHeroSpellLevel(side, level))
 			completedHeroSpellLevelMasks[side] |= static_cast<std::uint8_t>(1u << (level - 1));
 	const auto * snapshotHero = source.getBattle()->getSideHero(side);
-	if(snapshotHero && newHorizonsPassiveDivineMandate::enabled(snapshotHero->getPerkState().rules))
+	if(snapshotHero && newHorizonsPassiveDivineMandate::enabled(snapshotHero->getPerkState().getRules()))
 		projectedCastSpells[side] = source.getBattle()->getCastSpells(side);
 	chainGateArmedStates[side] = source.getBattle()->getChainGateArmed(side);
 	masterGateUsedStates[side] = source.getBattle()->getMasterGateUsed(side);
 	passiveDivineMandateUses[side] = source.getBattle()->getPassiveDivineMandateUses(side);
-	counterspellArmedStates[side] = source.getBattle()->getCounterspellArmed(side);
-	countersequenceArmedStates[side] = source.getBattle()->getMetamagicCountersequenceArmed(side);
-	auto & meta = metamagicStates[side];
-	meta.uses = source.getBattle()->getMetamagicUsesConsumed(side);
-	meta.pending = source.getBattle()->getMetamagicPendingCount(side);
-	meta.grandUsed = source.getBattle()->getMetamagicGrandUsed(side);
-	meta.firstSpell = source.getBattle()->getMetamagicFirstSpell(side);
-	meta.firstTarget = source.getBattle()->getMetamagicFirstTargetUnitId(side);
-	meta.firstCountered = source.getBattle()->getMetamagicFirstCounterspellNegated(side);
-	meta.sequence = source.getBattle()->getMetamagicSequenceSpells(side);
 }
 
 bool HypotheticBattle::hasCanonicalDamageQuerySources(size_t remaining, const BattleInfo * expected) const

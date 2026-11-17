@@ -69,7 +69,6 @@ ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster *
 	case spells::Mode::HERO:
 	{
 		const auto * hero = caster->getHeroCaster();
-		const bool metamagicFollowup = battleCanUseMetamagicFollowup(side);
 		if(getBattle()->getPreCombatOrderState(side).isUnresolved())
 			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
 
@@ -85,7 +84,7 @@ ESpellCastProblem CBattleInfoCallback::battleCanCastSpell(const spells::Caster *
 		}
 		if(!hero->hasSpellbook())
 			return ESpellCastProblem::NO_SPELLBOOK;
-		if(!battleUsesHeroCommands() && !metamagicFollowup
+		if(!battleUsesHeroCommands()
 			&& battleCastSpells(side) >= hero->valOfBonuses(BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN))
 			return ESpellCastProblem::CASTS_PER_TURN_LIMIT;
 	}

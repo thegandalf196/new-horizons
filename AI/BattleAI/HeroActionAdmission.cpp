@@ -29,21 +29,11 @@ Admission admitCandidate(HypotheticBattle & state, BattleSide side, const Possib
 	Admission result;
 	if(candidate.command == HeroCommand::NONE)
 	{
-		result.spellAllowance = state.prepareHeroSpellAllowance(side, candidate.spell->getId(),
-			candidate.metamagicFollowup, candidate.metamagicGrand);
+		result.spellAllowance = state.prepareHeroSpellAllowance(side, candidate.spell->getId());
 		if(!result.spellAllowance)
 			return result;
 		if(!state.beginProjectedHeroAction(side, *result.spellAllowance))
 			return result;
-		result.counterspell = state.resolveProjectedCounterspell(side, candidate.spell);
-		if(!result.counterspell.resolutionKnown || !result.counterspell.negated.has_value())
-		{
-			// The armed ward is public, but the opposing hero's mana and
-			// Countermage perk may be hidden from this player's callback.
-			// Do not invent either a successful or failed Counterspell result.
-			return result;
-		}
-		result.counterspellNegated = *result.counterspell.negated;
 	}
 	else
 	{

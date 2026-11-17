@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static regression check for the Time Stop battle-status presentation."""
+"""Guard retired Sorcery removal and surviving battle-status presentation."""
 
 from pathlib import Path
 import unittest
@@ -14,84 +14,68 @@ STACK_WINDOW = (ROOT / "client/windows/CCreatureWindow.cpp").read_text(encoding=
 SPELLS = (ROOT / "Mods/new-horizons/Content/config/spells/newHorizons.json").read_text(encoding="utf-8")
 
 
-class TimeStopStatusUiSourceTest(unittest.TestCase):
-    def test_time_stop_uses_shared_badge_and_explicit_remaining_semantics(self):
-        self.assertIn('TIME_STOP_SPELL_KEY = "new-horizons:timeStop"', STATUS)
-        self.assertIn('TIME_STOP_BADGE = "ST"', STATUS)
-        self.assertIn("Remaining: until the beginning of the caster's next Hero Action.", STATUS)
-        self.assertIn("NewHorizonsBattleStatus.h", HOVER_PANEL)
-        self.assertIn("NewHorizonsBattleStatus.h", STACK_WINDOW)
-        self.assertIn("TIME_STOP_BADGE", HOVER_PANEL)
-        self.assertIn("TIME_STOP_BADGE", STACK_WINDOW)
-        self.assertIn("timeStopTooltip", HOVER_PANEL)
-        self.assertIn("timeStopTooltip", STACK_WINDOW)
-        self.assertIn("StackTemporaryStatusPresenter temporaryStatuses(stack, displayedStatus, battleCallback.get());", HOVER_PANEL)
-        self.assertIn("std::stable_partition(spells.begin(), spells.end()", STACK_WINDOW)
-        self.assertLess(HOVER_PANEL.index("temporaryStatuses.plan()"), HOVER_PANEL.index("for(const auto entryIndex"))
-        self.assertLess(
-            STACK_WINDOW.index("std::stable_partition(spells.begin(), spells.end()"),
-            STACK_WINDOW.index("for(SpellID effect : spells)"),
-        )
+class RetiredSorceryStatusUiSourceTest(unittest.TestCase):
+    def test_retired_statuses_are_absent(self):
+        for source in (STATUS, HOVER_PANEL, STACK_WINDOW, PRIORITY):
+            for retired in ("TIME_STOP", "SPELL_LOCK", "isTimeStop", "isSpellLock", "arcaneBreach"):
+                self.assertNotIn(retired, source)
 
-    def test_other_spell_duration_presentation_remains_intact(self):
-        self.assertIn("std::to_string(duration)", HOVER_PANEL)
-        self.assertIn("std::to_string(duration)", STACK_WINDOW)
+    def test_ordinary_duration_and_overflow_remain(self):
+        for source in (HOVER_PANEL, STACK_WINDOW):
+            self.assertIn("std::to_string(duration)", source)
         self.assertIn("spellDurationRemaining", STACK_WINDOW)
-        self.assertIn('(wheelSpell.hasValue() ? wheelSpell : effect).getNum() + 1', HOVER_PANEL)
-        self.assertIn('effect + 1', STACK_WINDOW)
-        self.assertIn("displayPlan.visibleEntryIndices", HOVER_PANEL)
         self.assertIn("displayPlan.ellipsisUsesSlot", HOVER_PANEL)
-        self.assertIn("const std::size_t visibleLimit = result.ellipsisUsesSlot ? 2 : 3;", PRIORITY)
+        self.assertIn("result.ellipsisUsesSlot ? 2 : 3", PRIORITY)
         self.assertIn("printed >= 8", STACK_WINDOW)
 
-    def test_focus_magic_uses_captured_provenance_in_both_stack_presentations(self):
-        self.assertIn("isFocusMagic", HOVER_PANEL)
-        self.assertIn("isFocusMagic", STACK_WINDOW)
-        self.assertIn("focusMagicStatus", HOVER_PANEL)
-        self.assertIn("focusMagicStatus", STACK_WINDOW)
-        self.assertIn("focusMagicTooltip", HOVER_PANEL)
-        self.assertIn("focusMagicTooltip", STACK_WINDOW)
-        self.assertIn("Captured penetration per mark", STATUS)
-        self.assertIn("Captured beneficiary", STATUS)
+    def test_focus_displays_authoritative_charges(self):
+        for source in (HOVER_PANEL, STACK_WINDOW):
+            self.assertIn("newHorizonsFocusMagic::charges", source)
+            self.assertIn("Energy shots remaining", source)
+        self.assertIn("StackStatusIconKind::FOCUS_MAGIC: return 7", PRIORITY)
 
-    def test_arcane_breach_shows_mark_count_and_side_specific_help(self):
-        self.assertIn("isArcaneBreach", HOVER_PANEL)
-        self.assertIn("isArcaneBreach", STACK_WINDOW)
-        self.assertIn("arcaneBreachStatus", HOVER_PANEL)
-        self.assertIn("arcaneBreachStatus", STACK_WINDOW)
-        self.assertIn("arcaneStatus.markCount()", HOVER_PANEL)
-        self.assertIn("arcaneStatus.markCount()", STACK_WINDOW)
-        self.assertIn("arcaneBreachTooltip", HOVER_PANEL)
-        self.assertIn("arcaneBreachTooltip", STACK_WINDOW)
-        self.assertIn("Only subsequent friendly ranged creature attacks", STATUS)
-
-    def test_new_horizons_statuses_are_prioritized_before_display_limits(self):
-        self.assertIn("statusIconKind(effect)", TEMPORARY)
+    def test_surviving_control_statuses_keep_priority(self):
+        for kind in ("FROZEN", "CONFUSION", "ENTANGLE", "DOOM", "PHYSICAL_POISON"):
+            self.assertIn("StackStatusIconKind::" + kind, PRIORITY)
         self.assertIn("stackStatusDisplayPlan(statusKinds, totalEffectCount)", TEMPORARY)
-        for kind, priority in (("TIME_STOP", 0), ("SPELL_LOCK", 1), ("FOCUS_OR_ARCANE", 7)):
-            self.assertIn("StackStatusIconKind::" + kind + ": return " + str(priority), PRIORITY)
-        self.assertIn("std::stable_sort(orderedIndices.begin(), orderedIndices.end()", PRIORITY)
-        self.assertLess(PRIORITY.index("std::stable_sort(orderedIndices.begin()"), PRIORITY.index("result.visibleEntryIndices.assign"))
-        for source in (STACK_WINDOW,):
-            partition = source.index("const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end()")
-            time_stop_partition = source.index("std::stable_partition(spells.begin(), prioritizedEnd", partition)
-            loop = source.index("for(SpellID effect : spells)")
-            self.assertLess(partition, loop)
-            self.assertLess(partition, time_stop_partition)
-            self.assertLess(time_stop_partition, loop)
-            predicate = source[partition:time_stop_partition]
-            self.assertIn("isTimeStop", predicate)
-            self.assertIn("isFocusMagic", predicate)
-            self.assertIn("isArcaneBreach", predicate)
-            time_stop_predicate = source[time_stop_partition:loop]
-            self.assertIn("isTimeStop", time_stop_predicate)
-            self.assertNotIn("isFocusMagic", time_stop_predicate)
-            self.assertNotIn("isArcaneBreach", time_stop_predicate)
+        self.assertLess(STACK_WINDOW.index("std::stable_partition"), STACK_WINDOW.index("for(SpellID effect : spells)"))
 
-    def test_time_stop_uses_registered_purpose_made_status_icon(self):
-        time_stop = SPELLS.split('\t"timeStop" : {', 1)[1].split('\n\t"', 1)[0]
-        self.assertIn('"iconEffect" : "NH_spell_time_stop-30.png"', time_stop)
-        self.assertIn('"iconImmune" : "NH_spell_time_stop-30.png"', time_stop)
+    def test_focus_presentation_uses_attack_receipt_including_final_charge(self):
+        dispatch = (ROOT / "client/CPlayerInterface.cpp").read_text()
+        animation = (ROOT / "client/battle/BattleRangedAnimation.cpp").read_text()
+        projectile = (ROOT / "client/battle/BattleProjectileController.cpp").read_text()
+        for field in ("focusMagicRanged", "focusMagicConverted"):
+            self.assertIn("info." + field + " = ba->" + field, dispatch)
+        self.assertIn('AudioPath::builtin("ZELTSHOT.wav")', animation)
+        self.assertIn("if(focusMagicConverted)", animation)
+        self.assertNotIn("newHorizonsFocusMagic::active", animation + projectile)
+        self.assertIn("if(focusMagicRanged)", projectile)
+        self.assertIn("rayProjectile->rayConfig", projectile)
+
+    def test_recall_preview_uses_shared_actual_landing_footprint(self):
+        preview = (ROOT / "client/battle/BattleSpellManaPreview.cpp").read_text()
+        field = (ROOT / "client/battle/BattleFieldController.cpp").read_text()
+        self.assertIn("newHorizonsSorcerySpells::forcedRecallDestination(*battle, *target)", preview)
+        self.assertIn("target->getHexes(*destination)", preview)
+        self.assertIn("getForcedRecallTargetHexes(spell, hoveredHex)", field)
+
+    def test_force_lance_is_scene_owned_and_status_driven(self):
+        effects = (ROOT / "client/battle/BattleEffectsController.h").read_text()
+        presentation = (ROOT / "client/battle/ForceLancePresentation.cpp").read_text()
+        spell = (ROOT / "client/battle/BattleSpellPresentation.cpp").read_text()
+        self.assertIn("ForceLancePresentation forceLance;", effects)
+        for token in ("BonusType::BIND_EFFECT", "BonusSource::SPELL_EFFECT", "BonusDuration::N_TURNS",
+                      "bonus->turnsRemain > 0", "bonus->stacking == newHorizonsSorcerySpells::FORCE_LANCE",
+                      "bonus->sid.toString() == newHorizonsSorcerySpells::FORCE_LANCE"):
+            self.assertIn(token, presentation)
+        self.assertIn("if(!stack.alive() || stack.isGhost())", presentation)
+        self.assertIn("return foot - Point(110, 138);", presentation)
+        self.assertIn("RELEASE_MILLISECONDS = 250", presentation)
+        self.assertIn("release.phase.elapsedForAdvance(elapsed)", presentation)
+        self.assertIn("ForceLancePresentation::strike(*this, *target)", spell)
+        refresh = presentation.split("void ForceLancePresentation::refresh", 1)[1]
+        for forbidden in ("new EffectAnimation", "addBonus", "removeBonus", "battleMake", "static std::map"):
+            self.assertNotIn(forbidden, refresh)
 
 
 if __name__ == "__main__":

@@ -81,27 +81,12 @@ constexpr int CHAIN_LIGHTNING_FIXED_TARGET_COUNT_V3 = 5;
 constexpr int QUICKSAND_BASE_PATCH_COUNT_V3 = 2;
 constexpr int QUICKSAND_MAX_PATCH_COUNT_V3 = 5;
 constexpr int QUICKSAND_SPELL_POWER_PER_PATCH_V3 = 60;
-constexpr int METAMAGIC_FORMULA_RESERVE_POINTS = 3;
-constexpr int METAMAGIC_SPELL_BUFFER_POINTS = 6;
 constexpr int DIRECT_DAMAGE_POWER_DIVISOR = 10;
-constexpr int COUNTERSPELL_LISTED_COST = 11;
 constexpr int RESURRECTION_RESTORATION_VERSION = 1;
 constexpr int RESURRECTION_LEVEL = 5;
 constexpr int RESURRECTION_MANA_COST = 22;
 constexpr int RESURRECTION_BASE_POOL_HP = 100;
 constexpr int RESURRECTION_SPELL_POWER_HP_PER_POINT = 4;
-inline constexpr std::string_view METAMAGIC_SKILL = "new-horizons:metamagic";
-inline constexpr std::string_view METAMAGIC_SPELL_SEQUENCING = "new-horizons:metamagic.spellSequencing";
-inline constexpr std::string_view METAMAGIC_ARCANE_ECONOMY = "new-horizons:metamagic.arcaneEconomy";
-inline constexpr std::string_view METAMAGIC_FOCUSED_PAIRING = "new-horizons:metamagic.focusedPairing";
-inline constexpr std::string_view METAMAGIC_COUNTERSEQUENCE = "new-horizons:metamagic.countersequence";
-inline constexpr std::string_view METAMAGIC_ECHOED_DURATION = "new-horizons:metamagic.echoedDuration";
-inline constexpr std::string_view METAMAGIC_SPLIT_FOCUS = "new-horizons:metamagic.splitFocus";
-inline constexpr std::string_view METAMAGIC_FORMULA_RESERVE = "new-horizons:metamagic.formulaReserve";
-inline constexpr std::string_view METAMAGIC_SPELL_BUFFER = "new-horizons:metamagic.spellBuffer";
-inline constexpr std::string_view METAMAGIC_SPELL_ECHO = "new-horizons:metamagic.spellEcho";
-inline constexpr std::string_view METAMAGIC_GRAND = "new-horizons:metamagic.grandMetamagic";
-inline constexpr std::string_view METAMAGIC_PERFECT_SEQUENCE = "new-horizons:metamagic.perfectSequence";
 inline constexpr std::string_view HAVOC_STORMCALLER = "new-horizons:havocMagic.stormcaller";
 inline constexpr std::string_view HAVOC_MAGIC_SKILL = "new-horizons:havocMagic";
 inline constexpr std::string_view HAVOC_PYROMANCER = "new-horizons:havocMagic.pyromancer";
@@ -165,7 +150,6 @@ struct DLL_LINKAGE AdventureSpellState
 	}
 };
 
-constexpr uint32_t INVALID_METAMAGIC_TARGET = std::numeric_limits<uint32_t>::max();
 /// Canonical New Horizons Land Mine thresholds.  The spell uses the caster's
 /// saved Spell Power (before applying the direct-damage divisor) to determine
 /// how many distinct battlefield hexes the action must contain.
@@ -465,22 +449,11 @@ DLL_LINKAGE bool isFireWall(SpellID spell);
 /// The caller must only use this while a saved NH magic roster is active.
 DLL_LINKAGE int landMineHexCount(int32_t spellPower,
 	int coefficientBasisPoints = SPELL_POWER_COEFFICIENT_BASIS_POINTS);
-/// True only for the saved New Horizons Counterspell identity.  The identity
-/// check is deliberately content-based so installed spell indices remain
-/// irrelevant to saved battles.
-DLL_LINKAGE bool isCounterspell(const spells::Spell * spell);
-/// Counterspell's ward cost, using the enemy spell's listed/base cost rather
-/// than any battlefield discount. Countermage or Countersequence changes 2x
-/// to ceil(1.75x).
-DLL_LINKAGE int counterspellCost(int listedCost, bool countermage, bool countersequence = false);
 /// Saved-rules-backed Metamagic identity and perk helpers.  These are kept in
 /// the shared magic layer so server, client previews, and BattleAI use exactly
 /// the same rank/perk gates.
 /// Current-rules learned mastery; legacy contexts retain their prior effective rank.
-DLL_LINKAGE int metamagicRank(const CGHeroInstance * hero);
 /// Current rules: learned mastery plus at most one additional use; legacy unchanged.
-DLL_LINKAGE int metamagicCapacity(const CGHeroInstance * hero);
-DLL_LINKAGE bool hasMetamagicPerk(const CGHeroInstance * hero, std::string_view perkId);
 /// Saved-v3 Pyromancer / Cryomancer coefficient bonus for their canonical
 /// combat damage spells. Returns 15 or 20 only for an active selected perk;
 /// fixed damage bases, durations, and creature casts are excluded.

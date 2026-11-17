@@ -40,12 +40,12 @@ std::optional<SpellEffectPreview> knownUtilitySpellEffectPreview(const CGHeroIns
 		return buffSpellEffectPreview(hero, spell, rules, power, coefficient, empower);
 	if(spell.getJsonKey() == newHorizonsSorcery::FOCUS_MAGIC_SPELL)
 	{
-		const auto profile = newHorizonsSorceryRevision::focusRules(rules).value_or(newHorizonsSorceryRevision::FocusRules{
-			newHorizonsSorcery::ARCANE_BREACH_BASE_BASIS_POINTS, newHorizonsSorcery::ARCANE_BREACH_POWER_BASIS_POINTS,
-			newHorizonsSorcery::ARCANE_BREACH_CAP_BASIS_POINTS});
-		auto result = quantity("focus", newHorizonsSorceryRevision::focusMarkBasisPoints(profile, power, coefficient, empower, hero.getNonDamageSpellSpecialtyBonusPercent(spell.getId())), 100);
-		// Each captured mark has this penetration rate regardless of its recipient.
-		result.qualificationKey.clear();
+		if(!newHorizonsSorceryRevision::usesFocusEnchantment(rules)) return SpellEffectPreview{};
+		auto result = quantity("focus", 3);
+		result.secondary = SpellEffectPreview::Quantity{
+			20 + newHorizonsSorceryRevision::focusAdditionalRangedPercent(&hero, spell.getId()), 1,
+			"new-horizons.spellbook.unit.number"};
+		result.qualificationKey = "new-horizons.spellbook.focusRecipient";
 		return result;
 	}
 	if(spell.getJsonKey() == "new-horizons:summonLivingArmor")
@@ -82,7 +82,7 @@ std::optional<SpellEffectPreview> knownUtilitySpellEffectPreview(const CGHeroIns
 	if(const auto duration = curseDurationRounds(rules, &hero, spell.getId()))
 	{
 		// The authoritative Curse path adds Extend only; it does not call the
-		// general duration adjustment and therefore does not add Echoed Duration.
+		// general duration adjustment.
 		const bool extend = callback && heroCastExtendAvailable(hero, spell, *callback,
 			std::clamp(hero.getEffectLevel(&spell), 0, 3));
 		return quantity("curse", *duration + static_cast<int>(extend));

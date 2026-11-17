@@ -5,15 +5,19 @@
 namespace newHorizonsHeroes
 {
 /// Scoped operation over an unchanged captured rules object. Catalogue admission
-/// happens exactly once on entry; mutable choices are private until commit.
-/// Never retain this borrowed operation in hero state or across callbacks that
-/// can change its source rules. No gameplay state or RNG is stored in the view.
+/// is retained from capture; mutable choices are private until commit.
+/// Keeps its immutable capture alive and rejects use after source replacement.
+/// Never retain an operation in hero state. No gameplay state or RNG is stored.
 class DLL_LINKAGE PerkSelectionOperation
 {
 	const PerkState & source;
-	ValidatedPerkRules catalog;
+	std::shared_ptr<const nativeRules::CapturedPerkRules> capturedSnapshot;
+	std::optional<ValidatedPerkRules> uncapturedCatalog;
+	const ValidatedPerkRules & catalog;
+	std::vector<PerkSelection> publishedSelections;
 	std::vector<PerkSelection> working;
 	bool committed = false;
+	void requireCurrentCapture() const;
 public:
 	explicit PerkSelectionOperation(const PerkState & source);
 	PerkSelectionOperation(PerkState &&) = delete;

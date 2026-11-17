@@ -346,7 +346,7 @@ TEST_F(NewHorizonsReserveTest, UnitChangesAndBattleSnapshotPreserveReserveStateW
 	EXPECT_THROW(restoredState->load(invalid), std::runtime_error);
 }
 
-TEST_F(NewHorizonsReserveTest, ImmobilizationAndTimeStopStillSuppressReserveMovement)
+TEST_F(NewHorizonsReserveTest, ImmobilizationStillSuppressesReserveMovement)
 {
 	startGame();
 	startBattle();
@@ -365,12 +365,6 @@ TEST_F(NewHorizonsReserveTest, ImmobilizationAndTimeStopStillSuppressReserveMove
 		<< "Reserve cannot override the existing immobilization guard";
 	stack->removeBonus(bind);
 
-	auto timeStop = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	stack->addNewBonus(timeStop);
-	EXPECT_EQ(stack->getMovementRange(0), 0)
-		<< "Reserve cannot override the Time Stop guard";
-	stack->removeBonus(timeStop);
 	EXPECT_EQ(stack->getMovementRange(0), normalRange + 2);
 }
 

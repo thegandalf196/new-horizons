@@ -595,22 +595,25 @@ TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyCharacterizesCapturedIdentityAndC
 	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:tyraxor")));
 	CountingHeroBattle source;
 	source.attacker = attackerSideHero;
-	auto & captured = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules());
+	auto captured = attackerSideHero->getPrimaryGrowthRules();
 	auto & policy = captured["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 	const auto installedCoefficient = policy["ridersExploitDamagePercent"].Integer();
 	ASSERT_GT(installedCoefficient, 0);
 	EXPECT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
 	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER}));
 	policy["ridersExploitDamagePercent"].Integer() = 0;
+	attackerSideHero->replaceCapturedPrimaryGrowthRules(captured);
 	source.queries.clear();
 	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
 	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER, BattleSide::DEFENDER}));
 	policy.Struct().erase("ridersExploitDamagePercent"); // Historical absence stays inactive.
+	attackerSideHero->replaceCapturedPrimaryGrowthRules(captured);
 	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
 	source.attacker = nullptr;
 	source.defender = attackerSideHero;
 	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
 	policy["ridersExploitDamagePercent"].Integer() = installedCoefficient;
+	attackerSideHero->replaceCapturedPrimaryGrowthRules(captured);
 	source.queries.clear();
 	EXPECT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(source));
 	EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER, BattleSide::DEFENDER}));
@@ -626,9 +629,10 @@ TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyMainProbesMatchScoresStateAndRngs
 	ASSERT_NO_FATAL_FAILURE(compareMainBatch(child->getForUpdate(incoming->unitId()),
 		{braced, other, braced, other}));
 	// End every admission lifetime before changing captured policy and constructing a new batch.
-	auto & policy = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules())
-		["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	auto captured = attackerSideHero->getPrimaryGrowthRules();
+	auto & policy = captured["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 	policy["ridersExploitDamagePercent"].Integer() = 0;
+	attackerSideHero->replaceCapturedPrimaryGrowthRules(captured);
 	resetChild();
 	ASSERT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*child));
 	ASSERT_NO_FATAL_FAILURE(compareMainBatch(child->getForUpdate(incoming->unitId()),
@@ -650,9 +654,10 @@ TEST_F(DamageCacheAdmissionTest, OrdinaryPolicyAdmissionIsLazyAndRetainsTrueAndF
 		EXPECT_EQ(source.queries, (std::vector<BattleSide>{BattleSide::ATTACKER}));
 	}
 	// A new immutable batch must observe changed captured policy on the same callback.
-	auto & policy = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules())
-		["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	auto captured = attackerSideHero->getPrimaryGrowthRules();
+	auto & policy = captured["additionalSpecialties"]["ordinaryCreatureSpecialties"];
 	policy["ridersExploitDamagePercent"].Integer() = 0;
+	attackerSideHero->replaceCapturedPrimaryGrowthRules(captured);
 	source.queries.clear();
 	DamageCacheAdmission next(*actor, source);
 	EXPECT_FALSE(next.ordinaryCreatureDamageIsStateful());

@@ -19,22 +19,6 @@ namespace newHorizonsMagic
 {
 namespace
 {
-static bool spellsShareSchool(const CSpell * first, const CSpell * second)
-{
-	if(!first || !second)
-		return false;
-	bool shared = false;
-	first->forEachSchool([&](const SpellSchool & school, bool & stop)
-	{
-		if(second->hasSchool(school))
-		{
-			shared = true;
-			stop = true;
-		}
-	});
-	return shared;
-}
-
 }
 int32_t HeroSpellCastContext::componentBonusPercent() const
 {
@@ -43,7 +27,7 @@ int32_t HeroSpellCastContext::componentBonusPercent() const
 	return combined - 100;
 }
 HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback & callback, bool followup, bool concentrated, bool automaticHeroCast)
+	const CBattleInfoCallback & callback, bool concentrated, bool automaticHeroCast)
 {
 	HeroSpellCastContext result;
 	const auto casterSide = callback.playerToSide(hero.getCasterOwner());
@@ -51,7 +35,7 @@ HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero, const CSp
 		return result;
 	const auto * battleInfo = callback.getBattle();
 	const int32_t battleRound = battleInfo ? battleInfo->getRound() : -1;
-	const auto spellAllowance = !followup && !automaticHeroCast ? callback.battleGetSpellActionAllowance(casterSide, spell.getId())
+	const auto spellAllowance = !automaticHeroCast ? callback.battleGetSpellActionAllowance(casterSide, spell.getId())
 		: std::optional<HeroActionAllowanceState::Selection>{};
 	if(battleInfo && battleInfo->getSideHero(casterSide) == &hero && spellAllowance
 		&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
@@ -100,30 +84,5 @@ int32_t brimstoneSpellPowerBonus(const CGHeroInstance & hero, const CBattleInfoC
 	return rulesActive(hero.getMagicRules()) && defendedTown && defendedTown->getFactionID() == FactionID::INFERNO
 		&& defendedTown->hasBuilt(BuildingID::SPECIAL_2)
 		&& callback.battleGetFightingHero(BattleSide::DEFENDER) == &hero ? 20 : 0;
-}
-int32_t metamagicPowerBonus(const CGHeroInstance & hero, const CSpell & spell,
-	const CBattleInfoCallback & callback, std::optional<uint32_t> selectedTarget)
-{
-	const auto * battle = callback.getBattle();
-	const auto side = callback.playerToSide(hero.getCasterOwner());
-	if(!battle || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
-		return 0;
-	const auto & sequence = battle->getMetamagicSequenceSpells(side);
-	int result = 0;
-	if(hasMetamagicPerk(&hero, METAMAGIC_SPELL_SEQUENCING) && !sequence.empty()
-		&& !spellsShareSchool(sequence.front().toSpell(), &spell))
-		result += 15;
-	if(hasMetamagicPerk(&hero, METAMAGIC_SPLIT_FOCUS) && selectedTarget
-		&& *selectedTarget != INVALID_METAMAGIC_TARGET && battle->getMetamagicFirstTargetUnitId(side) != INVALID_METAMAGIC_TARGET
-		&& *selectedTarget != battle->getMetamagicFirstTargetUnitId(side))
-		result += 10;
-	if(hasMetamagicPerk(&hero, METAMAGIC_SPELL_ECHO) && !sequence.empty() && spell.getId() == sequence.front())
-		result += 25;
-	const bool distinct = std::all_of(sequence.begin(), sequence.end(), [&sequence](const SpellID & id)
-	{ return std::count(sequence.begin(), sequence.end(), id) == 1; });
-	if(hasMetamagicPerk(&hero, METAMAGIC_PERFECT_SEQUENCE) && distinct
-		&& std::none_of(sequence.begin(), sequence.end(), [&spell](const SpellID & id) { return id == spell.getId(); }))
-		result += 20;
-	return result;
 }
 }

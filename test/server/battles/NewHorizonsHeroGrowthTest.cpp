@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../PerkStateFixture.h"
 #include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/BattleEvaluator.h"
@@ -34,6 +35,7 @@
 #include "../../../lib/entities/hero/CHeroClass.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../../lib/entities/hero/NewHorizonsPrimaryGrowth.h"
+#include "../../../lib/entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../../lib/CPlayerState.h"
 #include "../../../lib/CSkillHandler.h"
@@ -65,7 +67,27 @@
 #include <string>
 #include <string_view>
 
-class NewHorizonsHeroGrowthTest : public HeroCommandFixture
+// Growth formula fixtures retain the finite Orders-only historical coefficients.
+// The issuance marker is part of that complete capture, independent of current
+// Warfare defaults; installed-profile fixtures below opt into current Orders.
+class GrowthCommandFixture : public HeroCommandFixture
+{
+protected:
+	void mapLoaded(CMap * loaded) override
+	{
+		if(!useCommands || useRevisedOrders)
+			return HeroCommandFixture::mapLoaded(loaded);
+		TinyMapGameTest::mapLoaded(loaded);
+		JsonNode file(JsonPath::builtin("config/newHorizonsCombatV3"));
+		auto rules = file["combat"]["heroCommands"];
+		rules["commandResourcePolicyVersion"].Integer() = 1;
+		rules.setOverrideFlag(true);
+		heroCommands::validateRules(rules);
+		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+	}
+};
+
+class NewHorizonsHeroGrowthTest : public GrowthCommandFixture
 {
 protected:
 	void prepareScaledExpert(SpellID spell)
@@ -84,7 +106,7 @@ protected:
 	bool legacyMagicRules = false;
 	void mapLoaded(CMap * map) override
 	{
-		HeroCommandFixture::mapLoaded(map);
+		GrowthCommandFixture::mapLoaded(map);
 		// Real turn processing needs a usable Calendar.  Tiny maps do not carry
 		// the global calendar settings reliably, so pin the canonical Heroes III
 		// week/month lengths in this server-side fixture before state init.
@@ -184,14 +206,16 @@ int growthChance(const newHorizonsHeroes::PrimaryGrowthView & view, SecondarySki
 }
 }
 
-class NewHorizonsInstalledSkillGrowthTest : public HeroCommandFixture
+class NewHorizonsInstalledSkillGrowthTest : public GrowthCommandFixture
 {
+public:
+	NewHorizonsInstalledSkillGrowthTest() { useRevisedOrders = true; }
 	protected:
 	bool wisdomGrowthChanceAtHundred = false;
 
 	void mapLoaded(CMap * map) override
 	{
-		HeroCommandFixture::mapLoaded(map);
+		GrowthCommandFixture::mapLoaded(map);
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perkRules);
 
@@ -316,7 +340,16 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ScopedSkillRanksUseInstalledGrowthMa
 			ASSERT_EQ(view->extraGrowth.size(), 1u) << configuredSkills[index].id << " at rank " << rank;
 			EXPECT_EQ(view->extraGrowth.front().skill, skills[index]);
 			EXPECT_EQ(view->extraGrowth.front().attribute, configuredSkills[index].attribute);
-			EXPECT_EQ(view->extraGrowth.front().chancePercent, rank * 10);
+			const auto & authored = rules["extraGrowth"].Vector();
+			const auto row = std::find_if(authored.begin(), authored.end(), [&](const auto & entry)
+				{ return entry["skill"].String() == configuredSkills[index].id; });
+			ASSERT_NE(row, authored.end());
+			const int specialty = std::string_view(configuredSkills[index].id) == "new-horizons:archery" ? 20 : 0;
+			EXPECT_EQ(hero->getHeroType()->getJsonKey(), "core:orrin");
+			if(specialty)
+				EXPECT_EQ(hero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARCHERY)), 20);
+			const int authoredChance = (*row)["chances"].Vector().at(rank).Integer();
+			EXPECT_EQ(view->extraGrowth.front().chancePercent, std::min(100, authoredChance * (100 + specialty) / 100));
 		}
 		hero->setSecSkillLevel(skills[index], 0, ChangeValueMode::ABSOLUTE);
 	}
@@ -402,7 +435,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ArcaneInsightUsesLegalWisdomRanksAnd
 	{
 		return hero->getPerkSkillRank(skillId);
 	};
-	const auto wisdomRules = hero->getPerkState().rules["skills"][WISDOM_SKILL_ID]["perks"].Vector();
+	const auto wisdomRules = hero->getPerkState().getRules()["skills"][WISDOM_SKILL_ID]["perks"].Vector();
 	const auto insightDefinition = std::find_if(wisdomRules.begin(), wisdomRules.end(), [](const JsonNode & perk)
 	{
 		return perk["id"].String() == ARCANE_INSIGHT_ID;
@@ -475,14 +508,21 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ArcaneInsightUsesLegalWisdomRanksAnd
 	ASSERT_TRUE(loaded->getPrimaryGrowthView());
 	EXPECT_EQ(growthChance(*loaded->getPrimaryGrowthView(), wisdom), 20);
 
-	EXPECT_TRUE(std::any_of(loaded->getPerkState().selected.begin(), loaded->getPerkState().selected.end(),
+	EXPECT_TRUE(std::any_of(loaded->getPerkState().getSelected().begin(), loaded->getPerkState().getSelected().end(),
 		[](const auto & selection) { return selection.skillId == WISDOM_SKILL_ID && selection.perkId != ARCANE_INSIGHT_ID; }));
 	auto plannedState = loaded->getPerkState();
-	ASSERT_TRUE(setArcaneInsightStatus(plannedState.rules, "planned"));
-	std::erase_if(plannedState.selected, [](const auto & selection)
+	// Remove the selected perk before marking its definition planned, keeping
+	// the current ordered four-offer policy and remaining selections valid.
+	auto plannedRules = plannedState.getRules();
+	ASSERT_TRUE(setArcaneInsightStatus(plannedRules, "planned"));
+	perkStateFixture::editSelected(plannedState, [&](auto & selected)
 	{
-		return selection.perkId == ARCANE_INSIGHT_ID;
+		std::erase_if(selected, [](const auto & selection)
+		{
+			return selection.perkId == ARCANE_INSIGHT_ID;
+		});
 	});
+	plannedState.replaceRules(std::move(plannedRules));
 	const auto plannedOffer = plannedState.prepareOffer([loaded](const std::string & skillId)
 	{
 		return loaded->getPerkSkillRank(skillId);
@@ -491,7 +531,14 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ArcaneInsightUsesLegalWisdomRanksAnd
 	{
 		return candidate.selection.perkId == ARCANE_INSIGHT_ID;
 	}));
-	plannedState.selected.push_back({WISDOM_SKILL_ID, ARCANE_INSIGHT_ID});
+	// Current strict captures reject a selected planned entry; rejection keeps
+	// the valid Basic-only selection and its compiled projection unchanged.
+	const auto selectedBeforeRejection = plannedState.getSelected();
+	EXPECT_THROW(perkStateFixture::editSelected(plannedState, [&](auto & selected)
+	{
+		selected.push_back({WISDOM_SKILL_ID, ARCANE_INSIGHT_ID});
+	}), std::runtime_error);
+	EXPECT_EQ(plannedState.getSelected(), selectedBeforeRejection);
 	const_cast<newHorizonsHeroes::PerkState &>(loaded->getPerkState()) = std::move(plannedState);
 	EXPECT_FALSE(loaded->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
 	ASSERT_TRUE(loaded->getPrimaryGrowthView());
@@ -586,11 +633,15 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, AuthoritativeLevelUpUsesPreOfferView
 	gameHandler->onAdvInterfaceReady(owner);
 	const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(gameHandler->queries->topQuery(owner));
 	ASSERT_NE(query, nullptr);
-	const auto arcaneInsight = std::find_if(query->hlu.perks.begin(), query->hlu.perks.end(), [](const auto & candidate)
-	{
-		return candidate.selection.perkId == ARCANE_INSIGHT_ID;
-	});
-	ASSERT_NE(arcaneInsight, query->hlu.perks.end());
+	const auto groups = newHorizonsHeroes::fourOfferPerkGroups(query->hlu.fourOffers,
+		newHorizonsHeroes::fourOfferCandidates(*gameState(), *hero));
+	std::optional<int32_t> insightReply;
+	for(size_t group = 0; group < groups.size(); ++group)
+		for(const auto & candidate : groups[group])
+			if(candidate.selection.perkId == ARCANE_INSIGHT_ID)
+				insightReply = newHorizonsHeroes::fourOfferPerkReply(query->hlu.fourOffers,
+					hero->getPerkState(), group, ARCANE_INSIGHT_ID);
+	ASSERT_TRUE(insightReply);
 	ASSERT_EQ(query->hlu.primaryGains, expectedPrimaryGains)
 		<< "the authoritative primary roll is captured before the level-up perk offer";
 	const auto gainsBeforePerkChoice = query->hlu.primaryGains;
@@ -599,9 +650,7 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, AuthoritativeLevelUpUsesPreOfferView
 	atChoice.oser & *gameHandler->randomizer;
 	GameRandomizer expectedNextRoll(*gameState());
 	atChoice.iser & expectedNextRoll;
-	const auto choice = query->hlu.skills.size()
-		+ static_cast<size_t>(std::distance(query->hlu.perks.begin(), arcaneInsight));
-	ASSERT_TRUE(gameHandler->queryReply(query->queryID, static_cast<int32_t>(choice), owner));
+	ASSERT_TRUE(gameHandler->queryReply(query->queryID, *insightReply, owner));
 	EXPECT_TRUE(hero->hasActivePerk(WISDOM_SKILL_ID, ARCANE_INSIGHT_ID));
 	ASSERT_TRUE(hero->getPrimaryGrowthView());
 	EXPECT_EQ(growthChance(*hero->getPrimaryGrowthView(), wisdom), 20);
@@ -717,8 +766,53 @@ protected:
 	}
 };
 
-class NewHorizonsCanonicalClassGrowthTest : public HeroCommandFixture, public ::testing::WithParamInterface<int>
+class NewHorizonsCanonicalClassGrowthTest : public GrowthCommandFixture, public ::testing::WithParamInterface<int>
 {
+public:
+	NewHorizonsCanonicalClassGrowthTest() { useRevisedOrders = true; }
+protected:
+	void finishProgressionQueries()
+	{
+		int answered = 0;
+		const PlayerColor owner(0);
+		while(const auto top = gameHandler->queries->topQuery(owner))
+		{
+			ASSERT_LT(answered++, 2000);
+			if(const auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(top))
+			{
+				const auto * hero = gameState()->getHero(query->hlu.heroId);
+				ASSERT_NE(hero, nullptr);
+				const auto legal = newHorizonsHeroes::legalFourOfferReplies(query->hlu.fourOffers,
+					hero->getPerkState(), newHorizonsHeroes::fourOfferCandidates(*gameState(), *hero));
+				int32_t reply = 0;
+				if(!legal.empty())
+				{
+					// This fixture measures a fixed authored XP level. Prodigy is
+					// separately tested and intentionally grants three extra levels.
+					const auto ordinary = std::find_if(legal.begin(), legal.end(), [&](int32_t candidate)
+					{
+						const auto choice = newHorizonsHeroes::fourOfferSelection(query->hlu.fourOffers,
+							hero->getPerkState(), candidate);
+						return choice && (!choice->perk
+							|| choice->perk->selection.perkId != "new-horizons:learning.prodigy");
+					});
+					ASSERT_NE(ordinary, legal.end());
+					reply = *ordinary;
+				}
+				ASSERT_TRUE(gameHandler->queryReply(query->queryID, reply, owner));
+			}
+			else
+			{
+				const auto masteryQuery = std::dynamic_pointer_cast<CHeroMasteryDialogQuery>(top);
+				ASSERT_NE(masteryQuery, nullptr);
+				const auto * hero = gameState()->getHero(masteryQuery->heroId);
+				ASSERT_NE(hero, nullptr);
+				ASSERT_TRUE(hero->getMasteryState().pending);
+				ASSERT_TRUE(gameHandler->heroMasteryReply(masteryQuery->queryID, hero->id,
+					hero->getMasteryState().pending->sequence, 0, owner));
+			}
+		}
+	}
 };
 
 TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClassesAndSurviveReload)
@@ -759,6 +853,15 @@ TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClasse
 	startWithMap(std::move(builder));
 	ASSERT_EQ(gameState()->getHeroDevelopmentRules(), canonical);
 	ASSERT_EQ(map()->getHeroesOnMap().size(), 18u);
+	server.gameState = gameState();
+	gameHandler = std::make_shared<CGameHandler>(server, gameState());
+	gameHandler->randomizer->setSeed(seed);
+	gameHandler->onAdvInterfaceReady(PlayerColor(0));
+	for(const auto heroId : map()->getHeroesOnMap())
+	{
+		gameHandler->levelUpHero(gameState()->getHero(heroId));
+		ASSERT_NO_FATAL_FAILURE(finishProgressionQueries());
+	}
 	std::set<std::string> seen;
 	for(const auto heroId : map()->getHeroesOnMap())
 	{
@@ -795,10 +898,6 @@ TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClasse
 
 	if(GetParam() == 1)
 	{
-		server.gameState = gameState();
-		gameHandler = std::make_shared<CGameHandler>(server, gameState());
-		gameHandler->randomizer->setSeed(seed);
-		gameHandler->onAdvInterfaceReady(PlayerColor(0));
 		for(const auto heroId : map()->getHeroesOnMap())
 		{
 			auto * hero = gameState()->getHero(heroId);
@@ -821,12 +920,7 @@ TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClasse
 			}
 			EXPECT_EQ(hero->getManaAvailable(), manaBefore);
 			EXPECT_EQ(hero->manaLimit(), expectedManaLimit(hero));
-			int answered = 0;
-			while(const auto query = gameHandler->queries->topQuery(PlayerColor(0)))
-			{
-				ASSERT_LT(answered++, 10);
-				ASSERT_TRUE(gameHandler->queryReply(query->queryID, 0, PlayerColor(0)));
-			}
+			ASSERT_NO_FATAL_FAILURE(finishProgressionQueries());
 		}
 	}
 
@@ -852,13 +946,15 @@ TEST_P(NewHorizonsCanonicalClassGrowthTest, InstalledProfilesInitializeAllClasse
 
 INSTANTIATE_TEST_SUITE_P(AuthoredLevels, NewHorizonsCanonicalClassGrowthTest, ::testing::Values(1, 2, 20));
 
-class LegacySpellCostTest : public HeroCommandFixture
+class LegacySpellCostTest : public GrowthCommandFixture
 {
 protected:
 	void mapLoaded(CMap * map) override
 	{
-		HeroCommandFixture::mapLoaded(map);
+		GrowthCommandFixture::mapLoaded(map);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode());
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, testHeroRules());
+		captureLegacyPerkOfferPolicy(*map);
 	}
 };
 
@@ -906,6 +1002,7 @@ protected:
 		JsonNode combat(JsonPath::builtin("config/newHorizonsCombatV2"));
 		auto rules = combat["combat"]["heroCommands"];
 		rules["rulesetVersion"].Integer() = heroCommands::RULESET_VERSION;
+		rules["commandResourcePolicyVersion"].Integer() = 1;
 		rules["commands"].Struct().erase("focusFire");
 		rules.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
@@ -959,7 +1056,7 @@ protected:
 	{
 		NewHorizonsPerSlotLeadershipTest::mapLoaded(map);
 		// Capture a genuine v3 capability context, excluding only v4-only policies.
-		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsCapabilities"));
+		auto rules = historicalCapabilityRulesV4();
 		rules["rulesetVersion"].Integer() = 3;
 		for(const auto * key : {"skeletonTransformer", "warMachineShop"})
 			rules.Struct().erase(key);
@@ -1325,61 +1422,36 @@ TEST_F(NewHorizonsWarMachinesTest, RankZeroSuppressesStaleArtilleryManualControl
 	}));
 }
 
-TEST_F(NewHorizonsPerSlotLeadershipTest, AuthoritativeStackMutationsRejectOversizedResultsAtomically)
+TEST_F(NewHorizonsPerSlotLeadershipTest, CurrentStackMutationsAllowLargeCountsAndRejectInvalidChangesAtomically)
 {
 	startGame();
 	attackerSideHero->clearSlots();
-	const CreatureID pikeman = creatureByName("core:pikeman");
-	const CreatureID halberdier = creatureByName("core:halberdier");
-	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->requirement, 60);
-	ASSERT_EQ(capacity->leadership,
-		newHorizonsHeroes::capabilityLeadershipRating(attackerSideHero->getCapabilityRules(), attackerSideHero->level)
-			+ std::max(0, attackerSideHero->valOfBonuses(BonusType::LEADERSHIP)));
-	ASSERT_EQ(capacity->maximum, capacity->leadership / 60);
-	ASSERT_GT(capacity->maximum, 1);
-
-	EXPECT_FALSE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), capacity->maximum + 1));
-	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(0)));
-	ASSERT_TRUE(gameHandler->insertNewStack(StackLocation(attackerSideHero->id, SlotID(0)), pikeman.toCreature(), capacity->maximum));
-	EXPECT_FALSE(gameHandler->changeStackCount(StackLocation(attackerSideHero->id, SlotID(0)),
-		1, ChangeValueMode::RELATIVE));
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity->maximum);
-
-	// A more expensive creature still rejects the whole existing stack atomically.
-	const auto angel = creatureByName("core:angel");
-	const auto angelCapacity = attackerSideHero->getLeadershipSlotCapacity(angel);
-	ASSERT_TRUE(angelCapacity);
-	ASSERT_LT(angelCapacity->maximum, capacity->maximum);
-	EXPECT_FALSE(gameHandler->changeStackType(StackLocation(attackerSideHero->id, SlotID(0)), angel.toCreature()));
-	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0)), pikeman.toCreature());
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity->maximum);
-
-	// Captured upgrade parity gives Halberdiers the same requirement as Pikemen.
-	const auto upgradedCapacity = attackerSideHero->getLeadershipSlotCapacity(halberdier);
-	ASSERT_TRUE(upgradedCapacity);
-	ASSERT_EQ(upgradedCapacity->requirement, capacity->requirement);
-	EXPECT_TRUE(gameHandler->changeStackType(StackLocation(attackerSideHero->id, SlotID(0)), halberdier.toCreature()));
-	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0)), halberdier.toCreature());
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), capacity->maximum);
+	const auto pikeman = creatureByName("core:pikeman");
+	const StackLocation slot(attackerSideHero->id, SlotID(0));
+	EXPECT_FALSE(attackerSideHero->getLeadershipSlotCapacity(pikeman));
+	ASSERT_TRUE(gameHandler->insertNewStack(slot, pikeman.toCreature(), 50000));
+	ASSERT_TRUE(gameHandler->changeStackCount(slot, 1, ChangeValueMode::RELATIVE));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 50001);
+	EXPECT_FALSE(gameHandler->insertNewStack(slot, pikeman.toCreature(), 1));
+	EXPECT_FALSE(gameHandler->changeStackCount(slot, -50002, ChangeValueMode::RELATIVE));
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 50001);
+	ASSERT_TRUE(gameHandler->changeStackType(slot, creatureByName("core:angel").toCreature()));
+	EXPECT_EQ(attackerSideHero->getCreature(SlotID(0)), creatureByName("core:angel").toCreature());
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 50001);
 }
 
-TEST_F(NewHorizonsPerSlotLeadershipTest, WholeArmyPreflightCannotLoopOrPartiallyTransfer)
+TEST_F(NewHorizonsPerSlotLeadershipTest, CurrentWholeArmyTransferConservesLargeCountsAndSourceRemainder)
 {
 	startGame();
-	const CreatureID pikeman = creatureByName("core:pikeman");
-	const CreatureID archer = creatureByName("core:archer");
 	attackerSideHero->clearSlots();
-	const auto capacity = attackerSideHero->getLeadershipSlotCapacity(pikeman);
-	ASSERT_TRUE(capacity);
 	defenderSideHero->clearSlots();
-	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, capacity->maximum + 1));
+	const auto pikeman = creatureByName("core:pikeman");
+	const auto archer = creatureByName("core:archer");
+	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 50000));
 	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), archer, 1));
-
-	EXPECT_FALSE(gameHandler->moveArmy(defenderSideHero, attackerSideHero, true));
-	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(0)));
-	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(0)), capacity->maximum + 1);
+	gameHandler->moveArmy(defenderSideHero, attackerSideHero, true);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 50000);
+	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(0)), 0);
 	EXPECT_EQ(defenderSideHero->getStackCount(SlotID(1)), 1);
 }
 
@@ -1401,7 +1473,7 @@ TEST_F(NewHorizonsPerSlotLeadershipTest, SeparateSlotsNeverShareOneLeadershipBud
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(1)), 8);
 }
 
-TEST_F(NewHorizonsPerSlotLeadershipTest, DuplicateCreatureRewardIsRejectedBeforeAnyPartialGrant)
+TEST_F(NewHorizonsPerSlotLeadershipTest, CurrentDuplicateCreatureRewardMergesEveryGrantedStack)
 {
 	startGame();
 	const CreatureID pikeman = creatureByName("core:pikeman");
@@ -1412,7 +1484,7 @@ TEST_F(NewHorizonsPerSlotLeadershipTest, DuplicateCreatureRewardIsRejectedBefore
 	ASSERT_TRUE(reward.setCreature(SlotID(1), pikeman, 8));
 
 	gameHandler->giveCreatures(attackerSideHero, reward);
-	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 2);
+	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 18);
 	EXPECT_FALSE(attackerSideHero->hasStackAtSlot(SlotID(1)));
 }
 
@@ -1851,21 +1923,25 @@ TEST_F(NewHorizonsCapabilityStateTest, FullWorldRoundtripKeepsBothIndependentIde
 	EXPECT_EQ(restored.getHeroCapabilityRules(), gameState()->getHeroCapabilityRules());
 }
 
-TEST_F(NewHorizonsHistoricalGrowthSnapshotTest, GrowthCheckpointBinaryDoesNotAcquireCapabilities)
+TEST_F(NewHorizonsHistoricalGrowthSnapshotTest, HistoricalGrowthCaptureRejectsOldWriterAndRoundTripsWithoutCapabilities)
 {
 	capabilitiesEnabled = false;
 	startGame();
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::NEW_HORIZONS_HERO_GROWTH;
-	memory.iser.version = ESerializationVersion::NEW_HORIZONS_HERO_GROWTH;
-	memory.oser & *gameState();
+	EXPECT_THROW(memory.oser & *gameState(), std::runtime_error);
+	EXPECT_TRUE(memory.extractBuffer().empty());
+	CMemorySerializer supported;
+	supported.oser & *gameState();
 	CGameState restored;
-	memory.iser.cb = &restored;
-	memory.iser.loadingGamestate = true;
-	memory.iser & restored;
+	supported.iser.cb = &restored;
+	supported.iser.loadingGamestate = true;
+	supported.iser & restored;
 	const auto * hero = restored.getHero(attackerSideHero->id);
 	ASSERT_NE(hero, nullptr);
-	EXPECT_TRUE(hero->getPrimaryGrowthView());
+	ASSERT_TRUE(hero->getPrimaryGrowthView());
+	EXPECT_EQ(hero->getPrimaryGrowthRules(), attackerSideHero->getPrimaryGrowthRules());
+	EXPECT_EQ(hero->getPrimaryGrowthView()->base, attackerSideHero->getPrimaryGrowthView()->base);
 	EXPECT_TRUE(hero->getCapabilityRules().isNull());
 	EXPECT_TRUE(restored.getHeroCapabilityRules().isNull());
 	EXPECT_FALSE(hero->getLeadershipCapacity());
@@ -2210,19 +2286,21 @@ TEST_F(NewHorizonsVersionTwoHeroGrowthTest, VersionedWorldSaveAndCrossoverPreser
 	EXPECT_EQ(restored.getHeroDevelopmentRules(), worldRules);
 }
 
-TEST_F(NewHorizonsActual034SnapshotTest, Actual034VersionAndOldCrossoverRemainLegacy)
+TEST_F(NewHorizonsActual034SnapshotTest, OldWriterRejectsCurrentWorldAndAbsentGrowthCrossoverRemainsLegacy)
 {
 	growthEnabled = false;
 	useCommands = false;
 	startGame();
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::NEW_HORIZONS_MAGIC;
-	memory.iser.version = ESerializationVersion::NEW_HORIZONS_MAGIC;
-	memory.oser & *gameState();
+	EXPECT_THROW(memory.oser & *gameState(), std::runtime_error);
+	EXPECT_TRUE(memory.extractBuffer().empty());
+	CMemorySerializer supported;
+	supported.oser & *gameState();
 	CGameState restored;
-	memory.iser.cb = &restored;
-	memory.iser.loadingGamestate = true;
-	memory.iser & restored;
+	supported.iser.cb = &restored;
+	supported.iser.loadingGamestate = true;
+	supported.iser & restored;
 	EXPECT_FALSE(restored.getHero(attackerSideHero->id)->getPrimaryGrowthView());
 	EXPECT_FALSE(newHorizonsHeroes::usesRules(restored.getHeroDevelopmentRules()));
 	CampaignState campaign;
@@ -2261,6 +2339,7 @@ TEST_F(NewHorizonsHeroGrowthTest, DetachedCampaignPreviewKeepsRatingsWithoutAssu
 
 TEST_F(NewHorizonsHeroGrowthTest, ExpandedRatingsDoNotBecomeCreatureDamageButDoStrengthenOrders)
 {
+	useRevisedOrders = true;
 	prepareCommands();
 	auto * ours = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("angel"), BattleHex(74), 100);
@@ -2287,7 +2366,7 @@ TEST_F(NewHorizonsHeroGrowthTest, ExpandedRatingsDoNotBecomeCreatureDamageButDoS
 	EXPECT_GT(damage(), before);
 }
 
-TEST_F(NewHorizonsHeroGrowthTest, RealCastScalesPowerTermAndPreservesFixedExpertTermAndBudget)
+TEST_F(NewHorizonsHeroGrowthTest, RealCurrentImplosionUsesHealthClauseAndPreservesRawRecipeAndPaidBudget)
 {
 	prepareCommands(true);
 	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 20, ChangeValueMode::ABSOLUTE);
@@ -2326,59 +2405,77 @@ TEST_F(NewHorizonsHeroGrowthTest, RealCastScalesPowerTermAndPreservesFixedExpert
 	action.spell = spell->getId();
 	action.aimToUnit(enemy);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_EQ(health - enemy->getAvailableHealth(), 622);
+	EXPECT_EQ(health - enemy->getAvailableHealth(), health * (1200 + 10 * 43) / 10000);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
 	EXPECT_FALSE(issue(HeroCommand::CHARGE));
 }
 
-TEST_F(NewHorizonsHeroGrowthTest, RealSummonRoundsAfterScaledPowerProduct)
+TEST_F(NewHorizonsHeroGrowthTest, RetiredHeroSummonRejectsWithoutManaActionsOrUnitMutation)
 {
 	const SpellID spellID(SpellID::SUMMON_AIR_ELEMENTAL);
 	prepareScaledExpert(spellID);
 	const auto * spell = spellID.toSpell();
-	ASSERT_EQ(spell->getLevelPower(3), 4);
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	EXPECT_EQ(mechanics->scaleSpellPowerComponentWithCoefficientBasisPoints(43 * 4, 10, 10000), 17);
+	CMemorySerializer randomBefore;
+	randomBefore.oser & *gameHandler->randomizer;
 	const auto mana = attackerSideHero->getManaAvailable();
+	const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	std::map<uint32_t, JsonNode> before;
+	for(const auto & unit : battle()->stacks) before.emplace(unit->unitId(), unit->save());
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
 	action.spell = spellID;
 	action.aimToHex(BattleHex::INVALID);
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	int count = 0;
-	for(const auto * unit : battle()->battleGetAllStacks())
-		if(unit->isSummoned() && unit->unitSide() == BattleSide::ATTACKER)
-			count += unit->getCount();
-	EXPECT_EQ(count, 17); // floor(43 * 4 / 10), not floor(43 / 10) * 4.
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - attackerSideHero->getSpellCost(spell));
-	EXPECT_FALSE(issue(HeroCommand::CHARGE));
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
+	std::map<uint32_t, JsonNode> after;
+	for(const auto & unit : battle()->stacks) after.emplace(unit->unitId(), unit->save());
+	EXPECT_EQ(after, before);
+	CMemorySerializer randomAfter;
+	randomAfter.oser & *gameHandler->randomizer;
+	EXPECT_EQ(randomAfter.extractBuffer(), randomBefore.extractBuffer());
 }
 
-TEST_F(NewHorizonsHeroGrowthTest, RealSacrificeKeepsVictimHealthAndMasteryTermsUnscaled)
+TEST_F(NewHorizonsHeroGrowthTest, RetiredHeroSacrificeRejectsWithoutConsumingEitherTargetOrBudget)
 {
 	const SpellID spellID(SpellID::SACRIFICE);
 	prepareScaledExpert(spellID);
 	auto * dead = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 100);
 	auto * victim = addStack(BattleSide::ATTACKER, creatureByName("pikeman"), BattleHex(72), 100);
 	int64_t damage = dead->getAvailableHealth();
-	dead->damage(damage); // Fixture casualty, before the authoritative cast.
+	dead->damage(damage);
 	ASSERT_FALSE(dead->alive());
 	const auto * spell = spellID.toSpell();
-	const int64_t expected = (43 + 10 * victim->getMaxHealth() + 10 * spell->getLevelPower(3)) * victim->getCount() / 10;
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	EXPECT_EQ(mechanics->scaleSpellPowerComponentWithCoefficientBasisPoints(43 * 100, 10, 10000), 430);
+	CMemorySerializer randomBefore;
+	randomBefore.oser & *gameHandler->randomizer;
 	const auto mana = attackerSideHero->getManaAvailable();
+	const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	std::map<uint32_t, JsonNode> before;
+	for(const auto & unit : battle()->stacks) before.emplace(unit->unitId(), unit->save());
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
 	action.spell = spellID;
 	action.setTarget({battle::Destination(dead), battle::Destination(victim)});
-	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	EXPECT_TRUE(dead->alive());
-	EXPECT_EQ(dead->getAvailableHealth(), expected);
-	EXPECT_FALSE(victim->alive());
-	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - attackerSideHero->getSpellCost(spell));
-	EXPECT_FALSE(issue(HeroCommand::CHARGE));
+	EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
+	std::map<uint32_t, JsonNode> after;
+	for(const auto & unit : battle()->stacks) after.emplace(unit->unitId(), unit->save());
+	EXPECT_EQ(after, before);
+	CMemorySerializer randomAfter;
+	randomAfter.oser & *gameHandler->randomizer;
+	EXPECT_EQ(randomAfter.extractBuffer(), randomBefore.extractBuffer());
 }
 
-TEST_F(NewHorizonsHeroGrowthTest, RealFireWallCreationTriggerAndBattlePacketKeepLatchedScale)
+TEST_F(NewHorizonsHeroGrowthTest, RealFireWallKeepsLatchedScaleAndRejectsLossyBattleDescriptor)
 {
 	legacyMagicRules = true;
 	prepareScaledExpert(SpellID::FIRE_WALL);
@@ -2416,31 +2513,21 @@ TEST_F(NewHorizonsHeroGrowthTest, RealFireWallCreationTriggerAndBattlePacketKeep
 	memory.iser.cb = &restored;
 	memory.iser.loadingGamestate = true;
 	memory.iser & restored;
-	// Ordinary game snapshots deliberately exclude active battles. Restore the
-	// battle through its real packet path, against this independent army graph.
 	ASSERT_TRUE(restored.currentBattles.empty());
-	BattleStart outgoing;
-	outgoing.battleID = BattleID(0);
-	outgoing.info = CMemorySerializer::deepCopy(*battle(), &restored);
-	CMemorySerializer wire;
-	wire.oser & outgoing;
-	wire.iser.cb = &restored;
-	BattleStart incoming;
-	wire.iser & incoming;
-	ASSERT_NE(incoming.info, nullptr);
-	restored.apply(incoming);
-	ASSERT_EQ(restored.currentBattles.size(), 1u);
-	EXPECT_EQ(restored.currentBattles.front()->obstacles.size(), battle()->obstacles.size());
-	EXPECT_FALSE(restored.currentBattles.front()->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
-	int savedWalls = 0;
-	for(const auto & obstacle : restored.currentBattles.front()->obstacles)
-		if(const auto * saved = dynamic_cast<const SpellCreatedObstacle *>(obstacle.get()))
-		{
-			++savedWalls;
-			EXPECT_EQ(saved->casterSpellPower, 43);
-			EXPECT_EQ(saved->casterPowerDivisor, 10);
-		}
-	EXPECT_GT(savedWalls, 0);
+	CMemorySerializer descriptor;
+	EXPECT_THROW(battle()->serialize(descriptor.oser), std::runtime_error);
+	EXPECT_TRUE(descriptor.extractBuffer().empty());
+	CMemorySerializer obstacleWire;
+	auto obstacleCopy = *created;
+	obstacleWire.oser & obstacleCopy;
+	SpellCreatedObstacle saved;
+	obstacleWire.iser & saved;
+	EXPECT_EQ(saved.casterSpellPower, 43);
+	EXPECT_EQ(saved.casterPowerDivisor, 10);
+	const auto savedTiles = saved.getAffectedTiles();
+	const auto createdTiles = created->getAffectedTiles();
+	EXPECT_TRUE(std::equal(savedTiles.begin(), savedTiles.end(), createdTiles.begin(), createdTiles.end()));
+	EXPECT_EQ(saved.getTrigger(), created->getTrigger());
 }
 
 TEST_F(NewHorizonsHeroGrowthTest, ObstacleKeepsCreationScaleNotCurrentSideHeroScale)
@@ -2589,7 +2676,7 @@ TEST_F(NewHorizonsEstatesSpecialtyFixture, LordHaartScalesOnlyEstatesIncomeAndKe
 		lordHaart->setSecSkillLevel(estates, ranks[index], ChangeValueMode::ABSOLUTE);
 		ordinaryHero->setSecSkillLevel(estates, ranks[index], ChangeValueMode::ABSOLUTE);
 
-		const int sharedGold = 30 /* OTHER */ + 100 /* one Tax Collector town */;
+		const int sharedGold = 30 /* OTHER; current Tax Collector changes visits, not daily income */;
 		const int64_t expectedSpecialistGold = vstd::divideAndCeil(
 			static_cast<int64_t>(specialistCoreIncome[index] + sharedGold) * TEST_INCOME_HANDICAP_PERCENT, 100);
 		const int64_t expectedOrdinaryGold = vstd::divideAndCeil(

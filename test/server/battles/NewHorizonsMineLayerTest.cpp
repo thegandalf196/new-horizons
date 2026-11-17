@@ -196,7 +196,7 @@ TEST_F(NewHorizonsMineLayerTest, PyromancerUnlocksLegalAdvancedMineLayerOfferInS
 	EXPECT_TRUE(attackerSideHero->hasActivePerk(std::string(newHorizonsMagic::HAVOC_MAGIC_SKILL),
 		std::string(mineLayerPerk)));
 	const auto savedDefinition = newHorizonsHeroes::perkDefinition(
-		attackerSideHero->getPerkState().rules, newHorizonsMagic::HAVOC_MAGIC_SKILL, mineLayerPerk);
+		attackerSideHero->getPerkState().getRules(), newHorizonsMagic::HAVOC_MAGIC_SKILL, mineLayerPerk);
 	ASSERT_TRUE(savedDefinition.has_value());
 	EXPECT_EQ(savedDefinition->effect["status"].String(), "active")
 		<< "Only this map's saved perk-rules snapshot opts the Mine Layer row in";

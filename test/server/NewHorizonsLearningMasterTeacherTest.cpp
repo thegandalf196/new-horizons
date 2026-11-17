@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../PerkTestSetup.h"
 
 #include "../../lib/GameConstants.h"
@@ -274,13 +275,16 @@ TEST_F(NewHorizonsLearningMasterTeacherTest, InactiveRankEnemyEqualAndSelfDoNotS
 	EXPECT_EQ(recipients[0]->exp, before);
 	ASSERT_NO_FATAL_FAILURE(prepareExpert(handler));
 	auto & perkState = const_cast<newHorizonsHeroes::PerkState &>(teacher->getPerkState());
-	const auto activeRules = perkState.rules;
-	for(auto & perk : perkState.rules["skills"][learningId]["perks"].Vector())
-		if(perk["id"].String() == mentorId)
-			perk["effect"]["status"].String() = "planned";
+	const auto activeRules = perkState.getRules();
+	perkStateFixture::editRules(perkState, [&](JsonNode & rules)
+	{
+		for(auto & perk : rules["skills"][learningId]["perks"].Vector())
+			if(perk["id"].String() == mentorId)
+				perk["effect"]["status"].String() = "planned";
+	});
 	handler.heroExchange(teacher->id, recipients[0]->id);
 	EXPECT_EQ(recipients[0]->exp, before);
-	perkState.rules = activeRules;
+	perkState.replaceRules(activeRules);
 	const SecondarySkill learning(SecondarySkill::decode(learningId));
 	handler.changeSecSkill(teacher, learning, MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	handler.heroExchange(teacher->id, recipients[0]->id);
@@ -374,15 +378,16 @@ TEST_F(NewHorizonsLearningMasterTeacherTest, OrisRevalidatesSeparateRawAwardBefo
 	CGameHandler handler(server, gameState());
 	ASSERT_NO_FATAL_FAILURE(prepareExpert(handler));
 	const auto before = recipients[0]->exp;
-	auto & captured = const_cast<JsonNode &>(teacher->getPrimaryGrowthRules());
+	auto captured = teacher->getPrimaryGrowthRules();
 	const auto original = captured;
 	// Adversarial in-process policy change between preparation and grant.
-	server.onExchange = [&captured]()
+	server.onExchange = [&captured, this]()
 	{
 		captured["additionalSpecialties"]["spiritTeacher"]["mentorExperiencePercent"].Integer() = 26;
+		teacher->replaceCapturedPrimaryGrowthRules(captured);
 	};
 	handler.heroExchange(teacher->id, recipients[0]->id);
-	captured = original;
+	teacher->replaceCapturedPrimaryGrowthRules(original);
 	server.onExchange = {};
 	EXPECT_EQ(recipients[0]->exp, before);
 	EXPECT_EQ(teacher->getNewHorizonsLearningMentorRecipients(),

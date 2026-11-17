@@ -9,9 +9,7 @@
 #include "../render/Colors.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/CComponent.h"
-#include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/TextControls.h"
-#include "render/Canvas.h"
 
 namespace
 {
@@ -31,13 +29,6 @@ public:
 		customSubtitle = caption;
 		setHorizontalLayout(252, 80);
 	}
-
-	void showAll(Canvas & canvas) override
-	{
-		canvas.drawColor(pos, ColorRGBA(28, 20, 15, 255));
-		canvas.drawBorder(pos, selected ? Colors::BRIGHT_YELLOW : ColorRGBA(140, 105, 45, 255));
-		CSelectableComponent::showAll(canvas);
-	}
 };
 }
 
@@ -50,7 +41,7 @@ std::shared_ptr<CSelectableComponent> CFourOfferLevelWindow::offerComponent(size
 		const auto currentName = current ? newHorizonsPerkHelp::tierName(current) : "Unlearned";
 		const auto nextName = newHorizonsPerkHelp::tierName(offers.targetRanks[slot]);
 		auto component = std::make_shared<AdvancementComponent>(skill, offers.targetRanks[slot],
-			newHorizonsPerkHelp::skillLabel(hero, skill) + "\n" + currentName + " → " + nextName);
+			newHorizonsPerkHelp::skillLabel(hero, skill) + "\n" + currentName + " -> " + nextName);
 		component->customDescription = newHorizonsPerkHelp::skillDescription(hero, skill, offers.targetRanks[slot]);
 		return component;
 	}
@@ -73,7 +64,7 @@ std::shared_ptr<CSelectableComponent> CFourOfferLevelWindow::perkComponent(size_
 	const auto skill = groupSkill(perk.selection.skillId);
 	auto component = levelUpPresentation::perkCard(skill.value_or(SecondarySkill(SecondarySkill::NONE)), skill.has_value(),
 		perk.name, AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.selection.perkId,
-			perk.name, hero->getPerkState().rules)));
+			perk.name, hero->getPerkState().getRules())));
 	component->customDescription = newHorizonsPerkHelp::format(hero, perk.selection.skillId,
 		perk.name, newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description);
 	return component;
@@ -118,8 +109,6 @@ void CFourOfferLevelWindow::createOfferSlots()
 		const bool offered = slot < 2 ? offers.skills[slot] != SecondarySkill::NONE : !offers.perkSkills[slot - 2].empty();
 		if(!offered)
 		{
-			choiceLabels.push_back(std::make_shared<TransparentFilledRectangle>(Rect(x, y, 252, 80),
-				ColorRGBA(28, 20, 15, 255), ColorRGBA(100, 75, 35, 255)));
 			choiceLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(x + 8, y + 8, 236, 64),
 				FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, unavailable[slot]));
 			continue;

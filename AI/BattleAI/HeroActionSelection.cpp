@@ -16,7 +16,7 @@ namespace
 {
 Disposition admission(const PossibleSpellcast & selected, float baseline, bool mandatoryOrder)
 {
-	const bool followup = selected.metamagicFollowup || selected.divineMandateFollowup;
+	const bool followup = selected.divineMandateFollowup;
 	// Keeping the allowance uses the cached no-cast baseline, not literal zero.
 	// Values already contain the projected active exchange; do not add a second
 	// baseline or reassociate the utility expression during selection.

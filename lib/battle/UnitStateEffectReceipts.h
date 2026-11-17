@@ -2,7 +2,6 @@
 #pragma once
 #include "NewHorizonsConfusionState.h"
 #include "DreadCavalryState.h"
-#include "ArcaneMarkState.h"
 class JsonSerializeFormat;
 namespace battle
 {
@@ -12,12 +11,12 @@ struct UnitStateEffectReceipts
 {
 	ConfusionState confusion;
 	DreadCavalryState dreadCavalry;
-	ArcaneMarkState arcaneMarks;
-	int64_t arcaneShieldHitPoints = 0;
 	bool demonicGateOpened = false;
 	BattleSide physicalPoisonSpellSide = BattleSide::NONE;
 };
 DLL_LINKAGE UnitStateEffectReceipts parseUnitStateEffectReceipts(const JsonNode & data);
+DLL_LINKAGE bool demonicGateOpenedFromUnitJson(const JsonNode & unit);
+DLL_LINKAGE bool hasPassiveFactionUnitState(const JsonNode & unit);
 DLL_LINKAGE void serializePassiveFactionUnitState(JsonSerializeFormat & handler,
-	ArcaneMarkState & marks, bool & demonicGateOpened, BattleSide & poisonSpellSide, int64_t & arcaneShieldHitPoints);
+	bool & demonicGateOpened, BattleSide & poisonSpellSide);
 }

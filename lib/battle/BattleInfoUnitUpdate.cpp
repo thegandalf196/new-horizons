@@ -54,21 +54,6 @@ void BattleInfo::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDe
 	if(!changedStack)
 		throw std::runtime_error("Invalid unit id in BattleInfo update");
 	const auto updateGate = battle::classifyUnitUpdateGate(*changedStack, healthDelta);
-	if(updateGate == battle::UnitUpdateGate::IGNORE_HEALTH_STOP)
-	{
-		logNetwork->warn("Ignoring health update of Time Stop unit %d", id);
-		return;
-	}
-	if(updateGate == battle::UnitUpdateGate::IGNORE_STATE_STOP)
-	{
-		// UnitChanges also carries a serialized state.  A stopped unit cannot
-		// move, wait, defend, cast, or otherwise mutate activation state; the
-		// authoritative flow advances it with a no-op instead.  Reject all
-		// external state updates until the marker is released.
-		logNetwork->warn("Ignoring state update of Time Stop unit %d", id);
-		return;
-	}
-
 	if(updateGate == battle::UnitUpdateGate::CHECK_RESURRECTION_SPACE)
 	{
 		//checking if we resurrect a stack that is under a living stack

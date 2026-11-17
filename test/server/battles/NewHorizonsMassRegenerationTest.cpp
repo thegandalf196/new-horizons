@@ -59,11 +59,6 @@ SpellID regenerationSpell()
 	return spellNamed(std::string(newHorizonsMagic::NATURE_REGENERATION_SPELL));
 }
 
-SpellID spellLockSpell()
-{
-	return spellNamed("new-horizons:spellLock");
-}
-
 JsonNode olderMagicSnapshotWithoutMassVariants()
 {
 	// The maintained v2 fixture disables later variants and validates the whole capture.
@@ -95,7 +90,7 @@ protected:
 	CStack * undeadFriendly = nullptr;
 	CStack * nonLivingFriendly = nullptr;
 	CStack * mechanicalFriendly = nullptr;
-	CStack * spellLockedFriendly = nullptr;
+	CStack * resistantFriendly = nullptr;
 	CStack * baseImmuneFriendly = nullptr;
 	CStack * massImmuneFriendly = nullptr;
 	CStack * cloneFriendly = nullptr;
@@ -202,7 +197,7 @@ protected:
 			undeadFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:skeleton"), BattleHex(3, 7), 20);
 			nonLivingFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(6, 7), 20);
 			mechanicalFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 7), 20);
-			spellLockedFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 9), 20);
+			resistantFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 9), 20);
 			baseImmuneFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(6, 9), 20);
 			massImmuneFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(9, 9), 20);
 			cloneFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(12, 7), 20);
@@ -218,7 +213,7 @@ protected:
 			ASSERT_NE(undeadFriendly, nullptr);
 			ASSERT_NE(nonLivingFriendly, nullptr);
 			ASSERT_NE(mechanicalFriendly, nullptr);
-			ASSERT_NE(spellLockedFriendly, nullptr);
+			ASSERT_NE(resistantFriendly, nullptr);
 			ASSERT_NE(baseImmuneFriendly, nullptr);
 			ASSERT_NE(massImmuneFriendly, nullptr);
 			ASSERT_NE(cloneFriendly, nullptr);
@@ -230,7 +225,7 @@ protected:
 			addTrait(mechanicalFriendly, BonusType::MECHANICAL);
 			markAsClone(cloneFriendly);
 			markAsPhantom(phantomFriendly);
-			addSpellLock(spellLockedFriendly);
+			addResistance(resistantFriendly);
 			addSpellImmunity(baseImmuneFriendly, regenerationSpell());
 			addSpellImmunity(massImmuneFriendly, massRegenerationSpell());
 		}
@@ -249,10 +244,10 @@ protected:
 			BonusType::SPELL_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(spell)));
 	}
 
-	void addSpellLock(CStack * unit)
+	void addResistance(CStack * unit)
 	{
 		Bonus lock(BonusDuration::N_TURNS, BonusType::MAGIC_RESISTANCE,
-			BonusSource::SPELL_EFFECT, 100, BonusSourceID(spellLockSpell()));
+			BonusSource::OTHER, 100, BonusSourceID());
 		lock.turnsRemain = 1;
 		unit->addNewBonus(std::make_shared<Bonus>(lock));
 	}
@@ -540,7 +535,7 @@ TEST_F(NewHorizonsMassRegenerationTest, AcceptedMassCastUsesThreeTimesTheListedC
 		EXPECT_EQ(unit->regenerationPendingMicroHealth, 0);
 	}
 	for(const CStack * unit : {undeadFriendly, nonLivingFriendly, mechanicalFriendly,
-		spellLockedFriendly, baseImmuneFriendly, massImmuneFriendly, cloneFriendly,
+		resistantFriendly, baseImmuneFriendly, massImmuneFriendly, cloneFriendly,
 		phantomFriendly, siegeFriendly, enemy})
 	{
 		EXPECT_EQ(regenerationEffect(unit), nullptr);

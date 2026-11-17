@@ -196,14 +196,14 @@ protected:
 		ASSERT_NE(hero, nullptr);
 		hero->secSkills.clear();
 		auto & state = const_cast<newHorizonsHeroes::PerkState &>(hero->getPerkState());
-		state.selected.clear();
-		ASSERT_EQ(newHorizonsHeroes::quickStudyRerollInterval(state.rules), 1);
+		state.replaceSelected({});
+		ASSERT_EQ(newHorizonsHeroes::quickStudyRerollInterval(state.getRules()), 1);
 		setRank(LEARNING, 1);
 		hero->applyPerkSelection({LEARNING, "new-horizons:learning.scholar"});
 		setRank(LEARNING, 2);
 		hero->applyPerkSelection({LEARNING, QUICK});
 		setRank("new-horizons:offense", 1);
-		const auto offense = newHorizonsHeroes::perkOptions(state.rules, "new-horizons:offense");
+		const auto offense = newHorizonsHeroes::perkOptions(state.getRules(), "new-horizons:offense");
 		const auto basic = std::find_if(offense.begin(), offense.end(), [](const auto & perk)
 			{ return perk.effect["status"].String() == "active" && newHorizonsHeroes::perkRequiredRank(perk.requiredRank) == 1; });
 		ASSERT_NE(basic, offense.end());
@@ -306,7 +306,7 @@ TEST_F(QuickStudyCallbackIntegrationTest, AuthoritativeSameIdConfirmationBeforeF
 	// no claim that ordinary gameplay currently produces this race.
 	query->hlu.optionalRerollAvailable = false;
 	const auto rng = rngBytes();
-	const auto count = hero->getPerkState().selected.size();
+	const auto count = hero->getPerkState().getSelected().size();
 	const auto ranksBefore = hero->secSkills;
 	ASSERT_FALSE(process(*reroll));
 	ASSERT_EQ(server->offers.size(), 2u);
@@ -330,7 +330,7 @@ TEST_F(QuickStudyCallbackIntegrationTest, AuthoritativeSameIdConfirmationBeforeF
 	ASSERT_TRUE(process(*selection));
 	acknowledge(*selection, true);
 	EXPECT_EQ(gateway->status.getQueriesCount(), 0);
-	const auto countAfter = hero->getPerkState().selected.size();
+	const auto countAfter = hero->getPerkState().getSelected().size();
 	EXPECT_GE(countAfter, count);
 	EXPECT_LE(countAfter, count + 1);
 	const auto rankSum = [](const auto & ranks)

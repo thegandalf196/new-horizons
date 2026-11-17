@@ -294,12 +294,6 @@ bool isCanonicalFireWall(const Mechanics * spellMechanics)
 		&& newHorizonsMagic::isFireWall(spellMechanics->getSpellId());
 }
 
-bool isCanonicalTimeStop(const Mechanics * spellMechanics)
-{
-	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
-	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
-}
-
 bool isCanonicalSanctuary(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
@@ -392,12 +386,6 @@ std::vector<Target> canonicalSanctuaryTargets(const Mechanics * spellMechanics)
 	return result;
 }
 
-bool isCanonicalSpellLock(const Mechanics * spellMechanics)
-{
-	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
-	return spell && spell->getJsonKey() == newHorizonsSorcery::SPELL_LOCK_SPELL;
-}
-
 bool isCanonicalPurify(const Mechanics * spellMechanics)
 {
 	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
@@ -426,7 +414,6 @@ bool isCanonicalPlague(const Mechanics * spellMechanics)
 		&& spell->getJsonKey() == newHorizonsPlague::SPELL_ID;
 }
 
-bool isSpellLocked(const battle::Unit * unit);
 
 bool isCanonicalSoulChain(const Mechanics * spellMechanics)
 {
@@ -475,9 +462,8 @@ float spellApplicationChance(const Mechanics * spellMechanics, const battle::Uni
 {
 	if(!spellMechanics || !unit || !spellMechanics->isNegativeSpell() || !spellMechanics->isMagicalEffect())
 		return 1.0f;
-	const auto * callback = spellMechanics->battle();
-	const int resistance = callback ? newHorizonsMetamagic::resistanceChance(unit->magicResistance(),
-		spellMechanics->getMetamagicCastProfile(), *callback, *unit) : unit->magicResistance();
+	if(spellMechanics->getSpellId().toSpell()->getJsonKey() == "new-horizons:forceLance") return 1.0f;
+	const int resistance = unit->magicResistance();
 	float chance = 1.0f - static_cast<float>(std::clamp(resistance, 0, 100)) / 100.0f;
 	const auto * battle = spellMechanics->battle();
 	if(!battle || !battle->getBattle() || chance <= 0.0f || chance >= 1.0f)
@@ -497,7 +483,6 @@ bool isSoulChainTargetUnit(const Mechanics * spellMechanics, const battle::Unit 
 {
 	if(!isCanonicalSoulChain(spellMechanics) || !unit || !unit->alive()
 		|| !unit->isValidTarget(false) || unit->isInvincible()
-		|| isSpellLocked(unit)
 		|| !spellMechanics->isReceptive(unit)
 		|| unit->hasImmunity(spellMechanics->getSpellId())
 		|| unit->hasAbsoluteImmunity(spellMechanics->getSpellId()))
@@ -522,20 +507,6 @@ bool isNaturePoisonTarget(const Mechanics * spellMechanics, const battle::Unit *
 		&& spellMechanics->isReceptive(unit)
 		&& !unit->hasImmunity(spellMechanics->getSpellId())
 		&& !unit->hasAbsoluteImmunity(spellMechanics->getSpellId());
-}
-
-bool isSpellLocked(const battle::Unit * unit)
-{
-	if(!unit)
-		return false;
-
-	static const SpellID spellLock(SpellID::decode(newHorizonsSorcery::SPELL_LOCK_SPELL));
-	const auto lockBonuses = unit->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(spellLock)));
-	return lockBonuses && vstd::contains_if(*lockBonuses, [](const std::shared_ptr<Bonus> & bonus)
-	{
-		return bonus && bonus->type == BonusType::MAGIC_RESISTANCE
-			&& Bonus::NTurns(bonus.get()) && bonus->turnsRemain > 0;
-	});
 }
 
 bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
@@ -1228,10 +1199,6 @@ std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMech
 		return canonicalSoulChainTargets(spellMechanics);
 	if(isCanonicalNaturePoison(spellMechanics))
 		return canonicalNaturePoisonTargets(spellMechanics);
-	if(isCanonicalSpellLock(spellMechanics))
-		return canonicalSpellLockTargets(spellMechanics);
-	if(isCanonicalTimeStop(spellMechanics))
-		return canonicalTimeStopTargets(spellMechanics);
 	if(isCanonicalFireWall(spellMechanics))
 		return canonicalFireWallTargets(spellMechanics);
 	if(isCanonicalLandMine(spellMechanics))
@@ -1653,7 +1620,6 @@ SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(
 						std::max<int32_t>(0, bonus.turnsRemain));
 				}
 
-			// Reuse Spell Lock's stack-health scale, then prioritize higher-rank and
 			// longer-lived groups when a stack has more eligible effects than its cap.
 			const float health = static_cast<float>(std::max<int64_t>(1, unit->getAvailableHealth()));
 			const float levelFactor = 0.75f + 0.05f
@@ -1711,39 +1677,6 @@ std::vector<Target> SpellTargetEvaluator::canonicalNaturePoisonTargets(const Mec
 			result.push_back(std::move(target));
 	}
 
-	return result;
-}
-
-std::vector<Target> SpellTargetEvaluator::canonicalSpellLockTargets(const Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
-	{
-		if(!unit || !unit->alive() || !unit->isValidTarget(false) || isSpellLocked(unit))
-			continue;
-
-		Target target{Destination(unit)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
-	}
-	return result;
-}
-
-std::vector<Target> SpellTargetEvaluator::canonicalTimeStopTargets(const spells::Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
-	{
-		const BattleHex hex(index);
-		if(!hex.isValid())
-			continue;
-
-		Target target{Destination(hex)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
-	}
 	return result;
 }
 
@@ -2090,102 +2023,6 @@ float SpellTargetEvaluator::fireWallPlacementValue(const Mechanics * spellMechan
 	return std::max(0.0f, hostileValue - friendlyPenalty);
 }
 
-float SpellTargetEvaluator::timeStopPlacementValue(const Mechanics * spellMechanics,
-	const Target & target)
-{
-	if(!isCanonicalTimeStop(spellMechanics) || target.size() != 1
-		|| target.front().unitValue != nullptr || !target.front().hexValue.isValid())
-		return 0.0f;
-
-	detail::ProblemImpl problem;
-	if(!spellMechanics->canBeCastAt(target, problem))
-		return 0.0f;
-
-	float value = 0.0f;
-	for(const auto * unit : spellMechanics->getAffectedStacks(target))
-	{
-		if(!unit || !unit->alive() || unit->isTimeStopped())
-			continue;
-
-		const float health = static_cast<float>(std::max<int64_t>(1, unit->getAvailableHealth()));
-		const float totalHealth = static_cast<float>(std::max<int64_t>(1, unit->getTotalHealth()));
-		const bool enemy = spellMechanics->battle()->battleGetOwner(unit) != spellMechanics->getCasterColor();
-		if(enemy)
-		{
-			// A unit that is ready to move is a more immediate tactical threat.
-			const float actionPressure = unit->willMove() ? 1.25f : 0.85f;
-			value += health * actionPressure;
-		}
-		else
-		{
-			// Stopping a healthy ally is usually a bad exchange.  An injured ally
-			// can still be protected from the next enemy action, so let that use
-			// become positive once enough health is missing.
-			const float missingHealth = std::clamp(1.0f - health / totalHealth, 0.0f, 1.0f);
-			value += health * (missingHealth * 1.8f - 0.65f);
-		}
-	}
-
-	return value;
-}
-
-float SpellTargetEvaluator::spellLockPlacementValue(const Mechanics * spellMechanics,
-	const Target & target)
-{
-	if(!isCanonicalSpellLock(spellMechanics) || target.size() != 1 || !target.front().unitValue)
-		return 0.0f;
-
-	const auto * unit = target.front().unitValue;
-	if(!unit->alive() || !unit->isValidTarget(false) || unit->isInvincible() || isSpellLocked(unit)
-		|| !spellMechanics->isReceptive(unit))
-		return 0.0f;
-
-	detail::ProblemImpl problem;
-	if(!spellMechanics->canBeCastAt(target, problem))
-		return 0.0f;
-
-	const bool enemy = spellMechanics->battle()->battleGetOwner(unit) != spellMechanics->getCasterColor();
-	const float health = static_cast<float>(std::max<int64_t>(1, unit->getAvailableHealth()));
-	float value = 0.0f;
-	std::set<SpellID> countedEffects;
-	const auto spellBonuses = unit->getBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
-	if(spellBonuses)
-	{
-		for(const auto & bonus : *spellBonuses)
-		{
-			if(!bonus || !bonus->sid.as<SpellID>().hasValue())
-				continue;
-
-			const auto spellId = bonus->sid.as<SpellID>();
-			const auto * statusSpell = spellId.toSpell();
-			if(!statusSpell || statusSpell->isAdventure() || !statusSpell->isMagical()
-				|| !countedEffects.insert(spellId).second)
-				continue;
-
-			if(enemy)
-			{
-				// Strip enemy enchantments and preserve our own active afflictions.
-				if(statusSpell->isPositive())
-					value += health * 0.65f;
-				if(statusSpell->isNegative())
-					value += health * 0.45f;
-			}
-			else
-			{
-				// Cleanse hostile effects while retaining and protecting friendly
-				// enchantments; the latter are useful but less valuable than a cleanse.
-				if(statusSpell->isNegative())
-					value += health * 0.90f;
-				if(statusSpell->isPositive())
-					value += health * 0.15f;
-			}
-		}
-	}
-
-	const auto rounds = spellMechanics->getRecipientSpellLockDuration(unit);
-	return value * (0.7f + 0.1f * static_cast<float>(rounds));
-}
-
 float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMechanics,
 	const Target & target, std::shared_ptr<CBattleInfoCallback> battleState)
 {
@@ -2447,7 +2284,7 @@ float SpellTargetEvaluator::shadowGiftTradeValue(const Mechanics * spellMechanic
 	const auto * recipient = target.front().unitValue;
 	const auto casterSide = spellMechanics->getCasterSide();
 	if(!battle || !recipient->alive() || !recipient->isValidTarget(false)
-		|| recipient->isClone() || recipient->isTimeStopped()
+		|| recipient->isClone()
 		|| recipient->unitSide() != casterSide
 		|| !spellMechanics->isReceptive(recipient))
 		return 0.0f;
@@ -2653,11 +2490,10 @@ std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
 	// Use the production effect for source-bound Confounder provenance and
 	// Berserk removal. The pending producer does not consume a random draw.
 	const auto side = spellMechanics->getCasterSide();
-	const auto prepared = outcomeValue ? projected->prepareHeroSpellAllowance(side, spellMechanics->getSpellId(), false, false) : std::nullopt;
+	const auto prepared = outcomeValue ? projected->prepareHeroSpellAllowance(side, spellMechanics->getSpellId()) : std::nullopt;
 	if(outcomeValue && (!prepared || !projected->beginProjectedHeroAction(side, *prepared))) return std::nullopt;
 	spellMechanics->castEval(projected->getServerCallback(), Target{Destination(projectedUnit.get())});
-	if(prepared && !projected->projectAcceptedHeroSpell(side, spellMechanics->getSpellId(), unitID,
-		false, false, false, false, *prepared)) return std::nullopt;
+	if(prepared && !projected->projectAcceptedHeroSpell(side, spellMechanics->getSpellId(), unitID, *prepared)) return std::nullopt;
 	auto without = projected;
 	if(outcomeValue)
 	{
@@ -2669,11 +2505,12 @@ std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
 	if(outcomeValue && inspirationValue)
 	{
 		auto coreBoard = outcomeValue ? std::make_shared<HypotheticBattle>(environment, battleState) : nullptr;
-		const auto core = outcomeValue(coreBoard, {}, false, false);
+		const auto core = outcomeValue(coreBoard, {}, false, false, {}).value;
 		const auto kernel = [&](const auto & board) { return -pressure(board); };
 		const auto localCore = heroSpellProjection::localReceiptMarginal(coreBoard, kernel);
-		outcomeValue(projected, {}, true, true);
-		*inspirationValue = core + chance * (heroSpellProjection::localReceiptMarginal(projected, kernel) - localCore);
+		const auto local = heroSpellProjection::evaluateLocalOutcome(outcomeValue, projected, {}, true,
+			{spellMechanics->getResolvedHeroRecipients()}, kernel);
+		*inspirationValue = core + chance * (local - localCore);
 	}
 	return original;
 }
@@ -2757,7 +2594,7 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 	const float baselinePressure = offensivePressure(baselineBattle, baselineDamage, forecastRounds);
 
 	auto coreBoard = outcomeValue ? std::make_shared<HypotheticBattle>(environment, battleState) : nullptr;
-	const float coreOnly = outcomeValue ? outcomeValue(coreBoard, {}, false, false) : 0.0f;
+	const float coreOnly = outcomeValue ? outcomeValue(coreBoard, {}, false, false, {}).value : 0.0f;
 	const auto kernel = [&](const std::shared_ptr<HypotheticBattle> & board)
 	{
 		DamageCache local;
@@ -2794,9 +2631,10 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 					spellMechanics->getSpellId(), spellMechanics->getCasterColor())});
 				projectedBattle->getServerCallback()->apply(marker);
 			}
-			outcomeValue(projectedBattle, {}, false, true);
+			const std::array resolved{unitId};
+			const auto local = heroSpellProjection::evaluateLocalOutcome(outcomeValue, projectedBattle, {}, false, {resolved}, kernel);
 			*inspirationValue += applicationChance * static_cast<double>(candidate.weight) / candidate.totalWeight
-				* (heroSpellProjection::localReceiptMarginal(projectedBattle, kernel) - localCore);
+				* (local - localCore);
 		}
 		// Preserve both weakening rewards and strengthening penalties. In
 		// particular, do not clamp an unfavorable random form before averaging.

@@ -131,7 +131,7 @@ int graveReaperPercentagePoints(const CGHeroInstance * hero)
 	if(!hero || hero->getHeroType()->getJsonKey() != "core:isra"
 		|| hero->getNewHorizonsNecromancyRank() <= 0)
 		return 0;
-	const auto policy = individualSpecialtyRules(hero->getPrimaryGrowthRules());
+	const auto policy = hero->compiledDevelopment()->individual;
 	return policy ? cappedSpecialtyContribution(hero->level,
 		policy->graveReaper.percentagePointsPerLevel, policy->graveReaper.maximumPercentagePoints) : 0;
 }
@@ -140,7 +140,7 @@ int warlocksFormulaPercent(const CGHeroInstance * hero)
 {
 	if(!hero || hero->getHeroType()->getJsonKey() != "core:malekith")
 		return 0;
-	const auto policy = individualSpecialtyRules(hero->getPrimaryGrowthRules());
+	const auto policy = hero->compiledDevelopment()->individual;
 	return policy ? cappedSpecialtyContribution(hero->level,
 		policy->warlocksFormula.percentPerLevel, policy->warlocksFormula.maximumPercent) : 0;
 }

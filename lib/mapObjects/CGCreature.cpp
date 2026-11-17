@@ -437,7 +437,7 @@ TQuantity CGCreature::getJoiningAmount() const
 newHorizonsDiplomacy::Forecast CGCreature::getNewHorizonsDiplomacyForecast(const CGHeroInstance & hero) const
 {
 	newHorizonsDiplomacy::ForecastInput input;
-	input.usesNewHorizonsRules = newHorizonsDiplomacy::usesNewHorizonsRules(hero.getPerkState().rules);
+	input.usesNewHorizonsRules = newHorizonsDiplomacy::usesNewHorizonsRules(hero.getPerkState().getRules());
 	input.skillRank = hero.getPerkSkillRank(newHorizonsDiplomacy::SKILL_ID);
 	input.negotiator = hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID,
 		newHorizonsDiplomacy::NEGOTIATOR_ID);
@@ -474,7 +474,7 @@ void CGCreature::onSuccessfulNewHorizonsRecruitment(IGameEventCallback & gameEve
 {
 	const bool neutralStack = tempOwner == PlayerColor::NEUTRAL || tempOwner == PlayerColor::UNFLAGGABLE;
 	if(!neutralStack || !diplomacyEligible || initialCharacter == Character::SAVAGE
-		|| !newHorizonsDiplomacy::usesNewHorizonsRules(hero.getPerkState().rules)
+		|| !newHorizonsDiplomacy::usesNewHorizonsRules(hero.getPerkState().getRules())
 		|| !hero.hasActivePerk(newHorizonsDiplomacy::SKILL_ID, newHorizonsDiplomacy::RECRUITMENT_PACT_ID))
 		return;
 

@@ -105,7 +105,7 @@ protected:
 	void prepare()
 	{
 		startGame();
-		ASSERT_EQ(newHorizonsNecromancy::policy(defenderSideHero->getPerkState().rules).has_value(), currentPolicy);
+		ASSERT_EQ(newHorizonsNecromancy::policy(defenderSideHero->getPerkState().getRules()).has_value(), currentPolicy);
 		defenderSideHero->setHeroType(HeroTypeID(72));
 		const auto skillId = SecondarySkill::decode(newHorizonsNecromancy::SKILL_ID);
 		ASSERT_GE(skillId, 0);

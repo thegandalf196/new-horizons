@@ -159,7 +159,7 @@ std::shared_ptr<HypotheticBattle> HeroExpectedSpellTest::detached()
 void HeroExpectedSpellTest::prepareTransition(const std::shared_ptr<HypotheticBattle> & model,
 	std::optional<HypotheticBattle::ProjectedSpellAllowance> & prepared, bool begin)
 {
-	prepared = model->prepareHeroSpellAllowance(BattleSide::ATTACKER, selectedSpell, false, false);
+	prepared = model->prepareHeroSpellAllowance(BattleSide::ATTACKER, selectedSpell);
 	ASSERT_TRUE(prepared);
 	if(begin)
 	{

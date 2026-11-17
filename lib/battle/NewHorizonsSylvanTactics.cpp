@@ -19,7 +19,7 @@ bool ordinary(const battle::Unit * unit)
 }
 bool enabled(const CGHeroInstance * hero)
 {
-	return hero && newHorizonsHeroes::usesSylvanTactics(hero->getPerkState().rules);
+	return hero && newHorizonsHeroes::usesSylvanTactics(hero->getPerkState().getRules());
 }
 void configure(const CGHeroInstance & hero, SylvanLuckState & fortune)
 {
@@ -42,7 +42,7 @@ void configure(const CGHeroInstance & hero, SylvanLuckState & fortune)
 	{
 		return hero.hasActivePerk("new-horizons:sylvanLuck", std::string("new-horizons:sylvanLuck.") + id);
 	};
-	if(newHorizonsHeroes::usesSylvanTacticsV3(hero.getPerkState().rules))
+	if(newHorizonsHeroes::usesSylvanTacticsV3(hero.getPerkState().getRules()))
 	{
 		// Policy 3 reuses the existing activation/Waiting histories, but only
 		// enables the selected hybrid roster. Older captures keep their slots.

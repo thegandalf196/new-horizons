@@ -81,8 +81,6 @@ protected:
 		if(uniform)
 		{
 			attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:neela")));
-			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
-				MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
 			const auto wisdom = SecondarySkill(SecondarySkill::decode("new-horizons:wisdom"));
 			attackerSideHero->setSecSkillLevel(wisdom, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 			attackerSideHero->applyPerkSelection({"new-horizons:wisdom", "new-horizons:wisdom.arcaneMomentum"});
@@ -99,16 +97,6 @@ protected:
 		startBattle();
 		addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
 		beginCombat();
-		if(uniform)
-		{
-			SetMetamagicPointState points;
-			points.battleID = BattleID(0);
-			points.side = BattleSide::ATTACKER;
-			points.round = battle()->getRound();
-			points.state = battle()->getMetamagicPointState(points.side);
-			points.state.points = 4;
-			gameHandler->sendAndApply(points);
-		}
 	}
 	int64_t value(SpellID id)
 	{
@@ -150,12 +138,9 @@ TEST_F(SpellPowerCompositionBattleTest, WarcastingRankAndPreviousOrderDoNotBoost
 TEST(SpellPowerComposition, UniformDurationAddsCapturedBonusesOnceAndPreservesSentinels)
 {
 	newHorizonsMetamagic::CastProfile cast;
-	cast.perks.rank = 3;
-	cast.perks.pointPolicy = true;
-	cast.perks.wisdomEffectivenessBonus = 25;
-	cast.points = 4;
-	EXPECT_EQ(newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(&cast), 37);
-	EXPECT_EQ(newHorizonsMetamagic::outgoingMagnitude(83, &cast, nullptr), 113);
+	cast.perks.wisdomEffectivenessBonus = 50;
+	EXPECT_EQ(newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(&cast), 50);
+	EXPECT_EQ(newHorizonsMetamagic::outgoingMagnitude(83, &cast, nullptr), 124);
 	EXPECT_EQ(newHorizonsMetamagic::outgoingDuration(3, &cast, nullptr), 4);
 	EXPECT_EQ(newHorizonsMetamagic::outgoingDuration(0, &cast, nullptr), 0);
 	EXPECT_EQ(newHorizonsMetamagic::outgoingDuration(-1, &cast, nullptr), -1);
@@ -176,14 +161,12 @@ TEST_F(SpellPowerCompositionBattleTest, SummonCardsMatchActualHpAndLivingArmorLi
 		attackerSideHero->addSpellToSpellbook(id);
 		const auto * spell = id.toSpell();
 		const auto mana = attackerSideHero->getManaAvailable();
-		const auto points = battle()->getMetamagicPointState(BattleSide::ATTACKER);
 		CMemorySerializer rngBefore;
 		rngBefore.oser & *gameHandler->randomizer;
 		const auto preview = newHorizonsMagic::spellEffectPreview(*attackerSideHero, *spell, battle());
 		ASSERT_TRUE(preview.primary);
 		EXPECT_EQ(preview, newHorizonsMagic::spellEffectPreview(*attackerSideHero, *spell, battle()));
 		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-		EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER), points);
 		CMemorySerializer rngAfter;
 		rngAfter.oser & *gameHandler->randomizer;
 		EXPECT_EQ(rngBefore.extractBuffer(), rngAfter.extractBuffer());
@@ -238,7 +221,7 @@ TEST_F(SpellPowerCompositionBattleTest, PlacementCardsUseUniformOutputAndEarthqu
 	EXPECT_EQ(preview.secondary->value, battle()->getMagicRules()["spells"]["core:earthquake"]["earthquake"]["maxSections"].Integer());
 }
 
-TEST_F(SpellPowerCompositionBattleTest, OutOfBattleCardsIncludeStaticArchmageWithoutCombatInsightMomentumOrPoints)
+TEST_F(SpellPowerCompositionBattleTest, OutOfBattleCardsIncludeStaticArchmageWithoutCombatInsightOrMomentum)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	battle()->getSide(BattleSide::ATTACKER).wisdomCombatState.recordCompletedCast(SpellID::MAGIC_ARROW, battle()->getRound());
@@ -247,7 +230,7 @@ TEST_F(SpellPowerCompositionBattleTest, OutOfBattleCardsIncludeStaticArchmageWit
 	const auto & rules = attackerSideHero->getMagicRules();
 	ASSERT_EQ(newHorizonsMagic::spellLevel(rules, id), 5);
 	const auto combat = newHorizonsMetamagic::captureHeroCastProfile(attackerSideHero, battle(), true, id);
-	ASSERT_EQ(newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(&combat), 42);
+	ASSERT_EQ(newHorizonsMetamagic::targetFreeEffectivenessBonusPercent(&combat), 30);
 	const auto raw = newHorizonsMagic::elementalConvergenceHitPoints(attackerSideHero->getEffectPower(spell),
 		newHorizonsMagic::ordinarySpellPowerCoefficientBasisPoints(rules, attackerSideHero, id),
 		newHorizonsMagic::empowerSpellBonusPercent(rules, attackerSideHero, id), false);
@@ -263,6 +246,5 @@ TEST_F(SpellPowerCompositionBattleTest, OutOfBattleCardsIncludeStaticArchmageWit
 	ASSERT_TRUE(after.primary);
 	EXPECT_EQ(after.primary->value, raw * 120 / 100);
 	EXPECT_EQ(newHorizonsMagic::spellEffectPreview(*attackerSideHero, *armorID.toSpell()), armorBefore);
-	EXPECT_EQ(battle()->getMetamagicPointState(BattleSide::ATTACKER).points, 4);
 	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).momentumBonusPercent(battle()->getRound()), 5);
 }

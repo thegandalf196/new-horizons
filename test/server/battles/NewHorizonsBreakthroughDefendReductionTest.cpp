@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../PerkStateFixture.h"
 #include "../../PerkTestSetup.h"
 
 #include "HeroCommandFixture.h"
@@ -118,14 +119,17 @@ protected:
 	template<typename F>
 	auto withoutBreakthrough(F && calculate)
 	{
-		const auto saved = attackerSideHero->getPerkState().selected;
+		const auto saved = attackerSideHero->getPerkState().getSelected();
 		auto & mutableState = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		std::erase_if(mutableState.selected, [](const auto & selection)
+		perkStateFixture::editSelected(mutableState, [&](auto & selected)
 		{
-			return selection.skillId == OFFENSE && selection.perkId == BREAKTHROUGH;
+			std::erase_if(selected, [](const auto & selection)
+			{
+				return selection.skillId == OFFENSE && selection.perkId == BREAKTHROUGH;
+			});
 		});
 		const auto result = calculate();
-		mutableState.selected = saved;
+		mutableState.replaceSelected(saved);
 		return result;
 	}
 

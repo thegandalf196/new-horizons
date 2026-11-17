@@ -257,8 +257,9 @@ TEST_F(NewHorizonsRewardSkillFilterTest, MissingClassWeightCannotBeLearnedFromPu
 {
 	startNewHorizonsAsAlchemist();
 	const auto lightMagic = canonical("new-horizons:lightMagic");
-	auto & rules = const_cast<JsonNode &>(attackerSideHero->getPrimaryGrowthRules());
+	auto rules = attackerSideHero->getPrimaryGrowthRules();
 	rules["skillOfferWeights"].Struct().erase(SecondarySkill::encode(lightMagic.getNum()));
+	attackerSideHero->replaceCapturedPrimaryGrowthRules(rules);
 	ASSERT_FALSE(newHorizonsHeroes::skillOfferWeight(attackerSideHero->getPrimaryGrowthRules(), lightMagic));
 	ASSERT_TRUE(attackerSideHero->canLearnSkill());
 	EXPECT_FALSE(attackerSideHero->canLearnSkill(lightMagic));

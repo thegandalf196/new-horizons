@@ -56,10 +56,7 @@ std::optional<HealthDeltaUtility> accumulateHealthDelta(const HealthDeltaSubject
 		// Pandemonium also permits friendly resistance. castEval uses
 		// shared damage per recipient but leaves
 		// that random roll out, so value its expected hit probability here.
-		const auto side = state->playerToSide(playerID);
-		const auto marks = newHorizonsMetamagic::captureHeroCastProfile(state->battleGetFightingHero(side), state.get(), true);
-		const int resistance = newHorizonsMetamagic::resistanceChance(original->magicResistance(),
-			marks.perks.rank > 0 ? &marks : nullptr, *state, *original);
+		const int resistance = original->magicResistance();
 		dpsReduce *= 1.0f - static_cast<float>(resistance) / 100.0f;
 	}
 

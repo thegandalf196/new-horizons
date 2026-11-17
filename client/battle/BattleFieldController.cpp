@@ -656,6 +656,9 @@ BattleHexArray BattleFieldController::getHighlightedHexesForSpellRange()
 		if(BattleActionsController::isVerdantPrisonSpell(spell))
 			return owner.actionsController->getVerdantPrisonTargetHexes(spell, hoveredHex);
 
+		if(BattleActionsController::isForcedRecallSpell(spell))
+			return owner.actionsController->getForcedRecallTargetHexes(spell, hoveredHex);
+
 		if(BattleActionsController::isPhantomArmySpell(spell))
 			return owner.actionsController->getPhantomArmyTargetHexes(spell, hoveredHex);
 
@@ -1289,6 +1292,7 @@ void BattleFieldController::tick(uint32_t msPassed)
 	owner.stacksController->tick(msPassed);
 	owner.obstacleController->tick(msPassed);
 	owner.projectilesController->tick(msPassed);
+	owner.effectsController->tick(msPassed);
 }
 
 void BattleFieldController::show(Canvas & to)

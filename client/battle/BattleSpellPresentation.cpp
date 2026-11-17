@@ -5,6 +5,8 @@
 #include "BattleFieldController.h"
 #include "BattleStacksController.h"
 #include "PoisonPresentation.h"
+#include "ForceLancePresentation.h"
+#include "../../lib/spells/NewHorizonsSorcerySpells.h"
 #include "../GameEngine.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -117,6 +119,12 @@ void BattleInterface::displaySpellCast(const CSpell * spell, const BattleHex & d
 void BattleInterface::displaySpellEffect(const CSpell * spell, const BattleHex & destinationTile,
 	const AnimationPath & resourceOverride)
 {
+	if(spell && spell->getJsonKey() == newHorizonsSorcerySpells::FORCE_LANCE)
+	{
+		if(const auto * target = getBattle()->battleGetStackByPos(destinationTile, false))
+			ForceLancePresentation::strike(*this, *target);
+		return;
+	}
 	if(spell)
 		displaySpellAnimationQueue(spell, spell->animationInfo.affect, destinationTile, false, resourceOverride);
 }

@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "BattleFocusMagic.h"
+#include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
 #include "../../lib/battle/ArcaneReprisal.h"
 #include "../../lib/battle/PassiveDivineMandate.h"
@@ -351,27 +353,6 @@ static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
 	return wallState == EWallState::NONE || wallState == EWallState::DESTROYED;
 }
 
-static bool isTimeStopHeroAction(const BattleAction & action)
-{
-	if(action.actionType != EActionType::HERO_SPELL || !action.spell.hasValue())
-		return false;
-	const auto * spell = action.spell.toSpell();
-	return spell && spell->getJsonKey() == newHorizonsSorcery::TIME_STOP_SPELL;
-}
-
-static bool shouldActivateGrandMetamagic(const CBattleInfoCallback & battle, BattleSide side,
-	const CGHeroInstance * hero, bool metamagicFollowup)
-{
-	return HeroSpellAllowanceTransition::activatesGrand(
-		metamagicFollowup,
-		static_cast<uint8_t>(battle.battleMetamagicPendingCount(side)),
-		battle.battleMetamagicSequenceSpells(side).size(),
-		static_cast<uint8_t>(battle.battleMetamagicUsesConsumed(side)),
-		static_cast<uint8_t>(hero ? newHorizonsMagic::metamagicRank(hero) : 0),
-		hero && newHorizonsMagic::hasMetamagicPerk(hero, newHorizonsMagic::METAMAGIC_GRAND),
-		battle.battleMetamagicGrandUsed(side));
-}
-
 static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle,
 	const battle::Unit * attacker, const battle::Unit * target)
 {
@@ -583,7 +564,7 @@ static bool validateShadowGiftAction(const CBattleInfoCallback & battle, const B
 
 	const auto * recipient = dynamic_cast<const CStack *>(target.front().unitValue);
 	if(!recipient || recipient->unitSide() != action.side || !recipient->alive()
-		|| !recipient->isValidTarget() || recipient->isClone() || recipient->isTimeStopped())
+		|| !recipient->isValidTarget() || recipient->isClone())
 		return false;
 
 	const bool darkGift = newHorizonsMagic::hasDarkGiftPerk(hero);
@@ -871,12 +852,10 @@ static const char * heroSpellTargetProblem(const CBattleInfoCallback & battle, c
 
 static void completeHeroPurifyAction(CGameHandler & gameHandler, const CBattleInfoCallback & battle,
 	const BattleAction & action, const CGHeroInstance * hero, bool purifyingMandate,
-	const newHorizonsMetamagic::CastProfile & metamagic, const spells::AutomaticHeroCastReceipt & automatic,
+	const spells::AutomaticHeroCastReceipt & automatic,
 	const std::optional<HeroActionAllowanceState::Receipt> & originalAction)
 {
 	const auto removed = applyPurifyAction(gameHandler, battle, action, hero, purifyingMandate);
-	newHorizonsMetamagic::publishResolvedMarks(*gameHandler.spellcastEnvironment(),
-		metamagic.perks.rank > 0 ? &metamagic : nullptr, battle, removed);
 	if(automatic.inspiringDuration > 0 && !removed.empty())
 	{
 		auto inspiration = newHorizonsPassiveDivineMandate::inspiringSpeedEffects(battle, action.side, automatic, removed);
@@ -965,10 +944,6 @@ static void completeHeroCurePhysicalPoison(CGameHandler & gameHandler, const CBa
 
 bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
-	if(ba.metamagicGrand)
-		return false;
-	if(ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
-		return false;
 
 	const auto * hero = battle.battleGetFightingHero(ba.side);
 	if(!hero || !ba.spell.hasValue())
@@ -984,10 +959,6 @@ bool BattleActionProcessor::validateHeroSpellAction(const CBattleInfoCallback & 
 	parameters.setCurePhysicalAffliction(ba.spellCurePhysicalAffliction);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setShadowGiftSacrificePercent(ba.spellShadowGiftSacrificePercent);
-	parameters.setMetamagicFollowup(ba.metamagicFollowup);
-	parameters.setMetamagicGrand(shouldActivateGrandMetamagic(battle, ba.side, hero, ba.metamagicFollowup));
-	if(ba.metamagicFollowup && !ba.target.empty() && ba.target.front().unitValue >= 0)
-		parameters.setMetamagicTargetUnitId(static_cast<uint32_t>(ba.target.front().unitValue));
 
 	spells::detail::ProblemImpl problem;
 	auto mechanics = spell->battleMechanics(&parameters);
@@ -1001,13 +972,6 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	spells::AutomaticHeroCastReceipt automatic)
 {
 	automatic.validateShape();
-	if(automatic.automatic() && (ba.metamagicFollowup || ba.metamagicGrand || ba.metamagicManaRefund != 0))
-		throw std::runtime_error("Automatic hero cast cannot request additional actions");
-	if(!automatic.automatic() && ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
-	{
-		gameHandler->complain("Metamagic follow-up is not available in the authoritative battle state");
-		return false;
-	}
 	const CGHeroInstance *h = battle.battleGetFightingHero(ba.side);
 	if (!h)
 	{
@@ -1030,16 +994,6 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	parameters.setPurifyChoices(ba.spellPurifyChoices);
 	parameters.setMassSlow(ba.spellMassSlow);
 	parameters.setShadowGiftSacrificePercent(ba.spellShadowGiftSacrificePercent);
-	parameters.setMetamagicFollowup(ba.metamagicFollowup);
-	const bool grandActivation = shouldActivateGrandMetamagic(battle, ba.side, h, ba.metamagicFollowup);
-	parameters.setMetamagicGrand(grandActivation);
-	// BaseMechanics snapshots the cast metadata in its constructor.  Seed the
-	// first targeted unit before creating it so Split Focus and Focused Pairing
-	// see the authoritative first target during effect evaluation.  The target
-	// is validated and rebuilt below; this early value is only a read-only
-	// modifier input and never replaces server target validation.
-	if(ba.metamagicFollowup && !ba.target.empty() && ba.target.front().unitValue >= 0)
-		parameters.setMetamagicTargetUnitId(static_cast<uint32_t>(ba.target.front().unitValue));
 
 	spells::detail::ProblemImpl problem;
 
@@ -1055,37 +1009,11 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 
 	if(target.empty() || !m->canBeCastAt(target, problem))
 		return logHeroSpellProblem("Spell cannot be cast at the requested target!", problem);
-	if(ba.metamagicFollowup && !target.empty() && target.front().unitValue)
-		parameters.setMetamagicTargetUnitId(target.front().unitValue->unitId());
-	if(ba.metamagicFollowup && !grandActivation
-		&& battle.battleMetamagicPendingCount(ba.side) == 1
-		&& newHorizonsMagic::spellPointRulesActive(h->getMagicRules())
-		&& newHorizonsMagic::hasMetamagicPerk(h, newHorizonsMagic::METAMAGIC_FORMULA_RESERVE))
-		parameters.setMetamagicManaRefund(newHorizonsMagic::METAMAGIC_FORMULA_RESERVE_POINTS);
 	const auto spellAllowance = battle.battleGetSpellActionAllowance(ba.side, ba.spell);
 	const bool purifyingMandate = spellAllowance
 		&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
 		&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
 		&& newHorizonsDivineMandate::hasPurifyingMandatePerk(h);
-
-	// Counterspell is resolved after the enemy hero's ordinary cast checks. A
-	// valid hero spell therefore still consumes its action and listed mana even
-	// when the ward suppresses every effect. A costly spell that the warding
-	// hero cannot afford instead collapses the ward and is cast normally.
-	const auto counteringSide = battle.otherSide(ba.side);
-	const auto * counteringHero = battle.battleGetFightingHero(counteringSide);
-	int counterspellCost = 0;
-	bool counterspellNegated = false;
-	if(counteringHero && battle.battleWasCounterspellArmed(counteringSide))
-	{
-		const int listedCost = h->getListedSpellCost(s);
-		counterspellCost = newHorizonsMagic::counterspellCost(listedCost,
-			counteringHero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.countermage"),
-			battle.battleMetamagicCountersequenceArmed(counteringSide));
-		counterspellNegated = counteringHero->getManaAvailable() >= counterspellCost;
-		parameters.setCounterspell(counteringSide, counterspellNegated,
-			counterspellNegated ? counterspellCost : 0);
-	}
 
 	const auto * shadowGiftRecipient = s->getJsonKey() == newHorizonsShadowGift::SPELL_ID
 		&& target.size() == 1 ? dynamic_cast<const CStack *>(target.front().unitValue) : nullptr;
@@ -1108,19 +1036,16 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 				HeroActionAllowanceState::ActionKind::SPELL, grant->allowance, grant->source,
 				battle.battleGetRound(), grant->divineMandateRecipients};
 	}
-	const auto auxiliaryMeta = s->getId() == newHorizonsPurify::spellID()
-		? newHorizonsMetamagic::captureHeroCastProfile(h, battle.getBattle(), true)
-		: newHorizonsMetamagic::CastProfile{};
 	if(newHorizonsHeroLuck::hasErraticMana(h)
 		|| (newHorizonsHeroLuck::hasDruidicLuck(h)
 			&& spells::heroLuckDamageEligible(*s, battle.getBattle()->getMagicRules())))
 		if(const auto luck = gameHandler->randomizer->rollHeroLuck(h->id, h->luckVal()))
 			parameters.setHeroLuck(*luck);
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
-	if(!counterspellNegated && s->getId() == newHorizonsPurify::spellID())
+	if(s->getId() == newHorizonsPurify::spellID())
 		completeHeroPurifyAction(*gameHandler, battle, ba, h, purifyingMandate,
-			auxiliaryMeta, automatic, sharedPurposePurifyAction);
-	if(!counterspellNegated && s->getJsonKey() == newHorizonsShadowGift::SPELL_ID)
+			automatic, sharedPurposePurifyAction);
+	if(s->getJsonKey() == newHorizonsShadowGift::SPELL_ID)
 	{
 		// Pay only after the script published the timed status. This keeps the
 		// separate permanent cap/casualty cost from charging an immune or otherwise
@@ -1133,11 +1058,9 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 			applyShadowGiftSacrifice(*gameHandler, battle, ba, *shadowGiftRecipient, costBasisPoints);
 		}
 	}
-	if(!counterspellNegated && s->getId() == SpellID::CURE && ba.spellCureAffliction == SpellID::POISON
+	if(s->getId() == SpellID::CURE && ba.spellCureAffliction == SpellID::POISON
 		&& newHorizonsMagic::cureEnabled(h->getMagicRules(), s->getId()))
 		completeHeroCurePhysicalPoison(*gameHandler, battle, target);
-	if(counterspellNegated)
-		counteringHero->spendMana(gameHandler->spellcastEnvironment(), counterspellCost);
 	gameHandler->useChargeBasedSpell(h->id, ba.spell);
 
 	return true;
@@ -1967,12 +1890,6 @@ bool BattleActionProcessor::canStackAct(const CBattleInfoCallback & battle, cons
 		gameHandler->complain("This stack is dead: " + stack->nodeName());
 		return false;
 	}
-	if(stack->isTimeStopped())
-	{
-		gameHandler->complain("This stack is in Time Stop stasis!");
-		return false;
-	}
-
 	if (battle.battleTacticDist())
 	{
 		if (stack && stack->unitSide() != battle.battleGetTacticsSide())
@@ -2242,48 +2159,8 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			return false;
 		}
 	}
-	if((ba.metamagicFollowup || ba.metamagicGrand || ba.metamagicDecline)
-		&& ba.side != BattleSide::ATTACKER && ba.side != BattleSide::DEFENDER)
-	{
-		gameHandler->complain("Metamagic action has an invalid battle side");
-		return false;
-	}
-	// Typed Spell allowances last through the round. Their presence does not
-	// block creature actions, Orders, Wait, or Defend; only an accepted HERO_SPELL
-	// may consume the selected spell grant.
-	if(ba.actionType == EActionType::HERO_SPELL
-		&& ba.metamagicFollowup != battle.battleCanUseMetamagicFollowup(ba.side, ba.spell))
-	{
-		gameHandler->complain("Forged or stale Metamagic follow-up request");
-		return false;
-	}
-	if(ba.actionType != EActionType::HERO_SPELL && ba.metamagicFollowup)
-	{
-		gameHandler->complain("Metamagic follow-up flag is only valid for Hero Spell actions");
-		return false;
-	}
-	if(ba.actionType != EActionType::HERO_SPELL && ba.metamagicGrand)
-	{
-		gameHandler->complain("Grand Metamagic flag is only valid for Hero Spell actions");
-		return false;
-	}
-	if(ba.actionType == EActionType::HERO_SPELL && ba.metamagicGrand)
-	{
-		gameHandler->complain("Grand Metamagic activation is derived by the server");
-		return false;
-	}
-	if(ba.metamagicDecline)
-	{
-		gameHandler->complain("Metamagic decline is retired; unused opportunities expire at the round boundary");
-		return false;
-	}
-	if(ba.metamagicManaRefund != 0)
-	{
-		gameHandler->complain("Metamagic mana refund is server-derived");
-		return false;
-	}
 	// Reject before StartAction can reserve the action budget or publish state.
-	if(ba.actionType == EActionType::HERO_SPELL && !ba.metamagicFollowup && battle.battleUsesHeroCommands()
+	if(ba.actionType == EActionType::HERO_SPELL && battle.battleUsesHeroCommands()
 		&& battle.battleCanCastSpell(battle.battleGetFightingHero(ba.side), spells::Mode::HERO) != ESpellCastProblem::OK)
 	{
 		gameHandler->complain("Hero spell unavailable under the shared round action budget");
@@ -2529,12 +2406,6 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		*masterGateActivationContinuationOut = updatedBattle
 			&& updatedBattle->getSide(ba.side).masterGateUsed;
 	}
-	if(result && isTimeStopHeroAction(ba))
-	{
-		if(auto * state = gameHandler->gs->getBattle(battle.getBattle()->getBattleID()))
-			state->notePendingTimeStopHeroAction(ba.side);
-	}
-
 	if (!ba.isBattleEndAction())
 	{
 		const auto * updatedBattle = gameHandler->gs->getBattle(battle.getBattle()->getBattleID());
@@ -2551,7 +2422,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 		EndAction endAction;
 		endAction.battleID = battle.getBattle()->getBattleID();
 		endAction.endsFortuneActivation = result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
-			&& stack && !stack->isTimeStopped() && !effectiveAction.timeStopHeroActionPass
+			&& stack
 			&& !(masterGateActivationContinuationOut && *masterGateActivationContinuationOut)
 			&& !pursuitContinuation
 			&& !rangedFollowUpStillPending
@@ -3270,6 +3141,8 @@ battle::Units BattleActionProcessor::collectSecondaryTargets(const CBattleInfoCa
 	};
 
 	//multiple-hex normal attack
+	if(attack.ranged && newHorizonsFocusMagic::converted(*attacker))
+		return result;
 	const auto & [attackedCreatures, useCustomAnimation] = attack.aerialExcursion
 		? battle.getAerialAttackedBattleUnits(*attack.aerialExcursion)
 		: battle.getAttackedCreatures(attacker, attack.targetHex, attack.ranged);
@@ -3707,8 +3580,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		const auto defenderOrderCauses = damageOrderCauses(estimation, false);
 		if(!attackerOrderCauses.empty() || !defenderOrderCauses.empty())
 			resolvedOrderCauses.push_back({unit->unitId(), attackerOrderCauses, defenderOrderCauses});
-		if(!unit->isTimeStopped())
-			removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
+		removeBonuses(battle, unit, *unit->getAllBonuses(Bonus::UntilTakingIndirectDamage));
 	}
 
 	const auto currentActivationSerial = battle.getBattle()->getActivationSerial();
@@ -3952,7 +3824,9 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			if(const auto * victim = battle.battleGetUnitByID(hit.stackAttacked); victim
 				&& newHorizonsAttackControllers::barrageKillQualifies(battle, *attacker, *victim, hit.killedAmount))
 				*attack.hostileCreatureKills += hit.killedAmount;
+	battleFocusMagic::capturePresentation(bat, *attacker);
 	gameHandler->sendAndApply(bat);
+	battleFocusMagic::consumeAcceptedStrike(*gameHandler->spellEnv, battle, bat);
 	battlePrimaryStrikeAftermath::recordPrimaryMelee(primaryEffects, primaryMeleeTarget);
 
 	handlePetrifyingBlood(battle, attacker, bat);
@@ -4584,11 +4458,6 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 {
 	if(masterGateActivationContinuationOut)
 		*masterGateActivationContinuationOut = false;
-	if(ba.timeStopHeroActionPass)
-	{
-		gameHandler->complain("Time Stop Hero Action pass is server-derived");
-		return false;
-	}
 	if (ba.side != BattleSide::ATTACKER && ba.side != BattleSide::DEFENDER && gameHandler->complain("Can not make action - invalid battle side!"))
 		return false;
 	if(!ba.spellPurifyChoices.empty()
@@ -4661,12 +4530,8 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 		auto unitOwner = battle.battleGetOwner(active);
 		auto actionController = battle.battleGetActionController(active);
 		const auto controllingSide = battle.playerToSide(actionController);
-		const auto allegianceSide = battle.playerToSide(unitOwner);
-		const bool stoppedPassRequest = active->isTimeStopped()
-			&& (ba.actionType == EActionType::NO_ACTION || ba.actionType == EActionType::DEFEND);
-		if(ba.isUnitAction() && (stoppedPassRequest
-			? (ba.side != controllingSide && ba.side != active->unitSide())
-			: ba.side != active->unitSide()))
+
+		if(ba.isUnitAction() && ba.side != active->unitSide())
 		{
 			gameHandler->complain("Can not make actions for the other battle side!");
 			return false;
@@ -4683,33 +4548,6 @@ bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & b
 		{
 			gameHandler->complain("Can not make actions in battles you are not part of!");
 			return false;
-		}
-
-		if(active->isTimeStopped() && ba.actionType == EActionType::NO_ACTION)
-		{
-			// This is the explicit pass for a control-visible stopped activation.
-			// The identity/side/owner checks above are deliberately completed before
-			// allowing it; no WAIT/DEFEND or other creature action can use this path.
-			BattleAction pass = BattleAction::makeNoAction(active);
-			pass.side = allegianceSide;
-			pass.timeStopHeroActionPass = true;
-			if(effectiveActionOut)
-				*effectiveActionOut = pass;
-			return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
-		}
-
-		if(active->isTimeStopped() && ba.actionType == EActionType::DEFEND)
-		{
-			// Existing human clients expose DEFEND as the visible close-turn
-			// control. Canonicalize only that owner-authenticated request to the
-			// explicit no-op pass so stasis never gains a defending bonus. WAIT and
-			// every other creature action remain rejected by canStackAct.
-			BattleAction pass = BattleAction::makeNoAction(active);
-			pass.side = allegianceSide;
-			pass.timeStopHeroActionPass = true;
-			if(effectiveActionOut)
-				*effectiveActionOut = pass;
-			return makeBattleActionImpl(battle, pass, masterGateActivationContinuationOut);
 		}
 
 		if(battle.battleHasPendingRangedFollowUp(active) && ba.isUnitAction()

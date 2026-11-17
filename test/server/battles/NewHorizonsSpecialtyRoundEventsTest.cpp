@@ -205,6 +205,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, NativeRoundPublicationAddsOneAndPubl
 {
 	prepare("core:kalt", "core:waterElemental");
 	BattleNextRound next; next.battleID = BattleID(0);
+	BattleNextRound next; next.battleID = battle()->getBattleID();
 	gameHandler->sendAndApply(next);
 	battleRoundHealing::afterRound(*gameHandler, *battle());
 	EXPECT_EQ(actor->getCount(), 6);
@@ -235,22 +236,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, UndyingUsesOrdinaryReceivedHealingRe
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
 	EXPECT_EQ(state->health.getCreatureHealthAvailable() - before, 50);
 }
-TEST_F(NewHorizonsSpecialtyRoundEventsTest, HeldRoundIsConsumedAndCannotBeReplayedAfterStasisEnds)
-{
-	prepare("core:kalt", "core:waterElemental");
-	auto stop = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	actor->addNewBonus(stop);
-	auto state = actor->acquireState();
-	ASSERT_TRUE(state->isTimeStopped());
-	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
-	EXPECT_EQ(state->getCount(), 5);
-	actor->removeBonus(stop);
-	EXPECT_FALSE(state->isTimeStopped());
-	EXPECT_FALSE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
-	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 2));
-	EXPECT_EQ(state->getCount(), 6);
-}
+
 
 TEST_F(NewHorizonsSpecialtyRoundEventsTest, UndyingPublishesHydraVisualOnlyAfterActualRestoration)
 {
@@ -324,27 +310,15 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, FullAndFullyBlockedUndyingDoNotPubli
 	EXPECT_TRUE(server.battleAnimations.empty());
 }
 
-TEST_F(NewHorizonsSpecialtyRoundEventsTest, StoppedAndDestroyedWaterStacksDoNotPublishFalseGrowthVisuals)
+TEST_F(NewHorizonsSpecialtyRoundEventsTest, DestroyedWaterStacksDoNotPublishFalseGrowthVisuals)
 {
 	prepare("core:kalt", "core:iceElemental");
-	auto stop = std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	actor->addNewBonus(stop);
-	BattleNextRound next; next.battleID = battle()->getBattleID();
-	gameHandler->sendAndApply(next);
-	const auto before = actor->getAvailableHealth();
-	server.battleAnimations.clear();
-	battleRoundHealing::afterRound(*gameHandler, *battle());
-	EXPECT_EQ(actor->getCount(), 5);
-	EXPECT_EQ(actor->getAvailableHealth(), before);
-	EXPECT_TRUE(server.battleAnimations.empty());
-
-	actor->removeBonus(stop);
 	auto state = actor->acquireState();
 	int64_t damage = state->getAvailableHealth();
 	state->health.damage(damage);
 	publish(*state);
 	ASSERT_FALSE(actor->alive());
+	BattleNextRound next; next.battleID = battle()->getBattleID();
 	gameHandler->sendAndApply(next);
 	battleRoundHealing::afterRound(*gameHandler, *battle());
 	EXPECT_FALSE(actor->alive());

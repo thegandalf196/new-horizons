@@ -11,7 +11,8 @@ constexpr auto SKILL = "new-horizons:authority";
 newHorizonsHeroes::PerkState state()
 {
 	newHorizonsHeroes::PerkState result;
-	result.rules = estatesTest::legacyEstatesPerks();
+	auto rules = estatesTest::legacyEstatesPerks();
+	result.replaceRules(std::move(rules));
 	return result;
 }
 int expert(const std::string & skill) { return skill == SKILL ? 3 : 0; }
@@ -20,7 +21,7 @@ int expert(const std::string & skill) { return skill == SKILL ? 3 : 0; }
 TEST(UnifiedSkillProgression, CompleteTierPoolsAreSequentialAndIndependentOfSeed)
 {
 	auto current = state();
-	ASSERT_TRUE(newHorizonsHeroes::usesUnifiedSkillProgression(current.rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesUnifiedSkillProgression(current.getRules()));
 	for(const auto [tier, size] : {std::pair{1, 4u}, std::pair{2, 4u}, std::pair{3, 2u}})
 	{
 		const auto offer = current.nextRequiredPerkOffer(expert);
@@ -32,7 +33,7 @@ TEST(UnifiedSkillProgression, CompleteTierPoolsAreSequentialAndIndependentOfSeed
 		EXPECT_TRUE(current.hasPerkForTier(SKILL, tier));
 		EXPECT_TRUE(current.candidatesForSkillTier(SKILL, tier).empty());
 	}
-	EXPECT_EQ(current.selected.size(), 3u);
+	EXPECT_EQ(current.getSelected().size(), 3u);
 	EXPECT_TRUE(current.nextRequiredPerkOffer(expert).empty());
 }
 
@@ -66,7 +67,7 @@ TEST(UnifiedSkillProgression, RankAdvancementRequiresPreviousTierAndOwnershipOfR
 	const auto basic = current.candidatesForSkillTier(SKILL, 1);
 	const auto absent = [](const std::string &) { return 0; };
 	EXPECT_THROW(current.acceptOffer(basic, 0, absent, 0), std::runtime_error);
-	EXPECT_TRUE(current.selected.empty());
+	EXPECT_TRUE(current.getSelected().empty());
 	current.acceptOffer(basic, 0, expert, 0);
 	EXPECT_TRUE(current.canAdvanceSkillNormally(SKILL, 1));
 	EXPECT_FALSE(current.canAdvanceSkillNormally(SKILL, 2));
@@ -84,13 +85,13 @@ TEST(UnifiedSkillProgression, AuthoredStartingPerkAndBinaryReloadRetainMandatory
 	memory.oser & current;
 	newHorizonsHeroes::PerkState restored;
 	memory.iser & restored;
-	EXPECT_EQ(restored.selected, current.selected);
+	EXPECT_EQ(restored.getSelected(), current.getSelected());
 	const auto next = restored.nextRequiredPerkOffer(expert);
 	ASSERT_EQ(next.size(), 4u);
 	EXPECT_EQ(next.front().requiredRank, 2);
 	restored.selectMissingPerksDeterministically(expert);
-	ASSERT_EQ(restored.selected.size(), 3u);
-	EXPECT_EQ(restored.selected.front(), authored.selection);
+	ASSERT_EQ(restored.getSelected().size(), 3u);
+	EXPECT_EQ(restored.getSelected().front(), authored.selection);
 	const auto completed = restored.toJson();
 	restored.selectMissingPerksDeterministically(expert);
 	EXPECT_EQ(restored.toJson(), completed);

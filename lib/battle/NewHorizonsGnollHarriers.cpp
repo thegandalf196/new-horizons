@@ -39,7 +39,7 @@ bool trackingRequired(const CBattleInfoCallback & battle)
 		const auto * hero = policy.kind() == VisibleHeroPolicy::Knowledge::VISIBLE_HERO ? policy.legacyHero() : nullptr;
 		if(hero && hero->getHeroType() && hero->getHeroType()->getJsonKey() == "core:drakon"
 			&& newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero)
-			&& hero->getPrimaryGrowthRules()["additionalSpecialties"]["ordinaryCreatureSpecialties"]["gnollHarriersDamagePercent"].Integer() > 0)
+			&& hero->compiledDevelopment()->ordinaryValue("gnollHarriersDamagePercent") > 0)
 			return true;
 	}
 	return false;
@@ -48,7 +48,7 @@ std::optional<Bonus> movement(const CBattleInfoCallback & battle, const battle::
 	bool voluntary, BattleHex before, BattleHex after)
 {
 	if(!voluntary || !before.isValid() || !after.isValid() || before == after
-		|| !unit.alive() || unit.isGhost() || unit.isTimeStopped() || !trackingRequired(battle)
+		|| !unit.alive() || unit.isGhost() || !trackingRequired(battle)
 		|| unit.hasBonus(CSelector(isMovementHistory)))
 		return std::nullopt;
 	Bonus result(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::NONE, BonusSource::OTHER,
@@ -62,7 +62,6 @@ int damagePercent(const CBattleInfoCallback & battle, const BattleAttackInfo & a
 {
 	if(!attack.attacker || !attack.defender || !attack.attacker->alive() || !attack.defender->alive()
 		|| attack.attacker->isGhost() || attack.defender->isGhost()
-		|| attack.attacker->isTimeStopped() || attack.defender->isTimeStopped()
 		|| !newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attack.attacker)
 		|| !attack.physicalDamage || attack.shooting || attack.secondaryAttack || attack.bracePreemptive
 		|| attack.preemptiveDamagePercent > 0 || attack.cleaveDamagePercent > 0

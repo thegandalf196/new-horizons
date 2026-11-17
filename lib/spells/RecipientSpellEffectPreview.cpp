@@ -14,6 +14,8 @@
 #include "NewHorizonsTimedStatusPlan.h"
 #include "RecipientTimedSpellEffectPreview.h"
 #include "../battle/Unit.h"
+#include "../battle/NewHorizonsFocusMagic.h"
+#include "NewHorizonsSorceryRevision.h"
 
 namespace newHorizonsMagic
 {
@@ -53,7 +55,14 @@ std::optional<RecipientSpellEffectPreview> recipientSpellEffectPreview(
 	const auto & key = family->getJsonKey();
 	std::optional<RecipientSpellEffectPreview> result;
 	if(key == "new-horizons:focusMagic")
-		result = quantity("focus", mechanics.getRecipientArcaneBreachMarkBasisPoints(recipient), 100);
+	{
+		const auto bonuses = newHorizonsFocusMagic::enchantment(*recipient, mechanics.getSpellId(),
+			newHorizonsSorceryRevision::focusAdditionalRangedPercent(mechanics.getHeroCaster(), mechanics.getSpellId()));
+		const bool shooter = bonuses.back().type == BonusType::PERCENTAGE_DAMAGE_BOOST;
+		result = quantity(shooter ? "focusShooter" : "focusConverted", 3);
+		if(shooter) result->effect.secondary = SpellEffectPreview::Quantity{
+			bonuses.back().val, 1, "new-horizons.spellbook.unit.number"};
+	}
 	else if(key == "new-horizons:hexOfPain")
 	{
 		result = quantity("hex", mechanics.adjustMetamagicMagnitude(mechanics.getHexOfPainFlatDamage(), recipient));
@@ -63,20 +72,6 @@ std::optional<RecipientSpellEffectPreview> recipientSpellEffectPreview(
 	}
 	else if(key == "new-horizons:soulChain")
 		result = quantity("soulChain", mechanics.getRecipientSoulChainEchoBasisPoints(recipient), 100);
-	else if(key == "new-horizons:spellLock")
-	{
-		const auto rounds = mechanics.getRecipientSpellLockDuration(recipient);
-		result = quantity("spellLock", rounds);
-		if(rounds > 0)
-			{
-			Bonus incoming;
-			incoming.type = BonusType::MAGIC_RESISTANCE;
-			if(mechanics.battle()->battleGetOwner(recipient) != mechanics.getCasterColor())
-				incoming.statusIdentity = key;
-			result->durationRounds = refreshedTimedStatusDuration(mechanics, *recipient, incoming, rounds);
-			result->effect.primary->value = *result->durationRounds;
-		}
-	}
 	else if(key == "new-horizons:guardianSpirit")
 		result = quantity("restorationPool", mechanics.getGuardianSpiritHitPoints(recipient));
 	else if(key == "new-horizons:frailty")

@@ -30,36 +30,56 @@ bool CGHeroInstance::captureInitialDevelopmentRules(bool isFake)
 {
 	nhLoadProfile::Scope measured(nhLoadProfile::Metric::HeroCapture);
 	const bool creationInitialization = !isFake && !primaryGrowthCaptured;
+	auto * pool = cb ? cb->getCapturedRulePoolForAdmission() : nullptr;
 	if(creationInitialization)
 		protectedAdventureFlightLayer = EPathfindingLayer::LAND;
 	if(!isFake && !masteryRulesCaptured)
 	{
-		masteryState.rules = cb->getHeroMasteryRules();
+		if(pool)
+		{
+			const auto id = pool->intern(nativeRules::CapturedRuleKind::Mastery, cb->getHeroMasteryRules());
+			masteryState.rules.bind(pool->document(id, nativeRules::CapturedRuleKind::Mastery));
+		}
+		else masteryState.rules = cb->getHeroMasteryRules();
 		masteryState.validate();
 		masteryRulesCaptured = true;
 	}
 	if(!isFake && !perkRulesCaptured)
 	{
 		newHorizonsHeroes::PerkState candidate;
-		candidate.rules = cb->getHeroPerkRules();
+		if(pool)
+		{
+			const auto id = pool->intern(nativeRules::CapturedRuleKind::Perks, cb->getHeroPerkRules());
+			candidate.bindCapturedRules(pool->document(id, nativeRules::CapturedRuleKind::Perks)->perks());
+		}
+		else candidate.replaceRules(cb->getHeroPerkRules());
 		auto prepared = candidate.prepareNativeRules();
 		perkState = std::move(candidate);
-		nhLoadProfile::jsonBytes(nhLoadProfile::Metric::CapturedPerkBytes, perkState.rules);
+		nhLoadProfile::jsonBytes(nhLoadProfile::Metric::CapturedPerkBytes, perkState.getRules());
 		preparedPilotPerks = std::move(prepared);
 		perkRulesCaptured = true;
 	}
 	if(!isFake && !capabilityRulesCaptured)
 	{
-		capabilityRules = newHorizonsHeroes::resolveCapabilityRules(cb->getHeroCapabilityRules(), getHeroClass()->getId());
+		if(pool)
+		{
+			const auto world = pool->intern(nativeRules::CapturedRuleKind::WorldCapability, cb->getHeroCapabilityRules());
+			capabilityRules.bind(pool->captureCapability(world, getHeroClass()->getId()));
+		}
+		else capabilityRules = newHorizonsHeroes::resolveCapabilityRules(cb->getHeroCapabilityRules(), getHeroClass()->getId());
 		capabilityRulesCaptured = true;
 		nodeHasChanged();
 	}
 	if(!preparedPilotPerks) preparedPilotPerks = perkState.prepareNativeRules();
 	if(creationInitialization)
 	{
-		auto candidate = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
-		auto prepared = nativeRules::preparePilotCreature(candidate, getHeroTypeID());
-		primaryGrowthRules = std::move(candidate);
+		if(pool)
+		{
+			const auto world = pool->intern(nativeRules::CapturedRuleKind::WorldDevelopment, cb->getHeroDevelopmentRules());
+			primaryGrowthRules.bind(pool->captureDevelopment(world, getHeroClass()->getId()));
+		}
+		else primaryGrowthRules = newHorizonsHeroes::resolveHeroRules(cb->getHeroDevelopmentRules(), getHeroClass()->getId());
+		auto prepared = compiledDevelopment()->preparedCreature(getHeroTypeID());
 		nhLoadProfile::jsonBytes(nhLoadProfile::Metric::CapturedDevelopmentBytes, primaryGrowthRules);
 		preparedCreatureMechanics = std::move(prepared);
 		primaryGrowthCaptured = true;
@@ -70,6 +90,12 @@ bool CGHeroInstance::captureInitialDevelopmentRules(bool isFake)
 
 int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
 {
+	if(const auto * catalogue = perkState.compiledCatalogue())
+	{
+		const auto skill = catalogue->skill(skillId);
+		return skill ? getSecSkillLevel(*skill) : 0;
+	}
+	// Uncaptured/fake legacy contexts retain generic canonical rank queries.
 	const auto decoded = LIBRARY->identifiers()->getIdentifier(
 		ModScope::scopeGame(), SecondarySkill::entityType(), skillId, true);
 	if(!decoded)
@@ -82,22 +108,27 @@ int CGHeroInstance::getPerkSkillRank(const std::string & skillId) const
 	return getSecSkillLevel(skill);
 }
 
-bool CGHeroInstance::hasActivePerk(const std::string & skillId, const std::string & perkId) const
+newHorizonsHeroes::PerkId CGHeroInstance::getPerkId(std::string_view skill, std::string_view perk) const
 {
-	if(!perkState.hasSelection(skillId, perkId))
-		return false;
+	const auto * catalogue = perkState.compiledCatalogue();
+	return catalogue ? catalogue->find(skill, perk) : newHorizonsHeroes::PerkId{};
+}
 
-	// This private saved state is validated on initialization, selection and load.
-	// Combat estimates query individual perks thousands of times: do not project
-	// every selection (and revalidate the entire registry) for each damage estimate.
-	// Read the current rank rather than caching enabled flags across skill changes.
-	for(const auto & perk : perkState.rules["skills"][skillId]["perks"].Vector())
-	{
-		if(perk["id"].String() == perkId)
-			return perk["effect"]["status"].String() == "active"
-				&& getPerkSkillRank(skillId) >= newHorizonsHeroes::perkRequiredRank(perk["requires"].String());
-	}
-	return false;
+bool CGHeroInstance::hasActivePerk(const newHorizonsHeroes::PerkId & perk) const
+{
+	const auto * definition = perkState.selectedDefinition(perk);
+	return definition && definition->active && getSecSkillLevel(definition->skill) >= definition->requiredRank;
+}
+
+bool CGHeroInstance::hasActivePerk(newHorizonsHeroes::BuiltinCombatPerk perk) const
+{
+	const auto * catalogue = perkState.compiledCatalogue();
+	return catalogue && hasActivePerk(catalogue->find(perk));
+}
+
+bool CGHeroInstance::hasActivePerk(const std::string & skill, const std::string & perk) const
+{
+	return hasActivePerk(getPerkId(skill, perk));
 }
 
 std::optional<newHorizonsHeroes::CommandRules> CGHeroInstance::getArmyCommandRules() const
@@ -238,13 +269,16 @@ void CGHeroInstance::restoreCommandProgression(const JsonNode & node)
 void CGHeroInstance::validateCommandSerialization(bool supported, bool leadershipSupported, bool fourOfferSupported, bool estatesSupported) const
 {
 	newHorizonsEstates::validateHoarderReceipt(newHorizonsHoarderLastWeek, estatesSupported);
-	newHorizonsHeroes::validateLeadershipEfficiencySerialization(capabilityRules, leadershipSupported);
-	newHorizonsHeroes::validateUnifiedSkillProgressionSerialization(perkState.rules, leadershipSupported);
-	newHorizonsNecromancy::validateLeadershipPolicySerialization(perkState.rules, leadershipSupported);
 	if(commandLevelEventPending)
 		throw std::runtime_error("Cannot save an unfinished ordinary level choice");
-	newHorizonsHeroes::validateCommandPerkSerialization(perkState.rules, supported, leadershipSupported, fourOfferSupported, estatesSupported);
-	newHorizonsHeroes::validateArmyCommandSerialization(capabilityRules, supported);
+	if(!(supported && leadershipSupported && fourOfferSupported && estatesSupported))
+	{
+		newHorizonsHeroes::validateLeadershipEfficiencySerialization(capabilityRules, leadershipSupported);
+		newHorizonsHeroes::validateUnifiedSkillProgressionSerialization(perkState.getRules(), leadershipSupported);
+		newHorizonsNecromancy::validateLeadershipPolicySerialization(perkState.getRules(), leadershipSupported);
+		newHorizonsHeroes::validateCommandPerkSerialization(perkState.getRules(), supported, leadershipSupported, fourOfferSupported, estatesSupported);
+		newHorizonsHeroes::validateArmyCommandSerialization(capabilityRules, supported);
+	}
 	const auto rules = getArmyCommandRules();
 	commandState.validateSerialization(rules, supported);
 	validateCommandHeroHistory(commandState, rules, level,
@@ -253,10 +287,10 @@ void CGHeroInstance::validateCommandSerialization(bool supported, bool leadershi
 
 void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 {
-	const bool unified = newHorizonsHeroes::usesUnifiedSkillProgression(perkState.rules);
+	const bool unified = newHorizonsHeroes::usesUnifiedSkillProgression(perkState.getRules());
 	// Owned heroes finish their initial ranks and any authored XP through the
 	// authoritative map-ready/turn-start transaction, including human choices.
-	if(newHorizonsHeroes::usesPersistentHeroProgression(perkState.rules) && getOwner().isValidPlayer()) return;
+	if(newHorizonsHeroes::usesPersistentHeroProgression(perkState.getRules()) && getOwner().isValidPlayer()) return;
 	const auto completePerks = [this, unified]()
 	{
 		if(!unified) return;
@@ -272,7 +306,7 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 	while(gainsLevel())
 	{
 		auto gains = gameRandomizer.rollPrimarySkillsForLevelup(this);
-		const bool four = newHorizonsHeroes::usesFourOfferProgression(perkState.rules);
+		const bool four = newHorizonsHeroes::usesFourOfferProgression(perkState.getRules());
 		const auto fourOffers = four ? gameRandomizer.rollFourOfferProgression(this) : newHorizonsHeroes::FourOfferProgressionOffer{};
 		const auto proposedSecondarySkills = four ? std::vector<SecondarySkill>{} : gameRandomizer.rollSecondarySkills(this);
 		captureMasteryEligibility(level + 1);

@@ -33,7 +33,7 @@ bool hasGhostUpgrade(const CGHeroInstance & hero)
 {
 	return hero.getHeroTypeID().hasValue()
 		&& hero.getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:vidomina"))
-		&& usesGhostUpgrade(hero.getPrimaryGrowthRules());
+		&& hero.compiledDevelopment()->ghostUpgrade;
 }
 bool resolveGhostSpecialtyPresentation(const CHero & hero, const JsonNode & rules, SpecialtyPresentation & result)
 {

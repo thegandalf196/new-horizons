@@ -107,7 +107,7 @@ float blinkPositionValue::expected(const battle::Unit * target,
 
 	const auto before = blinkLandingPositionValue(target, origin, player, battle, battleState, damageCache);
 	auto coreBoard = outcomeValue ? std::make_shared<HypotheticBattle>(environment, battleState) : nullptr;
-	const auto core = outcomeValue ? outcomeValue(coreBoard, {}, false, false) : 0.0f;
+	const auto core = outcomeValue ? outcomeValue(coreBoard, {}, false, false, {}).value : 0.0f;
 	const auto kernel = [&](const std::shared_ptr<HypotheticBattle> & board)
 	{
 		DamageCache local;
@@ -125,9 +125,10 @@ float blinkPositionValue::expected(const battle::Unit * target,
 		{
 			auto board = std::make_shared<HypotheticBattle>(environment, battleState);
 			board->moveUnit(target->unitId(), outcome.hex);
-			outcomeValue(board, {}, false, true);
+			const std::array resolved{target->unitId()};
+			const auto local = heroSpellProjection::evaluateLocalOutcome(outcomeValue, board, {}, false, {resolved, false}, kernel);
 			*inspirationValue += static_cast<double>(outcome.weight) / outcome.totalWeight
-				* (heroSpellProjection::localReceiptMarginal(board, kernel) - localCore);
+				* (local - localCore);
 		}
 	}
 

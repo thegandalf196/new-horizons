@@ -14,17 +14,11 @@ namespace spells::effects::native
 {
 namespace
 {
-enum class Kind { HEX, PLAGUE, SHADOW, FRAILTY, ATTACH, FOCUS };
+enum class Kind { HEX, PLAGUE, SHADOW, FRAILTY, ATTACH };
 
 class RoundStatus final : public UnitEffect
 {
 	Kind kind;
-	bool isValidTarget(const Mechanics * mechanics, const battle::Unit * unit) const override
-	{
-		if(kind != Kind::FOCUS) return UnitEffect::isValidTarget(mechanics, unit);
-		return unit && unit->alive() && unit->isValidTarget(false) && unit->isShooter()
-			&& mechanics->battle()->playerToSide(mechanics->battle()->battleGetOwner(unit)) == mechanics->getCasterSide();
-	}
 	void frailty(const nativeEvents::Context & context, const Mechanics * mechanics, const battle::Unit & unit, const std::string & key) const
 	{
 		const auto old = status::previous(unit, BonusType::PRIMARY_SKILL, key, "defence");
@@ -76,14 +70,6 @@ RoundPlan plan(const Mechanics * mechanics, Kind kind, const JsonNode & paramete
 		result.duration = 3 + mechanics->getExtendSpellBonusRounds();
 		result.extra["casterSide"].Integer() = static_cast<int>(mechanics->getCasterSide());
 	}
-	else if(kind == Kind::FOCUS)
-	{
-		result.event = "core:focusMagic";
-		const auto * hero = mechanics->getHeroCaster();
-		result.extra["beneficiarySide"].Integer() = static_cast<int>(mechanics->getCasterSide());
-		result.extra["arcaneAcquisition"].Bool() = mechanics->isMetamagicFollowup() && hero
-			&& hero->hasActivePerk("new-horizons:metamagic", "new-horizons:metamagic.arcaneAcquisition");
-	}
 	else if(kind == Kind::ATTACH)
 	{
 		result.event = parameters["eventScript"].String();
@@ -109,15 +95,13 @@ void RoundStatus::apply(ServerCallback * server, const Mechanics * mechanics, co
 		const auto * unit = destination.unitValue;
 		if(!unit || !unit->alive()) continue;
 		if((kind == Kind::HEX || kind == Kind::SHADOW) && !mechanics->ownerMatches(unit)) continue;
-		if(kind == Kind::FOCUS && !isValidTarget(mechanics, unit)) continue;
 		if(kind != Kind::ATTACH && !isReceptive(mechanics, unit)) continue;
 		if(kind == Kind::FRAILTY) { frailty(context, mechanics, *unit, key); continue; }
 		if(kind != Kind::ATTACH) status::refresh(context, *unit, BonusType::COMBAT_EVENT_TRIGGER, key, prepared.event);
-		const auto magnitude = kind == Kind::ATTACH ? prepared.magnitude : kind == Kind::FOCUS
-			? mechanics->getRecipientArcaneBreachMarkBasisPoints(unit) : kind == Kind::PLAGUE
+		const auto magnitude = kind == Kind::ATTACH ? prepared.magnitude : kind == Kind::PLAGUE
 			? newHorizonsMetamagic::outgoingDamageMagnitude(prepared.magnitude, mechanics->getMetamagicCastProfile(), unit)
 			: mechanics->adjustMetamagicMagnitude(prepared.magnitude, unit);
-		const int duration = kind == Kind::FOCUS ? mechanics->adjustEffectDuration(3) : kind == Kind::ATTACH
+		const int duration = kind == Kind::ATTACH
 			? mechanics->getEffectDuration() : prepared.duration;
 		auto record = status::bonus("COMBAT_EVENT_TRIGGER", magnitude, key, duration, prepared.event, prepared.debuff);
 		record["addInfo"] = prepared.extra;
@@ -152,7 +136,6 @@ std::shared_ptr<spells::effects::Effect> createStatusEffect(const ScriptTypeDesc
 	if(path == "spells/shadowGift") return std::make_shared<RoundStatus>(Kind::SHADOW);
 	if(path == "spells/frailty") return std::make_shared<RoundStatus>(Kind::FRAILTY);
 	if(path == "spells/attachCombatScript") return std::make_shared<RoundStatus>(Kind::ATTACH);
-	if(path == "spells/focusMagic") return std::make_shared<RoundStatus>(Kind::FOCUS);
 	return {};
 }
 }

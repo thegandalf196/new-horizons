@@ -147,11 +147,11 @@ TEST_F(NewHorizonsOffenseRankTest, ExecutionerUsesCurrentHealthAndMatchesHypothe
 	const auto fullHealth = battle()->calculateDmgRange(attack).damage;
 	ASSERT_EQ(defender->getAvailableHealth(), defender->getTotalHealth());
 
-	const auto savedSelections = attackerSideHero->getPerkState().selected;
+	const auto savedSelections = attackerSideHero->getPerkState().getSelected();
 	auto & mutablePerks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	mutablePerks.selected.clear();
+	mutablePerks.replaceSelected({});
 	const auto fullHealthWithoutExecutioner = battle()->calculateDmgRange(attack).damage;
-	mutablePerks.selected = savedSelections;
+	mutablePerks.replaceSelected(savedSelections);
 	EXPECT_EQ(fullHealth.min, fullHealthWithoutExecutioner.min);
 	EXPECT_EQ(fullHealth.max, fullHealthWithoutExecutioner.max);
 
@@ -159,12 +159,12 @@ TEST_F(NewHorizonsOffenseRankTest, ExecutionerUsesCurrentHealthAndMatchesHypothe
 	defender->damage(wound);
 	ASSERT_LT(defender->getAvailableHealth() * 100, defender->getTotalHealth() * 40);
 	const auto wounded = battle()->calculateDmgRange(attack).damage;
-	mutablePerks.selected.clear();
+	mutablePerks.replaceSelected({});
 	const auto woundedWithoutExecutioner = battle()->calculateDmgRange(attack).damage;
 	attackerSideHero->setSecSkillLevel(offense(), MasteryLevel::NONE, ChangeValueMode::ABSOLUTE);
 	const auto woundedWithoutOffense = battle()->calculateDmgRange(attack).damage;
 	attackerSideHero->setSecSkillLevel(offense(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-	mutablePerks.selected = savedSelections;
+	mutablePerks.replaceSelected(savedSelections);
 	// Offense rank and Executioner are additive percentage points in the
 	// authoritative damage-premium pipeline: Basic Offense is already present
 	// in the control, so Executioner adds 20% of the underlying base damage.
@@ -201,12 +201,12 @@ TEST_F(NewHorizonsOffenseRankTest, ArmorPiercerIgnoresOnlyMeleeCreatureDefense)
 	ASSERT_GT(melee.min, 0);
 	ASSERT_GT(ranged.min, 0);
 
-	const auto savedSelections = attackerSideHero->getPerkState().selected;
+	const auto savedSelections = attackerSideHero->getPerkState().getSelected();
 	auto & mutablePerks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	mutablePerks.selected.clear();
+	mutablePerks.replaceSelected({});
 	const auto inactiveMelee = battle()->calculateDmgRange(BattleAttackInfo(attacker, defender, 0, false)).damage;
 	const auto inactiveRanged = battle()->calculateDmgRange(BattleAttackInfo(attacker, defender, 0, true)).damage;
-	mutablePerks.selected = savedSelections;
+	mutablePerks.replaceSelected(savedSelections);
 	EXPECT_GT(melee.min, inactiveMelee.min);
 	EXPECT_GT(melee.max, inactiveMelee.max);
 	EXPECT_EQ(ranged.min, inactiveRanged.min);
@@ -228,11 +228,11 @@ TEST_F(NewHorizonsOffenseRankTest, BreakthroughPiercesHalfOfDefendReductionButNo
 	const auto withBreakthrough = battle()->calculateDmgRange(attack).damage;
 	ASSERT_LT(withBreakthrough.min, beforeDefend.min);
 
-	const auto savedSelections = attackerSideHero->getPerkState().selected;
+	const auto savedSelections = attackerSideHero->getPerkState().getSelected();
 	auto & mutablePerks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	mutablePerks.selected.clear();
+	mutablePerks.replaceSelected({});
 	const auto withoutBreakthrough = battle()->calculateDmgRange(attack).damage;
-	mutablePerks.selected = savedSelections;
+	mutablePerks.replaceSelected(savedSelections);
 
 	EXPECT_GT(withBreakthrough.min, withoutBreakthrough.min);
 	EXPECT_GT(withBreakthrough.max, withoutBreakthrough.max);
@@ -263,11 +263,11 @@ TEST_F(NewHorizonsOffenseRankTest, BreakthroughDoesNotPierceUnrelatedTemporaryOr
 	const BattleAttackInfo attack(attacker, defender, 0, false);
 	const auto withBreakthrough = battle()->calculateDmgRange(attack).damage;
 
-	const auto savedSelections = attackerSideHero->getPerkState().selected;
+	const auto savedSelections = attackerSideHero->getPerkState().getSelected();
 	auto & mutablePerks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-	mutablePerks.selected.clear();
+	mutablePerks.replaceSelected({});
 	const auto withoutBreakthrough = battle()->calculateDmgRange(attack).damage;
-	mutablePerks.selected = savedSelections;
+	mutablePerks.replaceSelected(savedSelections);
 
 	EXPECT_EQ(withBreakthrough.min, withoutBreakthrough.min);
 	EXPECT_EQ(withBreakthrough.max, withoutBreakthrough.max);

@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+from .nhart_source_transitions import read_historical_source
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
@@ -21,7 +22,7 @@ class ReleasedArtHistoryTest(unittest.TestCase):
     def setUpClass(cls):
         cls.entries = json.loads((ROOT / 'assets/new-horizons/runtime-art-manifest.json').read_text())['entries']
         cls.waves = json.loads((ROOT / 'assets/new-horizons/runtime-art-additions.json').read_text())['waves']
-        cls.header = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()
+        cls.header = read_historical_source('client/windows/NewHorizonsPerkIcons.h')
 
     def test_exact_authority_reversal_and_duplicate_or_mixed_blocks(self):
         original = binding_block()
@@ -40,7 +41,7 @@ class ReleasedArtHistoryTest(unittest.TestCase):
 
     def test_bridge_requires_exact_entries_provenance_and_archive_boundary(self):
         previous, index = released_predecessor_entries(self.entries, self.waves, entries_digest)
-        self.assertEqual((len(previous), index), (5852, 41))
+        self.assertEqual((len(previous), index), (5859, 41))
         for family in ('mummy-runtime', 'conflux-water-ice-runtime', 'wisps-and-projectiles'):
             changed = copy.deepcopy(self.entries)
             next(row for row in changed if row['family'] == family)['origin'] = 'unreviewed'

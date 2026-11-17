@@ -74,31 +74,7 @@ TEST_F(HeroCommandRevisionEffectsTest, RefreshRemovesOldBonusesBeforeLowerGrant)
 	EXPECT_EQ(friendly->getBonuses(CSelector(heroCommands::isVanguardBonus))->size(), 4);
 }
 
-TEST_F(HeroCommandRevisionEffectsTest, StasisPreservesOldNativeGrantAndRejectsNewGrant)
-{
-	prepare();
-	auto * stopped = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(70), 10);
-	auto * ordinary = addStack(BattleSide::ATTACKER, creatureByName("angel"), BattleHex(73), 10);
-	const auto first = snapshot({stopped->unitId(), ordinary->unitId()}, 3, 3);
-	heroCommands::applyIssuedOrderGrants(*battle(),
-		heroCommands::prepareIssuedOrderGrants(*battle(), BattleSide::ATTACKER, first));
-	Bonus stasis(BonusDuration::PERMANENT, BonusType::TIME_STOP,
-		BonusSource::OTHER, 1, BonusSourceID());
-	stopped->addNewBonus(std::make_shared<Bonus>(stasis));
-	ASSERT_TRUE(stopped->isTimeStopped());
-	EXPECT_FALSE(heroCommands::isVanguardCreature(stopped));
-	const auto refresh = snapshot({ordinary->unitId()}, 1, 1);
-	const auto grants = heroCommands::prepareIssuedOrderGrants(*battle(), BattleSide::ATTACKER, refresh);
-	for(const auto & batch : grants.removals)
-		for(const auto & [id, bonuses] : batch)
-			EXPECT_NE(id, stopped->unitId());
-	heroCommands::applyIssuedOrderGrants(*battle(), grants);
-	ASSERT_TRUE(heroCommands::activeVanguardBonuses(stopped));
-	EXPECT_EQ(heroCommands::activeVanguardBonuses(stopped)->statBonus, 3);
-	EXPECT_EQ(heroCommands::activeVanguardBonuses(stopped)->roundsRemaining, 3);
-	EXPECT_EQ(heroCommands::activeVanguardBonuses(ordinary)->statBonus, 1);
-	EXPECT_EQ(stopped->getBonuses(CSelector(heroCommands::isVanguardBonus))->size(), 4);
-}
+
 
 TEST_F(HeroCommandRevisionEffectsTest, NativeMoraleImmunityAndLivingEligibilityRemainIntact)
 {
@@ -426,13 +402,9 @@ protected:
 	}
 };
 
-TEST_F(HeroCommandVanguardRoyalStandardTest, PausedRoyalEntitlementSurvivesRefreshElsewhereAndLatestSnapshotExpiry)
+TEST_F(HeroCommandVanguardRoyalStandardTest, RoyalEntitlementSurvivesRefreshElsewhereAndLatestSnapshotExpiry)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareEntitlement());
-	auto stasis = std::make_shared<Bonus>(BonusDuration::PERMANENT,
-		BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID());
-	recipient->addNewBonus(stasis);
-	ASSERT_TRUE(recipient->isTimeStopped());
 	auto refresh = snapshot({other->unitId()}, 1, 1);
 	refresh.revision->potencyFinalized = true;
 	heroCommands::applyIssuedOrderGrants(*battle(),
@@ -441,12 +413,10 @@ TEST_F(HeroCommandVanguardRoyalStandardTest, PausedRoyalEntitlementSurvivesRefre
 	advanceRound();
 	EXPECT_FALSE(battle()->getHeroOrderState(BattleSide::ATTACKER, HeroCommand::VANGUARD));
 	ASSERT_TRUE(heroCommands::activeVanguardBonuses(recipient));
-	EXPECT_EQ(heroCommands::activeVanguardBonuses(recipient)->roundsRemaining, 3);
+	EXPECT_EQ(heroCommands::activeVanguardBonuses(recipient)->roundsRemaining, 2);
 	EXPECT_EQ(battle()->battleGetMorale(recipient), 0);
 	EXPECT_FALSE(heroCommands::activeVanguardBonuses(other));
-	recipient->removeBonus(stasis);
-	ASSERT_FALSE(recipient->isTimeStopped());
-	for(int round = 0; round < 2; ++round)
+	for(int round = 0; round < 1; ++round)
 	{
 		advanceRound();
 		EXPECT_TRUE(heroCommands::hasVanguardRoyalStandardEntitlement(recipient, BattleSide::ATTACKER));

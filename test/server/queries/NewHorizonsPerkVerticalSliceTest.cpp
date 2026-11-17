@@ -145,7 +145,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, PendingStrictPerkRejectsSaveCommandUnti
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
 	const auto player = hero->getOwner();
-	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(hero->getPerkState().rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(hero->getPerkState().getRules()));
 	PendingPerkCommandServer server(gameState(), player);
 	CGameHandler handler(server, gameState());
 	handler.onAdvInterfaceReady(player);
@@ -159,7 +159,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, PendingStrictPerkRejectsSaveCommandUnti
 	ASSERT_TRUE(query->isValidReply(choice));
 	const auto selection = query->hlu.perks.front().selection;
 	const auto tier = query->hlu.perks.front().requiredRank;
-	const auto selectedBefore = hero->getPerkState().selected;
+	const auto selectedBefore = hero->getPerkState().getSelected();
 	const auto levelBefore = hero->level;
 	const auto experienceBefore = hero->exp;
 	const auto snapshot = [](auto & value)
@@ -215,14 +215,14 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, PendingStrictPerkRejectsSaveCommandUnti
 	EXPECT_FALSE(handler.queries->topQuery(player));
 	EXPECT_EQ(handler.queries->countQuery(query), 0);
 	const auto & state = hero->getPerkState();
-	ASSERT_EQ(state.selected.size(), selectedBefore.size() + 1);
-	EXPECT_TRUE(std::equal(selectedBefore.begin(), selectedBefore.end(), state.selected.begin()));
-	EXPECT_EQ(state.selected.back(), selection);
+	ASSERT_EQ(state.getSelected().size(), selectedBefore.size() + 1);
+	EXPECT_TRUE(std::equal(selectedBefore.begin(), selectedBefore.end(), state.getSelected().begin()));
+	EXPECT_EQ(state.getSelected().back(), selection);
 	size_t selectedInTier = 0;
-	for(const auto & selected : state.selected)
+	for(const auto & selected : state.getSelected())
 		if(selected.skillId == selection.skillId)
 		{
-			const auto definition = newHorizonsHeroes::perkDefinition(state.rules, selected.skillId, selected.perkId);
+			const auto definition = newHorizonsHeroes::perkDefinition(state.getRules(), selected.skillId, selected.perkId);
 			ASSERT_TRUE(definition.has_value());
 			selectedInTier += newHorizonsHeroes::perkRequiredRank(definition->requiredRank) == tier;
 		}
@@ -242,7 +242,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, R2PendingQueryRefreshAndReplyStayDeterm
 	startGame(christianHeroId);
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
-	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(hero->getPerkState().rules));
+	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(hero->getPerkState().getRules()));
 	GameHandlerTestServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameHandler.onAdvInterfaceReady(hero->getOwner());
@@ -273,10 +273,10 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, R2PendingQueryRefreshAndReplyStayDeterm
 	query->hlu.perks = offered;
 	EXPECT_EQ(hero->getPerkState().toJson(), beforePerks);
 	EXPECT_EQ(rng(), beforeRng);
-	const auto selectedBefore = hero->getPerkState().selected.size();
+	const auto selectedBefore = hero->getPerkState().getSelected().size();
 	ASSERT_TRUE(gameHandler.queryReply(query->queryID, choice, hero->getOwner()));
 	EXPECT_TRUE(hero->getPerkState().hasSelection(selected.skillId, selected.perkId));
-	EXPECT_EQ(hero->getPerkState().selected.size(), selectedBefore + 1);
+	EXPECT_EQ(hero->getPerkState().getSelected().size(), selectedBefore + 1);
 }
 
 TEST_F(NewHorizonsPerkVerticalSliceTest, ControlledBlastIsAcceptedThroughAdvancedHavocOfferAndSurvivesSaveLoad)
@@ -369,7 +369,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ControlledBlastIsAcceptedThroughAdvance
 	EXPECT_EQ(hero->level, secondLevel + 1);
 	EXPECT_TRUE(hero->getPerkState().hasSelection(havocMagicId, controlledBlastId));
 	EXPECT_TRUE(hero->hasActivePerk(havocMagicId, controlledBlastId));
-	const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules,
+	const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().getRules(),
 		havocMagicId, controlledBlastId);
 	ASSERT_TRUE(definition.has_value());
 	EXPECT_EQ(definition->effect["status"].String(), "active");
@@ -579,7 +579,7 @@ TEST_F(NewHorizonsPerkVerticalSliceTest, ExperienceOfferChoiceActivatesEffectAnd
 	EXPECT_EQ(hero->level, previousLevel + 1);
 	EXPECT_TRUE(hero->getPerkState().hasSelection(sorceryMagicId, overchargerId));
 	EXPECT_TRUE(hero->hasActivePerk(sorceryMagicId, overchargerId));
-	const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().rules,
+	const auto definition = newHorizonsHeroes::perkDefinition(hero->getPerkState().getRules(),
 		sorceryMagicId, overchargerId);
 	ASSERT_TRUE(definition.has_value());
 	EXPECT_EQ(definition->effect["status"].String(), "active");

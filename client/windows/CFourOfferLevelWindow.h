@@ -59,7 +59,6 @@ private:
 	size_t page = 0;
 	bool rerollAvailable = false;
 	bool waiting = false;
-	bool warningShown = false;
 	bool resolved = false;
 
 	void createHeader(PrimarySkill primary);

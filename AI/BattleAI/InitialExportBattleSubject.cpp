@@ -239,18 +239,6 @@ const WisdomCombatState & InitialExportBattleSubject::getWisdomCombatState(Battl
 	return wisdomCombatStates.at(side);
 }
 
-const MetamagicPointState & InitialExportBattleSubject::getMetamagicPointState(BattleSide side) const
-{
-	return metamagicPointStates.at(side);
-}
-
-void InitialExportBattleSubject::setMetamagicPointState(BattleSide, const MetamagicPointState &)
-{
-	rejectSourceMutation();
-}
-
-
-
 void InitialExportBattleSubject::setLuckSerendipityState(BattleSide, const LuckSerendipityState &)
 {
 	rejectSourceMutation();
@@ -277,7 +265,6 @@ InitialExportBattleSubject::InitialExportBattleSubject(Subject subject, std::uni
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		leadershipCompositions[side] = this->subject->getBattle()->getLeadershipComposition(side);
-		metamagicPointStates[side] = this->subject->getBattle()->getMetamagicPointState(side);
 		wisdomCombatStates[side] = this->subject->getBattle()->getWisdomCombatState(side);
 	}
 }
@@ -370,7 +357,6 @@ void InitialExportBattleSubject::captureBranchValuesFrom(const HypotheticBattle 
 	copyValuesFrom(branch, source);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		metamagicPointStates[side] = branch.getMetamagicPointState(side);
 		wisdomCombatStates[side] = branch.getWisdomCombatState(side);
 	}
 	owned->recordEnvironmentSnapshot(battle::ProjectedUnitEnvironmentState::capture(branch));

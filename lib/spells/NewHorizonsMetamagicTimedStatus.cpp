@@ -41,14 +41,14 @@ std::optional<int32_t> lightReductionLimit(const Bonus & bonus, SpellID accepted
 		return newHorizonsMagic::HEAVENLY_GALE_MAXIMUM_REDUCTION_BASIS_POINTS;
 	return std::nullopt;
 }
-int32_t chaosShieldMagnitude(int32_t ordinary, const Profile & profile, int32_t marks, int32_t nativeLimit)
+int32_t chaosShieldMagnitude(int32_t ordinary, const Profile & profile, int32_t nativeLimit)
 {
-	return static_cast<int32_t>(std::min<int64_t>(nativeLimit, scaleMagnitude(ordinary, profile, marks)));
+	return static_cast<int32_t>(std::min<int64_t>(nativeLimit, scaleMagnitude(ordinary, profile)));
 }
-int32_t misfortuneChanceFactor(int32_t ordinary, const Profile & profile, int32_t marks)
+int32_t misfortuneChanceFactor(int32_t ordinary, const Profile & profile)
 {
 	const int64_t reduction = 10000LL - ordinary;
-	const int64_t magnitude = scaleMagnitude(std::abs(reduction), profile, marks);
+	const int64_t magnitude = scaleMagnitude(std::abs(reduction), profile);
 	const int64_t adjusted = 10000LL - (reduction < 0 ? -magnitude : magnitude);
 	return static_cast<int32_t>(std::clamp<int64_t>(adjusted, 2500, std::numeric_limits<int32_t>::max()));
 }

@@ -50,7 +50,7 @@ std::string perkRankName(int rank)
 
 size_t selectedPerksForSkill(const newHorizonsHeroes::PerkState & state, const std::string & skillId)
 {
-	return std::count_if(state.selected.begin(), state.selected.end(), [&skillId](const auto & selection)
+	return std::count_if(state.getSelected().begin(), state.getSelected().end(), [&skillId](const auto & selection)
 	{
 		return selection.skillId == skillId;
 	});
@@ -154,10 +154,10 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	const auto siege = hero.getSiegeCapabilities();
 	const auto masteries = hero.getMasteryView();
 	const auto & perkState = hero.getPerkState();
-	const bool perks = newHorizonsHeroes::usesPerkRules(perkState.rules);
+	const bool perks = newHorizonsHeroes::usesPerkRules(perkState.getRules());
 	if(perks)
 	{
-		for(const auto & entry : perkState.rules["skills"].Struct())
+		for(const auto & entry : perkState.getRules()["skills"].Struct())
 		{
 			const auto & skillId = entry.first;
 			if(hero.getPerkSkillRank(skillId) > 0 || selectedPerksForSkill(perkState, skillId) > 0)
@@ -424,7 +424,7 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 					const auto background = std::make_shared<TransparentFilledRectangle>(Rect(x, y, cardWidth, cardHeight), panelColor, borderColor);
 					panel.push_back(background);
 					elements.push_back(background);
-					const auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.rules)), 0,
+					const auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.getRules())), 0,
 						Rect(x + 4, y + 3, 20, 20));
 					panel.push_back(icon);
 					elements.push_back(icon);

@@ -95,8 +95,7 @@ std::optional<float> BattleExchangeVariant::trackFutureMovementReaction(
 		|| (resolvedDefender != defender.get()
 			&& newHorizonsChargeSpecialties::requiresChargeMovementPreview(*hb, *attacker, *defender));
 	const bool readyReturn = newHorizonsCoordinatedMarks::canMarkReturn(*hb, *attacker)
-		&& attacker->alive() && !attacker->isGhost() && !attacker->isTimeStopped()
-		&& !attacker->hasBonusOfType(BonusType::NOT_ACTIVE) && !attacker->hasBonusOfType(BonusType::BIND_EFFECT)
+		&& attacker->alive() && !attacker->isGhost() && !attacker->hasBonusOfType(BonusType::NOT_ACTIVE) && !attacker->hasBonusOfType(BonusType::BIND_EFFECT)
 		&& attacker->hasBonusOfType(BonusType::RETURN_AFTER_STRIKE);
 	const bool eligibleBrace = hb->battleCanTriggerHeroOrderBrace(
 		attacker.get(), resolvedDefender, 3, false, false);

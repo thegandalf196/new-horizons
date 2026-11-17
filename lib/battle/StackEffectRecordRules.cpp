@@ -8,23 +8,12 @@
 #include "NewHorizonsConfusionControl.h"
 #include "NewHorizonsOffense.h"
 #include "NewHorizonsSerpentsEmbrace.h"
-#include "TimeStopState.h"
 #include "StackEffectRemoval.h"
 #include "../bonuses/BonusList.h"
 #include <algorithm>
 #include <stdexcept>
 namespace stackEffectRecordRules
 {
-bool incomingProtected(const battle::Unit & unit, const Bonus & value)
-{
-	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit) && !arcaneInspiration::isEffect(&value);
-}
-bool removalProtected(const battle::Unit & unit, const Bonus & value)
-{
-	return unit.isTimeStopped() && !timeStopState::isStateBonus(value, unit) && !arcaneInspiration::isEffect(&value)
-		&& !newHorizonsOffense::isNoQuarterBonus(&value)
-		&& !newHorizonsSerpentsEmbrace::isMarker(value);
-}
 std::shared_ptr<Bonus> previousSwiftLifecycle(const battle::Unit & unit, const Bonus & value,
 	bool forceAdd, const BonusList & localExports)
 {

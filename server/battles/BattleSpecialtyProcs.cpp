@@ -18,8 +18,7 @@ void resolveStun(CGameHandler & game, BattleProcessor & processor, const CBattle
 	if(nominalChance < 0 || nominalChance > 100) throw std::invalid_argument("Invalid Concussive Stun chance");
 	const auto * actor = battle.battleGetUnitByID(source);
 	const auto * recipient = battle.battleGetUnitByID(target);
-	if(nominalChance <= 0 || !actor || !recipient || !actor->alive() || !recipient->alive()
-		|| actor->isTimeStopped() || actor->isGhost() || recipient->isTimeStopped() || recipient->isGhost()
+	if(nominalChance <= 0 || !actor || !recipient || !actor->alive() || !recipient->alive() || actor->isGhost() || recipient->isGhost()
 		|| recipient->isInvincible() || recipient->isTurret() || battle.battleGetOwner(actor) == battle.battleGetOwner(recipient)
 		|| newHorizonsStun::isStunned(*recipient)) return;
 	const auto side = battle.playerToSide(battle.battleGetOwner(recipient));

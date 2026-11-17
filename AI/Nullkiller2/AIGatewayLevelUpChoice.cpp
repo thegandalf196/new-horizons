@@ -15,24 +15,24 @@ namespace
 bool worsensTierReservation(const CGHeroInstance & hero, const newHorizonsHeroes::PerkOfferCandidate & candidate)
 {
 	const auto & state = hero.getPerkState();
-	if(newHorizonsHeroes::usesFourOfferProgression(state.rules))
+	if(newHorizonsHeroes::usesFourOfferProgression(state.getRules()))
 		return newHorizonsHeroes::perkChoiceBlocksTierCompletion(state, candidate,
 			hero.getPerkSkillRank(candidate.selection.skillId));
 	// Historical R2's active-tier reservation remains byte-for-byte arithmetic,
 	// including catalogues with a planned, unavailable later tier.
 	std::set<int> missingTiers;
-	for(const auto & definition : newHorizonsHeroes::perkOptions(state.rules, candidate.selection.skillId))
+	for(const auto & definition : newHorizonsHeroes::perkOptions(state.getRules(), candidate.selection.skillId))
 		if(definition.effect["status"].String() == "active")
 			missingTiers.insert(newHorizonsHeroes::perkRequiredRank(definition.requiredRank));
 	si64 count = 0;
-	for(const auto & selection : state.selected)
+	for(const auto & selection : state.getSelected())
 	{
 		if(selection.skillId != candidate.selection.skillId) continue;
 		++count;
-		const auto definition = newHorizonsHeroes::perkDefinition(state.rules, selection.skillId, selection.perkId);
+		const auto definition = newHorizonsHeroes::perkDefinition(state.getRules(), selection.skillId, selection.perkId);
 		if(definition) missingTiers.erase(newHorizonsHeroes::perkRequiredRank(definition->requiredRank));
 	}
-	const auto remaining = state.rules["maxPerksPerSkill"].Integer() - count;
+	const auto remaining = state.getRules()["maxPerksPerSkill"].Integer() - count;
 	const auto before = std::max<si64>(0, static_cast<si64>(missingTiers.size()) - remaining);
 	missingTiers.erase(candidate.requiredRank);
 	const auto after = std::max<si64>(0, static_cast<si64>(missingTiers.size()) - (remaining - 1));
@@ -65,7 +65,7 @@ int AIGateway::chooseLevelUpAdvancement(const HeroPtr & heroPtr, const std::vect
 					try
 					{
 						const auto definition = newHorizonsHeroes::perkDefinition(
-							observedHero->getPerkState().rules,
+							observedHero->getPerkState().getRules(),
 							candidate.selection.skillId, candidate.selection.perkId);
 						// Level-up offers are server-authored, but retain this check at
 						// the AI boundary so a stale/legacy planned entry is never
@@ -90,15 +90,14 @@ int AIGateway::chooseLevelUpAdvancement(const HeroPtr & heroPtr, const std::vect
 				return skills.empty() ? -1 : sel;
 
 			const auto ownFactionSkill = observedHero
-				? newHorizonsHeroes::factionSkill(observedHero->getPrimaryGrowthRules(), observedHero->getFactionID())
+				? observedHero->compiledDevelopment()->factionSkill(observedHero->getFactionID())
 				: std::nullopt;
 			const auto isFactionPerk = [observedHero, &ownFactionSkill, &perks](size_t index)
 			{
 				if(!observedHero || !ownFactionSkill)
 					return false;
 				const int decoded = SecondarySkill::decode(perks[index].selection.skillId);
-				return decoded >= 0 && newHorizonsHeroes::isFactionSkillForFaction(
-					observedHero->getPrimaryGrowthRules(), observedHero->getFactionID(), SecondarySkill(decoded));
+				return decoded >= 0 && observedHero->compiledDevelopment()->isFactionSkillForFaction(observedHero->getFactionID(), SecondarySkill(decoded));
 			};
 			const auto inspirationalLeaderScore = [observedHero, &perks](size_t index)
 			{
@@ -117,7 +116,7 @@ int AIGateway::chooseLevelUpAdvancement(const HeroPtr & heroPtr, const std::vect
 			};
 			// Prefer preserving later tiers when same-tier alternatives are legal.
 			// The player remains free to make that irreversible tradeoff.
-			const auto & perkRules = observedHero->getPerkState().rules;
+			const auto & perkRules = observedHero->getPerkState().getRules();
 			if(newHorizonsHeroes::usesFourOfferProgression(perkRules)
 				|| (newHorizonsHeroes::usesR2PerkOffers(perkRules)
 					&& !newHorizonsHeroes::usesStrictPerkProgression(perkRules)))

@@ -49,13 +49,6 @@ int64_t currentDivineCap(const ::spells::Mechanics & m, const battle::Unit & uni
 {
 	return m.getDivineRetributionCap(&unit);
 }
-int32_t currentSpellLockDuration(const ::spells::Mechanics & m)
-{
-	const auto * hero = m.getHeroCaster();
-	return m.adjustEffectDuration(newHorizonsSorcery::spellLockDurationBasisPoints(m.getEffectPower(),
-		hero && hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.spellbinder"),
-		m.getSpellPowerCoefficientBasisPoints(), m.getEmpowerSpellBonusPercent()));
-}
 int64_t currentHeavenlyGaleReduction(const ::spells::Mechanics & m, const battle::Unit & unit)
 {
 	return newHorizonsMagic::heavenlyGaleReductionForRecipient(m, unit);
@@ -76,8 +69,6 @@ void MechanicsProxy::registerTimedUtilityMethods(MethodRegistrar & R)
 	R.function<&currentChaosShield>("getShieldOfChaosReduction", {}, "Shared stored reduction in basis points, including Paradox after cap.");
 	R.function<&currentDivineCap>("getDivineRetributionCap", {{"target", "Recipient of the protection."}}, {},
 		"Shared stored reflection cap before Retributionist payout.");
-	R.function<&currentSpellLockDuration>("getSpellLockDuration", {},
-		"Returns the shared capped Spell Lock duration followed by this cast's Extend/Echo adjustment.");
 	R.function<&currentHeavenlyGaleReduction>("getHeavenlyGaleReductionBasisPoints",
 		{{"target", "Recipient of this bonus."}}, {},
 		"Returns Heavenly Gale's shared capped reduction, with Aegis and this recipient's Crown and Altar.");

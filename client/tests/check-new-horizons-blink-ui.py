@@ -30,12 +30,12 @@ def main() -> None:
         "heroSpellcastingModeActive()",
         "battleGetStackByPos(targetHex, true)",
         "isCastingPossibleHere(spell, nullptr, targetHex)",
-        "cast.setMetamagicFollowup(heroSpellToCast->metamagicFollowup)",
         "spell->battleMechanics(&cast)",
         "newHorizonsBlink::preview(*mechanics, target)",
     ):
         assert token in preview, token
     for forbidden in (
+        "setMetamagicFollowup",
         "CRandomGenerator",
         "battleMakeSpellAction",
         "giveCommand(",

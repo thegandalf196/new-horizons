@@ -199,23 +199,11 @@ TEST_F(NewHorizonsSpellcraftTargetDurationTest, ActionBoundAndPermanentEffectsAr
 	EXPECT_TRUE(newHorizonsSpellcraft::roundTemporary(*spell("new-horizons:polymorph").toSpell(), 3));
 	EXPECT_FALSE(newHorizonsSpellcraft::roundTemporary(*spell("new-horizons:puppetMaster").toSpell(), 3));
 	EXPECT_EQ(mechanics(spell("new-horizons:phantomArmy"), {spells::Destination(ally)})->adjustEffectDuration(2), 3);
-	EXPECT_EQ(newHorizonsSorcery::PHANTOM_ARMY_MAX_DURATION_ROUNDS, 4);
+	EXPECT_TRUE(newHorizonsSorcery::phantomArmyDurationSupported(5));
+	EXPECT_TRUE(newHorizonsSorcery::phantomArmyDurationSupported(7));
 }
 
-TEST_F(NewHorizonsSpellcraftTargetDurationTest, AcceptedCounterspellNegationConsumesOnlyAnEligibleTemporaryCast)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	BattleSpellCast accepted;
-	accepted.battleID = BattleID(0);
-	accepted.side = BattleSide::ATTACKER;
-	accepted.spellID = spell("core:haste");
-	accepted.counterspellSide = BattleSide::DEFENDER;
-	accepted.counterspellNegated = true;
-	accepted.extendedSpell = true;
-	gameHandler->sendAndApply(accepted);
-	EXPECT_EQ(battle()->getExtendSpellLastRound(BattleSide::ATTACKER), battle()->getRound());
-	EXPECT_THROW(gameHandler->sendAndApply(accepted), std::runtime_error);
-}
+
 
 TEST_F(NewHorizonsSpellcraftTargetDurationTest, CurrentRoundReceiptAndOldPrefixGuardsCoverBattleWorldAndLobby)
 {

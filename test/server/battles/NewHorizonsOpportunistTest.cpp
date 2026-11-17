@@ -426,18 +426,14 @@ TEST_F(NewHorizonsOpportunistTest, NoLuckPhysicalAttackCannotEarnSequence)
 	EXPECT_EQ(actor->pursuitMovementRemaining, 0);
 }
 
-TEST_F(NewHorizonsOpportunistTest, SharedTailCannotEscapeFrozenOrTimeStop)
+TEST_F(NewHorizonsOpportunistTest, SharedTailCannotEscapeFrozen)
 {
 	prepare();
 	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(80), 1);
 	actor->luckyOwnAttackSequence = true;
 	actor->addNewBonus(std::make_shared<Bonus>(newHorizonsFrozen::makeFrozenMarker(BonusSourceID(), 1)));
 	EXPECT_EQ(newHorizonsOpportunist::movementAllowance(*battle(), actor, 2), 0);
-	auto * stopped = addStack(BattleSide::ATTACKER, creatureByName("core:angel"), BattleHex(90), 1);
-	stopped->luckyOwnAttackSequence = true;
-	stopped->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
-		BonusType::TIME_STOP, BonusSource::SPELL_EFFECT, 1, BonusSourceID()));
-	EXPECT_EQ(newHorizonsOpportunist::movementAllowance(*battle(), stopped, 2), 0);
+
 }
 
 TEST_F(NewHorizonsOpportunistTest, BinaryDescriptorRebindPreservesReusedTailAndOldPrefixesReject)

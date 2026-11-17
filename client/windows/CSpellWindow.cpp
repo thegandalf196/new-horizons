@@ -23,7 +23,6 @@
 #include "../PlayerLocalState.h"
 
 #include "../battle/BattleInterface.h"
-#include "../battle/ArcaneMarkPresentation.h"
 #include "../battle/BattleActionsController.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -48,7 +47,6 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CCallback.h"
-#include "../../lib/spells/NewHorizonsMetamagicEffects.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/SpellCostBreakdown.h"
@@ -68,8 +66,6 @@ std::string spellAllowanceSourceName(HeroActionAllowanceState::GrantSource sourc
 	switch(source)
 	{
 		case HeroActionAllowanceState::GrantSource::ROUND: return {};
-		case HeroActionAllowanceState::GrantSource::METAMAGIC: return "Metamagic";
-		case HeroActionAllowanceState::GrantSource::METAMAGIC_GRAND: return "Grand Metamagic";
 		case HeroActionAllowanceState::GrantSource::PERK: return "Perk";
 		case HeroActionAllowanceState::GrantSource::ARTIFACT: return "Artifact";
 		case HeroActionAllowanceState::GrantSource::OTHER: return "Special ability";
@@ -927,25 +923,6 @@ bool CSpellWindow::isAdventureSpellUsedToday(SpellID spell) const
 		&& myHero->hasNewHorizonsAdventureSpellCastToday();
 }
 
-bool CSpellWindow::hasMetamagicFollowupForSpell(SpellID spell) const
-{
-	if(!battleSpellsOnly || !myInt || !myInt->battleInt)
-		return false;
-
-	try
-	{
-		const auto battle = myInt->battleInt->getBattle();
-		if(!battle)
-			return false;
-		const auto side = battle->battleGetMySide();
-		return side != BattleSide::NONE && battle->battleCanUseMetamagicFollowup(side, spell);
-	}
-	catch(const std::runtime_error &)
-	{
-		return false;
-	}
-}
-
 void CSpellWindow::updateAdventureSpellDailyStatus()
 {
 	if(!adventureSpellDailyStatusLabel || !adventureSpellDailyStatusHelp)
@@ -1088,11 +1065,9 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 
 		const auto battleInterface = owner->myInt->battleInt;
 		const auto battleCallback = battleInterface ? battleInterface->getBattle() : nullptr;
-		const bool metamagicFollowup = owner->hasMetamagicFollowupForSpell(mySpell->id);
-		const auto costBreakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero, metamagicFollowup);
-		const int spellCost = newHorizonsMetamagic::minimumSelectionCost(*owner->myHero,
-			*mySpell, battleCallback.get(), costBreakdown.finalCost);
-		if(spellCost > owner->myHero->getManaAvailable() && !metamagicFollowup) //insufficient mana; follow-ups use authoritative preview below
+		const auto costBreakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero);
+		const int spellCost = costBreakdown.finalCost;
+		if(spellCost > owner->myHero->getManaAvailable()) // Insufficient Mana.
 		{
 			MetaString message = MetaString::createFromTextID("core.genrltxt.206"); // That spell costs %d spell points. Your hero only has %d spell points...
 			message.replaceNumber(spellCost);

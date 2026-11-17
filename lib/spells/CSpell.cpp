@@ -151,24 +151,17 @@ bool CSpell::hasSchool(SpellSchool which) const
 	return schools.count(which);
 }
 
-bool CSpell::canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster,
-	bool metamagicGrand) const
+bool CSpell::canBeCast(const CBattleInfoCallback * cb, spells::Mode mode, const spells::Caster * caster) const
 {
 	//if caller do not interested in description just discard it and do not pollute even debug log
 	spells::detail::ProblemImpl problem;
-	return canBeCast(problem, cb, mode, caster, metamagicGrand);
+	return canBeCast(problem, cb, mode, caster);
 }
 
 bool CSpell::canBeCast(spells::Problem & problem, const CBattleInfoCallback * cb, spells::Mode mode,
-	const spells::Caster * caster, bool metamagicGrand) const
+	const spells::Caster * caster) const
 {
-spells::BattleCast event(cb, caster, mode, this);
-	if(mode == spells::Mode::HERO)
-	{
-		const auto side = cb->playerToSide(caster->getCasterOwner());
-		event.setMetamagicFollowup(cb->battleCanUseMetamagicFollowup(side));
-		event.setMetamagicGrand(metamagicGrand);
-	}
+	spells::BattleCast event(cb, caster, mode, this);
 	auto mechanics = battleMechanics(&event);
 	if(mechanics->canBeCast(problem))
 		return true;
@@ -182,11 +175,6 @@ spells::BattleCast event(cb, caster, mode, this);
 		&& hero->hasActivePerk("new-horizons:sorceryMagic", "new-horizons:sorceryMagic.temporalField"))
 	{
 		spells::BattleCast massEvent(cb, caster, mode, this);
-		if(mode == spells::Mode::HERO)
-		{
-			massEvent.setMetamagicFollowup(cb->battleCanUseMetamagicFollowup(cb->playerToSide(caster->getCasterOwner())));
-			massEvent.setMetamagicGrand(metamagicGrand);
-		}
 		massEvent.setMassSlow(true);
 		spells::detail::ProblemImpl massProblem;
 		if(battleMechanics(&massEvent)->canBeCast(massProblem))
@@ -197,11 +185,6 @@ spells::BattleCast event(cb, caster, mode, this);
 		return false;
 
 	spells::BattleCast selectiveEvent(cb, caster, mode, this);
-	if(mode == spells::Mode::HERO)
-	{
-		selectiveEvent.setMetamagicFollowup(cb->battleCanUseMetamagicFollowup(cb->playerToSide(caster->getCasterOwner())));
-		selectiveEvent.setMetamagicGrand(metamagicGrand);
-	}
 	selectiveEvent.setSelectiveDispel(true);
 	spells::detail::ProblemImpl selectiveProblem;
 	return battleMechanics(&selectiveEvent)->canBeCast(selectiveProblem);

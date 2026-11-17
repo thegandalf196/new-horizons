@@ -56,6 +56,41 @@ std::vector<PerkSelection> defaultsFor(const JsonNode & development, HeroTypeID 
 		result.push_back({entry["skill"].String(), entry["perk"].String()});
 	return result;
 }
+
+void validateSkillsOnlyProfiles(const JsonNode & starts)
+{
+	require(!starts.Struct().contains("startingPerkProfiles"), "skills-only starts cannot contain a perk table");
+	const auto & profiles = starts["startingDevelopmentProfiles"];
+	require(profiles.isStruct() && starts["factionSkills"].isStruct(), "skills-only development and faction maps");
+	for(const auto & hero : LIBRARY->heroh->objects)
+		if(hero && HeroTypeID::encode(hero->getId().getNum()).starts_with("core:"))
+			require(profiles.Struct().contains(HeroTypeID::encode(hero->getId().getNum())),
+				"complete registered Core starting Skills");
+	for(const auto & [identity, profile] : profiles.Struct())
+	{
+		const int id = resolve(HeroTypeID::entityType(), identity);
+		require(HeroTypeID::encode(id) == identity && id >= 0
+			&& static_cast<size_t>(id) < LIBRARY->heroh->objects.size()
+			&& LIBRARY->heroh->objects[id] && LIBRARY->heroh->objects[id]->heroClass,
+			"canonical installed skills-only hero");
+		fields(profile, {"skills"});
+		const auto & skills = profile["skills"];
+		require(skills.isVector() && skills.Vector().size() == 2, "exactly two skills-only starting parents");
+		std::set<std::string> parents;
+		for(const auto & skill : skills.Vector())
+		{
+			fields(skill, {"skill", "rank"});
+			require(skill["skill"].isString() && integer(skill["rank"], 1, 1), "Basic skills-only starting row");
+			const auto & key = skill["skill"].String();
+			const auto installed = resolve(SecondarySkill::entityType(), key);
+			require(SecondarySkill::encode(installed) == key && parents.insert(key).second,
+				"distinct canonical skills-only starting parents");
+		}
+		const auto faction = LIBRARY->heroh->objects[id]->heroClass->faction;
+		const auto & own = starts["factionSkills"][FactionID::encode(faction.getNum())];
+		require(own.isString() && parents.contains(own.String()), "own Basic skills-only starting faction Skill");
+	}
+}
 }
 
 bool usesAuthoredStartingPerks(const JsonNode & development)
@@ -68,13 +103,24 @@ bool usesAuthoredStartingPerks(const JsonNode & development)
 bool usesBasicStartingProfiles(const JsonNode & starts)
 {
 	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& starts["startingPerksPolicyVersion"].Integer() == 2;
+		&& integer(starts["startingPerksPolicyVersion"], 2, 3);
+}
+
+bool usesSkillsOnlyStartingProfiles(const JsonNode & starts)
+{
+	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& starts["startingPerksPolicyVersion"].Integer() == 3;
 }
 
 void validateStartingPerkProfiles(const JsonNode & starts)
 {
 	nhLoadProfile::Scope measured(nhLoadProfile::Metric::ProfileValidation);
 	require(starts.isStruct(), "starting Skill policy object");
+	if(usesSkillsOnlyStartingProfiles(starts))
+	{
+		validateSkillsOnlyProfiles(starts);
+		return;
+	}
 	const bool marker = starts.Struct().contains("startingPerksPolicyVersion");
 	const bool table = starts.Struct().contains("startingPerkProfiles");
 	if(!marker && !table) return;
@@ -159,19 +205,24 @@ void initializeStartingHeroPerks(PerkState & state, const JsonNode & development
 	const std::function<int(const std::string &)> & rank)
 {
 	nhLoadProfile::Scope measured(nhLoadProfile::Metric::StartingPerks);
+	if(usesSkillsOnlyStartingProfiles(development["startingSkills"]))
+	{
+		validateStartingPerkProfiles(development["startingSkills"]);
+		return; // Creation grants no perks and never rewrites an existing selection.
+	}
 	if(!usesAuthoredStartingPerks(development))
 	{
 		selectStartingHeroPerks(state, profile, prototype, rank);
 		return;
 	}
 	validateStartingPerkProfiles(development["startingSkills"]);
-	require(usesPersistentHeroProgression(state.rules), "starting defaults require captured Skill progression");
+	require(usesPersistentHeroProgression(state.getRules()), "starting defaults require captured Skill progression");
 	auto proposed = state;
 	// End every borrowed rules view before moving the completed candidate.
 	[&]
 	{
 		PerkSelectionOperation operation(proposed);
-		for(const auto & choice : proposed.selected)
+		for(const auto & choice : proposed.getSelected())
 			require(rank(choice.skillId) >= selectedTier(operation.definitions(), choice), "owned authored starting perk rank");
 		Preferences preferred;
 		appendPreferences(preferred, operation.definitions(), prototype);

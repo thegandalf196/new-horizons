@@ -57,25 +57,6 @@ public:
 	/// Canonical New Horizons Shadow Gift sacrifice tier (10, 20 or 30 percent).
 	/// Zero means no tier was selected and is invalid for an authoritative Gift cast.
 	si32 spellShadowGiftSacrificePercent = 0;
-	/// Requests the immediate additional spell granted by Tower Metamagic.  The
-	/// server accepts this only while its saved battle snapshot has a pending
-	/// sequence; it never buys another Hero Action or chains recursively.
-	bool metamagicFollowup = false;
-	/// Retired manual Grand request, retained for serialized action compatibility.
-	/// New requests must leave this false; Grand activation is server-derived.
-	bool metamagicGrand = false;
-	/// Retired Metamagic-decline request bit. Retained only so old serialized
-	/// actions can be decoded and rejected explicitly; current clients and the
-	/// authoritative server must never create or execute this transition.
-	bool metamagicDecline = false;
-	/// Server-authored marker for an owner-authenticated pass at a visible Time
-	/// Stop Hero Action boundary. Incoming clients may never set this flag. It is
-	/// replicated in StartAction so every game-state copy expires the same origin,
-	/// while synthetic AUTOMATIC_ACTION no-ops remain ordinary NO_ACTION actions.
-	bool timeStopHeroActionPass = false;
-	/// Server-derived Formula Reserve refund attached to an accepted spell cast
-	/// that completes a Metamagic sequence. Clients may never author this value.
-	si32 metamagicManaRefund = 0;
 	HeroCommand command = HeroCommand::NONE;
 	/// Real Inferno reserve stack selected for Demonic Gating. The entire
 	/// currently available stack is committed; no creatures are created.
@@ -155,17 +136,6 @@ public:
 		if(h.saving && spellFireWallDirection != BattleHex::NONE
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_FIRE_WALL))
 			throw std::runtime_error("Cannot serialize Fire Wall direction to an older protocol");
-		if(h.saving && metamagicFollowup && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-			throw std::runtime_error("Cannot serialize Metamagic follow-up to an older protocol");
-		if(h.saving && metamagicGrand && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-			throw std::runtime_error("Cannot serialize Metamagic Grand choice to an older protocol");
-		if(h.saving && metamagicDecline && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-			throw std::runtime_error("Cannot serialize Metamagic decline to an older protocol");
-		if(h.saving && metamagicManaRefund != 0 && !h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-			throw std::runtime_error("Cannot serialize Metamagic Formula Reserve refund to an older protocol");
-		if(h.saving && timeStopHeroActionPass
-			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS))
-			throw std::runtime_error("Cannot serialize Time Stop Hero Action pass to an older protocol");
 		if(h.saving && spell == SpellID(SpellID::LAND_MINE)
 			&& target.size() > 1 && !h.hasFeature(Handler::Version::NEW_HORIZONS_LAND_MINE))
 			throw std::runtime_error("Cannot serialize multi-hex Land Mine action to an older protocol");
@@ -236,34 +206,6 @@ public:
 		else if(!h.saving)
 		{
 			spellFireWallDirection = BattleHex::NONE;
-		}
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-		{
-			h & metamagicFollowup;
-			h & metamagicGrand;
-		}
-		else if(!h.saving)
-		{
-			metamagicFollowup = false;
-			metamagicGrand = false;
-		}
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_METAMAGIC))
-		{
-			h & metamagicDecline;
-			h & metamagicManaRefund;
-		}
-		else if(!h.saving)
-		{
-			metamagicDecline = false;
-			metamagicManaRefund = 0;
-		}
-		if(h.hasFeature(Handler::Version::NEW_HORIZONS_TIME_STOP_HERO_ACTION_PASS))
-		{
-			h & timeStopHeroActionPass;
-		}
-		else if(!h.saving)
-		{
-			timeStopHeroActionPass = false;
 		}
 		if(h.hasFeature(Handler::Version::HERO_COMMANDS))
 		{

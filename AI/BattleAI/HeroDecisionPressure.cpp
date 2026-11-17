@@ -1,6 +1,9 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
 #include "HeroDecisionPressure.h"
+#include "HeroSpellRefinement.h"
+#include "FlatDamageInputs.h"
+#include "BattleSearchPolicy.h"
 #include "AttackPossibility.h"
 #include "BattleExchangeVariant.h"
 #include "BattleDamageValue.h"
@@ -55,11 +58,36 @@ std::vector<size_t> promisingRefinements(const std::vector<Ranked> & ranked)
 	return best ? std::vector<size_t>{best->ordinal} : std::vector<size_t>{};
 }
 
+std::vector<size_t> boundedRefinements(const std::vector<Ranked> & ranked, unsigned limit)
+{
+	auto ordered = ranked;
+	if(std::ranges::any_of(ordered, [](const Ranked & item) { return !std::isfinite(item.marginal); }))
+	{
+		std::vector<size_t> all;
+		for(const auto & item : ordered) all.push_back(item.ordinal);
+		std::sort(all.begin(), all.end());
+		return all;
+	}
+	std::stable_sort(ordered.begin(), ordered.end(), [](const Ranked & a, const Ranked & b)
+	{
+		return a.marginal > b.marginal;
+	});
+	if(limit && ordered.size() > limit)
+		ordered.resize(limit);
+	std::vector<size_t> result;
+	for(const auto & item : ordered)
+		result.push_back(item.ordinal);
+	std::sort(result.begin(), result.end());
+	return result;
+}
+
 void Experiment::reset()
 {
 	const bool enabled = enableShortlist;
+	const auto limit = refinementLimit;
 	*this = {};
 	enableShortlist = enabled;
+	refinementLimit = limit;
 }
 
 void Experiment::noteContinuation(size_t ordinal)
@@ -69,49 +97,62 @@ void Experiment::noteContinuation(size_t ordinal)
 		++refinementContinuationCalls;
 }
 
+namespace
+{
+std::optional<float> scoutOrder(Baseline * baseline, const Environment * environment,
+	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
+	const PossibleSpellcast & candidate)
+{
+	if(!baseline) return {};
+	auto state = std::make_shared<HypotheticBattle>(environment, source);
+	const auto admission = heroActionProjection::admitCandidate(*state, side, candidate);
+	if(!admission.admitted || !admission.orderEffects || !admission.orderAllowance
+		|| !state->projectAcceptedHeroOrder(side, *admission.orderEffects, *admission.orderAllowance))
+		return {};
+	const auto & receipt = admission.orderAllowance->action.receipt;
+	const auto & order = admission.orderEffects->order;
+	const auto & future = state->getDoubleCommandState(side);
+	if(receipt.allowance != HeroActionAllowanceState::AllowanceKind::HERO
+		|| receipt.source != HeroActionAllowanceState::GrantSource::ROUND
+		|| future.orderPending() || future.secondWindReady()
+		|| newHorizonsHeroicSpirit::canRollOrderMorale(source->battleGetFightingHero(side), receipt)
+		|| !order.crownAndAltarRecipientUnitIds.empty()) return {};
+	return baseline->orderUtility(state, candidate.command);
+}
+}
+
 void prepareShortlist(Experiment & result, const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 	const std::vector<PossibleSpellcast> & candidates, const DamageCache & originalDamage,
 	const BattleExchangeEvaluator & utility)
 {
 	result.declined.assign(candidates.size(), false);
-	const auto supportedCommand = [](HeroCommand command)
+	const auto supportedCommand = [&](HeroCommand command)
 	{
-		return command == HeroCommand::FOCUS_FIRE || command == HeroCommand::RIPOSTE;
+		return command == HeroCommand::FOCUS_FIRE || command == HeroCommand::RIPOSTE
+			|| (result.refinementLimit && command == HeroCommand::HOLD_THE_LINE);
 	};
 	if(std::count_if(candidates.begin(), candidates.end(), [&](const auto & candidate)
-		{ return supportedCommand(candidate.command); }) <= 2)
-		return; // No saved full forecasts: avoid paying for a redundant scout.
+		{ return supportedCommand(candidate.command) || (result.refinementLimit && spellScoutCandidate(candidate)); })
+		<= static_cast<std::ptrdiff_t>(result.refinementLimit ? result.refinementLimit : 2))
+		return;
 	++result.baselineAttempts;
 	auto baseline = Baseline::create(environment, source, side, std::nullopt, true, &originalDamage, &utility);
-	if(!baseline)
-		return;
-	result.baselineReady = true;
-	const auto * hero = source->battleGetFightingHero(side);
+	result.baselineReady = baseline != nullptr;
 	for(size_t index = 0; index < candidates.size(); ++index)
 	{
 		const auto & candidate = candidates[index];
-		if(!supportedCommand(candidate.command))
-			continue;
-		auto state = std::make_shared<HypotheticBattle>(environment, source);
-		const auto admission = heroActionProjection::admitCandidate(*state, side, candidate);
-		if(!admission.admitted || !admission.orderEffects || !admission.orderAllowance
-			|| !state->projectAcceptedHeroOrder(side, *admission.orderEffects, *admission.orderAllowance))
-			continue; // Original evaluator, never reinterpret a refusal as a zero score.
-		const auto & receipt = admission.orderAllowance->action.receipt;
-		const auto & order = admission.orderEffects->order;
-		const auto & future = state->getDoubleCommandState(side);
-		if(receipt.allowance != HeroActionAllowanceState::AllowanceKind::HERO
-			|| receipt.source == HeroActionAllowanceState::GrantSource::BATTLE_PLAN
-			|| future.orderPending() || future.secondWindReady()
-			|| newHorizonsHeroicSpirit::canRollOrderMorale(hero, receipt)
-			|| !order.crownAndAltarRecipientUnitIds.empty())
-			continue; // Unvalued typed/faction/activation companions stay on the full path.
-		const auto marginal = baseline->orderUtility(state, candidate.command);
-		if(marginal && std::isfinite(*marginal))
-			result.cheapScores.push_back({index, *marginal});
+		std::optional<float> marginal;
+		if(supportedCommand(candidate.command))
+			marginal = scoutOrder(baseline.get(), environment, source, side, candidate);
+		else if(result.refinementLimit && spellScoutCandidate(candidate))
+			marginal = spellScoutUtility(environment, source, side, candidate,
+				originalDamage, utility, baseline.get());
+		if(marginal && std::isfinite(*marginal)) result.cheapScores.push_back({index, *marginal});
 	}
-	result.refinedOrdinals = promisingRefinements(result.cheapScores);
+	result.refinedOrdinals = result.refinementLimit
+		? boundedRefinements(result.cheapScores, result.refinementLimit)
+		: promisingRefinements(result.cheapScores);
 	for(const auto & estimate : result.cheapScores)
 		result.declined[estimate.ordinal] = std::find(result.refinedOrdinals.begin(),
 			result.refinedOrdinals.end(), estimate.ordinal) == result.refinedOrdinals.end();
@@ -224,6 +265,9 @@ bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool di
 		return false; // Unknown topology pays no damage-cache/scout payload work.
 	if(buildOriginal)
 		damage->buildDamageCache(reference, side);
+	FlatDamageInputs flat(*reference, false);
+	if(battleSearch::forecastBeamOne()) flat.prepareRoster(*reference);
+	FlatDamageInputs::Scope prepared(*reference, &flat);
 	for(auto & pair : pairs)
 		pair.referenceValue = pairValue(*reference, pair);
 	referencePressure = pressure(*reference);
@@ -242,7 +286,7 @@ float Baseline::pairValue(const CBattleInfoCallback & view, const Pair & pair, b
 {
 	const auto * a = view.battleGetUnitByID(pair.attacker);
 	const auto * d = view.battleGetUnitByID(pair.victim);
-	if(!a || !d || !a->alive() || !d->alive() || a->isTimeStopped() || d->isInvincible()
+	if(!a || !d || !a->alive() || !d->alive() || d->isInvincible()
 		|| !a->canMove() || (!grantedActivation && !a->willMove(0)))
 		return 0;
 	// Fixed opportunities only; no new paths, movement/attack sequence or target
@@ -258,8 +302,11 @@ float Baseline::pairValue(const CBattleInfoCallback & view, const Pair & pair, b
 			* (ours ? negativeMultiplier : positiveMultiplier);
 }
 
-float Baseline::pressure(const CBattleInfoCallback & view)
+float Baseline::pressure(HypotheticBattle & view)
 {
+	FlatDamageInputs flat(view, false);
+	if(&view != reference.get() && battleSearch::forecastBeamOne()) flat.prepareRoster(view);
+	FlatDamageInputs::Scope prepared(view, &flat);
 	std::map<uint32_t, float> best;
 	for(const auto & pair : pairs)
 	{
@@ -312,6 +359,29 @@ std::optional<float> Baseline::extraActivationUtility(const HypotheticBattle & a
 		best = std::max(best, pairValue(*isolated, pair, true));
 	}
 	return best; // One granted activation; never multiply the army's other turns.
+}
+
+std::optional<float> Baseline::spellUtility(const std::shared_ptr<HypotheticBattle> & accepted)
+{
+	if(!accepted || !directTopology || !accepted->hasCanonicalDamageQuerySources(512, nativeWorld)
+		|| accepted->hasObstacleChanges() || accepted->hasWallChanges()) return {};
+	const auto units = accepted->battleGetAllUnits(false);
+	if(units.size() != reference->battleGetAllUnits(false).size()) return {};
+	for(const auto * unit : units)
+	{
+		const auto * before = reference->battleGetUnitByID(unit->unitId());
+		if(!before || before->getPosition() != unit->getPosition()
+			|| before->getAvailableHealth() != unit->getAvailableHealth()
+			|| before->getMovementRange() != unit->getMovementRange()
+			|| before->getInitiative() != unit->getInitiative()
+			|| before->canMove() != unit->canMove() || before->willMove(0) != unit->willMove(0)
+			|| accepted->battleGetActionController(unit) != reference->battleGetActionController(before)) return {};
+		accepted->getForUpdate(unit->unitId());
+	}
+	for(const auto & pair : pairs)
+		if(accepted->battleCanShoot(accepted->battleGetUnitByID(pair.attacker),
+			accepted->battleGetUnitByID(pair.victim)->getPosition()) != pair.shooting) return {};
+	return pressure(*accepted) - referencePressure;
 }
 
 std::optional<float> Baseline::orderUtility(const std::shared_ptr<HypotheticBattle> & accepted,

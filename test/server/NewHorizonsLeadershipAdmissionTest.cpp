@@ -4,11 +4,12 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "ArmyAdmissionTestFixture.h"
 
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <array>
-#include <mutex>
+#include <limits>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -19,7 +20,6 @@
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/gameState/UpgradeInfo.h"
-#include "../../lib/logging/CLogger.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/mapObjects/CGDwelling.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -34,216 +34,15 @@
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyH3MBuilder.h"
 #include "../mock/TinyMapGameTest.h"
-#include "../hero/HistoricalCapabilityRules.h"
 
-namespace
-{
-class LeadershipAdmissionDiagnosticLogTarget final : public ILogTarget
-{
-public:
-	explicit LeadershipAdmissionDiagnosticLogTarget(
-		std::weak_ptr<std::vector<std::string>> messages, std::weak_ptr<std::mutex> messagesMutex)
-		: messages(std::move(messages)), messagesMutex(std::move(messagesMutex))
-	{}
 
-	void write(const LogRecord & record) override
-	{
-		if(record.message.find("Leadership admission rejected:") == std::string::npos)
-			return;
-		const auto capturedMessages = messages.lock();
-		const auto capturedMutex = messagesMutex.lock();
-		if(!capturedMessages || !capturedMutex)
-			return;
-		std::lock_guard lock(*capturedMutex);
-		capturedMessages->push_back(record.message);
-	}
+using armyAdmissionTest::LeadershipRecordingServer;
+using armyAdmissionTest::NewHorizonsLeadershipAdmissionTest;
+using armyAdmissionTest::NewHorizonsCampaignUpgradeLeadershipTest;
+using armyAdmissionTest::LegacyLeadershipAdmissionTest;
+using armyAdmissionTest::NewHorizonsLeadershipSaveTransferTest;
 
-private:
-	std::weak_ptr<std::vector<std::string>> messages;
-	std::weak_ptr<std::mutex> messagesMutex;
-};
-
-class ScopedGlobalLoggerLevel final
-{
-public:
-	explicit ScopedGlobalLoggerLevel(ELogLevel::ELogLevel requestedLevel)
-		: logger(CLogger::getGlobalLogger()), previousLevel(logger->getLevel())
-	{
-		logger->setLevel(requestedLevel);
-	}
-
-	~ScopedGlobalLoggerLevel()
-	{
-		logger->setLevel(previousLevel);
-	}
-
-	ScopedGlobalLoggerLevel(const ScopedGlobalLoggerLevel &) = delete;
-	ScopedGlobalLoggerLevel & operator=(const ScopedGlobalLoggerLevel &) = delete;
-
-private:
-	CLogger * logger;
-	ELogLevel::ELogLevel previousLevel;
-};
-
-class LeadershipRecordingServer final : public IGameServer
-{
-public:
-	struct RecordedInfoWindow
-	{
-		PlayerColor player;
-		EInfoWindowMode type;
-		std::string text;
-	};
-
-	explicit LeadershipRecordingServer(std::shared_ptr<CGameState> state)
-		: state(std::move(state))
-	{}
-
-	void setState(EServerState value) override { serverState = value; }
-	EServerState getState() const override { return serverState; }
-	bool isPlayerHost(const PlayerColor &) const override { return true; }
-	bool hasPlayerAt(PlayerColor player, GameConnectionID connection) const override
-	{
-		return player == PlayerColor(0) && connection == GameConnectionID::FIRST_CONNECTION;
-	}
-	bool hasBothPlayersAtSameConnection(PlayerColor, PlayerColor) const override { return false; }
-
-	void applyPack(CPackForClient & pack) override
-	{
-		if(const auto * ended = dynamic_cast<PlayerEndsGame *>(&pack))
-			playerEndsGamePacks.push_back(*ended);
-		if(const auto * ended = dynamic_cast<PlayerEndsTurn *>(&pack))
-			playerEndsTurnPacks.push_back(*ended);
-		if(const auto * dialog = dynamic_cast<BlockingDialog *>(&pack))
-			blockingDialogQuery = dialog->queryID;
-		if(const auto * dialog = dynamic_cast<GarrisonDialog *>(&pack))
-		{
-			++garrisonDialogs;
-			garrisonDialogQuery = dialog->queryID;
-			garrisonObject = dialog->objid;
-			garrisonHero = dialog->hid;
-		}
-		if(const auto * message = dynamic_cast<SystemMessage *>(&pack))
-		{
-			++systemMessages;
-			systemMessageTexts.push_back(message->text.toString(LIBRARY->generaltexth.get()));
-		}
-		if(const auto * window = dynamic_cast<InfoWindow *>(&pack))
-			infoWindows.push_back({window->player, window->type, window->text.toString(LIBRARY->generaltexth.get())});
-		if(dynamic_cast<RebalanceStacks *>(&pack))
-			++rebalancePacks;
-		if(dynamic_cast<SetStackType *>(&pack))
-			++stackTypePacks;
-		if(dynamic_cast<SetResources *>(&pack))
-			++resourcePacks;
-		state->apply(pack);
-	}
-
-	void sendPack(CPackForClient & pack, GameConnectionID) override
-	{
-		if(const auto * applied = dynamic_cast<const PackageApplied *>(&pack))
-			responses.push_back(*applied);
-		if(const auto * message = dynamic_cast<const SystemMessage *>(&pack))
-			targetedSystemMessageTexts.push_back(message->text.toString(LIBRARY->generaltexth.get()));
-	}
-
-	std::vector<PackageApplied> responses;
-	std::vector<PlayerEndsGame> playerEndsGamePacks;
-	std::vector<PlayerEndsTurn> playerEndsTurnPacks;
-	std::vector<std::string> systemMessageTexts;
-	std::vector<std::string> targetedSystemMessageTexts;
-	std::vector<RecordedInfoWindow> infoWindows;
-	QueryID blockingDialogQuery = QueryID::NONE;
-	QueryID garrisonDialogQuery = QueryID::NONE;
-	ObjectInstanceID garrisonObject = ObjectInstanceID::NONE;
-	ObjectInstanceID garrisonHero = ObjectInstanceID::NONE;
-	int systemMessages = 0;
-	int rebalancePacks = 0;
-	int stackTypePacks = 0;
-	int resourcePacks = 0;
-	int garrisonDialogs = 0;
-
-	bool hasLeadershipLimitMessage() const
-	{
-		const auto isLeadershipLimitMessage = [](const std::string & text)
-		{
-			return text.find("Leadership limit exceeded") != std::string::npos;
-		};
-		return std::any_of(systemMessageTexts.begin(), systemMessageTexts.end(), isLeadershipLimitMessage)
-			|| std::any_of(targetedSystemMessageTexts.begin(), targetedSystemMessageTexts.end(), isLeadershipLimitMessage);
-	}
-
-private:
-	EServerState serverState = EServerState::GAMEPLAY;
-	std::shared_ptr<CGameState> state;
-};
-
-class NewHorizonsLeadershipAdmissionTest : public TinyMapGameTest
-{
-protected:
-    void SetUp() override
-    {
-        TinyMapGameTest::SetUp();
-        if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
-            GTEST_SKIP() << "Requires the New Horizons module";
-    }
-
-    void mapLoaded(CMap * loaded) override
-    {
-        TinyMapGameTest::mapLoaded(loaded);
-        // Preserve the authored follower counts in these admission regressions.
-        loaded->overrideGameSetting(EGameSettings::CREATURES_NEUTRAL_ARMY_SIZE_PERCENT, JsonNode(100));
-        loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
-            JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
-        auto capabilities = historicalCapabilityRulesV4(); // Retired hard-cap admission regressions.
-        // The reported runtime snapshot assigned Halflings a 60-Leadership
-        // requirement; keep that observed value local to this regression.
-        capabilities["leadership"]["creatureRequirements"]["core:halfling"] = JsonNode(60);
-        loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, capabilities);
-    }
-
-    static HeroTypeID heroType(const char * id)
-    {
-        return HeroTypeID(HeroTypeID::decode(id));
-    }
-
-    static FactionID faction(const char * id)
-    {
-        return FactionID(FactionID::decode(id));
-    }
-
-    bool startRecruitmentAdmissionMap()
-    {
-        const PlayerColor player(0);
-        const CreatureID pikeman(CreatureID::decode("core:pikeman"));
-        TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
-        builder.size(36, false).playerActive(player)
-            .town({12, 12, 0}, faction("core:castle"), player)
-            .hero({5, 5, 0}, heroType("core:christian"), player);
-        startWithMap(std::move(builder));
-
-        recruitmentTown = findFirst<CGTownInstance>();
-        recruitmentHero = findHeroByOwner(player);
-        if(!recruitmentTown || !recruitmentHero)
-            return false;
-
-        recruitmentHero->clearSlots();
-        recruitmentTown->addBuilding(BuildingID::getDwellingFromLevel(0, 0));
-        recruitmentTown->creatures = {{10, {pikeman}}};
-        recruitmentTown->setVisitingHero(recruitmentHero);
-        gameState()->getPlayerState(player)->resources[EGameResID::GOLD] = 100000;
-        gameState()->actingPlayers.insert(player);
-        return true;
-    }
-
-    CGTownInstance * recruitmentTown = nullptr;
-    CGHeroInstance * recruitmentHero = nullptr;
-};
-
-class NewHorizonsCampaignUpgradeLeadershipTest : public NewHorizonsLeadershipAdmissionTest,
-	public ::testing::WithParamInterface<int> {};
-
-TEST_P(NewHorizonsCampaignUpgradeLeadershipTest, SpecialUpgradeChecksTargetCapacityBeforeSpending)
+TEST_P(NewHorizonsCampaignUpgradeLeadershipTest, SpecialUpgradeAllowsOversizedStacksAndChargesTheFullPrice)
 {
 	const bool dracon = GetParam() == 0;
 	const PlayerColor player(0);
@@ -251,19 +50,20 @@ TEST_P(NewHorizonsCampaignUpgradeLeadershipTest, SpecialUpgradeChecksTargetCapac
 	const CreatureID source(CreatureID::decode(dracon ? "core:mage" : "core:woodElf"));
 	const CreatureID target(CreatureID::decode(dracon ? "core:enchanter" : "core:sharpshooter"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
-	builder.size(36).playerActive(player).hero({5, 5, 0}, identity, player).heroExperience(0);
+	builder.size(36).playerActive(player).hero({5, 5, 0}, identity, player).heroExperience(0)
+		.playerActive(PlayerColor(1)).town({25, 25, 0}, faction("core:castle"), PlayerColor(1));
 	startWithMap(std::move(builder));
 	auto * hero = gameState()->getMap().getHero(identity);
 	ASSERT_NE(hero, nullptr);
-	const auto targetCapacity = hero->getLeadershipSlotCapacity(target);
-	const auto sourceCapacity = hero->getLeadershipSlotCapacity(source);
+	const auto targetCapacity = coordination(*hero, target);
+	const auto sourceCapacity = coordination(*hero, source);
 	ASSERT_TRUE(targetCapacity);
 	ASSERT_TRUE(sourceCapacity);
-	ASSERT_GT(targetCapacity->maximum, 0);
-	ASSERT_LE(targetCapacity->maximum + 1, sourceCapacity->maximum);
+	ASSERT_GT(targetCapacity->capacity, 0);
+	ASSERT_LE(targetCapacity->capacity + 1, sourceCapacity->capacity);
 	EXPECT_EQ(targetCapacity->requirement, dracon ? 380 : 170);
 	hero->clearSlots();
-	ASSERT_TRUE(hero->setCreature(SlotID(0), source, targetCapacity->maximum + 1));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), source, targetCapacity->capacity + 1));
 	UpgradeInfo upgrade(source);
 	gameState()->fillUpgradeInfo(hero, SlotID(0), upgrade);
 	ASSERT_TRUE(vstd::contains(upgrade.getAvailableUpgrades(), target));
@@ -281,17 +81,20 @@ TEST_P(NewHorizonsCampaignUpgradeLeadershipTest, SpecialUpgradeChecksTargetCapac
 	excessive.requestID = 740;
 	handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, excessive);
 	ASSERT_EQ(server.responses.size(), 1u);
-	EXPECT_FALSE(server.responses.back().result);
-	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), source);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), targetCapacity->maximum + 1);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), target);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), targetCapacity->capacity + 1);
 	EXPECT_EQ(hero->stacksCount(), 1);
-	EXPECT_EQ(playerState->resources, resourcesBefore);
+	EXPECT_EQ(playerState->resources, resourcesBefore - perCreatureCost * (targetCapacity->capacity + 1));
 	EXPECT_EQ(hero->getCapabilityRules(), capabilityBefore);
-	EXPECT_EQ(server.stackTypePacks, 0);
-	EXPECT_EQ(server.resourcePacks, 0);
-	EXPECT_TRUE(server.hasLeadershipLimitMessage());
+	EXPECT_EQ(server.stackTypePacks, 1);
+	EXPECT_EQ(server.resourcePacks, perCreatureCost.empty() ? 0 : 1);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+	expectOversizedEfficiency(*hero, SlotID(0));
 
-	hero->setStackCount(SlotID(0), targetCapacity->maximum);
+	hero->clearSlots();
+	ASSERT_TRUE(hero->setCreature(SlotID(0), source, targetCapacity->capacity));
+	const auto resourcesBeforeSecond = playerState->resources;
 	UpgradeCreature exact(SlotID(0), hero->id, target);
 	exact.player = player;
 	exact.requestID = 741;
@@ -299,36 +102,16 @@ TEST_P(NewHorizonsCampaignUpgradeLeadershipTest, SpecialUpgradeChecksTargetCapac
 	ASSERT_EQ(server.responses.size(), 2u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), target);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), targetCapacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), targetCapacity->capacity);
 	EXPECT_EQ(hero->stacksCount(), 1);
-	EXPECT_EQ(playerState->resources, resourcesBefore - perCreatureCost * targetCapacity->maximum);
+	EXPECT_EQ(playerState->resources, resourcesBeforeSecond - perCreatureCost * targetCapacity->capacity);
 	EXPECT_EQ(hero->getCapabilityRules(), capabilityBefore);
-	EXPECT_EQ(server.stackTypePacks, 1);
-	EXPECT_EQ(server.resourcePacks, perCreatureCost.empty() ? 0 : 1);
+	EXPECT_EQ(server.stackTypePacks, 2);
+	EXPECT_EQ(server.resourcePacks, perCreatureCost.empty() ? 0 : 2);
 }
 
 INSTANTIATE_TEST_SUITE_P(DraconAndGelu, NewHorizonsCampaignUpgradeLeadershipTest, ::testing::Values(0, 1));
 
-class LegacyLeadershipAdmissionTest : public NewHorizonsLeadershipAdmissionTest
-{
-protected:
-	void mapLoaded(CMap * loaded) override
-	{
-		NewHorizonsLeadershipAdmissionTest::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES, JsonNode());
-	}
-};
-
-class NewHorizonsLeadershipSaveTransferTest : public NewHorizonsLeadershipAdmissionTest
-{
-protected:
-	void SetUp() override
-	{
-		TinyMapGameTest::SetUp();
-		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
-	}
-};
-}
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, StrongholdBlacksmithUsesSavedOffersAndBallistaYardRefreshesSiege)
 {
@@ -402,7 +185,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, StrongholdBlacksmithUsesSavedOffersAn
 	EXPECT_EQ(hero->getSiegeCapabilities()->siegeRating, siegeBeforeVisit + 20);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLeavesFullArmyRemainder)
+TEST_F(NewHorizonsLeadershipAdmissionTest, FullArmyJoinKeepsUnmatchedTypesAndAllowsOversizedDuplicateMerges)
 {
     const CreatureID pikeman(CreatureID::decode("core:pikeman"));
     const CreatureID archer(CreatureID::decode("core:archer"));
@@ -424,7 +207,8 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLe
         .heroGarrison({
             {pikeman, 1}, {swordsman, 1}, {griffin, 1}, {monk, 1},
             {cavalier, 1}, {angel, 1}, {centaur, 1}
-        });
+        }).playerActive(PlayerColor(1))
+        .town({35, 35, 0}, faction("core:castle"), PlayerColor(1));
     startWithMap(std::move(builder));
 
     auto * hero = findHeroByOwner(PlayerColor(0));
@@ -432,30 +216,40 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, JoiningArmyClampsDuplicateStacksAndLe
     ASSERT_NE(hero, nullptr);
     ASSERT_NE(source, nullptr);
 
-    const auto pikemanCapacity = hero->getLeadershipSlotCapacity(pikeman);
+    const auto pikemanCapacity = coordination(*hero, pikeman);
     ASSERT_TRUE(pikemanCapacity);
-    ASSERT_EQ(pikemanCapacity->maximum, 17);
-    hero->setStackCount(SlotID(0), pikemanCapacity->maximum - 1);
+    ASSERT_GT(pikemanCapacity->capacity, 1);
+    hero->setStackCount(SlotID(0), pikemanCapacity->capacity - 1);
     ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
     ASSERT_EQ(source->stacksCount(), 3);
 
-    GameHandlerTestServer server(gameState(), PlayerColor(0));
+    LeadershipRecordingServer server(gameState());
     CGameHandler gameHandler(server, gameState());
-
-    // A full-count transfer would exceed the existing stack's Leadership
-    // limit.  The authoritative join path must take only the one legal unit,
-    // carry that clamp across the duplicate second pikeman stack, and leave
-    // the unmatched archer for the garrison fallback.
+    gameState()->actingPlayers.insert(PlayerColor(0));
+    // Seven occupied slots cannot accept an unmatched eighth creature type.
+    // The dialog remains real; Leadership cannot prohibit matching merges.
     gameHandler.tryJoiningArmy(source, hero, false, true);
-
-    EXPECT_EQ(hero->getStackCount(SlotID(0)), pikemanCapacity->maximum);
-    EXPECT_EQ(source->getStackCount(SlotID(0)), 2);
-    EXPECT_EQ(source->getStackCount(SlotID(1)), 4);
+    EXPECT_EQ(hero->getStackCount(SlotID(0)), pikemanCapacity->capacity - 1);
+    EXPECT_EQ(source->stacksCount(), 3);
+    ASSERT_EQ(server.garrisonDialogs, 1);
+    for(int slot = 0; slot < 2; ++slot)
+    {
+        ArrangeStacks merge(2, SlotID(slot), SlotID(0), source->id, hero->id, 0);
+        merge.player = PlayerColor(0);
+        merge.requestID = 400 + slot;
+        gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, merge);
+        ASSERT_EQ(server.responses.size(), static_cast<size_t>(slot + 1));
+        ASSERT_TRUE(server.responses.back().result);
+    }
+    EXPECT_EQ(hero->getStackCount(SlotID(0)), pikemanCapacity->capacity + 6);
+    EXPECT_EQ(source->stacksCount(), 1);
+    EXPECT_EQ(source->getCreature(SlotID(2))->getId(), archer);
     EXPECT_EQ(source->getStackCount(SlotID(2)), 2);
     EXPECT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
+    expectOversizedEfficiency(*hero, SlotID(0));
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, FreeTierOneDwellingKeepsUnitsAboveRemainingCapacity)
+TEST_F(NewHorizonsLeadershipAdmissionTest, FreeTierOneDwellingCollectsAllCreaturesAboveCoordinationThreshold)
 {
     TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
     builder.size(36, false).playerActive(PlayerColor(0))
@@ -474,29 +268,31 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, FreeTierOneDwellingKeepsUnitsAboveRem
 
     const CreatureID creature = dwelling->creatures.front().second.front();
     ASSERT_EQ(creature.toCreature()->getLevel(), 1);
-    const auto capacity = hero->getLeadershipSlotCapacity(creature);
+    const auto capacity = coordination(*hero, creature);
     ASSERT_TRUE(capacity);
 
     hero->clearSlots();
-    ASSERT_TRUE(hero->setCreature(SlotID(0), creature, capacity->maximum - 1));
+    ASSERT_TRUE(hero->setCreature(SlotID(0), creature, capacity->capacity - 1));
     dwelling->creatures.front().first = 3;
 
     GameHandlerTestServer server(gameState(), PlayerColor(0));
     CGameHandler gameHandler(server, gameState());
     static_cast<const IObjectInterface *>(dwelling)->blockingDialogAnswered(gameHandler, hero, 1);
 
-    EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-    EXPECT_EQ(dwelling->creatures.front().first, 2u);
+    EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 2);
+    EXPECT_EQ(dwelling->creatures.front().first, 0u);
+    expectOversizedEfficiency(*hero, SlotID(0));
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersKeepLeadershipRemainderInGarrison)
+TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedFollowersJoinAnOversizedStackAndRemoveTheObject)
 {
 	const CreatureID halfling(CreatureID::decode("core:halfling"));
 	const PlayerColor player(0);
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(player)
 		.hero({5, 5, 0}, heroType("core:christian"), player)
-		.monster({12, 12, 0}, halfling, 2, static_cast<int8_t>(CGCreature::Character::COMPLIANT));
+		.monster({12, 12, 0}, halfling, 2, static_cast<int8_t>(CGCreature::Character::COMPLIANT))
+		.playerActive(PlayerColor(1)).town({25, 25, 0}, faction("core:castle"), PlayerColor(1));
 	startWithMap(std::move(builder));
 
 	auto * hero = findHeroByOwner(player);
@@ -504,61 +300,38 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersKeepLeaders
 	ASSERT_NE(hero, nullptr);
 	ASSERT_NE(wanderingFollowers, nullptr);
 	const ObjectInstanceID wanderingFollowersId = wanderingFollowers->id;
-	const auto capacity = hero->getLeadershipSlotCapacity(halfling);
+	const auto capacity = coordination(*hero, halfling);
 	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 0);
+	ASSERT_GT(capacity->capacity, 0);
 	hero->clearSlots();
-	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->capacity));
 	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
 
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameState()->actingPlayers.insert(player);
-
-	// Follow the actual visit/query path. Resolving the Followers offer calls
-	// CGCreature::blockingDialogAnswered and then the authoritative join handler.
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
 	gameHandler.objectVisited(wanderingFollowers, hero);
 	ASSERT_NE(server.blockingDialogQuery, QueryID::NONE);
 	ASSERT_TRUE(gameHandler.queryReply(server.blockingDialogQuery, 1, player));
-
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)) + wanderingFollowers->getStackCount(SlotID(0)), capacity->maximum + 2);
-	EXPECT_EQ(server.garrisonDialogs, 1);
-	EXPECT_EQ(server.garrisonObject, wanderingFollowers->id);
-	EXPECT_EQ(server.garrisonHero, hero->id);
-	EXPECT_TRUE(server.garrisonDialogQuery != QueryID::NONE);
-	EXPECT_FALSE(server.hasLeadershipLimitMessage());
-
-	// The garrison exchange can preserve the excess as a second legal stack
-	// instead of attempting to merge it beyond the full first stack's limit.
-	ArrangeStacks retainRemainder(1, SlotID(1), SlotID(0), hero->id, wanderingFollowers->id, 0);
-	retainRemainder.player = player;
-	retainRemainder.requestID = 71;
-	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, retainRemainder);
-	ASSERT_FALSE(server.responses.empty());
-	ASSERT_EQ(server.responses.back().requestID, retainRemainder.requestID);
-	ASSERT_TRUE(server.responses.back().result);
-
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
-	EXPECT_TRUE(wanderingFollowers->slotEmpty(SlotID(0)));
-	EXPECT_EQ(hero->getStackCount(SlotID(0)) + hero->getStackCount(SlotID(1)), capacity->maximum + 2);
-	EXPECT_FALSE(server.hasLeadershipLimitMessage());
-
-	EXPECT_TRUE(gameHandler.queryReply(server.garrisonDialogQuery, 0, player));
-	EXPECT_EQ(hero->getStackCount(SlotID(0)) + hero->getStackCount(SlotID(1)), capacity->maximum + 2);
 	EXPECT_EQ(gameState()->getObjInstance(wanderingFollowersId), nullptr);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 2);
+	expectOversizedEfficiency(*hero, SlotID(0));
+	EXPECT_EQ(server.garrisonDialogs, 0);
+	EXPECT_EQ(gameHandler.queries->topQuery(player), nullptr);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersUseOneFreeLeadershipSlotAndKeepRemainder)
+TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedFollowersUseAnEmptySlotWithoutAResidualGarrison)
 {
 	const CreatureID halfling(CreatureID::decode("core:halfling"));
 	const PlayerColor player(0);
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(player)
 		.hero({5, 5, 0}, heroType("core:christian"), player)
-		.monster({12, 12, 0}, halfling, 2, static_cast<int8_t>(CGCreature::Character::COMPLIANT));
+		.monster({12, 12, 0}, halfling, 2, static_cast<int8_t>(CGCreature::Character::COMPLIANT))
+		.playerActive(PlayerColor(1)).town({25, 25, 0}, faction("core:castle"), PlayerColor(1));
 	startWithMap(std::move(builder));
 
 	auto * hero = findHeroByOwner(player);
@@ -566,33 +339,32 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersUseOneFreeL
 	ASSERT_NE(hero, nullptr);
 	ASSERT_NE(wanderingFollowers, nullptr);
 	const ObjectInstanceID wanderingFollowersId = wanderingFollowers->id;
-	const auto capacity = hero->getLeadershipSlotCapacity(halfling);
+	const auto capacity = coordination(*hero, halfling);
 	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 1);
+	ASSERT_GT(capacity->capacity, 1);
 	hero->clearSlots();
-	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->maximum - 1));
+	ASSERT_EQ(hero->stacksCount(), 0);
 	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
-	const TQuantity initialArmyCount = capacity->maximum + 1;
 
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameState()->actingPlayers.insert(player);
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
 	gameHandler.objectVisited(wanderingFollowers, hero);
 	ASSERT_NE(server.blockingDialogQuery, QueryID::NONE);
 	ASSERT_TRUE(gameHandler.queryReply(server.blockingDialogQuery, 1, player));
-
-	ASSERT_EQ(gameState()->getObjInstance(wanderingFollowersId), wanderingFollowers);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 1);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)) + wanderingFollowers->getStackCount(SlotID(0)), initialArmyCount);
-	EXPECT_EQ(server.garrisonDialogs, 1);
-	EXPECT_EQ(server.garrisonObject, wanderingFollowersId);
-	EXPECT_EQ(server.garrisonHero, hero->id);
-	EXPECT_TRUE(server.garrisonDialogQuery != QueryID::NONE);
+	EXPECT_EQ(gameState()->getObjInstance(wanderingFollowersId), nullptr);
+	EXPECT_EQ(hero->stacksCount(), 1);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), halfling);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 2);
+	EXPECT_DOUBLE_EQ(newHorizonsHeroes::leadershipStackReadout(hero, halfling, 2).efficiency, 1.0);
+	EXPECT_EQ(server.garrisonDialogs, 0);
+	EXPECT_EQ(gameHandler.queries->topQuery(player), nullptr);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
 	EXPECT_FALSE(server.hasLeadershipLimitMessage());
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersSingleRemainderCanSwapIntoEmptyHeroSlot)
+TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedFollowersCanBeSplitAfterImmediateJoinWithoutAStaleGarrison)
 {
 	const CreatureID halfling(CreatureID::decode("core:halfling"));
 	const PlayerColor player(0);
@@ -609,57 +381,42 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, AcceptedWanderingFollowersSingleRemai
 	auto * wanderingFollowers = findFirst<CGCreature>();
 	ASSERT_NE(hero, nullptr);
 	ASSERT_NE(wanderingFollowers, nullptr);
-	const auto capacity = hero->getLeadershipSlotCapacity(halfling);
+	const ObjectInstanceID wanderingFollowersId = wanderingFollowers->id;
+	const auto capacity = coordination(*hero, halfling);
 	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 1);
+	ASSERT_GT(capacity->capacity, 1);
 	hero->clearSlots();
-	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->maximum - 1));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), halfling, capacity->capacity));
 	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 2);
 
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameState()->actingPlayers.insert(player);
-	ASSERT_TRUE(vstd::contains(gameState()->actingPlayers, player));
+	const auto resourcesBefore = gameState()->getPlayerState(player)->resources;
 	gameHandler.objectVisited(wanderingFollowers, hero);
-	EXPECT_TRUE(vstd::contains(gameState()->actingPlayers, player)) << "object visit unexpectedly ended the player's active turn";
 	ASSERT_NE(server.blockingDialogQuery, QueryID::NONE);
 	ASSERT_TRUE(gameHandler.queryReply(server.blockingDialogQuery, 1, player));
-	EXPECT_TRUE(vstd::contains(gameState()->actingPlayers, player)) << "accepted offer unexpectedly ended the player's active turn";
+	EXPECT_EQ(gameState()->getObjInstance(wanderingFollowersId), nullptr);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 2);
+	expectOversizedEfficiency(*hero, SlotID(0));
+	EXPECT_EQ(server.garrisonDialogs, 0);
+	EXPECT_EQ(gameHandler.queries->topQuery(player), nullptr);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
+	EXPECT_FALSE(server.hasLeadershipLimitMessage());
+	ASSERT_TRUE(gameState()->actingPlayers.contains(player));
+	ArrangeStacks split(3, SlotID(0), SlotID(1), hero->id, hero->id, 2);
+	split.player = player;
+	split.requestID = 72;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, split);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
 	EXPECT_TRUE(server.playerEndsGamePacks.empty());
 	EXPECT_TRUE(server.playerEndsTurnPacks.empty());
-
-	ASSERT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	ASSERT_EQ(wanderingFollowers->getStackCount(SlotID(0)), 1);
-	auto topQuery = gameHandler.queries->topQuery(player);
-	ASSERT_NE(topQuery, nullptr);
-	ASSERT_EQ(topQuery->getType(), QueryType::GarrisonDialog);
-	ASSERT_EQ(server.garrisonObject, wanderingFollowers->id);
-	ASSERT_EQ(server.garrisonHero, hero->id);
-
-	const size_t systemMessageCountBeforeSwap = server.systemMessageTexts.size();
-	const size_t targetedMessageCountBeforeSwap = server.targetedSystemMessageTexts.size();
-	ArrangeStacks moveLastRemainder(1, SlotID(1), SlotID(0), hero->id, wanderingFollowers->id, 0);
-	moveLastRemainder.player = player;
-	moveLastRemainder.requestID = 72;
-	ASSERT_TRUE(vstd::contains(gameState()->actingPlayers, player));
-	ASSERT_FALSE(topQuery->blocksPack(&moveLastRemainder));
-	ASSERT_FALSE(gameHandler.isBlockedByQueries(&moveLastRemainder, player));
-	ASSERT_TRUE(gameHandler.isAllowedExchange(hero->id, wanderingFollowers->id));
-	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, moveLastRemainder);
-
-	ASSERT_EQ(server.responses.size(), 1u);
-	EXPECT_EQ(server.responses.back().requestID, moveLastRemainder.requestID);
-	const bool packageApplied = server.responses.back().result;
-	EXPECT_TRUE(packageApplied);
-	EXPECT_EQ(server.systemMessageTexts.size(), systemMessageCountBeforeSwap);
-	EXPECT_EQ(server.targetedSystemMessageTexts.size(), targetedMessageCountBeforeSwap);
-	EXPECT_FALSE(server.hasLeadershipLimitMessage());
-	EXPECT_EQ(hero->getStackCount(SlotID(0)) + hero->getStackCount(SlotID(1)), capacity->maximum + 1);
-	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
-	EXPECT_TRUE(wanderingFollowers->slotEmpty(SlotID(0)));
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershipAndLeavesTheRemainder)
+TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeCombinesAllAvailableCreaturesAboveCoordinationThreshold)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 
@@ -673,68 +430,42 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*hero, pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	hero->setStackCount(SlotID(0), static_cast<TQuantity>(capacity->capacity));
 	ASSERT_EQ(hero->getStackCount(SlotID(1)), 2);
-	ScopedGlobalLoggerLevel debugLogger(ELogLevel::DEBUG);
-	auto leadershipDiagnostics = std::make_shared<std::vector<std::string>>();
-	auto leadershipDiagnosticsMutex = std::make_shared<std::mutex>();
-	CLogger::getGlobalLogger()->addTarget(std::make_unique<LeadershipAdmissionDiagnosticLogTarget>(
-		leadershipDiagnostics, leadershipDiagnosticsMutex));
-
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameState()->actingPlayers.insert(PlayerColor(0));
 
-	// No room means no partial mutation and an ordinary combine is rejected.
+	// Passing the full-efficiency threshold is legal and consumes the source.
 	ArrangeStacks noFit(2, SlotID(1), SlotID(0), hero->id, hero->id, 0);
 	noFit.player = PlayerColor(0);
 	noFit.requestID = 41;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, noFit);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 2);
+	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(1)));
 	ASSERT_EQ(server.responses.size(), 1u);
-	EXPECT_FALSE(server.responses.back().result);
-	EXPECT_EQ(server.systemMessages, 1);
-	ASSERT_EQ(server.systemMessageTexts.size(), 1u);
-	const std::string expectedMessage = "Leadership limit exceeded: this hero can command at most "
-		+ std::to_string(capacity->maximum) + " creatures of this type ("
-		+ std::to_string(capacity->requirement) + " Leadership each; hero Leadership "
-		+ std::to_string(capacity->leadership) + ").";
-	EXPECT_NE(server.systemMessageTexts.back().find(expectedMessage), std::string::npos);
-	std::string rejectionDiagnostic;
-	{
-		std::lock_guard lock(*leadershipDiagnosticsMutex);
-		ASSERT_EQ(leadershipDiagnostics->size(), 1u);
-		rejectionDiagnostic = leadershipDiagnostics->front();
-	}
-	for(const auto & field : std::array<std::string, 6>{
-			 "operation=merge",
-			 "destinationObjectId=" + std::to_string(hero->id.getNum()),
-			 "destinationHeroId=" + std::to_string(hero->id.getNum()),
-			 "creatureId=" + std::to_string(pikeman.getNum()),
-			 "resultingCount=" + std::to_string(capacity->maximum + 1),
-			 "capacity=" + std::to_string(capacity->maximum)})
-	{
-		EXPECT_NE(rejectionDiagnostic.find(field), std::string::npos) << field;
-	}
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 0);
+	expectOversizedEfficiency(*hero, SlotID(0));
 
-	// One legal unit is transferred while the excess stays in its source stack.
-	hero->setStackCount(SlotID(0), capacity->maximum - 1);
+	// A second merge crosses the threshold without leaving an artificial remainder.
+	hero->setStackCount(SlotID(0), capacity->capacity - 1);
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, 2));
 	server.responses.clear();
 	server.systemMessages = 0;
 	ArrangeStacks partial(2, SlotID(1), SlotID(0), hero->id, hero->id, 0);
 	partial.player = PlayerColor(0);
 	partial.requestID = 42;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, partial);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 1);
+	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(1)));
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
 	ASSERT_TRUE(vstd::contains(gameState()->actingPlayers, PlayerColor(0)))
-		<< "the exact-fit request must follow an active partial merge in the same game";
+		<< "the next request must follow an active complete merge in the same game";
 	const auto * playerState = gameState()->getPlayerState(PlayerColor(0));
 	ASSERT_NE(playerState, nullptr);
 	EXPECT_EQ(playerState->status, EPlayerStatus::INGAME);
@@ -743,31 +474,31 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, OrdinaryMergeClampsToPerSlotLeadershi
 	ASSERT_EQ(gameHandler.queries->topQuery(PlayerColor(0)), nullptr);
 	EXPECT_TRUE(server.targetedSystemMessageTexts.empty());
 
-	// Exact fit consumes the complete source stack.
-	hero->setStackCount(SlotID(0), capacity->maximum - 2);
-	hero->setStackCount(SlotID(1), 2);
+	// A count exactly at the full-efficiency threshold also consumes the source.
+	hero->setStackCount(SlotID(0), capacity->capacity - 2);
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, 2));
 	server.responses.clear();
 	ArrangeStacks exactFit(2, SlotID(1), SlotID(0), hero->id, hero->id, 0);
 	exactFit.player = PlayerColor(0);
 	exactFit.requestID = 43;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, exactFit);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity);
 	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(1)));
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentUsesLaterMatchingSlotWhenFirstDuplicateIsFull)
+TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentUsesFirstMatchingStackBeyondCoordinationThreshold)
 {
 	ASSERT_TRUE(startRecruitmentAdmissionMap());
 	const PlayerColor player(0);
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	auto * hero = recruitmentHero;
 	auto * town = recruitmentTown;
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*hero, pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->capacity));
 	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, 2));
 	ASSERT_GT(town->getRecruitmentCost(pikeman)[EGameResID::GOLD], 0);
 	const auto stockBefore = town->creatures.front().first;
@@ -784,23 +515,24 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentUsesLaterMatchingSlotWhenF
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.responses.back().requestID, request.requestID);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(hero->getStackCount(SlotID(1)), 5);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 3);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
+	expectOversizedEfficiency(*hero, SlotID(0));
 	EXPECT_EQ(town->creatures.front().first, stockBefore - 3);
 	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore - unitCost * 3);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentFallsBackToEmptySlotWhenAllMatchingStacksAreFull)
+TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentMergesPastCoordinationThresholdBeforeUsingEmptySlot)
 {
 	ASSERT_TRUE(startRecruitmentAdmissionMap());
 	const PlayerColor player(0);
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	auto * hero = recruitmentHero;
 	auto * town = recruitmentTown;
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*hero, pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
-	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->capacity));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->capacity));
 	ASSERT_EQ(hero->stacksCount(), 2);
 	const auto stockBefore = town->creatures.front().first;
 	const auto unitCost = town->getRecruitmentCost(pikeman);
@@ -815,14 +547,15 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentFallsBackToEmptySlotWhenAl
 
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(hero->getStackCount(SlotID(1)), capacity->maximum);
-	EXPECT_EQ(hero->getStackCount(SlotID(2)), 2);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 2);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), capacity->capacity);
+	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(2)));
+	expectOversizedEfficiency(*hero, SlotID(0));
 	EXPECT_EQ(town->creatures.front().first, stockBefore - 2);
 	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore - unitCost * 2);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, NoRoomAndOversizedExactRecruitmentRejectAtomically)
+TEST_F(NewHorizonsLeadershipAdmissionTest, MatchingRecruitmentExceedsCoordinationButUnaffordableOrEmptyStockRejectsAtomically)
 {
 	ASSERT_TRUE(startRecruitmentAdmissionMap());
 	const PlayerColor player(0);
@@ -836,10 +569,10 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, NoRoomAndOversizedExactRecruitmentRej
 	};
 	auto * hero = recruitmentHero;
 	auto * town = recruitmentTown;
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*hero, pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum));
-	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->maximum));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->capacity));
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, capacity->capacity));
 	for(size_t index = 0; index < otherCreatures.size(); ++index)
 		ASSERT_TRUE(hero->setCreature(SlotID(index + 2), otherCreatures[index], 1));
 	ASSERT_EQ(hero->stacksCount(), GameConstants::ARMY_SIZE);
@@ -863,26 +596,39 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, NoRoomAndOversizedExactRecruitmentRej
 
 	submit(1, 503);
 	ASSERT_EQ(server.responses.size(), 1u);
-	EXPECT_FALSE(server.responses.back().result);
+	EXPECT_TRUE(server.responses.back().result);
 	for(size_t slot = 0; slot < fullArmy.size(); ++slot)
-		EXPECT_EQ(hero->getStackCount(SlotID(slot)), fullArmy[slot]);
-	EXPECT_EQ(town->creatures.front().first, stockBefore);
-	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
+		EXPECT_EQ(hero->getStackCount(SlotID(slot)), fullArmy[slot] + (slot == 0 ? 1 : 0));
+	EXPECT_EQ(town->creatures.front().first, stockBefore - 1);
+	const auto resourcesAfterPurchase = resourcesBefore - town->getRecruitmentCost(pikeman);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesAfterPurchase);
+	expectOversizedEfficiency(*hero, SlotID(0));
 
 	server.responses.clear();
-	hero->setStackCount(SlotID(0), capacity->maximum - 1);
+	hero->setStackCount(SlotID(0), capacity->capacity - 1);
 	const auto partiallyAvailableArmy = std::array<int32_t, GameConstants::ARMY_SIZE>{
 		hero->getStackCount(SlotID(0)), hero->getStackCount(SlotID(1)),
 		hero->getStackCount(SlotID(2)), hero->getStackCount(SlotID(3)),
 		hero->getStackCount(SlotID(4)), hero->getStackCount(SlotID(5)),
 		hero->getStackCount(SlotID(6))};
-	submit(2, 504); // exact request exceeds the one creature of remaining capacity
+	gameState()->getPlayerState(player)->resources[EGameResID::GOLD] = 0;
+	const auto resourcesBeforeRejection = gameState()->getPlayerState(player)->resources;
+	submit(2, 504); // available creatures, but insufficient Gold
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_FALSE(server.responses.back().result);
 	for(size_t slot = 0; slot < partiallyAvailableArmy.size(); ++slot)
 		EXPECT_EQ(hero->getStackCount(SlotID(slot)), partiallyAvailableArmy[slot]);
-	EXPECT_EQ(town->creatures.front().first, stockBefore);
-	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBefore);
+	EXPECT_EQ(town->creatures.front().first, stockBefore - 1);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBeforeRejection);
+	server.responses.clear();
+	town->creatures.front().first = 0;
+	submit(2, 505); // an empty dwelling cannot create creatures or spend resources
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	for(size_t slot = 0; slot < partiallyAvailableArmy.size(); ++slot)
+		EXPECT_EQ(hero->getStackCount(SlotID(slot)), partiallyAvailableArmy[slot]);
+	EXPECT_EQ(town->creatures.front().first, 0u);
+	EXPECT_EQ(gameState()->getPlayerState(player)->resources, resourcesBeforeRejection);
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, RecruitmentRejectsWhenNoMatchingOrEmptySlotExists)
@@ -1029,7 +775,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, ExactOneCreatureMergeIntoOccupiedGarr
 	EXPECT_EQ(server.rebalancePacks, 0);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragIntoEmptyHeroSlotFillsLeadershipCapacityAndLeavesRemainder)
+TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragIntoEmptyHeroSlotTransfersAllCreaturesAboveCoordinationThreshold)
 {
 	const CreatureID dendroidGuard(CreatureID::decode("core:dendroidGuard"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -1047,10 +793,10 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragIntoEmptyHeroSlotFillsL
 	hero->clearSlots();
 	ASSERT_TRUE(garrison->hasStackAtSlot(SlotID(0)));
 	ASSERT_FALSE(hero->hasStackAtSlot(SlotID(0)));
-	const auto capacity = hero->getLeadershipSlotCapacity(dendroidGuard);
+	const auto capacity = coordination(*hero, dendroidGuard);
 	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 0);
-	ASSERT_LT(capacity->maximum, garrison->getStackCount(SlotID(0)));
+	ASSERT_GT(capacity->capacity, 0);
+	ASSERT_LT(capacity->capacity, garrison->getStackCount(SlotID(0)));
 
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
@@ -1062,8 +808,9 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WholeStackDragIntoEmptyHeroSlotFillsL
 	drag.requestID = 49;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, drag);
 
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(garrison->getStackCount(SlotID(0)), 25 - capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 25);
+	EXPECT_FALSE(garrison->hasStackAtSlot(SlotID(0)));
+	expectOversizedEfficiency(*hero, SlotID(0));
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
@@ -1184,7 +931,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroStackDragToEmptyGarrisonTrans
 	EXPECT_EQ(server.rebalancePacks, 1);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroStackMoveToEmptyHeroSlotTransfersMaximumLegalAmountAndKeepsOne)
+TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroStackMoveToEmptyHeroSlotTransfersAllButOneRegardlessOfCoordination)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	const PlayerColor player(0);
@@ -1211,26 +958,26 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, LastHeroStackMoveToEmptyHeroSlotTrans
 	setHeroes.garrison = source->id;
 	gameState()->apply(setHeroes);
 
-	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*destination, pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 1);
-	// Leave more than one creature if the receiving hero's capacity, rather
-	// than the last-stack rule, is the limiting factor.
-	const TQuantity sourceCount = capacity->maximum + 5;
+	ASSERT_GT(capacity->capacity, 1);
+	// Leadership permits the entire transfer; only the last-creature rule limits it.
+	const TQuantity sourceCount = capacity->capacity + 5;
 	ASSERT_TRUE(source->setCreature(SlotID(0), pikeman, sourceCount));
 
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameState()->actingPlayers.insert(player);
 	// As in the exchange UI, send the clicked empty destination before the
-	// selected source. The server reserves one creature and applies Leadership.
+	// selected source. The server reserves exactly one creature.
 	ArrangeStacks drag(1, SlotID(0), SlotID(0), destination->id, source->id, 0);
 	drag.player = player;
 	drag.requestID = 53;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, drag);
 
-	EXPECT_EQ(destination->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(source->getStackCount(SlotID(0)), 5);
+	EXPECT_EQ(destination->getStackCount(SlotID(0)), sourceCount - 1);
+	EXPECT_EQ(source->getStackCount(SlotID(0)), 1);
+	expectOversizedEfficiency(*destination, SlotID(0));
 	EXPECT_EQ(destination->getStackCount(SlotID(0)) + source->getStackCount(SlotID(0)), sourceCount);
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
@@ -1304,19 +1051,22 @@ TEST_F(LegacyLeadershipAdmissionTest, OrdinaryMergeRemainsUncappedWithoutSavedLe
 	EXPECT_EQ(server.systemMessages, 0);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, NumericSplitRejectsNegativeDeltaAndOverCapacityButAcceptsNoOp)
+TEST_F(NewHorizonsLeadershipAdmissionTest, NumericSplitRejectsNegativeDeltaAndUnavailableUnitsButAllowsOversizedStacks)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0))
 		.hero({5, 5, 0}, heroType("core:christian"), PlayerColor(0))
-		.heroGarrison({{pikeman, 17}, {pikeman, 2}});
+		.heroGarrison({{pikeman, 17}, {pikeman, 2}})
+		.playerActive(PlayerColor(1)).town({25, 25, 0}, faction("core:castle"), PlayerColor(1));
 	startWithMap(std::move(builder));
 
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*hero, pikeman);
 	ASSERT_TRUE(capacity);
+	ASSERT_EQ(hero->getCapabilityRules()["rulesetVersion"].Integer(), 7);
+	hero->setStackCount(SlotID(0), static_cast<TQuantity>(capacity->capacity));
 
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
@@ -1324,11 +1074,11 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, NumericSplitRejectsNegativeDeltaAndOv
 
 	// An explicit numeric request that lowers the destination's current count
 	// is malformed/stale, not a reverse transfer.
-	ArrangeStacks negativeDelta(3, SlotID(1), SlotID(0), hero->id, hero->id, capacity->maximum - 1);
+	ArrangeStacks negativeDelta(3, SlotID(1), SlotID(0), hero->id, hero->id, capacity->capacity - 1);
 	negativeDelta.player = PlayerColor(0);
 	negativeDelta.requestID = 44;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, negativeDelta);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity);
 	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_FALSE(server.responses.back().result);
@@ -1337,32 +1087,58 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, NumericSplitRejectsNegativeDeltaAndOv
 	// A zero-delta request is a successful no-op and emits no state pack.
 	server.responses.clear();
 	server.systemMessages = 0;
-	ArrangeStacks zeroDelta(3, SlotID(1), SlotID(0), hero->id, hero->id, capacity->maximum);
+	ArrangeStacks zeroDelta(3, SlotID(1), SlotID(0), hero->id, hero->id, capacity->capacity);
 	zeroDelta.player = PlayerColor(0);
 	zeroDelta.requestID = 45;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, zeroDelta);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity);
 	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.rebalancePacks, 0);
 	EXPECT_EQ(server.systemMessages, 0);
 
-	// Numeric split requests remain exact: do not silently clamp a request of
-	// two units to the one unit that fits in the receiving stack.
-	hero->setStackCount(SlotID(0), capacity->maximum - 1);
+	// Numeric requests remain exact. An unavailable third creature is rejected
+	// without mutation; an available pair may exceed the coordination threshold.
+	hero->setStackCount(SlotID(0), capacity->capacity - 1);
 	server.responses.clear();
 	server.systemMessages = 0;
-	ArrangeStacks overCapacity(3, SlotID(1), SlotID(0), hero->id, hero->id, capacity->maximum + 1);
-	overCapacity.player = PlayerColor(0);
-	overCapacity.requestID = 46;
-	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, overCapacity);
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum - 1);
+	ArrangeStacks unavailable(3, SlotID(1), SlotID(0), hero->id, hero->id, capacity->capacity + 2);
+	unavailable.player = PlayerColor(0);
+	unavailable.requestID = 46;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, unavailable);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity - 1);
 	EXPECT_EQ(hero->getStackCount(SlotID(1)), 2);
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_FALSE(server.responses.back().result);
 	EXPECT_EQ(server.rebalancePacks, 0);
-	EXPECT_EQ(server.systemMessages, 1);
+	server.responses.clear();
+	server.systemMessages = 0;
+	ArrangeStacks overCapacity(3, SlotID(1), SlotID(0), hero->id, hero->id, capacity->capacity + 1);
+	overCapacity.player = PlayerColor(0);
+	overCapacity.requestID = 47;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, overCapacity);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 1);
+	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(1)));
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.rebalancePacks, 1);
+	EXPECT_EQ(server.systemMessages, 0);
+	// Leadership is not a count cap, but the engine's integer limit remains.
+	ASSERT_TRUE(gameState()->actingPlayers.contains(PlayerColor(0)));
+	hero->setStackCount(SlotID(0), std::numeric_limits<TQuantity>::max());
+	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, 1));
+	server.responses.clear();
+	ArrangeStacks overflow(2, SlotID(1), SlotID(0), hero->id, hero->id, 0);
+	overflow.player = PlayerColor(0);
+	overflow.requestID = 48;
+	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, overflow);
+	ASSERT_EQ(server.responses.size(), 1u);
+	EXPECT_FALSE(server.responses.back().result);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), std::numeric_limits<TQuantity>::max());
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+	EXPECT_EQ(server.rebalancePacks, 1);
+
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, StaleNumericSplitDoesNotMutateArmy)
@@ -1394,7 +1170,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, StaleNumericSplitDoesNotMutateArmy)
 	EXPECT_EQ(server.rebalancePacks, 0);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, CrossHeroMergeKeepsRequiredLastCreatureAndTransfersAvailableCapacity)
+TEST_F(NewHorizonsLeadershipAdmissionTest, CrossHeroMergeKeepsRequiredLastCreatureWithoutACoordinationCap)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	const PlayerColor player(0);
@@ -1414,10 +1190,10 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, CrossHeroMergeKeepsRequiredLastCreatu
 	auto * source = heroes[1];
 	destination->clearSlots();
 	source->clearSlots();
-	const auto capacity = destination->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*destination, pikeman);
 	ASSERT_TRUE(capacity);
-	ASSERT_GT(capacity->maximum, 1);
-	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, capacity->maximum - 1));
+	ASSERT_GT(capacity->capacity, 1);
+	ASSERT_TRUE(destination->setCreature(SlotID(0), pikeman, static_cast<TQuantity>(capacity->capacity + 5)));
 	ASSERT_TRUE(source->setCreature(SlotID(0), pikeman, 2));
 	SetHeroesInTown setHeroes;
 	setHeroes.tid = town->id;
@@ -1433,14 +1209,15 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, CrossHeroMergeKeepsRequiredLastCreatu
 	merge.requestID = 48;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, merge);
 
-	EXPECT_EQ(destination->getStackCount(SlotID(0)), capacity->maximum);
+	EXPECT_EQ(destination->getStackCount(SlotID(0)), capacity->capacity + 6);
+	expectOversizedEfficiency(*destination, SlotID(0));
 	EXPECT_EQ(source->getStackCount(SlotID(0)), 1);
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, BulkMergeTransfersOnlyAvailableLeadershipCapacity)
+TEST_F(NewHorizonsLeadershipAdmissionTest, BulkMergeCombinesAllMatchingStacksAboveCoordinationThreshold)
 {
 	const CreatureID pikeman(CreatureID::decode("core:pikeman"));
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -1450,10 +1227,10 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, BulkMergeTransfersOnlyAvailableLeader
 
 	auto * hero = findHeroByOwner(PlayerColor(0));
 	ASSERT_NE(hero, nullptr);
-	const auto capacity = hero->getLeadershipSlotCapacity(pikeman);
+	const auto capacity = coordination(*hero, pikeman);
 	ASSERT_TRUE(capacity);
 	hero->clearSlots();
-	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->maximum - 1));
+	ASSERT_TRUE(hero->setCreature(SlotID(0), pikeman, capacity->capacity - 1));
 	ASSERT_TRUE(hero->setCreature(SlotID(1), pikeman, 2));
 	ASSERT_TRUE(hero->setCreature(SlotID(2), pikeman, 3));
 
@@ -1465,15 +1242,16 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, BulkMergeTransfersOnlyAvailableLeader
 	merge.requestID = 49;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, merge);
 
-	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->maximum);
-	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
-	EXPECT_EQ(hero->getStackCount(SlotID(2)), 3);
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), capacity->capacity + 4);
+	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(1)));
+	EXPECT_FALSE(hero->hasStackAtSlot(SlotID(2)));
+	expectOversizedEfficiency(*hero, SlotID(0));
 	ASSERT_EQ(server.responses.size(), 1u);
 	EXPECT_TRUE(server.responses.back().result);
 	EXPECT_EQ(server.systemMessages, 0);
 }
 
-TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownStackAtomically)
+TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapAcceptsOversizedTownStacksAndPreservesAllCreatures)
 {
 	const CreatureID imp(CreatureID::decode("core:imp"));
 	const CreatureID gog(CreatureID::decode("core:gog"));
@@ -1494,8 +1272,8 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownSta
 	ASSERT_NE(hero, nullptr);
 
 	// This is the state that makes Nullkiller consider moving the visiting hero
-	// into the empty garrison.  Keep the town army above the hero's per-stack
-	// Leadership limit so the authoritative moveArmy preflight must reject it.
+	// into the empty garrison. Keep an oversized town stack to verify that
+	// army transfer preserves its complete count and the town/hero links.
 	ChangeObjPos moveHero;
 	moveHero.objid = hero->id;
 	moveHero.nPos = town->visitablePos();
@@ -1507,16 +1285,10 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownSta
 	setHeroes.garrison = ObjectInstanceID::NONE;
 	gameState()->apply(setHeroes);
 
-	const auto capacity = hero->getLeadershipSlotCapacity(gog);
+	const auto capacity = coordination(*hero, gog);
 	ASSERT_TRUE(capacity);
-	town->setStackCount(SlotID(1), capacity->maximum + 1);
-	const auto snapshotArmy = [](const CArmedInstance & army)
-	{
-		std::vector<std::tuple<int, int, TQuantity>> snapshot;
-		for(const auto & [slot, stack] : army.Slots())
-			snapshot.emplace_back(slot.getNum(), stack->getCreatureID().getNum(), stack->getCount());
-		return snapshot;
-	};
+	town->setStackCount(SlotID(1), capacity->capacity + 1);
+
 	const auto townArmyBefore = snapshotArmy(*town);
 	const auto heroArmyBefore = snapshotArmy(*hero);
 	LeadershipRecordingServer server(gameState());
@@ -1528,13 +1300,19 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, GarrisonSwapRejectsAnOversizedTownSta
 	request.requestID = 43;
 	gameHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, request);
 
-	EXPECT_EQ(snapshotArmy(*town), townArmyBefore);
-	EXPECT_EQ(snapshotArmy(*hero), heroArmyBefore);
-	EXPECT_EQ(town->getVisitingHero(), hero);
-	EXPECT_EQ(town->getGarrisonHero(), nullptr);
+	EXPECT_TRUE(snapshotArmy(*town).empty());
+	EXPECT_EQ(hero->stacksCount(), heroArmyBefore.size() + townArmyBefore.size());
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), std::get<2>(heroArmyBefore.front()));
+	EXPECT_EQ(hero->getCreature(SlotID(1))->getId(), imp);
+	EXPECT_EQ(hero->getStackCount(SlotID(1)), 1);
+	EXPECT_EQ(hero->getCreature(SlotID(2))->getId(), gog);
+	EXPECT_EQ(hero->getStackCount(SlotID(2)), capacity->capacity + 1);
+	expectOversizedEfficiency(*hero, SlotID(2));
+	EXPECT_EQ(town->getVisitingHero(), nullptr);
+	EXPECT_EQ(town->getGarrisonHero(), hero);
 	ASSERT_EQ(server.responses.size(), 1u);
-	EXPECT_FALSE(server.responses.back().result);
-	EXPECT_EQ(server.systemMessages, 1);
+	EXPECT_TRUE(server.responses.back().result);
+	EXPECT_EQ(server.systemMessages, 0);
 }
 
 TEST_F(NewHorizonsLeadershipAdmissionTest, WizardMageSurplusTransferThenGarrisonSwapUsesAuthoritativeRequests)
@@ -1569,17 +1347,17 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WizardMageSurplusTransferThenGarrison
 	setHeroes.garrison = ObjectInstanceID::NONE;
 	gameState()->apply(setHeroes);
 
-	const auto capacity = hero->getLeadershipSlotCapacity(mage);
+	const auto capacity = coordination(*hero, mage);
 	ASSERT_TRUE(capacity);
-	ASSERT_EQ(capacity->leadership, 650);
+	ASSERT_EQ(capacity->effectiveLeadership, 650);
 	ASSERT_EQ(capacity->requirement, 300);
-	ASSERT_EQ(capacity->maximum, 2);
+	ASSERT_EQ(capacity->capacity, 2);
 	LeadershipRecordingServer server(gameState());
 	CGameHandler gameHandler(server, gameState());
 	gameState()->actingPlayers.insert(player);
 
-	// The client preflight stops before requesting the oversized full merge.
-	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(town, hero));
+	// The client preflight accepts an oversized full merge without enforcing a count cap.
+	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(town, hero));
 	EXPECT_EQ(hero->getStackCount(SlotID(0)), 2);
 	EXPECT_EQ(town->getStackCount(SlotID(0)), 1);
 	EXPECT_EQ(hero->stacksCount(), 1);
@@ -1630,7 +1408,7 @@ TEST_F(NewHorizonsLeadershipAdmissionTest, WizardMageSurplusTransferThenGarrison
 	EXPECT_EQ(server.garrisonDialogs, 0); // The local UI did not invent a query.
 }
 
-TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarrisonSwapPreserveCapacityAndLinks)
+TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarrisonSwapPreserveEfficiencyRulesAndLinks)
 {
 	const CreatureID mage(CreatureID::decode("core:mage"));
 	const PlayerColor player(0);
@@ -1665,25 +1443,7 @@ TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarri
 	gameState()->actingPlayers.insert(player);
 	const JsonNode capturedCapabilities = hero->getCapabilityRules();
 
-	const auto expectCapacity = [&](const CGHeroInstance & currentHero)
-	{
-		EXPECT_EQ(currentHero.getHeroClassID(), HeroClassID(HeroClassID::decode("core:wizard")));
-		EXPECT_EQ(currentHero.level, 1);
-		const auto capacity = currentHero.getLeadershipSlotCapacity(mage);
-		ASSERT_TRUE(capacity);
-		EXPECT_EQ(capacity->leadership, 650);
-		EXPECT_EQ(capacity->requirement, 300);
-		EXPECT_EQ(capacity->maximum, 2);
-		EXPECT_EQ(currentHero.getCapabilityRules(), capturedCapabilities);
-	};
-	const auto snapshotArmy = [](const CArmedInstance & army)
-	{
-		std::vector<std::tuple<int, int, TQuantity>> snapshot;
-		for(const auto & [slot, stack] : army.Slots())
-			snapshot.emplace_back(slot.getNum(), stack->getCreatureID().getNum(), stack->getCount());
-		return snapshot;
-	};
-	ASSERT_NO_FATAL_FAILURE(expectCapacity(*hero));
+	ASSERT_NO_FATAL_FAILURE(expectWizardCoordination(*hero, mage, capturedCapabilities));
 	ASSERT_EQ(town->getVisitingHero(), hero);
 	ASSERT_EQ(hero->getVisitedTown(), town);
 	ASSERT_FALSE(hero->isGarrisoned());
@@ -1702,7 +1462,7 @@ TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarri
 	ASSERT_NE(restoredTown, nullptr);
 	ASSERT_NE(restoredHero, hero);
 	ASSERT_NE(restoredTown, town);
-	ASSERT_NO_FATAL_FAILURE(expectCapacity(*restoredHero));
+	ASSERT_NO_FATAL_FAILURE(expectWizardCoordination(*restoredHero, mage, capturedCapabilities));
 	ASSERT_EQ(snapshotArmy(*restoredHero), heroArmyBefore);
 	ASSERT_EQ(snapshotArmy(*restoredTown), townArmyBefore);
 	ASSERT_EQ(restoredTown->getVisitingHero(), restoredHero);
@@ -1710,11 +1470,11 @@ TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarri
 	ASSERT_EQ(restoredHero->getVisitedTown(), restoredTown);
 	ASSERT_FALSE(restoredHero->isGarrisoned());
 	ASSERT_TRUE(restored->actingPlayers.contains(player));
-	EXPECT_FALSE(newHorizonsHeroes::canMergeArmies(restoredTown, restoredHero));
+	EXPECT_TRUE(newHorizonsHeroes::canMergeArmies(restoredTown, restoredHero));
 
 	LeadershipRecordingServer restoredServer(restored);
 	CGameHandler restoredHandler(restoredServer, restored);
-	// Move one Mage to a separate slot; do not combine all three into capacity two.
+	// A separate-slot transfer remains legal even when a complete merge is also legal.
 	ArrangeStacks transfer(1, SlotID(1), SlotID(0), heroId, townId, 0);
 	transfer.player = player;
 	transfer.requestID = 91;
@@ -1760,7 +1520,7 @@ TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarri
 	ASSERT_NE(reloadedTown, nullptr);
 	ASSERT_NE(reloadedHero, restoredHero);
 	ASSERT_NE(reloadedTown, restoredTown);
-	ASSERT_NO_FATAL_FAILURE(expectCapacity(*reloadedHero));
+	ASSERT_NO_FATAL_FAILURE(expectWizardCoordination(*reloadedHero, mage, capturedCapabilities));
 	ASSERT_EQ(snapshotArmy(*reloadedHero), transferredArmy);
 	ASSERT_EQ(reloadedTown->stacksCount(), 0);
 	ASSERT_EQ(reloadedTown->getVisitingHero(), nullptr);
@@ -1773,18 +1533,21 @@ TEST_F(NewHorizonsLeadershipSaveTransferTest, RestoredWizardMageTransferAndGarri
 
 	LeadershipRecordingServer reloadedServer(reloaded);
 	CGameHandler reloadedHandler(reloadedServer, reloaded);
-	// A saturated combine must fail atomically even after the second restoration.
+	// Full combination remains legal after the second restoration and preserves all creatures.
 	ArrangeStacks noFit(2, SlotID(1), SlotID(0), heroId, heroId, 0);
 	noFit.player = player;
 	noFit.requestID = 93;
 	reloadedHandler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, noFit);
 	ASSERT_EQ(reloadedServer.responses.size(), 1u);
 	EXPECT_EQ(reloadedServer.responses.back().requestID, noFit.requestID);
-	EXPECT_FALSE(reloadedServer.responses.back().result);
-	EXPECT_EQ(snapshotArmy(*reloadedHero), transferredArmy);
+	EXPECT_TRUE(reloadedServer.responses.back().result);
+	EXPECT_EQ(reloadedHero->stacksCount(), 1);
+	EXPECT_EQ(reloadedHero->getCreature(SlotID(0))->getId(), mage);
+	EXPECT_EQ(reloadedHero->getStackCount(SlotID(0)), 3);
+	expectOversizedEfficiency(*reloadedHero, SlotID(0));
 	EXPECT_EQ(reloadedTown->stacksCount(), 0);
-	EXPECT_EQ(reloadedServer.rebalancePacks, 0);
-	EXPECT_TRUE(reloadedServer.hasLeadershipLimitMessage());
+	EXPECT_EQ(reloadedServer.rebalancePacks, 1);
+	EXPECT_FALSE(reloadedServer.hasLeadershipLimitMessage());
 	EXPECT_EQ(reloadedTown->getGarrisonHero(), reloadedHero);
 	EXPECT_EQ(reloadedHero->getVisitedTown(), reloadedTown);
 	EXPECT_TRUE(reloadedHero->isGarrisoned());

@@ -50,11 +50,11 @@ struct Selection
 };
 
 /// Same cached-score sentinel test; no new baseline or arithmetic grouping.
-float noCastBaseline(float cachedScore);
+DLL_LINKAGE float noCastBaseline(float cachedScore);
 /// Existing roster order, strict first maximum, then unchanged admission.
 /// Empty input returns nullopt without callbacks. Observer is call-local, not
 /// retained; only value copies cross its boundary. Null observer allocates/logs
 /// nothing and never requests clocks, callbacks, state, mechanics or native RNG.
-std::optional<Selection> choose(std::span<const PossibleSpellcast> candidates,
+DLL_LINKAGE std::optional<Selection> choose(std::span<const PossibleSpellcast> candidates,
 	float baseline, bool mandatoryOrder, Observer * observer = nullptr);
 }

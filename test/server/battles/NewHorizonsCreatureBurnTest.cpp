@@ -172,12 +172,10 @@ TEST_F(NewHorizonsCreatureBurnTest, WaitAndContinuationReasonsDoNotConsumeOrTick
 	EXPECT_TRUE(hasBurn(*victim)); victim->waiting = false;
 	EXPECT_EQ(burn::activationTick(*battle(), *victim, BattleUnitTurnReason::TURN_QUEUE).damage, 20);
 }
-TEST_F(NewHorizonsCreatureBurnTest, TimeStopSuspendsAndNewImmunityConsumesWithoutInjury)
+TEST_F(NewHorizonsCreatureBurnTest, NewImmunityConsumesPendingBurnWithoutInjury)
 {
 	setup(); add(pending());
-	add(Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_TRUE(burn::activationTick(*battle(), *victim, BattleUnitTurnReason::AUTOMATIC_ACTION).remove.empty());
-	victim->removeBonuses(Selector::type()(BonusType::TIME_STOP)); reduction(100, SpellSchool::FIRE);
+	reduction(100, SpellSchool::FIRE);
 	const auto before = victim->getAvailableHealth();
 	EXPECT_TRUE(battleCreatureBurn::onActivation(*gameHandler, *battle(), *victim, BattleUnitTurnReason::AUTOMATIC_ACTION));
 	EXPECT_EQ(victim->getAvailableHealth(), before); EXPECT_FALSE(hasBurn(*victim));
@@ -377,7 +375,7 @@ public:
 	}
 };
 }
-TEST_F(NewHorizonsCreatureBurnTest, CurrentContextTickKeepsReasonWaitStasisAndNoMarkerQueriesCanonical)
+TEST_F(NewHorizonsCreatureBurnTest, CurrentContextTickKeepsReasonWaitAndNoMarkerQueriesCanonical)
 {
 	setup(); const auto identities = burn::captureIdentityFacts(); BurnCurrentContextProbe context(*battle());
 	context.forbidFire = true;
@@ -411,10 +409,7 @@ TEST_F(NewHorizonsCreatureBurnTest, CurrentContextTickKeepsReasonWaitStasisAndNo
 		EXPECT_TRUE(burn::activationTickCaptured(*victim, reason, identities, context, context).remove.empty());
 	EXPECT_TRUE(context.calls.empty()); context.forbidFire = false;
 	EXPECT_EQ(burn::activationTickCaptured(*victim, BattleUnitTurnReason::MORALE, identities, context, context).damage, 20);
-	victim->waiting = false; context.calls.clear(); context.forbidFire = true;
-	add(Bonus(BonusDuration::ONE_BATTLE, BonusType::TIME_STOP, BonusSource::OTHER, 1, BonusSourceID()));
-	EXPECT_TRUE(burn::activationTickCaptured(*victim, BattleUnitTurnReason::MORALE, identities, context, context).remove.empty());
-	EXPECT_TRUE(context.calls.empty()); victim->removeBonuses(Selector::type()(BonusType::TIME_STOP));
+	victim->waiting = false;
 	EXPECT_EQ(victim->save(), before); EXPECT_TRUE(hasBurn(*victim));
 }
 TEST_F(NewHorizonsCreatureBurnTest, CurrentContextHeroCommandReevaluatesSecondWindAndHypnotizedController)

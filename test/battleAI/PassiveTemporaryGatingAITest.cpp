@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../PerkStateFixture.h"
 #include "../server/battles/BattleTestFixture.h"
 #include "../../AI/BattleAI/TemporaryGatingProjection.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
@@ -47,8 +48,8 @@ protected:
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating")),
 			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 		auto & perks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		perks.rules["demonicGatingPolicy"]["version"].Integer() = 2;
-		perks.selected.clear();
+		perkStateFixture::editRules(perks, [&](JsonNode & rules) { rules["demonicGatingPolicy"]["version"].Integer() = 2; });
+		perks.replaceSelected({});
 		attackerSideHero->setDemonicReserve({});
 		startBattle();
 		for(const auto & owned : battle()->stacks)
@@ -189,7 +190,7 @@ TEST_F(PassiveTemporaryGatingAITest, PassiveAdvancedPerksKeepSinglePlacementSear
 	{
 		SCOPED_TRACE(perk);
 		auto & selected = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
-		selected.selected.clear();
+		selected.replaceSelected({});
 		attackerSideHero->applyPerkSelection({"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate"});
 		attackerSideHero->applyPerkSelection({"new-horizons:demonicGating",
 			std::string("new-horizons:demonicGating.") + perk});
@@ -218,8 +219,8 @@ TEST_F(PassiveTemporaryGatingAITest, TemporaryPolicyDoesNotSearchMovementForARet
 	const auto rng = randomState();
 	auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
 	const JsonNode historical(JsonPath::builtin("test/newHorizonsHistoricalFactionPerks"));
-	state.rules["skills"]["new-horizons:demonicGating"] = historical["skills"]["new-horizons:demonicGating"];
-	state.selected.clear();
+	perkStateFixture::editRules(state, [&](JsonNode & rules) { rules["skills"]["new-horizons:demonicGating"] = historical["skills"]["new-horizons:demonicGating"]; });
+	state.replaceSelected({});
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:demonicGating")),
 		MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->applyPerkSelection({"new-horizons:demonicGating", "new-horizons:demonicGating.wideGate"});

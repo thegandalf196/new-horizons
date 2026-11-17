@@ -143,7 +143,6 @@ std::set<uint32_t> applyAutomaticAfflictions(HypotheticBattle & state,
 
 void heroSpellProjection::projectPurifySelection(PossibleSpellcast & ps, HypotheticBattle & state,
 	const CGHeroInstance * hero, BattleSide side, const float & baseline,
-	const HypotheticBattle::ProjectedCounterspellOutcome & counterspell, bool counterspellNegated,
 	const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
 	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t targetId)
 {
@@ -160,12 +159,9 @@ void heroSpellProjection::projectPurifySelection(PossibleSpellcast & ps, Hypothe
 		: std::set<uint32_t>{};
 	const bool selectionProjected = selected && (!selection.selectedUnits.empty() || !automatic.empty());
 
-	// Purify deliberately accepts the projected action before testing negation.
+	// Purify accepts the same projected action receipt as other spells.
 	if(!selectionProjected
-		|| !state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-			ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-			counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients)
-		|| counterspellNegated)
+		|| !state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId, *spellAllowance, sharedPurposeSpellRecipients) )
 		ps.value = std::numeric_limits<float>::lowest();
 	else
 		ps.value = baseline + ps.spellPurifyHeuristicValue;

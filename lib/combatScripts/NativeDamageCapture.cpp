@@ -205,6 +205,85 @@ void captureAdditionalFactors(const CBattleInfoCallback & battle, const DamageAt
 }
 }
 
+std::optional<PreparedUnit> prepareUnit(const battle::Unit & unit, bool shooting)
+{
+	PreparedUnit result;
+	auto & facts = result.unit;
+	presence(unit, facts);
+	// These families have pair-sensitive, source-identity or uncommon role
+	// semantics outside the initial flat projection. Keep the complete path.
+	for(const auto type : {BonusType::SIEGE_WEAPON, BonusType::HATE, BonusType::HATES_TRAIT,
+		BonusType::SLAYER, BonusType::REVENGE, BonusType::BONUS_DAMAGE_PERCENTAGE})
+		if(facts.has(type)) return {};
+	result.shooting = shooting;
+	for(const auto type : {BonusType::ALWAYS_MAXIMUM_DAMAGE, BonusType::ALWAYS_MINIMUM_DAMAGE,
+		BonusType::IN_FRENZY, BonusType::KING, BonusType::GENERAL_DAMAGE_PREMY,
+		BonusType::JOUSTING, BonusType::FORGETFULL, BonusType::LEVEL_SPELL_IMMUNITY,
+		BonusType::VULNERABLE_FROM_BACK, BonusType::DAMAGE_RECEIVED_CAP,
+		BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE})
+		value(unit, facts, type);
+	facts.minDamage = unit.getMinDamage(shooting);
+	facts.maxDamage = unit.getMaxDamage(shooting);
+	if(facts.minDamage > facts.maxDamage) return {};
+	facts.count = unit.getCount();
+	facts.attack = unit.getAttack(shooting);
+	facts.defense = unit.getDefense(shooting);
+	facts.firstHealth = unit.getFirstHPleft();
+	facts.maxHealth = unit.getMaxHealth();
+	facts.phantomIntegrity = static_cast<double>(unit.getPhantomIntegrity());
+	facts.shooter = unit.isShooter();
+	facts.creatureKey = creatureKey(unit);
+	result.physicalDefense = unit.valOfBonuses(BonusType::PHYSICAL_DEFENSE);
+	result.enemyDefenseReduction = rangedValue(unit, facts, BonusType::ENEMY_DEFENCE_REDUCTION, shooting);
+	result.enemyAttackReduction = rangedValue(unit, facts, BonusType::ENEMY_ATTACK_REDUCTION, shooting);
+	result.attackReduction = rangedValue(unit, facts, BonusType::GENERAL_ATTACK_REDUCTION, shooting);
+	if(facts.has(BonusType::PERCENTAGE_DAMAGE_BOOST))
+		result.damageBoost = unit.valOfBonuses(BonusType::PERCENTAGE_DAMAGE_BOOST,
+			shooting ? BonusCustomSubtype::damageTypeRanged : BonusCustomSubtype::damageTypeMelee);
+	if(facts.has(BonusType::GENERAL_DAMAGE_REDUCTION))
+	{
+		static const auto petrified = subtypeSourceQuery(BonusType::GENERAL_DAMAGE_REDUCTION,
+			BonusCustomSubtype::damageTypeAll, BonusSource::SPELL_EFFECT);
+		result.petrification = unit.valOfBonuses(petrified.first, petrified.second);
+	}
+	return result;
+}
+
+Facts capturePrepared(const CBattleInfoCallback & battle, const DamageAttackInfo & info,
+	const PreparedUnit & attacker, const PreparedUnit & defender)
+{
+	Facts facts;
+	facts.attacker = attacker.unit;
+	facts.defender = defender.unit;
+	facts.attacker.defense = info.physicalDamage
+		? attacker.unit.defense + attacker.physicalDefense : attacker.unit.defense;
+	facts.defender.defense = defender.unit.has(BonusType::IN_FRENZY) ? 0
+		: defender.unit.defense + (info.physicalDamage ? defender.physicalDefense : 0);
+	facts.defenderDefenseReduction = attacker.unit.value(BonusType::IN_FRENZY) != 0
+		? defender.enemyDefenseReduction : 0;
+	facts.attackerDefenseReduction = defender.unit.has(BonusType::IN_FRENZY)
+		? 0 : attacker.enemyDefenseReduction;
+	facts.defenderAttackReduction = defender.enemyAttackReduction;
+	facts.attackerAttackReduction = attacker.attackReduction;
+	facts.damageBoost = attacker.damageBoost;
+	facts.petrification = defender.petrification;
+	facts.physicalProtection = capturePhysicalProtection(info,
+		facts.defender.has(BonusType::GENERAL_DAMAGE_REDUCTION),
+		facts.defender.has(BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS));
+	if(info.shooting && !info.archeryAdjacentRangedTarget)
+		facts.distancePenalty = battle.battleHasDistancePenalty(info.attacker, info.attackerHex, info.defenderHex);
+	if(info.shooting && !info.archeryIgnoreObstaclePenalty && !info.archeryHighArc)
+		facts.wallPenalty = battle.battleHasWallPenalty(info.attacker, info.attackerHex, info.defenderHex);
+	if(facts.defender.value(BonusType::VULNERABLE_FROM_BACK) != 0)
+		facts.toReverse = battle.isToReverse(info.attacker, info.defender, info.attackerHex, info.defenderHex);
+	// Fresh capture only observes these conditional values when they can apply.
+	if(info.chargeDistance <= 0 || facts.defender.has(BonusType::CHARGE_IMMUNITY))
+		facts.attacker.values[static_cast<size_t>(BonusType::JOUSTING)] = 0;
+	if(!info.shooting)
+		facts.attacker.values[static_cast<size_t>(BonusType::FORGETFULL)] = 0;
+	return facts;
+}
+
 Facts capture(const CBattleInfoCallback & battle, const DamageAttackInfo & info)
 {
 	Facts facts;

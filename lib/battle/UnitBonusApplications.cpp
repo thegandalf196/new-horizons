@@ -17,7 +17,6 @@
 #include "StackEffectRecordRules.h"
 #include "StackEffectVectorRules.h"
 #include "StackEffectRefresh.h"
-#include "TimeStopState.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
 #include <algorithm>
@@ -110,12 +109,7 @@ void BattleInfo::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 
 	for(const Bonus & one : bonus)
 	{
-		if(stackEffectRecordRules::removalProtected(*sta, one))
-		{
-			logNetwork->warn("Ignoring effect removal from Time Stop unit %d", id);
-			continue;
-		}
-		if(stackEffectRecordRules::selectsCurrentFormMarker(*sta, one)
+			if(stackEffectRecordRules::selectsCurrentFormMarker(*sta, one)
 			&& !battle::endBattleFormAtNearestLegalPosition(*sta, getAccessibility(sta)))
 			continue; // Retain both marker and form until a legal round boundary.
 
@@ -141,18 +135,13 @@ bool applyUnitBonusRecord(CStack * sta, const Bonus & value, bool forceAdd)
 		if(previous)
 			sta->removeBonus(previous);
 		sta->addNewBonus(std::make_shared<Bonus>(value));
-		return true; // Lifecycle bookkeeping remains writable during Time Stop.
+		return true;
 	}
 	if(value.type == BonusType::CONFUSION_PENDING)
 		newHorizonsConfusionControl::validateMarker(value);
 	if(value.type == BonusType::PHYSICAL_AFFLICTION)
 		physicalAfflictions::markerMetadata(value);
 
-	if(stackEffectRecordRules::incomingProtected(*sta, value))
-	{
-		logNetwork->warn("Ignoring new effect on Time Stop unit %d", sta->unitId());
-		return false;
-	}
 	if(value.type == BonusType::CONFUSION_PENDING)
 	{
 		auto next = sta->confusionState;

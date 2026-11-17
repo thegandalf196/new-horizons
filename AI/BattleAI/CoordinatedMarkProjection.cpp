@@ -44,7 +44,7 @@ void publish(HypotheticBattle & branch, const newHorizonsOrdinaryStrike::EffectP
 		return;
 	auto target = branch.getForUpdate(plan.target);
 	target->removeUnitBonus(plan.remove);
-	if(target->alive() && !target->isGhost() && !target->isTimeStopped())
+	if(target->alive() && !target->isGhost())
 		target->addUnitBonus(plan.add);
 }
 void valueLanding(AttackPossibility & preview,
@@ -115,7 +115,7 @@ void completeReturn(AttackPossibility & preview)
 		return;
 	publish(*preview.effectPreview, preview.preparedReturnMark);
 	const auto * target = preview.effectPreview->battleGetUnitByID(preview.preparedReturnMark.target);
-	if(target && !preview.preparedReturnMark.add.empty() && target->alive() && !target->isGhost() && !target->isTimeStopped())
+	if(target && !preview.preparedReturnMark.add.empty() && target->alive() && !target->isGhost())
 		preview.completedReturnMarkTarget = target->unitId();
 }
 bool replayMovement(const AttackPossibility & captured, HypotheticBattle & destination, BattleHex origin)

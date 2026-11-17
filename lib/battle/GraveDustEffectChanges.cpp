@@ -47,7 +47,7 @@ class ApplicationState
 	}
 	void incoming(const Bonus & record, const EffectOperation operation)
 	{
-		if(!unit.alive() || unit.isGhost() || unit.isTimeStopped()) invalidChange();
+		if(!unit.alive() || unit.isGhost()) invalidChange();
 		if(record.spellCasterOwner != battle.getSidePlayer(BattleSide::ATTACKER)
 			&& record.spellCasterOwner != battle.getSidePlayer(BattleSide::DEFENDER)) invalidChange();
 		const auto sameType = [&record](const Bonus & candidate) { return candidate.type == record.type; };
@@ -72,7 +72,6 @@ public:
 	void apply(const std::vector<Bonus> & records, const EffectOperation operation)
 	{
 		if(!containsEffect(records)) return;
-		if(operation == EffectOperation::REMOVE && unit.isTimeStopped()) return; // Native protected no-op.
 		bool markerSeen = false;
 		bool reductionSeen = false;
 		for(const auto & record : records)

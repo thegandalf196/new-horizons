@@ -5,12 +5,14 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "HeroSpellExpectedValueProjection.h"
 #include "PossibleSpellcast.h"
 #include "BattleEvaluatorSpellProjection.h"
 #include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/bonuses/BonusList.h"
@@ -39,26 +41,29 @@ const float * expectedValueView(const PossibleSpellcast & ps)
 
 bool heroSpellProjection::acceptTerminalEffects(HypotheticBattle & state, BattleSide side,
 	const PossibleSpellcast & candidate, uint32_t & targetId,
-	const HypotheticBattle::ProjectedCounterspellOutcome & counterspell, bool negated,
-	const HypotheticBattle::ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & recipients)
+
+	const HypotheticBattle::ProjectedSpellAllowance & prepared, const std::vector<uint32_t> & recipients,
+	battleEvaluatorProjection::SpellProjection * completion)
 {
-	const auto current = state.prepareHeroSpellAllowance(side, candidate.spell->getId(),
-		candidate.metamagicFollowup, candidate.metamagicGrand);
+	const auto current = state.prepareHeroSpellAllowance(side, candidate.spell->getId());
 	if(!current || *current != prepared) return false;
 	const auto * hero = state.getSideHero(side);
-	if(!negated && arcaneInspiration::profile(hero).corePercent > 0)
+	if(arcaneInspiration::profile(hero).corePercent > 0
+		|| (hero && nativeRules::metamagicSkillRank(hero) > 0
+			&& nativeRules::metamagicRules(hero) && nativeRules::metamagicRules(hero)->policy()))
 	{
 		heroActionProjection::Admission admission;
 		admission.admitted = true; admission.spellAllowance = prepared;
-		admission.counterspell = counterspell; admission.counterspellNegated = negated;
 		const auto gift = candidate.spell->getJsonKey() == newHorizonsShadowGift::SPELL_ID;
 		const auto giftTarget = gift && candidate.dest.size() == 1 && candidate.dest.front().unitValue
 			? state.getForUpdate(candidate.dest.front().unitValue->unitId()) : nullptr;
 		const auto giftSelector = Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(candidate.spell->getId()))
 			.And(Selector::type()(BonusType::COMBAT_EVENT_TRIGGER));
 		const auto previousGift = giftTarget ? giftTarget->getBonuses(giftSelector) : TConstBonusListPtr{};
-		const bool accepted = battleEvaluatorProjection::projectSpell(state, state, hero, side, candidate,
-			admission, targetId, recipients).accepted;
+		auto projected = battleEvaluatorProjection::projectSpell(state, state, hero, side, candidate,
+			admission, targetId, recipients);
+		const bool accepted = projected.accepted;
+		if(completion) *completion = std::move(projected);
 		if(accepted && giftTarget)
 		{
 			const auto currentGift = giftTarget->getBonuses(giftSelector);
@@ -81,14 +86,11 @@ bool heroSpellProjection::acceptTerminalEffects(HypotheticBattle & state, Battle
 		}
 		return accepted;
 	}
-	return state.projectAcceptedHeroSpell(side, candidate.spell->getId(), targetId,
-		candidate.metamagicFollowup, candidate.metamagicGrand, counterspell.wardActive,
-		negated, prepared, recipients);
+	return state.projectAcceptedHeroSpell(side, candidate.spell->getId(), targetId, prepared, recipients);
 }
 
 bool heroSpellProjection::projectPrecomputedValue(PossibleSpellcast & ps, HypotheticBattle & state,
-	BattleSide side, const float & baseline, const HypotheticBattle::ProjectedCounterspellOutcome & counterspell,
-	bool counterspellNegated, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
+	BattleSide side, const float & baseline, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
 	const std::vector<uint32_t> & sharedPurposeSpellRecipients, uint32_t & targetId)
 {
 	const auto expected = expectedValueView(ps);
@@ -100,10 +102,7 @@ bool heroSpellProjection::projectPrecomputedValue(PossibleSpellcast & ps, Hypoth
 		return true;
 	}
 	targetId = ps.dest.front().unitValue->unitId();
-	if(counterspellNegated
-		|| !state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-			ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-			counterspellNegated, *spellAllowance, sharedPurposeSpellRecipients))
+	if(!state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId, *spellAllowance, sharedPurposeSpellRecipients))
 		ps.value = std::numeric_limits<float>::lowest();
 	else
 		ps.value = baseline + *expected;
@@ -111,33 +110,24 @@ bool heroSpellProjection::projectPrecomputedValue(PossibleSpellcast & ps, Hypoth
 }
 
 bool heroSpellProjection::projectNoEffectOrPrecomputedValue(PossibleSpellcast & ps, HypotheticBattle & state,
-	BattleSide side, const float & baseline, const HypotheticBattle::ProjectedCounterspellOutcome & counterspell,
-	bool counterspellNegated, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
+	BattleSide side, const float & baseline, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
 	const std::vector<uint32_t> & recipients, uint32_t & targetId)
 {
-	if(newHorizonsMagic::isCounterspell(ps.spell))
-	{
-		if(!state.projectAcceptedHeroSpell(side, ps.spell->getId(), targetId,
-			ps.metamagicFollowup, ps.metamagicGrand, counterspell.wardActive,
-			counterspellNegated, *spellAllowance, recipients) || counterspellNegated)
-			ps.value = std::numeric_limits<float>::lowest();
-		return true;
-	}
-	return projectPrecomputedValue(ps, state, side, baseline, counterspell, counterspellNegated,
+	return projectPrecomputedValue(ps, state, side, baseline,
 		spellAllowance, recipients, targetId);
 }
 
 bool heroSpellProjection::projectDeferredDamageValue(PossibleSpellcast & ps, HypotheticBattle & state,
-	BattleSide side, const float & baseline, const HypotheticBattle::ProjectedCounterspellOutcome & counterspell,
-	bool counterspellNegated, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
-	const std::vector<uint32_t> & recipients, uint32_t & targetId)
+	BattleSide side, const float & baseline, const std::optional<HypotheticBattle::ProjectedSpellAllowance> & spellAllowance,
+	const std::vector<uint32_t> & recipients, uint32_t & targetId,
+	battleEvaluatorProjection::SpellProjection * completion)
 {
 	if(ps.command != HeroCommand::NONE) return false;
 	const float * expected = ps.spellNaturePoisonValue > 0.0f ? &ps.spellNaturePoisonValue
 		: ps.spellSoulChainDelayedValue > 0.0f ? &ps.spellSoulChainDelayedValue : nullptr;
 	if(!expected) return false;
-	if(!acceptTerminalEffects(state, side, ps, targetId, counterspell, counterspellNegated,
-		*spellAllowance, recipients) || counterspellNegated)
+	if(!acceptTerminalEffects(state, side, ps, targetId,
+		*spellAllowance, recipients, completion))
 		ps.value = std::numeric_limits<float>::lowest();
 	else
 		ps.value = baseline + *expected;

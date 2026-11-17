@@ -899,11 +899,72 @@
 			}
 		},
 		"startingSkills": {
+			"oneOf": [
+				{
+					"properties": {
+						"startingPerksPolicyVersion": {
+							"enum": [
+								1,
+								2
+							]
+						},
+						"startingDevelopmentProfiles": {
+							"additionalProperties": {
+								"required": [
+									"startingPerks"
+								]
+							}
+						}
+					}
+				},
+				{
+					"required": [
+						"startingPerksPolicyVersion",
+						"startingDevelopmentProfiles"
+					],
+					"not": {
+						"required": [
+							"startingPerkProfiles"
+						]
+					},
+					"properties": {
+						"startingPerksPolicyVersion": {
+							"enum": [
+								3
+							]
+						},
+						"startingDevelopmentProfiles": {
+							"minProperties": 163,
+							"maxProperties": 163,
+							"additionalProperties": {
+								"not": {
+									"required": [
+										"startingPerks"
+									]
+								},
+								"properties": {
+									"skills": {
+										"items": {
+											"properties": {
+												"rank": {
+													"enum": [
+														1
+													]
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			],
 			"type": "object",
 			"additionalProperties": false,
 			"required": ["factionSkills", "legacyAliases", "magic", "might"],
 			"properties": {
-				"startingPerksPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Version 1 retains captured authored ranks. Version 2 requires all registered Core defaults to have two distinct Basic Skills and one active Basic perk per parent; runtime validates roster and faction membership."},
+				"startingPerksPolicyVersion": {"type": "integer", "enum": [1, 2, 3], "description": "Versions 1 and 2 retain historical authored perk defaults. Version 3 requires exactly two distinct Basic Skills and zero starting perks for every fresh hero; runtime validates roster and faction membership."},
 				"startingPerkProfiles": {
 					"description": "Authored initial perks for final normalized default hero Skills; runtime validates ownership, tier uniqueness and eligibility. Existing valid profile/prototype choices take precedence. This table never grants later level-up perks.",
 					"type": "object", "minProperties": 1,
@@ -961,7 +1022,7 @@
 		"startingDevelopmentProfile": {
 			"type": "object",
 			"additionalProperties": false,
-			"required": ["skills", "startingPerks"],
+			"required": ["skills"],
 			"properties": {
 				"skills": {
 					"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,

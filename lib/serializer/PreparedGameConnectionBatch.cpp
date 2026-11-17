@@ -7,6 +7,7 @@
  */
 #include "StdInc.h"
 #include "PreparedGameConnectionState.h"
+#include "GameConnectionProtocol.h"
 #include "../network/NetworkConnection.h"
 #include "../networkPacks/PacksForClientBattle.h"
 
@@ -78,6 +79,7 @@ void PreparedGameConnectionBatch::State::encode(const BattleUnitsChanged & packe
 		// applyPack gives every writer the SAME packet, then applies that final
 		// writer projection. Preserve this ordered mutation on our owned copy;
 		// the future world owner must consume packet(), not the caller's input.
+		gameConnectionProtocol::appendHeader(encoder.writer.bytes, encoder.staged->version);
 		const CPack * base = this->packet.get();
 		*encoder.staged & base;
 		frames.emplace_back(encoder.endpoint, std::move(encoder.writer.bytes));

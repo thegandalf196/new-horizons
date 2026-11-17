@@ -129,8 +129,18 @@ TConstBonusListPtr CBonusSystemNode::getUnstackedBonusesWithoutCaching(const CSe
 	return ret;
 }
 
+bool CBonusSystemNode::cachedMayHaveBonusType(BonusType type) const
+{
+	// Only the existing published value and atomic generation are read here;
+	// no graph aliases/callbacks escape and no global graph interval is needed.
+	std::shared_lock lock(sync, std::try_to_lock);
+	if(!lock.owns_lock()) return true; // Busy/publication-in-progress remains unknown.
+	return !cachedMechanicsReady || cachedLast != nodeChanged || cachedMechanics.mayHave(type);
+}
+
 void CBonusSystemNode::rebuildBonusCache() const
 {
+	const auto mechanics = battle::nativeMechanicsPresence(*this);
 	BonusList allBonuses;
 	cachedBonuses.clear();
 	cachedUnstackedBonuses.clear();
@@ -138,6 +148,8 @@ void CBonusSystemNode::rebuildBonusCache() const
 	limitBonuses(allBonuses, cachedUnstackedBonuses);
 	cachedUnstackedBonuses.getAllBonuses(cachedBonuses);
 	cachedBonuses.stackBonuses();
+	cachedMechanics = mechanics;
+	cachedMechanicsReady = true;
 	cachedLast = nodeChanged;
 }
 

@@ -285,7 +285,7 @@ protected:
 		ASSERT_EQ(attackerSideHero->getHeroType()->getJsonKey(), "core:solmyr");
 		ASSERT_NO_FATAL_FAILURE(expectCapturedPointBlankPolicy(corrected));
 		// The actual authored Solmyr profile has no saved Basic Archery selection.
-		ASSERT_TRUE(std::ranges::none_of(attackerSideHero->getPerkState().selected, [](const auto & selection)
+		ASSERT_TRUE(std::ranges::none_of(attackerSideHero->getPerkState().getSelected(), [](const auto & selection)
 		{
 			return selection.skillId == newHorizonsArchery::SKILL;
 		}));
@@ -372,7 +372,7 @@ TEST_F(NewHorizonsArcherySpecialtyTest, OrrinScalesOnlyCoreArcheryAndAcceptedSho
 	ASSERT_FALSE(ordinaryHero->getHeroType()->secondarySkillSpecialtyAlias
 		&& ordinaryHero->getHeroType()->secondarySkillSpecialtyAlias->skill == SecondarySkill(SecondarySkill::ARCHERY));
 	ASSERT_TRUE(newHorizonsArchery::hasTargetCaller(orrin));
-	const auto & startingSelections = orrin->getPerkState().selected;
+	const auto & startingSelections = orrin->getPerkState().getSelected();
 	ASSERT_EQ(std::count_if(startingSelections.begin(), startingSelections.end(), [](const auto & selection)
 	{
 		return selection.skillId == newHorizonsArchery::SKILL;

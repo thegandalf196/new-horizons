@@ -68,7 +68,7 @@ float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<Hypothet
 	// rebuilding a root here would also reprice the spell's own recipients.
 	for(const auto * unit : state->getUnitsIf([&](const battle::Unit * unit)
 	{
-		return unit->alive() && unit->unitId() != spentCasterId && !unit->isTimeStopped();
+		return unit->alive() && unit->unitId() != spentCasterId;
 	}))
 	{
 		// Reuse ordinary spell evaluation's physical-attack valuation, without

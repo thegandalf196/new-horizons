@@ -103,8 +103,6 @@ enum class EndpointRejection : uint8_t
 {
 	NONE,
 	INVALID_ENDPOINT,
-	SPELL_LOCKED,
-	TIME_STOPPED,
 	SNAPSHOT_UNAVAILABLE
 };
 
