@@ -72,7 +72,7 @@ class DLL_LINKAGE Recipe final
 	std::shared_ptr<const detail::TerrainWitnesses> terrainWitnesses;
 	ILimiter::EDecision decision = ILimiter::EDecision::DISCARD;
 	Change required = Change::None;
-	friend Recipe capture(const std::shared_ptr<const ownedBonusPayloads::Captured> &, size_t,
+	friend DLL_LINKAGE Recipe capture(const std::shared_ptr<const ownedBonusPayloads::Captured> &, size_t,
 		std::span<const Stage>, const BonusEvaluationContext &, bool);
 	friend Recipe detail::captureCertified(const std::shared_ptr<const ownedBonusPayloads::Captured> &, size_t,
 		std::span<const Stage>, const BonusEvaluationContext &, bool, const detail::TerrainCaptureCertificate *, const BonusList *, const Bonus *);
