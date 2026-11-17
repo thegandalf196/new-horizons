@@ -272,13 +272,42 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
     def test_metamagic_uses_actual_rank_without_retired_bonus_or_provider(self):
         skill = self.skills["metamagic"]
         self.assertNotIn("combatStatus", skill)
-        for rank, chance in zip(RANKS, (20, 30, 40)):
+        policy = self.perks["metamagicPolicy"]
+        self.assertEqual(policy["version"], 6)
+        for field in ("arcaneOverflowPercentByRank", "friendlyDamageReductionPercentByRank",
+                      "debuffRetryChancePercentByRank"):
+            self.assertEqual(policy[field], [0, 30, 45, 60])
+        # Removal remains an optional perk path, not the skill's core rank effect.
+        self.assertEqual(policy["removalChancePercent"], [0, 20, 30, 40])
+        for rank, chance in zip(RANKS, (30, 45, 60)):
             self.assertEqual(skill[rank]["effects"], {})
-            self.assertIn(f"{chance}% chance per temporary magical effect", skill[rank]["description"])
+            description = skill[rank]["description"]
+            self.assertIn(f"Arcane Overflow transfers {chance}% of primary single-target spell overkill", description)
+            self.assertIn(f"Own area, chain and global spells deal {100 - chance}% friendly damage", description)
+            self.assertIn(f"Resisted single-target debuffs have a {chance}% chance to retry once with normal resistance", description)
+            self.assertNotIn("chance per temporary magical effect", description)
             self.assertEqual(skill[rank]["description"], self.perks["skills"]
                              ["new-horizons:metamagic"]["ranks"][rank]["description"])
         providers = load("config/schemas/skill.json")["properties"]["combatStatus"]
         self.assertNotIn("metamagicUses", providers["properties"]["provider"]["enum"])
+
+    def test_consecrated_arms_uses_dedicated_prayer_policy_without_generic_bonus(self):
+        skill = self.skills["divineMandate"]
+        self.assertEqual(skill["name"], "Consecrated Arms")
+        self.assertEqual(self.perks["divineMandatePolicy"], {
+            "version": 3,
+            "potencyFaithBonusByRank": [0, 0, 50, 100],
+            "ferventInvocationAdditionalFaith": 100,
+        })
+        for rank, faith in zip(RANKS, (0, 50, 100)):
+            self.assertEqual(skill[rank]["effects"], {})
+            description = skill[rank]["description"]
+            self.assertIn("Each committed Order grants one uniformly random prayer", description)
+            self.assertIn(f"Prayer potency uses Spell Power + Knowledge + {faith} Faith", description)
+            self.assertIn("duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds", description)
+            canonical = self.perks["skills"]["new-horizons:divineMandate"]["ranks"][rank]
+            self.assertEqual(canonical["effect"]["status"], "active")
+            self.assertEqual(description, canonical["description"])
 
     def test_generated_runtime_definitions_contain_no_retired_metamagic_carrier(self):
         module = load("Mods/new-horizons/mod.json")
@@ -329,7 +358,7 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
                         skill[rank]["description"],
                         canonical["ranks"][rank]["description"],
                     )
-                    if key == "authority":
+                    if key in {"authority", "divineMandate"}:
                         self.assertEqual(canonical["ranks"][rank]["effect"]["status"], "active")
                         self.assertEqual(skill[rank]["effects"], {})
                     elif key in ACTIVE_RANK_EFFECTS:

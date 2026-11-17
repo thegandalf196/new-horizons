@@ -149,6 +149,14 @@ constexpr auto LEADERSHIP_EFFICIENCY_CALCULATOR_LAYERS = []
 	return result;
 }();
 
+// Comment-only terminology successor; preserve every historical root and patch.
+constexpr auto RANGED_PENETRATION_CALCULATOR_LAYERS = []
+{
+	auto result = LEADERSHIP_EFFICIENCY_CALCULATOR_LAYERS;
+	result[0] = {"damage/damageCalculator", "5f15e17088e5e99c1646df6af2700dc9e02ada906bae5dcfa074c1f0a71e5690"};
+	return result;
+}();
+
 std::string digest(std::string_view source)
 {
 	return nhart::hex(nhart::sha256(std::span<const ui8>(
@@ -236,7 +244,8 @@ LuaImplementationIdentity LuaImplementationIdentity::fromScript(const LuaScriptI
 		|| matchesReviewedLayers(script, PHYSICAL_PROTECTION_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, POINT_BLANK_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, INSPIRATION_CALCULATOR_LAYERS)
-		|| matchesReviewedLayers(script, LEADERSHIP_EFFICIENCY_CALCULATOR_LAYERS))
+		|| matchesReviewedLayers(script, LEADERSHIP_EFFICIENCY_CALCULATOR_LAYERS)
+		|| matchesReviewedLayers(script, RANGED_PENETRATION_CALCULATOR_LAYERS))
 		result.canonicalDamageCalculator = true;
 	return result;
 }

@@ -32,6 +32,9 @@ IMPORT_IDENTITIES = {
     'SORCERY_REVISION': 'spells/sorceryRevision',
     'SHARED_SORCERY_REVISION': 'spells/sorceryRevision',
 }
+# Keep the oracle owner's historical identity inventory strict. Only this
+# retired resource is absent; remaining roots, imports and layers stay required.
+RETIRED_ROOT_IDENTITIES = {'FOCUS_MAGIC': 'combat/focusMagic'}
 UNKNOWN = 'scripts/unattested-line-ending-probe.lua'
 
 
@@ -46,7 +49,8 @@ def attested_paths():
         raise AssertionError('Attestation import closure changed; review its exact script paths')
     # Includes every literal root/patch path in the reviewed layer tables.
     layers = set(re.findall(r'"((?:spells|damage|combat)/[A-Za-z0-9_/]+)"', source))
-    names = layers | imports | set(ROOT_IDENTITIES.values())
+    retired = set(RETIRED_ROOT_IDENTITIES.values())
+    names = layers | imports | (set(ROOT_IDENTITIES.values()) - retired)
     return sorted('scripts/' + name + '.lua' for name in names)
 
 
@@ -61,6 +65,10 @@ def reviewed_hashes_by_path():
         raise AssertionError('Review the literal digest declarations before updating this drift alarm')
     accepted = {}
     for identity, path in identities.items():
+        if identity in RETIRED_ROOT_IDENTITIES:
+            if path != RETIRED_ROOT_IDENTITIES[identity]:
+                raise AssertionError('Retired identity path changed; review native migration')
+            continue
         accepted.setdefault('scripts/' + path + '.lua', set()).add(constants[identity])
     layers = re.findall(
         r'\{\s*"((?:spells|damage|combat)/[A-Za-z0-9_/]+)"\s*,\s*("[0-9a-f]{64}"|[A-Z_]+_SHA256)\s*\}',
@@ -112,6 +120,31 @@ class LuaAttestationLineEndingsTest(unittest.TestCase):
             name, attribute, value = fields[offset:offset + 3]
             result.setdefault(name, {})[attribute] = value
         return result
+
+    def test_retired_focus_resource_keeps_its_historical_identity_and_native_owner(self):
+        self.assertEqual(RETIRED_ROOT_IDENTITIES, {'FOCUS_MAGIC': 'combat/focusMagic'})
+        path = 'scripts/combat/focusMagic.lua'
+        self.assertFalse((ROOT / path).exists())
+        self.assertNotIn(path, self.paths)
+        owner = (ROOT / 'luascript/LuaImplementationIdentity.cpp').read_text()
+        self.assertRegex(owner, r'FOCUS_MAGIC_SHA256\s*=\s*"'
+                         r'16ec8a55a950e5668c65ac76b2755e82217a911c4270f044121606a38c97340e"')
+        native = (ROOT / 'server/battles/BattleFocusMagic.cpp').read_text()
+        self.assertIn('newHorizonsFocusMagic::consume(*attacker)', native)
+        # Hex still owns the shared combat-script import; retirement cannot
+        # remove it or any other remaining reviewed transitive input.
+        self.assertIn('scripts/combat/hexOfPain.lua', self.paths)
+        self.assertIn('scripts/combat/combatScript.lua', self.paths)
+
+    def test_calculator_successor_changes_only_one_reviewed_comment(self):
+        raw = (ROOT / 'scripts/damage/damageCalculator.lua').read_bytes()
+        current = b'-- Attack-local ranged penetration contributes only to the target-side Creature Defense of a'
+        previous = b'-- Arcane Breach marks contribute only to the target-side Creature Defense of a'
+        self.assertEqual(raw.count(current), 1)
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),
+                         '5f15e17088e5e99c1646df6af2700dc9e02ada906bae5dcfa074c1f0a71e5690')
+        self.assertEqual(hashlib.sha256(raw.replace(current, previous)).hexdigest(),
+                         '1fa05bbc7fd68c88b814ba56e1efde8bcbf39a69d8442995182c84eed5d0588f')
 
     def test_every_attested_root_import_and_patch_has_explicit_lf(self):
         values = self.attributes(self.paths)
@@ -229,6 +262,13 @@ class LuaAttestationLineEndingsTest(unittest.TestCase):
             (self.repo / changed).write_bytes(raw)
             with patch.dict(globals(), ROOT=self.repo):
                 self.assertEqual(drifted_shipped_scripts(), [changed])
+        # A missing remaining input must still fail, never disappear through
+        # an exists()-based filter introduced for the retired Focus resource.
+        (self.repo / changed).write_bytes(payloads[changed])
+        (self.repo / 'scripts/combat/hexOfPain.lua').unlink()
+        with patch.dict(globals(), ROOT=self.repo):
+            with self.assertRaises(FileNotFoundError):
+                drifted_shipped_scripts()
         self.assertNotIn(UNKNOWN, reviewed_hashes_by_path())
 
     def test_unattested_scripts_are_not_blanket_normalized(self):
