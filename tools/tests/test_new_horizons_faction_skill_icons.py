@@ -84,7 +84,7 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
                         }
                     else:
                         expected = {
-                            size: f"NH_{skill}_{rank}_{size}.png" for size in SIZES
+                            size: f"NH_{skill}_rankart_v2_{rank}_{size}.png" for size in SIZES
                         }
                     self.assertEqual(images, expected)
                     self.assertNotIn("NH_lightMagic_", json.dumps(images))

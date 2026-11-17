@@ -10946,10 +10946,10 @@
 			"basic": {
 				"description": "Waiting grants +5% physical damage on your next attack this round; Defending grants 5% extra physical protection until your next activation.",
 				"images": {
-					"small": "NH_battlecraft_basic_small.png",
-					"medium": "NH_battlecraft_basic_medium.png",
-					"large": "NH_battlecraft_basic_large.png",
-					"scenarioBonus": "NH_battlecraft_basic_scenarioBonus.png"
+					"small": "NH_battlecraft_rankart_v2_basic_small.png",
+					"medium": "NH_battlecraft_rankart_v2_basic_medium.png",
+					"large": "NH_battlecraft_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_battlecraft_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -10962,10 +10962,10 @@
 			"advanced": {
 				"description": "Waiting grants +10% physical damage on your next attack this round; Defending grants 10% extra physical protection until your next activation.",
 				"images": {
-					"small": "NH_battlecraft_advanced_small.png",
-					"medium": "NH_battlecraft_advanced_medium.png",
-					"large": "NH_battlecraft_advanced_large.png",
-					"scenarioBonus": "NH_battlecraft_advanced_scenarioBonus.png"
+					"small": "NH_battlecraft_rankart_v2_advanced_small.png",
+					"medium": "NH_battlecraft_rankart_v2_advanced_medium.png",
+					"large": "NH_battlecraft_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_battlecraft_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -10978,10 +10978,10 @@
 			"expert": {
 				"description": "Waiting grants +15% physical damage on your next attack this round; Defending grants 15% extra physical protection until your next activation.",
 				"images": {
-					"small": "NH_battlecraft_expert_small.png",
-					"medium": "NH_battlecraft_expert_medium.png",
-					"large": "NH_battlecraft_expert_large.png",
-					"scenarioBonus": "NH_battlecraft_expert_scenarioBonus.png"
+					"small": "NH_battlecraft_rankart_v2_expert_small.png",
+					"medium": "NH_battlecraft_rankart_v2_expert_medium.png",
+					"large": "NH_battlecraft_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_battlecraft_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -11123,10 +11123,10 @@
 			"basic": {
 				"description": "Muster once per week in a friendly town: add 2 Core creatures to one Core dwelling's recruitment pool.",
 				"images": {
-					"small": "NH_recruitment_basic_small.png",
-					"medium": "NH_recruitment_basic_medium.png",
-					"large": "NH_recruitment_basic_large.png",
-					"scenarioBonus": "NH_recruitment_basic_scenarioBonus.png"
+					"small": "NH_recruitment_rankart_v2_basic_small.png",
+					"medium": "NH_recruitment_rankart_v2_basic_medium.png",
+					"large": "NH_recruitment_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_recruitment_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -11139,10 +11139,10 @@
 			"advanced": {
 				"description": "Muster once per week: add either 4 Core creatures to one Core dwelling or 1 Elite creature to one Elite dwelling.",
 				"images": {
-					"small": "NH_recruitment_advanced_small.png",
-					"medium": "NH_recruitment_advanced_medium.png",
-					"large": "NH_recruitment_advanced_large.png",
-					"scenarioBonus": "NH_recruitment_advanced_scenarioBonus.png"
+					"small": "NH_recruitment_rankart_v2_advanced_small.png",
+					"medium": "NH_recruitment_rankart_v2_advanced_medium.png",
+					"large": "NH_recruitment_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_recruitment_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -11155,10 +11155,10 @@
 			"expert": {
 				"description": "Muster once per week: add either 6 Core creatures, 2 Elite creatures, or 1 Champion creature to one corresponding dwelling pool.",
 				"images": {
-					"small": "NH_recruitment_expert_small.png",
-					"medium": "NH_recruitment_expert_medium.png",
-					"large": "NH_recruitment_expert_large.png",
-					"scenarioBonus": "NH_recruitment_expert_scenarioBonus.png"
+					"small": "NH_recruitment_rankart_v2_expert_small.png",
+					"medium": "NH_recruitment_rankart_v2_expert_medium.png",
+					"large": "NH_recruitment_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_recruitment_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -11241,30 +11241,30 @@
 			"basic": {
 				"description": "Increases effective Leadership by +15%.",
 				"images": {
-					"small": "NH_authority_basic_small.png",
-					"medium": "NH_authority_basic_medium.png",
-					"large": "NH_authority_basic_large.png",
-					"scenarioBonus": "NH_authority_basic_scenarioBonus.png"
+					"small": "NH_authority_rankart_v2_basic_small.png",
+					"medium": "NH_authority_rankart_v2_basic_medium.png",
+					"large": "NH_authority_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_authority_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {}
 			},
 			"advanced": {
 				"description": "Increases effective Leadership by +30% total.",
 				"images": {
-					"small": "NH_authority_advanced_small.png",
-					"medium": "NH_authority_advanced_medium.png",
-					"large": "NH_authority_advanced_large.png",
-					"scenarioBonus": "NH_authority_advanced_scenarioBonus.png"
+					"small": "NH_authority_rankart_v2_advanced_small.png",
+					"medium": "NH_authority_rankart_v2_advanced_medium.png",
+					"large": "NH_authority_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_authority_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {}
 			},
 			"expert": {
 				"description": "Increases effective Leadership by +45% total.",
 				"images": {
-					"small": "NH_authority_expert_small.png",
-					"medium": "NH_authority_expert_medium.png",
-					"large": "NH_authority_expert_large.png",
-					"scenarioBonus": "NH_authority_expert_scenarioBonus.png"
+					"small": "NH_authority_rankart_v2_expert_small.png",
+					"medium": "NH_authority_rankart_v2_expert_medium.png",
+					"large": "NH_authority_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_authority_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {}
 			}
@@ -11772,10 +11772,10 @@
 			"basic": {
 				"description": "Hero combat spells grant friendly stacks +5% attack and retaliation damage until the next round.",
 				"images": {
-					"small": "NH_warcasting_basic_small.png",
-					"medium": "NH_warcasting_basic_medium.png",
-					"large": "NH_warcasting_basic_large.png",
-					"scenarioBonus": "NH_warcasting_basic_scenarioBonus.png"
+					"small": "NH_warcasting_rankart_v2_basic_small.png",
+					"medium": "NH_warcasting_rankart_v2_basic_medium.png",
+					"large": "NH_warcasting_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_warcasting_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -11788,10 +11788,10 @@
 			"advanced": {
 				"description": "Hero combat spells grant friendly stacks +10% attack and retaliation damage until the next round.",
 				"images": {
-					"small": "NH_warcasting_advanced_small.png",
-					"medium": "NH_warcasting_advanced_medium.png",
-					"large": "NH_warcasting_advanced_large.png",
-					"scenarioBonus": "NH_warcasting_advanced_scenarioBonus.png"
+					"small": "NH_warcasting_rankart_v2_advanced_small.png",
+					"medium": "NH_warcasting_rankart_v2_advanced_medium.png",
+					"large": "NH_warcasting_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_warcasting_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -11804,10 +11804,10 @@
 			"expert": {
 				"description": "Hero combat spells grant friendly stacks +15% attack and retaliation damage until the next round.",
 				"images": {
-					"small": "NH_warcasting_expert_small.png",
-					"medium": "NH_warcasting_expert_medium.png",
-					"large": "NH_warcasting_expert_large.png",
-					"scenarioBonus": "NH_warcasting_expert_scenarioBonus.png"
+					"small": "NH_warcasting_rankart_v2_expert_small.png",
+					"medium": "NH_warcasting_rankart_v2_expert_medium.png",
+					"large": "NH_warcasting_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_warcasting_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12150,30 +12150,30 @@
 			"basic": {
 				"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 				"images": {
-					"small": "NH_divineMandate_basic_small.png",
-					"medium": "NH_divineMandate_basic_medium.png",
-					"large": "NH_divineMandate_basic_large.png",
-					"scenarioBonus": "NH_divineMandate_basic_scenarioBonus.png"
+					"small": "NH_divineMandate_rankart_v2_basic_small.png",
+					"medium": "NH_divineMandate_rankart_v2_basic_medium.png",
+					"large": "NH_divineMandate_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_divineMandate_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {}
 			},
 			"advanced": {
 				"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 				"images": {
-					"small": "NH_divineMandate_advanced_small.png",
-					"medium": "NH_divineMandate_advanced_medium.png",
-					"large": "NH_divineMandate_advanced_large.png",
-					"scenarioBonus": "NH_divineMandate_advanced_scenarioBonus.png"
+					"small": "NH_divineMandate_rankart_v2_advanced_small.png",
+					"medium": "NH_divineMandate_rankart_v2_advanced_medium.png",
+					"large": "NH_divineMandate_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_divineMandate_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {}
 			},
 			"expert": {
 				"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 				"images": {
-					"small": "NH_divineMandate_expert_small.png",
-					"medium": "NH_divineMandate_expert_medium.png",
-					"large": "NH_divineMandate_expert_large.png",
-					"scenarioBonus": "NH_divineMandate_expert_scenarioBonus.png"
+					"small": "NH_divineMandate_rankart_v2_expert_small.png",
+					"medium": "NH_divineMandate_rankart_v2_expert_medium.png",
+					"large": "NH_divineMandate_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_divineMandate_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {}
 			}
@@ -12191,10 +12191,10 @@
 			"basic": {
 				"description": "Friendly creatures gain +1 Initiative.",
 				"images": {
-					"small": "NH_sylvanLuck_basic_small.png",
-					"medium": "NH_sylvanLuck_basic_medium.png",
-					"large": "NH_sylvanLuck_basic_large.png",
-					"scenarioBonus": "NH_sylvanLuck_basic_scenarioBonus.png"
+					"small": "NH_sylvanLuck_rankart_v2_basic_small.png",
+					"medium": "NH_sylvanLuck_rankart_v2_basic_medium.png",
+					"large": "NH_sylvanLuck_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_sylvanLuck_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"initiative": {
@@ -12207,10 +12207,10 @@
 			"advanced": {
 				"description": "Friendly creatures gain +2 Initiative.",
 				"images": {
-					"small": "NH_sylvanLuck_advanced_small.png",
-					"medium": "NH_sylvanLuck_advanced_medium.png",
-					"large": "NH_sylvanLuck_advanced_large.png",
-					"scenarioBonus": "NH_sylvanLuck_advanced_scenarioBonus.png"
+					"small": "NH_sylvanLuck_rankart_v2_advanced_small.png",
+					"medium": "NH_sylvanLuck_rankart_v2_advanced_medium.png",
+					"large": "NH_sylvanLuck_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_sylvanLuck_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"initiative": {
@@ -12223,10 +12223,10 @@
 			"expert": {
 				"description": "Friendly creatures gain +3 Initiative.",
 				"images": {
-					"small": "NH_sylvanLuck_expert_small.png",
-					"medium": "NH_sylvanLuck_expert_medium.png",
-					"large": "NH_sylvanLuck_expert_large.png",
-					"scenarioBonus": "NH_sylvanLuck_expert_scenarioBonus.png"
+					"small": "NH_sylvanLuck_rankart_v2_expert_small.png",
+					"medium": "NH_sylvanLuck_rankart_v2_expert_medium.png",
+					"large": "NH_sylvanLuck_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_sylvanLuck_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"initiative": {
@@ -12291,10 +12291,10 @@
 			"basic": {
 				"description": "Friendly stacks move through occupied hexes and deal +25% flanking melee damage.",
 				"images": {
-					"small": "NH_shroudOfMalassa_basic_small.png",
-					"medium": "NH_shroudOfMalassa_basic_medium.png",
-					"large": "NH_shroudOfMalassa_basic_large.png",
-					"scenarioBonus": "NH_shroudOfMalassa_basic_scenarioBonus.png"
+					"small": "NH_shroudOfMalassa_rankart_v2_basic_small.png",
+					"medium": "NH_shroudOfMalassa_rankart_v2_basic_medium.png",
+					"large": "NH_shroudOfMalassa_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_shroudOfMalassa_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12307,10 +12307,10 @@
 			"advanced": {
 				"description": "Friendly stacks move through occupied hexes and deal +40% flanking melee damage.",
 				"images": {
-					"small": "NH_shroudOfMalassa_advanced_small.png",
-					"medium": "NH_shroudOfMalassa_advanced_medium.png",
-					"large": "NH_shroudOfMalassa_advanced_large.png",
-					"scenarioBonus": "NH_shroudOfMalassa_advanced_scenarioBonus.png"
+					"small": "NH_shroudOfMalassa_rankart_v2_advanced_small.png",
+					"medium": "NH_shroudOfMalassa_rankart_v2_advanced_medium.png",
+					"large": "NH_shroudOfMalassa_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_shroudOfMalassa_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12323,10 +12323,10 @@
 			"expert": {
 				"description": "Friendly stacks move through occupied hexes and deal +60% flanking melee damage; flanking prevents normal retaliation.",
 				"images": {
-					"small": "NH_shroudOfMalassa_expert_small.png",
-					"medium": "NH_shroudOfMalassa_expert_medium.png",
-					"large": "NH_shroudOfMalassa_expert_large.png",
-					"scenarioBonus": "NH_shroudOfMalassa_expert_scenarioBonus.png"
+					"small": "NH_shroudOfMalassa_rankart_v2_expert_small.png",
+					"medium": "NH_shroudOfMalassa_rankart_v2_expert_medium.png",
+					"large": "NH_shroudOfMalassa_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_shroudOfMalassa_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12350,10 +12350,10 @@
 			"basic": {
 				"description": "Original Core Inferno stacks can spend an activation once per combat to summon 30% more creatures next round as temporary reinforcements.",
 				"images": {
-					"small": "NH_demonicGating_basic_small.png",
-					"medium": "NH_demonicGating_basic_medium.png",
-					"large": "NH_demonicGating_basic_large.png",
-					"scenarioBonus": "NH_demonicGating_basic_scenarioBonus.png"
+					"small": "NH_demonicGating_rankart_v2_basic_small.png",
+					"medium": "NH_demonicGating_rankart_v2_basic_medium.png",
+					"large": "NH_demonicGating_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_demonicGating_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12366,10 +12366,10 @@
 			"advanced": {
 				"description": "Original Core and Elite Inferno stacks can spend an activation once per combat to summon 30% more creatures next round as temporary reinforcements.",
 				"images": {
-					"small": "NH_demonicGating_advanced_small.png",
-					"medium": "NH_demonicGating_advanced_medium.png",
-					"large": "NH_demonicGating_advanced_large.png",
-					"scenarioBonus": "NH_demonicGating_advanced_scenarioBonus.png"
+					"small": "NH_demonicGating_rankart_v2_advanced_small.png",
+					"medium": "NH_demonicGating_rankart_v2_advanced_medium.png",
+					"large": "NH_demonicGating_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_demonicGating_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12382,10 +12382,10 @@
 			"expert": {
 				"description": "Original Core, Elite and Champion Inferno stacks can spend an activation once per combat to summon 30% more creatures next round as temporary reinforcements.",
 				"images": {
-					"small": "NH_demonicGating_expert_small.png",
-					"medium": "NH_demonicGating_expert_medium.png",
-					"large": "NH_demonicGating_expert_large.png",
-					"scenarioBonus": "NH_demonicGating_expert_scenarioBonus.png"
+					"small": "NH_demonicGating_rankart_v2_expert_small.png",
+					"medium": "NH_demonicGating_rankart_v2_expert_medium.png",
+					"large": "NH_demonicGating_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_demonicGating_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12472,10 +12472,10 @@
 			"basic": {
 				"description": "Each non-summoned stack destroyed grants surviving friendly stacks +5% damage, cumulative to +20%.",
 				"images": {
-					"small": "NH_bloodrage_basic_small.png",
-					"medium": "NH_bloodrage_basic_medium.png",
-					"large": "NH_bloodrage_basic_large.png",
-					"scenarioBonus": "NH_bloodrage_basic_scenarioBonus.png"
+					"small": "NH_bloodrage_rankart_v2_basic_small.png",
+					"medium": "NH_bloodrage_rankart_v2_basic_medium.png",
+					"large": "NH_bloodrage_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_bloodrage_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12488,10 +12488,10 @@
 			"advanced": {
 				"description": "Each destruction grants +8% damage, cumulative to +40%.",
 				"images": {
-					"small": "NH_bloodrage_advanced_small.png",
-					"medium": "NH_bloodrage_advanced_medium.png",
-					"large": "NH_bloodrage_advanced_large.png",
-					"scenarioBonus": "NH_bloodrage_advanced_scenarioBonus.png"
+					"small": "NH_bloodrage_rankart_v2_advanced_small.png",
+					"medium": "NH_bloodrage_rankart_v2_advanced_medium.png",
+					"large": "NH_bloodrage_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_bloodrage_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12504,10 +12504,10 @@
 			"expert": {
 				"description": "Each destruction grants +12% damage, cumulative to +60%.",
 				"images": {
-					"small": "NH_bloodrage_expert_small.png",
-					"medium": "NH_bloodrage_expert_medium.png",
-					"large": "NH_bloodrage_expert_large.png",
-					"scenarioBonus": "NH_bloodrage_expert_scenarioBonus.png"
+					"small": "NH_bloodrage_rankart_v2_expert_small.png",
+					"medium": "NH_bloodrage_rankart_v2_expert_medium.png",
+					"large": "NH_bloodrage_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_bloodrage_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12531,10 +12531,10 @@
 			"basic": {
 				"description": "Defending stacks gain physical protection based on your hero’s Defense and strike the first melee attacker for 50% damage.",
 				"images": {
-					"small": "NH_bulwarkOfTheMire_basic_small.png",
-					"medium": "NH_bulwarkOfTheMire_basic_medium.png",
-					"large": "NH_bulwarkOfTheMire_basic_large.png",
-					"scenarioBonus": "NH_bulwarkOfTheMire_basic_scenarioBonus.png"
+					"small": "NH_bulwarkOfTheMire_rankart_v2_basic_small.png",
+					"medium": "NH_bulwarkOfTheMire_rankart_v2_basic_medium.png",
+					"large": "NH_bulwarkOfTheMire_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_bulwarkOfTheMire_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12547,10 +12547,10 @@
 			"advanced": {
 				"description": "Defending stacks gain physical protection based on your hero’s Defense and strike the first melee attacker for 75% damage while reflecting 25% of melee damage received.",
 				"images": {
-					"small": "NH_bulwarkOfTheMire_advanced_small.png",
-					"medium": "NH_bulwarkOfTheMire_advanced_medium.png",
-					"large": "NH_bulwarkOfTheMire_advanced_large.png",
-					"scenarioBonus": "NH_bulwarkOfTheMire_advanced_scenarioBonus.png"
+					"small": "NH_bulwarkOfTheMire_rankart_v2_advanced_small.png",
+					"medium": "NH_bulwarkOfTheMire_rankart_v2_advanced_medium.png",
+					"large": "NH_bulwarkOfTheMire_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_bulwarkOfTheMire_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12563,10 +12563,10 @@
 			"expert": {
 				"description": "Defending stacks gain physical protection based on your hero’s Defense and strike the first melee attacker for 100% damage while reflecting 50% of melee damage received.",
 				"images": {
-					"small": "NH_bulwarkOfTheMire_expert_small.png",
-					"medium": "NH_bulwarkOfTheMire_expert_medium.png",
-					"large": "NH_bulwarkOfTheMire_expert_large.png",
-					"scenarioBonus": "NH_bulwarkOfTheMire_expert_scenarioBonus.png"
+					"small": "NH_bulwarkOfTheMire_rankart_v2_expert_small.png",
+					"medium": "NH_bulwarkOfTheMire_rankart_v2_expert_medium.png",
+					"large": "NH_bulwarkOfTheMire_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_bulwarkOfTheMire_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12590,10 +12590,10 @@
 			"basic": {
 				"description": "Attuned creatures deal +20% attack damage for the remainder of combat.",
 				"images": {
-					"small": "NH_elementalRebirth_basic_small.png",
-					"medium": "NH_elementalRebirth_basic_medium.png",
-					"large": "NH_elementalRebirth_basic_large.png",
-					"scenarioBonus": "NH_elementalRebirth_basic_scenarioBonus.png"
+					"small": "NH_elementalRebirth_rankart_v2_basic_small.png",
+					"medium": "NH_elementalRebirth_rankart_v2_basic_medium.png",
+					"large": "NH_elementalRebirth_rankart_v2_basic_large.png",
+					"scenarioBonus": "NH_elementalRebirth_rankart_v2_basic_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12606,10 +12606,10 @@
 			"advanced": {
 				"description": "Attuned creatures deal +30% attack damage for the remainder of combat.",
 				"images": {
-					"small": "NH_elementalRebirth_advanced_small.png",
-					"medium": "NH_elementalRebirth_advanced_medium.png",
-					"large": "NH_elementalRebirth_advanced_large.png",
-					"scenarioBonus": "NH_elementalRebirth_advanced_scenarioBonus.png"
+					"small": "NH_elementalRebirth_rankart_v2_advanced_small.png",
+					"medium": "NH_elementalRebirth_rankart_v2_advanced_medium.png",
+					"large": "NH_elementalRebirth_rankart_v2_advanced_large.png",
+					"scenarioBonus": "NH_elementalRebirth_rankart_v2_advanced_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {
@@ -12622,10 +12622,10 @@
 			"expert": {
 				"description": "Attuned creatures deal +40% attack damage for the remainder of combat.",
 				"images": {
-					"small": "NH_elementalRebirth_expert_small.png",
-					"medium": "NH_elementalRebirth_expert_medium.png",
-					"large": "NH_elementalRebirth_expert_large.png",
-					"scenarioBonus": "NH_elementalRebirth_expert_scenarioBonus.png"
+					"small": "NH_elementalRebirth_rankart_v2_expert_small.png",
+					"medium": "NH_elementalRebirth_rankart_v2_expert_medium.png",
+					"large": "NH_elementalRebirth_rankart_v2_expert_large.png",
+					"scenarioBonus": "NH_elementalRebirth_rankart_v2_expert_scenarioBonus.png"
 				},
 				"effects": {
 					"newHorizonsPlaceholder": {

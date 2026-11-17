@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 import prepare_new_horizons_authority_art as authority
 from .nhart_test_resources import read_resource, open_image, later_art_waves
 from .test_new_horizons_art_additions import perk_header_history_forms
+from .nhart_released_history import authority_before_leadership_rework
 
 
 class AuthorityExportAlgorithmTest(unittest.TestCase):
@@ -59,7 +60,7 @@ class AuthorityExportAlgorithmTest(unittest.TestCase):
         historical = '#pragma once\n// synthetic baseline\n'
         self.assertIn(historical, perk_header_history_forms(block + historical))
         for changed in (block.replace('offensive_drills', 'unknown'), block + block):
-            with self.assertRaisesRegex(ValueError, 'Authority binding block'):
+            with self.assertRaisesRegex(ValueError, 'Authority.*block'):
                 perk_header_history_forms(changed + historical)
         self.assertNotIn(historical, perk_header_history_forms(block + historical + '// unrelated\n'))
 
@@ -102,7 +103,9 @@ class AuthoritySelectedPayloadTest(unittest.TestCase):
             self.assertEqual(self.entries[row['resource']], row)
             self.assertEqual(hashlib.sha256(read_resource(row['resource'])).hexdigest(), row['sha256'])
             self.assertFalse((ROOT / row['source']).exists())
-        wave = later_art_waves()[-1]
+        matches = [wave for wave in later_art_waves() if wave.get('suppliedAuthority')]
+        self.assertEqual(len(matches), 1)
+        wave = matches[0]
         self.assertEqual((wave['baselineCount'], wave['entryCount']), (5728, 5810))
         self.assertEqual(wave['resources'], record['resources'])
         self.assertEqual(wave['suppliedAuthority'][0]['selectionRecordSha256'],
@@ -155,7 +158,8 @@ class AuthoritySelectedPayloadTest(unittest.TestCase):
             self.assertEqual(len({image.tobytes() for image in variants}), 3)
 
     def test_ten_perk_bindings_aliases_native_insets_and_alpha_preserving_states(self):
-        header = (ROOT / authority.HEADER).read_text()
+        header = authority_before_leadership_rework(
+            (ROOT / authority.HEADER).read_text(), authority.binding_block())
         bindings = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', header))
         self.assertEqual(header.count(authority.binding_block()), 1)
         self.assertEqual(len(self.record['perks']), 10)

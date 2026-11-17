@@ -3,12 +3,12 @@
 This directory records the nine faction-skill families that are installed in
 `Mods/new-horizons/Images/`. Each family has Basic, Advanced, and Expert
 variants in the four module slots (`small`, `medium`, `large`, and
-`scenarioBonus`). Seven generated families use a high-resolution square master
-generated with the host's built-in image generator and deterministic
-downsampling in `../export_skill_icons.py`; their installed rank variants are
-the same still life with restrained contrast/saturation shifts and three rank
-pips. Metamagic is a versioned exception: three rank-specific masters and
-no-stretch native exports are recorded in
+`scenarioBonus`). The current faction families use distinct rank illustrations
+through `NH_<skill>_rankart_v2_<rank>_<slot>.png`. Their original single-master
+exports and three rank pips remain preserved historical resources, with source
+classification in `faction_skill_icon_manifest.json`. Use the current selected
+NHART manifest for shipping resources. Metamagic uses three rank-specific masters
+and no-stretch native exports recorded in
 `../metamagic-prisms-v2/manifest.json`, and the new
 `NH_metamagic_prism_*` bindings are separate from the historical single-master
 exports. Do not use `../export_skill_icons.py` to produce the active Metamagic

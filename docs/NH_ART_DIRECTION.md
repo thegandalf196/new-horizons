@@ -52,6 +52,9 @@ parchment, spellbook page, and interface frame are separate surfaces.
 
 Derive the entire requested role/rank/state manifest before production. Preserve
 accepted subject identity and make rank progression recognizable at small size.
+Basic, Advanced and Expert Skills use distinct illustrations. Rank changes must
+change the depicted objects or composition, with a readable progression at 32px.
+Do not embed rank dots or substitute color and contrast shifts for rank artwork.
 For magic-school skills, the current project grammar is Basic scroll, Advanced
 book, Expert orb, with school-specific effects and materials. This is a project
 choice, not a universal rule for every skill or a historical attribution claim.

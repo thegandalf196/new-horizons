@@ -170,7 +170,7 @@ class CommandAuthorityContentTest(unittest.TestCase):
         resources = {row["resource"] for row in load("assets/new-horizons/runtime-art-manifest.json")["entries"]}
         for rank in ("basic", "advanced", "expert"):
             for role in ("small", "medium", "large", "scenarioBonus"):
-                name = f"NH_authority_{rank}_{role}.png"
+                name = f"NH_authority_rankart_v2_{rank}_{role}.png"
                 self.assertEqual(self.skills["authority"][rank]["images"][role], name)
                 self.assertIn("SPRITES/" + name, resources)
             self.assertEqual(self.skills["authority"][rank]["effects"], {})

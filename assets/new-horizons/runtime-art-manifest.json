@@ -27,7 +27,7 @@
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
     "bug-report-interface-icon": 1,
-    "builtin-skills-perks-orders-and-ui": 3471,
+    "builtin-skills-perks-orders-and-ui": 3603,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "conflux-hero-portraits": 10,
@@ -62638,6 +62638,1326 @@
       "origin": "owner-supplied provisional Force Lance artwork; authored runtime descriptor",
       "selection": "authorized-provisional-runtime-force-lance-four-poses-2026-11-16",
       "approval": "Provisional; not Final; rendered acceptance pending; existing rights and attribution obligations retained"
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_advanced_large.png",
+      "size": 16051,
+      "sha256": "21ba990182704bfa7390a608b6a048a22380549984d0fdf02cb8150e67c8e7de",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_advanced_medium.png",
+      "size": 5420,
+      "sha256": "b7c3930d2045efb09d44025384ddcb754ed883eceacd660f1cd019d1a75c83d3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_advanced_scenarioBonus.png",
+      "size": 10077,
+      "sha256": "e9bf70a792c4cd4d0d41b108c768898701b389c404c173339e06ba17f0c50684",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_advanced_small.png",
+      "size": 3020,
+      "sha256": "754a9cba96a9f6a6de1a1072268070bcd8d25f90d595432b50e8332f2d91bf63",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_basic_large.png",
+      "size": 13222,
+      "sha256": "44b9e778780ffcb8aa14b8cd989e44c2206755b8fdd45bce4be34a521e4dfc2f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_basic_medium.png",
+      "size": 5096,
+      "sha256": "f1c5e4a27beb67cdf73504bfde46777468e18369b3bc9738a15ce96f8fc24aaa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_basic_scenarioBonus.png",
+      "size": 9458,
+      "sha256": "d59eaf53189a07d246f2c1bbe7ba4dc3026df068eb3784c4815521d2aad2ebd0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_basic_small.png",
+      "size": 2854,
+      "sha256": "904cecdc7ecef5a02c103993ccb5850a54cecd81897e1a2aae3f67b5f0a91c1f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_expert_large.png",
+      "size": 16609,
+      "sha256": "2c6a1692763fdbb963d06a891b49b7b2e471a13df37c7e38d1ef45fb5c39669b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_expert_medium.png",
+      "size": 5456,
+      "sha256": "45195f7b8a47e36c036fd9fbefe4c9e6963286957d7467f8823fb16a989e58b1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_expert_scenarioBonus.png",
+      "size": 10128,
+      "sha256": "dba96ea5edeaef0908430f3c55d978df2853626c09836a0974ee1fd3c95b8624",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_authority_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_authority_rankart_v2_expert_small.png",
+      "size": 3028,
+      "sha256": "80b0a0a6befa1462ab6bb49d55a0c308f54ea69c897fb820a7066d41c557dc21",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_advanced_large.png",
+      "size": 14730,
+      "sha256": "e8fdbd324e2f473901438965d68c57aeda634ed9ca0a5e43118c9226522d2fac",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_advanced_medium.png",
+      "size": 5100,
+      "sha256": "f87a13eccda8c208cd5599bb367fd5b4c7d14ca1b0ac1daa699a1f0699cfe640",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9502,
+      "sha256": "3dd09911a5e6f278cb1a9b0230bd17a94d56622f9bc748b3d654707903506f36",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_advanced_small.png",
+      "size": 2826,
+      "sha256": "f28e26d02d618eaa34f330b147d4367542ac3c2159700afc255eeb792c905750",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_basic_large.png",
+      "size": 14649,
+      "sha256": "eac37ce390b8edb7bb50ac2b39541252485da8fed3a5a4bef4a4d46c6324bcbc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_basic_medium.png",
+      "size": 5161,
+      "sha256": "f7c5f591ad6f72906ef2ae52d38914307687eeacf6c357b0d65f6e061a261f96",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_basic_scenarioBonus.png",
+      "size": 9555,
+      "sha256": "d8195ef5b3e317ce20d297897f488bab9094ba1923bb5739fb8e5c6d717f02b8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_basic_small.png",
+      "size": 2865,
+      "sha256": "6eb3173b1c7a0eee0d3f7bb7e9115b8951e4e7a6fd2a97b12b840c8af9cb8e0b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_expert_large.png",
+      "size": 15305,
+      "sha256": "8e18850090c6a101637dd5bc7e85b4d0a82ffa79b22cda78be8c2e6f1a60a393",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_expert_medium.png",
+      "size": 5082,
+      "sha256": "b3942a9a9bc84ff9eb7aec04cc2738fd5c0ce07987ed0e6131df22076d06bab9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_expert_scenarioBonus.png",
+      "size": 9544,
+      "sha256": "6bd6af7f30d46c57d8e07c1a344fe06162b907bba0a9142bf994fcc68afbc0f0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_battlecraft_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_battlecraft_rankart_v2_expert_small.png",
+      "size": 2830,
+      "sha256": "9a10b13ae879010780cfe57e7209f9c3b76d287c1054fa699d1545f6cf5ea252",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_advanced_large.png",
+      "size": 13821,
+      "sha256": "adbdc8247b6aae827cdb5fe395e1eab7c6d828c7ffb94192ef43a74f3aba81e0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_advanced_medium.png",
+      "size": 5156,
+      "sha256": "73fc8f070bd9a05360428c7a8e9af4ecdf2f3032658cfcf1cadabae01295230f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9632,
+      "sha256": "2eece50920bd9ff1a7a0810d5e07c00736ed1d2669ae61883dcd5dae8861281a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_advanced_small.png",
+      "size": 2861,
+      "sha256": "179714aeca2ea6dbc0a57a50d1bb7e93c5ca9767467c3dcedb30b2bfe3fedb64",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_basic_large.png",
+      "size": 13568,
+      "sha256": "8c5422841e49359b0555d6a5a0f00c38392b8bdcc87f676c568f1da1008981f2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_basic_medium.png",
+      "size": 5098,
+      "sha256": "35b90df328482aafa84281bade83e2b82ba5b2a884d0b6a97d4d42cb218e4505",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_basic_scenarioBonus.png",
+      "size": 9501,
+      "sha256": "ff7397178649a4552ae3d5b800eb14ab21c938e35907f60080ce3f8fc5e44e3b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_basic_small.png",
+      "size": 2859,
+      "sha256": "f7cc4db8d58a1a345e034d7c42a98a3a454caca719b3c570a20dfaae5db8c27c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_expert_large.png",
+      "size": 15800,
+      "sha256": "cacde088be5fb0dccc7a17a61f6922e5d1235ac165d59dd8777a6cfc4bb9eb8e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_expert_medium.png",
+      "size": 5240,
+      "sha256": "17ca57a2f141bcbe5e96b154808c9b0938f83de3a094dd4cc9a4567b0145fa70",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_expert_scenarioBonus.png",
+      "size": 9906,
+      "sha256": "c7a4d10a6cce1ad435c7f95acc9bc64c5272a98d3a551ba63c8442c2c7a65a6d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bloodrage_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_bloodrage_rankart_v2_expert_small.png",
+      "size": 2907,
+      "sha256": "944da246c006425a59e4184a1d6676a252af4942d1254e21e3ca5b1fb3ff48ec",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_advanced_large.png",
+      "size": 14343,
+      "sha256": "bd19a9385666270fecba426b9f4f316d34399ebb8d8f48addf6b2823b18382c4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_advanced_medium.png",
+      "size": 4960,
+      "sha256": "f71cf08a8874ca2df12cd7ac38dc92a80267834def0da55e84a7f932bd7a5d2d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9258,
+      "sha256": "f9fcf9489587359676d943f1a0810df233c95d09f0e23a40238e636da666d6f1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_advanced_small.png",
+      "size": 2736,
+      "sha256": "fcb90eabae0360781a67a9367dc55bc98aaa17918a9a41469e7514d1b4dd8e0e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_basic_large.png",
+      "size": 13838,
+      "sha256": "59e1e4c97cd1974d054206cb80c528066abe59a1b12f23a62120af89d1cf96e9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_basic_medium.png",
+      "size": 4969,
+      "sha256": "edd70280d8632b6185d21ceac6974bb5d6bcb384c7cca7a80c4bbef47628d786",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_basic_scenarioBonus.png",
+      "size": 9303,
+      "sha256": "b9409f5802a5bb28d83c13c7069a208a5d7eb257ab36997f23c3360af81c04a3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_basic_small.png",
+      "size": 2744,
+      "sha256": "ee38e030b7bbb5acda270c319440310fcbd4b3035a59a8fdb2796d04d47fb08f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_expert_large.png",
+      "size": 18251,
+      "sha256": "282c85dec71195e5e62bd3444ee386b087ad72b884a4b2299df78cc1aa0334c4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_expert_medium.png",
+      "size": 5248,
+      "sha256": "7a3f22865829fa90865366eff04e4ea5b3137cae61ed44147ab396d530e21c79",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_expert_scenarioBonus.png",
+      "size": 10018,
+      "sha256": "323789df41e6532840ec6addd327340437b47981a4bfe7256bef188a09241041",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_bulwarkOfTheMire_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_bulwarkOfTheMire_rankart_v2_expert_small.png",
+      "size": 2839,
+      "sha256": "fdb260a9e01ccb046f971a304e1765a36da7a0a59ccd8f4236a56dd90622a616",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_advanced_large.png",
+      "size": 15263,
+      "sha256": "6dd55a4ca2f215a6e95db9755e3665e52938d157898eeedebfdebd341d72507b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_advanced_medium.png",
+      "size": 5084,
+      "sha256": "287164ce838392c7d408dc5830ba22ac340ef60d7915cd41135fd82c2a56e74e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9594,
+      "sha256": "2b61af468687503941e0dc307f11e4f441952807b3006ad96a8820ac6ab92d09",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_advanced_small.png",
+      "size": 2812,
+      "sha256": "37984c0b830f88dbb4990bdb13fe4a67ab040a27a5ef14617c9bbfdbd348233a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_basic_large.png",
+      "size": 15797,
+      "sha256": "186c9178235fa26f565ec747d3e6b413049f57b19954f3559e5a09e88e8a7e78",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_basic_medium.png",
+      "size": 5012,
+      "sha256": "b99609bfb150354f90cb82529a3069fcd2d73617882ab4cbb3bec2bc00f30474",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_basic_scenarioBonus.png",
+      "size": 9465,
+      "sha256": "1895fa4d0cdb8612697deb8035cb39358163058d2cdb690c63f1801c89c33f1a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_basic_small.png",
+      "size": 2751,
+      "sha256": "caa71ce690fea802f04a7993ae795d0f4f5a04d12cdd28a57bd107628abaa3f0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_expert_large.png",
+      "size": 15820,
+      "sha256": "9be542884d3a3c7bd26d03cb3eae44d7bfd5625a4fa063b4c22d15f97cb9b765",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_expert_medium.png",
+      "size": 5132,
+      "sha256": "efce526ac6c619b94bdd9961e75fccef169a6f148d4d14d23de8fadce02c5bae",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_expert_scenarioBonus.png",
+      "size": 9666,
+      "sha256": "b051990fa296690b0b6e11aa44b6b80be9b60b115f9b8a49e6f827d1777b2fbc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_demonicGating_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_demonicGating_rankart_v2_expert_small.png",
+      "size": 2822,
+      "sha256": "b48b986410fd732ccca3512791d45e69d95fb11a90ea8338069541c7f916679e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_advanced_large.png",
+      "size": 17067,
+      "sha256": "dc554d81b1adadc5638465f9b3e76b16c9b11ed797480f9b29b748d036a6f0d5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_advanced_medium.png",
+      "size": 5584,
+      "sha256": "f6b6da14c0bd37da6cd133ffd1f0ead3c9f1f98d87fafa437985d77a85e65832",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_advanced_scenarioBonus.png",
+      "size": 10406,
+      "sha256": "1084d44736e6e8f4d353066b99c3cc45bc7d61de9c229320b2d0c7bb812403cd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_advanced_small.png",
+      "size": 3071,
+      "sha256": "e479f04601f08784b8c820d5bee59ebce301cc8e37f62bbebcc8a641c3959fc8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_basic_large.png",
+      "size": 15117,
+      "sha256": "9fc7b9a2c7cf281cb09afed128f83ff16791ec8d603c971fabf24276246b4ea6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_basic_medium.png",
+      "size": 5369,
+      "sha256": "79fadfdc7a4d1f16df5f69d532ba26be94d688d201bf998624b2231e196b6875",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_basic_scenarioBonus.png",
+      "size": 9901,
+      "sha256": "89384311bea6346c6714bc361eee6e9e62af59e591811c0b3d81c4d2bbc24b08",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_basic_small.png",
+      "size": 2978,
+      "sha256": "04af546a9ddbd20ef8b357dc2a2881f45a36a5bcc1682436774243a51bf717ff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_expert_large.png",
+      "size": 16420,
+      "sha256": "ef54c4d2b9e7d3aa5a57da1e162ca321c5e9b8104babea934e3747d06b9b32de",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_expert_medium.png",
+      "size": 5475,
+      "sha256": "9249b32fa3445bd65f7aee581fc0264136766f8105427c5c2e11484ac0322ac9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_expert_scenarioBonus.png",
+      "size": 10194,
+      "sha256": "d8a702bc444b175e5c80e03b749d60cdb41341b2096873558bb9219d90b6956c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_divineMandate_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_divineMandate_rankart_v2_expert_small.png",
+      "size": 2999,
+      "sha256": "e360989f3254baa987b516caafaebb4a4e7735140715c7c7470b1577e22ee334",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_advanced_large.png",
+      "size": 15430,
+      "sha256": "d86098ee7b6c0deda897b584bfb2c0630f64997a7991b8993e1358431a1cf2fd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_advanced_medium.png",
+      "size": 5377,
+      "sha256": "64f1ccb56f9caf9bec1302447b200e9fcd02134592e044b3bb1aafe33536b1ff",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9907,
+      "sha256": "b4cd14f7dd36154204bc1ace1841e6dac78e2feefbfdf2d28b34858acdf5f3a4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_advanced_small.png",
+      "size": 2976,
+      "sha256": "0a17364a5143e8812057bee0e0df6767b5b30745b73d7a58c1910f897f306f5b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_basic_large.png",
+      "size": 15611,
+      "sha256": "4acd781bdaea0a75df13231f38ba474755d705e6b44fe6296f3d9967b4c8400c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_basic_medium.png",
+      "size": 5357,
+      "sha256": "2e22ce14f0b236fc13561d5b3ea85a2a22fa6d52563b44e1d33b76ac634d2f34",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_basic_scenarioBonus.png",
+      "size": 9955,
+      "sha256": "365a97e03e1ab6d3e3ff6616674f6da43bc3ce9b17d0b9ac5e3db6a3629758df",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_basic_small.png",
+      "size": 2952,
+      "sha256": "6798676ac6ccb60c0be0f4c4665041c59f55c268ac25e65b26e0a992499f7112",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_expert_large.png",
+      "size": 15582,
+      "sha256": "107f1704a5c671978edcaeb4efc1d6eba4b983da14670ac25b70b12f5d8e341e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_expert_medium.png",
+      "size": 5330,
+      "sha256": "d5be87501f9b65116f4841dfba3166957e23e3b1e48b322ca5d86cca814bcf09",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_expert_scenarioBonus.png",
+      "size": 9982,
+      "sha256": "14f6839c90300284e6564fa3b609bf3391695dd67138527f8522d68345a5ad3c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_elementalRebirth_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_elementalRebirth_rankart_v2_expert_small.png",
+      "size": 2961,
+      "sha256": "36347bc322a2e6141891580b5a233c7dc61ac0440871901d1e6fd2c2708b6ab3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_advanced_large.png",
+      "size": 13972,
+      "sha256": "0f6b1cbd0df733cb9b357c07ccbf27fe0719ac17ab65b7769e40055d8d418afb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_advanced_medium.png",
+      "size": 5107,
+      "sha256": "28df82cf67f494de203438b6f75c86b6202fddc6bb6000b90d1407ff7e22535e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9446,
+      "sha256": "8b6cc6177172d24b626864da946b982ddba10bdeffbd53b82db09266be9a261c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_advanced_small.png",
+      "size": 2860,
+      "sha256": "6135a3f7d954101c10181139dce1ca02427219eb853b800bcddec1050a613948",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_basic_large.png",
+      "size": 13907,
+      "sha256": "eb0d55493441510a4cf47790fec7a2b6202e01c577c61c876790abe91502281a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_basic_medium.png",
+      "size": 5107,
+      "sha256": "b4f5132581c18937b4c20e06bf9b93734bfd187a631f5b4b64a16949a3b29957",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_basic_scenarioBonus.png",
+      "size": 9477,
+      "sha256": "973d005be125dfd6f24f4f717967adf083cf05a9e1166924d4a6001808f344d8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_basic_small.png",
+      "size": 2854,
+      "sha256": "649fd49fb7f64545308bb35582be9247ddcba653ce67c628188bcc820063c36a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_expert_large.png",
+      "size": 14915,
+      "sha256": "519edc8ff579ec73cc197735fcd7bdbb6b314d778ef33ed91eea416dd6e21ae6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_expert_medium.png",
+      "size": 5205,
+      "sha256": "6dc97369de72c08c6e0f5dc0f578664980fab4f184861c7f95e78afb5b09fb0a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_expert_scenarioBonus.png",
+      "size": 9688,
+      "sha256": "5325a5f0e41e40b458ebe98393a41984c4abe5425f22f24a54ef0fb4d4a0c893",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_recruitment_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_recruitment_rankart_v2_expert_small.png",
+      "size": 2899,
+      "sha256": "f108aa2e156bd9d8744e8c77941409c018582b5d9978a8bd9dbaadff1efd285e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_advanced_large.png",
+      "size": 14238,
+      "sha256": "f76683aeeb8cfb4033a24031d3c950920f47e58af6ff30354fc494e08f0668c2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_advanced_medium.png",
+      "size": 5148,
+      "sha256": "2ec015797a0c99a50b9fa2120338f20561b50cf32ea4f8eb19e396f19d512053",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9707,
+      "sha256": "37966f9ad300a5e5703884bca0507b05f20fcb362c48e6934bbd63a8ff0ece76",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_advanced_small.png",
+      "size": 2854,
+      "sha256": "427aa4607931df5515c034054ccfe9910f97251c1310855b48ab428559d5c336",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_basic_large.png",
+      "size": 15457,
+      "sha256": "69e3be66eb456214a0888db9953004beaa3c5fc8ec7a16a9c8ab3e2ed8200087",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_basic_medium.png",
+      "size": 5199,
+      "sha256": "98e3aa795eeac9977dfb60aa986ac7d3a03b46abc65840171918c966529187e5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_basic_scenarioBonus.png",
+      "size": 9704,
+      "sha256": "279652837a83b87f9ca6579c15aca50e41da97c9743bb51d76dab8bf5b46406d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_basic_small.png",
+      "size": 2885,
+      "sha256": "f33dd2b56b709037b288e1b610b5a25e725b7c0f2776b1ea41344a21b4ce8d8d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_expert_large.png",
+      "size": 16592,
+      "sha256": "080290f2e349220db0ef64ef7eb36e06a6f9f80ef9f181e5efe2fd3b3485cafd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_expert_medium.png",
+      "size": 5373,
+      "sha256": "382106b03c01320520d7b04dbb174b2bb18c7d7de62f660d8fa9706dee2563ac",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_expert_scenarioBonus.png",
+      "size": 10146,
+      "sha256": "c9e58ba4d9e7d4d21eb954d562254070cd7e4cad700820bbd39cb51aac0f8d88",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_shroudOfMalassa_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_shroudOfMalassa_rankart_v2_expert_small.png",
+      "size": 2932,
+      "sha256": "22638439669db3e9d1a6885848b95fd1638307b1c44a5bb86036484ec2d487a5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_advanced_large.png",
+      "size": 16555,
+      "sha256": "ffc26e1e1476132ec3ddd63b42abbe46c3178724c14bbd06160da33c08b7394a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_advanced_medium.png",
+      "size": 5480,
+      "sha256": "02562785e7ee9ce4153cbfe8441f04d00f392d18c1b6393003acbdda59577283",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_advanced_scenarioBonus.png",
+      "size": 10138,
+      "sha256": "9677f83f6be4e9aa8dc6b252f6a0d58e85a4e753e0b055fcb35fdca55e48b710",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_advanced_small.png",
+      "size": 3040,
+      "sha256": "89fd88ed4821e086f74075e6e74263f1eb5ca5bf036b96006d5a6074eff8a54f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_basic_large.png",
+      "size": 15161,
+      "sha256": "7f7527e5565ada940f5f5e0a581076f2a3557c41842b936d987d87d301ac5cd1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_basic_medium.png",
+      "size": 5245,
+      "sha256": "cae4c29ae4ef3fad8654ed85f701351e322d7d7e6f6c3216a0bc448680387599",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_basic_scenarioBonus.png",
+      "size": 9744,
+      "sha256": "eb13d8df60b57f808f2c80e55782426e2927605a3c568e3e11ac96293694cf36",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_basic_small.png",
+      "size": 2915,
+      "sha256": "d5f284c4788497413569e488e89731d3cd9c6b0d434dd6291c37791a9532cae3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_expert_large.png",
+      "size": 16029,
+      "sha256": "eb91f3d334d84d589ba3a941b56fb618c4e1aefb51a5bda768bc1824afe56172",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_expert_medium.png",
+      "size": 5435,
+      "sha256": "cd05e5437d78d0a6a4b55ddc452b28f3c6dcbd1c77fcff1a0e26ed082c4f69b5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_expert_scenarioBonus.png",
+      "size": 10070,
+      "sha256": "8f103e02f083cc2be3cb551d8e652c26dbff89c6a4699d699536e3e2a21a924e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_sylvanLuck_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_sylvanLuck_rankart_v2_expert_small.png",
+      "size": 2987,
+      "sha256": "3686ca404ba3abff6d7378dbc87b75f63e8886feba8c79dfe34af81f88a150cf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_advanced_large.png",
+      "size": 15185,
+      "sha256": "282adec176f13e0bec8ced0a4e67b7fcf3800cc5f19531ab006e11e1f17628df",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_advanced_medium.png",
+      "size": 5314,
+      "sha256": "64dcdcbb77569f63ac470efbb6e9095c87a491402c80b814b5765674ef4b9a24",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_advanced_scenarioBonus.png",
+      "size": 9954,
+      "sha256": "446ef8558135c8748efd5dae1bc5303784aafceea753b4ed809bc468f1f1d2d1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_advanced_small.png",
+      "size": 2956,
+      "sha256": "09f3fde82694070f42e98aea4332a4545b57ccf8863e6f97dbfd9879ff251584",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_basic_large.png",
+      "size": 14180,
+      "sha256": "5d2aa6c7003ab5fd99c8efead19d82c8bdc99bc5ee5239df7c997a4207b97c7b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_basic_medium.png",
+      "size": 5215,
+      "sha256": "675b2bd85be844bb5696573017cf212d82d6a81c84b88a51c89794fe5f2dc4e9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_basic_scenarioBonus.png",
+      "size": 9735,
+      "sha256": "891e99eda69544cb6cb78068490eef55a2eca315a4373bf95912e80c3be1f61c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_basic_small.png",
+      "size": 2903,
+      "sha256": "a78dab877422928f80d599dede9afe7a53e2ad639e219ba070be980347018f2d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_expert_large.png",
+      "size": 14525,
+      "sha256": "f34e26277a51a43f865e83b2fa4d392b6465a71b47e9640a50db79bf500dbeae",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_expert_medium.png",
+      "size": 5191,
+      "sha256": "f42ea7891f9a1e52586dd76b1f32b81fbe16c15376493cc314596b25a93f1c27",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_expert_scenarioBonus.png",
+      "size": 9787,
+      "sha256": "3b612fa3768ee03d4de2cc58d85b322971529cfd25ab3bc79af3b72b12596621",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "resource": "SPRITES/NH_warcasting_rankart_v2_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting_rankart_v2_expert_small.png",
+      "size": 2875,
+      "sha256": "1b91959724a387fdf57dd0df7c27cc7a52698619ba3c87736d05b64706129979",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Selected for New Horizons skill rank presentation.",
+      "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
     }
   ]
 }

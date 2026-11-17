@@ -15,6 +15,7 @@ from .nhart_released_history import (authority_before_leadership_rework,
     released_predecessor_entries, baseline_payload_proof, WISP_REPLACEMENTS)
 from .nhart_sylvan_alliance_presentations import validate_alliance_resource_reuse
 from .nhart_test_resources import read_resource
+from .nhart_skill_rank_art import skill_rank_wave
 
 
 class ReleasedArtHistoryTest(unittest.TestCase):
@@ -41,7 +42,9 @@ class ReleasedArtHistoryTest(unittest.TestCase):
 
     def test_bridge_requires_exact_entries_provenance_and_archive_boundary(self):
         previous, index = released_predecessor_entries(self.entries, self.waves, entries_digest)
-        self.assertEqual((len(previous), index), (5859, 41))
+        current_rank_wave = skill_rank_wave(self.waves)
+        self.assertEqual(len(current_rank_wave['resources']), 132)
+        self.assertEqual((len(previous), index), (5859 + len(current_rank_wave['resources']), 41))
         for family in ('mummy-runtime', 'conflux-water-ice-runtime', 'wisps-and-projectiles'):
             changed = copy.deepcopy(self.entries)
             next(row for row in changed if row['family'] == family)['origin'] = 'unreviewed'
@@ -51,6 +54,19 @@ class ReleasedArtHistoryTest(unittest.TestCase):
         for wave_index, field in ((40, 'newArchiveSha256'), (41, 'baselineArchiveSha256'), (41, 'baselineCount')):
             waves = copy.deepcopy(self.waves); waves[wave_index][field] = 0
             with self.assertRaises(ValueError): released_predecessor_entries(self.entries, waves, entries_digest)
+
+    def test_current_rank_art_descendant_requires_its_exact_selected_wave(self):
+        selected = skill_rank_wave(self.waves)
+        index = self.waves.index(selected)
+        for field in ('resources', 'baselineEntriesSha256', 'newArchiveSha256'):
+            changed = copy.deepcopy(self.waves)
+            changed[index][field] = 'changed'
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                released_predecessor_entries(self.entries, changed, entries_digest)
+        for changed in ([wave for wave in self.waves if wave is not selected],
+                        self.waves + [selected]):
+            with self.assertRaises(ValueError):
+                released_predecessor_entries(self.entries, changed, entries_digest)
 
     def test_wisp_replacement_proof_is_typed_and_never_returns_old_pixels(self):
         previous, _ = released_predecessor_entries(self.entries, self.waves, entries_digest)

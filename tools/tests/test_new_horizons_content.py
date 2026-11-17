@@ -1497,8 +1497,8 @@ class NewHorizonsContentTest(unittest.TestCase):
                     self.assertTrue((ART /
                                      expected_large).is_file())
                 else:
-                    expected_small = 'NH_' + icon_stem + '_basic_small.png'
-                    expected_large = 'NH_' + icon_stem + '_basic_medium.png'
+                    expected_small = 'NH_' + icon_stem + '_rankart_v2_basic_small.png'
+                    expected_large = 'NH_' + icon_stem + '_rankart_v2_basic_medium.png'
                     self.assertTrue((ART /
                                      expected_small).is_file())
                     self.assertTrue((ART /
