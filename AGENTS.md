@@ -35,7 +35,7 @@ user directs; do not silently return to its backlog after a task handoff.
 Current phase: **Phase 2 - stabilization and integration**.
 See `docs/NH_PHASE1_EXIT_AUDIT.md` for the Phase 1 exit evidence and
 `docs/NH_DEVELOPMENT_PHASES.md` for detailed phase criteria.
-Current source metadata targets **0.92.0**. The initial 0.92.0 package was
+Current source metadata targets **0.92.1**. The initial 0.92.0 package was
 withdrawn; its replacement is under implementation and validation.
 Phase 2 remains active; the development version is not a Version 1.0 release candidate.
 

@@ -8,7 +8,7 @@
 
 [Player wiki: Skills, perks, spells, creatures, heroes and combat.](https://github.com/thegandalf196/new-horizons/wiki/Home)
 
-Source metadata targets **0.92.0**. The initial 0.92.0 package was withdrawn
+Source metadata targets **0.92.1**. The initial 0.92.0 package was withdrawn
 because its perk progression did not match the intended rules. Its replacement
 is under implementation and validation.
 The Wiki describes published rules; source metadata does not establish publication.
