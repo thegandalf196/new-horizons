@@ -17,9 +17,11 @@ namespace forecast
 {
 namespace
 {
+#ifdef NH_COMPACT_FORECAST
 constexpr EventMask exchangePlan = eventBit(Event::Damage) | eventBit(Event::Healing)
 	| eventBit(Event::Move) | eventBit(Event::Activation) | eventBit(Event::Retaliation)
 	| eventBit(Event::Round) | eventBit(Event::Strike) | eventBit(Event::Effect);
+#endif
 void requireResult(const Result & result)
 {
 	if(result.refusal == Refusal::Exhausted) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
@@ -58,6 +60,11 @@ bool NativeAdapter::leadershipContextCurrent(const HypotheticBattle & branch)
 }
 bool NativeAdapter::prepareExchange(HypotheticBattle & branch, Counters * preparation)
 {
+#ifndef NH_COMPACT_FORECAST
+	(void)branch;
+	(void)preparation;
+	return false;
+#else
 	if(branch.referenceForecastOnly()) return false;
 	if(branch.compactForecast && leadershipContextCurrent(branch)) return true;
 	if(branch.compactForecast)
@@ -69,8 +76,7 @@ bool NativeAdapter::prepareExchange(HypotheticBattle & branch, Counters * prepar
 	if(branch.compactAdmissionAttempted) return false;
 	if(preparation) preparation->add(&Counters::rootCaptures);
 #ifdef NH_PERF_EXPERIMENTS
-	// Same-source diagnostic baseline only. Production always attempts compact
-	// admission; no environment switch enables or changes its value semantics.
+	// Measure the reference route in the same experimental binary.
 	const auto * forceReference = std::getenv("NH_PERF_FORCE_REFERENCE");
 	if(forceReference && std::string_view(forceReference) == "1")
 	{
@@ -115,6 +121,7 @@ bool NativeAdapter::prepareExchange(HypotheticBattle & branch, Counters * prepar
 	if(preparation) preparation->add(&Counters::rootAdmissions);
 	branch.compactForecast = std::move(admitted.state);
 	return true;
+#endif
 }
 std::shared_ptr<HypotheticBattle> NativeAdapter::prepareExchangeBranch(const Environment * environment,
 	const std::shared_ptr<HypotheticBattle> & source, Counters * counters)

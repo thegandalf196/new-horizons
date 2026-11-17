@@ -167,11 +167,7 @@ public:
 		if(compactForecast || compactReadSession) throw std::logic_error("Cannot retarget owned forecast diagnostics");
 		readWorkSink = std::move(sink);
 	}
-	std::optional<size_t> ownedForecastSize() const noexcept
-	{
-		const auto * values = compactForecast ? &*compactForecast : compactReadSession ? &*compactReadSession : nullptr;
-		return values ? std::optional<size_t>(values->ids().size()) : std::nullopt;
-	}
+	std::optional<size_t> ownedForecastSize() const noexcept;
 	void setSearchBudget(std::shared_ptr<battleSearch::SearchBudget> budget)
 	{
 		assert(!workBudget || budget); // A finite decision cannot silently become an exact unbounded adapter.
@@ -622,6 +618,8 @@ private:
 		bool updateInProgress = false;
 	};
 	std::optional<LifeDrainFriendlyObservation> lifeDrainFriendlyObservation;
+	// Private prospective accepted replay only; never inherited or serialized.
+	std::set<uint32_t> * acceptedReplayAcquisitions = nullptr;
 	std::shared_ptr<StackWithBonuses> getForUpdateImpl(uint32_t id);
 	void invalidateLifeDrainFriendlyObservation(uint32_t id) noexcept;
 	newHorizonsCrisisCommand::State crisisCommand;

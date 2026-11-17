@@ -21,6 +21,7 @@ namespace battle { class CUnitState; }
 namespace forecast
 {
 class SideReceipt;
+class NativePreparation;
 struct NativeReadEnvironment;
 
 enum class LifecyclePhase { Begin, BeginDeferred, CompleteForfeit, CompleteNormal, Finish, Wait };
@@ -39,6 +40,8 @@ class DLL_LINKAGE NativeAdapter
 {
 	static BattleHex commitSelectedReceipt(HypotheticBattle &, const AttackPossibility &,
 		battle::CUnitState &, const battle::CUnitState *, UnitId originalActor);
+	static bool consumeUnchangedCompletion(HypotheticBattle &, NativePreparation &, State &,
+		UnitId actor, LifecyclePhase, battleSearch::SearchBudget *);
 public:
 	static std::shared_ptr<const forecastEffects::State> captureEffects(const StackWithBonuses &, int32_t round);
 	static bool effectClockOwnersSupported(HypotheticBattle &);

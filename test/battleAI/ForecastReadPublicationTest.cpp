@@ -35,6 +35,15 @@ void expectRead(const forecast::State & state, uint32_t id, const battle::CUnitS
 	EXPECT_EQ(proof->modifiers, delta->currentModifiers);
 	EXPECT_EQ(proof->queries, delta->queries);
 }
+forecast::State withReplacementRead(const forecast::State & source, forecast::UnitId changedId,
+	const forecast::UnitDelta & replacement)
+{
+	std::vector<forecast::UnitInput> inputs;
+	for(const auto id : source.orderedIds())
+		inputs.push_back({std::make_shared<const forecast::UnitDefinition>(*source.definition(id)),
+			id == changedId ? replacement : *source.unit(id)});
+	return forecast::State::capture(source.source(), std::move(inputs), 0);
+}
 }
 TEST_F(ForecastNativeAdapterTest, PublishedPureCasualtyAndTemporaryResurrectionOwnCompleteNativeValues)
 {
@@ -56,6 +65,21 @@ TEST_F(ForecastNativeAdapterTest, PublishedPureCasualtyAndTemporaryResurrectionO
 	ASSERT_TRUE(forecast::NativeAdapter::damage(*child, *actual, damage, battle::DamageProvenance::SPELL, nullptr));
 	EXPECT_EQ(damage, nativeDamage);
 	expectRead(*child->forecastState(), id, *expected);
+	const auto woundedNumbers = child->forecastState()->unit(id)->numeric;
+	ASSERT_TRUE(woundedNumbers[0]); ASSERT_TRUE(woundedNumbers[1]);
+	const auto woundedCount = actual->getCount();
+	damage = 1; nativeDamage = damage;
+	expected->damage(nativeDamage, false, battle::DamageProvenance::SPELL);
+	ASSERT_TRUE(forecast::NativeAdapter::damage(*child, *actual, damage, battle::DamageProvenance::SPELL, nullptr));
+	EXPECT_EQ(actual->getCount(), woundedCount);
+	expectRead(*child->forecastState(), id, *expected);
+	for(size_t mode = 0; mode < woundedNumbers.size(); ++mode)
+	{
+		const auto & updated = child->forecastState()->unit(id)->numeric[mode];
+		ASSERT_TRUE(updated); EXPECT_NE(updated, woundedNumbers[mode]);
+		EXPECT_EQ(updated->unit.firstHealth, expected->health.getFirstHPleft());
+		EXPECT_EQ(updated->unit.availableHealth, static_cast<double>(expected->health.available()));
+	}
 	int64_t healing = actual->getMaxHealth() * 2, nativeHealing = healing;
 	expected->heal(nativeHealing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
 	ASSERT_TRUE(forecast::NativeAdapter::heal(*child, *actual, healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE));
@@ -162,4 +186,80 @@ TEST_F(ForecastNativeAdapterTest, OwnedHateQueriesRemainValidWhenPhysicalPairFac
 	EXPECT_EQ(value->readView->unit().valOfBonuses(BonusType::HATE, root->creatureId()),
 		expected->valOfBonuses(BonusType::HATE, root->creatureId()));
 	expectRead(*child->forecastState(), id, *expected);
+}
+
+TEST_F(ForecastNativeAdapterTest, PartialPublicationsReuseSealedOwnersAcrossMixedGroupsWithoutStalePeers)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:archer"));
+	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
+	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	auto reference = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	forecast::NativeAdapter::forkExchange(*parent, *child);
+	const auto ids = child->forecastState()->orderedIds();
+	ASSERT_GE(ids.size(), 2u);
+	const auto first = ids.front(), second = ids.back();
+	const auto original = child->forecastState()->readView(first);
+	const auto metadata = original->environmentOwner();
+	const auto descriptor = forecast::NativeReadView::querySource(original->unit())->descriptor;
+	for(const auto id : {first, second, first})
+	{
+		auto actual = child->getForUpdate(id), expected = reference->getForUpdate(id);
+		// These are REAL native observations, preserved through peer publication.
+		EXPECT_EQ(actual->counterAttacks.total(), expected->counterAttacks.total());
+		int64_t damage = actual->getMaxHealth() + 1, nativeDamage = damage;
+		expected->damage(nativeDamage, false, battle::DamageProvenance::SPELL);
+		ASSERT_TRUE(forecast::NativeAdapter::damage(*child, *actual, damage, battle::DamageProvenance::SPELL, nullptr));
+		const auto current = child->forecastState()->readView(id);
+		EXPECT_EQ(current->environmentOwner(), metadata);
+		EXPECT_NE(current->workIdentity(), original->workIdentity());
+		EXPECT_NE(child->forecastState()->readView(first)->workIdentity(),
+			child->forecastState()->readView(second)->workIdentity());
+		for(const auto peer : ids) expectRead(*child->forecastState(), peer, *reference->getForUpdate(peer));
+	}
+	const auto current = child->forecastState()->readView(first);
+	EXPECT_EQ(forecast::NativeReadView::querySource(current->unit())->descriptor, descriptor);
+	EXPECT_EQ(original->environmentOwner(), metadata);
+	EXPECT_NE(original->unit().getAvailableHealth(), current->unit().getAvailableHealth());
+}
+TEST_F(ForecastNativeAdapterTest, IndependentlyFrozenEquivalentGroupsKeepGeneralPublicationFallback)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
+	const auto & source = *parent->forecastState();
+	const auto ids = source.orderedIds();
+	std::vector<forecast::NativeReadOccurrence> occurrences;
+	for(const auto id : ids)
+	{
+		const auto * value = source.unit(id);
+		occurrences.push_back({source.definition(id)->readDescriptor, value->nativeValues,
+			value->currentModifiers, value->queries});
+	}
+	const auto oldEnvironment = source.readView(ids.front())->environmentOwner();
+	const auto independentlyFrozen = forecast::NativeReadView::fromOwned(std::move(occurrences), oldEnvironment);
+	ASSERT_NE(independentlyFrozen.back()->environmentOwner(), oldEnvironment);
+	auto value = *source.unit(ids.back());
+	value.readView = independentlyFrozen.back();
+	auto draft = withReplacementRead(source, ids.back(), value);
+	const auto id = ids.front();
+	ASSERT_NO_THROW(forecast::NativeAdapter::refreshReadViews(draft, *parent, std::span(&id, 1), false));
+	for(const auto peer : ids) expectRead(draft, peer, *parent->getForUpdate(peer));
+}
+
+TEST_F(ForecastNativeAdapterTest, SealedSuccessorStillRejectsCountMismatchedReplacementBeforePublication)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
+	const auto & source = *parent->forecastState();
+	const auto id = source.orderedIds().front();
+	auto changed = parent->getForUpdate(id)->acquireState();
+	int64_t damage = changed->getMaxHealth() + 1;
+	changed->damage(damage, false, battle::DamageProvenance::SPELL);
+	auto value = *source.unit(id);
+	value.nativeValues = std::make_shared<const battle::UnitStateValueSnapshot>(
+		battle::UnitStateValueSnapshot::capture(*changed));
+	ASSERT_NE(value.nativeValues->status().count, value.queries->binding().count);
+	auto draft = withReplacementRead(source, id, value);
+	const auto before = draft;
+	EXPECT_THROW(forecast::NativeAdapter::refreshReadViews(draft, *parent, std::span(&id, 1), false), std::invalid_argument);
+	EXPECT_TRUE(draft.sameSnapshot(before));
 }

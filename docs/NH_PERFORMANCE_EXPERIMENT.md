@@ -231,6 +231,18 @@ diagnostic settings, before claiming a timing improvement.
 
 For guarded Wine diagnostics use only the typed full-game options and fixed admitted environment. Bootstrap/fixture arguments and C/Z mapping are held/checked by the maintained owner. A Wine proof is not native Windows performance or full runtime acceptance.
 
+### Compact forecast comparison
+
+Release builds use the reference battle forecast by default. Configure
+`ENABLE_NH_COMPACT_FORECAST=ON` to exercise the compact forecast. The option
+defaults to the value of `ENABLE_TEST` on a fresh configuration. Reconfigure
+with an explicit value when reusing a build directory.
+
+Build with both `ENABLE_NH_COMPACT_FORECAST=ON` and
+`ENABLE_NH_PERF_EXPERIMENTS=ON` for a same-binary comparison. Use
+`NH_PERF_FORCE_REFERENCE=1` for the reference arm and leave it unset for the
+compact arm. Both use the same rules, seeds and AI search profile.
+
 ### Map initialization breakdown
 
 With `ENABLE_NH_PERF_EXPERIMENTS=ON`, launch with

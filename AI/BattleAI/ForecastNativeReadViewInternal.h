@@ -123,6 +123,8 @@ public:
 		std::vector<NativeReadOccurrence> occurrences;
 		std::shared_ptr<const NativeReadEnvironment> environment;
 		Tables(std::vector<NativeReadOccurrence>, std::shared_ptr<const NativeReadEnvironment>);
+		struct SealedSuccessor {};
+		Tables(std::vector<NativeReadOccurrence>, std::shared_ptr<const NativeReadEnvironment>, SealedSuccessor);
 	};
 	std::shared_ptr<const Tables> tables;
 	const std::vector<NativeReadOccurrence> & occurrences;
@@ -134,6 +136,7 @@ public:
 	Context context;
 	Group(std::vector<NativeReadOccurrence>, std::shared_ptr<const NativeReadEnvironment>,
 		std::shared_ptr<NativeReadWork>);
+	Group(std::shared_ptr<const Tables>, std::shared_ptr<NativeReadWork>);
 	explicit Group(const Group &); // Explicit branch fork; no native receiver/provider/HP clone.
 	int32_t currentRetaliationCache(size_t) const;
 	std::shared_ptr<const battle::UnitStateValueSnapshot> currentValues(size_t) const;

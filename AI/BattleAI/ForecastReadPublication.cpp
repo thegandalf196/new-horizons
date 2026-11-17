@@ -60,6 +60,11 @@ void refreshNumbers(UnitDelta & next, const UnitDefinition & definition,
 		for(auto & prepared : next.numeric)
 			if(prepared)
 			{
+				const auto & health = prepared->unit;
+				if(health.count == count && health.firstHealth == next.health.getFirstHPleft()
+					&& health.maxHealth == next.health.valueContext().maximumHealth
+					&& health.availableHealth == static_cast<double>(next.health.available()))
+					continue; // Preserve the immutable owner when every replacement field is unchanged.
 				auto value = *prepared;
 				value.unit.count = count;
 				value.unit.firstHealth = next.health.getFirstHPleft();
@@ -150,6 +155,8 @@ void NativeAdapter::refreshReadViews(State & draft, HypotheticBattle & prospecti
 	std::set<UnitId> changed(affected.begin(), affected.end());
 	require(changed.size() == affected.size());
 	if(contextChanged) require(changed.size() == order.size());
+	std::vector<std::shared_ptr<const NativeReadView>> previousViews;
+	previousViews.reserve(order.size());
 	std::vector<NativeReadOccurrence> occurrences;
 	occurrences.reserve(order.size());
 	std::shared_ptr<const NativeReadEnvironment> environment;
@@ -158,7 +165,8 @@ void NativeAdapter::refreshReadViews(State & draft, HypotheticBattle & prospecti
 		const auto * value = draft.unit(id);
 		const auto * definition = draft.definition(id);
 		require(value && definition && definition->readDescriptor && value->nativeValues && draft.readView(id));
-		const auto previousEnvironment = draft.readView(id)->environmentOwner();
+		previousViews.push_back(draft.readView(id));
+		const auto previousEnvironment = previousViews.back()->environmentOwner();
 		require(previousEnvironment != nullptr);
 		if(!environment) environment = previousEnvironment;
 		else require(environment->revision == previousEnvironment->revision && environment->magic == previousEnvironment->magic);
@@ -169,7 +177,12 @@ void NativeAdapter::refreshReadViews(State & draft, HypotheticBattle & prospecti
 	}
 	for(const auto id : changed) require(draft.unit(id) != nullptr);
 	if(contextChanged) environment = captureReadEnvironment(prospective, std::move(environment));
-	const auto views = NativeReadView::fromOwned(std::move(occurrences), std::move(environment), prospective.forecastWorkSink());
+	// Context changes recapture side state/warfare above and retain full admission.
+	// Older independently frozen groups conservatively retain that general path.
+	auto successor = contextChanged ? std::nullopt
+		: NativeReadView::successorViews(previousViews, occurrences, prospective.forecastWorkSink());
+	const auto views = successor ? std::move(*successor)
+		: NativeReadView::fromOwned(std::move(occurrences), std::move(environment), prospective.forecastWorkSink());
 	require(views.size() == order.size());
 	// No unaffected HP ledgers are copied. All preparation above precedes these
 	// PRIVATE State changes; callers still publish only after every peer passes.

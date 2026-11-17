@@ -28,6 +28,7 @@
                 "ENABLE_VIDEO": "ON",
                 "ENABLE_NULLKILLER2_AI": "ON",
                 "ENABLE_BATTLE_AI": "ON",
+                "ENABLE_NH_COMPACT_FORECAST": "OFF",
                 "ENABLE_STUPID_AI": "ON",
                 "ENABLE_MMAI": "OFF",
                 "ENABLE_DISCORD": "OFF",
@@ -47,6 +48,7 @@
             "cacheVariables": {
                 "ENABLE_TEST": "ON",
                 "ENABLE_NEW_HORIZONS_MANAGED_TESTS": "OFF",
+                "ENABLE_NH_COMPACT_FORECAST": "ON",
                 "ENABLE_NH_PERF_EXPERIMENTS": "OFF",
                 "ENABLE_NH_BUG_REPORT_REGRESSION": "ON"
             }
@@ -75,6 +77,7 @@
                 "ENABLE_VIDEO": "ON",
                 "ENABLE_NULLKILLER2_AI": "ON",
                 "ENABLE_BATTLE_AI": "ON",
+                "ENABLE_NH_COMPACT_FORECAST": "OFF",
                 "ENABLE_STUPID_AI": "ON",
                 "ENABLE_MMAI": "OFF",
                 "ENABLE_DISCORD": "OFF",

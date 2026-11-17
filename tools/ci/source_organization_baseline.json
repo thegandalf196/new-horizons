@@ -271,9 +271,9 @@
       "sha256": "247cdfe27811667c1d5d4e5987d7e1fcf02f8057b6807f8d7636587248d29123"
     },
     "AI/BattleAI/HypotheticBattle.h": {
-      "sha256": "bea151b2e996944c6244761bfc3db1d588986add49f04078c6cf8e9271ee5eee",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "dfb12862dfe48efb3d4933f742058822a0b38c4790f587e87934cd3bebf70bd8",
+      "review": "IR-NH0921-V12-JOURNAL-HB-MANUAL-20261117",
+      "rationale": "Complete exact765-line header independently reviewed against prior767-line inventory. All64 retained handwritten bodies remain byte-identical; the sole removed five-line ownedForecastSize body is cohesively implemented out of line in HypotheticLifeDrainObservation.cpp, retaining its declaration here. Four removed implementation lines shift later spans by-4, and the two-line private transient acquisition-journal declaration shifts the final nested bodies back by+2. Both conditional branches, all inline methods and nested callback/environment bodies remain covered. Added raw pointer has a nullptr default initializer, no handwritten callable body, and is neither copied by constructors nor serialized. No lambda/function-like macro/body omission. Existing bodyless default-argument parser recovery shifts415->411. Exact-content coverage only; no size waiver, future growth, native/rendered/performance or publication acceptance.",
       "functions": [
         {
           "symbol": "HypotheticBattle::const auto & searchBudget() const#1",
@@ -291,314 +291,309 @@
           "end": 169
         },
         {
-          "symbol": "HypotheticBattle::std::optional<size_t> ownedForecastSize() const noexcept#1",
-          "start": 170,
-          "end": 174
-        },
-        {
           "symbol": "HypotheticBattle::void setSearchBudget(std::shared_ptr<battleSearch::SearchBudget> budget)#1",
-          "start": 175,
-          "end": 179
+          "start": 171,
+          "end": 175
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override#1",
-          "start": 181,
-          "end": 184
+          "start": 177,
+          "end": 180
         },
         {
           "symbol": "HypotheticBattle::const auto & getArcaneInspirationEffects() const#1",
-          "start": 185,
-          "end": 185
+          "start": 181,
+          "end": 181
         },
         {
           "symbol": "HypotheticBattle::bool mayHaveSerpentBindings() const noexcept#1",
-          "start": 192,
-          "end": 192
+          "start": 188,
+          "end": 188
         },
         {
           "symbol": "HypotheticBattle::const std::shared_ptr<const forecast::SideState> & forecastSide(BattleSide side) const#1",
-          "start": 198,
-          "end": 198
+          "start": 194,
+          "end": 194
         },
         {
           "symbol": "HypotheticBattle::bool hasProjectedManaLeech() const noexcept#1",
-          "start": 209,
-          "end": 209
+          "start": 205,
+          "end": 205
         },
         {
           "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
-          "start": 219,
-          "end": 219
+          "start": 215,
+          "end": 215
         },
         {
           "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
-          "start": 220,
-          "end": 224
+          "start": 216,
+          "end": 220
         },
         {
           "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
-          "start": 225,
-          "end": 225
+          "start": 221,
+          "end": 221
         },
         {
           "symbol": "HypotheticBattle::const std::shared_ptr<MovementQueryCache> & movementQueryCache() const#1",
-          "start": 238,
-          "end": 238
+          "start": 234,
+          "end": 234
         },
         {
           "symbol": "HypotheticBattle::void setMovementQueryCache(std::shared_ptr<MovementQueryCache> cache)#1",
-          "start": 239,
-          "end": 239
+          "start": 235,
+          "end": 235
         },
         {
           "symbol": "HypotheticBattle::const IBattleInfo * getBattle() const override#1",
+          "start": 243,
+          "end": 243
+        },
+        {
+          "symbol": "HypotheticBattle::std::optional<PlayerColor> getPlayerID() const override#1",
+          "start": 244,
+          "end": 244
+        },
+        {
+          "symbol": "HypotheticBattle::bool referenceForecastOnly() const noexcept#1",
           "start": 247,
           "end": 247
         },
         {
-          "symbol": "HypotheticBattle::std::optional<PlayerColor> getPlayerID() const override#1",
-          "start": 248,
-          "end": 248
-        },
-        {
-          "symbol": "HypotheticBattle::bool referenceForecastOnly() const noexcept#1",
-          "start": 251,
-          "end": 251
-        },
-        {
           "symbol": "HypotheticBattle::void useReferenceForecast()#1",
-          "start": 252,
-          "end": 257
+          "start": 248,
+          "end": 253
         },
         {
           "symbol": "HypotheticBattle::const forecast::State * forecastState() const#1",
-          "start": 258,
-          "end": 258
+          "start": 254,
+          "end": 254
         },
         {
           "symbol": "HypotheticBattle::int32_t getBloodrageRank(BattleSide side) const override#1",
-          "start": 270,
-          "end": 270
+          "start": 266,
+          "end": 266
         },
         {
           "symbol": "HypotheticBattle::const battle::IUnitEnvironment * unitEnvironment() const#1",
+          "start": 271,
+          "end": 271
+        },
+        {
+          "symbol": "HypotheticBattle::int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override#1",
+          "start": 273,
+          "end": 273
+        },
+        {
+          "symbol": "HypotheticBattle::int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override#1",
+          "start": 274,
+          "end": 274
+        },
+        {
+          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
           "start": 275,
           "end": 275
         },
         {
-          "symbol": "HypotheticBattle::int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override#1",
-          "start": 277,
-          "end": 277
-        },
-        {
-          "symbol": "HypotheticBattle::int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override#1",
-          "start": 278,
-          "end": 278
-        },
-        {
-          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
-          "start": 279,
-          "end": 279
-        },
-        {
           "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
-          "start": 280,
-          "end": 280
+          "start": 276,
+          "end": 276
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override#1",
-          "start": 284,
-          "end": 285
+          "start": 280,
+          "end": 281
         },
         {
           "symbol": "HypotheticBattle::uint8_t getElementalAttunementMask(BattleSide side) const override#1",
-          "start": 286,
-          "end": 286
+          "start": 282,
+          "end": 282
         },
         {
           "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
-          "start": 292,
-          "end": 296
+          "start": 288,
+          "end": 292
         },
         {
           "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 307,
-          "end": 307
+          "start": 303,
+          "end": 303
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 315,
-          "end": 319
+          "start": 311,
+          "end": 315
         },
         {
           "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 322,
-          "end": 322
+          "start": 318,
+          "end": 318
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override#1",
-          "start": 343,
-          "end": 347
+          "start": 339,
+          "end": 343
         },
         {
           "symbol": "HypotheticBattle::bool hasCommandResourceObservation(BattleSide side) const#1",
-          "start": 348,
-          "end": 348
+          "start": 344,
+          "end": 344
         },
         {
           "symbol": "HypotheticBattle::void setCommandResources(BattleSide side, const newHorizonsCommand::ResourceState & state) override#1",
-          "start": 349,
-          "end": 353
+          "start": 345,
+          "end": 349
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 354,
-          "end": 354
+          "start": 350,
+          "end": 350
         },
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 355,
-          "end": 364
+          "start": 351,
+          "end": 360
         },
         {
           "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
+          "start": 361,
+          "end": 364
+        },
+        {
+          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
           "start": 365,
           "end": 368
         },
         {
-          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-          "start": 369,
-          "end": 372
-        },
-        {
           "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 374,
-          "end": 375
+          "start": 370,
+          "end": 371
         },
         {
           "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
-          "start": 377,
-          "end": 379
+          "start": 373,
+          "end": 375
         },
         {
           "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
-          "start": 380,
-          "end": 380
+          "start": 376,
+          "end": 376
         },
         {
           "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
-          "start": 381,
-          "end": 381
+          "start": 377,
+          "end": 377
         },
         {
           "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
-          "start": 382,
-          "end": 382
+          "start": 378,
+          "end": 378
         },
         {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 443,
-          "end": 443
+          "start": 439,
+          "end": 439
         },
         {
           "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 444,
-          "end": 444
+          "start": 440,
+          "end": 440
         },
         {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 453,
-          "end": 453
+          "start": 449,
+          "end": 449
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 469,
-          "end": 469
+          "start": 465,
+          "end": 465
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
-          "start": 470,
-          "end": 470
+          "start": 466,
+          "end": 466
         },
         {
           "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-          "start": 471,
-          "end": 471
+          "start": 467,
+          "end": 467
         },
         {
           "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
-          "start": 472,
-          "end": 472
+          "start": 468,
+          "end": 468
         },
         {
           "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
-          "start": 473,
-          "end": 477
+          "start": 469,
+          "end": 473
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 478,
-          "end": 482
+          "start": 474,
+          "end": 478
         },
         {
           "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 483,
-          "end": 483
+          "start": 479,
+          "end": 479
         },
         {
           "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 484,
-          "end": 487
+          "start": 480,
+          "end": 483
         },
         {
           "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-          "start": 488,
-          "end": 493
+          "start": 484,
+          "end": 489
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 494,
-          "end": 504
+          "start": 490,
+          "end": 500
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 507,
-          "end": 510
+          "start": 503,
+          "end": 506
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 511,
-          "end": 515
+          "start": 507,
+          "end": 511
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 520,
-          "end": 520
+          "start": 516,
+          "end": 516
         },
         {
           "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
-          "start": 521,
-          "end": 521
+          "start": 517,
+          "end": 517
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 588,
-          "end": 588
+          "start": 584,
+          "end": 584
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 599,
-          "end": 602
+          "start": 595,
+          "end": 598
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 712,
-          "end": 712
+          "start": 710,
+          "end": 710
         },
         {
           "symbol": "HypotheticBattle::HypotheticEnvironment::void closeNativeSource() noexcept#1",
-          "start": 742,
-          "end": 742
+          "start": 740,
+          "end": 740
         }
       ]
     },
@@ -17098,9 +17093,9 @@
       ]
     },
     "AI/BattleAI/ForecastNativeReadView.h": {
-      "sha256": "ecc181ba7c931d1d5c1fbe6ba3765ef043d0285f8a830de4d4c983fc26da29d4",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "ba4da47e7cac9bec595cdc23cd6e7c45749613b12bb796d48ffbd6d413abe9f3",
+      "review": "IR-NH0921-V12-READVIEW-MANUAL-20261117",
+      "rationale": "Complete exact114-line header independently inspected: aggregate fields, declarations, friends and private successor factory declaration only; no handwritten callable body, constructor body, lambda or function-like macro. Existing empty-span default-argument parser recovery moves72->73 in the bodyless forkViews declaration. The added NativeAdapter forward/friend declaration and successorViews declaration introduce no omitted implementation. Complete callable inventory remains empty. Exact-content coverage only, with no source-size waiver, future growth allowance or native/rendered/performance acceptance.",
       "functions": []
     },
     "AI/BattleAI/ForecastState.h": {
@@ -18370,15 +18365,15 @@
       "deferral": "Before further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner splits owned forecast/side/query capability declarations from legacy HypotheticBattle interface after consumers stabilize; preserve one instance/type identity and facade exports, no textual include fragments.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before another projected state family expands the header, extract the cohesive completion observation holder. Preserve exact callback lifetime, immutable packet copies, transaction reset and reverse application order. Minimum checks: failed apply has no receipt, core/shock refresh restores prior status, ordinary candidate effects/HP remain, no source/sibling/RNG change. Expanded exact review: AI engineer: subsequent snapshot-family expansion belongs in the existing HypotheticUnitSnapshots/HypotheticUnitEnvironment owners, using explicit captured side values and branch IUnitEnvironment; characterize parent/child/sibling isolation and owned-frame lifetime before adding more header logic.",
       "kind": "exception",
-      "lines": 767,
+      "lines": 765,
       "owner": "ai_engineer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Declares owned forecast/Side/query capability and private receipt seams in the one existing HB type. No duplicate battle owner, object injection or header implementation relocation.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "rationale": "Declares owned forecast/Side/query capability and private receipt seams in the one existing HB type. No duplicate battle owner, object injection or header implementation relocation. Exact journal successor shrinks767->765 lines: one private transient replay-acquisition pointer and its comment replace the existing ownedForecastSize inline implementation, now out of line. No second state owner, inherited child pointer, persistent field or serialized state is added. All64 remaining inline bodies are unchanged. Preserve every inherited extraction obligation and ratchet765; no future/unrelated header growth or ceiling increase is allowed.",
+      "review": "IR-NH0921-V12-JOURNAL-HB-UNIT-20261117",
       "review_category": "component-interface-review",
-      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
+      "review_scope": "Exact765-line source/header organization and unchanged64-body inventory only; preserve inherited obligations. No compiler/native/rendered/performance/promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "bea151b2e996944c6244761bfc3db1d588986add49f04078c6cf8e9271ee5eee",
+      "sha256": "dfb12862dfe48efb3d4933f742058822a0b38c4790f587e87934cd3bebf70bd8",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
         "sha256": "632547c06df7e99570e3f14c81748c9d323ad2a3cb9f425e85e3289ebce6081d",
@@ -29278,24 +29273,24 @@
     },
     "AI/BattleAI/ForecastAcceptedAttackIntegration.cpp::forecast::bool NativeAdapter::applyAcceptedAttack(HypotheticBattle & branch, const battle::Unit * actor, const AttackPossibility & action, AcceptedAttackRoute route)#1": {
       "kind": "exception",
-      "lines": 97,
-      "sha256": "c2e8ff7d678192c1c817fe56df5b8cb82e2d3d7914053341e801afe159469d2d",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "rationale": "Existing melee receipt uses adapter afterAttack if model exists and exact old native afterAttack otherwise; preserves reactive Brace versus ordinary retaliation consumption.\n\nIndependently reviewed C14 scope (97 to 97 physical lines): The existing compact transaction now refuses an explicitly uncertain affliction receipt at its first guard. Seal, ownership, prepare and commit order are retained with unchanged physical length. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
+      "lines": 96,
+      "sha256": "3798dca9d04528d1195e59edeb8debe42d6383af914834c21f0fa8a6b3d5f3c0",
+      "review": "IR-NH0921-V12-JOURNAL-ACCEPTED-UNIT-20261117",
+      "rationale": "Exact96-line accepted-attack transaction shrinks the prior97-line unit. Existing nonwriting sealed ownership preflight moves to the cohesive20-line validateAcceptedOwnership helper before any materialization or budget debit; old predicate ordering is retained. The transaction adds a prospective-only mutable-acquisition journal and skips effect-free untouched peer imports while retaining roster-order Node1 charge, all-peer prepared staging/provenance checks, full native final snapshot/Order refresh, stable target identity, Bloodrage and no-throw publication. No all-peer effect/lifetime validation is skipped for nonempty peers or exhausted revisions. File205->225 stays below500. Preserve transaction ratchet96 and inherited ownership/rollback/off-endpoint/state/RNG obligations; no future growth or numeric ceiling exception.",
       "owner": "ai_engineer",
-      "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
+      "review_scope": "Exact final journal patch468eb4 source organization and bounded source semantics only. No compiler/native/rendered/performance/save-resume/promotion acceptance.",
       "inherited_exact_source_review": {},
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
       "deferral": "AI engineer: retain the focused accepted-attack transaction. Before adding another admission family, extract its nonwriting receipt/ownership preflight with branch, actor and sealed action inputs; preserve refusal before materialization, rollback of map/observer state and all-peer no-throw publication. Require stale/foreign/scoring/uncertain negatives and accepted native parity."
     },
     "AI/BattleAI/ForecastActivationIntegration.cpp::forecast::bool NativeAdapter::lifecycle(HypotheticBattle & branch, UnitId actor, BattleUnitTurnReason reason, LifecyclePhase phase, HypotheticLifecycleTiming * timing)#1": {
       "kind": "review",
-      "lines": 101,
-      "sha256": "3350a859f18fdf79b8c45921c04120df9c3414c0a68204be31ef22b9e448c7a7",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Three-line native original completion bridge adds one Overflow stage; shared recorder observes pre-casualty original injury once and reflection/automatic origins remain separate.",
+      "lines": 97,
+      "sha256": "36373dc5476eb33d50a7cebc4b6e8aeb021b220a6386022eeed2b64e0151c898",
+      "review": "IR-NH0921-V12-LIFECYCLE-EXTRACTION-20261117",
+      "rationale": "Exact lifecycle97-line successor shrinks the inherited101-line transaction. Full work reservation is cohesively extracted to reserveLifecycleWork19 lines and unchanged completion proof/ordinal preparation to private NativeAdapter::consumeUnchangedCompletion21 lines. All mutable native replay, all-peer effect capture, exact read publication, expected-layer validation and storage-only acceptance remain ordered in the transaction owner. Exact local-effect comparison avoids replacement vectors only when every ordered record is equal. File127->182 stays below500; helper ownership is focused, no relocation into an oversized unit. Retain the97-line ratchet and all inherited lifecycle/rollback/observation/RNG and source-bound native test obligations; further substantive transaction growth requires a cohesive stage extraction. This is a bounded below150 review, not a new ceiling exception or future growth allowance.",
       "owner": "ai_engineer",
-      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
+      "review_scope": "Exact composed V12 source organization and source semantics only. No compiler, native, rendered, benchmark, save-resume, publication or promotion acceptance.",
       "inherited_exact_source_review": {},
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
     },

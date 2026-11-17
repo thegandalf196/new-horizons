@@ -436,6 +436,11 @@ assign_source_group(${battleAI_SRCS} ${battleAI_HEADERS})
 add_library(BattleAI OBJECT ${battleAI_SRCS} ${battleAI_HEADERS})
 target_compile_definitions(BattleAI PRIVATE VCMI_DLL=1)
 
+option(ENABLE_NH_COMPACT_FORECAST "Use the experimental compact battle forecast" ${ENABLE_TEST})
+if(ENABLE_NH_COMPACT_FORECAST)
+	set_property(SOURCE ForecastExchangeIntegration.cpp APPEND PROPERTY COMPILE_DEFINITIONS NH_COMPACT_FORECAST)
+endif()
+
 # The actual dedicated controller and its value-only barrier share this facade's
 # single internal AI implementation. The executable never imports hidden HB/Stack
 # symbols or embeds another engine/AI copy. Ordinary builds add no test sources.

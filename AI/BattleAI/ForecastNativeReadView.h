@@ -16,6 +16,7 @@ namespace frozenScoring { class OwnedSource; }
 namespace nativeRules { class CapturedRuleDocument; }
 namespace forecast
 {
+class DLL_LINKAGE NativeAdapter;
 struct NativeReadAcquisition;
 struct NativeReadQuerySource;
 /// Pure owned inputs; not a native-world admission certificate. The caller
@@ -86,6 +87,12 @@ public:
 	std::shared_ptr<const void> workIdentity() const;
 	NativeReadWork work() const noexcept;
 private:
+	friend class NativeAdapter;
+	/// Only publication from already sealed per-slot owners may use this path.
+	/// No public aliases are accepted; incompatible groups use fromOwned instead.
+	static std::optional<std::vector<std::shared_ptr<const NativeReadView>>> successorViews(
+		std::span<const std::shared_ptr<const NativeReadView>>,
+		std::vector<NativeReadOccurrence> &, std::shared_ptr<NativeReadWork>);
 	class Group;
 	std::shared_ptr<Group> group;
 	size_t slot;

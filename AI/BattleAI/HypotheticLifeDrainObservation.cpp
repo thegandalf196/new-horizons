@@ -6,8 +6,15 @@
 #include "HypotheticBattle.h"
 #include "../../lib/battle/OwnedUnitBonusFrame.h"
 
+std::optional<size_t> HypotheticBattle::ownedForecastSize() const noexcept
+{
+	const auto * values = compactForecast ? &*compactForecast : compactReadSession ? &*compactReadSession : nullptr;
+	return values ? std::optional<size_t>(values->ids().size()) : std::nullopt;
+}
+
 std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdateImpl(uint32_t id)
 {
+	if(acceptedReplayAcquisitions) acceptedReplayAcquisitions->insert(id);
 	auto iter = stackStates.find(id);
 
 	if(iter == stackStates.end())

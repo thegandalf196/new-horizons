@@ -18,6 +18,7 @@
 #include "../../lib/battle/UnitStateValueExchange.h"
 #include "../../lib/bonuses/BonusList.h"
 #include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
 
@@ -65,6 +66,26 @@ EffectDiff effectDiff(const forecastEffects::State & before, const forecastEffec
 	}
 	return result;
 }
+void validateAcceptedOwnership(const HypotheticBattle & branch, const State & accepted,
+	const battle::Unit * actor, const AttackPossibility & action)
+{
+	require(action.snapshotSeal && action.snapshotSeal->matches(action) && action.overwatchHits.empty());
+	require(actor && action.queryWorld && action.attackerState && action.attack.attacker && action.attack.defender);
+	const auto & query = action.queryWorld->callback();
+	require(query && sameWorld(branch, *query));
+	require(query->battleGetUnitByID(action.attack.attacker->unitId()) == action.attack.attacker
+		&& query->battleGetUnitByID(action.attack.defender->unitId()) == action.attack.defender);
+	heroActionProjection::CanonicalSourceAdmission proof(*action.attack.attacker, *query);
+	require(proof.admits(*action.attack.defender));
+	require(action.forecastSource && action.forecastSource->sameSnapshot(accepted));
+	const auto * targetActor = branch.battleGetUnitByID(actor->unitId());
+	require(targetActor == actor && action.attack.attacker->unitId() == actor->unitId()
+		&& action.attackerState->unitId() == actor->unitId());
+	if(action.effectPreview) require(sameWorld(branch, *action.effectPreview));
+	NativeAdapter::validateAcceptedSnapshot(*action.attackerState, action);
+	for(const auto & affected : action.affectedUnits)
+		if(affected) NativeAdapter::validateAcceptedSnapshot(*affected, action);
+}
 }
 
 void NativeAdapter::replayAcceptedAttackNative(HypotheticBattle & branch, const battle::Unit * actor,
@@ -109,35 +130,20 @@ bool NativeAdapter::applyAcceptedAttack(HypotheticBattle & branch, const battle:
 	const AttackPossibility & action, AcceptedAttackRoute route)
 {
 	if(!branch.compactForecast || action.uncertainAfflictionProjection) return false;
-	require(action.snapshotSeal && action.snapshotSeal->matches(action) && action.overwatchHits.empty());
-	require(actor && action.queryWorld && action.attackerState && action.attack.attacker && action.attack.defender);
-	const auto & query = action.queryWorld->callback();
-	require(query && sameWorld(branch, *query));
-	require(query->battleGetUnitByID(action.attack.attacker->unitId()) == action.attack.attacker
-		&& query->battleGetUnitByID(action.attack.defender->unitId()) == action.attack.defender);
-	heroActionProjection::CanonicalSourceAdmission proof(*action.attack.attacker, *query);
-	require(proof.admits(*action.attack.defender));
-	require(action.forecastSource && action.forecastSource->sameSnapshot(*branch.compactForecast));
-	const auto * targetActor = branch.battleGetUnitByID(actor->unitId());
-	require(targetActor == actor && action.attack.attacker->unitId() == actor->unitId()
-		&& action.attackerState->unitId() == actor->unitId());
-	if(action.effectPreview) require(sameWorld(branch, *action.effectPreview));
-	validateAcceptedSnapshot(*action.attackerState, action);
-	for(const auto & affected : action.affectedUnits)
-		if(affected) validateAcceptedSnapshot(*affected, action);
+	validateAcceptedOwnership(branch, *branch.compactForecast, actor, action);
 
 	// Charge bounded all-peer staging before any native replay prefix. The
 	// branch and its stable target objects remain untouched on every failure.
 	const auto ids = branch.compactForecast->ids();
 	if(branch.searchBudget()) branch.searchBudget()->require(battleSearch::WorkKind::Node,
 		static_cast<uint32_t>(ids.size() * (ids.size() + 1)));
-	// Lazily materialize child views without invalidating its observation.
-	// This before-image owns only map handles, not another simulation graph.
-	// Every existing target keeps its identity; failed preparation restores the
-	// exact registration before-image by a no-throw swap, without callbacks.
+	// Map handles retain target identity without another simulation graph.
+	// Failure restores registrations by no-throw swap without callbacks.
 	auto originalMap = branch.stackStates;
 	try
 	{
+		// Declared before prospective so its journal outlives replay on exceptions.
+		std::set<uint32_t> acquired;
 		auto borrowed = std::shared_ptr<CBattleInfoCallback>(&branch, [](CBattleInfoCallback *) {});
 		HypotheticBattle prospective(branch.env, std::move(borrowed),
 			std::shared_ptr<const battle::OwnedBattleFrameBatch>{}, branch.searchBudget());
@@ -159,11 +165,24 @@ bool NativeAdapter::applyAcceptedAttack(HypotheticBattle & branch, const battle:
 			staged.emplace_back(std::move(next));
 			prospective.stackStates[id] = staged.back();
 		}
+		prospective.acceptedReplayAcquisitions = &acquired;
 		replayAcceptedAttackNative(prospective, prospective.battleGetUnitByID(actor->unitId()), action, route);
+		prospective.acceptedReplayAcquisitions = nullptr;
+		for(const auto id : acquired) require(branch.compactForecast->unit(id) != nullptr);
 		auto draft = *branch.compactForecast;
 		for(size_t index = 0; index < ids.size(); ++index)
 		{
 			const auto id = ids[index];
+			const auto & effects = draft.unit(id)->effects;
+			if(!acquired.contains(id) && effects->values().empty()
+				&& effects->revision() != std::numeric_limits<uint64_t>::max())
+			{
+				// Proven effect-free untouched peer; all other peers retain the full path.
+				// Preserve the old no-op receipt debit and its roster-order cutoff.
+				if(branch.searchBudget()) branch.searchBudget()->require(battleSearch::WorkKind::Node,
+					1);
+				continue;
+			}
 			auto & after = *staged[index];
 			const auto captured = captureEffects(after, prospective.battleGetRound());
 			const auto diff = effectDiff(*draft.unit(id)->effects, *captured);
@@ -179,6 +198,7 @@ bool NativeAdapter::applyAcceptedAttack(HypotheticBattle & branch, const battle:
 			next.controller = prospective.battleGetActionController(&after);
 			draft.commit(id, std::move(next), Health | Queue | Damage | (moved ? Occupancy | Adjacency : Clean), moved);
 		}
+		// Full peer refresh/publication also preserves read-only counter-cache observations.
 		refreshOrderDerived(prospective, draft);
 		for(size_t index = 0; index < ids.size(); ++index)
 			require(targets[index]->preparedEffectSourceMatches(*staged[index]));

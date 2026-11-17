@@ -20,7 +20,8 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Replaces Divine Mandate with Consecrated Arms. Issuing an Order grants a
   prayer to its recipients, with effects that scale with the hero's Faith.
 - Removes the Conflux Vault of Ashes and its additional Fire Elemental growth.
-- Compiles captured rules and reuses battle state for supported combat AI forecasts.
+- Compiles captured rules for battle and spell evaluation. The release uses the
+  faster reference forecast. The compact forecast is available in test builds.
 
 Start a new game in 0.92.1. The current save format is **1164**. Earlier saves
 are rejected without changing the saved files.

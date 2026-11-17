@@ -12,7 +12,7 @@ void require(bool accepted)
 {
 	if(!accepted) throw std::invalid_argument("Incomplete or mismatched owned native read capability");
 }
-void validateOccurrence(const NativeReadOccurrence & input)
+void validateOccurrence(const NativeReadOccurrence & input, bool validateDescriptor = true)
 {
 	require(input.descriptor && input.values);
 	require(input.scoring ? !input.modifiers && !input.queries : input.modifiers && input.queries);
@@ -30,6 +30,7 @@ void validateOccurrence(const NativeReadOccurrence & input)
 		&& binding.side == descriptor.identity.side && binding.slot == descriptor.identity.slot
 		&& binding.ghost == status.ghost && binding.summoned == status.summoned
 		&& binding.natureSummoned == status.natureSummoned);
+	if(!validateDescriptor) return; // Canonical immutable prototype was checked at public admission.
 	const auto * creature = descriptor.creatures->creature(descriptor.identity.originalCreature);
 	require(creature && creature->getId() == descriptor.identity.originalCreature);
 	// Current admitted native consumers need these prototype values; absence
@@ -71,10 +72,20 @@ NativeReadView::Group::Tables::Tables(std::vector<NativeReadOccurrence> inputs,
 		require(warfare != environment->warfare.end() && warfare->second >= 0);
 	}
 }
+NativeReadView::Group::Tables::Tables(std::vector<NativeReadOccurrence> inputs,
+	std::shared_ptr<const NativeReadEnvironment> metadata, SealedSuccessor)
+	: occurrences(std::move(inputs)), environment(std::move(metadata))
+{
+	// Private successorViews has checked exact sealed owners and every new binding.
+}
 NativeReadView::Group::Group(std::vector<NativeReadOccurrence> inputs,
 	std::shared_ptr<const NativeReadEnvironment> environment, std::shared_ptr<NativeReadWork> decisionWork)
-	: tables(std::make_shared<const Tables>(std::move(inputs), std::move(environment))),
-	occurrences(tables->occurrences), environment(tables->environment), decisionWork(std::move(decisionWork)), context(*this)
+	: Group(std::make_shared<const Tables>(std::move(inputs), std::move(environment)), std::move(decisionWork))
+{
+}
+NativeReadView::Group::Group(std::shared_ptr<const Tables> tables, std::shared_ptr<NativeReadWork> decisionWork)
+	: tables(std::move(tables)), occurrences(this->tables->occurrences), environment(this->tables->environment),
+	decisionWork(std::move(decisionWork)), context(*this)
 {
 	retaliationCaches.reserve(occurrences.size());
 	for(const auto & occurrence : occurrences) retaliationCaches.push_back(occurrence.values->retaliationCache());
@@ -276,6 +287,43 @@ std::vector<std::shared_ptr<const NativeReadView>> NativeReadView::fromOwned(
 	std::vector<std::shared_ptr<const NativeReadView>> result;
 	result.reserve(group->occurrences.size());
 	for(size_t index = 0; index < group->occurrences.size(); ++index)
+		result.emplace_back(new NativeReadView(group, index));
+	return result;
+}
+std::optional<std::vector<std::shared_ptr<const NativeReadView>>> NativeReadView::successorViews(
+	std::span<const std::shared_ptr<const NativeReadView>> sources,
+	std::vector<NativeReadOccurrence> & inputs, std::shared_ptr<NativeReadWork> decisionWork)
+{
+	require(!sources.empty() && sources.size() == inputs.size());
+	std::shared_ptr<const NativeReadEnvironment> environment;
+	for(size_t index = 0; index < inputs.size(); ++index)
+	{
+		const auto & source = sources[index];
+		require(source && source->group && source->slot < source->group->occurrences.size());
+		// Partial publication leaves handles from DIFFERENT groups. Exact frozen
+		// environment ownership proves the same context, not merely equal magic.
+		if(source->slot != index || source->group->occurrences.size() != inputs.size()) return std::nullopt;
+		if(!environment) environment = source->group->environment;
+		else if(environment != source->group->environment) return std::nullopt;
+		const auto & canonical = source->group->occurrences[source->slot].descriptor;
+		const auto & descriptor = inputs[index].descriptor;
+		if(!descriptor || descriptor->identity != canonical->identity || descriptor->creatures != canonical->creatures
+			|| descriptor->healthBasis.battleStartMaximumHP != canonical->healthBasis.battleStartMaximumHP
+			|| descriptor->healthBasis.rebirthOriginalHP != canonical->healthBasis.rebirthOriginalHP) return std::nullopt;
+		validateOccurrence(inputs[index], false); // New values/program/count and dynamic bits still need exact proof.
+	}
+	// Each slot and its canonical descriptor was admitted with this EXACT owner;
+	// roster uniqueness, side membership, prototype and warfare facts stay sealed.
+	for(size_t index = 0; index < inputs.size(); ++index)
+		inputs[index].descriptor = sources[index]->group->occurrences[sources[index]->slot].descriptor;
+	// Only a successful successor consumes the caller's vector. No public
+	// descriptor aliases enter the sealed table; no second roster copy is needed.
+	auto tables = std::make_shared<const Group::Tables>(std::move(inputs), std::move(environment),
+		Group::Tables::SealedSuccessor{});
+	auto group = std::make_shared<Group>(std::move(tables), std::move(decisionWork));
+	std::vector<std::shared_ptr<const NativeReadView>> result;
+	result.reserve(sources.size());
+	for(size_t index = 0; index < sources.size(); ++index)
 		result.emplace_back(new NativeReadView(group, index));
 	return result;
 }

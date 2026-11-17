@@ -5,6 +5,7 @@
 #include "HypotheticBattle.h"
 #include "SearchBudget.h"
 #include "../../lib/battle/UnitStateValueExchange.h"
+#include "../../lib/battle/NewHorizonsDivineMandate.h"
 #include <limits>
 #include <stdexcept>
 namespace forecast
@@ -15,6 +16,24 @@ void require(bool accepted)
 {
 	if(!accepted) throw std::logic_error("Admitted forecast lifecycle rejected before publication");
 }
+// Match the native helpers on private values rather than maintaining another
+// list of perk/lifetime predicates. Any real mutation retains the full replay.
+bool unchangedCompletion(const HypotheticBattle & branch, const StackWithBonuses & actor, LifecyclePhase phase)
+{
+	if(actor.forestAmbush.shotPending) return false;
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto before = branch.getSylvanLuckState(side);
+		auto after = before;
+		if(phase == LifecyclePhase::Finish) after.endActivation();
+		else after.tactics.endActivation();
+		if(after != before) return false;
+		auto orders = branch.localHeroOrderStates(side);
+		if(newHorizonsDivineMandate::completeDisciplineOrders(orders, branch.getRound(), actor.unitId()))
+			return false;
+	}
+	return true;
+}
 std::vector<Bonus> records(const forecastEffects::State & effects)
 {
 	std::vector<Bonus> result;
@@ -22,6 +41,46 @@ std::vector<Bonus> records(const forecastEffects::State & effects)
 	for(const auto & record : effects.values()) result.push_back(*record.value);
 	return result;
 }
+std::shared_ptr<battleSearch::SearchBudget> reserveLifecycleWork(const State & draft,
+	const std::shared_ptr<battleSearch::SearchBudget> & budget)
+{
+	const auto ids = draft.ids();
+	uint64_t known = 1 + 4 * static_cast<uint64_t>(ids.size());
+	for(const auto id : ids)
+	{
+		require(draft.unit(id)->effects != nullptr);
+		known += 3 * draft.unit(id)->effects->values().size() + 1;
+	}
+	if(known > std::numeric_limits<uint32_t>::max())
+		throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
+	if(!budget) return {};
+	battleSearch::WorkAmounts quota{};
+	quota[static_cast<size_t>(battleSearch::WorkKind::Node)] = static_cast<uint32_t>(known);
+	auto reserved = budget->reserve(quota);
+	if(!reserved) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
+	return std::make_shared<battleSearch::SearchBudget>(std::move(*reserved));
+}
+}
+bool NativeAdapter::consumeUnchangedCompletion(HypotheticBattle & branch, NativePreparation & preparation,
+	State & draft, UnitId actor, LifecyclePhase phase, battleSearch::SearchBudget * work)
+{
+	if(phase != LifecyclePhase::Finish && phase != LifecyclePhase::CompleteNormal) return false;
+	const auto target = preparation.unit(actor);
+	require(target != nullptr);
+	if(phase == LifecyclePhase::Finish && branch.activeUnitId >= 0)
+	{
+		const auto active = static_cast<uint32_t>(branch.activeUnitId);
+		if((branch.stackStates.contains(active) || branch.subject->battleGetUnitByID(active))
+			&& preparation.unit(active)->getActivationMovementBonus() != 0) return false;
+	}
+	if(!unchangedCompletion(branch, *target, phase)) return false;
+	// Keep the full replay's reserve cutoff and constructor charge even
+	// when the native owners can be retained unchanged.
+	if(work) work->require(battleSearch::WorkKind::Node, static_cast<uint32_t>(draft.ids().size()) + 1);
+	const auto completed = Transitions::consumeActivation(draft, actor, work);
+	if(completed.refusal == Refusal::Exhausted) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
+	require(static_cast<bool>(completed));
+	return true;
 }
 bool NativeAdapter::lifecycle(HypotheticBattle & branch, UnitId actor,
 	BattleUnitTurnReason reason, LifecyclePhase phase, HypotheticLifecycleTiming * timing)
@@ -34,24 +93,16 @@ bool NativeAdapter::lifecycle(HypotheticBattle & branch, UnitId actor,
 	auto draft = *branch.compactForecast;
 	const auto expected = branch.compactForecast->layer;
 	const auto ids = draft.ids();
-	uint64_t known = 1 + 4 * static_cast<uint64_t>(ids.size());
-	for(const auto id : ids)
-	{
-		require(draft.unit(id)->effects != nullptr);
-		known += 3 * draft.unit(id)->effects->values().size() + 1;
-	}
-	if(known > std::numeric_limits<uint32_t>::max())
-		throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
-	std::shared_ptr<battleSearch::SearchBudget> work;
-	if(branch.searchBudget())
-	{
-		battleSearch::WorkAmounts quota{};
-		quota[static_cast<size_t>(battleSearch::WorkKind::Node)] = static_cast<uint32_t>(known);
-		auto reserved = branch.searchBudget()->reserve(quota);
-		if(!reserved) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
-		work = std::make_shared<battleSearch::SearchBudget>(std::move(*reserved));
-	}
+	auto work = reserveLifecycleWork(draft, branch.searchBudget());
 	NativePreparation preparation(branch);
+	if(consumeUnchangedCompletion(branch, preparation, draft, actor, phase, work.get()))
+	{
+		require(branch.compactForecast && branch.compactForecast->layer == expected);
+		preparation.accept(ids);
+		++branch.bonusTreeVersion;
+		branch.compactForecast = std::move(draft);
+		return true;
+	}
 	auto borrowed = std::shared_ptr<CBattleInfoCallback>(&branch, [](CBattleInfoCallback *) {});
 	auto future = std::make_shared<HypotheticBattle>(branch.env, std::move(borrowed),
 		std::shared_ptr<const battle::OwnedBattleFrameBatch>{}, work);
@@ -82,12 +133,16 @@ bool NativeAdapter::lifecycle(HypotheticBattle & branch, UnitId actor,
 		const auto id = target->unitId();
 		const auto before = draft.unit(id)->effects;
 		const auto after = captureEffects(*staged, branch.battleGetRound());
-		auto removed = records(*before), added = records(*after);
 		forecastEffects::Receipt receipt{before, before, before->revision()};
-		const bool identical = removed.size() == added.size() && std::equal(removed.begin(), removed.end(), added.begin(),
-			[](const Bonus & left, const Bonus & right) { return battle::exactBattleEffectEqual(left, right); });
+		// Compare the captured immutable records before copying replacement
+		// inputs. Ordinary unchanged peers need no owned Bonus replacements.
+		const auto & previous = before->values();
+		const auto & current = after->values();
+		const bool identical = previous.size() == current.size()
+			&& std::equal(previous.begin(), previous.end(), current.begin(), [](const auto & left, const auto & right)
+			{ return battle::exactBattleEffectEqual(*left.value, *right.value); });
 		if(!identical)
-			receipt = prepareEffectApplication(draft, *future, id, removed, added,
+			receipt = prepareEffectApplication(draft, *future, id, records(*before), records(*after),
 				staged->frozenLastAppliedRound());
 		require(stageEffects(draft, branch, id, receipt, *staged, nullptr, true));
 	}
