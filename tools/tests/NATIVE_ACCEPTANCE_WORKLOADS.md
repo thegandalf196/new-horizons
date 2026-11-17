@@ -59,6 +59,13 @@ requested case as run and completed, without failures, errors, skips or duplicat
 properties. Neither verified membership nor a timing pass accepts complete
 candidate gameplay; that summary field remains false.
 
+Parity excludes only exact known work-property names. Unknown fields remain
+semantic even when their names end in `Exchanges` or `TargetProbes`. When the
+versioned diagnostic schema is present, support, completion, policy and overflow
+controls must pass validation before exclusion; samples retain them separately
+as `diagnosticControls`. The original schema may omit the later three native-read
+work counters, but a partially emitted extension is rejected.
+
 `--diagnostics` enables optional DEBUG records and initialization profiling.
 This requires an `ENABLE_NH_PERF_EXPERIMENTS=ON` build for world profiling. The
 runner reads the actual `VCMI_Test_log.txt` under the disposable profile, rejects
@@ -93,7 +100,8 @@ The portable CI entrypoint runs only explicitly selected, nonempty workloads:
 ```
 
 The CI manifest additionally requires `harnessPins`: absolute paths and SHA-256
-values for the entrypoint, both runners and the actual interpreter, together with
+values for the entrypoint, both runners, `nh_native_work_properties.py` and the
+actual interpreter, together with
 each candidate's complete `expectedDiscoveryCases`. Candidate
 inventories must cover source/test supplements, facade/providers, current config,
 `test/testdata/`, and read-only external Data/Mp3 mounts. Missing reviewed inputs

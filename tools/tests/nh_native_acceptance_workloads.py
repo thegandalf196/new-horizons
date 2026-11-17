@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import statistics
 import nh_ordinary_decision_benchmark as guard
+import nh_native_work_properties as work_properties
 
 ENCOUNTER = 'DISABLED_NativeEncounterBenchmarkTest.'
 WORLD = 'DISABLED_NativeWorldBenchmarkTest.'
@@ -30,7 +31,7 @@ WORKLOADS = {
 # Keep every recorded nonclock semantic/work witness. Operation-count reductions
 # are reported separately from required action/state/RNG agreement.
 CLOCKS = {'encounterUs', 'callbackUs', 'initializationUs', 'snapshotReadUs', 'snapshotWriteUs'}
-COUNTER_SUFFIXES = ('Exchanges', 'TargetProbes')
+# Exact work fields and validated controls are classified by the shared pure schema helper.
 
 
 def read_result(path, expected):
@@ -94,6 +95,14 @@ def workload_sample(plan, prepared, output, selector, clock, args):
     return row
 
 
+
+def workload_witness(props, policy):
+    work, controls = work_properties.property_classes(props, policy)
+    witness = {key: value for key, value in props.items()
+               if key not in CLOCKS and key not in work and key not in controls and key != 'snapshotBytes'}
+    return witness, controls
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--manifest', required=True, type=Path)
@@ -137,9 +146,7 @@ def main():
             row = workload_sample(plan, plan['candidates'][arm],
                                   args.output / (str(pair) + '-' + arm), selector, clock, args)
             props = row['properties']
-            witness = {key: value for key, value in props.items()
-                       if key not in CLOCKS and not key.endswith(COUNTER_SUFFIXES)
-                       and key != 'snapshotBytes'}
+            witness, row['diagnosticControls'] = workload_witness(props, args.policy)
             if reference is None:
                 reference = witness
             differences = [key for key in reference.keys() | witness.keys() if witness.get(key) != reference.get(key)]

@@ -35,9 +35,10 @@ def main():
         guard.quiet_lease(plan)
         guard.pinned_files(plan['harnessPins'])
         required = [Path(__file__).resolve(), Path(guard.__file__).resolve(), Path(workloads.__file__).resolve(),
+                    Path(workloads.work_properties.__file__).resolve(),
                     Path(sys.executable).resolve(strict=True)]
         if any(str(path) not in plan['harnessPins'] for path in required):
-            raise ValueError('CI entrypoint and both runners must be reviewed/pinned')
+            raise ValueError('CI entrypoint, runners, property schema and interpreter must be reviewed/pinned')
         for candidate in plan['candidates'].values():
             guard.pinned_files(candidate['pins'])
             if not Path(candidate['cwd']).is_dir():
